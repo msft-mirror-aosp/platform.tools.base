@@ -1138,8 +1138,10 @@ maven_import(
     jars = [
         "repository/com/android/tools/smali/smali-dexlib2/3.0.9/smali-dexlib2-3.0.9.jar"
     ],
-    deps = [
+    exports = [
         "com.google.code.findbugs.jsr305",
+    ],
+    deps = [
         "com.google.guava.guava",
     ],
     original_deps = [
@@ -1825,7 +1827,7 @@ maven_artifact(
     repo_root_path = "repository",
     repo_path = "com/github/rholder/guava-retrying/2.0.0",
     deps = [
-        "com.google.guava.guava_33.3.1-jre",
+        "com.google.guava.guava_33.4.0-jre",
         "com.google.code.findbugs.jsr305_2.0.2",
     ],
     visibility = ["//visibility:public"],
@@ -1842,7 +1844,7 @@ maven_import(
         "com.google.code.findbugs.jsr305",
     ],
     original_deps = [
-        "com.google.guava.guava_33.3.1-jre",
+        "com.google.guava.guava_33.4.0-jre",
         "com.google.code.findbugs.jsr305_2.0.2",
     ],
     pom = "repository/com/github/rholder/guava-retrying/2.0.0/guava-retrying-2.0.0.pom",
@@ -3050,17 +3052,17 @@ maven_import(
 )
 
 maven_artifact(
-    name = "com.google.guava.guava-testlib_33.3.1-jre",
-    pom = "repository/com/google/guava/guava-testlib/33.3.1-jre/guava-testlib-33.3.1-jre.pom",
+    name = "com.google.guava.guava-testlib_33.4.0-jre",
+    pom = "repository/com/google/guava/guava-testlib/33.4.0-jre/guava-testlib-33.4.0-jre.pom",
     repo_root_path = "repository",
-    repo_path = "com/google/guava/guava-testlib/33.3.1-jre",
-    parent = "com.google.guava.guava-parent_33.3.1-jre",
+    repo_path = "com/google/guava/guava-testlib/33.4.0-jre",
+    parent = "com.google.guava.guava-parent_33.4.0-jre",
     deps = [
         "com.google.code.findbugs.jsr305_3.0.2",
         "org.checkerframework.checker-qual_3.43.0",
-        "com.google.errorprone.error_prone_annotations_2.28.0",
+        "com.google.errorprone.error_prone_annotations_2.36.0",
         "com.google.j2objc.j2objc-annotations_3.0.0",
-        "com.google.guava.guava_33.3.1-jre",
+        "com.google.guava.guava_33.4.0-jre",
         "junit.junit_4.13.2",
     ],
     visibility = ["//visibility:public"],
@@ -3069,9 +3071,9 @@ maven_artifact(
 maven_import(
     name = "com.google.guava.guava-testlib",
     classifiers = [],
-    parent = "com.google.guava.guava-parent_33.3.1-jre",
+    parent = "com.google.guava.guava-parent_33.4.0-jre",
     jars = [
-        "repository/com/google/guava/guava-testlib/33.3.1-jre/guava-testlib-33.3.1-jre.jar"
+        "repository/com/google/guava/guava-testlib/33.4.0-jre/guava-testlib-33.4.0-jre.jar"
     ],
     exports = [
         "com.google.code.findbugs.jsr305",
@@ -3084,29 +3086,29 @@ maven_import(
     original_deps = [
         "com.google.code.findbugs.jsr305_3.0.2",
         "org.checkerframework.checker-qual_3.43.0",
-        "com.google.errorprone.error_prone_annotations_2.28.0",
+        "com.google.errorprone.error_prone_annotations_2.36.0",
         "com.google.j2objc.j2objc-annotations_3.0.0",
-        "com.google.guava.guava_33.3.1-jre",
+        "com.google.guava.guava_33.4.0-jre",
         "junit.junit_4.13.2",
     ],
-    pom = "repository/com/google/guava/guava-testlib/33.3.1-jre/guava-testlib-33.3.1-jre.pom",
+    pom = "repository/com/google/guava/guava-testlib/33.4.0-jre/guava-testlib-33.4.0-jre.pom",
     repo_root_path = "repository",
-    repo_path = "com/google/guava/guava-testlib/33.3.1-jre",
+    repo_path = "com/google/guava/guava-testlib/33.4.0-jre",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "com.google.guava.guava_33.3.1-jre",
-    pom = "repository/com/google/guava/guava/33.3.1-jre/guava-33.3.1-jre.pom",
+    name = "com.google.guava.guava_33.4.0-jre",
+    pom = "repository/com/google/guava/guava/33.4.0-jre/guava-33.4.0-jre.pom",
     repo_root_path = "repository",
-    repo_path = "com/google/guava/guava/33.3.1-jre",
-    parent = "com.google.guava.guava-parent_33.3.1-jre",
+    repo_path = "com/google/guava/guava/33.4.0-jre",
+    parent = "com.google.guava.guava-parent_33.4.0-jre",
     deps = [
         "com.google.guava.failureaccess_1.0.2",
         "com.google.guava.listenablefuture_9999.0-empty-to-avoid-conflict-with-guava",
         "com.google.code.findbugs.jsr305_3.0.2",
         "org.checkerframework.checker-qual_3.43.0",
-        "com.google.errorprone.error_prone_annotations_2.28.0",
+        "com.google.errorprone.error_prone_annotations_2.36.0",
         "com.google.j2objc.j2objc-annotations_3.0.0",
     ],
     visibility = ["//visibility:public"],
@@ -3115,9 +3117,9 @@ maven_artifact(
 maven_import(
     name = "com.google.guava.guava",
     classifiers = [],
-    parent = "com.google.guava.guava-parent_33.3.1-jre",
+    parent = "com.google.guava.guava-parent_33.4.0-jre",
     jars = [
-        "repository/com/google/guava/guava/33.3.1-jre/guava-33.3.1-jre.jar"
+        "repository/com/google/guava/guava/33.4.0-jre/guava-33.4.0-jre.jar"
     ],
     exports = [
         "com.google.guava.failureaccess",
@@ -3132,12 +3134,12 @@ maven_import(
         "com.google.guava.listenablefuture_9999.0-empty-to-avoid-conflict-with-guava",
         "com.google.code.findbugs.jsr305_3.0.2",
         "org.checkerframework.checker-qual_3.43.0",
-        "com.google.errorprone.error_prone_annotations_2.28.0",
+        "com.google.errorprone.error_prone_annotations_2.36.0",
         "com.google.j2objc.j2objc-annotations_3.0.0",
     ],
-    pom = "repository/com/google/guava/guava/33.3.1-jre/guava-33.3.1-jre.pom",
+    pom = "repository/com/google/guava/guava/33.4.0-jre/guava-33.4.0-jre.pom",
     repo_root_path = "repository",
-    repo_path = "com/google/guava/guava/33.3.1-jre",
+    repo_path = "com/google/guava/guava/33.4.0-jre",
     exclusions_for_parents = {
         "com.google.auth.google-auth-library-oauth2-http": [
             "com.google.j2objc.j2objc-annotations",
@@ -76229,6 +76231,30 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.api.grpc.grpc-google-common-protos_2.51.0",
+    pom = "repository/com/google/api/grpc/grpc-google-common-protos/2.51.0/grpc-google-common-protos-2.51.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/api/grpc/grpc-google-common-protos/2.51.0",
+    deps = [
+        "io.grpc.grpc-api_1.69.0",
+        "com.google.code.findbugs.jsr305_3.0.2",
+        "com.google.errorprone.error_prone_annotations_2.36.0",
+        "io.grpc.grpc-stub_1.69.0",
+        "io.grpc.grpc-protobuf_1.69.0",
+        "io.grpc.grpc-protobuf-lite_1.69.0",
+        "com.google.protobuf.protobuf-java_3.25.5",
+        "com.google.guava.guava_33.4.0-jre",
+        "com.google.guava.failureaccess_1.0.2",
+        "com.google.guava.listenablefuture_9999.0-empty-to-avoid-conflict-with-guava",
+        "org.checkerframework.checker-qual_3.48.4",
+        "com.google.j2objc.j2objc-annotations_3.0.0",
+        "com.google.api.grpc.proto-google-common-protos_2.51.0",
+        "javax.annotation.javax.annotation-api_1.3.2",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.google.api.grpc.proto-google-common-protos_1.0.0",
     pom = "repository/com/google/api/grpc/proto-google-common-protos/1.0.0/proto-google-common-protos-1.0.0.pom",
     repo_root_path = "repository",
@@ -76263,6 +76289,14 @@ maven_artifact(
     deps = [
         "com.google.protobuf.protobuf-java_3.21.12",
     ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.api.grpc.proto-google-common-protos_2.51.0",
+    pom = "repository/com/google/api/grpc/proto-google-common-protos/2.51.0/proto-google-common-protos-2.51.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/api/grpc/proto-google-common-protos/2.51.0",
     visibility = ["//visibility:public"],
 )
 
@@ -79699,6 +79733,40 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.guava.guava_33.3.1-jre",
+    pom = "repository/com/google/guava/guava/33.3.1-jre/guava-33.3.1-jre.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/guava/guava/33.3.1-jre",
+    parent = "com.google.guava.guava-parent_33.3.1-jre",
+    deps = [
+        "com.google.guava.failureaccess_1.0.2",
+        "com.google.guava.listenablefuture_9999.0-empty-to-avoid-conflict-with-guava",
+        "com.google.code.findbugs.jsr305_3.0.2",
+        "org.checkerframework.checker-qual_3.43.0",
+        "com.google.errorprone.error_prone_annotations_2.28.0",
+        "com.google.j2objc.j2objc-annotations_3.0.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.guava.guava_33.4.0-android",
+    pom = "repository/com/google/guava/guava/33.4.0-android/guava-33.4.0-android.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/guava/guava/33.4.0-android",
+    parent = "com.google.guava.guava-parent_33.4.0-android",
+    deps = [
+        "com.google.guava.failureaccess_1.0.2",
+        "com.google.guava.listenablefuture_9999.0-empty-to-avoid-conflict-with-guava",
+        "com.google.code.findbugs.jsr305_3.0.2",
+        "org.checkerframework.checker-qual_3.43.0",
+        "com.google.errorprone.error_prone_annotations_2.36.0",
+        "com.google.j2objc.j2objc-annotations_3.0.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.google.guava.listenablefuture_1.0",
     pom = "repository/com/google/guava/listenablefuture/1.0/listenablefuture-1.0.pom",
     repo_root_path = "repository",
@@ -82619,6 +82687,14 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "io.grpc.grpc-api_1.69.0",
+    pom = "repository/io/grpc/grpc-api/1.69.0/grpc-api-1.69.0.pom",
+    repo_root_path = "repository",
+    repo_path = "io/grpc/grpc-api/1.69.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "io.grpc.grpc-context_1.14.0",
     pom = "repository/io/grpc/grpc-context/1.14.0/grpc-context-1.14.0.pom",
     repo_root_path = "repository",
@@ -83024,6 +83100,14 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "io.grpc.grpc-protobuf-lite_1.69.0",
+    pom = "repository/io/grpc/grpc-protobuf-lite/1.69.0/grpc-protobuf-lite-1.69.0.pom",
+    repo_root_path = "repository",
+    repo_path = "io/grpc/grpc-protobuf-lite/1.69.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "io.grpc.grpc-protobuf_1.14.0",
     pom = "repository/io/grpc/grpc-protobuf/1.14.0/grpc-protobuf-1.14.0.pom",
     repo_root_path = "repository",
@@ -83118,6 +83202,14 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "io.grpc.grpc-protobuf_1.69.0",
+    pom = "repository/io/grpc/grpc-protobuf/1.69.0/grpc-protobuf-1.69.0.pom",
+    repo_root_path = "repository",
+    repo_path = "io/grpc/grpc-protobuf/1.69.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "io.grpc.grpc-services_1.57.2",
     pom = "repository/io/grpc/grpc-services/1.57.2/grpc-services-1.57.2.pom",
     repo_root_path = "repository",
@@ -83204,6 +83296,14 @@ maven_artifact(
         "com.google.guava.guava_32.0.1-android",
         "com.google.errorprone.error_prone_annotations_2.18.0",
     ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "io.grpc.grpc-stub_1.69.0",
+    pom = "repository/io/grpc/grpc-stub/1.69.0/grpc-stub-1.69.0.pom",
+    repo_root_path = "repository",
+    repo_path = "io/grpc/grpc-stub/1.69.0",
     visibility = ["//visibility:public"],
 )
 
@@ -86370,6 +86470,14 @@ maven_artifact(
     pom = "repository/org/checkerframework/checker-qual/3.42.0/checker-qual-3.42.0.pom",
     repo_root_path = "repository",
     repo_path = "org/checkerframework/checker-qual/3.42.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.checkerframework.checker-qual_3.48.4",
+    pom = "repository/org/checkerframework/checker-qual/3.48.4/checker-qual-3.48.4.pom",
+    repo_root_path = "repository",
+    repo_path = "org/checkerframework/checker-qual/3.48.4",
     visibility = ["//visibility:public"],
 )
 
@@ -105196,6 +105304,20 @@ maven_artifact(
     pom = "repository/com/google/guava/guava-parent/33.3.1-jre/guava-parent-33.3.1-jre.pom",
     repo_root_path = "repository",
     repo_path = "com/google/guava/guava-parent/33.3.1-jre",
+)
+
+maven_artifact(
+    name = "com.google.guava.guava-parent_33.4.0-android",
+    pom = "repository/com/google/guava/guava-parent/33.4.0-android/guava-parent-33.4.0-android.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/guava/guava-parent/33.4.0-android",
+)
+
+maven_artifact(
+    name = "com.google.guava.guava-parent_33.4.0-jre",
+    pom = "repository/com/google/guava/guava-parent/33.4.0-jre/guava-parent-33.4.0-jre.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/guava/guava-parent/33.4.0-jre",
 )
 
 maven_artifact(
