@@ -234,9 +234,8 @@ class ViewInspectorTest {
       assertThat(testRoot).isNotNull()
 
       val resource = testRoot!!.idResource
-      assertThat(resource).isNotNull()
-      assertThat(stringTable[resource.name]).isEqualTo("content")
-      assertThat(stringTable[resource.type]).isEqualTo("id")
+      assertThat(resource).isNotEqualTo(0)
+      assertThat(stringTable[resource]).isEqualTo("@android:id/content")
     }
 
   @Test
@@ -262,10 +261,8 @@ class ViewInspectorTest {
       assertThat(testViewNode).isNotNull()
 
       val layoutResource = testViewNode!!.layoutResource
-      assertThat(layoutResource).isNotNull()
-      assertThat(stringTable[layoutResource.name]).isEqualTo("simple_list_item_1")
-      assertThat(stringTable[layoutResource.type]).isEqualTo("layout")
-      assertThat(stringTable[layoutResource.namespace]).isEqualTo("android")
+      assertThat(layoutResource).isNotEqualTo(0)
+      assertThat(stringTable[layoutResource]).isEqualTo("@android:layout/simple_list_item_1")
     }
 
   @Test

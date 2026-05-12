@@ -23,7 +23,6 @@ import androidx.annotation.VisibleForTesting
 import com.android.tools.ui.inspector.inspectors.view.property.PropertyCache
 import com.android.tools.ui.inspector.inspectors.view.property.ProtoAttributeReader
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.Rect
-import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.Resource
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.ViewNode
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.ViewNode.Attribute
 
@@ -78,15 +77,15 @@ private fun createViewNode(view: View, stringTable: StringTable, attributeExtrac
         .build()
 
     // Create and set view id resource
-    val res = view.createResource(stringTable, view.id)
+    val res = view.resolveResourceToString(view.id)
     if (res != null) {
-      idResource = res
+      idResource = stringTable.put(res)
     }
 
     // Create and set source layout id
-    val layoutRes = view.createResource(stringTable, view.sourceLayoutResId)
+    val layoutRes = view.resolveResourceToString(view.sourceLayoutResId)
     if (layoutRes != null) {
-      layoutResource = layoutRes
+      layoutResource = stringTable.put(layoutRes)
     }
 
     visibility =
@@ -143,31 +142,6 @@ private fun View.forEachProtoAttribute(
   val reader = ProtoAttributeReader(this, propertyData.properties, stringTable, onAttributeResolved)
   for (companion in propertyData.companions) {
     companion.readProperties(this, reader)
-  }
-}
-
-/**
- * Resolves a resource ID into a [Resource] proto message containing namespace, type, and name. Returns null if the resource ID is invalid
- * or cannot be found.
- *
- * TODO: We should simplify this in the future and migrate to [resolveResourceToString] to avoid the redundant [Resource] proto message. At
- *   the moment the Resource is simply converted to string by the host.
- */
-private fun View.createResource(stringTable: StringTable, resourceId: Int): Resource? {
-  if (!isValidResourceId(resourceId)) {
-    return null
-  }
-
-  return try {
-    return Resource.newBuilder()
-      .apply {
-        type = stringTable.put(resources.getResourceTypeName(resourceId))
-        namespace = stringTable.put(resources.getResourcePackageName(resourceId))
-        name = stringTable.put(resources.getResourceEntryName(resourceId))
-      }
-      .build()
-  } catch (_: Resources.NotFoundException) {
-    null
   }
 }
 

@@ -123,8 +123,8 @@ private fun printNode(node: ViewInspectorProtocol.ViewNode, stringTable: Map<Int
   val className = stringTable[node.className] ?: "Unknown"
   val bounds = node.bounds
 
-  val resourceStr = node.idResource.toResourceString(stringTable).let { if (it.isNotEmpty()) " id=$it" else "" }
-  val layoutResourceStr = node.layoutResource.toResourceString(stringTable).let { if (it.isNotEmpty()) " layout=$it" else "" }
+  val resourceStr = stringTable[node.idResource]?.let { " id=$it" } ?: ""
+  val layoutResourceStr = stringTable[node.layoutResource]?.let { " layout=$it" } ?: ""
 
   System.out.println(
     "${prefix}[$className]$resourceStr$layoutResourceStr (${bounds.x}, ${bounds.y}, ${bounds.width}, ${bounds.height}) visibility=${node.visibility.name}"
@@ -139,14 +139,6 @@ private fun printNode(node: ViewInspectorProtocol.ViewNode, stringTable: Map<Int
   for (child in node.childrenList) {
     printNode(child, stringTable, indent + 1)
   }
-}
-
-private fun ViewInspectorProtocol.Resource.toResourceString(stringTable: Map<Int, String>): String {
-  if (name == 0) return ""
-  val parsedNamespace = stringTable[namespace] ?: "unknown"
-  val parsedType = stringTable[type] ?: "unknown"
-  val parsedName = stringTable[name] ?: "unknown"
-  return "@$parsedNamespace:$parsedType/$parsedName"
 }
 
 fun main(args: Array<String>) {
