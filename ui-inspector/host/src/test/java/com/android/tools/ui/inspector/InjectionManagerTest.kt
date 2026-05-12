@@ -212,6 +212,7 @@ class InjectionManagerTest {
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
 
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "getprop ro.product.cpu.abi", "arm64-v8a\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pidof $packageName", "1234\n")
 
     // Configure run-as pwd to fail
     fakeSession.deviceServices.configureShellCommand(
