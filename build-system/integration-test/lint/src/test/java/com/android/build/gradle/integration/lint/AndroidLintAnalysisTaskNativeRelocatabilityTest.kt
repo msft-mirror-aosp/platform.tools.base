@@ -98,13 +98,8 @@ class AndroidLintAnalysisTaskNativeRelocatabilityTest {
         .withArgument("-Dorg.gradle.caching.debug=true")
         .run(":lib:lintDebug", ":lib:lintAnalyzeDebugAndroidTest", ":lib:lintAnalyzeDebugUnitTest")
 
-    try {
-      result.assertTask(":lib:lintAnalyzeDebug").wasFromCache()
-      result.assertTask(":lib:lintAnalyzeDebugAndroidTest").wasFromCache()
-      result.assertTask(":lib:lintAnalyzeDebugUnitTest").wasFromCache()
-    } catch (e: AssertionError) {
-      @Suppress("DEPRECATION")
-      throw RuntimeException("Task was NOT from cache on relocation! Full stdout:\n" + result.stdoutAsTextForDebug, e)
-    }
+    result.assertTask(":lib:lintAnalyzeDebug").wasFromCache()
+    result.assertTask(":lib:lintAnalyzeDebugAndroidTest").wasFromCache()
+    result.assertTask(":lib:lintAnalyzeDebugUnitTest").wasFromCache()
   }
 }
