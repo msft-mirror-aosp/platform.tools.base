@@ -127,6 +127,13 @@ class LintReportBuilderTest {
     `when`(incident.location).thenReturn(location1)
     `when`(incident.file).thenReturn(File("/path/to/project/file1.java"))
 
+    `when`(client.getSourceText(File("/path/to/project/file1.java")))
+      .thenReturn("Line 1\nLine 2\nLine 3\nLine 4\nLine 5\nLine 6\nLine 7\nLine 8\nLine 9\nLine 10\nLine 11\nLine 12")
+    `when`(client.getSourceText(File("/path/to/project/file2.java"))).thenReturn("Line 1\nLine 2\nLine 3\nLine 4\nLine 5\nLine 6\nLine 7")
+    val start2 = mock(Position::class.java)
+    `when`(start2.line).thenReturn(5)
+    `when`(location2.start).thenReturn(start2)
+
     val report = builder.buildReport(listOf(incident), emptyList(), emptyMap())
     val lintIssue = report.issues[0]
 
@@ -134,6 +141,9 @@ class LintReportBuilderTest {
       assertEquals(1, size)
       assertEquals("/path/to/project/file2.java", this[0].file)
       assertEquals("Secondary message", this[0].message)
+      assertNotNull(this[0].sourceContext)
+      assertTrue(this[0].sourceContext!!.contains("Line 6"))
+      assertTrue(this[0].sourceContext!!.contains("class=\"warning\""))
     }
   }
 

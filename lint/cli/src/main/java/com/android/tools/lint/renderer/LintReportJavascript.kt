@@ -841,7 +841,8 @@ const LintReportApp = {
                         const locStr = `${'$'}{loc.file}${'$'}{loc.line ? ':' + loc.line : ''}`;
                         const link = loc.url ? `<a href="${'$'}{loc.url}" class="text-blue-600 hover:underline">${'$'}{this.escapeHTML(locStr)}</a>` : this.escapeHTML(locStr);
                         const message = loc.message ? `: ${'$'}{this.renderExplanation(loc.message)}` : '';
-                        return `<li>${'$'}{link}${'$'}{message}</li>`;
+                        const snippet = loc.sourceContext ? `<pre class="errorlines mt-2">${'$'}{loc.sourceContext}</pre>` : '';
+                        return `<li>${'$'}{link}${'$'}{message}${'$'}{snippet}</li>`;
                     }).join('')}</ul></div>`
                     : '';
                 const imagesHtml = (issue.images && issue.images.length > 0)
@@ -882,12 +883,12 @@ const LintReportApp = {
                             `).join('')}
                         </div>
                     ` : ''}
+                    ${'$'}{codeSnippet}
                     ${'$'}{urlsHtml}
                     ${'$'}{secondaryHtml}
                     ${'$'}{autoFixedMsg}
                     ${'$'}{quickfixMsg}
                     ${'$'}{imagesHtml}
-                    ${'$'}{codeSnippet}
                     ${'$'}{suppressHtml}
                     ${'$'}{vendorHtml}
                 </div></td></tr>`);

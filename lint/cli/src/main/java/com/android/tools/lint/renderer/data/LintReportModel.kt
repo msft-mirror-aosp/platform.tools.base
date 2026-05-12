@@ -150,6 +150,8 @@ data class LintLocation(
   val message: String? = null,
   /** An optional URL for the file or location. */
   val url: String? = null,
+  /** Additional source context for the location. */
+  val sourceContext: String? = null,
 )
 
 /** Information about the vendor of a lint check. */
