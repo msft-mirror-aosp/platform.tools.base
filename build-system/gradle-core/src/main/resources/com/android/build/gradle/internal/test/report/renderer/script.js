@@ -329,6 +329,8 @@ const TestReportApp = {
     selectedClass: null,
     filters: { variants: [], search: '', status: ['passed', 'failed', 'skipped'], testSuite: 'all', modules: [], packages: [], classes: [], testCases: [] },
     sort: { by: 'name', order: 'asc' },
+    isResizing: false,
+    columnWidths: {},
     variants: [],
     processedData: null
   },
@@ -342,12 +344,79 @@ const TestReportApp = {
       this.setupTestResults(TEST_DATA_SOURCE);
       this.populateFilters();
       this.bindEvents();
+      this.initResizableColumns();
       this.closeDropdownsOnClickOutside();
       Navigation.init();
       this.render();
     } else {
       console.error("TEST_DATA_SOURCE is not defined. Make sure data.js is loaded before script.js");
       this.elements.resultsData.innerHTML = `<tr><td colspan="100%" class="text-center text-red-600 font-bold" style="padding: 2rem;">Error: Data file not loaded.</td></tr>`;
+    }
+  },
+
+  initResizableColumns() {
+    const headerRow = this.elements.tableHeaders;
+    let activeResizer = null;
+    let startX, startWidth, resizerId;
+    let animationFrameId = null;
+
+    const setColumnWidth = (id, width) => {
+        document.documentElement.style.setProperty(`--col-width-${id.replace(/\./g, '-')}`, `${width}px`);
+    };
+
+    const onPointerMove = (e) => {
+        if (!activeResizer) return;
+        const diffX = e.pageX - startX;
+        const newWidth = Math.max(50, startWidth + diffX);
+
+        this.state.columnWidths[resizerId] = newWidth;
+
+        if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+        }
+        animationFrameId = requestAnimationFrame(() => {
+            setColumnWidth(resizerId, newWidth);
+        });
+    };
+
+    const onPointerUp = (e) => {
+        if (activeResizer) {
+            if (activeResizer.hasPointerCapture(e.pointerId)) {
+                activeResizer.releasePointerCapture(e.pointerId);
+            }
+            activeResizer.classList.remove('resizing');
+            activeResizer.removeEventListener('pointermove', onPointerMove);
+            activeResizer.removeEventListener('pointerup', onPointerUp);
+            activeResizer.removeEventListener('pointercancel', onPointerUp);
+            activeResizer = null;
+            setTimeout(() => { this.state.isResizing = false; }, 0);
+        }
+    };
+
+    headerRow.addEventListener('pointerdown', (e) => {
+        if (e.target.classList.contains('resizer')) {
+            activeResizer = e.target;
+            resizerId = activeResizer.dataset.resizerId;
+            const columnTh = activeResizer.closest('th');
+            startX = e.pageX;
+            startWidth = columnTh.getBoundingClientRect().width;
+
+            activeResizer.setPointerCapture(e.pointerId);
+            activeResizer.classList.add('resizing');
+            this.state.isResizing = true;
+
+            activeResizer.addEventListener('pointermove', onPointerMove);
+            activeResizer.addEventListener('pointerup', onPointerUp);
+            activeResizer.addEventListener('pointercancel', onPointerUp);
+
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    });
+
+    // Apply initial widths if any
+    for (const [id, width] of Object.entries(this.state.columnWidths)) {
+        setColumnWidth(id, width);
     }
   },
 
@@ -841,6 +910,7 @@ const TestReportApp = {
     });
 
     this.elements.tableHeaders.addEventListener('click', (e) => {
+        if (this.state.isResizing || e.target.classList.contains('resizer')) return;
         const th = e.target.closest('[data-sort-by]');
         if (!th) return;
 
@@ -1365,17 +1435,17 @@ const TestReportApp = {
     let pathSubHeader = '';
     if (this.state.viewMode === 'flat' && !this.state.selectedModule) {
       if (this.state.currentFlatView === 'classes' || this.state.currentFlatView === 'testCases') {
-        pathHeader = `<th class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30">Path</th>`;
-        pathSubHeader = `<th class="py-2 px-6 bg-gray-50 z-30"></th>`;
+        pathHeader = `<th class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30 col-path">Path<div class="resizer" data-resizer-id="path"></div></th>`;
+        pathSubHeader = `<th class="py-2 px-6 bg-gray-50 z-30 col-path"></th>`;
       } else if (this.state.currentFlatView === 'packages') {
-        pathHeader = `<th class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30">Module</th>`;
-        pathSubHeader = `<th class="py-2 px-6 bg-gray-50 z-30"></th>`;
+        pathHeader = `<th class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30 col-module">Module<div class="resizer" data-resizer-id="module"></div></th>`;
+        pathSubHeader = `<th class="py-2 px-6 bg-gray-50 z-30 col-module"></th>`;
       }
     }
 
     this.elements.tableHeaders.innerHTML = `
             <tr class="border-b border-gray-200">
-                <th class="py-4 px-6 text-left font-semibold text-gray-700 sticky-name bg-gray-50 z-30 cursor-pointer" data-sort-by="name" tabindex="0" aria-sort="${getAriaSort('name')}">${nameHeader} ${sortIndicator('name')}</th>
+                <th class="py-4 px-6 text-left font-semibold text-gray-700 sticky-name bg-gray-50 z-30 cursor-pointer" data-sort-by="name" tabindex="0" aria-sort="${getAriaSort('name')}">${nameHeader} ${sortIndicator('name')}<div class="resizer" data-resizer-id="name"></div></th>
                 ${pathHeader}
                 ${variantsToShow.map(v => `<th class="py-4 px-4 text-center font-semibold text-gray-700 border-l border-gray-200" colspan="4">${v}</th>`).join('')}
             </tr>
@@ -1486,16 +1556,16 @@ const TestReportApp = {
         let pathCell = '';
         if (this.state.viewMode === 'flat' && !this.state.selectedModule) {
             if (view === 'packages') {
-                pathCell = `<td class="py-3 px-6 text-gray-500 text-sm truncate max-w-150" title="${item.moduleName}">${item.moduleName}</td>`;
+                pathCell = `<td class="py-3 px-6 text-gray-500 text-sm truncate col-module" title="${item.moduleName}">${item.moduleName}</td>`;
             } else if (view === 'classes') {
-                pathCell = `<td class="px-2 max-w-300" title="${item.moduleName} > ${item.packageName}">
+                pathCell = `<td class="px-2 col-path" title="${item.moduleName} > ${item.packageName}">
                     <div class="flex flex-col" style="overflow: hidden; width: 100%;">
                         <span class="text-xs text-gray-500 truncate-block">${item.moduleName}</span>
                         <span class="text-sm text-gray-500 truncate-block">${item.packageName}</span>
                     </div>
                 </td>`;
             } else if (view === 'testCases') {
-                pathCell = `<td class="px-2 max-w-300" title="${item.moduleName} > ${item.packageName} > ${item.className}">
+                pathCell = `<td class="px-2 col-path" title="${item.moduleName} > ${item.packageName} > ${item.className}">
                     <div class="flex flex-col" style="overflow: hidden; width: 100%;">
                         <span class="text-xs text-gray-500 truncate-block">${item.moduleName}</span>
                         <span class="text-sm text-gray-500 truncate-block">${item.packageName} > ${item.className}</span>

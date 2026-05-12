@@ -888,31 +888,42 @@ const CoverageReportApp = {
         const headerRow = this.elements.tableHeaders;
         let activeResizer = null;
         let startX, startWidth, resizerId;
+        let animationFrameId = null;
 
         const setColumnWidth = (id, width) => {
             document.documentElement.style.setProperty(`--col-width-${id.replace(/\./g, '-')}`, `${width}px`);
         };
 
-        const onMouseMove = (e) => {
+        const onPointerMove = (e) => {
             if (!activeResizer) return;
             const diffX = e.pageX - startX;
             const newWidth = Math.max(50, startWidth + diffX);
 
             this.state.columnWidths[resizerId] = newWidth;
-            setColumnWidth(resizerId, newWidth);
+
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+            }
+            animationFrameId = requestAnimationFrame(() => {
+                setColumnWidth(resizerId, newWidth);
+            });
         };
 
-        const onMouseUp = () => {
+        const onPointerUp = (e) => {
             if (activeResizer) {
+                if (activeResizer.hasPointerCapture(e.pointerId)) {
+                    activeResizer.releasePointerCapture(e.pointerId);
+                }
                 activeResizer.classList.remove('resizing');
-                document.removeEventListener('mousemove', onMouseMove);
-                document.removeEventListener('mouseup', onMouseUp);
+                activeResizer.removeEventListener('pointermove', onPointerMove);
+                activeResizer.removeEventListener('pointerup', onPointerUp);
+                activeResizer.removeEventListener('pointercancel', onPointerUp);
                 activeResizer = null;
                 setTimeout(() => { this.isResizing = false; }, 0);
             }
         };
 
-        headerRow.addEventListener('mousedown', (e) => {
+        headerRow.addEventListener('pointerdown', (e) => {
             if (e.target.classList.contains('resizer')) {
                 activeResizer = e.target;
                 resizerId = activeResizer.dataset.resizerId;
@@ -920,10 +931,14 @@ const CoverageReportApp = {
                 startX = e.pageX;
                 startWidth = columnTh.getBoundingClientRect().width;
 
+                activeResizer.setPointerCapture(e.pointerId);
                 activeResizer.classList.add('resizing');
                 this.isResizing = true;
-                document.addEventListener('mousemove', onMouseMove);
-                document.addEventListener('mouseup', onMouseUp);
+
+                activeResizer.addEventListener('pointermove', onPointerMove);
+                activeResizer.addEventListener('pointerup', onPointerUp);
+                activeResizer.addEventListener('pointercancel', onPointerUp);
+
                 e.preventDefault();
                 e.stopPropagation();
             }
@@ -1637,13 +1652,11 @@ const CoverageReportApp = {
 
         if (viewMode === 'flat' && !this.state.selectedModule) {
             if (currentView === 'classes') {
-                const pathStyle = this.getColumnStyle('path', 300);
-                topHeader.innerHTML += `<th class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30" ${pathStyle}>Path<div class="resizer" data-resizer-id="path"></div></th>`;
-                subHeader.innerHTML += `<th class="py-2 px-6 bg-gray-50 z-30" ${pathStyle} data-col-id="path"></th>`;
+                topHeader.innerHTML += `<th class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30 col-path">Path<div class="resizer" data-resizer-id="path"></div></th>`;
+                subHeader.innerHTML += `<th class="py-2 px-6 bg-gray-50 z-30 col-path" data-col-id="path"></th>`;
             } else if (currentView === 'packages') {
-                const modStyle = this.getColumnStyle('module', 200);
-                topHeader.innerHTML += `<th class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30" ${modStyle}>Module<div class="resizer" data-resizer-id="module"></div></th>`;
-                subHeader.innerHTML += `<th class="py-2 px-6 bg-gray-50 z-30" ${modStyle} data-col-id="module"></th>`;
+                topHeader.innerHTML += `<th class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30 col-module">Module<div class="resizer" data-resizer-id="module"></div></th>`;
+                subHeader.innerHTML += `<th class="py-2 px-6 bg-gray-50 z-30 col-module" data-col-id="module"></th>`;
             }
         }
 
@@ -1742,13 +1755,13 @@ const CoverageReportApp = {
                 case 'packages':
                     nameCell = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover:underline cursor-pointer" tabindex="0" title="${item.name}" data-name="${item.name}" data-type="${item.type}" data-module-name="${item.moduleName}">${item.name}</td>`;
                     if (!this.state.selectedModule) {
-                        nameCell += `<td class="py-3 px-6 text-gray-500 text-sm truncate" title="${item.moduleName}" ${this.getColumnStyle('module', 200)}>${item.moduleName}</td>`;
+                        nameCell += `<td class="py-3 px-6 text-gray-500 text-sm truncate col-module" title="${item.moduleName}">${item.moduleName}</td>`;
                     }
                     break;
                 case 'classes':
                     nameCell = `<td class="py-3 px-6 sticky-name cursor-pointer class-link" tabindex="0" role="link" title="${item.name}" data-class-name="${item.name}" data-module-name="${item.moduleName}" data-package-name="${item.packageName}"><span class="font-medium text-blue-700 hover:underline">${item.name}</span></td>`;
                     if (!this.state.selectedModule) {
-                        nameCell += `<td class="px-2" title="${item.moduleName} > ${item.packageName}" ${this.getColumnStyle('path', 300)}>
+                        nameCell += `<td class="px-2 col-path" title="${item.moduleName} > ${item.packageName}">
                             <div class="flex flex-col" style="overflow: hidden; width: 100%;">
                                 <span class="text-xs text-gray-500 truncate-block">${item.moduleName}</span>
                                 <span class="text-sm text-gray-500 truncate-block">${item.packageName}</span>
