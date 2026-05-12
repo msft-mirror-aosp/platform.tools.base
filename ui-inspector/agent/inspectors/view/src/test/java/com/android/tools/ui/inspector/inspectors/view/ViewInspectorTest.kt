@@ -153,10 +153,13 @@ class ViewInspectorTest {
       val testRoot = findNodeByClassName(dumpResponse.getNodes(0), "LinearLayout", stringTable)
 
       assertThat(testRoot).isNotNull()
-      assertThat(testRoot!!.visibility).isEqualTo(ViewNode.Visibility.VISIBLE)
-      assertThat(testRoot.getChildren(0).visibility).isEqualTo(ViewNode.Visibility.VISIBLE)
-      assertThat(testRoot.getChildren(1).visibility).isEqualTo(ViewNode.Visibility.INVISIBLE)
-      assertThat(testRoot.getChildren(2).visibility).isEqualTo(ViewNode.Visibility.GONE)
+      assertThat(stringTable[testRoot!!.attributesList.find { stringTable[it.name] == "visibility" }!!.value]).isEqualTo("visible")
+      assertThat(stringTable[testRoot.getChildren(0).attributesList.find { stringTable[it.name] == "visibility" }!!.value])
+        .isEqualTo("visible")
+      assertThat(stringTable[testRoot.getChildren(1).attributesList.find { stringTable[it.name] == "visibility" }!!.value])
+        .isEqualTo("invisible")
+      assertThat(stringTable[testRoot.getChildren(2).attributesList.find { stringTable[it.name] == "visibility" }!!.value])
+        .isEqualTo("gone")
     }
 
   @Test

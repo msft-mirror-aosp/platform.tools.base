@@ -42,13 +42,6 @@ message ViewNode {
     // The absolute bounds of the view in screen coordinates.
     Rect bounds = 5;
 
-    enum Visibility {
-        VISIBLE = 0;
-        INVISIBLE = 1;
-        GONE = 2;
-    }
-    // TODO: Reconsider if visibility belongs here or with general attributes.
-    Visibility visibility = 6;
 
     // String table index for the resource ID of the view (e.g., @id/my_view)
     int32 id_resource = 7;

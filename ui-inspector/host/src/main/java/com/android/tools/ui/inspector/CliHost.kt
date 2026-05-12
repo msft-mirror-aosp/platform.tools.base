@@ -126,9 +126,7 @@ private fun printNode(node: ViewInspectorProtocol.ViewNode, stringTable: Map<Int
   val resourceStr = stringTable[node.idResource]?.let { " id=$it" } ?: ""
   val layoutResourceStr = stringTable[node.layoutResource]?.let { " layout=$it" } ?: ""
 
-  System.out.println(
-    "${prefix}[$className]$resourceStr$layoutResourceStr (${bounds.x}, ${bounds.y}, ${bounds.width}, ${bounds.height}) visibility=${node.visibility.name}"
-  )
+  System.out.println("${prefix}[$className]$resourceStr$layoutResourceStr (${bounds.x}, ${bounds.y}, ${bounds.width}, ${bounds.height})")
 
   for (attr in node.attributesList) {
     val name = stringTable[attr.name] ?: "unknown"

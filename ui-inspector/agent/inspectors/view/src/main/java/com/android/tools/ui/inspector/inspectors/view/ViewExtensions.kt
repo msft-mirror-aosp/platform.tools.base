@@ -88,13 +88,6 @@ private fun createViewNode(view: View, stringTable: StringTable, attributeExtrac
       layoutResource = stringTable.put(layoutRes)
     }
 
-    visibility =
-      when (view.visibility) {
-        View.VISIBLE -> ViewNode.Visibility.VISIBLE
-        View.INVISIBLE -> ViewNode.Visibility.INVISIBLE
-        View.GONE -> ViewNode.Visibility.GONE
-        else -> ViewNode.Visibility.VISIBLE // Fallback
-      }
     // TODO: add support for attribute resolution stack (where properties come from).
     // Note: This feature has significant platform limitations:
     // 1. View.getAttributeResolutionStack() only returns fallback style chains and is often empty for views in the wild.
