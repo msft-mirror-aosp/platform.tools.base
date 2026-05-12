@@ -135,6 +135,8 @@ _CLASS_JARS = [
     "androidx.compose.runtime:runtime:1.3.3",  # Dependency of architecture-samples
     "androidx.compose.runtime:runtime:1.7.0",  # Compose BOM 2024.09.00
     "androidx.compose.runtime:runtime:1.8.0-alpha06",  # XR template
+    "androidx.compose.runtime:runtime-android:aar:1.6.0",
+    "androidx.compose.runtime:runtime-android:aar:1.7.0",
     "androidx.compose.runtime:runtime-desktop:1.7.0",  # Compose BOM 2024.09.00
     "androidx.compose.runtime:runtime-livedata:1.3.0",
     "androidx.compose.runtime:runtime-saveable:1.10.4",
@@ -148,6 +150,8 @@ _CLASS_JARS = [
     "androidx.compose.ui:ui:1.7.0",  # Compose BOM 2024.09.00
     "androidx.compose.ui:ui:1.7.5",
     "androidx.compose.ui:ui:1.8.0-alpha06",  # XR template
+    "androidx.compose.ui:ui-android:aar:1.6.0",
+    "androidx.compose.ui:ui-android:aar:1.7.0",
     "androidx.compose.ui:ui-desktop:1.7.0",  # Compose BOM 2024.09.00
     "androidx.compose.ui:ui-graphics:1.10.0",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.ui:ui-graphics:1.10.4",
@@ -308,6 +312,7 @@ _CLASS_JARS = [
     "androidx.lifecycle:lifecycle-runtime:2.6.1",
     "androidx.lifecycle:lifecycle-runtime:2.8.0-alpha02",  # Needed for kmp consumption test
     "androidx.lifecycle:lifecycle-runtime:2.8.7",
+    "androidx.lifecycle:lifecycle-runtime-android:aar:2.8.3",
     "androidx.lifecycle:lifecycle-runtime-android:2.8.0-alpha02",  # Needed for kmp consumption test
     "androidx.lifecycle:lifecycle-runtime-compose:2.6.0-alpha03",  # Dependency of architecture-samples
     "androidx.lifecycle:lifecycle-runtime-compose:2.6.1",
