@@ -49,9 +49,13 @@ class ViewInspector(connection: Connection, private val environment: InspectorEn
 
   private fun handleDumpViewsCommand(dumpViewsCommand: DumpViewsCommand, callback: CommandCallback) {
     val includeAttributes = dumpViewsCommand.includeAttributes
+    val includeResolutionStack = dumpViewsCommand.includeResolutionStack
     scope.launch {
       val stringTable = StringTable()
-      val nodes = withContext(mainDispatcher) { RootsDetector.getRootViews().map { it.toViewNode(stringTable, includeAttributes) } }
+      val nodes =
+        withContext(mainDispatcher) {
+          RootsDetector.getRootViews().map { it.toViewNode(stringTable, includeAttributes, includeResolutionStack) }
+        }
       callback.reply {
         dumpViewsResponse = DumpViewsResponse.newBuilder().addAllNodes(nodes).addAllStrings(stringTable.toStringEntries()).build()
       }

@@ -61,6 +61,11 @@ message ViewNode {
         int32 name = 1;
         // Index in the string table for the attribute value
         int32 value = 2;
+
+        // String table indices for style resolution stack (e.g., [@style/MyStyle, @style/ParentStyle])
+        repeated int32 style_chain = 3;
+        // String table index for layout file or style where the value was explicitly set (e.g., @layout/activity_main or @style/MyStyle)
+        int32 direct_source = 4;
     }
 
     // The list of resolved attributes for this view.
@@ -76,6 +81,9 @@ message StringEntry {
 // Command to dump the view hierarchy of all root views.
 message DumpViewsCommand {
     bool include_attributes = 1;
+    // Whether to include the style resolution stack and direct source for attributes.
+    // Requires debug_view_attributes flag to be enabled on the device.
+    bool include_resolution_stack = 2;
 }
 
 message DumpViewsResponse {

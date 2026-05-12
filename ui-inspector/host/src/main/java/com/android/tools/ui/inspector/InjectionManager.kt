@@ -104,6 +104,12 @@ class InjectionManager(
     val serviceJarLocalPath = getServiceJarLocalPath()
     val payloadJarLocalPath = getPayloadJarLocalPath()
 
+    // Enable debug view attributes before attaching.
+    // This is needed for the platform to expose attribute resolution traces.
+    // We don't clean this up because changing this flag causes the activity to restart. We do it once so the activity doesn't need to
+    // restart each time.
+    val flagSet = async { adbSession.deviceServices.shellAsText(deviceSelector, "settings put global debug_view_attributes 1") }
+
     appDataDir = queryAppDataDir(deviceSelector, packageName)
 
     val pidDeferred = async { getPid(deviceSelector, packageName) }
@@ -114,6 +120,7 @@ class InjectionManager(
     val agentRemoteTmpPath = agentPush.await()
     val serviceJarRemoteTmpPath = jarPush.await()
     val payloadRemoteTmpPath = payloadPush.await()
+    flagSet.await()
 
     copyAndSetupFiles(deviceSelector, packageName, agentRemoteTmpPath, serviceJarRemoteTmpPath, payloadRemoteTmpPath)
 

@@ -60,6 +60,9 @@ class InjectionManagerTest {
     dummyPayload = tempFolder.newFile("lib_ui_inspector_payload.jar").toPath()
 
     agentPathResolver = { abi -> dummyAgent }
+
+    val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "settings put global debug_view_attributes 1", "")
   }
 
   @Test
