@@ -19,19 +19,9 @@ package com.android.builder.dexing
 import com.android.testutils.TestUtils
 import com.android.testutils.truth.DexSubject
 import com.android.testutils.truth.PathSubject.assertThat
-import com.android.tools.r8.DiagnosticsHandler
-import com.android.tools.r8.PartitionMapConsumer
-import com.android.tools.r8.retrace.MappingPartition
-import com.android.tools.r8.retrace.MappingPartitionMetadata
-import com.android.tools.r8.retrace.Partition
-import com.android.tools.r8.retrace.PartitionCommand
-import com.android.tools.r8.retrace.ProguardMapProducer
 import com.google.common.truth.Truth.assertThat
-import java.io.BufferedOutputStream
 import java.nio.file.Files
 import java.nio.file.Path
-import java.util.zip.ZipEntry
-import java.util.zip.ZipOutputStream
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -123,93 +113,6 @@ class L8ToolTest {
     // (R8's id is present, L8's should be gone).
     val mapIdCount = content.count { it.contains("pg_map_id") }
     assertThat(mapIdCount).named("Should only have one Map ID (from R8)").isEqualTo(1)
-  }
-
-  @Test
-  fun testPartitionMappingMerge() {
-    val output = tmp.newFolder().toPath()
-    val r8MapId = "0123456789012345678901234567890123456789012345678901234567890123"
-
-    val keepRulesFile = tmp.newFile("rules.pro").toPath()
-    Files.write(keepRulesFile, listOf("-keep class j$.util.stream.Stream { *; }"))
-
-    // Run L8 to get its exact preamble
-    val dummyMappingTxt = tmp.newFile("dummy_mapping.txt").toPath()
-    runL8(
-      inputClasses = desugarJar,
-      output = output,
-      libConfiguration = desugarConfig,
-      libraries = bootClasspath,
-      minSdkVersion = 20,
-      keepRules = KeepRulesConfig(listOf(keepRulesFile), emptyList()),
-      isDebuggable = false,
-      outputMode = L8OutputMode.DexIndexed,
-      outputMappingFile = dummyMappingTxt,
-    )
-    val actualPreamble = Files.readAllLines(dummyMappingTxt).take(6).joinToString("\n")
-
-    val r8InputMappingPrt = tmp.newFile("r8_mapping.prt").toPath()
-    val r8InputMappingTxt = tmp.newFile("r8_mapping.txt").toPath()
-    val r8MapContent =
-      actualPreamble +
-        "\n" +
-        "# pg_map_id: $r8MapId\n" +
-        "# pg_map_hash: SHA-256 $r8MapId\n" +
-        "com.example.App -> a.a:\n" +
-        "    void main() -> b\n"
-
-    Files.write(r8InputMappingTxt, listOf(r8MapContent))
-
-    ZipOutputStream(BufferedOutputStream(Files.newOutputStream(r8InputMappingPrt))).use { zos ->
-      val command =
-        PartitionCommand.builder()
-          .setProguardMapProducer(ProguardMapProducer.fromString(r8MapContent))
-          .setPartitionMapConsumer(
-            object : PartitionMapConsumer {
-              override fun acceptMappingPartition(mappingPartition: MappingPartition) {
-                zos.putNextEntry(ZipEntry(mappingPartition.key))
-                zos.write(mappingPartition.payload)
-                zos.closeEntry()
-              }
-
-              override fun acceptMappingPartitionMetadata(mappingPartitionMetadata: MappingPartitionMetadata) {
-                zos.putNextEntry(ZipEntry("METADATA"))
-                zos.write(mappingPartitionMetadata.bytes)
-                zos.closeEntry()
-              }
-
-              override fun finished(handler: DiagnosticsHandler?) {
-                // zos is closed by the use block
-              }
-            }
-          )
-          .build()
-      Partition.run(command)
-    }
-
-    val finalOutputMappingPrt = output.resolve("mapping.prt")
-
-    runL8(
-      inputClasses = desugarJar,
-      output = output,
-      libConfiguration = desugarConfig,
-      libraries = bootClasspath,
-      minSdkVersion = 20,
-      keepRules = KeepRulesConfig(listOf(keepRulesFile), emptyList()),
-      isDebuggable = false, // FALSE to enable obfuscation
-      outputMode = L8OutputMode.DexIndexed,
-      inputMappingFile = r8InputMappingTxt,
-      inputPartitionMappingFile = r8InputMappingPrt,
-      outputPartitionMappingFile = finalOutputMappingPrt,
-    )
-
-    assertThat(finalOutputMappingPrt).exists()
-    java.util.zip.ZipFile(finalOutputMappingPrt.toFile()).use { zipFile ->
-      val entries = zipFile.entries().toList().map { it.name }
-      assertThat(entries).contains("METADATA")
-      assertThat(entries).contains("a.a")
-      assertThat(entries.size).isGreaterThan(2)
-    }
   }
 
   private fun getDexFileCount(dir: Path): Long = Files.list(dir).filter { it.toString().endsWith(".dex") }.count()

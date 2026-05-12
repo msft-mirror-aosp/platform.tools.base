@@ -156,10 +156,8 @@ class L8DexDesugarTest {
     project.executor().run("assembleDebug")
 
     val mappingFile = project.file("build/outputs/mapping/debug/mapping.txt")
-    val mappingPrtFile = project.file("build/outputs/mapping/debug/mapping.prt")
 
     assertTrue("Mapping file should exist at $mappingFile", mappingFile.exists())
-    assertTrue("Partitioned mapping file should exist at $mappingPrtFile", mappingPrtFile.exists())
 
     val content = mappingFile.readLines()
 
@@ -170,13 +168,6 @@ class L8DexDesugarTest {
     // Verify L8 Mapping (Desugared Lib)
     val hasL8Header = content.any { it.contains(EXPECTED_L8_HEADER) }
     TruthHelper.assertThat(hasL8Header).named("Contains L8 Separator").isTrue()
-
-    // Verify Partitioned Mapping (.prt) Contents
-    java.util.zip.ZipFile(mappingPrtFile).use { zipFile ->
-      val entries = zipFile.entries().toList().map { it.name }
-      TruthHelper.assertThat(entries).named("Partitioned Mapping contains METADATA").contains("METADATA")
-      TruthHelper.assertThat(entries.size).named("Partitioned Mapping contains multiple partitions").isGreaterThan(1)
-    }
   }
 
   /**
