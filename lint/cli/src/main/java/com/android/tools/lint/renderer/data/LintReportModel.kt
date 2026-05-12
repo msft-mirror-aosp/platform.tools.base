@@ -90,8 +90,8 @@ data class LintIssue(
   val vendor: LintVendor? = null,
   /** Package name where the issue occurred. */
   val packageName: String? = null,
-  /** Class name where the issue occurred. */
-  val className: String? = null,
+  /** File name where the issue occurred. */
+  val fileName: String? = null,
   /** Whether the issue was automatically fixed. */
   val wasAutoFixed: Boolean = false,
   /** Whether the issue has an associated quickfix. */

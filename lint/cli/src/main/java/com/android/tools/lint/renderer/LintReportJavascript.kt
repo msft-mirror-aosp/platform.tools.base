@@ -543,7 +543,7 @@ const LintReportApp = {
                 if (!this.state.filters.packages.includes(pkg)) return false;
             }
             if (this.state.filters.classes.length > 0) {
-                const cls = issue.className || "Unknown";
+                const cls = issue.fileName || "Unknown";
                 if (!this.state.filters.classes.includes(cls)) return false;
             }
             return true;
@@ -664,7 +664,7 @@ const LintReportApp = {
         issues.forEach(issue => {
             const moduleName = issue.module || "Unknown";
             const pkgName = issue.packageName || "default";
-            const className = issue.className || "Unknown";
+            const className = issue.fileName || "Unknown";
 
             if (!root.children[moduleName]) {
                 root.children[moduleName] = { name: moduleName, type: 'module', children: {}, total: 0, errors: 0, warnings: 0, info: 0, hints: 0 };
@@ -715,7 +715,7 @@ const LintReportApp = {
             if (groupByKey === 'modules') key = issue.module || "Unknown";
             else if (groupByKey === 'packages') key = issue.packageName || "default";
             else if (groupByKey === 'classes') {
-                key = issue.className || "Unknown";
+                key = issue.fileName || "Unknown";
                 if (key !== "Unknown" && key.includes('.')) {
                     displayName = key.substring(0, key.lastIndexOf('.'));
                 }

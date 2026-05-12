@@ -173,7 +173,7 @@ class LintReportBuilder(
       sourceContext = sourceContext,
       module = incident.project?.let { project -> project.buildModule?.modulePath ?: project.name }?.removePrefix(":") ?: "",
       packageName = finalPkgName,
-      className = file.name,
+      fileName = file.name,
       vendor = createLintVendor(issue),
       wasAutoFixed = incident.wasAutoFixed,
       hasAutoFix = Reporter.hasAutoFix(issue),
