@@ -146,6 +146,8 @@ data class LintLocation(
   val line: Int?,
   /** The column number (1-based), if available. */
   val column: Int?,
+  /** An optional message for this location (typically for secondary locations). */
+  val message: String? = null,
   /** An optional URL for the file or location. */
   val url: String? = null,
 )

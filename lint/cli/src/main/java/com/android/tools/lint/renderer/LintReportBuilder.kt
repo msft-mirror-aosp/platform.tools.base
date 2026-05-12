@@ -99,6 +99,7 @@ class LintReportBuilder(
             file = incident.getPath(client, curr.file),
             line = curr.start?.line?.plus(1),
             column = curr.start?.column?.plus(1),
+            message = curr.message,
             url = urlProvider(curr.file),
           )
         }

@@ -838,8 +838,10 @@ const LintReportApp = {
                     : '';
                 const secondaryHtml = (issue.secondaryLocations && issue.secondaryLocations.length > 0)
                     ? `<div class="mt-4"><strong>Additional locations:</strong><ul class="more-info-list">${'$'}{issue.secondaryLocations.map(loc => {
-                        const locStr = `${'$'}{loc.file}${'$'}{loc.line ? ':' + loc.line : ''}${'$'}{loc.message ? ': ' + loc.message : ''}`;
-                        return `<li>${'$'}{loc.url ? `<a href="${'$'}{loc.url}" class="text-blue-600 hover:underline">${'$'}{this.escapeHTML(locStr)}</a>` : this.escapeHTML(locStr)}</li>`;
+                        const locStr = `${'$'}{loc.file}${'$'}{loc.line ? ':' + loc.line : ''}`;
+                        const link = loc.url ? `<a href="${'$'}{loc.url}" class="text-blue-600 hover:underline">${'$'}{this.escapeHTML(locStr)}</a>` : this.escapeHTML(locStr);
+                        const message = loc.message ? `: ${'$'}{this.renderExplanation(loc.message)}` : '';
+                        return `<li>${'$'}{link}${'$'}{message}</li>`;
                     }).join('')}</ul></div>`
                     : '';
                 const imagesHtml = (issue.images && issue.images.length > 0)
