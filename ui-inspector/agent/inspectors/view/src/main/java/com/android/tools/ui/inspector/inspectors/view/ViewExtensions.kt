@@ -96,8 +96,14 @@ private fun createViewNode(view: View, stringTable: StringTable, attributeExtrac
         View.GONE -> ViewNode.Visibility.GONE
         else -> ViewNode.Visibility.VISIBLE // Fallback
       }
-    // TODO: add support for attribute resolution stack (where properties come from)
-    // TODO: add support for theme and style resolution
+    // TODO: add support for attribute resolution stack (where properties come from).
+    // Note: This feature has significant platform limitations:
+    // 1. View.getAttributeResolutionStack() only returns fallback style chains and is often empty for views in the wild.
+    // 2. View.getAttributeSourceResourceMap() is also needed to get the direct source (like layout XML) for inline attributes.
+    // Experiments on real apps showed that these APIs often return empty data even for XML-inflated views.
+    // TODO: add support for DLI AppContext (theme and display info)
+    // TODO: add support for DLI Configuration (device configuration)
+    // TODO: add support for XR
 
     when (attributeExtraction) {
       is AttributeExtraction.Enabled -> populateAttributes(this, view, stringTable, attributeExtraction.propertyCache)
