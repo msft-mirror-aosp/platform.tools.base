@@ -462,10 +462,10 @@ const LintReportApp = {
         levels.forEach((level, index) => {
             const isLast = index === levels.length - 1 || level.isLast;
             if (isLast) {
-                html += `<span class="font-medium text-gray-900">${'$'}{this.escapeHTML(level.name)}</span>`;
+                html += `<span class="breadcrumb-last">${'$'}{this.escapeHTML(level.name)}</span>`;
             } else {
-                html += `<span class="cursor-pointer hover:text-blue-600 breadcrumb-item" data-index="${'$'}{index}">${'$'}{this.escapeHTML(level.name)}</span>`;
-                html += ` <span class="text-gray-400">/</span> `;
+                html += `<span class="breadcrumb-item" data-index="${'$'}{index}">${'$'}{this.escapeHTML(level.name)}</span>`;
+                html += `<span class="breadcrumb-separator"> / </span>`;
             }
         });
 
