@@ -33,6 +33,7 @@ object IJFramework : Disposable {
   init {
     ApplicationManager.setApplication(application, this)
     PluginManagerCore.setPluginSet(PluginSetBuilder(emptySet()).createPluginSetWithEnabledModulesMap())
+    application.registerService(com.intellij.openapi.application.AsyncExecutionService::class.java, StubAsyncExecutionService(), this)
   }
 
   fun createProject(): Project {
