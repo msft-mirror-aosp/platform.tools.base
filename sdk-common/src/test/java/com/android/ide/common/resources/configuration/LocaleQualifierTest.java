@@ -315,6 +315,31 @@ public class LocaleQualifierTest extends TestCase {
         //assertFalse(getQualifier("b+en").isMatchFor(getQualifier("b+en+Knda+US")));
     }
 
+    public void testIsBetterMatchThan() {
+        ResourceQualifier reference = getQualifier("fr-rCA");
+        ResourceQualifier exactMatch = getQualifier("fr-rCA");
+        ResourceQualifier partialMatch = getQualifier("fr");
+
+        assertTrue(exactMatch.isBetterMatchThan(partialMatch, reference));
+        assertFalse(partialMatch.isBetterMatchThan(exactMatch, reference));
+
+        ResourceQualifier refScript = getQualifier("b+en+Knda+US");
+        ResourceQualifier exactScriptMatch = getQualifier("b+en+Knda");
+        ResourceQualifier exactRegionMatch = getQualifier("b+en+US");
+
+        // Script match is considered better than region match (score 2 vs 1)
+        assertTrue(exactScriptMatch.isBetterMatchThan(exactRegionMatch, refScript));
+        assertFalse(exactRegionMatch.isBetterMatchThan(exactScriptMatch, refScript));
+
+        ResourceQualifier referenceNoRegion = getQualifier("fr");
+        ResourceQualifier exactMatchNoRegion = getQualifier("fr");
+        ResourceQualifier extraRegion = getQualifier("fr-rCA");
+
+        // Exact match with no region should be preferred over a match with an extra region
+        assertTrue(exactMatchNoRegion.isBetterMatchThan(extraRegion, referenceNoRegion));
+        assertFalse(extraRegion.isBetterMatchThan(exactMatchNoRegion, referenceNoRegion));
+    }
+
     @SuppressWarnings("ConstantConditions")
     public void testGetTag() {
         assertEquals("en-CA", getQualifier("b+en+CA".toLowerCase(Locale.US)).getTag());
