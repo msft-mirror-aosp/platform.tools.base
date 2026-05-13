@@ -66,7 +66,9 @@ class DumpUiCommand : Callable<Int> {
         val port = injectionManager.injectAndAttach()
 
         CommandSender(host = "localhost", port = port.toInt()).use { commandSender ->
+          // TODO: consider running in parallel
           createViewInspector(commandSender, injectionManager)
+          createComposeInspector(commandSender, injectionManager)
           viewInspectorDump(commandSender, includeAttributes, includeResolutionStack)
         }
       }

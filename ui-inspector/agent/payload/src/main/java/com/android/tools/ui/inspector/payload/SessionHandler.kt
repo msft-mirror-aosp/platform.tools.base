@@ -17,8 +17,10 @@
 package com.android.tools.ui.inspector.payload
 
 import android.util.Log
+import androidx.annotation.VisibleForTesting
 import com.android.tools.idea.protobuf.ByteString
 import com.android.tools.ui.inspector.common.FramingProtocol
+import com.android.tools.ui.inspector.common.ProtocolConstants
 import com.android.tools.ui.inspector.payload.appinspection.DelegatingConnection
 import com.android.tools.ui.inspector.payload.appinspection.HandlerThreadExecutor
 import com.android.tools.ui.inspector.payload.appinspection.createAppInspectionConnection
@@ -27,6 +29,8 @@ import com.android.tools.ui.inspector.payload.appinspection.loadInspectorDynamic
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol.Command
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol.CreateInspectorCommand
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol.CreateInspectorResponse
+import com.android.tools.ui.inspector.protocol.UiInspectorProtocol.GetVersionCommand
+import com.android.tools.ui.inspector.protocol.UiInspectorProtocol.GetVersionResponse
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol.InspectorMessageCommand
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol.InspectorMessageResponse
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol.Response
@@ -61,6 +65,7 @@ internal class SessionHandler(
   private val shutdownSignal: CompletableDeferred<Unit>,
   private val serverScope: CoroutineScope,
   private val inspectorBridges: MutableMap<InspectorId, InspectorBridge>,
+  @VisibleForTesting private val classLoader: ClassLoader = SessionHandler::class.java.classLoader,
 ) {
 
   /**
@@ -107,6 +112,10 @@ internal class SessionHandler(
         Command.SpecializedCase.SHUTDOWN -> {
           handleShutdown(commandId)
           true
+        }
+        Command.SpecializedCase.GET_VERSION -> {
+          handleGetVersion(command.getVersion, commandId)
+          false
         }
         else -> error("Unhandled top-level command: ${command.specializedCase}")
       }
@@ -156,6 +165,25 @@ internal class SessionHandler(
   private fun handleShutdown(commandId: Int) {
     outputStream.reply(commandId = commandId) { shutdown = ShutdownResponse.newBuilder().build() }
     shutdownSignal.complete(Unit)
+  }
+
+  private fun handleGetVersion(command: GetVersionCommand, commandId: Int) {
+    val versions = mutableMapOf<String, String>()
+    for (libraryId in command.libraryIdsList) {
+      val version = performVersionDetection(libraryId)
+      if (version != null) {
+        versions[libraryId] = version
+      }
+    }
+
+    outputStream.reply(commandId = commandId) { getVersion = GetVersionResponse.newBuilder().putAllVersions(versions).build() }
+  }
+
+  private fun performVersionDetection(libraryId: String): String? {
+    return when (libraryId) {
+      ProtocolConstants.COMPOSE_UI_LIBRARY_ID -> detectComposeVersion(classLoader)
+      else -> throw IllegalArgumentException("Unsupported library ID: $libraryId")
+    }
   }
 }
 

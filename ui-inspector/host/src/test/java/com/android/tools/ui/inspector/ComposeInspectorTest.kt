@@ -1,0 +1,193 @@
+/*
+ * Copyright (C) 2026 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.android.tools.ui.inspector
+
+import com.android.adblib.DeviceInfo
+import com.android.adblib.DeviceList
+import com.android.adblib.DeviceSelector
+import com.android.adblib.DeviceState
+import com.android.adblib.testing.FakeAdbSession
+import com.android.tools.ui.inspector.common.FramingProtocol
+import com.android.tools.ui.inspector.common.ProtocolConstants
+import com.android.tools.ui.inspector.protocol.UiInspectorProtocol
+import com.google.common.truth.Truth.assertThat
+import java.net.ServerSocket
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import org.junit.Rule
+import org.junit.Test
+import org.junit.rules.TemporaryFolder
+
+class ComposeInspectorTest {
+
+  @get:Rule val tempFolder = TemporaryFolder()
+
+  private val deviceSerial = "123"
+  private val packageName = "com.example"
+
+  @Test
+  fun testGetComposeArtifactId_legacyAndKmpVersions() {
+    // Legacy (Pre-KMP) versions should return "ui"
+    assertThat(getComposeArtifactId("1.4.3")).isEqualTo("ui")
+    assertThat(getComposeArtifactId("1.0.0")).isEqualTo("ui")
+    assertThat(getComposeArtifactId("0.9.0")).isEqualTo("ui")
+
+    // Modern (KMP) versions should return "ui-android"
+    assertThat(getComposeArtifactId("1.5.0")).isEqualTo("ui-android")
+    assertThat(getComposeArtifactId("1.6.0-rc01")).isEqualTo("ui-android")
+    assertThat(getComposeArtifactId("2.0.0-alpha01")).isEqualTo("ui-android")
+
+    // Malformed/empty versions should gracefully fallback to "ui"
+    assertThat(getComposeArtifactId("invalid")).isEqualTo("ui")
+    assertThat(getComposeArtifactId("")).isEqualTo("ui")
+    assertThat(getComposeArtifactId("1")).isEqualTo("ui")
+  }
+
+  @Test
+  fun testCreateComposeInspector_endToEndOrchestration() = runBlocking {
+    // 1. Setup Background Server to simulate JVM agent
+    val serverSocket = ServerSocket(0)
+    val serverPort = serverSocket.localPort
+
+    val versionCmdReceived = CompletableDeferred<UiInspectorProtocol.Command>()
+    val createCmdReceived = CompletableDeferred<UiInspectorProtocol.Command>()
+    val serverJob = Job()
+    val testScope = CoroutineScope(Dispatchers.Default + serverJob)
+
+    testScope.launch {
+      serverSocket.accept().use { socket ->
+        val input = socket.getInputStream()
+        val output = socket.getOutputStream()
+
+        // A. Handle GetVersionCommand
+        val cmdBytes1 = FramingProtocol.readMessage(input)
+        val cmd1 = UiInspectorProtocol.Command.parseFrom(cmdBytes1)
+        versionCmdReceived.complete(cmd1)
+
+        val versionResponse =
+          UiInspectorProtocol.Response.newBuilder()
+            .setCommandId(cmd1.commandId)
+            .setStatus(UiInspectorProtocol.Response.Status.SUCCESS)
+            .setGetVersion(
+              UiInspectorProtocol.GetVersionResponse.newBuilder().putVersions(ProtocolConstants.COMPOSE_UI_LIBRARY_ID, "1.6.0")
+            )
+            .build()
+        FramingProtocol.writeMessage(output, versionResponse.toByteArray())
+
+        // B. Handle CreateInspectorCommand
+        val cmdBytes2 = FramingProtocol.readMessage(input)
+        val cmd2 = UiInspectorProtocol.Command.parseFrom(cmdBytes2)
+        createCmdReceived.complete(cmd2)
+
+        val createResponse =
+          UiInspectorProtocol.Response.newBuilder()
+            .setCommandId(cmd2.commandId)
+            .setStatus(UiInspectorProtocol.Response.Status.SUCCESS)
+            .setCreateInspector(UiInspectorProtocol.CreateInspectorResponse.getDefaultInstance())
+            .build()
+        FramingProtocol.writeMessage(output, createResponse.toByteArray())
+      }
+    }
+
+    // 2. Setup Mock adbSession / InjectionManager
+    val fakeSession = FakeAdbSession()
+    val testDeviceServices = TestAdbDeviceServices(fakeSession.deviceServices)
+    val testHostServices = TestAdbHostServices(fakeSession.hostServices)
+    val testSession = TestAdbSession(fakeSession, testDeviceServices, testHostServices)
+
+    fakeSession.hostServices.devices = DeviceList(listOf(DeviceInfo(deviceSerial, DeviceState.ONLINE)), emptyList())
+
+    val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "getprop ro.product.cpu.abi", "arm64-v8a\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
+
+    val expectedSetupCmd =
+      "run-as $packageName sh -c 'rm -f compose-inspector.jar && " +
+        "cat /data/local/tmp/compose-inspector.jar > compose-inspector.jar && " +
+        "chmod 444 compose-inspector.jar'"
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, expectedSetupCmd, "")
+
+    val dummyAgent = tempFolder.newFile("lib_ui_inspector_agent.so").toPath()
+    val dummyJar = tempFolder.newFile("lib_ui_inspector_service.jar").toPath()
+    val dummyPayload = tempFolder.newFile("lib_ui_inspector_payload.jar").toPath()
+
+    val agentPathResolver = { abi: String -> dummyAgent }
+    val injectionManager = InjectionManager(testSession, deviceSerial, packageName, agentPathResolver, dummyJar, dummyPayload)
+
+    // Trigger injectAndAttach so we populate the appDataDir internal states
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pidof $packageName", "1234\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "settings put global debug_view_attributes 1", "")
+
+    val baseAgentSetupCmd =
+      "run-as $packageName sh -c '" +
+        "rm -f lib_ui_inspector_agent.so lib_ui_inspector_service.jar lib_ui_inspector_payload.jar && " +
+        "cat /data/local/tmp/lib_ui_inspector_agent.so > lib_ui_inspector_agent.so && " +
+        "cat /data/local/tmp/lib_ui_inspector_service.jar > lib_ui_inspector_service.jar && " +
+        "cat /data/local/tmp/lib_ui_inspector_payload.jar > lib_ui_inspector_payload.jar && " +
+        "chmod 444 lib_ui_inspector_agent.so && " +
+        "chmod 444 lib_ui_inspector_service.jar && " +
+        "chmod 444 lib_ui_inspector_payload.jar'"
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, baseAgentSetupCmd, "")
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      "cmd activity attach-agent $packageName \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;1234\"",
+      "",
+    )
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      "cat /proc/net/unix | grep ui_inspector_1234 || true",
+      "ui_inspector_1234\n",
+    )
+    injectionManager.injectAndAttach()
+
+    // 3. Execute E2E Orchestrator with dynamic lambda jar resolution mock
+    CommandSender("localhost", serverPort).use { commandSender ->
+      createComposeInspector(
+        commandSender = commandSender,
+        injectionManager = injectionManager,
+        resolveJar = {
+          val fixedJar = tempFolder.newFile("compose-inspector.jar")
+          fixedJar.writeText("fake pre-compiled compose dex classes")
+          fixedJar
+        },
+      )
+    }
+
+    // 5. Assertions
+    // A. Check version detection command
+    val vCmd = versionCmdReceived.await()
+    assertThat(vCmd.getVersion.libraryIdsList).containsExactly(ProtocolConstants.COMPOSE_UI_LIBRARY_ID)
+
+    // B. Check inspector jar file was pushed to simulated device
+    val remoteFilePushed = testDeviceServices.recordedSyncSends.any { it.remoteFilePath == "/data/local/tmp/compose-inspector.jar" }
+    assertThat(remoteFilePushed).isTrue()
+
+    // C. Check CreateInspectorCommand parameters
+    val cCmd = createCmdReceived.await()
+    assertThat(cCmd.createInspector.inspectorId).isEqualTo(ProtocolConstants.COMPOSE_INSPECTOR_ID)
+    assertThat(cCmd.createInspector.dexPath).isEqualTo("/data/data/$packageName/compose-inspector.jar")
+
+    // Cleanup
+    testScope.cancel()
+    serverSocket.close()
+  }
+}

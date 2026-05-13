@@ -58,6 +58,19 @@ message CreateInspectorCommand {
 // Response to the create inspector command.
 message CreateInspectorResponse {}
 
+// Command to ask the agent for installed library versions.
+message GetVersionCommand {
+    // A list of library IDs to query (e.g. "androidx.compose.ui:ui").
+    repeated string library_ids = 1;
+}
+
+// Response containing discovered versions.
+message GetVersionResponse {
+    // A map of library IDs to their discovered version string on the agent's classpath.
+    // Example: {"androidx.compose.ui:ui" : "1.5.4"}
+    map<string, string> versions = 1;
+}
+
 // Top-level envelope for all commands sent from host to agent.
 message Command {
     uint32 command_id = 1;
@@ -65,6 +78,7 @@ message Command {
         InspectorMessageCommand inspector_message = 2;
         ShutdownCommand shutdown = 3;
         CreateInspectorCommand create_inspector = 4;
+        GetVersionCommand get_version = 5;
     }
 }
 
@@ -83,6 +97,7 @@ message Response {
         InspectorMessageResponse inspector_message = 4;
         ShutdownResponse shutdown = 5;
         CreateInspectorResponse create_inspector = 6;
+        GetVersionResponse get_version = 7;
     }
 }
 
