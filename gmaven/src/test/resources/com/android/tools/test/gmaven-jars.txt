@@ -2247,7 +2247,6 @@ com/android/tools/external/com-intellij/kotlin-compiler
   META-INF/kotlin-util-klib-abi.kotlin_module
   META-INF/kotlin-util-klib-metadata.kotlin_module
   META-INF/kotlin-util-klib.kotlin_module
-  META-INF/kotlinx-collections-immutable.kotlin_module
   META-INF/kt-references.kotlin_module
   META-INF/light-classes-base.kotlin_module
   META-INF/light-classes-for-decompiled.kotlin_module
@@ -2365,10 +2364,6 @@ com/android/tools/external/com-intellij/kotlin-compiler
   com/github/benmanes/caffeine/cache/stats/
   com/intellij/
   com/intellij/openapi/
-  com/intellij/openapi/fileTypes/
-  com/intellij/openapi/progress/
-  com/intellij/openapi/progress/impl/
-  com/intellij/openapi/util/
   com/intellij/openapi/vfs/
   custom-formatters.js
   io/
@@ -2397,20 +2392,8 @@ com/android/tools/external/com-intellij/kotlin-compiler
   kotlin/script/templates/
   kotlin/script/templates/standard/
   kotlinManifest.properties
-  kotlinx/
-  kotlinx/collections/
-  kotlinx/collections/immutable/
-  kotlinx/collections/immutable/adapters/
-  kotlinx/collections/immutable/implementations/
-  kotlinx/collections/immutable/implementations/immutableList/
-  kotlinx/collections/immutable/implementations/immutableMap/
-  kotlinx/collections/immutable/implementations/immutableSet/
-  kotlinx/collections/immutable/implementations/persistentOrderedMap/
-  kotlinx/collections/immutable/implementations/persistentOrderedSet/
-  kotlinx/collections/immutable/internal/
   org/
   org/jetbrains/
-  org/jetbrains/annotations/
   org/jetbrains/kotlin/
   org/jetbrains/kotlin/analysis/
   org/jetbrains/kotlin/analysis/api/
