@@ -213,9 +213,7 @@ public class LibraryPlugin
             return new ExtensionData<>(internalOnly, android, bootClasspathConfig);
         }
 
-        if (getProjectServices()
-                .getProjectOptions()
-                .get(BooleanOption.USE_NEW_DSL)) {
+        if (getProjectServices().getProjectOptions().useNewDsl(project.getPath())) {
             project.getExtensions().add(new TypeOf<>() {}, "android", libraryExtension);
 
             initExtensionFromSettings(libraryExtension);

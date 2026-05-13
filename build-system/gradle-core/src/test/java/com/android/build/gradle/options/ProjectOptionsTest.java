@@ -273,4 +273,36 @@ public class ProjectOptionsTest {
         assertThat(projectOptions.getExtraInstrumentationTestRunnerArgs().get())
                 .containsExactly("size", "large", "custom", "customValue");
     }
+
+    @Test
+    public void testOptOutParsingAndProjectOverrides() {
+        FakeProviderFactory factory =
+                new FakeProviderFactory(
+                        FakeProviderFactory.getFactory(),
+                        ImmutableMap.of(
+                                "android.newDsl", "true",
+                                "android.newDsl.optOut", ":subproject1 ,subproject3"));
+
+        ProjectOptions projectOptions = new ProjectOptions(factory);
+
+        assertThat(projectOptions.get(BooleanOption.USE_NEW_DSL)).isTrue();
+
+        assertThat(projectOptions.useNewDsl(":subproject1")).isFalse();
+        assertThat(projectOptions.useNewDsl(":subproject2")).isTrue();
+        assertThat(projectOptions.useNewDsl(":subproject3")).isFalse();
+
+        FakeProviderFactory factory2 =
+                new FakeProviderFactory(
+                        FakeProviderFactory.getFactory(),
+                        ImmutableMap.of(
+                                "android.newDsl", "false",
+                                "android.newDsl.optOut", ":subproject1"));
+
+        ProjectOptions projectOptions2 = new ProjectOptions(factory2);
+
+        assertThat(projectOptions2.get(BooleanOption.USE_NEW_DSL)).isFalse();
+
+        assertThat(projectOptions2.useNewDsl(":subproject1")).isFalse();
+        assertThat(projectOptions2.useNewDsl(":subproject2")).isFalse();
+    }
 }
