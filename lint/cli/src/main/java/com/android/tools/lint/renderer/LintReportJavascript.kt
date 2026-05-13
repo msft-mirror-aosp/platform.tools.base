@@ -864,11 +864,12 @@ const LintReportApp = {
                     if (issue.vendor.feedbackUrl) vendorHtml += `<strong>Feedback:</strong> <a href="${'$'}{this.escapeHTML(issue.vendor.feedbackUrl)}" class="text-blue-600 hover:underline">${'$'}{this.escapeHTML(issue.vendor.feedbackUrl)}</a><br>`;
                     vendorHtml += `</div>`;
                 }
-                const suppressHtml = issue.suppressMessage ? `<div class="mt-4 text-sm text-gray-500">${'$'}{issue.suppressMessage}</div>` : '';
                 rowsHtml.push(`<tr class="explanation-row" data-parent-id="${'$'}{parentId}"><td colspan="7"><div class="explanation-content">
-                    <div class="mb-4"><strong>Summary:</strong> ${'$'}{issue.summary}</div>
-                    <div class="mb-4">
-                        <strong>Explanation:</strong>
+                    <div class="mb-4 text-lg"><strong>${'$'}{issue.summary}</strong></div>
+                    ${'$'}{codeSnippet}
+                    ${'$'}{urlsHtml}
+                    ${'$'}{secondaryHtml}
+                    <div>
                         <div class="mt-1">${'$'}{this.renderExplanation(issue.explanation)}</div>
                     </div>
                     ${'$'}{issue.options && issue.options.length > 0 ? `
@@ -883,13 +884,10 @@ const LintReportApp = {
                             `).join('')}
                         </div>
                     ` : ''}
-                    ${'$'}{codeSnippet}
-                    ${'$'}{urlsHtml}
-                    ${'$'}{secondaryHtml}
                     ${'$'}{autoFixedMsg}
                     ${'$'}{quickfixMsg}
                     ${'$'}{imagesHtml}
-                    ${'$'}{suppressHtml}
+                    ${'$'}{issue.suppressMessage ? `<div class="text-sm text-gray-500">${'$'}{issue.suppressMessage}</div>` : ''}
                     ${'$'}{vendorHtml}
                 </div></td></tr>`);
             }
