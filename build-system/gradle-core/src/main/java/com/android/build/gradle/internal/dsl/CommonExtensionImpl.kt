@@ -24,6 +24,7 @@ import com.android.build.api.dsl.SdkComponents
 import com.android.build.gradle.ProguardFiles
 import com.android.build.gradle.internal.plugins.DslContainerProvider
 import com.android.build.gradle.internal.services.DslServices
+import com.android.build.gradle.internal.services.DslServicesImpl
 import com.android.build.gradle.internal.utils.validateNamespaceValue
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.core.LibraryRequest
@@ -61,11 +62,11 @@ abstract class CommonExtensionImpl<
     )
   }
 
-  override val buildTypes: NamedDomainObjectContainer<BuildTypeT> = dslContainers.buildTypeContainer
+  override val buildTypes: NamedDomainObjectContainer<out BuildTypeT> = dslContainers.buildTypeContainer
 
   override val defaultConfig: DefaultConfigT = dslContainers.defaultConfig
 
-  override val productFlavors: NamedDomainObjectContainer<ProductFlavorT> = dslContainers.productFlavorContainer
+  override val productFlavors: NamedDomainObjectContainer<out ProductFlavorT> = dslContainers.productFlavorContainer
 
   override val signingConfigs: NamedDomainObjectContainer<SigningConfig> = dslContainers.signingConfigContainer
 
@@ -76,7 +77,7 @@ abstract class CommonExtensionImpl<
     set(value) {
       _namespace = value
       val errorMsg = validateNamespaceValue(value)
-      errorMsg?.let { dslServices.issueReporter.reportError(IssueReporter.Type.GENERIC, it) }
+      errorMsg?.let { dslServices.issueReporter.reportError(IssueReporter.Type.NAMESPACE_INVALID, it) }
     }
 
   protected abstract var _compileSdk: CompileSdkVersion?
@@ -170,12 +171,12 @@ abstract class CommonExtensionImpl<
       dslServices.projectOptions[BooleanOption.R8_PROGUARD_ANDROID_TXT_DISALLOWED] &&
         name == ProguardFiles.ProguardFile.DONT_OPTIMIZE.fileName
     ) {
-      dslServices.issueReporter.reportError(IssueReporter.Type.GENERIC, ProguardFiles.DONTOPTIMIZE_DISALLOWED_MESSAGE)
+      dslServices.issueReporter.reportError(IssueReporter.Type.PROGUARD_FILE_INVALID, ProguardFiles.DONTOPTIMIZE_DISALLOWED_MESSAGE)
     }
     if (!ProguardFiles.KNOWN_FILE_NAMES.contains(name)) {
-      dslServices.issueReporter.reportError(IssueReporter.Type.GENERIC, ProguardFiles.UNKNOWN_FILENAME_MESSAGE)
+      dslServices.issueReporter.reportError(IssueReporter.Type.PROGUARD_FILE_INVALID, ProguardFiles.UNKNOWN_FILENAME_MESSAGE)
     }
-    return ProguardFiles.getDefaultProguardFile(name, dslServices.buildDirectory)
+    return ProguardFiles.getDefaultProguardFile(name, (dslServices as DslServicesImpl).buildDirectory)
   }
 
   override var enableKotlin: Boolean = true

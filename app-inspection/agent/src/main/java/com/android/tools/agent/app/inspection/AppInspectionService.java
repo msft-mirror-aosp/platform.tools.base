@@ -116,6 +116,20 @@ public class AppInspectionService {
             sendCreateInspectorResponseError(commandId, INSPECTOR_ID_MISSING_ERROR);
             return;
         }
+
+        // SECURITY: Prevent arbitrary code execution and directory traversal by validating the
+        // path.
+        try {
+            File dexFile = new File(dexPath);
+            if (!dexFile.getCanonicalPath().equals(dexFile.getAbsolutePath())) {
+                sendCreateInspectorResponseError(
+                        commandId, "Invalid dex path: path traversal detected");
+                return;
+            }
+        } catch (Exception e) {
+            sendCreateInspectorResponseError(commandId, "Invalid dex path: " + e.getMessage());
+            return;
+        }
         if (mInspectorBridges.containsKey(inspectorId)) {
             if (!force) {
                 String alreadyLaunchedProjectName = mInspectorBridges.get(inspectorId).getProject();

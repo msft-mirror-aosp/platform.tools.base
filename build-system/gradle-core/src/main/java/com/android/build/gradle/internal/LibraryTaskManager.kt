@@ -55,6 +55,8 @@ import com.android.build.gradle.internal.tasks.StripDebugSymbolsTask
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.tasks.factory.TaskManagerConfig
 import com.android.build.gradle.internal.tasks.factory.TaskProviderCallback
+import com.android.build.gradle.internal.test.tasks.TestReportTask
+import com.android.build.gradle.internal.test.tasks.TestResultsCollectionTask
 import com.android.build.gradle.internal.variant.ComponentInfo
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.tasks.BundleAar.LibraryCreationAction
@@ -71,8 +73,6 @@ import com.android.build.gradle.tasks.MergeResources
 import com.android.build.gradle.tasks.ProcessLibraryArtProfileTask
 import com.android.build.gradle.tasks.ProcessLibraryManifest
 import com.android.build.gradle.tasks.SourceJarTask
-import com.android.build.gradle.tasks.TestReportTask
-import com.android.build.gradle.tasks.TestResultsCollectionTask
 import com.android.build.gradle.tasks.ZipMergingTask
 import com.google.common.collect.ImmutableSet
 import com.google.common.collect.Sets
@@ -249,7 +249,7 @@ class LibraryTaskManager(
     testResultsCollectionTasks: MutableList<TaskProvider<TestResultsCollectionTask>>,
   ) {
     super.registerTestAndCodeCoverageCollectionTasks(variantInfo, testResultsCollectionTasks)
-    if (variantInfo.variant.publishInfo?.components?.isNotEmpty() ?: false) {
+    if (isReportAggregationEnabled && (variantInfo.variant.publishInfo?.components?.isNotEmpty() ?: false)) {
       testResultsCollectionTasks.add(
         taskFactory.register(TestResultsCollectionTask.AggregatedTestResultsCollectionCreationAction(variantInfo.variant))
       )
@@ -265,9 +265,9 @@ class LibraryTaskManager(
 
   override fun registerTestAndCodeCoverageReportTasks() {
     super.registerTestAndCodeCoverageReportTasks()
-    if (variants.any { it.variant.publishInfo?.components?.isNotEmpty() ?: false }) {
-      taskFactory.register(CodeCoverageReportTask.AggregatedCoverageReportCreationAction(globalConfig, isReportAggregationEnabled))
-      taskFactory.register(TestReportTask.AggregatedTestReportCreationAction(globalConfig, isReportAggregationEnabled))
+    if (isReportAggregationEnabled && variants.any { it.variant.publishInfo?.components?.isNotEmpty() ?: false }) {
+      taskFactory.register(CodeCoverageReportTask.AggregatedCoverageReportCreationAction(globalConfig))
+      taskFactory.register(TestReportTask.AggregatedTestReportCreationAction(globalConfig))
     }
   }
 

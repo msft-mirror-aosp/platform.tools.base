@@ -15,19 +15,21 @@
  */
 package com.android.tools.deployer;
 
+import static com.android.tools.deployer.model.FileDiff.Status.CREATED;
+import static com.android.tools.deployer.model.FileDiff.Status.MODIFIED;
+
+import com.android.tools.deployer.common.DeployerException;
 import com.android.tools.deployer.model.Apk;
 import com.android.tools.deployer.model.ApkEntry;
 import com.android.tools.deployer.model.FileDiff;
 import com.android.tools.manifest.parser.XmlNode;
 import com.android.tools.manifest.parser.components.ManifestServiceInfo;
+
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static com.android.tools.deployer.model.FileDiff.Status.CREATED;
-import static com.android.tools.deployer.model.FileDiff.Status.MODIFIED;
 
 public class SwapVerifierTest {
 
@@ -158,7 +160,8 @@ public class SwapVerifierTest {
             Assert.assertEquals(
                     DeployerException.Error.ISOLATED_SERVICE_NOT_SUPPORTED, e.getError());
             Assert.assertEquals(
-                    "The following service(s) are set to run in an isolated process: com.android.app.MyService",
+                    "The following service(s) are set to run in an isolated process:"
+                            + " com.android.app.MyService",
                     e.getDetails());
             return;
         }

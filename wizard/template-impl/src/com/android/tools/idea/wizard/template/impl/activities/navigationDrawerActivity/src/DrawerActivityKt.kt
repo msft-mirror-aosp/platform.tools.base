@@ -48,6 +48,7 @@ fun drawerActivityKt(
 package ${escapeKotlinIdentifier(packageName)}
 import android.os.Bundle
 import android.view.Menu
+import androidx.activity.enableEdgeToEdge
 ${renderIf(!isViewBindingSupported) {"""
 import ${getMaterialComponentName("android.support.design.widget.FloatingActionButton", useAndroidX)}
 """}}
@@ -71,6 +72,7 @@ ${renderIf(isViewBindingSupported) {"""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         ${contentViewBlock}
         setSupportActionBar(${findViewById(
           Language.Kotlin,

@@ -342,7 +342,7 @@ constructor(
                     If you wish to depend on a fused library, consider publishing as an external library using
                     maven-publish plugin and using the ${FusedLibraryConstants.FUSED_LIBRARY_PUBLICATION_COMPONENT_NAME} component.
                     """
-      syncIssueReporter.reportWarning(IssueReporter.Type.GENERIC, publicationOnlyModeWarning)
+      syncIssueReporter.reportWarning(IssueReporter.Type.FUSED_LIBRARY_PUBLICATION_ONLY_MODE, publicationOnlyModeWarning)
     } else {
       // This is the configuration that will contain all the JAVA_RUNTIME dependencies that are
       // not fused in the resulting aar library.

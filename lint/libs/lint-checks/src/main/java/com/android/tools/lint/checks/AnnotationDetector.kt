@@ -210,7 +210,7 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
 
     private fun checkTargetApiAnnotation(annotation: UAnnotation) {
       val value = annotation.attributeValues.firstOrNull()?.sourcePsi?.text ?: ""
-      var message = "Use `@RequiresApi($value) instead of `@TargetApi` to propagate the requirement"
+      var message = "Use `@RequiresApi($value)` instead of `@TargetApi` to propagate the requirement"
       val owner = annotation.uastParent
       if (owner is UMethod) {
         message += " to callers of `${owner.name}`"

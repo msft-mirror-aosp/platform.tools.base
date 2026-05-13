@@ -19,7 +19,6 @@ package com.android.build.gradle.tasks
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.testsuites.TestEngineInputProperty
 import com.google.common.truth.Truth.assertThat
-import java.io.FileReader
 import java.util.Properties
 import org.junit.Rule
 import org.junit.Test
@@ -44,10 +43,31 @@ class TestSuiteTestTaskTest {
       outputFile,
     )
     assertThat(outputFile.exists()).isTrue()
-    val serializedInputs = Properties().also { it.load(FileReader(outputFile)) }
+    val serializedInputs = Properties().also { it.load(outputFile.reader(Charsets.UTF_8)) }
     assertThat(serializedInputs).hasSize(4)
     assertThat(serializedInputs.getProperty(testedApksProp)).isEqualTo("universal.apk")
     assertThat(serializedInputs.getProperty("$testedApksProp[serial1]")).isEqualTo("device1.apk")
     assertThat(serializedInputs.getProperty("$testedApksProp[serial2]")).isEqualTo("device2.apk")
+  }
+
+  @Test
+  fun testSerializer_withOrchestrator() {
+    val outputFile = folder.newFile()
+    val testUtilApksProp = AgpTestSuiteInputParameters.TEST_UTIL_APKS.propertyName
+    val executionModeProp = AgpTestSuiteInputParameters.ANDROID_TEST_EXECUTION_MODE.propertyName
+    TestSuiteTestTask.AgpTestSuiteInputsSerializer.serialize(
+      engineInputParameters =
+        listOf(
+          TestEngineInputProperty(testUtilApksProp, "orchestrator.apk,services.apk"),
+          TestEngineInputProperty(executionModeProp, "ANDROIDX_TEST_ORCHESTRATOR"),
+        ),
+      engineInputProperties = emptyMap(),
+      outputFile,
+    )
+    assertThat(outputFile.exists()).isTrue()
+    val serializedInputs = Properties().also { it.load(outputFile.reader(Charsets.UTF_8)) }
+    assertThat(serializedInputs).hasSize(2)
+    assertThat(serializedInputs.getProperty(testUtilApksProp)).isEqualTo("orchestrator.apk,services.apk")
+    assertThat(serializedInputs.getProperty(executionModeProp)).isEqualTo("ANDROIDX_TEST_ORCHESTRATOR")
   }
 }

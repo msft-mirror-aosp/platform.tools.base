@@ -2447,7 +2447,7 @@
   {
     "binaryType": "KOTLIN_RUNTIME",
     "classpath": [
-      "{GRADLE_CACHE}/{CHECKSUM}/transformed/kmpLibraryPlugin-release-runtime.jar"
+      "{GRADLE_CACHE}/{CHECKSUM}/transformed/kmpLibraryPlugin-runtime.jar"
     ],
     "coordinates": {
       "group": "com.example",
@@ -2464,13 +2464,14 @@
         "artifactType": "android-classes-jar",
         "org.gradle.category": "library",
         "org.gradle.jvm.environment": "android",
+        "org.gradle.libraryelements": "aar",
         "org.gradle.status": "release",
         "org.gradle.usage": "java-runtime",
         "org.jetbrains.kotlin.platform.type": "androidJvm"
       }
     },
     "extras": {
-      "org.gradle.api.artifacts.result.ResolvedArtifactResult;gradleArtifact": "kmpLibraryPlugin-release.aar -\u003e kmpLibraryPlugin-release-runtime.jar (com.example:kmpLibraryPlugin-android:1.0)",
+      "org.gradle.api.artifacts.result.ResolvedArtifactResult;gradleArtifact": "kmpLibraryPlugin.aar -\u003e kmpLibraryPlugin-runtime.jar (com.example:kmpLibraryPlugin-android:1.0)",
       "org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver;resolvedBy": "org.jetbrains.kotlin.gradle.plugin.ide.dependencyResolvers.IdeBinaryDependencyResolver",
       "com.android.kotlin.multiplatform.models.DependencyInfo;android-dependency-model": {
         "library": {
@@ -2481,6 +2482,7 @@
               "attributes": {
                 "org.gradle.category": "library",
                 "org.gradle.jvm.environment": "android",
+                "org.gradle.libraryelements": "aar",
                 "org.gradle.status": "release",
                 "org.gradle.usage": "java-runtime",
                 "org.jetbrains.kotlin.platform.type": "androidJvm"
@@ -2495,51 +2497,51 @@
             "version": "1.0"
           },
           "artifact": {
-            "absolutePath": "{GRADLE_CACHE}/{MODULES_2}/com.example/kmpLibraryPlugin-android/1.0/{CHECKSUM}/kmpLibraryPlugin-release.aar"
+            "absolutePath": "{GRADLE_CACHE}/{MODULES_2}/com.example/kmpLibraryPlugin-android/1.0/{CHECKSUM}/kmpLibraryPlugin.aar"
           },
           "androidLibraryData": {
             "manifest": {
-              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/kmpLibraryPlugin-release/AndroidManifest.xml"
+              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/kmpLibraryPlugin/AndroidManifest.xml"
             },
             "compileJarFiles": [
               {
-                "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/kmpLibraryPlugin-release/jars/classes.jar"
+                "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/kmpLibraryPlugin/jars/classes.jar"
               }
             ],
             "runtimeJarFiles": [
               {
-                "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/kmpLibraryPlugin-release/jars/classes.jar"
+                "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/kmpLibraryPlugin/jars/classes.jar"
               }
             ],
             "resFolder": {
-              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/kmpLibraryPlugin-release/res"
+              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/kmpLibraryPlugin/res"
             },
             "resStaticLibrary": {
-              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/kmpLibraryPlugin-release/res.apk"
+              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/kmpLibraryPlugin/res.apk"
             },
             "assetsFolder": {
-              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/kmpLibraryPlugin-release/assets"
+              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/kmpLibraryPlugin/assets"
             },
             "jniFolder": {
-              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/kmpLibraryPlugin-release/jni"
+              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/kmpLibraryPlugin/jni"
             },
             "aidlFolder": {
-              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/kmpLibraryPlugin-release/aidl"
+              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/kmpLibraryPlugin/aidl"
             },
             "renderscriptFolder": {
-              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/kmpLibraryPlugin-release/rs"
+              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/kmpLibraryPlugin/rs"
             },
             "proguardRules": {
-              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/kmpLibraryPlugin-release/proguard.txt"
+              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/kmpLibraryPlugin/proguard.txt"
             },
             "externalAnnotations": {
-              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/kmpLibraryPlugin-release/annotations.zip"
+              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/kmpLibraryPlugin/annotations.zip"
             },
             "publicResources": {
-              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/kmpLibraryPlugin-release/public.txt"
+              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/kmpLibraryPlugin/public.txt"
             },
             "symbolFile": {
-              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/kmpLibraryPlugin-release/R.txt"
+              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/kmpLibraryPlugin/R.txt"
             }
           },
           "srcJars": [

@@ -90,13 +90,13 @@ internal class CompileSdkDelegate(
       } else {
         if (value.toIntOrNull() != null) {
           issueReporter.reportError(
-            IssueReporter.Type.GENERIC,
+            IssueReporter.Type.COMPILE_SDK_PREVIEW_INVALID,
             RuntimeException("Invalid integer value for compileSdkPreview ($value). Use compileSdk instead"),
           )
         } else {
           val expected = if (value.startsWith("android-")) value.substring(8) else "S"
           issueReporter.reportError(
-            IssueReporter.Type.GENERIC,
+            IssueReporter.Type.COMPILE_SDK_PREVIEW_INVALID,
             RuntimeException("Invalid value for compileSdkPreview (\"$value\"). Value must be a platform preview name (e.g. \"$expected\")"),
           )
         }
@@ -130,7 +130,7 @@ internal class CompileSdkDelegate(
         }
         if (apiLevel < 36 && getCompileSdk()?.minorApiLevel != null) {
           dslServices.issueReporter.reportError(
-            IssueReporter.Type.GENERIC,
+            IssueReporter.Type.COMPILE_SDK_PREVIEW_INVALID,
             RuntimeException("Minor versions are only supported for API 36 and above."),
           )
           compileSdk {
@@ -151,7 +151,9 @@ internal class CompileSdkDelegate(
           apiLevel = version?.apiLevel,
           minorApiLevel = version?.minorApiLevel,
           sdkExtension = version?.sdkExtension,
-          codeName = version?.codeName,
+          previewCodeName = version?.codeName,
+          canaryDate = version?.canaryDate,
+          betaVersion = version?.betaVersion,
           addonName = version?.addonName,
           vendorName = version?.vendorName,
         )
@@ -204,8 +206,10 @@ internal class CompileSdkDelegate(
     if (compileData.isAddon()) {
       compileSdk { version = addon(vendor = compileData.vendorName!!, name = compileData.addonName!!, version = compileData.apiLevel!!) }
     } else {
-      if (compileData.codeName != null) {
-        compileSdk { version = preview(compileData.codeName) }
+      // the canary and beta version is parsed from the parseTargetHash function, and they are reflected in codeName
+      val codeName = compileData.codeName
+      if (codeName != null) {
+        compileSdk { version = preview(codeName) }
       } else {
         compileData.apiLevel?.let { apiLevel ->
           compileSdk {

@@ -33,7 +33,6 @@ import com.android.annotations.concurrency.WorkerThread
 import com.android.ddmlib.AdbHelper
 import com.android.ddmlib.IDevice
 import com.android.ddmlib.IShellOutputReceiver
-import com.android.ddmlib.TimeoutException
 import java.io.IOException
 import java.io.InputStream
 import java.nio.ByteBuffer
@@ -55,7 +54,7 @@ import kotlinx.coroutines.launch
 
 /** Migration function for calls to [IDevice.executeShellCommand] */
 @WorkerThread
-@Throws(IOException::class, AdbFailResponseException::class, TimeoutException::class)
+@Throws(IOException::class, AdbFailResponseException::class)
 internal suspend fun executeShellCommand(
   adbService: AdbHelper.AdbService,
   connectedDevice: ConnectedDevice,
@@ -101,7 +100,7 @@ private fun setShellProtocol(shellCommand: ShellCommand<*>, adbService: AdbHelpe
 }
 
 @WorkerThread
-@Throws(IOException::class, AdbFailResponseException::class, TimeoutException::class)
+@Throws(IOException::class, AdbFailResponseException::class)
 internal suspend fun executeAbbCommand(
   adbService: AdbHelper.AdbService,
   connectedDevice: ConnectedDevice,

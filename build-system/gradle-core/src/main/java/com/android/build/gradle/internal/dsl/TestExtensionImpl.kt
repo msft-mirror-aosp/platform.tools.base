@@ -57,7 +57,7 @@ constructor(
   }
 
   override fun buildTypes(action: NamedDomainObjectContainer<TestBuildType>.() -> Unit) {
-    action(buildTypes)
+    action(buildTypes as NamedDomainObjectContainer<TestBuildType>)
   }
 
   override fun buildTypes(action: Action<in NamedDomainObjectContainer<BuildType>>) {
@@ -87,7 +87,7 @@ constructor(
   }
 
   override fun productFlavors(action: NamedDomainObjectContainer<TestProductFlavor>.() -> Unit) {
-    action.invoke(productFlavors)
+    action.invoke(productFlavors as NamedDomainObjectContainer<TestProductFlavor>)
   }
 
   override fun defaultConfig(action: Action<InternalDefaultConfig>) {

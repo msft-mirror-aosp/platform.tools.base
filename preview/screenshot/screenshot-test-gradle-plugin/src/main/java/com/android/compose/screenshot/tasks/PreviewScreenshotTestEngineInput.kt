@@ -35,6 +35,7 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.PathSensitive
@@ -88,6 +89,8 @@ interface PreviewScreenshotTestEngineInput {
 
   @get:Optional @get:OutputDirectory val junitXmlOutputDirectory: DirectoryProperty
 
+  @get:Internal val projectRoot: Property<String>
+
   @get:Input val recordingModeEnabled: Property<Boolean>
 }
 
@@ -104,6 +107,7 @@ fun PreviewScreenshotTestEngineInput.saveToPropertiesFile(outputFile: File) {
     properties.setProperty("PreviewScreenshotTestEngineInput.$key", value)
   }
 
+  addProp("projectRoot", projectRoot.get())
   addProp("screenshotTestDirectory", testProjectClassDirs.get().joinToString(File.pathSeparator) { it.asFile.absolutePath })
   addProp("screenshotTestJars", testProjectJars.get().joinToString(File.pathSeparator) { it.asFile.absolutePath })
   addProp("mainDirectory", mainProjectClassDirs.get().joinToString(File.pathSeparator) { it.asFile.absolutePath })

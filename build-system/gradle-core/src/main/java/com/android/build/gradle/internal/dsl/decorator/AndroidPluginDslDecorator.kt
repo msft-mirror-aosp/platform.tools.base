@@ -37,6 +37,7 @@ import com.android.build.api.dsl.BundleStoreArchive
 import com.android.build.api.dsl.BundleTexture
 import com.android.build.api.dsl.Cmake
 import com.android.build.api.dsl.CompileOptions
+import com.android.build.api.dsl.CompileSdkBetaSpec
 import com.android.build.api.dsl.CompileSdkSpec
 import com.android.build.api.dsl.CompileSdkVersion
 import com.android.build.api.dsl.ConfigurableFiles
@@ -91,6 +92,7 @@ import com.android.build.gradle.internal.dsl.BundleOptionsLanguage
 import com.android.build.gradle.internal.dsl.BundleOptionsStoreArchive
 import com.android.build.gradle.internal.dsl.BundleOptionsTexture
 import com.android.build.gradle.internal.dsl.CmakeOptions
+import com.android.build.gradle.internal.dsl.CompileSdkBetaSpecImpl
 import com.android.build.gradle.internal.dsl.ConfigurableFilesImpl
 import com.android.build.gradle.internal.dsl.ConsumerKeepRulesImpl
 import com.android.build.gradle.internal.dsl.DataBindingOptions
@@ -181,6 +183,7 @@ val AGP_SUPPORTED_PROPERTY_TYPES: List<SupportedPropertyType> =
     SupportedPropertyType.Block(AgpTestSuite::class.java, com.android.build.gradle.internal.dsl.AgpTestSuiteImpl::class.java),
     SupportedPropertyType.Block(JUnitEngineSpec::class.java, com.android.build.gradle.internal.dsl.JUnitEngineSpecImpl::class.java),
     SupportedPropertyType.Block(CompileSdkSpec::class.java, com.android.build.gradle.internal.dsl.CompileSdkSpecImpl::class.java),
+    SupportedPropertyType.Block(CompileSdkBetaSpec::class.java, CompileSdkBetaSpecImpl::class.java),
     SupportedPropertyType.Block(MinSdkSpec::class.java, com.android.build.gradle.internal.dsl.MinSdkSpecImpl::class.java),
     SupportedPropertyType.Block(MaxSdkSpec::class.java, com.android.build.gradle.internal.dsl.MaxSdkSpecImpl::class.java),
     SupportedPropertyType.Block(TargetSdkSpec::class.java, com.android.build.gradle.internal.dsl.TargetSdkSpecImpl::class.java),

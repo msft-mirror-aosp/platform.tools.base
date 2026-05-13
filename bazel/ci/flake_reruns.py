@@ -25,7 +25,12 @@ def studio_linux_flake_reruns(build_env: bazel.BuildEnv) -> None:
     build_env: The build environment.
   """
   known_flakes = _parse_known_flakes('studio-linux')
-  rerun_flaky_tests(build_env, known_flakes)
+  disallowed_targets = [
+      # b/507604654 This target uses the network to get an physical device
+      # connection. Running it multiple times will cause quota issues.
+      '//tools/profiler/integration:CaptureTraceSystemProfilerTest_linux',
+  ]
+  rerun_flaky_tests(build_env, known_flakes, disallowed_targets)
 
 
 def studio_win_flake_reruns(build_env: bazel.BuildEnv) -> None:
@@ -70,6 +75,8 @@ def rerun_flaky_tests(
       '--config=dynamic',
       f'--runs_per_test={runs_per_test}',
       '--bes_keywords=flake-reruns',
+      '--bes_keywords=cinder',
+      '--build_metadata=cinder_pipelines=test-stats',
       '-k',  # Continue even if test does not exist.
   ]
   logs_collector_options = studio.LogsCollectorOptions(zip_perfgate_data=False)

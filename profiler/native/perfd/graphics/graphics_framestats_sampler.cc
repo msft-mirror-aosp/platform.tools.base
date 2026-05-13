@@ -17,6 +17,7 @@
 
 #include <sstream>
 
+#include "utils/log.h"
 #include "utils/trace.h"
 
 using profiler::proto::GraphicsData;
@@ -72,6 +73,16 @@ std::string GraphicsFrameStatsSampler::GetDumpsysCommand() {
   std::string forefront_activity = GetForefrontActivity();
   if (forefront_activity.empty()) {
     // This happens if there is no SurfaceView on the screen.
+    return "";
+  }
+
+  // Security Fix: Prevent shell command injection.
+  // forefront_activity is sourced from dumpsys output. If a malicious app
+  // manages to create a SurfaceView with shell metacharacters in its name,
+  // it could break out of the quotes and execute arbitrary commands.
+  if (forefront_activity.find_first_of("\";$|&><`\\") != std::string::npos) {
+    Log::E(Log::Tag::PROFILER, "Invalid forefront activity name: %s",
+           forefront_activity.c_str());
     return "";
   }
   std::string cmd("dumpsys SurfaceFlinger --latency \"");

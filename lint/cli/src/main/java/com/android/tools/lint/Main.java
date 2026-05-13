@@ -144,6 +144,8 @@ public class Main {
 
     private static final String ARG_HTML = "--html";
 
+    private static final String ARG_HTML_V2 = "--html-v2";
+
     @SuppressWarnings("SpellCheckingInspection")
     private static final String ARG_SIMPLE_HTML = "--simplehtml";
 
@@ -936,10 +938,13 @@ public class Main {
                 } else {
                     flags.setOverrideLintConfig(file);
                 }
-            } else if (arg.equals(ARG_HTML) || arg.equals(ARG_SIMPLE_HTML)) {
+            } else if (arg.equals(ARG_HTML) || arg.equals(ARG_SIMPLE_HTML) || arg.equals(ARG_HTML_V2)) {
                 if (index == args.length - 1) {
                     System.err.println("Missing HTML output file name");
                     return ERRNO_INVALID_ARGS;
+                }
+                if (arg.equals(ARG_HTML_V2)) {
+                  flags.setUseHtmlV2(true);
                 }
                 File output = getOutArgumentPath(args[++index]);
                 // Get an absolute path such that we can ask its parent directory for
@@ -1511,8 +1516,6 @@ public class Main {
                 } else {
                     return ERRNO_ERRORS;
                 }
-            } else if (arg.equals("--XuseK1Uast")) {
-                System.out.printf("%s is no longer in effect, and will be an error in the next release.\n", arg);
             } else if (arg.equals("--XuseK2Uast")) {
                 // no-op, but no warning either until AGP usages are removed.
             } else if (arg.equals("--XuseKlibLightElementProvider")) {
@@ -2294,6 +2297,10 @@ public class Main {
                             + "on the line containing the error, but this flag turns it off.",
                     ARG_HTML + " <filename>",
                     "Create an HTML report instead. If the filename is a "
+                            + "directory (or a new filename without an extension), lint will create a "
+                            + "separate report for each scanned project.",
+                    ARG_HTML_V2 + " <filename>",
+                    "Create an HTML report using the V2 format. If the filename is a "
                             + "directory (or a new filename without an extension), lint will create a "
                             + "separate report for each scanned project.",
                     ARG_URL + " filepath=url",

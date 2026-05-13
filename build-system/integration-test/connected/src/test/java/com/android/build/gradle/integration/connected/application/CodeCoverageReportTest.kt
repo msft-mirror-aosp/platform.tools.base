@@ -79,7 +79,7 @@ class CodeCoverageReportTest {
           implementation(project(":lib"))
 
           testImplementation("junit:junit:4.13.2")
-          testImplementation("org.mockito:mockito-core:5.12.0")
+          testImplementation("org.mockito:mockito-core:5.20.0")
           testImplementation("org.jdeferred:jdeferred-android-aar:1.2.3")
           testImplementation("commons-logging:commons-logging:1.1.1")
 
@@ -126,7 +126,7 @@ class CodeCoverageReportTest {
           }
           dependencies {
             testImplementation("junit:junit:4.13.2")
-            testImplementation("org.mockito:mockito-core:5.12.0")
+            testImplementation("org.mockito:mockito-core:5.20.0")
             testImplementation("org.jdeferred:jdeferred-android-aar:1.2.3")
             testImplementation("commons-logging:commons-logging:1.1.1")
 
@@ -167,7 +167,7 @@ class CodeCoverageReportTest {
 
           dependencies {
             testImplementation("junit:junit:4.13.2")
-            testImplementation("org.mockito:mockito-core:5.12.0")
+            testImplementation("org.mockito:mockito-core:5.20.0")
             testImplementation("org.jdeferred:jdeferred-android-aar:1.2.3")
             testImplementation("commons-logging:commons-logging:1.1.1")
 
@@ -183,6 +183,7 @@ class CodeCoverageReportTest {
       gradleProperties {
         // this is to test the multi-variant support for coverage reporting
         add(BooleanOption.ONLY_ENABLE_UNIT_TEST_BY_DEFAULT_FOR_THE_TESTED_BUILD_TYPE, false)
+        add(BooleanOption.REPORT_AGGREGATION_SUPPORT, true)
       }
     }
 
@@ -281,11 +282,9 @@ class CodeCoverageReportTest {
   fun testCreateCoverageReportWithFeatureDisabled() {
     val build = rule.build { gradleProperties { add(BooleanOption.REPORT_AGGREGATION_SUPPORT, false) } }
 
-    val result = build.executor.run(":app:createCoverageReport")
+    val result = build.executor.expectFailure().run(":app:createCoverageReport")
 
-    result.assertOutputContains("Report aggregation feature is disabled. Task execution is skipped.")
-    result.assertOutputDoesNotContain("View coverage report at")
-    assertThat(result.didWorkTasks).doesNotContain(":app:collectDebugCoverage")
+    result.assertFailureMessage().contains("task 'createCoverageReport' is ambiguous in project ':app'")
   }
 
   private fun verifyIndexFileExists(taskOutputDir: File) {

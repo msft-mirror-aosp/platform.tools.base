@@ -44,7 +44,6 @@ class MultiCompositeBuildTest : ModelComparator() {
     GradleTestProject.builder()
       .fromTestProject("multiCompositeBuild")
       .withIncludedBuilds("TestCompositeApp", "TestCompositeLib1", "TestCompositeLib3")
-      .disableBuiltInKotlin()
       .create()
 
   @Test

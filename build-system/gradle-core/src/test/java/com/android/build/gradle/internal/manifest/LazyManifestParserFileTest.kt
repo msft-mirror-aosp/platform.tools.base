@@ -17,7 +17,7 @@
 package com.android.build.gradle.internal.manifest
 
 import com.android.build.gradle.internal.utils.IssueSubject.assertThat
-import com.android.builder.model.SyncIssue
+import com.android.builder.model.v2.ide.SyncIssue
 import java.io.File
 import org.junit.Test
 
@@ -87,7 +87,7 @@ internal class LazyManifestParserFileTest : LazyManifestParserBaseTest() {
     }
 
     withIssueChecker {
-      val onlyIssue = it.single()
+      val onlyIssue = it.single() as SyncIssue
       assertThat(onlyIssue)
         .hasMessageThatContains(
           "The manifest is being parsed during configuration. Please either remove android.disableConfigurationManifestParsing from build.gradle or remove any build configuration rules that read the android manifest file.\n"

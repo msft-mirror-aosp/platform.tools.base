@@ -89,7 +89,6 @@ internal constructor(
     runtimeClasspath.description = "Resolved configuration for runtime for test suite: $testSuiteName in $testedVariantName"
     populateClasspath(runtimeClasspath, gatherCollectors { listOf(it.implementation, it.runtimeOnly, enginesDependencies) })
     addAttributes(runtimeClasspath, factory.named(Usage::class.java, Usage.JAVA_RUNTIME))
-    runtimeClasspath.attributes.attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, AndroidArtifacts.ArtifactType.CLASSES_JAR.type)
 
     if (testedVariant.componentType.isAar) {
       // If the tested variant is a library, we can use standard project dependencies.
@@ -98,14 +97,9 @@ internal constructor(
     } else {
       // If the tested variant is an application, we cannot use 'extendsFrom' because that
       // would inherit the 'category=library' attribute and cause a resolution failure.
-      // Instead, we manually carry over the dependencies and add the app's classes as a file dependency.
+      // Instead, we manually carry over the dependencies.
       compileClasspath.dependencies.addAll(testedVariant.variantDependencies.compileClasspath.allDependencies)
       runtimeClasspath.dependencies.addAll(testedVariant.variantDependencies.runtimeClasspath.allDependencies)
-
-      val appClasses =
-        testedVariant.artifacts.forScope(ScopedArtifacts.Scope.PROJECT).getFinalArtifacts(ScopedArtifact.POST_COMPILATION_CLASSES)
-      project.dependencies.add(compileClasspath.name, appClasses)
-      project.dependencies.add(runtimeClasspath.name, appClasses)
     }
 
     return TestSuiteSourceClasspath(

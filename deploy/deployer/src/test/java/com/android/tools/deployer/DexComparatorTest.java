@@ -17,15 +17,19 @@ package com.android.tools.deployer;
 
 import static org.junit.Assert.*;
 
+import com.android.tools.deployer.common.DeployerException;
 import com.android.tools.deployer.model.Apk;
 import com.android.tools.deployer.model.ApkEntry;
 import com.android.tools.deployer.model.DexClass;
 import com.android.tools.deployer.model.FileDiff;
+
 import com.google.common.collect.Lists;
+
+import org.junit.Test;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
-import org.junit.Test;
 
 public class DexComparatorTest {
 

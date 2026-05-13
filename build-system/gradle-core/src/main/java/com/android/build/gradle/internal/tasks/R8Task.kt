@@ -25,7 +25,6 @@ import com.android.build.gradle.internal.component.ConsumableCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.core.ToolExecutionOptions
 import com.android.build.gradle.internal.dependency.ShrinkerVersion
-import com.android.build.gradle.internal.dsl.ModulePropertyKey
 import com.android.build.gradle.internal.errors.MessageReceiverImpl
 import com.android.build.gradle.internal.manifest.parseManifest
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
@@ -37,9 +36,7 @@ import com.android.build.gradle.internal.services.R8D8ThreadPoolBuildService
 import com.android.build.gradle.internal.services.R8MaxParallelTasksBuildService
 import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.services.doClose
-import com.android.build.gradle.internal.utils.LibraryArtifactType
 import com.android.build.gradle.internal.utils.getDesugarLibConfig
-import com.android.build.gradle.internal.utils.getFilteredFiles
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.IntegerOption
@@ -142,6 +139,12 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
 
   @get:OutputFile abstract val outputResources: RegularFileProperty
 
+  @get:Input abstract val enableKeepRadiusReport: Property<Boolean>
+
+  @get:Optional @get:OutputFile abstract val keepRadiusDataOutput: RegularFileProperty
+
+  @get:Optional @get:OutputFile abstract val keepRadiusReportOutput: RegularFileProperty
+
   @get:OutputFile abstract val proguardSeedsOutput: RegularFileProperty
 
   @get:OutputFile abstract val proguardUsageOutput: RegularFileProperty
@@ -171,9 +174,7 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
 
   @get:Nested abstract val resourceShrinkingParams: R8ResourceShrinkingParameters
 
-  @get:Input @get:Optional abstract val partialShrinkingEnabled: Property<Boolean>
-
-  @get:Input @get:Optional abstract val applicationOptimizationEnabled: Property<Boolean>
+  @get:Input @get:Optional abstract val gradualShrinkingEnabled: Property<Boolean>
 
   @get:Input @get:Optional abstract val gradualShrinkingPackages: SetProperty<String>
 
@@ -211,6 +212,14 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
 
         else -> error("Unexpected component type: $componentType")
       }
+
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, R8Task::keepRadiusDataOutput)
+        .on(InternalArtifactType.R8_MAPPING_KEEP_RADIUS_DATA)
+
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, R8Task::keepRadiusReportOutput)
+        .on(InternalArtifactType.R8_MAPPING_KEEP_RADIUS_REPORT)
 
       creationConfig.artifacts.setInitialProvider(taskProvider, R8Task::proguardSeedsOutput).on(InternalArtifactType.R8_MAPPING_SEEDS)
 
@@ -283,9 +292,7 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
       val artifacts = creationConfig.artifacts
 
       if (creationConfig is VariantCreationConfig) {
-        task.artProfileRewriting.set(
-          creationConfig.experimentalProperties.map { ModulePropertyKey.BooleanWithDefault.ART_PROFILE_R8_REWRITING.getValue(it) }
-        )
+        task.artProfileRewriting.set(true)
         if (!creationConfig.debuggable) {
           task.inputProfileForDexStartupOptimization.set(artifacts.get(InternalArtifactType.MERGED_STARTUP_PROFILE))
         }
@@ -304,6 +311,10 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
       task.errorFormatMode.set(SyncOptions.getErrorFormatMode(creationConfig.services.projectOptions))
       task.legacyMultiDexEnabled.setDisallowChanges(
         creationConfig is ApkCreationConfig && creationConfig.dexing.dexingType == DexingType.LEGACY_MULTIDEX
+      )
+
+      task.enableKeepRadiusReport.setDisallowChanges(
+        creationConfig.services.projectOptions.getProvider(BooleanOption.R8_ENABLE_KEEP_RADIUS_REPORT)
       )
 
       task.executionOptions.setDisallowChanges(creationConfig.global.settingsOptions.executionProfile?.r8Options)
@@ -387,11 +398,11 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
       }
 
       // for validation purposes
-      task.applicationOptimizationEnabled.setDisallowChanges(creationConfig.optimizationCreationConfig.applicationOptimizationEnabled)
+      task.gradualShrinkingEnabled.setDisallowChanges(
+        creationConfig.optimizationCreationConfig.minifiedEnabled && creationConfig.optimizationCreationConfig.packageScopeEnabled
+      )
 
-      task.partialShrinkingEnabled.setDisallowChanges(creationConfig.optimizationCreationConfig.applicationOptimizationEnabled)
-
-      if (creationConfig.optimizationCreationConfig.applicationOptimizationEnabled) {
+      if (creationConfig.optimizationCreationConfig.packageScopeEnabled) {
         task.gradualShrinkingPackages.set(creationConfig.optimizationCreationConfig.includePackages)
       }
     }
@@ -423,10 +434,8 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
 
   override fun doTaskAction() {
     // verify r8 gradual settings
-    if (applicationOptimizationEnabled.orNull == true && gradualShrinkingPackages.get().isEmpty()) {
-      throw RuntimeException(
-        "Wrong configuration. Gradual R8 is ON with optimization.enable = true " + "but packageScope has no include rules."
-      )
+    if (gradualShrinkingEnabled.orNull == true && gradualShrinkingPackages.get().isEmpty()) {
+      throw RuntimeException("Wrong configuration. optimization.packageScope is an empty set, at least one package must be specified.")
     }
 
     val output: Property<out FileSystemLocation> =
@@ -467,20 +476,6 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
         .trimMargin()
     )
 
-    val keepRulesTree =
-      when {
-        componentType.orNull?.isAar == true -> {
-          checkAarKeepRulesDirectories(aarKeepRulesDirectories, projectLayout.projectDirectory.asFile)
-          aarKeepRulesFiles.asFileTree
-        }
-        else -> {
-          checkKeepRulesDirectories(keepRulesDirectories, projectLayout.projectDirectory.asFile)
-          keepRulesFiles.asFileTree
-        }
-      }
-
-    val finalListOfConfigurationFiles = projectLayout.files(configurationFiles, generatedProguardFile.asFileTree, keepRulesTree)
-
     // If inputArtProfile exists but artProfileRewriting is false, we need to copy it over
     // to outputArtProfile.
     val inputArtProfileFile = inputArtProfile.orNull?.asFile
@@ -511,18 +506,7 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
       )
       it.mainDexListOutput.set(mainDexListOutput.orNull?.asFile)
       it.proguardConfigurationFiles.set(
-        reconcileDefaultProguardFile(
-          getFilteredFiles(
-            ignoreFromInKeepRules.get(),
-            ignoreFromAllExternalDependenciesInKeepRules.get(),
-            libraryKeepRules,
-            finalListOfConfigurationFiles,
-            LoggerWrapper.getLogger(R8Task::class.java),
-            LibraryArtifactType.KEEP_RULES,
-          ),
-          extractedDefaultProguardFile,
-          failOnMissingProguardFiles.get(),
-        )
+        reconcileDefaultProguardFile(obtainKeepRules(), extractedDefaultProguardFile, failOnMissingProguardFiles.get())
       )
       it.inputProguardMapping.set(
         if (testedMappingFile.isEmpty) {
@@ -542,6 +526,10 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
         }
       )
       it.resourcesJar.set(resourcesJar)
+      if (enableKeepRadiusReport.get()) {
+        it.keepRadiusDataOutput.set(keepRadiusDataOutput.get().asFile)
+        it.keepRadiusReportOutput.set(keepRadiusReportOutput.get().asFile)
+      }
       it.mappingFile.set(mappingFile.get().asFile)
       it.mappingPartitionFile.set(mappingPartitionFile.get().asFile)
       it.proguardSeedsOutput.set(proguardSeedsOutput.get().asFile)
@@ -592,11 +580,12 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
 
   // Merge creation config included/excluded patterns with package.txt with merged R8 packages
   private fun aggregatePartialShrinkingConfig(): PartialShrinking? {
-    if (partialShrinkingEnabled.orNull != true) return null
+    if (gradualShrinkingEnabled.orNull != true) return null
 
     // load from files and from new gradual r8 dsl
     val packages = (gradualShrinkingPackages.orNull ?: listOf()).toList()
     if (packages.contains("**")) return PartialShrinkingIncludeAll
+
     return PartialShrinkingConfig(packages)
   }
 
@@ -613,6 +602,8 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
       keepRuleWithOrigins: List<KeepRuleFile>,
       inputProguardMapping: File?,
       proguardConfigurations: MutableList<String>,
+      keepRadiusDataOutput: File?,
+      keepRadiusReportOutput: File?,
       mappingFile: File,
       mappingPartitionFile: File,
       proguardSeedsOutput: File,
@@ -662,6 +653,8 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
 
       val proguardOutputFiles =
         ProguardOutputFiles(
+          keepRadiusDataOutput?.toPath(),
+          keepRadiusReportOutput?.toPath(),
           mappingFile.toPath(),
           mappingPartitionFile.toPath(),
           proguardSeedsOutput.toPath(),
@@ -744,6 +737,8 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
       abstract val proguardConfigurationFiles: ListProperty<KeepRuleFile>
       abstract val inputProguardMapping: RegularFileProperty
       abstract val proguardConfigurations: ListProperty<String>
+      abstract val keepRadiusDataOutput: RegularFileProperty
+      abstract val keepRadiusReportOutput: RegularFileProperty
       abstract val mappingFile: RegularFileProperty
       abstract val mappingPartitionFile: RegularFileProperty
       abstract val proguardSeedsOutput: RegularFileProperty
@@ -793,6 +788,8 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
           parameters.proguardConfigurationFiles.get(),
           parameters.inputProguardMapping.orNull?.asFile,
           parameters.proguardConfigurations.get(),
+          parameters.keepRadiusDataOutput.orNull?.asFile,
+          parameters.keepRadiusReportOutput.orNull?.asFile,
           parameters.mappingFile.get().asFile,
           parameters.mappingPartitionFile.get().asFile,
           parameters.proguardSeedsOutput.get().asFile,

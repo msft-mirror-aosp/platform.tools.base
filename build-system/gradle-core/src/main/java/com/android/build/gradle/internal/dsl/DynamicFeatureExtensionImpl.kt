@@ -61,7 +61,7 @@ constructor(
   }
 
   override fun buildTypes(action: NamedDomainObjectContainer<DynamicFeatureBuildType>.() -> Unit) {
-    action(buildTypes)
+    action(buildTypes as NamedDomainObjectContainer<DynamicFeatureBuildType>)
   }
 
   override fun buildTypes(action: Action<in NamedDomainObjectContainer<BuildType>>) {
@@ -91,7 +91,7 @@ constructor(
   }
 
   override fun productFlavors(action: NamedDomainObjectContainer<DynamicFeatureProductFlavor>.() -> Unit) {
-    action.invoke(productFlavors)
+    action.invoke(productFlavors as NamedDomainObjectContainer<DynamicFeatureProductFlavor>)
   }
 
   override fun defaultConfig(action: Action<InternalDefaultConfig>) {

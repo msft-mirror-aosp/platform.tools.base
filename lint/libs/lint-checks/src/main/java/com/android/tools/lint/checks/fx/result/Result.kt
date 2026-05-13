@@ -31,6 +31,7 @@ import kotlin.reflect.KFunction3
 import kotlin.reflect.KFunction4
 import kotlin.reflect.KFunction5
 import kotlin.reflect.KParameter
+import kotlin.reflect.KProperty
 import kotlin.reflect.jvm.javaMethod
 import kotlinx.collections.immutable.PersistentSet
 import kotlinx.collections.immutable.persistentSetOf
@@ -323,6 +324,8 @@ sealed interface Type<out FX> {
     val UShort = Application<Nothing>(ClassId.of<UShort>())
     val UInt = Application<Nothing>(ClassId.of<UInt>())
     val ULong = Application<Nothing>(ClassId.of<ULong>())
+    val Any = Application<Nothing>(ClassId.of<java.lang.Object>())
+    val KPropertySome = Application<Nothing>(ClassId.of<KProperty<*>>(), listOf(WildCard))
   }
 }
 

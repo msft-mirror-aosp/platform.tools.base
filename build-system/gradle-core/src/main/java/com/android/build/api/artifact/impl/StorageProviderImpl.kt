@@ -28,17 +28,17 @@ class StorageProviderImpl {
 
   fun lock() {
     fileStorage.lock()
-    directory.lock()
+    directoryStorage.lock()
   }
 
   private val fileStorage = TypedStorageProvider<RegularFile> { objectFactory -> objectFactory.fileProperty() }
-  private val directory = TypedStorageProvider<Directory> { objectFactory -> objectFactory.directoryProperty() }
+  private val directoryStorage = TypedStorageProvider<Directory> { objectFactory -> objectFactory.directoryProperty() }
 
   fun <T : FileSystemLocation> getStorage(artifactKind: ArtifactKind<out T>): TypedStorageProvider<T> {
     @Suppress("Unchecked_cast")
     return when (artifactKind) {
       ArtifactKind.FILE -> fileStorage
-      ArtifactKind.DIRECTORY -> directory
+      ArtifactKind.DIRECTORY -> directoryStorage
     }
       as TypedStorageProvider<T>
   }

@@ -32,10 +32,14 @@ import com.android.build.gradle.options.BooleanOption;
 import com.android.build.gradle.tasks.PackageAndroidArtifact;
 import com.android.builder.core.ComponentType;
 import com.android.builder.errors.IssueReporter;
+
 import com.google.common.base.MoreObjects;
-import java.io.File;
-import javax.inject.Inject;
+
 import org.gradle.api.Task;
+
+import java.io.File;
+
+import javax.inject.Inject;
 
 /**
  * Implementation of variant output for apk-generating variants.
@@ -110,9 +114,13 @@ public class ApkVariantOutputImpl extends BaseVariantOutputImpl implements ApkVa
         if (!services.getProjectOptions().get(BooleanOption.ENABLE_LEGACY_API)) {
             services.getIssueReporter()
                     .reportError(
-                            IssueReporter.Type.GENERIC,
+                            IssueReporter.Type
+                                    .ACCESS_TO_DEPRECATED_LEGACY_API_REQUIRES_COMPATIBILITY_MODE,
                             new RuntimeException(
-                                    "Access to deprecated legacy com.android.build.gradle.api.ApkVariantOutput.getVersionCodeOverride() requires compatibility mode for Property values in new com.android.build.api.variant.VariantOutput.versionCode\n"
+                                    "Access to deprecated legacy"
+                                        + " com.android.build.gradle.api.ApkVariantOutput.getVersionCodeOverride()"
+                                        + " requires compatibility mode for Property values in new"
+                                        + " com.android.build.api.variant.VariantOutput.versionCode\n"
                                             + ComponentUtils.getENABLE_LEGACY_API()));
             // return default value during sync
             return -1;
@@ -142,9 +150,13 @@ public class ApkVariantOutputImpl extends BaseVariantOutputImpl implements ApkVa
         if (!services.getProjectOptions().get(BooleanOption.ENABLE_LEGACY_API)) {
             services.getIssueReporter()
                     .reportError(
-                            IssueReporter.Type.GENERIC,
+                            IssueReporter.Type
+                                    .ACCESS_TO_DEPRECATED_LEGACY_API_REQUIRES_COMPATIBILITY_MODE,
                             new RuntimeException(
-                                    "Access to deprecated legacy com.android.build.gradle.api.ApkVariantOutput.getVersionNameOverride() requires compatibility mode for Property values in new com.android.build.api.variant.VariantOutput.versionName\n"
+                                    "Access to deprecated legacy"
+                                        + " com.android.build.gradle.api.ApkVariantOutput.getVersionNameOverride()"
+                                        + " requires compatibility mode for Property values in new"
+                                        + " com.android.build.api.variant.VariantOutput.versionName\n"
                                             + ComponentUtils.getENABLE_LEGACY_API()));
             // return default value during sync
             return null;
@@ -158,9 +170,13 @@ public class ApkVariantOutputImpl extends BaseVariantOutputImpl implements ApkVa
         if (!services.getProjectOptions().get(BooleanOption.ENABLE_LEGACY_API)) {
             services.getIssueReporter()
                     .reportError(
-                            IssueReporter.Type.GENERIC,
+                            IssueReporter.Type
+                                    .ACCESS_TO_DEPRECATED_LEGACY_API_REQUIRES_COMPATIBILITY_MODE,
                             new RuntimeException(
-                                    "Access to deprecated legacy com.android.build.gradle.api.ApkVariantOutput.versionCode requires compatibility mode for Property values in new com.android.build.api.variant.VariantOutput.versionCode\n"
+                                    "Access to deprecated legacy"
+                                        + " com.android.build.gradle.api.ApkVariantOutput.versionCode"
+                                        + " requires compatibility mode for Property values in new"
+                                        + " com.android.build.api.variant.VariantOutput.versionCode\n"
                                             + ComponentUtils.getENABLE_LEGACY_API()));
             // return default value during sync
             return -1;

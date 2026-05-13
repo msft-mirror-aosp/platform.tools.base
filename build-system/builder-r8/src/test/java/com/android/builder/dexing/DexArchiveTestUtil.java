@@ -93,7 +93,8 @@ public final class DexArchiveTestUtil {
                                     new ClassFileProviderFactory(Collections.emptyList()), // cp
                                     null,
                                     enableApiModeling,
-                                    new NoOpMessageReceiver() // messageReceiver
+                                    new NoOpMessageReceiver(), // messageReceiver
+                                    false // useNoOpGlobalSyntheticsConsumer
                                     ));
 
             dexArchiveBuilder.convert(

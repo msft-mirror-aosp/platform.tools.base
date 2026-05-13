@@ -29,4 +29,5 @@ class DexParameters(
   val coreLibDesugarConfig: String?,
   val enableApiModeling: Boolean,
   val messageReceiver: MessageReceiver,
+  val useNoOpGlobalSyntheticsConsumer: Boolean = false,
 )

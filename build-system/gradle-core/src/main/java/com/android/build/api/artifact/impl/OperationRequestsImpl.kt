@@ -57,7 +57,13 @@ open class OutOperationRequestImpl<TaskT : Task, FileTypeT : FileSystemLocation>
   override fun <ArtifactTypeT> toAppendTo(type: ArtifactTypeT)
     where ArtifactTypeT : Multiple<FileTypeT>, ArtifactTypeT : Artifact.Appendable {
     closeRequest()
-    toAppend(artifacts, taskProvider, with, type, name)
+    toAppend(artifacts, taskProvider, with, type, name, attributes = null)
+  }
+
+  override fun <ArtifactTypeT> toAppendTo(type: ArtifactTypeT, qualifiers: Map<String, String>)
+    where ArtifactTypeT : Multiple<FileTypeT>, ArtifactTypeT : Artifact.Appendable, ArtifactTypeT : Artifact.WithQualifiers {
+    closeRequest()
+    toAppend(artifacts, taskProvider, with, type, name, ArtifactTypeQualifiers(qualifiers))
   }
 
   override fun <ArtifactTypeT> toCreate(type: ArtifactTypeT) where ArtifactTypeT : Single<FileTypeT>, ArtifactTypeT : Artifact.Replaceable {
@@ -303,15 +309,31 @@ private fun <TaskT : Task, FileTypeT : FileSystemLocation, ArtifactTypeT> toAppe
   with: (TaskT) -> FileSystemLocationProperty<FileTypeT>,
   type: ArtifactTypeT,
   outputFileSystemLocationName: String?,
+  attributes: ArtifactTypeQualifiers?,
 ) where ArtifactTypeT : Multiple<FileTypeT>, ArtifactTypeT : Artifact.Appendable {
 
   checkWithName(type, outputFileSystemLocationName)
   val artifactContainer = artifacts.getArtifactContainer(type)
-  taskProvider.configure { with(it).set(artifacts.getOutputPath(type, taskProvider.name, outputFileSystemLocationName ?: "")) }
+
+  attributes?.let {
+    if (type is Artifact.WithQualifiers) {
+      it.ensureAttributesCorrectness(type)
+    }
+    it.ensureAttributesUniqueness(artifactContainer)
+  }
+
+  taskProvider.configure { taskT ->
+    // the paths will contain the task name used to produce the artifact, when attributes are
+    // provided, they will also be used to isolate the task output by appending Key1/Value1,
+    // Key2/Value2 to the path...
+    val paths = mutableListOf<String>(taskProvider.name)
+    attributes?.toPath(paths)
+    with(taskT).set(artifacts.getOutputPath(type, paths = paths.toTypedArray(), outputFileSystemLocationName ?: ""))
+  }
   // all producers of a multiple artifact type are added to the initial list (just like
   // the AGP producers) since the transforms always operate on the complete list of added
   // providers.
-  artifactContainer.addInitialProvider(taskProvider, taskProvider.flatMap { with(it) })
+  artifactContainer.addInitialProvider(taskProvider, taskProvider.flatMap { with(it) }, attributes)
 }
 
 private fun <TaskT : Task, FileTypeT : FileSystemLocation, ArtifactTypeT> toCreate(

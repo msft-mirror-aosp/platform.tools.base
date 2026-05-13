@@ -15,10 +15,8 @@
  */
 package com.android.tools.idea.wizard.template.impl.activities.basicActivity.res.layout
 
-import com.android.tools.idea.wizard.template.getMaterialComponentName
-
-fun fragmentSimpleXml(navGraphName: String, navHostFragmentId: String, useAndroidX: Boolean): String {
-  val layout = getMaterialComponentName("android.support.constraint.ConstraintLayout", useAndroidX)
+fun fragmentSimpleXml(navGraphName: String, navHostFragmentId: String): String {
+  val layout = "androidx.constraintlayout.widget.ConstraintLayout"
 
   return """
 <?xml version="1.0" encoding="utf-8"?>

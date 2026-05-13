@@ -1,0 +1,101 @@
+/*
+ * Copyright (C) 2026 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+syntax = "proto3";
+package ui.inspector.view.inspector.protocol;
+option java_package = "com.android.tools.ui.inspector.view.inspector.protocol";
+option java_outer_classname = "ViewInspectorProtocol";
+
+message Rect {
+    int32 x = 1;
+    int32 y = 2;
+    int32 width = 3;
+    int32 height = 4;
+}
+
+
+message ViewNode {
+    // uniqueDrawingId of this view
+    int64 id = 1;
+
+    repeated ViewNode children = 2;
+
+    // String table index for class name
+    int32 class_name = 3;
+
+    // String table index for package name
+    int32 package_name = 4;
+
+    // The absolute bounds of the view in screen coordinates.
+    Rect bounds = 5;
+
+
+    // String table index for the resource ID of the view (e.g., @id/my_view)
+    int32 id_resource = 7;
+
+    // String table index for the layout resource that inflated this view (e.g., @layout/activity_main)
+    int32 layout_resource = 8;
+
+    // Represents a key-value pair for a view property.
+    message Attribute {
+        // TODO: mapping everything to strings has issues:
+        //  1. Everything is converted to string, even primitives like int
+        //  2. We loose the type of objects which can make things more difficult,
+        //     for example Dimension attributes are converted to strings without any
+        //     indication about the unit used (pixel, dp, sp)
+
+        // Index in the string table for the attribute name
+        int32 name = 1;
+        // Index in the string table for the attribute value
+        int32 value = 2;
+    }
+
+    // The list of resolved attributes for this view.
+    repeated Attribute attributes = 9;
+}
+
+// Maps a string to a unique ID to optimize payload size.
+message StringEntry {
+    int32 id = 1;
+    string value = 2;
+}
+
+// Command to dump the view hierarchy of all root views.
+message DumpViewsCommand {
+    bool include_attributes = 1;
+}
+
+message DumpViewsResponse {
+    // The flattened list of root views.
+    repeated ViewNode nodes = 1;
+
+    // Deduplicated strings referenced by indices in ViewNode.
+    repeated StringEntry strings = 2;
+}
+
+message Command {
+    oneof specialized {
+        DumpViewsCommand dump_views_command = 1;
+    }
+}
+
+message Response {
+    oneof specialized {
+        DumpViewsResponse dump_views_response = 1;
+    }
+}
+
+

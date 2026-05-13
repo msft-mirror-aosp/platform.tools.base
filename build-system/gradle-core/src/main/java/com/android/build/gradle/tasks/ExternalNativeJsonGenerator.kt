@@ -16,6 +16,7 @@
 package com.android.build.gradle.tasks
 
 import com.android.SdkConstants
+import com.android.build.gradle.internal.cxx.configure.FingerPrintFileWritten
 import com.android.build.gradle.internal.cxx.configure.createConfigurationInvalidationState
 import com.android.build.gradle.internal.cxx.configure.encode
 import com.android.build.gradle.internal.cxx.configure.recordConfigurationFingerPrint
@@ -184,11 +185,11 @@ internal constructor(
           // Log information about why configuration was executed or not
           logStructured { encoder -> invalidationState.encode(encoder) }
 
-          // Remove the fingerprint file if it exists. This ensures that any fingerprint
-          // file is written as a result of a successful configure.
-          abi.lastConfigureFingerPrintFile.delete()
-
           if (invalidationState.shouldConfigure) {
+            // Remove the fingerprint file if it exists. This ensures that any fingerprint
+            // file is written as a result of a successful configure.
+            abi.lastConfigureFingerPrintFile.delete()
+
             infoln("rebuilding JSON %s due to:", abi.jsonFile)
             for (reason in invalidationState.shouldConfigureReasonMessages) {
               infoln(reason)
@@ -265,13 +266,17 @@ internal constructor(
 
             // Record the outcome. JSON was built.
             variantStats.outcome = GenerationOutcome.SUCCESS_BUILT
+
+            // Record well-known files that were written
+            invalidationState.recordConfigurationFingerPrint()
+
+            logStructured { encoder ->
+              FingerPrintFileWritten.newBuilder().setFingerPrintFile(abi.lastConfigureFingerPrintFile.path).build().encode(encoder)
+            }
           } else {
             infoln("JSON '%s' was up-to-date", abi.jsonFile)
             variantStats.outcome = GenerationOutcome.SUCCESS_UP_TO_DATE
           }
-
-          // Record well-known files that were written
-          invalidationState.recordConfigurationFingerPrint()
 
           infoln("JSON generation completed without problems")
         } catch (e: GradleException) {

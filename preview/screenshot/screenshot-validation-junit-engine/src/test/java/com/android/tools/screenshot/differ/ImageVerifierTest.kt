@@ -18,7 +18,6 @@ package com.android.tools.screenshot.differ
 
 import com.google.common.truth.Truth.assertThat
 import java.io.File
-import java.io.FileNotFoundException
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertThrows
 import org.junit.Rule
@@ -38,8 +37,8 @@ class ImageVerifierTest {
     val imageVerifier = ImageVerifier(PixelPerfect())
     val diffImage = File(diffDir, "diff.png")
     val error =
-      assertThrows(FileNotFoundException::class.java) {
-        imageVerifier.verify("newImagePath", createImageFile("circle", refDir), diffImage.absolutePath)
+      assertThrows(ScreenshotImageNotFoundException::class.java) {
+        imageVerifier.verify(File(tempDir.root, "newImagePath"), File(createImageFile("circle", refDir)), diffImage, tempDir.root)
       }
     assertThat(error).hasMessageThat().contains("Preview image file does not exist (newImagePath)")
     assertThat(diffImage.exists()).isFalse()
@@ -51,7 +50,9 @@ class ImageVerifierTest {
     val diffImage = File(diffDir, "diff.png")
     val newImagePath = createImageFile("circle", newDir)
     val error =
-      assertThrows(FileNotFoundException::class.java) { imageVerifier.verify(newImagePath, "referenceImagePath", diffImage.absolutePath) }
+      assertThrows(ScreenshotImageNotFoundException::class.java) {
+        imageVerifier.verify(File(newImagePath), File(tempDir.root, "referenceImagePath"), diffImage, tempDir.root)
+      }
     assertThat(error).hasMessageThat().contains("Reference image file does not exist (referenceImagePath)")
     assertThat(diffImage.exists()).isFalse()
   }
@@ -60,7 +61,8 @@ class ImageVerifierTest {
   fun verify_identicalImages_returnsSimilar() {
     val imageVerifier = ImageVerifier(PixelPerfect())
     val diffImage = File(diffDir, "diff.png")
-    val result = imageVerifier.verify(createImageFile("circle", newDir), createImageFile("circle", refDir), diffImage.absolutePath)
+    val result =
+      imageVerifier.verify(File(createImageFile("circle", newDir)), File(createImageFile("circle", refDir)), diffImage, tempDir.root)
 
     assertThat(result.diffResult).isInstanceOf(ImageDiffer.DiffResult.Similar::class.java)
     assertThat(result.diffPercent).isEqualTo(0.0)
@@ -72,7 +74,8 @@ class ImageVerifierTest {
     // The difference between circle.png and star.png is about 27.22%
     val imageVerifier = ImageVerifier(PixelPerfect(imageDiffThreshold = 0.28f))
     val diffImage = File(diffDir, "diff.png")
-    val result = imageVerifier.verify(createImageFile("circle", newDir), createImageFile("star", refDir), diffImage.absolutePath)
+    val result =
+      imageVerifier.verify(File(createImageFile("circle", newDir)), File(createImageFile("star", refDir)), diffImage, tempDir.root)
 
     assertThat(result.diffResult).isInstanceOf(ImageDiffer.DiffResult.Similar::class.java)
     assertThat(result.diffPercent).isNotEqualTo(0.0)
@@ -84,7 +87,8 @@ class ImageVerifierTest {
   fun verify_differentImages_returnsDifferent() {
     val imageVerifier = ImageVerifier(PixelPerfect())
     val diffImage = File(diffDir, "diff.png")
-    val result = imageVerifier.verify(createImageFile("star", newDir), createImageFile("circle", refDir), diffImage.absolutePath)
+    val result =
+      imageVerifier.verify(File(createImageFile("star", newDir)), File(createImageFile("circle", refDir)), diffImage, tempDir.root)
 
     assertThat(result.diffResult).isInstanceOf(ImageDiffer.DiffResult.Different::class.java)
     assertNotNull(result.diffPercent)
@@ -95,7 +99,7 @@ class ImageVerifierTest {
     // Verify that the generated diff image is what we expect.
     val diffCheckResult =
       ImageVerifier(PixelPerfect())
-        .verify(diffImage.absolutePath, createImageFile("PixelPerfect_diff", refDir), File(diffDir, "diff2.png").absolutePath)
+        .verify(diffImage, File(createImageFile("PixelPerfect_diff", refDir)), File(diffDir, "diff2.png"), tempDir.root)
 
     assertThat(diffCheckResult.diffResult).isInstanceOf(ImageDiffer.DiffResult.Similar::class.java)
     assertThat(diffCheckResult.diffPercent).isEqualTo(0.0)
@@ -106,15 +110,41 @@ class ImageVerifierTest {
     val imageVerifier = ImageVerifier(PixelPerfect())
     val diffImage = File(diffDir, "diff.png")
     val error =
-      assertThrows(ImageVerifier.ImageComparisonAssertionError::class.java) {
+      assertThrows(ImageComparisonAssertionError::class.java) {
         imageVerifier.verify(
-          createImageFile("horizontal_rectangle", newDir),
-          createImageFile("vertical_rectangle", refDir),
-          diffImage.absolutePath,
+          File(createImageFile("horizontal_rectangle", newDir)),
+          File(createImageFile("vertical_rectangle", refDir)),
+          diffImage,
+          tempDir.root,
         )
       }
     assertThat(error).hasMessageThat().contains("Size Mismatch. Reference image size: 72x128. Rendered image size: 128x72")
+    assertThat(error).hasMessageThat().contains("Diff Image: ${File("diff", "diff.png").path}")
     assertThat(diffImage.exists()).isFalse()
+  }
+
+  @Test
+  fun verify_emptyImageFile_throws() {
+    val imageVerifier = ImageVerifier(PixelPerfect())
+    val diffImage = File(diffDir, "diff.png")
+    val emptyFile = File(newDir, "empty.png").apply { createNewFile() }
+    val refFile = File(createImageFile("circle", refDir))
+
+    val error =
+      assertThrows(ScreenshotImageInvalidException::class.java) { imageVerifier.verify(emptyFile, refFile, diffImage, tempDir.root) }
+    assertThat(error).hasMessageThat().contains("Cannot read preview image file")
+  }
+
+  @Test
+  fun verify_emptyReferenceImageFile_throws() {
+    val imageVerifier = ImageVerifier(PixelPerfect())
+    val diffImage = File(diffDir, "diff.png")
+    val newFile = File(createImageFile("circle", newDir))
+    val emptyFile = File(refDir, "empty.png").apply { createNewFile() }
+
+    val error =
+      assertThrows(ScreenshotImageInvalidException::class.java) { imageVerifier.verify(newFile, emptyFile, diffImage, tempDir.root) }
+    assertThat(error).hasMessageThat().contains("Cannot read reference image file")
   }
 
   /** Create a reference image for this test from the supplied test image [name]. */

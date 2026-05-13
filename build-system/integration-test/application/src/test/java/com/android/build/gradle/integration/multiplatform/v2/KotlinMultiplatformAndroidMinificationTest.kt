@@ -342,12 +342,11 @@ class KotlinMultiplatformAndroidMinificationTest {
     }
   }
 
-  @Test
-  fun `test disabling consumer proguard rules from kmp lib`() {
+  fun verifyConsumerProguardRules(consumerKeepRulesLine: String, expectedClasses: List<String>) {
     TestFileUtils.searchAndReplace(
       project.getSubproject("kmpFirstLib").ktsBuildFile,
       "consumerKeepRules.publish = true",
-      "consumerKeepRules.publish = false",
+      consumerKeepRulesLine,
     )
     FileUtils.writeToFile(
       project.getSubproject("kmpFirstLib").file("consumer-proguard-rules.pro"),
@@ -362,8 +361,30 @@ class KotlinMultiplatformAndroidMinificationTest {
 
     executor().run(":app:assembleDebug")
 
-    project.getSubproject("app").assertApk(ApkSelector.DEBUG) { mainDex().containsExactly("com/example/kmpfirstlib/KmpAndroidActivity") }
+    project.getSubproject("app").assertApk(ApkSelector.DEBUG) { mainDex().containsExactly(expectedClasses) }
   }
+
+  @Test
+  fun `test disabling consumer proguard rules from kmp lib`() =
+    verifyConsumerProguardRules(
+      consumerKeepRulesLine = "consumerKeepRules.publish = false",
+      expectedClasses = listOf("com/example/kmpfirstlib/KmpAndroidActivity"),
+    )
+
+  @Test
+  fun `test consumer proguard rules default`() =
+    verifyConsumerProguardRules(
+      consumerKeepRulesLine = "", // use default
+      expectedClasses =
+        listOf(
+          "com/example/kmpfirstlib/KmpAndroidActivity",
+          "com/example/kmpfirstlib/KmpAndroidFirstLibClass",
+          "com/example/kmpfirstlib/KmpCommonFirstLibClass",
+          "com/example/kmplibraryplugin/KmpLibraryPluginAndroidClass",
+          "com/example/kmplibraryplugin/KmpLibraryPluginCommonClass",
+          "com/example/kmpsecondlib/KmpAndroidSecondLibClass",
+        ),
+    )
 
   private fun executor() = project.executor().withFailOnWarning(false) // b/455891987
 }

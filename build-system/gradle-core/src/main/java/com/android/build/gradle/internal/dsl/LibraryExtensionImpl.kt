@@ -19,6 +19,10 @@ package com.android.build.gradle.internal.dsl
 import com.android.build.api.dsl.AndroidLibrarySourceSet
 import com.android.build.api.dsl.ApkSigningConfig
 import com.android.build.api.dsl.ComposeOptions
+import com.android.build.api.dsl.DeclarativeLibraryBuildType
+import com.android.build.api.dsl.DeclarativeLibraryExtension
+import com.android.build.api.dsl.DeclarativeLibraryFlavor
+import com.android.build.api.dsl.DependenciesExtension
 import com.android.build.api.dsl.LibraryAndroidResources
 import com.android.build.api.dsl.LibraryBuildFeatures
 import com.android.build.api.dsl.LibraryBuildType
@@ -36,10 +40,31 @@ import com.android.build.gradle.internal.dsl.ProductFlavor as InternalProductFla
 import com.android.build.gradle.internal.plugins.DslContainerProvider
 import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.options.BooleanOption
+import com.android.builder.core.ComponentTypeImpl
 import java.util.function.Supplier
 import javax.inject.Inject
 import org.gradle.api.Action
+import org.gradle.api.Incubating
 import org.gradle.api.NamedDomainObjectContainer
+
+@Incubating
+abstract class DeclarativeLibraryExtensionImpl
+@Inject
+constructor(
+  dslServices: DslServices,
+  dslContainers: DslContainerProvider<LibraryDefaultConfig, LibraryBuildType, LibraryProductFlavor, SigningConfig>,
+) : LibraryExtensionImpl(dslServices, dslContainers), DeclarativeLibraryExtension {
+
+  override val dependencies: DependenciesExtension = dslServices.newInstance(DependenciesExtension::class.java)
+
+  override val buildTypes: NamedDomainObjectContainer<DeclarativeLibraryBuildType> =
+    dslServices.domainObjectContainer(DeclarativeBuildType::class.java, DeclarativeBuildTypeFactory(dslServices, ComponentTypeImpl.LIBRARY))
+      as NamedDomainObjectContainer<DeclarativeLibraryBuildType>
+
+  override val productFlavors: NamedDomainObjectContainer<DeclarativeLibraryFlavor> =
+    dslServices.domainObjectContainer(DeclarativeProductFlavor::class.java, DeclarativeProductFlavorFactory(dslServices))
+      as NamedDomainObjectContainer<DeclarativeLibraryFlavor>
+}
 
 /** Internal implementation of the 'new' DSL interface */
 abstract class LibraryExtensionImpl
@@ -124,7 +149,7 @@ constructor(
   }
 
   override fun buildTypes(action: NamedDomainObjectContainer<LibraryBuildType>.() -> Unit) {
-    action(buildTypes)
+    action(buildTypes as NamedDomainObjectContainer<LibraryBuildType>)
   }
 
   override fun buildTypes(action: Action<in NamedDomainObjectContainer<BuildType>>) {
@@ -229,7 +254,7 @@ constructor(
   }
 
   override fun productFlavors(action: NamedDomainObjectContainer<LibraryProductFlavor>.() -> Unit) {
-    action.invoke(productFlavors)
+    action.invoke(productFlavors as NamedDomainObjectContainer<LibraryProductFlavor>)
   }
 
   override fun defaultConfig(action: Action<InternalDefaultConfig>) {

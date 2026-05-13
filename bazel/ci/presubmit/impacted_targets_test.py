@@ -71,12 +71,10 @@ class ImpactedTargetsTest(absltest.TestCase):
         impacted_targets.ImpactedTarget('target3', 1, 2),
         impacted_targets.ImpactedTarget('target4', 2, 3),
     ]
-    expected_baseline_targets = ['target2', 'target3']
-
     self._mock_generate_hash_file('hash-file')
     self._mock_get_impacted_targets(expected_impacted_targets)
-    self.build_env.bazel_query.return_value.stdout = '\n'.join(
-        expected_baseline_targets,
+    self.build_env.bazel_cquery.return_value.stdout = '\n'.join(
+        ['target2 (configA)', 'target3 (configB)'],
     ).encode('utf-8')
 
     parent_hash_path = self.build_env.tmp_path / 'parent.json'
@@ -94,7 +92,7 @@ class ImpactedTargetsTest(absltest.TestCase):
         info,
         impacted_targets.ImpactedTargetsInfo(
             all_targets=expected_impacted_targets,
-            baseline_targets=expected_baseline_targets,
+            baseline_targets=['target2', 'target3'],
         ),
     )
 

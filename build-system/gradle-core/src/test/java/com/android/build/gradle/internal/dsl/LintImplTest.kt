@@ -225,6 +225,12 @@ class LintImplTest {
   }
 
   @Test
+  fun testPrintTextReport() {
+    lint { printTextReport = true }
+    assertThat(lint.printTextReport).named("lint.printTextReport").isTrue()
+  }
+
+  @Test
   fun testHtmlOutput() {
     lint { htmlOutput = File("lint_report.html") }
     assertThat(lint.htmlReport).named("lint.htmlReport").isTrue()

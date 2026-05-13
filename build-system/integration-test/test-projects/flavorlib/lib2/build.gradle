@@ -1,6 +1,7 @@
 apply plugin: 'com.android.library'
 
 android {
+    enableKotlin = false
     namespace = "com.android.tests.flavorlib.lib"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()

@@ -13,18 +13,33 @@ android {
     buildToolsVersion = libs.versions.buildToolsVersion.get()
 }
 
-android.applicationVariants.all { variant ->
-    File sourceFolder = file("${buildDir}/customCode/${variant.dirName}")
-    variant.addJavaSourceFoldersToModel(sourceFolder)
+abstract class SingleOutputTask extends DefaultTask {
+    @OutputDirectory
+    abstract DirectoryProperty getOutputFolder()
 
-    def unitTestVariant = variant.unitTestVariant
-    if (unitTestVariant != null) {
-        File unitTestSourceFolder = file("${buildDir}/customCode/${unitTestVariant.dirName}-1")
-        unitTestVariant.addJavaSourceFoldersToModel(unitTestSourceFolder)
+    @TaskAction
+    void taskAction() {
+        // do nothing; task is only for setting the output folder
     }
 }
 
-android.unitTestVariants.all { unitTestVariant ->
-    File unitTestSourceFolder = file("${buildDir}/customCode/${unitTestVariant.dirName}-2")
-    unitTestVariant.addJavaSourceFoldersToModel(unitTestSourceFolder)
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        def javaGenerationTask = tasks.register("generatedJavaFor${variant.name.capitalize()}", SingleOutputTask) {
+            outputFolder.set(project.layout.buildDirectory.dir("customCode/${variant.name}"))
+        }
+        variant.sources.java.addGeneratedSourceDirectory(javaGenerationTask, { it.getOutputFolder() })
+
+        if (variant.unitTest != null) {
+            def unitTestTask1 = tasks.register("generatedJavaFor${variant.unitTest.name.capitalize()}1", SingleOutputTask) {
+                outputFolder.set(project.layout.buildDirectory.dir("customCode/${variant.unitTest.name}-1"))
+            }
+            variant.unitTest.sources.java.addGeneratedSourceDirectory(unitTestTask1, { it.getOutputFolder() })
+
+            def unitTestTask2 = tasks.register("generatedJavaFor${variant.unitTest.name.capitalize()}2", SingleOutputTask) {
+                outputFolder.set(project.layout.buildDirectory.dir("customCode/${variant.unitTest.name}-2"))
+            }
+            variant.unitTest.sources.java.addGeneratedSourceDirectory(unitTestTask2, { it.getOutputFolder() })
+        }
+    }
 }

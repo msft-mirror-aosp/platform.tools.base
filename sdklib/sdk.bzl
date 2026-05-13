@@ -1,6 +1,6 @@
-load("//tools/base/bazel/sdk:sdk_utils.bzl", "calculate_jar_name_for_sdk_package", "tool_start_script")
 load("@rules_license//rules_gathering:gather_metadata.bzl", "gather_metadata_info")
 load("@rules_license//rules_gathering:gathering_providers.bzl", "TransitiveMetadataInfo")
+load("//tools/base/bazel/sdk:sdk_utils.bzl", "calculate_jar_name_for_sdk_package", "tool_start_script")
 
 platforms = ["win", "linux", "mac"]
 
@@ -76,15 +76,15 @@ def _combine_licenses_impl(ctx):
     license_infos = set([])
     for dep in ctx.attr.deps:
         if not TransitiveMetadataInfo in dep:
-          continue
+            continue
         metadata = dep[TransitiveMetadataInfo]
         for license_info in metadata.licenses.to_list():
-          if license_info in license_infos:
-            continue
-          license_infos.add(license_info)
-          notice_link = ctx.actions.declare_file(license_info.label.name + ".NOTICE")
-          ctx.actions.symlink(output=notice_link, target_file=license_info.license_text)
-          inputs.append(notice_link)
+            if license_info in license_infos:
+                continue
+            license_infos.add(license_info)
+            notice_link = ctx.actions.declare_file(license_info.label.name + ".NOTICE")
+            ctx.actions.symlink(output = notice_link, target_file = license_info.license_text)
+            inputs.append(notice_link)
 
     ctx.actions.run(
         inputs = inputs,
@@ -107,19 +107,49 @@ def _package_component_impl(ctx):
     args = ["c", ctx.outputs.out.path]
     for bin in ctx.attr.bins:
         file = bin.files.to_list()[0]
-        args.append("cmdline-tools/bin/%s=%s" % (file.basename, file.path))
+        prefix = ctx.attr.bin_prefix + "/" if ctx.attr.bin_prefix else ""
+        args.append("%s%s=%s" % (prefix, file.basename, file.path))
         inputs += [file]
 
     runtime_jars = depset(transitive = [java_lib[JavaInfo].transitive_runtime_jars for java_lib in ctx.attr.java_libs])
     runtime_jar_names = {}
+    internal_jars = []
     for jar in runtime_jars.to_list() + [j.files.to_list()[0] for j in ctx.attr.other_libs]:
         name = calculate_jar_name_for_sdk_package(jar.short_path)
         existing = runtime_jar_names.get(name)
         if existing:
             fail("Multiple jars have same name for SDK component with the same name! name= " + name + " jars= " + existing.path + "       " + jar.path)
         runtime_jar_names[name] = jar
-        args.append("cmdline-tools/lib/%s=%s" % (name, jar.path))
-        inputs += [jar]
+
+        if ctx.attr.merge_internal_jars and not name.startswith("external/"):
+            internal_jars.append(jar)
+        else:
+            prefix = ctx.attr.lib_prefix + "/" if ctx.attr.lib_prefix else ""
+            args.append("%s%s=%s" % (prefix, name, jar.path))
+            inputs += [jar]
+
+    if ctx.attr.merge_internal_jars and internal_jars:
+        merged_jar = ctx.actions.declare_file(ctx.attr.merged_jar_name)
+        sj_args = ctx.actions.args()
+        sj_args.add("--normalize")
+        sj_args.add("--exclude_build_data")
+        sj_args.add("--dont_change_compression")
+        if not ctx.attr.allow_duplicates:
+            sj_args.add("--no_duplicates")
+        sj_args.add("--output", merged_jar)
+        sj_args.add_all("--sources", internal_jars)
+
+        ctx.actions.run(
+            inputs = internal_jars,
+            outputs = [merged_jar],
+            arguments = [sj_args],
+            mnemonic = "singlejar",
+            executable = ctx.executable._singlejar,
+        )
+
+        args.append("%s=%s" % (ctx.attr.merged_jar_name, merged_jar.path))
+        inputs.append(merged_jar)
+
     for other_file, other_location in ctx.attr.others.items():
         args.append(other_location + "=" + other_file.files.to_list()[0].path)
         inputs += other_file.files.to_list()
@@ -140,6 +170,16 @@ package_component = rule(
         "java_libs": attr.label_list(),
         "other_libs": attr.label_list(allow_files = True),
         "others": attr.label_keyed_string_dict(allow_files = True),
+        "bin_prefix": attr.string(default = "cmdline-tools/bin"),
+        "lib_prefix": attr.string(default = "cmdline-tools/lib"),
+        "merge_internal_jars": attr.bool(default = False),
+        "merged_jar_name": attr.string(default = "main.jar"),
+        "allow_duplicates": attr.bool(default = False),
+        "_singlejar": attr.label(
+            default = Label("@bazel_tools//tools/jdk:singlejar"),
+            cfg = "host",
+            executable = True,
+        ),
         "_zipper": attr.label(
             default = Label("@bazel_tools//tools/zip:zipper"),
             cfg = "host",

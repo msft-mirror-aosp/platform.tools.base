@@ -28,6 +28,14 @@ import com.android.build.gradle.internal.tasks.DexMergingAction
 import com.android.build.gradle.internal.tasks.creationconfig.DexMergingCreationConfig
 import org.gradle.api.file.FileCollection
 
+/**
+ * Returns true if the universal global synthetics optimization is enabled for this configuration. This optimization avoids generating
+ * per-class .globals files during intermediate dexing, instead relying on a single upstream task to generate a universal globals.dex for
+ * modern builds.
+ */
+val ApkCreationConfig.useUniversalGlobalSyntheticsDex: Boolean
+  get() = this.debuggable && this.enableGlobalSynthetics && this.minSdk.apiLevel >= 21
+
 fun getGlobalSyntheticsInput(
   creationConfig: ApkCreationConfig,
   mergeAction: DexMergingAction,

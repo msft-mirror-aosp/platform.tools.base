@@ -22,29 +22,27 @@ import javax.imageio.ImageIO
 
 /** Update reference image if there is difference. */
 class ImageUpdater(private val imageDiffer: ImageDiffer) {
-  fun updateIfDifferent(newImagePath: String, referenceImagePath: String) {
-    val newImageFile = File(newImagePath)
+  fun updateIfDifferent(newImageFile: File, referenceImageFile: File, projectRoot: File) {
     if (!newImageFile.exists()) {
-      throw FileNotFoundException("Preview image file does not exist ($newImagePath).")
+      throw FileNotFoundException("Preview image file does not exist (${newImageFile.relativeTo(projectRoot).path}).")
     }
 
-    val refImageFile = File(referenceImagePath)
-    if (!refImageFile.exists()) {
-      newImageFile.copyTo(refImageFile, overwrite = true)
+    if (!referenceImageFile.exists()) {
+      newImageFile.copyTo(referenceImageFile, overwrite = true)
       return
     }
 
     val actual = ImageIO.read(newImageFile)
-    val reference = ImageIO.read(refImageFile)
+    val reference = ImageIO.read(referenceImageFile)
 
     if (actual.width != reference.width || actual.height != reference.height) {
-      newImageFile.copyTo(refImageFile, overwrite = true)
+      newImageFile.copyTo(referenceImageFile, overwrite = true)
       return
     }
 
     val diff = imageDiffer.diff(actual, reference)
     if (diff is ImageDiffer.DiffResult.Different) {
-      newImageFile.copyTo(refImageFile, overwrite = true)
+      newImageFile.copyTo(referenceImageFile, overwrite = true)
       return
     }
   }

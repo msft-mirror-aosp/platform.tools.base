@@ -15,9 +15,14 @@
  */
 package com.android.tools.deployer;
 
+import com.android.tools.deployer.common.ApkDiffer;
+import com.android.tools.deployer.common.ChangeType;
+import com.android.tools.deployer.common.DeployerException;
+import com.android.tools.deployer.common.OverlayId;
 import com.android.tools.deployer.model.Apk;
 import com.android.tools.deployer.model.ApkEntry;
 import com.android.tools.deployer.model.FileDiff;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;

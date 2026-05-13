@@ -16,11 +16,11 @@
 package com.android.tools.deployer.deployerrunner
 
 import com.android.tools.deployer.AdbInstaller
-import com.android.tools.deployer.DeployMetric
-import com.android.tools.deployer.DeploymentCacheDatabase
 import com.android.tools.deployer.SqlApkFileDatabase
-import com.android.tools.deployer.UIService
 import com.android.tools.deployer.Version
+import com.android.tools.deployer.common.DeployMetric
+import com.android.tools.deployer.common.DeploymentCacheDatabase
+import com.android.tools.deployer.common.UIService
 import com.android.tools.deployer.devices.FakeDevice
 import com.android.tools.deployer.rules.ApiLevel
 import com.android.tools.deployer.rules.FakeDeviceConnection
@@ -133,6 +133,9 @@ abstract class DeployRunnerTestBase {
   open fun tearDown() {
     val currentTime = System.currentTimeMillis()
     Trace.end()
+    // Flush after each run to avoid running out of memory by trying to trace the full suite of tests.
+    // This will result in a trace file per-test rather than a single file for all tests.
+    Trace.flush()
     if (benchmark != null) {
       val timeTaken = currentTime - startTime
 

@@ -96,8 +96,8 @@ interface CallGraph {
   fun dump(filter: (Edge) -> Boolean = { true }) = buildString {
     for (node in nodes.sortedBy { it.shortName }) {
       val callees = node.edges.filter(filter)
-      appendln(node.shortName)
-      callees.forEach { appendln("    ${it.node.shortName} [${it.kind}]") }
+      appendLine(node.shortName)
+      callees.forEach { appendLine("    ${it.node.shortName} [${it.kind}]") }
     }
   }
 

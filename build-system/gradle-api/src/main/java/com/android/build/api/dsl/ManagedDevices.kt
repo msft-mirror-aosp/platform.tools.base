@@ -29,7 +29,7 @@ interface ManagedDevices {
    *
    * These APIs are experimental and may change without notice.
    */
-  val allDevices: ExtensiblePolymorphicDomainObjectContainer<Device>
+  @get:HiddenInDefinition val allDevices: ExtensiblePolymorphicDomainObjectContainer<Device>
 
   /**
    * Convenience container for specifying managed devices of type [ManagedVirtualDevice].

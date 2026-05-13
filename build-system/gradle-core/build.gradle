@@ -10,6 +10,7 @@ plugins {
     id 'com.google.protobuf'
     id 'idea'
     id 'jvm-toolchains'
+    id 'org.gradle.plugin-compatibility' version '1.0.0'
 }
 
 idea.module {
@@ -81,6 +82,13 @@ publishing {
  */
 gradlePlugin {
     testSourceSets sourceSets.apiTest
+    plugins.all {
+        compatibility {
+            features {
+                configurationCache = true
+            }
+        }
+    }
     plugins {
         comAndroidApplication {
             id = "com.android.application"
@@ -117,10 +125,6 @@ gradlePlugin {
         comAndroidFusedLibrary {
             id = "com.android.fused-library"
             implementationClass = "com.android.build.gradle.api.FusedLibraryPlugin"
-        }
-        comAndroidSdkLibrary {
-            id = "com.android.privacy-sandbox-sdk"
-            implementationClass = "com.android.build.gradle.api.PrivacySandboxSdkPlugin"
         }
         comAndroidKotlinMultiplatform {
             id = "com.android.kotlin.multiplatform.library"

@@ -56,6 +56,7 @@ import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtLambdaExpression
 import org.jetbrains.kotlin.psi.KtNameReferenceExpression
 import org.jetbrains.kotlin.psi.KtNamedFunction
+import org.jetbrains.kotlin.psi.KtOperationExpression
 import org.jetbrains.kotlin.psi.KtParenthesizedExpression
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtTreeVisitorVoid
@@ -993,6 +994,11 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
       arguments = emptyList()
     }
 
+    // Many of the original functions support null as an argument, but the replacement extension
+    // function has a non-nullable receiver. This could lead to a type error, or worse, if the type
+    // is flexible, an exception that does not occur in the original call.
+    receiver?.let { analyze(it) { if (!it.isDefinitelyNotNull) return false } }
+
     // Make sure we don't have a symbol conflict
     val import = "$extensionPackage.$extensionMethod"
     if (context.definesConflictingSymbol(extensionMethod, import, isProperty)) {
@@ -1211,7 +1217,11 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
     val sb = StringBuilder()
 
     if (receiver != null) {
-      val needsParens = receiver is KtBinaryExpression
+      // If the receiver is something like "a < b", "a as Something", "+a" then it needs parens. You
+      // might think we could just check KtBinaryExpression and KtUnaryExpression, but the type
+      // hierarchy is not what you would expect; KtOperationExpression is at the top of the
+      // hierarchy of all things like binary and unary expressions.
+      val needsParens = receiver is KtOperationExpression
       if (needsParens) {
         sb.append('(')
       }

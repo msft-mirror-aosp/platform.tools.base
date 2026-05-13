@@ -18,8 +18,11 @@ package com.android.tools.deployer;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.util.List;
+import com.android.tools.deployer.common.InstallOptions;
+
 import org.junit.Test;
+
+import java.util.List;
 
 public class InstallOptionsTest {
 

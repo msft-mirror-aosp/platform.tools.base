@@ -29,14 +29,14 @@ internal fun findProperty(propertiesNode: Element?, key: String): String? {
 }
 
 internal fun parseSingleCounter(counters: List<Element>, type: String): CoverageInfo {
-  val counter = counters.find { it.getAttribute(ATTR_TYPE) == type } ?: return CoverageInfo(0, 0, 0)
+  val counter = counters.find { it.getAttribute(ATTR_TYPE) == type } ?: return CoverageInfo(null, 0, 0)
   val missed = counter.getAttribute(ATTR_MISSED).toInt()
   val covered = counter.getAttribute(ATTR_COVERED).toInt()
   val total = missed + covered
   return CoverageInfo(calculatePercent(covered, total), covered, total)
 }
 
-internal fun calculatePercent(covered: Int, total: Int): Int {
-  if (total == 0) return 0
+internal fun calculatePercent(covered: Int, total: Int): Int? {
+  if (total == 0) return null
   return (covered * 100) / total
 }

@@ -28,6 +28,7 @@ import com.android.build.gradle.internal.component.ConsumableCreationConfig
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.dependency.AarToRClassTransform
+import com.android.build.gradle.internal.ide.dependencies.getProjectBuildTreePath
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope.ALL
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope.PROJECT
@@ -47,6 +48,7 @@ import com.android.build.gradle.options.BooleanOption
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.core.ComponentType
 import com.android.builder.dexing.KeepRuleFile
+import com.google.common.annotations.VisibleForTesting
 import com.google.common.base.Preconditions
 import java.nio.file.Files
 import java.nio.file.Path
@@ -110,6 +112,9 @@ abstract class ProguardConfigurableTask(@get:Internal val projectLayout: Project
 
   @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val configurationFiles: ConfigurableFileCollection
 
+  @get:InputFiles @get:Optional @get:PathSensitive(PathSensitivity.RELATIVE) abstract val aaptProguardFiles: ConfigurableFileCollection
+  @get:InputFiles @get:Optional @get:PathSensitive(PathSensitivity.RELATIVE) abstract val featureProguardFiles: ConfigurableFileCollection
+
   @get:Internal
   lateinit var libraryKeepRules: ArtifactCollection
     private set
@@ -122,6 +127,8 @@ abstract class ProguardConfigurableTask(@get:Internal val projectLayout: Project
 
   @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val libraryKeepRulesFileCollection: ConfigurableFileCollection
 
+  @get:Input abstract val buildId: Property<String>
+  @get:Input abstract val localProjectPath: Property<String>
   @get:Input abstract val ignoreFromInKeepRules: SetProperty<String>
 
   @get:Input abstract val ignoreFromAllExternalDependenciesInKeepRules: Property<Boolean>
@@ -133,6 +140,51 @@ abstract class ProguardConfigurableTask(@get:Internal val projectLayout: Project
   @get:Input abstract val hasAllAccessTransformers: Property<Boolean>
 
   @get:Inject abstract val objectFactory: ObjectFactory
+
+  /** Returns all keep rules from the various inputs, identified with their origins. */
+  internal fun obtainKeepRules(): List<KeepRuleFile> {
+    return obtainKeepRules(libraryKeepRules)
+  }
+
+  @VisibleForTesting
+  internal fun obtainKeepRules(libraryKeepRules: ArtifactCollection): List<KeepRuleFile> {
+    val keepRulesFromConfigurationFiles =
+      com.android.build.gradle.internal.utils.getFilteredFiles(
+        ignoreFromInKeepRules.get(),
+        ignoreFromAllExternalDependenciesInKeepRules.get(),
+        libraryKeepRules,
+        configurationFiles,
+        com.android.build.gradle.internal.LoggerWrapper.getLogger(this::class.java),
+        com.android.build.gradle.internal.utils.LibraryArtifactType.KEEP_RULES,
+      )
+
+    val aaptKeepRules = aaptProguardFiles.asFileTree.files.map { KeepRuleFile.GeneratedOrigin(AAPT2_RULES_ORIGIN, it.toPath().toString()) }
+
+    val generatedKeepRules =
+      generatedProguardFile.asFileTree.files.map { KeepRuleFile.GeneratedOrigin(GENERATED_RULES_ORIGIN, it.toPath().toString()) }
+
+    val featureKeepRules =
+      featureProguardFiles.asFileTree.files.map { KeepRuleFile.GeneratedOrigin(FEATURE_RULES_ORIGIN, it.toPath().toString()) }
+
+    val keepRulesTree =
+      when {
+        componentType.orNull?.isAar == true -> {
+          checkAarKeepRulesDirectories(aarKeepRulesDirectories, projectLayout.projectDirectory.asFile)
+          aarKeepRulesFiles.asFileTree
+        }
+        else -> {
+          checkKeepRulesDirectories(keepRulesDirectories, projectLayout.projectDirectory.asFile)
+          keepRulesFiles.asFileTree
+        }
+      }
+
+    val projectKeepRules =
+      keepRulesTree.files.map {
+        KeepRuleFile.LocalProjectOrigin(buildId = buildId.get(), projectPath = localProjectPath.get(), filePath = it.path)
+      }
+
+    return keepRulesFromConfigurationFiles + aaptKeepRules + generatedKeepRules + featureKeepRules + projectKeepRules
+  }
 
   /**
    * Users can have access to the default proguard file location through the VariantDimension.getDefaultProguardFile API. These files are
@@ -187,6 +239,12 @@ abstract class ProguardConfigurableTask(@get:Internal val projectLayout: Project
         false
       }
     }
+  }
+
+  companion object {
+    const val AAPT2_RULES_ORIGIN = "AAPT2 generated keep rules"
+    const val FEATURE_RULES_ORIGIN = "Feature ProGuard rules"
+    const val GENERATED_RULES_ORIGIN = "Generated ProGuard rules"
   }
 
   abstract class CreationAction<TaskT : ProguardConfigurableTask, CreationConfigT : ConsumableCreationConfig>
@@ -322,6 +380,8 @@ abstract class ProguardConfigurableTask(@get:Internal val projectLayout: Project
 
       task.shrinkingWithDynamicFeatures.set(shrinkingWithDynamicFeatures)
 
+      task.buildId.set(getProjectBuildTreePath(creationConfig.variantDependencies))
+      task.localProjectPath.set(creationConfig.services.projectInfo.path)
       val hasAllAccessTransformers =
         creationConfig.artifacts.forScope(Scope.ALL).getScopedArtifactsContainer(ScopedArtifact.CLASSES).artifactsAltered.get()
 
@@ -416,25 +476,23 @@ abstract class ProguardConfigurableTask(@get:Internal val projectLayout: Project
 
     private fun applyGeneratedProguardFiles(task: ProguardConfigurableTask, creationConfig: ConsumableCreationConfig) {
       task.generatedProguardFile.fromDisallowChanges(creationConfig.artifacts.get(GENERATED_PROGUARD_FILE))
-      task.configurationFiles.apply {
-        // R8's optimized shrinking does not need AAPT2-generated Proguard rules
-        if ((creationConfig as? ApplicationCreationConfig)?.runOptimizedShrinking() != true) {
-          if (task.shrinkingWithDynamicFeatures.get()) {
-            from(creationConfig.artifacts.get(InternalArtifactType.MERGED_AAPT_PROGUARD_FILE))
-          } else {
-            from(
-              Callable {
-                // Consume AAPT_PROGUARD_FILE only if it is produced (see b/319132114).
-                // The `Provider.isPresent` check needs to happen lazily when all
-                // producers/consumers have been finalized, so we do this inside a Callable.
-                creationConfig.artifacts.get(InternalArtifactType.AAPT_PROGUARD_FILE).takeIf { it.isPresent }
-              }
-            )
-          }
-        }
+      // R8's optimized shrinking does not need AAPT2-generated Proguard rules
+      if ((creationConfig as? ApplicationCreationConfig)?.runOptimizedShrinking() != true) {
         if (task.shrinkingWithDynamicFeatures.get()) {
-          from(getFeatureProguardRules(creationConfig))
+          task.aaptProguardFiles.from(creationConfig.artifacts.get(InternalArtifactType.MERGED_AAPT_PROGUARD_FILE))
+        } else {
+          task.aaptProguardFiles.from(
+            Callable {
+              // Consume AAPT_PROGUARD_FILE only if it is produced (see b/319132114).
+              // The `Provider.isPresent` check needs to happen lazily when all
+              // producers/consumers have been finalized, so we do this inside a Callable.
+              creationConfig.artifacts.get(InternalArtifactType.AAPT_PROGUARD_FILE).takeIf { it.isPresent }
+            }
+          )
         }
+      }
+      if (task.shrinkingWithDynamicFeatures.get()) {
+        task.featureProguardFiles.from(getFeatureProguardRules(creationConfig))
       }
     }
 

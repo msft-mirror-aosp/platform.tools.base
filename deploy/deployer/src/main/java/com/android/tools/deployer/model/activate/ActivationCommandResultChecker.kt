@@ -21,6 +21,7 @@ import java.util.function.Consumer
 abstract class ActivationCommandResultChecker(
   protected val onWarning: Consumer<String>? = null,
   protected val onError: Consumer<String>? = null,
+  protected val context: ActivationContext = ActivationContext(),
 ) {
   enum class Status {
     UNKNOWN,

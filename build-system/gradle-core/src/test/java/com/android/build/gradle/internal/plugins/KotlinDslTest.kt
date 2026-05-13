@@ -18,19 +18,13 @@ package com.android.build.gradle.internal.plugins
 
 import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.gradle.internal.dsl.AgpDslLockedException
-import com.android.build.gradle.internal.dsl.BaseAppModuleExtension
 import com.android.build.gradle.internal.dsl.CompileSdkVersionImpl
 import com.android.build.gradle.internal.fixture.TestConstants
 import com.android.build.gradle.internal.fixture.TestProjects
-import com.android.build.gradle.internal.packaging.defaultExcludes
-import com.android.build.gradle.internal.packaging.defaultMerges
 import com.android.build.gradle.internal.utils.importOfflineMavenRepo
-import com.android.build.gradle.options.BooleanOption
-import com.google.common.collect.ImmutableList
 import com.google.common.collect.ImmutableMap
 import com.google.common.truth.StringSubject
 import com.google.common.truth.Truth.assertThat
-import com.google.common.truth.TruthJUnit.assume
 import java.io.File
 import kotlin.test.assertFailsWith
 import org.gradle.api.Project
@@ -96,6 +90,10 @@ class KotlinDslTest {
       version = release(36)
       assertThat(version?.apiLevel).isEqualTo(36)
     }
+    assertThat(android.compileSdkHash).isEqualTo("android-36")
+
+    android.compileSdk { version = release(37) }
+    assertThat(android.compileSdkHash).isEqualTo("android-37.0")
 
     android.compileSdk {
       version =
@@ -109,6 +107,39 @@ class KotlinDslTest {
     android.compileSdk {}
 
     assertThat(android.compileSdkHash).isEqualTo("android-36.1-ext18")
+  }
+
+  @Test
+  fun testCompileSdkCanary() {
+    android.compileSdk {
+      version = canary("20250617")
+      assertThat(version?.canaryDate).isEqualTo("20250617")
+      assertThat(version?.codeName).isEqualTo("canary-20250617")
+    }
+    assertThat(android.compileSdkHash).isEqualTo("android-canary-20250617")
+  }
+
+  @Test
+  fun testCompileSdkBeta() {
+    android.compileSdk {
+      version = beta(36) { betaVersion = 1 }
+      assertThat(version?.apiLevel).isEqualTo(36)
+      assertThat(version?.betaVersion).isEqualTo(1)
+      assertThat(version?.codeName).isEqualTo("36.0-beta1")
+    }
+    assertThat(android.compileSdkHash).isEqualTo("android-36.0-beta1")
+
+    android.compileSdk {
+      version =
+        beta(36) {
+          minorApiLevel = 2
+          betaVersion = 3
+        }
+      assertThat(version?.minorApiLevel).isEqualTo(2)
+      assertThat(version?.betaVersion).isEqualTo(3)
+      assertThat(version?.codeName).isEqualTo("36.2-beta3")
+    }
+    assertThat(android.compileSdkHash).isEqualTo("android-36.2-beta3")
   }
 
   @Test
@@ -135,31 +166,6 @@ class KotlinDslTest {
     assertThat(android.compileSdkPreview).isNull()
 
     android.compileSdkPreview = null
-    assertThat(android.compileSdk).isNull()
-    assertThat(android.compileSdkPreview).isNull()
-
-    android.compileSdkVersion(29)
-    assertThat(android.compileSdk).isEqualTo(29)
-
-    android.compileSdkVersion("android-31")
-    assertThat(android.compileSdk).isEqualTo(31)
-
-    android.compileSdkVersion("android-S")
-    assertThat(android.compileSdkPreview).isEqualTo("S")
-
-    assertThat(attempt { android.compileSdkVersion("MadeUp") })
-      .isEqualTo(
-        """
-        Unsupported value: MadeUp. Format must be one of:
-        - android-31
-        - android-36.2
-        - android-31-ext2
-        - android-36.2-ext2
-        - android-T
-        - vendorName:addonName:31
-        """
-          .trimIndent()
-      )
     assertThat(android.compileSdk).isNull()
     assertThat(android.compileSdkPreview).isNull()
   }
@@ -485,62 +491,6 @@ class KotlinDslTest {
   }
 
   @Test
-  fun `baseFlavor source compatibility`() {
-    android.defaultConfig {
-      setTestFunctionalTest(true)
-      assertThat(testFunctionalTest).isTrue()
-      setTestHandleProfiling(true)
-      assertThat(testHandleProfiling).isTrue()
-      resConfig("one")
-      resConfigs("two", "three")
-      resConfigs(listOf("four"))
-      assertThat(resourceConfigurations).containsExactly("one", "two", "three", "four")
-      assertFailsWith<Exception> { resConfigs("") }
-    }
-  }
-
-  /** Regression test for https://b.corp.google.com/issues/155318103 */
-  @Test
-  fun `mergedFlavor source compatibility`() {
-    // TODO: Likely delete this test or migrate to an integration test(b/418804641)
-    assume().that(BooleanOption.USE_NEW_DSL.defaultValue).isFalse()
-    val applicationVariants = (android as BaseAppModuleExtension).applicationVariants
-    val fileF = File("f")
-    val fileG = File("g")
-    val fileH = File("h")
-    applicationVariants.all { variant ->
-      variant.mergedFlavor.manifestPlaceholders += mapOf("a" to "b")
-      variant.mergedFlavor.testInstrumentationRunnerArguments += mapOf("c" to "d")
-      variant.mergedFlavor.resourceConfigurations += "e"
-      variant.mergedFlavor.proguardFiles += fileF
-      variant.mergedFlavor.consumerProguardFiles += fileG // While not applicable to apps, the same objects are used for libraries
-      variant.mergedFlavor.testProguardFiles += fileH
-    }
-    plugin.createAndroidTasks(project)
-    assertThat(applicationVariants).hasSize(2)
-    applicationVariants.first().also { variant ->
-      assertThat(variant.mergedFlavor.manifestPlaceholders).containsExactly("a", "b")
-      assertThat(variant.mergedFlavor.testInstrumentationRunnerArguments).containsExactly("c", "d")
-      assertThat(variant.mergedFlavor.resourceConfigurations).containsExactly("e")
-      assertThat(variant.mergedFlavor.proguardFiles).containsExactly(fileF)
-      assertThat(variant.mergedFlavor.consumerProguardFiles).containsExactly(fileG)
-      assertThat(variant.mergedFlavor.testProguardFiles).containsExactly(fileH)
-    }
-  }
-
-  @Test
-  fun `testInstrumentationRunnerArguments source compatibility`() {
-    android.defaultConfig.testInstrumentationRunnerArguments.put("a", "b")
-    assertThat(android.defaultConfig.testInstrumentationRunnerArguments).containsExactly("a", "b")
-
-    android.defaultConfig.testInstrumentationRunnerArguments += "c" to "d"
-    assertThat(android.defaultConfig.testInstrumentationRunnerArguments).containsExactly("a", "b", "c", "d")
-
-    android.defaultConfig.setTestInstrumentationRunnerArguments(mutableMapOf("x" to "y"))
-    assertThat(android.defaultConfig.testInstrumentationRunnerArguments).containsExactly("x", "y")
-  }
-
-  @Test
   fun `AnnotationProcessorOptions arguments source compatibility`() {
     android.defaultConfig.javaCompileOptions.annotationProcessorOptions {
       arguments["a"] = "b"
@@ -548,58 +498,6 @@ class KotlinDslTest {
       assertThat(arguments).containsExactly("a", "b")
       arguments += mapOf("c" to "d")
       assertThat(arguments).containsExactly("a", "b", "c", "d")
-    }
-  }
-
-  @Test
-  fun `LintOptions source compatibility`() {
-    android.lintOptions {
-      enable += "a"
-      assertThat(enable).containsExactly("a")
-      disable += "b"
-      assertThat(disable).containsExactly("b")
-      checkOnly += "c"
-      assertThat(checkOnly).containsExactly("c")
-    }
-  }
-
-  @Test
-  fun `matchingFallbacks source compatibility`() {
-    android.productFlavors.create("example").apply {
-      // Check the list can be mutated
-      matchingFallbacks += "a"
-      matchingFallbacks.add("b")
-      assertThat(matchingFallbacks).containsExactly("a", "b")
-      // Check the single value setter
-      setMatchingFallbacks("c")
-      assertThat(matchingFallbacks).containsExactly("c")
-      // Check the vararg setter
-      setMatchingFallbacks("d", "e")
-      assertThat(matchingFallbacks).containsExactly("d", "e")
-      // Check the list setter
-      setMatchingFallbacks(ImmutableList.of("f"))
-      assertThat(matchingFallbacks).containsExactly("f")
-      // Check the setter copies before clearing
-      setMatchingFallbacks(matchingFallbacks)
-      assertThat(matchingFallbacks).containsExactly("f")
-    }
-    android.buildTypes.create("qa").apply {
-      // Check the list can be mutated
-      matchingFallbacks += "a"
-      matchingFallbacks.add("b")
-      assertThat(matchingFallbacks).containsExactly("a", "b")
-      // Check the single value setter
-      setMatchingFallbacks("c")
-      assertThat(matchingFallbacks).containsExactly("c")
-      // Check the vararg setter
-      setMatchingFallbacks("d", "e")
-      assertThat(matchingFallbacks).containsExactly("d", "e")
-      // Check the list setter
-      setMatchingFallbacks(ImmutableList.of("f"))
-      assertThat(matchingFallbacks).containsExactly("f")
-      // Check the setter copies before clearing
-      setMatchingFallbacks(matchingFallbacks)
-      assertThat(matchingFallbacks).containsExactly("f")
     }
   }
 
@@ -633,44 +531,8 @@ class KotlinDslTest {
     assertThat(android.productFlavors.getByName("two").customExtension.customSetting).isTrue()
   }
 
-  @Test
-  fun `java resource packaging options`() {
-    android.packagingOptions {
-      resources {
-        excludes += "a"
-        assertThat(excludes).containsExactlyElementsIn(defaultExcludes.plus("a"))
-        pickFirsts += "b"
-        assertThat(pickFirsts).containsExactly("b")
-        merges += "c"
-        assertThat(merges).containsExactlyElementsIn(defaultMerges.plus("c"))
-      }
-    }
-  }
-
-  @Test
-  fun `native libs packaging options`() {
-    android.packagingOptions {
-      jniLibs {
-        excludes += "a"
-        assertThat(excludes).containsExactly("a")
-        pickFirsts += "b"
-        assertThat(pickFirsts).containsExactly("b")
-        keepDebugSymbols += "c"
-        assertThat(keepDebugSymbols).containsExactly("c")
-      }
-    }
-  }
-
   private fun assertThatPath(file: File?): StringSubject {
     return assertThat(file?.path)
-  }
-
-  @Test
-  fun `compatibility for compile sdk`() {
-    android.apply {
-      compileSdkVersion(TestConstants.COMPILE_SDK_VERSION)
-      compileSdkVersion("android-${TestConstants.COMPILE_SDK_VERSION}")
-    }
   }
 
   @Test

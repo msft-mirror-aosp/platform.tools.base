@@ -83,7 +83,7 @@ open class AndroidResourcesCreationConfigImpl(
       }
       if (!component.optimizationCreationConfig.minifiedEnabled) {
         internalServices.issueReporter.reportError(
-          IssueReporter.Type.GENERIC,
+          IssueReporter.Type.RESOURCE_SHRINK_REQUIRES_CODE_SHRINK,
           "Removing unused resources requires unused code shrinking to be turned on. See " +
             "http://d.android.com/r/tools/shrink-resources.html " +
             "for more information.",

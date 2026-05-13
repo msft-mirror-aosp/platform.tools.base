@@ -4,22 +4,11 @@
     <issue
         id="DefaultLocale"
         message="Implicitly using the default locale is a common source of bugs: Use `String.format(Locale, ...)` instead"
-        errorLine1="        String reqStr = String.format(&quot;jdwp:%1$d&quot;, pid); //$NON-NLS-1$"
-        errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/android/ddmlib/AdbHelper.java"
-            line="273"
-            column="25"/>
-    </issue>
-
-    <issue
-        id="DefaultLocale"
-        message="Implicitly using the default locale is a common source of bugs: Use `String.format(Locale, ...)` instead"
         errorLine1="            return String.format(&quot;/data/user/%d/%s&quot;, getUserId(), packageName);"
         errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/android/ddmlib/ClientData.java"
-            line="909"
+            line="392"
             column="20"/>
     </issue>
 
@@ -32,28 +21,6 @@
             file="src/main/java/com/android/ddmlib/testrunner/InstrumentationResultParser.java"
             line="661"
             column="21"/>
-    </issue>
-
-    <issue
-        id="DefaultLocale"
-        message="Implicitly using the default locale is a common source of bugs: Use `String.format(Locale, ...)` instead"
-        errorLine1="                    buffer.append(String.format(&quot;\t%1$08x\t%2$s --- %3$s --- %4$s:%5$d\n&quot;, addr,"
-        errorLine2="                                  ^">
-        <location
-            file="src/main/java/com/android/ddmlib/NativeAllocationInfo.java"
-            line="250"
-            column="35"/>
-    </issue>
-
-    <issue
-        id="DefaultLocale"
-        message="Implicitly using the default locale is a common source of bugs: Use `String.format(Locale, ...)` instead"
-        errorLine1="        return String.format(&quot;\t%1$08x\t%2$s --- %3$s --- %4$s:%5$d&quot;,"
-        errorLine2="               ^">
-        <location
-            file="src/main/java/com/android/ddmlib/NativeStackCallInfo.java"
-            line="114"
-            column="16"/>
     </issue>
 
     <issue

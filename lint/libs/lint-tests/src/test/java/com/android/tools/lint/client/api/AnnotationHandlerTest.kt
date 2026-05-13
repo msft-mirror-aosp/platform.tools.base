@@ -40,13 +40,11 @@ import com.android.tools.lint.detector.api.JavaContext
 import com.android.tools.lint.detector.api.LocationType
 import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
-import com.android.tools.lint.useFirUast
 import com.google.common.io.Files
 import java.io.File
 import org.intellij.lang.annotations.Language
 import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UMethod
-import org.junit.Assume
 import org.junit.ClassRule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -2064,9 +2062,6 @@ src/pkg1/Foo.kt:12: Error: DEFINITION usage associated with @MyKotlinAnnotation 
     // when a call is resolved to declarations in klib.
     // Such (text) read requires a decompilation, while no decompiler plugin
     // is registered in CLI, resulting in a runtime exception.
-
-    // Klib resolution only works for K2 UAST.
-    Assume.assumeTrue(useFirUast())
 
     val shared =
       project(

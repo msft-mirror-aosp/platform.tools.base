@@ -216,7 +216,7 @@ class VariantServicesImpl(projectServices: ProjectServices, private val forUnitT
     }
   }
 
-  override fun <T> setProviderOf(type: Class<T>, value: Provider<out Iterable<T>>): Provider<Set<T>> {
+  override fun <T : Any> setProviderOf(type: Class<T>, value: Provider<out Iterable<T>>): Provider<Set<T>> {
     return projectServices.objectFactory.setProperty(type).also {
       it.set(value)
       it.disallowChanges()
@@ -227,7 +227,7 @@ class VariantServicesImpl(projectServices: ProjectServices, private val forUnitT
     }
   }
 
-  override fun <T> setProviderOf(type: Class<T>, value: Iterable<T>?): Provider<Set<T>> {
+  override fun <T : Any> setProviderOf(type: Class<T>, value: Iterable<T>?): Provider<Set<T>> {
     return projectServices.objectFactory.setProperty(type).also {
       it.set(value)
       it.disallowChanges()

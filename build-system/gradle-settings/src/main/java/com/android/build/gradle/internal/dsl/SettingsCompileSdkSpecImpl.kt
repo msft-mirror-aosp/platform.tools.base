@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.dsl
 
+import com.android.build.api.dsl.CompileSdkBetaSpec
 import com.android.build.api.dsl.CompileSdkReleaseSpec
 import com.android.build.api.dsl.CompileSdkSpec
 import com.android.build.api.dsl.CompileSdkVersion
@@ -57,6 +58,22 @@ internal open class SettingsCompileSdkSpecImpl @Inject constructor(private val o
     return SettingsCompileSdkVersionImpl(codeName = codeName)
   }
 
+  override fun canary(date: String): CompileSdkVersion {
+    return SettingsCompileSdkVersionImpl(canaryDate = date)
+  }
+
+  override fun beta(version: Int, action: (CompileSdkBetaSpec.() -> Unit)): CompileSdkVersion {
+    val betaSpec = objectFactory.newInstance(SettingsCompileSdkBetaSpecImpl::class.java)
+    action.invoke(betaSpec)
+    return SettingsCompileSdkVersionImpl(apiLevel = version, minorApiLevel = betaSpec.minorApiLevel, betaVersion = betaSpec.betaVersion)
+  }
+
+  fun beta(version: Int, action: Action<CompileSdkBetaSpec>): CompileSdkVersion {
+    val betaSpec = objectFactory.newInstance(SettingsCompileSdkBetaSpecImpl::class.java)
+    action.execute(betaSpec)
+    return SettingsCompileSdkVersionImpl(apiLevel = version, minorApiLevel = betaSpec.minorApiLevel, betaVersion = betaSpec.betaVersion)
+  }
+
   override fun addon(vendor: String, name: String, version: Int): CompileSdkVersion {
     return SettingsCompileSdkVersionImpl(vendorName = vendor, addonName = name, apiLevel = version)
   }
@@ -67,6 +84,8 @@ internal data class SettingsCompileSdkVersionImpl(
   override val minorApiLevel: Int? = null,
   override val sdkExtension: Int? = null,
   override val codeName: String? = null,
+  override val canaryDate: String? = null,
+  override val betaVersion: Int? = null,
   override val vendorName: String? = null,
   override val addonName: String? = null,
 ) : CompileSdkVersion
@@ -74,4 +93,9 @@ internal data class SettingsCompileSdkVersionImpl(
 internal open class SettingsCompileSdkReleaseSpecImpl : CompileSdkReleaseSpec {
   override var sdkExtension: Int? = null
   override var minorApiLevel: Int? = null
+}
+
+internal open class SettingsCompileSdkBetaSpecImpl : CompileSdkBetaSpec {
+  override var minorApiLevel: Int? = null
+  override var betaVersion: Int? = null
 }

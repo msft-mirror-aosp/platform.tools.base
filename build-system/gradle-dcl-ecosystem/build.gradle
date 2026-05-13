@@ -39,6 +39,7 @@ dependencies {
     implementation gradleApi()
     implementation(project(':base:build-system:gradle-kotlin'))
     implementation(project(':base:build-system:gradle-core'))
+    implementation libs.compose_compiler_gradle_plugin
 }
 
 group = 'com.android.tools.build'

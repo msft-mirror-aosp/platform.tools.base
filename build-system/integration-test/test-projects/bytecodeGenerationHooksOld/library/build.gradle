@@ -1,0 +1,19 @@
+apply plugin: 'com.android.library'
+apply plugin: 'com.example.compiler'
+
+android {
+    namespace = "com.example.lib"
+    compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
+    buildToolsVersion = libs.versions.buildToolsVersion.get()
+    defaultConfig {
+        minSdkVersion libs.versions.supportLibMinSdk.get()
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+}
+
+dependencies {
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation "androidx.test:runner:1.4.0-alpha06"
+    androidTestImplementation "androidx.test:rules:1.4.0-alpha06"
+    androidTestImplementation "androidx.annotation:annotation-experimental:1.3.0"
+}

@@ -145,6 +145,8 @@ fun runR8(
     referencedInputs = referencedInputs,
     classes = classes,
     resourcesJar = resourcesJar.toFile(),
+    keepRadiusDataOutput = proguardOutputDir.resolve("keepradius.pb"),
+    keepRadiusReportOutput = proguardOutputDir.resolve("keepradiusreport.html"),
     mappingFile = mappingFile,
     mappingPartitionFile = mappingPartitionFile,
     proguardSeedsOutput = proguardOutputDir.resolve("seeds.txt"),

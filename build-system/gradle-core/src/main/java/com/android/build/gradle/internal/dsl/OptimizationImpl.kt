@@ -36,6 +36,7 @@ abstract class OptimizationImpl @Inject constructor(dslService: DslServices, int
     action.invoke(keepRules)
   }
 
+  @Deprecated("Use buildType.baselineProfile{}", level = DeprecationLevel.ERROR)
   override fun baselineProfile(action: BaselineProfile.() -> Unit) {
     action.invoke(baselineProfile)
   }

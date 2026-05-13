@@ -181,7 +181,11 @@ abstract class AssetPackBundlePlugin : Plugin<Project> {
     }
 
     if (errors.isNotEmpty()) {
-      issueReporter.reportWarning(IssueReporter.Type.GENERIC, errors.joinToString(separator = "\n"), multilineMsg = errors)
+      issueReporter.reportWarning(
+        IssueReporter.Type.ASSET_PACK_BUNDLE_INVALID_CONFIG,
+        errors.joinToString(separator = "\n"),
+        multilineMsg = errors,
+      )
     }
   }
 

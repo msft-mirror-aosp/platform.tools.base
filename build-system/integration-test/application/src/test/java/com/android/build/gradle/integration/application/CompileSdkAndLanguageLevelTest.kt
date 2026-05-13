@@ -29,32 +29,47 @@ import org.junit.runners.Parameterized
 
 /** Check different Java language levels when compiling against older platform versions. */
 @RunWith(FilterableParameterized::class)
-class CompileSdkAndLanguageLevelTest(private val javaVersion: JavaVersion, private val compileSdkVersion: Int) {
+class CompileSdkAndLanguageLevelTest(
+  private val javaVersion: JavaVersion,
+  private val compileSdkVersion: Int,
+  private val builtInKotlin: Boolean,
+) {
 
   companion object {
     private val isJdk11OrOlder = Runtime.version().feature() <= 11
 
     private val params =
       arrayOf(
-        arrayOf(JavaVersion.VERSION_1_7, 19),
-        arrayOf(JavaVersion.VERSION_1_7, 21),
-        arrayOf(JavaVersion.VERSION_1_7, 24),
-        arrayOf(JavaVersion.VERSION_1_8, 19),
-        arrayOf(JavaVersion.VERSION_1_8, 21),
-        arrayOf(JavaVersion.VERSION_1_8, 24),
+        arrayOf<Any>(JavaVersion.VERSION_1_7, 19, false),
+        arrayOf<Any>(JavaVersion.VERSION_1_7, 21, false),
+        arrayOf<Any>(JavaVersion.VERSION_1_7, 24, false),
+        arrayOf<Any>(JavaVersion.VERSION_1_8, 19, false),
+        arrayOf<Any>(JavaVersion.VERSION_1_8, 21, false),
+        arrayOf<Any>(JavaVersion.VERSION_1_8, 24, false),
+        arrayOf<Any>(JavaVersion.VERSION_1_8, 19, true),
+        arrayOf<Any>(JavaVersion.VERSION_1_8, 21, true),
+        arrayOf<Any>(JavaVersion.VERSION_1_8, 24, true),
       )
 
     private val java6params =
-      arrayOf(arrayOf(JavaVersion.VERSION_1_6, 19), arrayOf(JavaVersion.VERSION_1_6, 21), arrayOf(JavaVersion.VERSION_1_6, 24))
+      arrayOf(
+        arrayOf<Any>(JavaVersion.VERSION_1_6, 19, false),
+        arrayOf<Any>(JavaVersion.VERSION_1_6, 21, false),
+        arrayOf<Any>(JavaVersion.VERSION_1_6, 24, false),
+      )
 
-    @Parameterized.Parameters(name = "javaVersion_{0}_compileSdkVersion_{1}")
+    @Parameterized.Parameters(name = "javaVersion_{0}_compileSdkVersion_{1}_builtInKotlin_{2}")
     @JvmStatic
     fun getParams() = if (isJdk11OrOlder) arrayOf(*params, *java6params) else params
   }
 
   @JvmField
   @Rule
-  val project = GradleTestProject.builder().fromTestApp(MinimalSubProject.app("com.example")).disableBuiltInKotlin().create()
+  val project =
+    GradleTestProject.builder()
+      .fromTestApp(MinimalSubProject.app("com.example"))
+      .apply { if (!builtInKotlin) disableBuiltInKotlin() }
+      .create()
 
   private fun warnsOnVersion(javaVersion: JavaVersion) = if (isJdk11OrOlder) javaVersion.isJava6 else javaVersion.isJava7
 

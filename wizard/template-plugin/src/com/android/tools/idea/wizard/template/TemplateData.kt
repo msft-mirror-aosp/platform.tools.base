@@ -56,6 +56,27 @@ enum class Language(val string: String, val extension: String) {
   }
 }
 
+enum class DslLanguage(val extension: String) {
+  KTS("gradle.kts"),
+  GROOVY("gradle"),
+  DCL("gradle.dcl");
+
+  val buildFileName: String
+    get() = "build.$extension"
+
+  val settingsFileName: String
+    get() = "settings.$extension"
+
+  val isKts: Boolean
+    get() = this == KTS
+
+  val isGroovy: Boolean
+    get() = this == GROOVY
+
+  val isDcl: Boolean
+    get() = this == DCL
+}
+
 // We define a new enum here instead of reusing existing ones because it should be available
 // both from intellij.android.core and wizardTemplate modules.
 enum class BytecodeLevel(val description: String, val versionString: String) {
@@ -73,14 +94,16 @@ const val KOTLIN_DSL_LINK = "https://d.android.com/build/migrate-to-kotlin-dsl"
 
 enum class BuildConfigurationLanguageForNewProject(val description: String, val useKts: Boolean) {
   KTS("Kotlin DSL (build.gradle.kts) [Recommended]", true),
-  Groovy("Groovy DSL (build.gradle)", false);
+  Groovy("Groovy DSL (build.gradle)", false),
+  DCL("Declarative DSL (build.gradle.dcl)", false);
 
   override fun toString() = description
 }
 
 enum class BuildConfigurationLanguageForNewModule(val description: String) {
   KTS("Kotlin DSL (build.gradle.kts) [Recommended]"),
-  Groovy("Groovy DSL (build.gradle)");
+  Groovy("Groovy DSL (build.gradle)"),
+  DCL("Declarative DSL (build.gradle.dcl)");
 
   override fun toString() = description
 }
@@ -121,6 +144,7 @@ data class ProjectTemplateData(
   val overridePathCheck: Boolean? = false, // To disable android plugin checking for ascii in paths (windows tests)
   val isNewProject: Boolean,
   val kotlinSupport: TemplateKotlinSupport = TemplateKotlinSupport.IMPLICIT_BUILT_IN_KOTLIN,
+  val dslLanguage: DslLanguage,
 ) : TemplateData() {
   @Deprecated("Replaced with agpVersion", replaceWith = ReplaceWith("agpVersion"))
   val gradlePluginVersion: GradlePluginVersion

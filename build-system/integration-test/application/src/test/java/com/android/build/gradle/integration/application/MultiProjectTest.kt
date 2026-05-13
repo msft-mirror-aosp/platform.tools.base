@@ -23,7 +23,7 @@ import org.junit.Test
 
 class MultiProjectTest : ModelComparator() {
 
-  @get:Rule val project = GradleTestProject.builder().fromTestProject("multiproject").disableBuiltInKotlin().create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("multiproject").create()
 
   @Test
   fun `check models`() {

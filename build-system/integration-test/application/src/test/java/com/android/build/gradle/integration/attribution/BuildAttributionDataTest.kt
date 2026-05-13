@@ -17,71 +17,66 @@
 package com.android.build.gradle.integration.attribution
 
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
-import com.android.build.gradle.integration.common.utils.TestFileUtils
-import com.android.build.gradle.options.BooleanOption
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
+import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
 import com.android.build.gradle.options.StringOption
+import com.android.build.gradle.tasks.MergeResources
 import com.android.buildanalyzer.common.AndroidGradlePluginAttributionData
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth.assertThat
+import org.gradle.api.DefaultTask
+import org.gradle.api.Project
+import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.TaskAction
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+
+abstract class SampleTask : DefaultTask() {
+  @get:OutputDirectory abstract val outputDirectory: DirectoryProperty
+
+  @TaskAction fun run() {}
+}
 
 class BuildAttributionDataTest {
   @get:Rule val temporaryFolder = TemporaryFolder()
 
   @get:Rule
-  var project =
-    GradleTestProject.builder()
-      .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
-      .addGradleProperty(BooleanOption.USE_NEW_DSL, false)
-      .create()
-
-  private fun setUpProject() {
-    TestFileUtils.appendToFile(
-      project.buildFile,
-      """
-      abstract class SampleTask extends DefaultTask {
-          @OutputDirectory
-          abstract DirectoryProperty getOutputDir()
-
-          @TaskAction
-          def run() {
-              // do nothing
-          }
+  var rule =
+    GradleRule.configure().from {
+      androidApplication {
+        android { HelloWorldAndroid.setupJava(files) }
+        pluginCallbacks += Callback::class.java
       }
+    }
 
-      task sample1(type: SampleTask) {
-          outputDir = file("${"$"}buildDir/outputs/shared_output")
+  class Callback : GenericCallback {
+    override fun handleProject(project: Project) {
+      val sample1 =
+        project.tasks.register("sample1", SampleTask::class.java) {
+          it.outputDirectory.set(project.layout.buildDirectory.dir("outputs/shared_output"))
+        }
+      val sample2 =
+        project.tasks.register("sample2", SampleTask::class.java) {
+          it.outputDirectory.set(project.layout.buildDirectory.dir("outputs/shared_output"))
+          it.dependsOn += sample1
+        }
+      project.tasks.withType(MergeResources::class.java).configureEach {
+        it.dependsOn += sample1
+        it.dependsOn += sample2
       }
-
-      task sample2(type: SampleTask) {
-          outputDir = file("${"$"}buildDir/outputs/shared_output")
-      }
-
-      afterEvaluate { project ->
-          android.applicationVariants.all { variant ->
-              def mergeResourcesTask = tasks.getByPath("merge${"$"}{variant.name.capitalize()}Resources")
-              mergeResourcesTask.dependsOn sample1
-              mergeResourcesTask.dependsOn sample2
-          }
-          sample2.dependsOn sample1
-      }
-      """
-        .trimIndent(),
-    )
+    }
   }
 
   @Test
   fun testBuildAttributionReport() {
-    setUpProject()
+    val project = rule.build
 
     val attributionFileLocation = temporaryFolder.newFolder()
 
-    project
-      .executor()
+    project.executor
       .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
       .with(StringOption.IDE_ATTRIBUTION_FILE_LOCATION, attributionFileLocation.absolutePath)
       .run("mergeDebugResources")
@@ -95,8 +90,7 @@ class BuildAttributionDataTest {
 
     FileUtils.deleteDirectoryContents(attributionFileLocation)
 
-    project
-      .executor()
+    project.executor
       .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
       .with(StringOption.IDE_ATTRIBUTION_FILE_LOCATION, attributionFileLocation.absolutePath)
       .run("mergeDebugResources")

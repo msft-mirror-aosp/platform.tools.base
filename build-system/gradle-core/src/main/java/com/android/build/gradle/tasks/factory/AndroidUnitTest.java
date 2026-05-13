@@ -38,7 +38,7 @@ import com.android.build.gradle.internal.tasks.BuildAnalyzer;
 import com.android.build.gradle.internal.tasks.UsesAnalytics;
 import com.android.build.gradle.internal.tasks.VariantTask;
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction;
-import com.android.build.gradle.internal.testing.TestReportAggregationUtils;
+import com.android.build.gradle.internal.test.report.TestReportAggregationUtils;
 import com.android.build.gradle.internal.utils.HasConfigurableValuesKt;
 import com.android.build.gradle.options.BooleanOption;
 import com.android.build.gradle.options.ProjectOptions;
@@ -152,6 +152,12 @@ public abstract class AndroidUnitTest extends Test implements VariantTask, UsesA
     @Internal
     public abstract Property<String> getTestSuiteTarget();
 
+    @Input
+    @Override
+    public boolean getIgnoreFailures() {
+        return super.getIgnoreFailures();
+    }
+
     @Override
     @TaskAction
     public void executeTests() {
@@ -193,15 +199,18 @@ public abstract class AndroidUnitTest extends Test implements VariantTask, UsesA
             systemProperty("java.library.path", sb.toString());
         }
 
-        super.executeTests();
-        if (this.getTestReportAggregationEnabled().get()) {
-            TestReportAggregationUtils.processTestReportAggregation(
-                    getReports().getJunitXml().getOutputLocation().get().getAsFile(),
-                    getXmlResultsDirectory(),
-                    getModulePath().get(),
-                    getTestedVariantName().get(),
-                    getTestSuiteName().get(),
-                    getTestSuiteTarget().get());
+        try {
+            super.executeTests();
+        } finally {
+            if (this.getTestReportAggregationEnabled().get()) {
+                TestReportAggregationUtils.processTestReportAggregation(
+                        getReports().getJunitXml().getOutputLocation().get().getAsFile(),
+                        getXmlResultsDirectory(),
+                        getModulePath().get(),
+                        getTestedVariantName().get(),
+                        getTestSuiteName().get(),
+                        getTestSuiteTarget().get());
+            }
         }
     }
 

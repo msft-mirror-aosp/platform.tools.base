@@ -79,6 +79,9 @@ service TransportService {
 
   // Studio-side only: Unsets the active task-specific database.
   rpc UnsetTaskDb(UnsetTaskDbRequest) returns (UnsetTaskDbResponse) {};
+
+  // Studio-side only: Adds metadata to the active task database.
+  rpc AddTaskDbMetadata(AddTaskDbMetadataRequest) returns (AddTaskDbMetadataResponse) {};
 }
 
 message TimeRequest {
@@ -225,6 +228,18 @@ message UnsetTaskDbRequest {
 
 // Response message for the UnsetTaskDb RPC.
 message UnsetTaskDbResponse {
+}
+
+// Request message for the AddTaskDbMetadata RPC.
+message AddTaskDbMetadataRequest {
+  // The ID of the session to associate the metadata with.
+  int64 session_id = 1;
+  // Key-value pairs to insert into the _metadata table.
+  map<string, string> metadata = 2;
+}
+
+// Response message for the AddTaskDbMetadata RPC.
+message AddTaskDbMetadataResponse {
 }
 
 // An event group is a collection of events that share the same group_id.

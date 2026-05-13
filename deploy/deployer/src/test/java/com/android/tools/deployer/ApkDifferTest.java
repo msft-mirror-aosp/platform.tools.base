@@ -17,6 +17,10 @@ package com.android.tools.deployer;
 
 import static org.junit.Assert.*;
 
+import com.android.tools.deployer.common.ApkDiffer;
+import com.android.tools.deployer.common.DeployerException;
+import com.android.tools.deployer.common.DeploymentCacheDatabase;
+import com.android.tools.deployer.common.OverlayId;
 import com.android.tools.deployer.model.Apk;
 import com.android.tools.deployer.model.FileDiff;
 

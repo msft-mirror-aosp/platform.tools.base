@@ -92,7 +92,6 @@ public class GradleTestProjectBuilder implements GradleOptionBuilder<GradleTestP
     private boolean withKspGradlePlugin = false;
     private boolean withComposeCompilerGradlePlugin = false;
 
-    private boolean withAndroidxPrivacySandboxLibraryPlugin = false;
     private boolean withBuiltInKotlinSupport = false;
     private boolean withPluginManagementBlock = false;
     private boolean withDependencyManagementBlock = true;
@@ -180,7 +179,6 @@ public class GradleTestProjectBuilder implements GradleOptionBuilder<GradleTestP
                 withKotlinGradlePlugin,
                 withKspGradlePlugin,
                 withComposeCompilerGradlePlugin,
-                withAndroidxPrivacySandboxLibraryPlugin,
                 withExtraPluginClasspath,
                 withBuiltInKotlinSupport,
                 withPluginManagementBlock,
@@ -306,11 +304,6 @@ public class GradleTestProjectBuilder implements GradleOptionBuilder<GradleTestP
     public GradleTestProjectBuilder withComposeCompilerGradlePlugin(
             boolean withComposeCompilerGradlePlugin) {
         this.withComposeCompilerGradlePlugin = withComposeCompilerGradlePlugin;
-        return this;
-    }
-
-    public GradleTestProjectBuilder withAndroidxPrivacySandboxLibraryPlugin(boolean withAndroidxPrivacySandboxLibraryPlugin) {
-        this.withAndroidxPrivacySandboxLibraryPlugin = withAndroidxPrivacySandboxLibraryPlugin;
         return this;
     }
 

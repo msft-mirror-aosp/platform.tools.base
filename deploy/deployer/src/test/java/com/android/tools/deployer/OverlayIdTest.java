@@ -18,11 +18,15 @@ package com.android.tools.deployer;
 import static com.google.common.truth.Truth.*;
 import static com.google.common.truth.Truth.assertThat;
 
+import com.android.tools.deployer.common.DeployerException;
+import com.android.tools.deployer.common.OverlayId;
 import com.android.tools.deployer.model.Apk;
-import java.util.ArrayList;
-import java.util.List;
+
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class OverlayIdTest {
     @Test

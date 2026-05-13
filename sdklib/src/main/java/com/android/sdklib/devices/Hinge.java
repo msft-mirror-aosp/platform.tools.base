@@ -17,7 +17,7 @@ package com.android.sdklib.devices;
 
 import java.util.OptionalInt;
 
-final class Hinge {
+public final class Hinge {
     private int mCount;
     private int mType;
     private int mSubtype;

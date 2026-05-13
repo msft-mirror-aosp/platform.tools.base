@@ -30,8 +30,14 @@ object UserSettingsKey {
   const val COMMAND_LINE_OPTIONS = "commandLineOptions"
 
   /** The folder name of the paired Phone AVD (AvdInfo.dataFolderPath.fileName). */
-  const val PAIRED_PHONE_AVD_ID = "paired.phone.avd"
+  const val PAIRED_PHONE_AVD_ID_PREFIX = "paired.phone.avd.id."
 
   /** The folder name of the paired Glasses AVD (AvdInfo.dataFolderPath.fileName). */
   const val PAIRED_GLASSES_AVD_ID = "paired.glasses.avd"
+
+  /** The prefix for the folder name of a paired Glasses AVD. Indexed by appending '1', '2', etc. (e.g., paired.glasses.avd.id.1). */
+  const val PAIRED_GLASSES_AVD_ID_PREFIX = "paired.glasses.avd.id."
+
+  /** The prefix for the MAC address of a paired Glasses AVD. Indexed by appending '1', '2', etc. (e.g., paired.glasses.avd.mac.1). */
+  const val PAIRED_GLASSES_AVD_MAC_PREFIX = "paired.glasses.avd.mac."
 }

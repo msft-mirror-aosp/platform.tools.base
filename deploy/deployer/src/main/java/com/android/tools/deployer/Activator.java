@@ -18,6 +18,7 @@ package com.android.tools.deployer;
 import com.android.annotations.NonNull;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
+import com.android.tools.deployer.common.DeployerException;
 import com.android.tools.deployer.model.Apk;
 import com.android.tools.deployer.model.App;
 import com.android.tools.deployer.model.ModelException;

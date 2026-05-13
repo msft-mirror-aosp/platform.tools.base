@@ -304,8 +304,6 @@ private fun resolveArtifacts(
 
   val explodedAars = aarOrAsar.filter { it.hasType(AndroidArtifacts.ArtifactType.EXPLODED_AAR) }.asMap()
 
-  val asarJars = aarOrAsar.filter { it.hasType(AndroidArtifacts.ArtifactType.ANDROID_PRIVACY_SANDBOX_SDK_INTERFACE_DESCRIPTOR) }.asMap()
-
   val lintJars = lintJar.asMap { it.file }
 
   /** See [ArtifactCollections.projectJars]. */
@@ -341,7 +339,7 @@ private fun resolveArtifacts(
         ResolvedArtifact(
           mainArtifact,
           artifactFile,
-          explodedAars[variantKey] ?: asarJars[variantKey],
+          explodedAars[variantKey],
           publishedLintJar,
           dependencyType,
           // check if this is a wrapped module
@@ -362,11 +360,6 @@ private fun resolveArtifacts(
           mainArtifact = resolvedComponentResult,
           publishedLintJar = lintJars[variantKey],
         )
-      }
-      AndroidArtifacts.ArtifactType.ANDROID_PRIVACY_SANDBOX_SDK_ARCHIVE.type -> {
-        // When the dependency is ASAR, the resolved artifact needs to be the jar inside it
-        // extractedAar will be pointing to that location of that jar
-        addArtifact(dependencyType = ResolvedArtifact.DependencyType.ANDROID_SANDBOX_SDK, mainArtifact = resolvedComponentResult)
       }
       AndroidArtifacts.ArtifactType.JAR.type ->
         if (resolvedComponentResult.isAndroidProjectDependency()) {

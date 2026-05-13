@@ -28,7 +28,6 @@ readonly BUILD_TARGETS="//tools/... -//tools/adt/idea/studio/..."
   --build_event_binary_file="${DIST_DIR:-/tmp}/bazel-${BUILD_NUMBER}.bes" \
   --build_metadata=ab_build_id="${BUILD_NUMBER}" \
   --build_metadata=ab_target=studio-linux_canary \
-  --define=meta_android_build_number="${BUILD_NUMBER}" \
   --tool_tag=studio-linux-canary \
   --test_tag_filters="-qa_smoke,-qa_fast,-qa_unreliable,-perfgate-release,-noci:studio-linux" \
   --verbose_failures \

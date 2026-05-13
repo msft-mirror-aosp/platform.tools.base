@@ -710,4 +710,47 @@ class ProcessTestManifestTest {
     val result = build.executor.run(":app:processDebugUnitTestManifest")
     assertTrue { result.failedTasks.isEmpty() }
   }
+
+  /** Regression test for b/496616822 */
+  @Test
+  fun testUnitTestManifestWithNavGraph() {
+    val build =
+      rule.build {
+        androidApplication(":app") {
+          android {
+            namespace = "com.example.app"
+            testOptions { unitTests { isIncludeAndroidResources = true } }
+          }
+          files
+            .update("src/main/AndroidManifest.xml")
+            .replaceWith(
+              """
+              <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                  <application>
+                      <activity android:name=".MainActivity" android:exported="true">
+                          <nav-graph android:value="@navigation/nav_graph" />
+                      </activity>
+                  </application>
+              </manifest>
+              """
+                .trimIndent()
+            )
+          files.add(
+            "src/main/res/navigation/nav_graph.xml",
+            """
+            <navigation xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:app="http://schemas.android.com/apk/res-auto"
+                android:id="@+id/nav_graph">
+                <fragment android:id="@+id/fragment1">
+                    <deepLink app:uri="www.example.com" />
+                </fragment>
+            </navigation>
+            """
+              .trimIndent(),
+          )
+        }
+      }
+
+    build.executor.run(":app:processDebugUnitTestManifest")
+  }
 }

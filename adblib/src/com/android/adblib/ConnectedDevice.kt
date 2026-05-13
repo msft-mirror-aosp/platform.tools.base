@@ -17,6 +17,8 @@ package com.android.adblib
 
 import com.android.adblib.AdbLibProperties.AM_SERVICE_RETRY_DELAY
 import com.android.adblib.AdbLibProperties.AM_SERVICE_TIMEOUT
+import com.android.adblib.AdbLibProperties.PM_SERVICE_RETRY_DELAY
+import com.android.adblib.AdbLibProperties.PM_SERVICE_TIMEOUT
 import java.io.IOException
 import java.nio.file.Path
 import java.nio.file.attribute.FileTime
@@ -28,9 +30,7 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.withContext
 
 /**
@@ -223,6 +223,14 @@ val ConnectedDevice.activityManager: ActivityManager
     return cache.getOrPut(ActivityManagerKey) { ActivityManager(this) }
   }
 
+private val PackageManagerKey = CoroutineScopeCache.Key<PackageManager>("PackageManager")
+
+/** The [PackageManager] instance for managing packages on this [ConnectedDevice] */
+val ConnectedDevice.packageManager: PackageManager
+  get() {
+    return cache.getOrPut(PackageManagerKey) { PackageManager(this) }
+  }
+
 private val FileSystemManagerKey = CoroutineScopeCache.Key<FileSystemManager>("FileSystemManager")
 
 /** The [FileSystemManager] instance for managing files on this [ConnectedDevice] */
@@ -329,19 +337,43 @@ class ActivityManager(val device: ConnectedDevice) {
   /**
    * Uses `adb shell am crash` to crash an app.
    *
-   * Note that `am crash` command is available on API level > 26.
+   * Note that `am crash` command is available on API level >= 26.
    *
+   * @throws AdbActivityManagerException if the `am` command failed or is not supported
+   * @throws IOException if there was an issue communicating with the device
    * @see AdbActivityManagerServices.crash
+   * @see isCrashSupported
    */
   suspend fun crash(packageName: String) {
     mapTimeoutToAdbException("crash $packageName") {
-      retryUntilDeviceReady(
+      runAmCommandWhenServiceIsReady(
         amCommandName = "crash",
         timeout = device.session.property(AM_SERVICE_TIMEOUT),
         retryDelay = device.session.property(AM_SERVICE_RETRY_DELAY),
       ) {
-        device.waitUntilOnline()
         device.session.activityManagerServices.crash(device.selector, packageName)
+      }
+    }
+  }
+
+  /**
+   * Uses `adb shell am gc` to trigger garbage collection on a process.
+   *
+   * Note: You can use the [capabilities] method to check if the `gc` command is supported by the `am` implementation on the device. This
+   * method will throw an [AdbActivityManagerException] if the `gc` command is not supported.
+   *
+   * @throws AdbActivityManagerException if the `am` command failed or is not supported
+   * @throws IOException if there was an issue communicating with the device
+   * @see AdbActivityManagerServices.gc
+   */
+  suspend fun gc(pid: Int) {
+    mapTimeoutToAdbException("gc $pid") {
+      runAmCommandWhenServiceIsReady(
+        amCommandName = "gc",
+        timeout = device.session.property(AM_SERVICE_TIMEOUT),
+        retryDelay = device.session.property(AM_SERVICE_RETRY_DELAY),
+      ) {
+        device.session.activityManagerServices.gc(device.selector, pid)
       }
     }
   }
@@ -349,39 +381,43 @@ class ActivityManager(val device: ConnectedDevice) {
   /**
    * Uses `adb shell am force-stop` to terminate an app.
    *
+   * @throws AdbActivityManagerException if the `am` command failed or is not supported
+   * @throws IOException if there was an issue communicating with the device
    * @see AdbActivityManagerServices.forceStop
    */
   suspend fun forceStop(packageName: String) {
     mapTimeoutToAdbException("force-stop $packageName") {
-      retryUntilDeviceReady(
+      runAmCommandWhenServiceIsReady(
         amCommandName = "force-stop",
         timeout = device.session.property(AM_SERVICE_TIMEOUT),
         retryDelay = device.session.property(AM_SERVICE_RETRY_DELAY),
       ) {
-        device.waitUntilOnline()
         device.session.activityManagerServices.forceStop(device.selector, packageName)
       }
     }
   }
 
   /**
-   * Returns various device/run-time capabilities in [AmCapabilitiesResult] using the `adb shell am capabilities` command, or `null` if the
-   * device does not support `am capabilities`
+   * Returns various device/run-time capabilities in [AmCapabilitiesResult] using the `adb shell am capabilities` command.
    *
    * Note: This method retries the command if the device is not ready, see [AdbActivityManagerServices.capabilities] for a detailed
    * description of error conditions.
    *
    * Note: The [AmCapabilitiesResult] is stored in the [ConnectedDevice.cache] if successfully retrieved.
+   *
+   * @throws AdbActivityManagerException if the `am` command failed or is not supported
+   * @throws IOException if there was an issue communicating with the device
+   * @see AdbActivityManagerServices.capabilities
+   * @see isCapabilitiesSupported
    */
-  suspend fun capabilities(): AmCapabilitiesResult? {
+  suspend fun capabilities(): AmCapabilitiesResult {
     return device.cache.getOrPutSuspending(capabilitiesKey) {
       mapTimeoutToAdbException("capabilities") {
-        retryUntilDeviceReady(
+        runAmCommandWhenServiceIsReady(
           amCommandName = "capabilities",
           timeout = device.session.property(AM_SERVICE_TIMEOUT),
           retryDelay = device.session.property(AM_SERVICE_RETRY_DELAY),
         ) {
-          device.waitUntilOnline()
           logger.debug { "Retrieving device capabilities from activity manager" }
           device.session.activityManagerServices.capabilities(device.selector)
         }
@@ -389,59 +425,168 @@ class ActivityManager(val device: ConnectedDevice) {
     }
   }
 
-  /**
-   * Returns the result of the [amCommand]. Retries it if the `am` service is not running. Returns `null` if the [amCommand] is not
-   * supported by the device.
-   */
-  private suspend fun <R> retryUntilDeviceReady(
+  /** Returns the result of the [amCommand]. If necessary, waits for device to come online or for the activity service to start running. */
+  private suspend fun <R> runAmCommandWhenServiceIsReady(
     amCommandName: String,
     timeout: Duration,
     retryDelay: Duration,
     amCommand: suspend () -> R,
-  ): R? {
+  ): R {
     return session.withErrorTimeout(timeout) {
-      // Note: We use a single value flow so we can use the `retryWhen` operator
-      // for the "retry" logic
-      flow<R?> { emit(amCommand()) }
-        .retryWhen { cause, _ ->
-          when {
-            (cause is AdbActivityManagerException) && cause.isServiceNotRunning -> {
-              logger.debug { "'activity' service is not running, retry after delay" }
-              delay(retryDelay.toSafeMillis())
-              true // retry
-            }
+      device.waitUntilOnline()
+      device.waitUntilServiceIsReady("activity", retryDelay)
 
-            (cause is AdbActivityManagerException) && cause.isCommandNotSupported -> {
-              logger.debug { "`am $amCommandName' is not supported, returning `null`" }
-              emit(null)
-              false // Don't retry
-            }
-
-            else -> {
-              false // Don't retry and propagate the exception
-            }
-          }
+      try {
+        amCommand()
+      } catch (cause: AdbActivityManagerException) {
+        if (cause.isCommandNotSupported) {
+          logger.debug { "`am $amCommandName' is not supported" }
         }
-        .first()
-    }
-  }
-
-  /**
-   * Wrap TimeoutException in IOException.
-   *
-   * When the timeout is an implementation detail, and callers are only expected to handle generic I/O errors we should rethrow
-   * TimeoutException as IOException.
-   */
-  private inline fun <R> mapTimeoutToAdbException(commandDescription: String, block: () -> R): R {
-    return try {
-      block()
-    } catch (e: TimeoutException) {
-      throw AdbIOTimeoutException("Operation timed out executing `$commandDescription`", e)
+        throw cause
+      }
     }
   }
 
   companion object {
-    private val capabilitiesKey = CoroutineScopeCache.Key<AmCapabilitiesResult?>("capabilitiesKey")
+    private val capabilitiesKey = CoroutineScopeCache.Key<AmCapabilitiesResult>("capabilitiesKey")
+  }
+}
+
+/**
+ * Returns `true` if the device supports the `am capabilities` command.
+ *
+ * @see AdbActivityManagerServices.capabilities
+ */
+suspend fun ActivityManager.isCapabilitiesSupported(): Boolean {
+  return device.deviceProperties().api() >= 34
+}
+
+/**
+ * Returns `true` if the device supports the `am crash` command.
+ *
+ * @see AdbActivityManagerServices.crash
+ */
+suspend fun ActivityManager.isCrashSupported(): Boolean {
+  return device.deviceProperties().api() >= 26
+}
+
+/**
+ * Returns `true` if the device supports the `am gc` command.
+ *
+ * @see AdbActivityManagerServices.gc
+ */
+suspend fun ActivityManager.isGcSupported(): Boolean {
+  return isCapabilitiesSupported() && capabilities().capabilities.contains("gc")
+}
+
+/**
+ * Access to various `pm` services for a given [ConnectedDevice].
+ *
+ * See [pm command](https://developer.android.com/tools/adb#pm)
+ */
+class PackageManager(val device: ConnectedDevice) {
+
+  private val session: AdbSession
+    get() = device.session
+
+  private val logger = adbLogger(session).withDevicePrefix(device)
+
+  /**
+   * Uses `adb shell pm uninstall` to uninstall an app.
+   *
+   * Note: This method retries the command if the device is not ready, see [runPmCommandWhenServiceIsReady] for a detailed description of
+   * error conditions.
+   *
+   * @throws AdbPackageManagerException if the `pm` command failed
+   * @throws IOException if there was an issue communicating with the device
+   * @see AdbPackageManagerServices.uninstall
+   */
+  suspend fun uninstall(packageName: String) {
+    mapTimeoutToAdbException("uninstall $packageName") {
+      try {
+        runPmCommandWhenServiceIsReady(
+          timeout = device.session.property(PM_SERVICE_TIMEOUT),
+          retryDelay = device.session.property(PM_SERVICE_RETRY_DELAY),
+        ) {
+          device.session.packageManagerServices.uninstall(device.selector, packageName)
+        }
+      } catch (cause: AdbPackageManagerException) {
+        if (cause.isCommandNotSupported) {
+          // This should never happen as `pm uninstall` command is supported since at least API 16.
+          logger.warn("`pm uninstall' is not supported on this device")
+        }
+        throw cause
+      }
+    }
+  }
+
+  /**
+   * Uses `adb shell pm clear` to clear the app data.
+   *
+   * Note: This method retries the command if the device is not ready, see [runPmCommandWhenServiceIsReady] for a detailed description of
+   * error conditions.
+   *
+   * @throws AdbPackageManagerException if the `pm` command failed
+   * @throws IOException if there was an issue communicating with the device
+   * @see AdbPackageManagerServices.clear
+   */
+  suspend fun clear(packageName: String) {
+    mapTimeoutToAdbException("clear $packageName") {
+      try {
+        runPmCommandWhenServiceIsReady(
+          timeout = device.session.property(PM_SERVICE_TIMEOUT),
+          retryDelay = device.session.property(PM_SERVICE_RETRY_DELAY),
+        ) {
+          device.session.packageManagerServices.clear(device.selector, packageName)
+        }
+      } catch (cause: AdbPackageManagerException) {
+        if (cause.isCommandNotSupported) {
+          // This should never happen as `pm clear` command is supported since at least API 16.
+          logger.warn("`pm clear' is not supported on this device")
+        }
+        throw cause
+      }
+    }
+  }
+
+  /** Returns the result of the [pmCommand]. If necessary, waits for device to come online or for the package service to start running. */
+  private suspend fun <R> runPmCommandWhenServiceIsReady(timeout: Duration, retryDelay: Duration, pmCommand: suspend () -> R): R {
+    return session.withErrorTimeout(timeout) {
+      device.waitUntilOnline()
+      device.waitUntilServiceIsReady("package", retryDelay)
+
+      pmCommand()
+    }
+  }
+}
+
+/** Wait until the [serviceName] is ready on the device. */
+private suspend fun ConnectedDevice.waitUntilServiceIsReady(serviceName: String, retryDelay: Duration) {
+  val logger = adbLogger(session).withDevicePrefix(this)
+  while (true) {
+    val checkOutput = shell.executeAsText("service check $serviceName")
+    if (checkOutput.stdout.contains("Service $serviceName: found")) {
+      break
+    } else if (checkOutput.stdout.contains("Service $serviceName: not found")) {
+      logger.debug { "'$serviceName' service is not running, retry after delay" }
+      delay(retryDelay.toSafeMillis())
+    } else {
+      throw IOException("Unexpected output from 'service check $serviceName': ${checkOutput.stdout}")
+    }
+  }
+}
+
+/**
+ * Wrap TimeoutException in IOException.
+ *
+ * When the timeout is an implementation detail, and callers are only expected to handle generic I/O errors we should rethrow
+ * TimeoutException as IOException.
+ */
+private inline fun <R> mapTimeoutToAdbException(commandDescription: String, block: () -> R): R {
+  return try {
+    block()
+  } catch (e: TimeoutException) {
+    throw AdbIOTimeoutException("Operation timed out executing `$commandDescription`", e)
   }
 }
 

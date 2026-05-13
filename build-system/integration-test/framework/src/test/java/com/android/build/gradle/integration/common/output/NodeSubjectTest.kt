@@ -67,12 +67,6 @@ class NodeSubjectTest {
   @Test
   fun nodeByAttribute() {
     val manifestContentAsNodes = parseManifestToNodes(MANIFEST_EXAMPLE_2.split("\n"))
-    Truth.assertAbout(NodeSubject.nodes())
-      .that(manifestContentAsNodes)
-      .node("manifest")
-      .node("application")
-      .nodeByNameAndAttribute("uses-sdk-library", "com.example.privacysandboxsdk")
-      .containsAttributeAndValue("http://schemas.android.com/apk/res/android:name", "\"com.example.privacysandboxsdk\"")
 
     // test failure
     expectFailure { it.that(manifestContentAsNodes).node("manifest").node("application").nodeByNameAndAttribute("uses-sdk-library", "foo") }

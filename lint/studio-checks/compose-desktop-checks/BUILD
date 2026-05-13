@@ -15,6 +15,7 @@ COMPOSE_LINT = [
     "@maven//:androidx.compose.material.material-lint",
     "@maven//:androidx.compose.material3.material3-lint",
     "@maven//:androidx.compose.runtime.runtime-lint",
+    "@maven//:androidx.compose.runtime.runtime-retain-lint",
     "@maven//:androidx.compose.runtime.runtime-saveable-lint",
     "@maven//:androidx.compose.ui.ui-graphics-lint",
     "@maven//:androidx.compose.ui.ui-lint",

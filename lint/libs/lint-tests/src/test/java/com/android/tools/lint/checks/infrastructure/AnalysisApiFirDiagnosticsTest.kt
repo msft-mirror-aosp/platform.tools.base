@@ -15,38 +15,15 @@
  */
 package com.android.tools.lint.checks.infrastructure
 
-import com.android.tools.lint.FIR_UAST_KEY
-import com.android.tools.lint.UastEnvironment
 import com.android.tools.lint.checks.AbstractCheckTest
 import com.android.tools.lint.checks.infrastructure.TestDiagnosticsDetector.Companion.NULLNESS_MESSAGE
 import com.android.tools.lint.detector.api.Detector
-import org.junit.AfterClass
-import org.junit.BeforeClass
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
 @RunWith(JUnit4::class)
 class AnalysisApiFirDiagnosticsTest : AbstractCheckTest(), AnalysisApiDiagnosticsTestBase {
-  companion object {
-    private var lastKey: String? = null
-
-    @BeforeClass
-    @JvmStatic
-    fun setup() {
-      lastKey = System.getProperty(FIR_UAST_KEY, "false")
-      System.setProperty(FIR_UAST_KEY, "true")
-    }
-
-    @AfterClass
-    @JvmStatic
-    fun teardown() {
-      lastKey?.let { System.setProperty(FIR_UAST_KEY, it) }
-      lastKey = null
-      UastEnvironment.disposeApplicationEnvironment()
-    }
-  }
-
   override fun getDetector(): Detector {
     return TestDiagnosticsDetector()
   }

@@ -15,6 +15,8 @@ kotlin_library(
     deps = [
         "@intellij//:intellij-sdk",
         "@intellij//:org.jetbrains.kotlin",
+        "@intellij//:intellij.java.debugger",
+        "@intellij//:intellij.java.debugger.impl",
         "@maven//:org.jetbrains.kotlinx.kotlinx-cli-jvm",
     ],
 )
@@ -143,6 +145,8 @@ iml_module(
         "@intellij//:intellij-sdk",
         "@intellij//:com.intellij.java",
         "@intellij//:org.jetbrains.kotlin",
+        "@intellij//:intellij.java.debugger",
+        "@intellij//:intellij.java.debugger.impl",
         "//prebuilts/tools/common/m2:kotlinx-cli-jvm-0.3.1",
     ],
 )

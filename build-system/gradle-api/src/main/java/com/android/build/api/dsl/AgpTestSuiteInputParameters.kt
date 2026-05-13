@@ -65,6 +65,12 @@ enum class AgpTestSuiteInputParameters(val propertyName: String) {
   /** Path to the testing APK file. */
   @Incubating TESTING_APK("com.android.agp.test.TESTING_APK"),
 
+  /** Comma separated list of APK files that are used for testing utilities. */
+  @Incubating TEST_UTIL_APKS("com.android.agp.test.TEST_UTIL_APKS"),
+
+  /** The execution mode for the test suite. */
+  @Incubating ANDROID_TEST_EXECUTION_MODE("com.android.agp.test.ANDROID_TEST_EXECUTION_MODE"),
+
   /** Path to the AAPT2 executable. */
   @Incubating AAPT2_EXECUTABLE("com.android.agp.test.AAPT2_EXECUTABLE"),
 

@@ -20,6 +20,7 @@ import com.android.build.api.dsl.ApkSigningConfig
 import com.android.build.api.dsl.ApplicationProductFlavor
 import com.android.build.api.dsl.BuildType
 import com.android.build.api.dsl.CommonExtension
+import com.android.build.api.dsl.CompileSdkBetaSpec
 import com.android.build.api.dsl.CompileSdkReleaseSpec
 import com.android.build.api.dsl.CompileSdkSpec
 import com.android.build.api.dsl.CompileSdkVersion
@@ -267,6 +268,25 @@ class DslProxy private constructor(private val theInterface: Class<*>, internal 
             }
 
             MethodReturn(CompileSdkVersionImpl(codeName = args.first() as String))
+          }
+          "canary" -> {
+            if (method.parameterCount != 1) {
+              throw RuntimeException("Unexpected arg count for ${method.name} -- Add support as needed")
+            }
+
+            MethodReturn(CompileSdkVersionImpl(canaryDate = args.first() as String))
+          }
+          "beta" -> {
+            if (method.parameterCount != 2) {
+              throw RuntimeException("Unexpected arg count for ${method.name} -- Add support as needed")
+            }
+
+            val spec = CompileSdkBetaSpecImpl()
+            @Suppress("UNCHECKED_CAST") (args[1] as Function1<CompileSdkBetaSpec, *>).invoke(spec)
+
+            MethodReturn(
+              CompileSdkVersionImpl(apiLevel = args[0] as Int, minorApiLevel = spec.minorApiLevel, betaVersion = spec.betaVersion)
+            )
           }
           "addon" -> {
             if (method.parameterCount != 3) {
@@ -738,6 +758,12 @@ private class CompileSdkReleaseSpecImpl : CompileSdkReleaseSpec {
   override var sdkExtension: Int? = null
 }
 
+/** Simple impl of [CompileSdkBetaSpec] to run the action provided to [CompileSdkSpec.beta]. */
+private class CompileSdkBetaSpecImpl : CompileSdkBetaSpec {
+  override var minorApiLevel: Int? = null
+  override var betaVersion: Int? = null
+}
+
 /**
  * Implementation of [CompileSdkVersion] so that we have an object that is returned by the call to [CompileSdkSpec.release] and other
  * similar methods
@@ -747,6 +773,8 @@ private data class CompileSdkVersionImpl(
   override val minorApiLevel: Int? = null,
   override val sdkExtension: Int? = null,
   override val codeName: String? = null,
+  override val canaryDate: String? = null,
+  override val betaVersion: Int? = null,
   override val addonName: String? = null,
   override val vendorName: String? = null,
 ) : CompileSdkVersion, CustomObjectInstance {
@@ -754,7 +782,15 @@ private data class CompileSdkVersionImpl(
     if (vendorName != null && addonName != null) {
       """addon(${handler.quoteString(vendorName)}, ${handler.quoteString(addonName)}, $apiLevel)"""
     } else if (apiLevel != null) {
-      if (minorApiLevel != null || sdkExtension != null) {
+      if (betaVersion != null) {
+        buildString {
+          append("beta($apiLevel) {\n")
+          val internalIndent = handler.getIndentStringFragment(1)
+          minorApiLevel?.let { append("${internalIndent}minorApiLevel = $it\n") }
+          append("${internalIndent}betaVersion = $betaVersion\n")
+          append("${handler.getIndentStringFragment()}}")
+        }
+      } else if (minorApiLevel != null || sdkExtension != null) {
         buildString {
           append("release($apiLevel) {\n")
           val internalIndent = handler.getIndentStringFragment(1)
@@ -765,6 +801,8 @@ private data class CompileSdkVersionImpl(
       } else {
         """release($apiLevel)"""
       }
+    } else if (canaryDate != null) {
+      """canary(${handler.quoteString(canaryDate)})"""
     } else if (codeName != null) {
       """preview(${handler.quoteString(codeName)})"""
     } else {

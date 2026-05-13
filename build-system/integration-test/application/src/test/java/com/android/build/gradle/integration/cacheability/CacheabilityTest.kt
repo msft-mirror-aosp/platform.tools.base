@@ -94,6 +94,7 @@ class CacheabilityTest {
             ":app:merge${DEBUG_RELEASE}Assets",
             ":app:merge${DEBUG_RELEASE}JavaResource",
             ":app:merge${DEBUG_RELEASE}JniLibFolders",
+            ":app:mergeDebugUnitTestManifest",
             ":app:mergeReleaseArtProfile",
             ":app:mergeReleaseStartupProfile",
             ":app:processApplicationManifest${DEBUG_RELEASE}ForBundle",
@@ -118,6 +119,8 @@ class CacheabilityTest {
         SKIPPED to
           setOf(
             ":app:assemble${DEBUG_RELEASE}",
+            ":app:compile${DEBUG_RELEASE}Kotlin",
+            ":app:compileDebugUnitTestKotlin",
             ":app:extractReleaseNativeSymbolTables",
             ":app:merge${DEBUG_RELEASE}NativeDebugMetadata",
             ":app:merge${DEBUG_RELEASE}NativeLibs",
@@ -138,7 +141,6 @@ class CacheabilityTest {
     return with(EmptyActivityProjectBuilder()) {
       this.projectName = projectName
       this.withUnitTest = true
-      disableBuiltInKotlin()
       withHeap("2048m")
       build()
     }

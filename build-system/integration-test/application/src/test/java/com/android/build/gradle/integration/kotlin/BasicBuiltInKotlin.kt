@@ -44,7 +44,15 @@ class BasicBuiltInKotlin {
     build.executor.run(":app:assembleDebug")
     val project = rule.build.androidApplication()
     project.assertApk(ApkSelector.DEBUG) {
-      classes().containsExactly("com/foo/application/HelloWorld", "com/foo/application/R\$", "kotlin/", "org/intellij/", "org/jetbrains/")
+      classes()
+        .containsExactly(
+          "com/foo/application/HelloWorld",
+          "com/foo/application/R\$",
+          "kotlin/",
+          "org/intellij/",
+          "org/jetbrains/",
+          "com/android/tools/r8/annotations/LambdaMethod",
+        )
     }
   }
 }

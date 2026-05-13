@@ -887,28 +887,6 @@ public class ManifestMerger2 {
     }
 
     /**
-     * Set an android namespaced attribute for the manifest element.
-     *
-     * @param document the document whose attributes will be modified
-     * @param attribute the new attribute to be set
-     * @param value the new value of the attribute
-     * @return the previous value of the attribute or null if the attribute was not set.
-     */
-    public static String setManifestAndroidAttribute(
-            @NotNull XmlDocument document, @NotNull String attribute, @NotNull String value) {
-        XmlElement manifest = document.getRootNode();
-        if (manifest == null) {
-            return null;
-        }
-        String previousValue =
-                manifest.getXml().hasAttributeNS(SdkConstants.ANDROID_URI, attribute)
-                        ? manifest.getXml().getAttributeNS(SdkConstants.ANDROID_URI, attribute)
-                        : null;
-        setAndroidAttribute(manifest, attribute, value);
-        return previousValue;
-    }
-
-    /**
      * Adds internet permission to document if not already present.
      *
      * @param document the document which gets edited if necessary.
@@ -1449,14 +1427,7 @@ public class ManifestMerger2 {
          * annotations will not be removed as they can be useful when later importing the resulting
          * merged android manifest into an application.
          */
-        LIBRARY(false, false),
-
-        /**
-         * Privacy sandbox library merging similar to fused library merging except that resulting
-         * manifest is expected to be processed by aapt2 and shipped into an .asb file to the Play
-         * Store.
-         */
-        PRIVACY_SANDBOX_LIBRARY(true, true);
+        LIBRARY(false, false);
 
         private final boolean isKeepToolsAttributeRequired;
         private final boolean isFullPlaceholderSubstitutionRequired;

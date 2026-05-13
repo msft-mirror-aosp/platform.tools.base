@@ -17,17 +17,29 @@ android {
     }
 }
 
+def variantCount = 0
+def testVariantCount = 0
+
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        variantCount++
+        if (variant.androidTest != null) {
+            testVariantCount++
+        }
+    }
+}
+
 dependencies {
     androidTestImplementation "androidx.test:runner:1.4.0-alpha06"
     androidTestImplementation "androidx.test:rules:1.4.0-alpha06"
 }
 
 project.afterEvaluate {
-    if (android.applicationVariants.size() != 2) {
-        throw new GradleException("Wrong number of app variants!")
+    if (variantCount != 2) {
+        throw new GradleException("Wrong number of app variants! Expected 2, got $variantCount")
     }
 
-    if (android.testVariants.size() != 1) {
-        throw new GradleException("Wrong number of test variants!")
+    if (testVariantCount != 1) {
+        throw new GradleException("Wrong number of test variants! Expected 1, got $testVariantCount")
     }
 }

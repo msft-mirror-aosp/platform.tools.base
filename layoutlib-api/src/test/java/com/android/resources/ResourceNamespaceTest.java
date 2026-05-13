@@ -72,7 +72,12 @@ public class ResourceNamespaceTest {
         assertSame(
                 ANDROID,
                 fromNamespacePrefix("android", RES_AUTO, prefix -> AndroidConstants.ANDROID_URI));
+        assertSame(
+                ANDROID,
+                fromNamespacePrefix(
+                        "androidprv", RES_AUTO, prefix -> AndroidConstants.ANDROID_PRV_URI));
         assertSame(ANDROID, fromNamespaceUri(AndroidConstants.ANDROID_URI));
+        assertSame(ANDROID, fromNamespaceUri(AndroidConstants.ANDROID_PRV_URI));
         assertSame(ANDROID, serializeAndDeserialize(ANDROID));
     }
 

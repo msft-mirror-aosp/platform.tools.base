@@ -117,7 +117,7 @@ public class ImportDependencyVisitor implements DependencyVisitor {
         // Create new dependency nodes for the import dependencies.
         List<DependencyNode> importDependencyNodes =
                 rawPomModel.getDependencyManagement().getDependencies().stream()
-                        .filter(d -> d.getType().equals("pom") && d.getScope().equals("import"))
+                        .filter(d -> "pom".equals(d.getType()) && "import".equals(d.getScope()))
                         .map(
                                 d -> {
                                     // Since we are working with the raw pom model, the model

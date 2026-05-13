@@ -23,6 +23,8 @@ android {
         create("minified").initWith(buildTypes.debug)
         minified {
             minifyEnabled true
+            //noinspection NotShrinkingResources
+            shrinkResources = false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro', 'dont-optimize.pro'
             testProguardFile 'test-proguard-rules.pro'
             enableAndroidTestCoverage = true

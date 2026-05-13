@@ -16,6 +16,7 @@
 
 package com.android.build.api.artifact
 
+import org.gradle.api.Incubating
 import org.gradle.api.Task
 import org.gradle.api.file.Directory
 import org.gradle.api.file.FileSystemLocation
@@ -79,6 +80,53 @@ interface OutOperationRequest<FileTypeT : FileSystemLocation> {
    */
   fun <ArtifactTypeT> toAppendTo(type: ArtifactTypeT)
     where ArtifactTypeT : Artifact.Multiple<FileTypeT>, ArtifactTypeT : Artifact.Appendable
+
+  /**
+   * Initiates an append request to a [Artifact.Multiple] artifact type that is also a [Artifact.WithQualifiers].
+   *
+   * @param type The [Artifact] of [FileTypeT] identifying the artifact to append to.
+   * @param qualifiers the [Artifact] attributes as a [Map<String, String>] that uniquely identifies the instance in the set of artifacts
+   *   for this [type].
+   *
+   * The artifact type must be [Artifact.Multiple], [Artifact.Appendable] and [Artifact.WithQualifiers]
+   *
+   * As an example, let's take a [Task] that outputs a [org.gradle.api.file.RegularFile]:
+   * ```kotlin
+   *     abstract class MyTask: DefaultTask() {
+   *          @get:OutputFile abstract val outputFile: RegularFileProperty
+   *
+   *          @TaskAction fun taskAction() {
+   *              ... outputFile.get().asFile.write( ... ) ...
+   *          }
+   *     }
+   * ```
+   *
+   * and an ArtifactType defined as follows :
+   * ```kotlin
+   *     sealed class ArtifactType<T: FileSystemLocation>(
+   *          val kind: ArtifactKind
+   *          val qualifiers: List<String>
+   *     ): MultipleArtifactType {
+   *          object MULTIPLE_FILE_ARTIFACT:
+   *                  ArtifactType<RegularFile>(
+   *                      FILE,
+   *                      listOf("ATTR_KEY_ONE", ATTR_KEY_TWO"),
+   *                      ), Appendable, WithQualifiers
+   *     }
+   * ```
+   *
+   * You can then register the above task as a Provider of [org.gradle.api.file.RegularFile] for that artifact type:
+   * ```kotlin
+   *     val taskProvider= projects.tasks.register(MyTask::class.java, "appendTask")
+   *     artifacts.use(taskProvider)
+   *      .wiredWith(MyTask::outputFile)
+   *      .toAppendTo(ArtifactType.MULTIPLE_FILE_ARTIFACT,
+   *          mapOf("ATTR_KEY_ONE" to "valueOne, "ATTR_KEY_TWO" to "valueTwo")
+   * ```
+   */
+  @Incubating
+  fun <ArtifactTypeT> toAppendTo(type: ArtifactTypeT, qualifiers: Map<String, String>)
+    where ArtifactTypeT : Artifact.Multiple<FileTypeT>, ArtifactTypeT : Artifact.Appendable, ArtifactTypeT : Artifact.WithQualifiers
 
   /**
    * Initiates a creation request for a single [Artifact.Replaceable] artifact type.

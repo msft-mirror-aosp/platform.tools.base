@@ -67,24 +67,15 @@ class EmptyActivityProjectBuilder {
    */
   private var kotlinUsedInLibrarySubprojects: Boolean = false
 
-  /** Whether built-in Kotlin should be enabled. */
-  private var builtInKotlin: Boolean = true
-
   init {
     if (useGradleBuildCache) {
       checkNotNull(gradleBuildCacheDir) { "gradleBuildCacheDir must be specified when useGradleBuildCache=true" }
     }
   }
 
-  @Deprecated("Do not use this method. Try to migrate the test to built-in Kotlin instead (b/385745419).")
-  fun disableBuiltInKotlin(): EmptyActivityProjectBuilder {
-    builtInKotlin = false
-    return this
-  }
-
   fun build(): GradleTestProject {
     val subProjectsBuilder = MultiModuleTestProject.builder()
-    app = createAppSubProject(APP, packageName, minSdkVersion, useKotlin)
+    app = createAppSubProject(APP, packageName, minSdkVersion)
     subProjectsBuilder.subproject(app.path!!, app)
     for (subProject in librarySubProjects) {
       subProjectsBuilder.subproject(subProject.path!!, subProject)
@@ -97,13 +88,8 @@ class EmptyActivityProjectBuilder {
         .withConfigurationCaching(withConfigurationCaching)
 
     rootProjectBuilder.withKotlinGradlePlugin(useKotlin || kotlinUsedInLibrarySubprojects)
-    if (!builtInKotlin && (useKotlin || kotlinUsedInLibrarySubprojects)) {
-      rootProjectBuilder.addGradleProperty(BooleanOption.USE_NEW_DSL, false)
-    }
 
-    rootProjectBuilder
-      .addGradleProperties(BooleanOption.ENABLE_JETIFIER.propertyName + "=true")
-      .addGradleProperty(BooleanOption.BUILT_IN_KOTLIN, builtInKotlin)
+    rootProjectBuilder.addGradleProperties(BooleanOption.ENABLE_JETIFIER.propertyName + "=true")
 
     if (useGradleBuildCache) {
       rootProjectBuilder.withGradleBuildCacheDirectory(gradleBuildCacheDir!!)
@@ -119,17 +105,14 @@ class EmptyActivityProjectBuilder {
     @Suppress("SameParameterValue") subprojectName: String,
     namespace: String,
     minSdkVersion: Int,
-    useKotlin: Boolean,
   ): GradleProject {
     val app = EmptyGradleProject(subprojectName)
     val packagePath = namespace.replace('.', '/')
-
     // 1. Create build.gradle file
     app.addFile(
       "build.gradle",
       with(BuildFileBuilder()) {
         plugin = "com.android.application"
-        this.useKotlin = useKotlin
         compileSdkVersion = GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
         this.minSdkVersion = minSdkVersion.toString()
         this.namespace = namespace
@@ -154,48 +137,27 @@ class EmptyActivityProjectBuilder {
 
     // 3. Create source files
     val appCompatActivityClass = "androidx.appcompat.app.AppCompatActivity"
-    if (useKotlin) {
-      app.addFile(
-        "src/main/java/$packagePath/MainActivity.kt",
-        """
-                package $namespace
+    app.addFile(
+      "src/main/java/$packagePath/MainActivity.java",
+      """
+              package $namespace;
 
-                import $appCompatActivityClass
-                import android.os.Bundle
+              import $appCompatActivityClass;
+              import android.os.Bundle;
 
-                class MainActivity : AppCompatActivity() {
+              public class MainActivity extends AppCompatActivity {
 
-                    override fun onCreate(savedInstanceState: Bundle?) {
-                        super.onCreate(savedInstanceState)
-                        setContentView(R.layout.activity_main)
-                    }
-                }
-                """
-          .trimIndent(),
-      )
-    } else {
-      app.addFile(
-        "src/main/java/$packagePath/MainActivity.java",
-        """
-                package $namespace;
-
-                import $appCompatActivityClass;
-                import android.os.Bundle;
-
-                public class MainActivity extends AppCompatActivity {
-
-                    @Override
-                    protected void onCreate(Bundle savedInstanceState) {
-                        super.onCreate(savedInstanceState);
-                        setContentView(R.layout.activity_main);
-                    }
-                }
-                """
-          .trimIndent(),
-      )
-    }
+                  @Override
+                  protected void onCreate(Bundle savedInstanceState) {
+                      super.onCreate(savedInstanceState);
+                      setContentView(R.layout.activity_main);
+                  }
+              }
+              """
+        .trimIndent(),
+    )
     if (withUnitTest) {
-      addUnitTest(app, namespace, useKotlin)
+      addUnitTest(app, namespace)
     }
 
     // 4. Create layout file
@@ -211,58 +173,31 @@ class EmptyActivityProjectBuilder {
     return app
   }
 
-  private fun addUnitTest(subProject: GradleProject, packageName: String, useKotlin: Boolean) {
+  private fun addUnitTest(subProject: GradleProject, packageName: String) {
     val packagePath = packageName.replace('.', '/')
-    if (useKotlin) {
-      subProject.addFile(
-        "src/test/java/$packagePath/ExampleUnitTest.kt",
-        """
-                package $packageName
+    subProject.addFile(
+      "src/test/java/$packagePath/ExampleUnitTest.java",
+      """
+              package $packageName;
 
-                import org.junit.Test
+              import org.junit.Test;
 
-                import org.junit.Assert.*
+              import static org.junit.Assert.*;
 
-                /**
-                 * Example local unit test, which will execute on the development machine (host).
-                 *
-                 * See [testing documentation](http://d.android.com/tools/testing).
-                 */
-                class ExampleUnitTest {
-                    @Test
-                    fun addition_isCorrect() {
-                        assertEquals(4, 2 + 2)
-                    }
-                }
-
-                """
-          .trimIndent(),
-      )
-    } else {
-      subProject.addFile(
-        "src/test/java/$packagePath/ExampleUnitTest.java",
-        """
-                package $packageName;
-
-                import org.junit.Test;
-
-                import static org.junit.Assert.*;
-
-                /**
-                 * Example local unit test, which will execute on the development machine (host).
-                 *
-                 * @see <a href="http://d.android.com/tools/testing">Testing documentation</a>
-                 */
-                public class ExampleUnitTest {
-                    @Test
-                    public void addition_isCorrect() {
-                        assertEquals(4, 2 + 2);
-                    }
-                }
-                """
-          .trimIndent(),
-      )
-    }
+              /**
+               * Example local unit test, which will execute on the development machine (host).
+               *
+               * @see <a href="http://d.android.com/tools/testing">Testing documentation</a>
+               */
+              public class ExampleUnitTest {
+                  @Test
+                  public void addition_isCorrect() {
+                      assertEquals(4, 2 + 2);
+                  }
+              }
+              """
+        .trimIndent(),
+    )
   }
 
   /**
@@ -274,7 +209,6 @@ class EmptyActivityProjectBuilder {
     subprojectName: String = LIB,
     namespace: String = COM_EXAMPLE_LIB,
     minSdkVersion: Int = DEFAULT_MIN_SDK_VERSION,
-    useKotlin: Boolean = false,
     addImplementationDependencyFromApp: Boolean = false, // default to false to match AS behavior
   ): EmptyActivityProjectBuilder {
     val lib = EmptyGradleProject(subprojectName)
@@ -283,7 +217,6 @@ class EmptyActivityProjectBuilder {
       "build.gradle",
       with(BuildFileBuilder()) {
         plugin = "com.android.library"
-        this.useKotlin = useKotlin
         compileSdkVersion = GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
         this.minSdkVersion = minSdkVersion.toString()
         this.namespace = namespace
@@ -299,15 +232,12 @@ class EmptyActivityProjectBuilder {
 
     // 3. Create source files
     if (withUnitTest) {
-      addUnitTest(lib, namespace, useKotlin)
+      addUnitTest(lib, namespace)
     }
 
     librarySubProjects.add(lib)
     if (addImplementationDependencyFromApp) {
       appDependencies.add(lib)
-    }
-    if (useKotlin) {
-      kotlinUsedInLibrarySubprojects = true
     }
     return this
   }

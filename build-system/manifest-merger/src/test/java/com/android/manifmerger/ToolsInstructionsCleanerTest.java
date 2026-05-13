@@ -16,17 +16,24 @@
 
 package com.android.manifmerger;
 
+import static com.google.common.truth.Truth.assertThat;
+
 import com.android.ide.common.blame.SourceFile;
 import com.android.testutils.MockLog;
+
 import com.google.common.base.Strings;
-import java.io.IOException;
-import java.util.Optional;
-import javax.xml.parsers.ParserConfigurationException;
+
 import junit.framework.TestCase;
+
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+
+import java.io.IOException;
+import java.util.Optional;
+
+import javax.xml.parsers.ParserConfigurationException;
 
 /**
  * Tests for the {@link com.android.manifmerger.ToolsInstructionsCleaner} class.
@@ -69,21 +76,25 @@ public class ToolsInstructionsCleanerTest extends TestCase {
     public void testNodeWithChildrenRemoveOperation()
             throws ParserConfigurationException, SAXException, IOException {
         MockLog mockLog = new MockLog();
-        String main = "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
-                + "        xmlns:tools=\"http://schemas.android.com/tools\"\n"
-                + "        package=\"com.example.lib3\" >\n"
-                + "\n"
-                + "        <application>\n"
-                + "             <activity android:name=\"com.example.lib3.activityOne\" >\n"
-                + "                 <intent-filter tools:node=\"remove\" >\n"
-                + "                     <action android:name=\"android.intent.action.VIEW\" />\n"
-                + "                     <category android:name=\"android.intent.category.DEFAULT\" />\n"
-                + "                     <category android:name=\"android.intent.category.BROWSABLE\" />\n"
-                + "                 </intent-filter>\n"
-                + "             </activity>\n"
-                + "        </application>\n"
-                + "\n"
-                + "</manifest>";
+        String main =
+                "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "        xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                        + "        package=\"com.example.lib3\" >\n"
+                        + "\n"
+                        + "        <application>\n"
+                        + "             <activity android:name=\"com.example.lib3.activityOne\" >\n"
+                        + "                 <intent-filter tools:node=\"remove\" >\n"
+                        + "                     <action android:name=\"android.intent.action.VIEW\""
+                        + " />\n"
+                        + "                     <category"
+                        + " android:name=\"android.intent.category.DEFAULT\" />\n"
+                        + "                     <category"
+                        + " android:name=\"android.intent.category.BROWSABLE\" />\n"
+                        + "                 </intent-filter>\n"
+                        + "             </activity>\n"
+                        + "        </application>\n"
+                        + "\n"
+                        + "</manifest>";
 
         XmlDocument mainDocument =
                 loadXmlDoc(
@@ -108,14 +119,15 @@ public class ToolsInstructionsCleanerTest extends TestCase {
     public void testInvalidToolsRemoveOperation()
             throws ParserConfigurationException, SAXException, IOException {
         MockLog mockLog = new MockLog();
-        String main = ""
-                + "<manifest\n"
-                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
-                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
-                + "    package=\"com.example.lib3\""
-                + "    tools:node=\"remove\">\n"
-                + "\n"
-                + "</manifest>";
+        String main =
+                ""
+                        + "<manifest\n"
+                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                        + "    package=\"com.example.lib3\"\n"
+                        + "    tools:node=\"remove\">\n"
+                        + "\n"
+                        + "</manifest>";
 
         XmlDocument mainDocument =
                 loadXmlDoc(TestUtils.sourceFile(getClass(), "testNodeRemoveOperation"), main);
@@ -124,19 +136,23 @@ public class ToolsInstructionsCleanerTest extends TestCase {
                 ToolsInstructionsCleaner.cleanToolsReferences(
                                 ManifestMerger2.MergeType.APPLICATION, mainDocument, mockLog)
                         .isPresent());
+
+        assertThat(mockLog.toString())
+                .contains("tools:node=\"remove\" not allowed on top level manifest element");
     }
 
     public void testInvalidToolsRemoveAllOperation()
             throws ParserConfigurationException, SAXException, IOException {
         MockLog mockLog = new MockLog();
-        String main = ""
-                + "<manifest\n"
-                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
-                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
-                + "    package=\"com.example.lib3\""
-                + "    tools:node=\"removeAll\">\n"
-                + "\n"
-                + "</manifest>";
+        String main =
+                ""
+                        + "<manifest\n"
+                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                        + "    package=\"com.example.lib3\"\n"
+                        + "    tools:node=\"removeAll\">\n"
+                        + "\n"
+                        + "</manifest>";
 
         XmlDocument mainDocument =
                 loadXmlDoc(TestUtils.sourceFile(getClass(), "testNodeRemoveOperation"), main);
@@ -145,6 +161,35 @@ public class ToolsInstructionsCleanerTest extends TestCase {
                 ToolsInstructionsCleaner.cleanToolsReferences(
                                 ManifestMerger2.MergeType.APPLICATION, mainDocument, mockLog)
                         .isPresent());
+
+        assertThat(mockLog.toString())
+                .contains("tools:node=\"removeAll\" not allowed on top level manifest element");
+    }
+
+    public void testInvalidToolsNamespacedRootElement()
+            throws ParserConfigurationException, SAXException, IOException {
+        MockLog mockLog = new MockLog();
+        String main =
+                ""
+                        + "<tools:manifest\n"
+                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                        + "    package=\"com.example.lib3\">\n"
+                        + "\n"
+                        + "</tools:manifest>";
+
+        XmlDocument mainDocument =
+                loadXmlDoc(
+                        TestUtils.sourceFile(getClass(), "testInvalidToolsNamespacedRootElement"),
+                        main);
+
+        assertFalse(
+                ToolsInstructionsCleaner.cleanToolsReferences(
+                                ManifestMerger2.MergeType.APPLICATION, mainDocument, mockLog)
+                        .isPresent());
+
+        assertThat(mockLog.toString())
+                .contains("tools namespace not allowed on top level manifest element");
     }
 
     public void testNodeReplaceOperation()
@@ -240,20 +285,54 @@ public class ToolsInstructionsCleanerTest extends TestCase {
         assertTrue(Strings.isNullOrEmpty(activity.get().getAttribute("tools:selector")));
     }
 
+    public void testRemoveAllWithSelectorRemoval()
+            throws ParserConfigurationException, SAXException, IOException {
+        MockLog mockLog = new MockLog();
+        String main =
+                ""
+                        + "<manifest\n"
+                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                        + "    package=\"com.example.lib3\">\n"
+                        + "\n"
+                        + "    <application android:label=\"@string/lib_name\">\n"
+                        + "        <activity android:name=\"activityOne\" "
+                        + "             tools:node=\"removeAll\" tools:selector=\"foo\"/>\n"
+                        + "    </application>\n"
+                        + "\n"
+                        + "</manifest>";
+
+        XmlDocument mainDocument =
+                loadXmlDoc(
+                        TestUtils.sourceFile(getClass(), "testRemoveAllWithSelectorRemoval"), main);
+
+        Element rootElement = mainDocument.getRootNode().getXml();
+        ToolsInstructionsCleaner.cleanToolsReferences(
+                ManifestMerger2.MergeType.APPLICATION, mainDocument, mockLog);
+
+        Optional<Element> application = getChildElementByName(rootElement, "application");
+        assertTrue(application.isPresent());
+
+        Optional<Element> activity = getChildElementByName(application.get(), "activity");
+        // ensure the activity DID get deleted even since it has a selector because it's removeAll
+        assertFalse(activity.isPresent());
+    }
+
     public void testOtherToolInstructionRemoval()
             throws ParserConfigurationException, SAXException, IOException {
         MockLog mockLog = new MockLog();
-        String main = ""
-                + "<manifest\n"
-                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
-                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
-                + "    package=\"com.example.lib3\">\n"
-                + "\n"
-                + "    <application android:label=\"@string/lib_name\">\n"
-                + "        <activity android:name=\"activityOne\" tools:targetApi=\"true\" tools:ignore=\"value\"/>\n"
-                + "    </application>\n"
-                + "\n"
-                + "</manifest>";
+        String main =
+                "<manifest\n"
+                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                        + "    package=\"com.example.lib3\">\n"
+                        + "\n"
+                        + "    <application android:label=\"@string/lib_name\">\n"
+                        + "        <activity android:name=\"activityOne\" tools:targetApi=\"true\""
+                        + " tools:ignore=\"value\"/>\n"
+                        + "    </application>\n"
+                        + "\n"
+                        + "</manifest>";
 
         XmlDocument mainDocument =
                 loadXmlDoc(TestUtils.sourceFile(getClass(), "testNodeReplaceOperation"), main);

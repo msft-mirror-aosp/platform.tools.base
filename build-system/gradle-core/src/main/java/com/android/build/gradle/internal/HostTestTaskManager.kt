@@ -33,9 +33,9 @@ import com.android.build.gradle.internal.scope.MutableTaskContainer
 import com.android.build.gradle.internal.tasks.PackageForHostTest
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.tasks.factory.dependsOn
+import com.android.build.gradle.internal.test.tasks.TestResultsCollectionTask
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.tasks.GenerateTestConfig
-import com.android.build.gradle.tasks.TestResultsCollectionTask
 import com.android.build.gradle.tasks.factory.AndroidUnitTest
 import com.google.common.collect.ImmutableSet
 import org.gradle.api.Project

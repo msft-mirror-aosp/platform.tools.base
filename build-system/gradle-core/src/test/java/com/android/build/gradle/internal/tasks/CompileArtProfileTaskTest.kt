@@ -20,7 +20,6 @@ import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
-import com.android.build.gradle.internal.dsl.ModulePropertyKey
 import com.android.build.gradle.internal.fixtures.ExecutionMode
 import com.android.build.gradle.internal.fixtures.FakeGradleWorkExecutor
 import com.android.build.gradle.internal.fixtures.FakeNoOpAnalyticsService
@@ -36,22 +35,10 @@ import org.gradle.workers.WorkerExecutor
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import org.junit.runner.RunWith
-import org.junit.runners.Parameterized
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 
-@RunWith(Parameterized::class)
-class CompileArtProfileTaskTest(private val r8Rewriting: Boolean) {
-
-  companion object {
-
-    @JvmStatic
-    @Parameterized.Parameters(name = "r8Rewriting={0}")
-    fun getParameters(): Collection<Array<Any>> {
-      return listOf(arrayOf(false), arrayOf(true))
-    }
-  }
+class CompileArtProfileTaskTest {
 
   @get:Rule val temporaryFolder = TemporaryFolder()
 
@@ -83,7 +70,6 @@ class CompileArtProfileTaskTest(private val r8Rewriting: Boolean) {
     whenever(creationConfig.artifacts).thenReturn(artifacts)
 
     val experimentalProperties = objects.mapProperty(String::class.java, Any::class.java)
-    experimentalProperties.put(ModulePropertyKey.BooleanWithDefault.ART_PROFILE_R8_REWRITING.key, r8Rewriting)
     whenever(creationConfig.experimentalProperties).thenReturn(experimentalProperties)
 
     val mergedFile = temporaryFolder.newFile("merged_file.txt")
@@ -104,7 +90,7 @@ class CompileArtProfileTaskTest(private val r8Rewriting: Boolean) {
       it.mergedArtProfile.set(mergedFile)
 
       // ensure the configuration set the task input correctly.
-      Truth.assertThat(it.useMappingFile.get()).isEqualTo(!r8Rewriting)
+      Truth.assertThat(it.useMappingFile.get()).isEqualTo(false)
 
       // run the task and make sure the work action parameters contain the right values.
       it.taskAction()
@@ -114,11 +100,7 @@ class CompileArtProfileTaskTest(private val r8Rewriting: Boolean) {
           Truth.assertThat(workParameters).isInstanceOf(CompileArtProfileTask.CompileArtProfileWorkAction.Parameters::class.java)
           workParameters as CompileArtProfileTask.CompileArtProfileWorkAction.Parameters
         }
-      if (r8Rewriting) {
-        Truth.assertThat(workParameters.obfuscationMappingFile.orNull).isNull()
-      } else {
-        Truth.assertThat(workParameters.obfuscationMappingFile.get().asFile).isEqualTo(mappingFile)
-      }
+      Truth.assertThat(workParameters.obfuscationMappingFile.orNull).isNull()
     }
   }
 }

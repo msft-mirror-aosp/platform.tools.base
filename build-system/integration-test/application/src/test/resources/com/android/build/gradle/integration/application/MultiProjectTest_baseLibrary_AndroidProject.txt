@@ -13,6 +13,7 @@
             - compileTaskName               = "compileDebugSources"
             - assembleTaskName              = "assembleDebug"
             - classesFolders:
+               * {PROJECT}/baseLibrary/build/intermediates/built_in_kotlinc/debug/compileDebugKotlin/classes{!}
                * {PROJECT}/baseLibrary/build/intermediates/compile_r_class_jar/debug/generateDebugRFile/R.jar{!}
                * {PROJECT}/baseLibrary/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes{!}
             - ideSetupTaskNames             = ["generateDebugSources"]
@@ -40,6 +41,7 @@
             - compileTaskName               = "compileDebugAndroidTestSources"
             - assembleTaskName              = "assembleDebugAndroidTest"
             - classesFolders:
+               * {PROJECT}/baseLibrary/build/intermediates/built_in_kotlinc/debugAndroidTest/compileDebugAndroidTestKotlin/classes{!}
                * {PROJECT}/baseLibrary/build/intermediates/compile_r_class_jar/debugAndroidTest/generateDebugAndroidTestRFile/R.jar{!}
                * {PROJECT}/baseLibrary/build/intermediates/javac/debugAndroidTest/compileDebugAndroidTestJavaWithJavac/classes{!}
             - ideSetupTaskNames             = ["generateDebugAndroidTestSources"]
@@ -71,6 +73,7 @@
             - compileTaskName       = "compileDebugUnitTestSources"
             - assembleTaskName      = "assembleDebugUnitTest"
             - classesFolders:
+               * {PROJECT}/baseLibrary/build/intermediates/built_in_kotlinc/debugUnitTest/compileDebugUnitTestKotlin/classes{!}
                * {PROJECT}/baseLibrary/build/intermediates/compile_and_runtime_r_class_jar/debugUnitTest/generateDebugUnitTestStubRFile/R.jar{!}
                * {PROJECT}/baseLibrary/build/intermediates/javac/debugUnitTest/compileDebugUnitTestJavaWithJavac/classes{!}
             - ideSetupTaskNames     = ["createMockableJar"]
@@ -91,6 +94,7 @@
             - compileTaskName               = "compileReleaseSources"
             - assembleTaskName              = "assembleRelease"
             - classesFolders:
+               * {PROJECT}/baseLibrary/build/intermediates/built_in_kotlinc/release/compileReleaseKotlin/classes{!}
                * {PROJECT}/baseLibrary/build/intermediates/compile_r_class_jar/release/generateReleaseRFile/R.jar{!}
                * {PROJECT}/baseLibrary/build/intermediates/javac/release/compileReleaseJavaWithJavac/classes{!}
             - ideSetupTaskNames             = ["generateReleaseSources"]
@@ -131,7 +135,7 @@
    > flags:
       * "APPLICATION_R_CLASS_CONSTANT_IDS -> false"
       * "BUILD_FEATURE_ANDROID_RESOURCES -> true"
-      * "BUILT_IN_KOTLIN_DEFAULT_ENABLED -> false"
+      * "BUILT_IN_KOTLIN_DEFAULT_ENABLED -> true"
       * "DATA_BINDING_ENABLED -> false"
       * "ENABLE_COMPILE_RUNTIME_CLASSPATH_ALIGNMENT -> false"
       * "ENABLE_VCS_INFO -> false"

@@ -17,7 +17,6 @@
 package com.android.build.api.dsl
 
 import org.gradle.declarative.dsl.model.annotations.HiddenInDefinition
-import org.gradle.declarative.dsl.model.annotations.Restricted
 
 /** Shared properties between DSL objects [ProductFlavor] and [DefaultConfig] */
 interface BaseFlavor : VariantDimension {
@@ -38,7 +37,7 @@ interface BaseFlavor : VariantDimension {
    *
    * See [uses-sdk element documentation](http://developer.android.com/guide/topics/manifest/uses-sdk-element.html).
    */
-  @get:Restricted var minSdk: Int?
+  var minSdk: Int?
 
   /** Configures all aspects regarding minSdk, see [MinSdkSpec] for available options. */
   fun minSdk(action: MinSdkSpec.() -> Unit)
@@ -61,7 +60,7 @@ interface BaseFlavor : VariantDimension {
    *
    * See [uses-sdk element documentation](http://developer.android.com/guide/topics/manifest/uses-sdk-element.html).
    */
-  @get:Restricted @Deprecated("Will be removed in AGP 10.0, replaced with the minSdk block") var minSdkPreview: String?
+  @Deprecated("Will be removed in AGP 10.0, replaced with the minSdk block") var minSdkPreview: String?
 
   @Deprecated("Will be removed in AGP 10.0, replaced with the minSdk block") fun setMinSdkVersion(minSdkVersion: String?)
 
@@ -97,7 +96,7 @@ interface BaseFlavor : VariantDimension {
    *
    * See [instrumentation](http://developer.android.com/guide/topics/manifest/instrumentation-element.html).
    */
-  @get:Restricted var testInstrumentationRunner: String?
+  var testInstrumentationRunner: String?
 
   /**
    * Test instrumentation runner custom arguments.

@@ -21,12 +21,21 @@ if [[ -z ${report_name} || -z ${html_dir} ]]; then
   exit 1
 fi
 
+readonly BAZEL_EXITCODE_TEST_FAILURES=3
+exit_if_not_test_failure() {
+  local -r exit_code=$1
+  # Test failures in CI are displayed by other systems. (context: b/192362688)
+  if [[ $exit_code != $BAZEL_EXITCODE_TEST_FAILURES ]]; then
+    exit $exit_code
+  fi
+}
+
 echo "Delete old baseline coverage file lists"
 find bazel-bin/ -name '*.coverage.baseline*' | xargs rm -fv || exit $?
 echo "Generate baseline coverage file lists"
 ./tools/base/bazel/bazel build --build_tag_filters="coverage-sources" -- //tools/... || exit $?
 echo "Run tests to generate coverage data"
-./tools/base/bazel/bazel test --define agent_coverage=true -- "@cov//:${report_name}.suite" @baseline//... || exit $?
+./tools/base/bazel/bazel test --define agent_coverage=true --flaky_test_attempts=3 --cache_test_results=yes -- "@cov//:${report_name}.suite" @baseline//... || exit_if_not_test_failure $?
 echo "Processing raw coverage data"
 ./tools/base/bazel/bazel build -- "@cov//:${report_name}.lcov.notests" || exit $?
 echo "Generating HTML report in ${html_dir}"

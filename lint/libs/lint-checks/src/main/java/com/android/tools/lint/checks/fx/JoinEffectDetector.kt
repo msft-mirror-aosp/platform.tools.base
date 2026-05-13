@@ -179,9 +179,25 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
       maybeSavePartialResults(context, program)
       isSummariesCacheValid = true
     }
+
+    // Warnings on calling `⊤` usually go away when other errors are resolved,
+    // so we omit them unless they're the only problems to report
+    val possibleRedundancies = mutableListOf<Error.CallingTop<FX>>()
+    var anyReported = false
     for ((_, sum) in summariesCache) {
-      for (error in dedupErrors(sum.effect.errors!!)) report(context, error)
+      for (error in dedupErrors(sum.effect.errors!!)) {
+        when {
+          error !is Error.CallingTop -> {
+            anyReported = true
+            possibleRedundancies.clear() // no longer need to track deferred ones
+            report(context, error)
+          }
+          !anyReported -> possibleRedundancies.add(error)
+          else -> {}
+        }
+      }
     }
+    for (deferredError in possibleRedundancies) report(context, deferredError)
   }
 
   /**
@@ -731,7 +747,45 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
           }
       }
 
-      // Common scoping functions
+      // Result
+      run {
+        static(kotlin.Result<*>::getOrElse) assumedAs
+          forAll { R ->
+            forAll(Function1::class(Throwable::class(), R)) { onFailure ->
+              given(kotlin.Result::class(Type.WildCard), onFailure) {
+                range = R
+                symbolicInvocations += onFailure[MethodId.Invoke[1], Throwable::class()]
+              }
+            }
+          }
+        static<_, (Any) -> Any>(kotlin.Result<Any>::map) assumedAs
+          forAll { T ->
+            forAll { R ->
+              forAll(Function1::class(T, R)) { transform ->
+                given(kotlin.Result::class(T), transform) {
+                  range = kotlin.Result::class(R)
+                  symbolicInvocations += transform[MethodId.Invoke[1], T]
+                }
+              }
+            }
+          }
+        static<kotlin.Result<Any>, (Any) -> Any, (Throwable) -> Any>(kotlin.Result<Any>::fold) assumedAs
+          forAll { T ->
+            forAll { R ->
+              forAll(Function1::class(T, R)) { onSuccess ->
+                forAll(Function1::class(Throwable::class(), R)) { onFailure ->
+                  given(kotlin.Result::class(T), onSuccess, onFailure) {
+                    range = R
+                    symbolicInvocations += onSuccess[MethodId.Invoke[1], T]
+                    symbolicInvocations += onFailure[MethodId.Invoke[1], Throwable::class()]
+                  }
+                }
+              }
+            }
+          }
+      }
+
+      // Common Kotlin combinators
       run {
         (static(Any::apply) + static(Any::also)) assumedAs
           forAll { self ->
@@ -749,6 +803,57 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
                 given(receiver, block) {
                   range = result
                   symbolicInvocations += block[MethodId.Invoke[1], receiver]
+                }
+              }
+            }
+          }
+
+        fun lazyRange(range: Type<FX>, initializer: Type.Sym<FX>): Type<FX> =
+          // The delegate implementation returned by `lazy`
+          Type.Lambda(
+            params = listOf(Type.Any, Type.KPropertySome),
+            body = Result(range, Effect(bottom, persistentSetOf(initializer[MethodId.Invoke[0]]))),
+            intf = ClassId.of<Lazy<*>>(),
+          )
+        static<() -> Any>(::lazy) assumedAs
+          forAll { T -> forAll(Function0::class(T)) { initializer -> given(initializer) { range = lazyRange(T, initializer) } } }
+        static<LazyThreadSafetyMode, () -> Any>(::lazy) assumedAs
+          forAll { T ->
+            forAll(Function0::class(T)) { initializer ->
+              given(LazyThreadSafetyMode::class(), initializer) { range = lazyRange(T, initializer) }
+            }
+          }
+        static<Any?, () -> Any>(::lazy) assumedAs
+          forAll { T ->
+            forAll(Function0::class(T)) { initializer ->
+              given(java.lang.Object::class(), initializer) { range = lazyRange(T, initializer) }
+            }
+          }
+
+        static(::repeat) assumedAs
+          forAll(Function1::class(Type.Int, Type.Int)) { action ->
+            given(Type.Int, action) {
+              range = Type.Unit
+              symbolicInvocations += action[MethodId.Invoke[1], Type.Int]
+            }
+          }
+
+        static<() -> Any>(::run) assumedAs
+          forAll { R ->
+            forAll(Function0::class(R)) { block ->
+              given(block) {
+                range = R
+                symbolicInvocations += block[MethodId.Invoke[0]]
+              }
+            }
+          }
+        static<Any, Any.() -> Any>(Any::run) assumedAs
+          forAll { T ->
+            forAll { R ->
+              forAll(Function1::class(T, R)) { block ->
+                given(T, block) {
+                  range = R
+                  symbolicInvocations += block[MethodId.Invoke[1], T]
                 }
               }
             }

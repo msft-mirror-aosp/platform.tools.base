@@ -96,6 +96,64 @@ class TestSuiteWithDependenciesTest {
           }
         }
 
+        androidApplication(":appWithDir") {
+          android {
+            applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
+
+            namespace = "com.example.test2"
+            testOptions.suites.create("first", AgpTestSuite::class.java) {
+              it.useJunitEngine.apply {
+                inputs.add(AgpTestSuiteInputParameters.TESTED_APKS)
+                includeEngines.add("toy-junit-engine-for-tests")
+                enginesDependencies.add("com.android.tools.build:gradle-api:${Version.ANDROID_GRADLE_PLUGIN_VERSION}")
+                enginesDependencies.add("org.junit.platform:junit-platform-launcher")
+                enginesDependencies.add("com.test:toy-junit-engine:1.0")
+                enginesDependencies.add("org.junit.platform:junit-platform-engine:1.12.0")
+              }
+              it.assets {}
+              it.targetVariants.add("debug")
+              it.targets.apply { create("t1") {} }
+            }
+          }
+          dependencies {
+            implementation(project(":lib"))
+            implementation(project(":lib-dir", false, "dirConf"))
+          }
+        }
+
+        // This generic project simulates a dependency that provides a directory artifact
+        // with 'artifactType=directory'. This is to verify that the test suite runtime
+        // classpath can correctly resolve such dependencies even when the consumer
+        // might otherwise prefer 'android-classes-jar'.
+        genericProject(":lib-dir") {
+          files {
+            add(
+              "build.gradle",
+              """
+              configurations {
+                  dirConf {
+                      canBeConsumed = true
+                      canBeResolved = false
+                      attributes {
+                          attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_RUNTIME))
+                          attribute(Attribute.of("artifactType", String.class), "directory")
+                      }
+                  }
+              }
+              task createDir {
+                  doLast { file("some-dir").mkdirs() }
+              }
+              artifacts {
+                  dirConf(file("some-dir")) {
+                      builtBy(createDir)
+                  }
+              }
+              """
+                .trimIndent(),
+            )
+          }
+        }
+
         androidLibrary(":lib") {
           dependencies { implementation("com.google.truth:truth:0.44") }
           android {
@@ -124,6 +182,23 @@ class TestSuiteWithDependenciesTest {
   @Test
   fun testConfigurationBlockExecutes() {
     rule.build.executor.run("app:testFirstT1DebugTestSuite")
+  }
+
+  @Test
+  fun testTestSuiteRuntimeClasspathResolutionWithDirectoryArtifact() {
+    // This test verifies that we don't have resolution failures due to project dependencies
+    // providing artifacts with different artifactType (e.g. 'directory') than what the
+    // test suite task might request (e.g. 'android-classes-jar').
+    //
+    // Real-world scenario (e.g. journeys test):
+    // The issue was triggered because the test suite runtime configuration was globally
+    // constrained to 'android-classes-jar'. When external dependencies (like a custom
+    // JUnit engine resolved from a local repository) or project classes (directories)
+    // were present, resolution failed.
+    //
+    // This test simulates that by using a project dependency that explicitly provides
+    // a 'directory' artifact, ensuring that the resolution remains lenient.
+    rule.build.executor.run(":appWithDir:testFirstT1DebugTestSuite")
   }
 }
 

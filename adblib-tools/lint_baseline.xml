@@ -111,15 +111,4 @@
             column="16"/>
     </issue>
 
-    <issue
-        id="AdbDeviceServicesCommand"
-        message="Use of `com.android.adblib.AdbDeviceServices#shell` is discouraged. Consider using `AdbDeviceServices.shellCommand()` instead"
-        errorLine1="    val flow = this.shell(device, cmd, TextShellCollector(), commandTimeout = timeout)"
-        errorLine2="               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/com/android/adblib/tools/Uninstall.kt"
-            line="61"
-            column="16"/>
-    </issue>
-
 </issues>

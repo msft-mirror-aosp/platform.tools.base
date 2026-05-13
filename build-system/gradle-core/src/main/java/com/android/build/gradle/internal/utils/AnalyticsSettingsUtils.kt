@@ -20,6 +20,7 @@ package com.android.build.gradle.internal.utils
 
 import com.android.build.gradle.internal.LoggerWrapper
 import com.android.tools.analytics.AnalyticsSettings
+import com.android.tools.analytics.AnalyticsStateManager
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.provider.ProviderFactory
@@ -30,6 +31,7 @@ import org.gradle.api.provider.ValueSourceParameters
 abstract class AnalyticsEnabledValueSource : ValueSource<Boolean, AnalyticsEnabledValueSource.Params> {
   override fun obtain(): Boolean {
     AnalyticsSettings.initialize(LoggerWrapper.getLogger(AnalyticsEnabledValueSource::class.java))
+    AnalyticsStateManager.dataSharing = AnalyticsSettings.optedIn
     return AnalyticsSettings.optedIn || parameters.profileJsonEnabled.get()
   }
 

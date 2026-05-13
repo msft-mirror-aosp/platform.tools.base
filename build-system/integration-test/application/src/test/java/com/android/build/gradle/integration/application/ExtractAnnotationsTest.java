@@ -24,18 +24,14 @@ import com.android.build.gradle.integration.common.fixture.GradleBuildResult;
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.project.AarSelector;
-import com.android.build.gradle.integration.common.runner.FilterableParameterized;
 import com.android.build.gradle.integration.common.truth.ScannerSubject;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.build.gradle.options.BooleanOption;
-import com.android.build.gradle.options.OptionalBooleanOption;
 
 import com.google.common.truth.Truth;
 
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 
 import java.io.File;
 import java.util.Scanner;
@@ -50,16 +46,7 @@ import java.util.Scanner;
  *     $ ./gradlew :base:build-system:integration-test:application:test --tests "ExtractAnnotationsTest"
  * </pre>
  */
-@RunWith(FilterableParameterized.class)
 public class ExtractAnnotationsTest {
-
-    @Parameterized.Parameters(name = "useK2Uast = {0}")
-    public static Object[] getParameters() {
-        return new Object[] {true, false};
-    }
-
-    @Parameterized.Parameter(0)
-    public boolean useK2Uast;
 
     @Rule
     public GradleTestProject project =
@@ -255,6 +242,6 @@ public class ExtractAnnotationsTest {
     }
 
     private GradleTaskExecutor getExecutor() {
-        return project.executor().with(OptionalBooleanOption.LINT_USE_K2_UAST, useK2Uast);
+        return project.executor();
     }
 }

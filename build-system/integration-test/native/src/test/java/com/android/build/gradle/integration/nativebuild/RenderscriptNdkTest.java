@@ -47,8 +47,6 @@ public class RenderscriptNdkTest {
             GradleTestProject.builder()
                     .fromTestProject("renderscriptNdk")
                     .setSideBySideNdkVersion(NDK_WITH_RENDERSCRIPT_VERSION)
-                    .addGradleProperties(
-                            BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT.getPropertyName() + "=false")
                     .create();
 
     private void checkPackagedFiles(boolean checkDotSo, boolean is32Bit, boolean is64Bit)

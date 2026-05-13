@@ -58,11 +58,20 @@ fun RecipeExecutor.tabbedActivityRecipe(
   addDependency("com.android.support:appcompat-v7:${appCompatVersion}.+")
   addDependency("com.android.support:design:${appCompatVersion}.+")
   addDependency("com.android.support.constraint:constraint-layout:+")
+  addDependency("androidx.activity:activity-ktx:+")
   addLifecycleDependencies(useAndroidX)
   addMaterialDependency(useAndroidX)
   addViewBindingSupport(moduleData.viewBindingSupport, true)
 
-  generateManifest(moduleData, activityClass, packageName, isLauncher, true, generateActivityTitle = true)
+  generateManifest(
+    moduleData,
+    activityClass,
+    packageName,
+    isLauncher,
+    true,
+    generateActivityTitle = true,
+    windowSoftInputMode = "adjustResize",
+  )
   generateNoActionBarStyles(moduleData.baseFeature?.resDir, resOut, moduleData.themesData)
 
   mergeXml(stringsXml(), resOut.resolve("values/strings.xml"))

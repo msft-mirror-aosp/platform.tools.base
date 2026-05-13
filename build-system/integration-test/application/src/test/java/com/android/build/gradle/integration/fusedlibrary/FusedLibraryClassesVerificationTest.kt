@@ -385,10 +385,11 @@ class FusedLibraryClassesVerificationTest(private val publicationOnlyMode: Boole
     )
 
     if (publicationOnlyMode) {
-      val appRun = build.executor.expectFailure().run(":app:assembleDebug")
+      val appRun =
+        build.executor.with(BooleanOption.ENABLE_GLOBAL_SYNTHETICS_FOR_ALL_DEBUG_BUILDS, false).expectFailure().run(":app:assembleDebug")
       appRun.assertErrorContains("No matching variant of project :fusedLib1 was found.")
     } else {
-      build.executor.run(":app:assembleDebug")
+      build.executor.with(BooleanOption.ENABLE_GLOBAL_SYNTHETICS_FOR_ALL_DEBUG_BUILDS, false).run(":app:assembleDebug")
       appProject.assertApk(ApkSelector.DEBUG) {
         classes()
           .containsExactly(

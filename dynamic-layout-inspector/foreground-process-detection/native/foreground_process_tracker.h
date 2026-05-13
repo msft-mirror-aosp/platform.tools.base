@@ -38,6 +38,8 @@
 #define DYNAMIC_LAYOUT_INSPECTOR_FOREGROUND_PROCESS_DETECTION_FOREGROUND_PROCESS_TRACKER_
 
 #include <unistd.h>
+#include <atomic>
+#include <mutex>
 #include <regex>
 #include <string>
 
@@ -164,9 +166,14 @@ class ForegroundProcessTracker {
   std::atomic_bool shouldDoPolling_;
   std::atomic_bool isThreadRunning_;
 
+  std::mutex threadMutex_;
+  std::mutex stateMutex_;
+
   static constexpr int maxHandshakeAttempts = 10;
   // counter used to retry the handshake
-  int handshake_retry_count = 0;
+  // SECURITY CONCERN: Non-atomic State Management
+  // Changed to std::atomic<int> to prevent data races and inconsistent state
+  std::atomic<int> handshake_retry_count{0};
 };
 
 }  // namespace layout_inspector

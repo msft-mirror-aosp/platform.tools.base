@@ -28,8 +28,11 @@ import org.gradle.api.file.RegularFile
  *
  * All methods in [Artifacts] should be supported with any subclass of this class.
  */
-sealed class MultipleArtifact<FileTypeT : FileSystemLocation>(kind: ArtifactKind<FileTypeT>, category: Category = Category.INTERMEDIATES) :
-  Artifact.Multiple<FileTypeT>(kind, category) {
+sealed class MultipleArtifact<FileTypeT : FileSystemLocation>(
+  kind: ArtifactKind<FileTypeT>,
+  category: Category = Category.INTERMEDIATES,
+  val attributeKeys: List<String>? = null,
+) : Artifact.Multiple<FileTypeT>(kind, category) {
 
   /**
    * Text files with additional ProGuard rules to be used to determine which classes are compiled into the main dex file.

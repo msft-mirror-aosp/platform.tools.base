@@ -1,0 +1,13 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load("//tools/base/bazel:android.bzl", "ANDROID_COPTS", "select_android")
+
+cc_library(
+    name = "log",
+    srcs = select_android(
+        ["log.android.cc"],
+        ["log.cc"],
+    ),
+    hdrs = ["log.h"],
+    copts = ANDROID_COPTS,
+    visibility = ["//tools/base/android-test/coverage:__subpackages__"],
+)

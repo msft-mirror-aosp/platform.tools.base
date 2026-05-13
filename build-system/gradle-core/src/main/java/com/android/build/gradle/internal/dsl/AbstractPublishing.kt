@@ -38,7 +38,7 @@ abstract class AbstractPublishing<T : SingleVariant>(val dslService: DslServices
   private fun checkSingleVariantUniqueness(variantName: String, singleVariants: List<T>) {
     if (singleVariants.any { it.variantName == variantName }) {
       dslService.issueReporter.reportError(
-        IssueReporter.Type.GENERIC,
+        IssueReporter.Type.INVALID_PUBLISHING_CONFIG,
         "Using singleVariant publishing DSL multiple times to publish " +
           "variant \"$variantName\" to component \"$variantName\" is not allowed.",
       )

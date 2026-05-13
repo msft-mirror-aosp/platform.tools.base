@@ -81,7 +81,7 @@ class AmInstrumentationRunnerTest {
         adb = fakeAdb,
         deviceSerial = deviceSerial,
         instrumentationRunnerClass = runnerClass,
-        instrumentationTargetPackageId = targetPackage,
+        testPackageId = targetPackage,
         logger = mockLogger,
         processBuilder = { command ->
           capturedCommand = command
@@ -100,9 +100,173 @@ class AmInstrumentationRunnerTest {
     // Verify that the process was started.
     verify(mockProcessBuilder).start()
 
+    // Verify logging
+    val infoCaptor = argumentCaptor<String>()
+    verify(mockLogger).info(infoCaptor.capture())
+    assertThat(infoCaptor.firstValue).contains("Running instrumentation:")
+    assertThat(infoCaptor.firstValue).contains("shell \"am instrument -r -w com.example.app/com.example.TestRunner\"")
+
     // Verify that stderr was logged as a warning.
     val warningCaptor = argumentCaptor<String>()
     verify(mockLogger).warning(warningCaptor.capture())
     assertThat(warningCaptor.firstValue).isEqualTo(stderr)
+  }
+
+  @Test
+  fun runAmInstrumentCommand_withAndroidxOrchestrator() {
+    val deviceSerial = "test-device-123"
+    val runnerClass = "com.example.TestRunner"
+    val targetPackage = "com.example.app"
+
+    whenever(mockProcess.inputStream).thenReturn("INSTRUMENTATION_CODE: -1".byteInputStream())
+    whenever(mockProcess.errorStream).thenReturn("".byteInputStream())
+    whenever(mockProcessBuilder.start()).thenReturn(mockProcess)
+
+    var capturedCommand: List<String>? = null
+    val runner =
+      AmInstrumentationRunner(
+        adb = fakeAdb,
+        deviceSerial = deviceSerial,
+        instrumentationRunnerClass = runnerClass,
+        testPackageId = targetPackage,
+        executionMode = "androidx_test_orchestrator", // Test case-insensitivity
+        logger = mockLogger,
+        processBuilder = { command ->
+          capturedCommand = command
+          mockProcessBuilder
+        },
+      )
+
+    runner.runAmInstrumentCommand()
+
+    assertThat(capturedCommand).isNotNull()
+    assertThat(capturedCommand)
+      .containsExactly(
+        fakeAdb.absolutePath,
+        "-s",
+        deviceSerial,
+        "shell",
+        "CLASSPATH=$(pm path androidx.test.services)",
+        "app_process",
+        "/",
+        "androidx.test.services.shellexecutor.ShellMain",
+        "am",
+        "instrument",
+        "-r",
+        "-w",
+        "-e",
+        "targetInstrumentation",
+        "$targetPackage/$runnerClass",
+        "androidx.test.orchestrator/androidx.test.orchestrator.AndroidTestOrchestrator",
+      )
+      .inOrder()
+
+    // Verify logging
+    val infoCaptor = argumentCaptor<String>()
+    verify(mockLogger).info(infoCaptor.capture())
+    assertThat(infoCaptor.firstValue).contains("Running instrumentation:")
+    assertThat(infoCaptor.firstValue)
+      .contains(
+        "shell \"CLASSPATH=$(pm path androidx.test.services) app_process / androidx.test.services.shellexecutor.ShellMain am instrument -r -w -e targetInstrumentation com.example.app/com.example.TestRunner androidx.test.orchestrator/androidx.test.orchestrator.AndroidTestOrchestrator\""
+      )
+  }
+
+  @Test
+  fun runAmInstrumentCommand_withLegacyOrchestrator() {
+    val deviceSerial = "test-device-123"
+    val runnerClass = "com.example.TestRunner"
+    val targetPackage = "com.example.app"
+
+    whenever(mockProcess.inputStream).thenReturn("INSTRUMENTATION_CODE: -1".byteInputStream())
+    whenever(mockProcess.errorStream).thenReturn("".byteInputStream())
+    whenever(mockProcessBuilder.start()).thenReturn(mockProcess)
+
+    var capturedCommand: List<String>? = null
+    val runner =
+      AmInstrumentationRunner(
+        adb = fakeAdb,
+        deviceSerial = deviceSerial,
+        instrumentationRunnerClass = runnerClass,
+        testPackageId = targetPackage,
+        executionMode = "ANDROID_TEST_ORCHESTRATOR",
+        logger = mockLogger,
+        processBuilder = { command ->
+          capturedCommand = command
+          mockProcessBuilder
+        },
+      )
+
+    runner.runAmInstrumentCommand()
+
+    assertThat(capturedCommand).isNotNull()
+    assertThat(capturedCommand)
+      .containsExactly(
+        fakeAdb.absolutePath,
+        "-s",
+        deviceSerial,
+        "shell",
+        "CLASSPATH=$(pm path android.support.test.services)",
+        "app_process",
+        "/",
+        "android.support.test.services.shellexecutor.ShellMain",
+        "am",
+        "instrument",
+        "-r",
+        "-w",
+        "-e",
+        "targetInstrumentation",
+        "$targetPackage/$runnerClass",
+        "android.support.test.orchestrator/android.support.test.orchestrator.AndroidTestOrchestrator",
+      )
+      .inOrder()
+  }
+
+  @Test
+  fun runAmInstrumentCommand_withInstrumentationArgs() {
+    val deviceSerial = "test-device-123"
+    val runnerClass = "com.example.TestRunner"
+    val targetPackage = "com.example.app"
+
+    whenever(mockProcess.inputStream).thenReturn("INSTRUMENTATION_CODE: -1".byteInputStream())
+    whenever(mockProcess.errorStream).thenReturn("".byteInputStream())
+    whenever(mockProcessBuilder.start()).thenReturn(mockProcess)
+
+    var capturedCommand: List<String>? = null
+    val runner =
+      AmInstrumentationRunner(
+        adb = fakeAdb,
+        deviceSerial = deviceSerial,
+        instrumentationRunnerClass = runnerClass,
+        testPackageId = targetPackage,
+        instrumentationArgs = mapOf("clearPackageData" to "true", "useTestStorageService" to "false"),
+        logger = mockLogger,
+        processBuilder = { command ->
+          capturedCommand = command
+          mockProcessBuilder
+        },
+      )
+
+    runner.runAmInstrumentCommand()
+
+    assertThat(capturedCommand).isNotNull()
+    assertThat(capturedCommand)
+      .containsExactly(
+        fakeAdb.absolutePath,
+        "-s",
+        deviceSerial,
+        "shell",
+        "am",
+        "instrument",
+        "-r",
+        "-w",
+        "-e",
+        "clearPackageData",
+        "true",
+        "-e",
+        "useTestStorageService",
+        "false",
+        "$targetPackage/$runnerClass",
+      )
+      .inOrder()
   }
 }

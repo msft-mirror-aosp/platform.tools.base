@@ -43,11 +43,16 @@ fun tabsActivityJava(
   return """package ${packageName};
 
 import android.os.Bundle;
+
+import androidx.activity.EdgeToEdge;
 import ${getMaterialComponentName("android.support.design.widget.FloatingActionButton", useAndroidX)};
 import ${getMaterialComponentName("android.support.design.widget.Snackbar", useAndroidX)};
 import ${getMaterialComponentName("android.support.design.widget.TabLayout", useAndroidX)};
 import ${getMaterialComponentName("android.support.v4.view.ViewPager", useAndroidX)};
 import ${getMaterialComponentName("android.support.v7.app.AppCompatActivity", useAndroidX)};
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -63,7 +68,13 @@ ${renderIf(isViewBindingSupported) {"""
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
         $contentViewBlock
+        ViewCompat.setOnApplyWindowInsetsListener(${findViewById(Language.Java, isViewBindingSupported, id = "main")}, (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
         SectionsPagerAdapter sectionsPagerAdapter = new SectionsPagerAdapter(this, getSupportFragmentManager());
         ViewPager viewPager = ${findViewById(
           Language.Java,

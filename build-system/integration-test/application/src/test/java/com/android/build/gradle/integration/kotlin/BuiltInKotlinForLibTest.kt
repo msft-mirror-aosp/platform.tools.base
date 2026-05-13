@@ -108,6 +108,7 @@ class BuiltInKotlinForLibTest {
           "kotlin/",
           "org/intellij/",
           "org/jetbrains/",
+          "com/android/tools/r8/annotations/LambdaMethod",
         )
     }
   }

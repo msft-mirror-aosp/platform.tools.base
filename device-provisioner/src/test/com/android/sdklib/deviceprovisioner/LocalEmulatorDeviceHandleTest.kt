@@ -21,10 +21,13 @@ import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.adblib.utils.createChildScope
 import com.android.sdklib.deviceprovisioner.testing.SdkFixture
+import com.android.sdklib.internal.avd.AvdInfo
+import com.android.sdklib.internal.avd.AvdManager
 import com.android.testutils.file.createInMemoryFileSystemAndFolder
 import com.google.common.truth.Truth.assertThat
 import java.time.Duration
 import kotlin.time.Duration.Companion.minutes
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
@@ -48,11 +51,12 @@ class LocalEmulatorDeviceHandleTest {
   fun activationTimeout() = runTest {
     val context = testContext(this)
 
+    val handleScope = this.createChildScope()
     val handle =
       LocalEmulatorDeviceHandle(
         context = context,
-        refreshDevices = {},
-        scope = this.createChildScope(),
+        avdScanner = NullAvdScanner(handleScope),
+        scope = handleScope,
         extensions = emptyList(),
         initialAvdInfo = makeAvdInfo(createInMemoryFileSystemAndFolder("avds"), 1),
       )
@@ -67,7 +71,7 @@ class LocalEmulatorDeviceHandleTest {
 
     assertThat(activateJob.getCompletionExceptionOrNull()).isInstanceOf(DeviceActionException::class.java)
 
-    handle.scope.cancel()
+    handleScope.cancel()
   }
 
   /** updatePaired{Glasses/Phone} should result in properties.paired{Glasses/Phone}Id being updated. */
@@ -90,12 +94,8 @@ class LocalEmulatorDeviceHandleTest {
           LocalEmulatorProvisionerPlugin(
             scope = session.scope,
             adbSession = session,
-            refreshAvds = {
-              avdManager.reloadAvds()
-              avdManager.allAvds
-            },
+            avdScanner = AvdScannerImpl(session.scope, avdManager),
             deviceIcons = emptyDeviceIcons,
-            rescanPeriod = Duration.ofMillis(100),
           )
 
         yieldUntil { plugin.devices.value.size == 2 }
@@ -103,19 +103,60 @@ class LocalEmulatorDeviceHandleTest {
         val devices = plugin.devices.value.map { it as LocalEmulatorDeviceHandle }
         val phone = devices.first { it.state.properties.deviceType == DeviceType.HANDHELD }
         val glasses = devices.first { it.state.properties.deviceType == DeviceType.AI_GLASSES }
-        phone.updatePairedGlasses(glasses)
+        phone.addPairedGlasses(glasses.id, null)
         glasses.updatePairedPhone(phone)
 
-        phone.stateFlow.first { it.properties.pairedGlassesId != null }
+        phone.stateFlow.first { (it.properties as LocalEmulatorProperties).pairedGlassesInfos.isNotEmpty() }
         glasses.stateFlow.first { it.properties.pairedPhoneId != null }
 
-        phone.updatePairedGlasses(null)
+        phone.removePairedGlasses(glasses.id)
         glasses.updatePairedPhone(null)
 
-        phone.stateFlow.first { it.properties.pairedGlassesId == null }
+        phone.stateFlow.first { (it.properties as LocalEmulatorProperties).pairedGlassesInfos.isEmpty() }
         glasses.stateFlow.first { it.properties.pairedPhoneId == null }
+
+        // Test 1:N pairing methods
+        phone.addPairedGlasses(glasses.id, "00:11:22:33:44:55")
+        phone.stateFlow.first { (it.properties as LocalEmulatorProperties).pairedGlassesInfos.size == 1 }
+
+        // Test updating an existing paired MAC address
+        phone.addPairedGlasses(glasses.id, "11:22:33:44:55:66")
+        phone.stateFlow.first {
+          val infos = (it.properties as LocalEmulatorProperties).pairedGlassesInfos
+          infos.size == 1 && infos.first().mac == "11:22:33:44:55:66"
+        }
+
+        val anotherGlassesId = DeviceId("AnotherGlasses", false, "abcd")
+        phone.addPairedGlasses(anotherGlassesId, null)
+        phone.stateFlow.first { (it.properties as LocalEmulatorProperties).pairedGlassesInfos.size == 2 }
+
+        phone.removePairedGlasses(glasses.id)
+        phone.stateFlow.first {
+          val infos = (it.properties as LocalEmulatorProperties).pairedGlassesInfos
+          infos.size == 1 && infos[0].id == anotherGlassesId
+        }
+
+        phone.removePairedGlasses(anotherGlassesId)
+        phone.stateFlow.first { (it.properties as LocalEmulatorProperties).pairedGlassesInfos.isEmpty() }
       }
     }
+}
+
+private class NullAvdScanner(coroutineScope: CoroutineScope) : AbstractAvdScanner(coroutineScope) {
+  override fun scanAvds(): List<AvdInfo> = emptyList()
+
+  override fun logError(message: String, exception: Throwable) = throw exception
+}
+
+private class AvdScannerImpl(coroutineScope: CoroutineScope, val avdManager: AvdManager) : AbstractAvdScanner(coroutineScope) {
+  override fun scanAvds(): List<AvdInfo> {
+    avdManager.reloadAvds()
+    return avdManager.allAvds
+  }
+
+  override fun logError(message: String, exception: Throwable) {
+    throw exception
+  }
 }
 
 fun testContext(testScope: TestScope) =

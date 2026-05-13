@@ -88,6 +88,7 @@ class AndroidTestEngineConnectedTest {
         }
 
         files {
+          add("src/myAndroidTestSuite/testcase1.txt", "some content")
           add(
             "src/androidTest/java/com/example/android/ExampleInstrumentedTest.kt",
             // language=kotlin
@@ -150,6 +151,7 @@ class AndroidTestEngineConnectedTest {
             }
 
             task.systemProperty("android-test.instrumentation-runner-class", "androidx.test.runner.AndroidJUnitRunner")
+            task.systemProperty("android-test.test-package-id", "pkg.name.app.test")
             task.systemProperty("android-test.instrumentation-target-package-id", "pkg.name.app.test")
 
             task.testLogging.apply {

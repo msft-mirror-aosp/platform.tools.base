@@ -44,7 +44,7 @@ import com.android.build.gradle.internal.coverage.renderer.xmlparser.utils.ATTR_
 import com.android.build.gradle.internal.coverage.renderer.xmlparser.utils.COUNTER_TYPE_BRANCH
 import com.android.build.gradle.internal.coverage.renderer.xmlparser.utils.COUNTER_TYPE_INSTRUCTION
 import com.android.build.gradle.internal.coverage.renderer.xmlparser.utils.COUNTER_TYPE_LINE
-import com.android.build.gradle.internal.coverage.renderer.xmlparser.utils.KEY_MODULE_NAME
+import com.android.build.gradle.internal.coverage.renderer.xmlparser.utils.KEY_MODULE_PATH
 import com.android.build.gradle.internal.coverage.renderer.xmlparser.utils.KEY_TEST_SUITE_NAME
 import com.android.build.gradle.internal.coverage.renderer.xmlparser.utils.KEY_VARIANT_NAME
 import com.android.build.gradle.internal.coverage.renderer.xmlparser.utils.TAG_CLASS
@@ -126,7 +126,7 @@ object XMLTransformer {
   private fun parseReportContext(rootElement: Element): ReportContext {
     val propertiesNode = rootElement.getElementsByTagName(TAG_PROPERTIES).item(0) as? Element
     return ReportContext(
-      moduleName = findProperty(propertiesNode, KEY_MODULE_NAME)?.takeIf { it.isNotEmpty() } ?: VALUE_DEFAULT,
+      moduleName = findProperty(propertiesNode, KEY_MODULE_PATH)?.takeIf { it.isNotEmpty() } ?: VALUE_DEFAULT,
       variantName = findProperty(propertiesNode, KEY_VARIANT_NAME) ?: VALUE_UNKNOWN,
       testSuiteName = findProperty(propertiesNode, KEY_TEST_SUITE_NAME) ?: VALUE_AGGREGATED,
     )
@@ -139,7 +139,7 @@ object XMLTransformer {
   ) {
     val projectCoverage =
       aggregatedVariantCoverages.getOrPut(context.variantName) {
-        VariantCoverage(context.variantName, CoverageInfo(0, 0, 0), CoverageInfo(0, 0, 0))
+        VariantCoverage(context.variantName, CoverageInfo(null, 0, 0), CoverageInfo(null, 0, 0))
       }
     val newCovered = projectCoverage.instruction.covered + overallCoverage.instruction.covered
     val newTotal = projectCoverage.instruction.total + overallCoverage.instruction.total

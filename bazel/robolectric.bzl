@@ -51,6 +51,7 @@ def robolectric_test(
         ],
         target_compatible_with = select({
             "@platforms//os:linux": [],
+            "@platforms//os:osx": [],
             "//conditions:default": ["@platforms//:incompatible"],
         }),
         test_class = test_class,

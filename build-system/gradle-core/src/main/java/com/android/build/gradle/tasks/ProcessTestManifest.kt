@@ -15,11 +15,7 @@
  */
 package com.android.build.gradle.tasks
 
-import com.android.SdkConstants
 import com.android.build.api.artifact.SingleArtifact
-import com.android.build.api.variant.BuiltArtifacts
-import com.android.build.api.variant.impl.BuiltArtifactImpl
-import com.android.build.api.variant.impl.BuiltArtifactsImpl
 import com.android.build.gradle.internal.LoggerWrapper
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
@@ -60,7 +56,7 @@ import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
-import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskProvider
@@ -79,7 +75,7 @@ import org.gradle.work.DisableCachingByDefault
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.MANIFEST)
 abstract class ProcessTestManifest : ManifestProcessorTask() {
 
-  @get:OutputDirectory abstract val packagedManifestOutputDirectory: DirectoryProperty
+  @get:OutputFile abstract val mergedManifestFile: RegularFileProperty
 
   @get:Internal abstract val tmpDir: DirectoryProperty
 
@@ -97,9 +93,7 @@ abstract class ProcessTestManifest : ManifestProcessorTask() {
   @get:Input abstract val disallowSdkVersionsInUsesSdkInManifest: Property<Boolean>
 
   override fun doTaskAction() {
-    val manifestOutputFolder = packagedManifestOutputDirectory.get().asFile
-    FileUtils.mkdirs(manifestOutputFolder)
-    val manifestOutputFile = File(manifestOutputFolder, SdkConstants.ANDROID_MANIFEST_XML)
+    val manifestOutputFile = mergedManifestFile.get().asFile
     val navJsons = navigationJsons?.files?.filter { it.exists() } ?: setOf()
 
     mergeManifestsForTestVariant(
@@ -126,14 +120,6 @@ abstract class ProcessTestManifest : ManifestProcessorTask() {
       manifestOutputFile,
       tmpDir.get().asFile,
     )
-    BuiltArtifactsImpl(
-        BuiltArtifacts.METADATA_FILE_VERSION,
-        PACKAGED_MANIFESTS,
-        testApplicationId.get(),
-        variantName,
-        listOf(BuiltArtifactImpl.make(manifestOutputFile.absolutePath)),
-      )
-      .saveToDirectory(packagedManifestOutputDirectory.get().asFile)
   }
 
   /**
@@ -268,6 +254,7 @@ abstract class ProcessTestManifest : ManifestProcessorTask() {
             .addAllowedNonUniqueNamespace(namespace)
             .setOverride(ManifestSystemProperty.Document.PACKAGE, testApplicationId)
             .setOverride(ManifestSystemProperty.UsesSdk.MIN_SDK_VERSION, minSdkVersion)
+            .addNavigationJsons(navigationJsons)
             .apply {
               if (instrumentationRunner != null) {
                 setOverride(ManifestSystemProperty.Instrumentation.TARGET_PACKAGE, testedApplicationId)
@@ -438,7 +425,7 @@ abstract class ProcessTestManifest : ManifestProcessorTask() {
   class CreationAction(creationConfig: ProcessTestManifestCreationConfig) :
     VariantTaskCreationAction<ProcessTestManifest, ProcessTestManifestCreationConfig>(creationConfig) {
     override val name
-      get() = computeTaskName("process", "Manifest")
+      get() = computeTaskName("merge", "Manifest")
 
     override val type
       get() = ProcessTestManifest::class.java
@@ -451,7 +438,7 @@ abstract class ProcessTestManifest : ManifestProcessorTask() {
     override fun handleProvider(taskProvider: TaskProvider<ProcessTestManifest>) {
       super.handleProvider(taskProvider)
       creationConfig.taskContainer.processManifestTask = taskProvider
-      creationConfig.artifacts.setInitialProvider(taskProvider, ProcessTestManifest::packagedManifestOutputDirectory).on(PACKAGED_MANIFESTS)
+      creationConfig.artifacts.setInitialProvider(taskProvider, ProcessTestManifest::mergedManifestFile).on(SingleArtifact.MERGED_MANIFEST)
       creationConfig.artifacts
         .setInitialProvider(taskProvider, ProcessTestManifest::mergeBlameFile)
         .withName("manifest-merger-blame-" + creationConfig.baseName + "-report.txt")

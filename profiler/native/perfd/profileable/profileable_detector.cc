@@ -81,6 +81,18 @@ bool ProfileableChecker::Check(int32_t pid, const string& package_name) const {
   // argument is in microseconds. The maximum acceptable value is
   // 2,147,483,647. However, a very long interval such as 30 minutes may
   // add overhead to the process and system which leads to ANR.)
+
+  // Security Fix: Validate package_name to prevent shell command injection.
+  // Since package_name is read from /proc/[pid]/cmdline and passed directly
+  // into a bash command string, a maliciously crafted process name could
+  // execute arbitrary commands as the daemon user.
+  if (package_name.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNO"
+                                     "PQRSTUVWXYZ0123456789._-") !=
+      string::npos) {
+    Log::E(Log::Tag::PROFILER, "Invalid package name: %s",
+           package_name.c_str());
+    return false;
+  }
   oss << "activity profile start --sampling 1000000 " << package_name
       << " /data/local/tmp/profileable_reporter.tmp 2>/dev/null";
   bool start_succeeded = tester.Run(oss.str(), nullptr);

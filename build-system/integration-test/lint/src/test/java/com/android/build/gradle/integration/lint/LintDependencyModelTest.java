@@ -57,8 +57,6 @@ public class LintDependencyModelTest {
     public final GradleTestProject project =
             GradleTestProject.builder()
                     .fromTestProject("lintDeps")
-                    .addGradleProperties(
-                            BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT.getPropertyName() + "=false")
                     .create();
 
     @Test

@@ -26,6 +26,7 @@ import com.android.tools.lint.checks.fx.result.Effect
 import com.android.tools.lint.checks.fx.result.EffectAnnotation
 import com.android.tools.lint.checks.fx.result.Env
 import com.android.tools.lint.checks.fx.result.Env.Companion.withVar
+import com.android.tools.lint.checks.fx.result.Env.Companion.withVarDelegate
 import com.android.tools.lint.checks.fx.result.Env.Companion.withVars
 import com.android.tools.lint.checks.fx.result.Error
 import com.android.tools.lint.checks.fx.result.ErrorSite
@@ -91,6 +92,7 @@ import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtObjectDeclaration
 import org.jetbrains.kotlin.psi.KtParameter
+import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.psiUtil.isExtensionDeclaration
 import org.jetbrains.uast.UAnnotation
 import org.jetbrains.uast.UArrayAccessExpression
@@ -338,7 +340,12 @@ internal open class Analysis<FX : Any>(
     fun <E : UExpression> E.asName(name: (E) -> String): Result<Type<FX>, R> {
       val x = name(this)
       val t = env.varAt(x)
-      if (t != null) return pure(t)
+      val fx =
+        when (val delegate = env.varDelegateAt(x)) {
+          null -> fxInstantiationLattice.bottom
+          else -> invokeWildGuess(rec, delegate, "getValue", listOf(Type.Any, Type.KPropertySome)) { instantiationLattice.bottom }.effect
+        }
+      if (t != null) return Result(t, onInvocationEffect(this, fx))
       return giveUp(this, "Don't know what `$x` means in `${target.target.renderAbbrev()}`")
     }
 
@@ -534,6 +541,12 @@ internal open class Analysis<FX : Any>(
             target is PsiField -> Result(module[target] ?: translate(target.type), loop(e.receiver).effect)
             target is KtLightMethod && target.isAccessor(getter = true) -> callMethod(e.receiver, target, listOf())
             e.selector is UCallExpression -> loop(e.selector)
+            // HACK `getValue` of `Lazy`
+            target is PsiMethod && target.name == "getValue" && e.receiver is USimpleNameReferenceExpression ->
+              when (val t = env.varAt((e.receiver as USimpleNameReferenceExpression).identifier)) {
+                is Type.Lambda -> Result(getType(e.receiver), onInvocationEffect(e, Instantiation(t.body.effect)))
+                else -> giveUp(e, "Handle ${e.renderAbbrev()} of `${e::class.java.simpleName}`")
+              }
             else -> giveUp(e, "Handle ${e.renderAbbrev()} of `${e::class.java.simpleName}`")
           }
         }
@@ -656,6 +669,8 @@ internal open class Analysis<FX : Any>(
                 is ULocalVariable -> {
                   val decPsi = dec.javaPsi as PsiLocalVariable
                   val rhs = dec.uastInitializer?.let(::loop)
+                  val delegeteExpr = (dec.sourcePsi as? KtProperty)?.delegateExpression?.toUElement() as? UExpression
+                  val delegate = if (delegeteExpr != null) loop(delegeteExpr) else null
                   val rhsType =
                     // For immutable local bindings, we bypass even the user-declared type to
                     // use
@@ -668,7 +683,13 @@ internal open class Analysis<FX : Any>(
                   // functionally, because later declarations need to see updates by earlier
                   // declarations.
                   env = env.withVar(decPsi.name, rhsType)
-                  rhs ?: emptyResult
+                  if (delegate != null) env = env.withVarDelegate(decPsi.name, delegate.value)
+                  when {
+                    rhs != null && delegate != null -> rhs.copy(effect = joinOf(rhs.effect, delegate.effect))
+                    rhs != null -> rhs
+                    delegate != null -> Result(Type.Unit, delegate.effect)
+                    else -> emptyResult
+                  }
                 }
                 is UVariable -> unitResult // already added to environment during indexing
                 else -> {
@@ -690,16 +711,16 @@ internal open class Analysis<FX : Any>(
                 is UMultiResolvable -> {
                   val operand = e.operand
                   val fx =
-                    e.multiResolve().fold(bottom) { acc, res ->
-                      val method = res.element as? PsiMethod ?: return@fold acc
-                      val (receiver, indices) = operand.lhsReceiverAndIndices() ?: return default()
+                    e.multiResolve().joinedOver { res ->
+                      val method = res.element as? PsiMethod ?: return@joinedOver bottom
+                      val (receiver, indices) = operand.lhsReceiverAndIndices() ?: return@joinedOver bottom
                       when {
                         // TODO
                         method.name.startsWith("get") -> callMethod(receiver, method, indices).effect
                         // TODO
                         method.name.startsWith("set") -> callMethod(receiver, method, indices + operand).effect
                         // TODO assuming inc/dec operator
-                        method.parameterList.parametersCount == 1 -> callMethod(operand, method, listOf()).effect
+                        method.parameterList.parametersCount == 0 -> callMethod(operand, method, listOf()).effect
                         else -> throw IllegalStateException("Got method `${method.name}` during ${e.renderAbbrev()}")
                       }
                     }
@@ -741,8 +762,8 @@ internal open class Analysis<FX : Any>(
                 is UMultiResolvable -> {
                   val (receiver, indices) = lhs.lhsReceiverAndIndices() ?: return defaultUnit()
                   val fx =
-                    e.multiResolve().fold(bottom) { acc, res ->
-                      val method = res.element as? PsiMethod ?: return@fold acc
+                    e.multiResolve().joinedOver { res ->
+                      val method = res.element as? PsiMethod ?: return@joinedOver bottom
                       when {
                         // TODO
                         method.name.startsWith("get") -> callMethod(receiver, method, indices).effect

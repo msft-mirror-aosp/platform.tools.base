@@ -178,6 +178,7 @@ class LintModelPerComponentIntegrationTest {
           buildTypes {
               debug {
                   minifyEnabled true
+                  shrinkResources = true
               }
           }
       }

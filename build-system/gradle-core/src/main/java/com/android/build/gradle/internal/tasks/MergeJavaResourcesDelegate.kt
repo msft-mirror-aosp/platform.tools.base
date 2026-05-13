@@ -156,7 +156,6 @@ internal class MergeJavaResourcesDelegate(
           PackagingFileAction.PICK_FIRST -> return@select StreamMergeAlgorithms.pickFirst()
           PackagingFileAction.MERGE -> return@select StreamMergeAlgorithms.concat()
           PackagingFileAction.NONE -> return@select StreamMergeAlgorithms.acceptOnlyOne()
-          else -> throw AssertionError()
         }
       }
 

@@ -29,11 +29,15 @@ import com.android.annotations.NonNull;
 import com.android.resources.Density;
 import com.android.resources.ScreenSize;
 import com.android.sdklib.devices.Device;
+import com.android.sdklib.devices.Screen;
 import com.android.sdklib.devices.Storage;
+import com.android.utils.ILogger;
+import com.android.utils.StdLogger;
 
 import java.util.Map;
 
 public class EmulatedProperties {
+    private static final ILogger sLogger = new StdLogger(StdLogger.Level.WARNING);
     public static final String BACK_CAMERA_KEY = ConfigKey.CAMERA_BACK;
     public static final String CPU_CORES_KEY = ConfigKey.CPU_CORES;
     public static final String CUSTOM_SKIN_FILE_KEY = ConfigKey.SKIN_PATH;
@@ -59,7 +63,12 @@ public class EmulatedProperties {
     public static final int RECOMMENDED_NUMBER_OF_CORES =
             max(2, min(4, Runtime.getRuntime().availableProcessors() / 2));
 
-    public static final Storage DEFAULT_INTERNAL_STORAGE = new Storage(6, Storage.Unit.GiB);
+    /**
+     * The default internal storage capacity if we know nothing about the device. Prefer
+     * defaultInternalStorage(Device) otherwise.
+     */
+    public static final Storage DEFAULT_INTERNAL_STORAGE = new Storage(10, Storage.Unit.GiB);
+
     public static final Storage DEFAULT_HEAP = new Storage(16, Storage.Unit.MiB);
     public static final AvdNetworkSpeed DEFAULT_NETWORK_SPEED = AvdNetworkSpeed.FULL;
     public static final AvdNetworkLatency DEFAULT_NETWORK_LATENCY = AvdNetworkLatency.NONE;
@@ -100,11 +109,10 @@ public class EmulatedProperties {
         if (Device.isXr(device)) {
             return new Storage(512, Storage.Unit.MiB);
         }
-        return minimumVmHeapSize(
-                ScreenSize.getScreenSize(
-                        device.getDefaultHardware().getScreen().getDiagonalLength()),
-                device.getDefaultHardware().getScreen().getPixelDensity(),
-                Device.isWear(device));
+        Screen screen = device.getDefaultHardware().getScreen();
+        ScreenSize screenSize = screen == null ? ScreenSize.NORMAL : ScreenSize.getScreenSize(screen.getDiagonalLength());
+        Density screenDensity = screen == null ? Density.MEDIUM : screen.getPixelDensity();
+        return minimumVmHeapSize(screenSize, screenDensity, Device.isWear(device));
     }
 
     /**
@@ -218,6 +226,19 @@ public class EmulatedProperties {
     }
 
     public static Storage defaultInternalStorage(@NonNull Device device) {
+        String defaultStorage = System.getProperty("default.avd.storage.size");
+        if (defaultStorage != null) {
+            try {
+                return Storage.getStorageFromString(defaultStorage);
+            } catch (NumberFormatException e) {
+                sLogger.warning(
+                        "Invalid value for system property default.avd.storage.size: "
+                                + defaultStorage);
+            }
+        }
+        if (Device.isWear(device) || Device.isAiGlasses(device) || Device.isTv(device)) {
+            return new Storage(6, Storage.Unit.GiB);
+        }
         return DEFAULT_INTERNAL_STORAGE;
     }
 

@@ -13,147 +13,52 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.build.gradle.integration.application
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyApplicationCallback
+import com.android.build.gradle.internal.dsl.BaseAppModuleExtension
 import com.android.build.gradle.options.BooleanOption
-import com.android.testutils.AbstractReturnGivenBuildResultTest
 import com.google.common.truth.Truth
+import org.gradle.api.Project
 import org.junit.Rule
 import org.junit.Test
 
-/** Tests to validate the different filtering mechanisms */
-class VariantFilteringTest :
-  AbstractReturnGivenBuildResultTest<String, VariantFilteringTest.VariantBuilder, List<VariantFilteringTest.VariantInfo>>() {
+/**
+ * Tests to validate the different filtering mechanisms. [BooleanOption.USE_NEW_DSL] = `true` tests in [AndroidComponentsFilteringTest];
+ * this test can be deleted when [BooleanOption.USE_NEW_DSL] is no longer an option.
+ */
+class VariantFilteringTest {
 
   @get:Rule
-  val project = GradleTestProject.builder().fromTestProject("emptyApp").addGradleProperty(BooleanOption.USE_NEW_DSL, false).create()
+  val rule =
+    GradleRule.configure().disableBrokenNewDslOptOutChecks().from {
+      gradleProperties { add(BooleanOption.USE_NEW_DSL, false) }
+      androidApplication(":app") { android { namespace = "com.android.tests.basic" } }
+    }
 
   @Test
   fun `filtering via old api on abi and flavor names`() {
-    given {
-      """
-                |    flavorDimensions "abi", "api"
-                |    productFlavors {
-                |        x86 {
-                |            dimension "abi"
-                |        }
-                |        mips {
-                |            dimension "abi"
-                |        }
-                |        arm {
-                |            dimension "abi"
-                |        }
-                |        cupcake {
-                |            dimension "api"
-                |        }
-                |        gingerbread {
-                |            dimension "api"
-                |        }
-                |    }
-                |    variantFilter {
-                |        String abi = it.flavors.get(0).name
-                |        if ("cupcake".equals(it.flavors.get(1).name) && ("x86".equals(abi) || "mips".equals(abi))) {
-                |            it.ignore = true
-                |        }
-                |    }
-            """
-    }
-
-    expect {
-      variant { name = "x86GingerbreadDebug" }
-      variant {
-        name = "x86GingerbreadRelease"
-        unitTest = false
-        androidTest = false
-      }
-      variant { name = "mipsGingerbreadDebug" }
-      variant {
-        name = "mipsGingerbreadRelease"
-        unitTest = false
-        androidTest = false
-      }
-      variant { name = "armGingerbreadDebug" }
-      variant {
-        name = "armGingerbreadRelease"
-        unitTest = false
-        androidTest = false
-      }
-
-      variant { name = "armCupcakeDebug" }
-      variant {
-        name = "armCupcakeRelease"
-        unitTest = false
-        androidTest = false
+    rule.build {
+      androidApplication(":app") {
+        android {
+          flavorDimensions += listOf("abi", "api")
+          productFlavors {
+            create("x86") { it.dimension = "abi" }
+            create("mips") { it.dimension = "abi" }
+            create("arm") { it.dimension = "abi" }
+            create("cupcake") { it.dimension = "api" }
+            create("gingerbread") { it.dimension = "api" }
+          }
+        }
+        pluginCallbacks += AbiAndFlavorFilteringCallback::class.java
       }
     }
-  }
 
-  @Test
-  fun `filtering via old api on build type names`() {
-    given {
-      """
-                |    variantFilter {
-                |        if (it.buildType.name.equals("debug")) {
-                |            it.ignore = true
-                |        }
-                |    }
-            """
-    }
-
-    expect {
-      variant {
-        name = "release"
-        unitTest = false
-        androidTest = false
-      }
-    }
-  }
-
-  // ---------------------------------------------------------------------------------------------
-
-  var androidComponentsBlock: (() -> String)? = null
-
-  fun withAndroidComponents(action: () -> String) {
-    androidComponentsBlock = action
-    state = TestState.GIVEN
-  }
-
-  override fun noGivenData(): String {
-    // it's ok to not have any given data, if there is some androidComponents customization.
-    if (androidComponentsBlock != null) return "" else throw RuntimeException("No given data")
-  }
-
-  override fun defaultWhen(given: String): List<VariantInfo>? {
-    project.buildFile.appendText(
-      """
-                |android {
-                |${given.trimMargin()}
-                |}
-            """
-        .trimMargin()
-    )
-    this.androidComponentsBlock?.let {
-      project.buildFile.appendText(
-        """
-                |
-                |androidComponents {
-                |${it().trimMargin()}
-                |}
-            """
-          .trimMargin()
-      )
-    }
-
-    return project
-      .modelV2()
-      .allowOptionWarning(BooleanOption.USE_NEW_DSL)
-      .fetchModels()
-      .container
-      .getProject()
-      .androidProject!!
-      .variants
-      .map {
+    val androidProject = getApplication().androidProject!!
+    val actual =
+      androidProject.variants.map {
         VariantInfo(
           it.name,
           unitTest = it.unitTestArtifact != null,
@@ -161,30 +66,65 @@ class VariantFilteringTest :
           testFixtures = it.testFixturesArtifact != null,
         )
       }
-  }
 
-  override fun compareResult(expected: List<VariantInfo>?, actual: List<VariantInfo>?, given: String) {
+    val expected =
+      listOf(
+        VariantInfo("x86GingerbreadDebug"),
+        VariantInfo("x86GingerbreadRelease", unitTest = false, androidTest = false),
+        VariantInfo("mipsGingerbreadDebug"),
+        VariantInfo("mipsGingerbreadRelease", unitTest = false, androidTest = false),
+        VariantInfo("armGingerbreadDebug"),
+        VariantInfo("armGingerbreadRelease", unitTest = false, androidTest = false),
+        VariantInfo("armCupcakeDebug"),
+        VariantInfo("armCupcakeRelease", unitTest = false, androidTest = false),
+      )
+
     Truth.assertThat(actual).containsExactlyElementsIn(expected)
   }
 
-  override fun instantiateResulBuilder(): VariantBuilder = VariantBuilder()
-
-  class VariantBuilder : ResultBuilder<List<VariantInfo>> {
-    private val variants = mutableListOf<VariantInfo>()
-
-    fun variant(action: VariantInfo.() -> Unit) {
-      variants.add(VariantInfo().also { action(it) })
-    }
-
-    override fun toResult(): List<VariantInfo> {
-      return variants
+  class AbiAndFlavorFilteringCallback : LegacyApplicationCallback {
+    override fun handleExtension(project: Project, extension: BaseAppModuleExtension) {
+      extension.variantFilter {
+        val abi = it.flavors[0].name
+        if (it.flavors[1].name == "cupcake" && (abi == "x86" || abi == "mips")) {
+          it.ignore = true
+        }
+      }
     }
   }
 
-  data class VariantInfo(
-    var name: String = "",
-    var unitTest: Boolean = true,
-    var androidTest: Boolean = true,
-    var testFixtures: Boolean = false,
-  )
+  @Test
+  fun `filtering via old api on build type names`() {
+    rule.build { androidApplication(":app") { pluginCallbacks += BuildTypeFilteringCallback::class.java } }
+
+    val androidProject = getApplication().androidProject!!
+    val actual =
+      androidProject.variants.map {
+        VariantInfo(
+          it.name,
+          unitTest = it.unitTestArtifact != null,
+          androidTest = it.androidTestArtifact != null,
+          testFixtures = it.testFixturesArtifact != null,
+        )
+      }
+
+    val expected = listOf(VariantInfo("release", unitTest = false, androidTest = false))
+
+    Truth.assertThat(actual).containsExactlyElementsIn(expected)
+  }
+
+  class BuildTypeFilteringCallback : LegacyApplicationCallback {
+    override fun handleExtension(project: Project, extension: BaseAppModuleExtension) {
+      extension.variantFilter {
+        if (it.buildType.name == "debug") {
+          it.ignore = true
+        }
+      }
+    }
+  }
+
+  data class VariantInfo(val name: String, val unitTest: Boolean = true, val androidTest: Boolean = true, val testFixtures: Boolean = false)
+
+  private fun getApplication() =
+    rule.build.modelBuilder.allowOptionWarning(BooleanOption.USE_NEW_DSL).fetchModels().container.getProject(":app")
 }

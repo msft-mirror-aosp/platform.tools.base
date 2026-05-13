@@ -17,19 +17,16 @@
 package com.android.build.gradle.integration.baselineprofiles
 
 import com.android.SdkConstants
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
-import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
-import com.android.build.gradle.integration.common.truth.ScannerSubject
-import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.utils.FileUtils
-import com.google.common.truth.Truth
-import org.junit.Before
+import com.google.common.truth.Truth.assertThat
+import kotlin.io.path.readText
 import org.junit.Rule
 import org.junit.Test
 
 class ArtProfileExternalDependenciesTest {
+
   private val activityDependency = "androidx.activity:activity-compose:1.5.1"
   private val fragmentDependency = "androidx.fragment:fragment:1.4.1"
   private val baselineProfileContent =
@@ -39,148 +36,88 @@ class ArtProfileExternalDependenciesTest {
     """
       .trimIndent()
 
-  private val app = HelloWorldApp.forPluginWithNamespace("com.android.application", "com.example.app")
-
-  @get:Rule val project = GradleTestProject.builder().fromTestApp(MultiModuleTestProject.builder().subproject(":app", app).build()).create()
-
-  @Before
-  fun setUp() {
-    TestFileUtils.appendToFile(
-      project.getSubproject("app").buildFile,
-      """
-                android {
-                    defaultConfig {
-                        minSdkVersion = 28
-                    }
-                }
-
-                dependencies {
-                    implementation '$activityDependency'
-                    implementation '$fragmentDependency'
-                }
-            """
-        .trimIndent(),
-    )
-
-    TestFileUtils.appendToFile(
-      project.file("gradle.properties"),
-      """
-      android.useAndroidX=true
-      """
-        .trimIndent(),
-    )
-
-    FileUtils.createFile(project.file("app/src/main/baselineProfiles/file.txt"), baselineProfileContent)
-  }
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidJavaApplication(":app") {
+        android {
+          namespace = "com.example.app"
+          defaultConfig.minSdk = 28
+        }
+        dependencies {
+          implementation(activityDependency)
+          implementation(fragmentDependency)
+        }
+        files.add("src/main/baselineProfiles/file.txt", baselineProfileContent)
+      }
+      gradleProperties { add("android.useAndroidX", "true") }
+    }
 
   @Test
   fun testIgnoreFrom() {
-    project.executor().run("assembleRelease")
+    rule.build.executor.run("assembleRelease")
 
+    val app = rule.build.androidApplication(":app")
     val mergedFile =
-      FileUtils.join(
-        project.getSubproject("app").buildDir,
-        SdkConstants.FD_INTERMEDIATES,
-        InternalArtifactType.MERGED_ART_PROFILE.getFolderName(),
-        "release",
-        "mergeReleaseArtProfile",
-        SdkConstants.FN_ART_PROFILE,
+      app.intermediatesDir.resolve(
+        FileUtils.join(
+          InternalArtifactType.MERGED_ART_PROFILE.getFolderName(),
+          "release",
+          "mergeReleaseArtProfile",
+          SdkConstants.FN_ART_PROFILE,
+        )
       )
 
-    Truth.assertThat(mergedFile.readText()).contains(baselineProfileContent)
-    Truth.assertThat(mergedFile.readText()).contains("HSPLandroidx/compose/")
-    Truth.assertThat(mergedFile.readText()).contains("HSPLandroidx/fragment/")
+    assertThat(mergedFile.readText()).contains(baselineProfileContent)
+    assertThat(mergedFile.readText()).contains("HSPLandroidx/compose/")
+    assertThat(mergedFile.readText()).contains("HSPLandroidx/fragment/")
 
-    TestFileUtils.appendToFile(
-      project.getSubproject("app").buildFile,
-      """
+    app.reconfigure { android { buildTypes.named("release") { it.baselineProfile { ignoreFrom.add(fragmentDependency) } } } }
 
-                android {
-                    buildTypes {
-                        release {
-                            optimization {
-                                baselineProfile {
-                                    ignoreFrom += '$fragmentDependency'
-                                }
-                            }
-                        }
-                    }
-                }
-            """
-        .trimIndent(),
-    )
+    rule.build.executor.run("assembleRelease")
 
-    project.executor().run("assembleRelease")
-
-    Truth.assertThat(mergedFile.readText()).contains(baselineProfileContent)
-    Truth.assertThat(mergedFile.readText()).contains("HSPLandroidx/compose/")
-    Truth.assertThat(mergedFile.readText()).doesNotContain("HSPLandroidx/fragment/")
+    assertThat(mergedFile.readText()).contains(baselineProfileContent)
+    assertThat(mergedFile.readText()).contains("HSPLandroidx/compose/")
+    assertThat(mergedFile.readText()).doesNotContain("HSPLandroidx/fragment/")
   }
 
   @Test
   fun testIgnoreFromAllExternalDependencies() {
-    TestFileUtils.appendToFile(
-      project.getSubproject("app").buildFile,
-      """
+    val app = rule.build.androidApplication(":app")
+    app.reconfigure { android { buildTypes.named("release") { it.baselineProfile { ignoreFromAllExternalDependencies = true } } } }
 
-      android {
-          buildTypes {
-              release {
-                  optimization {
-                      baselineProfile {
-                          ignoreFromAllExternalDependencies = true
-                      }
-                  }
-              }
-          }
-      }
-      """
-        .trimIndent(),
-    )
-
-    project.executor().run("assembleRelease")
+    rule.build.executor.run("assembleRelease")
 
     val mergedFile =
-      FileUtils.join(
-        project.getSubproject("app").buildDir,
-        SdkConstants.FD_INTERMEDIATES,
-        InternalArtifactType.MERGED_ART_PROFILE.getFolderName(),
-        "release",
-        "mergeReleaseArtProfile",
-        SdkConstants.FN_ART_PROFILE,
+      app.intermediatesDir.resolve(
+        FileUtils.join(
+          InternalArtifactType.MERGED_ART_PROFILE.getFolderName(),
+          "release",
+          "mergeReleaseArtProfile",
+          SdkConstants.FN_ART_PROFILE,
+        )
       )
 
-    Truth.assertThat(mergedFile.readText()).contains(baselineProfileContent)
-    Truth.assertThat(mergedFile.readText()).doesNotContain("HSPLandroidx/compose/")
-    Truth.assertThat(mergedFile.readText()).doesNotContain("HSPLandroidx/fragment/")
+    assertThat(mergedFile.readText()).contains(baselineProfileContent)
+    assertThat(mergedFile.readText()).doesNotContain("HSPLandroidx/compose/")
+    assertThat(mergedFile.readText()).doesNotContain("HSPLandroidx/fragment/")
   }
 
   @Test
   fun testIgnoreFromDependencyNotFound() {
-    TestFileUtils.appendToFile(
-      project.getSubproject("app").buildFile,
-      """
-
+    val app = rule.build.androidApplication(":app")
+    app.reconfigure {
       android {
-          buildTypes {
-              release {
-                  optimization {
-                      baselineProfile {
-                          ignoreFrom += "Unknown Dependency 1"
-                          ignoreFrom += "Unknown Dependency 2"
-                      }
-                  }
-              }
+        buildTypes.named("release") {
+          it.baselineProfile {
+            ignoreFrom.add("Unknown Dependency 1")
+            ignoreFrom.add("Unknown Dependency 2")
           }
+        }
       }
-      """
-        .trimIndent(),
-    )
-
-    val result = project.executor().run("assembleRelease")
-    result.stdout.use {
-      ScannerSubject.assertThat(it)
-        .contains("Baseline profiles from [Unknown Dependency 1, Unknown Dependency 2] " + "are specified to be ignored")
     }
+
+    val result = rule.build.executor.run("assembleRelease")
+    result.assertOutputContains("Baseline profiles from [Unknown Dependency 1, Unknown Dependency 2] are specified to be ignored")
   }
 }

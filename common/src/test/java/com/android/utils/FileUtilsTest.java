@@ -42,6 +42,47 @@ public class FileUtilsTest {
     public TemporaryFolder mTemporaryFolder = new TemporaryFolder();
 
     @Test
+    public void testDeleteDirectoryContents() throws IOException {
+        File dir = mTemporaryFolder.newFolder("dir");
+        File file1 = new File(dir, "file1.txt");
+        file1.createNewFile();
+        File subDir = new File(dir, "subDir");
+        subDir.mkdir();
+        File file2 = new File(subDir, "file2.txt");
+        file2.createNewFile();
+
+        FileUtils.deleteDirectoryContents(dir);
+
+        assertTrue(dir.exists());
+        assertTrue(dir.isDirectory());
+        assertThat(dir.listFiles()).isEmpty();
+    }
+
+    @Test
+    public void testCleanOutputDir() throws IOException {
+        // Case 1: Path is a file
+        File file = mTemporaryFolder.newFile("file.txt");
+        FileUtils.cleanOutputDir(file);
+        assertTrue(file.exists());
+        assertTrue(file.isDirectory());
+        assertThat(file.listFiles()).isEmpty();
+
+        // Case 2: Path is a non-empty directory
+        File dir = mTemporaryFolder.newFolder("dir2");
+        new File(dir, "content.txt").createNewFile();
+        FileUtils.cleanOutputDir(dir);
+        assertTrue(dir.exists());
+        assertTrue(dir.isDirectory());
+        assertThat(dir.listFiles()).isEmpty();
+
+        // Case 3: Path does not exist
+        File nonExistent = new File(mTemporaryFolder.getRoot(), "newDir");
+        FileUtils.cleanOutputDir(nonExistent);
+        assertTrue(nonExistent.exists());
+        assertTrue(nonExistent.isDirectory());
+    }
+
+    @Test
     public void testCopyFilesDoesNotCopyReadonlyBit() throws IOException {
         File fileIn = new File(mTemporaryFolder.getRoot(), "fileIn.txt");
         File fileOut = new File(mTemporaryFolder.getRoot(), "fileOut.txt");

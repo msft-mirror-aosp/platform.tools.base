@@ -6,6 +6,8 @@ local_archive = use_repo_rule("//tools/base/bazel:repositories.bzl", "local_arch
 
 http_jar = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_jar")
 
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
 # TODO(b/340640065): Replace with bazel_dep.
 local_repository(
     name = "googletest",
@@ -66,4 +68,25 @@ http_jar(
     urls = [
         "https://github.com/Tinder/bazel-diff/releases/download/8.1.4/bazel-diff_deploy.jar",
     ],
+)
+
+http_archive(
+    name = "gradle-profiler",
+    build_file_content = """
+package(default_visibility = ["//visibility:public"])
+
+java_import(
+    name = "gradle_profiler_jars",
+    jars = glob(["lib/*.jar"]),
+)
+
+sh_binary(
+    name = "gradle-profiler",
+    srcs = ["bin/gradle-profiler"],
+    data = glob(["lib/*.jar"]),
+)
+""",
+    sha256 = "74f39882a444d6d5616d35b3e9197f7423cd252f63f339bd3e01f662573b319c",
+    strip_prefix = "gradle-profiler-0.24.0",
+    urls = ["https://repo1.maven.org/maven2/org/gradle/profiler/gradle-profiler/0.24.0/gradle-profiler-0.24.0.zip"],
 )

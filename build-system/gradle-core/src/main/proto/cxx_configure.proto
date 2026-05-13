@@ -139,3 +139,11 @@ message EncodedCreateCxxModel {
     int32 variant_name = 2;
 }
 
+message FingerPrintFileWritten {
+    string finger_print_file = 1;
+}
+
+message EncodedFingerPrintFileWritten {
+    int32 finger_print_file = 1;
+}
+

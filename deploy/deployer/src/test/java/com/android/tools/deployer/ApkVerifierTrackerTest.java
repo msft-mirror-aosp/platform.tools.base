@@ -16,8 +16,8 @@
 package com.android.tools.deployer;
 
 import static com.android.ddmlib.IDevice.PROP_BUILD_CODENAME;
-import static com.android.tools.deployer.ApkVerifierTracker.SKIP_VERIFICATION_OPTION;
-import static com.android.tools.deployer.ApkVerifierTracker.getSkipVerificationInstallationFlag;
+import static com.android.tools.deployer.common.ApkVerifierTracker.SKIP_VERIFICATION_OPTION;
+import static com.android.tools.deployer.common.ApkVerifierTracker.getSkipVerificationInstallationFlag;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -32,6 +32,7 @@ import com.android.ddmlib.AndroidDebugBridge;
 import com.android.ddmlib.IDevice;
 import com.android.fakeadbserver.DeviceState;
 import com.android.fakeadbserver.FakeAdbServer;
+import com.android.tools.deployer.common.ApkVerifierTracker;
 import com.android.tools.deployer.devices.FakeDevice;
 import com.android.tools.deployer.devices.FakeDeviceHandler;
 import com.android.tools.deployer.devices.shell.GetProp;

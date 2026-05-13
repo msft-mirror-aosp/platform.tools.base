@@ -61,17 +61,17 @@ class XMLReportAggregator(private val files: List<File>, projectName: String) {
     val finalReport = generateReport()
     val gson =
       GsonBuilder()
-        .setPrettyPrinting()
         .registerTypeAdapter(TestCase::class.java, TestCaseAdapter())
         .registerTypeAdapter(TestSummary::class.java, TestSummaryAdapter())
         .create()
-    val jsonString = gson.toJson(finalReport)
-
     if (!outputDir.exists()) {
       outputDir.mkdirs()
     }
 
-    File(outputDir, "data.js").writeText("const TEST_DATA_SOURCE = $jsonString")
+    File(outputDir, "data.js").bufferedWriter().use { writer ->
+      writer.write("const TEST_DATA_SOURCE = ")
+      gson.toJson(finalReport, writer)
+    }
 
     val resources = listOf("index.html", "script.js", "styles.css")
     resources.forEach { fileName ->
@@ -135,6 +135,7 @@ class XMLReportAggregator(private val files: List<File>, projectName: String) {
           // We only want files with the "xml" extension
           it.extension == EXT_XML
       }
+      ?.sortedBy { it.name }
       ?.forEach { xmlFile ->
         logger.verbose("Found XML file: ${xmlFile.name}")
         try {

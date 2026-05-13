@@ -19,7 +19,7 @@ package com.android.build.gradle.integration.application
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
-import com.android.builder.model.SyncIssue
+import com.android.builder.model.v2.ide.SyncIssue
 import com.android.builder.model.v2.ide.Variant
 import com.google.common.truth.Truth.assertThat
 import java.io.File

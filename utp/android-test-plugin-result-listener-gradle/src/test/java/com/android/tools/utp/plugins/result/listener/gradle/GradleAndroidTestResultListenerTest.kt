@@ -24,8 +24,8 @@ import com.google.testing.platform.api.config.ProtoConfig
 import com.google.testing.platform.api.context.Context
 import com.google.testing.platform.proto.api.core.ExtensionProto
 import com.google.testing.platform.proto.api.core.TestResultProto.TestResult
-import com.google.testing.platform.proto.api.core.TestSuiteResultProto
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
+import java.io.File
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -44,14 +44,18 @@ class GradleAndroidTestResultListenerTest {
   private val capturedRequests = mutableListOf<TestResultEvent>()
   private val testListener = GradleAndroidTestResultListener { event -> capturedRequests.add(event) }
 
+  private var utpResultProtoOutputFile: File? = null
+
   @Before
   fun setUp() {
+    utpResultProtoOutputFile = temporaryFolder.newFile()
     val config =
       Any.pack(
         GradleAndroidTestResultListenerConfig.newBuilder()
           .apply {
             deviceId = "deviceIdString"
-            utpResultProtoOutputFilePath = temporaryFolder.newFile().absolutePath
+            utpResultProtoOutputFilePath = utpResultProtoOutputFile!!.absolutePath
+            xmlTestReportOutputDirectoryPath = temporaryFolder.newFolder().absolutePath
           }
           .build()
       )
@@ -72,11 +76,13 @@ class GradleAndroidTestResultListenerTest {
 
   @Test
   fun testSuiteFinishedSuccessfully() {
+    val testSuiteResult = TestSuiteResult.newBuilder().apply { testSuiteMetaDataBuilder.scheduledTestCaseCount = 1 }.build()
+
     testListener.apply {
-      beforeTestSuite(TestSuiteResultProto.TestSuiteMetaData.getDefaultInstance())
+      beforeTestSuite(testSuiteResult.testSuiteMetaData)
       beforeTest(null)
       afterTest(TestResult.getDefaultInstance())
-      afterTestSuite(TestSuiteResult.getDefaultInstance())
+      afterTestSuite(testSuiteResult)
     }
 
     assertThat(capturedRequests)
@@ -84,7 +90,7 @@ class GradleAndroidTestResultListenerTest {
         TestResultEvent.newBuilder()
           .apply {
             deviceId = "deviceIdString"
-            testSuiteStartedBuilder.apply { testSuiteMetadata = Any.pack(TestSuiteResultProto.TestSuiteMetaData.getDefaultInstance()) }
+            testSuiteStartedBuilder.apply { testSuiteMetadata = Any.pack(testSuiteResult.testSuiteMetaData) }
           }
           .build(),
         TestResultEvent.newBuilder()
@@ -102,10 +108,30 @@ class GradleAndroidTestResultListenerTest {
         TestResultEvent.newBuilder()
           .apply {
             deviceId = "deviceIdString"
-            testSuiteFinishedBuilder.apply { testSuiteResult = Any.pack(TestSuiteResult.getDefaultInstance()) }
+            testSuiteFinishedBuilder.apply { this.testSuiteResult = Any.pack(testSuiteResult) }
           }
           .build(),
       )
       .inOrder()
+
+    val outputFileContent = TestSuiteResult.parseFrom(utpResultProtoOutputFile!!.readBytes())
+    assertThat(outputFileContent.toByteArray()).isEqualTo(testSuiteResult.toByteArray())
+  }
+
+  @Test
+  fun testWithFailedAndIgnoredTests() {
+    val failedTestResult =
+      TestResult.newBuilder().apply { testStatus = com.google.testing.platform.proto.api.core.TestStatusProto.TestStatus.FAILED }.build()
+    val ignoredTestResult =
+      TestResult.newBuilder().apply { testStatus = com.google.testing.platform.proto.api.core.TestStatusProto.TestStatus.IGNORED }.build()
+
+    testListener.apply {
+      afterTest(failedTestResult)
+      afterTest(ignoredTestResult)
+    }
+
+    assertThat(capturedRequests).hasSize(2)
+    assertThat(capturedRequests[0].testCaseFinished.testCaseResult.unpack(TestResult::class.java)).isEqualTo(failedTestResult)
+    assertThat(capturedRequests[1].testCaseFinished.testCaseResult.unpack(TestResult::class.java)).isEqualTo(ignoredTestResult)
   }
 }

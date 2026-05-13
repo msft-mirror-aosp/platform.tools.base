@@ -29,6 +29,7 @@ fun androidManifestXml(activityClass: String, simpleName: String, isLauncher: Bo
     <application>
         <activity android:name=".ui.login.${activityClass}"
             android:exported="$launcher"
+            android:windowSoftInputMode="adjustResize"
             $activityLabel
             $activityBody
         </activity>

@@ -55,7 +55,11 @@ class DataBindingJetifierTest {
     )
 
     // Build the project with Jetifier enabled and AndroidX enabled
-    project.executor().with(BooleanOption.ENABLE_JETIFIER, true).run("assembleDebug")
+    project
+      .executor()
+      .with(BooleanOption.ENABLE_JETIFIER, true)
+      .with(BooleanOption.ENABLE_GLOBAL_SYNTHETICS_FOR_ALL_DEBUG_BUILDS, false)
+      .run("assembleDebug")
 
     project.getSubproject(":app").assertApk(ApkSelector.DEBUG) {
       classes {

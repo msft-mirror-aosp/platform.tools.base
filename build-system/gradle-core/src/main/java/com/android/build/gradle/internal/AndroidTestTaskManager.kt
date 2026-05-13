@@ -51,10 +51,10 @@ import com.android.build.gradle.internal.tasks.featuresplit.getFeatureName
 import com.android.build.gradle.internal.test.AbstractTestDataImpl
 import com.android.build.gradle.internal.test.BundleTestDataImpl
 import com.android.build.gradle.internal.test.TestDataImpl
+import com.android.build.gradle.internal.test.tasks.TestResultsCollectionTask
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.BooleanOption.LINT_ANALYSIS_PER_COMPONENT
 import com.android.build.gradle.tasks.CompileNavigationXmlTask
-import com.android.build.gradle.tasks.TestResultsCollectionTask
 import com.android.build.gradle.tasks.TestSuiteTestTask
 import com.android.builder.core.BuilderConstants.FD_MANAGED_DEVICE_SETUP_RESULTS
 import com.android.builder.core.ComponentType
@@ -190,6 +190,9 @@ class AndroidTestTaskManager(project: Project, globalConfig: GlobalTaskCreationC
     taskFactory.register(SigningConfigWriterTask.CreationAction(androidTestProperties))
     taskFactory.register(SigningConfigVersionsWriterTask.CreationAction(androidTestProperties))
     taskFactory.register(StripDebugSymbolsTask.CreationAction(androidTestProperties))
+    if (androidTestProperties.services.projectOptions[BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM]) {
+      taskFactory.register(com.android.build.gradle.internal.tasks.AndroidTestDiscoveryTask.CreationAction(androidTestProperties))
+    }
     createPackagingTask(androidTestProperties)
     taskFactory.configure(ASSEMBLE_ANDROID_TEST) { assembleTest: Task ->
       assembleTest.dependsOn(androidTestProperties.taskContainer.assembleTask.name)

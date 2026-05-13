@@ -100,8 +100,9 @@ public class InjectedAbiSplitTest {
         ProjectSyncIssues issues = container.getProject().getIssues();
         Collection<SyncIssue> genericSyncWarnings =
                 ProjectSyncIssuesUtilsV2Kt.filter(
-                        issues, SyncIssue.SEVERITY_WARNING, SyncIssue.TYPE_GENERIC
-                );
+                        issues,
+                        SyncIssue.SEVERITY_WARNING,
+                        SyncIssue.TYPE_CANNOT_BUILD_SELECTED_TARGET_ABI);
         assertThat(genericSyncWarnings).isNotEmpty();
     }
 

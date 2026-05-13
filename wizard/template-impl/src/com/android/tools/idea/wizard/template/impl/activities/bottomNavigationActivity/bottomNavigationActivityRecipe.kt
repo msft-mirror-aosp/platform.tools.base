@@ -51,6 +51,7 @@ fun RecipeExecutor.bottomNavigationActivityRecipe(
 
   addDependency("com.android.support:appcompat-v7:${appCompatVersion}.+")
   addDependency("com.android.support.constraint:constraint-layout:+")
+  addDependency("androidx.activity:activity-ktx:+")
   addMaterialDependency(useAndroidX)
   addViewBindingSupport(moduleData.viewBindingSupport, true)
 
@@ -58,7 +59,15 @@ fun RecipeExecutor.bottomNavigationActivityRecipe(
     addDependency("com.android.support:support-vector-drawable:${appCompatVersion}.+")
   }
 
-  generateManifest(moduleData, activityClass, packageName, isLauncher, hasNoActionBar = false, generateActivityTitle = true)
+  generateManifest(
+    moduleData,
+    activityClass,
+    packageName,
+    isLauncher,
+    hasNoActionBar = false,
+    generateActivityTitle = true,
+    windowSoftInputMode = "adjustResize",
+  )
 
   val language = projectData.language
   val isViewBindingSupported = moduleData.viewBindingSupport.isViewBindingSupported()

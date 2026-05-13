@@ -19,8 +19,12 @@ import com.android.tools.deploy.proto.Deploy;
 import com.android.tools.deploy.proto.Deploy.AgentSwapResponse;
 import com.android.tools.deploy.proto.Deploy.JvmtiError;
 import com.android.tools.deploy.proto.Deploy.SwapResponse;
+import com.android.tools.deployer.common.DeployerException;
+import com.android.tools.deployer.common.JvmtiErrorCode;
+
 import com.google.common.base.Enums;
 import com.google.common.base.Optional;
+
 import java.util.List;
 
 public class InstallerResponseHandler {

@@ -37,23 +37,18 @@ private constructor(
 
   /** The screen density of the device. */
   val screenDensity: Int,
-
-  /** Whether the device supports Privacy Sandbox. */
-  val supportsPrivacySandbox: Boolean,
 ) {
-  override fun toString() =
-    "DeviceSpec(name=$name, apiLevel=$apiLevel, codeName=$codeName, abis=$abis, supportsPrivacySandbox=$supportsPrivacySandbox, screenDensity=$screenDensity)"
+  override fun toString() = "DeviceSpec(name=$name, apiLevel=$apiLevel, codeName=$codeName, abis=$abis, screenDensity=$screenDensity)"
 
   override fun equals(other: Any?) =
     other is DeviceSpec &&
       name == other.name &&
       apiLevel == other.apiLevel &&
       codeName == other.codeName &&
-      supportsPrivacySandbox == other.supportsPrivacySandbox &&
       abis.toSet() == other.abis.toSet() &&
       screenDensity == other.screenDensity
 
-  override fun hashCode() = Objects.hash(name, apiLevel, codeName, supportsPrivacySandbox, abis.toSet(), screenDensity)
+  override fun hashCode() = Objects.hash(name, apiLevel, codeName, abis.toSet(), screenDensity)
 
   @Incubating
   class Builder {
@@ -62,8 +57,6 @@ private constructor(
     @set:JvmSynthetic var apiLevel: Int = 0
 
     @set:JvmSynthetic var codeName: String? = null
-
-    @set:JvmSynthetic var supportsPrivacySandbox: Boolean = false
 
     @set:JvmSynthetic var abis: List<String> = listOf()
 
@@ -75,12 +68,10 @@ private constructor(
 
     fun setCodeName(codeName: String?) = apply { this.codeName = codeName }
 
-    fun setSupportsPrivacySandbox(supportsPrivacySandbox: Boolean) = apply { this.supportsPrivacySandbox = supportsPrivacySandbox }
-
     fun setAbis(abis: List<String>) = apply { this.abis = abis }
 
     fun setScreenDensity(screenDensity: Int) = apply { this.screenDensity = screenDensity }
 
-    fun build() = DeviceSpec(name, apiLevel, codeName, abis, screenDensity, supportsPrivacySandbox)
+    fun build() = DeviceSpec(name, apiLevel, codeName, abis, screenDensity)
   }
 }

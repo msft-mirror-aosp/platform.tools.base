@@ -32,7 +32,7 @@ class AudioInterface(
     private val context: Context,
     private val initializationMessage: String
 ) : DefaultLifecycleObserver {
-    private lateinit var tts : TextToSpeech
+    private lateinit var tts: TextToSpeech
     override fun onStart(owner: LifecycleOwner) {
         super.onStart(owner)
         tts = TextToSpeech(context) { status ->
@@ -43,12 +43,16 @@ class AudioInterface(
             }
         }
     }
-    fun speak(textToSpeak: String){
-        tts.speak(textToSpeak,
+
+    fun speak(textToSpeak: String) {
+        tts.speak(
+            textToSpeak,
             TextToSpeech.QUEUE_ADD,
             null,
-            initializationMessage.lowercase().replace(" ", "_"))
+            initializationMessage.lowercase().replace(" ", "_")
+        )
     }
+
     override fun onStop(owner: LifecycleOwner) {
         super.onStop(owner)
         tts.shutdown()

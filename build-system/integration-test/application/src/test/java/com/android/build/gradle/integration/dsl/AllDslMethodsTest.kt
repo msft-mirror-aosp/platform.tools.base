@@ -112,7 +112,7 @@ class AllDslMethodsTest(
     GradleTestProject.builder()
       .fromTestApp(MultiModuleTestProject.builder().build())
       .withKotlinGradlePlugin(true)
-      .disableBuiltInKotlin()
+      .withComposeCompilerGradlePlugin(true)
       .create()
 
   @Before
@@ -133,6 +133,7 @@ class AllDslMethodsTest(
                     plugins {
                         id("$pluginId")
                         ${"kotlin(\"multiplatform\")".takeIf { extensionClass == KotlinMultiplatformAndroidLibraryExtension::class.java } ?: ""}
+                        ${"id(\"org.jetbrains.kotlin.plugin.compose\")".takeIf { extensionClass != KotlinMultiplatformAndroidLibraryExtension::class.java } ?: ""}
                     }
                 """
           .trimIndent() + generator.getScript(index - 1),
@@ -428,11 +429,12 @@ private class DslScriptGenerator(private val buildTypeType: Class<*>? = null, pr
         "public abstract com.android.build.api.dsl.CompileSdkVersion com.android.build.api.dsl.CompileSdk.release(int,kotlin.jvm.functions.Function1)",
         "public static com.android.build.api.dsl.CompileSdkVersion com.android.build.api.dsl.CompileSdk.release\$default(com.android.build.api.dsl.CompileSdk,int,kotlin.jvm.functions.Function1,int,java.lang.Object)",
         "public abstract com.android.build.api.dsl.CompileSdkVersion com.android.build.api.dsl.CompileSdkSpec.addon(java.lang.String,java.lang.String,int)",
+        "public abstract com.android.build.api.dsl.CompileSdkVersion com.android.build.api.dsl.CompileSdkSpec.beta(int,kotlin.jvm.functions.Function1)",
+        "public abstract com.android.build.api.dsl.CompileSdkVersion com.android.build.api.dsl.CompileSdkSpec.canary(java.lang.String)",
         "public abstract com.android.build.api.dsl.CompileSdkVersion com.android.build.api.dsl.CompileSdkSpec.preview(java.lang.String)",
         "public abstract com.android.build.api.dsl.CompileSdkVersion com.android.build.api.dsl.CompileSdkSpec.release(int)",
         "public abstract com.android.build.api.dsl.CompileSdkVersion com.android.build.api.dsl.CompileSdkSpec.release(int,kotlin.jvm.functions.Function1)",
-        "public abstract void com.android.build.api.dsl.Optimization.setEnable(boolean)",
-        "public abstract org.gradle.api.provider.SetProperty<java.lang.String> com.android.build.api.dsl.Optimization.getPackageScope()",
+        "public abstract org.gradle.api.provider.SetProperty com.android.build.api.dsl.Optimization.getPackageScope()",
       )
 
     private val nullableGetters =

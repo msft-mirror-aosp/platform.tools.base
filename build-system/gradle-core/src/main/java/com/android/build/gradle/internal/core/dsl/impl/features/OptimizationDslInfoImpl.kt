@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.core.dsl.impl.features
 
 import com.android.build.api.component.impl.features.CommonOptimizationDslInfoImpl
+import com.android.build.api.dsl.ApplicationBuildType
 import com.android.build.api.dsl.BuildType
 import com.android.build.api.dsl.LibraryBuildType
 import com.android.build.api.dsl.ProductFlavor
@@ -69,16 +70,22 @@ class OptimizationDslInfoImpl(
     get() = mergedOptimization.ignoreFromAllExternalDependenciesInKeepRules
 
   override val ignoreFromInBaselineProfile: Set<String>
-    get() = mergedOptimization.ignoreFromInBaselineProfile
+    get() =
+      mergedOptimization.ignoreFromInBaselineProfile +
+        // mix in build type baselineProfile
+        (buildTypeObj as ApplicationBuildType).baselineProfile.ignoreFrom
 
   override val ignoreFromAllExternalDependenciesInBaselineProfile: Boolean
-    get() = mergedOptimization.ignoreFromAllExternalDependenciesInBaselineProfile
+    get() =
+      mergedOptimization.ignoreFromAllExternalDependenciesInBaselineProfile ||
+        // mix in build type baselineProfile
+        (buildTypeObj as ApplicationBuildType).baselineProfile.ignoreFromAllExternalDependencies
 
   override val applicationOptimizationEnabled: Boolean
     get() = mergedOptimization.enable && componentType == BASE_APK
 
   override val includePackages: Set<String>
-    get() = if (componentType == BASE_APK) mergedOptimization.packageScope else setOf()
+    get() = if (componentType == BASE_APK) mergedOptimization.packageScope else setOf("**")
 
   override val optimizationEnabled: Boolean
     get() = mergedOptimization.enable

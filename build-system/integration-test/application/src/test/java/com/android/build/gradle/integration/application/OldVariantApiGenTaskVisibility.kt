@@ -26,7 +26,7 @@ import org.junit.Test
 
 class OldVariantApiGenTaskVisibility {
 
-  @get:Rule val project = GradleTestProject.builder().fromTestProject("genFolderApi").create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("genFolderApiOld").create()
 
   @Before
   @Throws(Exception::class)
@@ -81,7 +81,7 @@ class OldVariantApiGenTaskVisibility {
 
     val sep = File.separatorChar
     File(project.buildDir, "result.txt").readText().also {
-      Truth.assertThat(it).contains("genFolderApi${sep}build${sep}generated${sep}res${sep}resValues${sep}debug")
+      Truth.assertThat(it).contains("genFolderApiOld${sep}build${sep}generated${sep}res${sep}resValues${sep}debug")
     }
   }
 }

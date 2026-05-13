@@ -17,8 +17,8 @@
 package com.android.tools.deployer.tasks;
 
 import com.android.tools.deploy.proto.Deploy;
-import com.android.tools.deployer.AdbClient;
-import com.android.tools.deployer.Installer;
+import com.android.tools.deployer.common.AdbClient;
+import com.android.tools.deployer.common.Installer;
 import com.android.tools.idea.protobuf.ByteString;
 import com.android.utils.ILogger;
 

@@ -17,7 +17,6 @@
 package com.android.build.api.dsl
 
 import java.io.File
-import org.gradle.declarative.dsl.model.annotations.Restricted
 
 /**
  * DSL object for configuring lint options. Example:
@@ -57,6 +56,8 @@ import org.gradle.declarative.dsl.model.annotations.Restricted
  *          textReport = true
  *          // file to write report to (if not specified, defaults to standard output)
  *          textOutput file("$buildDir/reports/lint-results.txt")
+ *          // if true, write text report to standard output (false by default)
+ *          printTextReport = true
  *          // if true, generate an XML report for use by for example Jenkins
  *          xmlReport true
  *          // file to write report to (if not specified, defaults to lint-results.xml)
@@ -119,7 +120,7 @@ interface Lint {
   val checkOnly: MutableSet<String>
 
   /** Whether lint should set the exit code of the process if errors are found */
-  @get:Restricted var abortOnError: Boolean
+  var abortOnError: Boolean
 
   /** Whether lint should display full paths in the error output. By default the paths are relative to the path lint was invoked from. */
   var absolutePaths: Boolean
@@ -173,7 +174,7 @@ interface Lint {
    * Whether lint should check for fatal errors during release builds. Default is true. If issues with severity "fatal" are found, the
    * release build is aborted.
    */
-  @get:Restricted var checkReleaseBuilds: Boolean
+  var checkReleaseBuilds: Boolean
 
   /**
    * The default config file to use as a fallback. This corresponds to a `lint.xml` file with severities etc to use when a project does not
@@ -191,6 +192,13 @@ interface Lint {
    * [textOutput] is set, the full text report will be copied to the specified location.
    */
   var textReport: Boolean
+
+  /**
+   * Whether lint should print a text report to stdout.
+   *
+   * Default is false.
+   */
+  var printTextReport: Boolean
 
   /** Whether we should write an HTML report. Default is true. The location can be controlled by [htmlOutput]. */
   var htmlReport: Boolean

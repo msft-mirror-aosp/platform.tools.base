@@ -33,6 +33,8 @@ import com.android.sdklib.internal.avd.ColdBoot
 import com.android.sdklib.internal.avd.ConfigKey
 import com.android.sdklib.repository.IdDisplay
 import java.nio.file.Path
+import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.coroutines.CoroutineScope
 
 class FakeAvdManager(val session: FakeAdbSession, val avdRoot: Path) {
   val avds = mutableListOf<AvdInfo>()
@@ -83,6 +85,7 @@ class FakeAvdManager(val session: FakeAdbSession, val avdRoot: Path) {
           "dev.bootcomplete" to if (bootMode == ColdBoot) "" else "1",
         ),
     )
+    session.deviceServices.configureShellCommand(selector, "wm size", "Physical size: 1080x1920\n")
     device.start()
     runningDevices += device
     updateDevices()
@@ -141,6 +144,7 @@ fun makeAvdInfo(
   hasPlayStore: Boolean = true,
   avdStatus: AvdInfo.AvdStatus = AvdInfo.AvdStatus.OK,
   tag: IdDisplay = SystemImageTags.DEFAULT_TAG,
+  userSettings: Map<String, String> = emptyMap(),
 ): AvdInfo {
   return AvdInfo(
     iniFile = avdRoot.resolve("fake_avd_${index}.ini"),
@@ -159,6 +163,14 @@ fun makeAvdInfo(
         ConfigKey.TAG_IDS to tag.id,
         ConfigKey.TAG_DISPLAYNAMES to tag.display,
       ),
+    userSettings = userSettings,
     status = avdStatus,
   )
+}
+
+class FakeAvdScanner(val avdManager: FakeAvdManager, coroutineScope: CoroutineScope) :
+  AbstractAvdScanner(coroutineScope, rescanPeriod = 100.milliseconds) {
+  override fun scanAvds(): List<AvdInfo> = avdManager.rescanAvds()
+
+  override fun logError(message: String, exception: Throwable) = throw exception
 }

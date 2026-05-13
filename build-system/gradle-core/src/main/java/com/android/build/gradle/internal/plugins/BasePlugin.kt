@@ -29,7 +29,6 @@ import com.android.build.api.variant.VariantBuilder
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.LintLifecycleExtensionImpl
 import com.android.build.gradle.api.AndroidBasePlugin
-import com.android.build.gradle.api.AndroidSourceSet
 import com.android.build.gradle.internal.ApiObjectFactory
 import com.android.build.gradle.internal.AvdComponentsBuildService
 import com.android.build.gradle.internal.BadPluginException
@@ -543,14 +542,14 @@ abstract class BasePlugin<
     apply plugin: 'me.tatarka.retrolambda'
 To learn more, go to https://d.android.com/r/tools/java-8-support-message.html
 """
-      dslServices.issueReporter.reportWarning(Type.GENERIC, warningMsg)
+      dslServices.issueReporter.reportWarning(Type.RETROLAMBDA_USED, warningMsg)
     }
     project.repositories.forEach(
       Consumer { artifactRepository: ArtifactRepository ->
         if (artifactRepository is FlatDirectoryArtifactRepository) {
           val warningMsg =
             String.format("Using %s should be avoided because it doesn't support any meta-data formats.", artifactRepository.getName())
-          dslServices.issueReporter.reportWarning(Type.GENERIC, warningMsg)
+          dslServices.issueReporter.reportWarning(Type.FLAT_DIR_REPOSITORY_USED, warningMsg)
         }
       }
     )
@@ -601,10 +600,6 @@ To learn more, go to https://d.android.com/r/tools/java-8-support-message.html
             ?.let { AnalyticsUtil.toProto(it).number }
             ?.let { builder.optionsBuilder.addModulePropertyKeys(it) }
           ModulePropertyKey.BooleanWithDefault[modulePropertyKey]
-            ?.name
-            ?.let { AnalyticsUtil.toProto(it).number }
-            ?.let { builder.optionsBuilder.addModulePropertyKeys(it) }
-          ModulePropertyKey.Dependencies[modulePropertyKey]
             ?.name
             ?.let { AnalyticsUtil.toProto(it).number }
             ?.let { builder.optionsBuilder.addModulePropertyKeys(it) }
@@ -703,7 +698,7 @@ To learn more, go to https://d.android.com/r/tools/java-8-support-message.html
     // The Play Store doesn't allow Pure splits
     if (generatePureSplits) {
       dslServices.issueReporter.reportWarning(
-        Type.GENERIC,
+        Type.PURE_SPLITS_NOT_SUPPORTED,
         "Configuration APKs are supported by the Google Play Store only when publishing Android Instant Apps. To instead generate stand-alone APKs for different device configurations, set generatePureSplits=false. For more information, go to " +
           configApkUrl,
       )
@@ -730,7 +725,9 @@ To learn more, go to https://d.android.com/r/tools/java-8-support-message.html
               apiLevel = it.apiLevel,
               minorApiLevel = it.minorApiLevel,
               sdkExtension = it.sdkExtension,
-              codeName = it.codeName,
+              previewCodeName = it.codeName,
+              canaryDate = it.canaryDate,
+              betaVersion = it.betaVersion,
               addonName = it.addonName,
               vendorName = it.vendorName,
             )

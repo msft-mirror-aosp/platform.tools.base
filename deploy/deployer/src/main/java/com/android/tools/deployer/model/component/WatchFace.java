@@ -87,9 +87,12 @@ public class WatchFace extends WearComponent {
         validate(extraFlags);
         if (activationMode.equals(Mode.DEBUG)) {
             return new ActivationCommands(
-                    getSetUpAmDebugAppActivationCommand(), getStartWatchFaceActivationCommand());
+                    getSetUpAmDebugAppActivationCommand(),
+                    getStartWatchFaceActivationCommand(),
+                    getShowWatchFaceActivationCommand());
         } else {
-            return new ActivationCommands(getStartWatchFaceActivationCommand());
+            return new ActivationCommands(
+                    getStartWatchFaceActivationCommand(), getShowWatchFaceActivationCommand());
         }
     }
 
@@ -97,6 +100,13 @@ public class WatchFace extends WearComponent {
         return new ActivationCommand(
                 getStartWatchFaceCommand(),
                 "Setting Watch Face for " + appId,
+                new BroadcastResultChecker(null, msg -> logger.warning(msg)));
+    }
+
+    private ActivationCommand getShowWatchFaceActivationCommand() {
+        return new ActivationCommand(
+                ShellCommand.SHOW_WATCH_FACE,
+                "Showing Watch Face",
                 new BroadcastResultChecker(null, msg -> logger.warning(msg)));
     }
 }

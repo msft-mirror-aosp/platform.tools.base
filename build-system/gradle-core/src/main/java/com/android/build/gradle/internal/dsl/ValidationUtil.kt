@@ -24,10 +24,16 @@ import com.android.builder.errors.IssueReporter
 fun checkShrinkResourceEligibility(componentType: ComponentType, dslServices: DslServices, shrinkResourceFlag: Boolean) {
   if (shrinkResourceFlag) {
     if (componentType.isDynamicFeature) {
-      dslServices.issueReporter.reportError(IssueReporter.Type.GENERIC, "Resource shrinking must be configured for base module.")
+      dslServices.issueReporter.reportError(
+        IssueReporter.Type.RESOURCE_SHRINK_NOT_SUPPORTED,
+        "Resource shrinking must be configured for base module.",
+      )
     }
     if (componentType.isAar) {
-      dslServices.issueReporter.reportError(IssueReporter.Type.GENERIC, "Resource shrinker cannot be used for libraries.")
+      dslServices.issueReporter.reportError(
+        IssueReporter.Type.RESOURCE_SHRINK_NOT_SUPPORTED,
+        "Resource shrinker cannot be used for libraries.",
+      )
     }
   }
 }

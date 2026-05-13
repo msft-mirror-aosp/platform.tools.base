@@ -54,6 +54,9 @@ import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
 import android.view.inputmethod.EditorInfo
+import androidx.activity.enableEdgeToEdge
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 ${renderIf(!isViewBindingSupported) {"""import android.widget.Button"""}}
 import android.widget.EditText
 ${renderIf(!isViewBindingSupported) {"""import android.widget.ProgressBar"""}}
@@ -71,8 +74,13 @@ ${renderIf(isViewBindingSupported) {"""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
+        enableEdgeToEdge()
         $contentViewBlock
+        ViewCompat.setOnApplyWindowInsetsListener(${findViewById(Language.Kotlin, isViewBindingSupported, id = "main")}) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            insets
+        }
 
         val username = ${findViewById(
           Language.Kotlin,

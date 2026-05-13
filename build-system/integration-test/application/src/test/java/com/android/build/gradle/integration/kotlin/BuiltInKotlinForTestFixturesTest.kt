@@ -23,7 +23,6 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Plugi
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.options.BooleanOption
-import com.android.testutils.TestUtils
 import org.gradle.api.Project
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
@@ -239,10 +238,7 @@ class BuiltInKotlinForTestFixturesTest(private val builtInKotlin: Boolean) {
   }
 
   private fun GradleBuildDefinition.enableTestFixturesKotlinSupport() {
-    androidLibrary {
-      android { testFixtures.enable = true }
-      dependencies { testFixturesImplementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}") }
-    }
+    androidLibrary { android { testFixtures.enable = true } }
 
     gradleProperties { add(BooleanOption.ENABLE_TEST_FIXTURES_KOTLIN_SUPPORT, true) }
   }

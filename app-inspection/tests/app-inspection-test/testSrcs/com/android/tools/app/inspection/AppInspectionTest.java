@@ -30,25 +30,30 @@ import static com.android.tools.app.inspection.Commands.createInspector;
 import static com.android.tools.app.inspection.Commands.createLibraryInspector;
 import static com.android.tools.app.inspection.Commands.disposeInspector;
 import static com.android.tools.app.inspection.Commands.rawCommandInspector;
+
 import static com.google.common.truth.Truth.assertThat;
 
 import androidx.annotation.NonNull;
+
 import com.android.tools.app.inspection.AppInspection.AppInspectionCommand;
 import com.android.tools.app.inspection.AppInspection.AppInspectionEvent;
 import com.android.tools.app.inspection.AppInspection.AppInspectionResponse;
 import com.android.tools.app.inspection.AppInspection.AppInspectionResponse.Status;
 import com.android.tools.app.inspection.AppInspection.LaunchMetadata;
 import com.android.tools.transport.device.SdkLevel;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+
 import org.junit.Rule;
 import org.junit.Test;
+
 import test.inspector.api.NoReplyInspectorApi;
 import test.inspector.api.PayloadInspectorApi;
 import test.inspector.api.TestExecutorsApi;
 import test.inspector.api.TestInspectorApi;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 public final class AppInspectionTest {
     private static final String TODO_ACTIVITY = "com.activity.todo.TodoActivity";
@@ -145,6 +150,15 @@ public final class AppInspectionTest {
                 appInspectionRule.sendCommandAndGetResponse(
                         createInspector("test.inspector", "random_file")),
                 GENERIC_SERVICE_ERROR);
+    }
+
+    @Test
+    public void createFailsWithPathTraversal() throws Exception {
+        AppInspectionResponse response =
+                appInspectionRule.sendCommandAndGetResponse(
+                        createInspector("test.inspector", "/data/local/tmp/../tmp/inspector.dex"));
+        assertThat(response.getStatus()).isEqualTo(ERROR);
+        assertThat(response.getErrorMessage()).contains("path traversal");
     }
 
     @Test

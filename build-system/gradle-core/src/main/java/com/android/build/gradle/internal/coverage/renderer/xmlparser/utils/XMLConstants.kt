@@ -38,7 +38,7 @@ internal const val COUNTER_TYPE_INSTRUCTION = "INSTRUCTION"
 internal const val COUNTER_TYPE_LINE = "LINE"
 
 /** Keys for `<property>` tags within the `<properties>` section of the report. */
-internal const val KEY_MODULE_NAME = "moduleName"
+internal const val KEY_MODULE_PATH = "modulePath"
 internal const val KEY_TEST_SUITE_NAME = "testSuiteName"
 internal const val KEY_VARIANT_NAME = "testedVariantName"
 

@@ -26,6 +26,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import org.jetbrains.kotlin.analysis.api.KaExperimentalApi
 import org.jetbrains.kotlin.analysis.api.KaImplementationDetail
+import org.jetbrains.kotlin.analysis.api.KaPlatformInterface
 import org.jetbrains.kotlin.analysis.api.analyze
 import org.jetbrains.kotlin.analysis.api.platform.projectStructure.KotlinProjectStructureProvider
 import org.jetbrains.kotlin.analysis.api.resolution.singleFunctionCallOrNull
@@ -309,6 +310,7 @@ abstract class AnalysisApiServicesTestBase {
       .use { context -> checkJavaSymbol(context, isK2) }
   }
 
+  @OptIn(KaPlatformInterface::class)
   private fun checkJavaSymbol(context: JavaContext, isK2: Boolean) {
     context.uastFile!!.accept(
       object : AbstractUastVisitor() {

@@ -28,6 +28,7 @@ object PreviewScreenshotTestEngineInput {
   val previewImageOutputDir: File = getFileFromSystemProperty("previewImageOutputDir")
   val previewDiffImageOutputDir: File = getFileFromSystemProperty("previewDiffImageOutputDir")
   val referenceImageDir: File = getFileFromSystemProperty("referenceImageDir")
+  val projectRoot: File = getFileFromSystemProperty("projectRoot")
 
   object TestOption {
     val recordingModeEnabled: Boolean = getSystemProperty("TestOption.recordingModeEnabled", "false").toBoolean()

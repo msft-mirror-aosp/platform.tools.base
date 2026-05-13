@@ -22,6 +22,7 @@ import com.android.ddmlib.MultiLineReceiver;
 import com.android.ddmlib.MultiReceiver;
 import com.android.tools.deployer.model.ModelException;
 import com.android.tools.deployer.model.activate.ActivationCommand;
+import com.android.tools.deployer.model.activate.ActivationContext;
 import com.android.tools.deployer.model.activate.AmDebugAppResultChecker;
 import com.android.tools.deployer.model.activate.BroadcastResultChecker;
 import com.android.tools.manifest.parser.components.ManifestAppComponentInfo;
@@ -126,17 +127,28 @@ public abstract class WearComponent extends AppComponent {
     }
 
     protected ActivationCommand getSetUpAmDebugAppActivationCommand() {
+        return getSetUpAmDebugAppActivationCommand(new ActivationContext());
+    }
+
+    protected ActivationCommand getSetUpAmDebugAppActivationCommand(ActivationContext context) {
         return new ActivationCommand(
                 String.format("%s '%s'", ShellCommand.AM_SET_DEBUG_APP, appId),
                 "Setting debug app for " + appId,
-                new AmDebugAppResultChecker(null, msg -> logger.warning(msg)));
+                new AmDebugAppResultChecker(null, msg -> logger.warning(msg)),
+                context);
     }
 
     protected ActivationCommand getSetUpDebugSurfaceDebugAppActivationCommand() {
+        return getSetUpDebugSurfaceDebugAppActivationCommand(new ActivationContext());
+    }
+
+    protected ActivationCommand getSetUpDebugSurfaceDebugAppActivationCommand(
+            ActivationContext context) {
         return new ActivationCommand(
                 String.format("%s '%s'", ShellCommand.DEBUG_SURFACE_SET_DEBUG_APP, appId),
                 "Setting debug app in Debug Surface for " + appId,
-                new BroadcastResultChecker(null, msg -> logger.warning(msg)));
+                new BroadcastResultChecker(null, msg -> logger.warning(msg)),
+                context);
     }
 
     protected void runStartCommand(

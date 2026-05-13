@@ -69,9 +69,8 @@ class AvdBuilder(var metadataIniPath: Path, avdFolder: Path, var device: Device)
   var sdCard: SdCard? = null
   var skin: Skin? = null
   /**
-   * An image or video to be used as the background environment of an XR device. If this is a fully-constructed AVD, this should be a
-   * relative path, which is interpreted relative to [avdFolder]. If it is an AVD in the process of being created, this should be an
-   * absolute path; it will be copied to the AVD directory upon creation.
+   * An image or video to be used as the background environment of an XR device. This may be an absolute or relative path; relative paths
+   * are resolved relative to the AVD directory or the emulator/resources directory.
    */
   var environment: Path? = null
 
@@ -95,6 +94,7 @@ class AvdBuilder(var metadataIniPath: Path, avdFolder: Path, var device: Device)
 
   var bootMode: BootMode = QuickBoot
 
+  var aiGlassesDisplayMode: AiGlassesDisplayMode = DEFAULT_AI_GLASSES_DISPLAY_MODE
   val userSettings = mutableMapOf<String, String>()
 
   val androidVersion: AndroidVersion?
@@ -122,30 +122,16 @@ class AvdBuilder(var metadataIniPath: Path, avdFolder: Path, var device: Device)
     properties[ConfigKey.GPU_EMULATION] = "yes"
     properties[ConfigKey.AVD_ID] = avdName
     properties.putAll(bootMode.properties())
-    if (environment != null) {
-      properties[ConfigKey.LCD_TRANSPARENT] = "yes"
-    }
     binding.write(this, properties)
     return properties
   }
 
-  fun environment(): Map<String, String> {
-    val properties = mutableMapOf<String, String>()
+  fun environmentProperties(): Map<String, String>? =
     when (environment?.extension?.lowercase()) {
-      in setOf("png", "jpg", "webp") -> properties[EnvironmentKey.IMAGE] = environment.toString()
-      in setOf("mov", "mp4", "webm") -> properties[EnvironmentKey.VIDEO] = environment.toString()
+      in setOf("png", "jpg", "webp") -> mapOf(EnvironmentKey.IMAGE to environment.toString())
+      in setOf("mov", "mp4", "webm") -> mapOf(EnvironmentKey.VIDEO to environment.toString())
+      else -> null
     }
-    return properties
-  }
-
-  private fun environmentFromConfig(environment: Map<String, String>): Path? {
-    for (key in listOf(EnvironmentKey.IMAGE, EnvironmentKey.VIDEO)) {
-      environment[key]?.let {
-        return avdFolder.relativize(avdFolder.resolve(it))
-      }
-    }
-    return null
-  }
 
   /**
    * When the AVD folder changes, updates absolute paths that point to a location within the old AVD folder to a corresponding location
@@ -164,6 +150,8 @@ class AvdBuilder(var metadataIniPath: Path, avdFolder: Path, var device: Device)
   }
 
   companion object {
+    val DEFAULT_AI_GLASSES_DISPLAY_MODE = AiGlassesDisplayMode.MONOCULAR_RIGHT
+
     /**
      * Values that we unconditionally set before setting other properties. They may be overridden by Device-determined properties. If they
      * need to be configurable, they can be converted to fields.
@@ -185,6 +173,7 @@ class AvdBuilder(var metadataIniPath: Path, avdFolder: Path, var device: Device)
         AvdBuilder::enableKeyboard bindToKey HardwareProperties.HW_KEYBOARD,
         AvdBuilder::networkLatency bindToKey ConfigKey.NETWORK_LATENCY,
         AvdBuilder::networkSpeed bindToKey ConfigKey.NETWORK_SPEED,
+        AvdBuilder::aiGlassesDisplayMode bindToKey ConfigKey.AI_GLASSES_DISPLAY_MODE,
       )
 
     /** Creates an AvdBuilder for editing an existing AVD. */
@@ -195,7 +184,9 @@ class AvdBuilder(var metadataIniPath: Path, avdFolder: Path, var device: Device)
 
         sdCard = sdCardFromConfig(avdInfo.properties)
         skin = skinFromConfig(avdInfo.properties)
-        environment = environmentFromConfig(avdInfo.environment)
+        // We specifically do not load the environment for an existing AVD because we only write it on creation; after that, it's the
+        // emulator's domain.
+        environment = null
 
         bootMode = BootMode.fromProperties(avdInfo.properties)
         binding.read(this, avdInfo.properties)

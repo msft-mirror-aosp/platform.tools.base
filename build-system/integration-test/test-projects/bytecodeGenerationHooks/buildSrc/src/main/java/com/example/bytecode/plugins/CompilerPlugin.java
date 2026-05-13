@@ -1,17 +1,16 @@
 package com.example.bytecode.plugins;
 
-import com.android.build.gradle.*;
-import com.android.build.gradle.api.BaseVariant;
-import com.android.build.gradle.api.SourceKind;
+import com.android.build.api.artifact.MultipleArtifact;
+import com.android.build.api.artifact.ScopedArtifact;
+import com.android.build.api.variant.ApplicationAndroidComponentsExtension;
+import com.android.build.api.variant.Component;
+import com.android.build.api.variant.LibraryAndroidComponentsExtension;
+import com.android.build.api.variant.ScopedArtifacts;
+import com.android.build.api.variant.TestAndroidComponentsExtension;
 import java.io.File;
-import java.util.List;
-import org.gradle.api.DefaultTask;
-import org.gradle.api.DomainObjectSet;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
-import org.gradle.api.Task;
-import org.gradle.api.file.ConfigurableFileCollection;
-import org.gradle.api.file.ConfigurableFileTree;
+import org.gradle.api.tasks.TaskProvider;
 
 /**
  * Simple plugin that register a bytecode generating task
@@ -35,37 +34,46 @@ public class CompilerPlugin implements Plugin<Project> {
 
         computeJarLocations();
 
-        // process existing plugins
-        project.getPlugins().forEach(this::handlePlugin);
-        // process future plugins
-        project.getPlugins().whenPluginAdded(this::handlePlugin);
-    }
-
-    private void handlePlugin(Plugin plugin) {
-        final Class<? extends Plugin> pluginClass = plugin.getClass();
-
-        TestedExtension testedExtension = null;
-
-        if (pluginClass.equals(AppPlugin.class)) {
-            AppExtension extension = (AppExtension) project.getExtensions().getByName("android");
-            processVariants(extension.getApplicationVariants(), appJar, postJavacAppJar);
-
-            testedExtension = extension;
-        } else if (pluginClass.equals(LibraryPlugin.class)) {
-            LibraryExtension extension =
-                    (LibraryExtension) project.getExtensions().getByName("android");
-            processVariants(extension.getLibraryVariants(), libJar, postJavacLibJar);
-
-            testedExtension = extension;
-        } else if (pluginClass.equals(TestPlugin.class)) {
-            TestExtension extension = (TestExtension) project.getExtensions().getByName("android");
-            processVariants(extension.getApplicationVariants(), testJar, null);
-            // no test here.
+        ApplicationAndroidComponentsExtension appComponents =
+                project.getExtensions().findByType(ApplicationAndroidComponentsExtension.class);
+        if (appComponents != null) {
+            appComponents.onVariants(
+                    appComponents.selector().all(),
+                    variant -> {
+                        processVariant(variant, appJar, postJavacAppJar);
+                        if (variant.getUnitTest() != null) {
+                            processVariant(variant.getUnitTest(), testJar, null);
+                        }
+                        if (variant.getAndroidTest() != null) {
+                            processVariant(variant.getAndroidTest(), testJar, null);
+                        }
+                    });
         }
 
-        if (testedExtension != null) {
-            processVariants(testedExtension.getTestVariants(), testJar, null);
-            processVariants(testedExtension.getUnitTestVariants(), testJar, null);
+        LibraryAndroidComponentsExtension libComponents =
+                project.getExtensions().findByType(LibraryAndroidComponentsExtension.class);
+        if (libComponents != null) {
+            libComponents.onVariants(
+                    libComponents.selector().all(),
+                    variant -> {
+                        processVariant(variant, libJar, postJavacLibJar);
+                        if (variant.getUnitTest() != null) {
+                            processVariant(variant.getUnitTest(), testJar, null);
+                        }
+                        if (variant.getAndroidTest() != null) {
+                            processVariant(variant.getAndroidTest(), testJar, null);
+                        }
+                    });
+        }
+
+        TestAndroidComponentsExtension testComponents =
+                project.getExtensions().findByType(TestAndroidComponentsExtension.class);
+        if (testComponents != null) {
+            testComponents.onVariants(
+                    testComponents.selector().all(),
+                    variant -> {
+                        processVariant(variant, testJar, null);
+                    });
         }
     }
 
@@ -78,97 +86,84 @@ public class CompilerPlugin implements Plugin<Project> {
         testJar = new File(rootDir, "test.jar");
     }
 
-    private <T extends BaseVariant> void processVariants(
-            DomainObjectSet<T> variants, File sourceJar, File postJavacJar) {
-
-        File folder = project.file("src/custom/java");
-        Task findTask = project.getTasks().findByName("generateCustomTaskForTesting");
-        if (findTask == null) {
-            findTask = project.getTasks().create("generateCustomTaskForTesting", DefaultTask.class);
+    private void processVariant(Component variant, File sourceJar, File postJavacJar) {
+        // Source folders
+        if (postJavacJar != null && variant.getSources().getJava() != null) {
+            variant.getSources().getJava().addStaticSourceDirectory("src/custom/java");
         }
 
-        // need to be final because lambda below
-        Task sourceTask = findTask;
+        // Output the source folders.
+        try {
+            if (variant.getSources().getJava() != null) {
+                variant.getSources()
+                        .getJava()
+                        .getAll()
+                        .get()
+                        .forEach(
+                                dir -> {
+                                    System.out.println(
+                                            "SourceFoldersApi("
+                                                    + project.getPath()
+                                                    + ":"
+                                                    + variant.getName()
+                                                    + "): "
+                                                    + dir.getAsFile());
+                                });
+            }
+        } catch (Exception e) {
+            // ignore
+        }
 
-        variants.all(
-                variant -> {
-                    if (postJavacJar != null) {
-                        variant.registerJavaGeneratingTask(sourceTask, folder);
-                    }
+        // Pre-javac bytecode generation
+        TaskProvider<BytecodeGeneratingTask> t =
+                project.getTasks()
+                        .register(
+                                "generateBytecodeFor" + variant.getName(),
+                                BytecodeGeneratingTask.class,
+                                task -> {
+                                    task.setSourceJar(sourceJar);
+                                    task.setClasspath(variant.getCompileClasspath());
+                                });
 
-                    // get the source folders.
-                    List<ConfigurableFileTree> sourceFolders =
-                            variant.getSourceFolders(SourceKind.JAVA);
+        // Add to PRE_COMPILATION_CLASSES so javac can see it
+        variant.getArtifacts()
+                .use(t)
+                .wiredWith(task -> task.getOutputDirProperty())
+                .toAppendTo(MultipleArtifact.PRE_COMPILATION_CLASSES.INSTANCE);
 
-                    // output the source folder gotten by the API
-                    for (ConfigurableFileTree fileTree : sourceFolders) {
-                        System.out.println(
-                                "SourceFoldersApi("
-                                        + project.getPath()
-                                        + ":"
-                                        + variant.getName()
-                                        + "): "
-                                        + fileTree.getDir());
-                    }
+        // Also add to final classes for dexing
+        variant.getArtifacts()
+                .forScope(ScopedArtifacts.Scope.PROJECT)
+                .use(t)
+                .toAppend(ScopedArtifact.CLASSES.INSTANCE, task -> task.getOutputDirProperty());
 
-                    // figure out the output.
-                    File outputDir =
-                            project.file(
-                                    project.getBuildDir()
-                                            + "/generated/preJavacbytecode/"
-                                            + variant.getDirName());
+        // Also add to JAVA_RES to include META-INF files
+        variant.getArtifacts()
+                .forScope(ScopedArtifacts.Scope.PROJECT)
+                .use(t)
+                .toAppend(ScopedArtifact.JAVA_RES.INSTANCE, task -> task.getOutputDirProperty());
 
-                    // create the file collection that contains the result. We'll add the task
-                    // dependency later when we have it
-                    ConfigurableFileCollection fc = project.files(outputDir);
+        // Post-javac bytecode generation
+        if (postJavacJar != null) {
+            TaskProvider<BytecodeGeneratingTask> t2 =
+                    project.getTasks()
+                            .register(
+                                    "generateBytecode2For" + variant.getName(),
+                                    BytecodeGeneratingTask.class,
+                                    task -> {
+                                        task.setSourceJar(postJavacJar);
+                                        task.setClasspath(variant.getCompileClasspath());
+                                    });
 
-                    // and register it with the variant, getting the key in return that will
-                    // be used for the classpath
-                    Object key = variant.registerPreJavacGeneratedBytecode(fc);
+            variant.getArtifacts()
+                    .forScope(ScopedArtifacts.Scope.PROJECT)
+                    .use(t2)
+                    .toAppend(ScopedArtifact.CLASSES.INSTANCE, task -> task.getOutputDirProperty());
 
-                    // create the task, querying the classpath with the provided key.
-                    BytecodeGeneratingTask t =
-                            project.getTasks()
-                                    .create(
-                                            "generateBytecodeFor" + variant.getName(),
-                                            BytecodeGeneratingTask.class,
-                                            task -> {
-                                                task.setSourceFolders(sourceFolders);
-                                                task.setSourceJar(sourceJar);
-                                                task.setOutputDir(outputDir);
-                                                task.setClasspath(
-                                                        variant.getCompileClasspathArtifacts(key));
-                                            });
-
-                    // add the task dependency to the file collection so that consumers can have
-                    // the proper dependency.
-                    fc.builtBy(t);
-
-                    // make the task run after the variant's prebuild task
-                    t.dependsOn(variant.getPreBuild());
-
-                    // also create a post javac bytecode generating task if needed
-                    if (postJavacJar != null) {
-                        File outputDir2 =
-                                project.file(
-                                        project.getBuildDir()
-                                                + "/generated/postJavacBytecode/"
-                                                + variant.getDirName());
-
-                        BytecodeGeneratingTask t2 =
-                                project.getTasks()
-                                        .create(
-                                                "generateBytecode2For" + variant.getName(),
-                                                BytecodeGeneratingTask.class,
-                                                task -> {
-                                                    task.setSourceFolders(sourceFolders);
-                                                    task.setSourceJar(postJavacJar);
-                                                    task.setOutputDir(outputDir2);
-                                                });
-
-                        ConfigurableFileCollection fc2 = project.files(outputDir2).builtBy(t2);
-                        variant.registerPostJavacGeneratedBytecode(fc2);
-                    }
-                });
+            variant.getArtifacts()
+                    .forScope(ScopedArtifacts.Scope.PROJECT)
+                    .use(t2)
+                    .toAppend(ScopedArtifact.JAVA_RES.INSTANCE, task -> task.getOutputDirProperty());
+        }
     }
 }

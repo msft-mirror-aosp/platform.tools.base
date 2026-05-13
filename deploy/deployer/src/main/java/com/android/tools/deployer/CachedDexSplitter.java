@@ -15,8 +15,10 @@
  */
 package com.android.tools.deployer;
 
+import com.android.tools.deployer.common.DeployerException;
 import com.android.tools.deployer.model.ApkEntry;
 import com.android.tools.deployer.model.DexClass;
+
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collection;

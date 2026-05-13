@@ -66,14 +66,16 @@ open class ClassObj(id: Long, stack: StackTrace?, val className: String, private
   open val staticFieldValues: Map<Field, Any?>
     get() {
       val result: MutableMap<Field, Any?> = HashMap()
-      buffer.setPosition(staticFieldsOffset)
-      val numEntries = readUnsignedShort()
-      for (i in 0 until numEntries) {
-        val f = staticFields[i]
-        readId()
-        readUnsignedByte()
-        val value = readValue(f.type)
-        result[f] = value
+      synchronized(buffer) {
+        buffer.setPosition(staticFieldsOffset)
+        val numEntries = readUnsignedShort()
+        for (i in 0 until numEntries) {
+          val f = staticFields[i]
+          readId()
+          readUnsignedByte()
+          val value = readValue(f.type)
+          result[f] = value
+        }
       }
       return result
     }

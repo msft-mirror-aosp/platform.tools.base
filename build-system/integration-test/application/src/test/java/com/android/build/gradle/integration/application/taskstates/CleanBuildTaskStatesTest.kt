@@ -86,6 +86,8 @@ class CleanBuildTaskStatesTest {
         SKIPPED to
           setOf(
             ":app:assembleDebug",
+            ":app:compileDebugKotlin",
+            ":app:compileDebugUnitTestKotlin",
             ":app:mergeDebugNativeDebugMetadata",
             ":app:mergeDebugNativeLibs",
             ":app:processDebugJavaRes",
@@ -95,7 +97,7 @@ class CleanBuildTaskStatesTest {
       )
   }
 
-  @get:Rule var project = EmptyActivityProjectBuilder().also { it.withUnitTest = true }.disableBuiltInKotlin().build()
+  @get:Rule var project = EmptyActivityProjectBuilder().also { it.withUnitTest = true }.build()
 
   @Before
   fun setUp() {

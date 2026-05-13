@@ -7,9 +7,9 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import org.gradle.api.DefaultTask;
-import org.gradle.api.artifacts.ArtifactCollection;
 import org.gradle.api.file.ConfigurableFileTree;
 import org.gradle.api.file.FileCollection;
+import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Optional;
@@ -17,12 +17,11 @@ import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskAction;
 
 /** A task that generates bytecode simply by extracting it from a jar. */
-public class BytecodeGeneratingTask extends DefaultTask {
+public abstract class BytecodeGeneratingTask extends DefaultTask {
 
     private List<ConfigurableFileTree> sourceFolders;
     private File sourceJar;
-    private ArtifactCollection classpath;
-    private File outputDir;
+    private FileCollection classpath;
     private String projectPath = getProject().getPath().toString();
 
     @InputFile
@@ -33,18 +32,17 @@ public class BytecodeGeneratingTask extends DefaultTask {
     @InputFiles
     @Optional
     public FileCollection getClasspath() {
-        return classpath != null ? classpath.getArtifactFiles() : null;
+        return classpath;
     }
 
     @InputFiles
+    @Optional
     public List<ConfigurableFileTree> getSourceFolders() {
         return sourceFolders;
     }
 
     @OutputDirectory
-    public File getOutputDir() {
-        return outputDir;
-    }
+    public abstract DirectoryProperty getOutputDirProperty();
 
     public void setSourceFolders(List<ConfigurableFileTree> sourceFolders) {
         this.sourceFolders = sourceFolders;
@@ -53,16 +51,13 @@ public class BytecodeGeneratingTask extends DefaultTask {
         this.sourceJar = sourceJar;
     }
 
-    public void setClasspath(ArtifactCollection classpath) {
+    public void setClasspath(FileCollection classpath) {
         this.classpath = classpath;
-    }
-
-    public void setOutputDir(File outputDir) {
-        this.outputDir = outputDir;
     }
 
     @TaskAction
     void generate() throws IOException {
+        File outputDir = getOutputDirProperty().get().getAsFile();
         if (!outputDir.exists() && !outputDir.mkdirs()) {
             throw new RuntimeException("Failed to mkdirs: " + outputDir);
         }
@@ -99,12 +94,11 @@ public class BytecodeGeneratingTask extends DefaultTask {
 
         // check the compile classpath
         if (classpath != null) {
-            Set<File> files = classpath.getArtifactFiles().getFiles();
+            Set<File> files = classpath.getFiles();
             for (File file : files) {
-                if (!file.exists()) {
-                    throw new RuntimeException("Dependency file does not exist: " + file);
-                }
-                // prints the content so that the test can validate it.
+                // Files that are task outputs may not exist yet.
+                if (!file.exists()) continue;
+                // Prints existing files for test validation.
                 System.out.println(
                         "BytecodeGeneratingTask(" + projectPath + ":" + getName() + "): " + file);
             }

@@ -12,6 +12,16 @@ DATA = [
     "//tools/base/build-system/integration-test:android_platform_for_tests",
 ]
 
+#keep sorted
+CMAKE = [
+    "//prebuilts/studio/sdk:cmake",
+]
+
+#keep sorted
+NDK = [
+    "//prebuilts/studio/sdk:ndk",
+]
+
 # keep sorted
 DEPS_WITHOUT_UTILS = [
     "//tools/analytics-library/protos/src/main/proto",
@@ -85,6 +95,10 @@ LINT_CLASSLOADER_TEST = [
 
 LINT_ANALYSIS_CACHEABILITY_TEST = [
     "src/test/java/com/android/build/gradle/integration/lint/AndroidLintAnalysisTaskCacheabilityTest.kt",
+]
+
+LINT_NATIVE_RELOCATABILITY_TEST = [
+    "src/test/java/com/android/build/gradle/integration/lint/AndroidLintAnalysisTaskNativeRelocatabilityTest.kt",
 ]
 
 PRIVACY_SANDBOX_SDK_TESTS = [
@@ -174,6 +188,17 @@ gradle_integration_test(
 )
 
 gradle_integration_test(
+    name = "AndroidLintAnalysisTaskNativeRelocatabilityTest",
+    srcs = glob(
+        include = LINT_NATIVE_RELOCATABILITY_TEST,
+    ),
+    data = DATA + CMAKE + NDK,
+    maven_repo_zips = MAVEN_REPO_ZIPS,
+    maven_repos = MAVEN_REPOS,
+    deps = DEPS,
+)
+
+gradle_integration_test(
     name = "LintDetectorDetectorStandaloneTest",
     srcs = glob(
         include = LINT_DETECTOR_DETECTOR_STANDALONE_TEST,
@@ -194,7 +219,7 @@ gradle_integration_test(
             "src/test/java/**/*.java",
             "src/test/java/**/*.kt",
         ],
-        exclude = LONG_RUNNING_TESTS + KOTLIN_MULTIPLATFORM_TESTS + PRIVACY_SANDBOX_SDK_TESTS + LINT_DYNAMIC_FEATURE_TEST + LINT_ALIGN_UAST_TEST + LINT_CLASSLOADER_TEST + LINT_ANALYSIS_CACHEABILITY_TEST + LINT_DETECTOR_DETECTOR_STANDALONE_TEST + UTILS,
+        exclude = LONG_RUNNING_TESTS + KOTLIN_MULTIPLATFORM_TESTS + PRIVACY_SANDBOX_SDK_TESTS + LINT_DYNAMIC_FEATURE_TEST + LINT_ALIGN_UAST_TEST + LINT_CLASSLOADER_TEST + LINT_ANALYSIS_CACHEABILITY_TEST + LINT_NATIVE_RELOCATABILITY_TEST + LINT_DETECTOR_DETECTOR_STANDALONE_TEST + UTILS,
     ),
     data = DATA + [
         "//tools/base/build-system/integration-test:test-projects/lintBaseline",

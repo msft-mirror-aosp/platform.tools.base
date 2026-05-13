@@ -22,6 +22,7 @@ import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.tasks.creationconfig.forTestSuite
 import com.android.build.gradle.internal.tasks.factory.TaskFactory
 import com.android.build.gradle.tasks.ProcessTestManifest
+import com.android.build.gradle.tasks.ProcessTestManifestPackaging
 import org.gradle.api.Task
 import org.gradle.api.tasks.TaskProvider
 
@@ -36,6 +37,7 @@ class ApkTestSuiteTaskManager {
   ): TaskProvider<out Task> {
     val taskConfig = forTestSuite(creationConfig, sourceContainer, source)
     assert(taskConfig != null) { "ApkTestSuiteTaskManager create tasks should be called for Apk and Libraries only" }
-    return taskFactory.register(ProcessTestManifest.CreationAction(taskConfig!!))
+    taskFactory.register(ProcessTestManifestPackaging.CreationAction(taskConfig!!))
+    return taskFactory.register(ProcessTestManifest.CreationAction(taskConfig))
   }
 }

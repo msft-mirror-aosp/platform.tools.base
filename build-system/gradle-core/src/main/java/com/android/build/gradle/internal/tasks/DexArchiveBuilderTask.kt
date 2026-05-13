@@ -30,6 +30,7 @@ import com.android.build.gradle.internal.tasks.factory.features.DexingTaskCreati
 import com.android.build.gradle.internal.utils.DesugarConfigJson.Companion.combineFileContents
 import com.android.build.gradle.internal.utils.getDesugarLibConfigFiles
 import com.android.build.gradle.internal.utils.setDisallowChanges
+import com.android.build.gradle.internal.utils.useUniversalGlobalSyntheticsDex
 import com.android.build.gradle.options.IntegerOption
 import com.android.build.gradle.options.SyncOptions
 import com.android.buildanalyzer.common.TaskCategory
@@ -316,6 +317,7 @@ abstract class DexArchiveBuilderTask : NewIncrementalTask() {
 
       task.dexParams.enableApiModeling.set(creationConfig.enableApiModeling)
       task.dexParams.enableGlobalSynthetics.set(creationConfig.enableGlobalSynthetics)
+      task.dexParams.useNoOpGlobalSyntheticsConsumer.set(creationConfig.useUniversalGlobalSyntheticsDex)
 
       if (dexExternalLibsInArtifactTransform) {
         task.externalLibDexFiles.from(getDexForExternalLibs(task, "jar"))
@@ -340,6 +342,7 @@ abstract class DexArchiveBuilderTask : NewIncrementalTask() {
           this.enableDesugaring.set(task.dexParams.withDesugaring)
           this.desugarLibConfigFiles.setFrom(task.dexParams.desugarLibConfigFiles)
           this.enableGlobalSynthetics.set(task.dexParams.enableGlobalSynthetics)
+          this.useNoOpGlobalSyntheticsConsumer.set(task.dexParams.useNoOpGlobalSyntheticsConsumer)
           this.enableApiModeling.set(task.dexParams.enableApiModeling)
         }
 
@@ -417,6 +420,8 @@ abstract class DexParameterInputs {
 
   @get:Input abstract val errorFormatMode: Property<SyncOptions.ErrorFormatMode>
 
+  @get:Input abstract val useNoOpGlobalSyntheticsConsumer: Property<Boolean>
+
   fun toDexParameters(): DexParameters {
     return DexParameters(
       minSdkVersion = minSdkVersion.get(),
@@ -427,6 +432,7 @@ abstract class DexParameterInputs {
       coreLibDesugarConfig = combineFileContents(desugarLibConfigFiles.files),
       enableApiModeling = enableApiModeling.get(),
       errorFormatMode = errorFormatMode.get(),
+      useNoOpGlobalSyntheticsConsumer = useNoOpGlobalSyntheticsConsumer.get(),
     )
   }
 }

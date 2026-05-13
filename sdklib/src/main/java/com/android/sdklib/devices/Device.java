@@ -321,14 +321,16 @@ public final class Device {
      * A convenience method to get if the screen for this device is round.
      */
     public boolean isScreenRound() {
-        return getDefaultHardware().getScreen().getScreenRound() == ScreenRound.ROUND;
+        Screen screen = getDefaultHardware().getScreen();
+        return screen != null && screen.getScreenRound() == ScreenRound.ROUND;
     }
 
     /**
      * A convenience method to get the chin size for this device.
      */
     public int getChinSize() {
-        return getDefaultHardware().getScreen().getChin();
+        Screen screen = getDefaultHardware().getScreen();
+        return screen == null ? 0 : screen.getChin();
     }
 
     /**
@@ -668,7 +670,7 @@ public final class Device {
     // TODO: http://b/326289372 -  Declare this in XML
     private static boolean hasTabletScreen(@NonNull Device device) {
         Screen screen = device.getDefaultHardware().getScreen();
-        return screen.getDiagonalLength() >= MINIMUM_TABLET_SIZE && !screen.isFoldable();
+        return screen != null && screen.getDiagonalLength() >= MINIMUM_TABLET_SIZE && !screen.isFoldable();
     }
 
     /** Whether the given device is a wear device */
@@ -719,12 +721,18 @@ public final class Device {
         return "xr_headset_device".equals(device != null ? device.getId() : null);
     }
 
-    /** Whether the given device is an AI Glasses device */
+    /** Whether the given device is an AI Glasses device (with or without display) */
     public static boolean isAiGlasses(@Nullable Device device) {
         return AI_GLASSES_TAG.getId().equals(device != null ? device.getTagId() : null)
                 || DEPRECATED_AI_GLASSES_TAG
                         .getId()
                         .equals(device != null ? device.getTagId() : null);
+    }
+
+    /** Whether the given device is an AI Glasses displayless device */
+    public static boolean isAiGlassesDisplayless(@Nullable Device device) {
+        return isAiGlasses(device)
+                && "none".equals(device.getBootProps().get("ro.boot.display_device"));
     }
 
     /** Whether the given device is an XR Glasses device */

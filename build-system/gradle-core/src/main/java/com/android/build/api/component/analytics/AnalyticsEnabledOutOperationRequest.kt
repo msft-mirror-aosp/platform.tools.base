@@ -45,6 +45,16 @@ constructor(val delegate: OutOperationRequest<FileTypeT>, val stats: GradleBuild
     delegate.toAppendTo(type)
   }
 
+  override fun <ArtifactTypeT : Artifact.Multiple<FileTypeT>> toAppendTo(type: ArtifactTypeT, qualifiers: Map<String, String>)
+    where ArtifactTypeT : Artifact.Appendable, ArtifactTypeT : Artifact.WithQualifiers {
+    stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.TO_APPEND_TO_WITH_ATTRIBUTES_VALUE
+    stats.variantApiAccessBuilder.addArtifactAccessBuilder().also {
+      it.inputArtifactType = AnalyticsUtil.getVariantApiArtifactType(type.javaClass).number
+      it.type = ArtifactAccess.AccessType.APPEND
+    }
+    delegate.toAppendTo(type, qualifiers)
+  }
+
   override fun <ArtifactTypeT> toCreate(type: ArtifactTypeT)
     where ArtifactTypeT : Artifact.Single<FileTypeT>, ArtifactTypeT : Artifact.Replaceable {
     stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.TO_CREATE_VALUE

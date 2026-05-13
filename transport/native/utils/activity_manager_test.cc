@@ -77,7 +77,7 @@ TEST(ActivityManagerTest, SamplingStart_DualClockEnabled_Api34plus) {
   int64_t error_code = 0;
   manager.StartProfiling(ActivityManager::ProfilingMode::SAMPLING,
                          kTestPackageName, 1000, true, trace_path, &output_code,
-                         &error_code);
+                         &error_code, 1);
   EXPECT_THAT(cmd, StartsWith(kAmExecutable));
   EXPECT_THAT(cmd, HasSubstr(kProfileStart));
   EXPECT_THAT(cmd, HasSubstr(kTestPackageName));
@@ -105,7 +105,7 @@ TEST(ActivityManagerTest, SamplingStart_DualClockDisabled_Api34plus) {
   int64_t error_code = 0;
   manager.StartProfiling(ActivityManager::ProfilingMode::SAMPLING,
                          kTestPackageName, 1000, false, trace_path,
-                         &output_code, &error_code);
+                         &output_code, &error_code, 1);
   EXPECT_THAT(cmd, StartsWith(kAmExecutable));
   EXPECT_THAT(cmd, HasSubstr(kProfileStart));
   EXPECT_THAT(cmd, HasSubstr(kTestPackageName));
@@ -132,7 +132,7 @@ TEST(ActivityManagerTest, SamplingStart_DualClockEnabled_PreApi34) {
   int64_t error_code = 0;
   manager.StartProfiling(ActivityManager::ProfilingMode::SAMPLING,
                          kTestPackageName, 1000, false, trace_path,
-                         &output_code, &error_code);
+                         &output_code, &error_code, 1);
   EXPECT_THAT(cmd, StartsWith(kAmExecutable));
   EXPECT_THAT(cmd, HasSubstr(kProfileStart));
   EXPECT_THAT(cmd, HasSubstr(kTestPackageName));
@@ -160,7 +160,7 @@ TEST(ActivityManagerTest, SamplingStart_DualClockDisabled_PreApi34) {
   int64_t error_code = 0;
   manager.StartProfiling(ActivityManager::ProfilingMode::SAMPLING,
                          kTestPackageName, 1000, false, trace_path,
-                         &output_code, &error_code);
+                         &output_code, &error_code, 1);
   EXPECT_THAT(cmd, StartsWith(kAmExecutable));
   EXPECT_THAT(cmd, HasSubstr(kProfileStart));
   EXPECT_THAT(cmd, HasSubstr(kTestPackageName));
@@ -189,7 +189,7 @@ TEST(ActivityManagerTest, InstrumentStart_DualClockEnabled_Api34plus) {
   int64_t error_code = 0;
   manager.StartProfiling(ActivityManager::ProfilingMode::INSTRUMENTED,
                          kTestPackageName, 1000, true, trace_path, &output_code,
-                         &error_code);
+                         &error_code, 1);
   EXPECT_THAT(cmd, StartsWith(kAmExecutable));
   EXPECT_THAT(cmd, HasSubstr(kProfileStart));
   EXPECT_THAT(cmd, HasSubstr(kTestPackageName));
@@ -215,12 +215,58 @@ TEST(ActivityManagerTest, InstrumentStart_DualClockDisabled_Api34plus) {
   int64_t error_code = 0;
   manager.StartProfiling(ActivityManager::ProfilingMode::INSTRUMENTED,
                          kTestPackageName, 1000, false, trace_path,
-                         &output_code, &error_code);
+                         &output_code, &error_code, 1);
   EXPECT_THAT(cmd, StartsWith(kAmExecutable));
   EXPECT_THAT(cmd, HasSubstr(kProfileStart));
   EXPECT_THAT(cmd, HasSubstr(kTestPackageName));
   EXPECT_THAT(cmd, HasSubstr("--clock-type wall"));
   EXPECT_THAT(cmd, Not(HasSubstr("--sampling")));
+  EXPECT_THAT(output_code, kMockOutputString);
+}
+
+TEST(ActivityManagerTest, ProfilerOutputVersionIsTwo) {
+  string trace_path;
+  string output_code;
+  string cmd;
+  std::unique_ptr<BashCommandRunner> bash{
+      new MockBashCommandRunner(kAmExecutable)};
+  EXPECT_CALL(*(static_cast<MockBashCommandRunner*>(bash.get())),
+              RunAndReadOutput(testing::A<const string&>(), &output_code))
+      .WillOnce(DoAll(SaveArg<0>(&cmd), SetArgPointee<1>(kMockOutputString),
+                      Return(true)));
+  TestActivityManager manager{std::move(bash)};
+
+  int64_t error_code = 0;
+  manager.StartProfiling(ActivityManager::ProfilingMode::INSTRUMENTED,
+                         kTestPackageName, 1000, true, trace_path, &output_code,
+                         &error_code, 2, false);
+  EXPECT_THAT(cmd, StartsWith(kAmExecutable));
+  EXPECT_THAT(cmd, HasSubstr(kProfileStart));
+  EXPECT_THAT(cmd, HasSubstr(kTestPackageName));
+  EXPECT_THAT(cmd, HasSubstr("--profiler-output-version 2"));
+  EXPECT_THAT(output_code, kMockOutputString);
+}
+
+TEST(ActivityManagerTest, DefaultProfilerOutputVersion) {
+  string trace_path;
+  string output_code;
+  string cmd;
+  std::unique_ptr<BashCommandRunner> bash{
+      new MockBashCommandRunner(kAmExecutable)};
+  EXPECT_CALL(*(static_cast<MockBashCommandRunner*>(bash.get())),
+              RunAndReadOutput(testing::A<const string&>(), &output_code))
+      .WillOnce(DoAll(SaveArg<0>(&cmd), SetArgPointee<1>(kMockOutputString),
+                      Return(true)));
+  TestActivityManager manager{std::move(bash)};
+
+  int64_t error_code = 0;
+  manager.StartProfiling(ActivityManager::ProfilingMode::INSTRUMENTED,
+                         kTestPackageName, 1000, true, trace_path, &output_code,
+                         &error_code, 1, false);
+  EXPECT_THAT(cmd, StartsWith(kAmExecutable));
+  EXPECT_THAT(cmd, HasSubstr(kProfileStart));
+  EXPECT_THAT(cmd, HasSubstr(kTestPackageName));
+  EXPECT_THAT(cmd, Not(HasSubstr("--profiler-output-version")));
   EXPECT_THAT(output_code, kMockOutputString);
 }
 
@@ -240,7 +286,7 @@ TEST(ActivityManagerTest, InstrumentStart_DualClockEnabled_PreApi34) {
   int64_t error_code = 0;
   manager.StartProfiling(ActivityManager::ProfilingMode::INSTRUMENTED,
                          kTestPackageName, 1000, true, trace_path, &output_code,
-                         &error_code);
+                         &error_code, 1);
   EXPECT_THAT(cmd, StartsWith(kAmExecutable));
   EXPECT_THAT(cmd, HasSubstr(kProfileStart));
   EXPECT_THAT(cmd, HasSubstr(kTestPackageName));
@@ -265,7 +311,7 @@ TEST(ActivityManagerTest, InstrumentStart_DualClockDisabled_PreApi34) {
   int64_t error_code = 0;
   manager.StartProfiling(ActivityManager::ProfilingMode::INSTRUMENTED,
                          kTestPackageName, 1000, false, trace_path,
-                         &output_code, &error_code);
+                         &output_code, &error_code, 1);
   EXPECT_THAT(cmd, StartsWith(kAmExecutable));
   EXPECT_THAT(cmd, HasSubstr(kProfileStart));
   EXPECT_THAT(cmd, HasSubstr(kTestPackageName));
@@ -289,7 +335,7 @@ TEST(ActivityManagerTest, InstrumentSystemServerStart) {
   int64_t error_code = 0;
   manager.StartProfiling(ActivityManager::ProfilingMode::INSTRUMENTED,
                          "system_process", 1000, false, trace_path,
-                         &output_code, &error_code);
+                         &output_code, &error_code, 1);
   EXPECT_THAT(cmd, StartsWith(kAmExecutable));
   EXPECT_THAT(cmd, HasSubstr(kProfileStart));
   EXPECT_THAT(cmd, HasSubstr(" system "));

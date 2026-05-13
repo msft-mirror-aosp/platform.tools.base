@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.tasks
 
+import com.android.build.gradle.internal.fixtures.FakeArtifactCollection
 import com.android.build.gradle.internal.fixtures.FakeGradleWorkExecutor
 import com.android.build.gradle.internal.fixtures.FakeNoOpAnalyticsService
 import com.android.builder.merge.DuplicateRelativeFileException
@@ -24,12 +25,16 @@ import com.google.common.truth.Truth.assertThat
 import java.io.File
 import javax.inject.Inject
 import junit.framework.Assert.fail
+import org.gradle.api.artifacts.component.ComponentIdentifier
+import org.gradle.api.artifacts.result.ResolvedArtifactResult
 import org.gradle.testfixtures.ProjectBuilder
 import org.gradle.workers.WorkerExecutor
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.`when`
 
 /** Unit tests for [MergeNativeLibsTask]. */
 class MergeNativeLibsTaskTest {
@@ -240,6 +245,42 @@ class MergeNativeLibsTaskTest {
       assertThat(testOnlyDir.resolve("lib/$abi/externalLibTestOnly.so")).exists()
       assertThat(testOnlyDir.resolve("lib/$abi/externalLibTestOnly.so")).hasContents("externalLibTestOnly")
     }
+  }
+
+  /**
+   * Verifies that the native libs blame file is generated correctly. This ensures that external AAR dependencies, subproject dependencies,
+   * and local project native libraries are correctly mapped to their source identifiers in the blame report.
+   */
+  @Test
+  fun testBlameFileGeneration() {
+    val mockExternalLibResult1 = mock(ResolvedArtifactResult::class.java)
+    `when`(mockExternalLibResult1.file).thenReturn(externalLibNativeLibs[0])
+    val mockExternalId1 = mock(org.gradle.api.artifacts.component.ComponentArtifactIdentifier::class.java)
+    val mockExternalCompId1 = mock(ComponentIdentifier::class.java)
+    `when`(mockExternalCompId1.displayName).thenReturn("com.example:external-1")
+    `when`(mockExternalId1.componentIdentifier).thenReturn(mockExternalCompId1)
+    `when`(mockExternalLibResult1.id).thenReturn(mockExternalId1)
+    task.externalArtifactCollection.set(FakeArtifactCollection(mutableSetOf(mockExternalLibResult1)))
+
+    val mockSubProjectLibResult1 = mock(ResolvedArtifactResult::class.java)
+    `when`(mockSubProjectLibResult1.file).thenReturn(subProjectNativeLibs[0])
+    val mockSubProjectId1 = mock(org.gradle.api.artifacts.component.ComponentArtifactIdentifier::class.java)
+    val mockSubProjectCompId1 = mock(ComponentIdentifier::class.java)
+    `when`(mockSubProjectCompId1.displayName).thenReturn("project:subproject-1")
+    `when`(mockSubProjectId1.componentIdentifier).thenReturn(mockSubProjectCompId1)
+    `when`(mockSubProjectLibResult1.id).thenReturn(mockSubProjectId1)
+    task.subProjectArtifactCollection.set(FakeArtifactCollection(mutableSetOf(mockSubProjectLibResult1)))
+
+    val blameFile = temporaryFolder.newFile("native-libs-blame.txt")
+    task.mergeBlameFile.set(blameFile)
+
+    task.taskAction()
+
+    val blameContent = task.mergeBlameFile.get().asFile.readText()
+    assertThat(blameContent).contains("lib/x86/externalLibNativeLib1.so->com.example:external-1")
+    assertThat(blameContent).contains("lib/x86_64/externalLibNativeLib1.so->com.example:external-1")
+    assertThat(blameContent).contains("lib/x86/subProjectNativeLib1.so->project:subproject-1")
+    assertThat(blameContent).contains("lib/x86/projectNativeLib1.so->Project")
   }
 
   @Test

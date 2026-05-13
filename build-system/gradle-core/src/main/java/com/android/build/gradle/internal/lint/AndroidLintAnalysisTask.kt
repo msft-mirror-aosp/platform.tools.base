@@ -172,11 +172,6 @@ abstract class AndroidLintAnalysisTask : NonIncrementalTask() {
       arguments += "--stacktrace"
     }
     arguments += lintTool.initializeLintCacheDir()
-    if (uastInputs.useK2Uast) {
-      arguments += "--XuseK2Uast"
-    } else {
-      arguments += "--XuseK1Uast"
-    }
 
     // Pass information to lint using the --client-id, --client-name, and --client-version flags
     // so that lint can apply gradle-specific and version-specific behaviors.
@@ -429,7 +424,13 @@ abstract class AndroidLintAnalysisTask : NonIncrementalTask() {
     this.fatalOnly.setDisallowChanges(fatalOnly)
     this.checkOnly.setDisallowChanges(lintOptions.checkOnly)
     this.lintTool.initialize(taskCreationServices, this)
-    this.projectInputs.initializeForStandalone(project, taskCreationServices.projectOptions, javaPluginExtension, lintOptions, LintMode.ANALYSIS)
+    this.projectInputs.initializeForStandalone(
+      project,
+      taskCreationServices.projectOptions,
+      javaPluginExtension,
+      lintOptions,
+      LintMode.ANALYSIS,
+    )
     this.variantInputs.initializeForStandalone(
       project,
       this,

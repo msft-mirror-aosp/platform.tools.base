@@ -26,6 +26,7 @@ import com.intellij.util.io.URLUtil.JAR_SEPARATOR
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.io.path.extension
 import org.jetbrains.kotlin.analysis.api.KaExperimentalApi
+import org.jetbrains.kotlin.analysis.api.KaPlatformInterface
 import org.jetbrains.kotlin.analysis.api.platform.packages.createPackagePartProvider
 import org.jetbrains.kotlin.analysis.api.platform.projectStructure.KotlinProjectStructureProvider
 import org.jetbrains.kotlin.analysis.api.projectStructure.KaLibraryModule
@@ -34,7 +35,7 @@ import org.jetbrains.kotlin.analysis.api.symbols.*
 import org.jetbrains.kotlin.asJava.classes.lazyPub
 import org.jetbrains.kotlin.builtins.jvm.JavaToKotlinClassMap
 import org.jetbrains.kotlin.idea.KotlinLanguage
-import org.jetbrains.kotlin.library.KLIB_FILE_EXTENSION
+import org.jetbrains.kotlin.library.KlibConstants.KLIB_FILE_EXTENSION
 import org.jetbrains.kotlin.light.classes.symbol.annotations.getJvmNameFromAnnotation
 import org.jetbrains.kotlin.load.kotlin.PackagePartProvider
 import org.jetbrains.kotlin.name.ClassId
@@ -80,6 +81,7 @@ private class KotlinStaticPsiDeclarationFromBinaryModuleProvider(
       val packageParts = packagePartProvider.findPackageParts(fqName.asString()).map { it.replace("/", ".") }
       val fqNames =
         packageParts.ifEmpty {
+          @Suppress("UnstableApiUsage") // Scheduled for removal; K1 only? CoreJavaFileManager?
           (javaFileManager as? KotlinCliJavaFileManager)?.knownClassNamesInPackage(fqName)?.map { name ->
             fqName.child(Name.identifier(name)).asString()
           }
@@ -270,6 +272,7 @@ private class KotlinStaticPsiDeclarationFromBinaryModuleProvider(
   }
 }
 
+@OptIn(KaPlatformInterface::class)
 internal class KotlinStaticPsiDeclarationProviderFactory(private val project: Project, private val jarFileSystem: VirtualFileSystem) :
   KotlinPsiDeclarationProviderFactory() {
 

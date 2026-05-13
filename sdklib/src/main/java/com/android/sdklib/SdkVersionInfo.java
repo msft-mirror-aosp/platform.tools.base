@@ -30,14 +30,14 @@ public class SdkVersionInfo {
      * updated for a new release. This number is used as a baseline and any more recent platforms
      * found can be used to increase the highest known number.
      */
-    public static final int HIGHEST_KNOWN_API = 36;
+    public static final int HIGHEST_KNOWN_API = 37;
 
     /**
      * Like {@link #HIGHEST_KNOWN_API} but does not include preview platforms.
      *
      * <p>Make sure to keep this in sync with the value in TestUtils.
      */
-    public static final int HIGHEST_KNOWN_STABLE_API = 36;
+    public static final int HIGHEST_KNOWN_STABLE_API = 37;
 
     /**
      * The highest supported version of the Android platform (as an API level) that this version of
@@ -56,7 +56,7 @@ public class SdkVersionInfo {
      * <p>Generally we shouldn't <i>prevent</i> the user from proceeding; the intent is to make the
      * user <b>aware</b> that the SDK may not work correctly without a newer version of the tools.
      */
-    public static final int HIGHEST_SUPPORTED_API = 36; // b/230535497; this is not yet enforced
+    public static final int HIGHEST_SUPPORTED_API = 37; // b/230535497; this is not yet enforced
 
     /**
      * The lowest active API level in the ecosystem. This number will change over time as the
@@ -92,17 +92,16 @@ public class SdkVersionInfo {
     public static final int HIGHEST_KNOWN_API_DESKTOP = 32;
 
     /**
-     * The highest known API level for Android TV. Note the tools at the
-     * downloadable system images for TV to see if there are more recent
-     * versions.
+     * The highest known API level for Android TV. Note the tools at the downloadable system images
+     * for TV to see if there are more recent versions.
      */
-    public static final int HIGHEST_KNOWN_API_TV = 34;
+    public static final int HIGHEST_KNOWN_API_TV = 36;
 
     /**
      * The highest known API level for Android Auto. To find out if this value needs to be updated,
      * check the downloadable system images for Auto to see if there are more recent versions.
      */
-    public static final int HIGHEST_KNOWN_API_AUTO = 34;
+    public static final int HIGHEST_KNOWN_API_AUTO = 35;
 
     /**
      * The lowest active api for TV. This number will change over time
@@ -202,6 +201,8 @@ public class SdkVersionInfo {
                 return "15.0";
             case 36:
                 return "16.0";
+            case 37:
+                return "17.0";
                 // If you add more versions here, also update #HIGHEST_KNOWN_STABLE_API
             default:
                 return null;
@@ -300,6 +301,8 @@ public class SdkVersionInfo {
                 return "VanillaIceCream";
             case 36:
                 return "Baklava";
+            case 37:
+                return "CinnamonBun";
                 // If you add more versions here, also update #getBuildCode and
                 // #HIGHEST_KNOWN_API
             default:
@@ -360,6 +363,8 @@ public class SdkVersionInfo {
                 return "VANILLA_ICE_CREAM";
             case 36:
                 return "BAKLAVA";
+            case 37:
+                return "CINNAMON_BUN";
                 // If you add more versions here, also update #getCodeName and
                 // #HIGHEST_KNOWN_API
         }

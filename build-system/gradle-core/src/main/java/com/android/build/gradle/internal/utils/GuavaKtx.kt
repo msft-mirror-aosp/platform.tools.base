@@ -21,24 +21,24 @@ import com.google.common.collect.ImmutableMap
 import com.google.common.collect.ImmutableSet
 
 /** Kotlin Extensions for Guava types. */
-fun <T> Iterable<T>.toImmutableList(): ImmutableList<T> {
+fun <T : Any> Iterable<T>.toImmutableList(): ImmutableList<T> {
   return ImmutableList.copyOf(this)
 }
 
-fun <T> Sequence<T>.toImmutableList(): ImmutableList<T> {
+fun <T : Any> Sequence<T>.toImmutableList(): ImmutableList<T> {
   return ImmutableList.copyOf(this.iterator())
 }
 
-fun <T> Iterable<T>.toImmutableSet(): ImmutableSet<T> {
+fun <T : Any> Iterable<T>.toImmutableSet(): ImmutableSet<T> {
   return ImmutableSet.copyOf(this)
 }
 
-fun <K, V> Map<K, V>.toImmutableMap(): ImmutableMap<K, V> {
+fun <K : Any, V : Any> Map<K, V>.toImmutableMap(): ImmutableMap<K, V> {
   return ImmutableMap.copyOf(this)
 }
 
 /** Build an immutable map with a custom transform on the value instances */
-inline fun <K, V1, V2> Map<K, V1>.toImmutableMap(action: (V1) -> V2): ImmutableMap<K, V2> {
+inline fun <K : Any, V1, V2 : Any> Map<K, V1>.toImmutableMap(action: (V1) -> V2): ImmutableMap<K, V2> {
   val builder: ImmutableMap.Builder<K, V2> = ImmutableMap.builder()
 
   for (entry in entries) {
@@ -49,7 +49,7 @@ inline fun <K, V1, V2> Map<K, V1>.toImmutableMap(action: (V1) -> V2): ImmutableM
   return builder.build()
 }
 
-inline fun <K, V> immutableMapBuilder(block: ImmutableMap.Builder<K, V>.() -> Unit): ImmutableMap<K, V> {
+inline fun <K : Any, V : Any> immutableMapBuilder(block: ImmutableMap.Builder<K, V>.() -> Unit): ImmutableMap<K, V> {
   val builder: ImmutableMap.Builder<K, V> = ImmutableMap.builder()
 
   block(builder)
@@ -57,7 +57,7 @@ inline fun <K, V> immutableMapBuilder(block: ImmutableMap.Builder<K, V>.() -> Un
   return builder.build()
 }
 
-inline fun <T> immutableListBuilder(block: ImmutableList.Builder<T>.() -> Unit): ImmutableList<T> {
+inline fun <T : Any> immutableListBuilder(block: ImmutableList.Builder<T>.() -> Unit): ImmutableList<T> {
   val builder: ImmutableList.Builder<T> = ImmutableList.builder()
 
   block(builder)

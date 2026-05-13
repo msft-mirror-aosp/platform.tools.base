@@ -1,20 +1,34 @@
 > VariantDependencies:
    - name                 = "debug"
    > mainArtifact:
-      - compileDependencies:
+      > compileDependencies:
          - com.google.code.findbugs|jsr305|1.3.9|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|com.google.code.findbugs:jsr305:1.3.9:
             - requestedCoordinates = (null)
             - dependencies         = []
          - com.google.guava|guava|19.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|com.google.guava:guava:19.0:
             - requestedCoordinates = (null)
             - dependencies         = []
-      - runtimeDependencies:
+         - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
+            - requestedCoordinates = (null)
+            - dependencies:
+               - org.jetbrains|annotations|13.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains:annotations:13.0:
+                  - requestedCoordinates = (null)
+                  - dependencies         = []
+      < compileDependencies
+      > runtimeDependencies:
          - com.google.code.findbugs|jsr305|1.3.9|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|com.google.code.findbugs:jsr305:1.3.9:
             - requestedCoordinates = (null)
             - dependencies         = []
          - com.google.guava|guava|19.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|com.google.guava:guava:19.0:
             - requestedCoordinates = (null)
             - dependencies         = []
+         - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
+            - requestedCoordinates = (null)
+            - dependencies:
+               - org.jetbrains|annotations|13.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains:annotations:13.0:
+                  - requestedCoordinates = (null)
+                  - dependencies         = []
+      < runtimeDependencies
       - unresolvedDependencies = []
    < mainArtifact
    > androidTestArtifact:
@@ -56,12 +70,20 @@
          - com.google.guava|guava|19.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|com.google.guava:guava:19.0:
             - requestedCoordinates = (null)
             - dependencies         = []
+         - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
+            - requestedCoordinates = (null)
+            - dependencies:
+               - org.jetbrains|annotations|13.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains:annotations:13.0:
+                  - requestedCoordinates = (null)
+                  - dependencies         = []
          - :|:|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.usage>java-api|:libTestDep:unspecified:
             - requestedCoordinates = (null)
             - dependencies:
                - com.google.code.findbugs|jsr305|2.0.1|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|com.google.code.findbugs:jsr305:2.0.1:
                   - dependencies = "*visited*"
                - com.google.guava|guava|19.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|com.google.guava:guava:19.0:
+                  - dependencies = "*visited*"
+               - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
                   - dependencies = "*visited*"
       < compileDependencies
       > runtimeDependencies:
@@ -97,17 +119,27 @@
             - dependencies:
                - androidx.test|runner|1.4.0-alpha06|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.test:runner:1.4.0-alpha06:
                   - dependencies = "*visited*"
-         - :|:|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.usage>java-runtime|:libTestDep:unspecified:
+         > :|:|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.usage>java-runtime|:libTestDep:unspecified:
             - requestedCoordinates = (null)
-            - dependencies:
+            > dependencies:
                - com.google.code.findbugs|jsr305|2.0.1|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|com.google.code.findbugs:jsr305:2.0.1:
                   - dependencies = "*visited*"
                - com.google.guava|guava|19.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|com.google.guava:guava:19.0:
                   - requestedCoordinates = (null)
                   - dependencies         = []
+               - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
+                  - requestedCoordinates = (null)
+                  - dependencies:
+                     - org.jetbrains|annotations|13.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains:annotations:13.0:
+                        - requestedCoordinates = (null)
+                        - dependencies         = []
+            < dependencies
+         < :|:|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.usage>java-runtime|:libTestDep:unspecified
          - com.google.code.findbugs|jsr305|2.0.1|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|com.google.code.findbugs:jsr305:2.0.1:
             - dependencies = "*visited*"
          - com.google.guava|guava|19.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|com.google.guava:guava:19.0:
+            - dependencies = "*visited*"
+         - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
             - dependencies = "*visited*"
       < runtimeDependencies
       - unresolvedDependencies = []
@@ -120,6 +152,12 @@
          - com.google.guava|guava|19.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|com.google.guava:guava:19.0:
             - requestedCoordinates = (null)
             - dependencies         = []
+         - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
+            - requestedCoordinates = (null)
+            - dependencies:
+               - org.jetbrains|annotations|13.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains:annotations:13.0:
+                  - requestedCoordinates = (null)
+                  - dependencies         = []
          - :|:|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.usage>java-api|:libTestDep:unspecified:
             - requestedCoordinates = (null)
             - dependencies:
@@ -127,20 +165,32 @@
                   - dependencies = "*visited*"
                - com.google.guava|guava|19.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|com.google.guava:guava:19.0:
                   - dependencies = "*visited*"
+               - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
+                  - dependencies = "*visited*"
       < compileDependencies
       > runtimeDependencies:
-         - :|:|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.usage>java-runtime|:libTestDep:unspecified:
+         > :|:|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.usage>java-runtime|:libTestDep:unspecified:
             - requestedCoordinates = (null)
-            - dependencies:
+            > dependencies:
                - com.google.code.findbugs|jsr305|1.3.9|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|com.google.code.findbugs:jsr305:1.3.9:
                   - requestedCoordinates = (null)
                   - dependencies         = []
                - com.google.guava|guava|19.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|com.google.guava:guava:19.0:
                   - requestedCoordinates = (null)
                   - dependencies         = []
+               - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
+                  - requestedCoordinates = (null)
+                  - dependencies:
+                     - org.jetbrains|annotations|13.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains:annotations:13.0:
+                        - requestedCoordinates = (null)
+                        - dependencies         = []
+            < dependencies
+         < :|:|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.usage>java-runtime|:libTestDep:unspecified
          - com.google.code.findbugs|jsr305|1.3.9|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|com.google.code.findbugs:jsr305:1.3.9:
             - dependencies = "*visited*"
          - com.google.guava|guava|19.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|com.google.guava:guava:19.0:
+            - dependencies = "*visited*"
+         - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
             - dependencies = "*visited*"
       < runtimeDependencies
       - unresolvedDependencies = []
@@ -739,5 +789,97 @@
          - lintJar            = (null)
          - androidLibraryData = (null)
       < org.hamcrest|hamcrest-core|1.3|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.hamcrest:hamcrest-core:1.3
+      > org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
+         - type               = JAVA_LIBRARY
+         - artifact           = {LOCAL_REPO}/org/jetbrains/kotlin/kotlin-stdlib/{BUILT_IN_KOTLIN_VERSION}/kotlin-stdlib-{BUILT_IN_KOTLIN_VERSION}.jar{F}
+         - projectInfo        = (null)
+         > libraryInfo:
+            - group          = "org.jetbrains.kotlin"
+            - name           = "kotlin-stdlib"
+            - version        = "{BUILT_IN_KOTLIN_VERSION}"
+            - isTestFixtures = false
+            - buildType      = (null)
+            - productFlavors = []
+            - attributes:
+               * "org.gradle.category -> library"
+               * "org.gradle.jvm.environment -> standard-jvm"
+               * "org.gradle.libraryelements -> jar"
+               * "org.gradle.status -> release"
+               * "org.gradle.usage -> java-api"
+               * "org.jetbrains.kotlin.platform.type -> jvm"
+            - capabilities:
+               * "org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}"
+         < libraryInfo
+         - lintJar            = (null)
+         - androidLibraryData = (null)
+      < org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}
+      > org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
+         - type               = JAVA_LIBRARY
+         - artifact           = {LOCAL_REPO}/org/jetbrains/kotlin/kotlin-stdlib/{BUILT_IN_KOTLIN_VERSION}/kotlin-stdlib-{BUILT_IN_KOTLIN_VERSION}.jar{F}
+         - projectInfo        = (null)
+         > libraryInfo:
+            - group          = "org.jetbrains.kotlin"
+            - name           = "kotlin-stdlib"
+            - version        = "{BUILT_IN_KOTLIN_VERSION}"
+            - isTestFixtures = false
+            - buildType      = (null)
+            - productFlavors = []
+            - attributes:
+               * "org.gradle.category -> library"
+               * "org.gradle.jvm.environment -> standard-jvm"
+               * "org.gradle.libraryelements -> jar"
+               * "org.gradle.status -> release"
+               * "org.gradle.usage -> java-runtime"
+               * "org.jetbrains.kotlin.platform.type -> jvm"
+            - capabilities:
+               * "org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}"
+         < libraryInfo
+         - lintJar            = (null)
+         - androidLibraryData = (null)
+      < org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}
+      > org.jetbrains|annotations|13.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains:annotations:13.0:
+         - type               = JAVA_LIBRARY
+         - artifact           = {LOCAL_REPO}/org/jetbrains/annotations/13.0/annotations-13.0.jar{F}
+         - projectInfo        = (null)
+         > libraryInfo:
+            - group          = "org.jetbrains"
+            - name           = "annotations"
+            - version        = "13.0"
+            - isTestFixtures = false
+            - buildType      = (null)
+            - productFlavors = []
+            - attributes:
+               * "org.gradle.category -> library"
+               * "org.gradle.libraryelements -> jar"
+               * "org.gradle.status -> release"
+               * "org.gradle.usage -> java-api"
+            - capabilities:
+               * "org.jetbrains:annotations:13.0"
+         < libraryInfo
+         - lintJar            = (null)
+         - androidLibraryData = (null)
+      < org.jetbrains|annotations|13.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains:annotations:13.0
+      > org.jetbrains|annotations|13.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains:annotations:13.0:
+         - type               = JAVA_LIBRARY
+         - artifact           = {LOCAL_REPO}/org/jetbrains/annotations/13.0/annotations-13.0.jar{F}
+         - projectInfo        = (null)
+         > libraryInfo:
+            - group          = "org.jetbrains"
+            - name           = "annotations"
+            - version        = "13.0"
+            - isTestFixtures = false
+            - buildType      = (null)
+            - productFlavors = []
+            - attributes:
+               * "org.gradle.category -> library"
+               * "org.gradle.libraryelements -> jar"
+               * "org.gradle.status -> release"
+               * "org.gradle.usage -> java-runtime"
+            - capabilities:
+               * "org.jetbrains:annotations:13.0"
+         < libraryInfo
+         - lintJar            = (null)
+         - androidLibraryData = (null)
+      < org.jetbrains|annotations|13.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains:annotations:13.0
    < libraries
 < VariantDependencies

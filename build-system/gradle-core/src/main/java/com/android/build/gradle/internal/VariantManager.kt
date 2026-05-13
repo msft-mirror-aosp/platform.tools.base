@@ -792,11 +792,11 @@ class VariantManager<
             |All code optimizations and obfuscation are disabled for debuggable builds.
         """
           .trimMargin()
-      dslServices.issueReporter.reportWarning(IssueReporter.Type.GENERIC, warningMsg)
+      dslServices.issueReporter.reportWarning(IssueReporter.Type.DEBUGGABLE_AND_MINIFIED_ENABLED, warningMsg)
     }
     if (minSdkVersion.apiLevel > targetSdkVersion.apiLevel) {
       projectServices.issueReporter.reportWarning(
-        IssueReporter.Type.GENERIC,
+        IssueReporter.Type.MIN_SDK_VERSION_GREATER_THAN_TARGET_SDK,
         String.format(
           Locale.US,
           "minSdkVersion (%d) is greater than targetSdkVersion" +
@@ -870,7 +870,7 @@ class VariantManager<
         // this.
         if (variant !is HasTestSuitesCreationConfig) {
           this.variantBuilderServices.issueReporter.reportError(
-            IssueReporter.Type.GENERIC,
+            IssueReporter.Type.TEST_SUITE_IGNORED,
             """Test suite ${testSuiteBuilder.name} ignored as
                                 |${variant.name} variant does not support test suites"""
               .trimMargin(),

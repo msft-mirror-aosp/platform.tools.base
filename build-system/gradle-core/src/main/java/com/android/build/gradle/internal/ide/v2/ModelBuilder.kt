@@ -94,7 +94,6 @@ import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.ProjectOptions
 import com.android.builder.core.ComponentTypeImpl
 import com.android.builder.errors.IssueReporter
-import com.android.builder.model.SyncIssue
 import com.android.builder.model.v2.dsl.BuildType
 import com.android.builder.model.v2.dsl.ProductFlavor
 import com.android.builder.model.v2.ide.AndroidArtifact
@@ -109,6 +108,7 @@ import com.android.builder.model.v2.ide.CodeShrinker
 import com.android.builder.model.v2.ide.JavaArtifact
 import com.android.builder.model.v2.ide.SourceProvider
 import com.android.builder.model.v2.ide.SourceSetContainer
+import com.android.builder.model.v2.ide.SyncIssue
 import com.android.builder.model.v2.ide.TestInfo
 import com.android.builder.model.v2.ide.TestSuiteArtifact
 import com.android.builder.model.v2.ide.TestedTargetVariant
@@ -1093,7 +1093,7 @@ class ModelBuilder<ExtensionT : CommonExtension>(
             project.configurations.findByName(SdkConstants.GRADLE_ANDROID_TEST_UTIL_CONFIGURATION)?.files ?: listOf()
 
           DeviceProviderInstrumentTestTask.checkForNonApks(runtimeApks) { message ->
-            variantModel.syncIssueReporter.reportError(IssueReporter.Type.GENERIC, message)
+            variantModel.syncIssueReporter.reportError(IssueReporter.Type.NON_APK_RUNTIME_DEP, message)
           }
 
           val testOptionsDsl = extension.testOptions
@@ -1103,7 +1103,7 @@ class ModelBuilder<ExtensionT : CommonExtension>(
               ?: ""
                 .also {
                   variantModel.syncIssueReporter.reportError(
-                    IssueReporter.Type.GENERIC,
+                    IssueReporter.Type.CONNECTED_CHECK_TASK_NOT_FOUND,
                     "unable to find connectedCheck task name for ${component.name}",
                   )
                 }
@@ -1407,7 +1407,7 @@ class ModelBuilder<ExtensionT : CommonExtension>(
         }
       } catch (e: XMLStreamException) {
         variantModel.syncIssueReporter.reportError(
-          IssueReporter.Type.GENERIC,
+          IssueReporter.Type.MANIFEST_PARSE_FAILED,
           """
                         Failed to parse XML in ${manifest.path}
                         ${e.message}
@@ -1416,7 +1416,7 @@ class ModelBuilder<ExtensionT : CommonExtension>(
         )
       } catch (e: IOException) {
         variantModel.syncIssueReporter.reportError(
-          IssueReporter.Type.GENERIC,
+          IssueReporter.Type.MANIFEST_PARSE_FAILED,
           """
                         Failed to parse XML in ${manifest.path}
                         ${e.message}

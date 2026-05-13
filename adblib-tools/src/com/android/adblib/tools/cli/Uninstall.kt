@@ -15,42 +15,33 @@
  */
 package com.android.adblib.tools.cli
 
+import com.android.adblib.AdbPackageManagerException
 import com.android.adblib.AdbSession
 import com.android.adblib.DeviceSelector
 import com.android.adblib.adbLogger
-import com.android.adblib.tools.UninstallResult
-import com.android.adblib.tools.uninstall
+import com.android.adblib.packageManagerServices
 import kotlinx.coroutines.runBlocking
 
 internal class Uninstall : DeviceCommand("uninstall") {
 
   private fun printUsage() {
-    println("Usage: uninstall ['FLAGS'] APPLICATION_ID")
+    println("Usage: uninstall APPLICATION_ID")
   }
 
   override fun run(session: AdbSession, device: DeviceSelector, args: Arguments): Boolean {
     val logger = adbLogger(session.host)
-    val options: Array<String>
-    val applicationID: String
-    when (args.size()) {
-      0 -> {
-        printUsage()
-        return false
-      }
-      else -> {
-        options = args.consumeAll()
-        applicationID = options.last()
-        options.dropLast(1)
-      }
+    if (args.size() != 1) {
+      printUsage()
+      return false
     }
 
-    // TODO: Refactor the way DeviceServices.uninstall works. It should throw an exception to be
-    //       consistent with DeviceServices.install.
-    var result: UninstallResult
-    runBlocking { result = session.deviceServices.uninstall(device = device, applicationID, options.asList()) }
-    if (result.status != UninstallResult.Status.SUCCESS) {
-      logger.warn(result.output)
+    val packageName = args.next()
+    return try {
+      runBlocking { session.packageManagerServices.uninstall(device, packageName) }
+      true
+    } catch (e: AdbPackageManagerException) {
+      logger.warn("Failed to uninstall package '$packageName': ${e.errorOutput}")
+      false
     }
-    return result.status == UninstallResult.Status.SUCCESS
   }
 }

@@ -19,7 +19,7 @@ maven_library(
 )
 
 # The Gradle APIs to build against and run against.
-GRADLE_VERSION = "9.5.0-milestone-5"
+GRADLE_VERSION = "9.5.0"
 
 GRADLE_BASE_VERSION = "9.5.0"
 
@@ -49,6 +49,12 @@ maven_repository(
         "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.3.10",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib_2.3.10",
     ],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "gradle-distrib-9.5.0-milestone-7",
+    srcs = ["//tools/external/gradle:gradle-distrib-9.5.0-milestone-7"],
     visibility = ["//visibility:public"],
 )
 
@@ -523,6 +529,7 @@ gradle_build(
     repos = [
         "//tools/base:agp_dependencies",
         "//tools/base:agp_artifacts",
+        ":declarative_gradle_runtime",
     ],
     tasks = [":zipPlugin"],
     visibility = ["//visibility:public"],
@@ -530,8 +537,11 @@ gradle_build(
 
 maven_repository(
     name = "declarative_gradle_runtime",
+    # b/490330486: We should remove this dependency once we have a better idea at displaying plugins
+    # in declarative.
     artifacts = [
         "@maven//:org.gradle.experimental.plugin-ecosystem.org.gradle.experimental.plugin-ecosystem.gradle.plugin_0.1.54",
+        "@maven//:org.jetbrains.kotlin.compose-compiler-gradle-plugin_2.2.10",
         "@maven//:org.junit.junit-bom_5.10.1",
     ],
     visibility = ["//visibility:public"],
@@ -582,6 +592,7 @@ maven_repository(
         "//tools/data-binding:tools.baseLibrarySupport",
         "//tools/data-binding:tools.compiler",
         "//tools/data-binding:tools.compilerCommon",
+        "@maven//:androidx.lifecycle.lifecycle-runtime_2.6.1",
         "@maven//:androidx.multidex.multidex-instrumentation_2.0.0",
         "@maven//:androidx.multidex.multidex_2.0.0",
         "@maven//:androidx.privacysandbox.tools.tools-apigenerator_1.0.0-alpha13",
@@ -622,6 +633,7 @@ maven_repository(
         "@maven//:org.eclipse.aether.aether-transport-http",
         "@maven//:org.glassfish.jaxb.jaxb-xjc",
         "@maven//:org.gradle.gradle-tooling-api",
+        "@maven//:org.gradle.plugin-compatibility.org.gradle.plugin-compatibility.gradle.plugin_1.0.0",
         "@maven//:org.jacoco.org.jacoco.agent",
         "@maven//:org.jacoco.org.jacoco.report",
         "@maven//:org.jetbrains.dokka.dokka-core",
@@ -629,10 +641,7 @@ maven_repository(
         "@maven//:org.jetbrains.kotlin.kotlin-build-tools-impl",
         "@maven//:org.jetbrains.kotlin.kotlin-compiler",
         "@maven//:org.jetbrains.kotlin.kotlin-gradle-plugin-api",
-        "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.0.21",
-        "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.2.0",  # AGP depends on kotlin-reflect:2.2.10, but Gradle downgrades it to kotlin-reflect:2.2.0
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_2.2.10",
-        "@maven//:org.jetbrains.kotlin.kotlin-stdlib_2.2.0",  # AGP depends on kotlin-stdlib:2.2.10, but Gradle downgrades it to kotlin-stdlib:2.2.0
         "@maven//:org.jetbrains.kotlin.kotlin-test",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-android",
         "@maven//:org.jetbrains.markdown",
@@ -715,7 +724,7 @@ maven_repository(
         "@maven//:com.android.tools.metalava.metalava_1.0.0-alpha14",
         "@maven//:ch.randelshofer.fastdoubleparser_0.8.0",
         "@maven//:com.google.protobuf.protobuf-bom_3.19.3",
-        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_2.1.0",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_2.2.10",
     ],
 )
 
@@ -759,6 +768,7 @@ gradle_test(
         "//tools/base/common:agp_gradle_build_files",
         "//tools/buildSrc:agp_gradle_build_files",
         "//tools/buildSrc/base:agp_gradle_build_files",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_2.2.10",  # Currently used by //tools/base/build-system:android_gradle_plugin_gradle_api_metalava_test
     ],
     gradle_properties = GRADLE_PROPERTIES,
     # keep sorted

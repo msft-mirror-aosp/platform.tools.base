@@ -17,10 +17,19 @@ package com.android.tools.deployer;
 
 import com.android.annotations.Trace;
 import com.android.tools.deploy.proto.Deploy;
+import com.android.tools.deployer.common.AdbClient;
+import com.android.tools.deployer.common.ApplicationDumper;
+import com.android.tools.deployer.common.DeployerException;
+import com.android.tools.deployer.common.Installer;
+import com.android.tools.deployer.common.PatchSet;
+import com.android.tools.deployer.common.PatchSetGenerator;
+import com.android.tools.deployer.install.ApkInstaller;
+import com.android.tools.deployer.install.InstallMode;
 import com.android.tools.deployer.model.Apk;
 import com.android.tools.deployer.model.FileDiff;
 import com.android.utils.ILogger;
 import com.android.utils.Pair;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -150,8 +159,7 @@ public class ApkPreInstaller {
 
             pushRequestBuilder.addAllPatchInstructions(patches);
 
-            boolean inherit =
-                    ApkInstaller.canInherit(localApks.size(), diffs, Deployer.InstallMode.DELTA);
+            boolean inherit = ApkInstaller.canInherit(localApks.size(), diffs, InstallMode.DELTA);
             pushRequestBuilder.setInherit(inherit);
             pushRequestBuilder.setPackageName(packageName);
 

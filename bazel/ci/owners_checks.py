@@ -1,13 +1,31 @@
+import argparse
+import dataclasses
+import functools
 import os
 import sys
-import argparse
+from typing import List
 
-from functools import cache
 from tools.base.bazel.ci import bazel
 from tools.base.bazel.ci import errors
 
 
 _EXEMPT_LIST = "tools/base/bazel/ci/owners_exempt.lst"
+
+
+@dataclasses.dataclass(frozen=True,kw_only=True)
+class UnownedFilesError(errors.CIError):
+  unowned_files: set[str]
+
+  def __str__(self) -> str:
+    unowned_files = '\n'.join(self.unowned_files)
+    return f"""#############################
+# ERROR: Found files without an OWNERS and component ID
+{unowned_files}
+
+Total unowned files: {len(self.unowned_files)}
+See go/studio-code-ownership for more info
+"""
+
 
 def _is_single_directory_owned(directory_path: str) -> bool:
   """Checks if the specified directory contains an 'OWNERS' file with a '# Bug component:' line. """
@@ -20,7 +38,8 @@ def _is_single_directory_owned(directory_path: str) -> bool:
           return True
   return False
 
-@cache
+
+@functools.cache
 def _is_directory_owned(directory_path: str) -> bool:
   """Checks if a directory is itself or are its parents owned. """
 
@@ -36,10 +55,9 @@ def _is_directory_owned(directory_path: str) -> bool:
 
 def require_component_id(build_env: bazel.BuildEnv):
   """ Checks all files in the workspace are owned (except exempted ones)."""
-
-  success = _check_owned_files(build_env.workspace_dir)
-  if not success:
-    raise errors.CIError()
+  unowned_files = unowned_unexempt_files(build_env.workspace_dir)
+  if unowned_files:
+    raise UnownedFilesError(unowned_files=unowned_files)
 
 
 def _find_unowned_files(workspace_dir: str) -> (set[str], int):
@@ -84,23 +102,19 @@ def _read_exempt_files(workspace_dir: str) -> set[str]:
   return exempt_files
 
 
-def _check_owned_files(workspace_dir:str) -> bool:
-  """Returns true if given directory contains all owned files (except exempt ones)."""
+def unowned_unexempt_files(workspace_dir: str) -> List[str]:
+  """Returns all unowned files (minus exempt ones)."""
   unowned, total = _find_unowned_files(workspace_dir)
   exempt = _read_exempt_files(workspace_dir)
   new_files = unowned - exempt
   print(f'Checked {total} files. Of which {len(new_files)} are unowned, and {len(unowned) - len(new_files)} are exempt.')
-  if new_files:
-    for f in new_files:
-      print(f'ERROR: {f} is not owned.')
-    print(f'Total unowned files: {len(new_files)}')
-    print('See go/studio-code-ownership for more info')
-  return len(new_files) == 0
+  return new_files
 
 
 def _update_owned_files(workspace_dir):
   unowned, _ = _find_unowned_files(workspace_dir)
   _write_exempt_files(workspace_dir, unowned)
+
 
 def main():
   parser = argparse.ArgumentParser()
@@ -108,7 +122,9 @@ def main():
   args = parser.parse_args()
   workspace_dir = os.environ.get('BUILD_WORKSPACE_DIRECTORY')
   if args.action == "check":
-    return 0 if _check_owned_files(workspace_dir) else 1
+    unowned_files = unowned_unexempt_files(workspace_dir)
+    if unowned_files:
+      raise UnownedFilesError(unowned_files=unowned_files)
   elif args.action == "update":
     _update_owned_files(workspace_dir)
 

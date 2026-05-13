@@ -15,9 +15,11 @@
  */
 package com.android.sdklib.devices;
 
+import static com.android.sdklib.devices.Device.isAiGlasses;
 import static com.android.sdklib.devices.Device.isAutomotive;
 import static com.android.sdklib.devices.Device.isAutomotiveDistantDisplay;
 import static com.android.sdklib.devices.Device.isRollable;
+import static com.android.sdklib.devices.Device.isXrGlasses;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
@@ -582,9 +584,62 @@ public class DeviceManager {
     public static Map<String, String> getHardwareProperties(@NonNull State s) {
         Hardware hw = s.getHardware();
         Map<String, String> props = new HashMap<>();
-        if (hw.getScreen().getScreenType().equals(ScreenType.NOTOUCH)) {
-            props.put(HardwareProperties.HW_SCREEN, HardwareProperties.HW_SCREEN_NOTOUCH);
+        Screen screen = hw.getScreen();
+        if (screen != null) {
+            if (screen.getScreenType().equals(ScreenType.NOTOUCH)) {
+                props.put(HardwareProperties.HW_SCREEN, HardwareProperties.HW_SCREEN_NOTOUCH);
+            }
+            props.put(
+                    HardwareProperties.HW_LCD_DENSITY,
+                    Integer.toString(screen.getPixelDensity().getDpiValue()));
+            props.put(HardwareProperties.HW_LCD_WIDTH, Integer.toString(screen.getXDimension()));
+            props.put(HardwareProperties.HW_LCD_HEIGHT, Integer.toString(screen.getYDimension()));
+
+            if (screen.isFoldable()) {
+                props.put(HardwareProperties.HW_KEYBOARD_LID, getBooleanVal(true));
+                props.put(
+                        HardwareProperties.HW_LCD_FOLDED_X_OFFSET,
+                        Integer.toString(screen.getFoldedXOffset()));
+                props.put(
+                        HardwareProperties.HW_LCD_FOLDED_Y_OFFSET,
+                        Integer.toString(screen.getFoldedYOffset()));
+                props.put(
+                        HardwareProperties.HW_LCD_FOLDED_HEIGHT,
+                        Integer.toString(screen.getFoldedHeight()));
+                props.put(
+                        HardwareProperties.HW_LCD_FOLDED_WIDTH,
+                        Integer.toString(screen.getFoldedWidth()));
+                if (screen.getFoldedWidth2() != 0 && screen.getFoldedHeight2() != 0) {
+                    props.put(
+                            HardwareProperties.HW_LCD_FOLDED_X_OFFSET_2,
+                            Integer.toString(screen.getFoldedXOffset2()));
+                    props.put(
+                            HardwareProperties.HW_LCD_FOLDED_Y_OFFSET_2,
+                            Integer.toString(screen.getFoldedYOffset2()));
+                    props.put(
+                            HardwareProperties.HW_LCD_FOLDED_WIDTH_2,
+                            Integer.toString(screen.getFoldedWidth2()));
+                    props.put(
+                            HardwareProperties.HW_LCD_FOLDED_HEIGHT_2,
+                            Integer.toString(screen.getFoldedHeight2()));
+                }
+                if (screen.getFoldedWidth3() != 0 && screen.getFoldedHeight3() != 0) {
+                    props.put(
+                            HardwareProperties.HW_LCD_FOLDED_X_OFFSET_3,
+                            Integer.toString(screen.getFoldedXOffset3()));
+                    props.put(
+                            HardwareProperties.HW_LCD_FOLDED_Y_OFFSET_3,
+                            Integer.toString(screen.getFoldedYOffset3()));
+                    props.put(
+                            HardwareProperties.HW_LCD_FOLDED_WIDTH_3,
+                            Integer.toString(screen.getFoldedWidth3()));
+                    props.put(
+                            HardwareProperties.HW_LCD_FOLDED_HEIGHT_3,
+                            Integer.toString(screen.getFoldedHeight3()));
+                }
+            }
         }
+
         props.put(
                 HardwareProperties.HW_MAINKEYS,
                 getBooleanVal(hw.getButtonType().equals(ButtonType.HARD)));
@@ -618,16 +673,14 @@ public class DeviceManager {
 
         props.put(HardwareProperties.HW_AUDIO_INPUT, getBooleanVal(hw.hasMic()));
         props.put(HardwareProperties.HW_SDCARD, getBooleanVal(hw.hasSdCard()));
-        props.put(
-                HardwareProperties.HW_LCD_DENSITY,
-                Integer.toString(hw.getScreen().getPixelDensity().getDpiValue()));
-        props.put(
-                HardwareProperties.HW_LCD_WIDTH, Integer.toString(hw.getScreen().getXDimension()));
-        props.put(
-                HardwareProperties.HW_LCD_HEIGHT, Integer.toString(hw.getScreen().getYDimension()));
+
+        Environment environment = hw.getEnvironment();
+        if (environment != null) {
+            props.put(HardwareProperties.ENVIRONMENT_HEIGHT, Integer.toString(environment.getHeight()));
+            props.put(HardwareProperties.ENVIRONMENT_WIDTH, Integer.toString(environment.getWidth()));
+        }
 
         Touchpad touchpad = hw.getTouchpad();
-
         if (touchpad != null) {
             props.put(HardwareProperties.HW_TOUCHPAD0, getBooleanVal(true));
             props.put(HardwareProperties.HW_TOUCHPAD0_WIDTH, Integer.toString(touchpad.getWidth()));
@@ -638,49 +691,6 @@ public class DeviceManager {
         props.put(
                 HardwareProperties.HW_PROXIMITY_SENSOR,
                 getBooleanVal(sensors.contains(Sensor.PROXIMITY_SENSOR)));
-        if (hw.getScreen().isFoldable()) {
-            props.put(HardwareProperties.HW_KEYBOARD_LID, getBooleanVal(true));
-            props.put(
-                    HardwareProperties.HW_LCD_FOLDED_X_OFFSET,
-                    Integer.toString(hw.getScreen().getFoldedXOffset()));
-            props.put(
-                    HardwareProperties.HW_LCD_FOLDED_Y_OFFSET,
-                    Integer.toString(hw.getScreen().getFoldedYOffset()));
-            props.put(
-                    HardwareProperties.HW_LCD_FOLDED_HEIGHT,
-                    Integer.toString(hw.getScreen().getFoldedHeight()));
-            props.put(
-                    HardwareProperties.HW_LCD_FOLDED_WIDTH,
-                    Integer.toString(hw.getScreen().getFoldedWidth()));
-            if (hw.getScreen().getFoldedWidth2() != 0 && hw.getScreen().getFoldedHeight2() != 0) {
-                props.put(
-                        HardwareProperties.HW_LCD_FOLDED_X_OFFSET_2,
-                        Integer.toString(hw.getScreen().getFoldedXOffset2()));
-                props.put(
-                        HardwareProperties.HW_LCD_FOLDED_Y_OFFSET_2,
-                        Integer.toString(hw.getScreen().getFoldedYOffset2()));
-                props.put(
-                        HardwareProperties.HW_LCD_FOLDED_WIDTH_2,
-                        Integer.toString(hw.getScreen().getFoldedWidth2()));
-                props.put(
-                        HardwareProperties.HW_LCD_FOLDED_HEIGHT_2,
-                        Integer.toString(hw.getScreen().getFoldedHeight2()));
-            }
-            if (hw.getScreen().getFoldedWidth3() != 0 && hw.getScreen().getFoldedHeight3() != 0) {
-                props.put(
-                        HardwareProperties.HW_LCD_FOLDED_X_OFFSET_3,
-                        Integer.toString(hw.getScreen().getFoldedXOffset3()));
-                props.put(
-                        HardwareProperties.HW_LCD_FOLDED_Y_OFFSET_3,
-                        Integer.toString(hw.getScreen().getFoldedYOffset3()));
-                props.put(
-                        HardwareProperties.HW_LCD_FOLDED_WIDTH_3,
-                        Integer.toString(hw.getScreen().getFoldedWidth3()));
-                props.put(
-                        HardwareProperties.HW_LCD_FOLDED_HEIGHT_3,
-                        Integer.toString(hw.getScreen().getFoldedHeight3()));
-            }
-        }
 
         Hinge hinge = hw.getHinge();
 
@@ -733,26 +743,6 @@ public class DeviceManager {
             }
         }
 
-        HashFunction md5 = Hashing.md5();
-        Hasher hasher = md5.newHasher();
-
-        ArrayList<String> keys = new ArrayList<>(props.keySet());
-        Collections.sort(keys);
-        for (String key : keys) {
-            if (key != null) {
-                hasher.putString(key, StandardCharsets.UTF_8);
-                String value = props.get(key);
-                hasher.putString(value == null ? "null" : value, StandardCharsets.UTF_8);
-            }
-        }
-        // store the hash method for potential future compatibility
-        String hash = "MD5:" + hasher.hash().toString();
-        props.put(ConfigKey.DEVICE_HASH_V2, hash);
-        props.remove(ConfigKey.DEVICE_HASH_V1);
-
-        props.put(ConfigKey.DEVICE_NAME, d.getId());
-        props.put(ConfigKey.DEVICE_MANUFACTURER, d.getManufacturer());
-
         // Special-case hacks to support specific device types.
 
         if (d.getId().equals("13.5in Freeform")) {
@@ -777,7 +767,7 @@ public class DeviceManager {
             props.put(
                     ConfigKey.RESIZABLE_CONFIG,
                     "phone-0-1080-2400-420, foldable-1-2208-1840-420, tablet-2-1920-1200-240,"
-                            + " desktop-3-1920-1080-160");
+                    + " desktop-3-1920-1080-160");
         }
         // TODO: Remove hard coded config when the runtime configuration is available (b/337978287,
         // b/337980217)
@@ -793,6 +783,32 @@ public class DeviceManager {
             props.put(ConfigKey.DISTANT_DISPLAY_DENSITY, "120");
             props.put(ConfigKey.DISTANT_DISPLAY_FLAG, "0");
         }
+
+        if (isAiGlasses(d)) {
+            props.put(ConfigKey.LCD_TRANSPARENT, "yes");
+        } else if (isXrGlasses(d)) {
+            props.put(HardwareProperties.HW_DIMMING_LEVELS, "0.00390625,0.25,0.5,0.75,0.99609375");
+        }
+
+        HashFunction md5 = Hashing.md5();
+        Hasher hasher = md5.newHasher();
+
+        ArrayList<String> keys = new ArrayList<>(props.keySet());
+        Collections.sort(keys);
+        for (String key : keys) {
+            if (key != null) {
+                hasher.putString(key, StandardCharsets.UTF_8);
+                String value = props.get(key);
+                hasher.putString(value == null ? "null" : value, StandardCharsets.UTF_8);
+            }
+        }
+        // store the hash method for potential future compatibility
+        String hash = "MD5:" + hasher.hash().toString();
+        props.put(ConfigKey.DEVICE_HASH_V2, hash);
+        props.remove(ConfigKey.DEVICE_HASH_V1);
+
+        props.put(ConfigKey.DEVICE_NAME, d.getId());
+        props.put(ConfigKey.DEVICE_MANUFACTURER, d.getManufacturer());
 
         return props;
     }

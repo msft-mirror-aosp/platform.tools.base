@@ -84,6 +84,7 @@ TEST_DATA = [
     "//tools/base/build-system/integration-test:test-projects/basicMultiFlavors",
     "//tools/base/build-system/integration-test:test-projects/buildConfigBytecode",
     "//tools/base/build-system/integration-test:test-projects/bytecodeGenerationHooks",
+    "//tools/base/build-system/integration-test:test-projects/bytecodeGenerationHooksOld",
     "//tools/base/build-system/integration-test:test-projects/combinedAbiDensitySplits",
     "//tools/base/build-system/integration-test:test-projects/compileRClasses",
     "//tools/base/build-system/integration-test:test-projects/composeHelloWorld",
@@ -102,6 +103,8 @@ TEST_DATA = [
     "//tools/base/build-system/integration-test:test-projects/flavors",
     "//tools/base/build-system/integration-test:test-projects/genFolderApi",
     "//tools/base/build-system/integration-test:test-projects/genFolderApi2",
+    "//tools/base/build-system/integration-test:test-projects/genFolderApi2Old",
+    "//tools/base/build-system/integration-test:test-projects/genFolderApiOld",
     "//tools/base/build-system/integration-test:test-projects/gradleDeclarative",
     "//tools/base/build-system/integration-test:test-projects/jacocoOnlySubprojectBuildScriptDependency",
     "//tools/base/build-system/integration-test:test-projects/jacocoWithButterKnife",
@@ -172,7 +175,6 @@ TEST_DATA = [
     "//tools/base/build-system/integration-test:test-projects/testDependency",
     "//tools/base/build-system/integration-test:test-projects/testFixturesApp",
     "//tools/base/build-system/integration-test:test-projects/testFixturesKotlinApp",
-    "//tools/base/build-system/integration-test:test-projects/testWithDep",
     "//tools/base/build-system/integration-test:test-projects/tictactoe",
     "//tools/base/build-system/integration-test:test-projects/unitTesting",
     "//tools/base/build-system/integration-test:test-projects/unitTestingAndroidResources",
@@ -195,12 +197,10 @@ AUTOMATIC_TEST_DATA = TEST_DATA + OLD_SDKS + [
     "//tools/base/build-system/integration-test:test-projects/emptySplit",
     "//tools/base/build-system/integration-test:test-projects/flavorlibWithFailedTests",
     "//tools/base/build-system/integration-test:test-projects/mavenLocal",
-    "//tools/base/build-system/integration-test:test-projects/noPreDex",
     "//tools/base/build-system/integration-test:test-projects/packagingOptions",
     "//tools/base/build-system/integration-test:test-projects/renderscript",
     "//tools/base/build-system/integration-test:test-projects/renderscriptInLib",
     "//tools/base/build-system/integration-test:test-projects/renderscriptMultiSrc",
-    "//tools/base/build-system/integration-test:test-projects/splitAwareSeparateTestModule",
 ]
 
 # These sources need to compiled together as there are inter-dependencies. Avoid adding more.
@@ -208,6 +208,7 @@ SOURCES_TO_COMPILE_TOGETHER = [
     "src/test/java/com/android/build/gradle/integration/application/testData/*",
     "src/test/java/com/android/build/gradle/integration/application/AnalyzeDependenciesTest.kt",
     "src/test/java/com/android/build/gradle/integration/application/CoreLibraryDesugarTest.kt",
+    "src/test/java/com/android/build/gradle/integration/application/L8CircularDependencyReproTest.kt",
     "src/test/java/com/android/build/gradle/integration/application/CoreLibraryDesugarConversionTest.kt",
     "src/test/java/com/android/build/gradle/integration/application/CustomClassTransformTest.kt",
     "src/test/java/com/android/build/gradle/integration/application/MinSdkVersionTest.kt",
@@ -761,11 +762,21 @@ single_gradle_integration_test_per_source(
     deps = TEST_DEPS,
 )
 
+kotlin_library(
+    name = "screenshot_fixture",
+    srcs = ["src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotTestFixture.kt"],
+    deps = TEST_DEPS,
+)
+
 single_gradle_integration_test_per_source(
     name = "screenshot-tests",
     package_name = "tools/base/build-system/integration-test/application",
     timeout = "long",
     srcs = [
+        "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotEdgeCaseTest.kt",
+        "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotFeaturesTest.kt",
+        "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotMultiModuleTest.kt",
+        "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotPerformanceTest.kt",
         "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotTest.kt",
         "src/test/java/com/android/build/gradle/integration/testing/screenshot/WearTileScreenshotTest.kt",
     ],
@@ -785,7 +796,7 @@ single_gradle_integration_test_per_source(
     tags = [
         "noci:studio-win",  # b/374358308
     ],
-    deps = TEST_DEPS,
+    deps = TEST_DEPS + [":screenshot_fixture"],
 )
 
 SUITES_FIXTURE = [
@@ -1082,6 +1093,7 @@ maven_repository(
         "@maven//:androidx.collection.collection_1.4.0",
         "@maven//:androidx.compose.compiler.compiler_1.5.11",
         "@maven//:androidx.compose.material.material_1.3.0",
+        "@maven//:androidx.compose.runtime.runtime_1.6.0",
         "@maven//:androidx.compose.ui.ui-tooling-preview_1.6.5",
         "@maven//:androidx.compose.ui.ui-tooling_1.3.0",
         "@maven//:androidx.constraintlayout.constraintlayout_2.1.4",
@@ -1182,17 +1194,27 @@ maven_repository(
         "@maven//:org.javassist.javassist_3.26.0-GA",
         "@maven//:org.jdeferred.jdeferred-android-aar_1.2.2",
         "@maven//:org.jdeferred.jdeferred-android-aar_1.2.3",
-        "@maven//:org.jetbrains.dokka.javadoc-plugin_1.4.32",
+        "@maven//:org.jetbrains.dokka.javadoc-plugin_2.2.0",
+        "@maven//:org.jetbrains.kotlin.compose-compiler-gradle-plugin_2.2.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-compose-compiler-plugin-embeddable_2.2.10",
         "@maven//:org.jetbrains.kotlin.kotlin-annotation-processing-gradle_" + BUILT_IN_KOTLIN_VERSION,
         "@maven//:org.jetbrains.kotlin.kotlin-compiler-embeddable_1.8.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.3.20",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib_2.3.20",
         "@maven//:org.jetbrains.kotlin.kotlin-test-junit",
         "@maven//:org.jetbrains.kotlin.kotlin-test-junit_" + KGP_VERSION_FOR_TESTS,
+        "@maven//:org.jetbrains.dokka.analysis-kotlin-descriptors_2.2.0",
+        "@maven//:org.jetbrains.dokka.analysis-markdown_2.2.0",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_1.9.24",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_2.0.21",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-android_1.8.1",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core-common_1.3.6",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core_1.6.3",
         "@maven//:org.jetbrains.kotlinx.kotlinx-serialization-core_1.6.3",
         "@maven//:org.jetbrains.kotlinx.kotlinx-serialization-core_1.7.3",
-        "@maven//:org.mockito.mockito-core_5.12.0",
+        "@maven//:org.jetbrains.markdown_0.7.3",
+        "@maven//:org.mockito.mockito-core_5.20.0",
         "@maven//:org.ow2.asm.asm-bom_9.7",
         "@maven//:org.robolectric.android-all-instrumented_9-robolectric-4913185-2-i4",
         "@maven//:org.robolectric.robolectric_4.8.2",

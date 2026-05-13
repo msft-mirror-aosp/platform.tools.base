@@ -45,7 +45,8 @@ ActivityManager::ActivityManager()
 bool ActivityManager::StartProfiling(
     const ProfilingMode profiling_mode, const string &app_package_name,
     int sampling_interval_us, bool dual_clock, const string &trace_path,
-    std::string *error_string, int64_t *error_code, bool is_startup_profiling) {
+    std::string *error_string, int64_t *error_code, int profiler_output_version,
+    bool is_startup_profiling) {
   Trace trace("CPU:StartProfiling ART");
   std::lock_guard<std::mutex> lock(profiled_lock_);
 
@@ -63,6 +64,13 @@ bool ActivityManager::StartProfiling(
     if (DeviceInfo::feature_level() >= DeviceInfo::UPSIDE_DOWN_CAKE &&
         !dual_clock) {
       parameters << "--clock-type wall ";
+    }
+    if (profiler_output_version > 1) {
+      // Version 1 is the default on-device behavior. The argument
+      // --profiler_output_version is omitted when output version is
+      // 1 as older devices (API < 35) do not recognise it.
+      parameters << "--profiler-output-version " << profiler_output_version
+                 << " ";
     }
     if (profiling_mode == ActivityManager::SAMPLING) {
       // A sample interval in microseconds is required after '--sampling'.

@@ -175,9 +175,8 @@ public class CheckAll {
             ImmutableSet.of(
                     "api",
                     "artifactApi",
-                    "bytecodeGenerationHooks",
-                    "genFolderApi2",
-                    "noPreDex",
+                    "bytecodeGenerationHooksOld",
+                    "genFolderApi2Old",
                     "renamedApk",
                     "splitAwareSeparateTestModule"
             );

@@ -1450,7 +1450,7 @@
         </d:state>
     </d:device>
 
-    <d:device>
+    <d:device deprecated="true">
         <d:name>Pixel</d:name>
         <d:id>pixel</d:id>
         <d:manufacturer>Google</d:manufacturer>
@@ -1568,7 +1568,7 @@
         </d:state>
     </d:device>
 
-    <d:device>
+    <d:device deprecated="true">
         <d:name>Pixel XL</d:name>
         <d:id>pixel_xl</d:id>
         <d:manufacturer>Google</d:manufacturer>
@@ -1685,7 +1685,7 @@
         </d:state>
     </d:device>
 
-    <d:device>
+    <d:device deprecated="true">
         <d:name>Pixel 2</d:name>
         <d:id>pixel_2</d:id>
         <d:manufacturer>Google</d:manufacturer>
@@ -1807,7 +1807,7 @@
         </d:state>
     </d:device>
 
-    <d:device>
+    <d:device deprecated="true">
         <d:name>Pixel 2 XL</d:name>
         <d:id>pixel_2_xl</d:id>
         <d:manufacturer>Google</d:manufacturer>
@@ -1927,7 +1927,7 @@
         </d:state>
     </d:device>
 
-    <d:device>
+    <d:device deprecated="true">
         <d:name>Pixel 3</d:name>
         <d:id>pixel_3</d:id>
         <d:manufacturer>Google</d:manufacturer>
@@ -2057,7 +2057,7 @@
         </d:state>
     </d:device>
 
-    <d:device>
+    <d:device deprecated="true">
         <d:name>Pixel 3 XL</d:name>
         <d:id>pixel_3_xl</d:id>
         <d:manufacturer>Google</d:manufacturer>
@@ -2186,7 +2186,7 @@
         </d:state>
     </d:device>
 
-    <d:device>
+    <d:device deprecated="true">
         <d:name>Pixel 3a</d:name>
         <d:id>pixel_3a</d:id>
         <d:manufacturer>Google</d:manufacturer>
@@ -2316,7 +2316,7 @@
         </d:state>
     </d:device>
 
-    <d:device>
+    <d:device deprecated="true">
         <d:name>Pixel 3a XL</d:name>
         <d:id>pixel_3a_xl</d:id>
         <d:manufacturer>Google</d:manufacturer>
@@ -5063,6 +5063,11 @@
                 <d:location>back</d:location>
                 <d:autofocus>true</d:autofocus>
                 <d:flash>true</d:flash>
+            </d:camera>
+            <d:camera>
+                <d:location>front</d:location>
+                <d:autofocus>true</d:autofocus>
+                <d:flash>false</d:flash>
             </d:camera>
             <d:keyboard>nokeys</d:keyboard>
             <d:nav>nonav</d:nav>

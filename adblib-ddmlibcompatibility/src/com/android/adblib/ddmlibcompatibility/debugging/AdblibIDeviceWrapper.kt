@@ -25,7 +25,10 @@ import com.android.adblib.RemoteFileMode
 import com.android.adblib.SocketSpec
 import com.android.adblib.adbLogger
 import com.android.adblib.availableFeatures
+import com.android.adblib.ddmlibcompatibility.AdbLibDdmlibCompatibilityProperties.RUN_BLOCKING_LEGACY_DEFAULT_TIMEOUT
 import com.android.adblib.ddmlibcompatibility.AdbLibIDeviceManager
+import com.android.adblib.ddmlibcompatibility.DEFAULT_DDMLIB_TIMEOUT
+import com.android.adblib.property
 import com.android.adblib.rootAndWait
 import com.android.adblib.scope
 import com.android.adblib.serialNumber
@@ -44,7 +47,6 @@ import com.android.ddmlib.AndroidDebugBridge
 import com.android.ddmlib.AvdData
 import com.android.ddmlib.Client
 import com.android.ddmlib.CollectingOutputReceiver
-import com.android.ddmlib.DdmPreferences
 import com.android.ddmlib.FileListingService
 import com.android.ddmlib.IDevice
 import com.android.ddmlib.IDevice.DeviceState
@@ -69,7 +71,6 @@ import com.android.ddmlib.idevicemanager.IDeviceManagerListener
 import com.android.ddmlib.internal.UserDataMapImpl
 import com.android.ddmlib.log.LogReceiver
 import com.android.sdklib.AndroidVersion
-import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.SettableFuture
 import java.io.File
@@ -87,10 +88,11 @@ import java.util.function.Function
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.onFailure
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 
 /**
  * Implementation of [IDevice] that entirely relies on adblib services, i.e. does not depend on implementation details of ddmlib.
@@ -100,7 +102,7 @@ import kotlinx.coroutines.sync.withLock
  *   to be updated deterministically when [IDeviceManagerListener.deviceStateChanged] events are invoked by [AdbLibIDeviceManager].
  */
 internal class AdblibIDeviceWrapper(
-  private val connectedDevice: ConnectedDevice,
+  internal val connectedDevice: ConnectedDevice,
   bridge: AndroidDebugBridge,
   private val deviceState: () -> com.android.adblib.DeviceState?,
 ) : IDevice {
@@ -118,21 +120,29 @@ internal class AdblibIDeviceWrapper(
     AdbLibClientManagerFactory.createClientManager(connectedDevice.session).createDeviceClientManager(bridge, this)
 
   /** Name and path of the AVD */
-  private var mAvdName: String? = null
-  private var mAvdPath: String? = null
+  @Volatile private var mAvdName: String? = null
+  @Volatile private var mAvdPath: String? = null
 
-  private val mutex = Mutex()
+  /**
+   * We use a [SettableFuture] because we want to return the same future every time [getAvdData] is called. We also want to avoid returning
+   * a failed future if the device disconnects or if there is an error. In this case we just don't set the future value, so it never
+   * completes.
+   */
+  private val mAvdDataFuture = SettableFuture.create<AvdData?>()
 
-  // Use `Result` to distinguish between when `mAvdData` has not been not set, and when it was set
-  // to `null` because we are dealing with a non-emulator device.
-  // Note that we never set `mAvdData` to a failed Result.
-  @Volatile private var mAvdData: Result<AvdData?>? = null
+  internal enum class AvdFetchStatus {
+    INITIAL,
+    IN_PROGRESS,
+    FAILED,
+    SUCCEEDED,
+  }
+
+  private val mAvdFetchStatusStateFlow = MutableStateFlow(AvdFetchStatus.INITIAL)
+
+  internal val avdFetchStatusFlow: StateFlow<AvdFetchStatus> = mAvdFetchStatusStateFlow.asStateFlow()
 
   init {
-    connectedDevice.scope.launch {
-      runCatching { createOrGetCachedAvdData() }
-        .onFailure { throwable -> logger.logIOCompletionErrors(throwable, "Failed to retrieve AVD data during initialization") }
-    }
+    ensureAvdDataIsBeingFetched()
   }
 
   private val mUserDataMap = UserDataMapImpl()
@@ -144,7 +154,8 @@ internal class AdblibIDeviceWrapper(
   override fun executeShellCommand(command: String, receiver: IShellOutputReceiver) {
     logUsage(IDeviceUsageTracker.Method.EXECUTE_SHELL_COMMAND_1) {
       // This matches the behavior of `DeviceImpl`
-      executeRemoteCommand(command, receiver, DdmPreferences.getTimeOut().toLong(), TimeUnit.MILLISECONDS)
+
+      executeRemoteCommand(command, receiver, maxTimeToOutputResponse = DEFAULT_DDMLIB_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)
     }
   }
 
@@ -207,60 +218,54 @@ internal class AdblibIDeviceWrapper(
 
   override fun getAvdData(): ListenableFuture<AvdData?> =
     logUsage(IDeviceUsageTracker.Method.GET_AVD_DATA) {
-      // Callers expect this method to start returning a completed future after a while
-      val avdData = mAvdData
-      if (avdData != null) {
-        return@logUsage Futures.immediateFuture(avdData.getOrThrow())
-      }
-
-      // We rely on SettableFuture, because we want to avoid returning a failed future
-      // if the device disconnects or if there is an error. In this case we
-      // just don't set the future value, so it never completes.
-      val future = SettableFuture.create<AvdData?>()
-      connectedDevice.scope.launch {
-        runCatching { future.set(createOrGetCachedAvdData()) }
-          .onFailure { throwable -> logger.logIOCompletionErrors(throwable, "Failed to retrieve AVD data") }
-      }
-      future
+      ensureAvdDataIsBeingFetched()
+      mAvdDataFuture
     }
 
-  private suspend fun createOrGetCachedAvdData(): AvdData? {
-    mutex.withLock {
-      if (mAvdData != null) {
-        return mAvdData!!.getOrThrow()
+  private fun ensureAvdDataIsBeingFetched() {
+    if (
+      mAvdFetchStatusStateFlow.compareAndSet(AvdFetchStatus.INITIAL, AvdFetchStatus.IN_PROGRESS) ||
+        mAvdFetchStatusStateFlow.compareAndSet(AvdFetchStatus.FAILED, AvdFetchStatus.IN_PROGRESS)
+    ) {
+      connectedDevice.scope.launch {
+        runCatching { fetchAvdData() }.onFailure { throwable -> logger.logIOCompletionErrors(throwable, "Failed to retrieve AVD data") }
+
+        // If the future is not done, it means the fetch attempt failed or was interrupted.
+        // We set the status to FAILED to allow for subsequent retry attempts.
+        mAvdFetchStatusStateFlow.value = if (mAvdDataFuture.isDone) AvdFetchStatus.SUCCEEDED else AvdFetchStatus.FAILED
       }
+    }
+  }
 
-      if (!isEmulator) {
-        mAvdData = Result.success(null)
-        return null
+  private suspend fun fetchAvdData() {
+    if (!isEmulator) {
+      mAvdDataFuture.set(null)
+      return
+    }
+
+    // Wait until the device goes online before creating avd data.
+    // Note that extra care should be taken when relying on `connectedDevice` state
+    // instead of `AdblibIDeviceWrapper.deviceStateProvider`. In this case it's ok to use
+    // the former as all we care about is populating avd data as soon as possible.
+    connectedDevice.waitUntilOnline()
+
+    val emulatorMatchResult = RE_EMULATOR_SN.toRegex().matchEntire(serialNumber) ?: error("Invalid emulator serial pattern: $serialNumber")
+    val port = emulatorMatchResult.groupValues[1].toIntOrNull() ?: error("Invalid emulator port: $serialNumber")
+
+    try {
+      connectedDevice.session.openEmulatorConsole(localConsoleAddress(port)).use {
+        val avdName = kotlin.runCatching { it.avdName() }.getOrNull()
+        val path = kotlin.runCatching { it.avdPath() }.getOrNull()
+        val avdData = AvdData(avdName, path)
+
+        mAvdDataFuture.set(avdData)
+        mAvdName = avdData.name
+        mAvdPath = avdData.path
       }
-
-      // Wait until the device goes online before creating avd data.
-      // Note that extra care should be taken when relying on `connectedDevice` state
-      // instead of `AdblibIDeviceWrapper.deviceStateProvider`. In this case it's ok to use
-      // the former as all we care about is populating avd data as soon as possible.
-      connectedDevice.waitUntilOnline()
-
-      val emulatorMatchResult = RE_EMULATOR_SN.toRegex().matchEntire(serialNumber) ?: return null
-      val port = emulatorMatchResult.groupValues[1].toIntOrNull() ?: return null
-
-      try {
-        connectedDevice.session.openEmulatorConsole(localConsoleAddress(port)).use {
-          val avdName = kotlin.runCatching { it.avdName() }.getOrNull()
-          val path = kotlin.runCatching { it.avdPath() }.getOrNull()
-          val avdData = AvdData(avdName, path)
-
-          mAvdData = Result.success(avdData)
-          mAvdName = avdData.name
-          mAvdPath = avdData.path
-        }
-      } catch (e: EmulatorCommandException) {
-        logger.warn(e, "Couldn't open emulator console")
-      } catch (e: IOException) {
-        logger.warn(e, "Couldn't open emulator console")
-      }
-
-      return mAvdData?.getOrThrow()
+    } catch (e: EmulatorCommandException) {
+      logger.warn(e, "Couldn't open emulator console")
+    } catch (e: IOException) {
+      logger.warn(e, "Couldn't open emulator console")
     }
   }
 
@@ -318,10 +323,6 @@ internal class AdblibIDeviceWrapper(
         runBlockingLegacy { connectedDevice.availableFeatures() }
       } catch (e: IOException) {
         // Note that this block handles `AdbFailResponseException` as well.
-        // ignore to match the behavior in the `DeviceImpl`
-        logger.warn(e, "Error querying `availableFeatures`")
-        emptySet()
-      } catch (e: TimeoutException) {
         // ignore to match the behavior in the `DeviceImpl`
         logger.warn(e, "Error querying `availableFeatures`")
         emptySet()
@@ -482,7 +483,7 @@ internal class AdblibIDeviceWrapper(
 
   override fun pushFile(local: String, remote: String) {
     logUsage(IDeviceUsageTracker.Method.PUSH_FILE) {
-      runBlockingLegacy {
+      runBlockingLegacy(timeout = INFINITE_DURATION) {
         val deviceSelector = DeviceSelector.fromSerialNumber(connectedDevice.serialNumber)
 
         val localFile = File(local).toPath()
@@ -504,7 +505,7 @@ internal class AdblibIDeviceWrapper(
 
   override fun pullFile(remote: String, local: String) {
     logUsage(IDeviceUsageTracker.Method.PULL_FILE) {
-      runBlockingLegacy {
+      runBlockingLegacy(timeout = INFINITE_DURATION) {
         val deviceSelector = DeviceSelector.fromSerialNumber(connectedDevice.serialNumber)
 
         val localFile = File(local).toPath()
@@ -635,7 +636,7 @@ internal class AdblibIDeviceWrapper(
 
   override fun root(): Boolean =
     logUsage(IDeviceUsageTracker.Method.ROOT) {
-      runBlockingLegacy {
+      runBlockingLegacy(timeout = INFINITE_DURATION) {
         val deviceSelector = DeviceSelector.fromSerialNumber(connectedDevice.serialNumber)
         connectedDevice.session.deviceServices.rootAndWait(deviceSelector)
         isRoot()
@@ -803,7 +804,7 @@ internal class AdblibIDeviceWrapper(
 
   override fun rawExec2(executable: String, parameters: Array<out String>): SimpleConnectedSocket =
     logUsage(IDeviceUsageTracker.Method.RAW_EXEC2) {
-      runBlockingLegacy {
+      runBlockingLegacy(timeout = INFINITE_DURATION) {
         mapToDdmlibException {
           val command = StringBuilder(executable)
           for (parameter in parameters) {
@@ -847,11 +848,11 @@ internal class AdblibIDeviceWrapper(
    * Similar to [runBlocking] but with a custom [timeout], and dealing with `InterruptedException` by converting them into `IOException` as
    * `IDevice` interface checked exceptions don't include throwing `InterruptedException`
    *
-   * @throws TimeoutException if [block] take more than [timeout] to execute
+   * @throws IOException that wraps `TimeoutException` if [block] take more than [timeout] to execute
    * @throws IOException that wraps `InterruptedException`, if encountered
    */
   private fun <R> runBlockingLegacy(
-    timeout: Duration = Duration.ofMillis(DdmPreferences.getTimeOut().toLong()),
+    timeout: Duration = connectedDevice.session.property(RUN_BLOCKING_LEGACY_DEFAULT_TIMEOUT),
     block: suspend CoroutineScope.() -> R,
   ): R {
     try {
@@ -862,6 +863,8 @@ internal class AdblibIDeviceWrapper(
           connectedDevice.session.withErrorTimeout(timeout) { block() }
         }
       }
+    } catch (e: TimeoutException) {
+      throw IOException("Operation timed out", e)
     } catch (e: InterruptedException) {
       // We wrap `InterruptedException` in `IOException` to maintain the contract
       // defined by `IDevice` interface where no `InterruptedException` is ever thrown

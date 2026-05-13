@@ -20,7 +20,6 @@ import com.android.adblib.AdbServerController
 import com.android.adblib.AdbSession
 import com.android.adblib.ddmlibcompatibility.AdbLibAndroidDebugBridge
 import com.android.ddmlib.AndroidDebugBridge
-import com.android.ddmlib.AndroidDebugBridgeDelegate
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.rules.ExternalResource
 
@@ -31,8 +30,6 @@ import org.junit.rules.ExternalResource
  */
 class UseAdbLibAndroidDebugBridgeRule(private val adbSessionSupplier: () -> AdbSession) : ExternalResource() {
 
-  private lateinit var previousDelegate: AndroidDebugBridgeDelegate
-
   public override fun before() {
     val config =
       MutableStateFlow(
@@ -40,10 +37,10 @@ class UseAdbLibAndroidDebugBridgeRule(private val adbSessionSupplier: () -> AdbS
       )
     val adbSession = adbSessionSupplier()
     val adbServerController = AdbServerController.createServerController(adbSession.host, config)
-    previousDelegate = AndroidDebugBridge.preInit(AdbLibAndroidDebugBridge(adbSession, adbServerController, config))
+    AndroidDebugBridge.preInit(AdbLibAndroidDebugBridge(adbSession, adbServerController, config))
   }
 
   override fun after() {
-    AndroidDebugBridge.resetForTests(previousDelegate)
+    AndroidDebugBridge.resetForTests()
   }
 }

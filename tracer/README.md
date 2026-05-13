@@ -51,7 +51,7 @@ public void foo() {
 The last way of instrumenting is by building a profile file:
 
 ```
-Output: /tmp/report.json
+TraceOutputDirectory: /tmp/
 Trace: com.package.Clazz::method
 Trace: com.package.Clazz
 Trace: com.package.*
@@ -61,7 +61,7 @@ Flush: com.package.Clazz::end
 For those cases where the code is not available or recompiling is not an options it is possible to set up a file describing what methods want to be traced.
 
 * ``Start`` before tracing this method, the output file will be cleared.
-* ``Output`` The output .json report file, or ```/tmp/report.json``` if unspecified.
+* ``TraceOutputDirectory`` The output directory where the .perfetto trace file will be written, or ```/tmp/``` if unspecified.
 * ``Trace`` allows specifying which class, method or package will be instrumented.
 * ``Annotation`` if a method is annotated with this it will be traced, by default only ```com.android.annotations.Trace``` is traced.
 * ``Flush`` at the end of which method will a synchronous flush be performed.
@@ -128,4 +128,5 @@ It might be necessary to stop gradle daemons to force a reload of your profile:
 
 ## The report
 
-The report is saved by default to /tmp/report.json. To open navigate to chrome://tracing and load the file.
+The report is saved by default to `/tmp/perfetto-YYYY-MM-DD-HH-mm-ss.perfetto-trace`. To open navigate to https://ui.perfetto.dev/ and load
+the file.

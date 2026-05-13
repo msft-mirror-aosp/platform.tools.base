@@ -116,17 +116,19 @@ maven_repository(
         "@maven//:org.jetbrains.kotlin.kotlin-reflect_1.9.0",
         "@maven//:org.jetbrains.kotlin.kotlin-reflect_1.9.10",
         "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.0.21",
+        "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.3.20",
         "@maven//:org.jetbrains.kotlin.kotlin-script-runtime_1.6.21",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.6.21",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.8.0",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.8.10",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.8.20",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.9.0",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib_2.3.20",
     ] + KTS,
     visibility = ["//visibility:public"],
 )
 
-LATEST_KOTLIN_VERSION_FOR_SYNC_BENCHMARKS = "2.4.0-dev-5614"
+LATEST_KOTLIN_VERSION_FOR_SYNC_BENCHMARKS = "2.4.0-dev-8268"
 
 maven_repository(
     name = "latest_kotlin_gradle_plugin_prebuilts_for_sync_benchmarks",

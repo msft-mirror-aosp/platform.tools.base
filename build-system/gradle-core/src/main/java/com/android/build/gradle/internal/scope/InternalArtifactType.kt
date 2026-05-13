@@ -434,6 +434,8 @@ sealed class InternalArtifactType<T : FileSystemLocation>(
 
   object MANIFEST_MERGE_BLAME_FILE : InternalArtifactType<RegularFile>(FILE), Replaceable
 
+  object MERGED_NATIVE_LIBS_BLAME : InternalArtifactType<RegularFile>(FILE), Replaceable
+
   // List of annotation processors for metrics.
   object ANNOTATION_PROCESSOR_LIST : InternalArtifactType<RegularFile>(FILE), Replaceable
 
@@ -513,10 +515,14 @@ sealed class InternalArtifactType<T : FileSystemLocation>(
 
   object LINT_VITAL_INTERMEDIATE_TEXT_REPORT : InternalArtifactType<RegularFile>(FILE)
 
+  object AGGREGATED_LINT_INTERMEDIATE_TEXT_REPORT : InternalArtifactType<RegularFile>(FILE)
+
   // Files holding the corresponding lint invocation's return value
   object LINT_RETURN_VALUE : InternalArtifactType<RegularFile>(FILE)
 
   object LINT_VITAL_RETURN_VALUE : InternalArtifactType<RegularFile>(FILE)
+
+  object AGGREGATED_LINT_RETURN_VALUE : InternalArtifactType<RegularFile>(FILE)
 
   // This only exists so that the Lint vital task runs when the assemble or bundle task is run
   object LINT_VITAL_OUTPUT : InternalArtifactType<RegularFile>(FILE)
@@ -737,6 +743,10 @@ sealed class InternalArtifactType<T : FileSystemLocation>(
   /** Metadata file included in the app bundle as output from R8 */
   object R8_METADATA : InternalArtifactType<RegularFile>(FILE)
 
+  object R8_MAPPING_KEEP_RADIUS_DATA : InternalArtifactType<RegularFile>(FILE, Category.OUTPUTS, "mapping", "keepradius.pb")
+
+  object R8_MAPPING_KEEP_RADIUS_REPORT : InternalArtifactType<RegularFile>(FILE, Category.OUTPUTS, "mapping", "keepradiusreport.html")
+
   object R8_MAPPING_SEEDS : InternalArtifactType<RegularFile>(FILE, Category.OUTPUTS, "mapping", "seeds.txt")
 
   object R8_MAPPING_USAGE : InternalArtifactType<RegularFile>(FILE, Category.OUTPUTS, "mapping", "usage.txt")
@@ -787,6 +797,10 @@ sealed class InternalArtifactType<T : FileSystemLocation>(
 
   // Data for the android test results
   object ANDROID_TEST_RESULTS : InternalArtifactType<Directory>(DIRECTORY)
+
+  // Directory containing the list of discovered tests for instrumentation tests.
+  // This is used to skip the TestSuiteTestTask when no tests are found.
+  object ANDROID_TEST_DISCOVERY_LIST : InternalArtifactType<Directory>(DIRECTORY)
 
   override fun getFileSystemLocationName(): String {
     return fileName ?: super.getFileSystemLocationName()

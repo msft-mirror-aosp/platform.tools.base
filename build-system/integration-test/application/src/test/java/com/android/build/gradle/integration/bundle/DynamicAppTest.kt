@@ -73,7 +73,7 @@ class DynamicAppTest {
 
   @get:Rule val tmpFile = TemporaryFolder()
 
-  @get:Rule val project: GradleTestProject = GradleTestProject.builder().fromTestProject("dynamicApp").disableBuiltInKotlin().create()
+  @get:Rule val project: GradleTestProject = GradleTestProject.builder().fromTestProject("dynamicApp").create()
 
   private val bundleContent: Array<String> =
     arrayOf(
@@ -89,6 +89,14 @@ class DynamicAppTest {
       "/base/resources.pb",
       "/base/root/com/example/localLibJavaRes.txt",
       "/base/root/META-INF/com/android/build/gradle/app-metadata.properties",
+      "/base/root/kotlin/annotation/annotation.kotlin_builtins",
+      "/base/root/kotlin/collections/collections.kotlin_builtins",
+      "/base/root/kotlin/concurrent/atomics/atomics.kotlin_builtins",
+      "/base/root/kotlin/coroutines/coroutines.kotlin_builtins",
+      "/base/root/kotlin/internal/internal.kotlin_builtins",
+      "/base/root/kotlin/kotlin.kotlin_builtins",
+      "/base/root/kotlin/ranges/ranges.kotlin_builtins",
+      "/base/root/kotlin/reflect/reflect.kotlin_builtins",
       "/feature1/dex/classes.dex",
       "/feature1/dex/classes2.dex",
       "/feature1/manifest/AndroidManifest.xml",
@@ -237,7 +245,9 @@ class DynamicAppTest {
       val dex = Dex(aab.getEntry("base/dex/classes.dex")!!)
       // Legacy multidex is applied to the dex of the base directly for the case
       // when the build author has excluded all the features from fusing.
-      assertThat(dex).containsExactlyClassesIn(mainDexClasses)
+      //
+      // not containsExactlyClassesIn because of b/405347437 - contains the expected classes plus Kotlin-related things
+      assertThat(dex).containsClassesIn(mainDexClasses)
 
       jarClasses.forEach { jarClass ->
         assertThat(aab).containsClass("base", jarClass)
@@ -252,7 +262,14 @@ class DynamicAppTest {
       }
 
       // The main dex list must also analyze the classes from features.
-      val mainDexListInBundle = Files.readAllLines(aab.getEntry(MAIN_DEX_LIST_PATH)).map { "L" + it.removeSuffix(".class") + ";" }
+      val mainDexListInBundle =
+        Files.readAllLines(aab.getEntry(MAIN_DEX_LIST_PATH))
+          .map { "L" + it.removeSuffix(".class") + ";" }
+          // filter Kotlin-related remnants (b/405347437)
+          .filter { it != "Lcom/android/tools/r8/annotations/LambdaMethod;" }
+          .filter { !it.startsWith("Lorg/jetbrains/annotations") }
+          .filter { !it.startsWith("Lorg/intellij/lang/annotations") }
+          .filter { !it.startsWith("Lkotlin/") }
 
       assertThat(mainDexListInBundle).containsExactlyElementsIn(mainDexListClassesInBundle)
     }
@@ -962,7 +979,9 @@ class DynamicAppTest {
     val result = ApkVerifier.Builder(bundleFile).setMaxCheckedPlatformVersion(18).setMinCheckedPlatformVersion(18).build().verify()
     assertThat(result.isVerified).isTrue()
 
-    assertThat(ProcessBuilder(listOf(getJarSignerPath(), "-verify", bundleFile.absolutePath)).start().waitFor()).isEqualTo(0)
+    val processBuilder = ProcessBuilder(listOf(getJarSignerPath(), "-verify", bundleFile.absolutePath))
+    processBuilder.inheritIO()
+    assertThat(processBuilder.start().waitFor()).isEqualTo(0)
 
     // Check that we don't accidentally use signing config for code transparency signing
     Assert.assertThrows(InvalidBundleException::class.java) {
@@ -1050,7 +1069,9 @@ class DynamicAppTest {
     val result = ApkVerifier.Builder(bundleFile).setMaxCheckedPlatformVersion(18).setMinCheckedPlatformVersion(18).build().verify()
     assertThat(result.isVerified).isTrue()
 
-    assertThat(ProcessBuilder(listOf(getJarSignerPath(), "-verify", bundleFile.absolutePath)).start().waitFor()).isEqualTo(0)
+    val processBuilder = ProcessBuilder(listOf(getJarSignerPath(), "-verify", bundleFile.absolutePath))
+    processBuilder.inheritIO()
+    assertThat(processBuilder.start().waitFor()).isEqualTo(0)
   }
 
   @Test

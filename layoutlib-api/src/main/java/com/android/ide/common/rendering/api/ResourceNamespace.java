@@ -15,9 +15,11 @@ package com.android.ide.common.rendering.api;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+
 import com.google.common.base.Strings;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.ImmutableBiMap;
+
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Objects;
@@ -214,7 +216,8 @@ public class ResourceNamespace implements Comparable<ResourceNamespace>, Seriali
      */
     @Nullable
     public static ResourceNamespace fromNamespaceUri(@NonNull String uri) {
-        if (uri.equals(AndroidConstants.ANDROID_URI)) {
+        if (uri.equals(AndroidConstants.ANDROID_URI)
+                || uri.equals(AndroidConstants.ANDROID_PRV_URI)) {
             return ANDROID;
         }
         if (uri.equals(AndroidConstants.AUTO_URI)) {

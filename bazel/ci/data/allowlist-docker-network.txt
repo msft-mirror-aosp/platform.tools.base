@@ -1,3 +1,13 @@
 //tools/adt/idea/android/integration:BuildAndRunTest_linux
 //tools/adt/idea/android/integration:BuildAndRunTest_windows
 //tools/adt/idea/android/integration:BuildAndRunTest_mac
+//tools/profiler/integration:CaptureTraceSystemProfilerTest_linux
+//tools/profiler/integration:CaptureTraceSystemProfilerTest_windows
+//tools/profiler/integration:CaptureTraceSystemProfilerTest_mac
+//tools/adt/idea/android/integration:AdbWifiAutoEnableTest_mac
+//tools/adt/idea/android/integration:AdbWifiAutoEnableTest_linux
+//tools/adt/idea/android/integration:AdbWifiAutoEnableTest_windows
+//tools/adt/idea/android/integration:AdbWifiPairTest_mac
+//tools/adt/idea/android/integration:AdbWifiPairTest_linux
+//tools/adt/idea/android/integration:AdbWifiPairTest_windows
+

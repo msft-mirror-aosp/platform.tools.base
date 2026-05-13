@@ -252,7 +252,7 @@ class ApplicationVariantFactory(dslServices: DslServices) :
     // if we have any ABI splits, whether it's a full or pure ABI splits, it's an error.
     val issueReporter = dslServices.issueReporter
     issueReporter.reportError(
-      IssueReporter.Type.GENERIC,
+      IssueReporter.Type.CONFLICTING_ABI_CONFIG,
       String.format(
         "Conflicting configuration : '%1\$s' in ndk abiFilters " + "cannot be present when splits abi filters are set : %2\$s",
         Joiner.on(",").join(ndkConfigAbiFilters),
@@ -301,7 +301,7 @@ class ApplicationVariantFactory(dslServices: DslServices) :
           .map { obj: com.android.build.api.variant.VariantOutput -> obj.filters }
           .map { filters: Collection<FilterConfiguration> -> filters.joinToString(",") }
       dslServices.issueReporter.reportWarning(
-        IssueReporter.Type.GENERIC,
+        IssueReporter.Type.CANNOT_BUILD_SELECTED_TARGET_ABI,
         String.format(
           "Cannot build selected target ABI: %1\$s, " +
             if (splits.isEmpty()) "no suitable splits configured: %2\$s;" else "supported ABIs are: %2\$s",

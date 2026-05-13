@@ -27,7 +27,7 @@ import org.junit.Test
 
 class TestWithCompileDirectJarTest : ModelComparator() {
 
-  @get:Rule val project = GradleTestProject.builder().fromTestProject("projectWithModules").disableBuiltInKotlin().create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("projectWithModules").create()
 
   @Before
   fun setUp() {
@@ -45,6 +45,9 @@ class TestWithCompileDirectJarTest : ModelComparator() {
 
   @Test
   fun `test VariantDependencies model`() {
+    for (m in listOf("app")) {
+      TestFileUtils.appendToFile(project.getSubproject(m).buildFile, "android.enableKotlin = false\n")
+    }
     val result = project.modelV2().ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
 
     with(result).compareVariantDependencies(projectAction = { getProject(":app") }, goldenFile = "app_VariantDependencies")

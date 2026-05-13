@@ -194,14 +194,6 @@ enum class ComponentTypeImpl(
     artifactType = ArtifactMetaData.TYPE_JAVA,
     analyticsVariantType = GradleBuildVariant.VariantType.JAVA_LIBRARY,
   ),
-  PRIVACY_SANDBOX_SDK(
-    prefix = "",
-    suffix = "",
-    artifactName = AndroidProject.ARTIFACT_MAIN,
-    isSingleBuildType = true,
-    artifactType = ArtifactMetaData.TYPE_ANDROID,
-    analyticsVariantType = GradleBuildVariant.VariantType.PRIVACY_SANDBOX_SDK,
-  ),
   ANDROID_TEST(
     isApk = true,
     isForTesting = true,

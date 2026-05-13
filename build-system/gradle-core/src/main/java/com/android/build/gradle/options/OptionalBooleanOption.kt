@@ -18,6 +18,7 @@ package com.android.build.gradle.options
 
 import com.android.build.gradle.options.Version.VERSION_7_0
 import com.android.build.gradle.options.Version.VERSION_8_0
+import com.android.build.gradle.options.Version.VERSION_9_3
 import com.android.build.gradle.options.Version.VERSION_BEFORE_4_0
 import com.android.builder.model.PROPERTY_SIGNING_V1_ENABLED
 import com.android.builder.model.PROPERTY_SIGNING_V2_ENABLED
@@ -43,12 +44,8 @@ enum class OptionalBooleanOption(override val propertyName: String, val stage: S
   ),
   ENABLE_API_MODELING_AND_GLOBAL_SYNTHETICS("android.enableApiModelingAndGlobalSynthetics", ApiStage.Experimental),
 
-  /**
-   * Whether to use K2 UAST when running lint.
-   *
-   * If not set, lint will use K2 UAST when the kotlin language version is >= 2.0.
-   */
-  LINT_USE_K2_UAST("android.lint.useK2Uast", ApiStage.Experimental),
+  /** Whether lint will print the text report to stdout. */
+  LINT_PRINT_TEXT_REPORT("android.experimental.lint.printTextReport", ApiStage.Experimental),
 
   /* ----------------
    * SOFTLY ENFORCED FEATURES
@@ -67,6 +64,12 @@ enum class OptionalBooleanOption(override val propertyName: String, val stage: S
   /* ----------------
    * REMOVED FEATURES
    */
+
+  @Suppress("unused")
+  LINT_USE_K2_UAST(
+    "android.lint.useK2Uast",
+    ApiStage.Removed(VERSION_9_3, "Lint K2 is always enabled in AGP 9.3 and above"),
+  ),
 
   @Suppress("unused")
   SERIAL_AAPT2(

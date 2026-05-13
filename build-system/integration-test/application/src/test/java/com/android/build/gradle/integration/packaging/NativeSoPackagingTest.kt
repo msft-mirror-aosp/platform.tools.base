@@ -666,4 +666,15 @@ class NativeSoPackagingTest {
   private fun TemporaryProjectModification.replaceBinaryFile(path: String, content: String) {
     modifyFileWithBytes(path) { content.toByteArray() }
   }
+
+  @Test
+  fun testBlameFileGenerated() {
+    execute("app:assembleDebug")
+    val blameFile =
+      appProject.getIntermediateFile("merged_native_libs_blame", "debug", "mergeDebugNativeLibs", "native-libs-blame-debug-report.txt")
+    Truth.assertThat(blameFile.exists()).isTrue()
+    val content = blameFile.readText()
+    Truth.assertThat(content).contains("lib/x86/liblibrary.so")
+    Truth.assertThat(content).contains("lib/x86/libjar.so")
+  }
 }

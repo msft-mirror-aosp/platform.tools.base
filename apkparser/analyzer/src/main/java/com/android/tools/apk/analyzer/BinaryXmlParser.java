@@ -244,8 +244,17 @@ public class BinaryXmlParser {
             case INT_BOOLEAN -> Boolean.toString(data != 0);
             case INT_COLOR_ARGB8 -> String.format("#%08X", data);
             case INT_COLOR_RGB8 -> String.format("#%06X", 0xFFFFFF & data);
-            case INT_COLOR_ARGB4 -> String.format("#%04X", 0xFFFF & data);
-            case INT_COLOR_RGB4 -> String.format("#%03X", 0xFFF & data);
+            case INT_COLOR_ARGB4 ->
+                    String.format(
+                            "#%04X",
+                            ((data >> 12) & 0xF000)
+                                    | ((data >> 8) & 0x0F00)
+                                    | ((data >> 4) & 0x00F0)
+                                    | (data & 0x000F));
+            case INT_COLOR_RGB4 ->
+                    String.format(
+                            "#%03X",
+                            ((data >> 8) & 0x0F00) | ((data >> 4) & 0x00F0) | (data & 0x000F));
         };
     }
 

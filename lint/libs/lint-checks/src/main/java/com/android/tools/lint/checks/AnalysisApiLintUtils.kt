@@ -17,7 +17,11 @@ package com.android.tools.lint.checks
 
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiParameter
+import org.jetbrains.kotlin.analysis.api.KaImplementationDetail
+import org.jetbrains.kotlin.analysis.api.KaPlatformInterface
 import org.jetbrains.kotlin.analysis.api.KaSession
+import org.jetbrains.kotlin.analysis.api.analyze
+import org.jetbrains.kotlin.analysis.api.platform.projectStructure.KotlinProjectStructureProvider
 import org.jetbrains.kotlin.analysis.api.resolution.KaAnnotationCall
 import org.jetbrains.kotlin.analysis.api.resolution.KaCall
 import org.jetbrains.kotlin.analysis.api.resolution.KaCallableMemberCall
@@ -27,6 +31,7 @@ import org.jetbrains.kotlin.analysis.api.resolution.singleCallOrNull
 import org.jetbrains.kotlin.analysis.api.resolution.singleConstructorCallOrNull
 import org.jetbrains.kotlin.analysis.api.resolution.singleFunctionCallOrNull
 import org.jetbrains.kotlin.analysis.api.resolution.symbol
+import org.jetbrains.kotlin.analysis.api.session.KaSessionProvider
 import org.jetbrains.kotlin.analysis.api.symbols.KaClassSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaFunctionSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaReceiverParameterSymbol
@@ -38,6 +43,20 @@ import org.jetbrains.uast.UParameter
 import org.jetbrains.uast.analysis.KotlinExtensionConstants
 import org.jetbrains.uast.kotlin.BaseKotlinUastResolveProviderService
 import org.jetbrains.uast.toUElementOfType
+
+/**
+ * Executes the given [action] in an [analysis session][KaSession] context, even if starting from Java source.
+ *
+ * The project will be analyzed from the perspective of [element]'s module, which can be a Java or Kotlin element. This is similar to
+ * [org.jetbrains.kotlin.analysis.api.analyze], but also allows the use of a Java element. And unlike the version of analyze that takes a
+ * KaModule, this function does not use `crossinline` on [action].
+ */
+@OptIn(KaImplementationDetail::class, KaPlatformInterface::class)
+internal inline fun <R> analyzeFromPsi(element: PsiElement, action: KaSession.() -> R): R {
+  val useSiteModule = KotlinProjectStructureProvider.getInstance(element.project).getModule(element, useSiteModule = null)
+  val sessionProvider = KaSessionProvider.getInstance(useSiteModule.project)
+  return sessionProvider.analyze(useSiteModule, action)
+}
 
 /**
  * Resolve [KtElement] to function call, constructor call, or annotation call and return function-like symbol if any.

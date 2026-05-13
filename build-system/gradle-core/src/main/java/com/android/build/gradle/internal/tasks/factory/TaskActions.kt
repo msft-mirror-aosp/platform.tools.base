@@ -92,10 +92,6 @@ abstract class AndroidVariantTaskCreationAction<TaskT : AndroidVariantTask>(priv
   }
 }
 
-/** [TaskCreationAction] for a PrivacySandboxSdkTask. */
-abstract class PrivacySandboxSdkVariantTaskCreationAction<TaskT> : AndroidVariantTaskCreationAction<TaskT>("main")
-  where TaskT : AndroidVariantTask
-
 /** [TaskCreationAction] for a [GlobalTask]. */
 abstract class GlobalTaskCreationAction<TaskT> : TaskCreationAction<TaskT>() where TaskT : Task, TaskT : GlobalTask {
 

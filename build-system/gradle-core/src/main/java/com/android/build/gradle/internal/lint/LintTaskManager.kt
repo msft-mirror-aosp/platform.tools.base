@@ -92,6 +92,15 @@ class LintTaskManager(
           taskFactory.register(AndroidLintTextOutputTask.SingleVariantCreationAction(mainVariant))
         }
 
+      val variantAggregatedLintTextOutputTask =
+        if (
+          componentType.isDynamicFeature || !globalTaskCreationConfig.services.projectOptions.get(BooleanOption.LINT_REPORT_AGGREGATION)
+        ) {
+          null
+        } else {
+          taskFactory.register(AndroidLintTextOutputTask.AggregatedCreationAction(mainVariant))
+        }
+
       // Avoid registering most lint tasks, but register the AndroidLintTextOutputTask above
       // in case users reference it in their build scripts (b/332755363)
       if (globalTaskCreationConfig.avoidTaskRegistration) {
@@ -186,7 +195,8 @@ class LintTaskManager(
             taskFactory.register(AndroidLintTask.AggregatedLintReportCreationAction(variantWithTests)).also {
               it.configure { task -> task.mustRunAfter(updateLintBaselineTask) }
             }
-          variantLintTextOutputTask?.configure { it.dependsOn(aggregatedLintReportTask) }
+          variantLintTextOutputTask?.configure { it.dependsOn(localLintReportTask) }
+          variantAggregatedLintTextOutputTask?.configure { it.dependsOn(aggregatedLintReportTask) }
           localLintReportTask
         } else {
           taskFactory.register(AndroidLintTask.SingleVariantCreationAction(variantWithTests)).also {
@@ -230,6 +240,7 @@ class LintTaskManager(
         // If lint is being run, we do not need to run lint vital.
         variantLintTaskToLintVitalTask[getTaskPath(variantLintTask)] = lintVitalTask
         variantLintTextOutputTask?.let { variantLintTaskToLintVitalTask[getTaskPath(it)] = lintVitalTextOutputTask }
+        variantAggregatedLintTextOutputTask?.let { variantLintTaskToLintVitalTask[getTaskPath(it)] = lintVitalTextOutputTask }
       }
       taskFactory.register(AndroidLintTask.FixSingleVariantCreationAction(variantWithTests)).also {
         it.configure { task -> task.mustRunAfter(updateLintBaselineTask) }
@@ -250,6 +261,9 @@ class LintTaskManager(
     if (defaultVariant != null) {
       taskFactory.configure(AndroidLintGlobalTask.GlobalCreationAction.name, AndroidLintGlobalTask::class.java) { globalTask ->
         globalTask.dependsOn("lint".appendCapitalized(defaultVariant))
+        if (globalTaskCreationConfig.services.projectOptions.get(BooleanOption.LINT_REPORT_AGGREGATION)) {
+          globalTask.dependsOn("lintAggregated".appendCapitalized(defaultVariant))
+        }
       }
       taskFactory.configure(AndroidLintGlobalTask.LintFixCreationAction.name, AndroidLintGlobalTask::class.java) { globalFixTask ->
         globalFixTask.dependsOn("lintFix".appendCapitalized(defaultVariant))
@@ -262,13 +276,13 @@ class LintTaskManager(
 
     val lintTaskPath = getTaskPath("lint")
 
-    project.gradle.taskGraph.whenReady {
+    project.gradle.taskGraph.whenReady { taskGraph ->
       variantLintTaskToLintVitalTask.forEach { (taskPath, taskToDisable) ->
-        if (it.hasTask(taskPath)) {
+        if (taskGraph.hasTask(taskPath)) {
           taskToDisable.configure { it.enabled = false }
         }
       }
-      if (it.hasTask(lintTaskPath)) {
+      if (taskGraph.hasTask(lintTaskPath)) {
         variantLintTaskToLintVitalTask.forEach { (_, lintVitalTask) -> lintVitalTask.configure { it.enabled = false } }
       }
     }
@@ -352,7 +366,7 @@ class LintTaskManager(
 
       versionToName.forEach { (variantSdkLevel, names) ->
         globalTaskCreationConfig.services.issueReporter.reportError(
-          IssueReporter.Type.GENERIC,
+          IssueReporter.Type.LINT_TARGET_SDK_LESS_THAN_ANDROID_TARGET_SDK,
           String.format(
             Locale.US,
             "lint.targetSdk (%d) for non library is smaller than android.targetSdk (%d)" +

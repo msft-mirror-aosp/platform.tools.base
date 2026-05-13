@@ -32,7 +32,9 @@ import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.utils.fromDisallowChanges
 import com.android.build.gradle.tasks.TestSuiteTestTask
 import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_METADATA_FILE
+import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_METADATA_MODULE_KEY
 import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_METADATA_SUITE_KEY
+import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_METADATA_VARIANT_KEY
 import com.android.buildanalyzer.common.TaskCategory
 import java.io.File
 import java.io.IOException
@@ -97,8 +99,6 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
 
   @get:Classpath @get:Optional abstract val jacocoClasspath: ConfigurableFileCollection
 
-  @get:Internal abstract val projectName: Property<String>
-
   @get:Internal abstract val projectRoot: DirectoryProperty
 
   override fun doTaskAction() {
@@ -123,7 +123,7 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
         it.sourceFolders.setFrom(sourceFolders)
         it.dependentModuleCoverageData.setFrom(dependentModuleCoverageData)
         it.variantName.set(variantName)
-        it.projectName.set(projectName)
+        it.projectName.set(projectPath.get())
         it.projectRoot.set(projectRoot)
       }
   }
@@ -139,7 +139,6 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
     override fun configure(task: CodeCoverageCollectionTask) {
       super.configure(task)
 
-      task.projectName.set(creationConfig.services.projectInfo.path)
       task.projectRoot.set(task.project.rootDir)
       jacocoAntConfiguration?.let { task.jacocoClasspath.setFrom(it) }
 
@@ -255,9 +254,9 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
             injectMetadataInXmlReport(
               xmlFile,
               mapOf(
-                "moduleName" to parameters.projectName.get(),
-                "testSuiteName" to testSuiteName,
-                "testedVariantName" to parameters.variantName.get(),
+                TEST_SUITE_METADATA_MODULE_KEY to parameters.projectName.get(),
+                TEST_SUITE_METADATA_SUITE_KEY to testSuiteName,
+                TEST_SUITE_METADATA_VARIANT_KEY to parameters.variantName.get(),
               ),
               sourceFolders = parameters.sourceFolders.files.map { it.relativeTo(rootDir).path },
             )
@@ -267,21 +266,17 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
         val unitTestCoverageFile = parameters.unitTestCoverageFile.files.filter { it.exists() }
         generateXmlReport(unitTestCoverageFile, "UnitTest")
 
-        val connectedTestCoverageFile = parameters.connectedTestCoverageDirectory.asFileTree.files.filter(File::isFile)
+        val connectedTestCoverageFile =
+          parameters.connectedTestCoverageDirectory.asFileTree.files.filter { file ->
+            file.isFile && (file.extension == "ec" || file.extension == "exec")
+          }
         generateXmlReport(connectedTestCoverageFile, "AndroidTest")
 
         val testSuiteCoverageFiles = mutableListOf<File>()
         parameters.testSuiteCoverageData.files.forEach { directory ->
-          if (directory.exists()) {
-            val metadataFile = File(directory, TEST_SUITE_METADATA_FILE)
-            if (metadataFile.exists()) {
-              val metadata = TestSuiteTestTask.parseMetadata(metadataFile)
-              val testSuiteName = metadata[TEST_SUITE_METADATA_SUITE_KEY] ?: "unknown_suite"
-              val coverageFiles =
-                directory.listFiles { file -> file.extension == "ec" || file.extension == "exec" }?.toList() ?: emptyList()
-              generateXmlReport(coverageFiles, testSuiteName)
-              testSuiteCoverageFiles.addAll(coverageFiles)
-            }
+          getTestSuiteCoverageFiles(directory)?.let { (testSuiteName, coverageFiles) ->
+            generateXmlReport(coverageFiles, testSuiteName)
+            testSuiteCoverageFiles.addAll(coverageFiles)
           }
         }
 
@@ -308,6 +303,26 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
        */
       fun formatProjectName(projectName: String): String {
         return projectName.split(':').filter { it.isNotEmpty() }.joinToString("") { part -> part.replaceFirstChar { it.uppercase() } }
+      }
+
+      /**
+       * Get the test suite name and the list of coverage files for the given directory.
+       *
+       * @param directory The directory to look for coverage files.
+       * @return A pair of test suite name and a list of coverage files, or null if the directory does not exist or does not contain the
+       *   metadata file.
+       */
+      fun getTestSuiteCoverageFiles(directory: File): Pair<String, List<File>>? {
+        if (directory.exists()) {
+          val metadataFile = File(directory, TEST_SUITE_METADATA_FILE)
+          if (metadataFile.exists()) {
+            val metadata = TestSuiteTestTask.parseMetadata(metadataFile)
+            val testSuiteName = metadata[TEST_SUITE_METADATA_SUITE_KEY] ?: "unknown_suite"
+            val coverageFiles = directory.walkTopDown().filter { file -> file.extension == "ec" || file.extension == "exec" }.toList()
+            return Pair(testSuiteName, coverageFiles)
+          }
+        }
+        return null
       }
 
       /**
