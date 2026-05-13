@@ -53,11 +53,23 @@ class ClassesDataCache : Closeable {
   }
 
   private class JarCache(file: File, sourceType: SourceType) : ClassesDataSourceCache(sourceType) {
-    private val jarFile = JarFile(file)
+    /**
+     * On Windows, [JarFile] holds a rigid OS lock via memory-mapping. To prevent task failures when downstream tasks or `clean` attempt to
+     * modify the original file mid-build, we make a defensive copy of mutable project JARs to a temporary location and read from the copy.
+     */
+    private val tempFile: File? =
+      if (SdkConstants.CURRENT_PLATFORM == SdkConstants.PLATFORM_WINDOWS && sourceType == SourceType.PROJECT) {
+        Files.createTempFile("agp_cache_", ".jar").toFile().also { temp -> file.copyTo(temp, overwrite = true) }
+      } else {
+        null
+      }
+
+    private val jarFile = JarFile(tempFile ?: file)
 
     override fun close() {
       super.close()
       jarFile.close()
+      tempFile?.let { Files.deleteIfExists(it.toPath()) }
     }
 
     @Synchronized
