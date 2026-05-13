@@ -200,8 +200,7 @@ public final class ProjectOptions {
     }
 
     public AgpVersion getSimulatedAGPVersion() {
-        String simulatedVersionString =
-                getExplicitlySetStringOptions().get(StringOption.SIMULATE_AGP_VERSION_BEHAVIOR);
+        String simulatedVersionString = get(StringOption.SIMULATE_AGP_VERSION_BEHAVIOR);
         if (simulatedVersionString != null) {
             return AgpVersion.parse(simulatedVersionString);
         }
