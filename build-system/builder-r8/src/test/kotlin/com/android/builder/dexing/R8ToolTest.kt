@@ -186,8 +186,8 @@ class R8ToolTest {
     val proguardConfigurationOutput = mappingFileDir.resolve("configuration.txt")
     val mappingOutputFiles =
       ProguardOutputFiles(
-        mappingFileDir.resolve("keepradius.pb"),
-        mappingFileDir.resolve("keepradiusreport.html"),
+        mappingFileDir.resolve("configanalyzer.pb"),
+        mappingFileDir.resolve("configanalyzer.html"),
         mappingFileDir.resolve("mapping.txt"),
         mappingFileDir.resolve("mapping.prt"),
         mappingFileDir.resolve("seeds.txt"),
@@ -244,8 +244,8 @@ class R8ToolTest {
         proguardInputMapping,
         listOf(),
         ProguardOutputFiles(
-          tmp.root.toPath().resolve("keepradius.pb"),
-          tmp.root.toPath().resolve("keepradiusreport.html"),
+          tmp.root.toPath().resolve("configanalyzer.pb"),
+          tmp.root.toPath().resolve("configanalyzer.html"),
           tmp.root.toPath().resolve("mapping.txt"),
           tmp.root.toPath().resolve("mapping.prt"),
           tmp.root.toPath().resolve("seeds.txt"),
@@ -274,13 +274,13 @@ class R8ToolTest {
   }
 
   @Test
-  fun testKeepRadiusAndUsageAndSeeds() {
+  fun testr8ConfigurationAnalyzerAndUsageAndSeeds() {
     val classes = tmp.newFolder().toPath().resolve("classes.jar")
     TestInputsGenerator.dirWithEmptyClasses(classes, listOf("test/A", "test/B"))
     val output = tmp.newFolder().toPath()
 
-    val keepRadiusDataOutput = tmp.root.toPath().resolve("keepradius.pb")
-    val keepRadiusReportOutput = tmp.root.toPath().resolve("keepradiusreport.html")
+    val r8ConfigurationAnalyzerDataOutput = tmp.root.toPath().resolve("configanalyzer.pb")
+    val r8ConfigurationAnalyzerReportOutput = tmp.root.toPath().resolve("configanalyzer.html")
     val proguardSeedsOutput = tmp.root.toPath().resolve("seeds.txt")
     val proguardUsageOutput = tmp.root.toPath().resolve("usage.txt")
     val proguardConfigurationOutput = tmp.root.toPath().resolve("configuration.txt")
@@ -290,8 +290,8 @@ class R8ToolTest {
         null,
         listOf(),
         ProguardOutputFiles(
-          keepRadiusDataOutput,
-          keepRadiusReportOutput,
+          r8ConfigurationAnalyzerDataOutput,
+          r8ConfigurationAnalyzerReportOutput,
           tmp.root.toPath().resolve("mapping.txt"),
           tmp.root.toPath().resolve("mapping.prt"),
           proguardSeedsOutput,
@@ -303,8 +303,8 @@ class R8ToolTest {
 
     runR8Tool(inputClasses = listOf(classes), output = output, proguardConfig = proguardConfig)
 
-    assertThat(Files.exists(keepRadiusDataOutput)).isTrue()
-    assertThat(Files.exists(keepRadiusReportOutput)).isTrue()
+    assertThat(Files.exists(r8ConfigurationAnalyzerDataOutput)).isTrue()
+    assertThat(Files.exists(r8ConfigurationAnalyzerReportOutput)).isTrue()
     assertThat(Files.exists(proguardSeedsOutput)).isTrue()
     assertThat(Files.exists(proguardUsageOutput)).isTrue()
     assertThat(Files.exists(proguardConfigurationOutput)).isTrue()

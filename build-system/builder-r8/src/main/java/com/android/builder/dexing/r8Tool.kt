@@ -260,8 +260,8 @@ fun runR8(
   }
 
   val proguardOutputFiles = proguardConfig.proguardOutputFiles
-  proguardOutputFiles.keepRadiusDataOutput?.let { Files.deleteIfExists(it) }
-  proguardOutputFiles.keepRadiusReportOutput?.let { Files.deleteIfExists(it) }
+  proguardOutputFiles.r8ConfigurationAnalyzerDataOutput?.let { Files.deleteIfExists(it) }
+  proguardOutputFiles.r8ConfigurationAnalyzerReportOutput?.let { Files.deleteIfExists(it) }
   Files.deleteIfExists(proguardOutputFiles.proguardMapOutput)
   Files.deleteIfExists(proguardOutputFiles.proguardPartitionMapOutput)
   Files.deleteIfExists(proguardOutputFiles.proguardSeedsOutput)
@@ -270,10 +270,10 @@ fun runR8(
   Files.deleteIfExists(proguardOutputFiles.missingKeepRules)
 
   Files.createDirectories(proguardOutputFiles.proguardMapOutput.parent)
-  proguardOutputFiles.keepRadiusDataOutput?.let {
+  proguardOutputFiles.r8ConfigurationAnalyzerDataOutput?.let {
     r8CommandBuilder.setConfigurationAnalysisDataConsumer(ByteArrayConsumer.FileConsumer(it))
   }
-  proguardOutputFiles.keepRadiusReportOutput?.let {
+  proguardOutputFiles.r8ConfigurationAnalyzerReportOutput?.let {
     r8CommandBuilder.setConfigurationAnalysisHtmlReportConsumer(StringConsumer.FileConsumer(it))
   }
   r8CommandBuilder.setProguardMapOutputPath(proguardOutputFiles.proguardMapOutput)
@@ -651,8 +651,8 @@ data class ProguardConfig(
 )
 
 data class ProguardOutputFiles(
-  val keepRadiusDataOutput: Path?,
-  val keepRadiusReportOutput: Path?,
+  val r8ConfigurationAnalyzerDataOutput: Path?,
+  val r8ConfigurationAnalyzerReportOutput: Path?,
   val proguardMapOutput: Path,
   val proguardPartitionMapOutput: Path,
   val proguardSeedsOutput: Path,
