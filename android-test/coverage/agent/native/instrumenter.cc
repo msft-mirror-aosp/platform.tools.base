@@ -281,6 +281,11 @@ bool Instrumenter::ShouldInstrument(jobject loader, const char* name,
 
   std::string_view class_name(name);
 
+  // Explicitly skip our own runtime tracker to avoid infinite recursion.
+  if (class_name == "com/android/tools/coverage/CoverageTracker") {
+    return false;
+  }
+
   // Only instrument the classes which belong to the package names provided
   // by the build system.
   // TODO: Update this logic to support a delimited list of multiple packages.
@@ -335,6 +340,92 @@ bool Instrumenter::RegisterHooks() {
   }
 
   return true;
+}
+
+void Instrumenter::RetransformLoadedClasses(JNIEnv* jni) {
+  jint class_count = 0;
+  jclass* classes = nullptr;
+  jvmtiError error = jvmti_->GetLoadedClasses(&class_count, &classes);
+  if (error != JVMTI_ERROR_NONE) {
+    Log::E("Error: GetLoadedClasses failed. Error code: %d", error);
+    return;
+  }
+
+  std::vector<jclass> candidates;
+  for (jint i = 0; i < class_count; ++i) {
+    jclass klass = classes[i];
+
+    // 1. Performance Optimization: Quick Prefix Check on Signature (Fastest)
+    char* sig_ptr = nullptr;
+    error = jvmti_->GetClassSignature(klass, &sig_ptr, nullptr);
+    if (error != JVMTI_ERROR_NONE) {
+      jni->DeleteLocalRef(klass);
+      continue;
+    }
+
+    std::string_view sig(sig_ptr);
+    bool prefix_match = false;
+    std::string internal_name;
+
+    // JNI signature format: "Lcom/example/MyClass;"
+    if (sig.length() > 2 && sig.front() == 'L' && sig.back() == ';') {
+      // Fast check: does the signature (skipping 'L') start with our prefix?
+      std::string_view name_view = sig.substr(1, sig.length() - 2);
+      if (name_view.rfind(inclusion_prefix_, 0) == 0) {
+        prefix_match = true;
+        internal_name = std::string(name_view);
+      }
+    }
+
+    if (!prefix_match) {
+      jvmti_->Deallocate(reinterpret_cast<unsigned char*>(sig_ptr));
+      jni->DeleteLocalRef(klass);
+      continue;
+    }
+
+    // 2. Validation: Check Loader and Tags
+    jobject loader = nullptr;
+    jvmti_->GetClassLoader(klass, &loader);
+
+    bool should_instrument =
+        ShouldInstrument(loader, internal_name.c_str(), klass);
+
+    if (loader != nullptr) {
+      jni->DeleteLocalRef(loader);
+    }
+
+    // 3. Capability Check: Is it actually modifiable?
+    if (should_instrument) {
+      jboolean modifiable = JNI_FALSE;
+      jvmti_->IsModifiableClass(klass, &modifiable);
+      if (modifiable) {
+        // Use GlobalRef to avoid exceeding JNI local reference limits
+        // (typically 512).
+        candidates.push_back(
+            reinterpret_cast<jclass>(jni->NewGlobalRef(klass)));
+      }
+    }
+
+    // Clean up temporary references for this iteration
+    jvmti_->Deallocate(reinterpret_cast<unsigned char*>(sig_ptr));
+    jni->DeleteLocalRef(klass);
+  }
+
+  if (!candidates.empty()) {
+    Log::I("Retransforming %zu loaded classes...", candidates.size());
+    error = jvmti_->RetransformClasses(static_cast<jint>(candidates.size()),
+                                       candidates.data());
+    if (error != JVMTI_ERROR_NONE) {
+      Log::E("Error: RetransformClasses failed. Error code: %d", error);
+    }
+
+    // Clean up GlobalRefs
+    for (jclass global_klass : candidates) {
+      jni->DeleteGlobalRef(global_klass);
+    }
+  }
+
+  jvmti_->Deallocate(reinterpret_cast<unsigned char*>(classes));
 }
 
 }  // namespace coverage

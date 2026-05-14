@@ -40,6 +40,10 @@ class Instrumenter {
   // Registers the ClassFileLoadHook and enables the notification.
   bool RegisterHooks();
 
+  // Iterates through all currently loaded classes and triggers a
+  // retransformation for those that match the inclusion filter.
+  void RetransformLoadedClasses(JNIEnv* jni);
+
  private:
   // JVMTI callback for the ClassFileLoadHook event.
   static void JNICALL OnClassFileLoadHook(

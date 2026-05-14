@@ -113,6 +113,13 @@ extern "C" JNIEXPORT jint JNICALL Agent_OnAttach(JavaVM* vm, char* options,
     return JNI_OK;  // Return OK to prevent ART from re-attaching on failure.
   }
 
+  JNIEnv* jni_env = nullptr;
+  if (vm->GetEnv(reinterpret_cast<void**>(&jni_env), JNI_VERSION_1_6) !=
+      JNI_OK) {
+    coverage::Log::E("Error: Unable to get JNI environment.");
+    return JNI_OK;
+  }
+
   // Parse the package name and inclusion prefixes from the options string.
   // We expect AGP to pass: "package_name,prefix1:prefix2"
   // e.g., "com.example.app,com/example/app:com/example/lib"
@@ -158,6 +165,9 @@ extern "C" JNIEXPORT jint JNICALL Agent_OnAttach(JavaVM* vm, char* options,
       g_instrumenter = nullptr;
       return JNI_OK;
     }
+    // Now that hooks are registered, retransform all classes that were
+    // loaded before the agent was attached to ensure they are instrumented.
+    g_instrumenter->RetransformLoadedClasses(jni_env);
   }
 
   coverage::Log::I(
