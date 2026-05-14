@@ -401,9 +401,20 @@ abstract class KmpComponentImpl<DslInfoT : KmpComponentDslInfo>(
 
     artifacts
       .forScope(ScopedArtifacts.Scope.PROJECT)
-      .getScopedArtifactsContainer(ScopedArtifact.CLASSES)
+      .getScopedArtifactsContainer(ScopedArtifact.POST_COMPILATION_CLASSES)
       .initialScopedContent
       .from(androidKotlinCompilation.output.classesDirs)
+
+    // If Java is not enabled, the compilation context setup (which normally copies
+    // POST_COMPILATION_CLASSES to CLASSES) will not run. We need to manually
+    // initialize CLASSES with the compiled Kotlin classes.
+    if (!withJava) {
+      artifacts
+        .forScope(ScopedArtifacts.Scope.PROJECT)
+        .getScopedArtifactsContainer(ScopedArtifact.CLASSES)
+        .initialScopedContent
+        .from(artifacts.forScope(ScopedArtifacts.Scope.PROJECT).getFinalArtifacts(ScopedArtifact.POST_COMPILATION_CLASSES))
+    }
 
     androidKotlinCompilation.compileDependencyFiles =
       services.fileCollection(
