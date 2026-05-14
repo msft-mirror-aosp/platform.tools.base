@@ -793,10 +793,39 @@ thead tr { background: var(--bg-subtle); }
 th { position: sticky; top: 0; z-index: 10; background: var(--bg-subtle); }
 .sticky-name {
     position: sticky; left: 0; z-index: 5;
-    width: 400px; min-width: 400px; max-width: 400px;
+    width: var(--col-width-name, 400px);
+    min-width: var(--col-width-name, 400px);
+    max-width: var(--col-width-name, 400px);
     background-color: inherit;
     border-right: 1px solid var(--border-color);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.resizer {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 4px;
+    cursor: col-resize;
+    user-select: none;
+    height: 100%;
+    z-index: 100;
+}
+
+.resizer:hover, .resizing {
+    border-right: 2px solid var(--text-blue-600);
+}
+
+.col-path {
+    width: var(--col-width-path, 300px);
+    min-width: var(--col-width-path, 300px);
+    max-width: var(--col-width-path, 300px);
+}
+
+.col-module {
+    width: var(--col-width-module, 200px);
+    min-width: var(--col-width-module, 200px);
+    max-width: var(--col-width-module, 200px);
 }
 thead th.sticky-name { z-index: 20; background: var(--bg-subtle); }
 

@@ -53,6 +53,7 @@ import com.android.build.gradle.internal.test.report.TestReport
 import com.android.build.gradle.internal.testing.TestData
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.build.gradle.options.BooleanOption
+import com.android.build.gradle.options.IntegerOption
 import com.android.build.gradle.options.StringOption
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.core.BuilderConstants
@@ -157,6 +158,13 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
 
   @get:Nested abstract val managedDevices: ListProperty<ManagedVirtualDevice>
 
+  /**
+   * The number of shards to split the test execution into.
+   *
+   * This input is only relevant for Gradle Managed Devices (GMD) and is ignored for other test targets (e.g., connected devices).
+   */
+  @get:Input @get:Optional abstract val shardCount: Property<Int>
+
   @get:Internal abstract val avdService: Property<AvdComponentsBuildService>
 
   @Input
@@ -244,8 +252,15 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
     }
     val device = iterator.next()
     val avdName = computeAvdName(device)
-    avdService.get().runWithAvd(avdName) { onlineDeviceSerial ->
-      onlineDevices.add(DeviceTestTarget(onlineDeviceSerial, DslDeviceConfigProvider(device), device.name))
+    val desiredDeviceCount = if (shardCount.isPresent) shardCount.get() else 1
+    avdService.get().runWithAvds(avdName, desiredDeviceCount) { onlineDeviceSerials ->
+      if (desiredDeviceCount > 1) {
+        onlineDeviceSerials.forEachIndexed { index, serial ->
+          onlineDevices.add(DeviceTestTarget(serial, DslDeviceConfigProvider(device), "${device.name}_$index"))
+        }
+      } else {
+        onlineDevices.add(DeviceTestTarget(onlineDeviceSerials.first(), DslDeviceConfigProvider(device), device.name))
+      }
       provisionManagedDevicesAndExecute(iterator, onlineDevices, onDevicesReady)
     }
   }
@@ -619,8 +634,8 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       task.description = "Installs and runs the tests for $variantName on connected devices."
       task.outputs.upToDateWhen { false }
 
-      task.testSuiteName.setDisallowChanges("androidTest")
-      task.testSuiteTarget.setDisallowChanges("connected")
+      task.testSuiteName.setDisallowChanges(CONNECTED_TEST_TEST_SUITE_NAME)
+      task.testSuiteTarget.setDisallowChanges(CONNECTED_TEST_TEST_SUITE_TARGET_NAME)
       task.testedVariantName.setDisallowChanges(variantName)
       task.modulePath.setDisallowChanges(creationConfig.services.projectInfo.path)
 
@@ -810,6 +825,13 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
         .setInitialProvider(taskProvider, TestSuiteTestTask::coverageDir)
         .withName("connected")
         .on(InternalArtifactType.CODE_COVERAGE)
+
+      if (creationConfig is DeviceTestCreationConfig) {
+        creationConfig.mainVariant.artifacts
+          .use(taskProvider)
+          .wiredWith(TestSuiteTestTask::coverageDir)
+          .toAppendTo(InternalMultipleArtifactType.TEST_SUITE_CODE_COVERAGE)
+      }
     }
   }
 
@@ -873,6 +895,9 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
 
       task.managedDevices.add(device)
       task.managedDevices.disallowChanges()
+
+      val shardPoolSize = creationConfig.services.projectOptions.get(IntegerOption.MANAGED_DEVICE_SHARD_POOL_SIZE)
+      task.shardCount.setDisallowChanges(shardPoolSize ?: 1)
 
       task.executionMode.setDisallowChanges(globalConfig.androidTestOptions.execution)
 
@@ -1046,6 +1071,10 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
     const val TEST_SUITE_METADATA_VARIANT_KEY = "testedVariantName"
     const val TEST_SUITE_METADATA_SUITE_KEY = "testSuiteName"
     const val TEST_SUITE_METADATA_TARGET_KEY = "testTarget"
+
+    const val CONNECTED_TEST_TEST_SUITE_NAME = "androidTest"
+
+    const val CONNECTED_TEST_TEST_SUITE_TARGET_NAME = "connected"
 
     fun parseMetadata(metadataFile: File): Map<String, String> {
       val metadata =

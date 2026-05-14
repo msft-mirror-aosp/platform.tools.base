@@ -1,4 +1,4 @@
-load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -22,11 +22,31 @@ cc_binary(
 )
 
 cc_library(
+    name = "utf8_utils",
+    srcs = ["utf8_utils.cc"],
+    hdrs = ["utf8_utils.h"],
+)
+
+cc_library(
     name = "processor",
     srcs = ["processor.cc"],
     hdrs = ["processor.h"],
     deps = [
+        ":utf8_utils",
         "//tools/base/profiler/native/sherlock/proto:service_proto",
         "@perfetto//:trace_processor",
+    ],
+)
+
+cc_test(
+    name = "utf8_utils_test",
+    size = "small",
+    srcs = [
+        "utf8_utils.cc",
+        "utf8_utils.h",
+        "utf8_utils_test.cc",
+    ],
+    deps = [
+        "@googletest//:gtest_main",
     ],
 )

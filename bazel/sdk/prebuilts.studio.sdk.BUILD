@@ -381,10 +381,28 @@ alias(
 )
 
 alias(
+    name = "system_image_android-32_default",
+    actual = select({
+        "//tools/base/bazel/platforms:macos-arm64": "@system_image_android-32_default_arm64//:arm64-android-32-images",
+        "//conditions:default": "@system_image_android-32_default_x86_64//:x86_64-android-32-images",
+    }),
+    visibility = ["//visibility:public"],
+)
+
+alias(
     name = "system_image_android-33_default",
     actual = select({
         "//tools/base/bazel/platforms:macos-arm64": "@system_image_android-33_default_arm64//:arm64-android-33-images",
         "//conditions:default": "@system_image_android-33_default_x86_64//:x86_64-android-33-images",
+    }),
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "system_image_android-CANARY_r11_default",
+    actual = select({
+        "//tools/base/bazel/platforms:macos-arm64": "@system_image_android-CANARY_r11_default_arm64//:arm64-android-CANARY_r11-images",
+        "//conditions:default": "@system_image_android-CANARY_r11_default_x86_64//:x86_64-android-CANARY_r11-images",
     }),
     visibility = ["//visibility:public"],
 )
@@ -412,6 +430,15 @@ alias(
     actual = select({
         "//tools/base/bazel/platforms:macos-arm64": "@system_image_android-34_aosp_atd_arm64//:arm64-android-34AospAtd-images",
         "//conditions:default": "@system_image_android-34_aosp_atd_x86_64//:x86_64-android-34AospAtd-images",
+    }),
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "system_image_android-34_default",
+    actual = select({
+        "//tools/base/bazel/platforms:macos-arm64": "@system_image_android-34_default_arm64//:arm64-android-34-images",
+        "//conditions:default": "@system_image_android-34_default_x86_64//:x86_64-android-34-images",
     }),
     visibility = ["//visibility:public"],
 )

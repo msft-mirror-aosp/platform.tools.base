@@ -26,6 +26,7 @@ message Rect {
     int32 height = 4;
 }
 
+
 message ViewNode {
     // uniqueDrawingId of this view
     int64 id = 1;
@@ -41,13 +42,34 @@ message ViewNode {
     // The absolute bounds of the view in screen coordinates.
     Rect bounds = 5;
 
-    enum Visibility {
-        VISIBLE = 0;
-        INVISIBLE = 1;
-        GONE = 2;
+
+    // String table index for the resource ID of the view (e.g., @id/my_view)
+    int32 id_resource = 7;
+
+    // String table index for the layout resource that inflated this view (e.g., @layout/activity_main)
+    int32 layout_resource = 8;
+
+    // Represents a key-value pair for a view property.
+    message Attribute {
+        // TODO: mapping everything to strings has issues:
+        //  1. Everything is converted to string, even primitives like int
+        //  2. We loose the type of objects which can make things more difficult,
+        //     for example Dimension attributes are converted to strings without any
+        //     indication about the unit used (pixel, dp, sp)
+
+        // Index in the string table for the attribute name
+        int32 name = 1;
+        // Index in the string table for the attribute value
+        int32 value = 2;
+
+        // String table indices for style resolution stack (e.g., [@style/MyStyle, @style/ParentStyle])
+        repeated int32 style_chain = 3;
+        // String table index for layout file or style where the value was explicitly set (e.g., @layout/activity_main or @style/MyStyle)
+        int32 direct_source = 4;
     }
-    // TODO: Reconsider if visibility belongs here or with general attributes.
-    Visibility visibility = 6;
+
+    // The list of resolved attributes for this view.
+    repeated Attribute attributes = 9;
 }
 
 // Maps a string to a unique ID to optimize payload size.
@@ -57,7 +79,12 @@ message StringEntry {
 }
 
 // Command to dump the view hierarchy of all root views.
-message DumpViewsCommand {}
+message DumpViewsCommand {
+    bool include_attributes = 1;
+    // Whether to include the style resolution stack and direct source for attributes.
+    // Requires debug_view_attributes flag to be enabled on the device.
+    bool include_resolution_stack = 2;
+}
 
 message DumpViewsResponse {
     // The flattened list of root views.

@@ -233,6 +233,7 @@ class VersionChecks(private val client: LintClient, private val evaluator: JavaE
     fun isRequiresApiAnnotation(fqcn: String): Boolean {
       return REQUIRES_API_ANNOTATION.isEquals(fqcn) ||
         fqcn == "RequiresApi" || // With missing imports
+        fqcn == "RequiresExtension" ||
         REQUIRES_EXTENSION_ANNOTATION == fqcn ||
         fqcn.startsWith(AndroidPlatformAnnotations.PLATFORM_ANNOTATIONS_PREFIX) &&
           isRequiresApiAnnotation(AndroidPlatformAnnotations.toAndroidxAnnotation(fqcn))

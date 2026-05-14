@@ -29,6 +29,7 @@ def studio_mac(build_env: bazel.BuildEnv) -> None:
       '//tools/vendor/google/skia:skia_test_support',
       '//tools/base/profiler/native/trace_processor_daemon',
       '//tools/base/profiler/native/sherlock:sherlock_trace_processor',
+      '//tools/vendor/google/lume/dist:lightbuild',
   ]
   flags = build_flags(
       build_env,
@@ -51,6 +52,7 @@ def studio_mac(build_env: bazel.BuildEnv) -> None:
               ('tools/vendor/google/skia/skiaparser.zip', ''),
               ('tools/vendor/google/skia/skia_test_support.zip', ''),
               ('tools/vendor/google/android/android-cli.zip', ''),
+              ('tools/vendor/google/lume/dist/lightbuild.zip', ''),
           ],
       )
       studio.collect_logs(build_env, result.bes_path)
@@ -75,6 +77,7 @@ def studio_mac_arm(build_env: bazel.BuildEnv) -> None:
       '//tools/base/profiler/native/trace_processor_daemon',
       '//tools/base/profiler/native/sherlock:sherlock_trace_processor',
       '//tools/adt/idea/android/native/diagnostics/heap:libjni_object_tagger',
+      '//tools/vendor/google/lume/dist:lightbuild',
   ]
   flags = build_flags(build_env) + [
       '--discard_analysis_cache',
@@ -101,6 +104,7 @@ def studio_mac_arm(build_env: bazel.BuildEnv) -> None:
               ('tools/vendor/google/skia/skiaparser.zip', ''),
               ('tools/vendor/google/skia/skia_test_support.zip', ''),
               ('tools/vendor/google/android/android-cli.zip', ''),
+              ('tools/vendor/google/lume/dist/lightbuild.zip', ''),
           ],
       )
     if result.exit_code != bazel.EXITCODE_NO_TESTS_FOUND:

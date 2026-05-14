@@ -16,7 +16,7 @@
 plugins {
     id 'com.android.application' version '+' apply false
     id 'com.android.library' version '+' apply false
-    id 'dagger.hilt.android.plugin' version '2.40.1' apply false
+    id 'dagger.hilt.android.plugin' version '2.59' apply false
 }
 
 apply from: "../commonHeader.gradle"

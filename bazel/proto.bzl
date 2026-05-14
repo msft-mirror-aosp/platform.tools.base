@@ -423,6 +423,12 @@ def kotlin_proto_library(
         **kwargs):
     """Compiles protobuf into a kotlin library.
 
+    This has two output targets that can be consumed by other rules:
+    - :name is a kotlin_library that includes generated kotlin sources and depends on generated java sources
+    - :name.jar is a merged jar containing both the kotlin and java classes.
+    Probably you want the former if you're writing a kotlin_library or the like, and the latter if you're
+    importing into an iml_module.
+
     NOTE: Be cautious to use this rule. You may need to use android_java_proto_library instead.
     See the comments in android_java_proto_library rule before using it.
     Be cautious to override the versions as they may not be compatible with each other.
@@ -497,8 +503,7 @@ def kotlin_proto_library(
         proto_java_runtime_library = proto_java_runtime_library,
     )
 
-    kt_proto_name = "%s_partial_kt_internal" % name
-    kt_srcs_name = kt_proto_name + "_srcs"
+    kt_srcs_name = name + "_srcs"
     kt_srcs_label = ":" + kt_srcs_name
 
     # Generate kotlin wrapper source code on top of the java_proto_library.
@@ -528,16 +533,17 @@ def kotlin_proto_library(
     deps = list(deps) + (grpc_extra_deps if grpc_support else []) + proto_kotlin_runtime_library
 
     kotlin_library(
-        name = kt_proto_name,
+        name = name,
         srcs = [kt_srcs_label],
         deps = deps + [java_proto_label] + proto_java_runtime_library,
         visibility = visibility,
+        exports = [java_proto_label],
         **kwargs
     )
 
     merge_jars(
-        name = name,
+        name = name + "_merged",
         out = name + ".jar",
-        jars = [":lib%s.jar" % java_proto_name, ":lib%s.jar" % kt_proto_name],
+        jars = [":lib%s.jar" % java_proto_name, ":lib%s.jar" % name],
         visibility = visibility,
     )

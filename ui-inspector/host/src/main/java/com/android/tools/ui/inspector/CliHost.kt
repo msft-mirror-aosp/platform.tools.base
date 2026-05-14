@@ -46,6 +46,9 @@ class DumpUiCommand : Callable<Int> {
 
   @Option(names = ["--serial"], required = true, description = ["Device serial number"]) var serial: String = ""
   @Option(names = ["--package"], required = true, description = ["App package name"]) var packageName: String = ""
+  @Option(names = ["--include-attributes"], description = ["Include view attributes in the dump"]) var includeAttributes: Boolean = false
+  @Option(names = ["--include-resolution-stack"], description = ["Include attribute resolution stack in the dump"])
+  var includeResolutionStack: Boolean = false
 
   companion object {
     /** Factory for creating [AdbSession]. Can be overridden in tests. */
@@ -64,7 +67,7 @@ class DumpUiCommand : Callable<Int> {
 
         CommandSender(host = "localhost", port = port.toInt()).use { commandSender ->
           createViewInspector(commandSender, injectionManager)
-          viewInspectorDump(commandSender)
+          viewInspectorDump(commandSender, includeAttributes, includeResolutionStack)
         }
       }
       return EXIT_OK
@@ -95,9 +98,16 @@ private suspend fun createViewInspector(commandSender: CommandSender, injectionM
 }
 
 /** Sends a dump command to the view inspector and prints the view hierarchy. */
-private suspend fun viewInspectorDump(commandSender: CommandSender) {
+private suspend fun viewInspectorDump(commandSender: CommandSender, includeAttributes: Boolean, includeResolutionStack: Boolean) {
   val viewInspectorCommand =
-    ViewInspectorProtocol.Command.newBuilder().setDumpViewsCommand(ViewInspectorProtocol.DumpViewsCommand.getDefaultInstance()).build()
+    ViewInspectorProtocol.Command.newBuilder()
+      .setDumpViewsCommand(
+        ViewInspectorProtocol.DumpViewsCommand.newBuilder()
+          .setIncludeAttributes(includeAttributes || includeResolutionStack)
+          .setIncludeResolutionStack(includeResolutionStack)
+          .build()
+      )
+      .build()
 
   val responsePayload = commandSender.sendInspectorCommand(ProtocolConstants.VIEW_INSPECTOR_ID, viewInspectorCommand.toByteArray())
   val viewInspectorResponse = ViewInspectorProtocol.Response.parseFrom(responsePayload)
@@ -119,9 +129,27 @@ private fun printNode(node: ViewInspectorProtocol.ViewNode, stringTable: Map<Int
   val prefix = "  ".repeat(indent)
   val className = stringTable[node.className] ?: "Unknown"
   val bounds = node.bounds
-  System.out.println(
-    "${prefix}[$className] (${bounds.x}, ${bounds.y}, ${bounds.width}, ${bounds.height}) visibility=${node.visibility.name}"
-  )
+
+  val resourceStr = stringTable[node.idResource]?.let { " id=$it" } ?: ""
+  val layoutResourceStr = stringTable[node.layoutResource]?.let { " layout=$it" } ?: ""
+
+  System.out.println("${prefix}[$className]$resourceStr$layoutResourceStr (${bounds.x}, ${bounds.y}, ${bounds.width}, ${bounds.height})")
+
+  for (attr in node.attributesList) {
+    val name = stringTable[attr.name] ?: "unknown"
+    val value = if (attr.value == 0) "" else stringTable[attr.value] ?: "unknown"
+    System.out.println("$prefix  prop: $name=$value")
+
+    val sourceStr = stringTable[attr.directSource] ?: ""
+    if (sourceStr.isNotEmpty()) {
+      System.out.println("$prefix    Defined in: $sourceStr")
+    }
+
+    for (resId in attr.styleChainList) {
+      val resStr = stringTable[resId] ?: "unknown"
+      System.out.println("$prefix    Inherited from: $resStr")
+    }
+  }
 
   for (child in node.childrenList) {
     printNode(child, stringTable, indent + 1)

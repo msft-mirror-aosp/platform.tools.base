@@ -47,7 +47,8 @@ class ActivityManager {
                       const std::string &app_package_name,
                       int sampling_interval, bool dual_clock,
                       const std::string &trace_path, std::string *error_string,
-                      int64_t *error_code, bool is_startup_profiling = false);
+                      int64_t *error_code, int profiler_output_version,
+                      bool is_startup_profiling = false);
 
   // Stops ongoing profiling. If no profiling was ongoing, this function is a
   // no-op. If |need_result|, waits ART for |timeout_sec| Seconds for finishing

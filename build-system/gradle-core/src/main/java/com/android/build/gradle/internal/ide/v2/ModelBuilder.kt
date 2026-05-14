@@ -1093,7 +1093,7 @@ class ModelBuilder<ExtensionT : CommonExtension>(
             project.configurations.findByName(SdkConstants.GRADLE_ANDROID_TEST_UTIL_CONFIGURATION)?.files ?: listOf()
 
           DeviceProviderInstrumentTestTask.checkForNonApks(runtimeApks) { message ->
-            variantModel.syncIssueReporter.reportError(IssueReporter.Type.GENERIC, message)
+            variantModel.syncIssueReporter.reportError(IssueReporter.Type.NON_APK_RUNTIME_DEP, message)
           }
 
           val testOptionsDsl = extension.testOptions
@@ -1103,7 +1103,7 @@ class ModelBuilder<ExtensionT : CommonExtension>(
               ?: ""
                 .also {
                   variantModel.syncIssueReporter.reportError(
-                    IssueReporter.Type.GENERIC,
+                    IssueReporter.Type.CONNECTED_CHECK_TASK_NOT_FOUND,
                     "unable to find connectedCheck task name for ${component.name}",
                   )
                 }
@@ -1407,7 +1407,7 @@ class ModelBuilder<ExtensionT : CommonExtension>(
         }
       } catch (e: XMLStreamException) {
         variantModel.syncIssueReporter.reportError(
-          IssueReporter.Type.GENERIC,
+          IssueReporter.Type.MANIFEST_PARSE_FAILED,
           """
                         Failed to parse XML in ${manifest.path}
                         ${e.message}
@@ -1416,7 +1416,7 @@ class ModelBuilder<ExtensionT : CommonExtension>(
         )
       } catch (e: IOException) {
         variantModel.syncIssueReporter.reportError(
-          IssueReporter.Type.GENERIC,
+          IssueReporter.Type.MANIFEST_PARSE_FAILED,
           """
                         Failed to parse XML in ${manifest.path}
                         ${e.message}

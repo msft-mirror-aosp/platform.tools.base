@@ -20,20 +20,17 @@ import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
-import com.android.build.gradle.options.BooleanOption
 import java.io.File
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.junit.Rule
 import org.junit.Test
 
-class GradualR8KeepRulesSourceSetTest {
+class R8KeepRulesSourceSetTest {
 
   @get:Rule
   val rule =
     GradleRule.from {
-      gradleProperties { add(BooleanOption.R8_GRADUAL_API, true) }
       androidApplication {
-          applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
           android {
             defaultConfig.minSdk = 24
             buildTypes { named("release") { it.optimization { enable = true } } }

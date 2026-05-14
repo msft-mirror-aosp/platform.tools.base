@@ -169,7 +169,7 @@ abstract class AndroidComponentsExtensionImpl<DslExtensionT : Any, VariantBuilde
 
     if (variantApiOperations.sourceSetConfigurationsMap.put(lowercaseAffix, resolvableConfigurationNameMapper) != null) {
       dslServices.issueReporter.reportError(
-        IssueReporter.Type.GENERIC,
+        IssueReporter.Type.MULTIPLE_IDENTICAL_CALLS_TO_ANDROID_COMPONENTS_API,
         "Multiple identical calls to $callingFunctionName is not supported.",
       )
     }

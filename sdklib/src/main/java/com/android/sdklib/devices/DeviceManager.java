@@ -743,26 +743,6 @@ public class DeviceManager {
             }
         }
 
-        HashFunction md5 = Hashing.md5();
-        Hasher hasher = md5.newHasher();
-
-        ArrayList<String> keys = new ArrayList<>(props.keySet());
-        Collections.sort(keys);
-        for (String key : keys) {
-            if (key != null) {
-                hasher.putString(key, StandardCharsets.UTF_8);
-                String value = props.get(key);
-                hasher.putString(value == null ? "null" : value, StandardCharsets.UTF_8);
-            }
-        }
-        // store the hash method for potential future compatibility
-        String hash = "MD5:" + hasher.hash().toString();
-        props.put(ConfigKey.DEVICE_HASH_V2, hash);
-        props.remove(ConfigKey.DEVICE_HASH_V1);
-
-        props.put(ConfigKey.DEVICE_NAME, d.getId());
-        props.put(ConfigKey.DEVICE_MANUFACTURER, d.getManufacturer());
-
         // Special-case hacks to support specific device types.
 
         if (d.getId().equals("13.5in Freeform")) {
@@ -787,7 +767,7 @@ public class DeviceManager {
             props.put(
                     ConfigKey.RESIZABLE_CONFIG,
                     "phone-0-1080-2400-420, foldable-1-2208-1840-420, tablet-2-1920-1200-240,"
-                            + " desktop-3-1920-1080-160");
+                    + " desktop-3-1920-1080-160");
         }
         // TODO: Remove hard coded config when the runtime configuration is available (b/337978287,
         // b/337980217)
@@ -807,8 +787,29 @@ public class DeviceManager {
         if (isAiGlasses(d)) {
             props.put(ConfigKey.LCD_TRANSPARENT, "yes");
         } else if (isXrGlasses(d)) {
-            props.put(HardwareProperties.HW_DIMMING_LEVELS, "0.0,0.25,0.5,0.75,1.0");
+            props.put(HardwareProperties.HW_DIMMING_LEVELS, "0.00390625,0.25,0.5,0.75,0.99609375");
         }
+
+        HashFunction md5 = Hashing.md5();
+        Hasher hasher = md5.newHasher();
+
+        ArrayList<String> keys = new ArrayList<>(props.keySet());
+        Collections.sort(keys);
+        for (String key : keys) {
+            if (key != null) {
+                hasher.putString(key, StandardCharsets.UTF_8);
+                String value = props.get(key);
+                hasher.putString(value == null ? "null" : value, StandardCharsets.UTF_8);
+            }
+        }
+        // store the hash method for potential future compatibility
+        String hash = "MD5:" + hasher.hash().toString();
+        props.put(ConfigKey.DEVICE_HASH_V2, hash);
+        props.remove(ConfigKey.DEVICE_HASH_V1);
+
+        props.put(ConfigKey.DEVICE_NAME, d.getId());
+        props.put(ConfigKey.DEVICE_MANUFACTURER, d.getManufacturer());
+
         return props;
     }
 

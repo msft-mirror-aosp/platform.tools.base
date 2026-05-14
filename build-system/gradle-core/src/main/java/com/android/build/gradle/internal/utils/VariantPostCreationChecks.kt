@@ -67,7 +67,7 @@ fun restrictRenderScriptOnRiscv(
   val riscvAbis = validAbiList.filter { it.contains(SdkConstants.ABI_RISCV64, true) }
   if (riscvAbis.isNotEmpty()) {
     dslServices.issueReporter.reportError(
-      IssueReporter.Type.GENERIC,
+      IssueReporter.Type.RENDERSCRIPT_NOT_SUPPORTED_ON_RISCV,
       "Project ${dslServices.projectInfo.name} uses RenderScript. Cannot build for ABIs: $riscvAbis because RenderScript is not supported on Riscv.",
     )
   }

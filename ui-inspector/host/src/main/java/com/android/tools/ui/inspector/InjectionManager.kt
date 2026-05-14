@@ -99,14 +99,21 @@ class InjectionManager(
    * @return The forwarded TCP port number on the host. Connect to this port to communicate with the agent.
    */
   suspend fun injectAndAttach(): String = coroutineScope {
-    val deviceAbi = getDeviceAbi(deviceSelector)
+    // Enable debug view attributes before attaching.
+    // This is needed for the platform to expose attribute resolution traces.
+    // We don't clean this up because changing this flag causes the activity to restart. We do it once so the activity doesn't need to
+    // restart each time.
+    val flagSet = async { adbSession.deviceServices.shellAsText(deviceSelector, "settings put global debug_view_attributes 1") }
+
+    val abiDeferred = async { getDeviceAbi(deviceSelector) }
+    val appDataDirDeferred = async { queryAppDataDir(deviceSelector, packageName) }
+    val pidDeferred = async { getPid(deviceSelector, packageName) }
+
+    val deviceAbi = abiDeferred.await()
     val agentLocalPath = getAgentLocalPath(deviceAbi)
     val serviceJarLocalPath = getServiceJarLocalPath()
     val payloadJarLocalPath = getPayloadJarLocalPath()
 
-    appDataDir = queryAppDataDir(deviceSelector, packageName)
-
-    val pidDeferred = async { getPid(deviceSelector, packageName) }
     val agentPush = async { pushFileToDevice(deviceSelector, agentLocalPath, DEVICE_TMP_AGENT_PATH) }
     val jarPush = async { pushFileToDevice(deviceSelector, serviceJarLocalPath, DEVICE_TMP_SERVICE_JAR_PATH) }
     val payloadPush = async { pushFileToDevice(deviceSelector, payloadJarLocalPath, DEVICE_TMP_PAYLOAD_JAR_PATH) }
@@ -114,6 +121,8 @@ class InjectionManager(
     val agentRemoteTmpPath = agentPush.await()
     val serviceJarRemoteTmpPath = jarPush.await()
     val payloadRemoteTmpPath = payloadPush.await()
+    appDataDir = appDataDirDeferred.await()
+    flagSet.await()
 
     copyAndSetupFiles(deviceSelector, packageName, agentRemoteTmpPath, serviceJarRemoteTmpPath, payloadRemoteTmpPath)
 

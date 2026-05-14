@@ -122,6 +122,7 @@ class LintReportBuilderTest {
     `when`(location1.secondary).thenReturn(location2)
     `when`(location1.file).thenReturn(File("/path/to/project/file1.java"))
     `when`(location2.file).thenReturn(File("/path/to/project/file2.java"))
+    `when`(location2.message).thenReturn("Secondary message")
 
     `when`(incident.location).thenReturn(location1)
     `when`(incident.file).thenReturn(File("/path/to/project/file1.java"))
@@ -132,6 +133,7 @@ class LintReportBuilderTest {
     with(lintIssue.secondaryLocations) {
       assertEquals(1, size)
       assertEquals("/path/to/project/file2.java", this[0].file)
+      assertEquals("Secondary message", this[0].message)
     }
   }
 
@@ -191,7 +193,7 @@ class LintReportBuilderTest {
 
     with(lintIssue) {
       assertEquals("default", packageName)
-      assertEquals("build", className)
+      assertEquals("build.gradle", fileName)
     }
   }
 

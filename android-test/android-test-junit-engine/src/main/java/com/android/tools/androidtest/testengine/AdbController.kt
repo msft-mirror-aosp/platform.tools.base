@@ -32,6 +32,8 @@ class AdbController(private val adb: File, private val processBuilder: (command:
   /** Executes an external command and captures its output. */
   fun runCommand(command: List<String>, timeout: Duration? = null): CommandResult {
     val process = processBuilder(command).start()
+    // Close stdin immediately to prevent child processes from hanging on stdin reads.
+    process.outputStream.close()
 
     var stdout = ""
     var stderr = ""
@@ -83,6 +85,8 @@ class AdbController(private val adb: File, private val processBuilder: (command:
   ): Int {
     val command = listOf(adb.absolutePath, "-s", deviceSerial, "shell") + args
     val process = processBuilder(command).start()
+    // Close stdin immediately to prevent child processes from hanging on stdin reads.
+    process.outputStream.close()
 
     val errorLines = java.util.Collections.synchronizedList(mutableListOf<String>())
     val stderrThread =
@@ -114,6 +118,53 @@ class AdbController(private val adb: File, private val processBuilder: (command:
       val errors = synchronized(errorLines) { errorLines.joinToString("\n") }
       java.util.logging.Logger.getLogger(AdbController::class.java.name)
         .warning("adb shell ${args.joinToString(" ")} failed with exit code ${process.exitValue()}. Error: $errors")
+    }
+
+    return process.exitValue()
+  }
+
+  /** Constructs and runs an `adb exec-out` command and pipes its stdout to the given [outputStream]. */
+  fun runAdbExecOutCommandToOutputStream(
+    deviceSerial: String,
+    args: List<String>,
+    outputStream: java.io.OutputStream,
+    timeout: Duration? = null,
+  ): Int {
+    val command = listOf(adb.absolutePath, "-s", deviceSerial, "exec-out") + args
+    val process = processBuilder(command).start()
+    // Close stdin immediately to prevent child processes from hanging on stdin reads.
+    process.outputStream.close()
+
+    val errorLines = java.util.Collections.synchronizedList(mutableListOf<String>())
+    val stderrThread =
+      Thread({ process.errorStream.bufferedReader().use { it.lines().forEach { line -> errorLines.add(line) } } }, "adb-stderr-reader")
+    val stdoutThread = Thread({ process.inputStream.use { it.transferTo(outputStream) } }, "adb-stdout-reader")
+
+    stderrThread.start()
+    stdoutThread.start()
+
+    val finished =
+      if (timeout == null) {
+        process.waitFor()
+        true
+      } else {
+        process.waitFor(timeout.toMillis(), TimeUnit.MILLISECONDS)
+      }
+
+    if (!finished) {
+      process.destroyForcibly()
+      process.waitFor()
+    }
+
+    // Wait for the threads to finish reading the remaining output.
+    // If the process is dead, this should be very fast.
+    stderrThread.join(1000)
+    stdoutThread.join(1000)
+
+    if (process.exitValue() != 0 || errorLines.isNotEmpty()) {
+      val errors = synchronized(errorLines) { errorLines.joinToString("\n") }
+      java.util.logging.Logger.getLogger(AdbController::class.java.name)
+        .warning("adb exec-out ${args.joinToString(" ")} failed with exit code ${process.exitValue()}. Error: $errors")
     }
 
     return process.exitValue()

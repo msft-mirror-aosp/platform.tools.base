@@ -114,7 +114,7 @@ class OldVariantApiLegacySupportImpl(
       get() {
         if (!services.projectOptions.get(BooleanOption.ENABLE_LEGACY_API)) {
           services.issueReporter.reportError(
-            IssueReporter.Type.GENERIC,
+            IssueReporter.Type.ACCESS_TO_DEPRECATED_LEGACY_API_REQUIRES_COMPATIBILITY_MODE,
             RuntimeException(
               """
             Access to deprecated legacy com.android.build.gradle.api.BaseVariant.getJavaCompileOptions requires compatibility mode for Property values in new com.android.build.api.variant.AnnotationProcessorOptions

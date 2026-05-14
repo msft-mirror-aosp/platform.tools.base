@@ -542,14 +542,14 @@ abstract class BasePlugin<
     apply plugin: 'me.tatarka.retrolambda'
 To learn more, go to https://d.android.com/r/tools/java-8-support-message.html
 """
-      dslServices.issueReporter.reportWarning(Type.GENERIC, warningMsg)
+      dslServices.issueReporter.reportWarning(Type.RETROLAMBDA_USED, warningMsg)
     }
     project.repositories.forEach(
       Consumer { artifactRepository: ArtifactRepository ->
         if (artifactRepository is FlatDirectoryArtifactRepository) {
           val warningMsg =
             String.format("Using %s should be avoided because it doesn't support any meta-data formats.", artifactRepository.getName())
-          dslServices.issueReporter.reportWarning(Type.GENERIC, warningMsg)
+          dslServices.issueReporter.reportWarning(Type.FLAT_DIR_REPOSITORY_USED, warningMsg)
         }
       }
     )
@@ -698,7 +698,7 @@ To learn more, go to https://d.android.com/r/tools/java-8-support-message.html
     // The Play Store doesn't allow Pure splits
     if (generatePureSplits) {
       dslServices.issueReporter.reportWarning(
-        Type.GENERIC,
+        Type.PURE_SPLITS_NOT_SUPPORTED,
         "Configuration APKs are supported by the Google Play Store only when publishing Android Instant Apps. To instead generate stand-alone APKs for different device configurations, set generatePureSplits=false. For more information, go to " +
           configApkUrl,
       )

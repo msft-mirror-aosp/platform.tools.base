@@ -24,14 +24,14 @@ val LINTSCRIPT_JS =
 const LintReportApp = {
     state: {
         viewMode: 'flat', // 'flat' or 'tree'
-        currentView: 'issues', // 'packages', 'issues'
+        currentView: 'modules', // 'modules', 'packages', 'issues'
         density: 'comfy',
         searchQuery: '',
         expandedIssues: new Set(),
         expandedChecks: new Set(),
-        collapsedNodes: new Set(),
-        sort: { by: 'severity', order: 'desc' },
-        filters: { severities: [], categories: [], modules: [] },
+        expandedNodes: new Set(),
+        sort: { by: 'name', order: 'asc' },
+        filters: { severities: [], categories: [], modules: [], packages: [], classes: [] },
         isSeverityAdded: false,
         isCategoryAdded: false,
         isModuleAdded: false
@@ -113,6 +113,7 @@ const LintReportApp = {
             groupByBtn: document.getElementById('group-by-btn'),
             groupByText: document.getElementById('group-by-text'),
             groupByDropdown: document.getElementById('group-by-dropdown'),
+            breadcrumbs: document.getElementById('breadcrumbs'),
         };
     },
 
@@ -139,8 +140,8 @@ const LintReportApp = {
             this.render();
         });
 
-        const allModules = [...new Set(issues.map(i => i.module))].sort();
-        this.buildActionDropdown(this.elements.moduleFilterList, allModules.map(m => ({name: m || 'Unknown', value: m})), this.state.filters.modules, () => {
+        const allModules = [...new Set(issues.map(i => i.module || 'Unknown'))].sort();
+        this.buildActionDropdown(this.elements.moduleFilterList, allModules.map(m => ({name: m, value: m})), this.state.filters.modules, () => {
             this.updateFilterButtons();
             this.render();
         });
@@ -160,6 +161,7 @@ const LintReportApp = {
     },
 
     bindEvents() {
+        this.setupViewSegments(this.elements, this.state);
         this.setupDensitySegments(this.elements, this.state, [
             this.elements.mainTable
         ]);
@@ -210,6 +212,7 @@ const LintReportApp = {
                     this.state.isModuleAdded = true;
                 }
                 this.elements.addFilterDropdown.classList.add('hidden');
+                this.populateFilters();
                 this.updateFilterButtons();
                 this.render();
             });
@@ -219,7 +222,7 @@ const LintReportApp = {
             this.elements.removeSeverityFilter.addEventListener('click', (e) => {
                 e.stopPropagation();
                 this.state.isSeverityAdded = false;
-                this.state.filters.severities = [];
+                this.state.filters.severities.length = 0;
                 this.populateFilters();
                 this.updateFilterButtons();
                 this.render();
@@ -230,7 +233,7 @@ const LintReportApp = {
             this.elements.removeCategoryFilter.addEventListener('click', (e) => {
                 e.stopPropagation();
                 this.state.isCategoryAdded = false;
-                this.state.filters.categories = [];
+                this.state.filters.categories.length = 0;
                 this.populateFilters();
                 this.updateFilterButtons();
                 this.render();
@@ -241,7 +244,7 @@ const LintReportApp = {
             this.elements.removeModuleFilter.addEventListener('click', (e) => {
                 e.stopPropagation();
                 this.state.isModuleAdded = false;
-                this.state.filters.modules = [];
+                this.state.filters.modules.length = 0;
                 this.populateFilters();
                 this.updateFilterButtons();
                 this.render();
@@ -352,16 +355,137 @@ const LintReportApp = {
             issues = issues.filter(i => this.matchesSearch(i, this.state.searchQuery));
         }
         this.renderStats();
-        this.renderContent(issues);
+        this.renderBreadcrumbs();
+        this.updateSegmentsUI();
+
+        if (this.state.viewMode === 'tree') {
+            this.renderTreeView(issues);
+        } else {
+            this.renderContent(issues);
+        }
+
         this.renderAdditionalChecks();
         this.renderDisabledChecks();
+    },
+
+    updateSegmentsUI() {
+        if (this.elements.viewSegments) {
+            this.elements.viewSegments.querySelectorAll('.segment-btn').forEach(b => {
+                b.classList.toggle('active', b.dataset.value === this.state.viewMode);
+            });
+        }
+        if (this.elements.densitySegments) {
+            this.elements.densitySegments.querySelectorAll('.segment-btn').forEach(b => {
+                b.classList.toggle('active', b.dataset.value === this.state.density);
+            });
+        }
+    },
+
+    renderBreadcrumbs() {
+        if (!this.elements.breadcrumbs) return;
+        if (this.state.viewMode === 'tree') {
+            this.elements.breadcrumbs.innerHTML = '';
+            return;
+        }
+
+        const levels = [];
+        levels.push({ name: 'All Issues', action: () => {
+            this.state.currentView = 'issues';
+            this.state.filters.modules.length = 0;
+            this.state.filters.packages.length = 0;
+            this.state.filters.classes.length = 0;
+            this.state.isModuleAdded = false;
+            this.state.searchQuery = '';
+            if (this.elements.searchInput) this.elements.searchInput.value = '';
+            this.populateFilters();
+        }});
+
+        if (this.state.filters.modules.length === 1) {
+            const modName = this.state.filters.modules[0] || "Unknown";
+            levels.push({ name: modName, action: () => {
+                this.state.currentView = 'packages';
+                this.state.filters.packages.length = 0;
+                this.state.filters.classes.length = 0;
+                this.state.searchQuery = '';
+                if (this.elements.searchInput) this.elements.searchInput.value = '';
+            }});
+        } else if (this.state.filters.modules.length > 1) {
+            levels.push({ name: `${'$'}{this.state.filters.modules.length} Modules`, action: () => {
+                this.state.currentView = 'issues';
+                this.state.filters.packages.length = 0;
+                this.state.filters.classes.length = 0;
+            }});
+        }
+
+        if (this.state.filters.packages.length === 1) {
+            const pkgName = this.state.filters.packages[0];
+            levels.push({ name: pkgName, action: () => {
+                this.state.currentView = 'classes';
+                this.state.filters.classes.length = 0;
+                this.state.searchQuery = '';
+                if (this.elements.searchInput) this.elements.searchInput.value = '';
+            }});
+        } else if (this.state.filters.packages.length > 1) {
+            levels.push({ name: `${'$'}{this.state.filters.packages.length} Packages`, action: () => {
+                this.state.currentView = 'issues';
+                this.state.filters.classes.length = 0;
+            }});
+        }
+
+        if (this.state.filters.classes.length === 1) {
+            const clsName = this.state.filters.classes[0];
+            levels.push({ name: clsName, action: () => {
+                this.state.currentView = 'issues';
+                this.state.searchQuery = '';
+                if (this.elements.searchInput) this.elements.searchInput.value = '';
+            }});
+        } else if (this.state.filters.classes.length > 1) {
+            levels.push({ name: `${'$'}{this.state.filters.classes.length} Classes`, action: () => {
+                this.state.currentView = 'issues';
+            }});
+        }
+
+        if (this.state.currentView !== 'issues') {
+            const viewLabels = { 'modules': 'Modules', 'packages': 'Packages', 'classes': 'Classes' };
+            const currentLevelName = viewLabels[this.state.currentView];
+            if (currentLevelName) {
+                 levels.push({ name: currentLevelName, isLast: true });
+            }
+        }
+
+        if (this.state.searchQuery) {
+            levels.push({ name: `Search: ${'$'}{this.state.searchQuery}`, isLast: true });
+        }
+
+        // Render levels
+        let html = '';
+        levels.forEach((level, index) => {
+            const isLast = index === levels.length - 1 || level.isLast;
+            if (isLast) {
+                html += `<span class="breadcrumb-last">${'$'}{this.escapeHTML(level.name)}</span>`;
+            } else {
+                html += `<span class="breadcrumb-item" data-index="${'$'}{index}">${'$'}{this.escapeHTML(level.name)}</span>`;
+                html += `<span class="breadcrumb-separator"> / </span>`;
+            }
+        });
+
+        this.elements.breadcrumbs.innerHTML = html;
+
+        this.elements.breadcrumbs.querySelectorAll('.breadcrumb-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const idx = parseInt(item.dataset.index);
+                levels[idx].action();
+                this.updateFilterButtons();
+                this.render();
+            });
+        });
     },
 
     updateFilterButtons() {
         const issues = this.lintReport.issues || [];
         const allSeverities = [...new Set(issues.map(i => i.severityDescription))];
         const allCategories = [...new Set(issues.map(i => i.category))];
-        const allModules = [...new Set(issues.map(i => i.module))];
+        const allModules = [...new Set(issues.map(i => i.module || 'Unknown'))];
 
         if (this.elements.sevChipContainer) {
             this.elements.sevChipContainer.classList.toggle('hidden', !this.state.isSeverityAdded);
@@ -411,7 +535,16 @@ const LintReportApp = {
                 if (!this.state.filters.categories.includes(issue.category)) return false;
             }
             if (this.state.filters.modules.length > 0) {
-                if (!this.state.filters.modules.includes(issue.module)) return false;
+                const mod = issue.module || "Unknown";
+                if (!this.state.filters.modules.includes(mod)) return false;
+            }
+            if (this.state.filters.packages.length > 0) {
+                const pkg = issue.packageName || "default";
+                if (!this.state.filters.packages.includes(pkg)) return false;
+            }
+            if (this.state.filters.classes.length > 0) {
+                const cls = issue.fileName || "Unknown";
+                if (!this.state.filters.classes.includes(cls)) return false;
             }
             return true;
         });
@@ -426,11 +559,138 @@ const LintReportApp = {
     },
 
     renderContent(issues) {
-        this.renderFlatIssues(issues);
+        if (this.elements.groupByBtn) {
+            this.elements.groupByBtn.parentElement.style.display = this.state.viewMode === 'flat' ? 'block' : 'none';
+        }
+
+        if (this.state.currentView === 'issues') {
+            this.renderFlatIssues(issues);
+        } else {
+            this.renderGroupedView(issues, this.state.currentView);
+        }
+
         if (this.elements.groupByText) {
             const text = this.state.currentView;
             this.elements.groupByText.textContent = text.charAt(0).toUpperCase() + text.slice(1);
         }
+    },
+
+    renderTreeView(issues) {
+        const root = this.getHierarchicalData(issues);
+        this.elements.tableHeaders.innerHTML = `<tr>
+            <th class="cursor-pointer" data-sort="name">Element</th>
+            <th class="cursor-pointer" data-sort="total">Total</th>
+            <th class="cursor-pointer" data-sort="errors">Errors</th>
+            <th class="cursor-pointer" data-sort="warnings">Warnings</th>
+            <th class="cursor-pointer" data-sort="info">Info</th>
+            <th class="cursor-pointer" data-sort="hints">Hints</th>
+        </tr>`;
+
+        let rowsHtml = [];
+        const isSearching = !!this.state.searchQuery;
+
+        const renderNode = (node, level, parentId = '') => {
+            const id = parentId ? `${'$'}{parentId}/${'$'}{node.name}` : node.name;
+            const hasChildren = (node.children && Object.keys(node.children).length > 0);
+            const isOpen = isSearching || this.state.expandedNodes.has(id);
+            const chevron = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="collapsible-arrow w-4 h-4 text-gray-600 ${'$'}{!hasChildren ? 'invisible' : ''} ${'$'}{isOpen ? 'open' : ''}"><path d="m9 18 6-6-6-6"></path></svg>`;
+
+            const plClass = `pl-level-${'$'}{Math.min(level, 8)}`;
+            const isVisible = !parentId || parentId.split('/').every((p, i, arr) => {
+                const partialId = arr.slice(0, i + 1).join('/');
+                return this.state.expandedNodes.has(partialId);
+            });
+
+            rowsHtml.push(`
+                <tr class="issue-row ${'$'}{!isVisible ? 'hidden' : ''}" data-id="${'$'}{this.escapeHTML(id)}" data-parent-id="${'$'}{this.escapeHTML(parentId)}" data-type="${'$'}{node.type || 'root'}">
+                    <td class="${'$'}{plClass}"><div class="flex items-center gap-2">${'$'}{chevron}<span class="font-medium">${'$'}{this.escapeHTML(node.name)}</span></div></td>
+                    <td>${'$'}{node.total}</td>
+                    <td class="${'$'}{node.errors > 0 ? 'text-red-600 font-bold' : 'text-gray-400'}">${'$'}{node.errors}</td>
+                    <td class="${'$'}{node.warnings > 0 ? 'text-yellow-600 font-bold' : 'text-gray-400'}">${'$'}{node.warnings}</td>
+                    <td class="${'$'}{node.info > 0 ? 'text-blue-600 font-bold' : 'text-gray-400'}">${'$'}{node.info}</td>
+                    <td class="${'$'}{node.hints > 0 ? 'text-green-600 font-bold' : 'text-gray-400'}">${'$'}{node.hints}</td>
+                </tr>
+            `);
+
+            if (node.children) {
+                Object.values(node.children).sort((a,b) => a.name.localeCompare(b.name)).forEach(child => renderNode(child, level + 1, id));
+            }
+        };
+
+        Object.values(root.children).sort((a,b) => a.name.localeCompare(b.name)).forEach(mod => renderNode(mod, 0));
+        this.elements.lintData.innerHTML = rowsHtml.join('');
+
+        this.elements.lintData.querySelectorAll('.issue-row').forEach(row => {
+            row.addEventListener('click', (e) => {
+                const id = row.dataset.id;
+                const type = row.dataset.type;
+
+                const arrow = row.querySelector('.collapsible-arrow:not(.invisible)');
+                if (arrow) {
+                    const isOpen = arrow.classList.contains('open');
+                    if (isOpen) this.state.expandedNodes.delete(id);
+                    else this.state.expandedNodes.add(id);
+                    this.render();
+                } else {
+                    // Clicking a leaf: show issues for it
+                    const parts = id.split('/');
+                    this.state.viewMode = 'flat';
+                    this.state.currentView = 'issues';
+
+                    if (parts.length >= 1) {
+                        this.state.filters.modules.length = 0;
+                        this.state.filters.modules.push(parts[0]);
+                        this.state.isModuleAdded = true;
+                    }
+                    if (parts.length >= 2) {
+                        this.state.filters.packages.length = 0;
+                        this.state.filters.packages.push(parts[1]);
+                    }
+                    if (parts.length >= 3) {
+                        this.state.filters.classes.length = 0;
+                        this.state.filters.classes.push(parts[2]);
+                    }
+
+                    this.populateFilters();
+                    this.updateFilterButtons();
+                    this.render();
+                }
+            });
+        });
+    },
+
+    getHierarchicalData(issues) {
+        const root = { name: "Project", children: {}, total: 0, errors: 0, warnings: 0, info: 0, hints: 0 };
+        issues.forEach(issue => {
+            const moduleName = issue.module || "Unknown";
+            const pkgName = issue.packageName || "default";
+            const className = issue.fileName || "Unknown";
+
+            if (!root.children[moduleName]) {
+                root.children[moduleName] = { name: moduleName, type: 'module', children: {}, total: 0, errors: 0, warnings: 0, info: 0, hints: 0 };
+            }
+            const module = root.children[moduleName];
+
+            if (!module.children[pkgName]) {
+                module.children[pkgName] = { name: pkgName, type: 'package', children: {}, total: 0, errors: 0, warnings: 0, info: 0, hints: 0 };
+            }
+            const pkg = module.children[pkgName];
+
+            if (!pkg.children[className]) {
+                pkg.children[className] = { name: className, type: 'class', total: 0, errors: 0, warnings: 0, info: 0, hints: 0 };
+            }
+            const cls = pkg.children[className];
+
+            [root, module, pkg, cls].forEach(node => {
+                node.total++;
+                const sev = issue.severityDescription;
+                if (sev === 'Fatal' || sev === 'Error') node.errors++;
+                else if (sev === 'Warning') node.warnings++;
+                else if (sev === 'Information' || sev === 'Informational' || sev === 'Info') node.info++;
+                else if (sev === 'Hint') node.hints++;
+            });
+        });
+        return root;
     },
 
     renderFlatIssues(issues) {
@@ -445,6 +705,107 @@ const LintReportApp = {
             <th>Location</th>
         </tr>`;
         this.renderIssueRows(issues, this.elements.lintData);
+    },
+
+    getGroupedData(issues, groupByKey) {
+        const groups = {};
+        issues.forEach(issue => {
+            let key = "Unknown";
+            let displayName = null;
+            if (groupByKey === 'modules') key = issue.module || "Unknown";
+            else if (groupByKey === 'packages') key = issue.packageName || "default";
+            else if (groupByKey === 'classes') {
+                key = issue.fileName || "Unknown";
+                if (key !== "Unknown" && key.includes('.')) {
+                    displayName = key.substring(0, key.lastIndexOf('.'));
+                }
+            }
+
+            if (!groups[key]) {
+                groups[key] = { name: key, displayName: displayName || key, total: 0, errors: 0, warnings: 0, info: 0, hints: 0, issues: [] };
+            }
+            groups[key].total++;
+            const sev = issue.severityDescription;
+            if (sev === 'Fatal' || sev === 'Error') groups[key].errors++;
+            else if (sev === 'Warning') groups[key].warnings++;
+            else if (sev === 'Information' || sev === 'Informational' || sev === 'Info') groups[key].info++;
+            else if (sev === 'Hint') groups[key].hints++;
+            groups[key].issues.push(issue);
+        });
+        return Object.values(groups);
+    },
+
+    renderGroupedView(issues, groupByKey) {
+        const grouped = this.getGroupedData(issues, groupByKey);
+        const sorted = this.getSortedGroupedData(grouped);
+        const typeLabels = { 'modules': 'Module', 'packages': 'Package', 'classes': 'Class' };
+        const capitalizedType = typeLabels[groupByKey] || 'Item';
+
+        this.elements.tableHeaders.innerHTML = `<tr>
+            <th class="cursor-pointer" data-sort="name">Element</th>
+            <th class="cursor-pointer" data-sort="total">Total</th>
+            <th class="cursor-pointer" data-sort="errors">Errors</th>
+            <th class="cursor-pointer" data-sort="warnings">Warnings</th>
+            <th class="cursor-pointer" data-sort="info">Info</th>
+            <th class="cursor-pointer" data-sort="hints">Hints</th>
+        </tr>`;
+
+        let rowsHtml = sorted.map(group => `
+            <tr class="issue-row" data-group-type="${'$'}{groupByKey}" data-group-name="${'$'}{this.escapeHTML(group.name)}">
+                <td class="font-medium">${'$'}{this.escapeHTML(group.displayName)}</td>
+                <td>${'$'}{group.total}</td>
+                <td class="${'$'}{group.errors > 0 ? 'text-red-600 font-bold' : 'text-gray-400'}">${'$'}{group.errors}</td>
+                <td class="${'$'}{group.warnings > 0 ? 'text-yellow-600 font-bold' : 'text-gray-400'}">${'$'}{group.warnings}</td>
+                <td class="${'$'}{group.info > 0 ? 'text-blue-600 font-bold' : 'text-gray-400'}">${'$'}{group.info}</td>
+                <td class="${'$'}{group.hints > 0 ? 'text-green-600 font-bold' : 'text-gray-400'}">${'$'}{group.hints}</td>
+            </tr>
+        `).join('');
+
+        this.elements.lintData.innerHTML = rowsHtml;
+
+        // Add listeners for drill-down
+        const rows = this.elements.lintData.querySelectorAll('.issue-row');
+        rows.forEach(row => {
+            row.addEventListener('click', (e) => {
+                const type = row.dataset.groupType;
+                const name = row.dataset.groupName;
+
+                if (type === 'modules') {
+                    this.state.filters.modules.length = 0;
+                    this.state.filters.modules.push(name);
+                    this.state.isModuleAdded = true;
+                    this.state.currentView = 'packages';
+                    this.populateFilters();
+                } else if (type === 'packages') {
+                    this.state.filters.packages.length = 0;
+                    this.state.filters.packages.push(name);
+                    this.state.currentView = 'classes';
+                } else if (type === 'classes') {
+                    this.state.filters.classes.length = 0;
+                    this.state.filters.classes.push(name);
+                    this.state.currentView = 'issues';
+                }
+
+                this.updateFilterButtons();
+                this.render();
+            });
+        });
+    },
+
+    getSortedGroupedData(groups) {
+        return [...groups].sort((a, b) => {
+            const by = this.state.sort.by;
+            let vA = a[by], vB = b[by];
+            if (vA === undefined) vA = a.name; // Fallback to name if sorting by something non-existent for groups
+            if (vB === undefined) vB = b.name;
+
+            if (typeof vA === 'string') {
+                return this.state.sort.order === 'asc' ? vA.localeCompare(vB) : vB.localeCompare(vA);
+            }
+            if (vA < vB) return this.state.sort.order === 'asc' ? -1 : 1;
+            if (vA > vB) return this.state.sort.order === 'asc' ? 1 : -1;
+            return 0;
+        });
     },
 
     renderIssueRows(issues, container, level = 0, parentId = '') {
@@ -477,8 +838,10 @@ const LintReportApp = {
                     : '';
                 const secondaryHtml = (issue.secondaryLocations && issue.secondaryLocations.length > 0)
                     ? `<div class="mt-4"><strong>Additional locations:</strong><ul class="more-info-list">${'$'}{issue.secondaryLocations.map(loc => {
-                        const locStr = `${'$'}{loc.file}${'$'}{loc.line ? ':' + loc.line : ''}${'$'}{loc.message ? ': ' + loc.message : ''}`;
-                        return `<li>${'$'}{loc.url ? `<a href="${'$'}{loc.url}" class="text-blue-600 hover:underline">${'$'}{this.escapeHTML(locStr)}</a>` : this.escapeHTML(locStr)}</li>`;
+                        const locStr = `${'$'}{loc.file}${'$'}{loc.line ? ':' + loc.line : ''}`;
+                        const link = loc.url ? `<a href="${'$'}{loc.url}" class="text-blue-600 hover:underline">${'$'}{this.escapeHTML(locStr)}</a>` : this.escapeHTML(locStr);
+                        const message = loc.message ? `: ${'$'}{this.renderExplanation(loc.message)}` : '';
+                        return `<li>${'$'}{link}${'$'}{message}</li>`;
                     }).join('')}</ul></div>`
                     : '';
                 const imagesHtml = (issue.images && issue.images.length > 0)
@@ -539,9 +902,15 @@ const LintReportApp = {
     getSortedIssues(issues) {
         const order = { 'Fatal': 5, 'Error': 4, 'Warning': 3, 'Information': 2, 'Informational': 2, 'Hint': 1 };
         return [...issues].sort((a, b) => {
-            const by = this.state.sort.by;
+            let by = this.state.sort.by;
+            if (by === 'name') by = 'id'; // Issues use 'id', Groups use 'name' (displayed as Element)
             let vA = a[by], vB = b[by];
             if (by === 'severity') { vA = order[a.severityDescription] || 0; vB = order[b.severityDescription] || 0; }
+            if (vA === undefined) vA = '';
+            if (vB === undefined) vB = '';
+            if (typeof vA === 'string') {
+                return this.state.sort.order === 'asc' ? vA.localeCompare(vB) : vB.localeCompare(vA);
+            }
             if (vA < vB) return this.state.sort.order === 'asc' ? -1 : 1;
             if (vA > vB) return this.state.sort.order === 'asc' ? 1 : -1;
             return 0;
@@ -676,6 +1045,16 @@ const LintReportApp = {
         });
     },
 
+    setupViewSegments(elements, state) {
+        if (!elements.viewSegments) return;
+        elements.viewSegments.addEventListener('click', (e) => {
+            const btn = e.target.closest('.segment-btn');
+            if (!btn) return;
+            state.viewMode = btn.dataset.value;
+            this.render();
+        });
+    },
+
     buildActionDropdown(container, options, selectedStateArr, onSelectionChange) {
         if (!container) return;
         container.innerHTML = "";
@@ -726,7 +1105,7 @@ const LintReportApp = {
                 checkbox.checked = isChecked;
                 item.appendChild(checkbox);
 
-                item.addEventListener("change", (e) => {
+                checkbox.addEventListener("change", (e) => {
                     e.stopPropagation();
                     if (checkbox.checked) {
                         if (!selectedStateArr.includes(opt.value)) selectedStateArr.push(opt.value);

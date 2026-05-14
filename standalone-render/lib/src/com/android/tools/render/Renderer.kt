@@ -83,14 +83,13 @@ class Renderer(
   private val logger = Logger.getLogger(Renderer::class.java.name)
 
   private val project: Project = IJFramework.createProject()
+  private val moduleClassLoaderManager = StandaloneModuleClassLoaderManager(classPath, projectClassPath)
   private val baseConfiguration: Configuration
   val module: StandaloneRenderModelModule
   private val renderService: RenderService
 
   init {
     TimeZone.getDefault()
-
-    val moduleClassLoaderManager = StandaloneModuleClassLoaderManager(classPath, projectClassPath)
 
     val apkIdManager = ApkResourceIdManager()
     resourceApkPath?.let { apkIdManager.loadApkResources(it) }
@@ -396,6 +395,7 @@ class Renderer(
   }
 
   override fun close() {
+    moduleClassLoaderManager.close()
     Disposer.dispose(project)
   }
 }

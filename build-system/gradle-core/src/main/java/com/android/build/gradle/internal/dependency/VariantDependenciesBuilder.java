@@ -670,7 +670,7 @@ public class VariantDependenciesBuilder {
 
                 if (!notFound.isEmpty()) {
                     issueReporter.reportError(
-                            IssueReporter.Type.GENERIC,
+                            IssueReporter.Type.DYNAMIC_FEATURE_PROJECT_NOT_FOUND,
                             "Unable to find matching projects for Dynamic Features: " + notFound);
                 }
             } else {

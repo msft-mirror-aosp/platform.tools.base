@@ -226,7 +226,7 @@ const SourceViewApp = {
                 }
             }
         });
-        
+
         this.elements.variantFiltersDropdown.addEventListener('keydown', (e) => {
             if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
                 e.preventDefault();
@@ -380,7 +380,7 @@ const SourceViewApp = {
         if (isHidden) {
             this.elements.variantFiltersDropdown.classList.remove('hidden');
             this.elements.variantFilterBtn.setAttribute('aria-expanded', 'true');
-            
+
             // Focus management
             setTimeout(() => {
                 const searchInput = this.elements.variantFiltersDropdown.querySelector('input');

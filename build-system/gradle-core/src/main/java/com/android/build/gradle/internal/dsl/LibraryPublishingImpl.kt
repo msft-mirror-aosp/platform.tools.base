@@ -67,7 +67,7 @@ abstract class LibraryPublishingImpl @Inject constructor(dslService: DslServices
   private fun checkMultipleVariantUniqueness(componentName: String) {
     if (multipleVariantsContainer.any { it.componentName == componentName }) {
       dslService.issueReporter.reportError(
-        IssueReporter.Type.GENERIC,
+        IssueReporter.Type.INVALID_PUBLISHING_CONFIG,
         "Using multipleVariants publishing DSL multiple times to publish variants " +
           "to the same component \"$componentName\" is not allowed.",
       )

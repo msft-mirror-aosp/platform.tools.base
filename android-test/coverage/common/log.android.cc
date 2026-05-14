@@ -28,6 +28,13 @@ void Log::I(const char* fmt, ...) {
   va_end(args);
 }
 
+void Log::W(const char* fmt, ...) {
+  va_list args;
+  va_start(args, fmt);
+  __android_log_vprint(ANDROID_LOG_WARN, kTag, fmt, args);
+  va_end(args);
+}
+
 void Log::E(const char* fmt, ...) {
   va_list args;
   va_start(args, fmt);

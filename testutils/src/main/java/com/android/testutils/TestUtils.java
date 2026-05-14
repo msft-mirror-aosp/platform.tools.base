@@ -554,6 +554,12 @@ public class TestUtils {
     }
 
     @NonNull
+    public static Path getJava25Jdk() {
+        String hostDir = getJdkHostDir();
+        return resolveWorkspacePath("prebuilts/studio/jdk/jbr25/" + hostDir);
+    }
+
+    @NonNull
     private static String getJdkHostDir() {
         OsType osType = OsType.getHostOs();
         switch (osType) {

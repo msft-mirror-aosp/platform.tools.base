@@ -354,9 +354,9 @@ enum class BooleanOption(
   /** Enables R8 gradual support */
   R8_GRADUAL_API("android.r8.gradual.support", false, FeatureStage.Experimental),
 
-  /** Whether to output the keep radius report from R8 builds. */
+  /** Whether to output the R8 Configuration Analyzer report from R8 builds. */
   R8_ENABLE_KEEP_RADIUS_REPORT(
-    "android.experimental.r8.enableKeepRadiusReport",
+    "android.experimental.r8.enableR8ConfigurationAnalyzer",
     true,
     FeatureStage.Experimental,
     futureStage = FutureStage(Version.VERSION_10_0, true, FeatureStage.Enforced(Version.VERSION_10_0)),

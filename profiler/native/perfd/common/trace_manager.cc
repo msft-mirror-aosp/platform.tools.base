@@ -71,7 +71,8 @@ CaptureInfo* TraceManager::StartCapture(
         success = activity_manager_->StartProfiling(
             mode, app_name, art_options.sampling_interval_us(),
             art_options.dual_clock(), configuration.temp_path(), &error_message,
-            &error_code, startup_profiling);
+            &error_code, art_options.profiler_output_version(),
+            startup_profiling);
         break;
       }
       case TraceConfiguration::kAtraceOptions: {

@@ -5,6 +5,7 @@ import com.android.adblib.ConnectedDevice
 import com.android.adblib.DeviceSelector
 import com.android.adblib.RemoteFileMode
 import com.android.adblib.SocketSpec
+import com.android.adblib.ddmlibcompatibility.AdbLibDdmlibCompatibilityProperties.RUN_BLOCKING_LEGACY_DEFAULT_TIMEOUT
 import com.android.adblib.ddmlibcompatibility.testutils.InitAndroidDebugBridgeRule
 import com.android.adblib.ddmlibcompatibility.testutils.UseAdbLibAndroidDebugBridgeRule
 import com.android.adblib.ddmlibcompatibility.testutils.createConnectedDevice
@@ -18,7 +19,6 @@ import com.android.adblib.testingutils.TestingAdbSessionHost
 import com.android.ddmlib.AdbCommandRejectedException
 import com.android.ddmlib.AdbHelper
 import com.android.ddmlib.AndroidDebugBridge
-import com.android.ddmlib.DdmPreferences
 import com.android.ddmlib.IDevice
 import com.android.ddmlib.IDevice.PROP_DEVICE_DENSITY
 import com.android.ddmlib.IUserDataMap
@@ -633,12 +633,13 @@ class AdblibIDeviceWrapperTest {
   @Test
   fun supportsFeature_doesNotThrow_onTimeout() = runBlockingWithTimeout {
     // Prepare
-    // We need to trigger a timeout. We do it by introducing a fake delay of 10 seconds.
-    val (connectedDevice, _) = createConnectedDevice("device1", delayStdout = 10.toDuration(DurationUnit.SECONDS))
+    // We need to trigger a timeout. We do it by introducing a fake delay of 1 second,
+    // and setting the default timeout to 100ms.
+    fakeAdbRule.host.setPropertyValue(RUN_BLOCKING_LEGACY_DEFAULT_TIMEOUT, java.time.Duration.ofMillis(100))
+    val (connectedDevice, _) = createConnectedDevice("device1", delayStdout = 1.toDuration(DurationUnit.SECONDS))
     val adblibIDeviceWrapper = createAdblibIDeviceWrapper(connectedDevice, bridge)
 
-    // Act: There will be a timeout after 5 seconds, as that's what `runBlockingLegacy` is using.
-    assertEquals(5000, DdmPreferences.getTimeOut())
+    // Act: There will be a timeout after 100ms
     val supportsShellV2 = adblibIDeviceWrapper.supportsFeature(IDevice.Feature.SHELL_V2)
 
     // Assert

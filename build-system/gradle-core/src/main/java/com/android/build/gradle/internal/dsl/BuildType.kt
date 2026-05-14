@@ -297,7 +297,7 @@ constructor(
     val alreadyPresent = resValues[resValueKey.toString()]
     if (alreadyPresent != null) {
       val message = String.format("BuildType(%s): resValue '%s' value is being replaced.", getName(), resValueKey.toString())
-      dslServices.issueReporter.reportWarning(IssueReporter.Type.GENERIC, message)
+      dslServices.issueReporter.reportWarning(IssueReporter.Type.RES_VALUE_REPLACED, message)
     }
     addResValue(resValueKey.toString(), ClassFieldImpl(type, name, value))
   }

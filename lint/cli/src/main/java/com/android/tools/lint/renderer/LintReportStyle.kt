@@ -322,6 +322,30 @@ pre.errorlines {
 
 .breadcrumbs-container {
     min-height: 28px;
+    padding: 0.25rem 0.5rem;
+}
+
+.breadcrumb-item {
+    color: var(--text-blue-600);
+    cursor: pointer;
+    border-radius: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    margin: -0.25rem -0.5rem;
+    transition: background-color 0.2s;
+}
+
+.breadcrumb-item:hover {
+    background-color: var(--bg-hover);
+    text-decoration: underline;
+}
+
+.breadcrumb-last {
+    color: var(--text-darkest);
+    font-weight: 500;
+}
+
+.breadcrumb-separator {
+    color: var(--text-gray-400);
 }
 
 tr.issue-row:hover { cursor: pointer; }
@@ -381,6 +405,7 @@ tr.issue-row:hover { cursor: pointer; }
 .text-gray-600 { color: var(--text-gray-600); }
 .text-gray-900 { color: var(--text-gray-900); }
 .text-blue-600 { color: var(--text-blue-600); }
+.hover\:text-blue-600:hover { color: var(--text-blue-600); }
 .text-red-600 { color: var(--text-red-600); }
 .text-yellow-600 { color: var(--text-yellow-600); }
 .text-green-600 { color: var(--text-green-600); }
@@ -488,6 +513,21 @@ tr.issue-row:hover { cursor: pointer; }
 
 .hover\:underline:hover { text-decoration: underline; }
 .cursor-pointer { cursor: pointer; }
+
+/* Tree View Styles */
+.collapsible-arrow {
+    transition: transform 0.2s ease-in-out;
+    cursor: pointer;
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+}
+.collapsible-arrow.open {
+    transform: rotate(90deg);
+}
+.invisible {
+    visibility: hidden;
+}
 
 .pl-level-0 { padding-left: 1rem; }
 .pl-level-1 { padding-left: 2rem; }

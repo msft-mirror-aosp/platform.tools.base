@@ -347,7 +347,7 @@ private fun checkSdkCompatibility(compileSdkVersion: String, issueReporter: Issu
   compileSdkVersion.let {
     if (AndroidTargetHash.getVersionFromHash(it)!!.featureLevel < 30) {
       issueReporter.reportError(
-        IssueReporter.Type.GENERIC,
+        IssueReporter.Type.JAVA9_COMPILATION_REQUIRES_COMPILE_SDK30,
         "In order to compile Java 9+ source, " + "please set compileSdkVersion to 30 or above",
       )
     }
@@ -357,7 +357,7 @@ private fun checkSdkCompatibility(compileSdkVersion: String, issueReporter: Issu
 private fun JavaCompile.checkReleaseOption(issueReporter: IssueReporter) {
   if (options.release.isPresent) {
     issueReporter.reportError(
-      IssueReporter.Type.GENERIC,
+      IssueReporter.Type.JAVA_COMPILE_RELEASE_OPTION_NOT_SUPPORTED,
       """
       Using '--release' option for JavaCompile is not supported because it prevents the Android Gradle plugin
       from setting up the bootclasspath for compiling Java source files against Android APIs
@@ -423,8 +423,8 @@ private fun checkDeprecatedSourceAndTarget(
   val data = "javacVersion=$javacVersion,sourceCompatibility=$sourceCompatibility,targetCompatibility=$targetCompatibility"
 
   when (severity) {
-    IssueReporter.Severity.ERROR -> issueReporter.reportError(IssueReporter.Type.GENERIC, message, data)
-    IssueReporter.Severity.WARNING -> issueReporter.reportWarning(IssueReporter.Type.GENERIC, message, data)
+    IssueReporter.Severity.ERROR -> issueReporter.reportError(IssueReporter.Type.JAVA_COMPILE_DEPRECATED_SOURCE_TARGET, message, data)
+    IssueReporter.Severity.WARNING -> issueReporter.reportWarning(IssueReporter.Type.JAVA_COMPILE_DEPRECATED_SOURCE_TARGET, message, data)
   }
 }
 

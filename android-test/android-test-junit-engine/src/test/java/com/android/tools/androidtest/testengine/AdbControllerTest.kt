@@ -48,6 +48,7 @@ class AdbControllerTest {
         on { it.exitValue() } doReturn exitCode
         on { it.inputStream } doReturn output.byteInputStream()
         on { it.errorStream } doReturn error.byteInputStream()
+        on { it.outputStream } doReturn java.io.ByteArrayOutputStream()
         on { it.waitFor() } doReturn exitCode
         on { it.waitFor(any(), any()) } doReturn true
       }
@@ -104,6 +105,7 @@ class AdbControllerTest {
         on { it.exitValue() } doReturn 0
         on { it.inputStream } doReturn "".byteInputStream()
         on { it.errorStream } doReturn "".byteInputStream()
+        on { it.outputStream } doReturn java.io.ByteArrayOutputStream()
         on { it.waitFor(any(), any()) } doReturn true
       }
     val controller =
@@ -128,6 +130,7 @@ class AdbControllerTest {
         on { it.exitValue() } doReturn 0
         on { it.inputStream } doReturn "".byteInputStream()
         on { it.errorStream } doReturn "".byteInputStream()
+        on { it.outputStream } doReturn java.io.ByteArrayOutputStream()
         on { it.waitFor(any(), any()) } doReturn true
       }
     val controller =
@@ -152,6 +155,7 @@ class AdbControllerTest {
         on { it.exitValue() } doReturn 0
         on { it.inputStream } doReturn "".byteInputStream()
         on { it.errorStream } doReturn "".byteInputStream()
+        on { it.outputStream } doReturn java.io.ByteArrayOutputStream()
         on { it.waitFor(any(), any()) } doReturn true
       }
     val controller =
@@ -176,6 +180,7 @@ class AdbControllerTest {
         on { it.exitValue() } doReturn 0
         on { it.inputStream } doReturn "".byteInputStream()
         on { it.errorStream } doReturn "".byteInputStream()
+        on { it.outputStream } doReturn java.io.ByteArrayOutputStream()
         on { it.waitFor(any(), any()) } doReturn true
       }
     val controller =
@@ -206,6 +211,7 @@ class AdbControllerTest {
       .waitFor(any<Long>(), any<TimeUnit>())
     doReturn("".byteInputStream()).whenever(process).inputStream
     doReturn("".byteInputStream()).whenever(process).errorStream
+    doReturn(java.io.ByteArrayOutputStream()).whenever(process).outputStream
 
     // When waitFor() is called, make exitValue() return a value instead of throwing.
     doAnswer {
@@ -236,6 +242,7 @@ class AdbControllerTest {
       .waitFor(any<Long>(), any<TimeUnit>())
     doReturn("".byteInputStream()).whenever(process).inputStream
     doReturn("".byteInputStream()).whenever(process).errorStream
+    doReturn(java.io.ByteArrayOutputStream()).whenever(process).outputStream
 
     // When waitFor() is called, make exitValue() return a value instead of throwing.
     doAnswer {

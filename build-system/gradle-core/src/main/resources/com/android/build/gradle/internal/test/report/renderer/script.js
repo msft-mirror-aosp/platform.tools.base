@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ const UIUtils = {
     container.innerHTML = "";
     container.style.padding = "0";
     container.style.overflow = "hidden";
+    container.setAttribute("role", multiSelect ? "group" : "listbox");
 
     let currentState = multiSelect
       ? (Array.isArray(initialState) ? [...initialState] : [])
@@ -100,7 +101,7 @@ const UIUtils = {
       filteredOptions.forEach(opt => {
         const isChecked = multiSelect ? currentState.includes(opt.value) : currentState === opt.value;
 
-        const item = document.createElement("label");
+        const item = document.createElement(multiSelect ? "label" : "button");
         item.className = "popover-item";
 
         if (multiSelect) {
@@ -110,21 +111,39 @@ const UIUtils = {
           checkbox.checked = isChecked;
           item.appendChild(checkbox);
 
-          item.addEventListener("change", (e) => {
-            e.stopPropagation();
+          const handleChange = () => {
             if (checkbox.checked) {
               if (!currentState.includes(opt.value)) currentState.push(opt.value);
             } else {
               currentState = currentState.filter(v => v !== opt.value);
             }
             onSelectionChange([...currentState]);
+          };
+
+          item.addEventListener("change", (e) => {
+            e.stopPropagation();
+            handleChange();
+          });
+
+          item.addEventListener("keydown", (e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              e.stopPropagation();
+              checkbox.checked = !checkbox.checked;
+              handleChange();
+            }
           });
         } else {
+          item.setAttribute("role", "option");
+          item.setAttribute("tabindex", "0");
           if (isChecked) {
             item.classList.add('active-popover-item');
+            item.setAttribute("aria-selected", "true");
+          } else {
+            item.setAttribute("aria-selected", "false");
           }
 
-          item.addEventListener("click", (e) => {
+          const triggerSelect = (e) => {
             e.preventDefault();
             e.stopPropagation();
             currentState = opt.value;
@@ -135,8 +154,18 @@ const UIUtils = {
             const dropdownMenu = container.closest('.dropdown-menu');
             if (dropdownMenu) {
               dropdownMenu.classList.add('hidden');
-              const btn = document.querySelector(`[aria-controls="${dropdownMenu.id}"]`) || dropdownMenu.previousElementSibling;
-              if (btn) btn.setAttribute('aria-expanded', 'false');
+              const btn = TestReportApp.getDropdownConfigs().find(c => c.dropdown === dropdownMenu)?.btn;
+              if (btn) {
+                  btn.setAttribute('aria-expanded', 'false');
+                  btn.focus();
+              }
+            }
+          };
+
+          item.addEventListener("click", triggerSelect);
+          item.addEventListener("keydown", (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              triggerSelect(e);
             }
           });
         }
@@ -300,6 +329,8 @@ const TestReportApp = {
     selectedClass: null,
     filters: { variants: [], search: '', status: ['passed', 'failed', 'skipped'], testSuite: 'all', modules: [], packages: [], classes: [], testCases: [] },
     sort: { by: 'name', order: 'asc' },
+    isResizing: false,
+    columnWidths: {},
     variants: [],
     processedData: null
   },
@@ -313,12 +344,79 @@ const TestReportApp = {
       this.setupTestResults(TEST_DATA_SOURCE);
       this.populateFilters();
       this.bindEvents();
+      this.initResizableColumns();
       this.closeDropdownsOnClickOutside();
       Navigation.init();
       this.render();
     } else {
       console.error("TEST_DATA_SOURCE is not defined. Make sure data.js is loaded before script.js");
       this.elements.resultsData.innerHTML = `<tr><td colspan="100%" class="text-center text-red-600 font-bold" style="padding: 2rem;">Error: Data file not loaded.</td></tr>`;
+    }
+  },
+
+  initResizableColumns() {
+    const headerRow = this.elements.tableHeaders;
+    let activeResizer = null;
+    let startX, startWidth, resizerId;
+    let animationFrameId = null;
+
+    const setColumnWidth = (id, width) => {
+        document.documentElement.style.setProperty(`--col-width-${id.replace(/\./g, '-')}`, `${width}px`);
+    };
+
+    const onPointerMove = (e) => {
+        if (!activeResizer) return;
+        const diffX = e.pageX - startX;
+        const newWidth = Math.max(50, startWidth + diffX);
+
+        this.state.columnWidths[resizerId] = newWidth;
+
+        if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+        }
+        animationFrameId = requestAnimationFrame(() => {
+            setColumnWidth(resizerId, newWidth);
+        });
+    };
+
+    const onPointerUp = (e) => {
+        if (activeResizer) {
+            if (activeResizer.hasPointerCapture(e.pointerId)) {
+                activeResizer.releasePointerCapture(e.pointerId);
+            }
+            activeResizer.classList.remove('resizing');
+            activeResizer.removeEventListener('pointermove', onPointerMove);
+            activeResizer.removeEventListener('pointerup', onPointerUp);
+            activeResizer.removeEventListener('pointercancel', onPointerUp);
+            activeResizer = null;
+            setTimeout(() => { this.state.isResizing = false; }, 0);
+        }
+    };
+
+    headerRow.addEventListener('pointerdown', (e) => {
+        if (e.target.classList.contains('resizer')) {
+            activeResizer = e.target;
+            resizerId = activeResizer.dataset.resizerId;
+            const columnTh = activeResizer.closest('th');
+            startX = e.pageX;
+            startWidth = columnTh.getBoundingClientRect().width;
+
+            activeResizer.setPointerCapture(e.pointerId);
+            activeResizer.classList.add('resizing');
+            this.state.isResizing = true;
+
+            activeResizer.addEventListener('pointermove', onPointerMove);
+            activeResizer.addEventListener('pointerup', onPointerUp);
+            activeResizer.addEventListener('pointercancel', onPointerUp);
+
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    });
+
+    // Apply initial widths if any
+    for (const [id, width] of Object.entries(this.state.columnWidths)) {
+        setColumnWidth(id, width);
     }
   },
 
@@ -529,6 +627,60 @@ const TestReportApp = {
 
   // --- EVENT BINDING & HANDLING ---
   bindEvents() {
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const modal = document.getElementById('stack-trace-modal');
+        const openDropdownConf = this.getDropdownConfigs().find(c => c.dropdown && !c.dropdown.classList.contains('hidden'));
+        if (openDropdownConf) {
+          this.toggleDropdown(openDropdownConf.dropdown, openDropdownConf.btn);
+        } else if (modal && !modal.classList.contains('hidden')) {
+          this.closeModal();
+        } else if (this.elements.searchWrapper && this.elements.searchWrapper.classList.contains('expanded')) {
+          this.elements.searchWrapper.classList.remove('expanded');
+          setTimeout(() => {
+              this.elements.searchRevealBtn.classList.remove('hidden');
+              this.elements.searchRevealBtn.focus();
+          }, 300);
+        }
+      }
+    });
+
+    this.getDropdownConfigs().forEach(({ btn, dropdown }) => {
+        if (btn && dropdown) {
+            btn.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.toggleDropdown(dropdown, btn);
+                } else if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    if (dropdown.classList.contains('hidden')) {
+                        this.toggleDropdown(dropdown, btn);
+                    } else {
+                        const firstItem = dropdown.querySelector('button, [tabindex="0"], input');
+                        if (firstItem) firstItem.focus();
+                    }
+                }
+            });
+            dropdown.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    const items = Array.from(dropdown.querySelectorAll('input:not([disabled]), button:not([disabled]), [role="option"], [role="menuitem"]'))
+                        .filter(el => el.style.display !== 'none' && el.offsetWidth > 0 && el.offsetHeight > 0);
+                    if (items.length === 0) return;
+                    const currentIndex = items.indexOf(document.activeElement);
+                    let nextIndex = 0;
+                    if (e.key === 'ArrowDown') {
+                        nextIndex = currentIndex < items.length - 1 ? currentIndex + 1 : 0;
+                    } else {
+                        nextIndex = currentIndex > 0 ? currentIndex - 1 : items.length - 1;
+                    }
+                    items[nextIndex].focus();
+                }
+            });
+        }
+    });
+
     this.elements.searchInput.addEventListener('input', () => {
       this.state.filters.search = this.elements.searchInput.value.trim();
       if (this.state.filters.search.length > 0) {
@@ -635,8 +787,12 @@ const TestReportApp = {
         this.elements.viewSegments.addEventListener('click', (e) => {
             const btn = e.target.closest('.segment-btn');
             if (!btn) return;
-            this.elements.viewSegments.querySelectorAll('.segment-btn').forEach(b => b.classList.remove('active'));
+            this.elements.viewSegments.querySelectorAll('.segment-btn').forEach(b => {
+                b.classList.remove('active');
+                b.setAttribute('aria-pressed', 'false');
+            });
             btn.classList.add('active');
+            btn.setAttribute('aria-pressed', 'true');
             this.state.viewMode = btn.dataset.value;
             this.resetSelection();
             this.render();
@@ -648,8 +804,12 @@ const TestReportApp = {
         this.elements.densitySegments.addEventListener('click', (e) => {
             const btn = e.target.closest('.segment-btn');
             if (!btn) return;
-            this.elements.densitySegments.querySelectorAll('.segment-btn').forEach(b => b.classList.remove('active'));
+            this.elements.densitySegments.querySelectorAll('.segment-btn').forEach(b => {
+                b.classList.remove('active');
+                b.setAttribute('aria-pressed', 'false');
+            });
             btn.classList.add('active');
+            btn.setAttribute('aria-pressed', 'true');
             this.state.density = btn.dataset.value;
             if (this.elements.mainTable) {
                 if (this.state.density === 'compact') {
@@ -674,7 +834,9 @@ const TestReportApp = {
             if (target) {
                 this.state.currentFlatView = target.dataset.value;
                 this.elements.groupByDropdown.classList.add('hidden');
-                
+                this.elements.groupByBtn.setAttribute('aria-expanded', 'false');
+                this.elements.groupByBtn.focus();
+
                 // When changing the view, we reset selections if we are viewing a lower granularity
                 if (this.state.currentFlatView === 'modules') {
                     this.state.selectedModule = null;
@@ -686,7 +848,7 @@ const TestReportApp = {
                 } else if (this.state.currentFlatView === 'classes') {
                     this.state.selectedClass = null;
                 }
-                
+
                 this.render();
                 Navigation.push();
             }
@@ -694,16 +856,25 @@ const TestReportApp = {
     }
     this.elements.resultsData.addEventListener('click', (e) => {
         if (this.state.viewMode === 'flat') {
-            const clickable = e.target.closest('.nav-link');
+            const clickable = e.target.closest('[data-interactive="flat"]');
             if (clickable) {
                 e.preventDefault();
                 this.handleFlatRowClick(clickable);
             }
         } else {
-            const treeToggle = e.target.closest('.tree-toggle');
+            const treeToggle = e.target.closest('[data-interactive="tree"]');
             if (treeToggle) {
                 e.preventDefault();
                 this.handleTreeRowClick(treeToggle);
+            }
+        }
+    });
+    this.elements.resultsData.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            const clickable = e.target.closest('[data-interactive="flat"], [data-interactive="tree"], .clickable-status');
+            if (clickable) {
+                e.preventDefault();
+                clickable.click();
             }
         }
     });
@@ -728,8 +899,41 @@ const TestReportApp = {
         this.render();
         Navigation.push();
     });
+    this.elements.breadcrumbs.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            const link = e.target.closest('.breadcrumb-link');
+            if (link) {
+                e.preventDefault();
+                link.click();
+            }
+        }
+    });
 
-    this.elements.tableHeaders.addEventListener('click', (e) => { const th = e.target.closest('[data-sort-by]'); if (!th) return; const newSortBy = th.dataset.sortBy; if (this.state.sort.by === newSortBy) { this.state.sort.order = this.state.sort.order === 'asc' ? 'desc' : 'asc'; } else { this.state.sort.by = newSortBy; this.state.sort.order = 'asc'; } this.render(); Navigation.push(); });
+    this.elements.tableHeaders.addEventListener('click', (e) => {
+        if (this.state.isResizing || e.target.classList.contains('resizer')) return;
+        const th = e.target.closest('[data-sort-by]');
+        if (!th) return;
+
+        const newSortBy = th.dataset.sortBy;
+        if (this.state.sort.by === newSortBy) {
+            this.state.sort.order = this.state.sort.order === 'asc' ? 'desc' : 'asc';
+        } else {
+            this.state.sort.by = newSortBy;
+            this.state.sort.order = 'asc';
+        }
+
+        this.render();
+        Navigation.push();
+    });
+    this.elements.tableHeaders.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            const th = e.target.closest('[data-sort-by]');
+            if (th) {
+                e.preventDefault();
+                th.click();
+            }
+        }
+    });
 
   },
 
@@ -809,24 +1013,62 @@ const TestReportApp = {
           { btn: this.elements.packageFilterBtn, dropdown: this.elements.packageFilterDropdown },
           { btn: this.elements.classFilterBtn, dropdown: this.elements.classFilterDropdown },
           { btn: this.elements.tcFilterBtn, dropdown: this.elements.tcFilterDropdown },
-          { btn: this.elements.addFilterBtn, dropdown: this.elements.addFilterDropdown }
+          { btn: this.elements.addFilterBtn, dropdown: this.elements.addFilterDropdown },
+          { btn: this.elements.groupByBtn, dropdown: this.elements.groupByDropdown }
       ];
   },
 
-  toggleDropdown(dropdown, button) {
-    const isHidden = dropdown.classList.contains('hidden');
-    this.closeAllDropdowns();
-    if (isHidden) {
-        dropdown.classList.remove('hidden');
-        if (button) button.setAttribute('aria-expanded', 'true');
+  toggleDropdown(dropdownToToggle, button) {
+    this.getDropdownConfigs().forEach(({ btn, dropdown }) => {
+        if (dropdown && dropdown !== dropdownToToggle) {
+            dropdown.classList.add('hidden');
+            if (btn) btn.setAttribute('aria-expanded', 'false');
+        }
+    });
+
+    if (dropdownToToggle) {
+        const isHidden = dropdownToToggle.classList.contains('hidden');
+        if (isHidden) {
+            dropdownToToggle.classList.remove('hidden');
+            if (button) button.setAttribute('aria-expanded', 'true');
+
+            // Focus management
+            setTimeout(() => {
+                const searchInput = dropdownToToggle.querySelector('input');
+                if (searchInput) {
+                    searchInput.focus();
+                } else {
+                    const firstItem = dropdownToToggle.querySelector('button, [tabindex="0"], input');
+                    if (firstItem) firstItem.focus();
+                }
+            }, 0);
+        } else {
+            dropdownToToggle.classList.add('hidden');
+            if (button) {
+                button.setAttribute('aria-expanded', 'false');
+                button.focus();
+            }
+        }
     }
   },
 
   closeAllDropdowns() {
     this.getDropdownConfigs().forEach(({ btn, dropdown }) => {
-        if (dropdown) dropdown.classList.add('hidden');
-        if (btn && btn.hasAttribute('aria-expanded')) btn.setAttribute('aria-expanded', 'false');
+        if (dropdown && !dropdown.classList.contains('hidden')) {
+            dropdown.classList.add('hidden');
+            if (btn) {
+                btn.setAttribute('aria-expanded', 'false');
+                btn.focus();
+            }
+        }
     });
+  },
+
+  announce(message) {
+      const announcer = document.getElementById('a11y-announcer');
+      if (announcer) {
+          announcer.textContent = message;
+      }
   },
 
   closeDropdownsOnClickOutside() {
@@ -834,9 +1076,7 @@ const TestReportApp = {
       this.getDropdownConfigs().forEach(({ btn, dropdown }) => {
           if (btn && dropdown && !btn.contains(e.target) && !dropdown.contains(e.target)) {
               dropdown.classList.add('hidden');
-              if (btn.hasAttribute('aria-expanded')) {
-                  btn.setAttribute('aria-expanded', 'false');
-              }
+              if (btn) btn.setAttribute('aria-expanded', 'false');
           }
       });
 
@@ -915,12 +1155,22 @@ const TestReportApp = {
     const row = target.closest('tr');
     if (!row) return;
     const arrow = row.querySelector('.collapsible-arrow');
+    const toggle = row.querySelector('[data-interactive="tree"]');
     if (!arrow.classList.contains('invisible')) {
       arrow.classList.toggle('open');
       const isOpen = arrow.classList.contains('open');
+      if (toggle) toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
       document.querySelectorAll(`[data-parent-id="${row.dataset.id}"]`).forEach(child => {
         child.classList.toggle('hidden', !isOpen);
-        if (!isOpen) { const childArrow = child.querySelector('.collapsible-arrow.open'); if (childArrow) { childArrow.classList.remove('open'); this.collapseDescendants(child); } }
+        if (!isOpen) {
+            const childArrow = child.querySelector('.collapsible-arrow.open');
+            const childToggle = child.querySelector('[data-interactive="tree"]');
+            if (childArrow) {
+                childArrow.classList.remove('open');
+                if (childToggle) childToggle.setAttribute('aria-expanded', 'false');
+                this.collapseDescendants(child);
+            }
+        }
       });
     }
   },
@@ -929,7 +1179,12 @@ const TestReportApp = {
     document.querySelectorAll(`[data-parent-id="${parentRow.dataset.id}"]`).forEach(child => {
       child.classList.add('hidden');
       const childArrow = child.querySelector('.collapsible-arrow.open');
-      if (childArrow) { childArrow.classList.remove('open'); this.collapseDescendants(child); }
+      const childToggle = child.querySelector('[data-interactive="tree"]');
+      if (childArrow) {
+          childArrow.classList.remove('open');
+          if (childToggle) childToggle.setAttribute('aria-expanded', 'false');
+          this.collapseDescendants(child);
+      }
     });
   },
 
@@ -940,6 +1195,16 @@ const TestReportApp = {
 
     const applyFilters = (nodes, type, parentMatchesSearch = false) => {
       if (!nodes) return [];
+      const hasSearch = !!this.state.filters.search;
+      const hasDropdownFilters = this.state.filters.modules.length > 0 ||
+                                 this.state.filters.packages.length > 0 ||
+                                 this.state.filters.classes.length > 0 ||
+                                 this.state.filters.testCases.length > 0;
+      const ALL_STATUSES = ['passed', 'failed', 'skipped'];
+      const hasStatusFilters = this.state.filters.status.length < ALL_STATUSES.length;
+      const hasTestSuiteFilter = this.state.filters.testSuite !== 'all';
+      const isFiltering = hasSearch || hasDropdownFilters || hasStatusFilters || hasTestSuiteFilter;
+
       return nodes.filter(node => {
         // Fast paths: discard outright if missing explicit filters.
         if (type === 'module' && this.state.filters.modules.length > 0 && !this.state.filters.modules.includes(node.name)) return false;
@@ -955,13 +1220,13 @@ const TestReportApp = {
         }
 
         // Search filter
-        let selfMatchesSearch = true;
-        if (this.state.filters.search) {
+        let selfMatchesSearch = false;
+        if (hasSearch) {
           const searchTerm = this.state.filters.search.toLowerCase();
           selfMatchesSearch = node.name.toLowerCase().includes(searchTerm);
         }
 
-        const effectiveMatchesSearch = selfMatchesSearch || parentMatchesSearch;
+        const effectiveMatchesSearch = hasSearch ? (selfMatchesSearch || parentMatchesSearch) : false;
 
         const childKey = this.pluralize(this.getChildType(type));
         let children = node[childKey] || (type === 'class' ? node.testCases : []);
@@ -976,7 +1241,7 @@ const TestReportApp = {
         }
 
         // Test Suite Filter
-        if (this.state.filters.testSuite !== 'all' && type !== 'testCase') {
+        if (hasTestSuiteFilter && type !== 'testCase') {
           if (node.testSuiteSummaries) {
             const suiteMatch = node.testSuiteSummaries.find(ts => ts.name === this.state.filters.testSuite);
             if (!suiteMatch) return false;
@@ -987,7 +1252,7 @@ const TestReportApp = {
         }
 
         let matchesStatus = true;
-        if (this.state.filters.status.length < 3) {
+        if (hasStatusFilters) {
           const isLeaf = !this.getChildType(type);
           if (isLeaf) {
             let hasFail = false;
@@ -1006,14 +1271,16 @@ const TestReportApp = {
             if (hasPass && this.state.filters.status.includes('passed')) matchesStatus = true;
             if (hasFail && this.state.filters.status.includes('failed')) matchesStatus = true;
             if (hasSkipped && this.state.filters.status.includes('skipped')) matchesStatus = true;
-          } else {
-            matchesStatus = hasVisibleChildren;
+
+            if (!matchesStatus) return false;
           }
         }
 
         // Final evaluation check
+        if (!isFiltering) return true;
+
         if (!this.getChildType(type)) { // Leaf node (testCase)
-            return matchesStatus && effectiveMatchesSearch;
+            return hasSearch ? effectiveMatchesSearch : true;
         }
 
         return effectiveMatchesSearch || hasVisibleChildren;
@@ -1052,6 +1319,9 @@ const TestReportApp = {
     this.renderTable(data);
     this.updateGroupByText();
     this.updateTooltipsForOverflow();
+
+    const visibleItemsCount = this.elements.resultsData.querySelectorAll('tr.table-row:not(.hidden)').length;
+    this.announce(`Showing ${visibleItemsCount} results.`);
   },
 
   updateDynamicFilters() {
@@ -1128,6 +1398,18 @@ const TestReportApp = {
     };
     this.elements.groupByText.textContent = viewMap[this.state.currentFlatView] || 'Modules';
 
+    if (this.elements.groupByDropdown) {
+        this.elements.groupByDropdown.querySelectorAll('.dropdown-item').forEach(item => {
+            if (item.dataset.value === this.state.currentFlatView) {
+                item.classList.add('active-popover-item');
+                item.setAttribute('aria-selected', 'true');
+            } else {
+                item.classList.remove('active-popover-item');
+                item.setAttribute('aria-selected', 'false');
+            }
+        });
+    }
+
     if (this.elements.groupByBtn) {
         this.elements.groupByBtn.parentElement.style.display = this.state.viewMode === 'flat' ? 'block' : 'none';
     }
@@ -1146,23 +1428,24 @@ const TestReportApp = {
   renderHeaders() {
     const variantsToShow = this.state.filters.variants;
     const sortIndicator = (key) => this.state.sort.by === key ? (this.state.sort.order === 'asc' ? '▲' : '▼') : '';
+    const getAriaSort = (key) => this.state.sort.by === key ? (this.state.sort.order === 'asc' ? 'ascending' : 'descending') : 'none';
     let nameHeader = this.state.viewMode === 'tree' ? 'Name' : this.state.currentFlatView.charAt(0).toUpperCase() + this.state.currentFlatView.slice(1);
 
     let pathHeader = '';
     let pathSubHeader = '';
     if (this.state.viewMode === 'flat' && !this.state.selectedModule) {
       if (this.state.currentFlatView === 'classes' || this.state.currentFlatView === 'testCases') {
-        pathHeader = `<th class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30">Path</th>`;
-        pathSubHeader = `<th class="py-2 px-6 bg-gray-50 z-30"></th>`;
+        pathHeader = `<th class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30 col-path">Path<div class="resizer" data-resizer-id="path"></div></th>`;
+        pathSubHeader = `<th class="py-2 px-6 bg-gray-50 z-30 col-path"></th>`;
       } else if (this.state.currentFlatView === 'packages') {
-        pathHeader = `<th class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30">Module</th>`;
-        pathSubHeader = `<th class="py-2 px-6 bg-gray-50 z-30"></th>`;
+        pathHeader = `<th class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30 col-module">Module<div class="resizer" data-resizer-id="module"></div></th>`;
+        pathSubHeader = `<th class="py-2 px-6 bg-gray-50 z-30 col-module"></th>`;
       }
     }
 
     this.elements.tableHeaders.innerHTML = `
             <tr class="border-b border-gray-200">
-                <th class="py-4 px-6 text-left font-semibold text-gray-700 sticky-name bg-gray-50 z-30" data-sort-by="name">${nameHeader} ${sortIndicator('name')}</th>
+                <th class="py-4 px-6 text-left font-semibold text-gray-700 sticky-name bg-gray-50 z-30 cursor-pointer" data-sort-by="name" tabindex="0" aria-sort="${getAriaSort('name')}">${nameHeader} ${sortIndicator('name')}<div class="resizer" data-resizer-id="name"></div></th>
                 ${pathHeader}
                 ${variantsToShow.map(v => `<th class="py-4 px-4 text-center font-semibold text-gray-700 border-l border-gray-200" colspan="4">${v}</th>`).join('')}
             </tr>
@@ -1228,12 +1511,17 @@ const TestReportApp = {
       const uniqueId = `${parentId}-${node.name}`.replace(/[^a-zA-Z0-9-_]/g, '');
 
       const nameContent = `<span class="font-medium">${node.name}</span>`;
-      const chevron = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="collapsible-arrow ${!hasChildren ? 'invisible' : ''}"><path d="m9 18 6-6-6-6"></path></svg>`;
+      const chevron = `<svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="collapsible-arrow ${!hasChildren ? 'invisible' : ''}"><path d="m9 18 6-6-6-6"></path></svg>`;
+
+      const ariaExpanded = hasChildren ? 'aria-expanded="false"' : '';
+      const roleAttr = hasChildren ? 'role="button"' : '';
+      const tabindexAttr = hasChildren ? 'tabindex="0"' : '';
+      const interactiveAttr = hasChildren ? 'data-interactive="tree" cursor-pointer' : '';
 
       html += `
                 <tr class="table-row ${level > 0 ? 'hidden' : ''}" data-id="${uniqueId}" data-parent-id="${parentId}">
-                    <td class="py-3 px-6 sticky-name" title="${node.name}">
-                        <div class="tree-toggle" style="padding-left: ${level * 1.0}rem;">
+                    <td class="py-3 px-6 sticky-name ${hasChildren ? 'cursor-pointer' : ''}" title="${node.name}" ${tabindexAttr} ${ariaExpanded} ${roleAttr} ${hasChildren ? 'data-interactive="tree"' : ''}>
+                        <div style="padding-left: ${level * 1.0}rem; display: flex; align-items: center; width: 100%;">
                             ${chevron} ${nameContent}
                         </div>
                     </td>
@@ -1260,24 +1548,24 @@ const TestReportApp = {
     }
 
     this.elements.resultsData.innerHTML = items.map(item => {
-        let nameCell = `<div class="font-medium">${item.name}</div>`;
+        let nameTd = `<td class="py-3 px-6 sticky-name font-medium" title="${item.name}">${item.name}</td>`;
         if (view !== 'testCases') {
-            nameCell = `<div class="font-medium nav-link text-blue-700 hover-underline cursor-pointer" data-name="${item.name}" data-type="${item.type}" data-module-name="${item.moduleName || ''}" data-package-name="${item.packageName || ''}">${item.name}</div>`;
+            nameTd = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover-underline cursor-pointer" tabindex="0" role="link" title="${item.name}" data-name="${item.name}" data-type="${item.type}" data-module-name="${item.moduleName || ''}" data-package-name="${item.packageName || ''}" data-interactive="flat">${item.name}</td>`;
         }
 
         let pathCell = '';
         if (this.state.viewMode === 'flat' && !this.state.selectedModule) {
             if (view === 'packages') {
-                pathCell = `<td class="py-3 px-6 text-gray-500 text-sm truncate max-w-150" title="${item.moduleName}">${item.moduleName}</td>`;
+                pathCell = `<td class="py-3 px-6 text-gray-500 text-sm truncate col-module" title="${item.moduleName}">${item.moduleName}</td>`;
             } else if (view === 'classes') {
-                pathCell = `<td class="px-2 max-w-300" title="${item.moduleName} > ${item.packageName}">
+                pathCell = `<td class="px-2 col-path" title="${item.moduleName} > ${item.packageName}">
                     <div class="flex flex-col" style="overflow: hidden; width: 100%;">
                         <span class="text-xs text-gray-500 truncate-block">${item.moduleName}</span>
                         <span class="text-sm text-gray-500 truncate-block">${item.packageName}</span>
                     </div>
                 </td>`;
             } else if (view === 'testCases') {
-                pathCell = `<td class="px-2 max-w-300" title="${item.moduleName} > ${item.packageName} > ${item.className}">
+                pathCell = `<td class="px-2 col-path" title="${item.moduleName} > ${item.packageName} > ${item.className}">
                     <div class="flex flex-col" style="overflow: hidden; width: 100%;">
                         <span class="text-xs text-gray-500 truncate-block">${item.moduleName}</span>
                         <span class="text-sm text-gray-500 truncate-block">${item.packageName} > ${item.className}</span>
@@ -1285,11 +1573,9 @@ const TestReportApp = {
                 </td>`;
             }
         }
-        
+
         return `<tr class="table-row">
-            <td class="py-3 px-6 sticky-name" title="${item.name}">
-                 ${nameCell}
-            </td>
+            ${nameTd}
             ${pathCell}
             ${this._renderStatusCell(view === 'testCases' ? item : item.summary, view === 'testCases')}
         </tr>`;
@@ -1414,7 +1700,7 @@ const TestReportApp = {
           if (stackTrace) {
             cellContent = 'Failure';
             cellClass = 'py-3 px-4 text-center text-red-600 font-bold border-l border-gray-200 clickable-status';
-            return `<td colspan="4" class="${cellClass}" onclick="TestReportApp.openStackTrace(this)" data-stack-trace="${encodeURIComponent(stackTrace)}">${cellContent}</td>`;
+            return `<td colspan="4" class="${cellClass}" onclick="TestReportApp.openStackTrace(this)" data-stack-trace="${encodeURIComponent(stackTrace)}" tabindex="0" role="button" aria-label="View stack trace for failed test"><div class="flex flex-col"><span>${cellContent}</span><span class="text-xs text-transparent select-none">&nbsp;</span></div></td>`;
           } else {
             cellContent = 'Failed';
             cellClass = 'py-3 px-4 text-center text-red-600 font-bold border-l border-gray-200';
@@ -1424,7 +1710,7 @@ const TestReportApp = {
           cellClass = 'py-3 px-4 text-center text-yellow-600 border-l border-gray-200';
         }
 
-        return `<td colspan="4" class="${cellClass}">${cellContent}</td>`;
+        return `<td colspan="4" class="${cellClass}"><div class="flex flex-col"><span>${cellContent}</span><span class="text-xs text-transparent select-none">&nbsp;</span></div></td>`;
       }).join('')}`;
     }
 
@@ -1456,11 +1742,23 @@ const TestReportApp = {
   },
 
   openStackTrace(element) {
+    this.modalTrigger = element;
     const stackTrace = decodeURIComponent(element.dataset.stackTrace);
     const modal = document.getElementById('stack-trace-modal');
     const content = document.getElementById('stack-trace-content');
+    const closeBtn = document.getElementById('close-modal');
     content.textContent = stackTrace;
     modal.classList.remove('hidden');
+    if (closeBtn) closeBtn.focus();
+  },
+
+  closeModal() {
+    const modal = document.getElementById('stack-trace-modal');
+    if (modal) modal.classList.add('hidden');
+    if (this.modalTrigger) {
+        this.modalTrigger.focus();
+        this.modalTrigger = null;
+    }
   },
 
   getChildType(parentType) {
@@ -1482,26 +1780,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const closeBtn = document.getElementById('close-modal');
 
   if (closeBtn) {
-    closeBtn.addEventListener('click', () => {
-      modal.classList.add('hidden');
-    });
+    closeBtn.addEventListener('click', () => TestReportApp.closeModal());
   }
 
   if (modal) {
     modal.addEventListener('click', (e) => {
       if (e.target === modal) {
-        modal.classList.add('hidden');
+        TestReportApp.closeModal();
       }
     });
   }
-
-  // Close on Escape key
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      TestReportApp.closeAllDropdowns();
-      if (modal && !modal.classList.contains('hidden')) {
-        modal.classList.add('hidden');
-      }
-    }
-  });
 });

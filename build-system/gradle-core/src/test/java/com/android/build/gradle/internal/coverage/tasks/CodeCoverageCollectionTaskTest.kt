@@ -19,7 +19,9 @@ package com.android.build.gradle.internal.coverage.tasks
 import com.android.build.gradle.internal.coverage.tasks.CodeCoverageCollectionTask.CodeCoverageCollectionWorkerAction
 import com.android.build.gradle.internal.coverage.tasks.CodeCoverageCollectionTask.CodeCoverageCollectionWorkerAction.Companion.getTestSuiteCoverageFiles
 import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_METADATA_FILE
+import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_METADATA_MODULE_KEY
 import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_METADATA_SUITE_KEY
+import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_METADATA_VARIANT_KEY
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth.assertThat
@@ -87,7 +89,12 @@ class CodeCoverageCollectionTaskTest {
     val tempDir = temporaryFolder.newFolder()
     val xmlFile = copyResourceToFolder("jacocoReport/com/android/tools/build/tests/myapplication/report.xml", tempDir)
 
-    val properties = mapOf("moduleName" to "app", "testSuiteName" to "UnitTest", "testedVariantName" to "debug")
+    val properties =
+      mapOf(
+        TEST_SUITE_METADATA_MODULE_KEY to "app",
+        TEST_SUITE_METADATA_SUITE_KEY to "UnitTest",
+        TEST_SUITE_METADATA_VARIANT_KEY to "debug",
+      )
     val sourceFolders = listOf("src/main/java", "src/main/kotlin")
 
     CodeCoverageCollectionWorkerAction.injectMetadataInXmlReport(xmlFile, properties, sourceFolders)

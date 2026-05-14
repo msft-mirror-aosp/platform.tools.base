@@ -1,10 +1,29 @@
 load("@rules_cc//cc:defs.bzl", "cc_binary")
 load("//tools/base/bazel:android.bzl", "ANDROID_COPTS", "ANDROID_LINKOPTS", "android_cc_binary")
 
+# Converts the jar containing runtime dex to an array in a CC source file.
+genrule(
+    name = "coverage_rt_cc_generator",
+    srcs = [
+        "//tools/base/android-test/coverage/agent/runtime:coverage_rt",
+    ],
+    outs = [
+        "coverage_rt.cc",
+    ],
+    cmd = "$(location //tools/base/bazel:bin2c) -lang=cxx -variable=coverage_rt_jar" +
+          " -output=$(location coverage_rt.cc)" +
+          " $(location //tools/base/android-test/coverage/agent/runtime:coverage_rt)",
+    tools = [
+        "//tools/base/bazel:bin2c",
+    ],
+    visibility = ["//visibility:private"],
+)
+
 cc_binary(
     name = "coverage_agent.so",
     srcs = [
         "coverage_agent.cc",
+        "coverage_rt.cc",
         "instrumenter.cc",
         "instrumenter.h",
     ],
@@ -14,6 +33,7 @@ cc_binary(
     deps = [
         "//prebuilts/studio/jdk:jni_headers",
         "//tools/base/android-test/coverage/common:log",
+        "@slicer",
     ],
 )
 

@@ -33,7 +33,7 @@ internal fun TestComponentDslInfo.getTestComponentNamespace(
     services.provider {
       if (extension.testNamespace == extension.namespace) {
         services.issueReporter.reportError(
-          IssueReporter.Type.GENERIC,
+          IssueReporter.Type.NAMESPACE_CONFLICT,
           "namespace and testNamespace have the same value (\"$it\"), which is not allowed.",
         )
       }

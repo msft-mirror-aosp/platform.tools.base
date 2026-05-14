@@ -68,7 +68,7 @@ constructor(
             "Only one of these options can be used at a time.\n" +
             "Recommended action: Only set one of profileable=true via variant API \n" +
             "or debuggable=true via DSL"
-        variantBuilderServices.issueReporter.reportWarning(IssueReporter.Type.GENERIC, message)
+        variantBuilderServices.issueReporter.reportWarning(IssueReporter.Type.DEBUGGABLE_AND_PROFILEABLE_ENABLED, message)
       } else {
         _profileable = value
       }
@@ -127,7 +127,7 @@ constructor(
         AndroidTestBuilderImpl(androidTest)
       } else {
         variantBuilderServices.issueReporter.reportWarning(
-          IssueReporter.Type.GENERIC,
+          IssueReporter.Type.ANDROID_TEST_NOT_DEFINED,
           "androidTest test suite not defined for this variant : $name",
         )
         // return an empty shell during sync, otherwise an exception will be generated.

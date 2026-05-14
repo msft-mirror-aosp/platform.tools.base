@@ -12,9 +12,9 @@ setup_external_sdk(
 http_archive(
     name = "system_image_android-30_default_x86_64",
     build_file = "//tools/base/bazel/avd:system_images.BUILD",
-    sha256 = "8d591034a4244a920d7a3ec274bb1734dd6474a3d8c11d0fce902010db3a13aa",
+    sha256 = "daae27654be74ae83a484daea4db2c0c77b4f4ad661a645bd5f36d96ce03e4d5",
     strip_prefix = "x86_64",
-    url = "https://dl.google.com/android/repository/sys-img/android/x86_64-30_r11.zip",
+    url = "https://dl.google.com/android/repository/sys-img/google_apis/x86_64-30_r16.zip",
 )
 
 http_archive(
@@ -55,6 +55,22 @@ http_archive(
     sha256 = "361aeee5a89f98adf0765bc938857f384c178f703848f140f2a330a9d9b59908",
     strip_prefix = "arm64-v8a",
     url = "https://dl.google.com/android/repository/sys-img/aosp_atd/arm64-v8a-32_r01.zip",
+)
+
+http_archive(
+    name = "system_image_android-32_default_x86_64",
+    build_file = "//tools/base/bazel/avd:system_images.BUILD",
+    sha256 = "2709bcc5a4aa98539b12c2169df606dfe9184fc3b4a0aac7120f319721e63bf1",
+    strip_prefix = "x86_64",
+    url = "https://dl.google.com/android/repository/sys-img/google_apis/x86_64-32_r08.zip",
+)
+
+http_archive(
+    name = "system_image_android-32_default_arm64",
+    build_file = "//tools/base/bazel/avd:system_images.BUILD",
+    sha256 = "8c356d3b819cde8cbd34bed7deec4562f3935da4e46abf4f45b7019e23bca354",
+    strip_prefix = "arm64-v8a",
+    url = "https://dl.google.com/android/repository/sys-img/google_apis/arm64-v8a-32_r08.zip",
 )
 
 http_archive(
@@ -106,6 +122,22 @@ http_archive(
 )
 
 http_archive(
+    name = "system_image_android-34_default_x86_64",
+    build_file = "//tools/base/bazel/avd:system_images.BUILD",
+    sha256 = "783a40134baf4f3012d4464fbe1571b1612a0dbd2e7a44d14bd8328923443833",
+    strip_prefix = "x86_64",
+    url = "https://dl.google.com/android/repository/sys-img/google_apis/x86_64-34_r14.zip",
+)
+
+http_archive(
+    name = "system_image_android-34_default_arm64",
+    build_file = "//tools/base/bazel/avd:system_images.BUILD",
+    sha256 = "bd1c323cbdd3c9dd55dde54588b298d172fd126fe16e127a7bd7aeab6897890a",
+    strip_prefix = "arm64-v8a",
+    url = "https://dl.google.com/android/repository/sys-img/google_apis/arm64-v8a-34_r14.zip",
+)
+
+http_archive(
     name = "system_image_android-33PlayStore_default_x86_64",
     build_file = "//tools/base/bazel/avd:system_images.BUILD",
     sha256 = "74b0a57c2cfee755dcf7645e5da9d5468a2982af0bf012dfb46f661bc8b9f84a",
@@ -143,6 +175,22 @@ http_archive(
     sha256 = "1fb5e5fd1c4b1b54bfe5558f6f361d6c10e13786acff630153e0542df356dfe6",
     strip_prefix = "x86_64",
     url = "https://dl.google.com/android/repository/sys-img/google_apis_playstore/x86_64-35_r09.zip",
+)
+
+http_archive(
+    name = "system_image_android-CANARY_r11_default_arm64",
+    build_file = "//tools/base/bazel/avd:system_images.BUILD",
+    sha256 = "b9659724b354e5109a79f1e873704a1c971b05b9c9b47651977fbf122d807b2f",
+    strip_prefix = "arm64-v8a",
+    url = "https://dl.google.com/android/repository/sys-img/google_apis/arm64-v8a-ps16k-CANARY_r11.zip",
+)
+
+http_archive(
+    name = "system_image_android-CANARY_r11_default_x86_64",
+    build_file = "//tools/base/bazel/avd:system_images.BUILD",
+    sha256 = "f894527999540871b4167d138ae7f9785916762a63965e4467186b21c815e54b",
+    strip_prefix = "x86_64",
+    url = "https://dl.google.com/android/repository/sys-img/google_apis/x86_64-ps16k-CANARY_r11.zip",
 )
 
 http_archive(

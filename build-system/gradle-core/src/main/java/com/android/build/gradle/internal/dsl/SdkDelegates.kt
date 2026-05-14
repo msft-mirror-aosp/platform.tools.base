@@ -90,13 +90,13 @@ internal class CompileSdkDelegate(
       } else {
         if (value.toIntOrNull() != null) {
           issueReporter.reportError(
-            IssueReporter.Type.GENERIC,
+            IssueReporter.Type.COMPILE_SDK_PREVIEW_INVALID,
             RuntimeException("Invalid integer value for compileSdkPreview ($value). Use compileSdk instead"),
           )
         } else {
           val expected = if (value.startsWith("android-")) value.substring(8) else "S"
           issueReporter.reportError(
-            IssueReporter.Type.GENERIC,
+            IssueReporter.Type.COMPILE_SDK_PREVIEW_INVALID,
             RuntimeException("Invalid value for compileSdkPreview (\"$value\"). Value must be a platform preview name (e.g. \"$expected\")"),
           )
         }
@@ -130,7 +130,7 @@ internal class CompileSdkDelegate(
         }
         if (apiLevel < 36 && getCompileSdk()?.minorApiLevel != null) {
           dslServices.issueReporter.reportError(
-            IssueReporter.Type.GENERIC,
+            IssueReporter.Type.COMPILE_SDK_PREVIEW_INVALID,
             RuntimeException("Minor versions are only supported for API 36 and above."),
           )
           compileSdk {

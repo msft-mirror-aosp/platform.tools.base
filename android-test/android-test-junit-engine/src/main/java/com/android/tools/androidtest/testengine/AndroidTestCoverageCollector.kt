@@ -29,6 +29,7 @@ class AndroidTestCoverageCollector(
   private val coverageDirOnDevice: String?,
   private val useTestStorageService: Boolean,
   private val additionalTestOutputCollector: AndroidAdditionalTestOutputCollector,
+  private val runAsPackageName: String? = null,
   private val logger: Logger = Logger.getLogger(AndroidTestCoverageCollector::class.java.name),
 ) {
 
@@ -78,7 +79,7 @@ class AndroidTestCoverageCollector(
         } else {
           coverageFileOnDevice
         }
-      adbController.runAdbShellCommand(deviceSerial, listOf("rm", "-f", devicePath))
+      runShellCommandWithRunAs(listOf("rm", "-f", devicePath))
     } else if (!coverageDirOnDevice.isNullOrBlank()) {
       val devicePath =
         if (effectiveUseTestStorageService) {
@@ -86,8 +87,17 @@ class AndroidTestCoverageCollector(
         } else {
           coverageDirOnDevice
         }
-      adbController.runAdbShellCommand(deviceSerial, listOf("rm", "-rf", devicePath))
-      adbController.runAdbShellCommand(deviceSerial, listOf("mkdir", "-p", devicePath))
+      runShellCommandWithRunAs(listOf("rm", "-rf", devicePath))
+      runShellCommandWithRunAs(listOf("mkdir", "-p", devicePath))
+    }
+  }
+
+  private fun runShellCommandWithRunAs(commands: List<String>): AdbController.CommandResult {
+    val lastArg = commands.lastOrNull()
+    return if (!runAsPackageName.isNullOrBlank() && lastArg != null && lastArg.startsWith("/data/")) {
+      adbController.runAdbShellCommand(deviceSerial, listOf("run-as", runAsPackageName) + commands)
+    } else {
+      adbController.runAdbShellCommand(deviceSerial, commands)
     }
   }
 
