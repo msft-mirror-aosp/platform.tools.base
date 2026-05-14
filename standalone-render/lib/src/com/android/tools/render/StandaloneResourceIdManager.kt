@@ -31,7 +31,8 @@ class StandaloneResourceIdManager(private val apkIdManager: ApkResourceIdManager
   override fun getCompiledId(resource: ResourceReference): Int? =
     apkIdManager.getCompiledId(resource) ?: baseIdManager.getCompiledId(resource)
 
-  override fun getOrGenerateId(resource: ResourceReference): Int = baseIdManager.getOrGenerateId(resource)
+  override fun getOrGenerateId(resource: ResourceReference): Int =
+    apkIdManager.getCompiledId(resource) ?: baseIdManager.getOrGenerateId(resource)
 
   override fun resetDynamicIds() = baseIdManager.resetDynamicIds()
 
