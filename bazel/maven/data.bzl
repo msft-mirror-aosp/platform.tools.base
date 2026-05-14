@@ -1391,6 +1391,7 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.2.21",
     "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.3.0",
     "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.3.10",
+    "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.3.20",
     "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.4.0-Beta2",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.4.0-dev-8268",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.4.32",
