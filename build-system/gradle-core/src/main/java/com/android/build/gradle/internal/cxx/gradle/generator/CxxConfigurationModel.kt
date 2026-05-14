@@ -374,7 +374,6 @@ fun createCxxMetadataGenerator(abi: CxxAbiModel, analyticsService: AnalyticsServ
         }
       }
     }
-    else -> error("${variant.module.buildSystem}")
   }
 }
 
