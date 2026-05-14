@@ -18,19 +18,27 @@ package com.android.build.gradle.external.cmake;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.build.gradle.external.cmake.server.CodeModel;
 import com.android.build.gradle.internal.cxx.json.NativeToolchainValue;
 import com.android.repository.Revision;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import java.io.File;
-import java.util.Set;
+
 import org.jetbrains.annotations.Contract;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.mockito.Mockito;
 
+import java.io.File;
+import java.util.Set;
+
 public class CmakeUtilsTest {
+    @Rule public TemporaryFolder tmp = new TemporaryFolder();
+
     @Test
     public void testKeepWhileNumbersAndDots() {
         assertThat(CmakeUtils.keepWhileNumbersAndDots("3.6.0")).isEqualTo("3.6.0");
@@ -94,6 +102,34 @@ public class CmakeUtilsTest {
         nativeToolchainValue.cCompilerExecutable = Mockito.mock(File.class);
 
         assertThat(CmakeUtils.getToolchainHash(nativeToolchainValue)).isNotEqualTo(0);
+    }
+
+    @Test
+    public void testGetObjectToString() {
+        assertThat(CmakeUtils.getObjectToString(null)).isEqualTo("null");
+        CodeModel codeModel = getCodeModelFromJsonString("{\"cookie\": \"my_cookie\"}");
+        String json = CmakeUtils.getObjectToString(codeModel);
+        assertThat(json).contains("\"cookie\": \"my_cookie\"");
+    }
+
+    @Test
+    public void testIsWindows() {
+        boolean expected = (SdkConstants.CURRENT_PLATFORM == SdkConstants.PLATFORM_WINDOWS);
+        assertThat(CmakeUtils.isWindows()).isEqualTo(expected);
+    }
+
+    @Test
+    public void testGetVersionWithExecutor() throws java.io.IOException {
+        File dummyPath = tmp.newFile("cmake");
+        Revision rev = CmakeUtils.getVersion(dummyPath, file -> "cmake version 3.10.2");
+        assertThat(rev).isEqualTo(new Revision(3, 10, 2));
+
+        try {
+            CmakeUtils.getVersion(dummyPath, file -> "invalid output");
+            org.junit.Assert.fail("Expected RuntimeException");
+        } catch (RuntimeException e) {
+            assertThat(e.getMessage()).contains("Did not recognize stdout line as a cmake version");
+        }
     }
 
     /**
