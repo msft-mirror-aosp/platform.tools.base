@@ -485,6 +485,7 @@ public class AvdManagerCliTest {
                         "P resizable\n",
                         "P desktop_small\n",
                         "P small_phone\n",
+                        "P small_tablet\n",
                         "P tv_1080p\n",
                         "P tv_4k\n",
                         "P tv_720p\n",
@@ -533,11 +534,11 @@ public class AvdManagerCliTest {
         assertThat(Joiner.on("").join(mLogger.getMessages()))
                 .contains(
                         "P ---------\n"
-                                + "P id: 82 or \"4in WVGA (Nexus S)\"\n"
+                                + "P id: 83 or \"4in WVGA (Nexus S)\"\n"
                                 + "P     Name: 4\" WVGA (Nexus S)\n"
                                 + "P     OEM : Generic\n"
                                 + "P ---------\n"
-                                + "P id: 83 or \"4.65in 720p (Galaxy Nexus)\"\n"
+                                + "P id: 84 or \"4.65in 720p (Galaxy Nexus)\"\n"
                                 + "P     Name: 4.65\" 720p (Galaxy Nexus)\n"
                                 + "P     OEM : Generic\n"
                                 + "P ---------");
