@@ -50,4 +50,12 @@ class HtmlReporterV2(client: LintCliClient, output: File, flags: LintCliFlags) :
     val finalHtml = getIndexHtml("const lintReport = $json;", lintReport.name)
     outputHtml.writeText(finalHtml)
   }
+
+  override fun writeProjectList(stats: LintStats, projects: List<MultiProjectHtmlReporter.ProjectEntry>) {
+    val output = this.output ?: return
+    val titlePrefix = if (flags.isCheckDependencies) "Aggregate" else "Local"
+    val reportTitle = "$titlePrefix $title"
+    val finalHtml = getMultiProjectIndexHtml(reportTitle, stats, projects, client.getClientDisplayName(), client.getClientRevision())
+    output.writeText(finalHtml)
+  }
 }
