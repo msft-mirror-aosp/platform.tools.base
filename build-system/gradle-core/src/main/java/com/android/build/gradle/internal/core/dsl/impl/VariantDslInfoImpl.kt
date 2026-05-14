@@ -99,7 +99,7 @@ internal constructor(
 
   override val applicationId: Property<String> by lazy { services.newPropertyBackingDeprecatedApi(String::class.java, initApplicationId()) }
   override val packaging: Packaging
-    get() = extension.packagingOptions
+    get() = extension.packaging
 
   override val experimentalProperties: Map<String, Any>
     get() = extension.experimentalProperties
