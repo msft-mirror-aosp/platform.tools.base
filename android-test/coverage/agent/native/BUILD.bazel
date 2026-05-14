@@ -26,6 +26,8 @@ cc_binary(
         "coverage_rt.cc",
         "instrumenter.cc",
         "instrumenter.h",
+        "metadata_collector.cc",
+        "metadata_collector.h",
     ],
     copts = ANDROID_COPTS,
     linkopts = ANDROID_LINKOPTS,
@@ -33,6 +35,7 @@ cc_binary(
     deps = [
         "//prebuilts/studio/jdk:jni_headers",
         "//tools/base/android-test/coverage/common:log",
+        "//tools/base/android-test/coverage/proto:coverage_metadata_cc_proto",
         "@slicer",
     ],
 )
