@@ -402,6 +402,19 @@ const UIUtils = {
 };
 
 const CoverageReportApp = {
+    /**
+     * Escapes special characters for use in HTML content and attributes.
+     */
+    escapeHTML(str) {
+        if (!str) return "";
+        return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+    },
+
     state: {
         viewMode: 'flat', // 'flat' or 'tree'
         currentView: 'modules', // 'modules', 'packages', 'classes'
@@ -1041,15 +1054,15 @@ const CoverageReportApp = {
         if(selectedModule) {
             html += `<span class="breadcrumb-separator" aria-hidden="true">/</span>`;
             if(selectedPackage) {
-                html += `<a href="#" class="breadcrumb-link" data-action="go-to-packages">${selectedModule}</a>`;
+                html += `<a href="#" class="breadcrumb-link" data-action="go-to-packages">${this.escapeHTML(selectedModule)}</a>`;
             } else {
-                html += `<span class="breadcrumb-current">${selectedModule}</span>`;
+                html += `<span class="breadcrumb-current">${this.escapeHTML(selectedModule)}</span>`;
             }
         }
         // Package level
         if(selectedPackage) {
             html += `<span class="breadcrumb-separator" aria-hidden="true">/</span>`;
-            html += `<span class="breadcrumb-current">${selectedPackage}</span>`;
+            html += `<span class="breadcrumb-current">${this.escapeHTML(selectedPackage)}</span>`;
         }
         this.elements.flatBreadcrumbs.innerHTML = html;
     },
@@ -1666,16 +1679,17 @@ const CoverageReportApp = {
             const vals = this.getCoverageValues(this.fullReport, v);
 
             topHeader.innerHTML += `<th colspan="2" class="py-4 px-4 text-center font-semibold text-gray-700 border-l border-gray-200">
-                <div class="flex flex-col"><span>${v}</span><span class="text-sm font-bold ${vals.instrColor} mt-1">${vals.instrPercent}</span></div>
+                <div class="flex flex-col"><span>${this.escapeHTML(v)}</span><span class="text-sm font-bold ${vals.instrColor} mt-1">${vals.instrPercent}</span></div>
             </th>`;
+
 
             const instrKey = `instruction.${v}.percent`;
             const branchKey = `branch.${v}.percent`;
             const instrStyle = this.getColumnStyle(instrKey);
             const branchStyle = this.getColumnStyle(branchKey);
 
-            subHeader.innerHTML += `<th class="py-2 px-4 text-center text-xs font-medium text-gray-600 border-l border-gray-200 cursor-pointer" tabindex="0" data-sort-by="${instrKey}" aria-sort="${getAriaSort(instrKey)}" ${instrStyle}>Instruction ${sortIndicator(instrKey)}<div class="resizer" data-resizer-id="${instrKey}"></div></th>
-                                    <th class="py-2 px-4 text-center text-xs font-medium text-gray-600 cursor-pointer" tabindex="0" data-sort-by="${branchKey}" aria-sort="${getAriaSort(branchKey)}" ${branchStyle}>Branch ${sortIndicator(branchKey)}<div class="resizer" data-resizer-id="${branchKey}"></div></th>`;
+            subHeader.innerHTML += `<th class="py-2 px-4 text-center text-xs font-medium text-gray-600 border-l border-gray-200 cursor-pointer" tabindex="0" data-sort-by="${this.escapeHTML(instrKey)}" aria-sort="${getAriaSort(instrKey)}" ${instrStyle}>Instruction ${sortIndicator(instrKey)}<div class="resizer" data-resizer-id="${this.escapeHTML(instrKey)}"></div></th>
+                                    <th class="py-2 px-4 text-center text-xs font-medium text-gray-600 cursor-pointer" tabindex="0" data-sort-by="${this.escapeHTML(branchKey)}" aria-sort="${getAriaSort(branchKey)}" ${branchStyle}>Branch ${sortIndicator(branchKey)}<div class="resizer" data-resizer-id="${this.escapeHTML(branchKey)}"></div></th>`;
         });
 
         this.elements.tableHeaders.innerHTML = '';
@@ -1694,9 +1708,9 @@ const CoverageReportApp = {
 
             let nameContent;
             if (type === 'class') {
-                nameContent = `<span class="font-medium text-blue-700 hover:underline">${item.name}</span>`;
+                nameContent = `<span class="font-medium text-blue-700 hover:underline">${this.escapeHTML(item.name)}</span>`;
             } else {
-                nameContent = `<span class="font-medium text-gray-900">${item.name}</span>`;
+                nameContent = `<span class="font-medium text-gray-900">${this.escapeHTML(item.name)}</span>`;
             }
 
             const chevron = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="collapsible-arrow w-4 h-4 text-gray-600 ${!hasChildren ? 'invisible' : ''} ${isSearching ? 'open' : ''}"><path d="m9 18 6-6-6-6"></path></svg>`;
@@ -1713,10 +1727,10 @@ const CoverageReportApp = {
             const ariaExpanded = hasChildren ? `aria-expanded="${isSearching ? 'true' : 'false'}"` : '';
             const interactiveAttrs = hasChildren
                 ? `tabindex="0" class="flex items-center gap-2 cursor-pointer pl-level-${level}"`
-                : `tabindex="0" role="link" class="flex items-center gap-2 cursor-pointer pl-level-${level} class-link" data-class-name="${item.name}" data-module-name="${context.moduleName}" data-package-name="${context.packageName}" data-test-suite-name="${context.testSuiteName || ''}"`;
+                : `tabindex="0" role="link" class="flex items-center gap-2 cursor-pointer pl-level-${level} class-link" data-class-name="${this.escapeHTML(item.name)}" data-module-name="${this.escapeHTML(context.moduleName)}" data-package-name="${this.escapeHTML(context.packageName)}" data-test-suite-name="${this.escapeHTML(context.testSuiteName || '')}"`;
 
-            return `<tr class="${rowClasses}" data-id="${item.name}" data-parent-id="${parentId}">
-                <td class="py-3 px-6 sticky-name" title="${item.name}"><div ${interactiveAttrs} ${ariaExpanded}>${chevron}${nameContent}</div></td>
+            return `<tr class="${rowClasses}" data-id="${this.escapeHTML(item.name)}" data-parent-id="${this.escapeHTML(parentId)}">
+                <td class="py-3 px-6 sticky-name" title="${this.escapeHTML(item.name)}"><div ${interactiveAttrs} ${ariaExpanded}>${chevron}${nameContent}</div></td>
                 ${coverageCells}
             </tr>`;
         };
@@ -1753,24 +1767,24 @@ const CoverageReportApp = {
             let nameCell;
             switch (this.state.currentView) {
                 case 'packages':
-                    nameCell = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover:underline cursor-pointer" tabindex="0" title="${item.name}" data-name="${item.name}" data-type="${item.type}" data-module-name="${item.moduleName}">${item.name}</td>`;
+                    nameCell = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover:underline cursor-pointer" tabindex="0" title="${this.escapeHTML(item.name)}" data-name="${this.escapeHTML(item.name)}" data-type="${this.escapeHTML(item.type)}" data-module-name="${this.escapeHTML(item.moduleName)}">${this.escapeHTML(item.name)}</td>`;
                     if (!this.state.selectedModule) {
-                        nameCell += `<td class="py-3 px-6 text-gray-500 text-sm truncate col-module" title="${item.moduleName}">${item.moduleName}</td>`;
+                        nameCell += `<td class="py-3 px-6 text-gray-500 text-sm truncate col-module" title="${this.escapeHTML(item.moduleName)}">${this.escapeHTML(item.moduleName)}</td>`;
                     }
                     break;
                 case 'classes':
-                    nameCell = `<td class="py-3 px-6 sticky-name cursor-pointer class-link" tabindex="0" role="link" title="${item.name}" data-class-name="${item.name}" data-module-name="${item.moduleName}" data-package-name="${item.packageName}"><span class="font-medium text-blue-700 hover:underline">${item.name}</span></td>`;
+                    nameCell = `<td class="py-3 px-6 sticky-name cursor-pointer class-link" tabindex="0" role="link" title="${this.escapeHTML(item.name)}" data-class-name="${this.escapeHTML(item.name)}" data-module-name="${this.escapeHTML(item.moduleName)}" data-package-name="${this.escapeHTML(item.packageName)}"><span class="font-medium text-blue-700 hover:underline">${this.escapeHTML(item.name)}</span></td>`;
                     if (!this.state.selectedModule) {
-                        nameCell += `<td class="px-2 col-path" title="${item.moduleName} > ${item.packageName}">
+                        nameCell += `<td class="px-2 col-path" title="${this.escapeHTML(item.moduleName)} > ${this.escapeHTML(item.packageName)}">
                             <div class="flex flex-col" style="overflow: hidden; width: 100%;">
-                                <span class="text-xs text-gray-500 truncate-block">${item.moduleName}</span>
-                                <span class="text-sm text-gray-500 truncate-block">${item.packageName}</span>
+                                <span class="text-xs text-gray-500 truncate-block">${this.escapeHTML(item.moduleName)}</span>
+                                <span class="text-sm text-gray-500 truncate-block">${this.escapeHTML(item.packageName)}</span>
                             </div>
                         </td>`;
                     }
                     break;
                 default: // modules
-                    nameCell = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover:underline cursor-pointer" tabindex="0" title="${item.name}" data-name="${item.name}" data-type="${item.type}" data-module-name="${item.name}">${item.name}</td>`;
+                    nameCell = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover:underline cursor-pointer" tabindex="0" title="${this.escapeHTML(item.name)}" data-name="${this.escapeHTML(item.name)}" data-type="${this.escapeHTML(item.type)}" data-module-name="${this.escapeHTML(item.name)}">${this.escapeHTML(item.name)}</td>`;
             }
             return `<tr class="table-row border-b border-gray-200 hover:bg-gray-50">${nameCell}${coverageCells}</tr>`;
         }).join('');

@@ -19,6 +19,19 @@
  */
 const UIUtils = {
   /**
+   * Escapes special characters for use in HTML content and attributes.
+   */
+  escapeHTML(str) {
+    if (!str) return "";
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  },
+
+  /**
    * Builds a multi-select dropdown with "Select All" / "Clear" actions
    * and a scrollable list of options.
    */
@@ -189,130 +202,13 @@ const UIUtils = {
 };
 
 /**
- * Navigation handler for history management (Back/Forward buttons).
+ * Constants for navigation actions
  */
-const Navigation = {
-  isPopping: false,
-
-  init() {
-    // Store initial state
-    history.replaceState(this.captureState(), "");
-
-    window.onpopstate = (event) => {
-      if (event.state) {
-        this.isPopping = true;
-        this.applyState(event.state);
-        this.isPopping = false;
-      }
-    };
-  },
-
-  captureState() {
-    // Deep copy of state, excluding large/unnecessary parts
-    const { processedData, variants, ...restOfState } = TestReportApp.state;
-    const state = JSON.parse(JSON.stringify(restOfState));
-
-    // Always clear search from history state to avoid messy history from keystrokes
-    if (state.filters) {
-      state.filters.search = '';
-    }
-
-    // Always remove density from history state to retain user choice across navigation
-    delete state.density;
-
-    state.chipVisibility = {
-      status: !TestReportApp.elements.statusChipContainer.classList.contains('hidden'),
-      module: !TestReportApp.elements.modChipContainer.classList.contains('hidden'),
-      package: !TestReportApp.elements.pkgChipContainer.classList.contains('hidden'),
-      class: !TestReportApp.elements.clsChipContainer.classList.contains('hidden'),
-      testCase: !TestReportApp.elements.tcChipContainer.classList.contains('hidden')
-    };
-
-    return state;
-  },
-
-  push() {
-    if (this.isPopping) return;
-    history.pushState(this.captureState(), "");
-  },
-
-  replace() {
-    if (this.isPopping) return;
-    history.replaceState(this.captureState(), "");
-  },
-
-  applyState(state) {
-    if (!state) return;
-
-    // Restore state
-    TestReportApp.state = {
-      ...TestReportApp.state,
-      ...state
-    };
-
-    // Reset search UI on navigation
-    if (TestReportApp.elements.searchInput) {
-      TestReportApp.elements.searchInput.value = '';
-      if (TestReportApp.elements.searchClearBtn) {
-        TestReportApp.elements.searchClearBtn.classList.add('hidden');
-      }
-      if (TestReportApp.elements.searchWrapper) {
-        TestReportApp.elements.searchWrapper.classList.remove('expanded');
-      }
-      if (TestReportApp.elements.searchRevealBtn) {
-        TestReportApp.elements.searchRevealBtn.classList.remove('hidden');
-      }
-    }
-
-    // Update segments UI
-    if (TestReportApp.elements.viewSegments) {
-      TestReportApp.elements.viewSegments.querySelectorAll('.segment-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.value === TestReportApp.state.viewMode);
-      });
-    }
-    if (TestReportApp.elements.densitySegments) {
-      TestReportApp.elements.densitySegments.querySelectorAll('.segment-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.value === TestReportApp.state.density);
-      });
-      if (TestReportApp.elements.mainTable) {
-        if (TestReportApp.state.density === 'compact') {
-          TestReportApp.elements.mainTable.classList.add('table-compact');
-        } else {
-          TestReportApp.elements.mainTable.classList.remove('table-compact');
-        }
-      }
-    }
-
-    // Restore chip visibility
-    if (state.chipVisibility && TestReportApp.elements) {
-      TestReportApp.elements.statusChipContainer.classList.toggle('hidden', !state.chipVisibility.status);
-      TestReportApp.elements.modChipContainer.classList.toggle('hidden', !state.chipVisibility.module);
-      TestReportApp.elements.pkgChipContainer.classList.toggle('hidden', !state.chipVisibility.package);
-      TestReportApp.elements.clsChipContainer.classList.toggle('hidden', !state.chipVisibility.class);
-      TestReportApp.elements.tcChipContainer.classList.toggle('hidden', !state.chipVisibility.testCase);
-    }
-
-    // Rebuild static dropdowns to reflect restored state (test suite, variants, status)
-    TestReportApp.populateFilters();
-
-    // Update test suite UI specifically since populateFilters handles the dropdown but not the external UI elements fully unless changed
-    if (TestReportApp.elements.tsAllState && TestReportApp.elements.tsSelectedState) {
-      if (TestReportApp.state.filters.testSuite === 'all') {
-        TestReportApp.elements.tsAllState.classList.remove('hidden');
-        TestReportApp.elements.tsSelectedState.classList.add('hidden');
-      } else {
-        TestReportApp.elements.tsAllState.classList.add('hidden');
-        TestReportApp.elements.tsSelectedState.classList.remove('hidden');
-        if (TestReportApp.elements.testSuiteFilterText) {
-          TestReportApp.elements.testSuiteFilterText.textContent = TestReportApp.state.filters.testSuite;
-        }
-      }
-    }
-
-    // Re-render
-    TestReportApp.render();
-    TestReportApp.updateFilterButtons();
-  }
+const BREADCRUMB_ACTIONS = {
+  GO_TO_MODULES: 'go-to-modules',
+  GO_TO_PACKAGES: 'go-to-packages',
+  GO_TO_CLASSES: 'go-to-classes',
+  GO_TO_TEST_CASES: 'go-to-test-cases'
 };
 
 /**
@@ -327,6 +223,9 @@ const TestReportApp = {
     selectedModule: null,
     selectedPackage: null,
     selectedClass: null,
+    currentView: 'report',
+    currentStackTrace: null,
+    currentStackTraceContext: {},
     filters: { variants: [], search: '', status: ['passed', 'failed', 'skipped'], testSuite: 'all', modules: [], packages: [], classes: [], testCases: [] },
     sort: { by: 'name', order: 'asc' },
     isResizing: false,
@@ -489,6 +388,14 @@ const TestReportApp = {
       searchRevealBtn: document.getElementById('search-reveal-btn'),
       searchWrapper: document.getElementById('search-wrapper'),
       searchClearBtn: document.getElementById('search-clear-btn'),
+
+      reportViewControls: document.getElementById('report-view-controls'),
+      reportView: document.getElementById('report-view'),
+      stackTraceView: document.getElementById('stack-trace-view'),
+      stackTraceBreadcrumbs: document.getElementById('stack-trace-breadcrumbs'),
+      stackTraceContainer: document.getElementById('stack-trace-container'),
+      stackTraceContent: document.getElementById('stack-trace-content'),
+      stackTraceTitle: document.getElementById('stack-trace-title'),
     };
   },
 
@@ -629,12 +536,11 @@ const TestReportApp = {
   bindEvents() {
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
-        const modal = document.getElementById('stack-trace-modal');
         const openDropdownConf = this.getDropdownConfigs().find(c => c.dropdown && !c.dropdown.classList.contains('hidden'));
         if (openDropdownConf) {
           this.toggleDropdown(openDropdownConf.dropdown, openDropdownConf.btn);
-        } else if (modal && !modal.classList.contains('hidden')) {
-          this.closeModal();
+        } else if (this.state.currentView === 'stack-trace') {
+          history.back();
         } else if (this.elements.searchWrapper && this.elements.searchWrapper.classList.contains('expanded')) {
           this.elements.searchWrapper.classList.remove('expanded');
           setTimeout(() => {
@@ -787,13 +693,8 @@ const TestReportApp = {
         this.elements.viewSegments.addEventListener('click', (e) => {
             const btn = e.target.closest('.segment-btn');
             if (!btn) return;
-            this.elements.viewSegments.querySelectorAll('.segment-btn').forEach(b => {
-                b.classList.remove('active');
-                b.setAttribute('aria-pressed', 'false');
-            });
-            btn.classList.add('active');
-            btn.setAttribute('aria-pressed', 'true');
             this.state.viewMode = btn.dataset.value;
+            this.updateViewModeUI();
             this.resetSelection();
             this.render();
             Navigation.push();
@@ -878,28 +779,55 @@ const TestReportApp = {
             }
         }
     });
-    this.elements.breadcrumbs.addEventListener('click', (e) => {
+    const handleBreadcrumbAction = (e) => {
         const link = e.target.closest('a[data-action]');
         if (!link) return;
         e.preventDefault();
-        const action = link.dataset.action;
-        if (action === 'go-to-modules') {
+        const { action, moduleName, packageName } = link.dataset;
+
+        if (action === BREADCRUMB_ACTIONS.GO_TO_MODULES) {
             this.state.selectedModule = null;
             this.state.selectedPackage = null;
             this.state.selectedClass = null;
             this.state.currentFlatView = 'modules';
-        } else if (action === 'go-to-packages') {
+        } else if (action === BREADCRUMB_ACTIONS.GO_TO_PACKAGES) {
+            this.state.selectedModule = moduleName || this.state.selectedModule;
             this.state.selectedPackage = null;
             this.state.selectedClass = null;
             this.state.currentFlatView = 'packages';
-        } else if (action === 'go-to-classes') {
+        } else if (action === BREADCRUMB_ACTIONS.GO_TO_CLASSES) {
+            this.state.selectedModule = moduleName || this.state.selectedModule;
+            this.state.selectedPackage = packageName || this.state.selectedPackage;
             this.state.selectedClass = null;
             this.state.currentFlatView = 'classes';
+        } else if (action === BREADCRUMB_ACTIONS.GO_TO_TEST_CASES) {
+            this.state.selectedModule = moduleName || this.state.selectedModule;
+            this.state.selectedPackage = packageName || this.state.selectedPackage;
+            this.state.selectedClass = link.dataset.className || this.state.selectedClass;
+            this.state.currentFlatView = 'testCases';
         }
+
+        this.state.viewMode = 'flat';
+        this.updateViewModeUI();
+        this.showReportView();
         this.render();
         Navigation.push();
-    });
+    };
+
+    this.elements.breadcrumbs.addEventListener('click', handleBreadcrumbAction);
+    this.elements.stackTraceBreadcrumbs.addEventListener('click', handleBreadcrumbAction);
+
     this.elements.breadcrumbs.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            const link = e.target.closest('.breadcrumb-link');
+            if (link) {
+                e.preventDefault();
+                link.click();
+            }
+        }
+    });
+
+    this.elements.stackTraceBreadcrumbs.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
             const link = e.target.closest('.breadcrumb-link');
             if (link) {
@@ -988,6 +916,16 @@ const TestReportApp = {
               this.elements.addFilterBtn.closest('#add-filter-container').classList.remove('hidden');
           }
       }
+  },
+
+  updateViewModeUI() {
+    if (this.elements.viewSegments) {
+      this.elements.viewSegments.querySelectorAll('.segment-btn').forEach(btn => {
+        const isActive = btn.dataset.value === this.state.viewMode;
+        btn.classList.toggle('active', isActive);
+        btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      });
+    }
   },
 
   toggleAddFilterOption(type, show) {
@@ -1447,7 +1385,7 @@ const TestReportApp = {
             <tr class="border-b border-gray-200">
                 <th class="py-4 px-6 text-left font-semibold text-gray-700 sticky-name bg-gray-50 z-30 cursor-pointer" data-sort-by="name" tabindex="0" aria-sort="${getAriaSort('name')}">${nameHeader} ${sortIndicator('name')}<div class="resizer" data-resizer-id="name"></div></th>
                 ${pathHeader}
-                ${variantsToShow.map(v => `<th class="py-4 px-4 text-center font-semibold text-gray-700 border-l border-gray-200" colspan="4">${v}</th>`).join('')}
+                ${variantsToShow.map(v => `<th class="py-4 px-4 text-center font-semibold text-gray-700 border-l border-gray-200" colspan="4">${UIUtils.escapeHTML(v)}</th>`).join('')}
             </tr>
             <tr class="border-b border-gray-200">
                 <th class="py-2 px-6 sticky-name bg-gray-50 z-30"></th>
@@ -1466,7 +1404,7 @@ const TestReportApp = {
 
     // "Project" is the root link
     if (selectedModule) {
-        html += `<a href="#" class="breadcrumb-link" data-action="go-to-modules">Project</a>`;
+        html += `<a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_MODULES}">Project</a>`;
     } else {
         html += `<span class="breadcrumb-current">Project</span>`;
     }
@@ -1475,9 +1413,9 @@ const TestReportApp = {
     if (selectedModule) {
         html += `<span class="breadcrumb-separator">/</span>`;
         if (selectedPackage) {
-            html += `<a href="#" class="breadcrumb-link" data-action="go-to-packages">${selectedModule}</a>`;
+            html += `<a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_PACKAGES}">${UIUtils.escapeHTML(selectedModule)}</a>`;
         } else {
-            html += `<span class="breadcrumb-current">${selectedModule}</span>`;
+            html += `<span class="breadcrumb-current">${UIUtils.escapeHTML(selectedModule)}</span>`;
         }
     }
 
@@ -1485,16 +1423,16 @@ const TestReportApp = {
     if (selectedPackage) {
         html += `<span class="breadcrumb-separator">/</span>`;
         if (selectedClass) {
-            html += `<a href="#" class="breadcrumb-link" data-action="go-to-classes">${selectedPackage}</a>`;
+            html += `<a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_CLASSES}">${UIUtils.escapeHTML(selectedPackage)}</a>`;
         } else {
-            html += `<span class="breadcrumb-current">${selectedPackage}</span>`;
+            html += `<span class="breadcrumb-current">${UIUtils.escapeHTML(selectedPackage)}</span>`;
         }
     }
 
     // Class level
     if (selectedClass) {
         html += `<span class="breadcrumb-separator">/</span>`;
-        html += `<span class="breadcrumb-current">${selectedClass}</span>`;
+        html += `<span class="breadcrumb-current">${UIUtils.escapeHTML(selectedClass)}</span>`;
     }
 
     this.elements.breadcrumbs.innerHTML = html;
@@ -1502,15 +1440,20 @@ const TestReportApp = {
 
   renderTreeRows(data) {
     let html = '';
-    const renderNode = (node, parentId, level) => {
+    const renderNode = (node, parentId, level, context = {}) => {
       const type = node.type;
+      const currentContext = { ...context };
+      if (type === 'module') currentContext.moduleName = node.name;
+      if (type === 'package') currentContext.packageName = node.name;
+      if (type === 'class') currentContext.className = node.name;
+
       const childType = this.getChildType(type);
       const childKey = this.pluralize(childType);
       const children = node[childKey] || (type === 'class' ? node.testCases : []) || [];
       const hasChildren = children.length > 0;
       const uniqueId = `${parentId}-${node.name}`.replace(/[^a-zA-Z0-9-_]/g, '');
 
-      const nameContent = `<span class="font-medium">${node.name}</span>`;
+      const nameContent = `<span class="font-medium">${UIUtils.escapeHTML(node.name)}</span>`;
       const chevron = `<svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="collapsible-arrow ${!hasChildren ? 'invisible' : ''}"><path d="m9 18 6-6-6-6"></path></svg>`;
 
       const ariaExpanded = hasChildren ? 'aria-expanded="false"' : '';
@@ -1520,16 +1463,16 @@ const TestReportApp = {
 
       html += `
                 <tr class="table-row ${level > 0 ? 'hidden' : ''}" data-id="${uniqueId}" data-parent-id="${parentId}">
-                    <td class="py-3 px-6 sticky-name ${hasChildren ? 'cursor-pointer' : ''}" title="${node.name}" ${tabindexAttr} ${ariaExpanded} ${roleAttr} ${hasChildren ? 'data-interactive="tree"' : ''}>
+                    <td class="py-3 px-6 sticky-name ${hasChildren ? 'cursor-pointer' : ''}" title="${UIUtils.escapeHTML(node.name)}" ${tabindexAttr} ${ariaExpanded} ${roleAttr} ${hasChildren ? 'data-interactive="tree"' : ''}>
                         <div style="padding-left: ${level * 1.0}rem; display: flex; align-items: center; width: 100%;">
                             ${chevron} ${nameContent}
                         </div>
                     </td>
-                    ${this._renderStatusCell(type === 'testCase' ? node : node.summary, type === 'testCase')}
+                    ${this._renderStatusCell(type === 'testCase' ? node : node.summary, type === 'testCase', currentContext)}
                 </tr>`;
 
       if (hasChildren) {
-        children.forEach(child => renderNode(child, uniqueId, level + 1));
+        children.forEach(child => renderNode(child, uniqueId, level + 1, currentContext));
       }
     };
 
@@ -1548,36 +1491,42 @@ const TestReportApp = {
     }
 
     this.elements.resultsData.innerHTML = items.map(item => {
-        let nameTd = `<td class="py-3 px-6 sticky-name font-medium" title="${item.name}">${item.name}</td>`;
+        let nameTd = `<td class="py-3 px-6 sticky-name font-medium" title="${UIUtils.escapeHTML(item.name)}">${UIUtils.escapeHTML(item.name)}</td>`;
         if (view !== 'testCases') {
-            nameTd = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover-underline cursor-pointer" tabindex="0" role="link" title="${item.name}" data-name="${item.name}" data-type="${item.type}" data-module-name="${item.moduleName || ''}" data-package-name="${item.packageName || ''}" data-interactive="flat">${item.name}</td>`;
+            nameTd = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover-underline cursor-pointer" tabindex="0" role="link" title="${UIUtils.escapeHTML(item.name)}" data-name="${UIUtils.escapeHTML(item.name)}" data-type="${item.type}" data-module-name="${UIUtils.escapeHTML(item.moduleName || '')}" data-package-name="${UIUtils.escapeHTML(item.packageName || '')}" data-interactive="flat">${UIUtils.escapeHTML(item.name)}</td>`;
         }
 
         let pathCell = '';
         if (this.state.viewMode === 'flat' && !this.state.selectedModule) {
             if (view === 'packages') {
-                pathCell = `<td class="py-3 px-6 text-gray-500 text-sm truncate col-module" title="${item.moduleName}">${item.moduleName}</td>`;
+                pathCell = `<td class="py-3 px-6 text-gray-500 text-sm truncate col-module" title="${UIUtils.escapeHTML(item.moduleName)}">${UIUtils.escapeHTML(item.moduleName)}</td>`;
             } else if (view === 'classes') {
-                pathCell = `<td class="px-2 col-path" title="${item.moduleName} > ${item.packageName}">
+                pathCell = `<td class="px-2 col-path" title="${UIUtils.escapeHTML(item.moduleName)} > ${UIUtils.escapeHTML(item.packageName)}">
                     <div class="flex flex-col" style="overflow: hidden; width: 100%;">
-                        <span class="text-xs text-gray-500 truncate-block">${item.moduleName}</span>
-                        <span class="text-sm text-gray-500 truncate-block">${item.packageName}</span>
+                        <span class="text-xs text-gray-500 truncate-block">${UIUtils.escapeHTML(item.moduleName)}</span>
+                        <span class="text-sm text-gray-500 truncate-block">${UIUtils.escapeHTML(item.packageName)}</span>
                     </div>
                 </td>`;
             } else if (view === 'testCases') {
-                pathCell = `<td class="px-2 col-path" title="${item.moduleName} > ${item.packageName} > ${item.className}">
+                pathCell = `<td class="px-2 col-path" title="${UIUtils.escapeHTML(item.moduleName)} > ${UIUtils.escapeHTML(item.packageName)} > ${UIUtils.escapeHTML(item.className)}">
                     <div class="flex flex-col" style="overflow: hidden; width: 100%;">
-                        <span class="text-xs text-gray-500 truncate-block">${item.moduleName}</span>
-                        <span class="text-sm text-gray-500 truncate-block">${item.packageName} > ${item.className}</span>
+                        <span class="text-xs text-gray-500 truncate-block">${UIUtils.escapeHTML(item.moduleName)}</span>
+                        <span class="text-sm text-gray-500 truncate-block">${UIUtils.escapeHTML(item.packageName)} > ${UIUtils.escapeHTML(item.className)}</span>
                     </div>
                 </td>`;
             }
         }
 
+        const context = {
+            moduleName: item.moduleName,
+            packageName: item.packageName,
+            className: item.className
+        };
+
         return `<tr class="table-row">
             ${nameTd}
             ${pathCell}
-            ${this._renderStatusCell(view === 'testCases' ? item : item.summary, view === 'testCases')}
+            ${this._renderStatusCell(view === 'testCases' ? item : item.summary, view === 'testCases', context)}
         </tr>`;
     }).join('') || '<tr><td colspan="100%" class="text-center text-gray-500" style="padding: 2rem;">No results found.</td></tr>';
   },
@@ -1674,7 +1623,7 @@ const TestReportApp = {
     return summary;
   },
 
-  _renderStatusCell(summaryOrNode, isNode = false) {
+  _renderStatusCell(summaryOrNode, isNode = false, context = {}) {
     // If isNode is true, summaryOrNode is the node itself (for functions), otherwise it's a summary object
     if (!summaryOrNode) {
       const colspan = (this.state.filters.variants.length) * 4;
@@ -1700,7 +1649,8 @@ const TestReportApp = {
           if (stackTrace) {
             cellContent = 'Failure';
             cellClass = 'py-3 px-4 text-center text-red-600 font-bold border-l border-gray-200 clickable-status';
-            return `<td colspan="4" class="${cellClass}" onclick="TestReportApp.openStackTrace(this)" data-stack-trace="${encodeURIComponent(stackTrace)}" tabindex="0" role="button" aria-label="View stack trace for failed test"><div class="flex flex-col"><span>${cellContent}</span><span class="text-xs text-transparent select-none">&nbsp;</span></div></td>`;
+            const contextAttrs = `data-module="${UIUtils.escapeHTML(context.moduleName || '')}" data-package="${UIUtils.escapeHTML(context.packageName || '')}" data-class="${UIUtils.escapeHTML(context.className || '')}" data-test-case="${UIUtils.escapeHTML(summaryOrNode.name || '')}"`;
+            return `<td colspan="4" class="${cellClass}" onclick="TestReportApp.openStackTrace(this)" data-stack-trace="${encodeURIComponent(stackTrace)}" ${contextAttrs} tabindex="0" role="button" aria-label="View stack trace for failed test"><div class="flex flex-col"><span>${cellContent}</span><span class="text-xs text-transparent select-none">&nbsp;</span></div></td>`;
           } else {
             cellContent = 'Failed';
             cellClass = 'py-3 px-4 text-center text-red-600 font-bold border-l border-gray-200';
@@ -1742,23 +1692,79 @@ const TestReportApp = {
   },
 
   openStackTrace(element) {
-    this.modalTrigger = element;
+    this.activeTrigger = element;
     const stackTrace = decodeURIComponent(element.dataset.stackTrace);
-    const modal = document.getElementById('stack-trace-modal');
-    const content = document.getElementById('stack-trace-content');
-    const closeBtn = document.getElementById('close-modal');
-    content.textContent = stackTrace;
-    modal.classList.remove('hidden');
-    if (closeBtn) closeBtn.focus();
+    const context = {
+        moduleName: element.dataset.module,
+        packageName: element.dataset.package,
+        className: element.dataset.class,
+        testCaseName: element.dataset.testCase
+    };
+    this.showStackTraceView(stackTrace, context);
+    Navigation.push();
   },
 
-  closeModal() {
-    const modal = document.getElementById('stack-trace-modal');
-    if (modal) modal.classList.add('hidden');
-    if (this.modalTrigger) {
-        this.modalTrigger.focus();
-        this.modalTrigger = null;
+  showStackTraceView(stackTrace, context) {
+    this.state.currentView = 'stack-trace';
+    this.state.currentStackTrace = stackTrace;
+    this.state.currentStackTraceContext = context;
+
+    this.elements.reportView.classList.add('hidden-view');
+    if (this.elements.reportViewControls) this.elements.reportViewControls.classList.add('hidden');
+    this.elements.stackTraceView.classList.remove('hidden-view');
+
+    this.elements.stackTraceContent.textContent = stackTrace;
+    this.renderStackTraceBreadcrumbs(context);
+    window.scrollTo(0, 0);
+
+    if (this.elements.stackTraceContainer) {
+        this.elements.stackTraceContainer.focus();
     }
+  },
+
+  showReportView() {
+    this.state.currentView = 'report';
+    this.state.currentStackTrace = null;
+    this.state.currentStackTraceContext = {};
+
+    this.elements.stackTraceView.classList.add('hidden-view');
+    this.elements.reportView.classList.remove('hidden-view');
+    if (this.elements.reportViewControls) this.elements.reportViewControls.classList.remove('hidden');
+
+    if (this.activeTrigger) {
+        this.activeTrigger.focus();
+        this.activeTrigger = null;
+    }
+  },
+
+  renderStackTraceBreadcrumbs(context) {
+    const { moduleName, packageName, className, testCaseName } = context;
+    let html = `<div class="flex items-center gap-2 text-sm">
+        <a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_MODULES}">Project</a>`;
+
+    if (moduleName) {
+        html += `
+            <span class="breadcrumb-separator" aria-hidden="true">/</span>
+            <a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_PACKAGES}" data-module-name="${UIUtils.escapeHTML(moduleName)}">${UIUtils.escapeHTML(moduleName)}</a>`;
+    }
+    if (packageName) {
+         html += `
+            <span class="breadcrumb-separator" aria-hidden="true">/</span>
+            <a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_CLASSES}" data-module-name="${UIUtils.escapeHTML(moduleName)}" data-package-name="${UIUtils.escapeHTML(packageName)}">${UIUtils.escapeHTML(packageName)}</a>`;
+    }
+    if (className) {
+        html += `
+            <span class="breadcrumb-separator" aria-hidden="true">/</span>
+            <a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_TEST_CASES}" data-module-name="${UIUtils.escapeHTML(moduleName)}" data-package-name="${UIUtils.escapeHTML(packageName)}" data-class-name="${UIUtils.escapeHTML(className)}">${UIUtils.escapeHTML(className)}</a>`;
+    }
+    if (testCaseName) {
+        html += `
+            <span class="breadcrumb-separator" aria-hidden="true">/</span>
+            <span class="font-semibold text-gray-800">${UIUtils.escapeHTML(testCaseName)}</span>`;
+    }
+    html += `</div>`;
+
+    this.elements.stackTraceBreadcrumbs.innerHTML = html;
   },
 
   getChildType(parentType) {
@@ -1772,22 +1778,149 @@ const TestReportApp = {
   }
 };
 
+/**
+ * Navigation handler for history management (Back/Forward buttons).
+ */
+const Navigation = {
+  isPopping: false,
+
+  init() {
+    // Store initial state
+    history.replaceState(this.captureState(), "");
+
+    window.onpopstate = (event) => {
+      if (event.state) {
+        this.isPopping = true;
+        this.applyState(event.state);
+        this.isPopping = false;
+      }
+    };
+  },
+
+  captureState() {
+    // Deep copy of state, excluding large/unnecessary parts
+    const { processedData, variants, ...restOfState } = TestReportApp.state;
+    const state = JSON.parse(JSON.stringify(restOfState));
+
+    // Always clear search from history state to avoid messy history from keystrokes
+    if (state.filters) {
+      state.filters.search = '';
+    }
+
+    // Always remove density from history state to retain user choice across navigation
+    delete state.density;
+
+    state.chipVisibility = {
+      status: !TestReportApp.elements.statusChipContainer.classList.contains('hidden'),
+      module: !TestReportApp.elements.modChipContainer.classList.contains('hidden'),
+      package: !TestReportApp.elements.pkgChipContainer.classList.contains('hidden'),
+      class: !TestReportApp.elements.clsChipContainer.classList.contains('hidden'),
+      testCase: !TestReportApp.elements.tcChipContainer.classList.contains('hidden')
+    };
+
+    return state;
+  },
+
+  push() {
+    if (this.isPopping) return;
+    history.pushState(this.captureState(), "");
+  },
+
+  replace() {
+    if (this.isPopping) return;
+    history.replaceState(this.captureState(), "");
+  },
+
+  applyState(state) {
+    if (!state) return;
+
+    const oldView = TestReportApp.state.currentView;
+    const selectionChanged = (
+      TestReportApp.state.selectedModule !== state.selectedModule ||
+      TestReportApp.state.selectedPackage !== state.selectedPackage ||
+      TestReportApp.state.selectedClass !== state.selectedClass ||
+      TestReportApp.state.currentFlatView !== state.currentFlatView ||
+      TestReportApp.state.viewMode !== state.viewMode ||
+      JSON.stringify(TestReportApp.state.filters) !== JSON.stringify(state.filters) ||
+      TestReportApp.state.sort.by !== state.sort.by ||
+      TestReportApp.state.sort.order !== state.sort.order
+    );
+
+    // Restore state
+    TestReportApp.state = {
+      ...TestReportApp.state,
+      ...state
+    };
+
+    // Reset search UI on navigation
+    if (TestReportApp.elements.searchInput) {
+      TestReportApp.elements.searchInput.value = '';
+      if (TestReportApp.elements.searchClearBtn) {
+        TestReportApp.elements.searchClearBtn.classList.add('hidden');
+      }
+      if (TestReportApp.elements.searchWrapper) {
+        TestReportApp.elements.searchWrapper.classList.remove('expanded');
+      }
+      if (TestReportApp.elements.searchRevealBtn) {
+        TestReportApp.elements.searchRevealBtn.classList.remove('hidden');
+      }
+    }
+
+    // Update segments UI
+    TestReportApp.updateViewModeUI();
+
+    if (TestReportApp.elements.densitySegments) {
+      TestReportApp.elements.densitySegments.querySelectorAll('.segment-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.value === TestReportApp.state.density);
+      });
+      if (TestReportApp.elements.mainTable) {
+        if (TestReportApp.state.density === 'compact') {
+          TestReportApp.elements.mainTable.classList.add('table-compact');
+        } else {
+          TestReportApp.elements.mainTable.classList.remove('table-compact');
+        }
+      }
+    }
+
+    // Restore chip visibility
+    if (state.chipVisibility && TestReportApp.elements) {
+      TestReportApp.elements.statusChipContainer.classList.toggle('hidden', !state.chipVisibility.status);
+      TestReportApp.elements.modChipContainer.classList.toggle('hidden', !state.chipVisibility.module);
+      TestReportApp.elements.pkgChipContainer.classList.toggle('hidden', !state.chipVisibility.package);
+      TestReportApp.elements.clsChipContainer.classList.toggle('hidden', !state.chipVisibility.class);
+      TestReportApp.elements.tcChipContainer.classList.toggle('hidden', !state.chipVisibility.testCase);
+    }
+
+    // Rebuild static dropdowns to reflect restored state (test suite, variants, status)
+    TestReportApp.populateFilters();
+
+    // Update test suite UI specifically since populateFilters handles the dropdown but not the external UI elements fully unless changed
+    if (TestReportApp.elements.tsAllState && TestReportApp.elements.tsSelectedState) {
+      if (TestReportApp.state.filters.testSuite === 'all') {
+        TestReportApp.elements.tsAllState.classList.remove('hidden');
+        TestReportApp.elements.tsSelectedState.classList.add('hidden');
+      } else {
+        TestReportApp.elements.tsAllState.classList.add('hidden');
+        TestReportApp.elements.tsSelectedState.classList.remove('hidden');
+        if (TestReportApp.elements.testSuiteFilterText) {
+          TestReportApp.elements.testSuiteFilterText.textContent = TestReportApp.state.filters.testSuite;
+        }
+      }
+    }
+
+    // Re-render
+    if (TestReportApp.state.currentView === 'stack-trace') {
+        TestReportApp.showStackTraceView(TestReportApp.state.currentStackTrace, TestReportApp.state.currentStackTraceContext);
+    } else {
+        TestReportApp.showReportView();
+        if (selectionChanged || oldView === 'report') {
+            TestReportApp.render();
+        }
+    }
+    TestReportApp.updateFilterButtons();
+  }
+};
+
 document.addEventListener('DOMContentLoaded', () => {
   TestReportApp.init();
-
-  // Modal close handlers
-  const modal = document.getElementById('stack-trace-modal');
-  const closeBtn = document.getElementById('close-modal');
-
-  if (closeBtn) {
-    closeBtn.addEventListener('click', () => TestReportApp.closeModal());
-  }
-
-  if (modal) {
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) {
-        TestReportApp.closeModal();
-      }
-    });
-  }
 });

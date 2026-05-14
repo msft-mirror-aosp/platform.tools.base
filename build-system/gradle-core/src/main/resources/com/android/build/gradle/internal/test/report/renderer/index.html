@@ -160,7 +160,7 @@
                 </svg>
                 Add filter
               </button>
-              <div id="add-filter-dropdown" class="dropdown-menu hidden" role="menu" aria-label="Add Filter" style="min-width: 10rem">
+              <div id="add-filter-dropdown" class="dropdown-menu hidden" role="menu" aria-label="Add Filter">
                 <div id="add-filter-list">
                   <button class="dropdown-item w-full text-left" role="menuitem" data-filter-type="module">Module</button>
                   <button class="dropdown-item w-full text-left" role="menuitem" data-filter-type="package">Package</button>
@@ -267,16 +267,28 @@
     </main>
   </div>
 
-  <div id="stack-trace-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3 class="modal-title" id="modal-title">StackTrace</h3>
-        <button id="close-modal" class="close-button" aria-label="Close modal">&times;</button>
+  <div id="stack-trace-view" class="container-custom hidden-view">
+    <main>
+      <nav aria-label="Breadcrumb">
+        <div id="stack-trace-breadcrumbs" class="breadcrumbs-container"></div>
+      </nav>
+
+      <div class="variant-code-view">
+        <div class="variant-header">
+          <div class="flex items-center gap-2">
+            <svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-600">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+              <line x1="12" y1="9" x2="12" y2="13"></line>
+              <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+            <h3 class="text-lg font-semibold text-gray-900" id="stack-trace-title">Stack Trace</h3>
+          </div>
+        </div>
+        <div id="stack-trace-container" class="code-container" tabindex="0" aria-labelledby="stack-trace-title">
+          <pre id="stack-trace-content" class="font-mono text-sm text-red-600 whitespace-pre-wrap break-all"></pre>
+        </div>
       </div>
-      <div class="modal-body">
-        <pre id="stack-trace-content" tabindex="0"></pre>
-      </div>
-    </div>
+    </main>
   </div>
 
   <script src="data.js"></script>
