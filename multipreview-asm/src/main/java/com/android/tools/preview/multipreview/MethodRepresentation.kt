@@ -27,4 +27,4 @@ data class ParameterRepresentation(val annotationParameters: Map<String, Any?>)
 /**
  * Represent a method where [methodFqn] is a fully qualified name of the method and [parameters] is a list of [ParameterRepresentation]s.
  */
-data class MethodRepresentation(val methodFqn: String, val parameters: List<ParameterRepresentation>)
+data class MethodRepresentation(val methodFqn: String, val parameters: List<ParameterRepresentation>, val previewWrapperFqn: String? = null)

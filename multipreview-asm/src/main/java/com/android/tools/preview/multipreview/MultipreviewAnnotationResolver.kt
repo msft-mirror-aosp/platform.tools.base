@@ -31,11 +31,7 @@ import org.objectweb.asm.Opcodes
 class MultipreviewAnnotationResolver(
   private val previewAnnotationClassDescriptor: String,
   private val previewAnnotationContainerClassDescriptor: String,
-  private val screenshotTestDirectory: List<File>,
-  private val screenshotTestJars: List<File>,
-  private val mainDirectory: List<File>,
-  private val mainJars: List<File>,
-  private val dependencyJars: List<File>,
+  private val classResolver: (String) -> ClassReader?,
 ) {
 
   private val resolvedAnnotationClasses: MutableMap<String, Set<BaseAnnotationRepresentation>> = mutableMapOf()
@@ -118,58 +114,13 @@ class MultipreviewAnnotationResolver(
     try {
       currentlyResolvingAnnotationClasses += annotationClassDescriptor
 
-      val relativeFilePath = annotationClassDescriptor.substring(1, annotationClassDescriptor.length - 1) + ".class"
-
-      for (dir in screenshotTestDirectory) {
-        findClassInDirectory(dir, relativeFilePath)?.let {
-          return resolveAnnotationClass(it)
-        }
-      }
-
-      for (jar in screenshotTestJars) {
-        findClassInJar(jar, relativeFilePath)?.let {
-          return resolveAnnotationClass(it)
-        }
-      }
-
-      for (dir in mainDirectory) {
-        findClassInDirectory(dir, relativeFilePath)?.let {
-          return resolveAnnotationClass(it)
-        }
-      }
-
-      for (jar in mainJars) {
-        findClassInJar(jar, relativeFilePath)?.let {
-          return resolveAnnotationClass(it)
-        }
-      }
-
-      for (jar in dependencyJars) {
-        findClassInJar(jar, relativeFilePath)?.let {
-          return resolveAnnotationClass(it)
-        }
+      classResolver(annotationClassDescriptor)?.let {
+        return resolveAnnotationClass(it)
       }
 
       return setOf()
     } finally {
       currentlyResolvingAnnotationClasses -= annotationClassDescriptor
-    }
-  }
-
-  private fun findClassInDirectory(dir: File, relativeClassPath: String): ClassReader? {
-    val classFile = File(dir, relativeClassPath)
-    if (classFile.isFile && classFile.exists()) {
-      return ClassReader(classFile.readBytes())
-    }
-    return null
-  }
-
-  private fun findClassInJar(jar: File, relativeClassPath: String): ClassReader? {
-    if (!jar.exists() || !jar.isFile || !jar.name.endsWith(".jar")) {
-      return null
-    }
-    return ZipFile(jar).use { zipFile ->
-      zipFile.getEntry(relativeClassPath)?.let { zipFile.getInputStream(it).use { stream -> ClassReader(stream.readAllBytes()) } }
     }
   }
 

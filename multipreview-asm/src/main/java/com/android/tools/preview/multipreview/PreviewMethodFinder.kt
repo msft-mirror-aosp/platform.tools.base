@@ -18,6 +18,7 @@ package com.android.tools.preview.multipreview
 
 import java.io.File
 import java.util.zip.ZipFile
+import java.util.logging.Logger
 import org.objectweb.asm.AnnotationVisitor
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassVisitor
@@ -26,13 +27,15 @@ import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.AnnotationNode
 import org.objectweb.asm.tree.MethodNode
 
+private val logger = Logger.getLogger(PreviewMethodFinder::class.java.name)
+
 /** Provides functions to find all methods with Preview annotations for a given class paths. */
 class PreviewMethodFinder(
   private val screenshotTestDirectory: List<File>,
   private val screenshotTestJars: List<File>,
-  mainDirectory: List<File>,
-  mainJars: List<File>,
-  dependencyJars: List<File>,
+  private val mainDirectory: List<File>,
+  private val mainJars: List<File>,
+  private val dependencyJars: List<File>,
 ) {
 
   companion object {
@@ -53,28 +56,65 @@ class PreviewMethodFinder(
 
     private const val WEAR_TILE_PREVIEW_ANNOTATION = "Landroidx/wear/tiles/tooling/preview/Preview;"
     private const val WEAR_TILE_PREVIEW_ANNOTATION_CONTAINER = "Landroidx/wear/tiles/tooling/preview/Preview\$Container;"
+
+    private const val PREVIEW_WRAPPER_ANNOTATION = "Landroidx/compose/ui/tooling/preview/PreviewWrapper;"
+    private const val PREVIEW_WRAPPER_ANNOTATION_CONTAINER = ""
+  }
+
+  private val classReaderCache = mutableMapOf<String, ClassReader?>()
+
+  private fun resolveClassReader(annotationClassDescriptor: String): ClassReader? {
+    if (classReaderCache.containsKey(annotationClassDescriptor)) {
+      return classReaderCache[annotationClassDescriptor]
+    }
+
+    val relativeFilePath = annotationClassDescriptor.substring(1, annotationClassDescriptor.length - 1) + ".class"
+
+    fun findInDir(dir: File): ClassReader? {
+      val classFile = File(dir, relativeFilePath)
+      if (classFile.isFile && classFile.exists()) {
+        return ClassReader(classFile.readBytes())
+      }
+      return null
+    }
+
+    fun findInJar(jar: File): ClassReader? {
+      if (!jar.exists() || !jar.isFile || !jar.name.endsWith(".jar", ignoreCase = true)) return null
+      return ZipFile(jar).use { zipFile ->
+        zipFile.getEntry(relativeFilePath)?.let { zipFile.getInputStream(it).use { stream -> ClassReader(stream.readAllBytes()) } }
+      }
+    }
+
+    val reader =
+      screenshotTestDirectory.firstNotNullOfOrNull(::findInDir)
+        ?: screenshotTestJars.firstNotNullOfOrNull(::findInJar)
+        ?: mainDirectory.firstNotNullOfOrNull(::findInDir)
+        ?: mainJars.firstNotNullOfOrNull(::findInJar)
+        ?: dependencyJars.firstNotNullOfOrNull(::findInJar)
+
+    classReaderCache[annotationClassDescriptor] = reader
+    return reader
   }
 
   private val composeAnnotationResolver =
     MultipreviewAnnotationResolver(
       COMPOSE_PREVIEW_ANNOTATION,
       COMPOSE_PREVIEW_ANNOTATION_CONTAINER,
-      screenshotTestDirectory,
-      screenshotTestJars,
-      mainDirectory,
-      mainJars,
-      dependencyJars,
+      ::resolveClassReader
     )
 
   private val wearTileAnnotationResolver =
     MultipreviewAnnotationResolver(
       WEAR_TILE_PREVIEW_ANNOTATION,
       WEAR_TILE_PREVIEW_ANNOTATION_CONTAINER,
-      screenshotTestDirectory,
-      screenshotTestJars,
-      mainDirectory,
-      mainJars,
-      dependencyJars,
+      ::resolveClassReader
+    )
+
+  private val previewWrapperAnnotationResolver =
+    MultipreviewAnnotationResolver(
+      PREVIEW_WRAPPER_ANNOTATION,
+      PREVIEW_WRAPPER_ANNOTATION_CONTAINER,
+      ::resolveClassReader
     )
 
   /** Finds all methods with Preview annotations. */
@@ -159,7 +199,8 @@ class PreviewMethodFinder(
     }
 
     val methodPreviewParameters = findAllPreviewParameters(methodNodeToProcess)
-    onPreviewMethodFound(ComposePreviewMethod(MethodRepresentation(methodFqn, methodPreviewParameters), previewAnnotations))
+    val previewWrapperFqn = findPreviewWrapperFqn(methodNodeToProcess, methodFqn)
+    onPreviewMethodFound(ComposePreviewMethod(MethodRepresentation(methodFqn, methodPreviewParameters, previewWrapperFqn), previewAnnotations))
   }
 
   private fun processWearTileMethod(methodNodeToProcess: MethodNode, methodFqn: String, onPreviewMethodFound: (PreviewMethod) -> Unit) {
@@ -194,8 +235,8 @@ class PreviewMethodFinder(
     method: MethodNode,
   ): Set<BaseAnnotationRepresentation> {
     val previewAnnotations = mutableSetOf<BaseAnnotationRepresentation>()
-    method.invisibleAnnotations.findAllPreviewAnnotations(annotationResolver, previewAnnotations::addAll)
-    method.visibleAnnotations.findAllPreviewAnnotations(annotationResolver, previewAnnotations::addAll)
+    method.invisibleAnnotations?.findAllPreviewAnnotations(annotationResolver, previewAnnotations::addAll)
+    method.visibleAnnotations?.findAllPreviewAnnotations(annotationResolver, previewAnnotations::addAll)
     return previewAnnotations
   }
 
@@ -211,6 +252,20 @@ class PreviewMethodFinder(
     method.invisibleParameterAnnotations.findAllPreviewParameters(methodPreviewParameters::add)
     method.visibleParameterAnnotations.findAllPreviewParameters(methodPreviewParameters::add)
     return methodPreviewParameters
+  }
+
+  private fun findPreviewWrapperFqn(method: MethodNode, methodFqn: String): String? {
+    val wrapperAnnotations = mutableSetOf<BaseAnnotationRepresentation>()
+    method.invisibleAnnotations?.findAllPreviewAnnotations(previewWrapperAnnotationResolver, wrapperAnnotations::addAll)
+    method.visibleAnnotations?.findAllPreviewAnnotations(previewWrapperAnnotationResolver, wrapperAnnotations::addAll)
+
+    if (wrapperAnnotations.size > 1) {
+      logger.warning("Multiple @PreviewWrapper annotations found on $methodFqn. Only the first one will be used.")
+    }
+
+    val param = wrapperAnnotations.firstOrNull()?.parameters
+    val wrapperType = (param?.get("value") ?: param?.get("wrapper")) as? org.objectweb.asm.Type
+    return wrapperType?.className
   }
 
   private fun Array<List<AnnotationNode>?>?.findAllPreviewParameters(onFound: (ParameterRepresentation) -> Unit) {
