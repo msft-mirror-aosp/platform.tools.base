@@ -70,6 +70,11 @@ static std::atomic<uint32_t> g_next_block_id(0);
 
 Instrumenter* Instrumenter::instance_ = nullptr;
 
+Instrumenter::Instrumenter(jvmtiEnv* jvmti, const std::string& inclusion_prefix)
+    : jvmti_(jvmti), inclusion_prefix_(inclusion_prefix) {
+  instance_ = this;
+}
+
 Instrumenter::~Instrumenter() {
   if (instance_ == this) {
     instance_ = nullptr;
@@ -313,30 +318,6 @@ bool Instrumenter::ShouldInstrument(jobject loader, const char* name,
     if (next_char != '/' && next_char != '$') {
       return false;
     }
-  }
-
-  return true;
-}
-
-bool Instrumenter::RegisterHooks() {
-  jvmtiEventCallbacks callbacks = {};
-  callbacks.ClassFileLoadHook = &OnClassFileLoadHook;
-
-  jvmtiError error = jvmti_->SetEventCallbacks(&callbacks, sizeof(callbacks));
-  if (error != JVMTI_ERROR_NONE) {
-    Log::E("Error: Unable to set JVMTI callbacks. Error code: %d", error);
-    return false;
-  }
-
-  // Set the global instance pointer before enabling notifications to ensure
-  // that no classes loaded during the registration process are missed.
-  instance_ = this;
-
-  error = jvmti_->SetEventNotificationMode(
-      JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, nullptr);
-  if (error != JVMTI_ERROR_NONE) {
-    Log::E("Error: Unable to enable ClassFileLoadHook. Error code: %d", error);
-    return false;
   }
 
   return true;

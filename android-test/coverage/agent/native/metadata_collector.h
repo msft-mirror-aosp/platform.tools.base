@@ -73,6 +73,7 @@ class MetadataCollector {
   mutable std::mutex mutex_;
   std::string package_name_;
   proto::CoverageMetadata metadata_;
+  bool initialized_ = false;
 };
 
 }  // namespace coverage

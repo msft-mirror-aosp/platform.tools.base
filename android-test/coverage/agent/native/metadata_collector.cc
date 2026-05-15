@@ -33,8 +33,12 @@ MetadataCollector& MetadataCollector::Instance() {
 
 void MetadataCollector::Initialize(const std::string& package_name) {
   std::lock_guard<std::mutex> lock(mutex_);
+  if (initialized_) {
+    return;
+  }
   package_name_ = package_name;
   metadata_.set_version(1);
+  initialized_ = true;
 }
 
 proto::ClassMetadata* MetadataCollector::AddClass(
