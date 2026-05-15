@@ -49,4 +49,9 @@ public class CoverageTracker {
     public static void clear() {
         Arrays.fill(hits, false);
     }
+
+    /** @return The internal boolean array tracking block hits. */
+    public static boolean[] getHits() {
+        return hits;
+    }
 }
