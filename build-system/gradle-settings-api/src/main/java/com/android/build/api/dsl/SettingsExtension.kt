@@ -58,6 +58,13 @@ interface SettingsExtension {
    */
   var compileSdkPreview: String?
 
+  /**
+   * Specifies an SDK add-on to compile your project against.
+   *
+   * @param vendor The vendor of the add-on.
+   * @param name The name of the add-on.
+   * @param version The version of the add-on.
+   */
   fun compileSdkAddon(vendor: String, name: String, version: Int)
 
   /** Value set via `compileSdkAddon` */
@@ -78,6 +85,12 @@ interface SettingsExtension {
    */
   var minSdk: Int?
 
+  /**
+   * The minimum SDK version for preview APIs. Setting this will override previous calls of [minSdk] and [minSdkPreview] setters. Only one
+   * of [minSdk] and [minSdkPreview] should be set.
+   *
+   * See [uses-sdk element documentation](http://developer.android.com/guide/topics/manifest/uses-sdk-element.html).
+   */
   var minSdkPreview: String?
 
   /** Configures all aspects regarding minSdk, see [MinSdkSpec] for available options. */
