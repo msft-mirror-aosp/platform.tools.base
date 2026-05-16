@@ -15834,6 +15834,37 @@ maven_import(
 )
 
 maven_artifact(
+    name = "org.slf4j.slf4j-nop_2.0.17",
+    pom = "repository/org/slf4j/slf4j-nop/2.0.17/slf4j-nop-2.0.17.pom",
+    repo_root_path = "repository",
+    repo_path = "org/slf4j/slf4j-nop/2.0.17",
+    parent = "org.slf4j.slf4j-parent_2.0.17",
+    deps = [
+        "org.slf4j.slf4j-api_2.0.17",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.slf4j.slf4j-nop",
+    classifiers = [],
+    parent = "org.slf4j.slf4j-parent_2.0.17",
+    jars = [
+        "repository/org/slf4j/slf4j-nop/2.0.17/slf4j-nop-2.0.17.jar"
+    ],
+    exports = [
+        "org.slf4j.slf4j-api",
+    ],
+    original_deps = [
+        "org.slf4j.slf4j-api_2.0.17",
+    ],
+    pom = "repository/org/slf4j/slf4j-nop/2.0.17/slf4j-nop-2.0.17.pom",
+    repo_root_path = "repository",
+    repo_path = "org/slf4j/slf4j-nop/2.0.17",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.slf4j.slf4j-simple_1.7.2",
     pom = "repository/org/slf4j/slf4j-simple/1.7.2/slf4j-simple-1.7.2.pom",
     repo_root_path = "repository",
@@ -95826,6 +95857,14 @@ maven_artifact(
     pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-common/2.3.10/kotlin-stdlib-common-2.3.10.pom",
     repo_root_path = "repository",
     repo_path = "org/jetbrains/kotlin/kotlin-stdlib-common/2.3.10",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-stdlib-common_2.3.20",
+    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-common/2.3.20/kotlin-stdlib-common-2.3.20.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-stdlib-common/2.3.20",
     visibility = ["//visibility:public"],
 )
 

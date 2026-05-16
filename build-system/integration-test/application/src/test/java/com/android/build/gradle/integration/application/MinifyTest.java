@@ -138,8 +138,8 @@ public class MinifyTest {
                 .that()
                 // Make sure default ProGuard rules were applied.
                 .hasMethod("handleOnClick");
-        assertThat(project.file("build/outputs/mapping/minified/keepradius.pb")).exists();
-        assertThat(project.file("build/outputs/mapping/minified/keepradiusreport.html")).exists();
+        assertThat(project.file("build/outputs/mapping/minified/configanalyzer.pb")).exists();
+        assertThat(project.file("build/outputs/mapping/minified/configanalyzer.html")).exists();
         assertThat(project.file("build/outputs/mapping/minified/mapping.txt")).exists();
         assertThat(project.file("build/outputs/mapping/minified/mapping.prt")).exists();
         assertThat(project.file("build/outputs/mapping/minified/usage.txt")).exists();

@@ -28,16 +28,20 @@ import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProto
 
 /** Models the configuration for attribute extraction. */
 internal sealed class AttributeExtraction {
-  data class Enabled(val propertyCache: PropertyCache<View>) : AttributeExtraction()
+  data class Enabled(val propertyCache: PropertyCache<View>, val includeResolutionStack: Boolean) : AttributeExtraction()
 
   object Disabled : AttributeExtraction()
 }
 
 /** Flattens a view hierarchy into a [ViewNode] proto. */
-internal fun View.toViewNode(stringTable: StringTable, includeAttributes: Boolean = true): ViewNode {
+internal fun View.toViewNode(
+  stringTable: StringTable,
+  includeAttributes: Boolean = true,
+  includeResolutionStack: Boolean = false,
+): ViewNode {
   val attributeExtraction =
-    if (includeAttributes) {
-      AttributeExtraction.Enabled(PropertyCache.createViewPropertyCache())
+    if (includeAttributes || includeResolutionStack) {
+      AttributeExtraction.Enabled(PropertyCache.createViewPropertyCache(), includeResolutionStack)
     } else {
       AttributeExtraction.Disabled
     }
@@ -88,17 +92,13 @@ private fun createViewNode(view: View, stringTable: StringTable, attributeExtrac
       layoutResource = stringTable.put(layoutRes)
     }
 
-    // TODO: add support for attribute resolution stack (where properties come from).
-    // Note: This feature has significant platform limitations:
-    // 1. View.getAttributeResolutionStack() only returns fallback style chains and is often empty for views in the wild.
-    // 2. View.getAttributeSourceResourceMap() is also needed to get the direct source (like layout XML) for inline attributes.
-    // Experiments on real apps showed that these APIs often return empty data even for XML-inflated views.
     // TODO: add support for DLI AppContext (theme and display info)
     // TODO: add support for DLI Configuration (device configuration)
     // TODO: add support for XR
 
     when (attributeExtraction) {
-      is AttributeExtraction.Enabled -> populateAttributes(this, view, stringTable, attributeExtraction.propertyCache)
+      is AttributeExtraction.Enabled ->
+        populateAttributes(this, view, stringTable, attributeExtraction.propertyCache, attributeExtraction.includeResolutionStack)
       AttributeExtraction.Disabled -> {}
     }
 
@@ -121,18 +121,22 @@ private fun populateAttributes(
   view: View,
   stringTable: StringTable,
   viewPropertyCache: PropertyCache<View>,
+  includeResolutionStack: Boolean,
 ) {
   val viewPropertyData = viewPropertyCache.getOrResolve(view)
-  view.forEachProtoAttribute(viewPropertyData, stringTable) { attribute -> viewNodeBuilder.addAttributes(attribute) }
+  view.forEachProtoAttribute(viewPropertyData, stringTable, includeResolutionStack) { attribute ->
+    viewNodeBuilder.addAttributes(attribute)
+  }
 }
 
 /** Resolves and iterates over Android framework properties for this view, converting them into Proto [Attribute] messages. */
 private fun View.forEachProtoAttribute(
   propertyData: PropertyCache.PropertyData<View>,
   stringTable: StringTable,
+  includeResolutionStack: Boolean,
   onAttributeResolved: (Attribute) -> Unit,
 ) {
-  val reader = ProtoAttributeReader(this, propertyData.properties, stringTable, onAttributeResolved)
+  val reader = ProtoAttributeReader(this, propertyData.properties, stringTable, includeResolutionStack, onAttributeResolved)
   for (companion in propertyData.companions) {
     companion.readProperties(this, reader)
   }

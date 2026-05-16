@@ -22,9 +22,30 @@ import com.android.tools.ui.inspector.inspectors.view.resolveResourceToString
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.ViewNode.Attribute
 
 /** Resolves the framework value and builds a simplified [Attribute] proto message. */
-internal fun AttributeMetadata.toProtoAttribute(stringTable: StringTable, view: View, value: Any): Attribute? {
+internal fun AttributeMetadata.toProtoAttribute(
+  stringTable: StringTable,
+  view: View,
+  value: Any,
+  sourceMap: Map<Int, Int>,
+  includeResolutionStack: Boolean,
+): Attribute? {
   val resolvedValueString = resolveValueToString(view, value) ?: return null
-  return Attribute.newBuilder().setName(stringTable.put(name)).setValue(stringTable.put(resolvedValueString)).build()
+  val builder = Attribute.newBuilder().setName(stringTable.put(name)).setValue(stringTable.put(resolvedValueString))
+
+  // Set direct source if present in the map
+  sourceMap[attributeId]?.let { sourceResId ->
+    view.resolveResourceToString(sourceResId)?.let { resourceStr -> builder.setDirectSource(stringTable.put(resourceStr)) }
+  }
+
+  if (includeResolutionStack) {
+    // Requires debug_view_attributes flag to be enabled on the device to return non-empty stacks.
+    val stack = view.getAttributeResolutionStack(attributeId)
+    for (resId in stack) {
+      view.resolveResourceToString(resId)?.let { resourceStr -> builder.addStyleChain(stringTable.put(resourceStr)) }
+    }
+  }
+
+  return builder.build()
 }
 
 /**

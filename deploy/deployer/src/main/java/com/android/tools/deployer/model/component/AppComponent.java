@@ -17,14 +17,11 @@
 package com.android.tools.deployer.model.component;
 
 import com.android.annotations.NonNull;
-import com.android.ddmlib.IDevice;
-import com.android.ddmlib.IShellOutputReceiver;
 import com.android.tools.deployer.model.ModelException;
 import com.android.tools.deployer.model.activate.ActivationCommands;
 import com.android.tools.manifest.parser.components.ManifestAppComponentInfo;
 import com.android.utils.ILogger;
 
-import java.util.concurrent.TimeUnit;
 
 public abstract class AppComponent {
     @NonNull public final String appId;
@@ -33,10 +30,6 @@ public abstract class AppComponent {
 
     @NonNull protected final ILogger logger;
 
-    // The timeout is quite large to accommodate ARM emulators.
-    private final long SHELL_TIMEOUT = 15;
-
-    private final TimeUnit SHELL_TIMEUNIT = TimeUnit.SECONDS;
 
     /**
      * IMPORTANT! ---------- The model API will be completely implementation free. It will provide
@@ -67,24 +60,7 @@ public abstract class AppComponent {
         this.logger = logger;
     }
 
-    public abstract void activate(
-            @NonNull String extraFlags,
-            Mode activationMode,
-            @NonNull IShellOutputReceiver receiver,
-            @NonNull IDevice device)
-            throws ModelException;
 
-    protected void runShellCommand(
-            @NonNull String command,
-            @NonNull IShellOutputReceiver receiver,
-            @NonNull IDevice device)
-            throws ModelException {
-        try {
-            device.executeShellCommand(command, receiver, SHELL_TIMEOUT, SHELL_TIMEUNIT);
-        } catch (Exception e) {
-            throw new ModelException(e.getMessage());
-        }
-    }
 
     @NonNull
     public static String getFQEscapedName(@NonNull String appId, @NonNull String componentFqName) {

@@ -16,6 +16,7 @@
 
 #include "tools/base/android-test/coverage/agent/native/instrumenter.h"
 
+#include <atomic>
 #include <limits>
 #include <string_view>
 
@@ -62,9 +63,17 @@ class JvmtiAllocator : public dex::Writer::Allocator {
   jvmtiEnv* jvmti_;
 };
 
+// Global atomic counter for unique basic block IDs.
+static std::atomic<uint32_t> g_next_block_id(0);
+
 }  // namespace
 
 Instrumenter* Instrumenter::instance_ = nullptr;
+
+Instrumenter::Instrumenter(jvmtiEnv* jvmti, const std::string& inclusion_prefix)
+    : jvmti_(jvmti), inclusion_prefix_(inclusion_prefix) {
+  instance_ = this;
+}
 
 Instrumenter::~Instrumenter() {
   if (instance_ == this) {
@@ -178,7 +187,7 @@ bool Instrumenter::InstrumentMethod(
 
   // Allocate 1 scratch register for our instrumentation.
   slicer::AllocateScratchRegs alloc_regs(1);
-  if (!alloc_regs.Apply(&code_ir)) {
+  if (!alloc_regs.Apply(&code_ir) || alloc_regs.ScratchRegs().empty()) {
     Log::W("Failed to allocate scratch register for method %s. Skipping.",
            ir_method->decl->name->c_str());
     return false;
@@ -186,22 +195,50 @@ bool Instrumenter::InstrumentMethod(
 
   dex::u4 scratch_reg = *alloc_regs.ScratchRegs().begin();
 
-  // Find the first bytecode instruction to inject our call before it.
-  lir::Instruction* trace_point = nullptr;
-  for (auto instr : code_ir.instructions) {
-    if (dynamic_cast<lir::Bytecode*>(instr)) {
-      trace_point = instr;
-      break;
-    }
-  }
+  lir::ControlFlowGraph cfg(&code_ir, true);
 
-  if (trace_point != nullptr) {
-    // Inject: const vX, <dummy_id>
+  bool injected = false;
+  for (const auto& block : cfg.basic_blocks) {
+    lir::Instruction* trace_point = nullptr;
+
+    if (block.region.first == nullptr) continue;
+
+    // Find the first bytecode instruction in this basic block.
+    for (auto instr = block.region.first; instr != nullptr;
+         instr = (instr == block.region.last) ? nullptr : instr->next) {
+      if (dynamic_cast<lir::Bytecode*>(instr)) {
+        trace_point = instr;
+        break;
+      }
+    }
+
+    if (trace_point == nullptr) continue;
+
+    // Dalvik requires that OP_MOVE_RESULT_* and OP_MOVE_EXCEPTION instructions
+    // immediately follow the instruction that produced the result/exception.
+    // We cannot safely inject code between them, so we advance the trace point.
+    while (auto trace_bytecode = dynamic_cast<lir::Bytecode*>(trace_point)) {
+      auto opcode = trace_bytecode->opcode;
+      if (opcode != dex::OP_MOVE_RESULT && opcode != dex::OP_MOVE_RESULT_WIDE &&
+          opcode != dex::OP_MOVE_RESULT_OBJECT &&
+          opcode != dex::OP_MOVE_EXCEPTION) {
+        break;
+      }
+      trace_point = trace_point->next;
+    }
+
+    if (trace_point == nullptr) continue;
+
+    // Assign a globally unique block ID only for blocks we are actually
+    // instrumenting.
+    uint32_t block_id = g_next_block_id.fetch_add(1);
+
+    // Inject: const vX, <block_id>
     auto load_id = code_ir.Alloc<lir::Bytecode>();
     load_id->opcode = dex::OP_CONST;
     load_id->operands.push_back(code_ir.Alloc<lir::VReg>(scratch_reg));
-    load_id->operands.push_back(code_ir.Alloc<lir::Const32>(
-        42));  // dummy ID 42 to be replaced by block id
+    load_id->operands.push_back(
+        code_ir.Alloc<lir::Const32>(static_cast<dex::u4>(block_id)));
 
     // Inject: invoke-static/range {vX}, CoverageTracker.hit(I)V
     auto call_mark = code_ir.Alloc<lir::Bytecode>();
@@ -213,7 +250,12 @@ bool Instrumenter::InstrumentMethod(
 
     code_ir.instructions.InsertBefore(trace_point, load_id);
     code_ir.instructions.InsertBefore(trace_point, call_mark);
-  } else {
+    injected = true;
+
+    // TODO: Record the mapping of block_id -> source file / line numbers here.
+  }
+
+  if (!injected) {
     return false;
   }
 
@@ -243,6 +285,11 @@ bool Instrumenter::ShouldInstrument(jobject loader, const char* name,
   }
 
   std::string_view class_name(name);
+
+  // Explicitly skip our own runtime tracker to avoid infinite recursion.
+  if (class_name == "com/android/tools/coverage/CoverageTracker") {
+    return false;
+  }
 
   // Only instrument the classes which belong to the package names provided
   // by the build system.
@@ -276,28 +323,90 @@ bool Instrumenter::ShouldInstrument(jobject loader, const char* name,
   return true;
 }
 
-bool Instrumenter::RegisterHooks() {
-  jvmtiEventCallbacks callbacks = {};
-  callbacks.ClassFileLoadHook = &OnClassFileLoadHook;
-
-  jvmtiError error = jvmti_->SetEventCallbacks(&callbacks, sizeof(callbacks));
+void Instrumenter::RetransformLoadedClasses(JNIEnv* jni) {
+  jint class_count = 0;
+  jclass* classes = nullptr;
+  jvmtiError error = jvmti_->GetLoadedClasses(&class_count, &classes);
   if (error != JVMTI_ERROR_NONE) {
-    Log::E("Error: Unable to set JVMTI callbacks. Error code: %d", error);
-    return false;
+    Log::E("Error: GetLoadedClasses failed. Error code: %d", error);
+    return;
   }
 
-  // Set the global instance pointer before enabling notifications to ensure
-  // that no classes loaded during the registration process are missed.
-  instance_ = this;
+  std::vector<jclass> candidates;
+  for (jint i = 0; i < class_count; ++i) {
+    jclass klass = classes[i];
 
-  error = jvmti_->SetEventNotificationMode(
-      JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, nullptr);
-  if (error != JVMTI_ERROR_NONE) {
-    Log::E("Error: Unable to enable ClassFileLoadHook. Error code: %d", error);
-    return false;
+    // 1. Performance Optimization: Quick Prefix Check on Signature (Fastest)
+    char* sig_ptr = nullptr;
+    error = jvmti_->GetClassSignature(klass, &sig_ptr, nullptr);
+    if (error != JVMTI_ERROR_NONE) {
+      jni->DeleteLocalRef(klass);
+      continue;
+    }
+
+    std::string_view sig(sig_ptr);
+    bool prefix_match = false;
+    std::string internal_name;
+
+    // JNI signature format: "Lcom/example/MyClass;"
+    if (sig.length() > 2 && sig.front() == 'L' && sig.back() == ';') {
+      // Fast check: does the signature (skipping 'L') start with our prefix?
+      std::string_view name_view = sig.substr(1, sig.length() - 2);
+      if (name_view.rfind(inclusion_prefix_, 0) == 0) {
+        prefix_match = true;
+        internal_name = std::string(name_view);
+      }
+    }
+
+    if (!prefix_match) {
+      jvmti_->Deallocate(reinterpret_cast<unsigned char*>(sig_ptr));
+      jni->DeleteLocalRef(klass);
+      continue;
+    }
+
+    // 2. Validation: Check Loader and Tags
+    jobject loader = nullptr;
+    jvmti_->GetClassLoader(klass, &loader);
+
+    bool should_instrument =
+        ShouldInstrument(loader, internal_name.c_str(), klass);
+
+    if (loader != nullptr) {
+      jni->DeleteLocalRef(loader);
+    }
+
+    // 3. Capability Check: Is it actually modifiable?
+    if (should_instrument) {
+      jboolean modifiable = JNI_FALSE;
+      jvmti_->IsModifiableClass(klass, &modifiable);
+      if (modifiable) {
+        // Use GlobalRef to avoid exceeding JNI local reference limits
+        // (typically 512).
+        candidates.push_back(
+            reinterpret_cast<jclass>(jni->NewGlobalRef(klass)));
+      }
+    }
+
+    // Clean up temporary references for this iteration
+    jvmti_->Deallocate(reinterpret_cast<unsigned char*>(sig_ptr));
+    jni->DeleteLocalRef(klass);
   }
 
-  return true;
+  if (!candidates.empty()) {
+    Log::I("Retransforming %zu loaded classes...", candidates.size());
+    error = jvmti_->RetransformClasses(static_cast<jint>(candidates.size()),
+                                       candidates.data());
+    if (error != JVMTI_ERROR_NONE) {
+      Log::E("Error: RetransformClasses failed. Error code: %d", error);
+    }
+
+    // Clean up GlobalRefs
+    for (jclass global_klass : candidates) {
+      jni->DeleteGlobalRef(global_klass);
+    }
+  }
+
+  jvmti_->Deallocate(reinterpret_cast<unsigned char*>(classes));
 }
 
 }  // namespace coverage

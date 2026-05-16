@@ -462,10 +462,10 @@ const LintReportApp = {
         levels.forEach((level, index) => {
             const isLast = index === levels.length - 1 || level.isLast;
             if (isLast) {
-                html += `<span class="font-medium text-gray-900">${'$'}{this.escapeHTML(level.name)}</span>`;
+                html += `<span class="breadcrumb-last">${'$'}{this.escapeHTML(level.name)}</span>`;
             } else {
-                html += `<span class="cursor-pointer hover:text-blue-600 breadcrumb-item" data-index="${'$'}{index}">${'$'}{this.escapeHTML(level.name)}</span>`;
-                html += ` <span class="text-gray-400">/</span> `;
+                html += `<span class="breadcrumb-item" data-index="${'$'}{index}">${'$'}{this.escapeHTML(level.name)}</span>`;
+                html += `<span class="breadcrumb-separator"> / </span>`;
             }
         });
 
@@ -543,7 +543,7 @@ const LintReportApp = {
                 if (!this.state.filters.packages.includes(pkg)) return false;
             }
             if (this.state.filters.classes.length > 0) {
-                const cls = issue.className || "Unknown";
+                const cls = issue.fileName || "Unknown";
                 if (!this.state.filters.classes.includes(cls)) return false;
             }
             return true;
@@ -664,7 +664,7 @@ const LintReportApp = {
         issues.forEach(issue => {
             const moduleName = issue.module || "Unknown";
             const pkgName = issue.packageName || "default";
-            const className = issue.className || "Unknown";
+            const className = issue.fileName || "Unknown";
 
             if (!root.children[moduleName]) {
                 root.children[moduleName] = { name: moduleName, type: 'module', children: {}, total: 0, errors: 0, warnings: 0, info: 0, hints: 0 };
@@ -715,7 +715,7 @@ const LintReportApp = {
             if (groupByKey === 'modules') key = issue.module || "Unknown";
             else if (groupByKey === 'packages') key = issue.packageName || "default";
             else if (groupByKey === 'classes') {
-                key = issue.className || "Unknown";
+                key = issue.fileName || "Unknown";
                 if (key !== "Unknown" && key.includes('.')) {
                     displayName = key.substring(0, key.lastIndexOf('.'));
                 }
@@ -838,8 +838,11 @@ const LintReportApp = {
                     : '';
                 const secondaryHtml = (issue.secondaryLocations && issue.secondaryLocations.length > 0)
                     ? `<div class="mt-4"><strong>Additional locations:</strong><ul class="more-info-list">${'$'}{issue.secondaryLocations.map(loc => {
-                        const locStr = `${'$'}{loc.file}${'$'}{loc.line ? ':' + loc.line : ''}${'$'}{loc.message ? ': ' + loc.message : ''}`;
-                        return `<li>${'$'}{loc.url ? `<a href="${'$'}{loc.url}" class="text-blue-600 hover:underline">${'$'}{this.escapeHTML(locStr)}</a>` : this.escapeHTML(locStr)}</li>`;
+                        const locStr = `${'$'}{loc.file}${'$'}{loc.line ? ':' + loc.line : ''}`;
+                        const link = loc.url ? `<a href="${'$'}{loc.url}" class="text-blue-600 hover:underline">${'$'}{this.escapeHTML(locStr)}</a>` : this.escapeHTML(locStr);
+                        const message = loc.message ? `: ${'$'}{this.renderExplanation(loc.message)}` : '';
+                        const snippet = loc.sourceContext ? `<pre class="errorlines mt-2">${'$'}{loc.sourceContext}</pre>` : '';
+                        return `<li>${'$'}{link}${'$'}{message}${'$'}{snippet}</li>`;
                     }).join('')}</ul></div>`
                     : '';
                 const imagesHtml = (issue.images && issue.images.length > 0)
@@ -861,11 +864,12 @@ const LintReportApp = {
                     if (issue.vendor.feedbackUrl) vendorHtml += `<strong>Feedback:</strong> <a href="${'$'}{this.escapeHTML(issue.vendor.feedbackUrl)}" class="text-blue-600 hover:underline">${'$'}{this.escapeHTML(issue.vendor.feedbackUrl)}</a><br>`;
                     vendorHtml += `</div>`;
                 }
-                const suppressHtml = issue.suppressMessage ? `<div class="mt-4 text-sm text-gray-500">${'$'}{issue.suppressMessage}</div>` : '';
                 rowsHtml.push(`<tr class="explanation-row" data-parent-id="${'$'}{parentId}"><td colspan="7"><div class="explanation-content">
-                    <div class="mb-4"><strong>Summary:</strong> ${'$'}{issue.summary}</div>
-                    <div class="mb-4">
-                        <strong>Explanation:</strong>
+                    <div class="mb-4 text-lg"><strong>${'$'}{issue.summary}</strong></div>
+                    ${'$'}{codeSnippet}
+                    ${'$'}{urlsHtml}
+                    ${'$'}{secondaryHtml}
+                    <div>
                         <div class="mt-1">${'$'}{this.renderExplanation(issue.explanation)}</div>
                     </div>
                     ${'$'}{issue.options && issue.options.length > 0 ? `
@@ -880,13 +884,10 @@ const LintReportApp = {
                             `).join('')}
                         </div>
                     ` : ''}
-                    ${'$'}{urlsHtml}
-                    ${'$'}{secondaryHtml}
                     ${'$'}{autoFixedMsg}
                     ${'$'}{quickfixMsg}
                     ${'$'}{imagesHtml}
-                    ${'$'}{codeSnippet}
-                    ${'$'}{suppressHtml}
+                    ${'$'}{issue.suppressMessage ? `<div class="text-sm text-gray-500">${'$'}{issue.suppressMessage}</div>` : ''}
                     ${'$'}{vendorHtml}
                 </div></td></tr>`);
             }

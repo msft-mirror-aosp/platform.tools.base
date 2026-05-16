@@ -32,14 +32,23 @@ import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProto
  * @param view The target [View] instance from which properties are being read.
  * @param propertyData The container holding the properties metadata list and inspection companions.
  * @param stringTable The lookup table used to deduplicate and intern attribute names and values.
+ * @param includeResolutionStack Whether to include the attribute resolution stack. Requires debug_view_attributes flag to be enabled on the
+ *   device.
  * @param onAttributeResolved Callback invoked when a property is successfully resolved and converted to a [Attribute] proto.
  */
 internal class ProtoAttributeReader(
   private val view: View,
   private val properties: List<AttributeMetadata>,
   private val stringTable: StringTable,
+  private val includeResolutionStack: Boolean = false,
   private val onAttributeResolved: (Attribute) -> Unit,
 ) : PropertyReader {
+
+  /**
+   * Cached copy of the view's attribute source resource map. We cache it here to avoid calling the expensive framework method
+   * `View.getAttributeSourceResourceMap()` (which creates a new map on every call) for every property.
+   */
+  private val resourceMap: Map<Int, Int> = view.attributeSourceResourceMap
 
   override fun readBoolean(id: Int, b: Boolean) {
     emit(id, b)
@@ -115,7 +124,7 @@ internal class ProtoAttributeReader(
   private fun emit(id: Int, value: Any?) {
     if (value == null) return
     val metadata = properties.getOrNull(id) ?: return
-    val protoAttribute = metadata.toProtoAttribute(stringTable, view, value)
+    val protoAttribute = metadata.toProtoAttribute(stringTable, view, value, resourceMap, includeResolutionStack)
     if (protoAttribute != null) {
       onAttributeResolved(protoAttribute)
     }

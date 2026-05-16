@@ -26,6 +26,7 @@ import com.android.tools.deployer.model.TestLogger;
 import com.android.tools.deployer.model.activate.ActivationCommands;
 import com.android.tools.deployer.model.activate.AmDebugAppResultChecker;
 import com.android.tools.deployer.model.activate.BroadcastResultChecker;
+import com.android.tools.deployer.modelv1.component.ComplicationV1;
 import com.android.tools.manifest.parser.XmlNode;
 import com.android.tools.manifest.parser.components.ManifestAppComponentInfo;
 
@@ -113,7 +114,8 @@ public class ComplicationTest {
                         return "com.example.services.Complication";
                     }
                 };
-        Complication complication = new Complication(info, "com.example.myApp", new TestLogger());
+        ComplicationV1 complication =
+                new ComplicationV1(info, "com.example.myApp", new TestLogger());
         complication.activate(
                 "debug.app.watchface com.example.WatchFaces$InnerWatchFace 1 LONG_TEXT",
                 AppComponent.Mode.RUN,
@@ -146,7 +148,8 @@ public class ComplicationTest {
                         return "com.example.services.Complication";
                     }
                 };
-        Complication complication = new Complication(info, "com.example.myApp", new TestLogger());
+        ComplicationV1 complication =
+                new ComplicationV1(info, "com.example.myApp", new TestLogger());
         complication.activate(
                 "debug.app.watchface com.example.WatchFaces$InnerWatchFace 1 LONG_TEXT",
                 AppComponent.Mode.DEBUG,

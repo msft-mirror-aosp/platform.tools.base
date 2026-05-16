@@ -31,6 +31,7 @@ import com.android.tools.deployer.model.activate.ActivationCommand;
 import com.android.tools.deployer.model.activate.ActivationCommandResultChecker;
 import com.android.tools.deployer.model.activate.ActivationCommands;
 import com.android.tools.deployer.model.activate.AmStartResultChecker;
+import com.android.tools.deployer.modelv1.component.ActivityV1;
 import com.android.tools.manifest.parser.ManifestInfo;
 import com.android.tools.manifest.parser.XmlNode;
 import com.android.tools.manifest.parser.components.ManifestActivityInfo;
@@ -100,7 +101,7 @@ public class ActivityTest {
                         return "com.example.myApp.MainActivity";
                     }
                 };
-        Activity activity = new Activity(info, "com.example.myApp", new TestLogger());
+        ActivityV1 activity = new ActivityV1(info, "com.example.myApp", new TestLogger());
         activity.activate(" --user 123", AppComponent.Mode.DEBUG, new NullOutputReceiver(), device);
 
         String expectedCommand =
@@ -127,8 +128,8 @@ public class ActivityTest {
         Assert.assertNotNull(url);
         try (InputStream input = url.openStream()) {
             ManifestInfo manifestInfo = ManifestInfo.parseBinaryFromStream(input);
-            Activity activity =
-                    new Activity(
+            ActivityV1 activity =
+                    new ActivityV1(
                             manifestInfo.activities().get(0),
                             "com.example.myApp",
                             new TestLogger());

@@ -322,6 +322,30 @@ pre.errorlines {
 
 .breadcrumbs-container {
     min-height: 28px;
+    padding: 0.25rem 0.5rem;
+}
+
+.breadcrumb-item {
+    color: var(--text-blue-600);
+    cursor: pointer;
+    border-radius: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    margin: -0.25rem -0.5rem;
+    transition: background-color 0.2s;
+}
+
+.breadcrumb-item:hover {
+    background-color: var(--bg-hover);
+    text-decoration: underline;
+}
+
+.breadcrumb-last {
+    color: var(--text-darkest);
+    font-weight: 500;
+}
+
+.breadcrumb-separator {
+    color: var(--text-gray-400);
 }
 
 tr.issue-row:hover { cursor: pointer; }

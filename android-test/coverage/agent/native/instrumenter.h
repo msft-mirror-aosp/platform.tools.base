@@ -32,15 +32,10 @@ namespace coverage {
 
 class Instrumenter {
  public:
-  Instrumenter(jvmtiEnv* jvmti, const std::string& inclusion_prefix)
-      : jvmti_(jvmti), inclusion_prefix_(inclusion_prefix) {}
+  Instrumenter(jvmtiEnv* jvmti, const std::string& inclusion_prefix);
 
   ~Instrumenter();
 
-  // Registers the ClassFileLoadHook and enables the notification.
-  bool RegisterHooks();
-
- private:
   // JVMTI callback for the ClassFileLoadHook event.
   static void JNICALL OnClassFileLoadHook(
       jvmtiEnv* jvmti, JNIEnv* jni, jclass class_being_redefined,
@@ -48,6 +43,11 @@ class Instrumenter {
       jint class_data_len, const unsigned char* class_data,
       jint* new_class_data_len, unsigned char** new_class_data);
 
+  // Iterates through all currently loaded classes and triggers a
+  // retransformation for those that match the inclusion filter.
+  void RetransformLoadedClasses(JNIEnv* jni);
+
+ private:
   // Helper to determine if a class should be instrumented.
   bool ShouldInstrument(jobject loader, const char* name, jclass klass) const;
 

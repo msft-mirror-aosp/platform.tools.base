@@ -28,6 +28,7 @@ import com.android.adblib.availableFeatures
 import com.android.adblib.ddmlibcompatibility.AdbLibDdmlibCompatibilityProperties.RUN_BLOCKING_LEGACY_DEFAULT_TIMEOUT
 import com.android.adblib.ddmlibcompatibility.AdbLibIDeviceManager
 import com.android.adblib.ddmlibcompatibility.DEFAULT_DDMLIB_TIMEOUT
+import com.android.adblib.deviceProperties
 import com.android.adblib.property
 import com.android.adblib.rootAndWait
 import com.android.adblib.scope
@@ -60,7 +61,6 @@ import com.android.ddmlib.InstallMetrics
 import com.android.ddmlib.InstallReceiver
 import com.android.ddmlib.Log
 import com.android.ddmlib.ProfileableClient
-import com.android.ddmlib.PropertyFetcher
 import com.android.ddmlib.RawImage
 import com.android.ddmlib.ScreenRecorderOptions
 import com.android.ddmlib.ServiceInfo
@@ -71,6 +71,7 @@ import com.android.ddmlib.idevicemanager.IDeviceManagerListener
 import com.android.ddmlib.internal.UserDataMapImpl
 import com.android.ddmlib.log.LogReceiver
 import com.android.sdklib.AndroidVersion
+import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.SettableFuture
 import java.io.File
@@ -79,15 +80,20 @@ import java.io.InputStream
 import java.nio.channels.SocketChannel
 import java.nio.file.Files
 import java.time.Duration
+import java.util.ArrayList
 import java.util.Collections
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
+import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Function
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.onFailure
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -111,10 +117,6 @@ internal class AdblibIDeviceWrapper(
 
   private val iDeviceUsageTracker = bridge.getiDeviceUsageTracker()
 
-  // TODO(b/294559068): Create our own implementation of PropertyFetcher before we can get rid of
-  // ddmlib
-  private val propertyFetcher = PropertyFetcher(this)
-
   private val iDeviceSharedImpl = IDeviceSharedImpl(this)
   private val deviceClientManager =
     AdbLibClientManagerFactory.createClientManager(connectedDevice.session).createDeviceClientManager(bridge, this)
@@ -130,6 +132,13 @@ internal class AdblibIDeviceWrapper(
    */
   private val mAvdDataFuture = SettableFuture.create<AvdData?>()
 
+  // We need to cache all properties so that they could be returned by getProperties()
+  internal val propertiesMapRef = AtomicReference<Map<String, String>?>(null)
+
+  private val inProgressAllPropertiesJob = AtomicReference<Job?>(null)
+
+  private val pendingPropertyFutures = ConcurrentHashMap<String, MutableList<SettableFuture<String?>>>()
+
   internal enum class AvdFetchStatus {
     INITIAL,
     IN_PROGRESS,
@@ -143,6 +152,7 @@ internal class AdblibIDeviceWrapper(
 
   init {
     ensureAvdDataIsBeingFetched()
+    prefetchProperties()
   }
 
   private val mUserDataMap = UserDataMapImpl()
@@ -200,9 +210,18 @@ internal class AdblibIDeviceWrapper(
     }
   }
 
-  override fun getSystemProperty(name: String): ListenableFuture<String> {
+  override fun getSystemProperty(name: String): ListenableFuture<String?> {
     // NOTE: Calling `logUsage` here would log too many events, so let's not log these events
-    return propertyFetcher.getProperty(name)
+    if (name.startsWith("ro.")) {
+      propertiesMapRef.get()?.let {
+        return Futures.immediateFuture(it[name])
+      }
+    }
+
+    val future = SettableFuture.create<String?>()
+    pendingPropertyFutures.computeIfAbsent(name) { Collections.synchronizedList(ArrayList()) }.add(future)
+    triggerAllPropertiesFetch()
+    return future
   }
 
   override fun getSerialNumber(): String {
@@ -281,19 +300,17 @@ internal class AdblibIDeviceWrapper(
   }
 
   @Deprecated("")
-  override fun getProperties(): MutableMap<String, String> =
-    logUsage(IDeviceUsageTracker.Method.GET_PROPERTIES) { Collections.unmodifiableMap(propertyFetcher.properties) }
+  override fun getProperties(): Map<String, String> =
+    logUsage(IDeviceUsageTracker.Method.GET_PROPERTIES) { propertiesMapRef.get() ?: emptyMap() }
 
   @Deprecated("")
-  override fun getPropertyCount(): Int = logUsage(IDeviceUsageTracker.Method.GET_PROPERTY_COUNT) { propertyFetcher.properties.size }
+  override fun getPropertyCount(): Int = logUsage(IDeviceUsageTracker.Method.GET_PROPERTY_COUNT) { propertiesMapRef.get()?.size ?: 0 }
 
   override fun getProperty(name: String): String? =
     logUsage(IDeviceUsageTracker.Method.GET_PROPERTY) {
-      val timeout = if (propertyFetcher.properties.isEmpty()) INITIAL_GET_PROP_TIMEOUT_MS else GET_PROP_TIMEOUT_MS
-
-      val future = propertyFetcher.getProperty(name)
+      val timeout = if (propertiesMapRef.get() == null) INITIAL_GET_PROP_TIMEOUT_MS else GET_PROP_TIMEOUT_MS
       try {
-        return@logUsage future.get(timeout, TimeUnit.MILLISECONDS)
+        return@logUsage getSystemProperty(name).get(timeout, TimeUnit.MILLISECONDS)
       } catch (_: InterruptedException) {
         // ignore
       } catch (_: ExecutionException) {
@@ -304,7 +321,7 @@ internal class AdblibIDeviceWrapper(
       null
     }
 
-  override fun arePropertiesSet(): Boolean = logUsage(IDeviceUsageTracker.Method.ARE_PROPERTIES_SET) { propertyFetcher.arePropertiesSet() }
+  override fun arePropertiesSet(): Boolean = logUsage(IDeviceUsageTracker.Method.ARE_PROPERTIES_SET) { propertiesMapRef.get() != null }
 
   @Deprecated("")
   override fun getPropertySync(name: String?): String {
@@ -314,6 +331,53 @@ internal class AdblibIDeviceWrapper(
   @Deprecated("")
   override fun getPropertyCacheOrSync(name: String?): String {
     unsupportedMethod()
+  }
+
+  private fun prefetchProperties() {
+    triggerAllPropertiesFetch()
+  }
+
+  private fun triggerAllPropertiesFetch() {
+    // Quick exit to avoid creating jobs unnecessarily when it's already running
+    if (inProgressAllPropertiesJob.get() != null) return
+
+    val job =
+      connectedDevice.scope.launch(start = CoroutineStart.LAZY) {
+        runCatching {
+            connectedDevice.waitUntilOnline()
+            val props = connectedDevice.deviceProperties().all().associate { it.name to it.value }
+            propertiesMapRef.set(props)
+
+            // Resolve all pending futures and clear the map
+            val snapshot = HashMap(pendingPropertyFutures)
+            pendingPropertyFutures.clear()
+
+            snapshot.forEach { (propName, futures) ->
+              val value = props[propName]
+              futures.forEach { it.set(value) }
+            }
+          }
+          .onFailure { t ->
+            val snapshot = HashMap(pendingPropertyFutures)
+            pendingPropertyFutures.clear()
+            snapshot.forEach { (_, futures) -> futures.forEach { it.setException(t) } }
+          }
+          .also {
+            inProgressAllPropertiesJob.set(null)
+            // One last check to avoid the race condition where a request was added
+            // just before we set the job to null.
+            if (pendingPropertyFutures.isNotEmpty()) {
+              triggerAllPropertiesFetch()
+            }
+          }
+      }
+
+    if (inProgressAllPropertiesJob.compareAndSet(null, job)) {
+      job.start()
+    } else {
+      // Discard a lazy job since another thread won the `compareAndSet`
+      job.cancel()
+    }
   }
 
   override fun supportsFeature(feature: IDevice.Feature): Boolean {

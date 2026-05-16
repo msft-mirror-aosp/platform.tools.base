@@ -490,6 +490,20 @@ class AdblibIDeviceWrapperTest {
   }
 
   @Test
+  fun prefetchProperties_worksAsExpected() = runBlockingWithTimeout {
+    // Prepare
+    val (connectedDevice, _) = createConnectedDevice("device1", DeviceState.DeviceStatus.ONLINE)
+
+    // Act
+    val adblibIDeviceWrapper = createAdblibIDeviceWrapper(connectedDevice, bridge)
+
+    // Assert
+    // The `init` block of AdblibIDeviceWrapper calls `prefetchProperties` which
+    // queries all properties.
+    yieldUntil { adblibIDeviceWrapper.propertiesMapRef.get() != null }
+  }
+
+  @Test
   fun getProperty() = runBlockingWithTimeout {
     // Prepare
     val (connectedDevice, _) = createConnectedDevice("device1", DeviceState.DeviceStatus.ONLINE)
@@ -513,6 +527,72 @@ class AdblibIDeviceWrapperTest {
 
     // Assert
     assertEquals("device1", propertyValue)
+  }
+
+  @Test
+  fun getProperty_nonExistentReadOnlyProperty() = runBlockingWithTimeout {
+    // Prepare
+    val (connectedDevice, _) = createConnectedDevice("device1", DeviceState.DeviceStatus.ONLINE)
+    val adblibIDeviceWrapper = createAdblibIDeviceWrapper(connectedDevice, bridge)
+
+    // Act
+    val propertyValue = adblibIDeviceWrapper.getProperty("ro.non-existent")
+
+    // Assert
+    assertNull(propertyValue)
+  }
+
+  @Test
+  fun getSystemProperty_nonExistentReadOnlyProperty() = runBlockingWithTimeout {
+    // Prepare
+    val (connectedDevice, _) = createConnectedDevice("device1", DeviceState.DeviceStatus.ONLINE)
+    val adblibIDeviceWrapper = createAdblibIDeviceWrapper(connectedDevice, bridge)
+
+    // Act
+    val propertyValue = adblibIDeviceWrapper.getSystemProperty("ro.non-existent").get()
+
+    // Assert
+    assertNull(propertyValue)
+  }
+
+  @Test
+  fun getProperty_nonReadOnly_updatesValue() = runBlockingWithTimeout {
+    // Prepare
+    val (connectedDevice, fakeDevice) = createConnectedDevice("device1", DeviceState.DeviceStatus.ONLINE)
+    val adblibIDeviceWrapper = createAdblibIDeviceWrapper(connectedDevice, bridge)
+
+    // Initial value
+    @Suppress("UNCHECKED_CAST")
+    (fakeDevice.properties as MutableMap<String, String>)["my.custom.prop"] = "initial_value"
+    assertEquals("initial_value", adblibIDeviceWrapper.getProperty("my.custom.prop"))
+
+    // Act
+    @Suppress("UNCHECKED_CAST")
+    (fakeDevice.properties as MutableMap<String, String>)["my.custom.prop"] = "updated_value"
+    val updatedValue = adblibIDeviceWrapper.getProperty("my.custom.prop")
+
+    // Assert
+    assertEquals("updated_value", updatedValue)
+  }
+
+  @Test
+  fun getSystemProperty_nonReadOnly_updatesValue() = runBlockingWithTimeout {
+    // Prepare
+    val (connectedDevice, fakeDevice) = createConnectedDevice("device1", DeviceState.DeviceStatus.ONLINE)
+    val adblibIDeviceWrapper = createAdblibIDeviceWrapper(connectedDevice, bridge)
+
+    // Initial value
+    @Suppress("UNCHECKED_CAST")
+    (fakeDevice.properties as MutableMap<String, String>)["my.custom.prop"] = "initial_value"
+    assertEquals("initial_value", adblibIDeviceWrapper.getSystemProperty("my.custom.prop").get())
+
+    // Act
+    @Suppress("UNCHECKED_CAST")
+    (fakeDevice.properties as MutableMap<String, String>)["my.custom.prop"] = "updated_value"
+    val updatedValue = adblibIDeviceWrapper.getSystemProperty("my.custom.prop").get()
+
+    // Assert
+    assertEquals("updated_value", updatedValue)
   }
 
   @Test

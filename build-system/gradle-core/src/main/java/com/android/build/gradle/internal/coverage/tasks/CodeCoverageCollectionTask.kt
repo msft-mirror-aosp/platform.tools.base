@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.coverage.tasks
 
 import com.android.build.api.artifact.ScopedArtifact
 import com.android.build.api.variant.ScopedArtifacts
+import com.android.build.api.variant.impl.capitalizeFirstChar
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.coverage.JacocoConfigurations
 import com.android.build.gradle.internal.coverage.generateReport
@@ -30,7 +31,9 @@ import com.android.build.gradle.internal.tasks.JacocoTask
 import com.android.build.gradle.internal.tasks.NonIncrementalTask
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.utils.fromDisallowChanges
+import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.tasks.TestSuiteTestTask
+import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.CONNECTED_TEST_TEST_SUITE_NAME
 import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_METADATA_FILE
 import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_METADATA_MODULE_KEY
 import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_METADATA_SUITE_KEY
@@ -144,7 +147,9 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
 
       creationConfig.unitTestCoverageFile?.let { task.unitTestCoverageFile.fromDisallowChanges(it) }
 
-      creationConfig.connectedTestCoverageDirectory?.let { task.connectedTestCoverageDirectory.fromDisallowChanges(it) }
+      if (!creationConfig.services.projectOptions[BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM]) {
+        creationConfig.connectedTestCoverageDirectory?.let { task.connectedTestCoverageDirectory.fromDisallowChanges(it) }
+      }
 
       task.testSuiteCoverageData.fromDisallowChanges(creationConfig.artifacts.getAll(InternalMultipleArtifactType.TEST_SUITE_CODE_COVERAGE))
 
@@ -227,7 +232,7 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
 
         val generateXmlReport = { coverageFiles: Collection<File>, testSuiteName: String ->
           if (coverageFiles.isNotEmpty()) {
-            val baseReportName = "${parameters.variantName.get()}${formattedName}${testSuiteName}"
+            val baseReportName = "${parameters.variantName.get()}${formattedName}${testSuiteName.capitalizeFirstChar()}"
             var xmlReportFileName = "${baseReportName}XmlReport"
 
             if (usedXmlFileNames.contains(xmlReportFileName)) {
@@ -270,7 +275,7 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
           parameters.connectedTestCoverageDirectory.asFileTree.files.filter { file ->
             file.isFile && (file.extension == "ec" || file.extension == "exec")
           }
-        generateXmlReport(connectedTestCoverageFile, "AndroidTest")
+        generateXmlReport(connectedTestCoverageFile, CONNECTED_TEST_TEST_SUITE_NAME)
 
         val testSuiteCoverageFiles = mutableListOf<File>()
         parameters.testSuiteCoverageData.files.forEach { directory ->

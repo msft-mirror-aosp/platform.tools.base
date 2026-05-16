@@ -57,6 +57,11 @@ class HtmlReporterV2IndexTest {
     assertTrue(STYLE_CSS.contains(".search-input-wrapper"))
     assertTrue(STYLE_CSS.contains(".search-input"))
 
+    // Check breadcrumb styles
+    assertTrue(STYLE_CSS.contains(".breadcrumb-item"))
+    assertTrue(STYLE_CSS.contains(".breadcrumb-last"))
+    assertTrue(STYLE_CSS.contains(".breadcrumb-separator"))
+
     // Check for some key JS logic
     assertTrue(LINTSCRIPT_JS.contains("this.lintReport.issues"))
     assertTrue(LINTSCRIPT_JS.contains("searchQuery: ''"))
@@ -447,6 +452,9 @@ class HtmlReporterV2IndexTest {
     assertTrue(LINTSCRIPT_JS.contains("renderGroupedView(issues, groupByKey)"))
     assertTrue(LINTSCRIPT_JS.contains("getSortedGroupedData(groups)"))
     assertTrue(LINTSCRIPT_JS.contains("renderBreadcrumbs()"))
+    assertTrue(LINTSCRIPT_JS.contains("breadcrumb-item"))
+    assertTrue(LINTSCRIPT_JS.contains("breadcrumb-last"))
+    assertTrue(LINTSCRIPT_JS.contains("breadcrumb-separator"))
     assertTrue(LINTSCRIPT_JS.contains("Element"))
     assertTrue(LINTSCRIPT_JS.contains("levels.push({ name: modName"))
   }

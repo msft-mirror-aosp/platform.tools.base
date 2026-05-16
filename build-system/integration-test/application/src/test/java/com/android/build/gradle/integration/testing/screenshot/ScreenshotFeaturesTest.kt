@@ -186,6 +186,101 @@ class ScreenshotFeaturesTest {
   }
 
   @Test
+  fun runPreviewScreenshotTestWithAndroidViewInflater() {
+    val build =
+      rule.build {
+        androidApplication(":appWithInflater") {
+          setupProject(addEmptyJarToClassPath = false)
+          files {
+            add(
+              "src/main/res/layout/custom_view.xml",
+              """
+              <?xml version="1.0" encoding="utf-8"?>
+              <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                  android:layout_width="match_parent"
+                  android:layout_height="match_parent">
+                  <TextView
+                      android:id="@+id/custom_text"
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:text="Inflated Text"
+                      style="@style/Theme.Custom" />
+              </LinearLayout>
+              """.trimIndent()
+            )
+            add(
+              "src/main/res/values/styles.xml",
+              """
+              <?xml version="1.0" encoding="utf-8"?>
+              <resources>
+                  <style name="Theme.Custom" parent="android:Theme.Material">
+                      <item name="android:textColor">#FF0000</item>
+                  </style>
+              </resources>
+              """.trimIndent()
+            )
+            add(
+              "src/main/java/com/CustomView.kt",
+              """
+              package pkg.name
+
+              import android.content.Context
+              import android.view.LayoutInflater
+              import android.widget.LinearLayout
+              import android.widget.TextView
+              import pkg.name.appWithInflater.R
+
+              class CustomView(context: Context) : LinearLayout(context) {
+                  init {
+                      val view = LayoutInflater.from(context).inflate(R.layout.custom_view, this, false)
+                      addView(view)
+                      val textView = findViewById<TextView>(R.id.custom_text)
+                      textView.text = "Patched Inflated Text"
+                  }
+              }
+              """.trimIndent()
+            )
+            add(
+              "src/screenshotTest/java/com/AndroidViewTest.kt",
+              """
+              package pkg.name
+
+              import androidx.compose.ui.tooling.preview.Preview
+              import androidx.compose.runtime.Composable
+              import androidx.compose.ui.viewinterop.AndroidView
+              import android.view.ContextThemeWrapper
+              import com.android.tools.screenshot.PreviewTest
+              import pkg.name.appWithInflater.R
+
+              class AndroidViewTest {
+                  @PreviewTest
+                  @Preview(name = "androidViewPreview", showBackground = true)
+                  @Composable
+                  fun androidViewTest() {
+                      AndroidView(
+                          factory = { context ->
+                              val contextWrapper = ContextThemeWrapper(context, R.style.Theme_Custom)
+                              CustomView(contextWrapper)
+                          }
+                      )
+                  }
+              }
+              """.trimIndent()
+            )
+          }
+        }
+      }
+
+    val updateResult = build.updateReferenceImage(projectName = "appWithInflater")
+    updateResult.assertOutputDoesNotContain("ScreenshotError")
+    updateResult.assertOutputDoesNotContain("File not found")
+
+    val validateResult = build.sstExecutor().run(":appWithInflater:validateDebugScreenshotTest")
+    validateResult.assertOutputDoesNotContain("ScreenshotError")
+    validateResult.assertOutputDoesNotContain("File not found")
+  }
+
+  @Test
   fun analytics() {
     val build = rule.build
     val capturer = ProfileCapturer(build)

@@ -25,6 +25,7 @@ import com.android.build.gradle.integration.common.fixture.project.plugins.Gener
 import com.android.build.gradle.integration.connected.utils.getEmulator
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.StringOption
+import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.CONNECTED_TEST_TEST_SUITE_NAME
 import com.android.testutils.truth.PathSubject
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth
@@ -309,7 +310,7 @@ class CodeCoverageCollectionTest {
       APP_EXPECTED_COVERED_BRANCH_ANDROID_TEST,
       APP_EXPECTED_MISSED_BRANCH_ANDROID_TEST,
     )
-    verifyProperties(androidTestCoverageReportXml, ":app", "AndroidTest", "debug")
+    verifyProperties(androidTestCoverageReportXml, ":app", CONNECTED_TEST_TEST_SUITE_NAME, "debug")
     verifySources(androidTestCoverageReportXml, "app")
   }
 
@@ -403,7 +404,7 @@ class CodeCoverageCollectionTest {
       APP_EXPECTED_COVERED_BRANCH_ANDROID_TEST,
       APP_EXPECTED_MISSED_BRANCH_ANDROID_TEST,
     )
-    verifyProperties(androidTestCoverageReportXml, ":app", "AndroidTest", "debug")
+    verifyProperties(androidTestCoverageReportXml, ":app", CONNECTED_TEST_TEST_SUITE_NAME, "debug")
     verifySources(androidTestCoverageReportXml, "app")
 
     val xmlReport5 = xmlReports.filter { it.name == "debugLibUnitTestXmlReport.xml" }
@@ -431,7 +432,7 @@ class CodeCoverageCollectionTest {
       LIB_EXPECTED_COVERED_BRANCH_ANDROID_TEST,
       LIB_EXPECTED_MISSED_BRANCH_ANDROID_TEST,
     )
-    verifyProperties(androidTestCoverageReportXmlLibModule, ":lib", "AndroidTest", "debug")
+    verifyProperties(androidTestCoverageReportXmlLibModule, ":lib", CONNECTED_TEST_TEST_SUITE_NAME, "debug")
     verifySources(androidTestCoverageReportXmlLibModule, "lib")
 
     val libBuildDir = build.androidLibrary(":lib").buildDir.toFile()
@@ -484,7 +485,7 @@ class CodeCoverageCollectionTest {
       LIB_EXPECTED_COVERED_BRANCH_ANDROID_TEST,
       LIB_EXPECTED_MISSED_BRANCH_ANDROID_TEST,
     )
-    verifyProperties(androidTestCoverageReportXmlLibModule2, ":lib", "AndroidTest", "debug")
+    verifyProperties(androidTestCoverageReportXmlLibModule2, ":lib", CONNECTED_TEST_TEST_SUITE_NAME, "debug")
     verifySources(androidTestCoverageReportXmlLibModule2, "lib")
   }
 

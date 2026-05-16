@@ -60,6 +60,9 @@ class InjectionManagerTest {
     dummyPayload = tempFolder.newFile("lib_ui_inspector_payload.jar").toPath()
 
     agentPathResolver = { abi -> dummyAgent }
+
+    val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "settings put global debug_view_attributes 1", "")
   }
 
   @Test
@@ -209,6 +212,7 @@ class InjectionManagerTest {
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
 
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "getprop ro.product.cpu.abi", "arm64-v8a\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pidof $packageName", "1234\n")
 
     // Configure run-as pwd to fail
     fakeSession.deviceServices.configureShellCommand(

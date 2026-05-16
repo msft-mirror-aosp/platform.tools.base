@@ -16,11 +16,6 @@
 package com.android.tools.deployer.model.component;
 
 import com.android.annotations.NonNull;
-import com.android.ddmlib.IDevice;
-import com.android.ddmlib.IShellOutputReceiver;
-import com.android.ddmlib.MultiLineReceiver;
-import com.android.ddmlib.MultiReceiver;
-import com.android.tools.deployer.model.ModelException;
 import com.android.tools.deployer.model.activate.ActivationCommand;
 import com.android.tools.deployer.model.activate.ActivationContext;
 import com.android.tools.deployer.model.activate.AmDebugAppResultChecker;
@@ -46,84 +41,11 @@ public abstract class WearComponent extends AppComponent {
         public static final String AM_SET_DEBUG_APP = "am set-debug-app -w";
     }
 
-    public static final class CommandResultReceiver extends MultiLineReceiver {
-        public static final int SUCCESS_CODE = 1;
-        public static final int INVALID_ARGUMENT_CODE = 3;
-
-        private int resultCode = -1;
-        private final @NotNull Pattern resultCodePattern = Pattern.compile("result=(\\d+)");
-
-        public int getResultCode() {
-            return resultCode;
-        }
-
-        @Override
-        public void processNewLines(@NotNull String[] lines) {
-            for (String line : lines) {
-                Matcher matcher = resultCodePattern.matcher(line);
-                if (matcher.find()) {
-                    resultCode = Integer.parseInt(matcher.group(1));
-                }
-            }
-        }
-
-        @Override
-        public boolean isCancelled() {
-            return false;
-        }
-    }
-
     protected WearComponent(
             @NonNull String appId,
             @NonNull ManifestAppComponentInfo info,
             @NonNull ILogger logger) {
         super(appId, info, logger);
-    }
-
-    public static class DebugCommandReceiver extends MultiLineReceiver {
-        private final @NotNull Pattern exceptionPattern = Pattern.compile("(Exception)");
-        private boolean exceptionStatus = false;
-
-        public boolean hasException() {
-            return exceptionStatus;
-        }
-
-        @Override
-        public void processNewLines(@NotNull String[] lines) {
-            for (String line : lines) {
-                Matcher matcher = exceptionPattern.matcher(line);
-                if (matcher.find()) {
-                    exceptionStatus = true;
-                }
-            }
-        }
-
-        @Override
-        public boolean isCancelled() {
-            return false;
-        }
-    }
-
-    protected void setUpAmDebugApp(@NonNull IDevice device) throws ModelException {
-        DebugCommandReceiver amReceiver = new DebugCommandReceiver();
-        runShellCommand(
-                String.format("%s '%s'", ShellCommand.AM_SET_DEBUG_APP, appId), amReceiver, device);
-        if (amReceiver.hasException()) {
-            throw new ModelException("Activity Manager failed to set up the app for debugging.");
-        }
-    }
-
-    // Set up the app for debugging in the DebugSurface so that timeouts of SysUi and WCS can be
-    // increased accordingly (see go/wear-service-debug-timeout).
-    protected void setUpDebugSurfaceDebugApp(@NonNull IDevice device) throws ModelException {
-        CommandResultReceiver surfaceReceiver = new CommandResultReceiver();
-        runShellCommand(
-                String.format("%s '%s'", ShellCommand.DEBUG_SURFACE_SET_DEBUG_APP, appId),
-                surfaceReceiver,
-                device);
-        if (surfaceReceiver.resultCode != CommandResultReceiver.SUCCESS_CODE) {
-            this.logger.warning("Warning: Debug Surface failed to set the debug app.");
-        }
     }
 
     protected ActivationCommand getSetUpAmDebugAppActivationCommand() {
@@ -149,21 +71,5 @@ public abstract class WearComponent extends AppComponent {
                 "Setting debug app in Debug Surface for " + appId,
                 new BroadcastResultChecker(null, msg -> logger.warning(msg)),
                 context);
-    }
-
-    protected void runStartCommand(
-            @NonNull String command,
-            @NonNull IShellOutputReceiver receiver,
-            @NonNull ILogger logger,
-            @NonNull IDevice device)
-            throws ModelException {
-        logger.info("$ adb shell " + command);
-        CommandResultReceiver resultReceiver = new CommandResultReceiver();
-        MultiReceiver multiReceiver = new MultiReceiver(resultReceiver, receiver);
-        runShellCommand(command, multiReceiver, device);
-        if (resultReceiver.getResultCode() != CommandResultReceiver.SUCCESS_CODE) {
-            throw new ModelException(
-                    String.format("Invalid Success code `%d`", resultReceiver.getResultCode()));
-        }
     }
 }

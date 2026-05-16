@@ -91,7 +91,6 @@ public class AdbInstallerTest {
 
         String[] expectedHistory = {
             INVOCATION,
-            "getprop",
             DeployerTestConstants.RM_DIR,
             DeployerTestConstants.MK_DIR,
             DeployerTestConstants.CHMOD_INSTALLER,

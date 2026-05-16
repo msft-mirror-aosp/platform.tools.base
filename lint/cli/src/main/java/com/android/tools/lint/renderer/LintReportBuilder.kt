@@ -95,25 +95,31 @@ class LintReportBuilder(
     val locations =
       generateSequence(incident.location) { it.secondary }
         .map { curr ->
-          LintLocation(
-            file = incident.getPath(client, curr.file),
-            line = curr.start?.line?.plus(1),
-            column = curr.start?.column?.plus(1),
-            url = urlProvider(curr.file),
-          )
+          val lintLocation =
+            LintLocation(
+              file = incident.getPath(client, curr.file),
+              line = curr.start?.line?.plus(1),
+              column = curr.start?.column?.plus(1),
+              message = curr.message,
+              url = urlProvider(curr.file),
+            )
+
+          val sourceContext =
+            if (lintLocation.line != null && curr.file != null) {
+              val currentErrorLine = curr.getErrorLines(textProvider = { file -> client.getSourceText(file) })
+              val (_, currentErrorLine2) = parseErrorLines(currentErrorLine)
+              extractSourceContext(lintLocation, client.getSourceText(curr.file), currentErrorLine2, HtmlReporter.CODE_WINDOW_SIZE)
+            } else {
+              null
+            }
+
+          lintLocation.copy(sourceContext = sourceContext)
         }
         .toList()
 
     val primaryLocation = locations.firstOrNull()
     val errorLine = incident.getErrorLines(textProvider = { file -> client.getSourceText(file) })
     val (errorLine1, errorLine2) = parseErrorLines(errorLine)
-
-    val sourceContext =
-      if (primaryLocation?.line != null && incident.location.file != null) {
-        extractSourceContext(primaryLocation, client.getSourceText(incident.location.file), errorLine2, HtmlReporter.CODE_WINDOW_SIZE)
-      } else {
-        null
-      }
 
     val file = incident.file
     val project = incident.project
@@ -169,10 +175,10 @@ class LintReportBuilder(
       errorLine2 = errorLine2,
       includedVariants = applicableVariants?.includedVariantNames ?: emptyList(),
       excludedVariants = applicableVariants?.excludedVariantNames ?: emptyList(),
-      sourceContext = sourceContext,
+      sourceContext = primaryLocation?.sourceContext,
       module = incident.project?.let { project -> project.buildModule?.modulePath ?: project.name }?.removePrefix(":") ?: "",
       packageName = finalPkgName,
-      className = file.name,
+      fileName = file.name,
       vendor = createLintVendor(issue),
       wasAutoFixed = incident.wasAutoFixed,
       hasAutoFix = Reporter.hasAutoFix(issue),

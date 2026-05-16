@@ -89,7 +89,7 @@ using service::PingResponse;
 bool IsProcessAlive(int32_t pid) {
 #if defined(_WIN32)
   // Windows Implementation
-  HANDLE process = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pid);
+  HANDLE process = OpenProcess(SYNCHRONIZE, FALSE, pid);
 
   if (process == NULL) {
     // If OpenProcess fails because of permissions, the process exists but is
