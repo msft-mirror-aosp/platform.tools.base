@@ -27,8 +27,6 @@ def main():
   if not os.path.exists(android_home):
     android_home = os.environ.get('ANDROID_HOME')
 
-  env = {k: v for k, v in os.environ.items()}
-  env['USE_BAZEL_VERSION'] = os.environ.get('USE_BAZEL_VERSION', '')
   bazel = [
       os.path.join(
           workspace, 'prebuilts', 'tools', platform, 'bazel', 'bazelisk'
@@ -46,19 +44,8 @@ def main():
 
   args = sys.argv[1:]
 
-  env['TERM'] = os.environ.get('TERM', '')
+  env = os.environ.copy()
   env['ANDROID_HOME'] = android_home
-  env['MAVEN_FETCH'] = os.environ.get('MAVEN_FETCH', '')
-  env['SHELL'] = os.environ.get('SHELL', '')
-  env['HOME'] = os.environ.get('HOME', '')
-  env['DISPLAY'] = os.environ.get('DISPLAY', '')
-  env['GOOGLE_APPLICATION_CREDENTIALS'] = os.environ.get(
-      'GOOGLE_APPLICATION_CREDENTIALS', ''
-  )
-  env['PATH'] = os.environ.get('PATH', '')
-  env['BUILD_NUMBER'] = os.environ.get('BUILD_NUMBER', '')
-  env['BUILD_TARGET_NAME'] = os.environ.get('BUILD_TARGET_NAME', '')
-  env['DIST_DIR'] = os.environ.get('DIST_DIR', '')
   if sys.platform == 'darwin':
     java_path = os.path.join(
         workspace,
@@ -71,7 +58,7 @@ def main():
         'Home',
         'bin',
     )
-    env['PATH'] = f'{java_path}:{env["PATH"]}'
+    env['PATH'] = f"{java_path}:{env.get('PATH', '')}"
     if not os.path.exists('/Library/Developer/CommandLineTools'):
       print(
           '/Library/Developer/CommandLineTools does not exist. Please install'
@@ -84,7 +71,7 @@ def main():
     java_path = os.path.join(
         workspace, 'prebuilts', 'studio', 'jdk', 'jbr-next', 'win', 'bin'
     )
-    env['PATH'] = f'{java_path};{env["PATH"]}'
+    env['PATH'] = f"{java_path};{env.get('PATH', '')}"
     command = bazel_command(args)
     # We don't need the tools to be installed locally if you're building remotely.
     # This isn't really the correct check, since --config=remote is just an alias for a bunch of other
@@ -125,15 +112,9 @@ def main():
     # SYSTEMROOT must be defined to run a win .exe; otherwise, subprocess.call
     # will hang.
     env['SYSTEMROOT'] = 'C:\\Windows'
-    env['TMP'] = os.environ.get('TMP', '')
-    env['USERPROFILE'] = os.environ.get('USERPROFILE', '')
-    env['APPDATA'] = os.environ.get('APPDATA', '')
-    env['LOCALAPPDATA'] = os.environ.get('LOCALAPPDATA', '')
 
   else:  # Linux
     env['CC'] = os.environ.get('GCC', '/usr/bin/gcc')
-    env['SSH_AUTH_SOCK'] = os.environ.get('SSH_AUTH_SOCK', '')
-    env['USER'] = os.environ.get('USER', '')
 
   sys.exit(subprocess.call(bazel + args, env=env))
 
