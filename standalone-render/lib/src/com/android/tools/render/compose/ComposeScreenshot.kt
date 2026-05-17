@@ -36,6 +36,7 @@ data class ComposeScreenshot(
   val methodParams: List<Map<String, String>>,
   override val previewParams: Map<String, String>,
   override val previewId: String,
+  override val previewWrapperFqn: String? = null,
 ) : PreviewScreenshot {
 
   override fun toPreviewElement(module: StandaloneRenderModelModule): ScreenshotPreviewElement {
@@ -47,6 +48,7 @@ data class ComposeScreenshot(
         annotatedMethod,
         null,
         { basePreviewElement, parameters -> parameterizedElementConstructor(module, basePreviewElement, parameters) },
+        previewWrapperProviderFqn = previewWrapperFqn,
         buildPreviewName = { nameParameter ->
           if (nameParameter != null) "${annotatedMethod.name} - $nameParameter" else annotatedMethod.name
         },

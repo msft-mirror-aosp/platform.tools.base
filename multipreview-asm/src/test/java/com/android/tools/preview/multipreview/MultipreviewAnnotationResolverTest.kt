@@ -47,14 +47,41 @@ class MultipreviewAnnotationResolverTest {
     }
 
     val rootDir = File(testClassesDir, "testJarsAndClasses")
+    val screenshotTestDirectory = listOf(File(rootDir, "screenshotTestDirs/dir1"))
+    val screenshotTestJars = listOf(File(rootDir, "screenshotTestJars/precompiledTestClasses.jar"))
+    val mainDirectory = listOf(File(rootDir, "mainDirs/dir1"))
+    val mainJars = listOf(File(rootDir, "mainJars/jar1.jar"))
+    val dependencyJars = listOf(File(rootDir, "depsJars/libjar1.jar"))
+
+    fun resolveClassReader(annotationClassDescriptor: String): org.objectweb.asm.ClassReader? {
+      val relativeFilePath = annotationClassDescriptor.substring(1, annotationClassDescriptor.length - 1) + ".class"
+
+      fun findInDir(dir: File): org.objectweb.asm.ClassReader? {
+        val classFile = File(dir, relativeFilePath)
+        if (classFile.isFile && classFile.exists()) {
+          return org.objectweb.asm.ClassReader(classFile.readBytes())
+        }
+        return null
+      }
+
+      fun findInJar(jar: File): org.objectweb.asm.ClassReader? {
+        if (!jar.exists() || !jar.isFile || !jar.name.endsWith(".jar", ignoreCase = true)) return null
+        return java.util.zip.ZipFile(jar).use { zipFile ->
+          zipFile.getEntry(relativeFilePath)?.let { zipFile.getInputStream(it).use { stream -> org.objectweb.asm.ClassReader(stream.readAllBytes()) } }
+        }
+      }
+
+      return screenshotTestDirectory.firstNotNullOfOrNull(::findInDir)
+        ?: screenshotTestJars.firstNotNullOfOrNull(::findInJar)
+        ?: mainDirectory.firstNotNullOfOrNull(::findInDir)
+        ?: mainJars.firstNotNullOfOrNull(::findInJar)
+        ?: dependencyJars.firstNotNullOfOrNull(::findInJar)
+    }
+
     MultipreviewAnnotationResolver(
       COMPOSE_PREVIEW_ANNOTATION,
       COMPOSE_PREVIEW_ANNOTATION_CONTAINER,
-      listOf(File(rootDir, "screenshotTestDirs/dir1")),
-      listOf(File(rootDir, "screenshotTestJars/precompiledTestClasses.jar")),
-      listOf(File(rootDir, "mainDirs/dir1")),
-      listOf(File(rootDir, "mainJars/jar1.jar")),
-      listOf(File(rootDir, "depsJars/libjar1.jar")),
+      ::resolveClassReader
     )
   }
 

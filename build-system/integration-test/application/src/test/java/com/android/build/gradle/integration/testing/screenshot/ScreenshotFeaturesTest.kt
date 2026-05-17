@@ -281,6 +281,92 @@ class ScreenshotFeaturesTest {
   }
 
   @Test
+  fun runPreviewScreenshotTestWithPreviewWrapper() {
+    val build =
+      rule.build {
+        androidApplication(":appWithWrapper") {
+          setupProject(addEmptyJarToClassPath = false)
+          files {
+            add(
+              "src/main/java/androidx/compose/ui/tooling/preview/PreviewWrapper.kt",
+              """
+              package androidx.compose.ui.tooling.preview
+              import androidx.compose.runtime.Composable
+              import kotlin.reflect.KClass
+
+              interface PreviewWrapperProvider {
+                  @Composable
+                  fun Wrap(content: @Composable () -> Unit)
+              }
+
+              @Retention(AnnotationRetention.SOURCE)
+              @Target(AnnotationTarget.ANNOTATION_CLASS, AnnotationTarget.FUNCTION)
+              annotation class PreviewWrapper(val wrapper: KClass<out PreviewWrapperProvider>)
+              """
+                .trimIndent(),
+            )
+            add(
+              "src/main/java/com/WrapperComposable.kt",
+              """
+              package pkg.name
+              import androidx.compose.material.Text
+              import androidx.compose.runtime.Composable
+
+              @Composable
+              fun Content() {
+                  Text("Content without wrapper")
+              }
+              """
+                .trimIndent(),
+            )
+            add(
+              "src/screenshotTest/java/com/WrapperTest.kt",
+              """
+              package pkg.name
+              import androidx.compose.ui.tooling.preview.Preview
+              import androidx.compose.ui.tooling.preview.PreviewWrapper
+              import androidx.compose.ui.tooling.preview.PreviewWrapperProvider
+              import androidx.compose.runtime.Composable
+              import com.android.tools.screenshot.PreviewTest
+              import androidx.compose.material.Text
+
+              class ThemeWrapper : PreviewWrapperProvider {
+                  @Composable
+                  override fun Wrap(content: @Composable () -> Unit) {
+                      Text("Wrapped: ")
+                      content()
+                  }
+              }
+
+              @PreviewWrapper(ThemeWrapper::class)
+              @Preview
+              annotation class MyPreviewWrapper
+
+              class WrapperTest {
+                  @PreviewTest
+                  @MyPreviewWrapper
+                  @Composable
+                  fun wrapperTest() {
+                      Content()
+                  }
+              }
+              """
+                .trimIndent(),
+            )
+          }
+        }
+      }
+
+    val updateResult = build.updateReferenceImage(projectName = "appWithWrapper")
+    updateResult.assertOutputDoesNotContain("ScreenshotError")
+    updateResult.assertOutputDoesNotContain("File not found")
+
+    val validateResult = build.sstExecutor().run(":appWithWrapper:validateDebugScreenshotTest")
+    validateResult.assertOutputDoesNotContain("ScreenshotError")
+    validateResult.assertOutputDoesNotContain("File not found")
+  }
+
+  @Test
   fun analytics() {
     val build = rule.build
     val capturer = ProfileCapturer(build)
