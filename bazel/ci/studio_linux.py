@@ -130,7 +130,6 @@ _ARTIFACTS = [
     ('tools/vendor/google/android/dist/deb/android-cli.deb.zip', 'artifacts'),
     ('tools/vendor/google/android/dist/deb/android-cli.deb', 'artifacts'),
     ('tools/vendor/google/lume/dist/lume-distribution.zip', 'artifacts'),
-    ('tools/vendor/google/optional-plugins/project-system-lume/lume-plugin.zip', 'artifacts'),
     ('tools/vendor/google/lume/dist/lightbuild.zip', 'artifacts'),
 
     ('tools/base/bazel/owners.zip', 'owners.zip'),
