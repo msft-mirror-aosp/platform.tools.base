@@ -101,6 +101,33 @@ class ExtractProGuardRulesTransformTest {
   }
 
   @Test
+  fun testZipSlipWriteRejected() {
+    val maliciousRules =
+      com.android.build.gradle.internal.r8.TargetedR8Rules(
+        r8Rules =
+          listOf(
+            com.android.build.gradle.internal.r8.VersionedR8Rules(
+              minVersion = null,
+              maxVersionExclusive = null,
+              fileName = "../../../../evil.ext",
+              r8Rules = "println 'pwned'",
+            )
+          ),
+        legacyProguardRules = emptyList(),
+      )
+
+    val transformOutputs = FakeTransformOutputs(tmp)
+    var thrown: IllegalStateException? = null
+    try {
+      ExtractProGuardRulesTransform.writeTargetedR8Rules(maliciousRules, transformOutputs)
+    } catch (e: IllegalStateException) {
+      thrown = e
+    }
+    assertThat(thrown).isNotNull()
+    assertThat(thrown!!.message).contains("Consumer-rule path escapes output directory")
+  }
+
+  @Test
   fun testMultipleRuleFiles() {
     val jarFile = createZip("META-INF/proguard/bar.txt" to "hello", "META-INF/proguard/foo.pro" to "goodbye")
     val transformOutputs = FakeTransformOutputs(tmp)
