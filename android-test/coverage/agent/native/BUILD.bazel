@@ -1,4 +1,4 @@
-load("@rules_cc//cc:defs.bzl", "cc_binary")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
 load("//tools/base/bazel:android.bzl", "ANDROID_COPTS", "ANDROID_LINKOPTS", "android_cc_binary")
 
 # Converts the jar containing runtime dex to an array in a CC source file.
@@ -19,21 +19,19 @@ genrule(
     visibility = ["//visibility:private"],
 )
 
-cc_binary(
-    name = "coverage_agent.so",
+cc_library(
+    name = "agent_lib",
     srcs = [
-        "coverage_agent.cc",
-        "coverage_rt.cc",
         "hits_extractor.cc",
-        "hits_extractor.h",
         "instrumenter.cc",
-        "instrumenter.h",
         "metadata_collector.cc",
+    ],
+    hdrs = [
+        "hits_extractor.h",
+        "instrumenter.h",
         "metadata_collector.h",
     ],
     copts = ANDROID_COPTS,
-    linkopts = ANDROID_LINKOPTS,
-    linkshared = 1,
     deps = [
         "//prebuilts/studio/jdk:jni_headers",
         "//tools/base/android-test/coverage/common:log",
@@ -42,9 +40,36 @@ cc_binary(
     ],
 )
 
+cc_binary(
+    name = "coverage_agent.so",
+    srcs = [
+        "coverage_agent.cc",
+        "coverage_rt.cc",
+    ],
+    copts = ANDROID_COPTS,
+    linkopts = ANDROID_LINKOPTS,
+    linkshared = 1,
+    deps = [
+        ":agent_lib",
+    ],
+)
+
 android_cc_binary(
     name = "android_coverage_agent",
     binary = ":coverage_agent.so",
     filename = "coverage_agent.so",
     visibility = ["//visibility:public"],
+)
+
+cc_test(
+    name = "agent_unit_tests",
+    size = "small",
+    srcs = [
+        "metadata_collector_test.cc",
+    ],
+    linkstatic = 1,
+    deps = [
+        ":agent_lib",
+        "@googletest//:gtest_main",
+    ],
 )

@@ -29,7 +29,7 @@ namespace coverage {
 namespace proto = android::tools::coverage::proto;
 
 /**
- * A thread-safe singleton that aggregates coverage metadata during the
+ * A thread-safe class that aggregates coverage metadata during the
  * instrumentation phase.
  *
  * This class builds the Protobuf mapping that links unique Block IDs to
@@ -37,10 +37,16 @@ namespace proto = android::tools::coverage::proto;
  */
 class MetadataCollector {
  public:
+  // Standard constructor. In production, the agent uses the global singleton
+  // returned by Instance(). Unit tests can instantiate fresh, isolated
+  // collectors directly.
+  MetadataCollector() = default;
+  ~MetadataCollector() = default;
+
+  // Global singleton instance used by the JVMTI callbacks.
   static MetadataCollector& Instance();
 
-  // Initialize the collector. Metadata is typically written to the
-  // application's code_cache directory.
+  // Initialize the collector with the application's package name.
   void Initialize(const std::string& package_name);
 
   // Starts a new class metadata entry and returns a pointer to it.
@@ -60,12 +66,17 @@ class MetadataCollector {
 
   // Serializes the collected metadata to a binary protobuf file.
   // Returns true on success.
+  //
+  // NOTE: This method is currently untestable in host-side unit tests because
+  // it uses a hardcoded absolute Android path (/data/data/). A unit test
+  // should be implemented once the JNI-based path resolution (TODO in .cc)
+  // is added, allowing for JNI mocking.
   bool WriteToDisk() const;
 
- private:
-  MetadataCollector() = default;
-  ~MetadataCollector() = default;
+  // Returns a read-only reference to the internal metadata.
+  const proto::CoverageMetadata& metadata() const;
 
+ private:
   // Disallow copy and assignment.
   MetadataCollector(const MetadataCollector&) = delete;
   MetadataCollector& operator=(const MetadataCollector&) = delete;
