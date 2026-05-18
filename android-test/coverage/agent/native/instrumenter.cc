@@ -16,9 +16,12 @@
 
 #include "tools/base/android-test/coverage/agent/native/instrumenter.h"
 
+#include <algorithm>
 #include <atomic>
 #include <limits>
+#include <map>
 #include <string_view>
+#include <unordered_map>
 
 #include "slicer/code_ir.h"
 #include "slicer/control_flow_graph.h"
@@ -27,6 +30,7 @@
 #include "slicer/instrumentation.h"
 #include "slicer/reader.h"
 #include "slicer/writer.h"
+#include "tools/base/android-test/coverage/agent/native/metadata_collector.h"
 #include "tools/base/android-test/coverage/common/log.h"
 
 namespace coverage {
@@ -132,15 +136,48 @@ void JNICALL Instrumenter::OnClassFileLoadHook(
       builder.GetAsciiString("hit"), ir_proto,
       builder.GetType("Lcom/android/tools/coverage/CoverageTracker;"));
 
+  // Extract class-level metadata (SourceFile and SMAP)
+  std::string source_file = "";
+  std::string smap = "";
+  if (!dex_ir->classes.empty()) {
+    auto& ir_class = dex_ir->classes.front();
+    if (ir_class->source_file != nullptr) {
+      source_file = ir_class->source_file->c_str();
+    }
+
+    if (ir_class->annotations != nullptr &&
+        ir_class->annotations->class_annotation != nullptr) {
+      for (auto* anno : ir_class->annotations->class_annotation->annotations) {
+        if (anno->type != nullptr && anno->type->descriptor != nullptr &&
+            strcmp(anno->type->descriptor->c_str(),
+                   "Ldalvik/annotation/SourceDebugExtension;") == 0) {
+          for (auto* elem : anno->elements) {
+            if (elem->name != nullptr &&
+                strcmp(elem->name->c_str(), "value") == 0) {
+              if (elem->value->type == dex::kEncodedString) {
+                smap = elem->value->u.string_value->c_str();
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  auto* class_meta =
+      MetadataCollector::Instance().AddClass(descriptor, source_file, smap);
+
   bool modified = false;
   for (auto& ir_class : dex_ir->classes) {
     for (auto& method : ir_class->virtual_methods) {
-      if (instance_->InstrumentMethod(method, hit_method_decl, dex_ir)) {
+      if (instance_->InstrumentMethod(method, hit_method_decl, dex_ir,
+                                      class_meta)) {
         modified = true;
       }
     }
     for (auto& method : ir_class->direct_methods) {
-      if (instance_->InstrumentMethod(method, hit_method_decl, dex_ir)) {
+      if (instance_->InstrumentMethod(method, hit_method_decl, dex_ir,
+                                      class_meta)) {
         modified = true;
       }
     }
@@ -178,14 +215,16 @@ void JNICALL Instrumenter::OnClassFileLoadHook(
 
 bool Instrumenter::InstrumentMethod(
     ir::EncodedMethod* ir_method, ir::MethodDecl* hit_method_decl,
-    const std::shared_ptr<ir::DexFile>& dex_ir) const {
+    const std::shared_ptr<ir::DexFile>& dex_ir,
+    android::tools::coverage::proto::ClassMetadata* class_meta) const {
   if (ir_method->code == nullptr) {
     return false;  // Abstract or native method
   }
 
   lir::CodeIr code_ir(ir_method, dex_ir);
 
-  // Allocate 1 scratch register for our instrumentation.
+  // 1. Allocate 1 scratch register for our instrumentation.
+  // This is done first as it may insert prologue instructions.
   slicer::AllocateScratchRegs alloc_regs(1);
   if (!alloc_regs.Apply(&code_ir) || alloc_regs.ScratchRegs().empty()) {
     Log::W("Failed to allocate scratch register for method %s. Skipping.",
@@ -195,7 +234,38 @@ bool Instrumenter::InstrumentMethod(
 
   dex::u4 scratch_reg = *alloc_regs.ScratchRegs().begin();
 
+  // 2. Track line numbers for the entire method to map instructions to source
+  // lines. This pass is performed AFTER register allocation so that all
+  // instructions (including prologues) are mapped to the most relevant line.
+  std::unordered_map<lir::Instruction*, int32_t> instr_to_line;
+  int32_t current_line = -1;
+  if (ir_method->code->debug_info != nullptr) {
+    current_line =
+        static_cast<int32_t>(ir_method->code->debug_info->line_start);
+  }
+
+  for (auto* instr : code_ir.instructions) {
+    if (auto* dbg_annot = dynamic_cast<lir::DbgInfoAnnotation*>(instr)) {
+      if (dbg_annot->dbg_opcode == dex::DBG_ADVANCE_LINE &&
+          !dbg_annot->operands.empty()) {
+        if (auto* line_op =
+                dynamic_cast<lir::LineNumber*>(dbg_annot->operands[0])) {
+          current_line = static_cast<int32_t>(line_op->line);
+        }
+      }
+    }
+    instr_to_line[instr] = current_line;
+  }
+
   lir::ControlFlowGraph cfg(&code_ir, true);
+
+  // Use a local structure to hold block metadata until we are certain
+  // instrumentation succeeded.
+  struct PendingBlock {
+    uint32_t id;
+    std::vector<std::pair<int32_t, uint32_t>> line_counts;
+  };
+  std::vector<PendingBlock> pending_blocks;
 
   bool injected = false;
   for (const auto& block : cfg.basic_blocks) {
@@ -203,12 +273,21 @@ bool Instrumenter::InstrumentMethod(
 
     if (block.region.first == nullptr) continue;
 
-    // Find the first bytecode instruction in this basic block.
-    for (auto instr = block.region.first; instr != nullptr;
+    // Track metadata for this block: map line_number -> instruction_count
+    std::map<int32_t, uint32_t> line_instruction_counts;
+
+    // Find the first bytecode instruction in this basic block and count
+    // instructions.
+    for (auto* instr = block.region.first; instr != nullptr;
          instr = (instr == block.region.last) ? nullptr : instr->next) {
       if (dynamic_cast<lir::Bytecode*>(instr)) {
-        trace_point = instr;
-        break;
+        if (trace_point == nullptr) trace_point = instr;
+
+        auto it = instr_to_line.find(instr);
+        int32_t line = (it != instr_to_line.end()) ? it->second : -1;
+        if (line != -1) {
+          line_instruction_counts[line]++;
+        }
       }
     }
 
@@ -252,11 +331,26 @@ bool Instrumenter::InstrumentMethod(
     code_ir.instructions.InsertBefore(trace_point, call_mark);
     injected = true;
 
-    // TODO: Record the mapping of block_id -> source file / line numbers here.
+    // Record the mapping locally.
+    PendingBlock pending;
+    pending.id = block_id;
+    for (const auto& entry : line_instruction_counts) {
+      pending.line_counts.push_back(entry);
+    }
+    pending_blocks.push_back(std::move(pending));
   }
 
   if (!injected) {
     return false;
+  }
+
+  // Instrumentation succeeded. Commit metadata to the collector.
+  auto* method_meta = MetadataCollector::Instance().AddMethod(
+      class_meta, ir_method->decl->name->c_str(),
+      ir_method->decl->prototype->Signature().c_str());
+
+  for (const auto& pb : pending_blocks) {
+    MetadataCollector::Instance().AddBlock(method_meta, pb.id, pb.line_counts);
   }
 
   code_ir.Assemble();

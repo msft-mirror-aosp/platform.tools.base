@@ -20,7 +20,18 @@
 #include <jni.h>
 #include <jvmti.h>
 
+#include <memory>
 #include <string>
+
+namespace android {
+namespace tools {
+namespace coverage {
+namespace proto {
+class ClassMetadata;
+}  // namespace proto
+}  // namespace coverage
+}  // namespace tools
+}  // namespace android
 
 namespace ir {
 struct EncodedMethod;
@@ -53,9 +64,10 @@ class Instrumenter {
 
   // Instruments a single method by allocating scratch registers and injecting
   // coverage tracking calls. Returns true if the method was modified.
-  bool InstrumentMethod(ir::EncodedMethod* ir_method,
-                        ir::MethodDecl* hit_method_decl,
-                        const std::shared_ptr<ir::DexFile>& dex_ir) const;
+  bool InstrumentMethod(
+      ir::EncodedMethod* ir_method, ir::MethodDecl* hit_method_decl,
+      const std::shared_ptr<ir::DexFile>& dex_ir,
+      android::tools::coverage::proto::ClassMetadata* class_meta) const;
 
   jvmtiEnv* jvmti_;
   std::string inclusion_prefix_;
