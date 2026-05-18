@@ -69,9 +69,13 @@ class CommandSender(host: String, port: Int) : AutoCloseable {
       val command = Command.newBuilder().setInspectorMessage(envelope).build()
       val response = sendMessage(command)
 
+      if (response.status != Response.Status.SUCCESS) {
+        error("Agent Command Failed: ${response.errorMessage}")
+      }
+
       val responseEnvelope = response.inspectorMessage
       if (responseEnvelope.inspectorId != inspectorId) {
-        error("Received response for wrong inspector: ${responseEnvelope.inspectorId}")
+        error("Received response for wrong inspector. Expected: $inspectorId, Got: ${responseEnvelope.inspectorId}")
       }
       responseEnvelope.payload.toByteArray()
     }

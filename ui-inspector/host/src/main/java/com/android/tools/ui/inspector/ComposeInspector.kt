@@ -20,6 +20,7 @@ import com.android.tools.ui.inspector.common.ProtocolConstants
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol
 import com.google.common.annotations.VisibleForTesting
 import java.io.File
+import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol
 
 private const val COMPOSE_UI_GROUP_ID = "androidx.compose.ui"
 
@@ -32,15 +33,49 @@ internal suspend fun createComposeInspector(
     // TODO: add support for caching
     MavenArtifactResolver().resolve(COMPOSE_UI_GROUP_ID, artifactId, version)
   },
-) {
-  val composeVersion = getComposeVersion(commandSender) ?: return
+): Boolean {
+  val composeVersion = getComposeVersion(commandSender) ?: return false
 
-  try {
+  return try {
     val jarFile = resolveJar(composeVersion)
     launchComposeInspector(commandSender, injectionManager, jarFile)
+    true
   } catch (e: Exception) {
     System.err.println("Failed to resolve or deploy Compose Inspector: ${e.message}")
+    false
   }
+}
+
+/** Queries the Compose inspector on the agent for the Composable tree of a specific root view. */
+internal suspend fun queryComposeTree(
+  commandSender: CommandSender,
+  rootViewId: Long,
+): Pair<List<LayoutInspectorComposeProtocol.ComposableRoot>, Map<Int, String>>? {
+  val getComposablesCmd =
+    LayoutInspectorComposeProtocol.Command.newBuilder()
+      .setGetComposablesCommand(
+        LayoutInspectorComposeProtocol.GetComposablesCommand.newBuilder()
+          .setRootViewId(rootViewId)
+          .setSkipSystemComposables(false)
+          // Set generation to 0 to force the persistent agent inspector to bypass its layout cache
+          // and always return a fresh capture of the active screen on subsequent reconnections.
+          .setGeneration(0)
+          // TODO: Add support for dynamic Composable parameter extraction on the CLI host side.
+          .setExtractAllParameters(false)
+      )
+      .build()
+
+  val responsePayload = commandSender.sendInspectorCommand(ProtocolConstants.COMPOSE_INSPECTOR_ID, getComposablesCmd.toByteArray())
+  val composeResponse = LayoutInspectorComposeProtocol.Response.parseFrom(responsePayload)
+
+  if (composeResponse.specializedCase != LayoutInspectorComposeProtocol.Response.SpecializedCase.GET_COMPOSABLES_RESPONSE) {
+    System.err.println("Warning: Unexpected Compose Response: ${composeResponse.specializedCase}")
+    return null
+  }
+
+  val getCompResp = composeResponse.getComposablesResponse
+  val stringsMap = getCompResp.stringsList.associate { it.id to it.str }
+  return Pair(getCompResp.rootsList, stringsMap)
 }
 
 /** Queries the target application agent for its installed Jetpack Compose version. */
