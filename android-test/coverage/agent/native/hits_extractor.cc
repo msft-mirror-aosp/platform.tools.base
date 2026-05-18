@@ -64,6 +64,32 @@ void HitsExtractor::Initialize(JNIEnv* jni, const std::string& package_name) {
   initialized_ = true;
 }
 
+std::string HitsExtractor::PackHits(const jboolean* hits, jsize len,
+                                    uint32_t* last_hit_index) {
+  size_t mask_size = (len + 7) / 8;
+  std::string bitmask(mask_size, 0);
+
+  *last_hit_index = 0;
+  bool any_hits = false;
+
+  for (jsize i = 0; i < len; ++i) {
+    if (hits[i]) {
+      bitmask[i / 8] |= (1 << (i % 8));
+      *last_hit_index = static_cast<uint32_t>(i);
+      any_hits = true;
+    }
+  }
+
+  if (!any_hits) {
+    return "";
+  }
+
+  // Prune the bitmask to only include bytes up to the last hit to save space.
+  size_t pruned_size = (*last_hit_index / 8) + 1;
+  bitmask.resize(pruned_size);
+  return bitmask;
+}
+
 bool HitsExtractor::ExtractAndWrite(JNIEnv* jni) const {
   if (!initialized_ || package_name_.empty()) {
     Log::E("HitsExtractor not initialized or handles missing.");
@@ -92,31 +118,15 @@ bool HitsExtractor::ExtractAndWrite(JNIEnv* jni) const {
   }
 
   // 2. Pack the boolean array into a compact bitmask.
-  // bitset size = ceil(hits_len / 8)
-  size_t mask_size = (hits_len + 7) / 8;
-  std::string bitmask(mask_size, 0);
-
   uint32_t last_hit_index = 0;
-  bool any_hits = false;
-
-  for (jsize i = 0; i < hits_len; ++i) {
-    if (hits_ptr[i]) {
-      bitmask[i / 8] |= (1 << (i % 8));
-      last_hit_index = static_cast<uint32_t>(i);
-      any_hits = true;
-    }
-  }
+  std::string bitmask = PackHits(hits_ptr, hits_len, &last_hit_index);
 
   jni->ReleaseBooleanArrayElements(hits_array, hits_ptr, JNI_ABORT);
 
-  if (!any_hits) {
+  if (bitmask.empty()) {
     Log::I("No coverage hits recorded. Skipping hits file generation.");
     return true;
   }
-
-  // Prune the bitmask to only include bytes up to the last hit to save space.
-  size_t pruned_size = (last_hit_index / 8) + 1;
-  bitmask.resize(pruned_size);
 
   // 3. Serialize to Protobuf.
   proto::CoverageHits hits_proto;
@@ -149,7 +159,7 @@ bool HitsExtractor::ExtractAndWrite(JNIEnv* jni) const {
   }
 
   Log::I("Coverage hits successfully written to %s (%zu bytes)", path.c_str(),
-         pruned_size);
+         bitmask.size());
   return true;
 }
 

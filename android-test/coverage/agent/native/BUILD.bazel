@@ -65,6 +65,7 @@ cc_test(
     name = "agent_unit_tests",
     size = "small",
     srcs = [
+        "hits_extractor_test.cc",
         "metadata_collector_test.cc",
     ],
     linkstatic = 1,

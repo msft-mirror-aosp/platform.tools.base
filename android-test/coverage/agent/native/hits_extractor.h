@@ -24,11 +24,17 @@
 namespace coverage {
 
 /**
- * A singleton responsible for extracting coverage hit data from the Java
+ * A class responsible for extracting coverage hit data from the Java
  * runtime (CoverageTracker) and serializing it to disk during teardown.
  */
 class HitsExtractor {
  public:
+  // Standard constructor. Unit tests can instantiate fresh, isolated
+  // extractors directly.
+  HitsExtractor() = default;
+  ~HitsExtractor() = default;
+
+  // Global singleton instance used by the JVMTI callbacks.
   static HitsExtractor& Instance();
 
   // Initialize the extractor. This must be called during agent attachment
@@ -39,10 +45,12 @@ class HitsExtractor {
   // This uses cached handles for safety during VM shutdown.
   bool ExtractAndWrite(JNIEnv* jni) const;
 
- private:
-  HitsExtractor() = default;
-  ~HitsExtractor() = default;
+  // Static helper to pack a boolean array into a compact bitmask.
+  // bitset size = ceil(len / 8). trailing zero bytes are pruned.
+  static std::string PackHits(const jboolean* hits, jsize len,
+                              uint32_t* last_hit_index);
 
+ private:
   // Disallow copy and assignment.
   HitsExtractor(const HitsExtractor&) = delete;
   HitsExtractor& operator=(const HitsExtractor&) = delete;
