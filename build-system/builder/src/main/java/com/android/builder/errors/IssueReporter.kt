@@ -204,7 +204,10 @@ abstract class IssueReporter {
    */
   @JvmOverloads
   fun reportWarning(type: Type, msg: String, data: String? = null, multilineMsg: List<String>? = null) {
-    reportIssue(type, Severity.WARNING, EvalIssueException(msg, data, multilineMsg))
+    val suppressionMsg =
+      if (type in TYPES_WITHOUT_GENERAL_SUPPRESSION) ""
+      else "\nAdd android.sync.suppressAgpWarnings=${type.name} to the gradle.properties file to suppress this warning."
+    reportIssue(type, Severity.WARNING, EvalIssueException(msg + suppressionMsg, data, multilineMsg))
   }
 
   /**
@@ -221,4 +224,8 @@ abstract class IssueReporter {
 
   /** Whether an issue of the given type has been recorded. */
   abstract fun hasIssue(type: Type): Boolean
+
+  companion object {
+    private val TYPES_WITHOUT_GENERAL_SUPPRESSION = setOf(Type.COMPILE_SDK_VERSION_TOO_HIGH)
+  }
 }

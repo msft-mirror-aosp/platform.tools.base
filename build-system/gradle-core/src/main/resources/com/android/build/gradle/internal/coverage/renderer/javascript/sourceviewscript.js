@@ -15,6 +15,19 @@
  */
 
 const SourceViewApp = {
+    /**
+     * Escapes special characters for use in HTML content and attributes.
+     */
+    escapeHTML(str) {
+        if (!str) return "";
+        return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+    },
+
     elements: {},
     classData: null,
     context: {},
@@ -193,17 +206,17 @@ const SourceViewApp = {
         if (moduleName) {
             html += `
                 <span class="breadcrumb-separator" aria-hidden="true">/</span>
-                <a href="#" class="breadcrumb-link" data-action="go-to-packages" data-module-name="${moduleName}">${moduleName}</a>`;
+                <a href="#" class="breadcrumb-link" data-action="go-to-packages" data-module-name="${this.escapeHTML(moduleName)}">${this.escapeHTML(moduleName)}</a>`;
         }
         if (packageName) {
              html += `
                 <span class="breadcrumb-separator" aria-hidden="true">/</span>
-                <a href="#" class="breadcrumb-link" data-action="go-to-classes" data-module-name="${moduleName}" data-package-name="${packageName}">${packageName}</a>`;
+                <a href="#" class="breadcrumb-link" data-action="go-to-classes" data-module-name="${this.escapeHTML(moduleName)}" data-package-name="${this.escapeHTML(packageName)}">${this.escapeHTML(packageName)}</a>`;
         }
 
         html += `
             <span class="breadcrumb-separator" aria-hidden="true">/</span>
-            <span class="font-semibold text-gray-800">${sourceFileName}</span>
+            <span class="font-semibold text-gray-800">${this.escapeHTML(sourceFileName)}</span>
         </div>`;
 
         this.elements.sourceBreadcrumbs.innerHTML = html;
@@ -538,8 +551,8 @@ const SourceViewApp = {
         }
 
         this.elements.functionList.innerHTML = this.classData.methods.map(method => `
-            <div class="method-link w-full text-left px-3 py-2 rounded-lg transition-colors hover:bg-gray-100 text-gray-700 block cursor-pointer" tabindex="0" role="button" data-method-name="${method.name}">
-                <div class="text-sm font-mono truncate">${method.name}</div>
+            <div class="method-link w-full text-left px-3 py-2 rounded-lg transition-colors hover:bg-gray-100 text-gray-700 block cursor-pointer" tabindex="0" role="button" data-method-name="${this.escapeHTML(method.name)}">
+                <div class="text-sm font-mono truncate">${this.escapeHTML(method.name)}</div>
             </div>`
         ).join('');
 
@@ -562,7 +575,7 @@ const SourceViewApp = {
                 <div class="flex items-center justify-center w-full h-full text-red-600">
                     <div class="text-center p-8">
                         <h3 class="text-lg font-bold">No Source Data</h3>
-                        <p>Source file "${fullSourcePath}" was not found during generation of report</p>
+                        <p>Source file "${this.escapeHTML(fullSourcePath)}" was not found during generation of report</p>
                     </div>
                 </div>`;
             return;
@@ -607,8 +620,8 @@ const SourceViewApp = {
 
         if (!fileReport) {
             return `
-                <div class="variant-code-view" data-variant="${variantName}">
-                    <div class="variant-header"><div>${variantName}</div></div>
+                <div class="variant-code-view" data-variant="${this.escapeHTML(variantName)}">
+                    <div class="variant-header"><div>${this.escapeHTML(variantName)}</div></div>
                     <div class="p-4 text-gray-500 text-center">Data not loaded for this variant.</div>
                 </div>`;
         }
@@ -651,15 +664,15 @@ const SourceViewApp = {
             return `
                 <tr data-line-number="${lineNumber}">
                     <td class="line-number">${branchIndicator}${lineNumber}</td>
-                    <td class="code-cell ${statusClass}"><pre>${lineText || ' '}</pre></td>
+                    <td class="code-cell ${statusClass}"><pre>${this.escapeHTML(lineText) || ' '}</pre></td>
                 </tr>
             `;
         }).join('');
 
         return `
-            <div class="variant-code-view" data-variant="${variantName}">
+            <div class="variant-code-view" data-variant="${this.escapeHTML(variantName)}">
                 <div class="variant-header">
-                    <div>${variantName}</div>
+                    <div>${this.escapeHTML(variantName)}</div>
                     <div class="flex items-baseline gap-2 mt-1">
                         <span class="font-bold ${colorClass}">${percentDisplay}</span>
                         <span class="text-xs text-gray-500 font-normal">${covered}/${total} Lines</span>

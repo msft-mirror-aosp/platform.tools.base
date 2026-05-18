@@ -908,8 +908,8 @@ a.breadcrumb-link:hover { background-color: var(--bg-hover); text-decoration: un
 }
 
 .variant-code-view {
-    flex: 1 0 48%;
-    min-width: 600px;
+    flex: 1 1 auto;
+    min-width: 0;
     background: var(--bg-card);
     border: 1px solid var(--border-color);
     border-radius: 0.75rem;
@@ -930,8 +930,17 @@ a.breadcrumb-link:hover { background-color: var(--bg-hover); text-decoration: un
     flex: 1 1 auto;
     overflow: auto;
     position: relative;
-    background-color: var(--bg-card);
+    background-color: var(--bg-body);
     min-height: 0;
+    padding: 1.5rem;
+    max-height: calc(100vh - 250px);
+    border-bottom-left-radius: inherit;
+    border-bottom-right-radius: inherit;
+}
+
+.code-container:focus-visible {
+    outline: none;
+    box-shadow: inset 0 0 0 2px var(--text-blue-600);
 }
 
 .code-table {
@@ -1046,6 +1055,8 @@ a.breadcrumb-link:hover { background-color: var(--bg-hover); text-decoration: un
 .flex { display: flex; }
 .flex-col { flex-direction: column; }
 .items-center { align-items: center; }
+.whitespace-pre-wrap { white-space: pre-wrap; }
+.break-all { word-break: break-all; }
 .items-baseline { align-items: baseline; }
 .gap-2 { gap: 0.5rem; }
 .gap-3 { gap: 0.75rem; }
@@ -1070,13 +1081,15 @@ a.breadcrumb-link:hover { background-color: var(--bg-hover); text-decoration: un
 .h-5 { height: 1.25rem; }
 .w-6 { width: 1.5rem; }
 .h-6 { height: 1.5rem; }
+.w-full { width: 100%; }
 
+.text-lg { font-size: 1.125rem; }
 .text-sm { font-size: 0.875rem; }
 .text-xs { font-size: 0.75rem; }
 .font-bold { font-weight: 700; }
 .font-semibold { font-weight: 600; }
 .font-medium { font-weight: 500; }
-.font-mono { font-family: monospace; }
+.font-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
 
 .text-left { text-align: left; }
 .text-center { text-align: center; }
@@ -1091,6 +1104,10 @@ a.breadcrumb-link:hover { background-color: var(--bg-hover); text-decoration: un
 .text-green-600 { color: var(--text-green-600); }
 .text-red-600 { color: var(--text-red-600); }
 .text-yellow-600 { color: var(--text-yellow-600); }
+
+.filter-icon { display: flex; align-items: center; justify-content: center; }
+.table-header { width: 100%; }
+.class-link, .method-link { cursor: pointer; }
 
 .bg-gray-50 { background-color: var(--bg-subtle); }
 .bg-gray-100 { background-color: var(--bg-hover); }
@@ -1129,84 +1146,6 @@ a.breadcrumb-link:hover { background-color: var(--bg-hover); text-decoration: un
   padding: 0.25rem 0.5rem;
 }
 
-
-/* Modals */
-.modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-  opacity: 1;
-  visibility: visible;
-  transition: opacity 0.2s, visibility 0.2s;
-}
-
-.modal.hidden {
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-}
-
-.modal-content {
-  background-color: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  width: 90%;
-  max-width: 800px;
-  max-height: 90vh;
-  display: flex;
-  flex-direction: column;
-}
-
-.modal-header {
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid var(--border-color);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.modal-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--text-darkest);
-  margin: 0;
-}
-
-.close-button {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: 0;
-  line-height: 1;
-}
-
-.close-button:hover {
-  color: var(--text-dark);
-}
-
-.modal-body {
-  padding: 1.5rem;
-  overflow-y: auto;
-  background-color: var(--bg-body);
-}
-
-#stack-trace-content {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  font-size: 0.875rem;
-  color: var(--text-red-600);
-  white-space: pre-wrap;
-  word-break: break-all;
-  margin: 0;
-}
 
 .clickable-status {
   cursor: pointer;

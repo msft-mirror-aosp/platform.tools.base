@@ -291,7 +291,12 @@ class DefaultVariantTest : AbstractVariantInputModelTest<String>() {
       assertThat(issues.first().type).isEqualTo(SyncIssue.TYPE_AMBIGUOUS_BUILD_TYPE_DEFAULT)
       assertThat(issues.first().severity).isEqualTo(SyncIssue.SEVERITY_WARNING)
       assertThat(issues.first().message)
-        .isEqualTo("Ambiguous default build type: 'a', 'z'.\n" + "Please only set `isDefault = true` " + "for one build type.")
+        .isEqualTo(
+          "Ambiguous default build type: 'a', 'z'.\n" +
+            "Please only set `isDefault = true` " +
+            "for one build type.\n" +
+            "Add android.sync.suppressAgpWarnings=AMBIGUOUS_BUILD_TYPE_DEFAULT to the gradle.properties file to suppress this warning."
+        )
     }
 
     expect { "a" }
@@ -324,7 +329,8 @@ class DefaultVariantTest : AbstractVariantInputModelTest<String>() {
         .isEqualTo(
           "Ambiguous default product flavors for flavor dimension '1': 'f1', 'f2'.\n" +
             "Please only set `isDefault = true` " +
-            "for one product flavor in each flavor dimension."
+            "for one product flavor in each flavor dimension.\n" +
+            "Add android.sync.suppressAgpWarnings=AMBIGUOUS_PRODUCT_FLAVOR_DEFAULT to the gradle.properties file to suppress this warning."
         )
     }
 
@@ -369,10 +375,12 @@ class DefaultVariantTest : AbstractVariantInputModelTest<String>() {
         .containsExactly(
           "Ambiguous default product flavors for flavor dimension '1': 'f1', 'f2'.\n" +
             "Please only set `isDefault = true` " +
-            "for one product flavor in each flavor dimension.",
+            "for one product flavor in each flavor dimension.\n" +
+            "Add android.sync.suppressAgpWarnings=AMBIGUOUS_PRODUCT_FLAVOR_DEFAULT to the gradle.properties file to suppress this warning.",
           "Ambiguous default product flavors for flavor dimension '2': 'f4', 'f5'.\n" +
             "Please only set `isDefault = true` " +
-            "for one product flavor in each flavor dimension.",
+            "for one product flavor in each flavor dimension.\n" +
+            "Add android.sync.suppressAgpWarnings=AMBIGUOUS_PRODUCT_FLAVOR_DEFAULT to the gradle.properties file to suppress this warning.",
         )
     }
 

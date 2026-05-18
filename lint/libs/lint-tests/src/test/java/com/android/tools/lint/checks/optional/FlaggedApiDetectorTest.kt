@@ -20,8 +20,6 @@ import com.android.testutils.TestUtils
 import com.android.tools.lint.LintCliFlags
 import com.android.tools.lint.MainTest
 import com.android.tools.lint.checks.AbstractCheckTest.SUPPORT_ANNOTATIONS_JAR
-import com.android.tools.lint.checks.ApiDetector
-import com.android.tools.lint.checks.ApiLookupTest
 import com.android.tools.lint.checks.infrastructure.LintDetectorTest
 import com.android.tools.lint.checks.infrastructure.TestFile
 import com.android.tools.lint.checks.infrastructure.TestFiles
@@ -30,6 +28,9 @@ import com.android.tools.lint.checks.infrastructure.TestFiles.java
 import com.android.tools.lint.checks.infrastructure.TestFiles.xml
 import com.android.tools.lint.checks.infrastructure.TestLintTask
 import com.android.tools.lint.checks.infrastructure.TestMode
+import com.android.tools.lint.checks.ApiDetector
+import com.android.tools.lint.checks.ApiLookupTest
+import com.android.tools.lint.checks.optional.FlaggedApiDetector
 import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.Issue
 import java.io.File
@@ -1050,11 +1051,34 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
   fun testUsingCommandLineFlag() {
     // Ensure that the --include-aosp-issues flag pulls this check in
     // (and that without it, it's not included)
-    val project =
-      getProjectDir(
-        null,
-        java(
-            """
+    val xmlFile = File.createTempFile("api-versions", "xml")
+    xmlFile.writeText(
+      """
+      <api version="4">
+        <class name="java/lang/Object" since="2">
+          <method name="&lt;init>()V"/>
+        </class>
+        <class name="test/api/MyApi" since="10000">
+          <extends name="java/lang/Object"/>
+          <method name="&lt;init>()V"/>
+          <method name="apiMethod()V"/>
+          <field name="apiField"/>
+        </class>
+      </api>
+      """
+        .trimIndent()
+    )
+
+    ApiLookupTest.clearApiLookupCache()
+    val oldDb = System.getProperty("LINT_API_DATABASE")
+    try {
+      System.setProperty("LINT_API_DATABASE", xmlFile.path)
+
+      val project =
+        getProjectDir(
+          null,
+          java(
+              """
             package test.api;
             import android.annotation.FlaggedApi;
             import com.example.foobar.Flags;
@@ -1065,10 +1089,10 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
               public int apiField = 42;
             }
             """
-          )
-          .indented(),
-        java(
-            """
+            )
+            .indented(),
+          java(
+              """
             package test.pkg;
             import test.api.MyApi;
             import com.example.foobar.Flags;
@@ -1085,11 +1109,11 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
               }
             }
             """
-          )
-          .indented(),
-        // Generated
-        java(
-            """
+            )
+            .indented(),
+          // Generated
+          java(
+              """
             package com.example.foobar;
 
             public class Flags {
@@ -1097,50 +1121,50 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
                 public static boolean foobar() { return true; }
             }
             """
-          )
-          .indented(),
-        flaggedApiAnnotationStub,
+            )
+            .indented(),
+          flaggedApiAnnotationStub,
+        )
+
+      // No warnings by default
+      MainTest.checkDriver(
+        "No issues found.",
+        "",
+        // Expected exit code
+        LintCliFlags.ERRNO_SUCCESS,
+        arrayOf("-q", "--check", "FlaggedApi", "--disable", "LintError", project.path),
+        null,
+        null,
       )
 
-    // No warnings by default
-    MainTest.checkDriver(
-      "No issues found.",
-      "",
-      // Expected exit code
-      LintCliFlags.ERRNO_SUCCESS,
-      arrayOf("-q", "--check", "FlaggedApi", "--disable", "LintError", project.path),
-      null,
-      null,
-    )
+      // No warnings by default
+      MainTest.checkDriver(
+        """
+        src/test/pkg/Test.java:11: Error: Method apiMethod() is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+            api.apiMethod(); // ERROR 1
+            ~~~~~~~~~~~~~~~
+        src/test/pkg/Test.java:12: Error: Field apiField is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+            int val = api.apiField; // ERROR 2
+                          ~~~~~~~~
+        src/test/pkg/Test.java:13: Error: Class MyApi is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+            Object o = MyApi.class; // ERROR 3
+                       ~~~~~~~~~~~
+        3 errors
+        """
+          .trimIndent(),
+        "",
+        // Expected exit code
+        LintCliFlags.ERRNO_ERRORS,
+        arrayOf("--include-aosp-issues", "--exit-code", "-q", "--check", "FlaggedApi", "--disable", "LintError", project.path),
+        null,
+        null,
+      )
 
-    // No warnings by default
-    MainTest.checkDriver(
-      """
-      src/test/pkg/Test.java:11: Error: Method apiMethod() is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
-          api.apiMethod(); // ERROR 1
-          ~~~~~~~~~~~~~~~
-      src/test/pkg/Test.java:12: Error: Field apiField is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
-          int val = api.apiField; // ERROR 2
-                        ~~~~~~~~
-      src/test/pkg/Test.java:13: Error: Class MyApi is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
-          Object o = MyApi.class; // ERROR 3
-                     ~~~~~~~~~~~
-      3 errors
-      """
-        .trimIndent(),
-      "",
-      // Expected exit code
-      LintCliFlags.ERRNO_ERRORS,
-      arrayOf("--include-aosp-issues", "--exit-code", "-q", "--check", "FlaggedApi", "--disable", "LintError", project.path),
-      null,
-      null,
-    )
-
-    // project.xml checks
-    @Language("XML") val root = project
-    val sdk = TestUtils.getSdk().toFile()
-    val descriptor =
-      """
+      // project.xml checks
+      @Language("XML") val root = project
+      val sdk = TestUtils.getSdk().toFile()
+      val descriptor =
+        """
         <project>
         <root dir="$root" />
         <sdk dir='$sdk'/>
@@ -1153,81 +1177,86 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
         </module>
         </project>
         """
-        .trimIndent()
+          .trimIndent()
 
-    val projectXml = File(project, "project.xml")
-    projectXml.writeText(descriptor)
+      val projectXml = File(project, "project.xml")
+      projectXml.writeText(descriptor)
 
-    MainTest.checkDriver(
-      """
-      src/test/pkg/Test.java:11: Error: Method apiMethod() is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
-          api.apiMethod(); // ERROR 1
-          ~~~~~~~~~~~~~~~
-      src/test/pkg/Test.java:12: Error: Field apiField is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
-          int val = api.apiField; // ERROR 2
-                        ~~~~~~~~
-      src/test/pkg/Test.java:13: Error: Class MyApi is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
-          Object o = MyApi.class; // ERROR 3
-                     ~~~~~~~~~~~
-      3 errors
-      """
-        .trimIndent(),
-      "",
-      // Expected exit code
-      LintCliFlags.ERRNO_ERRORS,
-      arrayOf("--exit-code", "-q", "--check", "FlaggedApi", "--disable", "LintError", "--project", projectXml.path),
-      null,
-      null,
-    )
+      MainTest.checkDriver(
+        """
+        src/test/pkg/Test.java:11: Error: Method apiMethod() is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+            api.apiMethod(); // ERROR 1
+            ~~~~~~~~~~~~~~~
+        src/test/pkg/Test.java:12: Error: Field apiField is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+            int val = api.apiField; // ERROR 2
+                          ~~~~~~~~
+        src/test/pkg/Test.java:13: Error: Class MyApi is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+            Object o = MyApi.class; // ERROR 3
+                       ~~~~~~~~~~~
+        3 errors
+        """
+          .trimIndent(),
+        "",
+        // Expected exit code
+        LintCliFlags.ERRNO_ERRORS,
+        arrayOf("--exit-code", "-q", "--check", "FlaggedApi", "--disable", "LintError", "--project", projectXml.path),
+        null,
+        null,
+      )
 
-    // Redundantly also add the --include-aosp-issues to verify that we don't duplicate the warnings
-    MainTest.checkDriver(
-      """
-      src/test/pkg/Test.java:11: Error: Method apiMethod() is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
-          api.apiMethod(); // ERROR 1
-          ~~~~~~~~~~~~~~~
-      src/test/pkg/Test.java:12: Error: Field apiField is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
-          int val = api.apiField; // ERROR 2
-                        ~~~~~~~~
-      src/test/pkg/Test.java:13: Error: Class MyApi is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
-          Object o = MyApi.class; // ERROR 3
-                     ~~~~~~~~~~~
-      3 errors
-      """
-        .trimIndent(),
-      "",
-      // Expected exit code
-      LintCliFlags.ERRNO_ERRORS,
-      arrayOf(
-        "--exit-code",
-        "--include-aosp-issues",
-        "-q",
-        "--check",
-        "FlaggedApi",
-        "--disable",
-        "LintError",
-        "--project",
-        projectXml.path,
-      ),
-      null,
-      null,
-    )
+      // Redundantly also add the --include-aosp-issues to verify that we don't duplicate the warnings
+      MainTest.checkDriver(
+        """
+        src/test/pkg/Test.java:11: Error: Method apiMethod() is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+            api.apiMethod(); // ERROR 1
+            ~~~~~~~~~~~~~~~
+        src/test/pkg/Test.java:12: Error: Field apiField is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+            int val = api.apiField; // ERROR 2
+                          ~~~~~~~~
+        src/test/pkg/Test.java:13: Error: Class MyApi is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+            Object o = MyApi.class; // ERROR 3
+                       ~~~~~~~~~~~
+        3 errors
+        """
+          .trimIndent(),
+        "",
+        // Expected exit code
+        LintCliFlags.ERRNO_ERRORS,
+        arrayOf(
+          "--exit-code",
+          "--include-aosp-issues",
+          "-q",
+          "--check",
+          "FlaggedApi",
+          "--disable",
+          "LintError",
+          "--project",
+          projectXml.path,
+        ),
+        null,
+        null,
+      )
 
-    // Don't enable it if it's not an Android build
-    projectXml.writeText(descriptor.replace("""android="true"""", """android="false""""))
+      // Don't enable it if it's not an Android build
+      projectXml.writeText(descriptor.replace("""android="true"""", """android="false""""))
 
-    MainTest.checkDriver(
-      """
-      No issues found.
-      """
-        .trimIndent(),
-      "",
-      // Expected exit code
-      LintCliFlags.ERRNO_SUCCESS,
-      arrayOf("--exit-code", "-q", "--check", "FlaggedApi", "--disable", "LintError", "--project", projectXml.path),
-      null,
-      null,
-    )
+      MainTest.checkDriver(
+        """
+        No issues found.
+        """
+          .trimIndent(),
+        "",
+        // Expected exit code
+        LintCliFlags.ERRNO_SUCCESS,
+        arrayOf("--exit-code", "-q", "--check", "FlaggedApi", "--disable", "LintError", "--project", projectXml.path),
+        null,
+        null,
+      )
+    } finally {
+      if (oldDb != null) System.setProperty("LINT_API_DATABASE", oldDb) else System.clearProperty("LINT_API_DATABASE")
+      ApiLookupTest.clearApiLookupCache()
+      xmlFile.delete()
+    }
   }
 
   fun testExportedFlags() {
@@ -1576,6 +1605,96 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
       )
       .run()
       .expectClean()
+  }
+
+  fun testMultiSdkFlaggedApiBacksOff() {
+    val apiXml =
+      """
+      <api version="4">
+        <class name="java/lang/Object" since="2">
+          <method name="&lt;init>()V"/>
+        </class>
+        <class name="test/api/FooManager" since="35" sdks="34:12,35:12,0:35">
+          <extends name="java/lang/Object"/>
+          <method name="&lt;init>()V"/>
+          <method name="methodSameAsClass()V" />
+          <method name="methodFinalizedInPlatformAndExtension()V" since="36" sdks="34:15,35:15,36:15,0:36" />
+          <method name="methodFinalizedInExtension()V" since="10000" sdks="34:22,35:22,36:22,37:22,0:10000" />
+          <method name="methodNotFinalized()V" since="10000" sdks="0:10000" />
+        </class>
+      </api>
+      """
+        .trimIndent()
+
+    ApiLookupTest.runLintWithCustomLookup(
+        apiXml,
+        false,
+        {
+          super.lint()
+            .files(
+              com.android.tools.lint.checks.infrastructure.TestFiles.xml(
+                  "AndroidManifest.xml",
+                  """
+                <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                    package="test.pkg">
+                        <uses-sdk android:minSdkVersion="34" android:targetSdkVersion="34">
+                          <extension-sdk android:sdkVersion="34" android:minExtensionVersion="22" />
+                        </uses-sdk>
+                </manifest>
+                """,
+                )
+                .indented(),
+              binaryStub(
+                "libs/api.jar",
+                java(
+                    """
+                    package test.api;
+
+                    public class FooManager {
+                       @android.annotation.FlaggedApi("com.example.foobar.Flags.FLAG_SAME_AS_CLASS")
+                       public void methodSameAsClass() { }
+                       @android.annotation.FlaggedApi("com.example.foobar.Flags.FLAG_FINALIZED_IN_PLATFORM_AND_EXTENSION")
+                       public void methodFinalizedInPlatformAndExtension() { }
+                       @android.annotation.FlaggedApi("com.example.foobar.Flags.FLAG_FINALIZED_IN_EXTENSION")
+                       public void methodFinalizedInExtension() { }
+                       @android.annotation.FlaggedApi("com.example.foobar.Flags.FLAG_NOT_FINALIZED")
+                       public void methodNotFinalized() { }
+                    }
+                    """
+                  )
+                  .indented(),
+              ),
+              java(
+                  """
+                  package test.pkg;
+                  import test.api.FooManager;
+
+                  public class Test {
+                    public void test(FooManager fooManager) {
+                      fooManager.methodSameAsClass(); // OK 1
+                      fooManager.methodFinalizedInPlatformAndExtension(); // OK 2
+                      fooManager.methodFinalizedInExtension(); // OK 3
+                      fooManager.methodNotFinalized(); // ERROR 1 (FlaggedApi)
+                    }
+                  }
+                  """
+                )
+                .indented(),
+              flaggedApiAnnotationStub,
+            )
+        },
+        FlaggedApiDetector.ISSUE,
+        ApiDetector.UNSUPPORTED,
+      )
+      .expect(
+        """
+        src/test/pkg/Test.java:9: Error: Method methodNotFinalized() is a flagged API and should be inside an if (Flags.notFinalized()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_NOT_FINALIZED) to transfer requirement to caller) [FlaggedApi]
+            fooManager.methodNotFinalized(); // ERROR 1 (FlaggedApi)
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        1 errors, 0 warnings
+        """
+          .trimIndent()
+      )
   }
 }
 

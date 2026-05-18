@@ -1062,6 +1062,8 @@ a.breadcrumb-link:hover { background-color: var(--bg-hover); text-decoration: un
 .flex { display: flex; }
 .flex-col { flex-direction: column; }
 .items-center { align-items: center; }
+.whitespace-pre-wrap { white-space: pre-wrap; }
+.break-all { word-break: break-all; }
 .justify-center { justify-content: center; }
 .items-baseline { align-items: baseline; }
 .gap-2 { gap: 0.5rem; }
@@ -1081,6 +1083,7 @@ a.breadcrumb-link:hover { background-color: var(--bg-hover); text-decoration: un
 .py-4 { padding-top: 1rem; padding-bottom: 1rem; }
 .mt-1 { margin-top: 0.25rem; }
 .mt-2 { margin-top: 0.5rem; }
+.mb-4 { margin-bottom: 1rem; }
 .-ml-2 { margin-left: -0.5rem; }
 .w-4 { width: 1rem; }
 .h-4 { height: 1rem; }
@@ -1091,12 +1094,13 @@ a.breadcrumb-link:hover { background-color: var(--bg-hover); text-decoration: un
 .w-full { width: 100%; }
 .h-full { height: 100%; }
 
+.text-lg { font-size: 1.125rem; }
 .text-sm { font-size: 0.875rem; }
 .text-xs { font-size: 0.75rem; }
 .font-bold { font-weight: 700; }
 .font-semibold { font-weight: 600; }
 .font-medium { font-weight: 500; }
-.font-mono { font-family: monospace; }
+.font-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
 
 .text-left { text-align: left; }
 .text-center { text-align: center; }
@@ -1111,6 +1115,20 @@ a.breadcrumb-link:hover { background-color: var(--bg-hover); text-decoration: un
 .text-green-600 { color: var(--text-green-600); }
 .text-red-600 { color: var(--text-red-600); }
 .text-yellow-600 { color: var(--text-yellow-600); }
+
+.filter-icon { display: flex; align-items: center; justify-content: center; }
+.table-header { width: 100%; }
+.breadcrumb-separator { color: var(--text-muted); }
+.class-link, .method-link { cursor: pointer; }
+
+.table-row {
+  border-bottom: 1px solid var(--border-color);
+  transition: background-color 0.2s;
+}
+
+.table-row:hover {
+  background-color: var(--bg-hover);
+}
 
 .bg-gray-50 { background-color: var(--bg-subtle); }
 .bg-gray-100 { background-color: var(--bg-hover); }
