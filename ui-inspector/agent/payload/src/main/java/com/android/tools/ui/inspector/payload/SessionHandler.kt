@@ -22,10 +22,7 @@ import com.android.tools.idea.protobuf.ByteString
 import com.android.tools.ui.inspector.common.FramingProtocol
 import com.android.tools.ui.inspector.common.ProtocolConstants
 import com.android.tools.ui.inspector.payload.appinspection.DelegatingConnection
-import com.android.tools.ui.inspector.payload.appinspection.HandlerThreadExecutor
 import com.android.tools.ui.inspector.payload.appinspection.createAppInspectionConnection
-import com.android.tools.ui.inspector.payload.appinspection.createInspectorEnvironment
-import com.android.tools.ui.inspector.payload.appinspection.loadInspectorDynamically
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol.Command
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol.CreateInspectorCommand
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol.CreateInspectorResponse
@@ -45,8 +42,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.isActive
 
 private const val TAG = "studio.SessionHandler"
-
-private const val THREAD_NAME_PREFIX = "ui_inspector_"
 
 /**
  * Handles a single connection session with the host.
@@ -138,7 +133,7 @@ internal class SessionHandler(
     }
   }
 
-  private fun handleCreateInspector(command: CreateInspectorCommand, commandId: Int) {
+  private suspend fun handleCreateInspector(command: CreateInspectorCommand, commandId: Int) {
     val inspectorId = command.inspectorId
     val dexPath = command.dexPath
 
@@ -150,11 +145,7 @@ internal class SessionHandler(
     } else {
       val realConnection = createAppInspectionConnection(inspectorId, outputStream, crashListener)
       val delegatingConnection = DelegatingConnection(realConnection)
-
-      val primaryExecutor = HandlerThreadExecutor("${THREAD_NAME_PREFIX}${inspectorId}", crashListener)
-      val inspectorEnvironment = createInspectorEnvironment(primaryExecutor, crashListener)
-      val inspector = loadInspectorDynamically(inspectorId, dexPath, delegatingConnection, inspectorEnvironment)
-      val newBridge = InspectorBridge(inspector, delegatingConnection, serverScope, primaryExecutor)
+      val newBridge = InspectorBridge.create(inspectorId, dexPath, delegatingConnection, serverScope, crashListener)
 
       inspectorBridges[inspectorId] = newBridge
     }

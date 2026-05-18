@@ -80,7 +80,8 @@ class SessionHandlerTest {
     val testScope = CoroutineScope(Dispatchers.Default + Job())
     val bridges = mutableMapOf<String, InspectorBridge>()
     val primaryExecutor = HandlerThreadExecutor("test_thread_shutdown", { throw it })
-    bridges[ProtocolConstants.VIEW_INSPECTOR_ID] = InspectorBridge(mockInspector, DelegatingConnection(), testScope, primaryExecutor)
+    bridges[ProtocolConstants.VIEW_INSPECTOR_ID] =
+      InspectorBridge.createForTesting(mockInspector, DelegatingConnection(), testScope, primaryExecutor)
 
     val sessionHandler =
       SessionHandler(
@@ -133,7 +134,8 @@ class SessionHandlerTest {
     val testScope = CoroutineScope(Dispatchers.Default + Job())
     val bridges = mutableMapOf<String, InspectorBridge>()
     val primaryExecutor = HandlerThreadExecutor("test_thread_eof", { throw it })
-    bridges[ProtocolConstants.VIEW_INSPECTOR_ID] = InspectorBridge(mockInspector, DelegatingConnection(), testScope, primaryExecutor)
+    bridges[ProtocolConstants.VIEW_INSPECTOR_ID] =
+      InspectorBridge.createForTesting(mockInspector, DelegatingConnection(), testScope, primaryExecutor)
 
     val sessionHandler =
       SessionHandler(
@@ -284,7 +286,8 @@ class SessionHandlerTest {
     val testScope = CoroutineScope(Dispatchers.Default + Job())
     val bridges = mutableMapOf<String, InspectorBridge>()
     val primaryExecutor = HandlerThreadExecutor("test_thread_multiple", { throw it })
-    bridges[ProtocolConstants.VIEW_INSPECTOR_ID] = InspectorBridge(mockInspector, DelegatingConnection(), testScope, primaryExecutor)
+    bridges[ProtocolConstants.VIEW_INSPECTOR_ID] =
+      InspectorBridge.createForTesting(mockInspector, DelegatingConnection(), testScope, primaryExecutor)
 
     val sessionHandler =
       SessionHandler(

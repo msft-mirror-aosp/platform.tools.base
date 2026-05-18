@@ -61,13 +61,38 @@ class InspectorBridgeTest {
         override fun onDispose() {}
       }
 
-    val bridgeSeq = InspectorBridge(mockInspectorSeq, DelegatingConnection(), testScope, primaryExecutor)
+    val bridgeSeq = InspectorBridge.createForTesting(mockInspectorSeq, DelegatingConnection(), testScope, primaryExecutor)
 
     val job1Seq = launch { bridgeSeq.sendCommand(byteArrayOf(1)) }
     val job2Seq = launch { bridgeSeq.sendCommand(byteArrayOf(2)) }
 
     job1Seq.join()
     job2Seq.join()
+
+    testScope.cancel()
+  }
+
+  @Test
+  fun testSendCommand_executesOnPrimaryExecutorThread() = runBlocking {
+    val testScope = CoroutineScope(Dispatchers.Default + Job())
+    val primaryExecutor = HandlerThreadExecutor("test_bridge_thread", { throw it })
+
+    var executionThreadName: String? = null
+    val mockInspector =
+      object : Inspector(mockConnection) {
+        override fun onReceiveCommand(data: ByteArray, callback: CommandCallback) {
+          executionThreadName = Thread.currentThread().name
+          callback.reply(data)
+        }
+
+        override fun onDispose() {}
+      }
+
+    val bridge = InspectorBridge.createForTesting(mockInspector, DelegatingConnection(), testScope, primaryExecutor)
+
+    bridge.sendCommand(byteArrayOf(1))
+
+    assertThat(executionThreadName).startsWith("test_bridge_thread")
 
     testScope.cancel()
   }
@@ -85,7 +110,7 @@ class InspectorBridgeTest {
 
     val testScope = CoroutineScope(Dispatchers.Default + Job())
     val primaryExecutor = HandlerThreadExecutor("test_bridge_err", { throw it })
-    val bridge = InspectorBridge(mockInspector, DelegatingConnection(), testScope, primaryExecutor)
+    val bridge = InspectorBridge.createForTesting(mockInspector, DelegatingConnection(), testScope, primaryExecutor)
 
     var exceptionThrown = false
     try {
@@ -111,7 +136,7 @@ class InspectorBridgeTest {
         override fun onDispose() {}
       }
 
-    val bridge = InspectorBridge(mockInspector, delegatingConnection, testScope, primaryExecutor)
+    val bridge = InspectorBridge.createForTesting(mockInspector, delegatingConnection, testScope, primaryExecutor)
 
     val newConnection =
       object : Connection() {
@@ -138,7 +163,7 @@ class InspectorBridgeTest {
 
     val testScope = CoroutineScope(Dispatchers.Default + Job())
     val primaryExecutor = HandlerThreadExecutor("test_bridge_dispose", { throw it })
-    val bridge = InspectorBridge(mockInspector, DelegatingConnection(), testScope, primaryExecutor)
+    val bridge = InspectorBridge.createForTesting(mockInspector, DelegatingConnection(), testScope, primaryExecutor)
 
     bridge.dispose()
 
