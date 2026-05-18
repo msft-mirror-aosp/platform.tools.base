@@ -18,6 +18,9 @@ package com.android.tools.screenshot.differ
 
 import com.google.common.truth.Truth.assertThat
 import java.io.File
+import com.android.tools.screenshot.ImageComparisonAssertionError
+import com.android.tools.screenshot.ScreenshotImageNotFoundException
+import com.android.tools.screenshot.ScreenshotImageInvalidException
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertThrows
 import org.junit.Rule

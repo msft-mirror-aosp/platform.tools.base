@@ -38,6 +38,7 @@ kotlin_test(
         "//tools/base/preview/screenshot/screenshot-validation-api",
         "//tools/base/sdk-common:tools.sdk-common",
         "//tools/base/sdklib:tools.sdklib",
+        "//tools/base/standalone-render/lib:tools.standalone-render.lib",
         "//tools/base/testutils:tools.testutils",
         "@maven//:junit.junit",
         "@maven//:org.jetbrains.kotlin.kotlin-test",

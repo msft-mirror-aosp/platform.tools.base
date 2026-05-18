@@ -181,4 +181,54 @@ class ScreenshotEdgeCaseTest {
     result.assertErrorDoesNotContain("WARNING: A restricted method in java.lang.System has been called")
     result.assertErrorDoesNotContain("WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a future error")
   }
+
+  @Test
+  fun runScreenshotTestWithRenderingException() {
+    val build =
+      rule.build {
+        androidApplication {
+          files {
+            add(
+              "src/screenshotTest/java/com/FailingRenderTest.kt",
+              """
+              package pkg.name
+
+              import androidx.compose.foundation.layout.Box
+              import androidx.compose.foundation.layout.size
+              import androidx.compose.ui.Modifier
+              import androidx.compose.ui.draw.drawBehind
+              import androidx.compose.ui.unit.dp
+              import androidx.compose.ui.tooling.preview.Preview
+              import androidx.compose.runtime.Composable
+              import com.android.tools.screenshot.PreviewTest
+
+              class FailingRenderTest {
+                  @PreviewTest
+                  @Preview(name = "failingRender")
+                  @Composable
+                  fun failingRenderTest() {
+                      Box(
+                          modifier = Modifier
+                              .size(100.dp)
+                              .drawBehind {
+                                  throw RuntimeException("Simulated draw-time RenderProblem")
+                              }
+                      )
+                  }
+              }
+              """
+                .trimIndent(),
+            )
+          }
+        }
+      }
+    val appProject = build.androidApplication()
+    val result = build.sstExecutor().expectFailure().run(":app:updateDebugScreenshotTest")
+
+    result.assertErrorContains("Screenshot rendering failed:")
+    result.assertErrorContains("Render Problems:")
+
+    val failingTestReferenceScreenshotDir = appProject.resolve("src/screenshotTestDebug/reference/pkg/name/FailingRenderTest")
+    assertThat(failingTestReferenceScreenshotDir).doesNotExist()
+  }
 }

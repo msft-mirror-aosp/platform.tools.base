@@ -134,9 +134,6 @@ class PreviewAnnotationDescriptor(
       }
 
     context.renderer.render(previewScreenshot, context.previewImageOutputDir.absolutePath).forEachIndexed { idx, result ->
-      if (result.error != null) {
-        throw RuntimeException("Rendering failed for ${previewScreenshot.previewId}: ${result.error}")
-      }
       val previewNameBuilder = StringBuilder()
       val nameParam = previewScreenshot.previewParams["name"]
       nameParam?.let { previewNameBuilder.append("_$it") }

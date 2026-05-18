@@ -20,6 +20,9 @@ import java.io.File
 import java.io.FileNotFoundException
 import java.io.IOException
 import javax.imageio.ImageIO
+import com.android.tools.screenshot.ImageComparisonAssertionError
+import com.android.tools.screenshot.ScreenshotImageNotFoundException
+import com.android.tools.screenshot.ScreenshotImageInvalidException
 
 data class VerificationResult(val diffResult: ImageDiffer.DiffResult, val diffPercent: Double?)
 
@@ -66,31 +69,4 @@ class ImageVerifier(private val imageDiffer: ImageDiffer) {
     val diffPercentValue: Double? = diff.percentDiff
     return VerificationResult(diff, diffPercentValue)
   }
-}
-
-class ImageComparisonAssertionError(
-  val expectedImagePath: String,
-  val actualImagePath: String,
-  val diffPercentage: Double? = null,
-  val diffImagePath: String? = null,
-  message: String = "Image does not match.",
-) : AssertionError(message) {
-  override fun fillInStackTrace(): Throwable = this
-
-  override val message: String
-    get() =
-      super.message +
-        "\n" +
-        "Expected: $expectedImagePath\n" +
-        "Actual: $actualImagePath\n" +
-        (diffPercentage?.let { "Difference: ${"%.2f".format(it * 100)}%\n" } ?: "") +
-        (diffImagePath?.let { "Diff Image: $it\n" } ?: "")
-}
-
-class ScreenshotImageNotFoundException(message: String) : FileNotFoundException(message) {
-  override fun fillInStackTrace(): Throwable = this
-}
-
-class ScreenshotImageInvalidException(message: String) : IOException(message) {
-  override fun fillInStackTrace(): Throwable = this
 }
