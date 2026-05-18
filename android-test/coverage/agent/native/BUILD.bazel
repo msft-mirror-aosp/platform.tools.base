@@ -24,6 +24,8 @@ cc_binary(
     srcs = [
         "coverage_agent.cc",
         "coverage_rt.cc",
+        "hits_extractor.cc",
+        "hits_extractor.h",
         "instrumenter.cc",
         "instrumenter.h",
         "metadata_collector.cc",

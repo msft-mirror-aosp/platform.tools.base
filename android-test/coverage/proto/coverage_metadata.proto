@@ -70,3 +70,11 @@ message CoverageMetadata {
   uint32 version = 1;
   repeated ClassMetadata classes = 2;
 }
+
+// Execution data containing the actual hits recorded during the test run.
+message CoverageHits {
+  uint32 version = 1;
+
+  // A compact bitmask where bit 'i' is set if basic block ID 'i' was executed.
+  bytes hit_mask = 2;
+}
