@@ -31,8 +31,7 @@ import android.os.Message;
 import android.os.Messenger;
 import ${getMaterialComponentName("android.support.v4.app.NotificationChannelCompat", useAndroidX)};
 import ${getMaterialComponentName("android.support.v4.app.NotificationCompat", useAndroidX)};
-import ${getMaterialComponentName("android.support.v4.app.NotificationCompat.CarExtender", useAndroidX)};
-import ${getMaterialComponentName("android.support.v4.app.NotificationCompat.CarExtender.UnreadConversation", useAndroidX)};
+import ${getMaterialComponentName("android.support.v4.app.Person", useAndroidX)};
 import ${getMaterialComponentName("android.support.v4.app.NotificationManagerCompat", useAndroidX)};
 import ${getMaterialComponentName("android.support.v4.app.RemoteInput", useAndroidX)};
 
@@ -104,13 +103,38 @@ public class ${serviceName} extends Service {
                 createIntent(conversationId, REPLY_ACTION),
                 PendingIntent.FLAG_UPDATE_CURRENT);
 
-        // Create the UnreadConversation and populate it with the participant name,
-        // read and reply intents.
-        UnreadConversation.Builder unreadConvBuilder =
-                new UnreadConversation.Builder(participant)
-                .setLatestTimestamp(timestamp)
-                .setReadPendingIntent(readPendingIntent)
-                .setReplyAction(replyIntent, remoteInput);
+        // Create a Person object for the sender
+        Person sender = new Person.Builder()
+                .setName(participant)
+                .build();
+
+        // Create a Person object for the user
+        Person user = new Person.Builder()
+                .setName("Me")
+                .build();
+
+        // Create the MessagingStyle
+        NotificationCompat.MessagingStyle messagingStyle = new NotificationCompat.MessagingStyle(user)
+                .addMessage(message, timestamp, sender);
+
+        // Build the read action
+        NotificationCompat.Action readAction = new NotificationCompat.Action.Builder(
+                0, // No icon
+                "Mark as Read",
+                readPendingIntent)
+                .setSemanticAction(NotificationCompat.Action.SEMANTIC_ACTION_MARK_AS_READ)
+                .setShowsUserInterface(false)
+                .build();
+
+        // Build the reply action
+        NotificationCompat.Action replyAction = new NotificationCompat.Action.Builder(
+                0, // No icon
+                "Reply",
+                replyIntent)
+                .setSemanticAction(NotificationCompat.Action.SEMANTIC_ACTION_REPLY)
+                .setShowsUserInterface(false)
+                .addRemoteInput(remoteInput)
+                .build();
 
         NotificationChannelCompat channel = new NotificationChannelCompat
                 .Builder(CHANNEL_ID, NotificationManagerCompat.IMPORTANCE_DEFAULT)
@@ -129,8 +153,9 @@ public class ${serviceName} extends Service {
                 .setWhen(timestamp)
                 .setContentTitle(participant)
                 .setContentIntent(readPendingIntent)
-                .extend(new CarExtender()
-                        .setUnreadConversation(unreadConvBuilder.build()));
+                .setStyle(messagingStyle)
+                .addAction(readAction)
+                .addAction(replyAction);
 
         mNotificationManager.notify(conversationId, builder.build());
     }

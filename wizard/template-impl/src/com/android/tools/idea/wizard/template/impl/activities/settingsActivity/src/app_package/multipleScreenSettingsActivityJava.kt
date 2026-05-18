@@ -82,7 +82,6 @@ public class ${activityClass} extends AppCompatActivity implements
                 getClassLoader(),
                 pref.getFragment());
         fragment.setArguments(args);
-        fragment.setTargetFragment(caller, 0);
         // Replace the existing Fragment with the new Fragment
         getSupportFragmentManager().beginTransaction()
                 .replace(R.id.settings, fragment)

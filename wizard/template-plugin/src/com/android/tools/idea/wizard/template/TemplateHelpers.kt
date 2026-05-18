@@ -162,6 +162,7 @@ fun getMaterialComponentName(mavenCoordinate: String, useAndroidX: Boolean): Str
       "android.support.v4.app.NotificationCompat.CarExtender.UnreadConversation" to
         "androidx.core.app.NotificationCompat.CarExtender.UnreadConversation",
       "android.support.v4.app.NotificationManagerCompat" to "androidx.core.app.NotificationManagerCompat",
+      "android.support.v4.app.Person" to "androidx.core.app.Person",
       "android.support.v4.app.RemoteInput" to "androidx.core.app.RemoteInput",
       "android.support.v4.content.ContextCompat" to "androidx.core.content.ContextCompat",
       "android.support.v4.media.MediaBrowserServiceCompat" to "androidx.media.MediaBrowserServiceCompat",
