@@ -41,7 +41,8 @@ static coverage::Instrumenter* g_instrumenter = nullptr;
 namespace {
 
 void JNICALL OnVMDeath(jvmtiEnv* jvmti_env, JNIEnv* jni_env) {
-  coverage::Log::I("VMDeath event received. Writing coverage metadata...");
+  coverage::Log::I("VMDeath event received. Writing coverage data...");
+  coverage::HitsExtractor::Instance().ExtractAndWrite(jni_env);
   coverage::MetadataCollector::Instance().WriteToDisk();
 }
 
