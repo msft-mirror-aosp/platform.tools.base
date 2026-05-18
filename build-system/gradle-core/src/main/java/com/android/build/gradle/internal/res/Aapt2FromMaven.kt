@@ -154,13 +154,20 @@ class Aapt2FromMaven(val aapt2Directory: FileCollection, val version: String) {
         val input = inputArtifact.get().asFile
         val outDir = transformOutputs.dir(input.nameWithoutExtension).toPath()
         Files.createDirectories(outDir)
+
+        val normalizedOutDir = outDir.normalize()
+
         ZipInputStream(input.inputStream().buffered()).use { zipInputStream ->
           while (true) {
             val entry = zipInputStream.nextEntry ?: break
             if (entry.isDirectory) {
               continue
             }
-            val destinationFile = outDir.resolve(entry.name)
+            val destinationFile = outDir.resolve(entry.name).normalize()
+            if (!destinationFile.startsWith(normalizedOutDir)) {
+              // Skip entries that resolve outside the output directory (zip-slip).
+              continue
+            }
             Files.createDirectories(destinationFile.parent)
             Files.newOutputStream(destinationFile).buffered().use { output -> ByteStreams.copy(zipInputStream, output) }
             // Mark executable on linux.
