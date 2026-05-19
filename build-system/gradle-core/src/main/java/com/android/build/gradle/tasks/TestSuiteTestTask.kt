@@ -57,6 +57,7 @@ import com.android.build.gradle.options.IntegerOption
 import com.android.build.gradle.options.StringOption
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.core.BuilderConstants
+import com.android.builder.core.ComponentType
 import com.android.builder.testing.api.DeviceConfigProvider
 import com.android.builder.testing.api.DeviceConfigProviderImpl
 import com.android.builder.testing.api.DeviceException
@@ -619,7 +620,12 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
   ) : GlobalTaskCreationAction<LegacyReportingTestSuiteTestTask>() {
 
     override val name: String
-      get() = creationConfig.computeTaskNameInternal("connected")
+      get() =
+        if (creationConfig.componentType.isSeparateTestProject) {
+          creationConfig.computeTaskNameInternal("connected", ComponentType.ANDROID_TEST_SUFFIX)
+        } else {
+          creationConfig.computeTaskNameInternal("connected")
+        }
 
     override val type: Class<LegacyReportingTestSuiteTestTask> = LegacyReportingTestSuiteTestTask::class.java
 
