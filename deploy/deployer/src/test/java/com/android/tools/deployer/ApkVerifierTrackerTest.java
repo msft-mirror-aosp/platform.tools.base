@@ -114,6 +114,11 @@ public class ApkVerifierTrackerTest {
             deviceStates.add(connectAndWaitForDevice(fakeDevice));
         }
 
+        // Make sure all properties are fetched.
+        for (IDevice d : bridge.getDevices()) {
+            d.getSystemProperty(IDevice.PROP_BUILD_API_LEVEL).get(50, TimeUnit.MILLISECONDS);
+        }
+
         Map<FakeDevice, IDevice> devicesMap = new HashMap<>();
 
         // Map FakeDevices to their corresponding IDevices.
