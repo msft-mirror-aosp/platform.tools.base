@@ -445,14 +445,6 @@ const LintReportApp = {
             }});
         }
 
-        if (this.state.currentView !== 'issues') {
-            const viewLabels = { 'modules': 'Modules', 'packages': 'Packages', 'classes': 'Classes' };
-            const currentLevelName = viewLabels[this.state.currentView];
-            if (currentLevelName) {
-                 levels.push({ name: currentLevelName, isLast: true });
-            }
-        }
-
         if (this.state.searchQuery) {
             levels.push({ name: `Search: ${'$'}{this.state.searchQuery}`, isLast: true });
         }
@@ -578,7 +570,7 @@ const LintReportApp = {
     renderTreeView(issues) {
         const root = this.getHierarchicalData(issues);
         this.elements.tableHeaders.innerHTML = `<tr>
-            <th class="cursor-pointer" data-sort="name">Element</th>
+            <th class="cursor-pointer" data-sort="name">Module</th>
             <th class="cursor-pointer" data-sort="total">Total</th>
             <th class="cursor-pointer" data-sort="errors">Errors</th>
             <th class="cursor-pointer" data-sort="warnings">Warnings</th>
@@ -742,7 +734,7 @@ const LintReportApp = {
         const capitalizedType = typeLabels[groupByKey] || 'Item';
 
         this.elements.tableHeaders.innerHTML = `<tr>
-            <th class="cursor-pointer" data-sort="name">Element</th>
+            <th class="cursor-pointer" data-sort="name">${'$'}{capitalizedType}</th>
             <th class="cursor-pointer" data-sort="total">Total</th>
             <th class="cursor-pointer" data-sort="errors">Errors</th>
             <th class="cursor-pointer" data-sort="warnings">Warnings</th>
@@ -902,7 +894,7 @@ const LintReportApp = {
         const order = { 'Fatal': 5, 'Error': 4, 'Warning': 3, 'Information': 2, 'Informational': 2, 'Hint': 1 };
         return [...issues].sort((a, b) => {
             let by = this.state.sort.by;
-            if (by === 'name') by = 'id'; // Issues use 'id', Groups use 'name' (displayed as Element)
+            if (by === 'name') by = 'id'; // Issues use 'id', Groups use 'name' (displayed as Module/Package/Class)
             let vA = a[by], vB = b[by];
             if (by === 'severity') { vA = order[a.severityDescription] || 0; vB = order[b.severityDescription] || 0; }
             if (vA === undefined) vA = '';

@@ -455,7 +455,7 @@ class HtmlReporterV2IndexTest {
     assertTrue(LINTSCRIPT_JS.contains("breadcrumb-item"))
     assertTrue(LINTSCRIPT_JS.contains("breadcrumb-last"))
     assertTrue(LINTSCRIPT_JS.contains("breadcrumb-separator"))
-    assertTrue(LINTSCRIPT_JS.contains("Element"))
+    assertTrue(LINTSCRIPT_JS.contains("Module"))
     assertTrue(LINTSCRIPT_JS.contains("levels.push({ name: modName"))
   }
 
