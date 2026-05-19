@@ -156,14 +156,16 @@ def studio_linux(build_env: bazel.BuildEnv) -> None:
   targets = _BASE_TARGETS
 
   build_type = studio.BuildType.from_build_number(build_env.build_number)
+  if build_type != studio.BuildType.LOCAL:
+    # Reset artifacts, to avoid copying stale outputs from past builds.
+    reset_artifacts(build_env)
+
   if build_type == studio.BuildType.POSTSUBMIT:
     impacted_targets.generate_and_upload_hash_file(build_env)
     targets += _EXTRA_TARGETS
     flags.append('--build_metadata=cinder_pipelines=component-owners,test-stats')
 
   if build_type == studio.BuildType.PRESUBMIT:
-    # Reset artifacts, to avoid copying stale outputs from past builds.
-    reset_artifacts(build_env)
     result = presubmit.find_test_targets(
         build_env,
         _BASE_TARGETS,
