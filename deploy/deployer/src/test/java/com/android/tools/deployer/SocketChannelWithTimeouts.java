@@ -13,9 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.ddmlib;
+package com.android.tools.deployer;
 
 import com.android.annotations.NonNull;
+import com.android.ddmlib.SimpleConnectedSocket;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
@@ -25,7 +27,6 @@ import java.nio.channels.SocketChannel;
 
 /** Wrapper for a {@link SocketChannel} that supports read/write with timeouts */
 public class SocketChannelWithTimeouts implements SimpleConnectedSocket {
-    private static final String LOG_TAG = "SocketChannelWithTimeouts";
 
     private final SocketChannel channel;
     private Selector readSelector;
@@ -48,7 +49,6 @@ public class SocketChannelWithTimeouts implements SimpleConnectedSocket {
 
     private void init() throws IOException {
         if (channel.isBlocking()) {
-            Log.d(LOG_TAG, "SocketChannel is a blocking channel. Changing it to non-blocking");
             channel.configureBlocking(false);
         }
 

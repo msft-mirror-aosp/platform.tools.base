@@ -19,7 +19,6 @@ import com.android.ddmlib.AdbInitOptions;
 import com.android.ddmlib.AndroidDebugBridge;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.SimpleConnectedSocket;
-import com.android.ddmlib.SocketChannelWithTimeouts;
 import com.android.testutils.AssumeUtil;
 import com.android.tools.deployer.common.AdbClient;
 import com.android.tools.deployer.common.DeployMetric;
