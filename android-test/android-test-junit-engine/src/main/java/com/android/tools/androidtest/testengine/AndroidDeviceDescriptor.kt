@@ -184,6 +184,12 @@ class AndroidDeviceDescriptor(
         instrumentationArgs["coverageFile"] = effectiveCoverageFileOnDevice!!
       }
     }
+    if (additionalOutputDirectoryOnHost != null) {
+      val additionalTestOutputOnDeviceDir = additionalTestOutputCollector.getEffectiveAdditionalOutputDirectoryOnDevice()
+      if (!additionalTestOutputOnDeviceDir.isNullOrBlank()) {
+        instrumentationArgs["additionalTestOutputDir"] = additionalTestOutputOnDeviceDir
+      }
+    }
 
     val instrumentationRunner =
       AmInstrumentationRunner(

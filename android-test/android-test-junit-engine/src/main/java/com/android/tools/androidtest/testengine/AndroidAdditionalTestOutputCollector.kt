@@ -190,7 +190,7 @@ class AndroidAdditionalTestOutputCollector(
     }
   }
 
-  private fun getEffectiveAdditionalOutputDirectoryOnDevice(): String? {
+  internal fun getEffectiveAdditionalOutputDirectoryOnDevice(): String? {
     if (!additionalOutputDirectoryOnDevice.isNullOrBlank()) {
       return additionalOutputDirectoryOnDevice
     }
