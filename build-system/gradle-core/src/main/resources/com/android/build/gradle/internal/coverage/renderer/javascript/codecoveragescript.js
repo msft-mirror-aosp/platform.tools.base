@@ -1792,3 +1792,109 @@ const CoverageReportApp = {
 };
 
 document.addEventListener('DOMContentLoaded', () => App.init());
+
+/**
+ * HELP HUB INITIALIZATION
+ */
+(function() {
+    function initHelpHub() {
+        const helpHubFab = document.getElementById("help-hub-fab");
+        const helpHubPanel = document.getElementById("help-hub-panel");
+        const closeHelpHubBtn = document.getElementById("close-help-hub");
+
+        if (!helpHubFab || !helpHubPanel) return;
+
+        function togglePanel(open) {
+            const isOpening = open === undefined ? !helpHubPanel.classList.contains("open") : open;
+            helpHubPanel.classList.toggle("open", isOpening);
+            helpHubFab.setAttribute("aria-expanded", isOpening);
+            helpHubPanel.setAttribute("aria-hidden", !isOpening);
+
+            if (isOpening) {
+                requestAnimationFrame(() => {
+                    closeHelpHubBtn?.focus();
+                });
+            } else {
+                helpHubFab.focus();
+            }
+        }
+
+        // Focus Trap
+        helpHubPanel.addEventListener("keydown", (e) => {
+            if (e.key !== "Tab") return;
+
+            const focusableElements = helpHubPanel.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+            const firstElement = focusableElements[0];
+            const lastElement = focusableElements[focusableElements.length - 1];
+
+            if (e.shiftKey) { // Shift + Tab
+                if (document.activeElement === firstElement) {
+                    lastElement.focus();
+                    e.preventDefault();
+                }
+            } else { // Tab
+                if (document.activeElement === lastElement) {
+                    firstElement.focus();
+                    e.preventDefault();
+                }
+            }
+        });
+
+        helpHubFab.addEventListener("click", (e) => {
+            e.stopPropagation();
+            togglePanel();
+        });
+
+        if (closeHelpHubBtn) {
+            closeHelpHubBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                togglePanel(false);
+            });
+        }
+
+        document.addEventListener("click", (e) => {
+            if (helpHubPanel.classList.contains("open") && !helpHubPanel.contains(e.target) && !helpHubFab.contains(e.target)) {
+                togglePanel(false);
+            }
+        });
+
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape" && helpHubPanel.classList.contains("open")) {
+                togglePanel(false);
+            }
+        });
+
+        const legendItems = helpHubPanel.querySelectorAll(".legend-item");
+        legendItems.forEach(item => {
+            const header = item.querySelector(".legend-item-header");
+            if (header) {
+                const toggleItem = (e) => {
+                    e.stopPropagation();
+                    const isOpen = item.classList.contains("open");
+                    legendItems.forEach(other => {
+                        if (other !== item) {
+                            other.classList.remove("open");
+                            other.querySelector(".legend-item-header").setAttribute("aria-expanded", "false");
+                        }
+                    });
+                    item.classList.toggle("open", !isOpen);
+                    header.setAttribute("aria-expanded", !isOpen);
+                };
+
+                header.addEventListener("click", toggleItem);
+                header.addEventListener("keydown", (e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        toggleItem(e);
+                    }
+                });
+            }
+        });
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initHelpHub);
+    } else {
+        initHelpHub();
+    }
+})();

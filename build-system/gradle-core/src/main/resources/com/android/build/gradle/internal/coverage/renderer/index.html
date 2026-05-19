@@ -309,5 +309,91 @@
 <script src="data/report-data.js"></script>
 <script src="javascript/codecoveragescript.js"></script>
 <script src="javascript/sourceviewscript.js"></script>
+<!-- Help Hub FAB -->
+<button id="help-hub-fab" class="fab" aria-label="Open Help" aria-haspopup="dialog" aria-expanded="false" aria-controls="help-hub-panel">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+    </svg>
+    <span>Help</span>
+</button>
+
+<!-- Help Hub Side Panel -->
+<div id="help-hub-panel" class="side-panel" role="dialog" aria-labelledby="help-hub-title" aria-hidden="true" aria-modal="true">
+    <div class="side-panel-header">
+        <div class="header-left">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <h2 id="help-hub-title">Help</h2>
+        </div>
+        <button id="close-help-hub" class="icon-btn" aria-label="Close Help">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+        </button>
+    </div>
+    <div class="side-panel-content">
+        <!-- Introduction -->
+        <div class="help-section">
+            <div class="help-section-title">Introduction to Coverage Data</div>
+            <p>This report provides code coverage information for your project, showing how much of your code was executed during testing. Higher percentages indicate better coverage.</p>
+        </div>
+
+        <div class="divider"></div>
+        <!-- Table Legend -->
+        <div class="help-section">
+            <div class="help-section-title">Table Legend</div>
+            <div class="legend-list">
+                <!-- Symbols & Colors -->
+                <div class="legend-item">
+                    <div class="legend-item-header" role="button" tabindex="0" aria-expanded="false">
+                        <span class="legend-item-title">Symbols & Colors</span>
+                        <svg class="legend-item-arrow" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </div>
+                    <div class="legend-item-content">
+                        <p><strong>--</strong>: Indicates that the metric is not applicable (e.g., no instructions or branches to cover in that element).</p>
+                        <p style="margin-top: 0.5rem;"><strong>Coverage Percentage Colors</strong>:</p>
+                        <ul style="padding-left: 1.25rem; margin-top: 0.25rem;">
+                            <li><span style="color: var(--text-green-600); font-weight: bold;">Green</span>: High coverage (80% or above)</li>
+                            <li><span style="color: var(--text-yellow-600); font-weight: bold;">Yellow</span>: Medium coverage (60% to 79.9%)</li>
+                            <li><span style="color: var(--text-red-600); font-weight: bold;">Red</span>: Low coverage (below 60%)</li>
+                            <li><span style="color: var(--text-gray-500); font-weight: bold;">Gray</span>: Not applicable</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Instruction Coverage -->
+                <div class="legend-item">
+                    <div class="legend-item-header" role="button" tabindex="0" aria-expanded="false">
+                        <span class="legend-item-title">Instruction Coverage</span>
+                        <svg class="legend-item-arrow" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </div>
+                    <div class="legend-item-content">
+                        Percentage of Java bytecode instructions that were executed.
+                    </div>
+                </div>
+
+                <!-- Branch Coverage -->
+                <div class="legend-item">
+                    <div class="legend-item-header" role="button" tabindex="0" aria-expanded="false">
+                        <span class="legend-item-title">Branch Coverage</span>
+                        <svg class="legend-item-arrow" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </div>
+                    <div class="legend-item-content">
+                        Percentage of control flow branches (e.g., if/else) that were executed.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 </body>
+
 </html>
