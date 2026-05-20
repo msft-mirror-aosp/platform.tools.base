@@ -75,5 +75,12 @@ internal fun convertComposeNode(
   if (node.viewId != 0L) {
     hostedViews[node.viewId]?.let { hostedView -> children.add(hostedView) }
   }
-  return UiNode.ComposeNode(id = node.id, className = name, bounds = bounds, children = children)
+  val sourceLocation =
+    if (node.filename != 0) {
+      val filename = stringTable[node.filename] ?: "Missing"
+      UiNode.SourceLocation(filename, node.lineNumber)
+    } else {
+      null
+    }
+  return UiNode.ComposeNode(id = node.id, className = name, bounds = bounds, children = children, sourceLocation = sourceLocation)
 }

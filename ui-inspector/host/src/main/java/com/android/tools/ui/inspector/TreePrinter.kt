@@ -41,8 +41,14 @@ internal fun printUiTree(node: UiNode, indent: Int) {
       }
     }
     is UiNode.ComposeNode -> {
+      val sourceLocation =
+        node.sourceLocation?.let {
+          val lineSuffix = if (it.lineNumber > 0) ":${it.lineNumber}" else ""
+          " file=${it.filename}$lineSuffix"
+        } ?: ""
+
       System.out.println(
-        "${prefix}[${node.className}] [compose] (${node.bounds.x}, ${node.bounds.y}, ${node.bounds.width}, ${node.bounds.height})"
+        "${prefix}[${node.className}]$sourceLocation [compose] (${node.bounds.x}, ${node.bounds.y}, ${node.bounds.width}, ${node.bounds.height})"
       )
     }
   }

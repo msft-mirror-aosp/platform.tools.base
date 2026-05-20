@@ -27,6 +27,9 @@ sealed class UiNode {
 
   data class Attribute(val name: String, val value: String, val directSource: String? = null, val styleChain: List<String> = emptyList())
 
+  /** Represents the location in the source code where a layout node is defined. */
+  data class SourceLocation(val filename: String, val lineNumber: Int)
+
   /** Represents a standard Android View node. */
   data class ViewNode(
     override val id: Long,
@@ -44,5 +47,6 @@ sealed class UiNode {
     override val className: String,
     override val bounds: Bounds,
     override val children: MutableList<UiNode> = mutableListOf(),
+    val sourceLocation: SourceLocation? = null,
   ) : UiNode()
 }

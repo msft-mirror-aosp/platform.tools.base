@@ -62,12 +62,14 @@ class TreeMergerTest {
     // 2. Setup Composable children nodes to graft:
     // Composable Column (id = 200)
     //   -> Text (id = 201)
-    val stringTable = mapOf(1 to "Column", 2 to "Text")
+    val stringTable = mapOf(1 to "Column", 2 to "Text", 3 to "MainActivity.kt")
     val composeNodes: List<LayoutInspectorComposeProtocol.ComposableNode> =
       listOf(
         LayoutInspectorComposeProtocol.ComposableNode.newBuilder()
           .setId(200)
           .setName(1) // Column
+          .setFilename(3) // MainActivity.kt
+          .setLineNumber(10)
           .setBounds(
             LayoutInspectorComposeProtocol.Bounds.newBuilder()
               .setLayout(LayoutInspectorComposeProtocol.Rect.newBuilder().setX(0).setY(0).setW(1080).setH(500))
@@ -108,6 +110,8 @@ class TreeMergerTest {
     assertThat(graftedRoot.id).isEqualTo(200)
     assertThat(graftedRoot.className).isEqualTo("Column")
     assertThat(graftedRoot.bounds.width).isEqualTo(1080)
+    assertThat(graftedRoot.sourceLocation?.filename).isEqualTo("MainActivity.kt")
+    assertThat(graftedRoot.sourceLocation?.lineNumber).isEqualTo(10)
 
     // Verify recursive children grafting
     assertThat(graftedRoot.children).hasSize(1)
