@@ -1015,7 +1015,7 @@ private constructor(
           if (hashV2 == null) {
             updateHashV2 = true
           } else {
-            val newHashV2 = DeviceManager.hasHardwarePropHashChanged(device, hashV2)
+            val newHashV2 = HardwareProperties.hasHardwarePropHashChanged(device, hashV2)
             if (newHashV2 != null) {
               properties[ConfigKey.DEVICE_HASH_V2] = newHashV2
               updateHashV2 = true
@@ -1147,7 +1147,7 @@ private constructor(
 
     // The device has a RAM size, but we don't want to use it.
     // Instead, we'll keep the AVD's existing RAM size setting.
-    val deviceHwProperties = DeviceManager.getHardwareProperties(d)
+    val deviceHwProperties = HardwareProperties.getHardwareProperties(d)
     deviceHwProperties.remove(ConfigKey.RAM_SIZE)
     properties.putAll(deviceHwProperties)
     try {

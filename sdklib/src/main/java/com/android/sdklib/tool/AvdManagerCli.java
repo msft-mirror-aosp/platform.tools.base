@@ -74,7 +74,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -868,7 +867,7 @@ class AvdManagerCli extends CommandLineParser {
                 // want custom hardware.
                 // Start with the default values, then overlay the selected hardware.
                 hardwareConfig = defaultHardwareConfig();
-                hardwareConfig.putAll(DeviceManager.getHardwareProperties(device));
+                hardwareConfig.putAll(HardwareProperties.getHardwareProperties(device));
                 EmulatedProperties.restrictDefaultRamSize(hardwareConfig);
             } else {
                 try {
