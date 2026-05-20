@@ -18,6 +18,8 @@ package com.android.build.gradle.tasks
 
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.scope.InternalArtifactType
+import com.android.build.gradle.internal.services.DokkaParallelBuildService
+import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
 import com.android.build.gradle.internal.tasks.NonIncrementalTask
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
@@ -206,6 +208,9 @@ abstract class JavaDocGenerationTask : NonIncrementalTask() {
 
     override fun configure(task: JavaDocGenerationTask) {
       super.configure(task)
+
+      val dokkaParallelBuildService = getBuildService(creationConfig.services.buildServiceRegistry, DokkaParallelBuildService::class.java)
+      task.usesService(dokkaParallelBuildService)
 
       task.moduleVersion.setDisallowChanges(task.project.version.toString())
 
