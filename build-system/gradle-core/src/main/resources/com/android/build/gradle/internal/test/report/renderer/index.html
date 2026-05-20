@@ -324,6 +324,67 @@
         </div>
 
         <div class="divider"></div>
+        <!-- Navigating & Filtering -->
+        <div class="help-section">
+            <div class="help-section-title">Navigating & Filtering</div>
+            <div class="legend-list">
+                <div class="legend-item">
+                    <div class="legend-item-header" role="button" tabindex="0" aria-expanded="false">
+                        <span class="legend-item-title">Search & Filter</span>
+                        <svg class="legend-item-arrow" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </div>
+                    <div class="legend-item-content">
+                        <p>Searching filters the table while preserving the project hierarchy. It keeps matching items and their parent structures visible, allowing you to see exactly which modules or packages contain the results.</p>
+                        <p style="margin-top: 0.5rem;">Use <b>Add filter</b> to narrow down the data by specific <b>Modules</b>, <b>Packages</b>, <b>Classes</b>, <b>Test Cases</b>, or <b>Status</b>. You can also filter the entire report by test suite or build variant.</p>
+                    </div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-item-header" role="button" tabindex="0" aria-expanded="false">
+                        <span class="legend-item-title">View Modes & Grouping</span>
+                        <svg class="legend-item-arrow" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </div>
+                    <div class="legend-item-content">
+                        Switch between <b>Flat View</b> (list of all items) and <b>Hierarchical View</b> (nested folders). In Flat View, use <b>Group By</b> to aggregate data by module, package, or class.
+                    </div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-item-header" role="button" tabindex="0" aria-expanded="false">
+                        <span class="legend-item-title">Sorting</span>
+                        <svg class="legend-item-arrow" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </div>
+                    <div class="legend-item-content">
+                        Click on the first column header (e.g., Module, Package, Class) to sort the table alphabetically by those names.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+        <!-- Interactive Features -->
+        <div class="help-section">
+            <div class="help-section-title">Interactive Features</div>
+            <div class="legend-list">
+                <div class="legend-item">
+                    <div class="legend-item-header" role="button" tabindex="0" aria-expanded="false">
+                        <span class="legend-item-title">Debug Failures</span>
+                        <svg class="legend-item-arrow" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </div>
+                    <div class="legend-item-content">
+                        Clicking on <b>Failure</b> status in the report table opens its <b>Stack Trace</b>.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="divider"></div>
         <!-- Legend -->
         <div class="help-section">
             <div class="help-section-title">Legend</div>
@@ -344,6 +405,7 @@
                             <li><span style="color: var(--text-yellow-600); font-weight: bold;">Yellow</span>: Skipped tests or medium pass rate (80% to 94.9%)</li>
                             <li><span style="color: var(--text-red-600); font-weight: bold;">Red</span>: Failed tests or low pass rate (below 80%)</li>
                         </ul>
+                        <p style="margin-top: 0.5rem;"><strong>Note on Pass Rate</strong>: The pass rate is calculated as <code>passed / (passed + failed)</code>. Skipped tests are excluded from this calculation.</p>
                     </div>
                 </div>
 
