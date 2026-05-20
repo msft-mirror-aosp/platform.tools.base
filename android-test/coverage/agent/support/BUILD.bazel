@@ -1,0 +1,13 @@
+load("//tools/base/bazel:merge_archives.bzl", "merge_jars")
+
+# Create a single "Support JAR" that contains both the Java bytecode
+# and the native JVMTI agent libraries.
+merge_jars(
+    name = "coverage_agent_support",
+    out = "coverage_agent_support.jar",
+    jars = [
+        "//tools/base/android-test/coverage/agent/runtime:coverage_rt_java",
+        "//tools/base/android-test/coverage/agent/native:coverage_agent_jni.jar",
+    ],
+    visibility = ["//visibility:public"],
+)

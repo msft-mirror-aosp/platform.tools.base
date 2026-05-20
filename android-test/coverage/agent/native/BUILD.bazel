@@ -1,5 +1,5 @@
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
-load("//tools/base/bazel:android.bzl", "ANDROID_COPTS", "ANDROID_LINKOPTS", "android_cc_binary")
+load("//tools/base/bazel:android.bzl", "ANDROID_COPTS", "ANDROID_LINKOPTS", "android_cc_binary", "jni_library")
 
 # Converts the jar containing runtime dex to an array in a CC source file.
 genrule(
@@ -59,6 +59,14 @@ android_cc_binary(
     binary = ":coverage_agent.so",
     filename = "coverage_agent.so",
     visibility = ["//visibility:public"],
+)
+
+jni_library(
+    name = "coverage_agent_jni",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":coverage_agent.so.stripped",
+    ],
 )
 
 cc_test(
