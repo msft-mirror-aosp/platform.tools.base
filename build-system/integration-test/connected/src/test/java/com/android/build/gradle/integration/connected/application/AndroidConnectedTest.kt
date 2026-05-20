@@ -30,7 +30,6 @@ import com.android.tools.perflogger.Benchmark
 import com.google.common.truth.Truth.assertThat
 import java.io.Closeable
 import java.util.concurrent.TimeUnit
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -132,6 +131,30 @@ class AndroidConnectedTest(val runWithBuiltInPlatform: Boolean) {
   fun androidTestWithOrchestratorAndCodeCoverageWithDynamicFeature() = util.androidTestWithOrchestratorAndCodeCoverageWithDynamicFeature()
 
   @Test fun androidTestWithCodeCoverageWithDynamicFeature() = util.androidTestWithCodeCoverageWithDynamicFeature()
+
+  @Test
+  fun testCustomReportAndResultsDir() {
+    val customResultsDir = "custom-results"
+    val customReportsDir = "custom-reports"
+
+    util.selectModule("app")
+    util.rule.build.androidApplication().reconfigure {
+      android.testOptions.resultsDir = "${util.project.resolve(customResultsDir)}"
+      android.testOptions.reportDir = "${util.project.resolve(customReportsDir)}"
+    }
+
+    util.executor.run(util.testTaskName)
+
+    val subFolder = "connected/debug"
+    val xmlFileName =
+      if (util.runWithBuiltInPlatform) {
+        "TEST-$DEVICE_NAME.xml"
+      } else {
+        "TEST-$DEVICE_NAME-_app-.xml"
+      }
+    assertThat(util.project.resolve("$customResultsDir/$subFolder/$xmlFileName")).exists()
+    assertThat(util.project.resolve("$customReportsDir/$subFolder/index.html")).exists()
+  }
 
   @Test fun runAndroidTestWithNoTestClasses() = util.runAndroidTestWithNoTestClasses()
 
