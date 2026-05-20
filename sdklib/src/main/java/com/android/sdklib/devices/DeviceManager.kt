@@ -13,506 +13,382 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.sdklib.devices;
+package com.android.sdklib.devices
 
-import com.android.SdkConstants;
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
-import com.android.annotations.concurrency.Slow;
-import com.android.io.CancellableFileIo;
-import com.android.prefs.AndroidLocationsProvider;
-import com.android.repository.api.RepoManager;
-import com.android.sdklib.internal.avd.AvdInfo;
-import com.android.sdklib.repository.AndroidSdkHandler;
-import com.android.sdklib.repository.LoggerProgressIndicatorWrapper;
-import com.android.sdklib.repository.meta.DetailsTypes;
-import com.android.utils.ILogger;
+import com.android.SdkConstants
+import com.android.annotations.concurrency.Slow
+import com.android.io.CancellableFileIo
+import com.android.prefs.AndroidLocationsProvider
+import com.android.repository.api.RepoManager
+import com.android.sdklib.internal.avd.AvdInfo
+import com.android.sdklib.repository.AndroidSdkHandler
+import com.android.sdklib.repository.LoggerProgressIndicatorWrapper
+import com.android.sdklib.repository.meta.DetailsTypes
+import com.android.utils.ILogger
+import com.google.common.collect.HashBasedTable
+import com.google.common.collect.Table
+import java.io.IOException
+import java.nio.file.Files
+import java.nio.file.Path
+import java.util.Collections
+import java.util.EnumSet
+import javax.xml.parsers.ParserConfigurationException
+import org.xml.sax.SAXException
 
-import com.google.common.collect.HashBasedTable;
-import com.google.common.collect.Table;
+/** Manager class for interacting with [Device]s within the SDK */
+class DeviceManager
+private constructor(
+  private val sdkHandler: AndroidSdkHandler,
+  private val log: ILogger,
+  private val isSupportedDevice: (Device) -> Boolean,
+) {
+  private val androidFolder: Path? = sdkHandler.androidFolder
+  private val vendorDevices = VendorDevices(log)
+  private val defaultDevices = DefaultDevices(log)
+  private val lock = Any()
+  private val listeners: MutableList<DevicesChangedListener> = ArrayList()
+  private val osSdkPath: Path? = sdkHandler.location
 
-import org.xml.sax.SAXException;
+  // These are keyed by (device ID, manufacturer)
+  private var sysImgDevices: Table<String, String, Device>? = null
+  private var userDevices: Table<String, String, Device>? = null
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.function.Predicate;
+  enum class DeviceCategory {
+    /** getDevices() flag to list default devices from the bundled devices.xml definitions. */
+    DEFAULT,
+    /** getDevices() flag to list user devices saved in the .android home folder. */
+    USER,
+    /** getDevices() flag to list vendor devices -- the bundled nexus.xml devices as well as all those coming from extra packages. */
+    VENDOR,
+    /** getDevices() flag to list devices from system-images/platform-N/tag/abi/devices.xml */
+    SYSTEM_IMAGES,
+  }
 
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactoryConfigurationError;
+  enum class DeviceStatus {
+    /** The device exists unchanged from the given configuration */
+    EXISTS,
+    /** A device exists with the given name and manufacturer, but has a different configuration */
+    CHANGED,
+    /** There is no device with the given name and manufacturer */
+    MISSING,
+  }
 
-/** Manager class for interacting with {@link Device}s within the SDK */
-public class DeviceManager {
+  /** Interface implemented by objects which want to know when changes occur to the [Device] lists. */
+  fun interface DevicesChangedListener {
+    /** Called after one of the [Device] lists has been updated. */
+    fun onDevicesChanged()
+  }
 
-    @Nullable private final Path mAndroidFolder;
-
-    private final ILogger mLog;
-
-    private final VendorDevices mVendorDevices;
-
-    private final Predicate<Device> mIsSupportedDevice;
-
-    private Table<String, String, Device> mSysImgDevices;
-
-    private Table<String, String, Device> mUserDevices;
-
-    private final DefaultDevices mDefaultDevices;
-
-    private final Object mLock = new Object();
-
-    private final List<DevicesChangedListener> sListeners = new ArrayList<>();
-
-    private final Path mOsSdkPath;
-
-    private final AndroidSdkHandler mSdkHandler;
-
-    public enum DeviceCategory {
-        /** getDevices() flag to list default devices from the bundled devices.xml definitions. */
-        DEFAULT,
-        /** getDevices() flag to list user devices saved in the .android home folder. */
-        USER,
-        /**
-         * getDevices() flag to list vendor devices -- the bundled nexus.xml devices as well as all
-         * those coming from extra packages.
-         */
-        VENDOR,
-        /** getDevices() flag to list devices from system-images/platform-N/tag/abi/devices.xml */
-        SYSTEM_IMAGES,
+  /**
+   * Register a listener to be notified when the device lists are modified.
+   *
+   * @param listener The listener to add. Ignored if already registered.
+   */
+  fun registerListener(listener: DevicesChangedListener) {
+    synchronized(listeners) {
+      if (listener !in listeners) {
+        listeners.add(listener)
+      }
     }
+  }
 
-    /** getDevices() flag to list all devices. */
-    public static final EnumSet<DeviceCategory> ALL_DEVICES = EnumSet.allOf(DeviceCategory.class);
-
-    public enum DeviceStatus {
-        /** The device exists unchanged from the given configuration */
-        EXISTS,
-        /**
-         * A device exists with the given name and manufacturer, but has a different configuration
-         */
-        CHANGED,
-        /** There is no device with the given name and manufacturer */
-        MISSING
+  /**
+   * Removes a listener from the notification list such that it will no longer receive notifications when modifications to the [Device] list
+   * occur.
+   *
+   * @param listener The listener to remove.
+   */
+  fun unregisterListener(listener: DevicesChangedListener): Boolean {
+    synchronized(listeners) {
+      return listeners.remove(listener)
     }
+  }
 
-    /**
-     * Creates a new instance of {@link DeviceManager}, using the user's android folder.
-     *
-     * @see #createInstance(AndroidSdkHandler, ILogger, Predicate)
-     */
-    public static DeviceManager createInstance(
-            @NonNull AndroidLocationsProvider androidLocationsProvider,
-            @Nullable Path sdkLocation,
-            @NonNull ILogger log) {
-        return createInstance(
-                AndroidSdkHandler.getInstance(androidLocationsProvider, sdkLocation),
-                log,
-                (device) -> true);
+  fun getDeviceStatus(name: String, manufacturer: String): DeviceStatus {
+    return if (getDevice(name, manufacturer) == null) DeviceStatus.MISSING else DeviceStatus.EXISTS
+  }
+
+  fun getDevice(id: String, manufacturer: String): Device? {
+    initDevicesLists()
+    return userDevices?.get(id, manufacturer)
+      ?: sysImgDevices?.get(id, manufacturer)
+      ?: defaultDevices.getDevice(id, manufacturer)
+      ?: vendorDevices.getDevice(id, manufacturer)
+  }
+
+  fun getDevice(avdInfo: AvdInfo): Device? {
+    return getDevice(avdInfo.deviceName, avdInfo.deviceManufacturer)
+  }
+
+  /**
+   * Returns the known [Device] list.
+   *
+   * @param deviceCategory One of the [DeviceCategory] constants.
+   * @return A copy of the list of [Device]s. Can be empty but not null.
+   */
+  fun getDevices(deviceCategory: DeviceCategory): Collection<Device> {
+    return getDevices(EnumSet.of(deviceCategory))
+  }
+
+  /**
+   * Returns the known [Device] list.
+   *
+   * @param deviceCategory A combination of the [DeviceCategory] constants or the constant [ALL_DEVICES].
+   * @return A copy of the list of [Device]s. Can be empty but not null.
+   */
+  fun getDevices(deviceCategory: Collection<DeviceCategory>): Collection<Device> {
+    initDevicesLists()
+    val devices = HashBasedTable.create<String, String, Device>()
+    userDevices?.let { if (DeviceCategory.USER in deviceCategory) devices.putAll(it) }
+    defaultDevices.devices?.let {
+      if (DeviceCategory.DEFAULT in deviceCategory) {
+        devices.putAll(it)
+      }
     }
-
-    public static DeviceManager createInstance(
-            @NonNull AndroidSdkHandler sdkHandler,
-            @NonNull ILogger log,
-            @NonNull Predicate<Device> isSupportedDevice) {
-        return new DeviceManager(sdkHandler, log, isSupportedDevice);
+    vendorDevices.devices?.let {
+      if (DeviceCategory.VENDOR in deviceCategory) {
+        devices.putAll(it)
+      }
     }
+    sysImgDevices?.let { if (DeviceCategory.SYSTEM_IMAGES in deviceCategory) devices.putAll(it) }
 
-    public static DeviceManager createInstance(
-            @NonNull AndroidSdkHandler sdkHandler, @NonNull ILogger log) {
-        return new DeviceManager(sdkHandler, log, (device) -> true);
+    return Collections.unmodifiableCollection(devices.values())
+  }
+
+  private fun initDevicesLists() {
+    val changed = defaultDevices.init() or vendorDevices.init(isSupportedDevice) or initSysImgDevices() or initUserDevices()
+    if (changed) {
+      notifyListeners()
     }
+  }
 
-    /**
-     * Creates a new instance of DeviceManager.
-     *
-     * @param sdkHandler The AndroidSdkHandler to use.
-     * @param log SDK logger instance. Should be non-null.
-     * @param isSupportedDevice function that allows filtering certain devices.
-     */
-    private DeviceManager(
-            @NonNull AndroidSdkHandler sdkHandler,
-            @NonNull ILogger log,
-            @NonNull Predicate<Device> isSupportedDevice) {
-        mSdkHandler = sdkHandler;
-        mOsSdkPath = sdkHandler.getLocation() == null ? null : sdkHandler.getLocation();
-        mAndroidFolder =
-                sdkHandler.getAndroidFolder() == null
-                        ? Paths.get("")
-                        : sdkHandler.getAndroidFolder();
-        mLog = log;
-        mDefaultDevices = new DefaultDevices(mLog);
-        mVendorDevices = new VendorDevices(mLog);
-        mIsSupportedDevice = isSupportedDevice;
-    }
+  /**
+   * Initializes all system-image provided [Device]s.
+   *
+   * @return true if the list has changed.
+   */
+  @Slow
+  private fun initSysImgDevices(): Boolean {
+    synchronized(lock) {
+      if (sysImgDevices != null) {
+        return false
+      }
+      val osSdkPath =
+        osSdkPath
+          ?: run {
+            sysImgDevices = HashBasedTable.create()
+            return false
+          }
 
-    /**
-     * Interface implemented by objects which want to know when changes occur to the {@link Device}
-     * lists.
-     */
-    public interface DevicesChangedListener {
+      val newSysImgDevices = HashBasedTable.create<String, String, Device>()
 
-        /** Called after one of the {@link Device} lists has been updated. */
-        void onDevicesChanged();
-    }
+      // Load device definitions from the system image directories.
+      // Load in increasing order of Android version. This way, if there is a conflict,
+      // we'll retain the definitions from the higher API level. The file in the higher
+      // API directory is probably newer and more accurate.
+      val progress = LoggerProgressIndicatorWrapper(log)
 
-    /**
-     * Register a listener to be notified when the device lists are modified.
-     *
-     * @param listener The listener to add. Ignored if already registered.
-     */
-    public void registerListener(@NonNull DevicesChangedListener listener) {
-        synchronized (sListeners) {
-            if (!sListeners.contains(listener)) {
-                sListeners.add(listener);
+      val mgr = sdkHandler.getRepoManager(progress)
+      mgr.loadSynchronously(RepoManager.DEFAULT_EXPIRATION_PERIOD_MS, progress, null, null)
+      mgr.packages.localPackages.values
+        .filter { it.typeDetails is DetailsTypes.SysImgDetailsType }
+        .sortedBy { (it.typeDetails as DetailsTypes.SysImgDetailsType).androidVersion }
+        .forEach { pkg ->
+          val deviceXml = pkg.location.resolve(SdkConstants.FN_DEVICES_XML)
+          if (CancellableFileIo.isRegularFile(deviceXml)) {
+            for (device in loadDevices(deviceXml).values()) {
+              var dev = device
+              if (!isSupportedDevice(dev)) continue
+              if (isDeprecatedWearDevice(dev)) {
+                val builder = Device.Builder(dev)
+                builder.setDeprecated(true)
+                dev = builder.build()
+              }
+              newSysImgDevices.put(dev.id, dev.manufacturer, dev)
             }
+          }
         }
+      sysImgDevices = newSysImgDevices
+      return true
     }
+  }
 
-    /**
-     * Removes a listener from the notification list such that it will no longer receive
-     * notifications when modifications to the {@link Device} list occur.
-     *
-     * @param listener The listener to remove.
-     */
-    public boolean unregisterListener(@NonNull DevicesChangedListener listener) {
-        synchronized (sListeners) {
-            return sListeners.remove(listener);
-        }
-    }
-
-    @NonNull
-    public DeviceStatus getDeviceStatus(@NonNull String name, @NonNull String manufacturer) {
-        Device d = getDevice(name, manufacturer);
-        if (d == null) {
-            return DeviceStatus.MISSING;
-        }
-
-        return DeviceStatus.EXISTS;
-    }
-
-    @Nullable
-    public Device getDevice(@NonNull String id, @NonNull String manufacturer) {
-        initDevicesLists();
-        Device d = mUserDevices.get(id, manufacturer);
-        if (d != null) {
-            return d;
-        }
-        d = mSysImgDevices.get(id, manufacturer);
-        if (d != null) {
-            return d;
-        }
-        d = mDefaultDevices.getDevice(id, manufacturer);
-        if (d != null) {
-            return d;
-        }
-        d = mVendorDevices.getDevice(id, manufacturer);
-        if (d != null) {
-            return d;
-        }
-        return d;
-    }
-
-    @Nullable
-    public Device getDevice(@NonNull AvdInfo avdInfo) {
-        return getDevice(avdInfo.getDeviceName(), avdInfo.getDeviceManufacturer());
-    }
-
-    /**
-     * Returns the known {@link Device} list.
-     *
-     * @param deviceCategory One of the {@link DeviceCategory} constants.
-     * @return A copy of the list of {@link Device}s. Can be empty but not null.
-     */
-    @NonNull
-    public Collection<Device> getDevices(@NonNull DeviceCategory deviceCategory) {
-        return getDevices(EnumSet.of(deviceCategory));
-    }
-
-    /**
-     * Returns the known {@link Device} list.
-     *
-     * @param deviceCategory A combination of the {@link DeviceCategory} constants or the constant
-     *     {@link DeviceManager#ALL_DEVICES}.
-     * @return A copy of the list of {@link Device}s. Can be empty but not null.
-     */
-    @NonNull
-    public Collection<Device> getDevices(@NonNull Collection<DeviceCategory> deviceCategory) {
-        initDevicesLists();
-        Table<String, String, Device> devices = HashBasedTable.create();
-        if (mUserDevices != null && (deviceCategory.contains(DeviceCategory.USER))) {
-            devices.putAll(mUserDevices);
-        }
-        if (mDefaultDevices.getDevices() != null
-                && (deviceCategory.contains(DeviceCategory.DEFAULT))) {
-            devices.putAll(mDefaultDevices.getDevices());
-        }
-        if (mVendorDevices.getDevices() != null
-                && (deviceCategory.contains(DeviceCategory.VENDOR))) {
-            devices.putAll(mVendorDevices.getDevices());
-        }
-        if (mSysImgDevices != null && (deviceCategory.contains(DeviceCategory.SYSTEM_IMAGES))) {
-            devices.putAll(mSysImgDevices);
-        }
-
-        return Collections.unmodifiableCollection(devices.values());
-    }
-
-    private void initDevicesLists() {
-        boolean changed = mDefaultDevices.init();
-        changed |= mVendorDevices.init(mIsSupportedDevice);
-        changed |= initSysImgDevices();
-        changed |= initUserDevices();
-        if (changed) {
-            notifyListeners();
-        }
-    }
-
-    /**
-     * Initializes all system-image provided {@link Device}s.
-     *
-     * @return true if the list has changed.
-     */
-    @Slow
-    private boolean initSysImgDevices() {
-        synchronized (mLock) {
-            if (mSysImgDevices != null) {
-                return false;
-            }
-
-            if (mOsSdkPath == null) {
-                mSysImgDevices = HashBasedTable.create();
-                return false;
-            }
-
-            Table<String, String, Device> sysImgDevices = HashBasedTable.create();
-
-            // Load device definitions from the system image directories.
-            // Load in increasing order of Android version. This way, if there is a conflict,
-            // we'll retain the definitions from the higher API level. The file in the higher
-            // API directory is probably newer and more accurate.
-            LoggerProgressIndicatorWrapper progress = new LoggerProgressIndicatorWrapper(mLog);
-
-            RepoManager mgr = mSdkHandler.getRepoManager(progress);
-            mgr.loadSynchronously(RepoManager.DEFAULT_EXPIRATION_PERIOD_MS, progress, null, null);
-            mgr.getPackages().getLocalPackages().values().stream()
-                    .filter(pkg -> pkg.getTypeDetails() instanceof DetailsTypes.SysImgDetailsType)
-                    .sorted(
-                            Comparator.comparing(
-                                    pkg ->
-                                            ((DetailsTypes.SysImgDetailsType) pkg.getTypeDetails())
-                                                    .getAndroidVersion()))
-                    .forEach(
-                            pkg -> {
-                                Path deviceXml =
-                                        pkg.getLocation().resolve(SdkConstants.FN_DEVICES_XML);
-                                if (CancellableFileIo.isRegularFile(deviceXml)) {
-                                    for (Device device : loadDevices(deviceXml).values()) {
-                                        if (!mIsSupportedDevice.test(device)) continue;
-                                        if (isDeprecatedWearDevice(device)) {
-                                            Device.Builder builder = new Device.Builder(device);
-                                            builder.setDeprecated(true);
-                                            device = builder.build();
-                                        }
-                                        sysImgDevices.put(
-                                                device.getId(), device.getManufacturer(), device);
-                                    }
-                                }
-                            });
-            mSysImgDevices = sysImgDevices;
-            return true;
-        }
-    }
-
-    /**
-     * Some device definitions are present in old system images which can override some vendor
-     * device definitions. This method ensures these devices are considered as deprecated. For
-     * example, `wearos_rect` is deprecated in the vendor definition, however APIs 30 and 33 also
-     * provide a `wearos_rect` which is not deprecated. This function checks whether the device is a
-     * deprecated wear device based on its id. If the device's id does not start with `wearos` or
-     * the id is either `wearos_square` or `wearos_rect` then it is considered as deprecated.
-     */
-    private static boolean isDeprecatedWearDevice(Device device) {
-        boolean isWearDevice = "android-wear".equals(device.getTagId());
-        if (!isWearDevice) return false;
-        return !device.getId().startsWith("wearos")
-                || "wearos_square".equals(device.getId())
-                || "wearos_rect".equals(device.getId());
-    }
-
-    /**
-     * Initializes all user-created {@link Device}s
-     *
-     * @return True if the list has changed.
-     */
-    private boolean initUserDevices() {
-        synchronized (mLock) {
-            if (mUserDevices != null) {
-                return false;
-            }
-            // User devices should be saved out to
-            // $HOME/.android/devices.xml
-            Table<String, String, Device> userDevices = HashBasedTable.create();
-            Path userDevicesFile = null;
-            try {
-                try {
-                    userDevicesFile = mAndroidFolder.resolve(SdkConstants.FN_DEVICES_XML);
-                    if (userDevicesFile != null && Files.exists(userDevicesFile)) {
-                        DeviceParser.parse(userDevicesFile)
-                                .cellSet()
-                                .forEach(
-                                        (cell) -> {
-                                            if (mIsSupportedDevice.test(cell.getValue())) {
-                                                userDevices.put(
-                                                        cell.getRowKey(),
-                                                        cell.getColumnKey(),
-                                                        cell.getValue());
-                                            } else {
-                                                mLog.warning(
-                                                        "Unsupported device %s", cell.getRowKey());
-                                            }
-                                        });
-
-                        mUserDevices = userDevices;
-                        return true;
-                    }
-                } catch (SAXException e) {
-                    // Probably an old config file which we don't want to overwrite.
-                    if (userDevicesFile != null) {
-                        Path parent = userDevicesFile.toAbsolutePath().getParent();
-                        String base = userDevicesFile.getFileName().toString() + ".old";
-                        Path renamedConfig = parent.resolve(base);
-                        int i = 0;
-                        while (CancellableFileIo.exists(renamedConfig)) {
-                            renamedConfig = parent.resolve(base + '.' + (i++));
-                        }
-                        mLog.error(
-                                e,
-                                "Error parsing %1$s, backing up to %2$s",
-                                userDevicesFile.toAbsolutePath(),
-                                renamedConfig.toAbsolutePath());
-                        Files.move(userDevicesFile, renamedConfig);
-                    }
-                }
-            } catch (ParserConfigurationException | IOException e) {
-                mLog.error(
-                        e,
-                        "Error parsing %1$s",
-                        userDevicesFile == null ? "(null)" : userDevicesFile.toAbsolutePath());
-            }
-        }
-        mUserDevices = HashBasedTable.create();
-        return false;
-    }
-
-    public void addUserDevice(@NonNull Device d) {
-        if (!mIsSupportedDevice.test(d)) return;
-        boolean changed = false;
-        synchronized (mLock) {
-            if (mUserDevices == null) {
-                initUserDevices();
-                assert mUserDevices != null;
-            }
-            if (mUserDevices != null) {
-                mUserDevices.put(d.getId(), d.getManufacturer(), d);
-            }
-            changed = true;
-        }
-        if (changed) {
-            notifyListeners();
-        }
-    }
-
-    public void removeUserDevice(@NonNull Device d) {
-        synchronized (mLock) {
-            if (mUserDevices == null) {
-                initUserDevices();
-                assert mUserDevices != null;
-            }
-            if (mUserDevices != null) {
-                if (mUserDevices.contains(d.getId(), d.getManufacturer())) {
-                    mUserDevices.remove(d.getId(), d.getManufacturer());
-                    notifyListeners();
-                }
-            }
-        }
-    }
-
-    public void replaceUserDevice(@NonNull Device d) {
-        synchronized (mLock) {
-            if (mUserDevices == null) {
-                initUserDevices();
-            }
-            removeUserDevice(d);
-            addUserDevice(d);
-        }
-    }
-
-    /** Saves out the user devices to {@link SdkConstants#FN_DEVICES_XML} in the Android folder. */
-    public void saveUserDevices() {
-        if (mUserDevices == null) {
-            return;
-        }
-        if (mAndroidFolder == null) {
-            return;
-        }
-
-        Path userDevicesFile = mAndroidFolder.resolve(SdkConstants.FN_DEVICES_XML);
-
-        if (mUserDevices.isEmpty()) {
-            try {
-                Files.deleteIfExists(userDevicesFile);
-            } catch (IOException ignore) {
-                // nothing
-            }
-            return;
-        }
-
-        synchronized (mLock) {
-            if (!mUserDevices.isEmpty()) {
-                try {
-                    DeviceWriter.writeToXml(
-                            Files.newOutputStream(userDevicesFile), mUserDevices.values());
-                } catch (FileNotFoundException e) {
-                    mLog.warning("Couldn't open file: %1$s", e.getMessage());
-                } catch (ParserConfigurationException
-                        | IOException
-                        | TransformerException
-                        | TransformerFactoryConfigurationError e) {
-                    mLog.warning("Error writing file: %1$s", e.getMessage());
-                }
-            }
-        }
-    }
-
-    @NonNull
-    private Table<String, String, Device> loadDevices(@NonNull Path deviceXml) {
+  /**
+   * Initializes all user-created [Device]s
+   *
+   * @return True if the list has changed.
+   */
+  private fun initUserDevices(): Boolean {
+    synchronized(lock) {
+      if (userDevices != null) {
+        return false
+      }
+      // User devices should be saved out to $HOME/.android/devices.xml
+      val newUserDevices = HashBasedTable.create<String, String, Device>()
+      val userDevicesFile = androidFolder?.resolve(SdkConstants.FN_DEVICES_XML)
+      if (userDevicesFile != null && Files.exists(userDevicesFile)) {
         try {
-            return DeviceParser.parse(deviceXml);
-        } catch (SAXException | ParserConfigurationException | AssertionError e) {
-            mLog.error(e, "Error parsing %1$s", deviceXml.toAbsolutePath());
-        } catch (IOException e) {
-            mLog.error(e, "Error reading %1$s", deviceXml.toAbsolutePath());
-        } catch (IllegalStateException e) {
-            // The device builders can throw IllegalStateExceptions if
-            // build gets called before everything is properly setup
-            mLog.error(e, null);
+          DeviceParser.parse(userDevicesFile).cellSet().forEach { cell ->
+            val device = cell.value
+            if (isSupportedDevice(device)) {
+              newUserDevices.put(cell.rowKey, cell.columnKey, device)
+            } else {
+              log.warning("Unsupported device %s", cell.rowKey)
+            }
+          }
+
+          userDevices = newUserDevices
+          return true
+        } catch (e: SAXException) {
+          // Probably an old config file which we don't want to overwrite.
+          val parent = userDevicesFile.toAbsolutePath().parent
+          val base = userDevicesFile.fileName.toString() + ".old"
+          var renamedConfig = parent.resolve(base)
+          var i = 0
+          while (CancellableFileIo.exists(renamedConfig)) {
+            renamedConfig = parent.resolve("$base.${i++}")
+          }
+          log.error(e, "Error parsing %1\$s, backing up to %2\$s", userDevicesFile.toAbsolutePath(), renamedConfig.toAbsolutePath())
+          try {
+            Files.move(userDevicesFile, renamedConfig)
+          } catch (moveException: IOException) {
+            log.error(moveException, "Failed to rename old config file")
+          }
+        } catch (e: ParserConfigurationException) {
+          log.error(e, "Error parsing %1\$s", userDevicesFile.toAbsolutePath())
+        } catch (e: IOException) {
+          log.error(e, "Error parsing %1\$s", userDevicesFile.toAbsolutePath())
         }
-        return HashBasedTable.create();
+      }
+    }
+    userDevices = HashBasedTable.create()
+    return false
+  }
+
+  fun addUserDevice(d: Device) {
+    if (!isSupportedDevice(d)) return
+    var changed = false
+    synchronized(lock) {
+      if (userDevices == null) {
+        initUserDevices()
+      }
+      userDevices?.let {
+        it.put(d.id, d.manufacturer, d)
+        changed = true
+      }
+    }
+    if (changed) {
+      notifyListeners()
+    }
+  }
+
+  fun removeUserDevice(d: Device) {
+    synchronized(lock) {
+      if (userDevices == null) {
+        initUserDevices()
+      }
+      userDevices?.let {
+        if (it.contains(d.id, d.manufacturer)) {
+          it.remove(d.id, d.manufacturer)
+          notifyListeners()
+        }
+      }
+    }
+  }
+
+  fun replaceUserDevice(d: Device) {
+    synchronized(lock) {
+      if (userDevices == null) {
+        initUserDevices()
+      }
+      removeUserDevice(d)
+      addUserDevice(d)
+    }
+  }
+
+  /** Saves out the user devices to [SdkConstants.FN_DEVICES_XML] in the Android folder. */
+  fun saveUserDevices() {
+    val currentDevices = userDevices ?: return
+    val currentFolder = androidFolder ?: return
+    val userDevicesFile = currentFolder.resolve(SdkConstants.FN_DEVICES_XML)
+
+    if (currentDevices.isEmpty) {
+      try {
+        Files.deleteIfExists(userDevicesFile)
+      } catch (_: IOException) {}
+      return
     }
 
-    private void notifyListeners() {
-        synchronized (sListeners) {
-            for (DevicesChangedListener listener : sListeners) {
-                listener.onDevicesChanged();
-            }
+    synchronized(lock) {
+      if (!currentDevices.isEmpty) {
+        try {
+          Files.newOutputStream(userDevicesFile).use { outputStream -> DeviceWriter.writeToXml(outputStream, currentDevices.values()) }
+        } catch (e: Exception) {
+          log.warning("Error writing file: 1%\$s", e.message)
         }
+      }
     }
+  }
+
+  private fun loadDevices(deviceXml: Path): Table<String, String, Device> {
+    try {
+      return DeviceParser.parse(deviceXml)
+    } catch (e: Throwable) {
+      when (e) {
+        is SAXException,
+        is ParserConfigurationException,
+        is AssertionError,
+        is IOException -> {
+          log.error(e, "Error parsing %1\$s", deviceXml.toAbsolutePath())
+        }
+        is IllegalStateException -> {
+          // The device builders can throw IllegalStateExceptions if
+          // build gets called before everything is properly setup
+          log.error(e, null)
+        }
+        else -> throw e
+      }
+    }
+    return HashBasedTable.create()
+  }
+
+  private fun notifyListeners() {
+    synchronized(listeners) {
+      for (listener in listeners) {
+        listener.onDevicesChanged()
+      }
+    }
+  }
+
+  companion object {
+    /** getDevices() flag to list all devices. */
+    @JvmField val ALL_DEVICES: EnumSet<DeviceCategory> = EnumSet.allOf(DeviceCategory::class.java)
+
+    @JvmStatic
+    fun createInstance(androidLocationsProvider: AndroidLocationsProvider, sdkLocation: Path?, log: ILogger): DeviceManager {
+      return createInstance(AndroidSdkHandler.getInstance(androidLocationsProvider, sdkLocation), log, isSupportedDevice = { true })
+    }
+
+    @JvmStatic
+    fun createInstance(sdkHandler: AndroidSdkHandler, log: ILogger, isSupportedDevice: (Device) -> Boolean): DeviceManager {
+      return DeviceManager(sdkHandler, log, isSupportedDevice)
+    }
+
+    @JvmStatic
+    fun createInstance(sdkHandler: AndroidSdkHandler, log: ILogger): DeviceManager {
+      return DeviceManager(sdkHandler, log, isSupportedDevice = { true })
+    }
+
+    /**
+     * Some device definitions are present in old system images which can override some vendor device definitions. This method ensures these
+     * devices are considered as deprecated. For example, `wearos_rect` is deprecated in the vendor definition, however APIs 30 and 33 also
+     * provide a `wearos_rect` which is not deprecated. This function checks whether the device is a deprecated wear device based on its id.
+     * If the device's id does not start with `wearos` or the id is either `wearos_square` or `wearos_rect` then it is considered as
+     * deprecated.
+     */
+    private fun isDeprecatedWearDevice(device: Device): Boolean {
+      if ("android-wear" != device.tagId) return false
+      return !device.id.startsWith("wearos") || "wearos_square" == device.id || "wearos_rect" == device.id
+    }
+  }
 }
