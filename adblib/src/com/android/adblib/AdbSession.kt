@@ -139,7 +139,7 @@ interface AdbSession : AutoCloseable {
     fun create(
       host: AdbSessionHost,
       channelProvider: AdbServerChannelProvider = AdbServerChannelProvider.createOpenLocalHost(host),
-      connectionTimeout: Duration = Duration.ofSeconds(30),
+      connectionTimeout: Duration = host.getPropertyValue(AdbLibProperties.SESSION_CONNECTION_TIMEOUT),
     ): AdbSession {
       return AdbSessionImpl(parentSession = null, host, channelProvider, connectionTimeout.toMillis())
     }
@@ -153,7 +153,7 @@ interface AdbSession : AutoCloseable {
       parentSession: AdbSession,
       host: AdbSessionHost,
       channelProvider: AdbServerChannelProvider = AdbServerChannelProvider.createOpenLocalHost(host),
-      connectionTimeout: Duration = Duration.ofSeconds(30),
+      connectionTimeout: Duration = host.getPropertyValue(AdbLibProperties.SESSION_CONNECTION_TIMEOUT),
     ): AdbSession {
       return AdbSessionImpl(parentSession, host, channelProvider, connectionTimeout.toMillis())
     }
