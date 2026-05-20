@@ -293,6 +293,104 @@
 
   <script src="data.js"></script>
   <script src="script.js"></script>
+<!-- Help Hub FAB -->
+<button id="help-hub-fab" class="fab" aria-label="Open Help" aria-haspopup="dialog" aria-expanded="false" aria-controls="help-hub-panel">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+    </svg>
+    <span>Help</span>
+</button>
+
+<!-- Help Hub Side Panel -->
+<div id="help-hub-panel" class="side-panel" role="dialog" aria-labelledby="help-hub-title" aria-hidden="true">
+    <div class="side-panel-header">
+        <div class="header-left">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <h2 id="help-hub-title">Help</h2>
+        </div>
+        <button id="close-help-hub" class="icon-btn" aria-label="Close Help">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+        </button>
+    </div>
+    <div class="side-panel-content">
+        <!-- Introduction -->
+        <div class="help-section">
+            <div class="help-section-title">Introduction to Test Data</div>
+            <p>This report provides the results of your test execution. It summarizes the pass/fail status of your tests, helping you identify regressions and ensure the quality of your application.</p>
+        </div>
+
+        <div class="divider"></div>
+        <!-- Legend -->
+        <div class="help-section">
+            <div class="help-section-title">Legend</div>
+            <div class="legend-list">
+                <!-- Symbols & Colors -->
+                <div class="legend-item">
+                    <div class="legend-item-header" role="button" tabindex="0" aria-expanded="false">
+                        <span class="legend-item-title">Symbols & Colors</span>
+                        <svg class="legend-item-arrow" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </div>
+                    <div class="legend-item-content">
+                        <p><strong>-</strong>: Indicates that no data is available for that variant.</p>
+                        <p style="margin-top: 0.5rem;"><strong>Status & Rate Colors</strong>:</p>
+                        <ul style="padding-left: 1.25rem; margin-top: 0.25rem;">
+                            <li><span style="color: var(--text-green-600); font-weight: bold;">Green</span>: Passed tests or high pass rate (95% or above)</li>
+                            <li><span style="color: var(--text-yellow-600); font-weight: bold;">Yellow</span>: Skipped tests or medium pass rate (80% to 94.9%)</li>
+                            <li><span style="color: var(--text-red-600); font-weight: bold;">Red</span>: Failed tests or low pass rate (below 80%)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Passed Tests -->
+                <div class="legend-item">
+                    <div class="legend-item-header" role="button" tabindex="0" aria-expanded="false">
+                        <span class="legend-item-title">Passed Tests</span>
+                        <svg class="legend-item-arrow" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </div>
+                    <div class="legend-item-content">
+                        Tests that completed successfully without any assertions failing or unexpected exceptions.
+                    </div>
+                </div>
+
+                <!-- Failed Tests -->
+                <div class="legend-item">
+                    <div class="legend-item-header" role="button" tabindex="0" aria-expanded="false">
+                        <span class="legend-item-title">Failed Tests</span>
+                        <svg class="legend-item-arrow" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </div>
+                    <div class="legend-item-content">
+                        Tests where an assertion failed or an unexpected exception was thrown during execution.
+                    </div>
+                </div>
+
+                <!-- Skipped Tests -->
+                <div class="legend-item">
+                    <div class="legend-item-header" role="button" tabindex="0" aria-expanded="false">
+                        <span class="legend-item-title">Skipped Tests</span>
+                        <svg class="legend-item-arrow" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </div>
+                    <div class="legend-item-content">
+                        Tests that were ignored or disabled, often using annotations like @Ignore.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 </body>
+
 
 </html>
