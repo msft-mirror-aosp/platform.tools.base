@@ -49657,6 +49657,17 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.android.test.com.android.test.gradle.plugin_9.2.0",
+    pom = "repository/com/android/test/com.android.test.gradle.plugin/9.2.0/com.android.test.gradle.plugin-9.2.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/android/test/com.android.test.gradle.plugin/9.2.0",
+    deps = [
+        "com.android.tools.build.gradle_9.2.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.android.tools.adblib.adblib-tools_8.8.0-alpha05",
     pom = "repository/com/android/tools/adblib/adblib-tools/8.8.0-alpha05/adblib-tools-8.8.0-alpha05.pom",
     repo_root_path = "repository",

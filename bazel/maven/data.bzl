@@ -610,6 +610,7 @@ _CLASS_JARS = [
     "com.android.support.test:orchestrator:1.0.0",
     "com.android.support.test:rules:1.0.2",
     "com.android.support.test.uiautomator:uiautomator-v18:2.1.1",
+    "com.android.test:com.android.test.gradle.plugin:pom:9.2.0",
     "com.android.tools.analytics-library:protos:30.1.3",
     "com.android.tools.analytics-library:shared:30.1.3",
     "com.android.tools.analytics-library:tracker:30.1.3",
