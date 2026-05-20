@@ -61,7 +61,7 @@ public class TestUtils {
      * <p>This version needs to be present in prebuilts for tests to pass (see
      * tools/base/bazel/README.md).
      */
-    public static final String KOTLIN_VERSION_FOR_TESTS = "2.4.0-Beta2";
+    public static final String KOTLIN_VERSION_FOR_TESTS = "2.4.0-RC";
 
     /** KSP version used by AGP integration tests. */
     public static final String KSP_VERSION_FOR_TESTS = "2.2.20-RC-2.0.2";
