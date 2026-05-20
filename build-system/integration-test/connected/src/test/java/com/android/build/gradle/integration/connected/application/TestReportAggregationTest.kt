@@ -22,9 +22,12 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Gradl
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import com.android.build.gradle.integration.connected.utils.getEmulator
 import com.android.build.gradle.options.BooleanOption
+import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.CONNECTED_TEST_TEST_SUITE_NAME
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.FileUtils
+import com.google.gson.Gson
 import java.io.File
+import org.gradle.internal.logging.ConsoleRenderer
 import org.junit.ClassRule
 import org.junit.Rule
 import org.junit.Test
@@ -119,12 +122,12 @@ class TestReportAggregationTest {
             androidTestImplementation("androidx.test:runner:1.4.0-alpha06")
           }
           files.add(
-            "src/androidTest/java/com/example/lib2/FailingTest.kt",
+            "src/androidTest/java/com/example/lib2/FailingAndroidTest.kt",
             """
             package com.example.lib2
             import org.junit.Test
             import org.junit.Assert.fail
-            class FailingTest {
+            class FailingAndroidTest {
                 @Test
                 fun testFailure() {
                     fail("This test is supposed to fail")
@@ -134,12 +137,12 @@ class TestReportAggregationTest {
               .trimIndent(),
           )
           files.add(
-            "src/test/java/com/example/lib2/FailingTest.kt",
+            "src/test/java/com/example/lib2/FailingUnitTest.kt",
             """
             package com.example.lib2
             import org.junit.Test
             import org.junit.Assert.fail
-            class FailingTest {
+            class FailingUnitTest {
                 @Test
                 fun testFailure() {
                     fail("This test is supposed to fail")
@@ -168,7 +171,15 @@ class TestReportAggregationTest {
     val libBuildDir = rule.build.androidLibrary(":lib2").buildDir.toFile()
     val outputDir = FileUtils.join(libBuildDir, "reports", "tests", "test-report")
 
-    verifyHtmlReport(outputDir = outputDir, taskResult = result)
+    verifyHtmlReport(
+      outputDir = outputDir,
+      taskResult = result,
+      expectedModuleCount = 1,
+      expectedTotalTests = 18,
+      expectedFailedTests = 3,
+      expectedUnitTestSummary = TestSummary(total = 16, passed = 14, failed = 2, skipped = 0),
+      expectedAndroidTestSummary = TestSummary(total = 2, passed = 1, failed = 1, skipped = 0),
+    )
   }
 
   @Test
@@ -177,10 +188,18 @@ class TestReportAggregationTest {
     val appBuildDir = rule.build.androidApplication(":app").buildDir.toFile()
     val outputDir = FileUtils.join(appBuildDir, "reports", "tests", "test-report")
 
-    assertThat(result.didWorkTasks.contains(":app:testDebugUnitTest")).isTrue()
-    assertThat(result.didWorkTasks.contains(":app:testReleaseUnitTest")).isTrue()
+    assertThat(result.tasks.contains(":app:testDebugUnitTest")).isTrue()
+    assertThat(result.tasks.contains(":app:testReleaseUnitTest")).isTrue()
 
-    verifyHtmlReport(outputDir = outputDir, taskResult = result)
+    verifyHtmlReport(
+      outputDir = outputDir,
+      taskResult = result,
+      expectedModuleCount = 1,
+      expectedTotalTests = 16,
+      expectedFailedTests = 0,
+      expectedUnitTestSummary = TestSummary(total = 15, passed = 15, failed = 0, skipped = 0),
+      expectedAndroidTestSummary = TestSummary(total = 1, passed = 1, failed = 0, skipped = 0),
+    )
   }
 
   @Test
@@ -189,25 +208,41 @@ class TestReportAggregationTest {
     val appBuildDir = rule.build.androidApplication(":app").buildDir.toFile()
     val outputDir = FileUtils.join(appBuildDir, "reports", "tests", "aggregated-test-report")
 
-    assertThat(result.didWorkTasks.contains(":app:testDebugUnitTest")).isTrue()
-    assertThat(result.didWorkTasks.contains(":app:connectedDebugAndroidTest")).isTrue()
-    assertThat(result.didWorkTasks.contains(":lib:testDebugUnitTest")).isTrue()
-    assertThat(result.didWorkTasks.contains(":lib:connectedDebugAndroidTest")).isTrue()
-    assertThat(result.didWorkTasks.contains(":lib2:testDebugUnitTest")).isTrue()
-    assertThat(result.didWorkTasks.contains(":lib2:connectedDebugAndroidTest")).isTrue()
+    assertThat(result.tasks.contains(":app:testDebugUnitTest")).isTrue()
+    assertThat(result.tasks.contains(":app:connectedDebugAndroidTest")).isTrue()
+    assertThat(result.tasks.contains(":lib:testDebugUnitTest")).isTrue()
+    assertThat(result.tasks.contains(":lib:connectedDebugAndroidTest")).isTrue()
+    assertThat(result.tasks.contains(":lib2:testDebugUnitTest")).isTrue()
+    assertThat(result.tasks.contains(":lib2:connectedDebugAndroidTest")).isTrue()
 
-    verifyHtmlReport(outputDir = outputDir, taskResult = result)
+    verifyHtmlReport(
+      outputDir = outputDir,
+      taskResult = result,
+      expectedModuleCount = 3,
+      expectedTotalTests = 49,
+      expectedFailedTests = 3,
+      expectedUnitTestSummary = TestSummary(total = 45, passed = 43, failed = 2, skipped = 0),
+      expectedAndroidTestSummary = TestSummary(total = 4, passed = 3, failed = 1, skipped = 0),
+    )
   }
 
   @Test
   fun testCreateTestReportLib() {
     val result = rule.build.executor.run(":lib:createTestReport")
     val libBuildDir = rule.build.androidLibrary(":lib").buildDir.toFile()
-    assertThat(result.didWorkTasks.contains(":lib:testDebugUnitTest")).isTrue()
-    assertThat(result.didWorkTasks.contains(":lib:connectedDebugAndroidTest")).isTrue()
+    assertThat(result.tasks.contains(":lib:testDebugUnitTest")).isTrue()
+    assertThat(result.tasks.contains(":lib:connectedDebugAndroidTest")).isTrue()
     val outputDir = FileUtils.join(libBuildDir, "reports", "tests", "test-report")
 
-    verifyHtmlReport(outputDir = outputDir, taskResult = result)
+    verifyHtmlReport(
+      outputDir = outputDir,
+      taskResult = result,
+      expectedModuleCount = 1,
+      expectedTotalTests = 15,
+      expectedFailedTests = 0,
+      expectedUnitTestSummary = TestSummary(total = 14, passed = 14, failed = 0, skipped = 0),
+      expectedAndroidTestSummary = TestSummary(total = 1, passed = 1, failed = 0, skipped = 0),
+    )
   }
 
   @Test
@@ -216,7 +251,15 @@ class TestReportAggregationTest {
     val libBuildDir = rule.build.androidLibrary(":lib2").buildDir.toFile()
     val outputDir = FileUtils.join(libBuildDir, "reports", "tests", "aggregated-test-report")
 
-    verifyHtmlReport(outputDir = outputDir, taskResult = result)
+    verifyHtmlReport(
+      outputDir = outputDir,
+      taskResult = result,
+      expectedModuleCount = 1,
+      expectedTotalTests = 10,
+      expectedFailedTests = 2,
+      expectedUnitTestSummary = TestSummary(total = 8, passed = 7, failed = 1, skipped = 0),
+      expectedAndroidTestSummary = TestSummary(total = 2, passed = 1, failed = 1, skipped = 0),
+    )
   }
 
   @Test
@@ -226,12 +269,78 @@ class TestReportAggregationTest {
     aggregatedReportLibResult.assertFailureMessage().contains("task 'createAggregatedTestReport' not found in project ':lib'")
   }
 
-  private fun verifyHtmlReport(outputDir: File, taskResult: GradleBuildResult) {
+  private val gson = Gson()
+
+  private fun verifyHtmlReport(
+    outputDir: File,
+    taskResult: GradleBuildResult,
+    expectedProjectName: String = "project",
+    expectedModuleCount: Int = 1,
+    expectedTotalTests: Int? = null,
+    expectedFailedTests: Int? = null,
+    expectedUnitTestSummary: TestSummary? = null,
+    expectedAndroidTestSummary: TestSummary? = null,
+  ) {
     assertThat(outputDir).exists()
     assertThat(outputDir).isDirectory()
 
     val indexFile = File(outputDir, "index.html")
     assertThat(indexFile).exists()
     assertThat(indexFile).isFile()
+
+    val reportLocation = ConsoleRenderer().asClickableFileUrl(indexFile)
+    taskResult.assertOutputContains("Test report generated at: $reportLocation")
+
+    assertThat(File(outputDir, "script.js")).exists()
+    assertThat(File(outputDir, "styles.css")).exists()
+    assertThat(File(outputDir, "data.js")).exists()
+
+    val report = parseReportJs<TestReport>(File(outputDir, "data.js"))
+
+    assertThat(report.projectName).isEqualTo(expectedProjectName)
+    assertThat(report.numberOfModules).isEqualTo(expectedModuleCount)
+
+    expectedTotalTests?.let { assertThat(report.summary.total).isEqualTo(it) }
+    expectedFailedTests?.let { assertThat(report.summary.failed).isEqualTo(it) }
+
+    expectedUnitTestSummary?.let { expected ->
+      val actual = aggregateSuiteSummaries(report, "UnitTest")
+      verifySummary(actual, expected, "UnitTest")
+    }
+
+    expectedAndroidTestSummary?.let { expected ->
+      val actual = aggregateSuiteSummaries(report, CONNECTED_TEST_TEST_SUITE_NAME)
+      verifySummary(actual, expected, CONNECTED_TEST_TEST_SUITE_NAME)
+    }
   }
+
+  private fun aggregateSuiteSummaries(report: TestReport, suiteName: String): TestSummary {
+    val summaries =
+      report.modules.flatMap { it.testSuiteSummaries }.filter { it.name.equals(suiteName, ignoreCase = true) }.map { it.summary }
+    return TestSummary(
+      total = summaries.sumOf { it.total },
+      passed = summaries.sumOf { it.passed },
+      failed = summaries.sumOf { it.failed },
+      skipped = summaries.sumOf { it.skipped },
+    )
+  }
+
+  private fun verifySummary(actual: TestSummary, expected: TestSummary, suiteName: String) {
+    assertThat(actual.total).named("$suiteName total").isEqualTo(expected.total)
+    assertThat(actual.passed).named("$suiteName passed").isEqualTo(expected.passed)
+    assertThat(actual.failed).named("$suiteName failed").isEqualTo(expected.failed)
+  }
+
+  private inline fun <reified T> parseReportJs(file: File): T {
+    val content = file.readText().removePrefix("const TEST_DATA_SOURCE = ")
+    return gson.fromJson(content, T::class.java)
+  }
+
+  data class TestReport(val projectName: String, val numberOfModules: Int, val modules: List<ModuleReport>, val summary: TestSummary)
+
+  data class ModuleReport(val name: String, val testSuiteSummaries: List<TestSuiteSummary>, val summary: TestSummary)
+
+  data class TestSuiteSummary(val name: String, val summary: TestSummary)
+
+  data class TestSummary(val total: Int, val passed: Int, val failed: Int, val skipped: Int)
 }

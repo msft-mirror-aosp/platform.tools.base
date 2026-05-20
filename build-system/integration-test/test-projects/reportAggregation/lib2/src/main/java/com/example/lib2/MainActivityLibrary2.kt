@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.example.app
+package com.example.lib2
 
 import android.app.Activity
 import java.util.logging.Logger.getLogger

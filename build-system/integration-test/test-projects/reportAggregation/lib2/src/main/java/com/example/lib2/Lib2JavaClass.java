@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.example.lib;
+package com.example.lib2;
 
 public class Lib2JavaClass {
     public String getName() {

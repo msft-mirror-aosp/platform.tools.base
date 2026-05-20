@@ -51,7 +51,11 @@ import org.w3c.dom.Node
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.TEST)
 abstract class TestResultsCollectionTask : NonIncrementalTask() {
 
-  @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) @get:Optional abstract val testResults: ListProperty<Directory>
+  @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) @get:Optional abstract val testSuiteResults: ListProperty<Directory>
+
+  @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) @get:Optional abstract val unitTestResults: DirectoryProperty
+
+  @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) @get:Optional abstract val androidTestResults: DirectoryProperty
 
   @get:InputFiles
   @get:Optional
@@ -86,8 +90,16 @@ abstract class TestResultsCollectionTask : NonIncrementalTask() {
       }
     }
 
-    if (testResults.isPresent) {
-      testResults.get().forEach { directory -> processXml(directory.asFile) }
+    if (testSuiteResults.isPresent) {
+      testSuiteResults.get().forEach { directory -> processXml(directory.asFile) }
+    }
+
+    if (unitTestResults.isPresent) {
+      processXml(unitTestResults.get().asFile)
+    }
+
+    if (androidTestResults.isPresent) {
+      processXml(androidTestResults.get().asFile)
     }
 
     dependentModuleTestResults.asFileTree.forEach { xmlFile ->
@@ -148,13 +160,11 @@ abstract class TestResultsCollectionTask : NonIncrementalTask() {
     override fun configure(task: TestResultsCollectionTask) {
       super.configure(task)
 
-      val unitTestResults = creationConfig.artifacts.get(InternalArtifactType.UNIT_TEST_RESULTS)
-      val connectedTestResults = creationConfig.artifacts.get(InternalArtifactType.ANDROID_TEST_RESULTS)
-      val testSuiteResults = creationConfig.artifacts.getAll(InternalMultipleArtifactType.TEST_SUITE_RESULTS)
+      task.testSuiteResults.set(creationConfig.artifacts.getAll(InternalMultipleArtifactType.TEST_SUITE_RESULTS))
 
-      task.testResults.set(testSuiteResults)
-      task.testResults.add(unitTestResults)
-      task.testResults.add(connectedTestResults)
+      task.unitTestResults.set(creationConfig.artifacts.get(InternalArtifactType.UNIT_TEST_RESULTS))
+
+      task.androidTestResults.set(creationConfig.artifacts.get(InternalArtifactType.ANDROID_TEST_RESULTS))
     }
   }
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.example.lib
+package com.example.lib2
 
 import android.annotation.SuppressLint
 import android.app.Activity

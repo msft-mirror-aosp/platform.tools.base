@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.example.lib;
+package com.example.lib2;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
