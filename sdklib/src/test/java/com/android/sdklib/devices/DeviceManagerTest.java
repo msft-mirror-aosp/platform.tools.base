@@ -57,11 +57,13 @@ public class DeviceManagerTest {
     @Rule public final TempSdkManager sdkManager =
             new TempSdkManager("sdk_" + getClass().getSimpleName());
 
+    private UserDeviceTable userDevices;
     private DeviceManager dm;
 
     @Before
     public void setUp() {
         dm = createDeviceManager();
+        userDevices = dm.getUserDevices();
     }
 
     private DeviceManager createDeviceManager() {
@@ -315,8 +317,8 @@ public class DeviceManagerTest {
 
         Device d2 = b.build();
 
-        dm.addUserDevice(d2);
-        dm.saveUserDevices();
+        userDevices.addUserDevice(d2);
+        userDevices.saveUserDevices();
 
         assertThat(dm.getDevice("MyCustomTablet", "OEM").getDisplayName())
                 .isEqualTo("My Custom Tablet");
@@ -812,7 +814,7 @@ public class DeviceManagerTest {
                         Collections.emptyList(),
                         Collections.emptyList(),
                         p);
-        sdkManager.makeSystemImageFolder(imageWithDevice22, "wearos_small_round");
+        sdkManager.makeSystemImageFolder(imageWithDevice22, "new_wearos_device");
 
         DetailsTypes.AddonDetailsType details25 = AndroidSdkHandler.getAddonModule()
           .createLatestFactory().createAddonDetailsType();
@@ -828,7 +830,7 @@ public class DeviceManagerTest {
                         Collections.emptyList(),
                         Collections.emptyList(),
                         p);
-        sdkManager.makeSystemImageFolder(imageWithDevice25, "wearos_small_round");
+        sdkManager.makeSystemImageFolder(imageWithDevice25, "new_wearos_device");
 
         // Re-create the local DeviceManager using the new directory,
         // fetch the device, and verify that it is the right one.
@@ -836,27 +838,31 @@ public class DeviceManagerTest {
         sdkManager.getSdkHandler().getRepoManager(progress).markLocalCacheInvalid();
         localDeviceManager = createDeviceManager();
 
-        localDevice = localDeviceManager.getDevice("wearos_small_round", "Google");
+        localDevice = localDeviceManager.getDevice("new_wearos_device", "Google");
         // (The "Android wear" part comes from the tag "android-wear")
         assertThat(localDevice.getDisplayName()).isEqualTo("Mock Android wear Device Name");
         assertThat(localDevice.getDefaultState().getHardware().getCpu())
                 .isEqualTo(Abi.ARMEABI.toString());
 
+        // Verify that the total number of devices is increased by one for new_wearos_device
+        assertThat(localDeviceManager.getDevices(EnumSet.allOf(DeviceCategory.class)).size())
+                .isEqualTo(count + 1);
+
         // Change the name of that device and add it to our local DeviceManager again
-        Device dmDevice = dm.getDevice("wearos_small_round", "Google");
+        Device dmDevice = dm.getDevice("new_wearos_device", "Google");
         Builder b = new Device.Builder(dmDevice);
         b.setName("Custom");
-        localDeviceManager.addUserDevice(b.build());
-        localDeviceManager.saveUserDevices();
+        localDeviceManager.getUserDevices().addUserDevice(b.build());
+        localDeviceManager.getUserDevices().saveUserDevices();
 
-        // Fetch the device from our local DeviceManager and verify
-        // that it has the updated name
+        // Fetch the device from our local DeviceManager and verify that it does not have the
+        // updated name (user devices do not override built-in devices)
         localDevice = localDeviceManager.getDevice("wearos_small_round", "Google");
-        assertThat(localDevice.getDisplayName()).isEqualTo("Custom");
+        assertThat(localDevice.getDisplayName()).isEqualTo("Wear OS Small Round");
 
         // Verify that the total number of devices is unchanged
         assertThat(localDeviceManager.getDevices(EnumSet.allOf(DeviceCategory.class)).size())
-                .isEqualTo(count);
+                .isEqualTo(count + 1);
     }
 
     @Test
@@ -889,15 +895,15 @@ public class DeviceManagerTest {
             assertThat(roundDevice.getBootProps().get(DeviceParser.ROUND_BOOT_PROP))
                     .isEqualTo("true");
 
-            dm.addUserDevice(roundDevice);
+            userDevices.addUserDevice(roundDevice);
         }
 
         Device testDeviceMid = dm.getDevice("test_round_dev", "User");
         assertThat(testDeviceMid).isNotNull();
 
         // Write the user-defined device definitions to devices.xml
-        dm.saveUserDevices();
-        dm.removeUserDevice(testDeviceMid);
+        userDevices.saveUserDevices();
+        userDevices.removeUserDevice(testDeviceMid);
 
         // Create a new DeviceManager. It will read the newly-written
         // devices.xml file, so we can check the contents.

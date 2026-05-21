@@ -17,6 +17,7 @@ package com.android.sdklib.devices
 
 import com.android.ProgressManagerAdapter
 import com.android.SdkConstants
+import com.android.io.CancellableFileIo
 import com.android.repository.api.RepoManager
 import com.android.sdklib.repository.AndroidSdkHandler
 import com.android.sdklib.repository.LoggerProgressIndicatorWrapper
@@ -26,7 +27,15 @@ import com.google.common.collect.HashBasedTable
 import com.google.common.collect.ImmutableTable
 import com.google.common.collect.Table
 import java.io.FileNotFoundException
+import java.io.IOException
 import java.io.InputStream
+import java.nio.file.Files
+import java.nio.file.Path
+import javax.xml.parsers.ParserConfigurationException
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.filterNotNull
+import org.xml.sax.SAXException
 
 interface DeviceTable {
   fun getDevice(id: String, manufacturer: String): Device?
@@ -129,5 +138,108 @@ class SystemImageDeviceTable(val log: ILogger, isSupportedDevice: (Device) -> Bo
   private fun isDeprecatedWearDevice(device: Device): Boolean {
     if ("android-wear" != device.tagId) return false
     return !device.id.startsWith("wearos") || "wearos_square" == device.id || "wearos_rect" == device.id
+  }
+}
+
+class UserDeviceTable(private val log: ILogger, private val isSupportedDevice: (Device) -> Boolean, private val userDevicesFile: Path) :
+  DeviceTable {
+  private val lock = Any()
+  private val tableState = MutableStateFlow<ImmutableTable<String, String, Device>?>(null)
+  private val table: ImmutableTable<String, String, Device>
+    get() {
+      synchronized(lock) {
+        tableState.value?.let {
+          return it
+        }
+        return load().also { tableState.value = it }
+      }
+    }
+
+  /** Observable view of the table state. */
+  val devicesFlow: Flow<ImmutableTable<String, String, Device>> = tableState.filterNotNull()
+
+  /** Loads devices from userDevicesFile. */
+  private fun load(): ImmutableTable<String, String, Device> {
+    // User devices should be saved out to $HOME/.android/devices.xml
+    val newUserDevices = HashBasedTable.create<String, String, Device>()
+    if (Files.exists(userDevicesFile)) {
+      try {
+        DeviceParser.parse(userDevicesFile).cellSet().forEach { cell ->
+          val device = cell.value
+          if (isSupportedDevice(device)) {
+            newUserDevices.put(cell.rowKey, cell.columnKey, device)
+          } else {
+            log.warning("Unsupported device %s", cell.rowKey)
+          }
+        }
+
+        return ImmutableTable.copyOf(newUserDevices)
+      } catch (e: SAXException) {
+        // Probably an old config file which we don't want to overwrite.
+        val parent = userDevicesFile.toAbsolutePath().parent
+        val base = userDevicesFile.fileName.toString() + ".old"
+        var renamedConfig = parent.resolve(base)
+        var i = 0
+        while (CancellableFileIo.exists(renamedConfig)) {
+          renamedConfig = parent.resolve("$base.${i++}")
+        }
+        log.error(e, "Error parsing %s, backing up to %s", userDevicesFile.toAbsolutePath(), renamedConfig.toAbsolutePath())
+        try {
+          Files.move(userDevicesFile, renamedConfig)
+        } catch (moveException: IOException) {
+          log.error(moveException, "Failed to rename old config file")
+        }
+      } catch (e: ParserConfigurationException) {
+        log.error(e, "Error parsing %s", userDevicesFile.toAbsolutePath())
+      } catch (e: IOException) {
+        log.error(e, "Error parsing %s", userDevicesFile.toAbsolutePath())
+      }
+    }
+    return ImmutableTable.of()
+  }
+
+  override fun getDevice(id: String, manufacturer: String): Device? {
+    return table.get(id, manufacturer)
+  }
+
+  override fun getDevices(): Table<String, String, Device> {
+    return table
+  }
+
+  private inline fun update(updater: (Table<String, String, Device>) -> Unit) {
+    synchronized(lock) {
+      val tableBuilder = HashBasedTable.create(table)
+      updater(tableBuilder)
+      tableState.value = ImmutableTable.copyOf(tableBuilder)
+    }
+  }
+
+  fun addUserDevice(d: Device) {
+    if (!isSupportedDevice(d)) return
+
+    update { it.put(d.id, d.manufacturer, d) }
+  }
+
+  fun removeUserDevice(d: Device) = update { it.remove(d.id, d.manufacturer) }
+
+  fun replaceUserDevice(d: Device) = update {
+    it.remove(d.id, d.manufacturer)
+    it.put(d.id, d.manufacturer, d)
+  }
+
+  fun saveUserDevices() {
+    val currentDevices = table
+    if (currentDevices.isEmpty) {
+      try {
+        Files.deleteIfExists(userDevicesFile)
+      } catch (_: IOException) {}
+      return
+    }
+
+    try {
+      Files.newOutputStream(userDevicesFile).use { outputStream -> DeviceWriter.writeToXml(outputStream, currentDevices.values()) }
+    } catch (e: Exception) {
+      log.warning("Error writing file: %s", e.message)
+    }
   }
 }
