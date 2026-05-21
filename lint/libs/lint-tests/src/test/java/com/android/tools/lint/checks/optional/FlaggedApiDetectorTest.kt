@@ -20,6 +20,8 @@ import com.android.testutils.TestUtils
 import com.android.tools.lint.LintCliFlags
 import com.android.tools.lint.MainTest
 import com.android.tools.lint.checks.AbstractCheckTest.SUPPORT_ANNOTATIONS_JAR
+import com.android.tools.lint.checks.ApiDetector
+import com.android.tools.lint.checks.ApiLookupTest
 import com.android.tools.lint.checks.infrastructure.LintDetectorTest
 import com.android.tools.lint.checks.infrastructure.TestFile
 import com.android.tools.lint.checks.infrastructure.TestFiles
@@ -28,9 +30,6 @@ import com.android.tools.lint.checks.infrastructure.TestFiles.java
 import com.android.tools.lint.checks.infrastructure.TestFiles.xml
 import com.android.tools.lint.checks.infrastructure.TestLintTask
 import com.android.tools.lint.checks.infrastructure.TestMode
-import com.android.tools.lint.checks.ApiDetector
-import com.android.tools.lint.checks.ApiLookupTest
-import com.android.tools.lint.checks.optional.FlaggedApiDetector
 import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.Issue
 import java.io.File
@@ -53,10 +52,10 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
         java(
             """
             package test.api;
-            import android.annotation.FlaggedApi;
+            import android.annotation.RequiresFlag;
             import com.example.foobar.Flags;
 
-            @FlaggedApi(Flags.FLAG_FOOBAR)
+            @RequiresFlag(Flags.FLAG_FOOBAR)
             public class MyApi {
               public void apiMethod() { }
               public int apiField = 42;
@@ -156,18 +155,18 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
       .files(
         bytecode(
           "libs/annotation.jar",
-          flaggedApiAnnotationStub,
-          0x81415584,
+          requiresFlagAnnotationStub,
+          0xcb0f312a,
           """
-          android/annotation/FlaggedApi.class:
-          H4sIAAAAAAAA/4WRwU4CMRCG/yLLKqigookHo/FA9OIePXja4BJJcJfsVhPj
-          wRRoNiWlS5ZCwqt58AF8KOOsJsKBxEP/Tjrf/O1MP7/ePwDc4sTFkYumi2MG
-          ZyH0XDI0r657Y7EQnhYm9RKbK5PeMVSTbJ4PZUdpYuodLdJUjvypuilYhtN4
-          bqyayGc1UwMtfWMyK6zKzIzhbM1P/CU8LvJUWrK+3JwPtJxIY/lyKgkq85d+
-          wFB5DPhDdM9Qa0dhwuOnNo9ienynG/TotO6HYcR93o3Ct9+Ci83msbTkTRFZ
-          t/5B+plWwyWBTrvnJwk1JMwoz9RonV5NhKGx8osGYzm0DOcbr1iNqcXAUKK1
-          RR/DytQvHIpKqPyoi23aPYp2iCm/wpGoolbIbiF7hewXUkejICQOcPgNDPA2
-          HOgBAAA=
+          android/annotation/RequiresFlag.class:
+          H4sIAAAAAAAA/4WRwUrDQBCGZ2vTaKu21Sp4EMVD0Yt5AE+hJliISUlWQTzI
+          th3Clu1Gk02hr+bBB/ChxImC7aHgYf/9mf3mn2X38+v9AwB8OLahxuBM6Gme
+          yakjtM6MMDLTToxvpcyx8JVIbagz6MzEQjhK6NSJxjOcGBsa1LqqrjW7f5aB
+          tRCqRAa9y6tgBScmlzq9YdBMsjKfoC8VMd31qdcVzeAkLrWRc3yUhRwrXEUX
+          DE6DjeO5yFM0FH6x+dxTOEdt+PIVCarzp5HHoHHv8bvolkFrEIUJjx8GPIrp
+          +v7QC6jadsMw4i4fRuHLb8P55vAYDWWTo+j+P8goU3KyJNAaBG6S9Bkw2KJl
+          0ecwenMbtsnVYOdHm9Ci3SG3S4z9DBbCHuxX0q6kU0m3kgM4rAiEHhx9A55w
+          XSDsAQAA
           """,
         ),
         bytecode(
@@ -203,10 +202,10 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
           java(
               """
               package test.api;
-              import android.annotation.FlaggedApi;
+              import android.annotation.RequiresFlag;
               import com.android.aconfig.test.Flags;
 
-              @FlaggedApi(Flags.FLAG_DISABLED_RO)
+              @RequiresFlag(Flags.FLAG_DISABLED_RO)
               public class MyApi {
                 public void apiMethod() { }
                 public int apiField = 42;
@@ -214,18 +213,18 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
               """
             )
             .indented(),
-          0x3ababae6,
+          0x941c0de,
           """
-            test/api/MyApi.class:
-            H4sIAAAAAAAA/0VQTUvDQBScbdOmTWtbP0E8iCe1hwRPHhShiIVCq1DF+za7
-            xi3pbkk2RX+WBxE8+AP8UeLLIvXwHvvmzcwO7/vn8wvAOfYCeNhqooptHzs+
-            dhkafKmGSqaCgY0Y6pdKK3vFUD05fWTwro2QDN2x0vK2WMxk9sBnKSFNkk2k
-            fTakC+5NkcVyqMpFMHkdLFU45yvOcDAttFULOdIrlSsSDrQ2lltldM5wOOZa
-            ZEaJiK/haJjyJJGCPC4YaiueFmR6FptF+EcOeWz0k0pCK3Mb3rwsTWalKGV5
-            KFRexhNT04aPRhs11Bk6JTOiwJHLxtAr00Up10l0N5vL2OKITuLRiegIpYZe
-            FXqRBfUmTcduBlr9D7B+r/+OypujB9QDWoJEnqO31qJ9x6D6p9Yd4JOg7f7Y
-            QKd0JbRL1cux+QtqrrJkrAEAAA==
-            """,
+          test/api/MyApi.class:
+          H4sIAAAAAAAA/0VQTUvDQBB924+kTWutnyCeelJ7SPCsCEUMFFqFKt63yVqn
+          pLttsin6szyI4MEf4I8SJ0HqYYaZt++9nZnvn88vACEOPVRQdVFrow5HoDuX
+          axkkUs+Cu+lcRVbAuSRN9kqgenr22EQDTRdeGy20BTpWZTaQSwrGr4MlCTS4
+          DkklsYAYCtSuTawEtkek1W2+mKr0QU4TRprMGyv7bJjo3Zs8jVRIxYNXGvnF
+          GALHk1xbWqihXlNGLBxobay0ZHQm0BtJHaeG4kBu4GCiVjmlKgsTObsQqK9l
+          krPteWQW/h/dl5HRTzTzi+H9m5elSa2KC0Hmx5QVA8YTgx6vWuEj8SbFslxV
+          uOIrcd7i7qTsgVb/A6Lf7b/DfSvpHc5eKXVQYxPefyM6Khkc/1SnBFwWdMs/
+          drBbuDK6x7Gf4eAXwKd5o64BAAA=
+          """,
         ),
         java(
             """
@@ -271,22 +270,22 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
       .files(
         compiled(
           "libs/annotation.jar",
-          flaggedApiAnnotationStub,
-          0x81415584,
+          requiresFlagAnnotationStub,
+          0xcb0f312a,
           """
-          android/annotation/FlaggedApi.class:
-          H4sIAAAAAAAA/4WRwU4CMRCG/yLLKqigookHo/FA9OIePXja4BJJcJfsVhPj
-          wRRoNiWlS5ZCwqt58AF8KOOsJsKBxEP/Tjrf/O1MP7/ePwDc4sTFkYumi2MG
-          ZyH0XDI0r657Y7EQnhYm9RKbK5PeMVSTbJ4PZUdpYuodLdJUjvypuilYhtN4
-          bqyayGc1UwMtfWMyK6zKzIzhbM1P/CU8LvJUWrK+3JwPtJxIY/lyKgkq85d+
-          wFB5DPhDdM9Qa0dhwuOnNo9ienynG/TotO6HYcR93o3Ct9+Ci83msbTkTRFZ
-          t/5B+plWwyWBTrvnJwk1JMwoz9RonV5NhKGx8osGYzm0DOcbr1iNqcXAUKK1
-          RR/DytQvHIpKqPyoi23aPYp2iCm/wpGoolbIbiF7hewXUkejICQOcPgNDPA2
-          HOgBAAA=
+          android/annotation/RequiresFlag.class:
+          H4sIAAAAAAAA/4WRwUrDQBCGZ2vTaKu21Sp4EMVD0Yt5AE+hJliISUlWQTzI
+          th3Clu1Gk02hr+bBB/ChxImC7aHgYf/9mf3mn2X38+v9AwB8OLahxuBM6Gme
+          yakjtM6MMDLTToxvpcyx8JVIbagz6MzEQjhK6NSJxjOcGBsa1LqqrjW7f5aB
+          tRCqRAa9y6tgBScmlzq9YdBMsjKfoC8VMd31qdcVzeAkLrWRc3yUhRwrXEUX
+          DE6DjeO5yFM0FH6x+dxTOEdt+PIVCarzp5HHoHHv8bvolkFrEIUJjx8GPIrp
+          +v7QC6jadsMw4i4fRuHLb8P55vAYDWWTo+j+P8goU3KyJNAaBG6S9Bkw2KJl
+          0ecwenMbtsnVYOdHm9Ci3SG3S4z9DBbCHuxX0q6kU0m3kgM4rAiEHhx9A55w
+          XSDsAQAA
           """,
         ),
         compiled(
-          "libs/api.jar",
+          "libs/api_flags.jar",
           // Generated
           java(
               """
@@ -301,27 +300,27 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
               """
             )
             .indented(),
-          0xc07ff6ad,
+          0x3176006b,
           """
           com/android/aconfig/test/Flags.class:
-          H4sIAAAAAAAA/11PPUsDQRScl29jYmK0UVAQLNTirkyhCDExIhwGEklhEzZ3
-          67Hhsgt3e/4qGyvBwh/gjxLfLRHBYue9nZ158/br++MTQB/7TZTRrWO3jh6h
-          Ow4Gd4vR/WxwE9yOFtMJoResxIvwE6Fjf2ZTpeNLQntodGaFtnOR5LKBPULt
-          Smllrwnls/M5oTI0kSR0AqXlQ75eyvRRLBNmmpHKii6aGqd9Ympm8jSUY+Xe
-          x4mIM68IbaGBLcJxaNa+0FFqVOSL0OhnFftWZtZ3Ut76b8PJciVDSzhlj7fx
-          eBuPV3i83/hFanCCEv8eIByggirXGt9KqPOhIpyxycwRV+JavXgHvTnDNmPN
-          kWWWtdDeSA8dx0Mqr/90Be648Z0fKhia7H4BAAA=
+          H4sIAAAAAAAA/12QzUrDQBSFz+2/tbW1ulFQEFyoi+QBFKG2RoRgoZUu3JRp
+          MoYp6QwkE5/KjSvBhQ/gQ4k3Q0VwMfcw5577cWe+vj8+AQTYb6OCahO1Dupo
+          EPor8SL8VOjEnyxXMrKExpXSyl4Tqmfn8yZahOPIrH2h48yo2BeR0c8q8a3M
+          rR+kIsmZEoTDu8X4fja8CW/Hi+mEMAj/yDObKZ1cErojo3MrtJ2LtJAtdAmn
+          zPY2bG/D9kq2F6tcLFMZLzJDqI1MLAm9UGn5UKyXMnssm4T2b2xq3MZPbM1M
+          kUUyUK7vVvTKZXCCJr8eIBxgC23Wbb5V0OFD5X9w3WHniJVY6xfvoDc30OPa
+          cGaVR/vY3UQPnceQ2uu/XFkHDr/3A6Uuv7t+AQAA
           """,
         ),
         compiled(
-          "libs/api.jar",
+          "libs/api_compiled.jar",
           java(
               """
               package test.api;
-              import android.annotation.FlaggedApi;
+              import android.annotation.RequiresFlag;
               import com.android.aconfig.test.Flags;
 
-              @FlaggedApi(Flags.FLAG_DISABLED_RO)
+              @RequiresFlag(Flags.FLAG_DISABLED_RO)
               public class MyApi {
                 public void apiMethod() { }
                 public int apiField = 42;
@@ -329,17 +328,17 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
               """
             )
             .indented(),
-          0x6f573c19,
+          0x5cc465db,
           """
           test/api/MyApi.class:
-          H4sIAAAAAAAA/0VQTUvDQBB926ZNm9a2foJ4EEFQc0iOHhShCIVCq6DiVbbZ
-          NW5Jd0uyKfizPIjgwR/gjxIni9TDDDNv3ns7O98/n18AzrEXwMNWG3Vs+9jx
-          scvQ4ks1UjITDGzM0LxUWtkrhvrp2SODd22EZOhPlJY35WIm8wc+ywhpk2wq
-          7YshXXBvyjyRI1UNgunrcKmiOV9xhoO7Ulu1kGO9UoUi4VBrY7lVRhcMhxOu
-          RW6UiPkajkcZT1MpyOOCobHiWUmmx4lZRH/kiCdGP6s0srKwkVBFtZB4yk0X
-          PlpdNNBk6FXDmHaM3ToMg2qhOOM6jW9nc5lYHNEVPLoK/bvSUFWjiiwot6k7
-          cT3QCT/AwkH4jtqboweUAxqCRJ6jd9aifceg+Kc2HeCToOve2ECvciW0TzEo
-          sPkLyuJbCJ8BAAA=
+          H4sIAAAAAAAA/0VQ20rDQBA920vSprXWK4hPBUHtQ/IBilCEQKFVqOKrbJO1
+          Tkl3a7IJ+Fk+iOCDH+BHiZMg9WGGmdlzzp6Z75/PLwAhDj3UUHfR6KIJR6C/
+          lIUMEqkXwe18qSIr4FySJnslUD87f2ijhbYLr4sOugI9qzIbyDUF09fRmgRa
+          XIekklhAjAUa1yZWAtsT0uomX81Vei/nCU/ajJsq+2wY6N2ZPI1USOWDVwn5
+          pQ2B41muLa3UWBeUERNHWhsrLRmdCQwmUsepoTiQm3EwUy85pSoLE7m4EGgW
+          MslZ9iQyK/8P7svI6Cda+KV5P6astBQ/pgYD3q7Gd2Hz5X5c1bjiw3De4u60
+          6oHO8ANi2B++w32r4D3OXkV10GARXnlDOqoQHP9Qpxq4TOhXf+xgt1Tl6R7H
+          foaDX6pL8+GhAQAA
           """,
         ),
         java(
@@ -404,11 +403,11 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
         java(
             """
             package test.api;
-            import android.annotation.FlaggedApi;
+            import android.annotation.RequiresFlag;
             import com.android.aconfig.test.Flags;
 
             public class MyApi {
-              @FlaggedApi(Flags.FLAG_ENABLED_FIXED_RO)
+              @RequiresFlag(Flags.FLAG_ENABLED_FIXED_RO)
               public void apiMethod() { }
             }
             """
@@ -447,7 +446,7 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
             """
           )
           .indented(),
-        flaggedApiAnnotationStub,
+        requiresFlagAnnotationStub,
       )
       .run()
       .expect(
@@ -468,10 +467,10 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
         java(
             """
             package test.api;
-            import android.annotation.FlaggedApi;
+            import android.annotation.RequiresFlag;
             import com.example.foobar.Flags;
 
-            @FlaggedApi(Flags.FLAG_FOOBAR)
+            @RequiresFlag(Flags.FLAG_FOOBAR)
             public class MyApi {
               public void apiMethod() { }
             }
@@ -481,10 +480,10 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
         java(
             """
             package test.api;
-            import android.annotation.FlaggedApi;
+            import android.annotation.RequiresFlag;
             import com.example.foobar.Flags;
 
-            @FlaggedApi(Flags.FLAG_FOOBAR)
+            @RequiresFlag(Flags.FLAG_FOOBAR)
             public class MyApi2 {
               public void apiMethod(MyApi api) {
                   api.apiMethod(); // OK
@@ -496,10 +495,10 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
         java(
             """
             package test.api;
-            import android.annotation.FlaggedApi;
+            import android.annotation.RequiresFlag;
             import com.example.foobar.Flags;
 
-            @FlaggedApi(Flags.FLAG_UNRELATED)
+            @RequiresFlag(Flags.FLAG_UNRELATED)
             public class Test {
               public void apiMethod(MyApi api) {
                   api.apiMethod(); // ERROR: Flagged, but different API so still an error
@@ -522,7 +521,7 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
             """
           )
           .indented(),
-        flaggedApiAnnotationStub,
+        requiresFlagAnnotationStub,
       )
       .run()
       .expect(
@@ -553,10 +552,10 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
             """
             package test.pkg;
 
-            import android.annotation.FlaggedApi;
+            import android.annotation.RequiresFlag;
 
             public class JavaTest {
-                @FlaggedApi(Flags.FLAG_MY_FLAG)
+                @RequiresFlag(Flags.FLAG_MY_FLAG)
                 class Foo {
                     public void someMethod() { }
                 }
@@ -571,7 +570,7 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
             """
           )
           .indented(),
-        flaggedApiAnnotationStub,
+        requiresFlagAnnotationStub,
       )
       .run()
       .expectClean()
@@ -595,11 +594,11 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
             """
             package test.pkg;
 
-            import android.annotation.FlaggedApi;
+            import android.annotation.RequiresFlag;
 
             public class JavaTest {
                 static class Foo {
-                    @FlaggedApi(Flags.FLAG_MY_FLAG)
+                    @RequiresFlag(Flags.FLAG_MY_FLAG)
                     static void flaggedApi() {
                     }
                 }
@@ -619,7 +618,7 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
             """
           )
           .indented(),
-        flaggedApiAnnotationStub,
+        requiresFlagAnnotationStub,
       )
       .run()
       .expect(
@@ -650,7 +649,7 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
             """
             package test.pkg;
 
-            import android.annotation.FlaggedApi;
+            import android.annotation.RequiresFlag;
 
             public class JavaTest {
                 interface MyInterface {
@@ -663,7 +662,7 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
                     }
                 }
 
-                @FlaggedApi(Flags.FLAG_MY_FLAG)
+                @RequiresFlag(Flags.FLAG_MY_FLAG)
                 static class NewImpl implements MyInterface {
                     @Override
                     public void bar() {
@@ -683,7 +682,7 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
             """
           )
           .indented(),
-        flaggedApiAnnotationStub,
+        requiresFlagAnnotationStub,
       )
       .run()
       .expectClean()
@@ -707,11 +706,11 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
             """
             package test.pkg;
 
-            import android.annotation.FlaggedApi;
+            import android.annotation.RequiresFlag;
 
             public class JavaTest {
                 static class Bar {
-                    @FlaggedApi(Flags.FLAG_MY_FLAG)
+                    @RequiresFlag(Flags.FLAG_MY_FLAG)
                     public void bar() { }
                 }
                 static class Foo {
@@ -732,7 +731,7 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
             """
           )
           .indented(),
-        flaggedApiAnnotationStub,
+        requiresFlagAnnotationStub,
       )
       .run()
       .expectClean()
@@ -755,10 +754,10 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
             """
             package test.pkg;
 
-            import android.annotation.FlaggedApi;
+            import android.annotation.RequiresFlag;
 
             public class JavaTest {
-                @FlaggedApi(Flags.FLAG_MY_FLAG)
+                @RequiresFlag(Flags.FLAG_MY_FLAG)
                 class Foo {
                     public void someMethod() { }
                 }
@@ -775,7 +774,7 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
             """
           )
           .indented(),
-        flaggedApiAnnotationStub,
+        requiresFlagAnnotationStub,
       )
       .run()
       .expectClean()
@@ -798,12 +797,12 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
             """
             package test.pkg;
 
-            import android.annotation.FlaggedApi;
+            import android.annotation.RequiresFlag;
             import static test.pkg.Flags.myFlag;
 
             /** @noinspection InstantiationOfUtilityClass, AccessStaticViaInstance , ResultOfMethodCallIgnored , StatementWithEmptyBody */
             public class JavaTest {
-                @FlaggedApi(Flags.FLAG_MY_FLAG)
+                @RequiresFlag(Flags.FLAG_MY_FLAG)
                 public static class Foo {
                     public static boolean someMethod() { return true; }
                 }
@@ -836,7 +835,7 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
             """
           )
           .indented(),
-        flaggedApiAnnotationStub,
+        requiresFlagAnnotationStub,
       )
       .run()
       .expectClean()
@@ -859,10 +858,10 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
             """
             package test.pkg;
 
-            import android.annotation.FlaggedApi;
+            import android.annotation.RequiresFlag;
 
             public class JavaTest {
-                @FlaggedApi(Flags.FLAG_MY_FLAG)
+                @RequiresFlag(Flags.FLAG_MY_FLAG)
                 class Foo {
                     public void someMethod() { }
                 }
@@ -892,7 +891,7 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
             """
           )
           .indented(),
-        flaggedApiAnnotationStub,
+        requiresFlagAnnotationStub,
       )
       .run()
       .expect(
@@ -945,6 +944,7 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
             package test.pkg;
 
             import android.annotation.FlaggedApi;
+            import android.annotation.RequiresFlag;
 
             @FlaggedApi("test.pkg.FLAG_MY_FLAG")
             public class JavaTest {
@@ -952,23 +952,37 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
                 class Foo {
                     public void someMethod() { }
                 }
+
+                @RequiresFlag("test.pkg.FLAG_MY_FLAG")
+                class Bar {
+                    @RequiresFlag("FLAG_MY_FLAG")
+                    public void someMethod() { }
+                }
             }
             """
           )
           .indented(),
         flaggedApiAnnotationStub,
+        requiresFlagAnnotationStub,
       )
       .run()
       .expect(
         """
-        src/test/pkg/JavaTest.java:7: Error: Invalid @FlaggedApi descriptor; should be package.name [FlaggedApi]
+        src/test/pkg/JavaTest.java:8: Error: Invalid @FlaggedApi descriptor; should be package.name [FlaggedApi]
             @FlaggedApi("FLAG_MY_FLAG")
                         ~~~~~~~~~~~~~~
-        src/test/pkg/JavaTest.java:5: Warning: @FlaggedApi should specify an actual flag constant; raw strings are discouraged (and more importantly, not enforced) [FlaggedApi]
+        src/test/pkg/JavaTest.java:15: Error: Invalid @RequiresFlag descriptor; should be package.name [FlaggedApi]
+                @RequiresFlag("FLAG_MY_FLAG")
+                              ~~~~~~~~~~~~~~
+        src/test/pkg/JavaTest.java:6: Warning: @FlaggedApi should specify an actual flag constant; raw strings are discouraged (and more importantly, not enforced) [FlaggedApi]
         @FlaggedApi("test.pkg.FLAG_MY_FLAG")
                     ~~~~~~~~~~~~~~~~~~~~~~~
-        1 errors, 1 warnings
+        src/test/pkg/JavaTest.java:13: Warning: @RequiresFlag should specify an actual flag constant; raw strings are discouraged (and more importantly, not enforced) [FlaggedApi]
+            @RequiresFlag("test.pkg.FLAG_MY_FLAG")
+                          ~~~~~~~~~~~~~~~~~~~~~~~
+        2 errors, 2 warnings
         """
+          .trimIndent()
       )
   }
 
@@ -989,8 +1003,8 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
         java(
             """
             package test.pkg;
-            import android.annotation.FlaggedApi;
-            @FlaggedApi(Flags.FLAG_MY_FLAG)
+            import android.annotation.RequiresFlag;
+            @RequiresFlag(Flags.FLAG_MY_FLAG)
             public final class Constants {
               public static final int MY_INT_CONSTANT = 1;
               public static final int MY_LONG_CONSTANT = 1L;
@@ -1041,7 +1055,7 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
             """
           )
           .indented(),
-        flaggedApiAnnotationStub,
+        requiresFlagAnnotationStub,
         SUPPORT_ANNOTATIONS_JAR,
       )
       .run()
@@ -1080,10 +1094,10 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
           java(
               """
             package test.api;
-            import android.annotation.FlaggedApi;
+            import android.annotation.RequiresFlag;
             import com.example.foobar.Flags;
 
-            @FlaggedApi(Flags.FLAG_FOOBAR)
+            @RequiresFlag(Flags.FLAG_FOOBAR)
             public class MyApi {
               public void apiMethod() { }
               public int apiField = 42;
@@ -1123,7 +1137,7 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
             """
             )
             .indented(),
-          flaggedApiAnnotationStub,
+          requiresFlagAnnotationStub,
         )
 
       // No warnings by default
@@ -1172,7 +1186,7 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
           <manifest file="AndroidManifest.xml" />
           <src file="src/test/api/MyApi.java" />
           <src file="src/test/pkg/Test.java" />
-          <src file="src/android/annotation/FlaggedApi.java" />
+          <src file="src/android/annotation/RequiresFlag.java" />
           <src file="src/com/example/foobar/Flags.java" />
         </module>
         </project>
@@ -1266,10 +1280,10 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
         java(
             """
             package test.api;
-            import android.annotation.FlaggedApi;
+            import android.annotation.RequiresFlag;
             import com.example.foobar.Flags;
 
-            @FlaggedApi(Flags.FLAG_FOOBAR)
+            @RequiresFlag(Flags.FLAG_FOOBAR)
             public class MyApi {
               public void apiMethod() { }
               public int apiField = 42;
@@ -1320,7 +1334,7 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
             """
           )
           .indented(),
-        flaggedApiAnnotationStub,
+        requiresFlagAnnotationStub,
       )
       .run()
       .expect(
@@ -1372,14 +1386,14 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
                 java(
                     """
                     package test.api;
-                    import android.annotation.FlaggedApi;
+                    import android.annotation.RequiresFlag;
                     import com.example.foobar.Flags;
 
                     class FooManager {
                        void someMethod();
-                       @FlaggedApi(Flags.FLAG_FOOBAR)
+                       @RequiresFlag(Flags.FLAG_FOOBAR)
                        void newUnfinalizedMethod();
-                       @FlaggedApi(Flags.FLAG_FOOBAR)
+                       @RequiresFlag(Flags.FLAG_FOOBAR)
                        void newFinalizedMethod();
                        void newUnflaggedUnfinalizedMethod();
                     }
@@ -1400,7 +1414,7 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
                     """
                   )
                   .indented(),
-                flaggedApiAnnotationStub,
+                requiresFlagAnnotationStub,
                 TestFiles.java(
                     """
                     package androidx.annotation;
@@ -1463,7 +1477,7 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
                   """
                 )
                 .indented(),
-              flaggedApiAnnotationStub,
+              requiresFlagAnnotationStub,
             )
         },
         FlaggedApiDetector.ISSUE,
@@ -1494,6 +1508,7 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
   }
 
   fun testBaseline() {
+    // Verify that old baselines (with @FlaggedApi in message) are still accepted
     lint()
       .files(
         java(
@@ -1543,6 +1558,71 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
               <issue
                   id="FlaggedApi"
                   message="Method apiMethod() is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller)"
+                  errorLine1="    api.apiMethod();"
+                  errorLine2="    ~~~~~~~~~~~~~~~">
+                  <location
+                      file="src/test/pkg/Test.java"
+                      line="6"/>
+              </issue>
+          </issues>
+          """,
+        )
+      )
+      .run()
+      .expectClean()
+  }
+
+  fun testBaselineNewFormat() {
+    // Verify that new baselines (with @RequiresFlag in message) are also accepted
+    lint()
+      .files(
+        java(
+            """
+            package test.pkg;
+            import test.api.MyApi;
+
+            public class Test {
+              public void test(MyApi api) {
+                api.apiMethod();
+              }
+            }
+            """
+          )
+          .indented(),
+        java(
+            """
+            package test.api;
+            import android.annotation.RequiresFlag;
+            import com.example.foobar.Flags;
+
+            @RequiresFlag(Flags.FLAG_FOOBAR)
+            public class MyApi {
+              public void apiMethod() { }
+            }
+            """
+          )
+          .indented(),
+        java(
+            """
+            package com.example.foobar;
+            public class Flags {
+                public static final String FLAG_FOOBAR = "com.example.foobar.foobar";
+                public static boolean foobar() { return true; }
+            }
+            """
+          )
+          .indented(),
+        flaggedApiAnnotationStub,
+        requiresFlagAnnotationStub,
+      )
+      .baseline(
+        xml(
+          "lint-baseline.xml",
+          """
+          <issues format="5">
+              <issue
+                  id="FlaggedApi"
+                  message="Method apiMethod() is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_FOOBAR) to transfer requirement to caller)"
                   errorLine1="    api.apiMethod();"
                   errorLine2="    ~~~~~~~~~~~~~~~">
                   <location
@@ -1651,13 +1731,13 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
                     package test.api;
 
                     public class FooManager {
-                       @android.annotation.FlaggedApi("com.example.foobar.Flags.FLAG_SAME_AS_CLASS")
+                       @android.annotation.RequiresFlag("com.example.foobar.Flags.FLAG_SAME_AS_CLASS")
                        public void methodSameAsClass() { }
-                       @android.annotation.FlaggedApi("com.example.foobar.Flags.FLAG_FINALIZED_IN_PLATFORM_AND_EXTENSION")
+                       @android.annotation.RequiresFlag("com.example.foobar.Flags.FLAG_FINALIZED_IN_PLATFORM_AND_EXTENSION")
                        public void methodFinalizedInPlatformAndExtension() { }
-                       @android.annotation.FlaggedApi("com.example.foobar.Flags.FLAG_FINALIZED_IN_EXTENSION")
+                       @android.annotation.RequiresFlag("com.example.foobar.Flags.FLAG_FINALIZED_IN_EXTENSION")
                        public void methodFinalizedInExtension() { }
-                       @android.annotation.FlaggedApi("com.example.foobar.Flags.FLAG_NOT_FINALIZED")
+                       @android.annotation.RequiresFlag("com.example.foobar.Flags.FLAG_NOT_FINALIZED")
                        public void methodNotFinalized() { }
                     }
                     """
@@ -1680,7 +1760,7 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
                   """
                 )
                 .indented(),
-              flaggedApiAnnotationStub,
+              requiresFlagAnnotationStub,
             )
         },
         FlaggedApiDetector.ISSUE,
@@ -1695,6 +1775,52 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
         """
           .trimIndent()
       )
+  }
+
+  fun testFlaggedApiIgnoredForUsage() {
+    lint()
+      .files(
+        java(
+            """
+            package test.api;
+            import android.annotation.FlaggedApi;
+            import com.example.foobar.Flags;
+
+            @FlaggedApi(Flags.FLAG_FOOBAR)
+            public class MyApi {
+              public void apiMethod() { }
+            }
+            """
+          )
+          .indented(),
+        java(
+            """
+            package test.pkg;
+            import test.api.MyApi;
+
+            public class Test {
+              public void test(MyApi api) {
+                api.apiMethod(); // Would be an error for @RequiresFlag, but should be ignored for @FlaggedApi
+              }
+            }
+            """
+          )
+          .indented(),
+        java(
+            """
+            package com.example.foobar;
+
+            public class Flags {
+                public static final String FLAG_FOOBAR = "foobar";
+                public static boolean foobar() { return true; }
+            }
+            """
+          )
+          .indented(),
+        flaggedApiAnnotationStub,
+      )
+      .run()
+      .expectClean()
   }
 }
 
