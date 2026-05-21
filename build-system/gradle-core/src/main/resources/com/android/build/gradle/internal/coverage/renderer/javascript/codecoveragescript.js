@@ -1028,13 +1028,16 @@ const CoverageReportApp = {
         }
 
         if (this.elements.variantFilterBtn) {
+            let label = 'Filter by Variant';
             if (selectedCount === allVariantsCount && allVariantsCount > 0) {
-                this.elements.variantFilterBtn.setAttribute('data-tooltip', 'Filter by Variant: All');
+                label = 'Filter by Variant: All';
             } else if (selectedCount === 1) {
-                this.elements.variantFilterBtn.setAttribute('data-tooltip', `Filter by Variant: ${this.state.filters.variants[0]}`);
+                label = `Filter by Variant: ${this.state.filters.variants[0]}`;
             } else {
-                this.elements.variantFilterBtn.setAttribute('data-tooltip', `Filter by Variant: ${selectedCount} Selected`);
+                label = `Filter by Variant: ${selectedCount} Selected`;
             }
+            this.elements.variantFilterBtn.setAttribute('data-tooltip', label);
+            this.elements.variantFilterBtn.setAttribute('aria-label', label);
         }
     },
 
@@ -1113,6 +1116,11 @@ const CoverageReportApp = {
             this.state.sort.by = newSortBy;
             this.state.sort.order = 'asc';
         }
+
+        const headerName = target.textContent.replace(/[▲▼]/g, '').trim();
+        const orderText = this.state.sort.order === 'asc' ? 'ascending' : 'descending';
+        this.announce(`Sorted by ${headerName}, ${orderText}`);
+
         this.render(true);
         Navigation.push();
     },
@@ -1660,16 +1668,16 @@ const CoverageReportApp = {
         const sortIndicator = (key) => sort.by === key ? (sort.order === 'asc' ? '▲' : '▼') : '';
         const getAriaSort = (key) => sort.by === key ? (sort.order === 'asc' ? 'ascending' : 'descending') : 'none';
 
-        topHeader.innerHTML = `<th class="${firstColClass}" tabindex="0" data-sort-by="name" aria-sort="${getAriaSort('name')}">${mainHeaderTitle} ${sortIndicator('name')}<div class="resizer" data-resizer-id="name"></div></th>`;
-        subHeader.innerHTML = `<th class="py-2 px-6 sticky-name bg-gray-50 z-30" data-col-id="name"></th>`;
+        topHeader.innerHTML = `<th scope="col" class="${firstColClass}" tabindex="0" data-sort-by="name" aria-sort="${getAriaSort('name')}">${mainHeaderTitle} ${sortIndicator('name')}<div class="resizer" data-resizer-id="name"></div></th>`;
+        subHeader.innerHTML = `<th scope="col" class="py-2 px-6 sticky-name bg-gray-50 z-30" data-col-id="name"></th>`;
 
         if (viewMode === 'flat' && !this.state.selectedModule) {
             if (currentView === 'classes') {
-                topHeader.innerHTML += `<th class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30 col-path">Path<div class="resizer" data-resizer-id="path"></div></th>`;
-                subHeader.innerHTML += `<th class="py-2 px-6 bg-gray-50 z-30 col-path" data-col-id="path"></th>`;
+                topHeader.innerHTML += `<th scope="col" class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30 col-path">Path<div class="resizer" data-resizer-id="path"></div></th>`;
+                subHeader.innerHTML += `<th scope="col" class="py-2 px-6 bg-gray-50 z-30 col-path" data-col-id="path"></th>`;
             } else if (currentView === 'packages') {
-                topHeader.innerHTML += `<th class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30 col-module">Module<div class="resizer" data-resizer-id="module"></div></th>`;
-                subHeader.innerHTML += `<th class="py-2 px-6 bg-gray-50 z-30 col-module" data-col-id="module"></th>`;
+                topHeader.innerHTML += `<th scope="col" class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30 col-module">Module<div class="resizer" data-resizer-id="module"></div></th>`;
+                subHeader.innerHTML += `<th scope="col" class="py-2 px-6 bg-gray-50 z-30 col-module" data-col-id="module"></th>`;
             }
         }
 
@@ -1678,7 +1686,7 @@ const CoverageReportApp = {
         variants.forEach(v => {
             const vals = this.getCoverageValues(this.fullReport, v);
 
-            topHeader.innerHTML += `<th colspan="2" class="py-4 px-4 text-center font-semibold text-gray-700 border-l border-gray-200">
+            topHeader.innerHTML += `<th scope="col" colspan="2" class="py-4 px-4 text-center font-semibold text-gray-700 border-l border-gray-200">
                 <div class="flex flex-col"><span>${this.escapeHTML(v)}</span><span class="text-sm font-bold ${vals.instrColor} mt-1">${vals.instrPercent}</span></div>
             </th>`;
 
@@ -1688,8 +1696,8 @@ const CoverageReportApp = {
             const instrStyle = this.getColumnStyle(instrKey);
             const branchStyle = this.getColumnStyle(branchKey);
 
-            subHeader.innerHTML += `<th class="py-2 px-4 text-center text-xs font-medium text-gray-600 border-l border-gray-200 cursor-pointer" tabindex="0" data-sort-by="${this.escapeHTML(instrKey)}" aria-sort="${getAriaSort(instrKey)}" ${instrStyle}>Instruction ${sortIndicator(instrKey)}<div class="resizer" data-resizer-id="${this.escapeHTML(instrKey)}"></div></th>
-                                    <th class="py-2 px-4 text-center text-xs font-medium text-gray-600 cursor-pointer" tabindex="0" data-sort-by="${this.escapeHTML(branchKey)}" aria-sort="${getAriaSort(branchKey)}" ${branchStyle}>Branch ${sortIndicator(branchKey)}<div class="resizer" data-resizer-id="${this.escapeHTML(branchKey)}"></div></th>`;
+            subHeader.innerHTML += `<th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600 border-l border-gray-200 cursor-pointer" tabindex="0" data-sort-by="${this.escapeHTML(instrKey)}" aria-sort="${getAriaSort(instrKey)}" ${instrStyle}>Instruction ${sortIndicator(instrKey)}<div class="resizer" data-resizer-id="${this.escapeHTML(instrKey)}"></div></th>
+                                    <th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600 cursor-pointer" tabindex="0" data-sort-by="${this.escapeHTML(branchKey)}" aria-sort="${getAriaSort(branchKey)}" ${branchStyle}>Branch ${sortIndicator(branchKey)}<div class="resizer" data-resizer-id="${this.escapeHTML(branchKey)}"></div></th>`;
         });
 
         this.elements.tableHeaders.innerHTML = '';

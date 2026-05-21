@@ -385,11 +385,13 @@ const TestReportApp = {
       addFilterBtn: document.getElementById('add-filter-btn'),
       addFilterDropdown: document.getElementById('add-filter-dropdown'),
       addFilterList: document.getElementById('add-filter-list'),
+      searchContainer: document.querySelector('.search-container'),
       searchRevealBtn: document.getElementById('search-reveal-btn'),
       searchWrapper: document.getElementById('search-wrapper'),
       searchClearBtn: document.getElementById('search-clear-btn'),
 
       reportViewControls: document.getElementById('report-view-controls'),
+      filterControlsGroup: document.querySelector('.flex-start-gap-4'),
       reportView: document.getElementById('report-view'),
       stackTraceView: document.getElementById('stack-trace-view'),
       stackTraceBreadcrumbs: document.getElementById('stack-trace-breadcrumbs'),
@@ -498,13 +500,16 @@ const TestReportApp = {
     const totalCount = this.state.variants.length;
 
     if (this.elements.variantFilterBtn) {
+      let label = 'Filter by Variant';
       if (selectedCount === totalCount && totalCount > 0) {
-          this.elements.variantFilterBtn.setAttribute('data-tooltip', 'Filter by Variant: All');
+          label = 'Filter by Variant: All';
       } else if (selectedCount === 1) {
-          this.elements.variantFilterBtn.setAttribute('data-tooltip', `Filter by Variant: ${this.state.filters.variants[0]}`);
+          label = `Filter by Variant: ${this.state.filters.variants[0]}`;
       } else {
-          this.elements.variantFilterBtn.setAttribute('data-tooltip', `Filter by Variant: ${selectedCount} Selected`);
+          label = `Filter by Variant: ${selectedCount} Selected`;
       }
+      this.elements.variantFilterBtn.setAttribute('data-tooltip', label);
+      this.elements.variantFilterBtn.setAttribute('aria-label', label);
     }
   },
 
@@ -825,6 +830,10 @@ const TestReportApp = {
             this.state.sort.by = newSortBy;
             this.state.sort.order = 'asc';
         }
+
+        const headerName = th.textContent.replace(/[▲▼]/g, '').trim();
+        const orderText = this.state.sort.order === 'asc' ? 'ascending' : 'descending';
+        this.announce(`Sorted by ${headerName}, ${orderText}`);
 
         this.render();
         Navigation.push();
@@ -1354,24 +1363,24 @@ const TestReportApp = {
     let pathSubHeader = '';
     if (this.state.viewMode === 'flat' && !this.state.selectedModule) {
       if (this.state.currentFlatView === 'classes' || this.state.currentFlatView === 'testCases') {
-        pathHeader = `<th class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30 col-path">Path<div class="resizer" data-resizer-id="path"></div></th>`;
-        pathSubHeader = `<th class="py-2 px-6 bg-gray-50 z-30 col-path"></th>`;
+        pathHeader = `<th scope="col" class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30 col-path">Path<div class="resizer" data-resizer-id="path"></div></th>`;
+        pathSubHeader = `<th scope="col" class="py-2 px-6 bg-gray-50 z-30 col-path"></th>`;
       } else if (this.state.currentFlatView === 'packages') {
-        pathHeader = `<th class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30 col-module">Module<div class="resizer" data-resizer-id="module"></div></th>`;
-        pathSubHeader = `<th class="py-2 px-6 bg-gray-50 z-30 col-module"></th>`;
+        pathHeader = `<th scope="col" class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30 col-module">Module<div class="resizer" data-resizer-id="module"></div></th>`;
+        pathSubHeader = `<th scope="col" class="py-2 px-6 bg-gray-50 z-30 col-module"></th>`;
       }
     }
 
     this.elements.tableHeaders.innerHTML = `
             <tr class="border-b border-gray-200">
-                <th class="py-4 px-6 text-left font-semibold text-gray-700 sticky-name bg-gray-50 z-30 cursor-pointer" data-sort-by="name" tabindex="0" aria-sort="${getAriaSort('name')}">${nameHeader} ${sortIndicator('name')}<div class="resizer" data-resizer-id="name"></div></th>
+                <th scope="col" class="py-4 px-6 text-left font-semibold text-gray-700 sticky-name bg-gray-50 z-30 cursor-pointer" data-sort-by="name" tabindex="0" aria-sort="${getAriaSort('name')}">${nameHeader} ${sortIndicator('name')}<div class="resizer" data-resizer-id="name"></div></th>
                 ${pathHeader}
-                ${variantsToShow.map(v => `<th class="py-4 px-4 text-center font-semibold text-gray-700 border-l border-gray-200" colspan="4">${UIUtils.escapeHTML(v)}</th>`).join('')}
+                ${variantsToShow.map(v => `<th scope="col" class="py-4 px-4 text-center font-semibold text-gray-700 border-l border-gray-200" colspan="4">${UIUtils.escapeHTML(v)}</th>`).join('')}
             </tr>
             <tr class="border-b border-gray-200">
-                <th class="py-2 px-6 sticky-name bg-gray-50 z-30"></th>
+                <th scope="col" class="py-2 px-6 sticky-name bg-gray-50 z-30"></th>
                 ${pathSubHeader}
-                ${variantsToShow.map(v => `<th class="py-2 px-4 text-center text-xs font-medium text-gray-600 border-l border-gray-200">Pass</th><th class="py-2 px-4 text-center text-xs font-medium text-gray-600">Fail</th><th class="py-2 px-4 text-center text-xs font-medium text-gray-600">Skip</th><th class="py-2 px-4 text-center text-xs font-medium text-gray-600">Pass Rate</th>`).join('')}
+                ${variantsToShow.map(v => `<th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600 border-l border-gray-200">Pass</th><th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600">Fail</th><th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600">Skip</th><th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600">Pass Rate</th>`).join('')}
             </tr>`;
   },
 
@@ -1672,6 +1681,12 @@ const TestReportApp = {
 
     this.elements.reportView.classList.add('hidden-view');
     this.elements.stackTraceView.classList.remove('hidden-view');
+    if (this.elements.filterControlsGroup) {
+        this.elements.filterControlsGroup.classList.add('hidden');
+    }
+    if (this.elements.searchContainer) this.elements.searchContainer.classList.add('hidden');
+    if (this.elements.viewSegments) this.elements.viewSegments.classList.add('hidden');
+    if (this.elements.densitySegments) this.elements.densitySegments.classList.add('hidden');
 
     this.renderStackTraceGrid(testCase);
     this.renderStackTraceBreadcrumbs(context);
@@ -1776,6 +1791,12 @@ const TestReportApp = {
 
     this.elements.stackTraceView.classList.add('hidden-view');
     this.elements.reportView.classList.remove('hidden-view');
+    if (this.elements.filterControlsGroup) {
+        this.elements.filterControlsGroup.classList.remove('hidden');
+    }
+    if (this.elements.searchContainer) this.elements.searchContainer.classList.remove('hidden');
+    if (this.elements.viewSegments) this.elements.viewSegments.classList.remove('hidden');
+    if (this.elements.densitySegments) this.elements.densitySegments.classList.remove('hidden');
 
     if (this.activeTrigger) {
         this.activeTrigger.focus();
