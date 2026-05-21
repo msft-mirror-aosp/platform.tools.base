@@ -50,13 +50,14 @@ internal suspend fun createComposeInspector(
 internal suspend fun queryComposeTree(
   commandSender: CommandSender,
   rootViewId: Long,
+  skipSystemComposables: Boolean = true,
 ): Pair<List<LayoutInspectorComposeProtocol.ComposableRoot>, Map<Int, String>>? {
   val getComposablesCmd =
     LayoutInspectorComposeProtocol.Command.newBuilder()
       .setGetComposablesCommand(
         LayoutInspectorComposeProtocol.GetComposablesCommand.newBuilder()
           .setRootViewId(rootViewId)
-          .setSkipSystemComposables(false)
+          .setSkipSystemComposables(skipSystemComposables)
           // Set generation to 0 to force the persistent agent inspector to bypass its layout cache
           // and always return a fresh capture of the active screen on subsequent reconnections.
           .setGeneration(0)
