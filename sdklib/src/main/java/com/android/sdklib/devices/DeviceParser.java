@@ -551,6 +551,11 @@ public class DeviceParser {
     @NonNull
     public static Table<String, String, Device> parse(@NonNull Path devicesFile)
             throws SAXException, ParserConfigurationException, IOException {
+        return parseImpl(openInputStream(devicesFile), devicesFile.toAbsolutePath().getParent());
+    }
+
+    @NonNull
+    static InputStream openInputStream(@NonNull Path devicesFile) throws IOException {
         if (CancellableFileIo.size(devicesFile) > MAX_FILE_LENGTH) {
             throw new IOException(
                     String.format(
@@ -560,10 +565,7 @@ public class DeviceParser {
                             MAX_FILE_LENGTH));
         }
 
-        // stream closed by parseImpl.
-        @SuppressWarnings("IOResourceOpenedButNotSafelyClosed")
-        InputStream stream = CancellableFileIo.newInputStream(devicesFile);
-        return parseImpl(stream, devicesFile.toAbsolutePath().getParent());
+        return CancellableFileIo.newInputStream(devicesFile);
     }
 
     /**

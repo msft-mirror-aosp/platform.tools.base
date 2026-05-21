@@ -16,16 +16,13 @@
 package com.android.sdklib.devices
 
 import com.android.SdkConstants
-import com.android.annotations.concurrency.Slow
 import com.android.io.CancellableFileIo
 import com.android.prefs.AndroidLocationsProvider
-import com.android.repository.api.RepoManager
 import com.android.sdklib.internal.avd.AvdInfo
 import com.android.sdklib.repository.AndroidSdkHandler
-import com.android.sdklib.repository.LoggerProgressIndicatorWrapper
-import com.android.sdklib.repository.meta.DetailsTypes
 import com.android.utils.ILogger
 import com.google.common.collect.HashBasedTable
+import com.google.common.collect.ImmutableList
 import com.google.common.collect.Table
 import java.io.IOException
 import java.nio.file.Files
@@ -43,14 +40,13 @@ private constructor(
   private val isSupportedDevice: (Device) -> Boolean,
 ) {
   private val androidFolder: Path? = sdkHandler.androidFolder
-  private val vendorDevices = VendorDevices(log)
-  private val defaultDevices = DefaultDevices(log)
+  private val vendorDevices = DeviceResourceTable(log, isSupportedDevice, VENDOR_DEVICE_RESOURCES)
+  private val defaultDevices = DeviceResourceTable(log, isSupportedDevice = { true }, listOf("devices"))
   private val lock = Any()
   private val listeners: MutableList<DevicesChangedListener> = ArrayList()
-  private val osSdkPath: Path? = sdkHandler.location
 
   // These are keyed by (device ID, manufacturer)
-  private var sysImgDevices: Table<String, String, Device>? = null
+  private var sysImgDevices = SystemImageDeviceTable(log, isSupportedDevice, sdkHandler)
   private var userDevices: Table<String, String, Device>? = null
 
   enum class DeviceCategory {
@@ -111,7 +107,7 @@ private constructor(
   fun getDevice(id: String, manufacturer: String): Device? {
     initDevicesLists()
     return userDevices?.get(id, manufacturer)
-      ?: sysImgDevices?.get(id, manufacturer)
+      ?: sysImgDevices.getDevice(id, manufacturer)
       ?: defaultDevices.getDevice(id, manufacturer)
       ?: vendorDevices.getDevice(id, manufacturer)
   }
@@ -140,76 +136,22 @@ private constructor(
     initDevicesLists()
     val devices = HashBasedTable.create<String, String, Device>()
     userDevices?.let { if (DeviceCategory.USER in deviceCategory) devices.putAll(it) }
-    defaultDevices.devices?.let {
-      if (DeviceCategory.DEFAULT in deviceCategory) {
-        devices.putAll(it)
-      }
+    if (DeviceCategory.DEFAULT in deviceCategory) {
+      devices.putAll(defaultDevices.getDevices())
     }
-    vendorDevices.devices?.let {
-      if (DeviceCategory.VENDOR in deviceCategory) {
-        devices.putAll(it)
-      }
+    if (DeviceCategory.VENDOR in deviceCategory) {
+      devices.putAll(vendorDevices.getDevices())
     }
-    sysImgDevices?.let { if (DeviceCategory.SYSTEM_IMAGES in deviceCategory) devices.putAll(it) }
-
+    if (DeviceCategory.SYSTEM_IMAGES in deviceCategory) {
+      devices.putAll(sysImgDevices.getDevices())
+    }
     return Collections.unmodifiableCollection(devices.values())
   }
 
   private fun initDevicesLists() {
-    val changed = defaultDevices.init() or vendorDevices.init(isSupportedDevice) or initSysImgDevices() or initUserDevices()
+    val changed = initUserDevices()
     if (changed) {
       notifyListeners()
-    }
-  }
-
-  /**
-   * Initializes all system-image provided [Device]s.
-   *
-   * @return true if the list has changed.
-   */
-  @Slow
-  private fun initSysImgDevices(): Boolean {
-    synchronized(lock) {
-      if (sysImgDevices != null) {
-        return false
-      }
-      val osSdkPath =
-        osSdkPath
-          ?: run {
-            sysImgDevices = HashBasedTable.create()
-            return false
-          }
-
-      val newSysImgDevices = HashBasedTable.create<String, String, Device>()
-
-      // Load device definitions from the system image directories.
-      // Load in increasing order of Android version. This way, if there is a conflict,
-      // we'll retain the definitions from the higher API level. The file in the higher
-      // API directory is probably newer and more accurate.
-      val progress = LoggerProgressIndicatorWrapper(log)
-
-      val mgr = sdkHandler.getRepoManager(progress)
-      mgr.loadSynchronously(RepoManager.DEFAULT_EXPIRATION_PERIOD_MS, progress, null, null)
-      mgr.packages.localPackages.values
-        .filter { it.typeDetails is DetailsTypes.SysImgDetailsType }
-        .sortedBy { (it.typeDetails as DetailsTypes.SysImgDetailsType).androidVersion }
-        .forEach { pkg ->
-          val deviceXml = pkg.location.resolve(SdkConstants.FN_DEVICES_XML)
-          if (CancellableFileIo.isRegularFile(deviceXml)) {
-            for (device in loadDevices(deviceXml).values()) {
-              var dev = device
-              if (!isSupportedDevice(dev)) continue
-              if (isDeprecatedWearDevice(dev)) {
-                val builder = Device.Builder(dev)
-                builder.setDeprecated(true)
-                dev = builder.build()
-              }
-              newSysImgDevices.put(dev.id, dev.manufacturer, dev)
-            }
-          }
-        }
-      sysImgDevices = newSysImgDevices
-      return true
     }
   }
 
@@ -330,28 +272,6 @@ private constructor(
     }
   }
 
-  private fun loadDevices(deviceXml: Path): Table<String, String, Device> {
-    try {
-      return DeviceParser.parse(deviceXml)
-    } catch (e: Throwable) {
-      when (e) {
-        is SAXException,
-        is ParserConfigurationException,
-        is AssertionError,
-        is IOException -> {
-          log.error(e, "Error parsing %1\$s", deviceXml.toAbsolutePath())
-        }
-        is IllegalStateException -> {
-          // The device builders can throw IllegalStateExceptions if
-          // build gets called before everything is properly setup
-          log.error(e, null)
-        }
-        else -> throw e
-      }
-    }
-    return HashBasedTable.create()
-  }
-
   private fun notifyListeners() {
     synchronized(listeners) {
       for (listener in listeners) {
@@ -363,6 +283,9 @@ private constructor(
   companion object {
     /** getDevices() flag to list all devices. */
     @JvmField val ALL_DEVICES: EnumSet<DeviceCategory> = EnumSet.allOf(DeviceCategory::class.java)
+
+    /** Names of XML files bundled as resources containing device definitions for [DeviceCategory.VENDOR]. */
+    val VENDOR_DEVICE_RESOURCES: ImmutableList<String> = ImmutableList.of("nexus", "wear", "tv", "automotive", "desktop", "xr")
 
     @JvmStatic
     fun createInstance(androidLocationsProvider: AndroidLocationsProvider, sdkLocation: Path?, log: ILogger): DeviceManager {
@@ -377,18 +300,6 @@ private constructor(
     @JvmStatic
     fun createInstance(sdkHandler: AndroidSdkHandler, log: ILogger): DeviceManager {
       return DeviceManager(sdkHandler, log, isSupportedDevice = { true })
-    }
-
-    /**
-     * Some device definitions are present in old system images which can override some vendor device definitions. This method ensures these
-     * devices are considered as deprecated. For example, `wearos_rect` is deprecated in the vendor definition, however APIs 30 and 33 also
-     * provide a `wearos_rect` which is not deprecated. This function checks whether the device is a deprecated wear device based on its id.
-     * If the device's id does not start with `wearos` or the id is either `wearos_square` or `wearos_rect` then it is considered as
-     * deprecated.
-     */
-    private fun isDeprecatedWearDevice(device: Device): Boolean {
-      if ("android-wear" != device.tagId) return false
-      return !device.id.startsWith("wearos") || "wearos_square" == device.id || "wearos_rect" == device.id
     }
   }
 }
