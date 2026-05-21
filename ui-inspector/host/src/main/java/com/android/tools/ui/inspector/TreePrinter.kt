@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.android.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -50,7 +50,59 @@ internal fun printUiTree(node: UiNode, indent: Int) {
       System.out.println(
         "${prefix}[${node.className}]$sourceLocation [compose] (${node.bounds.x}, ${node.bounds.y}, ${node.bounds.width}, ${node.bounds.height})"
       )
+      node.parameters.forEach { param ->
+        val formattedValue = formatComposeParameter(param)
+        if (formattedValue.isNotEmpty()) {
+          System.out.println("$prefix  param: ${param.name}=$formattedValue")
+        }
+      }
     }
   }
   node.children.forEach { printUiTree(it, indent + 1) }
+}
+
+/** Recursively formats a rich ComposeParameter to its display string. */
+internal fun formatComposeParameter(param: UiNode.ComposeParameter): String {
+  return when (param) {
+    is UiNode.ComposeParameter.Single -> {
+      formatComposeValue(param.value)
+    }
+    is UiNode.ComposeParameter.Group -> {
+      if (param.isCollection) {
+        param.elements.joinToString(prefix = "[", postfix = "]") { formatComposeParameter(it) }
+      } else {
+        val fields = param.elements.joinToString(", ") { "${it.name}=${formatComposeParameter(it)}" }
+        "{$fields}"
+      }
+    }
+  }
+}
+
+private fun formatComposeValue(value: UiNode.ComposeParameter.Value): String {
+  return when (value) {
+    is UiNode.ComposeParameter.Value.StringVal -> value.value
+    is UiNode.ComposeParameter.Value.BooleanVal -> value.value.toString()
+    is UiNode.ComposeParameter.Value.NumberVal -> value.value.toString()
+    is UiNode.ComposeParameter.Value.DimensionVal -> {
+      val unitName = value.unit.name.lowercase()
+      "${value.value}$unitName"
+    }
+    is UiNode.ComposeParameter.Value.ColorVal -> {
+      "#%08X".format(value.colorInt)
+    }
+    is UiNode.ComposeParameter.Value.ResourceVal -> {
+      val namespace = value.namespace?.let { "$it:" } ?: ""
+      val type = value.type?.let { "$it/" } ?: ""
+      "@$namespace$type${value.name}"
+    }
+    is UiNode.ComposeParameter.Value.LambdaVal -> {
+      if (value.fileName != null) {
+        val lineSuffix = if (value.startLineNumber != null && value.startLineNumber > 0) ":${value.startLineNumber}" else ""
+        "[lambda in ${value.fileName}$lineSuffix]"
+      } else {
+        "[lambda]"
+      }
+    }
+    is UiNode.ComposeParameter.Value.NullVal -> ""
+  }
 }

@@ -50,7 +50,8 @@ internal suspend fun createComposeInspector(
 internal suspend fun queryComposeTree(
   commandSender: CommandSender,
   rootViewId: Long,
-  skipSystemComposables: Boolean = true,
+  includeParameters: Boolean,
+  skipSystemComposables: Boolean,
 ): Pair<List<LayoutInspectorComposeProtocol.ComposableRoot>, Map<Int, String>>? {
   val getComposablesCmd =
     LayoutInspectorComposeProtocol.Command.newBuilder()
@@ -61,8 +62,9 @@ internal suspend fun queryComposeTree(
           // Set generation to 0 to force the persistent agent inspector to bypass its layout cache
           // and always return a fresh capture of the active screen on subsequent reconnections.
           .setGeneration(0)
-          // TODO: Add support for dynamic Composable parameter extraction on the CLI host side.
-          .setExtractAllParameters(false)
+          // If includeParameters is true, we instruct the agent to pre-extract and warm up the Compose
+          // parameter cache in background memory so they are ready for subsequent queries.
+          .setExtractAllParameters(includeParameters)
       )
       .build()
 
@@ -74,9 +76,42 @@ internal suspend fun queryComposeTree(
     return null
   }
 
+  // TODO return GetComposablesResponse directly, like we do for queryComposeParameters
   val getCompResp = composeResponse.getComposablesResponse
   val stringsMap = getCompResp.stringsList.associate { it.id to it.str }
   return Pair(getCompResp.rootsList, stringsMap)
+}
+
+/** Queries the Compose inspector on the agent for the parameters of all active Composable views in a root layout tree. */
+internal suspend fun queryComposeParameters(
+  commandSender: CommandSender,
+  rootViewId: Long,
+  skipSystemComposables: Boolean,
+): LayoutInspectorComposeProtocol.GetAllParametersResponse? {
+  val getAllParamsCmd =
+    LayoutInspectorComposeProtocol.Command.newBuilder()
+      .setGetAllParametersCommand(
+        LayoutInspectorComposeProtocol.GetAllParametersCommand.newBuilder()
+          .setRootViewId(rootViewId)
+          .setSkipSystemComposables(skipSystemComposables)
+          // Use the same generation from the get composables command so that we get the cached parameters
+          .setGeneration(0)
+          // Allow traversal up to 2 levels deep (Layout Inspector standard) to fully capture properties
+          // while preventing slot table index out of bounds crashes in Compose reflection.
+          .setMaxRecursions(2)
+          .build()
+      )
+      .build()
+
+  val responsePayload = commandSender.sendInspectorCommand(ProtocolConstants.COMPOSE_INSPECTOR_ID, getAllParamsCmd.toByteArray())
+  val composeResponse = LayoutInspectorComposeProtocol.Response.parseFrom(responsePayload)
+
+  if (composeResponse.specializedCase != LayoutInspectorComposeProtocol.Response.SpecializedCase.GET_ALL_PARAMETERS_RESPONSE) {
+    System.err.println("Warning: Unexpected Compose Response: ${composeResponse.specializedCase}")
+    return null
+  }
+
+  return composeResponse.getAllParametersResponse
 }
 
 /** Queries the target application agent for its installed Jetpack Compose version. */

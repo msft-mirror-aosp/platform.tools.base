@@ -96,7 +96,7 @@ internal suspend fun dumpUiTree(
 ) {
   val viewRoots = fetchViewTree(commandSender, includeAttributes, includeResolutionStack)
   if (composeInspectorConnected) {
-    fetchAndMergeComposeTrees(commandSender, viewRoots, skipSystemComposables)
+    fetchAndMergeComposeTrees(commandSender, viewRoots, includeAttributes, skipSystemComposables)
   }
   viewRoots.forEach { printUiTree(it, 0) }
 }
@@ -105,12 +105,21 @@ internal suspend fun dumpUiTree(
 internal suspend fun fetchAndMergeComposeTrees(
   commandSender: CommandSender,
   viewRoots: List<UiNode.ViewNode>,
+  includeParameters: Boolean,
   skipSystemComposables: Boolean,
 ) {
   viewRoots.forEach { viewRoot ->
-    val composeResult = queryComposeTree(commandSender, viewRoot.id, skipSystemComposables)
+    val composeResult = queryComposeTree(commandSender, viewRoot.id, includeParameters, skipSystemComposables)
     if (composeResult != null) {
       val (roots, stringsMap) = composeResult
+
+      val composeParameters =
+        if (includeParameters) {
+          queryComposeParameters(commandSender, viewRoot.id, skipSystemComposables)
+        } else {
+          null
+        }
+
       roots.forEach { composeRoot ->
         attachComposeTree(
           viewNode = viewRoot,
@@ -118,6 +127,7 @@ internal suspend fun fetchAndMergeComposeTrees(
           composeNodes = composeRoot.nodesList,
           stringTable = stringsMap,
           viewsToSkip = composeRoot.viewsToSkipList,
+          parameters = composeParameters,
         )
       }
     }
