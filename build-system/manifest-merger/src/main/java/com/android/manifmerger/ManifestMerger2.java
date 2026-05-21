@@ -1115,7 +1115,8 @@ public class ManifestMerger2 {
                             inputStream,
                             manifestInfo.getType(),
                             namespace,
-                            mModel);
+                            mModel,
+                            mergingReportBuilder);
         } catch (Exception e) {
             throw new MergeFailureException("Error parsing " + xmlFile.getAbsolutePath(), e);
         }
@@ -1279,7 +1280,8 @@ public class ManifestMerger2 {
                                     xmlFile,
                                     XmlDocument.Type.LIBRARY,
                                     null, /* namespace */
-                                    mModel);
+                                    mModel,
+                                    mergingReportBuilder);
                 } else {
                     libraryDocument =
                             XmlLoader.load(
@@ -1290,7 +1292,8 @@ public class ManifestMerger2 {
                                     mFileStreamProvider.getInputStream(xmlFile),
                                     XmlDocument.Type.LIBRARY,
                                     null, /* namespace */
-                                    mModel);
+                                    mModel,
+                                    mergingReportBuilder);
                 }
             } catch (Exception e) {
                 throw new MergeFailureException(e);

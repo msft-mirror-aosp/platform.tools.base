@@ -16,6 +16,8 @@
 
 package com.android.manifmerger;
 
+import static com.android.manifmerger.PlaceholderHandler.KeyBasedValueResolver;
+
 import com.android.ide.common.blame.SourceFile;
 
 import com.google.common.io.Files;
@@ -24,14 +26,13 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.xml.sax.SAXException;
 
-import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 
-import static com.android.manifmerger.PlaceholderHandler.KeyBasedValueResolver;
+import javax.xml.parsers.ParserConfigurationException;
 
 /**
  * Utilities for testing ManifestMerge classes.
@@ -68,7 +69,8 @@ public class TestUtils {
                 input,
                 XmlDocument.Type.MAIN,
                 null, /* mainManifestPackageName */
-                model);
+                model,
+                new MergingReport.Builder(new com.android.testutils.MockLog()));
     }
 
     static XmlDocument xmlLibraryFromString(SourceFile location, String input, ManifestModel model)
@@ -81,7 +83,8 @@ public class TestUtils {
                 input,
                 XmlDocument.Type.LIBRARY,
                 null, /* mainManifestPackageName */
-                model);
+                model,
+                new MergingReport.Builder(new com.android.testutils.MockLog()));
     }
 
     static XmlDocument xmlDocumentFromString(
@@ -99,7 +102,8 @@ public class TestUtils {
                 input,
                 type,
                 mainManifestPackageName,
-                model);
+                model,
+                new MergingReport.Builder(new com.android.testutils.MockLog()));
     }
 
     static XmlDocument xmlDocumentFromString(
@@ -116,7 +120,8 @@ public class TestUtils {
                 input,
                 XmlDocument.Type.LIBRARY,
                 null, /* mainManifestPackageName */
-                model);
+                model,
+                new MergingReport.Builder(new com.android.testutils.MockLog()));
     }
 
     /** Utility method to save a {@link String} XML into a file. */

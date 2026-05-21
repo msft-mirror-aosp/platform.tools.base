@@ -17,22 +17,28 @@
 package com.android.manifmerger;
 
 import static com.android.manifmerger.Actions.NodeRecord;
+
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.when;
 
 import com.android.SdkConstants;
 import com.android.ide.common.blame.SourceFile;
 import com.android.utils.StdLogger;
+
 import com.google.common.collect.ImmutableList;
+
+import junit.framework.TestCase;
+
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.xml.sax.SAXException;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
+
 import javax.xml.parsers.ParserConfigurationException;
-import junit.framework.TestCase;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-import org.xml.sax.SAXException;
 
 /**
  * Tests for the {@link XmlElement}
@@ -88,27 +94,33 @@ public class XmlElementTest extends TestCase {
     public void testInvalidNodeInstruction()
             throws ParserConfigurationException, SAXException, IOException {
 
-        String input = ""
-                + "<manifest\n"
-                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
-                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
-                + "    package=\"com.example.lib3\">\n"
-                + "\n"
-                + "    <activity android:name=\"activityOne\" "
-                + "         tools:node=\"funkyValue\"/>\n"
-                + "\n"
-                + "</manifest>";
+        String input =
+                ""
+                        + "<manifest\n"
+                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                        + "    package=\"com.example.lib3\">\n"
+                        + "\n"
+                        + "    <activity android:name=\"activityOne\" "
+                        + "         tools:node=\"funkyValue\"/>\n"
+                        + "\n"
+                        + "</manifest>";
 
-        try {
-            XmlDocument xmlDocument =
-                    loadXmlDoc(
-                            TestUtils.sourceFile(getClass(), "testInvalidNodeInstruction()"),
-                            input);
-            xmlDocument.getRootNode();
-            fail("Exception not thrown");
-        } catch (IllegalArgumentException expected) {
-            // expected.
-        }
+        MergingReport.Builder mergingReportBuilder =
+                new MergingReport.Builder(new com.android.testutils.MockLog());
+        XmlDocument xmlDocument =
+                XmlLoader.load(
+                        new ManifestMerger2.SelectorResolver(),
+                        key -> null,
+                        "testInvalidNodeInstruction",
+                        new java.io.File("AndroidManifest.xml"),
+                        new java.io.ByteArrayInputStream(input.getBytes()),
+                        XmlDocument.Type.MAIN,
+                        null,
+                        model,
+                        mergingReportBuilder);
+        xmlDocument.getRootNode();
+        assertTrue(mergingReportBuilder.build().getResult().isError());
     }
 
     public void testAttributeInstructions()
@@ -165,7 +177,8 @@ public class XmlElementTest extends TestCase {
         assertTrue(activityOptional.isPresent());
         activity = activityOptional.get();
         assertEquals(1, activity.getAttributeOperations().size());
-        attributeOperationType = activity.getAttributeOperationType(XmlNode.fromXmlName("android:theme"));
+        attributeOperationType =
+                activity.getAttributeOperationType(XmlNode.fromXmlName("android:theme"));
         assertEquals(AttributeOperationType.REPLACE, attributeOperationType);
 
         // ActivityThree, strict operation.
@@ -175,7 +188,8 @@ public class XmlElementTest extends TestCase {
         assertTrue(activityOptional.isPresent());
         activity = activityOptional.get();
         assertEquals(1, activity.getAttributeOperations().size());
-        attributeOperationType = activity.getAttributeOperationType(XmlNode.fromXmlName("android:theme"));
+        attributeOperationType =
+                activity.getAttributeOperationType(XmlNode.fromXmlName("android:theme"));
         assertEquals(AttributeOperationType.STRICT, attributeOperationType);
 
         // ActivityFour, multiple target fields.
@@ -206,8 +220,10 @@ public class XmlElementTest extends TestCase {
         assertEquals(AttributeOperationType.REPLACE,
                 activity.getAttributeOperationType(XmlNode.fromXmlName("android:theme")));
 
-        assertEquals(AttributeOperationType.STRICT,
-                activity.getAttributeOperationType(XmlNode.fromXmlName("android:windowSoftInputMode")));
+        assertEquals(
+                AttributeOperationType.STRICT,
+                activity.getAttributeOperationType(
+                        XmlNode.fromXmlName("android:windowSoftInputMode")));
     }
 
     public void testNoNamespaceAwareAttributeInstructions()
@@ -265,25 +281,33 @@ public class XmlElementTest extends TestCase {
     public void testInvalidAttributeInstruction()
             throws ParserConfigurationException, SAXException, IOException {
 
-        String input = ""
-                + "<manifest\n"
-                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
-                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
-                + "    package=\"com.example.lib3\">\n"
-                + "\n"
-                + "    <activity android:name=\"activityOne\" "
-                + "         tools:bad-name=\"android:theme\"/>\n"
-                + "\n"
-                + "</manifest>";
+        String input =
+                ""
+                        + "<manifest\n"
+                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                        + "    package=\"com.example.lib3\">\n"
+                        + "\n"
+                        + "    <activity android:name=\"activityOne\" "
+                        + "         tools:bad-name=\"android:theme\"/>\n"
+                        + "\n"
+                        + "</manifest>";
 
-        try {
-            XmlDocument xmlDocument =
-                    loadXmlDoc(TestUtils.sourceFile(getClass(), "testDiff6()"), input);
-            xmlDocument.getRootNode();
-            fail("Exception not thrown");
-        } catch (RuntimeException expected) {
-            // expected.
-        }
+        MergingReport.Builder mergingReportBuilder =
+                new MergingReport.Builder(new com.android.testutils.MockLog());
+        XmlDocument xmlDocument =
+                XmlLoader.load(
+                        new ManifestMerger2.SelectorResolver(),
+                        key -> null,
+                        "testInvalidAttributeInstruction",
+                        new java.io.File("AndroidManifest.xml"),
+                        new java.io.ByteArrayInputStream(input.getBytes()),
+                        XmlDocument.Type.MAIN,
+                        null,
+                        model,
+                        mergingReportBuilder);
+        xmlDocument.getRootNode();
+        assertTrue(mergingReportBuilder.build().getResult().isError());
     }
 
     public void testOtherToolsInstruction()
@@ -1854,43 +1878,53 @@ public class XmlElementTest extends TestCase {
     public void testCompatibleScreens()
             throws ParserConfigurationException, SAXException, IOException {
 
-        String higherPriority = ""
-                + "<manifest\n"
-                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
-                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
-                + "    package=\"com.example.lib3\">\n"
-                + "\n"
-                + "    <compatible-screens>\n"
-                + "        <!-- all small size screens -->\n"
-                + "        <screen android:screenSize=\"small\" android:screenDensity=\"ldpi\" />\n"
-                + "        <screen android:screenSize=\"small\" android:screenDensity=\"mdpi\" />\n"
-                + "        <screen android:screenSize=\"small\" android:screenDensity=\"xhdpi\" />\n"
-                + "        <!-- all normal size screens -->\n"
-                + "        <screen android:screenSize=\"normal\" android:screenDensity=\"ldpi\" />\n"
-                + "        <screen android:screenSize=\"normal\" android:screenDensity=\"hdpi\" />\n"
-                + "        <screen android:screenSize=\"normal\" android:screenDensity=\"xhdpi\" />\n"
-                + "    </compatible-screens>"
-                + "\n"
-                + "</manifest>";
+        String higherPriority =
+                "<manifest\n"
+                    + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                    + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                    + "    package=\"com.example.lib3\">\n"
+                    + "\n"
+                    + "    <compatible-screens>\n"
+                    + "        <!-- all small size screens -->\n"
+                    + "        <screen android:screenSize=\"small\" android:screenDensity=\"ldpi\""
+                    + " />\n"
+                    + "        <screen android:screenSize=\"small\" android:screenDensity=\"mdpi\""
+                    + " />\n"
+                    + "        <screen android:screenSize=\"small\" android:screenDensity=\"xhdpi\""
+                    + " />\n"
+                    + "        <!-- all normal size screens -->\n"
+                    + "        <screen android:screenSize=\"normal\" android:screenDensity=\"ldpi\""
+                    + " />\n"
+                    + "        <screen android:screenSize=\"normal\" android:screenDensity=\"hdpi\""
+                    + " />\n"
+                    + "        <screen android:screenSize=\"normal\""
+                    + " android:screenDensity=\"xhdpi\" />\n"
+                    + "    </compatible-screens>\n"
+                    + "</manifest>";
 
-        String lowerPriorityOne = ""
-                + "<manifest\n"
-                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
-                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
-                + "    package=\"com.example.lib1\">\n"
-                + "\n"
-                + "    <compatible-screens>\n"
-                + "        <!-- all small size screens -->\n"
-                + "        <screen android:screenSize=\"small\" android:screenDensity=\"ldpi\" />\n"
-                + "        <screen android:screenSize=\"small\" android:screenDensity=\"mdpi\" />\n"
-                + "        <screen android:screenSize=\"small\" android:screenDensity=\"hdpi\" />\n"
-                + "        <!-- all normal size screens -->\n"
-                + "        <screen android:screenSize=\"normal\" android:screenDensity=\"mdpi\" />\n"
-                + "        <screen android:screenSize=\"normal\" android:screenDensity=\"hdpi\" />\n"
-                + "        <screen android:screenSize=\"normal\" android:screenDensity=\"xhdpi\" />\n"
-                + "    </compatible-screens>"
-                + "\n"
-                + "</manifest>";
+        String lowerPriorityOne =
+                "<manifest\n"
+                    + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                    + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                    + "    package=\"com.example.lib1\">\n"
+                    + "\n"
+                    + "    <compatible-screens>\n"
+                    + "        <!-- all small size screens -->\n"
+                    + "        <screen android:screenSize=\"small\" android:screenDensity=\"ldpi\""
+                    + " />\n"
+                    + "        <screen android:screenSize=\"small\" android:screenDensity=\"mdpi\""
+                    + " />\n"
+                    + "        <screen android:screenSize=\"small\" android:screenDensity=\"hdpi\""
+                    + " />\n"
+                    + "        <!-- all normal size screens -->\n"
+                    + "        <screen android:screenSize=\"normal\" android:screenDensity=\"mdpi\""
+                    + " />\n"
+                    + "        <screen android:screenSize=\"normal\" android:screenDensity=\"hdpi\""
+                    + " />\n"
+                    + "        <screen android:screenSize=\"normal\""
+                    + " android:screenDensity=\"xhdpi\" />\n"
+                    + "    </compatible-screens>\n"
+                    + "</manifest>";
 
         XmlDocument refDocument =
                 loadXmlDoc(TestUtils.sourceFile(getClass(), "higherPriority"), higherPriority);

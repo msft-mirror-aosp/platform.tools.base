@@ -358,7 +358,8 @@ public class Actions {
                         xmlDocument.prettyPrint(),
                         XmlDocument.Type.MAIN,
                         null, /* mainManifestPackageName */
-                        xmlDocument.getModel());
+                        xmlDocument.getModel(),
+                        xmlDocument.getReportBuilder());
 
         ImmutableMultimap.Builder<Integer, Record> mappingBuilder = ImmutableMultimap.builder();
         for (XmlElement xmlElement : loadedWithLineNumbers.getRootNode().getMergeableElements()) {
