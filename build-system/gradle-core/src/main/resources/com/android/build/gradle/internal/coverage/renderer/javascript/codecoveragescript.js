@@ -1734,7 +1734,7 @@ const CoverageReportApp = {
             const rowClasses = `table-row border-b border-gray-200 hover:bg-gray-50 ${level > 0 && !isSearching ? 'child-row hidden' : 'child-row'}`;
             const ariaExpanded = hasChildren ? `aria-expanded="${isSearching ? 'true' : 'false'}"` : '';
             const interactiveAttrs = hasChildren
-                ? `tabindex="0" class="flex items-center gap-2 cursor-pointer pl-level-${level}"`
+                ? `tabindex="0" role="button" class="flex items-center gap-2 cursor-pointer pl-level-${level}"`
                 : `tabindex="0" role="link" class="flex items-center gap-2 cursor-pointer pl-level-${level} class-link" data-class-name="${this.escapeHTML(item.name)}" data-module-name="${this.escapeHTML(context.moduleName)}" data-package-name="${this.escapeHTML(context.packageName)}" data-test-suite-name="${this.escapeHTML(context.testSuiteName || '')}"`;
 
             return `<tr class="${rowClasses}" data-id="${this.escapeHTML(item.name)}" data-parent-id="${this.escapeHTML(parentId)}">
@@ -1775,7 +1775,7 @@ const CoverageReportApp = {
             let nameCell;
             switch (this.state.currentView) {
                 case 'packages':
-                    nameCell = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover:underline cursor-pointer" tabindex="0" title="${this.escapeHTML(item.name)}" data-name="${this.escapeHTML(item.name)}" data-type="${this.escapeHTML(item.type)}" data-module-name="${this.escapeHTML(item.moduleName)}">${this.escapeHTML(item.name)}</td>`;
+                    nameCell = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover:underline cursor-pointer" tabindex="0" role="link" title="${this.escapeHTML(item.name)}" data-name="${this.escapeHTML(item.name)}" data-type="${this.escapeHTML(item.type)}" data-module-name="${this.escapeHTML(item.moduleName)}">${this.escapeHTML(item.name)}</td>`;
                     if (!this.state.selectedModule) {
                         nameCell += `<td class="py-3 px-6 text-gray-500 text-sm truncate col-module" title="${this.escapeHTML(item.moduleName)}">${this.escapeHTML(item.moduleName)}</td>`;
                     }
@@ -1792,7 +1792,7 @@ const CoverageReportApp = {
                     }
                     break;
                 default: // modules
-                    nameCell = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover:underline cursor-pointer" tabindex="0" title="${this.escapeHTML(item.name)}" data-name="${this.escapeHTML(item.name)}" data-type="${this.escapeHTML(item.type)}" data-module-name="${this.escapeHTML(item.name)}">${this.escapeHTML(item.name)}</td>`;
+                    nameCell = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover:underline cursor-pointer" tabindex="0" role="link" title="${this.escapeHTML(item.name)}" data-name="${this.escapeHTML(item.name)}" data-type="${this.escapeHTML(item.type)}" data-module-name="${this.escapeHTML(item.name)}">${this.escapeHTML(item.name)}</td>`;
             }
             return `<tr class="table-row border-b border-gray-200 hover:bg-gray-50">${nameCell}${coverageCells}</tr>`;
         }).join('');

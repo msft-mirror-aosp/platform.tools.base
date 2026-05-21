@@ -200,10 +200,14 @@ header {
     transition: background-color 0.2s;
     background: transparent;
     border: none;
-    outline: none;
     cursor: pointer;
     height: 52px;
     max-width: 300px;
+}
+
+.ts-selector-btn:focus-visible {
+    outline: 2px solid var(--text-blue-600);
+    outline-offset: -2px;
 }
 
 .ts-selector-btn:hover {
@@ -335,6 +339,10 @@ header {
     outline-offset: -2px !important;
 }
 
+.filter-chip-btn:focus:not(:focus-visible) {
+    outline: none !important;
+}
+
 
 .filter-chip.active { box-shadow: 0 0 0 2px #2563eb; }
 
@@ -429,7 +437,7 @@ header {
     background: var(--bg-card);
     height: 28px;
 }
-.search-input:focus { border-color: var(--text-blue-600); outline: none; }
+.search-input:focus { border-color: var(--text-blue-600); box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2); outline: none; }
 .search-clear-btn {
     position: absolute;
     right: 0.5rem;
@@ -673,6 +681,7 @@ header {
 
 .popover-search:focus {
     border-color: var(--text-blue-600);
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
     outline: none;
 }
 

@@ -753,7 +753,7 @@ const TestReportApp = {
     });
     this.elements.resultsData.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
-            const clickable = e.target.closest('[data-interactive="flat"], [data-interactive="tree"], .clickable-status');
+            const clickable = e.target.closest('[data-interactive="flat"], [data-interactive="tree"], .clickable-status, .stack-trace-trigger');
             if (clickable) {
                 e.preventDefault();
                 clickable.click();
@@ -1445,7 +1445,7 @@ const TestReportApp = {
 
       let nameContent = `<span class="font-medium">${UIUtils.escapeHTML(node.name)}</span>`;
       if (type === 'testCase' && this.hasVisibleFailures(node)) {
-          nameContent = `<span class="font-medium text-blue-700 hover-underline cursor-pointer" onclick="TestReportApp.openStackTrace(this)" data-module="${UIUtils.escapeHTML(currentContext.moduleName || '')}" data-package="${UIUtils.escapeHTML(currentContext.packageName || '')}" data-class="${UIUtils.escapeHTML(currentContext.className || '')}" data-test-case="${UIUtils.escapeHTML(node.name || '')}" tabindex="0" role="button" aria-label="View stack trace">${UIUtils.escapeHTML(node.name)}</span>`;
+          nameContent = `<span class="font-medium text-blue-700 hover-underline cursor-pointer stack-trace-trigger" onclick="TestReportApp.openStackTrace(this)" data-module="${UIUtils.escapeHTML(currentContext.moduleName || '')}" data-package="${UIUtils.escapeHTML(currentContext.packageName || '')}" data-class="${UIUtils.escapeHTML(currentContext.className || '')}" data-test-case="${UIUtils.escapeHTML(node.name || '')}" tabindex="0" role="button" aria-label="View stack trace">${UIUtils.escapeHTML(node.name)}</span>`;
       }
 
       const chevron = `<svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="collapsible-arrow ${!hasChildren ? 'invisible' : ''}"><path d="m9 18 6-6-6-6"></path></svg>`;
@@ -1489,7 +1489,7 @@ const TestReportApp = {
         if (item.type !== 'testCase') {
             nameTd = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover-underline cursor-pointer" tabindex="0" role="link" title="${UIUtils.escapeHTML(item.name)}" data-name="${UIUtils.escapeHTML(item.name)}" data-type="${item.type}" data-module-name="${UIUtils.escapeHTML(item.moduleName || '')}" data-package-name="${UIUtils.escapeHTML(item.packageName || '')}" data-interactive="flat">${UIUtils.escapeHTML(item.name)}</td>`;
         } else if (this.hasVisibleFailures(item)) {
-            nameTd = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover-underline cursor-pointer" onclick="TestReportApp.openStackTrace(this)" data-module="${UIUtils.escapeHTML(item.moduleName || '')}" data-package="${UIUtils.escapeHTML(item.packageName || '')}" data-class="${UIUtils.escapeHTML(item.className || '')}" data-test-case="${UIUtils.escapeHTML(item.name || '')}" tabindex="0" role="button" aria-label="View stack trace">${UIUtils.escapeHTML(item.name)}</td>`;
+            nameTd = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover-underline cursor-pointer stack-trace-trigger" onclick="TestReportApp.openStackTrace(this)" data-module="${UIUtils.escapeHTML(item.moduleName || '')}" data-package="${UIUtils.escapeHTML(item.packageName || '')}" data-class="${UIUtils.escapeHTML(item.className || '')}" data-test-case="${UIUtils.escapeHTML(item.name || '')}" tabindex="0" role="button" aria-label="View stack trace">${UIUtils.escapeHTML(item.name)}</td>`;
         }
 
         let pathCell = '';
