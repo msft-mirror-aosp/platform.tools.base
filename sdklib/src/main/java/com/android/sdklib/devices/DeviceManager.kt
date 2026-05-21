@@ -34,11 +34,7 @@ import org.xml.sax.SAXException
 
 /** Manager class for interacting with [Device]s within the SDK */
 class DeviceManager
-private constructor(
-  private val sdkHandler: AndroidSdkHandler,
-  private val log: ILogger,
-  private val isSupportedDevice: (Device) -> Boolean,
-) {
+private constructor(sdkHandler: AndroidSdkHandler, private val log: ILogger, private val isSupportedDevice: (Device) -> Boolean) {
   private val androidFolder: Path? = sdkHandler.androidFolder
   private val vendorDevices = DeviceResourceTable(log, isSupportedDevice, VENDOR_DEVICE_RESOURCES)
   private val defaultDevices = DeviceResourceTable(log, isSupportedDevice = { true }, listOf("devices"))
@@ -280,13 +276,9 @@ private constructor(
     }
 
     @JvmStatic
-    fun createInstance(sdkHandler: AndroidSdkHandler, log: ILogger, isSupportedDevice: (Device) -> Boolean): DeviceManager {
+    @JvmOverloads
+    fun createInstance(sdkHandler: AndroidSdkHandler, log: ILogger, isSupportedDevice: (Device) -> Boolean = { true }): DeviceManager {
       return DeviceManager(sdkHandler, log, isSupportedDevice)
-    }
-
-    @JvmStatic
-    fun createInstance(sdkHandler: AndroidSdkHandler, log: ILogger): DeviceManager {
-      return DeviceManager(sdkHandler, log, isSupportedDevice = { true })
     }
   }
 }
