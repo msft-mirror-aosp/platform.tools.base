@@ -18,13 +18,21 @@ package com.android.build.gradle.integration.lint
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.KotlinHelloWorldApp
+import com.android.build.gradle.options.BooleanOption
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
-class LintGlobalRuleJarsTest {
+@RunWith(Parameterized::class)
+class LintGlobalRuleJarsTest(private val aggregateReports: Boolean) {
+
+  companion object {
+    @Parameterized.Parameters(name = "aggregateReports={0}") @JvmStatic fun parameters() = listOf(true, false)
+  }
 
   @get:Rule
   val project: GradleTestProject =
@@ -38,21 +46,34 @@ class LintGlobalRuleJarsTest {
 
     val absolutePath = lintJar.absolutePath
     assertThat(absolutePath).isNotEmpty()
-    val executor = project.executor().withEnvironmentVariables(mapOf("ANDROID_LINT_JARS" to absolutePath))
+    val executor =
+      project
+        .executor()
+        .withEnvironmentVariables(mapOf("ANDROID_LINT_JARS" to absolutePath))
+        .with(BooleanOption.LINT_REPORT_AGGREGATION, aggregateReports)
 
-    val lintTaskName = ":lintDebug"
-    val lintReportTaskName = ":lintReportDebug"
+    val tasks = mutableListOf(":lintDebug")
+    if (aggregateReports) {
+      tasks.add(":lintAggregatedDebug")
+    }
+    val lintReportTaskName = if (aggregateReports) ":createLocalLintReportDebug" else ":lintReportDebug"
     val lintAnalyzeTaskName = ":lintAnalyzeDebug"
-    executor.run(lintTaskName)
-    executor.run(lintTaskName).apply {
+    executor.run(tasks)
+    executor.run(tasks).apply {
       assertTask(lintReportTaskName).wasUpToDate()
       assertTask(lintAnalyzeTaskName).wasUpToDate()
+      if (aggregateReports) {
+        assertTask(":createAggregatedLintReportDebug").wasUpToDate()
+      }
     }
 
     FileUtils.createFile(lintJar, "FOO_BAR")
-    executor.run(lintTaskName).apply {
+    executor.run(tasks).apply {
       assertTask(lintReportTaskName).didWork()
       assertTask(lintAnalyzeTaskName).didWork()
+      if (aggregateReports) {
+        assertTask(":createAggregatedLintReportDebug").didWork()
+      }
       assertOutputDoesNotContain("this will stop working soon.")
     }
   }
