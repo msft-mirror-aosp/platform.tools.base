@@ -60,15 +60,6 @@ private constructor(
     SYSTEM_IMAGES,
   }
 
-  enum class DeviceStatus {
-    /** The device exists unchanged from the given configuration */
-    EXISTS,
-    /** A device exists with the given name and manufacturer, but has a different configuration */
-    CHANGED,
-    /** There is no device with the given name and manufacturer */
-    MISSING,
-  }
-
   /** Interface implemented by objects which want to know when changes occur to the [Device] lists. */
   fun interface DevicesChangedListener {
     /** Called after one of the [Device] lists has been updated. */
@@ -98,10 +89,6 @@ private constructor(
     synchronized(listeners) {
       return listeners.remove(listener)
     }
-  }
-
-  fun getDeviceStatus(name: String, manufacturer: String): DeviceStatus {
-    return if (getDevice(name, manufacturer) == null) DeviceStatus.MISSING else DeviceStatus.EXISTS
   }
 
   fun getDevice(id: String, manufacturer: String): Device? {

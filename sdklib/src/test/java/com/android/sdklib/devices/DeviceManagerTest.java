@@ -31,7 +31,6 @@ import com.android.sdklib.SystemImageTags;
 import com.android.sdklib.TempSdkManager;
 import com.android.sdklib.devices.Device.Builder;
 import com.android.sdklib.devices.DeviceManager.DeviceCategory;
-import com.android.sdklib.devices.DeviceManager.DeviceStatus;
 import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.sdklib.repository.IdDisplay;
 import com.android.sdklib.repository.meta.DetailsTypes;
@@ -780,19 +779,6 @@ public class DeviceManagerTest {
                         "XR Glasses",
                         "AI Glasses (Display)",
                         "AI Glasses");
-    }
-
-    @Test
-    public final void testGetDeviceStatus() {
-        // get a definition from the bundled devices.xml file
-        assertThat(dm.getDeviceStatus("7in WSVGA (Tablet)", "Generic"))
-                .isEqualTo(DeviceStatus.EXISTS);
-
-        // get a definition from the bundled oem file
-        assertThat(dm.getDeviceStatus("Nexus One", "Google")).isEqualTo(DeviceStatus.EXISTS);
-
-        // try a device that does not exist
-        assertThat(dm.getDeviceStatus("My Device", "Custom OEM")).isEqualTo(DeviceStatus.MISSING);
     }
 
     @Test

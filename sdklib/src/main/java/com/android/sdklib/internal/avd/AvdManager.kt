@@ -999,7 +999,7 @@ private constructor(
     val sysImage: ISystemImage? = imageSysDir?.let { sdkHandler.getSystemImageManager(progress).getImageAt(sdkLocation.resolve(it)) }
 
     // Get the device status if this AVD is associated with a device
-    var deviceStatus: DeviceManager.DeviceStatus? = null
+    var deviceMissing = false
     var updateHashV2 = false
     if (properties != null) {
       val deviceName = properties[ConfigKey.DEVICE_NAME]
@@ -1007,10 +1007,8 @@ private constructor(
       if (deviceName != null && deviceManufacturer != null) {
         val device = deviceManager.getDevice(deviceName, deviceManufacturer)
         if (device == null) {
-          deviceStatus = DeviceManager.DeviceStatus.MISSING
+          deviceMissing = true
         } else {
-          deviceStatus = DeviceManager.DeviceStatus.EXISTS
-
           val hashV2 = properties[ConfigKey.DEVICE_HASH_V2]
           if (hashV2 == null) {
             updateHashV2 = true
@@ -1036,7 +1034,7 @@ private constructor(
       when {
         configIniFile == null -> AvdStatus.ERROR_CONFIG
         properties == null || imageSysDir == null -> AvdStatus.ERROR_PROPERTIES
-        deviceStatus == DeviceManager.DeviceStatus.MISSING -> AvdStatus.ERROR_DEVICE_MISSING
+        deviceMissing -> AvdStatus.ERROR_DEVICE_MISSING
         sysImage == null && !isDirectoryOutsideSdkDirectory(imageSysDir) -> {
           // SdkHandler is aware only of system images located under the SDK directory.
           AvdStatus.ERROR_IMAGE_MISSING
