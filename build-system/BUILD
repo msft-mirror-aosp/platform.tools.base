@@ -561,6 +561,7 @@ maven_repository(
         "//tools/apkzlib",
         "//tools/base/android-test/android-test-engine-result-listener:android-test-engine-result-listener",
         "//tools/base/android-test/android-test-junit-engine:android-test-engine",
+        "//tools/base/android-test/coverage/agent/support:coverage-agent",
         "//tools/base/annotations:annotations",
         "//tools/base/build-system:tools.apksig",
         "//tools/base/common:tools.common",

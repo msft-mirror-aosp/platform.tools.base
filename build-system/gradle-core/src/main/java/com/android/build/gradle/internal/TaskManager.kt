@@ -296,6 +296,7 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
     // Since it's going to chance the configurations, we need to do it before
     // we start doing queries to fill the streams.
     handleJacocoDependencies(creationConfig)
+    handleOnTheFlyCoverageDependencies(creationConfig)
     creationConfig.instrumentationCreationConfig?.configureAndLockAsmClassesVisitors(project.objects)
     fun getFinalRuntimeClassesJarsFromComponent(component: ComponentCreationConfig, scope: ArtifactScope): FileCollection {
       return component.instrumentationCreationConfig?.getDependenciesClassesJarsPostInstrumentation(scope)
@@ -1584,6 +1585,15 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
         r.force(jacocoAgentRuntimeDependency)
       }
       taskFactory.register(JacocoPropertiesTask.CreationAction(creationConfig))
+    }
+  }
+
+  private fun handleOnTheFlyCoverageDependencies(creationConfig: ComponentCreationConfig) {
+    val onTheFlyEnabled = globalConfig.services.projectOptions.get(BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE)
+    if (onTheFlyEnabled && creationConfig.componentType.isForTesting && creationConfig.componentType.isApk) {
+      val coverageAgentDependency =
+        com.android.build.gradle.internal.coverage.CoverageAgentConfigurations.getAgentRuntimeDependency(globalConfig.services)
+      project.dependencies.add(creationConfig.variantDependencies.runtimeClasspath.name, coverageAgentDependency)
     }
   }
 

@@ -1,13 +1,30 @@
+load("//tools/base/bazel:jvm_import.bzl", "jvm_import")
+load("//tools/base/bazel:maven.bzl", "maven_library")
 load("//tools/base/bazel:merge_archives.bzl", "merge_jars")
 
 # Create a single "Support JAR" that contains both the Java bytecode
 # and the native JVMTI agent libraries.
 merge_jars(
-    name = "coverage_agent_support",
+    name = "coverage_agent_support_jar",
     out = "coverage_agent_support.jar",
     jars = [
         "//tools/base/android-test/coverage/agent/runtime:coverage_rt_java",
         "//tools/base/android-test/coverage/agent/native:coverage_agent_jni.jar",
     ],
+)
+
+# Wrap the raw JAR in a target that provides JavaInfo, so maven_library can bundle it.
+# We use jvm_import instead of java_import to avoid ijar processing issues with Kotlin.
+jvm_import(
+    name = "coverage_agent_support_java",
+    jars = [":coverage_agent_support_jar"],
+)
+
+maven_library(
+    name = "coverage-agent",
+    srcs = [],
+    bundled_deps = [":coverage_agent_support_java"],
+    coordinates = "com.android.tools.test:coverage-agent",
+    version = "1.0.0",
     visibility = ["//visibility:public"],
 )

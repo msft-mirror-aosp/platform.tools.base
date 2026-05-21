@@ -1,0 +1,12 @@
+apply plugin: 'com.android.tools.java-library'
+apply plugin: 'com.android.tools.publish'
+
+group = 'com.android.tools.test'
+version = '1.0.0'
+
+project.ext.pomName = 'Android On-the-fly Coverage Agent Support'
+project.ext.pomDesc = 'Support JAR for on-the-fly code coverage agent'
+
+dependencies {
+    api project(':base:android-test:coverage:coverage-rt')
+}
