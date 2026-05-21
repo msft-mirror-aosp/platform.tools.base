@@ -20,9 +20,6 @@ import com.android.adblib.AdbLogger
 import com.android.adblib.AdbLoggerFactory
 import com.android.adblib.AdbSession
 import com.android.adblib.tools.createStandaloneSession
-import com.android.tools.ui.inspector.common.ProtocolConstants
-import com.android.tools.ui.inspector.protocol.UiInspectorProtocol
-import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol
 import java.util.concurrent.Callable
 import kotlin.system.exitProcess
 import kotlinx.coroutines.runBlocking
@@ -66,8 +63,11 @@ class DumpUiCommand : Callable<Int> {
         val port = injectionManager.injectAndAttach()
 
         CommandSender(host = "localhost", port = port.toInt()).use { commandSender ->
+          // TODO: consider running in parallel
           createViewInspector(commandSender, injectionManager)
-          viewInspectorDump(commandSender, includeAttributes, includeResolutionStack)
+          val composeInspectorConnected = createComposeInspector(commandSender, injectionManager)
+
+          dumpUiTree(commandSender, includeAttributes, includeResolutionStack, composeInspectorConnected)
         }
       }
       return EXIT_OK
@@ -78,81 +78,36 @@ class DumpUiCommand : Callable<Int> {
   }
 }
 
-/** Sends a command to the agent to load and create the view inspector dynamically. */
-private suspend fun createViewInspector(commandSender: CommandSender, injectionManager: InjectionManager) {
-  val inspectorMetadata = InspectorRegistry.VIEW_INSPECTOR
-
-  // Push payload jar on demand and get the remote path
-  val dexPath = injectionManager.pushInspectorPayload(inspectorMetadata)
-  val createCommand =
-    UiInspectorProtocol.Command.newBuilder()
-      .setCreateInspector(
-        UiInspectorProtocol.CreateInspectorCommand.newBuilder().setInspectorId(inspectorMetadata.id).setDexPath(dexPath).build()
-      )
-      .build()
-
-  val createResponse = commandSender.sendMessage(createCommand)
-  if (createResponse.status != UiInspectorProtocol.Response.Status.SUCCESS) {
-    throw IllegalStateException("Failed to create inspector: ${createResponse.errorMessage}")
+/** Dumps the View tree, enriches it with Compose if active, and prints the unified tree to console. */
+internal suspend fun dumpUiTree(
+  commandSender: CommandSender,
+  includeAttributes: Boolean,
+  includeResolutionStack: Boolean,
+  composeInspectorConnected: Boolean,
+) {
+  val viewRoots = fetchViewTree(commandSender, includeAttributes, includeResolutionStack)
+  if (composeInspectorConnected) {
+    fetchAndMergeComposeTrees(commandSender, viewRoots)
   }
+  viewRoots.forEach { printUiTree(it, 0) }
 }
 
-/** Sends a dump command to the view inspector and prints the view hierarchy. */
-private suspend fun viewInspectorDump(commandSender: CommandSender, includeAttributes: Boolean, includeResolutionStack: Boolean) {
-  val viewInspectorCommand =
-    ViewInspectorProtocol.Command.newBuilder()
-      .setDumpViewsCommand(
-        ViewInspectorProtocol.DumpViewsCommand.newBuilder()
-          .setIncludeAttributes(includeAttributes || includeResolutionStack)
-          .setIncludeResolutionStack(includeResolutionStack)
-          .build()
-      )
-      .build()
-
-  val responsePayload = commandSender.sendInspectorCommand(ProtocolConstants.VIEW_INSPECTOR_ID, viewInspectorCommand.toByteArray())
-  val viewInspectorResponse = ViewInspectorProtocol.Response.parseFrom(responsePayload)
-
-  if (viewInspectorResponse.specializedCase != ViewInspectorProtocol.Response.SpecializedCase.DUMP_VIEWS_RESPONSE) {
-    throw IllegalStateException("Unexpected response: ${viewInspectorResponse.specializedCase}")
-  }
-
-  val dumpResponse = viewInspectorResponse.dumpViewsResponse
-  val stringTable = dumpResponse.stringsList.associate { it.id to it.value }
-
-  System.out.println("View Hierarchy:")
-  for (node in dumpResponse.nodesList) {
-    printNode(node, stringTable, 0)
-  }
-}
-
-private fun printNode(node: ViewInspectorProtocol.ViewNode, stringTable: Map<Int, String>, indent: Int) {
-  val prefix = "  ".repeat(indent)
-  val className = stringTable[node.className] ?: "Unknown"
-  val bounds = node.bounds
-
-  val resourceStr = stringTable[node.idResource]?.let { " id=$it" } ?: ""
-  val layoutResourceStr = stringTable[node.layoutResource]?.let { " layout=$it" } ?: ""
-
-  System.out.println("${prefix}[$className]$resourceStr$layoutResourceStr (${bounds.x}, ${bounds.y}, ${bounds.width}, ${bounds.height})")
-
-  for (attr in node.attributesList) {
-    val name = stringTable[attr.name] ?: "unknown"
-    val value = if (attr.value == 0) "" else stringTable[attr.value] ?: "unknown"
-    System.out.println("$prefix  prop: $name=$value")
-
-    val sourceStr = stringTable[attr.directSource] ?: ""
-    if (sourceStr.isNotEmpty()) {
-      System.out.println("$prefix    Defined in: $sourceStr")
+/** Queries the Compose Layout Inspector on the device and merges its trees into [viewRoots] in-place. */
+internal suspend fun fetchAndMergeComposeTrees(commandSender: CommandSender, viewRoots: List<UiNode.ViewNode>) {
+  viewRoots.forEach { viewRoot ->
+    val composeResult = queryComposeTree(commandSender, viewRoot.id)
+    if (composeResult != null) {
+      val (roots, stringsMap) = composeResult
+      roots.forEach { composeRoot ->
+        attachComposeTree(
+          viewNode = viewRoot,
+          targetViewId = composeRoot.viewId,
+          composeNodes = composeRoot.nodesList,
+          stringTable = stringsMap,
+          viewsToSkip = composeRoot.viewsToSkipList,
+        )
+      }
     }
-
-    for (resId in attr.styleChainList) {
-      val resStr = stringTable[resId] ?: "unknown"
-      System.out.println("$prefix    Inherited from: $resStr")
-    }
-  }
-
-  for (child in node.childrenList) {
-    printNode(child, stringTable, indent + 1)
   }
 }
 

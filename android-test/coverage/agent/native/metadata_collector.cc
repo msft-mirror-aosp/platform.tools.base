@@ -19,6 +19,7 @@
 #include <unistd.h>
 #include <cstdio>
 #include <fstream>
+#include <string>
 
 #include "tools/base/android-test/coverage/common/log.h"
 
@@ -78,14 +79,17 @@ void MetadataCollector::AddBlock(
 
 bool MetadataCollector::WriteToDisk() const {
   std::lock_guard<std::mutex> lock(mutex_);
-  if (package_name_.empty()) {
-    Log::E("MetadataCollector not initialized with package name.");
+  if (!initialized_ || package_name_.empty()) {
+    Log::E("MetadataCollector not initialized.");
     return false;
   }
 
   // TODO: Hardcoding /data/data/ fails for secondary users or Work Profiles
   // (e.g., /data/user/10/). We should resolve the true data directory via JNI
   // by calling Context.getCodeCacheDir() on the application context.
+  //
+  // Implementation of this TODO will also enable host-side unit testing of
+  // this method via JNI mocking.
   std::string path =
       "/data/data/" + package_name_ + "/code_cache/coverage_metadata.pb";
 
@@ -114,6 +118,11 @@ bool MetadataCollector::WriteToDisk() const {
 
   Log::I("Coverage metadata successfully written to %s", path.c_str());
   return true;
+}
+
+const proto::CoverageMetadata& MetadataCollector::metadata() const {
+  std::lock_guard<std::mutex> lock(mutex_);
+  return metadata_;
 }
 
 }  // namespace coverage

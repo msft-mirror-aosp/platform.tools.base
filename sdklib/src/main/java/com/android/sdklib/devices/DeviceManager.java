@@ -36,12 +36,10 @@ import com.android.sdklib.internal.avd.ConfigKey;
 import com.android.sdklib.internal.avd.HardwareProperties;
 import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.sdklib.repository.LoggerProgressIndicatorWrapper;
-import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.meta.DetailsTypes;
 import com.android.utils.ILogger;
 
 import com.google.common.collect.HashBasedTable;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Table;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hasher;
@@ -49,16 +47,12 @@ import com.google.common.hash.Hashing;
 
 import org.xml.sax.SAXException;
 
-import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -69,8 +63,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
@@ -79,10 +71,6 @@ import javax.xml.transform.TransformerFactoryConfigurationError;
 /** Manager class for interacting with {@link Device}s within the SDK */
 public class DeviceManager {
 
-    private static final String DEVICE_PROFILES_PROP = "DeviceProfiles";
-
-    private static final Pattern PATH_PROPERTY_PATTERN =
-            Pattern.compile('^' + PkgProps.EXTRA_PATH + '=' + DEVICE_PROFILES_PROP + '$');
     @Nullable private final Path mAndroidFolder;
 
     private final ILogger mLog;
@@ -90,9 +78,6 @@ public class DeviceManager {
     private final VendorDevices mVendorDevices;
 
     private final Predicate<Device> mIsSupportedDevice;
-
-    // These are keyed by (device ID, manufacturer)
-    private Table<String, String, Device> mSdkVendorDevices;
 
     private Table<String, String, Device> mSysImgDevices;
 
@@ -250,7 +235,6 @@ public class DeviceManager {
         if (d != null) {
             return d;
         }
-        d = mSdkVendorDevices.get(id, manufacturer);
         return d;
     }
 
@@ -292,9 +276,6 @@ public class DeviceManager {
                 && (deviceCategory.contains(DeviceCategory.VENDOR))) {
             devices.putAll(mVendorDevices.getDevices());
         }
-        if (mSdkVendorDevices != null && (deviceCategory.contains(DeviceCategory.VENDOR))) {
-            devices.putAll(mSdkVendorDevices);
-        }
         if (mSysImgDevices != null && (deviceCategory.contains(DeviceCategory.SYSTEM_IMAGES))) {
             devices.putAll(mSysImgDevices);
         }
@@ -305,55 +286,10 @@ public class DeviceManager {
     private void initDevicesLists() {
         boolean changed = mDefaultDevices.init();
         changed |= mVendorDevices.init(mIsSupportedDevice);
-        changed |= initSdkVendorDevices();
         changed |= initSysImgDevices();
         changed |= initUserDevices();
         if (changed) {
             notifyListeners();
-        }
-    }
-
-    /**
-     * Initializes SDK vendor-provided {@link Device}s.
-     *
-     * @return True if the list has changed.
-     */
-    private boolean initSdkVendorDevices() {
-        synchronized (mLock) {
-            if (mSdkVendorDevices != null) {
-                return false;
-            }
-
-            if (mOsSdkPath == null) {
-                mSdkVendorDevices = HashBasedTable.create();
-                return false;
-            }
-
-            Table<String, String, Device> sdkVendorDevices = HashBasedTable.create();
-            // Load devices from vendor extras
-            Path extrasFolder = mOsSdkPath.resolve(SdkConstants.FD_EXTRAS);
-            List<Path> deviceDirs = getExtraDirs(extrasFolder);
-            for (Path deviceDir : deviceDirs) {
-                Path deviceXml = deviceDir.resolve(SdkConstants.FN_DEVICES_XML);
-                if (Files.isRegularFile(deviceXml)) {
-                    loadDevices(deviceXml)
-                            .cellSet()
-                            .forEach(
-                                    (cell) -> {
-                                        if (mIsSupportedDevice.test(cell.getValue())) {
-                                            sdkVendorDevices.put(
-                                                    cell.getRowKey(),
-                                                    cell.getColumnKey(),
-                                                    cell.getValue());
-                                        } else {
-                                            mLog.warning("Unsupported device %s", cell.getRowKey());
-                                        }
-                                    });
-                }
-            }
-
-            mSdkVendorDevices = sdkVendorDevices;
-            return true;
         }
     }
 
@@ -876,51 +812,5 @@ public class DeviceManager {
                 listener.onDevicesChanged();
             }
         }
-    }
-
-    /* Returns all of DeviceProfiles in the extras/ folder */
-    @NonNull
-    private List<Path> getExtraDirs(@NonNull Path extrasFolder) {
-        List<Path> extraDirs = new ArrayList<>();
-        // All OEM provided device profiles are in
-        // $SDK/extras/$VENDOR/$ITEM/devices.xml
-        if (CancellableFileIo.isDirectory(extrasFolder)) {
-            try {
-                Files.walkFileTree(
-                        extrasFolder,
-                        ImmutableSet.of(),
-                        2,
-                        new SimpleFileVisitor<Path>() {
-                            @Override
-                            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-                                if (attrs.isDirectory() && isDevicesExtra(file)) {
-                                    extraDirs.add(file);
-                                }
-                                return FileVisitResult.CONTINUE;
-                            }
-                        });
-            } catch (IOException ignore) {
-            }
-        }
-        return extraDirs;
-    }
-
-    /*
-     * Returns whether a specific folder for a specific vendor is a
-     * DeviceProfiles folder
-     */
-    private static boolean isDevicesExtra(@NonNull Path item) {
-        Path properties = item.resolve(SdkConstants.FN_SOURCE_PROP);
-        try (BufferedReader propertiesReader = Files.newBufferedReader(properties)) {
-            String line;
-            while ((line = propertiesReader.readLine()) != null) {
-                Matcher m = PATH_PROPERTY_PATTERN.matcher(line);
-                if (m.matches()) {
-                    return true;
-                }
-            }
-        } catch (IOException ignore) {
-        }
-        return false;
     }
 }

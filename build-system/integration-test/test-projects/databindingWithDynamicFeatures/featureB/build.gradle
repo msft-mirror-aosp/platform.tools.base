@@ -33,9 +33,7 @@ android {
 
 dependencies {
     implementation project(':app')
-    // TODO: remove once we are fully on AndroidX
-    implementation 'android.arch.lifecycle:runtime:1.1.0'
-    // runtime classpath is not exported by the base
-    implementation 'com.android.support:appcompat-v7:' + libs.versions.supportLibVersion.get()
-    implementation 'com.android.support.constraint:constraint-layout:' + libs.versions.constraintLayoutVersion.get()
+    implementation "androidx.appcompat:appcompat:1.7.0"
+    implementation "androidx.constraintlayout:constraintlayout:2.1.4"
+    implementation "androidx.lifecycle:lifecycle-runtime:2.6.2"
 }

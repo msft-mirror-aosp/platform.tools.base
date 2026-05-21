@@ -24,11 +24,13 @@ import com.android.tools.ui.inspector.payload.InspectorBridge
 import com.android.tools.ui.inspector.payload.SessionHandler
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol.Command
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol.CreateInspectorCommand
+import com.android.tools.ui.inspector.protocol.UiInspectorProtocol.GetVersionCommand
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol.Response
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol.ShutdownCommand
 import com.google.common.truth.Truth.assertThat
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
+import java.io.InputStream
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -78,7 +80,8 @@ class SessionHandlerTest {
     val testScope = CoroutineScope(Dispatchers.Default + Job())
     val bridges = mutableMapOf<String, InspectorBridge>()
     val primaryExecutor = HandlerThreadExecutor("test_thread_shutdown", { throw it })
-    bridges[ProtocolConstants.VIEW_INSPECTOR_ID] = InspectorBridge(mockInspector, DelegatingConnection(), testScope, primaryExecutor)
+    bridges[ProtocolConstants.VIEW_INSPECTOR_ID] =
+      InspectorBridge.createForTesting(mockInspector, DelegatingConnection(), testScope, primaryExecutor)
 
     val sessionHandler =
       SessionHandler(
@@ -131,7 +134,8 @@ class SessionHandlerTest {
     val testScope = CoroutineScope(Dispatchers.Default + Job())
     val bridges = mutableMapOf<String, InspectorBridge>()
     val primaryExecutor = HandlerThreadExecutor("test_thread_eof", { throw it })
-    bridges[ProtocolConstants.VIEW_INSPECTOR_ID] = InspectorBridge(mockInspector, DelegatingConnection(), testScope, primaryExecutor)
+    bridges[ProtocolConstants.VIEW_INSPECTOR_ID] =
+      InspectorBridge.createForTesting(mockInspector, DelegatingConnection(), testScope, primaryExecutor)
 
     val sessionHandler =
       SessionHandler(
@@ -282,7 +286,8 @@ class SessionHandlerTest {
     val testScope = CoroutineScope(Dispatchers.Default + Job())
     val bridges = mutableMapOf<String, InspectorBridge>()
     val primaryExecutor = HandlerThreadExecutor("test_thread_multiple", { throw it })
-    bridges[ProtocolConstants.VIEW_INSPECTOR_ID] = InspectorBridge(mockInspector, DelegatingConnection(), testScope, primaryExecutor)
+    bridges[ProtocolConstants.VIEW_INSPECTOR_ID] =
+      InspectorBridge.createForTesting(mockInspector, DelegatingConnection(), testScope, primaryExecutor)
 
     val sessionHandler =
       SessionHandler(
@@ -312,5 +317,159 @@ class SessionHandlerTest {
     val responseBytes2 = FramingProtocol.readMessage(responseInputStream)
     val response2 = Response.parseFrom(responseBytes2)
     assertThat(response2.commandId).isEqualTo(2)
+  }
+
+  @Test
+  fun testHandle_getVersion_composeAbsent() {
+    runBlocking {
+      val outputStream = ByteArrayOutputStream()
+
+      val command =
+        Command.newBuilder()
+          .setCommandId(1)
+          .setGetVersion(GetVersionCommand.newBuilder().addLibraryIds(ProtocolConstants.COMPOSE_UI_LIBRARY_ID).build())
+          .build()
+
+      val inputStreamData = ByteArrayOutputStream()
+      FramingProtocol.writeMessage(inputStreamData, command.toByteArray())
+      val inputStream = ByteArrayInputStream(inputStreamData.toByteArray())
+
+      // Create a mock classloader that explicitly simulates Compose absence
+      val mockAbsentClassLoader =
+        object : ClassLoader(SessionHandlerTest::class.java.classLoader) {
+          override fun loadClass(name: String, resolve: Boolean): Class<*> {
+            if (name == "androidx.compose.ui.Modifier") {
+              throw ClassNotFoundException("androidx.compose.ui.Modifier")
+            }
+            return super.loadClass(name, resolve)
+          }
+        }
+
+      val shutdownSignal = CompletableDeferred<Unit>()
+      val testScope = CoroutineScope(Dispatchers.Default + Job())
+      val sessionHandler =
+        SessionHandler(
+          inputStream = inputStream,
+          outputStream = outputStream,
+          crashListener = { throw it },
+          shutdownSignal = shutdownSignal,
+          serverScope = testScope,
+          inspectorBridges = mutableMapOf(),
+          classLoader = mockAbsentClassLoader, // Inject mock absent classloader!
+        )
+
+      sessionHandler.processCommands()
+      testScope.cancel()
+
+      val writtenBytes = outputStream.toByteArray()
+      val responseBytes = FramingProtocol.readMessage(ByteArrayInputStream(writtenBytes))
+      val response = Response.parseFrom(responseBytes)
+
+      assertThat(response.commandId).isEqualTo(1)
+      assertThat(response.status).isEqualTo(Response.Status.SUCCESS)
+      assertThat(response.specializedCase).isEqualTo(Response.SpecializedCase.GET_VERSION)
+
+      val versionResponse = response.getVersion
+      assertThat(versionResponse.versionsMap).isEmpty()
+    }
+  }
+
+  @Test
+  fun testHandle_getVersion_composePresent() {
+    runBlocking {
+      val outputStream = ByteArrayOutputStream()
+
+      val command =
+        Command.newBuilder()
+          .setCommandId(1)
+          .setGetVersion(GetVersionCommand.newBuilder().addLibraryIds(ProtocolConstants.COMPOSE_UI_LIBRARY_ID).build())
+          .build()
+
+      val inputStreamData = ByteArrayOutputStream()
+      FramingProtocol.writeMessage(inputStreamData, command.toByteArray())
+      val inputStream = ByteArrayInputStream(inputStreamData.toByteArray())
+
+      // Create a mock classloader that simulates Compose presence
+      val mockClassLoader =
+        object : ClassLoader(SessionHandlerTest::class.java.classLoader) {
+          override fun loadClass(name: String, resolve: Boolean): Class<*> {
+            if (name == "androidx.compose.ui.Modifier") {
+              return Any::class.java // return dummy
+            }
+            return super.loadClass(name, resolve)
+          }
+
+          override fun getResourceAsStream(name: String): InputStream? {
+            if (name == "META-INF/androidx.compose.ui_ui.version") {
+              return ByteArrayInputStream("1.5.4".toByteArray())
+            }
+            return super.getResourceAsStream(name)
+          }
+        }
+
+      val shutdownSignal = CompletableDeferred<Unit>()
+      val testScope = CoroutineScope(Dispatchers.Default + Job())
+      val sessionHandler =
+        SessionHandler(
+          inputStream = inputStream,
+          outputStream = outputStream,
+          crashListener = { throw it },
+          shutdownSignal = shutdownSignal,
+          serverScope = testScope,
+          inspectorBridges = mutableMapOf(),
+          classLoader = mockClassLoader,
+        )
+
+      sessionHandler.processCommands()
+      testScope.cancel()
+
+      val writtenBytes = outputStream.toByteArray()
+      val responseBytes = FramingProtocol.readMessage(ByteArrayInputStream(writtenBytes))
+      val response = Response.parseFrom(responseBytes)
+
+      assertThat(response.commandId).isEqualTo(1)
+      assertThat(response.status).isEqualTo(Response.Status.SUCCESS)
+      assertThat(response.specializedCase).isEqualTo(Response.SpecializedCase.GET_VERSION)
+
+      val versionResponse = response.getVersion
+      assertThat(versionResponse.versionsMap).containsExactly(ProtocolConstants.COMPOSE_UI_LIBRARY_ID, "1.5.4")
+    }
+  }
+
+  @Test
+  fun testHandle_getVersion_unknownLibrary_fails() {
+    runBlocking {
+      val outputStream = ByteArrayOutputStream()
+
+      val command =
+        Command.newBuilder().setCommandId(1).setGetVersion(GetVersionCommand.newBuilder().addLibraryIds("invalid:lib").build()).build()
+
+      val inputStreamData = ByteArrayOutputStream()
+      FramingProtocol.writeMessage(inputStreamData, command.toByteArray())
+      val inputStream = ByteArrayInputStream(inputStreamData.toByteArray())
+
+      val shutdownSignal = CompletableDeferred<Unit>()
+      val testScope = CoroutineScope(Dispatchers.Default + Job())
+      val sessionHandler =
+        SessionHandler(
+          inputStream = inputStream,
+          outputStream = outputStream,
+          crashListener = { throw it },
+          shutdownSignal = shutdownSignal,
+          serverScope = testScope,
+          inspectorBridges = mutableMapOf(),
+        )
+
+      sessionHandler.processCommands()
+      testScope.cancel()
+
+      val writtenBytes = outputStream.toByteArray()
+      val responseBytes = FramingProtocol.readMessage(ByteArrayInputStream(writtenBytes))
+      val response = Response.parseFrom(responseBytes)
+
+      assertThat(response.commandId).isEqualTo(1)
+      assertThat(response.status).isEqualTo(Response.Status.ERROR)
+      assertThat(response.errorMessage).contains("Unsupported library ID: invalid:lib")
+    }
   }
 }

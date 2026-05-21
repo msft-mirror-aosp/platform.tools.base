@@ -38,13 +38,10 @@ public class DataBindingIntegrationTestAppsTest {
     @Rule public GradleTestProject project;
     private final boolean enableLegacyApi;
 
-    public DataBindingIntegrationTestAppsTest(
-            String projectName, boolean useAndroidX, boolean enableLegacyApi) {
+    public DataBindingIntegrationTestAppsTest(String projectName, boolean enableLegacyApi) {
         GradleTestProjectBuilder builder =
                 GradleTestProject.builder()
-                        .fromDataBindingIntegrationTest(projectName, useAndroidX)
-                        .addGradleProperties(
-                                BooleanOption.USE_ANDROID_X.getPropertyName() + "=" + useAndroidX)
+                        .fromDataBindingIntegrationTest(projectName, true)
                         // b/116109681 - Enforce unique package names disabled in this test due to
                         // test project
                         // containing violation.
@@ -56,26 +53,24 @@ public class DataBindingIntegrationTestAppsTest {
                                         + "="
                                         + enableLegacyApi)
                         .withDependencyChecker(!"KotlinTestApp".equals(projectName));
-        if (SdkVersionInfo.HIGHEST_KNOWN_STABLE_API < 28 && useAndroidX) {
+        if (SdkVersionInfo.HIGHEST_KNOWN_STABLE_API < 28) {
             builder.withCompileSdkVersion("28");
         }
         this.project = builder.create();
         this.enableLegacyApi = enableLegacyApi;
     }
 
-    @Parameterized.Parameters(name = "app_{0}_useAndroidX_{1}_enableLegacyApi_{2}")
+    @Parameterized.Parameters(name = "app_{0}_enableLegacyApi_{1}")
     public static Iterable<Object[]> classNames() {
         List<Object[]> params = new ArrayList<>();
-        for (boolean useAndroidX : new boolean[] {true, false}) {
-            params.add(new Object[] {"IndependentLibrary", useAndroidX, false});
-            // b/161641190 (javac crash when running in RBE)
-            // params.add(new Object[] {"TestApp", useAndroidX});
-            params.add(new Object[] {"ViewBindingTestApp", useAndroidX, false});
-            params.add(new Object[] {"ProguardedAppWithTest", useAndroidX, false});
-            params.add(new Object[] {"AppWithDataBindingInTests", useAndroidX, false});
-        }
-        params.add(new Object[] {"KotlinTestApp", true, true});
-        params.add(new Object[] {"ViewBindingWithDataBindingTestApp", true, true});
+        params.add(new Object[] {"IndependentLibrary", false});
+        // b/161641190 (javac crash when running in RBE)
+        // params.add(new Object[] {"TestApp", false});
+        params.add(new Object[] {"ViewBindingTestApp", false});
+        params.add(new Object[] {"ProguardedAppWithTest", false});
+        params.add(new Object[] {"AppWithDataBindingInTests", false});
+        params.add(new Object[] {"KotlinTestApp", true});
+        params.add(new Object[] {"ViewBindingWithDataBindingTestApp", true});
         return params;
     }
 

@@ -42,53 +42,40 @@ public class DataBindingIntegrationTestAppsConnectedTest {
 
     @ClassRule public static final ExternalResource EMULATOR = EmulatorUtils.getEmulator();
 
-    public DataBindingIntegrationTestAppsConnectedTest(String projectName, boolean useAndroidX) {
+    public DataBindingIntegrationTestAppsConnectedTest(String projectName) {
         this.projectName = projectName;
-        this.useAndroidX = useAndroidX;
         GradleTestProjectBuilder builder =
                 GradleTestProject.builder()
-                        .fromDataBindingIntegrationTest(projectName, useAndroidX)
-                        .addGradleProperties(
-                                BooleanOption.USE_ANDROID_X.getPropertyName() + "=" + useAndroidX)
+                        .fromDataBindingIntegrationTest(projectName, true)
                         .withDependencyChecker(!"KotlinTestApp".equals(projectName));
-        if (SdkVersionInfo.HIGHEST_KNOWN_STABLE_API < 28 && useAndroidX) {
+        if (SdkVersionInfo.HIGHEST_KNOWN_STABLE_API < 28) {
             builder.withCompileSdkVersion("28");
         }
         this.project = builder.create();
     }
 
-    @Parameterized.Parameters(name = "app_{0}_useAndroidX_{1}")
-    public static Iterable<Object[]> classNames() {
-        List<Object[]> params = new ArrayList<>();
-        for (boolean useAndroidX : new boolean[] {true, false}) {
-            // b/178458738
-            // params.add(new Object[] {"TestApp", useAndroidX});
-
-            // b/177370256
-            // params.add(new Object[] {"ViewBindingTestApp", useAndroidX});
-
-            params.add(new Object[] {"ProguardedAppWithTest", useAndroidX});
-            params.add(new Object[] {"IndependentLibrary", useAndroidX});
-        }
-        params.add(new Object[] {"AppWithDataBindingInTests", true});
-        params.add(new Object[] {"KotlinTestApp", true});
-        params.add(new Object[] {"ViewBindingWithDataBindingTestApp", true});
+    @Parameterized.Parameters(name = "app_{0}")
+    public static Iterable<String> classNames() {
+        List<String> params = new ArrayList<>();
+        // b/178458738
+        // params.add("TestApp");
+        // b/177370256
+        // params.add("ViewBindingTestApp");
+        params.add("ProguardedAppWithTest");
+        params.add("IndependentLibrary");
+        params.add("AppWithDataBindingInTests");
+        params.add("KotlinTestApp");
+        params.add("ViewBindingWithDataBindingTestApp");
         // b/177370256 Support version works fine
-        params.add(new Object[] {"ViewBindingTestApp", false});
+        params.add("ViewBindingTestApp");
         return params;
     }
 
     String projectName;
-    Boolean useAndroidX;
 
     @Before
     public void setUp() throws IOException, InterruptedException {
-        if ("ViewBindingTestApp".equals(projectName) && !useAndroidX) {
-            // Support version has no subprojects
-            project.addAdbTimeout();
-        } else {
-            project.addAdbTimeout();
-        }
+        project.addAdbTimeout();
 
         // run the uninstall tasks in order to (1) make sure nothing is installed at the beginning
         // of each test and (2) check the adb connection before taking the time to build anything.
@@ -113,7 +100,6 @@ public class DataBindingIntegrationTestAppsConnectedTest {
                 .with(
                         BooleanOption.USE_NON_FINAL_RES_IDS,
                         !"ProguardedAppWithTest".equals(projectName))
-                .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
                 .with(BooleanOption.ENABLE_LEGACY_API, true)
                 .run("connectedCheck");
     }

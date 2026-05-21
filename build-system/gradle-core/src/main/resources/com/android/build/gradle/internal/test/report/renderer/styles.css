@@ -53,6 +53,7 @@
     --border-interactive: #d1d5db;
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1207,3 +1208,162 @@ a.breadcrumb-link:hover { background-color: var(--bg-hover); text-decoration: un
 
 #breadcrumbs { margin-bottom: 1rem; }
 .table-container { margin-top: 1rem; }
+
+/* ==========================================================================
+   HELP HUB STYLES
+   ========================================================================== */
+
+.fab {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 2rem;
+  background-color: var(--text-gray-900);
+  color: var(--text-inverse);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: var(--shadow-lg);
+  cursor: pointer;
+  transition: transform 0.2s, background-color 0.2s;
+  z-index: 1000;
+  border: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.fab:hover {
+  background-color: var(--text-gray-800);
+  transform: scale(1.05);
+}
+
+.side-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 400px;
+  height: 100%;
+  background-color: var(--bg-card);
+  box-shadow: var(--shadow-lg);
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.3s ease-in-out, visibility 0.3s;
+  transform: translateX(100%);
+  visibility: hidden;
+  border-left: 1px solid var(--border-color);
+}
+
+.side-panel.open {
+  transform: translateX(0);
+  visibility: visible;
+}
+
+.side-panel-header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.side-panel-header .header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.side-panel-header h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-darkest);
+}
+
+.side-panel-content {
+  padding: 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.help-section {
+  margin-bottom: 1.5rem;
+}
+
+.help-section-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.75rem;
+}
+
+.help-section p {
+  font-size: 0.875rem;
+  color: var(--text-gray-700);
+  line-height: 1.6;
+}
+
+.legend-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.legend-item {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.side-panel :focus-visible {
+  outline-offset: -2px !important;
+}
+
+.legend-item:hover {
+  background-color: var(--bg-hover);
+  border-color: var(--border-interactive);
+}
+
+.legend-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+}
+
+.legend-item-title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-gray-800);
+}
+
+.legend-item-arrow {
+  color: var(--text-muted);
+  transition: transform 0.2s;
+}
+
+.legend-item.open .legend-item-arrow {
+  transform: rotate(90deg);
+}
+
+.legend-item-content {
+  padding: 0 1rem 0.75rem 1rem;
+  font-size: 0.875rem;
+  color: var(--text-gray-600);
+  line-height: 1.5;
+  display: none;
+}
+
+.legend-item.open .legend-item-content {
+  display: block;
+}
+
+.divider {
+  height: 1px;
+  background-color: var(--border-color);
+  margin: 1.5rem 0;
+}

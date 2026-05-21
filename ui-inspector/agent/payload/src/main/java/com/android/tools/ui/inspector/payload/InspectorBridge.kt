@@ -16,21 +16,29 @@
 
 package com.android.tools.ui.inspector.payload
 
+import androidx.annotation.VisibleForTesting
 import androidx.inspection.Connection
 import androidx.inspection.Inspector
 import com.android.tools.ui.inspector.payload.appinspection.DelegatingConnection
 import com.android.tools.ui.inspector.payload.appinspection.HandlerThreadExecutor
+import com.android.tools.ui.inspector.payload.appinspection.createInspectorEnvironment
 import com.android.tools.ui.inspector.payload.appinspection.handleCommandSuspend
+import com.android.tools.ui.inspector.payload.appinspection.loadInspectorDynamically
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+private const val THREAD_NAME_PREFIX = "ui_inspector_"
 
 /**
  * Bridges communication between the server and a specific [Inspector], enabling persistence across host reconnections and ensuring
  * sequential command processing.
  */
-internal class InspectorBridge(
+internal class InspectorBridge
+private constructor(
   private val inspector: Inspector,
   private val connection: DelegatingConnection,
   private val scope: CoroutineScope,
@@ -45,7 +53,11 @@ internal class InspectorBridge(
       // Command handler coroutine. Handles commands sequentially.
       for (envelope in channel) {
         try {
-          val response = inspector.handleCommandSuspend(envelope.command)
+          val response =
+            withContext(primaryExecutor.asCoroutineDispatcher()) {
+              // Route inspector commands to the primary thread to satisfy the convention from AppInspection.
+              inspector.handleCommandSuspend(envelope.command)
+            }
           envelope.reply.complete(response)
         } catch (e: Exception) {
           envelope.reply.completeExceptionally(e)
@@ -74,5 +86,40 @@ internal class InspectorBridge(
     channel.close()
     inspector.onDispose()
     primaryExecutor.quitSafely()
+  }
+
+  companion object {
+    /** Creates and initializes a new [InspectorBridge] containing a dynamically loaded [Inspector] instance. */
+    suspend fun create(
+      inspectorId: String,
+      dexPath: String,
+      connection: DelegatingConnection,
+      scope: CoroutineScope,
+      crashListener: (Throwable) -> Unit,
+    ): InspectorBridge {
+      val primaryExecutor = HandlerThreadExecutor("$THREAD_NAME_PREFIX$inspectorId", crashListener)
+      val inspectorEnvironment = createInspectorEnvironment(primaryExecutor, crashListener)
+
+      val inspector =
+        withContext(primaryExecutor.asCoroutineDispatcher()) {
+          // Instantiate the inspector on the primary executor thread so that its internally captured Thread.currentThread() matches the
+          // thread used for executing subsequent commands.
+          // This respects the convention from AppInspection.
+          loadInspectorDynamically(inspectorId, dexPath, connection, inspectorEnvironment)
+        }
+
+      return InspectorBridge(inspector, connection, scope, primaryExecutor)
+    }
+
+    /** Creates a new [InspectorBridge] for testing with a mocked or stubbed [Inspector] instance. */
+    @VisibleForTesting
+    fun createForTesting(
+      inspector: Inspector,
+      connection: DelegatingConnection,
+      scope: CoroutineScope,
+      primaryExecutor: HandlerThreadExecutor,
+    ): InspectorBridge {
+      return InspectorBridge(inspector, connection, scope, primaryExecutor)
+    }
   }
 }

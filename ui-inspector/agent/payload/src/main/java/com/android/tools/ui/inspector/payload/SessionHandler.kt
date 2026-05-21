@@ -17,16 +17,17 @@
 package com.android.tools.ui.inspector.payload
 
 import android.util.Log
+import androidx.annotation.VisibleForTesting
 import com.android.tools.idea.protobuf.ByteString
 import com.android.tools.ui.inspector.common.FramingProtocol
+import com.android.tools.ui.inspector.common.ProtocolConstants
 import com.android.tools.ui.inspector.payload.appinspection.DelegatingConnection
-import com.android.tools.ui.inspector.payload.appinspection.HandlerThreadExecutor
 import com.android.tools.ui.inspector.payload.appinspection.createAppInspectionConnection
-import com.android.tools.ui.inspector.payload.appinspection.createInspectorEnvironment
-import com.android.tools.ui.inspector.payload.appinspection.loadInspectorDynamically
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol.Command
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol.CreateInspectorCommand
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol.CreateInspectorResponse
+import com.android.tools.ui.inspector.protocol.UiInspectorProtocol.GetVersionCommand
+import com.android.tools.ui.inspector.protocol.UiInspectorProtocol.GetVersionResponse
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol.InspectorMessageCommand
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol.InspectorMessageResponse
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol.Response
@@ -41,8 +42,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.isActive
 
 private const val TAG = "studio.SessionHandler"
-
-private const val THREAD_NAME_PREFIX = "ui_inspector_"
 
 /**
  * Handles a single connection session with the host.
@@ -61,6 +60,7 @@ internal class SessionHandler(
   private val shutdownSignal: CompletableDeferred<Unit>,
   private val serverScope: CoroutineScope,
   private val inspectorBridges: MutableMap<InspectorId, InspectorBridge>,
+  @VisibleForTesting private val classLoader: ClassLoader = SessionHandler::class.java.classLoader,
 ) {
 
   /**
@@ -108,6 +108,10 @@ internal class SessionHandler(
           handleShutdown(commandId)
           true
         }
+        Command.SpecializedCase.GET_VERSION -> {
+          handleGetVersion(command.getVersion, commandId)
+          false
+        }
         else -> error("Unhandled top-level command: ${command.specializedCase}")
       }
     } catch (e: IOException) {
@@ -129,7 +133,7 @@ internal class SessionHandler(
     }
   }
 
-  private fun handleCreateInspector(command: CreateInspectorCommand, commandId: Int) {
+  private suspend fun handleCreateInspector(command: CreateInspectorCommand, commandId: Int) {
     val inspectorId = command.inspectorId
     val dexPath = command.dexPath
 
@@ -141,11 +145,7 @@ internal class SessionHandler(
     } else {
       val realConnection = createAppInspectionConnection(inspectorId, outputStream, crashListener)
       val delegatingConnection = DelegatingConnection(realConnection)
-
-      val primaryExecutor = HandlerThreadExecutor("${THREAD_NAME_PREFIX}${inspectorId}", crashListener)
-      val inspectorEnvironment = createInspectorEnvironment(primaryExecutor, crashListener)
-      val inspector = loadInspectorDynamically(inspectorId, dexPath, delegatingConnection, inspectorEnvironment)
-      val newBridge = InspectorBridge(inspector, delegatingConnection, serverScope, primaryExecutor)
+      val newBridge = InspectorBridge.create(inspectorId, dexPath, delegatingConnection, serverScope, crashListener)
 
       inspectorBridges[inspectorId] = newBridge
     }
@@ -156,6 +156,25 @@ internal class SessionHandler(
   private fun handleShutdown(commandId: Int) {
     outputStream.reply(commandId = commandId) { shutdown = ShutdownResponse.newBuilder().build() }
     shutdownSignal.complete(Unit)
+  }
+
+  private fun handleGetVersion(command: GetVersionCommand, commandId: Int) {
+    val versions = mutableMapOf<String, String>()
+    for (libraryId in command.libraryIdsList) {
+      val version = performVersionDetection(libraryId)
+      if (version != null) {
+        versions[libraryId] = version
+      }
+    }
+
+    outputStream.reply(commandId = commandId) { getVersion = GetVersionResponse.newBuilder().putAllVersions(versions).build() }
+  }
+
+  private fun performVersionDetection(libraryId: String): String? {
+    return when (libraryId) {
+      ProtocolConstants.COMPOSE_UI_LIBRARY_ID -> detectComposeVersion(classLoader)
+      else -> throw IllegalArgumentException("Unsupported library ID: $libraryId")
+    }
   }
 }
 

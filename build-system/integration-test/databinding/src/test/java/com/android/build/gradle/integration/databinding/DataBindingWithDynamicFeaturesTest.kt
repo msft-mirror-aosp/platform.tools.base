@@ -17,14 +17,11 @@
 package com.android.build.gradle.integration.databinding
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.runner.FilterableParameterized
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.apk.Apk
 import org.junit.Rule
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.Parameterized
 
 /**
  * <pre>
@@ -44,36 +41,17 @@ import org.junit.runners.Parameterized
  *
  * </pre>
  */
-@RunWith(FilterableParameterized::class)
-class DataBindingWithDynamicFeaturesTest(private val useAndroidX: Boolean) {
-  companion object {
-    @Parameterized.Parameters(name = "useAndroidX_{0}") @JvmStatic fun params() = listOf(true, false)
-
-    data class DataBindingClass(private val support: String, private val androidX: String) {
-      fun get(useAndroidX: Boolean) =
-        if (useAndroidX) {
-          androidX
-        } else {
-          support
-        }
-    }
-  }
+class DataBindingWithDynamicFeaturesTest {
 
   @Rule
   @JvmField
   val project: GradleTestProject =
-    GradleTestProject.builder()
-      .fromTestProject("databindingWithDynamicFeatures")
-      .addGradleProperties(BooleanOption.USE_ANDROID_X.propertyName + "=" + useAndroidX)
-      .withDependencyChecker(false)
-      .create()
+    GradleTestProject.builder().fromTestProject("databindingWithDynamicFeatures").withDependencyChecker(false).create()
 
   @Test
   fun checkApkContainsDataBindingClasses() {
     project
       .executor()
-      // Disabled due to dependencies on vectordrawable libraries.
-      .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
       // TODO(b/439806981): Remove this
       .with(BooleanOption.USE_DEPENDENCY_CONSTRAINTS, true)
       .run("clean", "assembleDebug")
@@ -99,11 +77,11 @@ class DataBindingWithDynamicFeaturesTest(private val useAndroidX: Boolean) {
 
     val baseClasses =
       listOf(
-        brClass(BASE_ADAPTERS.get(useAndroidX)),
+        brClass(BASE_ADAPTERS),
         brClass(BASE),
-        DATA_BINDING_COMPONENT.get(useAndroidX),
-        MERGED_MAPPER.get(useAndroidX),
-        brClass(BASE_ADAPTERS.get(useAndroidX)),
+        DATA_BINDING_COMPONENT,
+        MERGED_MAPPER,
+        brClass(BASE_ADAPTERS),
         bindingClass(BASE, BASE_ACTIVITY),
         bindingClass(BASE, BASE_ACTIVITY_IMPL),
       )
@@ -146,10 +124,8 @@ class DataBindingWithDynamicFeaturesTest(private val useAndroidX: Boolean) {
   private val BASE = "$PROJECT_PACKAGE.app"
   private val FEATURE_A = "$PROJECT_PACKAGE.featureA"
   private val FEATURE_B = "$PROJECT_PACKAGE.featureB"
-  private val MERGED_MAPPER =
-    DataBindingClass(support = "Landroid/databinding/DataBinderMapperImpl;", androidX = "Landroidx/databinding/DataBinderMapperImpl;")
-  private val DATA_BINDING_COMPONENT =
-    DataBindingClass(support = "Landroid/databinding/DataBindingComponent;", androidX = "Landroidx/databinding/DataBindingComponent;")
+  private val MERGED_MAPPER = "Landroidx/databinding/DataBinderMapperImpl;"
+  private val DATA_BINDING_COMPONENT = "Landroidx/databinding/DataBindingComponent;"
   private val LIBRARY_MODULE = "$PROJECT_PACKAGE.libraryModule"
   private val FEATURE_A_ACTIVITY = "ActivityMainBinding"
   private val FEATURE_A_ACTIVITY_IMPL = "ActivityMainBindingImpl"
@@ -157,6 +133,5 @@ class DataBindingWithDynamicFeaturesTest(private val useAndroidX: Boolean) {
   private val FEATURE_B_ACTIVITY_IMPL = "FeatureBMainBindingImpl"
   private val BASE_ACTIVITY = "AppLayoutBinding"
   private val BASE_ACTIVITY_IMPL = "AppLayoutBindingImpl"
-  private val BASE_ADAPTERS =
-    DataBindingClass(support = "com.android.databinding.library.baseAdapters", androidX = "androidx.databinding.library.baseAdapters")
+  private val BASE_ADAPTERS = "androidx.databinding.library.baseAdapters"
 }

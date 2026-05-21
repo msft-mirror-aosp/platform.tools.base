@@ -23,6 +23,7 @@ import com.android.build.gradle.integration.common.fixture.project.plugins.Kotli
 import com.android.build.gradle.integration.manageddevice.utils.CustomAndroidSdkRule
 import com.android.build.gradle.integration.manageddevice.utils.CustomAndroidSdkRule.Companion.withCustomAndroidSdk
 import com.android.build.gradle.integration.manageddevice.utils.CustomAndroidSdkRule.Companion.withCustomSdkDir
+import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.FileUtils
 import java.io.File
@@ -32,14 +33,18 @@ import org.gradle.api.plugins.ExtensionAware
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
-class KmpManagedDeviceTest {
+@RunWith(Parameterized::class)
+class KmpManagedDeviceTest(val runWithBuiltInPlatform: Boolean) {
 
   @get:Rule val customAndroidSdkRule = CustomAndroidSdkRule()
 
   @get:Rule
   val rule =
     GradleRule.configure().withCustomSdkDir(customAndroidSdkRule).from {
+      gradleProperties { add(BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM, runWithBuiltInPlatform) }
       androidKotlinMultiplatformLibrary(":kmpLibrary") {
         files {
           add(
@@ -115,5 +120,11 @@ class KmpManagedDeviceTest {
     assertThat(File(reportDir, "index.html")).exists()
     assertThat(File(reportDir, "pkg.name.kmpLibrary.html")).exists()
     assertThat(File(reportDir, "pkg.name.kmpLibrary.ExampleInstrumentedTest.html")).exists()
+  }
+
+  companion object {
+    @JvmStatic
+    @Parameterized.Parameters(name = "runWithBuiltInPlatform={0}")
+    fun parameters(): Collection<Array<Any>> = listOf(arrayOf(false), arrayOf(true))
   }
 }

@@ -22,6 +22,7 @@
 
 #include <string>
 
+#include "tools/base/android-test/coverage/agent/native/hits_extractor.h"
 #include "tools/base/android-test/coverage/agent/native/instrumenter.h"
 #include "tools/base/android-test/coverage/agent/native/metadata_collector.h"
 #include "tools/base/android-test/coverage/common/log.h"
@@ -40,7 +41,8 @@ static coverage::Instrumenter* g_instrumenter = nullptr;
 namespace {
 
 void JNICALL OnVMDeath(jvmtiEnv* jvmti_env, JNIEnv* jni_env) {
-  coverage::Log::I("VMDeath event received. Writing coverage metadata...");
+  coverage::Log::I("VMDeath event received. Writing coverage data...");
+  coverage::HitsExtractor::Instance().ExtractAndWrite(jni_env);
   coverage::MetadataCollector::Instance().WriteToDisk();
 }
 
@@ -163,8 +165,9 @@ extern "C" JNIEXPORT jint JNICALL Agent_OnAttach(JavaVM* vm, char* options,
       return JNI_OK;
     }
 
-    // b. Initialize metadata collector
+    // b. Initialize metadata collector and hits extractor
     coverage::MetadataCollector::Instance().Initialize(package_name);
+    coverage::HitsExtractor::Instance().Initialize(jni_env, package_name);
 
     // c. Initialize instrumenter and register hooks
     g_instrumenter = new coverage::Instrumenter(jvmti_env, inclusion_prefixes);

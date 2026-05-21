@@ -22,6 +22,7 @@ import com.android.builder.files.RelativeFile;
 import com.android.ide.common.resources.FileStatus;
 import com.google.common.collect.ImmutableSet;
 import java.io.InputStream;
+import java.util.Set;
 import java.util.function.Predicate;
 
 /**
@@ -45,7 +46,7 @@ import java.util.function.Predicate;
  * <p>Because not all methods are necessarily needed for every merge operation, it is recommended to
  * use {@link LazyIncrementalFileMergerInput} as implementation.
  */
-public interface IncrementalFileMergerInput extends OpenableCloseable {
+public interface IncrementalFileMergerInput extends FileMergerInput {
 
     /**
      * Obtains all OS-independent paths of all files that were changed in this input.
@@ -53,43 +54,15 @@ public interface IncrementalFileMergerInput extends OpenableCloseable {
      * @return the paths, may be empty if no paths were changed
      */
     @NonNull
-    ImmutableSet<String> getUpdatedPaths();
+    Set<String> getUpdatedPaths();
 
-    /**
-     * Obtains all OS-independent paths of all files that in this input, regardless of being changed
-     * or not.
-     *
-     * @return the paths, may be empty if the relative tree of this input is empty
-     */
-    @NonNull
-    ImmutableSet<String> getAllPaths();
-
-    /**
-     * Obtains the name of this input.
-     *
-     * @return the name
-     */
-    @NonNull
-    String getName();
 
     /**
      * Obtains the status of a path in this input.
      *
      * @param path the OS-independent path; the path may or not exist in the input
-     * @return the status of the path or {@code null} if the path does not exist in the input or
-     * if the path has not been changed;
-     * {@code null} is returned if and only if {@code !getUpdatedPaths().contains(path)}
+     * @return the status of the path or `null` if the path does not exist in the input or if the path has not been changed; `null` is
+     *   returned if and only if `!getUpdatedPaths().contains(path)`
      */
-    @Nullable
-    FileStatus getFileStatus(@NonNull String path);
-
-    /**
-     * Opens a path for reading. This method should only be called when the input is open.
-     *
-     * @param path the path
-     * @return the input stream that should be closed by the caller before {@link #close()} is
-     * called
-     */
-    @NonNull
-    InputStream openPath(@NonNull String path);
+    FileStatus getFileStatus(String path);
 }

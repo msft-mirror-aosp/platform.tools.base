@@ -16,6 +16,7 @@
 
 package com.android.tools.ui.inspector.payload.appinspection
 
+import android.os.Build
 import android.os.Handler
 import android.util.Log
 import androidx.inspection.ArtTooling
@@ -29,11 +30,15 @@ import com.android.tools.ui.inspector.common.FramingProtocol
 import com.android.tools.ui.inspector.payload.SessionHandler
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol
 import dalvik.system.DexClassLoader
+import java.io.File
 import java.io.IOException
 import java.io.OutputStream
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 import java.util.ServiceLoader
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
+import java.util.jar.JarFile
 import kotlin.coroutines.resume
 import kotlinx.coroutines.suspendCancellableCoroutine
 
@@ -153,7 +158,8 @@ internal fun loadInspectorDynamically(
   environment: InspectorEnvironment,
 ): Inspector {
   val optimizedDir = System.getProperty("java.io.tmpdir")
-  val classLoader = DexClassLoader(dexPath, optimizedDir, null, SessionHandler::class.java.classLoader)
+  val nativePath = prepareNativeLibraries(dexPath)
+  val classLoader = DexClassLoader(dexPath, optimizedDir, nativePath, SessionHandler::class.java.classLoader)
   val loader = ServiceLoader.load(InspectorFactory::class.java, classLoader)
   val iterator = loader.iterator()
   var inspector: Inspector? = null
@@ -168,4 +174,44 @@ internal fun loadInspectorDynamically(
     throw Exception("Failed to find InspectorFactory with id $inspectorId")
   }
   return inspector
+}
+
+/**
+ * Dynamically extracts JNI native libraries from the inspector's jar if present, matching the mechanism used by App Inspection's
+ * `InspectorContext.java`.
+ */
+private fun prepareNativeLibraries(dexPath: String): String? {
+  try {
+    val abi = Build.SUPPORTED_ABIS[0]
+    JarFile(dexPath).use { jarFile ->
+      val libEntry = jarFile.getEntry("lib/")
+      if (libEntry == null || !libEntry.isDirectory) {
+        return null
+      }
+      val dexFile = File(dexPath)
+      val tmpDir = System.getProperty("java.io.tmpdir")
+      val workingDir = File(tmpDir, "${dexFile.name}_unpacked_lib")
+      if (!workingDir.exists() && !workingDir.mkdir()) {
+        throw IOException("Failed to create working dir: $workingDir")
+      }
+      val entries = jarFile.entries()
+      val targetFolder = "lib/$abi/"
+      while (entries.hasMoreElements()) {
+        val entry = entries.nextElement()
+        if (entry.name.startsWith(targetFolder) && !entry.isDirectory && entry.name.endsWith(".so")) {
+          val name = entry.name.substring(entry.name.lastIndexOf('/') + 1)
+          val file = File(workingDir, name)
+          jarFile.getInputStream(entry).use { inputStream -> Files.copy(inputStream, file.toPath(), StandardCopyOption.REPLACE_EXISTING) }
+          file.setReadable(true, false)
+          file.setWritable(true, false)
+          file.setExecutable(true, false)
+          file.deleteOnExit()
+        }
+      }
+      return workingDir.absolutePath
+    }
+  } catch (e: Exception) {
+    Log.e("studio.AppInspectionUtils", "Failed to prepare native libraries", e)
+    return null
+  }
 }
