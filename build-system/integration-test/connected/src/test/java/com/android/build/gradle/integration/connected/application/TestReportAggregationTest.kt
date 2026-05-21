@@ -86,20 +86,20 @@ class TestReportAggregationTest {
           compileSdk { version = release(GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION) }
           installation { timeOutInMs = 30000 }
           defaultConfig { testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner" }
-          dependencies {
-            implementation(project(":lib2"))
+        }
+        dependencies {
+          implementation(project(":lib2"))
 
-            testImplementation("junit:junit:4.13.2")
-            testImplementation("org.mockito:mockito-core:5.20.0")
-            testImplementation("org.jdeferred:jdeferred-android-aar:1.2.3")
-            testImplementation("commons-logging:commons-logging:1.1.1")
+          testImplementation("junit:junit:4.13.2")
+          testImplementation("org.mockito:mockito-core:5.20.0")
+          testImplementation("org.jdeferred:jdeferred-android-aar:1.2.3")
+          testImplementation("commons-logging:commons-logging:1.1.1")
 
-            androidTestImplementation("androidx.test:core:1.4.0-alpha06")
-            androidTestImplementation("androidx.test.ext:junit:1.1.3-alpha02")
-            androidTestImplementation("androidx.test:monitor:1.4.0-alpha06")
-            androidTestImplementation("androidx.test:rules:1.4.0-alpha06")
-            androidTestImplementation("androidx.test:runner:1.4.0-alpha06")
-          }
+          androidTestImplementation("androidx.test:core:1.4.0-alpha06")
+          androidTestImplementation("androidx.test.ext:junit:1.1.3-alpha02")
+          androidTestImplementation("androidx.test:monitor:1.4.0-alpha06")
+          androidTestImplementation("androidx.test:rules:1.4.0-alpha06")
+          androidTestImplementation("androidx.test:runner:1.4.0-alpha06")
         }
       }
       androidLibrary(":lib2") {
@@ -109,49 +109,49 @@ class TestReportAggregationTest {
           installation { timeOutInMs = 30000 }
           defaultConfig { testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner" }
           publishing { singleVariant("debug") }
-          dependencies {
-            testImplementation("junit:junit:4.13.2")
-            testImplementation("org.mockito:mockito-core:5.20.0")
-            testImplementation("org.jdeferred:jdeferred-android-aar:1.2.3")
-            testImplementation("commons-logging:commons-logging:1.1.1")
-
-            androidTestImplementation("androidx.test:core:1.4.0-alpha06")
-            androidTestImplementation("androidx.test.ext:junit:1.1.3-alpha02")
-            androidTestImplementation("androidx.test:monitor:1.4.0-alpha06")
-            androidTestImplementation("androidx.test:rules:1.4.0-alpha06")
-            androidTestImplementation("androidx.test:runner:1.4.0-alpha06")
-          }
-          files.add(
-            "src/androidTest/java/com/example/lib2/FailingAndroidTest.kt",
-            """
-            package com.example.lib2
-            import org.junit.Test
-            import org.junit.Assert.fail
-            class FailingAndroidTest {
-                @Test
-                fun testFailure() {
-                    fail("This test is supposed to fail")
-                }
-            }
-            """
-              .trimIndent(),
-          )
-          files.add(
-            "src/test/java/com/example/lib2/FailingUnitTest.kt",
-            """
-            package com.example.lib2
-            import org.junit.Test
-            import org.junit.Assert.fail
-            class FailingUnitTest {
-                @Test
-                fun testFailure() {
-                    fail("This test is supposed to fail")
-                }
-            }
-            """
-              .trimIndent(),
-          )
         }
+        dependencies {
+          testImplementation("junit:junit:4.13.2")
+          testImplementation("org.mockito:mockito-core:5.20.0")
+          testImplementation("org.jdeferred:jdeferred-android-aar:1.2.3")
+          testImplementation("commons-logging:commons-logging:1.1.1")
+
+          androidTestImplementation("androidx.test:core:1.4.0-alpha06")
+          androidTestImplementation("androidx.test.ext:junit:1.1.3-alpha02")
+          androidTestImplementation("androidx.test:monitor:1.4.0-alpha06")
+          androidTestImplementation("androidx.test:rules:1.4.0-alpha06")
+          androidTestImplementation("androidx.test:runner:1.4.0-alpha06")
+        }
+        files.add(
+          "src/androidTest/java/com/example/lib2/FailingAndroidTest.kt",
+          """
+          package com.example.lib2
+          import org.junit.Test
+          import org.junit.Assert.fail
+          class FailingAndroidTest {
+              @Test
+              fun testFailure() {
+                  fail("This test is supposed to fail")
+              }
+          }
+          """
+            .trimIndent(),
+        )
+        files.add(
+          "src/test/java/com/example/lib2/FailingUnitTest.kt",
+          """
+          package com.example.lib2
+          import org.junit.Test
+          import org.junit.Assert.fail
+          class FailingUnitTest {
+              @Test
+              fun testFailure() {
+                  fail("This test is supposed to fail")
+              }
+          }
+          """
+            .trimIndent(),
+        )
       }
       gradleProperties {
         // this is to test the multi-variant support for coverage reporting
@@ -300,8 +300,10 @@ class TestReportAggregationTest {
     assertThat(report.projectName).isEqualTo(expectedProjectName)
     assertThat(report.numberOfModules).isEqualTo(expectedModuleCount)
 
-    expectedTotalTests?.let { assertThat(report.summary.total).isEqualTo(it) }
-    expectedFailedTests?.let { assertThat(report.summary.failed).isEqualTo(it) }
+    // Aggregate from the internal "Aggregated" suite
+    val totalSummary = aggregateFromAggregatedSuite(report)
+    expectedTotalTests?.let { assertThat(totalSummary.total).isEqualTo(it) }
+    expectedFailedTests?.let { assertThat(totalSummary.failed).isEqualTo(it) }
 
     expectedUnitTestSummary?.let { expected ->
       val actual = aggregateSuiteSummaries(report, "UnitTest")
@@ -314,9 +316,22 @@ class TestReportAggregationTest {
     }
   }
 
+  private fun aggregateFromAggregatedSuite(report: TestReport): TestSummary {
+    val summaries = report.modules.flatMap { m -> m.testSuiteSummaries.find { it.name == "Aggregated" }?.variantSummaries ?: emptyList() }
+    return TestSummary(
+      total = summaries.sumOf { it.total },
+      passed = summaries.sumOf { it.passed },
+      failed = summaries.sumOf { it.failed },
+      skipped = summaries.sumOf { it.skipped },
+    )
+  }
+
   private fun aggregateSuiteSummaries(report: TestReport, suiteName: String): TestSummary {
     val summaries =
-      report.modules.flatMap { it.testSuiteSummaries }.filter { it.name.equals(suiteName, ignoreCase = true) }.map { it.summary }
+      report.modules
+        .flatMap { it.testSuiteSummaries }
+        .filter { it.name.contains(suiteName, ignoreCase = true) }
+        .flatMap { it.variantSummaries }
     return TestSummary(
       total = summaries.sumOf { it.total },
       passed = summaries.sumOf { it.passed },
@@ -336,11 +351,13 @@ class TestReportAggregationTest {
     return gson.fromJson(content, T::class.java)
   }
 
-  data class TestReport(val projectName: String, val numberOfModules: Int, val modules: List<ModuleReport>, val summary: TestSummary)
+  data class TestReport(val projectName: String, val numberOfModules: Int, val modules: List<ModuleReport>)
 
-  data class ModuleReport(val name: String, val testSuiteSummaries: List<TestSuiteSummary>, val summary: TestSummary)
+  data class ModuleReport(val name: String, val testSuiteSummaries: List<TestSuiteSummary>)
 
-  data class TestSuiteSummary(val name: String, val summary: TestSummary)
+  data class TestSuiteSummary(val name: String, val variantSummaries: List<VariantSummary>)
+
+  data class VariantSummary(val total: Int, val passed: Int, val failed: Int, val skipped: Int)
 
   data class TestSummary(val total: Int, val passed: Int, val failed: Int, val skipped: Int)
 }

@@ -865,9 +865,9 @@ a.breadcrumb-link:hover { background-color: var(--bg-hover); text-decoration: un
     display: none !important;
 }
 
-/* --- SOURCE VIEW --- */
+/* --- SOURCE VIEW & STACK TRACE VIEW --- */
 
-#source-breadcrumbs {
+#source-breadcrumbs, #stack-trace-breadcrumbs {
     flex: 0 0 auto;
     margin-top: 1rem;
     margin-bottom: 1rem;
@@ -877,7 +877,7 @@ a.breadcrumb-link:hover { background-color: var(--bg-hover); text-decoration: un
     gap: 0.75rem;
 }
 
-.source-grid {
+.source-grid, .stack-trace-grid {
     display: grid;
     grid-template-columns: 280px 1fr;
     gap: 1.5rem;
@@ -886,6 +886,13 @@ a.breadcrumb-link:hover { background-color: var(--bg-hover); text-decoration: un
     height: calc(100vh - 180px);
     overflow: hidden;
     min-height: 0;
+}
+
+.stack-trace-grid {
+    display: flex;
+    flex-direction: row;
+    grid-template-columns: none;
+    overflow-x: auto;
 }
 
 .func-list-container {
@@ -898,7 +905,7 @@ a.breadcrumb-link:hover { background-color: var(--bg-hover); text-decoration: un
     position: relative;
 }
 
-.source-view-container {
+.source-view-container, .stack-trace-container-wrapper {
     display: flex;
     flex-direction: row;
     gap: 1.5rem;
@@ -910,7 +917,7 @@ a.breadcrumb-link:hover { background-color: var(--bg-hover); text-decoration: un
 
 .variant-code-view {
     flex: 1 1 auto;
-    min-width: 0;
+    min-width: 400px;
     background: var(--bg-card);
     border: 1px solid var(--border-color);
     border-radius: 0.75rem;
@@ -918,6 +925,22 @@ a.breadcrumb-link:hover { background-color: var(--bg-hover); text-decoration: un
     flex-direction: column;
     height: 100%;
     overflow: hidden;
+}
+
+.variant-code-view.multi-view {
+    max-width: 800px;
+}
+
+.occurrence-tag {
+    display: inline-flex;
+    align-items: center;
+    background-color: var(--bg-selected);
+    color: var(--text-blue-600);
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-top: 0.25rem;
 }
 
 .variant-header {

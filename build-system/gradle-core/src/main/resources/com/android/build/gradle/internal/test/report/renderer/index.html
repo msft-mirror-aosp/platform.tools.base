@@ -273,20 +273,8 @@
         <div id="stack-trace-breadcrumbs" class="breadcrumbs-container"></div>
       </nav>
 
-      <div class="variant-code-view">
-        <div class="variant-header">
-          <div class="flex items-center gap-2">
-            <svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-600">
-              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-              <line x1="12" y1="9" x2="12" y2="13"></line>
-              <line x1="12" y1="17" x2="12.01" y2="17"></line>
-            </svg>
-            <h3 class="text-lg font-semibold text-gray-900" id="stack-trace-title">Stack Trace</h3>
-          </div>
-        </div>
-        <div id="stack-trace-container" class="code-container" tabindex="0" aria-labelledby="stack-trace-title">
-          <pre id="stack-trace-content" class="font-mono text-sm text-red-600 whitespace-pre-wrap break-all"></pre>
-        </div>
+      <div id="stack-trace-grid" class="stack-trace-grid">
+        <!-- Stack traces will be dynamically injected here -->
       </div>
     </main>
   </div>
@@ -378,7 +366,7 @@
                         </svg>
                     </div>
                     <div class="legend-item-content">
-                        Clicking on <b>Failure</b> status in the report table opens its <b>Stack Trace</b>.
+                        Clicking on the <b>name</b> of a failed test case in the report table opens its <b>Stack Trace</b>. Multiple failures across suites or variants will be shown side-by-side.
                     </div>
                 </div>
             </div>

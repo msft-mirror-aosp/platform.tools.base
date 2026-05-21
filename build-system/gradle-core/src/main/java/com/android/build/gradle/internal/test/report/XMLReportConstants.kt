@@ -40,3 +40,5 @@ internal const val STATUS_FAIL = "fail"
 
 /** File extensions. */
 internal const val EXT_XML = "xml"
+
+internal const val AGGREGATED_TEST_SUITE_NAME = "Aggregated"

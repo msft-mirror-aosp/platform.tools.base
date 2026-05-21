@@ -224,7 +224,7 @@ const TestReportApp = {
     selectedPackage: null,
     selectedClass: null,
     currentView: 'report',
-    currentStackTrace: null,
+    currentTestCase: null,
     currentStackTraceContext: {},
     filters: { variants: [], search: '', status: ['passed', 'failed', 'skipped'], testSuite: 'all', modules: [], packages: [], classes: [], testCases: [] },
     sort: { by: 'name', order: 'asc' },
@@ -393,65 +393,41 @@ const TestReportApp = {
       reportView: document.getElementById('report-view'),
       stackTraceView: document.getElementById('stack-trace-view'),
       stackTraceBreadcrumbs: document.getElementById('stack-trace-breadcrumbs'),
-      stackTraceContainer: document.getElementById('stack-trace-container'),
-      stackTraceContent: document.getElementById('stack-trace-content'),
-      stackTraceTitle: document.getElementById('stack-trace-title'),
+      stackTraceGrid: document.getElementById('stack-trace-grid'),
     };
   },
 
-  setupTestResults(testCaseData) {
-    // Deep copy to avoid mutating the original source if used elsewhere
-    const dataCopy = JSON.parse(JSON.stringify(testCaseData));
-    this.state.variants = dataCopy.variants;
-    this.state.filters.variants = [...dataCopy.variants]; // Default to all selected
+  setupTestResults(rootReport) {
+    this.state.variants = rootReport.variants;
+    this.state.testSuites = rootReport.testSuites;
+    this.state.filters.variants = [...rootReport.variants];
 
     // Populate header
-    if (this.elements.appTitle) this.elements.appTitle.textContent = dataCopy.projectName || 'Test Report';
-    if (this.elements.reportDate) this.elements.reportDate.textContent = dataCopy.timestamp || '';
-    if (this.elements.totalModules) this.elements.totalModules.textContent = dataCopy.numberOfModules || 0;
-    if (this.elements.totalPackages) this.elements.totalPackages.textContent = dataCopy.numberOfPackages || 0;
-    if (this.elements.totalClasses) this.elements.totalClasses.textContent = dataCopy.numberOfClasses || 0;
+    if (this.elements.appTitle) this.elements.appTitle.textContent = rootReport.projectName || 'Test Report';
+    if (this.elements.reportDate) this.elements.reportDate.textContent = rootReport.timestamp || '';
+    if (this.elements.totalModules) this.elements.totalModules.textContent = rootReport.numberOfModules || 0;
+    if (this.elements.totalPackages) this.elements.totalPackages.textContent = rootReport.numberOfPackages || 0;
+    if (this.elements.totalClasses) this.elements.totalClasses.textContent = rootReport.numberOfClasses || 0;
 
-    const processNode = (node, type) => {
-      node.type = type;
-      const childKey = this.pluralize(this.getChildType(type));
-      let children = node[childKey];
+    const annotateType = (node, type) => {
+        node.type = type;
+        const childType = this.getChildType(type);
+        if (!childType) return;
 
-      if (type === 'class') {
-        children = node.testCases || [];
-      }
-
-      if (children) {
-        children.forEach(child => processNode(child, this.getChildType(type)));
-      }
-
-      node.summary = this._calculateSummaryFromChildren(children);
+        const childKey = this.pluralize(childType);
+        const children = node[childKey] || (type === 'class' ? node.testCases : []) || [];
+        children.forEach(child => annotateType(child, childType));
     };
+    rootReport.modules.forEach(m => annotateType(m, 'module'));
 
-    const suiteSet = new Set();
-    const extractSuites = (nodes) => {
-      if (!nodes) return;
-      nodes.forEach(n => {
-        if (n.testSuiteSummaries) {
-          n.testSuiteSummaries.forEach(ts => suiteSet.add(ts.name));
-        }
-        if (n.packages) extractSuites(n.packages);
-        if (n.classes) extractSuites(n.classes);
-      });
-    };
-    extractSuites(dataCopy.modules);
-    this.state.testSuites = Array.from(suiteSet).sort();
-
-    dataCopy.modules.forEach(module => processNode(module, 'module'));
-    dataCopy.summary = this._calculateSummaryFromChildren(dataCopy.modules);
-    this.processedData = dataCopy;
+    this.processedData = rootReport;
   },
 
   populateFilters() {
     // Test Suite Dropdown
     const testSuiteOptions = [
       { name: 'All', value: 'all' },
-      ...this.state.testSuites.map(ts => ({ name: ts, value: ts }))
+      ...this.state.testSuites.filter(ts => ts !== 'Aggregated').map(ts => ({ name: ts, value: ts }))
     ];
     UIUtils.buildActionDropdown(this.elements.testSuiteFilterList, testSuiteOptions, this.state.filters.testSuite, (newVal) => {
       this.state.filters.testSuite = newVal;
@@ -1183,7 +1159,6 @@ const TestReportApp = {
           if (node.testSuiteSummaries) {
             const suiteMatch = node.testSuiteSummaries.find(ts => ts.name === this.state.filters.testSuite);
             if (!suiteMatch) return false;
-            node.summary = suiteMatch.summary;
           } else {
             return false;
           }
@@ -1198,11 +1173,12 @@ const TestReportApp = {
             let hasSkipped = false;
 
             this.state.filters.variants.forEach(v => {
-              const statusVal = node[v];
-              const status = (typeof statusVal === 'object' && statusVal !== null) ? statusVal.status : statusVal;
-              if (status === 'fail') hasFail = true;
-              if (status === 'pass') hasPass = true;
-              if (status === 'skipped') hasSkipped = true;
+              const res = this.getVariantResultForTestCase(node, this.state.filters.testSuite, v);
+              if (res) {
+                  if (res.status === 'fail') hasFail = true;
+                  if (res.status === 'pass') hasPass = true;
+                  if (res.status === 'skipped') hasSkipped = true;
+              }
             });
 
             matchesStatus = false;
@@ -1253,10 +1229,15 @@ const TestReportApp = {
   // --- RENDERING ---
   render() {
     this.updateDynamicFilters();
-    const data = this.getFilteredAndSortedData();
-    this.renderTable(data);
-    this.updateGroupByText();
-    this.updateTooltipsForOverflow();
+
+    if (this.state.currentView === 'stack-trace') {
+        this.renderStackTraceGrid(this.state.currentTestCase);
+    } else {
+        const data = this.getFilteredAndSortedData();
+        this.renderTable(data);
+        this.updateGroupByText();
+        this.updateTooltipsForOverflow();
+    }
 
     const visibleItemsCount = this.elements.resultsData.querySelectorAll('tr.table-row:not(.hidden)').length;
     this.announce(`Showing ${visibleItemsCount} results.`);
@@ -1453,7 +1434,11 @@ const TestReportApp = {
       const hasChildren = children.length > 0;
       const uniqueId = `${parentId}-${node.name}`.replace(/[^a-zA-Z0-9-_]/g, '');
 
-      const nameContent = `<span class="font-medium">${UIUtils.escapeHTML(node.name)}</span>`;
+      let nameContent = `<span class="font-medium">${UIUtils.escapeHTML(node.name)}</span>`;
+      if (type === 'testCase' && this.hasVisibleFailures(node)) {
+          nameContent = `<span class="font-medium text-blue-700 hover-underline cursor-pointer" onclick="TestReportApp.openStackTrace(this)" data-module="${UIUtils.escapeHTML(currentContext.moduleName || '')}" data-package="${UIUtils.escapeHTML(currentContext.packageName || '')}" data-class="${UIUtils.escapeHTML(currentContext.className || '')}" data-test-case="${UIUtils.escapeHTML(node.name || '')}" tabindex="0" role="button" aria-label="View stack trace">${UIUtils.escapeHTML(node.name)}</span>`;
+      }
+
       const chevron = `<svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="collapsible-arrow ${!hasChildren ? 'invisible' : ''}"><path d="m9 18 6-6-6-6"></path></svg>`;
 
       const ariaExpanded = hasChildren ? 'aria-expanded="false"' : '';
@@ -1468,7 +1453,7 @@ const TestReportApp = {
                             ${chevron} ${nameContent}
                         </div>
                     </td>
-                    ${this._renderStatusCell(type === 'testCase' ? node : node.summary, type === 'testCase', currentContext)}
+                    ${this._renderStatusCell(node, currentContext)}
                 </tr>`;
 
       if (hasChildren) {
@@ -1492,8 +1477,10 @@ const TestReportApp = {
 
     this.elements.resultsData.innerHTML = items.map(item => {
         let nameTd = `<td class="py-3 px-6 sticky-name font-medium" title="${UIUtils.escapeHTML(item.name)}">${UIUtils.escapeHTML(item.name)}</td>`;
-        if (view !== 'testCases') {
+        if (item.type !== 'testCase') {
             nameTd = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover-underline cursor-pointer" tabindex="0" role="link" title="${UIUtils.escapeHTML(item.name)}" data-name="${UIUtils.escapeHTML(item.name)}" data-type="${item.type}" data-module-name="${UIUtils.escapeHTML(item.moduleName || '')}" data-package-name="${UIUtils.escapeHTML(item.packageName || '')}" data-interactive="flat">${UIUtils.escapeHTML(item.name)}</td>`;
+        } else if (this.hasVisibleFailures(item)) {
+            nameTd = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover-underline cursor-pointer" onclick="TestReportApp.openStackTrace(this)" data-module="${UIUtils.escapeHTML(item.moduleName || '')}" data-package="${UIUtils.escapeHTML(item.packageName || '')}" data-class="${UIUtils.escapeHTML(item.className || '')}" data-test-case="${UIUtils.escapeHTML(item.name || '')}" tabindex="0" role="button" aria-label="View stack trace">${UIUtils.escapeHTML(item.name)}</td>`;
         }
 
         let pathCell = '';
@@ -1526,7 +1513,7 @@ const TestReportApp = {
         return `<tr class="table-row">
             ${nameTd}
             ${pathCell}
-            ${this._renderStatusCell(view === 'testCases' ? item : item.summary, view === 'testCases', context)}
+            ${this._renderStatusCell(item, context)}
         </tr>`;
     }).join('') || '<tr><td colspan="100%" class="text-center text-gray-500" style="padding: 2rem;">No results found.</td></tr>';
   },
@@ -1563,173 +1550,232 @@ const TestReportApp = {
   },
 
   // --- HELPERS ---
-  _calculateSummaryFromChildren(children) {
-    if (!children || children.length === 0) {
-      // Return empty summary with 0s
-      const summary = { total: 0, passed: 0, failed: 0, skipped: 0, passRate: 0 };
-      this.state.variants.forEach(v => {
-        summary[v] = { passed: 0, failed: 0, skipped: 0, total: 0, rate: 0 };
-      });
-      return summary;
-    }
 
-    const summary = { total: 0, passed: 0, failed: 0, skipped: 0, passRate: 0 };
-    this.state.variants.forEach(v => {
-      summary[v] = { passed: 0, failed: 0, skipped: 0, total: 0, rate: 0 };
-    });
+  getVariantResultForTestCase(testCase, suiteName, variantName) {
+      if (!testCase.testSuiteResults) return null;
+      let suitesToSearch = [];
+      if (suiteName === 'all') {
+          suitesToSearch = testCase.testSuiteResults;
+      } else {
+          const specific = testCase.testSuiteResults.find(ts => ts.testSuiteName === suiteName);
+          if (specific) suitesToSearch = [specific];
+      }
 
-    children.forEach(child => {
-      this.state.variants.forEach(v => {
-        if (child.type === 'testCase') {
-          const statusVal = child[v];
-          const status = (typeof statusVal === 'object' && statusVal !== null) ? statusVal.status : statusVal;
-          if (status === 'pass') summary[v].passed++;
-          else if (status === 'fail') summary[v].failed++;
-          else if (status === 'skipped') summary[v].skipped++;
-          summary[v].total++;
-        } else {
-          // It's a node with summary
-          summary[v].passed += child.summary[v].passed;
-          summary[v].failed += child.summary[v].failed;
-          summary[v].skipped += child.summary[v].skipped;
-          summary[v].total += child.summary[v].total;
-        }
-      });
-    });
-
-    // Calculate rates
-    let totalPassed = 0;
-    let totalFailed = 0;
-    let totalSkipped = 0;
-
-    this.state.variants.forEach(v => {
-      const s = summary[v];
-      const relevant = s.passed + s.failed;
-      s.rate = relevant > 0 ? (s.passed / relevant) * 100 : 100; // Default to 100 if no tests? Or 0?
-      // If total is 0, rate is 0?
-      if (s.total === 0) s.rate = 0;
-
-      totalPassed += s.passed;
-      totalFailed += s.failed;
-      totalSkipped += s.skipped;
-    });
-    summary.passed = totalPassed;
-    summary.failed = totalFailed;
-    summary.skipped = totalSkipped;
-
-    summary.total = summary.passed + summary.failed + summary.skipped;
-    const relevantTotal = summary.passed + summary.failed;
-    summary.passRate = relevantTotal > 0 ? (summary.passed / relevantTotal) * 100 : 100;
-    return summary;
+      // Priority: Fail > Pass > Skipped
+      let finalRes = null;
+      for (const suite of suitesToSearch) {
+          const res = suite.variantResults[variantName];
+          if (res) {
+              if (res.status === 'fail') return res;
+              if (res.status === 'pass') finalRes = res;
+              if (res.status === 'skipped' && !finalRes) finalRes = res;
+          }
+      }
+      return finalRes;
   },
 
-  _renderStatusCell(summaryOrNode, isNode = false, context = {}) {
-    // If isNode is true, summaryOrNode is the node itself (for functions), otherwise it's a summary object
-    if (!summaryOrNode) {
-      const colspan = (this.state.filters.variants.length) * 4;
-      return `<td colspan="${colspan}"></td>`;
-    }
+  hasVisibleFailures(node) {
+    if (!node || node.type !== 'testCase') return false;
+    const activeSuite = this.state.filters.testSuite;
+    const activeVariants = this.state.filters.variants;
 
+    return (node.commonStackTraces || []).some(group => {
+        for (const [suite, variants] of Object.entries(group.occurrences)) {
+            if (activeSuite !== 'all' && suite !== activeSuite) continue;
+            if (variants.some(v => activeVariants.includes(v))) return true;
+        }
+        return false;
+    });
+  },
+
+  _renderStatusCell(node, context = {}) {
     const variantsToShow = this.state.filters.variants;
 
-    if (isNode) {
-      // Rendering for a function row - show direct status
-      return `${variantsToShow.map(v => {
-        const statusVal = summaryOrNode[v];
-        const status = (typeof statusVal === 'object' && statusVal !== null) ? statusVal.status : statusVal;
-        const stackTrace = (typeof statusVal === 'object' && statusVal !== null) ? statusVal.stackTrace : null;
-
-        let cellContent = '-';
-        let cellClass = 'py-3 px-4 text-center text-gray-500 border-l border-gray-200';
-
-        if (status === 'pass') {
-          cellContent = 'Passed';
-          cellClass = 'py-3 px-4 text-center text-green-600 font-medium border-l border-gray-200';
-        } else if (status === 'fail') {
-          if (stackTrace) {
-            cellContent = 'Failure';
-            cellClass = 'py-3 px-4 text-center text-red-600 font-bold border-l border-gray-200 clickable-status';
-            const contextAttrs = `data-module="${UIUtils.escapeHTML(context.moduleName || '')}" data-package="${UIUtils.escapeHTML(context.packageName || '')}" data-class="${UIUtils.escapeHTML(context.className || '')}" data-test-case="${UIUtils.escapeHTML(summaryOrNode.name || '')}"`;
-            return `<td colspan="4" class="${cellClass}" onclick="TestReportApp.openStackTrace(this)" data-stack-trace="${encodeURIComponent(stackTrace)}" ${contextAttrs} tabindex="0" role="button" aria-label="View stack trace for failed test"><div class="flex flex-col"><span>${cellContent}</span><span class="text-xs text-transparent select-none">&nbsp;</span></div></td>`;
-          } else {
-            cellContent = 'Failed';
-            cellClass = 'py-3 px-4 text-center text-red-600 font-bold border-l border-gray-200';
-          }
-        } else if (status === 'skipped') {
-          cellContent = 'Skipped';
-          cellClass = 'py-3 px-4 text-center text-yellow-600 border-l border-gray-200';
-        }
-
-        return `<td colspan="4" class="${cellClass}"><div class="flex flex-col"><span>${cellContent}</span><span class="text-xs text-transparent select-none">&nbsp;</span></div></td>`;
-      }).join('')}`;
+    if (!node) {
+      return variantsToShow.map(() => `<td colspan="4" class="border-l border-gray-200"></td>`).join('');
     }
 
-    // Rendering for a summary row
+    const suiteFilter = this.state.filters.testSuite;
+
     return `${variantsToShow.map(v => {
-      const stats = summaryOrNode[v];
-      if (!stats) return '<td colspan="4" class="text-center text-gray-500 border-l border-gray-200">-</td>';
+        let variantSummary = null;
+        if (suiteFilter === 'all') {
+            const aggregatedSuite = node.testSuiteSummaries.find(ts => ts.name === 'Aggregated');
+            if (aggregatedSuite) {
+                variantSummary = aggregatedSuite.variantSummaries.find(vs => vs.name === v);
+            }
+        } else {
+            const suiteSummary = node.testSuiteSummaries.find(ts => ts.name === suiteFilter);
+            if (suiteSummary) {
+                variantSummary = suiteSummary.variantSummaries.find(vs => vs.name === v);
+            }
+        }
 
-      const { passed, failed, skipped, total, rate } = stats;
-      const passRateColor = rate >= 95 ? 'text-green-600' : rate >= 80 ? 'text-yellow-600' : 'text-red-600';
-      const relevantTotal = passed + failed;
+        if (!variantSummary || variantSummary.total === 0) return '<td colspan="4" class="text-center text-gray-500 border-l border-gray-200">-</td>';
 
-      const filter = this.state.filters.status;
-      const showPassed = filter.includes('passed');
-      const showFailed = filter.includes('failed');
-      const showSkipped = filter.includes('skipped');
+        const { passed, failed, skipped, rate } = variantSummary;
+        const relevantTotal = passed + failed;
+        const passRateColor = rate >= 95 ? 'text-green-600' : rate >= 80 ? 'text-yellow-600' : 'text-red-600';
 
-      return `
-                <td class="py-3 px-4 text-center ${showPassed ? 'text-green-600' : 'text-gray-500'} font-medium border-l border-gray-200">${showPassed ? passed : '-'}</td>
-                <td class="py-3 px-4 text-center ${showFailed ? (failed > 0 ? 'text-red-600 font-bold' : 'text-gray-500') : 'text-gray-500'}">${showFailed ? failed : '-'}</td>
-                <td class="py-3 px-4 text-center ${showSkipped ? 'text-yellow-600' : 'text-gray-500'}">${showSkipped ? skipped : '-'}</td>
-                <td class="py-3 px-4 text-center">
-                    <div class="flex flex-col">
-                        <span class="font-bold ${passRateColor}">${rate.toFixed(1)}%</span>
-                        <span class="text-xs text-gray-500">${passed}/${relevantTotal}</span>
-                    </div>
-                </td>`;
+        const filter = this.state.filters.status;
+        const showPassed = filter.includes('passed');
+        const showFailed = filter.includes('failed');
+        const showSkipped = filter.includes('skipped');
+
+        return `
+            <td class="py-3 px-4 text-center ${showPassed ? 'text-green-600' : 'text-gray-500'} font-medium border-l border-gray-200">${showPassed ? passed : '-'}</td>
+            <td class="py-3 px-4 text-center ${showFailed && failed > 0 ? 'text-red-600 font-bold' : 'text-gray-500'} border-l border-gray-200">${showFailed ? failed : '-'}</td>
+            <td class="py-3 px-4 text-center ${showSkipped ? 'text-yellow-600' : 'text-gray-500'}">${showSkipped ? skipped : '-'}</td>
+            <td class="py-3 px-4 text-center">
+                <div class="flex flex-col">
+                    <span class="font-bold ${passRateColor}">${rate.toFixed(1)}%</span>
+                    <span class="text-xs text-gray-500">${passed}/${relevantTotal}</span>
+                </div>
+            </td>`;
     }).join('')}`;
   },
 
   openStackTrace(element) {
-    this.activeTrigger = element;
-    const stackTrace = decodeURIComponent(element.dataset.stackTrace);
-    const context = {
-        moduleName: element.dataset.module,
-        packageName: element.dataset.package,
-        className: element.dataset.class,
-        testCaseName: element.dataset.testCase
+    const { module, package: pkg, class: clz, testCase: tcName } = element.dataset;
+
+    // Find the test case object in the processed data
+    const findTestCase = (nodes) => {
+        for (const m of nodes) {
+            if (m.name === module) {
+                for (const p of m.packages) {
+                    if (p.name === pkg) {
+                        for (const c of p.classes) {
+                            if (c.name === clz) {
+                                return c.testCases.find(t => t.name === tcName);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return null;
     };
-    this.showStackTraceView(stackTrace, context);
-    Navigation.push();
+
+    const testCase = findTestCase(this.processedData.modules);
+    if (testCase) {
+        this.activeTrigger = element;
+        const context = { moduleName: module, packageName: pkg, className: clz, testCaseName: tcName };
+        this.showStackTraceView(testCase, context);
+        Navigation.push();
+    }
   },
 
-  showStackTraceView(stackTrace, context) {
+  showStackTraceView(testCase, context) {
     this.state.currentView = 'stack-trace';
-    this.state.currentStackTrace = stackTrace;
+    this.state.currentTestCase = testCase;
     this.state.currentStackTraceContext = context;
 
     this.elements.reportView.classList.add('hidden-view');
-    if (this.elements.reportViewControls) this.elements.reportViewControls.classList.add('hidden');
     this.elements.stackTraceView.classList.remove('hidden-view');
 
-    this.elements.stackTraceContent.textContent = stackTrace;
+    this.renderStackTraceGrid(testCase);
     this.renderStackTraceBreadcrumbs(context);
     window.scrollTo(0, 0);
+  },
 
-    if (this.elements.stackTraceContainer) {
-        this.elements.stackTraceContainer.focus();
+  renderStackTraceGrid(testCase) {
+    const grid = this.elements.stackTraceGrid;
+    grid.innerHTML = "";
+
+    const activeSuite = this.state.filters.testSuite;
+    const activeVariants = this.state.filters.variants;
+
+    // Filter groups and their internal occurrences based on active filters
+    const filteredGroups = (testCase.commonStackTraces || []).map(group => {
+        const filteredOccurrences = {};
+        let hasMatch = false;
+
+        for (const [suite, variants] of Object.entries(group.occurrences)) {
+            if (activeSuite !== 'all' && suite !== activeSuite) continue;
+
+            const matchedVariants = variants.filter(v => activeVariants.includes(v));
+            if (matchedVariants.length > 0) {
+                filteredOccurrences[suite] = matchedVariants;
+                hasMatch = true;
+            }
+        }
+
+        return hasMatch ? { ...group, filteredOccurrences } : null;
+    }).filter(g => g !== null);
+
+    if (filteredGroups.length === 0) {
+        grid.innerHTML = '<div class="p-8 text-center text-gray-500 w-full">No stack trace available for the selected filters.</div>';
+        return;
+    }
+
+    const isMultiView = filteredGroups.length > 1;
+
+    filteredGroups.forEach((group, index) => {
+        const viewId = `st-view-${index}`;
+        const titleId = `st-title-${index}`;
+
+        const variantView = document.createElement("div");
+        variantView.className = "variant-code-view";
+        variantView.id = viewId;
+        if (isMultiView) {
+            variantView.classList.add("multi-view");
+        }
+
+        const header = document.createElement("div");
+        header.className = "variant-header";
+
+        const titleDiv = document.createElement("div");
+        titleDiv.className = "flex items-center gap-2";
+        titleDiv.innerHTML = `
+            <svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-600">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                <line x1="12" y1="9" x2="12" y2="13"></line>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+            <h3 class="text-sm font-semibold text-gray-900" id="${titleId}">Stack Trace</h3>
+        `;
+        header.appendChild(titleDiv);
+
+        const occurrencesDiv = document.createElement("div");
+        occurrencesDiv.className = "flex flex-wrap gap-1 mt-2";
+
+        for (const [suite, variants] of Object.entries(group.filteredOccurrences)) {
+            const tag = document.createElement("span");
+            tag.className = "occurrence-tag";
+            tag.textContent = `${suite} (${variants.join(", ")})`;
+            occurrencesDiv.appendChild(tag);
+        }
+        header.appendChild(occurrencesDiv);
+        variantView.appendChild(header);
+
+        const container = document.createElement("div");
+        container.className = "code-container";
+        container.setAttribute("tabindex", "0");
+        container.setAttribute("aria-labelledby", titleId);
+
+        const pre = document.createElement("pre");
+        pre.className = "font-mono text-sm text-red-600 whitespace-pre-wrap break-all";
+        pre.textContent = group.stackTrace;
+        container.appendChild(pre);
+
+        variantView.appendChild(container);
+        grid.appendChild(variantView);
+    });
+
+    // Auto-focus the first stack trace for keyboard users
+    const firstContainer = grid.querySelector('.code-container');
+    if (firstContainer) {
+        setTimeout(() => firstContainer.focus(), 100);
     }
   },
 
   showReportView() {
     this.state.currentView = 'report';
-    this.state.currentStackTrace = null;
+    this.state.currentTestCase = null;
     this.state.currentStackTraceContext = {};
 
     this.elements.stackTraceView.classList.add('hidden-view');
     this.elements.reportView.classList.remove('hidden-view');
-    if (this.elements.reportViewControls) this.elements.reportViewControls.classList.remove('hidden');
 
     if (this.activeTrigger) {
         this.activeTrigger.focus();
@@ -1910,7 +1956,7 @@ const Navigation = {
 
     // Re-render
     if (TestReportApp.state.currentView === 'stack-trace') {
-        TestReportApp.showStackTraceView(TestReportApp.state.currentStackTrace, TestReportApp.state.currentStackTraceContext);
+        TestReportApp.showStackTraceView(TestReportApp.state.currentTestCase, TestReportApp.state.currentStackTraceContext);
     } else {
         TestReportApp.showReportView();
         if (selectionChanged || oldView === 'report') {
@@ -1923,110 +1969,105 @@ const Navigation = {
 
 document.addEventListener('DOMContentLoaded', () => {
   TestReportApp.init();
+  initHelpHub();
 });
 
 /**
  * HELP HUB INITIALIZATION
  */
-(function() {
-    function initHelpHub() {
-        const helpHubFab = document.getElementById("help-hub-fab");
-        const helpHubPanel = document.getElementById("help-hub-panel");
-        const closeHelpHubBtn = document.getElementById("close-help-hub");
+function initHelpHub() {
+    const helpHubFab = document.getElementById("help-hub-fab");
+    const helpHubPanel = document.getElementById("help-hub-panel");
+    const closeHelpHubBtn = document.getElementById("close-help-hub");
 
-        if (!helpHubFab || !helpHubPanel) return;
+    if (!helpHubFab || !helpHubPanel) return;
 
-        function togglePanel(open) {
-            const isOpening = open === undefined ? !helpHubPanel.classList.contains("open") : open;
-            helpHubPanel.classList.toggle("open", isOpening);
-            helpHubFab.setAttribute("aria-expanded", isOpening);
-            helpHubPanel.setAttribute("aria-hidden", !isOpening);
+    function togglePanel(open) {
+        const isOpening = typeof open === 'boolean' ? open : !helpHubPanel.classList.contains("open");
+        helpHubPanel.classList.toggle("open", isOpening);
+        helpHubFab.setAttribute("aria-expanded", isOpening);
+        helpHubPanel.setAttribute("aria-hidden", !isOpening);
 
-            if (isOpening) {
-                requestAnimationFrame(() => {
-                    closeHelpHubBtn?.focus();
-                });
-            } else {
-                helpHubFab.focus();
-            }
-        }
-
-        // Focus Trap
-        helpHubPanel.addEventListener("keydown", (e) => {
-            if (e.key !== "Tab") return;
-
-            const focusableElements = helpHubPanel.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
-            const firstElement = focusableElements[0];
-            const lastElement = focusableElements[focusableElements.length - 1];
-
-            if (e.shiftKey) { // Shift + Tab
-                if (document.activeElement === firstElement) {
-                    lastElement.focus();
-                    e.preventDefault();
-                }
-            } else { // Tab
-                if (document.activeElement === lastElement) {
-                    firstElement.focus();
-                    e.preventDefault();
-                }
-            }
-        });
-
-        helpHubFab.addEventListener("click", (e) => {
-            e.stopPropagation();
-            togglePanel();
-        });
-
-        if (closeHelpHubBtn) {
-            closeHelpHubBtn.addEventListener("click", (e) => {
-                e.stopPropagation();
-                togglePanel(false);
+        if (isOpening) {
+            requestAnimationFrame(() => {
+                closeHelpHubBtn?.focus();
             });
+        } else {
+            helpHubFab.focus();
         }
+    }
 
-        document.addEventListener("click", (e) => {
-            if (helpHubPanel.classList.contains("open") && !helpHubPanel.contains(e.target) && !helpHubFab.contains(e.target)) {
-                togglePanel(false);
+    // Focus Trap
+    helpHubPanel.addEventListener("keydown", (e) => {
+        if (e.key !== "Tab") return;
+
+        const focusableElements = helpHubPanel.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (e.shiftKey) { // Shift + Tab
+            if (document.activeElement === firstElement) {
+                lastElement.focus();
+                e.preventDefault();
             }
-        });
-
-        document.addEventListener("keydown", (e) => {
-            if (e.key === "Escape" && helpHubPanel.classList.contains("open")) {
-                togglePanel(false);
+        } else { // Tab
+            if (document.activeElement === lastElement) {
+                firstElement.focus();
+                e.preventDefault();
             }
-        });
+        }
+    });
 
-        const legendItems = helpHubPanel.querySelectorAll(".legend-item");
-        legendItems.forEach(item => {
-            const header = item.querySelector(".legend-item-header");
-            if (header) {
-                const toggleItem = (e) => {
-                    e.stopPropagation();
-                    const isOpen = item.classList.contains("open");
-                    legendItems.forEach(other => {
-                        if (other !== item) {
-                            other.classList.remove("open");
-                            other.querySelector(".legend-item-header").setAttribute("aria-expanded", "false");
-                        }
-                    });
-                    item.classList.toggle("open", !isOpen);
-                    header.setAttribute("aria-expanded", !isOpen);
-                };
+    helpHubFab.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        togglePanel();
+    });
 
-                header.addEventListener("click", toggleItem);
-                header.addEventListener("keydown", (e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        toggleItem(e);
-                    }
-                });
-            }
+    if (closeHelpHubBtn) {
+        closeHelpHubBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            togglePanel(false);
         });
     }
 
-    if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", initHelpHub);
-    } else {
-        initHelpHub();
-    }
-})();
+    document.addEventListener("click", (e) => {
+        if (helpHubPanel.classList.contains("open") && !helpHubPanel.contains(e.target) && !helpHubFab.contains(e.target)) {
+            togglePanel(false);
+        }
+    });
+
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && helpHubPanel.classList.contains("open")) {
+            togglePanel(false);
+        }
+    });
+
+    const legendItems = helpHubPanel.querySelectorAll(".legend-item");
+    legendItems.forEach(item => {
+        const header = item.querySelector(".legend-item-header");
+        const toggle = () => {
+            const isOpen = item.classList.contains("open");
+            legendItems.forEach(i => {
+                i.classList.remove("open");
+                const h = i.querySelector(".legend-item-header");
+                if (h) h.setAttribute("aria-expanded", "false");
+            });
+            item.classList.toggle("open", !isOpen);
+            header.setAttribute("aria-expanded", !isOpen);
+        };
+
+        header.addEventListener("click", (e) => {
+            e.stopPropagation();
+            toggle();
+        });
+
+        header.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                e.stopPropagation();
+                toggle();
+            }
+        });
+    });
+}
