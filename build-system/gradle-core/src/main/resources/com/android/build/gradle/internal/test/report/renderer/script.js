@@ -216,6 +216,8 @@ const BREADCRUMB_ACTIONS = {
  * DEPENDENCY: Requires 'TEST_DATA_SOURCE' to be defined in data.js
  */
 const TestReportApp = {
+  activeTrigger: null,
+
   state: {
     viewMode: 'flat',
     density: 'comfy',
@@ -1394,7 +1396,7 @@ const TestReportApp = {
 
     // "Project" is the root link
     if (selectedModule) {
-        html += `<a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_MODULES}">Project</a>`;
+        html += `<a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_MODULES}" aria-label="Go back to Project Overview">Project</a>`;
     } else {
         html += `<span class="breadcrumb-current">Project</span>`;
     }
@@ -1403,7 +1405,7 @@ const TestReportApp = {
     if (selectedModule) {
         html += `<span class="breadcrumb-separator">/</span>`;
         if (selectedPackage) {
-            html += `<a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_PACKAGES}">${UIUtils.escapeHTML(selectedModule)}</a>`;
+            html += `<a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_PACKAGES}" aria-label="Go back to module: ${UIUtils.escapeHTML(selectedModule)}">${UIUtils.escapeHTML(selectedModule)}</a>`;
         } else {
             html += `<span class="breadcrumb-current">${UIUtils.escapeHTML(selectedModule)}</span>`;
         }
@@ -1413,7 +1415,7 @@ const TestReportApp = {
     if (selectedPackage) {
         html += `<span class="breadcrumb-separator">/</span>`;
         if (selectedClass) {
-            html += `<a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_CLASSES}">${UIUtils.escapeHTML(selectedPackage)}</a>`;
+            html += `<a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_CLASSES}" aria-label="Go back to package: ${UIUtils.escapeHTML(selectedPackage)}">${UIUtils.escapeHTML(selectedPackage)}</a>`;
         } else {
             html += `<span class="breadcrumb-current">${UIUtils.escapeHTML(selectedPackage)}</span>`;
         }
@@ -1445,7 +1447,7 @@ const TestReportApp = {
 
       let nameContent = `<span class="font-medium">${UIUtils.escapeHTML(node.name)}</span>`;
       if (type === 'testCase' && this.hasVisibleFailures(node)) {
-          nameContent = `<span class="font-medium text-blue-700 hover-underline cursor-pointer stack-trace-trigger" onclick="TestReportApp.openStackTrace(this)" data-module="${UIUtils.escapeHTML(currentContext.moduleName || '')}" data-package="${UIUtils.escapeHTML(currentContext.packageName || '')}" data-class="${UIUtils.escapeHTML(currentContext.className || '')}" data-test-case="${UIUtils.escapeHTML(node.name || '')}" tabindex="0" role="button" aria-label="View stack trace">${UIUtils.escapeHTML(node.name)}</span>`;
+          nameContent = `<span class="font-medium text-blue-700 hover-underline cursor-pointer stack-trace-trigger" onclick="TestReportApp.openStackTrace(this)" data-module="${UIUtils.escapeHTML(currentContext.moduleName || '')}" data-package="${UIUtils.escapeHTML(currentContext.packageName || '')}" data-class="${UIUtils.escapeHTML(currentContext.className || '')}" data-test-case="${UIUtils.escapeHTML(node.name || '')}" tabindex="0" role="button" aria-label="View stack trace for ${UIUtils.escapeHTML(node.name)}">${UIUtils.escapeHTML(node.name)}</span>`;
       }
 
       const chevron = `<svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="collapsible-arrow ${!hasChildren ? 'invisible' : ''}"><path d="m9 18 6-6-6-6"></path></svg>`;
@@ -1489,7 +1491,7 @@ const TestReportApp = {
         if (item.type !== 'testCase') {
             nameTd = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover-underline cursor-pointer" tabindex="0" role="link" title="${UIUtils.escapeHTML(item.name)}" data-name="${UIUtils.escapeHTML(item.name)}" data-type="${item.type}" data-module-name="${UIUtils.escapeHTML(item.moduleName || '')}" data-package-name="${UIUtils.escapeHTML(item.packageName || '')}" data-interactive="flat">${UIUtils.escapeHTML(item.name)}</td>`;
         } else if (this.hasVisibleFailures(item)) {
-            nameTd = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover-underline cursor-pointer stack-trace-trigger" onclick="TestReportApp.openStackTrace(this)" data-module="${UIUtils.escapeHTML(item.moduleName || '')}" data-package="${UIUtils.escapeHTML(item.packageName || '')}" data-class="${UIUtils.escapeHTML(item.className || '')}" data-test-case="${UIUtils.escapeHTML(item.name || '')}" tabindex="0" role="button" aria-label="View stack trace">${UIUtils.escapeHTML(item.name)}</td>`;
+            nameTd = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover-underline cursor-pointer stack-trace-trigger" onclick="TestReportApp.openStackTrace(this)" data-module="${UIUtils.escapeHTML(item.moduleName || '')}" data-package="${UIUtils.escapeHTML(item.packageName || '')}" data-class="${UIUtils.escapeHTML(item.className || '')}" data-test-case="${UIUtils.escapeHTML(item.name || '')}" tabindex="0" role="button" aria-label="View stack trace for ${UIUtils.escapeHTML(item.name)}">${UIUtils.escapeHTML(item.name)}</td>`;
         }
 
         let pathCell = '';
@@ -1632,10 +1634,10 @@ const TestReportApp = {
         const showSkipped = filter.includes('skipped');
 
         return `
-            <td class="py-3 px-4 text-center ${showPassed ? 'text-green-600' : 'text-gray-500'} font-medium border-l border-gray-200">${showPassed ? passed : '-'}</td>
-            <td class="py-3 px-4 text-center ${showFailed && failed > 0 ? 'text-red-600 font-bold' : 'text-gray-500'} border-l border-gray-200">${showFailed ? failed : '-'}</td>
-            <td class="py-3 px-4 text-center ${showSkipped ? 'text-yellow-600' : 'text-gray-500'}">${showSkipped ? skipped : '-'}</td>
-            <td class="py-3 px-4 text-center">
+            <td class="py-3 px-4 text-center ${showPassed ? 'text-green-600' : 'text-gray-500'} font-medium border-l border-gray-200" aria-label="${showPassed ? passed : '-'} passed tests for ${UIUtils.escapeHTML(v)}">${showPassed ? passed : '-'}</td>
+            <td class="py-3 px-4 text-center ${showFailed && failed > 0 ? 'text-red-600 font-bold' : 'text-gray-500'} border-l border-gray-200" aria-label="${showFailed ? failed : '-'} failed tests for ${UIUtils.escapeHTML(v)}">${showFailed ? failed : '-'}</td>
+            <td class="py-3 px-4 text-center ${showSkipped ? 'text-yellow-600' : 'text-gray-500'}" aria-label="${showSkipped ? skipped : '-'} skipped tests for ${UIUtils.escapeHTML(v)}">${showSkipped ? skipped : '-'}</td>
+            <td class="py-3 px-4 text-center" aria-label="${rate.toFixed(1)}% pass rate (${passed}/${relevantTotal}) for ${UIUtils.escapeHTML(v)}">
                 <div class="flex flex-col">
                     <span class="font-bold ${passRateColor}">${rate.toFixed(1)}%</span>
                     <span class="text-xs text-gray-500">${passed}/${relevantTotal}</span>
@@ -1675,6 +1677,7 @@ const TestReportApp = {
   },
 
   showStackTraceView(testCase, context) {
+    this.announce(`Showing stack trace for test case: ${testCase.name}`);
     this.state.currentView = 'stack-trace';
     this.state.currentTestCase = testCase;
     this.state.currentStackTraceContext = context;
@@ -1747,7 +1750,7 @@ const TestReportApp = {
                 <line x1="12" y1="9" x2="12" y2="13"></line>
                 <line x1="12" y1="17" x2="12.01" y2="17"></line>
             </svg>
-            <h3 class="text-sm font-semibold text-gray-900" id="${titleId}">Stack Trace</h3>
+            <h2 class="text-sm font-semibold text-gray-900" id="${titleId}">Stack Trace</h2>
         `;
         header.appendChild(titleDiv);
 
@@ -1785,6 +1788,7 @@ const TestReportApp = {
   },
 
   showReportView() {
+    this.announce("Returning to report view");
     this.state.currentView = 'report';
     this.state.currentTestCase = null;
     this.state.currentStackTraceContext = {};
@@ -1807,22 +1811,22 @@ const TestReportApp = {
   renderStackTraceBreadcrumbs(context) {
     const { moduleName, packageName, className, testCaseName } = context;
     let html = `<div class="flex items-center gap-2 text-sm">
-        <a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_MODULES}">Project</a>`;
+        <a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_MODULES}" aria-label="Go back to Project Overview">Project</a>`;
 
     if (moduleName) {
         html += `
             <span class="breadcrumb-separator" aria-hidden="true">/</span>
-            <a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_PACKAGES}" data-module-name="${UIUtils.escapeHTML(moduleName)}">${UIUtils.escapeHTML(moduleName)}</a>`;
+            <a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_PACKAGES}" data-module-name="${UIUtils.escapeHTML(moduleName)}" aria-label="Go back to module: ${UIUtils.escapeHTML(moduleName)}">${UIUtils.escapeHTML(moduleName)}</a>`;
     }
     if (packageName) {
          html += `
             <span class="breadcrumb-separator" aria-hidden="true">/</span>
-            <a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_CLASSES}" data-module-name="${UIUtils.escapeHTML(moduleName)}" data-package-name="${UIUtils.escapeHTML(packageName)}">${UIUtils.escapeHTML(packageName)}</a>`;
+            <a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_CLASSES}" data-module-name="${UIUtils.escapeHTML(moduleName)}" data-package-name="${UIUtils.escapeHTML(packageName)}" aria-label="Go back to package: ${UIUtils.escapeHTML(packageName)}">${UIUtils.escapeHTML(packageName)}</a>`;
     }
     if (className) {
         html += `
             <span class="breadcrumb-separator" aria-hidden="true">/</span>
-            <a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_TEST_CASES}" data-module-name="${UIUtils.escapeHTML(moduleName)}" data-package-name="${UIUtils.escapeHTML(packageName)}" data-class-name="${UIUtils.escapeHTML(className)}">${UIUtils.escapeHTML(className)}</a>`;
+            <a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_TEST_CASES}" data-module-name="${UIUtils.escapeHTML(moduleName)}" data-package-name="${UIUtils.escapeHTML(packageName)}" data-class-name="${UIUtils.escapeHTML(className)}" aria-label="Go back to class: ${UIUtils.escapeHTML(className)}">${UIUtils.escapeHTML(className)}</a>`;
     }
     if (testCaseName) {
         html += `
@@ -2092,3 +2096,4 @@ function initHelpHub() {
         });
     });
 }
+

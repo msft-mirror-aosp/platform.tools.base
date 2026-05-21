@@ -46,7 +46,7 @@
 
     --text-green-600: #16a34a;
     --text-red-600: #dc2626;
-    --text-yellow-600: #ca8a04;
+    --text-yellow-600: #854d0e;
 
     --border-color: #e5e7eb;
     --border-light: #f1f5f9;
@@ -195,7 +195,6 @@ header {
     position: relative;
     margin-left: 1rem;
 }
-
 .ts-selector-btn {
     display: flex;
     align-items: center;
@@ -209,6 +208,7 @@ header {
     height: 52px;
     max-width: 300px;
 }
+
 
 .ts-selector-btn:focus-visible {
     outline: 2px solid var(--text-blue-600);
@@ -331,7 +331,6 @@ header {
     padding: 0.25rem 0.5rem;
     display: flex;
     align-items: center;
-    outline: none;
 }
 
 .filter-chip-btn:hover,

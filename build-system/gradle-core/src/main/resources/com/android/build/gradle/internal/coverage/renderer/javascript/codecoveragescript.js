@@ -18,6 +18,8 @@
  * Main application object to encapsulate state, elements, and logic.
  */
 const App = {
+    activeTrigger: null,
+
     init() {
         // fullReport is consumed from generated report-data.js
         if (typeof fullReport !== 'undefined') {
@@ -41,6 +43,7 @@ const App = {
                 const classObj = this.findClassObject(moduleName, packageName, className);
 
                 if (classObj) {
+                    App.activeTrigger = link;
                     const context = {
                         moduleName: moduleName,
                         packageName: packageName,
@@ -70,6 +73,7 @@ const App = {
     },
 
     showSourceView(classData, context) {
+        CoverageReportApp.announce(`Showing source code for class: ${classData.name}`);
         document.getElementById('report-view').classList.add('hidden-view');
         document.getElementById('source-view').classList.remove('hidden-view');
         document.getElementById('report-view-controls').classList.add('hidden');
@@ -79,10 +83,16 @@ const App = {
     },
 
     showReportView() {
+        CoverageReportApp.announce("Returning to report view");
         document.getElementById('source-view').classList.add('hidden-view');
         document.getElementById('report-view').classList.remove('hidden-view');
         document.getElementById('source-view-controls').classList.add('hidden');
         document.getElementById('report-view-controls').classList.remove('hidden');
+
+        if (App.activeTrigger) {
+            App.activeTrigger.focus();
+            App.activeTrigger = null;
+        }
     }
 }
 
@@ -1049,7 +1059,7 @@ const CoverageReportApp = {
         const { selectedModule, selectedPackage } = this.state; let html = '';
         // "Project" is the root link
         if(selectedModule) {
-            html += `<a href="#" class="breadcrumb-link" data-action="go-to-modules">Project</a>`;
+            html += `<a href="#" class="breadcrumb-link" data-action="go-to-modules" aria-label="Go back to Project Overview">Project</a>`;
         } else {
             html += `<span class="breadcrumb-current">Project</span>`;
         }
@@ -1057,7 +1067,7 @@ const CoverageReportApp = {
         if(selectedModule) {
             html += `<span class="breadcrumb-separator" aria-hidden="true">/</span>`;
             if(selectedPackage) {
-                html += `<a href="#" class="breadcrumb-link" data-action="go-to-packages">${this.escapeHTML(selectedModule)}</a>`;
+                html += `<a href="#" class="breadcrumb-link" data-action="go-to-packages" aria-label="Go back to module: ${this.escapeHTML(selectedModule)}">${this.escapeHTML(selectedModule)}</a>`;
             } else {
                 html += `<span class="breadcrumb-current">${this.escapeHTML(selectedModule)}</span>`;
             }
@@ -1696,8 +1706,8 @@ const CoverageReportApp = {
             const instrStyle = this.getColumnStyle(instrKey);
             const branchStyle = this.getColumnStyle(branchKey);
 
-            subHeader.innerHTML += `<th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600 border-l border-gray-200 cursor-pointer" tabindex="0" data-sort-by="${this.escapeHTML(instrKey)}" aria-sort="${getAriaSort(instrKey)}" ${instrStyle}>Instruction ${sortIndicator(instrKey)}<div class="resizer" data-resizer-id="${this.escapeHTML(instrKey)}"></div></th>
-                                    <th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600 cursor-pointer" tabindex="0" data-sort-by="${this.escapeHTML(branchKey)}" aria-sort="${getAriaSort(branchKey)}" ${branchStyle}>Branch ${sortIndicator(branchKey)}<div class="resizer" data-resizer-id="${this.escapeHTML(branchKey)}"></div></th>`;
+            subHeader.innerHTML += `<th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600 border-l border-gray-200 cursor-pointer" tabindex="0" data-sort-by="${this.escapeHTML(instrKey)}" aria-sort="${getAriaSort(instrKey)}" aria-label="Sort by Instruction Coverage for ${this.escapeHTML(v)}" ${instrStyle}>Instruction ${sortIndicator(instrKey)}<div class="resizer" data-resizer-id="${this.escapeHTML(instrKey)}"></div></th>
+                                    <th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600 cursor-pointer" tabindex="0" data-sort-by="${this.escapeHTML(branchKey)}" aria-sort="${getAriaSort(branchKey)}" aria-label="Sort by Branch Coverage for ${this.escapeHTML(v)}" ${branchStyle}>Branch ${sortIndicator(branchKey)}<div class="resizer" data-resizer-id="${this.escapeHTML(branchKey)}"></div></th>`;
         });
 
         this.elements.tableHeaders.innerHTML = '';
@@ -1727,8 +1737,8 @@ const CoverageReportApp = {
                 const instrKey = `instruction.${v}.percent`;
                 const branchKey = `branch.${v}.percent`;
                 return `
-                <td class="py-3 px-4 text-center" ${this.getColumnStyle(instrKey)}><div class="flex flex-col"><span class="font-bold ${vals.instrColor}">${vals.instrPercent}</span><span class="text-xs text-gray-500">${vals.instrRatio}</span></div></td>
-                <td class="py-3 px-4 text-center" ${this.getColumnStyle(branchKey)}><div class="flex flex-col"><span class="font-bold ${vals.branchColor}">${vals.branchPercent}</span><span class="text-xs text-gray-500">${vals.branchRatio}</span></div></td>
+                <td class="py-3 px-4 text-center" ${this.getColumnStyle(instrKey)} aria-label="${vals.instrPercent} instruction coverage (${vals.instrRatio}) for ${this.escapeHTML(v)}"><div class="flex flex-col"><span class="font-bold ${vals.instrColor}">${vals.instrPercent}</span><span class="text-xs text-gray-500">${vals.instrRatio}</span></div></td>
+                <td class="py-3 px-4 text-center" ${this.getColumnStyle(branchKey)} aria-label="${vals.branchPercent} branch coverage (${vals.branchRatio}) for ${this.escapeHTML(v)}"><div class="flex flex-col"><span class="font-bold ${vals.branchColor}">${vals.branchPercent}</span><span class="text-xs text-gray-500">${vals.branchRatio}</span></div></td>
             `}).join('');
 
             const rowClasses = `table-row border-b border-gray-200 hover:bg-gray-50 ${level > 0 && !isSearching ? 'child-row hidden' : 'child-row'}`;
@@ -1768,20 +1778,20 @@ const CoverageReportApp = {
                 const instrKey = `instruction.${v}.percent`;
                 const branchKey = `branch.${v}.percent`;
                 return `
-                <td class="py-3 px-4 text-center" ${this.getColumnStyle(instrKey)}><div class="flex flex-col"><span class="font-bold ${vals.instrColor}">${vals.instrPercent}</span><span class="text-xs text-gray-500">${vals.instrRatio}</span></div></td>
-                <td class="py-3 px-4 text-center" ${this.getColumnStyle(branchKey)}><div class="flex flex-col"><span class="font-bold ${vals.branchColor}">${vals.branchPercent}</span><span class="text-xs text-gray-500">${vals.branchRatio}</span></div></td>
+                <td class="py-3 px-4 text-center" ${this.getColumnStyle(instrKey)} aria-label="${vals.instrPercent} instruction coverage (${vals.instrRatio}) for ${this.escapeHTML(v)}"><div class="flex flex-col"><span class="font-bold ${vals.instrColor}">${vals.instrPercent}</span><span class="text-xs text-gray-500">${vals.instrRatio}</span></div></td>
+                <td class="py-3 px-4 text-center" ${this.getColumnStyle(branchKey)} aria-label="${vals.branchPercent} branch coverage (${vals.branchRatio}) for ${this.escapeHTML(v)}"><div class="flex flex-col"><span class="font-bold ${vals.branchColor}">${vals.branchPercent}</span><span class="text-xs text-gray-500">${vals.branchRatio}</span></div></td>
             `}).join('');
 
             let nameCell;
             switch (this.state.currentView) {
                 case 'packages':
-                    nameCell = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover:underline cursor-pointer" tabindex="0" role="link" title="${this.escapeHTML(item.name)}" data-name="${this.escapeHTML(item.name)}" data-type="${this.escapeHTML(item.type)}" data-module-name="${this.escapeHTML(item.moduleName)}">${this.escapeHTML(item.name)}</td>`;
+                    nameCell = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover:underline cursor-pointer" tabindex="0" role="link" aria-label="View classes for package: ${this.escapeHTML(item.name)}" title="${this.escapeHTML(item.name)}" data-name="${this.escapeHTML(item.name)}" data-type="${this.escapeHTML(item.type)}" data-module-name="${this.escapeHTML(item.moduleName)}">${this.escapeHTML(item.name)}</td>`;
                     if (!this.state.selectedModule) {
                         nameCell += `<td class="py-3 px-6 text-gray-500 text-sm truncate col-module" title="${this.escapeHTML(item.moduleName)}">${this.escapeHTML(item.moduleName)}</td>`;
                     }
                     break;
                 case 'classes':
-                    nameCell = `<td class="py-3 px-6 sticky-name cursor-pointer class-link" tabindex="0" role="link" title="${this.escapeHTML(item.name)}" data-class-name="${this.escapeHTML(item.name)}" data-module-name="${this.escapeHTML(item.moduleName)}" data-package-name="${this.escapeHTML(item.packageName)}"><span class="font-medium text-blue-700 hover:underline">${this.escapeHTML(item.name)}</span></td>`;
+                    nameCell = `<td class="py-3 px-6 sticky-name cursor-pointer class-link" tabindex="0" role="link" aria-label="View coverage details for class: ${this.escapeHTML(item.name)}" title="${this.escapeHTML(item.name)}" data-class-name="${this.escapeHTML(item.name)}" data-module-name="${this.escapeHTML(item.moduleName)}" data-package-name="${this.escapeHTML(item.packageName)}"><span class="font-medium text-blue-700 hover:underline">${this.escapeHTML(item.name)}</span></td>`;
                     if (!this.state.selectedModule) {
                         nameCell += `<td class="px-2 col-path" title="${this.escapeHTML(item.moduleName)} > ${this.escapeHTML(item.packageName)}">
                             <div class="flex flex-col" style="overflow: hidden; width: 100%;">
@@ -1792,7 +1802,7 @@ const CoverageReportApp = {
                     }
                     break;
                 default: // modules
-                    nameCell = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover:underline cursor-pointer" tabindex="0" role="link" title="${this.escapeHTML(item.name)}" data-name="${this.escapeHTML(item.name)}" data-type="${this.escapeHTML(item.type)}" data-module-name="${this.escapeHTML(item.name)}">${this.escapeHTML(item.name)}</td>`;
+                    nameCell = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover:underline cursor-pointer" tabindex="0" role="link" aria-label="View packages for module: ${this.escapeHTML(item.name)}" title="${this.escapeHTML(item.name)}" data-name="${this.escapeHTML(item.name)}" data-type="${this.escapeHTML(item.type)}" data-module-name="${this.escapeHTML(item.name)}">${this.escapeHTML(item.name)}</td>`;
             }
             return `<tr class="table-row border-b border-gray-200 hover:bg-gray-50">${nameCell}${coverageCells}</tr>`;
         }).join('');
