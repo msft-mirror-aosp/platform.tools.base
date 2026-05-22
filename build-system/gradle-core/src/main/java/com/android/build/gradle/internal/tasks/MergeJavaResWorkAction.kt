@@ -17,10 +17,10 @@ package com.android.build.gradle.internal.tasks
 
 import com.android.build.api.artifact.impl.InternalScopedArtifacts
 import com.android.build.api.variant.ScopedArtifacts
-import com.android.build.gradle.internal.packaging.ParsedPackagingOptions
 import com.android.build.gradle.internal.profile.ProfileAwareWorkAction
 import com.android.builder.files.SerializableInputChanges
 import com.android.builder.files.ZipSnapshotRepository
+import com.android.builder.packaging.ParsedPackagingOptions
 import com.android.utils.FileUtils
 import java.io.File
 import java.io.Serializable

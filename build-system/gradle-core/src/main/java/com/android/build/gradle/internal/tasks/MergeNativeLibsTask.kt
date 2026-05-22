@@ -30,7 +30,6 @@ import com.android.build.gradle.internal.core.Abi
 import com.android.build.gradle.internal.cxx.gradle.generator.externalNativeBuildIsActive
 import com.android.build.gradle.internal.cxx.io.removeDuplicateFiles
 import com.android.build.gradle.internal.initialize
-import com.android.build.gradle.internal.packaging.ParsedPackagingOptions.Companion.compileGlob
 import com.android.build.gradle.internal.profile.ProfileAwareWorkAction
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.InternalArtifactType
@@ -42,6 +41,7 @@ import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.merge.DuplicateRelativeFileException
+import com.android.builder.packaging.ParsedPackagingOptions.Companion.compileGlob
 import com.android.utils.FileUtils
 import java.io.File
 import java.io.File.separatorChar

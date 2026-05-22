@@ -38,6 +38,9 @@ class LazyFileMergerInput(private val name: String, private val jarFile: File) :
   override fun getAllPaths(): Set<String> = paths.value
 
   override fun open() {
+    if (zipRepo != null) {
+      return
+    }
     try {
       zipRepo = ZipRepo(jarFile.toPath())
     } catch (e: IOException) {

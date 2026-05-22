@@ -23,8 +23,6 @@ import com.android.build.gradle.internal.LoggerWrapper
 import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
-import com.android.build.gradle.internal.packaging.PackagingFileAction
-import com.android.build.gradle.internal.packaging.ParsedPackagingOptions
 import com.android.build.gradle.internal.profile.ProfileAwareWorkAction
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.InternalArtifactType
@@ -37,10 +35,11 @@ import com.android.builder.merge.FileMerger
 import com.android.builder.merge.FileMergerInput
 import com.android.builder.merge.FileMergerOutputs
 import com.android.builder.merge.FilterFileMergerInput
+import com.android.builder.merge.InputStreamMerger
 import com.android.builder.merge.LazyFileMergerInput
 import com.android.builder.merge.MergeOutputWriters
-import com.android.builder.merge.StreamMergeAlgorithms
 import com.android.builder.packaging.PackagingUtils
+import com.android.builder.packaging.ParsedPackagingOptions
 import com.google.common.collect.ImmutableList
 import kotlin.sequences.map
 import kotlin.sequences.sortedBy
@@ -204,7 +203,10 @@ abstract class MergeJavaResOptimizedWorkAction : ProfileAwareWorkAction<MergeJav
     }
 
     val packagingOptions = ParsedPackagingOptions(parameters.excludes.get(), parameters.pickFirsts.get(), parameters.merges.get())
-    val inputFilter = MergeJavaResourceTask.predicate.and { path -> packagingOptions.getAction(path) != PackagingFileAction.EXCLUDE }
+    val inputFilter =
+      MergeJavaResourceTask.predicate.and { path ->
+        packagingOptions.getAction(path) != ParsedPackagingOptions.JavaResPackagingFileAction.EXCLUDE
+      }
 
     val highPriorityInputs = mutableListOf<FileMergerInput>()
 
@@ -225,20 +227,8 @@ abstract class MergeJavaResOptimizedWorkAction : ProfileAwareWorkAction<MergeJav
         }
         .toList()
 
-    val mergeTransformAlgorithm =
-      StreamMergeAlgorithms.select { path ->
-        val packagingAction = packagingOptions.getAction(path)
-        when (packagingAction) {
-          PackagingFileAction.EXCLUDE ->
-            // Should have been excluded from the input.
-            throw AssertionError()
-          PackagingFileAction.PICK_FIRST -> return@select StreamMergeAlgorithms.pickFirst()
-          PackagingFileAction.MERGE -> return@select StreamMergeAlgorithms.concat()
-          PackagingFileAction.NONE -> return@select StreamMergeAlgorithms.acceptOnlyOne()
-        }
-      }
-
-    val baseOutput = FileMergerOutputs.fromAlgorithmAndWriter(mergeTransformAlgorithm, MergeOutputWriters.toZipWithZipFlinger(outputFile))
+    val merger = InputStreamMerger(packagingOptions)
+    val baseOutput = FileMergerOutputs.fromAlgorithmAndWriter(merger, MergeOutputWriters.toZipWithZipFlinger(outputFile))
 
     val output =
       object : DelegateFileMergerOutput(baseOutput) {
@@ -248,7 +238,8 @@ abstract class MergeJavaResOptimizedWorkAction : ProfileAwareWorkAction<MergeJav
 
         private fun filter(path: String, inputs: List<FileMergerInput>): ImmutableList<FileMergerInput> {
           val packagingAction = packagingOptions.getAction(path)
-          val shouldFilterInputs = packagingAction == PackagingFileAction.NONE && inputs.any { highPriorityInputs.contains(it) }
+          val shouldFilterInputs =
+            packagingAction == ParsedPackagingOptions.JavaResPackagingFileAction.NONE && inputs.any { highPriorityInputs.contains(it) }
           return if (shouldFilterInputs) {
             val filteredInputs = ImmutableList.copyOf(inputs.filter { highPriorityInputs.contains(it) })
             if (filteredInputs.size < inputs.size) {

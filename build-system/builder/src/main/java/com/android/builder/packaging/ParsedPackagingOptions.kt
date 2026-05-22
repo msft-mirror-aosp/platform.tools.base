@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.packaging
+package com.android.builder.packaging
 
 import com.android.builder.internal.matcher.GlobPathMatcherFactory
 import java.io.File
@@ -50,7 +50,7 @@ constructor(excludePatterns: Collection<String>, pickFirstPatterns: Collection<S
    * @param archivePath the path
    * @return the packaging action
    */
-  fun getAction(archivePath: String): PackagingFileAction {
+  fun getAction(archivePath: String): JavaResPackagingFileAction {
     var absPath = archivePath
     if (!absPath.startsWith("/")) {
       absPath = "/$absPath"
@@ -59,16 +59,35 @@ constructor(excludePatterns: Collection<String>, pickFirstPatterns: Collection<S
     val path = Paths.get(absPath.replace('/', File.separatorChar))
 
     if (pickFirsts.stream().anyMatch { m -> m.matches(path) }) {
-      return PackagingFileAction.PICK_FIRST
+      return JavaResPackagingFileAction.PICK_FIRST
     }
 
     if (merges.stream().anyMatch { m -> m.matches(path) }) {
-      return PackagingFileAction.MERGE
+      return JavaResPackagingFileAction.MERGE
     }
 
     return if (excludes.stream().anyMatch { m -> m.matches(path) }) {
-      PackagingFileAction.EXCLUDE
-    } else PackagingFileAction.NONE
+      JavaResPackagingFileAction.EXCLUDE
+    } else JavaResPackagingFileAction.NONE
+  }
+
+  /**
+   * User's setting for a particular archive entry. This is expressed in the build.gradle DSL and used by this filter to determine file
+   * merging behaviors.
+   */
+  enum class JavaResPackagingFileAction {
+
+    /** No action was described for archive entry. */
+    NONE,
+
+    /** Merge all archive entries with the same archive path. */
+    MERGE,
+
+    /** Pick to first archive entry with that archive path (not stable). */
+    PICK_FIRST,
+
+    /** Exclude all archive entries with that archive path. */
+    EXCLUDE,
   }
 
   companion object {

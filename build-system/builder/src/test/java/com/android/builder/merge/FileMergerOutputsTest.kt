@@ -16,20 +16,21 @@
 
 package com.android.builder.merge
 
+import com.android.builder.packaging.ParsedPackagingOptions
 import java.io.ByteArrayInputStream
+import java.io.InputStream
 import org.junit.Test
 import org.mockito.ArgumentMatchers.any
-import org.mockito.ArgumentMatchers.anyList
-import org.mockito.ArgumentMatchers.anyString
+import org.mockito.ArgumentMatchers.eq
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
-import org.mockito.Mockito.`when`
 
 class FileMergerOutputsTest {
 
   @Test
   fun testFromAlgorithmAndWriter() {
-    val algorithm = mock(StreamMergeAlgorithm::class.java)
+    val mergedStream = ByteArrayInputStream(byteArrayOf(1))
+    val algorithm = InputStreamMerger(ParsedPackagingOptions(emptyList(), emptyList(), emptyList()))
     val writer = mock(MergeOutputWriter::class.java)
     val output = FileMergerOutputs.fromAlgorithmAndWriter(algorithm, writer)
 
@@ -38,15 +39,9 @@ class FileMergerOutputsTest {
       output.open()
       output.use {
         val input = FileMergerTestInput("i0")
-        input.open()
-        input.use {
-          it.add("path")
-          val mergedStream = ByteArrayInputStream(byteArrayOf(1))
-          `when`(algorithm.merge(anyString(), anyList(), any())).thenReturn(mergedStream)
-          output.create("path", listOf(it), true)
-          verify(algorithm).merge(anyString(), anyList(), any())
-          verify(writer).create("path", mergedStream, true)
-        }
+        input.add("path")
+        output.create("path", listOf(input), true)
+        verify(writer).create(eq("path"), any(InputStream::class.java), eq(true))
       }
     }
   }

@@ -16,10 +16,6 @@
 
 package com.android.builder.merge
 
-import com.google.common.io.Closer
-import java.io.IOException
-import java.io.UncheckedIOException
-
 /** Factories for instances of [FileMergerOutput]. */
 object FileMergerOutputs {
 
@@ -32,7 +28,7 @@ object FileMergerOutputs {
    * @return the output
    */
   @JvmStatic
-  fun fromAlgorithmAndWriter(algorithm: StreamMergeAlgorithm, writer: MergeOutputWriter): FileMergerOutput {
+  fun fromAlgorithmAndWriter(merger: InputStreamMerger, writer: MergeOutputWriter): FileMergerOutput {
     return object : FileMergerOutput {
       override fun open() {
         writer.open()
@@ -43,14 +39,16 @@ object FileMergerOutputs {
       }
 
       override fun <T : FileMergerInput> create(path: String, inputs: List<T>, compress: Boolean) {
-        try {
-          Closer.create().use { closer ->
-            val inStreams = inputs.map { input -> MergeInput(input.openPath(path), input.getName()) }
-            val mergedStream = algorithm.merge(path, inStreams, closer)
-            writer.create(path, mergedStream, compress)
-          }
-        } catch (e: IOException) {
-          throw UncheckedIOException(e)
+        merger.merge(
+          path,
+          {
+            inputs.map { input ->
+              input.open()
+              MergeInput(input.openPath(path), input.getName())
+            }
+          },
+        ) {
+          writer.create(path, it, compress)
         }
       }
     }

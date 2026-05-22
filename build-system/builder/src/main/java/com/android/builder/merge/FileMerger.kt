@@ -16,7 +16,6 @@
 
 package com.android.builder.merge
 
-import com.google.common.io.Closer
 import java.io.IOException
 import java.io.UncheckedIOException
 import java.util.function.Predicate
@@ -33,20 +32,14 @@ object FileMerger {
   @JvmStatic
   fun merge(inputs: List<FileMergerInput>, output: FileMergerOutput, noCompressPredicate: Predicate<String>) {
     try {
-      Closer.create().use { closer ->
-        inputs.forEach {
-          it.open()
-          closer.register(it)
-        }
-        output.open()
-        closer.register(output)
-
+      output.open()
+      output.use {
         val allPaths = inputs.flatMap { it.getAllPaths() }.toSet()
 
         for (path in allPaths) {
           val inputsForFile = inputs.filter { path in it.getAllPaths() }
           if (inputsForFile.isNotEmpty()) {
-            output.create(path, inputsForFile, !noCompressPredicate.test(path))
+            it.create(path, inputsForFile, !noCompressPredicate.test(path))
           }
         }
       }
