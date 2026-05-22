@@ -263,6 +263,8 @@ const TestReportApp = {
 
     const setColumnWidth = (id, width) => {
         document.documentElement.style.setProperty(`--col-width-${id.replace(/\./g, '-')}`, `${width}px`);
+        const resizer = this.elements.tableHeaders.querySelector(`.resizer[data-resizer-id="${id}"]`);
+        if (resizer) resizer.setAttribute('aria-valuenow', Math.round(width));
     };
 
     const onPointerMove = (e) => {
@@ -312,6 +314,48 @@ const TestReportApp = {
 
             e.preventDefault();
             e.stopPropagation();
+        }
+    });
+
+    headerRow.addEventListener('dblclick', (e) => {
+        if (e.target.classList.contains('resizer')) {
+            const id = e.target.dataset.resizerId;
+            delete this.state.columnWidths[id];
+            document.documentElement.style.removeProperty(`--col-width-${id.replace(/\./g, '-')}`);
+            // Update to default width instead of removing
+            const newWidth = e.target.closest('th').getBoundingClientRect().width;
+            e.target.setAttribute('aria-valuenow', Math.round(newWidth));
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    });
+
+    headerRow.addEventListener('keydown', (e) => {
+        if (e.target.classList.contains('resizer')) {
+            const id = e.target.dataset.resizerId;
+            const columnTh = e.target.closest('th');
+            const currentWidth = columnTh.getBoundingClientRect().width;
+            let newWidth = this.state.columnWidths[id] || currentWidth;
+
+            if (e.key === 'ArrowLeft') {
+                newWidth = Math.max(50, newWidth - 10);
+                this.state.columnWidths[id] = newWidth;
+                setColumnWidth(id, newWidth);
+                e.preventDefault();
+            } else if (e.key === 'ArrowRight') {
+                newWidth = Math.min(1000, newWidth + 10);
+                this.state.columnWidths[id] = newWidth;
+                setColumnWidth(id, newWidth);
+                e.preventDefault();
+            } else if (e.key === 'Enter' || e.key === ' ') {
+                e.stopImmediatePropagation();
+                delete this.state.columnWidths[id];
+                document.documentElement.style.removeProperty(`--col-width-${id.replace(/\./g, '-')}`);
+                // Update to default width instead of removing
+                const resetWidth = e.target.closest('th').getBoundingClientRect().width;
+                e.target.setAttribute('aria-valuenow', Math.round(resetWidth));
+                e.preventDefault();
+            }
         }
     });
 
@@ -841,6 +885,7 @@ const TestReportApp = {
         Navigation.push();
     });
     this.elements.tableHeaders.addEventListener('keydown', (e) => {
+        if (e.target.classList.contains('resizer')) return;
         if (e.key === 'Enter' || e.key === ' ') {
             const th = e.target.closest('[data-sort-by]');
             if (th) {
@@ -1365,17 +1410,20 @@ const TestReportApp = {
     let pathSubHeader = '';
     if (this.state.viewMode === 'flat' && !this.state.selectedModule) {
       if (this.state.currentFlatView === 'classes' || this.state.currentFlatView === 'testCases') {
-        pathHeader = `<th scope="col" class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30 col-path">Path<div class="resizer" data-resizer-id="path"></div></th>`;
+        const pathWidth = Math.round(this.state.columnWidths['path'] || 300);
+        pathHeader = `<th scope="col" class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30 col-path">Path<div class="resizer" data-resizer-id="path" tabindex="0" role="separator" aria-label="Resize column" aria-orientation="vertical" aria-valuemin="50" aria-valuemax="1000" aria-valuenow="${pathWidth}"></div></th>`;
         pathSubHeader = `<th scope="col" class="py-2 px-6 bg-gray-50 z-30 col-path"></th>`;
       } else if (this.state.currentFlatView === 'packages') {
-        pathHeader = `<th scope="col" class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30 col-module">Module<div class="resizer" data-resizer-id="module"></div></th>`;
+        const moduleWidth = Math.round(this.state.columnWidths['module'] || 200);
+        pathHeader = `<th scope="col" class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30 col-module">Module<div class="resizer" data-resizer-id="module" tabindex="0" role="separator" aria-label="Resize column" aria-orientation="vertical" aria-valuemin="50" aria-valuemax="1000" aria-valuenow="${moduleWidth}"></div></th>`;
         pathSubHeader = `<th scope="col" class="py-2 px-6 bg-gray-50 z-30 col-module"></th>`;
       }
     }
 
+    const nameWidth = Math.round(this.state.columnWidths['name'] || 400);
     this.elements.tableHeaders.innerHTML = `
             <tr class="border-b border-gray-200">
-                <th scope="col" class="py-4 px-6 text-left font-semibold text-gray-700 sticky-name bg-gray-50 z-30 cursor-pointer" data-sort-by="name" tabindex="0" aria-sort="${getAriaSort('name')}">${nameHeader} ${sortIndicator('name')}<div class="resizer" data-resizer-id="name"></div></th>
+                <th scope="col" class="py-4 px-6 text-left font-semibold text-gray-700 sticky-name bg-gray-50 z-30 cursor-pointer" data-sort-by="name" tabindex="0" aria-sort="${getAriaSort('name')}">${nameHeader} ${sortIndicator('name')}<div class="resizer" data-resizer-id="name" tabindex="0" role="separator" aria-label="Resize column" aria-orientation="vertical" aria-valuemin="50" aria-valuemax="1000" aria-valuenow="${nameWidth}"></div></th>
                 ${pathHeader}
                 ${variantsToShow.map(v => `<th scope="col" class="py-4 px-4 text-center font-semibold text-gray-700 border-l border-gray-200" colspan="4">${UIUtils.escapeHTML(v)}</th>`).join('')}
             </tr>

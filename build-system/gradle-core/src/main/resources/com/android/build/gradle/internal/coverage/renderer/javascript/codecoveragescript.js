@@ -739,6 +739,7 @@ const CoverageReportApp = {
         });
         this.elements.tableHeaders.addEventListener('click', this.handleHeaderClick.bind(this));
         this.elements.tableHeaders.addEventListener('keydown', (e) => {
+            if (e.target.classList.contains('resizer')) return;
             if (e.key === 'Enter' || e.key === ' ') {
                 if (e.target.closest('[data-sort-by]')) {
                     e.preventDefault();
@@ -915,6 +916,8 @@ const CoverageReportApp = {
 
         const setColumnWidth = (id, width) => {
             document.documentElement.style.setProperty(`--col-width-${id.replace(/\./g, '-')}`, `${width}px`);
+            const resizer = this.elements.tableHeaders.querySelector(`.resizer[data-resizer-id="${id}"]`);
+            if (resizer) resizer.setAttribute('aria-valuenow', Math.round(width));
         };
 
         const onPointerMove = (e) => {
@@ -964,6 +967,48 @@ const CoverageReportApp = {
 
                 e.preventDefault();
                 e.stopPropagation();
+            }
+        });
+
+        headerRow.addEventListener('dblclick', (e) => {
+            if (e.target.classList.contains('resizer')) {
+                const id = e.target.dataset.resizerId;
+                delete this.state.columnWidths[id];
+                document.documentElement.style.removeProperty(`--col-width-${id.replace(/\./g, '-')}`);
+                // Update to default width instead of removing
+                const newWidth = e.target.closest('th').getBoundingClientRect().width;
+                e.target.setAttribute('aria-valuenow', Math.round(newWidth));
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        });
+
+        headerRow.addEventListener('keydown', (e) => {
+            if (e.target.classList.contains('resizer')) {
+                const id = e.target.dataset.resizerId;
+                const columnTh = e.target.closest('th');
+                const currentWidth = columnTh.getBoundingClientRect().width;
+                let newWidth = this.state.columnWidths[id] || currentWidth;
+
+                if (e.key === 'ArrowLeft') {
+                    newWidth = Math.max(50, newWidth - 10);
+                    this.state.columnWidths[id] = newWidth;
+                    setColumnWidth(id, newWidth);
+                    e.preventDefault();
+                } else if (e.key === 'ArrowRight') {
+                    newWidth = Math.min(1000, newWidth + 10);
+                    this.state.columnWidths[id] = newWidth;
+                    setColumnWidth(id, newWidth);
+                    e.preventDefault();
+                } else if (e.key === 'Enter' || e.key === ' ') {
+                    e.stopImmediatePropagation();
+                    delete this.state.columnWidths[id];
+                    document.documentElement.style.removeProperty(`--col-width-${id.replace(/\./g, '-')}`);
+                    // Update to default width instead of removing
+                    const resetWidth = e.target.closest('th').getBoundingClientRect().width;
+                    e.target.setAttribute('aria-valuenow', Math.round(resetWidth));
+                    e.preventDefault();
+                }
             }
         });
 
@@ -1678,15 +1723,18 @@ const CoverageReportApp = {
         const sortIndicator = (key) => sort.by === key ? (sort.order === 'asc' ? '▲' : '▼') : '';
         const getAriaSort = (key) => sort.by === key ? (sort.order === 'asc' ? 'ascending' : 'descending') : 'none';
 
-        topHeader.innerHTML = `<th scope="col" class="${firstColClass}" tabindex="0" data-sort-by="name" aria-sort="${getAriaSort('name')}">${mainHeaderTitle} ${sortIndicator('name')}<div class="resizer" data-resizer-id="name"></div></th>`;
+        const nameWidth = Math.round(this.state.columnWidths['name'] || 400);
+        topHeader.innerHTML = `<th scope="col" class="${firstColClass}" tabindex="0" data-sort-by="name" aria-sort="${getAriaSort('name')}">${mainHeaderTitle} ${sortIndicator('name')}<div class="resizer" data-resizer-id="name" tabindex="0" role="separator" aria-label="Resize column" aria-orientation="vertical" aria-valuemin="50" aria-valuemax="1000" aria-valuenow="${nameWidth}"></div></th>`;
         subHeader.innerHTML = `<th scope="col" class="py-2 px-6 sticky-name bg-gray-50 z-30" data-col-id="name"></th>`;
 
         if (viewMode === 'flat' && !this.state.selectedModule) {
             if (currentView === 'classes') {
-                topHeader.innerHTML += `<th scope="col" class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30 col-path">Path<div class="resizer" data-resizer-id="path"></div></th>`;
+                const pathWidth = Math.round(this.state.columnWidths['path'] || 300);
+                topHeader.innerHTML += `<th scope="col" class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30 col-path">Path<div class="resizer" data-resizer-id="path" tabindex="0" role="separator" aria-label="Resize column" aria-orientation="vertical" aria-valuemin="50" aria-valuemax="1000" aria-valuenow="${pathWidth}"></div></th>`;
                 subHeader.innerHTML += `<th scope="col" class="py-2 px-6 bg-gray-50 z-30 col-path" data-col-id="path"></th>`;
             } else if (currentView === 'packages') {
-                topHeader.innerHTML += `<th scope="col" class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30 col-module">Module<div class="resizer" data-resizer-id="module"></div></th>`;
+                const moduleWidth = Math.round(this.state.columnWidths['module'] || 200);
+                topHeader.innerHTML += `<th scope="col" class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30 col-module">Module<div class="resizer" data-resizer-id="module" tabindex="0" role="separator" aria-label="Resize column" aria-orientation="vertical" aria-valuemin="50" aria-valuemax="1000" aria-valuenow="${moduleWidth}"></div></th>`;
                 subHeader.innerHTML += `<th scope="col" class="py-2 px-6 bg-gray-50 z-30 col-module" data-col-id="module"></th>`;
             }
         }
@@ -1706,8 +1754,8 @@ const CoverageReportApp = {
             const instrStyle = this.getColumnStyle(instrKey);
             const branchStyle = this.getColumnStyle(branchKey);
 
-            subHeader.innerHTML += `<th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600 border-l border-gray-200 cursor-pointer" tabindex="0" data-sort-by="${this.escapeHTML(instrKey)}" aria-sort="${getAriaSort(instrKey)}" aria-label="Sort by Instruction Coverage for ${this.escapeHTML(v)}" ${instrStyle}>Instruction ${sortIndicator(instrKey)}<div class="resizer" data-resizer-id="${this.escapeHTML(instrKey)}"></div></th>
-                                    <th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600 cursor-pointer" tabindex="0" data-sort-by="${this.escapeHTML(branchKey)}" aria-sort="${getAriaSort(branchKey)}" aria-label="Sort by Branch Coverage for ${this.escapeHTML(v)}" ${branchStyle}>Branch ${sortIndicator(branchKey)}<div class="resizer" data-resizer-id="${this.escapeHTML(branchKey)}"></div></th>`;
+            subHeader.innerHTML += `<th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600 border-l border-gray-200 cursor-pointer" tabindex="0" data-sort-by="${this.escapeHTML(instrKey)}" aria-sort="${getAriaSort(instrKey)}" aria-label="Sort by Instruction Coverage for ${this.escapeHTML(v)}" ${instrStyle}>Instruction ${sortIndicator(instrKey)}</th>
+                                    <th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600 cursor-pointer" tabindex="0" data-sort-by="${this.escapeHTML(branchKey)}" aria-sort="${getAriaSort(branchKey)}" aria-label="Sort by Branch Coverage for ${this.escapeHTML(v)}" ${branchStyle}>Branch ${sortIndicator(branchKey)}</th>`;
         });
 
         this.elements.tableHeaders.innerHTML = '';
