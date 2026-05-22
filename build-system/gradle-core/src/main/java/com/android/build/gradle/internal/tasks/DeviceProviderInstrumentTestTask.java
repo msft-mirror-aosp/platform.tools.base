@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.tasks;
 
 import static com.android.build.gradle.internal.testing.utp.emulatorcontrol.EmulatorControlConfigKt.createEmulatorControlConfig;
+import static com.android.build.gradle.tasks.TestSuiteTestTask.CONNECTED_TEST_TEST_SUITE_NAME;
 import static com.android.builder.core.BuilderConstants.CONNECTED;
 import static com.android.builder.core.BuilderConstants.DEVICE;
 import static com.android.builder.core.BuilderConstants.FD_ANDROID_RESULTS;
@@ -196,9 +197,6 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
         @Input
         @Optional
         public abstract Property<Boolean> getKeepInstalledApks();
-
-        public static final String TEST_RESULT_METADATA_FILE = "metadata.txt";
-        public static final String CURRENT_TEST_SUITE = "AndroidTest";
 
         @Internal
         public abstract Property<String> getModulePath();
@@ -889,9 +887,7 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                     .getModulePath()
                     .set(creationConfig.getServices().getProjectInfo().getPath());
             task.getTestRunnerFactory().getTestedVariantName().set(variantName);
-            task.getTestRunnerFactory()
-                    .getTestSuiteName()
-                    .set(TestRunnerFactory.CURRENT_TEST_SUITE);
+            task.getTestRunnerFactory().getTestSuiteName().set(CONNECTED_TEST_TEST_SUITE_NAME);
             task.getTestRunnerFactory().getTestSuiteTarget().set(deviceProviderName);
 
             if (connectedCheckTargetSerials != null) {

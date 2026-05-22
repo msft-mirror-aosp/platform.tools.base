@@ -904,6 +904,11 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
           .use(taskProvider)
           .wiredWith(TestSuiteTestTask::coverageDir)
           .toAppendTo(InternalMultipleArtifactType.TEST_SUITE_CODE_COVERAGE)
+
+        creationConfig.mainVariant.artifacts
+          .use(taskProvider)
+          .wiredWith(TestSuiteTestTask::xmlResultsDirectory)
+          .toAppendTo(InternalMultipleArtifactType.TEST_SUITE_RESULTS)
       }
 
       val artifacts =
