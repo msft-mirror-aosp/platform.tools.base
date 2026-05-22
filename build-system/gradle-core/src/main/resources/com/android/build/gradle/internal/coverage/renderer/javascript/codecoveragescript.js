@@ -14,6 +14,142 @@
  * limitations under the License.
  */
 
+const Tooltip = {
+    element: null,
+    activeTarget: null,
+    hideTimeout: null,
+
+    init() {
+        this.element = document.getElementById('a11y-tooltip');
+        if (!this.element) return;
+
+        document.body.addEventListener('mouseover', (e) => {
+            const target = e.target.closest('[data-tooltip], [title], [data-stored-title]');
+            if (target && !target.contains(e.relatedTarget)) this.show(target);
+        });
+
+        document.body.addEventListener('mouseout', (e) => {
+            const target = e.target.closest('[data-tooltip], [title], [data-stored-title]');
+            if (target && !target.contains(e.relatedTarget)) {
+                this.startHide();
+            }
+        });
+
+        document.body.addEventListener('focusin', (e) => {
+            const target = e.target.closest('[data-tooltip], [title], [data-stored-title]');
+            if (target && !target.contains(e.relatedTarget)) this.show(target);
+        });
+
+        document.body.addEventListener('focusout', (e) => {
+            const target = e.target.closest('[data-tooltip], [title], [data-stored-title]');
+            if (target && !target.contains(e.relatedTarget)) {
+                this.hide();
+            }
+        });
+
+        // Dismiss tooltip on scroll (prevent detaching from element)
+        window.addEventListener('scroll', () => this.hide(), true);
+
+        // Keep tooltip open when hovering over it
+        this.element.addEventListener('mouseenter', () => this.clearHide());
+        this.element.addEventListener('mouseleave', () => this.startHide());
+    },
+
+    show(target) {
+        this.clearHide();
+
+        if (this.activeTarget && this.activeTarget !== target) {
+            this.hide();
+        }
+
+        let text = target.getAttribute('data-tooltip') || target.getAttribute('title') || target.dataset.storedTitle;
+        if (!text) {
+            this.hide();
+            return;
+        }
+
+        // Prevent native tooltip by transiently removing title
+        if (target.hasAttribute('title')) {
+            target.dataset.storedTitle = target.getAttribute('title');
+            target.removeAttribute('title');
+        }
+
+        // Establish programmatic connection for ALL targets
+        if (!target.hasAttribute('aria-describedby')) {
+            target.setAttribute('aria-describedby', 'a11y-tooltip');
+            target.dataset.addedAriaDescribedby = 'true';
+        }
+
+        // Ensure accessible name is preserved if no other source exists
+        if (!target.hasAttribute('aria-label') && !target.hasAttribute('aria-labelledby')) {
+            target.setAttribute('aria-label', text);
+            target.dataset.addedAriaLabel = 'true';
+        }
+
+        this.activeTarget = target;
+        this.element.textContent = text;
+        this.element.classList.remove('top', 'bottom');
+        this.element.classList.add('visible');
+
+        const rect = target.getBoundingClientRect();
+        const tooltipRect = this.element.getBoundingClientRect();
+
+        let top = rect.top - tooltipRect.height - 10;
+        let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+
+        // Flip if no space on top
+        if (top < 10) {
+            top = rect.bottom + 10;
+            this.element.classList.add('bottom');
+        } else {
+            this.element.classList.add('top');
+        }
+
+        // Keep within viewport horizontal bounds
+        const originalLeft = left;
+        left = Math.max(10, Math.min(left, window.innerWidth - tooltipRect.width - 10));
+
+        // Position arrow to point at target center
+        const arrowX = (rect.left + rect.width / 2) - left;
+        this.element.style.setProperty('--arrow-x', `${arrowX}px`);
+
+        this.element.style.top = `${top}px`;
+        this.element.style.left = `${left}px`;
+        this.element.setAttribute('aria-hidden', 'false');
+    },
+
+    startHide() {
+        this.hideTimeout = setTimeout(() => this.hide(), 100);
+    },
+
+    clearHide() {
+        if (this.hideTimeout) clearTimeout(this.hideTimeout);
+    },
+
+    hide() {
+        if (!this.element || !this.activeTarget) return;
+
+        if (this.activeTarget) {
+            if (this.activeTarget.dataset.storedTitle !== undefined) {
+                this.activeTarget.setAttribute('title', this.activeTarget.dataset.storedTitle);
+                delete this.activeTarget.dataset.storedTitle;
+            }
+            if (this.activeTarget.dataset.addedAriaDescribedby) {
+                this.activeTarget.removeAttribute('aria-describedby');
+                delete this.activeTarget.dataset.addedAriaDescribedby;
+            }
+            if (this.activeTarget.dataset.addedAriaLabel) {
+                // Keep aria-label intact to ensure permanent accessible name
+                delete this.activeTarget.dataset.addedAriaLabel;
+            }
+        }
+
+        this.element.classList.remove('visible', 'top', 'bottom');
+        this.element.setAttribute('aria-hidden', 'true');
+        this.activeTarget = null;
+    }
+};
+
 /**
  * Main application object to encapsulate state, elements, and logic.
  */
@@ -21,6 +157,8 @@ const App = {
     activeTrigger: null,
 
     init() {
+        this.baseTitle = document.title;
+        Tooltip.init();
         // fullReport is consumed from generated report-data.js
         if (typeof fullReport !== 'undefined') {
             CoverageReportApp.init(fullReport);
@@ -74,6 +212,7 @@ const App = {
 
     showSourceView(classData, context) {
         CoverageReportApp.announce(`Showing source code for class: ${classData.name}`);
+        document.title = `Source: ${classData.name} - ${this.baseTitle}`;
         document.getElementById('report-view').classList.add('hidden-view');
         document.getElementById('source-view').classList.remove('hidden-view');
         document.getElementById('report-view-controls').classList.add('hidden');
@@ -84,6 +223,7 @@ const App = {
 
     showReportView() {
         CoverageReportApp.announce("Returning to report view");
+        document.title = this.baseTitle;
         document.getElementById('source-view').classList.add('hidden-view');
         document.getElementById('report-view').classList.remove('hidden-view');
         document.getElementById('source-view-controls').classList.add('hidden');
@@ -217,13 +357,17 @@ const UIUtils = {
      * Builds a multi-select dropdown with "Select All" / "Clear" actions
      * and a scrollable list of options.
      */
-    buildActionDropdown(container, options, selectedStateArr, onSelectionChange, searchable = true, multiSelect = true) {
+    buildActionDropdown(container, options, selectedValueOrArray, onSelectionChange, searchable = true, multiSelect = true) {
         if (!container) return;
 
         container.innerHTML = "";
         container.style.padding = "0";
         container.style.overflow = "hidden";
         container.setAttribute("role", multiSelect ? "group" : "listbox");
+
+        let currentState = multiSelect
+            ? (Array.isArray(selectedValueOrArray) ? [...selectedValueOrArray] : [])
+            : selectedValueOrArray;
 
         let searchInput = null;
         if (searchable) {
@@ -234,6 +378,7 @@ const UIUtils = {
             searchInput.type = "text";
             searchInput.className = "popover-search";
             searchInput.placeholder = "Search...";
+            searchInput.setAttribute("autocomplete", "off");
 
             searchContainer.appendChild(searchInput);
             container.appendChild(searchContainer);
@@ -258,20 +403,17 @@ const UIUtils = {
             selectAllBtn.addEventListener("click", (e) => {
                 e.stopPropagation();
                 e.preventDefault();
-                selectedStateArr.length = 0;
-                options.forEach(o => {
-                    if (o.value !== "all") selectedStateArr.push(o.value);
-                });
+                currentState = options.filter(o => o.value !== "all").map(o => o.value);
                 Array.from(listZone.querySelectorAll("input[type='checkbox']")).forEach(cb => cb.checked = true);
-                onSelectionChange();
+                onSelectionChange([...currentState]);
             });
 
             clearBtn.addEventListener("click", (e) => {
                 e.stopPropagation();
                 e.preventDefault();
-                selectedStateArr.length = 0;
+                currentState = [];
                 Array.from(listZone.querySelectorAll("input[type='checkbox']")).forEach(cb => cb.checked = false);
-                onSelectionChange();
+                onSelectionChange([]);
             });
         }
 
@@ -290,10 +432,10 @@ const UIUtils = {
             options.forEach(opt => {
                 if (opt.value === "all") return;
 
-                const isChecked = selectedStateArr.includes(opt.value);
                 let item;
 
                 if (multiSelect) {
+                    const isChecked = currentState.includes(opt.value);
                     item = document.createElement("label");
                     item.className = "popover-item";
 
@@ -305,12 +447,12 @@ const UIUtils = {
 
                     const handleChange = () => {
                         if (checkbox.checked) {
-                            if (!selectedStateArr.includes(opt.value)) selectedStateArr.push(opt.value);
+                            if (!currentState.includes(opt.value)) currentState.push(opt.value);
                         } else {
-                            const idx = selectedStateArr.indexOf(opt.value);
-                            if (idx > -1) selectedStateArr.splice(idx, 1);
+                            const idx = currentState.indexOf(opt.value);
+                            if (idx > -1) currentState.splice(idx, 1);
                         }
-                        onSelectionChange();
+                        onSelectionChange([...currentState]);
                     };
 
                     item.addEventListener("change", (e) => {
@@ -334,10 +476,11 @@ const UIUtils = {
                     item = document.createElement("div");
                     item.className = "popover-item w-full text-left cursor-pointer";
                     item.setAttribute("role", "option");
-                    item.textContent = opt.name;
+                    const itemText = document.createElement("span");
+                    itemText.textContent = opt.name;
+                    item.appendChild(itemText);
 
-                    const isSelected = (selectedStateArr.length === 0 && opt.value === 'Aggregated') ||
-                                     (selectedStateArr.length === 1 && selectedStateArr[0] === opt.value);
+                    const isSelected = currentState === opt.value;
 
                     item.setAttribute("tabindex", "0");
                     if (isSelected) {
@@ -350,9 +493,7 @@ const UIUtils = {
                     const triggerSelect = (e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        selectedStateArr.length = 0;
-                        selectedStateArr.push(opt.value);
-                        onSelectionChange();
+                        onSelectionChange(opt.value);
                         container.classList.add('hidden');
 
                         let config;
@@ -555,7 +696,11 @@ const CoverageReportApp = {
     announce(message) {
         const announcer = document.getElementById('a11y-announcer');
         if (announcer) {
-            announcer.textContent = message;
+            announcer.textContent = '';
+            if (this.announceTimeout) clearTimeout(this.announceTimeout);
+            this.announceTimeout = setTimeout(() => {
+                announcer.textContent = message;
+            }, 50);
         }
     },
 
@@ -651,7 +796,8 @@ const CoverageReportApp = {
         }
         const variantOptions = allVariants.map(v => ({name: v, value: v}));
 
-        UIUtils.buildActionDropdown(this.elements.variantFilterDropdown, variantOptions, this.state.filters.variants, () => {
+        UIUtils.buildActionDropdown(this.elements.variantFilterDropdown, variantOptions, this.state.filters.variants, (newArr) => {
+            this.state.filters.variants = newArr;
             this.updateVariantButtonText();
             this.render(true);
             Navigation.push();
@@ -675,6 +821,10 @@ const CoverageReportApp = {
     bindEvents() {
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
+                if (Tooltip.activeTarget) {
+                    Tooltip.hide();
+                    return;
+                }
                 const openDropdownConf = this.getDropdownConfigs().find(c => c.dropdown && !c.dropdown.classList.contains('hidden'));
                 if (openDropdownConf) {
                     this.toggleDropdown(openDropdownConf.dropdown);
@@ -910,9 +1060,6 @@ const CoverageReportApp = {
 
     initResizableColumns() {
         const headerRow = this.elements.tableHeaders;
-        let activeResizer = null;
-        let startX, startWidth, resizerId;
-        let animationFrameId = null;
 
         const setColumnWidth = (id, width) => {
             document.documentElement.style.setProperty(`--col-width-${id.replace(/\./g, '-')}`, `${width}px`);
@@ -920,50 +1067,44 @@ const CoverageReportApp = {
             if (resizer) resizer.setAttribute('aria-valuenow', Math.round(width));
         };
 
-        const onPointerMove = (e) => {
-            if (!activeResizer) return;
-            const diffX = e.pageX - startX;
-            const newWidth = Math.max(50, startWidth + diffX);
-
-            this.state.columnWidths[resizerId] = newWidth;
-
-            if (animationFrameId) {
-                cancelAnimationFrame(animationFrameId);
-            }
-            animationFrameId = requestAnimationFrame(() => {
-                setColumnWidth(resizerId, newWidth);
-            });
-        };
-
-        const onPointerUp = (e) => {
-            if (activeResizer) {
-                if (activeResizer.hasPointerCapture(e.pointerId)) {
-                    activeResizer.releasePointerCapture(e.pointerId);
-                }
-                activeResizer.classList.remove('resizing');
-                activeResizer.removeEventListener('pointermove', onPointerMove);
-                activeResizer.removeEventListener('pointerup', onPointerUp);
-                activeResizer.removeEventListener('pointercancel', onPointerUp);
-                activeResizer = null;
-                setTimeout(() => { this.isResizing = false; }, 0);
-            }
-        };
-
         headerRow.addEventListener('pointerdown', (e) => {
             if (e.target.classList.contains('resizer')) {
-                activeResizer = e.target;
-                resizerId = activeResizer.dataset.resizerId;
-                const columnTh = activeResizer.closest('th');
-                startX = e.pageX;
-                startWidth = columnTh.getBoundingClientRect().width;
+                if (this.isResizing) return;
 
-                activeResizer.setPointerCapture(e.pointerId);
-                activeResizer.classList.add('resizing');
+                const resizer = e.target;
+                const resizerId = resizer.dataset.resizerId;
+                const columnTh = resizer.closest('th');
+                const startX = e.pageX;
+                const startWidth = columnTh.getBoundingClientRect().width;
+                let animationFrameId = null;
+
+                resizer.setPointerCapture(e.pointerId);
+                resizer.classList.add('resizing');
                 this.isResizing = true;
 
-                activeResizer.addEventListener('pointermove', onPointerMove);
-                activeResizer.addEventListener('pointerup', onPointerUp);
-                activeResizer.addEventListener('pointercancel', onPointerUp);
+                const onPointerMove = (moveEvt) => {
+                    const diffX = moveEvt.pageX - startX;
+                    const newWidth = Math.max(50, startWidth + diffX);
+                    this.state.columnWidths[resizerId] = newWidth;
+
+                    if (animationFrameId) cancelAnimationFrame(animationFrameId);
+                    animationFrameId = requestAnimationFrame(() => {
+                        setColumnWidth(resizerId, newWidth);
+                    });
+                };
+
+                const onPointerUp = (upEvt) => {
+                    resizer.releasePointerCapture(upEvt.pointerId);
+                    resizer.classList.remove('resizing');
+                    resizer.removeEventListener('pointermove', onPointerMove);
+                    resizer.removeEventListener('pointerup', onPointerUp);
+                    resizer.removeEventListener('pointercancel', onPointerUp);
+                    setTimeout(() => { this.isResizing = false; }, 0);
+                };
+
+                resizer.addEventListener('pointermove', onPointerMove);
+                resizer.addEventListener('pointerup', onPointerUp);
+                resizer.addEventListener('pointercancel', onPointerUp);
 
                 e.preventDefault();
                 e.stopPropagation();
@@ -1253,7 +1394,8 @@ const CoverageReportApp = {
                 .sort()
                 .map(name => ({ name, value: name }));
 
-        UIUtils.buildActionDropdown(this.elements.moduleFilterDropdown, moduleOptions, filters.modules, () => {
+        UIUtils.buildActionDropdown(this.elements.moduleFilterDropdown, moduleOptions, filters.modules, (newArr) => {
+            filters.modules = newArr;
             filters.packages = [];
             filters.classes = [];
             this.handleHeaderFilterChange('module');
@@ -1262,9 +1404,8 @@ const CoverageReportApp = {
             Navigation.push();
         });
 
-        const testSuiteStateWrapper = [filters.testSuite];
-        UIUtils.buildActionDropdown(this.elements.testSuiteFilterDropdown, testSuiteOptions, testSuiteStateWrapper, () => {
-            filters.testSuite = testSuiteStateWrapper[0] || 'Aggregated';
+        UIUtils.buildActionDropdown(this.elements.testSuiteFilterDropdown, testSuiteOptions, filters.testSuite, (newVal) => {
+            filters.testSuite = newVal || 'Aggregated';
             this.updateFilterButtons();
             this.render(true);
             Navigation.push();
@@ -1277,7 +1418,8 @@ const CoverageReportApp = {
             }
         }, false, false);
 
-        UIUtils.buildActionDropdown(this.elements.packageFilterDropdown, packageOptions, filters.packages, () => {
+        UIUtils.buildActionDropdown(this.elements.packageFilterDropdown, packageOptions, filters.packages, (newArr) => {
+            filters.packages = newArr;
             filters.classes = [];
             this.handleHeaderFilterChange('package');
             this.updateFilterButtons();
@@ -1285,7 +1427,8 @@ const CoverageReportApp = {
             Navigation.push();
         });
 
-        UIUtils.buildActionDropdown(this.elements.classFilterDropdown, classOptions, filters.classes, () => {
+        UIUtils.buildActionDropdown(this.elements.classFilterDropdown, classOptions, filters.classes, (newArr) => {
+            filters.classes = newArr;
             this.handleHeaderFilterChange('class');
             this.updateFilterButtons();
             this.render(true);

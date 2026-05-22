@@ -35,7 +35,7 @@ const UIUtils = {
    * Builds a multi-select dropdown with "Select All" / "Clear" actions
    * and a scrollable list of options.
    */
-  buildActionDropdown(container, options, initialState, onSelectionChange, searchable = true, multiSelect = true) {
+  buildActionDropdown(container, options, selectedValueOrArray, onSelectionChange, searchable = true, multiSelect = true) {
     if (!container) return;
 
     container.innerHTML = "";
@@ -44,8 +44,8 @@ const UIUtils = {
     container.setAttribute("role", multiSelect ? "group" : "listbox");
 
     let currentState = multiSelect
-      ? (Array.isArray(initialState) ? [...initialState] : [])
-      : initialState;
+      ? (Array.isArray(selectedValueOrArray) ? [...selectedValueOrArray] : [])
+      : selectedValueOrArray;
 
     let searchInput = null;
     if (searchable) {
@@ -56,6 +56,7 @@ const UIUtils = {
       searchInput.type = "text";
       searchInput.className = "popover-search";
       searchInput.placeholder = "Search...";
+      searchInput.setAttribute("autocomplete", "off");
 
       searchContainer.appendChild(searchInput);
       container.appendChild(searchContainer);
@@ -211,6 +212,142 @@ const BREADCRUMB_ACTIONS = {
   GO_TO_TEST_CASES: 'go-to-test-cases'
 };
 
+const Tooltip = {
+  element: null,
+  activeTarget: null,
+  hideTimeout: null,
+
+  init() {
+    this.element = document.getElementById('a11y-tooltip');
+    if (!this.element) return;
+
+    document.body.addEventListener('mouseover', (e) => {
+      const target = e.target.closest('[data-tooltip], [title], [data-stored-title]');
+      if (target && !target.contains(e.relatedTarget)) this.show(target);
+    });
+
+    document.body.addEventListener('mouseout', (e) => {
+      const target = e.target.closest('[data-tooltip], [title], [data-stored-title]');
+      if (target && !target.contains(e.relatedTarget)) {
+        this.startHide();
+      }
+    });
+
+    document.body.addEventListener('focusin', (e) => {
+      const target = e.target.closest('[data-tooltip], [title], [data-stored-title]');
+      if (target && !target.contains(e.relatedTarget)) this.show(target);
+    });
+
+    document.body.addEventListener('focusout', (e) => {
+      const target = e.target.closest('[data-tooltip], [title], [data-stored-title]');
+      if (target && !target.contains(e.relatedTarget)) {
+        this.hide();
+      }
+    });
+
+    // Dismiss tooltip on scroll (prevent detaching from element)
+    window.addEventListener('scroll', () => this.hide(), true);
+
+    // Keep tooltip open when hovering over it
+    this.element.addEventListener('mouseenter', () => this.clearHide());
+    this.element.addEventListener('mouseleave', () => this.startHide());
+  },
+
+  show(target) {
+    this.clearHide();
+
+    if (this.activeTarget && this.activeTarget !== target) {
+      this.hide();
+    }
+
+    let text = target.getAttribute('data-tooltip') || target.getAttribute('title') || target.dataset.storedTitle;
+    if (!text) {
+      this.hide();
+      return;
+    }
+
+    // Prevent native tooltip by transiently removing title
+    if (target.hasAttribute('title')) {
+      target.dataset.storedTitle = target.getAttribute('title');
+      target.removeAttribute('title');
+    }
+
+    // Establish programmatic connection for ALL targets
+    if (!target.hasAttribute('aria-describedby')) {
+        target.setAttribute('aria-describedby', 'a11y-tooltip');
+        target.dataset.addedAriaDescribedby = 'true';
+    }
+
+    // Ensure accessible name is preserved if no other source exists
+    if (!target.hasAttribute('aria-label') && !target.hasAttribute('aria-labelledby')) {
+        target.setAttribute('aria-label', text);
+        target.dataset.addedAriaLabel = 'true';
+    }
+
+    this.activeTarget = target;
+    this.element.textContent = text;
+    this.element.classList.remove('top', 'bottom');
+    this.element.classList.add('visible');
+
+    const rect = target.getBoundingClientRect();
+    const tooltipRect = this.element.getBoundingClientRect();
+
+    let top = rect.top - tooltipRect.height - 10;
+    let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+
+    // Flip if no space on top
+    if (top < 10) {
+      top = rect.bottom + 10;
+      this.element.classList.add('bottom');
+    } else {
+      this.element.classList.add('top');
+    }
+
+    // Keep within viewport horizontal bounds
+    const originalLeft = left;
+    left = Math.max(10, Math.min(left, window.innerWidth - tooltipRect.width - 10));
+
+    // Position arrow to point at target center
+    const arrowX = (rect.left + rect.width / 2) - left;
+    this.element.style.setProperty('--arrow-x', `${arrowX}px`);
+
+    this.element.style.top = `${top}px`;
+    this.element.style.left = `${left}px`;
+    this.element.setAttribute('aria-hidden', 'false');
+  },
+
+  startHide() {
+    this.hideTimeout = setTimeout(() => this.hide(), 100);
+  },
+
+  clearHide() {
+    if (this.hideTimeout) clearTimeout(this.hideTimeout);
+  },
+
+  hide() {
+    if (!this.element || !this.activeTarget) return;
+
+    if (this.activeTarget) {
+      if (this.activeTarget.dataset.storedTitle !== undefined) {
+        this.activeTarget.setAttribute('title', this.activeTarget.dataset.storedTitle);
+        delete this.activeTarget.dataset.storedTitle;
+      }
+      if (this.activeTarget.dataset.addedAriaDescribedby) {
+          this.activeTarget.removeAttribute('aria-describedby');
+          delete this.activeTarget.dataset.addedAriaDescribedby;
+      }
+      if (this.activeTarget.dataset.addedAriaLabel) {
+          // Keep aria-label intact to ensure permanent accessible name
+          delete this.activeTarget.dataset.addedAriaLabel;
+      }
+    }
+
+    this.element.classList.remove('visible', 'top', 'bottom');
+    this.element.setAttribute('aria-hidden', 'true');
+    this.activeTarget = null;
+  }
+};
+
 /**
  * Main application object.
  * DEPENDENCY: Requires 'TEST_DATA_SOURCE' to be defined in data.js
@@ -238,7 +375,9 @@ const TestReportApp = {
   elements: {},
 
   init: function () {
+    this.baseTitle = document.title;
     this.cacheDOMElements();
+    Tooltip.init();
 
     // Directly access the global variable from data.js
     if (typeof TEST_DATA_SOURCE !== 'undefined') {
@@ -257,9 +396,6 @@ const TestReportApp = {
 
   initResizableColumns() {
     const headerRow = this.elements.tableHeaders;
-    let activeResizer = null;
-    let startX, startWidth, resizerId;
-    let animationFrameId = null;
 
     const setColumnWidth = (id, width) => {
         document.documentElement.style.setProperty(`--col-width-${id.replace(/\./g, '-')}`, `${width}px`);
@@ -267,50 +403,44 @@ const TestReportApp = {
         if (resizer) resizer.setAttribute('aria-valuenow', Math.round(width));
     };
 
-    const onPointerMove = (e) => {
-        if (!activeResizer) return;
-        const diffX = e.pageX - startX;
-        const newWidth = Math.max(50, startWidth + diffX);
-
-        this.state.columnWidths[resizerId] = newWidth;
-
-        if (animationFrameId) {
-            cancelAnimationFrame(animationFrameId);
-        }
-        animationFrameId = requestAnimationFrame(() => {
-            setColumnWidth(resizerId, newWidth);
-        });
-    };
-
-    const onPointerUp = (e) => {
-        if (activeResizer) {
-            if (activeResizer.hasPointerCapture(e.pointerId)) {
-                activeResizer.releasePointerCapture(e.pointerId);
-            }
-            activeResizer.classList.remove('resizing');
-            activeResizer.removeEventListener('pointermove', onPointerMove);
-            activeResizer.removeEventListener('pointerup', onPointerUp);
-            activeResizer.removeEventListener('pointercancel', onPointerUp);
-            activeResizer = null;
-            setTimeout(() => { this.state.isResizing = false; }, 0);
-        }
-    };
-
     headerRow.addEventListener('pointerdown', (e) => {
         if (e.target.classList.contains('resizer')) {
-            activeResizer = e.target;
-            resizerId = activeResizer.dataset.resizerId;
-            const columnTh = activeResizer.closest('th');
-            startX = e.pageX;
-            startWidth = columnTh.getBoundingClientRect().width;
+            if (this.state.isResizing) return;
 
-            activeResizer.setPointerCapture(e.pointerId);
-            activeResizer.classList.add('resizing');
+            const resizer = e.target;
+            const resizerId = resizer.dataset.resizerId;
+            const columnTh = resizer.closest('th');
+            const startX = e.pageX;
+            const startWidth = columnTh.getBoundingClientRect().width;
+            let animationFrameId = null;
+
+            resizer.setPointerCapture(e.pointerId);
+            resizer.classList.add('resizing');
             this.state.isResizing = true;
 
-            activeResizer.addEventListener('pointermove', onPointerMove);
-            activeResizer.addEventListener('pointerup', onPointerUp);
-            activeResizer.addEventListener('pointercancel', onPointerUp);
+            const onPointerMove = (moveEvt) => {
+                const diffX = moveEvt.pageX - startX;
+                const newWidth = Math.max(50, startWidth + diffX);
+                this.state.columnWidths[resizerId] = newWidth;
+
+                if (animationFrameId) cancelAnimationFrame(animationFrameId);
+                animationFrameId = requestAnimationFrame(() => {
+                    setColumnWidth(resizerId, newWidth);
+                });
+            };
+
+            const onPointerUp = (upEvt) => {
+                resizer.releasePointerCapture(upEvt.pointerId);
+                resizer.classList.remove('resizing');
+                resizer.removeEventListener('pointermove', onPointerMove);
+                resizer.removeEventListener('pointerup', onPointerUp);
+                resizer.removeEventListener('pointercancel', onPointerUp);
+                setTimeout(() => { this.state.isResizing = false; }, 0);
+            };
+
+            resizer.addEventListener('pointermove', onPointerMove);
+            resizer.addEventListener('pointerup', onPointerUp);
+            resizer.addEventListener('pointercancel', onPointerUp);
 
             e.preventDefault();
             e.stopPropagation();
@@ -563,6 +693,10 @@ const TestReportApp = {
   bindEvents() {
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
+        if (Tooltip.activeTarget) {
+            Tooltip.hide();
+            return;
+        }
         const openDropdownConf = this.getDropdownConfigs().find(c => c.dropdown && !c.dropdown.classList.contains('hidden'));
         if (openDropdownConf) {
           this.toggleDropdown(openDropdownConf.dropdown, openDropdownConf.btn);
@@ -1037,10 +1171,14 @@ const TestReportApp = {
   announce(message) {
       const announcer = document.getElementById('a11y-announcer');
       if (announcer) {
-          announcer.textContent = message;
+          announcer.textContent = '';
+          if (this.announceTimeout) clearTimeout(this.announceTimeout);
+          // Small delay to ensure the DOM change is registered
+          this.announceTimeout = setTimeout(() => {
+              announcer.textContent = message;
+          }, 50);
       }
   },
-
   closeDropdownsOnClickOutside() {
     document.addEventListener('click', (e) => {
       this.getDropdownConfigs().forEach(({ btn, dropdown }) => {
@@ -1726,6 +1864,7 @@ const TestReportApp = {
 
   showStackTraceView(testCase, context) {
     this.announce(`Showing stack trace for test case: ${testCase.name}`);
+    document.title = `Stack Trace: ${testCase.name} - ${this.baseTitle}`;
     this.state.currentView = 'stack-trace';
     this.state.currentTestCase = testCase;
     this.state.currentStackTraceContext = context;
@@ -1837,6 +1976,7 @@ const TestReportApp = {
 
   showReportView() {
     this.announce("Returning to report view");
+    document.title = this.baseTitle;
     this.state.currentView = 'report';
     this.state.currentTestCase = null;
     this.state.currentStackTraceContext = {};
