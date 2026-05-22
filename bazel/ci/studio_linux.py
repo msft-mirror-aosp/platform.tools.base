@@ -55,6 +55,7 @@ _EXTRA_TARGETS = [
     '//tools/vendor/google/adrt:android-studio-nsis-prebuilt.zip',
     '//tools/vendor/google/asfp/studio:asfp_build_manifest.textproto',
     '//tools/vendor/google/asfp/studio:asfp.deb',
+    '//tools/vendor/google/asfp/studio:asfp-external.deb',
     '//tools/vendor/google/ml:aiplugin',
 # TODO: b/497702794 - old custom packaging deleted.
 #    '//tools/adt/idea/aswb/aswb:aswb_bazel_zip',
@@ -86,6 +87,7 @@ _ARTIFACTS = [
     ('tools/vendor/google/adrt/android-studio-nsis-prebuilt.zip', 'artifacts'),
     ('tools/vendor/google/asfp/studio/asfp_build_manifest.textproto', 'artifacts'),
     ('tools/vendor/google/asfp/studio/asfp.deb', 'artifacts'),
+    ('tools/vendor/google/asfp/studio/asfp-external.deb', 'artifacts'),
     ('tools/vendor/google/aswb/android-studio-with-blaze-canary.deb', 'artifacts'),
     ('tools/vendor/google/aswb/android-studio-with-blaze-canary.mac.zip', 'artifacts'),
     ('tools/vendor/google/aswb/android-studio-with-blaze-canary.mac_arm.zip', 'artifacts'),
