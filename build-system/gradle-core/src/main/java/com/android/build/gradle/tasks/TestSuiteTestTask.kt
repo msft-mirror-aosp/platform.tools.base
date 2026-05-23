@@ -769,16 +769,6 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
 
       val testOptions = globalConfig.androidTestOptions
 
-      val resultsDir = testOptions.resultsDir
-      if (resultsDir != null) {
-        task.resultsDir.set(File(resultsDir, subFolder))
-        task.resultsDir.disallowChanges()
-      } else {
-        task.resultsDir.setDisallowChanges(
-          creationConfig.services.projectInfo.getOutputsDir().map { it.dir("${BuilderConstants.FD_ANDROID_RESULTS}/$subFolder") }
-        )
-      }
-
       val testTaskReports = task.reports
       // Set html to true so that Gradle's error message contains clickable link to the html file.
       testTaskReports.html.required.setDisallowChanges(true)
@@ -828,6 +818,47 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
           .wiredWith(TestSuiteTestTask::coverageDir)
           .toAppendTo(InternalMultipleArtifactType.TEST_SUITE_CODE_COVERAGE)
       }
+
+      val artifacts =
+        if (creationConfig is DeviceTestCreationConfig) {
+          creationConfig.mainVariant.artifacts
+        } else {
+          creationConfig.artifacts
+        }
+
+      val globalConfig = creationConfig.global
+      val testedConfig = (creationConfig as? DeviceTestCreationConfig)?.mainVariant
+      val variantName = testedConfig?.name ?: creationConfig.name
+      var buildTarget: String
+      var flavorFolder = if (creationConfig.componentType.isAar) "" else creationConfig.flavorName ?: ""
+      if (flavorFolder.isNotEmpty()) {
+        buildTarget = variantName.substring(flavorFolder.length).lowercase(Locale.US)
+        flavorFolder = "${BuilderConstants.FD_FLAVORS}/$flavorFolder"
+      } else {
+        buildTarget = variantName
+      }
+      val providerFolder = BuilderConstants.CONNECTED
+      val subFolder = "$providerFolder/$buildTarget/$flavorFolder"
+
+      val testOptions = globalConfig.androidTestOptions
+      val resultsDir = testOptions.resultsDir
+      val request = artifacts.setInitialProvider(taskProvider, TestSuiteTestTask::resultsDir)
+
+      if (resultsDir != null) {
+        val f = File(resultsDir)
+        val resolvedFile =
+          if (f.isAbsolute) {
+            File(f, subFolder)
+          } else {
+            File(creationConfig.services.projectInfo.projectDirectory.asFile, File(resultsDir, subFolder).path)
+          }
+        request.atLocation(resolvedFile)
+      } else {
+        val defaultLocation =
+          creationConfig.services.projectInfo.getOutputsDir().map { it.dir("${BuilderConstants.FD_ANDROID_RESULTS}/$subFolder") }
+        request.atLocation(defaultLocation)
+      }
+      request.on(InternalArtifactType.ANDROID_TEST_RESULTS)
     }
   }
 

@@ -32,15 +32,22 @@ import org.junit.ClassRule
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExternalResource
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
 /**
  * Integration test for [com.android.build.gradle.internal.test.tasks.TestReportTask] and
  * [com.android.build.gradle.internal.test.tasks.TestResultsCollectionTask] evaluating cross-module unit test reporting.
  */
-class TestReportAggregationTest {
+@RunWith(Parameterized::class)
+class TestReportAggregationTest(val runWithBuiltInPlatform: Boolean) {
 
   companion object {
     @ClassRule @JvmField val emulator: ExternalResource = getEmulator()
+
+    @JvmStatic
+    @Parameterized.Parameters(name = "runWithBuiltInPlatform={0}")
+    fun parameters(): Collection<Array<Any>> = listOf(arrayOf(false), arrayOf(true))
   }
 
   @get:Rule
@@ -157,6 +164,7 @@ class TestReportAggregationTest {
         // this is to test the multi-variant support for coverage reporting
         add(BooleanOption.ONLY_ENABLE_UNIT_TEST_BY_DEFAULT_FOR_THE_TESTED_BUILD_TYPE, false)
         add(BooleanOption.REPORT_AGGREGATION_SUPPORT, true)
+        add(BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM, runWithBuiltInPlatform)
       }
     }
 
