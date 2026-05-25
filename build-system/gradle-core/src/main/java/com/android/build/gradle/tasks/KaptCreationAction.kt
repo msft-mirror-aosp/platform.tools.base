@@ -110,12 +110,12 @@ class KaptCreationAction(
 
     // Add annotation processing options
     val processorOptions = creationConfig.annotationProcessor
-    task.annotationProcessorOptionProviders.add(
-      listOf(
-        CommandLineArgumentProviderAdapter((processorOptions as AnnotationProcessorImpl).finalListOfClassNames, processorOptions.arguments)
-      )
+    task.annotationProcessorOptionsProviders.add(
+      CommandLineArgumentProviderAdapter((processorOptions as AnnotationProcessorImpl).finalListOfClassNames, processorOptions.arguments)
     )
-    task.annotationProcessorOptionProviders.add(processorOptions.argumentProviders)
+    processorOptions.argumentProviders.forEach {
+      task.annotationProcessorOptionsProviders.add(it)
+    }
     task.includeCompileClasspath.setDisallowChanges(false)
   }
 }
