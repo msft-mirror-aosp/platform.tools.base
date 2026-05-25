@@ -226,7 +226,7 @@ abstract class DexMergingTask : NewIncrementalTask() {
     }
   }
 
-  class CreationAction @JvmOverloads constructor(creationConfig: DexMergingCreationConfig) :
+  class CreationAction constructor(creationConfig: DexMergingCreationConfig) :
     VariantTaskCreationAction<DexMergingTask, DexMergingCreationConfig>(creationConfig),
     DexingTaskCreationAction by DexingTaskCreationActionImpl(creationConfig.dexing) {
 
