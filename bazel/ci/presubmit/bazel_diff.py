@@ -35,6 +35,8 @@ def generate_hash_file(
       build_env.bazel_path,
       '--workspacePath',
       build_env.workspace_dir,
+      '--bazelCommandOptions',
+      '--config=dl-ci',
       '--fineGrainedHashExternalRepos',
       ','.join(external_repos),
   ]
