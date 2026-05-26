@@ -64,9 +64,23 @@ android_cc_binary(
 jni_library(
     name = "coverage_agent_jni",
     visibility = ["//visibility:public"],
-    deps = [
-        ":coverage_agent.so.stripped",
-    ],
+    deps = select({
+        "//tools/base/bazel:without_vendor": [":placeholder"],
+        "//conditions:default": [
+            ":coverage_agent.so.stripped",
+        ],
+    }),
+)
+
+# Provide a non-empty target for environments where android_ndk_repository is not
+# initialized (e.g. lightweight presubmits). This prevents build graph analysis
+# failures while ensuring the resulting APK remains safe; the .txt file is
+# ignored by the Android native loader, and the Java-side attacher handles the
+# missing .so file gracefully without interrupting test execution.
+genrule(
+    name = "placeholder",
+    outs = ["placeholder.txt"],
+    cmd = "touch $@",
 )
 
 cc_test(
