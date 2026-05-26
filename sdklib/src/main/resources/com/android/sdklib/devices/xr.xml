@@ -86,7 +86,7 @@
     </d:device>
 
     <d:device>
-        <d:name>AI Glasses (Display)</d:name>
+        <d:name>Display Glasses</d:name>
         <d:id>ai_glasses_device</d:id>
         <d:manufacturer>Google</d:manufacturer>
         <d:hardware>
@@ -167,7 +167,7 @@
     </d:device>
 
     <d:device>
-        <d:name>AI Glasses</d:name>
+        <d:name>Audio Glasses</d:name>
         <d:id>ai_glasses_displayless</d:id>
         <d:manufacturer>Google</d:manufacturer>
         <d:hardware>

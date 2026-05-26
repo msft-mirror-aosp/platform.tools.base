@@ -422,7 +422,6 @@ public class AvdManagerCliTest {
                                 .collect(Collectors.toList()))
                 .containsExactly(
                         "P ai_glasses_displayless\n",
-                        "P ai_glasses_device\n",
                         "P automotive_1024p_landscape\n",
                         "P automotive_1080p_landscape\n",
                         "P automotive_1408p_landscape_with_google_apis\n",
@@ -433,6 +432,7 @@ public class AvdManagerCliTest {
                         "P automotive_portrait\n",
                         "P automotive_ultrawide\n",
                         "P desktop_api37\n",
+                        "P ai_glasses_device\n",
                         "P Galaxy Nexus\n",
                         "P desktop_large\n",
                         "P desktop_medium\n",

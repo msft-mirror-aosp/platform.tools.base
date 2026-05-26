@@ -121,8 +121,8 @@ public class DeviceManagerTest {
         // cf /sdklib/src/main/java/com/android/sdklib/devices/nexus.xml
         assertThat(listDisplayNames(dm.getDevices(DeviceCategory.VENDOR)))
                 .containsExactly(
-                        "AI Glasses (Display)",
-                        "AI Glasses",
+                        "Display Glasses",
+                        "Audio Glasses",
                         "Television (4K)",
                         "Television (1080p)",
                         "Television (720p)",
@@ -289,8 +289,8 @@ public class DeviceManagerTest {
                         "Pixel 10 Pro Fold",
                         "XR Headset",
                         "XR Glasses",
-                        "AI Glasses (Display)",
-                        "AI Glasses");
+                        "Display Glasses",
+                        "Audio Glasses");
     }
 
     @Test
@@ -369,8 +369,8 @@ public class DeviceManagerTest {
         // cf /sdklib/src/main/java/com/android/sdklib/devices/nexus.xml
         assertThat(listDisplayNames(dm2.getDevices(DeviceCategory.VENDOR)))
                 .containsExactly(
-                        "AI Glasses (Display)",
-                        "AI Glasses",
+                        "Display Glasses",
+                        "Audio Glasses",
                         "Television (4K)",
                         "Television (1080p)",
                         "Television (720p)",
@@ -536,8 +536,8 @@ public class DeviceManagerTest {
                         "Pixel 10 Pro Fold",
                         "XR Headset",
                         "XR Glasses",
-                        "AI Glasses (Display)",
-                        "AI Glasses");
+                        "Display Glasses",
+                        "Audio Glasses");
     }
 
     @Test
@@ -610,8 +610,8 @@ public class DeviceManagerTest {
         // cf /sdklib/src/main/java/com/android/sdklib/devices/nexus.xml
         assertThat(listDisplayNames(dm.getDevices(DeviceCategory.VENDOR)))
                 .containsExactly(
-                        "AI Glasses (Display)",
-                        "AI Glasses",
+                        "Display Glasses",
+                        "Audio Glasses",
                         "Television (4K)",
                         "Television (1080p)",
                         "Television (720p)",
@@ -777,8 +777,8 @@ public class DeviceManagerTest {
                         "Pixel 10 Pro Fold",
                         "XR Headset",
                         "XR Glasses",
-                        "AI Glasses (Display)",
-                        "AI Glasses");
+                        "Display Glasses",
+                        "Audio Glasses");
     }
 
     @Test

@@ -114,9 +114,7 @@ public class SdkVersionInfo {
      */
     public static final int HIGHEST_KNOWN_API_XR = 34;
 
-    /**
-     * The highest known API level for AI Glasses.
-     */
+    /** The highest known API level for Intelligent Eyewear. */
     public static final int HIGHEST_KNOWN_API_AI_GLASSES = 36;
 
     /**
@@ -124,9 +122,7 @@ public class SdkVersionInfo {
      */
     public static final int LOWEST_ACTIVE_API_XR = 34;
 
-    /**
-     * The lowest active API for AI Glasses, minimum required by libraries.
-     */
+    /** The lowest active API for Intelligent Eyewear, minimum required by libraries. */
     public static final int LOWEST_ACTIVE_API_AI_GLASSES = 36;
 
     /**
