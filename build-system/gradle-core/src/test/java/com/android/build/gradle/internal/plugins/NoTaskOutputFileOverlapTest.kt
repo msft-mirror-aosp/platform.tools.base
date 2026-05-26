@@ -47,7 +47,8 @@ class NoTaskOutputFileOverlapTest {
   @Test
   fun testLibrary() {
     val projectDir = projectDirectory.newFolder("library").toPath()
-    val project = TestProjects.builder(projectDir).withPlugin(TestProjects.Plugin.LIBRARY).build()
+    val project =
+      TestProjects.builder(projectDir).withPlugin(TestProjects.Plugin.LIBRARY).withProperty("_agp_internal_test_mode_", "true").build()
     val android = project.extensions.getByType(com.android.build.api.dsl.LibraryExtension::class.java)
     android.compileSdk { version = release(TestConstants.COMPILE_SDK_VERSION) }
     android.buildToolsVersion = TestConstants.BUILD_TOOL_VERSION
@@ -61,7 +62,8 @@ class NoTaskOutputFileOverlapTest {
   @Test
   fun testApplication() {
     val projectDir = projectDirectory.newFolder("library").toPath()
-    val project = TestProjects.builder(projectDir).withPlugin(TestProjects.Plugin.APP).build()
+    val project =
+      TestProjects.builder(projectDir).withPlugin(TestProjects.Plugin.APP).withProperty("_agp_internal_test_mode_", "true").build()
     val android = project.extensions.getByType(ApplicationExtension::class.java)
     android.compileSdk { version = release(TestConstants.COMPILE_SDK_VERSION) }
     android.buildToolsVersion = TestConstants.BUILD_TOOL_VERSION

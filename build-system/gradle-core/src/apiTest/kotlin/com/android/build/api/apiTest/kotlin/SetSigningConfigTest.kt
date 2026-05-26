@@ -85,7 +85,7 @@ class SetSigningConfigTest : VariantApiBaseTest(TestType.Script) {
                         .withFlavor("version" to "flavor1")
                         .withBuildType("special")
                 ) { variant ->
-                        variant.signingConfig?.setConfig(android.signingConfigs.getByName("other"))
+                        variant.signingConfig?.from(android.signingConfigs.getByName("other"))
                 }
             }
         """

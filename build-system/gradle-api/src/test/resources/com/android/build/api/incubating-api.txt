@@ -800,3 +800,6 @@ https://issuetracker.google.com/498938267
   * com.android.build.api.dsl.ApplicationBuildType.getBaselineProfile: com.android.build.api.dsl.BaselineProfile ()
 https://issuetracker.google.com/501095983
   * com.android.build.api.dsl.DependenciesExtension implements org.gradle.api.artifacts.dsl.GradleDependencies, org.gradle.api.plugins.jvm.PlatformDependencyModifiers
+https://issuetracker.google.com/517066980
+  * com.android.build.api.variant.SigningConfig.from: void (com.android.build.api.dsl.SigningConfig)
+  * com.android.build.api.variant.SigningConfig.from: void (org.gradle.api.provider.Provider<com.android.build.api.variant.SigningConfigInfo>)

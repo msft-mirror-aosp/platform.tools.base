@@ -3603,15 +3603,31 @@ package com.android.build.api.variant {
   }
 
   public interface SigningConfig {
+    method @org.gradle.api.Incubating public void from(com.android.build.api.dsl.SigningConfig signingConfig);
+    method @org.gradle.api.Incubating public void from(org.gradle.api.provider.Provider<com.android.build.api.variant.SigningConfigInfo> provider);
     method @InaccessibleFromKotlin public org.gradle.api.provider.Property<java.lang.Boolean> getEnableV1Signing();
     method @InaccessibleFromKotlin public org.gradle.api.provider.Property<java.lang.Boolean> getEnableV2Signing();
     method @InaccessibleFromKotlin public org.gradle.api.provider.Property<java.lang.Boolean> getEnableV3Signing();
     method @InaccessibleFromKotlin public org.gradle.api.provider.Property<java.lang.Boolean> getEnableV4Signing();
-    method @org.gradle.api.Incubating public void setConfig(com.android.build.api.dsl.SigningConfig signingConfig);
+    method @Deprecated @org.gradle.api.Incubating public void setConfig(com.android.build.api.dsl.SigningConfig signingConfig);
     property public abstract org.gradle.api.provider.Property<java.lang.Boolean> enableV1Signing;
     property public abstract org.gradle.api.provider.Property<java.lang.Boolean> enableV2Signing;
     property public abstract org.gradle.api.provider.Property<java.lang.Boolean> enableV3Signing;
     property public abstract org.gradle.api.provider.Property<java.lang.Boolean> enableV4Signing;
+  }
+
+  public final class SigningConfigInfo implements java.io.Serializable {
+    ctor public SigningConfigInfo(java.io.File storeFile, String storePassword, String keyAlias, String keyPassword, String storeType);
+    method @InaccessibleFromKotlin public String getKeyAlias();
+    method @InaccessibleFromKotlin public String getKeyPassword();
+    method @InaccessibleFromKotlin public java.io.File getStoreFile();
+    method @InaccessibleFromKotlin public String getStorePassword();
+    method @InaccessibleFromKotlin public String getStoreType();
+    property public String keyAlias;
+    property public String keyPassword;
+    property public java.io.File storeFile;
+    property public String storePassword;
+    property public String storeType;
   }
 
   public interface SourceDirectories extends org.gradle.api.Named {
