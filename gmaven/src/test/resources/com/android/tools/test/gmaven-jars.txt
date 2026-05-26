@@ -3536,11 +3536,6 @@ com/android/tools/sdk-common
   com/android/ide/common/vectordrawable/
   com/android/ide/common/workers/
   com/android/ide/common/xml/
-  com/android/instantapp/
-  com/android/instantapp/provision/
-  com/android/instantapp/run/
-  com/android/instantapp/sdk/
-  com/android/instantapp/utils/
   com/android/projectmodel/
   manifest.proto
   versions-offline/
