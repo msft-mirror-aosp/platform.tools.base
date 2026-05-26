@@ -15,13 +15,63 @@
  */
 package com.android.template.engine
 
+import com.android.template.engine.impl.TemplateFileLoaderWithFallback
+
 /** A templation definition contains the [metadata] about the template (name, etc.) as well as all the [files] of the template. */
-data class TemplateDefinition(val metadata: TemplateMetadata, val files: List<TemplateFile>) {
+data class TemplateDefinition(
+  /** Template metadata from the "template-definition.json" file */
+  val metadata: TemplateMetadata,
+  /** Template files from all directories except ".template" */
+  val files: List<TemplateFileEntry>,
+  /** Extra files from ".template" directory */
+  val extraFiles: List<TemplateFileEntry>,
+  /** The [TemplateFileLoader] that should be used to access the content of all [TemplateFileEntry] in this template definition */
+  val loader: TemplateFileLoader,
+) {
+
+  /** Shortcut for [TemplateMetadata.name] */
   val name: String
     get() = metadata.name
 
+  /** Shortcut for [TemplateMetadata.shortName] */
   val shortName: String
     get() = metadata.shortName
+}
+
+fun TemplateDefinition.copyAndLoadExtraFiles(): TemplateDefinition {
+  val fileSet = extraFiles.toSet()
+  return copyAndLoadFiles { fileSet.contains(it) }
+}
+
+fun TemplateDefinition.copyAndLoadTemplateFiles(): TemplateDefinition {
+  val fileSet = files.toSet()
+  return copyAndLoadFiles { fileSet.contains(it) }
+}
+
+fun TemplateDefinition.copyAndLoadAllFiles(): TemplateDefinition {
+  return copyAndLoadFiles { true }
+}
+
+fun TemplateDefinition.copyAndLoadFiles(predicate: (TemplateFileEntry) -> Boolean): TemplateDefinition {
+  val loadedFiles = mutableMapOf<TemplateFileEntry, TemplateFile>()
+  var anyFileSkipped = false
+  loader.withLoader { loader ->
+    (extraFiles + files).forEach { entry ->
+      if (predicate(entry)) {
+        loadedFiles[entry] = loader.loadFile(entry)
+      } else {
+        anyFileSkipped = true
+      }
+    }
+  }
+
+  val newLoader =
+    if (anyFileSkipped) {
+      TemplateFileLoaderWithFallback(loadedFiles, loader)
+    } else {
+      TemplateFileLoader.forMap(loadedFiles)
+    }
+  return copy(loader = newLoader)
 }
 
 data class TemplateMetadata(
@@ -38,6 +88,11 @@ data class TemplateMetadata(
 data class TemplateArgument(val sourceLocation: SourceLocation, val id: String, val defaultValue: String)
 
 data class TemplateDependency(val sourceLocation: SourceLocation, val sdkPackage: String)
+
+data class TemplateFileEntry(
+  /** The path of this template file, relative to its container "app/build.gradle.kts" */
+  val relativePath: String
+)
 
 data class TemplateFile(
   val relativePath: String, // E.g., "app/build.gradle.kts"

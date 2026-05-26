@@ -15,12 +15,27 @@
  */
 package com.android.template.engine
 
+import com.android.template.engine.TemplateListBuilderImpl.Companion.TEMPLATE_JSON_FILE_LOCATION
 import com.android.template.engine.impl.DirectoryBeforeFileComparator
+import java.nio.file.Path
+import java.util.SortedMap
 import java.util.TreeMap
 import java.util.zip.ZipInputStream
 
 interface TemplateListBuilder {
+
+  /**
+   * Loads all template definitions found in the [zipStream]. Given a [ZipInputStream] is forward only, all template files content is loaded
+   * in memory, including [TemplateDefinition.extraFiles] and [TemplateDefinition.files].
+   */
   fun loadFromZipStream(zipStream: ZipInputStream): TemplateListBuilder
+
+  /**
+   * Loads all template definitions found in the [zipFile]. The content of the template files is loaded accessed "on demand" through the
+   * [TemplateDefinition.loader], which re-open the [zipFile] everytime [TemplateFileLoader.withLoader] is invoked. Or use
+   * [copyAndLoadAllFiles] to create a [TemplateDefinition] with all files loaded in memory.
+   */
+  fun loadFromZipFile(zipFile: Path): TemplateListBuilder
 
   fun parseTemplateMetadata(relativePath: String, json: String): TemplateMetadata?
 
@@ -32,36 +47,67 @@ internal class TemplateListBuilderImpl(
   private val registry: TransformationRegistry,
   private val filterTemplateDefinitionStrategy: TemplateEngineFactory.FilterTemplateDefinitionStrategy,
 ) : TemplateListBuilder {
+  private val templateStorages = mutableSetOf<TemplateDefinitionStorage>()
   private val templateDefinitions = mutableListOf<TemplateDefinition>()
 
   override fun toTemplateList(): TemplateList {
-    return TemplateList(templateDefinitions.filter { filterTemplateDefinitionStrategy.accept(it) })
+    return TemplateList(templates = templateDefinitions.filter { filterTemplateDefinitionStrategy.accept(it) })
+  }
+
+  override fun loadFromZipFile(zipFile: Path): TemplateListBuilder {
+    val storage = ZipFileTemplateStorage(zipFile)
+    // Enumerate all template definition, but don't load file content in memory
+    val fileContentsByRelativePath =
+      storage.withZipInputStream { zipInputStream -> createTemplateFilesMapFromZipInputStream(zipInputStream, loadFileContent = false) }
+
+    // Copy all template definition with a "ZipFile" loader to load file content
+    // from the zip file "on demand"
+    val definitions =
+      parse(fileContentsByRelativePath).map { (dir, templateDefinition) ->
+        val templateFileLoader = TemplateFileLoader.forZipStorage(storage, dir)
+        templateDefinition.copy(loader = templateFileLoader)
+      }
+
+    templateDefinitions.addAll(definitions)
+    templateStorages.add(storage)
+    return this
   }
 
   override fun loadFromZipStream(zipStream: ZipInputStream): TemplateListBuilder {
+    val fileContentsByRelativePath = createTemplateFilesMapFromZipInputStream(zipStream, loadFileContent = true)
+
+    templateDefinitions.addAll(parse(fileContentsByRelativePath).map { it.second })
+    return this
+  }
+
+  /**
+   * Enumerates entries from the given [zipStream] and returns a map of [java.util.zip.ZipEntry.name] paths to their byte contents.
+   *
+   * @param zipStream The [ZipInputStream] containing the template files.
+   * @param loadFileContent If `true`, the content of all files is read and loaded into memory. If `false`, only the template definition
+   *   JSON files ([TEMPLATE_JSON_FILE_LOCATION]) are loaded into memory, and other files are stored as empty byte arrays to save memory.
+   * @return A sorted [SortedMap] containing the file paths as keys and their byte contents as values.
+   */
+  private fun createTemplateFilesMapFromZipInputStream(zipStream: ZipInputStream, loadFileContent: Boolean): SortedMap<String, ByteArray> {
     val fileContentsByRelativePath = TreeMap<String, ByteArray>(DirectoryBeforeFileComparator())
     var entry = zipStream.nextEntry
 
     while (entry != null) {
       if (!entry.isDirectory) {
-        fileContentsByRelativePath[entry.name] = zipStream.readBytes()
+        fileContentsByRelativePath[entry.name] =
+          if (loadFileContent || entry.name.endsWith(TEMPLATE_JSON_FILE_LOCATION)) zipStream.readBytes() else ByteArray(0)
       }
       entry = zipStream.nextEntry
     }
-
-    templateDefinitions.addAll(parse(fileContentsByRelativePath))
-    return this
+    return fileContentsByRelativePath
   }
 
-  fun parse(fileContentsByRelativePath: Map<String, ByteArray>): MutableList<TemplateDefinition> {
-    val templateDirectoryName = ".template"
-    val jsonFileLocation = "/$templateDirectoryName/template-definition.json"
-
+  fun parse(fileContentsByRelativePath: Map<String, ByteArray>): List<Pair<String, TemplateDefinition>> {
     // Find all the template directories by looking the template "json" files
     val templateDirs =
       fileContentsByRelativePath.entries.mapNotNull {
-        if (it.key.endsWith(jsonFileLocation)) {
-          it.key.removeSuffix(jsonFileLocation)
+        if (it.key.endsWith(TEMPLATE_JSON_FILE_LOCATION)) {
+          it.key.removeSuffix(TEMPLATE_JSON_FILE_LOCATION)
         } else {
           null
         }
@@ -73,10 +119,19 @@ internal class TemplateListBuilderImpl(
         templateDirs.firstOrNull { templateDir -> fileContentsEntry.key.startsWith("$templateDir/") } ?: ""
       }
 
-    val templates = mutableListOf<TemplateDefinition>()
+    val templates = mutableListOf<Pair<String, TemplateDefinition>>()
     for ((dir, entries) in filesByDir) {
+      val templateContent = mutableMapOf<TemplateFileEntry, TemplateFile>()
       // Find template "json" file
-      val jsonDefinition = entries.first { it.key.endsWith(jsonFileLocation) }
+      val jsonDefinition = entries.first { it.key.endsWith(TEMPLATE_JSON_FILE_LOCATION) }
+
+      val extraFiles =
+        entries
+          .filter { it.key.startsWith("$dir/$DOT_TEMPLATE_NAME/") && !it.key.endsWith(TEMPLATE_JSON_FILE_LOCATION) }
+          .map { entry ->
+            val relativePath = entry.key.substringAfter("$dir/")
+            TemplateFileEntry(relativePath).also { templateContent[it] = TemplateFile(it.relativePath, entry.value) }
+          }
 
       val jsonContent = jsonDefinition.value.toString(Charsets.UTF_8)
       val parser = TemplateDefinitionParser(messageSink, jsonDefinition.key)
@@ -90,15 +145,16 @@ internal class TemplateListBuilderImpl(
           entries
             .filter {
               // Ignore all files in the `.template` directory
-              !it.key.startsWith("$dir/$templateDirectoryName/")
+              !it.key.startsWith("$dir/$DOT_TEMPLATE_NAME/")
             }
             .map { entry ->
               // Compute relative path to the `dir` directory
               val relativePath = entry.key.substringAfter("$dir/")
-              TemplateFile(relativePath, entry.value)
+              TemplateFileEntry(relativePath).also { templateContent[it] = TemplateFile(it.relativePath, entry.value) }
             }
 
-        templates.add(TemplateDefinition(metadata, templateFiles))
+        val templateFileLoader = TemplateFileLoader.forMap(templateContent)
+        templates.add(Pair(dir, TemplateDefinition(metadata, templateFiles, extraFiles, templateFileLoader)))
       }
     }
 
@@ -170,5 +226,10 @@ internal class TemplateListBuilderImpl(
   ): TransformationDefinition? {
     return registry.findTransformForJsonField(stepObj)?.parseJson(parser, stepObj)
       ?: parser.addWarning(stepObj, "Ignoring unknown transformation")
+  }
+
+  companion object {
+    private const val DOT_TEMPLATE_NAME = ".template"
+    private const val TEMPLATE_JSON_FILE_LOCATION = "/$DOT_TEMPLATE_NAME/template-definition.json"
   }
 }

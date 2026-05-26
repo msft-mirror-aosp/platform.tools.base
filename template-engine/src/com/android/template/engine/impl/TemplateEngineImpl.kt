@@ -190,16 +190,19 @@ internal class TemplateEngineImpl(
   }
 
   private fun processTemplateFilesImpl(template: TemplateDefinition, fileTransformer: (TemplateFile) -> TemplateFile): List<TemplateFile> {
-    return template.files.map { templateFile ->
-      val newTemplateFile = fileTransformer(templateFile)
+    return template.loader.withLoader { loader ->
+      template.files.map { templateFileEntry ->
+        val templateFile = loader.loadFile(templateFileEntry)
+        val newTemplateFile = fileTransformer(templateFile)
 
-      // Log no-nop file copy here
-      if (templateFile.content.contentEquals(newTemplateFile.content)) {
-        message(Severity.Verbose, newTemplateFile) { "Copying contents unchanged" }
+        // Log no-nop file copy here
+        if (templateFile.content.contentEquals(newTemplateFile.content)) {
+          message(Severity.Verbose, newTemplateFile) { "Copying contents unchanged" }
+        }
+
+        // Return new file always
+        newTemplateFile
       }
-
-      // Return new file always
-      newTemplateFile
     }
   }
 

@@ -82,7 +82,15 @@ class DryRunTemplateEngineTest(private val fileSystemId: FileSystemId) {
     val metadata = builder.parseTemplateMetadata("template.json", jsonFile)
     assertThat(metadata).isNotNull()
 
-    val template = TemplateDefinition(metadata = metadata!!, files = files)
+    val templateFileLoader =
+      TemplateFileLoader.forFunction { entry: TemplateFileEntry -> files.first { it.relativePath == entry.relativePath } }
+    val template =
+      TemplateDefinition(
+        metadata = metadata!!,
+        files = files.map { TemplateFileEntry(it.relativePath) },
+        extraFiles = emptyList(),
+        loader = templateFileLoader,
+      )
     val engine = factory.createDryRunEngine(messageSink, destinationPathProvider = { getTestRootPath() })
     engine.processTemplate(template, predefinedArguments = emptyMap(), explicitArguments = emptyMap())
 
@@ -151,7 +159,15 @@ class DryRunTemplateEngineTest(private val fileSystemId: FileSystemId) {
     val metadata = builder.parseTemplateMetadata("template.json", jsonFile)
     assertThat(metadata).isNotNull()
 
-    val template = TemplateDefinition(metadata = metadata!!, files = files)
+    val templateFileLoader =
+      TemplateFileLoader.forFunction { entry: TemplateFileEntry -> files.first { it.relativePath == entry.relativePath } }
+    val template =
+      TemplateDefinition(
+        metadata = metadata!!,
+        files = files.map { TemplateFileEntry(it.relativePath) },
+        extraFiles = emptyList(),
+        loader = templateFileLoader,
+      )
     val engine = factory.createDryRunEngine(messageSink, destinationPathProvider = { getTestRootPath() })
     engine.processTemplate(template, predefinedArguments = emptyMap(), explicitArguments = emptyMap())
 
@@ -191,7 +207,15 @@ class DryRunTemplateEngineTest(private val fileSystemId: FileSystemId) {
     val metadata = builder.parseTemplateMetadata("template.json", jsonFile)
     assertThat(metadata).isNotNull()
 
-    val template = TemplateDefinition(metadata = metadata!!, files = files)
+    val templateFileLoader =
+      TemplateFileLoader.forFunction { entry: TemplateFileEntry -> files.first { it.relativePath == entry.relativePath } }
+    val template =
+      TemplateDefinition(
+        metadata = metadata!!,
+        extraFiles = emptyList(),
+        files = files.map { TemplateFileEntry(it.relativePath) },
+        loader = templateFileLoader,
+      )
     val engine = factory.createDryRunEngine(messageSink, destinationPathProvider = { getTestRootPath() })
     engine.processTemplate(template, predefinedArguments = emptyMap(), explicitArguments = emptyMap())
 
