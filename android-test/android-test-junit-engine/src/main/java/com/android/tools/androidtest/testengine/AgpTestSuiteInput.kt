@@ -45,6 +45,9 @@ enum class AgpTestSuiteInput(val key: String) {
   /** Path to the code coverage directory on host. */
   COVERAGE_DIR("com.android.junit.engine.coverage.dir"),
 
+  /** The type of code coverage to use. */
+  COVERAGE_TYPE("com.android.agp.test.COVERAGE_TYPE"),
+
   /** Alias for [AndroidTestConfigurationKeys.TEST_UTIL_APKS]. */
   TEST_UTIL_APKS("com.android.agp.test.TEST_UTIL_APKS"),
 

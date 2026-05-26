@@ -542,6 +542,10 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       task.engineInputProperties.set(junitEngineSpec.inputProperties)
       // add default properties.
       task.engineInputProperties.put(TestEngineInputProperty.TESTED_APPLICATION_ID, testedVariant.applicationId)
+      task.engineInputProperties.put(
+        "com.android.agp.test.COVERAGE_TYPE",
+        if (creationConfig.services.projectOptions.get(BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE)) "ON_THE_FLY" else "NONE",
+      )
       task.engineInputProperties.disallowChanges()
 
       task.useJUnitPlatform { testFramework: JUnitPlatformOptions ->
@@ -782,6 +786,10 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       task.engineInputProperties.put(
         "android-test.coverage-dir-on-device",
         testData.instrumentationRunnerArguments.map { it.getOrDefault("coverageDir", "") },
+      )
+      task.engineInputProperties.put(
+        "com.android.agp.test.COVERAGE_TYPE",
+        if (creationConfig.services.projectOptions.get(BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE)) "ON_THE_FLY" else "NONE",
       )
 
       if (testData is BundleTestDataImpl) {
@@ -1042,6 +1050,10 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       task.engineInputProperties.put(
         "android-test.coverage-dir-on-device",
         testData.instrumentationRunnerArguments.map { it.getOrDefault("coverageDir", "") },
+      )
+      task.engineInputProperties.put(
+        "com.android.agp.test.COVERAGE_TYPE",
+        if (creationConfig.services.projectOptions.get(BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE)) "ON_THE_FLY" else "NONE",
       )
 
       if (testData is BundleTestDataImpl) {

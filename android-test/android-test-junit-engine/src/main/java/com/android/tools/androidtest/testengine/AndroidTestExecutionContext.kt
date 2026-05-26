@@ -131,7 +131,21 @@ class AndroidTestConfiguration(request: ExecutionRequest) {
   val additionalTestOutputDirOnDevice: String? = get(AndroidTestConfigurationKeys.ADDITIONAL_TEST_OUTPUT_DIR_ON_DEVICE)
   val useTestStorageService: Boolean = get(AndroidTestConfigurationKeys.USE_TEST_STORAGE_SERVICE)?.toBoolean() ?: false
   val isTestCoverageEnabled: Boolean = get(AndroidTestConfigurationKeys.IS_TEST_COVERAGE_ENABLED)?.toBoolean() ?: false
+  val coverageType: CoverageType =
+    get(AndroidTestConfigurationKeys.COVERAGE_TYPE, AgpTestSuiteInput.COVERAGE_TYPE)?.let {
+      try {
+        CoverageType.valueOf(it.uppercase())
+      } catch (e: Exception) {
+        CoverageType.NONE
+      }
+    } ?: CoverageType.NONE
   val forceAotCompilation: Boolean = get(AndroidTestConfigurationKeys.FORCE_AOT_COMPILATION)?.toBoolean() ?: false
+
+  /** Supported types of code coverage. */
+  enum class CoverageType {
+    NONE,
+    ON_THE_FLY,
+  }
 
   fun getCoverageDirOnHost(deviceSerial: String? = null): File? =
     get("", AgpTestSuiteInput.COVERAGE_DIR, deviceSerial)?.let { File(it, "coverage_data") }

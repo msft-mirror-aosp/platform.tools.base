@@ -49,6 +49,7 @@ class AndroidDeviceDescriptor(
   val deviceSerial: String,
   val deviceId: String = deviceSerial,
   val deviceDisplayName: String = deviceId,
+  private val adbControllerFactory: (File) -> AdbController = { AdbController(it) },
 ) : AbstractTestDescriptor(uniqueId, deviceDisplayName), Node<AndroidTestExecutionContext> {
 
   private val logger = Logger.getLogger(AndroidDeviceDescriptor::class.java.name)
@@ -214,6 +215,7 @@ class AndroidDeviceDescriptor(
         config.uninstallApksAfterTests,
         config.forceAotCompilation,
         onBeforeInstrumentation = {
+          extractAgentIfNeeded(config)
           additionalTestOutputCollector.prepare()
           coverageCollector.prepare()
         },
@@ -388,6 +390,61 @@ class AndroidDeviceDescriptor(
 
     override fun testRunEnded(elapsedTime: Long, runMetrics: Map<String, String>?) {
       super.testRunEnded(elapsedTime, runMetrics)
+    }
+  }
+
+  /**
+   * Extraction of the coverage agent from the Test APK into the target app's data directory. This is to satisfy JVMTI physical file
+   * requirements while keeping APK packaging modern (compressed).
+   */
+  fun extractAgentIfNeeded(config: AndroidTestConfiguration) {
+    if (config.coverageType != AndroidTestConfiguration.CoverageType.ON_THE_FLY) {
+      logger.info("On-the-fly coverage is disabled, skipping agent extraction")
+      return
+    }
+
+    logger.info("Extracting agent for ${config.testPackageId}")
+    val adbController = adbControllerFactory(config.adb)
+    val targetPkg = config.instrumentationTargetPackageId
+    val testPkg = config.testPackageId
+
+    // 1. Get Device ABI
+    val abi = adbController.runAdbShellCommand(deviceSerial, listOf("getprop", "ro.product.cpu.abi")).output.trim()
+    if (abi.isBlank()) {
+      logger.warning("Failed to detect device ABI for agent extraction")
+      return
+    }
+
+    // 2. Discovery Phase: Find Test APK path (where the agent is bundled)
+    var apkPath = adbController.runAdbShellCommand(deviceSerial, listOf("pm", "path", testPkg)).output.substringAfter("package:").trim()
+
+    // Fallback: Attempt to find APK path via 'pm dump' if 'pm path' was empty
+    if (apkPath.isBlank()) {
+      logger.info("pm path returned empty for $testPkg. Trying pm dump fallback...")
+      val dumpOutput = adbController.runAdbShellCommand(deviceSerial, listOf("pm", "dump", testPkg)).output
+      apkPath = Regex("codePath=(.+)").find(dumpOutput)?.groupValues?.get(1)?.trim() ?: ""
+    }
+
+    if (apkPath.isBlank()) {
+      logger.warning("Extraction Failed - Could not locate APK path for $testPkg using pm path or pm dump")
+      return
+    }
+
+    // 3. Extract to the App's Internal Private Data directory (Secure and production-ready)
+    logger.info("Extraction Side-Channel: Extracting $abi agent from $apkPath to $testPkg private folder")
+
+    val extractCmd = listOf("run-as", testPkg, "sh", "-c", "\"unzip -p $apkPath lib/$abi/coverage_agent.so > coverage_agent.so\"")
+
+    val result = adbController.runAdbShellCommand(deviceSerial, extractCmd)
+    if (result.exitCode == 0) {
+      val verifyResult = adbController.runAdbShellCommand(deviceSerial, listOf("run-as", testPkg, "ls", "-l", "coverage_agent.so"))
+      if (verifyResult.exitCode == 0) {
+        logger.info("Agent extraction VERIFIED: ${verifyResult.output.trim()}")
+      } else {
+        logger.warning("Agent extraction failed verification: ${verifyResult.errorOutput}")
+      }
+    } else {
+      logger.warning("Agent extraction failed with exit code ${result.exitCode}: ${result.errorOutput}")
     }
   }
 }

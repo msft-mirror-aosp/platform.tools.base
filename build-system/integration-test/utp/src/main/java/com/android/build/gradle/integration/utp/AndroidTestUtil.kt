@@ -32,6 +32,7 @@ import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.exists
 import kotlin.io.path.readText
+import org.junit.Assume
 
 class AndroidTestUtil(
   val runWithBuiltInPlatform: Boolean,
@@ -122,6 +123,11 @@ class AndroidTestUtil(
     projectDef.dependencies { add("androidTestUtil", "androidx.test.services:test-services:$ANDROIDX_TEST_VERSION") }
   }
 
+  fun enableOnTheFlyCoverage(projectDef: AndroidProjectDefinition<out CommonExtension>) {
+    projectDef.android.experimentalProperties["android.experimental.testOptions.coverage.coverageType"] = "ON_THE_FLY"
+    projectDef.dependencies { add("androidTestImplementation", "com.android.tools.test:coverage-agent:1.0.0") }
+  }
+
   fun enableTestStorageService(projectDef: AndroidProjectDefinition<out CommonExtension>) {
     projectDef.android.defaultConfig.testInstrumentationRunnerArguments["useTestStorageService"] = "true"
     projectDef.dependencies { add("androidTestUtil", "androidx.test.services:test-services:$ANDROIDX_TEST_VERSION") }
@@ -149,6 +155,16 @@ class AndroidTestUtil(
     assertThat(resolveTestResultPbPath()).exists()
     assertThat(project.resolve(testCoverageXmlPath)).contains("""<method name="stubFuncForTestingCodeCoverage" desc="()V" line="9">""")
     assertThat(project.resolve(testCoverageXmlPath)).contains("""<counter type="INSTRUCTION" missed="3" covered="5"/>""")
+  }
+
+  fun androidTestWithOnTheFlyCoverage() {
+    Assume.assumeTrue("On-the-fly coverage is only supported on the built-in platform", runWithBuiltInPlatform)
+    selectModule("app")
+    rule.build.androidApplication().reconfigure { enableOnTheFlyCoverage(this) }
+
+    val result = executor.with(BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE, true).withEnableInfoLogging(true).run(testTaskName)
+
+    result.assertOutputContains("Agent extraction VERIFIED")
   }
 
   fun androidTestWithTestFailures() {

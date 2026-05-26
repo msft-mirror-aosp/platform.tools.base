@@ -95,6 +95,8 @@ class AndroidConnectedTest(val runWithBuiltInPlatform: Boolean) {
 
   @Test fun androidTestWithCodeCoverage() = util.androidTestWithCodeCoverage()
 
+  @Test fun androidTestWithOnTheFlyCoverage() = util.androidTestWithOnTheFlyCoverage()
+
   @Test fun androidTestWithTestFailures() = util.androidTestWithTestFailures()
 
   @Test fun androidTest() = util.androidTest()

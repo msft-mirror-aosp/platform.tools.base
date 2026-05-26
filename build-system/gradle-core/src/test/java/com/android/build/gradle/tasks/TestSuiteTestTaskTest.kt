@@ -70,4 +70,18 @@ class TestSuiteTestTaskTest {
     assertThat(serializedInputs.getProperty(testUtilApksProp)).isEqualTo("orchestrator.apk,services.apk")
     assertThat(serializedInputs.getProperty(executionModeProp)).isEqualTo("ANDROIDX_TEST_ORCHESTRATOR")
   }
+
+  @Test
+  fun testSerializer_withOnTheFlyCoverage() {
+    val outputFile = folder.newFile()
+    TestSuiteTestTask.AgpTestSuiteInputsSerializer.serialize(
+      engineInputParameters = emptyList(),
+      engineInputProperties = mapOf("com.android.agp.test.COVERAGE_TYPE" to "ON_THE_FLY"),
+      outputFile,
+    )
+    assertThat(outputFile.exists()).isTrue()
+    val serializedInputs = Properties().also { it.load(outputFile.reader(Charsets.UTF_8)) }
+    assertThat(serializedInputs).hasSize(1)
+    assertThat(serializedInputs.getProperty("com.android.agp.test.COVERAGE_TYPE")).isEqualTo("ON_THE_FLY")
+  }
 }

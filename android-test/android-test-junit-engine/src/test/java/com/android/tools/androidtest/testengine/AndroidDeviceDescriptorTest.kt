@@ -30,6 +30,7 @@ import org.junit.rules.TemporaryFolder
 import org.mockito.Mock
 import org.mockito.junit.MockitoJUnit
 import org.mockito.junit.MockitoRule
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.eq
@@ -46,6 +47,7 @@ class AndroidDeviceDescriptorTest {
   @Mock private lateinit var executionRequest: ExecutionRequest
   @Mock private lateinit var engineExecutionListener: EngineExecutionListener
   @Mock private lateinit var configurationParameters: ConfigurationParameters
+  @Mock private lateinit var adbController: AdbController
 
   private val deviceSerial = "device-1234"
   private lateinit var adbFile: File
@@ -91,5 +93,73 @@ class AndroidDeviceDescriptorTest {
     val deviceInfoEntry = reportEntryCaptor.allValues.find { it.keyValuePairs.containsKey(AndroidTestReportKeys.DEVICE_INFO_PATH) }
     assertThat(deviceInfoEntry).isNotNull()
     assertThat(deviceInfoEntry?.keyValuePairs?.get(AndroidTestReportKeys.DEVICE_INFO_PATH)).isEqualTo(deviceInfoFile.absolutePath)
+  }
+
+  @Test
+  fun `extractAgentIfNeeded runs expected commands when coverage enabled`() {
+    val configParams =
+      object : ConfigurationParameters {
+        private val params =
+          mapOf(
+            AndroidTestConfigurationKeys.ADB_PATH to adbFile.absolutePath,
+            AndroidTestConfigurationKeys.AAPT2_PATH to aapt2File.absolutePath,
+            AndroidTestConfigurationKeys.DEVICE_SERIALS to deviceSerial,
+            AndroidTestConfigurationKeys.TEST_PACKAGE_ID to "com.example.app.test",
+            AndroidTestConfigurationKeys.INSTRUMENTATION_TARGET_PACKAGE_ID to "com.example.app",
+            AndroidTestConfigurationKeys.INSTRUMENTATION_RUNNER_CLASS to "android.support.test.runner.AndroidJUnitRunner",
+            AndroidTestConfigurationKeys.COVERAGE_TYPE to "ON_THE_FLY",
+          )
+
+        override fun get(key: String): java.util.Optional<String> = java.util.Optional.ofNullable(params[key])
+
+        override fun getBoolean(key: String): java.util.Optional<Boolean> = get(key).map { it.toBoolean() }
+
+        override fun size(): Int = params.size
+
+        override fun keySet(): Set<String> = params.keys
+      }
+    whenever(executionRequest.configurationParameters).thenReturn(configParams)
+
+    val descriptor =
+      AndroidDeviceDescriptor(
+        UniqueId.forEngine("android-test-engine").append("device", deviceSerial),
+        deviceSerial,
+        adbControllerFactory = { adbController },
+      )
+    val context = AndroidTestExecutionContext(executionRequest)
+    val config = context.configuration
+
+    val abi = "x86_64"
+    val apkPath = "/data/app/pkg-1/base.apk"
+
+    whenever(adbController.runAdbShellCommand(eq(deviceSerial), eq(listOf("getprop", "ro.product.cpu.abi")), anyOrNull()))
+      .thenReturn(AdbController.CommandResult(0, abi, ""))
+    whenever(adbController.runAdbShellCommand(eq(deviceSerial), eq(listOf("pm", "path", "com.example.app.test")), anyOrNull()))
+      .thenReturn(AdbController.CommandResult(0, "package:$apkPath", ""))
+    whenever(
+        adbController.runAdbShellCommand(
+          eq(deviceSerial),
+          eq(listOf("run-as", "com.example.app.test", "sh", "-c", "\"unzip -p $apkPath lib/$abi/coverage_agent.so > coverage_agent.so\"")),
+          anyOrNull(),
+        )
+      )
+      .thenReturn(AdbController.CommandResult(0, "", ""))
+    whenever(
+        adbController.runAdbShellCommand(
+          eq(deviceSerial),
+          eq(listOf("run-as", "com.example.app.test", "ls", "-l", "coverage_agent.so")),
+          anyOrNull(),
+        )
+      )
+      .thenReturn(AdbController.CommandResult(0, "-rw------- 1 ... coverage_agent.so", ""))
+
+    descriptor.extractAgentIfNeeded(config)
+
+    verify(adbController)
+      .runAdbShellCommand(
+        eq(deviceSerial),
+        eq(listOf("run-as", "com.example.app.test", "sh", "-c", "\"unzip -p $apkPath lib/$abi/coverage_agent.so > coverage_agent.so\"")),
+        anyOrNull(),
+      )
   }
 }
