@@ -24,7 +24,7 @@ import org.junit.Test
 class DeviceListParserTest {
 
   @Test
-  fun parseShotFormatEmptyOutputWorks() {
+  fun parseShortFormatEmptyOutputWorks() {
     // Prepare
     val parser = DeviceListTextParser(AdbHostServices.DeviceInfoFormat.SHORT_FORMAT)
 
@@ -37,7 +37,7 @@ class DeviceListParserTest {
   }
 
   @Test
-  fun parseShotFormatEmptyLinesOutputWorks() {
+  fun parseShortFormatEmptyLinesOutputWorks() {
     // Prepare
     val parser = DeviceListTextParser(AdbHostServices.DeviceInfoFormat.SHORT_FORMAT)
 
@@ -50,7 +50,7 @@ class DeviceListParserTest {
   }
 
   @Test
-  fun parseShotFormatWorks() {
+  fun parseShortFormatWorks() {
     // Prepare
     val parser = DeviceListTextParser(AdbHostServices.DeviceInfoFormat.SHORT_FORMAT)
 
@@ -112,6 +112,60 @@ class DeviceListParserTest {
       Assert.assertEquals("emulator-5556", device.serialNumber)
       Assert.assertEquals(DeviceState.HOST, device.deviceState)
       Assert.assertSame(DeviceState.HOST.state, device.deviceStateString)
+      Assert.assertNull(device.product)
+      Assert.assertNull(device.model)
+      Assert.assertNull(device.device)
+      Assert.assertNull(device.transportId)
+    }
+  }
+
+  @Test
+  fun parseShortFormatWithErrorsWorks() {
+    // Prepare
+    val parser = DeviceListTextParser(AdbHostServices.DeviceInfoFormat.SHORT_FORMAT)
+
+    // Act
+    val deviceList =
+      parser.parse(
+        "adb-FAAY0QWER-jBMEIf._adb-tls-connect._tcp.\tdevice\n" +
+          "(no serial number)\tdevice\n" +
+          "serial and no state\n" +
+          "emulator-5554\tdevice\n"
+      )
+
+    // Assert
+    Assert.assertEquals(2, deviceList.size)
+    Assert.assertEquals(2, deviceList.errors.size)
+
+    deviceList.errors[0].let { error ->
+      Assert.assertEquals("(no serial number)\tdevice", error.rawLineText)
+      Assert.assertEquals(1, error.lineIndex)
+      Assert.assertEquals("Device serial number is empty", error.message)
+    }
+
+    deviceList.errors[1].let { error ->
+      Assert.assertEquals("serial and no state", error.rawLineText)
+      Assert.assertEquals(2, error.lineIndex)
+      Assert.assertEquals("Device line format is not recognized", error.message)
+    }
+  }
+
+  @Test
+  fun parseShortFormatWorks_whenSerialContainsSpecialCharacters() {
+    // Prepare
+    val parser = DeviceListTextParser(AdbHostServices.DeviceInfoFormat.SHORT_FORMAT)
+
+    // Act
+    val deviceList = parser.parse("adb-57291FDCH007BM-sYES9I (2)._adb-tls-connect._tcp\tdevice\n")
+
+    // Assert
+    Assert.assertEquals(1, deviceList.size)
+    Assert.assertEquals(0, deviceList.errors.size)
+
+    deviceList[0].let { device ->
+      Assert.assertEquals("adb-57291FDCH007BM-sYES9I (2)._adb-tls-connect._tcp", device.serialNumber)
+      Assert.assertEquals(DeviceState.ONLINE, device.deviceState)
+      Assert.assertSame(DeviceState.ONLINE.state, device.deviceStateString)
       Assert.assertNull(device.product)
       Assert.assertNull(device.model)
       Assert.assertNull(device.device)
@@ -187,17 +241,25 @@ class DeviceListParserTest {
       parser.parse(
         "adb-FAAY0QWER-jBMEIf._adb-tls-connect._tcp. device product:crosshatch model:Pixel_3_XL device:crosshatch transport_id:15\n" +
           "(no serial number)\n" +
+          "(no serial number)     offline transport_id:4\n" +
           "emulator-5554          device product:sdk_gphone_x86 model:Android_SDK_built_for_x86 device:generic_x86 transport_id:3\n" +
           "emulator-5556          offline transport_id:4\n"
       )
 
     // Assert
     Assert.assertEquals(3, deviceList.size)
-    Assert.assertEquals(1, deviceList.errors.size)
+    Assert.assertEquals(2, deviceList.errors.size)
 
     deviceList.errors[0].let { error ->
       Assert.assertEquals("(no serial number)", error.rawLineText)
       Assert.assertEquals(1, error.lineIndex)
+      Assert.assertEquals("Device line format is not recognized", error.message)
+    }
+
+    deviceList.errors[1].let { error ->
+      Assert.assertEquals("(no serial number)     offline transport_id:4", error.rawLineText)
+      Assert.assertEquals(2, error.lineIndex)
+      Assert.assertEquals("Device serial number is empty", error.message)
     }
 
     deviceList[0].let { device ->

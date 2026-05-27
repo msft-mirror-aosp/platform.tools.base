@@ -12,11 +12,23 @@ import java.nio.ByteBuffer
 import java.util.regex.Pattern
 
 /** ADB returns "(no serial number)" when serial number is not available */
-private const val NO_SERIAL_PATTERN = "\\(.*\\)"
+private const val NO_SERIAL = "(no serial number)"
+private val NO_SERIAL_PATTERN = Pattern.quote(NO_SERIAL)
 
-/** Any serial number that is not [.NO_SERIAL_PATTERN] */
+/**
+ * Any serial number that is not [.NO_SERIAL_PATTERN]
+ *
+ * TODO(b/517138568): Fix these to make long pattern matching work with serial numbers that contain spaces.
+ */
 private const val REGULAR_SERIAL_PATTERN = "[\\S&&[^(]]\\S*"
-private const val SERIAL_PATTERN = "$REGULAR_SERIAL_PATTERN|$NO_SERIAL_PATTERN"
+private val SERIAL_PATTERN = "$REGULAR_SERIAL_PATTERN|$NO_SERIAL_PATTERN"
+
+/**
+ * Serial number for "short" format. It must start with a non-whitespace character other than an opening parenthesis, and matches everything
+ * up to the next `\t`.
+ */
+private const val REGULAR_SHORT_SERIAL_PATTERN = "[\\S&&[^(]][^\\t]*"
+private val SHORT_SERIAL_PATTERN = "$REGULAR_SHORT_SERIAL_PATTERN|$NO_SERIAL_PATTERN"
 
 /** TODO: This is not correct for the "no permissions" pattern */
 private const val DEVICE_STATE_PATTERN = "\\S+"
@@ -29,7 +41,7 @@ private val LONG_LINE_PATTERN =
 private val ONE_FIELD_PATTERN = Pattern.compile("(\\w+):(\\w+)")
 
 /** 2 groups: serial - state */
-private val SHORT_LINE_PATTERN = Pattern.compile("(" + SERIAL_PATTERN + ")" + "\t" + "(" + SHORT_LINE_STATE_PATTERN + ")$")
+private val SHORT_LINE_PATTERN = Pattern.compile("($SHORT_SERIAL_PATTERN)\\t($SHORT_LINE_STATE_PATTERN)$")
 
 internal abstract class DeviceListParser {
 
@@ -140,8 +152,8 @@ internal class DeviceListTextParser(val format: DeviceInfoFormat) : DeviceListPa
       result.addError("Device line format is not recognized", lineIndex, lineText.toString())
       return
     }
-    val serialNumber = matcher.group(1)
-    if (serialNumber == null || serialNumber.isEmpty()) {
+    val serialNumber = matcher.group(1)?.trim()
+    if (serialNumber.isNullOrEmpty() || serialNumber == NO_SERIAL) {
       result.addError("Device serial number is empty", lineIndex, lineText)
       return
     }
@@ -161,8 +173,8 @@ internal class DeviceListTextParser(val format: DeviceInfoFormat) : DeviceListPa
       result.addError("Device line format is not recognized", lineIndex, lineText)
       return
     }
-    val serialNumber = matcher.group(1)
-    if (serialNumber == null || serialNumber.isEmpty()) {
+    val serialNumber = matcher.group(1)?.trim()
+    if (serialNumber.isNullOrEmpty() || serialNumber == NO_SERIAL) {
       // TODO: If there is a "transport_id" field, we could expose the device, as it can be
       // identified
       // with a "host-transport-id" prefix.
