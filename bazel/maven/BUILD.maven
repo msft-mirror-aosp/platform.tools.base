@@ -60152,6 +60152,24 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.android.tools.emulator.proto_32.2.0",
+    pom = "repository/com/android/tools/emulator/proto/32.2.0/proto-32.2.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/android/tools/emulator/proto/32.2.0",
+    deps = [
+        "com.google.code.gson.gson_2.11.0",
+        "com.google.guava.guava_33.3.1-jre",
+        "io.grpc.grpc-core_1.69.1",
+        "io.grpc.grpc-netty_1.69.1",
+        "io.grpc.grpc-protobuf_1.69.1",
+        "io.grpc.grpc-stub_1.69.1",
+        "javax.annotation.javax.annotation-api_1.3.2",
+        "com.google.protobuf.protobuf-java_3.25.5",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.android.tools.external.com-intellij.intellij-core_26.0.0",
     pom = "repository/com/android/tools/external/com-intellij/intellij-core/26.0.0/intellij-core-26.0.0.pom",
     repo_root_path = "repository",
@@ -65649,6 +65667,17 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.android.tools.utp.android-device-provider-ddmlib-proto_32.2.0",
+    pom = "repository/com/android/tools/utp/android-device-provider-ddmlib-proto/32.2.0/android-device-provider-ddmlib-proto-32.2.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/android/tools/utp/android-device-provider-ddmlib-proto/32.2.0",
+    deps = [
+        "com.google.protobuf.protobuf-java_4.28.3",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.android.tools.utp.android-device-provider-ddmlib_30.2.0",
     pom = "repository/com/android/tools/utp/android-device-provider-ddmlib/30.2.0/android-device-provider-ddmlib-30.2.0.pom",
     repo_root_path = "repository",
@@ -65679,6 +65708,24 @@ maven_artifact(
         "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.6.3",
         "com.google.testing.platform.core-proto_0.0.8-alpha08",
         "com.google.testing.platform.android-device-provider-local_0.0.8-alpha08",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.android.tools.utp.android-device-provider-ddmlib_32.2.0",
+    pom = "repository/com/android/tools/utp/android-device-provider-ddmlib/32.2.0/android-device-provider-ddmlib-32.2.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/android/tools/utp/android-device-provider-ddmlib/32.2.0",
+    deps = [
+        "com.android.tools.common_32.2.0",
+        "com.android.tools.ddms.ddmlib_32.2.0",
+        "com.google.protobuf.protobuf-java_3.25.5",
+        "com.android.tools.utp.android-device-provider-ddmlib-proto_32.2.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.7.3",
+        "com.google.testing.platform.core-proto_0.0.9-alpha04",
+        "com.google.testing.platform.android-device-provider-local_0.0.9-alpha04",
     ],
     visibility = ["//visibility:public"],
 )
@@ -66287,6 +66334,17 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.android.tools.utp.android-test-plugin-host-additional-test-output-proto_32.2.0",
+    pom = "repository/com/android/tools/utp/android-test-plugin-host-additional-test-output-proto/32.2.0/android-test-plugin-host-additional-test-output-proto-32.2.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/android/tools/utp/android-test-plugin-host-additional-test-output-proto/32.2.0",
+    deps = [
+        "com.google.protobuf.protobuf-java_4.28.3",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.android.tools.utp.android-test-plugin-host-additional-test-output_30.2.0",
     pom = "repository/com/android/tools/utp/android-test-plugin-host-additional-test-output/30.2.0/android-test-plugin-host-additional-test-output-30.2.0.pom",
     repo_root_path = "repository",
@@ -66312,6 +66370,22 @@ maven_artifact(
         "org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.8.20-RC2",
         "com.google.protobuf.protobuf-java_3.19.3",
         "com.google.testing.platform.android-device-provider-local_0.0.8-alpha08",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.android.tools.utp.android-test-plugin-host-additional-test-output_32.2.0",
+    pom = "repository/com/android/tools/utp/android-test-plugin-host-additional-test-output/32.2.0/android-test-plugin-host-additional-test-output-32.2.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/android/tools/utp/android-test-plugin-host-additional-test-output/32.2.0",
+    deps = [
+        "com.android.tools.common_32.2.0",
+        "com.android.tools.utp.utp-common_32.2.0",
+        "com.android.tools.utp.android-test-plugin-host-additional-test-output-proto_32.2.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
+        "com.google.protobuf.protobuf-java_3.25.5",
+        "com.google.testing.platform.android-device-provider-local_0.0.9-alpha04",
     ],
     visibility = ["//visibility:public"],
 )
@@ -66471,6 +66545,17 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.android.tools.utp.android-test-plugin-host-apk-installer-proto_32.2.0",
+    pom = "repository/com/android/tools/utp/android-test-plugin-host-apk-installer-proto/32.2.0/android-test-plugin-host-apk-installer-proto-32.2.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/android/tools/utp/android-test-plugin-host-apk-installer-proto/32.2.0",
+    deps = [
+        "com.google.protobuf.protobuf-java_4.28.3",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.android.tools.utp.android-test-plugin-host-apk-installer_31.1.0",
     pom = "repository/com/android/tools/utp/android-test-plugin-host-apk-installer/31.1.0/android-test-plugin-host-apk-installer-31.1.0.pom",
     repo_root_path = "repository",
@@ -66482,6 +66567,23 @@ maven_artifact(
         "com.android.tools.utp.android-test-plugin-host-apk-installer-proto_31.1.0",
         "com.google.testing.platform.android-device-provider-local_0.0.8-alpha08",
         "com.google.testing.platform.core-proto_0.0.8-alpha08",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.android.tools.utp.android-test-plugin-host-apk-installer_32.2.0",
+    pom = "repository/com/android/tools/utp/android-test-plugin-host-apk-installer/32.2.0/android-test-plugin-host-apk-installer-32.2.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/android/tools/utp/android-test-plugin-host-apk-installer/32.2.0",
+    deps = [
+        "com.android.tools.common_32.2.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.7.3",
+        "com.google.protobuf.protobuf-java_3.25.5",
+        "com.android.tools.utp.android-test-plugin-host-apk-installer-proto_32.2.0",
+        "com.google.testing.platform.android-device-provider-local_0.0.9-alpha04",
+        "com.google.testing.platform.core-proto_0.0.9-alpha04",
     ],
     visibility = ["//visibility:public"],
 )
@@ -66729,6 +66831,17 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.android.tools.utp.android-test-plugin-host-coverage-proto_32.2.0",
+    pom = "repository/com/android/tools/utp/android-test-plugin-host-coverage-proto/32.2.0/android-test-plugin-host-coverage-proto-32.2.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/android/tools/utp/android-test-plugin-host-coverage-proto/32.2.0",
+    deps = [
+        "com.google.protobuf.protobuf-java_4.28.3",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.android.tools.utp.android-test-plugin-host-coverage_30.2.0",
     pom = "repository/com/android/tools/utp/android-test-plugin-host-coverage/30.2.0/android-test-plugin-host-coverage-30.2.0.pom",
     repo_root_path = "repository",
@@ -66759,6 +66872,21 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.android.tools.utp.android-test-plugin-host-coverage_32.2.0",
+    pom = "repository/com/android/tools/utp/android-test-plugin-host-coverage/32.2.0/android-test-plugin-host-coverage-32.2.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/android/tools/utp/android-test-plugin-host-coverage/32.2.0",
+    deps = [
+        "com.android.tools.common_32.2.0",
+        "com.android.tools.utp.android-test-plugin-host-coverage-proto_32.2.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
+        "com.google.protobuf.protobuf-java_3.25.5",
+        "com.google.testing.platform.android-device-provider-local_0.0.9-alpha04",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.android.tools.utp.android-test-plugin-host-device-info-proto_30.2.0",
     pom = "repository/com/android/tools/utp/android-test-plugin-host-device-info-proto/30.2.0/android-test-plugin-host-device-info-proto-30.2.0.pom",
     repo_root_path = "repository",
@@ -66776,6 +66904,17 @@ maven_artifact(
     repo_path = "com/android/tools/utp/android-test-plugin-host-device-info-proto/31.1.0",
     deps = [
         "com.google.protobuf.protobuf-java_3.19.3",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.android.tools.utp.android-test-plugin-host-device-info-proto_32.2.0",
+    pom = "repository/com/android/tools/utp/android-test-plugin-host-device-info-proto/32.2.0/android-test-plugin-host-device-info-proto-32.2.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/android/tools/utp/android-test-plugin-host-device-info-proto/32.2.0",
+    deps = [
+        "com.google.protobuf.protobuf-java_4.28.3",
     ],
     visibility = ["//visibility:public"],
 )
@@ -66806,6 +66945,22 @@ maven_artifact(
         "com.google.protobuf.protobuf-java_3.19.3",
         "com.android.tools.utp.android-test-plugin-host-device-info-proto_31.1.0",
         "com.google.testing.platform.android-device-provider-local_0.0.8-alpha08",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.android.tools.utp.android-test-plugin-host-device-info_32.2.0",
+    pom = "repository/com/android/tools/utp/android-test-plugin-host-device-info/32.2.0/android-test-plugin-host-device-info-32.2.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/android/tools/utp/android-test-plugin-host-device-info/32.2.0",
+    deps = [
+        "com.android.tools.common_32.2.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
+        "com.google.protobuf.protobuf-java_3.25.5",
+        "com.android.tools.utp.utp-common_32.2.0",
+        "com.android.tools.utp.android-test-plugin-host-device-info-proto_32.2.0",
+        "com.google.testing.platform.android-device-provider-local_0.0.9-alpha04",
     ],
     visibility = ["//visibility:public"],
 )
@@ -66979,6 +67134,18 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.android.tools.utp.android-test-plugin-host-emulator-control-proto_32.2.0",
+    pom = "repository/com/android/tools/utp/android-test-plugin-host-emulator-control-proto/32.2.0/android-test-plugin-host-emulator-control-proto-32.2.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/android/tools/utp/android-test-plugin-host-emulator-control-proto/32.2.0",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib-jdk8_2.2.10",
+        "com.google.protobuf.protobuf-java_4.28.3",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.android.tools.utp.android-test-plugin-host-emulator-control_31.1.0",
     pom = "repository/com/android/tools/utp/android-test-plugin-host-emulator-control/31.1.0/android-test-plugin-host-emulator-control-31.1.0.pom",
     repo_root_path = "repository",
@@ -66994,6 +67161,28 @@ maven_artifact(
         "com.android.tools.utp.android-test-plugin-host-emulator-control-proto_31.1.0",
         "com.android.tools.emulator.proto_31.1.0",
         "com.google.testing.platform.android-device-provider-local_0.0.8-alpha08",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.android.tools.utp.android-test-plugin-host-emulator-control_32.2.0",
+    pom = "repository/com/android/tools/utp/android-test-plugin-host-emulator-control/32.2.0/android-test-plugin-host-emulator-control-32.2.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/android/tools/utp/android-test-plugin-host-emulator-control/32.2.0",
+    deps = [
+        "com.android.tools.common_32.2.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.7.3",
+        "commons-io.commons-io_2.16.1",
+        "com.google.code.gson.gson_2.11.0",
+        "com.google.protobuf.protobuf-java_3.25.5",
+        "com.google.guava.guava_33.3.1-jre",
+        "com.android.tools.utp.android-test-plugin-host-emulator-control-proto_32.2.0",
+        "com.android.tools.emulator.proto_32.2.0",
+        "com.google.testing.platform.android-device-provider-local_0.0.9-alpha04",
+        "com.google.crypto.tink.tink_1.18.0",
+        "com.google.testing.platform.android-driver-instrumentation_0.0.9-alpha04",
     ],
     visibility = ["//visibility:public"],
 )
@@ -67164,6 +67353,17 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.android.tools.utp.android-test-plugin-host-logcat-proto_32.2.0",
+    pom = "repository/com/android/tools/utp/android-test-plugin-host-logcat-proto/32.2.0/android-test-plugin-host-logcat-proto-32.2.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/android/tools/utp/android-test-plugin-host-logcat-proto/32.2.0",
+    deps = [
+        "com.google.protobuf.protobuf-java_4.28.3",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.android.tools.utp.android-test-plugin-host-logcat_30.2.0",
     pom = "repository/com/android/tools/utp/android-test-plugin-host-logcat/30.2.0/android-test-plugin-host-logcat-30.2.0.pom",
     repo_root_path = "repository",
@@ -67188,6 +67388,22 @@ maven_artifact(
         "org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.8.20-RC2",
         "com.google.protobuf.protobuf-java_3.19.3",
         "com.google.testing.platform.android-device-provider-local_0.0.8-alpha08",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.android.tools.utp.android-test-plugin-host-logcat_32.2.0",
+    pom = "repository/com/android/tools/utp/android-test-plugin-host-logcat/32.2.0/android-test-plugin-host-logcat-32.2.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/android/tools/utp/android-test-plugin-host-logcat/32.2.0",
+    deps = [
+        "com.android.tools.common_32.2.0",
+        "com.android.tools.utp.utp-common_32.2.0",
+        "com.android.tools.utp.android-test-plugin-host-logcat-proto_32.2.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
+        "com.google.protobuf.protobuf-java_3.25.5",
+        "com.google.testing.platform.android-device-provider-local_0.0.9-alpha04",
     ],
     visibility = ["//visibility:public"],
 )
@@ -67913,6 +68129,17 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.android.tools.utp.android-test-plugin-result-listener-gradle-proto_32.2.0",
+    pom = "repository/com/android/tools/utp/android-test-plugin-result-listener-gradle-proto/32.2.0/android-test-plugin-result-listener-gradle-proto-32.2.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/android/tools/utp/android-test-plugin-result-listener-gradle-proto/32.2.0",
+    deps = [
+        "com.google.protobuf.protobuf-java_4.28.3",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.android.tools.utp.android-test-plugin-result-listener-gradle_30.2.0",
     pom = "repository/com/android/tools/utp/android-test-plugin-result-listener-gradle/30.2.0/android-test-plugin-result-listener-gradle-30.2.0.pom",
     repo_root_path = "repository",
@@ -67958,6 +68185,26 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.android.tools.utp.android-test-plugin-result-listener-gradle_32.2.0",
+    pom = "repository/com/android/tools/utp/android-test-plugin-result-listener-gradle/32.2.0/android-test-plugin-result-listener-gradle-32.2.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/android/tools/utp/android-test-plugin-result-listener-gradle/32.2.0",
+    deps = [
+        "com.android.tools.common_32.2.0",
+        "com.android.tools.ddms.ddmlib_32.2.0",
+        "com.android.tools.sdk-common_32.2.0",
+        "com.android.tools.utp.android-test-plugin-result-listener-gradle-proto_32.2.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.7.3",
+        "com.google.protobuf.protobuf-java_3.25.5",
+        "com.google.guava.guava_33.3.1-jre",
+        "com.google.testing.platform.core-proto_0.0.9-alpha04",
+        "com.google.testing.platform.android-device-provider-local_0.0.9-alpha04",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.android.tools.utp.gradle-work-action-api_32.0.0",
     pom = "repository/com/android/tools/utp/gradle-work-action-api/32.0.0/gradle-work-action-api-32.0.0.pom",
     repo_root_path = "repository",
@@ -67973,6 +68220,42 @@ maven_artifact(
     pom = "repository/com/android/tools/utp/gradle-work-action-api/32.2.0/gradle-work-action-api-32.2.0.pom",
     repo_root_path = "repository",
     repo_path = "com/android/tools/utp/gradle-work-action-api/32.2.0",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.android.tools.utp.gradle-work-action_32.2.0",
+    pom = "repository/com/android/tools/utp/gradle-work-action/32.2.0/gradle-work-action-32.2.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/android/tools/utp/gradle-work-action/32.2.0",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
+        "com.android.tools.common_32.2.0",
+        "com.android.tools.ddms.ddmlib_32.2.0",
+        "com.google.crypto.tink.tink_1.18.0",
+        "commons-io.commons-io_2.16.1",
+        "com.android.tools.utp.android-device-provider-ddmlib-proto_32.2.0",
+        "com.android.tools.utp.android-test-plugin-host-additional-test-output-proto_32.2.0",
+        "com.android.tools.utp.android-test-plugin-host-apk-installer-proto_32.2.0",
+        "com.android.tools.utp.android-test-plugin-host-coverage-proto_32.2.0",
+        "com.android.tools.utp.android-test-plugin-host-emulator-control-proto_32.2.0",
+        "com.android.tools.utp.android-test-plugin-host-logcat-proto_32.2.0",
+        "com.android.tools.utp.android-test-plugin-result-listener-gradle-proto_32.2.0",
+        "com.google.testing.platform.core-proto_0.0.9-alpha04",
+        "com.google.testing.platform.launcher_0.0.9-alpha04",
+        "com.google.dagger.dagger_2.48",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.android.tools.utp.utp-common_32.2.0",
+    pom = "repository/com/android/tools/utp/utp-common/32.2.0/utp-common-32.2.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/android/tools/utp/utp-common/32.2.0",
     deps = [
         "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
     ],
