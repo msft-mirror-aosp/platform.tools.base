@@ -84,7 +84,11 @@ abstract class Configuration(val configurations: ConfigurationHierarchy) {
    */
   @Deprecated(
     "Use the new isIgnored(Context, Incident) method instead",
-    ReplaceWith("isIgnored(Incident(context, incident))", "com.android.tools.lint.detector.api.Incident"),
+    ReplaceWith(
+      "isIgnored(context, Incident(issue, location ?: Location.NONE, message))",
+      "import com.android.tools.lint.detector.api.Location",
+      "com.android.tools.lint.detector.api.Incident",
+    ),
   )
   fun isIgnored(context: Context, issue: Issue, location: Location?, message: String): Boolean {
     return isIgnored(context, Incident(issue, location ?: Location.NONE, message))
