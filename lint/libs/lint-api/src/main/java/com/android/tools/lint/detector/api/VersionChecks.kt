@@ -242,7 +242,7 @@ class VersionChecks(private val client: LintClient, private val evaluator: JavaE
     fun getTargetApiForAnnotation(annotation: UAnnotation, isApiLevelAnnotation: (String) -> Boolean): ApiConstraint? {
       val fqcn = annotation.qualifiedName
       if (fqcn != null && isApiLevelAnnotation(fqcn)) {
-        if (fqcn == REQUIRES_EXTENSION_ANNOTATION) {
+        if (fqcn == REQUIRES_EXTENSION_ANNOTATION || fqcn == "RequiresExtension") {
           val sdkId = getAnnotationLongValue(annotation, "extension", ANDROID_SDK_ID.toLong()).toInt()
           val value = getAnnotationLongValue(annotation, "version", 0).toInt()
           return atLeast(value, sdkId)
