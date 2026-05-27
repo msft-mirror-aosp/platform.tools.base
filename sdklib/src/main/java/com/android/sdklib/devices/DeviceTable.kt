@@ -18,7 +18,6 @@ package com.android.sdklib.devices
 import com.android.ProgressManagerAdapter
 import com.android.SdkConstants
 import com.android.io.CancellableFileIo
-import com.android.repository.api.RepoManager
 import com.android.sdklib.repository.AndroidSdkHandler
 import com.android.sdklib.repository.LoggerProgressIndicatorWrapper
 import com.android.sdklib.repository.meta.DetailsTypes
@@ -35,9 +34,16 @@ import javax.xml.parsers.ParserConfigurationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.xml.sax.SAXException
 
 interface DeviceTable {
+  val deviceFlow: Flow<Table<String, String, Device>>
+
   fun getDevice(id: String, manufacturer: String): Device?
 
   fun getDevices(): Table<String, String, Device>
@@ -49,10 +55,16 @@ abstract class AbstractLazyDeviceTable(
   private val isSupportedDevice: (Device) -> Boolean,
   private val abortOnFailure: Boolean = false,
 ) : DeviceTable {
+  private val mutex = Mutex()
+  private var cachedTable: Table<String, String, Device>? = null
 
-  private val table by lazy { load() }
+  private suspend fun getOrLoadTable(): Table<String, String, Device> {
+    return cachedTable ?: mutex.withLock { cachedTable ?: (load() ?: ImmutableTable.of()).also { cachedTable = it } }
+  }
 
-  abstract fun load(): Table<String, String, Device>?
+  override val deviceFlow = flow { emit(getOrLoadTable()) }
+
+  abstract suspend fun load(): Table<String, String, Device>?
 
   /**
    * For each input, produces an input stream using [open] and parses a device XML from it. Entries in later inputs override entries from
@@ -90,16 +102,16 @@ abstract class AbstractLazyDeviceTable(
   /** Transforms a [Device] before it is added to the output table. */
   protected open fun mapDevice(device: Device): Device = device
 
-  override fun getDevice(id: String, manufacturer: String): Device? = table?.get(id, manufacturer)
+  override fun getDevice(id: String, manufacturer: String): Device? = runBlocking { getOrLoadTable().get(id, manufacturer) }
 
-  override fun getDevices(): Table<String, String, Device> = table ?: ImmutableTable.of()
+  override fun getDevices(): Table<String, String, Device> = runBlocking { getOrLoadTable() }
 }
 
 /** A [DeviceTable] that loads from XML files stored as resources. */
 class DeviceResourceTable(log: ILogger, isSupportedDevice: (Device) -> Boolean, val resources: List<String>) :
   AbstractLazyDeviceTable(log, isSupportedDevice, abortOnFailure = true) {
 
-  override fun load(): Table<String, String, Device>? {
+  override suspend fun load(): Table<String, String, Device>? {
     return readInputsToTable(resources) {
       DeviceManager::class.java.getResourceAsStream("$it.xml") ?: throw FileNotFoundException("$it.xml")
     }
@@ -110,12 +122,12 @@ class DeviceResourceTable(log: ILogger, isSupportedDevice: (Device) -> Boolean, 
 class SystemImageDeviceTable(val log: ILogger, isSupportedDevice: (Device) -> Boolean, val sdkHandler: AndroidSdkHandler) :
   AbstractLazyDeviceTable(log, isSupportedDevice) {
 
-  override fun load(): Table<String, String, Device>? {
+  override suspend fun load(): Table<String, String, Device>? {
     val progress = LoggerProgressIndicatorWrapper(log)
-    val repoManager = sdkHandler.getRepoManager(progress)
-    repoManager.loadSynchronously(RepoManager.DEFAULT_EXPIRATION_PERIOD_MS, progress)
     val paths =
-      repoManager.packages.localPackages.values
+      sdkHandler
+        .getRepoManager(progress)
+        .loadLocalPackages(progress)
         .filter { it.typeDetails is DetailsTypes.SysImgDetailsType }
         .sortedBy { (it.typeDetails as DetailsTypes.SysImgDetailsType).androidVersion }
         .mapNotNull { it.location.resolve(SdkConstants.FN_DEVICES_XML) }
@@ -155,8 +167,7 @@ class UserDeviceTable(private val log: ILogger, private val isSupportedDevice: (
       }
     }
 
-  /** Observable view of the table state. */
-  val devicesFlow: Flow<ImmutableTable<String, String, Device>> = tableState.filterNotNull()
+  override val deviceFlow: Flow<Table<String, String, Device>> = tableState.filterNotNull().onStart { table }
 
   /** Loads devices from userDevicesFile. */
   private fun load(): ImmutableTable<String, String, Device> {

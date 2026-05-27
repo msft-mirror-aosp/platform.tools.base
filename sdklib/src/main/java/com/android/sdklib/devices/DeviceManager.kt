@@ -22,15 +22,16 @@ import com.android.sdklib.repository.AndroidSdkHandler
 import com.android.utils.ILogger
 import com.google.common.collect.HashBasedTable
 import com.google.common.collect.ImmutableList
+import com.google.common.collect.Table
 import java.nio.file.Path
 import java.util.Collections
 import java.util.EnumSet
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 
 /** Manager class for interacting with [Device]s within the SDK */
 class DeviceManager(tables: Map<DeviceCategory, DeviceTable>) {
   private val deviceTables: Map<DeviceCategory, DeviceTable> = tables.toSortedMap()
-
-  private val listeners: MutableList<DevicesChangedListener> = ArrayList()
 
   /**
    * Sources of device definitions available to the device manager, in priority order (earlier sources take precedence). We favor built-in
@@ -45,37 +46,6 @@ class DeviceManager(tables: Map<DeviceCategory, DeviceTable>) {
     SYSTEM_IMAGES,
     /** getDevices() flag to list user devices saved in the .android home folder. */
     USER,
-  }
-
-  /** Interface implemented by objects which want to know when changes occur to the [Device] lists. */
-  fun interface DevicesChangedListener {
-    /** Called after one of the [Device] lists has been updated. */
-    fun onDevicesChanged()
-  }
-
-  /**
-   * Register a listener to be notified when the device lists are modified.
-   *
-   * @param listener The listener to add. Ignored if already registered.
-   */
-  fun registerListener(listener: DevicesChangedListener) {
-    synchronized(listeners) {
-      if (listener !in listeners) {
-        listeners.add(listener)
-      }
-    }
-  }
-
-  /**
-   * Removes a listener from the notification list such that it will no longer receive notifications when modifications to the [Device] list
-   * occur.
-   *
-   * @param listener The listener to remove.
-   */
-  fun unregisterListener(listener: DevicesChangedListener): Boolean {
-    synchronized(listeners) {
-      return listeners.remove(listener)
-    }
   }
 
   fun getDevice(id: String, manufacturer: String): Device? {
@@ -113,6 +83,15 @@ class DeviceManager(tables: Map<DeviceCategory, DeviceTable>) {
   fun getDevices(): Collection<Device> = getDevices(ALL_DEVICES)
 
   fun getUserDevices(): UserDeviceTable? = deviceTables[DeviceCategory.USER] as? UserDeviceTable
+
+  val deviceFlow: Flow<Table<String, String, Device>> =
+    combine(deviceTables.values.map { it.deviceFlow }) { tables ->
+      val devices = HashBasedTable.create<String, String, Device>()
+      for (table in tables.reversed()) {
+        devices.putAll(table)
+      }
+      devices
+    }
 
   companion object {
     /** getDevices() flag to list all devices. */
