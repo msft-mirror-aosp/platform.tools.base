@@ -47,7 +47,6 @@ internal class TemplateListBuilderImpl(
   private val registry: TransformationRegistry,
   private val filterTemplateDefinitionStrategy: TemplateEngineFactory.FilterTemplateDefinitionStrategy,
 ) : TemplateListBuilder {
-  private val templateStorages = mutableSetOf<TemplateDefinitionStorage>()
   private val templateDefinitions = mutableListOf<TemplateDefinition>()
 
   override fun toTemplateList(): TemplateList {
@@ -69,7 +68,6 @@ internal class TemplateListBuilderImpl(
       }
 
     templateDefinitions.addAll(definitions)
-    templateStorages.add(storage)
     return this
   }
 
@@ -114,9 +112,17 @@ internal class TemplateListBuilderImpl(
       }
 
     // Group files by template directory
+    val templateDirsSet = templateDirs.toSet()
     val filesByDir =
       fileContentsByRelativePath.entries.groupBy { fileContentsEntry ->
-        templateDirs.firstOrNull { templateDir -> fileContentsEntry.key.startsWith("$templateDir/") } ?: ""
+        var parent = fileContentsEntry.key.substringBeforeLast('/', "")
+        while (parent.isNotEmpty()) {
+          if (templateDirsSet.contains(parent)) {
+            return@groupBy parent
+          }
+          parent = parent.substringBeforeLast('/', "")
+        }
+        ""
       }
 
     val templates = mutableListOf<Pair<String, TemplateDefinition>>()
