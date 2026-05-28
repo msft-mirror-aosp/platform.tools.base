@@ -264,4 +264,29 @@ class DiffChunkTest {
     val exception = assertFailsWith<IllegalArgumentException> { DiffChunk.parse(mismatchedDiff, strict = true) }
     assertThat(exception).hasMessageThat().contains("Parsed ADDED/CONTEXT lines (3) does not match newLength (2)")
   }
+
+  @Test
+  fun testCreateChunks_largeContextOverflowProtection() {
+    // Simple list of diff lines containing one edit
+    val diffLines =
+      listOf(
+        DiffLine(LineType.CONTEXT, "context1"),
+        DiffLine(LineType.REMOVED, "removed"),
+        DiffLine(LineType.ADDED, "added"),
+        DiffLine(LineType.CONTEXT, "context2"),
+      )
+
+    // Requesting infinite context lines (Int.MAX_VALUE) represents a full-file replacement.
+    // This test verifies that our Long safe math successfully prevents 32-bit integer overflow
+    // and correctly bounds the hunk coordinates without throwing IndexOutOfBoundsException.
+    val chunks = DiffChunk.createChunks(diffLines, contextLines = Int.MAX_VALUE)
+
+    assertThat(chunks).hasSize(1)
+    val chunk = chunks[0]
+    assertThat(chunk.oldStart).isEqualTo(1)
+    assertThat(chunk.oldLength).isEqualTo(3) // 2 context + 1 removed
+    assertThat(chunk.newStart).isEqualTo(1)
+    assertThat(chunk.newLength).isEqualTo(3) // 2 context + 1 added
+    assertThat(chunk.lines).hasSize(4)
+  }
 }

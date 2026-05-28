@@ -114,8 +114,9 @@ data class DiffChunk(val oldStart: Int, val oldLength: Int, val newStart: Int, v
           lastChange++
         }
 
-        val effectiveStart = kotlin.math.max(0, firstChange - contextLines)
-        var effectiveEnd = kotlin.math.min(flattened.size, lastChange + contextLines)
+        val startOffset = firstChange.toLong() - contextLines
+        val effectiveStart = startOffset.coerceAtLeast(0L).toInt()
+        var effectiveEnd = (lastChange.toLong() + contextLines).coerceAtMost(flattened.size.toLong()).toInt()
 
         var lastConsideredEnd = lastChange
         while (true) {
@@ -124,13 +125,14 @@ data class DiffChunk(val oldStart: Int, val oldLength: Int, val newStart: Int, v
             nextChange++
           }
           if (nextChange == flattened.size) break
-          if (effectiveEnd >= nextChange - contextLines) {
+          val nextChangeOffset = nextChange.toLong() - contextLines
+          if (effectiveEnd.toLong() >= nextChangeOffset) {
             var nextChangeEnd = nextChange
             // Group subsequent edit blocks that are within the context line threshold
             while (nextChangeEnd < flattened.size && flattened[nextChangeEnd].type != LineType.CONTEXT) {
               nextChangeEnd++
             }
-            effectiveEnd = kotlin.math.min(flattened.size, nextChangeEnd + contextLines)
+            effectiveEnd = (nextChangeEnd.toLong() + contextLines).coerceAtMost(flattened.size.toLong()).toInt()
             lastConsideredEnd = nextChangeEnd
           } else {
             break
