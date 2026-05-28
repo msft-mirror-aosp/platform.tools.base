@@ -41,4 +41,31 @@ class CliHostTest {
     val exitCode = CommandLine(UiInspectorCommand()).addSubcommand("dump-ui", DumpUiCommand()).execute("dump-ui")
     assertThat(exitCode).isEqualTo(2)
   }
+
+  @Test
+  fun testCommandLineOptionsDefaults() {
+    val cmd = CommandLine(UiInspectorCommand()).addSubcommand("dump-ui", DumpUiCommand())
+    val parseResult = cmd.parseArgs("dump-ui", "--serial", "123", "--package", "com.example")
+    val dumpCmd = parseResult.subcommand().commandSpec().userObject() as DumpUiCommand
+    assertThat(dumpCmd.includeSystemComposables).isFalse()
+    assertThat(dumpCmd.includeAttributes).isFalse()
+    assertThat(dumpCmd.composeInspectorJarPath).isNull()
+  }
+
+  @Test
+  fun testCommandLineOptionsFlags() {
+    val cmd = CommandLine(UiInspectorCommand()).addSubcommand("dump-ui", DumpUiCommand())
+    val parseResult = cmd.parseArgs("dump-ui", "--serial", "123", "--package", "com.example", "--include-system-composables")
+    val dumpCmd = parseResult.subcommand().commandSpec().userObject() as DumpUiCommand
+    assertThat(dumpCmd.includeSystemComposables).isTrue()
+  }
+
+  @Test
+  fun testCommandLineOptionsComposeInspector() {
+    val cmd = CommandLine(UiInspectorCommand()).addSubcommand("dump-ui", DumpUiCommand())
+    val parseResult =
+      cmd.parseArgs("dump-ui", "--serial", "123", "--package", "com.example", "--compose-inspector", "local/path/to/inspector.jar")
+    val dumpCmd = parseResult.subcommand().commandSpec().userObject() as DumpUiCommand
+    assertThat(dumpCmd.composeInspectorJarPath).isEqualTo("local/path/to/inspector.jar")
+  }
 }

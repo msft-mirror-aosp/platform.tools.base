@@ -20,6 +20,7 @@ import com.android.adblib.AdbLogger
 import com.android.adblib.AdbLoggerFactory
 import com.android.adblib.AdbSession
 import com.android.adblib.tools.createStandaloneSession
+import java.io.File
 import java.util.concurrent.Callable
 import kotlin.system.exitProcess
 import kotlinx.coroutines.runBlocking
@@ -48,6 +49,11 @@ class DumpUiCommand : Callable<Int> {
   var includeResolutionStack: Boolean = false
   @Option(names = ["--include-system-composables"], description = ["Include system/framework Composable nodes in the dump"])
   var includeSystemComposables: Boolean = false
+  @Option(
+    names = ["--compose-inspector"],
+    description = ["Path to a local Compose Inspector JAR file to use instead of the one from maven"],
+  )
+  var composeInspectorJarPath: String? = null
 
   companion object {
     /** Factory for creating [AdbSession]. Can be overridden in tests. */
@@ -67,7 +73,24 @@ class DumpUiCommand : Callable<Int> {
         CommandSender(host = "localhost", port = port.toInt()).use { commandSender ->
           // TODO: consider running in parallel
           createViewInspector(commandSender, injectionManager)
-          val composeInspectorConnected = createComposeInspector(commandSender, injectionManager)
+
+          val localJarProvider =
+            composeInspectorJarPath?.let { path ->
+              { _: String ->
+                val file = File(path)
+                if (!file.exists() || !file.isFile) {
+                  throw IllegalArgumentException("Specified Compose Inspector JAR does not exist: $path")
+                }
+                file
+              }
+            }
+
+          val composeInspectorConnected =
+            if (localJarProvider != null) {
+              createComposeInspector(commandSender, injectionManager, localJarProvider)
+            } else {
+              createComposeInspector(commandSender, injectionManager)
+            }
 
           dumpUiTree(
             commandSender = commandSender,
