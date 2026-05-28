@@ -22,6 +22,7 @@ import java.util.zip.ZipInputStream
 import kotlin.io.path.inputStream
 
 internal class ZipFileTemplateStorage(private val zipFile: Path) : TemplateDefinitionStorage {
+  private val lock = Any()
   private var fileSystem: FileSystem? = null
   private var openRefCount = 0
 
@@ -42,25 +43,27 @@ internal class ZipFileTemplateStorage(private val zipFile: Path) : TemplateDefin
     }
   }
 
-  private fun acquire(): FileSystem {
-    openRefCount++
-    return if (openRefCount == 1) {
-      check(fileSystem == null) { "Internal error: file system for '$zipFile' should be null when openRefCount is 1" }
-      FileSystems.newFileSystem(zipFile, null as ClassLoader?).also { fileSystem = it }
-    } else {
-      fileSystem ?: throw IllegalStateException("Internal error: file system for '$zipFile' should be active")
+  private fun acquire(): FileSystem =
+    synchronized(lock) {
+      openRefCount++
+      return if (openRefCount == 1) {
+        check(fileSystem == null) { "Internal error: file system for '$zipFile' should be null when openRefCount is 1" }
+        FileSystems.newFileSystem(zipFile, null as ClassLoader?).also { fileSystem = it }
+      } else {
+        fileSystem ?: throw IllegalStateException("Internal error: file system for '$zipFile' should be active")
+      }
     }
-  }
 
-  private fun release() {
-    assert(openRefCount > 0)
-    openRefCount--
-    if (openRefCount == 0) {
-      assert(fileSystem != null)
-      fileSystem?.close()
-      fileSystem = null
+  private fun release() =
+    synchronized(lock) {
+      check(openRefCount > 0) { "Internal error: openRefCount is underflowing" }
+      openRefCount--
+      if (openRefCount == 0) {
+        check(fileSystem != null) { "Internal error: file system for '$zipFile' should not be null when openRefCount is 0" }
+        fileSystem?.close()
+        fileSystem = null
+      }
     }
-  }
 
   private inner class ZipFileHandle : TemplateDefinitionStorage.Handle {
     override fun close() {

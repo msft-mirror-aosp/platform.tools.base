@@ -20,6 +20,7 @@ import com.google.common.truth.Truth.assertThat
 import java.nio.file.FileSystem
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.concurrent.Executors
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import org.junit.Rule
@@ -28,7 +29,6 @@ import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
-@Suppress("FunctionName")
 @RunWith(Parameterized::class)
 class ZipFileTemplateStorageTest(private val fileSystemId: FileSystemId) {
   @get:Rule val tempFolder = TemporaryFolder()
@@ -135,6 +135,57 @@ class ZipFileTemplateStorageTest(private val fileSystemId: FileSystemId) {
       assertThat(entry).isNotNull()
       assertThat(entry!!.name).isEqualTo("test.txt")
       assertThat(zis.readBytes().toString(Charsets.UTF_8)).isEqualTo("hello")
+    }
+  }
+
+  @Test
+  fun `test thread safety under concurrent open and use operations`() {
+    val rootPath = getTestRootPath()
+    Files.createDirectories(rootPath)
+    val zipFile = rootPath.resolve("archive.zip")
+
+    // Create a zip with a small file so we can read it concurrently
+    ZipOutputStream(Files.newOutputStream(zipFile)).use { zos ->
+      zos.putNextEntry(ZipEntry("data.txt"))
+      zos.write("shared content".toByteArray(Charsets.UTF_8))
+      zos.closeEntry()
+    }
+
+    val storage = ZipFileTemplateStorage(zipFile)
+    val executor = Executors.newFixedThreadPool(8)
+    val numTasks = 200
+    val futures = mutableListOf<java.util.concurrent.Future<*>>()
+
+    try {
+      for (i in 0 until numTasks) {
+        futures.add(
+          executor.submit {
+            // Mix of using open/close tokens and openAndUse blocks
+            if (i % 2 == 0) {
+              storage.open().use { _ ->
+                storage.openAndUse { fs ->
+                  val path = fs.getPath("data.txt")
+                  val bytes = Files.readAllBytes(path)
+                  assertThat(bytes.toString(Charsets.UTF_8)).isEqualTo("shared content")
+                }
+              }
+            } else {
+              storage.openAndUse { fs ->
+                val path = fs.getPath("data.txt")
+                val bytes = Files.readAllBytes(path)
+                assertThat(bytes.toString(Charsets.UTF_8)).isEqualTo("shared content")
+              }
+            }
+          }
+        )
+      }
+
+      // Wait for all tasks to complete successfully
+      for (future in futures) {
+        future.get(10, java.util.concurrent.TimeUnit.SECONDS)
+      }
+    } finally {
+      executor.shutdownNow()
     }
   }
 

@@ -24,6 +24,8 @@ package com.android.template.engine
  * using [TemplateDefinition.loader] will open the ZipFile, providing access to all zip entries of the ZipFile until [Handle.close] is
  * called. Without the [open] call, each [TemplateDefinition.loader] use would incur an "on-demand" [open]/[Handle.close] pair of call,
  * potentially forcing reading the ZipFile directory of entries multiple times.
+ *
+ * Implementations of this interface must be thread-safe, as [open] and [Token.close] may be called concurrently from multiple threads.
  */
 interface TemplateDefinitionStorage {
   /** Opens the underlying storage for reading, returning a unique [Handle] to be used to [Handle.close] */
