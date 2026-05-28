@@ -22,15 +22,23 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject.Com
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.integration.connected.utils.getEmulator
+import com.android.build.gradle.options.BooleanOption
 import org.junit.Before
 import org.junit.ClassRule
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
-class InstrumentationRunnerConnectedTest {
+@RunWith(Parameterized::class)
+class InstrumentationRunnerConnectedTest(val runWithBuiltInPlatform: Boolean) {
 
   companion object {
     @get:ClassRule @get:JvmStatic val emulator = getEmulator()
+
+    @JvmStatic
+    @Parameterized.Parameters(name = "runWithBuiltInPlatform={0}")
+    fun parameters(): Collection<Array<Any>> = listOf(arrayOf(false), arrayOf(true))
   }
 
   @get:Rule val project = builder().fromTestProject("separateTestModule").create()
@@ -90,26 +98,53 @@ class InstrumentationRunnerConnectedTest {
   }
 
   private fun executor(): GradleTaskExecutor {
-    return project.executor()
+    return project.executor().with(BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM, runWithBuiltInPlatform)
   }
 
   private fun checkArgsInOutput(f2ArgPresent: Boolean, f3ArgPresent: Boolean, f4ArgPresent: Boolean, result: GradleBuildResult) {
-    assertThat(result.stdout).contains("key: \"size\"\nvalue: \"small\"")
-    assertThat(result.stdout).doesNotContain("key: \"otherValue\"\nvalue: \"f4.1\"")
+    if (runWithBuiltInPlatform) {
+      assertThat(result.stdout).contains("-e size small")
+      assertThat(result.stdout).doesNotContain("-e otherValue f4.1")
 
-    val f2String = "key: \"value\"\nvalue: \"f2\""
-    if (f2ArgPresent) {
-      assertThat(result.stdout).contains(f2String)
+      val f2String = "-e value f2"
+      if (f2ArgPresent) {
+        assertThat(result.stdout).contains(f2String)
+      } else {
+        assertThat(result.stdout).doesNotContain(f2String)
+        assertThat(result.stdout).contains("-e value default")
+      }
+
+      val f3String = "-e otherValue f3"
+      if (f3ArgPresent) {
+        assertThat(result.stdout).contains(f3String)
+      } else {
+        assertThat(result.stdout).doesNotContain(f3String)
+      }
+
+      val f4String = "-e otherValue f4.2"
+      if (f4ArgPresent) {
+        assertThat(result.stdout).contains(f4String)
+      } else {
+        assertThat(result.stdout).doesNotContain(f4String)
+      }
     } else {
-      assertThat(result.stdout).doesNotContain(f2String)
-      assertThat(result.stdout).contains("key: \"value\"\nvalue: \"default\"")
+      assertThat(result.stdout).contains("key: \"size\"\nvalue: \"small\"")
+      assertThat(result.stdout).doesNotContain("key: \"otherValue\"\nvalue: \"f4.1\"")
+
+      val f2String = "key: \"value\"\nvalue: \"f2\""
+      if (f2ArgPresent) {
+        assertThat(result.stdout).contains(f2String)
+      } else {
+        assertThat(result.stdout).doesNotContain(f2String)
+        assertThat(result.stdout).contains("key: \"value\"\nvalue: \"default\"")
+      }
+
+      val f3String = "key: \"otherValue\"\nvalue: \"f3\""
+      if (f3ArgPresent) assertThat(result.stdout).contains(f3String) else assertThat(result.stdout).doesNotContain(f3String)
+
+      val f4String = "key: \"otherValue\"\nvalue: \"f4.2\""
+      if (f4ArgPresent) assertThat(result.stdout).contains(f4String) else assertThat(result.stdout).doesNotContain(f4String)
     }
-
-    val f3String = "key: \"otherValue\"\nvalue: \"f3\""
-    if (f3ArgPresent) assertThat(result.stdout).contains(f3String) else assertThat(result.stdout).doesNotContain(f3String)
-
-    val f4String = "key: \"otherValue\"\nvalue: \"f4.2\""
-    if (f4ArgPresent) assertThat(result.stdout).contains(f4String) else assertThat(result.stdout).doesNotContain(f4String)
   }
 
   @Test
@@ -127,6 +162,10 @@ class InstrumentationRunnerConnectedTest {
     )
 
     val result = executor().run(":test:connectedCheck")
-    assertThat(result.stdout).contains("key: \"testKey\"\nvalue: \"testValue\"")
+    if (runWithBuiltInPlatform) {
+      assertThat(result.stdout).contains("-e testKey testValue")
+    } else {
+      assertThat(result.stdout).contains("key: \"testKey\"\nvalue: \"testValue\"")
+    }
   }
 }

@@ -28,6 +28,7 @@ import com.android.fakeadbserver.DeviceFileState
 import com.android.fakeadbserver.DeviceState
 import com.android.sdklib.AndroidApiLevel
 import java.io.IOException
+import java.net.ServerSocket
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.attribute.FileTime
@@ -41,7 +42,6 @@ import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.hamcrest.CoreMatchers
 import org.junit.Assert.assertArrayEquals
@@ -148,45 +148,29 @@ class AdblibIDeviceWrapperTest {
   }
 
   @Test
-  fun getAvdDataDoesNotThrowOnConnectionErrors() = runBlockingWithTimeout {
-    // Prepare
-    val serialNumber = "emulator-64178"
+  fun getAvdDataFutureIsSetToNullOnConnectionErrors() = runBlockingWithTimeout {
+    // Prepare: Find a port that is guaranteed to be closed
+    val closedPort = ServerSocket(0).use { it.localPort }
+    val serialNumber = "emulator-$closedPort"
+
     val (connectedDevice, _) = createConnectedDevice(serialNumber, DeviceState.DeviceStatus.ONLINE)
     val adblibIDeviceWrapper = createAdblibIDeviceWrapper(connectedDevice, bridge)
     val avdDataFuture = adblibIDeviceWrapper.avdData
 
     // Act / Assert
     // Note that `serialNumber` above matches an emulator pattern and as a result a call to
-    // `createAvdData` triggers `connectedDevice.session.openEmulatorConsole` which throws
-    // a `java.io.IOException: Error connecting channel to address 'localhost/127.0.0.1:64178'`.
-    // In this case `mAvdDataFuture` is NOT set to allow for retries.
-    try {
-      avdDataFuture.get(100, TimeUnit.MILLISECONDS)
-      fail("Future should not have been completed")
-    } catch (e: TimeoutException) {
-      // Expected
-    }
+    // `createAvdData` triggers `connectedDevice.session.openEmulatorConsole` which should
+    // fail because the port is closed.
+    // We wait up to 30 seconds because on Windows, connection to a closed port can take
+    // a long time to fail at the OS level.
+    val avdData = avdDataFuture.get(30, TimeUnit.SECONDS)
+    assertNull(avdData)
     assertNull(adblibIDeviceWrapper.avdName)
     assertNull(adblibIDeviceWrapper.avdPath)
-
-    // Act / Assert
-    // Trying to retrieve avdData again returns the same future as indicated
-    // by avdDataFuture2 being the same instance as avdDataFuture
-    val avdDataFuture2 = adblibIDeviceWrapper.avdData
-    assertEquals(avdDataFuture, avdDataFuture2)
-    try {
-      avdDataFuture2.get(100, TimeUnit.MILLISECONDS)
-      fail("Future should not have been completed")
-    } catch (e: TimeoutException) {
-      // Expected
-    }
-
-    adblibIDeviceWrapper.avdFetchStatusFlow.first { it == AdblibIDeviceWrapper.AvdFetchStatus.FAILED }
-    Unit
   }
 
   @Test
-  fun getAvdDataRetriesAndSucceeds() = runBlockingWithTimeout {
+  fun getAvdDataDoesNotRetryErrors() = runBlockingWithTimeout {
     // Prepare
     val avdName = "myAvd-36"
     val avdPath = Path.of("/android/avds/myAvd-36.avd").toString()
@@ -202,25 +186,13 @@ class AdblibIDeviceWrapperTest {
 
     // Act / Assert: First call fails to connect to console due to authentication failures
     val avdDataFuture = adblibIDeviceWrapper.avdData
-    try {
-      avdDataFuture.get(100, TimeUnit.MILLISECONDS)
-      fail("Future should not have been completed")
-    } catch (e: TimeoutException) {
-      // Expected
-    }
-    adblibIDeviceWrapper.avdFetchStatusFlow.first { it == AdblibIDeviceWrapper.AvdFetchStatus.FAILED }
+    assertNull(avdDataFuture.get(2, TimeUnit.SECONDS))
 
     // Prepare: Now stop requiring authorization
     emulatorConsole.authRequired = false
 
-    // Act: retry getting avdData future
-    val avdData = adblibIDeviceWrapper.avdData.get()
-
-    // Assert
-    assertNotNull(avdData)
-    assertEquals(avdName, avdData?.name)
-    adblibIDeviceWrapper.avdFetchStatusFlow.first { it == AdblibIDeviceWrapper.AvdFetchStatus.SUCCEEDED }
-    Unit
+    // Act / Assert: even though authorization is no longer required avdDataFuture is not retried
+    assertNull(avdDataFuture.get(2, TimeUnit.SECONDS))
   }
 
   @Test
@@ -284,10 +256,10 @@ class AdblibIDeviceWrapperTest {
 
     // Act
     fakeAdb.disconnectDevice(deviceId)
-    delay(50)
+
     // Assert
-    assertFalse(avdDataFuture.isDone)
-    assertFalse(adblibIDeviceWrapper.avdData.isDone)
+    yieldUntil { avdDataFuture.isDone }
+    assertNull(avdDataFuture.get())
     assertNull(adblibIDeviceWrapper.avdName)
     assertNull(adblibIDeviceWrapper.avdPath)
   }

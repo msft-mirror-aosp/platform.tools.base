@@ -16,7 +16,6 @@
 package com.android.tools.deployer;
 
 import com.android.annotations.NonNull;
-import com.android.ddmlib.SocketChannelWithTimeouts;
 import com.android.tools.deploy.proto.Deploy;
 import com.android.tools.deployer.common.Installer;
 import com.android.utils.ILogger;

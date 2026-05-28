@@ -32,9 +32,11 @@ import com.android.tools.lint.checks.fx.result.Point
 import com.android.tools.lint.checks.fx.result.Result
 import com.android.tools.lint.checks.fx.result.ResultTable
 import com.android.tools.lint.checks.fx.result.ResultTemplate
+import com.android.tools.lint.checks.fx.result.Scope
 import com.android.tools.lint.checks.fx.result.Type
 import com.android.tools.lint.checks.fx.result.Type.MethodRef.Companion.static
 import com.android.tools.lint.checks.fx.result.Type.MethodRef.Companion.virtual
+import com.android.tools.lint.checks.fx.result.emptySubst
 import com.android.tools.lint.checks.fx.result.get
 import com.android.tools.lint.checks.fx.utils.Encoder
 import com.android.tools.lint.checks.fx.utils.Encoder.Companion.adapt
@@ -335,10 +337,11 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
     val resultEncoder =
       Encoder.product(
         ::ResultTemplate,
-        Encoder.map(Encoder.internedString, Encoder.set(recNothingTypeEncoder) withDefault persistentSetOf()) withDefault persistentMapOf(),
+        Encoder.map(nameEncoder, Encoder.set(recNothingTypeEncoder) withDefault persistentSetOf()) withDefault persistentMapOf(),
         recNothingTypeEncoder.zeroOrMore() withDefault listOf(),
         recTypeEncoder withDefault Type.Unit,
         fxEncoder withDefault Effect(effects.bottom, persistentSetOf(), Constraint.MostPermissive),
+        Encoder.map(nameEncoder, typeEncoder) withDefault emptySubst,
       )
     Encoder.map(methodIdEncoder, resultEncoder)
   }
@@ -367,6 +370,15 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
   private val recTypeSymEncoder = recTypeEncoder.subType<_, Type.Sym<FX>>()
   private val invokeEncoder = Encoder.product(Type.Sym<FX>::Invoke, recTypeSymEncoder, methodIdEncoder, typeListEncoder)
   private val recNothingTypeEncoder = recTypeEncoder.subType<_, Type<Nothing>>()
+  private val scopeEncoder: Encoder<Scope> =
+    Encoder.sum(
+      case<_, MethodId>(methodIdEncoder),
+      case<_, ClassId>(classIdEncoder),
+      case<_, Scope.Generated>(Encoder.int.adapt(Scope.Generated::index, Scope::Generated)),
+    )
+  private val paramEncoder = Encoder.product(Type.Sym<Nothing>::Param, Encoder.internedString, scopeEncoder)
+  private val recvEncoder = classIdEncoder.adapt(Type.Sym.This::site, Type.Sym<Nothing>::This)
+  private val nameEncoder: Encoder<Type.Sym.Name> = Encoder.sum(case<_, _>(paramEncoder), case<_, _>(recvEncoder))
 
   private val typeEncoder: Encoder<Type<FX>> = Encoder {
     Encoder.sum(
@@ -379,11 +391,9 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
       ),
       case<_, Type.MethodRef>(methodRefEncoder),
       case<_, Type.SpecializedMethodRef<FX>>(Encoder.product(Type<FX>::SpecializedMethodRef, recTypeEncoder, methodRefEncoder)),
-      case<_, Type.Sym.Rec>(Encoder.const(Type.Sym.Rec)),
-      case<_, Type.Sym.Param>(Encoder.internedString.adapt(Type.Sym.Param::name, Type.Sym<Nothing>::Param)),
-      case<_, Type.Sym.This>(classIdEncoder.adapt(Type.Sym.This::site, Type.Sym<Nothing>::This)),
+      case<_, Type.Sym.Param>(paramEncoder),
+      case<_, Type.Sym.This>(recvEncoder),
       case<_, Type.Sym.Invoke<FX>>(invokeEncoder),
-      case<_, Type.Sym.Fix<FX>>(Encoder.product(Type.Sym<FX>::Fix, Encoder.set(typeEncoder), Encoder.set(typeEncoder))),
     )
   }
 
@@ -895,7 +905,8 @@ private fun <FX : Any> resultList(module: Module<FX>, results: Map<Type.MethodRe
               is EffectResult.Inference -> effectResult.result
               is EffectResult.Inapplicable -> return@fold m
             }
-          m.put(methodId, ResultTemplate(methodBody.initEnvironment.types, methodBody.domains, methodSummary.value, effect))
+          val subst = methodSummary.effect.subst!!
+          m.put(methodId, ResultTemplate(methodBody.initEnvironment.types, methodBody.domains, methodSummary.value, effect, subst))
         }
       classId to classSummary
     }

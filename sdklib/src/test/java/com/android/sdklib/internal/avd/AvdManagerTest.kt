@@ -709,7 +709,7 @@ class AvdManagerTest {
     val log = MockLog()
     val devMan = DeviceManager.createInstance(androidSdkHandler, log)
     val myDevice = devMan.getDevice("7.6in Foldable", "Generic")!!
-    val baseHardwareProperties = DeviceManager.getHardwareProperties(myDevice)
+    val baseHardwareProperties = HardwareProperties.getHardwareProperties(myDevice)
 
     // Modify hardware properties that should change
     baseHardwareProperties["hw.lcd.height"] = "960"

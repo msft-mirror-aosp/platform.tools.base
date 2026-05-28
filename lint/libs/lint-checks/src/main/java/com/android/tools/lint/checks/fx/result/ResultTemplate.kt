@@ -29,9 +29,10 @@ data class ResultTemplate<out FX>(
   val domains: List<Type<Nothing>>,
   val range: Type<FX>,
   val effect: Effect<FX>,
+  val subst: Subst<FX>,
 ) {
   override fun toString(): String {
-    val body = "(${domains.joinToString()}) -> $range @ $effect"
+    val body = "(${domains.joinToString()}) -> $range @ $effect [${showSubst(subst)}]"
     return when {
       typeBounds.isEmpty() -> body
       else -> "∀ ${typeBounds.format()}. $body"

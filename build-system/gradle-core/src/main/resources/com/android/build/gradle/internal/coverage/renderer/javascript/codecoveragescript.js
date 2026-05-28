@@ -14,11 +14,151 @@
  * limitations under the License.
  */
 
+const Tooltip = {
+    element: null,
+    activeTarget: null,
+    hideTimeout: null,
+
+    init() {
+        this.element = document.getElementById('a11y-tooltip');
+        if (!this.element) return;
+
+        document.body.addEventListener('mouseover', (e) => {
+            const target = e.target.closest('[data-tooltip], [title], [data-stored-title]');
+            if (target && !target.contains(e.relatedTarget)) this.show(target);
+        });
+
+        document.body.addEventListener('mouseout', (e) => {
+            const target = e.target.closest('[data-tooltip], [title], [data-stored-title]');
+            if (target && !target.contains(e.relatedTarget)) {
+                this.startHide();
+            }
+        });
+
+        document.body.addEventListener('focusin', (e) => {
+            const target = e.target.closest('[data-tooltip], [title], [data-stored-title]');
+            if (target && !target.contains(e.relatedTarget)) this.show(target);
+        });
+
+        document.body.addEventListener('focusout', (e) => {
+            const target = e.target.closest('[data-tooltip], [title], [data-stored-title]');
+            if (target && !target.contains(e.relatedTarget)) {
+                this.hide();
+            }
+        });
+
+        // Dismiss tooltip on scroll (prevent detaching from element)
+        window.addEventListener('scroll', () => this.hide(), true);
+
+        // Keep tooltip open when hovering over it
+        this.element.addEventListener('mouseenter', () => this.clearHide());
+        this.element.addEventListener('mouseleave', () => this.startHide());
+    },
+
+    show(target) {
+        this.clearHide();
+
+        if (this.activeTarget && this.activeTarget !== target) {
+            this.hide();
+        }
+
+        let text = target.getAttribute('data-tooltip') || target.getAttribute('title') || target.dataset.storedTitle;
+        if (!text) {
+            this.hide();
+            return;
+        }
+
+        // Prevent native tooltip by transiently removing title
+        if (target.hasAttribute('title')) {
+            target.dataset.storedTitle = target.getAttribute('title');
+            target.removeAttribute('title');
+        }
+
+        // Establish programmatic connection for ALL targets
+        if (!target.hasAttribute('aria-describedby')) {
+            target.setAttribute('aria-describedby', 'a11y-tooltip');
+            target.dataset.addedAriaDescribedby = 'true';
+        }
+
+        // Ensure accessible name is preserved if no other source exists
+        if (!target.hasAttribute('aria-label') && !target.hasAttribute('aria-labelledby')) {
+            target.setAttribute('aria-label', text);
+            target.dataset.addedAriaLabel = 'true';
+        }
+
+        this.activeTarget = target;
+        this.element.textContent = text;
+        this.element.classList.remove('top', 'bottom');
+        this.element.classList.add('visible');
+
+        const rect = target.getBoundingClientRect();
+        const tooltipRect = this.element.getBoundingClientRect();
+
+        let top = rect.top - tooltipRect.height - 10;
+        let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+
+        // Flip if no space on top
+        if (top < 10) {
+            top = rect.bottom + 10;
+            this.element.classList.add('bottom');
+        } else {
+            this.element.classList.add('top');
+        }
+
+        // Keep within viewport horizontal bounds
+        const originalLeft = left;
+        left = Math.max(10, Math.min(left, window.innerWidth - tooltipRect.width - 10));
+
+        // Position arrow to point at target center
+        const arrowX = (rect.left + rect.width / 2) - left;
+        this.element.style.setProperty('--arrow-x', `${arrowX}px`);
+
+        this.element.style.top = `${top}px`;
+        this.element.style.left = `${left}px`;
+        this.element.setAttribute('aria-hidden', 'false');
+    },
+
+    startHide() {
+        this.hideTimeout = setTimeout(() => this.hide(), 100);
+    },
+
+    clearHide() {
+        if (this.hideTimeout) clearTimeout(this.hideTimeout);
+    },
+
+    hide() {
+        if (!this.element || !this.activeTarget) return;
+
+        if (this.activeTarget) {
+            if (this.activeTarget.dataset.storedTitle !== undefined) {
+                this.activeTarget.setAttribute('title', this.activeTarget.dataset.storedTitle);
+                delete this.activeTarget.dataset.storedTitle;
+            }
+            if (this.activeTarget.dataset.addedAriaDescribedby) {
+                this.activeTarget.removeAttribute('aria-describedby');
+                delete this.activeTarget.dataset.addedAriaDescribedby;
+            }
+            if (this.activeTarget.dataset.addedAriaLabel) {
+                // Keep aria-label intact to ensure permanent accessible name
+                delete this.activeTarget.dataset.addedAriaLabel;
+            }
+        }
+
+        this.element.classList.remove('visible', 'top', 'bottom');
+        this.element.setAttribute('aria-hidden', 'true');
+        this.activeTarget = null;
+    }
+};
+
 /**
  * Main application object to encapsulate state, elements, and logic.
  */
 const App = {
+    activeTrigger: null,
+
     init() {
+        this.baseTitle = document.title;
+        Tooltip.init();
         // fullReport is consumed from generated report-data.js
         if (typeof fullReport !== 'undefined') {
             CoverageReportApp.init(fullReport);
@@ -41,6 +181,7 @@ const App = {
                 const classObj = this.findClassObject(moduleName, packageName, className);
 
                 if (classObj) {
+                    App.activeTrigger = link;
                     const context = {
                         moduleName: moduleName,
                         packageName: packageName,
@@ -70,6 +211,8 @@ const App = {
     },
 
     showSourceView(classData, context) {
+        CoverageReportApp.announce(`Showing source code for class: ${classData.name}`);
+        document.title = `Source: ${classData.name} - ${this.baseTitle}`;
         document.getElementById('report-view').classList.add('hidden-view');
         document.getElementById('source-view').classList.remove('hidden-view');
         document.getElementById('report-view-controls').classList.add('hidden');
@@ -79,10 +222,17 @@ const App = {
     },
 
     showReportView() {
+        CoverageReportApp.announce("Returning to report view");
+        document.title = this.baseTitle;
         document.getElementById('source-view').classList.add('hidden-view');
         document.getElementById('report-view').classList.remove('hidden-view');
         document.getElementById('source-view-controls').classList.add('hidden');
         document.getElementById('report-view-controls').classList.remove('hidden');
+
+        if (App.activeTrigger) {
+            App.activeTrigger.focus();
+            App.activeTrigger = null;
+        }
     }
 }
 
@@ -207,13 +357,17 @@ const UIUtils = {
      * Builds a multi-select dropdown with "Select All" / "Clear" actions
      * and a scrollable list of options.
      */
-    buildActionDropdown(container, options, selectedStateArr, onSelectionChange, searchable = true, multiSelect = true) {
+    buildActionDropdown(container, options, selectedValueOrArray, onSelectionChange, searchable = true, multiSelect = true) {
         if (!container) return;
 
         container.innerHTML = "";
         container.style.padding = "0";
         container.style.overflow = "hidden";
         container.setAttribute("role", multiSelect ? "group" : "listbox");
+
+        let currentState = multiSelect
+            ? (Array.isArray(selectedValueOrArray) ? [...selectedValueOrArray] : [])
+            : selectedValueOrArray;
 
         let searchInput = null;
         if (searchable) {
@@ -224,6 +378,7 @@ const UIUtils = {
             searchInput.type = "text";
             searchInput.className = "popover-search";
             searchInput.placeholder = "Search...";
+            searchInput.setAttribute("autocomplete", "off");
 
             searchContainer.appendChild(searchInput);
             container.appendChild(searchContainer);
@@ -248,20 +403,17 @@ const UIUtils = {
             selectAllBtn.addEventListener("click", (e) => {
                 e.stopPropagation();
                 e.preventDefault();
-                selectedStateArr.length = 0;
-                options.forEach(o => {
-                    if (o.value !== "all") selectedStateArr.push(o.value);
-                });
+                currentState = options.filter(o => o.value !== "all").map(o => o.value);
                 Array.from(listZone.querySelectorAll("input[type='checkbox']")).forEach(cb => cb.checked = true);
-                onSelectionChange();
+                onSelectionChange([...currentState]);
             });
 
             clearBtn.addEventListener("click", (e) => {
                 e.stopPropagation();
                 e.preventDefault();
-                selectedStateArr.length = 0;
+                currentState = [];
                 Array.from(listZone.querySelectorAll("input[type='checkbox']")).forEach(cb => cb.checked = false);
-                onSelectionChange();
+                onSelectionChange([]);
             });
         }
 
@@ -280,10 +432,10 @@ const UIUtils = {
             options.forEach(opt => {
                 if (opt.value === "all") return;
 
-                const isChecked = selectedStateArr.includes(opt.value);
                 let item;
 
                 if (multiSelect) {
+                    const isChecked = currentState.includes(opt.value);
                     item = document.createElement("label");
                     item.className = "popover-item";
 
@@ -295,12 +447,12 @@ const UIUtils = {
 
                     const handleChange = () => {
                         if (checkbox.checked) {
-                            if (!selectedStateArr.includes(opt.value)) selectedStateArr.push(opt.value);
+                            if (!currentState.includes(opt.value)) currentState.push(opt.value);
                         } else {
-                            const idx = selectedStateArr.indexOf(opt.value);
-                            if (idx > -1) selectedStateArr.splice(idx, 1);
+                            const idx = currentState.indexOf(opt.value);
+                            if (idx > -1) currentState.splice(idx, 1);
                         }
-                        onSelectionChange();
+                        onSelectionChange([...currentState]);
                     };
 
                     item.addEventListener("change", (e) => {
@@ -324,10 +476,11 @@ const UIUtils = {
                     item = document.createElement("div");
                     item.className = "popover-item w-full text-left cursor-pointer";
                     item.setAttribute("role", "option");
-                    item.textContent = opt.name;
+                    const itemText = document.createElement("span");
+                    itemText.textContent = opt.name;
+                    item.appendChild(itemText);
 
-                    const isSelected = (selectedStateArr.length === 0 && opt.value === 'Aggregated') ||
-                                     (selectedStateArr.length === 1 && selectedStateArr[0] === opt.value);
+                    const isSelected = currentState === opt.value;
 
                     item.setAttribute("tabindex", "0");
                     if (isSelected) {
@@ -340,9 +493,7 @@ const UIUtils = {
                     const triggerSelect = (e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        selectedStateArr.length = 0;
-                        selectedStateArr.push(opt.value);
-                        onSelectionChange();
+                        onSelectionChange(opt.value);
                         container.classList.add('hidden');
 
                         let config;
@@ -545,7 +696,11 @@ const CoverageReportApp = {
     announce(message) {
         const announcer = document.getElementById('a11y-announcer');
         if (announcer) {
-            announcer.textContent = message;
+            announcer.textContent = '';
+            if (this.announceTimeout) clearTimeout(this.announceTimeout);
+            this.announceTimeout = setTimeout(() => {
+                announcer.textContent = message;
+            }, 50);
         }
     },
 
@@ -641,7 +796,8 @@ const CoverageReportApp = {
         }
         const variantOptions = allVariants.map(v => ({name: v, value: v}));
 
-        UIUtils.buildActionDropdown(this.elements.variantFilterDropdown, variantOptions, this.state.filters.variants, () => {
+        UIUtils.buildActionDropdown(this.elements.variantFilterDropdown, variantOptions, this.state.filters.variants, (newArr) => {
+            this.state.filters.variants = newArr;
             this.updateVariantButtonText();
             this.render(true);
             Navigation.push();
@@ -665,6 +821,10 @@ const CoverageReportApp = {
     bindEvents() {
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
+                if (Tooltip.activeTarget) {
+                    Tooltip.hide();
+                    return;
+                }
                 const openDropdownConf = this.getDropdownConfigs().find(c => c.dropdown && !c.dropdown.classList.contains('hidden'));
                 if (openDropdownConf) {
                     this.toggleDropdown(openDropdownConf.dropdown);
@@ -729,6 +889,7 @@ const CoverageReportApp = {
         });
         this.elements.tableHeaders.addEventListener('click', this.handleHeaderClick.bind(this));
         this.elements.tableHeaders.addEventListener('keydown', (e) => {
+            if (e.target.classList.contains('resizer')) return;
             if (e.key === 'Enter' || e.key === ' ') {
                 if (e.target.closest('[data-sort-by]')) {
                     e.preventDefault();
@@ -899,61 +1060,96 @@ const CoverageReportApp = {
 
     initResizableColumns() {
         const headerRow = this.elements.tableHeaders;
-        let activeResizer = null;
-        let startX, startWidth, resizerId;
-        let animationFrameId = null;
 
         const setColumnWidth = (id, width) => {
             document.documentElement.style.setProperty(`--col-width-${id.replace(/\./g, '-')}`, `${width}px`);
-        };
-
-        const onPointerMove = (e) => {
-            if (!activeResizer) return;
-            const diffX = e.pageX - startX;
-            const newWidth = Math.max(50, startWidth + diffX);
-
-            this.state.columnWidths[resizerId] = newWidth;
-
-            if (animationFrameId) {
-                cancelAnimationFrame(animationFrameId);
-            }
-            animationFrameId = requestAnimationFrame(() => {
-                setColumnWidth(resizerId, newWidth);
-            });
-        };
-
-        const onPointerUp = (e) => {
-            if (activeResizer) {
-                if (activeResizer.hasPointerCapture(e.pointerId)) {
-                    activeResizer.releasePointerCapture(e.pointerId);
-                }
-                activeResizer.classList.remove('resizing');
-                activeResizer.removeEventListener('pointermove', onPointerMove);
-                activeResizer.removeEventListener('pointerup', onPointerUp);
-                activeResizer.removeEventListener('pointercancel', onPointerUp);
-                activeResizer = null;
-                setTimeout(() => { this.isResizing = false; }, 0);
-            }
+            const resizer = this.elements.tableHeaders.querySelector(`.resizer[data-resizer-id="${id}"]`);
+            if (resizer) resizer.setAttribute('aria-valuenow', Math.round(width));
         };
 
         headerRow.addEventListener('pointerdown', (e) => {
             if (e.target.classList.contains('resizer')) {
-                activeResizer = e.target;
-                resizerId = activeResizer.dataset.resizerId;
-                const columnTh = activeResizer.closest('th');
-                startX = e.pageX;
-                startWidth = columnTh.getBoundingClientRect().width;
+                if (this.isResizing) return;
 
-                activeResizer.setPointerCapture(e.pointerId);
-                activeResizer.classList.add('resizing');
+                const resizer = e.target;
+                const resizerId = resizer.dataset.resizerId;
+                const columnTh = resizer.closest('th');
+                const startX = e.pageX;
+                const startWidth = columnTh.getBoundingClientRect().width;
+                let animationFrameId = null;
+
+                resizer.setPointerCapture(e.pointerId);
+                resizer.classList.add('resizing');
                 this.isResizing = true;
 
-                activeResizer.addEventListener('pointermove', onPointerMove);
-                activeResizer.addEventListener('pointerup', onPointerUp);
-                activeResizer.addEventListener('pointercancel', onPointerUp);
+                const onPointerMove = (moveEvt) => {
+                    const diffX = moveEvt.pageX - startX;
+                    const newWidth = Math.max(50, startWidth + diffX);
+                    this.state.columnWidths[resizerId] = newWidth;
+
+                    if (animationFrameId) cancelAnimationFrame(animationFrameId);
+                    animationFrameId = requestAnimationFrame(() => {
+                        setColumnWidth(resizerId, newWidth);
+                    });
+                };
+
+                const onPointerUp = (upEvt) => {
+                    resizer.releasePointerCapture(upEvt.pointerId);
+                    resizer.classList.remove('resizing');
+                    resizer.removeEventListener('pointermove', onPointerMove);
+                    resizer.removeEventListener('pointerup', onPointerUp);
+                    resizer.removeEventListener('pointercancel', onPointerUp);
+                    setTimeout(() => { this.isResizing = false; }, 0);
+                };
+
+                resizer.addEventListener('pointermove', onPointerMove);
+                resizer.addEventListener('pointerup', onPointerUp);
+                resizer.addEventListener('pointercancel', onPointerUp);
 
                 e.preventDefault();
                 e.stopPropagation();
+            }
+        });
+
+        headerRow.addEventListener('dblclick', (e) => {
+            if (e.target.classList.contains('resizer')) {
+                const id = e.target.dataset.resizerId;
+                delete this.state.columnWidths[id];
+                document.documentElement.style.removeProperty(`--col-width-${id.replace(/\./g, '-')}`);
+                // Update to default width instead of removing
+                const newWidth = e.target.closest('th').getBoundingClientRect().width;
+                e.target.setAttribute('aria-valuenow', Math.round(newWidth));
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        });
+
+        headerRow.addEventListener('keydown', (e) => {
+            if (e.target.classList.contains('resizer')) {
+                const id = e.target.dataset.resizerId;
+                const columnTh = e.target.closest('th');
+                const currentWidth = columnTh.getBoundingClientRect().width;
+                let newWidth = this.state.columnWidths[id] || currentWidth;
+
+                if (e.key === 'ArrowLeft') {
+                    newWidth = Math.max(50, newWidth - 10);
+                    this.state.columnWidths[id] = newWidth;
+                    setColumnWidth(id, newWidth);
+                    e.preventDefault();
+                } else if (e.key === 'ArrowRight') {
+                    newWidth = Math.min(1000, newWidth + 10);
+                    this.state.columnWidths[id] = newWidth;
+                    setColumnWidth(id, newWidth);
+                    e.preventDefault();
+                } else if (e.key === 'Enter' || e.key === ' ') {
+                    e.stopImmediatePropagation();
+                    delete this.state.columnWidths[id];
+                    document.documentElement.style.removeProperty(`--col-width-${id.replace(/\./g, '-')}`);
+                    // Update to default width instead of removing
+                    const resetWidth = e.target.closest('th').getBoundingClientRect().width;
+                    e.target.setAttribute('aria-valuenow', Math.round(resetWidth));
+                    e.preventDefault();
+                }
             }
         });
 
@@ -1028,13 +1224,16 @@ const CoverageReportApp = {
         }
 
         if (this.elements.variantFilterBtn) {
+            let label = 'Filter by Variant';
             if (selectedCount === allVariantsCount && allVariantsCount > 0) {
-                this.elements.variantFilterBtn.setAttribute('data-tooltip', 'Filter by Variant: All');
+                label = 'Filter by Variant: All';
             } else if (selectedCount === 1) {
-                this.elements.variantFilterBtn.setAttribute('data-tooltip', `Filter by Variant: ${this.state.filters.variants[0]}`);
+                label = `Filter by Variant: ${this.state.filters.variants[0]}`;
             } else {
-                this.elements.variantFilterBtn.setAttribute('data-tooltip', `Filter by Variant: ${selectedCount} Selected`);
+                label = `Filter by Variant: ${selectedCount} Selected`;
             }
+            this.elements.variantFilterBtn.setAttribute('data-tooltip', label);
+            this.elements.variantFilterBtn.setAttribute('aria-label', label);
         }
     },
 
@@ -1046,7 +1245,7 @@ const CoverageReportApp = {
         const { selectedModule, selectedPackage } = this.state; let html = '';
         // "Project" is the root link
         if(selectedModule) {
-            html += `<a href="#" class="breadcrumb-link" data-action="go-to-modules">Project</a>`;
+            html += `<a href="#" class="breadcrumb-link" data-action="go-to-modules" aria-label="Go back to Project Overview">Project</a>`;
         } else {
             html += `<span class="breadcrumb-current">Project</span>`;
         }
@@ -1054,7 +1253,7 @@ const CoverageReportApp = {
         if(selectedModule) {
             html += `<span class="breadcrumb-separator" aria-hidden="true">/</span>`;
             if(selectedPackage) {
-                html += `<a href="#" class="breadcrumb-link" data-action="go-to-packages">${this.escapeHTML(selectedModule)}</a>`;
+                html += `<a href="#" class="breadcrumb-link" data-action="go-to-packages" aria-label="Go back to module: ${this.escapeHTML(selectedModule)}">${this.escapeHTML(selectedModule)}</a>`;
             } else {
                 html += `<span class="breadcrumb-current">${this.escapeHTML(selectedModule)}</span>`;
             }
@@ -1113,6 +1312,11 @@ const CoverageReportApp = {
             this.state.sort.by = newSortBy;
             this.state.sort.order = 'asc';
         }
+
+        const headerName = target.textContent.replace(/[▲▼]/g, '').trim();
+        const orderText = this.state.sort.order === 'asc' ? 'ascending' : 'descending';
+        this.announce(`Sorted by ${headerName}, ${orderText}`);
+
         this.render(true);
         Navigation.push();
     },
@@ -1190,7 +1394,8 @@ const CoverageReportApp = {
                 .sort()
                 .map(name => ({ name, value: name }));
 
-        UIUtils.buildActionDropdown(this.elements.moduleFilterDropdown, moduleOptions, filters.modules, () => {
+        UIUtils.buildActionDropdown(this.elements.moduleFilterDropdown, moduleOptions, filters.modules, (newArr) => {
+            filters.modules = newArr;
             filters.packages = [];
             filters.classes = [];
             this.handleHeaderFilterChange('module');
@@ -1199,9 +1404,8 @@ const CoverageReportApp = {
             Navigation.push();
         });
 
-        const testSuiteStateWrapper = [filters.testSuite];
-        UIUtils.buildActionDropdown(this.elements.testSuiteFilterDropdown, testSuiteOptions, testSuiteStateWrapper, () => {
-            filters.testSuite = testSuiteStateWrapper[0] || 'Aggregated';
+        UIUtils.buildActionDropdown(this.elements.testSuiteFilterDropdown, testSuiteOptions, filters.testSuite, (newVal) => {
+            filters.testSuite = newVal || 'Aggregated';
             this.updateFilterButtons();
             this.render(true);
             Navigation.push();
@@ -1214,7 +1418,8 @@ const CoverageReportApp = {
             }
         }, false, false);
 
-        UIUtils.buildActionDropdown(this.elements.packageFilterDropdown, packageOptions, filters.packages, () => {
+        UIUtils.buildActionDropdown(this.elements.packageFilterDropdown, packageOptions, filters.packages, (newArr) => {
+            filters.packages = newArr;
             filters.classes = [];
             this.handleHeaderFilterChange('package');
             this.updateFilterButtons();
@@ -1222,7 +1427,8 @@ const CoverageReportApp = {
             Navigation.push();
         });
 
-        UIUtils.buildActionDropdown(this.elements.classFilterDropdown, classOptions, filters.classes, () => {
+        UIUtils.buildActionDropdown(this.elements.classFilterDropdown, classOptions, filters.classes, (newArr) => {
+            filters.classes = newArr;
             this.handleHeaderFilterChange('class');
             this.updateFilterButtons();
             this.render(true);
@@ -1660,16 +1866,19 @@ const CoverageReportApp = {
         const sortIndicator = (key) => sort.by === key ? (sort.order === 'asc' ? '▲' : '▼') : '';
         const getAriaSort = (key) => sort.by === key ? (sort.order === 'asc' ? 'ascending' : 'descending') : 'none';
 
-        topHeader.innerHTML = `<th class="${firstColClass}" tabindex="0" data-sort-by="name" aria-sort="${getAriaSort('name')}">${mainHeaderTitle} ${sortIndicator('name')}<div class="resizer" data-resizer-id="name"></div></th>`;
-        subHeader.innerHTML = `<th class="py-2 px-6 sticky-name bg-gray-50 z-30" data-col-id="name"></th>`;
+        const nameWidth = Math.round(this.state.columnWidths['name'] || 400);
+        topHeader.innerHTML = `<th scope="col" class="${firstColClass}" tabindex="0" data-sort-by="name" aria-sort="${getAriaSort('name')}">${mainHeaderTitle} ${sortIndicator('name')}<div class="resizer" data-resizer-id="name" tabindex="0" role="separator" aria-label="Resize column" aria-orientation="vertical" aria-valuemin="50" aria-valuemax="1000" aria-valuenow="${nameWidth}"></div></th>`;
+        subHeader.innerHTML = `<th scope="col" class="py-2 px-6 sticky-name bg-gray-50 z-30" data-col-id="name"></th>`;
 
         if (viewMode === 'flat' && !this.state.selectedModule) {
             if (currentView === 'classes') {
-                topHeader.innerHTML += `<th class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30 col-path">Path<div class="resizer" data-resizer-id="path"></div></th>`;
-                subHeader.innerHTML += `<th class="py-2 px-6 bg-gray-50 z-30 col-path" data-col-id="path"></th>`;
+                const pathWidth = Math.round(this.state.columnWidths['path'] || 300);
+                topHeader.innerHTML += `<th scope="col" class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30 col-path">Path<div class="resizer" data-resizer-id="path" tabindex="0" role="separator" aria-label="Resize column" aria-orientation="vertical" aria-valuemin="50" aria-valuemax="1000" aria-valuenow="${pathWidth}"></div></th>`;
+                subHeader.innerHTML += `<th scope="col" class="py-2 px-6 bg-gray-50 z-30 col-path" data-col-id="path"></th>`;
             } else if (currentView === 'packages') {
-                topHeader.innerHTML += `<th class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30 col-module">Module<div class="resizer" data-resizer-id="module"></div></th>`;
-                subHeader.innerHTML += `<th class="py-2 px-6 bg-gray-50 z-30 col-module" data-col-id="module"></th>`;
+                const moduleWidth = Math.round(this.state.columnWidths['module'] || 200);
+                topHeader.innerHTML += `<th scope="col" class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30 col-module">Module<div class="resizer" data-resizer-id="module" tabindex="0" role="separator" aria-label="Resize column" aria-orientation="vertical" aria-valuemin="50" aria-valuemax="1000" aria-valuenow="${moduleWidth}"></div></th>`;
+                subHeader.innerHTML += `<th scope="col" class="py-2 px-6 bg-gray-50 z-30 col-module" data-col-id="module"></th>`;
             }
         }
 
@@ -1678,7 +1887,7 @@ const CoverageReportApp = {
         variants.forEach(v => {
             const vals = this.getCoverageValues(this.fullReport, v);
 
-            topHeader.innerHTML += `<th colspan="2" class="py-4 px-4 text-center font-semibold text-gray-700 border-l border-gray-200">
+            topHeader.innerHTML += `<th scope="col" colspan="2" class="py-4 px-4 text-center font-semibold text-gray-700 border-l border-gray-200">
                 <div class="flex flex-col"><span>${this.escapeHTML(v)}</span><span class="text-sm font-bold ${vals.instrColor} mt-1">${vals.instrPercent}</span></div>
             </th>`;
 
@@ -1688,8 +1897,8 @@ const CoverageReportApp = {
             const instrStyle = this.getColumnStyle(instrKey);
             const branchStyle = this.getColumnStyle(branchKey);
 
-            subHeader.innerHTML += `<th class="py-2 px-4 text-center text-xs font-medium text-gray-600 border-l border-gray-200 cursor-pointer" tabindex="0" data-sort-by="${this.escapeHTML(instrKey)}" aria-sort="${getAriaSort(instrKey)}" ${instrStyle}>Instruction ${sortIndicator(instrKey)}<div class="resizer" data-resizer-id="${this.escapeHTML(instrKey)}"></div></th>
-                                    <th class="py-2 px-4 text-center text-xs font-medium text-gray-600 cursor-pointer" tabindex="0" data-sort-by="${this.escapeHTML(branchKey)}" aria-sort="${getAriaSort(branchKey)}" ${branchStyle}>Branch ${sortIndicator(branchKey)}<div class="resizer" data-resizer-id="${this.escapeHTML(branchKey)}"></div></th>`;
+            subHeader.innerHTML += `<th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600 border-l border-gray-200 cursor-pointer" tabindex="0" data-sort-by="${this.escapeHTML(instrKey)}" aria-sort="${getAriaSort(instrKey)}" aria-label="Sort by Instruction Coverage for ${this.escapeHTML(v)}" ${instrStyle}>Instruction ${sortIndicator(instrKey)}</th>
+                                    <th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600 cursor-pointer" tabindex="0" data-sort-by="${this.escapeHTML(branchKey)}" aria-sort="${getAriaSort(branchKey)}" aria-label="Sort by Branch Coverage for ${this.escapeHTML(v)}" ${branchStyle}>Branch ${sortIndicator(branchKey)}</th>`;
         });
 
         this.elements.tableHeaders.innerHTML = '';
@@ -1719,14 +1928,14 @@ const CoverageReportApp = {
                 const instrKey = `instruction.${v}.percent`;
                 const branchKey = `branch.${v}.percent`;
                 return `
-                <td class="py-3 px-4 text-center" ${this.getColumnStyle(instrKey)}><div class="flex flex-col"><span class="font-bold ${vals.instrColor}">${vals.instrPercent}</span><span class="text-xs text-gray-500">${vals.instrRatio}</span></div></td>
-                <td class="py-3 px-4 text-center" ${this.getColumnStyle(branchKey)}><div class="flex flex-col"><span class="font-bold ${vals.branchColor}">${vals.branchPercent}</span><span class="text-xs text-gray-500">${vals.branchRatio}</span></div></td>
+                <td class="py-3 px-4 text-center" ${this.getColumnStyle(instrKey)} aria-label="${vals.instrPercent} instruction coverage (${vals.instrRatio}) for ${this.escapeHTML(v)}"><div class="flex flex-col"><span class="font-bold ${vals.instrColor}">${vals.instrPercent}</span><span class="text-xs text-gray-500">${vals.instrRatio}</span></div></td>
+                <td class="py-3 px-4 text-center" ${this.getColumnStyle(branchKey)} aria-label="${vals.branchPercent} branch coverage (${vals.branchRatio}) for ${this.escapeHTML(v)}"><div class="flex flex-col"><span class="font-bold ${vals.branchColor}">${vals.branchPercent}</span><span class="text-xs text-gray-500">${vals.branchRatio}</span></div></td>
             `}).join('');
 
             const rowClasses = `table-row border-b border-gray-200 hover:bg-gray-50 ${level > 0 && !isSearching ? 'child-row hidden' : 'child-row'}`;
             const ariaExpanded = hasChildren ? `aria-expanded="${isSearching ? 'true' : 'false'}"` : '';
             const interactiveAttrs = hasChildren
-                ? `tabindex="0" class="flex items-center gap-2 cursor-pointer pl-level-${level}"`
+                ? `tabindex="0" role="button" class="flex items-center gap-2 cursor-pointer pl-level-${level}"`
                 : `tabindex="0" role="link" class="flex items-center gap-2 cursor-pointer pl-level-${level} class-link" data-class-name="${this.escapeHTML(item.name)}" data-module-name="${this.escapeHTML(context.moduleName)}" data-package-name="${this.escapeHTML(context.packageName)}" data-test-suite-name="${this.escapeHTML(context.testSuiteName || '')}"`;
 
             return `<tr class="${rowClasses}" data-id="${this.escapeHTML(item.name)}" data-parent-id="${this.escapeHTML(parentId)}">
@@ -1760,20 +1969,20 @@ const CoverageReportApp = {
                 const instrKey = `instruction.${v}.percent`;
                 const branchKey = `branch.${v}.percent`;
                 return `
-                <td class="py-3 px-4 text-center" ${this.getColumnStyle(instrKey)}><div class="flex flex-col"><span class="font-bold ${vals.instrColor}">${vals.instrPercent}</span><span class="text-xs text-gray-500">${vals.instrRatio}</span></div></td>
-                <td class="py-3 px-4 text-center" ${this.getColumnStyle(branchKey)}><div class="flex flex-col"><span class="font-bold ${vals.branchColor}">${vals.branchPercent}</span><span class="text-xs text-gray-500">${vals.branchRatio}</span></div></td>
+                <td class="py-3 px-4 text-center" ${this.getColumnStyle(instrKey)} aria-label="${vals.instrPercent} instruction coverage (${vals.instrRatio}) for ${this.escapeHTML(v)}"><div class="flex flex-col"><span class="font-bold ${vals.instrColor}">${vals.instrPercent}</span><span class="text-xs text-gray-500">${vals.instrRatio}</span></div></td>
+                <td class="py-3 px-4 text-center" ${this.getColumnStyle(branchKey)} aria-label="${vals.branchPercent} branch coverage (${vals.branchRatio}) for ${this.escapeHTML(v)}"><div class="flex flex-col"><span class="font-bold ${vals.branchColor}">${vals.branchPercent}</span><span class="text-xs text-gray-500">${vals.branchRatio}</span></div></td>
             `}).join('');
 
             let nameCell;
             switch (this.state.currentView) {
                 case 'packages':
-                    nameCell = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover:underline cursor-pointer" tabindex="0" title="${this.escapeHTML(item.name)}" data-name="${this.escapeHTML(item.name)}" data-type="${this.escapeHTML(item.type)}" data-module-name="${this.escapeHTML(item.moduleName)}">${this.escapeHTML(item.name)}</td>`;
+                    nameCell = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover:underline cursor-pointer" tabindex="0" role="link" aria-label="View classes for package: ${this.escapeHTML(item.name)}" title="${this.escapeHTML(item.name)}" data-name="${this.escapeHTML(item.name)}" data-type="${this.escapeHTML(item.type)}" data-module-name="${this.escapeHTML(item.moduleName)}">${this.escapeHTML(item.name)}</td>`;
                     if (!this.state.selectedModule) {
                         nameCell += `<td class="py-3 px-6 text-gray-500 text-sm truncate col-module" title="${this.escapeHTML(item.moduleName)}">${this.escapeHTML(item.moduleName)}</td>`;
                     }
                     break;
                 case 'classes':
-                    nameCell = `<td class="py-3 px-6 sticky-name cursor-pointer class-link" tabindex="0" role="link" title="${this.escapeHTML(item.name)}" data-class-name="${this.escapeHTML(item.name)}" data-module-name="${this.escapeHTML(item.moduleName)}" data-package-name="${this.escapeHTML(item.packageName)}"><span class="font-medium text-blue-700 hover:underline">${this.escapeHTML(item.name)}</span></td>`;
+                    nameCell = `<td class="py-3 px-6 sticky-name cursor-pointer class-link" tabindex="0" role="link" aria-label="View coverage details for class: ${this.escapeHTML(item.name)}" title="${this.escapeHTML(item.name)}" data-class-name="${this.escapeHTML(item.name)}" data-module-name="${this.escapeHTML(item.moduleName)}" data-package-name="${this.escapeHTML(item.packageName)}"><span class="font-medium text-blue-700 hover:underline">${this.escapeHTML(item.name)}</span></td>`;
                     if (!this.state.selectedModule) {
                         nameCell += `<td class="px-2 col-path" title="${this.escapeHTML(item.moduleName)} > ${this.escapeHTML(item.packageName)}">
                             <div class="flex flex-col" style="overflow: hidden; width: 100%;">
@@ -1784,7 +1993,7 @@ const CoverageReportApp = {
                     }
                     break;
                 default: // modules
-                    nameCell = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover:underline cursor-pointer" tabindex="0" title="${this.escapeHTML(item.name)}" data-name="${this.escapeHTML(item.name)}" data-type="${this.escapeHTML(item.type)}" data-module-name="${this.escapeHTML(item.name)}">${this.escapeHTML(item.name)}</td>`;
+                    nameCell = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover:underline cursor-pointer" tabindex="0" role="link" aria-label="View packages for module: ${this.escapeHTML(item.name)}" title="${this.escapeHTML(item.name)}" data-name="${this.escapeHTML(item.name)}" data-type="${this.escapeHTML(item.type)}" data-module-name="${this.escapeHTML(item.name)}">${this.escapeHTML(item.name)}</td>`;
             }
             return `<tr class="table-row border-b border-gray-200 hover:bg-gray-50">${nameCell}${coverageCells}</tr>`;
         }).join('');

@@ -29,6 +29,7 @@ import kotlin.reflect.KFunction
 import kotlin.reflect.KFunction2
 import kotlin.reflect.KFunction3
 import kotlin.reflect.KFunction4
+import kotlin.reflect.KFunction5
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.memberProperties
 import kotlinx.collections.immutable.PersistentMap
@@ -144,6 +145,16 @@ interface Encoder<T> {
       enc2: Encoder<T2>,
       enc3: Encoder<T3>,
     ): Encoder<P> = P::class.uncheckedProduct(constructor, enc0, enc1, enc2, enc3)
+
+    /** Encoder for class [P], given ones on its fields [T0], [T1], [T2], [T3], and [T4] */
+    inline fun <reified P : Any, T0, T1, T2, T3, T4> product(
+      constructor: KFunction5<T0, T1, T2, T3, T4, P>,
+      enc0: Encoder<T0>,
+      enc1: Encoder<T1>,
+      enc2: Encoder<T2>,
+      enc3: Encoder<T3>,
+      enc4: Encoder<T4>,
+    ): Encoder<P> = P::class.uncheckedProduct(constructor, enc0, enc1, enc2, enc3, enc4)
 
     fun <P : Any> KClass<P>.uncheckedProduct(constructor: KFunction<P>, vararg encoders: Encoder<*>): Encoder<P> =
       Product(this, constructor, encoders)

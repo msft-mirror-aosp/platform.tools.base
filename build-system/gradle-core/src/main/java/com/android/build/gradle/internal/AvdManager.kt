@@ -133,7 +133,7 @@ class AvdManager(
     }
 
     val hardwareConfig = defaultHardwareConfig()
-    hardwareConfig.putAll(DeviceManager.getHardwareProperties(device))
+    hardwareConfig.putAll(HardwareProperties.getHardwareProperties(device))
     EmulatedProperties.restrictDefaultRamSize(hardwareConfig)
 
     val deviceFolder = AvdInfo.getDefaultAvdFolder(avdManager, deviceName, false)

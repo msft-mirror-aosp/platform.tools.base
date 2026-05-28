@@ -226,4 +226,63 @@ class R8GradleConfigDetectorTest : AbstractCheckTest() {
       .run()
       .expectClean()
   }
+
+  fun testNoWarningIfMinifyDisabled() {
+    lint()
+      .files(
+        gradle(
+            "build.gradle",
+            """
+               apply plugin: 'com.android.application'
+
+               android {
+                 buildTypes {
+                   nonminified {
+                     minifyEnabled = false
+                     shrinkResources = false
+                   }
+                   release {
+                     minifyEnabled = true
+                     shrinkResources = true
+                   }
+                 }
+               }
+           """,
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
+  }
+
+  fun testWarningIfMinifyEnabledRegardlessOfOrder() {
+    lint()
+      .files(
+        gradle(
+            "build.gradle",
+            """
+               apply plugin: 'com.android.application'
+
+               android {
+                 buildTypes {
+                   release {
+                     shrinkResources = false
+                     minifyEnabled = true
+                   }
+                 }
+               }
+           """,
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
+            build.gradle:6: Warning: Avoid setting shrinkResources = false [NotShrinkingResources]
+                  shrinkResources = false
+                                    ~~~~~
+            0 errors, 1 warning
+        """
+      )
+  }
 }

@@ -3815,15 +3815,18 @@ package com.android.build.api.variant {
   }
 
   public interface VariantBuilder extends com.android.build.api.variant.ComponentBuilder {
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public boolean getEnableLint();
     method @InaccessibleFromKotlin public Integer? getMaxSdk();
     method @InaccessibleFromKotlin public Integer? getMinSdk();
     method @InaccessibleFromKotlin public String? getMinSdkPreview();
     method @InaccessibleFromKotlin public int getRenderscriptTargetApi();
     method public <T> void registerExtension(Class<? extends T> type, T instance);
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public void setEnableLint(boolean);
     method @InaccessibleFromKotlin public void setMaxSdk(Integer?);
     method @InaccessibleFromKotlin public void setMinSdk(Integer?);
     method @InaccessibleFromKotlin public void setMinSdkPreview(String?);
     method @InaccessibleFromKotlin public void setRenderscriptTargetApi(int);
+    property @org.gradle.api.Incubating public abstract boolean enableLint;
     property public abstract Integer? maxSdk;
     property public abstract Integer? minSdk;
     property public abstract String? minSdkPreview;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.example.app
+package com.example.lib
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 

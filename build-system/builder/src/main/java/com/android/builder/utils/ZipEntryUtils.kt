@@ -22,11 +22,24 @@ import java.io.File
 import java.util.zip.ZipEntry
 
 /**
- * Validates the name of a zip entry. Zip files support .. in the file name as such an attacker could use this to place a file in a
- * directory in the users root. This function returns true if the entry contains ../
+ * Validates the name of a zip entry to prevent directory traversal attacks (e.g., Zip-Slip).
+ *
+ * This function returns true if the entry is safe. It specifically rejects:
+ * - Traversal sequences (`..`) and current directory (`.`) components.
+ * - Absolute Windows paths with drives (`:`).
+ * - Control characters (e.g., line feeds), which can be used for command injection.
+ *
+ * Note: This function does NOT reject absolute paths (e.g., leading `/`). This is intentional to support legitimate zip-to-zip copying
+ * tasks in the build system (such as PackageAndroidArtifact) where leading slashes are present and harmless. Extracting callers that write
+ * to the filesystem MUST additionally use [isValidZipEntryPath] or equivalent boundary checks to ensure the resolved path does not escape
+ * the output directory.
+ *
+ * @param entry The zip entry to validate.
+ * @return `true` if the entry name is considered safe, `false` otherwise.
  */
 fun isValidZipEntryName(entry: ZipEntry): Boolean {
-  return !entry.name.contains("../")
+  val name = entry.name
+  return !name.contains(":") && name.split('/', '\\').none { it == ".." || it == "." } && name.none { it < ' ' }
 }
 
 /** Helper function to validate the path inside a zipfile does not leave the output directory. */

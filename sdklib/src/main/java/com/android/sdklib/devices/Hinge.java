@@ -29,7 +29,7 @@ public final class Hinge {
     private String mPostureList;
     private String mHingeAnglePostureDefinitions;
 
-    int getCount() {
+    public int getCount() {
         return mCount;
     }
 
@@ -37,7 +37,7 @@ public final class Hinge {
         this.mCount = count;
     }
 
-    int getType() {
+    public int getType() {
         return mType;
     }
 
@@ -45,7 +45,7 @@ public final class Hinge {
         this.mType = type;
     }
 
-    int getSubtype() {
+    public int getSubtype() {
         return mSubtype;
     }
 
@@ -53,7 +53,7 @@ public final class Hinge {
         this.mSubtype = subtype;
     }
 
-    String getRanges() {
+    public String getRanges() {
         return mRanges;
     }
 
@@ -61,7 +61,7 @@ public final class Hinge {
         this.mRanges = ranges;
     }
 
-    int getDefaults() {
+    public int getDefaults() {
         return mDefaults;
     }
 
@@ -77,7 +77,7 @@ public final class Hinge {
         mChangeOrientationOnFold = changeOrientationOnFold;
     }
 
-    String getAreas() {
+    public String getAreas() {
         return mAreas;
     }
 
@@ -85,7 +85,7 @@ public final class Hinge {
         this.mAreas = areas;
     }
 
-    OptionalInt getFoldAtPosture() {
+    public OptionalInt getFoldAtPosture() {
         return mFoldAtPosture == -1 ? OptionalInt.empty() : OptionalInt.of(mFoldAtPosture);
     }
 
@@ -93,7 +93,7 @@ public final class Hinge {
         this.mFoldAtPosture = foldAtPosture;
     }
 
-    String getPostureList() {
+    public String getPostureList() {
         return mPostureList;
     }
 
@@ -101,7 +101,7 @@ public final class Hinge {
         this.mPostureList = postureList;
     }
 
-    String getHingeAnglePostureDefinitions() {
+    public String getHingeAnglePostureDefinitions() {
         return mHingeAnglePostureDefinitions;
     }
 

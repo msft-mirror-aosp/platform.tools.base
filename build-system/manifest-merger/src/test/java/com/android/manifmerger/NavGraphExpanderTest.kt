@@ -719,6 +719,75 @@ class NavGraphExpanderTest {
     validateDeepLinksGoToOneIntentFilter(expectedOutputManifestString, navigationString1, navigationString2, navigationString3)
   }
 
+  @Test
+  fun testMultipleErrorsReported() {
+    val navigationId1 = "nav1"
+    val navigationString1 =
+      """
+      |"|<?xml version="1.0" encoding="UTF-8"?>
+      |<navigation
+      |    xmlns:android="http://schemas.android.com/apk/res/android"
+      |    xmlns:app="http://schemas.android.com/apk/res-auto">
+      |    <include app:graph="@navigation/nav2" />
+      |    <include app:graph="@navigation/nav3" />
+      |</navigation>
+      """
+        .trimMargin()
+
+    val navigationId2 = "nav2"
+    val navigationString2 =
+      """
+      |"|<?xml version="1.0" encoding="UTF-8"?>
+      |<navigation
+      |    xmlns:android="http://schemas.android.com/apk/res/android"
+      |    xmlns:app="http://schemas.android.com/apk/res-auto">
+      |    <include app:graph="@navigation/nav1" />
+      |</navigation>
+      """
+        .trimMargin()
+
+    // nav3 is missing from loadedNavigationMap
+
+    val inputManifestString =
+      """
+      |"|<?xml version="1.0" encoding="UTF-8"?>
+      |<manifest
+      |    xmlns:android="http://schemas.android.com/apk/res/android"
+      |    package="com.example.app1">
+      |    <application android:name="TheApp">
+      |        <activity android:name=".MainActivity">
+      |            <nav-graph android:value="@navigation/nav1" />
+      |        </activity>
+      |    </application>
+      |</manifest>
+      """
+        .trimMargin()
+
+    val xmlDocument = TestUtils.xmlDocumentFromString(UNKNOWN, inputManifestString, model)
+
+    val loadedNavigationMap: Map<String, NavigationXmlDocument> =
+      mapOf(
+        Pair(navigationId1, NavigationXmlLoader.load(UNKNOWN, navigationString1)),
+        Pair(navigationId2, NavigationXmlLoader.load(UNKNOWN, navigationString2)),
+      )
+
+    expandNavGraphs(xmlDocument, loadedNavigationMap, mergingReportBuilder)
+
+    // verify both errors were recorded.
+    verify(mergingReportBuilder)
+      .addMessage(
+        any<SourceFilePosition>(),
+        eq(MergingReport.Record.Severity.ERROR),
+        eq("Illegal circular reference among navigation files when traversing navigation file references: nav1 > nav2 > nav1."),
+      )
+    verify(mergingReportBuilder)
+      .addMessage(
+        any<SourceFilePosition>(),
+        eq(MergingReport.Record.Severity.ERROR),
+        eq("Referenced navigation file with navigationXmlId = nav3 not found"),
+      )
+  }
+
   private fun validateDeepLinksGoToOneIntentFilter(expectedOutputManifestString: String, vararg navigationStrings: String) {
     val inputManifestString =
       """

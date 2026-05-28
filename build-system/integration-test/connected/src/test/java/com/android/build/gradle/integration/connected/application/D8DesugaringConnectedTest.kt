@@ -21,20 +21,30 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.EmptyGradleProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
-import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.integration.connected.utils.getEmulator
+import com.android.build.gradle.options.BooleanOption
 import com.android.utils.FileUtils
 import com.google.common.collect.ImmutableMap
+import com.google.common.truth.Truth.assertThat
+import java.io.File
+import javax.xml.parsers.DocumentBuilderFactory
 import org.junit.Before
 import org.junit.ClassRule
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
-class D8DesugaringConnectedTest {
+@RunWith(Parameterized::class)
+class D8DesugaringConnectedTest(val runWithBuiltInPlatform: Boolean) {
 
   companion object {
     @ClassRule @JvmField val emulator = getEmulator()
+
+    @JvmStatic
+    @Parameterized.Parameters(name = "runWithBuiltInPlatform={0}")
+    fun parameters(): Collection<Array<Any>> = listOf(arrayOf(false), arrayOf(true))
   }
 
   @get:Rule
@@ -60,7 +70,7 @@ class D8DesugaringConnectedTest {
                         applicationId "com.example.d8desugartest"
                         minSdkVersion 20
                         //noinspection ExpiredTargetSdkVersion
-                        targetSdkVersion 20
+                        targetSdkVersion ${GradleTestProject.DEFAULT_COMPILE_SDK_VERSION}
                         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
                     }
 
@@ -164,7 +174,34 @@ class D8DesugaringConnectedTest {
 
   @Test
   fun runAndroidTest() {
-    val result = project.executor().run("app:connectedBaseDebugAndroidTest")
-    result.stdout.use { stdout -> assertThat(stdout).contains("Starting 2 tests on") }
+    project.executor().with(BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM, runWithBuiltInPlatform).run("app:connectedBaseDebugAndroidTest")
+    verifyTestResultXml()
+  }
+
+  private fun verifyTestResultXml() {
+    val androidTestResultsDir =
+      File(project.getSubproject(":app").projectDir, "build/outputs/androidTest-results/connected/debug/flavors/base")
+
+    val xmlFiles = androidTestResultsDir.listFiles { _, name -> name.startsWith("TEST-") && name.endsWith(".xml") }
+
+    assertThat(xmlFiles).isNotNull()
+    assertThat(xmlFiles).isNotEmpty()
+
+    val xmlFile = xmlFiles!![0]
+
+    val dbFactory = DocumentBuilderFactory.newInstance()
+    val dBuilder = dbFactory.newDocumentBuilder()
+    val doc = dBuilder.parse(xmlFile)
+    doc.documentElement.normalize()
+
+    val rootName = doc.documentElement.nodeName
+    if (rootName == "testsuites" || rootName == "testsuite") {
+      val testsAttr = doc.documentElement.getAttribute("tests")
+      assertThat(testsAttr).isEqualTo("2")
+      val failuresAttr = doc.documentElement.getAttribute("failures")
+      assertThat(failuresAttr).isEqualTo("0")
+    } else {
+      throw AssertionError("Unexpected root element in test result XML: $rootName")
+    }
   }
 }

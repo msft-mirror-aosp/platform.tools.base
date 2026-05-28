@@ -437,6 +437,7 @@ class ComposeInspectorTest {
           includeAttributes = false,
           includeResolutionStack = false,
           composeInspectorConnected = composeInspectorConnected,
+          skipSystemComposables = true,
         )
       }
     } finally {

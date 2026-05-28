@@ -193,6 +193,13 @@ const SourceViewApp = {
         if (typeof Navigation !== 'undefined') {
             Navigation.replace();
         }
+
+        // Auto-focus breadcrumbs for orientation
+        const currentBreadcrumb = this.elements.sourceBreadcrumbs.querySelector('.font-semibold');
+        if (currentBreadcrumb) {
+            currentBreadcrumb.setAttribute('tabindex', '-1');
+            currentBreadcrumb.focus();
+        }
     },
 
     renderBreadcrumbs() {
@@ -201,17 +208,17 @@ const SourceViewApp = {
         const { moduleName } = this.context;
 
         let html = `<div class="flex items-center gap-2 text-sm">
-            <a href="#" class="breadcrumb-link" data-action="go-to-modules">Project</a>`;
+            <a href="#" class="breadcrumb-link" data-action="go-to-modules" aria-label="Go back to Project Overview">Project</a>`;
 
         if (moduleName) {
             html += `
                 <span class="breadcrumb-separator" aria-hidden="true">/</span>
-                <a href="#" class="breadcrumb-link" data-action="go-to-packages" data-module-name="${this.escapeHTML(moduleName)}">${this.escapeHTML(moduleName)}</a>`;
+                <a href="#" class="breadcrumb-link" data-action="go-to-packages" data-module-name="${this.escapeHTML(moduleName)}" aria-label="Go back to module: ${this.escapeHTML(moduleName)}">${this.escapeHTML(moduleName)}</a>`;
         }
         if (packageName) {
              html += `
                 <span class="breadcrumb-separator" aria-hidden="true">/</span>
-                <a href="#" class="breadcrumb-link" data-action="go-to-classes" data-module-name="${this.escapeHTML(moduleName)}" data-package-name="${this.escapeHTML(packageName)}">${this.escapeHTML(packageName)}</a>`;
+                <a href="#" class="breadcrumb-link" data-action="go-to-classes" data-module-name="${this.escapeHTML(moduleName)}" data-package-name="${this.escapeHTML(packageName)}" aria-label="Go back to package: ${this.escapeHTML(packageName)}">${this.escapeHTML(packageName)}</a>`;
         }
 
         html += `
@@ -542,9 +549,6 @@ const SourceViewApp = {
     },
 
     renderFunctionList() {
-        const header = this.elements.functionListContainer.querySelector('h3');
-        if(header) header.textContent = "Methods";
-
         if (!this.classData.methods || this.classData.methods.length === 0) {
             this.elements.functionList.innerHTML = '<div class="text-sm text-gray-500 px-3">No methods found</div>';
             return;

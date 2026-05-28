@@ -35,7 +35,7 @@ const UIUtils = {
    * Builds a multi-select dropdown with "Select All" / "Clear" actions
    * and a scrollable list of options.
    */
-  buildActionDropdown(container, options, initialState, onSelectionChange, searchable = true, multiSelect = true) {
+  buildActionDropdown(container, options, selectedValueOrArray, onSelectionChange, searchable = true, multiSelect = true) {
     if (!container) return;
 
     container.innerHTML = "";
@@ -44,8 +44,8 @@ const UIUtils = {
     container.setAttribute("role", multiSelect ? "group" : "listbox");
 
     let currentState = multiSelect
-      ? (Array.isArray(initialState) ? [...initialState] : [])
-      : initialState;
+      ? (Array.isArray(selectedValueOrArray) ? [...selectedValueOrArray] : [])
+      : selectedValueOrArray;
 
     let searchInput = null;
     if (searchable) {
@@ -56,6 +56,7 @@ const UIUtils = {
       searchInput.type = "text";
       searchInput.className = "popover-search";
       searchInput.placeholder = "Search...";
+      searchInput.setAttribute("autocomplete", "off");
 
       searchContainer.appendChild(searchInput);
       container.appendChild(searchContainer);
@@ -211,11 +212,149 @@ const BREADCRUMB_ACTIONS = {
   GO_TO_TEST_CASES: 'go-to-test-cases'
 };
 
+const Tooltip = {
+  element: null,
+  activeTarget: null,
+  hideTimeout: null,
+
+  init() {
+    this.element = document.getElementById('a11y-tooltip');
+    if (!this.element) return;
+
+    document.body.addEventListener('mouseover', (e) => {
+      const target = e.target.closest('[data-tooltip], [title], [data-stored-title]');
+      if (target && !target.contains(e.relatedTarget)) this.show(target);
+    });
+
+    document.body.addEventListener('mouseout', (e) => {
+      const target = e.target.closest('[data-tooltip], [title], [data-stored-title]');
+      if (target && !target.contains(e.relatedTarget)) {
+        this.startHide();
+      }
+    });
+
+    document.body.addEventListener('focusin', (e) => {
+      const target = e.target.closest('[data-tooltip], [title], [data-stored-title]');
+      if (target && !target.contains(e.relatedTarget)) this.show(target);
+    });
+
+    document.body.addEventListener('focusout', (e) => {
+      const target = e.target.closest('[data-tooltip], [title], [data-stored-title]');
+      if (target && !target.contains(e.relatedTarget)) {
+        this.hide();
+      }
+    });
+
+    // Dismiss tooltip on scroll (prevent detaching from element)
+    window.addEventListener('scroll', () => this.hide(), true);
+
+    // Keep tooltip open when hovering over it
+    this.element.addEventListener('mouseenter', () => this.clearHide());
+    this.element.addEventListener('mouseleave', () => this.startHide());
+  },
+
+  show(target) {
+    this.clearHide();
+
+    if (this.activeTarget && this.activeTarget !== target) {
+      this.hide();
+    }
+
+    let text = target.getAttribute('data-tooltip') || target.getAttribute('title') || target.dataset.storedTitle;
+    if (!text) {
+      this.hide();
+      return;
+    }
+
+    // Prevent native tooltip by transiently removing title
+    if (target.hasAttribute('title')) {
+      target.dataset.storedTitle = target.getAttribute('title');
+      target.removeAttribute('title');
+    }
+
+    // Establish programmatic connection for ALL targets
+    if (!target.hasAttribute('aria-describedby')) {
+        target.setAttribute('aria-describedby', 'a11y-tooltip');
+        target.dataset.addedAriaDescribedby = 'true';
+    }
+
+    // Ensure accessible name is preserved if no other source exists
+    if (!target.hasAttribute('aria-label') && !target.hasAttribute('aria-labelledby')) {
+        target.setAttribute('aria-label', text);
+        target.dataset.addedAriaLabel = 'true';
+    }
+
+    this.activeTarget = target;
+    this.element.textContent = text;
+    this.element.classList.remove('top', 'bottom');
+    this.element.classList.add('visible');
+
+    const rect = target.getBoundingClientRect();
+    const tooltipRect = this.element.getBoundingClientRect();
+
+    let top = rect.top - tooltipRect.height - 10;
+    let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+
+    // Flip if no space on top
+    if (top < 10) {
+      top = rect.bottom + 10;
+      this.element.classList.add('bottom');
+    } else {
+      this.element.classList.add('top');
+    }
+
+    // Keep within viewport horizontal bounds
+    const originalLeft = left;
+    left = Math.max(10, Math.min(left, window.innerWidth - tooltipRect.width - 10));
+
+    // Position arrow to point at target center
+    const arrowX = (rect.left + rect.width / 2) - left;
+    this.element.style.setProperty('--arrow-x', `${arrowX}px`);
+
+    this.element.style.top = `${top}px`;
+    this.element.style.left = `${left}px`;
+    this.element.setAttribute('aria-hidden', 'false');
+  },
+
+  startHide() {
+    this.hideTimeout = setTimeout(() => this.hide(), 100);
+  },
+
+  clearHide() {
+    if (this.hideTimeout) clearTimeout(this.hideTimeout);
+  },
+
+  hide() {
+    if (!this.element || !this.activeTarget) return;
+
+    if (this.activeTarget) {
+      if (this.activeTarget.dataset.storedTitle !== undefined) {
+        this.activeTarget.setAttribute('title', this.activeTarget.dataset.storedTitle);
+        delete this.activeTarget.dataset.storedTitle;
+      }
+      if (this.activeTarget.dataset.addedAriaDescribedby) {
+          this.activeTarget.removeAttribute('aria-describedby');
+          delete this.activeTarget.dataset.addedAriaDescribedby;
+      }
+      if (this.activeTarget.dataset.addedAriaLabel) {
+          // Keep aria-label intact to ensure permanent accessible name
+          delete this.activeTarget.dataset.addedAriaLabel;
+      }
+    }
+
+    this.element.classList.remove('visible', 'top', 'bottom');
+    this.element.setAttribute('aria-hidden', 'true');
+    this.activeTarget = null;
+  }
+};
+
 /**
  * Main application object.
  * DEPENDENCY: Requires 'TEST_DATA_SOURCE' to be defined in data.js
  */
 const TestReportApp = {
+  activeTrigger: null,
+
   state: {
     viewMode: 'flat',
     density: 'comfy',
@@ -224,7 +363,7 @@ const TestReportApp = {
     selectedPackage: null,
     selectedClass: null,
     currentView: 'report',
-    currentStackTrace: null,
+    currentTestCase: null,
     currentStackTraceContext: {},
     filters: { variants: [], search: '', status: ['passed', 'failed', 'skipped'], testSuite: 'all', modules: [], packages: [], classes: [], testCases: [] },
     sort: { by: 'name', order: 'asc' },
@@ -236,7 +375,9 @@ const TestReportApp = {
   elements: {},
 
   init: function () {
+    this.baseTitle = document.title;
     this.cacheDOMElements();
+    Tooltip.init();
 
     // Directly access the global variable from data.js
     if (typeof TEST_DATA_SOURCE !== 'undefined') {
@@ -255,61 +396,96 @@ const TestReportApp = {
 
   initResizableColumns() {
     const headerRow = this.elements.tableHeaders;
-    let activeResizer = null;
-    let startX, startWidth, resizerId;
-    let animationFrameId = null;
 
     const setColumnWidth = (id, width) => {
         document.documentElement.style.setProperty(`--col-width-${id.replace(/\./g, '-')}`, `${width}px`);
-    };
-
-    const onPointerMove = (e) => {
-        if (!activeResizer) return;
-        const diffX = e.pageX - startX;
-        const newWidth = Math.max(50, startWidth + diffX);
-
-        this.state.columnWidths[resizerId] = newWidth;
-
-        if (animationFrameId) {
-            cancelAnimationFrame(animationFrameId);
-        }
-        animationFrameId = requestAnimationFrame(() => {
-            setColumnWidth(resizerId, newWidth);
-        });
-    };
-
-    const onPointerUp = (e) => {
-        if (activeResizer) {
-            if (activeResizer.hasPointerCapture(e.pointerId)) {
-                activeResizer.releasePointerCapture(e.pointerId);
-            }
-            activeResizer.classList.remove('resizing');
-            activeResizer.removeEventListener('pointermove', onPointerMove);
-            activeResizer.removeEventListener('pointerup', onPointerUp);
-            activeResizer.removeEventListener('pointercancel', onPointerUp);
-            activeResizer = null;
-            setTimeout(() => { this.state.isResizing = false; }, 0);
-        }
+        const resizer = this.elements.tableHeaders.querySelector(`.resizer[data-resizer-id="${id}"]`);
+        if (resizer) resizer.setAttribute('aria-valuenow', Math.round(width));
     };
 
     headerRow.addEventListener('pointerdown', (e) => {
         if (e.target.classList.contains('resizer')) {
-            activeResizer = e.target;
-            resizerId = activeResizer.dataset.resizerId;
-            const columnTh = activeResizer.closest('th');
-            startX = e.pageX;
-            startWidth = columnTh.getBoundingClientRect().width;
+            if (this.state.isResizing) return;
 
-            activeResizer.setPointerCapture(e.pointerId);
-            activeResizer.classList.add('resizing');
+            const resizer = e.target;
+            const resizerId = resizer.dataset.resizerId;
+            const columnTh = resizer.closest('th');
+            const startX = e.pageX;
+            const startWidth = columnTh.getBoundingClientRect().width;
+            let animationFrameId = null;
+
+            resizer.setPointerCapture(e.pointerId);
+            resizer.classList.add('resizing');
             this.state.isResizing = true;
 
-            activeResizer.addEventListener('pointermove', onPointerMove);
-            activeResizer.addEventListener('pointerup', onPointerUp);
-            activeResizer.addEventListener('pointercancel', onPointerUp);
+            const onPointerMove = (moveEvt) => {
+                const diffX = moveEvt.pageX - startX;
+                const newWidth = Math.max(50, startWidth + diffX);
+                this.state.columnWidths[resizerId] = newWidth;
+
+                if (animationFrameId) cancelAnimationFrame(animationFrameId);
+                animationFrameId = requestAnimationFrame(() => {
+                    setColumnWidth(resizerId, newWidth);
+                });
+            };
+
+            const onPointerUp = (upEvt) => {
+                resizer.releasePointerCapture(upEvt.pointerId);
+                resizer.classList.remove('resizing');
+                resizer.removeEventListener('pointermove', onPointerMove);
+                resizer.removeEventListener('pointerup', onPointerUp);
+                resizer.removeEventListener('pointercancel', onPointerUp);
+                setTimeout(() => { this.state.isResizing = false; }, 0);
+            };
+
+            resizer.addEventListener('pointermove', onPointerMove);
+            resizer.addEventListener('pointerup', onPointerUp);
+            resizer.addEventListener('pointercancel', onPointerUp);
 
             e.preventDefault();
             e.stopPropagation();
+        }
+    });
+
+    headerRow.addEventListener('dblclick', (e) => {
+        if (e.target.classList.contains('resizer')) {
+            const id = e.target.dataset.resizerId;
+            delete this.state.columnWidths[id];
+            document.documentElement.style.removeProperty(`--col-width-${id.replace(/\./g, '-')}`);
+            // Update to default width instead of removing
+            const newWidth = e.target.closest('th').getBoundingClientRect().width;
+            e.target.setAttribute('aria-valuenow', Math.round(newWidth));
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    });
+
+    headerRow.addEventListener('keydown', (e) => {
+        if (e.target.classList.contains('resizer')) {
+            const id = e.target.dataset.resizerId;
+            const columnTh = e.target.closest('th');
+            const currentWidth = columnTh.getBoundingClientRect().width;
+            let newWidth = this.state.columnWidths[id] || currentWidth;
+
+            if (e.key === 'ArrowLeft') {
+                newWidth = Math.max(50, newWidth - 10);
+                this.state.columnWidths[id] = newWidth;
+                setColumnWidth(id, newWidth);
+                e.preventDefault();
+            } else if (e.key === 'ArrowRight') {
+                newWidth = Math.min(1000, newWidth + 10);
+                this.state.columnWidths[id] = newWidth;
+                setColumnWidth(id, newWidth);
+                e.preventDefault();
+            } else if (e.key === 'Enter' || e.key === ' ') {
+                e.stopImmediatePropagation();
+                delete this.state.columnWidths[id];
+                document.documentElement.style.removeProperty(`--col-width-${id.replace(/\./g, '-')}`);
+                // Update to default width instead of removing
+                const resetWidth = e.target.closest('th').getBoundingClientRect().width;
+                e.target.setAttribute('aria-valuenow', Math.round(resetWidth));
+                e.preventDefault();
+            }
         }
     });
 
@@ -385,73 +561,51 @@ const TestReportApp = {
       addFilterBtn: document.getElementById('add-filter-btn'),
       addFilterDropdown: document.getElementById('add-filter-dropdown'),
       addFilterList: document.getElementById('add-filter-list'),
+      searchContainer: document.querySelector('.search-container'),
       searchRevealBtn: document.getElementById('search-reveal-btn'),
       searchWrapper: document.getElementById('search-wrapper'),
       searchClearBtn: document.getElementById('search-clear-btn'),
 
       reportViewControls: document.getElementById('report-view-controls'),
+      filterControlsGroup: document.querySelector('.flex-start-gap-4'),
       reportView: document.getElementById('report-view'),
       stackTraceView: document.getElementById('stack-trace-view'),
       stackTraceBreadcrumbs: document.getElementById('stack-trace-breadcrumbs'),
-      stackTraceContainer: document.getElementById('stack-trace-container'),
-      stackTraceContent: document.getElementById('stack-trace-content'),
-      stackTraceTitle: document.getElementById('stack-trace-title'),
+      stackTraceGrid: document.getElementById('stack-trace-grid'),
     };
   },
 
-  setupTestResults(testCaseData) {
-    // Deep copy to avoid mutating the original source if used elsewhere
-    const dataCopy = JSON.parse(JSON.stringify(testCaseData));
-    this.state.variants = dataCopy.variants;
-    this.state.filters.variants = [...dataCopy.variants]; // Default to all selected
+  setupTestResults(rootReport) {
+    this.state.variants = rootReport.variants;
+    this.state.testSuites = rootReport.testSuites;
+    this.state.filters.variants = [...rootReport.variants];
 
     // Populate header
-    if (this.elements.appTitle) this.elements.appTitle.textContent = dataCopy.projectName || 'Test Report';
-    if (this.elements.reportDate) this.elements.reportDate.textContent = dataCopy.timestamp || '';
-    if (this.elements.totalModules) this.elements.totalModules.textContent = dataCopy.numberOfModules || 0;
-    if (this.elements.totalPackages) this.elements.totalPackages.textContent = dataCopy.numberOfPackages || 0;
-    if (this.elements.totalClasses) this.elements.totalClasses.textContent = dataCopy.numberOfClasses || 0;
+    if (this.elements.appTitle) this.elements.appTitle.textContent = rootReport.projectName || 'Test Report';
+    if (this.elements.reportDate) this.elements.reportDate.textContent = rootReport.timestamp || '';
+    if (this.elements.totalModules) this.elements.totalModules.textContent = rootReport.numberOfModules || 0;
+    if (this.elements.totalPackages) this.elements.totalPackages.textContent = rootReport.numberOfPackages || 0;
+    if (this.elements.totalClasses) this.elements.totalClasses.textContent = rootReport.numberOfClasses || 0;
 
-    const processNode = (node, type) => {
-      node.type = type;
-      const childKey = this.pluralize(this.getChildType(type));
-      let children = node[childKey];
+    const annotateType = (node, type) => {
+        node.type = type;
+        const childType = this.getChildType(type);
+        if (!childType) return;
 
-      if (type === 'class') {
-        children = node.testCases || [];
-      }
-
-      if (children) {
-        children.forEach(child => processNode(child, this.getChildType(type)));
-      }
-
-      node.summary = this._calculateSummaryFromChildren(children);
+        const childKey = this.pluralize(childType);
+        const children = node[childKey] || (type === 'class' ? node.testCases : []) || [];
+        children.forEach(child => annotateType(child, childType));
     };
+    rootReport.modules.forEach(m => annotateType(m, 'module'));
 
-    const suiteSet = new Set();
-    const extractSuites = (nodes) => {
-      if (!nodes) return;
-      nodes.forEach(n => {
-        if (n.testSuiteSummaries) {
-          n.testSuiteSummaries.forEach(ts => suiteSet.add(ts.name));
-        }
-        if (n.packages) extractSuites(n.packages);
-        if (n.classes) extractSuites(n.classes);
-      });
-    };
-    extractSuites(dataCopy.modules);
-    this.state.testSuites = Array.from(suiteSet).sort();
-
-    dataCopy.modules.forEach(module => processNode(module, 'module'));
-    dataCopy.summary = this._calculateSummaryFromChildren(dataCopy.modules);
-    this.processedData = dataCopy;
+    this.processedData = rootReport;
   },
 
   populateFilters() {
     // Test Suite Dropdown
     const testSuiteOptions = [
       { name: 'All', value: 'all' },
-      ...this.state.testSuites.map(ts => ({ name: ts, value: ts }))
+      ...this.state.testSuites.filter(ts => ts !== 'Aggregated').map(ts => ({ name: ts, value: ts }))
     ];
     UIUtils.buildActionDropdown(this.elements.testSuiteFilterList, testSuiteOptions, this.state.filters.testSuite, (newVal) => {
       this.state.filters.testSuite = newVal;
@@ -522,13 +676,16 @@ const TestReportApp = {
     const totalCount = this.state.variants.length;
 
     if (this.elements.variantFilterBtn) {
+      let label = 'Filter by Variant';
       if (selectedCount === totalCount && totalCount > 0) {
-          this.elements.variantFilterBtn.setAttribute('data-tooltip', 'Filter by Variant: All');
+          label = 'Filter by Variant: All';
       } else if (selectedCount === 1) {
-          this.elements.variantFilterBtn.setAttribute('data-tooltip', `Filter by Variant: ${this.state.filters.variants[0]}`);
+          label = `Filter by Variant: ${this.state.filters.variants[0]}`;
       } else {
-          this.elements.variantFilterBtn.setAttribute('data-tooltip', `Filter by Variant: ${selectedCount} Selected`);
+          label = `Filter by Variant: ${selectedCount} Selected`;
       }
+      this.elements.variantFilterBtn.setAttribute('data-tooltip', label);
+      this.elements.variantFilterBtn.setAttribute('aria-label', label);
     }
   },
 
@@ -536,6 +693,10 @@ const TestReportApp = {
   bindEvents() {
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
+        if (Tooltip.activeTarget) {
+            Tooltip.hide();
+            return;
+        }
         const openDropdownConf = this.getDropdownConfigs().find(c => c.dropdown && !c.dropdown.classList.contains('hidden'));
         if (openDropdownConf) {
           this.toggleDropdown(openDropdownConf.dropdown, openDropdownConf.btn);
@@ -772,7 +933,7 @@ const TestReportApp = {
     });
     this.elements.resultsData.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
-            const clickable = e.target.closest('[data-interactive="flat"], [data-interactive="tree"], .clickable-status');
+            const clickable = e.target.closest('[data-interactive="flat"], [data-interactive="tree"], .clickable-status, .stack-trace-trigger');
             if (clickable) {
                 e.preventDefault();
                 clickable.click();
@@ -850,10 +1011,15 @@ const TestReportApp = {
             this.state.sort.order = 'asc';
         }
 
+        const headerName = th.textContent.replace(/[▲▼]/g, '').trim();
+        const orderText = this.state.sort.order === 'asc' ? 'ascending' : 'descending';
+        this.announce(`Sorted by ${headerName}, ${orderText}`);
+
         this.render();
         Navigation.push();
     });
     this.elements.tableHeaders.addEventListener('keydown', (e) => {
+        if (e.target.classList.contains('resizer')) return;
         if (e.key === 'Enter' || e.key === ' ') {
             const th = e.target.closest('[data-sort-by]');
             if (th) {
@@ -1005,10 +1171,14 @@ const TestReportApp = {
   announce(message) {
       const announcer = document.getElementById('a11y-announcer');
       if (announcer) {
-          announcer.textContent = message;
+          announcer.textContent = '';
+          if (this.announceTimeout) clearTimeout(this.announceTimeout);
+          // Small delay to ensure the DOM change is registered
+          this.announceTimeout = setTimeout(() => {
+              announcer.textContent = message;
+          }, 50);
       }
   },
-
   closeDropdownsOnClickOutside() {
     document.addEventListener('click', (e) => {
       this.getDropdownConfigs().forEach(({ btn, dropdown }) => {
@@ -1183,7 +1353,6 @@ const TestReportApp = {
           if (node.testSuiteSummaries) {
             const suiteMatch = node.testSuiteSummaries.find(ts => ts.name === this.state.filters.testSuite);
             if (!suiteMatch) return false;
-            node.summary = suiteMatch.summary;
           } else {
             return false;
           }
@@ -1198,11 +1367,12 @@ const TestReportApp = {
             let hasSkipped = false;
 
             this.state.filters.variants.forEach(v => {
-              const statusVal = node[v];
-              const status = (typeof statusVal === 'object' && statusVal !== null) ? statusVal.status : statusVal;
-              if (status === 'fail') hasFail = true;
-              if (status === 'pass') hasPass = true;
-              if (status === 'skipped') hasSkipped = true;
+              const res = this.getVariantResultForTestCase(node, this.state.filters.testSuite, v);
+              if (res) {
+                  if (res.status === 'fail') hasFail = true;
+                  if (res.status === 'pass') hasPass = true;
+                  if (res.status === 'skipped') hasSkipped = true;
+              }
             });
 
             matchesStatus = false;
@@ -1253,10 +1423,15 @@ const TestReportApp = {
   // --- RENDERING ---
   render() {
     this.updateDynamicFilters();
-    const data = this.getFilteredAndSortedData();
-    this.renderTable(data);
-    this.updateGroupByText();
-    this.updateTooltipsForOverflow();
+
+    if (this.state.currentView === 'stack-trace') {
+        this.renderStackTraceGrid(this.state.currentTestCase);
+    } else {
+        const data = this.getFilteredAndSortedData();
+        this.renderTable(data);
+        this.updateGroupByText();
+        this.updateTooltipsForOverflow();
+    }
 
     const visibleItemsCount = this.elements.resultsData.querySelectorAll('tr.table-row:not(.hidden)').length;
     this.announce(`Showing ${visibleItemsCount} results.`);
@@ -1373,24 +1548,27 @@ const TestReportApp = {
     let pathSubHeader = '';
     if (this.state.viewMode === 'flat' && !this.state.selectedModule) {
       if (this.state.currentFlatView === 'classes' || this.state.currentFlatView === 'testCases') {
-        pathHeader = `<th class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30 col-path">Path<div class="resizer" data-resizer-id="path"></div></th>`;
-        pathSubHeader = `<th class="py-2 px-6 bg-gray-50 z-30 col-path"></th>`;
+        const pathWidth = Math.round(this.state.columnWidths['path'] || 300);
+        pathHeader = `<th scope="col" class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30 col-path">Path<div class="resizer" data-resizer-id="path" tabindex="0" role="separator" aria-label="Resize column" aria-orientation="vertical" aria-valuemin="50" aria-valuemax="1000" aria-valuenow="${pathWidth}"></div></th>`;
+        pathSubHeader = `<th scope="col" class="py-2 px-6 bg-gray-50 z-30 col-path"></th>`;
       } else if (this.state.currentFlatView === 'packages') {
-        pathHeader = `<th class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30 col-module">Module<div class="resizer" data-resizer-id="module"></div></th>`;
-        pathSubHeader = `<th class="py-2 px-6 bg-gray-50 z-30 col-module"></th>`;
+        const moduleWidth = Math.round(this.state.columnWidths['module'] || 200);
+        pathHeader = `<th scope="col" class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30 col-module">Module<div class="resizer" data-resizer-id="module" tabindex="0" role="separator" aria-label="Resize column" aria-orientation="vertical" aria-valuemin="50" aria-valuemax="1000" aria-valuenow="${moduleWidth}"></div></th>`;
+        pathSubHeader = `<th scope="col" class="py-2 px-6 bg-gray-50 z-30 col-module"></th>`;
       }
     }
 
+    const nameWidth = Math.round(this.state.columnWidths['name'] || 400);
     this.elements.tableHeaders.innerHTML = `
             <tr class="border-b border-gray-200">
-                <th class="py-4 px-6 text-left font-semibold text-gray-700 sticky-name bg-gray-50 z-30 cursor-pointer" data-sort-by="name" tabindex="0" aria-sort="${getAriaSort('name')}">${nameHeader} ${sortIndicator('name')}<div class="resizer" data-resizer-id="name"></div></th>
+                <th scope="col" class="py-4 px-6 text-left font-semibold text-gray-700 sticky-name bg-gray-50 z-30 cursor-pointer" data-sort-by="name" tabindex="0" aria-sort="${getAriaSort('name')}">${nameHeader} ${sortIndicator('name')}<div class="resizer" data-resizer-id="name" tabindex="0" role="separator" aria-label="Resize column" aria-orientation="vertical" aria-valuemin="50" aria-valuemax="1000" aria-valuenow="${nameWidth}"></div></th>
                 ${pathHeader}
-                ${variantsToShow.map(v => `<th class="py-4 px-4 text-center font-semibold text-gray-700 border-l border-gray-200" colspan="4">${UIUtils.escapeHTML(v)}</th>`).join('')}
+                ${variantsToShow.map(v => `<th scope="col" class="py-4 px-4 text-center font-semibold text-gray-700 border-l border-gray-200" colspan="4">${UIUtils.escapeHTML(v)}</th>`).join('')}
             </tr>
             <tr class="border-b border-gray-200">
-                <th class="py-2 px-6 sticky-name bg-gray-50 z-30"></th>
+                <th scope="col" class="py-2 px-6 sticky-name bg-gray-50 z-30"></th>
                 ${pathSubHeader}
-                ${variantsToShow.map(v => `<th class="py-2 px-4 text-center text-xs font-medium text-gray-600 border-l border-gray-200">Pass</th><th class="py-2 px-4 text-center text-xs font-medium text-gray-600">Fail</th><th class="py-2 px-4 text-center text-xs font-medium text-gray-600">Skip</th><th class="py-2 px-4 text-center text-xs font-medium text-gray-600">Pass Rate</th>`).join('')}
+                ${variantsToShow.map(v => `<th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600 border-l border-gray-200">Pass</th><th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600">Fail</th><th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600">Skip</th><th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600">Pass Rate</th>`).join('')}
             </tr>`;
   },
 
@@ -1404,7 +1582,7 @@ const TestReportApp = {
 
     // "Project" is the root link
     if (selectedModule) {
-        html += `<a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_MODULES}">Project</a>`;
+        html += `<a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_MODULES}" aria-label="Go back to Project Overview">Project</a>`;
     } else {
         html += `<span class="breadcrumb-current">Project</span>`;
     }
@@ -1413,7 +1591,7 @@ const TestReportApp = {
     if (selectedModule) {
         html += `<span class="breadcrumb-separator">/</span>`;
         if (selectedPackage) {
-            html += `<a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_PACKAGES}">${UIUtils.escapeHTML(selectedModule)}</a>`;
+            html += `<a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_PACKAGES}" aria-label="Go back to module: ${UIUtils.escapeHTML(selectedModule)}">${UIUtils.escapeHTML(selectedModule)}</a>`;
         } else {
             html += `<span class="breadcrumb-current">${UIUtils.escapeHTML(selectedModule)}</span>`;
         }
@@ -1423,7 +1601,7 @@ const TestReportApp = {
     if (selectedPackage) {
         html += `<span class="breadcrumb-separator">/</span>`;
         if (selectedClass) {
-            html += `<a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_CLASSES}">${UIUtils.escapeHTML(selectedPackage)}</a>`;
+            html += `<a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_CLASSES}" aria-label="Go back to package: ${UIUtils.escapeHTML(selectedPackage)}">${UIUtils.escapeHTML(selectedPackage)}</a>`;
         } else {
             html += `<span class="breadcrumb-current">${UIUtils.escapeHTML(selectedPackage)}</span>`;
         }
@@ -1453,7 +1631,11 @@ const TestReportApp = {
       const hasChildren = children.length > 0;
       const uniqueId = `${parentId}-${node.name}`.replace(/[^a-zA-Z0-9-_]/g, '');
 
-      const nameContent = `<span class="font-medium">${UIUtils.escapeHTML(node.name)}</span>`;
+      let nameContent = `<span class="font-medium">${UIUtils.escapeHTML(node.name)}</span>`;
+      if (type === 'testCase' && this.hasVisibleFailures(node)) {
+          nameContent = `<span class="font-medium text-blue-700 hover-underline cursor-pointer stack-trace-trigger" onclick="TestReportApp.openStackTrace(this)" data-module="${UIUtils.escapeHTML(currentContext.moduleName || '')}" data-package="${UIUtils.escapeHTML(currentContext.packageName || '')}" data-class="${UIUtils.escapeHTML(currentContext.className || '')}" data-test-case="${UIUtils.escapeHTML(node.name || '')}" tabindex="0" role="button" aria-label="View stack trace for ${UIUtils.escapeHTML(node.name)}">${UIUtils.escapeHTML(node.name)}</span>`;
+      }
+
       const chevron = `<svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="collapsible-arrow ${!hasChildren ? 'invisible' : ''}"><path d="m9 18 6-6-6-6"></path></svg>`;
 
       const ariaExpanded = hasChildren ? 'aria-expanded="false"' : '';
@@ -1468,7 +1650,7 @@ const TestReportApp = {
                             ${chevron} ${nameContent}
                         </div>
                     </td>
-                    ${this._renderStatusCell(type === 'testCase' ? node : node.summary, type === 'testCase', currentContext)}
+                    ${this._renderStatusCell(node, currentContext)}
                 </tr>`;
 
       if (hasChildren) {
@@ -1492,8 +1674,10 @@ const TestReportApp = {
 
     this.elements.resultsData.innerHTML = items.map(item => {
         let nameTd = `<td class="py-3 px-6 sticky-name font-medium" title="${UIUtils.escapeHTML(item.name)}">${UIUtils.escapeHTML(item.name)}</td>`;
-        if (view !== 'testCases') {
+        if (item.type !== 'testCase') {
             nameTd = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover-underline cursor-pointer" tabindex="0" role="link" title="${UIUtils.escapeHTML(item.name)}" data-name="${UIUtils.escapeHTML(item.name)}" data-type="${item.type}" data-module-name="${UIUtils.escapeHTML(item.moduleName || '')}" data-package-name="${UIUtils.escapeHTML(item.packageName || '')}" data-interactive="flat">${UIUtils.escapeHTML(item.name)}</td>`;
+        } else if (this.hasVisibleFailures(item)) {
+            nameTd = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover-underline cursor-pointer stack-trace-trigger" onclick="TestReportApp.openStackTrace(this)" data-module="${UIUtils.escapeHTML(item.moduleName || '')}" data-package="${UIUtils.escapeHTML(item.packageName || '')}" data-class="${UIUtils.escapeHTML(item.className || '')}" data-test-case="${UIUtils.escapeHTML(item.name || '')}" tabindex="0" role="button" aria-label="View stack trace for ${UIUtils.escapeHTML(item.name)}">${UIUtils.escapeHTML(item.name)}</td>`;
         }
 
         let pathCell = '';
@@ -1526,7 +1710,7 @@ const TestReportApp = {
         return `<tr class="table-row">
             ${nameTd}
             ${pathCell}
-            ${this._renderStatusCell(view === 'testCases' ? item : item.summary, view === 'testCases', context)}
+            ${this._renderStatusCell(item, context)}
         </tr>`;
     }).join('') || '<tr><td colspan="100%" class="text-center text-gray-500" style="padding: 2rem;">No results found.</td></tr>';
   },
@@ -1563,173 +1747,248 @@ const TestReportApp = {
   },
 
   // --- HELPERS ---
-  _calculateSummaryFromChildren(children) {
-    if (!children || children.length === 0) {
-      // Return empty summary with 0s
-      const summary = { total: 0, passed: 0, failed: 0, skipped: 0, passRate: 0 };
-      this.state.variants.forEach(v => {
-        summary[v] = { passed: 0, failed: 0, skipped: 0, total: 0, rate: 0 };
-      });
-      return summary;
-    }
 
-    const summary = { total: 0, passed: 0, failed: 0, skipped: 0, passRate: 0 };
-    this.state.variants.forEach(v => {
-      summary[v] = { passed: 0, failed: 0, skipped: 0, total: 0, rate: 0 };
-    });
+  getVariantResultForTestCase(testCase, suiteName, variantName) {
+      if (!testCase.testSuiteResults) return null;
+      let suitesToSearch = [];
+      if (suiteName === 'all') {
+          suitesToSearch = testCase.testSuiteResults;
+      } else {
+          const specific = testCase.testSuiteResults.find(ts => ts.testSuiteName === suiteName);
+          if (specific) suitesToSearch = [specific];
+      }
 
-    children.forEach(child => {
-      this.state.variants.forEach(v => {
-        if (child.type === 'testCase') {
-          const statusVal = child[v];
-          const status = (typeof statusVal === 'object' && statusVal !== null) ? statusVal.status : statusVal;
-          if (status === 'pass') summary[v].passed++;
-          else if (status === 'fail') summary[v].failed++;
-          else if (status === 'skipped') summary[v].skipped++;
-          summary[v].total++;
-        } else {
-          // It's a node with summary
-          summary[v].passed += child.summary[v].passed;
-          summary[v].failed += child.summary[v].failed;
-          summary[v].skipped += child.summary[v].skipped;
-          summary[v].total += child.summary[v].total;
-        }
-      });
-    });
-
-    // Calculate rates
-    let totalPassed = 0;
-    let totalFailed = 0;
-    let totalSkipped = 0;
-
-    this.state.variants.forEach(v => {
-      const s = summary[v];
-      const relevant = s.passed + s.failed;
-      s.rate = relevant > 0 ? (s.passed / relevant) * 100 : 100; // Default to 100 if no tests? Or 0?
-      // If total is 0, rate is 0?
-      if (s.total === 0) s.rate = 0;
-
-      totalPassed += s.passed;
-      totalFailed += s.failed;
-      totalSkipped += s.skipped;
-    });
-    summary.passed = totalPassed;
-    summary.failed = totalFailed;
-    summary.skipped = totalSkipped;
-
-    summary.total = summary.passed + summary.failed + summary.skipped;
-    const relevantTotal = summary.passed + summary.failed;
-    summary.passRate = relevantTotal > 0 ? (summary.passed / relevantTotal) * 100 : 100;
-    return summary;
+      // Priority: Fail > Pass > Skipped
+      let finalRes = null;
+      for (const suite of suitesToSearch) {
+          const res = suite.variantResults[variantName];
+          if (res) {
+              if (res.status === 'fail') return res;
+              if (res.status === 'pass') finalRes = res;
+              if (res.status === 'skipped' && !finalRes) finalRes = res;
+          }
+      }
+      return finalRes;
   },
 
-  _renderStatusCell(summaryOrNode, isNode = false, context = {}) {
-    // If isNode is true, summaryOrNode is the node itself (for functions), otherwise it's a summary object
-    if (!summaryOrNode) {
-      const colspan = (this.state.filters.variants.length) * 4;
-      return `<td colspan="${colspan}"></td>`;
-    }
+  hasVisibleFailures(node) {
+    if (!node || node.type !== 'testCase') return false;
+    const activeSuite = this.state.filters.testSuite;
+    const activeVariants = this.state.filters.variants;
 
+    return (node.commonStackTraces || []).some(group => {
+        for (const [suite, variants] of Object.entries(group.occurrences)) {
+            if (activeSuite !== 'all' && suite !== activeSuite) continue;
+            if (variants.some(v => activeVariants.includes(v))) return true;
+        }
+        return false;
+    });
+  },
+
+  _renderStatusCell(node, context = {}) {
     const variantsToShow = this.state.filters.variants;
 
-    if (isNode) {
-      // Rendering for a function row - show direct status
-      return `${variantsToShow.map(v => {
-        const statusVal = summaryOrNode[v];
-        const status = (typeof statusVal === 'object' && statusVal !== null) ? statusVal.status : statusVal;
-        const stackTrace = (typeof statusVal === 'object' && statusVal !== null) ? statusVal.stackTrace : null;
-
-        let cellContent = '-';
-        let cellClass = 'py-3 px-4 text-center text-gray-500 border-l border-gray-200';
-
-        if (status === 'pass') {
-          cellContent = 'Passed';
-          cellClass = 'py-3 px-4 text-center text-green-600 font-medium border-l border-gray-200';
-        } else if (status === 'fail') {
-          if (stackTrace) {
-            cellContent = 'Failure';
-            cellClass = 'py-3 px-4 text-center text-red-600 font-bold border-l border-gray-200 clickable-status';
-            const contextAttrs = `data-module="${UIUtils.escapeHTML(context.moduleName || '')}" data-package="${UIUtils.escapeHTML(context.packageName || '')}" data-class="${UIUtils.escapeHTML(context.className || '')}" data-test-case="${UIUtils.escapeHTML(summaryOrNode.name || '')}"`;
-            return `<td colspan="4" class="${cellClass}" onclick="TestReportApp.openStackTrace(this)" data-stack-trace="${encodeURIComponent(stackTrace)}" ${contextAttrs} tabindex="0" role="button" aria-label="View stack trace for failed test"><div class="flex flex-col"><span>${cellContent}</span><span class="text-xs text-transparent select-none">&nbsp;</span></div></td>`;
-          } else {
-            cellContent = 'Failed';
-            cellClass = 'py-3 px-4 text-center text-red-600 font-bold border-l border-gray-200';
-          }
-        } else if (status === 'skipped') {
-          cellContent = 'Skipped';
-          cellClass = 'py-3 px-4 text-center text-yellow-600 border-l border-gray-200';
-        }
-
-        return `<td colspan="4" class="${cellClass}"><div class="flex flex-col"><span>${cellContent}</span><span class="text-xs text-transparent select-none">&nbsp;</span></div></td>`;
-      }).join('')}`;
+    if (!node) {
+      return variantsToShow.map(() => `<td colspan="4" class="border-l border-gray-200"></td>`).join('');
     }
 
-    // Rendering for a summary row
+    const suiteFilter = this.state.filters.testSuite;
+
     return `${variantsToShow.map(v => {
-      const stats = summaryOrNode[v];
-      if (!stats) return '<td colspan="4" class="text-center text-gray-500 border-l border-gray-200">-</td>';
+        let variantSummary = null;
+        if (suiteFilter === 'all') {
+            const aggregatedSuite = node.testSuiteSummaries.find(ts => ts.name === 'Aggregated');
+            if (aggregatedSuite) {
+                variantSummary = aggregatedSuite.variantSummaries.find(vs => vs.name === v);
+            }
+        } else {
+            const suiteSummary = node.testSuiteSummaries.find(ts => ts.name === suiteFilter);
+            if (suiteSummary) {
+                variantSummary = suiteSummary.variantSummaries.find(vs => vs.name === v);
+            }
+        }
 
-      const { passed, failed, skipped, total, rate } = stats;
-      const passRateColor = rate >= 95 ? 'text-green-600' : rate >= 80 ? 'text-yellow-600' : 'text-red-600';
-      const relevantTotal = passed + failed;
+        if (!variantSummary || variantSummary.total === 0) return '<td colspan="4" class="text-center text-gray-500 border-l border-gray-200">-</td>';
 
-      const filter = this.state.filters.status;
-      const showPassed = filter.includes('passed');
-      const showFailed = filter.includes('failed');
-      const showSkipped = filter.includes('skipped');
+        const { passed, failed, skipped, rate } = variantSummary;
+        const relevantTotal = passed + failed;
+        const passRateColor = rate >= 95 ? 'text-green-600' : rate >= 80 ? 'text-yellow-600' : 'text-red-600';
 
-      return `
-                <td class="py-3 px-4 text-center ${showPassed ? 'text-green-600' : 'text-gray-500'} font-medium border-l border-gray-200">${showPassed ? passed : '-'}</td>
-                <td class="py-3 px-4 text-center ${showFailed ? (failed > 0 ? 'text-red-600 font-bold' : 'text-gray-500') : 'text-gray-500'}">${showFailed ? failed : '-'}</td>
-                <td class="py-3 px-4 text-center ${showSkipped ? 'text-yellow-600' : 'text-gray-500'}">${showSkipped ? skipped : '-'}</td>
-                <td class="py-3 px-4 text-center">
-                    <div class="flex flex-col">
-                        <span class="font-bold ${passRateColor}">${rate.toFixed(1)}%</span>
-                        <span class="text-xs text-gray-500">${passed}/${relevantTotal}</span>
-                    </div>
-                </td>`;
+        const filter = this.state.filters.status;
+        const showPassed = filter.includes('passed');
+        const showFailed = filter.includes('failed');
+        const showSkipped = filter.includes('skipped');
+
+        return `
+            <td class="py-3 px-4 text-center ${showPassed ? 'text-green-600' : 'text-gray-500'} font-medium border-l border-gray-200" aria-label="${showPassed ? passed : '-'} passed tests for ${UIUtils.escapeHTML(v)}">${showPassed ? passed : '-'}</td>
+            <td class="py-3 px-4 text-center ${showFailed && failed > 0 ? 'text-red-600 font-bold' : 'text-gray-500'} border-l border-gray-200" aria-label="${showFailed ? failed : '-'} failed tests for ${UIUtils.escapeHTML(v)}">${showFailed ? failed : '-'}</td>
+            <td class="py-3 px-4 text-center ${showSkipped ? 'text-yellow-600' : 'text-gray-500'}" aria-label="${showSkipped ? skipped : '-'} skipped tests for ${UIUtils.escapeHTML(v)}">${showSkipped ? skipped : '-'}</td>
+            <td class="py-3 px-4 text-center" aria-label="${rate.toFixed(1)}% pass rate (${passed}/${relevantTotal}) for ${UIUtils.escapeHTML(v)}">
+                <div class="flex flex-col">
+                    <span class="font-bold ${passRateColor}">${rate.toFixed(1)}%</span>
+                    <span class="text-xs text-gray-500">${passed}/${relevantTotal}</span>
+                </div>
+            </td>`;
     }).join('')}`;
   },
 
   openStackTrace(element) {
-    this.activeTrigger = element;
-    const stackTrace = decodeURIComponent(element.dataset.stackTrace);
-    const context = {
-        moduleName: element.dataset.module,
-        packageName: element.dataset.package,
-        className: element.dataset.class,
-        testCaseName: element.dataset.testCase
+    const { module, package: pkg, class: clz, testCase: tcName } = element.dataset;
+
+    // Find the test case object in the processed data
+    const findTestCase = (nodes) => {
+        for (const m of nodes) {
+            if (m.name === module) {
+                for (const p of m.packages) {
+                    if (p.name === pkg) {
+                        for (const c of p.classes) {
+                            if (c.name === clz) {
+                                return c.testCases.find(t => t.name === tcName);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return null;
     };
-    this.showStackTraceView(stackTrace, context);
-    Navigation.push();
+
+    const testCase = findTestCase(this.processedData.modules);
+    if (testCase) {
+        this.activeTrigger = element;
+        const context = { moduleName: module, packageName: pkg, className: clz, testCaseName: tcName };
+        this.showStackTraceView(testCase, context);
+        Navigation.push();
+    }
   },
 
-  showStackTraceView(stackTrace, context) {
+  showStackTraceView(testCase, context) {
+    this.announce(`Showing stack trace for test case: ${testCase.name}`);
+    document.title = `Stack Trace: ${testCase.name} - ${this.baseTitle}`;
     this.state.currentView = 'stack-trace';
-    this.state.currentStackTrace = stackTrace;
+    this.state.currentTestCase = testCase;
     this.state.currentStackTraceContext = context;
 
     this.elements.reportView.classList.add('hidden-view');
-    if (this.elements.reportViewControls) this.elements.reportViewControls.classList.add('hidden');
     this.elements.stackTraceView.classList.remove('hidden-view');
+    if (this.elements.filterControlsGroup) {
+        this.elements.filterControlsGroup.classList.add('hidden');
+    }
+    if (this.elements.searchContainer) this.elements.searchContainer.classList.add('hidden');
+    if (this.elements.viewSegments) this.elements.viewSegments.classList.add('hidden');
+    if (this.elements.densitySegments) this.elements.densitySegments.classList.add('hidden');
 
-    this.elements.stackTraceContent.textContent = stackTrace;
+    this.renderStackTraceGrid(testCase);
     this.renderStackTraceBreadcrumbs(context);
     window.scrollTo(0, 0);
+  },
 
-    if (this.elements.stackTraceContainer) {
-        this.elements.stackTraceContainer.focus();
+  renderStackTraceGrid(testCase) {
+    const grid = this.elements.stackTraceGrid;
+    grid.innerHTML = "";
+
+    const activeSuite = this.state.filters.testSuite;
+    const activeVariants = this.state.filters.variants;
+
+    // Filter groups and their internal occurrences based on active filters
+    const filteredGroups = (testCase.commonStackTraces || []).map(group => {
+        const filteredOccurrences = {};
+        let hasMatch = false;
+
+        for (const [suite, variants] of Object.entries(group.occurrences)) {
+            if (activeSuite !== 'all' && suite !== activeSuite) continue;
+
+            const matchedVariants = variants.filter(v => activeVariants.includes(v));
+            if (matchedVariants.length > 0) {
+                filteredOccurrences[suite] = matchedVariants;
+                hasMatch = true;
+            }
+        }
+
+        return hasMatch ? { ...group, filteredOccurrences } : null;
+    }).filter(g => g !== null);
+
+    if (filteredGroups.length === 0) {
+        grid.innerHTML = '<div class="p-8 text-center text-gray-500 w-full">No stack trace available for the selected filters.</div>';
+        return;
+    }
+
+    const isMultiView = filteredGroups.length > 1;
+
+    filteredGroups.forEach((group, index) => {
+        const viewId = `st-view-${index}`;
+        const titleId = `st-title-${index}`;
+
+        const variantView = document.createElement("div");
+        variantView.className = "variant-code-view";
+        variantView.id = viewId;
+        if (isMultiView) {
+            variantView.classList.add("multi-view");
+        }
+
+        const header = document.createElement("div");
+        header.className = "variant-header";
+
+        const titleDiv = document.createElement("div");
+        titleDiv.className = "flex items-center gap-2";
+        titleDiv.innerHTML = `
+            <svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-600">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                <line x1="12" y1="9" x2="12" y2="13"></line>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+            <h2 class="text-sm font-semibold text-gray-900" id="${titleId}">Stack Trace</h2>
+        `;
+        header.appendChild(titleDiv);
+
+        const occurrencesDiv = document.createElement("div");
+        occurrencesDiv.className = "flex flex-wrap gap-1 mt-2";
+
+        for (const [suite, variants] of Object.entries(group.filteredOccurrences)) {
+            const tag = document.createElement("span");
+            tag.className = "occurrence-tag";
+            tag.textContent = `${suite} (${variants.join(", ")})`;
+            occurrencesDiv.appendChild(tag);
+        }
+        header.appendChild(occurrencesDiv);
+        variantView.appendChild(header);
+
+        const container = document.createElement("div");
+        container.className = "code-container";
+        container.setAttribute("tabindex", "0");
+        container.setAttribute("aria-labelledby", titleId);
+
+        const pre = document.createElement("pre");
+        pre.className = "font-mono text-sm text-red-600 whitespace-pre-wrap break-all";
+        pre.textContent = group.stackTrace;
+        container.appendChild(pre);
+
+        variantView.appendChild(container);
+        grid.appendChild(variantView);
+    });
+
+    // Auto-focus the first stack trace for keyboard users
+    const firstContainer = grid.querySelector('.code-container');
+    if (firstContainer) {
+        setTimeout(() => firstContainer.focus(), 100);
     }
   },
 
   showReportView() {
+    this.announce("Returning to report view");
+    document.title = this.baseTitle;
     this.state.currentView = 'report';
-    this.state.currentStackTrace = null;
+    this.state.currentTestCase = null;
     this.state.currentStackTraceContext = {};
 
     this.elements.stackTraceView.classList.add('hidden-view');
     this.elements.reportView.classList.remove('hidden-view');
-    if (this.elements.reportViewControls) this.elements.reportViewControls.classList.remove('hidden');
+    if (this.elements.filterControlsGroup) {
+        this.elements.filterControlsGroup.classList.remove('hidden');
+    }
+    if (this.elements.searchContainer) this.elements.searchContainer.classList.remove('hidden');
+    if (this.elements.viewSegments) this.elements.viewSegments.classList.remove('hidden');
+    if (this.elements.densitySegments) this.elements.densitySegments.classList.remove('hidden');
 
     if (this.activeTrigger) {
         this.activeTrigger.focus();
@@ -1740,22 +1999,22 @@ const TestReportApp = {
   renderStackTraceBreadcrumbs(context) {
     const { moduleName, packageName, className, testCaseName } = context;
     let html = `<div class="flex items-center gap-2 text-sm">
-        <a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_MODULES}">Project</a>`;
+        <a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_MODULES}" aria-label="Go back to Project Overview">Project</a>`;
 
     if (moduleName) {
         html += `
             <span class="breadcrumb-separator" aria-hidden="true">/</span>
-            <a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_PACKAGES}" data-module-name="${UIUtils.escapeHTML(moduleName)}">${UIUtils.escapeHTML(moduleName)}</a>`;
+            <a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_PACKAGES}" data-module-name="${UIUtils.escapeHTML(moduleName)}" aria-label="Go back to module: ${UIUtils.escapeHTML(moduleName)}">${UIUtils.escapeHTML(moduleName)}</a>`;
     }
     if (packageName) {
          html += `
             <span class="breadcrumb-separator" aria-hidden="true">/</span>
-            <a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_CLASSES}" data-module-name="${UIUtils.escapeHTML(moduleName)}" data-package-name="${UIUtils.escapeHTML(packageName)}">${UIUtils.escapeHTML(packageName)}</a>`;
+            <a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_CLASSES}" data-module-name="${UIUtils.escapeHTML(moduleName)}" data-package-name="${UIUtils.escapeHTML(packageName)}" aria-label="Go back to package: ${UIUtils.escapeHTML(packageName)}">${UIUtils.escapeHTML(packageName)}</a>`;
     }
     if (className) {
         html += `
             <span class="breadcrumb-separator" aria-hidden="true">/</span>
-            <a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_TEST_CASES}" data-module-name="${UIUtils.escapeHTML(moduleName)}" data-package-name="${UIUtils.escapeHTML(packageName)}" data-class-name="${UIUtils.escapeHTML(className)}">${UIUtils.escapeHTML(className)}</a>`;
+            <a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_TEST_CASES}" data-module-name="${UIUtils.escapeHTML(moduleName)}" data-package-name="${UIUtils.escapeHTML(packageName)}" data-class-name="${UIUtils.escapeHTML(className)}" aria-label="Go back to class: ${UIUtils.escapeHTML(className)}">${UIUtils.escapeHTML(className)}</a>`;
     }
     if (testCaseName) {
         html += `
@@ -1910,7 +2169,7 @@ const Navigation = {
 
     // Re-render
     if (TestReportApp.state.currentView === 'stack-trace') {
-        TestReportApp.showStackTraceView(TestReportApp.state.currentStackTrace, TestReportApp.state.currentStackTraceContext);
+        TestReportApp.showStackTraceView(TestReportApp.state.currentTestCase, TestReportApp.state.currentStackTraceContext);
     } else {
         TestReportApp.showReportView();
         if (selectionChanged || oldView === 'report') {
@@ -1923,110 +2182,106 @@ const Navigation = {
 
 document.addEventListener('DOMContentLoaded', () => {
   TestReportApp.init();
+  initHelpHub();
 });
 
 /**
  * HELP HUB INITIALIZATION
  */
-(function() {
-    function initHelpHub() {
-        const helpHubFab = document.getElementById("help-hub-fab");
-        const helpHubPanel = document.getElementById("help-hub-panel");
-        const closeHelpHubBtn = document.getElementById("close-help-hub");
+function initHelpHub() {
+    const helpHubFab = document.getElementById("help-hub-fab");
+    const helpHubPanel = document.getElementById("help-hub-panel");
+    const closeHelpHubBtn = document.getElementById("close-help-hub");
 
-        if (!helpHubFab || !helpHubPanel) return;
+    if (!helpHubFab || !helpHubPanel) return;
 
-        function togglePanel(open) {
-            const isOpening = open === undefined ? !helpHubPanel.classList.contains("open") : open;
-            helpHubPanel.classList.toggle("open", isOpening);
-            helpHubFab.setAttribute("aria-expanded", isOpening);
-            helpHubPanel.setAttribute("aria-hidden", !isOpening);
+    function togglePanel(open) {
+        const isOpening = typeof open === 'boolean' ? open : !helpHubPanel.classList.contains("open");
+        helpHubPanel.classList.toggle("open", isOpening);
+        helpHubFab.setAttribute("aria-expanded", isOpening);
+        helpHubPanel.setAttribute("aria-hidden", !isOpening);
 
-            if (isOpening) {
-                requestAnimationFrame(() => {
-                    closeHelpHubBtn?.focus();
-                });
-            } else {
-                helpHubFab.focus();
-            }
-        }
-
-        // Focus Trap
-        helpHubPanel.addEventListener("keydown", (e) => {
-            if (e.key !== "Tab") return;
-
-            const focusableElements = helpHubPanel.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
-            const firstElement = focusableElements[0];
-            const lastElement = focusableElements[focusableElements.length - 1];
-
-            if (e.shiftKey) { // Shift + Tab
-                if (document.activeElement === firstElement) {
-                    lastElement.focus();
-                    e.preventDefault();
-                }
-            } else { // Tab
-                if (document.activeElement === lastElement) {
-                    firstElement.focus();
-                    e.preventDefault();
-                }
-            }
-        });
-
-        helpHubFab.addEventListener("click", (e) => {
-            e.stopPropagation();
-            togglePanel();
-        });
-
-        if (closeHelpHubBtn) {
-            closeHelpHubBtn.addEventListener("click", (e) => {
-                e.stopPropagation();
-                togglePanel(false);
+        if (isOpening) {
+            requestAnimationFrame(() => {
+                closeHelpHubBtn?.focus();
             });
+        } else {
+            helpHubFab.focus();
         }
+    }
 
-        document.addEventListener("click", (e) => {
-            if (helpHubPanel.classList.contains("open") && !helpHubPanel.contains(e.target) && !helpHubFab.contains(e.target)) {
-                togglePanel(false);
+    // Focus Trap
+    helpHubPanel.addEventListener("keydown", (e) => {
+        if (e.key !== "Tab") return;
+
+        const focusableElements = helpHubPanel.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (e.shiftKey) { // Shift + Tab
+            if (document.activeElement === firstElement) {
+                lastElement.focus();
+                e.preventDefault();
             }
-        });
-
-        document.addEventListener("keydown", (e) => {
-            if (e.key === "Escape" && helpHubPanel.classList.contains("open")) {
-                togglePanel(false);
+        } else { // Tab
+            if (document.activeElement === lastElement) {
+                firstElement.focus();
+                e.preventDefault();
             }
-        });
+        }
+    });
 
-        const legendItems = helpHubPanel.querySelectorAll(".legend-item");
-        legendItems.forEach(item => {
-            const header = item.querySelector(".legend-item-header");
-            if (header) {
-                const toggleItem = (e) => {
-                    e.stopPropagation();
-                    const isOpen = item.classList.contains("open");
-                    legendItems.forEach(other => {
-                        if (other !== item) {
-                            other.classList.remove("open");
-                            other.querySelector(".legend-item-header").setAttribute("aria-expanded", "false");
-                        }
-                    });
-                    item.classList.toggle("open", !isOpen);
-                    header.setAttribute("aria-expanded", !isOpen);
-                };
+    helpHubFab.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        togglePanel();
+    });
 
-                header.addEventListener("click", toggleItem);
-                header.addEventListener("keydown", (e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        toggleItem(e);
-                    }
-                });
-            }
+    if (closeHelpHubBtn) {
+        closeHelpHubBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            togglePanel(false);
         });
     }
 
-    if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", initHelpHub);
-    } else {
-        initHelpHub();
-    }
-})();
+    document.addEventListener("click", (e) => {
+        if (helpHubPanel.classList.contains("open") && !helpHubPanel.contains(e.target) && !helpHubFab.contains(e.target)) {
+            togglePanel(false);
+        }
+    });
+
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && helpHubPanel.classList.contains("open")) {
+            togglePanel(false);
+        }
+    });
+
+    const legendItems = helpHubPanel.querySelectorAll(".legend-item");
+    legendItems.forEach(item => {
+        const header = item.querySelector(".legend-item-header");
+        const toggle = () => {
+            const isOpen = item.classList.contains("open");
+            legendItems.forEach(i => {
+                i.classList.remove("open");
+                const h = i.querySelector(".legend-item-header");
+                if (h) h.setAttribute("aria-expanded", "false");
+            });
+            item.classList.toggle("open", !isOpen);
+            header.setAttribute("aria-expanded", !isOpen);
+        };
+
+        header.addEventListener("click", (e) => {
+            e.stopPropagation();
+            toggle();
+        });
+
+        header.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                e.stopPropagation();
+                toggle();
+            }
+        });
+    });
+}
+

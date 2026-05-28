@@ -33,6 +33,8 @@ import org.junit.ClassRule
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExternalResource
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
 /**
  * Integration test for [com.android.build.gradle.internal.coverage.tasks.CodeCoverageReportTask].
@@ -41,10 +43,15 @@ import org.junit.rules.ExternalResource
  * `createAggregatedCoverageReport` tasks. It checks for the existence of the report files, parses the generated JSON data, and verifies the
  * accuracy of the aggregated coverage metrics.
  */
-class CodeCoverageReportTest {
+@RunWith(Parameterized::class)
+class CodeCoverageReportTest(val runWithBuiltInPlatform: Boolean) {
 
   companion object {
     @ClassRule @JvmField val emulator: ExternalResource = getEmulator()
+
+    @JvmStatic
+    @Parameterized.Parameters(name = "runWithBuiltInPlatform={0}")
+    fun parameters(): Collection<Array<Any>> = listOf(arrayOf(false), arrayOf(true))
 
     const val APP_EXPECTED_COVERED_INSTRUCTION_AGGREGATED = 28
     const val APP_EXPECTED_COVERED_BRANCH_AGGREGATED = 1
@@ -193,6 +200,7 @@ class CodeCoverageReportTest {
         // this is to test the multi-variant support for coverage reporting
         add(BooleanOption.ONLY_ENABLE_UNIT_TEST_BY_DEFAULT_FOR_THE_TESTED_BUILD_TYPE, false)
         add(BooleanOption.REPORT_AGGREGATION_SUPPORT, true)
+        add(BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM, runWithBuiltInPlatform)
       }
     }
 
@@ -201,26 +209,6 @@ class CodeCoverageReportTest {
   @Test
   fun testCreateCoverageReport() {
     val result = rule.build.executor.run(":app:createCoverageReport")
-
-    val appBuildDir = rule.build.androidApplication(":app").buildDir.toFile()
-    val outputDir = FileUtils.join(appBuildDir, "reports", "code_coverage_html_report", "global")
-
-    assertThat(result.didWorkTasks.contains(":app:testDebugUnitTest")).isTrue()
-    assertThat(result.didWorkTasks.contains(":app:testReleaseUnitTest")).isTrue()
-
-    verifyHtmlReport(
-      outputDir = outputDir,
-      expectedProjectName = "reportAggregation",
-      expectedModuleCount = 1,
-      verifyLibModuleIsPresent = false,
-      taskResult = result,
-    )
-  }
-
-  @Test
-  fun testCreateCoverageReportWithAndroidTestEngine() {
-    val build = rule.build { gradleProperties { add(BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM, true) } }
-    val result = build.executor.run(":app:createCoverageReport")
 
     val appBuildDir = rule.build.androidApplication(":app").buildDir.toFile()
     val outputDir = FileUtils.join(appBuildDir, "reports", "code_coverage_html_report", "global")

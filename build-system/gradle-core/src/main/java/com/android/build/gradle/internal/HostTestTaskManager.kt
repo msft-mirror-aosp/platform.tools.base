@@ -212,7 +212,8 @@ open class HostTestTaskManager(project: Project, globalConfig: GlobalTaskCreatio
     if (
       globalConfig.avoidTaskRegistration.not() &&
         hostTestCreationConfig.services.projectOptions.get(BooleanOption.LINT_ANALYSIS_PER_COMPONENT) &&
-        globalConfig.lintOptions.ignoreTestSources.not()
+        globalConfig.lintOptions.ignoreTestSources.not() &&
+        hostTestCreationConfig.mainVariant.enableLint
     ) {
       taskFactory.register(AndroidLintAnalysisTask.PerComponentCreationAction(hostTestCreationConfig, fatalOnly = false))
       taskFactory.register(

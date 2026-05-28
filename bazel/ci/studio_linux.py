@@ -55,6 +55,7 @@ _EXTRA_TARGETS = [
     '//tools/vendor/google/adrt:android-studio-nsis-prebuilt.zip',
     '//tools/vendor/google/asfp/studio:asfp_build_manifest.textproto',
     '//tools/vendor/google/asfp/studio:asfp.deb',
+    '//tools/vendor/google/asfp/studio:asfp-external.deb',
     '//tools/vendor/google/ml:aiplugin',
 # TODO: b/497702794 - old custom packaging deleted.
 #    '//tools/adt/idea/aswb/aswb:aswb_bazel_zip',
@@ -86,6 +87,7 @@ _ARTIFACTS = [
     ('tools/vendor/google/adrt/android-studio-nsis-prebuilt.zip', 'artifacts'),
     ('tools/vendor/google/asfp/studio/asfp_build_manifest.textproto', 'artifacts'),
     ('tools/vendor/google/asfp/studio/asfp.deb', 'artifacts'),
+    ('tools/vendor/google/asfp/studio/asfp-external.deb', 'artifacts'),
     ('tools/vendor/google/aswb/android-studio-with-blaze-canary.deb', 'artifacts'),
     ('tools/vendor/google/aswb/android-studio-with-blaze-canary.mac.zip', 'artifacts'),
     ('tools/vendor/google/aswb/android-studio-with-blaze-canary.mac_arm.zip', 'artifacts'),
@@ -156,14 +158,16 @@ def studio_linux(build_env: bazel.BuildEnv) -> None:
   targets = _BASE_TARGETS
 
   build_type = studio.BuildType.from_build_number(build_env.build_number)
+  if build_type != studio.BuildType.LOCAL:
+    # Reset artifacts, to avoid copying stale outputs from past builds.
+    reset_artifacts(build_env)
+
   if build_type == studio.BuildType.POSTSUBMIT:
     impacted_targets.generate_and_upload_hash_file(build_env)
     targets += _EXTRA_TARGETS
     flags.append('--build_metadata=cinder_pipelines=component-owners,test-stats')
 
   if build_type == studio.BuildType.PRESUBMIT:
-    # Reset artifacts, to avoid copying stale outputs from past builds.
-    reset_artifacts(build_env)
     result = presubmit.find_test_targets(
         build_env,
         _BASE_TARGETS,

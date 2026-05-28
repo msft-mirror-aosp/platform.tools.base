@@ -19,7 +19,6 @@ import com.android.resources.ScreenOrientation
 import com.android.sdklib.AndroidVersion
 import com.android.sdklib.ISystemImage
 import com.android.sdklib.devices.Device
-import com.android.sdklib.devices.DeviceManager
 import com.android.sdklib.devices.Storage
 import com.android.sdklib.internal.avd.AvdManager.Companion.USER_SETTINGS_INI
 import com.android.utils.ILogger
@@ -103,7 +102,7 @@ class AvdBuilder(var metadataIniPath: Path, avdFolder: Path, var device: Device)
   /** Sets the properties of this AvdBuilder based on its Device. */
   fun initializeFromDevice() {
     // Read the default values for the properties that we can edit.
-    binding.read(this, DeviceManager.getHardwareProperties(device))
+    binding.read(this, HardwareProperties.getHardwareProperties(device))
 
     // Default to a skin based on the device screen
     skin = device.getScreenSize(device.defaultState.orientation)?.let { GenericSkin(it.width, it.height) }
@@ -118,7 +117,7 @@ class AvdBuilder(var metadataIniPath: Path, avdFolder: Path, var device: Device)
   fun configProperties(): Map<String, String> {
     val properties = mutableMapOf<String, String>()
     properties.putAll(defaultConfigKeys)
-    properties.putAll(DeviceManager.getHardwareProperties(device))
+    properties.putAll(HardwareProperties.getHardwareProperties(device))
     properties[ConfigKey.GPU_EMULATION] = "yes"
     properties[ConfigKey.AVD_ID] = avdName
     properties.putAll(bootMode.properties())

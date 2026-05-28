@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package com.android.tools.lint.checks.fx.result
 
 import com.android.tools.lint.checks.fx.result.Type.Sym
 import com.android.tools.lint.checks.fx.result.Type.Sym.Invoke
+import com.android.tools.lint.checks.fx.utils.Lattice
 import com.android.tools.lint.checks.fx.utils.LatticeTest
 import com.android.tools.lint.checks.fx.utils.UnboundedSet
 import com.android.tools.lint.checks.fx.utils.possibilityLattice
@@ -27,112 +28,36 @@ import org.junit.Test
 
 private typealias IntsFx = UnboundedSet<Int>
 
-private val UnitTypeEffectConstraintLattice = TypeEffectConstraintLattice(possibilityLattice<Int>())
+private val concreteEffectLattice = possibilityLattice<Int>()
+private val constraintLattice = Constraint.domain(concreteEffectLattice)
+private val effectLattice =
+  Lattice.product(
+    ::Effect,
+    Effect<IntsFx>::concrete,
+    Effect<IntsFx>::invocations,
+    Effect<IntsFx>::constraint,
+    concreteEffectLattice,
+    possibilityLattice(),
+    constraintLattice,
+  )
 
 class TypeLatticeTest :
-  LatticeTest<Type<IntsFx>>(
-    lattice = UnitTypeEffectConstraintLattice.typeLattice,
-    poolInits = listOf(Type.Int, Type.Boolean, Sym.Param("x"), Sym.Param("x")["f", Sym.Param("y")]),
-  ) {
-
-  @Test
-  fun `widening works`() {
-    Truth.assertThat(widen(Type.Unit, Type.Unit)).isEqualTo(Type.Unit)
-    Truth.assertThat(widen(Type.Int, Type.Boolean)).isEqualTo(Type.Int join Type.Boolean)
-    Truth.assertThat(widen(Type.Int, Type.Int join Type.Boolean)).isEqualTo(Type.Int join Type.Boolean)
-
-    Truth.assertThat(widen(x, x)).isEqualTo(x)
-    Truth.assertThat(widen(x, y)).isEqualTo(x join y)
-    Truth.assertThat(widen(x, x join y["f"])).isEqualTo(x join y["f"])
-
-    // x
-    // y.f(y).g(x)
-    // -->
-    // μα. x ⊔ y.f(y).g(α)
-    testInductiveWidening(x, y["f", y]["g", x] to fix { listOf(x, y["f", y]["g", it]) })
-
-    // x
-    // x.f(x.g())
-    // -->
-    // μα. x ⊔ α.f(α.g())
-    testInductiveWidening(x, x["f", x["g"]] to fix { listOf(x, it["f", it["g"]]) })
-
-    // x
-    // x.f()
-    // x.g()
-    // -->
-    // μα. x ⊔ α.f() ⊔ α.g()
-    testInductiveWidening(x, x["f"] to fix { listOf(x, it["f"]) }, x["g"] to fix { listOf(x, it["f"], it["g"]) })
-
-    // x.h()
-    // x.h().f().g()
-    // x.h().f().g().f().g()
-    // -->
-    // μα. x.h() ⊔ α.f().g()
-    testInductiveWidening(
-      x["h"],
-      x["h"]["f"]["g"] to fix { listOf(x["h"], it["f"]["g"]) },
-      x["h"]["f"]["g"]["f"]["g"] to fix { listOf(x["h"], it["f"]["g"]) },
-    )
-  }
-
-  @Test
-  fun `summary of growing symbolic invocations works`() {
-    Truth.assertThat(widen(x["f", Type.Int]["g"]["f", Type.String])).isEqualTo(fix { listOf(x["f", Type.Int], it["g"]["f", Type.String]) })
-
-    Truth.assertThat(widen((fix { listOf(x["f", Type.Int], it["g"]["f", Type.String]) })["g"]["f", Type.Int]["g"]))
-      .isEqualTo(fix { listOf(x["f", Type.Int], it["g"], it["f", Type.String], it["f", Type.Int]["g"]) })
-  }
-
-  @Test
-  fun `no excessive widening`() {
-    // `x` and `x ∪ y.f(x)` should get widened to just `x ∪ y.f(x)`, not `μα. x ∪ y.f(α)`
-    val sym = y["f", Type.Application(ClassId.of<List<*>>(), listOf(x))]
-    Truth.assertThat(widen(x, x join sym)).isEqualTo(x join sym)
-  }
-
-  @Test
-  fun `widen growing set`() {
-    // `x ∪ y.f(x)` and `x ∪ y.f(x) ∪ y.f(x).f(x)` should get widened to `μα.x ∪ y.f(α) ∪ α.f(α)`
-    val sym = y["f", x]
-    val sym1 = sym["f", x]
-    Truth.assertThat(widen(x join sym, x join sym join sym1)).isEqualTo(fix { listOf(x, y["f", it], it["f", it]) })
-  }
-
-  @Test
-  fun `repeated sub-symbol summarized`() {
-    val sym1 = fix { listOf(Type.String, y["f", it]) }
-    val sym2 = y["f", Type.String]
-    Truth.assertThat(widen(sym1, sym2)).isEqualTo(sym1)
-  }
-}
+  LatticeTest<Type<IntsFx>>(lattice = Type.latticeOf(effectLattice), poolInits = listOf(Type.Int, Type.Boolean, x, x["f", y]))
 
 class EffectLatticeTest :
   LatticeTest<Effect<IntsFx>>(
-    lattice = UnitTypeEffectConstraintLattice.effectLattice,
+    lattice = effectLattice,
     poolInits =
       listOf(
         Effect(persistentSetOf(1, 2, 3), persistentSetOf(x["f", Type.Int])),
         Effect(persistentSetOf(2, 3, 4), persistentSetOf(x["f", Type.String])),
         Effect(persistentSetOf(3, 4, 5), persistentSetOf(x["f", Type.Int, Type.String])),
       ),
-  ) {
-
-  @Test
-  fun `symbolic invocations summarized`() {
-    val fx1 = Effect(persistentSetOf(1, 2, 3), persistentSetOf(x["f", Type.Int]))
-    val fx2 = Effect(persistentSetOf(2, 3, 4), persistentSetOf(x["f", Type.String]))
-    val fx3 = Effect(persistentSetOf(3, 4, 5), persistentSetOf(x["f", Type.Int, Type.String]))
-    val fx = widen(fx1, widen(fx2, fx3))
-    Truth.assertThat(fx.concrete).isEqualTo(persistentSetOf(1, 2, 3, 4, 5))
-    Truth.assertThat(fx.invocations)
-      .isEqualTo(persistentSetOf(x["f", Type.Union(persistentSetOf(Type.Int, Type.String))], x["f", Type.Int, Type.String]))
-  }
-}
+  )
 
 class ConstraintLatticeTest :
   LatticeTest<Constraint<IntsFx>>(
-    lattice = UnitTypeEffectConstraintLattice.constraintLattice,
+    lattice = constraintLattice,
     poolInits =
       listOf(
         Constraint(persistentMapOf(x["f"] to persistentSetOf(1, 2, 3)), persistentMapOf(x["f"] to persistentSetOf(y["g"]))),
@@ -154,11 +79,9 @@ class ConstraintLatticeTest :
 
 // Constructor shorthands
 
-internal val x = Sym.Param("x")
-internal val y = Sym.Param("y")
-internal val z = Sym.Param("z")
-
-internal fun <FX> fix(body: (Sym<FX>) -> Collection<Type<FX>>) = Sym.Fix(body(Sym.Rec))
+internal val x = Sym.Param("x", Scope.Generated(0))
+internal val y = Sym.Param("y", Scope.Generated(0))
+internal val z = Sym.Param("z", Scope.Generated(0))
 
 internal operator fun <FX> Sym<FX>.get(methodName: String, vararg args: Type<FX>): Invoke<FX> {
   // Method descriptor. Type signature unimportant for this test.

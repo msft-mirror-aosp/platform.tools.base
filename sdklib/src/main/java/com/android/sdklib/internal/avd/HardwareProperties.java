@@ -16,16 +16,48 @@
 
 package com.android.sdklib.internal.avd;
 
+import static com.android.sdklib.devices.Device.isAiGlasses;
+import static com.android.sdklib.devices.Device.isAutomotive;
+import static com.android.sdklib.devices.Device.isAutomotiveDistantDisplay;
+import static com.android.sdklib.devices.Device.isRollable;
+import static com.android.sdklib.devices.Device.isXrGlasses;
+
 import com.android.SdkConstants;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import com.android.io.IAbstractFile;
 import com.android.io.StreamException;
+import com.android.resources.KeyboardState;
+import com.android.resources.Navigation;
+import com.android.sdklib.devices.ButtonType;
+import com.android.sdklib.devices.Camera;
+import com.android.sdklib.devices.Device;
+import com.android.sdklib.devices.Environment;
+import com.android.sdklib.devices.Hardware;
+import com.android.sdklib.devices.Hinge;
+import com.android.sdklib.devices.PowerType;
+import com.android.sdklib.devices.Screen;
+import com.android.sdklib.devices.ScreenType;
+import com.android.sdklib.devices.Sensor;
+import com.android.sdklib.devices.State;
+import com.android.sdklib.devices.Storage;
+import com.android.sdklib.devices.Touchpad;
 import com.android.utils.ILogger;
+
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hasher;
+import com.google.common.hash.Hashing;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -149,6 +181,286 @@ public class HardwareProperties {
     public static final String BOOLEAN_YES = "yes";
     public static final String BOOLEAN_NO = "no";
     public static final Pattern DISKSIZE_PATTERN = Pattern.compile("\\d+[MK]B"); //$NON-NLS-1$
+
+    /**
+     * Returns hardware properties (defined in hardware.ini) as a {@link Map}.
+     *
+     * @param s The {@link State} from which to derive the hardware properties.
+     * @return A {@link Map} of hardware properties.
+     */
+    @NotNull
+    public static Map<String, String> getHardwareProperties(@NotNull State s) {
+        Hardware hw = s.getHardware();
+        Map<String, String> props = new HashMap<>();
+        Screen screen = hw.getScreen();
+        if (screen != null) {
+            if (screen.getScreenType().equals(ScreenType.NOTOUCH)) {
+                props.put(HW_SCREEN, HW_SCREEN_NOTOUCH);
+            }
+            props.put(
+                    HW_LCD_DENSITY,
+                    Integer.toString(screen.getPixelDensity().getDpiValue()));
+            props.put(HW_LCD_WIDTH, Integer.toString(screen.getXDimension()));
+            props.put(HW_LCD_HEIGHT, Integer.toString(screen.getYDimension()));
+
+            if (screen.isFoldable()) {
+                props.put(HW_KEYBOARD_LID, getBooleanVal(true));
+                props.put(
+                        HW_LCD_FOLDED_X_OFFSET,
+                        Integer.toString(screen.getFoldedXOffset()));
+                props.put(
+                        HW_LCD_FOLDED_Y_OFFSET,
+                        Integer.toString(screen.getFoldedYOffset()));
+                props.put(
+                        HW_LCD_FOLDED_HEIGHT,
+                        Integer.toString(screen.getFoldedHeight()));
+                props.put(
+                        HW_LCD_FOLDED_WIDTH,
+                        Integer.toString(screen.getFoldedWidth()));
+                if (screen.getFoldedWidth2() != 0 && screen.getFoldedHeight2() != 0) {
+                    props.put(
+                            HW_LCD_FOLDED_X_OFFSET_2,
+                            Integer.toString(screen.getFoldedXOffset2()));
+                    props.put(
+                            HW_LCD_FOLDED_Y_OFFSET_2,
+                            Integer.toString(screen.getFoldedYOffset2()));
+                    props.put(
+                            HW_LCD_FOLDED_WIDTH_2,
+                            Integer.toString(screen.getFoldedWidth2()));
+                    props.put(
+                            HW_LCD_FOLDED_HEIGHT_2,
+                            Integer.toString(screen.getFoldedHeight2()));
+                }
+                if (screen.getFoldedWidth3() != 0 && screen.getFoldedHeight3() != 0) {
+                    props.put(
+                            HW_LCD_FOLDED_X_OFFSET_3,
+                            Integer.toString(screen.getFoldedXOffset3()));
+                    props.put(
+                            HW_LCD_FOLDED_Y_OFFSET_3,
+                            Integer.toString(screen.getFoldedYOffset3()));
+                    props.put(
+                            HW_LCD_FOLDED_WIDTH_3,
+                            Integer.toString(screen.getFoldedWidth3()));
+                    props.put(
+                            HW_LCD_FOLDED_HEIGHT_3,
+                            Integer.toString(screen.getFoldedHeight3()));
+                }
+            }
+        }
+
+        props.put(
+                HW_MAINKEYS,
+                getBooleanVal(hw.getButtonType().equals(ButtonType.HARD)));
+        props.put(
+                HW_TRACKBALL,
+                getBooleanVal(hw.getNav().equals(Navigation.TRACKBALL)));
+        props.put(HW_DPAD, getBooleanVal(hw.getNav().equals(Navigation.DPAD)));
+
+        Set<Sensor> sensors = hw.getSensors();
+        props.put(HW_GPS, getBooleanVal(sensors.contains(Sensor.GPS)));
+        props.put(
+                HW_BATTERY,
+                getBooleanVal(hw.getChargeType().equals(PowerType.BATTERY)));
+        props.put(
+                HW_ACCELEROMETER,
+                getBooleanVal(sensors.contains(Sensor.ACCELEROMETER)));
+        props.put(
+                HW_ORIENTATION_SENSOR,
+                getBooleanVal(sensors.contains(Sensor.GYROSCOPE)));
+        props.put(
+                HW_GYROSCOPE, getBooleanVal(sensors.contains(Sensor.GYROSCOPE)));
+        props.put(
+                HW_MAGNETIC_FIELD_SENSOR,
+                getBooleanVal(sensors.contains(Sensor.COMPASS)));
+        props.put(
+                HW_PRESSURE_SENSOR,
+                getBooleanVal(sensors.contains(Sensor.BAROMETER)));
+        props.put(
+                HW_LIGHT_SENSOR,
+                getBooleanVal(sensors.contains(Sensor.LIGHT_SENSOR)));
+
+        props.put(HW_AUDIO_INPUT, getBooleanVal(hw.hasMic()));
+        props.put(HW_SDCARD, getBooleanVal(hw.hasSdCard()));
+
+        Environment environment = hw.getEnvironment();
+        if (environment != null) {
+            props.put(ENVIRONMENT_HEIGHT, Integer.toString(environment.getHeight()));
+            props.put(ENVIRONMENT_WIDTH, Integer.toString(environment.getWidth()));
+        }
+
+        Touchpad touchpad = hw.getTouchpad();
+        if (touchpad != null) {
+            props.put(HW_TOUCHPAD0, getBooleanVal(true));
+            props.put(HW_TOUCHPAD0_WIDTH, Integer.toString(touchpad.getWidth()));
+            props.put(
+                    HW_TOUCHPAD0_HEIGHT, Integer.toString(touchpad.getHeight()));
+        }
+
+        props.put(
+                HW_PROXIMITY_SENSOR,
+                getBooleanVal(sensors.contains(Sensor.PROXIMITY_SENSOR)));
+
+        Hinge hinge = hw.getHinge();
+
+        if (hinge != null) {
+            props.put(ConfigKey.HINGE, hinge.getCount() > 0 ? "yes" : "no");
+            props.put(ConfigKey.HINGE_COUNT, Integer.toString(hinge.getCount()));
+            props.put(ConfigKey.HINGE_TYPE, Integer.toString(hinge.getType()));
+            props.put(ConfigKey.HINGE_SUB_TYPE, Integer.toString(hinge.getSubtype()));
+            props.put(ConfigKey.HINGE_RANGES, hinge.getRanges());
+            props.put(ConfigKey.HINGE_DEFAULTS, Integer.toString(hinge.getDefaults()));
+            props.put(ConfigKey.HINGE_AREAS, hinge.getAreas());
+            hinge.getFoldAtPosture()
+                    .ifPresent(
+                            fold -> props.put(ConfigKey.FOLD_AT_POSTURE, Integer.toString(fold)));
+            props.put(ConfigKey.POSTURE_LISTS, hinge.getPostureList());
+            props.put(
+                    ConfigKey.HINGE_ANGLES_POSTURE_DEFINITIONS,
+                    hinge.getHingeAnglePostureDefinitions());
+        }
+
+        for (Camera camera : hw.getCameras()) {
+            if (!camera.isSensorOrientationDefault()) {
+                props.put(ConfigKey.cameraSensorOrientation(camera.getLocation()),
+                        Integer.toString(camera.getSensorOrientation()));
+            }
+        }
+        return props;
+    }
+
+    /**
+     * Returns the hardware properties defined in {@link AvdManager#HARDWARE_INI} as a {@link Map}.
+     *
+     * <p>This is intended to be dumped in the config.ini and already contains the device name,
+     * manufacturer and device hash.
+     *
+     * @param d The {@link Device} from which to derive the hardware properties.
+     * @return A {@link Map} of hardware properties.
+     */
+    @NotNull
+    public static Map<String, String> getHardwareProperties(@NotNull Device d) {
+        Map<String, String> props = getHardwareProperties(d.getDefaultState());
+        for (State s : d.getAllStates()) {
+            final Storage ramSize = s.getHardware().getRam();
+            if (ramSize.getSize() > 0) {
+                props.put(
+                        ConfigKey.RAM_SIZE, Long.toString(ramSize.getSizeAsUnit(Storage.Unit.MiB)));
+            }
+            if (s.getKeyState().equals(KeyboardState.HIDDEN)) {
+                props.put("hw.keyboard.lid", getBooleanVal(true));
+            }
+        }
+
+        // Special-case hacks to support specific device types.
+
+        if (d.getId().equals("13.5in Freeform")) {
+            props.put(ConfigKey.DISPLAY_SETTINGS_FILE, "freeform");
+        }
+        if (isRollable(d.getId())) {
+            props.put(ConfigKey.ROLL, "yes");
+            props.put(ConfigKey.ROLL_COUNT, "1");
+            props.put(ConfigKey.HINGE_TYPE, "3");
+            props.put(ConfigKey.ROLL_RANGES, "58.55-100");
+            props.put(ConfigKey.ROLL_DEFAULTS, "67.5");
+            props.put(ConfigKey.ROLL_RADIUS, "3");
+            props.put(ConfigKey.ROLL_DIRECTION, "1");
+            props.put(ConfigKey.ROLL_RESIZE_1_AT_POSTURE, "1");
+            props.put(ConfigKey.ROLL_RESIZE_2_AT_POSTURE, "2");
+            props.put(ConfigKey.POSTURE_LISTS, "1, 2, 3");
+            props.put(
+                    ConfigKey.ROLL_PERCENTAGES_POSTURE_DEFINITIONS,
+                    "58.55-76.45, 76.45-94.35, 94.35-100");
+        }
+        if (d.getId().equals("resizable")) {
+            props.put(
+                    ConfigKey.RESIZABLE_CONFIG,
+                    "phone-0-1080-2400-420, foldable-1-2208-1840-420, tablet-2-1920-1200-240,"
+                    + " desktop-3-1920-1080-160");
+        }
+        // TODO: Remove hard coded config when the runtime configuration is available (b/337978287,
+        // b/337980217)
+        if (isAutomotive(d)) {
+            props.put(ConfigKey.CLUSTER_WIDTH, "400");
+            props.put(ConfigKey.CLUSTER_HEIGHT, "600");
+            props.put(ConfigKey.CLUSTER_DENSITY, "120");
+            props.put(ConfigKey.CLUSTER_FLAG, "0");
+        }
+        if (isAutomotiveDistantDisplay(d)) {
+            props.put(ConfigKey.DISTANT_DISPLAY_WIDTH, "3000");
+            props.put(ConfigKey.DISTANT_DISPLAY_HEIGHT, "600");
+            props.put(ConfigKey.DISTANT_DISPLAY_DENSITY, "120");
+            props.put(ConfigKey.DISTANT_DISPLAY_FLAG, "0");
+        }
+
+        if (isAiGlasses(d)) {
+            props.put(ConfigKey.LCD_TRANSPARENT, "yes");
+        } else if (isXrGlasses(d)) {
+            props.put(HW_DIMMING_LEVELS, "0.00390625,0.25,0.5,0.75,0.99609375");
+        }
+
+        HashFunction md5 = Hashing.md5();
+        Hasher hasher = md5.newHasher();
+
+        ArrayList<String> keys = new ArrayList<>(props.keySet());
+        Collections.sort(keys);
+        for (String key : keys) {
+            if (key != null) {
+                hasher.putString(key, StandardCharsets.UTF_8);
+                String value = props.get(key);
+                hasher.putString(value == null ? "null" : value, StandardCharsets.UTF_8);
+            }
+        }
+        // store the hash method for potential future compatibility
+        String hash = "MD5:" + hasher.hash().toString();
+        props.put(ConfigKey.DEVICE_HASH_V2, hash);
+        props.remove(ConfigKey.DEVICE_HASH_V1);
+
+        props.put(ConfigKey.DEVICE_NAME, d.getId());
+        props.put(ConfigKey.DEVICE_MANUFACTURER, d.getManufacturer());
+
+        return props;
+    }
+
+    /**
+     * Checks whether the hardware props have changed. If the hash is the same, returns null for
+     * success. If the hash is not the same or there's not enough information to indicate it's the
+     * same (e.g. if in the future we change the digest method), simply return the new hash,
+     * indicating it would be best to update it.
+     *
+     * @param d The device.
+     * @param hashV2 The previous saved AvdManager.DEVICE_HASH_V2 property.
+     * @return Null if the same, otherwise returns the new and different hash.
+     */
+    @Nullable
+    public static String hasHardwarePropHashChanged(@NotNull Device d, @NotNull String hashV2) {
+        Map<String, String> props = getHardwareProperties(d);
+        String newHash = props.get(ConfigKey.DEVICE_HASH_V2);
+
+        // Implementation detail: don't just return the hash and let the caller decide whether
+        // the hash is the same. That's because the hash contains the digest method so if in
+        // the future we decide to change it, we could potentially recompute the hash here
+        // using an older digest method here and still determine its validity, whereas the
+        // caller cannot determine that.
+
+        if (newHash != null && newHash.equals(hashV2)) {
+            return null;
+        }
+        return newHash;
+    }
+
+    /**
+     * Takes a boolean and returns the appropriate value for {@link HardwareProperties}
+     *
+     * @param bool The boolean value to turn into the appropriate {@link HardwareProperties} value.
+     * @return {@code HardwareProperties#BOOLEAN_YES} if true, {@code HardwareProperties#BOOLEAN_NO}
+     *     otherwise.
+     */
+    private static String getBooleanVal(boolean bool) {
+        if (bool) {
+            return BOOLEAN_YES;
+        }
+        return BOOLEAN_NO;
+    }
 
     /** Represents the type of a hardware property value. */
     public enum HardwarePropertyType {

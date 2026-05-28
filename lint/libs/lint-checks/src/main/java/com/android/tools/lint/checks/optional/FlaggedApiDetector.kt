@@ -172,7 +172,19 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
       checkFlagApiDeclaration(annotation, context, usageInfo, qualifiedName)
       return
     }
+    // 2. Usage checks (ONLY for @RequiresFlag)
+    if (REQUIRES_FLAG_ANNOTATION.isEquals(qualifiedName)) {
+      checkFlagApiUsage(context, element, annotationInfo, usageInfo)
+    }
+  }
 
+  private fun checkFlagApiUsage(
+    context: JavaContext,
+    element: UElement,
+    annotationInfo: AnnotationInfo,
+    usageInfo: AnnotationUsageInfo,
+  ) {
+    val annotation = annotationInfo.annotation
     val compiled = usageInfo.referenced is PsiCompiledElement
     val evaluator = context.evaluator
 
@@ -209,11 +221,7 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
 
     val (flag, flag2) = flags ?: return
 
-    if (annotationInfo.origin == AnnotationOrigin.SELF) {
-      if (FLAGGED_API_ANNOTATION.isEquals(qualifiedName) || REQUIRES_FLAG_ANNOTATION.isEquals(qualifiedName)) {
-        return
-      }
-    } else if (isAlreadyAnnotated(evaluator, element, flag)) {
+    if (isAlreadyAnnotated(evaluator, element, flag)) {
       return
     }
 

@@ -15,13 +15,12 @@
  */
 package com.android.tools.lint.checks.fx.result
 
-import com.android.tools.lint.checks.fx.result.Env.Companion.withReceiver
-import com.android.tools.lint.checks.fx.result.Env.Companion.withVar
 import com.android.tools.lint.checks.fx.utils.Lattice
 import com.android.tools.lint.checks.fx.utils.assoc
 import kotlinx.collections.immutable.PersistentList
 import kotlinx.collections.immutable.PersistentMap
 import kotlinx.collections.immutable.PersistentSet
+import kotlinx.collections.immutable.persistentHashMapOf
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentMapOf
 
@@ -42,6 +41,9 @@ internal data class Env<out FX>(
   val virtualReceivers: PersistentMap<ClassId, Type<FX>>,
   val varDelegates: PersistentMap<String, Type<FX>> = persistentMapOf(),
 ) {
+
+  val boundParamNames: PersistentMap<String, Type.Sym.Param> by lazy(LazyThreadSafetyMode.NONE, types::paramNames)
+
   override fun toString() =
     "[" +
       types.asSequence().joinToString { (l, rs) -> showBound(l, rs) } +
@@ -84,13 +86,10 @@ internal data class Env<out FX>(
   // TODO hack
   internal fun innermostExtensionReceiver(): Type<FX>? = vars.entries.findLast { (x, _) -> x.isExtensionReceiverName() }?.value
 
-  fun isPureRenaming() = vars.all { (_, t) -> t is Type.Sym } && virtualReceivers.all { (_, t) -> t is Type.Sym }
-
   private fun Type<FX>.widenedByBound(): Type<FX> {
     val b =
       when (this) {
-        is Type.Sym.Param -> types[name]
-        is Type.Sym.This -> types[uniqueName]
+        is Type.Sym.Name -> types[this]
         else -> null
       }
     return when {
@@ -102,8 +101,7 @@ internal data class Env<out FX>(
 
   private fun Type<FX>.bound(): Type<FX> =
     when (this) {
-      is Type.Sym.Param -> types[name]?.let { Type.Union(it) } ?: this
-      is Type.Sym.This -> types[uniqueName]?.let { Type.Union(it) } ?: this
+      is Type.Sym.Name -> types[this]?.let { Type.Union(it) } ?: this
       else -> this
     }
 
@@ -132,11 +130,11 @@ internal data class Env<out FX>(
       typeBounds: TypeBounds<FX>,
       params: List<Type<FX>>,
       args: List<Type<FX>>,
-    ): Env<FX> {
-      var env = empty.unify(typeLattice, params, args)
+    ): Subst<FX> {
+      var env = emptySubst.unify(typeLattice, params, args)
       for ((param, arg) in params zip args) {
-        if (param !is Type.Sym.Param) continue
-        val bounds = typeBounds[param.name] ?: continue
+        if (param !is Type.Sym.Name) continue
+        val bounds = typeBounds[param] ?: continue
 
         fun unify(arg: Type.Application<FX>) = { bound: Type.Application<FX> ->
           if (bound.constructor == arg.constructor) for ((x, y) in bound.args zip arg.args) env = env.unify(typeLattice, x, y)
@@ -160,7 +158,7 @@ internal data class Env<out FX>(
   }
 }
 
-typealias TypeBounds<FX> = PersistentMap<String, PersistentSet<Type<FX>>>
+typealias TypeBounds<FX> = PersistentMap<Type.Sym.Name, PersistentSet<Type<FX>>>
 
 /** A mapping from variable name to type. Order matters! */
 internal typealias TermEnv<FX> = PersistentMap<String, Type<FX>>
@@ -168,9 +166,14 @@ internal typealias TermEnv<FX> = PersistentMap<String, Type<FX>>
 /** A mapping from function name to 1+ overloadings. Order matters!. */
 private typealias FunEnv = PersistentMap<String, PersistentList<Type.MethodRef>>
 
+/** An explicit substitution explaining free type variables */
+internal typealias Subst<FX> = PersistentMap<Type.Sym.Name, Type<FX>>
+
+internal val emptySubst: Subst<Nothing> = persistentHashMapOf()
+
 private fun <FX> emptyEnv(): TermEnv<FX> = persistentMapOf()
 
-private fun <FX> Env<FX>.unify(typeLattice: Lattice<Type<FX>>, params: List<Type<FX>>, args: List<Type<FX>>): Env<FX> {
+private fun <FX> Subst<FX>.unify(typeLattice: Lattice<Type<FX>>, params: List<Type<FX>>, args: List<Type<FX>>): Subst<FX> {
   val lastParam = params.lastOrNull()
   val arityChecks = params.size == args.size || lastParam is Type.Sym.Param && lastParam.name == "\$completion"
   return when {
@@ -180,26 +183,12 @@ private fun <FX> Env<FX>.unify(typeLattice: Lattice<Type<FX>>, params: List<Type
   }
 }
 
-private fun <FX> Env<FX>.unify(typeLattice: Lattice<Type<FX>>, lhs: Type<FX>, rhs: Type<FX>): Env<FX> =
+private fun <FX> Subst<FX>.unify(typeLattice: Lattice<Type<FX>>, lhs: Type<FX>, rhs: Type<FX>): Subst<FX> =
   when (rhs) {
     is Type.Union -> rhs.cases.fold(this) { env, case -> env.unify(typeLattice, lhs, case) }
     else ->
       when (lhs) {
-        is Type.Sym.Param ->
-          when (val existing = varAt(lhs.name)) {
-            null -> withVar(lhs.name, rhs)
-            rhs -> this
-            // We assume the program's already type-checked. So calling this "unification" was
-            // misleading.
-            // It's about collecting concrete types that the parameters may instantiate to.
-            else -> withVar(lhs.name, typeLattice.joinOf(existing, rhs))
-          }
-        is Type.Sym.This ->
-          when (val existing = receiver(lhs.site)) {
-            null -> withReceiver(lhs.site, rhs)
-            rhs -> this
-            else -> withReceiver(lhs.site, typeLattice.joinOf(existing, rhs))
-          }
+        is Type.Sym.Name -> if (lhs == rhs) this else put(lhs, typeLattice.joinOf(this[lhs] ?: typeLattice.bottom, rhs))
         is Type.Application ->
           when (rhs) {
             is Type.Application ->
@@ -235,16 +224,20 @@ private fun <FX> Env<FX>.unify(typeLattice: Lattice<Type<FX>>, lhs: Type<FX>, rh
         is Type.SpecializedMethodRef,
         is Type.Sym.Invoke,
         is Type.Union,
-        is Type.WildCard,
-        is Type.Sym.Rec,
-        is Type.Sym.Fix -> if (typeLattice.precede(rhs, lhs)) this else throw IllegalStateException("Cannot unify: $lhs with $rhs")
+        is Type.WildCard -> if (typeLattice.precede(rhs, lhs)) this else throw IllegalStateException("Cannot unify: $lhs with $rhs")
       }
   }
 
-internal fun showBound(name: String, bounds: Set<Type<*>>): String = if (bounds.isEmpty()) name else "$name ≼ ${bounds.joinToString(" ∩ ")}"
+internal fun showBound(name: Type.Sym.Name, bounds: Set<Type<*>>): String =
+  if (bounds.isEmpty()) name.toString() else "$name ≼ ${bounds.joinToString(" ∩ ")}"
 
 internal fun TypeBounds<*>.format(): String = asSequence().joinToString { (x, b) -> showBound(x, b) }
 
 internal fun String.isReceiverName() = this == "this" // || this == "<this>" || this.contains("\$this")
 
 internal fun String.isExtensionReceiverName() = this == "<this>" || this.startsWith("\$this")
+
+internal fun TypeBounds<*>.paramNames(): PersistentMap<String, Type.Sym.Param> =
+  asSequence().fold(persistentMapOf()) { m, (x, _) -> if (x is Type.Sym.Param) m.put(x.name, x) else m }
+
+internal fun <FX> showSubst(subst: Subst<FX>): String = subst.asSequence().joinToString { (l, r) -> "$l ↦ $r" }

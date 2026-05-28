@@ -18,9 +18,9 @@ package com.android.tools.render.configuration
 
 import com.android.ide.common.resources.Locale
 import com.android.sdklib.IAndroidTarget
-import com.android.sdklib.devices.DefaultDevices
 import com.android.sdklib.devices.Device
-import com.android.sdklib.devices.VendorDevices
+import com.android.sdklib.devices.DeviceManager
+import com.android.sdklib.devices.DeviceResourceTable
 import com.android.sdklib.internal.avd.AvdInfo
 import com.android.tools.configurations.ConfigurationModelModule
 import com.android.tools.configurations.ConfigurationSettings
@@ -34,9 +34,9 @@ internal class StandaloneConfigurationSettings(
   private val androidTarget: IAndroidTarget,
 ) : ConfigurationSettings {
 
-  private val defaultDevices = DefaultDevices(NullLogger.getLogger()).also { it.init() }
-  private val vendorDevices = VendorDevices(NullLogger.getLogger()).also { it.init() { true } }
-  override val defaultDevice = defaultDevices.getDevice("medium_phone", "Generic")
+  private val deviceTable =
+    DeviceResourceTable(NullLogger.getLogger(), isSupportedDevice = { true }, DeviceManager.VENDOR_DEVICE_RESOURCES + "devices")
+  override val defaultDevice = deviceTable.getDevice("medium_phone", "Generic")
 
   override fun selectDevice(device: Device) {}
 
@@ -48,8 +48,7 @@ internal class StandaloneConfigurationSettings(
   override val stateVersion: Int = 0 // State does not change
   override val resolverCache: ResourceResolverCache = ResourceResolverCache(this)
   override val localesInProject: ImmutableList<Locale> = ImmutableList.of()
-  override val devices: ImmutableList<Device> =
-    ImmutableList.builder<Device>().addAll(defaultDevices.devices!!.values()).addAll(vendorDevices.devices!!.values()).build()
+  override val devices: ImmutableList<Device> = ImmutableList.copyOf(deviceTable.getDevices().values())
   override val projectTarget: IAndroidTarget = androidTarget
 
   override fun createDeviceForAvd(avd: AvdInfo): Device? = null

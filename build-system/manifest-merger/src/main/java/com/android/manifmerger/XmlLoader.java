@@ -19,7 +19,6 @@ package com.android.manifmerger;
 import static com.android.manifmerger.PlaceholderHandler.KeyBasedValueResolver;
 
 import com.android.ide.common.blame.SourceFile;
-import com.android.resources.NamespaceReferenceRewriter;
 import com.android.utils.PositionXmlParser;
 
 import org.jetbrains.annotations.NotNull;
@@ -59,7 +58,8 @@ public final class XmlLoader {
             @NotNull InputStream inputStream,
             @NotNull XmlDocument.Type type,
             @Nullable String namespace,
-            @NotNull DocumentModel<ManifestModel.NodeTypes> model)
+            @NotNull DocumentModel<ManifestModel.NodeTypes> model,
+            @NotNull MergingReport.Builder reportBuilder)
             throws IOException, SAXException, ParserConfigurationException {
         Document domDocument = PositionXmlParser.parse(inputStream);
         return load(
@@ -70,13 +70,14 @@ public final class XmlLoader {
                 xmlFile,
                 type,
                 namespace,
-                model);
+                model,
+                reportBuilder);
     }
 
     /**
      * Build an unvalidated {@link XmlDocument} object from given DOM Document Also see overload
      * {@link XmlLoader#load(KeyResolver, KeyBasedValueResolver, String, File, InputStream,
-     * XmlDocument.Type, String, DocumentModel)} for more details.
+     * XmlDocument.Type, String, DocumentModel, MergingReport.Builder)} for more details.
      *
      * @param domDocument Manifest Document object.
      */
@@ -89,7 +90,8 @@ public final class XmlLoader {
             @NotNull File xmlFile,
             @NotNull XmlDocument.Type type,
             @Nullable String namespace,
-            @NotNull DocumentModel<ManifestModel.NodeTypes> model)
+            @NotNull DocumentModel<ManifestModel.NodeTypes> model,
+            @NotNull MergingReport.Builder reportBuilder)
             throws IOException, SAXException, ParserConfigurationException {
         Element rootElement = domDocument.getDocumentElement();
         @Nullable
@@ -103,7 +105,8 @@ public final class XmlLoader {
                 domDocument.getDocumentElement(),
                 type,
                 namespaceOrPackageName,
-                model);
+                model,
+                reportBuilder);
     }
 
     /**
@@ -127,7 +130,8 @@ public final class XmlLoader {
             @NotNull String xml,
             @NotNull XmlDocument.Type type,
             @Nullable String namespace,
-            @NotNull DocumentModel<ManifestModel.NodeTypes> model)
+            @NotNull DocumentModel<ManifestModel.NodeTypes> model,
+            @NotNull MergingReport.Builder reportBuilder)
             throws IOException, SAXException, ParserConfigurationException {
         Document domDocument = PositionXmlParser.parse(xml);
         Element rootElement = domDocument.getDocumentElement();
@@ -141,6 +145,7 @@ public final class XmlLoader {
                 domDocument.getDocumentElement(),
                 type,
                 namespaceOrPackageName,
-                model);
+                model,
+                reportBuilder);
     }
 }

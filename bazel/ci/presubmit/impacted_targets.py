@@ -334,7 +334,9 @@ def query_baseline_targets(
       + ' except '
       + ' except '.join(exclude_query)
   )
-  output = build_env.bazel_cquery(query).stdout.decode('utf-8').splitlines()
+  output = build_env.bazel_cquery(
+    query, "--config=dl-ci"
+  ).stdout.decode('utf-8').splitlines()
   # Filter out the configuration suffix from the target labels.
   baseline_targets = []
   for line in output:

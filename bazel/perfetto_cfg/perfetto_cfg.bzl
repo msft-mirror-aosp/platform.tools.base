@@ -85,6 +85,8 @@ PERFETTO_CONFIG = struct(
         #     your own demangling implementation.
         demangle_wrapper = ["//:src_trace_processor_demangle"],
         llvm_demangle = ["@perfetto-llvm-project-3b4c59c156919902c785ce3cbae0eee2ee53064d//:llvm_demangle"],
+        re2 = ["@re2//:re2"],
+        error_prone_annotations = ["@maven//:com.google.errorprone.error_prone_annotations"],
     ),
 
     # This struct allows embedders to customize the cc_opts for Perfetto
@@ -109,6 +111,7 @@ PERFETTO_CONFIG = struct(
     # This variable has been introduced to limit the change to Bazel and avoid
     # making the targets public in the google internal tree.
     proto_library_visibility = "//visibility:public",
+    trace_processor_proto_library_visibility = ["//visibility:public"],
 
     # Allow Bazel embedders to change the visibility of the Go protos.
     # Go protos have all sorts of strange behaviour in Google3 so need special

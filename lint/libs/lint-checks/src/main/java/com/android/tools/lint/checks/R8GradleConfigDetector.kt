@@ -29,9 +29,12 @@ import com.android.tools.lint.detector.api.Severity
 
 class R8GradleConfigDetector : Detector(), GradleScanner {
 
-  var minificationEnabledCookie: Any? = null
-  var seenResourceShrinkingSet = false
-  var isKts = false
+  private var minificationEnabledCookie: Any? = null
+  private var seenResourceShrinkingSet = false
+  private var isKts = false
+
+  private val parentsWithMinifyEnabled = mutableSetOf<String>()
+  private val shrinkResourcesFalseIncidents = mutableListOf<Pair<String, Incident>>()
 
   /** Property name matching, accounting for kts vs groovy property naming difference */
   private fun String.matchesBooleanPropertyName(context: GradleContext, expected: String): Boolean {
@@ -77,14 +80,15 @@ class R8GradleConfigDetector : Detector(), GradleScanner {
           // Downgrade to warning if not in Studio, since this is very bad for perf, but app will still run
           incident.overrideSeverity(Severity.WARNING)
         }
-        context.client.report(context, incident)
+        shrinkResourcesFalseIncidents.add(parent to incident)
       }
     }
 
-    if ((context.project.gradleModelVersion?.major ?: 10) < 10) {
-      // Only perform the check for using default value if < AGP 10
-      if (property.matchesBooleanPropertyName(context, "minifyEnabled")) {
-        if (value == "true") {
+    if (property.matchesBooleanPropertyName(context, "minifyEnabled")) {
+      if (value == "true") {
+        parentsWithMinifyEnabled.add(parent)
+        if ((context.project.gradleModelVersion?.major ?: 10) < 10) {
+          // Only perform the check for using default value if < AGP 10
           minificationEnabledCookie = statementCookie
         }
       }
@@ -92,6 +96,12 @@ class R8GradleConfigDetector : Detector(), GradleScanner {
   }
 
   override fun afterCheckFile(context: Context) {
+    for ((parent, incident) in shrinkResourcesFalseIncidents) {
+      if (parent in parentsWithMinifyEnabled) {
+        context.client.report(context, incident)
+      }
+    }
+
     if (minificationEnabledCookie != null && !seenResourceShrinkingSet) {
       val minifyEnabledLocation = context.getLocation(minificationEnabledCookie)
       val indentPrefix = " ".repeat(minifyEnabledLocation.start?.column ?: 0)

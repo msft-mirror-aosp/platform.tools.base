@@ -133,8 +133,6 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
 
   @get:OutputDirectory abstract val resultsDir: DirectoryProperty
 
-  @get:OutputDirectory abstract val xmlResultsDir: DirectoryProperty
-
   @get:OutputDirectory @get:Optional abstract val additionalTestOutputDir: DirectoryProperty
 
   @get:OutputDirectory abstract val coverageDir: DirectoryProperty
@@ -382,19 +380,13 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
     try {
       super.executeTests()
     } finally {
-      val xmlResultsDirFile = this.xmlResultsDir.get().asFile
+      val testResultsDir = resultsDir.get().asFile
       val htmlOutputDirFile = this.reports.html.outputLocation.get().asFile
 
-      // When android.experimental.androidTest.builtin_test_platform=true, XMLs might be in the root
-      // results directory or in device-specific subdirectories (alongside other artifacts).
-      // We need to aggregate all of them to get a complete HTML report.
-      val resultDirs = mutableListOf(xmlResultsDirFile)
-      xmlResultsDirFile.listFiles()?.filter { it.isDirectory }?.let { resultDirs.addAll(it) }
-
-      val report = TestReport(ReportType.SINGLE_FLAVOR, resultDirs, htmlOutputDirFile)
+      val report = TestReport(ReportType.SINGLE_FLAVOR, testResultsDir, htmlOutputDirFile)
       report.generateReport()
 
-      val metadataDir = xmlResultsDirFile.also { it.mkdirs() }
+      val metadataDir = testResultsDir.also { it.mkdirs() }
       val metadataFile = File(metadataDir, TEST_SUITE_METADATA_FILE)
 
       val metadataContent =
@@ -554,7 +546,7 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       task.streamingOutputFile.setDisallowChanges(
         task.project.layout.buildDirectory.file("intermediates/${testedVariant.name}/$name/streaming.txt")
       )
-      task.resultsDir.setDisallowChanges(task.project.layout.buildDirectory.dir("intermediates/${testedVariant.name}/$name/results"))
+      task.resultsDir.set(task.project.layout.buildDirectory.dir("intermediates/${testedVariant.name}/$name/results"))
       task.environment(DEFAULT_ENV_VARIABLE, task.engineInputPropertiesFiles.get().asFile.absolutePath)
       task.environment("junit.platform.commons.logging.level", "debug")
       task.deviceProviderFactory.timeOutInMs.setDisallowChanges(10000)
@@ -573,7 +565,7 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       testTaskReports.html.required.setDisallowChanges(true)
       testTaskReports.junitXml.required.setDisallowChanges(true)
       val xmlReport = testTaskReports.junitXml
-      xmlReport.outputLocation.setDisallowChanges(task.xmlResultsDir)
+      xmlReport.outputLocation.setDisallowChanges(task.resultsDir)
 
       val htmlReport = testTaskReports.html
       htmlReport.outputLocation.fileProvider(creationConfig.services.projectInfo.getTestReportFolder().map { it.dir(task.name).asFile })
@@ -596,7 +588,7 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
 
       creationConfig.testedVariant.artifacts
         .use(taskProvider)
-        .wiredWith(TestSuiteTestTask::xmlResultsDir)
+        .wiredWith(TestSuiteTestTask::resultsDir)
         .toAppendTo(InternalMultipleArtifactType.TEST_SUITE_RESULTS)
 
       creationConfig.testedVariant.artifacts
@@ -777,34 +769,22 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
 
       val testOptions = globalConfig.androidTestOptions
 
-      val resultsDir = testOptions.resultsDir
-      if (resultsDir != null) {
-        task.resultsDir.set(File(resultsDir, subFolder))
-        task.resultsDir.disallowChanges()
-      } else {
-        task.resultsDir.setDisallowChanges(
-          creationConfig.services.projectInfo.getOutputsDir().map { it.dir("${BuilderConstants.FD_ANDROID_RESULTS}/$subFolder") }
-        )
-      }
-
-      val reportDir = testOptions.reportDir
-      if (reportDir != null) {
-        task.xmlResultsDir.set(File(reportDir, subFolder))
-        task.xmlResultsDir.disallowChanges()
-      } else {
-        task.xmlResultsDir.setDisallowChanges(task.resultsDir)
-      }
-
       val testTaskReports = task.reports
       // Set html to true so that Gradle's error message contains clickable link to the html file.
       testTaskReports.html.required.setDisallowChanges(true)
       // We use our own per-device XML reporter in the android-test-engine to match the default
       // test execution path behavior.
       testTaskReports.junitXml.required.setDisallowChanges(false)
-      testTaskReports.junitXml.outputLocation.setDisallowChanges(task.xmlResultsDir)
-      testTaskReports.html.outputLocation.setDisallowChanges(
-        creationConfig.services.projectInfo.getReportsDir().map { it.dir("${BuilderConstants.FD_ANDROID_TESTS}/$subFolder") }
-      )
+
+      val reportDir = testOptions.reportDir
+      if (reportDir != null) {
+        testTaskReports.html.outputLocation.set(File(reportDir, subFolder))
+        testTaskReports.html.outputLocation.disallowChanges()
+      } else {
+        testTaskReports.html.outputLocation.setDisallowChanges(
+          creationConfig.services.projectInfo.getReportsDir().map { it.dir("${BuilderConstants.FD_ANDROID_TESTS}/$subFolder") }
+        )
+      }
 
       task.engineInputPropertiesFiles.setDisallowChanges(
         task.project.layout.buildDirectory.file("intermediates/androidTest/${creationConfig.name}/connected/junit_inputs.txt")
@@ -838,6 +818,47 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
           .wiredWith(TestSuiteTestTask::coverageDir)
           .toAppendTo(InternalMultipleArtifactType.TEST_SUITE_CODE_COVERAGE)
       }
+
+      val artifacts =
+        if (creationConfig is DeviceTestCreationConfig) {
+          creationConfig.mainVariant.artifacts
+        } else {
+          creationConfig.artifacts
+        }
+
+      val globalConfig = creationConfig.global
+      val testedConfig = (creationConfig as? DeviceTestCreationConfig)?.mainVariant
+      val variantName = testedConfig?.name ?: creationConfig.name
+      var buildTarget: String
+      var flavorFolder = if (creationConfig.componentType.isAar) "" else creationConfig.flavorName ?: ""
+      if (flavorFolder.isNotEmpty()) {
+        buildTarget = variantName.substring(flavorFolder.length).lowercase(Locale.US)
+        flavorFolder = "${BuilderConstants.FD_FLAVORS}/$flavorFolder"
+      } else {
+        buildTarget = variantName
+      }
+      val providerFolder = BuilderConstants.CONNECTED
+      val subFolder = "$providerFolder/$buildTarget/$flavorFolder"
+
+      val testOptions = globalConfig.androidTestOptions
+      val resultsDir = testOptions.resultsDir
+      val request = artifacts.setInitialProvider(taskProvider, TestSuiteTestTask::resultsDir)
+
+      if (resultsDir != null) {
+        val f = File(resultsDir)
+        val resolvedFile =
+          if (f.isAbsolute) {
+            File(f, subFolder)
+          } else {
+            File(creationConfig.services.projectInfo.projectDirectory.asFile, File(resultsDir, subFolder).path)
+          }
+        request.atLocation(resolvedFile)
+      } else {
+        val defaultLocation =
+          creationConfig.services.projectInfo.getOutputsDir().map { it.dir("${BuilderConstants.FD_ANDROID_RESULTS}/$subFolder") }
+        request.atLocation(defaultLocation)
+      }
+      request.on(InternalArtifactType.ANDROID_TEST_RESULTS)
     }
   }
 
@@ -1001,12 +1022,10 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       task.engineInputProperties.disallowChanges()
 
       task.resultsDir.set(testResultOutputDir)
-      task.xmlResultsDir.set(testResultOutputDir)
 
       val testTaskReports = task.reports
       testTaskReports.html.required.setDisallowChanges(true)
       testTaskReports.junitXml.required.setDisallowChanges(false)
-      testTaskReports.junitXml.outputLocation.setDisallowChanges(task.xmlResultsDir)
       testTaskReports.html.outputLocation.set(testReportOutputDir)
       testTaskReports.html.outputLocation.disallowChanges()
 

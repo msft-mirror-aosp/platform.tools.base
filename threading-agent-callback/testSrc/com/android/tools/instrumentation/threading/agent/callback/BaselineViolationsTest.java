@@ -18,14 +18,13 @@ package com.android.tools.instrumentation.threading.agent.callback;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import com.google.common.collect.ImmutableList;
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.util.List;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
+
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 
 public class BaselineViolationsTest {
 
@@ -44,15 +43,30 @@ public class BaselineViolationsTest {
         InputStream stream = new ByteArrayInputStream(BASELINE_TEXT.getBytes());
         BaselineViolations baseline = BaselineViolations.fromStream(stream);
 
-        assertThat(baseline.isIgnored(createStackTrace("com.android.ClassA", "methodOne")))
+        assertThat(baseline.isIgnored(createStackTrace("com.android.ClassA", "methodOne"), 0))
                 .isTrue();
+        assertThat(baseline.isIgnored(createStackTrace("com.android.ClassA", "methodTwo"), 0))
+                .isTrue();
+
         assertThat(
                         baseline.isIgnored(
                                 createStackTrace(
                                         "com.android.ClassA",
                                         "methodOne",
                                         "ParentClass",
-                                        "parentMethod")))
+                                        "parentMethod"),
+                                0))
+                .isTrue();
+
+        // Test frame index 1.
+        assertThat(
+                        baseline.isIgnored(
+                                createStackTrace(
+                                        "OtherClass",
+                                        "otherMethod",
+                                        "com.android.ClassA",
+                                        "methodOne"),
+                                1))
                 .isTrue();
     }
 
@@ -61,17 +75,19 @@ public class BaselineViolationsTest {
         InputStream stream = new ByteArrayInputStream(BASELINE_TEXT.getBytes());
         BaselineViolations baseline = BaselineViolations.fromStream(stream);
 
-        assertThat(baseline.isIgnored(createStackTrace("com.android.ClassA", "notListedMethod")))
-                .isFalse();
-        assertThat(baseline.isIgnored(createStackTrace("com.android.NotListedClass", "methodOne")))
+        assertThat(baseline.isIgnored(createStackTrace("com.android.ClassA", "notListedMethod"), 0))
                 .isFalse();
         assertThat(
                         baseline.isIgnored(
-                                createStackTrace("com.android.ClassA", "methodOnePlusSuffix")))
+                                createStackTrace("com.android.NotListedClass", "methodOne"), 0))
                 .isFalse();
         assertThat(
                         baseline.isIgnored(
-                                createStackTrace("com.android.ClassA", "prefixPlusMethodOne")))
+                                createStackTrace("com.android.ClassA", "methodOnePlusSuffix"), 0))
+                .isFalse();
+        assertThat(
+                        baseline.isIgnored(
+                                createStackTrace("com.android.ClassA", "prefixPlusMethodOne"), 0))
                 .isFalse();
     }
 
@@ -80,7 +96,9 @@ public class BaselineViolationsTest {
         InputStream stream = new ByteArrayInputStream(BASELINE_TEXT.getBytes());
         BaselineViolations baseline = BaselineViolations.fromStream(stream);
 
-        assertThat(baseline.isIgnored(createStackTrace("com.android.ClassA", "commentedOutMethod")))
+        assertThat(
+                        baseline.isIgnored(
+                                createStackTrace("com.android.ClassA", "commentedOutMethod"), 0))
                 .isFalse();
     }
 
@@ -98,23 +116,25 @@ public class BaselineViolationsTest {
                                         "leafClass",
                                         "leafMethod",
                                         "com.android.ClassA",
-                                        "methodOne")))
+                                        "methodOne"),
+                                0))
                 .isFalse();
     }
 
-    private static List<StackTraceElement> createStackTrace(
+    private static StackTraceElement[] createStackTrace(
             String declaringClass1, String methodName1) {
-        return ImmutableList.of(createStackTraceElement(declaringClass1, methodName1));
+        return new StackTraceElement[] {createStackTraceElement(declaringClass1, methodName1)};
     }
 
-    private static List<StackTraceElement> createStackTrace(
+    private static StackTraceElement[] createStackTrace(
             String declaringClass1,
             String methodName1,
             String declaringClass2,
             String methodName2) {
-        return ImmutableList.of(
-                createStackTraceElement(declaringClass1, methodName1),
-                createStackTraceElement(declaringClass2, methodName2));
+        return new StackTraceElement[] {
+            createStackTraceElement(declaringClass1, methodName1),
+            createStackTraceElement(declaringClass2, methodName2),
+        };
     }
 
     private static StackTraceElement createStackTraceElement(

@@ -176,6 +176,8 @@ single_version_override(
     version = "3.16.0",
 )
 
+bazel_dep(name = "re2")
+
 # re2 is included by grpc, but override with a fix for Bazel 8.
 # See https://github.com/google/re2/commit/c84a140c93352cdabbfb547c531be34515b12228
 git_override(

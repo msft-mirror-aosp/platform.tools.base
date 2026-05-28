@@ -76,21 +76,29 @@ class XMLReportAggregatorTest {
 
     val module = report.modules.first()
     assertThat(module.name).isEqualTo(":app")
-    assertThat(module.testSuiteSummaries).hasSize(1)
-    assertThat(module.packages).hasSize(1)
+    // unitTest + Aggregated
+    val suiteNames = module.testSuiteSummaries.map { it.name }
+    if (suiteNames.size != 2) {
+      println("DEBUG: suiteNames for module = $suiteNames")
+    }
+    assertThat(suiteNames).containsExactly("unitTest", "Aggregated")
 
     val pkg = module.packages.first()
     assertThat(pkg.name).isEqualTo("com.example.app")
-    assertThat(pkg.classes).hasSize(1)
+    assertThat(pkg.testSuiteSummaries.map { it.name }).containsExactly("unitTest", "Aggregated")
 
     val clazz = pkg.classes.first()
     assertThat(clazz.name).isEqualTo("MyClassTest")
-    assertThat(clazz.testCases).hasSize(1)
+    assertThat(clazz.testSuiteSummaries.map { it.name }).containsExactly("unitTest", "Aggregated")
 
     val testCase = clazz.testCases.first()
     assertThat(testCase.name).isEqualTo("testExample")
-    assertThat(testCase.results).hasSize(1)
-    assertThat(testCase.results["debug"]?.status).isEqualTo("pass")
+    assertThat(testCase.testSuiteSummaries.map { it.name }).containsExactly("unitTest", "Aggregated")
+    assertThat(testCase.testSuiteResults).hasSize(1)
+
+    val suiteResult = testCase.testSuiteResults.find { it.testSuiteName == "unitTest" }
+    assertThat(suiteResult).isNotNull()
+    assertThat(suiteResult?.variantResults?.get("debug")?.status).isEqualTo("pass")
   }
 
   @Test
@@ -144,8 +152,9 @@ class XMLReportAggregatorTest {
 
     val appModule = report.modules.first()
     assertThat(appModule.name).isEqualTo(":app")
-    assertThat(appModule.testSuiteSummaries).hasSize(2)
-    assertThat(appModule.packages).hasSize(1)
+    // unitTest, otherTestSuite + Aggregated
+    val suiteNames = appModule.testSuiteSummaries.map { it.name }
+    assertThat(suiteNames).containsExactly("unitTest", "otherTestSuite", "Aggregated")
 
     val pkg = appModule.packages.first()
     assertThat(pkg.name).isEqualTo("com.example.app")
@@ -153,14 +162,26 @@ class XMLReportAggregatorTest {
 
     val unitTestClass = pkg.classes.findOrThrow({ it.name == "MyClassTest" }) { "MyClassTest not found" }
     assertThat(unitTestClass.testCases).hasSize(2)
-    assertThat(unitTestClass.testCases.find { it.name == "testPass" }?.results["debug"]?.status).isEqualTo("pass")
-    assertThat(unitTestClass.testCases.find { it.name == "testFail" }?.results["debug"]?.status).isEqualTo("fail")
-    assertThat(unitTestClass.testCases.find { it.name == "testFail" }?.results["debug"]?.stackTrace).contains("stacktrace here")
+
+    val testPass = unitTestClass.testCases.find { it.name == "testPass" }
+    assertThat(testPass?.testSuiteResults?.first()?.variantResults?.get("debug")?.status).isEqualTo("pass")
+
+    val testFail = unitTestClass.testCases.find { it.name == "testFail" }
+    assertThat(testFail?.testSuiteResults?.first()?.variantResults?.get("debug")?.status).isEqualTo("fail")
+
+    val stackTraceId = testFail?.testSuiteResults?.first()?.variantResults?.get("debug")?.stackTraceId
+    assertThat(stackTraceId).isNotNull()
+    val group = testFail?.commonStackTraces?.find { it.id == stackTraceId }
+    assertThat(group?.stackTrace).contains("stacktrace here")
 
     val otherTestClass = pkg.classes.findOrThrow({ it.name == "MyOtherClassTest" }) { "MyOtherClassTest not found" }
     assertThat(otherTestClass.testCases).hasSize(2)
-    assertThat(otherTestClass.testCases.find { it.name == "testAnotherPass" }?.results["release"]?.status).isEqualTo("pass")
-    assertThat(otherTestClass.testCases.find { it.name == "testSkipped" }?.results["release"]?.status).isEqualTo("skipped")
+
+    val testAnotherPass = otherTestClass.testCases.find { it.name == "testAnotherPass" }
+    assertThat(testAnotherPass?.testSuiteResults?.first()?.variantResults?.get("release")?.status).isEqualTo("pass")
+
+    val testSkipped = otherTestClass.testCases.find { it.name == "testSkipped" }
+    assertThat(testSkipped?.testSuiteResults?.first()?.variantResults?.get("release")?.status).isEqualTo("skipped")
   }
 
   @Test
@@ -222,15 +243,19 @@ class XMLReportAggregatorTest {
     val report = aggregator.generateReport()
 
     val module = report.modules.findOrThrow({ it.name == ":lib" }) { ":lib module not found" }
-
     val pkg = module.packages.findOrThrow({ it.name == "com.example.app" }) { "com.example.app package not found" }
     val clazz = pkg.classes.findOrThrow({ it.name == "MyFailedClassTest" }) { "MyFailedClassTest not found" }
     val testCase = clazz.testCases.findOrThrow({ it.name == "testFailure" }) { "testFailure testcase not found" }
 
     assertThat(testCase.name).isEqualTo("testFailure")
-    assertThat(testCase.results["debug"]?.status).isEqualTo("fail")
-    assertThat(testCase.results["debug"]?.stackTrace).contains("java.lang.RuntimeException: This is a test exception")
-    assertThat(testCase.results["debug"]?.stackTrace).contains("at com.example.app.MyFailedClassTest.testFailure(MyFailedClassTest.kt:10)")
+
+    val suiteResult = testCase.testSuiteResults.find { it.testSuiteName == "failedUnitTest" }
+    assertThat(suiteResult?.variantResults?.get("debug")?.status).isEqualTo("fail")
+
+    val stackTraceId = suiteResult?.variantResults?.get("debug")?.stackTraceId
+    val group = testCase.commonStackTraces.find { it.id == stackTraceId }
+    assertThat(group?.stackTrace).contains("java.lang.RuntimeException: This is a test exception")
+    assertThat(group?.stackTrace).contains("at com.example.app.MyFailedClassTest.testFailure(MyFailedClassTest.kt:10)")
   }
 
   @Test
@@ -288,18 +313,22 @@ class XMLReportAggregatorTest {
     val exampleInstrumentedTest = pkg.classes.findOrThrow({ it.name == "ExampleInstrumentedTest" }) { "ExampleInstrumentedTest not found" }
     val exampleTestCase =
       exampleInstrumentedTest.testCases.findOrThrow({ it.name == "useAppContext" }) { "useAppContext in ExampleInstrumentedTest not found" }
-    assertThat(exampleTestCase.results).hasSize(2)
-    assertThat(exampleTestCase.results["stagingDebug"]?.status).isEqualTo("pass")
-    assertThat(exampleTestCase.results["trialDebug"]?.status).isEqualTo("pass")
+
+    val exampleSuiteResult = exampleTestCase.testSuiteResults.find { it.testSuiteName == "AndroidTest" }
+    assertThat(exampleSuiteResult?.variantResults).hasSize(2)
+    assertThat(exampleSuiteResult?.variantResults?.get("stagingDebug")?.status).isEqualTo("pass")
+    assertThat(exampleSuiteResult?.variantResults?.get("trialDebug")?.status).isEqualTo("pass")
 
     // Verify StagingInstrumentedTest (runs only on stagingDebug)
     val stagingInstrumentedTest = pkg.classes.findOrThrow({ it.name == "StagingInstrumentedTest" }) { "StagingInstrumentedTest not found" }
     val stagingTestCase =
       stagingInstrumentedTest.testCases.findOrThrow({ it.name == "useAppContext" }) { "useAppContext in StagingInstrumentedTest not found" }
-    assertThat(stagingTestCase.results).hasSize(1)
-    assertThat(stagingTestCase.results).containsKey("stagingDebug")
-    assertThat(stagingTestCase.results["stagingDebug"]?.status).isEqualTo("pass")
-    assertThat(stagingTestCase.results).doesNotContainKey("trialDebug")
+
+    val stagingSuiteResult = stagingTestCase.testSuiteResults.find { it.testSuiteName == "AndroidTest" }
+    assertThat(stagingSuiteResult?.variantResults).hasSize(1)
+    assertThat(stagingSuiteResult?.variantResults).containsKey("stagingDebug")
+    assertThat(stagingSuiteResult?.variantResults?.get("stagingDebug")?.status).isEqualTo("pass")
+    assertThat(stagingSuiteResult?.variantResults).doesNotContainKey("trialDebug")
   }
 
   @Test
@@ -360,50 +389,32 @@ class XMLReportAggregatorTest {
     val aggregator = XMLReportAggregator(files = listOf(inputDir1), projectName = "SummaryProject")
     val report = aggregator.generateReport()
 
-    // 1. Check Root Summary
-    val rootSummary = report.summary
-    assertThat(rootSummary.total).isEqualTo(5)
-    assertThat(rootSummary.passed).isEqualTo(2)
-    assertThat(rootSummary.failed).isEqualTo(1)
-    assertThat(rootSummary.skipped).isEqualTo(2)
+    val appModule = report.modules.findOrThrow({ it.name == ":app" }) { ":app module not found" }
 
-    // passRate = passed / (passed + failed) = 2 / 3 = 66.666...
-    assertThat(rootSummary.passRate).isWithin(0.01).of(66.66)
+    // Check Module Summaries
+    val unitTestSummary = appModule.testSuiteSummaries.find { it.name == "unitTest" }
+    assertThat(unitTestSummary).isNotNull()
 
-    // 2. Check Variant Summaries at Root
-    val debugSummary = rootSummary.variantSummaries["debug"]!!
+    val debugSummary = unitTestSummary?.variantSummaries?.find { it.name == "debug" }!!
     assertThat(debugSummary.total).isEqualTo(2)
     assertThat(debugSummary.passed).isEqualTo(1)
     assertThat(debugSummary.failed).isEqualTo(1)
     assertThat(debugSummary.skipped).isEqualTo(0)
     assertThat(debugSummary.rate).isEqualTo(50.0)
 
-    val releaseSummary = rootSummary.variantSummaries["release"]!!
+    val releaseSummary = unitTestSummary.variantSummaries.find { it.name == "release" }!!
     assertThat(releaseSummary.total).isEqualTo(2)
     assertThat(releaseSummary.passed).isEqualTo(1)
     assertThat(releaseSummary.failed).isEqualTo(0)
     assertThat(releaseSummary.skipped).isEqualTo(1)
     assertThat(releaseSummary.rate).isEqualTo(100.0)
 
-    val skippedOnlySummary = rootSummary.variantSummaries["skippedOnly"]!!
+    val skippedOnlySummary = unitTestSummary.variantSummaries.find { it.name == "skippedOnly" }!!
     assertThat(skippedOnlySummary.total).isEqualTo(1)
     assertThat(skippedOnlySummary.passed).isEqualTo(0)
     assertThat(skippedOnlySummary.failed).isEqualTo(0)
     assertThat(skippedOnlySummary.skipped).isEqualTo(1)
     assertThat(skippedOnlySummary.rate).isEqualTo(0.0)
-
-    // 3. Check Aggregation up the chain (Module, Package, Class, TestSuiteSummary)
-    val appModule = report.modules.findOrThrow({ it.name == ":app" }) { ":app module not found" }
-    assertThat(appModule.summary.total).isEqualTo(5)
-    assertThat(appModule.testSuiteSummaries.first().summary.total).isEqualTo(5)
-
-    val pkg = appModule.packages.first()
-    assertThat(pkg.summary.total).isEqualTo(5)
-    assertThat(pkg.testSuiteSummaries.first().summary.total).isEqualTo(5)
-
-    val clazz = pkg.classes.first()
-    assertThat(clazz.summary.total).isEqualTo(5)
-    assertThat(clazz.testSuiteSummaries.first().summary.total).isEqualTo(5)
   }
 
   @Test
@@ -459,14 +470,5 @@ class XMLReportAggregatorTest {
 
     // Assert that the parsed variants are sorted alphabetically
     assertThat(report.variants).containsExactly("variantA", "variantB", "variantC").inOrder()
-
-    val module = report.modules.first()
-    val pkg = module.packages.first()
-    val clazz = pkg.classes.first()
-    val testCase = clazz.testCases.first()
-
-    // Assert that the test cases results map keys are ordered alphabetically ascending
-    val resultKeys = testCase.results.keys.toList()
-    assertThat(resultKeys).containsExactly("variantA", "variantB", "variantC").inOrder()
   }
 }

@@ -167,26 +167,32 @@ object TargetedR8RulesReadWriter {
       while (true) {
         val zipEntry = zipInputStream.nextEntry ?: break
 
-        VersionedR8Rules.relativeFilePathRegex.matchEntire(zipEntry.name)?.let { matchResult ->
-          r8Rules.add(
-            VersionedR8Rules(
-              minVersion = matchResult.groups["minVersion"]?.value?.let { ShrinkerVersion.tryParse(it) },
-              maxVersionExclusive = matchResult.groups["maxVersionExclusive"]?.value?.let { ShrinkerVersion.tryParse(it) },
-              fileName = matchResult.groups["fileName"]!!.value,
-              r8Rules =
-                ConsumerRuleGlobalGuardian.readConsumerKeepRulesRemovingBannedGlobals(
-                  zipInputStream,
-                  shouldRemoveBannedGlobals = shouldRemoveBannedGlobals,
-                ),
+        val r8Match = VersionedR8Rules.relativeFilePathRegex.matchEntire(zipEntry.name)
+        if (r8Match != null) {
+          if (isSafeRuleFileName(r8Match.groups["fileName"]!!.value)) {
+            r8Rules.add(
+              VersionedR8Rules(
+                minVersion = r8Match.groups["minVersion"]?.value?.let { ShrinkerVersion.tryParse(it) },
+                maxVersionExclusive = r8Match.groups["maxVersionExclusive"]?.value?.let { ShrinkerVersion.tryParse(it) },
+                fileName = r8Match.groups["fileName"]!!.value,
+                r8Rules =
+                  ConsumerRuleGlobalGuardian.readConsumerKeepRulesRemovingBannedGlobals(
+                    zipInputStream,
+                    shouldRemoveBannedGlobals = shouldRemoveBannedGlobals,
+                  ),
+              )
             )
-          )
+          }
+          continue
         }
-          ?: if (isClassesJarInAar) null
-          else {
-            LegacyProguardRules.legacyProguardRulesRelativeFilePathRegexForJar.matchEntire(zipEntry.name)?.let { matchResult ->
+
+        if (!isClassesJarInAar) {
+          val legacyMatch = LegacyProguardRules.legacyProguardRulesRelativeFilePathRegexForJar.matchEntire(zipEntry.name)
+          if (legacyMatch != null) {
+            if (isSafeRuleFileName(legacyMatch.groups["fileName"]!!.value)) {
               legacyProguardRules.add(
                 LegacyProguardRules(
-                  fileName = matchResult.groups["fileName"]!!.value,
+                  fileName = legacyMatch.groups["fileName"]!!.value,
                   legacyProguardRules =
                     ConsumerRuleGlobalGuardian.readConsumerKeepRulesRemovingBannedGlobals(
                       zipInputStream,
@@ -196,9 +202,22 @@ object TargetedR8RulesReadWriter {
               )
             }
           }
+        }
       }
     }
 
     return TargetedR8Rules(r8Rules, legacyProguardRules)
   }
+
+  /**
+   * Validates that the provided file name is a safe, single path component.
+   *
+   * This prevents directory traversal attacks (e.g., Zip-Slip) where a malicious JAR entry could use relative paths (such as `../` or
+   * `..\`) to write outside the intended output directory.
+   *
+   * @param name The file name extracted from the zip entry.
+   * @return `true` if the file name is safe, `false` otherwise.
+   */
+  private fun isSafeRuleFileName(name: String): Boolean =
+    name.isNotEmpty() && '/' !in name && '\\' !in name && ':' !in name && name != "." && name != ".." && name.none { it < ' ' }
 }

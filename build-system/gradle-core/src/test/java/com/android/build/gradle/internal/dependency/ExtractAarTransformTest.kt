@@ -69,6 +69,30 @@ class ExtractAarTransformTest {
     extractedAarDirContents.forEach { assertThat(it.value.contentEquals(expectedDirContents[it.key]!!)).isTrue() }
   }
 
+  @Test
+  fun `test extract aar with Zip Slip`() {
+    val aarContents =
+      sampleAarContents().toMutableMap().also {
+        it["../../evil.ext"] = "malicious payload".toByteArray()
+        it["..\\..\\evil2.ext"] = "malicious payload 2".toByteArray()
+      }
+
+    val aarFile = tmp.newFile("foo_evil.aar")
+    createAar(aarFile, aarContents)
+
+    val extractedAarDir = tmp.newFolder("extracted-aar-evil")
+    AarExtractor().extract(aarFile, extractedAarDir)
+
+    val extractedAarDirContents = readDirectoryContents(extractedAarDir)
+    val expectedDirContents =
+      sampleAarContents().toMutableMap().also {
+        it["jars/classes.jar"] = it["classes.jar"]!!
+        it.remove("classes.jar")
+      }
+    assertThat(extractedAarDirContents.size).isEqualTo(expectedDirContents.size)
+    extractedAarDirContents.forEach { assertThat(it.value.contentEquals(expectedDirContents[it.key]!!)).isTrue() }
+  }
+
   private fun sampleAarContents(): Map<String, ByteArray> =
     mapOf(
       "AndroidManifest.xml" to "<manifest/>".toByteArray(),

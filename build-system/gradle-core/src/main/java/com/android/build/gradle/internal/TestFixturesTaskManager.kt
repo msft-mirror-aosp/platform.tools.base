@@ -202,7 +202,8 @@ class TestFixturesTaskManager(project: Project, globalConfig: GlobalTaskCreation
     if (
       globalConfig.avoidTaskRegistration.not() &&
         testFixturesComponent.services.projectOptions.get(LINT_ANALYSIS_PER_COMPONENT) &&
-        globalConfig.lintOptions.ignoreTestFixturesSources.not()
+        globalConfig.lintOptions.ignoreTestFixturesSources.not() &&
+        testFixturesComponent.mainVariant.enableLint
     ) {
       taskFactory.register(AndroidLintAnalysisTask.PerComponentCreationAction(testFixturesComponent, fatalOnly = false))
       taskFactory.register(

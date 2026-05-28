@@ -46,6 +46,8 @@ class DumpUiCommand : Callable<Int> {
   @Option(names = ["--include-attributes"], description = ["Include view attributes in the dump"]) var includeAttributes: Boolean = false
   @Option(names = ["--include-resolution-stack"], description = ["Include attribute resolution stack in the dump"])
   var includeResolutionStack: Boolean = false
+  @Option(names = ["--skip-system-composables"], description = ["Skip system/framework Composable nodes in the dump"])
+  var skipSystemComposables: Boolean = false
 
   companion object {
     /** Factory for creating [AdbSession]. Can be overridden in tests. */
@@ -67,7 +69,13 @@ class DumpUiCommand : Callable<Int> {
           createViewInspector(commandSender, injectionManager)
           val composeInspectorConnected = createComposeInspector(commandSender, injectionManager)
 
-          dumpUiTree(commandSender, includeAttributes, includeResolutionStack, composeInspectorConnected)
+          dumpUiTree(
+            commandSender = commandSender,
+            includeAttributes = includeAttributes,
+            includeResolutionStack = includeResolutionStack,
+            composeInspectorConnected = composeInspectorConnected,
+            skipSystemComposables = skipSystemComposables,
+          )
         }
       }
       return EXIT_OK
@@ -84,18 +92,23 @@ internal suspend fun dumpUiTree(
   includeAttributes: Boolean,
   includeResolutionStack: Boolean,
   composeInspectorConnected: Boolean,
+  skipSystemComposables: Boolean,
 ) {
   val viewRoots = fetchViewTree(commandSender, includeAttributes, includeResolutionStack)
   if (composeInspectorConnected) {
-    fetchAndMergeComposeTrees(commandSender, viewRoots)
+    fetchAndMergeComposeTrees(commandSender, viewRoots, skipSystemComposables)
   }
   viewRoots.forEach { printUiTree(it, 0) }
 }
 
 /** Queries the Compose Layout Inspector on the device and merges its trees into [viewRoots] in-place. */
-internal suspend fun fetchAndMergeComposeTrees(commandSender: CommandSender, viewRoots: List<UiNode.ViewNode>) {
+internal suspend fun fetchAndMergeComposeTrees(
+  commandSender: CommandSender,
+  viewRoots: List<UiNode.ViewNode>,
+  skipSystemComposables: Boolean,
+) {
   viewRoots.forEach { viewRoot ->
-    val composeResult = queryComposeTree(commandSender, viewRoot.id)
+    val composeResult = queryComposeTree(commandSender, viewRoot.id, skipSystemComposables)
     if (composeResult != null) {
       val (roots, stringsMap) = composeResult
       roots.forEach { composeRoot ->
