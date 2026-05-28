@@ -150,8 +150,9 @@ class DiffChunkTest {
     assertThat(resilientChunks).hasSize(1)
     assertThat(resilientChunks[0].lines[1].type).isEqualTo(LineType.CONTEXT)
 
-    // Strict mode (strict = true) throws IllegalArgumentException
-    assertFailsWith<IllegalArgumentException> { DiffChunk.parse(malformedDiff, strict = true) }
+    // Strict mode (strict = true) throws IllegalArgumentException and asserts its exact message
+    val exception = assertFailsWith<IllegalArgumentException> { DiffChunk.parse(malformedDiff, strict = true) }
+    assertThat(exception).hasMessageThat().contains("Malformed diff line: unrecognized or missing prefix 'm'")
   }
 
   @Test
@@ -210,8 +211,9 @@ class DiffChunkTest {
     assertThat(resilientChunks[0].lines[1].type).isEqualTo(LineType.CONTEXT)
     assertThat(resilientChunks[0].lines[1].text).isEmpty()
 
-    // Strict mode (strict = true) throws IllegalArgumentException on prefix-less empty line
-    assertFailsWith<IllegalArgumentException> { DiffChunk.parse(emptyLineDiff, strict = true) }
+    // Strict mode (strict = true) throws IllegalArgumentException on prefix-less empty line and asserts its exact message
+    val exception = assertFailsWith<IllegalArgumentException> { DiffChunk.parse(emptyLineDiff, strict = true) }
+    assertThat(exception).hasMessageThat().contains("Malformed diff line: completely blank line inside hunk body")
   }
 
   @Test
@@ -287,6 +289,81 @@ class DiffChunkTest {
     assertThat(chunk.oldLength).isEqualTo(3) // 2 context + 1 removed
     assertThat(chunk.newStart).isEqualTo(1)
     assertThat(chunk.newLength).isEqualTo(3) // 2 context + 1 added
-    assertThat(chunk.lines).hasSize(4)
+  }
+
+  @Test
+  fun testParse_resilientMetadataAndBlankLineBoundaryExit() {
+    val diffText =
+      """
+      @@ -1,1 +1,1 @@
+      -old line
+      +new line
+
+
+      @@ -10,1 +10,1 @@
+      -another old
+      +another new
+      """
+        .trimIndent()
+
+    // This verifies that the resilient lookahead correctly:
+    // 1. Skips both blank lines between hunks as boundary separators.
+    // 2. Does not consume them as context lines inside the first hunk.
+    // 3. Parses exactly two distinct chunks.
+    val chunks = DiffChunk.parse(diffText, strict = false)
+    assertThat(chunks).hasSize(2)
+
+    val chunk1 = chunks[0]
+    assertThat(chunk1.lines).hasSize(2) // only REMOVED and ADDED, no blank CONTEXT lines!
+    assertThat(chunk1.lines[0].type).isEqualTo(LineType.REMOVED)
+    assertThat(chunk1.lines[1].type).isEqualTo(LineType.ADDED)
+
+    val chunk2 = chunks[1]
+    assertThat(chunk2.lines).hasSize(2)
+  }
+
+  @Test
+  fun testParse_resilientBlankLineInsideHunkBody() {
+    val diffText =
+      """
+      @@ -1,3 +1,4 @@
+       context before
+      -old line
+      +new line
+
+       context after
+      """
+        .trimIndent()
+
+    // This verifies that a completely blank line occurring strictly INSIDE the hunk body
+    // is successfully parsed resiliently as a CONTEXT line and does not cut the hunk short!
+    val chunks = DiffChunk.parse(diffText, strict = false)
+    assertThat(chunks).hasSize(1)
+    val chunk = chunks[0]
+    assertThat(chunk.lines).hasSize(5) // context + removed + added + blank context + context = 5!
+    assertThat(chunk.lines[3].type).isEqualTo(LineType.CONTEXT)
+    assertThat(chunk.lines[3].text).isEmpty()
+  }
+
+  @Test
+  fun testParse_metadataHeaderBoundaryExit() {
+    val diffText =
+      """
+      --- a/first.txt
+      +++ b/first.txt
+      @@ -1,1 +1,1 @@
+      -old line
+      +new line
+      --- a/second.txt
+      +++ b/second.txt
+      """
+        .trimIndent()
+
+    // This verifies that encountering a new file header metadata block (---) immediately
+    // exits the hunk loop cleanly, treating the trailing file header as a boundary!
+    val chunks = DiffChunk.parse(diffText, strict = false)
+    assertThat(chunks).hasSize(1)
+    val chunk = chunks[0]
+    assertThat(chunk.lines).hasSize(2) // only REMOVED and ADDED, no trailing '---' lines!
   }
 }

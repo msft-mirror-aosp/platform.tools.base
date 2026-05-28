@@ -17,6 +17,26 @@ package com.android.tools.diff
 
 import com.android.tools.diff.TextPatch.Companion.splitWithLineSeparators
 
+internal const val HUNK_HEADER_PREFIX = "@@ -"
+internal const val ORIGINAL_FILE_PREFIX = "---"
+internal const val MODIFIED_FILE_PREFIX = "+++"
+internal const val GIT_DIFF_PREFIX = "diff "
+internal const val INDEX_PREFIX = "index "
+internal const val META_INSTRUCTION_PREFIX = "\\"
+internal const val NO_NEWLINE_MARKER = "No newline at end of file"
+
+internal fun Char.isLineTerminator(): Boolean = this == '\n' || this == '\r'
+
+internal fun String.removeLineTerminators(): String = this.removeSuffix("\n").removeSuffix("\r")
+
+private fun String.isHunkHeader(): Boolean = this.startsWith(HUNK_HEADER_PREFIX)
+
+private fun String.isDiffHeader(): Boolean =
+  this.startsWith(ORIGINAL_FILE_PREFIX) ||
+    this.startsWith(MODIFIED_FILE_PREFIX) ||
+    this.startsWith(GIT_DIFF_PREFIX) ||
+    this.startsWith(INDEX_PREFIX)
+
 /**
  * A contiguous block of changes within a [TextPatch].
  *
@@ -73,7 +93,7 @@ data class DiffChunk(val oldStart: Int, val oldLength: Int, val newStart: Int, v
       append("\n")
       append(line.toUnifiedString())
       if (line.separator == LineSeparator.NONE) {
-        append("\n\\ No newline at end of file")
+        append("\n$META_INSTRUCTION_PREFIX $NO_NEWLINE_MARKER")
       }
     }
   }
@@ -162,7 +182,6 @@ data class DiffChunk(val oldStart: Int, val oldLength: Int, val newStart: Int, v
      * defaults to 1), 3: newStart, 4: newLength (optional, defaults to 1).
      */
     val CHUNK_HEADER_REGEX = Regex("""^@@\s*-(\d+)(?:,(\d+))?\s*\+(\d+)(?:,(\d+))?\s*@@.*""")
-    private const val NO_NEWLINE_MARKER = "No newline at end of file"
 
     /**
      * Parses a unified diff string into a list of [DiffChunk]s.
@@ -178,7 +197,7 @@ data class DiffChunk(val oldStart: Int, val oldLength: Int, val newStart: Int, v
       var i = 0
       while (i < inputLines.size) {
         val lineRaw = inputLines[i]
-        val line = lineRaw.removeSuffix("\n").removeSuffix("\r")
+        val line = lineRaw.removeLineTerminators()
         val match = CHUNK_HEADER_REGEX.find(line)
         i++
         // Skip leading metadata (e.g. email headers, git command lines, commit logs)
@@ -200,10 +219,36 @@ data class DiffChunk(val oldStart: Int, val oldLength: Int, val newStart: Int, v
         val newStart = if (newLength == 0) newStartParsed + 1 else newStartParsed
 
         val chunkLines = mutableListOf<DiffLine>()
-        while (i < inputLines.size && !inputLines[i].startsWith("@@ -")) {
+        while (i < inputLines.size && !inputLines[i].startsWith(HUNK_HEADER_PREFIX)) {
           val chunkLineRaw = inputLines[i]
-          val chunkLine = chunkLineRaw.removeSuffix("\n").removeSuffix("\r")
-          if (chunkLine.startsWith("\\")) {
+          val chunkLine = chunkLineRaw.removeLineTerminators()
+          val prefix = chunkLine.getOrNull(0)
+
+          if (chunkLine.isEmpty()) {
+            var lookAheadIdx = i + 1
+            while (lookAheadIdx < inputLines.size && inputLines[lookAheadIdx].trim().isEmpty()) {
+              lookAheadIdx++
+            }
+            val nextNonBlankLine = inputLines.getOrNull(lookAheadIdx)?.trim() ?: ""
+
+            if (nextNonBlankLine.isHunkHeader() || nextNonBlankLine.isDiffHeader()) break
+
+            require(!strict) { "Malformed diff line: completely blank line inside hunk body in strict mode on line: $chunkLineRaw" }
+            // OPTIMIZATION: Consume current and subsequent consecutive blank lines in one step,
+            // then jump index pointer 'i' forward to maintain strictly linear O(N) complexity!
+            val terminator = chunkLineRaw.takeLastWhile { it.isLineTerminator() }
+            chunkLines.add(DiffLine(LineType.CONTEXT, "", LineSeparator.from(terminator)))
+            for (idx in (i + 1) until lookAheadIdx) {
+              val blankLineRaw = inputLines[idx]
+              val blankTerminator = blankLineRaw.takeLastWhile { it.isLineTerminator() }
+              chunkLines.add(DiffLine(LineType.CONTEXT, "", LineSeparator.from(blankTerminator)))
+            }
+            i = lookAheadIdx // Jump index pointer forward!
+            continue // Skip to next iteration immediately
+          }
+
+          if (chunkLine.isDiffHeader()) break
+          if (chunkLine.startsWith(META_INSTRUCTION_PREFIX)) {
             if (chunkLine.contains(NO_NEWLINE_MARKER) && chunkLines.isNotEmpty()) {
               // Retroactively update the last parsed line to indicate it lacks a trailing newline
               val last = chunkLines.removeAt(chunkLines.size - 1)
@@ -214,19 +259,14 @@ data class DiffChunk(val oldStart: Int, val oldLength: Int, val newStart: Int, v
             continue
           }
 
-          val prefix = chunkLine.getOrNull(0)
           val lineType = prefix?.let { LineType.fromPrefix(it) }
           val text = if (chunkLine.isEmpty()) "" else chunkLine.substring(1)
-          val terminator = chunkLineRaw.takeLastWhile { c -> c == '\n' || c == '\r' }
+          val terminator = chunkLineRaw.takeLastWhile { it.isLineTerminator() }
 
           if (lineType != null) {
             chunkLines.add(DiffLine(lineType, text, LineSeparator.from(terminator)))
           } else {
-            if (strict) {
-              throw IllegalArgumentException(
-                "Malformed diff line: unrecognized or missing prefix '${prefix ?: "none"}' on line: $chunkLine"
-              )
-            }
+            require(!strict) { "Malformed diff line: unrecognized or missing prefix '${prefix ?: "none"}' on line: $chunkLine" }
             // Resiliently handle lines without standard prefix as context
             chunkLines.add(DiffLine(LineType.CONTEXT, chunkLine, LineSeparator.from(terminator)))
           }
