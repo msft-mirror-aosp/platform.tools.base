@@ -3,6 +3,7 @@ load("//tools/base/bazel:android.bzl", "dex_library")
 load("//tools/base/bazel:kotlin.bzl", "kotlin_library")
 load("//tools/base/bazel:merge_archives.bzl", "merge_jars")
 load("//tools/base/bazel:robolectric.bzl", "robolectric_test")
+load("//tools/base/bazel:utils.bzl", "java_jarjar")
 
 package(default_visibility = ["//tools/base/ui-inspector:__subpackages__"])
 
@@ -20,7 +21,7 @@ kotlin_library(
         "//tools/base/bazel:studio-proto",
         "//tools/base/ui-inspector/common",
         "//tools/base/ui-inspector/common/proto:ui_inspector_protocol_java_proto",
-        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm",
     ],
 )
 
@@ -38,7 +39,7 @@ robolectric_test(
         "//tools/base/testutils:tools.testutils",
         "//tools/base/ui-inspector/common",
         "//tools/base/ui-inspector/common/proto:ui_inspector_protocol_java_proto",
-        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-test-jvm",
         "@maven//:org.robolectric.robolectric",
     ],
@@ -51,9 +52,15 @@ java_library(
     visibility = ["//tools/base/ui-inspector:__subpackages__"],
 )
 
+java_jarjar(
+    name = "view_inspector_jarjared",
+    srcs = [":view_inspector"],
+    rules = "//tools/base/ui-inspector/agent/payload:jarjar_rules.txt",
+)
+
 dex_library(
     name = "view_inspector_dexed",
-    jars = [":view_inspector"],
+    jars = [":view_inspector_jarjared"],
 )
 
 merge_jars(
