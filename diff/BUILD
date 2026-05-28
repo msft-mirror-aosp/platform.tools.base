@@ -5,6 +5,7 @@ iml_module(
     name = "studio.android.sdktools.diff",
     srcs = ["src/main/kotlin"],
     iml_files = ["android.sdktools.diff.iml"],
+    jvm_target = "8",
     # do not sort: must match IML order
     test_deps = [
         "//tools/adt/idea/.idea/libraries:junit4",
