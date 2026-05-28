@@ -121,9 +121,11 @@ internal class TemplateListBuilderImpl(
 
     val templates = mutableListOf<Pair<String, TemplateDefinition>>()
     for ((dir, entries) in filesByDir) {
+      // The empty "dir" contains all misc. files that don't belong to a template
+      // i.e. misc. "extra" files that should be ignored.
+      if (dir.isEmpty()) continue
+      val jsonDefinition = entries.firstOrNull { it.key.endsWith(TEMPLATE_JSON_FILE_LOCATION) } ?: continue
       val templateContent = mutableMapOf<TemplateFileEntry, TemplateFile>()
-      // Find template "json" file
-      val jsonDefinition = entries.first { it.key.endsWith(TEMPLATE_JSON_FILE_LOCATION) }
 
       val extraFiles =
         entries

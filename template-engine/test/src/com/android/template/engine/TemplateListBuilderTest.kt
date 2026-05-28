@@ -206,6 +206,44 @@ class TemplateListBuilderTest(private val fileSystemId: FileSystemId) {
   }
 
   @Test
+  fun `test loadFromZipStream ignores miscellaneous files outside template directories`() {
+    val jsonContent =
+      """
+      {
+        "name": "Template In Zip",
+        "short-name": "template-in-zip"
+      }
+      """
+        .trimIndent()
+
+    val fileMap =
+      mapOf(
+        "my-template/.template/template-definition.json" to jsonContent.toByteArray(Charsets.UTF_8),
+        "my-template/src/MainActivity.kt" to "class MainActivity".toByteArray(Charsets.UTF_8),
+        // Miscellaneous files outside of template directories
+        "README.md" to "Global README".toByteArray(Charsets.UTF_8),
+        "LICENSE" to "Global LICENSE".toByteArray(Charsets.UTF_8),
+        "other-folder/some-file.txt" to "other file content".toByteArray(Charsets.UTF_8)
+      )
+
+    val zipBytes = createZipBytes(fileMap)
+    val messageSink = DefaultTemplateMessageSink(TemplateMessageSink.Severity.Error)
+    val factory = TemplateEngineFactory.createDefault()
+    val builder = factory.createTemplateListBuilder(messageSink)
+
+    // Act
+    ZipInputStream(ByteArrayInputStream(zipBytes)).use { zipStream -> builder.loadFromZipStream(zipStream) }
+    val list = builder.toTemplateList()
+
+    // Assert
+    assertThat(list.templates).hasSize(1)
+    val template = list.templates[0]
+    assertThat(template.name).isEqualTo("Template In Zip")
+    assertThat(template.files).hasSize(1)
+    assertThat(template.files[0].relativePath).isEqualTo("src/MainActivity.kt")
+  }
+
+  @Test
   fun `test copyAndLoad helper methods preload files and use cache`() {
     // Prepare metadata
     val metadata =
