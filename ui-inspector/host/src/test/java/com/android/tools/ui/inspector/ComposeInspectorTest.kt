@@ -451,9 +451,9 @@ class ComposeInspectorTest {
     assertThat(output).contains("[androidx.compose.ui.platform.AndroidComposeView]")
 
     // Check that the Compose tree was merged and printed under AndroidComposeView with the [compose] tag!
-    assertThat(output).contains("  [androidx.compose.ui.platform.AndroidComposeView]")
-    assertThat(output).contains("    [Column] [compose]")
-    assertThat(output).contains("      [Text] [compose]")
+    assertThat(output).contains(" [androidx.compose.ui.platform.AndroidComposeView]")
+    assertThat(output).contains("  [Column] [compose]")
+    assertThat(output).contains("   [Text] [compose]")
 
     // Cleanup
     testScope.cancel()
@@ -763,12 +763,12 @@ class ComposeInspectorTest {
     assertThat(output).contains("[androidx.compose.ui.platform.AndroidComposeView]")
 
     // Check that the Compose tree was merged and printed under AndroidComposeView with the [compose] tag!
-    assertThat(output).contains("  [androidx.compose.ui.platform.AndroidComposeView]")
-    assertThat(output).contains("    [Column] [compose]")
-    assertThat(output).contains("      [Text] [compose]")
+    assertThat(output).contains(" [androidx.compose.ui.platform.AndroidComposeView]")
+    assertThat(output).contains("  [Column] [compose]")
+    assertThat(output).contains("   [Text] [compose]")
 
     // Verify that Composable parameters were parsed and printed successfully!
-    assertThat(output).contains("      param: text=Hello")
+    assertThat(output).contains("   param: text=Hello")
 
     // Cleanup
     testScope.cancel()

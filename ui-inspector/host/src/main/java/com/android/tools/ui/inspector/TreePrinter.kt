@@ -21,7 +21,7 @@ internal fun printUiTree(node: UiNode, indent: Int) {
   if (indent == 0) {
     System.out.println("View Hierarchy:")
   }
-  val prefix = "  ".repeat(indent)
+  val prefix = " ".repeat(indent)
   when (node) {
     is UiNode.ViewNode -> {
       val resourceStr = node.idResource?.let { " id=$it" } ?: ""
