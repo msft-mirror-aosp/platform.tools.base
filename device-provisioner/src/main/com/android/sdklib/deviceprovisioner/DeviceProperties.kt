@@ -357,7 +357,7 @@ enum class DeviceType(val stringValue: String) {
   AUTOMOTIVE("Automotive"),
   DESKTOP("Desktop"),
   XR_HEADSET("XR Headset"),
-  AI_GLASSES("AI Glasses");
+  AI_GLASSES("Intelligent Eyewear");
 
   override fun toString() = stringValue
 }
