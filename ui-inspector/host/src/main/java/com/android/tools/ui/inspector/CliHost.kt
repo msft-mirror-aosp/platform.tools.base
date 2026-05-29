@@ -46,8 +46,8 @@ class DumpUiCommand : Callable<Int> {
   @Option(names = ["--include-attributes"], description = ["Include view attributes in the dump"]) var includeAttributes: Boolean = false
   @Option(names = ["--include-resolution-stack"], description = ["Include attribute resolution stack in the dump"])
   var includeResolutionStack: Boolean = false
-  @Option(names = ["--skip-system-composables"], description = ["Skip system/framework Composable nodes in the dump"])
-  var skipSystemComposables: Boolean = false
+  @Option(names = ["--include-system-composables"], description = ["Include system/framework Composable nodes in the dump"])
+  var includeSystemComposables: Boolean = false
 
   companion object {
     /** Factory for creating [AdbSession]. Can be overridden in tests. */
@@ -74,7 +74,7 @@ class DumpUiCommand : Callable<Int> {
             includeAttributes = includeAttributes,
             includeResolutionStack = includeResolutionStack,
             composeInspectorConnected = composeInspectorConnected,
-            skipSystemComposables = skipSystemComposables,
+            skipSystemComposables = !includeSystemComposables,
           )
         }
       }

@@ -37,7 +37,7 @@ interface AndroidSourceSet : com.android.build.api.dsl.AndroidSourceSet {
   /** Returns the name of the compile configuration for this source set. */
   @get:Deprecated(
     "This property is deprecated. Use getImplementationConfigurationName() instead",
-    ReplaceWith("implementationConfigurationName()"),
+    ReplaceWith("implementationConfigurationName"),
   )
   val compileConfigurationName: String
 

@@ -34,7 +34,9 @@ interface CommonExtension : ExtensionAware {
    *
    * For more information about the properties you can configure in this block, see [AaptOptions].
    */
-  @Suppress("DEPRECATION") @Deprecated("Replaced by ", replaceWith = ReplaceWith("androidResources")) val aaptOptions: AaptOptions
+  @Suppress("DEPRECATION")
+  @Deprecated("Replaced by androidResources", replaceWith = ReplaceWith("androidResources"))
+  val aaptOptions: AaptOptions
 
   /**
    * Specifies options related to the processing of Android Resources.

@@ -16,50 +16,47 @@
 
 package com.android.tools.idea.wizard.template.impl.activities.tabbedActivity.src.app_package.ui.main
 
-import com.android.tools.idea.wizard.template.getMaterialComponentName
-
-fun sectionsPagerAdapterJava(packageName: String, useAndroidX: Boolean) =
+fun sectionsPagerAdapterJava(packageName: String) =
   """package ${packageName}.ui.main;
 
 import android.content.Context;
-import ${getMaterialComponentName("android.support.annotation.Nullable", useAndroidX)};
-import ${getMaterialComponentName("android.support.annotation.StringRes", useAndroidX)};
-import ${getMaterialComponentName("android.support.v4.app.Fragment", useAndroidX)};
-import ${getMaterialComponentName("android.support.v4.app.FragmentManager", useAndroidX)};
-import ${getMaterialComponentName("android.support.v4.app.FragmentPagerAdapter", useAndroidX)};
+import androidx.annotation.Nullable;
+import androidx.annotation.StringRes;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
+import androidx.viewpager2.adapter.FragmentStateAdapter;
 import ${packageName}.R;
 
 /**
- * A [FragmentPagerAdapter] that returns a fragment corresponding to
+ * A [FragmentStateAdapter] that returns a fragment corresponding to
  * one of the sections/tabs/pages.
  */
-public class SectionsPagerAdapter extends FragmentPagerAdapter {
+public class SectionsPagerAdapter extends FragmentStateAdapter {
 
     @StringRes
     private static final int[] TAB_TITLES = new int[] {R.string.tab_text_1, R.string.tab_text_2};
     private final Context mContext;
 
-    public SectionsPagerAdapter(Context context, FragmentManager fm) {
-        super(fm);
+    public SectionsPagerAdapter(Context context, FragmentActivity fa) {
+        super(fa);
         mContext = context;
     }
 
     @Override
-    public Fragment getItem(int position) {
-        // getItem is called to instantiate the fragment for the given page.
+    public Fragment createFragment(int position) {
+        // createFragment is called to instantiate the fragment for the given page.
         // Return a PlaceholderFragment.
         return PlaceholderFragment.newInstance(position + 1);
     }
 
-    @Nullable
     @Override
-    public CharSequence getPageTitle(int position) {
-        return mContext.getResources().getString(TAB_TITLES[position]);
-    }
-
-    @Override
-    public int getCount() {
+    public int getItemCount() {
         // Show 2 total pages.
         return 2;
+    }
+
+    @Nullable
+    public CharSequence getPageTitle(int position) {
+        return mContext.getResources().getString(TAB_TITLES[position]);
     }
 }"""

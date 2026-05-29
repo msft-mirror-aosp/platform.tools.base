@@ -42,7 +42,7 @@ interface DynamicFeatureExtension : CommonExtension, ApkExtension, TestedExtensi
    * For more information about the properties you can configure in this block, see [AaptOptions].
    */
   @Suppress("DEPRECATION")
-  @Deprecated("Replaced by ", replaceWith = ReplaceWith("androidResources"))
+  @Deprecated("Replaced by androidResources", replaceWith = ReplaceWith("androidResources"))
   fun aaptOptions(action: AaptOptions.() -> Unit)
 
   /**

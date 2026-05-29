@@ -61,10 +61,10 @@ data class TextFilePatch(
    */
   fun toUnifiedString(): String = buildString {
     if (oldFile.path != FileHeader.NO_PATH || newFile.path != FileHeader.NO_PATH) {
-      append("--- ")
+      append("$ORIGINAL_FILE_PREFIX ")
       append(oldFile.format())
       append("\n")
-      append("+++ ")
+      append("$MODIFIED_FILE_PREFIX ")
       append(newFile.format())
       if (!patch.isEmpty()) {
         append("\n")
@@ -126,7 +126,7 @@ data class TextFilePatch(
 
       while (i < inputLines.size) {
         val lineRaw = inputLines[i]
-        val line = lineRaw.removeSuffix("\n").removeSuffix("\r")
+        val line = lineRaw.removeLineTerminators()
 
         val headerMatch = FILE_HEADER_REGEX.find(line)
         if (headerMatch != null) {

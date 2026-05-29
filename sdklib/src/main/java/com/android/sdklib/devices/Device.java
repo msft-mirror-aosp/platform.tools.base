@@ -721,7 +721,7 @@ public final class Device {
         return "xr_headset_device".equals(device != null ? device.getId() : null);
     }
 
-    /** Whether the given device is an AI Glasses device (with or without display) */
+    /** Whether the given device is an Intelligent Eyewear device (with or without display) */
     public static boolean isAiGlasses(@Nullable Device device) {
         return AI_GLASSES_TAG.getId().equals(device != null ? device.getTagId() : null)
                 || DEPRECATED_AI_GLASSES_TAG
@@ -729,7 +729,7 @@ public final class Device {
                         .equals(device != null ? device.getTagId() : null);
     }
 
-    /** Whether the given device is an AI Glasses displayless device */
+    /** Whether the given device is an Audio glasses device */
     public static boolean isAiGlassesDisplayless(@Nullable Device device) {
         return isAiGlasses(device)
                 && "none".equals(device.getBootProps().get("ro.boot.display_device"));

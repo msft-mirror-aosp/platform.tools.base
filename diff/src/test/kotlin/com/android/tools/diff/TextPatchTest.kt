@@ -329,7 +329,7 @@ class TextPatchTest {
       """
         .trimIndent()
 
-    assertThat(repaired.toUnifiedString()).isEqualTo(expectedRepairedDiff)
+    assertThat(repaired!!.toUnifiedString()).isEqualTo(expectedRepairedDiff)
     assertThat(repaired.apply(document))
       .isEqualTo(
         """
@@ -380,7 +380,7 @@ class TextPatchTest {
       """
         .trimIndent()
 
-    assertThat(repaired.toUnifiedString()).isEqualTo(expectedRepairedDiff)
+    assertThat(repaired!!.toUnifiedString()).isEqualTo(expectedRepairedDiff)
   }
 
   @Test
@@ -398,7 +398,7 @@ class TextPatchTest {
     val patch = TextPatch.parse(malformedWithExtraEmpty)
     val repaired = patch.repair(document.splitWithLineSeparators())
 
-    assertThat(repaired.toUnifiedString())
+    assertThat(repaired!!.toUnifiedString())
       .isEqualTo(
         """
         @@ -1,2 +1,2 @@
@@ -423,7 +423,7 @@ class TextPatchTest {
     val patch = TextPatch.parse(patchText)
     val repaired = patch.repair(document.splitWithLineSeparators())
 
-    assertThat(repaired.toUnifiedString()).isEqualTo("@@ -1,3 +1,3 @@\n line1\n \n line2")
+    assertThat(repaired!!.toUnifiedString()).isEqualTo("@@ -1,3 +1,3 @@\n line1\n \n line2")
   }
 
   @Test
@@ -455,7 +455,7 @@ class TextPatchTest {
     val patch = TextPatch.parse(malformedDiffText)
     val repaired = patch.repair(document.splitWithLineSeparators())
 
-    assertThat(repaired.toUnifiedString())
+    assertThat(repaired!!.toUnifiedString())
       .isEqualTo(
         """
         @@ -3,5 +3,3 @@
@@ -504,7 +504,7 @@ class TextPatchTest {
     val patch = TextPatch.parse(malformedDiffText)
     val repaired = patch.repair(document.splitWithLineSeparators())
 
-    assertThat(repaired.toUnifiedString())
+    assertThat(repaired!!.toUnifiedString())
       .isEqualTo(
         """
         @@ -3,3 +3,2 @@
@@ -542,7 +542,7 @@ class TextPatchTest {
     val patch = TextPatch.parse(malformedDiffText)
     val repaired = patch.repair(document.splitWithLineSeparators())
 
-    assertThat(repaired.toUnifiedString())
+    assertThat(repaired!!.toUnifiedString())
       .isEqualTo(
         """
         @@ -3 +2,0 @@
@@ -651,7 +651,7 @@ class TextPatchTest {
 
     // Sliding window should perfectly find the exact match in source lines
     val repaired = patch.repair(sourceLines)
-    assertThat(repaired.chunks).hasSize(1)
+    assertThat(repaired!!.chunks).hasSize(1)
     val chunk = repaired.chunks[0]
 
     // Verify that the duplicate empty context lines are mapped to distinct, correct source line indices
@@ -662,5 +662,89 @@ class TextPatchTest {
   @Test
   fun testCompute_levenshteinMatcherNegativeMaxDistance() {
     assertFailsWith<IllegalArgumentException> { TextPatch.Companion.LineMatchers.levenshtein(-1) }
+  }
+
+  @Test
+  fun testSquash_overlappingEditsGracefullyMerged() {
+    // patch1: replaces lines 1-2 with new lines 1-2
+    val patch1 =
+      TextPatch(
+        listOf(
+          DiffChunk(
+            1,
+            2,
+            1,
+            2,
+            listOf(
+              DiffLine(LineType.REMOVED, "old1"),
+              DiffLine(LineType.REMOVED, "old2"),
+              DiffLine(LineType.ADDED, "new1"),
+              DiffLine(LineType.ADDED, "new2"),
+            ),
+          )
+        )
+      )
+
+    // patch2: inserts a blank line at line 2 of intermediate space (overlapping inside patch1's modified block!)
+    val patch2 = TextPatch(listOf(DiffChunk(2, 0, 2, 1, listOf(DiffLine(LineType.ADDED, "")))))
+
+    // This verifies that our reconstruct logic gracefully merges these intermediate overlapping edits
+    // into a single combined contiguous chunk instead of throwing overlap exceptions.
+    val squashed = patch1.squash(patch2)
+    assertThat(squashed.chunks).hasSize(1)
+
+    val chunk = squashed.chunks[0]
+    assertThat(chunk.oldStart).isEqualTo(1)
+    assertThat(chunk.oldLength).isEqualTo(2)
+    assertThat(chunk.newStart).isEqualTo(1)
+    assertThat(chunk.newLength).isEqualTo(3) // original 2 additions + 1 blank line insertion = 3!
+    assertThat(chunk.lines).hasSize(5) // 2 REMOVED + 3 ADDED = 5 lines!
+  }
+
+  @Test
+  fun testSquash_overlappingAdditionsAtSameLineMerged() {
+    // patch1: inserts 'a' at line 2 (pure addition, oldLength = 0)
+    val patch1 = TextPatch(listOf(DiffChunk(2, 0, 2, 1, listOf(DiffLine(LineType.ADDED, "a")))))
+
+    // patch2: inserts 'b' at line 2 of intermediate space (overlapping at the exact same insertion coordinate!)
+    val patch2 = TextPatch(listOf(DiffChunk(2, 0, 2, 1, listOf(DiffLine(LineType.ADDED, "b")))))
+
+    // This verifies that our reconstruct logic gracefully merges these overlapping additions
+    // at the exact same coordinate into a single combined hunk in the correct sequential order!
+    val squashed = patch1.squash(patch2)
+    assertThat(squashed.chunks).hasSize(1)
+
+    val chunk = squashed.chunks[0]
+    assertThat(chunk.oldStart).isEqualTo(2)
+    assertThat(chunk.oldLength).isEqualTo(0)
+    assertThat(chunk.newStart).isEqualTo(2)
+    assertThat(chunk.newLength).isEqualTo(2) // both additions merged!
+    assertThat(chunk.lines).hasSize(2)
+    assertThat(chunk.lines[0].text).isEqualTo("b") // standard squasher sorts second addition first on identical coordinates
+    assertThat(chunk.lines[1].text).isEqualTo("a")
+  }
+
+  @Test
+  fun testRepair_failedChunkReturnsNull() {
+    // A patch with context lines that do not exist in the document
+    val patch =
+      TextPatch(
+        listOf(
+          DiffChunk(
+            3,
+            1,
+            3,
+            1,
+            listOf(DiffLine(LineType.CONTEXT, "missing context line"), DiffLine(LineType.REMOVED, "old"), DiffLine(LineType.ADDED, "new")),
+          )
+        )
+      )
+
+    val sourceLines = listOf("line1", "line2", "line3")
+
+    // This verifies that the strictly all-or-none repair method immediately returns null
+    // if any single chunk cannot be re-anchored safely!
+    val repaired = patch.repair(sourceLines)
+    assertThat(repaired).isNull()
   }
 }

@@ -118,7 +118,9 @@ interface ApplicationExtension : CommonExtension, ApkExtension, TestedExtension 
    *
    * For more information about the properties you can configure in this block, see [AaptOptions].
    */
-  @Suppress("DEPRECATION") @Deprecated("Replaced by ", replaceWith = ReplaceWith("androidResources")) override val aaptOptions: AaptOptions
+  @Suppress("DEPRECATION")
+  @Deprecated("Replaced by androidResources", replaceWith = ReplaceWith("androidResources"))
+  override val aaptOptions: AaptOptions
 
   /**
    * Specifies options for the Android Asset Packaging Tool (AAPT).

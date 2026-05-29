@@ -63,17 +63,18 @@ public class SystemImageTags {
     /** Tag to apply to system images for XR Glasses devices. */
     public static final IdDisplay XR_GLASSES_TAG = IdDisplay.create("android-xr-ost", "Android XR");
 
-    /** Tag to apply to system images for AI Glasses devices. */
+    /** Tag to apply to system images for Intelligent Eyewear devices. */
     @Deprecated // This is only to support the released EAP images that use this tag.
     public static final IdDisplay DEPRECATED_AI_GLASSES_TAG =
-            IdDisplay.create("android-xr-glasses", "AI Glasses");
+            IdDisplay.create("android-xr-glasses", "Intelligent Eyewear");
 
-    /** Tag to apply to system images for AI Glasses devices. */
-    public static final IdDisplay AI_GLASSES_TAG = IdDisplay.create("ai-glasses", "AI Glasses");
+    /** Tag to apply to system images for Intelligent Eyewear devices. */
+    public static final IdDisplay AI_GLASSES_TAG =
+            IdDisplay.create("ai-glasses", "Intelligent Eyewear");
 
-    /** Tag to apply to system images for AI Glasses compatible devices. */
+    /** Tag to apply to system images for Intelligent Eyewear compatible devices. */
     public static final IdDisplay AI_GLASSES_COMPATIBLE_TAG =
-            IdDisplay.create("ai_glasses_compatible", "AI Glasses Compatible");
+            IdDisplay.create("ai_glasses_compatible", "Intelligent Eyewear Compatible");
 
     /** Tag to apply to system images for Chrome OS device. */
     public static final IdDisplay CHROMEOS_TAG = IdDisplay.create("chromeos", "Chrome OS Device");

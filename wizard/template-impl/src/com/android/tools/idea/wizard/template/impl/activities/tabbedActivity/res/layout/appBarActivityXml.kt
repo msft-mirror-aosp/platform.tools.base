@@ -16,11 +16,9 @@
 
 package com.android.tools.idea.wizard.template.impl.activities.tabbedActivity.res.layout
 
-import com.android.tools.idea.wizard.template.getMaterialComponentName
-
-fun appBarActivityXml(activityClass: String, packageName: String, themeNameAppBarOverlay: String, useAndroidX: Boolean) =
+fun appBarActivityXml(activityClass: String, packageName: String, themeNameAppBarOverlay: String) =
   """<?xml version="1.0" encoding="utf-8"?>
-<${getMaterialComponentName("android.support.design.widget.CoordinatorLayout", useAndroidX)}
+<androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -29,7 +27,7 @@ fun appBarActivityXml(activityClass: String, packageName: String, themeNameAppBa
     android:layout_height="match_parent"
     tools:context="${packageName}.${activityClass}">
 
-    <${getMaterialComponentName("android.support.design.widget.AppBarLayout", useAndroidX)}
+    <com.google.android.material.appbar.AppBarLayout
         android:layout_height="wrap_content"
         android:layout_width="match_parent"
         android:theme="@style/${themeNameAppBarOverlay}">
@@ -44,19 +42,19 @@ fun appBarActivityXml(activityClass: String, packageName: String, themeNameAppBa
             android:text="@string/app_name"
             android:textAppearance="@style/TextAppearance.Widget.AppCompat.Toolbar.Title"/>
 
-        <${getMaterialComponentName("android.support.design.widget.TabLayout", useAndroidX)}
+        <com.google.android.material.tabs.TabLayout
             android:id="@+id/tabs"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
-    </${getMaterialComponentName("android.support.design.widget.AppBarLayout", useAndroidX)}>
+    </com.google.android.material.appbar.AppBarLayout>
 
-    <${getMaterialComponentName("android.support.v4.view.ViewPager", useAndroidX)}
+    <androidx.viewpager2.widget.ViewPager2
         android:id="@+id/view_pager"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:layout_behavior="@string/appbar_scrolling_view_behavior"/>
 
-    <${getMaterialComponentName("android.support.design.widget.FloatingActionButton", useAndroidX)}
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -64,4 +62,4 @@ fun appBarActivityXml(activityClass: String, packageName: String, themeNameAppBa
         android:layout_marginEnd="@dimen/fab_margin"
         android:layout_marginBottom="16dp"
         app:srcCompat="@android:drawable/ic_dialog_email" />
-</${getMaterialComponentName("android.support.design.widget.CoordinatorLayout", useAndroidX)}>"""
+</androidx.coordinatorlayout.widget.CoordinatorLayout>"""
