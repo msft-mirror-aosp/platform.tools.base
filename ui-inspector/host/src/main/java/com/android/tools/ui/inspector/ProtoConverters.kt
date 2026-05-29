@@ -25,6 +25,14 @@ private class ComposeParameters(response: LayoutInspectorComposeProtocol.GetAllP
   val parametersMap: Map<Long, List<LayoutInspectorComposeProtocol.Parameter>> =
     response.parameterGroupsList.associate { group -> group.composableId to group.parameterList }
 
+  /** Maps Composable ID to its list of merged semantics. */
+  val mergedSemanticsMap: Map<Long, List<LayoutInspectorComposeProtocol.Parameter>> =
+    response.parameterGroupsList.associate { group -> group.composableId to group.mergedSemanticsList }
+
+  /** Maps Composable ID to its list of unmerged semantics. */
+  val unmergedSemanticsMap: Map<Long, List<LayoutInspectorComposeProtocol.Parameter>> =
+    response.parameterGroupsList.associate { group -> group.composableId to group.unmergedSemanticsList }
+
   /** String table for resolving parameter names and string values. */
   val parameterStringTable: Map<Int, String> = response.stringsList.associate { it.id to it.str }
 }
@@ -93,8 +101,13 @@ private fun doConvertComposeNode(
     }
 
   val nodeParams = parameters?.parametersMap?.get(node.id) ?: emptyList()
+  val nodeMergedSemantics = parameters?.mergedSemanticsMap?.get(node.id) ?: emptyList()
+  val nodeUnmergedSemantics = parameters?.unmergedSemanticsMap?.get(node.id) ?: emptyList()
   val paramStringTable = parameters?.parameterStringTable ?: emptyMap()
+
   val mappedParameters = nodeParams.map { convertParameterToComposeParameter(it, paramStringTable) }
+  val mappedMergedSemantics = nodeMergedSemantics.map { convertParameterToComposeParameter(it, paramStringTable) }
+  val mappedUnmergedSemantics = nodeUnmergedSemantics.map { convertParameterToComposeParameter(it, paramStringTable) }
 
   val children = node.childrenList.map { doConvertComposeNode(it, stringTable, hostedViews, parameters) }.toMutableList<UiNode>()
   if (node.viewId != 0L) {
@@ -114,6 +127,8 @@ private fun doConvertComposeNode(
     children = children,
     sourceLocation = sourceLocation,
     parameters = mappedParameters,
+    mergedSemantics = mappedMergedSemantics,
+    unmergedSemantics = mappedUnmergedSemantics,
   )
 }
 

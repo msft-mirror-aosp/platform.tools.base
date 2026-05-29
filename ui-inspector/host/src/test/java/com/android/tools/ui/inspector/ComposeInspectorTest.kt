@@ -438,6 +438,7 @@ class ComposeInspectorTest {
           includeResolutionStack = false,
           composeInspectorConnected = composeInspectorConnected,
           skipSystemComposables = true,
+          includeSemantics = false,
         )
       }
     } finally {
@@ -750,6 +751,7 @@ class ComposeInspectorTest {
           includeResolutionStack = false,
           composeInspectorConnected = composeInspectorConnected,
           skipSystemComposables = false,
+          includeSemantics = false,
         )
       }
     } finally {
@@ -768,7 +770,344 @@ class ComposeInspectorTest {
     assertThat(output).contains("   [Text] [compose]")
 
     // Verify that Composable parameters were parsed and printed successfully!
-    assertThat(output).contains("   param: text=Hello")
+    assertThat(output).contains("  param: text=Hello")
+
+    // Cleanup
+    testScope.cancel()
+    serverSocket.close()
+  }
+
+  @Test
+  fun testViewInspectorDump_GetComposablesAndMerge_withSemantics(): Unit = runBlocking {
+    // 1. Setup Background Server to simulate dynamic responses
+    val serverSocket = ServerSocket(0)
+    val serverPort = serverSocket.localPort
+
+    val dumpCmdReceived = CompletableDeferred<UiInspectorProtocol.Command>()
+    val composeCmdReceived = CompletableDeferred<UiInspectorProtocol.Command>()
+    val allParamsCmdReceived = CompletableDeferred<UiInspectorProtocol.Command>()
+    val serverJob = Job()
+    val testScope = CoroutineScope(Dispatchers.Default + serverJob)
+
+    testScope.launch {
+      serverSocket.accept().use { socket ->
+        val input = socket.getInputStream()
+        val output = socket.getOutputStream()
+
+        // A. Handle GetVersionCommand
+        val cmdBytes1 = FramingProtocol.readMessage(input)
+        val cmd1 = UiInspectorProtocol.Command.parseFrom(cmdBytes1)
+        val versionResponse =
+          UiInspectorProtocol.Response.newBuilder()
+            .setCommandId(cmd1.commandId)
+            .setStatus(UiInspectorProtocol.Response.Status.SUCCESS)
+            .setGetVersion(
+              UiInspectorProtocol.GetVersionResponse.newBuilder().putVersions(ProtocolConstants.COMPOSE_UI_LIBRARY_ID, "1.6.0")
+            )
+            .build()
+        FramingProtocol.writeMessage(output, versionResponse.toByteArray())
+
+        // B. Handle CreateInspectorCommand
+        val cmdBytes2 = FramingProtocol.readMessage(input)
+        val cmd2 = UiInspectorProtocol.Command.parseFrom(cmdBytes2)
+        val createResponse =
+          UiInspectorProtocol.Response.newBuilder()
+            .setCommandId(cmd2.commandId)
+            .setStatus(UiInspectorProtocol.Response.Status.SUCCESS)
+            .setCreateInspector(UiInspectorProtocol.CreateInspectorResponse.getDefaultInstance())
+            .build()
+        FramingProtocol.writeMessage(output, createResponse.toByteArray())
+
+        // C. Handle ViewInspector Message (DumpViewsCommand)
+        val cmdBytes3 = FramingProtocol.readMessage(input)
+        val cmd3 = UiInspectorProtocol.Command.parseFrom(cmdBytes3)
+        dumpCmdReceived.complete(cmd3)
+
+        // Build a mock View tree: FrameLayout (ID 1000) -> AndroidComposeView (ID 2000)
+        val viewNode1 =
+          com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.ViewNode.newBuilder()
+            .setId(1000)
+            .setClassName(1) // index for FrameLayout
+            .setBounds(
+              com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.Rect.newBuilder()
+                .setX(0)
+                .setY(0)
+                .setWidth(1080)
+                .setHeight(1920)
+            )
+            .addChildren(
+              com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.ViewNode.newBuilder()
+                .setId(2000)
+                .setClassName(2) // AndroidComposeView
+                .setBounds(
+                  com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.Rect.newBuilder()
+                    .setX(0)
+                    .setY(0)
+                    .setWidth(1080)
+                    .setHeight(1920)
+                )
+            )
+            .build()
+
+        val viewResponse =
+          com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.Response.newBuilder()
+            .setDumpViewsResponse(
+              com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.DumpViewsResponse.newBuilder()
+                .addStrings(
+                  com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.StringEntry.newBuilder()
+                    .setId(1)
+                    .setValue("android.widget.FrameLayout")
+                )
+                .addStrings(
+                  com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.StringEntry.newBuilder()
+                    .setId(2)
+                    .setValue("androidx.compose.ui.platform.AndroidComposeView")
+                )
+                .addNodes(viewNode1)
+            )
+            .build()
+
+        val viewMsgResponse =
+          UiInspectorProtocol.Response.newBuilder()
+            .setCommandId(cmd3.commandId)
+            .setStatus(UiInspectorProtocol.Response.Status.SUCCESS)
+            .setInspectorMessage(
+              UiInspectorProtocol.InspectorMessageResponse.newBuilder()
+                .setInspectorId(ProtocolConstants.VIEW_INSPECTOR_ID)
+                .setPayload(com.google.protobuf.ByteString.copyFrom(viewResponse.toByteArray()))
+            )
+            .build()
+        FramingProtocol.writeMessage(output, viewMsgResponse.toByteArray())
+
+        // D. Handle COMPOSE_COMMAND (GetComposablesCommand)
+        val cmdBytes4 = FramingProtocol.readMessage(input)
+        val cmd4 = UiInspectorProtocol.Command.parseFrom(cmdBytes4)
+        composeCmdReceived.complete(cmd4)
+
+        // Build a mock Compose tree: Column (ID 3000) -> Text (ID 4000)
+        val composeRoot =
+          layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.ComposableRoot.newBuilder()
+            .setViewId(2000)
+            .addNodes(
+              layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.ComposableNode.newBuilder()
+                .setId(3000)
+                .setName(1) // Column
+                .setBounds(
+                  layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.Bounds.newBuilder()
+                    .setLayout(
+                      layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.Rect.newBuilder()
+                        .setX(0)
+                        .setY(0)
+                        .setW(1080)
+                        .setH(200)
+                    )
+                )
+                .addChildren(
+                  layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.ComposableNode.newBuilder()
+                    .setId(4000)
+                    .setName(2) // Text
+                    .setBounds(
+                      layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.Bounds.newBuilder()
+                        .setLayout(
+                          layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.Rect.newBuilder()
+                            .setX(10)
+                            .setY(10)
+                            .setW(100)
+                            .setH(50)
+                        )
+                    )
+                )
+            )
+            .build()
+
+        val composeResponse =
+          layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.Response.newBuilder()
+            .setGetComposablesResponse(
+              layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.GetComposablesResponse.newBuilder()
+                .addStrings(
+                  layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.StringEntry.newBuilder().setId(1).setStr("Column")
+                )
+                .addStrings(
+                  layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.StringEntry.newBuilder().setId(2).setStr("Text")
+                )
+                .addRoots(composeRoot)
+            )
+            .build()
+
+        val composeMsgResponse =
+          UiInspectorProtocol.Response.newBuilder()
+            .setCommandId(cmd4.commandId)
+            .setStatus(UiInspectorProtocol.Response.Status.SUCCESS)
+            .setInspectorMessage(
+              UiInspectorProtocol.InspectorMessageResponse.newBuilder()
+                .setInspectorId(ProtocolConstants.COMPOSE_INSPECTOR_ID)
+                .setPayload(com.google.protobuf.ByteString.copyFrom(composeResponse.toByteArray()))
+            )
+            .build()
+        FramingProtocol.writeMessage(output, composeMsgResponse.toByteArray())
+
+        // E. Handle COMPOSE_COMMAND (GetAllParametersCommand)
+        val cmdBytes5 = FramingProtocol.readMessage(input)
+        val cmd5 = UiInspectorProtocol.Command.parseFrom(cmdBytes5)
+        allParamsCmdReceived.complete(cmd5)
+
+        val paramGroup =
+          layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.ParameterGroup.newBuilder()
+            .setComposableId(4000)
+            .addParameter(
+              layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.Parameter.newBuilder()
+                .setName(3) // "text"
+                .setType(layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.Parameter.Type.STRING)
+                .setInt32Value(4) // index for "Hello"
+                .build()
+            )
+            .addMergedSemantics(
+              layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.Parameter.newBuilder()
+                .setName(5) // "contentDescription"
+                .setType(layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.Parameter.Type.STRING)
+                .setInt32Value(6) // index for "My Button"
+                .build()
+            )
+            .build()
+
+        val allParamsResponse =
+          layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.Response.newBuilder()
+            .setGetAllParametersResponse(
+              layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.GetAllParametersResponse.newBuilder()
+                .addStrings(
+                  layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.StringEntry.newBuilder().setId(3).setStr("text")
+                )
+                .addStrings(
+                  layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.StringEntry.newBuilder().setId(4).setStr("Hello")
+                )
+                .addStrings(
+                  layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.StringEntry.newBuilder()
+                    .setId(5)
+                    .setStr("contentDescription")
+                )
+                .addStrings(
+                  layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.StringEntry.newBuilder().setId(6).setStr("My Button")
+                )
+                .addParameterGroups(paramGroup)
+            )
+            .build()
+
+        val allParamsMsgResponse =
+          UiInspectorProtocol.Response.newBuilder()
+            .setCommandId(cmd5.commandId)
+            .setStatus(UiInspectorProtocol.Response.Status.SUCCESS)
+            .setInspectorMessage(
+              UiInspectorProtocol.InspectorMessageResponse.newBuilder()
+                .setInspectorId(ProtocolConstants.COMPOSE_INSPECTOR_ID)
+                .setPayload(com.google.protobuf.ByteString.copyFrom(allParamsResponse.toByteArray()))
+            )
+            .build()
+        FramingProtocol.writeMessage(output, allParamsMsgResponse.toByteArray())
+      }
+    }
+
+    // 2. Setup Mock adbSession / InjectionManager
+    val fakeSession = FakeAdbSession()
+    val testDeviceServices = TestAdbDeviceServices(fakeSession.deviceServices)
+    val testHostServices = TestAdbHostServices(fakeSession.hostServices)
+    val testSession = TestAdbSession(fakeSession, testDeviceServices, testHostServices)
+
+    fakeSession.hostServices.devices = DeviceList(listOf(DeviceInfo(deviceSerial, DeviceState.ONLINE)), emptyList())
+
+    val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "getprop ro.product.cpu.abi", "arm64-v8a\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pidof $packageName", "1234\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
+
+    val expectedSetupCmd =
+      "run-as $packageName sh -c 'rm -f compose-inspector.jar && " +
+        "cat /data/local/tmp/compose-inspector.jar > compose-inspector.jar && " +
+        "chmod 444 compose-inspector.jar'"
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, expectedSetupCmd, "")
+
+    val dummyAgent = tempFolder.newFile("lib_ui_inspector_agent.so").toPath()
+    val dummyJar = tempFolder.newFile("lib_ui_inspector_service.jar").toPath()
+    val dummyPayload = tempFolder.newFile("lib_ui_inspector_payload.jar").toPath()
+
+    val agentPathResolver = { _: String -> dummyAgent }
+    val injectionManager = InjectionManager(testSession, deviceSerial, packageName, agentPathResolver, dummyJar, dummyPayload)
+
+    // Trigger injectAndAttach so we populate the appDataDir internal states
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pidof $packageName", "1234\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "settings put global debug_view_attributes 1", "")
+
+    val baseAgentSetupCmd =
+      "run-as $packageName sh -c '" +
+        "rm -f lib_ui_inspector_agent.so lib_ui_inspector_service.jar lib_ui_inspector_payload.jar && " +
+        "cat /data/local/tmp/lib_ui_inspector_agent.so > lib_ui_inspector_agent.so && " +
+        "cat /data/local/tmp/lib_ui_inspector_service.jar > lib_ui_inspector_service.jar && " +
+        "cat /data/local/tmp/lib_ui_inspector_payload.jar > lib_ui_inspector_payload.jar && " +
+        "chmod 444 lib_ui_inspector_agent.so && " +
+        "chmod 444 lib_ui_inspector_service.jar && " +
+        "chmod 444 lib_ui_inspector_payload.jar'"
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, baseAgentSetupCmd, "")
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      "cmd activity attach-agent $packageName \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;1234\"",
+      "",
+    )
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      "cat /proc/net/unix | grep ui_inspector_1234 || true",
+      "ui_inspector_1234\n",
+    )
+    val composeSetupCmd =
+      "run-as $packageName sh -c 'rm -f compose-inspector.jar && " +
+        "cat /data/local/tmp/compose-inspector.jar > compose-inspector.jar && " +
+        "chmod 444 compose-inspector.jar'"
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, composeSetupCmd, "")
+    injectionManager.injectAndAttach()
+
+    val originalFactory = sessionFactory
+    sessionFactory = { testSession }
+
+    // 3. Capture System.out to verify the printed merged tree!
+    val stdoutCapture = ByteArrayOutputStream()
+    val originalStdout = System.out
+    System.setOut(java.io.PrintStream(stdoutCapture))
+
+    try {
+      CommandSender("localhost", serverPort).use { commandSender ->
+        val composeInspectorConnected =
+          createComposeInspector(
+            commandSender = commandSender,
+            injectionManager = injectionManager,
+            resolveJar = {
+              val fixedJar = tempFolder.newFile("compose-inspector.jar")
+              fixedJar.writeText("fake pre-compiled compose dex classes")
+              fixedJar
+            },
+          )
+        assertThat(composeInspectorConnected).isTrue()
+
+        dumpUiTree(
+          commandSender = commandSender,
+          includeAttributes = true,
+          includeResolutionStack = false,
+          composeInspectorConnected = composeInspectorConnected,
+          skipSystemComposables = false,
+          includeSemantics = true,
+        )
+      }
+    } finally {
+      System.setOut(originalStdout)
+      sessionFactory = originalFactory
+    }
+
+    // 4. Assertions
+    val output = stdoutCapture.toString()
+    assertThat(output).contains("[android.widget.FrameLayout]")
+    assertThat(output).contains("[androidx.compose.ui.platform.AndroidComposeView]")
+
+    // Verify semantics printing are successful!
+    assertThat(output).contains("   [Text] [compose]")
+    assertThat(output).contains("  param: text=Hello")
+    assertThat(output).contains("  semantics: contentDescription=My Button")
 
     // Cleanup
     testScope.cancel()

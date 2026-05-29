@@ -77,7 +77,14 @@ sealed class UiNode {
     }
   }
 
-  /** Represents a Jetpack Compose Composable node. */
+  /**
+   * Represents a Jetpack Compose Composable node.
+   *
+   * @param parameters Standard Composable properties and function parameters.
+   * @param mergedSemantics Accessibility properties that aggregate all readable texts and actions from this node's entire subtree into one
+   *   focusable block (which is what a screen reader like TalkBack speaks).
+   * @param unmergedSemantics Accessibility properties declared directly on this Composable node.
+   */
   data class ComposeNode(
     override val id: Long,
     override val className: String,
@@ -85,5 +92,7 @@ sealed class UiNode {
     override val children: MutableList<UiNode> = mutableListOf(),
     val sourceLocation: SourceLocation? = null,
     val parameters: List<ComposeParameter>,
+    val mergedSemantics: List<ComposeParameter>,
+    val unmergedSemantics: List<ComposeParameter>,
   ) : UiNode()
 }

@@ -82,6 +82,8 @@ class DumpUiCommand : Callable<Int> {
   var includeResolutionStack: Boolean = false
   @Option(names = ["--include-system-composables"], description = ["Include system/framework Composable nodes in the dump"])
   var includeSystemComposables: Boolean = false
+  @Option(names = ["--include-semantics"], description = ["Include Compose accessibility/semantics properties in the dump"])
+  var includeSemantics: Boolean = false
   @Option(
     names = ["--compose-inspector"],
     description = ["Path to a local Compose Inspector JAR file to use instead of the one from maven"],
@@ -126,6 +128,7 @@ class DumpUiCommand : Callable<Int> {
             includeResolutionStack = includeResolutionStack,
             composeInspectorConnected = composeInspectorConnected,
             skipSystemComposables = !includeSystemComposables,
+            includeSemantics = includeSemantics,
           )
         }
       }
@@ -144,12 +147,13 @@ internal suspend fun dumpUiTree(
   includeResolutionStack: Boolean,
   composeInspectorConnected: Boolean,
   skipSystemComposables: Boolean,
+  includeSemantics: Boolean,
 ) {
   val viewRoots = fetchViewTree(commandSender, includeAttributes, includeResolutionStack)
   if (composeInspectorConnected) {
-    fetchAndMergeComposeTrees(commandSender, viewRoots, includeAttributes, skipSystemComposables)
+    fetchAndMergeComposeTrees(commandSender, viewRoots, includeAttributes, skipSystemComposables, includeSemantics)
   }
-  viewRoots.forEach { printUiTree(it, 0) }
+  viewRoots.forEach { printUiTree(it, 0, includeAttributes, includeSemantics) }
 }
 
 /** Queries the Compose Layout Inspector on the device and merges its trees into [viewRoots] in-place. */
@@ -158,14 +162,24 @@ internal suspend fun fetchAndMergeComposeTrees(
   viewRoots: List<UiNode.ViewNode>,
   includeParameters: Boolean,
   skipSystemComposables: Boolean,
+  includeSemantics: Boolean,
 ) {
   viewRoots.forEach { viewRoot ->
-    val composeResult = queryComposeTree(commandSender, viewRoot.id, includeParameters, skipSystemComposables)
+    // In the compose inspector, standard parameters and semantics (accessibility properties) are fetched together with a single command.
+    val fetchComposeDetails = includeParameters || includeSemantics
+
+    val composeResult =
+      queryComposeTree(
+        commandSender = commandSender,
+        rootViewId = viewRoot.id,
+        includeParameters = fetchComposeDetails,
+        skipSystemComposables = skipSystemComposables,
+      )
     if (composeResult != null) {
       val (roots, stringsMap) = composeResult
 
       val composeParameters =
-        if (includeParameters) {
+        if (fetchComposeDetails) {
           queryComposeParameters(commandSender, viewRoot.id, skipSystemComposables)
         } else {
           null

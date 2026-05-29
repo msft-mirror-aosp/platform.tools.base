@@ -17,7 +17,7 @@
 package com.android.tools.ui.inspector
 
 /** Recursively walks and formats the unified UiNode layout tree to console. */
-internal fun printUiTree(node: UiNode, indent: Int) {
+internal fun printUiTree(node: UiNode, indent: Int, includeAttributes: Boolean, includeSemantics: Boolean) {
   if (indent == 0) {
     System.out.println("View Hierarchy:")
   }
@@ -29,15 +29,17 @@ internal fun printUiTree(node: UiNode, indent: Int) {
       System.out.println(
         "${prefix}[${node.className}]$resourceStr$layoutResourceStr (${node.bounds.x}, ${node.bounds.y}, ${node.bounds.width}, ${node.bounds.height})"
       )
-      node.attributes.forEach { attr ->
-        System.out.println("$prefix  prop: ${attr.name}=${attr.value}")
+      if (includeAttributes) {
+        node.attributes.forEach { attr ->
+          System.out.println("$prefix prop: ${attr.name}=${attr.value}")
 
-        val sourceStr = attr.directSource ?: ""
-        if (sourceStr.isNotEmpty()) {
-          System.out.println("$prefix    Defined in: $sourceStr")
+          val sourceStr = attr.directSource ?: ""
+          if (sourceStr.isNotEmpty()) {
+            System.out.println("$prefix  Defined in: $sourceStr")
+          }
+
+          attr.styleChain.forEach { style -> System.out.println("$prefix  Inherited from: $style") }
         }
-
-        attr.styleChain.forEach { style -> System.out.println("$prefix    Inherited from: $style") }
       }
     }
     is UiNode.ComposeNode -> {
@@ -50,15 +52,37 @@ internal fun printUiTree(node: UiNode, indent: Int) {
       System.out.println(
         "${prefix}[${node.className}]$sourceLocation [compose] (${node.bounds.x}, ${node.bounds.y}, ${node.bounds.width}, ${node.bounds.height})"
       )
-      node.parameters.forEach { param ->
-        val formattedValue = formatComposeParameter(param)
-        if (formattedValue.isNotEmpty()) {
-          System.out.println("$prefix  param: ${param.name}=$formattedValue")
+      if (includeAttributes) {
+        node.parameters.forEach { param ->
+          val formattedValue = formatComposeParameter(param)
+          if (formattedValue.isNotEmpty()) {
+            System.out.println("$prefix param: ${param.name}=$formattedValue")
+          }
+        }
+      }
+
+      if (includeSemantics) {
+        // Print Merged Semantics (preferred for general accessibility audits)
+        node.mergedSemantics.forEach { param ->
+          val formattedValue = formatComposeParameter(param)
+          if (formattedValue.isNotEmpty()) {
+            System.out.println("$prefix semantics: ${param.name}=$formattedValue")
+          }
+        }
+
+        // Optionally, if merged is empty but unmerged has elements, print unmerged
+        if (node.mergedSemantics.isEmpty()) {
+          node.unmergedSemantics.forEach { param ->
+            val formattedValue = formatComposeParameter(param)
+            if (formattedValue.isNotEmpty()) {
+              System.out.println("$prefix semantics: ${param.name}=$formattedValue")
+            }
+          }
         }
       }
     }
   }
-  node.children.forEach { printUiTree(it, indent + 1) }
+  node.children.forEach { printUiTree(it, indent + 1, includeAttributes, includeSemantics) }
 }
 
 /** Recursively formats a rich ComposeParameter to its display string. */
