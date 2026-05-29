@@ -31,11 +31,44 @@ import picocli.CommandLine.Option
 private const val EXIT_OK = 0
 private const val EXIT_ERROR = 1
 
+/** Factory for creating [AdbSession]. Can be overridden in tests. */
+var sessionFactory: () -> AdbSession = { createStandaloneSession(NO_LOGGING) }
+
 @Command(name = "ui-inspector", mixinStandardHelpOptions = true, version = ["1.0"], description = ["UI Inspector CLI"])
 class UiInspectorCommand : Callable<Int> {
   override fun call(): Int {
     CommandLine.usage(this, System.err)
     return EXIT_ERROR
+  }
+}
+
+@Command(name = "list-devices", description = ["List serial numbers of connected devices"])
+class ListDevicesCommand : Callable<Int> {
+  override fun call(): Int {
+    val adbSession = sessionFactory()
+    try {
+      runBlocking { doListDevices(adbSession) }
+      return EXIT_OK
+    } catch (e: Exception) {
+      System.err.println("Error listing devices: ${e.message}")
+      return EXIT_ERROR
+    }
+  }
+}
+
+@Command(name = "list-packages", description = ["List debuggable application package names on the device"])
+class ListPackagesCommand : Callable<Int> {
+  @Option(names = ["--serial"], required = true, description = ["Device serial number"]) var serial: String = ""
+
+  override fun call(): Int {
+    val adbSession = sessionFactory()
+    try {
+      runBlocking { doListPackages(adbSession, serial) }
+      return EXIT_OK
+    } catch (e: Exception) {
+      System.err.println("Error listing packages: ${e.message}")
+      return EXIT_ERROR
+    }
   }
 }
 
@@ -54,11 +87,6 @@ class DumpUiCommand : Callable<Int> {
     description = ["Path to a local Compose Inspector JAR file to use instead of the one from maven"],
   )
   var composeInspectorJarPath: String? = null
-
-  companion object {
-    /** Factory for creating [AdbSession]. Can be overridden in tests. */
-    var sessionFactory: () -> AdbSession = { createStandaloneSession(NO_LOGGING) }
-  }
 
   override fun call(): Int {
     System.err.println("Executing dump-ui for package: $packageName on device: $serial")
@@ -158,7 +186,12 @@ internal suspend fun fetchAndMergeComposeTrees(
 }
 
 fun main(args: Array<String>) {
-  val exitCode = CommandLine(UiInspectorCommand()).addSubcommand("dump-ui", DumpUiCommand()).execute(*args)
+  val exitCode =
+    CommandLine(UiInspectorCommand())
+      .addSubcommand("dump-ui", DumpUiCommand())
+      .addSubcommand("list-devices", ListDevicesCommand())
+      .addSubcommand("list-packages", ListPackagesCommand())
+      .execute(*args)
   exitProcess(exitCode)
 }
 

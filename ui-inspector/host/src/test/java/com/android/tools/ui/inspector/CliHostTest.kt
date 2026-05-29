@@ -17,18 +17,10 @@
 package com.android.tools.ui.inspector
 
 import com.google.common.truth.Truth.assertThat
-import org.junit.After
 import org.junit.Test
 import picocli.CommandLine
 
 class CliHostTest {
-
-  private val originalFactory = DumpUiCommand.sessionFactory
-
-  @After
-  fun tearDown() {
-    DumpUiCommand.sessionFactory = originalFactory
-  }
 
   @Test
   fun testNoArgsReturnsError() {
