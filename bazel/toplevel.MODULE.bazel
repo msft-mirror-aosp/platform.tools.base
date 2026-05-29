@@ -238,6 +238,21 @@ use_repo(android_sdk_repository_extension, "androidsdk")
 
 register_toolchains("@androidsdk//:sdk-toolchain", "@androidsdk//:all")
 
+bazel_dep(name = "rules_android_ndk", version = "0.1.5")
+bazel_dep(name = "perfetto", version = "56.0")
+archive_override(
+    module_name = "perfetto",
+    integrity = "sha256-l0GTin/FNO0wJyPCssPJSSc6qS2/cl0OG3IpqTILbAc=",
+    patch_strip = 1,
+    patches = [
+        "//tools/base/bazel/bzlmod:perfetto-fix-include-guard.patch",
+        "//tools/base/bazel/bzlmod:perfetto-fix-zlib-build.patch",
+        "//tools/base/bazel/bzlmod:perfetto-no-android-sdk-ndk.patch",
+    ],
+    strip_prefix = "perfetto-56.0",
+    urls = ["https://github.com/google/perfetto/archive/refs/tags/v56.0.tar.gz"],
+)
+
 include("//tools/base/bazel/bzlmod:external.MODULE.bazel")
 include("//tools/base/bazel/bzlmod:idea.MODULE.bazel")
 include("//tools/base/bazel/bzlmod:toolchains.MODULE.bazel")

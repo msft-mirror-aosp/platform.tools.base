@@ -1,0 +1,68 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zach Yu <zachyu@google.com>
+Date: Thu, 4 Jun 2026 17:57:06 -0700
+Subject: [build] Fix include guard
+
+Bzlmod uses '+' in canonical repository names (e.g., 'perfetto+'),
+which propagates into the generated header guard macros. Since '+'
+is not a valid character for C++ preprocessor identifiers, the
+compiler truncates the macro name at '+', leading to collisions.
+Sanitize include guard names by replacing non-alphanumeric characters
+with underscores.
+
+diff --git a/python/tools/cpp_blob_emitter.py b/python/tools/cpp_blob_emitter.py
+index a8fa509e..440c76d9 100755
+--- a/python/tools/cpp_blob_emitter.py
++++ b/python/tools/cpp_blob_emitter.py
+@@ -36,6 +36,7 @@ from __future__ import print_function
+ 
+ import argparse
+ import os
++import re
+ import sys
+ import textwrap
+ import zlib
+@@ -106,8 +107,7 @@ def derive_include_guard(output_path, gen_dir=''):
+   """
+   rel = os.path.relpath(output_path,
+                         gen_dir) if gen_dir else os.path.basename(output_path)
+-  return rel.replace('\\', '_').replace('/', '_').replace('.',
+-                                                          '_').upper() + '_'
++  return re.sub(r'[^A-Z0-9_]', '_', rel.upper()) + '_'
+ 
+ 
+ def emit_array(data, output_path, *, symbol, namespace, include_guard):
+diff --git a/test/stress_test/gen_configs_blob.py b/test/stress_test/gen_configs_blob.py
+index 83b7f91e..a6f8d7c2 100644
+--- a/test/stress_test/gen_configs_blob.py
++++ b/test/stress_test/gen_configs_blob.py
+@@ -22,13 +22,11 @@ This is invoked by the build system and is used by the stress_test runner. The
+ goal is making the stress_test binary hermetic and not depend on the repo.
+ """
+ 
+-from __future__ import absolute_import
+-from __future__ import division
+-from __future__ import print_function
+-import os
+-import sys
++from __future__ import absolute_import, division, print_function
++
+ import argparse
+-import shutil
++import os
++import re
+ import subprocess
+ 
+ CUR_DIR = os.path.dirname(os.path.realpath(__file__))
+@@ -73,7 +71,7 @@ def main():
+ 
+   # Write the C++ header file
+   fout = open(args.out, 'wb')
+-  include_guard = args.out.replace('/', '_').replace('.', '_').upper() + '_'
++  include_guard = re.sub(r'[^A-Z0-9_]', '_', args.out.upper()) + '_'
+   fout.write("""
+ #ifndef {include_guard}
+ #define {include_guard}
+-- 
+2.54.0.1064.gd145956f57-goog
+

@@ -267,7 +267,9 @@ build:dynamic --strategy=PythonZipper=dynamic
 # dynamic scheduling.
 build:dynamic --noexperimental_worker_multiplex
 
-common:without_vendor --repo_env=SETUP_VENDOR=0
+# Lockfile includes deps that are not available when building without vendor
+# so we disable checking.
+common:without_vendor --lockfile_mode=off
 build:without_vendor --//tools/base/bazel:without-vendor
 
 # Build arguments for IntelliJ Platform targets (@tools_idea//...).

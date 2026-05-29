@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zach Yu <zachyu@google.com>
+Date: Fri, 5 Jun 2026 14:18:55 -0700
+Subject: [build] Fix zlib BUILD file
+
+* The include path is fixed for "zlib.h".
+* Properly excludes chromeconf.h for downstream targets.
+* Also added import for cc_library.
+
+diff --git a/MODULE.bazel b/MODULE.bazel
+index f94686dc..9e639ddf 100644
+--- a/MODULE.bazel
++++ b/MODULE.bazel
+@@ -32,6 +32,7 @@ bazel_dep(name = "platforms", version = "0.0.10")
+ bazel_dep(name = "protobuf", version = "31.1", repo_name = "com_google_protobuf")
+ bazel_dep(name = "rules_python", version = "1.0.0")
+ bazel_dep(name = "rules_android", version = "0.6.6")
++bazel_dep(name = "rules_cc", version = "0.2.19")
+ 
+ remote_android_extensions = use_extension(
+     "@rules_android//bzlmod_extensions:android_extensions.bzl",
+diff --git a/bazel/zlib.BUILD b/bazel/zlib.BUILD
+index 5e2ac5bc..792610c9 100644
+--- a/bazel/zlib.BUILD
++++ b/bazel/zlib.BUILD
+@@ -13,12 +13,12 @@
+ # limitations under the License.
+ 
+ load("@perfetto_cfg//:perfetto_cfg.bzl", "PERFETTO_CONFIG")
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
+ 
+ cc_library(
+     name = "zlib",
+     srcs = [
+         "adler32.c",
+-        "chromeconf.h",
+         "compress.c",
+         "contrib/optimizations/insert_string.h",
+         "cpu_features.c",
+@@ -51,13 +51,14 @@ cc_library(
+         "zlib.h",
+     ],
+     copts = select({
+-      "@perfetto//bazel:os_windows": ["-DX86_WINDOWS"],
+-      "//conditions:default": [],
++        "@perfetto//bazel:os_windows": ["-DX86_WINDOWS"],
++        "//conditions:default": [],
+     }) + [
+         "-Wno-unused-function",
+-        "-DZLIB_IMPLEMENTATION",
+-        "-DCHROMIUM_ZLIB_NO_CHROMECONF",
+     ] + PERFETTO_CONFIG.deps_copts.zlib,
+-    includes = ["zlib"],
++    defines = [
++        "CHROMIUM_ZLIB_NO_CHROMECONF",
++    ],
++    includes = ["."],
+     visibility = ["//visibility:public"],
+ )
+-- 
+2.54.0.1064.gd145956f57-goog
+
