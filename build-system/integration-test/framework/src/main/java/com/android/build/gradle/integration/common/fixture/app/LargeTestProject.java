@@ -19,8 +19,10 @@ package com.android.build.gradle.integration.common.fixture.app;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.integration.common.fixture.TestProject;
+
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -155,8 +157,6 @@ public class LargeTestProject<T extends GradleModule> implements TestProject {
 
     private static void createGradleProperties(@NonNull File location) throws IOException {
         Files.asCharSink(new File(location, "gradle.properties"), Charset.defaultCharset())
-                .write(
-                        "org.gradle.jvmargs=-Xmx6096m -XX:MaxPermSize=1024m\n"
-                                + "org.gradle.daemon=true\n");
+                .write("org.gradle.jvmargs=-Xmx6096m\n" + "org.gradle.daemon=true\n");
     }
 }
