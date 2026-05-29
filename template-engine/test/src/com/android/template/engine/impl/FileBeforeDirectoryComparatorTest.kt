@@ -19,8 +19,8 @@ import com.google.common.truth.Truth
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
-class DirectoryBeforeFileComparatorTest {
-  private val comparator = DirectoryBeforeFileComparator()
+class FileBeforeDirectoryComparatorTest {
+  private val comparator = FileBeforeDirectoryComparator()
 
   @Test
   fun testDirectoryBeforeFile() {

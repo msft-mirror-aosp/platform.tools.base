@@ -245,6 +245,81 @@ class DefaultTemplateEngineTest(private val fileSystemId: FileSystemId) {
     assertThat(messageSink.messages.map { it.message }).contains("Failed to create project 'Template Name' due to previous error(s)")
   }
 
+  @Test
+  fun `verifies CRLF line endings are preserved`() {
+    val messageSink =
+      object : DefaultTemplateMessageSink(Severity.Verbose) {
+        override fun onMessage(entry: MessageEntry) {
+          // Nothing to do, we capture in memory only
+        }
+      }
+    val factory = TemplateEngineFactory.createDefault()
+    val builder = factory.createTemplateListBuilder(messageSink)
+    // Create content with CRLF endings
+    val content = "line1: name\r\nline2: name\r\n"
+    val files = listOf(createTemplateFile("file1.txt", content))
+    @Language("json")
+    val jsonFile =
+      """
+      {
+        "name": "Template Name",
+        "short-name": "template-name",
+        "tags": ["tag1"],
+        "arguments" : [
+          {
+            "id" : "name",
+            "default-value" : "My Template Name"
+          }
+        ],
+        "transformations" : [
+          {
+            "string-replace" : {
+              "selector" : {
+                "glob" : "/file1.txt"
+              },
+              "from" : "name",
+              "to" : "${"$"}{name}"
+            }
+          }
+        ]
+      }
+      """
+        .trimIndent()
+
+    val metadata = builder.parseTemplateMetadata("template.json", jsonFile)
+    assertThat(metadata).isNotNull()
+
+    val templateFileLoader =
+      TemplateFileLoader.forFunction { entry: TemplateFileEntry -> files.first { it.relativePath == entry.relativePath } }
+    val template =
+      TemplateDefinition(
+        metadata = metadata!!,
+        files = files.map { TemplateFileEntry(it.relativePath) },
+        extraFiles = emptyList(),
+        loader = templateFileLoader,
+      )
+    val dependencyInstaller =
+      object : DependencyInstaller {
+        override fun installAndroidSdkPackage(packagePath: String) {
+          // Nothing to do
+        }
+      }
+
+    // We want to inspect the output file, so let's check where the output files go
+    val testRootPath = getTestRootPath()
+    val engine = factory.createDefaultEngine(messageSink, dependencyInstaller, destinationPathProvider = { testRootPath })
+    engine.processTemplate(template, predefinedArguments = emptyMap(), explicitArguments = emptyMap())
+
+    assertThat(messageSink.messages.map { it.severity }).doesNotContain(Severity.Error)
+
+    // Let's read the saved file from disk and assert it has CRLF
+    val savedFile = testRootPath.resolve("file1.txt")
+    assertThat(java.nio.file.Files.exists(savedFile)).isTrue()
+    val bytes = java.nio.file.Files.readAllBytes(savedFile)
+    val expectedContent = "line1: My Template Name\r\nline2: My Template Name\r\n"
+    assertThat(bytes).isEqualTo(expectedContent.toByteArray(Charsets.UTF_8))
+  }
+
   private fun createTemplateFile(relativePath: String, content: String): TemplateFile {
     return TemplateFile(relativePath, content = content.toByteArray(Charsets.UTF_8))
   }

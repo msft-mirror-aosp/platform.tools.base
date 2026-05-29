@@ -89,7 +89,10 @@ internal class StringInterpolationLexer(private val input: String) {
           }
           pos++
         }
-        if (pos < input.length) pos++ // skip closing quote
+        if (pos >= input.length) {
+          throw StringInterpolationException(input, start, "Unclosed string literal starting with $quote")
+        }
+        pos++ // skip closing quote
         return StringInterpolationToken(TokenType.STRING_LITERAL, value, start, pos)
       }
       else -> {

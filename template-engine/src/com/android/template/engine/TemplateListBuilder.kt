@@ -16,7 +16,7 @@
 package com.android.template.engine
 
 import com.android.template.engine.TemplateListBuilderImpl.Companion.TEMPLATE_JSON_FILE_LOCATION
-import com.android.template.engine.impl.DirectoryBeforeFileComparator
+import com.android.template.engine.impl.FileBeforeDirectoryComparator
 import java.nio.file.Path
 import java.util.SortedMap
 import java.util.TreeMap
@@ -87,7 +87,7 @@ internal class TemplateListBuilderImpl(
    * @return A sorted [SortedMap] containing the file paths as keys and their byte contents as values.
    */
   private fun createTemplateFilesMapFromZipInputStream(zipStream: ZipInputStream, loadFileContent: Boolean): SortedMap<String, ByteArray> {
-    val fileContentsByRelativePath = TreeMap<String, ByteArray>(DirectoryBeforeFileComparator())
+    val fileContentsByRelativePath = TreeMap<String, ByteArray>(FileBeforeDirectoryComparator())
     var entry = zipStream.nextEntry
 
     while (entry != null) {

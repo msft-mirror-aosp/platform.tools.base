@@ -223,7 +223,7 @@ class TemplateListBuilderTest(private val fileSystemId: FileSystemId) {
         // Miscellaneous files outside of template directories
         "README.md" to "Global README".toByteArray(Charsets.UTF_8),
         "LICENSE" to "Global LICENSE".toByteArray(Charsets.UTF_8),
-        "other-folder/some-file.txt" to "other file content".toByteArray(Charsets.UTF_8)
+        "other-folder/some-file.txt" to "other file content".toByteArray(Charsets.UTF_8),
       )
 
     val zipBytes = createZipBytes(fileMap)

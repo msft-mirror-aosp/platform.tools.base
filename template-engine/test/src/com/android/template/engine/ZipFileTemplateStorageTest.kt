@@ -189,6 +189,34 @@ class ZipFileTemplateStorageTest(private val fileSystemId: FileSystemId) {
     }
   }
 
+  @Test
+  fun `test acquire handles initialization exceptions without state poisoning`() {
+    val rootPath = getTestRootPath()
+    Files.createDirectories(rootPath)
+    val invalidZip = rootPath.resolve("non_existent_file.zip")
+    val storage = ZipFileTemplateStorage(invalidZip)
+
+    // First attempt to open should fail since the file doesn't exist
+    var firstFailed = false
+    try {
+      storage.openAndUse {}
+    } catch (unused: Exception) {
+      firstFailed = true
+    }
+    assertThat(firstFailed).isTrue()
+
+    // Now make the file valid
+    createEmptyZip(invalidZip)
+
+    // A subsequent attempt should succeed because state was not poisoned (openRefCount should be 0)
+    var secondSucceeded = false
+    storage.openAndUse { fs ->
+      assertThat(fs.isOpen).isTrue()
+      secondSucceeded = true
+    }
+    assertThat(secondSucceeded).isTrue()
+  }
+
   private fun createEmptyZip(path: Path) {
     ZipOutputStream(Files.newOutputStream(path)).use {
       // Just open and close to make a valid empty zip archive
