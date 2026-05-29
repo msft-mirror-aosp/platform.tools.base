@@ -31,7 +31,7 @@ private class ComposeParameters(response: LayoutInspectorComposeProtocol.GetAllP
 
 /** Converts a protobuf [ViewInspectorProtocol.ViewNode] into a domain [UiNode.ViewNode]. */
 internal fun convertViewNode(node: ViewInspectorProtocol.ViewNode, stringTable: Map<Int, String>): UiNode.ViewNode {
-  val className = stringTable[node.className] ?: "Unknown"
+  val className = stringTable[node.className] ?: "unknown view"
   val bounds = UiNode.Bounds(x = node.bounds.x, y = node.bounds.y, width = node.bounds.width, height = node.bounds.height)
   val idResource = stringTable[node.idResource]
   val layoutResource = stringTable[node.layoutResource]
@@ -83,7 +83,7 @@ private fun doConvertComposeNode(
   hostedViews: Map<Long, UiNode.ViewNode>,
   parameters: ComposeParameters? = null,
 ): UiNode.ComposeNode {
-  val name = stringTable[node.name] ?: "Composable"
+  val name = stringTable[node.name] ?: "unknown composable"
   val bounds =
     if (node.hasBounds()) {
       val layout = node.bounds.layout
