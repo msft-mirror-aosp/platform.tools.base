@@ -21,7 +21,9 @@ iml_module(
 kotlin_library(
     name = "tools.template-engine",
     srcs = glob(["src/**/*.kt"]),
-    visibility = ["//visibility:public"],
+    visibility = [
+        "//tools/vendor/google/android:__subpackages__",
+    ],
     deps = [
         "@maven//:com.google.code.gson.gson",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib",
@@ -37,7 +39,9 @@ kotlin_test(
     friends = [":tools.template-engine"],
     jvm_flags = ["-Dtest.suite.jar=tools.template-engine-test.jar"],
     test_class = "com.android.testutils.JarTestSuite",
-    visibility = ["//visibility:public"],
+    visibility = [
+        "//tools/vendor/google/android:__subpackages__",
+    ],
     deps = [
         ":tools.template-engine",
         "//tools/base/testutils:tools.testutils",
