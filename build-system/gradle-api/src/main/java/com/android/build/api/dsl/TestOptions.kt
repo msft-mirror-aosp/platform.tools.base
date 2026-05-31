@@ -18,6 +18,7 @@ package com.android.build.api.dsl
 
 import org.gradle.api.ExtensiblePolymorphicDomainObjectContainer
 import org.gradle.api.Incubating
+import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.declarative.dsl.model.annotations.HiddenInDefinition
 
 /** Options for running tests. */
@@ -143,4 +144,7 @@ interface TestOptions {
    */
   /** @suppress */
   @get:HiddenInDefinition @get:Incubating val suites: ExtensiblePolymorphicDomainObjectContainer<AgpTestSuite>
+
+  /** Configures the specialized Screenshot TestSuite designed for Compose Preview Screenshot Testing. */
+  @get:Incubating val screenshotTests: NamedDomainObjectContainer<ScreenshotTestSuite>
 }

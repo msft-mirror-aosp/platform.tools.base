@@ -66,6 +66,7 @@ import com.android.build.api.dsl.NdkBuild
 import com.android.build.api.dsl.Optimization
 import com.android.build.api.dsl.Packaging
 import com.android.build.api.dsl.ResourcesPackaging
+import com.android.build.api.dsl.ScreenshotTestSuite
 import com.android.build.api.dsl.SigningConfig
 import com.android.build.api.dsl.Split
 import com.android.build.api.dsl.Splits
@@ -112,6 +113,7 @@ import com.android.build.gradle.internal.dsl.MultiDexConfigImpl
 import com.android.build.gradle.internal.dsl.NdkBuildOptions
 import com.android.build.gradle.internal.dsl.OptimizationImpl
 import com.android.build.gradle.internal.dsl.ResourcesPackagingImpl
+import com.android.build.gradle.internal.dsl.ScreenshotTestSuiteImpl
 import com.android.build.gradle.internal.dsl.SplitOptions
 import com.android.build.gradle.internal.dsl.VcsInfoImpl
 import com.android.build.gradle.internal.dsl.ViewBindingOptionsImpl
@@ -181,6 +183,7 @@ val AGP_SUPPORTED_PROPERTY_TYPES: List<SupportedPropertyType> =
     SupportedPropertyType.Block(MultiDexConfig::class.java, MultiDexConfigImpl::class.java),
     SupportedPropertyType.Block(VcsInfo::class.java, VcsInfoImpl::class.java),
     SupportedPropertyType.Block(AgpTestSuite::class.java, com.android.build.gradle.internal.dsl.AgpTestSuiteImpl::class.java),
+    SupportedPropertyType.Block(ScreenshotTestSuite::class.java, ScreenshotTestSuiteImpl::class.java),
     SupportedPropertyType.Block(JUnitEngineSpec::class.java, com.android.build.gradle.internal.dsl.JUnitEngineSpecImpl::class.java),
     SupportedPropertyType.Block(CompileSdkSpec::class.java, com.android.build.gradle.internal.dsl.CompileSdkSpecImpl::class.java),
     SupportedPropertyType.Block(CompileSdkBetaSpec::class.java, CompileSdkBetaSpecImpl::class.java),

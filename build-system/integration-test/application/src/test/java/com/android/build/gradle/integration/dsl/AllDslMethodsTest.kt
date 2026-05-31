@@ -368,6 +368,7 @@ private class DslScriptGenerator(private val buildTypeType: Class<*>? = null, pr
     private val methodsToIgnore =
       setOf(
         // Intentionally ignored
+        "public abstract void com.android.build.api.dsl.ScreenshotTestSuite.dependencies(kotlin.jvm.functions.Function1)",
         "public abstract com.android.build.api.dsl.HasConfigurableValue com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension.withHostTestBuilder(kotlin.jvm.functions.Function1)",
         "public abstract com.android.build.api.dsl.HasConfigurableValue com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension.withDeviceTestBuilder(kotlin.jvm.functions.Function1)",
         "public abstract com.android.build.api.dsl.LibraryPublishing com.android.build.api.dsl.LibraryExtension.getPublishing()",

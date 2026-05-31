@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.dsl
 
 import com.android.build.api.dsl.AgpTestSuite
+import com.android.build.api.dsl.ScreenshotTestSuite
 import com.android.build.api.dsl.TargetSdkSpec
 import com.android.build.api.dsl.TargetSdkVersion
 import com.android.build.gradle.internal.services.DslServices
@@ -31,7 +32,7 @@ import javax.inject.Inject
 import org.gradle.api.Action
 import org.gradle.api.ExtensiblePolymorphicDomainObjectContainer
 import org.gradle.api.Incubating
-import org.gradle.api.NamedDomainObjectFactory
+import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.tasks.testing.Test
 
 abstract class TestOptions @Inject constructor(private val dslServices: DslServices) : com.android.build.api.dsl.TestOptions {
@@ -47,6 +48,13 @@ abstract class TestOptions @Inject constructor(private val dslServices: DslServi
   override var animationsDisabled: Boolean = false
 
   override val managedDevices: ManagedDevices = dslServices.newInstance(ManagedDevices::class.java, dslServices)
+
+  // (Implementing interface for kotlin)
+  override val screenshotTests: NamedDomainObjectContainer<ScreenshotTestSuite> =
+    dslServices.domainObjectContainer(ScreenshotTestSuite::class.java) { name ->
+      checkScreenshotTestEnabled()
+      dslServices.newDecoratedInstance(ScreenshotTestSuiteImpl::class.java, name, dslServices)
+    }
 
   // (Implementing interface for kotlin)
   override fun managedDevices(action: com.android.build.api.dsl.ManagedDevices.() -> Unit) {
@@ -174,15 +182,28 @@ abstract class TestOptions @Inject constructor(private val dslServices: DslServi
     }
   }
 
-  override val suites: ExtensiblePolymorphicDomainObjectContainer<AgpTestSuite> by lazy {
-    class AgpTestSuiteFactory : NamedDomainObjectFactory<AgpTestSuite> {
+  override val suites: ExtensiblePolymorphicDomainObjectContainer<AgpTestSuite> =
+    dslServices.polymorphicDomainObjectContainer(AgpTestSuite::class.java).apply {
+      registerFactory(AgpTestSuite::class.java) { name ->
+        dslServices.newInstance(AgpTestSuiteImpl::class.java, name, dslServices, unitTests.isIncludeAndroidResources)
+      }
 
-      override fun create(name: String): AgpTestSuite {
-        return dslServices.newInstance(AgpTestSuiteImpl::class.java, name, dslServices, unitTests.isIncludeAndroidResources)
+      if (dslServices.projectOptions.get(com.android.build.gradle.options.BooleanOption.ENABLE_SCREENSHOT_TEST)) {
+        screenshotTests.configureEach { suite ->
+          this.add(
+            dslServices.newInstance(com.android.build.gradle.internal.dsl.ScreenshotAgpTestSuiteImpl::class.java, suite, dslServices)
+          )
+        }
       }
     }
-    dslServices.polymorphicDomainObjectContainer(AgpTestSuite::class.java).apply {
-      registerFactory(AgpTestSuite::class.java, AgpTestSuiteFactory())
+
+  private fun checkScreenshotTestEnabled() {
+    if (!dslServices.projectOptions.get(com.android.build.gradle.options.BooleanOption.ENABLE_SCREENSHOT_TEST)) {
+      dslServices.issueReporter.reportError(
+        com.android.builder.errors.IssueReporter.Type.GENERIC,
+        "Compose Preview Screenshot Testing is an experimental feature. " +
+          "To enable it, add 'android.experimental.enableScreenshotTest=true' to your gradle.properties file.",
+      )
     }
   }
 
