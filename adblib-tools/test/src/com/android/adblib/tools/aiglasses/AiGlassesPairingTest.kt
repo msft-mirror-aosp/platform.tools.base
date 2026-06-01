@@ -479,7 +479,97 @@ class AiGlassesPairingTest {
     assertFalse(executedCommands.contains("input keyevent KEYCODE_DPAD_CENTER"))
   }
 
+  @Test
+  fun pairToGlasses_enablesBluetoothIfDisabled() = runBlockingWithTimeout {
+    val device = createConnectedDevice()
+    val glassesAddress = "AA:BB:CC:DD:EE:FF"
+
+    // Mock the enable command
+    registerBroadcastResponse("cmd bluetooth_manager enable", "")
+
+    // Initial state for pairing
+    registerDumpsysResponse("dumpsys window displays", "  mCurrentFocus=Window{12345 u0 com.another.app/MainActivity}\n")
+    registerDumpsysResponse("dumpsys activity activities", "  ResumedActivity: ActivityRecord{... com.another.app/MainActivity}\n")
+    registerBroadcastResponse(
+      "am broadcast -a com.google.android.glasses.companion.GET_PAIRING_STATE com.google.android.glasses.companion",
+      "state=IDLE\n",
+    )
+    registerBroadcastResponse(
+      "am broadcast -a com.google.android.glasses.companion.ASSISTED_PAIR --es address \"$glassesAddress\" --ez auto_cdm true -p com.google.android.glasses.companion",
+      "Broadcast completed: result=-1, data=\"Successfully sent pairing broadcast\"\n",
+    )
+
+    setupDeviceMocks()
+    // Override the default mock from setupDeviceMocks
+    registerBroadcastResponse("settings get global bluetooth_on", "0")
+
+    val pairing = AiGlassesPairing(fakeAdbRule.adbSession)
+    AiGlassesPairing.POLLING_TIMEOUT = 5.seconds
+
+    registerDumpsysResponse(
+      "dumpsys window displays",
+      "  mCurrentFocus=Window{12345 u0 com.google.android.glasses.companion/MainActivity}\n",
+    )
+
+    val states = mutableListOf<String>()
+    val flow = pairing.run { device.pairToGlasses(glassesAddress, true) }
+    flow
+      .takeWhile {
+        states.add(it)
+        it != "IDLE"
+      }
+      .collect()
+
+    // Verify that the enable command was executed
+    assertTrue(executedCommands.contains("cmd bluetooth_manager enable"))
+    // Verify we checked the status
+    assertTrue(executedCommands.contains("settings get global bluetooth_on"))
+  }
+
+  @Test
+  fun pairToGlasses_doesNotEnableBluetoothIfEnabled() = runBlockingWithTimeout {
+    val device = createConnectedDevice()
+    val glassesAddress = "AA:BB:CC:DD:EE:FF"
+
+    // Initial state for pairing
+    registerDumpsysResponse("dumpsys window displays", "  mCurrentFocus=Window{12345 u0 com.another.app/MainActivity}\n")
+    registerDumpsysResponse("dumpsys activity activities", "  ResumedActivity: ActivityRecord{... com.another.app/MainActivity}\n")
+    registerBroadcastResponse(
+      "am broadcast -a com.google.android.glasses.companion.GET_PAIRING_STATE com.google.android.glasses.companion",
+      "state=IDLE\n",
+    )
+    registerBroadcastResponse(
+      "am broadcast -a com.google.android.glasses.companion.ASSISTED_PAIR --es address \"$glassesAddress\" --ez auto_cdm true -p com.google.android.glasses.companion",
+      "Broadcast completed: result=-1, data=\"Successfully sent pairing broadcast\"\n",
+    )
+
+    setupDeviceMocks() // This also sets it to "1"
+
+    val pairing = AiGlassesPairing(fakeAdbRule.adbSession)
+    AiGlassesPairing.POLLING_TIMEOUT = 5.seconds
+
+    registerDumpsysResponse(
+      "dumpsys window displays",
+      "  mCurrentFocus=Window{12345 u0 com.google.android.glasses.companion/MainActivity}\n",
+    )
+
+    val states = mutableListOf<String>()
+    val flow = pairing.run { device.pairToGlasses(glassesAddress, true) }
+    flow
+      .takeWhile {
+        states.add(it)
+        it != "IDLE"
+      }
+      .collect()
+
+    // Verify that the enable command was NOT executed
+    assertFalse(executedCommands.contains("cmd bluetooth_manager enable"))
+    // Verify we checked the status
+    assertTrue(executedCommands.contains("settings get global bluetooth_on"))
+  }
+
   private fun setupDeviceMocks() {
+    registerBroadcastResponse("settings get global bluetooth_on", "1")
     registerBroadcastResponse("cmd location set-location-enabled true", "")
     registerBroadcastResponse("pm grant com.google.android.glasses.companion android.permission.NEARBY_WIFI_DEVICES", "")
     registerBroadcastResponse("pm grant com.google.android.glasses.companion android.permission.BLUETOOTH_CONNECT", "")
@@ -534,6 +624,14 @@ class AiGlassesPairingTest {
     fakeAdbRule.fakeAdb.fakeAdbServer.handlers.add(
       0,
       FakeShellCommandHandler(ShellProtocolType.SHELL_V2, "input", broadcastResponses, executedCommands),
+    )
+    fakeAdbRule.fakeAdb.fakeAdbServer.handlers.add(
+      0,
+      FakeShellCommandHandler(ShellProtocolType.SHELL, "settings", broadcastResponses, executedCommands),
+    )
+    fakeAdbRule.fakeAdb.fakeAdbServer.handlers.add(
+      0,
+      FakeShellCommandHandler(ShellProtocolType.SHELL_V2, "settings", broadcastResponses, executedCommands),
     )
     fakeAdbRule.fakeAdb.fakeAdbServer.handlers.add(
       0,

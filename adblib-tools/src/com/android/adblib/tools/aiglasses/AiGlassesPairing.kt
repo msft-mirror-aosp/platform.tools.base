@@ -340,6 +340,11 @@ class AiGlassesPairing(val session: AdbSession) {
     return null
   }
 
+  private suspend fun ConnectedDevice.isBluetoothEnabled(): Boolean {
+    val result = runCatchingIoException(CMD_GET_BLUETOOTH_STATE) { shell.executeAsText(it) }
+    return result.stdout.trim() == "1"
+  }
+
   /**
    * Initiates the pairing process with the glasses and emits the pairing state updates.
    *
@@ -357,6 +362,11 @@ class AiGlassesPairing(val session: AdbSession) {
 
         // Ensure location services are enabled on the phone emulator
         runCatchingIoException(CMD_ENABLE_LOCATION) { shell.executeAsText(it) }
+
+        if (!isBluetoothEnabled()) {
+          logger.info { "Bluetooth is disabled, enabling it..." }
+          runCatchingIoException(CMD_ENABLE_BLUETOOTH) { shell.executeAsText(it) }
+        }
 
         launchCompanionApp()
 
@@ -443,6 +453,8 @@ class AiGlassesPairing(val session: AdbSession) {
     private const val CORE_PKG = "com.google.android.glasses.core"
 
     private const val CMD_ENABLE_LOCATION = "cmd location set-location-enabled true"
+    private const val CMD_GET_BLUETOOTH_STATE = "settings get global bluetooth_on"
+    private const val CMD_ENABLE_BLUETOOTH = "cmd bluetooth_manager enable"
     private const val CMD_INPUT_TAB = "input keyevent KEYCODE_TAB"
     private const val CMD_INPUT_CENTER = "input keyevent KEYCODE_DPAD_CENTER"
     private const val SETUP_ACTIVITY_NAME = ".setup.ui.SetupActivity"
