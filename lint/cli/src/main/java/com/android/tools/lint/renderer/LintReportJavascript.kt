@@ -819,7 +819,7 @@ const LintReportApp = {
                 <td>${'$'}{this.escapeHTML(issue.module)}</td>
                 <td>${'$'}{issue.priority}</td>
                 <td>${'$'}{this.escapeHTML(issue.message)}</td>
-                <td title="${'$'}{issue.location ? issue.location.file : ''}">${'$'}{locationHtml}</td>
+                <td title="${'$'}{issue.location ? this.escapeHTML(issue.location.file) : ''}">${'$'}{locationHtml}</td>
             </tr>`);
             if (isExpanded) {
                 const codeSnippet = issue.sourceContext ? `<pre class="errorlines">${'$'}{issue.sourceContext}</pre>` : (issue.errorLine1 ? `<pre class="errorlines">${'$'}{this.escapeHTML(issue.errorLine1)}\n${'$'}{this.escapeHTML(issue.errorLine2 || '')}</pre>` : '');

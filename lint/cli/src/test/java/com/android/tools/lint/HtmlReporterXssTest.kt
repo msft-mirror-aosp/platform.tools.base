@@ -20,6 +20,7 @@ import com.android.tools.lint.client.api.IssueRegistry
 import com.android.tools.lint.detector.api.Incident
 import com.android.tools.lint.detector.api.Issue
 import com.android.tools.lint.detector.api.Severity
+import com.android.tools.lint.renderer.LINTSCRIPT_JS
 import java.io.File
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -83,6 +84,24 @@ class HtmlReporterXssTest {
 
     val html = output.readText()
     assertFalse("V1 Report location should be escaped", html.contains(xssPayload))
+  }
+
+  @Test
+  fun testV2ReportXssInTitle() {
+    val xssPayload = "\"><img src=x onerror=alert(1)>"
+    val reportData = "const lintReport = { 'issues': [] };"
+    val html = getIndexHtml(reportData, "Report $xssPayload")
+
+    if (html.contains(xssPayload)) {
+      fail("V2 Report title should be escaped, but found raw payload in:\n$html")
+    }
+    assertTrue("Should contain escaped payload", html.contains("Report \">&lt;img src=x onerror=alert(1)>"))
+  }
+
+  @Test
+  fun testV2ReportXssInLocation() {
+    // Check that LINTSCRIPT_JS uses escapeHTML for the title attribute
+    assertTrue("V2 Report should escape location.file in JS", LINTSCRIPT_JS.contains("this.escapeHTML(issue.location.file)"))
   }
 
   private fun createFakeClient(flags: LintCliFlags): LintCliClient {
