@@ -172,6 +172,7 @@ ARTIFACTS = [
     "org.apache.lucene:lucene-queryparser:10.1.0",
     "org.apache.maven:maven-aether-provider:3.3.9",
     "org.apache.maven:maven-model-builder:3.9.1",
+    "org.apache.pdfbox:pdfbox:2.0.31",
     "org.bouncycastle:bcpkix-jdk18on:1.79",
     "org.bouncycastle:bcprov-jdk18on:1.79",
     "org.bytedeco:ffmpeg:7.1.1-1.5.12",
