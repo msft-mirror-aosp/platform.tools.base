@@ -120,7 +120,7 @@ public class HtmlBuilder {
             }
         }
         mStringBuilder.append("<A HREF=\"");
-        mStringBuilder.append(url);
+        XmlUtils.appendXmlAttributeValue(mStringBuilder, url);
         mStringBuilder.append("\">");
 
         XmlUtils.appendXmlTextValue(mStringBuilder, text.trim());
@@ -146,6 +146,25 @@ public class HtmlBuilder {
     public HtmlBuilder add(@NonNull String text, int start, int end) {
         XmlUtils.appendXmlTextValue(mStringBuilder, text, start, end);
 
+        return this;
+    }
+
+    @NonNull
+    public HtmlBuilder addMultiline(@NonNull String text) {
+        int length = text.length();
+        int start = 0;
+        for (int i = 0; i < length; i++) {
+            char c = text.charAt(i);
+            if (c == '\n') {
+                add(text, start, i);
+                newline();
+                start = i + 1;
+            }
+        }
+        if (start < length) {
+            add(text, start, length);
+            newline();
+        }
         return this;
     }
 
