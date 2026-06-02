@@ -17,10 +17,12 @@
 package com.android.tools.screenshot.differ
 
 import com.google.common.truth.Truth.assertThat
+import java.awt.image.BufferedImage
 import javax.imageio.ImageIO
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ImageDifferTest {
@@ -35,19 +37,23 @@ class ImageDifferTest {
   @Test
   fun mssimMatcherDifferentWithImageDifferenceThreshold() {
     val differ = MSSIMMatcher(0.9f)
+    val a = loadTestImage("circle")
+    val b = loadTestImage("star")
 
-    val result = differ.diff(loadTestImage("circle"), loadTestImage("star"))
+    val result = differ.diff(a, b)
     assertIs<ImageDiffer.DiffResult.Similar>(result)
     assertEquals("[MSSIM] Required SSIM: 0.100, Actual SSIM: 0.338", result.description)
-    assertIs<ImageDiffer.DiffResult.Similar>(PixelPerfect().diff(result.highlights!!, loadTestImage("PixelPerfect_diff")))
+    verifyHighlightsPattern(result.highlights!!, a, b)
   }
 
   @Test
   fun mssimMatcherDifferent() {
-    val result = MSSIMMatcher().diff(loadTestImage("circle"), loadTestImage("star"))
+    val a = loadTestImage("circle")
+    val b = loadTestImage("star")
+    val result = MSSIMMatcher().diff(a, b)
     assertIs<ImageDiffer.DiffResult.Different>(result)
     assertEquals("[MSSIM] Required SSIM: 1.000, Actual SSIM: 0.338", result.description)
-    assertIs<ImageDiffer.DiffResult.Similar>(PixelPerfect().diff(result.highlights, loadTestImage("PixelPerfect_diff")))
+    verifyHighlightsPattern(result.highlights, a, b)
   }
 
   @Test
@@ -67,27 +73,57 @@ class ImageDifferTest {
   @Test
   fun pixelPerfectMatcherDifferentWithImageDifferenceThreshold() {
     val differ = PixelPerfect(0.9f)
+    val a = loadTestImage("circle")
+    val b = loadTestImage("star")
 
-    val result = differ.diff(loadTestImage("circle"), loadTestImage("star"))
+    val result = differ.diff(a, b)
     assertIs<ImageDiffer.DiffResult.Similar>(result)
     assertEquals("Pixel percentage difference: 27.22%. 17837 of 65536 pixels are different", result.description)
-    assertIs<ImageDiffer.DiffResult.Similar>(PixelPerfect().diff(result.highlights!!, loadTestImage("PixelPerfect_diff")))
+    verifyHighlightsPattern(result.highlights!!, a, b)
     assertThat(result.percentDiff).isWithin(0.0001).of(0.2722) // Approximate double comparison
   }
 
   @Test
   fun pixelPerfectDifferent() {
-    val result = PixelPerfect().diff(loadTestImage("circle"), loadTestImage("star"))
+    val a = loadTestImage("circle")
+    val b = loadTestImage("star")
+    val result = PixelPerfect().diff(a, b)
 
     assertIs<ImageDiffer.DiffResult.Different>(result)
     assertEquals("Pixel percentage difference: 27.22%. 17837 of 65536 pixels are different", result.description)
-    assertIs<ImageDiffer.DiffResult.Similar>(PixelPerfect().diff(result.highlights, loadTestImage("PixelPerfect_diff")))
+    verifyHighlightsPattern(result.highlights, a, b)
     assertThat(result.percentDiff).isWithin(0.0001).of(0.2722) // Approximate double comparison
   }
 
   @Test
   fun pixelPerfectName() {
     assertEquals("PixelPerfect", PixelPerfect().name)
+  }
+
+  private fun verifyHighlightsPattern(highlights: BufferedImage, a: BufferedImage, b: BufferedImage) {
+    assertEquals(a.width, highlights.width)
+    assertEquals(a.height, highlights.height)
+    for (x in 0 until highlights.width) {
+      for (y in 0 until highlights.height) {
+        val aPixel = a.getRGB(x, y)
+        val bPixel = b.getRGB(x, y)
+        val diffPixel = highlights.getRGB(x, y)
+
+        if (aPixel == bPixel || (aPixel ushr 24 == 0 && bPixel ushr 24 == 0)) {
+          assertEquals("Pixel at ($x, $y) should be transparent", 0x00FFFFFF.toInt(), diffPixel)
+        } else {
+          val alpha = (diffPixel ushr 24) and 0xFF
+          val red = (diffPixel ushr 16) and 0xFF
+          val blue = diffPixel and 0xFF
+          assertEquals("Pixel at ($x, $y) red channel should be 255", 255, red)
+          assertEquals("Pixel at ($x, $y) blue channel should be 255", 255, blue)
+          assertEquals("Pixel at ($x, $y) alpha channel should be 255", 255, alpha)
+
+          val green = (diffPixel ushr 8) and 0xFF
+          assertTrue("Pixel at ($x, $y) green channel $green is not in 0..200", green in 0..200)
+        }
+      }
+    }
   }
 
   private fun loadTestImage(name: String) = ImageIO.read(javaClass.getResourceAsStream("$name.png")!!)
