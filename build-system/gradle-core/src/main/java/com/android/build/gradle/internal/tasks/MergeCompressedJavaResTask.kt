@@ -124,6 +124,11 @@ abstract class MergeCompressedJavaResTask : NonIncrementalTask() {
       creationConfig.artifacts
         .setInitialProvider(taskProvider, MergeCompressedJavaResTask::outputFile)
         .withName(fileName)
+        .on(InternalArtifactType.ORIGINAL_MERGED_JAVA_RES)
+
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, MergeCompressedJavaResTask::outputFile)
+        .withName(fileName)
         .on(InternalArtifactType.MERGED_JAVA_RES)
     }
 

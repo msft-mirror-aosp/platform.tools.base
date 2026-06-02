@@ -24,6 +24,7 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Plugi
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.FileUtils
+import com.google.common.truth.Truth
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.junit.Rule
 import org.junit.Test
@@ -263,6 +264,13 @@ class GradualR8ApiTest {
       classes().subPackage("com/example/javalib").containsExactly(listOf())
     }
     checkMappingFiles(build)
+  }
+
+  @Test
+  fun `test gradual r8 default optimization does not trigger R8AnalysisTask`() {
+    val build = rule.build
+    val result = build.executor.run(":app:assembleRelease")
+    Truth.assertThat(result.tasks).doesNotContain(":app:analyzeReleaseR8Config")
   }
 
   @Test

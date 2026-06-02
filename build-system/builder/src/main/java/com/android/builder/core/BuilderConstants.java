@@ -54,6 +54,7 @@ public class BuilderConstants {
 
     public static final String FD_FLAVORS = "flavors";
     public static final String FD_FLAVORS_ALL = "all";
+    public static final String FD_R8_REPORTS = "r8";
 
     public static final String ANDROID_WEAR_MICRO_APK = "android_wear_micro_apk";
 

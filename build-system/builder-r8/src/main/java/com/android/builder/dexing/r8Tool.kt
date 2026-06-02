@@ -59,6 +59,8 @@ import com.android.tools.r8.references.Reference
 import com.android.tools.r8.startup.StartupProfileBuilder
 import com.android.tools.r8.startup.StartupProfileProvider
 import com.android.tools.r8.utils.ArchiveResourceProvider
+import com.android.utils.FileUtils.cleanOutputDir
+import com.android.utils.FileUtils.deleteIfExists
 import com.google.common.io.ByteStreams
 import java.io.BufferedOutputStream
 import java.io.ByteArrayInputStream
@@ -144,9 +146,9 @@ class GeneratedKeepRuleOrigin(keepRuleFile: KeepRuleFile.GeneratedOrigin) : Path
 /** Converts the specified inputs, according to the configuration, and writes dex or classes to output path. */
 fun runR8(
   inputClasses: Collection<Path>,
-  output: Path,
+  output: Path?, // is null for analytics mode
   inputJavaResJar: Path,
-  javaResourcesJar: Path,
+  javaResourcesJar: Path?, // is null for analytics mode
   libraries: Collection<Path>,
   classpath: Collection<Path>,
   toolConfig: ToolConfig,
@@ -181,7 +183,7 @@ fun runR8(
   }
   val r8CommandBuilder =
     R8Command.builder(
-      R8DiagnosticsHandler(proguardConfig.proguardOutputFiles.missingKeepRules, messageReceiver, toolConfig.mainDexListDisallowed, "R8")
+      R8DiagnosticsHandler(proguardConfig.proguardOutputFiles?.missingKeepRules, messageReceiver, toolConfig.mainDexListDisallowed, "R8")
     )
 
   if (partialShrinking != null) {
@@ -217,6 +219,16 @@ fun runR8(
 
   if (r8Metadata != null) {
     r8CommandBuilder.setBuildMetadataConsumer { metadata -> r8Metadata.writeText(metadata.toJson()) }
+  }
+
+  if (output != null) {
+    if (toolConfig.r8OutputType == R8OutputType.CLASSES) {
+      deleteIfExists(output.toFile())
+    } else {
+      cleanOutputDir(output.toFile())
+      featureDexDir?.let { cleanOutputDir(it.toFile()) }
+      featureJavaResourceOutputDir?.let { cleanOutputDir(it.toFile()) }
+    }
   }
 
   if (toolConfig.r8OutputType == R8OutputType.DEX) {
@@ -260,31 +272,38 @@ fun runR8(
   }
 
   val proguardOutputFiles = proguardConfig.proguardOutputFiles
-  proguardOutputFiles.r8ConfigurationAnalyzerDataOutput?.let { Files.deleteIfExists(it) }
-  proguardOutputFiles.r8ConfigurationAnalyzerReportOutput?.let { Files.deleteIfExists(it) }
-  Files.deleteIfExists(proguardOutputFiles.proguardMapOutput)
-  Files.deleteIfExists(proguardOutputFiles.proguardPartitionMapOutput)
-  Files.deleteIfExists(proguardOutputFiles.proguardSeedsOutput)
-  Files.deleteIfExists(proguardOutputFiles.proguardUsageOutput)
-  Files.deleteIfExists(proguardOutputFiles.proguardConfigurationOutput)
-  Files.deleteIfExists(proguardOutputFiles.missingKeepRules)
+  if (proguardOutputFiles != null) {
+    Files.deleteIfExists(proguardOutputFiles.proguardMapOutput)
+    Files.deleteIfExists(proguardOutputFiles.proguardPartitionMapOutput)
+    Files.deleteIfExists(proguardOutputFiles.proguardSeedsOutput)
+    Files.deleteIfExists(proguardOutputFiles.proguardUsageOutput)
+    Files.deleteIfExists(proguardOutputFiles.proguardConfigurationOutput)
+    Files.deleteIfExists(proguardOutputFiles.missingKeepRules)
 
-  Files.createDirectories(proguardOutputFiles.proguardMapOutput.parent)
-  proguardOutputFiles.r8ConfigurationAnalyzerDataOutput?.let {
-    r8CommandBuilder.setConfigurationAnalysisDataConsumer(ByteArrayConsumer.FileConsumer(it))
-  }
-  proguardOutputFiles.r8ConfigurationAnalyzerReportOutput?.let {
-    r8CommandBuilder.setConfigurationAnalysisHtmlReportConsumer(StringConsumer.FileConsumer(it))
-  }
-  r8CommandBuilder.setProguardMapOutputPath(proguardOutputFiles.proguardMapOutput)
-  r8CommandBuilder.setPartitionMapOutputPath(proguardOutputFiles.proguardPartitionMapOutput)
-  r8CommandBuilder.setProguardSeedsConsumer(StringConsumer.FileConsumer(proguardOutputFiles.proguardSeedsOutput))
-  r8CommandBuilder.setProguardUsageConsumer(StringConsumer.FileConsumer(proguardOutputFiles.proguardUsageOutput))
-  r8CommandBuilder.setProguardConfigurationConsumer(StringConsumer.FileConsumer(proguardOutputFiles.proguardConfigurationOutput))
+    Files.createDirectories(proguardOutputFiles.proguardMapOutput.parent)
 
-  val dataResourceConsumer = JavaResourcesConsumer(javaResourcesJar)
+    r8CommandBuilder.setProguardMapOutputPath(proguardOutputFiles.proguardMapOutput)
+    r8CommandBuilder.setPartitionMapOutputPath(proguardOutputFiles.proguardPartitionMapOutput)
+    r8CommandBuilder.setProguardSeedsConsumer(StringConsumer.FileConsumer(proguardOutputFiles.proguardSeedsOutput))
+    r8CommandBuilder.setProguardUsageConsumer(StringConsumer.FileConsumer(proguardOutputFiles.proguardUsageOutput))
+    r8CommandBuilder.setProguardConfigurationConsumer(StringConsumer.FileConsumer(proguardOutputFiles.proguardConfigurationOutput))
+  }
+
+  val proguardOutputReports = proguardConfig.proguardOutputReports
+  if (proguardOutputReports != null) {
+    proguardOutputReports.r8ConfigurationAnalyzerDataOutput.let {
+      r8CommandBuilder.setConfigurationAnalysisDataConsumer(ByteArrayConsumer.FileConsumer(it))
+    }
+    proguardOutputReports.r8ConfigurationAnalyzerReportOutput.let {
+      r8CommandBuilder.setConfigurationAnalysisHtmlReportConsumer(StringConsumer.FileConsumer(it))
+    }
+  }
+
+  val dataResourceConsumer = javaResourcesJar?.let { JavaResourcesConsumer(javaResourcesJar) }
   val programConsumer =
-    if (toolConfig.r8OutputType == R8OutputType.CLASSES) {
+    if (output == null) {
+      DexIndexedConsumer.emptyConsumer()
+    } else if (toolConfig.r8OutputType == R8OutputType.CLASSES) {
       val baseConsumer: ClassFileConsumer =
         if (Files.isDirectory(output)) {
           ClassFileConsumer.DirectoryConsumer(output)
@@ -378,7 +397,7 @@ fun runR8(
     }
   }
 
-  proguardConfig.proguardOutputFiles.proguardMapOutput.let {
+  proguardConfig.proguardOutputFiles?.proguardMapOutput?.let {
     if (Files.notExists(it)) {
       // R8 might not create a mapping file, so we have to create it, http://b/37053758.
       Files.createFile(it)
@@ -647,12 +666,13 @@ data class ProguardConfig(
   val keepRuleWithOrigins: List<KeepRuleFile>,
   val proguardMapInput: Path?,
   val proguardConfigurations: List<String>,
-  val proguardOutputFiles: ProguardOutputFiles,
+  val proguardOutputFiles: ProguardOutputFiles?,
+  val proguardOutputReports: ProguardOutputReports?,
 )
 
+data class ProguardOutputReports(val r8ConfigurationAnalyzerDataOutput: Path, val r8ConfigurationAnalyzerReportOutput: Path)
+
 data class ProguardOutputFiles(
-  val r8ConfigurationAnalyzerDataOutput: Path?,
-  val r8ConfigurationAnalyzerReportOutput: Path?,
   val proguardMapOutput: Path,
   val proguardPartitionMapOutput: Path,
   val proguardSeedsOutput: Path,

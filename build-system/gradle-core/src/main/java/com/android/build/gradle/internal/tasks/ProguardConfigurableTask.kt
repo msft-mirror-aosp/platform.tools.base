@@ -133,9 +133,9 @@ abstract class ProguardConfigurableTask(@get:Internal val projectLayout: Project
 
   @get:Input abstract val ignoreFromAllExternalDependenciesInKeepRules: Property<Boolean>
 
-  @get:OutputFile abstract val mappingFile: RegularFileProperty
+  @get:Optional @get:OutputFile abstract val mappingFile: RegularFileProperty
 
-  @get:OutputFile abstract val mappingPartitionFile: RegularFileProperty
+  @get:Optional @get:OutputFile abstract val mappingPartitionFile: RegularFileProperty
 
   @get:Input abstract val hasAllAccessTransformers: Property<Boolean>
 
