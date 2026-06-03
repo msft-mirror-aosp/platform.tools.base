@@ -390,7 +390,8 @@ const TestReportApp = {
       this.render();
     } else {
       console.error("TEST_DATA_SOURCE is not defined. Make sure data.js is loaded before script.js");
-      this.elements.resultsData.innerHTML = `<tr><td colspan="100%" class="text-center text-red-600 font-bold" style="padding: 2rem;">Error: Data file not loaded.</td></tr>`;
+      this.elements.resultsData.innerHTML = `<tr><td colspan="100%" class="text-center text-red-600 font-bold" style="padding: 2rem;" tabindex="-1" id="data-load-error">Error: Data file not loaded.</td></tr>`;
+      document.getElementById('data-load-error').focus();
     }
   },
 
@@ -899,17 +900,9 @@ const TestReportApp = {
                 this.elements.groupByBtn.setAttribute('aria-expanded', 'false');
                 this.elements.groupByBtn.focus();
 
-                // When changing the view, we reset selections if we are viewing a lower granularity
-                if (this.state.currentFlatView === 'modules') {
-                    this.state.selectedModule = null;
-                    this.state.selectedPackage = null;
-                    this.state.selectedClass = null;
-                } else if (this.state.currentFlatView === 'packages') {
-                    this.state.selectedPackage = null;
-                    this.state.selectedClass = null;
-                } else if (this.state.currentFlatView === 'classes') {
-                    this.state.selectedClass = null;
-                }
+                // When changing the grouping via the dropdown, we reset all selections
+                // to show the global list for that grouping, consistent with coverage report.
+                this.resetSelection();
 
                 this.render();
                 Navigation.push();
@@ -1574,7 +1567,7 @@ const TestReportApp = {
 
   renderBreadcrumbs() {
     if (this.state.viewMode !== 'flat') {
-        this.elements.breadcrumbs.innerHTML = `<span class="breadcrumb-current">Project Overview</span>`;
+        this.elements.breadcrumbs.innerHTML = '';
         return;
     }
     const { selectedModule, selectedPackage, selectedClass } = this.state;
@@ -1589,7 +1582,7 @@ const TestReportApp = {
 
     // Module level
     if (selectedModule) {
-        html += `<span class="breadcrumb-separator">/</span>`;
+        html += `<span class="breadcrumb-separator" aria-hidden="true">/</span>`;
         if (selectedPackage) {
             html += `<a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_PACKAGES}" aria-label="Go back to module: ${UIUtils.escapeHTML(selectedModule)}">${UIUtils.escapeHTML(selectedModule)}</a>`;
         } else {
@@ -1599,7 +1592,7 @@ const TestReportApp = {
 
     // Package level
     if (selectedPackage) {
-        html += `<span class="breadcrumb-separator">/</span>`;
+        html += `<span class="breadcrumb-separator" aria-hidden="true">/</span>`;
         if (selectedClass) {
             html += `<a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_CLASSES}" aria-label="Go back to package: ${UIUtils.escapeHTML(selectedPackage)}">${UIUtils.escapeHTML(selectedPackage)}</a>`;
         } else {
@@ -1609,7 +1602,7 @@ const TestReportApp = {
 
     // Class level
     if (selectedClass) {
-        html += `<span class="breadcrumb-separator">/</span>`;
+        html += `<span class="breadcrumb-separator" aria-hidden="true">/</span>`;
         html += `<span class="breadcrumb-current">${UIUtils.escapeHTML(selectedClass)}</span>`;
     }
 
@@ -2061,11 +2054,6 @@ const Navigation = {
     const { processedData, variants, ...restOfState } = TestReportApp.state;
     const state = JSON.parse(JSON.stringify(restOfState));
 
-    // Always clear search from history state to avoid messy history from keystrokes
-    if (state.filters) {
-      state.filters.search = '';
-    }
-
     // Always remove density from history state to retain user choice across navigation
     delete state.density;
 
@@ -2111,17 +2099,30 @@ const Navigation = {
       ...state
     };
 
-    // Reset search UI on navigation
+    // Update search UI to match restored state
     if (TestReportApp.elements.searchInput) {
-      TestReportApp.elements.searchInput.value = '';
-      if (TestReportApp.elements.searchClearBtn) {
-        TestReportApp.elements.searchClearBtn.classList.add('hidden');
-      }
-      if (TestReportApp.elements.searchWrapper) {
-        TestReportApp.elements.searchWrapper.classList.remove('expanded');
-      }
-      if (TestReportApp.elements.searchRevealBtn) {
-        TestReportApp.elements.searchRevealBtn.classList.remove('hidden');
+      TestReportApp.elements.searchInput.value = TestReportApp.state.filters.search || '';
+      if (TestReportApp.elements.searchInput.value) {
+        if (TestReportApp.elements.searchWrapper) {
+            TestReportApp.elements.searchWrapper.classList.add('expanded');
+        }
+        if (TestReportApp.elements.searchRevealBtn) {
+            TestReportApp.elements.searchRevealBtn.classList.add('transparent');
+        }
+        if (TestReportApp.elements.searchClearBtn) {
+          TestReportApp.elements.searchClearBtn.classList.remove('hidden');
+        }
+      } else {
+        if (TestReportApp.elements.searchWrapper) {
+            TestReportApp.elements.searchWrapper.classList.remove('expanded');
+        }
+        if (TestReportApp.elements.searchRevealBtn) {
+            TestReportApp.elements.searchRevealBtn.classList.remove('transparent');
+            TestReportApp.elements.searchRevealBtn.classList.remove('hidden');
+        }
+        if (TestReportApp.elements.searchClearBtn) {
+          TestReportApp.elements.searchClearBtn.classList.add('hidden');
+        }
       }
     }
 

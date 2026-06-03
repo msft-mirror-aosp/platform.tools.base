@@ -275,10 +275,6 @@ const Navigation = {
             }
         };
 
-        // Always clear search from history state
-        if (state.reportState && state.reportState.filters) {
-            state.reportState.filters.search = '';
-        }
         // Always remove density from history state to retain user choice across navigation
         if (state.reportState) {
             delete state.reportState.density;
@@ -301,10 +297,6 @@ const Navigation = {
 
         // Restore Report filters
         CoverageReportApp.applyFilters(state.reportState.filters);
-
-        // Reset search on both apps during navigation
-        CoverageReportApp.resetSearchUI();
-        CoverageReportApp.collapseSearchUI(false);
 
         if (typeof SourceViewApp !== 'undefined') {
             SourceViewApp.resetSearchUI();
@@ -333,6 +325,19 @@ const Navigation = {
         if (state.currentView === 'report') {
             App.showReportView();
             CoverageReportApp.updateVariantDropdown();
+
+            // Restore search UI to match restored state after view is visible
+            if (CoverageReportApp.elements.searchInput) {
+                CoverageReportApp.elements.searchInput.value = state.reportState.filters.search || '';
+                if (CoverageReportApp.elements.searchInput.value) {
+                    CoverageReportApp.revealSearchUI();
+                    CoverageReportApp.elements.searchClearBtn?.classList.remove('hidden');
+                } else {
+                    CoverageReportApp.collapseSearchUI(false);
+                    CoverageReportApp.elements.searchClearBtn?.classList.add('hidden');
+                }
+            }
+
             CoverageReportApp.render(true); // pass true to skip replaceState
         } else if (state.sourceState.classData) {
             const classObj = App.findClassObject(
@@ -748,12 +753,26 @@ const CoverageReportApp = {
     },
 
     applyFilters(newFilters) {
+        if (!newFilters) return;
         const currentFilters = this.state.filters;
-        currentFilters.modules.length = 0; currentFilters.modules.push(...newFilters.modules);
-        currentFilters.packages.length = 0; currentFilters.packages.push(...newFilters.packages);
-        currentFilters.classes.length = 0; currentFilters.classes.push(...newFilters.classes);
-        currentFilters.variants.length = 0; currentFilters.variants.push(...newFilters.variants);
-        currentFilters.testSuite = newFilters.testSuite;
+        if (newFilters.modules) {
+            currentFilters.modules.length = 0;
+            currentFilters.modules.push(...newFilters.modules);
+        }
+        if (newFilters.packages) {
+            currentFilters.packages.length = 0;
+            currentFilters.packages.push(...newFilters.packages);
+        }
+        if (newFilters.classes) {
+            currentFilters.classes.length = 0;
+            currentFilters.classes.push(...newFilters.classes);
+        }
+        if (newFilters.variants) {
+            currentFilters.variants.length = 0;
+            currentFilters.variants.push(...newFilters.variants);
+        }
+        if (newFilters.testSuite !== undefined) currentFilters.testSuite = newFilters.testSuite;
+        currentFilters.search = newFilters.search || '';
     },
 
     setFilterChipsVisibility(visibility) {

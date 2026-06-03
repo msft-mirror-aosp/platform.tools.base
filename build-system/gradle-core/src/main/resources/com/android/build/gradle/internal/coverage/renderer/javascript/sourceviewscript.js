@@ -139,10 +139,11 @@ const SourceViewApp = {
         } catch (error) {
             console.error("[SourceView] Failed to load source files:", error);
             this.elements.sourceViewContainer.innerHTML = `
-                <div class="p-8 text-center text-red-600">
+                <div class="p-8 text-center text-red-600" tabindex="-1" id="source-load-error">
                     <h3 class="text-lg font-bold">Error Loading Source</h3>
                     <p>Could not load coverage data for ${classData.sourceFileName}.</p>
                 </div>`;
+            document.getElementById('source-load-error').focus();
         } finally {
             this.toggleLoading(false);
         }
