@@ -86,11 +86,8 @@ ${renderIf(isViewBindingSupported) {"""
         val adRequest = AdRequest.Builder()
             .setRequestAgent("android_studio:ad_template").build()
         adView.loadAd(adRequest)
-    }
 
-    override fun onActivityCreated(savedInstanceState: Bundle?) {
-        super.onActivityCreated(savedInstanceState)
-        val appContext = activity?.applicationContext ?: return
+        val appContext = context?.applicationContext ?: return
         Toast.makeText(appContext, TOAST_TEXT, Toast.LENGTH_LONG).show()
     }
 

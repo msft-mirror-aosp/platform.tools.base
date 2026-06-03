@@ -89,16 +89,13 @@ ${renderIf(isViewBindingSupported) {"""
         AdRequest adRequest = new AdRequest.Builder()
                 .setRequestAgent("android_studio:ad_template").build();
         adView.loadAd(adRequest);
-    }
 
-    @Override
-    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
-        if (getActivity() == null || getActivity().getApplicationContext() == null) return;
-        final Context appContext = getActivity().getApplicationContext();
-        // Toasts the test ad message on the screen.
-        // Remove this after defining your own ad unit ID.
-        Toast.makeText(appContext, TOAST_TEXT, Toast.LENGTH_LONG).show();
+        if (getContext() != null) {
+            Context appContext = getContext().getApplicationContext();
+            // Toasts the test ad message on the screen.
+            // Remove this after defining your own ad unit ID.
+            Toast.makeText(appContext, TOAST_TEXT, Toast.LENGTH_LONG).show();
+        }
     }
 
 ${renderIf(isViewBindingSupported) {"""
