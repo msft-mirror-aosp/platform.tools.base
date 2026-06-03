@@ -53,6 +53,12 @@ maven_repository(
 )
 
 filegroup(
+    name = "gradle-distrib-9.5.0",
+    srcs = ["//tools/external/gradle:gradle-distrib-9.5.0"],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
     name = "gradle-distrib-9.5.0-milestone-7",
     srcs = ["//tools/external/gradle:gradle-distrib-9.5.0-milestone-7"],
     visibility = ["//visibility:public"],
@@ -61,6 +67,12 @@ filegroup(
 filegroup(
     name = "gradle-distrib-9.5.0-milestone-5",
     srcs = ["//tools/external/gradle:gradle-distrib-9.5.0-milestone-5"],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "gradle-distrib-9.4.1",
+    srcs = ["//tools/external/gradle:gradle-distrib-9.4.1"],
     visibility = ["//visibility:public"],
 )
 
@@ -97,6 +109,16 @@ filegroup(
 filegroup(
     name = "gradle-distrib-8.13",
     srcs = ["//tools/external/gradle:gradle-distrib-8.13"],
+    visibility = ["//visibility:public"],
+)
+
+maven_repository(
+    name = "gradle-9.4.1-runtime-maven",
+    # keep sorted
+    artifacts = [
+        "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.3.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib_2.3.10",
+    ],
     visibility = ["//visibility:public"],
 )
 
