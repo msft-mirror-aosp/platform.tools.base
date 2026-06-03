@@ -16,7 +16,7 @@
 
 package com.android.build.gradle.internal.packaging
 
-import com.android.build.gradle.internal.matcher.GlobPathMatcherFactory
+import com.android.builder.internal.matcher.GlobPathMatcherFactory
 import java.io.File
 import java.nio.file.PathMatcher
 import java.nio.file.Paths

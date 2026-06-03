@@ -20,8 +20,8 @@ import com.android.SdkConstants.DOT_CLASS
 import com.android.build.api.instrumentation.AsmClassVisitorFactory
 import com.android.build.api.instrumentation.ClassContext
 import com.android.build.api.instrumentation.FramesComputationMode
-import com.android.build.gradle.internal.matcher.GlobPathMatcherFactory
 import com.android.builder.dexing.ClassFileInput.CLASS_MATCHER
+import com.android.builder.internal.matcher.GlobPathMatcherFactory
 import com.android.utils.FileUtils
 import com.google.common.io.ByteStreams
 import java.io.BufferedOutputStream

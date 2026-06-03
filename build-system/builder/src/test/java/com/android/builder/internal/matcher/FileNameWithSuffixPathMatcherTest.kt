@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.matcher
+package com.android.builder.internal.matcher
 
 import com.google.common.truth.Truth.assertThat
 import java.nio.file.Paths

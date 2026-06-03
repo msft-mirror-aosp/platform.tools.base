@@ -423,6 +423,7 @@ com/android/tools/build/builder
   com/android/builder/internal/aapt/v2/
   com/android/builder/internal/compiler/
   com/android/builder/internal/incremental/
+  com/android/builder/internal/matcher/
   com/android/builder/internal/packaging/
   com/android/builder/merge/
   com/android/builder/multidex/
@@ -603,7 +604,6 @@ com/android/tools/build/gradle
   com/android/build/gradle/internal/instrumentation/
   com/android/build/gradle/internal/lint/
   com/android/build/gradle/internal/manifest/
-  com/android/build/gradle/internal/matcher/
   com/android/build/gradle/internal/model/
   com/android/build/gradle/internal/multiplatform/
   com/android/build/gradle/internal/ndk/

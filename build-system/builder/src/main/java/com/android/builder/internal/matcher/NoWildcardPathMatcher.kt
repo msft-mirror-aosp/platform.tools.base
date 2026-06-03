@@ -14,35 +14,36 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.matcher
+package com.android.builder.internal.matcher
 
+import java.io.File
 import java.nio.file.Path
 import java.nio.file.PathMatcher
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 
-open class FileNameWithSuffixPathMatcher(matcher: Matcher) : PathMatcher {
+class NoWildcardPathMatcher(matcher: Matcher) : PathMatcher {
 
-  private val fileName: String
+  val path: String
 
   init {
     if (!matcher.matches()) throw IllegalArgumentException("matcher $matcher does not match this factory")
-    fileName = matcher.group(1)
+    path = matcher.group(1)
   }
 
   companion object {
-    // **/foo or **/*foo
-    private val pattern: Pattern = Pattern.compile("\\*\\*/\\*?([^/*{}]*)")
+    val pattern: Pattern = Pattern.compile("(/[^*{}]*)")
 
     fun factory() =
       object : GlobPathMatcherFactory {
-        override fun pattern() = pattern
+        override fun build(glob: Matcher) = NoWildcardPathMatcher(glob)
 
-        override fun build(glob: Matcher) = FileNameWithSuffixPathMatcher(glob)
+        override fun pattern() = pattern
       }
   }
 
-  override fun matches(path: Path?): Boolean {
-    return path?.parent != null && path.fileName?.toString()?.endsWith(fileName) ?: false
+  override fun matches(p0: Path?): Boolean {
+    val pathAsString = p0?.toString()?.replace(File.separatorChar, '/')
+    return path == pathAsString
   }
 }

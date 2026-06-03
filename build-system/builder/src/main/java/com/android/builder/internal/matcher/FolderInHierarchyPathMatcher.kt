@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.matcher
+package com.android.builder.internal.matcher
 
 import java.nio.file.Path
 import java.nio.file.PathMatcher
