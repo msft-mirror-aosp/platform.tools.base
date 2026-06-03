@@ -1137,7 +1137,7 @@ private constructor(
     // Overwrite the properties derived from the device and nothing else
     val properties: MutableMap<String, String> = avd.properties.toMutableMap()
 
-    val d = deviceManager.getDevice(avd)
+    val d = deviceManager.getDevice(avd.deviceName, avd.deviceManufacturer)
     if (d == null) {
       log.warning("Base device information incomplete or missing.")
       return null

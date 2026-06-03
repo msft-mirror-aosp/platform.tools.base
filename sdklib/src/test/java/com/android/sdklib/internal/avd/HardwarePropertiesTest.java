@@ -22,7 +22,9 @@ import static com.android.sdklib.internal.avd.ConfigKey.DISTANT_DISPLAY_HEIGHT;
 import static com.android.sdklib.internal.avd.ConfigKey.DISTANT_DISPLAY_WIDTH;
 import static com.android.sdklib.internal.avd.ConfigKey.RESIZABLE_CONFIG;
 import static com.android.sdklib.internal.avd.ConfigKey.ROLL;
+
 import static com.google.common.truth.Truth.assertThat;
+
 import static java.util.stream.Collectors.toList;
 
 import com.android.resources.Navigation;
@@ -30,16 +32,15 @@ import com.android.sdklib.TempSdkManager;
 import com.android.sdklib.devices.Device;
 import com.android.sdklib.devices.DeviceManager;
 import com.android.sdklib.devices.PowerType;
-
 import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.testutils.NoErrorsOrWarningsLogger;
-
-import java.util.List;
-import java.util.Map;
 
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+
+import java.util.List;
+import java.util.Map;
 
 public class HardwarePropertiesTest {
     static final String WSVGA_HASH             = "MD5:be7b258bf9edce03131d307b10b00856";
@@ -124,9 +125,7 @@ public class HardwarePropertiesTest {
     @Test
     public void testAutomotiveDeviceProperties() {
         List<Device> automotiveDevices =
-                dm.getDevices(DeviceManager.ALL_DEVICES).stream()
-                        .filter(Device::isAutomotive)
-                        .collect(toList());
+                dm.getDevices().stream().filter(Device::isAutomotive).collect(toList());
         assertThat(automotiveDevices).isNotEmpty();
         for (Device device : automotiveDevices) {
             Map<String, String> properties = HardwareProperties.getHardwareProperties(device);
@@ -151,7 +150,7 @@ public class HardwarePropertiesTest {
     @Test
     public void testAutomotiveDistantDeviceProperties() {
         List<Device> automotiveDistantDisplayDevices =
-                dm.getDevices(DeviceManager.ALL_DEVICES).stream()
+                dm.getDevices().stream()
                         .filter(Device::isAutomotiveDistantDisplay)
                         .collect(toList());
         assertThat(automotiveDistantDisplayDevices).isNotEmpty();
