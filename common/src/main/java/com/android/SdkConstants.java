@@ -523,6 +523,8 @@ public final class SdkConstants {
     public static final String FD_CMDLINE_TOOLS = "cmdline-tools";
     /** Name of the SDK emulator folder. */
     public static final String FD_EMULATOR = "emulator";
+    /** Name of the SDK emulators (side-by-side versioned) folder. */
+    public static final String FD_EMULATORS = "emulators";
     /** Name of the SDK tools/support folder. */
     public static final String FD_SUPPORT = "support";
     /** Name of the SDK platform tools folder. */
