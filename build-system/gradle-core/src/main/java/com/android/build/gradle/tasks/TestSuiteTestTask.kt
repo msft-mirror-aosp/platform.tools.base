@@ -501,6 +501,22 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
             // do nothing so far, we always do it but it might change in the near future.
           }
 
+          AgpTestSuiteInputParameters.TESTING_APK -> {
+            val testApkSourceContainer = creationConfig.sourceContainers.firstOrNull { it.source is TestSuiteSourceSet.TestApk }
+            if (testApkSourceContainer != null) {
+              task.engineInputParameters.add(
+                AgpTestSuiteInputParameter(
+                  AgpTestSuiteInputParameters.TESTING_APK,
+                  testApkSourceContainer.artifacts.get(SingleArtifact.APK),
+                )
+              )
+            } else {
+              throw RuntimeException(
+                "Engine requested TESTING_APK but no TestApk source set is configured for suite ${creationConfig.name}"
+              )
+            }
+          }
+
           else -> {
             println("I don't know of this parameter $inputParameter")
           }
@@ -537,7 +553,10 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
               sourceContainer.artifacts.forScope(ScopedArtifacts.Scope.PROJECT).getFinalArtifacts(ScopedArtifact.POST_COMPILATION_CLASSES)
             )
           }
-          is TestSuiteSourceSet.TestApk -> throw RuntimeException("Not implemented")
+          is TestSuiteSourceSet.TestApk -> {
+            task.testDefinitionDirs.from(sourceSet.manifestFile.parentFile)
+            task.failOnNoDiscoveredTests.setDisallowChanges(false)
+          }
         }
       }
 
