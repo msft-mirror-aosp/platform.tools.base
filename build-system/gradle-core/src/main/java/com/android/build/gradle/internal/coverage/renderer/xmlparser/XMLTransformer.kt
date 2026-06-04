@@ -109,7 +109,7 @@ object XMLTransformer {
 
     val moduleReportBuilder = coverageBuilder.moduleReportBuilders.getOrPut(context.moduleName) { ModuleReportBuilder(context.moduleName) }
     val overallCoverage = parseCoverageCounters(rootElement)
-    updateAggregatedCoverages(context, overallCoverage, coverageBuilder.aggregatedVariantCoverages)
+    updateTestSuiteCoverages(context, overallCoverage, coverageBuilder.testSuiteCoverages)
 
     moduleReportBuilder.testSuiteCoverages
       .getOrPut(context.testSuiteName) { TestSuiteReportCoverageBuilder(context.testSuiteName) }
@@ -132,19 +132,21 @@ object XMLTransformer {
     )
   }
 
-  private fun updateAggregatedCoverages(
+  private fun updateTestSuiteCoverages(
     context: ReportContext,
     overallCoverage: AllCounters,
-    aggregatedVariantCoverages: MutableMap<String, VariantCoverage>,
+    testSuiteCoverages: MutableMap<String, MutableMap<String, VariantCoverage>>,
   ) {
+    val variantMap = testSuiteCoverages.getOrPut(context.testSuiteName) { mutableMapOf() }
     val projectCoverage =
-      aggregatedVariantCoverages.getOrPut(context.variantName) {
-        VariantCoverage(context.variantName, CoverageInfo(null, 0, 0), CoverageInfo(null, 0, 0))
-      }
-    val newCovered = projectCoverage.instruction.covered + overallCoverage.instruction.covered
-    val newTotal = projectCoverage.instruction.total + overallCoverage.instruction.total
-    aggregatedVariantCoverages[context.variantName] =
-      projectCoverage.copy(instruction = CoverageInfo(calculatePercent(newCovered, newTotal), newCovered, newTotal))
+      variantMap.getOrPut(context.variantName) { VariantCoverage(context.variantName, CoverageInfo(null, 0, 0), CoverageInfo(null, 0, 0)) }
+    val newInstrCovered = projectCoverage.instruction.covered + overallCoverage.instruction.covered
+    val newInstrTotal = projectCoverage.instruction.total + overallCoverage.instruction.total
+    variantMap[context.variantName] =
+      projectCoverage.copy(
+        instruction = CoverageInfo(calculatePercent(newInstrCovered, newInstrTotal), newInstrCovered, newInstrTotal),
+        branch = CoverageInfo(0, 0, 0),
+      )
   }
 
   private fun parsePackage(

@@ -54,7 +54,7 @@ class XMLTransformerTest {
     XMLTransformer.transform(nonExistentFile, projectBaseDir, coverageBuilder, sourceFileReportsBuilder)
 
     assertThat(coverageBuilder.moduleReportBuilders).isEmpty()
-    assertThat(coverageBuilder.aggregatedVariantCoverages).isEmpty()
+    assertThat(coverageBuilder.testSuiteCoverages).isEmpty()
     assertThat(sourceFileReportsBuilder.sourceFileBuilders).isEmpty()
     assertThat(coverageBuilder.allTestSuiteNames).isEmpty()
   }
@@ -71,14 +71,17 @@ class XMLTransformerTest {
 
     assertThat(coverageBuilder.allTestSuiteNames).containsExactly("UnitTestmy-module")
 
-    assertThat(coverageBuilder.aggregatedVariantCoverages).hasSize(1)
-    val projectVariantCoverage = coverageBuilder.aggregatedVariantCoverages["debug"]!!
+    assertThat(coverageBuilder.testSuiteCoverages).hasSize(2)
+    val projectAggregatedMap = coverageBuilder.testSuiteCoverages["Aggregated"]!!
+    val projectVariantCoverage = projectAggregatedMap["debug"]!!
     assertThat(projectVariantCoverage.name).isEqualTo("debug")
-    // Sum of aggregated (15) and unit test (90)
-    assertThat(projectVariantCoverage.instruction.covered).isEqualTo(105)
-    // Sum of aggregated (20) and unit test (100)
-    assertThat(projectVariantCoverage.instruction.total).isEqualTo(120)
-    assertThat(projectVariantCoverage.instruction.percent).isEqualTo(87)
+    assertThat(projectVariantCoverage.instruction.covered).isEqualTo(15)
+    assertThat(projectVariantCoverage.instruction.total).isEqualTo(20)
+    assertThat(projectVariantCoverage.instruction.percent).isEqualTo(75)
+
+    val projectUnitTestMap = coverageBuilder.testSuiteCoverages["UnitTest"]!!
+    assertThat(projectUnitTestMap["debug"]!!.instruction.covered).isEqualTo(90)
+    assertThat(projectUnitTestMap["debug"]!!.instruction.total).isEqualTo(100)
 
     assertThat(coverageBuilder.moduleReportBuilders).hasSize(1)
     val moduleBuilder = coverageBuilder.moduleReportBuilders["my-module"]!!

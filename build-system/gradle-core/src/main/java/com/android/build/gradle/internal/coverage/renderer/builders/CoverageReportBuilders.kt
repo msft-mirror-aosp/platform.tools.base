@@ -46,10 +46,13 @@ import com.android.build.gradle.internal.coverage.renderer.xmlparser.XMLTransfor
 class CoverageReportBuilder(private val name: String, private val timeStamp: String) {
   /** A map of module names to their corresponding [ModuleReportBuilder] instances. */
   val moduleReportBuilders = mutableMapOf<String, ModuleReportBuilder>()
-  /** Aggregated coverage information for each variant across all modules in the project. */
-  val aggregatedVariantCoverages = mutableMapOf<String, VariantCoverage>()
   /** A set of all unique test suite names that contributed to this report. */
   val allTestSuiteNames = mutableSetOf<String>()
+  /**
+   * Aggregated coverage information for each test suite across all modules in the project. The first key is the test suite name (e.g.,
+   * "Aggregated", "UnitTest"). The second key is the variant name (e.g., "debug", "release").
+   */
+  val testSuiteCoverages = mutableMapOf<String, MutableMap<String, VariantCoverage>>()
 
   /**
    * Constructs the final, immutable [CoverageReport] from the accumulated data.
@@ -58,11 +61,15 @@ class CoverageReportBuilder(private val name: String, private val timeStamp: Str
    */
   fun build(): CoverageReport {
     val builtModules = moduleReportBuilders.values.map { it.build() }
+    val builtTestSuiteCoverages =
+      testSuiteCoverages.map { (testSuiteName, variantMap) ->
+        TestSuiteReportCoverage(name = testSuiteName, variantCoverages = variantMap.values.toList())
+      }
     return CoverageReport(
       name = name,
       timeStamp = timeStamp,
       modules = builtModules,
-      variantCoverages = aggregatedVariantCoverages.values.toList(),
+      testSuiteCoverages = builtTestSuiteCoverages,
       numberOfTestsSuites = allTestSuiteNames.size,
       numberOfModules = builtModules.size,
       numberOfPackages = builtModules.sumOf { it.packages.size },
