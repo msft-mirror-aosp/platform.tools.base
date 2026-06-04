@@ -20,6 +20,7 @@ import com.android.adblib.AdbLogger
 import com.android.adblib.AdbLoggerFactory
 import com.android.adblib.AdbSession
 import com.android.adblib.tools.createStandaloneSession
+import java.io.File
 import java.util.concurrent.Callable
 import kotlin.system.exitProcess
 import kotlinx.coroutines.runBlocking
@@ -30,11 +31,44 @@ import picocli.CommandLine.Option
 private const val EXIT_OK = 0
 private const val EXIT_ERROR = 1
 
+/** Factory for creating [AdbSession]. Can be overridden in tests. */
+var sessionFactory: () -> AdbSession = { createStandaloneSession(NO_LOGGING) }
+
 @Command(name = "ui-inspector", mixinStandardHelpOptions = true, version = ["1.0"], description = ["UI Inspector CLI"])
 class UiInspectorCommand : Callable<Int> {
   override fun call(): Int {
     CommandLine.usage(this, System.err)
     return EXIT_ERROR
+  }
+}
+
+@Command(name = "list-devices", description = ["List serial numbers of connected devices"])
+class ListDevicesCommand : Callable<Int> {
+  override fun call(): Int {
+    val adbSession = sessionFactory()
+    try {
+      runBlocking { doListDevices(adbSession) }
+      return EXIT_OK
+    } catch (e: Exception) {
+      System.err.println("Error listing devices: ${e.message}")
+      return EXIT_ERROR
+    }
+  }
+}
+
+@Command(name = "list-packages", description = ["List debuggable application package names on the device"])
+class ListPackagesCommand : Callable<Int> {
+  @Option(names = ["--serial"], required = true, description = ["Device serial number"]) var serial: String = ""
+
+  override fun call(): Int {
+    val adbSession = sessionFactory()
+    try {
+      runBlocking { doListPackages(adbSession, serial) }
+      return EXIT_OK
+    } catch (e: Exception) {
+      System.err.println("Error listing packages: ${e.message}")
+      return EXIT_ERROR
+    }
   }
 }
 
@@ -48,11 +82,13 @@ class DumpUiCommand : Callable<Int> {
   var includeResolutionStack: Boolean = false
   @Option(names = ["--include-system-composables"], description = ["Include system/framework Composable nodes in the dump"])
   var includeSystemComposables: Boolean = false
-
-  companion object {
-    /** Factory for creating [AdbSession]. Can be overridden in tests. */
-    var sessionFactory: () -> AdbSession = { createStandaloneSession(NO_LOGGING) }
-  }
+  @Option(names = ["--include-semantics"], description = ["Include Compose accessibility/semantics properties in the dump"])
+  var includeSemantics: Boolean = false
+  @Option(
+    names = ["--compose-inspector"],
+    description = ["Path to a local Compose Inspector JAR file to use instead of the one from maven"],
+  )
+  var composeInspectorJarPath: String? = null
 
   override fun call(): Int {
     System.err.println("Executing dump-ui for package: $packageName on device: $serial")
@@ -67,7 +103,24 @@ class DumpUiCommand : Callable<Int> {
         CommandSender(host = "localhost", port = port.toInt()).use { commandSender ->
           // TODO: consider running in parallel
           createViewInspector(commandSender, injectionManager)
-          val composeInspectorConnected = createComposeInspector(commandSender, injectionManager)
+
+          val localJarProvider =
+            composeInspectorJarPath?.let { path ->
+              { _: String ->
+                val file = File(path)
+                if (!file.exists() || !file.isFile) {
+                  throw IllegalArgumentException("Specified Compose Inspector JAR does not exist: $path")
+                }
+                file
+              }
+            }
+
+          val composeInspectorConnected =
+            if (localJarProvider != null) {
+              createComposeInspector(commandSender, injectionManager, localJarProvider)
+            } else {
+              createComposeInspector(commandSender, injectionManager)
+            }
 
           dumpUiTree(
             commandSender = commandSender,
@@ -75,6 +128,7 @@ class DumpUiCommand : Callable<Int> {
             includeResolutionStack = includeResolutionStack,
             composeInspectorConnected = composeInspectorConnected,
             skipSystemComposables = !includeSystemComposables,
+            includeSemantics = includeSemantics,
           )
         }
       }
@@ -93,24 +147,44 @@ internal suspend fun dumpUiTree(
   includeResolutionStack: Boolean,
   composeInspectorConnected: Boolean,
   skipSystemComposables: Boolean,
+  includeSemantics: Boolean,
 ) {
   val viewRoots = fetchViewTree(commandSender, includeAttributes, includeResolutionStack)
   if (composeInspectorConnected) {
-    fetchAndMergeComposeTrees(commandSender, viewRoots, skipSystemComposables)
+    fetchAndMergeComposeTrees(commandSender, viewRoots, includeAttributes, skipSystemComposables, includeSemantics)
   }
-  viewRoots.forEach { printUiTree(it, 0) }
+  viewRoots.forEach { printUiTree(it, 0, includeAttributes, includeSemantics) }
 }
 
 /** Queries the Compose Layout Inspector on the device and merges its trees into [viewRoots] in-place. */
 internal suspend fun fetchAndMergeComposeTrees(
   commandSender: CommandSender,
   viewRoots: List<UiNode.ViewNode>,
+  includeParameters: Boolean,
   skipSystemComposables: Boolean,
+  includeSemantics: Boolean,
 ) {
   viewRoots.forEach { viewRoot ->
-    val composeResult = queryComposeTree(commandSender, viewRoot.id, skipSystemComposables)
+    // In the compose inspector, standard parameters and semantics (accessibility properties) are fetched together with a single command.
+    val fetchComposeDetails = includeParameters || includeSemantics
+
+    val composeResult =
+      queryComposeTree(
+        commandSender = commandSender,
+        rootViewId = viewRoot.id,
+        includeParameters = fetchComposeDetails,
+        skipSystemComposables = skipSystemComposables,
+      )
     if (composeResult != null) {
       val (roots, stringsMap) = composeResult
+
+      val composeParameters =
+        if (fetchComposeDetails) {
+          queryComposeParameters(commandSender, viewRoot.id, skipSystemComposables)
+        } else {
+          null
+        }
+
       roots.forEach { composeRoot ->
         attachComposeTree(
           viewNode = viewRoot,
@@ -118,6 +192,7 @@ internal suspend fun fetchAndMergeComposeTrees(
           composeNodes = composeRoot.nodesList,
           stringTable = stringsMap,
           viewsToSkip = composeRoot.viewsToSkipList,
+          parameters = composeParameters,
         )
       }
     }
@@ -125,7 +200,12 @@ internal suspend fun fetchAndMergeComposeTrees(
 }
 
 fun main(args: Array<String>) {
-  val exitCode = CommandLine(UiInspectorCommand()).addSubcommand("dump-ui", DumpUiCommand()).execute(*args)
+  val exitCode =
+    CommandLine(UiInspectorCommand())
+      .addSubcommand("dump-ui", DumpUiCommand())
+      .addSubcommand("list-devices", ListDevicesCommand())
+      .addSubcommand("list-packages", ListPackagesCommand())
+      .execute(*args)
   exitProcess(exitCode)
 }
 

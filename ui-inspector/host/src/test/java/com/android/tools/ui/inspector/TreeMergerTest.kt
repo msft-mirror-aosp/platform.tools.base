@@ -86,6 +86,23 @@ class TreeMergerTest {
           .build()
       )
 
+    // Build mock parameters response for Composable node ID 201 (Text)
+    val mockAllParamsResponse =
+      LayoutInspectorComposeProtocol.GetAllParametersResponse.newBuilder()
+        .addParameterGroups(
+          LayoutInspectorComposeProtocol.ParameterGroup.newBuilder()
+            .setComposableId(201)
+            .addParameter(
+              LayoutInspectorComposeProtocol.Parameter.newBuilder()
+                .setName(3) // index for "text"
+                .setType(LayoutInspectorComposeProtocol.Parameter.Type.STRING)
+                .setInt32Value(4) // index for "Hello"
+            )
+        )
+        .addStrings(LayoutInspectorComposeProtocol.StringEntry.newBuilder().setId(3).setStr("text"))
+        .addStrings(LayoutInspectorComposeProtocol.StringEntry.newBuilder().setId(4).setStr("Hello"))
+        .build()
+
     // 3. Execute grafting
     val wasAttached =
       attachComposeTree(
@@ -94,6 +111,7 @@ class TreeMergerTest {
         composeNodes = composeNodes,
         stringTable = stringTable,
         viewsToSkip = emptyList(),
+        parameters = mockAllParamsResponse,
       )
 
     // 4. Assertions
@@ -118,6 +136,12 @@ class TreeMergerTest {
     val graftedText = graftedRoot.children[0] as UiNode.ComposeNode
     assertThat(graftedText.id).isEqualTo(201)
     assertThat(graftedText.className).isEqualTo("Text")
+
+    // Verify parameters are successfully converted and grafted on Composable node
+    assertThat(graftedText.parameters).hasSize(1)
+    val param = graftedText.parameters[0] as UiNode.ComposeParameter.Single
+    assertThat(param.name).isEqualTo("text")
+    assertThat(param.value).isEqualTo(UiNode.ComposeParameter.Value.StringVal("Hello"))
 
     // Verify that Button (OtherView) has zero grafted children
     val buttonView = rootNode.children[1] as UiNode.ViewNode
@@ -147,6 +171,7 @@ class TreeMergerTest {
         composeNodes = composeNodes,
         stringTable = mapOf(1 to "Column"),
         viewsToSkip = emptyList(),
+        parameters = null,
       )
 
     // Must skip grafting because the view id 999 does not exist in the View tree!
@@ -225,6 +250,7 @@ class TreeMergerTest {
         composeNodes = composeNodes,
         stringTable = stringTable,
         viewsToSkip = listOf(777L),
+        parameters = null,
       )
 
     // 4. Assertions
@@ -309,6 +335,7 @@ class TreeMergerTest {
         composeNodes = composeNodes,
         stringTable = stringTable,
         viewsToSkip = emptyList(),
+        parameters = null,
       )
 
     // 4. Assertions

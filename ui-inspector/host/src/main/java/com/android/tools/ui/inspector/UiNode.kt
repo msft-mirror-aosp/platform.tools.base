@@ -41,12 +41,58 @@ sealed class UiNode {
     val attributes: List<Attribute>,
   ) : UiNode()
 
-  /** Represents a Jetpack Compose Composable node. */
+  /** Represents a Jetpack Compose Composable parameter. */
+  sealed class ComposeParameter {
+    abstract val name: String
+
+    /** A leaf parameter representing a strongly-typed value. */
+    data class Single(override val name: String, val value: Value) : ComposeParameter()
+
+    /** A nested group of parameters representing lists or objects. */
+    data class Group(override val name: String, val elements: List<ComposeParameter>, val isCollection: Boolean) : ComposeParameter()
+
+    /** Domain values that preserve original data and type information. */
+    sealed class Value {
+      data class StringVal(val value: String) : Value()
+
+      data class BooleanVal(val value: Boolean) : Value()
+
+      data class NumberVal(val value: Number) : Value()
+
+      data class DimensionVal(val value: Float, val unit: DimensionUnit) : Value()
+
+      data class ColorVal(val colorInt: Int) : Value()
+
+      data class ResourceVal(val namespace: String?, val type: String?, val name: String) : Value()
+
+      data class LambdaVal(val fileName: String?, val startLineNumber: Int?) : Value()
+
+      object NullVal : Value()
+    }
+
+    enum class DimensionUnit {
+      DP,
+      SP,
+      EM,
+    }
+  }
+
+  /**
+   * Represents a Jetpack Compose Composable node.
+   *
+   * @param parameters Standard Composable properties and function parameters.
+   * @param mergedSemantics Accessibility properties that aggregate all readable texts and actions from this node's entire subtree into one
+   *   focusable block (which is what a screen reader like TalkBack speaks).
+   * @param unmergedSemantics Accessibility properties declared directly on this Composable node.
+   */
   data class ComposeNode(
     override val id: Long,
     override val className: String,
     override val bounds: Bounds,
     override val children: MutableList<UiNode> = mutableListOf(),
     val sourceLocation: SourceLocation? = null,
+    val parameters: List<ComposeParameter>,
+    val mergedSemantics: List<ComposeParameter>,
+    val unmergedSemantics: List<ComposeParameter>,
   ) : UiNode()
 }

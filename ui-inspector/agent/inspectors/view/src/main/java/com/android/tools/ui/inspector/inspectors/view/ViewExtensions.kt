@@ -64,7 +64,8 @@ private fun createViewNode(view: View, stringTable: StringTable, attributeExtrac
 
   return ViewNode.newBuilder().apply {
     id = view.uniqueDrawingId
-    className = stringTable.put(viewClass.simpleName)
+    val name = viewClass.simpleName.ifEmpty { viewClass.name.substringAfterLast('.') }
+    className = stringTable.put(name)
     val pkg = viewClass.`package`
     if (pkg != null) {
       packageName = stringTable.put(pkg.name)

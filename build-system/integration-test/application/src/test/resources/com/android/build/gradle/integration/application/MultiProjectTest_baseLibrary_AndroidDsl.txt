@@ -143,7 +143,7 @@
       - htmlOutput                = (null)
       - xmlReport                 = true
       - xmlOutput                 = (null)
-      - sarifReport               = false
+      - sarifReport               = true
       - sarifOutput               = (null)
       - checkReleaseBuilds        = true
       - checkDependencies         = false

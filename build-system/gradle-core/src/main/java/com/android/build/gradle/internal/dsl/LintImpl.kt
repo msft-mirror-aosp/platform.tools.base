@@ -39,6 +39,7 @@ abstract class LintImpl @Inject constructor(private val dslServices: DslServices
     checkReleaseBuilds = true
     htmlReport = true
     xmlReport = true
+    sarifReport = true
     checkDependencies = false
   }
 
@@ -167,13 +168,26 @@ abstract class LintImpl @Inject constructor(private val dslServices: DslServices
       _lintConfigPath = value?.path
     }
 
+  @Deprecated(
+    "Lint reports are now always generated. Use SingleArtifact.LINT_TEXT_REPORT or SingleArtifact.AGGREGATED_LINT_TEXT_REPORT to consume lint report artifacts."
+  )
   abstract override var textReport: Boolean
   abstract override var printTextReport: Boolean
+  @Deprecated(
+    "Lint reports are now always generated. Use SingleArtifact.LINT_HTML_REPORT or SingleArtifact.AGGREGATED_LINT_HTML_REPORT to consume lint report artifacts."
+  )
   abstract override var htmlReport: Boolean
+  @Deprecated(
+    "Lint reports are now always generated. Use SingleArtifact.LINT_SARIF_REPORT or SingleArtifact.AGGREGATED_LINT_SARIF_REPORT to consume lint report artifacts."
+  )
   abstract override var sarifReport: Boolean
+  @Deprecated(
+    "Lint reports are now always generated. Use SingleArtifact.LINT_XML_REPORT or SingleArtifact.AGGREGATED_LINT_XML_REPORT to consume lint report artifacts."
+  )
   abstract override var xmlReport: Boolean
 
   protected abstract var _textOutputPath: String?
+  @Deprecated("Use SingleArtifact.LINT_TEXT_REPORT or SingleArtifact.AGGREGATED_LINT_TEXT_REPORT to consume lint report artifacts.")
   final override var textOutput: File?
     get() = _textOutputPath?.let { File(it) }
     set(value) {
@@ -182,6 +196,7 @@ abstract class LintImpl @Inject constructor(private val dslServices: DslServices
     }
 
   protected abstract var _htmlOutputPath: String?
+  @Deprecated("Use SingleArtifact.LINT_HTML_REPORT or SingleArtifact.AGGREGATED_LINT_HTML_REPORT to consume lint report artifacts.")
   final override var htmlOutput: File?
     get() = _htmlOutputPath?.let { File(it) }
     set(value) {
@@ -190,6 +205,7 @@ abstract class LintImpl @Inject constructor(private val dslServices: DslServices
     }
 
   protected abstract var _xmlOutputPath: String?
+  @Deprecated("Use SingleArtifact.LINT_XML_REPORT or SingleArtifact.AGGREGATED_LINT_XML_REPORT to consume lint report artifacts.")
   final override var xmlOutput: File?
     get() = _xmlOutputPath?.let { File(it) }
     set(value) {
@@ -198,6 +214,7 @@ abstract class LintImpl @Inject constructor(private val dslServices: DslServices
     }
 
   protected abstract var _sarifOutputPath: String?
+  @Deprecated("Use SingleArtifact.LINT_SARIF_REPORT or SingleArtifact.AGGREGATED_LINT_SARIF_REPORT to consume lint report artifacts.")
   final override var sarifOutput: File?
     get() = _sarifOutputPath?.let { File(it) }
     set(value) {

@@ -19,7 +19,9 @@ package com.android.builder.sdk;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.repository.api.RemotePackage;
+
 import com.google.common.collect.ImmutableList;
+
 import java.nio.file.Path;
 import java.util.List;
 
@@ -59,7 +61,7 @@ public final class LicenceNotAcceptedException extends Exception {
         }
         String sdkManagerCommand =
                 "sdkmanager"
-                        + (SdkConstants.currentPlatform() != SdkConstants.PLATFORM_WINDOWS
+                        + (SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS
                                 ? ".bat"
                                 : "");
         builder.append(
@@ -69,9 +71,8 @@ public final class LicenceNotAcceptedException extends Exception {
                         + "All licenses can be accepted using the sdkmanager command line tool:\n"
                         + sdkManagerCommand
                         + " --licenses\n"
-                        + "Or, to transfer the license agreements from one "
-                        + "workstation to another, see "
-                        + "https://developer.android.com/studio/intro/update.html#download-with-gradle\n"
+                        + "Or, to transfer the license agreements from one workstation to another,"
+                        + " see https://developer.android.com/studio/intro/update.html#download-with-gradle\n"
                         + "\n"
                         + "Using Android SDK: ");
         builder.append(sdkLocation.toString());

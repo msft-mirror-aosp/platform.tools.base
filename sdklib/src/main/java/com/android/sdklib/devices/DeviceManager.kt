@@ -16,7 +16,6 @@
 package com.android.sdklib.devices
 
 import com.android.SdkConstants
-import com.android.io.CancellableFileIo
 import com.android.prefs.AndroidLocationsProvider
 import com.android.sdklib.internal.avd.AvdInfo
 import com.android.sdklib.repository.AndroidSdkHandler
@@ -24,75 +23,33 @@ import com.android.utils.ILogger
 import com.google.common.collect.HashBasedTable
 import com.google.common.collect.ImmutableList
 import com.google.common.collect.Table
-import java.io.IOException
-import java.nio.file.Files
 import java.nio.file.Path
 import java.util.Collections
 import java.util.EnumSet
-import javax.xml.parsers.ParserConfigurationException
-import org.xml.sax.SAXException
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 
 /** Manager class for interacting with [Device]s within the SDK */
-class DeviceManager
-private constructor(sdkHandler: AndroidSdkHandler, private val log: ILogger, private val isSupportedDevice: (Device) -> Boolean) {
-  private val androidFolder: Path? = sdkHandler.androidFolder
-  private val vendorDevices = DeviceResourceTable(log, isSupportedDevice, VENDOR_DEVICE_RESOURCES)
-  private val defaultDevices = DeviceResourceTable(log, isSupportedDevice = { true }, listOf("devices"))
-  private val lock = Any()
-  private val listeners: MutableList<DevicesChangedListener> = ArrayList()
+class DeviceManager(tables: Map<DeviceCategory, DeviceTable>) {
+  private val deviceTables: Map<DeviceCategory, DeviceTable> = tables.toSortedMap()
 
-  // These are keyed by (device ID, manufacturer)
-  private var sysImgDevices = SystemImageDeviceTable(log, isSupportedDevice, sdkHandler)
-  private var userDevices: Table<String, String, Device>? = null
-
+  /**
+   * Sources of device definitions available to the device manager, in priority order (earlier sources take precedence). We favor built-in
+   * definitions over user and system image provided definitions to avoid surprises; Studio may depend on the built-in definitions.
+   */
   enum class DeviceCategory {
     /** getDevices() flag to list default devices from the bundled devices.xml definitions. */
     DEFAULT,
-    /** getDevices() flag to list user devices saved in the .android home folder. */
-    USER,
     /** getDevices() flag to list vendor devices -- the bundled nexus.xml devices as well as all those coming from extra packages. */
     VENDOR,
     /** getDevices() flag to list devices from system-images/platform-N/tag/abi/devices.xml */
     SYSTEM_IMAGES,
-  }
-
-  /** Interface implemented by objects which want to know when changes occur to the [Device] lists. */
-  fun interface DevicesChangedListener {
-    /** Called after one of the [Device] lists has been updated. */
-    fun onDevicesChanged()
-  }
-
-  /**
-   * Register a listener to be notified when the device lists are modified.
-   *
-   * @param listener The listener to add. Ignored if already registered.
-   */
-  fun registerListener(listener: DevicesChangedListener) {
-    synchronized(listeners) {
-      if (listener !in listeners) {
-        listeners.add(listener)
-      }
-    }
-  }
-
-  /**
-   * Removes a listener from the notification list such that it will no longer receive notifications when modifications to the [Device] list
-   * occur.
-   *
-   * @param listener The listener to remove.
-   */
-  fun unregisterListener(listener: DevicesChangedListener): Boolean {
-    synchronized(listeners) {
-      return listeners.remove(listener)
-    }
+    /** getDevices() flag to list user devices saved in the .android home folder. */
+    USER,
   }
 
   fun getDevice(id: String, manufacturer: String): Device? {
-    initDevicesLists()
-    return userDevices?.get(id, manufacturer)
-      ?: sysImgDevices.getDevice(id, manufacturer)
-      ?: defaultDevices.getDevice(id, manufacturer)
-      ?: vendorDevices.getDevice(id, manufacturer)
+    return deviceTables.values.firstNotNullOfOrNull { it.getDevice(id, manufacturer) }
   }
 
   fun getDevice(avdInfo: AvdInfo): Device? {
@@ -116,152 +73,25 @@ private constructor(sdkHandler: AndroidSdkHandler, private val log: ILogger, pri
    * @return A copy of the list of [Device]s. Can be empty but not null.
    */
   fun getDevices(deviceCategory: Collection<DeviceCategory>): Collection<Device> {
-    initDevicesLists()
     val devices = HashBasedTable.create<String, String, Device>()
-    userDevices?.let { if (DeviceCategory.USER in deviceCategory) devices.putAll(it) }
-    if (DeviceCategory.DEFAULT in deviceCategory) {
-      devices.putAll(defaultDevices.getDevices())
-    }
-    if (DeviceCategory.VENDOR in deviceCategory) {
-      devices.putAll(vendorDevices.getDevices())
-    }
-    if (DeviceCategory.SYSTEM_IMAGES in deviceCategory) {
-      devices.putAll(sysImgDevices.getDevices())
+    for (category in deviceCategory.sortedDescending()) {
+      deviceTables[category]?.getDevices()?.let { devices.putAll(it) }
     }
     return Collections.unmodifiableCollection(devices.values())
   }
 
-  private fun initDevicesLists() {
-    val changed = initUserDevices()
-    if (changed) {
-      notifyListeners()
-    }
-  }
+  fun getDevices(): Collection<Device> = getDevices(ALL_DEVICES)
 
-  /**
-   * Initializes all user-created [Device]s
-   *
-   * @return True if the list has changed.
-   */
-  private fun initUserDevices(): Boolean {
-    synchronized(lock) {
-      if (userDevices != null) {
-        return false
-      }
-      // User devices should be saved out to $HOME/.android/devices.xml
-      val newUserDevices = HashBasedTable.create<String, String, Device>()
-      val userDevicesFile = androidFolder?.resolve(SdkConstants.FN_DEVICES_XML)
-      if (userDevicesFile != null && Files.exists(userDevicesFile)) {
-        try {
-          DeviceParser.parse(userDevicesFile).cellSet().forEach { cell ->
-            val device = cell.value
-            if (isSupportedDevice(device)) {
-              newUserDevices.put(cell.rowKey, cell.columnKey, device)
-            } else {
-              log.warning("Unsupported device %s", cell.rowKey)
-            }
-          }
+  fun getUserDevices(): UserDeviceTable? = deviceTables[DeviceCategory.USER] as? UserDeviceTable
 
-          userDevices = newUserDevices
-          return true
-        } catch (e: SAXException) {
-          // Probably an old config file which we don't want to overwrite.
-          val parent = userDevicesFile.toAbsolutePath().parent
-          val base = userDevicesFile.fileName.toString() + ".old"
-          var renamedConfig = parent.resolve(base)
-          var i = 0
-          while (CancellableFileIo.exists(renamedConfig)) {
-            renamedConfig = parent.resolve("$base.${i++}")
-          }
-          log.error(e, "Error parsing %1\$s, backing up to %2\$s", userDevicesFile.toAbsolutePath(), renamedConfig.toAbsolutePath())
-          try {
-            Files.move(userDevicesFile, renamedConfig)
-          } catch (moveException: IOException) {
-            log.error(moveException, "Failed to rename old config file")
-          }
-        } catch (e: ParserConfigurationException) {
-          log.error(e, "Error parsing %1\$s", userDevicesFile.toAbsolutePath())
-        } catch (e: IOException) {
-          log.error(e, "Error parsing %1\$s", userDevicesFile.toAbsolutePath())
-        }
+  val deviceFlow: Flow<Table<String, String, Device>> =
+    combine(deviceTables.values.map { it.deviceFlow }) { tables ->
+      val devices = HashBasedTable.create<String, String, Device>()
+      for (table in tables.reversed()) {
+        devices.putAll(table)
       }
+      devices
     }
-    userDevices = HashBasedTable.create()
-    return false
-  }
-
-  fun addUserDevice(d: Device) {
-    if (!isSupportedDevice(d)) return
-    var changed = false
-    synchronized(lock) {
-      if (userDevices == null) {
-        initUserDevices()
-      }
-      userDevices?.let {
-        it.put(d.id, d.manufacturer, d)
-        changed = true
-      }
-    }
-    if (changed) {
-      notifyListeners()
-    }
-  }
-
-  fun removeUserDevice(d: Device) {
-    synchronized(lock) {
-      if (userDevices == null) {
-        initUserDevices()
-      }
-      userDevices?.let {
-        if (it.contains(d.id, d.manufacturer)) {
-          it.remove(d.id, d.manufacturer)
-          notifyListeners()
-        }
-      }
-    }
-  }
-
-  fun replaceUserDevice(d: Device) {
-    synchronized(lock) {
-      if (userDevices == null) {
-        initUserDevices()
-      }
-      removeUserDevice(d)
-      addUserDevice(d)
-    }
-  }
-
-  /** Saves out the user devices to [SdkConstants.FN_DEVICES_XML] in the Android folder. */
-  fun saveUserDevices() {
-    val currentDevices = userDevices ?: return
-    val currentFolder = androidFolder ?: return
-    val userDevicesFile = currentFolder.resolve(SdkConstants.FN_DEVICES_XML)
-
-    if (currentDevices.isEmpty) {
-      try {
-        Files.deleteIfExists(userDevicesFile)
-      } catch (_: IOException) {}
-      return
-    }
-
-    synchronized(lock) {
-      if (!currentDevices.isEmpty) {
-        try {
-          Files.newOutputStream(userDevicesFile).use { outputStream -> DeviceWriter.writeToXml(outputStream, currentDevices.values()) }
-        } catch (e: Exception) {
-          log.warning("Error writing file: 1%\$s", e.message)
-        }
-      }
-    }
-  }
-
-  private fun notifyListeners() {
-    synchronized(listeners) {
-      for (listener in listeners) {
-        listener.onDevicesChanged()
-      }
-    }
-  }
 
   companion object {
     /** getDevices() flag to list all devices. */
@@ -278,7 +108,19 @@ private constructor(sdkHandler: AndroidSdkHandler, private val log: ILogger, pri
     @JvmStatic
     @JvmOverloads
     fun createInstance(sdkHandler: AndroidSdkHandler, log: ILogger, isSupportedDevice: (Device) -> Boolean = { true }): DeviceManager {
-      return DeviceManager(sdkHandler, log, isSupportedDevice)
+      val vendorDevices = DeviceResourceTable(log, isSupportedDevice, VENDOR_DEVICE_RESOURCES)
+      val defaultDevices = DeviceResourceTable(log, isSupportedDevice = { true }, listOf("devices"))
+      val sysImgDevices = SystemImageDeviceTable(log, isSupportedDevice, sdkHandler)
+      val userDevices = sdkHandler.androidFolder?.let { UserDeviceTable(log, isSupportedDevice, it.resolve(SdkConstants.FN_DEVICES_XML)) }
+
+      return DeviceManager(
+        buildMap {
+          put(DeviceCategory.SYSTEM_IMAGES, sysImgDevices)
+          put(DeviceCategory.VENDOR, vendorDevices)
+          put(DeviceCategory.DEFAULT, defaultDevices)
+          userDevices?.let { put(DeviceCategory.USER, it) }
+        }
+      )
     }
   }
 }

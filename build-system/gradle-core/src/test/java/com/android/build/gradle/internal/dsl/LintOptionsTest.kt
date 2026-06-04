@@ -171,6 +171,14 @@ class LintOptionsTest {
   }
 
   @Test
+  fun testDefaultReportsEnabled() {
+    assertThat(lintOptions.textReport).named("lint.textReport").isFalse()
+    assertThat(lintOptions.htmlReport).named("lint.htmlReport").isTrue()
+    assertThat(lintOptions.xmlReport).named("lint.xmlReport").isTrue()
+    assertThat(lintOptions.sarifReport).named("lint.sarifReport").isTrue()
+  }
+
+  @Test
   fun testTextOutput() {
     lintOptions { textOutput = File("stdout") }
     assertThat(lintOptions.textReport).named("lint.textReport").isTrue()

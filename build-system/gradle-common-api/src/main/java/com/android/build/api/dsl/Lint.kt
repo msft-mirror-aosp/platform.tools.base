@@ -191,6 +191,9 @@ interface Lint {
    * When [textReport]`=true` and [textOutput] is unset, the full report will be printed by the lint task, rather than just a summary. When
    * [textOutput] is set, the full text report will be copied to the specified location.
    */
+  @Deprecated(
+    "Lint reports are now always generated. Use SingleArtifact.LINT_TEXT_REPORT or SingleArtifact.AGGREGATED_LINT_TEXT_REPORT to consume lint report artifacts."
+  )
   var textReport: Boolean
 
   /**
@@ -201,15 +204,24 @@ interface Lint {
   var printTextReport: Boolean
 
   /** Whether we should write an HTML report. Default is true. The location can be controlled by [htmlOutput]. */
+  @Deprecated(
+    "Lint reports are now always generated. Use SingleArtifact.LINT_HTML_REPORT or SingleArtifact.AGGREGATED_LINT_HTML_REPORT to consume lint report artifacts."
+  )
   var htmlReport: Boolean
 
   /**
-   * Whether we should write a SARIF (OASIS Static Analysis Results Interchange Format) report. Default is false. The location can be
+   * Whether we should write a SARIF (OASIS Static Analysis Results Interchange Format) report. Default is true. The location can be
    * controlled by [sarifOutput].
    */
+  @Deprecated(
+    "Lint reports are now always generated. Use SingleArtifact.LINT_SARIF_REPORT or SingleArtifact.AGGREGATED_LINT_SARIF_REPORT to consume lint report artifacts."
+  )
   var sarifReport: Boolean
 
   /** Whether we should write an XML report. Default is true. The location can be controlled by [xmlOutput]. */
+  @Deprecated(
+    "Lint reports are now always generated. Use SingleArtifact.LINT_XML_REPORT or SingleArtifact.AGGREGATED_LINT_XML_REPORT to consume lint report artifacts."
+  )
   var xmlReport: Boolean
 
   /**
@@ -217,18 +229,22 @@ interface Lint {
    *
    * To output the lint report to `stdout` set [textReport]`=true`, and leave [textOutput] unset.
    */
+  @Deprecated("Use SingleArtifact.LINT_TEXT_REPORT or SingleArtifact.AGGREGATED_LINT_TEXT_REPORT to consume lint report artifacts.")
   var textOutput: File?
 
   /** The optional path to where an HTML report should be written. Setting this property will also turn on [htmlReport]. */
+  @Deprecated("Use SingleArtifact.LINT_HTML_REPORT or SingleArtifact.AGGREGATED_LINT_HTML_REPORT to cconsume lint report artifacts.")
   var htmlOutput: File?
 
   /** The optional path to where an XML report should be written. Setting this property will also turn on [xmlReport]. */
+  @Deprecated("Use SingleArtifact.LINT_XML_REPORT or SingleArtifact.AGGREGATED_LINT_XML_REPORT to consume lint report artifacts.")
   var xmlOutput: File?
 
   /**
    * The optional path to where a SARIF report (OASIS Static Analysis Results Interchange Format) should be written. Setting this property
    * will also turn on [sarifReport].
    */
+  @Deprecated("Use SingleArtifact.LINT_SARIF_REPORT or SingleArtifact.AGGREGATED_LINT_SARIF_REPORT to consume lint report artifacts.")
   var sarifOutput: File?
 
   /**

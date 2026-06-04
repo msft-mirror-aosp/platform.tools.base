@@ -32,6 +32,20 @@ public class HtmlBuilderTest extends TestCase {
         assertEquals("Plain. <A HREF=\"runnable:0\">(link)</A>Plain.", builder.getHtml());
     }
 
+    public void testAddLinkEscaping() {
+        HtmlBuilder builder = new HtmlBuilder();
+        builder.addLink("click here", "http://example.com/foo?bar=baz&qux=quz");
+        assertEquals(
+                "<A HREF=\"http://example.com/foo?bar=baz&amp;qux=quz\">click here</A>",
+                builder.getHtml());
+    }
+
+    public void testAddMultiline() {
+        HtmlBuilder builder = new HtmlBuilder();
+        builder.addMultiline("Line 1\n<Line 2>\nLine 3");
+        assertEquals("Line 1<BR/>&lt;Line 2><BR/>Line 3<BR/>", builder.getHtml());
+    }
+
     public void testAddBold() {
         HtmlBuilder builder = new HtmlBuilder();
         builder.addBold("This is bold");
@@ -109,7 +123,8 @@ public class HtmlBuilderTest extends TestCase {
         HtmlBuilder builder = new HtmlBuilder();
         builder.beginTable("valign=\"top\"").addTableRow("Data1", "Data2").endTable();
         assertEquals(
-                "<table><tr><td valign=\"top\">Data1</td><td valign=\"top\">Data2</td></tr></table>",
+                "<table><tr><td valign=\"top\">Data1</td><td"
+                        + " valign=\"top\">Data2</td></tr></table>",
                 builder.getHtml());
     }
 

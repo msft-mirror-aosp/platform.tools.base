@@ -55,6 +55,12 @@ KGP_2_3_10 = [
 ]
 
 # Previous versions of KGP. This is used for Gradle recipe testing
+KGP_2_2_21 = [
+    "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.2.21",
+    "@maven//:org.jetbrains.kotlin.kotlin-stdlib_2.2.21",
+    "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_2.2.21",
+]
+
 KGP_2_2_10 = [
     "@maven//:org.jetbrains.kotlin.android.org.jetbrains.kotlin.android.gradle.plugin_2.2.10",
     "@maven//:org.jetbrains.kotlin.jvm.org.jetbrains.kotlin.jvm.gradle.plugin_2.2.10",

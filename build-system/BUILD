@@ -101,6 +101,16 @@ filegroup(
 )
 
 maven_repository(
+    name = "gradle-9.3.1-runtime-maven",
+    # keep sorted
+    artifacts = [
+        "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.2.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_repository(
     name = "gradle-9.1-runtime-maven",
     # keep sorted
     artifacts = [
