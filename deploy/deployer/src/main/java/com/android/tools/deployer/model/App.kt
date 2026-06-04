@@ -22,6 +22,7 @@ import com.android.tools.deployer.model.component.Complication
 import com.android.tools.deployer.model.component.ComponentType
 import com.android.tools.deployer.model.component.Tile
 import com.android.tools.deployer.model.component.WatchFace
+import com.android.tools.deployer.model.component.WearWidget
 import com.android.utils.ILogger
 import java.nio.file.Path
 
@@ -147,6 +148,13 @@ class App(
           for (info in apk.services) {
             if (info.hasAction("androidx.wear.tiles.action.BIND_TILE_PROVIDER")) {
               components.add(Tile(info, appId, logger))
+            }
+          }
+        }
+        ComponentType.WEAR_WIDGET -> {
+          for (info in apk.services) {
+            if (info.hasAction("androidx.glance.wear.action.BIND_WIDGET_PROVIDER")) {
+              components.add(WearWidget(info, appId, logger))
             }
           }
         }

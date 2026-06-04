@@ -789,6 +789,9 @@ public final class SdkConstants {
 
     public static final String CLASS_TILE_SERVICE = "androidx.wear.tiles.TileService";
 
+    public static final String CLASS_GLANCE_WEAR_WIDGET_SERVICE =
+            "androidx.glance.wear.GlanceWearWidgetService";
+
     public static final String CLASS_COMPLICATION_SERVICE_ANDROIDX =
             "androidx.wear.watchface.complications.datasource.ComplicationDataSourceService";
 
