@@ -167,7 +167,7 @@ class LibraryVariantCreationConfigChecker private constructor(val checker: Commo
     with(variant.taskContainer) {
       assertThat(checkManifestTask).isNotNull()
       if (variant is TestCreationConfig) {
-        if (variant is ApkCreationConfig && variant.signingConfig?.isSigningReady() == true) {
+        if (variant is ApkCreationConfig && variant.signingConfig?.hasConfig() == true) {
           assertThat(installTask).isNotNull()
         } else {
           assertThat(installTask).isNull()

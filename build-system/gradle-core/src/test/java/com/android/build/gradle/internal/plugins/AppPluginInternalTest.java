@@ -496,13 +496,11 @@ public class AppPluginInternalTest {
         TestCase.assertEquals(signingConfig.getKeyAlias().get(), "c1");
         TestCase.assertEquals(signingConfig.getKeyPassword().get(), "d1");
         TestCase.assertTrue(signingConfig.hasConfig());
-        TestCase.assertTrue(signingConfig.isSigningReady());
 
         variant = findComponent(components, "flavor1Release");
         signingConfig = ((ApplicationVariantImpl) variant).getSigningConfig();
         TestCase.assertNotNull(signingConfig);
         TestCase.assertFalse(signingConfig.hasConfig());
-        TestCase.assertFalse(signingConfig.isSigningReady());
     }
 
     /**

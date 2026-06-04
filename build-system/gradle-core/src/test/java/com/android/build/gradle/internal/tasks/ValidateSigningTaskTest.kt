@@ -134,7 +134,7 @@ class ValidateSigningTaskTest {
     whenever(signingConfig.keyAlias).thenReturn(FakeGradleProvider(DefaultSigningConfig.DEFAULT_ALIAS))
     whenever(signingConfig.keyPassword).thenReturn(FakeGradleProvider(DefaultSigningConfig.DEFAULT_PASSWORD))
     whenever(signingConfig.storeType).thenReturn(FakeGradleProvider(KeyStore.getDefaultType()))
-    whenever(signingConfig.isSigningReady()).thenReturn(true)
+    whenever(signingConfig.hasConfig()).thenReturn(true)
 
     task.signingConfigData.set(SigningConfigData.fromSigningConfig(signingConfig))
     task.dummyOutputDirectory.set(outputDirectory)
