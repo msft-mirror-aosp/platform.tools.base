@@ -180,6 +180,7 @@ def studio_linux(build_env: bazel.BuildEnv) -> None:
     targets = result.targets + ['//tools/base/bazel:iml_to_build_consistency_test']
     flags.extend(result.flags)
 
+  studio.check_lockfile(build_env)
   result = studio.run_tests(build_env, flags, targets)
   if build_type == studio.BuildType.PRESUBMIT:
     failure_retry.validate_and_upload(build_env)
