@@ -141,7 +141,7 @@ class AndroidTestConfiguration(request: ExecutionRequest) {
 
   fun getTestedApks(deviceSerial: String? = null): List<File> = resolveApks(get(TESTED_APKS, AgpTestSuiteInput.TESTED_APKS, deviceSerial))
 
-  fun getTestApks(deviceSerial: String? = null): List<File> = resolveApks(get(TEST_APKS, AgpTestSuiteInput.TESTING_APK, deviceSerial))
+  fun getTestApks(deviceSerial: String? = null): List<File> = resolveApks(get(TEST_APKS, AgpTestSuiteInput.TEST_APKS, deviceSerial))
 
   fun getTestUtilApks(deviceSerial: String? = null): List<File> =
     resolveApks(get(TEST_UTIL_APKS, AgpTestSuiteInput.TEST_UTIL_APKS, deviceSerial))
