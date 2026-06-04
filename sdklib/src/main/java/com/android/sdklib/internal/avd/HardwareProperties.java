@@ -23,8 +23,6 @@ import static com.android.sdklib.devices.Device.isRollable;
 import static com.android.sdklib.devices.Device.isXrGlasses;
 
 import com.android.SdkConstants;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.android.io.IAbstractFile;
 import com.android.io.StreamException;
 import com.android.resources.KeyboardState;
@@ -47,6 +45,9 @@ import com.android.utils.ILogger;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -132,6 +133,9 @@ public class HardwareProperties {
 
     /** AVD/config.ini key for dimming levels. */
     public static final String HW_DIMMING_LEVELS = "hw.dimmingLevels";
+
+    /** AVD/config.ini key for LED indicators. */
+    public static final String HW_LED_INDICATORS = "hw.ledIndicators";
 
     /** AVD/config.ini key for whether touchpad is present. */
     public static final String HW_TOUCHPAD0 = "hw.touchpad0";
