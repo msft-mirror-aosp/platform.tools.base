@@ -19,6 +19,8 @@ package com.android.sdklib.devices;
 import static com.android.SdkConstants.VALUE_FALSE;
 import static com.android.SdkConstants.VALUE_TRUE;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.concurrency.GuardedBy;
@@ -436,14 +438,22 @@ public class DeviceParser {
             } else if (DeviceSchema.NODE_TAG_ID.equals(localName)) {
                 mBuilder.setTagId(getString(mStringAccumulator));
             } else if (DeviceSchema.NODE_PROP_NAME.equals(localName)) {
-                assert mBootProp != null && mBootProp.length == 2;
+                checkState(
+                        mBootProp != null && mBootProp.length == 2,
+                        "Unexpected prop-name tag outside of boot-prop");
                 mBootProp[0] = getString(mStringAccumulator);
             } else if (DeviceSchema.NODE_PROP_VALUE.equals(localName)) {
-                assert mBootProp != null && mBootProp.length == 2;
+                checkState(
+                        mBootProp != null && mBootProp.length == 2,
+                        "Unexpected prop-value tag outside of boot-prop");
                 mBootProp[1] = mStringAccumulator.toString();
             } else if (DeviceSchema.NODE_BOOT_PROP.equals(localName)) {
-                assert mBootProp != null && mBootProp.length == 2 &&
-                       mBootProp[0] != null && mBootProp[1] != null;
+                checkState(
+                        mBootProp != null && mBootProp.length == 2,
+                        "Unexpected boot-prop tag outside of boot-props");
+                checkState(
+                        mBootProp[0] != null && mBootProp[1] != null,
+                        "Missing prop-name and prop-value tags inside boot-prop tag");
                 mBuilder.addBootProp(mBootProp[0], mBootProp[1]);
                 checkAndSetIfRound(mBootProp[0], mBootProp[1]);
                 mBootProp = null;
@@ -615,3 +625,4 @@ public class DeviceParser {
         }
     }
 }
+
