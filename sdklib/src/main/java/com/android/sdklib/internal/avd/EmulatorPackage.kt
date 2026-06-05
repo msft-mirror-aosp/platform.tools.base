@@ -115,8 +115,19 @@ object EmulatorAdvancedFeatures {
   const val VIRTUAL_SCENE = "VirtualScene"
 }
 
-fun AndroidSdkHandler.getEmulatorPackage(progress: ProgressIndicator): EmulatorPackage? =
-  getLocalPackage(SdkConstants.FD_EMULATOR, progress)?.let { EmulatorPackage(it) }
+/**
+ * Gets the emulator package from the SDK. If [useLatestEmulator] is specified, uses the "latest" package within the side-by-side-versioned
+ * set of emulator packages. (This is currently the preview version of the emulator.)
+ */
+@JvmOverloads
+fun AndroidSdkHandler.getEmulatorPackage(progress: ProgressIndicator, useLatestEmulator: Boolean = false): EmulatorPackage? {
+  if (useLatestEmulator) {
+    getLocalPackage("${SdkConstants.FD_EMULATORS};latest", progress)?.let {
+      return EmulatorPackage(it)
+    }
+  }
+  return getLocalPackage(SdkConstants.FD_EMULATOR, progress)?.let { EmulatorPackage(it) }
+}
 
 private class SystemImageUpdateDependency(
   private val featureLevel: Int,

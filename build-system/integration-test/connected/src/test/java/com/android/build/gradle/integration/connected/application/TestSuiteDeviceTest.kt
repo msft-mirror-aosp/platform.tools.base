@@ -86,7 +86,17 @@ class TestSuiteDeviceTest {
       .from {
         gradleProperties { add(BooleanOption.TEST_SUITE_SUPPORT, true) }
         androidApplication {
-          files { add("src/myTestSuite/testcase1.txt", "some content") }
+          files {
+            add("src/myTestSuite/testcase1.txt", "some content")
+            add(
+              "src/myTestSuiteApk/AndroidManifest.xml",
+              """
+              <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              </manifest>
+              """
+                .trimIndent(),
+            )
+          }
           android {
             testOptions.suites.create("myTestSuite", AgpTestSuite::class.java) {
               it.useJunitEngine.apply {
@@ -102,6 +112,22 @@ class TestSuiteDeviceTest {
               }
               it.targetVariants.add("debug")
               it.targets.create("t1") {}
+            }
+            testOptions.suites.create("myTestSuiteApk", AgpTestSuite::class.java) {
+              it.useJunitEngine.apply {
+                inputs.add(AgpTestSuiteInputParameters.TESTED_APKS)
+                inputs.add(AgpTestSuiteInputParameters.ADB_EXECUTABLE)
+                includeEngines.add("MyTestEngine")
+                enginesDependencies.add("com.android.tools.build:gradle-api:${Version.ANDROID_GRADLE_PLUGIN_VERSION}")
+                enginesDependencies.add("org.junit.platform:junit-platform-engine:+")
+                enginesDependencies.add("org.junit.platform:junit-platform-launcher:+")
+                enginesDependencies.add("org.jetbrains.kotlin:kotlin-stdlib:+")
+                enginesDependencies.add("com.test:my-test-engine:+")
+                enginesDependencies.add("com.google.truth:truth:+")
+              }
+              it.targetVariants.add("debug")
+              it.targets.create("t1") {}
+              it.testApk {}
             }
           }
           pluginCallbacks += PrintTestLogsCallback::class.java
@@ -129,6 +155,11 @@ class TestSuiteDeviceTest {
   @Test
   fun allOnlineDeviceShouldBePassedByDefault() {
     executor.run(":app:testMyTestSuiteT1DebugTestSuite").assertOutputContains("Serial IDs = emulator-5554,emulator-5556")
+  }
+
+  @Test
+  fun testApkSuiteShouldRun() {
+    executor.run(":app:testMyTestSuiteApkT1DebugTestSuite").assertOutputContains("Serial IDs = emulator-5554,emulator-5556")
   }
 
   @Test

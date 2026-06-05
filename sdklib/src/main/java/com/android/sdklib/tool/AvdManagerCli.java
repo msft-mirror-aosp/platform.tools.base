@@ -615,8 +615,7 @@ class AvdManagerCli extends CommandLineParser {
      * Displays the list of available devices.
      */
     private void displayDeviceList() {
-        List<Device> devices =
-                new ArrayList<>(createDeviceManager().getDevices(DeviceManager.ALL_DEVICES));
+        List<Device> devices = new ArrayList<>(createDeviceManager().getDevices());
         Collections.sort(devices, Device.getDisplayComparator());
 
         // Compact output, suitable for scripts.
@@ -833,8 +832,7 @@ class AvdManagerCli extends CommandLineParser {
             Device device = null;
             String deviceParam = getParamDevice();
             if (deviceParam != null) {
-                List<Device> devices = new ArrayList<>(
-                        createDeviceManager().getDevices(DeviceManager.ALL_DEVICES));
+                List<Device> devices = new ArrayList<>(createDeviceManager().getDevices());
                 Collections.sort(devices, Device.getDisplayComparator());
 
                 int index = -1;

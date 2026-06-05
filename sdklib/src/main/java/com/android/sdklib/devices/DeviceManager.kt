@@ -17,7 +17,6 @@ package com.android.sdklib.devices
 
 import com.android.SdkConstants
 import com.android.prefs.AndroidLocationsProvider
-import com.android.sdklib.internal.avd.AvdInfo
 import com.android.sdklib.repository.AndroidSdkHandler
 import com.android.utils.ILogger
 import com.google.common.collect.HashBasedTable
@@ -25,7 +24,6 @@ import com.google.common.collect.ImmutableList
 import com.google.common.collect.Table
 import java.nio.file.Path
 import java.util.Collections
-import java.util.EnumSet
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 
@@ -52,35 +50,15 @@ class DeviceManager(tables: Map<DeviceCategory, DeviceTable>) {
     return deviceTables.values.firstNotNullOfOrNull { it.getDevice(id, manufacturer) }
   }
 
-  fun getDevice(avdInfo: AvdInfo): Device? {
-    return getDevice(avdInfo.deviceName, avdInfo.deviceManufacturer)
-  }
-
-  /**
-   * Returns the known [Device] list.
-   *
-   * @param deviceCategory One of the [DeviceCategory] constants.
-   * @return A copy of the list of [Device]s. Can be empty but not null.
-   */
-  fun getDevices(deviceCategory: DeviceCategory): Collection<Device> {
-    return getDevices(EnumSet.of(deviceCategory))
-  }
-
-  /**
-   * Returns the known [Device] list.
-   *
-   * @param deviceCategory A combination of the [DeviceCategory] constants or the constant [ALL_DEVICES].
-   * @return A copy of the list of [Device]s. Can be empty but not null.
-   */
-  fun getDevices(deviceCategory: Collection<DeviceCategory>): Collection<Device> {
+  /** Returns the devices of the given categories. If no categories are specified, all devices are returned. */
+  fun getDevices(vararg deviceCategories: DeviceCategory): Collection<Device> {
+    val categories = if (deviceCategories.isEmpty()) DeviceCategory.entries.reversed() else deviceCategories.sortedDescending()
     val devices = HashBasedTable.create<String, String, Device>()
-    for (category in deviceCategory.sortedDescending()) {
+    for (category in categories) {
       deviceTables[category]?.getDevices()?.let { devices.putAll(it) }
     }
     return Collections.unmodifiableCollection(devices.values())
   }
-
-  fun getDevices(): Collection<Device> = getDevices(ALL_DEVICES)
 
   fun getUserDevices(): UserDeviceTable? = deviceTables[DeviceCategory.USER] as? UserDeviceTable
 
@@ -94,9 +72,6 @@ class DeviceManager(tables: Map<DeviceCategory, DeviceTable>) {
     }
 
   companion object {
-    /** getDevices() flag to list all devices. */
-    @JvmField val ALL_DEVICES: EnumSet<DeviceCategory> = EnumSet.allOf(DeviceCategory::class.java)
-
     /** Names of XML files bundled as resources containing device definitions for [DeviceCategory.VENDOR]. */
     val VENDOR_DEVICE_RESOURCES: ImmutableList<String> = ImmutableList.of("nexus", "wear", "tv", "automotive", "desktop", "xr")
 

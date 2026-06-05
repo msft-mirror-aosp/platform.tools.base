@@ -122,6 +122,7 @@ class SigningConfigImpl(
 
   val storeType: Provider<String> = variantServices.provider { dslSigningConfig?.storeType }
 
+  @Deprecated("Use hasConfig", replaceWith = ReplaceWith("hasConfig"))
   fun isSigningReady(): Boolean {
     return storeFile.isPresent && storePassword.isPresent && keyAlias.isPresent && keyPassword.isPresent
   }

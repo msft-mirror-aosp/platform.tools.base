@@ -47337,6 +47337,19 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.android.databinding.adapters_9.2.0",
+    pom = "repository/com/android/databinding/adapters/9.2.0/adapters-9.2.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/android/databinding/adapters/9.2.0",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
+        "com.android.databinding.baseLibrary_9.2.0",
+        "com.android.databinding.library_9.2.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.android.databinding.baseLibrary_3.0.0",
     pom = "repository/com/android/databinding/baseLibrary/3.0.0/baseLibrary-3.0.0.pom",
     repo_root_path = "repository",
@@ -48026,6 +48039,21 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.android.databinding.library_9.2.0",
+    pom = "repository/com/android/databinding/library/9.2.0/library-9.2.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/android/databinding/library/9.2.0",
+    deps = [
+        "com.android.databinding.viewbinding_9.2.0",
+        "android.arch.lifecycle.runtime_1.0.3",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
+        "com.android.support.support-core-utils_26.1.0",
+        "com.android.databinding.baseLibrary_9.2.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.android.databinding.viewbinding_4.0.0",
     pom = "repository/com/android/databinding/viewbinding/4.0.0/viewbinding-4.0.0.pom",
     repo_root_path = "repository",
@@ -48314,6 +48342,18 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.android.databinding.viewbinding_9.2.0",
+    pom = "repository/com/android/databinding/viewbinding/9.2.0/viewbinding-9.2.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/android/databinding/viewbinding/9.2.0",
+    deps = [
+        "com.android.support.support-annotations_26.1.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.android.fused-library.com.android.fused-library.gradle.plugin_8.10.1",
     pom = "repository/com/android/fused-library/com.android.fused-library.gradle.plugin/8.10.1/com.android.fused-library.gradle.plugin-8.10.1.pom",
     repo_root_path = "repository",
@@ -48391,6 +48431,17 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.android.fused-library.com.android.fused-library.gradle.plugin_9.2.0",
+    pom = "repository/com/android/fused-library/com.android.fused-library.gradle.plugin/9.2.0/com.android.fused-library.gradle.plugin-9.2.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/android/fused-library/com.android.fused-library.gradle.plugin/9.2.0",
+    deps = [
+        "com.android.tools.build.gradle_9.2.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.android.kotlin.multiplatform.library.com.android.kotlin.multiplatform.library.gradle.plugin_9.0.0",
     pom = "repository/com/android/kotlin/multiplatform/library/com.android.kotlin.multiplatform.library.gradle.plugin/9.0.0/com.android.kotlin.multiplatform.library.gradle.plugin-9.0.0.pom",
     repo_root_path = "repository",
@@ -48408,6 +48459,17 @@ maven_artifact(
     repo_path = "com/android/kotlin/multiplatform/library/com.android.kotlin.multiplatform.library.gradle.plugin/9.1.0",
     deps = [
         "com.android.tools.build.gradle_9.1.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.android.kotlin.multiplatform.library.com.android.kotlin.multiplatform.library.gradle.plugin_9.2.0",
+    pom = "repository/com/android/kotlin/multiplatform/library/com.android.kotlin.multiplatform.library.gradle.plugin/9.2.0/com.android.kotlin.multiplatform.library.gradle.plugin-9.2.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/android/kotlin/multiplatform/library/com.android.kotlin.multiplatform.library.gradle.plugin/9.2.0",
+    deps = [
+        "com.android.tools.build.gradle_9.2.0",
     ],
     visibility = ["//visibility:public"],
 )

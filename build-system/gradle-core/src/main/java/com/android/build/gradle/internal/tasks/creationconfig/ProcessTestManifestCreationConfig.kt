@@ -304,7 +304,7 @@ abstract class TestSuiteProcessTestManifestCreationConfig(
     get() = source.manifestFile
 
   override val manifestOverlayFiles: Provider<List<File>>
-    get() = testSuiteCreationConfig.testedVariant.emptyProvider()
+    get() = creationConfig.services.provider { emptyList() }
 
   override val testedApkVariantArtifacts: ArtifactsImpl
     get() = creationConfig.artifacts

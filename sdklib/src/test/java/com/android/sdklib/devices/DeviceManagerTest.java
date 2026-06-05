@@ -47,7 +47,6 @@ import org.junit.Test;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -196,7 +195,7 @@ public class DeviceManagerTest {
 
         assertThat(dm.getDevice("Nexus One", "Google").getDisplayName()).isEqualTo("Nexus One");
 
-        assertThat(listDisplayNames(dm.getDevices(DeviceManager.ALL_DEVICES)))
+        assertThat(listDisplayNames(dm.getDevices()))
                 .containsExactly(
                         "10.1\" WXGA (Tablet)",
                         "2.7\" QVGA",
@@ -442,7 +441,7 @@ public class DeviceManagerTest {
                         "XR Glasses",
                         "XR Headset");
 
-        assertThat(listDisplayNames(dm2.getDevices(DeviceManager.ALL_DEVICES)))
+        assertThat(listDisplayNames(dm2.getDevices()))
                 .containsExactly(
                         "10.1\" WXGA (Tablet)",
                         "2.7\" QVGA",
@@ -683,7 +682,7 @@ public class DeviceManagerTest {
                         "XR Glasses",
                         "XR Headset");
 
-        assertThat(listDisplayNames(dm.getDevices(DeviceManager.ALL_DEVICES)))
+        assertThat(listDisplayNames(dm.getDevices()))
                 .containsExactly(
                         "10.1\" WXGA (Tablet)",
                         "2.7\" QVGA",
@@ -793,7 +792,7 @@ public class DeviceManagerTest {
 
         // Create a local DeviceManager, get the number of devices, and verify one device
         DeviceManager localDeviceManager = createDeviceManager();
-        int count = localDeviceManager.getDevices(EnumSet.allOf(DeviceCategory.class)).size();
+        int count = localDeviceManager.getDevices().size();
         Device localDevice = localDeviceManager.getDevice("wearos_small_round", "Google");
         assertThat(localDevice.getDisplayName()).isEqualTo("Wear OS Small Round");
 
@@ -845,8 +844,7 @@ public class DeviceManagerTest {
                 .isEqualTo(Abi.ARMEABI.toString());
 
         // Verify that the total number of devices is increased by one for new_wearos_device
-        assertThat(localDeviceManager.getDevices(EnumSet.allOf(DeviceCategory.class)).size())
-                .isEqualTo(count + 1);
+        assertThat(localDeviceManager.getDevices().size()).isEqualTo(count + 1);
 
         // Change the name of that device and add it to our local DeviceManager again
         Device dmDevice = dm.getDevice("new_wearos_device", "Google");
@@ -861,8 +859,7 @@ public class DeviceManagerTest {
         assertThat(localDevice.getDisplayName()).isEqualTo("Wear OS Small Round");
 
         // Verify that the total number of devices is unchanged
-        assertThat(localDeviceManager.getDevices(EnumSet.allOf(DeviceCategory.class)).size())
-                .isEqualTo(count + 1);
+        assertThat(localDeviceManager.getDevices().size()).isEqualTo(count + 1);
     }
 
     @Test
@@ -951,7 +948,7 @@ public class DeviceManagerTest {
                                 device.getId().startsWith("pixel_9")
                                         || device.getId().startsWith("pixel_10"));
 
-        assertThat(listDisplayNames(deviceManagerWithFilter.getDevices(DeviceManager.ALL_DEVICES)))
+        assertThat(listDisplayNames(deviceManagerWithFilter.getDevices()))
                 .containsExactly(
                         "10.1\" WXGA (Tablet)",
                         "2.7\" QVGA",
@@ -1055,7 +1052,7 @@ public class DeviceManagerTest {
 
     @Test
     public void testCancellation() {
-        int totalDeviceCount = createDeviceManager().getDevices(DeviceManager.ALL_DEVICES).size();
+        int totalDeviceCount = createDeviceManager().getDevices().size();
 
         AtomicBoolean shouldThrow = new AtomicBoolean(true);
         AndroidSdkHandler sdkHandler = sdkManager.getSdkHandler();
@@ -1067,11 +1064,9 @@ public class DeviceManagerTest {
                             if (shouldThrow.get()) throw new CancellationException();
                             return true;
                         });
-        assertThrows(
-                CancellationException.class,
-                () -> deviceManager.getDevices(DeviceManager.ALL_DEVICES));
+        assertThrows(CancellationException.class, () -> deviceManager.getDevices());
         shouldThrow.set(false);
-        Collection<Device> devices = deviceManager.getDevices(DeviceManager.ALL_DEVICES);
+        Collection<Device> devices = deviceManager.getDevices();
         assertThat(devices).hasSize(totalDeviceCount);
     }
 }

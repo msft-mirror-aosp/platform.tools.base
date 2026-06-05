@@ -29,7 +29,15 @@ import com.android.buildanalyzer.common.TaskCategory;
 import com.android.ide.common.signing.CertificateInfo;
 import com.android.ide.common.signing.KeystoreHelper;
 import com.android.ide.common.signing.KeytoolException;
+
 import com.google.common.collect.Maps;
+
+import org.gradle.api.DefaultTask;
+import org.gradle.api.tasks.TaskAction;
+import org.gradle.internal.logging.text.StyledTextOutput;
+import org.gradle.internal.logging.text.StyledTextOutputFactory;
+import org.gradle.work.DisableCachingByDefault;
+
 import java.io.FileNotFoundException;
 import java.io.Serializable;
 import java.security.MessageDigest;
@@ -43,11 +51,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import org.gradle.api.DefaultTask;
-import org.gradle.api.tasks.TaskAction;
-import org.gradle.internal.logging.text.StyledTextOutput;
-import org.gradle.internal.logging.text.StyledTextOutputFactory;
-import org.gradle.work.DisableCachingByDefault;
 
 /**
  * Report tasks displaying the signing information for all variants.
@@ -83,7 +86,7 @@ public class SigningReportTask extends DefaultTask {
 
             // get the data
             SigningConfigImpl signingConfig = details.signingConfig;
-            if (signingConfig == null) {
+            if (signingConfig == null || !signingConfig.hasConfig()) {
                 textOutput.withStyle(Identifier).text("Config: ");
                 textOutput.withStyle(Normal).text("none");
                 textOutput.println();
@@ -150,25 +153,22 @@ public class SigningReportTask extends DefaultTask {
         if (signingInfo == null) {
             signingInfo = new SigningInfo();
 
-            if (signingConfig.isSigningReady()) {
-                try {
-                    CertificateInfo certificateInfo =
-                            KeystoreHelper.getCertificateInfo(
-                                    signingConfig.getStoreType().getOrNull(),
-                                    signingConfig.getStoreFile().get(),
-                                    signingConfig.getStorePassword().get(),
-                                    signingConfig.getKeyPassword().get(),
-                                    signingConfig.getKeyAlias().get());
-                    signingInfo.md5 = getFingerprint(certificateInfo.getCertificate(), "MD5");
-                    signingInfo.sha1 = getFingerprint(certificateInfo.getCertificate(), "SHA1");
-                    signingInfo.sha256 =
-                            getFingerprint(certificateInfo.getCertificate(), "SHA-256");
-                    signingInfo.notAfter = certificateInfo.getCertificate().getNotAfter();
-                } catch (KeytoolException e) {
-                    signingInfo.error = e.getMessage();
-                } catch (FileNotFoundException e) {
-                    signingInfo.error = "Missing keystore";
-                }
+            try {
+                CertificateInfo certificateInfo =
+                        KeystoreHelper.getCertificateInfo(
+                                signingConfig.getStoreType().getOrNull(),
+                                signingConfig.getStoreFile().get(),
+                                signingConfig.getStorePassword().get(),
+                                signingConfig.getKeyPassword().get(),
+                                signingConfig.getKeyAlias().get());
+                signingInfo.md5 = getFingerprint(certificateInfo.getCertificate(), "MD5");
+                signingInfo.sha1 = getFingerprint(certificateInfo.getCertificate(), "SHA1");
+                signingInfo.sha256 = getFingerprint(certificateInfo.getCertificate(), "SHA-256");
+                signingInfo.notAfter = certificateInfo.getCertificate().getNotAfter();
+            } catch (KeytoolException e) {
+                signingInfo.error = e.getMessage();
+            } catch (FileNotFoundException e) {
+                signingInfo.error = "Missing keystore";
             }
 
             cache.put(signingConfig, signingInfo);
