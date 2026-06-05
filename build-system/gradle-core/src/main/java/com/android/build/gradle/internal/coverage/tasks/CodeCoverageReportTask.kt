@@ -62,7 +62,11 @@ abstract class CodeCoverageReportTask : NonIncrementalGlobalTask() {
       logger.lifecycle("View coverage report at $reportLocation")
     } else {
       logger.lifecycle(
-        "No code coverage data found. The code coverage report is not generated. This can happen if code coverage is not enabled"
+        """
+        No code coverage data found. Code coverage report was not generated.
+        Please enable code coverage in your module-level build files by setting `enableUnitTestCoverage = true` and/or `enableAndroidTestCoverage = true` in the relevant build types.
+        """
+          .trimIndent()
       )
     }
   }
