@@ -149,10 +149,15 @@ internal suspend fun dumpUiTree(
   skipSystemComposables: Boolean,
   includeSemantics: Boolean,
 ) {
-  val viewRoots = fetchViewTree(commandSender, includeAttributes, includeResolutionStack)
+  val result = dumpViews(commandSender, includeAttributes, includeResolutionStack)
+  val viewRoots = result.roots
+  val configuration = result.configuration
+  val stringTable = result.stringTable
+
   if (composeInspectorConnected) {
     fetchAndMergeComposeTrees(commandSender, viewRoots, includeAttributes, skipSystemComposables, includeSemantics)
   }
+  configuration?.let { printDeviceConfiguration(it, stringTable) }
   viewRoots.forEach { printUiTree(it, 0, includeAttributes, includeSemantics) }
 }
 

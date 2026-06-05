@@ -52,12 +52,20 @@ class ViewInspector(connection: Connection, private val environment: InspectorEn
     val includeResolutionStack = dumpViewsCommand.includeResolutionStack
     scope.launch {
       val stringTable = StringTable()
-      val nodes =
+      val (nodes, systemConfig) =
         withContext(mainDispatcher) {
-          RootsDetector.getRootViews().map { it.toViewNode(stringTable, includeAttributes, includeResolutionStack) }
+          val roots = RootsDetector.getRootViews()
+          val config = roots.firstOrNull()?.context?.resources?.configuration
+          val viewNodes = roots.map { it.toViewNode(stringTable, includeAttributes, includeResolutionStack) }
+          viewNodes to config
         }
       callback.reply {
-        dumpViewsResponse = DumpViewsResponse.newBuilder().addAllNodes(nodes).addAllStrings(stringTable.toStringEntries()).build()
+        val builder = DumpViewsResponse.newBuilder().addAllNodes(nodes)
+        if (systemConfig != null) {
+          builder.configuration = systemConfig.convert(stringTable)
+        }
+        builder.addAllStrings(stringTable.toStringEntries())
+        dumpViewsResponse = builder.build()
       }
     }
   }

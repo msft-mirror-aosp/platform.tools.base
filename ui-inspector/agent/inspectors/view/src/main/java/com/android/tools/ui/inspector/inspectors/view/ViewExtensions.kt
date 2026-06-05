@@ -94,7 +94,6 @@ private fun createViewNode(view: View, stringTable: StringTable, attributeExtrac
     }
 
     // TODO: add support for DLI AppContext (theme and display info)
-    // TODO: add support for DLI Configuration (device configuration)
     // TODO: add support for XR
 
     when (attributeExtraction) {

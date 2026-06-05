@@ -18,6 +18,8 @@ package com.android.tools.ui.inspector.inspectors.view
 
 import android.app.Activity
 import android.content.Context
+import android.content.res.Configuration as AndroidResConfiguration
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.view.View
@@ -34,6 +36,7 @@ import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProto
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.Response
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.ViewNode
 import com.google.common.truth.Truth.assertThat
+import java.util.Locale
 import java.util.concurrent.Executor
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -450,5 +453,92 @@ class ViewInspectorTest {
 
       // Verify that we have NO attributes collected
       assertThat(textViewNode!!.attributesCount).isEqualTo(0)
+    }
+
+  @Test
+  fun testDumpViews_configuration() =
+    runTest(testDispatcher) {
+      val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+      val config = activity.resources.configuration
+      config.densityDpi = 320
+      config.orientation = AndroidResConfiguration.ORIENTATION_LANDSCAPE
+      config.screenLayout =
+        AndroidResConfiguration.SCREENLAYOUT_SIZE_LARGE or
+          AndroidResConfiguration.SCREENLAYOUT_LONG_YES or
+          AndroidResConfiguration.SCREENLAYOUT_LAYOUTDIR_RTL or
+          AndroidResConfiguration.SCREENLAYOUT_ROUND_YES
+      config.colorMode = AndroidResConfiguration.COLOR_MODE_WIDE_COLOR_GAMUT_YES or AndroidResConfiguration.COLOR_MODE_HDR_YES
+      config.touchscreen = AndroidResConfiguration.TOUCHSCREEN_FINGER
+      config.keyboard = AndroidResConfiguration.KEYBOARD_QWERTY
+      config.keyboardHidden = AndroidResConfiguration.KEYBOARDHIDDEN_YES
+      config.hardKeyboardHidden = AndroidResConfiguration.HARDKEYBOARDHIDDEN_YES
+      config.navigation = AndroidResConfiguration.NAVIGATION_DPAD
+      config.navigationHidden = AndroidResConfiguration.NAVIGATIONHIDDEN_YES
+      config.uiMode = AndroidResConfiguration.UI_MODE_TYPE_CAR or AndroidResConfiguration.UI_MODE_NIGHT_YES
+      config.screenWidthDp = 1024
+      config.screenHeightDp = 768
+      config.smallestScreenWidthDp = 768
+
+      if (Build.VERSION.SDK_INT >= 24) {
+        config.setLocales(android.os.LocaleList(Locale("ar")))
+      } else {
+        @Suppress("DEPRECATION")
+        config.locale = Locale("ar")
+      }
+      config.setLayoutDirection(Locale("ar"))
+
+      if (Build.VERSION.SDK_INT >= 34) {
+        try {
+          // Use reflection to bypass read-only limitations
+          val field = AndroidResConfiguration::class.java.getDeclaredField("grammaticalGender")
+          field.isAccessible = true
+          field.set(config, AndroidResConfiguration.GRAMMATICAL_GENDER_FEMININE)
+        } catch (_: Exception) {}
+      }
+
+      activity.resources.updateConfiguration(config, activity.resources.displayMetrics)
+      activity.setContentView(setupViews(activity))
+
+      val inspector =
+        ViewInspector(
+          object : Connection() {
+            override fun sendEvent(data: ByteArray) {}
+          },
+          mockEnvironment,
+        )
+      val response = runDumpCommand(inspector)
+
+      assertThat(response.specializedCase).isEqualTo(Response.SpecializedCase.DUMP_VIEWS_RESPONSE)
+      val dumpResponse = response.dumpViewsResponse
+      assertThat(dumpResponse.hasConfiguration()).isTrue()
+
+      val configuration = dumpResponse.configuration
+      assertThat(configuration.density).isEqualTo(320)
+      assertThat(configuration.orientation).isEqualTo(ViewInspectorProtocol.Orientation.ORIENTATION_LANDSCAPE)
+      assertThat(configuration.screenLayoutSize).isEqualTo(ViewInspectorProtocol.ScreenLayoutSize.SCREEN_LAYOUT_SIZE_LARGE)
+      assertThat(configuration.screenLayoutLong).isEqualTo(ViewInspectorProtocol.ScreenLayoutLong.SCREEN_LAYOUT_LONG_YES)
+      assertThat(configuration.layoutDirection).isEqualTo(ViewInspectorProtocol.LayoutDirection.LAYOUT_DIRECTION_RTL)
+      assertThat(configuration.screenLayoutRound).isEqualTo(ViewInspectorProtocol.ScreenLayoutRound.SCREEN_LAYOUT_ROUND_YES)
+      assertThat(configuration.colorModeWideGamut).isEqualTo(ViewInspectorProtocol.ColorModeWideGamut.COLOR_MODE_WIDE_GAMUT_YES)
+      assertThat(configuration.colorModeHdr).isEqualTo(ViewInspectorProtocol.ColorModeHdr.COLOR_MODE_HDR_YES)
+      assertThat(configuration.touchScreen).isEqualTo(ViewInspectorProtocol.TouchScreen.TOUCH_SCREEN_FINGER)
+      assertThat(configuration.keyboard).isEqualTo(ViewInspectorProtocol.Keyboard.KEYBOARD_QWERTY)
+      assertThat(configuration.keyboardHidden).isEqualTo(ViewInspectorProtocol.KeyboardHidden.KEYBOARD_HIDDEN_YES)
+      assertThat(configuration.hardKeyboardHidden).isEqualTo(ViewInspectorProtocol.HardKeyboardHidden.HARD_KEYBOARD_HIDDEN_YES)
+      assertThat(configuration.navigation).isEqualTo(ViewInspectorProtocol.Navigation.NAVIGATION_DPAD)
+      assertThat(configuration.navigationHidden).isEqualTo(ViewInspectorProtocol.NavigationHidden.NAVIGATION_HIDDEN_YES)
+      assertThat(configuration.uiModeType).isEqualTo(ViewInspectorProtocol.UiModeType.UI_MODE_TYPE_CAR)
+      assertThat(configuration.uiModeNight).isEqualTo(ViewInspectorProtocol.UiModeNight.UI_MODE_NIGHT_YES)
+      assertThat(configuration.screenWidthDp).isEqualTo(1024)
+      assertThat(configuration.screenHeightDp).isEqualTo(768)
+      assertThat(configuration.smallestScreenWidthDp).isEqualTo(768)
+
+      if (Build.VERSION.SDK_INT >= 34) {
+        assertThat(configuration.grammaticalGender).isEqualTo(ViewInspectorProtocol.GrammaticalGender.GRAMMATICAL_GENDER_FEMININE)
+      }
+
+      val stringTable = dumpResponse.stringsList.associate { it.id to it.value }
+      assertThat(stringTable[configuration.locale.language]).isEqualTo("ar")
+      assertThat(configuration.locale.country).isEqualTo(0)
     }
 }
