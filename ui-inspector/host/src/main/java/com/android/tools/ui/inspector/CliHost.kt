@@ -133,12 +133,19 @@ class DumpUiCommand : Callable<Int> {
         }
       }
       return EXIT_OK
+    } catch (e: EmptyViewRootsException) {
+      System.err.println(
+        "Error: No active window roots found for package '$packageName'. Please make sure the app is in the foreground and has visible layout views."
+      )
+      return EXIT_ERROR
     } catch (e: Exception) {
       System.err.println("Error: ${e.message}")
       return EXIT_ERROR
     }
   }
 }
+
+private class EmptyViewRootsException : Exception()
 
 /** Dumps the View tree, enriches it with Compose if active, and prints the unified tree to console. */
 internal suspend fun dumpUiTree(
@@ -151,6 +158,9 @@ internal suspend fun dumpUiTree(
 ) {
   val result = dumpViews(commandSender, includeAttributes, includeResolutionStack)
   val viewRoots = result.roots
+  if (viewRoots.isEmpty()) {
+    throw EmptyViewRootsException()
+  }
   val configuration = result.configuration
   val stringTable = result.stringTable
 

@@ -99,6 +99,10 @@ class InjectionManager(
    * @return The forwarded TCP port number on the host. Connect to this port to communicate with the agent.
    */
   suspend fun injectAndAttach(): String = coroutineScope {
+    // Query app data dir and pid synchronously at the beginning to verify that the app is installed and running
+    appDataDir = queryAppDataDir(deviceSelector, packageName)
+    val pid = getPid(deviceSelector, packageName)
+
     // Enable debug view attributes before attaching.
     // This is needed for the platform to expose attribute resolution traces.
     // We don't clean this up because changing this flag causes the activity to restart. We do it once so the activity doesn't need to
@@ -106,8 +110,6 @@ class InjectionManager(
     val flagSet = async { adbSession.deviceServices.shellAsText(deviceSelector, "settings put global debug_view_attributes 1") }
 
     val abiDeferred = async { getDeviceAbi(deviceSelector) }
-    val appDataDirDeferred = async { queryAppDataDir(deviceSelector, packageName) }
-    val pidDeferred = async { getPid(deviceSelector, packageName) }
 
     val deviceAbi = abiDeferred.await()
     val agentLocalPath = getAgentLocalPath(deviceAbi)
@@ -121,12 +123,10 @@ class InjectionManager(
     val agentRemoteTmpPath = agentPush.await()
     val serviceJarRemoteTmpPath = jarPush.await()
     val payloadRemoteTmpPath = payloadPush.await()
-    appDataDir = appDataDirDeferred.await()
     flagSet.await()
 
     copyAndSetupFiles(deviceSelector, packageName, agentRemoteTmpPath, serviceJarRemoteTmpPath, payloadRemoteTmpPath)
 
-    val pid = pidDeferred.await()
     attachAgent(deviceSelector, packageName, pid)
 
     val socketName = ProtocolConstants.getSocketName(pid)
@@ -166,23 +166,27 @@ class InjectionManager(
 
   /** Queries the device for the PID of the specified package. */
   private suspend fun getPid(deviceSelector: DeviceSelector, packageName: String): String {
-    val output = runShellCommand(deviceSelector, "pidof $packageName").stdout.trim()
-    if (output.isEmpty()) {
-      throw IllegalStateException("Failed to find PID for package $packageName. Please make sure the app is running on the device.")
+    val result = adbSession.deviceServices.shellAsText(deviceSelector, "pidof $packageName")
+    val stdout = result.stdout.trim()
+    if (result.exitCode != 0 || stdout.isEmpty()) {
+      throw IllegalStateException("The application '$packageName' is not running on the device. Please start the app and try again.")
     }
     // pidof can return multiple PIDs if there are multiple processes.
     // We take the first one, which is usually the main process.
     // TODO: Handle multi-process apps more robustly.
-    return output.split(" ")[0]
+    return stdout.split(" ")[0]
   }
 
   /** Queries the device for the absolute path to the app's data directory. */
   private suspend fun queryAppDataDir(deviceSelector: DeviceSelector, packageName: String): String {
-    val output = runShellCommand(deviceSelector, "run-as $packageName pwd").stdout.trim()
-    if (output.isEmpty()) {
-      throw IllegalStateException("Failed to get app data directory for package $packageName")
+    val result = adbSession.deviceServices.shellAsText(deviceSelector, "run-as $packageName pwd")
+    val stdout = result.stdout.trim()
+    if (result.exitCode != 0 || stdout.isEmpty()) {
+      throw IllegalStateException(
+        "Failed to access the application '$packageName'. Please make sure the app is installed, debuggable, and running under the current user."
+      )
     }
-    return output
+    return stdout
   }
 
   /** Queries the device for its CPU ABI. */
