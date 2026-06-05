@@ -20,17 +20,70 @@ import com.android.tools.render.Renderer
 import com.android.tools.render.framework.IJFramework
 import com.intellij.openapi.util.Disposer
 import java.io.File
+import kotlin.system.exitProcess
 
 fun main(args: Array<String>) {
-  if (args.isEmpty()) {
-    println("Path to the preview rendering settings file is missing.")
+  if (args.isEmpty() || args.contains("--help") || args.contains("-h")) {
+    printUsage()
     return
   }
+  var exitCode = 0
   try {
     renderPreview(File(args[0]))
+  } catch (t: Throwable) {
+    System.err.println("Error: ${t.message}")
+    exitCode = 1
   } finally {
     Disposer.dispose(IJFramework)
   }
+  exitProcess(exitCode)
+}
+
+private fun printUsage() {
+  println("Usage: compose-preview-renderer <path-to-rendering-settings-json>")
+  println()
+  println("Renders Compose previews as screenshots based on the provided JSON settings file.")
+  println()
+  println("Options:")
+  println("  -h, --help  Show this help message")
+  println()
+  println("JSON Settings File Format:")
+  println("  The JSON file must contain the following fields:")
+  println("    layoutlibPath:    Path to layoutlib installation directory")
+  println("    outputFolder:     Directory where screenshots will be saved")
+  println("    metaDataFolder:   Directory where metadata is stored")
+  println("    classPath:        List of classpath entries (project & dependencies)")
+  println("    projectClassPath: List of project-only classpath entries")
+  println("    namespace:        Application package name")
+  println("    resourceApkPath:  Path to resource APK")
+  println("    resultsFilePath:  Path to write the results JSON file")
+  println("    screenshots:      List of screenshot configurations to render")
+  println()
+  println("  Each screenshot in the 'screenshots' list needs:")
+  println("    methodFQN:        Fully qualified name of Composable function")
+  println("    previewId:        Unique ID for the preview (used in filename)")
+  println("    previewParams:    (Optional) Map of preview parameters")
+  println()
+  println("Example JSON:")
+  println(
+    """  {
+    "layoutlibPath": "/path/to/layoutlib",
+    "outputFolder": "/path/to/output",
+    "metaDataFolder": "/path/to/metadata",
+    "classPath": ["/path/to/classes", "/path/to/dependencies.jar"],
+    "projectClassPath": ["/path/to/classes"],
+    "namespace": "com.example.myapp",
+    "resourceApkPath": "/path/to/app-debug.apk",
+    "resultsFilePath": "/path/to/results.json",
+    "screenshots": [
+      {
+        "methodFQN": "com.example.myapp.MainActivityKt.DefaultPreview",
+        "previewId": "com.example.myapp.MainActivityKt.DefaultPreview_screenshot",
+        "previewParams": { "showBackground": "true" }
+      }
+    ]
+  }"""
+  )
 }
 
 private fun renderPreview(previewRenderingJson: File) {
@@ -55,4 +108,35 @@ private fun renderPreview(previewRenderingJson: File) {
     }
 
   writePreviewRenderingResult(File(previewRendering.resultsFilePath).writer(), previewRenderingResult)
+
+  var hasErrors = false
+  if (previewRenderingResult.globalError != null) {
+    System.err.println("Global error: ${previewRenderingResult.globalError}")
+    hasErrors = true
+  }
+
+  val outputFolder = File(previewRendering.outputFolder)
+  previewRenderingResult.screenshotResults.forEach { result ->
+    val error = result.error
+    if (error != null) {
+      System.err.println("Error rendering ${result.previewId}: ${error.message}")
+      if (error.stackTrace.isNotEmpty()) {
+        System.err.println(error.stackTrace)
+      }
+      error.problems.forEach { problem ->
+        System.err.println("  Problem: ${problem.html}")
+        if (problem.stackTrace != null) {
+          System.err.println(problem.stackTrace)
+        }
+      }
+      hasErrors = true
+    } else {
+      val absolutePath = File(outputFolder, result.imagePath).absolutePath
+      println(absolutePath)
+    }
+  }
+
+  if (hasErrors) {
+    throw RuntimeException("Rendering failed with errors")
+  }
 }

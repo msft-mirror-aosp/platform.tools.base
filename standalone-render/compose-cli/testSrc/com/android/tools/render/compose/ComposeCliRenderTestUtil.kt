@@ -31,20 +31,18 @@ private val ALLOWED_ERRORS =
     "Tracing Skia with Perfetto is not supported in this environment (host build?)",
   )
 
-fun runComposeCliRender(settingsFile: File): String {
+fun runComposeCliRender(args: List<String>): String {
   val javaHome = System.getProperty("java.home")
-  val layoutlibJar = TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib/data/layoutlib-mvn.jar")
   val composeCliRenderFolder = TestUtils.resolveWorkspacePath("tools/base/standalone-render/compose-cli")
+  val deployJar = TestUtils.resolveWorkspacePath("tools/base/standalone-render/compose-cli/compose-preview-renderer-cli_deploy.jar")
   val command =
     listOf(
       "$javaHome/bin/java",
       "-Dlayoutlib.thread.profile.timeoutms=10000",
       "-Djava.security.manager=allow",
-      "-cp",
-      "compose-preview-renderer.jar:${layoutlibJar.absolutePathString()}",
-      "com.android.tools.render.common.MainKt",
-      settingsFile.absolutePath,
-    )
+      "-jar",
+      deployJar.absolutePathString(),
+    ) + args
   val procBuilder =
     ProcessBuilder(command)
       .directory(composeCliRenderFolder.toFile())
@@ -56,9 +54,13 @@ fun runComposeCliRender(settingsFile: File): String {
   proc.waitFor(5, TimeUnit.MINUTES)
   val error =
     proc.errorStream.bufferedReader().readLines().filter { line -> ALLOWED_ERRORS.none { line.startsWith(it) } }.joinToString("\n")
-  if (error.isNotEmpty()) {
+  if (error.isNotEmpty() || proc.exitValue() != 0) {
     val commandStr = command.joinToString(" ")
-    throw AssertionError("Error while rendering Compose previews \"$commandStr\":\n$error")
+    throw AssertionError("Error while executing gradle command \"$commandStr\" (exit code ${proc.exitValue()}):\n$error")
   }
   return proc.inputStream.bufferedReader().readText()
+}
+
+fun runComposeCliRender(settingsFile: File): String {
+  return runComposeCliRender(listOf(settingsFile.absolutePath))
 }

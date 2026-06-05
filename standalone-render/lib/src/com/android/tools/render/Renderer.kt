@@ -91,11 +91,12 @@ class Renderer(
   private val baseConfiguration: Configuration
   val module: StandaloneRenderModelModule
   private val renderService: RenderService
+  private val moduleClassLoaderManager: StandaloneModuleClassLoaderManager
 
   init {
     TimeZone.getDefault()
 
-    val moduleClassLoaderManager = StandaloneModuleClassLoaderManager(classPath, projectClassPath)
+    moduleClassLoaderManager = StandaloneModuleClassLoaderManager(classPath, projectClassPath)
 
     val apkIdManager = ApkResourceIdManager()
     resourceApkPath?.let { apkIdManager.loadApkResources(it) }
@@ -362,14 +363,11 @@ class Renderer(
     )
   }
 
-
-
   override fun close() {
+    moduleClassLoaderManager.close()
     Disposer.dispose(project)
   }
 }
-
-
 
 /**
  * Maps the compiled resource IDs from the APK to the R class fields.
@@ -380,22 +378,14 @@ class Renderer(
  * @param apkIdManager The ApkResourceIdManager that provides the compiled IDs.
  */
 @VisibleForTesting
-fun mapCompiledIdsToRClass(
-  className: String,
-  pkg: String,
-  classLoader: ClassLoader,
-  apkIdManager: ApkResourceIdManager
-) {
+fun mapCompiledIdsToRClass(className: String, pkg: String, classLoader: ClassLoader, apkIdManager: ApkResourceIdManager) {
   val typeName = className.substringAfterLast("$")
   val resType = ResourceType.fromClassName(typeName)
   if (resType != null && resType != ResourceType.STYLEABLE) {
     val namespace = ResourceNamespace.fromPackageName(pkg)
     val rClass = classLoader.loadClass(className)
     for (field in rClass.declaredFields) {
-      if (field.type == Int::class.java &&
-        Modifier.isStatic(field.modifiers) &&
-        !Modifier.isFinal(field.modifiers)
-      ) {
+      if (field.type == Int::class.java && Modifier.isStatic(field.modifiers) && !Modifier.isFinal(field.modifiers)) {
         val resRef = ResourceReference(namespace, resType, field.name)
         val apkId = apkIdManager.getCompiledId(resRef)
         if (apkId != null && apkId != 0) {
@@ -410,10 +400,9 @@ fun mapCompiledIdsToRClass(
 /**
  * Scans a directory for compiled R.class and R$*.class files, loading them to resolve resource IDs.
  *
- * For top-level R.class files, it parses the bytecode to discover and parse any inner classes.
- * For R$*.class files, it extracts the compiled resource IDs and maps them to Layoutlib's APK parser
- * output via [mapCompiledIdsToRClass]. This is necessary because modern Android Gradle Plugins
- * generate Light R-Classes that lack the InnerClasses attribute, breaking reflection-based discovery.
+ * For top-level R.class files, it parses the bytecode to discover and parse any inner classes. For R$*.class files, it extracts the
+ * compiled resource IDs and maps them to Layoutlib's APK parser output via [mapCompiledIdsToRClass]. This is necessary because modern
+ * Android Gradle Plugins generate Light R-Classes that lack the InnerClasses attribute, breaking reflection-based discovery.
  */
 @VisibleForTesting
 fun resolveClassesFromDirectory(
@@ -422,7 +411,7 @@ fun resolveClassesFromDirectory(
   parser: ResourceIdManager.RClassParser,
   apkIdManager: ApkResourceIdManager,
   rClassPackages: MutableSet<String>,
-  logger: Logger
+  logger: Logger,
 ) {
   file
     .walk()
@@ -453,9 +442,8 @@ fun resolveClassesFromDirectory(
 /**
  * Scans a JAR file for compiled R.class and R$*.class entries, loading them to resolve resource IDs.
  *
- * For top-level R.class entries, it reads the entry's bytes and parses them to discover inner classes.
- * For R$*.class entries, it extracts the compiled resource IDs and maps them to Layoutlib's APK parser
- * output via [mapCompiledIdsToRClass].
+ * For top-level R.class entries, it reads the entry's bytes and parses them to discover inner classes. For R$*.class entries, it extracts
+ * the compiled resource IDs and maps them to Layoutlib's APK parser output via [mapCompiledIdsToRClass].
  *
  * @param path The absolute path to the JAR file (used for logging).
  */
@@ -467,7 +455,7 @@ fun resolveClassesFromJar(
   parser: ResourceIdManager.RClassParser,
   apkIdManager: ApkResourceIdManager,
   rClassPackages: MutableSet<String>,
-  logger: Logger
+  logger: Logger,
 ) {
   try {
     JarFile(file).use { jar ->
