@@ -16,7 +16,7 @@
 
 package com.android.tools.render.common
 
-import com.android.tools.render.Renderer
+import com.android.tools.render.RenderEnvironmentBootstrapper
 import com.android.tools.render.framework.IJFramework
 import com.intellij.openapi.util.Disposer
 import java.io.File
@@ -90,7 +90,8 @@ private fun renderPreview(previewRenderingJson: File) {
   val previewRendering = readPreviewRenderingJson(previewRenderingJson.reader())
   val previewRenderingResult =
     try {
-      Renderer(
+      val bootstrapper =
+        RenderEnvironmentBootstrapper(
           previewRendering.fontsPath,
           previewRendering.resourceApkPath,
           previewRendering.namespace,
@@ -98,11 +99,11 @@ private fun renderPreview(previewRenderingJson: File) {
           previewRendering.projectClassPath,
           previewRendering.layoutlibPath,
         )
-        .use { renderer ->
-          val screenshotResults =
-            previewRendering.screenshots.flatMap { renderer.render(it, previewRendering.outputFolder) }.sortedBy { it.imagePath }
-          PreviewRenderingResult(globalError = null, screenshotResults)
-        }
+      bootstrapper.bootstrap().use { renderer ->
+        val screenshotResults =
+          previewRendering.screenshots.flatMap { renderer.render(it, previewRendering.outputFolder) }.sortedBy { it.imagePath }
+        PreviewRenderingResult(globalError = null, screenshotResults)
+      }
     } catch (t: Throwable) {
       PreviewRenderingResult(t.stackTraceToString(), emptyList())
     }

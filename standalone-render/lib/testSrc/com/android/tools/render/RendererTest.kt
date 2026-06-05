@@ -82,7 +82,16 @@ class RendererTest {
     val layoutlibPath = TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib")
 
     var outputImage: BufferedImage? = null
-    Renderer(null, null, "", emptyList(), emptyList(), layoutlibPath.absolutePathString()).use {
+    val bootstrapper =
+      RenderEnvironmentBootstrapper(
+        fontsPath = null,
+        resourceApkPath = null,
+        namespace = "",
+        classPath = emptyList(),
+        projectClassPath = emptyList(),
+        layoutlibPath = layoutlibPath.absolutePathString(),
+      )
+    bootstrapper.bootstrap().use {
       val (_, result) = it.render(request).single()
       assertNull("A single RenderResult is expected", outputImage)
       outputImage = result.renderedImage.copy
@@ -110,8 +119,17 @@ class RendererTest {
 
   @Test
   fun testIncorrectLayoutlibPath() {
+    val bootstrapper =
+      RenderEnvironmentBootstrapper(
+        fontsPath = null,
+        resourceApkPath = null,
+        namespace = "",
+        classPath = emptyList(),
+        projectClassPath = emptyList(),
+        layoutlibPath = "",
+      )
     val renderResults =
-      Renderer(null, null, "", emptyList(), emptyList(), "").use {
+      bootstrapper.bootstrap().use {
         val invalidRequest = RenderRequest({}) { sequenceOf("") }
         it.render(invalidRequest).map { it.second }.toList()
       }
@@ -143,10 +161,16 @@ class RendererTest {
 
     val layoutlibPath = TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib")
 
-    val renderResults =
-      Renderer(null, null, "", emptyList(), emptyList(), layoutlibPath.absolutePathString()).use {
-        it.render(RenderRequest({}) { sequenceOf(layout) }).map { it.second }.toList()
-      }
+    val bootstrapper =
+      RenderEnvironmentBootstrapper(
+        fontsPath = null,
+        resourceApkPath = null,
+        namespace = "",
+        classPath = emptyList(),
+        projectClassPath = emptyList(),
+        layoutlibPath = layoutlibPath.absolutePathString(),
+      )
+    val renderResults = bootstrapper.bootstrap().use { it.render(RenderRequest({}) { sequenceOf(layout) }).map { it.second }.toList() }
 
     assertEquals(1, renderResults.size)
     val renderResult = renderResults[0]

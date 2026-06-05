@@ -18,15 +18,14 @@ package com.android.tools.render
 
 import com.android.tools.res.ids.ResourceIdManager
 import com.android.tools.res.ids.apk.ApkResourceIdManager
+import java.io.File
+import java.io.FileOutputStream
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.io.File
-import java.io.FileOutputStream
-import java.util.logging.Logger
-import java.util.zip.ZipEntry
-import java.util.zip.ZipOutputStream
 
 class RendererClassResolutionTest {
   @get:Rule val tempFolder = TemporaryFolder()
@@ -38,12 +37,15 @@ class RendererClassResolutionTest {
     val classLoader = DummyRId::class.java.classLoader
     DummyRId.custom_text = 0
 
+    val classLoaderManager = StandaloneModuleClassLoaderManager(emptyList(), emptyList())
+    val resolver = RClassResourceResolver(classLoaderManager)
+
     // This should run without throwing any exceptions
-    mapCompiledIdsToRClass(
+    resolver.mapCompiledIdsToRClass(
       className = DummyRId::class.java.name,
       pkg = "com.android.tools.render",
       classLoader = classLoader,
-      apkIdManager = apkIdManager
+      apkIdManager = apkIdManager,
     )
 
     // It remains 0 because the apkIdManager is empty
@@ -58,23 +60,27 @@ class RendererClassResolutionTest {
     File(packageDir, "R\$id.class").writeText("dummy inner bytecode")
 
     val parsedBytecodes = mutableListOf<ByteArray>()
-    val parser = object : ResourceIdManager.RClassParser {
-      override fun parseBytecode(rClass: ByteArray, rClassProvider: (String) -> ByteArray) {
-        parsedBytecodes.add(rClass)
+    val parser =
+      object : ResourceIdManager.RClassParser {
+        override fun parseBytecode(rClass: ByteArray, rClassProvider: (String) -> ByteArray) {
+          parsedBytecodes.add(rClass)
+        }
+
+        override fun parseUsingReflection(rClass: Class<*>) {}
       }
-      override fun parseUsingReflection(rClass: Class<*>) {}
-    }
 
     val rClassPackages = mutableSetOf<String>()
     val apkIdManager = ApkResourceIdManager()
 
-    resolveClassesFromDirectory(
+    val classLoaderManager = StandaloneModuleClassLoaderManager(emptyList(), emptyList())
+    val resolver = RClassResourceResolver(classLoaderManager)
+
+    resolver.resolveClassesFromDirectory(
       file = dir,
       classLoader = this::class.java.classLoader,
       parser = parser,
       apkIdManager = apkIdManager,
       rClassPackages = rClassPackages,
-      logger = Logger.getLogger("Test")
     )
 
     assertTrue(parsedBytecodes.isNotEmpty())
@@ -94,24 +100,28 @@ class RendererClassResolutionTest {
     }
 
     val parsedBytecodes = mutableListOf<ByteArray>()
-    val parser = object : ResourceIdManager.RClassParser {
-      override fun parseBytecode(rClass: ByteArray, rClassProvider: (String) -> ByteArray) {
-        parsedBytecodes.add(rClass)
+    val parser =
+      object : ResourceIdManager.RClassParser {
+        override fun parseBytecode(rClass: ByteArray, rClassProvider: (String) -> ByteArray) {
+          parsedBytecodes.add(rClass)
+        }
+
+        override fun parseUsingReflection(rClass: Class<*>) {}
       }
-      override fun parseUsingReflection(rClass: Class<*>) {}
-    }
 
     val rClassPackages = mutableSetOf<String>()
     val apkIdManager = ApkResourceIdManager()
 
-    resolveClassesFromJar(
+    val classLoaderManager = StandaloneModuleClassLoaderManager(emptyList(), emptyList())
+    val resolver = RClassResourceResolver(classLoaderManager)
+
+    resolver.resolveClassesFromJar(
       file = jarFile,
       path = jarFile.absolutePath,
       classLoader = this::class.java.classLoader,
       parser = parser,
       apkIdManager = apkIdManager,
       rClassPackages = rClassPackages,
-      logger = Logger.getLogger("Test")
     )
 
     assertTrue(parsedBytecodes.isNotEmpty())
@@ -121,7 +131,6 @@ class RendererClassResolutionTest {
 
 class DummyRId {
   companion object {
-    @JvmField
-    var custom_text: Int = 0
+    @JvmField var custom_text: Int = 0
   }
 }
