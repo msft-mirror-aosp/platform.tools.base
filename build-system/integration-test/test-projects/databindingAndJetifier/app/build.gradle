@@ -31,7 +31,7 @@ afterEvaluate {
     configurations.all {
         resolutionStrategy.eachDependency {
             def groupAndName = requested.group + ":" + requested.name
-            if (findProperty("android.enableJetifier") == "true") {
+            if (providers.gradleProperty("android.enableJetifier").orNull == "true") {
                 if (groupAndName == 'androidx.annotation:annotation'
                         || groupAndName == 'androidx.appcompat:appcompat'
                         || groupAndName == 'androidx.legacy:legacy-support-v4'

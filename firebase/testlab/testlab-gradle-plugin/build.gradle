@@ -25,7 +25,7 @@ base {
     archivesName.set("testlab-gradle-plugin")
 }
 
-if (findProperty("release")?.toBoolean()) {
+if (providers.gradleProperty("release").orNull?.toBoolean()) {
     version = '0.0.1-alpha13'
 } else {
     version = '0.0.1-dev'

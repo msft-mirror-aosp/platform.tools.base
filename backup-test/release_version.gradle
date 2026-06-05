@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-if (findProperty('hybrid-build-embedded-in-bazel')?.toBoolean()) {
-    version = getProperty('BACKUP_TEST_VERSION')
+if (providers.gradleProperty('hybrid-build-embedded-in-bazel').orNull?.toBoolean()) {
+    version = providers.gradleProperty('BACKUP_TEST_VERSION').get()
 } else {
     Properties properties = new Properties()
     File versionRootDir = rootDir
     String relativeVersionPath = 'base/backup-test/release_version.bzl'
     File versionProperties = new File(versionRootDir, relativeVersionPath)
     versionProperties.withReader { properties.load(it) }
-    if (findProperty('release')?.toBoolean()) {
+    if (providers.gradleProperty('release').orNull?.toBoolean()) {
         version = properties.getProperty('BACKUP_TEST_VERSION_RELEASE').replaceAll('"', '')
     } else {
         version = properties.getProperty('BACKUP_TEST_VERSION_DEV').replaceAll('"', '')
