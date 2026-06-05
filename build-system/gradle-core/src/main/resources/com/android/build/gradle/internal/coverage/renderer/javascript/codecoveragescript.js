@@ -720,6 +720,11 @@ const CoverageReportApp = {
         this.elements.totalClasses.textContent = this.fullReport.numberOfClasses || 0;
     },
 
+    getAggregatedVariants() {
+        const agg = this.fullReport.testSuiteCoverages ? this.fullReport.testSuiteCoverages.find(ts => ts.name === 'Aggregated') : null;
+        return agg ? agg.variantCoverages : [];
+    },
+
     populateFilters() {
         this.allPackages = this.fullReport.modules.flatMap(m => (m.packages || []).map(p => ({ name: p.name, moduleName: m.name })) );
         this.allClasses = this.fullReport.modules.flatMap(m =>
@@ -730,8 +735,9 @@ const CoverageReportApp = {
 
         // Variants
         let allVariants = [];
-        if (this.fullReport.variantCoverages && this.fullReport.variantCoverages.length > 0) {
-            allVariants = this.fullReport.variantCoverages.map(v => v.name);
+        const aggVariants = this.getAggregatedVariants();
+        if (aggVariants.length > 0) {
+            allVariants = aggVariants.map(v => v.name);
         }
 
         if (this.state.filters.variants.length === 0 && allVariants.length > 0) {
@@ -810,8 +816,9 @@ const CoverageReportApp = {
 
     updateVariantDropdown() {
         let allVariants = [];
-        if (this.fullReport.variantCoverages && this.fullReport.variantCoverages.length > 0) {
-            allVariants = this.fullReport.variantCoverages.map(v => v.name);
+        const aggVariants = this.getAggregatedVariants();
+        if (aggVariants.length > 0) {
+            allVariants = aggVariants.map(v => v.name);
         }
         const variantOptions = allVariants.map(v => ({name: v, value: v}));
 
@@ -1238,8 +1245,9 @@ const CoverageReportApp = {
     updateVariantButtonText() {
         const selectedCount = this.state.filters.variants.length;
         let allVariantsCount = 0;
-         if (this.fullReport.variantCoverages && this.fullReport.variantCoverages.length > 0) {
-            allVariantsCount = this.fullReport.variantCoverages.length;
+        const aggVariants = this.getAggregatedVariants();
+        if (aggVariants.length > 0) {
+            allVariantsCount = aggVariants.length;
         }
 
         if (this.elements.variantFilterBtn) {
@@ -1704,6 +1712,16 @@ const CoverageReportApp = {
     cachedEffectiveData: null,
     cachedTestSuite: null,
 
+    getEffectiveRoot() {
+        const { filters } = this.state;
+        const suiteName = filters.testSuite || 'Aggregated';
+        const suite = this.fullReport.testSuiteCoverages ? this.fullReport.testSuiteCoverages.find(ts => ts.name === suiteName) : null;
+        return {
+            ...this.fullReport,
+            variantCoverages: suite ? suite.variantCoverages : []
+        };
+    },
+
     getEffectiveHierarchicalData() {
         if (this.cachedEffectiveData && this.cachedTestSuite === this.state.filters.testSuite) {
             return this.cachedEffectiveData;
@@ -1902,9 +1920,10 @@ const CoverageReportApp = {
         }
 
         const variants = [...filters.variants].sort();
+        const root = this.getEffectiveRoot();
 
         variants.forEach(v => {
-            const vals = this.getCoverageValues(this.fullReport, v);
+            const vals = this.getCoverageValues(root, v);
 
             topHeader.innerHTML += `<th scope="col" colspan="2" class="py-4 px-4 text-center font-semibold text-gray-700 border-l border-gray-200">
                 <div class="flex flex-col"><span>${this.escapeHTML(v)}</span><span class="text-sm font-bold ${vals.instrColor} mt-1">${vals.instrPercent}</span></div>

@@ -126,14 +126,14 @@ class TestOptionsTest {
     testOptions.suites.create("journeysTest") {
       it.useJunitEngine.let { junitEngine ->
         DefaultInputsForAgpTestSuites.JOURNEYS_TEST.initialize(junitEngine)
-        junitEngine.inputs.add(AgpTestSuiteInputParameters.TESTING_APK)
+        junitEngine.inputs.add(AgpTestSuiteInputParameters.TEST_APKS)
       }
     }
     val testSuite = testOptions.suites.getByName("journeysTest")
     Truth.assertThat(testSuite).isNotNull()
     Truth.assertThat(testSuite.useJunitEngine.inputs)
       .containsExactlyElementsIn(
-        DefaultInputsForAgpTestSuites.JOURNEYS_TEST.supportedProperties.plus(AgpTestSuiteInputParameters.TESTING_APK)
+        DefaultInputsForAgpTestSuites.JOURNEYS_TEST.supportedProperties.plus(AgpTestSuiteInputParameters.TEST_APKS)
       )
   }
 

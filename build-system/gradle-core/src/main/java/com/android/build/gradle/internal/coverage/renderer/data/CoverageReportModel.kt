@@ -28,7 +28,7 @@ package com.android.build.gradle.internal.coverage.renderer.data
  * @property name The name of the project.
  * @property timeStamp The timestamp of when the report was generated.
  * @property modules A list of all modules included in the report.
- * @property variantCoverages Aggregated coverage information for each variant, summarized across all modules and test suites.
+ * @property testSuiteCoverages Aggregated coverage information for each test suite, summarized across all modules in the project.
  * @property numberOfTestsSuites The total count of test suites that contributed to this report.
  * @property numberOfModules The total count of modules.
  * @property numberOfPackages The total count of packages.
@@ -38,7 +38,7 @@ data class CoverageReport(
   val name: String,
   val timeStamp: String,
   val modules: List<ModuleReport>,
-  val variantCoverages: List<VariantCoverage>,
+  val testSuiteCoverages: List<TestSuiteReportCoverage>,
   val numberOfTestsSuites: Int,
   val numberOfModules: Int,
   val numberOfPackages: Int,

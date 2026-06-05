@@ -117,6 +117,8 @@ class CodeCoverageReportOrchestratorTest {
     assertThat(moduleReport.name).isEqualTo("app")
     assertThat(moduleReport.testSuiteCoverages).hasSize(1)
     assertThat(moduleReport.testSuiteCoverages.first().name).isEqualTo("UnitTest")
+    assertThat(report.testSuiteCoverages).hasSize(1)
+    assertThat(report.testSuiteCoverages.first().name).isEqualTo("UnitTest")
     assertThat(report.numberOfTestsSuites).isEqualTo(1)
     assertThat(report.numberOfModules).isEqualTo(1)
     assertThat(report.numberOfPackages).isEqualTo(1)

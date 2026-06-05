@@ -34,7 +34,7 @@ enum class AgpTestSuiteInput(val key: String) {
   TESTED_APKS("com.android.agp.test.TESTED_APKS"),
 
   /** Alias for [AndroidTestConfigurationKeys.TEST_APKS]. */
-  TESTING_APK("com.android.agp.test.TESTING_APK"),
+  TEST_APKS("com.android.agp.test.TEST_APKS"),
 
   /** Alias for [AndroidTestConfigurationKeys.INSTRUMENTATION_TARGET_PACKAGE_ID]. */
   TESTED_APPLICATION_ID("com.android.junit.engine.tested.application.id"),

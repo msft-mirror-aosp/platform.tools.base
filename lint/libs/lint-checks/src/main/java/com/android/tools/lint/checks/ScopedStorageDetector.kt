@@ -20,6 +20,7 @@ import com.android.SdkConstants.ANDROID_URI
 import com.android.SdkConstants.ATTR_NAME
 import com.android.SdkConstants.TAG_APPLICATION
 import com.android.SdkConstants.TAG_USES_PERMISSION
+import com.android.SdkConstants.TOOLS_URI
 import com.android.SdkConstants.VALUE_TRUE
 import com.android.sdklib.AndroidVersion.VersionCodes
 import com.android.tools.lint.detector.api.Category
@@ -51,6 +52,9 @@ class ScopedStorageDetector : Detector(), XmlScanner {
   override fun getApplicableElements() = listOf(TAG_USES_PERMISSION)
 
   override fun visitElement(context: XmlContext, element: Element) {
+    if (element.getAttributeNS(TOOLS_URI, "node") == "remove") {
+      return
+    }
     val permission = element.getAttributeNodeNS(ANDROID_URI, ATTR_NAME) ?: return
     val value = permission.value
 
