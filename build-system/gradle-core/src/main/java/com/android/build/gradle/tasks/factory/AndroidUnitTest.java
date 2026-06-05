@@ -209,7 +209,8 @@ public abstract class AndroidUnitTest extends Test implements VariantTask, UsesA
                         getModulePath().get(),
                         getTestedVariantName().get(),
                         getTestSuiteName().get(),
-                        getTestSuiteTarget().get());
+                        getTestSuiteTarget().get(),
+                        getLogger());
             }
         }
     }

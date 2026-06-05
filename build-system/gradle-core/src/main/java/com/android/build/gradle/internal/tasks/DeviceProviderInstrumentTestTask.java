@@ -408,7 +408,8 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                     testRunnerFactory.getModulePath().get(),
                     testRunnerFactory.getTestedVariantName().get(),
                     testRunnerFactory.getTestSuiteName().get(),
-                    testRunnerFactory.getTestSuiteTarget().get());
+                    testRunnerFactory.getTestSuiteTarget().get(),
+                    logger);
         }
 
         TestsAnalytics.recordOkInstrumentedTestRun(

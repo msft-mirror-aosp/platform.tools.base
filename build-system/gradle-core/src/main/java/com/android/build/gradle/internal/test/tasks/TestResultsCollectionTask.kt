@@ -23,17 +23,8 @@ import com.android.build.gradle.internal.scope.InternalMultipleArtifactType
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
 import com.android.build.gradle.internal.tasks.NonIncrementalTask
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
-import com.android.build.gradle.tasks.TestSuiteTestTask
-import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_METADATA_FILE
 import com.android.buildanalyzer.common.TaskCategory
 import java.io.File
-import java.math.BigInteger
-import java.security.MessageDigest
-import javax.xml.parsers.DocumentBuilderFactory
-import javax.xml.transform.OutputKeys
-import javax.xml.transform.TransformerFactory
-import javax.xml.transform.dom.DOMSource
-import javax.xml.transform.stream.StreamResult
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
@@ -45,7 +36,6 @@ import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskProvider
-import org.w3c.dom.Node
 
 @CacheableTask
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.TEST)
@@ -67,39 +57,27 @@ abstract class TestResultsCollectionTask : NonIncrementalTask() {
   override fun doTaskAction() {
     val outputDir = this.outputDir.get().asFile
 
-    fun processXml(directory: File) {
+    val copyXmls = { directory: File ->
       if (directory.exists()) {
-        val metadataFiles = directory.listFiles { file -> file.name == TEST_SUITE_METADATA_FILE }
-        if (metadataFiles != null) {
-          check(metadataFiles.isNotEmpty()) { "No metadata.txt found in ${directory.path} for test results XML processing" }
-          val metadata = TestSuiteTestTask.parseMetadata(metadataFiles[0]).toMutableMap()
-          metadata[TestSuiteTestTask.TEST_SUITE_METADATA_MODULE_KEY] = projectPath.get()
-
-          val metadataBytes = metadataFiles[0].readBytes()
-          val digest = MessageDigest.getInstance("MD5").digest(metadataBytes)
-          val hashString = BigInteger(1, digest).toString(16).padStart(32, '0')
-
-          directory
-            .listFiles { file -> file.extension == "xml" }
-            ?.forEach { xmlFile ->
-              val newFileName = "${xmlFile.nameWithoutExtension}_${hashString}.xml"
-              val targetFile = outputDir.resolve(newFileName)
-              injectProperties(xmlFile, metadata, targetFile)
-            }
-        }
+        directory
+          .listFiles { file -> file.extension == "xml" }
+          ?.forEach { xmlFile ->
+            val targetFile = outputDir.resolve(xmlFile.name)
+            xmlFile.copyTo(targetFile, overwrite = true)
+          }
       }
     }
 
     if (testSuiteResults.isPresent) {
-      testSuiteResults.get().forEach { directory -> processXml(directory.asFile) }
+      testSuiteResults.get().forEach { directory -> copyXmls(directory.asFile) }
     }
 
     if (unitTestResults.isPresent) {
-      processXml(unitTestResults.get().asFile)
+      copyXmls(unitTestResults.get().asFile)
     }
 
     if (androidTestResults.isPresent) {
-      processXml(androidTestResults.get().asFile)
+      copyXmls(androidTestResults.get().asFile)
     }
 
     dependentModuleTestResults.asFileTree.forEach { xmlFile ->
@@ -165,43 +143,6 @@ abstract class TestResultsCollectionTask : NonIncrementalTask() {
       task.unitTestResults.set(creationConfig.artifacts.get(InternalArtifactType.UNIT_TEST_RESULTS))
 
       task.androidTestResults.set(creationConfig.artifacts.get(InternalArtifactType.ANDROID_TEST_RESULTS))
-    }
-  }
-
-  fun injectProperties(xmlFile: File, properties: Map<String, String>, targetFile: File) {
-    try {
-      val docFactory = DocumentBuilderFactory.newInstance()
-      val docBuilder = docFactory.newDocumentBuilder()
-      val document = docBuilder.parse(xmlFile)
-
-      val propertiesList = document.getElementsByTagName("properties")
-
-      val propertiesNode: Node
-      if (propertiesList.length == 0) {
-        propertiesNode = document.createElement("properties")
-        document.documentElement.appendChild(propertiesNode)
-      } else {
-        propertiesNode = propertiesList.item(0)
-      }
-      properties.forEach { (key, value) ->
-        val propertyElement = document.createElement("property")
-        propertyElement.setAttribute("name", key)
-        propertyElement.setAttribute("value", value)
-        propertiesNode.appendChild(propertyElement)
-      }
-
-      val transformerFactory = TransformerFactory.newInstance()
-      val transformer = transformerFactory.newTransformer()
-      transformer.setOutputProperty(OutputKeys.INDENT, "yes")
-
-      val source = DOMSource(document)
-      targetFile.parentFile.mkdirs()
-      val result = StreamResult(targetFile)
-
-      transformer.transform(source, result)
-    } catch (e: Exception) {
-      logger.warn("Failed to inject properties into XML test results: ${e.message}")
-      xmlFile.copyTo(targetFile, overwrite = true)
     }
   }
 }

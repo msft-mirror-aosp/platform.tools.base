@@ -50,6 +50,7 @@ import com.android.build.gradle.internal.tasks.getApkFiles
 import com.android.build.gradle.internal.test.BundleTestDataImpl
 import com.android.build.gradle.internal.test.report.ReportType
 import com.android.build.gradle.internal.test.report.TestReport
+import com.android.build.gradle.internal.test.report.processTestReportAggregation
 import com.android.build.gradle.internal.testing.TestData
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.build.gradle.options.BooleanOption
@@ -132,6 +133,8 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
   @get:OutputFile abstract val streamingOutputFile: RegularFileProperty
 
   @get:OutputDirectory abstract val resultsDir: DirectoryProperty
+
+  @get:OutputDirectory @get:Optional abstract val xmlResultsDirectory: DirectoryProperty
 
   @get:OutputDirectory @get:Optional abstract val additionalTestOutputDir: DirectoryProperty
 
@@ -386,9 +389,6 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       val report = TestReport(ReportType.SINGLE_FLAVOR, testResultsDir, htmlOutputDirFile)
       report.generateReport()
 
-      val metadataDir = testResultsDir.also { it.mkdirs() }
-      val metadataFile = File(metadataDir, TEST_SUITE_METADATA_FILE)
-
       val metadataContent =
         """
               $TEST_SUITE_METADATA_MODULE_KEY=${this.modulePath.get()}
@@ -397,7 +397,16 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
               $TEST_SUITE_METADATA_TARGET_KEY=${this.testSuiteTarget.get()}
           """
           .trimIndent()
-      metadataFile.writeText(metadataContent)
+
+      processTestReportAggregation(
+        testResultsDir,
+        xmlResultsDirectory,
+        this.modulePath.get(),
+        this.testedVariantName.get(),
+        this.testSuiteName.get(),
+        this.testSuiteTarget.get(),
+        logger,
+      )
 
       // Also write metadata to coverage directory so that the coverage collection task can identify the suite
       val coverageMetadataDir = this.coverageDir.get().asFile.also { it.mkdirs() }
@@ -614,7 +623,7 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
 
       creationConfig.testedVariant.artifacts
         .use(taskProvider)
-        .wiredWith(TestSuiteTestTask::resultsDir)
+        .wiredWith(TestSuiteTestTask::xmlResultsDirectory)
         .toAppendTo(InternalMultipleArtifactType.TEST_SUITE_RESULTS)
 
       creationConfig.testedVariant.artifacts
@@ -885,6 +894,13 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
         request.atLocation(defaultLocation)
       }
       request.on(InternalArtifactType.ANDROID_TEST_RESULTS)
+
+      if (creationConfig is DeviceTestCreationConfig) {
+        creationConfig.mainVariant.artifacts
+          .use(taskProvider)
+          .wiredWith(TestSuiteTestTask::xmlResultsDirectory)
+          .toAppendTo(InternalMultipleArtifactType.TEST_SUITE_RESULTS)
+      }
     }
   }
 
