@@ -204,6 +204,7 @@ class XMLReportAggregatorTest {
     val aggregator = XMLReportAggregator(files = listOf(inputDir1), projectName = "MyProject")
     aggregator.writeReport(outputDir)
 
+    assertThat(aggregator.getTestCount()).isEqualTo(1)
     assertThat(File(outputDir, "data.js").exists()).isTrue()
     assertThat(File(outputDir, "index.html").exists()).isTrue()
     assertThat(File(outputDir, "script.js").exists()).isTrue()

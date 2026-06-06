@@ -101,6 +101,8 @@ class AndroidConnectedTest(val runWithBuiltInPlatform: Boolean) {
 
   @Test fun androidTest() = util.androidTest()
 
+  @Test fun androidTestWithNewReportFormat() = util.androidTestWithNewReportFormat()
+
   @Test fun androidTestWithOrchestrator() = util.androidTestWithOrchestrator()
 
   @Test fun androidTestWithOrchestratorAndCodeCoverage() = util.androidTestWithOrchestratorAndCodeCoverage()

@@ -53,6 +53,7 @@ import com.android.build.gradle.internal.test.report.CompositeTestResults;
 import com.android.build.gradle.internal.test.report.ReportType;
 import com.android.build.gradle.internal.test.report.TestReport;
 import com.android.build.gradle.internal.test.report.TestReportAggregationUtils;
+import com.android.build.gradle.internal.test.report.XMLReportAggregator;
 import com.android.build.gradle.internal.testing.ConnectedDeviceProvider;
 import com.android.build.gradle.internal.testing.StaticTestData;
 import com.android.build.gradle.internal.testing.TestData;
@@ -398,8 +399,7 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
         File reportOutDir = reportDir;
         FileUtils.cleanOutputDir(reportOutDir);
 
-        TestReport report = new TestReport(ReportType.SINGLE_FLAVOR, resultsOutputDir, reportOutDir);
-        CompositeTestResults results = report.generateReport();
+        int testCount;
 
         if (enableTestReportAggregation) {
             TestReportAggregationUtils.processTestReportAggregation(
@@ -410,13 +410,23 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                     testRunnerFactory.getTestSuiteName().get(),
                     testRunnerFactory.getTestSuiteTarget().get(),
                     logger);
+            XMLReportAggregator aggregator =
+                    new XMLReportAggregator(
+                            List.of(xmlResultsDirectory.get().getAsFile()), projectPath);
+            aggregator.writeReport(reportOutDir);
+            testCount = aggregator.getTestCount();
+        } else {
+            TestReport report =
+                    new TestReport(ReportType.SINGLE_FLAVOR, resultsOutputDir, reportOutDir);
+            CompositeTestResults results = report.generateReport();
+            testCount = results.getTestCount();
         }
 
         TestsAnalytics.recordOkInstrumentedTestRun(
                 dependencies,
                 testRunnerFactory.getExecutionEnum().get(),
                 enableCoverage,
-                results.getTestCount(),
+                testCount,
                 analyticsService);
 
         if (!success) {
