@@ -48,13 +48,13 @@ public class TestWithMismatchDep {
 
     private static final String EXCEPTION_MSG =
             "Cannot find a version of 'com.google.guava:guava' that satisfies the version"
-                    + " constraints:\n"
-                    + "   Dependency path: 'root project :' (debugAndroidTestRuntimeClasspath) -->"
-                    + " 'com.google.guava:guava:19.0'\n"
-                    + "   Constraint path: 'root project :' (debugAndroidTestRuntimeClasspath) -->"
-                    + " 'com.google.guava:guava:{strictly 18.0}' because of the following reason:"
-                    + " version resolved in configuration ':debugRuntimeClasspath' by consistent"
-                    + " resolution\n";
+                + " constraints:\n"
+                + "   Dependency path: 'root project 'testDependency''"
+                + " (debugAndroidTestRuntimeClasspath) --> 'com.google.guava:guava:19.0'\n"
+                + "   Constraint path: 'root project 'testDependency''"
+                + " (debugAndroidTestRuntimeClasspath) --> 'com.google.guava:guava:{strictly 18.0}'"
+                + " because of the following reason: version resolved in configuration"
+                + " ':debugRuntimeClasspath' by consistent resolution\n";
     private static final String ERROR_MSG =
             "Could not resolve all files for configuration ':debugAndroidTestRuntimeClasspath'.\n"
                 + "   > Could not resolve com.google.guava:guava:19.0.\n"
@@ -62,12 +62,12 @@ public class TestWithMismatchDep {
                 + "         root project 'testDependency'\n"
                 + "      > Cannot find a version of 'com.google.guava:guava' that satisfies the"
                 + " version constraints:\n"
-                + "           Dependency path: 'root project :' (debugAndroidTestRuntimeClasspath)"
-                + " --> 'com.google.guava:guava:19.0'\n"
-                + "           Constraint path: 'root project :' (debugAndroidTestRuntimeClasspath)"
-                + " --> 'com.google.guava:guava:{strictly 18.0}' because of the following reason:"
-                + " version resolved in configuration ':debugRuntimeClasspath' by consistent"
-                + " resolution";
+                + "           Dependency path: 'root project 'testDependency''"
+                + " (debugAndroidTestRuntimeClasspath) --> 'com.google.guava:guava:19.0'\n"
+                + "           Constraint path: 'root project 'testDependency''"
+                + " (debugAndroidTestRuntimeClasspath) --> 'com.google.guava:guava:{strictly 18.0}'"
+                + " because of the following reason: version resolved in configuration"
+                + " ':debugRuntimeClasspath' by consistent resolution";
 
     @Test
     public void testMismatchDependencyBreaksTestBuild() throws Exception {

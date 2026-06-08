@@ -27,6 +27,7 @@ import com.android.build.api.dsl.SdkComponents;
 import com.android.build.api.extension.impl.LibraryAndroidComponentsExtensionImpl;
 import com.android.build.api.extension.impl.VariantApiOperationsRegistrar;
 import com.android.build.api.variant.AndroidComponentsExtension;
+import com.android.build.api.variant.AndroidLibraryModuleModel;
 import com.android.build.api.variant.LibraryAndroidComponentsExtension;
 import com.android.build.api.variant.LibraryVariant;
 import com.android.build.api.variant.LibraryVariantBuilder;
@@ -68,9 +69,12 @@ import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Project;
 import org.gradle.api.component.SoftwareComponentFactory;
 import org.gradle.api.configuration.BuildFeatures;
+import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.reflect.TypeOf;
 import org.gradle.build.event.BuildEventsListenerRegistry;
 import org.gradle.features.annotations.BindsProjectType;
+import org.gradle.features.binding.ProjectFeatureApplicationContext;
+import org.gradle.features.binding.ProjectTypeApplyAction;
 import org.gradle.features.binding.ProjectTypeBinding;
 import org.gradle.features.binding.ProjectTypeBindingBuilder;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
@@ -91,24 +95,39 @@ public class LibraryPlugin
                 LibraryCreationConfig,
                 LibraryVariant> {
 
+    static class LibraryProjectTypeApplyAction
+            implements ProjectTypeApplyAction<
+                    LibraryDeclarativeDefinition, AndroidLibraryModuleModel> {
+        private final ObjectFactory objectFactory;
+
+        @Inject
+        public LibraryProjectTypeApplyAction(ObjectFactory objectFactory) {
+            this.objectFactory = objectFactory;
+        }
+
+        @Override
+        public void apply(
+                ProjectFeatureApplicationContext context,
+                LibraryDeclarativeDefinition definition,
+                AndroidLibraryModuleModel buildModel) {
+            DeclarativeServices services = objectFactory.newInstance(DeclarativeServices.class);
+            DeclarativeLibraryExtension extension =
+                    (DeclarativeLibraryExtension)
+                            Objects.requireNonNull(services)
+                                    .getProject()
+                                    .getExtensions()
+                                    .getByName("android");
+
+            DslBindingUtils.copyProperties(definition, extension);
+        }
+    }
+
     static class Binding implements ProjectTypeBinding {
         public void bind(ProjectTypeBindingBuilder builder) {
             builder.bindProjectType(
                             "androidLibrary",
                             LibraryDeclarativeDefinition.class,
-                            (context, definition, buildModel) -> {
-                                DeclarativeServices services =
-                                        context.getObjectFactory()
-                                                .newInstance(DeclarativeServices.class);
-                                DeclarativeLibraryExtension extension =
-                                        (DeclarativeLibraryExtension)
-                                                Objects.requireNonNull(services)
-                                                        .getProject()
-                                                        .getExtensions()
-                                                        .getByName("android");
-
-                                DslBindingUtils.copyProperties(definition, extension);
-                            })
+                            LibraryProjectTypeApplyAction.class)
                     .withUnsafeDefinitionImplementationType(LibraryDeclarativeDefinitionImpl.class)
                     .withUnsafeApplyAction();
         }

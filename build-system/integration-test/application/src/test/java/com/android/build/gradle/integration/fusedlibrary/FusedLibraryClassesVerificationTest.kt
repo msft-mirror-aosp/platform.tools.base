@@ -274,7 +274,7 @@ class FusedLibraryClassesVerificationTest(private val publicationOnlyMode: Boole
 
     build.assertFusedLibAarContainsExpectedClasses(classesFromDirectDependencies)
     build.checkFusedLibReportContents(
-      include = listOf("project :androidLib1", "project :androidLib2"),
+      include = listOf("project ':androidLib1'", "project ':androidLib2'"),
       dependencies = listOf("org.jetbrains.kotlin:kotlin-stdlib:<version>", "org.jetbrains:annotations:<version>"),
     )
   }
@@ -304,7 +304,7 @@ class FusedLibraryClassesVerificationTest(private val publicationOnlyMode: Boole
 
     build.assertFusedLibAarContainsExpectedClasses(classesFromDirectDependencies)
     build.checkFusedLibReportContents(
-      listOf("project :androidLib1", "project :androidLib2", "project :androidLibWithExternalLibDependency"),
+      listOf("project ':androidLib1'", "project ':androidLib2'", "project ':androidLibWithExternalLibDependency'"),
       listOf(
         "org.jetbrains.kotlin:kotlin-stdlib:<version>",
         "org.jetbrains:annotations:<version>",
@@ -351,7 +351,7 @@ class FusedLibraryClassesVerificationTest(private val publicationOnlyMode: Boole
     build.assertFusedLibAarContainsExpectedClasses(classesFromDirectDependencies)
 
     build.checkFusedLibReportContents(
-      include = listOf("com.externaldep.externalaar:externalaar:1.0", "project :androidLib1"),
+      include = listOf("com.externaldep.externalaar:externalaar:1.0", "project ':androidLib1'"),
       dependencies = listOf("org.jetbrains.kotlin:kotlin-stdlib:<version>", "org.jetbrains:annotations:<version>"),
     )
   }
@@ -387,7 +387,7 @@ class FusedLibraryClassesVerificationTest(private val publicationOnlyMode: Boole
     if (publicationOnlyMode) {
       val appRun =
         build.executor.with(BooleanOption.ENABLE_GLOBAL_SYNTHETICS_FOR_ALL_DEBUG_BUILDS, false).expectFailure().run(":app:assembleDebug")
-      appRun.assertErrorContains("No matching variant of project :fusedLib1 was found.")
+      appRun.assertErrorContains("No matching variant of project ':fusedLib1' was found.")
     } else {
       build.executor.with(BooleanOption.ENABLE_GLOBAL_SYNTHETICS_FOR_ALL_DEBUG_BUILDS, false).run(":app:assembleDebug")
       appProject.assertApk(ApkSelector.DEBUG) {
@@ -448,8 +448,8 @@ class FusedLibraryClassesVerificationTest(private val publicationOnlyMode: Boole
     failure.assertErrorContains(
       "Validation failed due to 1 issue(s) with :fusedLib1 dependencies:\n" +
         "   [Require transitive dependency inclusion]:\n" +
-        "    * project :androidLib1 is included in the fused library .aar, " +
-        "however its parent dependency project :androidLib2 was not."
+        "    * project ':androidLib1' is included in the fused library .aar, " +
+        "however its parent dependency project ':androidLib2' was not."
     )
   }
 
@@ -614,7 +614,7 @@ class FusedLibraryClassesVerificationTest(private val publicationOnlyMode: Boole
     build.checkFusedLibReportContents(
       include =
         listOf(
-          "project :my-platform",
+          "project ':my-platform'",
           "bom:external-lib-bom:1.0",
           "com.externaldep.externalaar:externalaar:1.0",
           "com.externaldep:depwithdep:1.0",

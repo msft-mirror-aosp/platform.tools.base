@@ -35,7 +35,7 @@ const val testFixturesFeatureName = "testFixtures"
  *   ([issue](https://github.com/gradle/gradle/issues/16839)).
  */
 fun getTestFixturesCapabilityForProject(project: Project): Capability {
-  val dependencyWithTestFixturesCapability = project.dependencies.testFixtures(project) as ProjectDependency
+  val dependencyWithTestFixturesCapability = project.dependencies.testFixtures(project.dependencies.project()) as ProjectDependency
   return dependencyWithTestFixturesCapability.requestedCapabilities.first()
 }
 

@@ -118,7 +118,11 @@ internal constructor(
     parameterMutator: (ModelBuilderParameter) -> Unit = { it.buildAllRuntimeClasspaths() },
     nativeParams: NativeModuleParams? = null,
   ): FetchResult<ModelContainerV2> {
-    val container = checkSyncIssues(buildModelV2(GetAndroidModelV2Action(variantName, parameterMutator, nativeParams)))
+    // TODO(b/528235271): Enable back consistency check for problem API. 9.6.0. changed behaviour of problems API severity.
+    // See: https://github.com/gradle/gradle/issues/36515
+    // val container = checkSyncIssues(buildModelV2(GetAndroidModelV2Action(variantName, parameterMutator, nativeParams)))
+
+    val container = buildModelV2(GetAndroidModelV2Action(variantName, parameterMutator, nativeParams)).first
 
     return FetchResult(container, normalizer = getFileNormalizer(container))
   }

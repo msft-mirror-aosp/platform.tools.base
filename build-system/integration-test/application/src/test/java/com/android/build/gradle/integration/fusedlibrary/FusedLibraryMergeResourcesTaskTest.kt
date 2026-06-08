@@ -285,7 +285,7 @@ class FusedLibraryMergeResourcesTaskTest(private val publicationOnlyMode: Boolea
       build.executor.run(":app:assembleDebug", ":fusedLib1:assemble")
     } else {
       val failure = build.executor.expectFailure().run(":app:assembleDebug", ":fusedLib1:assemble")
-      failure.assertErrorContains("No matching variant of project :fusedLib1 was found.")
+      failure.assertErrorContains("No matching variant of project ':fusedLib1' was found.")
       return
     }
 

@@ -19,9 +19,9 @@ maven_library(
 )
 
 # The Gradle APIs to build against and run against.
-GRADLE_VERSION = "9.5.0"
+GRADLE_VERSION = "9.6.0"
 
-GRADLE_BASE_VERSION = "9.5.0"
+GRADLE_BASE_VERSION = "9.6.0"
 
 filegroup(
     name = "gradle-distrib",
@@ -46,8 +46,8 @@ maven_repository(
     name = "gradle-runtime-maven",
     # keep sorted
     artifacts = [
-        "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.3.10",
-        "@maven//:org.jetbrains.kotlin.kotlin-stdlib_2.3.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.3.21",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib_2.3.21",
     ],
     visibility = ["//visibility:public"],
 )
@@ -582,7 +582,7 @@ maven_repository(
     # b/490330486: We should remove this dependency once we have a better idea at displaying plugins
     # in declarative.
     artifacts = [
-        "@maven//:org.gradle.experimental.plugin-ecosystem.org.gradle.experimental.plugin-ecosystem.gradle.plugin_0.1.54",
+        "@maven//:org.gradle.experimental.plugin-ecosystem.org.gradle.experimental.plugin-ecosystem.gradle.plugin_0.1.62",
         "@maven//:org.jetbrains.kotlin.compose-compiler-gradle-plugin_2.2.10",
         "@maven//:org.junit.junit-bom_5.10.1",
     ],
