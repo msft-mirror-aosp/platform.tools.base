@@ -464,7 +464,7 @@ public class TestUtils {
     @NonNull
     public static Path getLocalMavenRepoFile(@NonNull String path) {
         if (runningFromBazel()) {
-            return resolveWorkspacePath("../maven/repository/" + path);
+            return resolveWorkspacePath("../+_repo_rules2+maven/repository/" + path);
         } else {
             return resolveWorkspacePath("prebuilts/tools/common/m2/repository/" + path);
         }

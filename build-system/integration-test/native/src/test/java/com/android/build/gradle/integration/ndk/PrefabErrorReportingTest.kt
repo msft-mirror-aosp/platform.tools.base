@@ -26,7 +26,7 @@ import com.android.build.gradle.internal.cxx.prefab.PackageMetadataV1
 import com.android.build.gradle.internal.ndk.Stl
 import com.android.build.gradle.tasks.DEFAULT_PREFAB_VERSION
 import com.android.build.gradle.tasks.reportErrors
-import com.android.testutils.TestUtils.getPrebuiltOfflineMavenRepo
+import com.android.testutils.TestUtils.getLocalMavenRepoFile
 import com.android.testutils.TestUtils.runningFromBazel
 import com.google.common.truth.Truth.assertThat
 import java.io.File
@@ -408,10 +408,7 @@ class PrefabErrorReportingTest {
   private fun Permutation.runPrefab() {
     if (!hasLibrary && !hasLibrary2) return
     workingDir.mkdirs()
-    val maven =
-      if (runningFromBazel()) {
-        File("..").resolve("maven/repository").absoluteFile.canonicalFile
-      } else getPrebuiltOfflineMavenRepo().toFile()
+    val maven = getLocalMavenRepoFile("").toFile()
     val prefabClassPath = maven.resolve("com/google/prefab/cli/$prefabVersion/cli-$prefabVersion-all.jar")
     if (!prefabClassPath.isFile) {
       error("Missing $prefabClassPath")
