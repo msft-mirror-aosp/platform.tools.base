@@ -19,17 +19,34 @@ package com.android.build.gradle.integration.lint;
 import static com.android.testutils.truth.PathSubject.assertThat;
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.options.BooleanOption;
 
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.io.File;
+import java.util.Arrays;
+import java.util.Collection;
 
 /**
  * Test making sure that the SupportAnnotationUsage does not report errors referencing R.type.name
  * resource fields. (Regression test for bug 133326990.)
  */
+@RunWith(Parameterized.class)
 public class LintResourceResolveTest {
+
+    @Parameterized.Parameters(name = "aggregationEnabled={0}")
+    public static Collection<Object[]> data() {
+        return Arrays.asList(new Object[][] {{true}, {false}});
+    }
+
+    private final boolean aggregationEnabled;
+
+    public LintResourceResolveTest(boolean aggregationEnabled) {
+        this.aggregationEnabled = aggregationEnabled;
+    }
 
     @Rule
     public final GradleTestProject project =
@@ -40,18 +57,50 @@ public class LintResourceResolveTest {
     @Test
     public void checkClean() throws Exception {
         // Run twice to catch issues with configuration caching
-        project.executor().run(":app:clean", ":app:lintDebug");
-        project.executor().run(":app:clean", ":app:lintDebug");
+        runLint();
+        runLint();
         project.getBuildResult().assertConfigurationCacheHit();
-        File file = new File(project.getSubproject("app").getProjectDir(), "lint-report.txt");
-        assertThat(file).exists();
-        assertThat(file).contentWithUnixLineSeparatorsIsExactly("No issues found.");
 
-        File sarifFile =
-                new File(
-                        project.getSubproject("app").getBuildDir(),
-                        "reports/lint-results-debug.sarif");
-        assertThat(sarifFile).exists();
-        assertThat(sarifFile).contains("\"$schema\" : \"https://docs.oasis-open.org/sarif/sarif/");
+        if (aggregationEnabled) {
+            assertThat(
+                            new File(
+                                    project.getSubproject("app").getBuildDir(),
+                                    "reports/local-lint-results-debug.txt"))
+                    .contentWithUnixLineSeparatorsIsExactly("No issues found.");
+            assertThat(
+                            new File(
+                                    project.getSubproject("app").getBuildDir(),
+                                    "reports/aggregated-lint-results-debug.txt"))
+                    .contentWithUnixLineSeparatorsIsExactly("No issues found.");
+            assertThat(
+                            new File(
+                                    project.getSubproject("app").getBuildDir(),
+                                    "reports/local-lint-results-debug.sarif"))
+                    .contains("\"$schema\" : \"https://docs.oasis-open.org/sarif/sarif/");
+            assertThat(
+                            new File(
+                                    project.getSubproject("app").getBuildDir(),
+                                    "reports/aggregated-lint-results-debug.sarif"))
+                    .contains("\"$schema\" : \"https://docs.oasis-open.org/sarif/sarif/");
+        } else {
+            assertThat(new File(project.getSubproject("app").getProjectDir(), "lint-report.txt"))
+                    .contentWithUnixLineSeparatorsIsExactly("No issues found.");
+            assertThat(
+                            new File(
+                                    project.getSubproject("app").getBuildDir(),
+                                    "reports/lint-results-debug.sarif"))
+                    .contains("\"$schema\" : \"https://docs.oasis-open.org/sarif/sarif/");
+        }
+    }
+
+    private void runLint() throws Exception {
+        project.executor()
+                .with(BooleanOption.LINT_REPORT_AGGREGATION, aggregationEnabled)
+                .run(":app:clean", ":app:lintDebug");
+        if (aggregationEnabled) {
+            project.executor()
+                    .with(BooleanOption.LINT_REPORT_AGGREGATION, aggregationEnabled)
+                    .run(":app:lintAggregatedDebug");
+        }
     }
 }
