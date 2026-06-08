@@ -2292,7 +2292,7 @@ class GradleDetectorTest : AbstractCheckTest() {
         gradle(
             """
             plugins {
-              id 'com.android.application' version '7.1.0'
+              id 'com.android.application' version '7.2.0'
             }
             """
           )
@@ -2304,7 +2304,7 @@ class GradleDetectorTest : AbstractCheckTest() {
             #Tue Jun 11 09:46:18 PDT 2024
             distributionBase=GRADLE_USER_HOME
             distributionPath=wrapper/dists
-            distributionUrl=https\://services.gradle.org/distributions/gradle-6.0-bin.zip
+            distributionUrl=https\://services.gradle.org/distributions/gradle-7.3.3-bin.zip
             zipStoreBase=GRADLE_USER_HOME
             zipStorePath=wrapper/dists
             """,
@@ -2315,12 +2315,12 @@ class GradleDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        build.gradle:2: Warning: A newer version of com.android.application than 7.1.0 is available: 8.0.2 [AndroidGradlePluginVersion]
-          id 'com.android.application' version '7.1.0'
+        build.gradle:2: Warning: A newer version of com.android.application than 7.2.0 is available: 8.0.2 [AndroidGradlePluginVersion]
+          id 'com.android.application' version '7.2.0'
                                                ~~~~~~~
-        ../gradle/wrapper/gradle-wrapper.properties:4: Warning: A newer version of Gradle than 6.0 is available: 7.6.4 [AndroidGradlePluginVersion]
-        distributionUrl=https\://services.gradle.org/distributions/gradle-6.0-bin.zip
-                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        ../gradle/wrapper/gradle-wrapper.properties:4: Warning: A newer version of Gradle than 7.3.3 is available: 7.6.4 [AndroidGradlePluginVersion]
+        distributionUrl=https\://services.gradle.org/distributions/gradle-7.3.3-bin.zip
+                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 2 warnings
         """
       )
