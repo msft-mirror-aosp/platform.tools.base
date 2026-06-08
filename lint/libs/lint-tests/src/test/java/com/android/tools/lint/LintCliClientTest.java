@@ -38,7 +38,9 @@ import com.android.tools.lint.checks.infrastructure.TestLintTask;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.client.api.LintClient.CompileSdkResult;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.LintModelModuleJavaLibraryProject;
 import com.android.tools.lint.detector.api.Project;
+import com.android.tools.lint.model.LintModelJavaLibrary;
 
 import com.intellij.codeInsight.CustomExceptionHandler;
 
@@ -226,6 +228,18 @@ public class LintCliClientTest extends AbstractCheckTest {
         IAndroidTarget pickedTarget = client.pickBuildTarget(projects);
 
         assertThat(pickedTarget).isEqualTo(target30);
+    }
+
+    public void testPickBuildTargetWithJavaLibraryProject() {
+        LintCliClient client = new LintCliClient(LintClient.CLIENT_UNIT_TESTS);
+
+        LintModelJavaLibrary javaLibrary = mock(LintModelJavaLibrary.class);
+        LintModelModuleJavaLibraryProject javaLibraryProject =
+                new LintModelModuleJavaLibraryProject(
+                        client, new File(""), new File(""), null, javaLibrary);
+
+        assertThat(javaLibraryProject.isAndroidProject()).isFalse();
+        assertThat(client.pickBuildTarget(Arrays.asList(javaLibraryProject))).isNull();
     }
 
     public void testPickBuildTargetDefault() {
