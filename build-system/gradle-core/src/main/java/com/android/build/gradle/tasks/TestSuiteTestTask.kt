@@ -536,10 +536,10 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
             )
           }
 
-          AgpTestSuiteInputParameters.LOCAL_TESTED_APKS -> {
+          AgpTestSuiteInputParameters.RESOURCES_AP_ARCHIVE -> {
             task.engineInputParameters.add(
               AgpTestSuiteInputParameter(
-                AgpTestSuiteInputParameters.LOCAL_TESTED_APKS,
+                AgpTestSuiteInputParameters.RESOURCES_AP_ARCHIVE,
                 creationConfig.artifacts.get(InternalArtifactType.APK_FOR_LOCAL_TEST),
               )
             )

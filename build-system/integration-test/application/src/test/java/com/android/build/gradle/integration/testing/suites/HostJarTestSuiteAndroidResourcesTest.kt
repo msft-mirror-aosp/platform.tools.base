@@ -58,7 +58,7 @@ class HostJarTestSuiteAndroidResourcesTest {
             // Android Resources Suite
             testOptions.suites.create("androidResSuite", AgpTestSuite::class.java) {
               it.useJunitEngine.apply {
-                inputs.add(com.android.build.api.dsl.AgpTestSuiteInputParameters.LOCAL_TESTED_APKS)
+                inputs.add(com.android.build.api.dsl.AgpTestSuiteInputParameters.RESOURCES_AP_ARCHIVE)
                 includeEngines.add("verifying-junit-engine")
                 enginesDependencies.add("com.android.tools.build:gradle-api:${Version.ANDROID_GRADLE_PLUGIN_VERSION}")
                 enginesDependencies.add("org.junit.platform:junit-platform-launcher:1.12.0")
