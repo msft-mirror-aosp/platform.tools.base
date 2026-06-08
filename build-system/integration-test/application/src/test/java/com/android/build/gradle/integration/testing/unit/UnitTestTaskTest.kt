@@ -18,11 +18,13 @@ package com.android.build.gradle.integration.testing.unit
 
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.options.BooleanOption
+import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.truth.Truth.assertThat
+import kotlin.io.path.readText
 import org.junit.Rule
 import org.junit.Test
 
-class UnitTestCachingTest {
+class UnitTestTaskTest {
 
   @get:Rule
   val rule =
@@ -45,9 +47,57 @@ class UnitTestCachingTest {
           """
             .trimIndent(),
         )
+        files.add(
+          "src/test/java/com/example/PassingTest.java",
+          """
+          package com.example;
+          import org.junit.Test;
+          import static org.junit.Assert.assertEquals;
+          public class PassingTest {
+              @Test
+              public void passingTest() {
+                  assertEquals(4, 2 + 2);
+              }
+          }
+          """
+            .trimIndent(),
+        )
       }
       gradleProperties { add(BooleanOption.REPORT_AGGREGATION_SUPPORT, true) }
     }
+
+  @Test
+  fun testLegacyReportFormat() {
+    val build = rule.build
+    build.reconfigureGradleProperties { add(BooleanOption.REPORT_AGGREGATION_SUPPORT, false) }
+
+    build.executor.expectFailure().run(":app:testDebugUnitTest")
+
+    val reportDir = build.androidApplication().buildDir.resolve("reports/tests/testDebugUnitTest")
+    assertThat(reportDir.resolve("index.html")).exists()
+    assertThat(reportDir.resolve("js/report.js")).exists()
+    assertThat(reportDir.resolve("css/base-style.css")).exists()
+    assertThat(reportDir.resolve("data.js")).doesNotExist()
+  }
+
+  @Test
+  fun testNewReportFormat() {
+    val build = rule.build
+
+    build.executor.expectFailure().run(":app:testDebugUnitTest")
+
+    val reportDir = build.androidApplication().buildDir.resolve("reports/tests/testDebugUnitTest")
+    assertThat(reportDir.resolve("index.html")).exists()
+    assertThat(reportDir.resolve("script.js")).exists()
+    assertThat(reportDir.resolve("styles.css")).exists()
+    assertThat(reportDir.resolve("data.js")).exists()
+
+    val dataJsContent = reportDir.resolve("data.js").readText()
+    assertThat(dataJsContent).contains("const TEST_DATA_SOURCE = ")
+    assertThat(dataJsContent).contains("\"projectName\":\":app\"")
+
+    assertThat(reportDir.resolve("js/report.js")).doesNotExist()
+  }
 
   @Test
   fun testUnitTestCachingWithReportAggregation() {

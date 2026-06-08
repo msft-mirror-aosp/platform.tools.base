@@ -39,6 +39,7 @@ import com.android.build.gradle.internal.tasks.UsesAnalytics;
 import com.android.build.gradle.internal.tasks.VariantTask;
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction;
 import com.android.build.gradle.internal.test.report.TestReportAggregationUtils;
+import com.android.build.gradle.internal.test.report.XMLReportAggregator;
 import com.android.build.gradle.internal.utils.HasConfigurableValuesKt;
 import com.android.build.gradle.options.BooleanOption;
 import com.android.build.gradle.options.ProjectOptions;
@@ -211,6 +212,12 @@ public abstract class AndroidUnitTest extends Test implements VariantTask, UsesA
                         getTestSuiteName().get(),
                         getTestSuiteTarget().get(),
                         getLogger());
+
+                File resultsDir = getXmlResultsDirectory().get().getAsFile();
+                File htmlOutputDirFile = getReports().getHtml().getOutputLocation().get().getAsFile();
+                XMLReportAggregator aggregator = new XMLReportAggregator(
+                        List.of(resultsDir), getModulePath().get());
+                aggregator.writeReport(htmlOutputDirFile);
             }
         }
     }
@@ -400,6 +407,9 @@ public abstract class AndroidUnitTest extends Test implements VariantTask, UsesA
                                     .getProjectInfo()
                                     .getTestReportFolder()
                                     .map(it -> it.dir(task.getName()).getAsFile()));
+            htmlReport
+                    .getRequired()
+                    .set(!configOptions.get(BooleanOption.REPORT_AGGREGATION_SUPPORT));
 
             testOptions.applyConfiguration(task);
 
