@@ -20,7 +20,6 @@ import com.android.adblib.AdbLogger
 import com.android.adblib.AdbLoggerFactory
 import com.android.adblib.AdbSession
 import com.android.adblib.tools.createStandaloneSession
-import java.io.File
 import java.util.concurrent.Callable
 import kotlin.system.exitProcess
 import kotlinx.coroutines.runBlocking
@@ -72,9 +71,8 @@ class ListPackagesCommand : Callable<Int> {
   }
 }
 
-@Command(name = "dump-ui", description = ["Dump UI hierarchy"])
-class DumpUiCommand : Callable<Int> {
-
+/** Base class containing common command line options for subcommands that query layout trees. */
+open class UiInspectorDumpCommand : Callable<Int> {
   @Option(names = ["--serial"], required = true, description = ["Device serial number"]) var serial: String = ""
   @Option(names = ["--package"], required = true, description = ["App package name"]) var packageName: String = ""
   @Option(names = ["--include-attributes"], description = ["Include view attributes in the dump"]) var includeAttributes: Boolean = false
@@ -90,126 +88,31 @@ class DumpUiCommand : Callable<Int> {
   )
   var composeInspectorJarPath: String? = null
 
+  override fun call(): Int = EXIT_OK
+}
+
+@Command(name = "dump-ui", description = ["Dump UI hierarchy"])
+class DumpUiCommand : UiInspectorDumpCommand() {
   override fun call(): Int {
     System.err.println("Executing dump-ui for package: $packageName on device: $serial")
-
     val adbSession = sessionFactory()
-
     try {
       runBlocking {
-        val injectionManager = InjectionManager(adbSession, serial, packageName)
-        val port = injectionManager.injectAndAttach()
-
-        CommandSender(host = "localhost", port = port.toInt()).use { commandSender ->
-          // TODO: consider running in parallel
-          createViewInspector(commandSender, injectionManager)
-
-          val localJarProvider =
-            composeInspectorJarPath?.let { path ->
-              { _: String ->
-                val file = File(path)
-                if (!file.exists() || !file.isFile) {
-                  throw IllegalArgumentException("Specified Compose Inspector JAR does not exist: $path")
-                }
-                file
-              }
-            }
-
-          val composeInspectorConnected =
-            if (localJarProvider != null) {
-              createComposeInspector(commandSender, injectionManager, localJarProvider)
-            } else {
-              createComposeInspector(commandSender, injectionManager)
-            }
-
-          dumpUiTree(
-            commandSender = commandSender,
-            includeAttributes = includeAttributes,
-            includeResolutionStack = includeResolutionStack,
-            composeInspectorConnected = composeInspectorConnected,
-            skipSystemComposables = !includeSystemComposables,
-            includeSemantics = includeSemantics,
-          )
-        }
+        doDumpUi(
+          adbSession = adbSession,
+          serial = serial,
+          packageName = packageName,
+          includeAttributes = includeAttributes,
+          includeResolutionStack = includeResolutionStack,
+          includeSystemComposables = includeSystemComposables,
+          includeSemantics = includeSemantics,
+          composeInspectorJarPath = composeInspectorJarPath,
+        )
       }
       return EXIT_OK
-    } catch (e: EmptyViewRootsException) {
-      System.err.println(
-        "Error: No active window roots found for package '$packageName'. Please make sure the app is in the foreground and has visible layout views."
-      )
-      return EXIT_ERROR
     } catch (e: Exception) {
       System.err.println("Error: ${e.message}")
       return EXIT_ERROR
-    }
-  }
-}
-
-private class EmptyViewRootsException : Exception()
-
-/** Dumps the View tree, enriches it with Compose if active, and prints the unified tree to console. */
-internal suspend fun dumpUiTree(
-  commandSender: CommandSender,
-  includeAttributes: Boolean,
-  includeResolutionStack: Boolean,
-  composeInspectorConnected: Boolean,
-  skipSystemComposables: Boolean,
-  includeSemantics: Boolean,
-) {
-  val result = dumpViews(commandSender, includeAttributes, includeResolutionStack)
-  val viewRoots = result.roots
-  if (viewRoots.isEmpty()) {
-    throw EmptyViewRootsException()
-  }
-  val configuration = result.configuration
-  val stringTable = result.stringTable
-
-  if (composeInspectorConnected) {
-    fetchAndMergeComposeTrees(commandSender, viewRoots, includeAttributes, skipSystemComposables, includeSemantics)
-  }
-  configuration?.let { printDeviceConfiguration(it, stringTable) }
-  viewRoots.forEach { printUiTree(it, 0, includeAttributes, includeSemantics) }
-}
-
-/** Queries the Compose Layout Inspector on the device and merges its trees into [viewRoots] in-place. */
-internal suspend fun fetchAndMergeComposeTrees(
-  commandSender: CommandSender,
-  viewRoots: List<UiNode.ViewNode>,
-  includeParameters: Boolean,
-  skipSystemComposables: Boolean,
-  includeSemantics: Boolean,
-) {
-  viewRoots.forEach { viewRoot ->
-    // In the compose inspector, standard parameters and semantics (accessibility properties) are fetched together with a single command.
-    val fetchComposeDetails = includeParameters || includeSemantics
-
-    val composeResult =
-      queryComposeTree(
-        commandSender = commandSender,
-        rootViewId = viewRoot.id,
-        includeParameters = fetchComposeDetails,
-        skipSystemComposables = skipSystemComposables,
-      )
-    if (composeResult != null) {
-      val (roots, stringsMap) = composeResult
-
-      val composeParameters =
-        if (fetchComposeDetails) {
-          queryComposeParameters(commandSender, viewRoot.id, skipSystemComposables)
-        } else {
-          null
-        }
-
-      roots.forEach { composeRoot ->
-        attachComposeTree(
-          viewNode = viewRoot,
-          targetViewId = composeRoot.viewId,
-          composeNodes = composeRoot.nodesList,
-          stringTable = stringsMap,
-          viewsToSkip = composeRoot.viewsToSkipList,
-          parameters = composeParameters,
-        )
-      }
     }
   }
 }
