@@ -101,6 +101,26 @@ suspend fun doDumpUi(
   includeSemantics: Boolean,
   composeInspectorJarPath: String?,
 ) {
+  runWithConnectedInspectors(adbSession, serial, packageName, composeInspectorJarPath) { commandSender, composeInspectorConnected ->
+    dumpUiTree(
+      commandSender = commandSender,
+      includeAttributes = includeAttributes,
+      includeResolutionStack = includeResolutionStack,
+      composeInspectorConnected = composeInspectorConnected,
+      skipSystemComposables = !includeSystemComposables,
+      includeSemantics = includeSemantics,
+    )
+  }
+}
+
+/** Connects to the device, injects inspector agents, starts View and Compose inspectors, and runs [block] with the active connection. */
+private suspend fun runWithConnectedInspectors(
+  adbSession: AdbSession,
+  serial: String,
+  packageName: String,
+  composeInspectorJarPath: String?,
+  block: suspend (CommandSender, Boolean) -> Unit,
+) {
   try {
     val injectionManager = InjectionManager(adbSession, serial, packageName)
     val port = injectionManager.injectAndAttach()
@@ -125,14 +145,7 @@ suspend fun doDumpUi(
           createComposeInspector(commandSender, injectionManager)
         }
 
-      dumpUiTree(
-        commandSender = commandSender,
-        includeAttributes = includeAttributes,
-        includeResolutionStack = includeResolutionStack,
-        composeInspectorConnected = composeInspectorConnected,
-        skipSystemComposables = !includeSystemComposables,
-        includeSemantics = includeSemantics,
-      )
+      block(commandSender, composeInspectorConnected)
     }
   } catch (e: EmptyViewRootsException) {
     throw Exception(
