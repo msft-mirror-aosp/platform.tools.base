@@ -67,18 +67,7 @@ class TestSuiteSourceClasspath(
     return artifacts
   }
 
-  fun getRuntimeClasspathArtifacts(artifactType: AndroidArtifacts.ArtifactType): org.gradle.api.file.FileCollection {
-    val attributesAction = Action { container: AttributeContainer ->
-      container.attribute(AndroidArtifacts.ARTIFACT_TYPE, artifactType.type)
-      artifactType.getAttributes { type, name -> objectFactory.named(type, name) }.addAttributesToContainer(container)
-    }
-
-    return runtimeClasspath.incoming.artifactView { config: ArtifactView.ViewConfiguration ->
-      config.attributes(attributesAction)
-    }.files
-  }
-
-  fun getArtifactCollectionForToolingModel(
+  fun getArtifactCollection(
     configType: ConsumedConfigType,
     artifactType: AndroidArtifacts.ArtifactType,
     configurationFactory: (Configuration) -> Configuration = { it },

@@ -25,7 +25,7 @@ import com.android.build.api.variant.ScopedArtifacts.Scope
 import com.android.build.api.variant.impl.TestSuiteSourceContainer
 import com.android.build.gradle.internal.api.HostJarTestSuiteSourceSet
 import com.android.build.gradle.internal.component.VariantCreationConfig
-import com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType
+import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.MutableTaskContainer
 import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.tasks.creationconfig.JavaCompileCreationConfig
@@ -99,9 +99,12 @@ internal class JavaCompileCreationConfigForTestSuite(
       services
         .fileCollection()
         .from(
-          sourceContainer.suiteSourceClasspath.compileClasspath.asFileTree,
+          sourceContainer.suiteSourceClasspath.getArtifactCollection(
+            AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH,
+            AndroidArtifacts.ArtifactType.CLASSES
+          ).artifactFiles,
           testedVariant.artifacts.forScope(Scope.PROJECT).getFinalArtifacts(ScopedArtifact.POST_COMPILATION_CLASSES),
-          testedVariant.androidResourcesCreationConfig?.getCompiledRClasses(ConsumedConfigType.COMPILE_CLASSPATH),
+          testedVariant.androidResourcesCreationConfig?.getCompiledRClasses(AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH),
         )
 
   override val builtInKotlincOutput: Provider<Directory>?

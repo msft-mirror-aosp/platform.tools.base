@@ -441,7 +441,10 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
           )
           creationConfig.sourceContainers.forEach { sourceContainer ->
             fileCollection.from(
-              sourceContainer.suiteSourceClasspath.getRuntimeClasspathArtifacts(AndroidArtifacts.ArtifactType.CLASSES_JAR)
+              sourceContainer.suiteSourceClasspath.getArtifactCollection(
+                AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
+                AndroidArtifacts.ArtifactType.CLASSES_JAR
+              ).artifactFiles
             )
             fileCollection.from(
               sourceContainer.artifacts.forScope(ScopedArtifacts.Scope.PROJECT).getFinalArtifacts(ScopedArtifact.POST_COMPILATION_CLASSES)
