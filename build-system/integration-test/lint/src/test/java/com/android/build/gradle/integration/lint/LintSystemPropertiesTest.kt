@@ -18,25 +18,49 @@ package com.android.build.gradle.integration.lint
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
+import com.android.build.gradle.options.BooleanOption
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
-class LintSystemPropertiesTest {
+@RunWith(Parameterized::class)
+class LintSystemPropertiesTest(private val aggregateReports: Boolean) {
+
+  companion object {
+    @Parameterized.Parameters(name = "aggregateReports={0}") @JvmStatic fun parameters() = listOf(true, false)
+  }
 
   @get:Rule
   val project: GradleTestProject = GradleTestProject.builder().fromTestApp(HelloWorldApp.forPlugin("com.android.application")).create()
 
   @Test
   fun checkLintNotUpToDate() {
-    project.executor().run(":lintDebug").apply {
-      assertTask(":lintAnalyzeDebug").didWork()
-      assertTask(":lintReportDebug").didWork()
+    val lintAnalyzeTaskName = ":lintAnalyzeDebug"
+    val lintReportTaskName = if (aggregateReports) ":createLocalLintReportDebug" else ":lintReportDebug"
+    val aggregatedReportTaskName = ":createAggregatedLintReportDebug"
+    val tasks = mutableListOf(":lintDebug")
+    if (aggregateReports) {
+      tasks.add(":lintAggregatedDebug")
+    }
+
+    val executor = project.executor().with(BooleanOption.LINT_REPORT_AGGREGATION, aggregateReports)
+
+    executor.run(tasks).apply {
+      assertTask(lintAnalyzeTaskName).didWork()
+      assertTask(lintReportTaskName).didWork()
+      if (aggregateReports) {
+        assertTask(aggregatedReportTaskName).didWork()
+      }
     }
 
     // check that the lint tasks are up-to-date if nothing changes
-    project.executor().run(":lintDebug").apply {
-      assertTask(":lintAnalyzeDebug").wasUpToDate()
-      assertTask(":lintReportDebug").wasUpToDate()
+    executor.run(tasks).apply {
+      assertTask(lintAnalyzeTaskName).wasUpToDate()
+      assertTask(lintReportTaskName).wasUpToDate()
+      if (aggregateReports) {
+        assertTask(aggregatedReportTaskName).wasUpToDate()
+      }
     }
 
     val systemPropertiesWithValues =
@@ -50,13 +74,16 @@ class LintSystemPropertiesTest {
 
     for (systemPropertyWithValue in systemPropertiesWithValues) {
       // check that the lint tasks are not up-to-date if we set the system property
-      project.executor().withArgument("-D$systemPropertyWithValue").run(":lintDebug").apply {
-        assertTask(":lintAnalyzeDebug", withInfo = "-D$systemPropertyWithValue").didWork()
-        assertTask(":lintReportDebug", withInfo = "-D$systemPropertyWithValue").didWork()
+      executor.withArgument("-D$systemPropertyWithValue").run(tasks).apply {
+        assertTask(lintAnalyzeTaskName, withInfo = "-D$systemPropertyWithValue").didWork()
+        assertTask(lintReportTaskName, withInfo = "-D$systemPropertyWithValue").didWork()
+        if (aggregateReports) {
+          assertTask(aggregatedReportTaskName, withInfo = "-D$systemPropertyWithValue").didWork()
+        }
       }
 
       // run build without any system properties before testing the next one
-      project.executor().run(":lintDebug")
+      executor.run(tasks)
     }
 
     val reportTaskSystemProperties = listOf("lint.autofix", "lint.baselines.continue", "lint.html.prefs", "user.home")
@@ -64,13 +91,16 @@ class LintSystemPropertiesTest {
     for (systemProperty in reportTaskSystemProperties) {
       // check that the lint reporting task is not up-to-date if we set the system property
       // (the lint analysis task should be up-to-date)
-      project.executor().withArgument("-D$systemProperty=foo").run(":lintDebug").apply {
-        assertTask(":lintAnalyzeDebug", withInfo = "-D$systemProperty=foo").wasUpToDate()
-        assertTask(":lintReportDebug", withInfo = "-D$systemProperty=foo").didWork()
+      executor.withArgument("-D$systemProperty=foo").run(tasks).apply {
+        assertTask(lintAnalyzeTaskName, withInfo = "-D$systemProperty=foo").wasUpToDate()
+        assertTask(lintReportTaskName, withInfo = "-D$systemProperty=foo").didWork()
+        if (aggregateReports) {
+          assertTask(aggregatedReportTaskName, withInfo = "-D$systemProperty=foo").didWork()
+        }
       }
 
       // run build without any system properties before testing the next one
-      project.executor().run(":lintDebug")
+      executor.run(tasks)
     }
   }
 }
