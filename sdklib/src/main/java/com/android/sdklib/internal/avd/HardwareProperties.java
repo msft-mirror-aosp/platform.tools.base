@@ -398,6 +398,7 @@ public class HardwareProperties {
 
         if (isAiGlasses(d)) {
             props.put(ConfigKey.LCD_TRANSPARENT, "yes");
+            props.put(HW_LED_INDICATORS, "yes");
         } else if (isXrGlasses(d)) {
             props.put(HW_DIMMING_LEVELS, "0.00390625,0.25,0.5,0.75,0.99609375");
         }
