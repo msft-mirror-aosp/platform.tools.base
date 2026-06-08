@@ -48,12 +48,14 @@
             "assembleTaskOutputListingFile": {
               "absolutePath": "{INCLUDED_BUILD(:kotlinMultiplatform)}/build-logic/lib-foo/build/intermediates/apk_ide_redirect_file/androidDeviceTest/createAndroidDeviceTestApkListingFileRedirect/redirect.txt"
             },
-            "generatedAssetFolders": []
+            "generatedAssetFolders": [],
+            "generatedResourceFolders": []
           },
           "defaultSourceSetName": "androidDeviceTest",
           "assembleTaskName": "assembleAndroidDeviceTest",
           "kotlinCompileTaskName": "compileAndroidDeviceTest",
-          "extraClassesFolders": []
+          "extraClassesFolders": [],
+          "generatedSourceFolders": []
         }
       }
     },
@@ -98,7 +100,8 @@
           "defaultSourceSetName": "androidHostTest",
           "assembleTaskName": "assembleAndroidHostTest",
           "kotlinCompileTaskName": "compileAndroidHostTest",
-          "extraClassesFolders": []
+          "extraClassesFolders": [],
+          "generatedSourceFolders": []
         }
       }
     },
@@ -145,12 +148,14 @@
             ],
             "consumerProguardFiles": [],
             "minificationEnabled": false,
-            "generatedAssetFolders": []
+            "generatedAssetFolders": [],
+            "generatedResourceFolders": []
           },
           "defaultSourceSetName": "androidMain",
           "assembleTaskName": "assembleAndroidMain",
           "kotlinCompileTaskName": "compileAndroidMain",
-          "extraClassesFolders": []
+          "extraClassesFolders": [],
+          "generatedSourceFolders": []
         }
       }
     }

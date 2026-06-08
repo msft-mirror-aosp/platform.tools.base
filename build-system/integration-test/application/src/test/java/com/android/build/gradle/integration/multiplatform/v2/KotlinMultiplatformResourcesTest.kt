@@ -83,6 +83,7 @@ class KotlinMultiplatformResourcesTest {
           """
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
+              <string name="generated_string">Generated</string>
               <string name="kmp_lib_string">lib string</string>
           </resources>
           """

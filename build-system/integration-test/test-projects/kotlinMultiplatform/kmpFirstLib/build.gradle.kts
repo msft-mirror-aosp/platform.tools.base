@@ -105,6 +105,18 @@ androidComponents {
             generateAssetTask, GenerateAssetTask::outputDir
         )
 
+        val generateResourcesTask = tasks.register<GenerateResourcesTask>("${variant.name}GenerateResources") {
+            outputDir.set(layout.buildDirectory.dir("generated/res/${variant.name}/"))
+        }
+        variant.sources.res?.addGeneratedSourceDirectory(generateResourcesTask, GenerateResourcesTask::outputDir)
+
+        (variant as? com.android.build.api.variant.HasDeviceTests)?.deviceTests?.forEach { _, deviceTest ->
+            val deviceTestTask = tasks.register<GenerateResourcesTask>("${deviceTest.name}GenerateResources") {
+                outputDir.set(layout.buildDirectory.dir("generated/res/${deviceTest.name}/"))
+            }
+            deviceTest.sources.res?.addGeneratedSourceDirectory(deviceTestTask, GenerateResourcesTask::outputDir)
+        }
+
         variant.manifestPlaceholders.put("exampleAndroidMainPlaceholder", "main")
 
         (variant as? com.android.build.api.variant.HasDeviceTests)?.deviceTests?.forEach { string, test ->
@@ -122,5 +134,17 @@ abstract class GenerateAssetTask : DefaultTask() {
         val d = outputDir.get().file("asset.txt").asFile
         d.parentFile.mkdirs()
         d.writeText("foo")
+    }
+}
+
+abstract class GenerateResourcesTask : DefaultTask() {
+    @get:OutputDirectory
+    abstract val outputDir: DirectoryProperty
+
+    @TaskAction
+    fun run() {
+        val outputFile = outputDir.file("values/generated.xml").get().asFile
+        outputFile.parentFile.mkdirs()
+        outputFile.writeText("<resources><string name=\"generated_string\">Generated</string></resources>")
     }
 }
