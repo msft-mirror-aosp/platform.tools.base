@@ -17,14 +17,22 @@ package com.android.build.gradle.integration.lint
 
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
 /** Integration test that lint can be up-to-date */
-class LintUpToDateTest {
+@RunWith(Parameterized::class)
+class LintUpToDateTest(private val aggregateReports: Boolean) {
+
+  companion object {
+    @Parameterized.Parameters(name = "aggregateReports={0}") @JvmStatic fun parameters() = listOf(true, false)
+  }
 
   @get:Rule val project: GradleTestProject = GradleTestProject.builder().fromTestProject("lintKotlin").create()
 
@@ -37,17 +45,32 @@ class LintUpToDateTest {
 
   @Test
   fun checkLintUpToDate() {
-    getExecutor().run(":app:lintDebug").apply {
-      assertTask(":app:lintReportDebug").didWork()
-      assertTask(":app:lintAnalyzeDebug").didWork()
+    val lintAnalyzeTaskName = ":app:lintAnalyzeDebug"
+    val lintReportTaskName = if (aggregateReports) ":app:createLocalLintReportDebug" else ":app:lintReportDebug"
+    val aggregatedReportTaskName = ":app:createAggregatedLintReportDebug"
+    val tasks = mutableListOf(":app:lintDebug")
+    if (aggregateReports) {
+      tasks.add(":app:lintAggregatedDebug")
+    }
+    val executor = getExecutor().with(BooleanOption.LINT_REPORT_AGGREGATION, aggregateReports)
+
+    executor.run(tasks).apply {
+      assertTask(lintAnalyzeTaskName).didWork()
+      assertTask(lintReportTaskName).didWork()
+      if (aggregateReports) {
+        assertTask(aggregatedReportTaskName).didWork()
+      }
     }
 
     val lintResults = project.file("app/build/reports/lint-results.txt")
     assertThat(lintResults).contains("9 errors, 4 warnings")
 
-    getExecutor().run(":app:lintDebug").apply {
-      assertTask(":app:lintReportDebug").wasUpToDate()
-      assertTask(":app:lintAnalyzeDebug").wasUpToDate()
+    executor.run(tasks).apply {
+      assertTask(lintAnalyzeTaskName).wasUpToDate()
+      assertTask(lintReportTaskName).wasUpToDate()
+      if (aggregateReports) {
+        assertTask(aggregatedReportTaskName).wasUpToDate()
+      }
     }
   }
 
