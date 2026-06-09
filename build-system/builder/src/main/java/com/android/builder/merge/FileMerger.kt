@@ -30,7 +30,7 @@ object FileMerger {
    * @param noCompressPredicate a predicate indicating whether paths should be uncompressed
    */
   @JvmStatic
-  fun merge(inputs: List<FileMergerInput>, output: FileMergerOutput, noCompressPredicate: Predicate<String>) {
+  fun merge(inputs: List<FileMergerInputNonIncremental>, output: FileMergerOutput, noCompressPredicate: Predicate<String>) {
     try {
       output.open()
       output.use {

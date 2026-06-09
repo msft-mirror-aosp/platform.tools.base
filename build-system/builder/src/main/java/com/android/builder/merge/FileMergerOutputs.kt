@@ -38,7 +38,7 @@ object FileMergerOutputs {
         writer.close()
       }
 
-      override fun <T : FileMergerInput> create(path: String, inputs: List<T>, compress: Boolean) {
+      override fun create(path: String, inputs: List<FileMergerInputNonIncremental>, compress: Boolean) {
         merger.merge(
           path,
           {
@@ -49,6 +49,28 @@ object FileMergerOutputs {
           },
         ) {
           writer.create(path, it, compress)
+        }
+      }
+    }
+  }
+
+  @JvmStatic
+  fun fromAlgorithmAndWriter(merger: JavaResZipSourceMerger, writer: SourceMergeOutputWriter): FileMergerOutput {
+    return object : FileMergerOutput {
+      override fun open() {
+        writer.open()
+      }
+
+      override fun close() {
+        writer.close()
+      }
+
+      override fun create(path: String, inputs: List<FileMergerInputNonIncremental>, compress: Boolean) {
+        merger.merge(path, { inputs }) { result ->
+          when (result) {
+            is MergedSourceResult.ZipSource -> writer.create(path, result.source)
+            is MergedSourceResult.InputStream -> writer.create(path, result.stream, compress)
+          }
         }
       }
     }

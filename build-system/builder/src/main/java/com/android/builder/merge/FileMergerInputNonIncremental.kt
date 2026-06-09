@@ -16,22 +16,15 @@
 
 package com.android.builder.merge
 
-open class DelegateFileMergerOutput(private val delegate: FileMergerOutput) : FileMergerOutput {
+import com.android.zipflinger.ZipSource
 
-  var isOpen = false
+interface FileMergerInputNonIncremental : FileMergerInput {
 
-  override fun open() {
-    delegate.open()
-    isOpen = true
-  }
-
-  override fun close() {
-    delegate.close()
-    isOpen = false
-  }
-
-  override fun create(path: String, inputs: List<FileMergerInputNonIncremental>, compress: Boolean) {
-    if (!isOpen) error("File Merger is not open.")
-    delegate.create(path, inputs, compress)
-  }
+  /**
+   * Opens a path as a ZipFlinger source. Open must be called first.
+   *
+   * @param path the path
+   * @return the [com.android.zipflinger.Source] or [com.android.zipflinger.ZipSource] as resolved by the path
+   */
+  fun openAsZipSource(path: String): ZipSource
 }

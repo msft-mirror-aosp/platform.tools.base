@@ -20,9 +20,9 @@ import com.android.tools.build.apkzlib.zip.ZFileOptions
 import com.android.utils.FileUtils
 import com.android.zipflinger.Archive
 import com.android.zipflinger.BytesSource
-import com.android.zipflinger.Source
 import com.android.zipflinger.StableArchive
 import com.android.zipflinger.ZipArchive
+import com.android.zipflinger.ZipSource
 import com.google.common.base.Preconditions
 import com.google.common.io.ByteStreams
 import java.io.File
@@ -103,7 +103,7 @@ object MergeOutputWriters {
         }
 
         if (!f.delete()) {
-          throw UncheckedIOException(IOException("Cannot delete file " + f.getAbsolutePath()))
+          throw UncheckedIOException(IOException("Cannot delete file " + f.absolutePath))
         }
 
         var dir = f.parentFile
@@ -252,10 +252,15 @@ object MergeOutputWriters {
       override fun create(path: String, data: InputStream, compress: Boolean) {
         val source =
           BytesSource(ByteStreams.toByteArray(data), path, if (compress) Deflater.DEFAULT_COMPRESSION else Deflater.NO_COMPRESSION)
-        create(path, source)
+        Preconditions.checkState(archive != null, "Writer not open")
+        try {
+          archive!!.add(source)
+        } catch (e: IOException) {
+          throw UncheckedIOException(e)
+        }
       }
 
-      override fun create(path: String, source: Source) {
+      override fun create(path: String, source: ZipSource) {
         Preconditions.checkState(archive != null, "Writer not open")
         try {
           archive!!.add(source)
@@ -269,7 +274,7 @@ object MergeOutputWriters {
         create(path, data, compress)
       }
 
-      override fun replace(path: String, source: Source) {
+      override fun replace(path: String, source: ZipSource) {
         remove(path)
         create(path, source)
       }

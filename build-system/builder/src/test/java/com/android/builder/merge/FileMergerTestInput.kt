@@ -16,11 +16,14 @@
 
 package com.android.builder.merge
 
+import com.android.zipflinger.ZipSource
 import java.io.ByteArrayInputStream
 import java.io.InputStream
 import org.junit.Assert
+import org.mockito.Mockito.mock
 
-class FileMergerTestInput(private val name: String, private var paths: MutableSet<String> = mutableSetOf<String>()) : FileMergerInput {
+class FileMergerTestInput(private val name: String, private var paths: MutableSet<String> = mutableSetOf<String>()) :
+  FileMergerInputNonIncremental {
 
   private val pathData = mutableMapOf<String, ByteArray>()
   private var open = false
@@ -28,10 +31,6 @@ class FileMergerTestInput(private val name: String, private var paths: MutableSe
   fun add(path: String) {
     paths.add(path)
     pathData[path] = byteArrayOf()
-  }
-
-  fun setData(path: String, data: ByteArray) {
-    pathData[path] = data
   }
 
   override fun getAllPaths(): Set<String> = paths
@@ -45,8 +44,12 @@ class FileMergerTestInput(private val name: String, private var paths: MutableSe
     return ByteArrayInputStream(data)
   }
 
+  override fun openAsZipSource(path: String): ZipSource {
+    Assert.assertTrue(open)
+    return mock(ZipSource::class.java)
+  }
+
   override fun open() {
-    Assert.assertFalse(open)
     open = true
   }
 
