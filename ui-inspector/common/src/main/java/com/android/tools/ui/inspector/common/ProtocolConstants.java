@@ -14,15 +14,19 @@
  * limitations under the License.
  */
 
-package com.android.tools.ui.inspector.common
+package com.android.tools.ui.inspector.common;
 
 /** Shared constants and identifiers for the UI Inspector communication protocol. */
-object ProtocolConstants {
-  const val SOCKET_NAME_PREFIX = "ui_inspector_"
-  const val VIEW_INSPECTOR_ID = "ui.inspector.inspectors.view.inspector"
-  const val COMPOSE_INSPECTOR_ID = "layoutinspector.compose.inspection"
-  const val COMPOSE_UI_LIBRARY_ID = "androidx.compose.ui:ui"
+public final class ProtocolConstants {
+    private ProtocolConstants() {}
 
-  /* Returns the unique socket name for a given process ID. */
-  fun getSocketName(pid: String): String = "$SOCKET_NAME_PREFIX$pid"
+    public static final String SOCKET_NAME_PREFIX = "ui_inspector_";
+    public static final String VIEW_INSPECTOR_ID = "ui.inspector.inspectors.view.inspector";
+    public static final String COMPOSE_INSPECTOR_ID = "layoutinspector.compose.inspection";
+    public static final String COMPOSE_UI_LIBRARY_ID = "androidx.compose.ui:ui";
+
+    /* Returns the unique socket name for a given process ID. */
+    public static String getSocketName(String pid) {
+        return SOCKET_NAME_PREFIX + pid;
+    }
 }
