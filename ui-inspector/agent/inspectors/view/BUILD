@@ -52,10 +52,21 @@ java_library(
     visibility = ["//tools/base/ui-inspector:__subpackages__"],
 )
 
+merge_jars(
+    name = "view_inspector_unjarjared",
+    out = "view_inspector_unjarjared.jar",
+    jars = [
+        ":view_inspector",
+        "//tools/base/ui-inspector/common",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm",
+    ],
+)
+
 java_jarjar(
     name = "view_inspector_jarjared",
-    srcs = [":view_inspector"],
-    rules = "//tools/base/ui-inspector/agent/payload:jarjar_rules.txt",
+    srcs = [":view_inspector_unjarjared"],
+    rules = "jarjar_rules.txt",
 )
 
 dex_library(
