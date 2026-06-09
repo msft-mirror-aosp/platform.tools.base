@@ -44,6 +44,11 @@ public class Bundle {
         myMap.put(key, value);
     }
 
+    public String getString(String key) {
+        Object o = myMap.get(key);
+        return (o instanceof String) ? (String) o : null;
+    }
+
     public int getInt(String key, int defaultValue) {
         if (myMap.containsKey(key) && myMap.get(key) instanceof Integer) {
             return (Integer) myMap.get(key);

@@ -41,7 +41,9 @@ class AmInstrumentationRunner(
   private val deviceSerial: String,
   private val instrumentationRunnerClass: String,
   private val testPackageId: String,
+  private val instrumentationTargetPackageId: String,
   private val executionMode: String? = null,
+  private val jvmtiCodeCoverageAgentPathProvider: () -> Pair<String, String>? = { null },
   private val instrumentationArgs: Map<String, String> = emptyMap(),
   private val listeners: Set<AmInstrumentationListener> = emptySet(),
   private val logger: Logger = Logger.getLogger(AmInstrumentationRunner::class.java.name),
@@ -81,12 +83,36 @@ class AmInstrumentationRunner(
   }
 
   private fun getAmInstrumentCmd(): List<String> {
-    return AmInstrumentCommandBuilder()
-      .setAdbPath(adb.absolutePath)
-      .setDeviceSerial(deviceSerial)
-      .setInstrumentationRunner(testPackageId, instrumentationRunnerClass)
-      .setExecutionMode(executionMode)
-      .addInstrumentationArgs(instrumentationArgs)
-      .build()
+    val builder =
+      AmInstrumentCommandBuilder()
+        .setAdbPath(adb.absolutePath)
+        .setDeviceSerial(deviceSerial)
+        .setInstrumentationRunner(testPackageId, instrumentationRunnerClass)
+        .setExecutionMode(executionMode)
+        .addInstrumentationArgs(instrumentationArgs)
+
+    jvmtiCodeCoverageAgentPathProvider()?.let { (agentPath, dataDir) ->
+      // The agent expects options in the format: "package_name,prefix,data_dir"
+      val targetPackage = instrumentationArgs["targetPackage"] ?: instrumentationTargetPackageId
+      val prefix = targetPackage.replace(".", "/")
+      val options = "$testPackageId,$prefix,$dataDir"
+      val config = "$agentPath=$options"
+
+      // Append our Java-API attacher to the listener list.
+      val existingListeners = instrumentationArgs["listener"]
+      val updatedListeners =
+        if (existingListeners.isNullOrBlank()) {
+          "com.android.tools.coverage.CoverageAgentAttacher"
+        } else {
+          "$existingListeners,com.android.tools.coverage.CoverageAgentAttacher"
+        }
+
+      builder.addInstrumentationArg("listener", updatedListeners)
+
+      // Pass the configuration for the Java API attacher.
+      builder.addInstrumentationArg("coverage-agent-config", config)
+    }
+
+    return builder.build()
   }
 }

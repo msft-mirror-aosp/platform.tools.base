@@ -39,7 +39,7 @@ class HitsExtractor {
 
   // Initialize the extractor. This must be called during agent attachment
   // while a valid Java stack is present to resolve and cache class handles.
-  void Initialize(JNIEnv* jni, const std::string& package_name);
+  void Initialize(JNIEnv* jni, const std::string& data_dir);
 
   // Extracts the hits array from CoverageTracker and writes it to disk.
   // This uses cached handles for safety during VM shutdown.
@@ -55,7 +55,7 @@ class HitsExtractor {
   HitsExtractor(const HitsExtractor&) = delete;
   HitsExtractor& operator=(const HitsExtractor&) = delete;
 
-  std::string package_name_;
+  std::string data_dir_;
   jclass tracker_class_ = nullptr;
   jmethodID get_hits_method_ = nullptr;
   bool initialized_ = false;

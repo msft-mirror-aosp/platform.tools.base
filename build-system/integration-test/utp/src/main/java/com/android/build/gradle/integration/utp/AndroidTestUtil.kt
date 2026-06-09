@@ -165,6 +165,8 @@ class AndroidTestUtil(
     val result = executor.with(BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE, true).withEnableInfoLogging(true).run(testTaskName)
 
     result.assertOutputContains("Agent extraction VERIFIED")
+    result.assertOutputContains("-e listener com.android.tools.coverage.CoverageAgentAttacher")
+    result.assertOutputContains("-e coverage-agent-config")
   }
 
   fun androidTestWithTestFailures() {

@@ -46,8 +46,8 @@ class MetadataCollector {
   // Global singleton instance used by the JVMTI callbacks.
   static MetadataCollector& Instance();
 
-  // Initialize the collector with the application's package name.
-  void Initialize(const std::string& package_name);
+  // Initialize the collector with the application's data directory.
+  void Initialize(const std::string& data_dir);
 
   // Starts a new class metadata entry and returns a pointer to it.
   // The pointer remains valid until the collector is destroyed.
@@ -82,7 +82,7 @@ class MetadataCollector {
   MetadataCollector& operator=(const MetadataCollector&) = delete;
 
   mutable std::mutex mutex_;
-  std::string package_name_;
+  std::string data_dir_;
   proto::CoverageMetadata metadata_;
   bool initialized_ = false;
 };

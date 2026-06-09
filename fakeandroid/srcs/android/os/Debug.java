@@ -40,4 +40,6 @@ public class Debug {
     public static String getRuntimeStat(String stat) {
         return stat;
     }
+
+    public static void attachJvmtiAgent(String library, String options, ClassLoader classLoader) {}
 }

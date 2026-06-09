@@ -49,12 +49,21 @@ class AndroidTestEngineDescriptor(uniqueId: UniqueId) :
       // with its internal device model.
       val deviceUniqueId = uniqueId.append("device", deviceSerial)
       val deviceDisplayName = if (deviceId != defaultDisplayName) "$deviceId ($defaultDisplayName)" else defaultDisplayName
+
+      val extractor = CoverageAgentExtractor(adbController, deviceSerial)
       val deviceDescriptor =
         AndroidDeviceDescriptor(
           uniqueId = deviceUniqueId,
           deviceSerial = deviceSerial,
           deviceId = deviceId,
           deviceDisplayName = deviceDisplayName,
+          jvmtiCodeCoverageAgentPathProvider = {
+            if (config.coverageType == AndroidTestConfiguration.CoverageType.ON_THE_FLY) {
+              extractor.extractAgentIfNeeded(config.testPackageId, config.instrumentationTargetPackageId)
+            } else {
+              null
+            }
+          },
         )
       deviceDescriptor.setParent(this)
       dynamicTestExecutor.execute(deviceDescriptor)

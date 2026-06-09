@@ -32,12 +32,12 @@ MetadataCollector& MetadataCollector::Instance() {
   return *instance;
 }
 
-void MetadataCollector::Initialize(const std::string& package_name) {
+void MetadataCollector::Initialize(const std::string& data_dir) {
   std::lock_guard<std::mutex> lock(mutex_);
   if (initialized_) {
     return;
   }
-  package_name_ = package_name;
+  data_dir_ = data_dir;
   metadata_.set_version(1);
   initialized_ = true;
 }
@@ -79,19 +79,12 @@ void MetadataCollector::AddBlock(
 
 bool MetadataCollector::WriteToDisk() const {
   std::lock_guard<std::mutex> lock(mutex_);
-  if (!initialized_ || package_name_.empty()) {
+  if (!initialized_ || data_dir_.empty()) {
     Log::E("MetadataCollector not initialized.");
     return false;
   }
 
-  // TODO: Hardcoding /data/data/ fails for secondary users or Work Profiles
-  // (e.g., /data/user/10/). We should resolve the true data directory via JNI
-  // by calling Context.getCodeCacheDir() on the application context.
-  //
-  // Implementation of this TODO will also enable host-side unit testing of
-  // this method via JNI mocking.
-  std::string path =
-      "/data/data/" + package_name_ + "/code_cache/coverage_metadata.pb";
+  std::string path = data_dir_ + "/code_cache/coverage_metadata.pb";
 
   // Use a temporary file for atomic write.
   std::string tmp_path = path + ".tmp";

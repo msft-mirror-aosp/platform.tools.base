@@ -82,6 +82,7 @@ class AmInstrumentationRunnerTest {
         deviceSerial = deviceSerial,
         instrumentationRunnerClass = runnerClass,
         testPackageId = targetPackage,
+        instrumentationTargetPackageId = targetPackage,
         logger = mockLogger,
         processBuilder = { command ->
           capturedCommand = command
@@ -129,6 +130,7 @@ class AmInstrumentationRunnerTest {
         deviceSerial = deviceSerial,
         instrumentationRunnerClass = runnerClass,
         testPackageId = targetPackage,
+        instrumentationTargetPackageId = targetPackage,
         executionMode = "androidx_test_orchestrator", // Test case-insensitivity
         logger = mockLogger,
         processBuilder = { command ->
@@ -188,6 +190,7 @@ class AmInstrumentationRunnerTest {
         deviceSerial = deviceSerial,
         instrumentationRunnerClass = runnerClass,
         testPackageId = targetPackage,
+        instrumentationTargetPackageId = targetPackage,
         executionMode = "ANDROID_TEST_ORCHESTRATOR",
         logger = mockLogger,
         processBuilder = { command ->
@@ -238,6 +241,7 @@ class AmInstrumentationRunnerTest {
         deviceSerial = deviceSerial,
         instrumentationRunnerClass = runnerClass,
         testPackageId = targetPackage,
+        instrumentationTargetPackageId = targetPackage,
         instrumentationArgs = mapOf("clearPackageData" to "true", "useTestStorageService" to "false"),
         logger = mockLogger,
         processBuilder = { command ->
@@ -268,5 +272,52 @@ class AmInstrumentationRunnerTest {
         "$targetPackage/$runnerClass",
       )
       .inOrder()
+  }
+
+  @Test
+  fun runAmInstrumentCommand_configuresJavaApiAttacher() {
+    val deviceSerial = "test-device-123"
+    val testPackage = "com.example.app.test"
+    val targetPackage = "com.example.app"
+    val agentPath = "/data/user/0/com.example.app.test/coverage_agent.so"
+    val dataDir = "/data/user/0/com.example.app.test"
+
+    val mockAmProcess = mock<Process>()
+    whenever(mockAmProcess.inputStream).thenReturn("INSTRUMENTATION_CODE: -1".byteInputStream())
+    whenever(mockAmProcess.errorStream).thenReturn("".byteInputStream())
+    whenever(mockAmProcess.waitFor()).thenReturn(0)
+
+    val commands = mutableListOf<List<String>>()
+    val runner =
+      AmInstrumentationRunner(
+        adb = fakeAdb,
+        deviceSerial = deviceSerial,
+        instrumentationRunnerClass = "Runner",
+        testPackageId = testPackage,
+        instrumentationTargetPackageId = targetPackage,
+        jvmtiCodeCoverageAgentPathProvider = { Pair(agentPath, dataDir) },
+        logger = mockLogger,
+        processBuilder = { command ->
+          commands.add(command)
+          val pb = mock<ProcessBuilder>()
+          whenever(pb.start()).thenReturn(if (command.contains("instrument")) mockAmProcess else mock<Process>())
+          pb
+        },
+      )
+
+    runner.runAmInstrumentCommand()
+
+    // 1. Verify host-side polling/attachment is GONE.
+    assertThat(commands.any { it.contains("pidof") }).isFalse()
+    assertThat(commands.any { it.contains("attach-agent") }).isFalse()
+
+    // 2. Verify instrumentation command includes Java-API config.
+    val instrumentCmd = commands.find { it.contains("instrument") }
+    assertThat(instrumentCmd).isNotNull()
+    assertThat(instrumentCmd).contains("-e")
+    assertThat(instrumentCmd).contains("listener")
+    assertThat(instrumentCmd).contains("com.android.tools.coverage.CoverageAgentAttacher")
+    assertThat(instrumentCmd).contains("coverage-agent-config")
+    assertThat(instrumentCmd).contains("$agentPath=$testPackage,com/example/app,$dataDir")
   }
 }

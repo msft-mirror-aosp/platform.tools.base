@@ -32,11 +32,11 @@ HitsExtractor& HitsExtractor::Instance() {
   return *instance;
 }
 
-void HitsExtractor::Initialize(JNIEnv* jni, const std::string& package_name) {
+void HitsExtractor::Initialize(JNIEnv* jni, const std::string& data_dir) {
   if (initialized_) {
     return;
   }
-  package_name_ = package_name;
+  data_dir_ = data_dir;
 
   // Resolve and cache the handles to CoverageTracker.
   // This must be done during attachment while a valid ClassLoader is active
@@ -91,7 +91,7 @@ std::string HitsExtractor::PackHits(const jboolean* hits, jsize len,
 }
 
 bool HitsExtractor::ExtractAndWrite(JNIEnv* jni) const {
-  if (!initialized_ || package_name_.empty()) {
+  if (!initialized_ || data_dir_.empty()) {
     Log::E("HitsExtractor not initialized or handles missing.");
     return false;
   }
@@ -133,9 +133,7 @@ bool HitsExtractor::ExtractAndWrite(JNIEnv* jni) const {
   hits_proto.set_version(1);
   hits_proto.set_hit_mask(bitmask);
 
-  // TODO: Hardcoding /data/data/ fails for secondary users or Work Profiles.
-  std::string path =
-      "/data/data/" + package_name_ + "/code_cache/coverage_hits.pb";
+  std::string path = data_dir_ + "/code_cache/coverage_hits.pb";
   std::string tmp_path = path + ".tmp";
 
   std::ofstream out(tmp_path, std::ios::binary | std::ios::trunc);

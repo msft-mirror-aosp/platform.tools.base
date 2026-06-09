@@ -46,19 +46,19 @@ void JNICALL OnVMDeath(jvmtiEnv* jvmti_env, JNIEnv* jni_env) {
   coverage::MetadataCollector::Instance().WriteToDisk();
 }
 
-bool WriteAndLoadRuntimeJar(jvmtiEnv* jvmti, const std::string& package_name) {
-  if (package_name.empty()) {
-    coverage::Log::E("Failed to determine package name from attach options.");
+bool WriteAndLoadRuntimeJar(jvmtiEnv* jvmti, const std::string& data_dir) {
+  if (data_dir.empty()) {
+    coverage::Log::E("Failed to determine data directory from attach options.");
     return false;
   }
 
-  // TODO: Hardcoding /data/data/ fails for secondary users or Work Profiles
-  // (e.g., /data/user/10/). We should resolve the true data directory via JNI
-  // by calling Context.getCodeCacheDir() on the application context.
-  std::string code_cache_dir = "/data/data/" + package_name + "/code_cache";
+  std::string code_cache_dir = data_dir + "/code_cache";
+
   // Ensure the code_cache directory exists.
-  // S_IRWXU ensures read, write, and execute permissions for the user.
-  mkdir(code_cache_dir.c_str(), S_IRWXU);
+  if (mkdir(code_cache_dir.c_str(), S_IRWXU) != 0 && errno != EEXIST) {
+    coverage::Log::E("Failed to create code_cache directory %s: %s",
+                     code_cache_dir.c_str(), strerror(errno));
+  }
 
   std::string jar_path = code_cache_dir + "/coverage_rt.jar";
   std::string tmp_path = jar_path + ".tmp";
@@ -128,27 +128,34 @@ extern "C" JNIEXPORT jint JNICALL Agent_OnAttach(JavaVM* vm, char* options,
     return JNI_OK;
   }
 
-  // Parse the package name and inclusion prefixes from the options string.
-  // We expect AGP to pass: "package_name,prefix1:prefix2"
-  // e.g., "com.example.app,com/example/app:com/example/lib"
+  // Parse the package name, inclusion prefixes and data directory from the
+  // options string. We expect AGP to pass:
+  // "package_name,prefix1:prefix2,data_dir" e.g.,
+  // "com.example.app,com/example/app,/data/user/0/com.example.app.test"
   std::string options_str = (options != nullptr) ? options : "";
   std::string package_name;
   std::string inclusion_prefixes;
+  std::string data_dir;
 
-  size_t comma_pos = options_str.find(',');
-  if (comma_pos != std::string::npos) {
-    package_name = options_str.substr(0, comma_pos);
-    inclusion_prefixes = options_str.substr(comma_pos + 1);
+  size_t first_comma = options_str.find(',');
+  size_t last_comma = options_str.find_last_of(',');
+
+  if (first_comma != std::string::npos && last_comma != std::string::npos &&
+      first_comma != last_comma) {
+    package_name = options_str.substr(0, first_comma);
+    inclusion_prefixes =
+        options_str.substr(first_comma + 1, last_comma - first_comma - 1);
+    data_dir = options_str.substr(last_comma + 1);
   } else {
     coverage::Log::E(
-        "Invalid attach options format. Expected 'package_name,prefixes'.");
+        "Invalid attach options format. Expected "
+        "'package_name,prefixes,data_dir'.");
     return JNI_OK;
   }
 
   // 2. Request necessary capabilities
   jvmtiCapabilities caps = {};
   caps.can_retransform_classes = 1;
-  caps.can_retransform_any_class = 1;
   caps.can_tag_objects = 1;
 
   jvmtiError error = jvmti_env->AddCapabilities(&caps);
@@ -161,13 +168,13 @@ extern "C" JNIEXPORT jint JNICALL Agent_OnAttach(JavaVM* vm, char* options,
   // 3. Initialize the agent components (Run once)
   if (g_instrumenter == nullptr) {
     // a. Load the CoverageTracker into the Bootstrap ClassLoader
-    if (!WriteAndLoadRuntimeJar(jvmti_env, package_name)) {
+    if (!WriteAndLoadRuntimeJar(jvmti_env, data_dir)) {
       return JNI_OK;
     }
 
     // b. Initialize metadata collector and hits extractor
-    coverage::MetadataCollector::Instance().Initialize(package_name);
-    coverage::HitsExtractor::Instance().Initialize(jni_env, package_name);
+    coverage::MetadataCollector::Instance().Initialize(data_dir);
+    coverage::HitsExtractor::Instance().Initialize(jni_env, data_dir);
 
     // c. Initialize instrumenter and register hooks
     g_instrumenter = new coverage::Instrumenter(jvmti_env, inclusion_prefixes);
