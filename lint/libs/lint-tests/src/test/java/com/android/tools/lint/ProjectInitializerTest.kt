@@ -5945,6 +5945,42 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
       )
   }
 
+  @Test
+  fun testAarZipSlip() {
+    val root = temp.newFolder().canonicalFile.absoluteFile
+    val aarFile = temp.newFile("evil.aar")
+
+    java.util.zip.ZipOutputStream(java.io.FileOutputStream(aarFile)).use { zos ->
+      val entry = java.util.zip.ZipEntry("../evil.txt")
+      zos.putNextEntry(entry)
+      zos.write("evil".toByteArray())
+      zos.closeEntry()
+    }
+
+    @Language("XML")
+    val descriptor =
+      """
+      <project>
+      <sdk dir='${TestUtils.getSdk()}'/>
+      <root dir="$root" />
+      <module name="M" android="true" library="false">
+        <aar file="$aarFile" />
+      </module>
+      </project>
+      """
+        .trimIndent()
+
+    val descriptorFile = File(root, "project.xml")
+    Files.asCharSink(descriptorFile, Charsets.UTF_8).write(descriptor)
+
+    try {
+      MainTest.checkDriver("", "", ERRNO_SUCCESS, arrayOf("--project", descriptorFile.path), null, null)
+      fail("Expected ZipException")
+    } catch (e: Exception) {
+      assertThat(e.message).contains("resolves outside")
+    }
+  }
+
   @After
   fun tearDown() {
     UastEnvironment.disposeApplicationEnvironment()
