@@ -82,6 +82,10 @@ class InjectionManager(
   private val serviceJarPath: Path = Paths.get(HOST_SERVICE_JAR_PATH),
   private val payloadJarPath: Path = Paths.get(HOST_PAYLOAD_JAR_PATH),
 ) {
+  init {
+    validateSerial(serial)
+    validatePackageName(packageName)
+  }
 
   private val deviceSelector = DeviceSelector.fromSerialNumber(serial)
 
@@ -295,5 +299,18 @@ class InjectionManager(
       throw IllegalStateException("Command '$command' failed with exit code ${result.exitCode}. Stderr: ${result.stderr}")
     }
     return result
+  }
+
+  companion object {
+    private val PACKAGE_NAME_REGEX = Regex("^[a-zA-Z0-9._]+$")
+    private val SERIAL_REGEX = Regex("^[a-zA-Z0-9.:_-]+$")
+
+    private fun validatePackageName(packageName: String) {
+      require(packageName.length <= 255 && PACKAGE_NAME_REGEX.matches(packageName)) { "Invalid package name: $packageName" }
+    }
+
+    private fun validateSerial(serial: String) {
+      require(SERIAL_REGEX.matches(serial)) { "Invalid serial number: $serial" }
+    }
   }
 }

@@ -24,6 +24,7 @@ import com.android.adblib.testing.FakeAdbSession
 import com.google.common.truth.Truth.assertThat
 import java.nio.file.Path
 import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertThrows
 import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Rule
@@ -253,5 +254,33 @@ class InjectionManagerTest {
     } catch (e: IllegalStateException) {
       assertThat(e.message).contains("The application '$packageName' is not running on the device. Please start the app and try again.")
     }
+  }
+
+  @Test
+  fun testInvalidPackageName_Throws() {
+    val exception =
+      assertThrows(IllegalArgumentException::class.java) {
+        InjectionManager(testSession, deviceSerial, "com.example; id", agentPathResolver, dummyJar, dummyPayload)
+      }
+    assertThat(exception.message).contains("Invalid package name")
+  }
+
+  @Test
+  fun testLongPackageName_Throws() {
+    val longPackageName = "a".repeat(256)
+    val exception =
+      assertThrows(IllegalArgumentException::class.java) {
+        InjectionManager(testSession, deviceSerial, longPackageName, agentPathResolver, dummyJar, dummyPayload)
+      }
+    assertThat(exception.message).contains("Invalid package name")
+  }
+
+  @Test
+  fun testInvalidSerial_Throws() {
+    val exception =
+      assertThrows(IllegalArgumentException::class.java) {
+        InjectionManager(testSession, "serial; rm -rf /", packageName, agentPathResolver, dummyJar, dummyPayload)
+      }
+    assertThat(exception.message).contains("Invalid serial number")
   }
 }
