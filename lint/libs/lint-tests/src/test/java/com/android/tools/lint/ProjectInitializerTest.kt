@@ -66,6 +66,7 @@ import com.intellij.psi.PsiField
 import com.intellij.psi.PsiMethod
 import com.intellij.util.asSafely
 import java.io.File
+import java.net.URI
 import kotlin.io.path.isRegularFile
 import kotlin.io.path.readText
 import kotlin.streams.toList
@@ -2580,6 +2581,104 @@ class ProjectInitializerTest {
                   assertEquals(1, expectSymbols.size)
                   assertTrue(expectSymbols[0].isExpect)
                 }
+              }
+            }
+          }
+          else -> {}
+        }
+      },
+    )
+  }
+
+  @Test
+  fun testExpectActualWithJustJvmAndJvmOverloads() {
+    val root = temp.newFolder().canonicalFile.absoluteFile
+
+    val resource = JvmOverloads::class.java.getResource("/kotlin/jvm/JvmOverloads.class")!!
+    val jarUriStr = resource.path.substringBeforeLast("!")
+    val uri = URI.create(jarUriStr)
+
+    val projects =
+      lint()
+        .files(
+          xml(
+              "project.xml",
+              """
+              <project>
+                <module name="common" library="true" android="false" compute_source_roots="false" kotlinPlatforms="JVM [1.8]">
+                  <src file="common/com/example/common.kt"/>
+                  <jar file="${uri.path}" />
+                </module>
+                <module name="desktop" library="true" android="false" compute_source_roots="false" kotlinPlatforms="JVM [1.8]">
+                  <src file="desktop/com/example/desktop.kt"/>
+                  <dep module="common" kind="dependsOn" />
+                  <jar file="${uri.path}" />
+                </module>
+              </project>
+              """,
+            )
+            .indented(),
+          kotlin(
+              "common/com/example/common.kt",
+              """
+              package com.example
+
+              expect class Foo @JvmOverloads constructor(p1: Int = 0, p2: Int = 0, p3: Int = 0) {
+                @JvmOverloads
+                fun foo(p1: Int = 0, p2: Int = 0, p3: Int = 0)
+              }
+              """,
+            )
+            .indented(),
+          kotlin(
+              "desktop/com/example/desktop.kt",
+              """
+              package com.example
+
+              actual class Foo @JvmOverloads actual constructor(p1: Int, p2: Int, p3: Int) {
+                // The default parameter values are inherited from the `expect` declaration and
+                // cannot be repeated here, so the `actual` value parameters have no *declared* defaults.
+                @JvmOverloads
+                actual fun foo(p1: Int, p2: Int, p3: Int) { }
+              }
+              """,
+            )
+            .indented(),
+        )
+        .createProjects(root)
+    val descriptorFile = File(projects[0], "project.xml")
+
+    MainTest.checkDriver(
+      "No issues found.",
+      "",
+      ERRNO_SUCCESS,
+      arrayOf("--check", "IgnoreWithoutReason", "--project", descriptorFile.path),
+      null,
+      { driver, type, project, context ->
+        when (type) {
+          SCANNING_FILE -> {
+            context!!
+            when (context.file.name) {
+              "desktop.kt" -> {
+                context as JavaContext
+                val uFile = context.uastParser.parse(context)!!
+                val c = uFile.classes[0]
+
+                assertThat(c.methods.map { it.name to it.javaPsi.parameterList.parametersCount })
+                  .containsExactlyElementsIn(
+                    arrayOf(
+                      // method:
+                      "foo" to 3,
+                      "foo" to 2,
+                      "foo" to 1,
+                      "foo" to 0,
+                      // constructor:
+                      "Foo" to 3,
+                      "Foo" to 2,
+                      "Foo" to 1,
+                      "Foo" to 0,
+                    )
+                  )
               }
             }
           }
