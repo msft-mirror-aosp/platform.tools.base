@@ -11607,6 +11607,29 @@ public class ApiDetectorTest extends AbstractCheckTest {
                                 + "7 errors, 0 warnings");
     }
 
+    public void testInlinedApiSuppressionDoesNotSuppressNewApi() {
+        lint().files(
+                        manifest().minSdk(21),
+                        kotlin(
+                                ""
+                                        + "package test.pkg\n"
+                                        + "\n"
+                                        + "import android.annotation.SuppressLint\n"
+                                        + "import android.content.Context\n"
+                                        + "\n"
+                                        + "@SuppressLint(\"InlinedApi\")\n"
+                                        + "fun check(context: Context) {\n"
+                                        + "    context.getSystemServiceName(Context.MIDI_SERVICE)\n"
+                                        + "}\n"))
+                .run()
+                .expect(
+                        ""
+                                + "src/test/pkg/test.kt:8: Error: Call requires API level 23 (current min is 21): android.content.Context#getSystemServiceName [NewApi]\n"
+                                + "    context.getSystemServiceName(Context.MIDI_SERVICE)\n"
+                                + "            ~~~~~~~~~~~~~~~~~~~~\n"
+                                + "1 errors, 0 warnings");
+    }
+
     @Override
     protected TestLintClient createClient() {
         return super.createClient();

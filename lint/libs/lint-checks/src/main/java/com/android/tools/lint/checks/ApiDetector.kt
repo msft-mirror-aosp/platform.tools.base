@@ -72,6 +72,7 @@ import com.android.tools.lint.checks.DesugaredMethodLookup.Companion.isDesugared
 import com.android.tools.lint.checks.RtlDetector.ATTR_SUPPORTS_RTL
 import com.android.tools.lint.checks.optional.FlaggedApiDetector
 import com.android.tools.lint.client.api.JavaEvaluator
+import com.android.tools.lint.client.api.LintDriver
 import com.android.tools.lint.client.api.ResourceReference
 import com.android.tools.lint.client.api.ResourceRepositoryScope.LOCAL_DEPENDENCIES
 import com.android.tools.lint.client.api.ResourceRepositoryScope.PROJECT_ONLY
@@ -757,7 +758,18 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
       return
     }
 
-    val (suppressed, localMinSdk) = getSuppressed(context, api, element, minSdk)
+    val field = usageInfo.referenced
+    val issue =
+      if (field is PsiField && isInlined(field, context.evaluator)) {
+        if (isBenignConstantUsage(context.evaluator, field, element, field.name, field.containingClass?.qualifiedName ?: "")) {
+          return
+        }
+        INLINED
+      } else {
+        UNSUPPORTED
+      }
+
+    val (suppressed, localMinSdk) = getSuppressed(context, issue, api, element, minSdk)
     if (suppressed) {
       return
     }
@@ -844,16 +856,6 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
         AnnotationUsageType.VARIABLE_REFERENCE,
         AnnotationUsageType.FIELD_REFERENCE -> "Field"
         else -> "Call"
-      }
-    val field = usageInfo.referenced
-    val issue =
-      if (field is PsiField && isInlined(field, context.evaluator)) {
-        if (isBenignConstantUsage(context.evaluator, field, element, field.name, field.containingClass?.qualifiedName ?: "")) {
-          return
-        }
-        INLINED
-      } else {
-        UNSUPPORTED
       }
 
     ApiVisitor(context).report(issue, element, location, type, fqcn, api, minSdk)
@@ -1298,7 +1300,7 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
         return
       }
       var minSdk = getMinSdk(context) ?: return
-      val (suppressed, localMinSdk) = getSuppressed(context, api, expression, minSdk)
+      val (suppressed, localMinSdk) = getSuppressed(context, UNSUPPORTED, api, expression, minSdk)
       if (suppressed) {
         return
       }
@@ -1378,7 +1380,7 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
         return true
       }
       var minSdk = getMinSdk(context) ?: return true
-      val (suppressed, localMinSdk) = getSuppressed(context, api, node, minSdk)
+      val (suppressed, localMinSdk) = getSuppressed(context, UNSUPPORTED, api, node, minSdk)
       if (suppressed) {
         return true
       }
@@ -1418,7 +1420,7 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
         return
       }
 
-      val (suppressed, localMinSdk) = getSuppressed(context, api, node, minSdk)
+      val (suppressed, localMinSdk) = getSuppressed(context, UNSUPPORTED, api, node, minSdk)
       if (suppressed) {
         return
       }
@@ -1544,7 +1546,7 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
           val api = API_24 // minSdk for default methods
           val minSdk = getMinSdk(context) ?: return
 
-          if (!isSuppressed(context, api, node, minSdk)) {
+          if (!isSuppressed(context, UNSUPPORTED, api, node, minSdk)) {
             val location = context.getLocation(node)
             val desc = if (methodModifierList.hasExplicitModifier(PsiModifier.DEFAULT)) "Default method" else "Static interface method"
             report(
@@ -1581,7 +1583,7 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
           if ("java.lang.annotation.Repeatable" == name) {
             val api = API_24 // minSdk for repeatable annotations
             val minSdk = getMinSdk(context) ?: return
-            if (!isSuppressed(context, api, node, minSdk)) {
+            if (!isSuppressed(context, UNSUPPORTED, api, node, minSdk)) {
               val location = context.getLocation(annotation)
               val min = max(minSdk, getTargetApi(node))
               val incident =
@@ -1649,7 +1651,7 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
         return
       }
       var minSdk = getMinSdk(context) ?: return
-      val (suppressed, localMinSdk) = getSuppressed(context, api, element, minSdk)
+      val (suppressed, localMinSdk) = getSuppressed(context, UNSUPPORTED, api, element, minSdk)
       if (suppressed) {
         return
       }
@@ -1682,7 +1684,7 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
           return
         }
         var minSdk = getMinSdk(context) ?: return
-        val (suppressed, localMinSdk) = getSuppressed(context, api, node, minSdk)
+        val (suppressed, localMinSdk) = getSuppressed(context, UNSUPPORTED, api, node, minSdk)
         if (suppressed) {
           return
         }
@@ -1972,7 +1974,7 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
         }
       }
 
-      val (suppressed, localMinSdk) = getSuppressed(context, api, reference, minSdk)
+      val (suppressed, localMinSdk) = getSuppressed(context, UNSUPPORTED, api, reference, minSdk)
       if (suppressed) {
         return
       }
@@ -2475,7 +2477,7 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
         var minSdk = getMinSdk(context) ?: return
 
         if (!isAtLeast(minSdk, node, api)) {
-          val (suppressed, localMinSdk) = getSuppressed(context, api, node, minSdk)
+          val (suppressed, localMinSdk) = getSuppressed(context, UNSUPPORTED, api, node, minSdk)
           if (suppressed) {
             return
           }
@@ -2508,7 +2510,7 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
         if (minSdk.isAtLeast(api)) {
           continue
         }
-        val (suppressed, localMinSdk) = getSuppressed(context, api, node, minSdk)
+        val (suppressed, localMinSdk) = getSuppressed(context, UNSUPPORTED, api, node, minSdk)
         if (suppressed) {
           continue
         }
@@ -2543,7 +2545,7 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
         val typeReferences = catchClause.typeReferences
         if (!minSdk.isAtLeast(required) && isMultiCatchReflectiveOperationException(catchClause)) {
           // No -- see 131349148: Dalvik: java.lang.VerifyError
-          val (suppressed, localMinSdk) = getSuppressed(context, API_19, typeReferences[0], minSdk)
+          val (suppressed, localMinSdk) = getSuppressed(context, UNSUPPORTED, API_19, typeReferences[0], minSdk)
           if (suppressed) {
             return
           }
@@ -2622,7 +2624,7 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
 
         // Don't use getSuppressed to pick up a higher minSdkVersion from SDK_INT checks here;
         // on art we're dealing with class loading verification before it runs those evaluations.
-        if (isSuppressed(context, api, typeReference, minSdk)) {
+        if (isSuppressed(context, UNSUPPORTED, api, typeReference, minSdk)) {
           // Normally having a surrounding version check is enough, but on Dalvik
           // just loading the class, whether or not the try statement is ever
           // executed will result in a crash, so the only way to prevent the
@@ -2728,7 +2730,7 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
           }
         }
 
-        val (suppressed, localMinSdk) = getSuppressed(context, api, node, minSdk)
+        val (suppressed, localMinSdk) = getSuppressed(context, issue, api, node, minSdk)
         if (suppressed) {
           return
         }
@@ -2763,7 +2765,7 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
               owner = specificOwner
             }
             if (!isAtLeast(minSdk, node, specificApi)) {
-              if (isSuppressed(context, specificApi, node, minSdk)) {
+              if (isSuppressed(context, issue, specificApi, node, minSdk)) {
                 return
               }
             } else {
@@ -3551,7 +3553,7 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
       return null
     }
 
-    fun isSuppressed(context: JavaContext, api: ApiConstraint, element: UElement, minSdk: ApiConstraint): Boolean {
+    fun isSuppressed(context: JavaContext, issue: Issue, api: ApiConstraint, element: UElement, minSdk: ApiConstraint): Boolean {
       if (minSdk.isAtLeast(api)) {
         return true
       }
@@ -3560,9 +3562,7 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
         return true
       }
 
-      val driver = context.driver
-      return driver.isSuppressed(context, UNSUPPORTED, element) ||
-        driver.isSuppressed(context, INLINED, element) ||
+      return isSuppressed(context.driver, context, issue, element) ||
         isWithinVersionCheckConditional(context, element, api) ||
         isPrecededByVersionCheckExit(context, element, api)
     }
@@ -3572,7 +3572,13 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
      * found. This makes it possible to have the error messages include not just the module-wide minSdk, but any locally inferred SDK_INT
      * constraints.
      */
-    fun getSuppressed(context: JavaContext, api: ApiConstraint, element: UElement, minSdk: ApiConstraint): Pair<Boolean, ApiConstraint?> {
+    fun getSuppressed(
+      context: JavaContext,
+      issue: Issue,
+      api: ApiConstraint,
+      element: UElement,
+      minSdk: ApiConstraint,
+    ): Pair<Boolean, ApiConstraint?> {
       if (minSdk.isAtLeast(api)) {
         return SUPPRESSED
       }
@@ -3581,8 +3587,7 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
         return SUPPRESSED
       }
 
-      val driver = context.driver
-      if (driver.isSuppressed(context, UNSUPPORTED, element) || driver.isSuppressed(context, INLINED, element)) {
+      if (isSuppressed(context.driver, context, issue, element)) {
         return SUPPRESSED
       }
 
@@ -3613,6 +3618,9 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
 
       return NOT_SUPPRESSED
     }
+
+    private fun isSuppressed(driver: LintDriver, context: JavaContext, issue: Issue, element: UElement) =
+      driver.isSuppressed(context, issue, element) || issue == INLINED && driver.isSuppressed(context, UNSUPPORTED, element)
 
     @Deprecated(
       "Use getTargetApi(JavaEvaluator, ...) passing in for example context.evaluator",

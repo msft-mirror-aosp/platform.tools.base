@@ -79,7 +79,7 @@ class AddJavascriptInterfaceDetector : Detector(), SourceCodeScanner {
       return
     }
 
-    if (isSuppressed(context, API_17, node, context.project.minSdkVersions)) {
+    if (isSuppressed(context, ISSUE, API_17, node, context.project.minSdkVersions)) {
       return
     }
 
