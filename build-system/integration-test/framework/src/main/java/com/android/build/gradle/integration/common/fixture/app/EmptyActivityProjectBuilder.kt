@@ -48,7 +48,7 @@ class EmptyActivityProjectBuilder {
   var withUnitTest: Boolean = false
   var useGradleBuildCache: Boolean = false
   var gradleBuildCacheDir: File? = null
-  var withConfigurationCaching: BaseGradleExecutor.ConfigurationCaching = BaseGradleExecutor.ConfigurationCaching.ON
+  var withConfigurationCaching: BaseGradleExecutor.ConfigurationCaching = BaseGradleExecutor.ConfigurationCaching.PROJECT_ISOLATION
   var heapSize: String? = null
 
   /** The app subproject. */

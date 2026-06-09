@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.application
 
+import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.app.EmptyActivityProjectBuilder
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.options.BooleanOption
@@ -28,7 +29,14 @@ import org.junit.Test
  */
 class EarlyTaskConfigurationTest {
 
-  @get:Rule var project = EmptyActivityProjectBuilder().also { it.withUnitTest = true }.build()
+  @get:Rule
+  var project =
+    EmptyActivityProjectBuilder()
+      .also {
+        it.withUnitTest = true
+        it.withConfigurationCaching = BaseGradleExecutor.ConfigurationCaching.ON
+      }
+      .build()
 
   @Test // Regression test for bug 139821728
   fun `check that build succeeds when tasks are configured early`() {
