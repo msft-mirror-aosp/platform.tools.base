@@ -165,7 +165,7 @@ internal open class Analysis<FX : Any>(
   private val module: Module<FX>,
   private val concreteEffect: Lattice<FX>,
   private val assumptions: ResultTable<FX> = ResultTable.of(persistentMapOf()),
-  private val log: (String) -> Unit = { /* ignore */ },
+  private val log: (() -> String) -> Unit = { /* ignore */ },
 ) : DependentMonotone<Point<FX>, Ans<FX>> {
 
   /**
@@ -305,7 +305,7 @@ internal open class Analysis<FX : Any>(
       if (LintClient.isUnitTest) {
         throw e
       } else {
-        log("${e.javaClass.simpleName}: ${e.message}")
+        log { "${e.javaClass.simpleName}: ${e.message}" }
         unsure
       }
     }
@@ -329,7 +329,7 @@ internal open class Analysis<FX : Any>(
 
     val target = returns.last()
 
-    val targetName =
+    fun targetName() =
       when (val target = target.target) {
         is UMethod -> target.name
         else -> target.toString()
@@ -340,7 +340,7 @@ internal open class Analysis<FX : Any>(
 
     fun getType(e: UExpression): Type<Nothing> =
       when (val t = e.getExpressionType()) {
-        null -> Type.None.also { log("WARNING: Can't get type of ${e.renderAbbrev()}") }
+        null -> Type.None.also { log { "WARNING: Can't get type of ${e.renderAbbrev()}" } }
         else -> translate(t)
       }
 
@@ -348,8 +348,8 @@ internal open class Analysis<FX : Any>(
      * When there is an expression/feature we don't know, we return the type from [UExpression.getExpressionType], and assume [unsure]
      * effect.
      */
-    fun giveUp(e: UExpression, msg: String): Result<Type<FX>, R> {
-      log("WARNING: $msg")
+    fun giveUp(e: UExpression, msg: () -> String): Result<Type<FX>, R> {
+      log { "WARNING: ${msg()}" }
       return Result(getType(e), unsure)
     }
 
@@ -370,7 +370,7 @@ internal open class Analysis<FX : Any>(
           tryResolveNamed()?.name?.let(env::varAt)
             ?: label?.let(env::receiver)
             ?: env.receiver(ClassId.of(getContainingUClass()!!.javaPsi))
-            ?: getType(this).also { log("WARNING: Don't know what `this` is in `$targetName`") }
+            ?: getType(this).also { log { "WARNING: Don't know what `this` is in `${targetName()}`" } }
       }
     }
 
@@ -386,7 +386,7 @@ internal open class Analysis<FX : Any>(
               .effect
         }
       if (t != null) return Result(t, onInvocationEffect(this, fx))
-      return giveUp(this, "Don't know what `$x` means in `${target.target.renderAbbrev()}`")
+      return giveUp(this) { "Don't know what `$x` means in `${target.target.renderAbbrev()}`" }
     }
 
     val cache = IdentityHashMap<UExpression, Result<Type<FX>, R>>()
@@ -475,7 +475,7 @@ internal open class Analysis<FX : Any>(
         val methodRef =
           containerChain(method)?.let { (c, m) -> Type.MethodRef(c, m) }
             ?: method.nameFromSource?.let { env.funAt(it) { it.method.isCompatible(args) } }
-            ?: return unsureResult.also { log("Warning: Don't know what `${method.nameFromSource}` is in `$targetName`") }
+            ?: return unsureResult.also { log { "Warning: Don't know what `${method.nameFromSource}` is in `${targetName()}`" } }
 
         fun KtNamedFunction.implicitThis(): Result<Type<FX>, R> {
           val t = KtTypeReferenceAdapter.translate(typeParams, typeReference) as Type.Application
@@ -526,10 +526,9 @@ internal open class Analysis<FX : Any>(
             callLambda(call.callReceiver(), method, completeArguments(typeParams, call, method, ULambdaExpression::valueParameters))
           else -> {
             fun fail() =
-              giveUp(
-                e,
-                "Handle ${e::class.java.simpleName} ${e.renderAbbrev()} with receiver `${call.receiver?.renderAbbrev()}`, resolved method `$method`",
-              )
+              giveUp(e) {
+                "Handle ${e::class.java.simpleName} ${e.renderAbbrev()} with receiver `${call.receiver?.renderAbbrev()}`, resolved method `$method`"
+              }
 
             val recv = call.receiver ?: call.callReceiver() ?: return fail()
             when (val recvDecl = recv.tryResolveUDeclaration()) {
@@ -545,20 +544,21 @@ internal open class Analysis<FX : Any>(
                 when {
                   // Applying extension method whose code we don't have?
                   recvType is Type.Application -> {
-                    val (t, _) = giveUp(e, "Applying extension method whose code we don't have at ${e.uastParent?.renderAbbrev()}")
+                    val (t, _) = giveUp(e) { "Applying extension method whose code we don't have at ${e.uastParent?.renderAbbrev()}" }
                     Result(t, recvFx join restFx)
                   }
                   else -> {
                     fun onNotFound(exc: Module.MethodLookupException? = null) =
                       Result(getType(e), fxInstantiationLattice.unsure).also {
-                        log(
+                        log {
                           when (exc) {
                             null,
                             is Module.MethodLookupException.NotFound ->
-                              "WARNING: Don't know what method `$methodName` is in `${e.uastParent?.renderAbbrev()}` in `$targetName`"
+                              "WARNING: Don't know what method `$methodName` is in `${e.uastParent?.renderAbbrev()}` in `${targetName()}`"
+
                             is Module.MethodLookupException.Ambiguous -> "ERROR: ${exc.candidates.size} methods found for name ${exc.name}"
                           }
-                        )
+                        }
                       }
 
                     val subst = substLattice.joinOf(recvFx.subst, restFx.subst)!!
@@ -605,13 +605,13 @@ internal open class Analysis<FX : Any>(
             target is PsiMethod && target.name == "getValue" && e.receiver is USimpleNameReferenceExpression ->
               when (val t = env.varAt((e.receiver as USimpleNameReferenceExpression).identifier)) {
                 is Type.Lambda -> Result(getType(e.receiver), onInvocationEffect(e, Instantiation(t.body.effect)))
-                else -> giveUp(e, "Handle ${e.renderAbbrev()} of `${e::class.java.simpleName}`")
+                else -> giveUp(e) { "Handle ${e.renderAbbrev()} of `${e::class.java.simpleName}`" }
               }
-            else -> giveUp(e, "Handle ${e.renderAbbrev()} of `${e::class.java.simpleName}`")
+            else -> giveUp(e) { "Handle ${e.renderAbbrev()} of `${e::class.java.simpleName}`" }
           }
         }
         is UCallableReferenceExpression -> {
-          fun fail() = unsureResult.also { log("ERROR: Don't know how to parse method reference ${e.renderAbbrev()}") }
+          fun fail() = unsureResult.also { log { "ERROR: Don't know how to parse method reference ${e.renderAbbrev()}" } }
           when (val method = e.resolve()) {
             is PsiMethod -> {
               val ref = Type.MethodRef(method)
@@ -756,7 +756,7 @@ internal open class Analysis<FX : Any>(
                 }
                 is UVariable -> unitResult // already added to environment during indexing
                 else -> {
-                  log("TODO: Handle ${dec::class.java.simpleName}: ${dec.asSourceString()}")
+                  log { "TODO: Handle ${dec::class.java.simpleName}: ${dec.asSourceString()}" }
                   unitResult
                 }
               }
@@ -861,7 +861,7 @@ internal open class Analysis<FX : Any>(
           when (val op = e.operationKind) {
             is UastBinaryExpressionWithTypeKind.InstanceCheck -> Result(Type.Boolean, loop(e.operand).effect)
             is UastBinaryExpressionWithTypeKind.TypeCast -> Result(translate(e.type), loop(e.operand).effect)
-            else -> giveUp(e, "Handle ${e.renderAbbrev()} with operation $op")
+            else -> giveUp(e) { "Handle ${e.renderAbbrev()} with operation $op" }
           }
         is UIfExpression -> {
           val (_, condFx) = loop(e.condition)
@@ -920,7 +920,7 @@ internal open class Analysis<FX : Any>(
             else -> call(call)
           }
         is UCallExpression -> call(e)
-        else -> giveUp(e, "Handle ${e::class.java.simpleName}: `${e.asSourceString()}`")
+        else -> giveUp(e) { "Handle ${e::class.java.simpleName}: `${e.asSourceString()}`" }
       }
     }
 
@@ -1330,7 +1330,7 @@ internal open class Analysis<FX : Any>(
             call.getArgumentForParameter(i)
               ?: param.uastInitializer // TODO wrong. Make it lexically, not dynamically scoped!
               ?: OpaqueConstant(PsiTypeAdapter.translate(typeParams, paramPsi.type)).also {
-                log("WARNING: Can't retrieve default argument for $paramName, supplying $it")
+                log { "WARNING: Can't retrieve default argument for $paramName, supplying $it" }
               }
           // TODO (b/406877361)
           when {
