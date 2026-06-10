@@ -102,7 +102,7 @@ suspend fun doDumpUi(
   composeInspectorJarPath: String?,
 ) {
   runWithConnectedInspectors(adbSession, serial, packageName, composeInspectorJarPath) { commandSender, composeInspectorConnected ->
-    dumpUiTree(
+    dumpUi(
       commandSender = commandSender,
       includeAttributes = includeAttributes,
       includeResolutionStack = includeResolutionStack,
@@ -155,7 +155,7 @@ private suspend fun runWithConnectedInspectors(
 }
 
 /** Dumps the View tree, enriches it with Compose if active, and prints the unified tree to console. */
-internal suspend fun dumpUiTree(
+internal suspend fun dumpUi(
   commandSender: CommandSender,
   includeAttributes: Boolean,
   includeResolutionStack: Boolean,
