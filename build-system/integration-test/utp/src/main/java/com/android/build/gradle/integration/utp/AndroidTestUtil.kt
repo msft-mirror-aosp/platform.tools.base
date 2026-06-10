@@ -57,7 +57,9 @@ class AndroidTestUtil(
 
   val executor: GradleTaskExecutor
     get() =
-      customExecutor(rule.build.executor.withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON).withEnableInfoLogging(false))
+      customExecutor(
+        rule.build.executor.withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.PROJECT_ISOLATION).withEnableInfoLogging(false)
+      )
 
   fun selectModule(moduleName: String) {
     onSelectModule(moduleName, this)

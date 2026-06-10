@@ -267,16 +267,25 @@ class ScreenshotCallback : GenericCallback {
   }
 }
 
-fun GradleBuild.sstExecutor(): GradleTaskExecutor =
-  executor.withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON).withLoggingLevel(LoggingLevel.LIFECYCLE)
+fun GradleBuild.sstExecutor(
+  cc: BaseGradleExecutor.ConfigurationCaching = BaseGradleExecutor.ConfigurationCaching.PROJECT_ISOLATION
+): GradleTaskExecutor = executor.withConfigurationCaching(cc).withLoggingLevel(LoggingLevel.LIFECYCLE)
 
-fun GradleBuild.updateReferenceImage(buildType: String = "debug", flavor: String = "", projectName: String = "app"): GradleBuildResult {
+fun GradleBuild.updateReferenceImage(
+  buildType: String = "debug",
+  flavor: String = "",
+  projectName: String = "app",
+  cc: BaseGradleExecutor.ConfigurationCaching = BaseGradleExecutor.ConfigurationCaching.PROJECT_ISOLATION,
+): GradleBuildResult {
   val variantName = if (flavor.isEmpty()) buildType else flavor + buildType.usLocaleCapitalize()
-  return sstExecutor().run(":$projectName:update${variantName.usLocaleCapitalize()}ScreenshotTest")
+  return sstExecutor(cc).run(":$projectName:update${variantName.usLocaleCapitalize()}ScreenshotTest")
 }
 
-fun GradleBuild.updateReferenceImageForAllProjects(variantName: String = "debug"): GradleBuildResult {
-  return sstExecutor().run("update${variantName.usLocaleCapitalize()}ScreenshotTest")
+fun GradleBuild.updateReferenceImageForAllProjects(
+  variantName: String = "debug",
+  cc: BaseGradleExecutor.ConfigurationCaching = BaseGradleExecutor.ConfigurationCaching.PROJECT_ISOLATION,
+): GradleBuildResult {
+  return sstExecutor(cc).run("update${variantName.usLocaleCapitalize()}ScreenshotTest")
 }
 
 fun verifyClassLoaderSetup(result: GradleBuildResult) {

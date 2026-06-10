@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.testing.screenshot
 
+import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.ProfileCapturer
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
@@ -206,7 +207,8 @@ class ScreenshotFeaturesTest {
                       android:text="Inflated Text"
                       style="@style/Theme.Custom" />
               </LinearLayout>
-              """.trimIndent()
+              """
+                .trimIndent(),
             )
             add(
               "src/main/res/values/styles.xml",
@@ -217,7 +219,8 @@ class ScreenshotFeaturesTest {
                       <item name="android:textColor">#FF0000</item>
                   </style>
               </resources>
-              """.trimIndent()
+              """
+                .trimIndent(),
             )
             add(
               "src/main/java/com/CustomView.kt",
@@ -238,7 +241,8 @@ class ScreenshotFeaturesTest {
                       textView.text = "Patched Inflated Text"
                   }
               }
-              """.trimIndent()
+              """
+                .trimIndent(),
             )
             add(
               "src/screenshotTest/java/com/AndroidViewTest.kt",
@@ -265,7 +269,8 @@ class ScreenshotFeaturesTest {
                       )
                   }
               }
-              """.trimIndent()
+              """
+                .trimIndent(),
             )
           }
         }
@@ -371,7 +376,7 @@ class ScreenshotFeaturesTest {
     val build = rule.build
     val capturer = ProfileCapturer(build)
 
-    val profiles = capturer.capture { build.updateReferenceImage() }
+    val profiles = capturer.capture { build.updateReferenceImage(cc = BaseGradleExecutor.ConfigurationCaching.ON) }
 
     profiles
       .mapNotNull { profile ->
