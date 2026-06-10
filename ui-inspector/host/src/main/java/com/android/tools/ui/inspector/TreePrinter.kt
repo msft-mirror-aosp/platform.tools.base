@@ -22,16 +22,13 @@ internal fun printUiTree(node: UiNode, indent: Int, includeAttributes: Boolean, 
     System.out.println("View Hierarchy:")
   }
   val prefix = " ".repeat(indent)
+  System.out.println("$prefix${node.formatHeader()}")
+
   when (node) {
     is UiNode.ViewNode -> {
-      val resourceStr = node.idResource?.let { " id=$it" } ?: ""
-      val layoutResourceStr = node.layoutResource?.let { " layout=$it" } ?: ""
-      System.out.println(
-        "${prefix}[${node.className}]$resourceStr$layoutResourceStr (${node.bounds.x}, ${node.bounds.y}, ${node.bounds.width}, ${node.bounds.height})"
-      )
       if (includeAttributes) {
         node.attributes.forEach { attr ->
-          System.out.println("$prefix prop: ${attr.name}=${attr.value}")
+          System.out.println("$prefix ${attr.format()}")
 
           val sourceStr = attr.directSource ?: ""
           if (sourceStr.isNotEmpty()) {
@@ -43,20 +40,11 @@ internal fun printUiTree(node: UiNode, indent: Int, includeAttributes: Boolean, 
       }
     }
     is UiNode.ComposeNode -> {
-      val sourceLocation =
-        node.sourceLocation?.let {
-          val lineSuffix = if (it.lineNumber > 0) ":${it.lineNumber}" else ""
-          " file=${it.filename}$lineSuffix"
-        } ?: ""
-
-      System.out.println(
-        "${prefix}[${node.className}]$sourceLocation [compose] (${node.bounds.x}, ${node.bounds.y}, ${node.bounds.width}, ${node.bounds.height})"
-      )
       if (includeAttributes) {
         node.parameters.forEach { param ->
-          val formattedValue = formatComposeParameter(param)
-          if (formattedValue.isNotEmpty()) {
-            System.out.println("$prefix param: ${param.name}=$formattedValue")
+          val formatted = param.format()
+          if (formatted.isNotEmpty()) {
+            System.out.println("$prefix $formatted")
           }
         }
       }
@@ -129,4 +117,35 @@ private fun formatComposeValue(value: UiNode.ComposeParameter.Value): String {
     }
     is UiNode.ComposeParameter.Value.NullVal -> ""
   }
+}
+
+/** Formats a node's header details (class name, resource/source locations, and bounds) consistently. */
+internal fun UiNode.formatHeader(): String {
+  val boundsStr = "(${bounds.x}, ${bounds.y}, ${bounds.width}, ${bounds.height})"
+  return when (this) {
+    is UiNode.ViewNode -> {
+      val resourceStr = idResource?.let { " id=$it" } ?: ""
+      val layoutResourceStr = layoutResource?.let { " layout=$it" } ?: ""
+      "[$className]$resourceStr$layoutResourceStr $boundsStr"
+    }
+    is UiNode.ComposeNode -> {
+      val sourceLocation =
+        sourceLocation?.let {
+          val lineSuffix = if (it.lineNumber > 0) ":${it.lineNumber}" else ""
+          " file=${it.filename}$lineSuffix"
+        } ?: ""
+      "[$className]$sourceLocation [compose] $boundsStr"
+    }
+  }
+}
+
+/** Formats an attribute key-value pair consistently. */
+internal fun UiNode.Attribute.format(): String {
+  return "prop: $name=$value"
+}
+
+/** Formats a Compose parameter key-value pair consistently (returns empty if value is empty/null). */
+internal fun UiNode.ComposeParameter.format(): String {
+  val formattedValue = formatComposeParameter(this)
+  return if (formattedValue.isNotEmpty()) "param: $name=$formattedValue" else ""
 }

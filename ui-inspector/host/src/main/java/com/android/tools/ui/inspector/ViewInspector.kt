@@ -39,12 +39,6 @@ internal suspend fun createViewInspector(commandSender: CommandSender, injection
   }
 }
 
-internal data class UiDump(
-  val roots: List<UiNode.ViewNode>,
-  val configuration: ViewInspectorProtocol.Configuration?,
-  val stringTable: Map<Int, String>,
-)
-
 /** Sends a dump command to the view inspector and returns the parsed View tree roots. */
 internal suspend fun dumpViews(commandSender: CommandSender, includeAttributes: Boolean, includeResolutionStack: Boolean): UiDump {
   val viewInspectorCommand =

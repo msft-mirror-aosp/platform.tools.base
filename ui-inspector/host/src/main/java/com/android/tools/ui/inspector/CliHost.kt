@@ -117,10 +117,42 @@ class DumpUiCommand : UiInspectorDumpCommand() {
   }
 }
 
+@Command(name = "track-changes", description = ["Track UI hierarchy changes over time by sampling"])
+class TrackChangesCommand : UiInspectorDumpCommand() {
+  @Option(names = ["--interval"], description = ["Sampling interval in milliseconds"], defaultValue = "100") var intervalMs: Long = 100
+  @Option(names = ["--duration"], description = ["Sampling duration in seconds"], defaultValue = "5") var durationSec: Long = 5
+
+  override fun call(): Int {
+    System.err.println("Executing track-changes for package: $packageName on device: $serial")
+    val adbSession = sessionFactory()
+    try {
+      runBlocking {
+        doTrackChanges(
+          adbSession = adbSession,
+          serial = serial,
+          packageName = packageName,
+          intervalMs = intervalMs,
+          durationSec = durationSec,
+          includeAttributes = includeAttributes,
+          includeResolutionStack = includeResolutionStack,
+          includeSystemComposables = includeSystemComposables,
+          includeSemantics = includeSemantics,
+          composeInspectorJarPath = composeInspectorJarPath,
+        )
+      }
+      return EXIT_OK
+    } catch (e: Exception) {
+      System.err.println("Error: ${e.message}")
+      return EXIT_ERROR
+    }
+  }
+}
+
 fun main(args: Array<String>) {
   val exitCode =
     CommandLine(UiInspectorCommand())
       .addSubcommand("dump-ui", DumpUiCommand())
+      .addSubcommand("track-changes", TrackChangesCommand())
       .addSubcommand("list-devices", ListDevicesCommand())
       .addSubcommand("list-packages", ListPackagesCommand())
       .execute(*args)

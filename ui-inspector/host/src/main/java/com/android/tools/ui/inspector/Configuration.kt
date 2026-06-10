@@ -18,8 +18,9 @@ package com.android.tools.ui.inspector
 
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol
 
+// TODO: rename to ConfigurationPrinter.kt
 /** Converts a CamelCase string into a snake_case string. */
-private fun String.camelToSnake(): String = buildString {
+internal fun String.camelToSnake(): String = buildString {
   for (char in this@camelToSnake) {
     if (char.isUpperCase()) {
       if (isNotEmpty()) append('_')
@@ -37,18 +38,22 @@ private fun String.camelToSnake(): String = buildString {
  * `TOUCH_SCREEN_FINGER`) to avoid namespace conflicts in generated bindings. This helper dynamically determines the prefix from the enum's
  * class name, removes it, and converts the remaining string to lowercase for clean console output.
  */
-private fun Enum<*>.protobufPrettyPrint(): String {
+internal fun Enum<*>.protobufPrettyPrint(): String {
   val prefix = this::class.java.simpleName.camelToSnake()
   return name.lowercase().removePrefix("${prefix}_")
 }
 
+internal fun formatLocale(locale: ViewInspectorProtocol.Locale, stringTable: Map<Int, String>): String {
+  val language = stringTable[locale.language] ?: ""
+  val country = stringTable[locale.country] ?: ""
+  val variant = stringTable[locale.variant] ?: ""
+  val script = stringTable[locale.script] ?: ""
+  return listOf(language, country, variant, script).filter { it.isNotEmpty() }.joinToString("-")
+}
+
 /** Prints the device configuration to the console in a human-readable format. */
 internal fun printDeviceConfiguration(config: ViewInspectorProtocol.Configuration, stringTable: Map<Int, String>) {
-  val language = stringTable[config.locale.language] ?: ""
-  val country = stringTable[config.locale.country] ?: ""
-  val variant = stringTable[config.locale.variant] ?: ""
-  val script = stringTable[config.locale.script] ?: ""
-  val localeStr = listOf(language, country, variant, script).filter { it.isNotEmpty() }.joinToString("-")
+  val localeStr = formatLocale(config.locale, stringTable)
 
   val orientationStr = config.orientation.protobufPrettyPrint()
   val sizeStr = config.screenLayoutSize.protobufPrettyPrint()

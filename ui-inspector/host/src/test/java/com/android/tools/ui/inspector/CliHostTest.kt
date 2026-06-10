@@ -60,4 +60,24 @@ class CliHostTest {
     val dumpCmd = parseResult.subcommand().commandSpec().userObject() as DumpUiCommand
     assertThat(dumpCmd.composeInspectorJarPath).isEqualTo("local/path/to/inspector.jar")
   }
+
+  @Test
+  fun testTrackChangesOptionsDefaults() {
+    val cmd = CommandLine(UiInspectorCommand()).addSubcommand("track-changes", TrackChangesCommand())
+    val parseResult = cmd.parseArgs("track-changes", "--serial", "123", "--package", "com.example")
+    val trackCmd = parseResult.subcommand().commandSpec().userObject() as TrackChangesCommand
+    assertThat(trackCmd.includeSystemComposables).isFalse()
+    assertThat(trackCmd.includeAttributes).isFalse()
+    assertThat(trackCmd.intervalMs).isEqualTo(100)
+    assertThat(trackCmd.durationSec).isEqualTo(5)
+  }
+
+  @Test
+  fun testTrackChangesCustomIntervalAndDuration() {
+    val cmd = CommandLine(UiInspectorCommand()).addSubcommand("track-changes", TrackChangesCommand())
+    val parseResult = cmd.parseArgs("track-changes", "--serial", "123", "--package", "com.example", "--interval", "50", "--duration", "10")
+    val trackCmd = parseResult.subcommand().commandSpec().userObject() as TrackChangesCommand
+    assertThat(trackCmd.intervalMs).isEqualTo(50)
+    assertThat(trackCmd.durationSec).isEqualTo(10)
+  }
 }
