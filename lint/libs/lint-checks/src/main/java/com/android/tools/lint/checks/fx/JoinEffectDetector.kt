@@ -62,6 +62,7 @@ import com.android.tools.lint.detector.api.PartialResult
 import com.android.tools.lint.detector.api.Project
 import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.intellij.openapi.application.runReadAction
+import com.intellij.psi.PsiTypeParameter
 import java.io.File
 import java.lang.Iterable as JIterable
 import java.nio.file.Paths
@@ -118,25 +119,24 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
     maybeLoadPartialResults(context)
   }
 
-  final override fun applicableSuperClasses() = listOf("java.lang.Object")
-
-  final override fun visitClass(context: JavaContext, declaration: UClass) {
-    isSummariesCacheValid = false
-    try {
-      programBuilder.addClass(context, declaration)
-    } catch (e: Throwable) {
-      if (LintClient.isUnitTest) {
-        throw e
-      } else {
-        context.log(e, "Error while indexing class ${declaration.qualifiedName}")
-      }
-    }
-  }
-
-  final override fun getApplicableUastTypes() = listOf(UDeclaration::class.java)
+  final override fun getApplicableUastTypes() = listOf(UDeclaration::class.java, UClass::class.java)
 
   final override fun createUastHandler(context: JavaContext) =
     object : UElementHandler() {
+      override fun visitClass(node: UClass) {
+        if (node.javaPsi is PsiTypeParameter) return
+        isSummariesCacheValid = false
+        try {
+          programBuilder.addClass(context, node)
+        } catch (e: Throwable) {
+          if (LintClient.isUnitTest) {
+            throw e
+          } else {
+            context.log(e, "Error while indexing class ${node.qualifiedName}")
+          }
+        }
+      }
+
       override fun visitDeclaration(node: UDeclaration) {
         val dec = node as? UVariable ?: return
         val fn = dec.sourcePsi as? KtNamedFunction ?: return
