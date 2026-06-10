@@ -3544,7 +3544,21 @@ package com.android.build.api.variant {
     method public void registerPreInstallation(java.lang.Object... objects);
   }
 
+  @org.gradle.api.Incubating public interface LintBuilder {
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public com.android.build.api.variant.LintReportsBuilder getReports();
+    property @org.gradle.api.Incubating public abstract com.android.build.api.variant.LintReportsBuilder reports;
+  }
+
   public interface LintLifecycleExtension extends com.android.build.api.variant.DslLifecycle<com.android.build.api.dsl.Lint> {
+  }
+
+  @org.gradle.api.Incubating public interface LintReportsBuilder {
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public boolean getEnableReportWithDependencies();
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public boolean getEnableReportWithoutDependencies();
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public void setEnableReportWithDependencies(boolean);
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public void setEnableReportWithoutDependencies(boolean);
+    property @org.gradle.api.Incubating public abstract boolean enableReportWithDependencies;
+    property @org.gradle.api.Incubating public abstract boolean enableReportWithoutDependencies;
   }
 
   public interface ManifestFiles extends org.gradle.api.Named {
@@ -3851,6 +3865,7 @@ package com.android.build.api.variant {
 
   public interface VariantBuilder extends com.android.build.api.variant.ComponentBuilder {
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public boolean getEnableLint();
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public com.android.build.api.variant.LintBuilder getLint();
     method @InaccessibleFromKotlin public Integer? getMaxSdk();
     method @InaccessibleFromKotlin public Integer? getMinSdk();
     method @InaccessibleFromKotlin public String? getMinSdkPreview();
@@ -3862,6 +3877,7 @@ package com.android.build.api.variant {
     method @InaccessibleFromKotlin public void setMinSdkPreview(String?);
     method @InaccessibleFromKotlin public void setRenderscriptTargetApi(int);
     property @org.gradle.api.Incubating public abstract boolean enableLint;
+    property @org.gradle.api.Incubating public abstract com.android.build.api.variant.LintBuilder lint;
     property public abstract Integer? maxSdk;
     property public abstract Integer? minSdk;
     property public abstract String? minSdkPreview;

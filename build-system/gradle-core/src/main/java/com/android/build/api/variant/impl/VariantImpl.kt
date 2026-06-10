@@ -235,6 +235,12 @@ abstract class VariantImpl<DslInfoT : VariantDslInfo>(
   override val enableLint: Boolean
     get() = variantBuilder.enableLint
 
+  override val enableReportWithDependencies: Boolean
+    get() = variantBuilder.lint.reports.enableReportWithDependencies
+
+  override val enableReportWithoutDependencies: Boolean
+    get() = variantBuilder.lint.reports.enableReportWithoutDependencies
+
   override val nestedComponents: List<ComponentImpl<*>>
     get() =
       mutableListOf<ComponentImpl<*>>().also { list ->

@@ -142,6 +142,7 @@ abstract class VariantBuilderImpl(
     }
 
   override var enableLint: Boolean = true
+  override val lint: LintBuilderImpl = variantBuilderServices.newInstance(LintBuilderImpl::class.java, variantBuilderServices)
 
   private val registeredExtensionDelegate = lazy { mutableMapOf<Class<out Any>, Any>() }
 

@@ -189,6 +189,12 @@ constructor(
   override val enableLint: Boolean
     get() = variantBuilder.enableLint
 
+  override val enableReportWithDependencies: Boolean
+    get() = variantBuilder.lint.reports.enableReportWithDependencies
+
+  override val enableReportWithoutDependencies: Boolean
+    get() = variantBuilder.lint.reports.enableReportWithoutDependencies
+
   override val maxSdk: Int?
     get() = variantBuilder.maxSdk
 

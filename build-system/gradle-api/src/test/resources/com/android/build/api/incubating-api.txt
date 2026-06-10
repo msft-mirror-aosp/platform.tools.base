@@ -810,3 +810,12 @@ https://issuetracker.google.com/518472902
   * com.android.build.api.dsl.ScreenshotTestSuite.getTargetVariants: java.util.List<java.lang.String> ()
   * com.android.build.api.dsl.ScreenshotTestSuite.setEngineVersion: void (java.lang.String)
   * com.android.build.api.dsl.TestOptions.getScreenshotTests: org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.ScreenshotTestSuite> ()
+https://issuetracker.google.com/527037384
+  * com.android.build.api.variant.LintBuilder
+  * com.android.build.api.variant.LintBuilder.getReports: com.android.build.api.variant.LintReportsBuilder ()
+  * com.android.build.api.variant.LintReportsBuilder
+  * com.android.build.api.variant.LintReportsBuilder.getEnableReportWithDependencies: boolean ()
+  * com.android.build.api.variant.LintReportsBuilder.getEnableReportWithoutDependencies: boolean ()
+  * com.android.build.api.variant.LintReportsBuilder.setEnableReportWithDependencies: void (boolean)
+  * com.android.build.api.variant.LintReportsBuilder.setEnableReportWithoutDependencies: void (boolean)
+  * com.android.build.api.variant.VariantBuilder.getLint: com.android.build.api.variant.LintBuilder ()

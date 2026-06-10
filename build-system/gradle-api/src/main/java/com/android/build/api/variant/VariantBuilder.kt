@@ -132,6 +132,9 @@ interface VariantBuilder : ComponentBuilder {
    */
   fun <T : Any> registerExtension(type: Class<out T>, instance: T)
 
+  /** Access to build-time configuration for lint. */
+  @get:Incubating val lint: LintBuilder
+
   /**
    * Whether lint should be run on this variant.
    *
