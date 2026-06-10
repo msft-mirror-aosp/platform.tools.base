@@ -83,7 +83,7 @@ import org.jetbrains.annotations.VisibleForTesting
 import org.jetbrains.kotlin.incremental.createDirectory
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.uast.UClass
-import org.jetbrains.uast.UDeclaration
+import org.jetbrains.uast.UElement
 import org.jetbrains.uast.ULambdaExpression
 import org.jetbrains.uast.UVariable
 
@@ -119,7 +119,7 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
     maybeLoadPartialResults(context)
   }
 
-  final override fun getApplicableUastTypes() = listOf(UDeclaration::class.java, UClass::class.java)
+  final override fun getApplicableUastTypes() = listOf<Class<out UElement>>(UVariable::class.java, UClass::class.java)
 
   final override fun createUastHandler(context: JavaContext) =
     object : UElementHandler() {
@@ -137,10 +137,9 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
         }
       }
 
-      override fun visitDeclaration(node: UDeclaration) {
-        val dec = node as? UVariable ?: return
-        val fn = dec.sourcePsi as? KtNamedFunction ?: return
-        val fnUast = dec.uastInitializer as? ULambdaExpression ?: return
+      override fun visitVariable(node: UVariable) {
+        val fn = node.sourcePsi as? KtNamedFunction ?: return
+        val fnUast = node.uastInitializer as? ULambdaExpression ?: return
         try {
           programBuilder.addLocalFunction(LocalFun(fnUast, fn))
         } catch (e: Throwable) {
