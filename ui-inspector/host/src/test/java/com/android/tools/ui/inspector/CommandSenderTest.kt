@@ -45,30 +45,37 @@ class CommandSenderTest {
     coroutineScope {
       val serverTask =
         async(dispatcher) {
-          serverSocket.accept().use { clientSocket ->
-            val input = clientSocket.getInputStream()
-            val output = clientSocket.getOutputStream()
+          try {
+            serverSocket.accept().use { clientSocket ->
+              val input = clientSocket.getInputStream()
+              val output = clientSocket.getOutputStream()
 
-            val requestBytes = FramingProtocol.readMessage(input)
-            val request = Command.parseFrom(requestBytes)
+              val requestBytes = FramingProtocol.readMessage(input)
+              val request = Command.parseFrom(requestBytes)
 
-            val response = Response.newBuilder().setCommandId(request.commandId).setStatus(Response.Status.SUCCESS).build()
+              val response = Response.newBuilder().setCommandId(request.commandId).setStatus(Response.Status.SUCCESS).build()
 
-            FramingProtocol.writeMessage(output, response.toByteArray())
+              FramingProtocol.writeMessage(output, response.toByteArray())
+            }
+          } catch (e: Exception) {
+            // Silence socket exceptions during close/cancellation
           }
         }
 
-      CommandSender("localhost", port).use { sender ->
-        val command = Command.newBuilder().setShutdown(ShutdownCommand.getDefaultInstance()).build()
-        val response = sender.sendMessage(command)
+      try {
+        CommandSender("localhost", port).use { sender ->
+          val command = Command.newBuilder().setShutdown(ShutdownCommand.getDefaultInstance()).build()
+          val response = sender.sendMessage(command)
 
-        assertThat(response.status).isEqualTo(Response.Status.SUCCESS)
-        assertThat(response.commandId).isEqualTo(1) // First command should have ID 1
+          assertThat(response.status).isEqualTo(Response.Status.SUCCESS)
+          assertThat(response.commandId).isEqualTo(1) // First command should have ID 1
+        }
+
+        serverTask.await()
+      } finally {
+        serverSocket.close()
       }
-
-      serverTask.await()
     }
-    serverSocket.close()
   }
 
   @Test
@@ -77,32 +84,42 @@ class CommandSenderTest {
     val port = serverSocket.localPort
 
     coroutineScope {
-      async(dispatcher) {
-        serverSocket.accept().use { clientSocket ->
-          val input = clientSocket.getInputStream()
-          val output = clientSocket.getOutputStream()
+      val serverTask =
+        async(dispatcher) {
+          try {
+            serverSocket.accept().use { clientSocket ->
+              val input = clientSocket.getInputStream()
+              val output = clientSocket.getOutputStream()
 
-          val requestBytes = FramingProtocol.readMessage(input)
-          val request = Command.parseFrom(requestBytes)
+              val requestBytes = FramingProtocol.readMessage(input)
+              val request = Command.parseFrom(requestBytes)
 
-          // Send back wrong ID
-          val response = Response.newBuilder().setCommandId(request.commandId + 1).setStatus(Response.Status.SUCCESS).build()
+              // Send back wrong ID
+              val response = Response.newBuilder().setCommandId(request.commandId + 1).setStatus(Response.Status.SUCCESS).build()
 
-          FramingProtocol.writeMessage(output, response.toByteArray())
+              FramingProtocol.writeMessage(output, response.toByteArray())
+            }
+          } catch (e: Exception) {
+            // Silence socket exceptions during close/cancellation
+          }
         }
-      }
 
-      CommandSender("localhost", port).use { sender ->
-        val command = Command.newBuilder().setShutdown(ShutdownCommand.getDefaultInstance()).build()
-        try {
-          sender.sendMessage(command)
-          fail("Expected IllegalArgumentException due to ID mismatch")
-        } catch (e: IllegalArgumentException) {
-          assertThat(e.message).contains("Received response for wrong command")
+      try {
+        CommandSender("localhost", port).use { sender ->
+          val command = Command.newBuilder().setShutdown(ShutdownCommand.getDefaultInstance()).build()
+          try {
+            sender.sendMessage(command)
+            fail("Expected IllegalArgumentException due to ID mismatch")
+          } catch (e: IllegalArgumentException) {
+            assertThat(e.message).contains("Received response for wrong command")
+          }
         }
+
+        serverTask.await()
+      } finally {
+        serverSocket.close()
       }
     }
-    serverSocket.close()
   }
 
   @Test
@@ -111,41 +128,51 @@ class CommandSenderTest {
     val port = serverSocket.localPort
 
     coroutineScope {
-      async(dispatcher) {
-        serverSocket.accept().use { clientSocket ->
-          val input = clientSocket.getInputStream()
-          val output = clientSocket.getOutputStream()
+      val serverTask =
+        async(dispatcher) {
+          try {
+            serverSocket.accept().use { clientSocket ->
+              val input = clientSocket.getInputStream()
+              val output = clientSocket.getOutputStream()
 
-          val requestBytes = FramingProtocol.readMessage(input)
-          val request = Command.parseFrom(requestBytes)
+              val requestBytes = FramingProtocol.readMessage(input)
+              val request = Command.parseFrom(requestBytes)
 
-          val inspectorMsg = request.inspectorMessage
-          val responsePayload = inspectorMsg.payload.toStringUtf8().reversed()
+              val inspectorMsg = request.inspectorMessage
+              val responsePayload = inspectorMsg.payload.toStringUtf8().reversed()
 
-          val responseEnvelope =
-            InspectorMessageResponse.newBuilder()
-              .setInspectorId(inspectorMsg.inspectorId)
-              .setPayload(ByteString.copyFromUtf8(responsePayload))
-              .build()
+              val responseEnvelope =
+                InspectorMessageResponse.newBuilder()
+                  .setInspectorId(inspectorMsg.inspectorId)
+                  .setPayload(ByteString.copyFromUtf8(responsePayload))
+                  .build()
 
-          val response =
-            Response.newBuilder()
-              .setCommandId(request.commandId)
-              .setStatus(Response.Status.SUCCESS)
-              .setInspectorMessage(responseEnvelope)
-              .build()
+              val response =
+                Response.newBuilder()
+                  .setCommandId(request.commandId)
+                  .setStatus(Response.Status.SUCCESS)
+                  .setInspectorMessage(responseEnvelope)
+                  .build()
 
-          FramingProtocol.writeMessage(output, response.toByteArray())
+              FramingProtocol.writeMessage(output, response.toByteArray())
+            }
+          } catch (e: Exception) {
+            // Silence socket exceptions during close/cancellation
+          }
         }
-      }
 
-      CommandSender("localhost", port).use { sender ->
-        val payload = "hello".toByteArray()
-        val responseBytes = sender.sendInspectorCommand("my-inspector", payload)
+      try {
+        CommandSender("localhost", port).use { sender ->
+          val payload = "hello".toByteArray()
+          val responseBytes = sender.sendInspectorCommand("my-inspector", payload)
 
-        assertThat(String(responseBytes)).isEqualTo("olleh")
+          assertThat(String(responseBytes)).isEqualTo("olleh")
+        }
+
+        serverTask.await()
+      } finally {
+        serverSocket.close()
       }
     }
-    serverSocket.close()
   }
 }
