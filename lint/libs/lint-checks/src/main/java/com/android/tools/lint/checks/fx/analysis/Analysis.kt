@@ -78,6 +78,7 @@ import com.intellij.psi.PsiIntersectionType
 import com.intellij.psi.PsiLambdaParameterType
 import com.intellij.psi.PsiLocalVariable
 import com.intellij.psi.PsiMethod
+import com.intellij.psi.PsiNamedElement
 import com.intellij.psi.PsiParameter
 import com.intellij.psi.PsiType
 import com.intellij.psi.PsiVariable
@@ -148,7 +149,6 @@ import org.jetbrains.uast.java.isJava
 import org.jetbrains.uast.resolveToUElement
 import org.jetbrains.uast.toUElement
 import org.jetbrains.uast.tryResolve
-import org.jetbrains.uast.tryResolveNamed
 import org.jetbrains.uast.util.isConstructorCall
 
 /**
@@ -354,7 +354,8 @@ internal open class Analysis<FX : Any>(
     }
 
     fun UThisExpression.type(): Type<FX> {
-      val cl = tryResolve().toUElement() as? UClass
+      val resolved = tryResolve()
+      val cl = resolved.toUElement() as? UClass
       return when {
         // opt: if the class is final, no need to make result parametric
         cl != null && cl.isFinal -> translate(cl)
@@ -367,7 +368,7 @@ internal open class Analysis<FX : Any>(
           }
         }
         else ->
-          tryResolveNamed()?.name?.let(env::varAt)
+          (resolved as? PsiNamedElement)?.name?.let(env::varAt)
             ?: label?.let(env::receiver)
             ?: env.receiver(ClassId.of(getContainingUClass()!!.javaPsi))
             ?: getType(this).also { log { "WARNING: Don't know what `this` is in `${targetName()}`" } }
