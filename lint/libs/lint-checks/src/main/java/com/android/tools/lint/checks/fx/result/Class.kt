@@ -164,7 +164,7 @@ sealed interface ClassId : Scope {
     internal fun of(guard: Any, base: PsiClass): ClassId = Guarded(guard, of(base.qualifiedName!!))
 
     // TODO: Is `canonicalText` always the fully qualified name??
-    fun of(type: PsiClassType): ClassId = of(type.canonicalText)
+    fun of(type: PsiClassType): ClassId = of(type.rawType().canonicalText)
 
     fun of(c: KClass<*>): ClassId =
       when {
