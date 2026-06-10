@@ -29,6 +29,7 @@ import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.test.runTest
+import org.junit.After
 import org.junit.Assert.fail
 import org.junit.Test
 
@@ -36,6 +37,11 @@ class CommandSenderTest {
 
   private val executor = Executors.newSingleThreadExecutor()
   private val dispatcher = executor.asCoroutineDispatcher()
+
+  @After
+  fun tearDown() {
+    executor.shutdown()
+  }
 
   @Test
   fun testSendMessage() = runTest {
