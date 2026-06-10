@@ -20,6 +20,7 @@ kotlin_library(
         "//tools/base/multipreview-asm:tools.compose-preview-detector",
         "//tools/base/sdklib:tools.sdklib",
         "//tools/base/standalone-render/lib:tools.standalone-render.lib",
+        "@maven//:org.jetbrains.kotlin.kotlin-reflect",
     ],
 )
 
@@ -55,6 +56,7 @@ merge_deps(
         "@maven//:jakarta.xml.bind.jakarta.xml.bind-api",
         "@maven//:net.sf.kxml.kxml2",
         "@maven//:org.glassfish.jaxb.jaxb-runtime",
+        "@maven//:org.jetbrains.kotlin.kotlin-reflect",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
         "@maven//:org.ow2.asm.asm",
         "@maven//:org.ow2.asm.asm-commons",
