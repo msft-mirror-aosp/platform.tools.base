@@ -18,9 +18,12 @@ package com.android.tools.ui.inspector.payload;
 
 import android.net.LocalServerSocket;
 import android.net.LocalSocket;
+import android.net.LocalSocketAddress;
 import android.util.Log;
+
 import com.android.tools.ui.inspector.common.ProtocolConstants;
 import com.android.tools.ui.inspector.payload.appinspection.HandlerThreadExecutor;
+
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -70,7 +73,8 @@ public final class Server {
         this.serverSocket = socket;
         Log.i(TAG, "Server listening on " + socketName);
 
-        // Centralized cleanup thread. Terminates the server and disposes of resources when shutdownLatch fires.
+        // Centralized cleanup thread. Terminates the server and disposes of resources when
+        // shutdownLatch fires.
         Thread janitorThread = new Thread(() -> {
           try {
             shutdownLatch.await();
@@ -80,15 +84,22 @@ public final class Server {
             timeoutExecutor.shutdownNow();
             closeServerSocket();
             for (InspectorBridge bridge : inspectorBridges.values()) {
-              bridge.dispose();
+              try {
+                bridge.dispose();
+              } catch (Throwable t) {
+                Log.e(TAG, "Error disposing inspector bridge", t);
+              }
             }
+            inspectorBridges.clear();
           }
         }, "ui-inspector-janitor");
         janitorThread.start();
 
         scheduleTimeout();
 
-        while (true) {
+        // To prevent the thread from re-entering accept() during shutdown, we check the shutdown
+        // state directly here.
+        while (shutdownLatch.getCount() > 0) {
           LocalSocket clientSocket;
           try {
             clientSocket = serverSocket.accept();
@@ -97,6 +108,13 @@ public final class Server {
               break;
             }
             throw e;
+          }
+
+          if (shutdownLatch.getCount() == 0) {
+            try {
+              clientSocket.close();
+            } catch (IOException ignored) {}
+            break;
           }
 
           cancelTimeout();
@@ -147,7 +165,6 @@ public final class Server {
         Log.i(TAG, "Inactivity timeout reached, stopping server");
         timedOut.set(true);
         shutdownLatch.countDown();
-        closeServerSocket();
       }, INACTIVITY_TIMEOUT_MS, TimeUnit.MILLISECONDS);
     }
 
@@ -160,11 +177,22 @@ public final class Server {
 
     private void closeServerSocket() {
       if (serverSocket != null) {
+        forceWakeUp(socketName);
         try {
           serverSocket.close();
         } catch (IOException e) {
           Log.e(TAG, "Error closing server socket", e);
         }
+      }
+    }
+
+    private static void forceWakeUp(String socketName) {
+      // The main server loop is stuck in a native layer during serverSocket.accept()
+      // FORCE WAKEUP: Connect a dummy client to the socket to unblock the stuck thread.
+      try (LocalSocket dummySocket = new LocalSocket()) {
+        dummySocket.connect(new LocalSocketAddress(socketName));
+      } catch (IOException ignored) {
+        // Ignored. Connection failure is expected if the socket is already fully closed or gone.
       }
     }
   }
