@@ -166,7 +166,11 @@ sealed interface ClassId : Scope {
     // TODO: Is `canonicalText` always the fully qualified name??
     fun of(type: PsiClassType): ClassId = of(type.canonicalText)
 
-    fun of(c: KClass<*>): ClassId = of(c.java.canonicalName)
+    fun of(c: KClass<*>): ClassId =
+      when {
+        c.java.isArray -> Array
+        else -> of(c.java.canonicalName)
+      }
 
     inline fun <reified C> of(): ClassId = of(C::class)
 

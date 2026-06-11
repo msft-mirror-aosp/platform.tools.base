@@ -220,6 +220,47 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
       )
   }
 
+  fun testBaseAssumption_arrayMap() {
+    lint()
+      .files(
+        kotlin(
+            """
+            package test.pkg
+            import androidx.annotation.WorkerThread
+            import androidx.annotation.UiThread
+
+            @WorkerThread fun worker() { }
+
+            @UiThread fun ui(arr: Array<Int>, l: List<Int>) {
+                arr.map { worker() }
+                l.map { worker() }
+                arr.forEach { worker() }
+                arr.map { { worker() } }.forEach { it() } // TODO(522930766)
+            }
+            """
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/test.kt:8: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            arr.map { worker() }
+                ~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:9: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            l.map { worker() }
+              ~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:10: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            arr.forEach { worker() }
+                ~~~~~~~~~~~~~~~~~~~~
+        3 errors
+        """
+          .trimIndent()
+      )
+  }
+
   fun testCustomDelegate() {
     lint()
       .files(

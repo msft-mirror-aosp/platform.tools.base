@@ -655,9 +655,14 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
             }
           }
         static<_, (Any?) -> Any>(Array<*>::map) assumedAs
-          forAll { a ->
-            forAll(Function1::class(a, Type.Unit)) { action ->
-              given(Array::class(a), action) { symbolicInvocations += action[MethodId.Invoke[1], a] }
+          forAll { x ->
+            forAll { y ->
+              forAll(Function1::class(x, y)) { action ->
+                given(Array::class(x), action) {
+                  range = List::class(y)
+                  symbolicInvocations += action[MethodId.Invoke[1], x]
+                }
+              }
             }
           }
         static(Array<*>::filter) assumedAs
@@ -840,7 +845,7 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
           }
 
         static(::repeat) assumedAs
-          forAll(Function1::class(Type.Int, Type.Int)) { action ->
+          forAll(Function1::class(Type.Int, Type.Unit)) { action ->
             given(Type.Int, action) {
               range = Type.Unit
               symbolicInvocations += action[MethodId.Invoke[1], Type.Int]
