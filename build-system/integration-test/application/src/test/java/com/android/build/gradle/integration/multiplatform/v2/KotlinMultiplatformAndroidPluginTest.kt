@@ -374,5 +374,50 @@ class KotlinMultiplatformAndroidPluginTest(private val publishLibs: Boolean) {
     }
   }
 
+  @Test
+  fun testIncludeKotlinFile() {
+    // We also include KmpAndroidFirstLibClass.kt because KmpAndroidFirstLibJavaClass.java
+    // depends on it. This ensures the Java compilation passes while still verifying that
+    // other Kotlin files (like KmpAndroidActivity.kt) are not included.
+    val includedFile = project.getSubproject("kmpFirstLib").file("src/androidMain/kotlin/com/example/kmpfirstlib/IncludedClass.kt")
+    FileUtils.mkdirs(includedFile.parentFile)
+    includedFile.writeText(
+      """
+      package com.example.kmpfirstlib
+      class IncludedClass
+      """
+        .trimIndent()
+    )
+
+    TestFileUtils.appendToFile(
+      project.getSubproject("kmpFirstLib").ktsBuildFile,
+      """
+      kotlin {
+          sourceSets {
+              androidMain.configure {
+                  kotlin.include("**/IncludedClass.kt")
+                  kotlin.include("**/KmpAndroidFirstLibClass.kt")
+              }
+          }
+      }
+      """
+        .trimIndent(),
+    )
+
+    executor().run(":kmpFirstLib:assemble")
+
+    project.getSubproject("kmpFirstLib").assertAar(AarSelector.NO_BUILD_TYPE) {
+      mainJar {
+        classes()
+          .containsExactly(
+            "com/example/kmpfirstlib/KmpCommonFirstLibClass",
+            "com/example/kmpfirstlib/KmpAndroidFirstLibClass",
+            "com/example/kmpfirstlib/KmpAndroidFirstLibJavaClass",
+            "com/example/kmpfirstlib/IncludedClass",
+          )
+      }
+    }
+  }
+
   private fun executor() = project.executor().withFailOnWarning(false) // b/455891987
 }
