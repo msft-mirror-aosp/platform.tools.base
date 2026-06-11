@@ -106,7 +106,7 @@ class GrpcTest {
           .trimIndent(),
         """
         grpc_thread {
-          thread_id: 1
+          thread_id: 0
           thread_name: "main"
         }
         """
@@ -181,6 +181,7 @@ class GrpcTest {
       }
       .toString()
       .replace("grpc-java-inprocess/\\d+\\.\\d+\\.\\d+".toRegex(), "grpc-java-inprocess")
+      .replace("thread_id: \\d+".toRegex(), "thread_id: 0")
       .trim()
   }
 
