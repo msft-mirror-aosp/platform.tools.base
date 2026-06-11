@@ -66,7 +66,7 @@ class MutableTaskContainer : TaskContainer {
   override var renderscriptCompileTask: TaskProvider<out RenderscriptCompile>? = null
   override lateinit var mergeResourcesTask: TaskProvider<out MergeResources>
   override lateinit var mergeAssetsTask: TaskProvider<out MergeSourceSetFolders>
-  override lateinit var processJavaResourcesTask: TaskProvider<out Sync>
+  override var processJavaResourcesTask: TaskProvider<out Sync>? = null
   override var generateBuildConfigTask: TaskProvider<out GenerateBuildConfig>? = null
   override var processAndroidResTask: TaskProvider<out ProcessAndroidResources>? = null
   override var processManifestTask: TaskProvider<out ManifestProcessorTask>? = null

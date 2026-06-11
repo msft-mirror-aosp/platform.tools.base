@@ -57,7 +57,7 @@ class AddJavaResourcesTest(private val useNewDsl: Boolean, private val disallowP
     if (disallowProvider) {
       build.expectFailure()
     }
-    build.run(":app:processDebugJavaRes")
+    build.run(":app:mergeDebugJavaResource")
   }
 }
 

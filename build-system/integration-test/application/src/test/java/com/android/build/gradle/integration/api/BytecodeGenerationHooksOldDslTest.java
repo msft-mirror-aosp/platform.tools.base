@@ -34,6 +34,7 @@ import com.android.testutils.apk.Dex;
 import com.android.utils.FileUtils;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.truth.Truth;
 import com.google.common.truth.Truth8;
 
 import kotlin.Unit;
@@ -49,6 +50,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.zip.ZipFile;
 
 /** test to verify the hook to register custom pre-javac compilers */
 @Category(SmokeTests.class)
@@ -97,11 +99,14 @@ public class BytecodeGenerationHooksOldDslTest {
                     it.contains("META-INF/post-lib.kotlin_module");
                 });
 
-        File resDir =
-                project.file("library/build/intermediates/java_res/debug/processDebugJavaRes/out");
-        assertThat(resDir).exists();
-        assertThat(FileUtils.join(resDir, "META-INF", "lib.kotlin_module")).isFile();
-        assertThat(FileUtils.join(resDir, "META-INF", "post-lib.kotlin_module")).isFile();
+        File javaResJar =
+                project.file(
+                        "library/build/intermediates/java_res_compressed_jar/debug/compressDebugJavaRes/java_res.jar");
+        assertThat(javaResJar).exists();
+        try (ZipFile jarResJarZip = new ZipFile(javaResJar)) {
+            Truth.assertThat(jarResJarZip.getEntry("META-INF/lib.kotlin_module")).isNotNull();
+            Truth.assertThat(jarResJarZip.getEntry("META-INF/post-lib.kotlin_module")).isNotNull();
+        }
 
         // verify the compile classpath
         checkDependencies(
