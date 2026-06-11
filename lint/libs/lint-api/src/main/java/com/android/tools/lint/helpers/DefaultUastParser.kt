@@ -60,7 +60,6 @@ import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UFile
 import org.jetbrains.uast.UastFacade
 import org.jetbrains.uast.getContainingUFile
-import org.jetbrains.uast.getIoFile
 import org.jetbrains.uast.psi.UElementWithLocation
 
 // Fully qualified names here:
@@ -252,7 +251,7 @@ open class DefaultUastParser(project: com.android.tools.lint.detector.api.Projec
   override fun getLocation(context: JavaContext, element: UElement): Location {
     if (element is UElementWithLocation) {
       val file = element.getContainingUFile() ?: return Location.NONE
-      val ioFile = file.getIoFile() ?: return Location.NONE
+      val ioFile = file.sourcePsi.virtualFile?.let(VfsUtilCore::virtualToIoFile) ?: return Location.NONE
       val text = file.sourcePsi.text ?: file.javaPsi?.text ?: ""
       val location = Location.create(ioFile, text, element.startOffset, element.endOffset)
       location.setSource(element)
@@ -350,7 +349,7 @@ open class DefaultUastParser(project: com.android.tools.lint.detector.api.Projec
   override fun createLocation(element: UElement): Location {
     if (element is UElementWithLocation) {
       val file = element.getContainingUFile() ?: return Location.NONE
-      val ioFile = file.getIoFile() ?: return Location.NONE
+      val ioFile = file.sourcePsi.virtualFile?.let(VfsUtilCore::virtualToIoFile) ?: return Location.NONE
       val text = file.sourcePsi.text
       val location = Location.create(ioFile, text, element.startOffset, element.endOffset)
       location.setSource(element)
