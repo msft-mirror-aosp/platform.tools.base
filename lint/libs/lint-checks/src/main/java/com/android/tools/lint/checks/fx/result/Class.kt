@@ -116,7 +116,7 @@ sealed interface ClassId : Scope {
   private enum class Common(val aliases: List<String>) : ClassId {
     Boolean("java.lang.Boolean", "kotlin.Boolean", "boolean"),
     Int("java.lang.Integer", "kotlin.Int", "int"),
-    Char("java.lang.Char", "kotlin.Char", "char"),
+    Char("java.lang.Character", "kotlin.Char", "char"),
     Byte("java.lang.Byte", "kotlin.Byte", "byte"),
     Short("java.lang.Short", "kotlin.Short", "short"),
     Long("java.lang.Long", "kotlin.Long", "long"),

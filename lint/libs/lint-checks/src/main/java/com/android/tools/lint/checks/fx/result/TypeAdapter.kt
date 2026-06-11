@@ -118,7 +118,8 @@ object KTypeAdapter : TypeAdapter<KType> {
       Boolean::class -> Type.Boolean
       Int::class -> Type.Int
       Char::class -> Type.Char
-      Byte::class -> Type.Short
+      Byte::class -> Type.Byte
+      Short::class -> Type.Short
       Long::class -> Type.Long
       Float::class -> Type.Float
       Double::class -> Type.Double
