@@ -24,8 +24,8 @@ import com.android.build.api.variant.impl.FilterConfigurationImpl
 import com.android.build.gradle.internal.core.dsl.ComponentDslInfo
 import com.android.build.gradle.internal.core.dsl.MultiVariantComponentDslInfo
 import com.android.build.gradle.internal.core.dsl.NestedComponentDslInfo
-import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.options.IntegerOption
+import com.android.build.gradle.options.Option
 import com.android.build.gradle.options.StringOption
 import com.android.builder.core.BuilderConstants
 import com.android.builder.core.ComponentType
@@ -39,11 +39,32 @@ import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.Provider
 
-class VariantPathHelper(
+open class VariantPathHelper(
   val buildDirectory: DirectoryProperty,
-  private val dslInfo: ComponentDslInfo,
-  private val dslServices: DslServices,
+  val componentIdentity: ComponentIdentity,
+  val componentType: ComponentType,
+  private val directorySegmentsLambda: () -> Collection<String?>,
+  private val baseNameLambda: () -> String,
+  private val baseNameWithSplitsLambda: (String) -> String,
+  private val projectOptionsLookup: (Option<*>) -> Any?,
+  private val fileCreator: (Any) -> File,
 ) {
+
+  constructor(
+    buildDirectory: DirectoryProperty,
+    dslInfo: ComponentDslInfo,
+    projectOptionsLookup: (Option<*>) -> Any?,
+    fileCreator: (Any) -> File,
+  ) : this(
+    buildDirectory = buildDirectory,
+    componentIdentity = dslInfo.componentIdentity,
+    componentType = dslInfo.componentType,
+    directorySegmentsLambda = { getDirectorySegments(dslInfo) },
+    baseNameLambda = { computeBaseName(dslInfo) },
+    baseNameWithSplitsLambda = { splitName -> computeBaseNameWithSplits(splitName, dslInfo) },
+    projectOptionsLookup = projectOptionsLookup,
+    fileCreator = fileCreator,
+  )
 
   companion object {
     private fun computeMultiVariantComponentBaseName(dslInfo: ComponentDslInfo): String {
@@ -123,6 +144,46 @@ class VariantPathHelper(
       }
       return sb.toString()
     }
+
+    private fun getDirectorySegments(dslInfo: ComponentDslInfo): Collection<String> {
+      val builder = ImmutableList.builder<String>()
+      when (dslInfo) {
+        is NestedComponentDslInfo -> {
+          builder.add(dslInfo.componentType.prefix)
+          builder.addAll(getDirectorySegments(dslInfo.mainVariantDslInfo))
+        }
+        is MultiVariantComponentDslInfo -> {
+          if (dslInfo.productFlavorList.isNotEmpty()) {
+            builder.add(combineAsCamelCase(dslInfo.productFlavorList, ProductFlavor::getName))
+          }
+          builder.add(dslInfo.buildType!!)
+        }
+      }
+      return builder.build()
+    }
+
+    private fun computeBaseNameWithSplits(splitName: String, dslInfo: ComponentDslInfo): String {
+      val sb = StringBuilder()
+      when (dslInfo) {
+        is NestedComponentDslInfo -> {
+          sb.append(computeBaseNameWithSplits(splitName, dslInfo.mainVariantDslInfo))
+          sb.append('-').append(dslInfo.componentType.prefix)
+        }
+        is MultiVariantComponentDslInfo -> {
+          if (dslInfo.productFlavorList.isNotEmpty()) {
+            for (pf in dslInfo.productFlavorList) {
+              sb.append(pf.name).append('-')
+            }
+          }
+          sb.append(splitName).append('-')
+          sb.append(dslInfo.buildType!!)
+        }
+        else -> {
+          return "main-$splitName"
+        }
+      }
+      return sb.toString()
+    }
   }
 
   /**
@@ -132,31 +193,14 @@ class VariantPathHelper(
    *
    * @return the directory name for the variant
    */
-  val dirName: String by lazy { Joiner.on('/').join(directorySegments) }
-
-  private fun getDirectorySegments(dslInfo: ComponentDslInfo): Collection<String> {
-    val builder = ImmutableList.builder<String>()
-    when (dslInfo) {
-      is NestedComponentDslInfo -> {
-        builder.add(dslInfo.componentType.prefix)
-        builder.addAll(getDirectorySegments(dslInfo.mainVariantDslInfo))
-      }
-      is MultiVariantComponentDslInfo -> {
-        if (dslInfo.productFlavorList.isNotEmpty()) {
-          builder.add(combineAsCamelCase(dslInfo.productFlavorList, ProductFlavor::getName))
-        }
-        builder.add(dslInfo.buildType!!)
-      }
-    }
-    return builder.build()
-  }
+  open val dirName: String by lazy { Joiner.on('/').join(directorySegments) }
 
   /**
    * Returns a unique directory name (can include multiple folders) for the variant, based on build type, flavor and test.
    *
    * @return the directory name for the variant
    */
-  val directorySegments: Collection<String?> by lazy { getDirectorySegments(dslInfo) }
+  val directorySegments: Collection<String?> by lazy { directorySegmentsLambda() }
 
   /**
    * Returns the expected output file name for the variant.
@@ -167,7 +211,7 @@ class VariantPathHelper(
   fun getOutputFileName(hasSigningConfig: Boolean, archivesBaseName: String, baseName: String): String {
     // we only know if it is signed during configuration, if it's the base module.
     // Otherwise, don't differentiate between signed and unsigned.
-    val suffix = if (hasSigningConfig || !dslInfo.componentType.isBaseModule) SdkConstants.DOT_ANDROID_PACKAGE else "-unsigned.apk"
+    val suffix = if (hasSigningConfig || !componentType.isBaseModule) SdkConstants.DOT_ANDROID_PACKAGE else "-unsigned.apk"
     return "$archivesBaseName-$baseName$suffix"
   }
 
@@ -178,7 +222,8 @@ class VariantPathHelper(
    * @return a unique name made up of the variant and split names.
    */
   fun computeFullNameWithSplits(splitName: String): String {
-    return computeFullNameWithSplits(dslInfo.componentIdentity, dslInfo.componentType, splitName)
+    // Corrected to use componentIdentity and componentType parameters
+    return computeFullNameWithSplits(componentIdentity, componentType, splitName)
   }
 
   /**
@@ -187,30 +232,7 @@ class VariantPathHelper(
    *
    * @return the name of the variant
    */
-  val baseName: String by lazy { computeBaseName(dslInfo) }
-
-  private fun computeBaseNameWithSplits(splitName: String, dslInfo: ComponentDslInfo): String {
-    val sb = StringBuilder()
-    when (dslInfo) {
-      is NestedComponentDslInfo -> {
-        sb.append(computeBaseNameWithSplits(splitName, dslInfo.mainVariantDslInfo))
-        sb.append('-').append(dslInfo.componentType.prefix)
-      }
-      is MultiVariantComponentDslInfo -> {
-        if (dslInfo.productFlavorList.isNotEmpty()) {
-          for (pf in dslInfo.productFlavorList) {
-            sb.append(pf.name).append('-')
-          }
-        }
-        sb.append(splitName).append('-')
-        sb.append(dslInfo.buildType!!)
-      }
-      else -> {
-        return "main-$splitName"
-      }
-    }
-    return sb.toString()
-  }
+  open val baseName: String by lazy { baseNameLambda() }
 
   /**
    * Returns a base name that includes the given splits name.
@@ -219,7 +241,7 @@ class VariantPathHelper(
    * @return a unique name made up of the variant and split names.
    */
   fun computeBaseNameWithSplits(splitName: String): String {
-    return computeBaseNameWithSplits(splitName, dslInfo)
+    return baseNameWithSplitsLambda(splitName)
   }
 
   fun intermediatesDir(vararg subDirs: String): Provider<Directory> = getBuildSubDir(SdkConstants.FD_INTERMEDIATES, subDirs)
@@ -244,16 +266,15 @@ class VariantPathHelper(
    * @return the location for APKs
    */
   val apkLocation: File by lazy {
-    val override = dslServices.projectOptions.get(StringOption.IDE_APK_LOCATION)
+    val override = projectOptionsLookup(StringOption.IDE_APK_LOCATION) as String?
     // it does not really matter if the build was invoked from the IDE or not, it only
     // matters if it is an 'optimized' build and in that case, we consider it a
     // custom build.
     val customBuild =
-      dslServices.projectOptions.get(StringOption.IDE_BUILD_TARGET_ABI) != null ||
-        dslServices.projectOptions.get(IntegerOption.IDE_TARGET_DEVICE_API) != null
+      projectOptionsLookup(StringOption.IDE_BUILD_TARGET_ABI) != null || projectOptionsLookup(IntegerOption.IDE_TARGET_DEVICE_API) != null
     val baseDirectory =
       when {
-        override != null -> dslServices.file(override)
+        override != null -> fileCreator(override)
         customBuild -> deploymentApkLocation.get().asFile
         else -> defaultApkLocation.get().asFile
       }
@@ -262,7 +283,7 @@ class VariantPathHelper(
 
   val targetFilterConfigurations: Collection<FilterConfiguration>? by lazy {
     val filterConfigurations = mutableListOf<FilterConfiguration>()
-    dslServices.projectOptions.get(StringOption.IDE_BUILD_TARGET_ABI)?.let {
+    (projectOptionsLookup(StringOption.IDE_BUILD_TARGET_ABI) as String?)?.let {
       filterConfigurations.add(FilterConfigurationImpl(FilterConfiguration.FilterType.ABI, it))
     }
     filterConfigurations.ifEmpty { null }

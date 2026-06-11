@@ -62,6 +62,17 @@ class AndroidTestEngineConnectedTest {
       androidApplication {
         android {
           testOptions.suites.create("myAndroidTestSuite", AgpTestSuite::class.java) {
+            it.testApk {
+              dependencies {
+                implementation.add("org.jetbrains.kotlin:kotlin-stdlib:1.8.20")
+                implementation.add("junit:junit:4.13.2")
+                implementation.add("androidx.test:core:1.4.0-alpha06")
+                implementation.add("androidx.test.ext:junit:1.1.3-alpha02")
+                implementation.add("androidx.test:monitor:1.4.0-alpha06")
+                implementation.add("androidx.test:rules:1.4.0-alpha06")
+                implementation.add("androidx.test:runner:1.4.0-alpha06")
+              }
+            }
             it.useJunitEngine.apply {
               inputs.add(AgpTestSuiteInputParameters.TESTED_APKS)
               inputs.add(AgpTestSuiteInputParameters.ADB_EXECUTABLE)
@@ -77,20 +88,12 @@ class AndroidTestEngineConnectedTest {
           }
 
           defaultConfig { testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner" }
-
-          dependencies {
-            androidTestImplementation("androidx.test:core:1.4.0-alpha06")
-            androidTestImplementation("androidx.test.ext:junit:1.1.3-alpha02")
-            androidTestImplementation("androidx.test:monitor:1.4.0-alpha06")
-            androidTestImplementation("androidx.test:rules:1.4.0-alpha06")
-            androidTestImplementation("androidx.test:runner:1.4.0-alpha06")
-          }
         }
 
         files {
           add("src/myAndroidTestSuite/testcase1.txt", "some content")
           add(
-            "src/androidTest/java/com/example/android/ExampleInstrumentedTest.kt",
+            "src/myAndroidTestSuite/kotlin/com/example/android/ExampleInstrumentedTest.kt",
             // language=kotlin
             """
             package com.example.android
@@ -125,7 +128,15 @@ class AndroidTestEngineConnectedTest {
 
       androidComponents.onVariants(androidComponents.selector().withName("debug")) { variant ->
         val apkArtifacts = variant.artifacts.get(SingleArtifact.APK)
-        val testApkArtifacts = variant.androidTest!!.artifacts.get(SingleArtifact.APK)
+        val mySuite =
+          (variant as com.android.build.gradle.internal.component.VariantCreationConfig).testSuites.first {
+            it.name == "myAndroidTestSuite"
+          }
+        val testApkArtifacts =
+          mySuite.sourceContainers
+            .first { it.type == com.android.build.api.variant.TestSuiteSourceType.TEST_APK }
+            .artifacts
+            .get(SingleArtifact.APK)
         project.tasks.withType(org.gradle.api.tasks.testing.Test::class.java).configureEach { task ->
           if (task.name.contains(variant.name, ignoreCase = true)) {
             // TODO(b/476442048): This is a tentative setup to allow end-to-end testing until

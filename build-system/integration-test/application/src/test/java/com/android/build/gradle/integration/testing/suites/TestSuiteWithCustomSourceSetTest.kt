@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.testing.suites
 import com.android.Version
 import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
+import com.android.build.api.variant.TestSuiteSourceSet
 import com.android.build.gradle.integration.common.fixture.GradleBuildResult
 import com.android.build.gradle.integration.common.fixture.project.GradleBuild
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
@@ -77,6 +78,11 @@ class TestSuiteWithCustomSourceSetTest(val testType: TestType) {
                   enginesDependencies.add("com.test:toy-junit-engine:1.0")
                   enginesDependencies.add("org.junit.platform:junit-platform-engine:1.12.0")
                 }
+                if (testType == TestType.HOST_JAR) {
+                  it.hostJar {}
+                } else {
+                  it.testApk {}
+                }
                 it.targetVariants.add("debug")
                 it.targets.apply { create("t1") {} }
               }
@@ -99,19 +105,16 @@ class TestSuiteWithCustomSourceSetTest(val testType: TestType) {
     Assume.assumeFalse(testType == TestType.TEST_APK)
 
     val project = rule.build
-    var result: GradleBuildResult =
-      project.executor
-        .expectFailure() // TODO: it fails because Gradle complains I have no tests.
-        .run("testFirstT1DebugTestSuite")
+    var result: GradleBuildResult = project.executor.run("testFirstT1DebugTestSuite")
 
-    Truth.assertThat(result.didWorkTasks).contains(":app:processFirstDebugJavaRes")
+    Truth.assertThat(result.didWorkTasks).contains(":app:processFirstHostJarDebugJavaRes")
     val javaRes = getJavaRes(project)
     Truth.assertThat(javaRes.exists()).isTrue()
     Truth.assertThat(javaRes.resolve("some/random").listFiles().map { it.name }).containsExactly("file.txt", "res.txt")
 
     // Run it again to check that we are up to date.
-    result = project.executor.expectFailure().run("testFirstT1DebugTestSuite")
-    Truth.assertThat(result.upToDateTasks).contains(":app:processFirstDebugJavaRes")
+    result = project.executor.run("testFirstT1DebugTestSuite")
+    Truth.assertThat(result.upToDateTasks).contains(":app:processFirstHostJarDebugJavaRes")
   }
 
   @Test
@@ -120,12 +123,9 @@ class TestSuiteWithCustomSourceSetTest(val testType: TestType) {
     Assume.assumeFalse(testType == TestType.TEST_APK)
 
     val project = rule.build
-    var result: GradleBuildResult =
-      project.executor
-        .expectFailure() // TODO: it fails because Gradle complains I have no tests.
-        .run("testFirstT1DebugTestSuite")
+    var result: GradleBuildResult = project.executor.run("testFirstT1DebugTestSuite")
 
-    Truth.assertThat(result.didWorkTasks).contains(":app:processFirstDebugJavaRes")
+    Truth.assertThat(result.didWorkTasks).contains(":app:processFirstHostJarDebugJavaRes")
     val javaRes = getJavaRes(project).resolve("some${File.separatorChar}random")
     Truth.assertThat(javaRes.exists()).isTrue()
     Truth.assertThat(javaRes.listFiles().map { it.name }).containsExactly("file.txt", "res.txt")
@@ -134,8 +134,8 @@ class TestSuiteWithCustomSourceSetTest(val testType: TestType) {
       build.subProject(":app").files.run { add("src/shared/resources/some/random/third.txt", "yet another one") }
 
       // Run it again to check that we are not up to date.
-      result = build.executor.expectFailure().run("testFirstT1DebugTestSuite")
-      Truth.assertThat(result.didWorkTasks).contains(":app:processFirstDebugJavaRes")
+      result = build.executor.run("testFirstT1DebugTestSuite")
+      Truth.assertThat(result.didWorkTasks).contains(":app:processFirstHostJarDebugJavaRes")
       Truth.assertThat(javaRes.listFiles().map { it.name }).containsExactly("file.txt", "res.txt", "third.txt")
     }
   }
@@ -171,19 +171,22 @@ class TestSuiteWithCustomSourceSetTest(val testType: TestType) {
 
   private fun getJavaRes(project: GradleBuild) =
     InternalArtifactType.JAVA_RES.getIntermediateOutputDir(project.subProject(":app").buildDir.toFile())
-      .resolve("firstDebug")
-      .resolve("processFirstDebugJavaRes")
+      .resolve("firstHostJarDebug")
+      .resolve("processFirstHostJarDebugJavaRes")
       .resolve("out")
 }
 
 open class AddStaticFolderToHostJarTestSuiteCallback : ApplicationComponentCallback {
 
   override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
-    androidComponents.finalizeDsl { android ->
-      android.testOptions.suites.getByName("first") { first ->
-        first.hostJar {
-          // use reflection as the API is not public yet.
-          javaClass.getMethod("addStaticSourceSet", String::class.java).invoke(this, "src/shared")
+    androidComponents.onVariants { variant ->
+      variant.suites.forEach { (suiteName, suite) ->
+        if (suiteName == "first") {
+          suite.sources.forEach { sourceSet ->
+            if (sourceSet is TestSuiteSourceSet.HostJar) {
+              sourceSet.resources.addStaticSourceDirectory("src/shared/resources")
+            }
+          }
         }
       }
     }
@@ -193,11 +196,14 @@ open class AddStaticFolderToHostJarTestSuiteCallback : ApplicationComponentCallb
 open class AddStaticFolderToTestApkTestSuiteCallback : ApplicationComponentCallback {
 
   override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
-    androidComponents.finalizeDsl { android ->
-      android.testOptions.suites.getByName("first") { first ->
-        first.testApk {
-          // use reflection as the API is not public yet.
-          javaClass.getMethod("addStaticSourceSet", String::class.java).invoke(this, "src/shared")
+    androidComponents.onVariants { variant ->
+      variant.suites.forEach { (suiteName, suite) ->
+        if (suiteName == "first") {
+          suite.sources.forEach { sourceSet ->
+            if (sourceSet is TestSuiteSourceSet.TestApk) {
+              sourceSet.resources.addStaticSourceDirectory("src/shared/resources")
+            }
+          }
         }
       }
     }

@@ -113,6 +113,7 @@ import com.android.build.gradle.internal.testing.ManagedDeviceRegistry
 import com.android.build.gradle.internal.utils.KOTLIN_MPP_PLUGIN_ID
 import com.android.build.gradle.internal.variant.VariantPathHelper
 import com.android.build.gradle.options.BooleanOption
+import com.android.build.gradle.options.getOption
 import com.android.builder.core.ComponentTypeImpl
 import com.android.builder.errors.IssueReporter
 import com.android.builder.model.v2.ide.ProjectType
@@ -509,7 +510,7 @@ constructor(listenerRegistry: BuildEventsListenerRegistry, private val buildFeat
         dslServices,
       )
 
-    val paths = VariantPathHelper(project.layout.buildDirectory, dslInfo, dslServices)
+    val paths = VariantPathHelper(project.layout.buildDirectory, dslInfo, dslServices.projectOptions::getOption, dslServices::file)
 
     val artifacts = ArtifactsImpl(project, dslInfo.componentIdentity.name)
 
@@ -597,7 +598,7 @@ constructor(listenerRegistry: BuildEventsListenerRegistry, private val buildFeat
         dslServices,
       )
 
-    val paths = VariantPathHelper(project.layout.buildDirectory, dslInfo, dslServices)
+    val paths = VariantPathHelper(project.layout.buildDirectory, dslInfo, dslServices.projectOptions::getOption, dslServices::file)
 
     val artifacts = ArtifactsImpl(project, dslInfo.componentIdentity.name)
 
@@ -665,7 +666,7 @@ constructor(listenerRegistry: BuildEventsListenerRegistry, private val buildFeat
         (androidTarget as KotlinMultiplatformAndroidLibraryTargetImpl).enableJavaSources,
       )
 
-    val paths = VariantPathHelper(project.layout.buildDirectory, dslInfo, dslServices)
+    val paths = VariantPathHelper(project.layout.buildDirectory, dslInfo, dslServices.projectOptions::getOption, dslServices::file)
 
     val artifacts = ArtifactsImpl(project, dslInfo.componentIdentity.name)
 

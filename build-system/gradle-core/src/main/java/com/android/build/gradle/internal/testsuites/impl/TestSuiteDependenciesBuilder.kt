@@ -21,6 +21,8 @@ import com.android.build.api.attributes.AgpVersionAttr
 import com.android.build.api.attributes.BuildTypeAttr
 import com.android.build.api.attributes.ProductFlavorAttr
 import com.android.build.api.dsl.AgpTestSuiteDependencies
+import com.android.build.api.variant.TestSuiteSourceType
+import com.android.build.api.variant.impl.toCamelCase
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.core.dsl.MultiVariantComponentDslInfo
 import com.android.build.gradle.internal.dependency.TestSuiteSourceClasspath
@@ -33,6 +35,7 @@ import org.gradle.api.artifacts.ResolutionStrategy
 import org.gradle.api.artifacts.dsl.DependencyCollector
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.attributes.AttributeContainer
+import org.gradle.api.attributes.Category
 import org.gradle.api.attributes.Usage
 import org.gradle.api.attributes.java.TargetJvmEnvironment
 import org.gradle.api.model.ObjectFactory
@@ -50,9 +53,11 @@ internal constructor(
   private val testedVariant: VariantCreationConfig,
   private val flavorSelection: Map<Attribute<ProductFlavorAttr>, ProductFlavorAttr>,
   private val dslInfo: MultiVariantComponentDslInfo,
+  private val sourceType: TestSuiteSourceType,
 ) {
 
   private val jvmEnvironment = project.objects.named(TargetJvmEnvironment::class.java, TargetJvmEnvironment.ANDROID)
+  private val standardJvmEnvironment = project.objects.named(TargetJvmEnvironment::class.java, TargetJvmEnvironment.STANDARD_JVM)
   private val agpVersion = project.objects.named(AgpVersionAttr::class.java, Version.ANDROID_GRADLE_PLUGIN_VERSION)
   private val testSuiteName = testSuiteBuilder.name
   private val enginesDependencies = testSuiteBuilder.junitEngineSpec.enginesDependencies
@@ -71,8 +76,10 @@ internal constructor(
     val configurations = project.configurations
     val testedVariantName = testedVariant.name
 
+    val identifier = "$testSuiteName${sourceType.toCamelCase()}${testedVariantName.capitalized()}"
+
     // ----------- COMPILE CLASSPATH
-    val compileClasspathName: String = testSuiteName + testedVariantName.capitalized() + "CompileClasspath"
+    val compileClasspathName: String = identifier + "CompileClasspath"
     val compileClasspath: Configuration = configurations.maybeCreate(compileClasspathName)
     compileClasspath.isVisible = false
     compileClasspath.description = "Resolved configuration for compilation for test suite: $testSuiteName in $testedVariantName"
@@ -80,11 +87,19 @@ internal constructor(
     addAttributes(compileClasspath, factory.named(Usage::class.java, Usage.JAVA_API))
 
     // -------------- RUNTIME CLASSPATH
-    val runtimeClasspathName: String = testSuiteName + testedVariantName.capitalized() + "RuntimeClasspath"
+    val runtimeClasspathName: String = identifier + "RuntimeClasspath"
     val runtimeClasspath = configurations.maybeCreate(runtimeClasspathName)
     runtimeClasspath.description = "Resolved configuration for runtime for test suite: $testSuiteName in $testedVariantName"
-    populateClasspath(runtimeClasspath, gatherCollectors { listOf(it.implementation, it.runtimeOnly, enginesDependencies) })
+    populateClasspath(runtimeClasspath, gatherCollectors { listOf(it.implementation, it.runtimeOnly) })
     addAttributes(runtimeClasspath, factory.named(Usage::class.java, Usage.JAVA_RUNTIME))
+
+    // -------------- HOST RUNTIME CLASSPATH
+    val hostRuntimeClasspathName: String = identifier + "HostRuntimeClasspath"
+    val hostRuntimeClasspath = configurations.maybeCreate(hostRuntimeClasspathName)
+    hostRuntimeClasspath.description = "Resolved configuration for host runtime for test suite: $testSuiteName in $testedVariantName"
+    hostRuntimeClasspath.extendsFrom(runtimeClasspath)
+    populateClasspath(hostRuntimeClasspath, listOf(enginesDependencies))
+    addAttributesForHost(hostRuntimeClasspath, factory.named(Usage::class.java, Usage.JAVA_RUNTIME))
 
     if (testedVariant.componentType.isAar) {
       // If the tested variant is a library, we can use standard project dependencies.
@@ -101,6 +116,7 @@ internal constructor(
     return TestSuiteSourceClasspath(
       compileClasspath = compileClasspath,
       runtimeClasspath = runtimeClasspath,
+      hostRuntimeClasspath = hostRuntimeClasspath,
       objectFactory = project.objects,
     )
   }
@@ -118,7 +134,21 @@ internal constructor(
     configuration.resolutionStrategy.sortArtifacts(ResolutionStrategy.SortOrder.CONSUMER_FIRST)
     val attributes = configuration.attributes
     attributes.attribute(Usage.USAGE_ATTRIBUTE, usage)
+    attributes.attribute(Category.CATEGORY_ATTRIBUTE, project.objects.named(Category::class.java, Category.LIBRARY))
     attributes.attribute(TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE, jvmEnvironment)
+    attributes.attribute(AgpVersionAttr.ATTRIBUTE, agpVersion)
+    val consumptionFlavorMap = getConsumptionFlavorAttributes(flavorSelection)
+    applyVariantAttributes(attributes, testedVariant.buildType, consumptionFlavorMap)
+  }
+
+  private fun addAttributesForHost(configuration: Configuration, usage: Usage) {
+    configuration.isCanBeConsumed = false
+    configuration.isVisible = false
+    configuration.resolutionStrategy.sortArtifacts(ResolutionStrategy.SortOrder.CONSUMER_FIRST)
+    val attributes = configuration.attributes
+    attributes.attribute(Usage.USAGE_ATTRIBUTE, usage)
+    attributes.attribute(Category.CATEGORY_ATTRIBUTE, project.objects.named(Category::class.java, Category.LIBRARY))
+    attributes.attribute(TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE, standardJvmEnvironment)
     attributes.attribute(AgpVersionAttr.ATTRIBUTE, agpVersion)
     val consumptionFlavorMap = getConsumptionFlavorAttributes(flavorSelection)
     applyVariantAttributes(attributes, testedVariant.buildType, consumptionFlavorMap)

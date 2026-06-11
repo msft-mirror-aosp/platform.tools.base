@@ -23,7 +23,7 @@ import com.android.build.api.dsl.CompileOptions
 import com.android.build.api.variant.AnnotationProcessor
 import com.android.build.api.variant.ScopedArtifacts.Scope
 import com.android.build.api.variant.impl.TestSuiteSourceContainer
-import com.android.build.gradle.internal.api.HostJarTestSuiteSourceSet
+import com.android.build.gradle.internal.api.AbstractTestSuiteSourceSet
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.MutableTaskContainer
@@ -41,7 +41,7 @@ import org.gradle.api.tasks.util.PatternSet
 
 internal class JavaCompileCreationConfigForTestSuite(
   val sourceContainer: TestSuiteSourceContainer,
-  val testSuiteSource: HostJarTestSuiteSourceSet,
+  val testSuiteSource: AbstractTestSuiteSourceSet,
   val testedVariant: VariantCreationConfig,
   override val services: TaskCreationServices,
   override val taskContainer: MutableTaskContainer,
@@ -99,10 +99,9 @@ internal class JavaCompileCreationConfigForTestSuite(
       services
         .fileCollection()
         .from(
-          sourceContainer.suiteSourceClasspath.getArtifactCollection(
-            AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH,
-            AndroidArtifacts.ArtifactType.CLASSES
-          ).artifactFiles,
+          sourceContainer.suiteSourceClasspath
+            .getArtifactCollection(AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH, AndroidArtifacts.ArtifactType.CLASSES)
+            .artifactFiles,
           testedVariant.artifacts.forScope(Scope.PROJECT).getFinalArtifacts(ScopedArtifact.POST_COMPILATION_CLASSES),
           testedVariant.androidResourcesCreationConfig?.getCompiledRClasses(AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH),
         )

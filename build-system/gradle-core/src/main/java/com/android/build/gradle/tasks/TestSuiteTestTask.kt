@@ -431,13 +431,17 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       task.outputs.upToDateWhen { false }
 
       val classesDir = task.project.layout.buildDirectory.file(task.name)
+      val hasHostJar = creationConfig.sourceContainers.any { it.source is TestSuiteSourceSet.HostJar }
+
       task.testClassesDirs =
         creationConfig.services.fileCollection().also { fileCollection ->
           fileCollection.from(classesDir)
           creationConfig.sourceContainers.forEach { sourceContainer ->
-            fileCollection.from(
-              sourceContainer.artifacts.forScope(ScopedArtifacts.Scope.PROJECT).getFinalArtifacts(ScopedArtifact.POST_COMPILATION_CLASSES)
-            )
+            if (sourceContainer.source is TestSuiteSourceSet.HostJar) {
+              fileCollection.from(
+                sourceContainer.artifacts.forScope(ScopedArtifacts.Scope.PROJECT).getFinalArtifacts(ScopedArtifact.POST_COMPILATION_CLASSES)
+              )
+            }
           }
         }
       task.classpath =
@@ -448,16 +452,25 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
               .forScope(ScopedArtifacts.Scope.PROJECT)
               .getFinalArtifacts(ScopedArtifact.POST_COMPILATION_CLASSES)
           )
-          creationConfig.sourceContainers.forEach { sourceContainer ->
-            fileCollection.from(
-              sourceContainer.suiteSourceClasspath.getArtifactCollection(
-                AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
-                AndroidArtifacts.ArtifactType.CLASSES_JAR
-              ).artifactFiles
-            )
-            fileCollection.from(
-              sourceContainer.artifacts.forScope(ScopedArtifacts.Scope.PROJECT).getFinalArtifacts(ScopedArtifact.POST_COMPILATION_CLASSES)
-            )
+          if (hasHostJar) {
+            creationConfig.sourceContainers
+              .filter { it.source is TestSuiteSourceSet.HostJar }
+              .forEach { sourceContainer ->
+                fileCollection.from(
+                  sourceContainer.suiteSourceClasspath.getHostRuntimeClasspathArtifacts(AndroidArtifacts.ArtifactType.CLASSES_JAR)
+                )
+                fileCollection.from(
+                  sourceContainer.artifacts
+                    .forScope(ScopedArtifacts.Scope.PROJECT)
+                    .getFinalArtifacts(ScopedArtifact.POST_COMPILATION_CLASSES)
+                )
+              }
+          } else {
+            creationConfig.sourceContainers.forEach { sourceContainer ->
+              fileCollection.from(
+                sourceContainer.suiteSourceClasspath.getHostRuntimeClasspathArtifacts(AndroidArtifacts.ArtifactType.CLASSES_JAR)
+              )
+            }
           }
         }
 

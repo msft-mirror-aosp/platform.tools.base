@@ -28,9 +28,10 @@ abstract class AbstractTestSuiteSourceSet(
   protected val sourceSetName: String,
   variantServices: VariantServices,
   val userAddedSourceSets: Collection<Directory>,
-  val javaEnabled: Boolean,
-  val kotlinEnabled: Boolean,
 ) {
+  abstract val java: FlatSourceDirectoriesImpl?
+  abstract val kotlin: FlatSourceDirectoriesImpl?
+
   fun getName(): String = sourceSetName
 
   val defaultTopLevelFolder = File(variantServices.projectInfo.projectDirectory.asFile, "src/$sourceSetName")

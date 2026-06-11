@@ -23,7 +23,7 @@ import com.android.build.api.variant.AnnotationProcessor
 import com.android.build.api.variant.ScopedArtifacts.Scope
 import com.android.build.api.variant.impl.FlatSourceDirectoriesImpl
 import com.android.build.api.variant.impl.TestSuiteSourceContainer
-import com.android.build.gradle.internal.api.HostJarTestSuiteSourceSet
+import com.android.build.gradle.internal.api.AbstractTestSuiteSourceSet
 import com.android.build.gradle.internal.component.BuiltInKotlinCreationConfig
 import com.android.build.gradle.internal.component.ComponentBasedBuiltInKotlinCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
@@ -51,7 +51,7 @@ import org.jetbrains.kotlin.gradle.plugin.sources.android.AndroidVariantType
 internal class BuiltInKotlinCreationConfigImpl(
   val testSuite: TestSuiteCreationConfig,
   val sourceContainer: TestSuiteSourceContainer,
-  val source: HostJarTestSuiteSourceSet,
+  val source: AbstractTestSuiteSourceSet,
   val testedVariant: VariantCreationConfig,
   override val services: TaskCreationServices,
   override val taskContainer: MutableTaskContainer,
@@ -85,10 +85,9 @@ internal class BuiltInKotlinCreationConfigImpl(
     services
       .fileCollection()
       .from(
-        sourceContainer.suiteSourceClasspath.getArtifactCollection(
-          AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH,
-          AndroidArtifacts.ArtifactType.CLASSES
-        ).artifactFiles,
+        sourceContainer.suiteSourceClasspath
+          .getArtifactCollection(AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH, AndroidArtifacts.ArtifactType.CLASSES)
+          .artifactFiles,
         testedVariant.artifacts.forScope(Scope.PROJECT).getFinalArtifacts(ScopedArtifact.POST_COMPILATION_CLASSES),
         testedVariant.androidResourcesCreationConfig?.getCompiledRClasses(ConsumedConfigType.COMPILE_CLASSPATH),
       )

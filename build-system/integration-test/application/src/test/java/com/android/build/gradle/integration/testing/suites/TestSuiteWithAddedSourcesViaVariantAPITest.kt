@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.testing.suites
 
+import com.android.Version
 import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.api.variant.TestSuiteSourceSet
@@ -44,66 +45,82 @@ class TestSuiteWithAddedSourcesViaVariantAPITest {
 
   @get:Rule
   val rule =
-    GradleRule.configure().from {
-      gradleProperties { add(BooleanOption.TEST_SUITE_SUPPORT, true) }
-      androidApplication {
-        android {
-          namespace = "com.example.test"
-          testOptions.suites.create("first", AgpTestSuite::class.java) {
-            it.useJunitEngine.apply { includeEngines.add("[engine:toy-junit-engine-for-tests]") }
-            it.hostJar {}
-            it.targetVariants.add("debug")
-            it.targetVariants.add("release")
-            it.targets.apply { create("t1") {} }
-          }
-          testOptions.suites.create("second", AgpTestSuite::class.java) {
-            it.useJunitEngine.apply { includeEngines.add("[engine:toy-junit-engine-for-tests]") }
-            it.testApk {}
-            it.targetVariants.add("debug")
-            it.targets.apply { create("t1") {} }
-          }
-        }
-        dependencies { implementation("com.google.truth:truth:0.44") }
-        files {
-          add("src/first/java/Dummy.java", "public class Dummy {}")
-          add("src/second/test.txt", "dummy content")
-          add("src/configuration", "1")
-          add("src/test/shared/shared_file.txt", "shared content")
-        }
-        pluginCallbacks += AddGeneratedSourceSetToTestSuiteCallback::class.java
-        pluginCallbacks += AddStaticDirectoryToTestSuiteCallback::class.java
+    GradleRule.configure()
+      .withMavenRepository {
+        jar("com.google.truth:truth:0.44")
+        jar("org.junit.platform:junit-platform-engine:1.10.1")
+        jar("org.junit.platform:junit-platform-launcher:1.10.1")
+        jar("org.jetbrains.kotlin:kotlin-stdlib:2.1.20")
+        jar("com.test:toy-junit-engine:1.0")
+          .addClasses(ToyJunitEngineForTesting::class.java, ToyTestDescriptor::class.java, TestEngineLogger::class.java)
+          .addTextFile("META-INF/services/org.junit.platform.engine.TestEngine", ToyJunitEngineForTesting::class.java.name)
       }
-    }
+      .from {
+        gradleProperties { add(BooleanOption.TEST_SUITE_SUPPORT, true) }
+        androidApplication {
+          android {
+            namespace = "com.example.test"
+            testOptions.suites.create("first", AgpTestSuite::class.java) {
+              it.useJunitEngine.apply {
+                includeEngines.add("[engine:toy-junit-engine-for-tests]")
+                enginesDependencies.add("com.android.tools.build:gradle-api:${Version.ANDROID_GRADLE_PLUGIN_VERSION}")
+                enginesDependencies.add("org.junit.platform:junit-platform-launcher")
+                enginesDependencies.add("com.test:toy-junit-engine:1.0")
+                enginesDependencies.add("org.junit.platform:junit-platform-engine:1.12.0")
+              }
+              it.hostJar {}
+              it.targetVariants.add("debug")
+              it.targetVariants.add("release")
+              it.targets.apply { create("t1") {} }
+            }
+            testOptions.suites.create("second", AgpTestSuite::class.java) {
+              it.useJunitEngine.apply {
+                includeEngines.add("[engine:toy-junit-engine-for-tests]")
+                enginesDependencies.add("com.android.tools.build:gradle-api:${Version.ANDROID_GRADLE_PLUGIN_VERSION}")
+                enginesDependencies.add("org.junit.platform:junit-platform-launcher")
+                enginesDependencies.add("com.test:toy-junit-engine:1.0")
+                enginesDependencies.add("org.junit.platform:junit-platform-engine:1.12.0")
+              }
+              it.testApk {}
+              it.targetVariants.add("debug")
+              it.targets.apply { create("t1") {} }
+            }
+          }
+          dependencies { implementation("com.google.truth:truth:0.44") }
+          files {
+            add("src/first/java/Dummy.java", "public class Dummy {}")
+            add("src/second/test.txt", "dummy content")
+            add("src/configuration", "1")
+            add("src/test/shared/resources/shared_file.txt", "shared content")
+          }
+          pluginCallbacks += AddGeneratedSourceSetToTestSuiteCallback::class.java
+          pluginCallbacks += AddStaticDirectoryToTestSuiteCallback::class.java
+        }
+      }
 
   @Test
   fun upToDateCheck() {
 
     val project = rule.build
-    var result: GradleBuildResult =
-      project.executor
-        .expectFailure() // TODO: it fails because Gradle complains I have no tests.
-        .run("testFirstT1DebugTestSuite")
+    var result: GradleBuildResult = project.executor.run("testFirstT1DebugTestSuite")
 
-    Truth.assertThat(result.didWorkTasks).contains(":app:processFirstDebugJavaRes")
+    Truth.assertThat(result.didWorkTasks).contains(":app:processFirstHostJarDebugJavaRes")
     val javaRes = getJavaRes(project)
     Truth.assertThat(javaRes.exists()).isTrue()
     Truth.assertThat(javaRes.listFiles().map { it.name }).containsExactly("shared_file.txt", "random_text_0.txt")
 
     // Run it again to check that we are up to date.
-    result = project.executor.expectFailure().run("testFirstT1DebugTestSuite")
-    Truth.assertThat(result.upToDateTasks).contains(":app:processFirstDebugJavaRes")
+    result = project.executor.run("testFirstT1DebugTestSuite")
+    Truth.assertThat(result.upToDateTasks).contains(":app:processFirstHostJarDebugJavaRes")
   }
 
   @Test
   fun fileAddedCheck() {
 
     val project = rule.build
-    var result: GradleBuildResult =
-      project.executor
-        .expectFailure() // TODO: it fails because Gradle complains I have no tests.
-        .run("testFirstT1DebugTestSuite")
+    var result: GradleBuildResult = project.executor.run("testFirstT1DebugTestSuite")
 
-    Truth.assertThat(result.didWorkTasks).contains(":app:processFirstDebugJavaRes")
+    Truth.assertThat(result.didWorkTasks).contains(":app:processFirstHostJarDebugJavaRes")
     val javaRes = getJavaRes(project)
     Truth.assertThat(javaRes.exists()).isTrue()
     Truth.assertThat(javaRes.listFiles().map { it.name }).containsExactly("shared_file.txt", "random_text_0.txt")
@@ -111,8 +128,8 @@ class TestSuiteWithAddedSourcesViaVariantAPITest {
     project.subProject(":app").files.run { update("src/configuration") { replaceWith("2") } }
 
     // Run it again to check that we are not up to date.
-    result = project.executor.expectFailure().run("testFirstT1DebugTestSuite")
-    Truth.assertThat(result.didWorkTasks).contains(":app:processFirstDebugJavaRes")
+    result = project.executor.run("testFirstT1DebugTestSuite")
+    Truth.assertThat(result.didWorkTasks).contains(":app:processFirstHostJarDebugJavaRes")
     Truth.assertThat(javaRes.listFiles().map { it.name }).containsExactly("shared_file.txt", "random_text_0.txt", "random_text_1.txt")
   }
 
@@ -121,12 +138,9 @@ class TestSuiteWithAddedSourcesViaVariantAPITest {
   @Test
   fun testAddedFoldersAreImpactingAllTargetedVariants() {
     val project = rule.build
-    var result: GradleBuildResult =
-      project.executor
-        .expectFailure() // TODO: it fails because Gradle complains I have no tests.
-        .run("testFirstT1ReleaseTestSuite")
+    var result: GradleBuildResult = project.executor.run("testFirstT1ReleaseTestSuite")
 
-    Truth.assertThat(result.didWorkTasks).contains(":app:processFirstReleaseJavaRes")
+    Truth.assertThat(result.didWorkTasks).contains(":app:processFirstHostJarReleaseJavaRes")
     val javaRes = getJavaRes(project, "Release")
     Truth.assertThat(javaRes.exists()).isTrue()
     Truth.assertThat(javaRes.listFiles().map { it.name }).containsExactly("shared_file.txt", "random_text_0.txt")
@@ -151,7 +165,7 @@ class TestSuiteWithAddedSourcesViaVariantAPITest {
     Truth.assertThat(basicFirstTestSuiteResources)
       .containsExactly(
         project.subProject(":app").resolve("src/first/resources").toFile(),
-        project.subProject(":app").resolve("src/test/shared").toFile(),
+        project.subProject(":app").resolve("src/test/shared/resources").toFile(),
       )
 
     // and verify the test suite model for generated folders.
@@ -174,7 +188,7 @@ class TestSuiteWithAddedSourcesViaVariantAPITest {
     Truth.assertThat(basicSecondTestSuiteResources)
       .containsExactly(
         project.subProject(":app").resolve("src/second/resources").toFile(),
-        project.subProject(":app").resolve("src/test/shared").toFile(),
+        project.subProject(":app").resolve("src/test/shared/resources").toFile(),
       )
 
     val secondTestSuite = testSuites.first { it.name == "second" }
@@ -188,8 +202,8 @@ class TestSuiteWithAddedSourcesViaVariantAPITest {
 
   private fun getJavaRes(project: GradleBuild, capitalizedVariantName: String = "Debug") =
     InternalArtifactType.JAVA_RES.getIntermediateOutputDir(project.subProject(":app").buildDir.toFile())
-      .resolve("first${capitalizedVariantName}")
-      .resolve("processFirst${capitalizedVariantName}JavaRes")
+      .resolve("firstHostJar${capitalizedVariantName}")
+      .resolve("processFirstHostJar${capitalizedVariantName}JavaRes")
       .resolve("out")
 }
 
@@ -247,10 +261,10 @@ open class AddStaticDirectoryToTestSuiteCallback : ApplicationComponentCallback 
       variant.suites.forEach { (suiteName, suite) ->
         suite.sources.forEach { sourceSet ->
           if (sourceSet is TestSuiteSourceSet.HostJar) {
-            sourceSet.resources.addStaticSourceDirectory("src/test/shared")
+            sourceSet.resources.addStaticSourceDirectory("src/test/shared/resources")
           }
           if (sourceSet is TestSuiteSourceSet.TestApk) {
-            sourceSet.resources.addStaticSourceDirectory("src/test/shared")
+            sourceSet.resources.addStaticSourceDirectory("src/test/shared/resources")
           }
         }
       }

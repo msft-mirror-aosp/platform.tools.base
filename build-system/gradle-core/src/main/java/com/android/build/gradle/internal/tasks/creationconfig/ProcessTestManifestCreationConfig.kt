@@ -291,8 +291,14 @@ abstract class TestSuiteProcessTestManifestCreationConfig(
   override val name
     get() = sourceContainer.identifier
 
+  override val applicationId: Provider<String>
+    get() = testSuiteCreationConfig.testedVariant.applicationId.map { "$it.test" }
+
   override val testedApplicationId: Provider<String>
     get() = testSuiteCreationConfig.testedVariant.applicationId
+
+  override val namespace: Provider<String>
+    get() = testSuiteCreationConfig.testedVariant.namespace.map { "$it.test" }
 
   override val instrumentationRunner: Provider<String>
     get() = testSuiteCreationConfig.instrumentationRunner(source)
@@ -306,6 +312,15 @@ abstract class TestSuiteProcessTestManifestCreationConfig(
   override val manifestOverlayFiles: Provider<List<File>>
     get() = creationConfig.services.provider { emptyList() }
 
+  override val mainManifestFile: File
+    get() = testSuiteCreationConfig.testedVariant.sources.manifestFile
+
+  override val mainManifestOverlayFiles: Provider<List<File>>
+    get() = testSuiteCreationConfig.testedVariant.sources.manifestOverlayFiles
+
   override val testedApkVariantArtifacts: ArtifactsImpl
     get() = creationConfig.artifacts
+
+  override val artifacts: ArtifactsImpl
+    get() = sourceContainer.artifacts
 }

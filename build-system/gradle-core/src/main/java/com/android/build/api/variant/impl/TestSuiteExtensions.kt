@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,14 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.dsl
+package com.android.build.api.variant.impl
 
-import org.gradle.api.file.Directory
-import org.gradle.api.file.DirectoryProperty
+import com.android.build.api.variant.TestSuiteSourceType
 
-abstract class AbstractTestSuiteSpecImpl(val name: String, val projectDirectory: Directory, val buildDirectory: DirectoryProperty) {
-  protected val userAddedSourcesSets = mutableListOf<Directory>()
+internal fun TestSuiteSourceType.toCamelCase(): String {
+  return when (this) {
+    TestSuiteSourceType.ASSETS -> "Assets"
+    TestSuiteSourceType.HOST_JAR -> "HostJar"
+    TestSuiteSourceType.TEST_APK -> "TestApk"
+  }
 }

@@ -31,8 +31,7 @@ class TestApkTestSuiteSourceSet(
   javaEnabled: Boolean,
   kotlinEnabled: Boolean,
   override val dependencies: AgpTestSuiteDependencies?,
-) :
-  AbstractTestSuiteSourceSet(sourceSetName, variantServices, userAddedSourceSets, javaEnabled, kotlinEnabled), TestSuiteSourceSet.TestApk {
+) : AbstractTestSuiteSourceSet(sourceSetName, variantServices, userAddedSourceSets), TestSuiteSourceSet.TestApk {
 
   override val manifestFile = File(variantServices.projectInfo.projectDirectory.asFile, "src/$sourceSetName/$FN_ANDROID_MANIFEST_XML")
 

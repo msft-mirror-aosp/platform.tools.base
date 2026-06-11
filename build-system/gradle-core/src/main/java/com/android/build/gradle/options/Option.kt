@@ -71,3 +71,13 @@ interface Option<out T> {
 
   fun parse(value: Any): T
 }
+
+fun ProjectOptions.getOption(option: Option<*>): Any? {
+  return when (option) {
+    is StringOption -> this.get(option)
+    is IntegerOption -> this.get(option)
+    is BooleanOption -> this.get(option)
+    is OptionalBooleanOption -> this.get(option)
+    else -> null
+  }
+}

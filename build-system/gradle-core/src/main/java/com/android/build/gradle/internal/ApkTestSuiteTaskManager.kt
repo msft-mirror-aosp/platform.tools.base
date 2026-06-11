@@ -16,28 +16,69 @@
 
 package com.android.build.gradle.internal
 
-import com.android.build.api.variant.TestSuiteSourceSet
 import com.android.build.api.variant.impl.TestSuiteSourceContainer
+import com.android.build.gradle.internal.api.TestApkTestSuiteSourceSet
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
+import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.tasks.creationconfig.forTestSuite
 import com.android.build.gradle.internal.tasks.factory.TaskFactory
+import com.android.build.gradle.internal.testsuites.impl.BuiltInKotlinCreationConfigImpl
+import com.android.build.gradle.internal.testsuites.impl.JavaCompileCreationConfigForTestSuite
+import com.android.build.gradle.internal.testsuites.impl.JavaPreCompileTaskCreationConfigImpl
+import com.android.build.gradle.tasks.JavaCompileCreationAction
+import com.android.build.gradle.tasks.JavaPreCompileTask
 import com.android.build.gradle.tasks.ProcessTestManifest
 import com.android.build.gradle.tasks.ProcessTestManifestPackaging
+import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.tasks.TaskProvider
 
 /** Task manager responsible for creating all tasks necessary to process a [TestSuiteSourceSet.TestApk] source set. */
-class ApkTestSuiteTaskManager {
+class ApkTestSuiteTaskManager(val project: Project, val testSuiteTaskManager: TestSuiteTaskManager) {
 
   fun createTasks(
+    testSuite: TestSuiteCreationConfig,
     sourceContainer: TestSuiteSourceContainer,
-    source: TestSuiteSourceSet.TestApk,
+    source: TestApkTestSuiteSourceSet,
     taskFactory: TaskFactory,
-    creationConfig: TestSuiteCreationConfig,
+    taskCreationServices: TaskCreationServices,
   ): TaskProvider<out Task> {
-    val taskConfig = forTestSuite(creationConfig, sourceContainer, source)
+    val taskConfig = forTestSuite(testSuite, sourceContainer, source)
     assert(taskConfig != null) { "ApkTestSuiteTaskManager create tasks should be called for Apk and Libraries only" }
     taskFactory.register(ProcessTestManifestPackaging.CreationAction(taskConfig!!))
-    return taskFactory.register(ProcessTestManifest.CreationAction(taskConfig))
+    taskFactory.register(ProcessTestManifest.CreationAction(taskConfig))
+
+    val javaPreCompileTaskCreationConfig = JavaPreCompileTaskCreationConfigImpl(testSuite, sourceContainer, taskCreationServices)
+    val preBuildTask = taskFactory.register(TaskManager.PreBuildCreationAction(javaPreCompileTaskCreationConfig))
+    taskFactory.register(JavaPreCompileTask.CreationAction(javaPreCompileTaskCreationConfig))
+
+    val javaCompileConfig =
+      JavaCompileCreationConfigForTestSuite(
+        sourceContainer,
+        source,
+        testSuite.testedVariant,
+        taskCreationServices,
+        javaPreCompileTaskCreationConfig.taskContainer,
+      )
+    val javacTask = taskFactory.register(JavaCompileCreationAction(javaCompileConfig))
+    testSuiteTaskManager.setupCompilationContext(
+      artifacts = sourceContainer.artifacts,
+      useBuiltInKotlinSupport = true,
+      useBuiltInKaptSupport = false,
+    )
+
+    val builtInCreationConfig =
+      BuiltInKotlinCreationConfigImpl(
+        testSuite = testSuite,
+        sourceContainer = sourceContainer,
+        source = source,
+        testedVariant = testSuite.testedVariant,
+        services = taskCreationServices,
+        javaPreCompileTaskCreationConfig.taskContainer,
+        javacTask,
+      )
+    testSuiteTaskManager.maybeCreateKotlinTasks(builtInCreationConfig)
+
+    return testSuiteTaskManager.createApkTestSuiteTasks(testSuite, sourceContainer, javacTask, preBuildTask)
   }
 }

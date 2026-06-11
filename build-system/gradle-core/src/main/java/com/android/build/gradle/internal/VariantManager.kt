@@ -23,6 +23,8 @@ import com.android.build.api.dsl.AgpTestSuiteDependencies
 import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.CommonExtension
 import com.android.build.api.dsl.Lint
+import com.android.build.api.dsl.TestSuiteHostJarSpec
+import com.android.build.api.dsl.TestSuiteTestApkSpec
 import com.android.build.api.dsl.TestedExtension
 import com.android.build.api.extension.impl.DslLifecycleComponentsOperationsRegistrar
 import com.android.build.api.extension.impl.VariantApiOperationsRegistrar
@@ -114,6 +116,7 @@ import com.android.build.gradle.internal.variant.VariantFactory
 import com.android.build.gradle.internal.variant.VariantInputModel
 import com.android.build.gradle.internal.variant.VariantPathHelper
 import com.android.build.gradle.options.BooleanOption
+import com.android.build.gradle.options.getOption
 import com.android.builder.core.AbstractProductFlavor.DimensionRequest
 import com.android.builder.core.ComponentType
 import com.android.builder.core.ComponentTypeImpl
@@ -366,8 +369,8 @@ class VariantManager<
 
     val variantDependencies = builder.build()
 
-    // Done. Create the (too) many variant objects
-    val pathHelper = VariantPathHelper(project.layout.buildDirectory, variantDslInfo, dslServices)
+    val pathHelper =
+      VariantPathHelper(project.layout.buildDirectory, variantDslInfo, dslServices.projectOptions::getOption, dslServices::file)
 
     val mappingScopePolicy: (ScopedArtifacts.Scope) -> ScopedArtifacts.Scope =
       if (componentType.isAar) {
@@ -523,7 +526,13 @@ class VariantManager<
         .overrideVariantNameAttribute(mainComponentInfo.variant.name)
         .setMainVariant(mainComponentInfo.variant)
         .build()
-    val pathHelper = VariantPathHelper(project.layout.buildDirectory, testFixturesComponentDslInfo, dslServices)
+    val pathHelper =
+      VariantPathHelper(
+        project.layout.buildDirectory,
+        testFixturesComponentDslInfo,
+        dslServices.projectOptions::getOption,
+        dslServices::file,
+      )
     val componentIdentity = testFixturesComponentDslInfo.componentIdentity
     val artifacts = ArtifactsImpl(project, componentIdentity.name)
     val taskContainer = MutableTaskContainer()
@@ -652,7 +661,8 @@ class VariantManager<
         .setTestedVariant(testedComponentInfo.variant)
         .setTestFixturesEnabled(testFixturesEnabled)
     val variantDependencies = builder.build()
-    val pathHelper = VariantPathHelper(project.layout.buildDirectory, testComponentDslInfo, dslServices)
+    val pathHelper =
+      VariantPathHelper(project.layout.buildDirectory, testComponentDslInfo, dslServices.projectOptions::getOption, dslServices::file)
     val componentIdentity = testComponentDslInfo.componentIdentity
     val artifacts = ArtifactsImpl(project, componentIdentity.name)
     val taskContainer = MutableTaskContainer()
@@ -882,22 +892,30 @@ class VariantManager<
         val componentName = "${testSuiteBuilder.name}${variantInfo.variant.name.capitalizeFirstChar()}"
 
         testSuiteBuilder as TestSuiteBuilderImpl
+        val sources = testSuiteBuilder.getSources()
+        val hasHostJar = sources.any { it is TestSuiteHostJarSpec }
+        val hasTestApk = sources.any { it is TestSuiteTestApkSpec }
+        val isMixed = hasHostJar && hasTestApk
+
         val testSuiteSources =
-          testSuiteBuilder.getSources().map { testSuiteSource: TestSuiteSourceCreationConfig ->
+          sources.map { testSuiteSource: TestSuiteSourceCreationConfig ->
             // create the variant specific dependency that will be additive to the
             // DSL One.
             val variantSpecificDependencies = project.objects.newInstance(AgpTestSuiteDependencies::class.java)
+
+            val source =
+              testSuiteSource.createTestSuiteSourceSet(
+                variantServices,
+                true, // so far, java is always enabled.
+                variantInfo.variant.builtInKotlinSupportMode is BuiltInKotlinSupportMode.Supported,
+                isMixed,
+              )
 
             TestSuiteSourceContainer(
               project = project,
               targetVariantName = variantBuilder.name,
               testSuiteName = testSuiteSource.name,
-              source =
-                testSuiteSource.createTestSuiteSourceSet(
-                  variantServices,
-                  true, // so far, java is always enabled.
-                  variantInfo.variant.builtInKotlinSupportMode is BuiltInKotlinSupportMode.Supported,
-                ),
+              source = source,
               dependencies = variantSpecificDependencies,
               suiteSourceClasspath =
                 TestSuiteDependenciesBuilder(
@@ -910,6 +928,7 @@ class VariantManager<
                     variantInfo.variant,
                     getFlavorSelection(variantInfo.variantDslInfo),
                     variantInfo.variantDslInfo as MultiVariantComponentDslInfo,
+                    source.type,
                   )
                   .build(),
             )
