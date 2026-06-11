@@ -18,12 +18,20 @@ package com.android.build.gradle.integration.lint
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.KotlinHelloWorldApp
+import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
-class LintConfigurationOverrideTest {
+@RunWith(Parameterized::class)
+class LintConfigurationOverrideTest(private val lintReportAggregation: Boolean) {
+
+  companion object {
+    @Parameterized.Parameters(name = "lintReportAggregation_{0}") @JvmStatic fun params() = listOf(true, false)
+  }
 
   @get:Rule
   val project: GradleTestProject =
@@ -31,9 +39,26 @@ class LintConfigurationOverrideTest {
 
   @get:Rule val temporaryFolder: TemporaryFolder = TemporaryFolder()
 
-  private val lintTaskName = ":lintDebug"
-  private val lintReportTaskName = ":lintReportDebug"
+  private val lintTaskNames: List<String>
+    get() =
+      if (lintReportAggregation) {
+        listOf(":lintDebug", ":lintAggregatedDebug")
+      } else {
+        listOf(":lintDebug")
+      }
+
+  private val lintReportTaskNames: List<String>
+    get() =
+      if (lintReportAggregation) {
+        listOf(":createLocalLintReportDebug", ":createAggregatedLintReportDebug")
+      } else {
+        listOf(":lintReportDebug")
+      }
+
   private val lintAnalyzeTaskName = ":lintAnalyzeDebug"
+
+  private val executor
+    get() = project.executor().with(BooleanOption.LINT_REPORT_AGGREGATION, lintReportAggregation)
 
   // Test that specifying a lint configuration override via a system property affects lint task
   // UP-TO-DATE checking as expected.
@@ -45,25 +70,25 @@ class LintConfigurationOverrideTest {
 
     // Use a nonexistent lint configuration file initially as a check that the build doesn't
     // fail in this case.
-    project.executor().withArgument("-Dlint.configuration.override=${nonexistentFile.absolutePath}").run(lintTaskName).apply {
-      assertTask(lintReportTaskName).didWork()
+    executor.withArgument("-Dlint.configuration.override=${nonexistentFile.absolutePath}").run(lintTaskNames).apply {
+      lintReportTaskNames.forEach { assertTask(it).didWork() }
       assertTask(lintAnalyzeTaskName).didWork()
     }
     // lint tasks should run again if we specify a lint.configuration.override system property.
-    project.executor().withArgument("-Dlint.configuration.override=${lintXml1.absolutePath}").run(lintTaskName).apply {
-      assertTask(lintReportTaskName).didWork()
+    executor.withArgument("-Dlint.configuration.override=${lintXml1.absolutePath}").run(lintTaskNames).apply {
+      lintReportTaskNames.forEach { assertTask(it).didWork() }
       assertTask(lintAnalyzeTaskName).didWork()
     }
     // lint tasks should be up-to-date if we set a different lint configuration file with the
     // same contents
-    project.executor().withArgument("-Dlint.configuration.override=${lintXml2.absolutePath}").run(lintTaskName).apply {
-      assertTask(lintReportTaskName).wasUpToDate()
+    executor.withArgument("-Dlint.configuration.override=${lintXml2.absolutePath}").run(lintTaskNames).apply {
+      lintReportTaskNames.forEach { assertTask(it).wasUpToDate() }
       assertTask(lintAnalyzeTaskName).wasUpToDate()
     }
     // lint tasks should run again if we modify the contents of the lint configuration file.
     lintXml2.appendText("bar")
-    project.executor().withArgument("-Dlint.configuration.override=${lintXml2.absolutePath}").run(lintTaskName).apply {
-      assertTask(lintReportTaskName).didWork()
+    executor.withArgument("-Dlint.configuration.override=${lintXml2.absolutePath}").run(lintTaskNames).apply {
+      lintReportTaskNames.forEach { assertTask(it).didWork() }
       assertTask(lintAnalyzeTaskName).didWork()
     }
   }
@@ -78,30 +103,26 @@ class LintConfigurationOverrideTest {
 
     // Use a nonexistent lint configuration file initially as a check that the build doesn't
     // fail in this case.
-    project
-      .executor()
-      .withEnvironmentVariables(mapOf("LINT_OVERRIDE_CONFIGURATION" to nonexistentFile.absolutePath))
-      .run(lintTaskName)
-      .apply {
-        assertTask(lintReportTaskName).didWork()
-        assertTask(lintAnalyzeTaskName).didWork()
-      }
+    executor.withEnvironmentVariables(mapOf("LINT_OVERRIDE_CONFIGURATION" to nonexistentFile.absolutePath)).run(lintTaskNames).apply {
+      lintReportTaskNames.forEach { assertTask(it).didWork() }
+      assertTask(lintAnalyzeTaskName).didWork()
+    }
     // lint tasks should run again if we specify a LINT_OVERRIDE_CONFIGURATION environment
     // variable.
-    project.executor().withEnvironmentVariables(mapOf("LINT_OVERRIDE_CONFIGURATION" to lintXml1.absolutePath)).run(lintTaskName).apply {
-      assertTask(lintReportTaskName).didWork()
+    executor.withEnvironmentVariables(mapOf("LINT_OVERRIDE_CONFIGURATION" to lintXml1.absolutePath)).run(lintTaskNames).apply {
+      lintReportTaskNames.forEach { assertTask(it).didWork() }
       assertTask(lintAnalyzeTaskName).didWork()
     }
     // lint tasks should be up-to-date if we set a different lint configuration file with the
     // same contents
-    project.executor().withEnvironmentVariables(mapOf("LINT_OVERRIDE_CONFIGURATION" to lintXml2.absolutePath)).run(lintTaskName).apply {
-      assertTask(lintReportTaskName).wasUpToDate()
+    executor.withEnvironmentVariables(mapOf("LINT_OVERRIDE_CONFIGURATION" to lintXml2.absolutePath)).run(lintTaskNames).apply {
+      lintReportTaskNames.forEach { assertTask(it).wasUpToDate() }
       assertTask(lintAnalyzeTaskName).wasUpToDate()
     }
     // lint tasks should run again if we modify the contents of the lint configuration file.
     lintXml2.appendText("bar")
-    project.executor().withEnvironmentVariables(mapOf("LINT_OVERRIDE_CONFIGURATION" to lintXml2.absolutePath)).run(lintTaskName).apply {
-      assertTask(lintReportTaskName).didWork()
+    executor.withEnvironmentVariables(mapOf("LINT_OVERRIDE_CONFIGURATION" to lintXml2.absolutePath)).run(lintTaskNames).apply {
+      lintReportTaskNames.forEach { assertTask(it).didWork() }
       assertTask(lintAnalyzeTaskName).didWork()
     }
   }

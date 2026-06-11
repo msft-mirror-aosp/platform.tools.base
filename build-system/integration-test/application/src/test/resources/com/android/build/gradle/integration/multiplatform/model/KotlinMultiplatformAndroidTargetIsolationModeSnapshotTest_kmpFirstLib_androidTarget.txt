@@ -48,7 +48,12 @@
             "assembleTaskOutputListingFile": {
               "absolutePath": "{INCLUDED_BUILD(:kotlinMultiplatform)}/kmpFirstLib/build/intermediates/apk_ide_redirect_file/androidDeviceTest/createAndroidDeviceTestApkListingFileRedirect/redirect.txt"
             },
-            "generatedAssetFolders": []
+            "generatedAssetFolders": [],
+            "generatedResourceFolders": [
+              {
+                "absolutePath": "{INCLUDED_BUILD(:kotlinMultiplatform)}/kmpFirstLib/build/generated/res/androidDeviceTest"
+              }
+            ]
           },
           "defaultSourceSetName": "androidDeviceTest",
           "assembleTaskName": "assembleAndroidDeviceTest",
@@ -57,7 +62,8 @@
             {
               "absolutePath": "{INCLUDED_BUILD(:kotlinMultiplatform)}/kmpFirstLib/build/intermediates/javac/androidDeviceTest/compileAndroidDeviceTestJavaWithJavac/classes"
             }
-          ]
+          ],
+          "generatedSourceFolders": []
         }
       }
     },
@@ -106,7 +112,8 @@
             {
               "absolutePath": "{INCLUDED_BUILD(:kotlinMultiplatform)}/kmpFirstLib/build/intermediates/javac/androidHostTest/compileAndroidHostTestJavaWithJavac/classes"
             }
-          ]
+          ],
+          "generatedSourceFolders": []
         }
       }
     },
@@ -157,6 +164,11 @@
               {
                 "absolutePath": "{INCLUDED_BUILD(:kotlinMultiplatform)}/kmpFirstLib/build/generated/androidMain/assets"
               }
+            ],
+            "generatedResourceFolders": [
+              {
+                "absolutePath": "{INCLUDED_BUILD(:kotlinMultiplatform)}/kmpFirstLib/build/generated/res/androidMain"
+              }
             ]
           },
           "defaultSourceSetName": "androidMain",
@@ -166,7 +178,8 @@
             {
               "absolutePath": "{INCLUDED_BUILD(:kotlinMultiplatform)}/kmpFirstLib/build/intermediates/javac/androidMain/compileAndroidMainJavaWithJavac/classes"
             }
-          ]
+          ],
+          "generatedSourceFolders": []
         }
       }
     }

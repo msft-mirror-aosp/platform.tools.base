@@ -48,9 +48,42 @@ class DiffUtilsTest {
     val (highlights, count) = generatePixelDiffImage(a, b)
 
     assertThat(count).isEqualTo(1)
-    assertThat(highlights.getRGB(5, 5)).isEqualTo(0xFFFF00FF.toInt()) // Magenta
+    // R=255, B=255, A=255 is constant. For Red vs Blue, total diff is 510, diffRatio = 0.5
+    // greenValue = 200 * 0.5 = 100 (0x64)
+    // Expected highlight color: 0xFFFF64FF.toInt()
+    assertThat(highlights.getRGB(5, 5)).isEqualTo(0xFFFF64FF.toInt())
     // Check other pixels are transparent
     assertThat(highlights.getRGB(0, 0)).isEqualTo(0x00FFFFFF.toInt())
+  }
+
+  @Test
+  fun generatePixelDiffImage_tinyDifference_usesLightPink() {
+    val a = createImage(10, 10, 0xFF000000.toInt()) // Black
+    val b = createImage(10, 10, 0xFF000000.toInt())
+    b.setRGB(5, 5, 0xFF000001.toInt()) // Almost Black (diff = 1)
+
+    val (highlights, count) = generatePixelDiffImage(a, b)
+
+    assertThat(count).isEqualTo(1)
+    // diffSum = 1, diffRatio = 1/1020
+    // greenValue = 200 * (1.0 - 1/1020) = 199 (0xC7)
+    // Expected color: 0xFFFFC7FF.toInt()
+    assertThat(highlights.getRGB(5, 5)).isEqualTo(0xFFFFC7FF.toInt())
+  }
+
+  @Test
+  fun generatePixelDiffImage_maximumDifference_usesVibrantMagenta() {
+    val a = createImage(10, 10, 0xFFFFFFFF.toInt()) // White
+    val b = createImage(10, 10, 0xFFFFFFFF.toInt())
+    b.setRGB(5, 5, 0x00000000.toInt()) // Transparent Black (max diff = 1020)
+
+    val (highlights, count) = generatePixelDiffImage(a, b)
+
+    assertThat(count).isEqualTo(1)
+    // diffSum = 1020, diffRatio = 1.0
+    // greenValue = 0
+    // Expected color: 0xFFFF00FF.toInt() (Vibrant Magenta)
+    assertThat(highlights.getRGB(5, 5)).isEqualTo(0xFFFF00FF.toInt())
   }
 
   @Test

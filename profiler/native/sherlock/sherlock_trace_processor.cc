@@ -274,6 +274,11 @@ class GapidServiceImpl final : public Gapid::Service {
     }
 #else
     FILE* file = fopen(request->path().c_str(), "r");
+    if (file == nullptr) {
+      tp.reset();
+      LOG(ERROR) << "LoadCapture: failed to open file";
+      return Status(grpc::StatusCode::INVALID_ARGUMENT, "failed to open file");
+    }
     fseek(file, 0L, SEEK_END);
     size_t size = ftell(file);
     fseek(file, 0L, SEEK_SET);
@@ -323,6 +328,9 @@ class GapidServiceImpl final : public Gapid::Service {
     GRPC_RETURN_IF_ERROR(ValidateToken(context));
     LOG(INFO) << "RPC: PerfettoQuery: " << request->query().data();
     std::lock_guard<std::mutex> guard(mu_);
+    if (tp == nullptr) {
+      return Status(grpc::StatusCode::FAILED_PRECONDITION, "no trace loaded");
+    }
     execute_query(tp.get(), request->query().data(),
                   response->mutable_result());
 

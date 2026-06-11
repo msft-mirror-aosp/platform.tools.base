@@ -24,6 +24,7 @@ import com.android.adblib.testing.FakeAdbSession
 import com.google.common.truth.Truth.assertThat
 import java.nio.file.Path
 import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertThrows
 import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Rule
@@ -227,7 +228,59 @@ class InjectionManagerTest {
       injectionManager.injectAndAttach()
       fail("Expected IllegalStateException for failing run-as pwd")
     } catch (e: IllegalStateException) {
-      assertThat(e.message).contains("Command 'run-as $packageName pwd' failed with exit code 1")
+      assertThat(e.message)
+        .contains(
+          "Failed to access the application '$packageName'. Please make sure the app is installed, debuggable, and running under the current user."
+        )
     }
+  }
+
+  @Test
+  fun testGetPid_Fails() = runTest {
+    val dummyPayload = tempFolder.root.toPath().resolve("lib_ui_inspector_payload.jar")
+    val injectionManager = InjectionManager(testSession, deviceSerial, packageName, agentPathResolver, dummyJar, dummyPayload)
+    val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
+
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "getprop ro.product.cpu.abi", "arm64-v8a\n")
+
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
+
+    // Configure pidof to fail
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pidof $packageName", stdout = "", stderr = "", exitCode = 1)
+
+    try {
+      injectionManager.injectAndAttach()
+      fail("Expected IllegalStateException for failing pidof")
+    } catch (e: IllegalStateException) {
+      assertThat(e.message).contains("The application '$packageName' is not running on the device. Please start the app and try again.")
+    }
+  }
+
+  @Test
+  fun testInvalidPackageName_Throws() {
+    val exception =
+      assertThrows(IllegalArgumentException::class.java) {
+        InjectionManager(testSession, deviceSerial, "com.example; id", agentPathResolver, dummyJar, dummyPayload)
+      }
+    assertThat(exception.message).contains("Invalid package name")
+  }
+
+  @Test
+  fun testLongPackageName_Throws() {
+    val longPackageName = "a".repeat(256)
+    val exception =
+      assertThrows(IllegalArgumentException::class.java) {
+        InjectionManager(testSession, deviceSerial, longPackageName, agentPathResolver, dummyJar, dummyPayload)
+      }
+    assertThat(exception.message).contains("Invalid package name")
+  }
+
+  @Test
+  fun testInvalidSerial_Throws() {
+    val exception =
+      assertThrows(IllegalArgumentException::class.java) {
+        InjectionManager(testSession, "serial; rm -rf /", packageName, agentPathResolver, dummyJar, dummyPayload)
+      }
+    assertThat(exception.message).contains("Invalid serial number")
   }
 }

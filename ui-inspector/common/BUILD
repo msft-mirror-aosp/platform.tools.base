@@ -1,10 +1,11 @@
-load("//tools/base/bazel:kotlin.bzl", "kotlin_library", "kotlin_test")
+load("@rules_java//java:defs.bzl", "java_library")
+load("//tools/base/bazel:kotlin.bzl", "kotlin_test")
 
 package(default_visibility = ["//tools/base/ui-inspector:__subpackages__"])
 
-kotlin_library(
+java_library(
     name = "common",
-    srcs = glob(["src/main/java/**/*.kt"]),
+    srcs = glob(["src/main/java/**/*.java"]),
     visibility = ["//visibility:public"],
 )
 

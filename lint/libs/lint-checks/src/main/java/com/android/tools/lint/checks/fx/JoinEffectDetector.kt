@@ -62,6 +62,7 @@ import com.android.tools.lint.detector.api.PartialResult
 import com.android.tools.lint.detector.api.Project
 import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.intellij.openapi.application.runReadAction
+import com.intellij.psi.PsiTypeParameter
 import java.io.File
 import java.lang.Iterable as JIterable
 import java.nio.file.Paths
@@ -82,7 +83,7 @@ import org.jetbrains.annotations.VisibleForTesting
 import org.jetbrains.kotlin.incremental.createDirectory
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.uast.UClass
-import org.jetbrains.uast.UDeclaration
+import org.jetbrains.uast.UElement
 import org.jetbrains.uast.ULambdaExpression
 import org.jetbrains.uast.UVariable
 
@@ -118,29 +119,27 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
     maybeLoadPartialResults(context)
   }
 
-  final override fun applicableSuperClasses() = listOf("java.lang.Object")
-
-  final override fun visitClass(context: JavaContext, declaration: UClass) {
-    isSummariesCacheValid = false
-    try {
-      programBuilder.addClass(context, declaration)
-    } catch (e: Throwable) {
-      if (LintClient.isUnitTest) {
-        throw e
-      } else {
-        context.log(e, "Error while indexing class ${declaration.qualifiedName}")
-      }
-    }
-  }
-
-  final override fun getApplicableUastTypes() = listOf(UDeclaration::class.java)
+  final override fun getApplicableUastTypes() = listOf<Class<out UElement>>(UVariable::class.java, UClass::class.java)
 
   final override fun createUastHandler(context: JavaContext) =
     object : UElementHandler() {
-      override fun visitDeclaration(node: UDeclaration) {
-        val dec = node as? UVariable ?: return
-        val fn = dec.sourcePsi as? KtNamedFunction ?: return
-        val fnUast = dec.uastInitializer as? ULambdaExpression ?: return
+      override fun visitClass(node: UClass) {
+        if (node.javaPsi is PsiTypeParameter) return
+        isSummariesCacheValid = false
+        try {
+          programBuilder.addClass(context, node)
+        } catch (e: Throwable) {
+          if (LintClient.isUnitTest) {
+            throw e
+          } else {
+            context.log(e, "Error while indexing class ${node.qualifiedName}")
+          }
+        }
+      }
+
+      override fun visitVariable(node: UVariable) {
+        val fn = node.sourcePsi as? KtNamedFunction ?: return
+        val fnUast = node.uastInitializer as? ULambdaExpression ?: return
         try {
           programBuilder.addLocalFunction(LocalFun(fnUast, fn))
         } catch (e: Throwable) {

@@ -326,7 +326,9 @@ public class BenchmarkTest {
             for (File repo : repos) {
                 gradle.addRepo(repo);
             }
-            gradle.addRepo(new File(data, "repo.zip"));
+            if (System.getProperty("SKIP_REPO_ZIP") == null && System.getenv("SKIP_REPO_ZIP") == null) {
+                gradle.addRepo(new File(data, "repo.zip"));
+            }
             gradle.addArgument(
                     "-Dcom.android.gradle.version=" + Objects.requireNonNull(agpVersion));
             gradle.addArgument("-Duser.home=" + home.getAbsolutePath());

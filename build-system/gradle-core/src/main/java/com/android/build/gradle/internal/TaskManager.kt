@@ -118,6 +118,7 @@ import com.android.build.gradle.internal.tasks.MergeNativeLibsTask
 import com.android.build.gradle.internal.tasks.OptimizeResourcesTask
 import com.android.build.gradle.internal.tasks.PrepareLintJarForPublish
 import com.android.build.gradle.internal.tasks.ProcessJavaResTask
+import com.android.build.gradle.internal.tasks.R8AnalysisTask
 import com.android.build.gradle.internal.tasks.R8Task
 import com.android.build.gradle.internal.tasks.RecalculateStackFramesTask
 import com.android.build.gradle.internal.tasks.UninstallTask
@@ -1771,7 +1772,10 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
     // proguard can shrink an empty library project, as the R class is always kept and
     // then removed by library jar transforms.
     val addCompileRClass = (this is LibraryTaskManager && creationConfig.buildFeatures.androidResources)
-    val task: TaskProvider<out Task> = createR8Task(creationConfig, isTestApplication, addCompileRClass)
+    taskFactory.register(R8AnalysisTask.CreationAction(creationConfig, creationConfig.name))
+
+    createR8Task(creationConfig, isTestApplication, addCompileRClass)
+
     if ((creationConfig as? ApplicationCreationConfig)?.runResourceShrinking() == true) {
       // Also convert shrunk resources from proto format to binary format so it can be
       // included in an APK

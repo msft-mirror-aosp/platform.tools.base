@@ -899,6 +899,7 @@ _CLASS_JARS = [
     "com.google.android.play:core:1.10.3",  # Used by SdkIndexIssuesSyncListenerTest
     "com.google.android.support:wearable:2.9.0",
     "com.google.android.wearable:wearable:2.9.0",
+    "com.google.api.grpc:grpc-google-common-protos:2.51.0",
     "com.google.apis:google-api-services-cloudresourcemanager:v1beta1-rev20240128-2.0.0",
     "com.google.apis:google-api-services-drive:v3-rev20241027-2.0.0",
     "com.google.apis:google-api-services-oauth2:v2-rev150-1.22.0",
@@ -976,6 +977,7 @@ _CLASS_JARS = [
     "com.google.guava:guava:32.1.2-jre",
     "com.google.guava:guava:33.0.0-jre",
     "com.google.guava:guava:33.2.1-jre",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
+    "com.google.guava:guava:33.4.0-android",
     "com.google.http-client:google-http-client-bom:pom:1.43.3",
     "com.google.http-client:google-http-client-bom:pom:1.45.0",
     "com.google.j2objc:j2objc-annotations:2.8",

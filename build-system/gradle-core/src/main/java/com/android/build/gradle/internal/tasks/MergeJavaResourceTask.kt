@@ -134,6 +134,11 @@ abstract class MergeJavaResourceTask : MergeJavaResourcesInputsOutputs, NewIncre
       creationConfig.artifacts
         .setInitialProvider(taskProvider, MergeJavaResourceTask::outputFile)
         .withName(fileName)
+        .on(InternalArtifactType.ORIGINAL_MERGED_JAVA_RES)
+
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, MergeJavaResourceTask::outputFile)
+        .withName(fileName)
         .on(InternalArtifactType.MERGED_JAVA_RES)
     }
 

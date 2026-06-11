@@ -29,7 +29,7 @@ import java.nio.file.Path
  */
 internal fun importOfflineMavenRepo() {
   if (TestUtils.runningFromBazel()) {
-    val originOfflineRepo: Path = TestUtils.getWorkspaceRoot().parent.resolve("maven/repository")
+    val originOfflineRepo: Path = TestUtils.getLocalMavenRepoFile("")
     if (!Files.exists(originOfflineRepo)) {
       throw IllegalArgumentException("$originOfflineRepo does not exist")
     }

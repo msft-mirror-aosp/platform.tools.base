@@ -835,8 +835,12 @@ private class ProjectInitializer(val client: LintClient, val file: File, var roo
 
   @Throws(ZipException::class, IOException::class)
   fun unpackZipFile(zip: File, dir: File) {
+    val canonicalDir = dir.canonicalFile
     forEachZippedFile(zip) { zipFile, zipEntry ->
-      val targetFile = File(dir, zipEntry.name)
+      val targetFile = File(canonicalDir, zipEntry.name).canonicalFile
+      if (!targetFile.toPath().startsWith(canonicalDir.toPath())) {
+        throw ZipException("Refusing to extract entry '${zipEntry.name}' from ${zip.name}: resolves outside $canonicalDir")
+      }
       Files.createParentDirs(targetFile)
       Files.asByteSink(targetFile).openBufferedStream().use { ByteStreams.copy(zipFile.getInputStream(zipEntry), it) }
     }

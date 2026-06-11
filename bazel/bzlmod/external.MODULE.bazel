@@ -90,3 +90,40 @@ sh_binary(
     strip_prefix = "gradle-profiler-0.24.0",
     urls = ["https://repo1.maven.org/maven2/org/gradle/profiler/gradle-profiler/0.24.0/gradle-profiler-0.24.0.zip"],
 )
+
+# TODO(b/415841192) Migrate @perfetto_repo to @perfetto.
+# This repo exposes only proto libraries, and does not need the patch applied
+# to the @perfetto repo.
+http_archive(
+    name = "perfetto_repo",
+    build_file = "@//tools/base/profiler:native/external/perfetto.BUILD",
+    sha256 = "0e119528d6f9d172bfc38512cd3a8dc6eee6f5ff7a99fc427983f837887bdc45",
+    strip_prefix = "perfetto-55.3",
+    url = "https://github.com/google/perfetto/archive/refs/tags/v55.3.tar.gz",
+)
+
+# An empty local repository which must be overridden according to the instructions at
+# go/agp-profiled-benchmarks if running the "_profiled" AGP build benchmarks.
+new_local_repository(
+    name = "yourkit_controller",
+    build_file = "//tools/base:yourkit-controller/yourkit.BUILD",
+    path = "tools/base/yourkit-controller",
+)
+
+new_local_repository(
+    name = "maven",
+    build_file = "//tools/base/bazel:maven/BUILD.maven",
+    path = "prebuilts/tools/common/m2",
+)
+
+new_local_repository(
+    name = "jar_jar",
+    build_file = "//tools/base/bazel/jarjar:jarjar.BUILD",
+    path = "external/jarjar",
+)
+
+new_local_repository(
+    name = "android_system_logging_repo",
+    build_file = "//tools/base/bazel:external/android_system_logging.BUILD",
+    path = "external/android/system/logging",
+)

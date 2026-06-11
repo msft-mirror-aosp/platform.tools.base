@@ -22,6 +22,7 @@ import static org.junit.Assert.assertThrows;
 
 import static java.util.stream.Collectors.toList;
 
+import com.android.SdkConstants;
 import com.android.annotations.Nullable;
 import com.android.repository.impl.meta.TypeDetails;
 import com.android.repository.testframework.FakePackage;
@@ -44,6 +45,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
@@ -1048,6 +1050,55 @@ public class DeviceManagerTest {
                             + "Warning: Unsupported device ai_glasses_device\n"
                             + "Warning: Unsupported device ai_glasses_displayless\n"
                             + "Warning: Unsupported device xr_glasses_device\n");
+    }
+
+    @Test
+    public final void testBadUserDevicesFile() throws Exception {
+        AndroidSdkHandler sdkHandler = sdkManager.getSdkHandler();
+        Path androidFolder = sdkHandler.getAndroidFolder();
+        assertThat((Object) androidFolder).isNotNull();
+        Path badUserDevicesFile = androidFolder.resolve(SdkConstants.FN_DEVICES_XML);
+
+        // Write invalid XML content to the user devices file
+        Files.write(
+                badUserDevicesFile, Collections.singletonList("This is not valid XML <devices>"));
+
+        // Create a custom logger that doesn't crash the test on errors, and capture the logs
+        StringBuilder errorLog = new StringBuilder();
+        StdLogger log =
+                new StdLogger(StdLogger.Level.VERBOSE) {
+                    @Override
+                    public void error(
+                            @Nullable Throwable t, @Nullable String errorFormat, Object... args) {
+                        errorLog.append(String.format("Error: " + errorFormat, args)).append("\n");
+                    }
+
+                    @Override
+                    public void warning(@NotNull String warningFormat, Object... args) {
+                        errorLog.append(String.format("Warning: " + warningFormat, args))
+                                .append("\n");
+                    }
+                };
+
+        // Create DeviceManager with the custom logger
+        DeviceManager deviceManager = DeviceManager.createInstance(sdkHandler, log);
+
+        // Verify that default devices are still parsed successfully
+        Collection<Device> defaultDevices = deviceManager.getDevices(DeviceCategory.DEFAULT);
+        assertThat(defaultDevices).isNotEmpty();
+        assertThat(listDisplayNames(defaultDevices)).contains("Medium Phone");
+
+        // Verify that user devices list is empty because the file was bad
+        Collection<Device> userDevices = deviceManager.getDevices(DeviceCategory.USER);
+        assertThat(userDevices).isEmpty();
+
+        // Verify that an error was logged about the parsing failure
+        assertThat(errorLog.toString()).contains("Error parsing");
+
+        // Verify that the bad file was renamed to backup file (.old)
+        Path backupFile = androidFolder.resolve(SdkConstants.FN_DEVICES_XML + ".old");
+        assertThat(Files.exists(backupFile)).isTrue();
+        assertThat(Files.exists(badUserDevicesFile)).isFalse();
     }
 
     @Test

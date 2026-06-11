@@ -67,6 +67,10 @@ class BuildEnv:
     """
     return self._bazel(True, True, "cquery", *query_args)
 
+  def bazel_mod(self, *mod_args) -> subprocess.CompletedProcess:
+    """Runs a 'bazel mod' command."""
+    return self._bazel(True, False, "mod", *mod_args)
+
   def bazel_info(self, *info_args) -> subprocess.CompletedProcess:
     """Runs a 'bazel info' command.
 

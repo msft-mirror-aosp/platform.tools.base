@@ -85,7 +85,10 @@ internal class BuiltInKotlinCreationConfigImpl(
     services
       .fileCollection()
       .from(
-        sourceContainer.suiteSourceClasspath.compileClasspath.asFileTree,
+        sourceContainer.suiteSourceClasspath.getArtifactCollection(
+          AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH,
+          AndroidArtifacts.ArtifactType.CLASSES
+        ).artifactFiles,
         testedVariant.artifacts.forScope(Scope.PROJECT).getFinalArtifacts(ScopedArtifact.POST_COMPILATION_CLASSES),
         testedVariant.androidResourcesCreationConfig?.getCompiledRClasses(ConsumedConfigType.COMPILE_CLASSPATH),
       )

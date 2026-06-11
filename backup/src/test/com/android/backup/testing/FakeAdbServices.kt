@@ -95,6 +95,7 @@ class FakeAdbServices(
   fun getProgress() = (progressListener as FakeProgressListener).getSteps()
 
   override suspend fun executeCommand(command: String, errorCode: ErrorCode): AdbOutput {
+    val command = command.replace("'", "")
     commands.add(command)
     val result = commandOverrides[command]?.handle(errorCode)
     if (result != null) {

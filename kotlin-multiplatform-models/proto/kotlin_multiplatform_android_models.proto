@@ -118,6 +118,9 @@ message MainVariantInfo {
 
     // Folders containing assets generated during the build and should be included in the main AAR.
     repeated File generated_asset_folders = 8;
+
+    // Folders containing resources generated during the build and should be included in the main AAR.
+    repeated File generated_resource_folders = 9;
 }
 
 // The info of the unit test component of the android kotlin multiplatform target.
@@ -146,6 +149,9 @@ message InstrumentedTestInfo {
 
     // Folders containing assets generated during the build and should be included in the test APK.
     repeated File generated_asset_folders = 6;
+
+    // Folders containing resources generated during the build and should be included in the test APK.
+    repeated File generated_resource_folders = 7;
 }
 
 message AndroidCompilation {
@@ -165,6 +171,8 @@ message AndroidCompilation {
     optional string kotlin_compile_task_name = 7;
     // Extra compiled bytecode output folders (for example javac output when java enabled)
     repeated File extra_classes_folders = 8;
+    // Folders containing generated source files.
+    repeated File generated_source_folders = 9;
 
     enum CompilationType {
         MAIN = 0;

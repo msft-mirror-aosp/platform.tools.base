@@ -30,7 +30,7 @@ import java.io.IOException
 import java.io.InputStream
 import java.nio.file.Files
 import java.nio.file.Path
-import javax.xml.parsers.ParserConfigurationException
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filterNotNull
@@ -200,9 +200,9 @@ class UserDeviceTable(private val log: ILogger, private val isSupportedDevice: (
         } catch (moveException: IOException) {
           log.error(moveException, "Failed to rename old config file")
         }
-      } catch (e: ParserConfigurationException) {
-        log.error(e, "Error parsing %s", userDevicesFile.toAbsolutePath())
-      } catch (e: IOException) {
+      } catch (e: CancellationException) {
+        throw e
+      } catch (e: Exception) {
         log.error(e, "Error parsing %s", userDevicesFile.toAbsolutePath())
       }
     }

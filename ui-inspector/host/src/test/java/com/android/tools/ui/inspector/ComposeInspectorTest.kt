@@ -431,8 +431,8 @@ class ComposeInspectorTest {
           )
         assertThat(composeInspectorConnected).isTrue()
 
-        // Trigger dumpUiTree which will fetch both trees, merge them, and print them!
-        dumpUiTree(
+        // Trigger dumpUi which will fetch both trees, merge them, and print them!
+        dumpUi(
           commandSender = commandSender,
           includeAttributes = false,
           includeResolutionStack = false,
@@ -744,8 +744,8 @@ class ComposeInspectorTest {
           )
         assertThat(composeInspectorConnected).isTrue()
 
-        // Trigger dumpUiTree which will fetch both trees, merge them, and print them!
-        dumpUiTree(
+        // Trigger dumpUi which will fetch both trees, merge them, and print them!
+        dumpUi(
           commandSender = commandSender,
           includeAttributes = true, // <-- Enable Attributes!
           includeResolutionStack = false,
@@ -1085,7 +1085,7 @@ class ComposeInspectorTest {
           )
         assertThat(composeInspectorConnected).isTrue()
 
-        dumpUiTree(
+        dumpUi(
           commandSender = commandSender,
           includeAttributes = true,
           includeResolutionStack = false,

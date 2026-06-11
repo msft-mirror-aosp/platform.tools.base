@@ -39,6 +39,7 @@ _EXTRA_TARGETS = [
     '//tools/base/journeys:journeys_maven_repo.zip',
     '//tools/base/preview/screenshot:preview_screenshot_maven_repo.zip',
     '//tools/base/firebase/testlab/testlab-gradle-plugin:testlab-gradle-plugin.zip',
+    '//tools/base/android-test:android-test-maven-repo.zip',
     '//tools/adt/idea/studio:test_studio_artifacts',
     '//tools/adt/idea/studio:android-studio.canary.test_studio_files',
     '//tools/adt/idea/studio:android-studio.stable.test_studio_files',
@@ -142,6 +143,7 @@ _AGP_ARTIFACTS = [
     ('tools/base/firebase/testlab/testlab-gradle-plugin/testlab-gradle-plugin.zip', 'artifacts'),
     ('tools/base/journeys/journeys_maven_repo.zip', 'artifacts'),
     ('tools/base/preview/screenshot/preview_screenshot_maven_repo.zip', 'artifacts'),
+    ('tools/base/android-test/android-test-maven-repo.zip', 'artifacts'),
     ('tools/base/build-system/android_gradle_plugin_9.zip', 'artifacts'),
 ]
 
@@ -178,6 +180,7 @@ def studio_linux(build_env: bazel.BuildEnv) -> None:
     targets = result.targets + ['//tools/base/bazel:iml_to_build_consistency_test']
     flags.extend(result.flags)
 
+  studio.check_lockfile(build_env)
   result = studio.run_tests(build_env, flags, targets)
   if build_type == studio.BuildType.PRESUBMIT:
     failure_retry.validate_and_upload(build_env)

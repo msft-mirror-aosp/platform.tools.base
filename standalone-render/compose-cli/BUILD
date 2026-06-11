@@ -1,4 +1,4 @@
-load("@rules_java//java:defs.bzl", "java_import")
+load("@rules_java//java:defs.bzl", "java_binary", "java_import")
 load("//tools/base/bazel:kotlin.bzl", "kotlin_library", "kotlin_test")
 load("//tools/base/bazel:maven.bzl", "maven_library", "maven_repository")
 load("//tools/base/preview/screenshot:version.bzl", "SCREENSHOT_TEST_PLUGIN_VERSION")
@@ -20,6 +20,7 @@ kotlin_library(
         "//tools/base/multipreview-asm:tools.compose-preview-detector",
         "//tools/base/sdklib:tools.sdklib",
         "//tools/base/standalone-render/lib:tools.standalone-render.lib",
+        "@maven//:org.jetbrains.kotlin.kotlin-reflect",
     ],
 )
 
@@ -55,6 +56,7 @@ merge_deps(
         "@maven//:jakarta.xml.bind.jakarta.xml.bind-api",
         "@maven//:net.sf.kxml.kxml2",
         "@maven//:org.glassfish.jaxb.jaxb-runtime",
+        "@maven//:org.jetbrains.kotlin.kotlin-reflect",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
         "@maven//:org.ow2.asm.asm",
         "@maven//:org.ow2.asm.asm-commons",
@@ -159,6 +161,7 @@ kotlin_test(
     # keep sorted
     data = [
         ":compose-preview-renderer",
+        ":compose-preview-renderer-cli_deploy.jar",
         ":compose_project_deps",
         "//prebuilts/studio/layoutlib:runtime",
         "//prebuilts/studio/layoutlib/data:framework_res.jar",
@@ -178,5 +181,45 @@ kotlin_test(
         "//tools/base/standalone-render/lib:tools.standalone-render.lib",
         "//tools/base/testutils:tools.testutils",
         "@maven//:junit.junit",
+    ],
+)
+
+java_binary(
+    name = "compose-preview-renderer-cli",
+    main_class = "com.android.tools.render.common.MainKt",
+    visibility = ["//visibility:public"],
+    runtime_deps = [
+        ":tools.compose-preview-renderer",
+        "//prebuilts/tools/common/lint-psi/intellij-core",
+        "//tools/adt/idea/compose-designer:ui-animation-tooling-internal",
+        "//tools/adt/idea/layoutlib:tools.layoutlib",
+        "//tools/adt/idea/layoutlib-loader:tools.layoutlib-loader",
+        "//tools/adt/idea/preview-elements:tools.preview-elements",
+        "//tools/adt/idea/render-resources:tools.render-resources",
+        "//tools/adt/idea/rendering:tools.rendering",
+        "//tools/adt/idea/wear-preview-elements:tools.wear-preview-elements",
+        "//tools/analytics-library/crash:tools.analytics-crash",
+        "//tools/base/apkparser:tools.binary-resources",
+        "//tools/base/apkparser/analyzer:tools.analyzer",
+        "//tools/base/common:tools.common",
+        "//tools/base/device_validator:tools.dvlib",
+        "//tools/base/environment-services:tools.environment-services",
+        "//tools/base/layoutlib-api:tools.layoutlib-api",
+        "//tools/base/layoutlib-extensions:tools.layoutlib-extensions",
+        "//tools/base/multipreview-asm:tools.compose-preview-detector",
+        "//tools/base/repository:tools.repository",
+        "//tools/base/resource-repository:tools.resource-repository",
+        "//tools/base/sdk-common:tools.sdk-common",
+        "//tools/base/sdklib:tools.sdklib",
+        "//tools/base/standalone-render/lib:tools.standalone-render.lib",
+        "//tools/base/zipflinger",
+        "@maven//:com.google.code.gson.gson",
+        "@maven//:com.google.guava.guava",
+        "@maven//:jakarta.xml.bind.jakarta.xml.bind-api",
+        "@maven//:net.sf.kxml.kxml2",
+        "@maven//:org.glassfish.jaxb.jaxb-runtime",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
+        "@maven//:org.ow2.asm.asm",
+        "@maven//:org.ow2.asm.asm-commons",
     ],
 )

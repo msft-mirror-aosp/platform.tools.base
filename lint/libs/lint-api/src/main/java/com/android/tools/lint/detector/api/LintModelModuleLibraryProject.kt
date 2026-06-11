@@ -25,6 +25,7 @@ import com.android.tools.lint.model.LintModelAndroidLibrary
 import com.android.tools.lint.model.LintModelDependency
 import com.android.tools.lint.model.LintModelJavaLibrary
 import com.android.tools.lint.model.LintModelMavenName
+import com.android.tools.lint.model.LintModelModuleType
 import com.android.utils.XmlUtils
 import com.google.common.collect.Lists
 import java.io.File
@@ -97,6 +98,10 @@ open class LintModelModuleJavaLibraryProject(
     }
     return javaLibraries
   }
+
+  override fun isAndroidProject(): Boolean = false
+
+  override fun getType(): LintModelModuleType = LintModelModuleType.JAVA_LIBRARY
 
   override fun getPartialResultsDir(): java.io.File? {
     return javaLibrary.partialResultsDir ?: super.getPartialResultsDir()

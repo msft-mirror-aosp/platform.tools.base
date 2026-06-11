@@ -44,12 +44,14 @@
             ],
             "consumerProguardFiles": [],
             "minificationEnabled": false,
-            "generatedAssetFolders": []
+            "generatedAssetFolders": [],
+            "generatedResourceFolders": []
           },
           "defaultSourceSetName": "androidMain",
           "assembleTaskName": "assembleAndroidMain",
           "kotlinCompileTaskName": "compileAndroidMain",
-          "extraClassesFolders": []
+          "extraClassesFolders": [],
+          "generatedSourceFolders": []
         }
       }
     }

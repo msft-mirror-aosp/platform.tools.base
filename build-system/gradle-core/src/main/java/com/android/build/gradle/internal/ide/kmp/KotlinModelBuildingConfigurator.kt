@@ -27,6 +27,9 @@ import com.android.build.gradle.internal.component.KmpComponentCreationConfig
 import com.android.build.gradle.internal.component.KmpCreationConfig
 import com.android.build.gradle.internal.ide.Utils.getConsumerKeepRules
 import com.android.build.gradle.internal.ide.Utils.getGeneratedAssetsFolders
+import com.android.build.gradle.internal.ide.Utils.getGeneratedResourceFolders
+import com.android.build.gradle.internal.ide.Utils.getGeneratedSourceFolders
+import com.android.build.gradle.internal.ide.Utils.getGeneratedSourceFoldersForUnitTests
 import com.android.build.gradle.internal.ide.proto.convert
 import com.android.build.gradle.internal.ide.proto.setIfNotNull
 import com.android.build.gradle.internal.ide.v2.ModelBuilder.Companion.getAgpFlags
@@ -81,6 +84,13 @@ object KotlinModelBuildingConfigurator {
     components.forEach { component ->
       val compilation = component.androidKotlinCompilation
 
+      val generatedSourceFolders =
+        if (component is HostTestCreationConfig) {
+          getGeneratedSourceFoldersForUnitTests(component)
+        } else {
+          getGeneratedSourceFolders(component)
+        }
+
       compilation.extras[androidCompilationKey] =
         AndroidCompilation.newBuilder()
           .setType(component.toType())
@@ -94,6 +104,7 @@ object KotlinModelBuildingConfigurator {
             (component as? DeviceTestCreationConfig)?.toInfo(testInstrumentationRunner, testInstrumentationRunnerArguments),
             AndroidCompilation.Builder::setInstrumentedTestInfo,
           )
+          .addAllGeneratedSourceFolders(generatedSourceFolders.map { it.convert() })
           .build()
 
       compilation.defaultSourceSet.extras[androidSourceSetKey] =
@@ -177,6 +188,7 @@ object KotlinModelBuildingConfigurator {
       .setMinSdkVersion(minSdk.convert())
       .setIfNotNull(maxSdk, MainVariantInfo.Builder::setMaxSdkVersion)
       .addAllGeneratedAssetFolders(getGeneratedAssetsFolders(this).map { it.convert() })
+      .addAllGeneratedResourceFolders(getGeneratedResourceFolders(this).map { it.convert() })
       .addAllProguardFiles(optimizationCreationConfig.proguardFiles.get().map { it.asFile.convert() })
       .addAllConsumerProguardFiles(optimizationCreationConfig.consumerProguardFiles.get().map { it.asFile.convert() })
       .addAllConsumerProguardFiles(getConsumerKeepRules(this).map { it.convert() })
@@ -198,5 +210,6 @@ object KotlinModelBuildingConfigurator {
       .putAllTestInstrumentationRunnerArguments(testInstrumentationRunnerArguments)
       .setAssembleTaskOutputListingFile(artifacts.get(InternalArtifactType.APK_IDE_REDIRECT_FILE).get().asFile.convert())
       .addAllGeneratedAssetFolders(getGeneratedAssetsFolders(this).map { it.convert() })
+      .addAllGeneratedResourceFolders(getGeneratedResourceFolders(this).map { it.convert() })
       .build()
 }

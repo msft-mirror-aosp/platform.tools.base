@@ -647,7 +647,7 @@ maven_repository(
         "@maven//:com.google.crypto.tink.tink",
         "@maven//:com.google.guava.guava",
         "@maven//:com.google.guava.guava-testlib",
-        "@maven//:com.google.guava.guava_33.2.1-android",
+        "@maven//:com.google.guava.guava_33.4.0-android",
         "@maven//:com.google.jimfs.jimfs",
         "@maven//:com.google.protobuf.protobuf-gradle-plugin",
         "@maven//:com.google.protobuf.protoc_3.22.3",

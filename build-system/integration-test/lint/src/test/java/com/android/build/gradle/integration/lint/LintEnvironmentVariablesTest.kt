@@ -18,25 +18,49 @@ package com.android.build.gradle.integration.lint
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
+import com.android.build.gradle.options.BooleanOption
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
-class LintEnvironmentVariablesTest {
+@RunWith(Parameterized::class)
+class LintEnvironmentVariablesTest(private val aggregateReports: Boolean) {
+
+  companion object {
+    @Parameterized.Parameters(name = "aggregateReports={0}") @JvmStatic fun parameters() = listOf(true, false)
+  }
 
   @get:Rule
   val project: GradleTestProject = GradleTestProject.builder().fromTestApp(HelloWorldApp.forPlugin("com.android.application")).create()
 
   @Test
   fun checkLintNotUpToDate() {
-    project.executor().run(":lintDebug").apply {
-      assertTask(":lintAnalyzeDebug").didWork()
-      assertTask(":lintReportDebug").didWork()
+    val lintAnalyzeTaskName = ":lintAnalyzeDebug"
+    val lintReportTaskName = if (aggregateReports) ":createLocalLintReportDebug" else ":lintReportDebug"
+    val aggregatedReportTaskName = ":createAggregatedLintReportDebug"
+    val tasks = mutableListOf(":lintDebug")
+    if (aggregateReports) {
+      tasks.add(":lintAggregatedDebug")
+    }
+
+    val executor = project.executor().with(BooleanOption.LINT_REPORT_AGGREGATION, aggregateReports)
+
+    executor.run(tasks).apply {
+      assertTask(lintAnalyzeTaskName).didWork()
+      assertTask(lintReportTaskName).didWork()
+      if (aggregateReports) {
+        assertTask(aggregatedReportTaskName).didWork()
+      }
     }
 
     // check that the lint tasks are up-to-date if nothing changes
-    project.executor().run(":lintDebug").apply {
-      assertTask(":lintAnalyzeDebug").wasUpToDate()
-      assertTask(":lintReportDebug").wasUpToDate()
+    executor.run(tasks).apply {
+      assertTask(lintAnalyzeTaskName).wasUpToDate()
+      assertTask(lintReportTaskName).wasUpToDate()
+      if (aggregateReports) {
+        assertTask(aggregatedReportTaskName).wasUpToDate()
+      }
     }
 
     val environmentVariables =
@@ -49,13 +73,16 @@ class LintEnvironmentVariablesTest {
 
     for (environmentVariable in environmentVariables) {
       // check that the lint tasks are not up-to-date if we set the environment variable
-      project.executor().withEnvironmentVariables(mapOf(environmentVariable to "foo")).run(":lintDebug").apply {
-        assertTask(":lintAnalyzeDebug", withInfo = "$environmentVariable=foo").didWork()
-        assertTask(":lintReportDebug", withInfo = "$environmentVariable=foo").didWork()
+      executor.withEnvironmentVariables(mapOf(environmentVariable to "foo")).run(tasks).apply {
+        assertTask(lintAnalyzeTaskName, withInfo = "$environmentVariable=foo").didWork()
+        assertTask(lintReportTaskName, withInfo = "$environmentVariable=foo").didWork()
+        if (aggregateReports) {
+          assertTask(aggregatedReportTaskName, withInfo = "$environmentVariable=foo").didWork()
+        }
       }
 
       // run build without any environment variables before testing the next one
-      project.executor().run(":lintDebug")
+      executor.run(tasks)
     }
 
     val reportTaskEnvironmentVariables = listOf("LINT_HTML_PREFS", "LINT_XML_ROOT")
@@ -63,8 +90,12 @@ class LintEnvironmentVariablesTest {
     for (environmentVariable in reportTaskEnvironmentVariables) {
       // check that the lint reporting task is not up-to-date if we set the environment
       // variable (the lint analysis task should be up-to-date)
-      project.executor().withEnvironmentVariables(mapOf(environmentVariable to "foo")).run(":lintDebug").apply {
-        assertTask(":lintReportDebug").didWork()
+      executor.withEnvironmentVariables(mapOf(environmentVariable to "foo")).run(tasks).apply {
+        assertTask(lintReportTaskName).didWork()
+        if (aggregateReports) {
+          assertTask(aggregatedReportTaskName).didWork()
+        }
+        assertTask(lintAnalyzeTaskName).wasUpToDate()
       }
     }
   }

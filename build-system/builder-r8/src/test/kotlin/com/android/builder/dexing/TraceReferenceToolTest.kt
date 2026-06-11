@@ -49,9 +49,9 @@ class TraceReferenceToolTest {
       )
     val mainDexConfig = MainDexListConfig(listOf(), listOf())
     val fakeOutput = tmp.newFolder().resolve("fake_output.txt").toPath()
-    val emptyProguardOutputFiles =
-      ProguardOutputFiles(fakeOutput, fakeOutput, fakeOutput, fakeOutput, fakeOutput, fakeOutput, fakeOutput, fakeOutput)
-    val proguardConfig = ProguardConfig(listOf(), null, listOf(), emptyProguardOutputFiles)
+    val emptyProguardOutputFiles = ProguardOutputFiles(fakeOutput, fakeOutput, fakeOutput, fakeOutput, fakeOutput, fakeOutput)
+    val emptyProguardOutputReports = ProguardOutputReports(fakeOutput, fakeOutput)
+    val proguardConfig = ProguardConfig(listOf(), null, listOf(), emptyProguardOutputFiles, emptyProguardOutputReports)
     val androidJar = TestUtils.resolvePlatformPath("android.jar", TestUtils.TestType.AGP)
     val javaRes = tmp.root.toPath().resolve("javaResources")
 

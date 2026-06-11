@@ -271,7 +271,7 @@ fun getArtifactsForModelBuilder(
   configType: AndroidArtifacts.ConsumedConfigType,
 ): Set<ResolvedArtifact> =
   testSuiteSourceContainer.suiteSourceClasspath.resolvedArtifacts(
-    testSuiteSourceContainer.suiteSourceClasspath.getArtifactCollectionForToolingModel(configType, AndroidArtifacts.ArtifactType.AAR_OR_JAR)
+    testSuiteSourceContainer.suiteSourceClasspath.getArtifactCollection(configType, AndroidArtifacts.ArtifactType.AAR_OR_JAR)
   )
 
 /**

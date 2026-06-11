@@ -18,7 +18,6 @@ package com.android.tools.screenshot.differ
 
 import java.awt.image.BufferedImage
 
-private const val MAGENTA = 0xFF_FF_00_FFu
 private const val TRANSPARENT = 0x00_FF_FF_FFu
 
 /** Returns an image highlighting the pixels that differ between image a and b and the number of pixels that differed. */
@@ -39,7 +38,22 @@ fun generatePixelDiffImage(a: BufferedImage, b: BufferedImage): Pair<BufferedIma
         highlights.setRGB(x, y, TRANSPARENT.toInt())
       } else {
         count++
-        highlights.setRGB(x, y, MAGENTA.toInt())
+        val aA = (aPixel shr 24) and 0xFF
+        val aR = (aPixel shr 16) and 0xFF
+        val aG = (aPixel shr 8) and 0xFF
+        val aB = aPixel and 0xFF
+
+        val bA = (bPixel shr 24) and 0xFF
+        val bR = (bPixel shr 16) and 0xFF
+        val bG = (bPixel shr 8) and 0xFF
+        val bB = bPixel and 0xFF
+
+        val diffSum = Math.abs(aA - bA) + Math.abs(aR - bR) + Math.abs(aG - bG) + Math.abs(aB - bB)
+        val diffRatio = diffSum.toDouble() / 1020.0
+        val greenValue = (200 * (1.0 - diffRatio)).toInt().coerceIn(0, 200)
+        val highlightColor = 0xFF_FF_00_FFu.toInt() or (greenValue shl 8)
+
+        highlights.setRGB(x, y, highlightColor)
       }
     }
   }

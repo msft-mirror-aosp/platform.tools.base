@@ -16,11 +16,11 @@
 
 package com.android.tools.screenshot.differ
 
+import com.android.tools.screenshot.ImageComparisonAssertionError
+import com.android.tools.screenshot.ScreenshotImageInvalidException
+import com.android.tools.screenshot.ScreenshotImageNotFoundException
 import com.google.common.truth.Truth.assertThat
 import java.io.File
-import com.android.tools.screenshot.ImageComparisonAssertionError
-import com.android.tools.screenshot.ScreenshotImageNotFoundException
-import com.android.tools.screenshot.ScreenshotImageInvalidException
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertThrows
 import org.junit.Rule
@@ -90,8 +90,9 @@ class ImageVerifierTest {
   fun verify_differentImages_returnsDifferent() {
     val imageVerifier = ImageVerifier(PixelPerfect())
     val diffImage = File(diffDir, "diff.png")
-    val result =
-      imageVerifier.verify(File(createImageFile("star", newDir)), File(createImageFile("circle", refDir)), diffImage, tempDir.root)
+    val starPath = createImageFile("star", newDir)
+    val circlePath = createImageFile("circle", refDir)
+    val result = imageVerifier.verify(File(starPath), File(circlePath), diffImage, tempDir.root)
 
     assertThat(result.diffResult).isInstanceOf(ImageDiffer.DiffResult.Different::class.java)
     assertNotNull(result.diffPercent)
@@ -99,13 +100,35 @@ class ImageVerifierTest {
     assertThat(result.diffPercent).isWithin(0.0001).of(0.2722)
     assertThat(diffImage.exists()).isTrue()
 
-    // Verify that the generated diff image is what we expect.
-    val diffCheckResult =
-      ImageVerifier(PixelPerfect())
-        .verify(diffImage, File(createImageFile("PixelPerfect_diff", refDir)), File(diffDir, "diff2.png"), tempDir.root)
+    // Programmatically verify that the generated diff image is what we expect.
+    val diffImg = javax.imageio.ImageIO.read(diffImage)
+    val starImg = javax.imageio.ImageIO.read(File(starPath))
+    val circleImg = javax.imageio.ImageIO.read(File(circlePath))
 
-    assertThat(diffCheckResult.diffResult).isInstanceOf(ImageDiffer.DiffResult.Similar::class.java)
-    assertThat(diffCheckResult.diffPercent).isEqualTo(0.0)
+    assertThat(diffImg.width).isEqualTo(starImg.width)
+    assertThat(diffImg.height).isEqualTo(starImg.height)
+
+    for (x in 0 until diffImg.width) {
+      for (y in 0 until diffImg.height) {
+        val aPixel = starImg.getRGB(x, y)
+        val bPixel = circleImg.getRGB(x, y)
+        val diffPixel = diffImg.getRGB(x, y)
+
+        if (aPixel == bPixel || (aPixel ushr 24 == 0 && bPixel ushr 24 == 0)) {
+          assertThat(diffPixel).isEqualTo(0x00FFFFFF.toInt())
+        } else {
+          val alpha = (diffPixel ushr 24) and 0xFF
+          val red = (diffPixel shr 16) and 0xFF
+          val blue = diffPixel and 0xFF
+          assertThat(alpha).isEqualTo(255)
+          assertThat(red).isEqualTo(255)
+          assertThat(blue).isEqualTo(255)
+
+          val green = (diffPixel shr 8) and 0xFF
+          assertThat(green).isIn(0..200)
+        }
+      }
+    }
   }
 
   @Test

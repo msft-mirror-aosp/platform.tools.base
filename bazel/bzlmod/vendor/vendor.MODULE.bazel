@@ -1,3 +1,11 @@
+android_ndk = use_extension("@rules_android_ndk//:extension.bzl", "android_ndk_repository_extension")
+android_ndk.configure(
+    api_level = 27,
+)
+use_repo(android_ndk, "androidndk")
+
+register_toolchains("@androidndk//:all")
+
 local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "local_repository")
 
 new_local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "new_local_repository")

@@ -19,13 +19,21 @@ package com.android.build.gradle.integration.lint
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
+import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
 import java.io.File
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
 /** Regression test for b/220190972 to check that lint baseline files are relocatable. */
-class LintRelocatableBaselineTest {
+@RunWith(Parameterized::class)
+class LintRelocatableBaselineTest(private val aggregateReports: Boolean) {
+
+  companion object {
+    @Parameterized.Parameters(name = "aggregateReports={0}") @JvmStatic fun parameters() = listOf(true, false)
+  }
 
   private val app =
     MinimalSubProject.app()
@@ -42,6 +50,15 @@ class LintRelocatableBaselineTest {
         }
         """
           .trimIndent()
+      )
+      .withFile(
+        "src/main/res/values/strings.xml",
+        """
+        <resources>
+            <string name="unused_app">I am unused in app!</string>
+        </resources>
+        """
+          .trimIndent(),
       )
 
   private val lib =
@@ -77,9 +94,19 @@ class LintRelocatableBaselineTest {
   fun testLintBaselineRelocatable() {
     // Set user.home system property to project directory. Lint should use a relative path
     // instead of the $HOME path variable in the line baseline file.
-    project.executor().withArgument("-Duser.home=${project.projectDir.absolutePath}").run(":app:updateLintBaseline")
+    val executor = project.executor().with(BooleanOption.LINT_REPORT_AGGREGATION, aggregateReports)
+    executor.withArgument("-Duser.home=${project.projectDir.absolutePath}").run(":app:updateLintBaseline")
     val lintBaselineFile = File(project.getSubproject("app").projectDir, "lint-baseline.xml")
     assertThat(lintBaselineFile).doesNotContain("HOME")
-    assertThat(lintBaselineFile).contains("../lib/src/main/res/values/strings.xml")
+
+    // The app issue should always be there and relocatable
+    assertThat(lintBaselineFile).contains("src/main/res/values/strings.xml")
+
+    if (aggregateReports) {
+      assertThat(lintBaselineFile).doesNotContain("../lib/src/main/res/values/strings.xml")
+    } else {
+      // The lib issue should only be there if checkDependencies was true (which it is when aggregation is disabled)
+      assertThat(lintBaselineFile).contains("../lib/src/main/res/values/strings.xml")
+    }
   }
 }

@@ -62,10 +62,11 @@ class Renderer : Closeable {
     isolatedClassLoaderForRendering =
       ResourceEnhancedClassLoader(layoutLibClassPath.map { it.toURI().toURL() }.toTypedArray(), platformClassLoader)
 
-    val rendererClass = isolatedClassLoaderForRendering.loadClass(com.android.tools.render.Renderer::class.java.name)
+    val bootstrapperClass =
+      isolatedClassLoaderForRendering.loadClass(com.android.tools.render.RenderEnvironmentBootstrapper::class.java.name)
 
     val constructor =
-      rendererClass.getConstructor(
+      bootstrapperClass.getConstructor(
         String::class.java, // fontsPath
         String::class.java, // resourceApkPath
         String::class.java, // namespace
@@ -76,8 +77,8 @@ class Renderer : Closeable {
         List::class.java, // rClassJars
       )
 
-    // Create an instance of the renderer by invoking the constructor.
-    rendererInstance =
+    // Create an instance of the bootstrapper by invoking the constructor.
+    val bootstrapperInstance =
       constructor.newInstance(
         fontsPath,
         resourceApkPath,
@@ -87,7 +88,9 @@ class Renderer : Closeable {
         layoutlibDataDir.absolutePath,
         RendererInput.testRuntimeResourceDirs.map { it.absolutePath },
         RendererInput.testRuntimeRClassJars.map { it.absolutePath },
-      ) as Closeable
+      )
+    val bootstrapMethod = bootstrapperClass.getMethod("bootstrap")
+    rendererInstance = bootstrapMethod.invoke(bootstrapperInstance) as Closeable
   }
 
   /**
@@ -162,27 +165,21 @@ class Renderer : Closeable {
   }
 
   /**
-   * A custom [URLClassLoader] that provides a fallback to the [ClassLoader.getSystemClassLoader]
-   * for resource discovery.
+   * A custom [URLClassLoader] that provides a fallback to the [ClassLoader.getSystemClassLoader] for resource discovery.
    *
-   * LayoutLib requires strict isolation from the host environment to prevent class-loading
-   * conflicts with the Android framework. To achieve this, the [Renderer] uses the
-   * [ClassLoader.getPlatformClassLoader] as a parent, which only contains JDK classes.
+   * LayoutLib requires strict isolation from the host environment to prevent class-loading conflicts with the Android framework. To achieve
+   * this, the [Renderer] uses the [ClassLoader.getPlatformClassLoader] as a parent, which only contains JDK classes.
    *
-   * However, JVM-based coverage agents use ASM for bytecode instrumentation. During this
-   * process, the agent often performs
-   * "frame computation," which requires reading the `.class` file bytes (via [getResourceAsStream])
-   * of all classes in a type hierarchy—including application dependencies like
-   * `androidx.compose.runtime.Composer`.
+   * However, JVM-based coverage agents use ASM for bytecode instrumentation. During this process, the agent often performs "frame
+   * computation," which requires reading the `.class` file bytes (via [getResourceAsStream]) of all classes in a type hierarchy—including
+   * application dependencies like `androidx.compose.runtime.Composer`.
    *
-   * Without this fallback, the isolated classloader chain cannot find these class resources
-   * because they reside on the system classpath. This causes coverage agents to skip
-   * instrumentation, resulting in 0% coverage for UI code exercised by screenshot tests.
+   * Without this fallback, the isolated classloader chain cannot find these class resources because they reside on the system classpath.
+   * This causes coverage agents to skip instrumentation, resulting in 0% coverage for UI code exercised by screenshot tests.
    *
-   * This class only overrides resource lookup ([getResource], [getResourceAsStream],
-   * [getResources]). It does **not** override [loadClass]. This ensures that we maintain
-   * LayoutLib's class-loading isolation while still allowing diagnostic tools to
-   * "see" the metadata of the surrounding application.
+   * This class only overrides resource lookup ([getResource], [getResourceAsStream], [getResources]). It does **not** override [loadClass].
+   * This ensures that we maintain LayoutLib's class-loading isolation while still allowing diagnostic tools to "see" the metadata of the
+   * surrounding application.
    */
   class ResourceEnhancedClassLoader(urls: Array<URL>, parent: ClassLoader) : URLClassLoader(urls, parent) {
     override fun getResourceAsStream(name: String): InputStream? {

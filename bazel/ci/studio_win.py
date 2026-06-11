@@ -70,6 +70,7 @@ def studio_win(build_env: bazel.BuildEnv):
     targets = result.targets + ['//tools/base/bazel/ci:ci_test']
     flags.extend(result.flags)
 
+  studio.check_lockfile(build_env)
   test_result = studio.run_tests(build_env, flags, targets)
 
   if build_type == studio.BuildType.PRESUBMIT:
