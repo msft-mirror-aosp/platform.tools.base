@@ -34,6 +34,7 @@ import com.android.tools.lint.detector.api.nameFromSource
 import com.android.tools.lint.detector.api.typeFromPsi
 import com.android.utils.usLocaleCapitalize
 import com.android.utils.usLocaleDecapitalize
+import com.intellij.java.syntax.parser.JavaKeywords
 import com.intellij.psi.PsiClassType
 import com.intellij.psi.PsiCompiledElement
 import com.intellij.psi.PsiDocCommentOwner
@@ -471,7 +472,7 @@ class InteroperabilityDetector : Detector(), SourceCodeScanner {
           if (modifierList.hasExplicitModifier(PsiModifier.STATIC)) {
             var child: PsiElement? = modifierList.firstChild
             while (child != null) {
-              if (child is PsiKeyword && PsiKeyword.STATIC == child.text) {
+              if (child is PsiKeyword && JavaKeywords.STATIC == child.text) {
                 staticElement = child
                 break
               }
