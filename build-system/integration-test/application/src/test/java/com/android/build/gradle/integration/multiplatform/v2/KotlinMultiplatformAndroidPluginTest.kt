@@ -333,5 +333,46 @@ class KotlinMultiplatformAndroidPluginTest(private val publishLibs: Boolean) {
     assertThat(apkIdeRedirectFile.readText()).contains("listingFile=../../../../outputs/apk/androidTest/output-metadata.json")
   }
 
+  @Test
+  fun testExcludeKotlinFile() {
+    val excludedFile = project.getSubproject("kmpFirstLib").file("src/androidMain/kotlin/com/example/kmpfirstlib/ExcludedClass.kt")
+    FileUtils.mkdirs(excludedFile.parentFile)
+    excludedFile.writeText(
+      """
+      package com.example.kmpfirstlib
+      class ExcludedClass
+      """
+        .trimIndent()
+    )
+
+    TestFileUtils.appendToFile(
+      project.getSubproject("kmpFirstLib").ktsBuildFile,
+      """
+      kotlin {
+          sourceSets {
+              androidMain.configure {
+                  kotlin.exclude("**/ExcludedClass.kt")
+              }
+          }
+      }
+      """
+        .trimIndent(),
+    )
+
+    executor().run(":kmpFirstLib:assemble")
+
+    project.getSubproject("kmpFirstLib").assertAar(AarSelector.NO_BUILD_TYPE) {
+      mainJar {
+        classes()
+          .containsExactly(
+            "com/example/kmpfirstlib/KmpCommonFirstLibClass",
+            "com/example/kmpfirstlib/KmpAndroidFirstLibClass",
+            "com/example/kmpfirstlib/KmpAndroidFirstLibJavaClass",
+            "com/example/kmpfirstlib/KmpAndroidActivity",
+          )
+      }
+    }
+  }
+
   private fun executor() = project.executor().withFailOnWarning(false) // b/455891987
 }

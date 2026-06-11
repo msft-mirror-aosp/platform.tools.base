@@ -427,7 +427,13 @@ abstract class KmpComponentImpl<DslInfoT : KmpComponentDslInfo>(
     sources.kotlin.addStaticSources(
       services.provider {
         androidKotlinCompilation.allKotlinSourceSets.flatMap { sourceSet ->
-          sourceSet.kotlin.srcDirs.map { srcDir -> FileBasedDirectoryEntryImpl(name = "Kotlin", directory = srcDir) }
+          val filter =
+            PatternSet().apply {
+              setIncludes(sourceSet.kotlin.includes)
+              setExcludes(sourceSet.kotlin.excludes)
+            }
+
+          sourceSet.kotlin.srcDirs.map { srcDir -> FileBasedDirectoryEntryImpl(name = "Kotlin", directory = srcDir, filter = filter) }
         }
       }
     )
