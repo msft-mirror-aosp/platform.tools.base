@@ -153,7 +153,7 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
     }
 
   final override fun afterCheckRootProject(context: Context) {
-    super.afterCheckEachProject(context)
+    super.afterCheckRootProject(context)
 
     if (!isSummariesCacheValid) {
       val program = programBuilder.build()
