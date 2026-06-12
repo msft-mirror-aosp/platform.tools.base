@@ -58,8 +58,8 @@ class TestSuiteWithCustomSourceSetTest(val testType: TestType) {
     GradleRule.configure()
       .withMavenRepository {
         jar("com.google.truth:truth:0.44")
-        jar("org.junit.platform:junit-platform-engine:1.10.1")
-        jar("org.junit.platform:junit-platform-launcher:1.10.1")
+        jar("org.junit.platform:junit-platform-engine:1.13.3")
+        jar("org.junit.platform:junit-platform-launcher:1.13.3")
         jar("org.jetbrains.kotlin:kotlin-stdlib:2.1.20")
         jar("com.test:toy-junit-engine:1.0")
           .addClasses(ToyJunitEngineForTesting::class.java, ToyTestDescriptor::class.java, TestEngineLogger::class.java)
@@ -76,7 +76,7 @@ class TestSuiteWithCustomSourceSetTest(val testType: TestType) {
                   enginesDependencies.add("com.android.tools.build:gradle-api:${Version.ANDROID_GRADLE_PLUGIN_VERSION}")
                   enginesDependencies.add("org.junit.platform:junit-platform-launcher")
                   enginesDependencies.add("com.test:toy-junit-engine:1.0")
-                  enginesDependencies.add("org.junit.platform:junit-platform-engine:1.12.0")
+                  enginesDependencies.add("org.junit.platform:junit-platform-engine:1.13.3")
                 }
                 if (testType == TestType.HOST_JAR) {
                   it.hostJar {}

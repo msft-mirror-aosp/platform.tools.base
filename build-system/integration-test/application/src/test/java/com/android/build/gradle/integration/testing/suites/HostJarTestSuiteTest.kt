@@ -58,7 +58,7 @@ class HostJarTestSuiteJavaResProcessingTest {
                 enginesDependencies.add("com.android.tools.build:gradle-api:${Version.ANDROID_GRADLE_PLUGIN_VERSION}")
                 enginesDependencies.add("org.junit.platform:junit-platform-launcher")
                 enginesDependencies.add("com.test:toy-junit-engine:1.0")
-                enginesDependencies.add("org.junit.platform:junit-platform-engine:1.12.0")
+                enginesDependencies.add("org.junit.platform:junit-platform-engine:1.13.3")
               }
               it.hostJar {}
               it.targetVariants.add("redDebug")
