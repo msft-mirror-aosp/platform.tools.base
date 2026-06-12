@@ -28,7 +28,7 @@ TEST_DEPS = [
     "@maven//:com.google.truth.truth",
     "@maven//:commons-io.commons-io",  # TODO: remove?
     "@maven//:org.apache.commons.commons-compress",
-    "@maven//:org.codehaus.groovy.groovy-all",  # required by //tools/base/build-system:gradle-api
+    "@maven//:org.apache.groovy.groovy-all",  # required by //tools/base/build-system:gradle-api
     "@maven//:org.mockito.mockito-core",
     "@maven//:org.ow2.asm.asm",
     "@maven//:org.ow2.asm.asm-tree",

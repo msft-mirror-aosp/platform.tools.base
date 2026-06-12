@@ -156,7 +156,7 @@ maven_library(
 java_library(
     name = "groovy_neverlink",
     neverlink = 1,
-    exports = ["@maven//:org.codehaus.groovy.groovy"],
+    exports = ["@maven//:org.apache.groovy.groovy"],
 )
 
 # managed by go/iml_to_build
@@ -245,7 +245,7 @@ maven_library(
         "//tools/base/common:tools.common",
         "//tools/base/lint/cli",
         "//tools/base/lint/libs/lint-typedef-remover",
-        "@maven//:org.codehaus.groovy.groovy",
+        "@maven//:org.apache.groovy.groovy",
     ],
 )
 
@@ -289,7 +289,7 @@ kotlin_test(
         "@maven//:com.google.truth.truth",
         "@maven//:junit.junit",
         "@maven//:net.sf.kxml.kxml2",
-        "@maven//:org.codehaus.groovy.groovy",
+        "@maven//:org.apache.groovy.groovy",
         "@maven//:org.jetbrains.annotations",
         "@maven//:org.jetbrains.kotlin.kotlin-reflect",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib",

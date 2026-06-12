@@ -763,7 +763,7 @@ com.android.tools.lint:lint-gradle
     com.android.tools:common (runtime)
     com.android.tools.lint:lint (runtime)
     com.android.tools.lint:lint-typedef-remover (runtime)
-    org.codehaus.groovy:groovy (runtime)
+    org.apache.groovy:groovy (runtime)
 
 com.android.tools.lint:lint-model
   pomName=com.android.tools.lint.lint-model
@@ -793,7 +793,7 @@ com.android.tools.lint:lint-tests
     com.google.code.gson:gson (runtime)
     junit:junit (runtime)
     net.sf.kxml:kxml2 (runtime)
-    org.codehaus.groovy:groovy (runtime)
+    org.apache.groovy:groovy (runtime)
     org.ow2.asm:asm (runtime)
     org.ow2.asm:asm-tree (runtime)
 

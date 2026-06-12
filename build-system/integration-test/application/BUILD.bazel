@@ -38,7 +38,7 @@ TEST_DEPS = [
     "@maven//:com.google.code.gson.gson",
     "@maven//:com.google.devtools.ksp.symbol-processing-gradle-plugin",
     "@maven//:commons-io.commons-io",
-    "@maven//:org.codehaus.groovy.groovy-all",
+    "@maven//:org.apache.groovy.groovy-all",
     "@maven//:org.jetbrains.dokka.dokka-core",
     "@maven//:org.jetbrains.kotlin.compose-compiler-gradle-plugin",
     "@maven//:org.jetbrains.kotlin.kotlin-gradle-plugin",

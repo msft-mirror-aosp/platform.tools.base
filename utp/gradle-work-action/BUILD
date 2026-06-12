@@ -78,7 +78,7 @@ kotlin_test(
         "@maven//:com.google.truth.truth",
         "@maven//:commons-io.commons-io",
         "@maven//:junit.junit",
-        "@maven//:org.codehaus.groovy.groovy-all",
+        "@maven//:org.apache.groovy.groovy-all",
         "@maven//:org.mockito.kotlin.mockito-kotlin",
         "@maven//:org.mockito.mockito-core",
     ],
