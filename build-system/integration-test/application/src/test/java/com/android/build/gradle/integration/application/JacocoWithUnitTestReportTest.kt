@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.options.BooleanOption
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth.assertThat
 import java.io.File
@@ -57,7 +58,8 @@ class JacocoWithUnitTestReportTest(private val isJacocoPluginAppliedFromBuildFil
   fun `test expected report contents`() {
     val run = testProject.executor().run("createDebugUnitTestCoverageReport")
     checkHighlightedSourceCodeReportFiles(testProject.buildDir)
-    val generatedCoverageReport = FileUtils.join(testProject.buildDir, "reports", "coverage", "test", "debug", "index.html")
+    val reportDir = FileUtils.join(testProject.buildDir, "reports", "coverage", "test", "debug")
+    val generatedCoverageReport = File(reportDir, "index.html")
     run.stdout.use { assertThat(ScannerSubject.assertThat(it).contains("View coverage report at ${generatedCoverageReport.toURI()}")) }
     assertThat(generatedCoverageReport.exists()).isTrue()
     val generatedCoverageReportHTML = generatedCoverageReport.readLines().joinToString("\n")
@@ -70,9 +72,48 @@ class JacocoWithUnitTestReportTest(private val isJacocoPluginAppliedFromBuildFil
     // Checks if the total line coverage on unit tests exceeds 0% i.e
     assertThat(totalUnitTestCoveragePercentage.trimEnd('%').toInt() > 0).isTrue()
 
+    // Verify XML report is generated
+    assertThat(File(reportDir, "report.xml").exists()).isTrue()
+
     // Verify that only the debug reports have been created.
     val testReports = FileUtils.join(testProject.buildDir, "reports", "tests")
     assertThat(testReports.listFiles().map(File::getName)).containsExactly("testDebugUnitTest")
+  }
+
+  @Test
+  fun `test expected report contents with aggregation enabled`() {
+    val run = testProject.executor().with(BooleanOption.REPORT_AGGREGATION_SUPPORT, true).run("createDebugUnitTestCoverageReport")
+
+    val reportDir = FileUtils.join(testProject.buildDir, "reports", "coverage", "test", "debug")
+    val generatedCoverageReport = File(reportDir, "index.html")
+
+    run.stdout.use { assertThat(ScannerSubject.assertThat(it).contains("View coverage report at ${generatedCoverageReport.toURI()}")) }
+
+    assertThat(generatedCoverageReport.exists()).isTrue()
+
+    // Verify XML report is generated
+    assertThat(File(reportDir, "report.xml").exists()).isTrue()
+
+    // Verify new format files
+    assertThat(File(reportDir, "data/report-data.js").exists()).isTrue()
+    assertThat(File(reportDir, "css/style.css").exists()).isTrue()
+    assertThat(File(reportDir, "javascript/codecoveragescript.js").exists()).isTrue()
+    assertThat(File(reportDir, "javascript/sourceviewscript.js").exists()).isTrue()
+
+    // Verify source files are generated
+    val sourceFilesDir = File(reportDir, "sourcefiles")
+    assertThat(sourceFilesDir.exists()).isTrue()
+    // It should contain something like com.android.tests/MainActivity.java.json.js
+    // In unitTesting project, we have MainActivity.java and someKotlinCode.kt
+    val expectedSourceJson = sourceFilesDir.walk().filter { it.extension == "js" }.toList()
+    assertThat(expectedSourceJson.map { it.name }).containsAtLeast("MainActivity.java.json.js", "someKotlinCode.kt.json.js")
+
+    val reportDataContent = File(reportDir, "data/report-data.js").readText()
+    assertThat(reportDataContent).contains("const fullReport = ")
+    // Should contain the project name, variant name and test suite coverages metadata
+    assertThat(reportDataContent).contains("\"debugUnitTest\"")
+    assertThat(reportDataContent).contains("\"testSuiteCoverages\"")
+    assertThat(reportDataContent).contains("\"name\"")
   }
 
   // Regression test for b/188953818.

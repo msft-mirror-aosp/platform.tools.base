@@ -1053,6 +1053,8 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
 
     const val CONNECTED_TEST_TEST_SUITE_NAME = "androidTest"
 
+    const val UNIT_TEST_TEST_SUITE_NAME = "UnitTest"
+
     const val CONNECTED_TEST_TEST_SUITE_TARGET_NAME = "connected"
 
     fun parseMetadata(metadataFile: File): Map<String, String> {
