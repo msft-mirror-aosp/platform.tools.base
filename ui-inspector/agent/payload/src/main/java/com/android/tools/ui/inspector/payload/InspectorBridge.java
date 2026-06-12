@@ -16,6 +16,8 @@
 
 package com.android.tools.ui.inspector.payload;
 
+import android.util.Log;
+
 import androidx.annotation.VisibleForTesting;
 import androidx.inspection.Connection;
 import androidx.inspection.Inspector;
@@ -28,6 +30,7 @@ import com.android.tools.ui.inspector.service.ArtToolingBridge;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
 
 /**
  * Bridges communication between the server and a specific [Inspector], enabling persistence across host reconnections and ensuring
@@ -111,10 +114,21 @@ public final class InspectorBridge {
 
   /** Disposes the bridge and the underlying inspector. */
   public void dispose() {
-    inspector.onDispose();
-        // Clear all bytecode hooks registered by this inspector session to prevent ClassLoader
-        // memory leaks.
-        ArtToolingBridge.clear(inspectorId);
+    try {
+      primaryExecutor.execute(() -> {
+        try {
+          inspector.onDispose();
+        } catch (Throwable t) {
+          Log.e("InspectorBridge", "Error during inspector disposal", t);
+        } finally {
+          // Clear all bytecode hooks registered by this inspector session to prevent ClassLoader
+          // memory leaks.
+          ArtToolingBridge.clear(inspectorId);
+        }
+      });
+    } catch (RejectedExecutionException e) {
+      // The bridge is already disposed.
+    }
     primaryExecutor.quitSafely();
   }
 

@@ -104,6 +104,8 @@ public final class SessionHandlerTest {
       }
     }
 
+    primaryExecutor.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS);
+
     assertThat(disposed.get()).isTrue();
     assertThat(shutdownLatch.getCount()).isEqualTo(0);
 
