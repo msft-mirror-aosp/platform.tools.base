@@ -16,8 +16,7 @@
 
 package com.android.tools.lint.detector.api
 
-import com.android.sdklib.SdkVersionInfo
-import java.util.HashMap
+import com.android.sdklib.SdkVersionUtil
 import org.jetbrains.annotations.Contract
 
 /**
@@ -129,7 +128,7 @@ class LintMap : Iterable<String> {
     val value = map[key] ?: return default
     return when (value) {
       is Int -> value
-      is String -> SdkVersionInfo.getVersion(value, null)?.featureLevel ?: default
+      is String -> SdkVersionUtil.getVersion(value, null)?.featureLevel ?: default
       else -> default
     }
   }

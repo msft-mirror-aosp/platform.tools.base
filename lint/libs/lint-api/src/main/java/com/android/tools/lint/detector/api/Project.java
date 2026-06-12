@@ -60,7 +60,7 @@ import com.android.sdklib.AndroidApiLevel;
 import com.android.sdklib.AndroidTargetHash;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
-import com.android.sdklib.SdkVersionInfo;
+import com.android.sdklib.SdkVersionUtil;
 import com.android.support.AndroidxNameUtils;
 import com.android.tools.lint.client.api.CircularDependencyException;
 import com.android.tools.lint.client.api.Configuration;
@@ -1102,7 +1102,7 @@ public class Project {
                 // If the minSdk version is a number we don't need to look up
                 // SDK targets to resolve code names (and computing the target list
                 // is expensive)
-                AndroidVersion version = SdkVersionInfo.getVersion(minSdk, null);
+                AndroidVersion version = SdkVersionUtil.getVersion(minSdk, null);
                 if (version == null) {
                     version = AndroidVersion.DEFAULT;
                 }
@@ -1112,7 +1112,7 @@ public class Project {
             if (element.hasAttributeNS(ANDROID_URI, ATTR_TARGET_SDK_VERSION)) {
                 String targetSdk = element.getAttributeNS(ANDROID_URI, ATTR_TARGET_SDK_VERSION);
                 if (!targetSdk.isEmpty()) {
-                    AndroidVersion version = SdkVersionInfo.getVersion(targetSdk, null);
+                    AndroidVersion version = SdkVersionUtil.getVersion(targetSdk, null);
                     if (version == null) {
                         version = AndroidVersion.DEFAULT;
                     }

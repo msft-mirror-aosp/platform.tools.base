@@ -347,7 +347,7 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
      * if the caller can guarantee that only {@link #getApiString()} will be used later. {@link
      * #getAndroidApiLevel()#getApiLevel()} will return 0.
      *
-     * <p>SdkVersionInfo.getVersion() can be used to get a valid AndroidVersion from known
+     * <p>SdkVersionUtil.getVersion() can be used to get a valid AndroidVersion from known
      * codenames, and should be preferred.
      *
      * @param apiString an API string that could have been produced by getApiStringWithExtension()

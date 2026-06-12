@@ -25,7 +25,6 @@ import static com.android.sdklib.SdkVersionInfo.getApiByBuildCode;
 import static com.android.sdklib.SdkVersionInfo.getApiByPreviewName;
 import static com.android.sdklib.SdkVersionInfo.getBuildCode;
 import static com.android.sdklib.SdkVersionInfo.getCodeName;
-import static com.android.sdklib.SdkVersionInfo.getVersion;
 import static com.android.sdklib.SdkVersionInfo.getVersionString;
 import static com.android.sdklib.SdkVersionInfo.underlinesToCamelCase;
 
@@ -146,25 +145,6 @@ public class SdkVersionInfoTest extends TestCase {
         assertEquals("JellyBeanMr2", underlinesToCamelCase("jelly_bean_mr2"));
     }
 
-    @SuppressWarnings("ConstantConditions")
-    public void testGetAndroidVersion() {
-        assertNull(getVersion("", null));
-        assertNull(getVersion("4H", null));
-        assertEquals(4, getVersion("4", null).getApiLevel());
-        assertNull(getVersion("4", null).getCodename());
-        assertEquals("4", getVersion("4", null).getApiString());
-        assertEquals(19, getVersion("19", null).getApiLevel());
-        // ICS is API 14, but when expressed as a preview platform, it's not yet 14
-        assertEquals(13, getVersion("IceCreamSandwich", null).getApiLevel());
-        assertEquals("IceCreamSandwich", getVersion("IceCreamSandwich", null).getCodename());
-        assertEquals(HIGHEST_KNOWN_API, getVersion("BackToTheFuture", null).getApiLevel());
-        assertEquals("BackToTheFuture", getVersion("BackToTheFuture", null).getCodename());
-
-        assertEquals(37, getVersion("37.0-beta1", null).getApiLevel());
-        assertEquals(1, (int) getVersion("37.0-beta1", null).getBetaNumber());
-        assertEquals(36, getVersion("canary-20251201", null).getApiLevel());
-        assertEquals(20251201, (int) getVersion("canary-20251201", null).getCanaryNumber());
-    }
 
     public void testGetVersionString() {
         // make sure all known versions are non-null

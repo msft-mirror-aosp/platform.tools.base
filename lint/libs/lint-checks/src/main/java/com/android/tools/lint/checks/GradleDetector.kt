@@ -37,6 +37,7 @@ import com.android.sdklib.AndroidTargetHash
 import com.android.sdklib.AndroidVersion.PLATFORM_HASH_PREFIX
 import com.android.sdklib.SdkVersionInfo
 import com.android.sdklib.SdkVersionInfo.LOWEST_ACTIVE_API
+import com.android.sdklib.SdkVersionUtil
 import com.android.tools.lint.checks.GooglePlaySdkIndex.Companion.GOOGLE_PLAY_SDK_INDEX_KEY
 import com.android.tools.lint.checks.GooglePlaySdkIndex.Companion.GOOGLE_PLAY_SDK_INDEX_URL
 import com.android.tools.lint.checks.GooglePlaySdkIndex.Companion.VulnerabilityDescription
@@ -438,7 +439,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
       }
 
       // Parse something like "Baklava".
-      val androidVersion = SdkVersionInfo.getVersion(stringLiteralValue, null) ?: return null
+      val androidVersion = SdkVersionUtil.getVersion(stringLiteralValue, null) ?: return null
       return androidVersion.featureLevel
     }
 
@@ -2323,7 +2324,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
           // Don't access numbered strings; should be literal numbers (lint will warn)
           return -1
         }
-        val androidVersion = SdkVersionInfo.getVersion(codeName, null)
+        val androidVersion = SdkVersionUtil.getVersion(codeName, null)
         if (androidVersion != null) {
           version = androidVersion.featureLevel
         }
