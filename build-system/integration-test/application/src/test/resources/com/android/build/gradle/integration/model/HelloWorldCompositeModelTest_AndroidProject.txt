@@ -77,7 +77,7 @@
             - generatedSourceFolders:
                * {INCLUDED_BUILD(:other-build)}/lib/build/generated/ap_generated_sources/debugUnitTest/out{!}
             - mockablePlatformJar   = {GRADLE_CACHE}/{CHECKSUM}/transformed/android.jar{F}
-            - runtimeResourceFolder = {INCLUDED_BUILD(:other-build)}/lib/build/intermediates/java_res/debugUnitTest/processDebugUnitTestJavaRes/out{!}
+            - runtimeResourceFolder = (null)
          < unitTestArtifact
          - testFixturesArtifact   = (null)
          - testedTargetVariant    = (null)

@@ -442,10 +442,7 @@ public abstract class AndroidUnitTest extends Test implements VariantTask, UsesA
                     artifacts
                             .forScope(ScopedArtifacts.Scope.PROJECT)
                             .getFinalArtifacts$gradle_core(ScopedArtifact.CLASSES.INSTANCE));
-
-            // TODO is this the right thing? this doesn't include the res merging via transform
-            // AFAIK
-            collection.from(artifacts.get(InternalArtifactType.JAVA_RES.INSTANCE));
+            collection.from(creationConfig.getProjectJavaRes());
 
             // 3. the runtime dependencies for both CLASSES and JAVA_RES type
             if (creationConfig.getInstrumentationCreationConfig() != null) {

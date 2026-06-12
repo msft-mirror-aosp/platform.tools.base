@@ -1228,7 +1228,7 @@ class ModelBuilder<ExtensionT : CommonExtension>(
       ideSetupTaskNames = setOf(component.global.taskNames.createMockableJar),
       classesFolders = classesFolders,
       generatedSourceFolders = getGeneratedSourceFoldersForUnitTests(component),
-      runtimeResourceFolder = component.artifacts.get(InternalArtifactType.JAVA_RES).get().asFile,
+      runtimeResourceFolder = null,
       mockablePlatformJar = variantModel.mockableJarArtifact.files.singleOrNull(),
       generatedClassPaths = generatedClassPaths,
       bytecodeTransformations = getBytecodeTransformations(component),

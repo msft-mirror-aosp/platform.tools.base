@@ -55,7 +55,7 @@ class ScreenshotTestTaskManager(project: Project, globalConfig: GlobalTaskCreati
 
     setupAssembleTasks(screenshotTestCreationConfig, taskContainer, ASSEMBLE_SCREENSHOT_TEST)
 
-    setupJavaCompilationTasks(screenshotTestCreationConfig, taskContainer, testedVariant)
+    setupJavaCompilationTasks(screenshotTestCreationConfig)
 
     maybeCreateTransformClassesWithAsmTask(screenshotTestCreationConfig)
 

@@ -170,22 +170,11 @@ open class HostTestTaskManager(project: Project, globalConfig: GlobalTaskCreatio
     }
   }
 
-  protected fun setupJavaCompilationTasks(
-    hostTestCreationConfig: HostTestCreationConfig,
-    taskContainer: MutableTaskContainer,
-    testedVariant: VariantCreationConfig,
-  ) {
+  protected fun setupJavaCompilationTasks(hostTestCreationConfig: HostTestCreationConfig) {
     // TODO(b/276758294): Remove such checks
     if (hostTestCreationConfig !is KmpComponentCreationConfig) {
       // compileDebugSources should be enough for running tests from AS, so add
       // dependencies on tasks that prepare necessary data files.
-      val compileTask = taskContainer.compileTask
-      compileTask.configure { task ->
-        task.dependsOn(
-          hostTestCreationConfig.artifacts.get(InternalArtifactType.JAVA_RES),
-          testedVariant.artifacts.get(InternalArtifactType.JAVA_RES),
-        )
-      }
       val javacTask = createJavacTask(hostTestCreationConfig)
       setJavaCompilerTask(javacTask, hostTestCreationConfig)
       initializeAllScope(hostTestCreationConfig.artifacts)

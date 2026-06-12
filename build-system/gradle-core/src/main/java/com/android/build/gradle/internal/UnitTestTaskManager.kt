@@ -62,7 +62,7 @@ class UnitTestTaskManager(project: Project, globalConfig: GlobalTaskCreationConf
 
     setupAssembleTasks(hostTestCreationConfig, taskContainer, ASSEMBLE_UNIT_TEST)
 
-    setupJavaCompilationTasks(hostTestCreationConfig, taskContainer, testedVariant)
+    setupJavaCompilationTasks(hostTestCreationConfig)
 
     maybeCreateTransformClassesWithAsmTask(hostTestCreationConfig)
 

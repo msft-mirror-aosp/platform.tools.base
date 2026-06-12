@@ -81,7 +81,7 @@
             - generatedSourceFolders:
                * {PROJECT}/app/build/generated/ap_generated_sources/proPlayDebugUnitTest/out{!}
             - mockablePlatformJar   = {GRADLE_CACHE}/{CHECKSUM}/transformed/android.jar{F}
-            - runtimeResourceFolder = {PROJECT}/app/build/intermediates/java_res/proPlayDebugUnitTest/processProPlayDebugUnitTestJavaRes/out{!}
+            - runtimeResourceFolder = (null)
          < unitTestArtifact
          - testFixturesArtifact   = (null)
          - testedTargetVariant    = (null)
