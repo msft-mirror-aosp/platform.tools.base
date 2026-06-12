@@ -30,6 +30,10 @@ import java.util.function.Consumer
 import org.jetbrains.concurrency.CancellablePromise
 
 class StubAsyncExecutionService : AsyncExecutionService() {
+  // createExecutor and ExpirableExecutor are scheduled for removal in the IntelliJ Platform.
+  // However, createExecutor is still abstract in the AsyncExecutionService version we are
+  // building against, so we must override it.
+  @Suppress("ScheduledForRemoval")
   override fun createExecutor(executor: Executor): ExpirableExecutor = throw UnsupportedOperationException()
 
   override fun createUIExecutor(modalityState: ModalityState): AppUIExecutor = throw UnsupportedOperationException()
