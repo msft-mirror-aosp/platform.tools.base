@@ -76,6 +76,7 @@ class AndroidTestEngineConnectedTest {
             it.useJunitEngine.apply {
               inputs.add(AgpTestSuiteInputParameters.TESTED_APKS)
               inputs.add(AgpTestSuiteInputParameters.ADB_EXECUTABLE)
+              inputs.add(AgpTestSuiteInputParameters.AAPT2_EXECUTABLE)
               includeEngines.add("android-test-engine")
               addInputProperty("android-test.listener.stream-base64-encoded-result", "true")
               enginesDependencies.add("com.android.tools.androidtest:android-test-engine:+")
@@ -143,8 +144,6 @@ class AndroidTestEngineConnectedTest {
             //  proper AGP test suite integration is available. These parameters should be
             //  automatically passed to the JUnit Engine by the AGP Test Suite task instead
             //  of being manually configured here via system properties.
-            task.systemProperty("android-test.adb-path", adbPath.get())
-            task.systemProperty("android-test.aapt2-path", aapt2Path.get())
             task.systemProperty("android-test.device-serials", "emulator-5554,emulator-5556")
 
             task.inputs.files(apkArtifacts)

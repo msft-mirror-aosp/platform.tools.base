@@ -484,11 +484,15 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
 
       task.androidDeviceSerials.setDisallowChanges(task.project.providers.environmentVariable("ANDROID_SERIAL"))
 
-      task.executionMode.setDisallowChanges(creationConfig.global.androidTestOptions.execution)
+      if (creationConfig.junitEngineSpec.inputs.contains(AgpTestSuiteInputParameters.ANDROID_TEST_EXECUTION_MODE)) {
+        task.executionMode.setDisallowChanges(creationConfig.global.androidTestOptions.execution)
+      }
 
-      val androidTestUtil = task.project.configurations.findByName(SdkConstants.GRADLE_ANDROID_TEST_UTIL_CONFIGURATION)
-      if (androidTestUtil != null) {
-        task.testUtilApks.from(androidTestUtil)
+      if (creationConfig.junitEngineSpec.inputs.contains(AgpTestSuiteInputParameters.TEST_UTIL_APKS)) {
+        val androidTestUtil = task.project.configurations.findByName(SdkConstants.GRADLE_ANDROID_TEST_UTIL_CONFIGURATION)
+        if (androidTestUtil != null) {
+          task.testUtilApks.from(androidTestUtil)
+        }
       }
 
       val localDevices = creationConfig.global.androidTestOptions.managedDevices.localDevices
@@ -528,13 +532,27 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
 
           AgpTestSuiteInputParameters.TEST_APKS -> {
             val testApkSourceContainer = creationConfig.sourceContainers.firstOrNull { it.source is TestSuiteSourceSet.TestApk }
-            if (testApkSourceContainer != null) {
-              task.engineInputParameters.add(
-                AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.TEST_APKS, testApkSourceContainer.artifacts.get(SingleArtifact.APK))
-              )
-            } else {
-              throw RuntimeException("Engine requested TEST_APKS but no TestApk source set is configured for suite ${creationConfig.name}")
-            }
+            // Fall back to the main creationConfig artifacts if no explicit TestApk source container
+            // is defined. This supports default androidTest paths and standalone test projects
+            // where the test APK is produced directly by the variant.
+            val apkProvider =
+              if (testApkSourceContainer != null) {
+                testApkSourceContainer.artifacts.get(SingleArtifact.APK)
+              } else {
+                creationConfig.artifacts.get(SingleArtifact.APK)
+              }
+            task.engineInputParameters.add(AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.TEST_APKS, apkProvider))
+          }
+
+          AgpTestSuiteInputParameters.AAPT2_EXECUTABLE -> {
+            task.engineInputParameters.add(
+              AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.AAPT2_EXECUTABLE, task.buildTools.aapt2ExecutableProvider())
+            )
+          }
+
+          AgpTestSuiteInputParameters.TEST_UTIL_APKS,
+          AgpTestSuiteInputParameters.ANDROID_TEST_EXECUTION_MODE -> {
+            // Handled via task properties and standardInputs in executeTests
           }
 
           else -> {
