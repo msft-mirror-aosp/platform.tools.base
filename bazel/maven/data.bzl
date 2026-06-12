@@ -68,8 +68,10 @@ _CLASS_JARS = [
     "androidx.compose.animation:animation:1.7.0-beta05",
     "androidx.compose.animation:animation:1.8.0-alpha06",
     "androidx.compose.animation:animation:1.8.2",  # Needed for TemplateDiffTest#testNewComposeWearActivityWithTileAndComplication
+    "androidx.compose.animation:animation:jar:1.9.5",
     "androidx.compose.animation:animation-core:1.10.4",
     "androidx.compose.animation:animation-core:1.3.3",  # Dependency of architecture-samples
+    "androidx.compose.animation:animation-core:jar:1.9.5",
     "androidx.compose.animation:animation-core-android:1.5.0-beta01",  # Necessary for Compose for TV.
     "androidx.compose.animation:animation-graphics:1.10.0",  # Needed for TemplateDiffTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.animation:animation-graphics:1.8.2",  # Needed for TemplateDiffTest#testNewComposeWearActivityWithTileAndComplication
@@ -97,11 +99,13 @@ _CLASS_JARS = [
     "androidx.compose.foundation:foundation:1.8.0-alpha06",
     "androidx.compose.foundation:foundation:1.8.2",  # Needed for TemplateDiffTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.foundation:foundation:1.9.5",
+    "androidx.compose.foundation:foundation:jar:1.9.5",
     "androidx.compose.foundation:foundation-android:1.5.0-beta01",  # Necessary for Compose for TV.
     "androidx.compose.foundation:foundation-android:1.9.5",
     "androidx.compose.foundation:foundation-layout:1.10.4",
     "androidx.compose.foundation:foundation-layout:1.3.1",  # Dependency of architecture-samples
     "androidx.compose.foundation:foundation-layout:1.7.0",  # Compose BOM 2024.09.00
+    "androidx.compose.foundation:foundation-layout:jar:1.9.5",
     "androidx.compose.material:material:1.10.0",  # Needed for TemplateDiffTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.material:material:1.10.4",
     "androidx.compose.material:material:1.3.0",  # Needed by //tools/base/build-system/integration-test/...
@@ -125,6 +129,8 @@ _CLASS_JARS = [
     "androidx.compose.material:material-ripple:1.10.4",
     "androidx.compose.material:material-ripple:1.7.0",  # Compose BOM 2024.09.00
     "androidx.compose.material:material-ripple:1.7.7",  # Needed for TemplateDiffTest#testNewComposeWearActivityWithTileAndComplication
+    "androidx.compose.material:material-ripple:jar:1.8.1",
+    "androidx.compose.material:material-ripple-android:pom:1.8.1",
     "androidx.compose.material:material-ripple-jvmstubs:1.7.7",  # Needed for TemplateDiffTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.material3.adaptive:adaptive:1.0.0",  # Compose Navigation UI template: Compose BOM 2024.09.00
     "androidx.compose.material3.adaptive:adaptive:1.2.0",  # Compose BOM 2025.12.00. Needed for Navigation UI Template
@@ -132,6 +138,7 @@ _CLASS_JARS = [
     "androidx.compose.material3:material3:1.1.1",
     "androidx.compose.material3:material3:1.3.0",  # Compose BOM 2024.09.00
     "androidx.compose.material3:material3:1.4.0",  # Compose BOM 2025.12.00
+    "androidx.compose.material3:material3:jar:1.4.0",
     "androidx.compose.material3:material3-adaptive-navigation-suite:1.3.0",  # Compose Navigation UI template: Compose BOM 2024.09.00
     "androidx.compose.material3:material3-adaptive-navigation-suite:1.4.0",  # Compose Navigation UI template: Compose BOM 2025.12.00
     "androidx.compose.material3:material3-desktop:1.3.0",  # Compose BOM 2024.09.00
@@ -140,6 +147,7 @@ _CLASS_JARS = [
     "androidx.compose.runtime:runtime:1.3.3",  # Dependency of architecture-samples
     "androidx.compose.runtime:runtime:1.7.0",  # Compose BOM 2024.09.00
     "androidx.compose.runtime:runtime:1.8.0-alpha06",  # XR template
+    "androidx.compose.runtime:runtime:jar:1.9.5",
     "androidx.compose.runtime:runtime-android:aar:1.6.0",
     "androidx.compose.runtime:runtime-android:aar:1.7.0",
     "androidx.compose.runtime:runtime-desktop:1.7.0",  # Compose BOM 2024.09.00
@@ -147,6 +155,7 @@ _CLASS_JARS = [
     "androidx.compose.runtime:runtime-saveable:1.10.4",
     "androidx.compose.runtime:runtime-saveable:1.3.3",  # Dependency of architecture-samples
     "androidx.compose.runtime:runtime-saveable:1.7.0",  # Compose BOM 2024.09.00
+    "androidx.compose.runtime:runtime-saveable:jar:1.9.5",
     "androidx.compose.runtime:runtime-saveable-desktop:1.7.0",  # Compose BOM 2024.09.00
     "androidx.compose.ui:ui:1.10.0",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.ui:ui:1.10.4",
@@ -156,14 +165,18 @@ _CLASS_JARS = [
     "androidx.compose.ui:ui:1.7.5",
     "androidx.compose.ui:ui:1.8.0",
     "androidx.compose.ui:ui:1.8.0-alpha06",  # XR template
+    "androidx.compose.ui:ui:jar:1.9.5",
     "androidx.compose.ui:ui-android:aar:1.6.0",
     "androidx.compose.ui:ui-android:aar:1.7.0",
     "androidx.compose.ui:ui-desktop:1.7.0",  # Compose BOM 2024.09.00
+    "androidx.compose.ui:ui-geometry:jar:1.9.5",
     "androidx.compose.ui:ui-graphics:1.10.0",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.ui:ui-graphics:1.10.4",
     "androidx.compose.ui:ui-graphics:1.7.0",  # Compose BOM 2024.09.00
+    "androidx.compose.ui:ui-graphics:jar:1.9.5",
     "androidx.compose.ui:ui-graphics-android:1.5.0-beta01",  # Necessary for Compose for TV.
     "androidx.compose.ui:ui-graphics-desktop:1.7.0",  # Compose BOM 2024.09.00
+    "androidx.compose.ui:ui-test:jar:1.9.5",
     "androidx.compose.ui:ui-test-android:1.5.0-beta01",  # Necessary for Compose for TV.
     "androidx.compose.ui:ui-test-junit4:1.10.0",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.ui:ui-test-junit4:1.10.4",
@@ -177,6 +190,7 @@ _CLASS_JARS = [
     "androidx.compose.ui:ui-test-junit4:1.8.0-alpha06",  # XR template
     "androidx.compose.ui:ui-test-junit4:1.8.2",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.ui:ui-test-junit4:1.9.5",
+    "androidx.compose.ui:ui-test-junit4:jar:1.9.5",
     "androidx.compose.ui:ui-test-junit4-android:1.5.0-beta01",  # Necessary for Compose for TV.
     "androidx.compose.ui:ui-test-manifest:1.10.0",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.ui:ui-test-manifest:1.10.4",
@@ -191,6 +205,7 @@ _CLASS_JARS = [
     "androidx.compose.ui:ui-text:1.10.0",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.ui:ui-text:1.10.4",
     "androidx.compose.ui:ui-text:1.3.3",  # Dependency of architecture-samples
+    "androidx.compose.ui:ui-text:jar:1.9.5",
     "androidx.compose.ui:ui-text-google-fonts:1.7.0",
     "androidx.compose.ui:ui-tooling:1.10.0",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.ui:ui-tooling:1.10.4",
@@ -208,8 +223,10 @@ _CLASS_JARS = [
     "androidx.compose.ui:ui-tooling:1.8.0-alpha06",
     "androidx.compose.ui:ui-tooling:1.8.2",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.ui:ui-tooling:1.9.5",
+    "androidx.compose.ui:ui-tooling:jar:1.9.5",
     "androidx.compose.ui:ui-tooling-android:1.5.0-beta01",  # Necessary for Compose for TV.
     "androidx.compose.ui:ui-tooling-data:1.9.5",
+    "androidx.compose.ui:ui-tooling-data:jar:1.9.5",
     "androidx.compose.ui:ui-tooling-data-android:1.5.0-beta01",  # Necessary for Compose for TV.
     "androidx.compose.ui:ui-tooling-data-android:1.9.5",
     "androidx.compose.ui:ui-tooling-desktop:1.7.0",  # Compose BOM 2024.09.00
@@ -220,12 +237,15 @@ _CLASS_JARS = [
     "androidx.compose.ui:ui-tooling-preview:1.8.0",
     "androidx.compose.ui:ui-tooling-preview:1.8.2",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.ui:ui-tooling-preview:1.9.5",
+    "androidx.compose.ui:ui-tooling-preview:jar:1.9.5",
     "androidx.compose.ui:ui-tooling-preview-android:1.5.0-beta01",  # Necessary for Compose for TV.
     "androidx.compose.ui:ui-tooling-preview-android:1.9.5",
     "androidx.compose.ui:ui-tooling-preview-desktop:1.7.0",  # Compose BOM 2024.09.00
+    "androidx.compose.ui:ui-unit:jar:1.9.5",
     "androidx.compose.ui:ui-unit-android:1.5.0-beta01",  # Necessary for Compose for TV.
     "androidx.compose.ui:ui-util:1.10.4",
     "androidx.compose.ui:ui-util:1.3.3",  # Dependency of architecture-samples
+    "androidx.compose.ui:ui-util:jar:1.9.5",
     "androidx.concurrent:concurrent-futures-ktx:1.2.0",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.constraintlayout:constraintlayout:1.1.3",
     "androidx.constraintlayout:constraintlayout:2.1.3",
@@ -329,6 +349,7 @@ _CLASS_JARS = [
     "androidx.lifecycle:lifecycle-runtime:2.6.1",
     "androidx.lifecycle:lifecycle-runtime:2.8.0-alpha02",  # Needed for kmp consumption test
     "androidx.lifecycle:lifecycle-runtime:2.8.7",
+    "androidx.lifecycle:lifecycle-runtime:jar:2.10.0",
     "androidx.lifecycle:lifecycle-runtime-android:2.8.0-alpha02",  # Needed for kmp consumption test
     "androidx.lifecycle:lifecycle-runtime-android:aar:2.8.3",
     "androidx.lifecycle:lifecycle-runtime-compose:2.10.0",
@@ -338,6 +359,7 @@ _CLASS_JARS = [
     "androidx.lifecycle:lifecycle-runtime-compose:2.8.7",
     "androidx.lifecycle:lifecycle-runtime-compose:2.9.2",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.lifecycle:lifecycle-runtime-compose:2.9.4",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
+    "androidx.lifecycle:lifecycle-runtime-compose:jar:2.10.0",
     "androidx.lifecycle:lifecycle-runtime-compose-desktop:2.8.3",  # Needed for kmp consumption test
     "androidx.lifecycle:lifecycle-runtime-compose-jvmstubs:2.8.7",  # Needed for ComposeRenderTest
     "androidx.lifecycle:lifecycle-runtime-desktop:2.8.0-alpha02",  # Needed for kmp consumption test
@@ -347,6 +369,7 @@ _CLASS_JARS = [
     "androidx.lifecycle:lifecycle-runtime-ktx:2.6.1",
     "androidx.lifecycle:lifecycle-runtime-ktx:2.6.2",
     "androidx.lifecycle:lifecycle-runtime-ktx:2.8.7",
+    "androidx.lifecycle:lifecycle-runtime-ktx:jar:2.10.0",
     "androidx.lifecycle:lifecycle-runtime-testing:2.6.0-alpha03",  # Dependency of architecture-samples
     "androidx.lifecycle:lifecycle-service:2.4.0",  # Needed for tools/data-binding:runtimeLibrariesAndroidX
     "androidx.lifecycle:lifecycle-service:2.6.1",
@@ -356,11 +379,13 @@ _CLASS_JARS = [
     "androidx.lifecycle:lifecycle-viewmodel:2.8.3",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.lifecycle:lifecycle-viewmodel:2.8.7",
     "androidx.lifecycle:lifecycle-viewmodel:2.9.4",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
+    "androidx.lifecycle:lifecycle-viewmodel:jar:2.10.0",
     "androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0",
     "androidx.lifecycle:lifecycle-viewmodel-compose:2.6.0-alpha03",  # Dependency of architecture-samples
     "androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1",
     "androidx.lifecycle:lifecycle-viewmodel-compose:2.8.3",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7",  # XR template
+    "androidx.lifecycle:lifecycle-viewmodel-compose:jar:2.10.0",
     "androidx.lifecycle:lifecycle-viewmodel-desktop:2.8.3",  # Needed for Privacy Sandbox connected tests
     "androidx.lifecycle:lifecycle-viewmodel-desktop:2.8.7",  # Needed for Privacy Sandbox connected tests
     "androidx.lifecycle:lifecycle-viewmodel-ktx:2.10.0",
@@ -373,12 +398,14 @@ _CLASS_JARS = [
     "androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7",
     "androidx.lifecycle:lifecycle-viewmodel-ktx:2.9.4",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.lifecycle:lifecycle-viewmodel-navigation3:2.10.0",
+    "androidx.lifecycle:lifecycle-viewmodel-navigation3:jar:2.10.0",
     "androidx.lifecycle:lifecycle-viewmodel-savedstate:2.10.0",
     "androidx.lifecycle:lifecycle-viewmodel-savedstate:2.6.1",
     "androidx.lifecycle:lifecycle-viewmodel-savedstate:2.6.2",
     "androidx.lifecycle:lifecycle-viewmodel-savedstate:2.8.7",
     "androidx.lifecycle:lifecycle-viewmodel-savedstate:2.9.2",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.lifecycle:lifecycle-viewmodel-savedstate:2.9.4",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
+    "androidx.lifecycle:lifecycle-viewmodel-savedstate:jar:2.10.0",
     "androidx.lifecycle:lifecycle-viewmodel-savedstate-android:2.10.0",
     "androidx.media:media:1.5.0",
     "androidx.media:media:1.6.0",
@@ -410,7 +437,11 @@ _CLASS_JARS = [
     "androidx.navigation:navigation-ui-ktx:2.5.3",
     "androidx.navigation:navigation-ui-ktx:2.6.0",
     "androidx.navigation3:navigation3-runtime:1.0.1",
+    "androidx.navigation3:navigation3-runtime:jar:1.0.1",
     "androidx.navigation3:navigation3-ui:1.0.1",
+    "androidx.navigation3:navigation3-ui:jar:1.0.1",
+    "androidx.navigationevent:navigationevent:jar:1.0.2",
+    "androidx.navigationevent:navigationevent-compose:jar:1.0.2",
     "androidx.palette:palette-ktx:1.0.0",
     "androidx.preference:preference:1.0.0",
     "androidx.preference:preference:1.2.0",
@@ -443,6 +474,8 @@ _CLASS_JARS = [
     "androidx.room:room-ktx:2.5.0-rc01",  # Dependency of architecture-samples
     "androidx.room:room-runtime:2.0.0",
     "androidx.room:room-testing:2.5.0-rc01",  # Dependency of architecture-samples
+    "androidx.savedstate:savedstate:jar:1.4.0",
+    "androidx.savedstate:savedstate-compose:jar:1.4.0",
     "androidx.savedstate:savedstate-ktx:1.2.1",
     "androidx.savedstate:savedstate-ktx:1.3.2",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.savedstate:savedstate-ktx:1.3.3",
