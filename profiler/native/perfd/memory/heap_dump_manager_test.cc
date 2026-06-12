@@ -67,18 +67,20 @@ void testHeapDumpManagerForDevice(int32_t deviceVersion) {
   EXPECT_TRUE(result);
 
   // Sanity-check: trigger another heap dump before one is finish is disallowed.
-  EXPECT_FALSE(dump.TriggerHeapDump(1, dump_id, nullptr));
+  if (deviceVersion < DeviceInfo::Q) {
+    EXPECT_FALSE(dump.TriggerHeapDump(1, dump_id, nullptr));
 
-  // Inserts content to the dump file that fakes that the dump is complete.
-  // Heap dumper expects content to be greater than |kHprofEndTagLength|.
-  // Everything is expected to be zero except the last |kHprofDumpEndTag|th
-  // byte which should be |kHprofDumpEndTag|
-  std::string dump_content(HeapDumpManager::kHprofEndTagLength + 1, 0x00);
-  dump_content[1] = HeapDumpManager::kHprofDumpEndTag;
-  auto file = file_cache.GetFile(file_name);
-  file->OpenForWrite();
-  file->Append(dump_content);
-  file->Close();
+    // Inserts content to the dump file that fakes that the dump is complete.
+    // Heap dumper expects content to be greater than |kHprofEndTagLength|.
+    // Everything is expected to be zero except the last |kHprofDumpEndTag|th
+    // byte which should be |kHprofDumpEndTag|
+    std::string dump_content(HeapDumpManager::kHprofEndTagLength + 1, 0x00);
+    dump_content[1] = HeapDumpManager::kHprofDumpEndTag;
+    auto file = file_cache.GetFile(file_name);
+    file->OpenForWrite();
+    file->Append(dump_content);
+    file->Close();
+  }
   latch.Await();
 
   // We should now be able to trigger a dump again. We read from the same
@@ -106,6 +108,14 @@ TEST(HeapDumpManager, DumpOnDeviceO) {
 // 3. Upon the dump file finished being written to, the heap dump thread ends.
 TEST(HeapDumpManager, DumpOnDeviceM) {
   testHeapDumpManagerForDevice(DeviceInfo::M);
+}
+
+// Test for Q Device:
+// 1. A heap dump can start successfully if none is in progress
+// 2. The heap dump thread ends immediately upon am dumpheap completion
+//    without requiring a file content check or wait logic.
+TEST(HeapDumpManager, DumpOnDeviceQ) {
+  testHeapDumpManagerForDevice(DeviceInfo::Q);
 }
 
 }  // namespace profiler
