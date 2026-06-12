@@ -64,9 +64,9 @@ local_archive(
 
 http_jar(
     name = "bazel_diff",
-    sha256 = "725e4012d8f68ecbe967138bc973bf0bca22b2b219a34cafbd3e392fb451b2e6",
+    sha256 = "8bff0db7d144a1df815378f4c3f4f15dc087074e7a5650374ed575050e1dc9e4",
     urls = [
-        "https://github.com/Tinder/bazel-diff/releases/download/8.1.4/bazel-diff_deploy.jar",
+        "https://github.com/Tinder/bazel-diff/releases/download/v26.0.0/bazel-diff_deploy.jar",
     ],
 )
 

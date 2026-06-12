@@ -14,27 +14,28 @@ def main():
     sys.exit('Must run %s within a workspace.' % os.path.basename(sys.argv[0]))
 
   if sys.platform.startswith('linux'):
-    platform = 'linux-x86_64'
+    bazel = [os.path.join(
+      workspace, 'prebuilts', 'bazel', 'linux-x86_64', 'bazel'
+    )]
     android_home = f'{workspace}/prebuilts/studio/sdk/linux'
   elif sys.platform == 'darwin':
-    platform = 'darwin-arm64' if plat.machine() == 'arm64' else 'darwin-x86_64'
+    bazel = [os.path.join(
+        workspace, 'prebuilts', 'bazel', 'darwin-x86_64', 'bazel'
+    )]
     android_home = f'{workspace}/prebuilts/studio/sdk/darwin'
   elif sys.platform == 'win32':
-    platform = 'windows-x86_64'
+    bazel = [os.path.join(
+        workspace, 'prebuilts', 'bazel', 'windows-x86_64', 'bazel.exe'
+    )]
     android_home = f'{workspace}/prebuilts/studio/sdk/windows'
   else:
     sys.exit('Platform %s is not yet supported.' % sys.platform)
   if not os.path.exists(android_home):
     android_home = os.environ.get('ANDROID_HOME')
 
-  bazel = [
-      os.path.join(
-          workspace, 'prebuilts', 'tools', platform, 'bazel', 'bazelisk'
-      )
-  ]
   # On linux bazel can sometimes hang due to RBE. So we kill it after
   # BAZEL_INVOCATION_TIMEOUT if set.
-  if platform == 'linux-x86_64' and os.environ.get('BAZEL_INVOCATION_TIMEOUT'):
+  if sys.platform.startswith('linux') and os.environ.get('BAZEL_INVOCATION_TIMEOUT'):
     bazel = [
         'timeout',
         '-k',
