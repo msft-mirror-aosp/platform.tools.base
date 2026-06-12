@@ -63,15 +63,15 @@ fun configureAndroidTestEngine(
 
   if (testedConfig != null && !isLibrary) {
     task.engineInputParameters.add(
-      TestSuiteTestTask.AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.TESTED_APKS, testedConfig.artifacts.get(SingleArtifact.APK))
+      TestSuiteTestTask.AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.TESTED_APKS, task.project.files(testedConfig.artifacts.get(SingleArtifact.APK)))
     )
   } else if (creationConfig is TestVariantCreationConfig) {
     task.engineInputParameters.add(
-      TestSuiteTestTask.AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.TESTED_APKS, creationConfig.testedApks)
+      TestSuiteTestTask.AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.TESTED_APKS, task.project.files(creationConfig.testedApks))
     )
   }
   task.engineInputParameters.add(
-    TestSuiteTestTask.AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.TEST_APKS, creationConfig.artifacts.get(SingleArtifact.APK))
+    TestSuiteTestTask.AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.TEST_APKS, task.project.files(creationConfig.artifacts.get(SingleArtifact.APK)))
   )
 
   task.engineInputProperties.put(TestEngineInputProperty.TESTED_APPLICATION_ID, testData.applicationId)

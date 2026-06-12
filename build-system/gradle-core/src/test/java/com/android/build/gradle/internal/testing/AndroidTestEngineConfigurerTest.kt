@@ -156,10 +156,10 @@ class AndroidTestEngineConfigurerTest {
 
     // Verify values of parameters
     val testedApksParam = parameters.first { it.type == AgpTestSuiteInputParameters.TESTED_APKS }
-    assertThat(testedApksParam.value.get().getAsFile().absolutePath).isEqualTo(testedApkDirectory.get().getAsFile().absolutePath)
+    assertThat(testedApksParam.fileCollection.files.single().absolutePath).isEqualTo(testedApkDirectory.get().asFile.absolutePath)
 
     val testApksParam = parameters.first { it.type == AgpTestSuiteInputParameters.TEST_APKS }
-    assertThat(testApksParam.value.get().getAsFile().absolutePath).isEqualTo(testApkDirectory.get().getAsFile().absolutePath)
+    assertThat(testApksParam.fileCollection.files.single().absolutePath).isEqualTo(testApkDirectory.get().asFile.absolutePath)
 
     // Verify other properties that depend on creationConfig
     assertThat(spyTask.engineInputProperties.get()).containsEntry("android-test.force-aot-compilation", "true")
