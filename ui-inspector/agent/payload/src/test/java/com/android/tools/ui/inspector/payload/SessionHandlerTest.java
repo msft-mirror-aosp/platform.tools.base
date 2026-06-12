@@ -20,11 +20,17 @@ import static com.google.common.truth.Truth.assertThat;
 
 import androidx.inspection.Connection;
 import androidx.inspection.Inspector;
+
 import com.android.tools.ui.inspector.common.FramingProtocol;
 import com.android.tools.ui.inspector.common.ProtocolConstants;
 import com.android.tools.ui.inspector.payload.appinspection.AppInspectionUtils;
 import com.android.tools.ui.inspector.payload.appinspection.HandlerThreadExecutor;
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.robolectric.RobolectricTestRunner;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -34,9 +40,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.robolectric.RobolectricTestRunner;
 
 @RunWith(RobolectricTestRunner.class)
 public final class SessionHandlerTest {
@@ -76,8 +79,13 @@ public final class SessionHandlerTest {
       throw new RuntimeException(t);
     });
 
-    bridges.put(ProtocolConstants.VIEW_INSPECTOR_ID,
-        InspectorBridge.createForTesting(mockInspector, new AppInspectionUtils.DelegatingConnection(), primaryExecutor));
+        bridges.put(
+                ProtocolConstants.VIEW_INSPECTOR_ID,
+                InspectorBridge.createForTesting(
+                        ProtocolConstants.VIEW_INSPECTOR_ID,
+                        mockInspector,
+                        new AppInspectionUtils.DelegatingConnection(),
+                        primaryExecutor));
 
     SessionHandler sessionHandler = new SessionHandler(
         inputStream,
@@ -129,8 +137,13 @@ public final class SessionHandlerTest {
     HandlerThreadExecutor primaryExecutor = new HandlerThreadExecutor("test_thread_eof", t -> {
       throw new RuntimeException(t);
     });
-    bridges.put(ProtocolConstants.VIEW_INSPECTOR_ID,
-        InspectorBridge.createForTesting(mockInspector, new AppInspectionUtils.DelegatingConnection(), primaryExecutor));
+        bridges.put(
+                ProtocolConstants.VIEW_INSPECTOR_ID,
+                InspectorBridge.createForTesting(
+                        ProtocolConstants.VIEW_INSPECTOR_ID,
+                        mockInspector,
+                        new AppInspectionUtils.DelegatingConnection(),
+                        primaryExecutor));
 
     SessionHandler sessionHandler = new SessionHandler(
         inputStream,
@@ -267,8 +280,13 @@ public final class SessionHandlerTest {
     HandlerThreadExecutor primaryExecutor = new HandlerThreadExecutor("test_thread_multiple", t -> {
       throw new RuntimeException(t);
     });
-    bridges.put(ProtocolConstants.VIEW_INSPECTOR_ID,
-        InspectorBridge.createForTesting(mockInspector, new AppInspectionUtils.DelegatingConnection(), primaryExecutor));
+        bridges.put(
+                ProtocolConstants.VIEW_INSPECTOR_ID,
+                InspectorBridge.createForTesting(
+                        ProtocolConstants.VIEW_INSPECTOR_ID,
+                        mockInspector,
+                        new AppInspectionUtils.DelegatingConnection(),
+                        primaryExecutor));
 
     SessionHandler sessionHandler = new SessionHandler(
         inputStream,
@@ -406,7 +424,8 @@ public final class SessionHandlerTest {
     assertThat(response.getSpecializedCase()).isEqualTo(UiInspectorProtocol.Response.SpecializedCase.GET_VERSION);
 
     UiInspectorProtocol.GetVersionResponse versionResponse = response.getGetVersion();
-    assertThat(versionResponse.getVersionsMap()).containsExactly(ProtocolConstants.COMPOSE_UI_LIBRARY_ID, "1.5.4");
+        assertThat(versionResponse.getVersionsMap())
+                .containsExactly(ProtocolConstants.COMPOSE_UI_LIBRARY_ID, "1.5.4");
   }
 
   @Test

@@ -20,20 +20,22 @@ import static com.google.common.truth.Truth.assertThat;
 
 import androidx.inspection.Connection;
 import androidx.inspection.Inspector;
+
 import com.android.tools.ui.inspector.payload.appinspection.AppInspectionUtils;
 import com.android.tools.ui.inspector.payload.appinspection.HandlerThreadExecutor;
-import java.util.ArrayList;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.robolectric.RobolectricTestRunner;
+
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.robolectric.RobolectricTestRunner;
 
 @RunWith(RobolectricTestRunner.class)
 public final class InspectorBridgeTest {
@@ -78,8 +80,12 @@ public final class InspectorBridgeTest {
       public void onDispose() {}
     };
 
-    InspectorBridge bridgeSeq = InspectorBridge.createForTesting(
-        mockInspectorSeq, new AppInspectionUtils.DelegatingConnection(), primaryExecutor);
+        InspectorBridge bridgeSeq =
+                InspectorBridge.createForTesting(
+                        "test_inspector",
+                        mockInspectorSeq,
+                        new AppInspectionUtils.DelegatingConnection(),
+                        primaryExecutor);
 
     CountDownLatch latch = new CountDownLatch(2);
     List<Throwable> errors = new CopyOnWriteArrayList<>();
@@ -122,8 +128,12 @@ public final class InspectorBridgeTest {
       public void onDispose() {}
     };
 
-    InspectorBridge bridge = InspectorBridge.createForTesting(
-        mockInspector, new AppInspectionUtils.DelegatingConnection(), primaryExecutor);
+        InspectorBridge bridge =
+                InspectorBridge.createForTesting(
+                        "test_inspector",
+                        mockInspector,
+                        new AppInspectionUtils.DelegatingConnection(),
+                        primaryExecutor);
 
     bridge.sendCommand(new byte[]{1});
 
@@ -142,8 +152,12 @@ public final class InspectorBridgeTest {
       public void onDispose() {}
     };
 
-    InspectorBridge bridge = InspectorBridge.createForTesting(
-        mockInspector, new AppInspectionUtils.DelegatingConnection(), primaryExecutor);
+        InspectorBridge bridge =
+                InspectorBridge.createForTesting(
+                        "test_inspector",
+                        mockInspector,
+                        new AppInspectionUtils.DelegatingConnection(),
+                        primaryExecutor);
 
     boolean exceptionThrown = false;
     try {
@@ -166,8 +180,9 @@ public final class InspectorBridgeTest {
       public void onDispose() {}
     };
 
-    InspectorBridge bridge = InspectorBridge.createForTesting(
-        mockInspector, delegatingConnection, primaryExecutor);
+        InspectorBridge bridge =
+                InspectorBridge.createForTesting(
+                        "test_inspector", mockInspector, delegatingConnection, primaryExecutor);
 
     Connection newConnection = new Connection() {
       @Override
@@ -192,8 +207,12 @@ public final class InspectorBridgeTest {
       }
     };
 
-    InspectorBridge bridge = InspectorBridge.createForTesting(
-        mockInspector, new AppInspectionUtils.DelegatingConnection(), primaryExecutor);
+        InspectorBridge bridge =
+                InspectorBridge.createForTesting(
+                        "test_inspector",
+                        mockInspector,
+                        new AppInspectionUtils.DelegatingConnection(),
+                        primaryExecutor);
 
     bridge.dispose();
 

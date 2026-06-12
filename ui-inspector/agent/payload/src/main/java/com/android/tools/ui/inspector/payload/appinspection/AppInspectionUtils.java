@@ -19,23 +19,27 @@ package com.android.tools.ui.inspector.payload.appinspection;
 import android.os.Build;
 import android.os.Handler;
 import android.util.Log;
+
 import androidx.inspection.ArtTooling;
 import androidx.inspection.Connection;
 import androidx.inspection.Inspector;
 import androidx.inspection.InspectorEnvironment;
 import androidx.inspection.InspectorExecutors;
 import androidx.inspection.InspectorFactory;
+
 import com.android.tools.idea.protobuf.ByteString;
 import com.android.tools.ui.inspector.common.FramingProtocol;
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol;
+import com.android.tools.ui.inspector.service.ArtToolingBridge;
+
 import dalvik.system.DexClassLoader;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.util.Collections;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.concurrent.Executor;
@@ -106,47 +110,61 @@ public final class AppInspectionUtils {
     }
   }
 
-  public static InspectorEnvironment createInspectorEnvironment(
-      HandlerThreadExecutor primaryExecutor,
-      HandlerThreadExecutor.CrashListener crashListener) {
-    return new InspectorEnvironment() {
-      @Override
-      public ArtTooling artTooling() {
-        // TODO: Implement ArtTooling methods to support finding instances and setting hooks.
-        return new ArtTooling() {
-          @Override
-          public <T> List<T> findInstances(Class<T> clazz) {
-            return Collections.emptyList();
-          }
+    public static InspectorEnvironment createInspectorEnvironment(
+            String inspectorId,
+            HandlerThreadExecutor primaryExecutor,
+            HandlerThreadExecutor.CrashListener crashListener) {
+        return new InspectorEnvironment() {
+            @Override
+            public ArtTooling artTooling() {
+                return new ArtTooling() {
+                    @Override
+                    public <T> List<T> findInstances(Class<T> clazz) {
+                        return ArtToolingBridge.findInstances(clazz);
+                    }
 
-          @Override
-          public void registerEntryHook(Class<?> originClass, String originMethod, EntryHook entryHook) {}
+                    @Override
+                    public void registerEntryHook(
+                            Class<?> originClass, String originMethod, EntryHook entryHook) {
+                        ArtToolingBridge.registerEntryHook(
+                                originClass,
+                                originMethod,
+                                inspectorId,
+                                (thisObject, args) -> entryHook.onEntry(thisObject, args));
+                    }
 
-          @Override
-          public <T> void registerExitHook(Class<?> originClass, String originMethod, ExitHook<T> exitHook) {}
+                    @Override
+                    public <T> void registerExitHook(
+                            Class<?> originClass, String originMethod, ExitHook<T> exitHook) {
+                        ArtToolingBridge.registerExitHook(
+                                originClass,
+                                originMethod,
+                                inspectorId,
+                                returnValue -> exitHook.onExit((T) returnValue));
+                    }
+                };
+            }
+
+            @Override
+            public InspectorExecutors executors() {
+                return new InspectorExecutors() {
+                    @Override
+                    public Handler handler() {
+                        return primaryExecutor.getHandler();
+                    }
+
+                    @Override
+                    public Executor primary() {
+                        return primaryExecutor;
+                    }
+
+                    @Override
+                    public Executor io() {
+                        return createDelegateExecutor(IoExecutor, crashListener);
+                    }
+                };
+            }
         };
-      }
-
-      @Override
-      public InspectorExecutors executors() {
-        return new InspectorExecutors() {
-          @Override
-          public Handler handler() {
-            return primaryExecutor.getHandler();
-          }
-
-          @Override
-          public Executor primary() {
-            return primaryExecutor;
-          }
-
-          @Override
-          public Executor io() {
-            return createDelegateExecutor(IoExecutor, crashListener);
-          }
-        };
-      }
-    };
   }
 
   /** Creates an executor that delegates work to the given one and forwards all uncaught exceptions to {@code crashListener}. */
@@ -222,7 +240,9 @@ public final class AppInspectionUtils {
         String targetFolder = "lib/" + abi + "/";
         while (entries.hasMoreElements()) {
           JarEntry entry = entries.nextElement();
-          if (entry.getName().startsWith(targetFolder) && !entry.isDirectory() && entry.getName().endsWith(".so")) {
+                    if (entry.getName().startsWith(targetFolder)
+                            && !entry.isDirectory()
+                            && entry.getName().endsWith(".so")) {
             String name = entry.getName().substring(entry.getName().lastIndexOf('/') + 1);
             File file = new File(workingDir, name);
             try (InputStream inputStream = jarFile.getInputStream(entry)) {

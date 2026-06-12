@@ -5,7 +5,15 @@ package(default_visibility = ["//visibility:public"])
 
 cc_binary(
     name = "ui_inspector_agent_native",
-    srcs = ["agent.cc"],
+    srcs = [
+        "agent.cc",
+        "array_params_entry_hook.cc",
+        "array_params_entry_hook.h",
+        "art_tooling_bridge_jni.cc",
+        "jvmti_art_tooling.cc",
+        "jvmti_art_tooling.h",
+        "ui_inspector_transform.h",
+    ],
     copts = ANDROID_COPTS,
     linkopts = ANDROID_LINKOPTS,
     linkshared = 1,
@@ -15,8 +23,10 @@ cc_binary(
     }),
     deps = [
         "//prebuilts/studio/jdk:jni_headers",
+        "//tools/base/transport/native/agent:jni_wrappers",
         "//tools/base/transport/native/jvmti",
         "//tools/base/transport/native/utils",
+        "@slicer",
     ],
 )
 

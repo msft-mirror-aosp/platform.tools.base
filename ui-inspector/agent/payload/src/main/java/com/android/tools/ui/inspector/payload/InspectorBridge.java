@@ -20,8 +20,11 @@ import androidx.annotation.VisibleForTesting;
 import androidx.inspection.Connection;
 import androidx.inspection.Inspector;
 import androidx.inspection.InspectorEnvironment;
+
 import com.android.tools.ui.inspector.payload.appinspection.AppInspectionUtils;
 import com.android.tools.ui.inspector.payload.appinspection.HandlerThreadExecutor;
+import com.android.tools.ui.inspector.service.ArtToolingBridge;
+
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -33,14 +36,17 @@ import java.util.concurrent.Executor;
 public final class InspectorBridge {
   private static final String THREAD_NAME_PREFIX = "ui_inspector_";
 
+    private final String inspectorId;
   private final Inspector inspector;
   private final AppInspectionUtils.DelegatingConnection connection;
   private final HandlerThreadExecutor primaryExecutor;
 
-  private InspectorBridge(
-      Inspector inspector,
-      AppInspectionUtils.DelegatingConnection connection,
-      HandlerThreadExecutor primaryExecutor) {
+    private InspectorBridge(
+            String inspectorId,
+            Inspector inspector,
+            AppInspectionUtils.DelegatingConnection connection,
+            HandlerThreadExecutor primaryExecutor) {
+        this.inspectorId = inspectorId;
     this.inspector = inspector;
     this.connection = connection;
     this.primaryExecutor = primaryExecutor;
@@ -106,6 +112,9 @@ public final class InspectorBridge {
   /** Disposes the bridge and the underlying inspector. */
   public void dispose() {
     inspector.onDispose();
+        // Clear all bytecode hooks registered by this inspector session to prevent ClassLoader
+        // memory leaks.
+        ArtToolingBridge.clear(inspectorId);
     primaryExecutor.quitSafely();
   }
 
@@ -117,8 +126,9 @@ public final class InspectorBridge {
       HandlerThreadExecutor.CrashListener crashListener) throws Exception {
     HandlerThreadExecutor primaryExecutor =
         new HandlerThreadExecutor(THREAD_NAME_PREFIX + inspectorId, crashListener);
-    InspectorEnvironment inspectorEnvironment =
-        AppInspectionUtils.createInspectorEnvironment(primaryExecutor, crashListener);
+        InspectorEnvironment inspectorEnvironment =
+                AppInspectionUtils.createInspectorEnvironment(
+                        inspectorId, primaryExecutor, crashListener);
 
     CompletableFuture<Inspector> future = new CompletableFuture<>();
     primaryExecutor.execute(() -> {
@@ -159,15 +169,18 @@ public final class InspectorBridge {
       throw new RuntimeException(cause);
     }
 
-    return new InspectorBridge(inspector, connection, primaryExecutor);
+        return new InspectorBridge(inspectorId, inspector, connection, primaryExecutor);
   }
 
-  /** Creates a new [InspectorBridge] for testing with a mocked or stubbed [Inspector] instance. */
-  @VisibleForTesting
-  public static InspectorBridge createForTesting(
-      Inspector inspector,
-      AppInspectionUtils.DelegatingConnection connection,
-      HandlerThreadExecutor primaryExecutor) {
-    return new InspectorBridge(inspector, connection, primaryExecutor);
+    /**
+     * Creates a new [InspectorBridge] for testing with a mocked or stubbed [Inspector] instance.
+     */
+    @VisibleForTesting
+    public static InspectorBridge createForTesting(
+            String inspectorId,
+            Inspector inspector,
+            AppInspectionUtils.DelegatingConnection connection,
+            HandlerThreadExecutor primaryExecutor) {
+        return new InspectorBridge(inspectorId, inspector, connection, primaryExecutor);
   }
 }

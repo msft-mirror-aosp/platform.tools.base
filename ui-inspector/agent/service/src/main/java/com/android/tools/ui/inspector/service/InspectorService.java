@@ -42,8 +42,20 @@ public class InspectorService {
     // TODO: Once we implement the Protobuf protocol for communication, we should adopt a strategy
     // similar to AppInspectionService to report bootstrap failures back to the host in a structured
     // way rather than relying on log scraping or simple return codes.
-    public static int initialize(String payloadJarPath, String pid) {
+    /**
+     * Initializes the inspector service, loads the payload JAR, and launches the inspector payload.
+     *
+     * @param payloadJarPath absolute path to the payload jar/dex file to load dynamically
+     * @param pid the target process ID of this application
+     * @param artToolingPtr pointer to the native JvmtiArtTooling C++ instance
+     * @return RESULT_OK on success, or an error/exception code on failure
+     */
+    public static int initialize(String payloadJarPath, String pid, long artToolingPtr) {
         try {
+            // Register the native JvmtiArtTooling pointer in the bootstrap bridge so JNI callbacks
+            // can delegate hooks and heap-walking queries to the JVMTI agent.
+            ArtToolingBridge.initialize(artToolingPtr);
+
             if (pid == null || pid.isEmpty()) {
                 Log.e(TAG, "PID is required for initialization");
                 return RESULT_ERROR;
