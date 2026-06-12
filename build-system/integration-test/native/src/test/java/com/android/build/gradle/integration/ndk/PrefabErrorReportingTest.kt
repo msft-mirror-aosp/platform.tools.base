@@ -416,6 +416,7 @@ class PrefabErrorReportingTest {
     val args =
       mutableListOf(
         File(System.getProperty("java.home")).resolve("bin/java").path,
+        "--enable-native-access=ALL-UNNAMED",
         "--class-path",
         prefabClassPath.toString(),
         "com.google.prefab.cli.AppKt",
