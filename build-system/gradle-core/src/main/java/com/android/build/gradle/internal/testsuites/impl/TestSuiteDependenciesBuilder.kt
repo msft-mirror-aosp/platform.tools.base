@@ -97,7 +97,13 @@ internal constructor(
     val hostRuntimeClasspathName: String = identifier + "HostRuntimeClasspath"
     val hostRuntimeClasspath = configurations.maybeCreate(hostRuntimeClasspathName)
     hostRuntimeClasspath.description = "Resolved configuration for host runtime for test suite: $testSuiteName in $testedVariantName"
-    hostRuntimeClasspath.extendsFrom(runtimeClasspath)
+    // Only host-driven test suites (like HOST_JAR) need the test classes and their
+    // dependencies on the host runtime classpath. For on-device tests (TEST_APK),
+    // the code runs on-device, and the host classpath should only contain the
+    // test engine dependencies (enginesDependencies) required for orchestration.
+    if (sourceType == TestSuiteSourceType.HOST_JAR) {
+      hostRuntimeClasspath.extendsFrom(runtimeClasspath)
+    }
     populateClasspath(hostRuntimeClasspath, listOf(enginesDependencies))
     addAttributesForHost(hostRuntimeClasspath, factory.named(Usage::class.java, Usage.JAVA_RUNTIME))
 

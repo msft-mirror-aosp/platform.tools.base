@@ -446,13 +446,13 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
         }
       task.classpath =
         creationConfig.services.fileCollection().also { fileCollection ->
-          fileCollection.from(classesDir)
-          fileCollection.from(
-            creationConfig.testedVariant.artifacts
-              .forScope(ScopedArtifacts.Scope.PROJECT)
-              .getFinalArtifacts(ScopedArtifact.POST_COMPILATION_CLASSES)
-          )
           if (hasHostJar) {
+            fileCollection.from(classesDir)
+            fileCollection.from(
+              creationConfig.testedVariant.artifacts
+                .forScope(ScopedArtifacts.Scope.PROJECT)
+                .getFinalArtifacts(ScopedArtifact.POST_COMPILATION_CLASSES)
+            )
             creationConfig.sourceContainers
               .filter { it.source is TestSuiteSourceSet.HostJar }
               .forEach { sourceContainer ->
