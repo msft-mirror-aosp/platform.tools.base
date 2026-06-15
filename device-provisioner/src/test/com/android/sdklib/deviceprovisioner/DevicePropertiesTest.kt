@@ -65,7 +65,6 @@ class DevicePropertiesTest {
     assertThat(props.androidVersion).isEqualTo(AndroidVersion(29))
     assertThat(props.androidRelease).isEqualTo("10")
     assertThat(props.primaryAbi).isEqualTo(Abi.ARM64_V8A)
-    assertThat(props.deviceType).isEqualTo(DeviceType.WEAR)
     assertThat(props.isVirtual).isTrue()
     assertThat(props.isDebuggable).isTrue()
   }
@@ -132,7 +131,9 @@ class DevicePropertiesTest {
 
   private fun props(vararg pairs: Pair<String, String>) =
     DeviceProperties.buildForTest {
-      readCommonProperties(mapOf(*pairs))
+      val map = mapOf(*pairs)
+      readCommonProperties(map)
+      deviceType = DeviceType.fromProperties(map)
       icon = EmptyIcon.DEFAULT
     }
 }

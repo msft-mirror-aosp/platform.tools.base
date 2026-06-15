@@ -384,7 +384,6 @@ class LocalEmulatorDeviceHandle(
                     LocalEmulatorProperties.build(activeAvdInfo) {
                       readCommonProperties(newProperties)
                       populateDeviceInfoProto(PLUGIN_ID, connectedDevice.serialNumber, newProperties, randomConnectionId())
-                      // Device type is not always reliably read from properties
                       deviceType = activeAvdInfo.toDeviceType()
                       density = newProperties[DevicePropertyNames.QEMU_SF_LCD_DENSITY]?.toIntOrNull()
                       resolution = message.resolution

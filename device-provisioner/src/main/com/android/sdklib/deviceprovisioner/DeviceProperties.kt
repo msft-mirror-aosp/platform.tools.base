@@ -34,6 +34,7 @@ import com.android.adblib.ShellCommandOutputElement
 import com.android.adblib.adbLogger
 import com.android.adblib.selector
 import com.android.adblib.shellAsLines
+import com.android.adblib.shellAsText
 import com.android.resources.Density
 import com.android.sdklib.AndroidVersion
 import com.android.sdklib.AndroidVersionUtil
@@ -232,24 +233,13 @@ interface DeviceProperties {
       abiList = abiStrings.mapNotNull { Abi.getEnum(it) }
 
       androidRelease = properties[RO_BUILD_VERSION_RELEASE]
-      val characteristics = (properties[RO_BUILD_CHARACTERISTICS] ?: "").split(",")
-      deviceType =
-        when {
-          // Some builds of microxr might present themselves with the "watch" characteristic
-          // so this check needs to be ahead of the WEAR one.
-          properties.contains("vendor.microxr.mcu.firmware.name") -> DeviceType.AI_GLASSES
-          characteristics.contains("watch") -> DeviceType.WEAR
-          characteristics.contains("tv") -> DeviceType.TV
-          characteristics.contains("automotive") -> DeviceType.AUTOMOTIVE
-          characteristics.contains("xr") -> DeviceType.XR_HEADSET
-          // TODO(b/408280128): Remove this workaround once RO_BUILD_CHARACTERISTICS contains "xr".
-          properties["ro.product.product.name"]?.let { it.startsWith("xr") || it.endsWith("xr") } == true &&
-            properties["init.svc.sxrd"] == "running" -> DeviceType.XR_HEADSET
-          else -> DeviceType.HANDHELD
-        }
       isVirtual = properties[RO_KERNEL_QEMU] == "1"
       isDebuggable = properties[RO_BUILD_TYPE] in setOf("userdebug", "eng")
       density = properties[RO_SF_LCD_DENSITY]?.toIntOrNull()
+    }
+
+    suspend fun readDeviceType(device: ConnectedDevice, properties: Map<String, String>) {
+      deviceType = DeviceType.readFromFeatures(device) ?: DeviceType.fromProperties(properties) ?: DeviceType.HANDHELD
     }
 
     /**
@@ -360,6 +350,63 @@ enum class DeviceType(val stringValue: String) {
   AI_GLASSES("Intelligent Eyewear");
 
   override fun toString() = stringValue
+
+  companion object {
+    /**
+     * Attempts to determine the device type based on the features present. Not all device types can be detected this way; returns null if
+     * an indicative feature is not found, or there is a failure reading features.
+     */
+    internal suspend fun readFromFeatures(device: ConnectedDevice): DeviceType? {
+      try {
+        val output = device.session.deviceServices.shellAsText(device.selector, "pm list features", commandTimeout = Duration.ofSeconds(5))
+
+        if (output.exitCode != 0) {
+          adbLogger(device.session).warn("Failed to read device features successfully: ${output.stderr} (exit code: ${output.exitCode})")
+          return null
+        }
+
+        return fromFeatures(output.stdout.lines().mapTo(mutableSetOf()) { it.trim().removePrefix("feature:") })
+      } catch (e: Exception) {
+        when (e) {
+          is CancellationException -> throw e
+          is AdbFailResponseException -> adbLogger(device.session).warn(e, "Failed to read device features")
+          is TimeoutException,
+          is InterruptedByTimeoutException -> adbLogger(device.session).warn(e, "Timeout reading device features")
+          else -> adbLogger(device.session).error(e, "Reading device features")
+        }
+        return null
+      }
+    }
+
+    internal fun fromFeatures(features: Collection<String>): DeviceType? =
+      when {
+        features.contains("android.hardware.type.watch") -> WEAR
+        features.contains("android.hardware.type.television") -> TV
+        features.contains("android.hardware.type.automotive") -> AUTOMOTIVE
+        features.contains("android.software.xr.api.spatial") -> XR_HEADSET
+        features.contains("android.hardware.type.xr_peripheral") -> AI_GLASSES
+        else -> null
+      }
+
+    /**
+     * Attempts to determine the device type based on system properties (particularly ro.build.characteristics). [readFromFeatures] should
+     * be favored over this.
+     */
+    internal fun fromProperties(properties: Map<String, String>): DeviceType? {
+      val characteristics = (properties[RO_BUILD_CHARACTERISTICS] ?: "").split(",")
+      return when {
+        // Some builds of microxr might present themselves with the "watch" characteristic
+        // so this check needs to be ahead of the WEAR one.
+        properties.contains("vendor.microxr.mcu.firmware.name") -> AI_GLASSES
+        characteristics.contains("watch") -> WEAR
+        characteristics.contains("tv") -> TV
+        characteristics.contains("automotive") -> AUTOMOTIVE
+        characteristics.contains("desktop") -> DESKTOP
+        characteristics.contains("xr") -> XR_HEADSET
+        else -> null
+      }
+    }
+  }
 }
 
 enum class ConnectionType {
