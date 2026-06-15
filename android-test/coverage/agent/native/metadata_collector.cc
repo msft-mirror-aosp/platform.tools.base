@@ -84,7 +84,7 @@ bool MetadataCollector::WriteToDisk() const {
     return false;
   }
 
-  std::string path = data_dir_ + "/code_cache/coverage_metadata.pb";
+  std::string path = data_dir_ + "/coverage_metadata.pb";
 
   // Use a temporary file for atomic write.
   std::string tmp_path = path + ".tmp";

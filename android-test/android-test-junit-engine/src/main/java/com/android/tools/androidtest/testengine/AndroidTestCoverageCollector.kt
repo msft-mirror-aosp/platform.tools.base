@@ -30,6 +30,7 @@ class AndroidTestCoverageCollector(
   private val useTestStorageService: Boolean,
   private val additionalTestOutputCollector: AndroidAdditionalTestOutputCollector,
   private val runAsPackageName: String? = null,
+  private val agentFilesystemInfo: CoverageAgentFilesystemInfo = CoverageAgentFilesystemInfo(),
   private val logger: Logger = Logger.getLogger(AndroidTestCoverageCollector::class.java.name),
 ) {
 
@@ -72,6 +73,14 @@ class AndroidTestCoverageCollector(
   /** Removes code coverages data on device from previous runs if exists. */
   private fun cleanPreviousCodeCoverageOnDevice() {
     val storageDir = AndroidAdditionalTestOutputCollector.TEST_STORAGE_SERVICE_INTERNAL_OUTPUT_DIR.removeSuffix("/")
+
+    val dataDir = agentFilesystemInfo.dataDirectoryOnDevice
+    if (dataDir != null) {
+      runShellCommandWithRunAs(listOf("rm", "-rf", dataDir))
+      runShellCommandWithRunAs(listOf("mkdir", "-p", dataDir))
+      return
+    }
+
     if (!coverageFileOnDevice.isNullOrBlank()) {
       val devicePath =
         if (effectiveUseTestStorageService) {
@@ -107,6 +116,15 @@ class AndroidTestCoverageCollector(
     if (coverageDirOnHost == null) return
     try {
       val storageDir = AndroidAdditionalTestOutputCollector.TEST_STORAGE_SERVICE_INTERNAL_OUTPUT_DIR.removeSuffix("/")
+
+      // On-the-fly coverage artifacts from the agent.
+      val agentDataDir = agentFilesystemInfo.dataDirectoryOnDevice
+      if (agentDataDir != null) {
+        logger.info("Pulling coverage artifacts from: $agentDataDir")
+        additionalTestOutputCollector.pullDirectory(agentDataDir, coverageDirOnHost, ".pb")
+        return
+      }
+
       if (!coverageFileOnDevice.isNullOrBlank()) {
         val devicePath =
           if (effectiveUseTestStorageService) {

@@ -78,6 +78,9 @@ object AndroidTestConfigurationKeys {
   /** Whether test coverage is enabled. */
   const val IS_TEST_COVERAGE_ENABLED = "android-test.is-test-coverage-enabled"
 
+  /** Path to the code coverage directory on host. */
+  const val COVERAGE_DIR_ON_HOST = "android-test.coverage-dir-on-host"
+
   /** Path to the single code coverage file on device. */
   const val COVERAGE_FILE_ON_DEVICE = "android-test.coverage-file-on-device"
 

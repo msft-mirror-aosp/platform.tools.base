@@ -104,6 +104,8 @@ void JNICALL Instrumenter::OnClassFileLoadHook(
     return;
   }
 
+  Log::I("Instrumenting class: %s (loader: %p)", name, loader);
+
   // The class name from JVMTI needs to be converted to a JNI descriptor.
   std::string descriptor = "L" + std::string(name) + ";";
 

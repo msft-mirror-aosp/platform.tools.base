@@ -148,7 +148,7 @@ class AndroidTestConfiguration(request: ExecutionRequest) {
   }
 
   fun getCoverageDirOnHost(deviceSerial: String? = null): File? =
-    get("", AgpTestSuiteInput.COVERAGE_DIR, deviceSerial)?.let { File(it, "coverage_data") }
+    get(AndroidTestConfigurationKeys.COVERAGE_DIR_ON_HOST, AgpTestSuiteInput.COVERAGE_DIR, deviceSerial)?.let { File(it, "coverage_data") }
 
   val coverageFileOnDevice: String? = get(AndroidTestConfigurationKeys.COVERAGE_FILE_ON_DEVICE)
   val coverageDirOnDevice: String? = get(AndroidTestConfigurationKeys.COVERAGE_DIR_ON_DEVICE)

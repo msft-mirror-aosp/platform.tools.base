@@ -16,6 +16,7 @@
 
 package com.android.tools.androidtest.testengine.instrument
 
+import com.android.tools.androidtest.testengine.CoverageAgentFilesystemInfo
 import com.google.common.truth.Truth.assertThat
 import java.io.File
 import java.util.logging.Logger
@@ -288,6 +289,11 @@ class AmInstrumentationRunnerTest {
     whenever(mockAmProcess.waitFor()).thenReturn(0)
 
     val commands = mutableListOf<List<String>>()
+    val agentFilesystemInfo =
+      CoverageAgentFilesystemInfo().apply {
+        agentBinaryPathOnDevice = agentPath
+        dataDirectoryOnDevice = dataDir
+      }
     val runner =
       AmInstrumentationRunner(
         adb = fakeAdb,
@@ -295,7 +301,7 @@ class AmInstrumentationRunnerTest {
         instrumentationRunnerClass = "Runner",
         testPackageId = testPackage,
         instrumentationTargetPackageId = targetPackage,
-        jvmtiCodeCoverageAgentPathProvider = { Pair(agentPath, dataDir) },
+        agentFilesystemInfo = agentFilesystemInfo,
         logger = mockLogger,
         processBuilder = { command ->
           commands.add(command)
@@ -311,13 +317,80 @@ class AmInstrumentationRunnerTest {
     assertThat(commands.any { it.contains("pidof") }).isFalse()
     assertThat(commands.any { it.contains("attach-agent") }).isFalse()
 
-    // 2. Verify instrumentation command includes Java-API config.
+    // 2. Verify instrumentation command includes Java-API config and auto-injected coverage flags.
     val instrumentCmd = commands.find { it.contains("instrument") }
     assertThat(instrumentCmd).isNotNull()
     assertThat(instrumentCmd).contains("-e")
+    assertThat(instrumentCmd).contains("coverage")
+    assertThat(instrumentCmd).contains("true")
     assertThat(instrumentCmd).contains("listener")
     assertThat(instrumentCmd).contains("com.android.tools.coverage.CoverageAgentAttacher")
     assertThat(instrumentCmd).contains("coverage-agent-config")
-    assertThat(instrumentCmd).contains("$agentPath=$testPackage,com/example/app,$dataDir")
+    assertThat(instrumentCmd?.joinToString(" ")).contains("$agentPath=$testPackage,com/example,$dataDir")
+  }
+
+  @Test
+  fun runAmInstrumentCommand_doesNotInjectCoverageArgs_whenAgentIsMissing() {
+    val mockAmProcess = mock<Process>()
+    whenever(mockAmProcess.inputStream).thenReturn("INSTRUMENTATION_CODE: -1".byteInputStream())
+    whenever(mockAmProcess.errorStream).thenReturn("".byteInputStream())
+    whenever(mockAmProcess.waitFor()).thenReturn(0)
+
+    val commands = mutableListOf<List<String>>()
+    val runner =
+      AmInstrumentationRunner(
+        adb = fakeAdb,
+        deviceSerial = "serial",
+        instrumentationRunnerClass = "Runner",
+        testPackageId = "pkg",
+        instrumentationTargetPackageId = "target",
+        agentFilesystemInfo = CoverageAgentFilesystemInfo(),
+        processBuilder = { command ->
+          commands.add(command)
+          val pb = mock<ProcessBuilder>()
+          whenever(pb.start()).thenReturn(mockAmProcess)
+          pb
+        },
+      )
+
+    runner.runAmInstrumentCommand()
+
+    val instrumentCmd = commands.find { it.contains("instrument") }
+    assertThat(instrumentCmd).isNotNull()
+    assertThat(instrumentCmd!!.none { it.contains("coverage") }).isTrue()
+    assertThat(instrumentCmd.none { it.contains(".pb") }).isTrue()
+  }
+
+  @Test
+  fun getAmInstrumentCmd_calculatesBroadInclusionPrefixCorrectly() {
+    val targetPackage = "com.android.sample.app"
+    val testPackage = "com.android.sample.app.test"
+    val agentPath = "/path/to/agent.so"
+    val dataDir = "/path/to/data"
+
+    val agentFilesystemInfo =
+      CoverageAgentFilesystemInfo().apply {
+        agentBinaryPathOnDevice = agentPath
+        dataDirectoryOnDevice = dataDir
+      }
+    val runner =
+      AmInstrumentationRunner(
+        adb = fakeAdb,
+        deviceSerial = "serial",
+        instrumentationRunnerClass = "Runner",
+        testPackageId = testPackage,
+        instrumentationTargetPackageId = targetPackage,
+        agentFilesystemInfo = agentFilesystemInfo,
+      )
+
+    val command =
+      runner.javaClass.getDeclaredMethod("getAmInstrumentCmd").let {
+        it.isAccessible = true
+        it.invoke(runner) as List<String>
+      }
+
+    // Verify prefix is "com/android" (first two segments of "com.android.sample.app")
+    assertThat(command.any { it.contains("com/android") }).isTrue()
+    assertThat(command.any { it.contains("$agentPath=$testPackage,com/android,$dataDir") }).isTrue()
   }
 }

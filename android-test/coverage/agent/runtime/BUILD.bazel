@@ -1,29 +1,50 @@
-load("@rules_java//java:defs.bzl", "java_library", "java_test")
+load("@rules_java//java:defs.bzl", "java_library")
 load("//tools/base/bazel:android.bzl", "dex_library")
+
+# The actual hit recorder implementation.
+java_library(
+    name = "coverage_tracker_internal",
+    srcs = ["src/main/java/com/android/tools/coverage/CoverageTracker.java"],
+    tags = ["testonly"],
+    visibility = ["//visibility:private"],
+    deps = ["//tools/base/fakeandroid:android-mock"],
+)
+
+# A compile-only version of the tracker for other modules to link against.
+java_library(
+    name = "coverage_tracker_java",
+    srcs = ["src/main/java/com/android/tools/coverage/CoverageTracker.java"],
+    neverlink = 1,
+    tags = ["testonly"],
+    visibility = ["//visibility:public"],
+    deps = ["//tools/base/fakeandroid:android-mock"],
+)
 
 java_library(
     name = "coverage_rt_java",
-    srcs = glob(["src/main/java/**/*.java"]),
+    srcs = ["src/main/java/com/android/tools/coverage/CoverageAgentAttacher.java"],
+    tags = ["testonly"],
     visibility = ["//visibility:public"],
     deps = [
+        ":coverage_tracker_java",
         "//prebuilts/tools/common/m2:androidx-test-runner-1.4.0",
         "//tools/base/fakeandroid:android-mock",
         "@maven//:junit.junit",
     ],
 )
 
-java_test(
-    name = "coverage_rt_test",
-    srcs = glob(["src/test/java/**/*.java"]),
-    test_class = "com.android.tools.coverage.CoverageTrackerTest",
-    deps = [
-        ":coverage_rt_java",
-        "@maven//:junit.junit",
-    ],
+# This is what the native agent embeds and injects into the BootClassLoader.
+dex_library(
+    name = "coverage_tracker_dex",
+    jars = [":coverage_tracker_internal"],
+    tags = ["testonly"],
+    visibility = ["//visibility:public"],
 )
 
+# This is what AGP bundles into the Test APK.
 dex_library(
     name = "coverage_rt",
     jars = [":coverage_rt_java"],
+    tags = ["testonly"],
     visibility = ["//visibility:public"],
 )

@@ -16,6 +16,8 @@
 
 package com.android.tools.coverage;
 
+import android.util.Log;
+
 import java.util.Arrays;
 
 /**
@@ -24,6 +26,7 @@ import java.util.Arrays;
  */
 public class CoverageTracker {
 
+    private static final String TAG = "studio.coverage.rt";
     // A large enough array to hold block hits.
     // TODO: Implement dynamic initialization from the native agent to allocate
     // exactly the required number of blocks for the specific project.
@@ -52,6 +55,10 @@ public class CoverageTracker {
 
     /** @return The internal boolean array tracking block hits. */
     public static boolean[] getHits() {
+        Log.i(TAG, "getHits() called.");
         return hits;
     }
+
+    /** Signals the native agent to write captured coverage data to disk immediately. */
+    public static native void dumpCoverageData();
 }

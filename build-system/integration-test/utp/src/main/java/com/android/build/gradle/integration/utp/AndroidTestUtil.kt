@@ -51,6 +51,7 @@ class AndroidTestUtil(
   lateinit var testCoverageXmlPath: String
   lateinit var testLogcatPath: String
   lateinit var testAdditionalOutputPath: String
+  lateinit var moduleName: String
 
   val project: Path
     get() = rule.build.directory
@@ -62,6 +63,7 @@ class AndroidTestUtil(
       )
 
   fun selectModule(moduleName: String) {
+    this.moduleName = moduleName
     onSelectModule(moduleName, this)
   }
 
@@ -169,6 +171,24 @@ class AndroidTestUtil(
     result.assertOutputContains("Agent extraction VERIFIED")
     result.assertOutputContains("-e listener com.android.tools.coverage.CoverageAgentAttacher")
     result.assertOutputContains("-e coverage-agent-config")
+
+    // Verify binary artifacts were pulled to the host.
+    // We search in a targeted directory based on the test platform.
+    val coverageSearchDir =
+      if (runWithBuiltInPlatform) {
+          project.resolve("$moduleName/build/intermediates/test_suite_code_coverage")
+        } else {
+          project.resolve("$moduleName/build/reports/coverage")
+        }
+        .toFile()
+
+    val hitsFile = coverageSearchDir.walkTopDown().find { it.name == "coverage_hits.pb" }
+    val metadataFile = coverageSearchDir.walkTopDown().find { it.name == "coverage_metadata.pb" }
+
+    assertThat(hitsFile).named("coverage_hits.pb in $coverageSearchDir").isNotNull()
+    assertThat(metadataFile).named("coverage_metadata.pb in $coverageSearchDir").isNotNull()
+    assertThat(hitsFile?.exists()).isTrue()
+    assertThat(metadataFile?.exists()).isTrue()
   }
 
   fun androidTestWithTestFailures() {

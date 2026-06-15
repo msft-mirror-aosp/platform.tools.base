@@ -30,6 +30,7 @@ import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 
 /** Unit tests for [AndroidTestCoverageCollector]. */
@@ -170,6 +171,63 @@ class AndroidTestCoverageCollectorTest {
   }
 
   @Test
+  fun collect_prioritizesAgentDirectoryPull_overLegacyProperties() {
+    val agentDir = "/data/user/0/pkg/code_cache"
+    val agentFilesystemInfo =
+      CoverageAgentFilesystemInfo().apply {
+        agentBinaryPathOnDevice = "/path/to/agent.so"
+        dataDirectoryOnDevice = agentDir
+      }
+    val collector =
+      AndroidTestCoverageCollector(
+        adbController,
+        deviceSerial,
+        coverageDirOnHost,
+        coverageFileOnDevice = "/data/data/pkg/coverage.ec",
+        coverageDirOnDevice = null,
+        useTestStorageService = false,
+        additionalOutputCollector,
+        agentFilesystemInfo = agentFilesystemInfo,
+      )
+
+    collector.collect()
+
+    // Should pull from the agent directory to get hits + metadata
+    verify(additionalOutputCollector).pullDirectory(eq(agentDir), eq(coverageDirOnHost), eq(".pb"))
+    // Should NOT pull the legacy .ec file
+    verify(additionalOutputCollector, never()).pullFile(anyString(), anyOrNull())
+  }
+
+  @Test
+  fun prepare_cleansAgentDirectory_whenAgentIsPresent() {
+    val agentDir = "/data/user/0/pkg/code_cache"
+    val agentFilesystemInfo =
+      CoverageAgentFilesystemInfo().apply {
+        agentBinaryPathOnDevice = "/path/to/agent.so"
+        dataDirectoryOnDevice = agentDir
+      }
+    val collector =
+      AndroidTestCoverageCollector(
+        adbController,
+        deviceSerial,
+        coverageDirOnHost,
+        coverageFileOnDevice = null,
+        coverageDirOnDevice = null,
+        useTestStorageService = false,
+        additionalOutputCollector,
+        agentFilesystemInfo = agentFilesystemInfo,
+      )
+
+    mockAdbResponse(listOf("pm", "list", "packages", "androidx.test.services"), "package:other")
+
+    collector.prepare()
+
+    val inOrder = inOrder(adbController)
+    inOrder.verify(adbController).runAdbShellCommand(eq(deviceSerial), eq(listOf("rm", "-rf", agentDir)), anyOrNull())
+    inOrder.verify(adbController).runAdbShellCommand(eq(deviceSerial), eq(listOf("mkdir", "-p", agentDir)), anyOrNull())
+  }
+
+  @Test
   fun collect_pullsSingleFile() {
     val coverageFileOnDevice = "/data/data/pkg/coverage.ec"
     val collector =
@@ -204,6 +262,26 @@ class AndroidTestCoverageCollectorTest {
 
     collector.collect()
 
+    verify(additionalOutputCollector).pullDirectory(eq(coverageDirOnDevice), eq(coverageDirOnHost), eq(".ec"))
+  }
+
+  @Test
+  fun collect_fallsBackToLegacyDirectoryPull_whenNoSingleFile() {
+    val coverageDirOnDevice = "/data/data/pkg/coverage_data/"
+    val collector =
+      AndroidTestCoverageCollector(
+        adbController,
+        deviceSerial,
+        coverageDirOnHost,
+        coverageFileOnDevice = null,
+        coverageDirOnDevice = coverageDirOnDevice,
+        useTestStorageService = false,
+        additionalOutputCollector,
+      )
+
+    collector.collect()
+
+    // Should fall back to directory pull for .ec files
     verify(additionalOutputCollector).pullDirectory(eq(coverageDirOnDevice), eq(coverageDirOnHost), eq(".ec"))
   }
 
