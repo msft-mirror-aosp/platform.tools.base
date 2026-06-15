@@ -35,14 +35,7 @@ fun runComposeCliRender(args: List<String>): String {
   val javaHome = System.getProperty("java.home")
   val composeCliRenderFolder = TestUtils.resolveWorkspacePath("tools/base/standalone-render/compose-cli")
   val deployJar = TestUtils.resolveWorkspacePath("tools/base/standalone-render/compose-cli/compose-preview-renderer-cli_deploy.jar")
-  val command =
-    listOf(
-      "$javaHome/bin/java",
-      "-Dlayoutlib.thread.profile.timeoutms=10000",
-      "-Djava.security.manager=allow",
-      "-jar",
-      deployJar.absolutePathString(),
-    ) + args
+  val command = listOf("$javaHome/bin/java", "-Dlayoutlib.thread.profile.timeoutms=10000", "-jar", deployJar.absolutePathString()) + args
   val procBuilder =
     ProcessBuilder(command)
       .directory(composeCliRenderFolder.toFile())
