@@ -97,9 +97,9 @@ sh_binary(
 http_archive(
     name = "perfetto_repo",
     build_file = "@//tools/base/profiler:native/external/perfetto.BUILD",
-    sha256 = "0e119528d6f9d172bfc38512cd3a8dc6eee6f5ff7a99fc427983f837887bdc45",
-    strip_prefix = "perfetto-55.3",
-    url = "https://github.com/google/perfetto/archive/refs/tags/v55.3.tar.gz",
+    sha256 = "9741938a7fc534ed302723c2b2c3c949273aa92dbf725d0e1b7229a9320b6c07",
+    strip_prefix = "perfetto-56.0",
+    url = "https://github.com/google/perfetto/archive/refs/tags/v56.0.tar.gz",
 )
 
 # An empty local repository which must be overridden according to the instructions at
