@@ -39,6 +39,10 @@ message BlockMetadata {
   // The specific source lines covered by this basic block.
   // In production, we track instruction counts per line for maximum precision.
   repeated LineMetadata lines = 2;
+
+  // The number of possible execution branches originating from this block.
+  // For example, a block ending in an 'if' will have 2 branches.
+  uint32 branch_count = 3;
 }
 
 // Metadata for a single method.

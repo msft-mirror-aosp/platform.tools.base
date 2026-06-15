@@ -62,7 +62,8 @@ class MetadataCollector {
 
   // Adds a block to a method metadata entry.
   void AddBlock(proto::MethodMetadata* method_meta, uint32_t block_id,
-                const std::vector<std::pair<int32_t, uint32_t>>& lines);
+                const std::vector<std::pair<int32_t, uint32_t>>& lines,
+                uint32_t branch_count);
 
   // Serializes the collected metadata to a binary protobuf file.
   // Returns true on success.

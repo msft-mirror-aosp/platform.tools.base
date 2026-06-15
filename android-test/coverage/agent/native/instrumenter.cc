@@ -266,6 +266,7 @@ bool Instrumenter::InstrumentMethod(
   struct PendingBlock {
     uint32_t id;
     std::vector<std::pair<int32_t, uint32_t>> line_counts;
+    uint32_t branch_count;
   };
   std::vector<PendingBlock> pending_blocks;
 
@@ -310,6 +311,26 @@ bool Instrumenter::InstrumentMethod(
 
     if (trace_point == nullptr) continue;
 
+    // Determine the branch count for this block using the opcode flags of the
+    // last instruction in the block region.
+    uint32_t branch_count = 1;  // Default for sequential flow.
+    if (auto* last_bytecode =
+            dynamic_cast<lir::Bytecode*>(block.region.last)) {
+      auto flags = dex::GetFlagsFromOpcode(last_bytecode->opcode);
+      if (flags & dex::kBranch) {
+        if (flags & dex::kContinue) {
+          branch_count = 2;  // Conditional branch (e.g., IF_*)
+        } else {
+          branch_count = 1;  // Unconditional branch (e.g., GOTO)
+        }
+      } else if (flags & dex::kSwitch) {
+        // TODO: Parse the switch payload to get the exact target count.
+        branch_count = 2;
+      } else if (flags & (dex::kReturn | dex::kThrow)) {
+        branch_count = 0;  // Terminal block (no successors)
+      }
+    }
+
     // Assign a globally unique block ID only for blocks we are actually
     // instrumenting.
     uint32_t block_id = g_next_block_id.fetch_add(1);
@@ -339,6 +360,7 @@ bool Instrumenter::InstrumentMethod(
     for (const auto& entry : line_instruction_counts) {
       pending.line_counts.push_back(entry);
     }
+    pending.branch_count = branch_count;
     pending_blocks.push_back(std::move(pending));
   }
 
@@ -352,7 +374,8 @@ bool Instrumenter::InstrumentMethod(
       ir_method->decl->prototype->Signature().c_str());
 
   for (const auto& pb : pending_blocks) {
-    MetadataCollector::Instance().AddBlock(method_meta, pb.id, pb.line_counts);
+    MetadataCollector::Instance().AddBlock(method_meta, pb.id, pb.line_counts,
+                                           pb.branch_count);
   }
 
   code_ir.Assemble();

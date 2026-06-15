@@ -50,7 +50,7 @@ TEST_F(MetadataCollectorTest, AggregationLogic) {
 
   // 3. Add a Block with multiple lines and instruction counts
   std::vector<std::pair<int32_t, uint32_t>> lines = {{10, 5}, {11, 3}};
-  collector_.AddBlock(method_meta, 101, lines);
+  collector_.AddBlock(method_meta, 101, lines, 2);
 
   // 4. Verify the entire hierarchy via the public metadata() getter.
   const auto& metadata = collector_.metadata();
@@ -66,7 +66,8 @@ TEST_F(MetadataCollectorTest, AggregationLogic) {
   ASSERT_EQ(m.blocks_size(), 1);
 
   const auto& b = m.blocks(0);
-  EXPECT_EQ(b.block_id(), 101);
+  EXPECT_EQ(b.block_id(), 101u);
+  EXPECT_EQ(b.branch_count(), 2u);
   ASSERT_EQ(b.lines_size(), 2);
 
   EXPECT_EQ(b.lines(0).line_number(), 10);
