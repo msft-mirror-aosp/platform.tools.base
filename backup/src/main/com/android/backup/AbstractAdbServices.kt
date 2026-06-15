@@ -17,6 +17,7 @@ package com.android.backup
 
 import com.android.adblib.DeviceSelector
 import com.android.backup.BackupProgressListener.Step
+import com.android.backup.BackupService.Companion.APPLICATION_ID_REGEX
 import com.android.backup.ErrorCode.APP_STOPPED
 import com.android.backup.ErrorCode.BACKUP_FAILED
 import com.android.backup.ErrorCode.BACKUP_MANAGER_IS_NOT_RUNNING
@@ -38,7 +39,6 @@ import com.android.commands.bmgr.outputparser.BmgrError
 import com.android.commands.bmgr.outputparser.BmgrOutputParser
 import com.android.tools.environment.Logger
 import com.android.utils.text.dropPrefix
-import kotlin.text.RegexOption.IGNORE_CASE
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
@@ -46,7 +46,6 @@ import kotlinx.coroutines.withTimeout
 
 private const val SELECT_TRANSPORT_COMPONENT_SUCCESS = "Success. Selected transport: "
 private val PACKAGE_VERSION_CODE_REGEX = "^ {4}versionCode=(?<version>\\d+).*$".toRegex()
-private val APPLICATION_ID_REGEX = "^([a-z][a-z\\d_]*\\.)+[a-z][a-z\\d_]*$".toRegex(IGNORE_CASE)
 private const val SECURE_SETTING_ENABLE_TESTING = "backup_enable_testing_flows"
 private const val SECURE_SETTING_BACKUP_TYPE = "backup_testing_flows_type"
 
