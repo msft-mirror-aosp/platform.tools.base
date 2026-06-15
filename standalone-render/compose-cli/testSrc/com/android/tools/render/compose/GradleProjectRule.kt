@@ -148,11 +148,18 @@ class GradleProjectRule(
   }
 
   private fun injectRepositories() {
-    val gradleSettings = projectFolderPath.resolve("settings.gradle.kts")
-    val rootPath = TestUtils.getWorkspaceRoot()
-    val content =
-      Files.readString(gradleSettings).replace("google\\(\\)".toRegex(), "maven(url = \"${TestUtils.getLocalMavenRepoFile("")}\")")
-    Files.writeString(gradleSettings, content)
+    val settingsGradle = projectFolderPath.resolve("settings.gradle")
+    val settingsGradleKts = projectFolderPath.resolve("settings.gradle.kts")
+    val localMavenRepo = TestUtils.getLocalMavenRepoFile("")
+    if (Files.exists(settingsGradle)) {
+      val content = Files.readString(settingsGradle).replace("google\\(\\)".toRegex(), "maven { url \"$localMavenRepo\" }")
+      Files.writeString(settingsGradle, content)
+    } else if (Files.exists(settingsGradleKts)) {
+      val content = Files.readString(settingsGradleKts).replace("google\\(\\)".toRegex(), "maven { url = uri(\"$localMavenRepo\") }")
+      Files.writeString(settingsGradleKts, content)
+    } else {
+      throw AssertionError("Neither settings.gradle nor settings.gradle.kts was found in $projectFolderPath")
+    }
   }
 
   private fun injectSdk() {
