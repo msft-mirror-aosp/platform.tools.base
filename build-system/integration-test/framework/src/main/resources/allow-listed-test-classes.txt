@@ -339,7 +339,7 @@ com.android.build.gradle.integration.dependencies.test.TestWithRemoteAndroidLibD
 com.android.build.gradle.integration.dependencies.test.TestWithSameDepAsApp
 com.android.build.gradle.integration.dependencies.test.TestWithSameDepAsAppWithClassifier
 com.android.build.gradle.integration.dependencies.test.TestWithSameDepAsAppWithProguard
-com.android.build.gradle.integration.dependencies.VariantDependencyTest
+com.android.build.gradle.integration.dependencies.VDTest
 com.android.build.gradle.integration.desugar.D8DesugarMethodsTest
 com.android.build.gradle.integration.desugar.DesugarAarTogetherWithD8Test
 com.android.build.gradle.integration.desugar.DesugarAppAndroidTestTest
