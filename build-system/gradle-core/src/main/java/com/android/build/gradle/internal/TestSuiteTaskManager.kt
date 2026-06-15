@@ -21,6 +21,7 @@ import com.android.build.api.dsl.TestTaskContext
 import com.android.build.api.variant.impl.TestSuiteSourceContainer
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
+import com.android.build.gradle.internal.tasks.AndroidTestDiscoveryTask
 import com.android.build.gradle.internal.tasks.CompressAssetsTask
 import com.android.build.gradle.internal.tasks.ProcessNavigationXmlTask
 import com.android.build.gradle.internal.tasks.SigningConfigVersionsWriterTask
@@ -90,6 +91,8 @@ class TestSuiteTaskManager(project: Project, globalConfig: GlobalTaskCreationCon
 
     taskFactory.register(SigningConfigWriterTask.CreationAction(apkCreationConfig))
     taskFactory.register(SigningConfigVersionsWriterTask.CreationAction(apkCreationConfig))
+
+    taskFactory.register(AndroidTestDiscoveryTask.CreationAction(apkCreationConfig))
 
     createPackagingTask(apkCreationConfig)
 

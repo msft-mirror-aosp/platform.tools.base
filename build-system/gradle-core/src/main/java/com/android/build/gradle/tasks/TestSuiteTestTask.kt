@@ -588,7 +588,6 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
           is TestSuiteSourceSet.Assets -> {
             task.sourceFolders.from(sourceSet.get().all)
             task.testDefinitionDirs.from(sourceSet.get().all)
-            task.failOnNoDiscoveredTests.setDisallowChanges(false)
           }
           is TestSuiteSourceSet.HostJar -> {
             task.binaryFolders.from(
@@ -596,8 +595,7 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
             )
           }
           is TestSuiteSourceSet.TestApk -> {
-            task.testDefinitionDirs.from(sourceSet.manifestFile.parentFile)
-            task.failOnNoDiscoveredTests.setDisallowChanges(false)
+            task.testDefinitionDirs.from(sourceContainer.artifacts.get(InternalArtifactType.ANDROID_TEST_DISCOVERY_LIST))
           }
         }
       }

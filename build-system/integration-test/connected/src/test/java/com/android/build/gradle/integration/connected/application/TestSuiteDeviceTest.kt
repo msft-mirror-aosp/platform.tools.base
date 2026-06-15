@@ -80,8 +80,14 @@ class TestSuiteDeviceTest {
             MyTestEngine::class.java,
             MyTestEngineContext::class.java,
             MyTestEngineDescriptor::class.java,
+            MyEmptyTestEngine::class.java,
+            MyEmptyTestEngineContext::class.java,
+            MyEmptyTestEngineDescriptor::class.java,
           )
-          .addTextFile("META-INF/services/org.junit.platform.engine.TestEngine", MyTestEngine::class.java.name)
+          .addTextFile(
+            "META-INF/services/org.junit.platform.engine.TestEngine",
+            "${MyTestEngine::class.java.name}\n${MyEmptyTestEngine::class.java.name}",
+          )
       }
       .from {
         gradleProperties { add(BooleanOption.TEST_SUITE_SUPPORT, true) }
@@ -93,6 +99,34 @@ class TestSuiteDeviceTest {
               """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android">
               </manifest>
+              """
+                .trimIndent(),
+            )
+            add(
+              "src/myTestSuiteApk/java/com/example/MyTest.java",
+              """
+              package com.example;
+              import org.junit.Test;
+              public class MyTest {
+                  @Test
+                  public void test() {}
+              }
+              """
+                .trimIndent(),
+            )
+            add(
+              "src/myEmptyTestSuiteApk/AndroidManifest.xml",
+              """
+              <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              </manifest>
+              """
+                .trimIndent(),
+            )
+            add(
+              "src/myEmptyTestSuiteApk/java/com/example/NotATest.java",
+              """
+              package com.example;
+              public class NotATest {}
               """
                 .trimIndent(),
             )
@@ -118,6 +152,22 @@ class TestSuiteDeviceTest {
                 inputs.add(AgpTestSuiteInputParameters.TESTED_APKS)
                 inputs.add(AgpTestSuiteInputParameters.ADB_EXECUTABLE)
                 includeEngines.add("MyTestEngine")
+                enginesDependencies.add("com.android.tools.build:gradle-api:${Version.ANDROID_GRADLE_PLUGIN_VERSION}")
+                enginesDependencies.add("org.junit.platform:junit-platform-engine:+")
+                enginesDependencies.add("org.junit.platform:junit-platform-launcher:+")
+                enginesDependencies.add("org.jetbrains.kotlin:kotlin-stdlib:+")
+                enginesDependencies.add("com.test:my-test-engine:+")
+                enginesDependencies.add("com.google.truth:truth:+")
+              }
+              it.targetVariants.add("debug")
+              it.targets.create("t1") {}
+              it.testApk { dependencies { implementation.add("junit:junit:4.13.2") } }
+            }
+            testOptions.suites.create("myEmptyTestSuiteApk", AgpTestSuite::class.java) {
+              it.useJunitEngine.apply {
+                inputs.add(AgpTestSuiteInputParameters.TESTED_APKS)
+                inputs.add(AgpTestSuiteInputParameters.ADB_EXECUTABLE)
+                includeEngines.add("MyEmptyTestEngine")
                 enginesDependencies.add("com.android.tools.build:gradle-api:${Version.ANDROID_GRADLE_PLUGIN_VERSION}")
                 enginesDependencies.add("org.junit.platform:junit-platform-engine:+")
                 enginesDependencies.add("org.junit.platform:junit-platform-launcher:+")
@@ -169,6 +219,11 @@ class TestSuiteDeviceTest {
       .run(":app:testMyTestSuiteT1DebugTestSuite")
       .assertOutputContains("Serial IDs = emulator-5554")
   }
+
+  @Test
+  fun testApkSuiteShouldFailWhenNoTests() {
+    executor.expectFailure().run(":app:testMyEmptyTestSuiteApkT1DebugTestSuite")
+  }
 }
 
 class MyTestEngine : HierarchicalTestEngine<MyTestEngineContext>() {
@@ -205,3 +260,16 @@ class MyTestDescriptor(parentId: UniqueId, testName: String) :
     return context
   }
 }
+
+class MyEmptyTestEngine : HierarchicalTestEngine<MyEmptyTestEngineContext>() {
+  override fun getId(): String = "MyEmptyTestEngine"
+
+  override fun discover(discoveryRequest: EngineDiscoveryRequest, uniqueId: UniqueId): TestDescriptor =
+    MyEmptyTestEngineDescriptor(uniqueId)
+
+  override fun createExecutionContext(request: ExecutionRequest) = MyEmptyTestEngineContext()
+}
+
+class MyEmptyTestEngineDescriptor(uniqueId: UniqueId) : EngineDescriptor(uniqueId, "MyEmptyTestEngine")
+
+class MyEmptyTestEngineContext : EngineExecutionContext

@@ -17,7 +17,7 @@
 package com.android.build.gradle.internal.tasks
 
 import com.android.SdkConstants
-import com.android.build.gradle.internal.component.InstrumentedTestCreationConfig
+import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.buildanalyzer.common.TaskCategory
@@ -63,10 +63,8 @@ abstract class AndroidTestDiscoveryTask : NewIncrementalTask() {
       }
     }
 
-    if (discoveredTests.isNotEmpty()) {
-      val outputFile = outputDirectory.file("test-list.txt").get().asFile
-      outputFile.writeText(discoveredTests.sorted().joinToString("\n"))
-    }
+    val outputFile = outputDirectory.file("test-list.txt").get().asFile
+    outputFile.writeText(discoveredTests.sorted().joinToString("\n"))
   }
 
   private fun scanClassFile(classFile: File, discoveredTests: MutableSet<String>) {
@@ -82,8 +80,8 @@ abstract class AndroidTestDiscoveryTask : NewIncrementalTask() {
     }
   }
 
-  class CreationAction(creationConfig: InstrumentedTestCreationConfig) :
-    VariantTaskCreationAction<AndroidTestDiscoveryTask, InstrumentedTestCreationConfig>(creationConfig) {
+  class CreationAction(creationConfig: ApkCreationConfig) :
+    VariantTaskCreationAction<AndroidTestDiscoveryTask, ApkCreationConfig>(creationConfig) {
     override val name: String
       get() = computeTaskName("merge", "AndroidTestDiscovery")
 
