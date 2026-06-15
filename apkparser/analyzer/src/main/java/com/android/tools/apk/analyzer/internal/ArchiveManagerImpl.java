@@ -28,8 +28,6 @@ import com.android.utils.TraceUtils;
 
 import com.google.common.collect.ImmutableList;
 
-import java.util.Locale;
-
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -40,6 +38,7 @@ import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.zip.ZipError;
@@ -87,7 +86,11 @@ public class ArchiveManagerImpl implements ArchiveManager {
         // Create (or re-use existing) temporary folder
         Path tempFolder = createTempDirectory(archive);
         Path contentRoot = archive.getContentRoot();
-        Path tempFile = tempFolder.resolve(contentRoot.relativize(childPath).toString());
+        String rel = contentRoot.relativize(childPath).toString();
+        Path tempFile = tempFolder.resolve(rel).normalize();
+        if (!tempFile.startsWith(tempFolder)) {
+            throw new IOException("Rejected inner-archive path escaping temp dir: " + rel);
+        }
 
         // Create (or re-use existing) archive
         return MapUtils.computeIfAbsent(
@@ -172,7 +175,7 @@ public class ArchiveManagerImpl implements ArchiveManager {
     /**
      * Ensures the path points to a valid ZIP archive, throws ZipError if the archive is not valid
      *
-     * @param archive
+     * @param archive to validate
      */
     private static void validateZipFile(@NotNull Path archive) throws IOException {
         try (FileInputStream fis = new FileInputStream(archive.toString());
@@ -186,6 +189,7 @@ public class ArchiveManagerImpl implements ArchiveManager {
             // Go through all entries to make sure the zip file is valid.
             // Invalid entries (e.g. bad crc, unexpected EOF, etc.)
             // result in an IOException being thrown
+            //noinspection StatementWithEmptyBody
             while (zis.getNextEntry() != null) {
                 // Nothing to do
             }
