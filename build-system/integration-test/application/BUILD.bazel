@@ -272,9 +272,6 @@ single_gradle_integration_test_per_source(
             "src/test/java/com/android/build/gradle/integration/compose/**",
             "src/test/java/com/android/build/gradle/integration/api/R8VersionCheckTest.kt",
             "src/test/java/com/android/build/gradle/integration/declarative/GradleDeclarativeTest.kt",
-            # Broken due to incorrect classpaths.
-            # TODO[b/522310447] Fix this.
-            "src/test/java/com/android/build/gradle/integration/validation/ValidateTaskPropertiesTest.kt",
         ],
     ),
     data = AUTOMATIC_TEST_DATA,
@@ -296,36 +293,6 @@ single_gradle_integration_test_per_source(
         "//tools/base/build-system/previous-versions:3.5.0",
     ],
     resources = glob(["src/test/resources/**"]),
-    deps = TEST_DEPS,
-)
-
-single_gradle_integration_test_per_source(
-    name = "tests-no-windows",
-    package_name = "tools/base/build-system/integration-test/application",
-    srcs = ["src/test/java/com/android/build/gradle/integration/validation/ValidateTaskPropertiesTest.kt"],
-    data = AUTOMATIC_TEST_DATA,
-    maven_repo_zips = [
-        "//tools/base/build-system:android_gradle_plugin",
-        "//tools/base/utp:utp_maven_repo_for_integration_tests",
-    ],
-    maven_repos = [
-        "//tools/base/build-system:gradle-runtime-maven",
-        "//tools/base/build-system:android_gradle_plugin_runtime_dependencies",
-        "//tools/base/build-system/integration-test:androidx_latest",
-        "//tools/base/build-system/integration-test:androidx_test_latest",
-        "//tools/base/build-system/integration-test:support_library_latest",
-        "//tools/base/build-system/integration-test:dagger_prebuilts",
-        "//tools/base/build-system/integration-test:kotlin_gradle_plugin_prebuilts",
-        "//tools/base/build-system/integration-test:kotlin_gradle_plugin_1_4_32_prebuilts",
-        "//tools/base/build-system/integration-test:relocated_coroutines_test_repo",
-        "//tools/base/build-system/integration-test/application:prebuilts",
-        "//tools/base/build-system/previous-versions:3.5.0",
-    ],
-    resources = glob(["src/test/resources/**"]),
-    target_compatible_with = select({
-        "@platforms//os:windows": ["@platforms//:incompatible"],
-        "//conditions:default": [],
-    }),
     deps = TEST_DEPS,
 )
 
