@@ -107,6 +107,7 @@ import org.jetbrains.uast.UCallableReferenceExpression
 import org.jetbrains.uast.UClass
 import org.jetbrains.uast.UContinueExpression
 import org.jetbrains.uast.UDeclarationsExpression
+import org.jetbrains.uast.UDoWhileExpression
 import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UExpression
 import org.jetbrains.uast.UExpressionList
@@ -114,6 +115,7 @@ import org.jetbrains.uast.UForEachExpression
 import org.jetbrains.uast.UForExpression
 import org.jetbrains.uast.UIfExpression
 import org.jetbrains.uast.UJumpExpression
+import org.jetbrains.uast.ULabeledExpression
 import org.jetbrains.uast.ULambdaExpression
 import org.jetbrains.uast.ULiteralExpression
 import org.jetbrains.uast.ULocalVariable
@@ -676,6 +678,7 @@ internal open class Analysis<FX : Any>(
           Result(Type.Ellipsis(t), fx)
         }
         is UParenthesizedExpression -> loop(e.expression)
+        is ULabeledExpression -> loop(e.expression)
         is UBreakExpression,
         is UContinueExpression,
         is UastEmptyExpression -> emptyResult
@@ -875,8 +878,15 @@ internal open class Analysis<FX : Any>(
           val (t, bodyFx) = joinM(::loop, e.body.expressions)
           Result(t, if (condition != null) merge(condition, conditionFx, bodyFx) else conditionFx join bodyFx)
         }
-        is USwitchClauseExpressionWithBody -> lastM(::loop, e.body.expressions) ?: unitResult
+        is USwitchClauseExpressionWithBody -> {
+          val condFx = forM(::loop, e.caseValues + listOfNotNull(e.guard))
+          when (val body = lastM(::loop, e.body.expressions)) {
+            null -> Result(Type.Unit, condFx)
+            else -> Result(body.value, condFx join body.effect)
+          }
+        }
         is UWhileExpression -> Result(Type.Unit, forM(::loop, listOf(e.condition, e.body)))
+        is UDoWhileExpression -> Result(Type.Unit, forM(::loop, listOf(e.condition, e.body)))
         is UForExpression -> Result(Type.Unit, forM(::loop, listOfNotNull(e.declaration, e.condition, e.update, e.body)))
         is UForEachExpression -> {
           val (t1, fx1) = loop(e.iteratedValue)

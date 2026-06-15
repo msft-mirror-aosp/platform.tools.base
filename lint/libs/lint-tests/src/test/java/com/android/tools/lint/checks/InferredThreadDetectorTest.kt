@@ -929,6 +929,100 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
       )
   }
 
+  fun testDoWhile() {
+    lint()
+      .files(
+        kotlin(
+            """
+          import androidx.annotation.UiThread
+          import androidx.annotation.WorkerThread
+
+          @WorkerThread fun work() { }
+
+          @UiThread fun updateUi() {
+              do {
+                  work()
+              } while (true)
+          }
+          """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test.kt:8: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+                work()
+                ~~~~~~
+        1 error
+        """
+      )
+  }
+
+  fun testLabeledLoop() {
+    lint()
+      .files(
+        kotlin(
+            """
+          import androidx.annotation.UiThread
+          import androidx.annotation.WorkerThread
+
+          @WorkerThread fun work() { }
+
+          @UiThread fun updateUi(xs: List<Int>) {
+              loop@ for (x in xs) {
+                  work()
+              }
+          }
+          """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test.kt:8: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+                work()
+                ~~~~~~
+        1 error
+        """
+      )
+  }
+
+  fun testWhenCondition() {
+    lint()
+      .files(
+        kotlin(
+            """
+          import androidx.annotation.UiThread
+          import androidx.annotation.WorkerThread
+
+          @WorkerThread fun work() : Boolean = false
+
+          @UiThread fun updateUi() {
+              when {
+                  work() -> println("Worked")
+                  else -> prinltn("Not worked")
+              }
+          }
+          """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test.kt:8: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+                work() -> println("Worked")
+                ~~~~~~
+        1 error
+        """
+      )
+  }
+
   fun testGenericId() {
     lint()
       .files(
