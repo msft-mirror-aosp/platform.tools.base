@@ -16,17 +16,14 @@
 
 package com.android.build.gradle.integration.connected.application
 
-import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
-import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.TestUtils
 import com.android.tools.bazel.avd.Emulator
-import java.io.File
 import org.gradle.api.Project
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.junit.ClassRule
@@ -75,10 +72,15 @@ class AndroidTestEngineConnectedTest {
             }
             it.useJunitEngine.apply {
               inputs.add(AgpTestSuiteInputParameters.TESTED_APKS)
+              inputs.add(AgpTestSuiteInputParameters.TEST_APKS)
               inputs.add(AgpTestSuiteInputParameters.ADB_EXECUTABLE)
               inputs.add(AgpTestSuiteInputParameters.AAPT2_EXECUTABLE)
               includeEngines.add("android-test-engine")
               addInputProperty("android-test.listener.stream-base64-encoded-result", "true")
+              addInputProperty("android-test.instrumentation-runner-class", "androidx.test.runner.AndroidJUnitRunner")
+              addInputProperty("android-test.test-package-id", "pkg.name.app.test")
+              addInputProperty("android-test.instrumentation-target-package-id", "pkg.name.app")
+              addInputProperty("android-test.uninstall-after-tests", "true")
               enginesDependencies.add("com.android.tools.androidtest:android-test-engine:+")
               enginesDependencies.add("com.android.tools.androidtest:android-test-engine-result-listener:+")
               enginesDependencies.add("org.junit.platform:junit-platform-engine:+")
@@ -92,7 +94,6 @@ class AndroidTestEngineConnectedTest {
         }
 
         files {
-          add("src/myAndroidTestSuite/testcase1.txt", "some content")
           add(
             "src/myAndroidTestSuite/kotlin/com/example/android/ExampleInstrumentedTest.kt",
             // language=kotlin
@@ -123,56 +124,14 @@ class AndroidTestEngineConnectedTest {
 
   class ConfigureTestTaskCallback : GenericCallback {
     override fun handleProject(project: Project) {
-      val androidComponents = project.extensions.getByType(ApplicationAndroidComponentsExtension::class.java)
-      val adbPath = androidComponents.sdkComponents.adb.map { it.asFile.absolutePath }
-      val aapt2Path = androidComponents.sdkComponents.aapt2.map { it.executable.get().asFile.absolutePath }
-
-      androidComponents.onVariants(androidComponents.selector().withName("debug")) { variant ->
-        val apkArtifacts = variant.artifacts.get(SingleArtifact.APK)
-        val mySuite =
-          (variant as com.android.build.gradle.internal.component.VariantCreationConfig).testSuites.first {
-            it.name == "myAndroidTestSuite"
-          }
-        val testApkArtifacts =
-          mySuite.sourceContainers
-            .first { it.type == com.android.build.api.variant.TestSuiteSourceType.TEST_APK }
-            .artifacts
-            .get(SingleArtifact.APK)
-        project.tasks.withType(org.gradle.api.tasks.testing.Test::class.java).configureEach { task ->
-          if (task.name.contains(variant.name, ignoreCase = true)) {
-            // TODO(b/476442048): This is a tentative setup to allow end-to-end testing until
-            //  proper AGP test suite integration is available. These parameters should be
-            //  automatically passed to the JUnit Engine by the AGP Test Suite task instead
-            //  of being manually configured here via system properties.
-            task.systemProperty("android-test.device-serials", "emulator-5554,emulator-5556")
-
-            task.inputs.files(apkArtifacts)
-            val appApkLocation = apkArtifacts.get().asFile
-            task.doFirst {
-              val apks = appApkLocation.list().filter { it.endsWith(".apk") }.joinToString(",") { File(appApkLocation, it).absolutePath }
-              task.systemProperty("android-test.tested-apks", apks)
-            }
-
-            task.inputs.files(testApkArtifacts)
-            val testApkLocation = testApkArtifacts.get().asFile
-            task.doFirst {
-              val apks = testApkLocation.list().filter { it.endsWith(".apk") }.joinToString(",") { File(testApkLocation, it).absolutePath }
-              task.systemProperty("android-test.test-apks", apks)
-            }
-
-            task.systemProperty("android-test.instrumentation-runner-class", "androidx.test.runner.AndroidJUnitRunner")
-            task.systemProperty("android-test.test-package-id", "pkg.name.app.test")
-            task.systemProperty("android-test.instrumentation-target-package-id", "pkg.name.app.test")
-
-            task.testLogging.apply {
-              events("passed", "skipped", "failed")
-              showStandardStreams = true
-              showExceptions = true
-              exceptionFormat = TestExceptionFormat.FULL
-              showCauses = true
-              showStackTraces = true
-            }
-          }
+      project.tasks.withType(org.gradle.api.tasks.testing.Test::class.java).configureEach { task ->
+        task.testLogging.apply {
+          events("passed", "skipped", "failed")
+          showStandardStreams = true
+          showExceptions = true
+          exceptionFormat = TestExceptionFormat.FULL
+          showCauses = true
+          showStackTraces = true
         }
       }
     }
