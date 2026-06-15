@@ -24,6 +24,7 @@ import com.android.build.api.testsuites.TestSuiteExecutionClient
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
+import com.android.build.gradle.internal.tasks.DeviceSerialTestTask
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.TestUtils
 import com.android.tools.bazel.avd.Emulator
@@ -181,8 +182,19 @@ class TestSuiteDeviceTest {
             }
           }
           pluginCallbacks += PrintTestLogsCallback::class.java
+          pluginCallbacks += ConfigureSerialsCallback::class.java
         }
       }
+
+  class ConfigureSerialsCallback : GenericCallback {
+    override fun handleProject(project: Project) {
+      val customSerials = project.providers.gradleProperty("customSerials")
+      if (customSerials.isPresent) {
+        val serials = customSerials.get().split(",")
+        project.tasks.withType(DeviceSerialTestTask::class.java).configureEach { it.serialValues.set(serials) }
+      }
+    }
+  }
 
   class PrintTestLogsCallback : GenericCallback {
     override fun handleProject(project: Project) {
@@ -216,6 +228,14 @@ class TestSuiteDeviceTest {
   fun selectDeviceByEnvVariable() {
     executor
       .withEnvironmentVariables(mapOf("ANDROID_SERIAL" to "emulator-5554"))
+      .run(":app:testMyTestSuiteT1DebugTestSuite")
+      .assertOutputContains("Serial IDs = emulator-5554")
+  }
+
+  @Test
+  fun selectDeviceByProjectProperty() {
+    executor
+      .withArguments(listOf("-PcustomSerials=emulator-5554"))
       .run(":app:testMyTestSuiteT1DebugTestSuite")
       .assertOutputContains("Serial IDs = emulator-5554")
   }

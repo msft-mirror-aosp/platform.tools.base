@@ -23,6 +23,7 @@ import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.tasks.AndroidTestDiscoveryTask
 import com.android.build.gradle.internal.tasks.CompressAssetsTask
+import com.android.build.gradle.internal.tasks.DeviceSerialTestTask
 import com.android.build.gradle.internal.tasks.ProcessNavigationXmlTask
 import com.android.build.gradle.internal.tasks.SigningConfigVersionsWriterTask
 import com.android.build.gradle.internal.tasks.SigningConfigWriterTask
@@ -36,6 +37,7 @@ import com.android.build.gradle.tasks.CompileNavigationXmlTask
 import com.android.build.gradle.tasks.TestSuiteTestTask
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.compile.JavaCompile
 
@@ -112,11 +114,14 @@ class TestSuiteTaskManager(project: Project, globalConfig: GlobalTaskCreationCon
           creationConfig = creationConfig,
         )
       }
+    val connectedCheckSerials: Provider<List<String>> =
+      taskFactory.named(globalConfig.taskNames.connectedCheck).flatMap { test -> (test as DeviceSerialTestTask).serialValues }
+
     creationConfig.targets
       .filter { it.value.enabled }
       .forEach { mapEntry ->
         val target = mapEntry.value
-        val testSuiteTestTask = taskFactory.register(TestSuiteTestTask.CreationAction(creationConfig, target))
+        val testSuiteTestTask = taskFactory.register(TestSuiteTestTask.CreationAction(creationConfig, target, connectedCheckSerials))
         val context =
           object : TestTaskContext {
             override val targetName: String

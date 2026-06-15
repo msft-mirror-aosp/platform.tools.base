@@ -417,8 +417,11 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
 
   private fun providerToPath(value: Provider<out FileSystemLocation>): String = value.get().asFile.absolutePath
 
-  class CreationAction(val creationConfig: TestSuiteCreationConfig, val testSuiteTarget: TestSuiteTargetCreationConfig) :
-    GlobalTaskCreationAction<LegacyReportingTestSuiteTestTask>() {
+  class CreationAction(
+    val creationConfig: TestSuiteCreationConfig,
+    val testSuiteTarget: TestSuiteTargetCreationConfig,
+    private val deviceSerials: Provider<List<String>>? = null,
+  ) : GlobalTaskCreationAction<LegacyReportingTestSuiteTestTask>() {
 
     override val name: String
       get() = testSuiteTarget.testTaskName
@@ -482,7 +485,24 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
         task.inputs.file(additionalInputFilePath)
       }
 
-      task.androidDeviceSerials.setDisallowChanges(task.project.providers.environmentVariable("ANDROID_SERIAL"))
+      // Configure the device serials for the test execution.
+      // 1. If a list of serials provider is passed (e.g. from the connectedCheck task), we use it.
+      //    However, if that list resolves to empty (meaning no task-specific serials were specified),
+      //    we fall back to the ANDROID_SERIAL environment variable provider.
+      // 2. If the serials provider itself is null, we directly use the ANDROID_SERIAL env var.
+      if (deviceSerials != null) {
+        val finalSerials =
+          deviceSerials.flatMap { list ->
+            if (list.isEmpty()) {
+              task.project.providers.environmentVariable("ANDROID_SERIAL")
+            } else {
+              task.project.providers.provider { list.joinToString(",") }
+            }
+          }
+        task.androidDeviceSerials.setDisallowChanges(finalSerials)
+      } else {
+        task.androidDeviceSerials.setDisallowChanges(task.project.providers.environmentVariable("ANDROID_SERIAL"))
+      }
 
       if (creationConfig.junitEngineSpec.inputs.contains(AgpTestSuiteInputParameters.ANDROID_TEST_EXECUTION_MODE)) {
         task.executionMode.setDisallowChanges(creationConfig.global.androidTestOptions.execution)
