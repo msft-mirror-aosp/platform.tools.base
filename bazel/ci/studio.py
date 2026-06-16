@@ -281,3 +281,9 @@ def is_build_successful(result: BazelTestResult) -> bool:
       bazel.EXITCODE_TEST_FAILURES,
       bazel.EXITCODE_NO_TESTS_FOUND,
   }
+
+
+def get_embed_label(build_number: str) -> str:
+  """Returns the embed label for the given build number."""
+  build_type = BuildType.from_build_number(build_number)
+  return 'P000000' if build_type == BuildType.PRESUBMIT else build_number

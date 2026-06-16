@@ -127,5 +127,5 @@ def build_flags(
       f'--profile={profile_path}',
       f'--test_tag_filters={test_tag_filters}',
       '--tool_tag=studio_mac.sh',
-      f'--embed_label={build_env.build_number}',
+      f'--embed_label={studio.get_embed_label(build_env.build_number)}',
   ]
