@@ -17,7 +17,6 @@
 package com.android.build.gradle.tasks
 
 import com.android.SdkConstants
-import com.android.Version
 import com.android.build.api.artifact.ScopedArtifact
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
@@ -33,7 +32,6 @@ import com.android.build.gradle.internal.component.DeviceTestCreationConfig
 import com.android.build.gradle.internal.component.InstrumentedTestCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteTargetCreationConfig
-import com.android.build.gradle.internal.component.TestVariantCreationConfig
 import com.android.build.gradle.internal.computeAbiFromArchitecture
 import com.android.build.gradle.internal.computeAvdName
 import com.android.build.gradle.internal.dsl.ManagedVirtualDevice
@@ -47,11 +45,11 @@ import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask.
 import com.android.build.gradle.internal.tasks.GlobalTask
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationAction
 import com.android.build.gradle.internal.tasks.getApkFiles
-import com.android.build.gradle.internal.test.BundleTestDataImpl
 import com.android.build.gradle.internal.test.report.ReportType
 import com.android.build.gradle.internal.test.report.TestReport
 import com.android.build.gradle.internal.test.report.processTestReportAggregation
 import com.android.build.gradle.internal.testing.TestData
+import com.android.build.gradle.internal.testing.configureAndroidTestEngine
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.IntegerOption
@@ -749,57 +747,7 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
         creationConfig.artifacts.get(com.android.build.gradle.internal.scope.InternalArtifactType.ANDROID_TEST_DISCOVERY_LIST)
       )
 
-      val androidTestEngineVersion = if (Version.IS_AGP_RELEASE_BRANCH) "0.1.0" else "0.1.0-dev"
-
-      task.classpath =
-        creationConfig.services.fileCollection().also {
-          it.from(
-            creationConfig.services.configurations.detachedConfiguration(
-              creationConfig.services.dependencies.create("com.android.tools.androidtest:android-test-engine:$androidTestEngineVersion"),
-              creationConfig.services.dependencies.create(
-                "com.android.tools.androidtest:android-test-engine-result-listener:$androidTestEngineVersion"
-              ),
-              creationConfig.services.dependencies.create("org.junit.platform:junit-platform-engine:1.12.0"),
-              creationConfig.services.dependencies.create("org.junit.platform:junit-platform-launcher:1.12.0"),
-            )
-          )
-        }
-
-      task.useJUnitPlatform { testFramework: JUnitPlatformOptions -> testFramework.includeEngines("android-test-engine") }
-
-      val isLibrary = testedConfig?.componentType?.isAar ?: false
-
-      if (testedConfig != null && !isLibrary) {
-        task.engineInputParameters.add(
-          AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.TESTED_APKS, testedConfig.artifacts.get(SingleArtifact.APK))
-        )
-      } else if (creationConfig is TestVariantCreationConfig) {
-        task.engineInputParameters.add(AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.TESTED_APKS, creationConfig.testedApks))
-      }
-      task.engineInputParameters.add(
-        AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.TEST_APKS, creationConfig.artifacts.get(SingleArtifact.APK))
-      )
-
-      task.engineInputProperties.put(TestEngineInputProperty.TESTED_APPLICATION_ID, testData.applicationId)
-      task.engineInputProperties.put(
-        AgpTestSuiteInputParameters.AAPT2_EXECUTABLE.propertyName,
-        task.buildTools.aapt2ExecutableProvider().map { it.asFile.absolutePath },
-      )
-
-      // These are the AndroidTestEngine specific parameters. Consider making it a part of official
-      // AgpTestSuiteInputParameters if they are useful for other JUnit engines.
-      task.engineInputProperties.put("android-test.instrumentation-runner-class", testData.instrumentationRunner)
-      task.engineInputProperties.put("android-test.test-package-id", testData.applicationId)
-      task.engineInputProperties.put("android-test.instrumentation-target-package-id", testData.instrumentationTargetPackageId)
-      task.engineInputProperties.put(
-        "android-test.instrumentation-args",
-        testData.instrumentationRunnerArguments.map { it.entries.joinToString(",") { (k, v) -> "$k=$v" } },
-      )
-      task.engineInputProperties.put(
-        "android-test.uninstall-after-tests",
-        (!globalConfig.services.projectOptions.get(BooleanOption.ANDROID_TEST_LEAVE_APKS_INSTALLED_AFTER_RUN)).toString(),
-      )
-      task.engineInputProperties.put("android-test.force-aot-compilation", creationConfig.isForceAotCompilation.toString())
+      configureAndroidTestEngine(task, creationConfig, testData, "connected")
 
       var buildTarget: String
       var flavorFolder = if (creationConfig.componentType.isAar) "" else creationConfig.flavorName ?: ""
@@ -819,55 +767,8 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       task.additionalTestOutputDir.set(additionalTestOutputDir)
       task.additionalTestOutputDir.disallowChanges()
 
-      task.engineInputProperties.put(
-        "android-test.additional-test-output-dir-on-device",
-        testData.instrumentationRunnerArguments.map { it.getOrDefault("additionalTestOutputDir", "") },
-      )
-      task.engineInputProperties.put(
-        "android-test.use-test-storage-service",
-        testData.instrumentationRunnerArguments.map { it.getOrDefault("useTestStorageService", "false") },
-      )
-      task.engineInputProperties.put("android-test.is-test-coverage-enabled", testData.testCoverageEnabled.map { it.toString() })
-      task.engineInputProperties.put(
-        "android-test.coverage-file-on-device",
-        testData.instrumentationRunnerArguments.map { it.getOrDefault("coverageFile", "") },
-      )
-      task.engineInputProperties.put(
-        "android-test.coverage-dir-on-device",
-        testData.instrumentationRunnerArguments.map { it.getOrDefault("coverageDir", "") },
-      )
-      task.engineInputProperties.put(
-        "com.android.agp.test.COVERAGE_TYPE",
-        if (creationConfig.services.projectOptions.get(BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE)) "ON_THE_FLY" else "NONE",
-      )
-
-      if (testData is BundleTestDataImpl) {
-        task.apkBundle.from(testData.apkBundle)
-        task.bundleModuleName.setDisallowChanges(testData.moduleName)
-      }
-
-      // This Gradle property key is hard coded in Android Studio.
-      // We will remove it once Android Studio can consume test report using
-      // the tooling api.
-      task.legacyTestReportingRedirectionEnabled.setDisallowChanges(
-        task.project.providers.gradleProperty(LegacyReportingTestSuiteTestTask.ENABLE_UTP_REPORTING_PROPERTY).orNull?.toBoolean() ?: false
-      )
-      task.engineInputProperties.put(
-        "android-test.listener.stream-base64-encoded-result",
-        task.legacyTestReportingRedirectionEnabled.map { it.toString() },
-      )
-
-      task.engineInputProperties.disallowChanges()
-
       val testOptions = globalConfig.androidTestOptions
-
       val testTaskReports = task.reports
-      // Set html to true so that Gradle's error message contains clickable link to the html file.
-      testTaskReports.html.required.setDisallowChanges(true)
-      // We use our own per-device XML reporter in the android-test-engine to match the default
-      // test execution path behavior.
-      testTaskReports.junitXml.required.setDisallowChanges(false)
-
       val reportDir = testOptions.reportDir
       if (reportDir != null) {
         testTaskReports.html.outputLocation.set(File(reportDir, subFolder))
@@ -877,21 +778,6 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
           creationConfig.services.projectInfo.getReportsDir().map { it.dir("${BuilderConstants.FD_ANDROID_TESTS}/$subFolder") }
         )
       }
-
-      task.engineInputPropertiesFiles.setDisallowChanges(
-        task.project.layout.buildDirectory.file("intermediates/androidTest/${creationConfig.name}/connected/junit_inputs.txt")
-      )
-      task.julConfigurationFile.setDisallowChanges(
-        task.project.layout.buildDirectory.file("intermediates/androidTest/${creationConfig.name}/connected/logging.properties")
-      )
-      task.logFile.setDisallowChanges(
-        task.project.layout.buildDirectory.file("intermediates/androidTest/${creationConfig.name}/connected/junit_engines_logging.txt")
-      )
-      task.streamingOutputFile.setDisallowChanges(
-        task.project.layout.buildDirectory.file("intermediates/androidTest/${creationConfig.name}/connected/streaming.txt")
-      )
-
-      task.environment(DEFAULT_ENV_VARIABLE, task.engineInputPropertiesFiles.get().asFile.absolutePath)
     }
 
     override fun handleProvider(taskProvider: TaskProvider<LegacyReportingTestSuiteTestTask>) {
@@ -1036,119 +922,17 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
         creationConfig.artifacts.get(com.android.build.gradle.internal.scope.InternalArtifactType.ANDROID_TEST_DISCOVERY_LIST)
       )
 
-      val androidTestEngineVersion = if (Version.IS_AGP_RELEASE_BRANCH) "0.1.0" else "0.1.0-dev"
+      val subFolder = creationConfig.computeTaskNameInternal(device.name, nameSuffix)
 
-      task.classpath =
-        creationConfig.services.fileCollection().also {
-          it.from(
-            creationConfig.services.configurations.detachedConfiguration(
-              creationConfig.services.dependencies.create("com.android.tools.androidtest:android-test-engine:$androidTestEngineVersion"),
-              creationConfig.services.dependencies.create(
-                "com.android.tools.androidtest:android-test-engine-result-listener:$androidTestEngineVersion"
-              ),
-              creationConfig.services.dependencies.create("org.junit.platform:junit-platform-engine:1.12.0"),
-              creationConfig.services.dependencies.create("org.junit.platform:junit-platform-launcher:1.12.0"),
-            )
-          )
-        }
-
-      task.useJUnitPlatform { testFramework: JUnitPlatformOptions -> testFramework.includeEngines("android-test-engine") }
-
-      val isLibrary = testedConfig?.componentType?.isAar ?: false
-
-      if (testedConfig != null && !isLibrary) {
-        task.engineInputParameters.add(
-          AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.TESTED_APKS, testedConfig.artifacts.get(SingleArtifact.APK))
-        )
-      } else if (creationConfig is TestVariantCreationConfig) {
-        task.engineInputParameters.add(AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.TESTED_APKS, creationConfig.testedApks))
-      }
-      task.engineInputParameters.add(
-        AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.TEST_APKS, creationConfig.artifacts.get(SingleArtifact.APK))
-      )
-
-      task.engineInputProperties.put(TestEngineInputProperty.TESTED_APPLICATION_ID, testData.applicationId)
-      task.engineInputProperties.put(
-        AgpTestSuiteInputParameters.AAPT2_EXECUTABLE.propertyName,
-        task.buildTools.aapt2ExecutableProvider().map { it.asFile.absolutePath },
-      )
-
-      // These are the AndroidTestEngine specific parameters.
-      task.engineInputProperties.put("android-test.instrumentation-runner-class", testData.instrumentationRunner)
-      task.engineInputProperties.put("android-test.test-package-id", testData.applicationId)
-      task.engineInputProperties.put("android-test.instrumentation-target-package-id", testData.instrumentationTargetPackageId)
-      task.engineInputProperties.put(
-        "android-test.instrumentation-args",
-        testData.instrumentationRunnerArguments.map { it.entries.joinToString(",") { (k, v) -> "$k=$v" } },
-      )
-      task.engineInputProperties.put(
-        "android-test.uninstall-after-tests",
-        (!globalConfig.services.projectOptions.get(BooleanOption.ANDROID_TEST_LEAVE_APKS_INSTALLED_AFTER_RUN)).toString(),
-      )
-      task.engineInputProperties.put("android-test.force-aot-compilation", creationConfig.isForceAotCompilation.toString())
-
-      task.engineInputProperties.put(
-        "android-test.use-test-storage-service",
-        testData.instrumentationRunnerArguments.map { it.getOrDefault("useTestStorageService", "false") },
-      )
-      task.engineInputProperties.put("android-test.is-test-coverage-enabled", testData.testCoverageEnabled.map { it.toString() })
-      task.engineInputProperties.put(
-        "android-test.coverage-file-on-device",
-        testData.instrumentationRunnerArguments.map { it.getOrDefault("coverageFile", "") },
-      )
-      task.engineInputProperties.put(
-        "android-test.coverage-dir-on-device",
-        testData.instrumentationRunnerArguments.map { it.getOrDefault("coverageDir", "") },
-      )
-      task.engineInputProperties.put(
-        "com.android.agp.test.COVERAGE_TYPE",
-        if (creationConfig.services.projectOptions.get(BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE)) "ON_THE_FLY" else "NONE",
-      )
-
-      if (testData is BundleTestDataImpl) {
-        task.apkBundle.from(testData.apkBundle)
-        task.bundleModuleName.setDisallowChanges(testData.moduleName)
-      }
-
-      task.legacyTestReportingRedirectionEnabled.setDisallowChanges(
-        task.project.providers.gradleProperty(LegacyReportingTestSuiteTestTask.ENABLE_UTP_REPORTING_PROPERTY).orNull?.toBoolean() ?: false
-      )
-      task.engineInputProperties.put(
-        "android-test.listener.stream-base64-encoded-result",
-        task.legacyTestReportingRedirectionEnabled.map { it.toString() },
-      )
-      task.engineInputProperties.put(
-        "android-test.additional-test-output-dir-on-device",
-        testData.instrumentationRunnerArguments.map { it.getOrDefault("additionalTestOutputDir", "") },
-      )
-
-      task.engineInputProperties.disallowChanges()
+      configureAndroidTestEngine(task, creationConfig, testData, subFolder)
 
       task.resultsDir.set(testResultOutputDir)
 
       val testTaskReports = task.reports
-      testTaskReports.html.required.setDisallowChanges(true)
-      testTaskReports.junitXml.required.setDisallowChanges(false)
       testTaskReports.html.outputLocation.set(testReportOutputDir)
       testTaskReports.html.outputLocation.disallowChanges()
 
-      val subFolder = creationConfig.computeTaskNameInternal(device.name, nameSuffix)
-      task.engineInputPropertiesFiles.setDisallowChanges(
-        task.project.layout.buildDirectory.file("intermediates/androidTest/${creationConfig.name}/$subFolder/junit_inputs.txt")
-      )
-      task.julConfigurationFile.setDisallowChanges(
-        task.project.layout.buildDirectory.file("intermediates/androidTest/${creationConfig.name}/$subFolder/logging.properties")
-      )
-      task.logFile.setDisallowChanges(
-        task.project.layout.buildDirectory.file("intermediates/androidTest/${creationConfig.name}/$subFolder/junit_engines_logging.txt")
-      )
-      task.streamingOutputFile.setDisallowChanges(
-        task.project.layout.buildDirectory.file("intermediates/androidTest/${creationConfig.name}/$subFolder/streaming.txt")
-      )
-
       task.avdService.setDisallowChanges(getBuildService(creationConfig.services.buildServiceRegistry))
-
-      task.environment(DEFAULT_ENV_VARIABLE, task.engineInputPropertiesFiles.get().asFile.absolutePath)
     }
   }
 
