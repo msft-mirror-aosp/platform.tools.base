@@ -211,6 +211,7 @@ java_import(
         "//tools/base/dynamic-layout-inspector/agent:__subpackages__",
         "//tools/base/experimental/live-sql-inspector:__pkg__",
         "//tools/base/profiler/app:__pkg__",
+        "//tools/base/studio-leakcanary:__subpackages__",
         "//tools/base/ui-inspector/agent:__subpackages__",
         "//tools/base/ui-inspector/agent/service:__pkg__",
     ],

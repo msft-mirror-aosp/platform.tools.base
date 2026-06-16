@@ -1,6 +1,7 @@
 load("@rules_java//java:defs.bzl", "java_library")
 load("//tools/base/bazel:android.bzl", "dex_library")
 load("//tools/base/bazel:merge_archives.bzl", "merge_jars")
+load("//tools/base/bazel:robolectric.bzl", "robolectric_test")
 load("//tools/base/bazel:utils.bzl", "java_jarjar")
 
 package(default_visibility = ["//visibility:public"])
@@ -84,5 +85,19 @@ dex_library(
     jars = [
         ":perfa_java",
         "//tools/base/app-inspection/agent",
+    ],
+)
+
+robolectric_test(
+    name = "LeakCanaryManagerTest",
+    srcs = ["common/testSrc/main/java/com/android/tools/profiler/support/profilers/LeakCanaryManagerTest.java"],
+    deps = [
+        ":studio-profiler-core",
+        "//prebuilts/studio/sdk:platforms/latest_jar",
+        "//tools/base/fakeandroid",
+        "@maven//:com.google.truth.truth",
+        "@maven//:junit.junit",
+        "@maven//:org.mockito.mockito-core",
+        "@maven//:org.robolectric.robolectric",
     ],
 )
