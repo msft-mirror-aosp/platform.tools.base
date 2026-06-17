@@ -4,6 +4,8 @@ load("//tools/base/sdklib:sdk.bzl", "sdk_java_binary")
 java_library(
     name = "screenshot2lib",
     srcs = glob(["src/main/java/**/*.java"]),
+    # Align with version targeted by kotlin_library and other SDK tools
+    javacopts = ["--release 17"],
     deps = [
         "//tools/base/annotations",
         "//tools/base/common:tools.common",
