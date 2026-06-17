@@ -16,16 +16,21 @@
 
 package com.android.build.gradle
 
+import com.android.build.api.dsl.ApplicationDeclarativeDefinition
+import com.android.build.api.dsl.LibraryDeclarativeDefinition
+import com.android.build.gradle.internal.plugins.AppPlugin
+import com.android.build.gradle.internal.plugins.LibraryPlugin
 import org.gradle.api.Incubating
 import org.gradle.api.Plugin
 import org.gradle.api.initialization.Settings
 import org.gradle.features.annotations.RegistersProjectFeatures
 
+@Suppress("UnstableApiUsage")
 @Incubating
-@RegistersProjectFeatures(
-  com.android.build.gradle.internal.plugins.AppPlugin::class,
-  com.android.build.gradle.internal.plugins.LibraryPlugin::class,
-)
+@RegistersProjectFeatures(AppPlugin::class, LibraryPlugin::class)
 class AndroidEcosystemPlugin : Plugin<Settings> {
-  override fun apply(target: Settings) = Unit
+  override fun apply(target: Settings) {
+    target.defaults.add("androidApp", ApplicationDeclarativeDefinition::class.java) {}
+    target.defaults.add("androidLibrary", LibraryDeclarativeDefinition::class.java) {}
+  }
 }
