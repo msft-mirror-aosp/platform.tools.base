@@ -310,9 +310,9 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
     }
 
     if (animationsDisabled.isPresent) {
-      // TODO(b/525084361): Replace hardcoded string with AgpTestSuiteInputParameters.ANIMATIONS_DISABLED.propertyName once exposed in DSL
-      // API.
-      standardInputs.add(TestEngineInputProperty("com.android.agp.test.ANIMATIONS_DISABLED", animationsDisabled.get().toString()))
+      standardInputs.add(
+        TestEngineInputProperty(AgpTestSuiteInputParameters.ANIMATIONS_DISABLED.propertyName, animationsDisabled.get().toString())
+      )
     }
 
     if (!sourceFolders.isEmpty) {
@@ -527,11 +527,11 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
         task.executionMode.setDisallowChanges(creationConfig.global.androidTestOptions.execution)
       }
 
-      // TODO(b/525084361): Wrap with creationConfig.junitEngineSpec.inputs.contains(AgpTestSuiteInputParameters.ANIMATIONS_DISABLED) once
-      // exposed in DSL API.
-      task.animationsDisabled.setDisallowChanges(
-        creationConfig.services.provider { creationConfig.global.androidTestOptions.animationsDisabled }
-      )
+      if (creationConfig.junitEngineSpec.inputs.contains(AgpTestSuiteInputParameters.ANIMATIONS_DISABLED)) {
+        task.animationsDisabled.setDisallowChanges(
+          creationConfig.services.provider { creationConfig.global.androidTestOptions.animationsDisabled }
+        )
+      }
 
       if (creationConfig.junitEngineSpec.inputs.contains(AgpTestSuiteInputParameters.TEST_UTIL_APKS)) {
         val androidTestUtil = task.project.configurations.findByName(SdkConstants.GRADLE_ANDROID_TEST_UTIL_CONFIGURATION)
@@ -768,7 +768,8 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
           }
 
           AgpTestSuiteInputParameters.TEST_UTIL_APKS,
-          AgpTestSuiteInputParameters.ANDROID_TEST_EXECUTION_MODE -> {
+          AgpTestSuiteInputParameters.ANDROID_TEST_EXECUTION_MODE,
+          AgpTestSuiteInputParameters.ANIMATIONS_DISABLED -> {
             // Handled via task properties and standardInputs in executeTests
           }
 
