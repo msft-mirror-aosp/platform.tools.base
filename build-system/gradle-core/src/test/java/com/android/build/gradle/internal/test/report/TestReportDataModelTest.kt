@@ -23,32 +23,52 @@ import org.junit.Test
 
 class TestReportDataModelTest {
 
-  private val gson: Gson =
-    GsonBuilder()
-      .registerTypeAdapter(TestCase::class.java, XMLReportAggregator.TestCaseAdapter())
-      .registerTypeAdapter(TestSummary::class.java, XMLReportAggregator.TestSummaryAdapter())
-      .create()
-
-  private val emptySummary = TestSummary(0, 0, 0, 0, 0.0, emptyMap())
+  private val gson: Gson = GsonBuilder().create()
 
   @Test
   fun `test TestCase serialization`() {
+    val stackTraceGroup = StackTraceGroup(id = "st-1", stackTrace = "stacktrace", occurrences = mapOf("unitTest" to listOf("release")))
+
+    val testSuiteResult =
+      TestSuiteTestResult(
+        testSuiteName = "unitTest",
+        variantResults =
+          mapOf("debug" to VariantTestResult(status = "pass"), "release" to VariantTestResult(status = "fail", stackTraceId = "st-1")),
+      )
+
     val testCase =
-      TestCase(name = "testSomething", results = mapOf("debug" to TestResults("pass"), "release" to TestResults("fail", "stacktrace")))
+      TestCase(
+        name = "testSomething",
+        testSuiteSummaries = emptyList(),
+        testSuiteResults = listOf(testSuiteResult),
+        commonStackTraces = listOf(stackTraceGroup),
+      )
 
     val jsonString = gson.toJson(testCase)
 
     assertThat(jsonString).contains("\"name\":\"testSomething\"")
-    assertThat(jsonString).contains("\"debug\":\"pass\"")
-    assertThat(jsonString).contains("\"release\":{\"status\":\"fail\",\"stackTrace\":\"stacktrace\"}")
+    assertThat(jsonString).contains("\"testSuiteName\":\"unitTest\"")
+    assertThat(jsonString).contains("\"status\":\"pass\"")
+    assertThat(jsonString).contains("\"status\":\"fail\"")
+    assertThat(jsonString).contains("\"stackTraceId\":\"st-1\"")
+    assertThat(jsonString).contains("\"stackTrace\":\"stacktrace\"")
   }
 
   @Test
   fun `test RootReport serialization`() {
-    val testCase = TestCase(name = "test1", results = mapOf("debug" to TestResults("pass")))
-    val classType = ClassType(name = "MyTest", testSuiteSummaries = emptyList(), testCases = listOf(testCase), summary = emptySummary)
-    val pkg = Package(name = "com.example", testSuiteSummaries = emptyList(), classes = listOf(classType), summary = emptySummary)
-    val module = Module(name = ":app", testSuiteSummaries = emptyList(), packages = listOf(pkg), summary = emptySummary)
+    val testSuiteResult =
+      TestSuiteTestResult(testSuiteName = "unitTest", variantResults = mapOf("debug" to VariantTestResult(status = "pass")))
+    val testCase =
+      TestCase(
+        name = "test1",
+        testSuiteSummaries = emptyList(),
+        testSuiteResults = listOf(testSuiteResult),
+        commonStackTraces = emptyList(),
+      )
+    val classType = ClassType(name = "MyTest", testSuiteSummaries = emptyList(), testCases = listOf(testCase))
+    val pkg = Package(name = "com.example", testSuiteSummaries = emptyList(), classes = listOf(classType))
+    val module = Module(name = ":app", testSuiteSummaries = emptyList(), packages = listOf(pkg))
+
     val rootReport =
       RootReport(
         projectName = "project",
@@ -57,14 +77,16 @@ class TestReportDataModelTest {
         numberOfPackages = 1,
         numberOfClasses = 1,
         variants = listOf("debug", "release"),
+        testSuites = listOf("unitTest"),
         modules = listOf(module),
-        summary = emptySummary,
       )
 
     val jsonString = gson.toJson(rootReport)
 
     val expectedJson =
-      """{"projectName":"project","timestamp":"Mar 4, 2026, 6:09PM","numberOfModules":1,"numberOfPackages":1,"numberOfClasses":1,"variants":["debug","release"],"modules":[{"name":":app","testSuiteSummaries":[],"packages":[{"name":"com.example","testSuiteSummaries":[],"classes":[{"name":"MyTest","testSuiteSummaries":[],"testCases":[{"name":"test1","debug":"pass"}],"summary":{"total":0,"passed":0,"failed":0,"skipped":0,"passRate":0.0}}],"summary":{"total":0,"passed":0,"failed":0,"skipped":0,"passRate":0.0}}],"summary":{"total":0,"passed":0,"failed":0,"skipped":0,"passRate":0.0}}],"summary":{"total":0,"passed":0,"failed":0,"skipped":0,"passRate":0.0}}"""
+      """
+      {"projectName":"project","timestamp":"Mar 4, 2026, 6:09PM","numberOfModules":1,"numberOfPackages":1,"numberOfClasses":1,"variants":["debug","release"],"testSuites":["unitTest"],"modules":[{"name":":app","testSuiteSummaries":[],"packages":[{"name":"com.example","testSuiteSummaries":[],"classes":[{"name":"MyTest","testSuiteSummaries":[],"testCases":[{"name":"test1","testSuiteSummaries":[],"testSuiteResults":[{"testSuiteName":"unitTest","variantResults":{"debug":{"status":"pass"}}}],"commonStackTraces":[]}]}]}]}]}
+      """
         .trimIndent()
         .replace(Regex("\\s"), "")
 

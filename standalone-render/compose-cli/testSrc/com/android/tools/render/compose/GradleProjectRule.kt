@@ -83,8 +83,9 @@ class GradleProjectRule(
     procBuilder.environment()["GRADLE_USER_HOME"] = gradleUserHomePath.absolutePathString()
     val proc = procBuilder.start()
     proc.waitFor(5, TimeUnit.MINUTES)
-    val error = proc.errorStream.bufferedReader().readText()
-    if (error.isNotEmpty()) {
+    val error =
+      proc.errorStream.bufferedReader().readLines().filter { line -> !line.startsWith("Warning: SDK processing.") }.joinToString("\n")
+    if (error.trim().isNotEmpty()) {
       val commandStr = command.joinToString(" ")
       throw AssertionError("Error while executing gradle command \"$commandStr\":\n$error")
     }

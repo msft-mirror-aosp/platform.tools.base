@@ -164,7 +164,7 @@ abstract class BundleToStandaloneApkTask : NonIncrementalTask() {
     override fun handleProvider(taskProvider: TaskProvider<BundleToStandaloneApkTask>) {
       super.handleProvider(taskProvider)
       // Mirrors logic in OutputFactory.getOutputFileName, but without splits.
-      val suffix = if (creationConfig.signingConfig?.isSigningReady() == true) SdkConstants.DOT_ANDROID_PACKAGE else "-unsigned.apk"
+      val suffix = if (creationConfig.signingConfig?.hasConfig() == true) SdkConstants.DOT_ANDROID_PACKAGE else "-unsigned.apk"
       creationConfig.artifacts
         .setInitialProvider(taskProvider, BundleToStandaloneApkTask::outputFile)
         .withName(creationConfig.services.projectInfo.getProjectBaseName().map { "$it-${creationConfig.baseName}-universal$suffix" })

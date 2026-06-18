@@ -41,19 +41,20 @@ import org.gradle.testing.base.TestSuite
  *     - **Content**: A single folder containing static files like XML, JSON, or other declarative resources that describe or support tests.
  *       These files are not compiled.
  *     - **Purpose**: Typically interpreted directly by test execution engines (e.g., JUnit).
- *     - **Default Location**: `src/<testSuiteName>/assets/`
+ *     - **Default Location**: `src/<testSuiteName>/` if it's the only source type in the suite, or `src/<testSuiteName>Assets/` if the
+ *       suite is mixed (contains both hostJar and testApk).
  * 2. **Host Test Sources (configured via `hostJar`)**:
  *     - **Content**: A single folder containing compilable source code (e.g., Kotlin or Java) intended for tests that run on the host
  *       machine (JVM).
  *     - **Purpose**: Compiled before test execution. The compiled classes are then used by test engines.
- *     - **Default Location**: `src/<testSuiteName>/` (which would then contain standard source layouts like `java/`, `kotlin/`,
- *       `resources/`)
+ *     - **Default Location**: `src/<testSuiteName>/` (containing `java/`, `kotlin/`, `resources/`) if it's the only source type, or
+ *       `src/<testSuiteName>Test/` if the suite is mixed.
  * 3. **Device Test Sources (configured via `testApk`)**:
  *     - **Content**: A standard Android source set structure, including compilable source code (Kotlin/Java), Android resources (`res/`),
  *       Android assets (`assets/`), and an AndroidManifest.xml file.
  *     - **Purpose**: Compiled into a test APK that runs on an Android device or emulator.
- *     - **Default Location**: `src/<testSuiteName>/androidTest/` (which would then contain standard Android source layouts like `java/`,
- *       `res/`, `assets/`, etc.)
+ *     - **Default Location**: `src/<testSuiteName>/` if it's the only source type, or `src/<testSuiteName>AndroidTest/` if the suite is
+ *       mixed.
  *
  * **Configuration Notes:**
  * - A test suite can include one or more of these source types. For example, a suite might define both `hostTest` sources and `assetTest`
@@ -85,7 +86,8 @@ interface AgpTestSuite : TestSuite {
   /**
    * Adds an asset folder to this test suite sources, containing static sources like xml, or json files.
    *
-   * The folder will be named 'assets' by default and will be therefore located at `src/<testSuiteName>/assets/`
+   * The folder will be located at `src/<testSuiteName>/` by default if it's the only source type, or `src/<testSuiteName>Assets/` if the
+   * suite is mixed (contains both hostJar and testApk).
    *
    * No compilation of the sources will be performed and the sources files will be provided to the configured junit engines using the
    * [AgpTestSuiteInputParameters.STATIC_FILES]
@@ -95,8 +97,8 @@ interface AgpTestSuite : TestSuite {
   /**
    * Adds a host test folder to this test suite sources, containing kotlin sources that will be compiled.
    *
-   * The folder will be named 'test' by default. It's the root path of the sources and may contain subfolders like 'java', 'kotlin' and
-   * 'resources'. The full path will be by default `src/<testSuiteName>/test/
+   * The folder will be located at `src/<testSuiteName>/` by default if it's the only source type, or `src/<testSuiteName>Test/` if the
+   * suite is mixed. It may contain subfolders like 'java', 'kotlin' and 'resources'.
    *
    * questionable : Configured test engines can retrieve the compiled classes using the [AgpTestSuiteInputParameters.TEST_CLASSES] property.
    */
@@ -105,7 +107,8 @@ interface AgpTestSuite : TestSuite {
   /**
    * Adds a device test source folder to this test suite, containing all necessary sources to create an APK.
    *
-   * The parent folder will be 'androidTest' by default.
+   * The folder will be located at `src/<testSuiteName>/` by default if it's the only source type, or `src/<testSuiteName>AndroidTest/` if
+   * the suite is mixed.
    *
    * The sources will be compiled to produce a test APK that can be retrieved by the test engine using the
    * [AgpTestSuiteInputParameters.TESTED_APKS] property.

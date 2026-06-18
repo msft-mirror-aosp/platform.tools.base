@@ -51,7 +51,7 @@ enum class DefaultInputsForAgpTestSuites(
   @Incubating HOST_TEST(listOf(AgpTestSuiteInputParameters.TEST_CLASSES)),
   @Incubating
   DEVICE_TEST(
-    listOf(AgpTestSuiteInputParameters.MERGED_MANIFEST, AgpTestSuiteInputParameters.TESTED_APKS, AgpTestSuiteInputParameters.TESTING_APK)
+    listOf(AgpTestSuiteInputParameters.MERGED_MANIFEST, AgpTestSuiteInputParameters.TESTED_APKS, AgpTestSuiteInputParameters.TEST_APKS)
   ),
   @Incubating JOURNEYS_TEST(listOf(AgpTestSuiteInputParameters.MERGED_MANIFEST).plus(HOST_TEST.supportedProperties));
 

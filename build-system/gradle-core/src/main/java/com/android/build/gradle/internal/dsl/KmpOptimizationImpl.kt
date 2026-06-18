@@ -19,11 +19,18 @@ package com.android.build.gradle.internal.dsl
 import com.android.build.api.dsl.ConsumerKeepRules
 import com.android.build.api.dsl.KmpOptimization
 import com.android.build.api.dsl.LibraryKeepRules
+import com.android.build.gradle.internal.dsl.decorator.annotation.WithLazyInitialization
 import com.android.build.gradle.internal.services.DslServices
 import javax.inject.Inject
 
 abstract class KmpOptimizationImpl @Inject constructor(dslService: DslServices) : KmpOptimization
 
-abstract class ConsumerKeepRulesImpl @Inject constructor(dslService: DslServices) : ConsumerKeepRules, ConfigurableFilesImpl(dslService)
+abstract class ConsumerKeepRulesImpl @Inject constructor(dslService: DslServices) : ConsumerKeepRules, ConfigurableFilesImpl(dslService) {
+  @WithLazyInitialization
+  @Suppress("unused")
+  protected fun lazyInit() {
+    publish = true
+  }
+}
 
 abstract class LibraryKeepRulesImpl @Inject constructor(dslService: DslServices) : LibraryKeepRules, ConfigurableFilesImpl(dslService)

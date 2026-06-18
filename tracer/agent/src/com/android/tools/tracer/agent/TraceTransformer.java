@@ -15,12 +15,13 @@
  */
 package com.android.tools.tracer.agent;
 
-import java.lang.instrument.ClassFileTransformer;
-import java.security.ProtectionDomain;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
+
+import java.lang.instrument.ClassFileTransformer;
+import java.security.ProtectionDomain;
 
 class TraceTransformer implements ClassFileTransformer, Opcodes {
 
@@ -38,7 +39,15 @@ class TraceTransformer implements ClassFileTransformer, Opcodes {
             ProtectionDomain protectionDomain,
             byte[] classfileBuffer) {
         try {
-            if (className == null || !profile.shouldTransform(className)) {
+            if (className == null
+                    // Don't instrument the agent itself nor the tracing library.
+                    // We do want to allow com/android/tools/tracer
+                    // to be instrumented only for the Trace annotation and for tests.
+                    || className.startsWith("androidx/tracing")
+                    || className.startsWith("com/android/tools/tracer/agent")
+                    || className.startsWith("com/android/tools/tracer/Tracing")
+                    || className.startsWith("com/android/tools/tracer/PerfettoTracer")
+                    || !profile.shouldTransform(className)) {
                 return classfileBuffer;
             }
             ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS);

@@ -19,12 +19,25 @@ package com.android.tools.deployer;
 import com.android.annotations.NonNull;
 import com.android.sdklib.AndroidVersion;
 import com.android.tools.deploy.proto.Deploy;
+import com.android.tools.deployer.common.AdbClient;
+import com.android.tools.deployer.common.ApkDiffer;
+import com.android.tools.deployer.common.ApplicationDumper;
+import com.android.tools.deployer.common.Canceller;
+import com.android.tools.deployer.common.DeployerException;
+import com.android.tools.deployer.common.DeployerOption;
+import com.android.tools.deployer.common.DeploymentCacheDatabase;
+import com.android.tools.deployer.common.InstallOptions;
+import com.android.tools.deployer.common.Installer;
+import com.android.tools.deployer.common.OverlayId;
+import com.android.tools.deployer.common.UIService;
+import com.android.tools.deployer.install.ApkInstaller;
+import com.android.tools.deployer.install.InstallMode;
 import com.android.tools.deployer.model.Apk;
 import com.android.tools.deployer.model.ApkEntry;
 import com.android.tools.deployer.model.App;
+import com.android.tools.deployer.model.AppState;
 import com.android.tools.deployer.model.DeploymentPlan;
 import com.android.tools.deployer.model.FileDiff;
-import com.android.tools.deployer.tasks.Canceller;
 import com.android.tools.deployer.tasks.Task;
 import com.android.tools.deployer.tasks.TaskResult;
 import com.android.tools.deployer.tasks.TaskRunner;
@@ -110,11 +123,6 @@ public class Deployer {
         INSTALL_COROUTINE_DEBUGGER
     }
 
-    public enum InstallMode {
-        DELTA, // If an application is already installed on the a device, send only what has changed.
-        DELTA_NO_SKIP, // Delta install but don't skip installation should there be no changes.
-        FULL // Send application full apk regardless of the device state.
-    }
 
     /**
      * Information related to a swap or install.
@@ -179,25 +187,28 @@ public class Deployer {
             String sessionUID = UUID.randomUUID().toString();
 
             InstallInfo info;
+
+            // The first ABI is always the most preferable on the device.
+            AppState appState = new AppState(adb.getDevice().getAbis().get(0));
             if (deployOptions.useRootPushInstall) {
                 info =
                         rootPushInstall(
                                 sessionUID,
-                                new DeploymentPlan(adb.getDevice(), app),
+                                new DeploymentPlan(app, appState),
                                 installOptions,
                                 installMode);
             } else if (supportsNewPipeline()) {
                 info =
                         optimisticInstall(
                                 sessionUID,
-                                new DeploymentPlan(adb.getDevice(), app),
+                                new DeploymentPlan(app, appState),
                                 installOptions,
                                 installMode);
             } else {
                 info =
                         packageManagerInstall(
                                 sessionUID,
-                                new DeploymentPlan(adb.getDevice(), app),
+                                new DeploymentPlan(app, appState),
                                 installOptions,
                                 installMode);
             }

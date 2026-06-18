@@ -217,16 +217,15 @@ public final class DetailsTypes {
         }
 
         static int getApiMinorLevelInt(String apiLevel) {
-            if (apiLevel == null) {
+            if (apiLevel == null || !apiLevel.contains(".")) {
                 return 0;
             }
-            if (apiLevel.contains(".")) {
-                try {
-                    return Integer.parseInt(apiLevel.substring(apiLevel.indexOf('.') + 1));
-                } catch (NumberFormatException ignore) {
-                }
+            int end = apiLevel.endsWith("x") ? apiLevel.length() - 1 : apiLevel.length();
+            try {
+                return Integer.parseInt(apiLevel.substring(apiLevel.indexOf('.') + 1, end));
+            } catch (NumberFormatException ignore) {
+                return 0;
             }
-            return 0;
         }
 
         @NonNull

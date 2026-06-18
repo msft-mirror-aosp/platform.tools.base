@@ -887,6 +887,8 @@ public class XmlUtils {
     public static String getRootTagName(@NonNull File xmlFile) {
         try (InputStream stream = new BufferedInputStream(new FileInputStream(xmlFile))) {
             XMLInputFactory factory = XMLInputFactory.newFactory();
+            factory.setProperty(XMLInputFactory.SUPPORT_DTD, false);
+            factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
             XMLStreamReader xmlStreamReader = factory.createXMLStreamReader(stream);
 
             while (xmlStreamReader.hasNext()) {
@@ -909,6 +911,8 @@ public class XmlUtils {
     @Nullable
     public static String getRootTagName(@NonNull String xmlText) {
         XMLInputFactory factory = XMLInputFactory.newFactory();
+        factory.setProperty(XMLInputFactory.SUPPORT_DTD, false);
+        factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
         try (Reader reader = new StringReader(xmlText)) {
             XMLStreamReader xmlStreamReader = factory.createXMLStreamReader(reader);
 

@@ -28,15 +28,17 @@ import com.google.common.truth.Truth.assertThat
 import java.io.File
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
-class LintDynamicFeatureTest {
+@RunWith(Parameterized::class)
+class LintDynamicFeatureTest(private val lintReportAggregation: Boolean) {
 
-  @get:Rule
-  val project: GradleTestProject =
-    GradleTestProject.builder()
-      .fromTestProject("dynamicApp")
-      .addGradleProperties("${BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT.propertyName}=false")
-      .create()
+  companion object {
+    @Parameterized.Parameters(name = "lintReportAggregation={0}") @JvmStatic fun params() = listOf(true, false)
+  }
+
+  @get:Rule val project: GradleTestProject = GradleTestProject.builder().fromTestProject("dynamicApp").create()
 
   private val app = MinimalSubProject.app("com.example.test.app").appendToBuild("android.dynamicFeatures = [':feature']")
   private val feature = MinimalSubProject.dynamicFeature("com.example.test.feature")
@@ -57,12 +59,35 @@ class LintDynamicFeatureTest {
           .dependency("api", app, lib2)
           .build()
       )
-      .addGradleProperties("${BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT.propertyName}=false")
       .create()
+
+  private fun executor() = project.executor().with(BooleanOption.LINT_REPORT_AGGREGATION, lintReportAggregation)
+
+  private fun executorWithLibs() = projectWithLibs.executor().with(BooleanOption.LINT_REPORT_AGGREGATION, lintReportAggregation)
+
+  private fun getLintDebugTasks(projectPath: String): List<String> {
+    return if (lintReportAggregation) {
+      listOf("$projectPath:lintDebug", "$projectPath:lintAggregatedDebug")
+    } else {
+      listOf("$projectPath:lintDebug")
+    }
+  }
+
+  private fun getReportTasks(projectPath: String, isApp: Boolean = false): List<String> {
+    return if (lintReportAggregation) {
+      if (isApp) {
+        listOf("$projectPath:createLocalLintReportDebug", "$projectPath:createAggregatedLintReportDebug")
+      } else {
+        listOf("$projectPath:createLocalLintReportDebug")
+      }
+    } else {
+      listOf("$projectPath:lintReportDebug")
+    }
+  }
 
   @Test
   fun testUnusedResourcesInFeatureModules() {
-    project.executor().run("clean", "lint")
+    executor().run("clean", "lint")
 
     val file = project.file("app/lint-results.txt")
     assertThat(file)
@@ -102,24 +127,27 @@ class LintDynamicFeatureTest {
     FileUtils.writeToFile(File(projectWithLibs.getSubproject(":lib2").mainResDir, "layout/lib2_layout.xml"), layout_text)
 
     // Run twice to catch issues with configuration caching
-    projectWithLibs.executor().run("clean", "lint")
-    projectWithLibs.executor().run("clean", "lint")
+    executorWithLibs().run("clean", "lint")
+    executorWithLibs().run("clean", "lint")
     projectWithLibs.buildResult.assertConfigurationCacheHit()
     assertThat(projectWithLibs.buildResult.failedTasks).isEmpty()
 
     assertThat(projectWithLibs.buildResult.tasks).contains(":app:lint")
-    assertThat(projectWithLibs.buildResult.tasks).contains(":app:lintDebug")
-    assertThat(projectWithLibs.buildResult.tasks).contains(":app:lintReportDebug")
+    assertThat(projectWithLibs.buildResult.tasks).containsAllIn(getLintDebugTasks(":app"))
+    assertThat(projectWithLibs.buildResult.tasks).containsAllIn(getReportTasks(":app", isApp = true))
+
     assertThat(projectWithLibs.buildResult.tasks).contains(":lib1:lint")
-    assertThat(projectWithLibs.buildResult.tasks).contains(":lib1:lintDebug")
-    assertThat(projectWithLibs.buildResult.tasks).contains(":lib1:lintReportDebug")
+    assertThat(projectWithLibs.buildResult.tasks).containsAllIn(getLintDebugTasks(":lib1"))
+    assertThat(projectWithLibs.buildResult.tasks).containsAllIn(getReportTasks(":lib1"))
+
     assertThat(projectWithLibs.buildResult.tasks).contains(":lib2:lint")
-    assertThat(projectWithLibs.buildResult.tasks).contains(":lib2:lintDebug")
-    assertThat(projectWithLibs.buildResult.tasks).contains(":lib2:lintReportDebug")
+    assertThat(projectWithLibs.buildResult.tasks).containsAllIn(getLintDebugTasks(":lib2"))
+    assertThat(projectWithLibs.buildResult.tasks).containsAllIn(getReportTasks(":lib2"))
+
     // There should not be a lint reporting task or lint anchor task for the dynamic feature.
     assertThat(projectWithLibs.buildResult.tasks).doesNotContain(":feature:lint")
     assertThat(projectWithLibs.buildResult.tasks).doesNotContain(":feature:lintDebug")
-    assertThat(projectWithLibs.buildResult.tasks).doesNotContain(":feature:lintReportDebug")
+    assertThat(projectWithLibs.buildResult.tasks).containsNoneIn(getReportTasks(":feature"))
 
     assertThat(projectWithLibs.file("app/lint-results.txt"))
       .containsAllOf("app_layout.xml:10: Warning: Hardcoded string", "feature_layout.xml:10: Warning: Hardcoded string")
@@ -130,8 +158,8 @@ class LintDynamicFeatureTest {
   @Test
   fun runLintFromApp() {
     // Run twice to catch issues with configuration caching
-    project.executor().run(":app:clean", ":app:lint")
-    project.executor().run(":app:clean", ":app:lint")
+    executor().run(":app:clean", ":app:lint")
+    executor().run(":app:clean", ":app:lint")
     project.buildResult.assertConfigurationCacheHit()
     assertThat(project.buildResult.failedTasks).isEmpty()
 
@@ -160,7 +188,7 @@ class LintDynamicFeatureTest {
         .trimIndent(),
     )
     FileUtils.writeToFile(File(projectWithLibs.getSubproject(":feature").mainResDir, "layout/feature_layout.xml"), layout_text)
-    projectWithLibs.executor().run(":app:clean", ":app:lint")
+    executorWithLibs().run(":app:clean", ":app:lint")
     assertThat(projectWithLibs.buildResult.failedTasks).isEmpty()
 
     assertThat(projectWithLibs.file("app/lint-results.txt")).contains("feature_layout.xml:10: Warning: Hardcoded string")
@@ -168,39 +196,42 @@ class LintDynamicFeatureTest {
 
   @Test
   fun testLintUpToDate() {
-    project.executor().run(":app:lintDebug")
-    project.executor().run(":app:lintDebug")
+    val tasks = getLintDebugTasks(":app")
+    executor().run(tasks)
+    executor().run(tasks)
     assertThat(project.buildResult.upToDateTasks)
       .containsAtLeastElementsIn(
-        listOf(":app:lintReportDebug", ":app:lintAnalyzeDebug", ":feature1:lintAnalyzeDebug", ":feature2:lintAnalyzeDebug")
+        getReportTasks(":app", isApp = true) + listOf(":app:lintAnalyzeDebug", ":feature1:lintAnalyzeDebug", ":feature2:lintAnalyzeDebug")
       )
   }
 
   @Test
   fun testLintWithIncrementalChanges() {
-    project.executor().run(":app:lintDebug")
+    val tasks = getLintDebugTasks(":app")
+    executor().run(tasks)
     TestFileUtils.searchAndReplace(project.file("feature2/src/main/res/layout/feature2_layout.xml"), "\"Button\"", "\"AAAAAAAAAAA\"")
-    project.executor().run(":app:lintDebug")
+    executor().run(tasks)
     assertThat(project.buildResult.upToDateTasks).containsAtLeastElementsIn(listOf(":app:lintAnalyzeDebug", ":feature1:lintAnalyzeDebug"))
-    assertThat(project.buildResult.didWorkTasks).containsAtLeastElementsIn(listOf(":app:lintReportDebug", ":feature2:lintAnalyzeDebug"))
+    assertThat(project.buildResult.didWorkTasks)
+      .containsAtLeastElementsIn(getReportTasks(":app", isApp = true) + listOf(":feature2:lintAnalyzeDebug"))
   }
 
   @Test
   fun testLintVital() {
     // check that lintVital succeeds before change to feature manifest
-    project.executor().run(":app:lintVitalRelease")
+    executor().run(":app:lintVitalRelease")
     ScannerSubject.assertThat(project.buildResult.stdout).contains("BUILD SUCCESSFUL")
 
     val featureManifest = project.getSubproject(":feature1").file("src/main/AndroidManifest.xml")
     TestFileUtils.searchAndReplace(featureManifest, "<application>", "<application android:debuggable=\"true\">")
 
-    val failureMessage = project.executor().expectFailure().run(":app:lintVitalRelease").failureMessage
+    val failureMessage = executor().expectFailure().run(":app:lintVitalRelease").failureMessage
     assertThat(failureMessage).contains("fatal errors")
   }
 
   @Test
   fun testLintVitalUpToDate() {
-    project.executor().run("lintVitalRelease")
+    executor().run("lintVitalRelease")
 
     assertThat(project.buildResult.tasks).contains(":app:lintVitalRelease")
     assertThat(project.buildResult.tasks).contains(":app:lintVitalReportRelease")
@@ -210,7 +241,7 @@ class LintDynamicFeatureTest {
     assertThat(project.buildResult.tasks).doesNotContain(":feature1:lintVitalRelease")
     assertThat(project.buildResult.tasks).doesNotContain(":feature2:lintVitalRelease")
 
-    project.executor().run("lintVitalRelease")
+    executor().run("lintVitalRelease")
 
     assertThat(project.buildResult.upToDateTasks).contains(":app:lintVitalReportRelease")
     assertThat(project.buildResult.upToDateTasks).contains(":app:lintVitalAnalyzeRelease")
@@ -262,8 +293,7 @@ class LintDynamicFeatureTest {
         .trimIndent()
     )
 
-    project
-      .executor()
+    executor()
       .expectFailure()
       .run(":app:lintFix")
       .assertErrorContains("Aborting build since sources were modified to apply quickfixes after compilation")
@@ -281,12 +311,12 @@ class LintDynamicFeatureTest {
     assertThat(appSourceFile).contains("void bar()")
     assertThat(featureSourceFile).doesNotContain("private void bar()")
     assertThat(featureSourceFile).contains("void bar()")
-    project.executor().run("clean", "lintFix").assertOutputContains("BUILD SUCCESSFUL")
+    executor().run("clean", "lintFix").assertOutputContains("BUILD SUCCESSFUL")
   }
 
   @Test
   fun testLintFixAnchorTaskWithDynamicFeatures() {
-    project.executor().run("lintFix")
+    executor().run("lintFix")
 
     assertThat(project.buildResult.tasks).contains(":app:lintFix")
     assertThat(project.buildResult.tasks).contains(":app:lintFixDebug")
@@ -301,7 +331,8 @@ class LintDynamicFeatureTest {
   @Test
   fun testNoMisplacedOutputFiles() {
     TestFileUtils.appendToFile(project.getSubproject(":app").buildFile, "\n\nbuildDir = 'foo'\n\n")
-    project.executor().run("app:clean", ":app:lintDebug")
+    val tasks = listOf("app:clean") + getLintDebugTasks(":app")
+    executor().run(tasks)
     val defaultAppBuildDir = File(project.getSubproject(":app").projectDir, "build")
     assertThat(!defaultAppBuildDir.exists() || defaultAppBuildDir.walk().none { it.isFile }).isTrue()
     val appBuildDir = File(project.getSubproject(":app").projectDir, "foo")

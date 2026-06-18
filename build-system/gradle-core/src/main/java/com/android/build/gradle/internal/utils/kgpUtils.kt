@@ -216,7 +216,7 @@ fun maybeUseInlineScopesNumbers(task: KotlinCompile, creationConfig: ComponentCr
 }
 
 private fun KotlinCompile.addPluginOption(pluginId: String, key: String, value: String) {
-  val freeCompilerArgs = compilerOptions.freeCompilerArgs.getOrElse(emptyList())
+  val freeCompilerArgs = compilerOptions.freeCompilerArgs.getOrNull() ?: emptyList()
   val pluginOption = "plugin:$pluginId:$key"
   // Only add the plugin option if it was not previously added by the user (see b/318384658)
   if (freeCompilerArgs.any { it.startsWith("$pluginOption=") }) {
@@ -265,7 +265,7 @@ fun handleKotlinSourceSets(
 
         if (nonDefaultKotlinSrcDirs.isNotEmpty()) {
           projectServices.issueReporter.reportError(
-            Type.GENERIC,
+            Type.KOTLIN_SOURCE_SET_NOT_ALLOWED,
             "Using kotlin.sourceSets DSL to add Kotlin sources is not allowed with built-in Kotlin.\n" +
               "Kotlin source set '${androidSourceSet.name}' contains: ${kotlinSourceSet.kotlin.srcDirs}\n" +
               "Solution: Use android.sourceSets DSL instead.\n" +

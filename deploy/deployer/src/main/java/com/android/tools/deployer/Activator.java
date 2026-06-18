@@ -18,15 +18,17 @@ package com.android.tools.deployer;
 import com.android.annotations.NonNull;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
+import com.android.tools.deployer.common.DeployerException;
 import com.android.tools.deployer.model.Apk;
 import com.android.tools.deployer.model.App;
 import com.android.tools.deployer.model.ModelException;
-import com.android.tools.deployer.model.component.Activity;
 import com.android.tools.deployer.model.component.AppComponent;
-import com.android.tools.deployer.model.component.Complication;
 import com.android.tools.deployer.model.component.ComponentType;
-import com.android.tools.deployer.model.component.Tile;
-import com.android.tools.deployer.model.component.WatchFace;
+import com.android.tools.deployer.modelv1.component.ActivityV1;
+import com.android.tools.deployer.modelv1.component.AppComponentV1;
+import com.android.tools.deployer.modelv1.component.ComplicationV1;
+import com.android.tools.deployer.modelv1.component.TileV1;
+import com.android.tools.deployer.modelv1.component.WatchFaceV1;
 import com.android.tools.manifest.parser.components.ManifestActivityInfo;
 import com.android.tools.manifest.parser.components.ManifestServiceInfo;
 import com.android.utils.ILogger;
@@ -83,7 +85,7 @@ public class Activator {
             throws DeployerException {
         String qualifiedName =
                 componentName.startsWith(".") ? app.getAppId() + componentName : componentName;
-        AppComponent component = getComponent(type, qualifiedName);
+        AppComponentV1 component = getComponent(type, qualifiedName);
         try {
             component.activate(extraFlags, mode, receiver, device);
         } catch (ModelException e) {
@@ -92,32 +94,32 @@ public class Activator {
     }
 
     @NonNull
-    private AppComponent getComponent(@NonNull ComponentType type, @NonNull String qualifiedName)
+    private AppComponentV1 getComponent(@NonNull ComponentType type, @NonNull String qualifiedName)
             throws DeployerException {
-        AppComponent component = null;
+        AppComponentV1 component = null;
         switch (type) {
             case ACTIVITY:
                 Optional<ManifestActivityInfo> optionalActivity = getActivity(qualifiedName);
                 if (optionalActivity.isPresent()) {
-                    component = new Activity(optionalActivity.get(), app.getAppId(), logger);
+                    component = new ActivityV1(optionalActivity.get(), app.getAppId(), logger);
                 }
                 break;
             case WATCH_FACE:
                 Optional<ManifestServiceInfo> optionalService = getService(qualifiedName);
                 if (optionalService.isPresent()) {
-                    component = new WatchFace(optionalService.get(), app.getAppId(), logger);
+                    component = new WatchFaceV1(optionalService.get(), app.getAppId(), logger);
                 }
                 break;
             case TILE:
                 optionalService = getService(qualifiedName);
                 if (optionalService.isPresent()) {
-                    component = new Tile(optionalService.get(), app.getAppId(), logger);
+                    component = new TileV1(optionalService.get(), app.getAppId(), logger);
                 }
                 break;
             case COMPLICATION:
                 optionalService = getService(qualifiedName);
                 if (optionalService.isPresent()) {
-                    component = new Complication(optionalService.get(), app.getAppId(), logger);
+                    component = new ComplicationV1(optionalService.get(), app.getAppId(), logger);
                 }
                 break;
             default:

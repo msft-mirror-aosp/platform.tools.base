@@ -68,7 +68,6 @@ class HelloWorldAppKts private constructor(val namespace: String) : KotlinHelloW
 
 
             dependencies {
-              api("org.jetbrains.kotlin:kotlin-stdlib:${"$"}{libs.versions.kotlinVersion.get()}")
               androidTestImplementation("com.android.support.test:runner:${"$"}{libs.versions.testSupportLibVersion.get()}")
               androidTestImplementation("com.android.support.test:rules:${"$"}{libs.versions.testSupportLibVersion.get()}")
             }

@@ -21,6 +21,7 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.connected.utils.getEmulator
 import com.android.build.gradle.options.BooleanOption
+import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.CONNECTED_TEST_TEST_SUITE_NAME
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth.assertThat
@@ -32,6 +33,8 @@ import org.junit.ClassRule
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExternalResource
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
 /**
  * Integration test for [com.android.build.gradle.internal.coverage.tasks.CodeCoverageReportTask].
@@ -40,13 +43,26 @@ import org.junit.rules.ExternalResource
  * `createAggregatedCoverageReport` tasks. It checks for the existence of the report files, parses the generated JSON data, and verifies the
  * accuracy of the aggregated coverage metrics.
  */
-class CodeCoverageReportTest {
+@RunWith(Parameterized::class)
+class CodeCoverageReportTest(val runWithBuiltInPlatform: Boolean) {
 
   companion object {
     @ClassRule @JvmField val emulator: ExternalResource = getEmulator()
 
+    @JvmStatic
+    @Parameterized.Parameters(name = "runWithBuiltInPlatform={0}")
+    fun parameters(): Collection<Array<Any>> = listOf(arrayOf(false), arrayOf(true))
+
     const val APP_EXPECTED_COVERED_INSTRUCTION_AGGREGATED = 28
     const val APP_EXPECTED_COVERED_BRANCH_AGGREGATED = 1
+
+    const val APP_EXPECTED_COVERED_INSTRUCTION_ANDROIDTEST = 5
+
+    const val APP_EXPECTED_COVERED_BRANCH_ANDROIDTEST = 0
+
+    const val APP_EXPECTED_COVERED_INSTRUCTION_UNITTEST = 23
+
+    const val APP_EXPECTED_COVERED_BRANCH_UNITTEST = 1
     const val LIB_EXPECTED_COVERED_INSTRUCTION_AGGREGATED = 37
     const val LIB_EXPECTED_COVERED_BRANCH_AGGREGATED = 3
   }
@@ -79,7 +95,7 @@ class CodeCoverageReportTest {
           implementation(project(":lib"))
 
           testImplementation("junit:junit:4.13.2")
-          testImplementation("org.mockito:mockito-core:5.12.0")
+          testImplementation("org.mockito:mockito-core:5.20.0")
           testImplementation("org.jdeferred:jdeferred-android-aar:1.2.3")
           testImplementation("commons-logging:commons-logging:1.1.1")
 
@@ -126,7 +142,7 @@ class CodeCoverageReportTest {
           }
           dependencies {
             testImplementation("junit:junit:4.13.2")
-            testImplementation("org.mockito:mockito-core:5.12.0")
+            testImplementation("org.mockito:mockito-core:5.20.0")
             testImplementation("org.jdeferred:jdeferred-android-aar:1.2.3")
             testImplementation("commons-logging:commons-logging:1.1.1")
 
@@ -167,7 +183,7 @@ class CodeCoverageReportTest {
 
           dependencies {
             testImplementation("junit:junit:4.13.2")
-            testImplementation("org.mockito:mockito-core:5.12.0")
+            testImplementation("org.mockito:mockito-core:5.20.0")
             testImplementation("org.jdeferred:jdeferred-android-aar:1.2.3")
             testImplementation("commons-logging:commons-logging:1.1.1")
 
@@ -183,6 +199,8 @@ class CodeCoverageReportTest {
       gradleProperties {
         // this is to test the multi-variant support for coverage reporting
         add(BooleanOption.ONLY_ENABLE_UNIT_TEST_BY_DEFAULT_FOR_THE_TESTED_BUILD_TYPE, false)
+        add(BooleanOption.REPORT_AGGREGATION_SUPPORT, true)
+        add(BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM, runWithBuiltInPlatform)
       }
     }
 
@@ -281,11 +299,9 @@ class CodeCoverageReportTest {
   fun testCreateCoverageReportWithFeatureDisabled() {
     val build = rule.build { gradleProperties { add(BooleanOption.REPORT_AGGREGATION_SUPPORT, false) } }
 
-    val result = build.executor.run(":app:createCoverageReport")
+    val result = build.executor.expectFailure().run(":app:createCoverageReport")
 
-    result.assertOutputContains("Report aggregation feature is disabled. Task execution is skipped.")
-    result.assertOutputDoesNotContain("View coverage report at")
-    assertThat(result.didWorkTasks).doesNotContain(":app:collectDebugCoverage")
+    result.assertFailureMessage().contains("task 'createCoverageReport' is ambiguous in project ':app'")
   }
 
   private fun verifyIndexFileExists(taskOutputDir: File) {
@@ -342,6 +358,20 @@ class CodeCoverageReportTest {
     assertThat(appDebugCoverage!!.instruction.covered).isEqualTo(APP_EXPECTED_COVERED_INSTRUCTION_AGGREGATED)
     assertThat(appDebugCoverage.branch.covered).isEqualTo(APP_EXPECTED_COVERED_BRANCH_AGGREGATED)
 
+    val appAndroidTestCoverage = appModule!!.testSuiteCoverages.find { it.name == CONNECTED_TEST_TEST_SUITE_NAME }
+    assertThat(appAndroidTestCoverage).isNotNull()
+    val appDebugAndroidTestCoverage = appAndroidTestCoverage!!.variantCoverages.find { it.name == "debug" }
+    assertThat(appDebugAndroidTestCoverage).isNotNull()
+    assertThat(appDebugAndroidTestCoverage!!.instruction.covered).isEqualTo(APP_EXPECTED_COVERED_INSTRUCTION_ANDROIDTEST)
+    assertThat(appDebugAndroidTestCoverage.branch.covered).isEqualTo(APP_EXPECTED_COVERED_BRANCH_ANDROIDTEST)
+
+    val appUnitTestCoverage = appModule!!.testSuiteCoverages.find { it.name == "UnitTest" }
+    assertThat(appUnitTestCoverage).isNotNull()
+    val appDebugUnitTestTestCoverage = appUnitTestCoverage!!.variantCoverages.find { it.name == "debug" }
+    assertThat(appDebugUnitTestTestCoverage).isNotNull()
+    assertThat(appDebugUnitTestTestCoverage!!.instruction.covered).isEqualTo(APP_EXPECTED_COVERED_INSTRUCTION_UNITTEST)
+    assertThat(appDebugUnitTestTestCoverage.branch.covered).isEqualTo(APP_EXPECTED_COVERED_BRANCH_UNITTEST)
+
     val appPackage = appModule.packages.find { it.name == "com.example.app" }
     assertThat(appPackage).isNotNull()
     val appKotlinClass = appPackage!!.classes.find { it.name == "AppKotlinClass" }
@@ -366,7 +396,7 @@ class CodeCoverageReportTest {
     assertThat(unitTestCoverage).isNotNull()
     assertThat(unitTestCoverage!!.variantCoverage.instruction.covered).isEqualTo(5)
 
-    val androidTestCoverage = addLineDetails.testSuiteCoverages.find { it.testSuiteName == "AndroidTest" }
+    val androidTestCoverage = addLineDetails.testSuiteCoverages.find { it.testSuiteName == CONNECTED_TEST_TEST_SUITE_NAME }
     assertThat(androidTestCoverage).isNotNull()
     assertThat(androidTestCoverage!!.variantCoverage.instruction.covered).isEqualTo(0)
 
@@ -403,7 +433,7 @@ class CodeCoverageReportTest {
       assertThat(libUnitTestCoverage).isNotNull()
       assertThat(libUnitTestCoverage!!.variantCoverage.instruction.covered).isEqualTo(5)
 
-      val libAndroidTestCoverage = subtractLineDetails.testSuiteCoverages.find { it.testSuiteName == "AndroidTest" }!!
+      val libAndroidTestCoverage = subtractLineDetails.testSuiteCoverages.find { it.testSuiteName == CONNECTED_TEST_TEST_SUITE_NAME }!!
       assertThat(libAndroidTestCoverage.variantCoverage.instruction.covered).isEqualTo(0)
     } else {
       val libModule = report.modules.find { it.name == ":lib" }

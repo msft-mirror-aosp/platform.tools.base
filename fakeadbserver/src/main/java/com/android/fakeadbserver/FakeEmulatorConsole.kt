@@ -43,6 +43,7 @@ class FakeEmulatorConsole(private val avdName: String, private val avdPath: Stri
   private val executor: ExecutorService = Executors.newCachedThreadPool()
   private var runEmulatorTask: Future<*>? = null
   private val isShutdown = AtomicBoolean(false)
+  var authRequired = false
 
   fun start() {
     assert(
@@ -74,7 +75,16 @@ class FakeEmulatorConsole(private val avdName: String, private val avdPath: Stri
       val input = BufferedReader(InputStreamReader(socket.socket().getInputStream()))
       val output = PrintWriter(socket.socket().getOutputStream(), true) // autoFlush=true
 
-      output.write("OK\r\n") // Initial greeting
+      // Initial greeting
+      if (authRequired) {
+        output.write("Android Console: Authentication required\r\n")
+        output.write("Android Console: type 'auth <auth_token>' to authenticate\r\n")
+        output.write("OK\r\n")
+      } else {
+        output.write("Android Console: type 'help' for a list of commands\r\n")
+        output.write("OK\r\n")
+      }
+
       output.flush()
       while (true) {
         val line = input.readLine() ?: break

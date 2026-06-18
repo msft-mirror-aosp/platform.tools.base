@@ -19,15 +19,17 @@ import com.android.tools.lint.checks.fx.utils.InterningPool
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiModifier
+import com.intellij.psi.PsiTypeParameter
 import kotlin.reflect.KFunction
 import kotlin.reflect.KParameter
 import org.jetbrains.kotlin.psi.KtNamedFunction
+import org.jetbrains.kotlin.psi.KtTypeParameter
 import org.jetbrains.kotlin.psi.psiUtil.containingClass
 import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UExpression
 
 /** An internal representation of a method descriptor, identifying the name and overloading. */
-class MethodId(val isVirtual: Boolean, name: String, paramTags: List<ClassId?>) {
+class MethodId(val isVirtual: Boolean, name: String, paramTags: List<ClassId?>) : Scope {
   val name = InterningPool.string(name)
   val paramTags = paramListPool.intern(paramTags)
 
@@ -46,10 +48,12 @@ class MethodId(val isVirtual: Boolean, name: String, paramTags: List<ClassId?>) 
         method.name == "invoke" && method.containingClass?.qualifiedName?.startsWith("kotlin.jvm.functions.Function") == true ->
           Invoke[method.parameterList.parametersCount]
         else -> {
-          val typeParams = buildSet {
-            for (x in method.containingClass?.typeParameters ?: arrayOf()) x.name?.let(::add)
-            for (x in method.typeParameters) x.name?.let(::add)
-          }
+          val typeParams =
+            bootstrapTypeEnv(
+              PsiTypeParameter::getName,
+              method.containingClass?.typeParameters?.asIterable(),
+              method.typeParameters.asIterable(),
+            )
           val isVirtual = !method.isStatic() && !method.isConstructor
           val params = method.parameterList.parameters.map { PsiTypeAdapter.translate(typeParams, it.type).erased() }
           MethodId(isVirtual, method.name, params)
@@ -57,12 +61,18 @@ class MethodId(val isVirtual: Boolean, name: String, paramTags: List<ClassId?>) 
       }
 
     operator fun invoke(method: KtNamedFunction): MethodId {
-      val typeParams = buildSet {
-        for (x in method.containingClass()?.typeParameters ?: listOf()) x.name?.let(::add)
-        for (x in method.typeParameters) x.name?.let(::add)
-      }
+      val typeParams = bootstrapTypeEnv(KtTypeParameter::getName, method.containingClass()?.typeParameters, method.typeParameters)
       val params = method.valueParameters.map { KtTypeReferenceAdapter.translate(typeParams, it.typeReference).erased() }
       return MethodId(false, method.name!!, params)
+    }
+
+    private fun <X> bootstrapTypeEnv(name: X.() -> String?, vararg paramLists: Iterable<X>?): Map<String, Type.Sym.Param> = buildMap {
+      for (l in paramLists) {
+        for (x in l ?: continue) {
+          val name = x.name() ?: continue
+          put(name, Type.Sym.Param(name, Scope.Generated(-1)))
+        }
+      }
     }
 
     fun ofVirtual(method: KFunction<*>): MethodId {
@@ -70,7 +80,7 @@ class MethodId(val isVirtual: Boolean, name: String, paramTags: List<ClassId?>) 
       return MethodId(
         true,
         method.name,
-        method.parameters.subList(1, method.parameters.size).map { KTypeAdapter.translate(setOf(), it.type).erased() },
+        method.parameters.subList(1, method.parameters.size).map { KTypeAdapter.translate({ Type.WildCard }, it.type).erased() },
       )
     }
 
@@ -78,7 +88,7 @@ class MethodId(val isVirtual: Boolean, name: String, paramTags: List<ClassId?>) 
       require(method.parameters.isEmpty() || method.parameters[0].kind != KParameter.Kind.INSTANCE) {
         "Method ${method.name} is not static"
       }
-      return MethodId(false, method.name, method.parameters.map { KTypeAdapter.translate(setOf(), it.type).erased() })
+      return MethodId(false, method.name, method.parameters.map { KTypeAdapter.translate({ Type.WildCard }, it.type).erased() })
     }
   }
 
@@ -147,7 +157,11 @@ internal data class MethodBody<out FX>(
   }
 }
 
-internal fun <FX> returnType(env: Set<String>, m: PsiMethod, classAdapter: TypeAdapter<PsiClass> = PsiClassAdapter): Type<FX> =
+internal fun <FX> returnType(
+  env: Map<String, Type.Sym.Param>,
+  m: PsiMethod,
+  classAdapter: TypeAdapter<PsiClass> = PsiClassAdapter,
+): Type<FX> =
   when (val t = m.returnType) {
     null ->
       when {

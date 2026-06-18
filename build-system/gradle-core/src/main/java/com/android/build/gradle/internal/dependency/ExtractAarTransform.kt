@@ -19,6 +19,7 @@ package com.android.build.gradle.internal.dependency
 import com.android.SdkConstants
 import com.android.build.gradle.internal.caching.DisabledCachingReason
 import com.android.builder.utils.isValidZipEntryName
+import com.android.builder.utils.isValidZipEntryPath
 import com.android.utils.FileUtils
 import com.google.common.annotations.VisibleForTesting
 import com.google.common.io.Files
@@ -105,6 +106,10 @@ internal class AarExtractor {
         }
         val path = FileUtils.toSystemDependentPath(choosePathInOutput(entry.name))
         val outputFile = File(outputDir, path)
+        if (!isValidZipEntryPath(outputFile, outputDir)) {
+          // Skip entries that resolve outside the output directory (zip-slip).
+          continue
+        }
         Files.createParentDirs(outputFile)
         Files.asByteSink(outputFile).writeFrom(zipInputStream)
       }

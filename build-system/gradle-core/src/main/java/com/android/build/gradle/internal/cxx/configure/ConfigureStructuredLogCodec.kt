@@ -128,3 +128,20 @@ fun EncodedCreateCxxModel.decode(decoder: StringDecoder): CreateCxxModel {
 
 /** Helper function for calling decode for this [EncodedCreateCxxConfiguration] */
 fun decodeCreateCxxModel(encoded: EncodedCreateCxxModel, decoder: StringDecoder) = encoded.decode(decoder)
+
+/** Transform a [FingerPrintFileWritten] into an [EncodedFingerPrintFileWritten] by encoding strings with [StringEncoder]. */
+fun FingerPrintFileWritten.encode(encoder: StringEncoder): EncodedFingerPrintFileWritten {
+  val encoded = EncodedFingerPrintFileWritten.newBuilder()
+  encoded.fingerPrintFile = encoder.encode(fingerPrintFile)
+  return encoded.build()
+}
+
+/** Transform a [EncodedFingerPrintFileWritten] into an [FingerPrintFileWritten] by decoding strings with [StringDecoder]. */
+fun EncodedFingerPrintFileWritten.decode(decoder: StringDecoder): FingerPrintFileWritten {
+  val decoded = FingerPrintFileWritten.newBuilder()
+  decoded.fingerPrintFile = decoder.decode(fingerPrintFile)
+  return decoded.build()
+}
+
+/** Helper function for calling decode for this [EncodedFingerPrintFileWritten] */
+fun decodeFingerPrintFileWritten(encoded: EncodedFingerPrintFileWritten, decoder: StringDecoder) = encoded.decode(decoder)

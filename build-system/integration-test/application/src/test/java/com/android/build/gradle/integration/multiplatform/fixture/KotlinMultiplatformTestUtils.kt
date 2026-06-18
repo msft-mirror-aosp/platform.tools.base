@@ -128,18 +128,6 @@ internal fun GradleTestProject.publishLibs(
     )
   }
 
-  if (publishKmpLibraryPlugin) {
-    TestFileUtils.appendToFile(
-      getSubproject("kmpLibraryPlugin").ktsBuildFile,
-      """
-      kotlin {
-          androidTarget { publishAllLibraryVariants() }
-      }
-      """
-        .trimIndent(),
-    )
-  }
-
   projectsToPublish.forEach {
     executor()
       .withFailOnWarning(false) // b/455891987

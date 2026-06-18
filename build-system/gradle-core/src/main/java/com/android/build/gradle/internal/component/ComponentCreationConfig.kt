@@ -39,11 +39,13 @@ import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.services.BuiltInKaptSupportMode
 import com.android.build.gradle.internal.services.BuiltInKotlinSupportMode
 import com.android.build.gradle.internal.variant.VariantPathHelper
+import com.android.build.gradle.options.BooleanOption
 import com.android.builder.core.ComponentType
 import java.io.File
 import java.util.function.Predicate
 import org.gradle.api.file.Directory
 import org.gradle.api.file.FileCollection
+import org.gradle.api.file.FileSystemLocation
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.compile.JavaCompile
@@ -158,6 +160,14 @@ interface ComponentCreationConfig : ComponentIdentity, TaskCreationConfig {
   /** Returns the directory for the [internalArtifactType] if built-in KAPT support is enabled, or null if not. */
   fun getBuiltInKaptArtifact(internalArtifactType: InternalArtifactType<Directory>): Provider<Directory>? =
     artifacts.get(internalArtifactType).takeIf { useBuiltInKaptSupport }
+
+  fun getProjectJavaRes(): Provider<out FileSystemLocation> {
+    return if (services.projectOptions[BooleanOption.ENABLE_JAVA_RESOURCE_OPTIMIZATIONS]) {
+      artifacts.get(InternalArtifactType.JAVA_RES_COMPRESSED_JAR)
+    } else {
+      artifacts.get(InternalArtifactType.JAVA_RES)
+    }
+  }
 
   // ---------------------------------------------------------------------------------------------
   // LEGACY SUPPORT

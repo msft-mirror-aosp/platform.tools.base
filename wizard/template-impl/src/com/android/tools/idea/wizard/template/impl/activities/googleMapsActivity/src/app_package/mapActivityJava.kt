@@ -44,6 +44,7 @@ package ${packageName};
 
 import ${getMaterialComponentName("android.support.v4.app.FragmentActivity", useAndroidX)};
 import android.os.Bundle;
+import androidx.activity.EdgeToEdge;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -63,6 +64,7 @@ ${renderIf(isViewBindingSupported) {"""
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
         $contentViewBlock
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()

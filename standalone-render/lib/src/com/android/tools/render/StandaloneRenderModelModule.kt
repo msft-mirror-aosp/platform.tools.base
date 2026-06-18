@@ -99,7 +99,20 @@ class StandaloneRenderModelModule(
             return@forEach
           }
 
-        for (innerClass in rClass.declaredClasses) {
+        val innerClasses = com.android.resources.ResourceType.values().mapNotNull { resType ->
+          val classFilePath = "${pkg.replace('.', '/')}/R$${resType.getName()}.class"
+          if (classLoader.getResource(classFilePath) != null) {
+            try {
+              classLoader.loadClass("$pkg.R$${resType.getName()}")
+            } catch (e: ClassNotFoundException) {
+              null
+            }
+          } else {
+            null
+          }
+        }
+
+        for (innerClass in innerClasses) {
           val typeName = innerClass.simpleName
           val type = com.android.resources.ResourceType.fromClassName(typeName) ?: continue
           if (type == com.android.resources.ResourceType.STYLEABLE) continue

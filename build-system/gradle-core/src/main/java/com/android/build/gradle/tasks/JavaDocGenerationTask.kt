@@ -53,7 +53,7 @@ import org.jetbrains.dokka.androidSdk
 import org.jetbrains.dokka.androidX
 import org.jetbrains.dokka.jdk
 import org.jetbrains.dokka.kotlinStdlib
-import org.jetbrains.dokka.toJsonString
+import org.jetbrains.dokka.toCompactJsonString
 
 /** Generate Java docs for java & kotlin sources using dokka. */
 @CacheableTask
@@ -121,7 +121,7 @@ abstract class JavaDocGenerationTask : NonIncrementalTask() {
         val configureMethod = bootstrapClass.getMethod("configure", String::class.java, BiConsumer::class.java)
         val generateMethod = bootstrapClass.getMethod("generate")
 
-        configureMethod.invoke(bootstrapInstance, dokkaConfiguration.toJsonString(), createProxyLogger())
+        configureMethod.invoke(bootstrapInstance, dokkaConfiguration.toCompactJsonString(), createProxyLogger())
         generateMethod.invoke(bootstrapInstance)
       }
     }
@@ -227,6 +227,7 @@ abstract class JavaDocGenerationTask : NonIncrementalTask() {
         task.project.configurations.detachedConfiguration(
           task.project.dependencies.create(DOKKA_CORE),
           task.project.dependencies.create(DOKKA_JAVADOC_PLUGIN),
+          task.project.dependencies.create(DOKKA_ANALYSIS),
         )
       runtimeConfig.isCanBeConsumed = false
       runtimeConfig.isCanBeResolved = true
@@ -247,10 +248,12 @@ abstract class JavaDocGenerationTask : NonIncrementalTask() {
 
   companion object {
     // this version should be same as the version of dokka-core that gradle-core depends on.
-    const val DOKKA_VERSION = "1.4.32"
+    const val DOKKA_VERSION = "2.2.0"
+
     private const val DOKKA_GROUP = "org.jetbrains.dokka"
     const val DOKKA_CORE = "$DOKKA_GROUP:dokka-core:$DOKKA_VERSION"
     const val DOKKA_JAVADOC_PLUGIN = "$DOKKA_GROUP:javadoc-plugin:$DOKKA_VERSION"
     const val DOKKA_BASE_PLUGIN = "$DOKKA_GROUP:dokka-base:$DOKKA_VERSION"
+    const val DOKKA_ANALYSIS = "$DOKKA_GROUP:analysis-kotlin-descriptors:$DOKKA_VERSION"
   }
 }

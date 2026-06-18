@@ -33,7 +33,7 @@ import com.android.tools.rendering.api.IncludeReference
 import com.android.tools.rendering.api.NavGraphResolver
 import com.android.tools.rendering.parsers.RenderXmlFile
 import com.android.tools.rendering.parsers.RenderXmlFileSnapshot
-import com.android.tools.rendering.security.RenderSecurityManager
+import com.android.tools.rendering.security.RenderSecurity
 import com.android.tools.sdk.AndroidPlatform
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
@@ -65,9 +65,8 @@ class StandaloneEnvironmentContext(
 
   override fun getNavGraphResolver(resourceResolver: ResourceResolver): NavGraphResolver = NavGraphResolver { null }
 
-  override fun createRenderSecurityManager(projectPath: String?, platform: AndroidPlatform?): RenderSecurityManager {
-    val sdkLocationPath = platform?.sdkData?.location?.toString()!!
-    return object : RenderSecurityManager(sdkLocationPath, projectPath, false, emptyArray(), { true }) {}
+  override fun createRenderSecurity(projectPath: String?, platform: AndroidPlatform?): RenderSecurity {
+    return StandaloneRenderSecurity()
   }
 
   // This is only to be called from RenderErrorContributor and never in the standalone rendering

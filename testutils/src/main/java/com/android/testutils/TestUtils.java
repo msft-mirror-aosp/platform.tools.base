@@ -61,7 +61,7 @@ public class TestUtils {
      * <p>This version needs to be present in prebuilts for tests to pass (see
      * tools/base/bazel/README.md).
      */
-    public static final String KOTLIN_VERSION_FOR_TESTS = "2.3.20-RC";
+    public static final String KOTLIN_VERSION_FOR_TESTS = "2.4.0-RC";
 
     /** KSP version used by AGP integration tests. */
     public static final String KSP_VERSION_FOR_TESTS = "2.2.20-RC-2.0.2";
@@ -84,7 +84,7 @@ public class TestUtils {
      * <p>The following script updates the dev Kotlin version:
      * sync-memory-tests/src/com/android/tools/idea/gradle/project/sync/UpdateBenchmarkVersions.kt
      */
-    public static final String LATEST_KOTLIN_VERSION = "2.4.0-dev-5614";
+    public static final String LATEST_KOTLIN_VERSION = "2.4.0-dev-8268";
 
     /** Compose compiler compatible with {@link #KOTLIN_VERSION_FOR_COMPOSE_TESTS}. */
     public static final String COMPOSE_COMPILER_FOR_TESTS = "1.5.11";
@@ -117,9 +117,9 @@ public class TestUtils {
      * Creates a temporary directory that is deleted when the JVM exits.
      *
      * @deprecated Temporary directories and files should be deleted after each test, not kept
-     *     around for the lifetime of the JVM. This can be achieved by using
-     *     a {@link org.junit.rules.TemporaryFolder} rule, or by calling the
-     *     {@link PathUtils#deleteRecursivelyIfExists(Path)} method in {@code tearDown}.
+     *     around for the lifetime of the JVM. This can be achieved by using a {@link
+     *     org.junit.rules.TemporaryFolder} rule, or by calling the {@link
+     *     PathUtils#deleteRecursivelyIfExists(Path)} method in {@code tearDown}.
      */
     @Deprecated
     public static Path createTempDirDeletedOnExit() throws IOException {
@@ -380,9 +380,9 @@ public class TestUtils {
     /**
      * Returns the SDK directory.
      *
+     * @return a valid Path object pointing at the SDK directory.
      * @throws IllegalStateException if the current OS is not supported.
      * @throws IllegalArgumentException if the path results in a file not found.
-     * @return a valid Path object pointing at the SDK directory.
      */
     @NonNull
     public static Path getSdk() {
@@ -464,9 +464,9 @@ public class TestUtils {
     @NonNull
     public static Path getLocalMavenRepoFile(@NonNull String path) {
         if (runningFromBazel()) {
-          return resolveWorkspacePath("../maven/repository/" + path);
+            return resolveWorkspacePath("../+_repo_rules2+maven/repository/" + path);
         } else {
-          return resolveWorkspacePath("prebuilts/tools/common/m2/repository/" + path);
+            return resolveWorkspacePath("prebuilts/tools/common/m2/repository/" + path);
         }
     }
 
@@ -554,6 +554,23 @@ public class TestUtils {
     }
 
     @NonNull
+    public static Path getJava25Jdk() {
+        String hostDir = getJdkHostDir();
+        return resolveWorkspacePath("prebuilts/studio/jdk/jbr25/" + hostDir);
+    }
+
+    @NonNull
+    public static Path getEmbeddedJdkPath() {
+        String hostDir = getJdkHostDir();
+        String embeddedJdkPath =
+                System.getProperty("embedded.jdk.path", "prebuilts/studio/jdk/jbr-next/").trim();
+        if (!embeddedJdkPath.endsWith("/")) {
+            embeddedJdkPath = embeddedJdkPath + "/";
+        }
+        return resolveWorkspacePath(embeddedJdkPath + hostDir);
+    }
+
+    @NonNull
     private static String getJdkHostDir() {
         OsType osType = OsType.getHostOs();
         switch (osType) {
@@ -628,7 +645,7 @@ public class TestUtils {
      */
     @Deprecated
     @NonNull
-    public static String getDiff(@NonNull String before, @NonNull  String after) {
+    public static String getDiff(@NonNull String before, @NonNull String after) {
         return getDiff(before, after, 0);
     }
 
@@ -637,7 +654,7 @@ public class TestUtils {
      */
     @Deprecated
     @NonNull
-    public static String getDiff(@NonNull String before, @NonNull  String after, int windowSize) {
+    public static String getDiff(@NonNull String before, @NonNull String after, int windowSize) {
         return getDiff(before.split("\n"), after.split("\n"), windowSize);
     }
 

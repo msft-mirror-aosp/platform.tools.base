@@ -56,7 +56,7 @@ class AdbApkInstaller(
   }
 
   companion object {
-    private val packageNameRegex = "package:\\sname='(\\S*)'.*$".toRegex()
+    private val packageNameRegex = "package:\\sname='([^']*)'.*$".toRegex()
   }
 
   /**
@@ -228,9 +228,11 @@ class AdbApkInstaller(
    * Currently, this clears the debug app setting set by [preInstallationSetup].
    */
   fun postTestCleanup() {
-    adbController.runAdbShellCommand(deviceSerial, listOf("am", "clear-debug-app")).let { result ->
-      if (result.exitCode != 0) {
-        logger.info("Failed to execute clear-debug-app command. " + "It may not be supported on this device.")
+    if (deviceApiLevel >= MinFeatureApiLevel.SET_DEBUG_APP.apiLevel) {
+      adbController.runAdbShellCommand(deviceSerial, listOf("am", "clear-debug-app")).let { result ->
+        if (result.exitCode != 0) {
+          logger.info("Failed to execute clear-debug-app command.")
+        }
       }
     }
   }

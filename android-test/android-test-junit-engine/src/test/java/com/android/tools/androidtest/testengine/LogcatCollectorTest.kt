@@ -41,7 +41,8 @@ class LogcatCollectorTest {
 
   @Test
   fun startCapture_processesLogcatLines() {
-    val deviceId = "emulator-5554"
+    val deviceSerial = "emulator-5554"
+    val deviceId = "device1"
 
     // Mock for "shell date"
     val dateOutput = "03-05 10:00:00"
@@ -76,7 +77,7 @@ class LogcatCollectorTest {
         }
       }
 
-    collector.startCapture(deviceId)
+    collector.startCapture(deviceId, deviceSerial)
 
     // Wait for the reader thread to catch the "started" line
     var logcatPath: String? = null

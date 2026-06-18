@@ -47,6 +47,7 @@ class TracingTest {
     Tracing.initialize(config, fileProvider)
 
     assertThat(File(tempDir, "trace-0.perfetto").exists()).isTrue()
+    assertThat(File(tempDir, "trace-1.perfetto").exists()).isFalse()
     val initialTracer = Tracing.tracer
     assertThat(initialTracer).isNotNull()
 
@@ -55,6 +56,7 @@ class TracingTest {
 
     val flushedFile = Tracing.flush()
     assertThat(flushedFile).endsWith("trace-0.perfetto")
+    assertThat(File(tempDir, "trace-0.perfetto").length() > 0).isTrue()
 
     // Assert that the tracer instance was NOT reused after flushing because we aren't using a ring buffer.
     val tracerAfterFlush = Tracing.tracer
@@ -186,6 +188,9 @@ class TracingTest {
         override fun isTracingEnabled() = true
 
         override fun getTraceDirectory() = tempDir
+
+        // A change to the capacity has no impact, we'll keep the old config.
+        override fun getRingBufferCapacity(): Long = 50_000_000
       }
     Tracing.initialize(config2)
 

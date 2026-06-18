@@ -27,6 +27,7 @@ import com.android.tools.idea.wizard.template.TemplateData
 import com.android.tools.idea.wizard.template.TextFieldWidget
 import com.android.tools.idea.wizard.template.WizardUiContext
 import com.android.tools.idea.wizard.template.booleanParameter
+import com.android.tools.idea.wizard.template.impl.activities.common.MIN_API
 import com.android.tools.idea.wizard.template.impl.defaultPackageNameParameter
 import com.android.tools.idea.wizard.template.stringParameter
 import com.android.tools.idea.wizard.template.template
@@ -36,7 +37,7 @@ val composeTvActivityTemplate
   get() = template {
     name = "Empty Activity"
     description = "Create a new empty activity with Compose for TV"
-    minApi = 21
+    minApi = MIN_API
     constraints = listOf(TemplateConstraint.AndroidX, TemplateConstraint.Kotlin, TemplateConstraint.Compose)
     category = Category.TV
     formFactor = FormFactor.Tv

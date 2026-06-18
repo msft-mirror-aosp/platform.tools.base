@@ -66,7 +66,6 @@ public class MultiDexTest {
             GradleTestProject.builder()
                     .fromTestProject("multiDex")
                     .withHeap("2048M")
-                    .disableBuiltInKotlin()
                     .create();
 
     @Rule public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -286,9 +285,12 @@ public class MultiDexTest {
         assertThat(mainDexClasses).contains("Landroidx/multidex/MultiDexApplication;");
 
         Set<String> nonMultidexSupportClasses =
-                mainDexClasses
-                        .stream()
+                mainDexClasses.stream()
                         .filter(c -> !c.startsWith("Landroidx/multidex"))
+                        .filter(c -> !c.startsWith("Lkotlin/"))
+                        .filter(c -> !c.startsWith("Lorg/jetbrains/"))
+                        .filter(c -> !c.startsWith("Lcom/android/tools/r8"))
+                        .filter(c -> !c.startsWith("Lorg/intellij/lang/annotations"))
                         .collect(Collectors.toSet());
         assertThat(nonMultidexSupportClasses).containsExactlyElementsIn(mandatoryClasses);
     }

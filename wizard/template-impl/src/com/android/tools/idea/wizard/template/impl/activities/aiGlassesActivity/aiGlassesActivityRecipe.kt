@@ -15,6 +15,7 @@
  */
 package com.android.tools.idea.wizard.template.impl.activities.aiGlassesActivity
 
+import com.android.sdklib.AndroidVersion
 import com.android.tools.idea.wizard.template.ModuleTemplateData
 import com.android.tools.idea.wizard.template.RecipeExecutor
 import com.android.tools.idea.wizard.template.impl.activities.aiGlassesActivity.res.values.stringsXml
@@ -31,19 +32,24 @@ import com.android.tools.idea.wizard.template.impl.activities.composeActivityMat
 
 fun RecipeExecutor.aiGlassesActivityRecipe(moduleData: ModuleTemplateData, activityClass: String, packageName: String) {
   val (_, srcOut, resOut, manifestOut, _, _, _, rootDir) = moduleData
+  val (buildApi, _, _) = moduleData.apis
+  addCompileSdk(maxOf(AndroidVersion(37, 0), buildApi))
   addAllKotlinDependencies(moduleData)
 
   addDependency(mavenCoordinate = "androidx.activity:activity-compose:+")
 
   // Add Compose dependencies, using the BOM to set versions
-  addComposeDependencies(moduleData, composeBomVersion = "2025.07.00")
+  addComposeDependencies(moduleData, composeBomVersion = "2026.03.01")
 
   addDependency(mavenCoordinate = "androidx.compose.material3:material3")
 
   addDependency(mavenCoordinate = "androidx.compose.runtime:runtime")
 
-  addDependency(mavenCoordinate = "androidx.xr.glimmer:glimmer:1.0.0-alpha02")
-  addDependency(mavenCoordinate = "androidx.xr.projected:projected:1.0.0-alpha03")
+  addDependency(mavenCoordinate = "androidx.lifecycle:lifecycle-runtime-compose")
+
+  addDependency(mavenCoordinate = "androidx.xr.glimmer:glimmer:1.0.0-alpha11")
+  addDependency(mavenCoordinate = "androidx.xr.glimmer:glimmer-google-fonts:1.0.0-alpha11")
+  addDependency(mavenCoordinate = "androidx.xr.projected:projected:1.0.0-alpha06")
 
   val glassesActivityClass = "Glasses$activityClass"
   generateManifest(
@@ -54,6 +60,7 @@ fun RecipeExecutor.aiGlassesActivityRecipe(moduleData: ModuleTemplateData, activ
     isLauncher = true,
     hasNoActionBar = true,
     generateActivityTitle = true,
+    windowSoftInputMode = "adjustResize",
   )
   // It doesn't have to create separate themes.xml for light and night because the default
   // status bar color is same between them at this moment
@@ -66,7 +73,6 @@ fun RecipeExecutor.aiGlassesActivityRecipe(moduleData: ModuleTemplateData, activ
     aiGlassesActivityManifestXml(activityClass = glassesActivityClass, packageName = packageName),
     manifestOut.resolve("AndroidManifest.xml"),
   )
-  mergeXml(themesXml(themeName = moduleData.themesData.main.name), resOut.resolve("values/themes.xml"))
   mergeXml(stringsXml(), resOut.resolve("values/strings.xml"))
 
   val themeName = "${moduleData.themesData.appName}Theme"

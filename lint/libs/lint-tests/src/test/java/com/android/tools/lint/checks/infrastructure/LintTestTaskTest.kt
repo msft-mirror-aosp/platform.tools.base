@@ -16,8 +16,6 @@
 
 package com.android.tools.lint.checks.infrastructure
 
-import com.android.testutils.TestUtils
-import com.android.tools.lint.checks.infrastructure.MultiRun.Step
 import com.android.tools.lint.checks.infrastructure.TestFiles.kotlin
 import com.android.tools.lint.checks.infrastructure.TestLintTask.lint
 import com.android.tools.lint.detector.api.Category
@@ -32,11 +30,36 @@ import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.google.common.truth.Truth.assertThat
 import com.intellij.psi.PsiMethod
 import org.jetbrains.uast.UCallExpression
-import org.junit.Ignore
 import org.junit.Test
 
 @Suppress("LintDocExample")
 class LintTestTaskTest {
+
+  @Test
+  fun checkProjectsRegisteredOnce() {
+    // Projects in unit tests were previously getting registered twice.
+    // This did not really cause any issues.
+    // We check here that a simple test results in just one project.
+    lint()
+      .allowMissingSdk()
+      .files(
+        kotlin(
+            """
+            fun foo() {
+                hello()
+            }
+
+            fun hello() {
+            }
+            """
+          )
+          .indented()
+      )
+      .issues(NoOpDetector.ISSUE)
+      .checkProjects { _, projects -> assertThat(projects.size).isEqualTo(1) }
+      .run()
+      .expectClean()
+  }
 
   @Test
   fun checkFlagsAcrossTestModes() {
@@ -101,6 +124,21 @@ class LintTestTaskTest {
           priority = 10,
           severity = Severity.WARNING,
           implementation = Implementation(MyCheckFlagsDetector::class.java, Scope.JAVA_FILE_SCOPE),
+        )
+    }
+  }
+
+  class NoOpDetector : Detector(), SourceCodeScanner {
+    companion object {
+      val ISSUE =
+        Issue.create(
+          id = "_NoOpDetector",
+          briefDescription = "Not applicable",
+          explanation = "Not applicable",
+          category = Category.CORRECTNESS,
+          priority = 10,
+          severity = Severity.WARNING,
+          implementation = Implementation(NoOpDetector::class.java, Scope.JAVA_FILE_SCOPE),
         )
     }
   }

@@ -15,17 +15,10 @@
  */
 package com.android.tools.lint.checks.fx.utils
 
-import java.util.ArrayDeque
-import java.util.Deque
 import kotlinx.collections.immutable.PersistentMap
-import kotlinx.collections.immutable.PersistentSet
 import kotlinx.collections.immutable.persistentMapOf
-import kotlinx.collections.immutable.persistentSetOf
-import kotlinx.collections.immutable.plus
 
 typealias Memo<K, V> = PersistentMap<K, V>
-
-private typealias Deps<K> = PersistentMap<K, PersistentSet<K>>
 
 /**
  * A [Monotone] on functions ([K] -> [V]), where [V] forms a lattice. This is conceptually ([K] -> [V]) -> ([K] -> [V]), but the uncurried
@@ -65,89 +58,60 @@ interface DependentMonotone<K, V> : ((K) -> V, K) -> V {
  * expressions, but relies on the bootstrapping function for assumptions on top-level bindings.
  */
 fun <K : Any, V> DependentMonotone<K, V>.leastFixPoint(domain: Collection<K>, bootstrap: Memo<K, V> = persistentMapOf()): Memo<K, V> {
-  var known: Memo<K, V> = bootstrap
-  var dependencies: Deps<K> = persistentMapOf()
-  val workSet = UniqueDeque(domain)
-  while (!workSet.isEmpty()) {
-    val argument = workSet.removeNext()
-    val (result, resultIsNew, newCallees) = step(known, dependencies, argument)
-
-    // Update dependencies and accumulate new work
-    for (newCallee in newCallees) {
-      val callers =
-        when (val existingCallers = dependencies[newCallee]) {
-          null -> persistentSetOf(argument).also { workSet.addFirst(newCallee) }
-          else -> existingCallers + argument
-        }
-      dependencies += newCallee to callers
-    }
-
-    // Update this context's result, and invalidate any affected contexts
-    if (resultIsNew) {
-      known += argument to result
-      for (ctxCaller in dependencies[argument] ?: setOf()) workSet.addLast(ctxCaller)
-    }
-
-    // If we were visiting multiple contexts in parallel, here we'd also need to explicitly
-    // propagate updated results along newly discovered dependencies. But at the moment we're
-    // visiting one context at a time, so that would be redundant.
+  tailrec fun loop(domain: Collection<K>, bootstrap: Memo<K, V>): Memo<K, V> {
+    if (domain.isEmpty()) return bootstrap
+    val (remaining, learned) = step(domain, bootstrap)
+    return loop(remaining, learned)
   }
-
-  return known
+  return loop(domain, bootstrap)
 }
 
 fun <K : Any, V> DependentMonotone<K, V>.leastFixPoint(vararg points: K): Memo<K, V> = leastFixPoint(points.asList())
 
-/** Accumulate new results and dependencies */
-private fun <K, V> DependentMonotone<K, V>.step(knownResults: Memo<K, V>, knownDeps: Map<K, Set<K>>, point: K): StepResult<K, V> {
-  val lattice = latticeAt(point)
-  // Check for new, un-subsumed result
-  val recur = LoggedFunction(knownResults) { latticeAt(it).bottom }
-  val existingResult = if (point in knownResults) knownResults[point] as V else lattice.bottom
-  val widenedResult = lattice.widen(existingResult, invoke(recur, point))
-  val resultIsNew = !(lattice.precede(widenedResult, existingResult))
-  // Accumulate new dependencies
-  val newDeps = recur.log.filter { point !in (knownDeps[it] ?: persistentSetOf()) }
-  return StepResult(widenedResult, resultIsNew, newDeps)
-}
-
-/** Unfortunately we need to allow `null` in [V], so use an extra flag [resultIsNew] */
-private data class StepResult<K, V>(val result: V, val resultIsNew: Boolean, val newDeps: List<K>)
-
 /**
- * Given a finite map [K] to [V], return a total function on [K] with a [default] result, also with a side effect logging the elements [K]s
- * applied to.
+ * Given a [Monotone] describing a function ([K] -> [V]) and a [bootstrap], make progress computing the function's mappings over the
+ * [domain] of interest.
+ *
+ * @return a more computed function that subsumes [bootstrap], paired with parts of [domain] that need re-iteration.
  */
-private class LoggedFunction<K, V>(private val memo: Map<K, V>, private val default: (K) -> V) : (K) -> V {
-  val log = mutableSetOf<K>()
+private fun <K : Any, V> DependentMonotone<K, V>.step(domain: Collection<K>, bootstrap: Memo<K, V>): Pair<Collection<K>, Memo<K, V>> {
+  val learned = bootstrap.builder()
+  val cacheDependents = hashMapOf<K, MutableSet<K>>()
+  val cacheUpdates = mutableSetOf<K>()
+  val cacheUpdateTriggers = hashMapOf<K, MutableSet<K>>()
 
-  override fun invoke(x: K): V {
-    log += x
-    return memo[x] ?: default(x)
+  class Step(private val root: K) : (K) -> V {
+    override fun invoke(point: K): V =
+      when (val deps = cacheDependents[point]) {
+        null -> {
+          cacheDependents[point] = mutableSetOf()
+          val lattice = latticeAt(point)
+          val knownAnswer = if (point in bootstrap) bootstrap[point] as V else lattice.bottom
+          when (val iteratedAnswer = lattice.joinOf(knownAnswer, invoke(this, point))) {
+            knownAnswer -> knownAnswer
+            else ->
+              iteratedAnswer.also {
+                cacheUpdates.add(point)
+                learned[point] = iteratedAnswer
+              }
+          }
+        }
+        else -> {
+          deps.add(root)
+          if (point !in cacheUpdates) cacheUpdateTriggers.getOrPut(point, ::mutableSetOf).add(root)
+          if (point in learned) learned[point] as V else latticeAt(point).bottom
+        }
+      }
   }
-}
 
-/** Like a `Deque`, but only storing each element once */
-private class UniqueDeque<T>(elements: Collection<T>) {
-  private val elements = HashSet(elements)
-  private val deque = ArrayDeque(elements)
+  for (d in domain) Step(d)(d)
 
-  fun isEmpty(): Boolean = deque.isEmpty()
-
-  fun addFirst(element: T) = addBy(Deque<T>::addFirst, element)
-
-  fun addLast(element: T) = addBy(Deque<T>::addLast, element)
-
-  fun removeNext(): T = removeBy(Deque<T>::removeFirst)
-
-  private fun addBy(add: Deque<T>.(T) -> Any?, element: T) {
-    if (element !in elements) {
-      elements += element
-      add(deque, element)
+  val invalidated = buildSet {
+    fun visit(k: K) {
+      if (add(k)) cacheDependents[k]?.forEach(::visit)
     }
+    for (p in cacheUpdates) cacheUpdateTriggers[p]?.forEach(::visit)
   }
 
-  private fun removeBy(rem: Deque<T>.() -> T): T = rem(deque).also(elements::remove)
-
-  override fun toString() = deque.joinToString(separator = ",", prefix = "[", postfix = "]")
+  return domain.filter(invalidated::contains) to learned.build()
 }

@@ -20,7 +20,6 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.TestVersions;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.build.gradle.integration.connected.utils.EmulatorUtils;
-import com.android.build.gradle.options.BooleanOption;
 
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -35,8 +34,6 @@ public class SeparateTestWithAarDependencyConnectedTest {
     public GradleTestProject project =
             GradleTestProject.builder()
                     .fromTestProject("separateTestModule")
-                    .addGradleProperties(
-                            BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES.getPropertyName() + "=false")
                     .create();
 
     @ClassRule public static final ExternalResource EMULATOR = EmulatorUtils.getEmulator();
@@ -63,8 +60,7 @@ public class SeparateTestWithAarDependencyConnectedTest {
                         + "    }\n"
                         + "}\n"
                         + "dependencies {\n"
-                        + "    api 'com.android.support:appcompat-v7:"
-                        + TestVersions.SUPPORT_LIB_VERSION
+                        + "    api 'androidx.appcompat:appcompat:1.3.0-beta01"
                         + "'\n"
                         + "}\n");
 

@@ -22,6 +22,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.KotlinHelloWorldApp;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.build.gradle.integration.connected.utils.EmulatorUtils;
+import com.android.build.gradle.options.BooleanOption;
 import com.android.utils.FileUtils;
 
 import com.google.common.truth.Truth;
@@ -31,15 +32,31 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExternalResource;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.regex.Pattern;
 
+@RunWith(Parameterized.class)
 public class JacocoConnectedTest {
+
+    @Parameterized.Parameters(name = "runWithBuiltInPlatform={0}")
+    public static Collection<Boolean> data() {
+        return Arrays.asList(true, false);
+    }
+
+    private final boolean runWithBuiltInPlatform;
+
+    public JacocoConnectedTest(boolean runWithBuiltInPlatform) {
+        this.runWithBuiltInPlatform = runWithBuiltInPlatform;
+    }
 
     @ClassRule public static final ExternalResource emulator = EmulatorUtils.getEmulator();
 
@@ -58,12 +75,16 @@ public class JacocoConnectedTest {
         project.addAdbTimeout();
         // run the uninstall tasks in order to (1) make sure nothing is installed at the beginning
         // of each test and (2) check the adb connection before taking the time to build anything.
-        project.execute("uninstallAll");
+        project.executor()
+                .with(BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM, runWithBuiltInPlatform)
+                .run("uninstallAll");
     }
 
     @Test
     public void connectedCheck() throws Exception {
-        project.executor().run("connectedCheck");
+        project.executor()
+                .with(BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM, runWithBuiltInPlatform)
+                .run("connectedCheck");
         assertThat(project.file("build/reports/coverage/androidTest/debug/connected/index.html"))
                 .exists();
         assertThat(
@@ -149,10 +170,10 @@ public class JacocoConnectedTest {
                         .resolve("src/androidTest/java/com/example/helloworld/HelloWorldTest.java");
         Files.deleteIfExists(deprecatedTest);
 
-        project.executor().run("connectedCheck");
-        List<File> files =
-                FileUtils.find(
-                        project.file("build/outputs/code_coverage"), Pattern.compile(".*\\.ec"));
+        project.executor()
+                .with(BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM, runWithBuiltInPlatform)
+                .run("connectedCheck");
+        List<File> files = FileUtils.find(getCoverageDir(), Pattern.compile(".*\\.ec"));
 
         // ExampleTest has 2 methods, and there should be at least 2 .ec files
         Truth.assertThat(files.size()).isAtLeast(2);
@@ -174,7 +195,9 @@ public class JacocoConnectedTest {
                         + "    renderScript = false\n"
                         + "  }\n"
                         + "}\n");
-        project.executor().run("connectedCheck");
+        project.executor()
+                .with(BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM, runWithBuiltInPlatform)
+                .run("connectedCheck");
         assertThat(
                         project.file(
                                 "build/reports/coverage/androidTest/debug/connected/com.example.helloworld/HelloWorld.html"))
@@ -218,5 +241,13 @@ public class JacocoConnectedTest {
                                                 "build/reports/coverage/androidTest/debug/connected/report.xml")
                                         .toPath()))
                 .contains(expectedReportXml);
+    }
+
+    private File getCoverageDir() {
+        if (runWithBuiltInPlatform) {
+            return project.file("build/intermediates/test_suite_code_coverage");
+        } else {
+            return project.file("build/outputs/code_coverage");
+        }
     }
 }

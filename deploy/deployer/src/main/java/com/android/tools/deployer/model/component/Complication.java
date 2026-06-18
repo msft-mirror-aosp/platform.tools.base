@@ -16,8 +16,6 @@
 package com.android.tools.deployer.model.component;
 
 import com.android.annotations.NonNull;
-import com.android.ddmlib.IDevice;
-import com.android.ddmlib.IShellOutputReceiver;
 import com.android.tools.deployer.model.ModelException;
 import com.android.tools.deployer.model.activate.ActivationCommand;
 import com.android.tools.deployer.model.activate.ActivationCommands;
@@ -50,28 +48,8 @@ public class Complication extends WearComponent {
         super(appId, info, logger);
     }
 
-    @Override
-    public void activate(
-            @NonNull String extraFlags,
-            @NonNull Mode activationMode,
-            @NonNull IShellOutputReceiver receiver,
-            @NonNull IDevice device)
-            throws ModelException {
-        ComplicationParams params = ComplicationParams.parse(extraFlags);
-        logger.info(
-                "Activating WatchFace '%s' %s",
-                info.getQualifiedName(), activationMode.equals(Mode.DEBUG) ? "for debug" : "");
-
-        if (activationMode.equals(Mode.DEBUG)) {
-            setUpAmDebugApp(device);
-            setUpDebugSurfaceDebugApp(device);
-        }
-        String command = getAddComplicationCommand(params);
-        runStartCommand(command, receiver, logger, device);
-    }
-
     @NonNull
-    private String getAddComplicationCommand(ComplicationParams param) {
+    protected String getAddComplicationCommand(ComplicationParams param) {
         return String.format(
                 Locale.US,
                 ShellCommand.ADD_COMPLICATION_TO_WATCH_FACE,
@@ -89,10 +67,20 @@ public class Complication extends WearComponent {
             return new ActivationCommands(
                     getSetUpAmDebugAppActivationCommand(),
                     getSetUpDebugSurfaceDebugAppActivationCommand(),
-                    getAddComplicationActivationCommand(params));
+                    getAddComplicationActivationCommand(params),
+                    getShowWatchFaceActivationCommand());
         } else {
-            return new ActivationCommands(getAddComplicationActivationCommand(params));
+            return new ActivationCommands(
+                    getAddComplicationActivationCommand(params),
+                    getShowWatchFaceActivationCommand());
         }
+    }
+
+    private ActivationCommand getShowWatchFaceActivationCommand() {
+        return new ActivationCommand(
+                WatchFace.ShellCommand.SHOW_WATCH_FACE,
+                "Showing Watch Face",
+                new BroadcastResultChecker(null, msg -> logger.warning(msg)));
     }
 
     private ActivationCommand getAddComplicationActivationCommand(ComplicationParams params) {
@@ -124,7 +112,7 @@ public class Complication extends WearComponent {
         }
     }
 
-    private static class ComplicationParams {
+    protected static class ComplicationParams {
 
         static String INCORRECT_FORMAT_ERROR =
                 "Incorrect extra flags for Complication `%s`. Expected format `WATCH_FACE_APP_ID"
@@ -149,7 +137,7 @@ public class Complication extends WearComponent {
             this.type = type;
         }
 
-        static ComplicationParams parse(String rawParams) throws ModelException {
+        public static ComplicationParams parse(String rawParams) throws ModelException {
             try {
                 String[] params = rawParams.split("\\s+");
                 String watchfaceAppId = params[0];

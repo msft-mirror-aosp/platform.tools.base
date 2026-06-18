@@ -82,6 +82,7 @@ abstract class BaseDexingTransform<T : BaseDexingTransform.Parameters> : Transfo
     @get:Internal val errorFormat: Property<ErrorFormatMode>
     @get:Optional @get:InputFiles @get:PathSensitive(PathSensitivity.NONE) val desugarLibConfigFiles: ConfigurableFileCollection
     @get:Input val enableGlobalSynthetics: Property<Boolean>
+    @get:Input val useNoOpGlobalSyntheticsConsumer: Property<Boolean>
     @get:Input val enableApiModeling: Property<Boolean>
   }
 
@@ -409,6 +410,7 @@ object DexingRegistration {
     val debuggable: Boolean,
     val enableCoreLibraryDesugaring: Boolean,
     val enableGlobalSynthetics: Boolean,
+    val useNoOpGlobalSyntheticsConsumer: Boolean,
     val enableApiModeling: Boolean,
     val dependenciesClassesAreInstrumented: Boolean,
     val asmTransformComponent: String?, // Not-null iff dependenciesClassesAreInstrumented == true
@@ -426,6 +428,8 @@ object DexingRegistration {
       debuggable = creationConfig.debuggable,
       enableCoreLibraryDesugaring = creationConfig.dexing.isCoreLibraryDesugaringEnabled,
       enableGlobalSynthetics = creationConfig.enableGlobalSynthetics,
+      useNoOpGlobalSyntheticsConsumer =
+        creationConfig.debuggable && creationConfig.enableGlobalSynthetics && creationConfig.dexing.minSdkVersionForDexing >= 21,
       enableApiModeling = creationConfig.enableApiModeling,
       dependenciesClassesAreInstrumented = creationConfig.instrumentationCreationConfig?.dependenciesClassesAreInstrumented == true,
       asmTransformComponent =
@@ -444,6 +448,8 @@ object DexingRegistration {
       debuggable = creationConfig.debuggable,
       enableCoreLibraryDesugaring = creationConfig.dexing.isCoreLibraryDesugaringEnabled,
       enableGlobalSynthetics = creationConfig.enableGlobalSynthetics,
+      useNoOpGlobalSyntheticsConsumer =
+        creationConfig.debuggable && creationConfig.enableGlobalSynthetics && creationConfig.dexing.minSdkVersionForDexing >= 21,
       enableApiModeling = creationConfig.enableApiModeling,
       dependenciesClassesAreInstrumented = creationConfig.instrumentationCreationConfig?.dependenciesClassesAreInstrumented == true,
       asmTransformComponent =
@@ -515,6 +521,7 @@ object DexingRegistration {
           desugarLibConfigFiles.setFrom(allComponents.desugarLibConfigFiles)
         }
         enableGlobalSynthetics.set(component.enableGlobalSynthetics)
+        useNoOpGlobalSyntheticsConsumer.set(component.useNoOpGlobalSyntheticsConsumer)
         enableApiModeling.set(component.enableApiModeling)
       }
       // There are 2 transform flows for DEX:

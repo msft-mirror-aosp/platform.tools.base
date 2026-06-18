@@ -500,7 +500,6 @@ public class TestLintClient extends LintCliClient {
                     LintGradleUtilsKt.isDesignatedGradleRootHolder(project, this);
         }
 
-        registerProject(dir, project);
         return project;
     }
 

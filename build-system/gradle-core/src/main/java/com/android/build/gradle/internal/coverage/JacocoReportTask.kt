@@ -75,7 +75,7 @@ abstract class JacocoReportTask : NonIncrementalTask() {
   @get:OutputDirectory abstract val outputReportDir: DirectoryProperty
 
   override fun doTaskAction() {
-    val jacocoCoverageFiles = coverageFiles.asFileTree.files.filter(File::isFile)
+    val jacocoCoverageFiles = coverageFiles.asFileTree.files.filter { it.isFile && (it.extension == "ec" || it.extension == "exec") }
     if (jacocoCoverageFiles.none()) {
       throw IOException(
         "Test coverage report requested, but no tests were run. " + "Task '${name}' failed because no coverage data was found."

@@ -85,7 +85,6 @@ function run_bazel_build() {
     ${CONFIG_OPTIONS} \
     --invocation_id=${invocation_id} \
     --build_tag_filters=${build_tag_filters} \
-    --define=meta_android_build_number="${BUILD_NUMBER}" \
     --build_metadata=ANDROID_BUILD_ID="${BUILD_NUMBER}" \
     --tool_tag=${SCRIPT_NAME} \
     --embed_label="${AS_BUILD_NUMBER}" \

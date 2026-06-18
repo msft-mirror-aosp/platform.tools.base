@@ -1,0 +1,260 @@
+/*
+ * Copyright (C) 2026 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.android.tools.lint.renderer
+
+import com.android.tools.lint.HtmlReporter
+import com.android.tools.lint.LintCliClient
+import com.android.tools.lint.LintSyntaxHighlighter
+import com.android.tools.lint.Reporter
+import com.android.tools.lint.client.api.IssueRegistry.Companion.AOSP_VENDOR
+import com.android.tools.lint.detector.api.Incident
+import com.android.tools.lint.detector.api.Issue
+import com.android.tools.lint.detector.api.Location
+import com.android.tools.lint.detector.api.TextFormat
+import com.android.tools.lint.getErrorLines
+import com.android.tools.lint.getPath
+import com.android.tools.lint.renderer.data.LintCheck
+import com.android.tools.lint.renderer.data.LintIssue
+import com.android.tools.lint.renderer.data.LintLocation
+import com.android.tools.lint.renderer.data.LintOption
+import com.android.tools.lint.renderer.data.LintReport
+import com.android.tools.lint.renderer.data.LintVendor
+import com.android.utils.HtmlBuilder
+import com.android.utils.SdkUtils
+import java.io.File
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
+
+/**
+ * Builds a [LintReport] containing incidents, additional checks, and disabled checks
+ *
+ * @property client the [LintCliClient] to fetch file paths and source text
+ * @property title the title of the report
+ * @property rootProjectDir the root project directory, used to compute relative paths
+ * @property displayRevision the revision/version of lint used
+ * @property urlProvider a function providing an optional URL for a given [File]
+ */
+class LintReportBuilder(
+  private val client: LintCliClient,
+  private val title: String,
+  private val rootProjectDir: File,
+  private val displayRevision: String?,
+  private val urlProvider: (File) -> String?,
+) {
+
+  fun buildReport(
+    incidents: List<Incident>,
+    extraIssues: List<Issue>,
+    missingIssues: Map<Issue, String>,
+    maxCount: Int = MAX_COUNT,
+  ): LintReport {
+    val counts = mutableMapOf<Issue, Int>()
+    val lintIssues =
+      incidents
+        .filter { incident ->
+          val count = counts.getOrDefault(incident.issue, 0)
+          if (count < maxCount) {
+            counts[incident.issue] = count + 1
+            true
+          } else {
+            false
+          }
+        }
+        .map(::createLintIssue)
+    val additionalChecks = extraIssues.map(::createLintCheck).sortedBy { it.id }
+    val disabledChecks = missingIssues.map { (issue, reason) -> createLintCheck(issue, reason) }.sortedBy { it.id }
+
+    return LintReport(
+      name = title,
+      timeStamp = getReportTimestamp(),
+      issues = lintIssues,
+      numberOfIssues = lintIssues.size,
+      lintVersion = displayRevision,
+      additionalChecks = additionalChecks,
+      disabledChecks = disabledChecks,
+    )
+  }
+
+  private fun createLintIssue(incident: Incident): LintIssue {
+    val issue = incident.issue
+    val locations =
+      generateSequence(incident.location) { it.secondary }
+        .map { curr ->
+          val lintLocation =
+            LintLocation(
+              file = incident.getPath(client, curr.file),
+              line = curr.start?.line?.plus(1),
+              column = curr.start?.column?.plus(1),
+              message = curr.message,
+              url = urlProvider(curr.file),
+            )
+
+          val sourceContext =
+            if (lintLocation.line != null && curr.file != null) {
+              val currentErrorLine = curr.getErrorLines(textProvider = { file -> client.getSourceText(file) })
+              val (_, currentErrorLine2) = parseErrorLines(currentErrorLine)
+              extractSourceContext(lintLocation, client.getSourceText(curr.file), currentErrorLine2, HtmlReporter.CODE_WINDOW_SIZE)
+            } else {
+              null
+            }
+
+          lintLocation.copy(sourceContext = sourceContext)
+        }
+        .toList()
+
+    val primaryLocation = locations.firstOrNull()
+    val errorLine = incident.getErrorLines(textProvider = { file -> client.getSourceText(file) })
+    val (errorLine1, errorLine2) = parseErrorLines(errorLine)
+
+    val file = incident.file
+    val project = incident.project
+    val pkgName =
+      if (project != null) {
+        val sourceFolders =
+          project.javaSourceFolders +
+            project.unitTestSourceFolders +
+            project.instrumentationTestSourceFolders +
+            project.testFixturesSourceFolders +
+            project.generatedSourceFolders
+        val root = sourceFolders.find { file.startsWith(it) }
+        if (root != null) {
+          file.parentFile?.relativeToOrNull(root)?.path?.replace(File.separatorChar, '.') ?: ""
+        } else {
+          val resFolders = project.resourceFolders + project.generatedResourceFolders + project.assetFolders
+          val resRoot = resFolders.find { file.startsWith(it) }
+          if (resRoot != null) {
+            file.parentFile?.relativeToOrNull(resRoot)?.path?.replace(File.separatorChar, '.') ?: "res"
+          } else {
+            file.parentFile?.relativeToOrNull(project.dir)?.path?.replace(File.separatorChar, '.') ?: ""
+          }
+        }
+      } else {
+        file.parentFile?.relativeToOrNull(rootProjectDir)?.path?.replace(File.separatorChar, '.') ?: ""
+      }
+    val finalPkgName = if (pkgName.isEmpty()) "default" else pkgName
+
+    val applicableVariants = incident.applicableVariants
+
+    val images = mutableListOf<String>()
+    var curr: Location? = incident.location
+    while (curr != null) {
+      val imageFile = curr.file
+      if (SdkUtils.isBitmapFile(imageFile)) {
+        urlProvider(imageFile)?.let { images.add(it) }
+      }
+      curr = curr.secondary
+    }
+
+    return LintIssue(
+      id = issue.id,
+      severityDescription = incident.severity?.description ?: "Unknown",
+      message = incident.message ?: "",
+      category = issue.category.fullName,
+      priority = issue.priority,
+      summary = issue.getBriefDescription(TextFormat.HTML) ?: "",
+      explanation = issue.getExplanation(TextFormat.HTML) ?: "",
+      location = primaryLocation,
+      secondaryLocations = locations.drop(1),
+      urls = issue.moreInfo,
+      errorLine1 = errorLine1,
+      errorLine2 = errorLine2,
+      includedVariants = applicableVariants?.includedVariantNames ?: emptyList(),
+      excludedVariants = applicableVariants?.excludedVariantNames ?: emptyList(),
+      sourceContext = primaryLocation?.sourceContext,
+      module = incident.project?.let { project -> project.buildModule?.modulePath ?: project.name }?.removePrefix(":") ?: "",
+      packageName = finalPkgName,
+      fileName = file.name,
+      vendor = createLintVendor(issue),
+      wasAutoFixed = incident.wasAutoFixed,
+      hasAutoFix = Reporter.hasAutoFix(issue),
+      images = images,
+      suppressMessage =
+        "To suppress this error, use the issue id \"${issue.id}\" as explained in the " +
+          "<a href=\"#SuppressInfo\">Suppressing Warnings and Errors</a> section.",
+      options = createLintOptions(issue),
+    )
+  }
+
+  private fun createLintCheck(issue: Issue, reason: String? = null): LintCheck {
+    return LintCheck(
+      id = issue.id,
+      summary = issue.getBriefDescription(TextFormat.HTML) ?: "",
+      explanation = issue.getExplanation(TextFormat.HTML) ?: "",
+      category = issue.category.fullName,
+      vendor = createLintVendor(issue),
+      hasAutoFix = Reporter.hasAutoFix(issue),
+      reason = reason,
+      urls = issue.moreInfo,
+      options = createLintOptions(issue),
+    )
+  }
+
+  private fun createLintOptions(issue: Issue): List<LintOption> {
+    val options = issue.getOptions()
+    if (options.isEmpty()) return emptyList()
+    return options.map { option ->
+      val name = option.name
+      val defaultValue = option.defaultAsString()
+      val builder = HtmlBuilder()
+      val snippet =
+        "<lint>\n" +
+          "    <issue id=\"${issue.id}\">\n" +
+          "        <option name=\"$name\" value=\"${defaultValue ?: "some string"}\" />\n" +
+          "    </issue>\n" +
+          "</lint>\n"
+
+      val highlighter = LintSyntaxHighlighter("lint.xml", snippet)
+      highlighter.isPadCaretLine = true
+      highlighter.isDedent = true
+      val start = snippet.indexOf(name) - 1
+      val end = snippet.lastIndexOf(" />")
+      highlighter.generateHtml(builder, start, end, false)
+      val highlighted = builder.html
+
+      LintOption(
+        name = name,
+        description = option.describe(TextFormat.HTML, includeExample = false),
+        defaultValue = defaultValue,
+        explanation = highlighted,
+      )
+    }
+  }
+
+  private fun parseErrorLines(errorLine: String?): Pair<String?, String?> {
+    val lines = errorLine?.lines() ?: return null to null
+    return lines.getOrNull(0) to lines.getOrNull(1)
+  }
+
+  private fun createLintVendor(issue: Issue): LintVendor? {
+    val vendor = issue.vendor ?: issue.registry?.vendor
+    return vendor
+      ?.takeIf { it != AOSP_VENDOR }
+      ?.let { LintVendor(name = it.vendorName, identifier = it.identifier, feedbackUrl = it.feedbackUrl, contact = it.contact) }
+  }
+
+  private fun getReportTimestamp(): String {
+    val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)
+    val zonedDateTime = ZonedDateTime.now(ZoneId.systemDefault())
+    return zonedDateTime.format(formatter)
+  }
+
+  companion object {
+    /** Maximum number of incidents shown per issue type */
+    const val MAX_COUNT = 50
+  }
+}

@@ -326,7 +326,9 @@ public class BenchmarkTest {
             for (File repo : repos) {
                 gradle.addRepo(repo);
             }
-            gradle.addRepo(new File(data, "repo.zip"));
+            if (System.getProperty("SKIP_REPO_ZIP") == null && System.getenv("SKIP_REPO_ZIP") == null) {
+                gradle.addRepo(new File(data, "repo.zip"));
+            }
             gradle.addArgument(
                     "-Dcom.android.gradle.version=" + Objects.requireNonNull(agpVersion));
             gradle.addArgument("-Duser.home=" + home.getAbsolutePath());
@@ -438,6 +440,7 @@ public class BenchmarkTest {
 
         String jvmArgs = p.getProperty("org.gradle.jvmargs", "");
         jvmArgs += " -XX:+UseParallelGC";
+        jvmArgs += " -XX:+IgnoreUnrecognizedVMOptions";
         jvmArgs += " --add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED";
         jvmArgs += " --add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED";
         // See https://www.yourkit.com/docs/java/help/startup_options.jsp for a comprehensive list

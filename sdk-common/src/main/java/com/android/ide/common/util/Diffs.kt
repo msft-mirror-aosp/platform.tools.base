@@ -322,7 +322,7 @@ class Diffs {
         // Advance to the end of the (potentially merged) hunk
         overallProcessedIdx = currentHunkEffectiveEnd
       }
-      return resultHunks.toString().trimEnd()
+      return resultHunks.toString().trimEnd('\n', '\r')
     }
 
     /**

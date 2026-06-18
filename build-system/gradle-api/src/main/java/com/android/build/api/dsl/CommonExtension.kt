@@ -21,7 +21,6 @@ import org.gradle.api.Incubating
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.plugins.ExtensionAware
 import org.gradle.declarative.dsl.model.annotations.HiddenInDefinition
-import org.gradle.declarative.dsl.model.annotations.Restricted
 
 /**
  * Common extension properties for the Android Application. Library and Dynamic Feature Plugins.
@@ -35,7 +34,9 @@ interface CommonExtension : ExtensionAware {
    *
    * For more information about the properties you can configure in this block, see [AaptOptions].
    */
-  @Suppress("DEPRECATION") @Deprecated("Replaced by ", replaceWith = ReplaceWith("androidResources")) val aaptOptions: AaptOptions
+  @Suppress("DEPRECATION")
+  @Deprecated("Replaced by androidResources", replaceWith = ReplaceWith("androidResources"))
+  val aaptOptions: AaptOptions
 
   /**
    * Specifies options related to the processing of Android Resources.
@@ -476,7 +477,7 @@ interface CommonExtension : ExtensionAware {
    *
    * This can be set on all Gradle projects with [com.android.build.api.dsl.SettingsExtension.compileSdk]
    */
-  @get:Restricted var compileSdk: Int?
+  var compileSdk: Int?
 
   /**
    * Specifies the SDK Extension level to compile your project against. This value is optional.
@@ -527,12 +528,12 @@ interface CommonExtension : ExtensionAware {
    * The namespace of the generated R and BuildConfig classes. Also, the namespace used to resolve any relative class names that are
    * declared in the AndroidManifest.xml.
    */
-  @get:Restricted var namespace: String?
+  var namespace: String?
 
-  @Restricted fun getDefaultProguardFile(name: String): File
+  fun getDefaultProguardFile(name: String): File
 
   /** Enables the compilation of Kotlin sources. The default value is `true`. */
-  @get:Restricted var enableKotlin: Boolean
+  var enableKotlin: Boolean
 
   /**
    * Additional per module experimental properties.

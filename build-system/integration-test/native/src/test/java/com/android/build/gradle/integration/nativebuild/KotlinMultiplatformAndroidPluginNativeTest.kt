@@ -153,7 +153,7 @@ class KotlinMultiplatformAndroidPluginNativeTest {
             "com/example/nativelib/Jni",
             "com/example/nativelib/Incrementer",
           )
-        resources().containsExactly("kmp_resource.txt", "META-INF/kmpFirstLib.kotlin_module")
+        resources().containsExactly("kmp_resource.txt", "META-INF/Kotlin Multiplatform_kmpFirstLib.kotlin_module")
       }
 
       jniLibs()

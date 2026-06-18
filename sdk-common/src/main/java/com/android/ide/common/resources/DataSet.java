@@ -20,11 +20,18 @@ import com.android.annotations.Nullable;
 import com.android.ide.common.blame.Message;
 import com.android.utils.HashCodes;
 import com.android.utils.ILogger;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.ListMultimap;
+
+import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,11 +40,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+
 import javax.xml.parsers.DocumentBuilderFactory;
-import org.w3c.dom.Attr;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 /**
  * Represents a set of {@link DataItem}s.
@@ -591,6 +595,7 @@ public abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>>
             @NonNull DocumentBuilderFactory factory)
             throws MergingException {
         F dataFile = mDataFileMap.get(changedFile);
+        if (dataFile == null) return false;
         for (I item : dataFile.getItems()) {
             item.setTouched();
         }

@@ -79,6 +79,7 @@ class BinaryXmlParserTest {
 
   @Test
   fun testFormatColorValue() {
+    // -0xaa9989 is the integer value corresponding to #FF556677
     val value1 =
       ResourceValue.create(ByteBuffer.wrap(Bytes.concat(byteArrayOf(0x0, 0x8, 0x0, INT_COLOR_ARGB8.code()), Ints.toByteArray(-0xaa9989))))
 
@@ -86,10 +87,10 @@ class BinaryXmlParserTest {
       ResourceValue.create(ByteBuffer.wrap(Bytes.concat(byteArrayOf(0x0, 0x8, 0x0, INT_COLOR_RGB8.code()), Ints.toByteArray(-0xaa9989))))
 
     val value3 =
-      ResourceValue.create(ByteBuffer.wrap(Bytes.concat(byteArrayOf(0x0, 0x8, 0x0, INT_COLOR_ARGB4.code()), Ints.toByteArray(0x1234F567))))
+      ResourceValue.create(ByteBuffer.wrap(Bytes.concat(byteArrayOf(0x0, 0x8, 0x0, INT_COLOR_ARGB4.code()), Ints.toByteArray(-0xaa9989))))
 
     val value4 =
-      ResourceValue.create(ByteBuffer.wrap(Bytes.concat(byteArrayOf(0x0, 0x8, 0x0, INT_COLOR_RGB4.code()), Ints.toByteArray(0x1234F567))))
+      ResourceValue.create(ByteBuffer.wrap(Bytes.concat(byteArrayOf(0x0, 0x8, 0x0, INT_COLOR_RGB4.code()), Ints.toByteArray(-0xaa9989))))
 
     assertThat(BinaryXmlParser.formatValue(value1, null)).isEqualTo("#FF556677")
     assertThat(BinaryXmlParser.formatValue(value2, null)).isEqualTo("#556677")

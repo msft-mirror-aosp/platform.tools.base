@@ -16,48 +16,74 @@
 
 package com.android.build.gradle.integration.deployment
 
+import com.android.build.api.artifact.SingleArtifact
+import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
 import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyApplicationCallback
 import com.android.build.gradle.integration.common.fixture.project.prebuilts.BasicSpec
 import com.android.build.gradle.integration.common.truth.ScannerSubject
-import com.android.build.gradle.internal.api.InstallableVariantImpl
 import com.android.build.gradle.internal.dsl.BaseAppModuleExtension
 import com.android.build.gradle.options.BooleanOption
 import com.google.common.truth.Truth.assertThat
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
-import org.gradle.api.file.FileCollection
-import org.gradle.api.provider.Property
-import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.TaskAction
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
-class MappingFileAccessTest {
+@RunWith(Parameterized::class)
+class MappingFileAccessTest(private val useNewDsl: Boolean) {
+
+  companion object {
+    @Parameterized.Parameters(name = "useNewDsl={0}") @JvmStatic fun parameters() = listOf(true, false)
+  }
 
   @get:Rule
   val rule =
-    GradleRule.fromProject(BasicSpec()) {
+    GradleRule.configure().fromProject(BasicSpec()) {
+      gradleProperties { add(BooleanOption.USE_NEW_DSL, useNewDsl) }
       androidApplication(":app") {
         android { buildTypes { named("release") { it.isMinifyEnabled = true } } }
 
-        pluginCallbacks += AppVariantCallback::class.java
+        if (useNewDsl) {
+          pluginCallbacks += AppVariantCallback::class.java
+        } else {
+          pluginCallbacks += LegacyAppVariantCallback::class.java
+        }
       }
-      gradleProperties { add(BooleanOption.USE_NEW_DSL, false) }
     }
 
-  class AppVariantCallback : LegacyApplicationCallback {
-    override fun handleExtension(project: Project, extension: BaseAppModuleExtension) {
-      extension.applicationVariants.all { variant ->
-        if (variant.buildType.name == "release") {
-          variant as InstallableVariantImpl
-          val mappingFile = variant.getFinalArtifact(com.android.build.api.artifact.SingleArtifact.OBFUSCATION_MAPPING_FILE)
-          println("Creating mapping task for " + variant.name)
-          val mappingTask =
-            project.tasks.register("hello" + variant.name.capitalize(), MappingFileUserTask::class.java) { it.mappingFile.set(mappingFile) }
-          variant.register(mappingTask.get())
+  class AppVariantCallback : ApplicationComponentCallback {
+    override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
+      androidComponents.onVariants { variant ->
+        if (variant.name == "release") {
+          val mappingTask = project.tasks.register("hello" + variant.name.capitalize(), MappingFileUserTask::class.java)
+          variant.artifacts.use(mappingTask).wiredWith(MappingFileUserTask::mappingFile).toListenTo(SingleArtifact.OBFUSCATION_MAPPING_FILE)
+
+          project.tasks.matching { it.name == "assemble" + variant.name.capitalize() }.configureEach { it.dependsOn(mappingTask) }
+          project.tasks.matching { it.name == "bundle" + variant.name.capitalize() }.configureEach { it.dependsOn(mappingTask) }
         } else {
           println("Not creating mapping task for " + variant.name)
+        }
+      }
+    }
+  }
+
+  class LegacyAppVariantCallback : LegacyApplicationCallback {
+    override fun handleExtension(project: Project, extension: BaseAppModuleExtension) {
+      extension.applicationVariants.all { variant ->
+        if (variant.name == "release") {
+          val mappingTask = project.tasks.register("hello" + variant.name.capitalize(), MappingFileUserTask::class.java)
+          mappingTask.configure {
+            it.mappingFile.set(project.layout.file(variant.mappingFileProvider.map { it.single() }))
+            it.dependsOn(variant.mappingFileProvider)
+          }
+          variant.assembleProvider.configure { it.dependsOn(mappingTask) }
+          project.tasks.matching { it.name == "bundle" + variant.name.capitalize() }.configureEach { it.dependsOn(mappingTask) }
         }
       }
     }
@@ -83,7 +109,16 @@ class MappingFileAccessTest {
 
   @Test
   fun useMappingFileSpecificApi() {
-    val build = rule.build { androidApplication(":app") { pluginCallbacks += MappingFileSpecificApiCallback::class.java } }
+    val build =
+      rule.build {
+        androidApplication(":app") {
+          if (useNewDsl) {
+            pluginCallbacks += MappingFileSpecificApiCallback::class.java
+          } else {
+            pluginCallbacks += LegacyMappingFileSpecificApiCallback::class.java
+          }
+        }
+      }
 
     build.executor.run("mappingFileRelease").apply {
       assertTask(":app:mappingFileRelease").didWork()
@@ -91,12 +126,25 @@ class MappingFileAccessTest {
     }
   }
 
-  class MappingFileSpecificApiCallback : LegacyApplicationCallback {
+  class MappingFileSpecificApiCallback : ApplicationComponentCallback {
+    override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
+      androidComponents.onVariants { variant ->
+        if (variant.isMinifyEnabled) {
+          project.tasks.register("mappingFile" + variant.name.capitalize(), MappingFileUserTask::class.java) {
+            it.mappingFile.set(variant.artifacts.get(SingleArtifact.OBFUSCATION_MAPPING_FILE))
+          }
+        }
+      }
+    }
+  }
+
+  class LegacyMappingFileSpecificApiCallback : LegacyApplicationCallback {
     override fun handleExtension(project: Project, extension: BaseAppModuleExtension) {
       extension.applicationVariants.all { variant ->
         if (variant.buildType.isMinifyEnabled) {
           project.tasks.register("mappingFile" + variant.name.capitalize(), MappingFileUserTask::class.java) {
-            it.mappingFile.set(variant.mappingFileProvider)
+            it.mappingFile.set(project.layout.file(variant.mappingFileProvider.map { it.single() }))
+            it.dependsOn(variant.mappingFileProvider)
           }
         }
       }
@@ -106,11 +154,11 @@ class MappingFileAccessTest {
 
 abstract class MappingFileUserTask : DefaultTask() {
 
-  @get:InputFiles abstract val mappingFile: Property<FileCollection>
+  @get:InputFile abstract val mappingFile: org.gradle.api.file.RegularFileProperty
 
   @TaskAction
   fun taskAction() {
-    val file = mappingFile.get().singleFile
+    val file = mappingFile.get().asFile
     println("MappingFileTask $file")
     println("$name task mapping file exists is ${file.exists()}")
   }

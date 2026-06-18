@@ -55,11 +55,7 @@ class ResourceShrinkerTest(private val r8OptimizedShrinking: Boolean) {
 
   @get:Rule
   var project =
-    builder()
-      .fromTestProject("shrink")
-      .addGradleProperty(BooleanOption.R8_OPTIMIZED_RESOURCE_SHRINKING, r8OptimizedShrinking)
-      .disableBuiltInKotlin()
-      .create()
+    builder().fromTestProject("shrink").addGradleProperty(BooleanOption.R8_OPTIMIZED_RESOURCE_SHRINKING, r8OptimizedShrinking).create()
 
   @get:Rule
   var projectWithDynamicFeatureModules =
@@ -173,7 +169,7 @@ class ResourceShrinkerTest(private val r8OptimizedShrinking: Boolean) {
     val (debugResEntries, debugNonResEntries) = debugEntries.partition { it.startsWith("res/") }
     val (releaseResEntries, releaseNonResEntries) = releaseEntries.partition { it.startsWith("res/") }
     assertThat(debugResEntries.size).isEqualTo(87)
-    assertThat(debugNonResEntries.size).isEqualTo(32)
+    assertThat(debugNonResEntries.size).isEqualTo(40)
     assertThat(releaseResEntries.size).isEqualTo((debugResEntries - removedFiles.toSet()).size)
     assertThat(releaseNonResEntries)
       .containsExactlyElementsIn(
@@ -266,6 +262,14 @@ class ResourceShrinkerTest(private val r8OptimizedShrinking: Boolean) {
         "classes.dex",
         "resources.arsc",
         "AndroidManifest.xml",
+        "kotlin/annotation/annotation.kotlin_builtins",
+        "kotlin/collections/collections.kotlin_builtins",
+        "kotlin/concurrent/atomics/atomics.kotlin_builtins",
+        "kotlin/coroutines/coroutines.kotlin_builtins",
+        "kotlin/internal/internal.kotlin_builtins",
+        "kotlin/kotlin.kotlin_builtins",
+        "kotlin/ranges/ranges.kotlin_builtins",
+        "kotlin/reflect/reflect.kotlin_builtins",
         "META-INF/com/android/build/gradle/app-metadata.properties",
         "META-INF/version-control-info.textproto",
         "res/GM",

@@ -98,6 +98,7 @@ import com.android.build.gradle.internal.tasks.ExtractProguardFiles
 import com.android.build.gradle.internal.tasks.FeatureDexMergeTask
 import com.android.build.gradle.internal.tasks.FeatureGlobalSyntheticsMergeTask
 import com.android.build.gradle.internal.tasks.GenerateLibraryProguardRulesTask
+import com.android.build.gradle.internal.tasks.GlobalSyntheticsGeneratorTask
 import com.android.build.gradle.internal.tasks.GlobalSyntheticsMergeTask
 import com.android.build.gradle.internal.tasks.InstallVariantTask
 import com.android.build.gradle.internal.tasks.JacocoTask
@@ -110,12 +111,14 @@ import com.android.build.gradle.internal.tasks.ManagedDeviceSetupTask
 import com.android.build.gradle.internal.tasks.ManagedDeviceTestTask
 import com.android.build.gradle.internal.tasks.MergeAaptProguardFilesCreationAction
 import com.android.build.gradle.internal.tasks.MergeClassesTask
+import com.android.build.gradle.internal.tasks.MergeCompressedJavaResTask
 import com.android.build.gradle.internal.tasks.MergeGeneratedProguardFilesCreationAction
 import com.android.build.gradle.internal.tasks.MergeJavaResourceTask
 import com.android.build.gradle.internal.tasks.MergeNativeLibsTask
 import com.android.build.gradle.internal.tasks.OptimizeResourcesTask
 import com.android.build.gradle.internal.tasks.PrepareLintJarForPublish
 import com.android.build.gradle.internal.tasks.ProcessJavaResTask
+import com.android.build.gradle.internal.tasks.R8AnalysisTask
 import com.android.build.gradle.internal.tasks.R8Task
 import com.android.build.gradle.internal.tasks.RecalculateStackFramesTask
 import com.android.build.gradle.internal.tasks.UninstallTask
@@ -144,6 +147,7 @@ import com.android.build.gradle.internal.tasks.featuresplit.getFeatureName
 import com.android.build.gradle.internal.tasks.mlkit.GenerateMlModelClass
 import com.android.build.gradle.internal.tasks.runResourceShrinking
 import com.android.build.gradle.internal.test.AbstractTestDataImpl
+import com.android.build.gradle.internal.test.tasks.TestResultsCollectionTask
 import com.android.build.gradle.internal.transforms.ShrinkAppBundleResourcesTask
 import com.android.build.gradle.internal.transforms.ShrinkResourcesNewShrinkerTask
 import com.android.build.gradle.internal.utils.COMPOSE_COMPILER_PLUGIN_ID
@@ -153,6 +157,7 @@ import com.android.build.gradle.internal.utils.KgpVersion.Companion.MINIMUM_BUIL
 import com.android.build.gradle.internal.utils.getKotlinAndroidPluginVersion
 import com.android.build.gradle.internal.utils.isKotlinKaptPluginApplied
 import com.android.build.gradle.internal.utils.isKspPluginApplied
+import com.android.build.gradle.internal.utils.useUniversalGlobalSyntheticsDex
 import com.android.build.gradle.internal.variant.ApkVariantData
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.tasks.AidlCompile
@@ -176,10 +181,11 @@ import com.android.build.gradle.tasks.ProcessManifestForMetadataFeatureTask
 import com.android.build.gradle.tasks.ProcessMultiApkApplicationManifest
 import com.android.build.gradle.tasks.ProcessPackagedManifestTask
 import com.android.build.gradle.tasks.ProcessTestManifest
+import com.android.build.gradle.tasks.ProcessTestManifestPackaging
 import com.android.build.gradle.tasks.RenderscriptCompile
 import com.android.build.gradle.tasks.ShaderCompile
 import com.android.build.gradle.tasks.SimplifiedMergedManifestsProducerTask
-import com.android.build.gradle.tasks.TestResultsCollectionTask
+import com.android.build.gradle.tasks.TestSuiteTestTask
 import com.android.build.gradle.tasks.TransformClassesWithAsmTask
 import com.android.build.gradle.tasks.VerifyLibraryResourcesTask
 import com.android.buildanalyzer.common.TaskCategoryIssue
@@ -291,6 +297,7 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
     // Since it's going to chance the configurations, we need to do it before
     // we start doing queries to fill the streams.
     handleJacocoDependencies(creationConfig)
+    handleOnTheFlyCoverageDependencies(creationConfig)
     creationConfig.instrumentationCreationConfig?.configureAndLockAsmClassesVisitors(project.objects)
     fun getFinalRuntimeClassesJarsFromComponent(component: ComponentCreationConfig, scope: ArtifactScope): FileCollection {
       return component.instrumentationCreationConfig?.getDependenciesClassesJarsPostInstrumentation(scope)
@@ -404,8 +411,8 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
 
   protected fun createProcessTestManifestTask(creationConfig: TestCreationConfig) {
     val taskConfig = forTestComponent(creationConfig)
-
     taskFactory.register(ProcessTestManifest.CreationAction(taskConfig))
+    taskFactory.register(ProcessTestManifestPackaging.CreationAction(taskConfig))
   }
 
   protected fun createRenderscriptTask(creationConfig: ConsumableCreationConfig) {
@@ -773,7 +780,11 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
    */
   protected fun createMergeJavaResTask(creationConfig: ConsumableCreationConfig) {
     // Compute the scopes that need to be merged.
-    taskFactory.register(MergeJavaResourceTask.CreationAction(javaResMergingScopes, creationConfig.packaging, creationConfig))
+    if (creationConfig.services.projectOptions[BooleanOption.ENABLE_JAVA_RESOURCE_OPTIMIZATIONS]) {
+      taskFactory.register(MergeCompressedJavaResTask.CreationAction(javaResMergingScopes, creationConfig.packaging, creationConfig))
+    } else {
+      taskFactory.register(MergeJavaResourceTask.CreationAction(javaResMergingScopes, creationConfig.packaging, creationConfig))
+    }
   }
 
   protected fun createAidlTask(creationConfig: ConsumableCreationConfig) {
@@ -1100,18 +1111,33 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
       val managedDeviceTestTask =
         when {
           managedDevice is ManagedVirtualDevice ->
-            taskFactory.register(
-              ManagedDeviceInstrumentationTestTask.CreationAction(
-                creationConfig,
-                managedDevice,
-                testData,
-                deviceResults,
-                deviceReports,
-                deviceAdditionalOutputs,
-                deviceCoverage,
-                testTaskSuffix,
+            if (creationConfig.services.projectOptions[BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM]) {
+              taskFactory.register(
+                TestSuiteTestTask.ManagedDeviceTestSuiteCreationAction(
+                  creationConfig,
+                  managedDevice,
+                  testData,
+                  deviceResults,
+                  deviceReports,
+                  deviceAdditionalOutputs,
+                  deviceCoverage,
+                  testTaskSuffix,
+                )
               )
-            )
+            } else {
+              taskFactory.register(
+                ManagedDeviceInstrumentationTestTask.CreationAction(
+                  creationConfig,
+                  managedDevice,
+                  testData,
+                  deviceResults,
+                  deviceReports,
+                  deviceAdditionalOutputs,
+                  deviceCoverage,
+                  testTaskSuffix,
+                )
+              )
+            }
           registration != null -> {
             val setupResult: Provider<Directory>? =
               if (registration.hasSetupActions) {
@@ -1323,11 +1349,11 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
     if (creationConfig is ApplicationCreationConfig) {
       if (
         !creationConfig.services.projectOptions[BooleanOption.R8_GRADUAL_API] &&
-          creationConfig.optimizationCreationConfig.applicationOptimizationEnabled
+          creationConfig.optimizationCreationConfig.packageScopeEnabled
       ) {
         creationConfig.services.issueReporter.reportError(
-          IssueReporter.Type.GENERIC,
-          "Cannot use optimization.enable=true without setting android.r8.gradual.support flag.",
+          IssueReporter.Type.R8_GRADUAL_API_FLAG_REQUIRED,
+          "Cannot use optimization.packageScope without setting android.r8.gradual.support flag.",
         )
       }
     }
@@ -1338,6 +1364,11 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
    * dexing support.
    */
   private fun createDexTasks(creationConfig: ApkCreationConfig, dexingType: DexingType) {
+    val useUniversalGlobalSyntheticsDex = creationConfig.useUniversalGlobalSyntheticsDex
+    if (useUniversalGlobalSyntheticsDex) {
+      taskFactory.register(GlobalSyntheticsGeneratorTask.CreationAction(creationConfig))
+    }
+
     val classpathUtils = getClassPathUtils(creationConfig)
 
     taskFactory.register(DexArchiveBuilderTask.CreationAction(creationConfig, classpathUtils))
@@ -1362,7 +1393,7 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
       separateFileDependenciesDexingTask,
     )
 
-    if (creationConfig.enableGlobalSynthetics) {
+    if (creationConfig.enableGlobalSynthetics && !useUniversalGlobalSyntheticsDex) {
       if (dexingType == DexingType.NATIVE_MULTIDEX) {
         taskFactory.register(
           GlobalSyntheticsMergeTask.CreationAction(
@@ -1558,6 +1589,15 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
     }
   }
 
+  private fun handleOnTheFlyCoverageDependencies(creationConfig: ComponentCreationConfig) {
+    val onTheFlyEnabled = globalConfig.services.projectOptions.get(BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE)
+    if (onTheFlyEnabled && creationConfig.componentType.isForTesting && creationConfig.componentType.isApk) {
+      val coverageAgentDependency =
+        com.android.build.gradle.internal.coverage.CoverageAgentConfigurations.getAgentRuntimeDependency(globalConfig.services)
+      project.dependencies.add(creationConfig.variantDependencies.runtimeClasspath.name, coverageAgentDependency)
+    }
+  }
+
   protected open fun createJacocoTask(creationConfig: ComponentCreationConfig) {
     val jacocoTask = taskFactory.register(JacocoTask.CreationAction(creationConfig))
 
@@ -1624,7 +1664,7 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
   protected fun createPackagingTask(creationConfig: ApkCreationConfig) {
     // ApkVariantData variantData = (ApkVariantData) variantScope.getVariantData();
     val taskContainer = creationConfig.taskContainer
-    val signedApk = creationConfig.signingConfig?.isSigningReady() ?: false
+    val signedApk = creationConfig.signingConfig?.hasConfig() ?: false
 
     /*
      * PrePackaging step class that will look if the packaging of the main FULL_APK split is
@@ -1692,7 +1732,7 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
   }
 
   protected fun createValidateSigningTask(creationConfig: ApkCreationConfig) {
-    if (creationConfig.signingConfig?.isSigningReady() != true) {
+    if (creationConfig.signingConfig?.hasConfig() != true) {
       return
     }
 
@@ -1732,7 +1772,10 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
     // proguard can shrink an empty library project, as the R class is always kept and
     // then removed by library jar transforms.
     val addCompileRClass = (this is LibraryTaskManager && creationConfig.buildFeatures.androidResources)
-    val task: TaskProvider<out Task> = createR8Task(creationConfig, isTestApplication, addCompileRClass)
+    taskFactory.register(R8AnalysisTask.CreationAction(creationConfig, creationConfig.name))
+
+    createR8Task(creationConfig, isTestApplication, addCompileRClass)
+
     if ((creationConfig as? ApplicationCreationConfig)?.runResourceShrinking() == true) {
       // Also convert shrunk resources from proto format to binary format so it can be
       // included in an APK

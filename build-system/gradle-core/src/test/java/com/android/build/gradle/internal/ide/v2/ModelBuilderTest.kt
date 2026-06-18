@@ -152,7 +152,9 @@ class ModelBuilderTest {
     val issue = model.syncIssues.single()
     Truth.assertThat(issue.severity).named("severity").isEqualTo(SyncIssue.SEVERITY_WARNING)
     Truth.assertThat(issue.type).named("type").isEqualTo(SyncIssue.TYPE_GENERIC)
-    Truth.assertThat(issue.message).named("message").isEqualTo("warning!")
+    Truth.assertThat(issue.message)
+      .named("message")
+      .isEqualTo("warning!\n" + "Add android.sync.suppressAgpWarnings=GENERIC to the gradle.properties file to suppress this warning.")
   }
 
   @Test

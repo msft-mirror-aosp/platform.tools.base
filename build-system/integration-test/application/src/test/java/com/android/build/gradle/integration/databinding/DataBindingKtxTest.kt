@@ -21,7 +21,7 @@ import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.fixture.app.KotlinHelloWorldApp
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.options.BooleanOption
-import com.android.builder.model.SyncIssue
+import com.android.builder.model.v2.ide.SyncIssue
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertNull
 import org.junit.Rule
@@ -119,4 +119,5 @@ class DataBindingKtxTest(private val useKotlin: Boolean, private val useBuiltInK
 private const val ERROR_MESSAGE =
   "The `android.dataBinding.addKtx` DSL option has no effect " +
     "because the `android.useAndroidX` property is not enabled or the project " +
-    "does not use Kotlin."
+    "does not use Kotlin.\n" +
+    "Add android.sync.suppressAgpWarnings=DATABINDING_KTX_NO_EFFECT to the gradle.properties file to suppress this warning."

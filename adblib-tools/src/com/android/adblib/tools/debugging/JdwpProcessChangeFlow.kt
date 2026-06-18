@@ -80,22 +80,21 @@ val ConnectedDevice.jdwpProcessChangeFlow: Flow<JdwpProcessChange>
         send(JdwpProcessChange.Added(addedProcessInfo))
 
         // Keep track of process properties updates
-        val job =
-          addedProcess.scope.launch {
-            // Combine both 'properties' and 'proxy status' flows so that changes to
-            // either are unified in a single `collect`.
-            addedProcess.propertiesFlow
-              .combine(addedProcess.jdwpProxySocketServer.proxyStatusFlow) { properties, proxyStatus ->
-                JdwpProcessInfo(device = addedProcess.device, properties = properties, proxyStatus = proxyStatus)
+        val job = launch {
+          // Combine both 'properties' and 'proxy status' flows so that changes to
+          // either are unified in a single `collect`.
+          addedProcess.propertiesFlow
+            .combine(addedProcess.jdwpProxySocketServer.proxyStatusFlow) { properties, proxyStatus ->
+              JdwpProcessInfo(device = addedProcess.device, properties = properties, proxyStatus = proxyStatus)
+            }
+            .collectIndexed { index, updatedProcessInfo ->
+              // Skip the first update if we just sent it out as part of `Added` update
+              if (index != 0 || updatedProcessInfo != addedProcessInfo) {
+                // Send [ProcessChange] for updated process.
+                send(JdwpProcessChange.Updated(updatedProcessInfo))
               }
-              .collectIndexed { index, updatedProcessInfo ->
-                // Skip the first update if we just sent it out as part of `Added` update
-                if (index != 0 || updatedProcessInfo != addedProcessInfo) {
-                  // Send [ProcessChange] for updated process.
-                  send(JdwpProcessChange.Updated(updatedProcessInfo))
-                }
-              }
-          }
+            }
+        }
         currentProcessTrackingJobs[pid] = job
       }
 

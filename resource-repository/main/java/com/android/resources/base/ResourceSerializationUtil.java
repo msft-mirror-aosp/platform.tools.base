@@ -100,7 +100,7 @@ public class ResourceSerializationUtil {
     }
 
     try {
-      Files.move(tempFile, cacheFile, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+      Files.move(tempFile, cacheFile, StandardCopyOption.ATOMIC_MOVE);
     } catch (NoSuchFileException e) {
       // Ignore. This may happen in tests if the "caches" directory was cleaned up by a test tear down.
     } catch (IOException e) {

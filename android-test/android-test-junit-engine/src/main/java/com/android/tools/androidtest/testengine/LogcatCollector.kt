@@ -49,9 +49,8 @@ class LogcatCollector(
   /** Tracks logcat file paths for each test in each device serial. */
   private val perDeviceTestLogcatFiles = ConcurrentHashMap<String, ConcurrentHashMap<String, String>>()
 
-  /** Starts logcat collection for the given [deviceId]. */
-  fun startCapture(deviceId: String) {
-    val deviceSerial = deviceId.substringBefore(" - ")
+  /** Starts logcat collection for the given [deviceId] and [deviceSerial]. */
+  fun startCapture(deviceId: String, deviceSerial: String) {
     val deviceTime = getDeviceCurrentTime(deviceSerial)
     val command = mutableListOf(adbPath, "-s", deviceSerial, "logcat", "-v", "threadtime", "-b", "main", "-b", "crash")
     if (deviceTime != null) {

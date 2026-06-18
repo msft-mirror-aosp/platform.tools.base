@@ -36,7 +36,6 @@ import com.android.utils.ILogger
 import java.io.File
 import java.util.stream.Collectors
 import org.gradle.api.GradleException
-import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.RegularFile
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.logging.Logger
@@ -44,9 +43,7 @@ import org.gradle.api.logging.Logging
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.InputFile
-import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Nested
-import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskProvider
@@ -67,11 +64,6 @@ abstract class InstallVariantViaBundleTask : NonIncrementalTask() {
 
   @get:InputFile @get:PathSensitive(PathSensitivity.NAME_ONLY) abstract val apkBundle: RegularFileProperty
 
-  @get:InputFiles
-  @get:PathSensitive(PathSensitivity.RELATIVE)
-  @get:Optional
-  abstract val privacySandboxSdkApksFiles: ConfigurableFileCollection
-
   init {
     this.outputs.upToDateWhen { false }
   }
@@ -87,7 +79,6 @@ abstract class InstallVariantViaBundleTask : NonIncrementalTask() {
       it.variantName.set(variantName)
       it.minApiCodeName.set(minSdkCodename)
       it.minSdkVersion.set(minSdkVersion)
-      it.privacySandboxSdkApksFiles.setFrom(privacySandboxSdkApksFiles)
     }
   }
 
@@ -99,7 +90,6 @@ abstract class InstallVariantViaBundleTask : NonIncrementalTask() {
     abstract val variantName: Property<String>
     abstract val minApiCodeName: Property<String>
     abstract val minSdkVersion: Property<Int>
-    abstract val privacySandboxSdkApksFiles: ConfigurableFileCollection
   }
 
   abstract class InstallRunnable : ProfileAwareWorkAction<Params>(), BundleApkFetcher {

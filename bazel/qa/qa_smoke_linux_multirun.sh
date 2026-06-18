@@ -30,7 +30,6 @@ target_filters=qa_smoke,ui_test,-qa_unreliable,-no_linux,-no_test_linux,-require
   --keep_going \
   ${config_options} --config=ants \
   --invocation_id=${invocation_id_smoke_longrunning} \
-  --define=meta_android_build_number=${build_number} \
   --build_metadata=ab_build_id="${build_number}" \
   --build_metadata=ab_target="qa-studio_smoke_multirun" \
   --build_tag_filters=${target_filters} \

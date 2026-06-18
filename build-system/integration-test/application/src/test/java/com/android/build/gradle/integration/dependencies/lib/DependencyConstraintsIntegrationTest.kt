@@ -44,7 +44,6 @@ class DependencyConstraintsIntegrationTest {
     GradleTestProject.builder()
       .withName("app")
       .fromTestApp(MinimalSubProject.app())
-      .disableBuiltInKotlin()
       .withAdditionalMavenRepo(mavenRepoGenerator)
       .create()
 
@@ -54,7 +53,6 @@ class DependencyConstraintsIntegrationTest {
     GradleTestProject.builder()
       .withName("lib")
       .fromTestApp(MinimalSubProject.lib())
-      .disableBuiltInKotlin()
       .withAdditionalMavenRepo(mavenRepoGenerator)
       .create()
 
@@ -82,14 +80,8 @@ class DependencyConstraintsIntegrationTest {
 
   @Test
   fun `default constraint behaviour`() {
-    app.assertConstrained(
-      "debugAndroidTestRuntimeClasspath",
-      """
-            |debugAndroidTestRuntimeClasspath - Resolved configuration for runtime for variant: debugAndroidTest
-            |+--- com.example:package:3.0-androidTestRuntimeOnly FAILED
-            |\--- com.example:package:{strictly 1.0-runtimeOnly} FAILED
-        """,
-    )
+    app.assertConstrained("debugAndroidTestRuntimeClasspath", "com.example:package:3.0-androidTestRuntimeOnly FAILED")
+    app.assertConstrained("debugAndroidTestRuntimeClasspath", "com.example:package:{strictly 1.0-runtimeOnly} FAILED")
 
     // Nothing else should fail as nothing's aligned
     lib.assertNotConstrained("debugCompileClasspath")
@@ -112,39 +104,19 @@ class DependencyConstraintsIntegrationTest {
     }
     // Failures indicate runtime-compile constraint is applied for main artifact (failure to
     // downgrade)
-    listOf(lib, app)
-      .assertConstrained(
-        "debugCompileClasspath",
-        """
-            |debugCompileClasspath - Resolved configuration for compilation for variant: debug
-            |+--- com.example:package:2.0-compileOnly FAILED
-            |\--- com.example:package:{strictly 1.0-runtimeOnly} FAILED
-        """,
-      )
+    listOf(lib, app).assertConstrained("debugCompileClasspath", "com.example:package:2.0-compileOnly FAILED")
+    listOf(lib, app).assertConstrained("debugCompileClasspath", "com.example:package:{strictly 1.0-runtimeOnly} FAILED")
 
     // This won't fail because the constraints we only ever apply this for app android test.
     lib.assertNotConstrained("debugAndroidTestRuntimeClasspath")
     // Failures indicate runtime-androidTestRuntime constraint is applied for app (failure to
     // downgrade)
-    app.assertConstrained(
-      "debugAndroidTestRuntimeClasspath",
-      """
-            |debugAndroidTestRuntimeClasspath - Resolved configuration for runtime for variant: debugAndroidTest
-            |+--- com.example:package:3.0-androidTestRuntimeOnly FAILED
-            |\--- com.example:package:{strictly 1.0-runtimeOnly} FAILED
-        """,
-    )
+    app.assertConstrained("debugAndroidTestRuntimeClasspath", "com.example:package:3.0-androidTestRuntimeOnly FAILED")
+    app.assertConstrained("debugAndroidTestRuntimeClasspath", "com.example:package:{strictly 1.0-runtimeOnly} FAILED")
 
     // Failures indicate runtime-compile constraint is applied for unit test (failure to downgrade)
-    listOf(lib, app)
-      .assertConstrained(
-        "debugUnitTestCompileClasspath",
-        """
-            |+--- root project : (*)
-            |+--- com.example:package:6.0-testCompileOnly FAILED
-            |\--- com.example:package:{strictly 5.0-testRuntimeOnly} FAILED
-        """,
-      )
+    listOf(lib, app).assertConstrained("debugUnitTestCompileClasspath", "com.example:package:6.0-testCompileOnly FAILED")
+    listOf(lib, app).assertConstrained("debugUnitTestCompileClasspath", "com.example:package:{strictly 5.0-testRuntimeOnly} FAILED")
   }
 
   @Test
@@ -162,27 +134,15 @@ class DependencyConstraintsIntegrationTest {
     lib.assertNotConstrained("debugCompileClasspath")
     // Failures indicate runtime-compile constraint is applied for main artifact (failure to
     // downgrade)
-    app.assertConstrained(
-      "debugCompileClasspath",
-      """
-            |debugCompileClasspath - Resolved configuration for compilation for variant: debug
-            |+--- com.example:package:2.0-compileOnly FAILED
-            |\--- com.example:package:{strictly 1.0-runtimeOnly} FAILED
-        """,
-    )
+    app.assertConstrained("debugCompileClasspath", "com.example:package:2.0-compileOnly FAILED")
+    app.assertConstrained("debugCompileClasspath", "com.example:package:{strictly 1.0-runtimeOnly} FAILED")
 
     // This won't fail because the constraints we only ever apply this for app android test.
     lib.assertNotConstrained("debugAndroidTestRuntimeClasspath")
     // Failures indicate runtime-androidTestRuntime constraint is applied for app (failure to
     // downgrade)
-    app.assertConstrained(
-      "debugAndroidTestRuntimeClasspath",
-      """
-            |debugAndroidTestRuntimeClasspath - Resolved configuration for runtime for variant: debugAndroidTest
-            |+--- com.example:package:3.0-androidTestRuntimeOnly FAILED
-            |\--- com.example:package:{strictly 1.0-runtimeOnly} FAILED
-        """,
-    )
+    app.assertConstrained("debugAndroidTestRuntimeClasspath", "com.example:package:3.0-androidTestRuntimeOnly FAILED")
+    app.assertConstrained("debugAndroidTestRuntimeClasspath", "com.example:package:{strictly 1.0-runtimeOnly} FAILED")
 
     // This won't fail because no constraints are applied for libraries
     lib.assertNotConstrained("debugUnitTestCompileClasspath")

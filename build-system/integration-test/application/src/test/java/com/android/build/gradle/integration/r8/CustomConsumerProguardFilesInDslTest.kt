@@ -33,7 +33,6 @@ class CustomConsumerProguardFilesInDslTest {
         android {
           namespace = "com.test.library"
           compileSdk = 36
-          optimization.consumerKeepRules.publish = true
           optimization.consumerKeepRules.files(File("proguard-rules.pro"))
         }
       }

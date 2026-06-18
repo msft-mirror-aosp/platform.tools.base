@@ -25,7 +25,7 @@ import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.internal.scope.getOutputDir
 import com.android.build.gradle.options.BooleanOption
-import com.android.builder.model.SyncIssue
+import com.android.builder.model.v2.ide.SyncIssue
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth

@@ -17,7 +17,7 @@
 package com.android.build.gradle.internal.variant
 
 import com.android.build.gradle.internal.utils.IssueSubject
-import com.android.builder.model.SyncIssue
+import com.android.builder.model.v2.ide.SyncIssue
 import com.google.common.truth.Truth
 import org.junit.Test
 
@@ -175,7 +175,7 @@ class DimensionCombinatorTest : AbstractVariantInputModelTest<List<DimensionComb
       }
     }
 
-    withIssueChecker { issues: List<SyncIssue> ->
+    withIssueChecker { issues ->
       Truth.assertThat(issues).named("issues").hasSize(1)
       val issue = issues.single()
       IssueSubject.assertThat(issue).hasType(SyncIssue.TYPE_UNNAMED_FLAVOR_DIMENSION)

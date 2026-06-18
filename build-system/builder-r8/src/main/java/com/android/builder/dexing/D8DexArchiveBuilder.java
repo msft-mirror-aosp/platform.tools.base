@@ -98,7 +98,9 @@ final class D8DexArchiveBuilder extends DexArchiveBuilder {
                         AssertionsConfiguration.Builder::compileTimeEnableAllAssertions);
             }
 
-            if (globalSyntheticsOutput != null) {
+            if (dexParams.getUseNoOpGlobalSyntheticsConsumer()) {
+                builder.setGlobalSyntheticsConsumer((data, context, handler) -> {});
+            } else if (globalSyntheticsOutput != null) {
                 builder.setGlobalSyntheticsConsumer(
                         new D8GlobalSyntheticsConsumer(globalSyntheticsOutput));
             }

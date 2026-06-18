@@ -17,7 +17,6 @@ package com.android.tools.idea.wizard.template.impl.activities.basicActivity.src
 
 import com.android.tools.idea.wizard.template.Language
 import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
-import com.android.tools.idea.wizard.template.getMaterialComponentName
 import com.android.tools.idea.wizard.template.impl.activities.common.findViewById
 import com.android.tools.idea.wizard.template.impl.activities.common.importViewBindingClass
 import com.android.tools.idea.wizard.template.impl.activities.common.layoutToViewBindingClass
@@ -29,7 +28,6 @@ fun firstFragmentKt(
   firstFragmentClass: String,
   secondFragmentClass: String,
   firstFragmentLayoutName: String,
-  useAndroidX: Boolean = true,
   isViewBindingSupported: Boolean,
 ): String {
 
@@ -44,7 +42,7 @@ fun firstFragmentKt(
   return """package ${escapeKotlinIdentifier(packageName)}
 
 import android.os.Bundle
-import ${getMaterialComponentName("android.support.v4.app.Fragment", useAndroidX)}
+import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup

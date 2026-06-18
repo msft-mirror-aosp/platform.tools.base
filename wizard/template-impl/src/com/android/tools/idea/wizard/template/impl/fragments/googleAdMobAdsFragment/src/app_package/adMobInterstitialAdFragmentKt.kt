@@ -98,11 +98,8 @@ ${renderIf(isViewBindingSupported) {"""
           id = "level",
           parentView = "view",)}
         level = START_LEVEL
-    }
 
-    override fun onActivityCreated(savedInstanceState: Bundle?) {
-        super.onActivityCreated(savedInstanceState)
-        val appContext = activity?.applicationContext ?: return
+        val appContext = context?.applicationContext ?: return
 
         nextLevelButton.let {
             it.isEnabled = false

@@ -121,15 +121,10 @@ constructor(private val name: String, val dslServices: DslServices, val androidR
 
   /** Private APIs */
   private inline fun <reified T : TestSuiteSourceCreationConfig> addSource(initializationBlock: T.() -> Unit) {
-    if (sources.isNotEmpty()) {
-      // this may be another initialization block for the same source.
-      val existingSource = sources.single()
-      if (existingSource is T) {
-        initializationBlock.invoke(existingSource)
-        return
-      } else {
-        throw RuntimeException("It is not yet possible to register multiple sources for a test suite")
-      }
+    val existingSource = sources.filterIsInstance<T>().firstOrNull()
+    if (existingSource != null) {
+      initializationBlock.invoke(existingSource)
+      return
     }
     dslServices.newInstance(T::class.java, name, dslServices.projectInfo.projectDirectory, dslServices.projectInfo.buildDirectory).also {
       newSources ->

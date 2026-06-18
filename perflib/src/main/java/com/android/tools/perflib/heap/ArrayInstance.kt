@@ -23,17 +23,21 @@ open class ArrayInstance(id: Long, stack: StackTrace?, val arrayType: Type, val 
   Instance(id, stack) {
   open val values: Array<Any?>
     get() {
-      buffer.setPosition(valuesOffset)
-      return Array(length) { readValue(arrayType) }
+      synchronized(buffer) {
+        buffer.setPosition(valuesOffset)
+        return Array(length) { readValue(arrayType) }
+      }
     }
 
   fun asRawByteArray(start: Int, elementCount: Int): ByteArray {
-    buffer.setPosition(valuesOffset)
-    assert(arrayType != Type.OBJECT)
-    assert(start + elementCount <= length)
-    val bytes = ByteArray(elementCount * arrayType.size)
-    buffer.readSubSequence(bytes, start * arrayType.size, elementCount * arrayType.size)
-    return bytes
+    synchronized(buffer) {
+      buffer.setPosition(valuesOffset)
+      assert(arrayType != Type.OBJECT)
+      assert(start + elementCount <= length)
+      val bytes = ByteArray(elementCount * arrayType.size)
+      buffer.readSubSequence(bytes, start * arrayType.size, elementCount * arrayType.size)
+      return bytes
+    }
   }
 
   fun asCharArray(offset: Int, length: Int): CharArray {

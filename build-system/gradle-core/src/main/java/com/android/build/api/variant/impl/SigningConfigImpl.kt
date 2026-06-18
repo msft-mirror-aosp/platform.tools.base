@@ -22,6 +22,7 @@ import com.android.build.gradle.internal.signing.SigningConfigVersions
 import java.io.File
 import java.io.Serializable
 import java.util.concurrent.Callable
+import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 
 class SigningConfigImpl(
@@ -33,14 +34,46 @@ class SigningConfigImpl(
 
   private var dslSigningConfig = signingConfig
 
+  private var hasProvider = false
+
   val name: String?
     get() = dslSigningConfig?.name
 
+  @Deprecated(message = "Use from(SigningConfig) instead", replaceWith = ReplaceWith("from(signingConfig)"))
   override fun setConfig(signingConfig: com.android.build.api.dsl.SigningConfig) {
-    dslSigningConfig = signingConfig as com.android.build.gradle.internal.dsl.SigningConfig
+    from(signingConfig)
   }
 
-  fun hasConfig() = dslSigningConfig != null
+  override fun from(signingConfig: com.android.build.api.dsl.SigningConfig) {
+    dslSigningConfig = signingConfig as com.android.build.gradle.internal.dsl.SigningConfig
+    createSigningConfigInfo(signingConfig)?.let { configProvider.set(it) }
+  }
+
+  override fun from(provider: Provider<com.android.build.api.variant.SigningConfigInfo>) {
+    configProvider.set(
+      provider.map {
+        SigningConfigInfo(
+          storeFile = it.storeFile.absolutePath,
+          storePassword = it.storePassword,
+          keyAlias = it.keyAlias,
+          keyPassword = it.keyPassword,
+          storeType = it.storeType,
+        )
+      }
+    )
+    hasProvider = true
+  }
+
+  fun hasConfig() = dslSigningConfig != null || hasProvider
+
+  private fun createSigningConfigInfo(signingConfig: com.android.build.gradle.internal.dsl.SigningConfig): SigningConfigInfo? {
+    val storeFile = signingConfig.storeFile ?: return null
+    val storePassword = signingConfig.storePassword ?: return null
+    val keyAlias = signingConfig.keyAlias ?: return null
+    val keyPassword = signingConfig.keyPassword ?: return null
+    val storeType = signingConfig.storeType ?: return null
+    return SigningConfigInfo(storeFile.absolutePath, storePassword, keyAlias, keyPassword, storeType)
+  }
 
   override val enableV4Signing =
     variantServices.propertyOf(
@@ -109,20 +142,29 @@ class SigningConfigImpl(
       },
     )
 
+  private val configProvider: Property<SigningConfigInfo> =
+    variantServices.propertyOf(
+      SigningConfigInfo::class.java,
+      variantServices.provider { signingConfig?.let { createSigningConfigInfo(it) } },
+    )
+
   // -----------------------------------------------------
   // Internal APIs
   // ------------------------------------------------------
-  val storeFile: Provider<File> = variantServices.provider { dslSigningConfig?.storeFile }
 
-  val storePassword: Provider<String> = variantServices.provider { dslSigningConfig?.storePassword }
+  val storeFile: Provider<File> = configProvider.map { config -> config.storeFile?.let { File(it) } }
+  val storePassword: Provider<String> = configProvider.map(SigningConfigInfo::storePassword)
+  val keyAlias: Provider<String> = configProvider.map(SigningConfigInfo::keyAlias)
+  val keyPassword: Provider<String> = configProvider.map(SigningConfigInfo::keyPassword)
+  val storeType: Provider<String> = configProvider.map(SigningConfigInfo::storeType)
 
-  val keyAlias: Provider<String> = variantServices.provider { dslSigningConfig?.keyAlias }
+  @Deprecated("Use hasConfig", replaceWith = ReplaceWith("hasConfig")) fun isSigningReady(): Boolean = configProvider.isPresent
 
-  val keyPassword: Provider<String> = variantServices.provider { dslSigningConfig?.keyPassword }
-
-  val storeType: Provider<String> = variantServices.provider { dslSigningConfig?.storeType }
-
-  fun isSigningReady(): Boolean {
-    return storeFile.isPresent && storePassword.isPresent && keyAlias.isPresent && keyPassword.isPresent
-  }
+  private data class SigningConfigInfo(
+    val storeFile: String? = null,
+    val storePassword: String? = null,
+    val keyAlias: String? = null,
+    val keyPassword: String? = null,
+    val storeType: String? = null,
+  ) : Serializable
 }

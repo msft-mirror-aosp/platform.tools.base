@@ -33,9 +33,9 @@ import com.android.build.gradle.internal.scope.MutableTaskContainer
 import com.android.build.gradle.internal.tasks.PackageForHostTest
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.tasks.factory.dependsOn
+import com.android.build.gradle.internal.test.tasks.TestResultsCollectionTask
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.tasks.GenerateTestConfig
-import com.android.build.gradle.tasks.TestResultsCollectionTask
 import com.android.build.gradle.tasks.factory.AndroidUnitTest
 import com.google.common.collect.ImmutableSet
 import org.gradle.api.Project
@@ -170,22 +170,11 @@ open class HostTestTaskManager(project: Project, globalConfig: GlobalTaskCreatio
     }
   }
 
-  protected fun setupJavaCompilationTasks(
-    hostTestCreationConfig: HostTestCreationConfig,
-    taskContainer: MutableTaskContainer,
-    testedVariant: VariantCreationConfig,
-  ) {
+  protected fun setupJavaCompilationTasks(hostTestCreationConfig: HostTestCreationConfig) {
     // TODO(b/276758294): Remove such checks
     if (hostTestCreationConfig !is KmpComponentCreationConfig) {
       // compileDebugSources should be enough for running tests from AS, so add
       // dependencies on tasks that prepare necessary data files.
-      val compileTask = taskContainer.compileTask
-      compileTask.configure { task ->
-        task.dependsOn(
-          hostTestCreationConfig.artifacts.get(InternalArtifactType.JAVA_RES),
-          testedVariant.artifacts.get(InternalArtifactType.JAVA_RES),
-        )
-      }
       val javacTask = createJavacTask(hostTestCreationConfig)
       setJavaCompilerTask(javacTask, hostTestCreationConfig)
       initializeAllScope(hostTestCreationConfig.artifacts)
@@ -212,7 +201,8 @@ open class HostTestTaskManager(project: Project, globalConfig: GlobalTaskCreatio
     if (
       globalConfig.avoidTaskRegistration.not() &&
         hostTestCreationConfig.services.projectOptions.get(BooleanOption.LINT_ANALYSIS_PER_COMPONENT) &&
-        globalConfig.lintOptions.ignoreTestSources.not()
+        globalConfig.lintOptions.ignoreTestSources.not() &&
+        hostTestCreationConfig.mainVariant.enableLint
     ) {
       taskFactory.register(AndroidLintAnalysisTask.PerComponentCreationAction(hostTestCreationConfig, fatalOnly = false))
       taskFactory.register(

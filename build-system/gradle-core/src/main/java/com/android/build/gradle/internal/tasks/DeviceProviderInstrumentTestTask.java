@@ -52,10 +52,10 @@ import com.android.build.gradle.internal.test.TestsAnalytics;
 import com.android.build.gradle.internal.test.report.CompositeTestResults;
 import com.android.build.gradle.internal.test.report.ReportType;
 import com.android.build.gradle.internal.test.report.TestReport;
+import com.android.build.gradle.internal.test.report.TestReportAggregationUtils;
 import com.android.build.gradle.internal.testing.ConnectedDeviceProvider;
 import com.android.build.gradle.internal.testing.StaticTestData;
 import com.android.build.gradle.internal.testing.TestData;
-import com.android.build.gradle.internal.testing.TestReportAggregationUtils;
 import com.android.build.gradle.internal.testing.TestRunner;
 import com.android.build.gradle.internal.testing.utp.UtpTestRunner;
 import com.android.build.gradle.internal.testing.utp.UtpTestUtilsKt;
@@ -408,7 +408,8 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                     testRunnerFactory.getModulePath().get(),
                     testRunnerFactory.getTestedVariantName().get(),
                     testRunnerFactory.getTestSuiteName().get(),
-                    testRunnerFactory.getTestSuiteTarget().get());
+                    testRunnerFactory.getTestSuiteTarget().get(),
+                    logger);
         }
 
         TestsAnalytics.recordOkInstrumentedTestRun(
@@ -625,6 +626,7 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
         getTestRunnerFactory().getDeviceSerialValues().addAll(serials);
     }
 
+    @Input
     @Override
     public boolean getIgnoreFailures() {
         return ignoreFailures;
@@ -638,11 +640,6 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
     @InputFiles
     @PathSensitive(PathSensitivity.RELATIVE)
     public abstract ConfigurableFileCollection getBuddyApks();
-
-    @InputFiles
-    @PathSensitive(PathSensitivity.ABSOLUTE)
-    @Optional
-    public abstract ConfigurableFileCollection getPrivacySandboxSdkApksFiles();
 
     @Nested
     public abstract BuildToolsExecutableInput getBuildTools();

@@ -36,8 +36,6 @@ public class LibMinifyJarDepConnectedTest {
     public GradleTestProject project =
             GradleTestProject.builder()
                     .fromTestProject("libMinifyJarDep")
-                    .addGradleProperties(
-                            BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT.getPropertyName() + "=false")
                     .create();
 
     @Before

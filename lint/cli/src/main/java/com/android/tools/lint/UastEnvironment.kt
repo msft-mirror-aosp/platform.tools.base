@@ -28,7 +28,7 @@ import com.intellij.openapi.vfs.impl.ZipHandler
 import com.intellij.pom.java.LanguageLevel
 import java.io.File
 import kotlin.concurrent.withLock
-import org.jetbrains.annotations.ApiStatus
+import org.jetbrains.kotlin.K1Deprecation
 import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreEnvironment
 import org.jetbrains.kotlin.cli.jvm.config.addJavaSourceRoots
 import org.jetbrains.kotlin.cli.jvm.config.addJvmClasspathRoots
@@ -37,9 +37,6 @@ import org.jetbrains.kotlin.config.JVMConfigurationKeys
 import org.jetbrains.kotlin.config.LanguageVersionSettings
 import org.jetbrains.kotlin.config.deserializeTargetPlatformByComponentPlatforms
 import org.jetbrains.kotlin.config.languageVersionSettings
-import org.jetbrains.kotlin.konan.library.KLIB_INTEROP_IR_PROVIDER_IDENTIFIER
-import org.jetbrains.kotlin.library.CompilerSingleFileKlibResolveAllowingIrProvidersStrategy
-import org.jetbrains.kotlin.library.KotlinLibrary
 import org.jetbrains.kotlin.platform.CommonPlatforms
 import org.jetbrains.kotlin.platform.TargetPlatform
 import org.jetbrains.kotlin.platform.js.JsPlatforms
@@ -49,11 +46,6 @@ import org.jetbrains.kotlin.platform.konan.NativePlatforms
 import org.jetbrains.kotlin.platform.wasm.WasmPlatforms
 import org.jetbrains.kotlin.util.Logger
 import org.jetbrains.uast.UastFacade
-
-/** JVM system property to enable FIR UAST or K2 UAST, as per the new compiler name */
-const val FIR_UAST_KEY = "lint.use.fir.uast"
-
-@ApiStatus.Internal fun useFirUast(): Boolean = System.getProperty(FIR_UAST_KEY, "true").toBoolean()
 
 /**
  * This interface provides the setup and configuration needed to use VFS/PSI/UAST on the command line.
@@ -87,14 +79,6 @@ interface UastEnvironment {
       @JvmOverloads
       fun create(enableKotlinScripting: Boolean = true): Configuration {
         return FirUastEnvironment.Configuration.create(enableKotlinScripting)
-      }
-
-      /** Creates a new [Configuration] that specifies project structure, classpath, compiler flags, etc. */
-      @Deprecated("No longer support K1 UAST", replaceWith = ReplaceWith("create()"))
-      @JvmStatic
-      fun create(enableKotlinScripting: Boolean = true, useFirUast: Boolean = useFirUast()): Configuration {
-        return if (useFirUast) FirUastEnvironment.Configuration.create(enableKotlinScripting)
-        else Fe10UastEnvironment.Configuration.create(enableKotlinScripting)
       }
 
       fun mergeRoots(modules: List<Module>, bootClassPaths: Iterable<File>?): Pair<Set<File>, Set<File>> {
@@ -167,7 +151,6 @@ interface UastEnvironment {
     fun create(config: Configuration): UastEnvironment {
       return when (config) {
         is FirUastEnvironment.Configuration -> FirUastEnvironment.create(config)
-        is Fe10UastEnvironment.Configuration -> Fe10UastEnvironment.create(config)
         else -> throw UnsupportedOperationException()
       }
     }
@@ -176,6 +159,7 @@ interface UastEnvironment {
      * Disposes the global application environment, which is created implicitly by the first [UastEnvironment]. Only call this once *all*
      * [UastEnvironment]s have been disposed.
      */
+    @OptIn(K1Deprecation::class)
     @JvmStatic
     fun disposeApplicationEnvironment() {
       // Note: if we later decide to keep the app env alive forever in the Gradle daemon, we
@@ -197,15 +181,11 @@ interface UastEnvironment {
       }
     }
 
+    @OptIn(K1Deprecation::class)
     @JvmStatic
     fun checkApplicationEnvironmentDisposed() {
       check(KotlinCoreEnvironment.applicationEnvironment == null)
     }
-
-    @JvmStatic
-    fun kotlinLibrary(path: String): KotlinLibrary =
-      CompilerSingleFileKlibResolveAllowingIrProvidersStrategy(listOf(KLIB_INTEROP_IR_PROVIDER_IDENTIFIER))
-        .resolve(org.jetbrains.kotlin.konan.file.File(path), logger)
 
     @JvmStatic fun CompilerConfiguration.getKlibPaths(): List<String> = get(JVMConfigurationKeys.KLIB_PATHS) ?: listOf()
 

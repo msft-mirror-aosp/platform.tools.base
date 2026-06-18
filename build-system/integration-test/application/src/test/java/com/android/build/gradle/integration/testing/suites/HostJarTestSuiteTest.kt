@@ -68,6 +68,7 @@ class HostJarTestSuiteJavaResProcessingTest {
             }
           }
           files {
+            add("src/first/java/Dummy.java", "public class Dummy {}")
             add("src/first/resources/some/random/file.txt", "some random text")
             add("src/first/resources/some/random/res.txt", "another text")
           }
@@ -78,30 +79,24 @@ class HostJarTestSuiteJavaResProcessingTest {
   @Test
   fun upToDateCheck() {
     val project = rule.build
-    var result: GradleBuildResult =
-      project.executor
-        .expectFailure() // TODO: it fails because Gradle complains I have no tests.
-        .run("testFirstT1RedDebugTestSuite")
+    var result: GradleBuildResult = project.executor.run("testFirstT1RedDebugTestSuite")
 
-    Truth.assertThat(result.didWorkTasks).contains(":app:processFirstRedDebugJavaRes")
+    Truth.assertThat(result.didWorkTasks).contains(":app:processFirstHostJarRedDebugJavaRes")
     val javaRes = getJavaRes(project)
     PathSubject.assertThat(javaRes).exists()
     PathSubject.assertThat(javaRes.resolve("some/random/file.txt")).contains("some random text")
 
     // Run it again to check that we are up to date.
-    result = project.executor.expectFailure().run("testFirstT1RedDebugTestSuite")
-    Truth.assertThat(result.upToDateTasks).contains(":app:processFirstRedDebugJavaRes")
+    result = project.executor.run("testFirstT1RedDebugTestSuite")
+    Truth.assertThat(result.upToDateTasks).contains(":app:processFirstHostJarRedDebugJavaRes")
   }
 
   @Test
   fun fileRemovedCheck() {
     val project = rule.build
-    var result: GradleBuildResult =
-      project.executor
-        .expectFailure() // TODO: it fails because Gradle complains I have no tests.
-        .run("testFirstT1RedDebugTestSuite")
+    var result: GradleBuildResult = project.executor.run("testFirstT1RedDebugTestSuite")
 
-    Truth.assertThat(result.didWorkTasks).contains(":app:processFirstRedDebugJavaRes")
+    Truth.assertThat(result.didWorkTasks).contains(":app:processFirstHostJarRedDebugJavaRes")
     val javaRes = getJavaRes(project).resolve("some${File.separatorChar}random")
 
     PathSubject.assertThat(javaRes).exists()
@@ -111,8 +106,8 @@ class HostJarTestSuiteJavaResProcessingTest {
       build.subProject(":app").files.run { remove("src/first/resources/some/random/res.txt") }
 
       // Run it again to check that we are not up to date.
-      result = build.executor.expectFailure().run("testFirstT1RedDebugTestSuite")
-      Truth.assertThat(result.didWorkTasks).contains(":app:processFirstRedDebugJavaRes")
+      result = build.executor.run("testFirstT1RedDebugTestSuite")
+      Truth.assertThat(result.didWorkTasks).contains(":app:processFirstHostJarRedDebugJavaRes")
       Truth.assertThat(javaRes.listFiles().map { it.name }).containsExactly("file.txt")
     }
   }
@@ -120,12 +115,9 @@ class HostJarTestSuiteJavaResProcessingTest {
   @Test
   fun fileAddedCheck() {
     val project = rule.build
-    var result: GradleBuildResult =
-      project.executor
-        .expectFailure() // TODO: it fails because Gradle complains I have no tests.
-        .run("testFirstT1RedDebugTestSuite")
+    var result: GradleBuildResult = project.executor.run("testFirstT1RedDebugTestSuite")
 
-    Truth.assertThat(result.didWorkTasks).contains(":app:processFirstRedDebugJavaRes")
+    Truth.assertThat(result.didWorkTasks).contains(":app:processFirstHostJarRedDebugJavaRes")
     val javaRes = getJavaRes(project).resolve("some${File.separatorChar}random")
     PathSubject.assertThat(javaRes).exists()
     Truth.assertThat(javaRes.listFiles().map { it.name }).containsExactly("file.txt", "res.txt")
@@ -134,8 +126,8 @@ class HostJarTestSuiteJavaResProcessingTest {
       build.subProject(":app").files.run { add("src/first/resources/some/random/third.txt", "yet another one") }
 
       // Run it again to check that we are not up to date.
-      result = build.executor.expectFailure().run("testFirstT1RedDebugTestSuite")
-      Truth.assertThat(result.didWorkTasks).contains(":app:processFirstRedDebugJavaRes")
+      result = build.executor.run("testFirstT1RedDebugTestSuite")
+      Truth.assertThat(result.didWorkTasks).contains(":app:processFirstHostJarRedDebugJavaRes")
       Truth.assertThat(javaRes.listFiles().map { it.name }).containsExactly("file.txt", "res.txt", "third.txt")
     }
   }
@@ -143,12 +135,9 @@ class HostJarTestSuiteJavaResProcessingTest {
   @Test
   fun fileChangedCheck() {
     val project: GradleBuild = rule.build
-    var result: GradleBuildResult =
-      project.executor
-        .expectFailure() // TODO: it fails because Gradle complains I have no tests.
-        .run("testFirstT1RedDebugTestSuite")
+    var result: GradleBuildResult = project.executor.run("testFirstT1RedDebugTestSuite")
 
-    Truth.assertThat(result.didWorkTasks).contains(":app:processFirstRedDebugJavaRes")
+    Truth.assertThat(result.didWorkTasks).contains(":app:processFirstHostJarRedDebugJavaRes")
     val javaRes = getJavaRes(project)
     PathSubject.assertThat(javaRes).exists()
 
@@ -156,8 +145,8 @@ class HostJarTestSuiteJavaResProcessingTest {
       build.subProject(":app").files.update("src/first/resources/some/random/file.txt") { replaceWith("some update") }
 
       // Run it again to check that we are not up to date.
-      result = build.executor.expectFailure().run("testFirstT1RedDebugTestSuite")
-      Truth.assertThat(result.didWorkTasks).contains(":app:processFirstRedDebugJavaRes")
+      result = build.executor.run("testFirstT1RedDebugTestSuite")
+      Truth.assertThat(result.didWorkTasks).contains(":app:processFirstHostJarRedDebugJavaRes")
       PathSubject.assertThat(javaRes.resolve("some/random/file.txt")).contains("some update")
     }
   }
@@ -166,8 +155,8 @@ class HostJarTestSuiteJavaResProcessingTest {
     project
       .subProject(":app")
       .resolve(InternalArtifactType.JAVA_RES)
-      .resolve("firstRedDebug")
-      .resolve("processFirstRedDebugJavaRes")
+      .resolve("firstHostJarRedDebug")
+      .resolve("processFirstHostJarRedDebugJavaRes")
       .resolve("out")
       .toFile()
 }

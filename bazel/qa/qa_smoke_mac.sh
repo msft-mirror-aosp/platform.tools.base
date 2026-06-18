@@ -24,7 +24,6 @@ readonly target_filters="qa_smoke,ui_test,-qa_unreliable,-no_test_mac,-requires_
         --test_strategy=exclusive \
         --strategy=TestRunner=local \
         --invocation_id=${invocation_id} \
-        --define=meta_android_build_number=${build_number} \
         --build_metadata=ab_build_id="${build_number}" \
         --build_metadata=ab_target="qa-mac_smoke" \
         --build_tag_filters=${target_filters} \

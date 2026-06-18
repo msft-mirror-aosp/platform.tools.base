@@ -57,6 +57,7 @@ class NoOpIncrementalBuildMinifyTest {
             ":compileReleaseNavigationResources",
             ":compressDebugAndroidTestAssets",
             ":compressReleaseAssets",
+            ":convertShrunkResourcesToBinaryRelease",
             ":createDebugAndroidTestApkListingFileRedirect",
             ":createReleaseApkListingFileRedirect",
             ":createDebugCompatibleScreenManifests",
@@ -95,6 +96,7 @@ class NoOpIncrementalBuildMinifyTest {
             ":mergeDebugAndroidTestAssets",
             ":mergeDebugAndroidTestJavaResource",
             ":mergeDebugAndroidTestJniLibFolders",
+            ":mergeDebugAndroidTestManifest",
             ":mergeDebugAndroidTestResources",
             ":mergeDebugJniLibFolders",
             ":mergeDebugResources",
@@ -184,7 +186,10 @@ class NoOpIncrementalBuildMinifyTest {
     project.buildFile.appendText(
       """
       android.buildTypes {
-          release { minifyEnabled true }
+          release {
+              minifyEnabled true
+              shrinkResources = true
+          }
       }
       android {
           buildFeatures {

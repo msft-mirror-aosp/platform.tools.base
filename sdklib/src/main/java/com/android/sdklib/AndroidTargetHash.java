@@ -21,6 +21,7 @@ import com.android.annotations.Nullable;
 import com.android.repository.api.ProgressIndicator;
 import com.android.sdklib.repository.IdDisplay;
 import com.android.sdklib.repository.targets.AndroidTargetManager;
+
 import com.google.common.base.Splitter;
 
 import java.util.List;
@@ -42,6 +43,7 @@ public abstract class AndroidTargetHash {
     /**
      * @deprecated Use {@link AndroidVersion#getPlatformHashString} instead.
      */
+    @Deprecated
     @NonNull
     public static String getPlatformHashString(@NonNull AndroidVersion version) {
         return version.getPlatformHashString();
@@ -55,7 +57,7 @@ public abstract class AndroidTargetHash {
      */
     @Nullable
     public static String getPlatformHashString(@NonNull String apiString) {
-        AndroidVersion sdkVersion = SdkVersionInfo.getVersion(apiString, null);
+        AndroidVersion sdkVersion = SdkVersionUtil.getVersion(apiString, null);
         if (sdkVersion != null) {
             return getPlatformHashString(sdkVersion);
         }
@@ -77,7 +79,7 @@ public abstract class AndroidTargetHash {
         if (hashString.startsWith(PLATFORM_HASH_PREFIX)) {
             String suffix = hashString.substring(PLATFORM_HASH_PREFIX.length());
             if (!suffix.isEmpty()) {
-                return SdkVersionInfo.getVersion(suffix, null);
+                return SdkVersionUtil.getVersion(suffix, null);
             }
         } else if (!hashString.isEmpty() && Character.isDigit(hashString.charAt(0))) {
             // For convenience, interpret a single integer as the proper "android-NN" form.

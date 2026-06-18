@@ -17,7 +17,6 @@
 package com.android.build.api.dsl
 
 import org.gradle.api.Incubating
-import org.gradle.declarative.dsl.model.annotations.Restricted
 
 /**
  * Common extension properties for the Android Application. Library and Dynamic Feature Plugins that relate to testing
@@ -61,10 +60,10 @@ interface TestedExtension {
    *
    * You can resolve this issue by changing the test build type to "stage".
    */
-  @get:Restricted var testBuildType: String
+  var testBuildType: String
 
   /** The namespace used by the android test and unit test components for the generated R and BuildConfig classes. */
-  @get:Restricted var testNamespace: String?
+  var testNamespace: String?
 
   /** Options to configure the test fixtures. */
   @get:Incubating val testFixtures: TestFixtures

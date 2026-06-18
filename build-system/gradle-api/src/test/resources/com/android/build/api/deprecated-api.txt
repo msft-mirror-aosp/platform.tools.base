@@ -3,6 +3,27 @@ Deprecated Android Gradle Plugin API.
 ATTENTION REVIEWER: If this needs to be changed, please make sure changes
 are announced on go/as-release-notes.
 -------------------------------------------------------------------------
+Deprecated from AGP 9.3.0
+  * com.android.build.api.variant.SigningConfig.setConfig: void (com.android.build.api.dsl.SigningConfig)
+Deprecated from AGP 9.2.0
+  * com.android.build.api.dsl.KeepRules.getFiles: org.gradle.api.provider.SetProperty<java.io.File> ()
+  * com.android.build.api.dsl.Lint.getHtmlOutput: java.io.File ()
+  * com.android.build.api.dsl.Lint.getHtmlReport: boolean ()
+  * com.android.build.api.dsl.Lint.getSarifOutput: java.io.File ()
+  * com.android.build.api.dsl.Lint.getSarifReport: boolean ()
+  * com.android.build.api.dsl.Lint.getTextOutput: java.io.File ()
+  * com.android.build.api.dsl.Lint.getTextReport: boolean ()
+  * com.android.build.api.dsl.Lint.getXmlOutput: java.io.File ()
+  * com.android.build.api.dsl.Lint.getXmlReport: boolean ()
+  * com.android.build.api.dsl.Lint.setHtmlOutput: void (java.io.File)
+  * com.android.build.api.dsl.Lint.setHtmlReport: void (boolean)
+  * com.android.build.api.dsl.Lint.setSarifOutput: void (java.io.File)
+  * com.android.build.api.dsl.Lint.setSarifReport: void (boolean)
+  * com.android.build.api.dsl.Lint.setTextOutput: void (java.io.File)
+  * com.android.build.api.dsl.Lint.setTextReport: void (boolean)
+  * com.android.build.api.dsl.Lint.setXmlOutput: void (java.io.File)
+  * com.android.build.api.dsl.Lint.setXmlReport: void (boolean)
+  * com.android.build.api.dsl.Optimization.baselineProfile: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BaselineProfile, kotlin.Unit>)
 Deprecated from AGP 9.1.0
   * com.android.build.api.dsl.DeprecatedKotlinMultiplatformAndroidLibraryTarget implements com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
   * com.android.build.api.dsl.DeprecatedKotlinMultiplatformAndroidLibraryTarget$DefaultImpls.getPreset: org.jetbrains.kotlin.gradle.plugin.KotlinTargetPreset (com.android.build.api.dsl.DeprecatedKotlinMultiplatformAndroidLibraryTarget)

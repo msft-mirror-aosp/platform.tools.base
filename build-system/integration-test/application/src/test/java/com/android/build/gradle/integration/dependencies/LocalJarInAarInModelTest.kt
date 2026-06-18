@@ -26,7 +26,7 @@ import org.junit.Test
 
 class LocalJarInAarInModelTest : ModelComparator() {
 
-  @get:Rule val project = GradleTestProject.builder().fromTestApp(HelloWorldApp.noBuildFile()).disableBuiltInKotlin().create()
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(HelloWorldApp.noBuildFile()).create()
 
   @Before
   fun setUp() {
@@ -35,6 +35,7 @@ class LocalJarInAarInModelTest : ModelComparator() {
       """
                 apply plugin: "com.android.application"
                 android {
+                    enableKotlin = false
                     namespace = '${HelloWorldApp.NAMESPACE}'
                     compileSdkVersion ${GradleTestProject.DEFAULT_COMPILE_SDK_VERSION}
                     buildToolsVersion "${GradleTestProject.DEFAULT_BUILD_TOOL_VERSION}"

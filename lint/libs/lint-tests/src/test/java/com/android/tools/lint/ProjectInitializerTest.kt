@@ -66,6 +66,7 @@ import com.intellij.psi.PsiField
 import com.intellij.psi.PsiMethod
 import com.intellij.util.asSafely
 import java.io.File
+import java.net.URI
 import kotlin.io.path.isRegularFile
 import kotlin.io.path.readText
 import kotlin.streams.toList
@@ -94,7 +95,6 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
-import org.junit.Assume.assumeTrue
 import org.junit.ClassRule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -253,9 +253,8 @@ class ProjectInitializerTest {
     val appProjectPath = appProjectDir.path
 
     // TO avoid already existing temp folders
-    val suffix = if (useFirUast()) "-k2" else "-k1"
-    val sdk = temp.newFolder("fake-sdk$suffix")
-    val cacheDir = temp.newFolder("cache$suffix")
+    val sdk = temp.newFolder("fake-sdk")
+    val cacheDir = temp.newFolder("cache")
     @Language("XML")
     val mergedManifestXml =
       """
@@ -285,7 +284,7 @@ class ProjectInitializerTest {
       """
         .trimIndent()
 
-    val mergedManifest = temp.newFile("merged-manifest$suffix")
+    val mergedManifest = temp.newFile("merged-manifest")
     Files.asCharSink(mergedManifest, Charsets.UTF_8).write(mergedManifestXml)
 
     @Language("XML")
@@ -380,9 +379,7 @@ class ProjectInitializerTest {
     val canonicalRoot = root.canonicalPath
 
     // TODO: https://youtrack.jetbrains.com/issue/KT-57715
-    val expectedError =
-      if (useFirUast()) "WARN: ROOT/test.jar: ROOT/test.jar\n" + "java.nio.file.NoSuchFileException: ROOT/test.jar"
-      else "w: Classpath entry points to a non-existent location: ROOT/test.jar"
+    val expectedError = "WARN: ROOT/test.jar: ROOT/test.jar\n" + "java.nio.file.NoSuchFileException: ROOT/test.jar"
 
     MainTest.checkDriver(
       """
@@ -410,7 +407,6 @@ class ProjectInitializerTest {
 
       // Args
       arrayOf(
-        if (useFirUast()) "" else "--XuseK1Uast",
         "--check",
         "UniquePermission,DuplicateDefinition,SdCardPath",
         "--config",
@@ -423,7 +419,6 @@ class ProjectInitializerTest {
       { it.replace(canonicalRoot, "ROOT").replace(root.path, "ROOT").replace(baseline.parentFile.path, "TESTROOT").dos2unix() },
       listener,
       null,
-      false,
     )
 
     // Make sure we hit all our checks with the listener
@@ -2438,7 +2433,6 @@ class ProjectInitializerTest {
 
   @Test
   fun testAnalysisAPIServices() {
-    assumeTrue(useFirUast())
     val root = temp.newFolder().canonicalFile.absoluteFile
     val projects =
       lint()
@@ -2510,7 +2504,6 @@ class ProjectInitializerTest {
   @OptIn(KaExperimentalApi::class)
   @Test
   fun testExpectActualWithJustJvm() {
-    assumeTrue(useFirUast())
     val root = temp.newFolder().canonicalFile.absoluteFile
     val projects =
       lint()
@@ -2598,6 +2591,104 @@ class ProjectInitializerTest {
   }
 
   @Test
+  fun testExpectActualWithJustJvmAndJvmOverloads() {
+    val root = temp.newFolder().canonicalFile.absoluteFile
+
+    val resource = JvmOverloads::class.java.getResource("/kotlin/jvm/JvmOverloads.class")!!
+    val jarUriStr = resource.path.substringBeforeLast("!")
+    val uri = URI.create(jarUriStr)
+
+    val projects =
+      lint()
+        .files(
+          xml(
+              "project.xml",
+              """
+              <project>
+                <module name="common" library="true" android="false" compute_source_roots="false" kotlinPlatforms="JVM [1.8]">
+                  <src file="common/com/example/common.kt"/>
+                  <jar file="${uri.path}" />
+                </module>
+                <module name="desktop" library="true" android="false" compute_source_roots="false" kotlinPlatforms="JVM [1.8]">
+                  <src file="desktop/com/example/desktop.kt"/>
+                  <dep module="common" kind="dependsOn" />
+                  <jar file="${uri.path}" />
+                </module>
+              </project>
+              """,
+            )
+            .indented(),
+          kotlin(
+              "common/com/example/common.kt",
+              """
+              package com.example
+
+              expect class Foo @JvmOverloads constructor(p1: Int = 0, p2: Int = 0, p3: Int = 0) {
+                @JvmOverloads
+                fun foo(p1: Int = 0, p2: Int = 0, p3: Int = 0)
+              }
+              """,
+            )
+            .indented(),
+          kotlin(
+              "desktop/com/example/desktop.kt",
+              """
+              package com.example
+
+              actual class Foo @JvmOverloads actual constructor(p1: Int, p2: Int, p3: Int) {
+                // The default parameter values are inherited from the `expect` declaration and
+                // cannot be repeated here, so the `actual` value parameters have no *declared* defaults.
+                @JvmOverloads
+                actual fun foo(p1: Int, p2: Int, p3: Int) { }
+              }
+              """,
+            )
+            .indented(),
+        )
+        .createProjects(root)
+    val descriptorFile = File(projects[0], "project.xml")
+
+    MainTest.checkDriver(
+      "No issues found.",
+      "",
+      ERRNO_SUCCESS,
+      arrayOf("--check", "IgnoreWithoutReason", "--project", descriptorFile.path),
+      null,
+      { driver, type, project, context ->
+        when (type) {
+          SCANNING_FILE -> {
+            context!!
+            when (context.file.name) {
+              "desktop.kt" -> {
+                context as JavaContext
+                val uFile = context.uastParser.parse(context)!!
+                val c = uFile.classes[0]
+
+                assertThat(c.methods.map { it.name to it.javaPsi.parameterList.parametersCount })
+                  .containsExactlyElementsIn(
+                    arrayOf(
+                      // method:
+                      "foo" to 3,
+                      "foo" to 2,
+                      "foo" to 1,
+                      "foo" to 0,
+                      // constructor:
+                      "Foo" to 3,
+                      "Foo" to 2,
+                      "Foo" to 1,
+                      "Foo" to 0,
+                    )
+                  )
+              }
+            }
+          }
+          else -> {}
+        }
+      },
+    )
+  }
+
+  @Test
   fun testKmpEnabledWithJustNative() {
     val root = temp.newFolder().canonicalFile.absoluteFile
     val projects =
@@ -2665,7 +2756,6 @@ class ProjectInitializerTest {
 
   @Test
   fun testKmpNativeUastPsi() {
-    assumeTrue(useFirUast())
     // Tests the new KlibLightElementProvider.
     // kotlinSourceFile references various symbols from klibSourceFile. We consider different
     // scenarios for where the code in klibSourceFile ends up:
@@ -3837,9 +3927,6 @@ class ProjectInitializerTest {
 
   @Test
   fun testGeneratedAndTestFile() {
-    // Test/generated sources cannot be in the same root as non-test/non-generated sources with
-    // Lint's K1 project structure, so we can only test on K2.
-    assumeTrue(useFirUast())
     val root = temp.newFolder().canonicalFile.absoluteFile
     val projects =
       lint()
@@ -3955,10 +4042,6 @@ class ProjectInitializerTest {
 
   @Test
   fun testGeneratedAndTestFile2() {
-    // Test/generated sources cannot be in the same root as non-test/non-generated sources with
-    // Lint's K1 project structure, so we can only test on K2.
-    assumeTrue(useFirUast())
-
     // Similar to testGeneratedAndTestFile (above), except we are not checking generated files.
     // In particular, file C (both test and gen) should not be visited.
     val root = temp.newFolder().canonicalFile.absoluteFile
@@ -4070,10 +4153,6 @@ class ProjectInitializerTest {
 
   @Test
   fun testGeneratedAndTestFile3() {
-    // Test/generated sources cannot be in the same root as non-test/non-generated sources with
-    // Lint's K1 project structure, so we can only test on K2.
-    assumeTrue(useFirUast())
-
     // Similar to testGeneratedAndTestFile2 (above), except we are not checking test files.
     // So we only visit normal and generated files (not test files, and not gen+test).
     val root = temp.newFolder().canonicalFile.absoluteFile
@@ -4326,7 +4405,6 @@ class ProjectInitializerTest {
 
   @Test
   fun testKMPProjectK2() {
-    assumeTrue(useFirUast())
     val shared =
       project(
           kt(
@@ -4738,7 +4816,6 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
 
   @Test
   fun testKMPProjectK2_explicitPlatform() {
-    assumeTrue(useFirUast())
     val shared =
       project(
           kt(
@@ -5150,7 +5227,6 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
 
   @Test
   fun testKMPProjectK2_common_klib() {
-    assumeTrue(useFirUast())
     val shared =
       project(
           // TODO
@@ -5566,8 +5642,6 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
   /** Copied from [testKMPProjectK2], with klib removed and `iosApp/Hello.kt` added */
   @Test
   fun testLightClassSupportForNonJvm() {
-    assumeTrue(useFirUast())
-
     val shared =
       project(
           kt(
@@ -5869,6 +5943,42 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
         """
           .trimIndent()
       )
+  }
+
+  @Test
+  fun testAarZipSlip() {
+    val root = temp.newFolder().canonicalFile.absoluteFile
+    val aarFile = temp.newFile("evil.aar")
+
+    java.util.zip.ZipOutputStream(java.io.FileOutputStream(aarFile)).use { zos ->
+      val entry = java.util.zip.ZipEntry("../evil.txt")
+      zos.putNextEntry(entry)
+      zos.write("evil".toByteArray())
+      zos.closeEntry()
+    }
+
+    @Language("XML")
+    val descriptor =
+      """
+      <project>
+      <sdk dir='${TestUtils.getSdk()}'/>
+      <root dir="$root" />
+      <module name="M" android="true" library="false">
+        <aar file="$aarFile" />
+      </module>
+      </project>
+      """
+        .trimIndent()
+
+    val descriptorFile = File(root, "project.xml")
+    Files.asCharSink(descriptorFile, Charsets.UTF_8).write(descriptor)
+
+    try {
+      MainTest.checkDriver("", "", ERRNO_SUCCESS, arrayOf("--project", descriptorFile.path), null, null)
+      fail("Expected ZipException")
+    } catch (e: Exception) {
+      assertThat(e.message).contains("resolves outside")
+    }
   }
 
   @After

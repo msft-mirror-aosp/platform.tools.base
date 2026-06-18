@@ -18,12 +18,20 @@ package com.android.build.gradle.integration.lint
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.KotlinHelloWorldApp
+import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
-class LintApiDatabaseTest {
+@RunWith(Parameterized::class)
+class LintApiDatabaseTest(private val lintReportAggregation: Boolean) {
+
+  companion object {
+    @Parameterized.Parameters(name = "lintReportAggregation={0}") @JvmStatic fun params() = listOf(true, false)
+  }
 
   @get:Rule
   val project: GradleTestProject =
@@ -32,7 +40,7 @@ class LintApiDatabaseTest {
   @get:Rule val temporaryFolder: TemporaryFolder = TemporaryFolder()
 
   private val lintTaskName = ":lintDebug"
-  private val lintReportTaskName = ":lintReportDebug"
+  private val lintReportTaskName = if (lintReportAggregation) ":createLocalLintReportDebug" else ":lintReportDebug"
   private val lintAnalyzeTaskName = ":lintAnalyzeDebug"
 
   // Test that specifying a lint API database via a system property affects lint task UP-TO-DATE
@@ -45,27 +53,47 @@ class LintApiDatabaseTest {
 
     // Use a nonexistent lint api database file initially as a check that the build doesn't fail
     // in this case.
-    project.executor().withArgument("-DLINT_API_DATABASE=${nonexistentFile.absolutePath}").run(lintTaskName).apply {
-      assertTask(lintReportTaskName).didWork()
-      assertTask(lintAnalyzeTaskName).didWork()
-    }
+    project
+      .executor()
+      .with(BooleanOption.LINT_REPORT_AGGREGATION, lintReportAggregation)
+      .withArgument("-DLINT_API_DATABASE=${nonexistentFile.absolutePath}")
+      .run(lintTaskName)
+      .apply {
+        assertTask(lintReportTaskName).didWork()
+        assertTask(lintAnalyzeTaskName).didWork()
+      }
     // lint tasks should run again if we specify a LINT_API_DATABASE system property.
-    project.executor().withArgument("-DLINT_API_DATABASE=${lintApiDatabase1.absolutePath}").run(lintTaskName).apply {
-      assertTask(lintReportTaskName).didWork()
-      assertTask(lintAnalyzeTaskName).didWork()
-    }
+    project
+      .executor()
+      .with(BooleanOption.LINT_REPORT_AGGREGATION, lintReportAggregation)
+      .withArgument("-DLINT_API_DATABASE=${lintApiDatabase1.absolutePath}")
+      .run(lintTaskName)
+      .apply {
+        assertTask(lintReportTaskName).didWork()
+        assertTask(lintAnalyzeTaskName).didWork()
+      }
     // lint tasks should be up-to-date if we set a different lint api database file with the
     // same contents
-    project.executor().withArgument("-DLINT_API_DATABASE=${lintApiDatabase2.absolutePath}").run(lintTaskName).apply {
-      assertTask(lintReportTaskName).wasUpToDate()
-      assertTask(lintAnalyzeTaskName).wasUpToDate()
-    }
+    project
+      .executor()
+      .with(BooleanOption.LINT_REPORT_AGGREGATION, lintReportAggregation)
+      .withArgument("-DLINT_API_DATABASE=${lintApiDatabase2.absolutePath}")
+      .run(lintTaskName)
+      .apply {
+        assertTask(lintReportTaskName).wasUpToDate()
+        assertTask(lintAnalyzeTaskName).wasUpToDate()
+      }
     // lint tasks should run again if we modify the contents of the lint api database file.
     lintApiDatabase2.appendText("bar")
-    project.executor().withArgument("-DLINT_API_DATABASE=${lintApiDatabase2.absolutePath}").run(lintTaskName).apply {
-      assertTask(lintReportTaskName).didWork()
-      assertTask(lintAnalyzeTaskName).didWork()
-    }
+    project
+      .executor()
+      .with(BooleanOption.LINT_REPORT_AGGREGATION, lintReportAggregation)
+      .withArgument("-DLINT_API_DATABASE=${lintApiDatabase2.absolutePath}")
+      .run(lintTaskName)
+      .apply {
+        assertTask(lintReportTaskName).didWork()
+        assertTask(lintAnalyzeTaskName).didWork()
+      }
   }
 
   // Test that specifying a lint API database via an environment variable affects lint task
@@ -78,26 +106,46 @@ class LintApiDatabaseTest {
 
     // Use a nonexistent lint api database file initially as a check that the build doesn't fail
     // in this case.
-    project.executor().withEnvironmentVariables(mapOf("LINT_API_DATABASE" to nonexistentFile.absolutePath)).run(lintTaskName).apply {
-      assertTask(lintReportTaskName).didWork()
-      assertTask(lintAnalyzeTaskName).didWork()
-    }
+    project
+      .executor()
+      .with(BooleanOption.LINT_REPORT_AGGREGATION, lintReportAggregation)
+      .withEnvironmentVariables(mapOf("LINT_API_DATABASE" to nonexistentFile.absolutePath))
+      .run(lintTaskName)
+      .apply {
+        assertTask(lintReportTaskName).didWork()
+        assertTask(lintAnalyzeTaskName).didWork()
+      }
     // lint tasks should run again if we specify a LINT_API_DATABASE environment variable.
-    project.executor().withEnvironmentVariables(mapOf("LINT_API_DATABASE" to lintApiDatabase1.absolutePath)).run(lintTaskName).apply {
-      assertTask(lintReportTaskName).didWork()
-      assertTask(lintAnalyzeTaskName).didWork()
-    }
+    project
+      .executor()
+      .with(BooleanOption.LINT_REPORT_AGGREGATION, lintReportAggregation)
+      .withEnvironmentVariables(mapOf("LINT_API_DATABASE" to lintApiDatabase1.absolutePath))
+      .run(lintTaskName)
+      .apply {
+        assertTask(lintReportTaskName).didWork()
+        assertTask(lintAnalyzeTaskName).didWork()
+      }
     // lint tasks should be up-to-date if we set a different lint api database file with the
     // same contents
-    project.executor().withEnvironmentVariables(mapOf("LINT_API_DATABASE" to lintApiDatabase2.absolutePath)).run(lintTaskName).apply {
-      assertTask(lintReportTaskName).wasUpToDate()
-      assertTask(lintAnalyzeTaskName).wasUpToDate()
-    }
+    project
+      .executor()
+      .with(BooleanOption.LINT_REPORT_AGGREGATION, lintReportAggregation)
+      .withEnvironmentVariables(mapOf("LINT_API_DATABASE" to lintApiDatabase2.absolutePath))
+      .run(lintTaskName)
+      .apply {
+        assertTask(lintReportTaskName).wasUpToDate()
+        assertTask(lintAnalyzeTaskName).wasUpToDate()
+      }
     // lint tasks should run again if we modify the contents of the lint api database file.
     lintApiDatabase2.appendText("bar")
-    project.executor().withEnvironmentVariables(mapOf("LINT_API_DATABASE" to lintApiDatabase2.absolutePath)).run(lintTaskName).apply {
-      assertTask(lintReportTaskName).didWork()
-      assertTask(lintAnalyzeTaskName).didWork()
-    }
+    project
+      .executor()
+      .with(BooleanOption.LINT_REPORT_AGGREGATION, lintReportAggregation)
+      .withEnvironmentVariables(mapOf("LINT_API_DATABASE" to lintApiDatabase2.absolutePath))
+      .run(lintTaskName)
+      .apply {
+        assertTask(lintReportTaskName).didWork()
+        assertTask(lintAnalyzeTaskName).didWork()
+      }
   }
 }

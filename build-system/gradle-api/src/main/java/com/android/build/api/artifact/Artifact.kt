@@ -17,6 +17,7 @@
 package com.android.build.api.artifact
 
 import java.io.Serializable
+import org.gradle.api.Incubating
 import org.gradle.api.file.Directory
 import org.gradle.api.file.FileSystemLocation
 import org.gradle.api.file.RegularFile
@@ -84,7 +85,7 @@ abstract class Artifact<T : FileSystemLocation>(val kind: ArtifactKind<T>, val c
     Artifact<FileTypeT>(kind, category)
 
   /**
-   * Denotes a single [DIRECTORY] that may contain zero to many [com.android.build.api.variant.BuiltArtifact].
+   * Denotes a [DIRECTORY] that may contain zero to many [com.android.build.api.variant.BuiltArtifact].
    *
    * Artifact types annotated with this marker interface are backed up by a [DIRECTORY] whose content should be read using the
    * [com.android.build.api.variant.BuiltArtifactsLoader].
@@ -103,7 +104,7 @@ abstract class Artifact<T : FileSystemLocation>(val kind: ArtifactKind<T>, val c
   interface Appendable
 
   /**
-   * Denotes an artifact type that can transformed.
+   * Denotes an artifact type that can be transformed.
    *
    * Either a [Single] or [Multiple] artifact type can be transformed.
    */
@@ -114,4 +115,17 @@ abstract class Artifact<T : FileSystemLocation>(val kind: ArtifactKind<T>, val c
    * type, you will need to transform it by combining all the inputs into a single output instance.
    */
   interface Replaceable
+
+  /**
+   * Denotes a [Multiple] artifact that can have qualifiers attached to each of its [FileSystemLocation] instances.
+   *
+   * While [Multiple] artifacts are stored in a flat namespace, it can be beneficial to attach metadata to each artifact. This allows
+   * consumers to filter artifacts of interest and only resolve those particular [org.gradle.api.provider.Provider] instances, rather than
+   * resolving all of them.
+   */
+  @Incubating
+  interface WithQualifiers {
+    /** The list of attribute keys that can be used to query for specific artifacts. */
+    val qualifierKeys: List<String>?
+  }
 }

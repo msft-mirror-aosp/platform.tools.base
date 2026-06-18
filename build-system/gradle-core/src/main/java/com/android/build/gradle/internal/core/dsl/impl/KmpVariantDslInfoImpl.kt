@@ -191,7 +191,7 @@ class KmpVariantDslInfoImpl(
       get() = false
 
     override val includePackages: Set<String>
-      get() = setOf()
+      get() = setOf("**")
 
     override val keepRuleFiles: Set<File>
       get() = setOf()

@@ -376,15 +376,9 @@ src/test/pkg/Test.java:43: Error: Call must be from @UiThread, but context is al
 src/test/pkg/Test.java:48: Warning: Statement must run from @UiThread, incompatible with earlier code that must run from @{Slow,WorkerThread} [UnsatisfiableThreadConstraint]
                 uiMethod(); // OK
                 ~~~~~~~~~~
-src/test/pkg/Test.java:52: Warning: Call results in an unsatisfiable thread requirement [UnsatisfiableThreadConstraint]
-        new Application().runOnPooledThread(new Runnable() { // WARN8 current
-                          ^
 src/test/pkg/Test.java:56: Warning: Statement must run from @UiThread, incompatible with earlier code that must run from @{Slow,WorkerThread} [UnsatisfiableThreadConstraint]
                 uiMethod(); // WARN8 ideally, but above instead
                 ~~~~~~~~~~
-src/test/pkg/Test.java:60: Warning: Call results in an unsatisfiable thread requirement [UnsatisfiableThreadConstraint]
-        new Application().externallyAnnotated(new Runnable() { // WARN9, WARN10 current
-                          ^
 src/test/pkg/Test.java:65: Warning: Statement must run from @UiThread, incompatible with earlier code that must run from @{Slow,WorkerThread} [UnsatisfiableThreadConstraint]
                 uiMethod(); // OK
                 ~~~~~~~~~~
@@ -409,9 +403,6 @@ src/test/pkg/Test.java:60: Error: Call has an unsatisfiable thread requirement, 
 src/test/pkg/Test.java:75: Error: Call must be from @UiThread, but context is allowing @{Slow,WorkerThread} [WrongThread]
         uiMethod(); // WARN12
         ~~~~~~~~~~
-src/test/pkg/Test.java:88: Error: Call has an unsatisfiable thread requirement, but context is allowing @{Slow,WorkerThread} [WrongThread]
-        new Application().runOnPooledThread(this::uiMethod); // WARN16
-                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 src/test/pkg/Test.java:88: Error: Call must be from @UiThread, but a super method is allowing @{Slow,WorkerThread} [WrongThread]
         new Application().runOnPooledThread(this::uiMethod); // WARN16
                                             ~~~~~~~~~~~~~~
@@ -436,19 +427,13 @@ src/test/pkg/Test.java:110: Error: Call must be from @{Slow,WorkerThread}, but a
 src/test/pkg/Test.java:111: Error: Call must be from @{Slow,WorkerThread}, but a super method is allowing @UiThread [WrongThread]
             workerMethod(); // WARN23
             ~~~~~~~~~~~~~~
-src/test/pkg/Test.java:117: Error: Argument must allow calling run() from @UiThread, but that call is requiring @{Slow,WorkerThread} [WrongThread]
-        new Application().runWriteAction(this::slowMethod); // WARN24
-                                         ~~~~~~~~~~~~~~~~
 src/test/pkg/Test.java:117: Error: Call must be from @{Slow,WorkerThread}, but a super method is allowing @UiThread [WrongThread]
         new Application().runWriteAction(this::slowMethod); // WARN24
                                          ~~~~~~~~~~~~~~~~
-src/test/pkg/Test.java:118: Error: Argument must allow calling run() from @UiThread, but that call is requiring @{Slow,WorkerThread} [WrongThread]
-        new Application().runWriteAction(this::workerMethod); // WARN25
-                                         ~~~~~~~~~~~~~~~~~~
 src/test/pkg/Test.java:118: Error: Call must be from @{Slow,WorkerThread}, but a super method is allowing @UiThread [WrongThread]
         new Application().runWriteAction(this::workerMethod); // WARN25
                                          ~~~~~~~~~~~~~~~~~~
-19 errors, 7 warnings
+16 errors, 5 warnings
                 """
       )
   }

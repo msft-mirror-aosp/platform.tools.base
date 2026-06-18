@@ -22,6 +22,8 @@ import com.android.adblib.AdbSession
 import com.android.adblib.INFINITE_DURATION
 import com.android.adblib.INFINITE_TIMEOUT
 import com.android.adblib.adbLogger
+import com.android.adblib.ddmlibcompatibility.AdbLibDdmlibCompatibilityProperties.RUN_BLOCKING_LEGACY_DEFAULT_TIMEOUT
+import com.android.adblib.property
 import com.android.adblib.trackDevices
 import com.android.adblib.withErrorTimeout
 import com.android.ddmlib.AdbDelegateUsageTracker
@@ -35,7 +37,6 @@ import com.android.ddmlib.AndroidDebugBridge.IDeviceChangeListener
 import com.android.ddmlib.AndroidDebugBridge.MIN_ADB_VERSION
 import com.android.ddmlib.AndroidDebugBridgeBase
 import com.android.ddmlib.Client
-import com.android.ddmlib.DdmPreferences
 import com.android.ddmlib.IDevice
 import com.android.ddmlib.IDeviceUsageTracker
 import com.android.ddmlib.Log
@@ -726,11 +727,10 @@ class AdbLibAndroidDebugBridge(
         }
       } catch (t: Throwable) {
         when (t) {
-          // `InterruptedException` can be thrown from `runBlocking`, and we simply ignore it,
-          // matching the behavior in `AndroidDebugBridgeImpl`, where
-          // `ClosedByInterruptException` is also caught and ignored
+          // `IOException` and `InterruptedException` can be thrown from `runBlockingLegacy`, and we simply ignore them
+          // to match the behavior in legacy `AndroidDebugBridge`.
           is InterruptedException,
-          is TimeoutException -> {
+          is IOException -> {
             logger.warn(t, "Exception while getting a socketAddress")
           }
 
@@ -941,22 +941,25 @@ class AdbLibAndroidDebugBridge(
   }
 
   /**
-   * Similar to [runBlocking] but with a custom [timeout]
-   *
-   * For information about the exceptions that [runBlocking] may throw, see the [runBlocking] documentation. Additionally, this method
+   * Similar to [runBlocking] but with a custom [timeout].
    *
    * @throws TimeoutException if [block] take more than [timeout] to execute
    */
   private fun <R> runBlockingLegacy(
-    timeout: Duration = Duration.ofMillis(DdmPreferences.getTimeOut().toLong()),
+    timeout: Duration = session.property(RUN_BLOCKING_LEGACY_DEFAULT_TIMEOUT),
     block: suspend CoroutineScope.() -> R,
   ): R {
-    return runBlocking {
-      if (timeout == INFINITE_DURATION) {
-        block()
-      } else {
-        session.withErrorTimeout(timeout) { block() }
+
+    try {
+      return runBlocking {
+        if (timeout == INFINITE_DURATION) {
+          block()
+        } else {
+          session.withErrorTimeout(timeout) { block() }
+        }
       }
+    } catch (e: TimeoutException) {
+      throw IOException("Operation timed out", e)
     }
   }
 

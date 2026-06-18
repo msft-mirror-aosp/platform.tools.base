@@ -39,7 +39,6 @@ class ExpandArtProfileWildcardsTest {
   val project =
     GradleTestProject.builder()
       .fromTestApp(MultiModuleTestProject.builder().subproject(":app", app).subproject(":lib", lib).dependency(app, lib).build())
-      .disableBuiltInKotlin()
       .create()
 
   @Test
@@ -70,7 +69,6 @@ class ExpandArtProfileWildcardsTest {
   @Test
   fun testExpandArtProfileWildcardsTaskWithR8Rewriting() {
     testExpandWildcardsTask(
-      r8Rewriting = true,
       expectedArtProfile =
         """
         Lcom/example/app/HelloWorld;
@@ -79,58 +77,29 @@ class ExpandArtProfileWildcardsTest {
         La;
 
         """
-          .trimIndent(),
+          .trimIndent()
     )
   }
 
-  @Test
-  fun testExpandArtProfileWildcardsTaskWithoutR8Rewriting() {
-    testExpandWildcardsTask(
-      r8Rewriting = false,
-      expectedArtProfile =
-        """
-        Lcom/example/app/HelloWorld;
-        Lcom/example/app/R${'$'}id;
-        Lcom/example/app/R${'$'}layout;
-        Lcom/example/app/R${'$'}string;
-        Lcom/example/app/R;
-        Lcom/example/lib/Foo;
-        Lcom/example/lib/HelloWorld;
-        Lcom/example/lib/R${'$'}id;
-        Lcom/example/lib/R${'$'}layout;
-        Lcom/example/lib/R${'$'}string;
-        Lcom/example/lib/R;
-
-        """
-          .trimIndent(),
-    )
-  }
-
-  private fun testExpandWildcardsTask(r8Rewriting: Boolean, expectedArtProfile: String) {
+  private fun testExpandWildcardsTask(expectedArtProfile: String) {
     // Set minifyEnabled to true so ExpandArtProfileWildcardsTask runs
     val app =
       project.getSubproject("app").also {
         it.buildFile.appendText(
           """
-                    android {
-                        defaultConfig {
-                            minSdkVersion = 33
-                        }
-                        buildTypes.release.proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'dontoptimize.pro'
-                    }
+          android {
+              defaultConfig {
+                  minSdkVersion = 33
+              }
+              buildTypes.release.proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'dontoptimize.pro'
+          }
 
-                    androidComponents {
-                        beforeVariants(selector().withBuildType("release"), { variant ->
-                            variant.setMinifyEnabled(true);
-                        })
-                        onVariants(selector().withName("release"), { variant ->
-                            variant.experimentalProperties.put(
-                                "android.experimental.art-profile-r8-rewriting",
-                                $r8Rewriting
-                            )
-                        })
-                    }
-                """
+          androidComponents {
+              beforeVariants(selector().withBuildType("release"), { variant ->
+                  variant.setMinifyEnabled(true);
+              })
+          }
+          """
             .trimIndent()
         )
         File(project.getSubproject("app").projectDir, "dontoptimize.pro").writeText("-dontoptimize")

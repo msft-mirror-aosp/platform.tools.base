@@ -26,6 +26,7 @@ import com.android.tools.deployer.model.TestLogger;
 import com.android.tools.deployer.model.activate.ActivationCommands;
 import com.android.tools.deployer.model.activate.AmDebugAppResultChecker;
 import com.android.tools.deployer.model.activate.BroadcastResultChecker;
+import com.android.tools.deployer.modelv1.component.ComplicationV1;
 import com.android.tools.manifest.parser.XmlNode;
 import com.android.tools.manifest.parser.components.ManifestAppComponentInfo;
 
@@ -55,7 +56,7 @@ public class ComplicationTest {
         // Test RUN mode
         ActivationCommands runCommands =
                 complication.getActivationCommands(flags, AppComponent.Mode.RUN);
-        Assert.assertEquals(1, runCommands.size());
+        Assert.assertEquals(2, runCommands.size());
         String expectedComplicationCommand =
                 "am broadcast -a com.google.android.wearable.app.DEBUG_SURFACE --es operation"
                     + " set-complication --ecn component"
@@ -67,10 +68,17 @@ public class ComplicationTest {
                 "Adding Complication for com.example.myApp", runCommands.get(0).getStatus());
         Assert.assertTrue(runCommands.get(0).getChecker() instanceof BroadcastResultChecker);
 
+        String expectedShowCommand =
+                "am broadcast -a com.google.android.wearable.app.DEBUG_SYSUI --es operation"
+                        + " show-watchface";
+        Assert.assertEquals(expectedShowCommand, runCommands.get(1).getCommand());
+        Assert.assertEquals("Showing Watch Face", runCommands.get(1).getStatus());
+        Assert.assertTrue(runCommands.get(1).getChecker() instanceof BroadcastResultChecker);
+
         // Test DEBUG mode
         ActivationCommands debugCommands =
                 complication.getActivationCommands(flags, AppComponent.Mode.DEBUG);
-        Assert.assertEquals(3, debugCommands.size());
+        Assert.assertEquals(4, debugCommands.size());
         Assert.assertEquals(
                 "am set-debug-app -w 'com.example.myApp'", debugCommands.get(0).getCommand());
         Assert.assertEquals(
@@ -90,6 +98,10 @@ public class ComplicationTest {
         Assert.assertEquals(
                 "Adding Complication for com.example.myApp", debugCommands.get(2).getStatus());
         Assert.assertTrue(debugCommands.get(2).getChecker() instanceof BroadcastResultChecker);
+
+        Assert.assertEquals(expectedShowCommand, debugCommands.get(3).getCommand());
+        Assert.assertEquals("Showing Watch Face", debugCommands.get(3).getStatus());
+        Assert.assertTrue(debugCommands.get(3).getChecker() instanceof BroadcastResultChecker);
     }
 
     @Test
@@ -102,7 +114,8 @@ public class ComplicationTest {
                         return "com.example.services.Complication";
                     }
                 };
-        Complication complication = new Complication(info, "com.example.myApp", new TestLogger());
+        ComplicationV1 complication =
+                new ComplicationV1(info, "com.example.myApp", new TestLogger());
         complication.activate(
                 "debug.app.watchface com.example.WatchFaces$InnerWatchFace 1 LONG_TEXT",
                 AppComponent.Mode.RUN,
@@ -135,7 +148,8 @@ public class ComplicationTest {
                         return "com.example.services.Complication";
                     }
                 };
-        Complication complication = new Complication(info, "com.example.myApp", new TestLogger());
+        ComplicationV1 complication =
+                new ComplicationV1(info, "com.example.myApp", new TestLogger());
         complication.activate(
                 "debug.app.watchface com.example.WatchFaces$InnerWatchFace 1 LONG_TEXT",
                 AppComponent.Mode.DEBUG,

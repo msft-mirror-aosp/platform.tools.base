@@ -49,6 +49,8 @@ public class AndroidArtifacts {
     // zip of apks for publishing single or multi-apks to a repo.
     private static final String TYPE_APK_ZIP = "zip";
 
+    private static final String TYPE_EXTRACTED_LAYOUTLIB = "android-extracted-layoutlib";
+
     // type for processed jars (the jars may need to be processed, e.g. jetified to AndroidX, before
     // they can be used)
     private static final String TYPE_PROCESSED_JAR = "processed-jar";
@@ -196,21 +198,6 @@ public class AndroidArtifacts {
 
     private static final String TYPE_DESUGAR_LIB_MERGED_KEEP_RULES =
             "android-desugar-lib-merged-keep-rules";
-
-    private static final String TYPE_ANDROID_PRIVACY_SANDBOX_SDK_ARCHIVE = "asar";
-    private static final String TYPE_ANDROID_PRIVACY_SANDBOX_SDK_COMPAT_SPLIT_APKS =
-            "android-privacy-sandbox-sdk-compat-apks";
-    private static final String TYPE_ANDROID_PRIVACY_SANDBOX_EXTRACTED_SDK_APKS =
-            "android-privacy-sandbox-extracted-sdk-apks";
-    private static final String TYPE_USES_SDK_LIBRARY_SPLIT_FOR_LOCAL_DEPLOYMENT =
-            "uses-sdk-library-split-for-local-deployment";
-
-    private static final String TYPE_ANDROID_PRIVACY_SANDBOX_SDK_EXTRACTED_METADATA_PROTO =
-            "android-privacy-sandbox-sdk-extracted-metadata";
-    private static final String TYPE_ANDROID_PRIVACY_SANDBOX_SDK_INTERFACE_DESCRIPTOR =
-            "android-privacy-sandbox-sdk-interface-descriptor";
-    private static final String TYPE_ANDROID_PRIVACY_SANDBOX_USES_SDK_LIBRARY_MANIFEST_SNIPPET =
-            "android-privacy-sandbox-sdk-uses-sdk-library-manifest-snippet";
 
     private static final String TYPE_FEATURE_PUBLISHED_DEX = "android-feature-published-dex";
 
@@ -503,6 +490,8 @@ public class AndroidArtifacts {
         // zip of apks for publishing single or multi-apks to a repo.
         APK_ZIP(TYPE_APK_ZIP),
 
+        EXTRACTED_LAYOUTLIB(TYPE_EXTRACTED_LAYOUTLIB),
+
         // intermediate bundle that only contains one module. This is to be input into bundle-tool
         MODULE_BUNDLE(TYPE_MODULE_BUNDLE),
         // final bundle generate by bundle-tool
@@ -630,29 +619,6 @@ public class AndroidArtifacts {
         DESUGAR_LIB_MERGED_KEEP_RULES(TYPE_DESUGAR_LIB_MERGED_KEEP_RULES),
 
         GLOBAL_SYNTHETICS_MERGED(TYPE_FEATURE_PUBLISHED_GLOBAL_SYNTHETICS),
-
-        // The 'ASAR' file for consuming privacy sandbox SDKs
-        ANDROID_PRIVACY_SANDBOX_SDK_ARCHIVE(TYPE_ANDROID_PRIVACY_SANDBOX_SDK_ARCHIVE),
-
-        // The APKs extracted from artifact-transform derived APKs from a privacy sandbox SDK
-        ANDROID_PRIVACY_SANDBOX_EXTRACTED_SDK_APKS(TYPE_ANDROID_PRIVACY_SANDBOX_EXTRACTED_SDK_APKS),
-
-        // The APKS containing split APK files for backward compatibility.
-        ANDROID_PRIVACY_SANDBOX_SDK_COMPAT_SPLIT_APKS(
-                TYPE_ANDROID_PRIVACY_SANDBOX_SDK_COMPAT_SPLIT_APKS),
-
-        // use sdk library split Apk that allows us to have a single main APK that works for all
-        // versions of Android.
-        USES_SDK_LIBRARY_SPLIT_FOR_LOCAL_DEPLOYMENT(
-                TYPE_USES_SDK_LIBRARY_SPLIT_FOR_LOCAL_DEPLOYMENT),
-
-        // The metadata proto from the privacy sandbox SDK, used by the package numbering task
-        ANDROID_PRIVACY_SANDBOX_SDK_METADATA_PROTO(
-                TYPE_ANDROID_PRIVACY_SANDBOX_SDK_EXTRACTED_METADATA_PROTO),
-
-        // The sdk-apis.jar containing client API stubs packaged in the ASB.
-        ANDROID_PRIVACY_SANDBOX_SDK_INTERFACE_DESCRIPTOR(
-                TYPE_ANDROID_PRIVACY_SANDBOX_SDK_INTERFACE_DESCRIPTOR),
 
         // The file describing the supported locales in the module
         SUPPORTED_LOCALE_LIST(TYPE_SUPPORTED_LOCALE_LIST),

@@ -70,7 +70,6 @@ import com.android.tools.lint.checks.TargetSdkRequirements.MINIMUM_TARGET_SDK_VE
 import com.android.tools.lint.checks.TargetSdkRequirements.MINIMUM_TARGET_SDK_VERSION_YEAR
 import com.android.tools.lint.checks.TargetSdkRequirements.MINIMUM_WEAR_TARGET_SDK_VERSION
 import com.android.tools.lint.checks.TargetSdkRequirements.PREVIOUS_MINIMUM_TARGET_SDK_VERSION
-import com.android.tools.lint.checks.infrastructure.LintDetectorTest.kts
 import com.android.tools.lint.checks.infrastructure.TestFiles.gradleToml
 import com.android.tools.lint.checks.infrastructure.TestIssueRegistry
 import com.android.tools.lint.checks.infrastructure.TestLintTask
@@ -84,7 +83,6 @@ import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.model.DefaultLintModelLintOptions
 import com.android.tools.lint.model.LintModelLintOptions
 import com.android.tools.lint.model.LintModelModule
-import com.android.tools.lint.useFirUast
 import com.android.utils.FileUtils
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -2294,7 +2292,7 @@ class GradleDetectorTest : AbstractCheckTest() {
         gradle(
             """
             plugins {
-              id 'com.android.application' version '7.1.0'
+              id 'com.android.application' version '7.2.0'
             }
             """
           )
@@ -2306,7 +2304,7 @@ class GradleDetectorTest : AbstractCheckTest() {
             #Tue Jun 11 09:46:18 PDT 2024
             distributionBase=GRADLE_USER_HOME
             distributionPath=wrapper/dists
-            distributionUrl=https\://services.gradle.org/distributions/gradle-6.0-bin.zip
+            distributionUrl=https\://services.gradle.org/distributions/gradle-7.3.3-bin.zip
             zipStoreBase=GRADLE_USER_HOME
             zipStorePath=wrapper/dists
             """,
@@ -2317,12 +2315,12 @@ class GradleDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        build.gradle:2: Warning: A newer version of com.android.application than 7.1.0 is available: 8.0.2 [AndroidGradlePluginVersion]
-          id 'com.android.application' version '7.1.0'
+        build.gradle:2: Warning: A newer version of com.android.application than 7.2.0 is available: 8.0.2 [AndroidGradlePluginVersion]
+          id 'com.android.application' version '7.2.0'
                                                ~~~~~~~
-        ../gradle/wrapper/gradle-wrapper.properties:4: Warning: A newer version of Gradle than 6.0 is available: 7.6.4 [AndroidGradlePluginVersion]
-        distributionUrl=https\://services.gradle.org/distributions/gradle-6.0-bin.zip
-                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        ../gradle/wrapper/gradle-wrapper.properties:4: Warning: A newer version of Gradle than 7.3.3 is available: 7.6.4 [AndroidGradlePluginVersion]
+        distributionUrl=https\://services.gradle.org/distributions/gradle-7.3.3-bin.zip
+                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 2 warnings
         """
       )
@@ -3278,10 +3276,10 @@ class GradleDetectorTest : AbstractCheckTest() {
         @@ -9 +9 @@
         -      version = release("35")
         +      version = release(35)
-        Fix for build.gradle.kts line 8: Update targetSdkVersion to 36:
+        Fix for build.gradle.kts line 8: Update targetSdkVersion to 37:
         @@ -8 +8 @@
         -      version = release(35)
-        +      version = release(36)
+        +      version = release(37)
         """
       )
   }
@@ -3330,10 +3328,10 @@ class GradleDetectorTest : AbstractCheckTest() {
         @@ -9 +9 @@
         -      version = release("35")
         +      version = release(35)
-        Fix for build.gradle line 8: Update targetSdkVersion to 36:
+        Fix for build.gradle line 8: Update targetSdkVersion to 37:
         @@ -8 +8 @@
         -      version release(35)
-        +      version release(36)
+        +      version release(37)
         """
       )
   }
@@ -3809,7 +3807,7 @@ class GradleDetectorTest : AbstractCheckTest() {
       )
   }
 
-  fun testR8NewApiWithFalseFlag() {
+  fun testR8PackageScopeWithFalseFlag() {
     lint()
       .files(
         propertyFile(
@@ -3828,6 +3826,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                  release {
                      optimization {
                          enable = true
+                         packageScope = setOf("androidx.**")
                      }
                  }
              }
@@ -3840,15 +3839,15 @@ class GradleDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        build.gradle:5: Warning: Cannot use optimization.enable=true without setting android.r8.gradual.support=true flag. [R8GradualApi]
-                        enable = true
-                        ~~~~~~
+        build.gradle:6: Warning: Cannot use optimization.packageScope without setting android.r8.gradual.support=true flag. [R8GradualApi]
+                        packageScope = setOf("androidx.**")
+                        ~~~~~~~~~~~~
         0 errors, 1 warning
         """
       )
       .expectFixDiffs(
         """
-          Autofix for build.gradle line 5: Replace flag value with true:
+          Autofix for build.gradle line 6: Replace flag value with true:
           gradle.properties:
           @@ -2 +2 @@
           -android.r8.gradual.support=false
@@ -3856,7 +3855,7 @@ class GradleDetectorTest : AbstractCheckTest() {
       )
   }
 
-  fun testR8NewApiWithNoFlag() {
+  fun testR8PackageScopeWithNoFlag() {
     lint()
       .files(
         propertyFile(
@@ -3873,6 +3872,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                  release {
                      optimization {
                          enable = true
+                         packageScope = setOf("androidx.**")
                      }
                  }
              }
@@ -3885,15 +3885,15 @@ class GradleDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        build.gradle:5: Warning: Cannot use optimization.enable=true without setting android.r8.gradual.support=true flag. [R8GradualApi]
-                        enable = true
-                        ~~~~~~
+        build.gradle:6: Warning: Cannot use optimization.packageScope without setting android.r8.gradual.support=true flag. [R8GradualApi]
+                        packageScope = setOf("androidx.**")
+                        ~~~~~~~~~~~~
         0 errors, 1 warning
         """
       )
       .expectFixDiffs(
         """
-          Autofix for build.gradle line 5: Add android.r8.gradual.support=true flag:
+          Autofix for build.gradle line 6: Add android.r8.gradual.support=true flag:
           gradle.properties:
           @@ -1 +1,2 @@
           -# comments
@@ -3903,7 +3903,7 @@ class GradleDetectorTest : AbstractCheckTest() {
       )
   }
 
-  fun testR8NewApiWithFlag() {
+  fun testR8PackageScopeWithFlag() {
     lint()
       .files(
         gradle(
@@ -3913,6 +3913,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                  release {
                      optimization {
                          enable = true
+                         packageScope = setOf("androidx.**")
                      }
                  }
              }
@@ -9740,11 +9741,8 @@ class GradleDetectorTest : AbstractCheckTest() {
     )
   }
 
-  fun testIncludedFiles_outsideApp() {
-    // TODO(b/463283604): remove the bail-out below.
-    if (useFirUast()) {
-      return
-    }
+  // TODO(b/463283604)
+  fun disabled_testIncludedFiles_outsideApp() {
     // Make sure we handle including files -- from kts to groovy and back.
     lint()
       .files(

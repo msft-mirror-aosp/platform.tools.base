@@ -62,8 +62,23 @@ enum class AgpTestSuiteInputParameters(val propertyName: String) {
    */
   @Incubating TESTED_APKS("com.android.agp.test.TESTED_APKS"),
 
-  /** Path to the testing APK file. */
-  @Incubating TESTING_APK("com.android.agp.test.TESTING_APK"),
+  /**
+   * [java.io.File.pathSeparator] separated list of local test APK files containing compiled Android resources (such as resources.arsc,
+   * assets, and merged manifests) for HostJar test suites.
+   *
+   * These local test APKs are generated when Android resources are included in local test suites, allowing tests (such as screenshot tests
+   * or unit tests) to access these resources at execution time.
+   */
+  @Incubating LOCAL_TESTED_APKS("com.android.agp.test.LOCAL_TESTED_APKS"),
+
+  /** Path to the test APKs. */
+  @Incubating TEST_APKS("com.android.agp.test.TEST_APKS"),
+
+  /** Comma separated list of APK files that are used for testing utilities. */
+  @Incubating TEST_UTIL_APKS("com.android.agp.test.TEST_UTIL_APKS"),
+
+  /** The execution mode for the test suite. */
+  @Incubating ANDROID_TEST_EXECUTION_MODE("com.android.agp.test.ANDROID_TEST_EXECUTION_MODE"),
 
   /** Path to the AAPT2 executable. */
   @Incubating AAPT2_EXECUTABLE("com.android.agp.test.AAPT2_EXECUTABLE"),

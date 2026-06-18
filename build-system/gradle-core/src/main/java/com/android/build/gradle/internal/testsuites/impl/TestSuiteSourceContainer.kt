@@ -53,7 +53,7 @@ class TestSuiteSourceContainer(
   override fun getName(): String = testSuiteName
 
   /** Returns a unique name for this source container within the test suite. */
-  val identifier = "$testSuiteName${targetVariantName.capitalizeFirstChar()}"
+  val identifier = "$testSuiteName${source.type.toCamelCase()}${targetVariantName.capitalizeFirstChar()}"
 
   override val type: TestSuiteSourceType
     get() = source.type
@@ -81,7 +81,8 @@ class TestSuiteSourceContainer(
           .createTasks(creationConfig, this, source as HostJarTestSuiteSourceSet, taskFactory, taskCreationServices)
       }
       TestSuiteSourceType.TEST_APK -> {
-        ApkTestSuiteTaskManager().createTasks(this, source as TestApkTestSuiteSourceSet, taskFactory, creationConfig)
+        ApkTestSuiteTaskManager(project, testSuiteTaskManager)
+          .createTasks(creationConfig, this, source as TestApkTestSuiteSourceSet, taskFactory, taskCreationServices)
       }
     }
   }

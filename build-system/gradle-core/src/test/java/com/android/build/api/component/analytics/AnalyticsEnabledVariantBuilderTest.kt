@@ -74,4 +74,12 @@ class AnalyticsEnabledVariantBuilderTest {
     GeneratesApkBuilder::class.java.getMethod("setTargetSdkPreview", String::class.java).invoke(apkBuilder, "S")
     verify(apkBuilder as GeneratesApkBuilder, times(1)).targetSdkPreview = "S"
   }
+
+  @Test
+  fun testEnableLint() {
+    proxy.enableLint = false
+    Truth.assertThat(stats.variantApiAccess.variantAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantAccessList.first().type).isEqualTo(VariantMethodType.ENABLE_LINT_VALUE)
+    verify(delegate, times(1)).enableLint = false
+  }
 }

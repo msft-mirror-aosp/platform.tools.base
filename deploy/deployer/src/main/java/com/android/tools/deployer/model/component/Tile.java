@@ -16,14 +16,17 @@
 package com.android.tools.deployer.model.component;
 
 import com.android.annotations.NonNull;
-import com.android.ddmlib.IDevice;
-import com.android.ddmlib.IShellOutputReceiver;
 import com.android.tools.deployer.model.ModelException;
 import com.android.tools.deployer.model.activate.ActivationCommand;
+import com.android.tools.deployer.model.activate.ActivationCommandResultChecker;
 import com.android.tools.deployer.model.activate.ActivationCommands;
+import com.android.tools.deployer.model.activate.ActivationContext;
 import com.android.tools.deployer.model.activate.BroadcastResultChecker;
 import com.android.tools.manifest.parser.components.ManifestServiceInfo;
 import com.android.utils.ILogger;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Tile extends WearComponent {
 
@@ -45,27 +48,7 @@ public class Tile extends WearComponent {
         super(appId, info, logger);
     }
 
-    @Override
-    public void activate(
-            @NonNull String extraFlags,
-            @NonNull Mode activationMode,
-            @NonNull IShellOutputReceiver addTileReceiver,
-            @NonNull IDevice device)
-            throws ModelException {
-        validate(extraFlags);
-        logger.info(
-                "Activating Tile '%s' %s",
-                info.getQualifiedName(), activationMode.equals(Mode.DEBUG) ? "for debug" : "");
-
-        if (activationMode.equals(Mode.DEBUG)) {
-            setUpAmDebugApp(device);
-            setUpDebugSurfaceDebugApp(device);
-        }
-        String command = getStartTileCommand();
-        runStartCommand(command, addTileReceiver, logger, device);
-    }
-
-    private void validate(String extraFlags) throws ModelException {
+    protected void validate(String extraFlags) throws ModelException {
         if (!extraFlags.isEmpty()) {
             throw new ModelException(
                     String.format(
@@ -75,28 +58,119 @@ public class Tile extends WearComponent {
     }
 
     @NonNull
-    private String getStartTileCommand() {
+    protected String getStartTileCommand() {
         return ShellCommand.SET_TILE + getFQEscapedName();
     }
-
     @Override
     public ActivationCommands getActivationCommands(
             @NonNull String extraFlags, @NonNull Mode activationMode) throws ModelException {
-        validate(extraFlags);
+        ActivationContext context = new ActivationContext();
         if (activationMode.equals(Mode.DEBUG)) {
             return new ActivationCommands(
-                    getSetUpAmDebugAppActivationCommand(),
-                    getSetUpDebugSurfaceDebugAppActivationCommand(),
-                    getStartTileActivationCommand());
+                    getWearDebugSurfaceVersionActivationCommand(context),
+                    getSetUpAmDebugAppActivationCommand(context),
+                    getSetUpDebugSurfaceDebugAppActivationCommand(context),
+                    getSetWatchTileActivationCommand(context),
+                    getShowTileActivationCommand(context));
         } else {
-            return new ActivationCommands(getStartTileActivationCommand());
+            return new ActivationCommands(
+                    getWearDebugSurfaceVersionActivationCommand(context),
+                    getSetWatchTileActivationCommand(context),
+                    getShowTileActivationCommand(context));
         }
     }
 
-    private ActivationCommand getStartTileActivationCommand() {
+    private ActivationCommand getWearDebugSurfaceVersionActivationCommand(
+            ActivationContext context) {
+        return new ActivationCommand(
+                WearComponent.ShellCommand.GET_WEAR_DEBUG_SURFACE_VERSION,
+                "Checking Wear OS Surface API version",
+                new WearDebugSurfaceVersionChecker(logger, context),
+                context);
+    }
+
+    static class WearDebugSurfaceVersionChecker extends ActivationCommandResultChecker {
+        private int version = -1;
+        private int resultCode = -1;
+        private final Pattern versionPattern = Pattern.compile("data=\"(\\d+)\"");
+        private final Pattern resultCodePattern = Pattern.compile("result=(\\d+)");
+        private final ILogger logger;
+
+        public WearDebugSurfaceVersionChecker(ILogger logger, ActivationContext context) {
+            super(null, msg -> logger.warning(msg), context);
+            this.logger = logger;
+        }
+
+        @Override
+        public void processLines(String[] lines) {
+            for (String line : lines) {
+                Matcher matcher = versionPattern.matcher(line);
+                if (matcher.find()) {
+                    version = Integer.parseInt(matcher.group(1));
+                }
+                matcher = resultCodePattern.matcher(line);
+                if (matcher.find()) {
+                    resultCode = Integer.parseInt(matcher.group(1));
+                }
+            }
+        }
+
+        @Override
+        public Status check() {
+            if (resultCode != 1) {
+                reportError("Broadcast failed with result=" + resultCode);
+                return Status.ERROR;
+            }
+            if (version < 2) {
+                reportError("Wear OS Surface API version too low: " + version);
+                return Status.ERROR;
+            }
+            return Status.SUCCESS;
+        }
+    }
+
+    private ActivationCommand getShowTileActivationCommand(ActivationContext context) {
+        return new ActivationCommand(
+                ShellCommand.SHOW_TILE_COMMAND + "${tile_index}",
+                "Showing Tile",
+                new BroadcastResultChecker(null, msg -> logger.warning(msg), context),
+                context);
+    }
+
+
+    private ActivationCommand getSetWatchTileActivationCommand(ActivationContext context) {
         return new ActivationCommand(
                 getStartTileCommand(),
                 "Setting Tile for " + appId,
-                new BroadcastResultChecker(null, msg -> logger.warning(msg)));
+                new SetWatchTileResultChecker(null, msg -> logger.warning(msg), context),
+                context);
+    }
+
+    static class SetWatchTileResultChecker extends BroadcastResultChecker {
+        private int index = -1;
+        private final Pattern indexPattern = Pattern.compile("Index=\\[(\\d+)]");
+
+        public SetWatchTileResultChecker(
+                java.util.function.Consumer<String> onWarning,
+                java.util.function.Consumer<String> onError,
+                ActivationContext context) {
+            super(onWarning, onError, context);
+        }
+
+        @Override
+        public void processLines(String[] lines) {
+            super.processLines(lines);
+            for (String line : lines) {
+                Matcher matcher = indexPattern.matcher(line);
+                if (matcher.find()) {
+                    index = Integer.parseInt(matcher.group(1));
+                    getContext().put("tile_index", String.valueOf(index));
+                }
+            }
+        }
+
+        public int getIndex() {
+            return index;
+        }
     }
 }

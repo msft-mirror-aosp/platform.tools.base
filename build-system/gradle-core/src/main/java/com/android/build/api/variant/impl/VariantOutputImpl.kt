@@ -74,7 +74,7 @@ data class VariantOutputImpl(
       variantOutputConfiguration = variantOutputConfiguration as VariantOutputConfigurationImpl,
       fullName = fullName,
       baseName = baseName,
-      outputFileName = outputFileName.get(),
+      outputFileName = outputFileName.get().also { validateOutputFileName(it) },
     )
 
   fun getFilter(filterType: FilterConfiguration.FilterType): FilterConfiguration? = filters.firstOrNull { it.filterType == filterType }
@@ -86,4 +86,10 @@ data class VariantOutputImpl(
   @get:Nested
   override val filters: Collection<FilterConfigurationImpl>
     get() = (variantOutputConfiguration as VariantOutputConfigurationImpl).filters
+}
+
+internal fun validateOutputFileName(fileName: String) {
+  if (fileName.contains('/') || fileName.contains("\\") || fileName.contains("..")) {
+    throw IllegalArgumentException("File paths are not supported when setting an output file name: $fileName")
+  }
 }

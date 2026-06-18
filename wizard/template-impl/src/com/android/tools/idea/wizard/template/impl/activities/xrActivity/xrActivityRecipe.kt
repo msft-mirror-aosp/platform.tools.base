@@ -56,6 +56,7 @@ fun RecipeExecutor.xrActivityRecipe(moduleData: ModuleTemplateData, activityClas
     isLauncher = true,
     hasNoActionBar = true,
     generateActivityTitle = false,
+    windowSoftInputMode = "adjustResize",
   )
 
   copy(File("xr-activity").resolve("drawable"), resOut.resolve("drawable"))

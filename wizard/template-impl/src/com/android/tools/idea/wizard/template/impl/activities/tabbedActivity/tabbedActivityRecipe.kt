@@ -58,11 +58,20 @@ fun RecipeExecutor.tabbedActivityRecipe(
   addDependency("com.android.support:appcompat-v7:${appCompatVersion}.+")
   addDependency("com.android.support:design:${appCompatVersion}.+")
   addDependency("com.android.support.constraint:constraint-layout:+")
+  addDependency("androidx.activity:activity-ktx:+")
   addLifecycleDependencies(useAndroidX)
   addMaterialDependency(useAndroidX)
   addViewBindingSupport(moduleData.viewBindingSupport, true)
 
-  generateManifest(moduleData, activityClass, packageName, isLauncher, true, generateActivityTitle = true)
+  generateManifest(
+    moduleData,
+    activityClass,
+    packageName,
+    isLauncher,
+    true,
+    generateActivityTitle = true,
+    windowSoftInputMode = "adjustResize",
+  )
   generateNoActionBarStyles(moduleData.baseFeature?.resDir, resOut, moduleData.themesData)
 
   mergeXml(stringsXml(), resOut.resolve("values/strings.xml"))
@@ -72,7 +81,7 @@ fun RecipeExecutor.tabbedActivityRecipe(
   mergeXml(dimensXmlW600dp(), resOut.resolve("values-w600dp/dimens.xml"))
   mergeXml(dimensXmlW1240dp(), resOut.resolve("values-w1240dp/dimens.xml"))
 
-  val appBarActivityLayoutXml = appBarActivityXml(activityClass, packageName, moduleData.themesData.appBarOverlay.name, useAndroidX)
+  val appBarActivityLayoutXml = appBarActivityXml(activityClass, packageName, moduleData.themesData.appBarOverlay.name)
   save(appBarActivityLayoutXml, resOut.resolve("layout/${layoutName}.xml"))
   val fragmentLayoutXml = fragmentSimpleXml(packageName, useAndroidX)
   save(fragmentLayoutXml, resOut.resolve("layout/${fragmentLayoutName}.xml"))
@@ -87,7 +96,6 @@ fun RecipeExecutor.tabbedActivityRecipe(
           layoutName = layoutName,
           packageName = packageName,
           applicationPackage = projectData.applicationPackage,
-          useAndroidX = useAndroidX,
           isViewBindingSupported = isViewBindingSupported,
         )
       Language.Kotlin ->
@@ -96,7 +104,6 @@ fun RecipeExecutor.tabbedActivityRecipe(
           layoutName = layoutName,
           packageName = packageName,
           applicationPackage = projectData.applicationPackage,
-          useAndroidX = useAndroidX,
           isViewBindingSupported = isViewBindingSupported,
         )
     }
@@ -132,8 +139,8 @@ fun RecipeExecutor.tabbedActivityRecipe(
 
   val sectionsPagerAdapter =
     when (projectData.language) {
-      Language.Java -> sectionsPagerAdapterJava(packageName, useAndroidX)
-      Language.Kotlin -> sectionsPagerAdapterKt(packageName, useAndroidX)
+      Language.Java -> sectionsPagerAdapterJava(packageName)
+      Language.Kotlin -> sectionsPagerAdapterKt(packageName)
     }
   save(sectionsPagerAdapter, srcOut.resolve("ui/main/SectionsPagerAdapter.${ktOrJavaExt}"))
 

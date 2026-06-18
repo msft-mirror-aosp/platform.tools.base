@@ -17,6 +17,8 @@
 package com.android.build.gradle.internal.dependency
 
 import com.android.build.gradle.internal.tasks.MergeNativeLibsTask
+import com.android.builder.utils.isValidZipEntryName
+import com.android.builder.utils.isValidZipEntryPath
 import com.android.utils.FileUtils
 import com.google.common.io.ByteStreams
 import java.io.BufferedInputStream
@@ -48,7 +50,9 @@ abstract class ExtractJniTransform : TransformAction<GenericTransformParameters>
         it
           .stream()
           .filter { entry ->
-            MergeNativeLibsTask.predicate.test(entry.name.substringAfterLast('/')) && JAR_JNI_PATTERN.matcher(entry.name).matches()
+            MergeNativeLibsTask.predicate.test(entry.name.substringAfterLast('/')) &&
+              JAR_JNI_PATTERN.matcher(entry.name).matches() &&
+              com.android.builder.utils.isValidZipEntryName(entry)
           }
           .iterator()
       if (!entries.hasNext()) {
@@ -61,6 +65,9 @@ abstract class ExtractJniTransform : TransformAction<GenericTransformParameters>
         // omit the "lib/" entry.name prefix in the output path
         val relativePath = entry.name.substringAfter('/').replace('/', File.separatorChar)
         val outFile = FileUtils.join(outputDir, relativePath)
+        if (!isValidZipEntryPath(outFile, outputDir)) {
+          continue
+        }
         FileUtils.mkdirs(outFile.parentFile)
         BufferedInputStream(it.getInputStream(entry)).use { inFileStream ->
           BufferedOutputStream(outFile.outputStream()).use { outFileStream -> ByteStreams.copy(inFileStream, outFileStream) }

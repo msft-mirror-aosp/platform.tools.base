@@ -227,4 +227,25 @@ class ScopedStorageDetectorTest : AbstractCheckTest() {
       .run()
       .expectClean()
   }
+
+  fun testRemovePermissions() {
+    lint()
+      .files(
+        manifest(
+            """
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:tools="http://schemas.android.com/tools"
+                package="test.pkg">
+              <uses-sdk android:targetSdkVersion="29"/>
+              <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" tools:node="remove" />
+              <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" tools:node="remove" />
+              <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" tools:node="remove" />
+            </manifest>
+            """
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
+  }
 }

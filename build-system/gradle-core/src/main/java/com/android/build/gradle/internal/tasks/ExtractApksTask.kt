@@ -107,7 +107,7 @@ abstract class ExtractApksTask : NonIncrementalTask() {
       it.apksFromBundleIdeModel.set(apksFromBundleIdeModel)
       it.applicationId.set(applicationId)
       it.variantName.set(variantName)
-      it.optionalListOfDynamicModulesToInstall.set(dynamicModulesToInstall.orElse(listOf()))
+      it.optionalListOfDynamicModulesToInstall.set(dynamicModulesToInstall.orElse(mutableListOf()))
       it.setIncludeMetadata.set(setIncludeMetadata)
     }
   }

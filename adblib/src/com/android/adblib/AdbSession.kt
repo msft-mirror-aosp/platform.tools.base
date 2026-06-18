@@ -19,6 +19,7 @@ import com.android.adblib.AdbLibProperties.TRACK_DEVICES_RETRY_DELAY
 import com.android.adblib.AdbSession.Companion.create
 import com.android.adblib.CoroutineScopeCache.Key
 import com.android.adblib.impl.AdbActivityManagerServicesImpl
+import com.android.adblib.impl.AdbPackageManagerServicesImpl
 import com.android.adblib.impl.AdbSessionImpl
 import com.android.adblib.impl.ConnectedDevicesDeviceCacheProvider
 import com.android.adblib.impl.ConnectedDevicesTrackerImpl
@@ -138,7 +139,7 @@ interface AdbSession : AutoCloseable {
     fun create(
       host: AdbSessionHost,
       channelProvider: AdbServerChannelProvider = AdbServerChannelProvider.createOpenLocalHost(host),
-      connectionTimeout: Duration = Duration.ofSeconds(30),
+      connectionTimeout: Duration = host.getPropertyValue(AdbLibProperties.SESSION_CONNECTION_TIMEOUT),
     ): AdbSession {
       return AdbSessionImpl(parentSession = null, host, channelProvider, connectionTimeout.toMillis())
     }
@@ -152,7 +153,7 @@ interface AdbSession : AutoCloseable {
       parentSession: AdbSession,
       host: AdbSessionHost,
       channelProvider: AdbServerChannelProvider = AdbServerChannelProvider.createOpenLocalHost(host),
-      connectionTimeout: Duration = Duration.ofSeconds(30),
+      connectionTimeout: Duration = host.getPropertyValue(AdbLibProperties.SESSION_CONNECTION_TIMEOUT),
     ): AdbSession {
       return AdbSessionImpl(parentSession, host, channelProvider, connectionTimeout.toMillis())
     }
@@ -304,6 +305,15 @@ val AdbSession.activityManagerServices: AdbActivityManagerServices
 
 /** The [Key] used to identify the [AdbActivityManagerServices] in [AdbSession.cache]. */
 private object AdbActivityManagerServicesKey : Key<AdbActivityManagerServices>(AdbActivityManagerServices::class.java.simpleName)
+
+/** Returns the [AdbPackageManagerServices] associated to this session */
+val AdbSession.packageManagerServices: AdbPackageManagerServices
+  get() {
+    return this.cache.getOrPut(AdbPackageManagerServicesKey) { AdbPackageManagerServicesImpl(this) }
+  }
+
+/** The [Key] used to identify the [AdbPackageManagerServices] in [AdbSession.cache]. */
+private object AdbPackageManagerServicesKey : Key<AdbPackageManagerServices>(AdbPackageManagerServices::class.java.simpleName)
 
 /** The [com.android.adblib.CoroutineScopeCache.Key] for the [WarningsTracker] */
 private val WarningsTrackerKey = Key<WarningsTracker>(WarningsTracker::class.java.simpleName)

@@ -38,7 +38,3 @@ android {
         baseline = file('lint-baseline.xml')
     }
 }
-
-dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:${libs.versions.kotlinVersion.get()}"
-}

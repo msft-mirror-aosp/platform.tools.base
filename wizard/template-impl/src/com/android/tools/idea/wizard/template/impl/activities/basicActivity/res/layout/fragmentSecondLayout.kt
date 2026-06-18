@@ -15,10 +15,8 @@
  */
 package com.android.tools.idea.wizard.template.impl.activities.basicActivity.res.layout
 
-import com.android.tools.idea.wizard.template.getMaterialComponentName
-
-fun fragmentSecondLayout(useAndroidX: Boolean, secondFragmentClass: String): String {
-  val layout = getMaterialComponentName("androidx.core.widget.NestedScrollView", false)
+fun fragmentSecondLayout(secondFragmentClass: String): String {
+  val layout = "androidx.core.widget.NestedScrollView"
   return """<?xml version="1.0" encoding="utf-8"?>
 <$layout
     xmlns:android="http://schemas.android.com/apk/res/android"

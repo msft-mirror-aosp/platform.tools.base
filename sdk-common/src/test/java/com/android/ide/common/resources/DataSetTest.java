@@ -18,26 +18,32 @@ package com.android.ide.common.resources;
 import static com.android.ide.common.resources.DataFile.FileType.XML_VALUES;
 import static com.android.ide.common.resources.DataMerger.NODE_DATA_SET;
 import static com.android.ide.common.resources.DataMerger.NODE_MERGER;
+
 import static com.google.common.truth.Truth.assertThat;
-import static java.io.File.separator;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+
+import static java.io.File.separator;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.testutils.TestUtils;
 import com.android.utils.ILogger;
 import com.android.utils.XmlUtils;
-import java.io.File;
-import java.io.IOException;
-import javax.xml.parsers.DocumentBuilderFactory;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
+
+import java.io.File;
+import java.io.IOException;
+
+import javax.xml.parsers.DocumentBuilderFactory;
 
 public class DataSetTest {
     @Rule
@@ -53,7 +59,9 @@ public class DataSetTest {
         assertFalse(dataSet.isIgnored(new File("foo")));
         assertFalse(dataSet.isIgnored(new File("foo" + separator + "bar")));
         assertFalse(dataSet.isIgnored(new File("layout" + separator + "main.xml")));
-        assertFalse(dataSet.isIgnored(new File("res" + separator + "drawable" + separator + "foo.png")));
+        assertFalse(
+                dataSet.isIgnored(
+                        new File("res" + separator + "drawable" + separator + "foo.png")));
         assertFalse(dataSet.isIgnored(new File("")));
 
         assertTrue(dataSet.isIgnored(new File(".")));
@@ -143,6 +151,17 @@ public class DataSetTest {
 
         assertThat(content).contains("file path=\"" + notEmpty.getAbsolutePath() + "\"");
         assertThat(content).contains("file path=\"" + empty.getAbsolutePath() + "\"");
+    }
+
+    @Test
+    public void testUpdateWithUnknownChangedFileReturnsFalse() throws MergingException {
+        DataSet dataSet = getDataSet();
+        File sourceFolder = new File("src");
+        File unknownFile = new File(sourceFolder, "unknown.txt");
+
+        boolean result = dataSet.updateWith(sourceFolder, unknownFile, FileStatus.CHANGED, null);
+
+        assertFalse(result);
     }
 
     private static DataSet getDataSet() {

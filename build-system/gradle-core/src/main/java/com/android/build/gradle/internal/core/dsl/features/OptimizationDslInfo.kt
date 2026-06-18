@@ -45,7 +45,7 @@ interface OptimizationDslInfo {
   /** Returns true if R8 optimization is on and only for application module */
   val applicationOptimizationEnabled: Boolean
 
-  /** Return set of packages Return empty set for anything than application module */
+  /** Return set of packages included in optimization, or setOf("**") if gradual R8 not enabled. */
   val includePackages: Set<String>
 
   /** Returns true if R8 optimization */

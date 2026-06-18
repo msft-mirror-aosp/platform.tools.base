@@ -31,7 +31,7 @@ android {
 }
 
 dependencies {
-    def useAndroidX = project.findProperty("android.useAndroidX")
+    def useAndroidX = providers.gradleProperty("android.useAndroidX").orNull
     if (useAndroidX == null) {
         throw new IllegalArgumentException("must provide androidX property")
     } else if (useAndroidX == "true") {

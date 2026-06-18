@@ -24,6 +24,9 @@ import com.android.build.api.dsl.ApplicationDefaultConfig
 import com.android.build.api.dsl.ApplicationInstallation
 import com.android.build.api.dsl.ApplicationProductFlavor
 import com.android.build.api.dsl.ComposeOptions
+import com.android.build.api.dsl.DeclarativeApplicationBuildType
+import com.android.build.api.dsl.DeclarativeApplicationFlavor
+import com.android.build.api.dsl.DependenciesExtension
 import com.android.build.api.dsl.Packaging
 import com.android.build.api.dsl.TestCoverage
 import com.android.build.api.dsl.ViewBinding
@@ -34,10 +37,33 @@ import com.android.build.gradle.internal.dsl.ProductFlavor as InternalProductFla
 import com.android.build.gradle.internal.dsl.decorator.ApplicationInstallationImpl
 import com.android.build.gradle.internal.plugins.DslContainerProvider
 import com.android.build.gradle.internal.services.DslServices
+import com.android.builder.core.ComponentTypeImpl
 import java.util.function.Supplier
 import javax.inject.Inject
 import org.gradle.api.Action
+import org.gradle.api.Incubating
 import org.gradle.api.NamedDomainObjectContainer
+
+@Incubating
+abstract class DeclarativeApplicationExtensionImpl
+@Inject
+constructor(
+  dslServices: DslServices,
+  dslContainers: DslContainerProvider<ApplicationDefaultConfig, ApplicationBuildType, ApplicationProductFlavor, SigningConfig>,
+) : ApplicationExtensionImpl(dslServices, dslContainers), DeclarativeApplicationExtension {
+
+  override val dependencies: DependenciesExtension = dslServices.newInstance(DependenciesExtension::class.java)
+
+  override val buildTypes: NamedDomainObjectContainer<DeclarativeApplicationBuildType> =
+    dslServices.domainObjectContainer(
+      DeclarativeBuildType::class.java,
+      DeclarativeBuildTypeFactory(dslServices, ComponentTypeImpl.BASE_APK),
+    ) as NamedDomainObjectContainer<DeclarativeApplicationBuildType>
+
+  override val productFlavors: NamedDomainObjectContainer<DeclarativeApplicationFlavor> =
+    dslServices.domainObjectContainer(DeclarativeProductFlavor::class.java, DeclarativeProductFlavorFactory(dslServices))
+      as NamedDomainObjectContainer<DeclarativeApplicationFlavor>
+}
 
 /** Internal implementation of the 'new' DSL interface */
 abstract class ApplicationExtensionImpl
@@ -63,11 +89,11 @@ constructor(
   }
 
   override fun buildTypes(action: NamedDomainObjectContainer<ApplicationBuildType>.() -> Unit) {
-    action(buildTypes)
+    @Suppress("UNCHECKED_CAST") (buildTypes as NamedDomainObjectContainer<ApplicationBuildType>).action()
   }
 
   override fun buildTypes(action: Action<in NamedDomainObjectContainer<BuildType>>) {
-    action.execute(buildTypes as NamedDomainObjectContainer<BuildType>)
+    @Suppress("UNCHECKED_CAST") action.execute(buildTypes as NamedDomainObjectContainer<BuildType>)
   }
 
   override fun NamedDomainObjectContainer<ApplicationBuildType>.debug(action: ApplicationBuildType.() -> Unit) {
@@ -89,11 +115,11 @@ constructor(
   }
 
   override fun productFlavors(action: Action<NamedDomainObjectContainer<InternalProductFlavor>>) {
-    action.execute(productFlavors as NamedDomainObjectContainer<InternalProductFlavor>)
+    @Suppress("UNCHECKED_CAST") action.execute(productFlavors as NamedDomainObjectContainer<InternalProductFlavor>)
   }
 
   override fun productFlavors(action: NamedDomainObjectContainer<ApplicationProductFlavor>.() -> Unit) {
-    action.invoke(productFlavors)
+    @Suppress("UNCHECKED_CAST") (productFlavors as NamedDomainObjectContainer<ApplicationProductFlavor>).action()
   }
 
   override fun defaultConfig(action: Action<InternalDefaultConfig>) {

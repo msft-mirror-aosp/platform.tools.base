@@ -149,7 +149,6 @@ https://issuetracker.google.com/328748711
   * com.android.build.api.dsl.BundleDensity.setEnableSplit: void (java.lang.Boolean)
 https://issuetracker.google.com/328748714
   * com.android.build.api.dsl.Optimization.baselineProfile: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BaselineProfile, kotlin.Unit>)
-  * com.android.build.api.dsl.Optimization.keepRules: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KeepRules, kotlin.Unit>)
   * com.android.build.api.dsl.VariantDimension.getOptimization: com.android.build.api.dsl.Optimization ()
   * com.android.build.api.dsl.VariantDimension.optimization: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Optimization, kotlin.Unit>)
 https://issuetracker.google.com/328748727
@@ -455,6 +454,15 @@ https://issuetracker.google.com/336296433
   * com.android.build.api.variant.DeviceTestBuilder.setEnableCodeCoverage: void (boolean)
 https://issuetracker.google.com/336985668
   * com.android.build.api.variant.UnitTest.configureTestTask: void (kotlin.jvm.functions.Function1<? super org.gradle.api.tasks.testing.Test, kotlin.Unit>)
+https://issuetracker.google.com/342408447
+  * com.android.build.api.artifact.Artifact$WithQualifiers
+  * com.android.build.api.artifact.Artifact$WithQualifiers.getQualifierKeys: java.util.List<java.lang.String> ()
+  * com.android.build.api.artifact.Artifacts.get: org.gradle.api.provider.Provider<FileTypeT> (ArtifactTypeT, java.util.Map<java.lang.String, java.lang.String>)
+  * com.android.build.api.artifact.Artifacts.getAllWithAttributes: java.util.Collection<com.android.build.api.artifact.RegisteredArtifactWithQualifiers<FileTypeT>> (ArtifactTypeT)
+  * com.android.build.api.artifact.OutOperationRequest.toAppendTo: void (ArtifactTypeT, java.util.Map<java.lang.String, java.lang.String>)
+  * com.android.build.api.artifact.RegisteredArtifactWithQualifiers
+  * com.android.build.api.artifact.RegisteredArtifactWithQualifiers.getArtifact: org.gradle.api.provider.Provider<FileTypeT> ()
+  * com.android.build.api.artifact.RegisteredArtifactWithQualifiers.getQualifiers: java.util.Map<java.lang.String, java.lang.String> ()
 https://issuetracker.google.com/349614565
   * com.android.build.api.dsl.ApplicationAndroidResources.getLocaleFilters: java.util.Set<java.lang.String> ()
   * com.android.build.api.variant.ApplicationAndroidResources.getLocaleFilters: org.gradle.api.provider.SetProperty<java.lang.String> ()
@@ -491,7 +499,6 @@ https://issuetracker.google.com/362941219
   * com.android.build.api.variant.DeviceSpec$Builder.getCodeName: java.lang.String ()
   * com.android.build.api.variant.DeviceSpec$Builder.getName: java.lang.String ()
   * com.android.build.api.variant.DeviceSpec$Builder.getScreenDensity: int ()
-  * com.android.build.api.variant.DeviceSpec$Builder.getSupportsPrivacySandbox: boolean ()
   * com.android.build.api.variant.DeviceSpec$Builder.setAbis: com.android.build.api.variant.DeviceSpec$Builder (java.util.List<java.lang.String>)
   * com.android.build.api.variant.DeviceSpec$Builder.setAbis: void (java.util.List)
   * com.android.build.api.variant.DeviceSpec$Builder.setApiLevel: com.android.build.api.variant.DeviceSpec$Builder (int)
@@ -502,16 +509,13 @@ https://issuetracker.google.com/362941219
   * com.android.build.api.variant.DeviceSpec$Builder.setName: void (java.lang.String)
   * com.android.build.api.variant.DeviceSpec$Builder.setScreenDensity: com.android.build.api.variant.DeviceSpec$Builder (int)
   * com.android.build.api.variant.DeviceSpec$Builder.setScreenDensity: void (int)
-  * com.android.build.api.variant.DeviceSpec$Builder.setSupportsPrivacySandbox: com.android.build.api.variant.DeviceSpec$Builder (boolean)
-  * com.android.build.api.variant.DeviceSpec$Builder.setSupportsPrivacySandbox: void (boolean)
-  * com.android.build.api.variant.DeviceSpec.<init>: com.android.build.api.variant.DeviceSpec (java.lang.String, int, java.lang.String, java.util.List, int, boolean, kotlin.jvm.internal.DefaultConstructorMarker)
+  * com.android.build.api.variant.DeviceSpec.<init>: com.android.build.api.variant.DeviceSpec (java.lang.String, int, java.lang.String, java.util.List, int, kotlin.jvm.internal.DefaultConstructorMarker)
   * com.android.build.api.variant.DeviceSpec.equals: boolean (java.lang.Object)
   * com.android.build.api.variant.DeviceSpec.getAbis: java.util.List<java.lang.String> ()
   * com.android.build.api.variant.DeviceSpec.getApiLevel: int ()
   * com.android.build.api.variant.DeviceSpec.getCodeName: java.lang.String ()
   * com.android.build.api.variant.DeviceSpec.getName: java.lang.String ()
   * com.android.build.api.variant.DeviceSpec.getScreenDensity: int ()
-  * com.android.build.api.variant.DeviceSpec.getSupportsPrivacySandbox: boolean ()
   * com.android.build.api.variant.DeviceSpec.hashCode: int ()
   * com.android.build.api.variant.DeviceSpec.toString: java.lang.String ()
 https://issuetracker.google.com/368426598
@@ -667,8 +671,6 @@ https://issuetracker.google.com/467692785
 https://issuetracker.google.com/475856688
   * com.android.build.api.variant.AarMetadata.getMinCompileSdkExtension: org.gradle.api.provider.Property<java.lang.Integer> ()
 https://issuetracker.google.com/476099690
-  * com.android.build.api.dsl.AndroidSourceSet.getKeepRules: com.android.build.api.dsl.AndroidSourceDirectorySet ()
-  * com.android.build.api.dsl.AndroidSourceSet.keepRules: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AndroidSourceDirectorySet, kotlin.Unit>)
   * com.android.build.api.variant.Sources.getKeepRules: com.android.build.api.variant.SourceDirectories$Flat ()
 https://issuetracker.google.com/480062612
   * com.android.build.api.variant.VariantOutput.getOutputFileName: org.gradle.api.provider.Property<java.lang.String> ()
@@ -676,6 +678,9 @@ https://issuetracker.google.com/481403863
   * com.android.build.api.dsl.AndroidLibrarySourceSet.aarKeepRules: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AndroidSourceDirectorySet, kotlin.Unit>)
   * com.android.build.api.dsl.AndroidLibrarySourceSet.getAarKeepRules: com.android.build.api.dsl.AndroidSourceDirectorySet ()
   * com.android.build.api.variant.LibrarySources.getAarKeepRules: com.android.build.api.variant.SourceDirectories$Flat ()
+https://issuetracker.google.com/488043043
+  * com.android.build.api.variant.VariantBuilder.getEnableLint: boolean ()
+  * com.android.build.api.variant.VariantBuilder.setEnableLint: void (boolean)
 https://issuetracker.google.com/491855034
   * com.android.build.api.artifact.SingleArtifact$AGGREGATED_LINT_HTML_REPORT extends com.android.build.api.artifact.SingleArtifact
   * com.android.build.api.artifact.SingleArtifact$AGGREGATED_LINT_SARIF_REPORT extends com.android.build.api.artifact.SingleArtifact
@@ -685,3 +690,116 @@ https://issuetracker.google.com/491855034
   * com.android.build.api.artifact.SingleArtifact$LINT_SARIF_REPORT extends com.android.build.api.artifact.SingleArtifact
   * com.android.build.api.artifact.SingleArtifact$LINT_TEXT_REPORT extends com.android.build.api.artifact.SingleArtifact
   * com.android.build.api.artifact.SingleArtifact$LINT_XML_REPORT extends com.android.build.api.artifact.SingleArtifact
+https://issuetracker.google.com/494573625
+  * com.android.build.api.dsl.BuildTypeDependenciesExtension implements com.android.build.api.dsl.VariantDimensionDependenciesExtension, org.gradle.api.artifacts.dsl.GradleDependencies
+  * com.android.build.api.dsl.DeclarativeApplicationBuildType implements com.android.build.api.dsl.ApplicationBuildType
+  * com.android.build.api.dsl.DeclarativeApplicationBuildType.getDependencies: com.android.build.api.dsl.BuildTypeDependenciesExtension ()
+  * com.android.build.api.dsl.DeclarativeApplicationFlavor implements com.android.build.api.dsl.ApplicationProductFlavor
+  * com.android.build.api.dsl.DeclarativeApplicationFlavor.getDependencies: com.android.build.api.dsl.ProductFlavorDependenciesExtension ()
+  * com.android.build.api.dsl.DeclarativeLibraryBuildType implements com.android.build.api.dsl.LibraryBuildType
+  * com.android.build.api.dsl.DeclarativeLibraryBuildType.getDependencies: com.android.build.api.dsl.BuildTypeDependenciesExtension ()
+  * com.android.build.api.dsl.DeclarativeLibraryFlavor implements com.android.build.api.dsl.LibraryProductFlavor
+  * com.android.build.api.dsl.DeclarativeLibraryFlavor.getDependencies: com.android.build.api.dsl.ProductFlavorDependenciesExtension ()
+  * com.android.build.api.dsl.ProductFlavorDependenciesExtension implements com.android.build.api.dsl.VariantDimensionDependenciesExtension, org.gradle.api.artifacts.dsl.GradleDependencies
+  * com.android.build.api.dsl.VariantDimensionDependenciesExtension
+  * com.android.build.api.dsl.VariantDimensionDependenciesExtension.getAnnotationProcessor: org.gradle.api.artifacts.dsl.DependencyCollector ()
+  * com.android.build.api.dsl.VariantDimensionDependenciesExtension.getApi: org.gradle.api.artifacts.dsl.DependencyCollector ()
+  * com.android.build.api.dsl.VariantDimensionDependenciesExtension.getCompileOnly: org.gradle.api.artifacts.dsl.DependencyCollector ()
+  * com.android.build.api.dsl.VariantDimensionDependenciesExtension.getCompileOnlyApi: org.gradle.api.artifacts.dsl.DependencyCollector ()
+  * com.android.build.api.dsl.VariantDimensionDependenciesExtension.getImplementation: org.gradle.api.artifacts.dsl.DependencyCollector ()
+  * com.android.build.api.dsl.VariantDimensionDependenciesExtension.getRuntimeOnly: org.gradle.api.artifacts.dsl.DependencyCollector ()
+https://issuetracker.google.com/497537804
+  * com.android.build.api.dsl.ApplicationDeclarativeDefinition implements com.android.build.api.dsl.CommonDeclarativeDefinition, com.android.build.api.dsl.TestedDeclarativeDefinition, org.gradle.features.binding.Definition
+  * com.android.build.api.dsl.ApplicationDeclarativeDefinition.debug: void (org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.ApplicationBuildType>, kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.DeclarativeApplicationBuildType, kotlin.Unit>)
+  * com.android.build.api.dsl.ApplicationDeclarativeDefinition.getAndroidResources: com.android.build.api.dsl.ApplicationAndroidResources ()
+  * com.android.build.api.dsl.ApplicationDeclarativeDefinition.getAssetPacks: java.util.Set<java.lang.String> ()
+  * com.android.build.api.dsl.ApplicationDeclarativeDefinition.getBuildFeatures: com.android.build.api.dsl.ApplicationBuildFeatures ()
+  * com.android.build.api.dsl.ApplicationDeclarativeDefinition.getBuildTypes: org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.DeclarativeApplicationBuildType> ()
+  * com.android.build.api.dsl.ApplicationDeclarativeDefinition.getBundle: com.android.build.api.dsl.Bundle ()
+  * com.android.build.api.dsl.ApplicationDeclarativeDefinition.getCompileOptions: com.android.build.api.dsl.CompileOptions ()
+  * com.android.build.api.dsl.ApplicationDeclarativeDefinition.getComposeOptions: com.android.build.api.dsl.ComposeOptions ()
+  * com.android.build.api.dsl.ApplicationDeclarativeDefinition.getDataBinding: com.android.build.api.dsl.DataBinding ()
+  * com.android.build.api.dsl.ApplicationDeclarativeDefinition.getDefaultConfig: com.android.build.api.dsl.ApplicationDefaultConfig ()
+  * com.android.build.api.dsl.ApplicationDeclarativeDefinition.getDependencies: com.android.build.api.dsl.DependenciesExtension ()
+  * com.android.build.api.dsl.ApplicationDeclarativeDefinition.getDependenciesInfo: com.android.build.api.dsl.DependenciesInfo ()
+  * com.android.build.api.dsl.ApplicationDeclarativeDefinition.getDynamicFeatures: java.util.Set<java.lang.String> ()
+  * com.android.build.api.dsl.ApplicationDeclarativeDefinition.getExternalNativeBuild: com.android.build.api.dsl.ExternalNativeBuild ()
+  * com.android.build.api.dsl.ApplicationDeclarativeDefinition.getInstallation: com.android.build.api.dsl.ApplicationInstallation ()
+  * com.android.build.api.dsl.ApplicationDeclarativeDefinition.getLint: com.android.build.api.dsl.Lint ()
+  * com.android.build.api.dsl.ApplicationDeclarativeDefinition.getPackaging: com.android.build.api.dsl.Packaging ()
+  * com.android.build.api.dsl.ApplicationDeclarativeDefinition.getProductFlavors: org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.DeclarativeApplicationFlavor> ()
+  * com.android.build.api.dsl.ApplicationDeclarativeDefinition.getPublishing: com.android.build.api.dsl.ApplicationPublishing ()
+  * com.android.build.api.dsl.ApplicationDeclarativeDefinition.getSigningConfigs: org.gradle.api.NamedDomainObjectContainer<? extends com.android.build.api.dsl.ApkSigningConfig> ()
+  * com.android.build.api.dsl.ApplicationDeclarativeDefinition.getSourceSets: org.gradle.api.NamedDomainObjectContainer<? extends com.android.build.api.dsl.AndroidSourceSet> ()
+  * com.android.build.api.dsl.ApplicationDeclarativeDefinition.getSplits: com.android.build.api.dsl.Splits ()
+  * com.android.build.api.dsl.ApplicationDeclarativeDefinition.getTestCoverage: com.android.build.api.dsl.TestCoverage ()
+  * com.android.build.api.dsl.ApplicationDeclarativeDefinition.getTestOptions: com.android.build.api.dsl.TestOptions ()
+  * com.android.build.api.dsl.ApplicationDeclarativeDefinition.getViewBinding: com.android.build.api.dsl.ViewBinding ()
+  * com.android.build.api.dsl.ApplicationDeclarativeDefinition.release: void (org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.ApplicationBuildType>, kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.DeclarativeApplicationBuildType, kotlin.Unit>)
+  * com.android.build.api.dsl.CommonDeclarativeDefinition
+  * com.android.build.api.dsl.CommonDeclarativeDefinition.getBuildToolsVersion: java.lang.String ()
+  * com.android.build.api.dsl.CommonDeclarativeDefinition.getCompileSdk: java.lang.Integer ()
+  * com.android.build.api.dsl.CommonDeclarativeDefinition.getDefaultProguardFile: java.io.File (java.lang.String)
+  * com.android.build.api.dsl.CommonDeclarativeDefinition.getEnableKotlin: boolean ()
+  * com.android.build.api.dsl.CommonDeclarativeDefinition.getExperimentalProperties: java.util.Map<java.lang.String, java.lang.Object> ()
+  * com.android.build.api.dsl.CommonDeclarativeDefinition.getFlavorDimensions: java.util.List<java.lang.String> ()
+  * com.android.build.api.dsl.CommonDeclarativeDefinition.getNamespace: java.lang.String ()
+  * com.android.build.api.dsl.CommonDeclarativeDefinition.getNdkPath: java.lang.String ()
+  * com.android.build.api.dsl.CommonDeclarativeDefinition.getNdkVersion: java.lang.String ()
+  * com.android.build.api.dsl.CommonDeclarativeDefinition.getResourcePrefix: java.lang.String ()
+  * com.android.build.api.dsl.CommonDeclarativeDefinition.setBuildToolsVersion: void (java.lang.String)
+  * com.android.build.api.dsl.CommonDeclarativeDefinition.setCompileSdk: void (java.lang.Integer)
+  * com.android.build.api.dsl.CommonDeclarativeDefinition.setEnableKotlin: void (boolean)
+  * com.android.build.api.dsl.CommonDeclarativeDefinition.setNamespace: void (java.lang.String)
+  * com.android.build.api.dsl.CommonDeclarativeDefinition.setNdkPath: void (java.lang.String)
+  * com.android.build.api.dsl.CommonDeclarativeDefinition.setNdkVersion: void (java.lang.String)
+  * com.android.build.api.dsl.CommonDeclarativeDefinition.setResourcePrefix: void (java.lang.String)
+  * com.android.build.api.dsl.CommonDeclarativeDefinition.useLibrary: void (java.lang.String)
+  * com.android.build.api.dsl.CommonDeclarativeDefinition.useLibrary: void (java.lang.String, boolean)
+  * com.android.build.api.dsl.DeclarativeLibraryExtension implements com.android.build.api.dsl.LibraryExtension
+  * com.android.build.api.dsl.DeclarativeLibraryExtension.getBuildTypes: org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.DeclarativeLibraryBuildType> ()
+  * com.android.build.api.dsl.DeclarativeLibraryExtension.getDependencies: com.android.build.api.dsl.DependenciesExtension ()
+  * com.android.build.api.dsl.DeclarativeLibraryExtension.getProductFlavors: org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.DeclarativeLibraryFlavor> ()
+  * com.android.build.api.dsl.DependenciesExtension.getAndroidTestImplementation: org.gradle.api.artifacts.dsl.DependencyCollector ()
+  * com.android.build.api.dsl.DependenciesExtension.getApi: org.gradle.api.artifacts.dsl.DependencyCollector ()
+  * com.android.build.api.dsl.DependenciesExtension.getImplementation: org.gradle.api.artifacts.dsl.DependencyCollector ()
+  * com.android.build.api.dsl.DependenciesExtension.getTestImplementation: org.gradle.api.artifacts.dsl.DependencyCollector ()
+  * com.android.build.api.dsl.LibraryDeclarativeDefinition implements com.android.build.api.dsl.CommonDeclarativeDefinition, com.android.build.api.dsl.TestedDeclarativeDefinition, org.gradle.features.binding.Definition
+  * com.android.build.api.dsl.LibraryDeclarativeDefinition.debug: void (org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.DeclarativeLibraryBuildType>, kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.DeclarativeLibraryBuildType, kotlin.Unit>)
+  * com.android.build.api.dsl.LibraryDeclarativeDefinition.getAidlPackagedList: java.util.Collection<java.lang.String> ()
+  * com.android.build.api.dsl.LibraryDeclarativeDefinition.getAndroidResources: com.android.build.api.dsl.LibraryAndroidResources ()
+  * com.android.build.api.dsl.LibraryDeclarativeDefinition.getBuildFeatures: com.android.build.api.dsl.LibraryBuildFeatures ()
+  * com.android.build.api.dsl.LibraryDeclarativeDefinition.getBuildTypes: org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.DeclarativeLibraryBuildType> ()
+  * com.android.build.api.dsl.LibraryDeclarativeDefinition.getCompileOptions: com.android.build.api.dsl.CompileOptions ()
+  * com.android.build.api.dsl.LibraryDeclarativeDefinition.getComposeOptions: com.android.build.api.dsl.ComposeOptions ()
+  * com.android.build.api.dsl.LibraryDeclarativeDefinition.getDataBinding: com.android.build.api.dsl.DataBinding ()
+  * com.android.build.api.dsl.LibraryDeclarativeDefinition.getDefaultConfig: com.android.build.api.dsl.LibraryDefaultConfig ()
+  * com.android.build.api.dsl.LibraryDeclarativeDefinition.getDependencies: com.android.build.api.dsl.DependenciesExtension ()
+  * com.android.build.api.dsl.LibraryDeclarativeDefinition.getExternalNativeBuild: com.android.build.api.dsl.ExternalNativeBuild ()
+  * com.android.build.api.dsl.LibraryDeclarativeDefinition.getInstallation: com.android.build.api.dsl.LibraryInstallation ()
+  * com.android.build.api.dsl.LibraryDeclarativeDefinition.getLint: com.android.build.api.dsl.Lint ()
+  * com.android.build.api.dsl.LibraryDeclarativeDefinition.getPackaging: com.android.build.api.dsl.Packaging ()
+  * com.android.build.api.dsl.LibraryDeclarativeDefinition.getPrefab: org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.Prefab> ()
+  * com.android.build.api.dsl.LibraryDeclarativeDefinition.getProductFlavors: org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.DeclarativeLibraryFlavor> ()
+  * com.android.build.api.dsl.LibraryDeclarativeDefinition.getPublishing: com.android.build.api.dsl.LibraryPublishing ()
+  * com.android.build.api.dsl.LibraryDeclarativeDefinition.getSigningConfigs: org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.ApkSigningConfig> ()
+  * com.android.build.api.dsl.LibraryDeclarativeDefinition.getSourceSets: org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.AndroidLibrarySourceSet> ()
+  * com.android.build.api.dsl.LibraryDeclarativeDefinition.getSplits: com.android.build.api.dsl.Splits ()
+  * com.android.build.api.dsl.LibraryDeclarativeDefinition.getTestCoverage: com.android.build.api.dsl.TestCoverage ()
+  * com.android.build.api.dsl.LibraryDeclarativeDefinition.getTestOptions: com.android.build.api.dsl.TestOptions ()
+  * com.android.build.api.dsl.LibraryDeclarativeDefinition.getViewBinding: com.android.build.api.dsl.ViewBinding ()
+  * com.android.build.api.dsl.LibraryDeclarativeDefinition.release: void (org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.DeclarativeLibraryBuildType>, kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.DeclarativeLibraryBuildType, kotlin.Unit>)
+  * com.android.build.api.dsl.TestedDeclarativeDefinition
+  * com.android.build.api.dsl.TestedDeclarativeDefinition.getTestBuildType: java.lang.String ()
+  * com.android.build.api.dsl.TestedDeclarativeDefinition.getTestFixtures: com.android.build.api.dsl.TestFixtures ()
+  * com.android.build.api.dsl.TestedDeclarativeDefinition.getTestNamespace: java.lang.String ()
+  * com.android.build.api.dsl.TestedDeclarativeDefinition.setTestBuildType: void (java.lang.String)
+  * com.android.build.api.dsl.TestedDeclarativeDefinition.setTestNamespace: void (java.lang.String)
+https://issuetracker.google.com/498938267
+  * com.android.build.api.dsl.ApplicationBuildType.baselineProfile: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BaselineProfile, kotlin.Unit>)
+  * com.android.build.api.dsl.ApplicationBuildType.getBaselineProfile: com.android.build.api.dsl.BaselineProfile ()
+https://issuetracker.google.com/501095983
+  * com.android.build.api.dsl.DependenciesExtension implements org.gradle.api.artifacts.dsl.GradleDependencies, org.gradle.api.plugins.jvm.PlatformDependencyModifiers
+https://issuetracker.google.com/517066980
+  * com.android.build.api.variant.SigningConfig.from: void (com.android.build.api.dsl.SigningConfig)
+  * com.android.build.api.variant.SigningConfig.from: void (org.gradle.api.provider.Provider<com.android.build.api.variant.SigningConfigInfo>)

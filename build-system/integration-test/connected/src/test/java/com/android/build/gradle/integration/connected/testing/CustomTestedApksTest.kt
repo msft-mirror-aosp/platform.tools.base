@@ -24,6 +24,7 @@ import com.android.build.gradle.integration.common.fixture.app.TestSourceFile
 import com.android.build.gradle.integration.common.truth.TruthHelper
 import com.android.build.gradle.integration.connected.utils.getEmulator
 import com.android.build.gradle.internal.scope.InternalArtifactType
+import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.MavenRepoGenerator
 import com.android.testutils.TestInputsGenerator
 import com.android.testutils.generateAarWithContent
@@ -34,8 +35,11 @@ import org.junit.Before
 import org.junit.ClassRule
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
-class CustomTestedApksTest {
+@RunWith(Parameterized::class)
+class CustomTestedApksTest(val runWithBuiltInPlatform: Boolean) {
 
   private val mavenRepo =
     MavenRepoGenerator(
@@ -207,7 +211,7 @@ class CustomTestedApksTest {
 
   @Test
   fun connectedCheckInstalls() {
-    project.executor().run(":test:connectedCheck")
+    project.executor().with(BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM, runWithBuiltInPlatform).run(":test:connectedCheck")
     val androidProject = project.modelV2().fetchModels().container.getProject(":test").androidProject!!
 
     val testVariant = androidProject.variants.first()
@@ -238,6 +242,9 @@ class CustomTestedApksTest {
   }
 
   companion object {
+    @JvmStatic
+    @Parameterized.Parameters(name = "runWithBuiltInPlatform={0}")
+    fun parameters(): Collection<Array<Any>> = listOf(arrayOf(false), arrayOf(true))
 
     @get:ClassRule @get:JvmStatic val emulator = getEmulator()
   }

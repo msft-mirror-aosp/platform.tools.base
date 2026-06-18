@@ -18,15 +18,23 @@ package com.android.build.gradle.integration.resources
 
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.internal.scope.InternalArtifactType
+import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.TestInputsGenerator.jarWithTextEntries
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth.assertThat
 import kotlin.io.path.exists
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
 /** Tests related to [MergeJavaResourceTask] */
-class MergeJavaResourceTaskTest {
+@RunWith(Parameterized::class)
+class MergeJavaResourceTaskTest(val enableOptimizations: Boolean) {
+
+  companion object {
+    @JvmStatic @Parameterized.Parameters(name = "enableOptimizations={0}") fun data() = listOf(true, false)
+  }
 
   @get:Rule
   val rule =
@@ -43,6 +51,7 @@ class MergeJavaResourceTaskTest {
             buildFeatures { buildConfig = true }
           }
         }
+        gradleProperties { add(BooleanOption.ENABLE_JAVA_RESOURCE_OPTIMIZATIONS, enableOptimizations) }
       }
 
   @Test
@@ -206,9 +215,12 @@ class MergeJavaResourceTaskTest {
     val newResourcesDir = build.androidApplication().resolve("src/main/resources/com/android/tests/empty_dir")
     assertThat(newResourcesDir.exists()).isFalse()
     assertThat(newResourcesDir.toFile().mkdirs()).isTrue()
+    val preMergeTask = if (enableOptimizations) ":app:compressDebugJavaRes" else ":app:processDebugJavaRes"
     build.executor.run(":app:mergeDebugJavaResource").run {
-      assertTask(":app:processDebugJavaRes").didWork()
-      assertTask(":app:mergeDebugJavaResource").didWork()
+      assertTask(preMergeTask).didWork()
+      if (!enableOptimizations) {
+        assertTask(":app:mergeDebugJavaResource").didWork()
+      }
     }
   }
 

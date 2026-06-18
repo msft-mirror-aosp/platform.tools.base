@@ -26,13 +26,13 @@ intellij.remote_platform(
 )
 intellij.remote_platform(
     name = "intellij_ce_2025_2",
-    sha256 = "3c152de654fa948e12e5fba4c04ed0200e472556a8081ddc2d4c22e5831d6020",
-    top_level_dir = "idea-IC-252.27397.103",
-    url = "https://download.jetbrains.com/idea/ideaIC-2025.2.4.tar.gz",
     plugins = [
         "intellij.libraries.ktor.client.cio",
         "intellij.libraries.ktor.client",
     ],
+    sha256 = "3c152de654fa948e12e5fba4c04ed0200e472556a8081ddc2d4c22e5831d6020",
+    top_level_dir = "idea-IC-252.27397.103",
+    url = "https://download.jetbrains.com/idea/ideaIC-2025.2.4.tar.gz",
 )
 intellij.remote_platform(
     name = "intellij_2025_3",
@@ -40,6 +40,12 @@ intellij.remote_platform(
     top_level_dir = "idea-IU-253.28294.334",
     url = "https://download.jetbrains.com/idea/idea-2025.3.tar.gz",
 )
+intellij.remote_platform(
+    name = "intellij_2026_1",
+    sha256 = "c00d8318492e718c3893cf51fe783f3585214adf48e2c2da2bde47829d70a90e",
+    top_level_dir = "idea-IU-261.23567.28",
+    url = "https://download.jetbrains.com/idea/idea-261.23567.28.tar.gz",
+)
 
 # IMPORTANT: This list of repos should always be kept up to date with the platforms defined above.
-use_repo(intellij, "intellij", "intellij_2025_3", "intellij_ce_2025_1", "intellij_ce_2025_2")
+use_repo(intellij, "intellij", "intellij_2025_3", "intellij_2026_1", "intellij_ce_2025_1", "intellij_ce_2025_2")

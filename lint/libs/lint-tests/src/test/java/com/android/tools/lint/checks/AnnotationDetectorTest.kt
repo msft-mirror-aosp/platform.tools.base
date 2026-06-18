@@ -19,7 +19,6 @@ import com.android.tools.lint.checks.infrastructure.TestMode
 import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.Issue
 import com.android.tools.lint.detector.api.requiresExtensionStub
-import com.android.tools.lint.useFirUast
 
 class AnnotationDetectorTest : AbstractCheckTest() {
   fun testBasic() {
@@ -1156,22 +1155,22 @@ class AnnotationDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        src/test/pkg/WrongUsagesJava.java:5: Warning: Use @RequiresApi(Build.VERSION_CODES.HONEYCOMB) instead of @TargetApi` to propagate the requirement to users of WrongUsagesJava [UseRequiresApi]
+        src/test/pkg/WrongUsagesJava.java:5: Warning: Use @RequiresApi(Build.VERSION_CODES.HONEYCOMB) instead of @TargetApi to propagate the requirement to users of WrongUsagesJava [UseRequiresApi]
         @TargetApi(Build.VERSION_CODES.HONEYCOMB) // ERROR 1
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        src/test/pkg/WrongUsagesJava.java:7: Warning: Use @RequiresApi(31) instead of @TargetApi` to propagate the requirement to callers of testApi [UseRequiresApi]
+        src/test/pkg/WrongUsagesJava.java:7: Warning: Use @RequiresApi(31) instead of @TargetApi to propagate the requirement to callers of testApi [UseRequiresApi]
             @TargetApi(31) // ERROR 2
             ~~~~~~~~~~~~~~
-        src/test/pkg/WrongUsagesJava.java:10: Warning: Use @RequiresApi(value = 32) instead of @TargetApi` to propagate the requirement to accessors of testApi [UseRequiresApi]
+        src/test/pkg/WrongUsagesJava.java:10: Warning: Use @RequiresApi(value = 32) instead of @TargetApi to propagate the requirement to accessors of testApi [UseRequiresApi]
             @TargetApi(value = 32) // ERROR 3
             ~~~~~~~~~~~~~~~~~~~~~~
-        src/test/pkg/WrongUsagesKotlin.kt:7: Warning: Use @RequiresApi(value = 31) instead of @TargetApi` to propagate the requirement to accessors of member [UseRequiresApi]
+        src/test/pkg/WrongUsagesKotlin.kt:7: Warning: Use @RequiresApi(value = 31) instead of @TargetApi to propagate the requirement to accessors of member [UseRequiresApi]
             @field:TargetApi(value = 31) // ERROR 4
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        src/test/pkg/WrongUsagesKotlin.kt:8: Warning: Use @RequiresApi(Build.VERSION_CODES.TIRAMISU) instead of @TargetApi` to propagate the requirement to callers of getMember [UseRequiresApi]
+        src/test/pkg/WrongUsagesKotlin.kt:8: Warning: Use @RequiresApi(Build.VERSION_CODES.TIRAMISU) instead of @TargetApi to propagate the requirement to callers of getMember [UseRequiresApi]
             @get:TargetApi(Build.VERSION_CODES.TIRAMISU) // ERROR 5
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        src/test/pkg/WrongUsagesKotlin.kt:11: Warning: Use @RequiresApi(31) instead of @TargetApi` to propagate the requirement to callers of testApi [UseRequiresApi]
+        src/test/pkg/WrongUsagesKotlin.kt:11: Warning: Use @RequiresApi(31) instead of @TargetApi to propagate the requirement to callers of testApi [UseRequiresApi]
             @TargetApi(31) // ERROR 6
             ~~~~~~~~~~~~~~
         0 errors, 6 warnings
@@ -1220,10 +1219,6 @@ class AnnotationDetectorTest : AbstractCheckTest() {
   }
 
   fun testValidateRequiresExtensions() {
-    // TODO(b/331978236): Java UAST drops Kotlin annotations on methods
-    if (!useFirUast()) {
-      return
-    }
     lint()
       .files(
         manifest().minSdk(15),
@@ -1779,10 +1774,6 @@ class AnnotationDetectorTest : AbstractCheckTest() {
   }
 
   fun testDelegates() {
-    // TODO(b/439078858): handle annotation on delegated property
-    if (!useFirUast()) {
-      return
-    }
     // Regression test for 132782238
     lint()
       .files(
@@ -1907,9 +1898,7 @@ class AnnotationDetectorTest : AbstractCheckTest() {
       .apply {
         // TODO(b/369688640): FIR no longer allows type replacement in the middle.
         //  That test mode needs to provide the rewritten annotation jar upfront.
-        if (useFirUast()) {
-          skipTestModes(PLATFORM_ANNOTATIONS_TEST_MODE)
-        }
+        skipTestModes(PLATFORM_ANNOTATIONS_TEST_MODE)
       }
       .run()
       .expect(

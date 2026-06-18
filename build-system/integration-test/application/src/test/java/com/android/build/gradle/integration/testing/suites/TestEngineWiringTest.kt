@@ -127,25 +127,20 @@ class TestEngineWiringTest(
               it.targets.create("t1") {}
             }
           }
+          files { add("src/first/java/Dummy.java", "public class Dummy {}") }
           this.dependencies { implementation("com.google.truth:truth:0.44") }
         }
       }
 
   @Test
   fun testJunitWiringThroughDSL() {
-    val result =
-      rule.build.executor
-        .expectFailure() // TODO: it fails because Gradle complains I have no tests.
-        .run("testFirstT1DebugTestSuite")
-    Truth.assertThat(result.failedTasks).contains("$modulePath:testFirstT1DebugTestSuite")
-    result
-      .assertFailureMessage()
-      .contains("There are test sources present and no filters are applied, but the test task did not discover any tests to execute.")
+    val result = rule.build.executor.run("testFirstT1DebugTestSuite")
+    Truth.assertThat(result.didWorkTasks).contains("$modulePath:testFirstT1DebugTestSuite")
   }
 
   @Test
   fun testLoggingRedirection() {
-    rule.build.executor.expectFailure().run("testFirstT1DebugTestSuite")
+    rule.build.executor.run("testFirstT1DebugTestSuite")
 
     val logFile =
       rule.build.subProject(modulePath).resolve("build/intermediates/debug/testFirstT1DebugTestSuite/junit_engines_logging.txt").toFile()

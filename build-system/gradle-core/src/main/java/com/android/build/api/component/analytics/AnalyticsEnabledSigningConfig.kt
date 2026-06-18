@@ -17,17 +17,31 @@
 package com.android.build.api.component.analytics
 
 import com.android.build.api.variant.SigningConfig
+import com.android.build.api.variant.SigningConfigInfo
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import javax.inject.Inject
 import org.gradle.api.provider.Property
+import org.gradle.api.provider.Provider
 
 open class AnalyticsEnabledSigningConfig @Inject constructor(val delegate: SigningConfig, val stats: GradleBuildVariant.Builder) :
   SigningConfig {
 
+  @Deprecated("Use from(signingConfig) instead", replaceWith = ReplaceWith("from(signingConfig)"))
   override fun setConfig(signingConfig: com.android.build.api.dsl.SigningConfig) {
     stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.SIGNING_CONFIG_SET_CONFIG_VALUE
     delegate.setConfig(signingConfig)
+  }
+
+  override fun from(signingConfig: com.android.build.api.dsl.SigningConfig) {
+    stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.SIGNING_CONFIG_FROM_CONFIG_VALUE
+    delegate.from(signingConfig)
+  }
+
+  override fun from(provider: Provider<SigningConfigInfo>) {
+    stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
+      VariantPropertiesMethodType.SIGNING_CONFIG_FROM_CONFIG_PROVIDER_VALUE
+    delegate.from(provider)
   }
 
   override val enableV1Signing: Property<Boolean>

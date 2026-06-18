@@ -33,6 +33,7 @@ android {
         proguard {
             initWith debug
             minifyEnabled true
+            shrinkResources = true
             proguardFile file('proguard-android.txt')
         }
         r8 {

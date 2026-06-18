@@ -79,7 +79,7 @@ public final class SdkConstants {
      * safely recommend during its development cycle.
      */
     public static final AndroidVersion MAX_SUPPORTED_ANDROID_PLATFORM_VERSION =
-            new AndroidVersion(36, 1);
+            new AndroidVersion(37, 0);
 
     /** Property in local.properties file that specifies the path of the Android NDK. */
     public static final String NDK_DIR_PROPERTY = "ndk.dir";
@@ -523,6 +523,8 @@ public final class SdkConstants {
     public static final String FD_CMDLINE_TOOLS = "cmdline-tools";
     /** Name of the SDK emulator folder. */
     public static final String FD_EMULATOR = "emulator";
+    /** Name of the SDK emulators (side-by-side versioned) folder. */
+    public static final String FD_EMULATORS = "emulators";
     /** Name of the SDK tools/support folder. */
     public static final String FD_SUPPORT = "support";
     /** Name of the SDK platform tools folder. */
@@ -2214,12 +2216,6 @@ public final class SdkConstants {
     public static final String EXT_INSTANTAPP_PACKAGE = "iapk";
     /** Extension for Android archive files */
     public static final String EXT_AAR = "aar";
-    /** Extension for Android Privacy Sandbox Sdk archives */
-    public static final String EXT_ASAR = "asar";
-    /** Extension for Android Privacy Sandbox Sdk bundles */
-    public static final String EXT_ASB = "asb";
-    /** Extension for APKs file containing multiple APKs */
-    public static final String EXT_APKS = "apks";
     /** Extension for Android atom files. */
     public static final String EXT_ATOM = "atom";
     /** Extension of java files, i.e. "java" */
@@ -2283,12 +2279,6 @@ public final class SdkConstants {
     public static final String DOT_ANDROID_PACKAGE = DOT + EXT_ANDROID_PACKAGE;
     /** Dot-Extension for Android archive files */
     public static final String DOT_AAR = DOT + EXT_AAR;
-    /** Extension for Android Privacy Sandbox Sdk archives */
-    public static final String DOT_ASAR = DOT + EXT_ASAR;
-    /** Extension for Android Privacy Sandbox Sdk bundles */
-    public static final String DOT_ASB = DOT + EXT_ASB;
-    /** Extension for APKs file containing multiple APKs */
-    public static final String DOT_APKS = DOT + EXT_APKS;
     /** Dot-Extension of zip files, i.e. ".zip" */
     public static final String DOT_ZIP = DOT + EXT_ZIP;
     /** Dot-Extension of aidl files, i.e. ".aidl" */
@@ -2928,7 +2918,7 @@ public final class SdkConstants {
      * Studio product. It need not actually be the latest version of Gradle, but it will most likely
      * be fairly recent.
      */
-    public static final String GRADLE_LATEST_VERSION = "9.5.0-milestone-5";
+    public static final String GRADLE_LATEST_VERSION = "9.5.0";
 
     /**
      * The minimum released version of the Android Gradle Plugin for which Studio will attempt a
@@ -2936,13 +2926,13 @@ public final class SdkConstants {
      * display a diagnostic informing the user that this project's version AGP is unsupported, but
      * at some point that might fail.
      */
-    public static final String GRADLE_PLUGIN_MINIMUM_FORCED_UPGRADE_VERSION = "7.0.0";
+    public static final String GRADLE_PLUGIN_MINIMUM_FORCED_UPGRADE_VERSION = "7.1.0";
 
     /**
      * The minimum released version of the Android Gradle Plugin that this version of Studio will
      * support. (Support of the development series leading up to it is unknown.)
      */
-    public static final String GRADLE_PLUGIN_MINIMUM_VERSION = "7.1.0";
+    public static final String GRADLE_PLUGIN_MINIMUM_VERSION = "7.2.0";
 
     /**
      * The minimum released version of the Android Gradle Plugin that the next version of Studio

@@ -145,6 +145,8 @@ fun runR8(
     referencedInputs = referencedInputs,
     classes = classes,
     resourcesJar = resourcesJar.toFile(),
+    r8ConfigurationAnalyzerDataOutput = proguardOutputDir.resolve("configanalyzer.pb"),
+    r8ConfigurationAnalyzerReportOutput = proguardOutputDir.resolve("configanalyzer.html"),
     mappingFile = mappingFile,
     mappingPartitionFile = mappingPartitionFile,
     proguardSeedsOutput = proguardOutputDir.resolve("seeds.txt"),

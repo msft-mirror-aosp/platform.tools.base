@@ -36,7 +36,7 @@ import kotlinx.collections.immutable.persistentMapOf
  *
  * Users of [ClassId] are expected to create instances through an appropriate overloading of [ClassId.of].
  */
-sealed interface ClassId {
+sealed interface ClassId : Scope {
   val fqn: String?
     get() = null
 
@@ -116,7 +116,7 @@ sealed interface ClassId {
   private enum class Common(val aliases: List<String>) : ClassId {
     Boolean("java.lang.Boolean", "kotlin.Boolean", "boolean"),
     Int("java.lang.Integer", "kotlin.Int", "int"),
-    Char("java.lang.Char", "kotlin.Char", "char"),
+    Char("java.lang.Character", "kotlin.Char", "char"),
     Byte("java.lang.Byte", "kotlin.Byte", "byte"),
     Short("java.lang.Short", "kotlin.Short", "short"),
     Long("java.lang.Long", "kotlin.Long", "long"),
@@ -164,9 +164,13 @@ sealed interface ClassId {
     internal fun of(guard: Any, base: PsiClass): ClassId = Guarded(guard, of(base.qualifiedName!!))
 
     // TODO: Is `canonicalText` always the fully qualified name??
-    fun of(type: PsiClassType): ClassId = of(type.canonicalText)
+    fun of(type: PsiClassType): ClassId = of(type.rawType().canonicalText)
 
-    fun of(c: KClass<*>): ClassId = of(c.java.canonicalName)
+    fun of(c: KClass<*>): ClassId =
+      when {
+        c.java.isArray -> Array
+        else -> of(c.java.canonicalName)
+      }
 
     inline fun <reified C> of(): ClassId = of(C::class)
 

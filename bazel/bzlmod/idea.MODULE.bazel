@@ -1,0 +1,58 @@
+# Expose modules in //tools/idea and rename them to make it clear where they come from
+bazel_dep(name = "community", repo_name = "tools_idea")
+local_path_override(
+    module_name = "community",
+    path = "tools/idea",
+)
+
+bazel_dep(name = "rules_jvm", repo_name = "tools_idea_rules_jvm")
+local_path_override(
+    module_name = "rules_jvm",
+    path = "tools/idea/build/jvm-rules",
+)
+
+bazel_dep(name = "lib", repo_name = "tools_idea_lib")
+local_path_override(
+    module_name = "lib",
+    path = "tools/idea/lib",
+)
+
+# Permit the diamond dependency between rules_apple and rules_jvm.
+multiple_version_override(
+    module_name = "rules_swift",
+    versions = [
+        "2.1.1",
+        "3.4.1",
+    ],
+)
+
+# TODO: Explain why this is needed
+# https://fusion2.corp.google.com/invocations/a49af733-ee2f-40ba-8f27-de2ca1487fa8
+single_version_override(
+    module_name = "rules_java",
+    version = "8.13.0",
+)
+
+# TODO: Explain why this is needed
+# https://fusion2.corp.google.com/invocations/0f18f827-c04f-4872-a402-e512e7a271df
+cc_compat = use_extension("@rules_cc//cc:extensions.bzl", "compatibility_proxy")
+use_repo(cc_compat, "cc_compatibility_proxy")
+
+# TODO: Explain why this is needed
+# Required to import @community//plugins/kotlin:kotlin_test_dependencies.bzl
+# https://fusion2.corp.google.com/invocations/b7cee79e-d32f-4eb0-a305-ad25107baa32
+kotlin_test_deps = use_repo_rule("@tools_idea//plugins/kotlin:kotlin_test_dependencies.bzl", "kotlin_test_deps")
+
+kotlin_test_deps(name = "kotlin_test_deps")
+
+# TODO: Explain why this is needed
+# Required for dep @debugger_test_deps_debugger_agent//file:debugger-agent.jar
+# https://fusion2.corp.google.com/invocations/900ec83f-dcf4-468c-a7c8-a4b1314421ce
+http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
+
+http_file(
+    name = "debugger_test_deps_debugger_agent",
+    downloaded_file_path = "debugger-agent.jar",
+    sha256 = "e048fb4bf2e9e883681e3070996fe4baf317287b175e09bab31dac799d0f6466",
+    url = "https://cache-redirector.jetbrains.com/packages.jetbrains.team/maven/p/ij/intellij-dependencies/org/jetbrains/intellij/deps/debugger-agent/1.136/debugger-agent-1.136.jar",
+)

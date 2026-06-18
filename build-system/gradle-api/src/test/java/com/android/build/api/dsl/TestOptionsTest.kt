@@ -21,6 +21,7 @@ import org.gradle.api.ExtensiblePolymorphicDomainObjectContainer
 import org.gradle.api.Project
 import org.gradle.api.artifacts.dsl.DependencyCollector
 import org.gradle.api.provider.Provider
+import org.gradle.declarative.dsl.model.annotations.HiddenInDefinition
 import org.gradle.testfixtures.ProjectBuilder
 import org.gradle.testing.base.TestSuite
 import org.junit.Before
@@ -50,6 +51,7 @@ class TestOptionsTest {
     override val targetVariants: MutableList<String>
       get() = throw RuntimeException("Unexpected call")
 
+    @HiddenInDefinition
     override fun getTargets(): ExtensiblePolymorphicDomainObjectContainer<AgpTestSuiteTarget> {
       throw RuntimeException("Unexpected call to `getTargets()`")
     }
@@ -124,14 +126,14 @@ class TestOptionsTest {
     testOptions.suites.create("journeysTest") {
       it.useJunitEngine.let { junitEngine ->
         DefaultInputsForAgpTestSuites.JOURNEYS_TEST.initialize(junitEngine)
-        junitEngine.inputs.add(AgpTestSuiteInputParameters.TESTING_APK)
+        junitEngine.inputs.add(AgpTestSuiteInputParameters.TEST_APKS)
       }
     }
     val testSuite = testOptions.suites.getByName("journeysTest")
     Truth.assertThat(testSuite).isNotNull()
     Truth.assertThat(testSuite.useJunitEngine.inputs)
       .containsExactlyElementsIn(
-        DefaultInputsForAgpTestSuites.JOURNEYS_TEST.supportedProperties.plus(AgpTestSuiteInputParameters.TESTING_APK)
+        DefaultInputsForAgpTestSuites.JOURNEYS_TEST.supportedProperties.plus(AgpTestSuiteInputParameters.TEST_APKS)
       )
   }
 

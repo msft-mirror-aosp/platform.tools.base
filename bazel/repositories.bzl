@@ -13,60 +13,6 @@ bazel_version_repository = repository_rule(
     local = True,
 )
 
-# Bazel repository mapped to git repositories.
-_git = [
-    # TODO(b/340640065): Perfetto relies on a load() for @perfetto_cfg that
-    # cannot be overridden with bzlmod.
-    {
-        "name": "perfetto_cfg",
-        "path": "tools/base/bazel/perfetto_cfg",
-        "build_file_content": "",
-    },
-    # TODO(b/340640065): Must be moved with @maven.
-    {
-        "name": "android_system_logging_repo",
-        "build_file": "//tools/base/bazel:external/android_system_logging.BUILD",
-        "path": "external/android/system/logging",
-    },
-]
-
-# Bazel repository mapped to archive files, containing the sources.
-_archives = [
-    # Perfetto Dependencies:
-    # These are external dependencies to build Perfetto.
-    {
-        # https://github.com/google/perfetto/blob/063034c1deea22dced25d8714fd525e3a8a120d3/bazel/deps.bzl#L59
-        "name": "perfetto-jsoncpp-1.0.0",
-        "archive": "//prebuilts/tools/common/external-src-archives/jsoncpp/1.9.3:jsoncpp-1.9.3.tar.gz",
-        "strip_prefix": "jsoncpp-1.9.3",
-        "build_file": "@perfetto//bazel:jsoncpp.BUILD",
-    },
-    {
-        "name": "perfetto-linenoise-c894b9e",
-        "archive": "//prebuilts/tools/common/external-src-archives/linenoise/c894b9e:linenoise.git-c894b9e.tar.gz",
-        "build_file": "@perfetto//bazel:linenoise.BUILD",
-    },
-    {
-        "name": "perfetto-sqlite-amalgamation-3450300",
-        "archive": "//prebuilts/tools/common/external-src-archives/sqlite-amalgamation/3450300:sqlite-amalgamation-3450300.zip",
-        "strip_prefix": "sqlite-amalgamation-3450300",
-        "build_file": "@perfetto//bazel:sqlite.BUILD",
-    },
-    {
-        "name": "perfetto-sqlite-src-3450300",
-        "archive": "//prebuilts/tools/common/external-src-archives/sqlite-src/3450300:sqlite-src-3450300.zip",
-        "strip_prefix": "sqlite-src-3450300",
-        "build_file": "@perfetto//bazel:sqlite.BUILD",
-    },
-    {
-        "name": "perfetto-llvm-project-3b4c59c156919902c785ce3cbae0eee2ee53064d",
-        "archive": "//prebuilts/tools/common/external-src-archives/perfetto-llvm/3b4c59c156919902c785ce3cbae0eee2ee53064d:llvm-3b4c59c156919902c785ce3cbae0eee2ee53064d.tgz",
-        "strip_prefix": "llvm-project",
-        "build_file": "@perfetto//bazel:llvm_demangle.BUILD",
-    },
-    # End Perfetto Dependencies.
-]
-
 def _local_archive_impl(ctx):
     """Implementation of local_archive rule."""
 
@@ -110,45 +56,3 @@ local_archive = repository_rule(
         "build_file_content": attr.string(),
     },
 )
-
-def _vendor_repository_impl(repository_ctx):
-    setup_vendor = repository_ctx.os.environ["SETUP_VENDOR"] in ["1", "True", "TRUE"] if "SETUP_VENDOR" in repository_ctx.os.environ else True
-    s = ""
-    if setup_vendor:
-        s = repository_ctx.read(repository_ctx.path(repository_ctx.attr.bzl))
-    else:
-        s = "def " + repository_ctx.attr.function + "(): pass"
-    repository_ctx.file("vendor.bzl", s)
-    repository_ctx.file("BUILD", "")
-
-# Helper rule for getting conditional workspace execution. Required for AOSP builds
-vendor_repository = repository_rule(
-    implementation = _vendor_repository_impl,
-    environ = ["SETUP_VENDOR"],
-    local = True,
-    attrs = {
-        "bzl": attr.label(doc = "Relative path to the bzl to load."),
-        "function": attr.string(doc = "The function to import."),
-    },
-)
-
-def setup_external_repositories(name = "", prefix = ""):
-    _setup_git_repos(_git, prefix)
-    _setup_archive_repos()
-
-def _setup_git_repos(repos, prefix = ""):
-    for _repo in repos:
-        repo = dict(_repo)
-        repo["path"] = prefix + repo["path"]
-        if "build_file" in repo:
-            repo["build_file"] = prefix + repo["build_file"]
-            native.new_local_repository(**repo)
-        elif "build_file_content" in repo:
-            native.new_local_repository(**repo)
-        else:
-            native.local_repository(**repo)
-
-def _setup_archive_repos():
-    for _repo in _archives:
-        repo = dict(_repo)
-        local_archive(**repo)

@@ -20,10 +20,13 @@ import com.android.tools.render.common.PreviewScreenshotResult
 import com.android.tools.screenshot.PreviewScreenshotExecutionContext
 import com.android.tools.screenshot.PreviewScreenshotTestEngineInput
 import com.android.tools.screenshot.PreviewScreenshotTestEngineInput.ImageDifferInput
+import com.android.tools.screenshot.ImageComparisonAssertionError
+import com.android.tools.screenshot.ScreenshotRenderException
 import com.android.tools.screenshot.differ.ImageDiffer
 import com.android.tools.screenshot.differ.ImageUpdater
 import com.android.tools.screenshot.differ.ImageVerifier
 import com.android.tools.screenshot.differ.PixelPerfect
+import com.android.tools.screenshot.differ.VerificationResult
 import java.io.File
 import java.util.Optional
 import org.junit.platform.engine.TestDescriptor
@@ -64,23 +67,54 @@ class PreviewScreenshotDescriptor(
     context: PreviewScreenshotExecutionContext,
     dynamicTestExecutor: Node.DynamicTestExecutor,
   ): PreviewScreenshotExecutionContext {
-    val newImagePath = "${context.previewImageOutputDir.absolutePath}/${previewScreenshotResult.imagePath}"
-    val refImagePath = "${context.referenceImageDir.absolutePath}/${previewScreenshotResult.imagePath}"
-    val diffImagePath = "${context.previewDiffImageOutputDir.absolutePath}/${previewScreenshotResult.imagePath}"
+    val newImageFile = File(context.previewImageOutputDir, previewScreenshotResult.imagePath)
+    val refImageFile = File(context.referenceImageDir, previewScreenshotResult.imagePath)
+    val diffImageFile = File(context.previewDiffImageOutputDir, previewScreenshotResult.imagePath)
+    previewScreenshotResult.error?.let { error ->
+      val detailedMessage = buildString {
+        append("Screenshot rendering failed: ").append(error.message).append("\n")
+        if (error.problems.isNotEmpty()) {
+          append("Render Problems:\n")
+          error.problems.forEach { problem ->
+            append("- ").append(problem.html).append("\n")
+            if (!problem.stackTrace.isNullOrBlank()) {
+              append(problem.stackTrace).append("\n")
+            }
+          }
+        }
+        if (error.brokenClasses.isNotEmpty()) {
+          append("Broken Classes:\n")
+          error.brokenClasses.forEach { brokenClass ->
+            append("- Class: ").append(brokenClass.className).append("\n")
+            append(brokenClass.stackTrace).append("\n")
+          }
+        }
+        if (error.missingClasses.isNotEmpty()) {
+          append("Missing Classes: ").append(error.missingClasses.joinToString(", ")).append("\n")
+        }
+        if (error.stackTrace.isNotBlank()) {
+          append("Stacktrace:\n").append(error.stackTrace).append("\n")
+        }
+      }
+      throw ScreenshotRenderException(detailedMessage)
+    }
 
-    previewScreenshotResult.error?.let { System.err.println(it) }
+    val absoluteProjectRoot = context.projectRoot.absoluteFile
+    val relativeRefPath = refImageFile.absoluteFile.relativeTo(absoluteProjectRoot).invariantSeparatorsPath
+    val relativeNewPath = newImageFile.absoluteFile.relativeTo(absoluteProjectRoot).invariantSeparatorsPath
+    val relativeDiffPath = diffImageFile.absoluteFile.relativeTo(absoluteProjectRoot).invariantSeparatorsPath
 
     val imageVerifier = ImageVerifier(PixelPerfect(ImageDifferInput.threshold))
-    var verificationResult: com.android.tools.screenshot.differ.VerificationResult? = null
+    var verificationResult: VerificationResult? = null
 
     try {
       if (PreviewScreenshotTestEngineInput.TestOption.recordingModeEnabled) {
-        ImageUpdater(PixelPerfect(ImageDifferInput.threshold)).updateIfDifferent(newImagePath, refImagePath)
+        ImageUpdater(PixelPerfect(ImageDifferInput.threshold)).updateIfDifferent(newImageFile, refImageFile, absoluteProjectRoot)
       } else {
-        verificationResult = imageVerifier.verify(newImagePath, refImagePath, diffImagePath)
+        verificationResult = imageVerifier.verify(newImageFile, refImageFile, diffImageFile, absoluteProjectRoot)
 
         if (verificationResult.diffResult is ImageDiffer.DiffResult.Different) {
-          throw ImageVerifier.ImageComparisonAssertionError(refImagePath, newImagePath, verificationResult.diffPercent, diffImagePath)
+          throw ImageComparisonAssertionError(relativeRefPath, relativeNewPath, verificationResult.diffPercent, relativeDiffPath)
         }
       }
     } finally {
@@ -91,16 +125,17 @@ class PreviewScreenshotDescriptor(
       context.executionListener.reportingEntryPublished(this, ReportEntry.from("PreviewScreenshot.previewName", previewDisplayName))
       context.executionListener.reportingEntryPublished(this, ReportEntry.from("PreviewScreenshot.methodName", methodName))
       // Always publish refImagePath, this is required in IDE
-      context.executionListener.reportingEntryPublished(this, ReportEntry.from("PreviewScreenshot.refImagePath", refImagePath))
+      context.executionListener.reportingEntryPublished(this, ReportEntry.from("PreviewScreenshot.refImagePath", relativeRefPath))
 
-      if (File(newImagePath).exists()) {
-        context.executionListener.reportingEntryPublished(this, ReportEntry.from("PreviewScreenshot.newImagePath", newImagePath))
+      if (newImageFile.exists()) {
+        context.executionListener.reportingEntryPublished(this, ReportEntry.from("PreviewScreenshot.newImagePath", relativeNewPath))
       }
-      if (File(diffImagePath).exists()) {
-        context.executionListener.reportingEntryPublished(this, ReportEntry.from("PreviewScreenshot.diffImagePath", diffImagePath))
+      if (diffImageFile.exists()) {
+        context.executionListener.reportingEntryPublished(this, ReportEntry.from("PreviewScreenshot.diffImagePath", relativeDiffPath))
       }
     }
 
     return context
   }
 }
+

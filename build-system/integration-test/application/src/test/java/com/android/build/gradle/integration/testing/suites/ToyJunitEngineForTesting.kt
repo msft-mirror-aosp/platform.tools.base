@@ -28,6 +28,7 @@ import org.junit.platform.engine.TestEngine
 import org.junit.platform.engine.TestExecutionResult
 import org.junit.platform.engine.UniqueId
 import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor
+import org.junit.platform.engine.support.descriptor.EngineDescriptor
 
 class ToyJunitEngineForTesting : TestEngine {
 
@@ -46,7 +47,11 @@ class ToyJunitEngineForTesting : TestEngine {
 
   override fun discover(p0: EngineDiscoveryRequest?, p1: UniqueId?): TestDescriptor {
     logger.info("Test discovery !\n")
-    return ToyTestDescriptor(UniqueId.parse("[method: some-test]"))
+    val nonNullUniqueId = p1 ?: UniqueId.forEngine(id)
+    val engineDescriptor = EngineDescriptor(nonNullUniqueId, "Toy Engine")
+    val testDescriptor = ToyTestDescriptor(nonNullUniqueId.append("test", "some-test"))
+    engineDescriptor.addChild(testDescriptor)
+    return engineDescriptor
   }
 
   override fun execute(p0: ExecutionRequest?) {
@@ -59,17 +64,24 @@ class ToyJunitEngineForTesting : TestEngine {
       logger.info("Starting $engineDescriptor test.")
       listener.executionStarted(engineDescriptor)
 
-      // Simulated test execution
-      try {
-        val testSucceeded = true // Replace with actual test outcome.
-        if (testSucceeded) {
-          listener.executionFinished(engineDescriptor, TestExecutionResult.successful())
-        } else {
-          listener.executionFinished(engineDescriptor, TestExecutionResult.failed(Exception("Test failed")))
+      // Simulated test execution for children
+      engineDescriptor.children.forEach { child ->
+        logger.info("Starting child $child")
+        listener.executionStarted(child)
+        try {
+          val testSucceeded = true // Replace with actual test outcome.
+          if (testSucceeded) {
+            listener.executionFinished(child, TestExecutionResult.successful())
+          } else {
+            listener.executionFinished(child, TestExecutionResult.failed(Exception("Test failed")))
+          }
+        } catch (t: Throwable) {
+          listener.executionFinished(child, TestExecutionResult.failed(t))
         }
-      } catch (t: Throwable) {
-        listener.executionFinished(engineDescriptor, TestExecutionResult.failed(t))
+        logger.info("Finished child $child")
       }
+
+      listener.executionFinished(engineDescriptor, TestExecutionResult.successful())
       logger.info("Finished $engineDescriptor test.")
     }
   }

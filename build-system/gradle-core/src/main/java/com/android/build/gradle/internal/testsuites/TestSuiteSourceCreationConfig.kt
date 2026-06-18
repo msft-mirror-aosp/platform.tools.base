@@ -34,5 +34,10 @@ interface TestSuiteSourceCreationConfig {
 
   val dependencies: AgpTestSuiteDependencies
 
-  fun createTestSuiteSourceSet(variantServices: VariantServices, javaEnabled: Boolean, kotlinEnabled: Boolean): TestSuiteSourceSet
+  fun createTestSuiteSourceSet(
+    variantServices: VariantServices,
+    javaEnabled: Boolean,
+    kotlinEnabled: Boolean,
+    isMixed: Boolean,
+  ): TestSuiteSourceSet
 }

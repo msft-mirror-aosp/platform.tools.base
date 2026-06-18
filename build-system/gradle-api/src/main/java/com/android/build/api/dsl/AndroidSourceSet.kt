@@ -84,10 +84,10 @@ interface AndroidSourceSet : Named {
   @Incubating fun baselineProfiles(action: AndroidSourceDirectorySet.() -> Unit)
 
   /** The KeepRules R8 source directory for this source set. */
-  @get:Incubating val keepRules: AndroidSourceDirectorySet
+  val keepRules: AndroidSourceDirectorySet
 
   /** The KeepRules R8 source directory for this source set. */
-  @Incubating fun keepRules(action: AndroidSourceDirectorySet.() -> Unit)
+  fun keepRules(action: AndroidSourceDirectorySet.() -> Unit)
 
   /**
    * The Android JNI source directory for this source set.

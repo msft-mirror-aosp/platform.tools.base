@@ -17,7 +17,6 @@
 package com.android.build.api.dsl
 
 import org.gradle.api.JavaVersion
-import org.gradle.declarative.dsl.model.annotations.Restricted
 
 /** Java compilation options. */
 interface CompileOptions {
@@ -30,7 +29,7 @@ interface CompileOptions {
    * - `JavaVersion.Version_1_6`
    * - `"Version_1_6"`
    */
-  @get:Restricted var sourceCompatibility: JavaVersion
+  var sourceCompatibility: JavaVersion
 
   /**
    * Language level of the java source code.
@@ -52,7 +51,7 @@ interface CompileOptions {
    * - `JavaVersion.Version_1_6`
    * - `"Version_1_6"`
    */
-  @get:Restricted var targetCompatibility: JavaVersion
+  var targetCompatibility: JavaVersion
 
   /**
    * Version of the generated Java bytecode.
@@ -66,8 +65,8 @@ interface CompileOptions {
   fun targetCompatibility(targetCompatibility: Any)
 
   /** Java source files encoding. */
-  @get:Restricted var encoding: String
+  var encoding: String
 
   /** Whether core library desugaring is enabled. */
-  @get:Restricted var isCoreLibraryDesugaringEnabled: Boolean
+  var isCoreLibraryDesugaringEnabled: Boolean
 }

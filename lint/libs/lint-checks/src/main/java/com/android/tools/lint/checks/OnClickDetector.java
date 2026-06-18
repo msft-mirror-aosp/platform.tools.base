@@ -45,6 +45,7 @@ import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.SourceCodeScanner;
 import com.android.tools.lint.detector.api.XmlContext;
 import com.google.common.base.Joiner;
+import com.intellij.java.syntax.parser.JavaKeywords;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiKeyword;
@@ -327,7 +328,7 @@ public class OnClickDetector extends LayoutDetector implements SourceCodeScanner
                         PsiElement child = modifierList.getFirstChild();
                         while (child != null) {
                             if (child instanceof PsiKeyword
-                                    && PsiKeyword.STATIC.equals(child.getText())) {
+                                    && JavaKeywords.STATIC.equals(child.getText())) {
                                 locationNode = child;
                                 break;
                             }

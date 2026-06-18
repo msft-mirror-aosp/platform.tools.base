@@ -32,9 +32,11 @@ import com.android.tools.lint.checks.fx.result.Point
 import com.android.tools.lint.checks.fx.result.Result
 import com.android.tools.lint.checks.fx.result.ResultTable
 import com.android.tools.lint.checks.fx.result.ResultTemplate
+import com.android.tools.lint.checks.fx.result.Scope
 import com.android.tools.lint.checks.fx.result.Type
 import com.android.tools.lint.checks.fx.result.Type.MethodRef.Companion.static
 import com.android.tools.lint.checks.fx.result.Type.MethodRef.Companion.virtual
+import com.android.tools.lint.checks.fx.result.emptySubst
 import com.android.tools.lint.checks.fx.result.get
 import com.android.tools.lint.checks.fx.utils.Encoder
 import com.android.tools.lint.checks.fx.utils.Encoder.Companion.adapt
@@ -60,6 +62,7 @@ import com.android.tools.lint.detector.api.PartialResult
 import com.android.tools.lint.detector.api.Project
 import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.intellij.openapi.application.runReadAction
+import com.intellij.psi.PsiTypeParameter
 import java.io.File
 import java.lang.Iterable as JIterable
 import java.nio.file.Paths
@@ -80,7 +83,7 @@ import org.jetbrains.annotations.VisibleForTesting
 import org.jetbrains.kotlin.incremental.createDirectory
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.uast.UClass
-import org.jetbrains.uast.UDeclaration
+import org.jetbrains.uast.UElement
 import org.jetbrains.uast.ULambdaExpression
 import org.jetbrains.uast.UVariable
 
@@ -116,29 +119,27 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
     maybeLoadPartialResults(context)
   }
 
-  final override fun applicableSuperClasses() = listOf("java.lang.Object")
-
-  final override fun visitClass(context: JavaContext, declaration: UClass) {
-    isSummariesCacheValid = false
-    try {
-      programBuilder.addClass(context, declaration)
-    } catch (e: Throwable) {
-      if (LintClient.isUnitTest) {
-        throw e
-      } else {
-        context.log(e, "Error while indexing class ${declaration.qualifiedName}")
-      }
-    }
-  }
-
-  final override fun getApplicableUastTypes() = listOf(UDeclaration::class.java)
+  final override fun getApplicableUastTypes() = listOf<Class<out UElement>>(UVariable::class.java, UClass::class.java)
 
   final override fun createUastHandler(context: JavaContext) =
     object : UElementHandler() {
-      override fun visitDeclaration(node: UDeclaration) {
-        val dec = node as? UVariable ?: return
-        val fn = dec.sourcePsi as? KtNamedFunction ?: return
-        val fnUast = dec.uastInitializer as? ULambdaExpression ?: return
+      override fun visitClass(node: UClass) {
+        if (node.javaPsi is PsiTypeParameter) return
+        isSummariesCacheValid = false
+        try {
+          programBuilder.addClass(context, node)
+        } catch (e: Throwable) {
+          if (LintClient.isUnitTest) {
+            throw e
+          } else {
+            context.log(e, "Error while indexing class ${node.qualifiedName}")
+          }
+        }
+      }
+
+      override fun visitVariable(node: UVariable) {
+        val fn = node.sourcePsi as? KtNamedFunction ?: return
+        val fnUast = node.uastInitializer as? ULambdaExpression ?: return
         try {
           programBuilder.addLocalFunction(LocalFun(fnUast, fn))
         } catch (e: Throwable) {
@@ -152,7 +153,7 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
     }
 
   final override fun afterCheckRootProject(context: Context) {
-    super.afterCheckEachProject(context)
+    super.afterCheckRootProject(context)
 
     if (!isSummariesCacheValid) {
       val program = programBuilder.build()
@@ -179,9 +180,25 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
       maybeSavePartialResults(context, program)
       isSummariesCacheValid = true
     }
+
+    // Warnings on calling `⊤` usually go away when other errors are resolved,
+    // so we omit them unless they're the only problems to report
+    val possibleRedundancies = mutableListOf<Error.CallingTop<FX>>()
+    var anyReported = false
     for ((_, sum) in summariesCache) {
-      for (error in dedupErrors(sum.effect.errors!!)) report(context, error)
+      for (error in dedupErrors(sum.effect.errors!!)) {
+        when {
+          error !is Error.CallingTop -> {
+            anyReported = true
+            possibleRedundancies.clear() // no longer need to track deferred ones
+            report(context, error)
+          }
+          !anyReported -> possibleRedundancies.add(error)
+          else -> {}
+        }
+      }
     }
+    for (deferredError in possibleRedundancies) report(context, deferredError)
   }
 
   /**
@@ -319,10 +336,11 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
     val resultEncoder =
       Encoder.product(
         ::ResultTemplate,
-        Encoder.map(Encoder.internedString, Encoder.set(recNothingTypeEncoder) withDefault persistentSetOf()) withDefault persistentMapOf(),
+        Encoder.map(nameEncoder, Encoder.set(recNothingTypeEncoder) withDefault persistentSetOf()) withDefault persistentMapOf(),
         recNothingTypeEncoder.zeroOrMore() withDefault listOf(),
         recTypeEncoder withDefault Type.Unit,
         fxEncoder withDefault Effect(effects.bottom, persistentSetOf(), Constraint.MostPermissive),
+        Encoder.map(nameEncoder, typeEncoder) withDefault emptySubst,
       )
     Encoder.map(methodIdEncoder, resultEncoder)
   }
@@ -351,6 +369,15 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
   private val recTypeSymEncoder = recTypeEncoder.subType<_, Type.Sym<FX>>()
   private val invokeEncoder = Encoder.product(Type.Sym<FX>::Invoke, recTypeSymEncoder, methodIdEncoder, typeListEncoder)
   private val recNothingTypeEncoder = recTypeEncoder.subType<_, Type<Nothing>>()
+  private val scopeEncoder: Encoder<Scope> =
+    Encoder.sum(
+      case<_, MethodId>(methodIdEncoder),
+      case<_, ClassId>(classIdEncoder),
+      case<_, Scope.Generated>(Encoder.int.adapt(Scope.Generated::index, Scope::Generated)),
+    )
+  private val paramEncoder = Encoder.product(Type.Sym<Nothing>::Param, Encoder.internedString, scopeEncoder)
+  private val recvEncoder = classIdEncoder.adapt(Type.Sym.This::site, Type.Sym<Nothing>::This)
+  private val nameEncoder: Encoder<Type.Sym.Name> = Encoder.sum(case<_, _>(paramEncoder), case<_, _>(recvEncoder))
 
   private val typeEncoder: Encoder<Type<FX>> = Encoder {
     Encoder.sum(
@@ -363,11 +390,9 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
       ),
       case<_, Type.MethodRef>(methodRefEncoder),
       case<_, Type.SpecializedMethodRef<FX>>(Encoder.product(Type<FX>::SpecializedMethodRef, recTypeEncoder, methodRefEncoder)),
-      case<_, Type.Sym.Rec>(Encoder.const(Type.Sym.Rec)),
-      case<_, Type.Sym.Param>(Encoder.internedString.adapt(Type.Sym.Param::name, Type.Sym<Nothing>::Param)),
-      case<_, Type.Sym.This>(classIdEncoder.adapt(Type.Sym.This::site, Type.Sym<Nothing>::This)),
+      case<_, Type.Sym.Param>(paramEncoder),
+      case<_, Type.Sym.This>(recvEncoder),
       case<_, Type.Sym.Invoke<FX>>(invokeEncoder),
-      case<_, Type.Sym.Fix<FX>>(Encoder.product(Type.Sym<FX>::Fix, Encoder.set(typeEncoder), Encoder.set(typeEncoder))),
     )
   }
 
@@ -630,9 +655,14 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
             }
           }
         static<_, (Any?) -> Any>(Array<*>::map) assumedAs
-          forAll { a ->
-            forAll(Function1::class(a, Type.Unit)) { action ->
-              given(Array::class(a), action) { symbolicInvocations += action[MethodId.Invoke[1], a] }
+          forAll { x ->
+            forAll { y ->
+              forAll(Function1::class(x, y)) { action ->
+                given(Array::class(x), action) {
+                  range = List::class(y)
+                  symbolicInvocations += action[MethodId.Invoke[1], x]
+                }
+              }
             }
           }
         static(Array<*>::filter) assumedAs
@@ -731,7 +761,45 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
           }
       }
 
-      // Common scoping functions
+      // Result
+      run {
+        static(kotlin.Result<*>::getOrElse) assumedAs
+          forAll { R ->
+            forAll(Function1::class(Throwable::class(), R)) { onFailure ->
+              given(kotlin.Result::class(Type.WildCard), onFailure) {
+                range = R
+                symbolicInvocations += onFailure[MethodId.Invoke[1], Throwable::class()]
+              }
+            }
+          }
+        static<_, (Any) -> Any>(kotlin.Result<Any>::map) assumedAs
+          forAll { T ->
+            forAll { R ->
+              forAll(Function1::class(T, R)) { transform ->
+                given(kotlin.Result::class(T), transform) {
+                  range = kotlin.Result::class(R)
+                  symbolicInvocations += transform[MethodId.Invoke[1], T]
+                }
+              }
+            }
+          }
+        static<kotlin.Result<Any>, (Any) -> Any, (Throwable) -> Any>(kotlin.Result<Any>::fold) assumedAs
+          forAll { T ->
+            forAll { R ->
+              forAll(Function1::class(T, R)) { onSuccess ->
+                forAll(Function1::class(Throwable::class(), R)) { onFailure ->
+                  given(kotlin.Result::class(T), onSuccess, onFailure) {
+                    range = R
+                    symbolicInvocations += onSuccess[MethodId.Invoke[1], T]
+                    symbolicInvocations += onFailure[MethodId.Invoke[1], Throwable::class()]
+                  }
+                }
+              }
+            }
+          }
+      }
+
+      // Common Kotlin combinators
       run {
         (static(Any::apply) + static(Any::also)) assumedAs
           forAll { self ->
@@ -749,6 +817,57 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
                 given(receiver, block) {
                   range = result
                   symbolicInvocations += block[MethodId.Invoke[1], receiver]
+                }
+              }
+            }
+          }
+
+        fun lazyRange(range: Type<FX>, initializer: Type.Sym<FX>): Type<FX> =
+          // The delegate implementation returned by `lazy`
+          Type.Lambda(
+            params = listOf(Type.Any, Type.KPropertySome),
+            body = Result(range, Effect(bottom, persistentSetOf(initializer[MethodId.Invoke[0]]))),
+            intf = ClassId.of<Lazy<*>>(),
+          )
+        static<() -> Any>(::lazy) assumedAs
+          forAll { T -> forAll(Function0::class(T)) { initializer -> given(initializer) { range = lazyRange(T, initializer) } } }
+        static<LazyThreadSafetyMode, () -> Any>(::lazy) assumedAs
+          forAll { T ->
+            forAll(Function0::class(T)) { initializer ->
+              given(LazyThreadSafetyMode::class(), initializer) { range = lazyRange(T, initializer) }
+            }
+          }
+        static<Any?, () -> Any>(::lazy) assumedAs
+          forAll { T ->
+            forAll(Function0::class(T)) { initializer ->
+              given(java.lang.Object::class(), initializer) { range = lazyRange(T, initializer) }
+            }
+          }
+
+        static(::repeat) assumedAs
+          forAll(Function1::class(Type.Int, Type.Unit)) { action ->
+            given(Type.Int, action) {
+              range = Type.Unit
+              symbolicInvocations += action[MethodId.Invoke[1], Type.Int]
+            }
+          }
+
+        static<() -> Any>(::run) assumedAs
+          forAll { R ->
+            forAll(Function0::class(R)) { block ->
+              given(block) {
+                range = R
+                symbolicInvocations += block[MethodId.Invoke[0]]
+              }
+            }
+          }
+        static<Any, Any.() -> Any>(Any::run) assumedAs
+          forAll { T ->
+            forAll { R ->
+              forAll(Function1::class(T, R)) { block ->
+                given(T, block) {
+                  range = R
+                  symbolicInvocations += block[MethodId.Invoke[1], T]
                 }
               }
             }
@@ -790,7 +909,8 @@ private fun <FX : Any> resultList(module: Module<FX>, results: Map<Type.MethodRe
               is EffectResult.Inference -> effectResult.result
               is EffectResult.Inapplicable -> return@fold m
             }
-          m.put(methodId, ResultTemplate(methodBody.initEnvironment.types, methodBody.domains, methodSummary.value, effect))
+          val subst = methodSummary.effect.subst!!
+          m.put(methodId, ResultTemplate(methodBody.initEnvironment.types, methodBody.domains, methodSummary.value, effect, subst))
         }
       classId to classSummary
     }

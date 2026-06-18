@@ -43,6 +43,8 @@ import com.android.build.gradle.internal.tasks.CheckJetifierTask
 import com.android.build.gradle.internal.tasks.SigningReportTask
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.tasks.factory.TaskManagerConfig
+import com.android.build.gradle.internal.test.tasks.TestReportTask
+import com.android.build.gradle.internal.test.tasks.TestResultsCollectionTask
 import com.android.build.gradle.internal.utils.ANDROID_BUILT_IN_KAPT_PLUGIN_ID
 import com.android.build.gradle.internal.utils.ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID
 import com.android.build.gradle.internal.utils.KOTLIN_KAPT_PLUGIN_ID
@@ -57,8 +59,6 @@ import com.android.build.gradle.internal.variant.ComponentInfo
 import com.android.build.gradle.internal.variant.VariantModel
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.tasks.AnalyzeDependenciesTask
-import com.android.build.gradle.tasks.TestReportTask
-import com.android.build.gradle.tasks.TestResultsCollectionTask
 import com.android.build.gradle.tasks.registerDataBindingOutputs
 import com.android.builder.core.ComponentType
 import com.android.builder.core.ComponentTypeImpl
@@ -398,7 +398,7 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
         // it's not a Kotlin or AndroidX project.
         if (ktxDataBindingDslValue == true) {
           globalConfig.services.issueReporter.reportWarning(
-            IssueReporter.Type.GENERIC,
+            IssueReporter.Type.DATABINDING_KTX_NO_EFFECT,
             "The `android.dataBinding.addKtx` DSL option has no effect because " +
               "the `android.useAndroidX` property is not enabled or " +
               "the project does not use Kotlin.",
@@ -420,7 +420,7 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
         ) {
           val depString = "${dependency.group}:${dependency.name}:${dependency.version}"
           globalConfig.services.issueReporter.reportError(
-            IssueReporter.Type.GENERIC,
+            IssueReporter.Type.DATABINDING_ANNOTATION_PROCESSOR_VERSION_MISMATCH,
             "Data Binding annotation processor version needs to match the" +
               " Android Gradle Plugin version. You can remove the kapt" +
               " dependency " +
@@ -633,7 +633,7 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
         val dependencyId = "${dependency.group}:${dependency.name}:${dependency.version ?: ""}".trimEnd(':')
 
         issueReporter.reportWarning(
-          IssueReporter.Type.GENERIC,
+          IssueReporter.Type.MULTIDEX_NOT_NEEDED,
           """
                         The multidex library is included as a dependency, but it is not needed for apps
                         with minSdk >= 21. Please remove dependency '$dependencyId' from '${project.path}'.
@@ -646,8 +646,10 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
 
   /** Register report tasks for test results and code coverage reporting */
   protected open fun registerTestAndCodeCoverageReportTasks() {
-    taskFactory.register(CodeCoverageReportTask.CoverageReportCreationAction(globalConfig, isReportAggregationEnabled))
-    taskFactory.register(TestReportTask.TestReportCreationAction(globalConfig, isReportAggregationEnabled))
+    if (isReportAggregationEnabled) {
+      taskFactory.register(CodeCoverageReportTask.CoverageReportCreationAction(globalConfig))
+      taskFactory.register(TestReportTask.TestReportCreationAction(globalConfig))
+    }
   }
 
   /** Register test data collection tasks for test results and code coverage reporting */
@@ -655,13 +657,17 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
     variantInfo: ComponentInfo<VariantBuilderT, VariantT>,
     testResultsCollectionTasks: MutableList<TaskProvider<TestResultsCollectionTask>> = mutableListOf(),
   ) {
-    testResultsCollectionTasks.add(taskFactory.register(TestResultsCollectionTask.TestResultsCollectionCreationAction(variantInfo.variant)))
-    taskFactory.register(
-      CodeCoverageCollectionTask.CoverageCollectionCreationAction(
-        CodeCoverageCollectionTask.getJacocoAntTaskConfiguration(project, variantInfo.variant),
-        CodeCoverageReportCreationConfigImpl(variantInfo.variant, testComponents),
+    if (isReportAggregationEnabled) {
+      testResultsCollectionTasks.add(
+        taskFactory.register(TestResultsCollectionTask.TestResultsCollectionCreationAction(variantInfo.variant))
       )
-    )
+      taskFactory.register(
+        CodeCoverageCollectionTask.CoverageCollectionCreationAction(
+          CodeCoverageCollectionTask.getJacocoAntTaskConfiguration(project, variantInfo.variant),
+          CodeCoverageReportCreationConfigImpl(variantInfo.variant, testComponents),
+        )
+      )
+    }
   }
 
   companion object {

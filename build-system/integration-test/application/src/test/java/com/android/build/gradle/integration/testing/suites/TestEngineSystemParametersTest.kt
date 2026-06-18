@@ -41,6 +41,7 @@ import org.junit.platform.engine.TestEngine
 import org.junit.platform.engine.TestExecutionResult
 import org.junit.platform.engine.UniqueId
 import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor
+import org.junit.platform.engine.support.descriptor.EngineDescriptor
 import org.junit.rules.TemporaryFolder
 
 class TestEngineSystemParametersTest {
@@ -97,6 +98,7 @@ class TestEngineSystemParametersTest {
               it.targets.create("t1") {}
             }
           }
+          files { add("src/first/test.txt", "dummy content") }
           this.dependencies { implementation("com.google.truth:truth:0.44") }
         }
       }
@@ -127,8 +129,11 @@ class ToyJunitEngineForTestingSystemProperties : TestEngine {
 
   override fun getId(): String = "toy-junit-engine-for-system-properties"
 
-  override fun discover(p0: EngineDiscoveryRequest?, p1: UniqueId?): TestDescriptor =
-    ToyTestDescriptorForTestingSystemProperties(UniqueId.parse("[method: some-test]"))
+  override fun discover(p0: EngineDiscoveryRequest?, p1: UniqueId?): TestDescriptor {
+    val root = EngineDescriptor(p1 ?: UniqueId.forEngine(getId()), "toy engine root")
+    root.addChild(ToyTestDescriptorForTestingSystemProperties(root.uniqueId.append("method", "some-test")))
+    return root
+  }
 
   override fun execute(p0: ExecutionRequest?) {
     p0?.let { executionRequest ->
@@ -136,6 +141,9 @@ class ToyJunitEngineForTestingSystemProperties : TestEngine {
       val listener: EngineExecutionListener = executionRequest.engineExecutionListener
       val engineDescriptor = executionRequest.rootTestDescriptor
       listener.executionStarted(engineDescriptor)
+
+      val childDescriptor = engineDescriptor.children.firstOrNull()
+      childDescriptor?.let { listener.executionStarted(it) }
 
       val additionalInputsPath = System.getProperty("android.testSuite.testTaskAdditionalInputsFile")
       if (additionalInputsPath == null) {
@@ -159,12 +167,16 @@ class ToyJunitEngineForTestingSystemProperties : TestEngine {
         val testSucceeded = token == "_random_token_"
         if (testSucceeded) {
           logger.info("Test Passed !")
+          childDescriptor?.let { listener.executionFinished(it, TestExecutionResult.successful()) }
           listener.executionFinished(engineDescriptor, TestExecutionResult.successful())
         } else {
           logger.info("Test Failed !")
-          listener.executionFinished(engineDescriptor, TestExecutionResult.failed(Exception("Test failed, token = $token")))
+          val exception = Exception("Test failed, token = $token")
+          childDescriptor?.let { listener.executionFinished(it, TestExecutionResult.failed(exception)) }
+          listener.executionFinished(engineDescriptor, TestExecutionResult.failed(exception))
         }
       } catch (t: Throwable) {
+        childDescriptor?.let { listener.executionFinished(it, TestExecutionResult.failed(t)) }
         listener.executionFinished(engineDescriptor, TestExecutionResult.failed(t))
       }
       logger.info("Finished $engineDescriptor test.")

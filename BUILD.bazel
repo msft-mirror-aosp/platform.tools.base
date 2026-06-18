@@ -1,3 +1,4 @@
+load("@rules_java//java:defs.bzl", "java_binary")
 load("//tools/base/bazel:maven.bzl", "maven_repository")
 
 # This Maven repository contains artifacts that are built by Bazel, but also needed by
@@ -49,6 +50,7 @@ maven_repository(
         "@maven//:org.eclipse.aether.aether-transport-http",
         "@maven//:org.glassfish.jaxb.jaxb-xjc",
         "@maven//:org.gradle.gradle-tooling-api",
+        "@maven//:org.gradle.plugin-compatibility.org.gradle.plugin-compatibility.gradle.plugin_1.0.0",
         "@maven//:org.jacoco.org.jacoco.agent",
         "@maven//:org.jacoco.org.jacoco.report",
         "@maven//:org.jetbrains.dokka.dokka-core",
@@ -64,6 +66,7 @@ maven_repository(
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core_1.8.0",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core_1.9.0",
         "@maven//:org.jetbrains.markdown",
+        "@maven//:org.jsoup.jsoup_1.16.1",
         "@maven//:org.junit.junit-bom_5.10.2",
         "@maven//:org.junit.junit-bom_5.11.0-M2",
         "@maven//:org.junit.junit-bom_5.9.2",
@@ -142,6 +145,7 @@ AGP_TEST_ARTIFACTS = [
     "//tools/base/android-test/android-test-engine-result-listener:android-test-engine-result-listener",  # For android test with JUnit Platform
     "//tools/base/android-test/android-test-engine-result-listener:test_result_event_proto",  # For android test with JUnit Platform
     "//tools/base/android-test/android-test-junit-engine:android-test-engine",  # For android test with JUnit Platform
+    "//tools/base/android-test/coverage/agent/support:coverage-agent",  # For on-the-fly code coverage
     "//tools/base/android-test/test-result-proto:test-result-proto",  # For android test with JUnit Platform
     "//tools/base/apkparser/analyzer:tools.analyzer.maven",  # TODO(b/143864616): Only required for tests
     "//tools/base/apkparser:tools.binary-resources",  # TODO(b/143864616): Only required for tests

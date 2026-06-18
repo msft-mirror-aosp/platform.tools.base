@@ -19,15 +19,23 @@ package com.android.build.gradle.integration.lint
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
+import com.android.build.gradle.integration.common.runner.FilterableParameterized
 import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
-import com.android.tools.build.gradle.internal.profile.BooleanOption
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
 /** Regression test for Issue 188871862 */
-class LintRClassAliasTest {
+@RunWith(FilterableParameterized::class)
+class LintRClassAliasTest(private val lintReportAggregation: Boolean) {
+
+  companion object {
+    @JvmStatic @Parameterized.Parameters(name = "lintReportAggregation_{0}") fun parameters() = listOf(true, false)
+  }
 
   private val app =
     MinimalSubProject.app("com.example.app")
@@ -95,19 +103,26 @@ class LintRClassAliasTest {
   @Before
   fun setUp() {
     // Set android.nonTransitiveRClass=true
-    TestFileUtils.appendToFile(project.gradlePropertiesFile, "${BooleanOption.NON_TRANSITIVE_R_CLASS}=true")
+    TestFileUtils.appendToFile(project.gradlePropertiesFile, "${BooleanOption.NON_TRANSITIVE_R_CLASS.propertyName}=true")
+    TestFileUtils.appendToFile(project.gradlePropertiesFile, "${BooleanOption.LINT_REPORT_AGGREGATION.propertyName}=$lintReportAggregation")
   }
 
   @Test
   fun testNoUnusedResourcesWarning() {
-    project.executor().run(":app:lintDebug")
-    val lintReportFile = project.getSubproject("app").file("lint-results.txt")
+    val lintTask = if (lintReportAggregation) ":app:lintAggregatedDebug" else ":app:lintDebug"
+    project.executor().run(lintTask)
+    val lintReportFile =
+      if (lintReportAggregation) {
+        project.getSubproject("app").file("build/reports/aggregated-lint-results-debug.txt")
+      } else {
+        project.getSubproject("app").file("lint-results.txt")
+      }
     assertThat(lintReportFile).exists()
     assertThat(lintReportFile).doesNotContain("UnusedResources")
 
     // As a control, check that we *do* see a warning if we edit the code accordingly
     TestFileUtils.searchAndReplace(project.getSubproject(":lib1").file("src/main/java/com/example/lib1/Foo.kt"), "println", "// println")
-    project.executor().run(":app:lintDebug")
+    project.executor().run(lintTask)
     assertThat(lintReportFile).exists()
     assertThat(lintReportFile).contains("UnusedResources")
   }

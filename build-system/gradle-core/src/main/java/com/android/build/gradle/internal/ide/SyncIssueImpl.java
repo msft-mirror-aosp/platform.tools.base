@@ -21,7 +21,7 @@ import com.android.annotations.Nullable;
 import com.android.annotations.concurrency.Immutable;
 import com.android.builder.errors.EvalIssueException;
 import com.android.builder.errors.IssueReporter;
-import com.android.builder.model.SyncIssue;
+import com.android.builder.model.v2.ide.SyncIssue;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
@@ -31,11 +31,12 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * An implementation of BaseConfig specifically for sending as part of the Android model
- * through the Gradle tooling API.
+ * An implementation of BaseConfig specifically for sending as part of the Android model through the
+ * Gradle tooling API.
  */
 @Immutable
-public final class SyncIssueImpl implements SyncIssue, Serializable {
+public final class SyncIssueImpl
+        implements SyncIssue, com.android.builder.model.SyncIssue, Serializable {
     private static final long serialVersionUID = 1L;
 
     private final int type;

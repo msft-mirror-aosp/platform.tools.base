@@ -17,6 +17,7 @@ package com.android.backup
 
 import com.android.adblib.DeviceSelector
 import com.android.backup.BackupProgressListener.Step
+import com.android.backup.BackupService.Companion.APPLICATION_ID_REGEX
 import com.android.backup.ErrorCode.APP_STOPPED
 import com.android.backup.ErrorCode.BACKUP_FAILED
 import com.android.backup.ErrorCode.BACKUP_MANAGER_IS_NOT_RUNNING
@@ -38,7 +39,6 @@ import com.android.commands.bmgr.outputparser.BmgrError
 import com.android.commands.bmgr.outputparser.BmgrOutputParser
 import com.android.tools.environment.Logger
 import com.android.utils.text.dropPrefix
-import kotlin.text.RegexOption.IGNORE_CASE
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
@@ -46,7 +46,6 @@ import kotlinx.coroutines.withTimeout
 
 private const val SELECT_TRANSPORT_COMPONENT_SUCCESS = "Success. Selected transport: "
 private val PACKAGE_VERSION_CODE_REGEX = "^ {4}versionCode=(?<version>\\d+).*$".toRegex()
-private val APPLICATION_ID_REGEX = "^([a-z][a-z\\d_]*\\.)+[a-z][a-z\\d_]*$".toRegex(IGNORE_CASE)
 private const val SECURE_SETTING_ENABLE_TESTING = "backup_enable_testing_flows"
 private const val SECURE_SETTING_BACKUP_TYPE = "backup_testing_flows_type"
 
@@ -90,7 +89,7 @@ abstract class AbstractAdbServices(
 
   override suspend fun backupNow(applicationId: String, type: BackupType, initOk: Boolean) {
     setBackupType(type)
-    val command = "bmgr backupnow @pm@ $applicationId --non-incremental --monitor-verbose"
+    val command = "bmgr backupnow @pm@ ${applicationId.quoted()} --non-incremental --monitor-verbose"
     val out = executeCommand(command, BACKUP_FAILED).stdout
     val errors = BmgrOutputParser.parseBmgrErrors(out)
     if (errors.isEmpty()) {
@@ -105,7 +104,7 @@ abstract class AbstractAdbServices(
   }
 
   override suspend fun clearAppData(applicationId: String) {
-    val out = executeCommand("pm clear $applicationId").stdout.trim()
+    val out = executeCommand("pm clear ${applicationId.quoted()}").stdout.trim()
     if (out != "Success") {
       // Don't throw if clear app data fails but log a warning.
       logger.warn("Failed to clear app data for package $applicationId")
@@ -114,7 +113,7 @@ abstract class AbstractAdbServices(
 
   override suspend fun restore(token: String, applicationId: String, type: BackupType, initOk: Boolean) {
     setBackupType(type)
-    val command = "bmgr restore $token $applicationId --monitor-verbose"
+    val command = "bmgr restore $token ${applicationId.quoted()} --monitor-verbose"
     val out = executeCommand(command, RESTORE_FAILED).stdout
     val errors = BmgrOutputParser.parseBmgrErrors(out)
     if (errors.isEmpty()) {
@@ -203,7 +202,7 @@ abstract class AbstractAdbServices(
   }
 
   override suspend fun getAppInfo(applicationId: String, withPermissions: Boolean, user: String?): AppInfo? {
-    val lines = executeCommand("dumpsys package $applicationId").stdout.lines()
+    val lines = executeCommand("dumpsys package ${applicationId.quoted()}").stdout.lines()
     val flags =
       lines.find { it.trim().startsWith("pkgFlags=") }?.substringAfter('[')?.substringBefore(']')?.trim()?.split(' ') ?: return null
     val allowBackup = flags.contains("ALLOW_BACKUP")
@@ -241,7 +240,7 @@ abstract class AbstractAdbServices(
 
   override suspend fun grantPermission(applicationId: String, permission: String) {
     try {
-      executeCommand("pm grant $applicationId $permission")
+      executeCommand("pm grant ${applicationId.quoted()} ${permission.quoted()}")
     } catch (e: BackupException) {
       logger.warn("Failed to restore permission $permission on $applicationId", e)
     }
@@ -396,3 +395,6 @@ abstract class AbstractAdbServices(
 private fun MatchResult.getGroup(name: String) = groups[name]?.value ?: throw BackupException(UNEXPECTED_ERROR, "Group $name not found")
 
 private fun List<BmgrError>.isAppStopped() = any { it.errorCode == "PACKAGE_STOPPED" }
+
+/** Wrap a value in single quotes for /system/bin/sh -c, escaping embedded single quotes. */
+private fun String.quoted() = "'" + replace("'", "'\\''") + "'"

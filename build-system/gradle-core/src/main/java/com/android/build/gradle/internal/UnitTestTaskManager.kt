@@ -21,7 +21,7 @@ import com.android.build.gradle.internal.component.HostTestCreationConfig
 import com.android.build.gradle.internal.res.GenerateLibraryRFileTask
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
-import com.android.build.gradle.tasks.TestResultsCollectionTask
+import com.android.build.gradle.internal.test.tasks.TestResultsCollectionTask
 import org.gradle.api.Project
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.tasks.TaskProvider
@@ -62,7 +62,7 @@ class UnitTestTaskManager(project: Project, globalConfig: GlobalTaskCreationConf
 
     setupAssembleTasks(hostTestCreationConfig, taskContainer, ASSEMBLE_UNIT_TEST)
 
-    setupJavaCompilationTasks(hostTestCreationConfig, taskContainer, testedVariant)
+    setupJavaCompilationTasks(hostTestCreationConfig)
 
     maybeCreateTransformClassesWithAsmTask(hostTestCreationConfig)
 

@@ -83,6 +83,9 @@ internal constructor(
   var trackJdwpInvocations: Int = 0
     private set
 
+  // Keep track of all pids for which "am gc" was triggered
+  private val mGcPids = Vector<Int>()
+
   init {
     features = initFeatures(buildVersionSdk)
     this.properties = combinedProperties(deviceId, manufacturer, model, buildVersionRelease, buildVersionSdk, cpuAbi, properties)
@@ -425,6 +428,13 @@ internal constructor(
     trackJdwpInvocations++
   }
 
+  val gcPids: List<Int>
+    get() = mGcPids.toList()
+
+  fun addGcPid(pid: Int) {
+    mGcPids.add(pid)
+  }
+
   internal inline fun <R> trackCommand(command: String, scope: CoroutineScope, socket: Socket, block: () -> R): R {
     return deviceCommandTracker.trackCommand(command, scope, socket, block)
   }
@@ -547,7 +557,7 @@ internal constructor(
           }
           else -> {
             DeviceCapabilities(
-              capabilities = listOf("start.suspend"),
+              capabilities = listOf("start.suspend", "gc"),
               vmCapabilities = api36VmCapabilities,
               frameworkCapabilities = api36FrameworkCapabilities,
               vmInfo = api36VmInfo,

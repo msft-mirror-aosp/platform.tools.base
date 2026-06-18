@@ -18,6 +18,16 @@ from tools.base.bazel.ci import errors
 
 
 @dataclasses.dataclass(frozen=True,kw_only=True)
+class LockfileError(errors.CIError):
+  """Represents an error verifying the bzlmod lockfile."""
+
+  message: str
+
+  def __str__(self) -> str:
+    return f'Lockfile verification failed:\n{self.message}'
+
+
+@dataclasses.dataclass(frozen=True,kw_only=True)
 class BazelTestError(errors.CIError):
   """Represents an error originating from the bazel test."""
 
@@ -78,6 +88,13 @@ def last_incremental_build_id(build_env: bazel.BuildEnv) -> str:
     return match.group(1)
   logging.warning('Failed to parse last_build.info: %s', last_build_info)
   return ''
+
+
+def check_lockfile(build_env: bazel.BuildEnv):
+  """Checks if the bzlmod lockfile is correct."""
+  deps_proc = build_env.bazel_mod('deps', '--lockfile_mode=error')
+  if deps_proc.returncode != 0:
+    raise LockfileError(message=deps_proc.stderr.decode('utf-8'))
 
 
 def run_bazel_test(
@@ -264,3 +281,9 @@ def is_build_successful(result: BazelTestResult) -> bool:
       bazel.EXITCODE_TEST_FAILURES,
       bazel.EXITCODE_NO_TESTS_FOUND,
   }
+
+
+def get_embed_label(build_number: str) -> str:
+  """Returns the embed label for the given build number."""
+  build_type = BuildType.from_build_number(build_number)
+  return 'P000000' if build_type == BuildType.PRESUBMIT else build_number

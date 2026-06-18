@@ -113,6 +113,7 @@ public class XmlDocument {
     private final Type mType;
     @Nullable private final String mNamespace;
     @NotNull private final DocumentModel<ManifestModel.NodeTypes> mModel;
+    @NotNull private final MergingReport.Builder mReportBuilder;
     @NotNull public Map<Element, NodeOperationType> originalNodeOperation = new HashMap<>();
 
     public XmlDocument(
@@ -122,7 +123,8 @@ public class XmlDocument {
             @NotNull Element element,
             @NotNull Type type,
             @Nullable String namespace,
-            @NotNull DocumentModel<ManifestModel.NodeTypes> model) {
+            @NotNull DocumentModel<ManifestModel.NodeTypes> model,
+            @NotNull MergingReport.Builder reportBuilder) {
         this.mSourceFile = Preconditions.checkNotNull(sourceLocation);
         this.mRootElement = Preconditions.checkNotNull(element);
         this.mSelectors = Preconditions.checkNotNull(selectors);
@@ -130,6 +132,12 @@ public class XmlDocument {
         this.mType = type;
         this.mNamespace = namespace;
         this.mModel = model;
+        this.mReportBuilder = Preconditions.checkNotNull(reportBuilder);
+    }
+
+    @NotNull
+    public MergingReport.Builder getReportBuilder() {
+        return mReportBuilder;
     }
 
     @NotNull
@@ -907,28 +915,5 @@ public class XmlDocument {
             }
         }
         return nodeRenamed;
-    }
-
-    private static class KeyAndReason {
-
-        private final String mKey;
-        private final String mReason;
-
-        private KeyAndReason(String key, String reason) {
-            this.mKey = key;
-            this.mReason = reason;
-        }
-
-        public static KeyAndReason of(String key, String reason) {
-            return new KeyAndReason(key, reason);
-        }
-
-        public String getKey() {
-            return mKey;
-        }
-
-        public String getReason() {
-            return mReason;
-        }
     }
 }

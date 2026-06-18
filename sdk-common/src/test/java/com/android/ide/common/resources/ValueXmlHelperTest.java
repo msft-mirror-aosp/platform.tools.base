@@ -17,6 +17,7 @@
 package com.android.ide.common.resources;
 
 import static com.android.ide.common.resources.ValueXmlHelper.unescapeResourceString;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -150,6 +151,10 @@ public final class ValueXmlHelperTest {
                 unescapeResourceString("This is a\\n test", true, true));
         assertEquals("This is a\n test",
                 unescapeResourceString("This is\n a\\n test", true, true));
+        assertEquals(
+                "This is a test with multiple lines",
+                unescapeResourceString(
+                        "\"This is a test\"\n  \"with multiple\"\n  \"lines\"", true, true));
     }
 
     @Test

@@ -33,8 +33,7 @@ internal class HostJarTestSuiteSourceSet(
   kotlinEnabled: Boolean,
   includeAndroidResources: Provider<Boolean>,
   override val dependencies: AgpTestSuiteDependencies?,
-) :
-  AbstractTestSuiteSourceSet(sourceSetName, variantServices, userAddedSourceSets, javaEnabled, kotlinEnabled), TestSuiteSourceSet.HostJar {
+) : AbstractTestSuiteSourceSet(sourceSetName, variantServices, userAddedSourceSets), TestSuiteSourceSet.HostJar {
 
   val manifestFileCandidate = File(variantServices.projectInfo.projectDirectory.asFile, "src/$sourceSetName/$FN_ANDROID_MANIFEST_XML")
 

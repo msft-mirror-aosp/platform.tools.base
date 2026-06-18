@@ -2,6 +2,60 @@ load("//tools/base/bazel:gradle.bzl", "gradle_build")
 load("//tools/base/bazel:maven.bzl", "maven_repository")
 
 maven_repository(
+    name = "9.2.0",
+    #keep sorted
+    artifacts = [
+        "@maven//:com.android.application.com.android.application.gradle.plugin_9.2.0",
+        "@maven//:com.android.databinding.adapters_9.2.0",
+        "@maven//:com.android.databinding.viewbinding_9.2.0",
+        "@maven//:com.android.fused-library.com.android.fused-library.gradle.plugin_9.2.0",
+        "@maven//:com.android.kotlin.multiplatform.library.com.android.kotlin.multiplatform.library.gradle.plugin_9.2.0",
+        "@maven//:com.android.library.com.android.library.gradle.plugin_9.2.0",
+        "@maven//:com.android.tools.build.aapt2_9.2.0-15009934",
+        "@maven//:com.android.tools.build.gradle_9.2.0",
+        "@maven//:com.android.tools.lint.lint-gradle_32.2.0",
+        "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.3.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-script-runtime_2.3.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_2.3.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk7_2.3.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8_2.3.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib_2.3.10",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core_1.9.0",
+        "@maven//:org.junit.junit-bom_5.10.2",
+        "@maven//:org.junit.junit-bom_5.9.2",
+        "@maven//:org.junit.junit-bom_5.9.3",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_repository(
+    name = "9.1.0",
+    #keep sorted
+    artifacts = [
+        "@maven//:com.android.application.com.android.application.gradle.plugin_9.1.0",
+        "@maven//:com.android.databinding.adapters_9.1.0",
+        "@maven//:com.android.databinding.viewbinding_9.1.0",
+        "@maven//:com.android.fused-library.com.android.fused-library.gradle.plugin_9.1.0",
+        "@maven//:com.android.kotlin.multiplatform.library.com.android.kotlin.multiplatform.library.gradle.plugin_9.1.0",
+        "@maven//:com.android.library.com.android.library.gradle.plugin_9.1.0",
+        "@maven//:com.android.tools.build.aapt2_9.1.0-14792394",
+        "@maven//:com.android.tools.build.gradle_9.1.0",
+        "@maven//:com.android.tools.lint.lint-gradle_32.1.0",
+        "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.2.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-script-runtime_2.2.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_2.2.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk7_2.2.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8_2.2.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core_1.9.0",
+        "@maven//:org.junit.junit-bom_5.10.2",
+        "@maven//:org.junit.junit-bom_5.9.2",
+        "@maven//:org.junit.junit-bom_5.9.3",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_repository(
     name = "9.0.0",
     #keep sorted
     artifacts = [
@@ -14,10 +68,13 @@ maven_repository(
         "@maven//:com.android.tools.build.aapt2_9.0.0-14304508",
         "@maven//:com.android.tools.build.gradle_9.0.0",
         "@maven//:com.android.tools.lint.lint-gradle_32.0.0",
-        "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.1.20",
-        "@maven//:org.jetbrains.kotlin.kotlin-script-runtime_1.8.10",
-        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_1.8.10",
-        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.8.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.2.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-script-runtime_2.2.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_2.2.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk7_2.2.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8_2.2.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core_1.9.0",
         "@maven//:org.junit.junit-bom_5.10.2",
         "@maven//:org.junit.junit-bom_5.9.2",
         "@maven//:org.junit.junit-bom_5.9.3",

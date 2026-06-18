@@ -19,7 +19,6 @@ package com.android.build.api.dsl
 import org.gradle.api.Incubating
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
-import org.gradle.declarative.dsl.model.annotations.Restricted
 
 /**
  * DSL object for configuring the Android Application Bundle
@@ -44,13 +43,13 @@ interface Bundle {
 
   val storeArchive: BundleStoreArchive
 
-  @get:Incubating @get:Restricted val integrityConfigDir: DirectoryProperty
+  @get:Incubating val integrityConfigDir: DirectoryProperty
 
   @get:Incubating val countrySet: BundleCountrySet
 
   @get:Incubating val aiModelVersion: BundleAiModelVersion
 
-  @get:Incubating @get:Restricted val deviceTargetingConfig: RegularFileProperty
+  @get:Incubating val deviceTargetingConfig: RegularFileProperty
 
   fun abi(action: BundleAbi.() -> Unit)
 

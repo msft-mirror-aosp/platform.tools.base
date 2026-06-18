@@ -24,10 +24,8 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Gradl
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.fixture.project.builder.kotlin.KotlinExtension
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
-import com.android.build.gradle.internal.dsl.ModulePropertyKey.OptionalBoolean
 import com.android.build.gradle.internal.lint.AndroidLintAnalysisTask
 import com.android.build.gradle.options.BooleanOption
-import com.android.build.gradle.options.OptionalBooleanOption
 import com.android.testutils.TestUtils
 import java.io.File
 import org.gradle.api.Project
@@ -84,41 +82,12 @@ class LintAlignUastWithLanguageVersionTest(private val useBuiltInKotlinSupport: 
     result.assertConfigurationCacheHit()
   }
 
-  /** Test kotlin language version 1.9. */
-  @Test
-  fun testOldLanguageVersion() {
-    val build =
-      rule.build {
-        addLanguageVersionsToProject(
-          appExpectedLanguageVersion = "1.9",
-          libExpectedLanguageVersion = "1.9",
-          featureExpectedLanguageVersion = "1.9",
-          javaLibExpectedLanguageVersion = null,
-          kotlinLibExpectedLanguageVersion = "1.9",
-          kmpAndroidLibExpectedLanguageVersion = "1.9",
-          kmpJvmLibExpectedLanguageVersion = "1.9",
-          appExpectedUseK2Uast = false,
-          libExpectedUseK2Uast = false,
-          featureExpectedUseK2Uast = false,
-          javaLibExpectedUseK2Uast = true,
-          kotlinLibExpectedUseK2Uast = false,
-          kmpAndroidLibExpectedUseK2Uast = false,
-          kmpJvmLibExpectedUseK2Uast = false,
-          sourceSetsLanguageVersion = "1.9",
-        )
-      }
-
-    build.executor
-      .withFailOnWarning(false) // b/455891987
-      .run("clean", "lint")
-  }
-
   /** Test incrementing kotlin language version. */
   @Test
   fun testKotlinExperimentalTryNext() {
     // When updating the Kotlin version used for tests, be sure to also update this constant to
     // the next version.
-    val nextLanguageVersion = "2.4"
+    val nextLanguageVersion = "2.5"
     check(nextLanguageVersion != kotlinLanguageVersion) {
       "nextLanguageVersion must be higher than the current language version ($kotlinLanguageVersion)"
     }
@@ -144,187 +113,6 @@ class LintAlignUastWithLanguageVersionTest(private val useBuiltInKotlinSupport: 
 
     build.executor
       .withArgument("-Pkotlin.experimental.tryNext=true")
-      .withFailOnWarning(false) // b/455891987
-      .run("clean", "lint")
-  }
-
-  /** Test enabling K2 UAST for all modules */
-  @Test
-  fun testUseK2UastGlobally() {
-    val build =
-      rule.build {
-        addLanguageVersionsToProject(
-          appExpectedLanguageVersion = "1.9",
-          libExpectedLanguageVersion = "1.9",
-          featureExpectedLanguageVersion = "1.9",
-          javaLibExpectedLanguageVersion = null,
-          kotlinLibExpectedLanguageVersion = "1.9",
-          kmpAndroidLibExpectedLanguageVersion = "1.9",
-          kmpJvmLibExpectedLanguageVersion = "1.9",
-          appExpectedUseK2Uast = true,
-          libExpectedUseK2Uast = true,
-          featureExpectedUseK2Uast = true,
-          javaLibExpectedUseK2Uast = true,
-          kotlinLibExpectedUseK2Uast = true,
-          kmpAndroidLibExpectedUseK2Uast = true,
-          kmpJvmLibExpectedUseK2Uast = true,
-          sourceSetsLanguageVersion = "1.9",
-        )
-      }
-
-    build.executor
-      .withFailOnWarning(false) // b/455891987
-      .with(OptionalBooleanOption.LINT_USE_K2_UAST, true)
-      .run("clean", "lint")
-  }
-
-  /** Test enabling K2 UAST for a single module (the app module) */
-  @Test
-  fun testUseK2UastInAppOnly() {
-    val build =
-      rule.build {
-        addLanguageVersionsToProject(
-          appExpectedLanguageVersion = "1.9",
-          libExpectedLanguageVersion = "1.9",
-          featureExpectedLanguageVersion = "1.9",
-          javaLibExpectedLanguageVersion = null,
-          kotlinLibExpectedLanguageVersion = "1.9",
-          kmpAndroidLibExpectedLanguageVersion = "1.9",
-          kmpJvmLibExpectedLanguageVersion = "1.9",
-          appExpectedUseK2Uast = true,
-          libExpectedUseK2Uast = false,
-          featureExpectedUseK2Uast = false,
-          javaLibExpectedUseK2Uast = true,
-          kotlinLibExpectedUseK2Uast = false,
-          kmpAndroidLibExpectedUseK2Uast = false,
-          kmpJvmLibExpectedUseK2Uast = false,
-          sourceSetsLanguageVersion = "1.9",
-        )
-
-        androidApplication(":app") { android { experimentalProperties[OptionalBoolean.LINT_USE_K2_UAST.key] = true } }
-      }
-
-    build.executor
-      .withFailOnWarning(false) // b/455891987
-      .run("clean", "lint")
-  }
-
-  /** Test enabling K2 UAST for a single module (the lib module) */
-  @Test
-  fun testUseK2UastInLibOnly() {
-    val build =
-      rule.build {
-        addLanguageVersionsToProject(
-          appExpectedLanguageVersion = "1.9",
-          libExpectedLanguageVersion = "1.9",
-          featureExpectedLanguageVersion = "1.9",
-          javaLibExpectedLanguageVersion = null,
-          kotlinLibExpectedLanguageVersion = "1.9",
-          kmpAndroidLibExpectedLanguageVersion = "1.9",
-          kmpJvmLibExpectedLanguageVersion = "1.9",
-          appExpectedUseK2Uast = false,
-          libExpectedUseK2Uast = true,
-          featureExpectedUseK2Uast = false,
-          javaLibExpectedUseK2Uast = true,
-          kotlinLibExpectedUseK2Uast = false,
-          kmpAndroidLibExpectedUseK2Uast = false,
-          kmpJvmLibExpectedUseK2Uast = false,
-          sourceSetsLanguageVersion = "1.9",
-        )
-
-        androidLibrary(":lib") { android { experimentalProperties[OptionalBoolean.LINT_USE_K2_UAST.key] = true } }
-      }
-
-    build.executor
-      .withFailOnWarning(false) // b/455891987
-      .run("clean", "lint")
-  }
-
-  /** Test disabling K2 UAST for all modules */
-  @Test
-  fun testDisableK2UastGlobally() {
-    val build =
-      rule.build {
-        addLanguageVersionsToProject(
-          appExpectedLanguageVersion = kotlinLanguageVersion,
-          libExpectedLanguageVersion = kotlinLanguageVersion,
-          featureExpectedLanguageVersion = kotlinLanguageVersion,
-          javaLibExpectedLanguageVersion = null,
-          kotlinLibExpectedLanguageVersion = kotlinLanguageVersion,
-          kmpAndroidLibExpectedLanguageVersion = kotlinLanguageVersion,
-          kmpJvmLibExpectedLanguageVersion = kotlinLanguageVersion,
-          appExpectedUseK2Uast = false,
-          libExpectedUseK2Uast = false,
-          featureExpectedUseK2Uast = false,
-          javaLibExpectedUseK2Uast = false,
-          kotlinLibExpectedUseK2Uast = false,
-          kmpAndroidLibExpectedUseK2Uast = false,
-          kmpJvmLibExpectedUseK2Uast = false,
-        )
-      }
-
-    build.executor
-      .with(OptionalBooleanOption.LINT_USE_K2_UAST, false)
-      .withFailOnWarning(false) // b/455891987
-      .run("clean", "lint")
-  }
-
-  /** Test disabling K2 UAST for a single module (the app module) */
-  @Test
-  fun testDisableK2UastInAppOnly() {
-    val build =
-      rule.build {
-        addLanguageVersionsToProject(
-          appExpectedLanguageVersion = kotlinLanguageVersion,
-          libExpectedLanguageVersion = kotlinLanguageVersion,
-          featureExpectedLanguageVersion = kotlinLanguageVersion,
-          javaLibExpectedLanguageVersion = null,
-          kotlinLibExpectedLanguageVersion = kotlinLanguageVersion,
-          kmpAndroidLibExpectedLanguageVersion = kotlinLanguageVersion,
-          kmpJvmLibExpectedLanguageVersion = kotlinLanguageVersion,
-          appExpectedUseK2Uast = false,
-          libExpectedUseK2Uast = true,
-          featureExpectedUseK2Uast = true,
-          javaLibExpectedUseK2Uast = true,
-          kotlinLibExpectedUseK2Uast = true,
-          kmpAndroidLibExpectedUseK2Uast = true,
-          kmpJvmLibExpectedUseK2Uast = true,
-        )
-
-        androidApplication(":app") { android { experimentalProperties[OptionalBoolean.LINT_USE_K2_UAST.key] = false } }
-      }
-
-    build.executor
-      .withFailOnWarning(false) // b/455891987
-      .run("clean", "lint")
-  }
-
-  /** Test disabling K2 UAST for a single module (the lib module) */
-  @Test
-  fun testDisableK2UastInLibOnly() {
-    val build =
-      rule.build {
-        addLanguageVersionsToProject(
-          appExpectedLanguageVersion = kotlinLanguageVersion,
-          libExpectedLanguageVersion = kotlinLanguageVersion,
-          featureExpectedLanguageVersion = kotlinLanguageVersion,
-          javaLibExpectedLanguageVersion = null,
-          kotlinLibExpectedLanguageVersion = kotlinLanguageVersion,
-          kmpAndroidLibExpectedLanguageVersion = kotlinLanguageVersion,
-          kmpJvmLibExpectedLanguageVersion = kotlinLanguageVersion,
-          appExpectedUseK2Uast = true,
-          libExpectedUseK2Uast = false,
-          featureExpectedUseK2Uast = true,
-          javaLibExpectedUseK2Uast = true,
-          kotlinLibExpectedUseK2Uast = true,
-          kmpAndroidLibExpectedUseK2Uast = true,
-          kmpJvmLibExpectedUseK2Uast = true,
-        )
-
-        androidLibrary(":lib") { android { experimentalProperties[OptionalBoolean.LINT_USE_K2_UAST.key] = false } }
-      }
-
-    build.executor
       .withFailOnWarning(false) // b/455891987
       .run("clean", "lint")
   }

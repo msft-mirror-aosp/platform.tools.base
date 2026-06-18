@@ -22,15 +22,30 @@ interface AdbActivityManagerServices {
   /** The session this [AdbActivityManagerServices] instance belongs to. */
   val session: AdbSession
 
-  /** Uses `adb shell am force-stop` to terminate an app. */
+  /**
+   * Uses `adb shell am force-stop` to terminate an app.
+   *
+   * @throws [AdbActivityManagerException] if the `am` command failed
+   */
   suspend fun forceStop(device: DeviceSelector, packageName: String)
 
   /**
    * Uses `adb shell am crash` to crash an app.
    *
    * Note that `am crash` command is available on API level > 26.
+   *
+   * @throws [AdbActivityManagerException] if the `am` command failed
+   * @see [AdbActivityManagerException.isCommandNotSupported]
    */
   suspend fun crash(device: DeviceSelector, packageName: String)
+
+  /**
+   * Uses `adb shell am gc` to trigger garbage collection on a process.
+   *
+   * Note: You can use the [capabilities] method to check if the `gc` command is supported by the `am` implementation on the device. This
+   * method will throw an [AdbActivityManagerException] if the `gc` command is not supported.
+   */
+  suspend fun gc(device: DeviceSelector, pid: Int)
 
   /**
    * Uses `adb shell am capabilities` to return various device/run-time capabilities
@@ -39,10 +54,7 @@ interface AdbActivityManagerServices {
    *
    * Note: See [ActivityManager.capabilities] for a higher level version of this method that supports retrying if the device is not ready.
    *
-   * @throws [AdbFailResponseException] if the device is not [DeviceState.ONLINE]
    * @throws [AdbActivityManagerException] if the `am` command failed
-   * @throws [IOException] if there was an issue communicating with the device
-   * @see [AdbActivityManagerException.isServiceNotRunning]
    * @see [AdbActivityManagerException.isCommandNotSupported]
    */
   suspend fun capabilities(device: DeviceSelector): AmCapabilitiesResult
@@ -85,33 +97,6 @@ class AdbActivityManagerException(
    */
   val isCommandNotSupported: Boolean
     get() = errorOutput.contains("unknown command: ", ignoreCase = true) || errorOutput.contains("unknown command ", ignoreCase = true)
-
-  /**
-   * The `activity` service is not running (probably because the device is still in the boot process, where the device is already online,
-   * but not all services are started)
-   *
-   * ## API 16-25
-   *
-   * ```
-   * Error type 2
-   * android.util.AndroidException: Can't connect to activity manager; is the system running?
-   * 	at com.android.commands.am.Am.run(Am.java:100)
-   * 	at com.android.commands.am.Am.main(Am.java:81)
-   * 	at com.android.internal.os.RuntimeInit.nativeFinishInit(Native Method)
-   * 	at com.android.internal.os.RuntimeInit.main(RuntimeInit.java:235)
-   * 	at dalvik.system.NativeStart.main(Native Method)
-   * ```
-   *
-   * ## API 26-36+
-   *
-   * ```
-   * cmd: Can't find service: activity
-   * ```
-   */
-  val isServiceNotRunning: Boolean
-    get() =
-      errorOutput.contains("Can't connect to activity manager", ignoreCase = true) ||
-        errorOutput.contains("Can't find service: activity", ignoreCase = true)
 }
 
 /**

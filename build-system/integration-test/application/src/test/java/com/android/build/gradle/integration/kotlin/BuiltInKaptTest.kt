@@ -32,7 +32,7 @@ import com.android.build.gradle.internal.utils.ANDROID_BUILT_IN_KAPT_PLUGIN_ID
 import com.android.build.gradle.internal.utils.COMPOSE_COMPILER_PLUGIN_ID
 import com.android.build.gradle.internal.utils.KOTLIN_KAPT_PLUGIN_ID
 import com.android.build.gradle.options.BooleanOption
-import com.android.builder.model.SyncIssue
+import com.android.builder.model.v2.ide.SyncIssue
 import com.android.testutils.truth.PathSubject
 import com.android.utils.appendCapitalized
 import org.junit.Before

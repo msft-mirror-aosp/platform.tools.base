@@ -19,6 +19,8 @@ package com.android.sdklib.devices;
 import static com.android.SdkConstants.VALUE_FALSE;
 import static com.android.SdkConstants.VALUE_TRUE;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.concurrency.GuardedBy;
@@ -75,6 +77,8 @@ public class DeviceParser {
         private final Path mParentFolder;
         private Meta mMeta;
         private Hardware mHardware;
+        private Environment mEnvironment;
+        private boolean mInEnvironment = false;
         private Software mSoftware;
         private State mState;
         private Device.Builder mBuilder;
@@ -100,6 +104,8 @@ public class DeviceParser {
                 mMeta = null;
                 mHardware = null;
                 mSoftware = null;
+                mEnvironment = null;
+                mInEnvironment = false;
                 mState = null;
                 mCamera = null;
 
@@ -140,6 +146,10 @@ public class DeviceParser {
                 mBootProp = new String[2];
             } else if (DeviceSchema.NODE_TOUCHPAD.equals(localName)) {
                 mHardware.setTouchpad(new Touchpad());
+            } else if (DeviceSchema.NODE_ENVIRONMENT.equals(localName)) {
+                mEnvironment = new Environment();
+                mHardware.setEnvironment(mEnvironment);
+                mInEnvironment = true;
             }
             mStringAccumulator.setLength(0);
         }
@@ -243,9 +253,17 @@ public class DeviceParser {
             } else if (DeviceSchema.NODE_HINGE_ANGLES_POSTURE_DEFINITIONS.equals(localName)) {
                 mHardware.getHinge().setHingeAnglePostureDefinitions(getString(mStringAccumulator));
             } else if (DeviceSchema.NODE_WIDTH.equals(localName)) {
-                mHardware.getTouchpad().setWidth(getInteger(mStringAccumulator));
+                if (mInEnvironment) {
+                    mEnvironment.setWidth(getInteger(mStringAccumulator));
+                } else {
+                    mHardware.getTouchpad().setWidth(getInteger(mStringAccumulator));
+                }
             } else if (DeviceSchema.NODE_HEIGHT.equals(localName)) {
-                mHardware.getTouchpad().setHeight(getInteger(mStringAccumulator));
+                if (mInEnvironment) {
+                    mEnvironment.setHeight(getInteger(mStringAccumulator));
+                } else {
+                    mHardware.getTouchpad().setHeight(getInteger(mStringAccumulator));
+                }
             } else if (DeviceSchema.NODE_XDPI.equals(localName)) {
                 mHardware.getScreen().setXdpi(getDouble(mStringAccumulator));
             } else if (DeviceSchema.NODE_YDPI.equals(localName)) {
@@ -278,6 +296,8 @@ public class DeviceParser {
             } else if (DeviceSchema.NODE_CAMERA.equals(localName)) {
                 mHardware.addCamera(mCamera);
                 mCamera = null;
+            } else if (DeviceSchema.NODE_ENVIRONMENT.equals(localName)) {
+                mInEnvironment = false;
             } else if (DeviceSchema.NODE_LOCATION.equals(localName)) {
                 CameraLocation location = CameraLocation.getEnum(getString(mStringAccumulator));
                 if (location != null) {
@@ -418,14 +438,22 @@ public class DeviceParser {
             } else if (DeviceSchema.NODE_TAG_ID.equals(localName)) {
                 mBuilder.setTagId(getString(mStringAccumulator));
             } else if (DeviceSchema.NODE_PROP_NAME.equals(localName)) {
-                assert mBootProp != null && mBootProp.length == 2;
+                checkState(
+                        mBootProp != null && mBootProp.length == 2,
+                        "Unexpected prop-name tag outside of boot-prop");
                 mBootProp[0] = getString(mStringAccumulator);
             } else if (DeviceSchema.NODE_PROP_VALUE.equals(localName)) {
-                assert mBootProp != null && mBootProp.length == 2;
+                checkState(
+                        mBootProp != null && mBootProp.length == 2,
+                        "Unexpected prop-value tag outside of boot-prop");
                 mBootProp[1] = mStringAccumulator.toString();
             } else if (DeviceSchema.NODE_BOOT_PROP.equals(localName)) {
-                assert mBootProp != null && mBootProp.length == 2 &&
-                       mBootProp[0] != null && mBootProp[1] != null;
+                checkState(
+                        mBootProp != null && mBootProp.length == 2,
+                        "Unexpected boot-prop tag outside of boot-props");
+                checkState(
+                        mBootProp[0] != null && mBootProp[1] != null,
+                        "Missing prop-name and prop-value tags inside boot-prop tag");
                 mBuilder.addBootProp(mBootProp[0], mBootProp[1]);
                 checkAndSetIfRound(mBootProp[0], mBootProp[1]);
                 mBootProp = null;
@@ -533,6 +561,11 @@ public class DeviceParser {
     @NonNull
     public static Table<String, String, Device> parse(@NonNull Path devicesFile)
             throws SAXException, ParserConfigurationException, IOException {
+        return parseImpl(openInputStream(devicesFile), devicesFile.toAbsolutePath().getParent());
+    }
+
+    @NonNull
+    static InputStream openInputStream(@NonNull Path devicesFile) throws IOException {
         if (CancellableFileIo.size(devicesFile) > MAX_FILE_LENGTH) {
             throw new IOException(
                     String.format(
@@ -542,10 +575,7 @@ public class DeviceParser {
                             MAX_FILE_LENGTH));
         }
 
-        // stream closed by parseImpl.
-        @SuppressWarnings("IOResourceOpenedButNotSafelyClosed")
-        InputStream stream = CancellableFileIo.newInputStream(devicesFile);
-        return parseImpl(stream, devicesFile.toAbsolutePath().getParent());
+        return CancellableFileIo.newInputStream(devicesFile);
     }
 
     /**
@@ -595,3 +625,4 @@ public class DeviceParser {
         }
     }
 }
+

@@ -21,6 +21,10 @@ import java.time.Duration
 internal object AdbLibProperties {
   private const val NAME_PREFIX = "com.android.adblib"
 
+  /** Timeout waiting for the connection to the ADB server to be established. */
+  val SESSION_CONNECTION_TIMEOUT =
+    AdbSessionHost.DurationProperty(name = "$NAME_PREFIX.session.connection.timeout", defaultValue = Duration.ofSeconds(10))
+
   val TRACK_DEVICES_RETRY_DELAY =
     AdbSessionHost.DurationProperty(name = "$NAME_PREFIX.track.devices.retry.delay", defaultValue = Duration.ofSeconds(2))
 
@@ -73,4 +77,20 @@ internal object AdbLibProperties {
    */
   val AM_SERVICE_RETRY_DELAY =
     AdbSessionHost.DurationProperty(name = "$NAME_PREFIX.am.service.retry.delay", defaultValue = Duration.ofSeconds(1))
+
+  /**
+   * Timeout waiting for the `pm` service to be loaded and ready on the device.
+   *
+   * See [ConnectedDevice].[packageManager][PackageManager]
+   */
+  val PM_SERVICE_TIMEOUT = AdbSessionHost.DurationProperty(name = "$NAME_PREFIX.pm.service.timeout", defaultValue = Duration.ofSeconds(10))
+
+  /**
+   * [Duration] between attempt to call the `pm` service on a device if the service is not started yet.
+   *
+   * @see [PM_SERVICE_TIMEOUT]
+   * @see [ConnectedDevice].[packageManager][PackageManager]
+   */
+  val PM_SERVICE_RETRY_DELAY =
+    AdbSessionHost.DurationProperty(name = "$NAME_PREFIX.pm.service.retry.delay", defaultValue = Duration.ofSeconds(1))
 }

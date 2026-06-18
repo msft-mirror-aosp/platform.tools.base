@@ -19,7 +19,6 @@ package com.android.build.gradle.integration.lint;
 import static com.android.testutils.truth.PathSubject.assertThat;
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
-import com.android.build.gradle.options.BooleanOption;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -37,11 +36,7 @@ public class LintInstantiateTest {
 
     @Test
     public void checkFindErrors() throws Exception {
-        project.executor()
-                // Disabled due to a dependency on
-                // com.android.support:animated-vector-drawable:28.0.0
-                .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
-                .run(":app:clean", ":app:lintDebug");
+        project.executor().run(":app:clean", ":app:lintDebug");
         File lintReport = project.file("app/lint-results.txt");
         assertThat(lintReport).contains("No issues found.");
 

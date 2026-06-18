@@ -51,7 +51,6 @@ internal enum class BuildSystem {
     withKotlinGradlePlugin: Boolean,
     withKspGradlePlugin: Boolean,
     withComposeCompilerGradlePlugin: Boolean,
-    withAndroidxPrivacySandboxLibraryPlugin: Boolean,
     withExtraPluginClasspath: String?,
     withBuiltInKotlinSupport: Boolean,
   ): String {
@@ -77,11 +76,6 @@ internal enum class BuildSystem {
     }
     if (withComposeCompilerGradlePlugin) {
       script.append("        classpath \"org.jetbrains.kotlin:compose-compiler-gradle-plugin:\${libs.versions.kotlinVersion.get()}\"\n")
-    }
-    if (withAndroidxPrivacySandboxLibraryPlugin) {
-      script.append(
-        "        classpath \"androidx.privacysandbox.plugins:plugins-privacysandbox-library:\${libs.versions.androidxPrivacySandboxLibraryVersion.get()}\"\n"
-      )
     }
     if (!withExtraPluginClasspath.isNullOrBlank()) {
       script.append("        classpath '$withExtraPluginClasspath'\n")

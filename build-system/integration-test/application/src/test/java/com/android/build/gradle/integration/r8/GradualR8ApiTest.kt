@@ -24,6 +24,7 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Plugi
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.FileUtils
+import com.google.common.truth.Truth
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.junit.Rule
 import org.junit.Test
@@ -35,7 +36,6 @@ class GradualR8ApiTest {
     GradleRule.from {
       gradleProperties { add(BooleanOption.R8_GRADUAL_API, true) }
       androidApplication {
-        applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
         android {
           defaultConfig.minSdk = 24
           buildTypes { named("release") { it.optimization { enable = true } } }
@@ -48,7 +48,6 @@ class GradualR8ApiTest {
         }
       }
       androidLibrary(":androidLib") {
-        applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
         android {
           defaultConfig {
             minSdk = 24
@@ -85,7 +84,6 @@ class GradualR8ApiTest {
         }
       }
       androidLibrary(":androidLib2") { // no consumer proguard file present, added to validate no-op
-        applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
         android { defaultConfig { minSdk = 24 } }
         kotlin { compilerOptions { jvmTarget.set(JvmTarget.JVM_11) } }
         files {
@@ -141,7 +139,7 @@ class GradualR8ApiTest {
     val build =
       rule.build { androidApplication { android { buildTypes { named("release") { it.optimization { packageScope.set(listOf()) } } } } } }
     val result = build.executor.expectFailure().run(":app:assembleRelease")
-    result.assertErrorContains("Wrong configuration.")
+    result.assertErrorContains("Wrong configuration. optimization.packageScope is an empty set, at least one package must be specified.")
   }
 
   @Test
@@ -266,6 +264,27 @@ class GradualR8ApiTest {
       classes().subPackage("com/example/javalib").containsExactly(listOf())
     }
     checkMappingFiles(build)
+  }
+
+  @Test
+  fun `test gradual r8 default optimization does not trigger R8AnalysisTask`() {
+    val build = rule.build
+    val result = build.executor.run(":app:assembleRelease")
+    Truth.assertThat(result.tasks).doesNotContain(":app:analyzeReleaseR8Config")
+  }
+
+  @Test
+  fun `test gradual r8 requires flag`() {
+    val build =
+      rule.build {
+        gradleProperties { remove(BooleanOption.R8_GRADUAL_API) }
+        androidApplication {
+          android { buildTypes { named("release") { it.optimization { packageScope.add("com.example.androidlib.*") } } } }
+        }
+      }
+
+    val result = build.executor.expectFailure().run(":app:assembleRelease")
+    result.assertErrorContains("Cannot use optimization.packageScope without setting android.r8.gradual.support flag.")
   }
 
   private fun checkMappingFiles(build: GradleBuild) {

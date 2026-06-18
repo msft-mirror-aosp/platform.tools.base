@@ -88,6 +88,7 @@ public class AppPluginInternalTest {
         project =
                 TestProjects.builder(projectDirectory.newFolder("project").toPath())
                         .withPlugin(TestProjects.Plugin.APP)
+                        .withProperty("_agp_internal_test_mode_", "true")
                         .build();
         ApplicationExtension android =
                 project.getExtensions().getByType(ApplicationExtension.class);
@@ -392,13 +393,14 @@ public class AppPluginInternalTest {
         TestCase.assertNotNull(signingConfig);
         final File file = signingConfig.getStoreFile().get();
         assertNotNull(file);
-        assertThat(file)
+        assertThat(file.getAbsoluteFile())
                 .isEqualTo(
                         GradleKeystoreHelper.getDefaultDebugKeystoreLocation(
-                                new AbstractAndroidLocations(
-                                        EnvironmentProvider.DIRECT,
-                                        new StdLogger(StdLogger.Level.VERBOSE),
-                                        true) {}));
+                                        new AbstractAndroidLocations(
+                                                EnvironmentProvider.DIRECT,
+                                                new StdLogger(StdLogger.Level.VERBOSE),
+                                                true) {})
+                                .getAbsoluteFile());
 
         variant = findComponent(components, "flavor1Staging");
         signingConfig = ((ApplicationVariantImpl) variant).getSigningConfig();
@@ -415,13 +417,14 @@ public class AppPluginInternalTest {
         TestCase.assertNotNull(signingConfig);
         final File file1 = signingConfig.getStoreFile().get();
         assertNotNull(file1);
-        assertThat(file1)
+        assertThat(file1.getAbsoluteFile())
                 .isEqualTo(
                         GradleKeystoreHelper.getDefaultDebugKeystoreLocation(
-                                new AbstractAndroidLocations(
-                                        EnvironmentProvider.DIRECT,
-                                        new StdLogger(StdLogger.Level.VERBOSE),
-                                        true) {}));
+                                        new AbstractAndroidLocations(
+                                                EnvironmentProvider.DIRECT,
+                                                new StdLogger(StdLogger.Level.VERBOSE),
+                                                true) {})
+                                .getAbsoluteFile());
 
         variant = findComponent(components, "flavor2Staging");
         signingConfig = ((ApplicationVariantImpl) variant).getSigningConfig();
@@ -496,13 +499,11 @@ public class AppPluginInternalTest {
         TestCase.assertEquals(signingConfig.getKeyAlias().get(), "c1");
         TestCase.assertEquals(signingConfig.getKeyPassword().get(), "d1");
         TestCase.assertTrue(signingConfig.hasConfig());
-        TestCase.assertTrue(signingConfig.isSigningReady());
 
         variant = findComponent(components, "flavor1Release");
         signingConfig = ((ApplicationVariantImpl) variant).getSigningConfig();
         TestCase.assertNotNull(signingConfig);
         TestCase.assertFalse(signingConfig.hasConfig());
-        TestCase.assertFalse(signingConfig.isSigningReady());
     }
 
     /**

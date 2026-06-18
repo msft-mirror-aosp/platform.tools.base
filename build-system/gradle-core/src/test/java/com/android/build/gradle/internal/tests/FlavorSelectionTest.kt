@@ -70,6 +70,7 @@ class FlavorSelectionTest(val variantApi: VariantApiType) {
     defaultConfig.missingDimensionStrategy("default", "defaultValue")
     defaultConfig.missingDimensionStrategy("flavor", "defaultValue")
     defaultConfig.missingDimensionStrategy("variant", "defaultValue")
+    defaultConfig.missingDimensionStrategy("dimension", "dimension_fallback")
 
     // add selection on flavors
     android.flavorDimensions += "dimension"
@@ -114,6 +115,11 @@ class FlavorSelectionTest(val variantApi: VariantApiType) {
     checkAttribute("flavor-only", "other-flavor-only")
 
     // TODO: we should check the strategies but there's no API for it right now.
+  }
+
+  @Test
+  fun testDimensionAttributeNotOverwrittenByStrategy() {
+    checkAttribute("dimension", "flavor")
   }
 
   @Test

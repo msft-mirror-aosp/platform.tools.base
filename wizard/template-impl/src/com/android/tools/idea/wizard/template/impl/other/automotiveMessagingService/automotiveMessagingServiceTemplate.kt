@@ -32,6 +32,7 @@ import com.android.tools.idea.wizard.template.stringParameter
 import com.android.tools.idea.wizard.template.template
 import java.io.File
 
+// TODO: b/390508868 - Fix deprecation warnings
 val automotiveMessagingServiceTemplate
   get() = template {
     name = "Messaging Service"

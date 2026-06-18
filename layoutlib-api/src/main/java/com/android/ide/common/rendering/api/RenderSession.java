@@ -83,14 +83,29 @@ public class RenderSession {
     }
 
     /**
-     * Returns the rendering of the full layout.
-     * <p>
-     * This is reset to a new instance every time {@link #render()} is called and can be
-     * <code>null</code> if the call failed (and the method returned a {@link Result} with
-     * {@link Status#ERROR_UNKNOWN} or {@link Status#NOT_IMPLEMENTED}.
-     * <p>
-     * This can be safely modified by the caller.
+     * Returns the last rendered image as a recyclable/managed image.
+     *
+     * <p>The client takes ownership of this image and is responsible for calling {@link
+     * RecyclableImage#close()} when the image is no longer needed.
+     *
+     * @return a {@link RecyclableImage} or null if the rendering failed.
      */
+    public RecyclableImage getRecyclableImage() {
+        return null;
+    }
+
+    /**
+     * Returns the rendering of the full layout.
+     *
+     * <p>This is reset to a new instance every time {@link #render()} is called and can be <code>
+     * null</code> if the call failed (and the method returned a {@link Result} with {@link
+     * Status#ERROR_UNKNOWN} or {@link Status#NOT_IMPLEMENTED}.
+     *
+     * <p>This can be safely modified by the caller.
+     *
+     * @deprecated Use {@link #getRecyclableImage()} instead to prevent buffer leaks.
+     */
+    @Deprecated
     public BufferedImage getImage() {
         return null;
     }

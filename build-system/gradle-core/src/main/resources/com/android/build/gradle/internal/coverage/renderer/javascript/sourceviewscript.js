@@ -15,6 +15,19 @@
  */
 
 const SourceViewApp = {
+    /**
+     * Escapes special characters for use in HTML content and attributes.
+     */
+    escapeHTML(str) {
+        if (!str) return "";
+        return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+    },
+
     elements: {},
     classData: null,
     context: {},
@@ -23,7 +36,6 @@ const SourceViewApp = {
         isLoading: false,
         scrollLock: false
     },
-    isSyncing: false,
 
     init() {
         this.cacheElements();
@@ -66,24 +78,53 @@ const SourceViewApp = {
         return div;
     },
 
+    resetSearchUI() {
+        if (this.elements.functionSearch) {
+            this.elements.functionSearch.value = '';
+        }
+        if (this.elements.functionSearchClearBtn) {
+            this.elements.functionSearchClearBtn.classList.add('hidden');
+        }
+        this.handleFunctionSearch({ target: { value: '' } });
+    },
+
+    revealSearchUI() {
+        if (!this.elements.srcSearchWrapper || !this.elements.srcSearchRevealBtn) return;
+        this.elements.srcSearchRevealBtn.classList.add('transparent');
+        this.elements.srcSearchWrapper.classList.add('expanded');
+        if (this.elements.functionSearch) {
+            this.elements.functionSearch.focus();
+        }
+    },
+
+    collapseSearchUI(animated = true) {
+        if (!this.elements.srcSearchWrapper || !this.elements.srcSearchRevealBtn) return;
+
+        this.elements.srcSearchWrapper.classList.remove('expanded');
+        this.elements.srcSearchRevealBtn.classList.remove('transparent');
+        if (!animated) {
+            this.elements.srcSearchRevealBtn.classList.remove('hidden');
+        }
+    },
+
     /**
      * Entry point to load specific source files for a class and then render.
      */
     async loadAndRender(classData, context = {}) {
         // Reset selected variants if we are loading a new class (check name and package)
-        if (!this.classData || this.classData.packageName !== classData.packageName || this.classData.name !== classData.name) {
+        // Unless we are restoring state from history.
+        const isNewClass = !this.classData || this.classData.packageName !== classData.packageName || this.classData.name !== classData.name;
+        const isPopping = typeof Navigation !== 'undefined' && Navigation.isPopping;
+
+        if (isNewClass && !isPopping) {
             this.state.selectedVariants = [];
         }
 
         this.classData = classData;
         this.context = context;
 
-        if (!classData?.variantSourceFilePaths) {
-            this.elements.sourceViewContainer.innerHTML = `
-                <div class="p-8 text-center text-red-600">
-                    <h3 class="text-lg font-bold">No Source Data</h3>
-                    <p>No source file paths found for ${classData?.name || 'this class'}.</p>
-                </div>`;
+        if (!classData?.variantSourceFilePaths || classData.variantSourceFilePaths.length === 0) {
+            this.render();
             return;
         }
 
@@ -98,10 +139,11 @@ const SourceViewApp = {
         } catch (error) {
             console.error("[SourceView] Failed to load source files:", error);
             this.elements.sourceViewContainer.innerHTML = `
-                <div class="p-8 text-center text-red-600">
+                <div class="p-8 text-center text-red-600" tabindex="-1" id="source-load-error">
                     <h3 class="text-lg font-bold">Error Loading Source</h3>
                     <p>Could not load coverage data for ${classData.sourceFileName}.</p>
                 </div>`;
+            document.getElementById('source-load-error').focus();
         } finally {
             this.toggleLoading(false);
         }
@@ -138,7 +180,7 @@ const SourceViewApp = {
     },
 
     render() {
-        const availableVariants = [...new Set(this.classData.variantSourceFilePaths.map(v => v.variantName))];
+        const availableVariants = [...new Set((this.classData?.variantSourceFilePaths || []).map(v => v.variantName))];
         if (this.state.selectedVariants.length === 0) {
             this.state.selectedVariants = [...availableVariants];
         }
@@ -148,6 +190,17 @@ const SourceViewApp = {
         this.renderFunctionList();
         this.renderAllVariantViews();
         this.updateVariantButtonText();
+
+        if (typeof Navigation !== 'undefined') {
+            Navigation.replace();
+        }
+
+        // Auto-focus breadcrumbs for orientation
+        const currentBreadcrumb = this.elements.sourceBreadcrumbs.querySelector('.font-semibold');
+        if (currentBreadcrumb) {
+            currentBreadcrumb.setAttribute('tabindex', '-1');
+            currentBreadcrumb.focus();
+        }
     },
 
     renderBreadcrumbs() {
@@ -156,22 +209,22 @@ const SourceViewApp = {
         const { moduleName } = this.context;
 
         let html = `<div class="flex items-center gap-2 text-sm">
-            <a href="#" class="breadcrumb-link" data-action="go-to-modules">Project</a>`;
+            <a href="#" class="breadcrumb-link" data-action="go-to-modules" aria-label="Go back to Project Overview">Project</a>`;
 
         if (moduleName) {
             html += `
-                <span class="breadcrumb-separator">/</span>
-                <a href="#" class="breadcrumb-link" data-action="go-to-packages" data-module-name="${moduleName}">${moduleName}</a>`;
+                <span class="breadcrumb-separator" aria-hidden="true">/</span>
+                <a href="#" class="breadcrumb-link" data-action="go-to-packages" data-module-name="${this.escapeHTML(moduleName)}" aria-label="Go back to module: ${this.escapeHTML(moduleName)}">${this.escapeHTML(moduleName)}</a>`;
         }
         if (packageName) {
              html += `
-                <span class="breadcrumb-separator">/</span>
-                <a href="#" class="breadcrumb-link" data-action="go-to-classes" data-module-name="${moduleName}" data-package-name="${packageName}">${packageName}</a>`;
+                <span class="breadcrumb-separator" aria-hidden="true">/</span>
+                <a href="#" class="breadcrumb-link" data-action="go-to-classes" data-module-name="${this.escapeHTML(moduleName)}" data-package-name="${this.escapeHTML(packageName)}" aria-label="Go back to package: ${this.escapeHTML(packageName)}">${this.escapeHTML(packageName)}</a>`;
         }
 
         html += `
-            <span class="breadcrumb-separator">/</span>
-            <span class="font-semibold text-gray-800">${sourceFileName}</span>
+            <span class="breadcrumb-separator" aria-hidden="true">/</span>
+            <span class="font-semibold text-gray-800">${this.escapeHTML(sourceFileName)}</span>
         </div>`;
 
         this.elements.sourceBreadcrumbs.innerHTML = html;
@@ -179,17 +232,66 @@ const SourceViewApp = {
 
     bindEvents() {
         this.elements.variantFilterBtn.addEventListener('click', this.toggleVariantDropdown.bind(this));
+        this.elements.variantFilterBtn.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                e.stopPropagation();
+                this.toggleVariantDropdown();
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (this.elements.variantFiltersDropdown.classList.contains('hidden')) {
+                    this.toggleVariantDropdown();
+                } else {
+                    const firstItem = this.elements.variantFiltersDropdown.querySelector('button, [tabindex="0"], input');
+                    if (firstItem) firstItem.focus();
+                }
+            }
+        });
+
+        this.elements.variantFiltersDropdown.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                const items = Array.from(this.elements.variantFiltersDropdown.querySelectorAll('input:not([disabled]), button:not([disabled]), [role="option"]'))
+                    .filter(el => el.style.display !== 'none' && el.offsetWidth > 0 && el.offsetHeight > 0);
+                if (items.length === 0) return;
+                const currentIndex = items.indexOf(document.activeElement);
+                let nextIndex = 0;
+                if (e.key === 'ArrowDown') {
+                    nextIndex = currentIndex < items.length - 1 ? currentIndex + 1 : 0;
+                } else {
+                    nextIndex = currentIndex > 0 ? currentIndex - 1 : items.length - 1;
+                }
+                items[nextIndex].focus();
+            }
+        });
+
         this.elements.functionSearch.addEventListener('input', this.handleFunctionSearch.bind(this));
         this.elements.functionSearchClearBtn.addEventListener('click', this.handleFunctionSearchClear.bind(this));
         this.elements.functionList.addEventListener('click', this.handleMethodClick.bind(this));
+        this.elements.functionList.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                const methodLink = e.target.closest('.method-link');
+                if (methodLink) {
+                    e.preventDefault();
+                    methodLink.click();
+                }
+            }
+        });
         this.elements.sourceBreadcrumbs.addEventListener('click', this.handleBreadcrumbClick.bind(this));
+        this.elements.sourceBreadcrumbs.addEventListener('keydown', (e) => {
+            if (e.key === ' ') {
+                const link = e.target.closest('.breadcrumb-link');
+                if (link) {
+                    e.preventDefault();
+                    link.click();
+                }
+            }
+        });
 
         if (this.elements.srcSearchRevealBtn) {
             this.elements.srcSearchRevealBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                this.elements.srcSearchRevealBtn.classList.add('hidden');
-                this.elements.srcSearchWrapper.classList.add('expanded');
-                this.elements.functionSearch.focus();
+                this.revealSearchUI();
             });
         }
 
@@ -198,12 +300,20 @@ const SourceViewApp = {
                 const btn = e.target.closest('.segment-btn');
                 if (!btn) return;
 
-                this.elements.scrollLockSegments.querySelectorAll('.segment-btn').forEach(b => b.classList.remove('active'));
+                this.elements.scrollLockSegments.querySelectorAll('.segment-btn').forEach(b => {
+                    b.classList.remove('active');
+                    b.setAttribute('aria-pressed', 'false');
+                    b.removeAttribute('tabindex');
+                });
                 btn.classList.add('active');
+                btn.setAttribute('aria-pressed', 'true');
+                btn.removeAttribute('tabindex');
 
                 this.state.scrollLock = (btn.dataset.value === 'on');
             });
         }
+
+
 
         this.elements.sourceViewContainer.addEventListener('scroll', (e) => {
             if (!this.state.scrollLock) return;
@@ -246,43 +356,95 @@ const SourceViewApp = {
                 CoverageReportApp.resetSelection();
                 CoverageReportApp.state.currentView = 'modules';
                 App.showReportView();
-                CoverageReportApp.render();
+                CoverageReportApp.render(true);
+                Navigation.push();
+                setTimeout(() => {
+                    if (CoverageReportApp.elements.tableHeaders) {
+                        const firstHeader = CoverageReportApp.elements.tableHeaders.querySelector('[tabindex="0"]');
+                        if (firstHeader) firstHeader.focus();
+                    }
+                }, 0);
                 break;
             case 'go-to-packages':
                 CoverageReportApp.state.selectedModule = moduleName;
                 CoverageReportApp.state.selectedPackage = null;
                 CoverageReportApp.state.currentView = 'packages';
                 App.showReportView();
-                CoverageReportApp.render();
+                CoverageReportApp.render(true);
+                Navigation.push();
+                setTimeout(() => {
+                    if (CoverageReportApp.elements.tableHeaders) {
+                        const firstHeader = CoverageReportApp.elements.tableHeaders.querySelector('[tabindex="0"]');
+                        if (firstHeader) firstHeader.focus();
+                    }
+                }, 0);
                 break;
             case 'go-to-classes':
                 CoverageReportApp.state.selectedModule = moduleName;
                 CoverageReportApp.state.selectedPackage = packageName;
                 CoverageReportApp.state.currentView = 'classes';
                 App.showReportView();
-                CoverageReportApp.render();
+                CoverageReportApp.render(true);
+                Navigation.push();
+                setTimeout(() => {
+                    if (CoverageReportApp.elements.tableHeaders) {
+                        const firstHeader = CoverageReportApp.elements.tableHeaders.querySelector('[tabindex="0"]');
+                        if (firstHeader) firstHeader.focus();
+                    }
+                }, 0);
                 break;
         }
     },
 
     toggleVariantDropdown() {
-        this.elements.variantFiltersDropdown.classList.toggle('hidden');
+        const isHidden = this.elements.variantFiltersDropdown.classList.contains('hidden');
+        if (isHidden) {
+            this.elements.variantFiltersDropdown.classList.remove('hidden');
+            this.elements.variantFilterBtn.setAttribute('aria-expanded', 'true');
+
+            // Focus management
+            setTimeout(() => {
+                const searchInput = this.elements.variantFiltersDropdown.querySelector('input');
+                if (searchInput) {
+                    searchInput.focus();
+                } else {
+                    const firstItem = this.elements.variantFiltersDropdown.querySelector('button, [tabindex="0"], input');
+                    if (firstItem) firstItem.focus();
+                }
+            }, 0);
+        } else {
+            this.elements.variantFiltersDropdown.classList.add('hidden');
+            this.elements.variantFilterBtn.setAttribute('aria-expanded', 'false');
+        }
     },
 
     closeDropdownOnClickOutside() {
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                if (!this.elements.variantFiltersDropdown.classList.contains('hidden')) {
+                    this.elements.variantFiltersDropdown.classList.add('hidden');
+                    this.elements.variantFilterBtn.setAttribute('aria-expanded', 'false');
+                    this.elements.variantFilterBtn.focus();
+                } else if (this.elements.srcSearchWrapper && this.elements.srcSearchWrapper.classList.contains('expanded')) {
+                    this.collapseSearchUI(true);
+                    this.elements.srcSearchRevealBtn.focus();
+                }
+            }
+        });
+
         document.addEventListener('click', (event) => {
+            if (!document.body.contains(event.target)) return;
+
             if (!this.elements.variantFilterBtn.contains(event.target) && !this.elements.variantFiltersDropdown.contains(event.target)) {
                 this.elements.variantFiltersDropdown.classList.add('hidden');
+                this.elements.variantFilterBtn.setAttribute('aria-expanded', 'false');
             }
 
             // Search Input Collapse
             if (this.elements.srcSearchWrapper && this.elements.srcSearchRevealBtn) {
                 if (!this.elements.srcSearchWrapper.contains(event.target) && !this.elements.srcSearchRevealBtn.contains(event.target)) {
                     if (this.elements.functionSearch && this.elements.functionSearch.value === '') {
-                        this.elements.srcSearchWrapper.classList.remove('expanded');
-                        setTimeout(() => {
-                            this.elements.srcSearchRevealBtn.classList.remove('hidden');
-                        }, 300);
+                        this.collapseSearchUI(true);
                     }
                 }
             }
@@ -291,7 +453,7 @@ const SourceViewApp = {
 
     updateVariantButtonText() {
         const selectedCount = this.state.selectedVariants.length;
-        const availableVariants = [...new Set(this.classData.variantSourceFilePaths.map(v => v.variantName))];
+        const availableVariants = [...new Set((this.classData?.variantSourceFilePaths || []).map(v => v.variantName))];
         const allVariantsCount = availableVariants.length;
 
         if (selectedCount === allVariantsCount && allVariantsCount > 0) {
@@ -318,9 +480,11 @@ const SourceViewApp = {
     },
 
     handleFunctionSearchClear() {
-        this.elements.functionSearch.value = '';
-        this.handleFunctionSearch({ target: this.elements.functionSearch });
-        this.elements.functionSearch.focus();
+        this.resetSearchUI();
+        this.collapseSearchUI(true);
+        if (this.elements.srcSearchRevealBtn) {
+            this.elements.srcSearchRevealBtn.focus();
+        }
     },
 
     handleMethodClick(e) {
@@ -379,21 +543,21 @@ const SourceViewApp = {
         UIUtils.buildActionDropdown(this.elements.variantFiltersDropdown, variantOptions, this.state.selectedVariants, () => {
             this.renderAllVariantViews();
             this.updateVariantButtonText();
+            if (typeof Navigation !== 'undefined') {
+                Navigation.push();
+            }
         }, false);
     },
 
     renderFunctionList() {
-        const header = this.elements.functionListContainer.querySelector('h3');
-        if(header) header.textContent = "Methods";
-
         if (!this.classData.methods || this.classData.methods.length === 0) {
             this.elements.functionList.innerHTML = '<div class="text-sm text-gray-500 px-3">No methods found</div>';
             return;
         }
 
         this.elements.functionList.innerHTML = this.classData.methods.map(method => `
-            <div class="method-link w-full text-left px-3 py-2 rounded-lg transition-colors hover:bg-gray-100 text-gray-700 block cursor-pointer" data-method-name="${method.name}">
-                <div class="text-sm font-mono truncate">${method.name}</div>
+            <div class="method-link w-full text-left px-3 py-2 rounded-lg transition-colors hover:bg-gray-100 text-gray-700 block cursor-pointer" tabindex="0" role="button" data-method-name="${this.escapeHTML(method.name)}">
+                <div class="text-sm font-mono truncate">${this.escapeHTML(method.name)}</div>
             </div>`
         ).join('');
 
@@ -404,6 +568,24 @@ const SourceViewApp = {
     },
 
     renderAllVariantViews() {
+        if (!this.classData?.variantSourceFilePaths || this.classData.variantSourceFilePaths.length === 0) {
+            const packageName = this.classData?.packageName || this.context.packageName;
+            const sourceFileName = this.classData?.sourceFileName || this.classData?.name;
+            const packagePath = (packageName && packageName !== 'default')
+                ? packageName.replace(/\./g, '/') + '/'
+                : '';
+            const fullSourcePath = packagePath + sourceFileName;
+
+            this.elements.sourceViewContainer.innerHTML = `
+                <div class="flex items-center justify-center w-full h-full text-red-600">
+                    <div class="text-center p-8">
+                        <h3 class="text-lg font-bold">No Source Data</h3>
+                        <p>Source file "${this.escapeHTML(fullSourcePath)}" was not found during generation of report</p>
+                    </div>
+                </div>`;
+            return;
+        }
+
         this.elements.sourceViewContainer.innerHTML = this.state.selectedVariants.map(variant => this.renderVariantView(variant)).join('');
     },
 
@@ -443,8 +625,8 @@ const SourceViewApp = {
 
         if (!fileReport) {
             return `
-                <div class="variant-code-view" data-variant="${variantName}">
-                    <div class="variant-header"><div>${variantName}</div></div>
+                <div class="variant-code-view" data-variant="${this.escapeHTML(variantName)}">
+                    <div class="variant-header"><div>${this.escapeHTML(variantName)}</div></div>
                     <div class="p-4 text-gray-500 text-center">Data not loaded for this variant.</div>
                 </div>`;
         }
@@ -452,10 +634,11 @@ const SourceViewApp = {
         const summaryGroup = fileReport.variantCoverageSummary.find(s => s.variantName === variantName);
         const summaryStats = this.resolveCoverageForGroup(summaryGroup);
 
-        const percent = summaryStats ? summaryStats.instruction.percent : 0;
+        const percentValue = summaryStats ? summaryStats.instruction.percent : null;
+        const percentDisplay = (percentValue === null || percentValue === undefined) ? '--' : percentValue + '%';
         const covered = summaryStats ? summaryStats.instruction.covered : 0;
         const total = summaryStats ? summaryStats.instruction.total : 0;
-        const colorClass = UIUtils.getCoverageClass(percent);
+        const colorClass = UIUtils.getCoverageClass(percentValue);
 
         const tbody = fileReport.linesCoverages.map(line => {
             const { lineNumber, lineText, variantCoverageDetails } = line;
@@ -486,17 +669,17 @@ const SourceViewApp = {
             return `
                 <tr data-line-number="${lineNumber}">
                     <td class="line-number">${branchIndicator}${lineNumber}</td>
-                    <td class="code-cell ${statusClass}"><pre>${lineText || ' '}</pre></td>
+                    <td class="code-cell ${statusClass}"><pre>${this.escapeHTML(lineText) || ' '}</pre></td>
                 </tr>
             `;
         }).join('');
 
         return `
-            <div class="variant-code-view" data-variant="${variantName}">
+            <div class="variant-code-view" data-variant="${this.escapeHTML(variantName)}">
                 <div class="variant-header">
-                    <div>${variantName}</div>
+                    <div>${this.escapeHTML(variantName)}</div>
                     <div class="flex items-baseline gap-2 mt-1">
-                        <span class="font-bold ${colorClass}">${percent}%</span>
+                        <span class="font-bold ${colorClass}">${percentDisplay}</span>
                         <span class="text-xs text-gray-500 font-normal">${covered}/${total} Lines</span>
                     </div>
                 </div>

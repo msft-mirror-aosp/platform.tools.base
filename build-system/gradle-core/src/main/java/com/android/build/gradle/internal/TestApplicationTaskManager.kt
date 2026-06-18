@@ -19,6 +19,7 @@ import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.variant.TestVariantBuilder
 import com.android.build.gradle.internal.component.*
 import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask
+import com.android.build.gradle.internal.tasks.DeviceSerialTestTask
 import com.android.build.gradle.internal.tasks.SigningConfigVersionsWriterTask
 import com.android.build.gradle.internal.tasks.creationconfig.forTestComponent
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
@@ -26,9 +27,12 @@ import com.android.build.gradle.internal.tasks.factory.TaskManagerConfig
 import com.android.build.gradle.internal.tasks.factory.dependsOn
 import com.android.build.gradle.internal.test.SeparateTestModuleTestData
 import com.android.build.gradle.internal.variant.ComponentInfo
+import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.tasks.CheckTestedAppObfuscation
 import com.android.build.gradle.tasks.ManifestProcessorTask
 import com.android.build.gradle.tasks.ProcessTestManifest
+import com.android.build.gradle.tasks.ProcessTestManifestPackaging
+import com.android.build.gradle.tasks.TestSuiteTestTask
 import com.android.builder.core.ComponentType
 import com.google.common.base.Preconditions
 import org.gradle.api.Action
@@ -79,14 +83,25 @@ class TestApplicationTaskManager(
     createValidateSigningTask(testVariantProperties)
     taskFactory.register<SigningConfigVersionsWriterTask>(SigningConfigVersionsWriterTask.CreationAction(testVariantProperties))
 
+    val connectedCheckSerials: Provider<List<String>> =
+      taskFactory.named(globalConfig.taskNames.connectedCheck).flatMap { test -> (test as DeviceSerialTestTask).serialValues }
+
+    if (testVariantProperties.services.projectOptions[BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM]) {
+      taskFactory.register(com.android.build.gradle.internal.tasks.AndroidTestDiscoveryTask.CreationAction(testVariantProperties))
+    }
+
     // create the test connected check task.
-    val instrumentTestTask: TaskProvider<DeviceProviderInstrumentTestTask> =
-      taskFactory.register<DeviceProviderInstrumentTestTask>(
-        object : DeviceProviderInstrumentTestTask.CreationAction(testVariantProperties, testData) {
-          override val name: String
-            get() = super.name + ComponentType.ANDROID_TEST_SUFFIX
-        }
-      )
+    val instrumentTestTask =
+      if (testVariantProperties.services.projectOptions[BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM]) {
+        taskFactory.register(TestSuiteTestTask.ConnectedTestSuiteCreationAction(testVariantProperties, testData, connectedCheckSerials))
+      } else {
+        taskFactory.register<DeviceProviderInstrumentTestTask>(
+          object : DeviceProviderInstrumentTestTask.CreationAction(testVariantProperties, testData) {
+            override val name: String
+              get() = super.name + ComponentType.ANDROID_TEST_SUFFIX
+          }
+        )
+      }
 
     taskFactory.configure(CONNECTED_ANDROID_TEST, Action { task: Task? -> task!!.dependsOn(instrumentTestTask) })
 
@@ -110,6 +125,7 @@ class TestApplicationTaskManager(
   override fun createMergeManifestTasks(creationConfig: ApkCreationConfig): TaskProvider<out ManifestProcessorTask> {
     val taskConfig = forTestComponent(creationConfig as TestVariantCreationConfig)
 
+    taskFactory.register(ProcessTestManifestPackaging.CreationAction(taskConfig))
     return taskFactory.register(ProcessTestManifest.CreationAction(taskConfig))
   }
 }

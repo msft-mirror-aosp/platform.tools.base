@@ -24,6 +24,7 @@ fun playbackVideoFragmentKt(minApiLevel: Int, packageName: String): String {
 package ${escapeKotlinIdentifier(packageName)}
 
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import androidx.leanback.app.VideoSupportFragment
 import androidx.leanback.app.VideoSupportFragmentGlueHost
@@ -39,8 +40,14 @@ class PlaybackVideoFragment : VideoSupportFragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val (_, title, description, _, _, videoUrl) =
-                activity?.intent?.getSerializableExtra(DetailsActivity.MOVIE) as Movie
+        val movie = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            activity?.intent?.getSerializableExtra(DetailsActivity.MOVIE, Movie::class.java) as Movie
+        } else {
+            @Suppress("DEPRECATION")
+            activity?.intent?.getSerializableExtra(DetailsActivity.MOVIE) as Movie
+        }
+
+        val (_, title, description, _, _, videoUrl) = movie
 
         val glueHost = VideoSupportFragmentGlueHost(this@PlaybackVideoFragment)
         val playerAdapter = MediaPlayerAdapter($contextArgBlock)

@@ -17,6 +17,7 @@
 package com.android.build.api.artifact.impl
 
 import com.android.build.api.artifact.Artifact
+import com.android.build.api.artifact.RegisteredArtifactWithQualifiers
 import com.google.common.annotations.VisibleForTesting
 import java.util.concurrent.atomic.AtomicBoolean
 import org.gradle.api.file.FileSystemLocation
@@ -29,8 +30,8 @@ import org.gradle.api.tasks.TaskProvider
  * The container will provide methods to set, get the artifact. The artifact type is always either a [org.gradle.api.file.RegularFile] or a
  * [org.gradle.api.file.Directory]. An artifact cardinality is either single or multiple elements of the above type.
  *
- * @param FileTypeT the artifact type as [FileSystemLocation] sybclass
- * @param StoredT is [FileTypeT] for single element artifact or a [List] of [FileTypeT] for multiple elements artifact.
+ * @param FileTypeT the artifact type as [FileSystemLocation] subclass
+ * @param StoredT is [FileTypeT] for single element artifact or a [List] of [FileTypeT] for multiple elements' artifact.
  * @param AdapterT is a [PropertyAdapter] to abstract access to the underlying Property object holding a single element or multiple
  *   elements.
  */
@@ -137,7 +138,7 @@ internal abstract class ArtifactContainer<FileTypeT, StoredT, AdapterT>(private 
  *
  * @param FileTypeT the single element type, either [org.gradle.api.file.RegularFile] or [org.gradle.api.file.Directory]
  */
-internal class SingleArtifactContainer<FileTypeT : FileSystemLocation>(val allocator: () -> SinglePropertyAdapter<FileTypeT>) :
+internal class SingleArtifactContainer<FileTypeT : FileSystemLocation>(allocator: () -> SinglePropertyAdapter<FileTypeT>) :
   ArtifactContainer<FileTypeT, FileTypeT, SinglePropertyAdapter<FileTypeT>>(allocator) {
 
   private val agpProducer = allocator()
@@ -196,11 +197,13 @@ internal class SingleArtifactContainer<FileTypeT : FileSystemLocation>(val alloc
  *
  * @param T the multiple elements type, either [org.gradle.api.file.RegularFile] or [org.gradle.api.file.Directory]
  */
-internal class MultipleArtifactContainer<T : FileSystemLocation>(val allocator: () -> MultiplePropertyAdapter<T>) :
+internal open class MultipleArtifactContainer<T : FileSystemLocation>(allocator: () -> MultiplePropertyAdapter<T>) :
   ArtifactContainer<T, List<T>, MultiplePropertyAdapter<T>>(allocator) {
 
   // this represents the providers from the AGP.
   private val agpProducers = allocator()
+
+  private val producersWithAttributes = mutableListOf<RegisteredArtifactWithQualifiersImpl<T>>()
 
   init {
     current.from(agpProducers)
@@ -221,16 +224,46 @@ internal class MultipleArtifactContainer<T : FileSystemLocation>(val allocator: 
     initialTaskProviders.addAll(from.getInitialTaskProviders())
   }
 
-  fun addInitialProvider(taskProvider: TaskProvider<*>, item: Provider<T>) {
-    needInitialProducer().set(false)
-    agpProducers.add(item)
-    initialTaskProviders.add(taskProvider)
-  }
-
   fun addInitialProvider(item: Provider<T>) {
     needInitialProducer().set(false)
     agpProducers.add(item)
   }
+
+  fun addInitialProvider(taskProvider: TaskProvider<*>, item: Provider<T>, attributes: ArtifactTypeQualifiers? = null) {
+    needInitialProducer().set(false)
+    agpProducers.add(item)
+    initialTaskProviders.add(taskProvider)
+    attributes?.let { attr -> producersWithAttributes.add(RegisteredArtifactWithQualifiersImpl(taskProvider.name, attr, item)) }
+  }
+
+  fun getAllWithAttributes(): List<RegisteredArtifactWithQualifiers<T>> = producersWithAttributes.toList()
+
+  fun getImplWithAttributes(attributes: ArtifactTypeQualifiers): RegisteredArtifactWithQualifiersImpl<T>? {
+    val matches = producersWithAttributes.filter { it.qualifiers == attributes.value }
+    if (matches.size > 1) {
+      throw IllegalArgumentException(
+        StringBuffer()
+          .also {
+            it.append("There are multiple artifacts matching requested attributes <")
+            attributes.toString(it)
+            it.append("> : \n")
+            matches.joinTo(it)
+          }
+          .toString()
+      )
+    }
+    return matches.firstOrNull()
+  }
+
+  fun getWithAttributes(attributes: ArtifactTypeQualifiers): Provider<T> =
+    getImplWithAttributes(attributes)?.artifact
+      ?: throw IllegalArgumentException(
+        "Cannot find an artifact with matching attributes <${
+                    StringBuffer().also {
+                        attributes.toString(it)
+                    }
+                }>"
+      )
 
   /** Copies initial and transformation providers from 'source' */
   fun transferFrom(source: ArtifactsImpl, from: Artifact.Single<T>) {

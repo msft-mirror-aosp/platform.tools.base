@@ -42,13 +42,9 @@ class ExtractAarTransformTest {
     AarExtractor().extract(aarFile, extractedAarDir)
 
     val extractedAarDirContents = readDirectoryContents(extractedAarDir)
-    val expectedDirContents =
-      aarContents.toMutableMap().also {
-        it["jars/classes.jar"] = it["classes.jar"]!!
-        it.remove("classes.jar")
-      }
+    val expectedDirContents = aarContents.toMutableMap().apply { put("jars/classes.jar", remove("classes.jar")!!) }
     assertThat(extractedAarDirContents.size).isEqualTo(expectedDirContents.size)
-    extractedAarDirContents.forEach { assertThat(it.value.contentEquals(expectedDirContents[it.key]!!)).isTrue() }
+    extractedAarDirContents.forEach { assertThat(it.value).isEqualTo(expectedDirContents[it.key]) }
   }
 
   /** Regression test for b/315336689. */
@@ -66,7 +62,31 @@ class ExtractAarTransformTest {
     val extractedAarDirContents = readDirectoryContents(extractedAarDir)
     val expectedDirContents = aarContentsWithoutClassesJar.toMutableMap().also { it["jars/classes.jar"] = emptyJar() }
     assertThat(extractedAarDirContents.size).isEqualTo(expectedDirContents.size)
-    extractedAarDirContents.forEach { assertThat(it.value.contentEquals(expectedDirContents[it.key]!!)).isTrue() }
+    extractedAarDirContents.forEach { assertThat(it.value).isEqualTo(expectedDirContents[it.key]) }
+  }
+
+  @Test
+  fun `test extract aar with Zip Slip`() {
+    // Generate the baseline AAR contents once. While writeEntry now uses a fixed timestamp,
+    // caching here is a safety measure against non-deterministic JAR/ZIP creation in future
+    // refactors of sampleAarContents.
+    val baseContents = sampleAarContents()
+    val aarContents =
+      baseContents.toMutableMap().also {
+        it["../../evil.ext"] = "malicious payload".toByteArray()
+        it["..\\..\\evil2.ext"] = "malicious payload 2".toByteArray()
+      }
+
+    val aarFile = tmp.newFile("foo_evil.aar")
+    createAar(aarFile, aarContents)
+
+    val extractedAarDir = tmp.newFolder("extracted-aar-evil")
+    AarExtractor().extract(aarFile, extractedAarDir)
+
+    val extractedAarDirContents = readDirectoryContents(extractedAarDir)
+    val expectedDirContents = baseContents.toMutableMap().apply { put("jars/classes.jar", remove("classes.jar")!!) }
+    assertThat(extractedAarDirContents.size).isEqualTo(expectedDirContents.size)
+    extractedAarDirContents.forEach { assertThat(it.value).isEqualTo(expectedDirContents[it.key]) }
   }
 
   private fun sampleAarContents(): Map<String, ByteArray> =
@@ -88,7 +108,9 @@ class ExtractAarTransformTest {
   }
 
   private fun ZipOutputStream.writeEntry(name: String, contents: ByteArray) {
-    putNextEntry(ZipEntry(name))
+    // Force a constant timestamp (time = 0L) to ensure bit-perfect matching in byte-level
+    // assertions across different build environments (e.g., Windows vs Linux CI).
+    putNextEntry(ZipEntry(name).apply { time = 0L })
     write(contents)
     closeEntry()
   }

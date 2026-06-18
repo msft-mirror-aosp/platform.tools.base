@@ -231,7 +231,10 @@ interface RecipeExecutor {
   fun useLibrary(name: String)
 
   /** Adds `compileSdk` element in form of block or property to the build file. It adds block for new AGP versions. */
-  fun addCompileSdk(androidVersion: AndroidVersion, isKotlinMultiplatform: Boolean = false)
+  fun addCompileSdk(androidVersion: AndroidVersion, isKotlinMultiplatform: Boolean = false, isDeclarative: Boolean = false)
+
+  /** Applies the accumulated changes. This is called once at the end of recipe execution. */
+  fun applyChanges()
 }
 
 enum class SourceSetType {

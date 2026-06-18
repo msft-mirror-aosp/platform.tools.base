@@ -410,6 +410,15 @@ class DiffsTest {
   }
 
   @Test
+  fun testNoTrimEnds_LastLineHasTrailingWhitespace() {
+    val original = "Line 1\nLine 2\nLine 3\n"
+    val new = "Line 1\nLine 2\nLine 2b  \nLine 3\nLine 4  \n"
+    // Since Line 2b and Line 4 have trailing spaces, they should not be trimmed.
+    val expectedDiff = "@@ -1,3 +1,5 @@\n" + " Line 1\n" + " Line 2\n" + "+Line 2b  \n" + " Line 3\n" + "+Line 4  "
+    assertEquals(expectedDiff, diff(original, new, trimEnds = false))
+  }
+
+  @Test
   fun testTrimEnds() {
     val original = "Line 1  \nLine 2\nLine 3  \n"
     val new = "Line 1  \nLine 1b  \nLine 2\nLine 3  \n"

@@ -267,6 +267,7 @@ class DexingTransformTest {
       override val enableDesugaring = FakeGradleProperty(desugaring)
       override val desugarLibConfigFiles = FakeConfigurableFileCollection()
       override val enableGlobalSynthetics = FakeGradleProperty(enableGlobalSynthetics)
+      override val useNoOpGlobalSyntheticsConsumer = FakeGradleProperty(false)
       override val enableApiModeling = FakeGradleProperty(enableGlobalSynthetics)
     }
 

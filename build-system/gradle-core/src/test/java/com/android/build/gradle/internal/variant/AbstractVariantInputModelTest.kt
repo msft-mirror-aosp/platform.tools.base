@@ -19,7 +19,7 @@ package com.android.build.gradle.internal.variant
 import com.android.build.gradle.internal.fixtures.FakeSyncIssueReporter
 import com.android.build.gradle.internal.services.createDslServices
 import com.android.builder.core.ComponentTypeImpl
-import com.android.builder.model.SyncIssue
+import com.android.builder.model.v2.ide.SyncIssue
 import com.android.testutils.AbstractReturnGivenReturnExpectTest
 import com.google.common.truth.Truth
 

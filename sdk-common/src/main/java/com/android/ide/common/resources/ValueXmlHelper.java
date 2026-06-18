@@ -21,11 +21,10 @@ import static com.android.SdkConstants.GT_ENTITY;
 import static com.android.SdkConstants.LT_ENTITY;
 import static com.android.SdkConstants.QUOT_ENTITY;
 
-import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.ide.common.resources.escape.string.StringResourceEscaper;
-import com.android.ide.common.resources.escape.xml.CharacterDataEscaper;
+
 import com.google.common.annotations.VisibleForTesting;
+
 import org.jetbrains.annotations.Contract;
 
 /**
@@ -123,6 +122,7 @@ public class ValueXmlHelper {
             char c = s.charAt(i);
             while (c == '"' && trim) {
                 quoted = !quoted;
+                prevSpace = false;
                 i++;
                 if (i == n) {
                     break;

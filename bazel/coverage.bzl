@@ -119,7 +119,7 @@ def coverage_android_local_test(
         jvm_flags = jvm_flags + select({
             "//tools/base/bazel:agent_coverage": [jacoco_jvm_flag],
             "//conditions:default": [],
-        }) + ["-Djava.security.manager=allow"],
+        }),
         visibility = visibility,
         **kwargs
     )

@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -44,11 +43,8 @@ public class BaselineViolations {
      * Checks if the stack trace should be excluded from the threading checks due to its presence in
      * the baseline_violations.txt.
      */
-    public boolean isIgnored(List<StackTraceElement> stackTrace) {
-        if (stackTrace.isEmpty()) {
-            throw new IllegalArgumentException("stackTrace is empty");
-        }
-        return violatingMethods.contains(traceElementToMethodSignature(stackTrace.get(0)));
+    public boolean isIgnored(StackTraceElement[] stackTrace, int frameIndex) {
+        return violatingMethods.contains(traceElementToMethodSignature(stackTrace[frameIndex]));
     }
 
     static BaselineViolations fromResource() {

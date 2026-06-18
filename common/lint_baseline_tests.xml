@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.3.0-dev" type="baseline" client="" dependencies="true" name="" variant="all" version="8.3.0-dev">
+<issues format="6" by="lint 9.3.0-alpha08" type="baseline" client="" dependencies="true" name="" variant="all" version="9.3.0-alpha08">
 
     <issue
         id="DefaultLocale"
@@ -8,7 +8,7 @@
         errorLine2="                                         ~~~~~~~~~~~">
         <location
             file="src/test/java/com/android/utils/PositionXmlParserTest.java"
-            line="225"
+            line="239"
             column="42"/>
     </issue>
 
@@ -19,140 +19,151 @@
         errorLine2="                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/test/java/com/android/utils/XmlUtilsTest.java"
-            line="399"
+            line="405"
             column="34"/>
     </issue>
 
     <issue
         id="PathAsIterable"
         message="Using `Path` in an `Iterable` context: make sure this is doing what you expect and suppress this warning if so"
-        errorLine1="            .that(result)"
-        errorLine2="                  ~~~~~~">
+        errorLine1="    Truth.assertWithMessage(&quot;Test Location&quot;).that(result).isEqualTo(testLocation.toPath())"
+        errorLine2="                                                  ~~~~~~">
         <location
             file="src/test/java/com/android/prefs/AbstractAndroidLocationsTest.kt"
-            line="50"
-            column="19"/>
+            line="45"
+            column="51"/>
     </issue>
 
     <issue
         id="PathAsIterable"
         message="Using `Path` in an `Iterable` context: make sure this is doing what you expect and suppress this warning if so"
-        errorLine1="            .that(result2)"
-        errorLine2="                  ~~~~~~~">
+        errorLine1="    Truth.assertWithMessage(&quot;Test Memoization&quot;).that(result2).isSameAs(result)"
+        errorLine2="                                                     ~~~~~~~">
         <location
             file="src/test/java/com/android/prefs/AbstractAndroidLocationsTest.kt"
-            line="58"
-            column="19"/>
+            line="51"
+            column="54"/>
     </issue>
 
     <issue
         id="PathAsIterable"
         message="Using `Path` in an `Iterable` context: make sure this is doing what you expect and suppress this warning if so"
-        errorLine1="            .that(result)"
-        errorLine2="                  ~~~~~~">
+        errorLine1="    Truth.assertWithMessage(&quot;Test Location&quot;).that(result).isEqualTo(expected)"
+        errorLine2="                                                  ~~~~~~">
         <location
             file="src/test/java/com/android/prefs/AbstractAndroidLocationsTest.kt"
-            line="76"
-            column="19"/>
+            line="64"
+            column="51"/>
     </issue>
 
     <issue
         id="PathAsIterable"
         message="Using `Path` in an `Iterable` context: make sure this is doing what you expect and suppress this warning if so"
-        errorLine1="            .that(AndroidLocations(provider, logger).prefsLocation)"
-        errorLine2="                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        errorLine1="    Truth.assertWithMessage(&quot;Test Location&quot;).that(AndroidLocations(provider, logger).prefsLocation).isEqualTo(expected)"
+        errorLine2="                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/test/java/com/android/prefs/AbstractAndroidLocationsTest.kt"
-            line="94"
-            column="19"/>
+            line="77"
+            column="51"/>
     </issue>
 
     <issue
         id="PathAsIterable"
         message="Using `Path` in an `Iterable` context: make sure this is doing what you expect and suppress this warning if so"
-        errorLine1="            .that(result)"
-        errorLine2="                  ~~~~~~">
+        errorLine1="    Truth.assertWithMessage(&quot;Test Location&quot;).that(result).isEqualTo(expected)"
+        errorLine2="                                                  ~~~~~~">
         <location
             file="src/test/java/com/android/prefs/AbstractAndroidLocationsTest.kt"
-            line="114"
-            column="19"/>
+            line="95"
+            column="51"/>
     </issue>
 
     <issue
         id="PathAsIterable"
         message="Using `Path` in an `Iterable` context: make sure this is doing what you expect and suppress this warning if so"
-        errorLine1="            .that(AndroidLocations(provider, logger).prefsLocation)"
-        errorLine2="                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        errorLine1="    Truth.assertWithMessage(&quot;Test Location&quot;).that(result).isEqualTo(expected)"
+        errorLine2="                                                  ~~~~~~">
         <location
             file="src/test/java/com/android/prefs/AbstractAndroidLocationsTest.kt"
-            line="164"
-            column="19"/>
+            line="115"
+            column="51"/>
     </issue>
 
     <issue
         id="PathAsIterable"
         message="Using `Path` in an `Iterable` context: make sure this is doing what you expect and suppress this warning if so"
-        errorLine1="            .that(result)"
-        errorLine2="                  ~~~~~~">
+        errorLine1="    Truth.assertWithMessage(&quot;Test Location&quot;).that(AndroidLocations(provider, logger).prefsLocation).isEqualTo(expected)"
+        errorLine2="                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/test/java/com/android/prefs/AbstractAndroidLocationsTest.kt"
-            line="346"
-            column="19"/>
+            line="159"
+            column="51"/>
     </issue>
 
     <issue
         id="PathAsIterable"
         message="Using `Path` in an `Iterable` context: make sure this is doing what you expect and suppress this warning if so"
-        errorLine1="            .that(AndroidLocations(provider, logger).avdLocation)"
-        errorLine2="                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        errorLine1="    Truth.assertWithMessage(&quot;Test Location&quot;).that(result).isEqualTo(expected)"
+        errorLine2="                                                  ~~~~~~">
         <location
             file="src/test/java/com/android/prefs/AbstractAndroidLocationsTest.kt"
-            line="364"
-            column="19"/>
+            line="329"
+            column="51"/>
     </issue>
 
     <issue
         id="PathAsIterable"
         message="Using `Path` in an `Iterable` context: make sure this is doing what you expect and suppress this warning if so"
-        errorLine1="            .that(AndroidLocations(provider, logger).userHomeLocation)"
-        errorLine2="                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        errorLine1="    Truth.assertWithMessage(&quot;Test Location&quot;).that(AndroidLocations(provider, logger).avdLocation).isEqualTo(expectedAvdLocation.toPath())"
+        errorLine2="                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/test/java/com/android/prefs/AbstractAndroidLocationsTest.kt"
-            line="383"
-            column="19"/>
+            line="343"
+            column="51"/>
     </issue>
 
     <issue
         id="PathAsIterable"
         message="Using `Path` in an `Iterable` context: make sure this is doing what you expect and suppress this warning if so"
-        errorLine1="            .that(result)"
-        errorLine2="                  ~~~~~~">
+        errorLine1="    Truth.assertWithMessage(&quot;Test Location&quot;).that(AndroidLocations(provider, logger).userHomeLocation).isEqualTo(testLocation.toPath())"
+        errorLine2="                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/test/java/com/android/prefs/AbstractAndroidLocationsTest.kt"
-            line="403"
-            column="19"/>
+            line="356"
+            column="51"/>
     </issue>
 
     <issue
         id="PathAsIterable"
         message="Using `Path` in an `Iterable` context: make sure this is doing what you expect and suppress this warning if so"
-        errorLine1="            .that(AndroidLocations(provider, logger).userHomeLocation)"
-        errorLine2="                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        errorLine1="    Truth.assertWithMessage(&quot;Test Location&quot;).that(result).isEqualTo(testLocation.toPath())"
+        errorLine2="                                                  ~~~~~~">
         <location
             file="src/test/java/com/android/prefs/AbstractAndroidLocationsTest.kt"
-            line="419"
-            column="19"/>
+            line="367"
+            column="51"/>
     </issue>
 
     <issue
         id="PathAsIterable"
         message="Using `Path` in an `Iterable` context: make sure this is doing what you expect and suppress this warning if so"
-        errorLine1="            .that(AndroidLocations(provider, logger).userHomeLocation)"
-        errorLine2="                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        errorLine1="    Truth.assertWithMessage(&quot;Test Location&quot;).that(AndroidLocations(provider, logger).userHomeLocation).isEqualTo(testLocation.toPath())"
+        errorLine2="                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/test/java/com/android/prefs/AbstractAndroidLocationsTest.kt"
-            line="435"
-            column="19"/>
+            line="376"
+            column="51"/>
+    </issue>
+
+    <issue
+        id="PathAsIterable"
+        message="Using `Path` in an `Iterable` context: make sure this is doing what you expect and suppress this warning if so"
+        errorLine1="    Truth.assertWithMessage(&quot;Test Location&quot;).that(AndroidLocations(provider, logger).userHomeLocation).isEqualTo(testLocation.toPath())"
+        errorLine2="                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/test/java/com/android/prefs/AbstractAndroidLocationsTest.kt"
+            line="385"
+            column="51"/>
     </issue>
 
     <issue
@@ -162,7 +173,7 @@
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/test/java/com/android/utils/FileUtilsTest.java"
-            line="169"
+            line="286"
             column="17"/>
     </issue>
 

@@ -16,6 +16,8 @@
 #include "heap_dump.h"
 
 #include <climits>
+#include <memory>
+#include <mutex>
 
 #include "perfd/sessions/sessions_manager.h"
 #include "proto/memory.pb.h"
@@ -49,11 +51,19 @@ Status HeapDump::ExecuteOn(Daemon* daemon) {
   SessionsManager* sessions_manager = sessions_manager_;
 
   bool should_end_session = command().should_end_session();
+
+  // Use a shared mutex to guarantee that the background thread's completion
+  // callback does not push end events to the buffer before the main thread
+  // pushes the start and status events.
+  auto event_order_mutex = std::make_shared<std::mutex>();
+  std::unique_lock<std::mutex> event_order_lock(*event_order_mutex);
+
   bool dump_started = heap_dumper_->TriggerHeapDump(
       command().pid(), start_timestamp,
       // Use the start_event to construct the end_event
-      [daemon, start_event, session_id, sessions_manager,
-       should_end_session](bool dump_success) {
+      [daemon, start_event, session_id, sessions_manager, should_end_session,
+       event_order_mutex](bool dump_success) {
+        std::lock_guard<std::mutex> lock(*event_order_mutex);
         int64_t end_timestamp = daemon->clock()->GetCurrentTime();
         Event end_event;
         end_event.CopyFrom(start_event);

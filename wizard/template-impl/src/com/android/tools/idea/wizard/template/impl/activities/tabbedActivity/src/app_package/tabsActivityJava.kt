@@ -17,7 +17,6 @@
 package com.android.tools.idea.wizard.template.impl.activities.tabbedActivity.src.app_package
 
 import com.android.tools.idea.wizard.template.Language
-import com.android.tools.idea.wizard.template.getMaterialComponentName
 import com.android.tools.idea.wizard.template.impl.activities.common.findViewById
 import com.android.tools.idea.wizard.template.impl.activities.common.importViewBindingClass
 import com.android.tools.idea.wizard.template.impl.activities.common.layoutToViewBindingClass
@@ -28,7 +27,6 @@ fun tabsActivityJava(
   layoutName: String,
   packageName: String,
   applicationPackage: String?,
-  useAndroidX: Boolean,
   isViewBindingSupported: Boolean,
 ): String {
 
@@ -43,11 +41,17 @@ fun tabsActivityJava(
   return """package ${packageName};
 
 import android.os.Bundle;
-import ${getMaterialComponentName("android.support.design.widget.FloatingActionButton", useAndroidX)};
-import ${getMaterialComponentName("android.support.design.widget.Snackbar", useAndroidX)};
-import ${getMaterialComponentName("android.support.design.widget.TabLayout", useAndroidX)};
-import ${getMaterialComponentName("android.support.v4.view.ViewPager", useAndroidX)};
-import ${getMaterialComponentName("android.support.v7.app.AppCompatActivity", useAndroidX)};
+
+import androidx.activity.EdgeToEdge;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.snackbar.Snackbar;
+import com.google.android.material.tabs.TabLayout;
+import androidx.viewpager2.widget.ViewPager2;
+import com.google.android.material.tabs.TabLayoutMediator;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -63,9 +67,15 @@ ${renderIf(isViewBindingSupported) {"""
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
         $contentViewBlock
-        SectionsPagerAdapter sectionsPagerAdapter = new SectionsPagerAdapter(this, getSupportFragmentManager());
-        ViewPager viewPager = ${findViewById(
+        ViewCompat.setOnApplyWindowInsetsListener(${findViewById(Language.Java, isViewBindingSupported, id = "main")}, (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
+        SectionsPagerAdapter sectionsPagerAdapter = new SectionsPagerAdapter(this, this);
+        ViewPager2 viewPager = ${findViewById(
           Language.Java,
           isViewBindingSupported = isViewBindingSupported,
           id = "view_pager",)};
@@ -74,7 +84,9 @@ ${renderIf(isViewBindingSupported) {"""
           Language.Java,
           isViewBindingSupported = isViewBindingSupported,
           id = "tabs",)};
-        tabs.setupWithViewPager(viewPager);
+        new TabLayoutMediator(tabs, viewPager,
+                (tab, position) -> tab.setText(sectionsPagerAdapter.getPageTitle(position))
+        ).attach();
         FloatingActionButton fab = ${findViewById(
           Language.Java,
           isViewBindingSupported = isViewBindingSupported,

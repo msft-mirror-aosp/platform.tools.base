@@ -125,9 +125,18 @@ object NavGraphExpander {
     val deepLinks =
       try {
         findDeepLinks(navigationXmlId, loadedNavigationMap, mergingReportBuilder, sourceFilePosition)
-      } catch (e: NavGraphException) {
-        mergingReportBuilder.addMessage(sourceFilePosition, MergingReport.Record.Severity.ERROR, e.message ?: "Error finding deep links.")
-        return
+      } catch (e: Exception) {
+        when (e) {
+          is NavGraphException,
+          is DeepLink.DeepLinkException,
+          is NavigationXmlDocument.NavigationXmlDocumentException -> {
+            mergingReportBuilder.addMessage(
+              sourceFilePosition, MergingReport.Record.Severity.ERROR, e.message ?: "Error finding deep links."
+            )
+            return
+          }
+          else -> throw e
+        }
       }
     val actionRecorder = mergingReportBuilder.actionRecorder
     val deepLinkGroups = deepLinks.groupBy { getDeepLinkUriBody(it, includeQuery = false, includeFragment = false) }
@@ -176,10 +185,7 @@ object NavGraphExpander {
 
   /**
    * Find [DeepLink]s from referenced [NavigationXmlDocument]s and return a List of them.
-   *
-   * If duplicate [DeepLink]s are found, throws a [NavGraphException]
    */
-  @Throws(NavGraphException::class)
   fun findDeepLinks(
     navigationXmlId: String,
     loadedNavigationMap: Map<String, NavigationXmlDocument>,
@@ -199,10 +205,7 @@ object NavGraphExpander {
 
   /**
    * Find [DeepLink]s from referenced [NavigationXmlDocument]s and add them to the deepLinkList.
-   *
-   * If duplicate [DeepLink]s are found, throws a [NavGraphException]
    */
-  @Throws(NavGraphException::class)
   private fun findDeepLinks(
     navigationXmlId: String,
     loadedNavigationMap: Map<String, NavigationXmlDocument>,
@@ -215,12 +218,15 @@ object NavGraphExpander {
   ) {
     // Check for an infinite loop caused by a circular reference among the navigation files.
     if (!navigationFileAncestors.add(navigationXmlId)) {
-      throw NavGraphException(
+      mergingReportBuilder.addMessage(
+        sourceFilePosition,
+        MergingReport.Record.Severity.ERROR,
         "Illegal circular reference among navigation files when traversing navigation " +
           "file references: " +
           navigationFileAncestors.joinToString(separator = " > ") +
           " > $navigationXmlId."
       )
+      return
     }
     // Warn if the same navigation file is added to the navigation graph multiple times.
     if (!visitedNavigationFiles.add(navigationXmlId)) {
@@ -236,7 +242,15 @@ object NavGraphExpander {
       return
     }
     val navigationXmlDocument = loadedNavigationMap[navigationXmlId]
-    navigationXmlDocument ?: throw NavGraphException("Referenced navigation file with navigationXmlId = $navigationXmlId not found")
+    if (navigationXmlDocument == null) {
+      mergingReportBuilder.addMessage(
+        sourceFilePosition,
+        MergingReport.Record.Severity.ERROR,
+        "Referenced navigation file with navigationXmlId = $navigationXmlId not found"
+      )
+      navigationFileAncestors.remove(navigationXmlId)
+      return
+    }
     for (deepLink in navigationXmlDocument.deepLinks) {
       for (deepLinkUri in getDeepLinkUris(deepLink)) {
         val deepLinkComparisonObject = DeepLinkComparisonObject(uri = deepLinkUri, action = deepLink.action, mimeType = deepLink.mimeType)
@@ -248,7 +262,11 @@ object NavGraphExpander {
           if (deepLink.mimeType != null) {
             comparisonString.append(", mimeType:${deepLink.mimeType}")
           }
-          throw NavGraphException("Multiple destinations found with a deep link containing $comparisonString.")
+          mergingReportBuilder.addMessage(
+            sourceFilePosition,
+            MergingReport.Record.Severity.ERROR,
+            "Multiple destinations found with a deep link containing $comparisonString."
+          )
         }
         deepLinkComparisonObjects.add(deepLinkComparisonObject)
       }

@@ -1,5 +1,5 @@
 load("//tools/base/bazel:bazel.bzl", "iml_module")
-load("//tools/base/bazel:kotlin.bzl", "kotlin_test")
+load("//tools/base/bazel:kotlin.bzl", "kotlin_library", "kotlin_test")
 load("//tools/base/bazel:maven.bzl", "maven_library")
 load("//tools/base/bazel:proto.bzl", "java_proto_library")
 load("//tools/base/common:version.bzl", "BUILD_VERSION")
@@ -52,7 +52,7 @@ maven_library(
         "//tools/base/deploy/deployer:__subpackages__",
         "//tools/base/deploy/service:__subpackages__",
         "//tools/base/gmaven:__subpackages__",
-        "//tools/vendor/google/android/run:__subpackages__",
+        "//tools/vendor/google/android:__subpackages__",
         "//tools/vendor/google/directaccess-client:__subpackages__",
     ],
     deps = [
@@ -94,6 +94,26 @@ kotlin_test(
         "//tools/base/common:tools.common",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
         "@maven//:org.jetbrains.kotlin.kotlin-test",
+    ],
+)
+
+kotlin_library(
+    name = "adblib.test.fixtures",
+    srcs = glob([
+        "src/com/android/adblib/testing/**/*.kt",
+        "src/com/android/adblib/testingutils/**/*.kt",
+    ]),
+    friends = [":adblib"],
+    lint_baseline = "lint_baseline_adblib.xml",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        ":adblib",
+        "//tools/base/common:tools.common",
+        "//tools/base/fakeadbserver:tools.fakeadbserver",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
     ],
 )
 

@@ -22,7 +22,6 @@ import com.android.build.gradle.integration.common.truth.ScannerSubject.Companio
 import com.android.build.gradle.integration.common.truth.forEachLine
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.options.BooleanOption.LINT_ANALYSIS_PER_COMPONENT
-import com.android.build.gradle.options.OptionalBooleanOption.LINT_USE_K2_UAST
 import com.android.build.gradle.options.StringOption.LINT_RESERVED_MEMORY_PER_TASK
 import com.android.testutils.truth.PathSubject
 import com.android.utils.FileUtils
@@ -481,40 +480,6 @@ class KotlinMultiplatformAndroidLintTest(private val lintAnalysisPerComponent: B
         Truth.assertThat(it).doesNotContain("lintJvm")
       }
     }
-  }
-
-  @Test
-  fun `test K2 UAST`() {
-    TestFileUtils.appendToFile(
-      project.getSubproject("app").ktsBuildFile,
-      """
-      android {
-          defaultConfig {
-              minSdk = 24
-          }
-          lint {
-              checkDependencies = true
-              textReport = true
-              abortOnError = false
-          }
-      }
-      """
-        .trimIndent(),
-    )
-
-    addNewApiIssuesToKmpFirstLib(addCommonMainIssues = true)
-
-    getExecutor().with(LINT_USE_K2_UAST, true).run(":app:clean", ":app:lintDebug")
-
-    val reportFile = File(project.getSubproject("app").buildDir, "reports/lint-results-debug.txt")
-
-    PathSubject.assertThat(reportFile).exists()
-    PathSubject.assertThat(reportFile)
-      .containsAllOf(
-        "Error: Call requires API level 26, or core library desugaring (current min is 24): java.time.LocalDate#getMonth [NewApi]",
-        "Error: Call requires API level 26, or core library desugaring (current min is 24): java.time.LocalDate#now [NewApi]",
-      )
-    PathSubject.assertThat(reportFile).doesNotContain("[LintError]")
   }
 
   @Test

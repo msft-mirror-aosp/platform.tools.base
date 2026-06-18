@@ -131,7 +131,7 @@ class NamespaceRewriter(
     // should be fine to write as UTF_8 too.
 
     output.nonClosing().writer(Charsets.UTF_8).use {
-      it.write(XmlPrettyPrinter.prettyPrint(doc, XmlFormatPreferences.defaults(), XmlFormatStyle.get(doc), System.lineSeparator(), false))
+      it.write(XmlPrettyPrinter.prettyPrint(doc, XmlFormatPreferences.defaults(), XmlFormatStyle.get(doc), "\n", false))
     }
   }
 

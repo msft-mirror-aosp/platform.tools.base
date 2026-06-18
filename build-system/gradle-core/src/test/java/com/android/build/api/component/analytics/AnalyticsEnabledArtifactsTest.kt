@@ -17,6 +17,7 @@
 package com.android.build.api.component.analytics
 
 import com.android.build.api.artifact.Artifacts
+import com.android.build.api.artifact.MultipleArtifact
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.artifact.TaskBasedOperation
 import com.android.build.api.variant.BuiltArtifactsLoader
@@ -34,6 +35,7 @@ import org.gradle.api.tasks.OutputFiles
 import org.gradle.api.tasks.TaskProvider
 import org.junit.Before
 import org.junit.Test
+import org.mockito.Mockito
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
@@ -81,6 +83,45 @@ class AnalyticsEnabledArtifactsTest {
     Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
       .isEqualTo(VariantPropertiesMethodType.GET_ARTIFACT_VALUE)
     verify(delegate, times(1)).get(SingleArtifact.APK)
+  }
+
+  @Test
+  fun testGetAll() {
+    @Suppress("UNCHECKED_CAST") val fakeProvider = mock<Provider<List<Directory>>>()
+
+    whenever(delegate.getAll(MultipleArtifact.NATIVE_SYMBOL_TABLES)).thenReturn(fakeProvider)
+    Truth.assertThat(proxy.getAll(MultipleArtifact.NATIVE_SYMBOL_TABLES)).isEqualTo(fakeProvider)
+
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.GET_ALL_ARTIFACTS_VALUE)
+    verify(delegate, times(1)).getAll(MultipleArtifact.NATIVE_SYMBOL_TABLES)
+  }
+
+  @Test
+  fun testAdd() {
+    val fakeFile = Mockito.mock(Directory::class.java)
+
+    proxy.add(MultipleArtifact.NATIVE_SYMBOL_TABLES, fakeFile)
+
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.ADD_ARTIFACTS_VALUE)
+    Mockito.verify(delegate, Mockito.times(1)).add(MultipleArtifact.NATIVE_SYMBOL_TABLES, fakeFile)
+  }
+
+  @Test
+  fun testAddStaticDirectory() {
+    val fakeDir = mock<Directory>()
+    // NATIVE_SYMBOL_TABLES is Appendable and Directory based
+    val artifactType = MultipleArtifact.NATIVE_SYMBOL_TABLES
+
+    proxy.addStaticDirectory(artifactType, fakeDir)
+
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.ADD_STATIC_DIRECTORY_VALUE)
+    verify(delegate, times(1)).addStaticDirectory(artifactType, fakeDir)
   }
 
   @Test

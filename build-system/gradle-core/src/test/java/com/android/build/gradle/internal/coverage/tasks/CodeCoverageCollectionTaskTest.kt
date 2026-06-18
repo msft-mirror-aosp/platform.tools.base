@@ -17,6 +17,11 @@
 package com.android.build.gradle.internal.coverage.tasks
 
 import com.android.build.gradle.internal.coverage.tasks.CodeCoverageCollectionTask.CodeCoverageCollectionWorkerAction
+import com.android.build.gradle.internal.coverage.tasks.CodeCoverageCollectionTask.CodeCoverageCollectionWorkerAction.Companion.getTestSuiteCoverageFiles
+import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_METADATA_FILE
+import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_METADATA_MODULE_KEY
+import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_METADATA_SUITE_KEY
+import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_METADATA_VARIANT_KEY
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth.assertThat
@@ -31,7 +36,44 @@ import org.w3c.dom.Element
 
 class CodeCoverageCollectionTaskTest {
 
-  @get:Rule var mTemporaryFolder: TemporaryFolder = TemporaryFolder()
+  @get:Rule val temporaryFolder = TemporaryFolder()
+
+  @Test
+  fun testGetTestSuiteCoverageFiles() {
+    val root = temporaryFolder.newFolder("test_suite_data")
+    val subDir = File(root, "coverage_data").apply { mkdirs() }
+    val ecFile = File(subDir, "test.ec").apply { createNewFile() }
+    val execFile = File(subDir, "test.exec").apply { createNewFile() }
+    File(subDir, "metadata.txt").apply { createNewFile() }
+
+    File(root, TEST_SUITE_METADATA_FILE).apply { writeText("$TEST_SUITE_METADATA_SUITE_KEY=my_suite") }
+
+    val result = getTestSuiteCoverageFiles(root)
+
+    assertThat(result).isNotNull()
+    val (testSuiteName, coverageFiles) = result!!
+    assertThat(testSuiteName).isEqualTo("my_suite")
+    assertThat(coverageFiles).containsExactly(ecFile, execFile)
+  }
+
+  @Test
+  fun testGetTestSuiteCoverageFilesNoMetadata() {
+    val root = temporaryFolder.newFolder("test_suite_data_no_metadata")
+    File(root, "test.ec").apply { createNewFile() }
+
+    val result = getTestSuiteCoverageFiles(root)
+
+    assertThat(result).isNull()
+  }
+
+  @Test
+  fun testGetTestSuiteCoverageFilesDoesNotExist() {
+    val root = File(temporaryFolder.root, "does_not_exist")
+
+    val result = getTestSuiteCoverageFiles(root)
+
+    assertThat(result).isNull()
+  }
 
   @Test
   fun testFormatProjectName() {
@@ -44,10 +86,15 @@ class CodeCoverageCollectionTaskTest {
 
   @Test
   fun testInjectMetadataInXmlReport() {
-    val tempDir = mTemporaryFolder.newFolder()
+    val tempDir = temporaryFolder.newFolder()
     val xmlFile = copyResourceToFolder("jacocoReport/com/android/tools/build/tests/myapplication/report.xml", tempDir)
 
-    val properties = mapOf("moduleName" to "app", "testSuiteName" to "UnitTest", "testedVariantName" to "debug")
+    val properties =
+      mapOf(
+        TEST_SUITE_METADATA_MODULE_KEY to "app",
+        TEST_SUITE_METADATA_SUITE_KEY to "UnitTest",
+        TEST_SUITE_METADATA_VARIANT_KEY to "debug",
+      )
     val sourceFolders = listOf("src/main/java", "src/main/kotlin")
 
     CodeCoverageCollectionWorkerAction.injectMetadataInXmlReport(xmlFile, properties, sourceFolders)
@@ -92,7 +139,7 @@ class CodeCoverageCollectionTaskTest {
     val inputStream = javaClass.classLoader.getResourceAsStream(fileName) ?: throw IOException("Resource not found: $fileName")
 
     val file = File(folder, fileName)
-    FileUtils.mkdirs(file.getParentFile())
+    FileUtils.mkdirs(file.parentFile)
 
     file.outputStream().use { fileOut -> inputStream.use { it.copyTo(fileOut) } }
     return file

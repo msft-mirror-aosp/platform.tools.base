@@ -76,9 +76,15 @@ class HtmlPaneDetector : Detector(), SourceCodeScanner {
   override fun getApplicableMethodNames(): List<String> = listOf("setContentType")
 
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
-    val arguments = node.valueArguments
-    if (arguments.size == 1) {
-      checkContentTypeWithoutEditorKit(context, arguments[0], node)
+    val containingClass = method.containingClass ?: return
+    val evaluator = context.evaluator
+    if (
+      evaluator.inheritsFrom(containingClass, "javax.swing.JEditorPane") || evaluator.inheritsFrom(containingClass, "javax.swing.JTextPane")
+    ) {
+      val arguments = node.valueArguments
+      if (arguments.size == 1) {
+        checkContentTypeWithoutEditorKit(context, arguments[0], node)
+      }
     }
   }
 

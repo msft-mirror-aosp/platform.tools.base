@@ -32,7 +32,7 @@ import java.awt.geom.Rectangle2D
  * @param size the [Dimension] (width and height) the resulting [Shape] should fit in.
  */
 fun Device.screenShape(originX: Double, originY: Double, size: Dimension): Shape? {
-  val screen = this.defaultHardware.screen
+  val screen = this.defaultHardware.screen ?: return null
   if (screen.screenRound != ScreenRound.ROUND) {
     return null
   }

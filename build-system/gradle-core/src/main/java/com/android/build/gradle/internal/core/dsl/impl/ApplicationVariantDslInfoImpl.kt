@@ -84,7 +84,7 @@ internal class ApplicationVariantDslInfoImpl(
             ":$projectName build type '${buildType}' can only have debuggable or profileable enabled.\n" +
               "Only one of these options can be used at a time.\n" +
               "Recommended action: Only set one of debuggable=true and profileable=true.\n"
-          services.issueReporter.reportWarning(IssueReporter.Type.GENERIC, message)
+          services.issueReporter.reportWarning(IssueReporter.Type.APPLICATION_ID_SUFFIX_IGNORED, message)
           // Disable profileable when profileable and debuggable are both enabled.
           false
         }

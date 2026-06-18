@@ -20,6 +20,7 @@ import com.android.adblib.ConnectedDevice
 import com.android.adblib.ShellCommandOutput
 import com.android.adblib.ShellCommandOutputElement
 import com.android.adblib.adbLogger
+import com.android.adblib.deviceProperties
 import com.android.adblib.serialNumber
 import com.android.adblib.shell
 import java.io.IOException
@@ -123,7 +124,11 @@ class AiGlassesPairing(val session: AdbSession) {
     return checkAppInForeground(COMPANION_PKG)
   }
 
-  private suspend fun ConnectedDevice.checkAppInForeground(pkg: String): Boolean {
+  private suspend fun ConnectedDevice.checkSetupActivityInForeground(): Boolean {
+    return checkAppInForeground(COMPANION_PKG, SETUP_ACTIVITY_NAME)
+  }
+
+  private suspend fun ConnectedDevice.checkAppInForeground(pkg: String, activity: String? = null): Boolean {
     val commands = listOf("dumpsys window displays", "dumpsys activity activities")
     val focusKeywords =
       listOf("mCurrentFocus", "mFocusedApp", "mResumedActivity", "mFocusedWindow", "topActivity", "topResumedActivity", "ResumedActivity")
@@ -134,7 +139,7 @@ class AiGlassesPairing(val session: AdbSession) {
           if (element is ShellCommandOutputElement.StdoutLine) {
             val line = element.contents
             val containsFocusKeyword = focusKeywords.any { keyword -> line.contains("$keyword=") || line.contains("$keyword:") }
-            containsFocusKeyword && line.contains(pkg)
+            containsFocusKeyword && line.contains(pkg) && (activity == null || line.contains(activity))
           } else {
             false
           }
@@ -335,6 +340,11 @@ class AiGlassesPairing(val session: AdbSession) {
     return null
   }
 
+  private suspend fun ConnectedDevice.isBluetoothEnabled(): Boolean {
+    val result = runCatchingIoException(CMD_GET_BLUETOOTH_STATE) { shell.executeAsText(it) }
+    return result.stdout.trim() == "1"
+  }
+
   /**
    * Initiates the pairing process with the glasses and emits the pairing state updates.
    *
@@ -350,6 +360,14 @@ class AiGlassesPairing(val session: AdbSession) {
         grantPermission(COMPANION_PKG, "android.permission.BLUETOOTH_CONNECT")
         grantPermission(CORE_PKG, "android.permission.ACCESS_FINE_LOCATION")
 
+        // Ensure location services are enabled on the phone emulator
+        runCatchingIoException(CMD_ENABLE_LOCATION) { shell.executeAsText(it) }
+
+        if (!isBluetoothEnabled()) {
+          logger.info { "Bluetooth is disabled, enabling it..." }
+          runCatchingIoException(CMD_ENABLE_BLUETOOTH) { shell.executeAsText(it) }
+        }
+
         launchCompanionApp()
 
         // Wait for the app to appear in the foreground
@@ -362,7 +380,11 @@ class AiGlassesPairing(val session: AdbSession) {
         // Wait 3 seconds once it is in the foreground
         delay(3.seconds)
 
+        val apiLevel = deviceProperties().api()
+
         emit("POLLING")
+        var idleCount = 0
+        var associatingCount = 0
         while (true) {
           val state = waitForPairingState()
 
@@ -374,11 +396,32 @@ class AiGlassesPairing(val session: AdbSession) {
           emit(state)
           when (state) {
             "IDLE" -> {
+              idleCount++
+              associatingCount = 0
+              // TODO: Remove this fallback once http://b/505111138 is fixed
+              if (apiLevel >= 37 && idleCount >= 2 && checkSetupActivityInForeground()) {
+                sendFocusNavigationTap()
+                idleCount = 0
+              }
               sendPairingCommand(glassesBluetoothAddress, useCdm)
               delay(PAIRING_COMMAND_DELAY)
             }
+            "UI_CDM_ASSOCIATING" -> {
+              associatingCount++
+              idleCount = 0
+              // TODO: Remove this fallback once http://b/505111138 is fixed
+              if (apiLevel >= 37 && associatingCount >= 2 && checkSetupActivityInForeground()) {
+                sendFocusNavigationTap()
+                associatingCount = 0
+              }
+              delay(POLLING_INTERVAL)
+            }
             in TERMINAL_STATES -> return@flow
-            else -> delay(POLLING_INTERVAL)
+            else -> {
+              idleCount = 0 // reset if we see any other state
+              associatingCount = 0
+              delay(POLLING_INTERVAL)
+            }
           }
         }
       }
@@ -389,6 +432,11 @@ class AiGlassesPairing(val session: AdbSession) {
         }
         throw cause
       }
+
+  private suspend fun ConnectedDevice.sendFocusNavigationTap() {
+    runCatchingIoException(CMD_INPUT_TAB) { shell.executeAsText(it) }
+    runCatchingIoException(CMD_INPUT_CENTER) { shell.executeAsText(it) }
+  }
 
   private suspend inline fun <T> ConnectedDevice.runCatchingIoException(command: String, block: (String) -> T): T {
     try {
@@ -403,6 +451,13 @@ class AiGlassesPairing(val session: AdbSession) {
     private const val GLASSES_PKG = "com.google.android.glasses"
     private const val COMPANION_PKG = "com.google.android.glasses.companion"
     private const val CORE_PKG = "com.google.android.glasses.core"
+
+    private const val CMD_ENABLE_LOCATION = "cmd location set-location-enabled true"
+    private const val CMD_GET_BLUETOOTH_STATE = "settings get global bluetooth_on"
+    private const val CMD_ENABLE_BLUETOOTH = "cmd bluetooth_manager enable"
+    private const val CMD_INPUT_TAB = "input keyevent KEYCODE_TAB"
+    private const val CMD_INPUT_CENTER = "input keyevent KEYCODE_DPAD_CENTER"
+    private const val SETUP_ACTIVITY_NAME = ".setup.ui.SetupActivity"
 
     // Time to wait for the pairing state to change after sending the pairing command
     private val PAIRING_COMMAND_DELAY = 4.seconds

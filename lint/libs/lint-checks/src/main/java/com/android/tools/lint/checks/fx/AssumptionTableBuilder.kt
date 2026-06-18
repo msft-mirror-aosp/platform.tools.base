@@ -21,6 +21,7 @@ import com.android.tools.lint.checks.fx.result.Constraint
 import com.android.tools.lint.checks.fx.result.Effect
 import com.android.tools.lint.checks.fx.result.MethodId
 import com.android.tools.lint.checks.fx.result.ResultTemplate
+import com.android.tools.lint.checks.fx.result.Scope
 import com.android.tools.lint.checks.fx.result.Type
 import com.android.tools.lint.checks.fx.result.Type.MethodRef
 import com.android.tools.lint.checks.fx.result.Type.MethodRef.Companion.rawStatic
@@ -41,6 +42,7 @@ import kotlinx.collections.immutable.plus
 
 open class AssumptionTableBuilder<FX>(lattice: Lattice<FX>) : Lattice<FX> by lattice, TypeBounds<Nothing> by persistentMapOf() {
   private var results: AssumptionTable<FX> = persistentMapOf()
+  private var nextScopeIndex = 0
 
   /** Adds an assumption that [this] has signature [result] */
   infix fun MethodRef.assumedAs(result: ResultTemplate<FX>) {
@@ -101,7 +103,7 @@ open class AssumptionTableBuilder<FX>(lattice: Lattice<FX>) : Lattice<FX> by lat
   /** Creates a monomorphic signature, [setUp]-ing the type and effect given [domains] */
   fun TypeBounds<Nothing>.given(vararg domains: Type<Nothing>, setUp: ResultTemplateBuilder<FX>.() -> Unit): ResultTemplate<FX> =
     with(ResultTemplateBuilder(this@AssumptionTableBuilder).apply(setUp)) {
-      ResultTemplate(this@given, domains.asList(), range, Effect(concreteEffect, symbolicInvocations, constraint))
+      ResultTemplate(this@given, domains.asList(), range, Effect(concreteEffect, symbolicInvocations, constraint), persistentMapOf())
     }
 
   /** Creates a polymorphic signature, introducing unbounded type parameter */
@@ -125,9 +127,10 @@ open class AssumptionTableBuilder<FX>(lattice: Lattice<FX>) : Lattice<FX> by lat
     vararg boundList: PersistentSet<Type<Nothing>>,
     make: TypeBounds<Nothing>.(List<Type.Sym<Nothing>>) -> ResultTemplate<FX>,
   ): ResultTemplate<FX> {
-    val names = Array(boundList.size) { i -> "x${(size + i).subscript()}" }
+    val scope = Scope.Generated(nextScopeIndex++)
+    val names = List(boundList.size) { i -> Type.Sym.Param("x${(size + i).subscript()}", scope) }
     val extendedContext = (names zip boundList).fold(this) { acc, bound -> acc + bound }
-    return extendedContext.make(names.map(Type.Sym<Nothing>::Param))
+    return extendedContext.make(names)
   }
 
   open class Container<FX>(val containerFqn: String) {

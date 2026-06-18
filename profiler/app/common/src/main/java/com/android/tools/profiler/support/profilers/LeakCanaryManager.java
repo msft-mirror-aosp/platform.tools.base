@@ -59,44 +59,27 @@ public class LeakCanaryManager {
     public static final String FORCE_DUMP_ON_DEVICE_INTENT =
             "studio.leakcanary.FORCE_DUMP_ON_DEVICE";
 
-    private static final String LEAKCANARY_CLASS_NAME = "leakcanary.AppWatcher";
-
     /**
      * Timeout for waiting for the Studio-LeakCanary library to respond to the threshold check
      * broadcast.
      */
-    private static final long LEAKCANARY_CHECK_TIMEOUT_SECONDS = 2;
+    private static final long LEAKCANARY_CHECK_TIMEOUT_SECONDS = 3;
 
     private static final int DEFAULT_RETAINED_VISIBLE_THRESHOLD = 5;
 
     private static Context sApplicationContext;
 
+    // Error constants mapping to LeakCanaryDeviceError in common.proto
+    // These must be kept strictly synced with LeakCanaryDeviceError.ErrorType enum
+    // in tools/base/transport/proto/common.proto because they are natively casted in perfa.cc.
+    private static final int LEAKCANARY_ERROR_APP_CONTEXT_NULL = 1;
+    private static final int LEAKCANARY_ERROR_BROADCAST_DELIVERY_FAILED = 2;
+
     private static BroadcastReceiver sObjectCountReceiver;
 
     private static native boolean sendObjectCountNative(int count);
 
-    /** Called from the profiler agent (perfa.cc) via JNI to check for LeakCanary's presence. */
-    @Keep
-    @SuppressWarnings("unused") // Called via JNI
-    public static boolean isPresent() {
-        Context context = getApplicationContext();
-        if (context == null) {
-            Log.d(TAG, "LeakCanary class check: Could not get Application instance.");
-            return true;
-        }
-
-        try {
-            Class.forName(LEAKCANARY_CLASS_NAME, false, context.getClassLoader());
-            return true;
-        } catch (ClassNotFoundException e) {
-            // We are certain that LeakCanary is not present.
-            Log.e(TAG, "LeakCanary class check: FAILED. AppWatcher class not found.");
-            return false;
-        } catch (Exception e) {
-            Log.d(TAG, "LeakCanary class check: FAILED with exception.", e);
-            return true;
-        }
-    }
+    private static native void sendErrorNative(int errorCode);
 
     /**
      * Called from the profiler agent (perfa.cc) via JNI to get the retained visible threshold. This
@@ -150,6 +133,7 @@ public class LeakCanaryManager {
             }
         } catch (Exception e) {
             Log.e(TAG, "Failed to get LeakCanary threshold via broadcast.", e);
+            sendErrorNative(LEAKCANARY_ERROR_BROADCAST_DELIVERY_FAILED);
         } finally {
             try {
                 context.unregisterReceiver(receiver);
@@ -187,6 +171,7 @@ public class LeakCanaryManager {
             Log.d(TAG, "HEAP_DUMP_FINISHED broadcast sent successfully.");
         } catch (Exception e) {
             Log.e(TAG, "Failed to send HEAP_DUMP_FINISHED broadcast.", e);
+            sendErrorNative(LEAKCANARY_ERROR_BROADCAST_DELIVERY_FAILED);
         }
     }
 
@@ -240,8 +225,9 @@ public class LeakCanaryManager {
 
                             boolean success = sendObjectCountNative(count);
                             if (!success) {
-                                Log.e(TAG, "Failed to send count to agent. Stopping listener.");
-                                stopListeningForRetainedObjects();
+                                Log.w(
+                                        TAG,
+                                        "Failed to send count to agent. Dropping current count.");
                             }
                         }
                     }
@@ -274,6 +260,7 @@ public class LeakCanaryManager {
             Log.d(TAG, "Sent START_LISTENING broadcast with mode: " + mode);
         } catch (Exception e) {
             Log.e(TAG, "Failed to send START_LISTENING broadcast.", e);
+            sendErrorNative(LEAKCANARY_ERROR_BROADCAST_DELIVERY_FAILED);
         }
     }
 
@@ -296,6 +283,7 @@ public class LeakCanaryManager {
             Log.d(TAG, "FORCE_DUMP_ON_DEVICE broadcast sent successfully.");
         } catch (Exception e) {
             Log.e(TAG, "Failed to send FORCE_DUMP_ON_DEVICE broadcast.", e);
+            sendErrorNative(LEAKCANARY_ERROR_BROADCAST_DELIVERY_FAILED);
         }
     }
 
@@ -346,6 +334,7 @@ public class LeakCanaryManager {
                 sApplicationContext = (Context) currentApplicationMethod.invoke(null);
             } catch (Exception e) {
                 Log.e(TAG, "Failed to get application context.", e);
+                sendErrorNative(LEAKCANARY_ERROR_APP_CONTEXT_NULL);
             }
         }
         if (sApplicationContext == null) {

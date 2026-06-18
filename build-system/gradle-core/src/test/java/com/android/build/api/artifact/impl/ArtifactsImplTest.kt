@@ -23,6 +23,7 @@ import com.android.build.api.artifact.impl.ArtifactsImplTest.TestMultipleArtifac
 import com.android.build.api.artifact.impl.ArtifactsImplTest.TestMultipleArtifactType.TEST_APPENDABLE_FILES
 import com.android.build.api.artifact.impl.ArtifactsImplTest.TestMultipleArtifactType.TEST_DIRECTORIES
 import com.android.build.api.artifact.impl.ArtifactsImplTest.TestMultipleArtifactType.TEST_FILES
+import com.android.build.api.artifact.impl.ArtifactsImplTest.TestMultipleArtifactType.TEST_FILES_WITH_ATTRIBUTES
 import com.android.build.api.artifact.impl.ArtifactsImplTest.TestMultipleArtifactType.TEST_TRANSFORMABLE_DIRECTORIES
 import com.android.build.api.artifact.impl.ArtifactsImplTest.TestMultipleArtifactType.TEST_TRANSFORMABLE_FILES
 import com.android.build.api.artifact.impl.ArtifactsImplTest.TestSingleArtifactType.TEST_DIRECTORY
@@ -55,6 +56,7 @@ import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.testfixtures.ProjectBuilder
+import org.junit.Assert
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -86,7 +88,7 @@ class ArtifactsImplTest {
     object TEST_TRANSFORMABLE_MANY_DIRECTORY : TestSingleArtifactType<Directory>(DIRECTORY), Transformable, ContainsMany
   }
 
-  sealed class TestMultipleArtifactType<T : FileSystemLocation>(kind: ArtifactKind<T>) :
+  private sealed class TestMultipleArtifactType<T : FileSystemLocation>(kind: ArtifactKind<T>, val qualifierKeys: List<String>? = null) :
     Artifact.Multiple<T>(kind, Category.INTERMEDIATES) {
 
     object TEST_FILES : TestMultipleArtifactType<RegularFile>(FILE)
@@ -100,6 +102,9 @@ class ArtifactsImplTest {
     object TEST_TRANSFORMABLE_FILES : TestMultipleArtifactType<RegularFile>(FILE), Transformable, Appendable
 
     object TEST_TRANSFORMABLE_DIRECTORIES : TestMultipleArtifactType<Directory>(DIRECTORY), Transformable
+
+    object TEST_FILES_WITH_ATTRIBUTES :
+      TestMultipleArtifactType<RegularFile>(FILE, qualifierKeys = listOf("DEVICE_ID", "CLOUD_PROVIDER", "CLOUD_USER")), WithQualifiers
   }
 
   @Rule @JvmField val tmpDir: TemporaryFolder = TemporaryFolder()
@@ -164,6 +169,30 @@ class ArtifactsImplTest {
   }
 
   @Test
+  fun testAddFileArtifactsWithAttributes() {
+    artifacts.add(TEST_FILES_WITH_ATTRIBUTES, project.layout.buildDirectory.file("first").get(), mapOf("DEVICE_ID" to "dev1"))
+    artifacts.add(TEST_FILES_WITH_ATTRIBUTES, project.layout.buildDirectory.file("second").get(), mapOf("DEVICE_ID" to "dev2"))
+    Truth.assertThat(artifacts.getAll(TEST_FILES_WITH_ATTRIBUTES).get())
+      .containsExactly(project.layout.buildDirectory.file("first").get(), project.layout.buildDirectory.file("second").get())
+  }
+
+  @Test
+  fun testAddFileArtifactsWithDuplicateAttributes() {
+    artifacts.add(TEST_FILES_WITH_ATTRIBUTES, project.layout.buildDirectory.file("first").get(), mapOf("DEVICE_ID" to "dev1"))
+    val exception =
+      Assert.assertThrows(RuntimeException::class.java) {
+        artifacts.add(TEST_FILES_WITH_ATTRIBUTES, project.layout.buildDirectory.file("second").get(), mapOf("DEVICE_ID" to "dev1"))
+      }
+    Truth.assertThat(exception.localizedMessage)
+      .contains(
+        """
+        An artifact with the same attributes has already been added
+        """
+          .trimIndent()
+      )
+  }
+
+  @Test
   fun testAddExternalFileArtifactsWithTask() {
     abstract class AGPTask : DefaultTask() {
       @get:OutputFile abstract val outputFile: RegularFileProperty
@@ -205,6 +234,74 @@ class ArtifactsImplTest {
         "test.txt",
       ),
     )
+  }
+
+  @Test
+  fun testAddArtifactsWithAttributesFromTask() {
+
+    addProvider(mapOf("DEVICE_ID" to "dev1"))
+    addProvider(mapOf("DEVICE_ID" to "dev2"))
+    addProvider(mapOf("DEVICE_ID" to "dev3"))
+
+    val expectedResults = mutableListOf<String>()
+    for (i in 1..3) {
+      expectedResults.add(
+        FileUtils.join(
+          Artifact.Category.INTERMEDIATES.name.lowercase(Locale.getDefault()),
+          TEST_FILES_WITH_ATTRIBUTES.getFolderName(),
+          "debug",
+          "agpTaskProvider$i",
+          "DEVICE_ID",
+          "dev$i",
+        )
+      )
+    }
+    verifyTestAddFileArtifactWithTask(TEST_FILES_WITH_ATTRIBUTES, expectedResults)
+  }
+
+  @Test
+  fun testInvalidAttributeAddInternalFileArtifactsWithAttributesFromTask() {
+
+    val exception = Assert.assertThrows(RuntimeException::class.java) { addProvider(mapOf("DEVICE_ID" to "dev3", "INCORRECT" to "foo")) }
+    Truth.assertThat(exception.localizedMessage)
+      .isEqualTo(
+        """
+        An artifact with qualifiers <DEVICE_ID=dev3, INCORRECT=foo> is using undeclared qualifier key(s) <INCORRECT>,
+        possible keys are <DEVICE_ID, CLOUD_PROVIDER, CLOUD_USER>
+        """
+          .trimIndent()
+      )
+  }
+
+  @Test
+  fun testAddArtifactsWithNonUniqueAttributesUnsortedFromTask() {
+
+    addProvider(mapOf("DEVICE_ID" to "dev1", "CLOUD_PROVIDER" to "Google", "CLOUD_USER" to "user1"))
+    val exception =
+      Assert.assertThrows(RuntimeException::class.java) {
+        addProvider(mapOf("CLOUD_PROVIDER" to "Google", "CLOUD_USER" to "user1", "DEVICE_ID" to "dev1"))
+      }
+    Truth.assertThat(exception.localizedMessage)
+      .isEqualTo(
+        """
+        An artifact with qualifiers <CLOUD_PROVIDER=Google, CLOUD_USER=user1, DEVICE_ID=dev1> has already been added by Task named `agpTaskProvider1`
+        """
+          .trimIndent()
+      )
+  }
+
+  @Test
+  fun testAddArtifactsWithNonUniqueAttributesFromTask() {
+
+    addProvider(mapOf("DEVICE_ID" to "dev3"))
+    val exception = Assert.assertThrows(RuntimeException::class.java) { addProvider(mapOf("DEVICE_ID" to "dev3")) }
+    Truth.assertThat(exception.localizedMessage)
+      .isEqualTo(
+        """
+        An artifact with qualifiers <DEVICE_ID=dev3> has already been added by Task named `agpTaskProvider1`
+        """
+          .trimIndent()
+      )
   }
 
   private fun <T : Artifact.Multiple<RegularFile>> verifyTestAddFileArtifactWithTask(type: T, expectedFiles: List<String>) {
@@ -354,6 +451,127 @@ class ArtifactsImplTest {
     }
     Truth.assertThat(artifactContainer.get().get()).hasSize(3)
     Truth.assertThat(initializedTasks.get()).isEqualTo(3)
+  }
+
+  @Test
+  fun testLookupMultipleProvidersWithAttributes() {
+    addProvider(mapOf("DEVICE_ID" to "dev1"))
+    addProvider(mapOf("DEVICE_ID" to "dev2"))
+    addProvider(mapOf("DEVICE_ID" to "dev3"))
+    val returnedArtifact = artifacts.get(TEST_FILES_WITH_ATTRIBUTES, mapOf("DEVICE_ID" to "dev2"))
+    Truth.assertThat(returnedArtifact).isNotNull()
+    Truth.assertThat(returnedArtifact.get().asFile)
+      .isEqualTo(
+        FileUtils.join(
+          project.buildDir,
+          Artifact.Category.INTERMEDIATES.name.lowercase(Locale.getDefault()),
+          TEST_FILES_WITH_ATTRIBUTES.getFolderName(),
+          "debug",
+          "agpTaskProvider2",
+          "DEVICE_ID",
+          "dev2",
+        )
+      )
+  }
+
+  @Test
+  fun testLookupUnknownProviderWithAttributes() {
+    addProvider(mapOf("DEVICE_ID" to "dev1"))
+    addProvider(mapOf("DEVICE_ID" to "dev2"))
+    val exception =
+      Assert.assertThrows(RuntimeException::class.java) { artifacts.get(TEST_FILES_WITH_ATTRIBUTES, mapOf("DEVICE_ID" to "dev3")) }
+    Truth.assertThat(exception.localizedMessage).isEqualTo("Cannot find an artifact with matching attributes <DEVICE_ID=dev3>")
+  }
+
+  @Test
+  fun testLookupWithFullAndPartialAttributesMatching() {
+    addProvider(mapOf("DEVICE_ID" to "dev1", "CLOUD_PROVIDER" to "Google", "CLOUD_USER" to "user1"))
+    addProvider(mapOf("DEVICE_ID" to "dev2", "CLOUD_PROVIDER" to "Google", "CLOUD_USER" to "user1"))
+    addProvider(mapOf("DEVICE_ID" to "dev3", "CLOUD_PROVIDER" to "Google", "CLOUD_USER" to "user2"))
+    addProvider(mapOf("DEVICE_ID" to "dev4", "CLOUD_PROVIDER" to "Google", "CLOUD_USER" to "user2"))
+
+    val result =
+      artifacts.get(TEST_FILES_WITH_ATTRIBUTES, mapOf("DEVICE_ID" to "dev3", "CLOUD_PROVIDER" to "Google", "CLOUD_USER" to "user2"))
+    Truth.assertThat(result.get().asFile.absolutePath).contains("dev3")
+    val exception =
+      Assert.assertThrows(IllegalArgumentException::class.java) {
+        artifacts.get(TEST_FILES_WITH_ATTRIBUTES, mapOf("CLOUD_USER" to "user2"))
+      }
+    Truth.assertThat(exception.localizedMessage).isEqualTo("Cannot find an artifact with matching attributes <CLOUD_USER=user2>")
+  }
+
+  @Test
+  fun testGetAllWithAttributes() {
+    addProvider(mapOf("DEVICE_ID" to "dev1", "CLOUD_PROVIDER" to "Google", "CLOUD_USER" to "user1"))
+    addProvider(mapOf("DEVICE_ID" to "dev2", "CLOUD_PROVIDER" to "Google", "CLOUD_USER" to "user1"))
+    addProvider(mapOf("DEVICE_ID" to "dev3", "CLOUD_PROVIDER" to "Google", "CLOUD_USER" to "user2"))
+    addProvider(mapOf("DEVICE_ID" to "dev4", "CLOUD_PROVIDER" to "Google", "CLOUD_USER" to "user2"))
+
+    val result =
+      artifacts.get(TEST_FILES_WITH_ATTRIBUTES, mapOf("DEVICE_ID" to "dev3", "CLOUD_PROVIDER" to "Google", "CLOUD_USER" to "user2"))
+    Truth.assertThat(result.get().asFile.absolutePath).contains("dev3")
+    val listOfArtifacts = artifacts.getAllWithAttributes(TEST_FILES_WITH_ATTRIBUTES)
+    Truth.assertThat(listOfArtifacts).hasSize(4)
+    Truth.assertThat(listOfArtifacts.map { it.artifact.get().asFile.absolutePath })
+      .containsExactly(
+        makeFilePath(
+          TEST_FILES_WITH_ATTRIBUTES,
+          "agpTaskProvider1",
+          mapOf("CLOUD_PROVIDER" to "Google", "CLOUD_USER" to "user1", "DEVICE_ID" to "dev1"),
+        ),
+        makeFilePath(
+          TEST_FILES_WITH_ATTRIBUTES,
+          "agpTaskProvider2",
+          mapOf("CLOUD_PROVIDER" to "Google", "CLOUD_USER" to "user1", "DEVICE_ID" to "dev2"),
+        ),
+        makeFilePath(
+          TEST_FILES_WITH_ATTRIBUTES,
+          "agpTaskProvider3",
+          mapOf("CLOUD_PROVIDER" to "Google", "CLOUD_USER" to "user2", "DEVICE_ID" to "dev3"),
+        ),
+        makeFilePath(
+          TEST_FILES_WITH_ATTRIBUTES,
+          "agpTaskProvider4",
+          mapOf("CLOUD_PROVIDER" to "Google", "CLOUD_USER" to "user2", "DEVICE_ID" to "dev4"),
+        ),
+      )
+  }
+
+  @Test
+  fun testGetAllWithAttributesInVariousOrder() {
+    addProvider(mapOf("DEVICE_ID" to "dev1", "CLOUD_PROVIDER" to "Google", "CLOUD_USER" to "user1"))
+    addProvider(mapOf("CLOUD_PROVIDER" to "Google", "DEVICE_ID" to "dev2", "CLOUD_USER" to "user1"))
+    addProvider(mapOf("CLOUD_USER" to "user2", "DEVICE_ID" to "dev3", "CLOUD_PROVIDER" to "Google"))
+    addProvider(mapOf("DEVICE_ID" to "dev4", "CLOUD_USER" to "user2", "CLOUD_PROVIDER" to "Google"))
+
+    val result =
+      artifacts.get(TEST_FILES_WITH_ATTRIBUTES, mapOf("DEVICE_ID" to "dev3", "CLOUD_PROVIDER" to "Google", "CLOUD_USER" to "user2"))
+    Truth.assertThat(result.get().asFile.absolutePath).contains("dev3")
+    val listOfArtifacts = artifacts.getAllWithAttributes(TEST_FILES_WITH_ATTRIBUTES)
+    Truth.assertThat(listOfArtifacts).hasSize(4)
+    Truth.assertThat(listOfArtifacts.map { it.artifact.get().asFile.absolutePath })
+      .containsExactly(
+        makeFilePath(
+          TEST_FILES_WITH_ATTRIBUTES,
+          "agpTaskProvider1",
+          mapOf("CLOUD_PROVIDER" to "Google", "CLOUD_USER" to "user1", "DEVICE_ID" to "dev1"),
+        ),
+        makeFilePath(
+          TEST_FILES_WITH_ATTRIBUTES,
+          "agpTaskProvider2",
+          mapOf("CLOUD_PROVIDER" to "Google", "CLOUD_USER" to "user1", "DEVICE_ID" to "dev2"),
+        ),
+        makeFilePath(
+          TEST_FILES_WITH_ATTRIBUTES,
+          "agpTaskProvider3",
+          mapOf("CLOUD_PROVIDER" to "Google", "CLOUD_USER" to "user2", "DEVICE_ID" to "dev3"),
+        ),
+        makeFilePath(
+          TEST_FILES_WITH_ATTRIBUTES,
+          "agpTaskProvider4",
+          mapOf("CLOUD_PROVIDER" to "Google", "CLOUD_USER" to "user2", "DEVICE_ID" to "dev4"),
+        ),
+      )
   }
 
   @Test
@@ -1163,5 +1381,37 @@ class ArtifactsImplTest {
 
   abstract class AgpDirectoryTask : DefaultTask() {
     @get:OutputFile abstract val outputFolder: DirectoryProperty
+  }
+
+  abstract class AgpRegularFileTask : DefaultTask() {
+    @get:OutputFile abstract val outputFile: RegularFileProperty
+  }
+
+  private var providersNumber = 0
+
+  private fun addProvider(attributes: Map<String, String>) {
+    providersNumber++
+    val agpTaskProvider = project.tasks.register("agpTaskProvider" + providersNumber, AgpRegularFileTask::class.java)
+    artifacts.addInitialProvider(
+      TEST_FILES_WITH_ATTRIBUTES,
+      agpTaskProvider,
+      AgpRegularFileTask::outputFile,
+      ArtifactTypeQualifiers(attributes),
+    )
+  }
+
+  private fun makeFilePath(type: Artifact<*>, taskName: String, attributes: Map<String, String>? = null): String {
+    val paths = Array(4 + 2 * (attributes?.size ?: 0)) { "" }
+    paths[0] = Artifact.Category.INTERMEDIATES.name.lowercase(Locale.getDefault())
+    paths[1] = type.getFolderName()
+    paths[2] = "debug"
+    paths[3] = taskName
+    var propIndex = 0
+    attributes?.forEach { key, value ->
+      paths[4 + propIndex * 2] = key
+      paths[5 + propIndex * 2] = value
+      propIndex++
+    }
+    return FileUtils.join(project.buildDir, *paths).absolutePath
   }
 }

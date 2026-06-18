@@ -11,6 +11,7 @@ com.android.build.gradle.integration.api.ApiCompatibilityTest
 com.android.build.gradle.integration.api.ArtifactReplacementTest
 com.android.build.gradle.integration.api.BuiltArtifactsWithWorkerTest
 com.android.build.gradle.integration.api.BytecodeGenerationHooksTest
+com.android.build.gradle.integration.api.BytecodeGenerationHooksOldDslTest
 com.android.build.gradle.integration.api.DynamicAppClassesAccessTest
 com.android.build.gradle.integration.api.GetCompileClasspathTest
 com.android.build.gradle.integration.api.GetRuntimeSymbolListTest
@@ -85,6 +86,8 @@ com.android.build.gradle.integration.application.GenerateManifestJarTaskTest
 com.android.build.gradle.integration.application.GenerateResValuesIntegrationTest
 com.android.build.gradle.integration.application.GenFolderApi2Test
 com.android.build.gradle.integration.application.GenFolderApiTest
+com.android.build.gradle.integration.application.GenFolderApi2OldTest
+com.android.build.gradle.integration.application.GenFolderApiOldTest
 com.android.build.gradle.integration.application.GenFolderKotlinOnlyApiTest
 com.android.build.gradle.integration.application.InitWithThisTest
 com.android.build.gradle.integration.application.InjectedAbiSplitTest
@@ -141,6 +144,7 @@ com.android.build.gradle.integration.application.OldAndNewVariantAPIInteractionT
 com.android.build.gradle.integration.application.OldAndNewVariantAPIMisuseTest
 com.android.build.gradle.integration.application.OldVariantApiCompatibility
 com.android.build.gradle.integration.application.OldVariantApiGenTaskVisibility
+com.android.build.gradle.integration.application.OldVariantApiPropertiesTest
 com.android.build.gradle.integration.application.OptionalLibraryTest
 com.android.build.gradle.integration.application.OptionalLibraryWithProguardTest
 com.android.build.gradle.integration.application.Overlay1Test
@@ -179,16 +183,12 @@ com.android.build.gradle.integration.application.UnitTestWithJniLibs
 com.android.build.gradle.integration.application.VariantApiArtifactAccessTest
 com.android.build.gradle.integration.application.VariantApiCompatTest
 com.android.build.gradle.integration.application.VariantApiCustomizationTest
-com.android.build.gradle.integration.application.VariantApiPropertiesTest
-com.android.build.gradle.integration.application.VariantFilteringTest
 com.android.build.gradle.integration.application.VariantsApiTest
 com.android.build.gradle.integration.application.VectorDrawableTest
 com.android.build.gradle.integration.application.VectorDrawableTest_Library
 com.android.build.gradle.integration.application.WindowsSystemDependencyTest
-com.android.build.gradle.integration.attribution.BuildAttributionDataTest
 com.android.build.gradle.integration.automatic.CheckAll
 com.android.build.gradle.integration.baselineprofiles.ArtProfileBaselineTest
-com.android.build.gradle.integration.baselineprofiles.ArtProfileExternalDependenciesTest
 com.android.build.gradle.integration.baselineprofiles.ArtProfileMultipleLibrariesTest
 com.android.build.gradle.integration.baselineprofiles.ArtProfileSingleLibraryTest
 com.android.build.gradle.integration.baselineprofiles.D8StartupProfileDexOptimizationTest
@@ -245,7 +245,6 @@ com.android.build.gradle.integration.connected.databinding.DataBindingIntegratio
 com.android.build.gradle.integration.connected.dependencies.TestWithSameDepAsAppConnectedTest
 com.android.build.gradle.integration.connected.feature.DynamicFeatureConnectedTest
 com.android.build.gradle.integration.connected.library.AdditionalTestOutputOverrideConnectedTest
-com.android.build.gradle.integration.connected.library.ApiConnectedTest
 com.android.build.gradle.integration.connected.library.AttrOrderConnectedTest
 com.android.build.gradle.integration.connected.library.FlavoredlibConnectedTest
 com.android.build.gradle.integration.connected.library.FlavorlibConnectedTest
@@ -312,7 +311,6 @@ com.android.build.gradle.integration.dependencies.app.AppWithResolutionStrategyF
 com.android.build.gradle.integration.dependencies.app.AppWithRuntimeDependencyTest
 com.android.build.gradle.integration.dependencies.BrokenTestModuleSyncTest
 com.android.build.gradle.integration.dependencies.CheckJetifierTaskTest
-com.android.build.gradle.integration.dependencies.CompileAndRuntimeClasspathTest
 com.android.build.gradle.integration.dependencies.DependenciesFilePublicOutputTest
 com.android.build.gradle.integration.dependencies.DependencyOrderTest
 com.android.build.gradle.integration.dependencies.DepOnLocalJarThroughAModuleTest
@@ -537,7 +535,6 @@ com.android.build.gradle.integration.packaging.AccentCharacterAndProguardTest
 com.android.build.gradle.integration.packaging.ApkCreatedByTest
 com.android.build.gradle.integration.packaging.ApkLocationTest
 com.android.build.gradle.integration.packaging.ApkMetadataTest
-com.android.build.gradle.integration.packaging.ApkOutputFileChangeTest
 com.android.build.gradle.integration.packaging.AssetPackagingTest
 com.android.build.gradle.integration.packaging.BundleMetadataTest
 com.android.build.gradle.integration.packaging.BundleOptionsTest
@@ -561,7 +558,6 @@ com.android.build.gradle.integration.publishing.JavaDocGenerationMixedSourceTest
 com.android.build.gradle.integration.publishing.JavaDocPublishingTest
 com.android.build.gradle.integration.publishing.LibraryPublishingTest
 com.android.build.gradle.integration.publishing.SourcePublishingTest
-com.android.build.gradle.integration.r8.DefaultProguardFilesTest
 com.android.build.gradle.integration.r8.IgnoreKeepRulesAppFeatureTest
 com.android.build.gradle.integration.r8.IgnoreKeepRulesLibraryTest
 com.android.build.gradle.integration.r8.ShrinkLibraryRClassTest
@@ -593,7 +589,6 @@ com.android.build.gradle.integration.testing.SeparateTestModuleTest
 com.android.build.gradle.integration.testing.SeparateTestModuleWithAppDependenciesTest
 com.android.build.gradle.integration.testing.SeparateTestModuleWithMinifiedAppTest
 com.android.build.gradle.integration.testing.SeparateTestModuleWithVariantsTest
-com.android.build.gradle.integration.testing.SeparateTestWithAarDependencyTest
 com.android.build.gradle.integration.testing.SeparateTestWithDependenciesTest
 com.android.build.gradle.integration.testing.SeparateTestWithMinificationButNoObfuscationTest
 com.android.build.gradle.integration.testing.SeparateTestWithoutMinificationWithDependenciesTest
@@ -601,7 +596,6 @@ com.android.build.gradle.integration.testing.testFixtures.TestFixturesKotlinTest
 com.android.build.gradle.integration.testing.testFixtures.TestFixturesTest
 com.android.build.gradle.integration.testing.TestingSupportLibraryTest
 com.android.build.gradle.integration.testing.TestOptionsExecutionTest
-com.android.build.gradle.integration.testing.TestWithDepTest
 com.android.build.gradle.integration.testing.unit.UnitTestingAndroidResourcesTest
 com.android.build.gradle.integration.testing.unit.UnitTestingAssembleTest
 com.android.build.gradle.integration.testing.unit.UnitTestingBuildTypesSupportTest

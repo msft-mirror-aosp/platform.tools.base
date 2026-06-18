@@ -21,16 +21,4 @@ import org.gradle.api.file.DirectoryProperty
 
 abstract class AbstractTestSuiteSpecImpl(val name: String, val projectDirectory: Directory, val buildDirectory: DirectoryProperty) {
   protected val userAddedSourcesSets = mutableListOf<Directory>()
-
-  /**
-   * Adds a source set to the test suite assembly pipeline. The source folder is a root directory that should contain 'java', 'kotlin' and
-   * 'res' subfolders depending on the type of source spec.
-   *
-   * We will eventually make this function public,
-   *
-   * @param sourceSet source path relative to the project directory.
-   */
-  fun addStaticSourceSet(sourceSet: String) {
-    userAddedSourcesSets.add(projectDirectory.dir(sourceSet))
-  }
 }

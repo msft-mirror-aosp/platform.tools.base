@@ -48,9 +48,48 @@ object AndroidTestConfigurationKeys {
   /** The fully qualified class name of the instrumentation runner to use. */
   const val INSTRUMENTATION_RUNNER_CLASS = "android-test.instrumentation-runner-class"
 
-  /** The package ID of the instrumentation target. */
+  /** The package ID of the test APK containing the instrumentation runner. */
+  const val TEST_PACKAGE_ID = "android-test.test-package-id"
+
+  /** The package ID of the application being instrumented (the targetPackage). */
   const val INSTRUMENTATION_TARGET_PACKAGE_ID = "android-test.instrumentation-target-package-id"
+
+  /** The application ID of the tested application. */
+  const val TESTED_APPLICATION_ID = "com.android.junit.engine.tested.application.id"
+
+  /** Comma-separated list of extra instrumentation arguments in key=value format. */
+  const val INSTRUMENTATION_ARGS = "android-test.instrumentation-args"
 
   /** Path to the results directory. */
   const val RESULTS_DIR = "android-test.results-dir"
+
+  /** The execution mode for the test suite. */
+  const val ANDROID_TEST_EXECUTION_MODE = "android-test.execution-mode"
+
+  /** Path to the additional test output directory on host. */
+  const val ADDITIONAL_TEST_OUTPUT_DIR_ON_HOST = "android-test.additional-test-output-dir-on-host"
+
+  /** Path to the additional test output directory on device. */
+  const val ADDITIONAL_TEST_OUTPUT_DIR_ON_DEVICE = "android-test.additional-test-output-dir-on-device"
+
+  /** Whether to use the test storage service. */
+  const val USE_TEST_STORAGE_SERVICE = "android-test.use-test-storage-service"
+
+  /** Whether test coverage is enabled. */
+  const val IS_TEST_COVERAGE_ENABLED = "android-test.is-test-coverage-enabled"
+
+  /** Path to the single code coverage file on device. */
+  const val COVERAGE_FILE_ON_DEVICE = "android-test.coverage-file-on-device"
+
+  /** Path to the multiple code coverage files directory on device. */
+  const val COVERAGE_DIR_ON_DEVICE = "android-test.coverage-dir-on-device"
+
+  /** The type of code coverage to use. Values: NONE, ON_THE_FLY. */
+  const val COVERAGE_TYPE = "android-test.coverage-type"
+
+  /** Whether to force AOT compilation after installation. */
+  const val FORCE_AOT_COMPILATION = "android-test.force-aot-compilation"
+
+  /** The display name of the device, used for directory and file names. */
+  const val DEVICE_ID = "android-test.device-id"
 }

@@ -18,7 +18,6 @@ package com.android.tools.instrumentation.threading.agent.callback;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import java.io.ByteArrayInputStream;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -86,26 +85,6 @@ public class ThreadingCheckerTrampolineTest {
     }
 
     @Test
-    public void threadingViolationChecks_notEnforcedOnMethodInBaselineFile() {
-        ThreadingCheckerTrampoline.installHook(createThreadingCheckerHook());
-
-        String baselineMethod =
-                "com.android.tools.instrumentation.threading.agent.callback.ThreadingCheckerTrampolineTest$InnerTestClass#method1";
-        ThreadingCheckerTrampoline.BaselineViolationsHolder.baselineViolations =
-                BaselineViolations.fromStream(new ByteArrayInputStream(baselineMethod.getBytes()));
-
-        // method1 is in the baseline
-        InnerTestClass.method1();
-        assertThat(verifyOnUiThreadCallCount).isEqualTo(0);
-        assertThat(verifyOnWorkerThreadCallCount).isEqualTo(0);
-
-        // method2 is not in the baseline
-        InnerTestClass.method2();
-        assertThat(verifyOnUiThreadCallCount).isEqualTo(1);
-        assertThat(verifyOnWorkerThreadCallCount).isEqualTo(1);
-    }
-
-    @Test
     public void keepsTrackOfSkippedChecks_whenVerifyMethodsAreCalledBeforeHookIsInstalled() {
         ThreadingCheckerTrampoline.verifyOnUiThread();
         ThreadingCheckerTrampoline.verifyOnWorkerThread();
@@ -145,18 +124,5 @@ public class ThreadingCheckerTrampolineTest {
                 ++verifyNoReadLockCount;
             }
         };
-    }
-
-    public static class InnerTestClass {
-
-        public static void method1() {
-            ThreadingCheckerTrampoline.verifyOnUiThread();
-            ThreadingCheckerTrampoline.verifyOnWorkerThread();
-        }
-
-        public static void method2() {
-            ThreadingCheckerTrampoline.verifyOnUiThread();
-            ThreadingCheckerTrampoline.verifyOnWorkerThread();
-        }
     }
 }

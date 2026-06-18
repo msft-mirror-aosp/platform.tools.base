@@ -25,7 +25,6 @@ import static com.android.sdklib.SdkVersionInfo.getApiByBuildCode;
 import static com.android.sdklib.SdkVersionInfo.getApiByPreviewName;
 import static com.android.sdklib.SdkVersionInfo.getBuildCode;
 import static com.android.sdklib.SdkVersionInfo.getCodeName;
-import static com.android.sdklib.SdkVersionInfo.getVersion;
 import static com.android.sdklib.SdkVersionInfo.getVersionString;
 import static com.android.sdklib.SdkVersionInfo.underlinesToCamelCase;
 
@@ -86,6 +85,7 @@ public class SdkVersionInfoTest extends TestCase {
         assertEquals(34, getApiByBuildCode("UPSIDE_DOWN_CAKE", true));
         assertEquals(35, getApiByBuildCode("VANILLA_ICE_CREAM", true));
         assertEquals(36, getApiByBuildCode("BAKLAVA", true));
+        assertEquals(37, getApiByBuildCode("CINNAMON_BUN", true));
 
         for (int api = 1; api <= HIGHEST_KNOWN_API; api++) {
             assertEquals(api, getApiByBuildCode(getBuildCode(api), false));
@@ -113,9 +113,10 @@ public class SdkVersionInfoTest extends TestCase {
         assertEquals("UpsideDownCake", getCodeName(34));
         assertEquals("VanillaIceCream", getCodeName(35));
         assertEquals("Baklava", getCodeName(36));
+        assertEquals("CinnamonBun", getCodeName(37));
         assertNull(
                 "getCodeName for future versions should return null",
-                getCodeName(37)); // Deliberately hardcoded to ensure this test gets looked at when
+                getCodeName(38)); // Deliberately hardcoded to ensure this test gets looked at when
         // adding new codenames.
 
         // make sure all known codenames are non-null
@@ -144,25 +145,6 @@ public class SdkVersionInfoTest extends TestCase {
         assertEquals("JellyBeanMr2", underlinesToCamelCase("jelly_bean_mr2"));
     }
 
-    @SuppressWarnings("ConstantConditions")
-    public void testGetAndroidVersion() {
-        assertNull(getVersion("", null));
-        assertNull(getVersion("4H", null));
-        assertEquals(4, getVersion("4", null).getApiLevel());
-        assertNull(getVersion("4", null).getCodename());
-        assertEquals("4", getVersion("4", null).getApiString());
-        assertEquals(19, getVersion("19", null).getApiLevel());
-        // ICS is API 14, but when expressed as a preview platform, it's not yet 14
-        assertEquals(13, getVersion("IceCreamSandwich", null).getApiLevel());
-        assertEquals("IceCreamSandwich", getVersion("IceCreamSandwich", null).getCodename());
-        assertEquals(HIGHEST_KNOWN_API, getVersion("BackToTheFuture", null).getApiLevel());
-        assertEquals("BackToTheFuture", getVersion("BackToTheFuture", null).getCodename());
-
-        assertEquals(37, getVersion("37.0-beta1", null).getApiLevel());
-        assertEquals(1, (int) getVersion("37.0-beta1", null).getBetaNumber());
-        assertEquals(36, getVersion("canary-20251201", null).getApiLevel());
-        assertEquals(20251201, (int) getVersion("canary-20251201", null).getCanaryNumber());
-    }
 
     public void testGetVersionString() {
         // make sure all known versions are non-null

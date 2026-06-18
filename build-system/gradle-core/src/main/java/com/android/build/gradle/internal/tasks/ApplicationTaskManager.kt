@@ -41,12 +41,12 @@ import com.android.build.gradle.internal.tasks.factory.TaskManagerConfig
 import com.android.build.gradle.internal.tasks.factory.TaskProviderCallback
 import com.android.build.gradle.internal.tasks.factory.dependsOn
 import com.android.build.gradle.internal.tasks.featuresplit.FeatureSetMetadataWriterTask
+import com.android.build.gradle.internal.test.tasks.TestReportTask
+import com.android.build.gradle.internal.test.tasks.TestResultsCollectionTask
 import com.android.build.gradle.internal.variant.ComponentInfo
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.tasks.ExtractSupportedLocalesTask
 import com.android.build.gradle.tasks.GenerateLocaleConfigTask
-import com.android.build.gradle.tasks.TestReportTask
-import com.android.build.gradle.tasks.TestResultsCollectionTask
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.tasks.TaskProvider
@@ -148,22 +148,26 @@ class ApplicationTaskManager(
   ) {
     super.registerTestAndCodeCoverageCollectionTasks(variantInfo, testResultsCollectionTasks)
 
-    testResultsCollectionTasks.add(
-      taskFactory.register(TestResultsCollectionTask.AggregatedTestResultsCollectionCreationAction(variantInfo.variant))
-    )
-
-    taskFactory.register(
-      CodeCoverageCollectionTask.AggregatedCoverageCollectionCreationAction(
-        CodeCoverageCollectionTask.getJacocoAntTaskConfiguration(project, variantInfo.variant),
-        CodeCoverageReportCreationConfigImpl(variantInfo.variant, testComponents),
+    if (isReportAggregationEnabled) {
+      testResultsCollectionTasks.add(
+        taskFactory.register(TestResultsCollectionTask.AggregatedTestResultsCollectionCreationAction(variantInfo.variant))
       )
-    )
+
+      taskFactory.register(
+        CodeCoverageCollectionTask.AggregatedCoverageCollectionCreationAction(
+          CodeCoverageCollectionTask.getJacocoAntTaskConfiguration(project, variantInfo.variant),
+          CodeCoverageReportCreationConfigImpl(variantInfo.variant, testComponents),
+        )
+      )
+    }
   }
 
   override fun registerTestAndCodeCoverageReportTasks() {
     super.registerTestAndCodeCoverageReportTasks()
-    taskFactory.register(CodeCoverageReportTask.AggregatedCoverageReportCreationAction(globalConfig, isReportAggregationEnabled))
-    taskFactory.register(TestReportTask.AggregatedTestReportCreationAction(globalConfig, isReportAggregationEnabled))
+    if (isReportAggregationEnabled) {
+      taskFactory.register(CodeCoverageReportTask.AggregatedCoverageReportCreationAction(globalConfig))
+      taskFactory.register(TestReportTask.AggregatedTestReportCreationAction(globalConfig))
+    }
   }
 
   private fun createBundleTask(component: ComponentCreationConfig) {

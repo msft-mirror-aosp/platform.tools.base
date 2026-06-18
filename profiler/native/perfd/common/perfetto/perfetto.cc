@@ -112,10 +112,18 @@ Perfetto::LaunchStatus Perfetto::Run(const PerfettoArgs &run_args) {
     perfetto_trace_path_ = string(kFixedPerfettoTracePath);
     // Find the filename of the expected output file and use that
     // for the filename of the /data/misc/perfetto-traces/ file.
+    // Security Fix: Prevent path traversal (e.g., directory climb via "../").
+    // By extracting strictly the basename and rejecting "." and "..", we ensure
+    // an attacker cannot force Perfetto to write traces to arbitrary system
+    // locations.
     size_t last_slash = run_args.output_file_path.find_last_of("/");
-    if (last_slash != std::string::npos) {
-      perfetto_trace_path_.append(run_args.output_file_path.substr(last_slash));
+    string filename = (last_slash != std::string::npos)
+                          ? run_args.output_file_path.substr(last_slash + 1)
+                          : run_args.output_file_path;
+    if (filename == "." || filename == "..") {
+      filename = "default_trace";
     }
+    perfetto_trace_path_.append(filename);
   }
 
   command_ = std::unique_ptr<NonBlockingCommandRunner>(

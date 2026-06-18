@@ -15,32 +15,9 @@
  */
 package com.android.tools.lint.checks.infrastructure
 
-import com.android.tools.lint.FIR_UAST_KEY
-import com.android.tools.lint.UastEnvironment
-import org.junit.AfterClass
-import org.junit.BeforeClass
 import org.junit.Test
 
 class AnalysisApiFirServicesTest : AnalysisApiServicesTestBase() {
-  companion object {
-    private var lastKey: String? = null
-
-    @BeforeClass
-    @JvmStatic
-    fun setup() {
-      lastKey = System.getProperty(FIR_UAST_KEY, "false")
-      System.setProperty(FIR_UAST_KEY, "true")
-    }
-
-    @AfterClass
-    @JvmStatic
-    fun teardown() {
-      lastKey?.let { System.setProperty(FIR_UAST_KEY, it) }
-      lastKey = null
-      UastEnvironment.disposeApplicationEnvironment()
-    }
-  }
-
   @Test
   fun testDynamicType() {
     checkDynamicType()

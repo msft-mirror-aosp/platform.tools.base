@@ -22,6 +22,7 @@ import com.android.backup.BackupService.Companion.APP_DATA_FILE
 import com.android.backup.BackupService.Companion.AUTH_DATA_FILE
 import com.android.backup.BackupService.Companion.METADATA_FILE
 import com.android.backup.BackupService.Companion.PERMISSIONS_FILE
+import com.android.backup.BackupService.Companion.PERMISSION_REGEX
 import com.android.backup.BackupService.Companion.PM_DATA_FILE
 import com.android.backup.BackupService.Companion.PROPERTY_APPLICATION_ID
 import com.android.backup.BackupService.Companion.PROPERTY_BACKUP_TYPE
@@ -256,7 +257,7 @@ private fun Path.hasAuthData(): Boolean {
 
 internal fun ZipFile.getPermissions(): List<String> {
   return try {
-    getInputStream(getEntry(PERMISSIONS_FILE)).reader().readLines()
+    getInputStream(getEntry(PERMISSIONS_FILE)).reader().readLines().filter { it.matches(PERMISSION_REGEX) }
   } catch (_: Exception) {
     emptyList()
   }

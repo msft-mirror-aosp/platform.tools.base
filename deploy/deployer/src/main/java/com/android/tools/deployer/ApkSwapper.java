@@ -16,10 +16,16 @@
 package com.android.tools.deployer;
 
 import com.android.tools.deploy.proto.Deploy;
+import com.android.tools.deployer.common.AdbClient;
+import com.android.tools.deployer.common.ApplicationDumper;
+import com.android.tools.deployer.common.DeployerException;
+import com.android.tools.deployer.common.Installer;
 import com.android.tools.deployer.model.DexClass;
 import com.android.tools.idea.protobuf.ByteString;
 import com.android.utils.ILogger;
+
 import com.google.common.collect.Iterables;
+
 import java.util.List;
 import java.util.Map;
 
@@ -204,8 +210,9 @@ public class ApkSwapper {
                         continue;
                     case NONE:
                         throw DeployerException.operationNotSupported(
-                                "The redefiner is not able to swap the current state of the debug application. "
-                                        + "All available threads are suspended but not on a breakpoint.");
+                                "The redefiner is not able to swap the current state of the debug"
+                                    + " application. All available threads are suspended but not on"
+                                    + " a breakpoint.");
                 }
             } else {
                 request.addProcessIds(pid);

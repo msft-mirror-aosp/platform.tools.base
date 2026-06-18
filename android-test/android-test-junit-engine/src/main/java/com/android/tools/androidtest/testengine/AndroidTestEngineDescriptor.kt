@@ -43,16 +43,27 @@ class AndroidTestEngineDescriptor(uniqueId: UniqueId) :
 
     config.deviceSerials.forEach { deviceSerial ->
       val androidVersion = getAndroidVersion(adbController, deviceSerial)
-      val displayName = if (androidVersion.isNotEmpty()) "$deviceSerial - $androidVersion" else deviceSerial
+      val defaultDisplayName = if (androidVersion.isNotEmpty()) "$deviceSerial - $androidVersion" else deviceSerial
+      val deviceId = config.getDeviceId(deviceSerial) ?: defaultDisplayName
       // Android Studio expects the device serial in the UniqueId to match results
       // with its internal device model.
       val deviceUniqueId = uniqueId.append("device", deviceSerial)
+      val deviceDisplayName = if (deviceId != defaultDisplayName) "$deviceId ($defaultDisplayName)" else defaultDisplayName
+
+      val extractor = CoverageAgentExtractor(adbController, deviceSerial)
       val deviceDescriptor =
         AndroidDeviceDescriptor(
           uniqueId = deviceUniqueId,
           deviceSerial = deviceSerial,
-          deviceId = displayName,
-          deviceDisplayName = displayName,
+          deviceId = deviceId,
+          deviceDisplayName = deviceDisplayName,
+          jvmtiCodeCoverageAgentPathProvider = {
+            if (config.coverageType == AndroidTestConfiguration.CoverageType.ON_THE_FLY) {
+              extractor.extractAgentIfNeeded(config.testPackageId, config.instrumentationTargetPackageId)
+            } else {
+              null
+            }
+          },
         )
       deviceDescriptor.setParent(this)
       dynamicTestExecutor.execute(deviceDescriptor)

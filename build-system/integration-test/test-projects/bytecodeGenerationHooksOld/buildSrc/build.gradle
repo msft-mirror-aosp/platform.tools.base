@@ -1,0 +1,11 @@
+apply plugin: 'java-library'
+apply plugin: 'idea'
+
+apply from: "../../commonVersions.gradle", to: project.ext
+apply from: "../../commonLocalRepo.gradle"
+
+dependencies {
+    api "com.android.tools.build:gradle:$rootProject.buildVersion"
+    api gradleApi()
+    implementation 'com.google.guava:guava:20.0'
+}

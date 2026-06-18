@@ -18,8 +18,6 @@ package com.android.sdklib;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
-import com.google.common.base.Strings;
-
 import java.util.Locale;
 
 /** Information about available SDK Versions */
@@ -30,14 +28,14 @@ public class SdkVersionInfo {
      * updated for a new release. This number is used as a baseline and any more recent platforms
      * found can be used to increase the highest known number.
      */
-    public static final int HIGHEST_KNOWN_API = 36;
+    public static final int HIGHEST_KNOWN_API = 37;
 
     /**
      * Like {@link #HIGHEST_KNOWN_API} but does not include preview platforms.
      *
      * <p>Make sure to keep this in sync with the value in TestUtils.
      */
-    public static final int HIGHEST_KNOWN_STABLE_API = 36;
+    public static final int HIGHEST_KNOWN_STABLE_API = 37;
 
     /**
      * The highest supported version of the Android platform (as an API level) that this version of
@@ -56,7 +54,7 @@ public class SdkVersionInfo {
      * <p>Generally we shouldn't <i>prevent</i> the user from proceeding; the intent is to make the
      * user <b>aware</b> that the SDK may not work correctly without a newer version of the tools.
      */
-    public static final int HIGHEST_SUPPORTED_API = 36; // b/230535497; this is not yet enforced
+    public static final int HIGHEST_SUPPORTED_API = 37; // b/230535497; this is not yet enforced
 
     /**
      * The lowest active API level in the ecosystem. This number will change over time as the
@@ -92,17 +90,16 @@ public class SdkVersionInfo {
     public static final int HIGHEST_KNOWN_API_DESKTOP = 32;
 
     /**
-     * The highest known API level for Android TV. Note the tools at the
-     * downloadable system images for TV to see if there are more recent
-     * versions.
+     * The highest known API level for Android TV. Note the tools at the downloadable system images
+     * for TV to see if there are more recent versions.
      */
-    public static final int HIGHEST_KNOWN_API_TV = 34;
+    public static final int HIGHEST_KNOWN_API_TV = 36;
 
     /**
      * The highest known API level for Android Auto. To find out if this value needs to be updated,
      * check the downloadable system images for Auto to see if there are more recent versions.
      */
-    public static final int HIGHEST_KNOWN_API_AUTO = 34;
+    public static final int HIGHEST_KNOWN_API_AUTO = 35;
 
     /**
      * The lowest active api for TV. This number will change over time
@@ -115,9 +112,7 @@ public class SdkVersionInfo {
      */
     public static final int HIGHEST_KNOWN_API_XR = 34;
 
-    /**
-     * The highest known API level for AI Glasses.
-     */
+    /** The highest known API level for Intelligent Eyewear. */
     public static final int HIGHEST_KNOWN_API_AI_GLASSES = 36;
 
     /**
@@ -125,9 +120,7 @@ public class SdkVersionInfo {
      */
     public static final int LOWEST_ACTIVE_API_XR = 34;
 
-    /**
-     * The lowest active API for AI Glasses, minimum required by libraries.
-     */
+    /** The lowest active API for Intelligent Eyewear, minimum required by libraries. */
     public static final int LOWEST_ACTIVE_API_AI_GLASSES = 36;
 
     /**
@@ -202,6 +195,8 @@ public class SdkVersionInfo {
                 return "15.0";
             case 36:
                 return "16.0";
+            case 37:
+                return "17.0";
                 // If you add more versions here, also update #HIGHEST_KNOWN_STABLE_API
             default:
                 return null;
@@ -300,6 +295,8 @@ public class SdkVersionInfo {
                 return "VanillaIceCream";
             case 36:
                 return "Baklava";
+            case 37:
+                return "CinnamonBun";
                 // If you add more versions here, also update #getBuildCode and
                 // #HIGHEST_KNOWN_API
             default:
@@ -360,6 +357,8 @@ public class SdkVersionInfo {
                 return "VANILLA_ICE_CREAM";
             case 36:
                 return "BAKLAVA";
+            case 37:
+                return "CINNAMON_BUN";
                 // If you add more versions here, also update #getCodeName and
                 // #HIGHEST_KNOWN_API
         }
@@ -506,61 +505,5 @@ public class SdkVersionInfo {
         }
 
         return sb.toString();
-    }
-
-    /**
-     * Returns the {@link AndroidVersion} for a given version string, which is typically an API
-     * level number, but can also be a codename for a <b>preview</b> platform. Note: This should
-     * <b>not</b> be used to look up version names for build codes; for that, use {@link
-     * #getApiByBuildCode(String, boolean)}. The primary difference between this method is that
-     * {@link #getApiByBuildCode(String, boolean)} will return the final API number for a platform
-     * (e.g. for "KITKAT" it will return 19) whereas this method will return the API number for the
-     * codename as a preview platform (e.g. 18).
-     *
-     * @param apiOrPreviewName the version string
-     * @param targets          an optional array of installed targets, if available. If the version
-     *                         string corresponds to a code name, this is used to search for a
-     *                         corresponding API level.
-     * @return an {@link AndroidVersion}, or null if the version could not be
-     * determined (e.g. an empty or invalid API number or an unknown code name)
-     */
-    @Nullable
-    public static AndroidVersion getVersion(
-            @Nullable String apiOrPreviewName,
-            @Nullable IAndroidTarget[] targets) {
-        if (Strings.isNullOrEmpty(apiOrPreviewName)) {
-            return null;
-        }
-
-        if (Character.isDigit(apiOrPreviewName.charAt(0))
-                || apiOrPreviewName.startsWith("canary-")) {
-            try {
-                return AndroidVersion.fromString(apiOrPreviewName);
-            } catch (IllegalArgumentException e) {
-                // Invalid version string
-                return null;
-            }
-        }
-
-        // Codename
-        if (targets != null) {
-            for (int i = targets.length - 1; i >= 0; i--) {
-                IAndroidTarget target = targets[i];
-                if (target.isPlatform()) {
-                    AndroidVersion version = target.getVersion();
-                    if (version.isPreview() && apiOrPreviewName.equalsIgnoreCase(version.getCodename())) {
-                        return new AndroidVersion(version.getApiLevel(), version.getCodename());
-                    }
-                }
-            }
-        }
-
-        int api = getApiByPreviewName(apiOrPreviewName, false);
-        if (api != -1) {
-            return new AndroidVersion(api - 1, apiOrPreviewName);
-        }
-
-        // Must be a future SDK platform
-        return new AndroidVersion(HIGHEST_KNOWN_API, apiOrPreviewName);
     }
 }

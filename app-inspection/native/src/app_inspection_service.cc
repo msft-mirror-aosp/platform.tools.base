@@ -198,6 +198,11 @@ class JvmtiAllocator : public dex::Writer::Allocator {
   jvmtiEnv* jvmti_env_;
 };
 
+// SECURITY: Protect global transformation map against concurrent access from
+// multiple threads (e.g. JVMTI callbacks and agent commands running
+// simultaneously).
+static std::mutex g_transforms_mutex;
+
 std::unordered_map<std::string, AppInspectionTransform*>*
 GetAppInspectionTransforms() {
   static auto* transformations =
@@ -214,6 +219,7 @@ void AppInspectionService::OnClassFileLoaded(
   // however, in .dex these classes are stored using the "Ljava/net/URL;"
   // format.
   std::string desc = "L" + std::string(name) + ";";
+  std::lock_guard<std::mutex> lock(g_transforms_mutex);
   auto class_transforms = GetAppInspectionTransforms();
   auto transform = class_transforms->find(desc);
   if (transform == class_transforms->end()) return;

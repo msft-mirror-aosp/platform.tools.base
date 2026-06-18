@@ -82,6 +82,13 @@ abstract class AnalyticsEnabledVariantBuilder(override val delegate: VariantBuil
       (delegate as HasHostTestsBuilder).hostTests[HostTestBuilder.UNIT_TEST_TYPE]?.enable = value
     }
 
+  override var enableLint: Boolean
+    get() = delegate.enableLint
+    set(value) {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.ENABLE_LINT_VALUE
+      delegate.enableLint = value
+    }
+
   override fun <T : Any> registerExtension(type: Class<out T>, instance: T) {
     stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.REGISTER_EXTENSION_VALUE
     delegate.registerExtension(type, instance)

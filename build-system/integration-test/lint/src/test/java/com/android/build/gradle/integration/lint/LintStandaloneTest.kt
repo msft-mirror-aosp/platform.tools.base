@@ -21,7 +21,6 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.runner.FilterableParameterized
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.options.BooleanOption
-import com.android.build.gradle.options.OptionalBooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
@@ -111,17 +110,6 @@ class LintStandaloneTest(private val runLintInProcess: Boolean, private val lint
       assertOutputDoesNotContain("Gradle detected a problem")
       assertErrorDoesNotContain("Gradle detected a problem")
     }
-  }
-
-  @Test
-  fun checkK2Uast() {
-    getExecutor().with(OptionalBooleanOption.LINT_USE_K2_UAST, true).run(":lint")
-
-    val file = project.file("lint-results.txt")
-    assertThat(file).exists()
-    assertThat(file).contains("build.gradle:4: Warning: no Java language level directives")
-    assertThat(file).contains("MyClass.java:5: Warning: Use Boolean.valueOf(true) instead")
-    assertThat(file).contains("0 errors, 3 warnings")
   }
 
   /** Regression test for b/294385251 */

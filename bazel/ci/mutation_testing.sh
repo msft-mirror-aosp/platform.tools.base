@@ -33,6 +33,10 @@ mkdir -p "${mutation_testing_dir}"
 mkdir -p "${temp_mutation_testing_dir}"
 
 # Bazel configuration for CI builds
+if [[ -n "${BUILD_NUMBER}" ]]; then
+  echo "common --credential_helper=*.pkg.dev=%workspace%/build/bazel/tools/ci_credhelper.py" >> "${WORKSPACE}/ci.bazelrc"
+  echo "common --credential_helper=*.googleapis.com=%workspace%/build/bazel/tools/ci_credhelper.py" >> "${WORKSPACE}/ci.bazelrc"
+fi
 readonly config_options="--config=ci --config=remote-exec"
 
 # Common Functions

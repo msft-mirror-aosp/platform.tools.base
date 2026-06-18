@@ -55,6 +55,7 @@ register_toolchains(
     "//prebuilts/studio/jdk/jdk11:runtime_toolchain_definition",
     "//prebuilts/studio/jdk/jdk17:runtime_toolchain_definition",
     "//prebuilts/studio/jdk/jbr-next:runtime_toolchain_definition",
+    "//prebuilts/studio/jdk/jbr25:runtime_toolchain_definition",
 
     # Java runtime used to execute the Java compiler ('javac')
     "//prebuilts/studio/jdk:java8_compile_toolchain_definition",
@@ -64,8 +65,8 @@ register_toolchains(
 
     # Bazel want those for bootclasspath shenanigans. Not used in studio-main rules
     # https://github.com/bazelbuild/rules_java/blob/master/toolchains/BUILD#L75
-    "//prebuilts/studio/jdk/jdk17:bootstrap_runtime_toolchain_definition",
     "//prebuilts/studio/jdk/jbr-next:bootstrap_runtime_toolchain_definition",
+    "//prebuilts/studio/jdk/jbr25:bootstrap_runtime_toolchain_definition",
 )
 
 # CC toolchain dependencies

@@ -23,7 +23,7 @@ import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
 import com.android.build.gradle.integration.common.fixture.model.toValueString
 import com.android.build.gradle.integration.common.utils.TestFileUtils
-import com.android.builder.model.SyncIssue
+import com.android.builder.model.v2.ide.SyncIssue
 import com.google.common.truth.Truth
 import org.junit.Before
 import org.junit.Rule

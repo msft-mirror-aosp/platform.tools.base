@@ -63,7 +63,7 @@ public final class DeviceSystemImageMatcher {
             return SystemImageTags.isTvImage(tags);
         }
 
-        // AI Glasses supports different tags since there are a couple of different images
+        // Intelligent Eyewear supports different tags since there are a couple of different images
         // circulating. SystemImageTags and Device handle this correctly.
         if (Device.isAiGlasses(device)) {
             return SystemImageTags.isAiGlassesImage(tags);

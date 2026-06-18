@@ -85,6 +85,7 @@ kotlin_library(
         "@maven//:org.apache.httpcomponents.httpmime",
         "@maven//:org.glassfish.jaxb.jaxb-runtime",
         "@maven//:org.jetbrains.kotlin.kotlin-reflect",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
     ],
 )
 

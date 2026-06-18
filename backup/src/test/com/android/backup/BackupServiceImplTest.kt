@@ -490,7 +490,7 @@ class BackupServiceImplTest {
     assertThat(bmgrException.message)
       .isEqualTo(
         """
-        Command 'bmgr backupnow @pm@ com.app --non-incremental --monitor-verbose' failed with the following output:
+        Command 'bmgr backupnow @pm@ 'com.app' --non-incremental --monitor-verbose' failed with the following output:
         Running non-incremental backup for 2 requested packages.
         Package @pm@ with result: Success
         => Event{AGENT / FULL_BACKUP_CANCEL : package = com.example.empty(v1)}
@@ -922,7 +922,7 @@ class BackupServiceImplTest {
     assertThat(bmgrException.message)
       .isEqualTo(
         """
-        Command 'bmgr restore 9bc1546914997f6c com.app --monitor-verbose' failed with the following output:
+        Command 'bmgr restore 9bc1546914997f6c 'com.app' --monitor-verbose' failed with the following output:
         => Event{BACKUP_MANAGER_POLICY / SIGNATURE_MISMATCH : package = com.app(v1)}
         restoreFinished: -1
         """

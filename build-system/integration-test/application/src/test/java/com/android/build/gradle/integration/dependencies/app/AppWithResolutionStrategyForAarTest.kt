@@ -73,6 +73,9 @@ class AppWithResolutionStrategyForAarTest : ModelComparator() {
 
   @Test
   fun `test debug VariantDependencies model`() {
+    for (m in listOf("app", "library")) {
+      TestFileUtils.appendToFile(project.getSubproject(m).buildFile, "android.enableKotlin = false\n")
+    }
     val result = project.modelV2().ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
 
     with(result).compareVariantDependencies(projectAction = { getProject(":app") }, goldenFile = "app_debugVariantDependencies")
@@ -80,6 +83,9 @@ class AppWithResolutionStrategyForAarTest : ModelComparator() {
 
   @Test
   fun `test release VariantDependencies model`() {
+    for (m in listOf("app", "library")) {
+      TestFileUtils.appendToFile(project.getSubproject(m).buildFile, "android.enableKotlin = false\n")
+    }
     val result = project.modelV2().ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "release")
 
     with(result).compareVariantDependencies(projectAction = { getProject(":app") }, goldenFile = "app_releaseVariantDependencies")

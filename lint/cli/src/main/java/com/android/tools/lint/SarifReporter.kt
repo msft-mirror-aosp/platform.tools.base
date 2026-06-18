@@ -76,35 +76,33 @@ class SarifReporter
 constructor(client: LintCliClient, output: File) : Reporter(client, output) {
   private val writer: Writer = BufferedWriter(Files.newWriter(output, UTF_8))
   private val incidentSnippets = mutableMapOf<Incident, String>()
-  private var root: File? = null
-  private val home: File = File(System.getProperty("user.home"))
+  private val projectRoots = mutableMapOf<com.android.tools.lint.detector.api.Project, File?>()
+  private val lineOffsets = mutableMapOf<File, IntArray>()
+  private val home: File = File(System.getProperty("user.home") ?: "/")
 
+  /** Returns the root directory for the project associated with the given [incident]. The results are cached for performance. */
   private fun getRoot(incident: Incident): File? {
-    return root
-      ?: client.getRootDir()
-      ?: run {
-          val project = incident.project
-          if (project != null) {
-            // Workaround: we need the root project; and the client couldn't compute it.
-            // We don't just want the project directory, we want the root, which often
-            // is not the same; as a temporary workaround before this shows up in the
-            // model (see LintCliClient#getRootDir) we find the highest directory that
-            // supports build.grade/kts.
-            var dir = project.dir
-            while (true) {
-              val parent = dir.parentFile ?: break
-              if (File(parent, FN_BUILD_GRADLE).exists() || File(parent, FN_BUILD_GRADLE_KTS).exists()) {
-                dir = parent
-              } else {
-                break
-              }
+    val project = incident.project ?: return null
+    return projectRoots.getOrPut(project) {
+      client.getRootDir()
+        ?: run {
+          // Workaround: we need the root project; and the client couldn't compute it.
+          // We don't just want the project directory, we want the root, which often
+          // is not the same; as a temporary workaround before this shows up in the
+          // model (see LintCliClient#getRootDir) we find the highest directory that
+          // supports build.grade/kts.
+          var dir = project.dir
+          while (true) {
+            val parent = dir.parentFile ?: break
+            if (File(parent, FN_BUILD_GRADLE).exists() || File(parent, FN_BUILD_GRADLE_KTS).exists()) {
+              dir = parent
+            } else {
+              break
             }
-            dir
-          } else {
-            null
           }
+          dir
         }
-        .also { root = it }
+    }
   }
 
   @Throws(IOException::class)
@@ -409,7 +407,7 @@ constructor(client: LintCliClient, output: File) : Reporter(client, output) {
           null
         }
 
-      val context = computeContext(fileText, start, end)
+      val context = computeContext(file, fileText, start, end)
 
       writer.indent(indent++).write("\"region\": {\n")
       writer.indent(indent).write("\"startLine\": ${start.line + 1},\n")
@@ -504,82 +502,52 @@ constructor(client: LintCliClient, output: File) : Reporter(client, output) {
   }
 
   /**
+   * Returns an array where each entry represents the character offset of the beginning of that line (0-indexed). The results are cached for
+   * performance.
+   */
+  private fun getLineOffsets(file: File, fileText: CharSequence): IntArray {
+    return lineOffsets.getOrPut(file) {
+      val offsets = mutableListOf(0)
+      for (i in fileText.indices) {
+        if (fileText[i] == '\n') {
+          offsets.add(i + 1)
+        }
+      }
+      offsets.toIntArray()
+    }
+  }
+
+  /**
    * The SARIF format has a way to indicate the "context" around a line error: this is a few lines above and a few lines below the error
    * segment.
    *
-   * This CL computes two locations: the location of the start of this snippet, a few lines above, and the location of the end of this
+   * This method computes two locations: the location of the start of this snippet, a few lines above, and the location of the end of this
    * snippet, at the end of the line a few lines below. (When the error message is near the beginning of the file or the end of the file the
    * locations are of course clamped to the beginning or end of the file).
    */
-  private fun computeContext(fileText: CharSequence, lineStart: Position, lineEnd: Position): Pair<Position, Position>? {
+  private fun computeContext(file: File, fileText: CharSequence, lineStart: Position, lineEnd: Position): Pair<Position, Position>? {
     if (fileText.isEmpty()) {
       return null
     }
+
+    val offsets = getLineOffsets(file, fileText)
     val size = 2 // size of window: number of additional lines on each side
-    val start: Position
-    if (lineStart.offset > 0) {
-      var beginLine = lineStart.line
-      val beginOffset: Int
-      var offset = lineStart.offset - 1
-      for (i in 0 until size) {
-        while (true) {
-          if (offset == 0) {
-            break
-          }
-          val ch = fileText[offset--]
-          if (ch == '\n') {
-            beginLine--
-            break
-          }
-        }
-      }
-      while (true) {
-        if (offset == 0) {
-          beginOffset = 0
-          break
-        } else if (fileText[offset] == '\n') {
-          beginOffset = offset + 1
-          break
-        }
-        offset--
-      }
-      start = DefaultPosition(beginLine, 1, beginOffset)
+
+    val beginLine = (lineStart.line - size).coerceAtLeast(0)
+    val beginOffset = offsets[beginLine]
+    val start = DefaultPosition(beginLine, 1, beginOffset)
+
+    val targetEndLine = lineEnd.line + size + 1
+    val endLine: Int
+    val endOffset: Int
+    if (targetEndLine < offsets.size) {
+      endLine = targetEndLine
+      endOffset = offsets[targetEndLine]
     } else {
-      start = lineStart
+      endLine = offsets.size - 1
+      endOffset = fileText.length
     }
-
-    var endOffset = lineEnd.offset
-    var endLine = lineEnd.line
-    var endColumn = lineEnd.column
-    var offset = endOffset
-    while (offset < fileText.length) {
-      if (fileText[offset++] == '\n') {
-        endLine++
-        endColumn = 1
-        endOffset = offset
-        break
-      }
-      if (offset == fileText.length) {
-        endOffset = offset
-      }
-      endColumn++
-    }
-    for (i in 0 until size) {
-      while (offset < fileText.length) {
-        if (fileText[offset++] == '\n') {
-          endLine++
-          endColumn = 1
-          endOffset = offset
-          break
-        }
-        if (offset == fileText.length) {
-          endOffset = offset
-        }
-        endColumn++
-      }
-    }
-
-    val end = DefaultPosition(endLine, endColumn, endOffset)
+    val end = DefaultPosition(endLine, 1, endOffset)
 
     return Pair(start, end)
   }

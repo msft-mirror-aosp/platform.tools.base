@@ -55,6 +55,7 @@ import com.android.build.gradle.internal.scope.InternalArtifactType.FULL_JAR
 import com.android.build.gradle.internal.scope.InternalArtifactType.GLOBAL_SYNTHETICS_MERGED
 import com.android.build.gradle.internal.scope.InternalArtifactType.JAVA_DOC_JAR
 import com.android.build.gradle.internal.scope.InternalArtifactType.JAVA_RES
+import com.android.build.gradle.internal.scope.InternalArtifactType.JAVA_RES_COMPRESSED_JAR
 import com.android.build.gradle.internal.scope.InternalArtifactType.LIBRARY_AND_LOCAL_JARS_JNI
 import com.android.build.gradle.internal.scope.InternalArtifactType.LIBRARY_ART_PROFILE
 import com.android.build.gradle.internal.scope.InternalArtifactType.LIBRARY_JNI
@@ -146,6 +147,7 @@ class PublishingSpecs {
         api(COMPILE_APP_CLASSES_JAR, ArtifactType.CLASSES_JAR)
         runtime(RUNTIME_APP_CLASSES_JAR, ArtifactType.CLASSES_JAR)
         output(JAVA_RES, ArtifactType.JAVA_RES)
+        output(JAVA_RES_COMPRESSED_JAR, ArtifactType.JAVA_RES)
         api(OBFUSCATION_MAPPING_FILE, ArtifactType.APK_MAPPING)
         api(OBFUSCATION_MAPPING_PARTITION_FILE, ArtifactType.APK_MAPPING_PARTITION)
 
@@ -189,6 +191,7 @@ class PublishingSpecs {
         api(COMPILE_APP_CLASSES_JAR, ArtifactType.CLASSES_JAR)
         runtime(RUNTIME_APP_CLASSES_JAR, ArtifactType.CLASSES_JAR)
         output(JAVA_RES, ArtifactType.JAVA_RES)
+        output(JAVA_RES_COMPRESSED_JAR, ArtifactType.JAVA_RES)
         api(OBFUSCATION_MAPPING_FILE, ArtifactType.APK_MAPPING)
         api(OBFUSCATION_MAPPING_PARTITION_FILE, ArtifactType.APK_MAPPING_PARTITION)
 
@@ -272,6 +275,7 @@ class PublishingSpecs {
         runtime(PUBLIC_RES, ArtifactType.PUBLIC_RES)
         runtime(COMPILE_SYMBOL_LIST, ArtifactType.COMPILE_SYMBOL_LIST)
         runtime(JAVA_RES, ArtifactType.JAVA_RES)
+        runtime(JAVA_RES_COMPRESSED_JAR, ArtifactType.JAVA_RES)
         runtime(CONSUMER_PROGUARD_DIR, ArtifactType.UNFILTERED_PROGUARD_RULES)
         runtime(NAVIGATION_JSON, ArtifactType.NAVIGATION_JSON)
         runtime(UPDATED_NAVIGATION_XML, ArtifactType.NAVIGATION_XML)
@@ -331,6 +335,7 @@ class PublishingSpecs {
         runtime(PUBLIC_RES, ArtifactType.PUBLIC_RES)
         runtime(COMPILE_SYMBOL_LIST, ArtifactType.COMPILE_SYMBOL_LIST)
         runtime(JAVA_RES, ArtifactType.JAVA_RES)
+        runtime(JAVA_RES_COMPRESSED_JAR, ArtifactType.JAVA_RES)
         runtime(NAVIGATION_JSON, ArtifactType.NAVIGATION_JSON)
         runtime(UPDATED_NAVIGATION_XML, ArtifactType.NAVIGATION_XML)
         runtime(COMPILED_LOCAL_RESOURCES, ArtifactType.COMPILED_DEPENDENCIES_RESOURCES)
@@ -365,6 +370,7 @@ class PublishingSpecs {
         runtime(PUBLIC_RES, ArtifactType.PUBLIC_RES)
         runtime(COMPILE_SYMBOL_LIST, ArtifactType.COMPILE_SYMBOL_LIST)
         runtime(JAVA_RES, ArtifactType.JAVA_RES)
+        runtime(JAVA_RES_COMPRESSED_JAR, ArtifactType.JAVA_RES)
         runtime(AAR_METADATA, ArtifactType.AAR_METADATA)
         runtime(CONSUMER_PROGUARD_DIR, ArtifactType.UNFILTERED_PROGUARD_RULES)
         runtime(LIBRARY_AND_LOCAL_JARS_JNI, ArtifactType.JNI)
@@ -394,7 +400,6 @@ class PublishingSpecs {
       variantSpec(ComponentTypeImpl.TEST_APK)
       variantSpec(ComponentTypeImpl.ANDROID_TEST)
       variantSpec(ComponentTypeImpl.UNIT_TEST)
-      variantSpec(ComponentTypeImpl.PRIVACY_SANDBOX_SDK)
       lock()
     }
 

@@ -23,6 +23,9 @@ import static org.junit.Assert.fail;
 
 import com.android.testutils.TestUtils;
 import com.android.tools.deploy.proto.Deploy;
+import com.android.tools.deployer.common.ApplicationDumper;
+import com.android.tools.deployer.common.DeployerException;
+import com.android.tools.deployer.common.Installer;
 import com.android.tools.deployer.model.Apk;
 import com.android.tools.deployer.model.ApkEntry;
 import com.android.tools.idea.protobuf.ByteString;

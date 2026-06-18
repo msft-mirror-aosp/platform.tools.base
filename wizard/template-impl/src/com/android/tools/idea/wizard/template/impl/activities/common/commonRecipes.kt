@@ -64,6 +64,7 @@ fun RecipeExecutor.generateManifest(
   isResizeable: Boolean = false,
   libraryName: String = "",
   taskAffinity: String? = null,
+  windowSoftInputMode: String? = null,
 ) {
   generateManifestStrings(activityClass, baseFeatureResOut, isNewModule, generateActivityTitle)
 
@@ -80,6 +81,7 @@ fun RecipeExecutor.generateManifest(
       isResizeable = isResizeable,
       libraryName = libraryName,
       taskAffinity = taskAffinity,
+      windowSoftInputMode = windowSoftInputMode,
     )
 
   mergeXml(manifest, manifestOut.resolve("AndroidManifest.xml"))
@@ -193,6 +195,7 @@ fun RecipeExecutor.generateAppBar(
         xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:app="http://schemas.android.com/apk/res-auto"
         xmlns:tools="http://schemas.android.com/tools"
+        android:id="@+id/main"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         ${renderIf(isMaterial3) { "android:fitsSystemWindows=\"true\"" }}

@@ -18,13 +18,88 @@ package com.android.build.gradle.internal
 
 import com.android.build.api.artifact.impl.InternalScopedArtifacts
 import com.android.build.api.dsl.TestTaskContext
+import com.android.build.api.variant.impl.TestSuiteSourceContainer
+import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
+import com.android.build.gradle.internal.tasks.AndroidTestDiscoveryTask
+import com.android.build.gradle.internal.tasks.CompressAssetsTask
+import com.android.build.gradle.internal.tasks.DeviceSerialTestTask
+import com.android.build.gradle.internal.tasks.ProcessNavigationXmlTask
+import com.android.build.gradle.internal.tasks.SigningConfigVersionsWriterTask
+import com.android.build.gradle.internal.tasks.SigningConfigWriterTask
+import com.android.build.gradle.internal.tasks.StripDebugSymbolsTask
+import com.android.build.gradle.internal.tasks.ValidateResourcesTask
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.tasks.factory.dependsOn
+import com.android.build.gradle.internal.testsuites.impl.TestSuiteApkCreationConfig
+import com.android.build.gradle.options.BooleanOption
+import com.android.build.gradle.tasks.CompileNavigationXmlTask
 import com.android.build.gradle.tasks.TestSuiteTestTask
 import org.gradle.api.Project
+import org.gradle.api.Task
+import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.TaskProvider
+import org.gradle.api.tasks.compile.JavaCompile
 
 class TestSuiteTaskManager(project: Project, globalConfig: GlobalTaskCreationConfig) : TaskManager(project, globalConfig) {
+
+  fun createApkTestSuiteTasks(
+    testSuite: TestSuiteCreationConfig,
+    sourceContainer: TestSuiteSourceContainer,
+    javacTask: TaskProvider<out JavaCompile>,
+    preBuildTask: TaskProvider<out Task>,
+  ): TaskProvider<out Task> {
+    val apkCreationConfig = TestSuiteApkCreationConfig(testSuite, sourceContainer)
+
+    val taskContainer = apkCreationConfig.taskContainer
+    taskContainer.javacTask = javacTask
+    taskContainer.preBuildTask = preBuildTask
+
+    val sourceGenTask = taskFactory.register(apkCreationConfig.computeTaskNameInternal("generate", "Sources"))
+    taskContainer.sourceGenTask = sourceGenTask
+
+    val resourceGenTask = taskFactory.register(ValidateResourcesTask.CreateAction(apkCreationConfig))
+    taskContainer.resourceGenTask = resourceGenTask
+
+    val assetGenTask = taskFactory.register(apkCreationConfig.computeTaskNameInternal("generate", "Assets"))
+    taskContainer.assetGenTask = assetGenTask
+
+    val assembleTaskName = apkCreationConfig.computeTaskNameInternal("assemble")
+    val assembleTask = taskFactory.register(assembleTaskName)
+    taskContainer.assembleTask = assembleTask
+
+    createMergeResourcesTask(apkCreationConfig, true, emptySet())
+    val appCompileRClass = apkCreationConfig.services.projectOptions[BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS]
+    if (appCompileRClass) {
+      basicCreateMergeResourcesTask(
+        apkCreationConfig,
+        MergeType.PACKAGE,
+        includeDependencies = false,
+        processResources = false,
+        alsoOutputNotCompiledResources = false,
+        emptySet(),
+        null,
+      )
+    }
+    createMergeAssetsTask(apkCreationConfig)
+    taskFactory.register(CompressAssetsTask.CreationAction(apkCreationConfig))
+    createNavigationProcessingTasks(apkCreationConfig)
+    createApkProcessResTask(apkCreationConfig)
+    createProcessJavaResTask(apkCreationConfig)
+    createMergeJniLibFoldersTasks(apkCreationConfig)
+    taskFactory.register(StripDebugSymbolsTask.CreationAction(apkCreationConfig))
+    createPostCompilationTasks(apkCreationConfig)
+    createValidateSigningTask(apkCreationConfig)
+
+    taskFactory.register(SigningConfigWriterTask.CreationAction(apkCreationConfig))
+    taskFactory.register(SigningConfigVersionsWriterTask.CreationAction(apkCreationConfig))
+
+    taskFactory.register(AndroidTestDiscoveryTask.CreationAction(apkCreationConfig))
+
+    createPackagingTask(apkCreationConfig)
+
+    return assembleTask
+  }
 
   override val javaResMergingScopes: Set<InternalScopedArtifacts.InternalScope>
     get() = setOf()
@@ -39,11 +114,14 @@ class TestSuiteTaskManager(project: Project, globalConfig: GlobalTaskCreationCon
           creationConfig = creationConfig,
         )
       }
+    val connectedCheckSerials: Provider<List<String>> =
+      taskFactory.named(globalConfig.taskNames.connectedCheck).flatMap { test -> (test as DeviceSerialTestTask).serialValues }
+
     creationConfig.targets
       .filter { it.value.enabled }
       .forEach { mapEntry ->
         val target = mapEntry.value
-        val testSuiteTestTask = taskFactory.register(TestSuiteTestTask.CreationAction(creationConfig, target))
+        val testSuiteTestTask = taskFactory.register(TestSuiteTestTask.CreationAction(creationConfig, target, connectedCheckSerials))
         val context =
           object : TestTaskContext {
             override val targetName: String
@@ -76,5 +154,10 @@ class TestSuiteTaskManager(project: Project, globalConfig: GlobalTaskCreationCon
           testSuiteTestTask.dependsOn(setupTaskName(targetDevice))
         }
       }
+  }
+
+  private fun createNavigationProcessingTasks(creationConfig: ComponentCreationConfig) {
+    taskFactory.register(ProcessNavigationXmlTask.LibraryCreationAction(creationConfig))
+    taskFactory.register(CompileNavigationXmlTask.CreationAction(creationConfig))
   }
 }

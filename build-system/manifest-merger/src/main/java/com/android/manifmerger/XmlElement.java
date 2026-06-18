@@ -23,7 +23,6 @@ import static com.android.manifmerger.XmlElementMergeMapperKt.mapMergingElements
 import com.android.SdkConstants;
 import com.android.ide.common.blame.SourceFile;
 import com.android.ide.common.blame.SourcePosition;
-import com.android.ide.common.resources.MergingException;
 import com.android.utils.ILogger;
 import com.android.utils.SdkUtils;
 import com.android.utils.XmlUtils;
@@ -35,6 +34,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -52,8 +53,6 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * Xml {@link Element} which is mergeable.
@@ -183,10 +182,24 @@ public class XmlElement extends OrphanXmlElement {
             if (SdkConstants.TOOLS_URI.equals(attribute.getNamespaceURI())) {
                 String instruction = attribute.getLocalName();
                 if (instruction.equals(NodeOperationType.NODE_LOCAL_NAME)) {
-                    // should we flag an error when there are more than one operation type on a node ?
-                    lastNodeOperationType = NodeOperationType.valueOf(
-                            SdkUtils.camelCaseToConstantName(
-                                    attribute.getNodeValue()));
+                    // should we flag an error when there are more than one operation type on a node
+                    // ?
+                    try {
+                        lastNodeOperationType =
+                                NodeOperationType.valueOf(
+                                        SdkUtils.camelCaseToConstantName(attribute.getNodeValue()));
+                    } catch (IllegalArgumentException e) {
+                        mDocument
+                                .getReportBuilder()
+                                .addMessage(
+                                        getSourceFilePosition(),
+                                        MergingReport.Record.Severity.ERROR,
+                                        String.format(
+                                                "Invalid instruction '%1$s', "
+                                                        + "valid instructions are : %2$s",
+                                                attribute.getNodeValue(),
+                                                Joiner.on(',').join(NodeOperationType.values())));
+                    }
                 } else if (instruction.equals(
                         NodeOperationType.REQUIRED_BY_PRIVACY_SANDBOX_SDK_ATTRIBUTE_NAME)) {
                     continue;
@@ -214,17 +227,18 @@ public class XmlElement extends OrphanXmlElement {
                         } catch (IllegalArgumentException e1) {
 
                             String errorMessage =
-                                    String.format("Invalid instruction '%1$s', "
+                                    String.format(
+                                            "Invalid instruction '%1$s', "
                                                     + "valid instructions are : %2$s",
                                             instruction,
-                                            Joiner.on(',').join(AttributeOperationType.values())
-                                    );
-                            throw new RuntimeException(
-                                    MergingException.wrapException(e)
-                                            .withMessage(errorMessage)
-                                            .withFile(mDocument.getSourceFile())
-                                            .withPosition(XmlDocument.getNodePosition(getXml()))
-                                            .build());
+                                            Joiner.on(',').join(AttributeOperationType.values()));
+                            mDocument
+                                    .getReportBuilder()
+                                    .addMessage(
+                                            getSourceFilePosition(),
+                                            MergingReport.Record.Severity.ERROR,
+                                            errorMessage);
+                            continue;
                         }
                     }
                     for (String attributeName : Splitter.on(',').trimResults()

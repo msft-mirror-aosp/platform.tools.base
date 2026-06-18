@@ -15,6 +15,9 @@
  */
 package com.android.tools.deployer;
 
+import com.android.tools.deployer.common.DeployerException;
+import com.android.tools.deployer.common.JvmtiErrorCode;
+
 import org.junit.Assert;
 import org.junit.Test;
 

@@ -31,7 +31,6 @@ import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 import org.gradle.api.Project
-import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
@@ -70,10 +69,9 @@ class InstallVariantViaBundleTaskTest(private val sdkVersion: AndroidVersion) {
     whenever(deviceConnector.apiCodeName).thenReturn(sdkVersion.codename)
     whenever(deviceConnector.abis).thenReturn(listOf("x86_64"))
     whenever(deviceConnector.density).thenReturn(-1)
-    whenever(deviceConnector.supportsPrivacySandbox).thenReturn(sdkVersion.apiLevel >= 33)
   }
 
-  private fun getParams(privacySandboxSdkApksFiles: List<File> = emptyList()) =
+  private fun getParams() =
     object : InstallVariantViaBundleTask.Params() {
       override val adbExe: RegularFileProperty
         get() = project.objects.fileProperty().fileValue(File("adb.exe"))
@@ -107,9 +105,6 @@ class InstallVariantViaBundleTaskTest(private val sdkVersion: AndroidVersion) {
 
       override val analyticsService: Property<AnalyticsService>
         get() = FakeGradleProperty(FakeNoOpAnalyticsService())
-
-      override val privacySandboxSdkApksFiles: ConfigurableFileCollection
-        get() = project.objects.fileCollection().from(privacySandboxSdkApksFiles)
     }
 
   @Test

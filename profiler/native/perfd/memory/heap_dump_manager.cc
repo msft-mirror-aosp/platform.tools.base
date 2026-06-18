@@ -139,7 +139,12 @@ void HeapDumpManager::HeapDumpMain(int32_t pid, std::shared_ptr<File> file,
   std::string unused;
   bool result = activity_manager_->TriggerHeapDump(pid, file->path(), &unused);
   if (result) {
-    result = WaitForHeapDumpFinish(file->path());
+    // Starting in Android Q, the 'am dumpheap' command is synchronous and waits
+    // until the dump finishes before returning. Therefore, we don't need to
+    // manually wait for the file. See ag/4276703 for details.
+    if (DeviceInfo::feature_level() < DeviceInfo::Q) {
+      result = WaitForHeapDumpFinish(file->path());
+    }
   }
 
   callback(result);

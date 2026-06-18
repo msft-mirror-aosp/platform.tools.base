@@ -19,8 +19,10 @@ import com.android.ddmlib.AdbInitOptions;
 import com.android.ddmlib.AndroidDebugBridge;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.SimpleConnectedSocket;
-import com.android.ddmlib.SocketChannelWithTimeouts;
 import com.android.testutils.AssumeUtil;
+import com.android.tools.deployer.common.AdbClient;
+import com.android.tools.deployer.common.DeployMetric;
+import com.android.tools.deployer.common.Timeouts;
 import com.android.tools.deployer.devices.FakeDevice;
 import com.android.tools.deployer.rules.ApiLevel;
 import com.android.tools.deployer.rules.FakeDeviceConnection;
@@ -98,9 +100,7 @@ public class AdbInstallerChannelManagerTest {
 
         // Even though we send two requests and both timed out, we should have pushed the binary
         // only once (so we should have only one set of rm/mkdir/chmod).
-        String[] expectedHistory = {
-            "getprop", RM_DIR, MK_DIR, CHMOD_INSTALLER, CHMOD_DIR, CHOWN_DIR
-        };
+        String[] expectedHistory = {RM_DIR, MK_DIR, CHMOD_INSTALLER, CHMOD_DIR, CHOWN_DIR};
         assertHistory(device, expectedHistory);
     }
 

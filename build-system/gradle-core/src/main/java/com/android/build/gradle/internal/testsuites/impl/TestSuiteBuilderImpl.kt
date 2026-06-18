@@ -63,10 +63,10 @@ internal constructor(
       if (!flagChecked.getAndSet(true)) {
         val unstableNotice = "*Important* Test suite support is experimental and subject to change\n"
         if (variantBuilderServices.projectOptions[BooleanOption.TEST_SUITE_SUPPORT]) {
-          variantBuilderServices.issueReporter.reportWarning(IssueReporter.Type.GENERIC, unstableNotice)
+          variantBuilderServices.issueReporter.reportWarning(IssueReporter.Type.TEST_SUITE_SUPPORT_EXPERIMENTAL, unstableNotice)
         } else {
           variantBuilderServices.issueReporter.reportError(
-            IssueReporter.Type.GENERIC,
+            IssueReporter.Type.TEST_SUITE_SUPPORT_EXPERIMENTAL,
             unstableNotice +
               "If you want to use test suites support, acknowledge the warning by " +
               "setting `${BooleanOption.TEST_SUITE_SUPPORT.propertyName}=true` to gradle.properties",

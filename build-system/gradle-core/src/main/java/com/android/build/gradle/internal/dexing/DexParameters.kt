@@ -31,6 +31,7 @@ class DexParameters(
   val coreLibDesugarConfig: String?,
   val enableApiModeling: Boolean,
   val errorFormatMode: SyncOptions.ErrorFormatMode,
+  val useNoOpGlobalSyntheticsConsumer: Boolean = false,
 ) {
 
   fun toDexParametersForWorkers(
@@ -48,6 +49,7 @@ class DexParameters(
       coreLibDesugarConfig = coreLibDesugarConfig,
       enableApiModeling = enableApiModeling,
       errorFormatMode = errorFormatMode,
+      useNoOpGlobalSyntheticsConsumer = useNoOpGlobalSyntheticsConsumer,
     )
   }
 }
@@ -67,6 +69,7 @@ class DexParametersForWorkers(
   val coreLibDesugarConfig: String?,
   val enableApiModeling: Boolean,
   val errorFormatMode: SyncOptions.ErrorFormatMode,
+  val useNoOpGlobalSyntheticsConsumer: Boolean = false,
 ) : Serializable {
 
   companion object {

@@ -206,7 +206,11 @@ abstract class CheckAarMetadataTask : NonIncrementalTask() {
         creationConfig.global.versionedSdkLoader.flatMap { sdkLoader -> sdkLoader.targetAndroidVersionProvider.map { it.featureLevel } }
       )
 
-      task.disableCompileSdkChecks.setDisallowChanges(creationConfig.services.projectOptions[BooleanOption.DISABLE_COMPILE_SDK_CHECKS])
+      val globalDisable = creationConfig.services.projectOptions[BooleanOption.DISABLE_COMPILE_SDK_CHECKS]
+      val disableForTests =
+        creationConfig.componentType.isTestComponent &&
+          creationConfig.services.projectOptions[BooleanOption.DISABLE_COMPILE_SDK_CHECKS_TESTS]
+      task.disableCompileSdkChecks.setDisallowChanges(globalDisable || disableForTests)
     }
   }
 }

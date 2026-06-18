@@ -17,10 +17,8 @@
 package com.android.build.gradle.integration.lint
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.SUPPORT_LIB_VERSION
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
-import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
 import org.junit.Rule
 import org.junit.Test
@@ -35,21 +33,21 @@ class LintVectorDrawableCompatTest {
         MinimalSubProject.app("com.example.app")
           .appendToBuild(
             """
-                            android {
-                                defaultConfig {
-                                    vectorDrawables.useSupportLibrary = false
-                                }
+            android {
+                defaultConfig {
+                    vectorDrawables.useSupportLibrary = false
+                }
 
-                                lintOptions {
-                                    abortOnError = false
-                                    textOutput = file("lint-results.txt")
-                                }
-                            }
+                lintOptions {
+                    abortOnError = false
+                    textOutput = file("lint-results.txt")
+                }
+            }
 
-                            dependencies {
-                                implementation 'com.android.support:appcompat-v7:$SUPPORT_LIB_VERSION'
-                            }
-                        """
+            dependencies {
+                implementation 'androidx.appcompat:appcompat:1.6.1'
+            }
+            """
               .trimIndent()
           )
           .withFile(
@@ -86,11 +84,7 @@ class LintVectorDrawableCompatTest {
   // Regression test for b/187341964
   @Test
   fun testVectorDrawableCompat() {
-    val executor =
-      project
-        .executor()
-        // Disabled due to a dependency on com.android.support:animated-vector-drawable:28.0.0
-        .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
+    val executor = project.executor()
     executor.run("lintDebug")
     assertThat(project.file("lint-results.txt")).exists()
     assertThat(project.file("lint-results.txt"))

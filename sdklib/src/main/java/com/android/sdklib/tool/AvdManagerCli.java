@@ -74,7 +74,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -616,8 +615,7 @@ class AvdManagerCli extends CommandLineParser {
      * Displays the list of available devices.
      */
     private void displayDeviceList() {
-        List<Device> devices =
-                new ArrayList<>(createDeviceManager().getDevices(DeviceManager.ALL_DEVICES));
+        List<Device> devices = new ArrayList<>(createDeviceManager().getDevices());
         Collections.sort(devices, Device.getDisplayComparator());
 
         // Compact output, suitable for scripts.
@@ -834,8 +832,7 @@ class AvdManagerCli extends CommandLineParser {
             Device device = null;
             String deviceParam = getParamDevice();
             if (deviceParam != null) {
-                List<Device> devices = new ArrayList<>(
-                        createDeviceManager().getDevices(DeviceManager.ALL_DEVICES));
+                List<Device> devices = new ArrayList<>(createDeviceManager().getDevices());
                 Collections.sort(devices, Device.getDisplayComparator());
 
                 int index = -1;
@@ -868,7 +865,7 @@ class AvdManagerCli extends CommandLineParser {
                 // want custom hardware.
                 // Start with the default values, then overlay the selected hardware.
                 hardwareConfig = defaultHardwareConfig();
-                hardwareConfig.putAll(DeviceManager.getHardwareProperties(device));
+                hardwareConfig.putAll(HardwareProperties.getHardwareProperties(device));
                 EmulatedProperties.restrictDefaultRamSize(hardwareConfig);
             } else {
                 try {

@@ -6,6 +6,8 @@ local_archive = use_repo_rule("//tools/base/bazel:repositories.bzl", "local_arch
 
 http_jar = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_jar")
 
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
 # TODO(b/340640065): Replace with bazel_dep.
 local_repository(
     name = "googletest",
@@ -66,4 +68,62 @@ http_jar(
     urls = [
         "https://github.com/Tinder/bazel-diff/releases/download/8.1.4/bazel-diff_deploy.jar",
     ],
+)
+
+http_archive(
+    name = "gradle-profiler",
+    build_file_content = """
+package(default_visibility = ["//visibility:public"])
+
+java_import(
+    name = "gradle_profiler_jars",
+    jars = glob(["lib/*.jar"]),
+)
+
+sh_binary(
+    name = "gradle-profiler",
+    srcs = ["bin/gradle-profiler"],
+    data = glob(["lib/*.jar"]),
+)
+""",
+    sha256 = "74f39882a444d6d5616d35b3e9197f7423cd252f63f339bd3e01f662573b319c",
+    strip_prefix = "gradle-profiler-0.24.0",
+    urls = ["https://repo1.maven.org/maven2/org/gradle/profiler/gradle-profiler/0.24.0/gradle-profiler-0.24.0.zip"],
+)
+
+# TODO(b/415841192) Migrate @perfetto_repo to @perfetto.
+# This repo exposes only proto libraries, and does not need the patch applied
+# to the @perfetto repo.
+http_archive(
+    name = "perfetto_repo",
+    build_file = "@//tools/base/profiler:native/external/perfetto.BUILD",
+    sha256 = "9741938a7fc534ed302723c2b2c3c949273aa92dbf725d0e1b7229a9320b6c07",
+    strip_prefix = "perfetto-56.0",
+    url = "https://github.com/google/perfetto/archive/refs/tags/v56.0.tar.gz",
+)
+
+# An empty local repository which must be overridden according to the instructions at
+# go/agp-profiled-benchmarks if running the "_profiled" AGP build benchmarks.
+new_local_repository(
+    name = "yourkit_controller",
+    build_file = "//tools/base:yourkit-controller/yourkit.BUILD",
+    path = "tools/base/yourkit-controller",
+)
+
+new_local_repository(
+    name = "maven",
+    build_file = "//tools/base/bazel:maven/BUILD.maven",
+    path = "prebuilts/tools/common/m2",
+)
+
+new_local_repository(
+    name = "jar_jar",
+    build_file = "//tools/base/bazel/jarjar:jarjar.BUILD",
+    path = "external/jarjar",
+)
+
+new_local_repository(
+    name = "android_system_logging_repo",
+    build_file = "//tools/base/bazel:external/android_system_logging.BUILD",
+    path = "external/android/system/logging",
 )

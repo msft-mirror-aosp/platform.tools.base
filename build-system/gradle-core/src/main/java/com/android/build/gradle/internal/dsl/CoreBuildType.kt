@@ -17,6 +17,7 @@ package com.android.build.gradle.internal.dsl
 
 import com.android.build.gradle.api.JavaCompileOptions
 import com.android.builder.model.BuildType
+import org.gradle.api.model.ReplacedBy
 import org.gradle.api.provider.Property
 
 /** A build type with addition properties for building with Gradle plugin. */
@@ -29,9 +30,9 @@ interface CoreBuildType : BuildType {
 
   @get:Deprecated("Use {@link AndroidResourcesCreationConfig#useResourceShrinker()} instead. ") val isShrinkResources: Boolean
 
-  @get:Deprecated("Use {@link VariantScope#getCodeShrinker()} instead. ") val isUseProguard: Boolean?
+  @get:Deprecated("Use {@link VariantScope#getCodeShrinker()} instead. ") @get:ReplacedBy("getUseProguard") val isUseProguard: Boolean?
 
-  val isCrunchPngs: Boolean?
+  @get:ReplacedBy("getCrunchPngs") val isCrunchPngs: Boolean?
 
   @get:Deprecated("Can go away once {@link AaptOptions#cruncherEnabled} is removed. ") val isCrunchPngsDefault: Boolean
 

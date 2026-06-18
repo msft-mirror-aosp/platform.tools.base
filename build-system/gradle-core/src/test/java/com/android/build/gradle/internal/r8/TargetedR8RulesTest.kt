@@ -67,4 +67,26 @@ class TargetedR8RulesTest(val filterOutGlobalRules: Boolean) {
       }
     assertEquals(expectedRules, r8RulesContentsAtConsumer)
   }
+
+  @Test
+  fun `test Zip-Slip malicious paths are rejected`() {
+    val jarFile = tmpDir.root.resolve("malicious.jar")
+    java.util.zip.ZipOutputStream(java.io.FileOutputStream(jarFile)).use { zos ->
+      // Simulate a Zip-Slip payload targeting Windows using backslashes
+      zos.putNextEntry(java.util.zip.ZipEntry("META-INF/com.android.tools/r8/..\\..\\evil.ext"))
+      zos.write("malicious payload".toByteArray())
+      zos.closeEntry()
+
+      // Simulate a legacy ProGuard payload
+      zos.putNextEntry(java.util.zip.ZipEntry("META-INF/proguard/..\\evil.pro"))
+      zos.write("malicious payload".toByteArray())
+      zos.closeEntry()
+    }
+
+    val r8RulesAtConsumer = readFromJar(jarFile, isClassesJarInAar = false, shouldRemoveBannedGlobals = filterOutGlobalRules)
+
+    // Assert that the maliciously named entries were rejected and skipped
+    kotlin.test.assertTrue(r8RulesAtConsumer.r8Rules.isEmpty(), "Malicious R8 rule should be rejected")
+    kotlin.test.assertTrue(r8RulesAtConsumer.legacyProguardRules.isEmpty(), "Malicious legacy Proguard rule should be rejected")
+  }
 }

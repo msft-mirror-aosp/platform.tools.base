@@ -16,6 +16,8 @@
 package com.android.tools.deployer;
 
 import com.android.tools.deploy.proto.Deploy;
+import com.android.tools.deployer.common.DeployerException;
+
 import com.google.common.collect.Lists;
 import com.sun.jdi.ArrayReference;
 import com.sun.jdi.ClassType;
@@ -25,10 +27,10 @@ import com.sun.jdi.ObjectReference;
 import com.sun.jdi.ReferenceType;
 import com.sun.jdi.ThreadReference;
 import com.sun.jdi.VirtualMachine;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 /**
  * An implementation of the {@link ClassRedefiner} that invoke the Android Virtual Machine's class

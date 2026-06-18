@@ -18,7 +18,7 @@ package com.android.deploy.service
 import com.android.tools.deploy.proto.Deploy
 import com.android.tools.deploy.proto.Deploy.InstallerRequest
 import com.android.tools.deploy.proto.Deploy.InstallerResponse
-import com.android.tools.deployer.Installer
+import com.android.tools.deployer.common.Installer
 import java.io.IOException
 
 class FakeInstaller : Installer() {

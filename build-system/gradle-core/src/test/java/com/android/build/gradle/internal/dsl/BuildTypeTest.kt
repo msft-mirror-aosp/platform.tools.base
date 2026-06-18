@@ -103,6 +103,7 @@ class BuildTypeTest {
         "isZipAlignEnabled\$annotations",
         "getUseProguard",
         "getCrunchPngs",
+        "getBaselineProfile",
       ),
     ) { original: BuildType ->
       val copy = dslServices.newDecoratedInstance(BuildType::class.java, original.name, dslServices, ComponentTypeImpl.BASE_APK)

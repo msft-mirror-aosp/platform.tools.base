@@ -18,7 +18,6 @@ package com.android.tools.idea.wizard.template.impl.activities.tabbedActivity.sr
 
 import com.android.tools.idea.wizard.template.Language
 import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
-import com.android.tools.idea.wizard.template.getMaterialComponentName
 import com.android.tools.idea.wizard.template.impl.activities.common.findViewById
 import com.android.tools.idea.wizard.template.impl.activities.common.importViewBindingClass
 import com.android.tools.idea.wizard.template.impl.activities.common.layoutToViewBindingClass
@@ -29,7 +28,6 @@ fun tabsActivityKt(
   layoutName: String,
   packageName: String,
   applicationPackage: String?,
-  useAndroidX: Boolean,
   isViewBindingSupported: Boolean,
 ): String {
 
@@ -44,13 +42,15 @@ fun tabsActivityKt(
   return """package ${escapeKotlinIdentifier(packageName)}
 
 import android.os.Bundle
-import ${getMaterialComponentName("android.support.design.widget.FloatingActionButton", useAndroidX)}
-import ${getMaterialComponentName("android.support.design.widget.Snackbar", useAndroidX)}
-import ${getMaterialComponentName("android.support.design.widget.TabLayout", useAndroidX)}
-import ${getMaterialComponentName("android.support.v4.view.ViewPager", useAndroidX)}
-import ${getMaterialComponentName("android.support.v7.app.AppCompatActivity", useAndroidX)}
-import android.view.Menu
-import android.view.MenuItem
+import androidx.activity.enableEdgeToEdge
+import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.tabs.TabLayout
+import androidx.viewpager2.widget.ViewPager2
+import com.google.android.material.tabs.TabLayoutMediator
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import ${escapeKotlinIdentifier(packageName)}.ui.main.SectionsPagerAdapter
 ${importViewBindingClass(isViewBindingSupported, packageName, applicationPackage, layoutName, Language.Kotlin)}
 
@@ -62,9 +62,15 @@ ${renderIf(isViewBindingSupported) {"""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         $contentViewBlock
-        val sectionsPagerAdapter = SectionsPagerAdapter(this, supportFragmentManager)
-        val viewPager: ViewPager = ${findViewById(
+        ViewCompat.setOnApplyWindowInsetsListener(${findViewById(Language.Kotlin, isViewBindingSupported, id = "main")}) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            insets
+        }
+        val sectionsPagerAdapter = SectionsPagerAdapter(this, this)
+        val viewPager: ViewPager2 = ${findViewById(
           Language.Kotlin,
           isViewBindingSupported = isViewBindingSupported,
           id = "view_pager",)}
@@ -73,7 +79,9 @@ ${renderIf(isViewBindingSupported) {"""
           Language.Kotlin,
           isViewBindingSupported = isViewBindingSupported,
           id = "tabs",)}
-        tabs.setupWithViewPager(viewPager)
+        TabLayoutMediator(tabs, viewPager) { tab, position ->
+            tab.text = sectionsPagerAdapter.getPageTitle(position)
+        }.attach()
         val fab: FloatingActionButton = ${findViewById(
           Language.Kotlin,
           isViewBindingSupported = isViewBindingSupported,

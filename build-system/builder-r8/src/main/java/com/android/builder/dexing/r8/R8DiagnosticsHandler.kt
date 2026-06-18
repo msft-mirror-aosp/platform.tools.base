@@ -27,7 +27,7 @@ import java.nio.file.Path
 
 /** Handle R8-specific warning/errors and capture additional information. */
 class R8DiagnosticsHandler(
-  private val missingKeepRulesFile: Path,
+  private val missingKeepRulesFile: Path?,
   private val messageReceiver: MessageReceiver,
   private val mainDexListDisallowed: Boolean,
   tool: String,
@@ -66,36 +66,48 @@ class R8DiagnosticsHandler(
   }
 
   private fun generateMissingRulesFile(warning: MissingDefinitionsDiagnostic, messageKind: Message.Kind) {
-    messageReceiver.receiveMessage(
-      Message(
-        messageKind,
-        """
+    if (missingKeepRulesFile != null) {
+      messageReceiver.receiveMessage(
+        Message(
+          messageKind,
+          """
                                 Missing classes detected while running R8. Please add the missing classes or apply additional keep rules that are generated in $missingKeepRulesFile.
                                 """
-          .trimIndent(),
+            .trimIndent(),
+        )
       )
-    )
-    val missingClasses =
-      warning.missingDefinitions.mapNotNull {
-        if (it.isMissingClass) {
-          it.asMissingClass().classReference.typeName
-        } else null
-      }
-    missingKeepRulesFile
-      .toFile()
-      .writeText(
-        missingClasses.joinToString(
-          separator = System.lineSeparator(),
-          prefix =
-            """
-            # Please add these rules to your existing keep rules in order to suppress warnings.
-            # This is generated automatically by the Android Gradle plugin.
-
-            """
-              .trimIndent(),
-        ) {
-          "-dontwarn $it"
+      val missingClasses =
+        warning.missingDefinitions.mapNotNull {
+          if (it.isMissingClass) {
+            it.asMissingClass().classReference.typeName
+          } else null
         }
+      missingKeepRulesFile
+        .toFile()
+        .writeText(
+          missingClasses.joinToString(
+            separator = System.lineSeparator(),
+            prefix =
+              """
+              # Please add these rules to your existing keep rules in order to suppress warnings.
+              # This is generated automatically by the Android Gradle plugin.
+
+              """
+                .trimIndent(),
+          ) {
+            "-dontwarn $it"
+          }
+        )
+    } else {
+      messageReceiver.receiveMessage(
+        Message(
+          messageKind,
+          """
+          Missing classes detected while running R8. Please run build with optimization to get missing rules file with list of missing classes.
+          """
+            .trimIndent(),
+        )
       )
+    }
   }
 }

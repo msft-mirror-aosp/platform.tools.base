@@ -19,8 +19,6 @@ package com.android.build.gradle.internal.tasks
 import com.android.build.api.artifact.impl.InternalScopedArtifacts
 import com.android.build.api.variant.ScopedArtifacts
 import com.android.build.gradle.internal.LoggerWrapper
-import com.android.build.gradle.internal.packaging.PackagingFileAction
-import com.android.build.gradle.internal.packaging.ParsedPackagingOptions
 import com.android.builder.merge.DelegateIncrementalFileMergerOutput
 import com.android.builder.merge.FilterIncrementalFileMergerInput
 import com.android.builder.merge.IncrementalFileMerger
@@ -30,6 +28,8 @@ import com.android.builder.merge.IncrementalFileMergerState
 import com.android.builder.merge.MergeOutputWriters
 import com.android.builder.merge.StreamMergeAlgorithms
 import com.android.builder.packaging.PackagingUtils
+import com.android.builder.packaging.ParsedPackagingOptions
+import com.android.builder.packaging.ParsedPackagingOptions.JavaResPackagingFileAction
 import com.android.tools.build.apkzlib.zip.ZFileOptions
 import com.android.utils.FileUtils
 import com.google.common.collect.ImmutableList
@@ -41,6 +41,8 @@ import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
 import java.util.function.Predicate
 import org.gradle.api.logging.Logging
+
+internal class CompressedJavaResJar(val file: File, val priority: JavaResMergingPriority)
 
 internal enum class JavaResMergingPriority(val value: Int) {
   HIGH(0),
@@ -115,7 +117,7 @@ internal class MergeJavaResourcesDelegate(
      */
 
     // Filter inputs.
-    val inputFilter = acceptedPathsPredicate.and { path -> packagingOptions.getAction(path) != PackagingFileAction.EXCLUDE }
+    val inputFilter = acceptedPathsPredicate.and { path -> packagingOptions.getAction(path) != JavaResPackagingFileAction.EXCLUDE }
 
     /*
      * We need a custom output to handle the case in which the same path appears in multiple
@@ -150,13 +152,12 @@ internal class MergeJavaResourcesDelegate(
       StreamMergeAlgorithms.select { path ->
         val packagingAction = packagingOptions.getAction(path)
         when (packagingAction) {
-          PackagingFileAction.EXCLUDE ->
+          JavaResPackagingFileAction.EXCLUDE ->
             // Should have been excluded from the input.
             throw AssertionError()
-          PackagingFileAction.PICK_FIRST -> return@select StreamMergeAlgorithms.pickFirst()
-          PackagingFileAction.MERGE -> return@select StreamMergeAlgorithms.concat()
-          PackagingFileAction.NONE -> return@select StreamMergeAlgorithms.acceptOnlyOne()
-          else -> throw AssertionError()
+          JavaResPackagingFileAction.PICK_FIRST -> return@select StreamMergeAlgorithms.pickFirst()
+          JavaResPackagingFileAction.MERGE -> return@select StreamMergeAlgorithms.concat()
+          JavaResPackagingFileAction.NONE -> return@select StreamMergeAlgorithms.acceptOnlyOne()
         }
       }
 
@@ -192,7 +193,7 @@ internal class MergeJavaResourcesDelegate(
 
         private fun filter(path: String, inputs: List<IncrementalFileMergerInput>): ImmutableList<IncrementalFileMergerInput> {
           val packagingAction = packagingOptions.getAction(path)
-          val shouldFilterInputs = packagingAction == PackagingFileAction.NONE && inputs.any { highPriorityInputs.contains(it) }
+          val shouldFilterInputs = packagingAction == JavaResPackagingFileAction.NONE && inputs.any { highPriorityInputs.contains(it) }
           return if (shouldFilterInputs) {
             // Warn if filtering out "low priority inputs" resolves collisions. Future
             // AGP versions will not do this filtering and will result in an error instead.

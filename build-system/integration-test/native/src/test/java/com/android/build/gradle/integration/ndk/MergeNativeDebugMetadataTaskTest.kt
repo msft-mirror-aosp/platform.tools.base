@@ -26,7 +26,6 @@ import com.android.build.gradle.internal.dsl.NdkOptions.DebugSymbolLevel
 import com.android.build.gradle.internal.dsl.NdkOptions.DebugSymbolLevel.FULL
 import com.android.build.gradle.internal.dsl.NdkOptions.DebugSymbolLevel.NONE
 import com.android.build.gradle.internal.dsl.NdkOptions.DebugSymbolLevel.SYMBOL_TABLE
-import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.apk.Zip
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.FileUtils
@@ -52,11 +51,7 @@ class MergeNativeDebugMetadataTaskTest(private val debugSymbolLevel: DebugSymbol
 
   @get:Rule
   val project: GradleTestProject =
-    GradleTestProject.builder()
-      .fromTestProject("dynamicApp")
-      .addGradleProperties("${BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT.propertyName}=false")
-      .setSideBySideNdkVersion(DEFAULT_NDK_SIDE_BY_SIDE_VERSION)
-      .create()
+    GradleTestProject.builder().fromTestProject("dynamicApp").setSideBySideNdkVersion(DEFAULT_NDK_SIDE_BY_SIDE_VERSION).create()
 
   @Before
   fun setUp() {

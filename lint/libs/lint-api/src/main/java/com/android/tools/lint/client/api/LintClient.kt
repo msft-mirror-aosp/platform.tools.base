@@ -149,7 +149,7 @@ abstract class LintClient {
    *   maxVersion for a permission tag to be added to the
    */
   @Deprecated(
-    "Use the new report(Incident) method instead",
+    "Use the new report(Context, Incident) method instead",
     ReplaceWith("report(context, Incident(issue, message, location, fix), format)", "com.android.tools.lint.detector.api.Incident"),
   )
   fun report(context: Context, issue: Issue, severity: Severity, location: Location, message: String, format: TextFormat, fix: LintFix?) {

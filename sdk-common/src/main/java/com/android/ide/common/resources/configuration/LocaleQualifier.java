@@ -611,4 +611,31 @@ public final class LocaleQualifier extends ResourceQualifier {
         }
         return false;
     }
+
+    @Override
+    public boolean isBetterMatchThan(
+            @Nullable ResourceQualifier compareTo, @NonNull ResourceQualifier reference) {
+        if (compareTo == null) {
+            return true;
+        }
+
+        LocaleQualifier compareQualifier = (LocaleQualifier) compareTo;
+        LocaleQualifier referenceQualifier = (LocaleQualifier) reference;
+
+        boolean thisScriptMatches = Objects.equals(mScript, referenceQualifier.mScript);
+        boolean compareScriptMatches = Objects.equals(compareQualifier.mScript, referenceQualifier.mScript);
+
+        if (thisScriptMatches != compareScriptMatches) {
+            return thisScriptMatches;
+        }
+
+        boolean thisRegionMatches = Objects.equals(mRegion, referenceQualifier.mRegion);
+        boolean compareRegionMatches = Objects.equals(compareQualifier.mRegion, referenceQualifier.mRegion);
+
+        if (thisRegionMatches != compareRegionMatches) {
+            return thisRegionMatches;
+        }
+
+        return false;
+    }
 }

@@ -16,8 +16,10 @@
 package com.android.tools.deployer;
 
 import com.android.annotations.Trace;
+import com.android.tools.deployer.common.DeployerException;
 import com.android.tools.deployer.model.DexClass;
 import com.android.tools.deployer.model.FileDiff;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;

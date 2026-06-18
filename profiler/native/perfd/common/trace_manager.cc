@@ -32,6 +32,13 @@ CaptureInfo* TraceManager::StartCapture(
   std::lock_guard<std::recursive_mutex> lock(capture_mutex_);
 
   const auto& app_name = configuration.app_name();
+  if (app_name.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRS"
+                                 "TUVWXYZ0123456789._:-") !=
+      std::string::npos) {
+    status->set_status(TraceStartStatus::FAILURE);
+    status->set_error_message("Invalid application name");
+    return nullptr;
+  }
   // obtain the CircularBuffer, create in place if one does not exist already.
   CircularBuffer<CaptureInfo>& cache =
       capture_cache_
@@ -71,7 +78,8 @@ CaptureInfo* TraceManager::StartCapture(
         success = activity_manager_->StartProfiling(
             mode, app_name, art_options.sampling_interval_us(),
             art_options.dual_clock(), configuration.temp_path(), &error_message,
-            &error_code, startup_profiling);
+            &error_code, art_options.profiler_output_version(),
+            startup_profiling);
         break;
       }
       case TraceConfiguration::kAtraceOptions: {

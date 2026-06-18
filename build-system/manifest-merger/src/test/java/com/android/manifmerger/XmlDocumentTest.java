@@ -17,6 +17,7 @@
 package com.android.manifmerger;
 
 import static com.android.manifmerger.MergingReport.Record.Severity.ERROR;
+
 import static org.junit.Assert.assertThrows;
 
 import com.android.SdkConstants;
@@ -24,16 +25,11 @@ import com.android.ide.common.blame.SourceFile;
 import com.android.sdklib.SdkVersionInfo;
 import com.android.testutils.MockLog;
 import com.android.utils.ILogger;
+
 import com.google.common.collect.ImmutableList;
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.List;
-import java.util.Optional;
-import java.util.logging.Logger;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
+
 import junit.framework.TestCase;
+
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.w3c.dom.Document;
@@ -44,6 +40,17 @@ import org.xml.sax.ErrorHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.List;
+import java.util.Optional;
+import java.util.logging.Logger;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 
 /** Tests for {@link XmlDocument} */
 public class XmlDocumentTest extends TestCase {
@@ -1624,8 +1631,7 @@ public class XmlDocumentTest extends TestCase {
     public void testMultipleIntentFilter_sameKey_noLibraryDeclaration()
             throws ParserConfigurationException, SAXException, IOException {
         String main =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                         + "    package=\"com.example.lib3\">\n"
                         + "\n"
@@ -1633,21 +1639,24 @@ public class XmlDocumentTest extends TestCase {
                         + "         <activity android:name=\"activityOne\">\n"
                         + "             <intent-filter android:icon=\"foo\">\n"
                         + "                 <action android:name=\"android.intent.action.VIEW\"/>\n"
-                        + "                 <category android:name=\"android.intent.category.DEFAULT\"/>\n"
-                        + "                 <category android:name=\"android.intent.category.BROWSABLE\"/>\n"
+                        + "                 <category"
+                        + " android:name=\"android.intent.category.DEFAULT\"/>\n"
+                        + "                 <category"
+                        + " android:name=\"android.intent.category.BROWSABLE\"/>\n"
                         + "                 <data android:scheme=\"mySpecialDeepLinkScheme\"/>\n"
                         + "                 <data android:host=\"home\"/>\n"
                         + "             </intent-filter>\n"
                         + "             <intent-filter android:icon=\"bar\">\n"
                         + "                 <action android:name=\"android.intent.action.VIEW\"/>\n"
-                        + "                 <category android:name=\"android.intent.category.DEFAULT\"/>\n"
-                        + "                 <category android:name=\"android.intent.category.BROWSABLE\"/>\n"
+                        + "                 <category"
+                        + " android:name=\"android.intent.category.DEFAULT\"/>\n"
+                        + "                 <category"
+                        + " android:name=\"android.intent.category.BROWSABLE\"/>\n"
                         + "                 <data android:scheme=\"mySpecialDeepLinkScheme\"/>\n"
                         + "                 <data android:host=\"home\"/>\n"
                         + "             </intent-filter>\n"
                         + "         </activity>\n"
-                        + "     </application>"
-                        + "\n"
+                        + "     </application>\n"
                         + "</manifest>";
         String library = ""
                 + "<manifest\n"
@@ -1682,8 +1691,7 @@ public class XmlDocumentTest extends TestCase {
     public void testMultipleIntentFilter_sameKey_noOverride()
             throws ParserConfigurationException, SAXException, IOException {
         String main =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                         + "    package=\"com.example.lib3\">\n"
                         + "\n"
@@ -1691,39 +1699,40 @@ public class XmlDocumentTest extends TestCase {
                         + "         <activity android:name=\"activityOne\">\n"
                         + "             <intent-filter android:icon=\"foo\">\n"
                         + "                 <action android:name=\"android.intent.action.VIEW\"/>\n"
-                        + "                 <category android:name=\"android.intent.category.DEFAULT\"/>\n"
-                        + "                 <category android:name=\"android.intent.category.BROWSABLE\"/>\n"
+                        + "                 <category"
+                        + " android:name=\"android.intent.category.DEFAULT\"/>\n"
+                        + "                 <category"
+                        + " android:name=\"android.intent.category.BROWSABLE\"/>\n"
                         + "                 <data android:scheme=\"mySpecialDeepLinkScheme\"/>\n"
                         + "                 <data android:host=\"home\"/>\n"
                         + "             </intent-filter>\n"
                         + "             <intent-filter android:icon=\"bar\">\n"
                         + "                 <action android:name=\"android.intent.action.VIEW\"/>\n"
-                        + "                 <category android:name=\"android.intent.category.DEFAULT\"/>\n"
-                        + "                 <category android:name=\"android.intent.category.BROWSABLE\"/>\n"
+                        + "                 <category"
+                        + " android:name=\"android.intent.category.DEFAULT\"/>\n"
+                        + "                 <category"
+                        + " android:name=\"android.intent.category.BROWSABLE\"/>\n"
                         + "                 <data android:scheme=\"mySpecialDeepLinkScheme\"/>\n"
                         + "                 <data android:host=\"home\"/>\n"
                         + "             </intent-filter>\n"
                         + "         </activity>\n"
-                        + "     </application>"
-                        + "\n"
+                        + "     </application>\n"
                         + "</manifest>";
         String library =
-                ""
-                        + "<manifest\n"
-                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
-                        + "    xmlns:acme=\"http://acme.org/schemas\"\n"
-                        + "    package=\"com.example.lib3\">\n"
-                        + "\n"
-                        + "    <application>\n"
-                        + "         <activity android:name=\"activityOne\">\n"
-                        + "             <intent-filter>\n"
-                        + "                 <action android:name=\"android.intent.action.SEARCH\"/>\n"
-                        + "             </intent-filter>\n"
-                        + "         </activity>"
-                        + "     </application>"
-                        + "    <uses-sdk android:targetSdkVersion=\"3\"/>\n"
-                        + "\n"
-                        + "</manifest>";
+                "<manifest\n"
+                    + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                    + "    xmlns:acme=\"http://acme.org/schemas\"\n"
+                    + "    package=\"com.example.lib3\">\n"
+                    + "\n"
+                    + "    <application>\n"
+                    + "         <activity android:name=\"activityOne\">\n"
+                    + "             <intent-filter>\n"
+                    + "                 <action android:name=\"android.intent.action.SEARCH\"/>\n"
+                    + "             </intent-filter>\n"
+                    + "         </activity>     </application>    <uses-sdk"
+                    + " android:targetSdkVersion=\"3\"/>\n"
+                    + "\n"
+                    + "</manifest>";
 
         XmlDocument mainDocument = loadXmlDoc(TestUtils.sourceFile(getClass(), "main"), main);
         XmlDocument libraryDocument =
@@ -1746,8 +1755,7 @@ public class XmlDocumentTest extends TestCase {
     public void testMultipleIntentFilter_sameKey_sameOverride()
             throws ParserConfigurationException, SAXException, IOException {
         String main =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                         + "    package=\"com.example.lib3\">\n"
                         + "\n"
@@ -1755,46 +1763,49 @@ public class XmlDocumentTest extends TestCase {
                         + "         <activity android:name=\"activityOne\">\n"
                         + "             <intent-filter android:icon=\"foo\">\n"
                         + "                 <action android:name=\"android.intent.action.VIEW\"/>\n"
-                        + "                 <category android:name=\"android.intent.category.DEFAULT\"/>\n"
-                        + "                 <category android:name=\"android.intent.category.BROWSABLE\"/>\n"
+                        + "                 <category"
+                        + " android:name=\"android.intent.category.DEFAULT\"/>\n"
+                        + "                 <category"
+                        + " android:name=\"android.intent.category.BROWSABLE\"/>\n"
                         + "                 <data android:scheme=\"mySpecialDeepLinkScheme\"/>\n"
                         + "                 <data android:host=\"home\"/>\n"
                         + "             </intent-filter>\n"
                         + "             <intent-filter android:icon=\"bar\">\n"
                         + "                 <action android:name=\"android.intent.action.VIEW\"/>\n"
-                        + "                 <category android:name=\"android.intent.category.DEFAULT\"/>\n"
-                        + "                 <category android:name=\"android.intent.category.BROWSABLE\"/>\n"
+                        + "                 <category"
+                        + " android:name=\"android.intent.category.DEFAULT\"/>\n"
+                        + "                 <category"
+                        + " android:name=\"android.intent.category.BROWSABLE\"/>\n"
                         + "                 <data android:scheme=\"mySpecialDeepLinkScheme\"/>\n"
                         + "                 <data android:host=\"home\"/>\n"
                         + "             </intent-filter>\n"
                         + "         </activity>\n"
-                        + "     </application>"
-                        + "\n"
+                        + "     </application>\n"
                         + "</manifest>";
         String library =
-                ""
-                        + "<manifest\n"
-                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
-                        + "    xmlns:acme=\"http://acme.org/schemas\"\n"
-                        + "    package=\"com.example.lib3\">\n"
-                        + "\n"
-                        + "    <application>\n"
-                        + "         <activity android:name=\"activityOne\">\n"
-                        + "             <intent-filter>\n"
-                        + "                 <action android:name=\"android.intent.action.SEARCH\"/>\n"
-                        + "             </intent-filter>\n"
-                        + "             <intent-filter android:icon=\"foo\">\n"
-                        + "                 <action android:name=\"android.intent.action.VIEW\"/>\n"
-                        + "                 <category android:name=\"android.intent.category.DEFAULT\"/>\n"
-                        + "                 <category android:name=\"android.intent.category.BROWSABLE\"/>\n"
-                        + "                 <data android:scheme=\"mySpecialDeepLinkScheme\"/>\n"
-                        + "                 <data android:host=\"home\"/>\n"
-                        + "             </intent-filter>\n"
-                        + "         </activity>"
-                        + "    </application>"
-                        + "    <uses-sdk android:targetSdkVersion=\"3\"/>\n"
-                        + "\n"
-                        + "</manifest>";
+                "<manifest\n"
+                    + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                    + "    xmlns:acme=\"http://acme.org/schemas\"\n"
+                    + "    package=\"com.example.lib3\">\n"
+                    + "\n"
+                    + "    <application>\n"
+                    + "         <activity android:name=\"activityOne\">\n"
+                    + "             <intent-filter>\n"
+                    + "                 <action android:name=\"android.intent.action.SEARCH\"/>\n"
+                    + "             </intent-filter>\n"
+                    + "             <intent-filter android:icon=\"foo\">\n"
+                    + "                 <action android:name=\"android.intent.action.VIEW\"/>\n"
+                    + "                 <category"
+                    + " android:name=\"android.intent.category.DEFAULT\"/>\n"
+                    + "                 <category"
+                    + " android:name=\"android.intent.category.BROWSABLE\"/>\n"
+                    + "                 <data android:scheme=\"mySpecialDeepLinkScheme\"/>\n"
+                    + "                 <data android:host=\"home\"/>\n"
+                    + "             </intent-filter>\n"
+                    + "         </activity>    </application>    <uses-sdk"
+                    + " android:targetSdkVersion=\"3\"/>\n"
+                    + "\n"
+                    + "</manifest>";
 
         XmlDocument mainDocument = loadXmlDoc(TestUtils.sourceFile(getClass(), "main"), main);
         XmlDocument libraryDocument =
@@ -1820,8 +1831,7 @@ public class XmlDocumentTest extends TestCase {
     public void testMultipleIntentFilter_sameKey_differentOverride()
             throws ParserConfigurationException, SAXException, IOException {
         String main =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                         + "    package=\"com.example.lib3\">\n"
                         + "\n"
@@ -1829,46 +1839,49 @@ public class XmlDocumentTest extends TestCase {
                         + "         <activity android:name=\"activityOne\">\n"
                         + "             <intent-filter android:icon=\"foo\">\n"
                         + "                 <action android:name=\"android.intent.action.VIEW\"/>\n"
-                        + "                 <category android:name=\"android.intent.category.DEFAULT\"/>\n"
-                        + "                 <category android:name=\"android.intent.category.BROWSABLE\"/>\n"
+                        + "                 <category"
+                        + " android:name=\"android.intent.category.DEFAULT\"/>\n"
+                        + "                 <category"
+                        + " android:name=\"android.intent.category.BROWSABLE\"/>\n"
                         + "                 <data android:scheme=\"mySpecialDeepLinkScheme\"/>\n"
                         + "                 <data android:host=\"home\"/>\n"
                         + "             </intent-filter>\n"
                         + "             <intent-filter android:icon=\"bar\">\n"
                         + "                 <action android:name=\"android.intent.action.VIEW\"/>\n"
-                        + "                 <category android:name=\"android.intent.category.DEFAULT\"/>\n"
-                        + "                 <category android:name=\"android.intent.category.BROWSABLE\"/>\n"
+                        + "                 <category"
+                        + " android:name=\"android.intent.category.DEFAULT\"/>\n"
+                        + "                 <category"
+                        + " android:name=\"android.intent.category.BROWSABLE\"/>\n"
                         + "                 <data android:scheme=\"mySpecialDeepLinkScheme\"/>\n"
                         + "                 <data android:host=\"home\"/>\n"
                         + "             </intent-filter>\n"
                         + "         </activity>\n"
-                        + "     </application>"
-                        + "\n"
+                        + "     </application>\n"
                         + "</manifest>";
         String library =
-                ""
-                        + "<manifest\n"
-                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
-                        + "    xmlns:acme=\"http://acme.org/schemas\"\n"
-                        + "    package=\"com.example.lib3\">\n"
-                        + "\n"
-                        + "    <application>\n"
-                        + "         <activity android:name=\"activityOne\">\n"
-                        + "             <intent-filter>\n"
-                        + "                 <action android:name=\"android.intent.action.SEARCH\"/>\n"
-                        + "             </intent-filter>\n"
-                        + "             <intent-filter android:icon=\"baz\">\n"
-                        + "                 <action android:name=\"android.intent.action.VIEW\"/>\n"
-                        + "                 <category android:name=\"android.intent.category.DEFAULT\"/>\n"
-                        + "                 <category android:name=\"android.intent.category.BROWSABLE\"/>\n"
-                        + "                 <data android:scheme=\"mySpecialDeepLinkScheme\"/>\n"
-                        + "                 <data android:host=\"home\"/>\n"
-                        + "             </intent-filter>\n"
-                        + "         </activity>"
-                        + "    </application>"
-                        + "    <uses-sdk android:targetSdkVersion=\"3\"/>\n"
-                        + "\n"
-                        + "</manifest>";
+                "<manifest\n"
+                    + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                    + "    xmlns:acme=\"http://acme.org/schemas\"\n"
+                    + "    package=\"com.example.lib3\">\n"
+                    + "\n"
+                    + "    <application>\n"
+                    + "         <activity android:name=\"activityOne\">\n"
+                    + "             <intent-filter>\n"
+                    + "                 <action android:name=\"android.intent.action.SEARCH\"/>\n"
+                    + "             </intent-filter>\n"
+                    + "             <intent-filter android:icon=\"baz\">\n"
+                    + "                 <action android:name=\"android.intent.action.VIEW\"/>\n"
+                    + "                 <category"
+                    + " android:name=\"android.intent.category.DEFAULT\"/>\n"
+                    + "                 <category"
+                    + " android:name=\"android.intent.category.BROWSABLE\"/>\n"
+                    + "                 <data android:scheme=\"mySpecialDeepLinkScheme\"/>\n"
+                    + "                 <data android:host=\"home\"/>\n"
+                    + "             </intent-filter>\n"
+                    + "         </activity>    </application>    <uses-sdk"
+                    + " android:targetSdkVersion=\"3\"/>\n"
+                    + "\n"
+                    + "</manifest>";
 
         XmlDocument mainDocument = loadXmlDoc(TestUtils.sourceFile(getClass(), "main"), main);
         XmlDocument libraryDocument =
@@ -1892,8 +1905,7 @@ public class XmlDocumentTest extends TestCase {
     public void testMultipleIntentFilter_sameKey_removal()
             throws ParserConfigurationException, SAXException, IOException {
         String main =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                         + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
                         + "    package=\"com.example.lib3\">\n"
@@ -1902,46 +1914,49 @@ public class XmlDocumentTest extends TestCase {
                         + "         <activity android:name=\"activityOne\">\n"
                         + "             <intent-filter tools:node=\"remove\">\n"
                         + "                 <action android:name=\"android.intent.action.VIEW\"/>\n"
-                        + "                 <category android:name=\"android.intent.category.DEFAULT\"/>\n"
-                        + "                 <category android:name=\"android.intent.category.BROWSABLE\"/>\n"
+                        + "                 <category"
+                        + " android:name=\"android.intent.category.DEFAULT\"/>\n"
+                        + "                 <category"
+                        + " android:name=\"android.intent.category.BROWSABLE\"/>\n"
                         + "                 <data android:scheme=\"mySpecialDeepLinkScheme\"/>\n"
                         + "                 <data android:host=\"home\"/>\n"
                         + "             </intent-filter>\n"
                         + "         </activity>\n"
-                        + "     </application>"
-                        + "\n"
+                        + "     </application>\n"
                         + "</manifest>";
         String library =
-                ""
-                        + "<manifest\n"
-                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
-                        + "    xmlns:acme=\"http://acme.org/schemas\"\n"
-                        + "    package=\"com.example.lib3\">\n"
-                        + "\n"
-                        + "    <application>\n"
-                        + "         <activity android:name=\"activityOne\">\n"
-                        + "             <intent-filter>\n"
-                        + "                 <action android:name=\"android.intent.action.SEARCH\" />\n"
-                        + "             </intent-filter>\n"
-                        + "             <intent-filter android:icon=\"foo\">\n"
-                        + "                 <action android:name=\"android.intent.action.VIEW\"/>\n"
-                        + "                 <category android:name=\"android.intent.category.DEFAULT\"/>\n"
-                        + "                 <category android:name=\"android.intent.category.BROWSABLE\"/>\n"
-                        + "                 <data android:scheme=\"mySpecialDeepLinkScheme\"/>\n"
-                        + "                 <data android:host=\"home\"/>\n"
-                        + "             </intent-filter>\n"
-                        + "             <intent-filter android:icon=\"bar\">\n"
-                        + "                 <action android:name=\"android.intent.action.VIEW\"/>\n"
-                        + "                 <category android:name=\"android.intent.category.DEFAULT\"/>\n"
-                        + "                 <category android:name=\"android.intent.category.BROWSABLE\"/>\n"
-                        + "                 <data android:scheme=\"mySpecialDeepLinkScheme\"/>\n"
-                        + "                 <data android:host=\"home\"/>\n"
-                        + "             </intent-filter>\n"
-                        + "         </activity>"
-                        + "    </application>"
-                        + "    <uses-sdk android:targetSdkVersion=\"3\"/>\n"
-                        + "\n"
-                        + "</manifest>";
+                "<manifest\n"
+                    + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                    + "    xmlns:acme=\"http://acme.org/schemas\"\n"
+                    + "    package=\"com.example.lib3\">\n"
+                    + "\n"
+                    + "    <application>\n"
+                    + "         <activity android:name=\"activityOne\">\n"
+                    + "             <intent-filter>\n"
+                    + "                 <action android:name=\"android.intent.action.SEARCH\" />\n"
+                    + "             </intent-filter>\n"
+                    + "             <intent-filter android:icon=\"foo\">\n"
+                    + "                 <action android:name=\"android.intent.action.VIEW\"/>\n"
+                    + "                 <category"
+                    + " android:name=\"android.intent.category.DEFAULT\"/>\n"
+                    + "                 <category"
+                    + " android:name=\"android.intent.category.BROWSABLE\"/>\n"
+                    + "                 <data android:scheme=\"mySpecialDeepLinkScheme\"/>\n"
+                    + "                 <data android:host=\"home\"/>\n"
+                    + "             </intent-filter>\n"
+                    + "             <intent-filter android:icon=\"bar\">\n"
+                    + "                 <action android:name=\"android.intent.action.VIEW\"/>\n"
+                    + "                 <category"
+                    + " android:name=\"android.intent.category.DEFAULT\"/>\n"
+                    + "                 <category"
+                    + " android:name=\"android.intent.category.BROWSABLE\"/>\n"
+                    + "                 <data android:scheme=\"mySpecialDeepLinkScheme\"/>\n"
+                    + "                 <data android:host=\"home\"/>\n"
+                    + "             </intent-filter>\n"
+                    + "         </activity>    </application>    <uses-sdk"
+                    + " android:targetSdkVersion=\"3\"/>\n"
+                    + "\n"
+                    + "</manifest>";
 
         XmlDocument mainDocument = loadXmlDoc(TestUtils.sourceFile(getClass(), "main"), main);
         XmlDocument libraryDocument =
@@ -1975,36 +1990,38 @@ public class XmlDocumentTest extends TestCase {
                 + "\n"
                 + "</manifest>";
         String library =
-                ""
-                        + "<manifest\n"
-                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
-                        + "    xmlns:acme=\"http://acme.org/schemas\"\n"
-                        + "    package=\"com.example.lib3\">\n"
-                        + "\n"
-                        + "    <application>\n"
-                        + "         <activity android:name=\"activityOne\">\n"
-                        + "             <intent-filter>\n"
-                        + "                 <action android:name=\"android.intent.action.SEARCH\" />\n"
-                        + "             </intent-filter>\n"
-                        + "             <intent-filter android:icon=\"foo\">\n"
-                        + "                 <action android:name=\"android.intent.action.VIEW\"/>\n"
-                        + "                 <category android:name=\"android.intent.category.DEFAULT\"/>\n"
-                        + "                 <category android:name=\"android.intent.category.BROWSABLE\"/>\n"
-                        + "                 <data android:scheme=\"mySpecialDeepLinkScheme\"/>\n"
-                        + "                 <data android:host=\"home\"/>\n"
-                        + "             </intent-filter>\n"
-                        + "             <intent-filter android:icon=\"bar\">\n"
-                        + "                 <action android:name=\"android.intent.action.VIEW\"/>\n"
-                        + "                 <category android:name=\"android.intent.category.DEFAULT\"/>\n"
-                        + "                 <category android:name=\"android.intent.category.BROWSABLE\"/>\n"
-                        + "                 <data android:scheme=\"mySpecialDeepLinkScheme\"/>\n"
-                        + "                 <data android:host=\"home\"/>\n"
-                        + "             </intent-filter>\n"
-                        + "         </activity>"
-                        + "    </application>"
-                        + "    <uses-sdk android:targetSdkVersion=\"3\"/>\n"
-                        + "\n"
-                        + "</manifest>";
+                "<manifest\n"
+                    + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                    + "    xmlns:acme=\"http://acme.org/schemas\"\n"
+                    + "    package=\"com.example.lib3\">\n"
+                    + "\n"
+                    + "    <application>\n"
+                    + "         <activity android:name=\"activityOne\">\n"
+                    + "             <intent-filter>\n"
+                    + "                 <action android:name=\"android.intent.action.SEARCH\" />\n"
+                    + "             </intent-filter>\n"
+                    + "             <intent-filter android:icon=\"foo\">\n"
+                    + "                 <action android:name=\"android.intent.action.VIEW\"/>\n"
+                    + "                 <category"
+                    + " android:name=\"android.intent.category.DEFAULT\"/>\n"
+                    + "                 <category"
+                    + " android:name=\"android.intent.category.BROWSABLE\"/>\n"
+                    + "                 <data android:scheme=\"mySpecialDeepLinkScheme\"/>\n"
+                    + "                 <data android:host=\"home\"/>\n"
+                    + "             </intent-filter>\n"
+                    + "             <intent-filter android:icon=\"bar\">\n"
+                    + "                 <action android:name=\"android.intent.action.VIEW\"/>\n"
+                    + "                 <category"
+                    + " android:name=\"android.intent.category.DEFAULT\"/>\n"
+                    + "                 <category"
+                    + " android:name=\"android.intent.category.BROWSABLE\"/>\n"
+                    + "                 <data android:scheme=\"mySpecialDeepLinkScheme\"/>\n"
+                    + "                 <data android:host=\"home\"/>\n"
+                    + "             </intent-filter>\n"
+                    + "         </activity>    </application>    <uses-sdk"
+                    + " android:targetSdkVersion=\"3\"/>\n"
+                    + "\n"
+                    + "</manifest>";
 
         XmlDocument mainDocument = loadXmlDoc(TestUtils.sourceFile(getClass(), "main"), main);
         XmlDocument libraryDocument =
@@ -2015,10 +2032,52 @@ public class XmlDocumentTest extends TestCase {
 
         assertTrue(mergedDocument.isPresent());
         XmlDocument xmlDocument = mergedDocument.get();
-        List<XmlElement> allIntentFilters = getAllElementsOfType(xmlDocument,
-                ManifestModel.NodeTypes.INTENT_FILTER);
+        List<XmlElement> allIntentFilters =
+                getAllElementsOfType(xmlDocument, ManifestModel.NodeTypes.INTENT_FILTER);
         // since the cleaner has not run, there is one intent-filter with the removeAll annotation.
         assertEquals(1, allIntentFilters.size());
+    }
+
+    public void testInvalidToolsInstruction()
+            throws ParserConfigurationException, SAXException, IOException {
+        String input =
+                ""
+                        + "<manifest\n"
+                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                        + "    package=\"com.example.lib3\">\n"
+                        + "\n"
+                        + "    <application tools:node=\"invalidInstruction\" />\n"
+                        + "\n"
+                        + "</manifest>";
+
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mLogger);
+        XmlDocument xmlDocument =
+                XmlLoader.load(
+                        new ManifestMerger2.SelectorResolver(),
+                        key -> null,
+                        "testInvalidToolsInstruction",
+                        new File("AndroidManifest.xml"),
+                        new java.io.ByteArrayInputStream(input.getBytes()),
+                        XmlDocument.Type.MAIN,
+                        null,
+                        mModel,
+                        mergingReportBuilder);
+
+        // Accessing root node should trigger the error logging but not crash.
+        xmlDocument.getRootNode();
+
+        MergingReport mergingReport = mergingReportBuilder.build();
+        assertTrue(mergingReport.getResult().isError());
+        boolean foundError = false;
+        for (MergingReport.Record record : mergingReport.getLoggingRecords()) {
+            if (record.getSeverity() == MergingReport.Record.Severity.ERROR
+                    && record.getMessage().contains("Invalid instruction 'invalidInstruction'")) {
+                foundError = true;
+                break;
+            }
+        }
+        assertTrue("Error message not found in merging report", foundError);
     }
 
     private static List<XmlElement> getAllElementsOfType(

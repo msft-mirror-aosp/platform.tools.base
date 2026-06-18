@@ -20,7 +20,7 @@ import com.android.build.gradle.internal.fixtures.FakeProviderFactory
 import com.android.build.gradle.internal.fixtures.FakeSyncIssueReporter
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.ProjectOptions
-import com.android.builder.model.SyncIssue.Companion.TYPE_ANDROID_X_PROPERTY_NOT_ENABLED
+import com.android.builder.model.v2.ide.SyncIssue.Companion.TYPE_ANDROID_X_PROPERTY_NOT_ENABLED
 import com.google.common.collect.ImmutableMap
 import com.google.common.truth.Truth.assertThat
 import java.lang.Boolean.FALSE

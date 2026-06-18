@@ -34,6 +34,7 @@ import com.android.tools.lint.detector.api.nameFromSource
 import com.android.tools.lint.detector.api.typeFromPsi
 import com.android.utils.usLocaleCapitalize
 import com.android.utils.usLocaleDecapitalize
+import com.intellij.java.syntax.parser.JavaKeywords
 import com.intellij.psi.PsiClassType
 import com.intellij.psi.PsiCompiledElement
 import com.intellij.psi.PsiDocCommentOwner
@@ -471,7 +472,7 @@ class InteroperabilityDetector : Detector(), SourceCodeScanner {
           if (modifierList.hasExplicitModifier(PsiModifier.STATIC)) {
             var child: PsiElement? = modifierList.firstChild
             while (child != null) {
-              if (child is PsiKeyword && PsiKeyword.STATIC == child.text) {
+              if (child is PsiKeyword && JavaKeywords.STATIC == child.text) {
                 staticElement = child
                 break
               }
@@ -542,7 +543,7 @@ class InteroperabilityDetector : Detector(), SourceCodeScanner {
       ) {
         val name1 = badGetter.name
         if (name1.startsWith("is") && methodName.startsWith("setIs") && name1[2].isUpperCase()) {
-          val newProperty = name1[2].toLowerCase() + name1.substring(3)
+          val newProperty = name1[2].lowercase() + name1.substring(3)
           val message =
             "This method should be called `set${newProperty.usLocaleCapitalize()}` such " +
               "that (along with the `$name1` getter) Kotlin code can access it " +

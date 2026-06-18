@@ -34,6 +34,7 @@ def studio_win(build_env: bazel.BuildEnv):
       '//tools/adt/idea/studio:android-studio.win.zip',
       '//tools/vendor/google/skia:skiaparser.zip',
       '//tools/vendor/google/skia:skia_test_support.zip',
+      '//tools/vendor/google/lume/dist:lightbuild',
   ]
   test_tag_filters = '-noci:studio-win,-qa_smoke,-qa_fast,-qa_unreliable,-perfgate-release,-no_k2'
 
@@ -47,13 +48,17 @@ def studio_win(build_env: bazel.BuildEnv):
       f'--test_tag_filters={test_tag_filters}',
 
       '--tool_tag=studio_win.cmd',
+      f'--embed_label={studio.get_embed_label(build_env.build_number)}',
       '--jobs=500',
+
+      '--bes_keywords=cinder',
   ]
 
   build_type = studio.BuildType.from_build_number(build_env.build_number)
   if build_type == studio.BuildType.POSTSUBMIT:
     impacted_targets.generate_and_upload_hash_file(build_env)
     targets += extra_targets
+    flags.append('--build_metadata=cinder_pipelines=test-stats')
 
   if build_type == studio.BuildType.PRESUBMIT:
     result = presubmit.find_test_targets(
@@ -65,6 +70,7 @@ def studio_win(build_env: bazel.BuildEnv):
     targets = result.targets + ['//tools/base/bazel/ci:ci_test']
     flags.extend(result.flags)
 
+  studio.check_lockfile(build_env)
   test_result = studio.run_tests(build_env, flags, targets)
 
   if build_type == studio.BuildType.PRESUBMIT:
@@ -73,12 +79,12 @@ def studio_win(build_env: bazel.BuildEnv):
   studio.copy_artifacts(
       build_env,
       [
-          ('tools/vendor/google/android/android.exe', ''),
           ('tools/vendor/google/android/android-cli.zip', ''),
           ('tools/vendor/google/skia/skiaparser.zip', ''),
           ('tools/vendor/google/skia/skia_test_support.zip', ''),
           ('tools/base/profiler/native/trace_processor_daemon/trace_processor_daemon.exe', ''),
           ('tools/base/profiler/native/sherlock/sherlock_trace_processor.exe', ''),
+          ('tools/vendor/google/lume/dist/lightbuild.zip', ''),
       ],
       missing_ok=(build_type == studio.BuildType.PRESUBMIT),
   )
@@ -92,3 +98,20 @@ def studio_win(build_env: bazel.BuildEnv):
     return
 
   raise studio.BazelTestError(exit_code=test_result.exit_code)
+
+
+def studio_win_canary(build_env: bazel.BuildEnv):
+  """Runs Windows canary build."""
+  process = build_env.bazel_build(
+      '--config=ci',
+      '--config=remote-exec',
+      '--build_tag_filters=-no_windows',
+      '--tool_tag=studio-win-canary',
+      '--',
+      '//tools/...',
+      '-//tools/vendor/google3/aswb/...',
+      '-//tools/vendor/google/aswb/...',
+      '-//tools/adt/idea/aswb/...',
+  )
+  if process.returncode != 0:
+    raise studio.BazelTestError(exit_code=process.returncode)

@@ -18,12 +18,23 @@ package com.android.build.api.variant
 
 import org.gradle.api.Incubating
 import org.gradle.api.provider.Property
+import org.gradle.api.provider.Provider
 
 /** Defines a variant's signing config. */
 interface SigningConfig {
+  /** Sets the [com.android.build.api.dsl.SigningConfig] with information on how to retrieve the signing configuration. */
+  @Deprecated(message = "Use from(SigningConfig) instead", replaceWith = ReplaceWith("from(signingConfig)"))
+  @Incubating
+  fun setConfig(signingConfig: com.android.build.api.dsl.SigningConfig)
 
   /** Sets the [com.android.build.api.dsl.SigningConfig] with information on how to retrieve the signing configuration. */
-  @Incubating fun setConfig(signingConfig: com.android.build.api.dsl.SigningConfig)
+  @Incubating fun from(signingConfig: com.android.build.api.dsl.SigningConfig)
+
+  /**
+   * Sets the [com.android.build.api.variant.SigningConfigInfo] provider with information on how to retrieve the signing configuration
+   * lazily.
+   */
+  @Incubating fun from(provider: Provider<SigningConfigInfo>)
 
   /**
    * Enable signing using JAR Signature Scheme (aka v1 signing).

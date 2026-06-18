@@ -24,7 +24,6 @@ import com.android.build.gradle.AppExtension
 import com.android.build.gradle.api.AndroidSourceSet
 import com.android.build.gradle.api.BaseVariantOutput
 import com.android.build.gradle.internal.CompileOptions
-import com.android.build.gradle.internal.DependenciesExtension
 import com.android.build.gradle.internal.coverage.JacocoOptions
 import com.android.build.gradle.internal.dependency.SourceSetManager
 import com.android.build.gradle.internal.services.DslServices
@@ -34,35 +33,9 @@ import com.android.repository.Revision
 import com.google.wireless.android.sdk.stats.GradleBuildProject
 import javax.inject.Inject
 import org.gradle.api.Action
-import org.gradle.api.Incubating
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.plugins.ExtensionContainer
 import org.gradle.declarative.dsl.model.annotations.Configuring
-
-@Incubating
-abstract class BaseAppModuleExtensionInternal(
-  dslServices: DslServices,
-  bootClasspathConfig: BootClasspathConfig,
-  buildOutputs: NamedDomainObjectContainer<BaseVariantOutput>,
-  sourceSetManager: SourceSetManager,
-  private val publicExtensionImpl: ApplicationExtensionImpl,
-  stats: GradleBuildProject.Builder?,
-) : BaseAppModuleExtension(dslServices, bootClasspathConfig, buildOutputs, sourceSetManager, publicExtensionImpl, stats) {
-  @Deprecated("Use dependencies{} block inside build type and product flavors")
-  val dependenciesDcl: DependenciesExtension by lazy { dslServices.newInstance(DependenciesExtension::class.java) }
-
-  @Deprecated("Use dependencies{} block inside build type and product flavors")
-  @Configuring
-  fun dependenciesDcl(configure: DependenciesExtension.() -> Unit) {
-    configure.invoke(dependenciesDcl)
-  }
-
-  override val buildTypes: NamedDomainObjectContainer<DeclarativeBuildType>
-    get() = publicExtensionImpl.buildTypes as NamedDomainObjectContainer<DeclarativeBuildType>
-
-  override val productFlavors: NamedDomainObjectContainer<DeclarativeProductFlavor>
-    get() = publicExtensionImpl.productFlavors as NamedDomainObjectContainer<DeclarativeProductFlavor>
-}
 
 /**
  * An intermediate implementation class of the previous `android` extension for the `com.android.application` plugin

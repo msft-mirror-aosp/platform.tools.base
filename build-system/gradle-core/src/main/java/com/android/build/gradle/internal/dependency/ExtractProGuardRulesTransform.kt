@@ -57,8 +57,12 @@ abstract class ExtractProGuardRulesTransform @Inject constructor() : TransformAc
       val outputDirectory = transformOutputs.dir("shrink-rules").resolve("lib")
       FileUtils.mkdirs(outputDirectory)
 
+      val normalizedOutputDirectory = outputDirectory.normalize()
+
       targetedR8Rules.createJarContents(isClassesJarInAar = isClassesJarInAar).forEach { (relativePath, contents) ->
-        outputDirectory.resolve(relativePath).run {
+        val target = outputDirectory.resolve(relativePath).normalize()
+        check(target.startsWith(normalizedOutputDirectory)) { "Consumer-rule path escapes output directory: $relativePath" }
+        target.run {
           FileUtils.mkdirs(parentFile)
           writeBytes(contents)
         }

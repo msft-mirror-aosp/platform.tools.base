@@ -16,6 +16,7 @@
 #ifndef APP_INSPECTION_TRANSFORM_H
 #define APP_INSPECTION_TRANSFORM_H
 
+#include <mutex>
 #include "array_params_entry_hook.h"
 #include "slicer/dex_ir.h"
 #include "slicer/dex_ir_builder.h"
@@ -30,11 +31,17 @@ class AppInspectionTransform {
 
   void AddTransform(const char* class_name, const char* method_name,
                     const char* signature, bool isEntry) {
+    // SECURITY: Synchronize modifications to the transform list to avoid race
+    // conditions.
+    std::lock_guard<std::mutex> lock(transforms_mutex_);
     transforms.push_back(
         TransformDescription(class_name, method_name, signature, isEntry));
   }
 
   void Apply(std::shared_ptr<ir::DexFile> dex_ir) {
+    // SECURITY: Synchronize iteration over the transform list to avoid race
+    // conditions.
+    std::lock_guard<std::mutex> lock(transforms_mutex_);
     for (auto transform : transforms) {
       slicer::MethodInstrumenter mi(dex_ir);
       if (transform.isEntry()) {
@@ -80,8 +87,16 @@ class AppInspectionTransform {
 
     const char* GetSignature() { return signature_.c_str(); }
 
-    bool HasPrimitiveOrVoidReturnType() { return signature_.back() != ';'; }
-
+    // SECURITY: Correctly identify object arrays as non-primitive to ensure
+    // slicer generates valid bytecode.
+    bool HasPrimitiveOrVoidReturnType() {
+      size_t pos = signature_.find(')');
+      if (pos != std::string::npos && pos + 1 < signature_.length()) {
+        char ret = signature_[pos + 1];
+        return ret != 'L' && ret != '[';
+      }
+      return true;  // fallback
+    }
     bool isEntry() { return isEntry_; }
 
    private:
@@ -93,6 +108,7 @@ class AppInspectionTransform {
 
   std::string class_name_;
   std::list<TransformDescription> transforms;
+  std::mutex transforms_mutex_;
 };
 
 }  // namespace app_inspection

@@ -57,4 +57,7 @@ interface TestSuiteCreationConfig : TestSuite {
   val variantServices: VariantServices
 
   val manifestDataProviderBuilder: (File) -> ManifestDataProvider
+
+  /** Returns whether the Android Resources should be included in the test suite. */
+  val androidResourcesIncluded: Boolean
 }

@@ -30,7 +30,6 @@ import com.android.build.gradle.internal.core.Abi
 import com.android.build.gradle.internal.cxx.gradle.generator.externalNativeBuildIsActive
 import com.android.build.gradle.internal.cxx.io.removeDuplicateFiles
 import com.android.build.gradle.internal.initialize
-import com.android.build.gradle.internal.packaging.ParsedPackagingOptions.Companion.compileGlob
 import com.android.build.gradle.internal.profile.ProfileAwareWorkAction
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.InternalArtifactType
@@ -42,6 +41,7 @@ import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.merge.DuplicateRelativeFileException
+import com.android.builder.packaging.ParsedPackagingOptions.Companion.compileGlob
 import com.android.utils.FileUtils
 import java.io.File
 import java.io.File.separatorChar
@@ -50,14 +50,18 @@ import java.nio.file.PathMatcher
 import java.nio.file.Paths
 import java.util.function.Predicate
 import org.gradle.api.GradleException
+import org.gradle.api.artifacts.ArtifactCollection
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.FileVisitDetails
+import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.file.RelativePath
 import org.gradle.api.file.ReproducibleFileVisitor
 import org.gradle.api.logging.Logging
 import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.MapProperty
+import org.gradle.api.provider.Property
 import org.gradle.api.provider.SetProperty
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.IgnoreEmptyDirectories
@@ -67,6 +71,7 @@ import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.SkipWhenEmpty
@@ -105,6 +110,12 @@ abstract class MergeNativeLibsTask : NonIncrementalTask() {
   @get:IgnoreEmptyDirectories
   abstract val testOnlyNativeLibs: ConfigurableFileCollection
 
+  @get:Internal abstract val externalArtifactCollection: Property<ArtifactCollection>
+
+  @get:Internal abstract val subProjectArtifactCollection: Property<ArtifactCollection>
+
+  @get:OutputFile @get:Optional abstract val mergeBlameFile: RegularFileProperty
+
   @get:Input abstract val excludes: SetProperty<String>
 
   @get:Input abstract val pickFirsts: SetProperty<String>
@@ -129,6 +140,12 @@ abstract class MergeNativeLibsTask : NonIncrementalTask() {
   override fun doTaskAction() {
     val inputFiles = mutableListOf<InputFile>()
 
+    val origins = mutableMapOf<File, String>()
+    externalArtifactCollection.orNull?.artifacts?.associateTo(origins) { it.file to it.id.componentIdentifier.displayName }
+    subProjectArtifactCollection.orNull?.artifacts?.associateTo(origins) { it.file to it.id.componentIdentifier.displayName }
+
+    val fileOriginsMap = mutableMapOf<File, String>()
+
     val fileVisitor =
       object : ReproducibleFileVisitor {
         override fun isReproducibleFileOrder() = true
@@ -136,6 +153,9 @@ abstract class MergeNativeLibsTask : NonIncrementalTask() {
         override fun visitFile(details: FileVisitDetails) {
           if (predicate.test(details.name)) {
             inputFiles.add(InputFile(details.file, "lib/${toAbiRootedPath(details.file, details.relativePath)}"))
+
+            val origin = generateSequence(details.file) { it.parentFile }.mapNotNull { origins[it] }.firstOrNull() ?: "Project"
+            fileOriginsMap[details.file] = origin
           }
         }
 
@@ -161,6 +181,8 @@ abstract class MergeNativeLibsTask : NonIncrementalTask() {
       it.excludes.set(excludes)
       it.pickFirsts.set(pickFirsts)
       it.testOnly.set(testOnly)
+      it.mergeBlameFile.set(mergeBlameFile)
+      it.fileOrigins.set(fileOriginsMap)
     }
   }
 
@@ -175,6 +197,8 @@ abstract class MergeNativeLibsTask : NonIncrementalTask() {
         parameters.testOnlyDir.orNull?.asFile,
         parameters.projectNativeLibs.get(),
         parameters.outputDirectory.get().asFile,
+        parameters.fileOrigins.get(),
+        parameters.mergeBlameFile.orNull?.asFile,
       )
     }
 
@@ -190,6 +214,8 @@ abstract class MergeNativeLibsTask : NonIncrementalTask() {
       abstract val excludes: SetProperty<String>
       abstract val pickFirsts: SetProperty<String>
       abstract val testOnly: SetProperty<String>
+      abstract val fileOrigins: MapProperty<File, String>
+      abstract val mergeBlameFile: RegularFileProperty
     }
   }
 
@@ -206,6 +232,10 @@ abstract class MergeNativeLibsTask : NonIncrementalTask() {
       super.handleProvider(taskProvider)
 
       creationConfig.artifacts.setInitialProvider(taskProvider, MergeNativeLibsTask::outputDir).withName("out").on(MERGED_NATIVE_LIBS)
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, MergeNativeLibsTask::mergeBlameFile)
+        .withName("native-libs-blame-${creationConfig.baseName}-report.txt")
+        .on(InternalArtifactType.MERGED_NATIVE_LIBS_BLAME)
       if (creationConfig.writesTestOnlyDir()) {
         creationConfig.artifacts
           .setInitialProvider(taskProvider, MergeNativeLibsTask::testOnlyDir)
@@ -239,6 +269,8 @@ abstract class MergeNativeLibsTask : NonIncrementalTask() {
       if (creationConfig is ApkCreationConfig) {
         task.externalLibNativeLibs.from(getExternalNativeLibs(creationConfig))
         task.subProjectNativeLibs.from(getSubProjectNativeLibs(creationConfig))
+        task.externalArtifactCollection.set(getExternalArtifactCollection(creationConfig))
+        task.subProjectArtifactCollection.set(getSubProjectArtifactCollection(creationConfig))
         if (creationConfig.shouldPackageProfilerDependencies) {
           task.profilerNativeLibs.set(creationConfig.artifacts.get(InternalArtifactType.PROFILERS_NATIVE_LIBS))
         }
@@ -327,6 +359,8 @@ fun mergeJavaNativeLibs(
   testOnlyDir: File?,
   projectNativeLibs: Set<File>,
   outputDir: File,
+  fileOrigins: Map<File, String> = emptyMap(),
+  mergeBlameFile: File? = null,
 ) {
   // A map of pickFirst pattern strings to their compiled globs.
   val pickFirstsPathMatchers: Map<String, PathMatcher> = pickFirst.associateWith { compileGlob(it) }
@@ -363,6 +397,18 @@ fun mergeJavaNativeLibs(
   // Files that have the same content are considered to be the same (and no error or
   // warning is emitted).
   val deduplicatedUsedRelativePaths = usedRelativePaths.map { (k, v) -> k to removeDuplicateFiles(v) }.toMap()
+
+  mergeBlameFile?.let { file ->
+    val blameContent = buildString {
+      for ((relativePath, files) in deduplicatedUsedRelativePaths) {
+        if (files.isNotEmpty()) {
+          val origin = fileOrigins[files.first()] ?: "Unknown"
+          append(relativePath).append("->").append(origin).append("\n")
+        }
+      }
+    }
+    file.writeText(blameContent)
+  }
 
   for (entry in deduplicatedUsedRelativePaths) {
     if (entry.value.size > 1) {
@@ -468,6 +514,13 @@ fun getSubProjectNativeLibs(creationConfig: ComponentCreationConfig): FileCollec
       file.walk().any { it.isFile }
     }
 
+fun getSubProjectArtifactCollection(creationConfig: ComponentCreationConfig): ArtifactCollection =
+  creationConfig.variantDependencies.getArtifactCollection(
+    AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
+    AndroidArtifacts.ArtifactScope.PROJECT,
+    AndroidArtifacts.ArtifactType.JNI,
+  )
+
 fun getExternalNativeLibs(creationConfig: ComponentCreationConfig): FileCollection =
   creationConfig.variantDependencies
     .getArtifactFileCollection(
@@ -479,6 +532,13 @@ fun getExternalNativeLibs(creationConfig: ComponentCreationConfig): FileCollecti
       // Filter out directories without any file descendants so @SkipWhenEmpty works as desired.
       file.walk().any { it.isFile }
     }
+
+fun getExternalArtifactCollection(creationConfig: ComponentCreationConfig): ArtifactCollection =
+  creationConfig.variantDependencies.getArtifactCollection(
+    AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
+    AndroidArtifacts.ArtifactScope.EXTERNAL,
+    AndroidArtifacts.ArtifactType.JNI,
+  )
 
 fun getTestOnlyNativeLibs(creationConfig: ComponentCreationConfig): FileCollection {
   val nativeLibs = creationConfig.services.fileCollection()

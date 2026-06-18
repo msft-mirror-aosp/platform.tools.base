@@ -130,8 +130,8 @@ interface DeviceProperties {
   /** ID of a phone paired to this device via the glasses pairing mechanism. (Not currently used for Wear; see [wearPairingId].) */
   val pairedPhoneId: DeviceId?
 
-  /** ID of a glasses device paired to this device via the glasses pairing mechanism. */
-  val pairedGlassesId: DeviceId?
+  /** Information about the glasses devices paired to this device via the glasses pairing mechanism. */
+  val pairedGlassesInfos: List<PairedGlassesInfo>
 
   /** The type of connection to the device, if known. */
   val connectionType: ConnectionType?
@@ -178,7 +178,7 @@ interface DeviceProperties {
     var isResizable: Boolean? = null
     var wearPairingId: String? = null
     var pairedPhoneId: DeviceId? = null
-    var pairedGlassesId: DeviceId? = null
+    var pairedGlassesInfos: List<PairedGlassesInfo> = emptyList()
     var resolution: Resolution? = null
     var density: Int? = null
     var icon: Icon? = null
@@ -200,7 +200,7 @@ interface DeviceProperties {
       isResizable = properties.isResizable
       wearPairingId = properties.wearPairingId
       pairedPhoneId = properties.pairedPhoneId
-      pairedGlassesId = properties.pairedGlassesId
+      pairedGlassesInfos = properties.pairedGlassesInfos
       resolution = properties.resolution
       density = properties.density
       icon = properties.icon
@@ -308,7 +308,7 @@ interface DeviceProperties {
         isResizable = isResizable,
         wearPairingId = wearPairingId,
         pairedPhoneId = pairedPhoneId,
-        pairedGlassesId = pairedGlassesId,
+        pairedGlassesInfos = pairedGlassesInfos,
         resolution = resolution,
         density = density,
         icon = checkNotNull(icon),
@@ -334,7 +334,7 @@ data class BaseDeviceProperties(
   override val isResizable: Boolean?,
   override val wearPairingId: String?,
   override val pairedPhoneId: DeviceId?,
-  override val pairedGlassesId: DeviceId?,
+  override val pairedGlassesInfos: List<PairedGlassesInfo> = emptyList(),
   override val resolution: Resolution?,
   override val density: Int?,
   override val icon: Icon,
@@ -357,7 +357,7 @@ enum class DeviceType(val stringValue: String) {
   AUTOMOTIVE("Automotive"),
   DESKTOP("Desktop"),
   XR_HEADSET("XR Headset"),
-  AI_GLASSES("AI Glasses");
+  AI_GLASSES("Intelligent Eyewear");
 
   override fun toString() = stringValue
 }

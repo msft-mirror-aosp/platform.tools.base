@@ -218,10 +218,24 @@ class LintImplTest {
   }
 
   @Test
+  fun testDefaultReports() {
+    assertThat(lint.textReport).named("lint.textReport").isFalse()
+    assertThat(lint.htmlReport).named("lint.htmlReport").isTrue()
+    assertThat(lint.xmlReport).named("lint.xmlReport").isTrue()
+    assertThat(lint.sarifReport).named("lint.sarifReport").isTrue()
+  }
+
+  @Test
   fun testTextOutput() {
     lint { textOutput = File("stdout") }
     assertThat(lint.textReport).named("lint.textReport").isTrue()
     assertThat(lint.textOutput?.path).named("lint.textOutput").isEqualTo("stdout")
+  }
+
+  @Test
+  fun testPrintTextReport() {
+    lint { printTextReport = true }
+    assertThat(lint.printTextReport).named("lint.printTextReport").isTrue()
   }
 
   @Test

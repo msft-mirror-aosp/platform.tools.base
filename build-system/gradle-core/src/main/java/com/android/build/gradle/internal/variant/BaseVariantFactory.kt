@@ -246,7 +246,7 @@ abstract class BaseVariantFactory<VariantBuilderT : VariantBuilder, VariantDslIn
           .trimIndent()
       if (model.defaultConfigData.defaultConfig.buildConfigFields.isNotEmpty()) {
         issueReporter.reportError(
-          IssueReporter.Type.GENERIC,
+          IssueReporter.Type.BUILD_CONFIG_USED_WHEN_DISABLED,
           """
                     defaultConfig contains custom BuildConfig fields, but the feature is disabled.
                     $suggestion
@@ -258,7 +258,7 @@ abstract class BaseVariantFactory<VariantBuilderT : VariantBuilder, VariantDslIn
       for (buildType in model.buildTypes.values) {
         if (buildType.buildType.buildConfigFields.isNotEmpty()) {
           issueReporter.reportError(
-            IssueReporter.Type.GENERIC,
+            IssueReporter.Type.BUILD_CONFIG_USED_WHEN_DISABLED,
             """
                         Build Type '${buildType.buildType.name}' contains custom BuildConfig fields, but the feature is disabled.
                         $suggestion
@@ -271,7 +271,7 @@ abstract class BaseVariantFactory<VariantBuilderT : VariantBuilder, VariantDslIn
       for (productFlavor in model.productFlavors.values) {
         if (productFlavor.productFlavor.buildConfigFields.isNotEmpty()) {
           issueReporter.reportError(
-            IssueReporter.Type.GENERIC,
+            IssueReporter.Type.BUILD_CONFIG_USED_WHEN_DISABLED,
             """
                         Product Flavor '${productFlavor.productFlavor.name}' contains custom BuildConfig fields, but the feature is disabled.
                         $suggestion
@@ -290,13 +290,16 @@ abstract class BaseVariantFactory<VariantBuilderT : VariantBuilder, VariantDslIn
       val issueReporter = dslServices.issueReporter
 
       if (model.defaultConfigData.defaultConfig.resValues.isNotEmpty()) {
-        issueReporter.reportError(IssueReporter.Type.GENERIC, "defaultConfig contains custom resource values, but the feature is disabled.")
+        issueReporter.reportError(
+          IssueReporter.Type.RES_VALUES_USED_WHEN_DISABLED,
+          "defaultConfig contains custom resource values, but the feature is disabled.",
+        )
       }
 
       for (buildType in model.buildTypes.values) {
         if (buildType.buildType.resValues.isNotEmpty()) {
           issueReporter.reportError(
-            IssueReporter.Type.GENERIC,
+            IssueReporter.Type.RES_VALUES_USED_WHEN_DISABLED,
             "Build Type ${buildType.buildType.name} contains custom resource values, but the feature is disabled.",
           )
         }
@@ -305,7 +308,7 @@ abstract class BaseVariantFactory<VariantBuilderT : VariantBuilder, VariantDslIn
       for (productFlavor in model.productFlavors.values) {
         if (productFlavor.productFlavor.resValues.isNotEmpty()) {
           issueReporter.reportError(
-            IssueReporter.Type.GENERIC,
+            IssueReporter.Type.RES_VALUES_USED_WHEN_DISABLED,
             "Product Flavor ${productFlavor.productFlavor.name} contains custom resource values, but the feature is disabled.",
           )
         }

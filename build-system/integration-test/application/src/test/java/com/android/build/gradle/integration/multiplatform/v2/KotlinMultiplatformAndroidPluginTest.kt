@@ -95,13 +95,17 @@ class KotlinMultiplatformAndroidPluginTest(private val publishLibs: Boolean) {
 
     executor().run(":kmpFirstLib:createAndroidHostTestCoverageReport")
 
+    val testReportFiles =
+      FileUtils.join(project.getSubproject("kmpFirstLib").buildDir, "reports", "tests", "testAndroidHostTest")
+        .walkTopDown()
+        .filter { it.extension == "html" }
+        .toList()
     assertWithMessage("Running kmp unit tests should run common tests as well")
-      .that(
-        FileUtils.join(project.getSubproject("kmpFirstLib").buildDir, "reports", "tests", "testAndroidHostTest").listFiles()!!.map {
-          it.name
-        }
-      )
-      .containsAtLeast("com.example.kmpfirstlib.KmpAndroidFirstLibClassTest", "com.example.kmpfirstlib.KmpCommonFirstLibClassTest")
+      .that(testReportFiles.any { it.readText().contains("com.example.kmpfirstlib.KmpAndroidFirstLibClassTest") })
+      .isTrue()
+    assertWithMessage("Running kmp unit tests should run common tests as well")
+      .that(testReportFiles.any { it.readText().contains("com.example.kmpfirstlib.KmpCommonFirstLibClassTest") })
+      .isTrue()
 
     val coveragePackageFolder =
       FileUtils.join(project.getSubproject("kmpFirstLib").buildDir, "reports", "coverage", "test", "com.example.kmpfirstlib")
@@ -180,7 +184,11 @@ class KotlinMultiplatformAndroidPluginTest(private val publishLibs: Boolean) {
             "com/example/kmpfirstlib/KmpAndroidActivity",
           )
         resources {
-          containsExactly("kmp_resource.txt", "META-INF/kmpFirstLib.kotlin_module")
+          if (publishLibs) {
+            containsExactly("kmp_resource.txt", "META-INF/com.example_kmpFirstLib.kotlin_module")
+          } else {
+            containsExactly("kmp_resource.txt", "META-INF/Kotlin Multiplatform_kmpFirstLib.kotlin_module")
+          }
           resourceAsText("kmp_resource.txt").isEqualTo("kmp resource")
         }
       }
@@ -323,6 +331,92 @@ class KotlinMultiplatformAndroidPluginTest(private val publishLibs: Boolean) {
       )
     assertThat(apkIdeRedirectFile.exists()).isTrue()
     assertThat(apkIdeRedirectFile.readText()).contains("listingFile=../../../../outputs/apk/androidTest/output-metadata.json")
+  }
+
+  @Test
+  fun testExcludeKotlinFile() {
+    val excludedFile = project.getSubproject("kmpFirstLib").file("src/androidMain/kotlin/com/example/kmpfirstlib/ExcludedClass.kt")
+    FileUtils.mkdirs(excludedFile.parentFile)
+    excludedFile.writeText(
+      """
+      package com.example.kmpfirstlib
+      class ExcludedClass
+      """
+        .trimIndent()
+    )
+
+    TestFileUtils.appendToFile(
+      project.getSubproject("kmpFirstLib").ktsBuildFile,
+      """
+      kotlin {
+          sourceSets {
+              androidMain.configure {
+                  kotlin.exclude("**/ExcludedClass.kt")
+              }
+          }
+      }
+      """
+        .trimIndent(),
+    )
+
+    executor().run(":kmpFirstLib:assemble")
+
+    project.getSubproject("kmpFirstLib").assertAar(AarSelector.NO_BUILD_TYPE) {
+      mainJar {
+        classes()
+          .containsExactly(
+            "com/example/kmpfirstlib/KmpCommonFirstLibClass",
+            "com/example/kmpfirstlib/KmpAndroidFirstLibClass",
+            "com/example/kmpfirstlib/KmpAndroidFirstLibJavaClass",
+            "com/example/kmpfirstlib/KmpAndroidActivity",
+          )
+      }
+    }
+  }
+
+  @Test
+  fun testIncludeKotlinFile() {
+    // We also include KmpAndroidFirstLibClass.kt because KmpAndroidFirstLibJavaClass.java
+    // depends on it. This ensures the Java compilation passes while still verifying that
+    // other Kotlin files (like KmpAndroidActivity.kt) are not included.
+    val includedFile = project.getSubproject("kmpFirstLib").file("src/androidMain/kotlin/com/example/kmpfirstlib/IncludedClass.kt")
+    FileUtils.mkdirs(includedFile.parentFile)
+    includedFile.writeText(
+      """
+      package com.example.kmpfirstlib
+      class IncludedClass
+      """
+        .trimIndent()
+    )
+
+    TestFileUtils.appendToFile(
+      project.getSubproject("kmpFirstLib").ktsBuildFile,
+      """
+      kotlin {
+          sourceSets {
+              androidMain.configure {
+                  kotlin.include("**/IncludedClass.kt")
+                  kotlin.include("**/KmpAndroidFirstLibClass.kt")
+              }
+          }
+      }
+      """
+        .trimIndent(),
+    )
+
+    executor().run(":kmpFirstLib:assemble")
+
+    project.getSubproject("kmpFirstLib").assertAar(AarSelector.NO_BUILD_TYPE) {
+      mainJar {
+        classes()
+          .containsExactly(
+            "com/example/kmpfirstlib/KmpCommonFirstLibClass",
+            "com/example/kmpfirstlib/KmpAndroidFirstLibClass",
+            "com/example/kmpfirstlib/KmpAndroidFirstLibJavaClass",
+            "com/example/kmpfirstlib/IncludedClass",
+          )
+      }
+    }
   }
 
   private fun executor() = project.executor().withFailOnWarning(false) // b/455891987

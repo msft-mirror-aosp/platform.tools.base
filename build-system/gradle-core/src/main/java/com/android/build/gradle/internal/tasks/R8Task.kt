@@ -16,44 +16,25 @@
 
 package com.android.build.gradle.internal.tasks
 
-import com.android.build.api.artifact.MultipleArtifact
-import com.android.build.api.variant.impl.BuiltArtifactsLoaderImpl
 import com.android.build.gradle.internal.LoggerWrapper
 import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.ApplicationCreationConfig
 import com.android.build.gradle.internal.component.ConsumableCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
-import com.android.build.gradle.internal.core.ToolExecutionOptions
 import com.android.build.gradle.internal.dependency.ShrinkerVersion
-import com.android.build.gradle.internal.dsl.ModulePropertyKey
 import com.android.build.gradle.internal.errors.MessageReceiverImpl
-import com.android.build.gradle.internal.manifest.parseManifest
-import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.InternalArtifactType
-import com.android.build.gradle.internal.scope.InternalArtifactType.DUPLICATE_CLASSES_CHECK
 import com.android.build.gradle.internal.scope.InternalMultipleArtifactType
-import com.android.build.gradle.internal.scope.Java8LangSupport
 import com.android.build.gradle.internal.services.R8D8ThreadPoolBuildService
-import com.android.build.gradle.internal.services.R8MaxParallelTasksBuildService
-import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.services.doClose
-import com.android.build.gradle.internal.utils.LibraryArtifactType
-import com.android.build.gradle.internal.utils.getDesugarLibConfig
-import com.android.build.gradle.internal.utils.getFilteredFiles
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.build.gradle.options.BooleanOption
-import com.android.build.gradle.options.IntegerOption
-import com.android.build.gradle.options.SyncOptions
-import com.android.build.gradle.tasks.PackageAndroidArtifact.Companion.THROW_ON_ERROR_ISSUE_REPORTER
 import com.android.buildanalyzer.common.TaskCategory
-import com.android.builder.dexing.DexingType
 import com.android.builder.dexing.KeepRuleFile
-import com.android.builder.dexing.MainDexListConfig
 import com.android.builder.dexing.PartialShrinking
-import com.android.builder.dexing.PartialShrinkingConfig
-import com.android.builder.dexing.PartialShrinkingIncludeAll
 import com.android.builder.dexing.ProguardConfig
 import com.android.builder.dexing.ProguardOutputFiles
+import com.android.builder.dexing.ProguardOutputReports
 import com.android.builder.dexing.R8OutputType
 import com.android.builder.dexing.ResourceShrinkingConfig
 import com.android.builder.dexing.ToolConfig
@@ -73,21 +54,11 @@ import org.gradle.api.logging.Logging
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.ProviderFactory
-import org.gradle.api.provider.SetProperty
-import org.gradle.api.services.ServiceReference
 import org.gradle.api.tasks.CacheableTask
-import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputDirectory
-import org.gradle.api.tasks.InputFile
-import org.gradle.api.tasks.InputFiles
-import org.gradle.api.tasks.Internal
-import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.OutputFile
-import org.gradle.api.tasks.PathSensitive
-import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.workers.WorkAction
 import org.gradle.workers.WorkParameters
@@ -101,35 +72,7 @@ import org.gradle.workers.WorkParameters
  */
 @CacheableTask
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.OPTIMIZATION)
-abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : ProguardConfigurableTask(projectLayout) {
-
-  @get:InputFile @get:PathSensitive(PathSensitivity.NONE) @get:Optional abstract val multiDexKeepFile: RegularFileProperty
-
-  @get:InputFile @get:PathSensitive(PathSensitivity.NONE) @get:Optional abstract val multiDexKeepProguard: RegularFileProperty
-
-  @get:InputFiles @get:PathSensitive(PathSensitivity.NONE) abstract val mainDexRulesFiles: ConfigurableFileCollection
-
-  @get:Classpath abstract val bootClasspath: ConfigurableFileCollection
-
-  @get:Internal abstract val errorFormatMode: Property<SyncOptions.ErrorFormatMode>
-
-  @get:InputFiles @get:PathSensitive(PathSensitivity.NONE) abstract val duplicateClassesCheck: ConfigurableFileCollection
-
-  @get:Input
-  lateinit var proguardConfigurations: MutableList<String>
-    private set
-
-  @get:Input abstract val legacyMultiDexEnabled: Property<Boolean>
-
-  @get:Internal abstract val executionOptions: Property<ToolExecutionOptions>
-
-  @get:Optional @get:Classpath abstract val featureClassJars: ConfigurableFileCollection
-
-  @get:Optional @get:Classpath abstract val featureJavaResourceJars: ConfigurableFileCollection
-
-  @get:Optional @get:Classpath abstract val baseJar: RegularFileProperty
-
-  @get:Input @get:Optional abstract val coreLibDesugarConfig: Property<String>
+abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : BaseR8Task(projectLayout) {
 
   // R8 will produce either classes or dex
   @get:Optional @get:OutputFile abstract val outputClasses: RegularFileProperty
@@ -142,6 +85,16 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
 
   @get:OutputFile abstract val outputResources: RegularFileProperty
 
+  @get:Input abstract val enableR8ConfigurationAnalyzerReport: Property<Boolean>
+
+  @get:Optional @get:OutputFile abstract val r8ConfigurationAnalyzerDataOutput: RegularFileProperty
+
+  @get:Optional @get:OutputFile abstract val r8ConfigurationAnalyzerReportOutput: RegularFileProperty
+
+  @get:Optional @get:OutputFile abstract val mainDexListOutput: RegularFileProperty
+
+  @get:Optional @get:OutputFile abstract val outputArtProfile: RegularFileProperty
+
   @get:OutputFile abstract val proguardSeedsOutput: RegularFileProperty
 
   @get:OutputFile abstract val proguardUsageOutput: RegularFileProperty
@@ -150,51 +103,27 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
 
   @get:OutputFile abstract val missingKeepRulesOutput: RegularFileProperty
 
-  @get:Optional @get:OutputFile abstract val mainDexListOutput: RegularFileProperty
-
-  @get:Input abstract val artProfileRewriting: Property<Boolean>
-
-  @get:Optional @get:PathSensitive(PathSensitivity.NAME_ONLY) @get:InputFiles abstract val inputArtProfile: RegularFileProperty
-
-  @get:Optional
-  @get:PathSensitive(PathSensitivity.NAME_ONLY)
-  @get:InputFiles
-  abstract val inputProfileForDexStartupOptimization: RegularFileProperty
-
-  @get:Optional @get:OutputFile abstract val outputArtProfile: RegularFileProperty
+  @get:OutputFile abstract val r8Metadata: RegularFileProperty
 
   @get:Inject abstract val providerFactory: ProviderFactory
 
-  @get:OutputFile abstract val r8Metadata: RegularFileProperty
-
-  @get:Nested abstract val toolParameters: R8ToolParameters
-
-  @get:Nested abstract val resourceShrinkingParams: R8ResourceShrinkingParameters
-
-  @get:Input @get:Optional abstract val partialShrinkingEnabled: Property<Boolean>
-
-  @get:Input @get:Optional abstract val applicationOptimizationEnabled: Property<Boolean>
-
-  @get:Input @get:Optional abstract val gradualShrinkingPackages: SetProperty<String>
-
-  @get:ServiceReference abstract val r8D8ThreadPoolBuildService: Property<R8D8ThreadPoolBuildService>
-
-  @get:Internal abstract val r8ThreadPoolSize: Property<Int>
-
-  @get:Input abstract val failOnMissingProguardFiles: Property<Boolean>
-
   class CreationAction(creationConfig: ConsumableCreationConfig, isTestApplication: Boolean = false, addCompileRClass: Boolean) :
-    ProguardConfigurableTask.CreationAction<R8Task, ConsumableCreationConfig>(creationConfig, isTestApplication, addCompileRClass) {
+    BaseR8Task.CreationAction<R8Task, ConsumableCreationConfig>(creationConfig, isTestApplication, addCompileRClass) {
     override val type = R8Task::class.java
     override val name = computeTaskName("minify", "WithR8")
 
-    private var disableTreeShaking: Boolean = false
-    private var disableMinification: Boolean = false
-
-    private val proguardConfigurations: MutableList<String> = mutableListOf()
-
     override fun handleProvider(taskProvider: TaskProvider<R8Task>) {
       super.handleProvider(taskProvider)
+
+      creationConfig.artifacts.setInitialProvider(taskProvider, R8Task::proguardSeedsOutput).on(InternalArtifactType.R8_MAPPING_SEEDS)
+      creationConfig.artifacts.setInitialProvider(taskProvider, R8Task::proguardUsageOutput).on(InternalArtifactType.R8_MAPPING_USAGE)
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, R8Task::proguardConfigurationOutput)
+        .on(InternalArtifactType.R8_MAPPING_CONFIGURATION)
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, R8Task::missingKeepRulesOutput)
+        .on(InternalArtifactType.R8_MAPPING_MISSING_RULES)
+      creationConfig.artifacts.setInitialProvider(taskProvider, R8Task::r8Metadata).on(InternalArtifactType.R8_METADATA)
 
       when {
         componentType.isAar -> {
@@ -212,17 +141,13 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
         else -> error("Unexpected component type: $componentType")
       }
 
-      creationConfig.artifacts.setInitialProvider(taskProvider, R8Task::proguardSeedsOutput).on(InternalArtifactType.R8_MAPPING_SEEDS)
-
-      creationConfig.artifacts.setInitialProvider(taskProvider, R8Task::proguardUsageOutput).on(InternalArtifactType.R8_MAPPING_USAGE)
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, R8Task::r8ConfigurationAnalyzerDataOutput)
+        .on(InternalArtifactType.R8_MAPPING_CONFIGURATION_ANALYZER_DATA)
 
       creationConfig.artifacts
-        .setInitialProvider(taskProvider, R8Task::proguardConfigurationOutput)
-        .on(InternalArtifactType.R8_MAPPING_CONFIGURATION)
-
-      creationConfig.artifacts
-        .setInitialProvider(taskProvider, R8Task::missingKeepRulesOutput)
-        .on(InternalArtifactType.R8_MAPPING_MISSING_RULES)
+        .setInitialProvider(taskProvider, R8Task::r8ConfigurationAnalyzerReportOutput)
+        .on(InternalArtifactType.R8_MAPPING_CONFIGURATION_ANALYZER_REPORT)
 
       creationConfig.artifacts
         .use(taskProvider)
@@ -231,10 +156,10 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
 
       if ((creationConfig as? ApplicationCreationConfig)?.runResourceShrinking() == true) {
         creationConfig.artifacts
-          .setInitialProvider(taskProvider) { it.resourceShrinkingParams.shrunkResourcesOutputDir }
+          .setInitialProvider(taskProvider) { (it as BaseR8Task).resourceShrinkingParams.shrunkResourcesOutputDir }
           .on(InternalArtifactType.SHRUNK_RESOURCES_PROTO_FORMAT)
         creationConfig.artifacts
-          .setInitialProvider(taskProvider) { it.resourceShrinkingParams.logFile }
+          .setInitialProvider(taskProvider) { (it as BaseR8Task).resourceShrinkingParams.logFile }
           .on(InternalArtifactType.R8_MAPPING_RESOURCES)
       }
 
@@ -247,7 +172,7 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
 
         if (creationConfig.runResourceShrinking()) {
           creationConfig.artifacts
-            .setInitialProvider(taskProvider) { it.resourceShrinkingParams.featureShrunkResourcesOutputDir }
+            .setInitialProvider(taskProvider) { (it as BaseR8Task).resourceShrinkingParams.featureShrunkResourcesOutputDir }
             .on(InternalArtifactType.FEATURE_SHRUNK_RESOURCES_PROTO_FORMAT)
         }
       }
@@ -274,160 +199,20 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
           .wiredWithFiles(R8Task::inputArtProfile, R8Task::outputArtProfile)
           .toTransform(InternalArtifactType.R8_ART_PROFILE)
       }
-      creationConfig.artifacts.setInitialProvider(taskProvider, R8Task::r8Metadata).on(InternalArtifactType.R8_METADATA)
     }
 
     override fun configure(task: R8Task) {
       super.configure(task)
 
-      val artifacts = creationConfig.artifacts
-
-      if (creationConfig is VariantCreationConfig) {
-        task.artProfileRewriting.set(
-          creationConfig.experimentalProperties.map { ModulePropertyKey.BooleanWithDefault.ART_PROFILE_R8_REWRITING.getValue(it) }
-        )
-        if (!creationConfig.debuggable) {
-          task.inputProfileForDexStartupOptimization.set(artifacts.get(InternalArtifactType.MERGED_STARTUP_PROFILE))
-        }
-      } else {
-        task.artProfileRewriting.set(false)
-      }
-
-      useR8D8BuildServices(task, creationConfig.services)
-      task.r8ThreadPoolSize.setDisallowChanges(
-        // This `IntegerOption` has a default value so get() should return not-null
-        creationConfig.services.projectOptions.get(IntegerOption.R8_THREAD_POOL_SIZE)!!
+      task.enableR8ConfigurationAnalyzerReport.setDisallowChanges(
+        creationConfig.services.projectOptions.getProvider(BooleanOption.R8_ENABLE_KEEP_RADIUS_REPORT)
       )
-
-      setBootClasspathForCodeShrinker(task)
-
-      task.errorFormatMode.set(SyncOptions.getErrorFormatMode(creationConfig.services.projectOptions))
-      task.legacyMultiDexEnabled.setDisallowChanges(
-        creationConfig is ApkCreationConfig && creationConfig.dexing.dexingType == DexingType.LEGACY_MULTIDEX
-      )
-
-      task.executionOptions.setDisallowChanges(creationConfig.global.settingsOptions.executionProfile?.r8Options)
-
-      task.proguardConfigurations = proguardConfigurations
-
-      task.failOnMissingProguardFiles.setDisallowChanges(
-        creationConfig.services.projectOptions.get(BooleanOption.FAIL_ON_MISSING_PROGUARD_FILES)
-      )
-
-      if (creationConfig is ApkCreationConfig) {
-        // options applicable only when building APKs, do not apply with AARs
-        task.duplicateClassesCheck.from(artifacts.get(DUPLICATE_CLASSES_CHECK))
-
-        task.mainDexRulesFiles.from(artifacts.getAll(MultipleArtifact.MULTIDEX_KEEP_PROGUARD))
-
-        if (creationConfig.dexing.dexingType.isLegacyMultiDex) {
-          task.mainDexRulesFiles.from(artifacts.get(InternalArtifactType.LEGACY_MULTIDEX_AAPT_DERIVED_PROGUARD_RULES))
-        }
-        task.multiDexKeepFile.setDisallowChanges(creationConfig.dexing.multiDexKeepFile)
-
-        if ((creationConfig as? ApplicationCreationConfig)?.shrinkingWithDynamicFeatures == true) {
-          creationConfig.artifacts.setTaskInputToFinalProduct(InternalArtifactType.MODULE_AND_RUNTIME_DEPS_CLASSES, task.baseJar)
-          task.featureClassJars.from(
-            creationConfig.variantDependencies.getArtifactFileCollection(
-              AndroidArtifacts.ConsumedConfigType.REVERSE_METADATA_VALUES,
-              AndroidArtifacts.ArtifactScope.PROJECT,
-              AndroidArtifacts.ArtifactType.REVERSE_METADATA_CLASSES,
-            )
-          )
-          task.featureJavaResourceJars.from(
-            creationConfig.variantDependencies.getArtifactFileCollection(
-              AndroidArtifacts.ConsumedConfigType.REVERSE_METADATA_VALUES,
-              AndroidArtifacts.ArtifactScope.PROJECT,
-              AndroidArtifacts.ArtifactType.REVERSE_METADATA_JAVA_RES,
-            )
-          )
-        }
-        if (creationConfig.dexing.isCoreLibraryDesugaringEnabled) {
-          task.coreLibDesugarConfig.set(getDesugarLibConfig(creationConfig.services))
-        }
-      }
-
-      task.baseJar.disallowChanges()
-      task.featureClassJars.disallowChanges()
-      task.featureJavaResourceJars.disallowChanges()
-
-      task.toolParameters.let {
-        it.minSdkVersion.setDisallowChanges(
-          if (creationConfig is ApkCreationConfig) {
-            creationConfig.dexing.minSdkVersionForDexing
-          } else {
-            creationConfig.minSdk.apiLevel
-          }
-        )
-        it.debuggable.setDisallowChanges(creationConfig.debuggable)
-        it.disableTreeShaking.setDisallowChanges(disableTreeShaking)
-        it.disableMinification.setDisallowChanges(disableMinification)
-        it.disableDesugaring.setDisallowChanges(
-          !(creationConfig is ApkCreationConfig && creationConfig.dexing.java8LangSupportType == Java8LangSupport.R8)
-        )
-        it.fullMode.setDisallowChanges(creationConfig.services.projectOptions[BooleanOption.FULL_R8])
-        it.strictFullModeForKeepRules.setDisallowChanges(
-          creationConfig.services.projectOptions[BooleanOption.R8_STRICT_FULL_MODE_FOR_KEEP_RULES]
-        )
-        it.packagedManifestDirectory.setDisallowChanges(creationConfig.artifacts.get(InternalArtifactType.PACKAGED_MANIFESTS))
-        it.r8OutputType.setDisallowChanges(
-          if (componentType.isAar) {
-            R8OutputType.CLASSES
-          } else {
-            R8OutputType.DEX
-          }
-        )
-        it.mainDexListDisallowed.set(creationConfig.services.projectOptions.get(BooleanOption.R8_MAIN_DEX_LIST_DISALLOWED))
-      }
-
-      if ((creationConfig as? ApplicationCreationConfig)?.runResourceShrinking() == true) {
-        task.resourceShrinkingParams.initialize(creationConfig)
-      } else {
-        task.resourceShrinkingParams.enabled.setDisallowChanges(false)
-      }
-
-      // for validation purposes
-      task.applicationOptimizationEnabled.setDisallowChanges(creationConfig.optimizationCreationConfig.applicationOptimizationEnabled)
-
-      task.partialShrinkingEnabled.setDisallowChanges(creationConfig.optimizationCreationConfig.applicationOptimizationEnabled)
-
-      if (creationConfig.optimizationCreationConfig.applicationOptimizationEnabled) {
-        task.gradualShrinkingPackages.set(creationConfig.optimizationCreationConfig.includePackages)
-      }
-    }
-
-    override fun keep(keep: String) {
-      proguardConfigurations.add("-keep $keep")
-    }
-
-    override fun keepAttributes() {
-      proguardConfigurations.add("-keepattributes *")
-    }
-
-    override fun dontWarn(dontWarn: String) {
-      proguardConfigurations.add("-dontwarn $dontWarn")
-    }
-
-    private fun setBootClasspathForCodeShrinker(task: R8Task) {
-      val javaTarget = creationConfig.global.compileOptions.targetCompatibility
-
-      task.bootClasspath.from(creationConfig.global.fullBootClasspath)
-      when {
-        javaTarget.isJava9Compatible ->
-          task.bootClasspath.from(creationConfig.global.versionedSdkLoader.flatMap { it.coreForSystemModulesProvider })
-        javaTarget.isJava8Compatible ->
-          task.bootClasspath.from(creationConfig.global.versionedSdkLoader.flatMap { it.coreLambdaStubsProvider })
-      }
     }
   }
 
   override fun doTaskAction() {
     // verify r8 gradual settings
-    if (applicationOptimizationEnabled.orNull == true && gradualShrinkingPackages.get().isEmpty()) {
-      throw RuntimeException(
-        "Wrong configuration. Gradual R8 is ON with optimization.enable = true " + "but packageScope has no include rules."
-      )
-    }
+    verifyGradualShrinkingConfiguration()
 
     val output: Property<out FileSystemLocation> =
       when {
@@ -467,20 +252,6 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
         .trimMargin()
     )
 
-    val keepRulesTree =
-      when {
-        componentType.orNull?.isAar == true -> {
-          checkAarKeepRulesDirectories(aarKeepRulesDirectories, projectLayout.projectDirectory.asFile)
-          aarKeepRulesFiles.asFileTree
-        }
-        else -> {
-          checkKeepRulesDirectories(keepRulesDirectories, projectLayout.projectDirectory.asFile)
-          keepRulesFiles.asFileTree
-        }
-      }
-
-    val finalListOfConfigurationFiles = projectLayout.files(configurationFiles, generatedProguardFile.asFileTree, keepRulesTree)
-
     // If inputArtProfile exists but artProfileRewriting is false, we need to copy it over
     // to outputArtProfile.
     val inputArtProfileFile = inputArtProfile.orNull?.asFile
@@ -494,35 +265,11 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
 
     val workerAction = { it: R8Runnable.Params ->
       it.bootClasspath.from(bootClasspath.toList())
-      it.mainDexListFiles.from(
-        mutableListOf<File>().also {
-          if (multiDexKeepFile.isPresent) {
-            it.add(multiDexKeepFile.get().asFile)
-          }
-        }
-      )
-      it.mainDexRulesFiles.from(
-        mutableListOf<File>().also {
-          it.addAll(mainDexRulesFiles.toList())
-          if (multiDexKeepProguard.isPresent) {
-            it.add(multiDexKeepProguard.get().asFile)
-          }
-        }
-      )
+      it.mainDexListFiles.from(getCombinedMainDexListFiles())
+      it.mainDexRulesFiles.from(getCombinedMainDexRulesFiles())
       it.mainDexListOutput.set(mainDexListOutput.orNull?.asFile)
       it.proguardConfigurationFiles.set(
-        reconcileDefaultProguardFile(
-          getFilteredFiles(
-            ignoreFromInKeepRules.get(),
-            ignoreFromAllExternalDependenciesInKeepRules.get(),
-            libraryKeepRules,
-            finalListOfConfigurationFiles,
-            LoggerWrapper.getLogger(R8Task::class.java),
-            LibraryArtifactType.KEEP_RULES,
-          ),
-          extractedDefaultProguardFile,
-          failOnMissingProguardFiles.get(),
-        )
+        reconcileDefaultProguardFile(obtainKeepRules(), extractedDefaultProguardFile, failOnMissingProguardFiles.get())
       )
       it.inputProguardMapping.set(
         if (testedMappingFile.isEmpty) {
@@ -542,6 +289,10 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
         }
       )
       it.resourcesJar.set(resourcesJar)
+      if (enableR8ConfigurationAnalyzerReport.get()) {
+        it.r8ConfigurationAnalyzerDataOutput.set(r8ConfigurationAnalyzerDataOutput.get().asFile)
+        it.r8ConfigurationAnalyzerReportOutput.set(r8ConfigurationAnalyzerReportOutput.get().asFile)
+      }
       it.mappingFile.set(mappingFile.get().asFile)
       it.mappingPartitionFile.set(mappingPartitionFile.get().asFile)
       it.proguardSeedsOutput.set(proguardSeedsOutput.get().asFile)
@@ -590,16 +341,6 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
     }
   }
 
-  // Merge creation config included/excluded patterns with package.txt with merged R8 packages
-  private fun aggregatePartialShrinkingConfig(): PartialShrinking? {
-    if (partialShrinkingEnabled.orNull != true) return null
-
-    // load from files and from new gradual r8 dsl
-    val packages = (gradualShrinkingPackages.orNull ?: listOf()).toList()
-    if (packages.contains("**")) return PartialShrinkingIncludeAll
-    return PartialShrinkingConfig(packages)
-  }
-
   companion object {
     fun shrink(
       bootClasspath: List<File>,
@@ -613,6 +354,8 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
       keepRuleWithOrigins: List<KeepRuleFile>,
       inputProguardMapping: File?,
       proguardConfigurations: MutableList<String>,
+      r8ConfigurationAnalyzerDataOutput: File?,
+      r8ConfigurationAnalyzerReportOutput: File?,
       mappingFile: File,
       mappingPartitionFile: File,
       proguardSeedsOutput: File,
@@ -626,7 +369,7 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
       featureDexDir: File?,
       featureJavaResourceOutputDir: File?,
       libConfiguration: String?,
-      errorFormatMode: SyncOptions.ErrorFormatMode,
+      errorFormatMode: com.android.build.gradle.options.SyncOptions.ErrorFormatMode,
       inputArtProfile: File?,
       outputArtProfile: File?,
       inputProfileForDexStartupOptimization: File?,
@@ -670,18 +413,30 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
           missingKeepRulesOutput.toPath(),
         )
 
-      val proguardConfig = ProguardConfig(keepRuleWithOrigins, inputProguardMapping?.toPath(), proguardConfigurations, proguardOutputFiles)
+      val proguardOutputReports =
+        if (r8ConfigurationAnalyzerDataOutput != null && r8ConfigurationAnalyzerReportOutput != null) {
+          ProguardOutputReports(r8ConfigurationAnalyzerDataOutput.toPath(), r8ConfigurationAnalyzerReportOutput.toPath())
+        } else null
+
+      val proguardConfig =
+        ProguardConfig(
+          keepRuleWithOrigins,
+          inputProguardMapping?.toPath(),
+          proguardConfigurations,
+          proguardOutputFiles,
+          proguardOutputReports,
+        )
 
       val mainDexListConfig =
         if (legacyMultiDexEnabled) {
-          MainDexListConfig(
+          com.android.builder.dexing.MainDexListConfig(
             mainDexRulesFiles.map { it.toPath() },
             mainDexListFiles.map { it.toPath() },
             getPlatformRules(),
             mainDexListOutput?.toPath(),
           )
         } else {
-          MainDexListConfig()
+          com.android.builder.dexing.MainDexListConfig()
         }
 
       // When invoking R8 we filter out missing files. E.g. javac output may not exist if
@@ -721,13 +476,6 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
         }
       }
     }
-
-    private fun useR8D8BuildServices(task: R8Task, services: TaskCreationServices) {
-      task.usesService(R8MaxParallelTasksBuildService.RegistrationAction(task.project, services.projectOptions).execute())
-      task.r8D8ThreadPoolBuildService.setDisallowChanges(
-        R8D8ThreadPoolBuildService.RegistrationAction(task.project, services.projectOptions).execute()
-      )
-    }
   }
 
   abstract class R8Runnable : WorkAction<R8Runnable.Params> {
@@ -744,6 +492,8 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
       abstract val proguardConfigurationFiles: ListProperty<KeepRuleFile>
       abstract val inputProguardMapping: RegularFileProperty
       abstract val proguardConfigurations: ListProperty<String>
+      abstract val r8ConfigurationAnalyzerDataOutput: RegularFileProperty
+      abstract val r8ConfigurationAnalyzerReportOutput: RegularFileProperty
       abstract val mappingFile: RegularFileProperty
       abstract val mappingPartitionFile: RegularFileProperty
       abstract val proguardSeedsOutput: RegularFileProperty
@@ -757,7 +507,7 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
       abstract val featureDexDir: DirectoryProperty
       abstract val featureJavaResourceOutputDir: DirectoryProperty
       abstract val libConfiguration: Property<String>
-      abstract val errorFormatMode: Property<SyncOptions.ErrorFormatMode>
+      abstract val errorFormatMode: Property<com.android.build.gradle.options.SyncOptions.ErrorFormatMode>
       abstract val inputArtProfile: RegularFileProperty
       abstract val outputArtProfile: RegularFileProperty
       abstract val inputProfileForDexStartupOptimization: RegularFileProperty
@@ -793,6 +543,8 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
           parameters.proguardConfigurationFiles.get(),
           parameters.inputProguardMapping.orNull?.asFile,
           parameters.proguardConfigurations.get(),
+          parameters.r8ConfigurationAnalyzerDataOutput.orNull?.asFile,
+          parameters.r8ConfigurationAnalyzerReportOutput.orNull?.asFile,
           parameters.mappingFile.get().asFile,
           parameters.mappingPartitionFile.get().asFile,
           parameters.proguardSeedsOutput.get().asFile,
@@ -824,74 +576,6 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
           r8ThreadPool.doClose()
         }
       }
-    }
-  }
-}
-
-/** Similar to [ToolConfig] but containing Gradle types. */
-abstract class R8ToolParameters {
-
-  @get:Input abstract val minSdkVersion: Property<Int>
-
-  @get:Input abstract val debuggable: Property<Boolean>
-
-  @get:Input abstract val disableTreeShaking: Property<Boolean>
-
-  @get:Input abstract val disableMinification: Property<Boolean>
-
-  @get:Input abstract val disableDesugaring: Property<Boolean>
-
-  @get:Input abstract val fullMode: Property<Boolean>
-
-  @get:Input abstract val strictFullModeForKeepRules: Property<Boolean>
-
-  /** Used to compute [ToolConfig.isolatedSplits] */
-  @get:InputDirectory @get:PathSensitive(PathSensitivity.RELATIVE) @get:Optional abstract val packagedManifestDirectory: DirectoryProperty
-
-  @get:Input abstract val r8OutputType: Property<R8OutputType>
-
-  @get:Input abstract val mainDexListDisallowed: Property<Boolean>
-
-  fun toToolConfig() =
-    ToolConfig(
-      minSdkVersion = minSdkVersion.get(),
-      debuggable = debuggable.get(),
-      disableTreeShaking = disableTreeShaking.get(),
-      disableMinification = disableMinification.get(),
-      disableDesugaring = disableDesugaring.get(),
-      fullMode = fullMode.get(),
-      strictFullModeForKeepRules = strictFullModeForKeepRules.get(),
-      isolatedSplits = getIsolatedSplitsValue(),
-      r8OutputType = r8OutputType.get(),
-      mainDexListDisallowed = mainDexListDisallowed.get(),
-    )
-
-  private fun getIsolatedSplitsValue(): Boolean? {
-    if (!packagedManifestDirectory.isPresent) return null
-
-    val packagedManifests =
-      BuiltArtifactsLoaderImpl().load(packagedManifestDirectory)?.elements
-        ?: error("Failed to load manifests from: ${packagedManifestDirectory.get().asFile}")
-
-    val isolatedSplitsValues: Set<Boolean?> =
-      packagedManifests
-        .map {
-          parseManifest(
-              File(it.outputFile).readText(),
-              it.outputFile,
-              manifestFileRequired = true,
-              manifestParsingAllowedProvider = null, // Always allow manifest parsing as this should be called only in
-              // the execution phase
-              THROW_ON_ERROR_ISSUE_REPORTER,
-            )
-            .isolatedSplits
-        }
-        .toSet()
-
-    return when (isolatedSplitsValues.size) {
-      0 -> error("No manifests found in: ${packagedManifestDirectory.get().asFile}")
-      1 -> isolatedSplitsValues.single()
-      else -> error("Multiple isolatedSplits values found in ${packagedManifestDirectory.get().asFile}: $isolatedSplitsValues")
     }
   }
 }

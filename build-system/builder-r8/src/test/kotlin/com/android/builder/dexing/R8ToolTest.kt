@@ -152,7 +152,14 @@ class R8ToolTest {
 
     val proguardRules = tmp.newFile().toPath()
     Files.write(proguardRules, listOf("-keep class test.A"))
-    val proguardConfig = ProguardConfig(listOf(KeepRuleFile.WithoutOrigin(proguardRules)), null, listOf(), emptyProguardOutputFiles)
+    val proguardConfig =
+      ProguardConfig(
+        listOf(KeepRuleFile.WithoutOrigin(proguardRules)),
+        null,
+        listOf(),
+        emptyProguardOutputFiles,
+        emptyProguardOutputReports,
+      )
 
     val output = tmp.newFolder().toPath()
 
@@ -193,7 +200,9 @@ class R8ToolTest {
         proguardConfigurationOutput,
         mappingFileDir.resolve("missing_rules.txt"),
       )
-    val proguardConfig = ProguardConfig(keepRuleWithOrigins, null, listOf(), mappingOutputFiles)
+    val mappingOutputReports =
+      ProguardOutputReports(mappingFileDir.resolve("configanalyzer.pb"), mappingFileDir.resolve("configanalyzer.html"))
+    val proguardConfig = ProguardConfig(keepRuleWithOrigins, null, listOf(), mappingOutputFiles, mappingOutputReports)
 
     val output = tmp.newFolder().toPath()
 
@@ -249,6 +258,7 @@ class R8ToolTest {
           tmp.root.toPath().resolve("configuration.txt"),
           tmp.root.toPath().resolve("missing_rules.txt"),
         ),
+        ProguardOutputReports(tmp.root.toPath().resolve("configanalyzer.pb"), tmp.root.toPath().resolve("configanalyzer.html")),
       )
 
     val output = tmp.newFolder().toPath()
@@ -266,15 +276,17 @@ class R8ToolTest {
       .containsClass("Lcom/android/builder/dexing/ExampleClasses\$TestClass;")
       .that()
       .hasMethodThatInvokes("test", "Lfoo/Bar;->baz()V")
-    assertThat(Files.exists(proguardConfig.proguardOutputFiles.proguardMapOutput)).isTrue()
+    assertThat(Files.exists(proguardConfig.proguardOutputFiles!!.proguardMapOutput)).isTrue()
   }
 
   @Test
-  fun testUsageAndSeeds() {
+  fun testr8ConfigurationAnalyzerAndUsageAndSeeds() {
     val classes = tmp.newFolder().toPath().resolve("classes.jar")
     TestInputsGenerator.dirWithEmptyClasses(classes, listOf("test/A", "test/B"))
     val output = tmp.newFolder().toPath()
 
+    val r8ConfigurationAnalyzerDataOutput = tmp.root.toPath().resolve("configanalyzer.pb")
+    val r8ConfigurationAnalyzerReportOutput = tmp.root.toPath().resolve("configanalyzer.html")
     val proguardSeedsOutput = tmp.root.toPath().resolve("seeds.txt")
     val proguardUsageOutput = tmp.root.toPath().resolve("usage.txt")
     val proguardConfigurationOutput = tmp.root.toPath().resolve("configuration.txt")
@@ -291,10 +303,13 @@ class R8ToolTest {
           proguardConfigurationOutput,
           tmp.root.toPath().resolve("missing_rules.txt"),
         ),
+        ProguardOutputReports(r8ConfigurationAnalyzerDataOutput, r8ConfigurationAnalyzerReportOutput),
       )
 
     runR8Tool(inputClasses = listOf(classes), output = output, proguardConfig = proguardConfig)
 
+    assertThat(Files.exists(r8ConfigurationAnalyzerDataOutput)).isTrue()
+    assertThat(Files.exists(r8ConfigurationAnalyzerReportOutput)).isTrue()
     assertThat(Files.exists(proguardSeedsOutput)).isTrue()
     assertThat(Files.exists(proguardUsageOutput)).isTrue()
     assertThat(Files.exists(proguardConfigurationOutput)).isTrue()
@@ -304,7 +319,14 @@ class R8ToolTest {
   fun testErrorReporting() {
     val proguardRules = tmp.newFile().toPath()
     Files.write(proguardRules, listOf("wrongRuleExample"))
-    val proguardConfig = ProguardConfig(listOf(KeepRuleFile.WithoutOrigin(proguardRules)), null, listOf(), emptyProguardOutputFiles)
+    val proguardConfig =
+      ProguardConfig(
+        listOf(KeepRuleFile.WithoutOrigin(proguardRules)),
+        null,
+        listOf(),
+        emptyProguardOutputFiles,
+        emptyProguardOutputReports,
+      )
 
     val output = tmp.newFolder().toPath()
     val messages = mutableListOf<String>()
@@ -414,6 +436,7 @@ class R8ToolTest {
         null,
         listOf("-keep class ${testClass.name} { public void foo(); }", "-dontwarn ${testClass.name}"),
         emptyProguardOutputFiles,
+        emptyProguardOutputReports,
       )
     val debuggableToolConfig = defaultToolConfig().copy(debuggable = true)
 
@@ -456,6 +479,7 @@ class R8ToolTest {
           tmp.newFile().toPath(),
           missingRules.toPath(),
         ),
+        ProguardOutputReports(tmp.newFile().toPath(), tmp.newFile().toPath()),
       )
 
     val classes =
@@ -485,7 +509,13 @@ class R8ToolTest {
     val proguardRulesFile = tmp.newFile("proguard-rules.pro")
     proguardRulesFile.writeText("-keep class test.A")
     val proguardConfig =
-      ProguardConfig(listOf(KeepRuleFile.WithoutOrigin(proguardRulesFile.toPath())), null, listOf(), emptyProguardOutputFiles)
+      ProguardConfig(
+        listOf(KeepRuleFile.WithoutOrigin(proguardRulesFile.toPath())),
+        null,
+        listOf(),
+        emptyProguardOutputFiles,
+        emptyProguardOutputReports,
+      )
 
     val output = tmp.newFolder().toPath()
 
@@ -585,7 +615,12 @@ class R8ToolTest {
     ProguardOutputFiles(fakeOutput, fakeOutput, fakeOutput, fakeOutput, fakeOutput, fakeOutput)
   }
 
-  private fun emptyProguardConfig() = ProguardConfig(listOf(), null, listOf(), emptyProguardOutputFiles)
+  private val emptyProguardOutputReports by lazy {
+    val fakeOutput = tmp.newFolder().resolve("fake_output.txt").toPath()
+    ProguardOutputReports(fakeOutput, fakeOutput)
+  }
+
+  private fun emptyProguardConfig() = ProguardConfig(listOf(), null, listOf(), emptyProguardOutputFiles, emptyProguardOutputReports)
 
   private fun emptyMainDexListConfig() = MainDexListConfig(listOf(), listOf())
 

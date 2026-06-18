@@ -16,8 +16,8 @@
 
 package com.android.tools.deployer;
 
-import static com.android.tools.deployer.InstallOptions.MOBILE_INSTALL_DEFAULTS;
-import static com.android.tools.deployer.InstallOptions.STUDIO_DEFAULTS;
+import static com.android.tools.deployer.common.InstallOptions.MOBILE_INSTALL_DEFAULTS;
+import static com.android.tools.deployer.common.InstallOptions.STUDIO_DEFAULTS;
 
 import com.android.adblib.AdbSession;
 import com.android.adblib.tools.AdbLibSessionFactoryKt;
@@ -25,9 +25,19 @@ import com.android.annotations.NonNull;
 import com.android.ddmlib.AdbInitOptions;
 import com.android.ddmlib.AndroidDebugBridge;
 import com.android.ddmlib.IDevice;
+import com.android.tools.deployer.common.AdbClient;
+import com.android.tools.deployer.common.Canceller;
+import com.android.tools.deployer.common.ChangeType;
+import com.android.tools.deployer.common.DeployMetric;
+import com.android.tools.deployer.common.DeployerException;
+import com.android.tools.deployer.common.DeployerOption;
+import com.android.tools.deployer.common.DeploymentCacheDatabase;
+import com.android.tools.deployer.common.InstallOptions;
+import com.android.tools.deployer.common.Installer;
+import com.android.tools.deployer.common.UIService;
+import com.android.tools.deployer.install.InstallMode;
 import com.android.tools.deployer.model.App;
 import com.android.tools.deployer.model.component.ApkParserException;
-import com.android.tools.deployer.tasks.Canceller;
 import com.android.tools.deployer.tasks.TaskRunner;
 import com.android.tools.tracer.Trace;
 import com.android.utils.ILogger;
@@ -247,9 +257,9 @@ public class DeployerRunner {
                     options.setGrantAllPermissions();
                 }
 
-                Deployer.InstallMode installMode = Deployer.InstallMode.DELTA;
+                InstallMode installMode = InstallMode.DELTA;
                 if (parameters.isForceFullInstall()) {
-                    installMode = Deployer.InstallMode.FULL;
+                    installMode = InstallMode.FULL;
                 }
 
                 if (parameters.getTargetUserId() != null) {

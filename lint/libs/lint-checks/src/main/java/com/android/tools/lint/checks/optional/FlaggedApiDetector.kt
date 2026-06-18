@@ -32,7 +32,6 @@ import com.android.tools.lint.detector.api.ApiConstraint
 import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.ConstantEvaluator
 import com.android.tools.lint.detector.api.Detector
-import com.android.tools.lint.detector.api.ExtensionSdk.Companion.ANDROID_SDK_ID
 import com.android.tools.lint.detector.api.Implementation
 import com.android.tools.lint.detector.api.Incident
 import com.android.tools.lint.detector.api.Issue
@@ -173,7 +172,19 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
       checkFlagApiDeclaration(annotation, context, usageInfo, qualifiedName)
       return
     }
+    // 2. Usage checks (ONLY for @RequiresFlag)
+    if (REQUIRES_FLAG_ANNOTATION.isEquals(qualifiedName)) {
+      checkFlagApiUsage(context, element, annotationInfo, usageInfo)
+    }
+  }
 
+  private fun checkFlagApiUsage(
+    context: JavaContext,
+    element: UElement,
+    annotationInfo: AnnotationInfo,
+    usageInfo: AnnotationUsageInfo,
+  ) {
+    val annotation = annotationInfo.annotation
     val compiled = usageInfo.referenced is PsiCompiledElement
     val evaluator = context.evaluator
 
@@ -210,11 +221,7 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
 
     val (flag, flag2) = flags ?: return
 
-    if (annotationInfo.origin == AnnotationOrigin.SELF) {
-      if (FLAGGED_API_ANNOTATION.isEquals(qualifiedName) || REQUIRES_FLAG_ANNOTATION.isEquals(qualifiedName)) {
-        return
-      }
-    } else if (isAlreadyAnnotated(evaluator, element, flag)) {
+    if (isAlreadyAnnotated(evaluator, element, flag)) {
       return
     }
 
@@ -264,7 +271,7 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
   }
 
   private fun ApiConstraint.isFinalized(): Boolean {
-    return getSdk() == ANDROID_SDK_ID && min() < CUR_DEVELOPMENT
+    return getConstraints().any { it.fromInclusive() != CUR_DEVELOPMENT }
   }
 
   private fun getFlagMethodName(flagName: String): String = constantNameToCamelCase(flagName.removePrefix("FLAG_"))

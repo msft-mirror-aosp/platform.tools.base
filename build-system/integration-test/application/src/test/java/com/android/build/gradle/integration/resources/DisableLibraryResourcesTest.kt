@@ -229,8 +229,8 @@ class DisableLibraryResourcesTest {
   @Test
   fun testAndroidAndUnitTests() {
     project.executor().with(BooleanOption.BUILD_FEATURE_ANDROID_RESOURCES, false).run(":leaflib:assembleDebugAndroidTest", ":leaflib:test")
-    assertThat(project.file("leafLib/build/reports/tests/testDebugUnitTest/com.example.MyTest/check.html").readText())
-      .contains("ExampleTest has some output")
+    val htmlFiles = project.file("leafLib/build/reports/tests/testDebugUnitTest").walkTopDown().filter { it.extension == "html" }.toList()
+    assertThat(htmlFiles.any { it.readText().contains("ExampleTest has some output") }).isTrue()
     // By default, only debug unit tests are run. Verify release unit tests did not run, and
     // therefore, no test results were generated.
     assertThat(project.file("leafLib/build/reports/tests/testReleaseUnitTest").exists()).isFalse()

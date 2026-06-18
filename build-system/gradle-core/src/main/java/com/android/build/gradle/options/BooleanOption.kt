@@ -210,6 +210,9 @@ enum class BooleanOption(
    */
   UNINSTALL_INCOMPATIBLE_APKS("android.experimental.testOptions.uninstallIncompatibleApks", false, FeatureStage.Experimental),
 
+  /** When enabled, on-the-fly code coverage will be used for Android tests instead of offline instrumentation. */
+  ENABLE_ON_THE_FLY_CODE_COVERAGE("android.experimental.testOptions.coverage.onTheFly", false, FeatureStage.Experimental),
+
   /** When enabled, "-show-kernel" and "-verbose" flags are used when running an Android emulator for Gradle Managed devices. */
   GRADLE_MANAGED_DEVICE_EMULATOR_SHOW_KERNEL_LOGGING(
     "android.experimental.testOptions.managedDevices.emulator.showKernelLogging",
@@ -288,6 +291,7 @@ enum class BooleanOption(
   PRIVACY_SANDBOX_SDK_REQUIRE_SERVICES("android.experimental.privacysandboxsdk.requireServices", true, FeatureStage.Experimental),
   VERIFY_AAR_CLASSES("android.experimental.verifyLibraryClasses", false, FeatureStage.Experimental),
   DISABLE_COMPILE_SDK_CHECKS("android.experimental.disableCompileSdkChecks", false, FeatureStage.Experimental),
+  DISABLE_COMPILE_SDK_CHECKS_TESTS("android.experimental.disableCompileSdkChecks.tests", false, FeatureStage.Experimental),
 
   // Whether to suppress warnings about android:extractNativeLibs set to true in dependencies
   SUPPRESS_EXTRACT_NATIVE_LIBS_WARNINGS("android.experimental.suppressExtractNativeLibsWarnings", false, FeatureStage.Experimental),
@@ -337,7 +341,7 @@ enum class BooleanOption(
   ),
 
   /** When enabled, registers code coverage and test results aggregation tasks. */
-  REPORT_AGGREGATION_SUPPORT("android.experimental.reportAggregationSupport", true, FeatureStage.Experimental),
+  REPORT_AGGREGATION_SUPPORT("android.experimental.reportAggregationSupport", false, FeatureStage.Experimental),
 
   /** Temporary workaround to continue using R8 param of --main-dex-list */
   R8_MAIN_DEX_LIST_DISALLOWED(
@@ -349,6 +353,14 @@ enum class BooleanOption(
 
   /** Enables R8 gradual support */
   R8_GRADUAL_API("android.r8.gradual.support", false, FeatureStage.Experimental),
+
+  /** Whether to output the R8 Configuration Analyzer report from R8 builds. */
+  R8_ENABLE_KEEP_RADIUS_REPORT(
+    "android.experimental.r8.enableR8ConfigurationAnalyzer",
+    true,
+    FeatureStage.Experimental,
+    futureStage = FutureStage(Version.VERSION_10_0, true, FeatureStage.Enforced(Version.VERSION_10_0)),
+  ),
 
   /**
    * Whether to disallow the use of Kotlin source sets ([org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet]) when built-in Kotlin is
@@ -380,6 +392,7 @@ enum class BooleanOption(
     FeatureStage.Experimental,
     futureStage = FutureStage(Version.VERSION_10_0, true, FeatureStage.Experimental),
   ),
+  ENABLE_GLOBAL_SYNTHETICS_FOR_ALL_DEBUG_BUILDS("android.enableGlobalSyntheticsForAllDebugBuilds", true, FeatureStage.Experimental),
 
   /* ------------------------
    * SOFTLY-ENFORCED FEATURES

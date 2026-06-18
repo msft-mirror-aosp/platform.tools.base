@@ -29,7 +29,13 @@ import java.lang.reflect.Method;
  */
 public class LeakCanaryReflectionHelper {
 
-    private static volatile boolean initialized = false;
+    public enum ReflectionState {
+        UNINITIALIZED,
+        COMPLETED,
+        FAILED
+    }
+
+    private static volatile ReflectionState state = ReflectionState.UNINITIALIZED;
 
     // Cached LeakCanary Config Methods/Fields
     private static Method getConfigMethod;
@@ -66,13 +72,14 @@ public class LeakCanaryReflectionHelper {
      * actually performs the reflection.
      */
     public static void ensureInitialized() {
-        // 1st Check (Fast Path): If already initialized, return immediately without locking.
-        if (initialized) return;
+        // 1st Check (Fast Path): If already initialized or failed, return immediately without
+        // locking.
+        if (state != ReflectionState.UNINITIALIZED) return;
 
         synchronized (LeakCanaryReflectionHelper.class) {
             // 2nd Check (Safe Path): If another thread initialized it while we were waiting for the
             // lock, return.
-            if (initialized) return;
+            if (state != ReflectionState.UNINITIALIZED) return;
 
             // 1. Initialize LeakCanary Configuration cache and Dump Heap Method
             try {
@@ -82,25 +89,15 @@ public class LeakCanaryReflectionHelper {
                 leakCanaryInstance = leakCanaryInstanceField.get(null);
                 getConfigMethod = leakCanaryClass.getDeclaredMethod(HelperConfig.GET_CONFIG_METHOD);
                 dumpHeapMethod = leakCanaryClass.getMethod(HelperConfig.DUMP_HEAP_METHOD);
-            } catch (Throwable t) {
-                Log.w(
-                        HelperConfig.LOG_TAG,
-                        "Failed to initialize LeakCanary configuration/dumpHeap reflection.");
-            }
 
-            // 2. Initialize internal listener
-            try {
+                // 2. Initialize internal listener
                 Class<?> internalLcClass = Class.forName(HelperConfig.LEAK_CANARY_INTERNAL_CLASS);
                 Field internalInstanceField =
                         internalLcClass.getDeclaredField(HelperConfig.INSTANCE_FIELD);
                 internalInstanceField.setAccessible(true);
                 internalLcInstance = internalInstanceField.get(null);
-            } catch (Throwable t) {
-                Log.w(HelperConfig.LOG_TAG, "Failed to initialize internal listener reflection.");
-            }
 
-            // 3. Initialize AppWatcher and ObjectWatcher cache
-            try {
+                // 3. Initialize AppWatcher and ObjectWatcher cache
                 Class<?> appWatcherClass = Class.forName(HelperConfig.APP_WATCHER_CLASS);
                 Field appWatcherInstanceField =
                         appWatcherClass.getDeclaredField(HelperConfig.INSTANCE_FIELD);
@@ -127,33 +124,33 @@ public class LeakCanaryReflectionHelper {
                         objectWatcherClass.getMethod(
                                 HelperConfig.ADD_ON_OBJECT_RETAINED_LISTENER_METHOD,
                                 listenerInterface);
-            } catch (Throwable t) {
-                Log.w(
-                        HelperConfig.LOG_TAG,
-                        "Failed to initialize AppWatcher/ObjectWatcher reflection.");
-            }
 
-            // 4. Initialize GC Trigger cache
-            try {
+                // 4. Initialize GC Trigger cache
                 Class<?> gcTriggerClass = Class.forName(HelperConfig.GC_TRIGGER_DEFAULT_CLASS);
                 Field gcInstanceField =
                         gcTriggerClass.getDeclaredField(HelperConfig.INSTANCE_FIELD);
                 gcTriggerInstance = gcInstanceField.get(null);
                 runGcMethod = gcTriggerInstance.getClass().getMethod(HelperConfig.RUN_GC_METHOD);
-            } catch (Throwable t) {
-                Log.w(
-                        HelperConfig.LOG_TAG,
-                        "Failed to initialize GcTrigger reflection. GC features will be disabled.");
-            }
 
-            initialized = true;
+                // If we reached this point without throwing an exception, reflection was completely
+                // successful.
+                state = ReflectionState.COMPLETED;
+            } catch (Throwable t) {
+                Log.w(HelperConfig.LOG_TAG, "Failed to fully initialize LeakCanary reflection.", t);
+                state = ReflectionState.FAILED;
+            }
         }
     }
 
     /** Modifies the 'dumpHeap' field of LeakCanary's current Config object. */
     public static void setDumpHeapEnabled(boolean enabled) {
         ensureInitialized();
-        if (leakCanaryInstance == null || getConfigMethod == null) return;
+        if (state != ReflectionState.COMPLETED
+                || leakCanaryInstance == null
+                || getConfigMethod == null) {
+            Log.w(HelperConfig.LOG_TAG, "Cannot set LeakCanary heap dumping; reflection failed.");
+            return;
+        }
 
         try {
             Object currentConfig = getConfigMethod.invoke(leakCanaryInstance);
@@ -185,13 +182,12 @@ public class LeakCanaryReflectionHelper {
     public static boolean swapOnObjectRetainedListener(
             Object studioListener, boolean useStudioListener) {
         ensureInitialized();
-        if (objectWatcherInstance == null
+        if (state != ReflectionState.COMPLETED
+                || objectWatcherInstance == null
                 || removeListenerMethod == null
                 || addListenerMethod == null
                 || internalLcInstance == null) {
-            Log.e(
-                    HelperConfig.LOG_TAG,
-                    "Cannot swap listener. Required reflection variables are null.");
+            Log.w(HelperConfig.LOG_TAG, "Cannot swap LeakCanary listener; reflection failed.");
             return false;
         }
 
@@ -221,7 +217,12 @@ public class LeakCanaryReflectionHelper {
     /** Natively checks the AppWatcher object watcher to get the retained object count. */
     public static int getRetainedObjectCount() {
         ensureInitialized();
-        if (objectWatcherInstance == null || getRetainedObjectCountMethod == null) return 0;
+        if (state != ReflectionState.COMPLETED
+                || objectWatcherInstance == null
+                || getRetainedObjectCountMethod == null) {
+            Log.w(HelperConfig.LOG_TAG, "Cannot get retained object count; reflection failed.");
+            return 0;
+        }
 
         try {
             return (int) getRetainedObjectCountMethod.invoke(objectWatcherInstance);
@@ -234,7 +235,12 @@ public class LeakCanaryReflectionHelper {
     /** Clears objects watched before the specified timestamp. */
     public static void clearObjectsWatchedBefore(long timestampMillis) {
         ensureInitialized();
-        if (objectWatcherInstance == null || clearObjectsMethod == null) return;
+        if (state != ReflectionState.COMPLETED
+                || objectWatcherInstance == null
+                || clearObjectsMethod == null) {
+            Log.w(HelperConfig.LOG_TAG, "Cannot clear watched objects; reflection failed.");
+            return;
+        }
 
         try {
             clearObjectsMethod.invoke(objectWatcherInstance, timestampMillis);
@@ -246,7 +252,12 @@ public class LeakCanaryReflectionHelper {
     /** Triggers garbage collection using LeakCanary's GcTrigger. */
     public static void runGc() {
         ensureInitialized();
-        if (gcTriggerInstance == null || runGcMethod == null) return;
+        if (state != ReflectionState.COMPLETED
+                || gcTriggerInstance == null
+                || runGcMethod == null) {
+            Log.w(HelperConfig.LOG_TAG, "Cannot trigger GC; reflection failed.");
+            return;
+        }
 
         try {
             runGcMethod.invoke(gcTriggerInstance);
@@ -258,7 +269,12 @@ public class LeakCanaryReflectionHelper {
     /** Forces LeakCanary to dump the heap immediately. */
     public static void triggerDumpHeap() {
         ensureInitialized();
-        if (leakCanaryInstance == null || dumpHeapMethod == null) return;
+        if (state != ReflectionState.COMPLETED
+                || leakCanaryInstance == null
+                || dumpHeapMethod == null) {
+            Log.w(HelperConfig.LOG_TAG, "Cannot trigger heap dump; reflection failed.");
+            return;
+        }
 
         try {
             dumpHeapMethod.invoke(leakCanaryInstance);
@@ -273,10 +289,18 @@ public class LeakCanaryReflectionHelper {
     /**
      * Gets the retained visible threshold from LeakCanary config.
      *
-     * @return The threshold value, or default if reflection fails.
+     * @return The threshold value, -1 if reflection failed, or default if it succeeds but fails
+     *     during invocation.
      */
     public static int getRetainedVisibleThreshold() {
         ensureInitialized();
+        if (state != ReflectionState.COMPLETED) {
+            Log.w(
+                    HelperConfig.LOG_TAG,
+                    "Reflection was not fully successful. Returning failure threshold to signal"
+                            + " Studio.");
+            return HelperConfig.REFLECTION_FAILED_THRESHOLD;
+        }
         int threshold = HelperConfig.DEFAULT_THRESHOLD;
         if (leakCanaryInstance == null || getConfigMethod == null) return threshold;
 

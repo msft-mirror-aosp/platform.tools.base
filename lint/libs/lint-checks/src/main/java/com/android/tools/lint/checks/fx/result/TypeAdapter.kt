@@ -39,21 +39,22 @@ import org.jetbrains.uast.kotlin.BaseKotlinUastResolveProviderService
 
 /** A converter of [T] into the internal [Type] representation */
 internal interface TypeAdapter<T> {
-  fun translate(env: Set<String>, repr: T): Type<Nothing>
+  fun translate(env: (String) -> Type<Nothing>?, repr: T): Type<Nothing>
 
   fun isFinal(repr: T): Boolean
 }
 
+internal fun <T> TypeAdapter<T>.translate(env: Map<String, Type.Sym.Param>, repr: T): Type<Nothing> = translate(env::get, repr)
+
 internal object PsiClassAdapter : TypeAdapter<PsiClass> {
-  override fun translate(env: Set<String>, repr: PsiClass): Type<Nothing> {
+  override fun translate(env: (String) -> Type<Nothing>?, repr: PsiClass): Type<Nothing> {
     val c = repr.qualifiedName
-    return when {
-      c in env -> Type.Sym.Param(c!!)
-      else -> {
-        val params = repr.typeParameters.map { Type.Sym.Param(it.name!!) }
+    return c?.let(env)
+      ?: run {
+        val reprId = ClassId.of(repr)
+        val params = repr.typeParameters.map { Type.Sym.Param(it.name!!, reprId) }
         Type.Application(ClassId.of(repr), params)
       }
-    }
   }
 
   // TODO: does below check for user-annotated `final`, or effective `final`?
@@ -61,7 +62,7 @@ internal object PsiClassAdapter : TypeAdapter<PsiClass> {
 }
 
 internal object PsiTypeAdapter : TypeAdapter<PsiType> {
-  override fun translate(env: Set<String>, repr: PsiType): Type<Nothing> {
+  override fun translate(env: (String) -> Type<Nothing>?, repr: PsiType): Type<Nothing> {
     fun loop(t: PsiType): Type<Nothing> =
       when (t) {
         PsiTypes.booleanType() -> Type.Boolean
@@ -74,12 +75,8 @@ internal object PsiTypeAdapter : TypeAdapter<PsiType> {
         PsiTypes.doubleType() -> Type.Double
         PsiTypes.voidType() -> Type.Unit
         PsiTypes.nullType() -> Type.None
-        is PsiClassType ->
-          when (val c = t.className) {
-            in env -> Type.Sym.Param(c)
-            else -> Type.Application(ClassId.of(t), t.parameters.map(::loop))
-          }
-        is PsiTypeParameter -> Type.Sym.Param(t.canonicalText)
+        is PsiClassType -> env(t.className) ?: Type.Application(ClassId.of(t), t.parameters.map(::loop))
+        is PsiTypeParameter -> env(t.canonicalText)!!
         is PsiWildcardType -> Type.WildCard // TODO
         is PsiEllipsisType -> Type.Ellipsis(translate(env, t.componentType))
         is PsiArrayType -> Type.Application(ClassId.Array, listOf(translate(env, t.componentType)))
@@ -105,7 +102,7 @@ internal object KtTypeReferenceAdapter : TypeAdapter<KtTypeReference?> {
   internal val resolveProviderService: BaseKotlinUastResolveProviderService by
     lazy(LazyThreadSafetyMode.NONE) { ApplicationManager.getApplication().getService(BaseKotlinUastResolveProviderService::class.java) }
 
-  override fun translate(env: Set<String>, repr: KtTypeReference?) =
+  override fun translate(env: (String) -> Type<Nothing>?, repr: KtTypeReference?) =
     when (repr) {
       null -> Type.WildCard
       else -> resolveProviderService.resolveToType(repr, null)?.let { PsiTypeAdapter.translate(env, it) } ?: Type.WildCard
@@ -116,18 +113,19 @@ internal object KtTypeReferenceAdapter : TypeAdapter<KtTypeReference?> {
 }
 
 object KTypeAdapter : TypeAdapter<KType> {
-  override fun translate(env: Set<String>, repr: KType): Type<Nothing> =
+  override fun translate(env: (String) -> Type<Nothing>?, repr: KType): Type<Nothing> =
     when (val c = repr.classifier) {
       Boolean::class -> Type.Boolean
       Int::class -> Type.Int
       Char::class -> Type.Char
-      Byte::class -> Type.Short
+      Byte::class -> Type.Byte
+      Short::class -> Type.Short
       Long::class -> Type.Long
       Float::class -> Type.Float
       Double::class -> Type.Double
       Unit::class -> Type.Unit
       is KClass<*> -> Type.Application(ClassId.of(c), repr.arguments.map { translate(env, it.type ?: return@map Type.WildCard) })
-      is KTypeParameter -> Type.Sym.Param(c.name)
+      is KTypeParameter -> env(c.name)!!
       else -> throw NotImplementedError("Translate $repr")
     }
 

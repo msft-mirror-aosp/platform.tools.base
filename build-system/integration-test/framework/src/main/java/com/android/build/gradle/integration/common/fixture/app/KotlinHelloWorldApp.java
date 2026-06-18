@@ -89,7 +89,6 @@ public class KotlinHelloWorldApp extends HelloWorldApp {
                                 + "    }\n"
                                 + "}\n"
                                 + "dependencies {\n"
-                                + "    api \"org.jetbrains.kotlin:kotlin-stdlib:${libs.versions.kotlinVersion.get()}\"\n"
                                 + "    androidTestImplementation \"androidx.test:runner:1.4.0-alpha06\"\n"
                                 + "    androidTestImplementation \"androidx.test:rules:1.4.0-alpha06\"\n"
                                 + "    androidTestImplementation \"androidx.annotation:annotation-experimental:1.3.0\"\n"

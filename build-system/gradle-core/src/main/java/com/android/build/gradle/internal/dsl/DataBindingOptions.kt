@@ -49,12 +49,14 @@ constructor(private val featuresProvider: Supplier<BuildFeatures>, private val d
       }
     }
 
+  @Deprecated("deprecated, use enable", ReplaceWith("enable"))
   override var isEnabled: Boolean
     get() = enable
     set(value) {
       enable = value
     }
 
+  @Deprecated("deprecated, use enableForTests", ReplaceWith("enableForTests"))
   override var isEnabledForTests: Boolean
     get() = enableForTests
     set(value) {

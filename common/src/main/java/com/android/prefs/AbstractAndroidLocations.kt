@@ -24,6 +24,7 @@ import com.android.utils.NullLogger
 import com.google.common.annotations.VisibleForTesting
 import java.nio.file.Files
 import java.nio.file.Path
+import kotlin.io.path.exists
 
 /**
  * A class that computes various locations used by the Android tools.
@@ -111,9 +112,8 @@ This is the path of preference folder expected by the Android tools."""
         return it
       }
       val pathLocator = PathLocator(environmentProvider)
-      return pathLocator.firstPathOf(Global.TEST_TMPDIR, Global.XDG_CONFIG_HOME, Global.USER_HOME, Global.HOME)?.also {
-        internalUserHomeLocation = it
-      } ?: throw AndroidLocationsException.createForHomeLocation(pathLocator.visitedVariables)
+      return pathLocator.firstPathOf(Global.TEST_TMPDIR, Global.USER_HOME, Global.HOME)?.also { internalUserHomeLocation = it }
+        ?: throw AndroidLocationsException.createForHomeLocation(pathLocator.visitedVariables)
     }
 
   private var internalUserHomeLocation: Path? = null
@@ -160,7 +160,23 @@ This is the path of preference folder expected by the Android tools."""
     // Worst case we query for these variables twice before both userHomeLocation and
     // prefsLocation are cached.
     val pathLocator = PathLocator(environmentProvider)
-    return pathLocator.firstPathOf(Global.TEST_TMPDIR, Global.XDG_CONFIG_HOME, Global.USER_HOME, Global.HOME)?.resolve(FOLDER_DOT_ANDROID)
+
+    val testDir = pathLocator.firstPathOf(Global.TEST_TMPDIR)
+    testDir?.also {
+      return it.resolve(FOLDER_DOT_ANDROID)
+    }
+
+    // We no longer default to XDG_CONFIG_HOME, as ".android" is not a config directory
+    // and a multitude of other tools do not support it, creating inconsistencies, but
+    // if we find it we keep using it for backwards compatibility
+    val legacy = pathLocator.firstPathOf(Global.XDG_CONFIG_HOME)?.resolve(FOLDER_DOT_ANDROID)
+    legacy
+      ?.takeIf { legacy.exists() }
+      ?.also {
+        return it
+      }
+
+    return pathLocator.firstPathOf(Global.USER_HOME, Global.HOME)?.resolve(FOLDER_DOT_ANDROID)
       ?: throw AndroidLocationsException(
         combineLocationValuesIntoMessage(
           values = locator.visitedVariables + pathLocator.visitedVariables,

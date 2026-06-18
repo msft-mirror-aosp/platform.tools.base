@@ -67,7 +67,6 @@ import org.gradle.api.artifacts.Configuration
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 import org.gradle.api.tasks.SourceSet
-import org.gradle.declarative.dsl.model.annotations.Restricted
 
 /**
  * Base extension for all Android plugins.
@@ -357,10 +356,13 @@ protected constructor(
       dslServices.projectOptions[BooleanOption.R8_PROGUARD_ANDROID_TXT_DISALLOWED] &&
         name == ProguardFiles.ProguardFile.DONT_OPTIMIZE.fileName
     ) {
-      dslServices.issueReporter.reportError(IssueReporter.Type.GENERIC, ProguardFiles.DONTOPTIMIZE_DISALLOWED_MESSAGE)
+      dslServices.issueReporter.reportError(
+        IssueReporter.Type.PROGUARD_ANDROID_OPTIMIZE_TXT_DISALLOWED,
+        ProguardFiles.DONTOPTIMIZE_DISALLOWED_MESSAGE,
+      )
     }
     if (!ProguardFiles.KNOWN_FILE_NAMES.contains(name)) {
-      dslServices.issueReporter.reportError(IssueReporter.Type.GENERIC, ProguardFiles.UNKNOWN_FILENAME_MESSAGE)
+      dslServices.issueReporter.reportError(IssueReporter.Type.UNKNOWN_PROGUARD_FILE, ProguardFiles.UNKNOWN_FILENAME_MESSAGE)
     }
     return ProguardFiles.getDefaultProguardFile(name, dslServices.buildDirectory)
   }
@@ -452,5 +454,5 @@ protected constructor(
   // extension interfaces via delegates.
   abstract val buildFeatures: BuildFeatures
 
-  @get:Restricted abstract var namespace: String?
+  abstract var namespace: String?
 }

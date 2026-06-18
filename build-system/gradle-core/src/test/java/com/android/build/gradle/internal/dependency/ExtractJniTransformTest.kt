@@ -108,6 +108,16 @@ class ExtractJniTransformTest {
     assertThat(File(transformOutputs.outputDirectory, "x86/$FN_GDB_SETUP")).hasContents("x86 gdb.setup")
   }
 
+  @Test
+  fun testZipSlipMaliciousPathRejected() {
+    val jarFile = createZip("lib/x86/foo.so" to "x86 foo", "lib/x86/../../evil.so" to "x86 evil", "lib/x86/..\\..\\evil2.so" to "x86 evil2")
+    val transformOutputs = FakeTransformOutputs(tmp)
+    createTransform(jarFile).transform(transformOutputs)
+
+    assertThat(getProducedFileNames(transformOutputs.outputDirectory)).containsExactly("x86/foo.so")
+    assertThat(File(transformOutputs.outputDirectory, "x86/foo.so")).hasContents("x86 foo")
+  }
+
   private fun getProducedFileNames(rootDir: File): List<String> =
     rootDir.walk().filter { !it.isDirectory }.map { FileUtils.toSystemIndependentPath(it.relativeTo(rootDir).path) }.toList()
 

@@ -255,6 +255,7 @@ class FakeAdbServer private constructor(var features: Set<String> = DEFAULT_FEAT
    * @param hostConnectionType the simulated connection type to the device
    * @return a future to allow synchronization of the side effects of the call
    */
+  @JvmOverloads
   fun connectDevice(
     deviceId: String,
     manufacturer: String,
@@ -569,6 +570,7 @@ class FakeAdbServer private constructor(var features: Set<String> = DEFAULT_FEAT
       addDeviceHandler(WriteNoStopCommandHandler(ShellProtocolType.SHELL))
       addDeviceHandler(PackageManagerCommandHandler(ShellProtocolType.EXEC))
       addDeviceHandler(PackageManagerCommandHandler(ShellProtocolType.SHELL))
+      addDeviceHandler(PackageManagerCommandHandler(ShellProtocolType.SHELL_V2))
       addDeviceHandler(WindowManagerCommandHandler(ShellProtocolType.SHELL))
       addDeviceHandler(WindowManagerCommandHandler(ShellProtocolType.SHELL_V2))
       addDeviceHandler(CmdCommandHandler(ShellProtocolType.EXEC))

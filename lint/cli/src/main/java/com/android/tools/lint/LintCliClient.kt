@@ -215,18 +215,22 @@ open class LintCliClient : LintClient {
     }
 
   @OptIn(KaNonPublicApi::class)
-  override fun <T> runReadAction(computable: Computable<T>): T =
-    when (uastEnvironment?.isKMP) {
-      true -> withMultiplatformLightClassSupport { super.runReadAction(computable) }
+  override fun <T> runReadAction(computable: Computable<T>): T {
+    val uastEnv = uastEnvironment
+    return when (uastEnv?.isKMP) {
+      true -> withMultiplatformLightClassSupport(uastEnv.ideaProject) { super.runReadAction(computable) }
       else -> super.runReadAction(computable)
     }
+  }
 
   @OptIn(KaNonPublicApi::class)
-  override fun runReadAction(runnable: Runnable) =
-    when (uastEnvironment?.isKMP) {
-      true -> withMultiplatformLightClassSupport { super.runReadAction(runnable) }
+  override fun runReadAction(runnable: Runnable) {
+    val uastEnv = uastEnvironment
+    when (uastEnv?.isKMP) {
+      true -> withMultiplatformLightClassSupport(uastEnv.ideaProject) { super.runReadAction(runnable) }
       else -> super.runReadAction(runnable)
     }
+  }
 
   /** Runs the static analysis command line driver. You need to add at least one error reporter to the command line flags. */
   @Throws(IOException::class)
@@ -1612,38 +1616,6 @@ open class LintCliClient : LintClient {
         val path = context.file.path
         if (path.endsWith(DOT_KT) || path.endsWith(DOT_KTS)) {
           kotlinFiles.add(context.file)
-        }
-      }
-
-      // In unit tests, when using the FE1.0 UAST environment, Kotlin elements from dependencies (in
-      // multimodule tests) cannot be resolved unless we include the Kotlin source files from all
-      // dependencies in the call to UastEnvironment.analyzeFiles(). Thus, we add these source files
-      // to kotlinFiles. Note that we could do something like this in Fe10UastEnvironment (see
-      // addKtFilesFromSrcJars), but by doing it here, we can limit to unit tests and just the files
-      // from dependencies.
-      if (isUnitTest && uastEnvironment is Fe10UastEnvironment) {
-        fun gatherKotlinFiles(dir: File, result: MutableList<File>) {
-          val files = dir.listFiles()
-          if (files != null) {
-            for (file in files.sorted()) {
-              if (file.isFile) {
-                val path = file.path
-                if (path.endsWith(DOT_KT)) {
-                  result.add(file)
-                }
-              } else if (file.isDirectory) {
-                gatherKotlinFiles(file, result)
-              }
-            }
-          }
-        }
-
-        if (project != null) {
-          for (library in project.allLibraries) {
-            for (sourceFolder in library.javaSourceFolders.asSequence() + library.generatedSourceFolders) {
-              gatherKotlinFiles(library.dir, kotlinFiles)
-            }
-          }
         }
       }
 

@@ -28,8 +28,8 @@ import com.android.deploy.service.proto.Service.InstallApkRequest
 import com.android.deploy.service.proto.Service.InstallApkResponse
 import com.android.deploy.service.proto.Service.NetworkTest
 import com.android.tools.deploy.proto.Deploy
-import com.android.tools.deployer.DeployMetric
 import com.android.tools.deployer.DeployerRunner
+import com.android.tools.deployer.common.DeployMetric
 import com.android.tools.idea.io.grpc.stub.StreamObserver
 import com.google.common.truth.Truth
 import org.junit.Test

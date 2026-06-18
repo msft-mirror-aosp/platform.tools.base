@@ -46,6 +46,7 @@ public abstract class RenderParams {
 
     private AssetRepository mAssetRepository;
     private IImageFactory mImageFactory;
+    private RenderSizeProvider mSizeProvider;
 
     private ResourceValue mAppIcon;
     private String mAppLabel;
@@ -110,6 +111,7 @@ public abstract class RenderParams {
         mSetTransparentBackground = params.mSetTransparentBackground;
         mTimeout = params.mTimeout;
         mImageFactory = params.mImageFactory;
+        mSizeProvider = params.mSizeProvider;
         mAppIcon = params.mAppIcon;
         mAppLabel = params.mAppLabel;
         mLocale = params.mLocale;
@@ -135,6 +137,10 @@ public abstract class RenderParams {
 
     public void setImageFactory(IImageFactory imageFactory) {
         mImageFactory = imageFactory;
+    }
+
+    public void setSizeProvider(RenderSizeProvider sizeProvider) {
+        mSizeProvider = sizeProvider;
     }
 
     /**
@@ -262,6 +268,10 @@ public abstract class RenderParams {
 
     public IImageFactory getImageFactory() {
         return mImageFactory;
+    }
+
+    public RenderSizeProvider getSizeProvider() {
+        return mSizeProvider;
     }
 
     public boolean isLayoutValidationEnabled() {

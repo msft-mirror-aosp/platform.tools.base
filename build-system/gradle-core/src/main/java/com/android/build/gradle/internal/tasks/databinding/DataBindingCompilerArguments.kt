@@ -174,7 +174,7 @@ constructor(
         enableDebugLogs = enableDebugLogs,
         printEncodedErrorLogs = printEncodedErrorLogs,
         isTestVariant = creationConfig.componentType.isTestComponent,
-        isEnabledForTests = creationConfig.global.dataBinding.isEnabledForTests,
+        isEnabledForTests = creationConfig.global.dataBinding.enableForTests,
         isEnableV2 = true,
         isNonTransitiveR = isNonTransitiveR,
         dependenciesLocalRFiles = dependenciesLocalRFiles,

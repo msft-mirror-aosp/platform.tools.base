@@ -16,13 +16,17 @@
 package com.android.tools.deployer;
 
 import com.android.tools.deploy.proto.Deploy;
+import com.android.tools.deployer.common.Installer;
+import com.android.tools.deployer.common.Timeouts;
+
+import org.junit.Assert;
+import org.junit.Test;
+
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import org.junit.Assert;
-import org.junit.Test;
 
 public class InstallerTest {
 

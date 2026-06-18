@@ -86,7 +86,7 @@ public class VmTraceParser {
             }
         } catch (RuntimeException | IOException e) {
             Logger.getInstance(VmTraceParser.class)
-                    .warn("There was an error trying to read the trace file header.", e);
+                    .info("There was an error trying to read the trace file header.", e);
             return false;
         }
     }

@@ -601,6 +601,8 @@ class R8Test(private val r8OutputType: R8OutputType) {
       referencedInputs = referencedInputs,
       classes = classes,
       resourcesJar = resourcesJar.toFile(),
+      r8ConfigurationAnalyzerDataOutput = tmp.root.resolve("configanalyzer.pb"),
+      r8ConfigurationAnalyzerReportOutput = tmp.root.resolve("configanalyzer.html"),
       mappingFile = outputProguardMapping,
       mappingPartitionFile = outputPartitionMapping,
       proguardSeedsOutput = tmp.root.resolve("seeds.txt"),

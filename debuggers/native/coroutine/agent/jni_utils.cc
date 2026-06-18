@@ -5,46 +5,60 @@ static std::unique_ptr<StackTrace> retrieveStackTrace(
     JNIEnv* jni, jthrowable exception, jmethodID throwable_getCause,
     jmethodID throwable_getStackTrace, jmethodID throwable_getMessage,
     jmethodID frame_toString) {
+  if (exception == nullptr) {
+    return nullptr;
+  }
   std::unique_ptr<StackTrace> stackTrace(new StackTrace());
 
-  // get the array of StackTraceElements
-  jobjectArray frames =
-      (jobjectArray)jni->CallObjectMethod(exception, throwable_getStackTrace);
+  // Use RAII wrappers (ScopedLocalRef/ScopedUtfChars) to automatically manage
+  // JNI lifetimes. This ensures resources are freed (via DeleteLocalRef,
+  // ReleaseStringUTFChars) even on early returns or if an exception is pending,
+  // preventing memory leaks and JNI table crashes.
 
-  if (frames == nullptr) {
+  // get the array of StackTraceElements
+  ScopedLocalRef<jobjectArray> frames(
+      jni,
+      (jobjectArray)jni->CallObjectMethod(exception, throwable_getStackTrace));
+
+  if (frames.get() == nullptr) {
     return nullptr;
   }
 
   jsize frames_length = jni->GetArrayLength(frames);
 
   // add Throwable.getMessage() before descending stack trace messages
-  jstring msg_obj =
-      (jstring)jni->CallObjectMethod(exception, throwable_getMessage);
+  ScopedLocalRef<jstring> msg_obj(
+      jni, (jstring)jni->CallObjectMethod(exception, throwable_getMessage));
 
-  stackTrace->msg = jni->GetStringUTFChars(msg_obj, 0);
-
-  jni->DeleteLocalRef(msg_obj);
+  if (msg_obj.get() != nullptr) {
+    ScopedUtfChars msg_utf(jni, msg_obj);
+    if (msg_utf.c_str() != nullptr) {
+      stackTrace->msg = msg_utf.c_str();
+    }
+  }
 
   for (jsize i = 0; i < frames_length; i++) {
     // Get the string returned from the 'toString()'
     // method of the next frame and append it to
     // the error message.
-    jobject frame = jni->GetObjectArrayElement(frames, i);
-    jstring frame_str = (jstring)jni->CallObjectMethod(frame, frame_toString);
+    ScopedLocalRef<jobject> frame(jni, jni->GetObjectArrayElement(frames, i));
+    if (frame.get() == nullptr) continue;
 
-    const char* frame_str_utf = jni->GetStringUTFChars(frame_str, 0);
-    stackTrace->frames.emplace_back(frame_str_utf);
+    ScopedLocalRef<jstring> frame_str(
+        jni, (jstring)jni->CallObjectMethod(frame, frame_toString));
+    if (frame_str.get() == nullptr) continue;
 
-    jni->ReleaseStringUTFChars(frame_str, frame_str_utf);
-    jni->DeleteLocalRef(frame_str);
-    jni->DeleteLocalRef(frame);
+    ScopedUtfChars frame_str_utf(jni, frame_str);
+    if (frame_str_utf.c_str() != nullptr) {
+      stackTrace->frames.emplace_back(frame_str_utf.c_str());
+    }
   }
 
   // if 'exception' has a cause then append the stack trace messages from the
   // cause
-  jthrowable cause =
-      (jthrowable)jni->CallObjectMethod(exception, throwable_getCause);
-  if (cause != nullptr) {
+  ScopedLocalRef<jthrowable> cause(
+      jni, (jthrowable)jni->CallObjectMethod(exception, throwable_getCause));
+  if (cause.get() != nullptr) {
     stackTrace->cause = retrieveStackTrace(
         jni, cause, throwable_getCause, throwable_getStackTrace,
         throwable_getMessage, frame_toString);

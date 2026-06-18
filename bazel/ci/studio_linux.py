@@ -38,8 +38,13 @@ _EXTRA_TARGETS = [
     '//tools/base/deploy/deployer:deployer.runner_deploy.jar',
     '//tools/base/journeys:journeys_maven_repo.zip',
     '//tools/base/preview/screenshot:preview_screenshot_maven_repo.zip',
+    '//tools/base/studio-leakcanary:studio_leakcanary_gmaven_repo.zip',
     '//tools/base/firebase/testlab/testlab-gradle-plugin:testlab-gradle-plugin.zip',
-    '//tools/adt/idea/studio:test_studio',
+    '//tools/base/android-test:android-test-maven-repo.zip',
+    '//tools/adt/idea/studio:test_studio_artifacts',
+    '//tools/adt/idea/studio:android-studio.canary.test_studio_files',
+    '//tools/adt/idea/studio:android-studio.stable.test_studio_files',
+    '//tools/adt/idea/studio:android-studio.nightly.test_studio_files',
     '//tools/vendor/google/game-tools/packaging:packaging-linux',
     '//tools/vendor/google/game-tools/packaging:packaging-win',
     '//tools/base/deploy/service:deploy.service_deploy.jar',
@@ -52,10 +57,11 @@ _EXTRA_TARGETS = [
     '//tools/vendor/google/adrt:android-studio-nsis-prebuilt.zip',
     '//tools/vendor/google/asfp/studio:asfp_build_manifest.textproto',
     '//tools/vendor/google/asfp/studio:asfp.deb',
-    '//tools/vendor/google/ml:aiplugin',
-    '//tools/vendor/google/ml:studiobot-dogfood-plugin',
-    '//tools/adt/idea/aswb/aswb:aswb_bazel_zip',
+    '//tools/vendor/google/asfp/studio:asfp-external.deb',
+# TODO: b/497702794 - old custom packaging deleted.
+#    '//tools/adt/idea/aswb/aswb:aswb_bazel_zip',
     '//tools/base/bazel:owners.zip',
+    '//tools/vendor/google/lume/dist:lightbuild',
 ]
 
 
@@ -82,6 +88,7 @@ _ARTIFACTS = [
     ('tools/vendor/google/adrt/android-studio-nsis-prebuilt.zip', 'artifacts'),
     ('tools/vendor/google/asfp/studio/asfp_build_manifest.textproto', 'artifacts'),
     ('tools/vendor/google/asfp/studio/asfp.deb', 'artifacts'),
+    ('tools/vendor/google/asfp/studio/asfp-external.deb', 'artifacts'),
     ('tools/vendor/google/aswb/android-studio-with-blaze-canary.deb', 'artifacts'),
     ('tools/vendor/google/aswb/android-studio-with-blaze-canary.mac.zip', 'artifacts'),
     ('tools/vendor/google/aswb/android-studio-with-blaze-canary.mac_arm.zip', 'artifacts'),
@@ -93,8 +100,6 @@ _ARTIFACTS = [
     ('tools/vendor/google/aswb/android-studio-with-blaze-qa.mac_arm.zip', 'artifacts'),
     ('tools/vendor/google/skia/skiaparser.zip', 'artifacts'),
     ('tools/vendor/google/skia/skia_test_support.zip', 'artifacts'),
-    ('tools/vendor/google/ml/aiplugin*.zip', 'artifacts'),
-    ('tools/vendor/google/ml/studiobot-dogfood-plugin*.zip', 'artifacts'),
 
     ('tools/base/sdklib/commandlinetools_*.zip', 'artifacts'),
     ('tools/base/ddmlib/tools.ddmlib.jar', 'artifacts/ddmlib.jar'),
@@ -109,7 +114,8 @@ _ARTIFACTS = [
     ('tools/vendor/google/game-tools/packaging/game-tools-linux.tar.gz', 'artifacts'),
     ('tools/vendor/google/game-tools/packaging/game-tools-win.zip', 'artifacts'),
     ('tools/base/deploy/service/deploy.service_deploy.jar', 'artifacts'),
-    ('tools/adt/idea/aswb/aswb/aswb_bazel.zip', 'artifacts'),
+    ('tools/vendor/google/aswb/aswb_bazel.stable.zip', 'artifacts'),
+    ('tools/vendor/google/aswb/aswb_bazel.canary.zip', 'artifacts'),
     ('tools/base/sdk-common/tools.sdk-common.jar', 'artifacts'),
     ('tools/base/sdk-common/tools.sdk-common.src.jar', 'artifacts'),
     ('tools/base/ninepatch/tools.ninepatch.jar', 'artifacts'),
@@ -118,9 +124,14 @@ _ARTIFACTS = [
     ('tools/base/layoutlib-api/tools.layoutlib-api.src.jar', 'artifacts'),
     ('tools/base/resource-repository/libtools.resource-repository.jar', 'artifacts'),
     ('tools/base/environment-services/libtools.environment-services.jar', 'artifacts'),
+    ('tools/base/apkparser/tools.binary-resources.jar', 'artifacts'),
+    ('tools/base/apkparser/analyzer/libtools.analyzer.jar', 'artifacts'),
     ('prebuilts/studio/layoutlib/layoutlib-repository.zip', 'artifacts'),
-    ('tools/vendor/google/android/android', 'artifacts'),
     ('tools/vendor/google/android/android-cli.zip', 'artifacts'),
+    ('tools/vendor/google/android/create/dist/templates-sdk-package.zip', 'artifacts'),
+    ('tools/vendor/google/android/dist/deb/android-cli.deb.zip', 'artifacts'),
+    ('tools/vendor/google/android/dist/deb/android-cli.deb', 'artifacts'),
+    ('tools/vendor/google/lume/dist/lightbuild.zip', 'artifacts'),
 
     ('tools/base/bazel/owners.zip', 'owners.zip'),
 ]
@@ -131,6 +142,8 @@ _AGP_ARTIFACTS = [
     ('tools/base/firebase/testlab/testlab-gradle-plugin/testlab-gradle-plugin.zip', 'artifacts'),
     ('tools/base/journeys/journeys_maven_repo.zip', 'artifacts'),
     ('tools/base/preview/screenshot/preview_screenshot_maven_repo.zip', 'artifacts'),
+    ('tools/base/studio-leakcanary/studio_leakcanary_gmaven_repo.zip', 'artifacts'),
+    ('tools/base/android-test/android-test-maven-repo.zip', 'artifacts'),
     ('tools/base/build-system/android_gradle_plugin_9.zip', 'artifacts'),
 ]
 
@@ -147,14 +160,16 @@ def studio_linux(build_env: bazel.BuildEnv) -> None:
   targets = _BASE_TARGETS
 
   build_type = studio.BuildType.from_build_number(build_env.build_number)
+  if build_type != studio.BuildType.LOCAL:
+    # Reset artifacts, to avoid copying stale outputs from past builds.
+    reset_artifacts(build_env)
+
   if build_type == studio.BuildType.POSTSUBMIT:
     impacted_targets.generate_and_upload_hash_file(build_env)
     targets += _EXTRA_TARGETS
-    flags.append('--build_metadata=cinder_pipelines=component-owners')
+    flags.append('--build_metadata=cinder_pipelines=component-owners,test-stats')
 
   if build_type == studio.BuildType.PRESUBMIT:
-    # Reset artifacts, to avoid copying stale outputs from past builds.
-    reset_artifacts(build_env)
     result = presubmit.find_test_targets(
         build_env,
         _BASE_TARGETS,
@@ -165,6 +180,7 @@ def studio_linux(build_env: bazel.BuildEnv) -> None:
     targets = result.targets + ['//tools/base/bazel:iml_to_build_consistency_test']
     flags.extend(result.flags)
 
+  studio.check_lockfile(build_env)
   result = studio.run_tests(build_env, flags, targets)
   if build_type == studio.BuildType.PRESUBMIT:
     failure_retry.validate_and_upload(build_env)
@@ -215,9 +231,6 @@ def build_flags(
   ) -> List[str]:
   """Returns the flags to use for testing."""
   dist_path = pathlib.Path(build_env.dist_dir)
-  as_build_number = build_env.build_number
-  if as_build_number.startswith('P'):
-    as_build_number = '0' + as_build_number[1:]
   profile_path = dist_path / f'profile-{build_env.build_number}.json.gz'
 
   return [
@@ -227,14 +240,12 @@ def build_flags(
 
       '--build_manual_tests',
 
-      f'--define=meta_android_build_number={build_env.build_number}',
-
       f'--profile={profile_path}',
 
       f'--test_tag_filters={test_tag_filters}',
 
       '--tool_tag=studio_linux.sh',
-      f'--embed_label={as_build_number}',
+      f'--embed_label={studio.get_embed_label(build_env.build_number)}',
 
       '--jobs=500',
   ]

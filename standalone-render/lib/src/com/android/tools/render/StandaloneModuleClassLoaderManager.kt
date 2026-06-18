@@ -18,126 +18,34 @@ package com.android.tools.render
 
 import com.android.annotations.concurrency.GuardedBy
 import com.android.layoutlib.LayoutlibClassLoader
-import com.android.tools.rendering.classloading.ClassTransform
-import com.android.tools.rendering.classloading.ClassesTracker
-import com.android.tools.rendering.classloading.CodeExecutionTrackerTransform
+import com.android.tools.rendering.classloading.FilteringClassLoader
+import com.android.tools.rendering.classloading.FirewalledResourcesClassLoader
 import com.android.tools.rendering.classloading.ModuleClassLoader
-import com.android.tools.rendering.classloading.ModuleClassLoaderDiagnosticsRead
 import com.android.tools.rendering.classloading.ModuleClassLoaderManager
 import com.android.tools.rendering.classloading.Preloader
-import com.android.tools.rendering.classloading.PseudoClassLocatorForLoader
-import com.android.tools.rendering.classloading.ResourcesCompatTransform
-import com.android.tools.rendering.classloading.SdkIntReplacer
-import com.android.tools.rendering.classloading.loaders.AsmTransformingLoader
-import com.android.tools.rendering.classloading.loaders.ClassLoaderLoader
-import com.android.tools.rendering.classloading.loaders.DelegatingClassLoader
-import com.android.tools.rendering.classloading.loaders.MultiLoader
-import com.android.tools.rendering.classloading.toClassTransform
 import com.google.common.cache.CacheBuilder
 import com.intellij.openapi.module.Module
-import com.intellij.util.lang.UrlClassLoader
 import java.util.concurrent.Executors
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
-import kotlin.io.path.Path
 
-/**
- * [ModuleClassLoaderManager] for the [ModuleClassLoader]s used in the standalone rendering. Currently, it is a thin wrapper around
- * [UrlClassLoader].
- *
- * TODO(): Apply the bytecode processing similar to the one used in Studio.
- */
+/** [ModuleClassLoaderManager] for the [ModuleClassLoader]s used in the standalone rendering. */
 class StandaloneModuleClassLoaderManager(private val classPath: List<String>, private val projectClassPath: List<String>) :
-  ModuleClassLoaderManager<ModuleClassLoader> {
+  ModuleClassLoaderManager<ModuleClassLoader>, AutoCloseable {
 
-  private val preloader =
-    Preloader(createClassLoader(LayoutlibClassLoader(this::class.java.classLoader)), Executors.newSingleThreadExecutor(), COMPOSE_CLASSES)
+  private val preloaderExecutor = Executors.newSingleThreadExecutor()
+  private val preloader = Preloader(createClassLoader(null), preloaderExecutor, COMPOSE_CLASSES)
 
-  /**
-   * A loader responsible for loading all the classes in out-of-studio version of [ModuleClassLoader].
-   *
-   * TODO: Merge this with ModuleClassLoaderImpl
-   */
-  private class DefaultLoader(parent: ClassLoader?, classPath: List<String>, projectClassPath: List<String>) :
-    DelegatingClassLoader.Loader {
-    val classesToPaths = mutableMapOf<String, String>()
-    private val classTransforms = toClassTransform(::ResourcesCompatTransform, ::SdkIntReplacer)
-    private val projectClassTransforms = toClassTransform({ CodeExecutionTrackerTransform(it, CLASSES_TRACKER_KEY) }, ::SdkIntReplacer)
-
-    private val loader: DelegatingClassLoader.Loader
-
-    init {
-      val projectClassPathSet = projectClassPath.toSet()
-      val depsClassPath = classPath.filter { !projectClassPathSet.contains(it) }
-      val parentLoader = parent?.let { ClassLoaderLoader(it) }
-      val depsClassLoader = UrlClassLoader.build().useCache(false).parent(parent).files(depsClassPath.map { Path(it) }).get()
-      val depsClassLoaderLoader = ClassLoaderLoader(depsClassLoader)
-      val depsLoader =
-        AsmTransformingLoader(
-          classTransforms,
-          depsClassLoaderLoader,
-          PseudoClassLocatorForLoader(listOfNotNull(depsClassLoaderLoader, parentLoader).asSequence(), parent),
-        )
-      val projectClassLoader = UrlClassLoader.build().useCache(false).parent(parent).files(projectClassPath.map { Path(it) }).get()
-      val projectClassLoaderLoader = ClassLoaderLoader(projectClassLoader) { fqcn, path, _ -> classesToPaths[fqcn] = path }
-      val projectLoader =
-        AsmTransformingLoader(
-          projectClassTransforms,
-          projectClassLoaderLoader,
-          PseudoClassLocatorForLoader(listOfNotNull(projectClassLoaderLoader, depsLoader, parentLoader).asSequence(), parent),
-        )
-      loader = MultiLoader(projectLoader, depsLoader)
-    }
-
-    override fun loadClass(fqcn: String): ByteArray? = loader.loadClass(fqcn)
-  }
-
-  class DefaultModuleClassLoader private constructor(parent: ClassLoader?, private val loader: DefaultLoader) :
-    ModuleClassLoader(parent, loader) {
-    constructor(
-      parent: ClassLoader?,
-      classPath: List<String>,
-      projectClassPath: List<String>,
-    ) : this(parent, DefaultLoader(parent, classPath, projectClassPath))
-
-    private val loadedClasses = mutableSetOf<String>()
-    override val stats: ModuleClassLoaderDiagnosticsRead =
-      object : ModuleClassLoaderDiagnosticsRead {
-        override val classesFound: Long = 0
-        override val accumulatedFindTimeMs: Long = 0
-        override val accumulatedRewriteTimeMs: Long = 0
-      }
-    override val isUserCodeUpToDate: Boolean = true
-
-    override fun hasLoadedClass(fqcn: String): Boolean = loadedClasses.contains(fqcn)
-
-    override val projectLoadedClasses: Set<String> = emptySet()
-    override val nonProjectLoadedClasses: Set<String>
-      get() = loadedClasses
-
-    override val projectClassesTransform: ClassTransform = ClassTransform.identity
-    override val nonProjectClassesTransform: ClassTransform = ClassTransform.identity
-
-    override fun dispose() {}
-
-    override val isDisposed: Boolean = false
-
-    override fun isCompatibleParentClassLoader(parent: ClassLoader?): Boolean = true
-
-    override fun areDependenciesUpToDate(): Boolean = true
-
-    override fun onAfterLoadClass(fqcn: String, loaded: Boolean, durationMs: Long) {
-      if (loaded) {
-        loadedClasses.add(fqcn)
-      }
-    }
-
-    val classesToPaths: Map<String, String>
-      get() = loader.classesToPaths
+  override fun close() {
+    preloaderExecutor.shutdownNow()
   }
 
   private fun createClassLoader(parent: ClassLoader?): DefaultModuleClassLoader {
-    return DefaultModuleClassLoader(parent, classPath, projectClassPath)
+    val wrappedParent =
+      FirewalledResourcesClassLoader(
+        FilteringClassLoader.allowedPrefixes(parent ?: LayoutlibClassLoader(this::class.java.classLoader), ALLOWED_PACKAGES_FROM_PARENT)
+      )
+    return DefaultModuleClassLoader(wrappedParent, classPath, projectClassPath)
   }
 
   private val sharedClassLoadersLock = ReentrantLock()
@@ -154,12 +62,4 @@ class StandaloneModuleClassLoaderManager(private val classPath: List<String>, pr
   }
 
   override fun clearCache(module: Module) {}
-
-  companion object {
-    /**
-     * A key used for identifying classes loaded by the [DefaultModuleClassLoader] in [ClassesTracker], both for writing with
-     * [ClassesTracker.trackClass] and for retrieving with [ClassesTracker.getClasses].
-     */
-    const val CLASSES_TRACKER_KEY = ""
-  }
 }

@@ -194,4 +194,25 @@ class TestReportTest {
     assertThat(indexHtml).contains("<div class=\"percent\">-</div>")
     assertThat(indexHtml).contains("<p>N/A</p>")
   }
+
+  @Test
+  fun generateReportWithNoPropertiesAndToolFailures() {
+    val reportXml = File(resultsOutDir, "TEST-no-properties.xml")
+    Files.asCharSink(reportXml, Charsets.UTF_8)
+      .write(
+        """
+        <?xml version='1.0' encoding='UTF-8' ?>
+        <testsuite tests="0" failures="0" errors="0" skipped="0" time="0.518" timestamp="2022-01-12T22:11:43" hostname="localhost">
+          <system-err>PLATFORM ERROR</system-err>
+        </testsuite>
+        """
+          .trimIndent()
+      )
+
+    TestReport(ReportType.SINGLE_FLAVOR, resultsOutDir, reportOutDir).generateReport()
+
+    val indexHtml = File(reportOutDir, "index.html")
+    assertThat(indexHtml).exists()
+    assertThat(indexHtml).contains("PLATFORM ERROR")
+  }
 }

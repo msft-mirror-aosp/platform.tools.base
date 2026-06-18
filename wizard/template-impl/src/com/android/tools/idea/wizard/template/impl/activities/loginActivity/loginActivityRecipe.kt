@@ -64,6 +64,7 @@ fun RecipeExecutor.loginActivityRecipe(moduleData: ModuleTemplateData, activityC
   addDependency("com.android.support:design:${appCompatVersion}.+")
   addDependency("com.android.support:support-annotations:${appCompatVersion}.+")
   addDependency("com.android.support.constraint:constraint-layout:+")
+  addDependency("androidx.activity:activity-ktx:+")
   addLifecycleDependencies(useAndroidX)
   addMaterialDependency(useAndroidX)
   addViewBindingSupport(moduleData.viewBindingSupport, true)

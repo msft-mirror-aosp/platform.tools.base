@@ -223,7 +223,8 @@ public abstract class BaseVariantImpl implements BaseVariant, InternalBaseVarian
         } else {
             services.getIssueReporter()
                     .reportError(
-                            IssueReporter.Type.GENERIC, "Unknown SourceKind value: " + folderType);
+                            IssueReporter.Type.UNKNOWN_SOURCE_KIND,
+                            "Unknown SourceKind value: " + folderType);
         }
 
         return ImmutableList.of();
@@ -255,7 +256,7 @@ public abstract class BaseVariantImpl implements BaseVariant, InternalBaseVarian
         if (component.getComponentType().isDynamicFeature()) {
             services.getIssueReporter()
                     .reportError(
-                            IssueReporter.Type.GENERIC,
+                            IssueReporter.Type.GET_APPLICATION_ID_NOT_SUPPORTED_IN_DYNAMIC_FEATURE,
                             "variant.getApplicationId() is not supported by dynamic-feature plugins"
                                     + " as it cannot handle delayed setting of the application ID."
                                     + " Please use getApplicationIdTextResource() instead.");
@@ -263,7 +264,8 @@ public abstract class BaseVariantImpl implements BaseVariant, InternalBaseVarian
         if (!services.getProjectOptions().get(BooleanOption.ENABLE_LEGACY_API)) {
             services.getIssueReporter()
                     .reportError(
-                            IssueReporter.Type.GENERIC,
+                            IssueReporter.Type
+                                    .ACCESS_TO_DEPRECATED_LEGACY_API_REQUIRES_COMPATIBILITY_MODE,
                             new RuntimeException(
                                     "Access to applicationId via deprecated Variant API requires"
                                             + " compatibility mode.\n"
@@ -336,7 +338,7 @@ public abstract class BaseVariantImpl implements BaseVariant, InternalBaseVarian
         if (!component.getBuildFeatures().getAidl()) {
             services.getIssueReporter()
                     .reportError(
-                            IssueReporter.Type.GENERIC,
+                            IssueReporter.Type.AIDL_DISABLED_VIA_BUILD_FEATURES,
                             "aidl support is disabled via buildFeatures.");
             return null;
         }
@@ -356,7 +358,7 @@ public abstract class BaseVariantImpl implements BaseVariant, InternalBaseVarian
         if (!component.getBuildFeatures().getAidl()) {
             services.getIssueReporter()
                     .reportError(
-                            IssueReporter.Type.GENERIC,
+                            IssueReporter.Type.AIDL_DISABLED_VIA_BUILD_FEATURES,
                             "aidl support is disabled via buildFeatures.");
             return null;
         }
@@ -372,7 +374,7 @@ public abstract class BaseVariantImpl implements BaseVariant, InternalBaseVarian
         if (!component.getBuildFeatures().getRenderScript()) {
             services.getIssueReporter()
                     .reportError(
-                            IssueReporter.Type.GENERIC,
+                            IssueReporter.Type.RENDERSCRIPT_DISABLED_VIA_BUILD_FEATURES,
                             "renderscript support is disabled via buildFeatures.");
             return null;
         }
@@ -392,7 +394,7 @@ public abstract class BaseVariantImpl implements BaseVariant, InternalBaseVarian
         if (!component.getBuildFeatures().getRenderScript()) {
             services.getIssueReporter()
                     .reportError(
-                            IssueReporter.Type.GENERIC,
+                            IssueReporter.Type.RENDERSCRIPT_DISABLED_VIA_BUILD_FEATURES,
                             "renderscript support is disabled via buildFeatures.");
             return null;
         }

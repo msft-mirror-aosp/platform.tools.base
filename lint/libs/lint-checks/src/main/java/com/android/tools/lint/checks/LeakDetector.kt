@@ -36,6 +36,7 @@ import com.android.tools.lint.detector.api.getMethodName
 import com.android.tools.lint.detector.api.isKotlin
 import com.android.tools.lint.detector.api.nameFromSource
 import com.android.tools.lint.detector.api.typeFromPsi
+import com.intellij.java.syntax.parser.JavaKeywords
 import com.intellij.openapi.util.Ref
 import com.intellij.psi.PsiAnnotation
 import com.intellij.psi.PsiAnonymousClass
@@ -208,7 +209,7 @@ class LeakDetector : Detector(), SourceCodeScanner {
       if (modifierList.hasExplicitModifier(PsiModifier.STATIC)) {
         var child: PsiElement? = modifierList.firstChild
         while (child != null) {
-          if (child is PsiKeyword && PsiKeyword.STATIC == child.text) {
+          if (child is PsiKeyword && JavaKeywords.STATIC == child.text) {
             locationNode = child
             break
           }

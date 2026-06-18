@@ -78,6 +78,7 @@ class BooleanOptionTest {
         BooleanOption.DISABLE_MINSDKLIBRARY_CHECK,
         BooleanOption.ENABLE_INSTRUMENTATION_TEST_DESUGARING,
         BooleanOption.UNINSTALL_INCOMPATIBLE_APKS,
+        BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE,
         BooleanOption.GRADLE_MANAGED_DEVICE_EMULATOR_SHOW_KERNEL_LOGGING,
         BooleanOption.GRADLE_MANAGED_DEVICE_ALLOW_OLD_API_LEVEL_DEVICES,
         BooleanOption.ENABLE_ADDITIONAL_ANDROID_TEST_OUTPUT,
@@ -104,6 +105,7 @@ class BooleanOptionTest {
         BooleanOption.PRIVACY_SANDBOX_SDK_REQUIRE_SERVICES,
         BooleanOption.VERIFY_AAR_CLASSES,
         BooleanOption.DISABLE_COMPILE_SDK_CHECKS,
+        BooleanOption.DISABLE_COMPILE_SDK_CHECKS_TESTS,
         BooleanOption.SUPPRESS_EXTRACT_NATIVE_LIBS_WARNINGS,
         BooleanOption.FUSED_LIBRARY_PUBLICATION_ONLY_MODE,
         BooleanOption.LINT_BASELINE_OMIT_LINE_NUMBERS,
@@ -121,6 +123,7 @@ class BooleanOptionTest {
         BooleanOption.ENABLE_IDENTITY_TRANSFORMS_FOR_PROCESSED_ARTIFACTS,
         BooleanOption.TREAT_MANIFEST_MERGER_WARNINGS_AS_ERRORS,
         BooleanOption.REPORT_AGGREGATION_SUPPORT,
+        BooleanOption.ENABLE_GLOBAL_SYNTHETICS_FOR_ALL_DEBUG_BUILDS,
       )
 
     checkViolatingProjectOptions(

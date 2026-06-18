@@ -16,8 +16,11 @@
 package com.android.tools.deployer;
 
 import com.android.tools.deploy.proto.Deploy;
-import java.io.IOException;
+import com.android.tools.deployer.common.Installer;
+
 import org.jetbrains.annotations.NotNull;
+
+import java.io.IOException;
 
 public class ProgrammableInstaller extends Installer {
 

@@ -92,7 +92,14 @@ public class XmlAttribute extends XmlNode {
             if (!PlaceholderHandler.isPlaceHolder(value)) {
                 String pkg = mOwnerElement.getDocument().getNamespace();
                 if (pkg == null) {
-                    throw new RuntimeException("No namespace or package specified");
+                    mOwnerElement
+                            .getDocument()
+                            .getReportBuilder()
+                            .addMessage(
+                                    mOwnerElement.getSourceFilePosition(),
+                                    MergingReport.Record.Severity.ERROR,
+                                    "No namespace or package specified");
+                    return;
                 }
                 // We know it's a shortened FQCN if it starts with a dot
                 // or does not contain any dot.

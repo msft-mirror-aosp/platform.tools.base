@@ -23,6 +23,7 @@ import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
 import com.android.build.gradle.internal.tasks.NonIncrementalTask
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
+import com.android.build.gradle.options.BooleanOption
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.packaging.JarFlinger
 import com.android.utils.FileUtils
@@ -46,6 +47,8 @@ abstract class ZipMergingTask : NonIncrementalTask() {
   @get:InputFiles @get:PathSensitive(PathSensitivity.NONE) abstract val libraryInputFile: RegularFileProperty
 
   @get:InputFiles @get:PathSensitive(PathSensitivity.NONE) @get:Optional abstract val javaResDirectory: DirectoryProperty
+
+  @get:InputFiles @get:PathSensitive(PathSensitivity.NONE) @get:Optional abstract val javaResJar: RegularFileProperty
 
   @get:OutputFile abstract val outputFile: RegularFileProperty
 
@@ -73,6 +76,10 @@ abstract class ZipMergingTask : NonIncrementalTask() {
       if (javaRes?.exists() == true) {
         it.addDirectory(javaRes.toPath())
       }
+      val javaResJarFile = javaResJar.orNull?.asFile
+      if (javaResJarFile?.exists() == true) {
+        it.addJar(javaResJarFile.toPath())
+      }
     }
   }
 
@@ -98,7 +105,11 @@ abstract class ZipMergingTask : NonIncrementalTask() {
 
       val artifacts = creationConfig.artifacts
       artifacts.setTaskInputToFinalProduct(InternalArtifactType.RUNTIME_LIBRARY_CLASSES_JAR, task.libraryInputFile)
-      artifacts.setTaskInputToFinalProduct(InternalArtifactType.JAVA_RES, task.javaResDirectory)
+      if (creationConfig.services.projectOptions[BooleanOption.ENABLE_JAVA_RESOURCE_OPTIMIZATIONS]) {
+        artifacts.setTaskInputToFinalProduct(InternalArtifactType.JAVA_RES_COMPRESSED_JAR, task.javaResJar)
+      } else {
+        artifacts.setTaskInputToFinalProduct(InternalArtifactType.JAVA_RES, task.javaResDirectory)
+      }
     }
   }
 }

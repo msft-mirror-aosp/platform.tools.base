@@ -33,6 +33,7 @@ data class WearTileScreenshot(
   override val methodFQN: String,
   override val previewParams: Map<String, String>,
   override val previewId: String,
+  override val previewWrapperFqn: String? = null,
 ) : PreviewScreenshot {
 
   override fun toPreviewElement(module: StandaloneRenderModelModule): ScreenshotPreviewElement {

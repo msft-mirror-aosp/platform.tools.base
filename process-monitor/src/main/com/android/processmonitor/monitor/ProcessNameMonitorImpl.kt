@@ -35,12 +35,11 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.launch
-import org.jetbrains.annotations.TestOnly
 import org.jetbrains.annotations.VisibleForTesting
 
 /** Implementation of ProcessNameMonitor */
 class ProcessNameMonitorImpl<T>
-@TestOnly
+@VisibleForTesting
 internal constructor(
   parentScope: CoroutineScope,
   private val deviceTracker: DeviceTracker<T>,

@@ -100,6 +100,9 @@ final class HelperConfig {
     /** Default fallback value for the retained visible threshold. */
     static final int DEFAULT_THRESHOLD = 5;
 
+    /** Value returned to Studio when LeakCanary reflection fails (e.g., due to minification). */
+    static final int REFLECTION_FAILED_THRESHOLD = -1;
+
     /** Private constructor to prevent instantiation of this utility class. */
     private HelperConfig() {}
 }

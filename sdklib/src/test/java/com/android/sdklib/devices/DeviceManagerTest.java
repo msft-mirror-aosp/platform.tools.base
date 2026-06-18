@@ -16,32 +16,22 @@
 
 package com.android.sdklib.devices;
 
-import static com.android.sdklib.internal.avd.ConfigKey.CLUSTER_HEIGHT;
-import static com.android.sdklib.internal.avd.ConfigKey.CLUSTER_WIDTH;
-import static com.android.sdklib.internal.avd.ConfigKey.DISPLAY_SETTINGS_FILE;
-import static com.android.sdklib.internal.avd.ConfigKey.DISTANT_DISPLAY_HEIGHT;
-import static com.android.sdklib.internal.avd.ConfigKey.DISTANT_DISPLAY_WIDTH;
-import static com.android.sdklib.internal.avd.ConfigKey.RESIZABLE_CONFIG;
-import static com.android.sdklib.internal.avd.ConfigKey.ROLL;
-
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.assertThrows;
 
 import static java.util.stream.Collectors.toList;
 
+import com.android.SdkConstants;
 import com.android.annotations.Nullable;
 import com.android.repository.impl.meta.TypeDetails;
 import com.android.repository.testframework.FakePackage;
 import com.android.repository.testframework.FakeProgressIndicator;
-import com.android.resources.Navigation;
 import com.android.resources.ScreenRound;
 import com.android.sdklib.SystemImageTags;
 import com.android.sdklib.TempSdkManager;
 import com.android.sdklib.devices.Device.Builder;
 import com.android.sdklib.devices.DeviceManager.DeviceCategory;
-import com.android.sdklib.devices.DeviceManager.DeviceStatus;
-import com.android.sdklib.internal.avd.HardwareProperties;
 import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.sdklib.repository.IdDisplay;
 import com.android.sdklib.repository.meta.DetailsTypes;
@@ -55,38 +45,32 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class DeviceManagerTest {
 
-    static final String WSVGA_HASH             = "MD5:be7b258bf9edce03131d307b10b00856";
-    static final String WSVGA_TRACKBALL_HASH   = "MD5:b175af6e1b3d92b267ed4459bcbb5de7";
-    static final String NEXUS_ONE_HASH         = "MD5:7d6cfc4f88c91801ebb7340d8a7f7e6e";
-    static final String NEXUS_ONE_PLUGGED_HASH = "MD5:730700c2dec77d0dc439bad52f4b6a1c";
-
     @Rule public final TempSdkManager sdkManager =
             new TempSdkManager("sdk_" + getClass().getSimpleName());
 
+    private UserDeviceTable userDevices;
     private DeviceManager dm;
 
     @Before
     public void setUp() {
         dm = createDeviceManager();
+        userDevices = dm.getUserDevices();
     }
 
     private DeviceManager createDeviceManager() {
         NoErrorsOrWarningsLogger log = new NoErrorsOrWarningsLogger();
         AndroidSdkHandler sdkHandler = sdkManager.getSdkHandler();
-        return DeviceManager.createInstance(
-                sdkHandler,
-                log);
+        return DeviceManager.createInstance(sdkHandler, log);
     }
 
     /**
@@ -131,7 +115,8 @@ public class DeviceManagerTest {
                         "Medium Tablet",
                         "13.5\" Freeform",
                         "Resizable (Experimental)",
-                        "Small Phone");
+                        "Small Phone",
+                        "Small Tablet");
 
         assertThat(dm.getDevice("2.7in QVGA", "Generic").getDisplayName()).isEqualTo("2.7\" QVGA");
 
@@ -139,13 +124,15 @@ public class DeviceManagerTest {
         // cf /sdklib/src/main/java/com/android/sdklib/devices/nexus.xml
         assertThat(listDisplayNames(dm.getDevices(DeviceCategory.VENDOR)))
                 .containsExactly(
-                        "AI Glasses",
+                        "Display Glasses",
+                        "Audio Glasses",
                         "Television (4K)",
                         "Television (1080p)",
                         "Television (720p)",
                         "Large Desktop",
                         "Medium Desktop",
                         "Small Desktop",
+                        "Desktop (Preview)",
                         "Wear OS Rectangular",
                         "Wear OS Small Round",
                         "Wear OS Square",
@@ -205,12 +192,13 @@ public class DeviceManagerTest {
                         "Pixel 10 Pro",
                         "Pixel 10 Pro XL",
                         "Pixel 10 Pro Fold",
+                        "Pixel 10a",
                         "XR Glasses",
                         "XR Headset");
 
         assertThat(dm.getDevice("Nexus One", "Google").getDisplayName()).isEqualTo("Nexus One");
 
-        assertThat(listDisplayNames(dm.getDevices(DeviceManager.ALL_DEVICES)))
+        assertThat(listDisplayNames(dm.getDevices()))
                 .containsExactly(
                         "10.1\" WXGA (Tablet)",
                         "2.7\" QVGA",
@@ -236,12 +224,14 @@ public class DeviceManagerTest {
                         "13.5\" Freeform",
                         "Resizable (Experimental)",
                         "Small Phone",
+                        "Small Tablet",
                         "Television (4K)",
                         "Television (1080p)",
                         "Television (720p)",
                         "Large Desktop",
                         "Medium Desktop",
                         "Small Desktop",
+                        "Desktop (Preview)",
                         "Wear OS Rectangular",
                         "Wear OS Small Round",
                         "Wear OS Square",
@@ -301,9 +291,11 @@ public class DeviceManagerTest {
                         "Pixel 10 Pro",
                         "Pixel 10 Pro XL",
                         "Pixel 10 Pro Fold",
+                        "Pixel 10a",
                         "XR Headset",
                         "XR Glasses",
-                        "AI Glasses");
+                        "Display Glasses",
+                        "Audio Glasses");
     }
 
     @Test
@@ -328,8 +320,8 @@ public class DeviceManagerTest {
 
         Device d2 = b.build();
 
-        dm.addUserDevice(d2);
-        dm.saveUserDevices();
+        userDevices.addUserDevice(d2);
+        userDevices.saveUserDevices();
 
         assertThat(dm.getDevice("MyCustomTablet", "OEM").getDisplayName())
                 .isEqualTo("My Custom Tablet");
@@ -375,19 +367,22 @@ public class DeviceManagerTest {
                         "Medium Tablet",
                         "13.5\" Freeform",
                         "Resizable (Experimental)",
-                        "Small Phone");
+                        "Small Phone",
+                        "Small Tablet");
 
         // this list comes from the nexus.xml bundled in the JAR
         // cf /sdklib/src/main/java/com/android/sdklib/devices/nexus.xml
         assertThat(listDisplayNames(dm2.getDevices(DeviceCategory.VENDOR)))
                 .containsExactly(
-                        "AI Glasses",
+                        "Display Glasses",
+                        "Audio Glasses",
                         "Television (4K)",
                         "Television (1080p)",
                         "Television (720p)",
                         "Large Desktop",
                         "Medium Desktop",
                         "Small Desktop",
+                        "Desktop (Preview)",
                         "Wear OS Rectangular",
                         "Wear OS Small Round",
                         "Wear OS Square",
@@ -447,10 +442,11 @@ public class DeviceManagerTest {
                         "Pixel 10 Pro",
                         "Pixel 10 Pro XL",
                         "Pixel 10 Pro Fold",
+                        "Pixel 10a",
                         "XR Glasses",
                         "XR Headset");
 
-        assertThat(listDisplayNames(dm2.getDevices(DeviceManager.ALL_DEVICES)))
+        assertThat(listDisplayNames(dm2.getDevices()))
                 .containsExactly(
                         "10.1\" WXGA (Tablet)",
                         "2.7\" QVGA",
@@ -476,12 +472,14 @@ public class DeviceManagerTest {
                         "13.5\" Freeform",
                         "Resizable (Experimental)",
                         "Small Phone",
+                        "Small Tablet",
                         "Television (4K)",
                         "Television (1080p)",
                         "Television (720p)",
                         "Large Desktop",
                         "Medium Desktop",
                         "Small Desktop",
+                        "Desktop (Preview)",
                         "Wear OS Rectangular",
                         "Wear OS Small Round",
                         "Wear OS Square",
@@ -542,9 +540,11 @@ public class DeviceManagerTest {
                         "Pixel 10 Pro",
                         "Pixel 10 Pro XL",
                         "Pixel 10 Pro Fold",
-                        "XR Glasses",
+                        "Pixel 10a",
                         "XR Headset",
-                        "AI Glasses");
+                        "XR Glasses",
+                        "Display Glasses",
+                        "Audio Glasses");
     }
 
     @Test
@@ -559,7 +559,7 @@ public class DeviceManagerTest {
                 .createLatestFactory().createAddonDetailsType();
         details.setApiLevel(22);
         details.setVendor(SystemImageTags.DEFAULT_TAG);
-        p.setTypeDetails((TypeDetails) details);
+        p.setTypeDetails((TypeDetails)details);
         SystemImage imageWithDevice =
                 new SystemImage(
                         sdkPath.resolve("system-images/android-22/tag-1/x86"),
@@ -610,19 +610,22 @@ public class DeviceManagerTest {
                         "Medium Tablet",
                         "13.5\" Freeform",
                         "Resizable (Experimental)",
-                        "Small Phone");
+                        "Small Phone",
+                        "Small Tablet");
 
         // this list comes from the nexus.xml bundled in the JAR
         // cf /sdklib/src/main/java/com/android/sdklib/devices/nexus.xml
         assertThat(listDisplayNames(dm.getDevices(DeviceCategory.VENDOR)))
                 .containsExactly(
-                        "AI Glasses",
+                        "Display Glasses",
+                        "Audio Glasses",
                         "Television (4K)",
                         "Television (1080p)",
                         "Television (720p)",
                         "Large Desktop",
                         "Medium Desktop",
                         "Small Desktop",
+                        "Desktop (Preview)",
                         "Wear OS Small Round",
                         "Wear OS Rectangular",
                         "Wear OS Square",
@@ -682,10 +685,11 @@ public class DeviceManagerTest {
                         "Pixel 10 Pro",
                         "Pixel 10 Pro XL",
                         "Pixel 10 Pro Fold",
+                        "Pixel 10a",
                         "XR Glasses",
                         "XR Headset");
 
-        assertThat(listDisplayNames(dm.getDevices(DeviceManager.ALL_DEVICES)))
+        assertThat(listDisplayNames(dm.getDevices()))
                 .containsExactly(
                         "10.1\" WXGA (Tablet)",
                         "2.7\" QVGA",
@@ -711,12 +715,14 @@ public class DeviceManagerTest {
                         "13.5\" Freeform",
                         "Resizable (Experimental)",
                         "Small Phone",
+                        "Small Tablet",
                         "Television (4K)",
                         "Television (1080p)",
                         "Television (720p)",
                         "Large Desktop",
                         "Medium Desktop",
                         "Small Desktop",
+                        "Desktop (Preview)",
                         "Wear OS Rectangular",
                         "Wear OS Small Round",
                         "Wear OS Square",
@@ -777,157 +783,11 @@ public class DeviceManagerTest {
                         "Pixel 10 Pro",
                         "Pixel 10 Pro XL",
                         "Pixel 10 Pro Fold",
-                        "XR Glasses",
+                        "Pixel 10a",
                         "XR Headset",
-                        "AI Glasses");
-    }
-
-    @Test
-    public final void testGetDeviceStatus() {
-        // get a definition from the bundled devices.xml file
-        assertThat(dm.getDeviceStatus("7in WSVGA (Tablet)", "Generic"))
-                .isEqualTo(DeviceStatus.EXISTS);
-
-        // get a definition from the bundled oem file
-        assertThat(dm.getDeviceStatus("Nexus One", "Google")).isEqualTo(DeviceStatus.EXISTS);
-
-        // try a device that does not exist
-        assertThat(dm.getDeviceStatus("My Device", "Custom OEM")).isEqualTo(DeviceStatus.MISSING);
-    }
-
-    @Test
-    public final void testGetHardwareProperties() {
-        final Device pixelDevice = dm.getDevice("pixel", "Google");
-
-        Map<String, String> devProperties = DeviceManager.getHardwareProperties(pixelDevice);
-        assertThat(devProperties.get("hw.lcd.density")).isEqualTo("420");
-        assertThat(devProperties.get("hw.lcd.width")).isEqualTo("1080");
-        assertThat(devProperties.get("hw.ramSize")).isEqualTo("4096"); // In MB, without units
-    }
-
-    @Test
-    public final void testGetGlassesHardwareProperties() {
-        final Device glassesDevice = dm.getDevice("ai_glasses_device", "Google");
-
-        Map<String, String> properties = DeviceManager.getHardwareProperties(glassesDevice);
-        assertThat(properties.get("hw.camera.back.orientation")).isEqualTo("0");
-        assertThat(properties.get("hw.touchpad0")).isEqualTo("yes");
-        assertThat(properties.get("hw.touchpad0.width")).isEqualTo("1542");
-        assertThat(properties.get("hw.touchpad0.height")).isEqualTo("297");
-        assertThat(properties.get("hw.screen")).isEqualTo("no-touch");
-    }
-
-    @Test
-    public void testGetFreeformHardwareProperties() {
-        Device device = dm.getDevice("13.5in Freeform", "Generic");
-        String settingsFile =
-                DeviceManager.getHardwareProperties(device).get(DISPLAY_SETTINGS_FILE);
-        assertThat(settingsFile).isEqualTo("freeform");
-    }
-
-    @Test
-    public void testGetRollableHardwareProperties() {
-        Device device = dm.getDevice("7.4in Rollable", "Generic");
-        assertThat(DeviceManager.getHardwareProperties(device).get(ROLL)).isEqualTo("yes");
-    }
-
-    @Test
-    public void testResizableHardwareProperties() {
-        Device device = dm.getDevice("resizable", "Generic");
-        assertThat(DeviceManager.getHardwareProperties(device).get(RESIZABLE_CONFIG)).isNotEmpty();
-    }
-
-    @Test
-    public void testAutomotiveDeviceProperties() {
-        List<Device> automotiveDevices =
-                dm.getDevices(DeviceManager.ALL_DEVICES).stream()
-                        .filter(Device::isAutomotive)
-                        .collect(toList());
-        assertThat(automotiveDevices).isNotEmpty();
-        for (Device device : automotiveDevices) {
-            Map<String, String> properties = DeviceManager.getHardwareProperties(device);
-            assertThat(properties).containsKey(CLUSTER_HEIGHT);
-            assertThat(properties).containsKey(CLUSTER_WIDTH);
-        }
-    }
-
-    @Test
-    public void testAutomotiveDeviceSensors() {
-        Device device = dm.getDevice("automotive_1080p_landscape", "Google");
-        Map<String, String> properties = DeviceManager.getHardwareProperties(device);
-
-        assertThat(properties.get(HardwareProperties.HW_ACCELEROMETER)).isEqualTo("yes");
-        assertThat(properties.get(HardwareProperties.HW_GYROSCOPE)).isEqualTo("yes");
-        assertThat(properties.get(HardwareProperties.HW_MAGNETIC_FIELD_SENSOR)).isEqualTo("no");
-        assertThat(properties.get(HardwareProperties.HW_LIGHT_SENSOR)).isEqualTo("no");
-        assertThat(properties.get(HardwareProperties.HW_PRESSURE_SENSOR)).isEqualTo("no");
-        assertThat(properties.get(HardwareProperties.HW_PROXIMITY_SENSOR)).isEqualTo("no");
-    }
-
-    @Test
-    public void testAutomotiveDistantDeviceProperties() {
-        List<Device> automotiveDistantDisplayDevices =
-                dm.getDevices(DeviceManager.ALL_DEVICES).stream()
-                        .filter(Device::isAutomotiveDistantDisplay)
-                        .collect(toList());
-        assertThat(automotiveDistantDisplayDevices).isNotEmpty();
-        for (Device device : automotiveDistantDisplayDevices) {
-            Map<String, String> properties = DeviceManager.getHardwareProperties(device);
-            assertThat(properties).containsKey(DISTANT_DISPLAY_HEIGHT);
-            assertThat(properties).containsKey(DISTANT_DISPLAY_WIDTH);
-        }
-    }
-
-    @Test
-    public final void testHasHardwarePropHashChanged_Generic() {
-        final Device d1 = dm.getDevice("7in WSVGA (Tablet)", "Generic");
-
-        assertThat(DeviceManager.hasHardwarePropHashChanged(d1, "invalid"))
-                .isEqualTo(WSVGA_HASH);
-
-        assertThat(DeviceManager.hasHardwarePropHashChanged(
-                d1, WSVGA_HASH))
-                .isNull();
-
-        // change the device hardware props, this should change the hash
-        d1.getDefaultHardware().setNav(Navigation.TRACKBALL);
-
-        assertThat(DeviceManager.hasHardwarePropHashChanged(
-                d1, WSVGA_HASH))
-                .isEqualTo(WSVGA_TRACKBALL_HASH);
-
-        // change the property back, should revert its hash to the previous one
-        d1.getDefaultHardware().setNav(Navigation.NONAV);
-
-        assertThat(DeviceManager.hasHardwarePropHashChanged(
-                d1, WSVGA_HASH))
-                .isNull();
-    }
-
-    @Test
-    public final void testHasHardwarePropHashChanged_Oem() {
-        final Device d2 = dm.getDevice("Nexus One", "Google");
-
-        assertThat(DeviceManager.hasHardwarePropHashChanged(d2, "invalid"))
-                .isEqualTo(NEXUS_ONE_HASH);
-
-        assertThat(DeviceManager.hasHardwarePropHashChanged(
-                d2, NEXUS_ONE_HASH))
-                .isNull();
-
-        // change the device hardware props, this should change the hash
-        d2.getDefaultHardware().setChargeType(PowerType.PLUGGEDIN);
-
-        assertThat(DeviceManager.hasHardwarePropHashChanged(
-                d2, NEXUS_ONE_HASH))
-                .isEqualTo(NEXUS_ONE_PLUGGED_HASH);
-
-        // change the property back, should revert its hash to the previous one
-        d2.getDefaultHardware().setChargeType(PowerType.BATTERY);
-
-        assertThat(DeviceManager.hasHardwarePropHashChanged(
-                d2, NEXUS_ONE_HASH))
-                .isNull();
+                        "XR Glasses",
+                        "Display Glasses",
+                        "Audio Glasses");
     }
 
     @Test
@@ -940,7 +800,7 @@ public class DeviceManagerTest {
 
         // Create a local DeviceManager, get the number of devices, and verify one device
         DeviceManager localDeviceManager = createDeviceManager();
-        int count = localDeviceManager.getDevices(EnumSet.allOf(DeviceCategory.class)).size();
+        int count = localDeviceManager.getDevices().size();
         Device localDevice = localDeviceManager.getDevice("wearos_small_round", "Google");
         assertThat(localDevice.getDisplayName()).isEqualTo("Wear OS Small Round");
 
@@ -961,7 +821,7 @@ public class DeviceManagerTest {
                         Collections.emptyList(),
                         Collections.emptyList(),
                         p);
-        sdkManager.makeSystemImageFolder(imageWithDevice22, "wearos_small_round");
+        sdkManager.makeSystemImageFolder(imageWithDevice22, "new_wearos_device");
 
         DetailsTypes.AddonDetailsType details25 = AndroidSdkHandler.getAddonModule()
           .createLatestFactory().createAddonDetailsType();
@@ -977,7 +837,7 @@ public class DeviceManagerTest {
                         Collections.emptyList(),
                         Collections.emptyList(),
                         p);
-        sdkManager.makeSystemImageFolder(imageWithDevice25, "wearos_small_round");
+        sdkManager.makeSystemImageFolder(imageWithDevice25, "new_wearos_device");
 
         // Re-create the local DeviceManager using the new directory,
         // fetch the device, and verify that it is the right one.
@@ -985,27 +845,29 @@ public class DeviceManagerTest {
         sdkManager.getSdkHandler().getRepoManager(progress).markLocalCacheInvalid();
         localDeviceManager = createDeviceManager();
 
-        localDevice = localDeviceManager.getDevice("wearos_small_round", "Google");
+        localDevice = localDeviceManager.getDevice("new_wearos_device", "Google");
         // (The "Android wear" part comes from the tag "android-wear")
         assertThat(localDevice.getDisplayName()).isEqualTo("Mock Android wear Device Name");
         assertThat(localDevice.getDefaultState().getHardware().getCpu())
                 .isEqualTo(Abi.ARMEABI.toString());
 
+        // Verify that the total number of devices is increased by one for new_wearos_device
+        assertThat(localDeviceManager.getDevices().size()).isEqualTo(count + 1);
+
         // Change the name of that device and add it to our local DeviceManager again
-        Device dmDevice = dm.getDevice("wearos_small_round", "Google");
+        Device dmDevice = dm.getDevice("new_wearos_device", "Google");
         Builder b = new Device.Builder(dmDevice);
         b.setName("Custom");
-        localDeviceManager.addUserDevice(b.build());
-        localDeviceManager.saveUserDevices();
+        localDeviceManager.getUserDevices().addUserDevice(b.build());
+        localDeviceManager.getUserDevices().saveUserDevices();
 
-        // Fetch the device from our local DeviceManager and verify
-        // that it has the updated name
+        // Fetch the device from our local DeviceManager and verify that it does not have the
+        // updated name (user devices do not override built-in devices)
         localDevice = localDeviceManager.getDevice("wearos_small_round", "Google");
-        assertThat(localDevice.getDisplayName()).isEqualTo("Custom");
+        assertThat(localDevice.getDisplayName()).isEqualTo("Wear OS Small Round");
 
         // Verify that the total number of devices is unchanged
-        assertThat(localDeviceManager.getDevices(EnumSet.allOf(DeviceCategory.class)).size())
-                .isEqualTo(count);
+        assertThat(localDeviceManager.getDevices().size()).isEqualTo(count + 1);
     }
 
     @Test
@@ -1038,15 +900,15 @@ public class DeviceManagerTest {
             assertThat(roundDevice.getBootProps().get(DeviceParser.ROUND_BOOT_PROP))
                     .isEqualTo("true");
 
-            dm.addUserDevice(roundDevice);
+            userDevices.addUserDevice(roundDevice);
         }
 
         Device testDeviceMid = dm.getDevice("test_round_dev", "User");
         assertThat(testDeviceMid).isNotNull();
 
         // Write the user-defined device definitions to devices.xml
-        dm.saveUserDevices();
-        dm.removeUserDevice(testDeviceMid);
+        userDevices.saveUserDevices();
+        userDevices.removeUserDevice(testDeviceMid);
 
         // Create a new DeviceManager. It will read the newly-written
         // devices.xml file, so we can check the contents.
@@ -1094,7 +956,7 @@ public class DeviceManagerTest {
                                 device.getId().startsWith("pixel_9")
                                         || device.getId().startsWith("pixel_10"));
 
-        assertThat(listDisplayNames(deviceManagerWithFilter.getDevices(DeviceManager.ALL_DEVICES)))
+        assertThat(listDisplayNames(deviceManagerWithFilter.getDevices()))
                 .containsExactly(
                         "10.1\" WXGA (Tablet)",
                         "2.7\" QVGA",
@@ -1120,6 +982,7 @@ public class DeviceManagerTest {
                         "13.5\" Freeform",
                         "Resizable (Experimental)",
                         "Small Phone",
+                        "Small Tablet",
                         "Pixel 9",
                         "Pixel 9 Pro",
                         "Pixel 9 Pro XL",
@@ -1128,7 +991,8 @@ public class DeviceManagerTest {
                         "Pixel 10",
                         "Pixel 10 Pro",
                         "Pixel 10 Pro XL",
-                        "Pixel 10 Pro Fold");
+                        "Pixel 10 Pro Fold",
+                        "Pixel 10a");
         assertThat(errorLog.toString())
                 .isEqualTo(
                         "Warning: Unsupported device Nexus One\n"
@@ -1188,14 +1052,65 @@ public class DeviceManagerTest {
                             + "Warning: Unsupported device desktop_small\n"
                             + "Warning: Unsupported device desktop_medium\n"
                             + "Warning: Unsupported device desktop_large\n"
+                            + "Warning: Unsupported device desktop_api37\n"
                             + "Warning: Unsupported device xr_headset_device\n"
                             + "Warning: Unsupported device ai_glasses_device\n"
+                            + "Warning: Unsupported device ai_glasses_displayless\n"
                             + "Warning: Unsupported device xr_glasses_device\n");
     }
 
     @Test
+    public final void testBadUserDevicesFile() throws Exception {
+        AndroidSdkHandler sdkHandler = sdkManager.getSdkHandler();
+        Path androidFolder = sdkHandler.getAndroidFolder();
+        assertThat((Object) androidFolder).isNotNull();
+        Path badUserDevicesFile = androidFolder.resolve(SdkConstants.FN_DEVICES_XML);
+
+        // Write invalid XML content to the user devices file
+        Files.write(
+                badUserDevicesFile, Collections.singletonList("This is not valid XML <devices>"));
+
+        // Create a custom logger that doesn't crash the test on errors, and capture the logs
+        StringBuilder errorLog = new StringBuilder();
+        StdLogger log =
+                new StdLogger(StdLogger.Level.VERBOSE) {
+                    @Override
+                    public void error(
+                            @Nullable Throwable t, @Nullable String errorFormat, Object... args) {
+                        errorLog.append(String.format("Error: " + errorFormat, args)).append("\n");
+                    }
+
+                    @Override
+                    public void warning(@NotNull String warningFormat, Object... args) {
+                        errorLog.append(String.format("Warning: " + warningFormat, args))
+                                .append("\n");
+                    }
+                };
+
+        // Create DeviceManager with the custom logger
+        DeviceManager deviceManager = DeviceManager.createInstance(sdkHandler, log);
+
+        // Verify that default devices are still parsed successfully
+        Collection<Device> defaultDevices = deviceManager.getDevices(DeviceCategory.DEFAULT);
+        assertThat(defaultDevices).isNotEmpty();
+        assertThat(listDisplayNames(defaultDevices)).contains("Medium Phone");
+
+        // Verify that user devices list is empty because the file was bad
+        Collection<Device> userDevices = deviceManager.getDevices(DeviceCategory.USER);
+        assertThat(userDevices).isEmpty();
+
+        // Verify that an error was logged about the parsing failure
+        assertThat(errorLog.toString()).contains("Error parsing");
+
+        // Verify that the bad file was renamed to backup file (.old)
+        Path backupFile = androidFolder.resolve(SdkConstants.FN_DEVICES_XML + ".old");
+        assertThat(Files.exists(backupFile)).isTrue();
+        assertThat(Files.exists(badUserDevicesFile)).isFalse();
+    }
+
+    @Test
     public void testCancellation() {
-        int totalDeviceCount = createDeviceManager().getDevices(DeviceManager.ALL_DEVICES).size();
+        int totalDeviceCount = createDeviceManager().getDevices().size();
 
         AtomicBoolean shouldThrow = new AtomicBoolean(true);
         AndroidSdkHandler sdkHandler = sdkManager.getSdkHandler();
@@ -1207,11 +1122,9 @@ public class DeviceManagerTest {
                             if (shouldThrow.get()) throw new CancellationException();
                             return true;
                         });
-        assertThrows(
-                CancellationException.class,
-                () -> deviceManager.getDevices(DeviceManager.ALL_DEVICES));
+        assertThrows(CancellationException.class, () -> deviceManager.getDevices());
         shouldThrow.set(false);
-        Collection<Device> devices = deviceManager.getDevices(DeviceManager.ALL_DEVICES);
+        Collection<Device> devices = deviceManager.getDevices();
         assertThat(devices).hasSize(totalDeviceCount);
     }
 }

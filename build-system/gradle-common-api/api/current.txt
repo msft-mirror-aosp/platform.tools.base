@@ -1,6 +1,15 @@
 // Signature format: 4.0
 package com.android.build.api.dsl {
 
+  public interface CompileSdkBetaSpec {
+    method @InaccessibleFromKotlin public Integer? getBetaVersion();
+    method @InaccessibleFromKotlin public Integer? getMinorApiLevel();
+    method @InaccessibleFromKotlin public void setBetaVersion(Integer?);
+    method @InaccessibleFromKotlin public void setMinorApiLevel(Integer?);
+    property public abstract Integer? betaVersion;
+    property public abstract Integer? minorApiLevel;
+  }
+
   public interface CompileSdkReleaseSpec {
     method @InaccessibleFromKotlin public Integer? getMinorApiLevel();
     method @InaccessibleFromKotlin public Integer? getSdkExtension();
@@ -12,6 +21,8 @@ package com.android.build.api.dsl {
 
   public interface CompileSdkSpec {
     method @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public com.android.build.api.dsl.CompileSdkVersion addon(String vendor, String name, int version);
+    method @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public com.android.build.api.dsl.CompileSdkVersion beta(int version, kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.CompileSdkBetaSpec,kotlin.Unit> action);
+    method @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public com.android.build.api.dsl.CompileSdkVersion canary(String date);
     method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public com.android.build.api.dsl.CompileSdkVersion? getVersion();
     method @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public com.android.build.api.dsl.CompileSdkVersion preview(String codeName);
     method @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public com.android.build.api.dsl.CompileSdkVersion release(int version);
@@ -23,12 +34,16 @@ package com.android.build.api.dsl {
   @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public interface CompileSdkVersion {
     method @InaccessibleFromKotlin public String? getAddonName();
     method @InaccessibleFromKotlin public Integer? getApiLevel();
+    method @InaccessibleFromKotlin public Integer? getBetaVersion();
+    method @InaccessibleFromKotlin public String? getCanaryDate();
     method @InaccessibleFromKotlin public String? getCodeName();
     method @InaccessibleFromKotlin public Integer? getMinorApiLevel();
     method @InaccessibleFromKotlin public Integer? getSdkExtension();
     method @InaccessibleFromKotlin public String? getVendorName();
     property public abstract String? addonName;
     property public abstract Integer? apiLevel;
+    property public abstract Integer? betaVersion;
+    property public abstract String? canaryDate;
     property public abstract String? codeName;
     property public abstract Integer? minorApiLevel;
     property public abstract Integer? sdkExtension;
@@ -36,22 +51,22 @@ package com.android.build.api.dsl {
   }
 
   public interface Lint {
-    method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.Restricted public boolean getAbortOnError();
+    method @InaccessibleFromKotlin public boolean getAbortOnError();
     method @InaccessibleFromKotlin public boolean getAbsolutePaths();
     method @InaccessibleFromKotlin public java.io.File? getBaseline();
     method @InaccessibleFromKotlin public boolean getCheckAllWarnings();
     method @InaccessibleFromKotlin public boolean getCheckDependencies();
     method @InaccessibleFromKotlin public boolean getCheckGeneratedSources();
     method @InaccessibleFromKotlin public java.util.Set<java.lang.String> getCheckOnly();
-    method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.Restricted public boolean getCheckReleaseBuilds();
+    method @InaccessibleFromKotlin public boolean getCheckReleaseBuilds();
     method @InaccessibleFromKotlin public boolean getCheckTestSources();
     method @InaccessibleFromKotlin public java.util.Set<java.lang.String> getDisable();
     method @InaccessibleFromKotlin public java.util.Set<java.lang.String> getEnable();
     method @InaccessibleFromKotlin public java.util.Set<java.lang.String> getError();
     method @InaccessibleFromKotlin public boolean getExplainIssues();
     method @InaccessibleFromKotlin public java.util.Set<java.lang.String> getFatal();
-    method @InaccessibleFromKotlin public java.io.File? getHtmlOutput();
-    method @InaccessibleFromKotlin public boolean getHtmlReport();
+    method @InaccessibleFromKotlin @Deprecated public java.io.File? getHtmlOutput();
+    method @InaccessibleFromKotlin @Deprecated public boolean getHtmlReport();
     method @InaccessibleFromKotlin @Deprecated public java.util.Set<java.lang.String> getIgnore();
     method @InaccessibleFromKotlin public boolean getIgnoreTestFixturesSources();
     method @InaccessibleFromKotlin public boolean getIgnoreTestSources();
@@ -59,18 +74,19 @@ package com.android.build.api.dsl {
     method @InaccessibleFromKotlin public java.util.Set<java.lang.String> getInformational();
     method @InaccessibleFromKotlin public java.io.File? getLintConfig();
     method @InaccessibleFromKotlin public boolean getNoLines();
+    method @InaccessibleFromKotlin public boolean getPrintTextReport();
     method @InaccessibleFromKotlin public boolean getQuiet();
-    method @InaccessibleFromKotlin public java.io.File? getSarifOutput();
-    method @InaccessibleFromKotlin public boolean getSarifReport();
+    method @InaccessibleFromKotlin @Deprecated public java.io.File? getSarifOutput();
+    method @InaccessibleFromKotlin @Deprecated public boolean getSarifReport();
     method @InaccessibleFromKotlin public boolean getShowAll();
     method @InaccessibleFromKotlin public Integer? getTargetSdk();
     method @InaccessibleFromKotlin public String? getTargetSdkPreview();
-    method @InaccessibleFromKotlin public java.io.File? getTextOutput();
-    method @InaccessibleFromKotlin public boolean getTextReport();
+    method @InaccessibleFromKotlin @Deprecated public java.io.File? getTextOutput();
+    method @InaccessibleFromKotlin @Deprecated public boolean getTextReport();
     method @InaccessibleFromKotlin public java.util.Set<java.lang.String> getWarning();
     method @InaccessibleFromKotlin public boolean getWarningsAsErrors();
-    method @InaccessibleFromKotlin public java.io.File? getXmlOutput();
-    method @InaccessibleFromKotlin public boolean getXmlReport();
+    method @InaccessibleFromKotlin @Deprecated public java.io.File? getXmlOutput();
+    method @InaccessibleFromKotlin @Deprecated public boolean getXmlReport();
     method @InaccessibleFromKotlin public void setAbortOnError(boolean);
     method @InaccessibleFromKotlin public void setAbsolutePaths(boolean);
     method @InaccessibleFromKotlin public void setBaseline(java.io.File?);
@@ -80,41 +96,42 @@ package com.android.build.api.dsl {
     method @InaccessibleFromKotlin public void setCheckReleaseBuilds(boolean);
     method @InaccessibleFromKotlin public void setCheckTestSources(boolean);
     method @InaccessibleFromKotlin public void setExplainIssues(boolean);
-    method @InaccessibleFromKotlin public void setHtmlOutput(java.io.File?);
-    method @InaccessibleFromKotlin public void setHtmlReport(boolean);
+    method @InaccessibleFromKotlin @Deprecated public void setHtmlOutput(java.io.File?);
+    method @InaccessibleFromKotlin @Deprecated public void setHtmlReport(boolean);
     method @InaccessibleFromKotlin public void setIgnoreTestFixturesSources(boolean);
     method @InaccessibleFromKotlin public void setIgnoreTestSources(boolean);
     method @InaccessibleFromKotlin public void setIgnoreWarnings(boolean);
     method @InaccessibleFromKotlin public void setLintConfig(java.io.File?);
     method @InaccessibleFromKotlin public void setNoLines(boolean);
+    method @InaccessibleFromKotlin public void setPrintTextReport(boolean);
     method @InaccessibleFromKotlin public void setQuiet(boolean);
-    method @InaccessibleFromKotlin public void setSarifOutput(java.io.File?);
-    method @InaccessibleFromKotlin public void setSarifReport(boolean);
+    method @InaccessibleFromKotlin @Deprecated public void setSarifOutput(java.io.File?);
+    method @InaccessibleFromKotlin @Deprecated public void setSarifReport(boolean);
     method @InaccessibleFromKotlin public void setShowAll(boolean);
     method @InaccessibleFromKotlin public void setTargetSdk(Integer?);
     method @InaccessibleFromKotlin public void setTargetSdkPreview(String?);
-    method @InaccessibleFromKotlin public void setTextOutput(java.io.File?);
-    method @InaccessibleFromKotlin public void setTextReport(boolean);
+    method @InaccessibleFromKotlin @Deprecated public void setTextOutput(java.io.File?);
+    method @InaccessibleFromKotlin @Deprecated public void setTextReport(boolean);
     method @InaccessibleFromKotlin public void setWarningsAsErrors(boolean);
-    method @InaccessibleFromKotlin public void setXmlOutput(java.io.File?);
-    method @InaccessibleFromKotlin public void setXmlReport(boolean);
+    method @InaccessibleFromKotlin @Deprecated public void setXmlOutput(java.io.File?);
+    method @InaccessibleFromKotlin @Deprecated public void setXmlReport(boolean);
     method public void targetSdk(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TargetSdkSpec,kotlin.Unit> action);
-    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract boolean abortOnError;
+    property public abstract boolean abortOnError;
     property public abstract boolean absolutePaths;
     property public abstract java.io.File? baseline;
     property public abstract boolean checkAllWarnings;
     property public abstract boolean checkDependencies;
     property public abstract boolean checkGeneratedSources;
     property public abstract java.util.Set<java.lang.String> checkOnly;
-    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract boolean checkReleaseBuilds;
+    property public abstract boolean checkReleaseBuilds;
     property public abstract boolean checkTestSources;
     property public abstract java.util.Set<java.lang.String> disable;
     property public abstract java.util.Set<java.lang.String> enable;
     property public abstract java.util.Set<java.lang.String> error;
     property public abstract boolean explainIssues;
     property public abstract java.util.Set<java.lang.String> fatal;
-    property public abstract java.io.File? htmlOutput;
-    property public abstract boolean htmlReport;
+    property @Deprecated public abstract java.io.File? htmlOutput;
+    property @Deprecated public abstract boolean htmlReport;
     property @Deprecated public abstract java.util.Set<java.lang.String> ignore;
     property public abstract boolean ignoreTestFixturesSources;
     property public abstract boolean ignoreTestSources;
@@ -122,18 +139,19 @@ package com.android.build.api.dsl {
     property public abstract java.util.Set<java.lang.String> informational;
     property public abstract java.io.File? lintConfig;
     property public abstract boolean noLines;
+    property public abstract boolean printTextReport;
     property public abstract boolean quiet;
-    property public abstract java.io.File? sarifOutput;
-    property public abstract boolean sarifReport;
+    property @Deprecated public abstract java.io.File? sarifOutput;
+    property @Deprecated public abstract boolean sarifReport;
     property public abstract boolean showAll;
     property public abstract Integer? targetSdk;
     property public abstract String? targetSdkPreview;
-    property public abstract java.io.File? textOutput;
-    property public abstract boolean textReport;
+    property @Deprecated public abstract java.io.File? textOutput;
+    property @Deprecated public abstract boolean textReport;
     property public abstract java.util.Set<java.lang.String> warning;
     property public abstract boolean warningsAsErrors;
-    property public abstract java.io.File? xmlOutput;
-    property public abstract boolean xmlReport;
+    property @Deprecated public abstract java.io.File? xmlOutput;
+    property @Deprecated public abstract boolean xmlReport;
   }
 
   public interface MaxSdkSpec {

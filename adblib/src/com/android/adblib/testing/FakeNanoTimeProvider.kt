@@ -41,4 +41,29 @@ class FakeNanoTimeProvider : SystemNanoTimeProvider() {
       (pausedTimeNano ?: throw IllegalStateException("Time can be manually advanced only in a `paused` state")) +
         TimeUnit.NANOSECONDS.convert(time, unit)
   }
+
+  /*
+  TODO: this is disabled because adding it breaks many existing tests. It is the "correct" behavior though and
+  should be enabled when possible.
+
+  override suspend fun <R> withErrorTimeout(timeout: Long, block: suspend CoroutineScope.() -> R): R {
+    val deadline = nanoTime() + TimeUnit.MILLISECONDS.toNanos(timeout)
+    var result: R? = null
+    coroutineScope {
+      val job = launch(Dispatchers.IO) { result = block() }
+
+      launch(Dispatchers.Unconfined) {
+        while (nanoTime() < deadline) {
+          delay(10)
+          if (job.isCompleted) {
+            return@launch
+          }
+        }
+        job.cancel()
+        throw TimeoutException()
+      }
+    }
+    return result as R
+  }
+   */
 }

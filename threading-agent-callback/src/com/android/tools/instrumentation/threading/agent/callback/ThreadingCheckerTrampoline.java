@@ -16,8 +16,6 @@
 
 package com.android.tools.instrumentation.threading.agent.callback;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
@@ -48,6 +46,10 @@ public final class ThreadingCheckerTrampoline {
 
     static BaselineViolations getBaselineViolations() {
         return BaselineViolationsHolder.baselineViolations;
+    }
+
+    public static boolean isIgnored(StackTraceElement[] stackTrace, int frameIndex) {
+        return getBaselineViolations().isIgnored(stackTrace, frameIndex);
     }
 
     // This method should be called from Android Studio startup code.
@@ -93,9 +95,6 @@ public final class ThreadingCheckerTrampoline {
         if (insideIgnoredCounter.get() > 0) {
             return;
         }
-        if (getBaselineViolations().isIgnored(getInstrumentedMethodStackTrace())) {
-            return;
-        }
         for (ThreadingCheckerHook hook : hooks) {
             hook.verifyOnUiThread();
         }
@@ -108,9 +107,6 @@ public final class ThreadingCheckerTrampoline {
             return;
         }
         if (insideIgnoredCounter.get() > 0) {
-            return;
-        }
-        if (getBaselineViolations().isIgnored(getInstrumentedMethodStackTrace())) {
             return;
         }
         for (ThreadingCheckerHook hook : hooks) {
@@ -127,9 +123,6 @@ public final class ThreadingCheckerTrampoline {
         if (insideIgnoredCounter.get() > 0) {
             return;
         }
-        if (getBaselineViolations().isIgnored(getInstrumentedMethodStackTrace())) {
-            return;
-        }
         for (ThreadingCheckerHook hook : hooks) {
             hook.verifyReadLock();
         }
@@ -142,9 +135,6 @@ public final class ThreadingCheckerTrampoline {
             return;
         }
         if (insideIgnoredCounter.get() > 0) {
-            return;
-        }
-        if (getBaselineViolations().isIgnored(getInstrumentedMethodStackTrace())) {
             return;
         }
         for (ThreadingCheckerHook hook : hooks) {
@@ -161,9 +151,6 @@ public final class ThreadingCheckerTrampoline {
         if (insideIgnoredCounter.get() > 0) {
             return;
         }
-        if (getBaselineViolations().isIgnored(getInstrumentedMethodStackTrace())) {
-            return;
-        }
         for (ThreadingCheckerHook hook : hooks) {
             hook.verifyNoReadLock();
         }
@@ -177,19 +164,5 @@ public final class ThreadingCheckerTrampoline {
                             + skippedChecksCount
                             + " times before the ThreadingCheckerHook was installed");
         }
-    }
-
-    private static List<StackTraceElement> getInstrumentedMethodStackTrace() {
-        // Stack trace here will look like
-        // Thread#getStackTrace
-        // ThreadingCheckerTrampoline#getInstrumentedMethodStackTrace
-        // ThreadingCheckerTrampoline.verifyOnUiThread
-        // [method-of-interest]
-        // ...
-        //
-        // And so we are interested in the stack trace starting with the fourth frame. If this
-        // changes please update the frame index below
-        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
-        return Arrays.asList(stackTrace).subList(3, stackTrace.length);
     }
 }

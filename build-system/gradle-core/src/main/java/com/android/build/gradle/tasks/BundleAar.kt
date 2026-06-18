@@ -235,6 +235,8 @@ abstract class BundleAar : Zip(), VariantTask {
   /** Creation action to produce a local .aar file which is used when running lint on a downstream module. */
   class LibraryLocalLintCreationAction(creationConfig: LibraryCreationConfig) : AbstractLibraryCreationAction(creationConfig) {
 
+    override val includeJniInAar: Boolean = false
+
     override val name: String
       get() = computeTaskName("bundle", "LocalLintAar")
 
@@ -289,6 +291,8 @@ abstract class BundleAar : Zip(), VariantTask {
   abstract class AbstractLibraryCreationAction(creationConfig: LibraryCreationConfig) :
     BaseCreationAction<LibraryCreationConfig>(creationConfig) {
 
+    protected open val includeJniInAar: Boolean = true
+
     override fun configure(task: BundleAar) {
       super.configure(task)
 
@@ -306,7 +310,9 @@ abstract class BundleAar : Zip(), VariantTask {
       if (buildFeatures.renderScript) {
         task.from(artifacts.get(InternalArtifactType.RENDERSCRIPT_HEADERS), prependToCopyPath(SdkConstants.FD_RENDERSCRIPT))
       }
-      task.from(artifacts.get(LIBRARY_AND_LOCAL_JARS_JNI), prependToCopyPath(SdkConstants.FD_JNI))
+      if (includeJniInAar) {
+        task.from(artifacts.get(LIBRARY_AND_LOCAL_JARS_JNI), prependToCopyPath(SdkConstants.FD_JNI))
+      }
       task.from(creationConfig.artifacts.get(InternalArtifactType.LINT_PUBLISH_JAR))
 
       if (buildFeatures.prefabPublishing) {

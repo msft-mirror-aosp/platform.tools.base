@@ -25,6 +25,7 @@ import java.nio.file.Path
 import java.util.Properties
 import java.util.zip.ZipFile
 import kotlin.io.path.pathString
+import kotlin.text.RegexOption.IGNORE_CASE
 
 interface BackupService {
 
@@ -60,6 +61,8 @@ interface BackupService {
     const val METADATA_FILE = "metadata.txt"
     const val PROPERTY_APPLICATION_ID = "application-id"
     const val PROPERTY_BACKUP_TYPE = "backup-type"
+    val APPLICATION_ID_REGEX = "^([a-z][a-z\\d_]*\\.)+[a-z][a-z\\d_]*$".toRegex(IGNORE_CASE)
+    val PERMISSION_REGEX = "^[a-z][a-z0-9_.]*$".toRegex(IGNORE_CASE)
 
     fun getInstance(adbSession: AdbSession, logger: Logger, minGmsVersion: Int): BackupService =
       BackupServiceImpl(AdbServicesFactoryImpl(adbSession, logger, minGmsVersion))
@@ -101,7 +104,11 @@ interface BackupService {
       return try {
         val properties = Properties()
         properties.load(getInputStream(getEntry(METADATA_FILE)))
-        BackupMetadata(properties.getProperty(PROPERTY_APPLICATION_ID), BackupType.valueOf(properties.getProperty(PROPERTY_BACKUP_TYPE)))
+        val applicationId = properties.getProperty(PROPERTY_APPLICATION_ID)
+        if (!APPLICATION_ID_REGEX.matches(applicationId)) {
+          throw BackupException(INVALID_BACKUP_FILE, "Invalid application-id in backup metadata")
+        }
+        BackupMetadata(applicationId, BackupType.valueOf(properties.getProperty(PROPERTY_BACKUP_TYPE)))
       } catch (e: Exception) {
         throw BackupException(INVALID_BACKUP_FILE, "Backup file does not contain metadata: $name", e)
       }

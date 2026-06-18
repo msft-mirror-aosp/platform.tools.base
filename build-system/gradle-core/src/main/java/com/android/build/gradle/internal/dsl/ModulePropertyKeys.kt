@@ -17,56 +17,12 @@
 package com.android.build.gradle.internal.dsl
 
 import com.android.build.gradle.options.BooleanOption
-import com.android.build.gradle.options.OptionalBooleanOption
-import com.android.build.gradle.options.StringOption
 import com.android.build.gradle.options.parseBoolean
-import org.gradle.api.artifacts.Dependency
 
 sealed interface ModulePropertyKey<OutputT> {
 
-  enum class Dependencies(override val key: String) : ModulePropertyKey<List<Dependency>?> {
-    /** A [Dependency] providing apigenerator artifact. */
-    ANDROID_PRIVACY_SANDBOX_SDK_API_GENERATOR(StringOption.ANDROID_PRIVACY_SANDBOX_SDK_API_GENERATOR.propertyName),
-
-    /** [ArrayList<Dependency>] of required runtime dependencies of the artifact of the apigenerator. */
-    ANDROID_PRIVACY_SANDBOX_SDK_API_GENERATOR_GENERATED_RUNTIME_DEPENDENCIES(
-      StringOption.ANDROID_PRIVACY_SANDBOX_SDK_API_GENERATOR_GENERATED_RUNTIME_DEPENDENCIES.propertyName
-    ),
-
-    /** A [Dependency] providing apipackager artifact. */
-    ANDROID_PRIVACY_SANDBOX_SDK_API_PACKAGER(StringOption.ANDROID_PRIVACY_SANDBOX_SDK_API_PACKAGER.propertyName),
-
-    /**
-     * A [Dependency] providing kotlin compiler embeddable artifact (used for compling sources produced by the Privacy Sandbox apigenerator.
-     */
-    ANDROID_PRIVACY_SANDBOX_SDK_KOTLIN_COMPILER_EMBEDDABLE(
-      StringOption.ANDROID_PRIVACY_SANDBOX_SDK_KOTLIN_COMPILER_EMBEDDABLE.propertyName
-    );
-
-    override fun getValue(properties: Map<String, Any>): List<Dependency>? {
-      return when (val value = properties[key]) {
-        null -> null
-        is Dependency -> listOf(value)
-        is List<*> -> value as List<Dependency>
-        else -> throw IllegalArgumentException("Unexpected type ${value::class.qualifiedName} for property $key")
-      }
-    }
-
-    companion object {
-      private val keyToModulePropertyKey = Dependencies.values().associateBy { it.key }
-
-      internal operator fun get(value: String) = keyToModulePropertyKey[value]
-    }
-  }
-
   enum class OptionalBoolean(override val key: String) : ModulePropertyKey<Boolean?> {
-    VERIFY_AAR_CLASSES(BooleanOption.VERIFY_AAR_CLASSES.propertyName),
-
-    /** Whether to use K2 UAST when running lint. The corresponding global property is [OptionalBooleanOption.LINT_USE_K2_UAST]. */
-    LINT_USE_K2_UAST(OptionalBooleanOption.LINT_USE_K2_UAST.propertyName),
-
-    /** Whether to enable various R8 optimization on the code */
-    ANDROID_PRIVACY_SANDBOX_R8_OPTIMIZATION("android.experimental.privacysandboxsdk.optimize");
+    VERIFY_AAR_CLASSES(BooleanOption.VERIFY_AAR_CLASSES.propertyName);
 
     override fun getValue(properties: Map<String, Any>): Boolean? {
       return properties[key]?.let { parseBoolean(key, it) }
@@ -80,12 +36,6 @@ sealed interface ModulePropertyKey<OutputT> {
   }
 
   enum class OptionalString(override val key: String) : ModulePropertyKey<String?> {
-    ANDROID_PRIVACY_SANDBOX_LOCAL_DEPLOYMENT_SIGNING_NAME("android.privacy_sandbox.local_deployment_signing_name"),
-    ANDROID_PRIVACY_SANDBOX_LOCAL_DEPLOYMENT_SIGNING_STORE_TYPE("android.privacy_sandbox.local_deployment_signing_store_type"),
-    ANDROID_PRIVACY_SANDBOX_LOCAL_DEPLOYMENT_SIGNING_STORE_FILE("android.privacy_sandbox.local_deployment_signing_store_file"),
-    ANDROID_PRIVACY_SANDBOX_LOCAL_DEPLOYMENT_SIGNING_STORE_PASSWORD("android.privacy_sandbox.local_deployment_signing_store_password"),
-    ANDROID_PRIVACY_SANDBOX_LOCAL_DEPLOYMENT_SIGNING_KEY_ALIAS("android.privacy_sandbox.local_deployment_signing_key_alias"),
-    ANDROID_PRIVACY_SANDBOX_LOCAL_DEPLOYMENT_SIGNING_KEY_PASSWORD("android.privacy_sandbox.local_deployment_signing_key_password"),
     R8_EXPERIMENTAL_PARTIAL_SHRINKING_INCLUDE_PATTERNS("com.android.tools.r8.experimentalPartialShrinkingIncludePatterns"),
     R8_EXPERIMENTAL_PARTIAL_SHRINKING_EXCLUDE_PATTERNS("com.android.tools.r8.experimentalPartialShrinkingExcludePatterns"),
 
@@ -112,9 +62,6 @@ sealed interface ModulePropertyKey<OutputT> {
      * for macro benchmarks)
      */
     SELF_INSTRUMENTING("android.experimental.self-instrumenting", false),
-
-    /** If false - R8 will not be provided with the merged art-profile If true - R8 will rewrite the art-profile */
-    ART_PROFILE_R8_REWRITING("android.experimental.art-profile-r8-rewriting", true),
 
     /** If false - R8 will not attempt to optimize startup dex If true - R8 will optimize first dex for optimal startup performance. */
     R8_DEX_STARTUP_OPTIMIZATION("android.experimental.r8.dex-startup-optimization", true),

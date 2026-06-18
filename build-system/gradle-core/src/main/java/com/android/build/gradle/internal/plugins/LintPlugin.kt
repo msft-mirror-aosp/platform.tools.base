@@ -53,6 +53,7 @@ import com.android.build.gradle.internal.profile.NoOpAnalyticsService
 import com.android.build.gradle.internal.projectIsolationActive
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.publishing.getAttributes
+import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalMultipleArtifactType
 import com.android.build.gradle.internal.scope.InternalMultipleArtifactType.LINT_REPORT_LINT_MODEL
 import com.android.build.gradle.internal.scope.InternalMultipleArtifactType.LINT_VITAL_REPORT_LINT_MODEL
@@ -268,7 +269,12 @@ abstract class LintPlugin : Plugin<Project> {
           task.mustRunAfter(updateLintBaselineJvmTask)
         }
         .also {
-          AndroidLintTask.VariantCreationAction.registerLintIntermediateArtifacts(it, artifacts)
+          AndroidLintTask.VariantCreationAction.registerLintIntermediateArtifacts(
+            it,
+            artifacts,
+            InternalArtifactType.LINT_INTERMEDIATE_TEXT_REPORT,
+            InternalArtifactType.LINT_RETURN_VALUE,
+          )
           AndroidLintTask.VariantCreationAction.registerLintReportArtifacts(
             it,
             artifacts,
@@ -305,7 +311,14 @@ abstract class LintPlugin : Plugin<Project> {
           )
           task.mustRunAfter(updateLintBaselineTask)
         }
-        .also { AndroidLintTask.VariantCreationAction.registerLintIntermediateArtifacts(it, artifacts, fatalOnly = true) }
+        .also {
+          AndroidLintTask.VariantCreationAction.registerLintIntermediateArtifacts(
+            it,
+            artifacts,
+            InternalArtifactType.LINT_VITAL_INTERMEDIATE_TEXT_REPORT,
+            InternalArtifactType.LINT_VITAL_RETURN_VALUE,
+          )
+        }
 
       val lintFixJvmTask =
         project.tasks.register("lintFixJvm", AndroidLintTask::class.java) { task ->

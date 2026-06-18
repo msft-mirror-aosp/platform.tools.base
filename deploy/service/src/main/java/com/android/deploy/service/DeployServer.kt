@@ -32,11 +32,11 @@ import com.android.deploy.service.proto.Service.NetworkTest
 import com.android.deploy.service.proto.Service.ResumeProcessRequest
 import com.android.deploy.service.proto.Service.ResumeProcessResponse
 import com.android.tools.deploy.proto.Deploy
-import com.android.tools.deployer.AdbClient
 import com.android.tools.deployer.AdbInstaller
-import com.android.tools.deployer.DeployMetric
 import com.android.tools.deployer.DeployerRunner
-import com.android.tools.deployer.Installer
+import com.android.tools.deployer.common.AdbClient
+import com.android.tools.deployer.common.DeployMetric
+import com.android.tools.deployer.common.Installer
 import com.android.tools.idea.io.grpc.Server
 import com.android.tools.idea.io.grpc.netty.NettyServerBuilder
 import com.android.tools.idea.io.grpc.stub.StreamObserver

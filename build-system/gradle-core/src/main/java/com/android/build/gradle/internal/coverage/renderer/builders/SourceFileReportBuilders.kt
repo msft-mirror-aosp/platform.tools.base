@@ -83,7 +83,7 @@ data class TestSuiteFileCoverageBuilder(
           instruction = fileCoverage,
           // The source file report from JaCoCo doesn't provide aggregated branch
           // coverage, only line-by-line.
-          branch = CoverageInfo(0, 0, 0),
+          branch = CoverageInfo(null, 0, 0),
         ),
     )
   }

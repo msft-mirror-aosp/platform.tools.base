@@ -428,6 +428,7 @@ class JourneysConnectedTest {
     )
     val result =
       executor
+        .expectFailure()
         .withEnvironmentVariables(mapOf("JOURNEYS_FILTER" to "journey2.xml, journey3.journey.xml"))
         .run(":app:testJourneysTestT1DebugTestSuite")
 

@@ -684,8 +684,7 @@ private class ProjectInitializer(val client: LintClient, val file: File, var roo
     // can walk through directories/packages, including package-info.java
     // Alas, in K1, there is no counterpart inside compiler environment initialization.
     // That is, this computation of source roots is the key for K1: b/406902458.
-    val isK2 = (client as? LintCliClient)?.flags?.useK2Uast() == true && useFirUast()
-    if (computeSourceRoots || !isK2) {
+    if (computeSourceRoots) {
       sourceRoots = computeSourceRoots(sources)
       testSourceRoots = computeUniqueSourceRoots("test", testSources, sourceRoots)
       generatedSourceRoots = computeUniqueSourceRoots("generated", generatedSources, sourceRoots)
@@ -836,8 +835,12 @@ private class ProjectInitializer(val client: LintClient, val file: File, var roo
 
   @Throws(ZipException::class, IOException::class)
   fun unpackZipFile(zip: File, dir: File) {
+    val canonicalDir = dir.canonicalFile
     forEachZippedFile(zip) { zipFile, zipEntry ->
-      val targetFile = File(dir, zipEntry.name)
+      val targetFile = File(canonicalDir, zipEntry.name).canonicalFile
+      if (!targetFile.toPath().startsWith(canonicalDir.toPath())) {
+        throw ZipException("Refusing to extract entry '${zipEntry.name}' from ${zip.name}: resolves outside $canonicalDir")
+      }
       Files.createParentDirs(targetFile)
       Files.asByteSink(targetFile).openBufferedStream().use { ByteStreams.copy(zipFile.getInputStream(zipEntry), it) }
     }

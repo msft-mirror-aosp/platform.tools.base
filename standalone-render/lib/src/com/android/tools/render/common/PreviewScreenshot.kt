@@ -24,6 +24,7 @@ interface PreviewScreenshot : Serializable {
   val methodFQN: String
   val previewParams: Map<String, String>
   val previewId: String
+  val previewWrapperFqn: String?
 
   /** Creates a [ScreenshotPreviewElement]. */
   fun toPreviewElement(module: StandaloneRenderModelModule): ScreenshotPreviewElement

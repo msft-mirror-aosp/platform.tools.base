@@ -40,11 +40,11 @@ class JUnitEngineSpecImplForTestSuiteVariantTest {
     val variantBuilderJUnitEngineSpec =
       JUnitEngineSpecForVariantBuilder(objects, dslDefinedJUnitEngineSpec).also {
         it.inputs.add(AgpTestSuiteInputParameters.TESTED_APKS)
-        it.inputs.add(AgpTestSuiteInputParameters.TESTING_APK)
+        it.inputs.add(AgpTestSuiteInputParameters.TEST_APKS)
       }
     val junitEngineSpec =
       JUnitEngineSpecImplForVariant(variantBuilderJUnitEngineSpec, { objects.mapProperty(String::class.java, String::class.java) })
-    assertThat(junitEngineSpec.inputs).containsExactly(AgpTestSuiteInputParameters.TESTED_APKS, AgpTestSuiteInputParameters.TESTING_APK)
+    assertThat(junitEngineSpec.inputs).containsExactly(AgpTestSuiteInputParameters.TESTED_APKS, AgpTestSuiteInputParameters.TEST_APKS)
   }
 
   @Test

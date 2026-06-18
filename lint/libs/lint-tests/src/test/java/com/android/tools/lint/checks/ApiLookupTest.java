@@ -490,6 +490,10 @@ public class ApiLookupTest extends AbstractCheckTest {
         assertEquals(desc, expected, actual);
     }
 
+    public static void clearApiLookupCache() {
+        ApiLookup.dispose();
+    }
+
     public void testDeprecatedIn() {
         assertEquals(9, getClassDeprecatedIn("org/xml/sax/Parser"));
         assertEquals(

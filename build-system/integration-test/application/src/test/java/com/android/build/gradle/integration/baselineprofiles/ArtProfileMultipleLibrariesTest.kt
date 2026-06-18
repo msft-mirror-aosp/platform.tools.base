@@ -39,16 +39,10 @@ import org.junit.Assert
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import org.junit.runner.RunWith
-import org.junit.runners.Parameterized
 
-@RunWith(Parameterized::class)
-class ArtProfileMultipleLibrariesTest(private val withArtProfileR8Rewriting: Boolean, private val minifyEnabled: Boolean) {
+class ArtProfileMultipleLibrariesTest {
 
   companion object {
-    @Parameterized.Parameters(name = "withArtProfileR8Rewriting_{0}_minifyEnabled_{1}")
-    @JvmStatic
-    fun setups() = listOf(arrayOf(true, true), arrayOf(false, true), arrayOf(false, false))
 
     const val aarEntryName = SdkConstants.FN_ART_PROFILE
     const val apkEntryName = "${SdkConstants.FN_BINART_ART_PROFILE_FOLDER_IN_APK}/${SdkConstants.FN_BINARY_ART_PROFILE}"
@@ -102,25 +96,18 @@ class ArtProfileMultipleLibrariesTest(private val withArtProfileR8Rewriting: Boo
       project.getSubproject(":app").also {
         it.buildFile.appendText(
           """
-                        android {
-                            defaultConfig {
-                                minSdkVersion = 28
-                            }
-                        }
-                        androidComponents {
-                            // turn on minification if we want r8 to rewrite the art-profile
-                            beforeVariants(selector().withBuildType("release"), { variant ->
-                                variant.setMinifyEnabled($minifyEnabled);
-                            })
-                            // and turn on the feature if necessary
-                            onVariants(selector().withName("release"), { variant ->
-                                variant.experimentalProperties.put(
-                                    "android.experimental.art-profile-r8-rewriting",
-                                    $withArtProfileR8Rewriting
-                                )
-                            })
-                        }
-                    """
+          android {
+              defaultConfig {
+                  minSdkVersion = 28
+              }
+          }
+          androidComponents {
+              // turn on minification if we want r8 to rewrite the art-profile
+              beforeVariants(selector().withBuildType("release"), { variant ->
+                  variant.setMinifyEnabled(true);
+              })
+          }
+          """
             .trimIndent()
         )
       }
@@ -184,12 +171,7 @@ class ArtProfileMultipleLibrariesTest(private val withArtProfileR8Rewriting: Boo
 
       libraryBaselineProfContents.add(baselineProfContent)
       File(androidAssets, SdkConstants.FN_ART_PROFILE).writeText(baselineProfContent)
-      expectedMergedFileContent =
-        if (minifyEnabled) {
-          expectedMergedFileContent.plus(minifyEnabledBaselineProfContent.plus("\n"))
-        } else {
-          expectedMergedFileContent.plus(baselineProfContent.plus("\n"))
-        }
+      expectedMergedFileContent = expectedMergedFileContent.plus(minifyEnabledBaselineProfContent.plus("\n"))
       expectedMergedFileContentBeforeWildcardTask = expectedMergedFileContentBeforeWildcardTask.plus(baselineProfContent.plus("\n"))
       expectedMergedRewrittenFileContent =
         expectedMergedRewrittenFileContent.plus(
@@ -236,13 +218,8 @@ class ArtProfileMultipleLibrariesTest(private val withArtProfileR8Rewriting: Boo
         )
     }
     if (addApplicationProfile) {
-      if (minifyEnabled) {
-        expectedMergedFileContent = applicationBaselineProfContent.plus("\n$expectedMergedFileContent")
-        expectedMergedRewrittenFileContent = applicationBaselineProfContent.plus("\n$expectedMergedRewrittenFileContent")
-      } else {
-        expectedMergedFileContent = expectedMergedFileContent.plus(applicationBaselineProfContent.plus("\n"))
-        expectedMergedRewrittenFileContent = expectedMergedRewrittenFileContent.plus(applicationBaselineProfContent.plus("\n"))
-      }
+      expectedMergedFileContent = applicationBaselineProfContent.plus("\n$expectedMergedFileContent")
+      expectedMergedRewrittenFileContent = applicationBaselineProfContent.plus("\n$expectedMergedRewrittenFileContent")
       expectedMergedFileContentBeforeWildcardTask =
         expectedMergedFileContentBeforeWildcardTask.plus(applicationBaselineProfContent.plus("\n"))
     }
@@ -286,24 +263,20 @@ class ArtProfileMultipleLibrariesTest(private val withArtProfileR8Rewriting: Boo
       )
     Truth.assertThat(mergedFilePreR8.readText()).isEqualTo(expectedMergedFileContentBeforeWildcardTask)
 
-    if (minifyEnabled) {
-      val mergedFile =
-        FileUtils.join(
-          project.getSubproject(":app").buildDir,
-          SdkConstants.FD_INTERMEDIATES,
-          InternalArtifactType.R8_ART_PROFILE.getFolderName(),
-          "release",
-          "minifyReleaseWithR8",
-          SdkConstants.FN_ART_PROFILE,
-        )
-      Truth.assertThat(
-          mergedFile.readText().trimEnd() // R8 seems to add a newline at the end
-        )
-        .isEqualTo(if (withArtProfileR8Rewriting) expectedMergedRewrittenFileContent else expectedMergedFileContent)
-      Truth.assertThat(HumanReadableProfile(mergedFile) { fail(it) }).isNotNull()
-    } else {
-      Truth.assertThat(HumanReadableProfile(mergedFilePreR8) { fail(it) }).isNotNull()
-    }
+    val mergedFile =
+      FileUtils.join(
+        project.getSubproject(":app").buildDir,
+        SdkConstants.FD_INTERMEDIATES,
+        InternalArtifactType.R8_ART_PROFILE.getFolderName(),
+        "release",
+        "minifyReleaseWithR8",
+        SdkConstants.FN_ART_PROFILE,
+      )
+    Truth.assertThat(
+        mergedFile.readText().trimEnd() // R8 seems to add a newline at the end
+      )
+      .isEqualTo(expectedMergedRewrittenFileContent)
+    Truth.assertThat(HumanReadableProfile(mergedFile) { fail(it) }).isNotNull()
 
     val binaryProfile =
       FileUtils.join(

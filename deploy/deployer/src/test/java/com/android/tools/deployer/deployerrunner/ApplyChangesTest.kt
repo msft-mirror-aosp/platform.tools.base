@@ -17,11 +17,12 @@ package com.android.tools.deployer.deployerrunner
 
 import com.android.testutils.AssumeUtil
 import com.android.testutils.TestUtils
-import com.android.tools.deployer.DeployerException
 import com.android.tools.deployer.DeployerRunner
 import com.android.tools.deployer.DeployerTestUtils
 import com.android.tools.deployer.Sites
 import com.android.tools.deployer.SqlApkFileDatabase
+import com.android.tools.deployer.common.DeployerException
+import com.android.tools.deployer.common.DeployerTestConstants
 import com.android.tools.deployer.devices.shell.FailingMkdir
 import com.android.tools.deployer.rules.ApiLevel
 import java.io.File
@@ -70,11 +71,11 @@ class ApplyChangesTest : DeployRunnerTestBase() {
         device,
         "getprop",
         getInstallerInvocation(), // dump com.example.simpleapp
-        AdbInstallerTest.RM_DIR,
-        AdbInstallerTest.MK_DIR,
-        AdbInstallerTest.CHMOD_INSTALLER,
-        AdbInstallerTest.CHMOD_DIR,
-        AdbInstallerTest.CHOWN_DIR,
+        DeployerTestConstants.RM_DIR,
+        DeployerTestConstants.MK_DIR,
+        DeployerTestConstants.CHMOD_INSTALLER,
+        DeployerTestConstants.CHMOD_DIR,
+        DeployerTestConstants.CHOWN_DIR,
         getInstallerInvocation(), // dump com.example.simpleapp
         "/system/bin/run-as com.example.simpleapp id -u",
         "id -u",
@@ -231,11 +232,11 @@ class ApplyChangesTest : DeployRunnerTestBase() {
         device,
         "getprop",
         getInstallerInvocation(), // dump com.example.simpleapp
-        AdbInstallerTest.RM_DIR,
-        AdbInstallerTest.MK_DIR,
-        AdbInstallerTest.CHMOD_INSTALLER,
-        AdbInstallerTest.CHMOD_DIR,
-        AdbInstallerTest.CHOWN_DIR,
+        DeployerTestConstants.RM_DIR,
+        DeployerTestConstants.MK_DIR,
+        DeployerTestConstants.CHMOD_INSTALLER,
+        DeployerTestConstants.CHMOD_DIR,
+        DeployerTestConstants.CHOWN_DIR,
         getInstallerInvocation(), // dump com.example.simpleapp
         "/system/bin/run-as com.example.simpleapp id -u",
         "id -u",
@@ -324,11 +325,11 @@ class ApplyChangesTest : DeployRunnerTestBase() {
         device,
         "getprop",
         getInstallerInvocation(), // dump com.example.simpleapp
-        AdbInstallerTest.RM_DIR,
-        AdbInstallerTest.MK_DIR,
-        AdbInstallerTest.CHMOD_INSTALLER,
-        AdbInstallerTest.CHMOD_DIR,
-        AdbInstallerTest.CHOWN_DIR,
+        DeployerTestConstants.RM_DIR,
+        DeployerTestConstants.MK_DIR,
+        DeployerTestConstants.CHMOD_INSTALLER,
+        DeployerTestConstants.CHMOD_DIR,
+        DeployerTestConstants.CHOWN_DIR,
         getInstallerInvocation(), // dump com.example.simpleapp
         "/system/bin/run-as com.example.simpleapp id -u",
         "id -u",
@@ -415,11 +416,11 @@ class ApplyChangesTest : DeployRunnerTestBase() {
         device,
         "getprop",
         getInstallerInvocation(), // dump com.example.simpleapp
-        AdbInstallerTest.RM_DIR,
-        AdbInstallerTest.MK_DIR,
-        AdbInstallerTest.CHMOD_INSTALLER,
-        AdbInstallerTest.CHMOD_DIR,
-        AdbInstallerTest.CHOWN_DIR,
+        DeployerTestConstants.RM_DIR,
+        DeployerTestConstants.MK_DIR,
+        DeployerTestConstants.CHMOD_INSTALLER,
+        DeployerTestConstants.CHMOD_DIR,
+        DeployerTestConstants.CHOWN_DIR,
         getInstallerInvocation(), // dump com.example.simpleapp
         "/system/bin/run-as com.example.simpleapp id -u",
         "id -u",
@@ -555,11 +556,11 @@ class ApplyChangesTest : DeployRunnerTestBase() {
         device,
         "getprop",
         getInstallerInvocation(),
-        AdbInstallerTest.RM_DIR,
-        AdbInstallerTest.MK_DIR,
-        "su root " + AdbInstallerTest.CHOWN_DIR,
-        AdbInstallerTest.RM_DIR,
-        AdbInstallerTest.MK_DIR,
+        DeployerTestConstants.RM_DIR,
+        DeployerTestConstants.MK_DIR,
+        "su root " + DeployerTestConstants.CHOWN_DIR,
+        DeployerTestConstants.RM_DIR,
+        DeployerTestConstants.MK_DIR,
       )
     } else {
       // TODO: Add R+ tests.

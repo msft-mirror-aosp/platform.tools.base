@@ -20,6 +20,7 @@ import com.android.repository.api.LocalPackage
 import com.android.repository.api.Repository
 import com.android.repository.impl.meta.SchemaModuleUtil
 import com.android.repository.testframework.FakeProgressIndicator
+import com.android.sdklib.AndroidApiLevel
 import com.android.sdklib.AndroidVersion
 import com.android.sdklib.repository.meta.DetailsTypes
 import com.google.common.truth.Truth.assertThat
@@ -103,6 +104,20 @@ class LocalPackageUnmarshalTest {
       val details = pkg.typeDetails as DetailsTypes.SourceDetailsType
       assertThat(details.apiLevel).isEqualTo(24)
       assertThat(details.isBaseExtension).isTrue()
+    }
+  }
+
+  @Test
+  fun testPlatformV4Minor() {
+    unmarshalAndVerify("platform/v4/platform_minor.xml") { pkg ->
+      val details = pkg.typeDetails as DetailsTypes.PlatformDetailsType
+      assertThat(details.apiLevel).isEqualTo(36)
+      assertThat(details.apiMinorLevel).isEqualTo(1)
+      assertThat(details.extensionLevel).isEqualTo(20)
+      assertThat(details.isBaseExtension).isTrue()
+      assertThat(details.layoutlib.api).isEqualTo(15)
+      assertThat(details.androidVersion).isEqualTo(AndroidVersion(AndroidApiLevel(36, 1), null, 20, true))
+      assertThat(details.abis).containsExactly("armeabi")
     }
   }
 

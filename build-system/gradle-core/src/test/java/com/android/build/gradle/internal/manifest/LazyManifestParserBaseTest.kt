@@ -18,7 +18,7 @@ package com.android.build.gradle.internal.manifest
 
 import com.android.build.gradle.internal.fixtures.FakeGradleProvider
 import com.android.build.gradle.internal.services.createProjectServices
-import com.android.builder.model.SyncIssue
+import com.android.builder.model.v2.ide.SyncIssue
 import com.android.testutils.AbstractBuildGivenBuildExpectTest
 import com.google.common.truth.Truth
 import java.io.File
@@ -124,7 +124,7 @@ internal abstract class LazyManifestParserBaseTest :
     override val type: Int = -1,
     override val data: String? = null,
     override val message: String = "",
-    override val multiLineMessage: List<String>? = null,
+    override val multiLineMessage: List<String?>? = null,
   ) : SyncIssue
 
   private fun SyncIssue.toFake(): SyncIssue = FakeSyncIssue(this.severity, this.type, this.data, this.message, this.multiLineMessage)
@@ -134,7 +134,7 @@ internal abstract class LazyManifestParserBaseTest :
     override var type: Int = -1,
     override var data: String? = null,
     override var message: String = "",
-    override var multiLineMessage: List<String>? = null,
+    override var multiLineMessage: List<String?>? = null,
   ) : SyncIssue {
     fun toFake(): SyncIssue = FakeSyncIssue(this.severity, this.type, this.data, this.message, this.multiLineMessage)
   }

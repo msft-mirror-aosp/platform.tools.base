@@ -16,19 +16,30 @@
 
 package com.android.build.gradle.integration.testing
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import org.junit.Rule
 import org.junit.Test
 
 class TestWithDepTest : ModelComparator() {
 
-  @get:Rule val project = GradleTestProject.builder().fromTestProject("testWithDep").disableBuiltInKotlin().create()
+  @get:Rule
+  val project =
+    GradleRule.configure().from {
+      androidApplication(":app") {
+        dependencies {
+          androidTestImplementation("com.google.guava:guava:19.0")
+          androidTestImplementation("junit:junit:4.12")
+          androidTestImplementation("androidx.test:runner:1.4.0-alpha06")
+          androidTestImplementation("androidx.test:rules:1.4.0-alpha06")
+        }
+      }
+    }
 
   @Test
   fun `test VariantDependencies model`() {
-    val result = project.modelV2().fetchModels(variantName = "debug")
+    val result = project.build.modelBuilder.fetchModels(variantName = "debug")
 
-    with(result).compareVariantDependencies(goldenFile = "VariantDependencies")
+    with(result).compareVariantDependencies(projectAction = { getProject(":app") }, goldenFile = "VariantDependencies")
   }
 }

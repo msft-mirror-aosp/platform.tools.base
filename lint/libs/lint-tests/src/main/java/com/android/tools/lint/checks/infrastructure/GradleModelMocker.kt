@@ -23,6 +23,7 @@ import com.android.ide.common.repository.AgpVersion
 import com.android.sdklib.AndroidTargetHash
 import com.android.sdklib.AndroidVersion
 import com.android.sdklib.SdkVersionInfo
+import com.android.sdklib.SdkVersionUtil
 import com.android.tools.lint.LintCliFlags
 import com.android.tools.lint.checks.DesugaredMethodLookup
 import com.android.tools.lint.checks.VC_LIBRARIES
@@ -80,7 +81,6 @@ import java.util.jar.JarOutputStream
 import java.util.jar.Manifest
 import java.util.regex.Pattern
 import java.util.zip.ZipEntry
-import kotlin.text.Charsets
 import org.intellij.lang.annotations.Language
 
 /**
@@ -911,8 +911,6 @@ constructor(
           updateProjectType(LintModelModuleType.FEATURE, hasJavaOrJavaLibraryPlugin = false, isLibrary = false)
         "apply plugin: 'com.android.instantapp'" ->
           updateProjectType(LintModelModuleType.INSTANT_APP, hasJavaOrJavaLibraryPlugin = false, isLibrary = false)
-        "apply plugin: 'com.android.privacy-sandbox-sdk'" ->
-          updateProjectType(LintModelModuleType.PRIVACY_SANDBOX_SDK, hasJavaOrJavaLibraryPlugin = false, isLibrary = false)
         "java",
         "id('java')",
         "apply plugin: 'java'" -> updateProjectType(LintModelModuleType.JAVA_LIBRARY, hasJavaOrJavaLibraryPlugin = true, isLibrary = false)
@@ -1563,7 +1561,7 @@ constructor(
     val s = value.substring(value.indexOf(' ') + 1)
     if (s.startsWith("'")) {
       val codeName = getUnquotedValue(s)
-      val sdkVersion = SdkVersionInfo.getVersion(codeName, null)
+      val sdkVersion = SdkVersionUtil.getVersion(codeName, null)
       if (sdkVersion != null) return sdkVersion
     } else if (s[0].isDigit()) {
       return AndroidVersion(s.toInt(), null)

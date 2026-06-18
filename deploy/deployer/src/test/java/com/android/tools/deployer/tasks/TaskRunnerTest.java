@@ -17,17 +17,21 @@ package com.android.tools.deployer.tasks;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
+
 import static org.junit.Assert.fail;
 
-import com.android.tools.deployer.DeployerException;
+import com.android.tools.deployer.common.Canceller;
+import com.android.tools.deployer.common.DeployerException;
+
+import org.junit.Assert;
+import org.junit.Test;
+
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import org.junit.Assert;
-import org.junit.Test;
 
 public class TaskRunnerTest {
 

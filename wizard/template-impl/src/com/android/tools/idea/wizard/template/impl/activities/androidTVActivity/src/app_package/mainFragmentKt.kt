@@ -55,7 +55,7 @@ import android.widget.TextView
 import android.widget.Toast
 
 import com.bumptech.glide.Glide
-import com.bumptech.glide.request.target.SimpleTarget
+import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
 
 /**
@@ -94,8 +94,7 @@ class ${mainFragment} : BrowseSupportFragment() {
         mBackgroundManager = BackgroundManager.getInstance(activity)
         mBackgroundManager.attach(activity!!.window)
         mDefaultBackground = ContextCompat.getDrawable($contextArgBlock, R.drawable.default_background)
-        mMetrics = DisplayMetrics()
-        activity!!.windowManager.defaultDisplay.getMetrics(mMetrics)
+        mMetrics = resources.displayMetrics
     }
 
     private fun setupUIElements() {
@@ -196,11 +195,15 @@ class ${mainFragment} : BrowseSupportFragment() {
                 .load(uri)
                 .centerCrop()
                 .error(mDefaultBackground)
-                .into<SimpleTarget<Drawable>>(
-                        object : SimpleTarget<Drawable>(width, height) {
+                .into(
+                        object : CustomTarget<Drawable>(width, height) {
                             override fun onResourceReady(drawable: Drawable,
                                                          transition: Transition<in Drawable>?) {
                                 mBackgroundManager.drawable = drawable
+                            }
+
+                            override fun onLoadCleared(placeholder: Drawable?) {
+                                // Unused
                             }
                         })
         mBackgroundTimer?.cancel()

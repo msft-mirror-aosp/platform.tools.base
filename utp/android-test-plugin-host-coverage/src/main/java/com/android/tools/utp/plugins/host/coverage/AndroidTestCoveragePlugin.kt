@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.tools.utp.plugins.host.coverage
 
 import com.android.tools.utp.plugins.host.coverage.proto.AndroidTestCoverageConfigProto.AndroidTestCoverageConfig
@@ -60,22 +61,20 @@ class AndroidTestCoveragePlugin(
   }
 
   override fun beforeAll(deviceController: DeviceController) {
-    createEmptyDirectoryOnHost(File(testCoverageConfig.outputDirectoryOnHost))
-    cleanPreviousCodeCoverageOnDevice(deviceController)
-
-    if (testCoverageConfig.useTestStorageService && !deviceController.isTestServiceInstalled()) {
-      logger.warning("useTestStorageService is requested but TestStorageService is not installed on" + " device.")
-    }
-
     useTestStorageService = (testCoverageConfig.useTestStorageService && deviceController.isTestServiceInstalled())
     if (useTestStorageService) {
       val apiLevel = (deviceController.getDevice().properties as? AndroidDeviceProperties)?.deviceApiLevel?.toIntOrNull() ?: 0
       if (apiLevel >= 30) {
         // Grant MANAGE_EXTERNAL_STORAGE permission to androidx.test.services so that it
         // can write test artifacts in external storage.
-        deviceController.deviceShellAndCheckSuccess("appops set androidx.test.services MANAGE_EXTERNAL_STORAGE allow")
+        deviceController.deviceShellAndCheckSuccess("appops", "set", "androidx.test.services", "MANAGE_EXTERNAL_STORAGE", "allow")
       }
+    } else if (testCoverageConfig.useTestStorageService) {
+      logger.warning("useTestStorageService is requested but TestStorageService is not installed on device.")
     }
+
+    createEmptyDirectoryOnHost(File(testCoverageConfig.outputDirectoryOnHost))
+    cleanPreviousCodeCoverageOnDevice(deviceController)
   }
 
   /** Creates an empty directory. If a directory exists at the given path, it removes all contents in the directory. */
@@ -90,13 +89,25 @@ class AndroidTestCoveragePlugin(
   private fun cleanPreviousCodeCoverageOnDevice(deviceController: DeviceController) {
     when (testCoverageConfig.testCoveragePathOnDeviceCase) {
       TestCoveragePathOnDeviceCase.SINGLE_COVERAGE_FILE -> {
-        val file = testCoverageConfig.singleCoverageFile
-        deviceController.deviceShellWithRunAs("rm -f \"${file}\"")
+        val path = testCoverageConfig.singleCoverageFile
+        val coveragePathOnDevice =
+          if (useTestStorageService) {
+            "${TEST_STORAGE_SERVICE_OUTPUT_DIR.removeSuffix("/")}/${path.removePrefix("/")}"
+          } else {
+            path
+          }
+        deviceController.deviceShellWithRunAs("rm", "-f", "\"${coveragePathOnDevice}\"")
       }
       TestCoveragePathOnDeviceCase.MULTIPLE_COVERAGE_FILES_IN_DIRECTORY -> {
-        val dir = testCoverageConfig.multipleCoverageFilesInDirectory
-        deviceController.deviceShellWithRunAs("rm -rf \"${dir}\"")
-        deviceController.deviceShellWithRunAs("mkdir -p \"${dir}\"")
+        val path = testCoverageConfig.multipleCoverageFilesInDirectory
+        val coveragePathOnDevice =
+          if (useTestStorageService) {
+            "${TEST_STORAGE_SERVICE_OUTPUT_DIR.removeSuffix("/")}/${path.removePrefix("/")}"
+          } else {
+            path
+          }
+        deviceController.deviceShellWithRunAs("rm", "-rf", "\"${coveragePathOnDevice}\"")
+        deviceController.deviceShellWithRunAs("mkdir", "-p", "\"${coveragePathOnDevice}\"")
       }
       else -> throw UnsupportedOperationException("test_coverage_path_on_device must be specified.")
     }
@@ -118,7 +129,11 @@ class AndroidTestCoveragePlugin(
 
   private fun retrieveCoverageFiles(deviceController: DeviceController) {
     val tmpDir = "${TMP_DIR_ON_DEVICE}${createRandomId()}-coverage_data"
-    deviceController.deviceShellAndCheckSuccess("mkdir -p \"${tmpDir}\"")
+    deviceController.deviceShellAndCheckSuccess("mkdir", "-p", "\"${tmpDir}\"")
+    // We need to make the directory writable by all users because the cat command
+    // in copyCoverageFileToHost and copyCoverageFilesInDirectoryToHost is
+    // executed as the tested application user when runAsPackageName is specified.
+    deviceController.deviceShellAndCheckSuccess("chmod", "777", "\"${tmpDir}\"")
     try {
       when (testCoverageConfig.testCoveragePathOnDeviceCase) {
         TestCoveragePathOnDeviceCase.SINGLE_COVERAGE_FILE -> this::copyCoverageFileToHost
@@ -126,26 +141,23 @@ class AndroidTestCoveragePlugin(
         else -> throw UnsupportedOperationException("test_coverage_path_on_device must be specified.")
       }(deviceController, tmpDir)
     } finally {
-      deviceController.deviceShellAndCheckSuccess("rm -rf \"${tmpDir}\"")
+      deviceController.deviceShellAndCheckSuccess("rm", "-rf", "\"${tmpDir}\"")
     }
   }
 
   private fun copyCoverageFileToHost(deviceController: DeviceController, tmpDir: String) {
     val coverageFilePath =
       if (useTestStorageService) {
-        "${TEST_STORAGE_SERVICE_OUTPUT_DIR}/${testCoverageConfig.singleCoverageFile}"
+        "${TEST_STORAGE_SERVICE_OUTPUT_DIR.removeSuffix("/")}/${testCoverageConfig.singleCoverageFile.removePrefix("/")}"
       } else {
         testCoverageConfig.singleCoverageFile
       }
     val coverageFileName = File(coverageFilePath).name
     val tmpCoverageFilePath = "${tmpDir}/${coverageFileName}"
-    // We need to use "cat" instead of "cp" command to copy files to workaround
-    // access permission problems. coverageFilePath is located in package
-    // private directory so we need to run commands with "run-as" however
-    // the tested application may not have access to the external storage (sdcard)
-    // so "cp" command may fail with the access denied error. "adb shell" itself
-    // has an access to the external storage.
-    deviceController.deviceShellWithRunAs("cat \"${coverageFilePath}\" > \"${tmpCoverageFilePath}\"")
+    // We use shell redirection to copy files to workaround access permission problems.
+    // coverageFilePath is located in package private directory so we need to run
+    // commands with "run-as". We let the outer shell handle redirection by not using "sh -c".
+    deviceController.deviceShellWithRunAs("cat", "\"${coverageFilePath}\"", ">", "\"${tmpCoverageFilePath}\"")
     deviceController.pull(
       TestArtifactProto.Artifact.newBuilder()
         .apply {
@@ -159,16 +171,17 @@ class AndroidTestCoveragePlugin(
   private fun copyCoverageFilesInDirectoryToHost(deviceController: DeviceController, tmpDir: String) {
     val coverageDir =
       if (useTestStorageService) {
-        "${TEST_STORAGE_SERVICE_OUTPUT_DIR}/${testCoverageConfig.multipleCoverageFilesInDirectory}"
+        "${TEST_STORAGE_SERVICE_OUTPUT_DIR.removeSuffix("/")}/${testCoverageConfig.multipleCoverageFilesInDirectory.removePrefix("/")}"
       } else {
         testCoverageConfig.multipleCoverageFilesInDirectory
       }
     // Note: "ls -1" doesn't work on API level 21.
-    val covFileNames = deviceController.deviceShellWithRunAs("ls \"${coverageDir}\" | cat").output.filter { it.endsWith(".ec") }.toList()
+    val covFileNames =
+      deviceController.deviceShellWithRunAs("ls", "\"${coverageDir}\"", "|", "cat").output.filter { it.endsWith(".ec") }.toList()
     covFileNames.forEach { covFileName ->
       val covFilePath = "${coverageDir}/${covFileName}"
       val tmpCovFilePath = "${tmpDir}/${covFileName}"
-      deviceController.deviceShellWithRunAs("cat \"${covFilePath}\" > \"${tmpCovFilePath}\"")
+      deviceController.deviceShellWithRunAs("cat", "\"${covFilePath}\"", ">", "\"${tmpCovFilePath}\"")
       deviceController.pull(
         TestArtifactProto.Artifact.newBuilder()
           .apply {
@@ -198,7 +211,7 @@ class AndroidTestCoveragePlugin(
         testCoverageConfig.runAsPackageName
       }
     return if (runAsPackage.isNotBlank()) {
-      deviceShellAndCheckSuccess(*commands.flatMap { c -> listOf("run-as", runAsPackage, c) }.toTypedArray())
+      deviceShellAndCheckSuccess("run-as", runAsPackage, *commands)
     } else {
       deviceShellAndCheckSuccess(*commands)
     }

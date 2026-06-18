@@ -18,8 +18,6 @@ package com.android.tools.lint.checks.fx.result
 import com.android.tools.lint.checks.fx.utils.InterningPool
 import com.android.tools.lint.checks.fx.utils.Lattice
 import com.android.tools.lint.checks.fx.utils.UnboundedSet
-import com.android.tools.lint.checks.fx.utils.map
-import com.android.tools.lint.checks.fx.utils.partitionToPersistentSets
 import com.android.tools.lint.checks.fx.utils.unboundedSetOf
 import com.intellij.psi.PsiMethod
 import kotlin.reflect.KClass
@@ -31,9 +29,12 @@ import kotlin.reflect.KFunction3
 import kotlin.reflect.KFunction4
 import kotlin.reflect.KFunction5
 import kotlin.reflect.KParameter
+import kotlin.reflect.KProperty
 import kotlin.reflect.jvm.javaMethod
 import kotlinx.collections.immutable.PersistentSet
+import kotlinx.collections.immutable.intersect
 import kotlinx.collections.immutable.persistentSetOf
+import kotlinx.collections.immutable.plus
 
 sealed interface Instantiable<out FX>
 
@@ -158,16 +159,14 @@ sealed interface Type<out FX> {
   }
 
   sealed interface Sym<out FX> : Type<FX> {
-    data object Rec : Sym<Nothing> {
-      override fun toString() = "\uD835\uDEC2"
-    }
+    sealed interface Name : Sym<Nothing>
 
-    class Param(name: String) : Sym<Nothing> {
+    class Param(name: String, val scope: Scope) : Name {
       val name = InterningPool.string(name)
 
-      override fun equals(other: Any?) = other is Param && name === other.name
+      override fun equals(other: Any?) = other is Param && name === other.name && scope == other.scope
 
-      override fun hashCode() = System.identityHashCode(name)
+      override fun hashCode() = System.identityHashCode(name) * 31 + scope.hashCode()
 
       init {
         require(!name.isReceiverName()) { "Should be `This`" }
@@ -176,7 +175,7 @@ sealed interface Type<out FX> {
       override fun toString() = name.bold()
     }
 
-    data class This(val site: ClassId) : Sym<Nothing> {
+    data class This(val site: ClassId) : Name {
       val uniqueName = "\$this\$$site"
 
       override fun toString() = "this"
@@ -204,71 +203,6 @@ sealed interface Type<out FX> {
       }
     }
 
-    data class Fix<out FX>
-    internal constructor(
-      val baseCases: PersistentSet<Type<FX>>,
-      val inductiveCases: PersistentSet<Type<FX>>, // that refer to 1+ `Rec`
-    ) : Sym<FX> {
-      init {
-        if (inductiveCases.isEmpty()) throw TrivialInduction(baseCases)
-      }
-
-      class TrivialInduction(val cases: PersistentSet<Type<*>>) : Exception()
-
-      val cases: Sequence<Type<FX>>
-        get() = baseCases.asSequence() + inductiveCases.asSequence()
-
-      override fun toString() = "(μ\uD835\uDEC2. ${cases.joinToString(" ∪ ")})"
-
-      companion object {
-        operator fun <FX> invoke(cases: Collection<Type<FX>>): Fix<FX> {
-          val (indCases, baseCases) = cases.partitionToPersistentSets { it.hasFreeRec() }
-          return Fix(baseCases, indCases.remove(Rec))
-        }
-
-        internal fun <FX> Type<FX>.hasFreeRec(): Boolean =
-          when (this) {
-            is Application -> args.any { it.hasFreeRec() }
-            is Lambda -> body.value.hasFreeRec() || body.effect.invocations?.any { it.hasFreeRec() } == true
-            is Union -> cases.any { it.hasFreeRec() }
-            is SpecializedMethodRef -> receiver.hasFreeRec()
-            is Rec -> true
-            is Invoke -> receiver.hasFreeRec() || args.any { it.hasFreeRec() }
-            is Ellipsis<*> -> element.hasFreeRec()
-            is Param,
-            is This,
-            is Fix,
-            is MethodRef,
-            is WildCard -> false
-          }
-
-        private fun <FX> Sym<FX>.substSym(base: PersistentSet<Sym<FX>>): PersistentSet<Sym<FX>> =
-          when (this) {
-            is Rec -> base
-            is Param,
-            is This -> persistentSetOf(this)
-            is Invoke -> {
-              val substReceivers = receiver.substSym(base)
-              val substArgs = args.map { it.subst(base) }
-              substReceivers.map { copy(receiver = it, args = substArgs) }
-            }
-            is Fix -> throw IllegalStateException("Nested inductive set not expected")
-          }
-
-        private fun <FX> Type<FX>.subst(base: PersistentSet<Sym<FX>>): Type<FX> =
-          when (this) {
-            is Application,
-            is Ellipsis,
-            is WildCard,
-            is MethodRef -> this
-            is Union -> Union(cases.map { it.subst(base) })
-            is Lambda -> Lambda(params, body.copy(value = body.value.subst(base)), intf)
-            is SpecializedMethodRef -> copy(receiver = receiver.subst(base))
-            is Sym -> Union(substSym(base))
-          }
-      }
-    }
-
     companion object {
       internal val <FX> Sym<FX>.chain: Pair<String, List<MethodId>>
         get() =
@@ -276,17 +210,12 @@ sealed interface Type<out FX> {
             is Param -> name to listOf()
             is This -> toString() to listOf()
             is Invoke -> receiver.chain.let { (x, ms) -> x to ms + method }
-            is Rec,
-            is Fix -> throw java.lang.IllegalStateException()
           }
     }
   }
 
   companion object {
     val None: Type<Nothing> = Union.Empty
-
-    // TODO ensure distinct. Sloppy for debugging for now.
-    fun genParam(hint: String): Sym.Param = Sym.Param(hint)
 
     fun ofLiteral(value: Any?): Type<Nothing> =
       when (value) {
@@ -323,6 +252,63 @@ sealed interface Type<out FX> {
     val UShort = Application<Nothing>(ClassId.of<UShort>())
     val UInt = Application<Nothing>(ClassId.of<UInt>())
     val ULong = Application<Nothing>(ClassId.of<ULong>())
+    val Any = Application<Nothing>(ClassId.of<java.lang.Object>())
+    val KPropertySome = Application<Nothing>(ClassId.of<KProperty<*>>(), listOf(WildCard))
+
+    fun <FX> latticeOf(effectLattice: Lattice<Effect<FX>>): Lattice<Type<FX>> =
+      object : Lattice<Type<FX>> {
+        override val bottom = None
+        override val top = WildCard
+
+        // Inconsequential for now
+        override fun meetOf(first: Type<FX>, second: Type<FX>) =
+          when {
+            top precedes first -> second
+            top precedes second -> first
+            first precedes bottom || second precedes bottom -> bottom
+            first == second -> first
+            second is Union -> meetUnion(first, second)
+            first is Union -> meetUnion(second, first)
+            else -> bottom
+          }
+
+        private fun meetUnion(first: Type<FX>, second: Union<FX>): Type<FX> =
+          when (first) {
+            is Union -> Union(first.cases intersect second.cases)
+            else -> if (first in second.cases) first else bottom
+          }
+
+        override fun joinOf(first: Type<FX>, second: Type<FX>): Type<FX> =
+          when {
+            first is WildCard || second is WildCard -> WildCard
+            first is Union && second is Union -> Union(first.cases + second.cases)
+            first is Union -> Union(first.cases + second)
+            second is Union -> Union(second.cases + first)
+            first is Lambda && second is Lambda && first.intf != null && first.intf == second.intf && first.params == second.params -> {
+              val (bodyType1, bodyFx1) = first.body
+              val (bodyType2, bodyFx2) = second.body
+              first.copy(body = Result(joinOf(bodyType1, bodyType2), effectLattice.joinOf(bodyFx1, bodyFx2)))
+            }
+
+            else -> Union(persistentSetOf(first, second))
+          }
+
+        override fun precede(first: Type<FX>, second: Type<FX>) =
+          when {
+            second == top -> true
+            first == top -> false
+            first == bottom -> true
+            second == bottom -> false
+            first == second -> true
+            second is Union ->
+              when (first) {
+                is Union -> second.cases.containsAll(first.cases)
+                else -> first in second.cases
+              }
+
+            else -> false
+          }
+      }
   }
 }
 
@@ -343,7 +329,7 @@ fun Type<*>.erased(): ClassId? =
 data class Effect<out FX>(
   val concrete: FX,
   val invocations: UnboundedSet<Type.Sym<FX>> = unboundedSetOf(),
-  val constraint: Constraint<FX> = Constraint.Companion.MostPermissive,
+  val constraint: Constraint<FX> = Constraint.MostPermissive,
 ) {
   override fun toString(): String {
     val fx =
@@ -368,7 +354,7 @@ data class Result<out T, out FX>(val value: T, val effect: FX) {
 
 /** A [Point] is either a [Type.MethodRef] whose summary is polymorphic, or an [Instantiation] whose summary is monomorphic */
 sealed interface Point<out FX> {
-  data class Instantiation<out FX>(val method: Instantiable<FX>, val args: List<Type<FX>>) : Point<FX> {
-    override fun toString() = "$method @ (${args.joinToString()})"
+  data class Instantiation<out FX>(val subst: Subst<FX>, val type: Type<FX>) : Point<FX> {
+    override fun toString() = "⟨$type | ${showSubst(subst)}⟩"
   }
 }

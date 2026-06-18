@@ -247,14 +247,14 @@ abstract class AndroidPluginBaseServices(
           buildProfileOptions(executionProfiles.values.first())
         } else { // no profile selected
           dslServices.issueReporter.reportError(
-            Type.GENERIC,
+            Type.UNSUPPORTED_EXECUTION_PROFILE,
             "Found ${executionProfiles.size} execution profiles ${executionProfiles.keys}, but no profile was selected.\n",
           )
           null
         }
       } else {
         if (!executionProfiles.containsKey(actualProfileName)) { // invalid profile selected
-          dslServices.issueReporter.reportError(Type.GENERIC, "Selected profile '$actualProfileName' does not exist")
+          dslServices.issueReporter.reportError(Type.UNSUPPORTED_EXECUTION_PROFILE, "Selected profile '$actualProfileName' does not exist")
           null
         } else {
           if (actualProfileName == dslServices.projectOptions[StringOption.EXECUTION_PROFILE_SELECTION]) {

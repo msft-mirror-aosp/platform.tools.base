@@ -109,7 +109,7 @@ constructor(
     // TODO: Should be removed once we stop implementing all build type interfaces in one class
     if (dslInfo.isMultiDexSetFromDsl) {
       services.issueReporter.reportWarning(
-        IssueReporter.Type.GENERIC,
+        IssueReporter.Type.DYNAMIC_FEATURE_MULTIDEX_SET_IN_DSL,
         "Native multidex is always used for dynamic features. Please " +
           "remove 'multiDexEnabled true|false' from your " +
           "build.gradle file.",

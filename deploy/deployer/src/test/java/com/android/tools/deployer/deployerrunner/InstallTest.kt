@@ -20,15 +20,16 @@ import com.android.ddmlib.AndroidDebugBridge
 import com.android.testutils.AssumeUtil
 import com.android.testutils.TestUtils
 import com.android.tools.deploy.proto.Deploy.DumpResponse
-import com.android.tools.deployer.AdbClient
 import com.android.tools.deployer.AdbInstaller
-import com.android.tools.deployer.DeployMetric
-import com.android.tools.deployer.DeployerException
 import com.android.tools.deployer.DeployerRunner
 import com.android.tools.deployer.DeployerTestUtils
-import com.android.tools.deployer.Installer
 import com.android.tools.deployer.Sites
 import com.android.tools.deployer.TestLogger
+import com.android.tools.deployer.common.AdbClient
+import com.android.tools.deployer.common.DeployMetric
+import com.android.tools.deployer.common.DeployerException
+import com.android.tools.deployer.common.DeployerTestConstants
+import com.android.tools.deployer.common.Installer
 import com.android.tools.deployer.rules.ApiLevel
 import com.android.utils.ILogger
 import java.util.concurrent.TimeUnit
@@ -137,11 +138,11 @@ class InstallTestTest : DeployRunnerTestBase() {
         device,
         "getprop",
         getInstallerInvocation(), // dump com.example.helloworld
-        AdbInstallerTest.RM_DIR,
-        AdbInstallerTest.MK_DIR,
-        AdbInstallerTest.CHMOD_INSTALLER,
-        AdbInstallerTest.CHMOD_DIR,
-        AdbInstallerTest.CHOWN_DIR,
+        DeployerTestConstants.RM_DIR,
+        DeployerTestConstants.MK_DIR,
+        DeployerTestConstants.CHMOD_INSTALLER,
+        DeployerTestConstants.CHMOD_DIR,
+        DeployerTestConstants.CHOWN_DIR,
         getInstallerInvocation(), // dump com.example.helloworld
         "/system/bin/run-as com.example.helloworld id -u",
         String.format("/system/bin/cmd package %s com.example.helloworld", packageCommand),
@@ -156,11 +157,11 @@ class InstallTestTest : DeployRunnerTestBase() {
         device,
         "getprop",
         getInstallerInvocation(), // dump com.example.helloworld
-        AdbInstallerTest.RM_DIR,
-        AdbInstallerTest.MK_DIR,
-        AdbInstallerTest.CHMOD_INSTALLER,
-        AdbInstallerTest.CHMOD_DIR,
-        AdbInstallerTest.CHOWN_DIR,
+        DeployerTestConstants.RM_DIR,
+        DeployerTestConstants.MK_DIR,
+        DeployerTestConstants.CHMOD_INSTALLER,
+        DeployerTestConstants.CHMOD_DIR,
+        DeployerTestConstants.CHOWN_DIR,
         getInstallerInvocation(), // dump com.example.helloworld
         "/system/bin/run-as com.example.helloworld id -u",
         String.format("/system/bin/cmd package %s com.example.helloworld", packageCommand),
@@ -183,11 +184,11 @@ class InstallTestTest : DeployRunnerTestBase() {
         device,
         "getprop",
         getInstallerInvocation(), // dump com.example.helloworld
-        AdbInstallerTest.RM_DIR,
-        AdbInstallerTest.MK_DIR,
-        AdbInstallerTest.CHMOD_INSTALLER,
-        AdbInstallerTest.CHMOD_DIR,
-        AdbInstallerTest.CHOWN_DIR,
+        DeployerTestConstants.RM_DIR,
+        DeployerTestConstants.MK_DIR,
+        DeployerTestConstants.CHMOD_INSTALLER,
+        DeployerTestConstants.CHMOD_DIR,
+        DeployerTestConstants.CHOWN_DIR,
         getInstallerInvocation(), // dump com.example.helloworld
         "/system/bin/run-as com.example.helloworld id -u",
         String.format("/system/bin/cmd package %s com.example.helloworld", packageCommand),
@@ -239,11 +240,11 @@ class InstallTestTest : DeployRunnerTestBase() {
         device,
         "getprop",
         getInstallerInvocation(),
-        AdbInstallerTest.RM_DIR,
-        AdbInstallerTest.MK_DIR,
-        AdbInstallerTest.CHMOD_INSTALLER,
-        AdbInstallerTest.CHMOD_DIR,
-        AdbInstallerTest.CHOWN_DIR,
+        DeployerTestConstants.RM_DIR,
+        DeployerTestConstants.MK_DIR,
+        DeployerTestConstants.CHMOD_INSTALLER,
+        DeployerTestConstants.CHMOD_DIR,
+        DeployerTestConstants.CHOWN_DIR,
         getInstallerInvocation(),
         "/system/bin/run-as com.example.simpleapp id -u",
         "id -u",
@@ -307,11 +308,11 @@ class InstallTestTest : DeployRunnerTestBase() {
         device,
         "getprop",
         getInstallerInvocation(), // dump
-        AdbInstallerTest.RM_DIR,
-        AdbInstallerTest.MK_DIR,
-        AdbInstallerTest.CHMOD_INSTALLER,
-        AdbInstallerTest.CHMOD_DIR,
-        AdbInstallerTest.CHOWN_DIR,
+        DeployerTestConstants.RM_DIR,
+        DeployerTestConstants.MK_DIR,
+        DeployerTestConstants.CHMOD_INSTALLER,
+        DeployerTestConstants.CHMOD_DIR,
+        DeployerTestConstants.CHOWN_DIR,
         getInstallerInvocation(), // dump
         "/system/bin/run-as com.example.simpleapp id -u",
         "id -u",
@@ -426,11 +427,11 @@ class InstallTestTest : DeployRunnerTestBase() {
         device,
         "getprop",
         getInstallerInvocation(), // dump com.example.simpleapp
-        AdbInstallerTest.RM_DIR,
-        AdbInstallerTest.MK_DIR,
-        AdbInstallerTest.CHMOD_INSTALLER,
-        AdbInstallerTest.CHMOD_DIR,
-        AdbInstallerTest.CHOWN_DIR,
+        DeployerTestConstants.RM_DIR,
+        DeployerTestConstants.MK_DIR,
+        DeployerTestConstants.CHMOD_INSTALLER,
+        DeployerTestConstants.CHMOD_DIR,
+        DeployerTestConstants.CHOWN_DIR,
         getInstallerInvocation(), // dump com.example.simpleapp
         "/system/bin/run-as com.example.simpleapp id -u",
         "id -u",
@@ -657,11 +658,11 @@ class InstallTestTest : DeployRunnerTestBase() {
           device,
           "getprop",
           getInstallerInvocation(), // dump com.example.simpleapp
-          AdbInstallerTest.RM_DIR,
-          AdbInstallerTest.MK_DIR,
-          AdbInstallerTest.CHMOD_INSTALLER,
-          AdbInstallerTest.CHMOD_DIR,
-          AdbInstallerTest.CHOWN_DIR,
+          DeployerTestConstants.RM_DIR,
+          DeployerTestConstants.MK_DIR,
+          DeployerTestConstants.CHMOD_INSTALLER,
+          DeployerTestConstants.CHMOD_DIR,
+          DeployerTestConstants.CHOWN_DIR,
           getInstallerInvocation(), // dump com.example.simpleapp
           "/system/bin/run-as com.example.simpleapp id -u",
           "id -u",
@@ -772,11 +773,11 @@ class InstallTestTest : DeployRunnerTestBase() {
           device,
           "getprop",
           getInstallerInvocation(), // dump com.example.simpleapp
-          AdbInstallerTest.RM_DIR,
-          AdbInstallerTest.MK_DIR,
-          AdbInstallerTest.CHMOD_INSTALLER,
-          AdbInstallerTest.CHMOD_DIR,
-          AdbInstallerTest.CHOWN_DIR,
+          DeployerTestConstants.RM_DIR,
+          DeployerTestConstants.MK_DIR,
+          DeployerTestConstants.CHMOD_INSTALLER,
+          DeployerTestConstants.CHMOD_DIR,
+          DeployerTestConstants.CHOWN_DIR,
           getInstallerInvocation(), // dump com.example.simpleapp
           "/system/bin/run-as com.example.simpleapp id -u",
           "id -u",
@@ -902,11 +903,11 @@ class InstallTestTest : DeployRunnerTestBase() {
           device,
           "getprop",
           getInstallerInvocation(), // dump com.example.simpleapp
-          AdbInstallerTest.RM_DIR,
-          AdbInstallerTest.MK_DIR,
-          AdbInstallerTest.CHMOD_INSTALLER,
-          AdbInstallerTest.CHMOD_DIR,
-          AdbInstallerTest.CHOWN_DIR,
+          DeployerTestConstants.RM_DIR,
+          DeployerTestConstants.MK_DIR,
+          DeployerTestConstants.CHMOD_INSTALLER,
+          DeployerTestConstants.CHMOD_DIR,
+          DeployerTestConstants.CHOWN_DIR,
           getInstallerInvocation(), // dump com.example.simpleapp
           "/system/bin/run-as com.example.simpleapp id -u",
           "id -u",
@@ -1034,11 +1035,11 @@ class InstallTestTest : DeployRunnerTestBase() {
           device,
           "getprop",
           getInstallerInvocation(), // dump com.example.simpleapp
-          AdbInstallerTest.RM_DIR,
-          AdbInstallerTest.MK_DIR,
-          AdbInstallerTest.CHMOD_INSTALLER,
-          AdbInstallerTest.CHMOD_DIR,
-          AdbInstallerTest.CHOWN_DIR,
+          DeployerTestConstants.RM_DIR,
+          DeployerTestConstants.MK_DIR,
+          DeployerTestConstants.CHMOD_INSTALLER,
+          DeployerTestConstants.CHMOD_DIR,
+          DeployerTestConstants.CHOWN_DIR,
           getInstallerInvocation(), // dump com.example.simpleapp
           "/system/bin/run-as com.example.simpleapp id -u",
           "id -u",
@@ -1132,11 +1133,11 @@ class InstallTestTest : DeployRunnerTestBase() {
         device,
         "getprop",
         getInstallerInvocation(), // dump com.example.simpleapp
-        AdbInstallerTest.RM_DIR,
-        AdbInstallerTest.MK_DIR,
-        AdbInstallerTest.CHMOD_INSTALLER,
-        AdbInstallerTest.CHMOD_DIR,
-        AdbInstallerTest.CHOWN_DIR,
+        DeployerTestConstants.RM_DIR,
+        DeployerTestConstants.MK_DIR,
+        DeployerTestConstants.CHMOD_INSTALLER,
+        DeployerTestConstants.CHMOD_DIR,
+        DeployerTestConstants.CHOWN_DIR,
         getInstallerInvocation(), // dump com.example.simpleapp
         "/system/bin/run-as com.example.simpleapp id -u",
         "id -u",
@@ -1259,11 +1260,11 @@ class InstallTestTest : DeployRunnerTestBase() {
           device,
           "getprop",
           getInstallerInvocation(), // dump com.example.simpleapp
-          AdbInstallerTest.RM_DIR,
-          AdbInstallerTest.MK_DIR,
-          AdbInstallerTest.CHMOD_INSTALLER,
-          AdbInstallerTest.CHMOD_DIR,
-          AdbInstallerTest.CHOWN_DIR,
+          DeployerTestConstants.RM_DIR,
+          DeployerTestConstants.MK_DIR,
+          DeployerTestConstants.CHMOD_INSTALLER,
+          DeployerTestConstants.CHMOD_DIR,
+          DeployerTestConstants.CHOWN_DIR,
           getInstallerInvocation(), // dump com.example.simpleapp
           "/system/bin/run-as com.example.simpleapp id -u",
           "id -u",

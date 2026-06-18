@@ -18,7 +18,7 @@ package com.android.build.gradle.integration.bundle
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.builder.errors.IssueReporter
-import com.android.builder.model.SyncIssue
+import com.android.builder.model.v2.ide.SyncIssue
 import com.google.common.truth.Truth
 import org.junit.Rule
 import org.junit.Test
@@ -36,11 +36,13 @@ class DynamicAppMultidexTest {
 
     Truth.assertThat(syncIssues.size).isEqualTo(1)
     Truth.assertThat(syncIssues.first().severity).isEqualTo(IssueReporter.Severity.WARNING.severity)
-    Truth.assertThat(syncIssues.first().type).isEqualTo(SyncIssue.TYPE_GENERIC)
+    Truth.assertThat(syncIssues.first().type).isEqualTo(SyncIssue.TYPE_DYNAMIC_FEATURE_MULTIDEX_SET_IN_DSL)
     Truth.assertThat(syncIssues.first().data).isNull()
     Truth.assertThat(syncIssues.first().message)
       .isEqualTo(
-        "Native multidex is always used for dynamic features. Please remove " + "'multiDexEnabled true|false' from your build.gradle file."
+        "Native multidex is always used for dynamic features. Please remove " +
+          "'multiDexEnabled true|false' from your build.gradle file.\n" +
+          "Add android.sync.suppressAgpWarnings=DYNAMIC_FEATURE_MULTIDEX_SET_IN_DSL to the gradle.properties file to suppress this warning."
       )
   }
 

@@ -46,8 +46,14 @@ class TraceApiMethodVisitor extends GeneratorAdapter implements Opcodes {
     }
 
     private void redirect(String method, String desc) {
+        visitFieldInsn(
+                GETSTATIC,
+                "com/android/tools/tracer/agent/TraceAgent",
+                "delegate",
+                "Lcom/android/tools/tracer/agent/Tracer;");
         loadArgs();
         desc = desc.replaceAll("\\).*", ")V");
-        visitMethodInsn(INVOKESTATIC, "com/android/tools/tracer/agent/Tracer", method, desc, false);
+        visitMethodInsn(
+                INVOKEINTERFACE, "com/android/tools/tracer/agent/Tracer", method, desc, true);
     }
 }

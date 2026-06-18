@@ -17,8 +17,6 @@
 package com.android.tools.deployer.model.component;
 
 import com.android.annotations.NonNull;
-import com.android.ddmlib.IDevice;
-import com.android.ddmlib.IShellOutputReceiver;
 import com.android.tools.deployer.model.ModelException;
 import com.android.tools.deployer.model.activate.ActivationCommand;
 import com.android.tools.deployer.model.activate.ActivationCommands;
@@ -40,30 +38,8 @@ public class Activity extends AppComponent {
         super(appId, info, logger);
     }
 
-    @Override
-    public void activate(
-            @NonNull String extraFlags,
-            @NonNull Mode activationMode,
-            @NonNull IShellOutputReceiver receiver,
-            @NonNull IDevice device)
-            throws ModelException {
-        extraFlags = extraFlags.trim();
-        logger.info(
-                "Activating Activity '%s' %s on device %s",
-                info.getQualifiedName(),
-                activationMode.equals(Mode.DEBUG) ? "for debug" : "",
-                device.getSerialNumber());
-        if (activationMode.equals(Mode.DEBUG)
-                && !extraFlags.contains(Flag.ENABLE_DEBUGGING.string)) {
-            extraFlags = "-D" + (extraFlags.isEmpty() ? "" : (" " + extraFlags));
-        }
-        String command = getStartActivityCommand(extraFlags);
-        logger.info("$ adb shell " + command);
-        runShellCommand(command, receiver, device);
-    }
-
     @NonNull
-    private String getStartActivityCommand(@NonNull String extraFlags) {
+    protected String getStartActivityCommand(@NonNull String extraFlags) {
         return "am start"
                 + " -n "
                 + getFQEscapedName()
@@ -94,7 +70,7 @@ public class Activity extends AppComponent {
         return DEFAULT_CATEGORY;
     }
 
-    private enum Flag {
+    protected enum Flag {
         ENABLE_DEBUGGING("-D", false),
         WAIT_FOR_LAUNCH("-W", false),
         REPEAT("-R", true),

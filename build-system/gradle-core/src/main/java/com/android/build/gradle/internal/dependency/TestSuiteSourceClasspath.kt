@@ -27,6 +27,7 @@ import org.gradle.api.artifacts.ArtifactView
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.result.ResolutionResult
 import org.gradle.api.attributes.AttributeContainer
+import org.gradle.api.file.FileCollection
 import org.gradle.api.model.ObjectFactory
 
 /** Resolvable dependencies of a test suite. Do not resolve these configurations before execution phase. */
@@ -34,11 +35,11 @@ class TestSuiteSourceClasspath(
   /** The test suite classpath that can be used to compile the test suite sources */
   val compileClasspath: Configuration,
 
-  /**
-   * The test suite runtime classpath that can be used when configuring the test task or to package in the resulting test APK depending on
-   * source type.
-   */
+  /** The test suite runtime classpath that can be used to package in the resulting test APK depending on source type. */
   val runtimeClasspath: Configuration,
+
+  /** The test suite host runtime classpath that can be used when configuring the host test task. */
+  val hostRuntimeClasspath: Configuration,
   val objectFactory: ObjectFactory,
 ) : ResolutionResultProvider {
 
@@ -67,7 +68,36 @@ class TestSuiteSourceClasspath(
     return artifacts
   }
 
-  fun getArtifactCollectionForToolingModel(
+  fun getRuntimeClasspathArtifacts(artifactType: AndroidArtifacts.ArtifactType): FileCollection {
+    val attributesAction = Action { container: AttributeContainer ->
+      container.attribute(AndroidArtifacts.ARTIFACT_TYPE, artifactType.type)
+      artifactType.getAttributes { type, name -> objectFactory.named(type, name) }.addAttributesToContainer(container)
+    }
+
+    return runtimeClasspath.incoming.artifactView { config: ArtifactView.ViewConfiguration -> config.attributes(attributesAction) }.files
+  }
+
+  fun getHostRuntimeClasspathArtifacts(artifactType: AndroidArtifacts.ArtifactType): FileCollection {
+    val attributesAction = Action { container: AttributeContainer ->
+      container.attribute(AndroidArtifacts.ARTIFACT_TYPE, artifactType.type)
+      artifactType.getAttributes { type, name -> objectFactory.named(type, name) }.addAttributesToContainer(container)
+    }
+
+    return hostRuntimeClasspath.incoming
+      .artifactView { config: ArtifactView.ViewConfiguration -> config.attributes(attributesAction) }
+      .files
+  }
+
+  fun getCompileClasspathArtifacts(artifactType: AndroidArtifacts.ArtifactType): FileCollection {
+    val attributesAction = Action { container: AttributeContainer ->
+      container.attribute(AndroidArtifacts.ARTIFACT_TYPE, artifactType.type)
+      artifactType.getAttributes { type, name -> objectFactory.named(type, name) }.addAttributesToContainer(container)
+    }
+
+    return compileClasspath.incoming.artifactView { config: ArtifactView.ViewConfiguration -> config.attributes(attributesAction) }.files
+  }
+
+  fun getArtifactCollection(
     configType: ConsumedConfigType,
     artifactType: AndroidArtifacts.ArtifactType,
     configurationFactory: (Configuration) -> Configuration = { it },

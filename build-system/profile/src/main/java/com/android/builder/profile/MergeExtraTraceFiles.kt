@@ -72,7 +72,17 @@ data class TraceEventJson(
   val args: Map<String, String>? = null,
 )
 
+/**
+ * Represents the root structure of a Chrome trace JSON file.
+ *
+ * @property traceEvents The list of trace events contained in this trace.
+ */
 data class ChromeTraceJson(val traceEvents: List<TraceEventJson>) {
+  /**
+   * Serializes the trace data to JSON and stores it in the specified file, compressing it with GZIP.
+   *
+   * @param file The destination file where the GZIP-compressed JSON will be written.
+   */
   fun storeToFile(file: File) =
     OutputStreamWriter(GZIPOutputStream(FileOutputStream(file)), StandardCharsets.UTF_8).use { gson.toJson(this, it) }
 }

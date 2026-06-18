@@ -16,8 +16,6 @@
 
 package com.android.build.api.dsl
 
-import org.gradle.declarative.dsl.model.annotations.Restricted
-
 /**
  * Shared properties between DSL objects that contribute to an application variant.
  *
@@ -31,7 +29,7 @@ interface ApplicationVariantDimension : VariantDimension {
    * flavor, followed by the suffix from product flavor of the first dimension, second dimension and so on. All of these will have a dot in
    * between e.g. &quot;defaultSuffix.dimension1Suffix.dimensions2Suffix&quot;.
    */
-  @get:Restricted var applicationIdSuffix: String?
+  var applicationIdSuffix: String?
 
   /**
    * Version name suffix. It is appended to the "base" version name when calculating the final version name for a variant.
@@ -39,14 +37,14 @@ interface ApplicationVariantDimension : VariantDimension {
    * In case there are product flavor dimensions specified, the final version name suffix will contain the suffix from the default product
    * flavor, followed by the suffix from product flavor of the first dimension, second dimension and so on.
    */
-  @get:Restricted var versionNameSuffix: String?
+  var versionNameSuffix: String?
 
   /**
    * Returns whether multi-dex is enabled.
    *
    * This can be null if the flag is not set, in which case the default value is used.
    */
-  @get:Restricted var multiDexEnabled: Boolean?
+  var multiDexEnabled: Boolean?
 
   /** The associated signing config or null if none are set on the variant dimension. */
   var signingConfig: ApkSigningConfig?

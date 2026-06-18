@@ -15,10 +15,14 @@
  */
 package com.android.fakeadbserver.services
 
+import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.shellcommandhandlers.ShellConstants
 
 // TODO: Add all package management app (create,write,commit,abandon) and list here.
-class PackageManager : Service {
+class PackageManager(private val deviceState: DeviceState) : Service {
+
+  private val errorReporting = ErrorReporting(deviceState)
+
   companion object {
 
     const val BAD_FLAG = "-BAD_FLAG"
@@ -54,22 +58,52 @@ class PackageManager : Service {
   fun processLocked(args: List<String>, shellCommandOutput: ShellCommandOutput) {
     val cmd = args[0]
 
-    return when {
+    when {
       cmd == "list users" -> {
         shellCommandOutput.writeStdout("Users:\n\tUserInfo{0:Owner:13} running\n")
         shellCommandOutput.writeExitCode(0)
       }
       cmd.startsWith("uninstall") -> {
         if (args.size == 1) {
-          shellCommandOutput.writeStdout("Error: package name not specified")
-          shellCommandOutput.writeExitCode(1)
+          errorReporting.reportError(shellCommandOutput, "package name not specified")
           return
         }
         val applicationId = args.last()
         if (applicationId == ShellConstants.NON_INSTALLED_APP_ID) {
-          shellCommandOutput.writeStdout("Failure [DELETE_FAILED_INTERNAL_ERROR]")
+          // Note: General error reporting by PackageManager is covered by `errorReporting.reportError` helper method,
+          // but for APIs 24-27, the behavior is different that when uninstalling a non-existent package shell command returns a `0` exit
+          // code.
+          when (deviceState.apiLevel) {
+            24 -> {
+              shellCommandOutput.writeStdout("Failure [DELETE_FAILED_INTERNAL_ERROR]\n")
+              shellCommandOutput.writeExitCode(0)
+            }
+            in 25..<28 -> {
+              shellCommandOutput.writeStderr(
+                "Exception occurred while executing:\njava.lang.IllegalArgumentException: Unknown package: $applicationId\n"
+              )
+              shellCommandOutput.writeExitCode(0)
+            }
+            else -> {
+              errorReporting.reportError(shellCommandOutput, "Failure [DELETE_FAILED_INTERNAL_ERROR]")
+            }
+          }
         } else {
           shellCommandOutput.writeStdout("Success")
+          shellCommandOutput.writeExitCode(0)
+        }
+      }
+      cmd.startsWith("clear") -> {
+        if (args.size == 1) {
+          errorReporting.reportError(shellCommandOutput, "package name not specified")
+          return
+        }
+        val applicationId = args.last()
+        if (applicationId == ShellConstants.NON_INSTALLED_APP_ID) {
+          errorReporting.reportError(shellCommandOutput, "Failure [DELETE_FAILED_INTERNAL_ERROR]")
+        } else {
+          shellCommandOutput.writeStdout("Success")
+          shellCommandOutput.writeExitCode(0)
         }
       }
       cmd == "path" -> {
@@ -80,8 +114,7 @@ class PackageManager : Service {
 
       cmd.startsWith("install-create") -> {
         if (args.contains(BAD_FLAG)) {
-          shellCommandOutput.writeStderr("Error: (requested to fail via flag))")
-          shellCommandOutput.writeExitCode(1)
+          errorReporting.reportError(shellCommandOutput, "requested to fail via flag")
           return
         }
 
@@ -98,8 +131,7 @@ class PackageManager : Service {
       cmd.startsWith("install-commit") -> {
         val sessionID = args[1]
         if (BAD_SESSIONS.containsKey(sessionID)) {
-          BAD_SESSIONS.get(sessionID)?.let { shellCommandOutput.writeStderr(it) }
-          shellCommandOutput.writeExitCode(1)
+          BAD_SESSIONS[sessionID]?.let { errorReporting.reportError(shellCommandOutput, it) }
         } else {
           commit(args.drop(1), shellCommandOutput)
         }
@@ -125,15 +157,13 @@ class PackageManager : Service {
       }
 
       else -> {
-        shellCommandOutput.writeStderr("Error: Package command '$cmd' is not supported")
-        shellCommandOutput.writeExitCode(1)
+        errorReporting.reportUnknownCommand(shellCommandOutput, cmd)
       }
     }
   }
 
   private fun failUnknownSession(shellCommandOutput: ShellCommandOutput, sessionID: String) {
-    shellCommandOutput.writeStdout("java.lang.SecurityException: Caller has no access to session $sessionID")
-    shellCommandOutput.writeExitCode(1)
+    errorReporting.reportError(shellCommandOutput, "java.lang.SecurityException: Caller has no access to session $sessionID")
   }
 
   private fun install(slice: List<String>, shellCommandOutput: ShellCommandOutput) {
@@ -155,14 +185,12 @@ class PackageManager : Service {
     // Check if we have had duplicate filename. They should all be unique, otherwise pm will have
     // trouble verifying certificates
     if (session.splits.groupingBy { it }.eachCount().filter { it.value > 1 }.isNotEmpty()) {
-      shellCommandOutput.writeStdout("Error: The application could not be installed: INSTALL_PARSE_FAILED_NO_CERTIFICATES")
-      shellCommandOutput.writeExitCode(1)
+      errorReporting.reportError(shellCommandOutput, "The application could not be installed: INSTALL_PARSE_FAILED_NO_CERTIFICATES")
       return
     }
 
     if (sessionID == "FAIL_ME") {
-      shellCommandOutput.writeStderr("Error (requested a FAIL_ME session)\n")
-      shellCommandOutput.writeExitCode(1)
+      errorReporting.reportError(shellCommandOutput, "requested a FAIL_ME session")
     } else {
       shellCommandOutput.writeStdout("Success\n")
       shellCommandOutput.writeExitCode(0)
@@ -172,8 +200,7 @@ class PackageManager : Service {
   private fun installWrite(args: String, shellCommandOutput: ShellCommandOutput) {
     val parameters = args.split(" ")
     if (parameters.isEmpty()) {
-      shellCommandOutput.writeStderr("Not install-write parameters after split($args,' ')")
-      shellCommandOutput.writeExitCode(1)
+      errorReporting.reportError(shellCommandOutput, "Not install-write parameters after split($args,' ')")
       return
     }
 
@@ -181,8 +208,7 @@ class PackageManager : Service {
     if (parameters.last() != "-") {
       sessionID = parameters[1]
       if (BAD_SESSIONS.containsKey(sessionID)) {
-        BAD_SESSIONS.get(sessionID)?.let { shellCommandOutput.writeStderr(it) }
-        shellCommandOutput.writeExitCode(1)
+        BAD_SESSIONS.get(sessionID)?.let { errorReporting.reportError(shellCommandOutput, it) }
         return
       }
       // This is a remote apk write (the apk is somewhere on the device, likely /data/local"..)
@@ -217,5 +243,74 @@ class PackageManager : Service {
 
     shellCommandOutput.writeStdout("Success: streamed $totalBytesRead bytes\n")
     shellCommandOutput.writeExitCode(0)
+  }
+
+  private class ErrorReporting(private val deviceState: DeviceState) {
+
+    fun reportError(shellCommandOutput: ShellCommandOutput, message: String) {
+      // We add "Error: " if the `message` doesn't already start with "Failure " or "Error: "
+      val errorPrefix =
+        if (message.startsWith("Error:", ignoreCase = true) || message.startsWith("Failure", ignoreCase = true)) "" else "Error: "
+      when (deviceState.apiLevel) {
+        in 1..23 -> {
+          // API <= 23: Error message in STDOUT, usage info, exit code 0
+          shellCommandOutput.writeStdout("$errorPrefix$message\n")
+          printUsage(shellCommandOutput, useStdout = true)
+          shellCommandOutput.writeExitCode(0)
+        }
+        in 24..27 -> {
+          // API 24-27: Error message in STDERR, usage info, exit code 1
+          shellCommandOutput.writeStderr("$errorPrefix$message\n")
+          printUsage(shellCommandOutput, useStdout = false)
+          shellCommandOutput.writeExitCode(1)
+        }
+        else -> {
+          // API >= 28: Error message in STDOUT, no usage info, exit code 1 (typically)
+          shellCommandOutput.writeStdout("$errorPrefix$message\n")
+          shellCommandOutput.writeExitCode(1)
+        }
+      }
+    }
+
+    fun reportUnknownCommand(shellCommandOutput: ShellCommandOutput, command: String) {
+      when (deviceState.apiLevel) {
+        in 1..27 -> {
+          reportError(shellCommandOutput, "unknown command '$command'")
+        }
+        else -> {
+          // API >= 28: "Unknown command: <cmd>" in STDOUT, no usage info, exit code 255
+          shellCommandOutput.writeStdout("Unknown command: $command\n")
+          shellCommandOutput.writeExitCode(255)
+        }
+      }
+    }
+
+    private fun printUsage(shellCommandOutput: ShellCommandOutput, useStdout: Boolean) {
+      val usage =
+        """
+        usage: pm list packages [-f] [-d] [-e] [-s] [-3] [-i] [-u] [--user USER_ID] [FILTER]
+               pm list permission-groups
+               pm list permissions [-g] [-f] [-d] [-u] [GROUP]
+               pm list instrumentation [-f] [TARGET-PACKAGE]
+               pm list features
+               pm list libraries
+               pm list users
+               pm path PACKAGE
+               pm dump PACKAGE
+               pm install [-lrtsfd] [-i PACKAGE] [PATH]
+               pm install-create [-lrtsfdp] [-i PACKAGE] [-S BYTES]
+               pm install-write [-S BYTES] SESSION_ID SPLIT_NAME [PATH]
+               pm install-commit SESSION_ID
+               pm install-abandon SESSION_ID
+               pm uninstall [-k] [--user USER_ID] PACKAGE
+               <ETC>
+        """
+          .trimIndent()
+      if (useStdout) {
+        shellCommandOutput.writeStdout(usage)
+      } else {
+        shellCommandOutput.writeStderr(usage)
+      }
+    }
   }
 }

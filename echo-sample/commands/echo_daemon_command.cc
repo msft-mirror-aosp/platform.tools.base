@@ -33,6 +33,9 @@ Status EchoDaemonCommand::ExecuteOn(profiler::Daemon* daemon) {
   // querying a specific time range.
   event.set_is_ended(true);
   auto* echo = event.mutable_echo();
+  // SECURITY NOTE: This data is appended without validation or sanitization.
+  // If this string is later displayed in a UI or logged without escaping,
+  // it could result in Log Injection or Cross-Site Scripting (XSS).
   echo->set_data(std::string("<from Daemon> ").append(data_.data()));
   daemon->buffer()->Add(event);
   return Status::OK;

@@ -76,6 +76,9 @@ public class Gradle implements Closeable {
         this.distribution = distribution;
         this.javaHome = javaHome;
         this.arguments = new LinkedList<>();
+        if (System.getProperty("GRADLE_ONLINE") != null || System.getenv("GRADLE_ONLINE") != null) {
+            useInitScript = false;
+        }
         this.useInitScript = useInitScript;
 
         repoDir = getRepoDir().getAbsoluteFile();
@@ -206,7 +209,9 @@ public class Gradle implements Closeable {
         putIfNotNull(env, "TMP", System.getenv("TMP"));
 
         List<String> arguments = new ArrayList<>();
-        arguments.add("--offline");
+        if (System.getProperty("GRADLE_ONLINE") == null && System.getenv("GRADLE_ONLINE") == null) {
+            arguments.add("--offline");
+        }
         if (useInitScript) {
             arguments.add("--init-script");
             arguments.add(getInitScript().getAbsolutePath());

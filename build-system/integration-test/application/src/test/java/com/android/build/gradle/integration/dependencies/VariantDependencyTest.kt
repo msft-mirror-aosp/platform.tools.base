@@ -35,8 +35,7 @@ import org.junit.Test
 
 class VariantDependencyTest : ModelComparator() {
 
-  @get:Rule
-  val project = GradleTestProject.builder().fromTestApp(HelloWorldApp.noBuildFile()).disableBuiltInKotlin().withHeap("2048m").create()
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(HelloWorldApp.noBuildFile()).withHeap("2048m").create()
 
   lateinit var androidProject: AndroidProject
 

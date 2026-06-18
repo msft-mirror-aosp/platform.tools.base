@@ -42,6 +42,7 @@ import com.android.build.gradle.internal.utils.HasConfigurableValuesKt;
 import com.android.buildanalyzer.common.TaskCategory;
 import com.android.utils.FileUtils;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
@@ -211,11 +212,6 @@ public abstract class ExtractAnnotations extends NonIncrementalTask {
         }
         args.add("--skip-class-retention");
         args.add("--no-sort");
-        if (getUastInputs().getUseK2Uast()) {
-            args.add("--XuseK2Uast");
-        } else {
-            args.add("--XuseK1Uast");
-        }
         getLintTool()
                 .submit(
                         getWorkerExecutor(),
@@ -419,14 +415,15 @@ public abstract class ExtractAnnotations extends NonIncrementalTask {
      * Visitor which gathers a series of individual source files as well as inferring the set of
      * source roots
      */
-    private static class SourceFileVisitor extends EmptyFileVisitor {
+    @VisibleForTesting
+    static class SourceFileVisitor extends EmptyFileVisitor {
         private final List<File> sourceUnits = Lists.newArrayListWithExpectedSize(100);
         private final List<File> sourceRoots = Lists.newArrayList();
 
         private String mostRecentRoot = "\000";
 
-        public SourceFileVisitor() {
-        }
+        @VisibleForTesting
+        SourceFileVisitor() {}
 
         public List<File> getSourceFiles() {
             return sourceUnits;
@@ -447,7 +444,11 @@ public abstract class ExtractAnnotations extends NonIncrementalTask {
                     && !path.contains(BUILD_GENERATED)) {
                 // Infer the source roots. These are available as relative paths
                 // on the file visit details.
-                if (!path.startsWith(mostRecentRoot)) {
+                String rootWithSeparator =
+                        mostRecentRoot.endsWith(File.separator)
+                                ? mostRecentRoot
+                                : mostRecentRoot + File.separator;
+                if (!path.startsWith(rootWithSeparator)) {
                     RelativePath relativePath = details.getRelativePath();
                     String pathString = relativePath.getPathString();
                     // The above method always uses / as a file separator but for

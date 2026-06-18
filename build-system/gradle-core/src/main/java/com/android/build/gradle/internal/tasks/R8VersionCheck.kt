@@ -32,7 +32,7 @@ fun checkIfR8VersionMatches(issueReporter: IssueReporter) {
   } catch (e: NoSuchMethodError) {
     throw R8VersionCheckException()
   } catch (e: R8VersionCheckException) {
-    issueReporter.reportWarning(IssueReporter.Type.GENERIC, e)
+    issueReporter.reportWarning(IssueReporter.Type.R8_VERSION_MISMATCH, e)
   }
 }
 

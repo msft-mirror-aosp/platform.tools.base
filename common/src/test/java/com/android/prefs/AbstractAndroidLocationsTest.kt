@@ -21,6 +21,7 @@ import com.android.utils.FileUtils
 import com.android.utils.ILogger
 import com.google.common.truth.Truth
 import java.io.File
+import kotlin.io.path.createDirectories
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExpectedException
@@ -81,7 +82,24 @@ class AbstractAndroidLocationsTest {
   @Test
   fun `XDG_CONFIG_HOME usage`() {
     val testLocation = folder.newFolder()
-    val provider = FakeProvider(sysProp = mapOf("XDG_CONFIG_HOME" to testLocation.absolutePath), envVar = mapOf())
+    val provider = FakeProvider(sysProp = mapOf(), envVar = mapOf("XDG_CONFIG_HOME" to "do/not/use", "HOME" to testLocation.absolutePath))
+    val logger = RecordingLogger()
+
+    val locationProvider: AndroidLocationsProvider = AndroidLocations(provider, logger)
+    val result = locationProvider.prefsLocation
+
+    val expected = testLocation.toPath().resolve(".android")
+    Truth.assertWithMessage("Test Location").that(result).isEqualTo(expected)
+
+    Truth.assertWithMessage("Emitted Warnings").that(logger.warnings).isEmpty()
+  }
+
+  @Test
+  fun `existing XDG_CONFIG_HOME usage`() {
+    val testLocation = folder.newFolder()
+    // If it already exists use it
+    testLocation.toPath().resolve(".android").createDirectories()
+    val provider = FakeProvider(sysProp = mapOf(), envVar = mapOf("XDG_CONFIG_HOME" to testLocation.absolutePath, "HOME" to "do/not/use"))
     val logger = RecordingLogger()
 
     val locationProvider: AndroidLocationsProvider = AndroidLocations(provider, logger)
@@ -355,7 +373,7 @@ class AbstractAndroidLocationsTest {
   @Test
   fun `userHomeLocation via XDG_CONFIG_HOME`() {
     val testLocation = folder.newFolder()
-    val provider = FakeProvider(sysProp = mapOf(), envVar = mapOf("XDG_CONFIG_HOME" to testLocation.absolutePath))
+    val provider = FakeProvider(sysProp = mapOf(), envVar = mapOf("HOME" to testLocation.absolutePath, "XDG_CONFIG_HOME" to "do/not/use"))
     val logger = RecordingLogger()
 
     Truth.assertWithMessage("Test Location").that(AndroidLocations(provider, logger).userHomeLocation).isEqualTo(testLocation.toPath())

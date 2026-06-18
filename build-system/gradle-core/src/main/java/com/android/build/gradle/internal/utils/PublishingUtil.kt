@@ -92,19 +92,19 @@ private fun ensureUsersInputCorrectness(
   val allBuildTypes = buildTypes.map { it.name }.toSet()
   for (includeBuildType in multipleVariant.includedBuildTypes) {
     if (!allBuildTypes.contains(includeBuildType)) {
-      issueReporter.reportError(IssueReporter.Type.GENERIC, computeErrorMessage("build type \"$includeBuildType\""))
+      issueReporter.reportError(IssueReporter.Type.INVALID_PUBLISHING_CONFIG, computeErrorMessage("build type \"$includeBuildType\""))
     }
   }
 
   for (entry in multipleVariant.includedFlavorDimensionAndValues.entries) {
     val flavorsWithSpecifiedDimension = productFlavors.filter { it.dimension == entry.key }
     if (flavorsWithSpecifiedDimension.isEmpty()) {
-      issueReporter.reportError(IssueReporter.Type.GENERIC, computeErrorMessage("dimension \"${entry.key}\""))
+      issueReporter.reportError(IssueReporter.Type.INVALID_PUBLISHING_CONFIG, computeErrorMessage("dimension \"${entry.key}\""))
     }
     val allFlavorValues = flavorsWithSpecifiedDimension.map { it.name }.toSet()
     for (flavorValue in entry.value) {
       if (!allFlavorValues.contains(flavorValue)) {
-        issueReporter.reportError(IssueReporter.Type.GENERIC, computeErrorMessage("flavor value \"$flavorValue\""))
+        issueReporter.reportError(IssueReporter.Type.INVALID_PUBLISHING_CONFIG, computeErrorMessage("flavor value \"$flavorValue\""))
       }
     }
   }
@@ -151,7 +151,7 @@ private fun ensureComponentNameUniqueness(publishing: LibraryPublishingImpl, iss
   publishing.multipleVariantsContainer.map {
     if (singleVariantPubComponents.contains(it.componentName)) {
       issueReporter.reportError(
-        IssueReporter.Type.GENERIC,
+        IssueReporter.Type.INVALID_PUBLISHING_CONFIG,
         "Publishing variants to the \"${it.componentName}\" component using both" +
           " singleVariant and multipleVariants publishing DSL is not allowed.",
       )
@@ -172,7 +172,10 @@ fun createPublishingInfoForApp(
       if (it.publishVariantAsApk) {
         // do not publish the APK(s) if there are dynamic feature.
         if (hasDynamicFeatures) {
-          issueReporter.reportError(IssueReporter.Type.GENERIC, "When dynamic feature modules exist, publishing APK is not allowed.")
+          issueReporter.reportError(
+            IssueReporter.Type.INVALID_PUBLISHING_CONFIG,
+            "When dynamic feature modules exist, publishing APK is not allowed.",
+          )
         } else {
           components.add(ComponentPublishingInfo(variantName, AbstractPublishing.Type.APK))
         }

@@ -24,10 +24,9 @@ fun navigationActivityMainXml(navGraphName: String, navHostFragmentId: String, u
 <${getMaterialComponentName("android.support.constraint.ConstraintLayout", useAndroidX)}
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/container"
+    android:id="@+id/main"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:paddingTop="?attr/actionBarSize" >
+    android:layout_height="match_parent">
 
     <${getMaterialComponentName("android.support.design.widget.BottomNavigationView", useAndroidX)}
         android:id="@+id/nav_view"

@@ -50,6 +50,8 @@ import org.gradle.api.file.RegularFile
 import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
+import org.gradle.api.tasks.testing.Test
+import org.gradle.process.CommandLineArgumentProvider
 import org.gradle.util.GradleVersion
 
 private val minAgpVersion = AndroidPluginVersion(8, 5, 0).beta(1)
@@ -231,6 +233,7 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
                 componentsExtension.sdkComponents.bootClasspath, // Needed for test discovery
                 task.classpath,
               )
+              configureJvmArgsForRendering(task)
               maxHeapSize?.let { task.maxHeapSize = it }
             }
 
@@ -282,7 +285,7 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
                 componentsExtension.sdkComponents.bootClasspath, // Needed for test discovery
                 task.classpath,
               )
-
+              configureJvmArgsForRendering(task)
               maxHeapSize?.let { task.maxHeapSize = it }
             }
 
@@ -329,27 +332,11 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
     val buildDir = project.layout.buildDirectory
     configure { task ->
       getTestEngineInput(task).apply {
+        projectRoot.set(project.rootDir.absolutePath)
         threshold.set(screenshotExtension.imageDifferenceThreshold)
         namespace.set(variant.namespace)
         layoutlibDataDir.setFrom(layoutlibDataFromMaven.layoutlibDataDirectory)
-        // Workaround: The layoutlib-standalone JAR may contain a stub version of Kotlin reflection
-        // inside to save space, but this can cause runtime UnsupportedOperationException or
-        // NoClassDefFoundError when Compose previews absolute or test execution tries to make
-        // legitimate reflective calls.
-        // As a fallback, bundle the application's actual configuration-matched `kotlin-reflect`.
-        // TODO(b/493100936): Remove this workaround once a fixed version of the renderer jar has been published.
-        val reflectFiles =
-          screenshotTestComponent.runtimeConfiguration.incoming
-            .artifactView { config ->
-              config.lenient(true)
-              config.componentFilter { id ->
-                id is org.gradle.api.artifacts.component.ModuleComponentIdentifier &&
-                  id.group == "org.jetbrains.kotlin" &&
-                  id.module == "kotlin-reflect"
-              }
-            }
-            .files
-        layoutlibClassPath.setFrom(reflectFiles, layoutlibJarConfig, sdkComponents.bootClasspath)
+        layoutlibClassPath.setFrom(layoutlibJarConfig, sdkComponents.bootClasspath)
         referenceImageDir.set(project.layout.projectDirectory.dir("src/screenshotTest$capitalizedVariantName/reference"))
         previewImageOutputDir.set(buildDir.dir("$PREVIEW_OUTPUT/$variantPath/rendered"))
         diffImageOutputDir.set(buildDir.dir("$PREVIEW_OUTPUT/$variantPath/diffs"))
@@ -615,6 +602,19 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
     Add "experimentalProperties["$ST_SOURCE_SET_ENABLED"] = true" to the android block of the module's build file: ${project.buildFile.toURI()}
     """
       .trimIndent()
+
+  private fun configureJvmArgsForRendering(task: Test) {
+    val javaLauncherProvider = task.javaLauncher
+    val defaultMajorVersion = task.javaVersion.majorVersion.toIntOrNull() ?: 0
+    task.jvmArgumentProviders.add(CommandLineArgumentProvider {
+      val launcher = javaLauncherProvider.orNull
+      val majorVersion = launcher?.metadata?.languageVersion?.asInt() ?: defaultMajorVersion
+      listOfNotNull(
+        if (majorVersion >= 21) "--enable-native-access=ALL-UNNAMED" else null,
+        if (majorVersion >= 24) "--sun-misc-unsafe-memory-access=allow" else null
+      )
+    })
+  }
 }
 
 private const val junitStandaloneLauncherConfigurationName = "_internal-junit-engine-standalone-launcher"

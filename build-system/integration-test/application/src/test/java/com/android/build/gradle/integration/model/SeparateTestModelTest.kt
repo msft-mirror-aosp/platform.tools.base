@@ -21,12 +21,16 @@ import com.android.build.gradle.integration.common.fixture.ModelContainerV2
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_APP_PATH
+import com.android.build.gradle.options.BooleanOption
 import com.android.builder.model.v2.ide.SyncIssue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
-class SeparateTestModelTest : ModelComparator() {
+@RunWith(Parameterized::class)
+class SeparateTestModelTest(val runWithBuiltInPlatform: Boolean) : ModelComparator() {
   @get:Rule
   val rule =
     GradleRule.from {
@@ -37,6 +41,7 @@ class SeparateTestModelTest : ModelComparator() {
           enableKotlin = false
         }
       }
+      gradleProperties { add(BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM, runWithBuiltInPlatform) }
     }
 
   private lateinit var result: ModelBuilderV2.FetchResult<ModelContainerV2>
@@ -59,5 +64,11 @@ class SeparateTestModelTest : ModelComparator() {
   @Test
   fun `test VariantDependencies`() {
     with(result).compareVariantDependencies(projectAction = { getProject(":test") }, goldenFile = "VariantDependencies")
+  }
+
+  companion object {
+    @JvmStatic
+    @Parameterized.Parameters(name = "runWithBuiltInPlatform={0}")
+    fun parameters(): Collection<Array<Any>> = listOf(arrayOf(false), arrayOf(true))
   }
 }

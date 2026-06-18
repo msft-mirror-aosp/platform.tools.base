@@ -42,19 +42,14 @@ import kotlin.math.max
 import kotlin.math.min
 
 /** A reporter which emits lint results into an HTML report. */
-class HtmlReporter(client: LintCliClient, output: File, flags: LintCliFlags) : Reporter(client, output) {
+open class HtmlReporter(client: LintCliClient, output: File, protected val flags: LintCliFlags) : Reporter(client, output) {
 
-  private val writer: Writer
-  private val flags: LintCliFlags
+  protected open val writer: Writer by lazy { output.bufferedWriter() }
+
   private var builder: HtmlBuilder? = null
   private var sb: StringBuilder? = null
   private var highlightedFile: String? = null
   private var highlighter: LintSyntaxHighlighter? = null
-
-  init {
-    writer = output.bufferedWriter()
-    this.flags = flags
-  }
 
   override fun write(stats: LintStats, incidents: List<Incident>, registry: IssueRegistry) {
     val missing = computeMissingIssues(registry, incidents)
@@ -334,7 +329,7 @@ class HtmlReporter(client: LintCliClient, output: File, flags: LintCliFlags) : R
       """<div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
   <header class="mdl-layout__header">
     <div class="mdl-layout__header-row">
-      <span class="mdl-layout-title">$title: """ +
+      <span class="mdl-layout-title">${XmlUtils.toXmlTextValue(title)}: """ +
         describeCounts(stats.errorCount, stats.warningCount, stats.hintCount, comma = false, capitalize = true) +
         "</span>\n" +
         "      <div class=\"mdl-layout-spacer\"></div>\n" +
@@ -388,7 +383,7 @@ class HtmlReporter(client: LintCliClient, output: File, flags: LintCliFlags) : R
       """
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-<title>$title</title>
+<title>${XmlUtils.toXmlTextValue(title)}</title>
 """
     )
 
@@ -532,7 +527,7 @@ document.getElementById(id).style.display = 'none';
   }
 
   /** Returns the list of extra issues that were included in analysis (those that are not built in). */
-  private fun computeExtraIssues(registry: IssueRegistry): List<Issue> {
+  protected fun computeExtraIssues(registry: IssueRegistry): List<Issue> {
     val issues = registry.issues
     return issues.filter { issue ->
       val vendor = issue.vendor ?: issue.registry?.vendor
@@ -540,7 +535,7 @@ document.getElementById(id).style.display = 'none';
     }
   }
 
-  private fun computeMissingIssues(registry: IssueRegistry, incidents: List<Incident>): Map<Issue, String> {
+  protected fun computeMissingIssues(registry: IssueRegistry, incidents: List<Incident>): Map<Issue, String> {
     val projects: MutableSet<Project> = HashSet()
     val seen: MutableSet<Issue> = HashSet()
     for (incident in incidents) {
@@ -726,7 +721,7 @@ document.getElementById(id).style.display = 'none';
     if (title != null) {
       append(
         """  <div class="mdl-card__title">
-    <h2 class="mdl-card__title-text">$title</h2>
+    <h2 class="mdl-card__title-text">${XmlUtils.toXmlTextValue(title)}</h2>
   </div>
 """
       )
@@ -818,7 +813,7 @@ ${action.title}</button>"""
       val start = max(startWin, startUnix)
       displayPath = (displayPath.substring(start, aarIndex + 4) + File.separator + "..." + File.separator + "lint.jar")
     }
-    append(displayPath)
+    append(XmlUtils.toXmlTextValue(displayPath))
     if (url != null) {
       append("</a>")
     }
@@ -903,7 +898,8 @@ ${action.title}</button>"""
         val href = XmlUtils.toXmlAttributeValue(entry.fileName)
         val path = entry.path
         val count = entry.errorCount + entry.warningCount
-        append("      <a class=\"mdl-navigation__link\" href=\"$href\">$path ($count)</a>\n")
+        val escapedPath = XmlUtils.toXmlTextValue(path)
+        append("      <a class=\"mdl-navigation__link\" href=\"$href\">$escapedPath ($count)</a>\n")
       }
     }
     if (stats.errorCount == 0 && stats.warningCount == 0) {
@@ -925,7 +921,7 @@ ${action.title}</button>"""
         append("<a href=\"")
         append(XmlUtils.toXmlAttributeValue(entry.fileName))
         append("\">")
-        append(entry.path)
+        append(XmlUtils.toXmlTextValue(entry.path))
         append("</a></td><td class=\"countColumn\">")
         append(entry.errorCount.toString())
         append("</td><td class=\"countColumn\">")

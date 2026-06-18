@@ -19,9 +19,11 @@ package com.android.tools.render.compose
 import com.android.testutils.ImageDiffUtil
 import com.android.testutils.TestUtils
 import com.android.tools.render.common.readPreviewRenderingResultJson
+import java.io.File
 import java.nio.file.Paths
 import javax.imageio.ImageIO
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
@@ -55,13 +57,44 @@ class ScreenshotRenderTest {
     commonTest(screenshots, "small")
   }
 
-  private fun commonTest(screenshots: List<ComposeScreenshot>, goldenName: String) {
+  @Test
+  fun testSmallPreview() {
+    val screenshots =
+      listOf(
+        ComposeScreenshot(
+          "com.example.composeapplication.PreviewsKt.PreviewSmall",
+          emptyList(),
+          emptyMap(),
+          "com.example.composeapplication.PreviewsKt.PreviewSmall_screenshot",
+        )
+      )
+    commonTest(screenshots, "small", 2.0)
+  }
+
+  @Test
+  fun testHelp() {
+    val stdout = runComposeCliRender(listOf("--help"))
+    assertTrue(stdout.contains("Usage: compose-preview-renderer"))
+    assertTrue(stdout.contains("Options:"))
+    assertTrue(stdout.contains("JSON Settings File Format:"))
+    assertTrue(stdout.contains("Example JSON:"))
+  }
+
+  private fun commonTest(screenshots: List<ComposeScreenshot>, goldenName: String, maxPercentDifferent: Double = 0.0) {
     val outputFolder = tmpFolder.newFolder()
     val metaDatafolder = tmpFolder.newFolder()
     val resultsFile = tmpFolder.newFile("results.json")
     val jsonSettings = gradleProject.createSettingsFile(outputFolder, resultsFile, metaDatafolder, screenshots)
 
-    runComposeCliRender(jsonSettings)
+    val stdout = runComposeCliRender(jsonSettings)
+
+    screenshots.forEach { screenshot ->
+      val imageName = "${screenshot.previewId.substringAfterLast(".")}_0.png"
+      val relativeImagePath = (screenshot.methodFQN.substringBeforeLast(".").replace(".", "/")) + "/" + imageName
+      val expectedAbsolutePath = File(outputFolder, relativeImagePath).absolutePath
+      assertTrue("Expected stdout to contain $expectedAbsolutePath, but was:\n$stdout", stdout.contains(expectedAbsolutePath))
+    }
+
     val result = readPreviewRenderingResultJson(resultsFile.bufferedReader())
     assertNull(result.globalError)
     result.screenshotResults.forEach { assertNull(it.error) }
@@ -73,6 +106,7 @@ class ScreenshotRenderTest {
       ImageDiffUtil.assertImageSimilar(
         TestUtils.resolveWorkspacePathUnchecked("tools/base/standalone-render/compose-cli/testData/goldens/$goldenName.png"),
         img,
+        maxPercentDifferent,
       )
     }
 

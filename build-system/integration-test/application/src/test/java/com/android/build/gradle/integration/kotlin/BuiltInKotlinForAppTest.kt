@@ -87,6 +87,7 @@ class BuiltInKotlinForAppTest(private val useLatestKgpVersion: Boolean) {
           "kotlin/",
           "org/intellij/",
           "org/jetbrains/",
+          "com/android/tools/r8/annotations/LambdaMethod",
         )
     }
   }
@@ -241,6 +242,7 @@ class BuiltInKotlinForAppTest(private val useLatestKgpVersion: Boolean) {
           "kotlin/",
           "org/intellij/",
           "org/jetbrains/",
+          "com/android/tools/r8/annotations/LambdaMethod",
         )
     }
   }
@@ -298,6 +300,7 @@ class BuiltInKotlinForAppTest(private val useLatestKgpVersion: Boolean) {
           "kotlin/",
           "org/intellij/",
           "org/jetbrains/",
+          "com/android/tools/r8/annotations/LambdaMethod",
         )
     }
   }
@@ -422,12 +425,7 @@ class BuiltInKotlinForAppTest(private val useLatestKgpVersion: Boolean) {
               .trimIndent(),
           )
           // Set some values in the built-in Kotlin DSL and check that the values flow to the task
-          kotlin {
-            compilerOptions {
-              moduleName.set("foo")
-              languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9)
-            }
-          }
+          kotlin { compilerOptions { moduleName.set("foo") } }
 
           pluginCallbacks += KotlinTaskCallback::class.java
         }
@@ -446,10 +444,6 @@ class BuiltInKotlinForAppTest(private val useLatestKgpVersion: Boolean) {
             val moduleName = task.compilerOptions.moduleName.get()
             if (moduleName != "foo") {
               throw RuntimeException("Unexpected module name: $moduleName")
-            }
-            val languageVersion = task.compilerOptions.languageVersion.get()
-            if (languageVersion != org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9) {
-              throw RuntimeException("Unexpected app language version: $languageVersion")
             }
           }
         }

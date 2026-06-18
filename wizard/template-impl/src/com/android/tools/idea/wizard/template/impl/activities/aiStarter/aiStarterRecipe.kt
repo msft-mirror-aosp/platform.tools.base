@@ -45,8 +45,23 @@ fun RecipeExecutor.aiStarterRecipe(moduleData: ModuleTemplateData, activityClass
   // KSP is needed for Room
   addPlugin("com.google.devtools.ksp", "com.google.devtools.ksp:symbol-processing-gradle-plugin", "2.3.5")
 
-  val navigationVersion = "2.8.9"
-  addDependency("androidx.navigation:navigation-compose:$navigationVersion")
+  // Navigation 3 relies on Kotlin Serialization.
+  addPlugin("org.jetbrains.kotlin.plugin.serialization", "org.jetbrains.kotlin:kotlin-gradle-plugin", "2.2.21")
+  addDependency("org.jetbrains.kotlinx:kotlinx-serialization-core:1.9.0")
+
+  // Navigation 3 Core & Adaptive Stack
+  val navigation3Version = "1.0.1"
+  addDependency("androidx.navigation3:navigation3-ui:$navigation3Version")
+  addDependency("androidx.navigation3:navigation3-runtime:$navigation3Version")
+
+  val adaptiveVersion = "1.3.+"
+  addDependency("androidx.compose.material3.adaptive:adaptive:$adaptiveVersion")
+  addDependency("androidx.compose.material3.adaptive:adaptive-layout:$adaptiveVersion")
+  addDependency("androidx.compose.material3.adaptive:adaptive-navigation3:$adaptiveVersion")
+
+  // ViewModel & Lifecycle Support for Nav3
+  val lifecycleNav3Version = "2.11.+"
+  addDependency("androidx.lifecycle:lifecycle-viewmodel-navigation3:$lifecycleNav3Version")
 
   val roomVersion = "2.7.0"
   addDependency("androidx.room:room-runtime:$roomVersion")
@@ -120,6 +135,7 @@ fun RecipeExecutor.aiStarterRecipe(moduleData: ModuleTemplateData, activityClass
     isLauncher = isLauncher,
     hasNoActionBar = true,
     generateActivityTitle = true,
+    windowSoftInputMode = "adjustResize",
   )
   mergeXml(
     """

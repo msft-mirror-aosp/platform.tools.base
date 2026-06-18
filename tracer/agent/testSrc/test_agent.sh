@@ -1,6 +1,20 @@
+#!/bin/bash
+
+# Guard against direct execution to prevent accidental file deletion
+if [[ -z "${TEST_WORKSPACE}" ]]; then
+  echo "Error: This script is intended to be run as a bazel test." >&2
+  exit 1
+fi
+
+trap 'rm -f ./*.perfetto*' EXIT
+
 function fail {
    echo $1
    exit 1
+}
+
+function findPerfetto {
+  find . -name "*.perfetto*"
 }
 
 EXPECTED=$(cat <<- EOF
@@ -29,7 +43,8 @@ EXPECTED=$(cat <<- EOF
 EOF
 )
 
-if [ -f report.json ]; then
+PERFETTO_FILES=$(findPerfetto)
+if [ -n "$PERFETTO_FILES" ]; then
   fail "Report should not exist before execution"
 fi
 # Run the file without instrumentation
@@ -39,56 +54,40 @@ if [ "$OUT" != "$EXPECTED" ]; then
   fail "Expected output does not match"
 fi
 
-if [ -f report.json ]; then
+PERFETTO_FILES=$(findPerfetto)
+if [ -n "$PERFETTO_FILES" ]; then
   fail "Report should not exist after running with no agent"
 fi
 
 # Now run with:
 OUT=$(tools/base/tracer/trace_test --jvm_flag=-javaagent:tools/base/tracer/trace_agent.jar=tools/base/tracer/agent/testSrc/com/android/tools/tracer/test.profile)
-if [ ! -f report.json ]; then
+
+PERFETTO_FILES=$(findPerfetto)
+if [ -z "$PERFETTO_FILES" ]; then
   fail "Report with profile should exist"
 fi
 
-EXPECTED_JSON=$(cat <<EOF
-[
-"void MainTest.main(String[])"},
-"void MainTest.simple()"},
-""},
-"int MainTest.twoReturns(boolean)"},
-""},
-"int MainTest.twoReturns(boolean)"},
-""},
-"void MainTest.itCatches()"},
-""},
-"void MainTest.isAnnotated()"},
-""},
-"void MainTest.nestedCatches()"},
-""},
-"void MainTest.itThrows()"},
-""},
-"void MainTest.callsAThrow()"},
-"void MainTest.itThrows()"},
-""},
-""},
-"void Other.<init>()"},
-""},
-"void PkgClass.<init>()"},
-""},
-"manual trace"},
-""},
-"custom events"},
-"custom"},
-""},
-""},
-""},
-EOF
+EXPECTED_METHODS=(
+  "void MainTest.main(String[])"
+  "void MainTest.simple()"
+  "int MainTest.twoReturns(boolean)"
+  "void MainTest.itCatches()"
+  "void MainTest.isAnnotated()"
+  "void MainTest.nestedCatches()"
+  "void MainTest.itThrows()"
+  "void MainTest.callsAThrow()"
+  "void Other.<init>()"
+  "void PkgClass.<init>()"
+  "manual trace"
+  "custom events"
+  "custom"
 )
-JSON=$(cat report.json | sed "s/.*\"name\" : //")
 
-if [ "$EXPECTED_JSON" != "$JSON" ]; then
-  echo $JSON
-  fail "Expected report does not match"
-fi
+for method in "${EXPECTED_METHODS[@]}"; do
+  if ! grep -a -F -q "$method" $PERFETTO_FILES; then
+    fail "Expected trace method '$method' not found in any of: $PERFETTO_FILES"
+  fi
+done
 
 if [ "$OUT" != "$EXPECTED" ]; then
   fail "Expected output with agent does not match"

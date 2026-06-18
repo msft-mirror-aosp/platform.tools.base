@@ -81,6 +81,7 @@ class PreviewScreenshotTestEngine : HierarchicalTestEngine<PreviewScreenshotExec
       PreviewScreenshotTestEngineInput.previewImageOutputDir,
       PreviewScreenshotTestEngineInput.previewDiffImageOutputDir,
       PreviewScreenshotTestEngineInput.referenceImageDir,
+      PreviewScreenshotTestEngineInput.projectRoot,
     )
   }
 }

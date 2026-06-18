@@ -18,7 +18,6 @@ package com.android.build.gradle.integration.databinding
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.truth.TruthHelper
-import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.apk.Apk
 import org.junit.Before
 import org.junit.Rule
@@ -133,11 +132,7 @@ class DataBindingMinifyDynamicFeaturesTest {
 
   @Test
   fun assembleMinified() {
-    project
-      .executor()
-      // Disabled due to a dependency on com.android.support:animated-vector-drawable:28.0.0
-      .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
-      .run("assembleMinified")
+    project.executor().run("assembleMinified")
 
     val minifiedApk = "minified"
 

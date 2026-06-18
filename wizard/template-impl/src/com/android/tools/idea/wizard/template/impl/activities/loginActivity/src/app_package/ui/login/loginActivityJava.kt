@@ -42,12 +42,16 @@ fun loginActivityJava(
   return """package  ${packageName}.ui.login;
 
 import android.app.Activity;
+import androidx.activity.EdgeToEdge;
 import ${getMaterialComponentName("android.arch.lifecycle.Observer", useAndroidX)};
 import ${getMaterialComponentName("android.arch.lifecycle.ViewModelProvider", useAndroidX)};
 import android.os.Bundle;
 import ${getMaterialComponentName("android.support.annotation.Nullable", useAndroidX)};
 import ${getMaterialComponentName("android.support.annotation.StringRes", useAndroidX)};
 import ${getMaterialComponentName("android.support.v7.app.AppCompatActivity", useAndroidX)};
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.KeyEvent;
@@ -74,7 +78,13 @@ ${renderIf(isViewBindingSupported) {"""
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
         $contentViewBlock
+        ViewCompat.setOnApplyWindowInsetsListener(${findViewById(Language.Java, isViewBindingSupported, id = "main")}, (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
         loginViewModel = new ViewModelProvider(this, new LoginViewModelFactory())
                 .get(LoginViewModel.class);
 

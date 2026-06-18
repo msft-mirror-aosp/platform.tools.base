@@ -814,7 +814,6 @@ coverage_report(
         "tools/adt/idea/project-system-gradle-upgrade/src/com/android/tools/idea/gradle/project/upgrade",
     ],
     tests = [
-        "//tools/adt/idea/project-system-gradle-upgrade:ProjectUpgradeTests_From_gradle_6.7.1_agp_4.2.2",
         "//tools/adt/idea/project-system-gradle-upgrade:intellij.android.projectSystem.gradle.upgrade.tests_tests",
     ],
 )
@@ -840,7 +839,7 @@ coverage_report(
     tests = [
         "//tools/adt/idea/utp:utp_tests",
         "//tools/base/build-system/gradle-core:tests.test",
-        "//tools/base/build-system/integration-test/connected:UtpConnectedTest",
+        "//tools/base/build-system/integration-test/connected:AndroidConnectedTest",
         "//tools/base/utp/android-device-provider-ddmlib:tests.test",
         "//tools/base/utp/android-test-plugin-host-additional-test-output:tests.test",
         "//tools/base/utp/android-test-plugin-host-apk-installer:tests.test",
@@ -1064,7 +1063,6 @@ coverage_report(
         # TODO(b/136028658) too flaky for coverage
         #"//tools/adt/idea/project-system-gradle:intellij.android.projectSystem.gradle.tests_tests",
         "//tools/adt/idea/project-system-gradle-psd:intellij.android.projectSystem.gradle.psd.tests_tests",
-        "//tools/adt/idea/project-system-gradle-upgrade:ProjectUpgradeTests_From_gradle_6.7.1_agp_4.2.2",
         "//tools/adt/idea/project-system-gradle-upgrade:intellij.android.projectSystem.gradle.upgrade.tests_tests",
         "//tools/adt/idea/sdk-updates:intellij.android.sdkUpdates.tests_tests",
         "//tools/adt/idea/smali:intellij.android.smali_tests",
@@ -1120,7 +1118,7 @@ coverage_report(
         "//tools/base/build-system/integration-test/application/src/test/java/com/android/build/gradle/integration/gradlecompat:GradleVersionCheckTest",
         "//tools/base/build-system/integration-test/application/src/test/java/com/android/build/gradle/integration/sdk:sdk_tests",
         "//tools/base/build-system/integration-test/application/src/test/java/com/android/build/gradle/integration/testing/unit:tests",
-        "//tools/base/build-system/integration-test/connected:UtpConnectedTest",
+        "//tools/base/build-system/integration-test/connected:AndroidConnectedTest",
         "//tools/base/build-system/integration-test/databinding:tests",
         "//tools/base/build-system/integration-test/framework:framework_tests.test",
         "//tools/base/build-system/integration-test/lint:tests",
