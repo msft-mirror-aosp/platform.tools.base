@@ -636,6 +636,7 @@ data class LocalEmulatorProperties(
   override val disambiguator: String?,
   override val deviceType: DeviceType?,
   override val isVirtual: Boolean?,
+  override val emulatorType: EmulatorType? = null,
   override val isRemote: Boolean?,
   override val isDebuggable: Boolean?,
   override val isResizable: Boolean?,
@@ -698,6 +699,7 @@ data class LocalEmulatorProperties(
 
     fun setAvdInfo(avdInfo: AvdInfo) {
       isVirtual = true
+      emulatorType = EmulatorType.GOLDFISH
       manufacturer = avdInfo.deviceManufacturer
       model = avdInfo.deviceName
       androidVersion = avdInfo.androidVersion
@@ -733,6 +735,7 @@ data class LocalEmulatorProperties(
         disambiguator = disambiguator,
         deviceType = deviceType,
         isVirtual = isVirtual,
+        emulatorType = emulatorType,
         isRemote = isRemote,
         isDebuggable = isDebuggable,
         isResizable = isResizable,

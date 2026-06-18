@@ -83,6 +83,9 @@ interface DeviceProperties {
   /** If true, the device is running on emulated / virtualized hardware; if false, it is running on native hardware. */
   val isVirtual: Boolean?
 
+  /** The type of emulator, if the device is virtual. */
+  val emulatorType: EmulatorType?
+
   /**
    * If true, the device is connected over the network via a proxy that mediates access; if false, the device is connected directly to the
    * local machine.
@@ -174,6 +177,7 @@ interface DeviceProperties {
     var disambiguator: String? = null
     var deviceType: DeviceType? = null
     var isVirtual: Boolean? = null
+    var emulatorType: EmulatorType? = null
     var isRemote: Boolean? = null
     var isDebuggable: Boolean? = null
     var isResizable: Boolean? = null
@@ -196,6 +200,7 @@ interface DeviceProperties {
       disambiguator = properties.disambiguator
       deviceType = properties.deviceType
       isVirtual = properties.isVirtual
+      emulatorType = properties.emulatorType
       isRemote = properties.isRemote
       isDebuggable = properties.isDebuggable
       isResizable = properties.isResizable
@@ -233,7 +238,19 @@ interface DeviceProperties {
       abiList = abiStrings.mapNotNull { Abi.getEnum(it) }
 
       androidRelease = properties[RO_BUILD_VERSION_RELEASE]
-      isVirtual = properties[RO_KERNEL_QEMU] == "1"
+
+      val hardware = properties["ro.hardware"] ?: ""
+      val board = properties["ro.product.board"] ?: ""
+      val device = properties["ro.product.device"] ?: ""
+      emulatorType =
+        when {
+          hardware == "goldfish" || hardware == "ranchu" || board == "goldfish" || board == "ranchu" -> EmulatorType.GOLDFISH
+          hardware.startsWith("cuttlefish") || board.startsWith("cuttlefish") || board == "gce_x86_phone" || device.startsWith("vsoc_") ->
+            EmulatorType.CUTTLEFISH
+          else -> null
+        }
+      isVirtual = properties[RO_KERNEL_QEMU] == "1" || emulatorType != null
+
       isDebuggable = properties[RO_BUILD_TYPE] in setOf("userdebug", "eng")
       density = properties[RO_SF_LCD_DENSITY]?.toIntOrNull()
     }
@@ -293,6 +310,7 @@ interface DeviceProperties {
         disambiguator = disambiguator,
         deviceType = deviceType,
         isVirtual = isVirtual,
+        emulatorType = emulatorType,
         isRemote = isRemote,
         isDebuggable = isDebuggable,
         isResizable = isResizable,
@@ -319,6 +337,7 @@ data class BaseDeviceProperties(
   override val disambiguator: String?,
   override val deviceType: DeviceType?,
   override val isVirtual: Boolean?,
+  override val emulatorType: EmulatorType?,
   override val isRemote: Boolean?,
   override val isDebuggable: Boolean?,
   override val isResizable: Boolean?,
@@ -413,6 +432,11 @@ enum class ConnectionType {
   USB,
   WIFI,
   NETWORK,
+}
+
+enum class EmulatorType {
+  GOLDFISH,
+  CUTTLEFISH,
 }
 
 data class DeviceIcons(val handheld: Icon, val wear: Icon, val tv: Icon, val automotive: Icon, val headset: Icon, val glasses: Icon) {

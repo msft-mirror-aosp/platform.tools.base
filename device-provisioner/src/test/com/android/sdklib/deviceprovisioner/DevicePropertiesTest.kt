@@ -92,6 +92,20 @@ class DevicePropertiesTest {
   }
 
   @Test
+  fun readCommonProperties_goldfish() {
+    val props = props("ro.kernel.qemu" to "1", "ro.hardware" to "goldfish")
+    assertThat(props.isVirtual).isTrue()
+    assertThat(props.emulatorType).isEqualTo(EmulatorType.GOLDFISH)
+  }
+
+  @Test
+  fun readCommonProperties_cuttlefish() {
+    val props = props("ro.product.board" to "gce_x86_phone", "ro.product.device" to "vsoc_x86_64")
+    assertThat(props.isVirtual).isTrue()
+    assertThat(props.emulatorType).isEqualTo(EmulatorType.CUTTLEFISH)
+  }
+
+  @Test
   fun parseMdnsConnectionType_notMdns() {
     SerialNumberAndMdnsConnectionType.fromAdbSerialNumber("435DT06WH").apply {
       assertThat(serialNumber).isEqualTo("435DT06WH")
@@ -153,6 +167,7 @@ private val pixel8Props =
       disambiguator = "emulator-5554"
       deviceType = DeviceType.HANDHELD
       isVirtual = true
+      emulatorType = EmulatorType.GOLDFISH
       isRemote = false
       isDebuggable = true
       isResizable = false
