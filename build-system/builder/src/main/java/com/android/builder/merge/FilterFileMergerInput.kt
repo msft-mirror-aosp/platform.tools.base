@@ -25,7 +25,9 @@ import java.util.function.Predicate
 class FilterFileMergerInput(private val input: FileMergerInputNonIncremental, private val pathsAccepted: Predicate<String>) :
   DelegateFileMergerInputNonIncremental(input) {
 
+  private val filteredPaths: Set<String> by lazy { input.getAllPaths().asSequence().filter { pathsAccepted.test(it) }.toSet() }
+
   override fun getAllPaths(): Set<String> {
-    return input.getAllPaths().toList().filter { pathsAccepted.test(it) }.toSet()
+    return filteredPaths
   }
 }
