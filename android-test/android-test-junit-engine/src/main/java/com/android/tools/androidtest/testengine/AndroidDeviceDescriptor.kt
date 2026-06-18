@@ -211,6 +211,8 @@ class AndroidDeviceDescriptor(
         agentFilesystemInfo = agentFilesystemInfo,
       )
 
+    val deviceSettingsController = DeviceSettingsController(config, deviceSerial, adbControllerFactory(config.adb))
+
     val runner =
       AndroidTestRunner(
         adbApkInstaller,
@@ -222,6 +224,7 @@ class AndroidDeviceDescriptor(
         config.getTestUtilApks(deviceSerial),
         config.uninstallApksAfterTests,
         config.forceAotCompilation,
+        deviceSettingsController = deviceSettingsController,
         onBeforeInstrumentation = {
           additionalTestOutputCollector.prepare()
           coverageCollector.prepare()

@@ -121,6 +121,7 @@ class AndroidTestEngineConfigurerTest {
     // Verify engine input parameters (only TEST_APKS should be present for this setup)
     val parameters = spyTask.engineInputParameters.get()
     assertThat(parameters.map { it.type }).containsExactly(AgpTestSuiteInputParameters.TEST_APKS)
+    assertThat(spyTask.animationsDisabled.get()).isFalse()
   }
 
   @Test

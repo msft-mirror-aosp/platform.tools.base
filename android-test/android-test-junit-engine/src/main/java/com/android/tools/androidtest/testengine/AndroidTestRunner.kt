@@ -45,6 +45,7 @@ class AndroidTestRunner(
   private val testUtilApks: List<File>,
   private val uninstallApksAfterTests: Boolean,
   private val forceAotCompilation: Boolean = false,
+  private val deviceSettingsController: DeviceSettingsController,
   private val onBeforeInstrumentation: (() -> Unit)? = null,
   private val onTestFinished: (() -> Unit)? = null,
 ) {
@@ -63,6 +64,7 @@ class AndroidTestRunner(
   fun run() {
     try {
       adbApkInstaller.preInstallationSetup(instrumentationTargetPackageId)
+      deviceSettingsController.preInstallationSetup()
 
       val forceCompilation =
         if (forceAotCompilation) AdbApkInstaller.ForceCompilation.FULL_COMPILATION
@@ -101,6 +103,7 @@ class AndroidTestRunner(
       instrumentationRunner.runAmInstrumentCommand()
     } finally {
       onTestFinished?.invoke()
+      deviceSettingsController.postTestCleanup()
       adbApkInstaller.postTestCleanup()
       if (uninstallApksAfterTests) {
         if (testedApks.isNotEmpty()) {

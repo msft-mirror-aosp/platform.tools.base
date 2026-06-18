@@ -59,11 +59,16 @@ fun configureAndroidTestEngine(
 
   task.useJUnitPlatform { testFramework: JUnitPlatformOptions -> testFramework.includeEngines("android-test-engine") }
 
+  task.animationsDisabled.setDisallowChanges(creationConfig.services.provider { globalConfig.androidTestOptions.animationsDisabled })
+
   val isLibrary = testedConfig?.componentType?.isAar ?: false
 
   if (testedConfig != null && !isLibrary) {
     task.engineInputParameters.add(
-      TestSuiteTestTask.AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.TESTED_APKS, task.project.files(testedConfig.artifacts.get(SingleArtifact.APK)))
+      TestSuiteTestTask.AgpTestSuiteInputParameter(
+        AgpTestSuiteInputParameters.TESTED_APKS,
+        task.project.files(testedConfig.artifacts.get(SingleArtifact.APK)),
+      )
     )
   } else if (creationConfig is TestVariantCreationConfig) {
     task.engineInputParameters.add(
@@ -71,7 +76,10 @@ fun configureAndroidTestEngine(
     )
   }
   task.engineInputParameters.add(
-    TestSuiteTestTask.AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.TEST_APKS, task.project.files(creationConfig.artifacts.get(SingleArtifact.APK)))
+    TestSuiteTestTask.AgpTestSuiteInputParameter(
+      AgpTestSuiteInputParameters.TEST_APKS,
+      task.project.files(creationConfig.artifacts.get(SingleArtifact.APK)),
+    )
   )
 
   task.engineInputProperties.put(TestEngineInputProperty.TESTED_APPLICATION_ID, testData.applicationId)

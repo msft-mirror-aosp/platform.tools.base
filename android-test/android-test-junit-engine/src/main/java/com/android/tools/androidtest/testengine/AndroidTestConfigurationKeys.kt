@@ -95,4 +95,7 @@ object AndroidTestConfigurationKeys {
 
   /** The display name of the device, used for directory and file names. */
   const val DEVICE_ID = "android-test.device-id"
+
+  /** Whether to disable window animations on the device. */
+  const val ANIMATIONS_DISABLED = "android-test.animations-disabled"
 }

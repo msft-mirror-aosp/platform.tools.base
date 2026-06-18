@@ -46,6 +46,8 @@ class AndroidTestRunnerTest {
 
   @Mock private lateinit var instrumentationRunner: AmInstrumentationRunner
 
+  @Mock private lateinit var deviceSettingsController: DeviceSettingsController
+
   private lateinit var baseApk: File
   private lateinit var testApk: File
   private lateinit var splitApk1: File
@@ -73,6 +75,7 @@ class AndroidTestRunnerTest {
         apkInstallOptions = installOptions,
         testUtilApks = emptyList(),
         uninstallApksAfterTests = true,
+        deviceSettingsController = deviceSettingsController,
       )
     val expectedInstallOptions = InstallOptions(extraArgs = installOptions)
 
@@ -102,6 +105,7 @@ class AndroidTestRunnerTest {
         apkInstallOptions = installOptions,
         testUtilApks = emptyList(),
         uninstallApksAfterTests = true,
+        deviceSettingsController = deviceSettingsController,
       )
     val expectedBaseInstallOptions = InstallOptions(extraArgs = installOptions)
     val expectedTestInstallOptions = InstallOptions(grantPermissions = true, extraArgs = installOptions)
@@ -135,6 +139,7 @@ class AndroidTestRunnerTest {
         apkInstallOptions = installOptions,
         testUtilApks = emptyList(),
         uninstallApksAfterTests = true,
+        deviceSettingsController = deviceSettingsController,
       )
     val expectedInstallOptions = InstallOptions(extraArgs = installOptions)
 
@@ -164,6 +169,7 @@ class AndroidTestRunnerTest {
         apkInstallOptions = emptyList(),
         testUtilApks = listOf(utilApk),
         uninstallApksAfterTests = true,
+        deviceSettingsController = deviceSettingsController,
       )
     val expectedUtilApkOptions = InstallOptions(grantPermissions = true, forceQueryable = true)
 
@@ -194,6 +200,7 @@ class AndroidTestRunnerTest {
         apkInstallOptions = emptyList(),
         testUtilApks = emptyList(),
         uninstallApksAfterTests = false, // Key condition for this test
+        deviceSettingsController = deviceSettingsController,
       )
 
     // When the runner is executed.
@@ -223,6 +230,7 @@ class AndroidTestRunnerTest {
         apkInstallOptions = emptyList(),
         testUtilApks = emptyList(),
         uninstallApksAfterTests = true,
+        deviceSettingsController = deviceSettingsController,
       )
     val installException = RuntimeException("Install failed!")
     whenever(adbApkInstaller.installApk(eq(baseApk), any())).thenThrow(installException)
@@ -257,6 +265,7 @@ class AndroidTestRunnerTest {
         apkInstallOptions = emptyList(),
         testUtilApks = emptyList(),
         uninstallApksAfterTests = true,
+        deviceSettingsController = deviceSettingsController,
       )
 
     // When the runner is executed.
@@ -272,5 +281,31 @@ class AndroidTestRunnerTest {
     verify(adbApkInstaller, never()).installApk(any(), any())
     verify(adbApkInstaller, never()).installSplitApk(any(), any())
     verify(adbApkInstaller, never()).uninstallApk(any())
+  }
+
+  @Test
+  fun `run with deviceSettingsController sets up and cleans up settings`() {
+    val runner =
+      AndroidTestRunner(
+        instrumentationTargetPackageId = "target.pkg",
+        adbApkInstaller = adbApkInstaller,
+        instrumentationRunner = instrumentationRunner,
+        testedApks = listOf(baseApk),
+        testApks = emptyList(),
+        apkInstallOptions = emptyList(),
+        testUtilApks = emptyList(),
+        uninstallApksAfterTests = true,
+        deviceSettingsController = deviceSettingsController,
+      )
+
+    runner.run()
+
+    inOrder(adbApkInstaller, deviceSettingsController, instrumentationRunner) {
+      verify(adbApkInstaller).preInstallationSetup("target.pkg")
+      verify(deviceSettingsController).preInstallationSetup()
+      verify(instrumentationRunner).runAmInstrumentCommand()
+      verify(deviceSettingsController).postTestCleanup()
+      verify(adbApkInstaller).postTestCleanup()
+    }
   }
 }
