@@ -99,10 +99,6 @@ build --tool_java_runtime_version=jbr-next
 
 build --stripopt=--strip-unneeded
 
-# lnzipper expects workspace filesystem state (i.e. symlinks) which may not
-# be the same when run inside a sandbox or remotely.
-build --strategy=lnzipper=local
-
 # Do not register auto-generated cpp toolchains
 common --repo_env='BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1'
 
