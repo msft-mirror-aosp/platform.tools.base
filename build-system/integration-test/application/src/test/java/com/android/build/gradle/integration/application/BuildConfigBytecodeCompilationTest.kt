@@ -17,13 +17,20 @@
 package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.testutils.TestUtils
 import org.junit.Rule
 import org.junit.Test
 
 // Regression test for b/363031540
 class BuildConfigBytecodeCompilationTest {
 
-  @get:Rule val project = GradleTestProject.builder().fromTestProject("buildConfigBytecode").create()
+  @get:Rule
+  val project =
+    GradleTestProject.builder()
+      .fromTestProject("buildConfigBytecode")
+      .addGradleProperties("org.gradle.java.installations.auto-detect=false")
+      .addGradleProperties("org.gradle.java.installations.paths=${TestUtils.getJava21Jdk()}")
+      .create()
 
   @Test
   fun testBuildConfigCompilation() {

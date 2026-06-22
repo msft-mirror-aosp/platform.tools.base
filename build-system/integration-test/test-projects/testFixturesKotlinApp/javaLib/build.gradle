@@ -21,6 +21,12 @@ plugins {
     id 'kotlin'
 }
 
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(21))
+    }
+}
+
 dependencies {
     testFixturesApi 'com.google.truth:truth:0.44'
 }
