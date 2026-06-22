@@ -73,13 +73,13 @@ class KotlinJvmToolchainTest {
 
   @Test
   fun testJvmToolchain() {
-    val build = rule.build { androidKotlinMultiplatformLibrary(":library") { kotlin { jvmToolchain(21) } } }
+    val build = rule.build { androidKotlinMultiplatformLibrary(":library") { kotlin { jvmToolchain(25) } } }
     val result =
       build.executor
         .withFailOnWarning(false) // b/455891987
         .run("clean", ":library:assemble")
-    ScannerSubject.assertThat(result.stdout).contains("kotlinc jvm-target=21")
-    ScannerSubject.assertThat(result.stdout).contains("javac jvm-target=21")
+    ScannerSubject.assertThat(result.stdout).contains("kotlinc jvm-target=25")
+    ScannerSubject.assertThat(result.stdout).contains("javac jvm-target=25")
   }
 
   @Test
@@ -87,7 +87,7 @@ class KotlinJvmToolchainTest {
     val build =
       rule.build {
         androidKotlinMultiplatformLibrary(":library") {
-          kotlin { jvmToolchain(21) }
+          kotlin { jvmToolchain(25) }
           android { compilerOptions.jvmTarget.set(JvmTarget.JVM_11) }
         }
       }
@@ -121,7 +121,7 @@ class KotlinJvmToolchainTest {
     val build =
       rule.build {
         androidKotlinMultiplatformLibrary(":library") {
-          kotlin { jvmToolchain(21) }
+          kotlin { jvmToolchain(25) }
           android { compilerOptions.jvmTarget.set(JvmTarget.JVM_11) }
           pluginCallbacks += KmpVariantApiCallback::class.java
         }
