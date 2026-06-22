@@ -18,9 +18,11 @@ package com.android.tools.ui.inspector
 
 import com.android.adblib.DeviceInfo
 import com.android.adblib.DeviceList
+import com.android.adblib.DevicePropertyNames
 import com.android.adblib.DeviceSelector
 import com.android.adblib.DeviceState
 import com.android.adblib.testing.FakeAdbSession
+import com.android.tools.ui.inspector.common.ProtocolConstants
 import com.google.common.truth.Truth.assertThat
 import java.nio.file.Path
 import kotlinx.coroutines.test.runTest
@@ -71,7 +73,8 @@ class InjectionManagerTest {
     val injectionManager = InjectionManager(testSession, deviceSerial, packageName, agentPathResolver, dummyJar, dummyPayload)
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
     // Mock expected shell commands for the injection flow
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "getprop ro.product.cpu.abi", "arm64-v8a\n")
+    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "pidof $packageName", "1234\n")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
     val setupCmd =
@@ -113,7 +116,8 @@ class InjectionManagerTest {
   fun testInjectAndAttach_CommandFails() = runTest {
     val injectionManager = InjectionManager(testSession, deviceSerial, packageName, agentPathResolver, dummyJar, dummyPayload)
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "getprop ro.product.cpu.abi", "arm64-v8a\n")
+    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "pidof $packageName", "1234\n")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
 
@@ -162,7 +166,8 @@ class InjectionManagerTest {
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
 
     // Mock injectAndAttach dependencies so we can initialize appDataDir
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "getprop ro.product.cpu.abi", "arm64-v8a\n")
+    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "pidof $packageName", "1234\n")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
     fakeSession.deviceServices.configureShellCommand(
@@ -212,7 +217,8 @@ class InjectionManagerTest {
     val injectionManager = InjectionManager(testSession, deviceSerial, packageName, agentPathResolver, dummyJar, dummyPayload)
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
 
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "getprop ro.product.cpu.abi", "arm64-v8a\n")
+    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "pidof $packageName", "1234\n")
 
     // Configure run-as pwd to fail
@@ -241,7 +247,8 @@ class InjectionManagerTest {
     val injectionManager = InjectionManager(testSession, deviceSerial, packageName, agentPathResolver, dummyJar, dummyPayload)
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
 
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "getprop ro.product.cpu.abi", "arm64-v8a\n")
+    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
 
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
 
@@ -282,5 +289,54 @@ class InjectionManagerTest {
         InjectionManager(testSession, "serial; rm -rf /", packageName, agentPathResolver, dummyJar, dummyPayload)
       }
     assertThat(exception.message).contains("Invalid serial number")
+  }
+
+  @Test
+  fun testUnsupportedApi_Throws() = runTest {
+    val injectionManager = InjectionManager(testSession, deviceSerial, packageName, agentPathResolver, dummyJar, dummyPayload)
+    val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
+
+    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n27\n")
+
+    try {
+      injectionManager.injectAndAttach()
+      fail("Expected IllegalStateException for unsupported API level")
+    } catch (e: IllegalStateException) {
+      assertThat(e.message).contains("The UI Inspector only supports API level ${ProtocolConstants.MIN_SUPPORTED_API_LEVEL} and above")
+      assertThat(e.message).contains("running API level 27")
+    }
+  }
+
+  @Test
+  fun testFailedToRetrieveSdkVersion_Throws() = runTest {
+    val injectionManager = InjectionManager(testSession, deviceSerial, packageName, agentPathResolver, dummyJar, dummyPayload)
+    val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
+
+    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\ninvalid_sdk\n")
+
+    try {
+      injectionManager.injectAndAttach()
+      fail("Expected IllegalStateException for failed SDK version retrieval")
+    } catch (e: IllegalStateException) {
+      assertThat(e.message).contains("Failed to retrieve device SDK API level")
+    }
+  }
+
+  @Test
+  fun testFailedToRetrieveAbi_Throws() = runTest {
+    val injectionManager = InjectionManager(testSession, deviceSerial, packageName, agentPathResolver, dummyJar, dummyPayload)
+    val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
+
+    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "\n30\n")
+
+    try {
+      injectionManager.injectAndAttach()
+      fail("Expected IllegalStateException for failed CPU ABI retrieval")
+    } catch (e: IllegalStateException) {
+      assertThat(e.message).contains("Failed to retrieve device CPU ABI")
+    }
   }
 }

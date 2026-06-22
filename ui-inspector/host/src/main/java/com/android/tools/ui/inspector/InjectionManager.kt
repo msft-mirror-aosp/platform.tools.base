@@ -17,6 +17,7 @@
 package com.android.tools.ui.inspector
 
 import com.android.adblib.AdbSession
+import com.android.adblib.DevicePropertyNames
 import com.android.adblib.DeviceSelector
 import com.android.adblib.RemoteFileMode
 import com.android.adblib.ShellCommandOutput
@@ -103,6 +104,13 @@ class InjectionManager(
    * @return The forwarded TCP port number on the host. Connect to this port to communicate with the agent.
    */
   suspend fun injectAndAttach(): String = coroutineScope {
+    val (deviceAbi, sdkVersion) = retrieveDeviceMetadata(deviceSelector)
+    if (sdkVersion < ProtocolConstants.MIN_SUPPORTED_API_LEVEL) {
+      throw IllegalStateException(
+        "The UI Inspector only supports API level ${ProtocolConstants.MIN_SUPPORTED_API_LEVEL} and above. The target device is running API level $sdkVersion."
+      )
+    }
+
     // Query app data dir and pid synchronously at the beginning to verify that the app is installed and running
     appDataDir = queryAppDataDir(deviceSelector, packageName)
     val pid = getPid(deviceSelector, packageName)
@@ -113,9 +121,6 @@ class InjectionManager(
     // restart each time.
     val flagSet = async { adbSession.deviceServices.shellAsText(deviceSelector, "settings put global debug_view_attributes 1") }
 
-    val abiDeferred = async { getDeviceAbi(deviceSelector) }
-
-    val deviceAbi = abiDeferred.await()
     val agentLocalPath = getAgentLocalPath(deviceAbi)
     val serviceJarLocalPath = getServiceJarLocalPath()
     val payloadJarLocalPath = getPayloadJarLocalPath()
@@ -193,9 +198,18 @@ class InjectionManager(
     return stdout
   }
 
-  /** Queries the device for its CPU ABI. */
-  private suspend fun getDeviceAbi(deviceSelector: DeviceSelector): String {
-    return runShellCommand(deviceSelector, "getprop ro.product.cpu.abi").stdout.trim()
+  /** Queries the device for its CPU ABI and SDK API level in a single shell invocation. */
+  private suspend fun retrieveDeviceMetadata(deviceSelector: DeviceSelector): DeviceMetadata {
+    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
+    val output = runShellCommand(deviceSelector, metadataCmd).stdout
+    val lines = output.lines()
+    val abi = lines.getOrNull(0)?.trim()
+    if (abi.isNullOrEmpty()) {
+      throw IllegalStateException("Failed to retrieve device CPU ABI.")
+    }
+    val sdkVersionStr = lines.getOrNull(1)?.trim()
+    val sdkVersion = sdkVersionStr?.toIntOrNull() ?: throw IllegalStateException("Failed to retrieve device SDK API level.")
+    return DeviceMetadata(abi, sdkVersion)
   }
 
   /** Resolves the local path to the agent binary for the given ABI. */
@@ -314,3 +328,5 @@ class InjectionManager(
     }
   }
 }
+
+private data class DeviceMetadata(val abi: String, val sdkVersion: Int)
