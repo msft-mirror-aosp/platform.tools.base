@@ -63,13 +63,13 @@ host is running on the user’s machine and the agent on the device.
 ### Host-agent communication
 
 The agent acts as the server, when it launches it creates a socket bound
-to `localabstract:layout_inspector_cli_<pid>`.
+to `localabstract:ui_inspector_<pid>`.
 
 The host runs the following command to map a local port on the user’s
 machine to the device’s socket:
 
 ```bash
-adb -s <device> forward tcp:<localHostPort> localabstract:layout_inspector_cli_<pid>
+adb -s <device> forward tcp:<localHostPort> localabstract:ui_inspector_<pid>
 ```
 
 Then connects to `<localHostPort>`.
@@ -86,30 +86,24 @@ Inspection already does, slightly adapted to our use case.
 
 The agent uses JVMTI to inject all the other inspector classes into the
 app. This is done by using `AddToBootstrapClassLoaderSearch()` to load
-`ui-inspector-service.jar` directly into the JVM. By doing this the
-contents of `ui-inspector-service.jar` will be available to the
+`lib_ui_inspector_service.jar` directly into the JVM. By doing this the
+contents of `lib_ui_inspector_service.jar` will be available to the
 bootstrap classloader.
 
-The agent uses JVMTI to inject all the other inspector classes into the
-app. This is done by using `AddToBootstrapClassLoaderSearch()` to load
-`bootstrap.jar` directly into the JVM. By doing this the contents of
-`bootstrap.jar` will be available to the bootstrap classloader.
-
 Finally, using JNI, the native code locates the injected
-`InspectorService.java` (which is part of `ui-inspector-service.jar`)
-and calls its
-static `initialize` method.
+`InspectorService.java` (which is part of `lib_ui_inspector_service.jar`)
+and calls its static `initialize` method.
 
 #### Service loader (agent/service)
 
-The contents of `ui-inspector-service.jar` act as a bridge between the
+The contents of `lib_ui_inspector_service.jar` act as a bridge between the
 bootstrap
 classloader and the app classloader. The bridge is necessary because in
 order to have access to the application classes `view-inspector.jar` and
 `compose-inspector.jar` need to be loaded with a class loader that
 descends from the app class loader.
 
-The main class of `ui-inspector-service.jar` is `InspectorService`,
+The main class of `lib_ui_inspector_service.jar` is `InspectorService`,
 which:
 
 * Receives the path to
@@ -158,14 +152,20 @@ on the device (`/data/local/tmp`).
 
 It then starts the injection sequence:
 
+* Queries the app private data directory dynamically using `run-as <package> pwd`
+  to support custom multi-user environments (e.g. `/data/user/10/`).
+* Automatically enables global view debugging by running
+  `settings put global debug_view_attributes 1` (allowing the platform to expose
+  attribute resolution stacks).
 * Runs `adb shell run-as <package> cp` to move files from
-  `/data/local/tmp` to the app memory space `/data/data/<package>/`.
-* Uses `run-as <package>` to `chmod` the binaries, ensuring that `.so`
-  has read/execute parameters and `.jar` are read-only (444), since the
-  Dalvik classloader prevents loading dynamic dalvik bytecode `.dex`
+  `/data/local/tmp` to the app memory space.
+* Uses `run-as <package>` to `chmod` all binary and jar files to read-only (`444`),
+  since the Dalvik classloader prevents loading dynamic dalvik bytecode `.dex`
   extensions from a writable app-data location.
+* Periodically polls `/proc/net/unix` on the device using a retry loop until the
+  agent's abstract Unix socket appears, preventing host connection race conditions.
 * Creates the adb tunnel and triggers payload injection via
-  `adb shell cmd activity attach-agent <package> /data/data/<package>/<agent_so>=/data/data/<package>/ui-inspector-service.jar`.
+  `adb shell cmd activity attach-agent <package> /data/data/<package>/lib_ui_inspector_agent.so=/data/data/<package>/lib_ui_inspector_service.jar;/data/data/<package>/lib_ui_inspector_payload.jar;<pid>`.
 
 ## Compose Inspector
 
@@ -204,6 +204,9 @@ the compose inspector jar:
 * Upon receiving the `GetVersionResponse` with the version number, the
   host connects to Google’s public Maven, downloads the `.aar` and
   unpacks the internal `inspector.jar`.
+  * *Note:* To support Jetpack Compose's Kotlin Multiplatform (KMP) transition in
+    version 1.5.0+, the host automatically resolves the artifact ID to `ui`
+    for versions < 1.5.0, and to `ui-android` for versions >= 1.5.0.
 * In case the user’s machine does not have access to public maven, the
   CLI will also provide a flag to specify an alternative maven repo.
 
@@ -220,31 +223,55 @@ commands can just re-connect to it.
 Before running a command the host would:
 
 * Discover the PID of the app.
-* Run `adb forward tcp:<host_port> localabstract:cli_<PID>`.
+* Run `adb forward tcp:<host_port> localabstract:ui_inspector_<PID>`.
 * Attempt connection to `tcp:<host_port>`.
 * Send `PING`.
 * If `PONG`: warm hit.
 * If connection failed or no `PONG`: run `attach-agent` from scratch.
 
-To prevent resource leaks if a device is unplugged, the agent can
-implement a timeout. If no message is received within the timeout the
-agent is terminated.
+To prevent resource leaks if a device is unplugged, the agent implements a
+5-minute inactivity timeout. If no message is received within the timeout,
+the agent is terminated and resources are cleaned up.
+
+***
+
+**⚠️ Implementation Note:** The host-side connection reuse and `PING`/`PONG`
+warm-hit detection are **not yet implemented in the CLI host**. Currently, the
+host runs the full file-push and `attach-agent` injection sequence on every
+command execution.
+
+However, the agent (device) side **fully supports persistence**: the server socket
+runs in a persistent loop, caches active inspector instances, and handles
+subsequent `attach-agent` calls gracefully (duplicate server threads exit cleanly after detecting socket collision via `"Address already in use"` checks).
+***
 
 ## Retrieving view attributes and composables parameters
 
-We can implement two ways of getting these:
+Attributes and parameters are fetched inline during the single-shot dump commands
+by passing command-line flags:
 
-* Add flag to the `dump-ui` command to include attributes and parameters
-  in the single shot dump.
-* Add a separate `get-params` command that given a view/composable id
-  can retrieve them. Here the user would need to first invoke `dump-ui`
-  to get the id.
+* `--include-attributes`: Includes view attributes and parameters in the dump.
+* `--include-resolution-stack`: Exposes attribute style/theme resolution traces.
+* `--include-semantics`: Includes Compose accessibility and semantics properties.
+
+*Note: The separate `get-params` command proposed in early designs is not implemented.*
+
+## Periodic Sampling of UI Changes
+
+In addition to `dump-ui`, the CLI supports a `track-changes` command. This command
+samples the UI tree structure periodically over a specified duration and interval,
+printing a diff representation of structural and attribute changes:
+
+```bash
+ui-inspector track-changes --serial 123 --package com.my.app --interval 100 --duration 5
+```
 
 ## Retrieving recomposition counts and state reads
 
 This is outside the scope of the MVP, but since the agent is persistent
 on the device we should implement start and stop commands (for example
-`start-observing-recompositions` / `stop-observing-recompositions`).
+`start-observing-recompositions` / `stop-observing-recompositions`). These
+remain unimplemented in the current version.
 
 ## Open questions
 
