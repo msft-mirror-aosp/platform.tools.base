@@ -29,6 +29,7 @@ import com.android.build.gradle.internal.lint.LintModelWriterTask
 import com.android.build.gradle.internal.plugins.LINT_PLUGIN_ID
 import com.android.build.gradle.internal.profile.AnalyticsConfiguratorService
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
+import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.tasks.AndroidReportTask
 import com.android.build.gradle.internal.tasks.AppClasspathCheckTask
@@ -262,6 +263,15 @@ class AndroidTestTaskManager(project: Project, globalConfig: GlobalTaskCreationC
             AndroidArtifacts.ArtifactScope.PROJECT,
             AndroidArtifacts.ArtifactType.APKS_FROM_BUNDLE,
           ),
+          androidTestProperties.services.projectOptions.extraInstrumentationTestRunnerArgs,
+        )
+      } else if (!isLibrary && testedVariant.global.hasDynamicFeatures) {
+        BundleTestDataImpl(
+          androidTestProperties.namespace,
+          androidTestProperties,
+          androidTestProperties.artifacts.get(SingleArtifact.APK),
+          null,
+          project.files(testedVariant.artifacts.get(InternalArtifactType.APKS_FROM_BUNDLE)),
           androidTestProperties.services.projectOptions.extraInstrumentationTestRunnerArgs,
         )
       } else {
