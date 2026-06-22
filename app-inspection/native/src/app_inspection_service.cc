@@ -108,12 +108,13 @@ bool AppInspectionService::tagClassInstancesO(JNIEnv* jni, jclass clazz,
   // IterateThroughHeap doesn't include subclasses
   // of the specfied class, so have to manually search for subclasses.
   bool error = false;
-  for (int i = 0; (i < count) && !error; ++i) {
-    if (jni->IsAssignableFrom(classes[i], clazz)) {
+  for (int i = 0; i < count; ++i) {
+    if (!error && jni->IsAssignableFrom(classes[i], clazz)) {
       error = CheckJvmtiError(
           jvmti_,
           jvmti_->IterateThroughHeap(0, classes[i], &heap_callbacks, &tag));
     }
+    jni->DeleteLocalRef(classes[i]);
   }
   jvmti_->Deallocate((unsigned char*)classes);
   return error;
@@ -151,7 +152,10 @@ jobjectArray AppInspectionService::FindInstances(JNIEnv* jni, jclass clazz) {
 
     auto result = jni->NewObjectArray(count, clazz, NULL);
     for (int i = 0; i < count; ++i) {
-      jni->SetObjectArrayElement(result, i, (jobject)classes[i]);
+      if (result != nullptr) {
+        jni->SetObjectArrayElement(result, i, (jobject)classes[i]);
+      }
+      jni->DeleteLocalRef(classes[i]);
     }
     jvmti_->Deallocate((unsigned char*)classes);
 
@@ -177,7 +181,10 @@ jobjectArray AppInspectionService::FindInstances(JNIEnv* jni, jclass clazz) {
 
   auto result = jni->NewObjectArray(count, clazz, NULL);
   for (int i = 0; i < count; ++i) {
-    jni->SetObjectArrayElement(result, i, instances[i]);
+    if (result != nullptr) {
+      jni->SetObjectArrayElement(result, i, instances[i]);
+    }
+    jni->DeleteLocalRef(instances[i]);
   }
   jvmti_->Deallocate((unsigned char*)instances);
 

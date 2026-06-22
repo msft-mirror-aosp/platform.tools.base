@@ -63,8 +63,11 @@ class AppInspectionTransform {
       if (!mi.InstrumentMethod(ir::MethodId(transform.GetClassName(),
                                             transform.GetMethod(),
                                             transform.GetSignature()))) {
-        profiler::Log::E(profiler::Log::Tag::APPINSPECT,
-                         "Error enter instrumenting %s\n", GetClassName());
+        profiler::Log::E(
+            profiler::Log::Tag::APPINSPECT, "Error instrumenting %s %s->%s%s\n",
+            transform.isEntry() ? "entry hook for" : "exit hook for",
+            transform.GetClassName(), transform.GetMethod(),
+            transform.GetSignature());
       }
     }
   }
