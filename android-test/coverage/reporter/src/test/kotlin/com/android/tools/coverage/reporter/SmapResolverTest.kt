@@ -52,6 +52,30 @@ class SmapResolverTest {
   }
 
   @Test
+  fun testManyToOneMapping() {
+    val smap =
+      """
+      SMAP
+      MyClass.kt
+      Kotlin
+      *S Kotlin
+      *F
+      + 1 MyClass.kt
+      com/example/MyClass.kt
+      *L
+      11:101,2
+      *E
+      """
+        .trimIndent()
+
+    val resolver = SmapResolver(smap)
+
+    // Both bytecode lines 101 and 102 should map back to source line 11
+    assertThat(resolver.resolve(101, "MyClass.kt")).isEqualTo(Pair(11, "MyClass.kt"))
+    assertThat(resolver.resolve(102, "MyClass.kt")).isEqualTo(Pair(11, "MyClass.kt"))
+  }
+
+  @Test
   fun testInlineMapping() {
     val smap =
       """

@@ -45,7 +45,9 @@ class SmapResolver(smapString: String) {
     }
 
     val offset = outputLine - mapping.outputStart
-    val sourceLine = mapping.inputStart + offset
+    // If the input range is only 1 line but the output range is multiple (e.g. 11:101,2),
+    // all output lines map to that same input line.
+    val sourceLine = if (mapping.repeat == 1) mapping.inputStart else mapping.inputStart + offset
     val sourceFile = fileMappings[mapping.fileId] ?: defaultSourceFile
     return Pair(sourceLine, sourceFile)
   }
