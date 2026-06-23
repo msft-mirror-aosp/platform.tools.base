@@ -28,6 +28,10 @@ const char *const kRunAsUserFlag = "--user";
 // Absolute on-device path to 'su' on non-user-build devices.
 const char *const kSuExecutable = "/system/xbin/su";
 
+// Safe characters for package/process/agent-lib names.
+const char *const kSafeNameChars =
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-:";
+
 // Run bash commands.
 class BashCommandRunner {
  public:

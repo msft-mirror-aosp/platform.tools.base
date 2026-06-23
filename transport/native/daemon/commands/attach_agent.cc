@@ -18,6 +18,7 @@
 #include <string>
 
 #include "proto/common.pb.h"
+#include "utils/bash_command.h"
 #include "utils/process_manager.h"
 
 using grpc::Status;
@@ -34,6 +35,15 @@ Status AttachAgent::ExecuteOn(Daemon *daemon) {
   if (app_name.empty()) {
     return Status(StatusCode::NOT_FOUND,
                   "Process isn't running. Cannot attach agent.");
+  }
+
+  if (app_name.find_first_not_of(kSafeNameChars) != string::npos ||
+      data_.package_name().find_first_not_of(kSafeNameChars) != string::npos ||
+      data_.agent_lib_file_name().find_first_not_of(kSafeNameChars) !=
+          string::npos) {
+    return Status(
+        StatusCode::INVALID_ARGUMENT,
+        "Invalid package/process/agent-lib name. Cannot attach agent.");
   }
 
   bool attachable = daemon->TryAttachAppAgent(
