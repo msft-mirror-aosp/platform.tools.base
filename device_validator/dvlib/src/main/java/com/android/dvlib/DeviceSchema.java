@@ -177,7 +177,7 @@ public class DeviceSchema {
     public static final String NODE_BLUETOOTH_PROFILES = "bluetooth-profiles";
 
     public static final String NODE_SCREEN = "screen";
-    
+
     public static final String NODE_ENVIRONMENT = "environment";
 
     public static final String NODE_SENSORS = "sensors";
@@ -399,22 +399,8 @@ public class DeviceSchema {
             ((NonClosingInputStream) xml).setCloseBehavior(CloseBehavior.RESET);
         }
 
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        DocumentBuilderFactory factory = XmlUtils.createDocumentBuilderFactory();
         factory.setIgnoringComments(false);
-        factory.setValidating(false);
-
-        // Parse the document using a non namespace aware builder
-        factory.setNamespaceAware(false);
-        // Prevent XXE: this method only needs the root element's xmlns; it must
-        // never fetch an external DTD or expand external entities. Mirrors
-        // com.android.utils.XmlUtils.createSaxParser() hardening.
-        factory.setXIncludeAware(false);
-        factory.setExpandEntityReferences(false);
-        factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-        factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-        factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
-        factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-        factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
         DocumentBuilder builder = factory.newDocumentBuilder();
 
         // We don't want the default handler which prints errors to stderr.

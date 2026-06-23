@@ -42,6 +42,8 @@ import com.android.ide.common.blame.SourcePosition;
 import com.google.common.base.CharMatcher;
 import com.google.common.collect.Sets;
 
+import javax.xml.XMLConstants;
+
 import org.w3c.dom.Attr;
 import org.w3c.dom.Comment;
 import org.w3c.dom.Document;
@@ -581,16 +583,38 @@ public class XmlUtils {
         return createDocumentBuilder(namespaceAware).newDocument();
     }
 
+    /**
+     * Returns a {@link DocumentBuilderFactory} hardened against XXE (CWE-611). The returned factory
+     * has DOCTYPE declarations disallowed and external entities disabled by default. Callers can
+     * re-enable them if necessary.
+     */
+    @NonNull
+    public static DocumentBuilderFactory createDocumentBuilderFactory() {
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        factory.setValidating(false);
+        try {
+            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+            factory.setFeature(DISALLOW_DOCTYPE_DECL, true);
+            factory.setFeature(EXTERNAL_GENERAL_ENTITIES, false);
+            factory.setFeature(EXTERNAL_PARAMETER_ENTITIES, false);
+            factory.setFeature(LOAD_EXTERNAL_DTD, false);
+        } catch (ParserConfigurationException e) {
+            throw new Error(e); // The parser we ship supports these
+        }
+        factory.setXIncludeAware(false);
+        factory.setExpandEntityReferences(false);
+        return factory;
+    }
+
     /** Creates a preconfigured document builder. */
     @NonNull
     private static DocumentBuilder createDocumentBuilder(boolean namespaceAware) {
         try {
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory factory = createDocumentBuilderFactory();
             factory.setNamespaceAware(namespaceAware);
-            factory.setValidating(false);
-            factory.setFeature(EXTERNAL_GENERAL_ENTITIES, false);
-            factory.setFeature(EXTERNAL_PARAMETER_ENTITIES, false);
-            factory.setFeature(LOAD_EXTERNAL_DTD, false);
+            // Allow DOCTYPES to exist for compatibility with existing callers / files; this is
+            // relatively benign since we're still not following external references
+            factory.setFeature(DISALLOW_DOCTYPE_DECL, false);
             return factory.newDocumentBuilder();
         } catch (ParserConfigurationException e) {
             throw new Error(e); // Impossible in the current context.

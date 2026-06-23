@@ -290,6 +290,24 @@ public class DeviceSchemaTest extends TestCase {
                 + "Error: cvc-type.3.1.3: The value '' of element 'd:gpu' is not valid.*");
     }
 
+    public void testXmlWithDoctypeRejected() throws Exception {
+        String xml =
+                "<?xml version=\"1.0\"?>\n"
+                        + "<!DOCTYPE devices [\n"
+                        + "  <!ENTITY xxe SYSTEM \"http://evil.com\">\n"
+                        + "]>\n"
+                        + "<devices>\n"
+                        + "</devices>";
+        InputStream stream = new ByteArrayInputStream(xml.getBytes("UTF-8"));
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        assertFalse(DeviceSchema.validate(stream, baos, null));
+        String output = baos.toString().trim();
+        assertTrue(
+                "Expected DOCTYPE disallowed error, got: " + output,
+                output.contains("DOCTYPE is disallowed")
+                        || output.contains("disallow-doctype-decl"));
+    }
+
     //---- helper methods -----
 
     private void checkFailure(Map<String, String> replacements, String regex) throws Exception {

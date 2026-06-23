@@ -20,6 +20,7 @@ import com.android.annotations.Nullable;
 import com.android.repository.api.RepoManager;
 import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.sdklib.repository.legacy.remote.internal.packages.RemotePackageParserUtils;
+import com.android.utils.XmlUtils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.regex.Pattern;
@@ -184,9 +185,8 @@ public class SdkRepoSource extends SdkSource {
         Document oldDoc = null;
         Document newDoc = null;
         try {
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory factory = XmlUtils.createDocumentBuilderFactory();
             factory.setIgnoringComments(false);
-            factory.setValidating(false);
 
             // Parse the old document using a non namespace aware builder
             factory.setNamespaceAware(false);

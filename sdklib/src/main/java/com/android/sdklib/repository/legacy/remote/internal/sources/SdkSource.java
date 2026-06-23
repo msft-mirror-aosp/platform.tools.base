@@ -38,6 +38,7 @@ import com.android.sdklib.repository.legacy.remote.internal.packages.RemoteSampl
 import com.android.sdklib.repository.legacy.remote.internal.packages.RemoteSourcePkgInfo;
 import com.android.sdklib.repository.legacy.remote.internal.packages.RemoteSystemImagePkgInfo;
 import com.android.sdklib.repository.legacy.remote.internal.packages.RemoteToolPkgInfo;
+import com.android.utils.XmlUtils;
 import com.google.common.annotations.VisibleForTesting;
 import java.io.BufferedInputStream;
 import java.io.FileNotFoundException;
@@ -694,7 +695,7 @@ public abstract class SdkSource implements Comparable<SdkSource> {
             assert xml.markSupported();
             xml.reset();
 
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory factory = XmlUtils.createDocumentBuilderFactory();
             factory.setIgnoringComments(false);
             factory.setValidating(false);
 
@@ -796,31 +797,44 @@ public abstract class SdkSource implements Comparable<SdkSource> {
         if (factory == null) {
             return null;
         }
+        try {
+            factory.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+            factory.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+        } catch (SAXException ignore) {
+            // older JAXP
+        }
 
         StreamSource[] xsdStreams = getXsdStream(version);
         // This may throw a SAX Exception if the schema itself is not a valid XSD
         Schema schema = factory.newSchema(xsdStreams);
 
         Validator validator = schema == null ? null : schema.newValidator();
-
-        // We don't want the default handler, which by default dumps errors to stderr.
-        validator.setErrorHandler(new ErrorHandler() {
-            @Override
-            public void warning(SAXParseException e) throws SAXException {
-                // pass
+        if (validator != null) {
+            try {
+                validator.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+                validator.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+            }
+            catch (SAXException ignore) {
             }
 
-            @Override
-            public void fatalError(SAXParseException e) throws SAXException {
-                throw e;
-            }
+            // We don't want the default handler, which by default dumps errors to stderr.
+            validator.setErrorHandler(new ErrorHandler() {
+                @Override
+                public void warning(SAXParseException e) throws SAXException {
+                    // pass
+                }
 
-            @Override
-            public void error(SAXParseException e) throws SAXException {
-                throw e;
-            }
-        });
+                @Override
+                public void fatalError(SAXParseException e) throws SAXException {
+                    throw e;
+                }
 
+                @Override
+                public void error(SAXParseException e) throws SAXException {
+                    throw e;
+                }
+            });
+        }
         return validator;
     }
 
@@ -939,7 +953,7 @@ public abstract class SdkSource implements Comparable<SdkSource> {
     @VisibleForTesting
     protected Document getDocument(@NonNull InputStream xml, @NonNull ProgressIndicator progress) {
         try {
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory factory = XmlUtils.createDocumentBuilderFactory();
             factory.setIgnoringComments(true);
             factory.setNamespaceAware(true);
 
