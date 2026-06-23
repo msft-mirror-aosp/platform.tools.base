@@ -90,10 +90,10 @@ public class MavenRepository {
                     "com.google.android.apps.common.testing.accessibility.framework:accessibility-test-framework:module:3.1.2",
                     "com.google.android.apps.common.testing.accessibility.framework:accessibility-test-framework:module:4.1.1",
                     // b/425997754 -- these dependencies have no Gradle module
-                    "org.eclipse.lsp4j:org.eclipse.lsp4j.debug:module:0.21.1",
-                    "org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc.debug:module:0.21.1",
-                    "org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc:module:0.21.1",
-                    "org.eclipse.lsp4j:org.eclipse.lsp4j:module:0.21.1");
+                    "org.eclipse.lsp4j:org.eclipse.lsp4j.debug:module:0.24.0",
+                    "org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc.debug:module:0.24.0",
+                    "org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc:module:0.24.0",
+                    "org.eclipse.lsp4j:org.eclipse.lsp4j:module:0.24.0");
 
     public MavenRepository(String repoPath, List<RemoteRepository> repositories, boolean verbose) {
         serviceLocator = AetherUtils.newServiceLocator(verbose);

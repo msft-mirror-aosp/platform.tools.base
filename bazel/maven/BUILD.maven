@@ -87436,23 +87436,26 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.eclipse.lsp4j.org.eclipse.lsp4j.debug_0.21.1",
-    pom = "repository/org/eclipse/lsp4j/org.eclipse.lsp4j.debug/0.21.1/org.eclipse.lsp4j.debug-0.21.1.pom",
+    name = "org.eclipse.lsp4j.org.eclipse.lsp4j.debug_0.24.0",
+    pom = "repository/org/eclipse/lsp4j/org.eclipse.lsp4j.debug/0.24.0/org.eclipse.lsp4j.debug-0.24.0.pom",
     repo_root_path = "repository",
-    repo_path = "org/eclipse/lsp4j/org.eclipse.lsp4j.debug/0.21.1",
+    repo_path = "org/eclipse/lsp4j/org.eclipse.lsp4j.debug/0.24.0",
     deps = [
-        "org.eclipse.lsp4j.org.eclipse.lsp4j.jsonrpc.debug_0.21.1",
+        "org.eclipse.lsp4j.org.eclipse.lsp4j.jsonrpc.debug_0.24.0",
     ],
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.eclipse.lsp4j.org.eclipse.lsp4j.jsonrpc.debug_0.21.1",
-    pom = "repository/org/eclipse/lsp4j/org.eclipse.lsp4j.jsonrpc.debug/0.21.1/org.eclipse.lsp4j.jsonrpc.debug-0.21.1.pom",
+    name = "org.eclipse.lsp4j.org.eclipse.lsp4j.jsonrpc.debug_0.24.0",
+    pom = "repository/org/eclipse/lsp4j/org.eclipse.lsp4j.jsonrpc.debug/0.24.0/org.eclipse.lsp4j.jsonrpc.debug-0.24.0.pom",
     repo_root_path = "repository",
-    repo_path = "org/eclipse/lsp4j/org.eclipse.lsp4j.jsonrpc.debug/0.21.1",
+    repo_path = "org/eclipse/lsp4j/org.eclipse.lsp4j.jsonrpc.debug/0.24.0",
     deps = [
-        "org.eclipse.lsp4j.org.eclipse.lsp4j.jsonrpc_0.21.1",
+        "org.eclipse.lsp4j.org.eclipse.lsp4j.jsonrpc_0.24.0",
+        "com.google.code.gson.gson_2.14.0",
+        "com.google.code.gson.gson_2.13.2",
+        "com.google.code.gson.gson_2.11.0",
         "com.google.code.gson.gson_2.10.1",
         "com.google.code.gson.gson_2.10",
     ],
@@ -87460,11 +87463,14 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.eclipse.lsp4j.org.eclipse.lsp4j.jsonrpc_0.21.1",
-    pom = "repository/org/eclipse/lsp4j/org.eclipse.lsp4j.jsonrpc/0.21.1/org.eclipse.lsp4j.jsonrpc-0.21.1.pom",
+    name = "org.eclipse.lsp4j.org.eclipse.lsp4j.jsonrpc_0.24.0",
+    pom = "repository/org/eclipse/lsp4j/org.eclipse.lsp4j.jsonrpc/0.24.0/org.eclipse.lsp4j.jsonrpc-0.24.0.pom",
     repo_root_path = "repository",
-    repo_path = "org/eclipse/lsp4j/org.eclipse.lsp4j.jsonrpc/0.21.1",
+    repo_path = "org/eclipse/lsp4j/org.eclipse.lsp4j.jsonrpc/0.24.0",
     deps = [
+        "com.google.code.gson.gson_2.14.0",
+        "com.google.code.gson.gson_2.13.2",
+        "com.google.code.gson.gson_2.11.0",
         "com.google.code.gson.gson_2.10.1",
         "com.google.code.gson.gson_2.10",
     ],
@@ -87472,12 +87478,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.eclipse.lsp4j.org.eclipse.lsp4j_0.21.1",
-    pom = "repository/org/eclipse/lsp4j/org.eclipse.lsp4j/0.21.1/org.eclipse.lsp4j-0.21.1.pom",
+    name = "org.eclipse.lsp4j.org.eclipse.lsp4j_0.24.0",
+    pom = "repository/org/eclipse/lsp4j/org.eclipse.lsp4j/0.24.0/org.eclipse.lsp4j-0.24.0.pom",
     repo_root_path = "repository",
-    repo_path = "org/eclipse/lsp4j/org.eclipse.lsp4j/0.21.1",
+    repo_path = "org/eclipse/lsp4j/org.eclipse.lsp4j/0.24.0",
     deps = [
-        "org.eclipse.lsp4j.org.eclipse.lsp4j.jsonrpc_0.21.1",
+        "org.eclipse.lsp4j.org.eclipse.lsp4j.jsonrpc_0.24.0",
     ],
     visibility = ["//visibility:public"],
 )
