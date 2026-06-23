@@ -111,7 +111,7 @@ class JacocoWithUnitTestReportTest(private val isJacocoPluginAppliedFromBuildFil
     val reportDataContent = File(reportDir, "data/report-data.js").readText()
     assertThat(reportDataContent).contains("const fullReport = ")
     // Should contain the project name, variant name and test suite coverages metadata
-    assertThat(reportDataContent).contains("\"debugUnitTest\"")
+    assertThat(reportDataContent).contains("\"debug\"")
     assertThat(reportDataContent).contains("\"testSuiteCoverages\"")
     assertThat(reportDataContent).contains("\"name\"")
   }

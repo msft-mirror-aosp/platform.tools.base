@@ -152,7 +152,7 @@ abstract class JacocoReportTask : NonIncrementalTask() {
       task.tabWidth.setDisallowChanges(4)
       task.reportAggregation.setDisallowChanges(creationConfig.services.projectOptions[BooleanOption.REPORT_AGGREGATION_SUPPORT])
       task.modulePath.setDisallowChanges(creationConfig.services.projectInfo.path)
-      task.testedVariantName.setDisallowChanges(creationConfig.name)
+      task.testedVariantName.setDisallowChanges(creationConfig.mainVariant.name)
       task.rootProjectName.setDisallowChanges(creationConfig.services.projectInfo.rootProjectName)
       task.rootProjectDir.setDisallowChanges(creationConfig.services.projectInfo.rootDir)
       creationConfig.mainVariant.sources.java { javaSources -> task.sources.addAll(javaSources.getAsFileTrees()) }
