@@ -167,6 +167,29 @@ public class DeviceSchemaTest extends TestCase {
                 result);
     }
 
+    public void testXmlWithDocTypeThrows() throws Exception {
+        String xml =
+                "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                        + "<!DOCTYPE devices [\n"
+                        + "  <!ENTITY xxe SYSTEM \"file:///etc/passwd\">\n"
+                        + "]>\n"
+                        + "<devices xmlns=\"http://schemas.android.com/sdk/devices/1\">\n"
+                        + "  <device>\n"
+                        + "    <name>&xxe;</name>\n"
+                        + "  </device>\n"
+                        + "</devices>";
+        InputStream xmlStream = new ByteArrayInputStream(xml.getBytes("UTF-8"));
+        xmlStream.mark(500000);
+
+        try {
+            DeviceSchema.getXmlSchemaVersion(xmlStream);
+            fail("Expected SAXException due to disallowed DOCTYPE declaration");
+        } catch (SAXException e) {
+            // Expected exception
+            assertTrue(e.getMessage().contains("DOCTYPE is disallowed"));
+        }
+    }
+
     public void testNoHardware() throws Exception {
         String regex =
                 "Error: cvc-complex-type.2.4.a: Invalid content was found starting with "
