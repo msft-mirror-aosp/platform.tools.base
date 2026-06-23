@@ -182,7 +182,9 @@ jobjectArray JvmtiArtTooling::FindInstances(JNIEnv* jni, jclass clazz) {
 
     auto result = jni->NewObjectArray(count, clazz, NULL);
     for (int i = 0; i < count; ++i) {
-      jni->SetObjectArrayElement(result, i, (jobject)classes[i]);
+      if (result != nullptr) {
+        jni->SetObjectArrayElement(result, i, (jobject)classes[i]);
+      }
       jni->DeleteLocalRef(classes[i]);
     }
     jvmti_->Deallocate((unsigned char*)classes);
@@ -210,7 +212,9 @@ jobjectArray JvmtiArtTooling::FindInstances(JNIEnv* jni, jclass clazz) {
 
   auto result = jni->NewObjectArray(count, clazz, NULL);
   for (int i = 0; i < count; ++i) {
-    jni->SetObjectArrayElement(result, i, instances[i]);
+    if (result != nullptr) {
+      jni->SetObjectArrayElement(result, i, instances[i]);
+    }
     jni->DeleteLocalRef(instances[i]);
   }
   jvmti_->Deallocate((unsigned char*)instances);
