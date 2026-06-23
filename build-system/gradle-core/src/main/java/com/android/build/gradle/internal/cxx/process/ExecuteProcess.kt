@@ -128,7 +128,10 @@ fun createJavaExecuteProcessCommand(
   javaExe: File = File(System.getProperty("java.home")).resolve("bin/java"),
 ) =
   createExecuteProcessCommand(javaExe)
-    .copy(useScript = true)
+    // Do not route Java sub-processes through a shell script: there is no
+    // .bat/.cmd-vs-no-extension lookup needed for java(.exe), and shell
+    // interpretation of args (OsBehavior.quoteCommandLineArgument) is a
+    // strictly larger attack surface than argv.
     .addArgs("--enable-native-access", "ALL-UNNAMED") // b/469503601
     .addArgs("--class-path", classPath, main)
 
@@ -191,6 +194,8 @@ data class ExecuteProcessCommand(
     val sb = StringBuilder()
     if (CURRENT_PLATFORM == PLATFORM_WINDOWS) {
       sb.appendLine("@echo off")
+    } else {
+      sb.appendLine("#!/bin/sh")
     }
     sb.append("${quoteCommandLineArgument(executable.path)} $cont")
     sb.appendLine(
