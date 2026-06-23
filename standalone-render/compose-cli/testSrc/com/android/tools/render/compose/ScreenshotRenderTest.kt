@@ -38,6 +38,7 @@ class ScreenshotRenderTest {
       tmpFolder,
       "tools/base/standalone-render/compose-cli/testData/compose-application",
       "tools/external/gradle/gradle-8.2-bin.zip",
+      "prebuilts/studio/jdk/jbr-next/linux",
     )
 
   @JvmField @Rule val chain: RuleChain = RuleChain.outerRule(tmpFolder).around(gradleProject)

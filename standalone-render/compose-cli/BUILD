@@ -163,6 +163,7 @@ kotlin_test(
         ":compose-preview-renderer",
         ":compose-preview-renderer-cli_deploy.jar",
         ":compose_project_deps",
+        "//prebuilts/studio/jdk/jbr-next:jdk_runtime_files",
         "//prebuilts/studio/layoutlib:runtime",
         "//prebuilts/studio/layoutlib/data:framework_res.jar",
         "//prebuilts/studio/sdk:build-tools/34.0.0",
