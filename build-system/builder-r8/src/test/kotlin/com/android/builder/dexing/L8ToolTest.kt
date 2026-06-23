@@ -16,12 +16,14 @@
 
 package com.android.builder.dexing
 
+import com.android.testutils.TestInputsGenerator
 import com.android.testutils.TestUtils
 import com.android.testutils.truth.DexSubject
 import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.truth.Truth.assertThat
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.zip.ZipFile
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -113,6 +115,100 @@ class L8ToolTest {
     // (R8's id is present, L8's should be gone).
     val mapIdCount = content.count { it.contains("pg_map_id") }
     assertThat(mapIdCount).named("Should only have one Map ID (from R8)").isEqualTo(1)
+  }
+
+  @Test
+  fun testPartitionMappingMerge() {
+    val output = tmp.newFolder().toPath()
+
+    // Generate dummy R8 input classes
+    val r8InputClasses = tmp.newFolder().toPath().resolve("classes.jar")
+    TestInputsGenerator.jarWithEmptyClasses(r8InputClasses, listOf("com/example/App"))
+
+    val r8OutputFolder = tmp.newFolder().toPath()
+    val r8MappingFile = r8OutputFolder.resolve("mapping.txt")
+    val r8PartitionMappingFile = r8OutputFolder.resolve("mapping.prt")
+
+    val proguardOutputFiles =
+      ProguardOutputFiles(
+        proguardMapOutput = r8MappingFile,
+        proguardPartitionMapOutput = r8PartitionMappingFile,
+        proguardSeedsOutput = r8OutputFolder.resolve("seeds.txt"),
+        proguardUsageOutput = r8OutputFolder.resolve("usage.txt"),
+        proguardConfigurationOutput = r8OutputFolder.resolve("configuration.txt"),
+        missingKeepRules = r8OutputFolder.resolve("missing_rules.txt"),
+      )
+    val proguardConfig =
+      ProguardConfig(
+        keepRuleWithOrigins = emptyList(),
+        proguardMapInput = null,
+        proguardConfigurations = listOf("-keep class com.example.App { *; }"),
+        proguardOutputFiles = proguardOutputFiles,
+        proguardOutputReports = ProguardOutputReports(r8OutputFolder.resolve("report.pb"), r8OutputFolder.resolve("report.html")),
+      )
+
+    val emptyJavaRes = tmp.newFolder().toPath().resolve("res.jar")
+    TestInputsGenerator.jarWithEmptyClasses(emptyJavaRes, emptyList())
+
+    // Run R8 to produce mapping.txt and mapping.prt
+    runR8(
+      inputClasses = listOf(r8InputClasses),
+      output = tmp.newFolder().toPath(),
+      inputJavaResJar = emptyJavaRes,
+      javaResourcesJar = null,
+      libraries = bootClasspath,
+      classpath = emptyList(),
+      toolConfig =
+        ToolConfig(
+          minSdkVersion = 20,
+          debuggable = false,
+          disableTreeShaking = false,
+          disableMinification = false,
+          disableDesugaring = true,
+          fullMode = true,
+          strictFullModeForKeepRules = true,
+          isolatedSplits = null,
+          r8OutputType = R8OutputType.DEX,
+          mainDexListDisallowed = true,
+        ),
+      proguardConfig = proguardConfig,
+      mainDexListConfig = MainDexListConfig(emptyList(), emptyList()),
+      resourceShrinkingConfig = null,
+      messageReceiver = NoOpMessageReceiver(),
+      featureClassJars = emptyList(),
+      featureJavaResourceJars = emptyList(),
+      featureDexDir = null,
+      featureJavaResourceOutputDir = null,
+    )
+
+    // Setup Keep Rules for L8 desugaring
+    val keepRulesFile = tmp.newFile("rules.pro").toPath()
+    Files.write(keepRulesFile, listOf("-keep class j\$.util.stream.Stream { *; }"))
+
+    val finalOutputPartitionMapping = output.resolve("mapping.prt")
+
+    // Run L8 and merge the partitioned mapping from R8
+    runL8(
+      inputClasses = desugarJar,
+      output = output,
+      libConfiguration = desugarConfig,
+      libraries = bootClasspath,
+      minSdkVersion = 20,
+      keepRules = KeepRulesConfig(listOf(keepRulesFile), emptyList()),
+      isDebuggable = false,
+      outputMode = L8OutputMode.DexIndexed,
+      inputMappingFile = r8MappingFile,
+      inputPartitionMappingFile = r8PartitionMappingFile,
+      outputPartitionMappingFile = finalOutputPartitionMapping,
+    )
+
+    assertThat(finalOutputPartitionMapping).exists()
+    ZipFile(finalOutputPartitionMapping.toFile()).use { zip ->
+      val names = zip.entries().toList().map { it.name }
+      assertThat(names).contains("METADATA")
+      // Check that it contains multiple partitions (R8 + L8)
+      assertThat(names.size).isGreaterThan(1)
+    }
   }
 
   private fun getDexFileCount(dir: Path): Long = Files.list(dir).filter { it.toString().endsWith(".dex") }.count()
