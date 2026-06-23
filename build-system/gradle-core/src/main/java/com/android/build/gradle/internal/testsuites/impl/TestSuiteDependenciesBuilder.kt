@@ -40,6 +40,8 @@ import org.gradle.api.attributes.Usage
 import org.gradle.api.attributes.java.TargetJvmEnvironment
 import org.gradle.api.model.ObjectFactory
 import org.gradle.internal.extensions.stdlib.capitalized
+import org.gradle.nativeplatform.MachineArchitecture
+import org.gradle.nativeplatform.OperatingSystemFamily
 
 /** Object that builds the dependencies of a test suite. */
 class TestSuiteDependenciesBuilder
@@ -156,6 +158,20 @@ internal constructor(
     attributes.attribute(Category.CATEGORY_ATTRIBUTE, project.objects.named(Category::class.java, Category.LIBRARY))
     attributes.attribute(TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE, standardJvmEnvironment)
     attributes.attribute(AgpVersionAttr.ATTRIBUTE, agpVersion)
+
+    // Resolve host OS family and architecture attributes dynamically and CC-safely
+    val hostOs = project.providers.systemProperty("os.name").map { getOperatingSystemFamily(it) }
+    val hostArch = project.providers.systemProperty("os.arch").map { getMachineArchitecture(it) }
+
+    attributes.attributeProvider(
+      OperatingSystemFamily.OPERATING_SYSTEM_ATTRIBUTE,
+      hostOs.map { project.objects.named(OperatingSystemFamily::class.java, it) },
+    )
+    attributes.attributeProvider(
+      MachineArchitecture.ARCHITECTURE_ATTRIBUTE,
+      hostArch.map { project.objects.named(MachineArchitecture::class.java, it) },
+    )
+
     val consumptionFlavorMap = getConsumptionFlavorAttributes(flavorSelection)
     applyVariantAttributes(attributes, testedVariant.buildType, consumptionFlavorMap)
   }
@@ -192,5 +208,24 @@ internal constructor(
     for ((key, value) in flavorMap) {
       attributeContainer.attribute(key, value)
     }
+  }
+}
+
+internal fun getOperatingSystemFamily(osName: String): String {
+  return when {
+    osName.contains("mac", ignoreCase = true) || osName.contains("darwin", ignoreCase = true) -> OperatingSystemFamily.MACOS
+    osName.contains("linux", ignoreCase = true) -> OperatingSystemFamily.LINUX
+    osName.contains("windows", ignoreCase = true) -> OperatingSystemFamily.WINDOWS
+    else -> throw IllegalStateException("Unsupported operating system: $osName")
+  }
+}
+
+internal fun getMachineArchitecture(osArch: String): String {
+  return when {
+    osArch.contains("aarch64", ignoreCase = true) || osArch.contains("arm64", ignoreCase = true) -> "aarch64"
+    osArch.contains("x86_64", ignoreCase = true) ||
+      osArch.contains("amd64", ignoreCase = true) ||
+      osArch.contains("x86-64", ignoreCase = true) -> "x86-64"
+    else -> throw IllegalStateException("Unsupported machine architecture: $osArch")
   }
 }

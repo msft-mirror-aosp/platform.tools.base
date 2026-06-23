@@ -28,6 +28,10 @@ dependencies {
     implementation "com.android.tools.compose:compose-preview-detector:${rootProject.ext.baseVersion}"
     implementation("com.android.tools.compose:compose-preview-renderer:$version")
     implementation(project(":base:preview:screenshot:screenshot-validation-api"))
+    implementation("com.android.tools.layoutlib:layoutlib-resources:16.1.0-jdk17")
+    implementation("com.android.tools.layoutlib:layoutlib:16.1.0-jdk17")
+    implementation("com.android.tools.layoutlib:layoutlib-runtime:16.1.0-jdk17")
+    implementation("com.android.tools.layoutlib:layoutlib-api:${rootProject.ext.baseVersion}")
     testImplementation libs.junit
     testImplementation libs.truth
     testImplementation libs.kotlin_test

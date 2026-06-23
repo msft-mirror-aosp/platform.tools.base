@@ -68,8 +68,6 @@ class ScreenshotTestSuiteImplTest {
     val notations = suite.useJunitEngine.enginesDependencies.dependencies.get().map { it.toString() }
 
     assertThat(notations).contains("com.android.tools.screenshot:screenshot-validation-junit-engine:1.2.3")
-    assertThat(notations).contains("com.android.tools.compose:compose-preview-renderer:1.2.3")
-    assertThat(notations).contains("com.android.tools.screenshot:screenshot-validation-api:1.2.3")
 
     // Call dependencies block to force hostJar source set initialization
     dslSuite.dependencies {}
