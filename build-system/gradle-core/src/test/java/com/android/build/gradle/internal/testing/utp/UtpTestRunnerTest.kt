@@ -33,10 +33,13 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import org.mockito.Answers
 import org.mockito.Answers.RETURNS_DEEP_STUBS
 import org.mockito.Mockito.mockStatic
+import org.mockito.Mockito.verify
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
@@ -70,13 +73,18 @@ class UtpTestRunnerTest {
     whenever(mockDevice.apiLevel).thenReturn(28)
     whenever(mockTestData.minSdkVersion).thenReturn(AndroidVersionImpl(28))
     whenever(mockTestData.testedApkFinder).thenReturn { listOf(mockAppApk) }
+    whenever(mockTestData.instrumentationTargetPackageId).thenReturn("target.package")
+    whenever(mockTestData.applicationId).thenReturn("com.example.test")
+    whenever(mockTestData.instrumentationRunner).thenReturn("android.support.test.runner.AndroidJUnitRunner")
+    whenever(mockTestData.testApk).thenReturn(mockAppApk)
+    whenever(mockTestData.instrumentationRunnerArguments).thenReturn(emptyMap())
 
     val adbHelperProvider: Provider<AdbHelper> = mock()
     whenever(adbHelperProvider.get()).thenReturn(mockAdbHelper)
     whenever(mockVersionedSdkLoader.adbHelper).thenReturn(adbHelperProvider)
   }
 
-  private fun runUtp(result: Boolean): Boolean {
+  private fun runUtp(result: Boolean, additionalTestOutputDir: File? = null, additionalTestOutputEnabled: Boolean = false): Boolean {
     val runner =
       UtpTestRunner(
         mock(),
@@ -94,9 +102,9 @@ class UtpTestRunnerTest {
         false,
       )
 
-    resultsDirectory = temporaryFolderRule.newFolder("results")
+    resultsDirectory = temporaryFolderRule.newFolder("results_${System.currentTimeMillis()}")
 
-    mockStatic(::runUtpTestSuiteAndWait.javaMethod!!.declaringClass).use { mockedStatic ->
+    mockStatic(::runUtpTestSuiteAndWait.javaMethod!!.declaringClass, Answers.CALLS_REAL_METHODS).use { mockedStatic ->
       mockedStatic
         .whenever<Boolean> { runUtpTestSuiteAndWait(runnerConfigsCaptor.capture(), any(), any(), any(), any(), any(), any()) }
         .thenReturn(result)
@@ -110,9 +118,9 @@ class UtpTestRunnerTest {
         0,
         setOf(),
         resultsDirectory,
-        false,
-        null,
-        temporaryFolderRule.newFolder("coverageDir"),
+        additionalTestOutputEnabled,
+        additionalTestOutputDir,
+        temporaryFolderRule.newFolder("coverageDir_${System.currentTimeMillis()}"),
         mock(),
       )
     }
@@ -145,5 +153,36 @@ class UtpTestRunnerTest {
     // be run.
     assertThat(runnerConfigsCaptor.firstValue).hasSize(0)
     assertThat(result).isTrue()
+  }
+
+  @Test
+  fun runUtpWithUnsafeDeviceName() {
+    val unsafeDeviceName = "../unsafe/device/../name"
+    whenever(mockDevice.name).thenReturn(unsafeDeviceName)
+
+    val mockUtpRunConfig: RunUtpWorkParameters.UtpRunConfig = mock(defaultAnswer = RETURNS_DEEP_STUBS)
+    doReturn(mockUtpRunConfig).whenever(mockObjectFactory).newInstance(eq(RunUtpWorkParameters.UtpRunConfig::class.java))
+
+    runUtp(
+      result = true,
+      additionalTestOutputDir = temporaryFolderRule.newFolder("additionalOutputDir"),
+      additionalTestOutputEnabled = true,
+    )
+
+    val capturedConfigs = runnerConfigsCaptor.firstValue
+    assertThat(capturedConfigs).hasSize(1)
+    assertThat(capturedConfigs[0]).isSameInstanceAs(mockUtpRunConfig)
+
+    val outputDirCaptor = argumentCaptor<File>()
+    verify(mockUtpRunConfig.outputDir).fileValue(outputDirCaptor.capture())
+    assertThat(outputDirCaptor.firstValue.name).isEqualTo(".._unsafe_device_.._name")
+
+    val coverageOutputDirCaptor = argumentCaptor<File>()
+    verify(mockUtpRunConfig.coverageOutputDir).fileValue(coverageOutputDirCaptor.capture())
+    assertThat(coverageOutputDirCaptor.firstValue.name).isEqualTo(".._unsafe_device_.._name")
+
+    val additionalTestOutputDirCaptor = argumentCaptor<File>()
+    verify(mockUtpRunConfig.additionalTestOutputDir).fileValue(additionalTestOutputDirCaptor.capture())
+    assertThat(additionalTestOutputDirCaptor.firstValue.name).isEqualTo(".._unsafe_device_.._name")
   }
 }

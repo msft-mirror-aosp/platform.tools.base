@@ -41,6 +41,7 @@ import org.mockito.ArgumentMatchers.contains
 import org.mockito.Mock
 import org.mockito.Mockito.atLeastOnce
 import org.mockito.Mockito.inOrder
+import org.mockito.Mockito.lenient
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyNoMoreInteractions
 import org.mockito.Mockito.`when`
@@ -70,7 +71,7 @@ class AndroidTestCoveragePluginTest {
 
   @Before
   fun setUpMocks() {
-    `when`(mockDeviceController.execute(anyList(), anyOrNull())).then { commandResult }
+    lenient().`when`(mockDeviceController.execute(anyList(), anyOrNull())).then { commandResult }
   }
 
   private fun installTestStorageService() {
@@ -327,5 +328,51 @@ class AndroidTestCoveragePluginTest {
     }
 
     verifyNoMoreInteractions(mockLogger)
+  }
+
+  @Test(expected = IllegalArgumentException::class)
+  fun beforeAllThrowsIfHostPathNotNormalized() {
+    runAndroidTestCoveragePlugin { outputDirectoryOnHost = "/path/to/../dir" }
+  }
+
+  @Test
+  fun runWithMultipleCoverageFilesInDirectorySkipsUnsafeFiles() {
+    val coverageDir = "/data/data/${TESTED_APP}/"
+    val tmpDir = "/data/local/tmp/UUID-coverage_data"
+    val outputDir = "coverageOutputDir/deviceName/"
+
+    `when`(mockDeviceController.execute(eq(listOf("shell", "run-as", TESTED_APP, "ls", "\"${coverageDir}\"", "|", "cat")), anyOrNull()))
+      .thenReturn(CommandResult(0, listOf("coverage1.ec", "..", "../unsafe.ec", "coverage2.ec")))
+
+    runAndroidTestCoveragePlugin {
+      runAsPackageName = TESTED_APP
+      multipleCoverageFilesInDirectory = coverageDir
+      outputDirectoryOnHost = outputDir
+    }
+
+    inOrder(mockDeviceController).apply {
+      verify(mockDeviceController).execute(eq(listOf("shell", "run-as", TESTED_APP, "rm", "-rf", "\"${coverageDir}\"")), anyOrNull())
+      verify(mockDeviceController).execute(eq(listOf("shell", "run-as", TESTED_APP, "mkdir", "-p", "\"${coverageDir}\"")), anyOrNull())
+      verify(mockDeviceController).execute(eq(listOf("shell", "mkdir", "-p", "\"${tmpDir}\"")), anyOrNull())
+      verify(mockDeviceController).execute(eq(listOf("shell", "chmod", "777", "\"${tmpDir}\"")), anyOrNull())
+      verify(mockDeviceController).execute(eq(listOf("shell", "run-as", TESTED_APP, "ls", "\"${coverageDir}\"", "|", "cat")), anyOrNull())
+
+      verify(mockDeviceController)
+        .execute(
+          eq(listOf("shell", "run-as", TESTED_APP, "cat", "\"${coverageDir}/coverage1.ec\"", ">", "\"${tmpDir}/coverage1.ec\"")),
+          anyOrNull(),
+        )
+      verify(mockDeviceController).pull(createTestArtifact("${tmpDir}/coverage1.ec", "${outputDir}/coverage1.ec"))
+
+      verify(mockDeviceController)
+        .execute(
+          eq(listOf("shell", "run-as", TESTED_APP, "cat", "\"${coverageDir}/coverage2.ec\"", ">", "\"${tmpDir}/coverage2.ec\"")),
+          anyOrNull(),
+        )
+      verify(mockDeviceController).pull(createTestArtifact("${tmpDir}/coverage2.ec", "${outputDir}/coverage2.ec"))
+
+      verify(mockDeviceController).execute(eq(listOf("shell", "rm", "-rf", "\"${tmpDir}\"")), anyOrNull())
+      verifyNoMoreInteractions()
+    }
   }
 }
