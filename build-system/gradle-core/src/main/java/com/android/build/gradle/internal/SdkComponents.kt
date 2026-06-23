@@ -397,6 +397,8 @@ abstract class BuildToolsExecutableInput : UsesSdkComponentsBuildService {
 
   fun aapt2ExecutableProvider(): Provider<RegularFile> = sdkLoader().flatMap { it.aapt2ExecutableProvider }
 
+  fun sdkDirectoryProvider(): Provider<Directory> = sdkLoader().flatMap { it.sdkDirectoryProvider }
+
   fun supportBlasLibFolderProvider(): Provider<File> =
     sdkLoader().map {
       it.sdkLoadStrategy.getSupportBlasLibFolder()

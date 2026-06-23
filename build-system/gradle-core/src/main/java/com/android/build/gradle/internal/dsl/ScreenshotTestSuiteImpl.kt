@@ -60,7 +60,9 @@ constructor(
     get() = screenshotSuite.targetVariants
 
   init {
-    // Automatically populate default engines and inputs
+    // Automatically populate default targets, engines and inputs
+    targets.create("default")
+
     useJunitEngine {
       includeEngines.add(SCREENSHOT_TEST_ENGINE_ID)
       inputs.addAll(
@@ -72,6 +74,9 @@ constructor(
           AgpTestSuiteInputParameters.R_CLASS_JARS,
           AgpTestSuiteInputParameters.ANDROID_RES_DIRS,
           AgpTestSuiteInputParameters.RESOURCES_AP_ARCHIVE,
+          AgpTestSuiteInputParameters.LAYOUTLIB_CLASSPATH,
+          AgpTestSuiteInputParameters.LAYOUTLIB_DATA_DIR,
+          AgpTestSuiteInputParameters.SDK_FONTS_DIR,
         )
       )
 

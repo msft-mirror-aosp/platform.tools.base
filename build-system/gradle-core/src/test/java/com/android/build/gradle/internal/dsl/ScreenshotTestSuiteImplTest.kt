@@ -35,8 +35,8 @@ class ScreenshotTestSuiteImplTest {
     val suite =
       dslServices.newDecoratedInstance(ScreenshotAgpTestSuiteImpl::class.java, dslSuite, dslServices, dependencyHandler, providers)
 
-    // 1. Assert targets: no default targets are created
-    assertThat(suite.targets.names).isEmpty()
+    // 1. Assert targets: default targets are created
+    assertThat(suite.targets.names).containsExactly("default")
 
     // 2. Assert JUnit engine defaults: "preview-screenshot-test-engine" is included
     assertThat(suite.useJunitEngine.includeEngines).containsExactly("preview-screenshot-test-engine")
@@ -51,6 +51,9 @@ class ScreenshotTestSuiteImplTest {
         AgpTestSuiteInputParameters.R_CLASS_JARS,
         AgpTestSuiteInputParameters.ANDROID_RES_DIRS,
         AgpTestSuiteInputParameters.RESOURCES_AP_ARCHIVE,
+        AgpTestSuiteInputParameters.LAYOUTLIB_CLASSPATH,
+        AgpTestSuiteInputParameters.LAYOUTLIB_DATA_DIR,
+        AgpTestSuiteInputParameters.SDK_FONTS_DIR,
       )
     assertThat(suite.useJunitEngine.inputs).containsExactlyElementsIn(expectedInputs)
   }
@@ -117,6 +120,6 @@ class ScreenshotTestSuiteImplTest {
       )
 
     // Instantiation should succeed even if configurations is unsupported
-    assertThat(suite.targets.names).isEmpty()
+    assertThat(suite.targets.names).containsExactly("default")
   }
 }

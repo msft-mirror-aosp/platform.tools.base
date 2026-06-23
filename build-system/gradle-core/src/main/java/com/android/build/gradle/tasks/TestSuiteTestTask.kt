@@ -652,6 +652,67 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
             task.engineInputParameters.add(AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.MAIN_CLASSPATH, mainClasspath))
           }
 
+          AgpTestSuiteInputParameters.SDK_FONTS_DIR -> {
+            task.engineInputParameters.add(
+              AgpTestSuiteInputParameter(
+                AgpTestSuiteInputParameters.SDK_FONTS_DIR,
+                task.project.files(task.buildTools.sdkDirectoryProvider().map { it.dir("fonts") }),
+              )
+            )
+          }
+
+          AgpTestSuiteInputParameters.LAYOUTLIB_DATA_DIR -> {
+            val layoutlibDataDir = task.project.objects.directoryProperty()
+
+            creationConfig.sourceContainers.forEach { sc ->
+              if (sc.source is TestSuiteSourceSet.HostJar) {
+                val extractedLayoutlib =
+                  sc.suiteSourceClasspath.hostRuntimeClasspath.incoming
+                    .artifactView { config ->
+                      config.attributes { attr ->
+                        attr.attribute(
+                          com.android.build.gradle.internal.publishing.AndroidArtifacts.ARTIFACT_TYPE,
+                          com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.EXTRACTED_LAYOUTLIB.type,
+                        )
+                      }
+                      config.componentFilter { id ->
+                        id is org.gradle.api.artifacts.component.ModuleComponentIdentifier &&
+                          id.group == "com.android.tools.layoutlib" &&
+                          id.module == "layoutlib-runtime"
+                      }
+                    }
+                    .artifacts
+                    .artifactFiles
+
+                // We map the FileCollection to a provider of the single valid directory to avoid passing multiple paths
+                layoutlibDataDir.set(
+                  task.project.layout.dir(
+                    extractedLayoutlib.elements.map { elements ->
+                      val dir = elements.firstOrNull { it.asFile.isDirectory && it.asFile.resolve("data").exists() }?.asFile
+                      requireNotNull(dir) { "Could not find extracted layoutlib-runtime with data directory" }
+                      dir
+                    }
+                  )
+                )
+              }
+            }
+            task.engineInputParameters.add(
+              AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.LAYOUTLIB_DATA_DIR, task.project.files(layoutlibDataDir))
+            )
+          }
+
+          AgpTestSuiteInputParameters.LAYOUTLIB_CLASSPATH -> {
+            val layoutlibClasspath =
+              task.project.objects.fileCollection().also { fc ->
+                creationConfig.sourceContainers.forEach { sc ->
+                  if (sc.source is TestSuiteSourceSet.HostJar) {
+                    fc.from(sc.suiteSourceClasspath.hostRuntimeClasspath)
+                  }
+                }
+              }
+            task.engineInputParameters.add(AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.LAYOUTLIB_CLASSPATH, layoutlibClasspath))
+          }
+
           AgpTestSuiteInputParameters.ADB_EXECUTABLE -> {
             // do nothing so far, we always do it but it might change in the near future.
           }
