@@ -27,6 +27,7 @@ build --verbose_failures
 common --noincompatible_disallow_empty_glob
 # TODO(b/416777191) PerfgateDataCollector relies on zipped test outputs.
 test --zip_undeclared_test_outputs
+common --enable_workspace
 
 # Needed by rules_android.
 common --experimental_google_legacy_api

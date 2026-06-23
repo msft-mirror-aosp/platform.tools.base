@@ -141,7 +141,7 @@ def define_env(env, var, value, msg=None):
 
 
 def find_workspace(path):
-  if os.path.isfile(os.path.join(path, 'MODULE.bazel')):
+  if os.path.isfile(os.path.join(path, 'WORKSPACE')):
     return path
   else:
     parent = os.path.dirname(path)
