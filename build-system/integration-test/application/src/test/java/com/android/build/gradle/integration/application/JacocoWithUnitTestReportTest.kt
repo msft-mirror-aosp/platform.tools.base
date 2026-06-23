@@ -22,6 +22,8 @@ import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.options.BooleanOption
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth.assertThat
+import com.google.gson.Gson
+import com.google.gson.annotations.SerializedName
 import java.io.File
 import org.gradle.tooling.BuildException
 import org.junit.Before
@@ -108,12 +110,124 @@ class JacocoWithUnitTestReportTest(private val isJacocoPluginAppliedFromBuildFil
     val expectedSourceJson = sourceFilesDir.walk().filter { it.extension == "js" }.toList()
     assertThat(expectedSourceJson.map { it.name }).containsAtLeast("MainActivity.java.json.js", "someKotlinCode.kt.json.js")
 
-    val reportDataContent = File(reportDir, "data/report-data.js").readText()
-    assertThat(reportDataContent).contains("const fullReport = ")
-    // Should contain the project name, variant name and test suite coverages metadata
-    assertThat(reportDataContent).contains("\"debug\"")
-    assertThat(reportDataContent).contains("\"testSuiteCoverages\"")
-    assertThat(reportDataContent).contains("\"name\"")
+    val report = parseReportJs<TestCoverageReport>(File(reportDir, "data/report-data.js"))
+
+    assertThat(report.name).isEqualTo("unitTesting")
+    assertThat(report.timeStamp).isNotEmpty()
+    assertThat(report.numberOfTestSuites).isEqualTo(1)
+    assertThat(report.numberOfModules).isEqualTo(1)
+    assertThat(report.numberOfPackages).isEqualTo(1)
+    assertThat(report.numberOfClasses).isEqualTo(3)
+
+    // Top-level testSuiteCoverages
+    assertThat(report.testSuiteCoverages).hasSize(1)
+    val topSuite = report.testSuiteCoverages.single { it.name == "UnitTest" }
+    assertThat(topSuite.variantCoverages).hasSize(1)
+    verifyVariantCoverage(
+      topSuite.variantCoverages.single { it.name == "debug" },
+      instPercent = 88,
+      instCovered = 23,
+      instTotal = 26,
+      branchPercent = 0,
+    )
+
+    // Modules
+    assertThat(report.modules).hasSize(1)
+    val appModule = report.modules.single { it.name == ":" }
+
+    // Module testSuiteCoverages
+    assertThat(appModule.testSuiteCoverages).hasSize(1)
+    val moduleSuite = appModule.testSuiteCoverages.single { it.name == "UnitTest" }
+    verifyVariantCoverage(
+      moduleSuite.variantCoverages.single { it.name == "debug" },
+      instPercent = 88,
+      instCovered = 23,
+      instTotal = 26,
+      branchPercent = null,
+    )
+
+    // Packages
+    assertThat(appModule.packages).hasSize(1)
+    val appPackage = appModule.packages.single { it.name == "com.android.tests" }
+    assertThat(appPackage.moduleName).isEqualTo(":")
+
+    // Package testSuiteCoverages
+    assertThat(appPackage.testSuiteCoverages).hasSize(1)
+    val packageSuite = appPackage.testSuiteCoverages.single { it.name == "UnitTest" }
+    verifyVariantCoverage(
+      packageSuite.variantCoverages.single { it.name == "debug" },
+      instPercent = 88,
+      instCovered = 23,
+      instTotal = 26,
+      branchPercent = null,
+    )
+
+    // Classes
+    assertThat(appPackage.classes).hasSize(3)
+
+    // Foo Class
+    val fooClass = appPackage.classes.single { it.name == "Foo" }
+    assertThat(fooClass.packageName).isEqualTo("com.android.tests")
+    assertThat(fooClass.sourceFileName).isEqualTo("Foo.java")
+    assertThat(fooClass.testSuiteCoverages).hasSize(1)
+    val fooSuite = fooClass.testSuiteCoverages.single { it.name == "UnitTest" }
+    verifyVariantCoverage(
+      fooSuite.variantCoverages.single { it.name == "debug" },
+      instPercent = 100,
+      instCovered = 5,
+      instTotal = 5,
+      branchPercent = null,
+    )
+    assertThat(fooClass.variantSourceFilePaths)
+      .containsExactly(TestVariantSourceFilePath("debug", "src/main/java/com.android.tests/Foo.java"))
+    assertThat(fooClass.methods).hasSize(2)
+    val fooInitMethod = fooClass.methods.single { it.name == "<init>()V" }
+    assertThat(fooInitMethod.variantLineNumbers).containsExactly(TestVariantLineNumber("debug", 3))
+    val fooFooMethod = fooClass.methods.single { it.name == "foo()Ljava/lang/String;" }
+    assertThat(fooFooMethod.variantLineNumbers).containsExactly(TestVariantLineNumber("debug", 5))
+
+    // MainActivity Class
+    val mainActivityClass = appPackage.classes.single { it.name == "MainActivity" }
+    assertThat(mainActivityClass.packageName).isEqualTo("com.android.tests")
+    assertThat(mainActivityClass.sourceFileName).isEqualTo("MainActivity.java")
+    assertThat(mainActivityClass.testSuiteCoverages).hasSize(1)
+    val mainSuite = mainActivityClass.testSuiteCoverages.single { it.name == "UnitTest" }
+    verifyVariantCoverage(
+      mainSuite.variantCoverages.single { it.name == "debug" },
+      instPercent = 0,
+      instCovered = 0,
+      instTotal = 3,
+      branchPercent = null,
+    )
+    assertThat(mainActivityClass.variantSourceFilePaths)
+      .containsExactly(TestVariantSourceFilePath("debug", "src/main/java/com.android.tests/MainActivity.java"))
+    assertThat(mainActivityClass.methods).hasSize(1)
+    val mainInitMethod = mainActivityClass.methods.single { it.name == "<init>()V" }
+    assertThat(mainInitMethod.variantLineNumbers).containsExactly(TestVariantLineNumber("debug", 5))
+
+    // KotlinDataClass Class
+    val kotlinDataClass = appPackage.classes.single { it.name == "KotlinDataClass" }
+    assertThat(kotlinDataClass.packageName).isEqualTo("com.android.tests")
+    assertThat(kotlinDataClass.sourceFileName).isEqualTo("someKotlinCode.kt")
+    assertThat(kotlinDataClass.testSuiteCoverages).hasSize(1)
+    val kotlinSuite = kotlinDataClass.testSuiteCoverages.single { it.name == "UnitTest" }
+    verifyVariantCoverage(
+      kotlinSuite.variantCoverages.single { it.name == "debug" },
+      instPercent = 100,
+      instCovered = 18,
+      instTotal = 18,
+      branchPercent = null,
+    )
+    assertThat(kotlinDataClass.variantSourceFilePaths)
+      .containsExactly(TestVariantSourceFilePath("debug", "src/main/java/com.android.tests/someKotlinCode.kt"))
+    assertThat(kotlinDataClass.methods).hasSize(3)
+    val kotlinInitMethod = kotlinDataClass.methods.single { it.name == "<init>(Ljava/lang/String;)V" }
+    assertThat(kotlinInitMethod.variantLineNumbers).containsExactly(TestVariantLineNumber("debug", 19))
+    val kotlinInitMarkerMethod =
+      kotlinDataClass.methods.single { it.name == "<init>(Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V" }
+    assertThat(kotlinInitMarkerMethod.variantLineNumbers).containsExactly(TestVariantLineNumber("debug", 19))
+    val kotlinGetNameMethod = kotlinDataClass.methods.single { it.name == "getName()Ljava/lang/String;" }
+    assertThat(kotlinGetNameMethod.variantLineNumbers).containsExactly(TestVariantLineNumber("debug", 19))
   }
 
   // Regression test for b/188953818.
@@ -129,4 +243,79 @@ class JacocoWithUnitTestReportTest(private val isJacocoPluginAppliedFromBuildFil
     // code coverage data for the release build type.
     testProject.execute("createReleaseUnitTestCoverageReport")
   }
+
+  private inline fun <reified T> parseReportJs(file: File): T {
+    val text = file.readText().trim()
+    assertThat(text).startsWith("const fullReport = ")
+    assertThat(text).endsWith(";")
+
+    val json = text.removePrefix("const fullReport = ").trim().removeSuffix(";").trim()
+    return Gson().fromJson(json, T::class.java)
+  }
+
+  private fun verifyVariantCoverage(
+    variant: TestVariantCoverage,
+    variantName: String = "debug",
+    instPercent: Int,
+    instCovered: Int,
+    instTotal: Int,
+    branchPercent: Int? = 0,
+    branchCovered: Int = 0,
+    branchTotal: Int = 0,
+  ) {
+    assertThat(variant.name).isEqualTo(variantName)
+    assertThat(variant.instruction.percent).isEqualTo(instPercent)
+    assertThat(variant.instruction.covered).isEqualTo(instCovered)
+    assertThat(variant.instruction.total).isEqualTo(instTotal)
+    assertThat(variant.branch.percent).isEqualTo(branchPercent)
+    assertThat(variant.branch.covered).isEqualTo(branchCovered)
+    assertThat(variant.branch.total).isEqualTo(branchTotal)
+  }
+
+  // --- Data classes for parsing JSON from report files ---
+
+  private data class TestCoverageReport(
+    val name: String,
+    val timeStamp: String,
+    val modules: List<TestModuleReport>,
+    val testSuiteCoverages: List<TestSuiteCoverageReport>,
+    @SerializedName("numberOfTestsSuites") val numberOfTestSuites: Int,
+    val numberOfModules: Int,
+    val numberOfPackages: Int,
+    val numberOfClasses: Int,
+  )
+
+  private data class TestModuleReport(
+    val name: String,
+    val testSuiteCoverages: List<TestSuiteCoverageReport>,
+    val packages: List<TestPackageReport>,
+  )
+
+  private data class TestSuiteCoverageReport(val name: String, val variantCoverages: List<TestVariantCoverage>)
+
+  private data class TestPackageReport(
+    val name: String,
+    val moduleName: String,
+    val testSuiteCoverages: List<TestSuiteCoverageReport>,
+    val classes: List<TestClassReport>,
+  )
+
+  private data class TestClassReport(
+    val name: String,
+    val packageName: String,
+    val sourceFileName: String,
+    val testSuiteCoverages: List<TestSuiteCoverageReport>,
+    val variantSourceFilePaths: List<TestVariantSourceFilePath>,
+    val methods: List<TestMethodReport>,
+  )
+
+  private data class TestVariantSourceFilePath(val variantName: String, val path: String)
+
+  private data class TestMethodReport(val name: String, val variantLineNumbers: List<TestVariantLineNumber>)
+
+  private data class TestVariantLineNumber(val variantName: String, val lineNumber: Int)
+
+  private data class TestVariantCoverage(val name: String, val instruction: TestCoverageInfo, val branch: TestCoverageInfo)
+
+  private data class TestCoverageInfo(val percent: Int?, val covered: Int, val total: Int)
 }
