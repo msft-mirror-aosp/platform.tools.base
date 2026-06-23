@@ -571,6 +571,13 @@ const CoverageReportApp = {
             .replace(/'/g, "&#39;");
     },
 
+    getDefaultTestSuite() {
+        if (!this.fullReport) return 'Aggregated';
+        const testSuites = this.fullReport.testSuiteCoverages || [];
+        const hasAggregated = testSuites.some(ts => ts.name === 'Aggregated');
+        return (hasAggregated || testSuites.length === 0) ? 'Aggregated' : testSuites[0].name;
+    },
+
     state: {
         viewMode: 'flat', // 'flat' or 'tree'
         currentView: 'modules', // 'modules', 'packages', 'classes'
@@ -588,6 +595,7 @@ const CoverageReportApp = {
 
     init(fullReport) {
         this.fullReport = fullReport;
+        this.state.filters.testSuite = this.getDefaultTestSuite();
         this.cacheDOMElements();
         this.populateHeaderInfo();
         this.populateGlobalStats();
@@ -721,7 +729,9 @@ const CoverageReportApp = {
     },
 
     getAggregatedVariants() {
-        const agg = this.fullReport.testSuiteCoverages ? this.fullReport.testSuiteCoverages.find(ts => ts.name === 'Aggregated') : null;
+        if (!this.fullReport.testSuiteCoverages) return [];
+        const testSuites = this.fullReport.testSuiteCoverages;
+        const agg = testSuites.find(ts => ts.name === 'Aggregated') || testSuites[0];
         return agg ? agg.variantCoverages : [];
     },
 
@@ -1432,7 +1442,7 @@ const CoverageReportApp = {
         });
 
         UIUtils.buildActionDropdown(this.elements.testSuiteFilterDropdown, testSuiteOptions, filters.testSuite, (newVal) => {
-            filters.testSuite = newVal || 'Aggregated';
+            filters.testSuite = newVal || this.getDefaultTestSuite();
             this.updateFilterButtons();
             this.render(true);
             Navigation.push();
@@ -1714,7 +1724,7 @@ const CoverageReportApp = {
 
     getEffectiveRoot() {
         const { filters } = this.state;
-        const suiteName = filters.testSuite || 'Aggregated';
+        const suiteName = filters.testSuite || this.getDefaultTestSuite();
         const suite = this.fullReport.testSuiteCoverages ? this.fullReport.testSuiteCoverages.find(ts => ts.name === suiteName) : null;
         return {
             ...this.fullReport,

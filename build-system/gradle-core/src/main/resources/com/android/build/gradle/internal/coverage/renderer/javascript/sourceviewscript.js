@@ -598,7 +598,8 @@ const SourceViewApp = {
 
     /**
      * Helper to select the correct coverage object for a given variant group.
-     * Prioritizes the active Test Suite (from context). Falls back to Aggregated.
+     * Prioritizes the active Test Suite (from context). Falls back to Aggregated,
+     * or the first available test suite if Aggregated is not present.
      */
     resolveCoverageForGroup(variantGroup) {
         if (!variantGroup || !variantGroup.testSuiteCoverages) return null;
