@@ -2,17 +2,17 @@
 WORKSPACE="$(pwd)"
 
 if [[ "$OSTYPE" = "linux"* && ("$(arch)" == "x86_64" || "$(arch)" == "i386") ]]; then
-  BAZEL="$WORKSPACE/prebuilts/bazel/linux-x86_64/bazel"
+  PLATFORM="linux-x86_64"
   JDK_HOME="${WORKSPACE}/prebuilts/studio/jdk/jbr-next/linux/bin/"
   PYTHON3_HOME="${WORKSPACE}/prebuilts/python/linux-x86/bin/"
   ANDROID_HOME='$WORKSPACE_ROOT/prebuilts/studio/sdk/linux'
 elif [[ "$OSTYPE" = "darwin"* && ("$(arch)" == "x86_64" || "$(arch)" == "i386") ]]; then
-  BAZEL="$WORKSPACE/prebuilts/bazel/darwin-x86_64/bazel"
+  PLATFORM="darwin-x86_64"
   JDK_HOME="${WORKSPACE}/prebuilts/studio/jdk/jbr-next/mac/Contents/Home/bin/"
   PYTHON3_HOME="${WORKSPACE}/prebuilts/python/mac-x86/bin/"
   ANDROID_HOME='$WORKSPACE_ROOT/prebuilts/studio/sdk/darwin'
 elif [[ "$OSTYPE" = "darwin"* && "$(arch)" == "arm64" ]]; then
-  BAZEL="$WORKSPACE/prebuilts/bazel/darwin-x86_64/bazel"
+  PLATFORM="darwin-arm64"
   JDK_HOME="${WORKSPACE}/prebuilts/studio/jdk/jbr-next/mac-arm64/Contents/Home/bin/"
   PYTHON3_HOME="${WORKSPACE}/prebuilts/python/mac-arm64/bin/"
   ANDROID_HOME='$WORKSPACE_ROOT/prebuilts/studio/sdk/darwin'
@@ -42,6 +42,7 @@ export PATH="${JDK_HOME}:${PYTHON3_HOME}:${PATH}"
 # https://googleplex-android.googlesource.com/platform/tools/base/+/0a8bc01ca5b48eb884c22d4a811af9c15e784578
 export ANDROID_HOME
 
-"$BAZEL" run \
+BAZELISK="$WORKSPACE/prebuilts/tools/$PLATFORM/bazel/bazelisk"
+"$BAZELISK" run \
   --config=ci \
   //tools/base/bazel/ci -- $1

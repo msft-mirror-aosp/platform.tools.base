@@ -26,9 +26,6 @@ _ARCH_ALIAS = {
     'aarch64': 'arm64',
 }
 
-_BAZEL_PLATFORM_REDIRECT = {
-  'darwin-arm64': 'darwin-x86_64',
-}
 
 class CI:
   """Continuous Integration wrapper.
@@ -116,14 +113,13 @@ def _get_bazel_path() -> str:
   host_os = platform.system().lower()
   host_arch = platform.machine().lower()
   host_arch = _ARCH_ALIAS.get(host_arch, host_arch)
-  bazel_platform = f'{host_os}-{host_arch}'
-  bazel_platform = _BAZEL_PLATFORM_REDIRECT.get(bazel_platform, bazel_platform)
   bazel_path = os.path.join(
       find_workspace(),
       'prebuilts',
+      'tools',
+      f'{host_os}-{host_arch}',
       'bazel',
-      bazel_platform,
-      'bazel.exe' if host_os == 'windows' else 'bazel',
+      'bazelisk.exe' if host_os == 'windows' else 'bazelisk',
   )
   return bazel_path
 
