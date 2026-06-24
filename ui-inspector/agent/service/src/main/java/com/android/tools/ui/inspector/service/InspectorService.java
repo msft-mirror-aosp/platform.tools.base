@@ -41,9 +41,6 @@ public class InspectorService {
             "com.android.tools.ui.inspector.payload.InspectorLauncher";
     private static final String START_METHOD_NAME = "start";
 
-    // TODO: Once we implement the Protobuf protocol for communication, we should adopt a strategy
-    // similar to AppInspectionService to report bootstrap failures back to the host in a structured
-    // way rather than relying on log scraping or simple return codes.
     /**
      * Initializes the inspector service, loads the payload JAR, and launches the inspector payload.
      *

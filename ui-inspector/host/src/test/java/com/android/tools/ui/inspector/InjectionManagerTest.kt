@@ -66,6 +66,7 @@ class InjectionManagerTest {
 
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "settings put global debug_view_attributes 1", "")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "date +\"%m-%d %H:%M:%S.000\"", "06-24 15:44:32.000\n")
   }
 
   @Test
@@ -157,6 +158,53 @@ class InjectionManagerTest {
         "/data/local/tmp/lib_ui_inspector_payload.jar",
         "/data/local/tmp/lib_ui_inspector_service.jar",
       )
+  }
+
+  @Test
+  fun testInjectAndAttach_FastFailLogcatDiagnostics() = runTest {
+    val injectionManager = InjectionManager(testSession, deviceSerial, packageName, agentPathResolver, dummyJar, dummyPayload)
+    val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
+
+    // Mock expected shell commands for the injection flow
+    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pidof $packageName", "1234\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
+
+    val setupCmd =
+      "run-as $packageName sh -c '" +
+        "rm -f lib_ui_inspector_agent.so lib_ui_inspector_service.jar lib_ui_inspector_payload.jar && " +
+        "cat /data/local/tmp/lib_ui_inspector_agent.so > lib_ui_inspector_agent.so && " +
+        "cat /data/local/tmp/lib_ui_inspector_service.jar > lib_ui_inspector_service.jar && " +
+        "cat /data/local/tmp/lib_ui_inspector_payload.jar > lib_ui_inspector_payload.jar && " +
+        "chmod 444 lib_ui_inspector_agent.so && " +
+        "chmod 444 lib_ui_inspector_service.jar && " +
+        "chmod 444 lib_ui_inspector_payload.jar'"
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, setupCmd, "")
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      "cmd activity attach-agent $packageName \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;1234\"",
+      "",
+    )
+
+    // 1. Configure the socket check to fail (socket is not created by the agent)
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "cat /proc/net/unix | grep ui_inspector_1234 || true", "")
+
+    // 2. Configure logcat command to return a mock agent crash log
+    val logcatCmd = "logcat -d -t '06-24 15:44:32.000' --pid=1234 *:E"
+    val mockErrorLog =
+      "06-24 15:44:32.764  7191  7191 E studio.ui-inspector.InspectorService: Error in InspectorService initialization\n" +
+        "06-24 15:44:32.764  7191  7191 E studio.ui-inspector.InspectorService: java.lang.RuntimeException: Simulated bootstrap failure"
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, logcatCmd, mockErrorLog)
+
+    try {
+      injectionManager.injectAndAttach()
+      fail("Expected IllegalStateException due to agent bootstrap failure")
+    } catch (e: IllegalStateException) {
+      assertThat(e.message).contains("Failed to attach UI Inspector agent. Agent error in logcat:")
+      assertThat(e.message).contains("Error in InspectorService initialization")
+      assertThat(e.message).contains("java.lang.RuntimeException: Simulated bootstrap failure")
+    }
   }
 
   @Test
