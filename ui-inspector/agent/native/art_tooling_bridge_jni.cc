@@ -76,3 +76,36 @@ Java_com_android_tools_ui_inspector_service_ArtToolingBridge_nativeRegisterExitH
 }
 
 }  // extern "C"
+
+namespace ui_inspector {
+
+// Explicitly registers JNI native methods for the ArtToolingBridge class.
+// This is required because the agent is loaded dynamically during
+// Agent_OnAttach, before the JVM registers JNI symbols for dynamic lookup.
+//
+// IMPORTANT: The method names and signatures in the JNINativeMethod array below
+// MUST match the native declarations in ArtToolingBridge.java EXACTLY. If any
+// native method in ArtToolingBridge.java is updated, this mapping must be
+// updated accordingly.
+int RegisterArtToolingBridgeNatives(JNIEnv* env) {
+  jclass clazz =
+      env->FindClass("com/android/tools/ui/inspector/service/ArtToolingBridge");
+  if (clazz == nullptr) {
+    return JNI_ERR;
+  }
+  JNINativeMethod methods[] = {
+      {(char*)"nativeFindInstances",
+       (char*)"(JLjava/lang/Class;)[Ljava/lang/Object;",
+       (void*)&Java_com_android_tools_ui_inspector_service_ArtToolingBridge_nativeFindInstances},
+      {(char*)"nativeRegisterEntryHook",
+       (char*)"(JLjava/lang/Class;Ljava/lang/String;)V",
+       (void*)&Java_com_android_tools_ui_inspector_service_ArtToolingBridge_nativeRegisterEntryHook},
+      {(char*)"nativeRegisterExitHook",
+       (char*)"(JLjava/lang/Class;Ljava/lang/String;)V",
+       (void*)&Java_com_android_tools_ui_inspector_service_ArtToolingBridge_nativeRegisterExitHook},
+  };
+  return env->RegisterNatives(clazz, methods,
+                              sizeof(methods) / sizeof(methods[0]));
+}
+
+}  // namespace ui_inspector

@@ -44,6 +44,9 @@
 
 namespace ui_inspector {
 
+// Explicitly registers JNI native methods for the ArtToolingBridge class.
+int RegisterArtToolingBridgeNatives(JNIEnv* env);
+
 class JvmtiArtTooling {
  public:
   JvmtiArtTooling(jvmtiEnv* jvmti) : jvmti_(jvmti), next_tag_(1) {

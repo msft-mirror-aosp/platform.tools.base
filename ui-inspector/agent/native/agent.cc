@@ -100,11 +100,30 @@ extern "C" JNIEXPORT jint JNICALL Agent_OnAttach(JavaVM* vm, char* options,
     return JNI_OK;
   }
 
+  // Register the ArtToolingBridge JNI methods explicitly. Since we invoke the
+  // Java service's initialize() method synchronously during Agent_OnAttach, the
+  // JVMTI agent loading process is not yet complete. During this attachment
+  // window, the JVM JNI symbol linker has not yet registered this agent library
+  // for automatic dynamic resolution. Explicitly calling RegisterNatives here
+  // binds the native methods immediately, preventing UnsatisfiedLinkError.
+  if (ui_inspector::RegisterArtToolingBridgeNatives(env) != JNI_OK) {
+    profiler::Log::E(kLogTag,
+                     "Failed to register ArtToolingBridge native methods");
+    if (env->ExceptionCheck()) {
+      env->ExceptionDescribe();
+      env->ExceptionClear();
+    }
+    return JNI_OK;
+  }
+
   // Find InspectorService
   jclass serviceClass = env->FindClass(kInspectorServiceClassName);
   if (env->ExceptionCheck() || serviceClass == nullptr) {
     profiler::Log::E(kLogTag, "Failed to find %s", kInspectorServiceClassName);
-    env->ExceptionDescribe();
+    if (env->ExceptionCheck()) {
+      env->ExceptionDescribe();
+      env->ExceptionClear();
+    }
     return JNI_OK;
   }
 
@@ -114,6 +133,10 @@ extern "C" JNIEXPORT jint JNICALL Agent_OnAttach(JavaVM* vm, char* options,
   if (env->ExceptionCheck() || initMethod == nullptr) {
     profiler::Log::E(kLogTag, "Failed to find %s method",
                      kInitializeMethodName);
+    if (env->ExceptionCheck()) {
+      env->ExceptionDescribe();
+      env->ExceptionClear();
+    }
     return JNI_OK;
   }
 
