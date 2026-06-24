@@ -21,12 +21,27 @@ import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.options.BooleanOption
+import com.android.testutils.TestUtils
+import com.android.tools.bazel.avd.Emulator
 import com.google.common.truth.Truth
 import java.io.File
+import org.junit.ClassRule
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.ExternalResource
 
 class MixedTestSuiteTest {
+
+  companion object {
+    @ClassRule
+    @JvmField
+    val emulator =
+      if (TestUtils.runningFromBazel()) {
+        Emulator(System.getProperty("EMULATOR_SCRIPT_PATH"), 5554)
+      } else {
+        object : ExternalResource() {}
+      }
+  }
 
   @get:Rule
   val rule =

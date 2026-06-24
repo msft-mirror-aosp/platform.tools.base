@@ -226,21 +226,29 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
   }
 
   private fun provisionDevicesAndExecute(onDevicesReady: (onlineDevices: List<DeviceTestTarget>) -> Unit) {
-    provisionConnectedDevicesAndExecute { connectedDevices ->
-      provisionManagedDevicesAndExecute { managedDevices -> onDevicesReady(connectedDevices + managedDevices) }
+    provisionConnectedDevicesAndExecute { connectedDevices, deviceException ->
+      provisionManagedDevicesAndExecute { managedDevices ->
+        val onlineDevices = connectedDevices + managedDevices
+        if (onlineDevices.isEmpty()) {
+          throw deviceException ?: DeviceException("No connected devices!")
+        }
+        onDevicesReady(onlineDevices)
+      }
     }
   }
 
-  private fun provisionConnectedDevicesAndExecute(onDevicesReady: (onlineDevices: List<DeviceTestTarget>) -> Unit) {
+  private fun provisionConnectedDevicesAndExecute(
+    onDevicesReady: (onlineDevices: List<DeviceTestTarget>, exception: DeviceException?) -> Unit
+  ) {
     val deviceProvider = deviceProviderFactory.getDeviceProvider(buildTools.adbExecutable(), androidDeviceSerials.orNull)
     try {
       deviceProvider.use {
         val targets =
           deviceProvider.devices.map { connector -> DeviceTestTarget(connector.serialNumber, DeviceConfigProviderImpl(connector)) }
-        onDevicesReady(targets)
+        onDevicesReady(targets, null)
       }
-    } catch (_: DeviceException) {
-      onDevicesReady(listOf())
+    } catch (e: DeviceException) {
+      onDevicesReady(listOf(), e)
     }
   }
 
