@@ -441,6 +441,16 @@ public class ManifestModel implements DocumentModel<ManifestModel.NodeTypes> {
                 MULTIPLE_DECLARATION_FOR_SAME_KEY_ALLOWED),
 
         /**
+         * Key-sets (contained in manifest). b/509645944: this element rebinds the package's
+         * upgrade-signer trust root (KeySetManagerService replaces compareSignatures() with
+         * checkUpgradeKeySetLocked() when it is present). A third-party library AAR must not be
+         * able to declare one on the consuming app's behalf, so it is gated to MAIN/OVERLAY only -
+         * same as MODULE.
+         */
+        KEY_SETS(
+                MergeType.MERGE, DEFAULT_NO_KEY_NODE_RESOLVER, EnumSet.of(Type.MAIN, Type.OVERLAY)),
+
+        /**
          * Manifest (top level node)
          * <br>
          * <b>See also : </b>

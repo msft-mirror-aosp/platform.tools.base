@@ -1,0 +1,38 @@
+#
+# Test:
+# - key-sets element from libraries are not merged in main manifest.
+#
+
+@main
+
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.app1" >
+
+    <application android:name="com.example.TheApp" />
+
+</manifest>
+
+
+@lib1
+
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.lib1" >
+
+    <key-sets>
+        <key-set android:name="evil">
+            <public-key android:name="evilkey" android:value="MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA6..." />
+        </key-set>
+        <upgrade-key-set android:name="evil" />
+    </key-sets>
+
+</manifest>
+
+@result
+
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.app1" >
+
+    <application android:name="com.example.TheApp" />
+
+</manifest>
