@@ -73,13 +73,13 @@ interface AsyncSupplier<V> : Supplier<ListenableFuture<V>> {
  *   the [executor] will be serialized so at most one computation is running at a given time.
  * @param isUpToDate Function that returns whether the passed value is up to date. This method should be thread-safe.
  */
-class CachedAsyncSupplier<V>
+class CachedAsyncSupplier<V : Any>
 @JvmOverloads
 constructor(private val compute: () -> V, private val isUpToDate: (value: V) -> Boolean = { _ -> true }, executor: ExecutorService) :
   AsyncSupplier<V> {
   private val executor = MoreExecutors.listeningDecorator(executor)
   private val runningComputationLock = ReentrantLock()
-  @GuardedBy("runningComputationLock") private var runningComputation: ListenableFuture<V> = Futures.immediateFuture(null)
+  @GuardedBy("runningComputationLock") private var runningComputation: ListenableFuture<V>? = null
   private val lastComputedValueLock = ReentrantReadWriteLock()
   @GuardedBy("lastComputedValueLock")
   private var lastComputedValue: V? = null
@@ -107,22 +107,24 @@ constructor(private val compute: () -> V, private val isUpToDate: (value: V) -> 
       return Futures.immediateFuture(cachedValue)
     }
 
-    return runningComputationLock.withLock {
-      if (runningComputation.isDone) {
-        runningComputation =
-          Futures.nonCancellationPropagating(
-            executor.submit(
-              Callable<V> {
-                val computedValue = compute()
-                this.lastComputedValue = computedValue
-                return@Callable computedValue
-              }
-            )
-          )
+    runningComputationLock.withLock {
+      val oldComputation = runningComputation
+      if (oldComputation != null && !oldComputation.isDone) {
+        return oldComputation
       }
 
-      // runningComputation can not be null since it's guarded by runningComputationLock
-      return runningComputation
+      val newComputation =
+        Futures.nonCancellationPropagating(
+          executor.submit(
+            Callable<V> {
+              val computedValue = compute()
+              this.lastComputedValue = computedValue
+              return@Callable computedValue
+            }
+          )
+        )
+      runningComputation = newComputation
+      return newComputation
     }
   }
 }
