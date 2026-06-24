@@ -78,6 +78,7 @@ import org.jetbrains.uast.UClassLiteralExpression
 import org.jetbrains.uast.UDeclaration
 import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UExpression
+import org.jetbrains.uast.UField
 import org.jetbrains.uast.UFile
 import org.jetbrains.uast.UForEachExpression
 import org.jetbrains.uast.UImportStatement
@@ -4717,6 +4718,38 @@ class UastTest : TestCase() {
       }
     )
     assertEquals(1, count)
+  }
+
+  fun testPropertyWithAnonymousObjectInitializer() {
+    // b/517167108
+    // https://youtrack.jetbrains.com/issue/KTIJ-39039
+    val source =
+      kotlin(
+          "test.kt",
+          """
+class SomeClass {
+    @JvmField
+    val callback: Callback.Stub = object : Callback.Stub() {}
+}
+
+interface Callback {
+    abstract class Stub
+}
+        """,
+        )
+        .indented()
+
+    check(source) { file ->
+      file.accept(
+        object : AbstractUastVisitor() {
+          override fun visitField(node: UField): Boolean {
+            val typeName = (node.type as PsiClassType).name
+            assertEquals("Stub", typeName)
+            return super.visitField(node)
+          }
+        }
+      )
+    }
   }
 
   fun testJavaAnonymousClassImportSTR() {
