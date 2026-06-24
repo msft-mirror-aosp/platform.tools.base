@@ -45,6 +45,7 @@ import com.android.build.gradle.internal.scope.InternalArtifactType.*
 import com.android.build.gradle.internal.scope.InternalMultipleArtifactType
 import com.android.build.gradle.internal.signing.SigningConfigDataProvider
 import com.android.build.gradle.internal.signing.SigningConfigProviderParams
+import com.android.build.gradle.internal.signing.SigningInputs
 import com.android.build.gradle.internal.tasks.ModuleMetadata.Companion.load
 import com.android.build.gradle.internal.tasks.NewIncrementalTask
 import com.android.build.gradle.internal.tasks.SigningConfigUtils.Companion.loadSigningConfigVersions
@@ -82,6 +83,7 @@ import java.util.stream.Stream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
+import kotlin.collections.emptyList
 import kotlin.text.Charsets.UTF_8
 import org.gradle.api.GradleException
 import org.gradle.api.file.*
@@ -99,7 +101,7 @@ import org.gradle.work.InputChanges
 
 /** Abstract task to package an Android artifact. */
 @DisableCachingByDefault
-abstract class PackageAndroidArtifact : NewIncrementalTask() {
+abstract class PackageAndroidArtifact : NewIncrementalTask(), SigningInputs {
   @get:PathSensitive(PathSensitivity.RELATIVE) @get:Incremental @get:InputFiles abstract val manifests: DirectoryProperty
 
   @get:PathSensitive(PathSensitivity.RELATIVE) @get:Incremental @get:InputFiles abstract val resourceFiles: DirectoryProperty
@@ -174,6 +176,8 @@ abstract class PackageAndroidArtifact : NewIncrementalTask() {
   @get:Optional @get:Classpath abstract val allClasspathInputFiles: ConfigurableFileCollection
 
   @get:PathSensitive(PathSensitivity.NONE) @get:InputFiles abstract val signingConfigVersions: ConfigurableFileCollection
+
+  abstract override val signingKeystoreFile: ConfigurableFileCollection
 
   @get:Input abstract val minSdkVersion: Property<Int>
 
@@ -670,6 +674,8 @@ abstract class PackageAndroidArtifact : NewIncrementalTask() {
     protected open fun finalConfigure(task: TaskT) {
       task.jniFolders.from(creationConfig.artifacts.get(STRIPPED_NATIVE_LIBS))
       task.signingConfigData = SigningConfigDataProvider.create(creationConfig)
+      creationConfig.signingConfig?.let { config -> task.signingKeystoreFile.from(config.storeFile.map { listOf(it) }.orElse(emptyList())) }
+      task.signingKeystoreFile.disallowChanges()
     }
 
     private fun getFeatureJavaResources(creationConfig: ApkCreationConfig, projectPath: String): FileCollection? {

@@ -19,7 +19,7 @@ package com.android.build.gradle.internal.tasks
 import com.android.build.api.variant.impl.SigningConfigImpl
 import com.android.build.gradle.internal.fixtures.FakeGradleProvider
 import com.android.build.gradle.internal.fixtures.FakeNoOpAnalyticsService
-import com.android.build.gradle.internal.signing.SigningConfigData
+import com.android.build.gradle.internal.signing.SigningConfigDataProvider
 import com.android.builder.signing.DefaultSigningConfig
 import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.hash.Hashing
@@ -29,6 +29,7 @@ import java.nio.file.Files
 import java.security.KeyStore
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
+import org.gradle.api.provider.Provider
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.AfterClass
 import org.junit.Assert.fail
@@ -86,7 +87,16 @@ class ValidateSigningTaskTest {
     whenever(signingConfig.keyAlias).thenReturn(FakeGradleProvider("key alias"))
     whenever(signingConfig.keyPassword).thenReturn(FakeGradleProvider("key password"))
     whenever(signingConfig.storeType).thenReturn(FakeGradleProvider(null))
-    task.signingConfigData.set(SigningConfigData.fromSigningConfig(signingConfig))
+    task.signingConfig.set(
+      createSigningConfigDataProvider(
+        name = FakeGradleProvider(signingConfig.name.orEmpty()),
+        storeFile = signingConfig.storeFile,
+        storeType = signingConfig.storeType,
+        keyAlias = signingConfig.keyAlias,
+        storePassword = signingConfig.storePassword,
+        keyPassword = signingConfig.keyPassword,
+      )
+    )
 
     assertThat(task.forceRerun()).named("forceRerun").isTrue()
     // If no config file set, throws InvalidUserDataException
@@ -109,7 +119,16 @@ class ValidateSigningTaskTest {
     whenever(signingConfig.keyAlias).thenReturn(FakeGradleProvider("key alias"))
     whenever(signingConfig.keyPassword).thenReturn(FakeGradleProvider("key password"))
     whenever(signingConfig.storeType).thenReturn(FakeGradleProvider(null))
-    task.signingConfigData.set(SigningConfigData.fromSigningConfig(signingConfig))
+    task.signingConfig.set(
+      createSigningConfigDataProvider(
+        name = FakeGradleProvider(signingConfig.name.orEmpty()),
+        storeFile = signingConfig.storeFile,
+        storeType = signingConfig.storeType,
+        keyAlias = signingConfig.keyAlias,
+        storePassword = signingConfig.storePassword,
+        keyPassword = signingConfig.keyPassword,
+      )
+    )
 
     task.dummyOutputDirectory.set(outputDirectory)
     task.analyticsService.set(FakeNoOpAnalyticsService())
@@ -136,7 +155,16 @@ class ValidateSigningTaskTest {
     whenever(signingConfig.storeType).thenReturn(FakeGradleProvider(KeyStore.getDefaultType()))
     whenever(signingConfig.hasConfig()).thenReturn(true)
 
-    task.signingConfigData.set(SigningConfigData.fromSigningConfig(signingConfig))
+    task.signingConfig.set(
+      createSigningConfigDataProvider(
+        name = FakeGradleProvider(signingConfig.name.orEmpty()),
+        storeFile = signingConfig.storeFile,
+        storeType = signingConfig.storeType,
+        keyAlias = signingConfig.keyAlias,
+        storePassword = signingConfig.storePassword,
+        keyPassword = signingConfig.keyPassword,
+      )
+    )
     task.dummyOutputDirectory.set(outputDirectory)
     task.analyticsService.set(FakeNoOpAnalyticsService())
     task.defaultDebugKeystoreLocation.set(defaultDebugKeystore)
@@ -163,5 +191,26 @@ class ValidateSigningTaskTest {
     assertThat(task.forceRerun()).named("forceRerun").isTrue()
     task.actions.single().execute(task)
     assertThat(Hashing.sha512().hashBytes(Files.readAllBytes(defaultDebugKeystore.toPath()))).isNotEqualTo(debugKeystoreHash)
+  }
+
+  private fun createSigningConfigDataProvider(
+    name: Provider<String>,
+    storeFile: Provider<File>,
+    storeType: Provider<String>,
+    keyAlias: Provider<String>,
+    storePassword: Provider<String>,
+    keyPassword: Provider<String>,
+  ): SigningConfigDataProvider {
+    val proj = project!!
+    val provider = proj.objects.newInstance(SigningConfigDataProvider::class.java)
+    with(proj.providers) {
+      provider.name.set(provider<String> { name.orNull })
+      provider.storeFile.set(provider<File> { storeFile.orNull })
+      provider.storeType.set(provider<String> { storeType.orNull })
+      provider.keyAlias.set(provider<String> { keyAlias.orNull })
+      provider.storePassword.set(provider<String> { storePassword.orNull })
+      provider.keyPassword.set(provider<String> { keyPassword.orNull })
+    }
+    return provider
   }
 }

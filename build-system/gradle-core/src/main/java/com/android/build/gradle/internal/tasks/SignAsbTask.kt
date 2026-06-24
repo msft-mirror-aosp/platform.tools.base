@@ -43,25 +43,26 @@ abstract class SignAsbTask : NonIncrementalGlobalTask() {
   @get:OutputFile abstract val outputSignedAsb: RegularFileProperty
 
   override fun doTaskAction() {
-    signingConfig.get().let {
-      it.signingConfigData.orNull?.let { signingConfig ->
-        val certificateInfo =
-          KeystoreHelper.getCertificateInfo(
-            signingConfig.storeType,
-            signingConfig.storeFile,
-            signingConfig.storePassword,
-            signingConfig.keyPassword,
-            signingConfig.keyAlias,
-          )
-        AabFlinger(
-            outputFile = outputSignedAsb.asFile.get(),
-            signerName = signingConfig.keyAlias?.uppercase(Locale.US)!!,
-            privateKey = certificateInfo.key,
-            certificates = listOf(certificateInfo.certificate),
-            minSdkVersion = 18, // So that RSA + SHA256 are used
-          )
-          .use { aabFlinger -> aabFlinger.writeZip(inputAsb.get().asFile, Deflater.DEFAULT_COMPRESSION) }
-      } ?: FileUtils.copyFile(inputAsb.get().asFile, outputSignedAsb.get().asFile)
+    val signingConfig = signingConfig.get().resolve()
+    if (signingConfig != null) {
+      val certificateInfo =
+        KeystoreHelper.getCertificateInfo(
+          signingConfig.storeType,
+          signingConfig.storeFile,
+          signingConfig.storePassword,
+          signingConfig.keyPassword,
+          signingConfig.keyAlias,
+        )
+      AabFlinger(
+          outputFile = outputSignedAsb.asFile.get(),
+          signerName = signingConfig.keyAlias?.uppercase(Locale.US)!!,
+          privateKey = certificateInfo.key,
+          certificates = listOf(certificateInfo.certificate),
+          minSdkVersion = 18, // So that RSA + SHA256 are used
+        )
+        .use { aabFlinger -> aabFlinger.writeZip(inputAsb.get().asFile, Deflater.DEFAULT_COMPRESSION) }
+    } else {
+      FileUtils.copyFile(inputAsb.get().asFile, outputSignedAsb.get().asFile)
     }
   }
 }

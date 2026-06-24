@@ -21,7 +21,7 @@ import com.android.build.api.dsl.SigningConfig
 import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.packaging.createDefaultDebugStore
 import com.android.build.gradle.internal.scope.InternalArtifactType
-import com.android.build.gradle.internal.signing.SigningConfigData
+import com.android.build.gradle.internal.signing.SigningConfigDataProvider
 import com.android.build.gradle.internal.tasks.factory.TaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.buildanalyzer.common.TaskCategory
@@ -38,7 +38,10 @@ import java.util.concurrent.ExecutionException
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.Property
+import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.work.DisableCachingByDefault
@@ -48,9 +51,10 @@ import org.gradle.work.DisableCachingByDefault
  *
  * If the keystore is the default debug keystore, it will be created if it is missing.
  *
- * This task has no explicit inputs, but is forced to run if the signing config keystore file is not present.
+ * This task has the signing config metadata (excluding passwords) as nested inputs, and a dummy output directory to allow it to be
+ * up-to-date.
  *
- * As the task has no Inputs or Outputs, enabling caching serves no useful purpose. So it is disabled by default.
+ * As enabling caching for a verification task that only checks file presence serves no useful purpose, it is disabled by default.
  */
 @DisableCachingByDefault
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.VERIFICATION)
@@ -62,29 +66,42 @@ abstract class ValidateSigningTask : NonIncrementalTask() {
    */
   @get:OutputDirectory abstract val dummyOutputDirectory: DirectoryProperty
 
-  @get:Internal abstract val signingConfigData: Property<SigningConfigData>
+  @get:Internal abstract val signingConfig: Property<SigningConfigDataProvider>
+
+  /**
+   * Exposing keyAlias as a flat input forces Gradle to resolve the custom signing config provider (if any) before this task runs, ensuring
+   * any configuration errors (e.g., reading missing files in a custom ValueSource) are caught early.
+   *
+   * We keep [signingConfig] as [Internal] to avoid input/output overlap issues since this task writes to the default debug keystore which
+   * would otherwise be tracked as a nested input.
+   */
+  @get:Input
+  @get:Optional
+  val keyAlias: Provider<String>
+    get() = signingConfig.flatMap { it.keyAlias }
 
   @get:Internal abstract val defaultDebugKeystoreLocation: Property<File>
 
-  override fun doTaskAction() =
+  override fun doTaskAction() {
+    val provider = signingConfig.get()
+    val storeFile = provider.storeFile.orNull
     when {
-      signingConfigData.get().storeFile == null ->
-        throw InvalidUserDataException("""Keystore file not set for signing config ${signingConfigData.get().name}""")
-      isSigningConfigUsingTheDefaultDebugKeystore() ->
+      storeFile == null -> throw InvalidUserDataException("""Keystore file not set for signing config ${provider.name.getOrElse("")}""")
+      isSigningConfigUsingTheDefaultDebugKeystore(provider) ->
         /* Check if the debug keystore is being used rather than directly checking if it
         already exists. A "fast path" of returning true if the store file is present would
         allow one task to return while another validate task has only partially written the
         default debug keystore file, which could lead to confusing transient build errors. */
         createDefaultDebugKeystoreIfNeeded()
-      signingConfigData.get().storeFile?.isFile == true -> {
+      storeFile.isFile -> {
         /* Keystore file is present, allow the build to continue. */
       }
       else ->
         throw InvalidUserDataException(
-          """Keystore file '${signingConfigData.get().storeFile?.absolutePath}' """ +
-            """not found for signing config '${signingConfigData.get().name}'."""
+          """Keystore file '${storeFile.absolutePath}' """ + """not found for signing config '${provider.name.getOrElse("")}'."""
         )
     }
+  }
 
   @Throws(ExecutionException::class, IOException::class)
   private fun createDefaultDebugKeystoreIfNeeded() {
@@ -109,14 +126,17 @@ abstract class ValidateSigningTask : NonIncrementalTask() {
     SynchronizedFile.getInstanceWithMultiProcessLocking(location).createIfAbsent { createDefaultDebugStore(it, this.logger) }
   }
 
-  private fun isSigningConfigUsingTheDefaultDebugKeystore(): Boolean {
-    val signingConfig = signingConfigData.get()
-    return signingConfig.name == BuilderConstants.DEBUG &&
-      signingConfig.keyAlias == DefaultSigningConfig.DEFAULT_ALIAS &&
-      signingConfig.keyPassword == DefaultSigningConfig.DEFAULT_PASSWORD &&
-      signingConfig.storePassword == DefaultSigningConfig.DEFAULT_PASSWORD &&
-      signingConfig.storeType == KeyStore.getDefaultType() &&
-      signingConfig.storeFile?.isSameFile(defaultDebugKeystoreLocation.get()) == true
+  private fun isSigningConfigUsingTheDefaultDebugKeystore(provider: SigningConfigDataProvider): Boolean {
+    val storeFileValue = provider.storeFile.orNull ?: return false
+    val defaultDebugLocation = defaultDebugKeystoreLocation.orNull ?: return false
+    if (!storeFileValue.isSameFile(defaultDebugLocation)) {
+      return false
+    }
+    return provider.name.getOrElse("") == BuilderConstants.DEBUG &&
+      provider.keyAlias.orNull == DefaultSigningConfig.DEFAULT_ALIAS &&
+      provider.keyPassword.orNull == DefaultSigningConfig.DEFAULT_PASSWORD &&
+      provider.storePassword.orNull == DefaultSigningConfig.DEFAULT_PASSWORD &&
+      provider.storeType.orNull == KeyStore.getDefaultType()
   }
 
   private fun File?.isSameFile(other: File?) = this != null && other != null && FileUtils.isSameFile(this, other)
@@ -128,7 +148,7 @@ abstract class ValidateSigningTask : NonIncrementalTask() {
    */
   @VisibleForTesting
   fun forceRerun(): Boolean {
-    val storeFile: File? = signingConfigData.get().storeFile
+    val storeFile: File? = signingConfig.get().storeFile.orNull
     return storeFile == null || !storeFile.isFile
   }
 
@@ -145,7 +165,7 @@ abstract class ValidateSigningTask : NonIncrementalTask() {
 
     override fun configure(task: ValidateSigningTask) {
       UsesAnalytics.ConfigureAction.configure(task)
-      task.signingConfigData.set(SigningConfigData.fromDslSigningConfig(signingConfig))
+      task.signingConfig.set(SigningConfigDataProvider.create(task.project.objects, signingConfig))
       task.outputs.upToDateWhen { !task.forceRerun() }
     }
   }
@@ -171,7 +191,14 @@ abstract class ValidateSigningTask : NonIncrementalTask() {
 
       val signingConfig =
         creationConfig.signingConfig ?: throw IllegalStateException("No signing config configured for variant " + creationConfig.name)
-      task.signingConfigData.set(creationConfig.services.provider { SigningConfigData.fromSigningConfig(signingConfig) })
+      val provider = creationConfig.services.newInstance(SigningConfigDataProvider::class.java)
+      provider.name.set(creationConfig.services.provider { signingConfig.name })
+      provider.storeFile.set(signingConfig.storeFile)
+      provider.storeType.set(signingConfig.storeType)
+      provider.keyAlias.set(signingConfig.keyAlias)
+      provider.storePassword.set(signingConfig.storePassword)
+      provider.keyPassword.set(signingConfig.keyPassword)
+      task.signingConfig.set(provider)
       task.defaultDebugKeystoreLocation.set(defaultDebugKeystoreLocation)
       task.outputs.upToDateWhen { !task.forceRerun() }
     }
