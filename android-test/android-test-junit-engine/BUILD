@@ -17,7 +17,6 @@ maven_library(
     visibility = ["//visibility:public"],
     deps = [
         "//tools/base/android-test/test-result-proto",
-        "//tools/base/common:tools.common",
         "@maven//:com.google.protobuf.protobuf-java",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
