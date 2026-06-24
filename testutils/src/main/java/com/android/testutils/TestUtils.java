@@ -192,7 +192,7 @@ public class TestUtils {
             // it. If we're using Bazel, we should still look to see if there's a larger outermost
             // workspace since we might be within a nested workspace.
             while (currDir != null) {
-                Path workspacePath = currDir.resolve("WORKSPACE");
+                Path workspacePath = currDir.resolve("MODULE.bazel");
                 // Ensure that the workspacePath being looked at is NOT a directory.
                 if (Files.isRegularFile(workspacePath)) {
                     workspaceRoot = currDir;
@@ -202,7 +202,7 @@ public class TestUtils {
 
             if (workspaceRoot == null) {
                 throw new IllegalStateException(
-                        "Could not find WORKSPACE root. Is the original working directory a "
+                        "Could not find MODULE.bazel. Is the original working directory a "
                                 + "subdirectory of the Android Studio codebase?\n\n"
                                 + "pwd = "
                                 + initialDir);
