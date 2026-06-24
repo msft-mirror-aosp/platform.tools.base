@@ -5,20 +5,83 @@ allprojects {
         p.plugins.withId("com.android.application") {
             p.androidComponents {
                 onVariants(selector().all(), { v ->
-                    p.tasks.register("${v.name}ExtractClasspath") {
+                    p.tasks.register("${v.name}ExtractClasspath") { task ->
                         def runtimeClasses = v.runtimeConfiguration.incoming.artifactView { av ->
                             av.attributes {
                                 attribute(artifactType, "android-classes-jar")
                             }
                         }.files
 
-                        it.inputs.files(runtimeClasses)
+                        task.inputs.files(runtimeClasses)
 
-                        doFirst {
+                        def appClassesProvider = null
+                        def rJarProvider = null
+                        try {
+                            // Reflectively load AGP's InternalArtifactType to dynamically retrieve compile-time
+                            // application classes and R class JAR using internal APIs.
+                            // Using reflection avoids compilation dependencies on AGP's internals, which can change packages.
+                            def internalArtifactType = Class.forName("com.android.build.gradle.internal.scope.InternalArtifactType")
+
+                            def compileAppClassesJar = internalArtifactType.getField("COMPILE_APP_CLASSES_JAR").get(null)
+                            appClassesProvider = v.artifacts.get(compileAppClassesJar)
+                            task.inputs.file(appClassesProvider)
+
+                            def compileAndRuntimeRClassJar = internalArtifactType.getField("COMPILE_AND_RUNTIME_R_CLASS_JAR").get(null)
+                            rJarProvider = v.artifacts.get(compileAndRuntimeRClassJar)
+                            task.inputs.file(rJarProvider)
+                        } catch (Exception e) {
+                            // Fallback if reflective access fails (e.g. internal API changed). Depend on the tasks
+                            // directly to ensure they are run and produce compile classes / R class outputs.
+                            def compileJarTask = p.tasks.findByName("bundle${v.name.capitalize()}ClassesToCompileJar")
+                            if (compileJarTask != null) {
+                                task.dependsOn(compileJarTask)
+                            }
+                            def processResTask = p.tasks.findByName("process${v.name.capitalize()}Resources")
+                            if (processResTask != null) {
+                                task.dependsOn(processResTask)
+                            }
+                        }
+
+                        task.doFirst {
 
                             try (def deps = new FileOutputStream(new File("deps.txt"))) {
 
-                                deps.write("${buildDir}/intermediates/compile_app_classes_jar/${v.name}/classes.jar\n".getBytes())
+                                def appClassesJarPath = null
+                                if (appClassesProvider != null && appClassesProvider.isPresent()) {
+                                    appClassesJarPath = appClassesProvider.get().asFile.absolutePath
+                                } else {
+                                    // Directory search fallback: If the compileAppClassesJar provider was not resolved,
+                                    // look directly inside the expected intermediates build directory for classes.jar.
+                                    def expectedDir = new File(p.layout.buildDirectory.asFile.get(), "intermediates/compile_app_classes_jar/${v.name}")
+                                    if (expectedDir.exists()) {
+                                        def files = p.fileTree(dir: expectedDir, include: "**/classes.jar").files
+                                        if (!files.isEmpty()) {
+                                            appClassesJarPath = files.iterator().next().absolutePath
+                                        }
+                                    }
+                                }
+                                if (appClassesJarPath != null) {
+                                    deps.write("${appClassesJarPath}\n".getBytes())
+                                }
+
+                                def rJarPath = null
+                                if (rJarProvider != null && rJarProvider.isPresent()) {
+                                    rJarPath = rJarProvider.get().asFile.absolutePath
+                                } else {
+                                    // Directory search fallback: If compileAndRuntimeRClassJar provider was not resolved,
+                                    // look directly inside the intermediates build directory for R.jar.
+                                    def expectedDir = new File(p.layout.buildDirectory.asFile.get(), "intermediates/compile_and_runtime_r_class_jar/${v.name}")
+                                    if (expectedDir.exists()) {
+                                        def files = p.fileTree(dir: expectedDir, include: "**/R.jar").files
+                                        if (!files.isEmpty()) {
+                                            rJarPath = files.iterator().next().absolutePath
+                                        }
+                                    }
+                                }
+                                if (rJarPath != null) {
+                                    deps.write("${rJarPath}\n".getBytes())
+                                }
+
                                 def fileNames = runtimeClasses.files.collect { "${it}".toString() }
                                 fileNames.forEach {
                                     deps.write("${it}\n".getBytes())
