@@ -274,8 +274,8 @@ class LintBaseline(
           // Remove all linked entries. We don't loop through all the locations;
           // they're allowed to vary over time, we just assume that all entries
           // for the same warning should be cleared.
-          var curr = entry
-          while (curr.previous != null) {
+          var curr: Entry? = entry
+          while (curr != null && curr.previous != null) {
             curr = curr.previous
           }
           while (curr != null) {

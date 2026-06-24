@@ -54,8 +54,8 @@ internal constructor(
 
   /** PID -> [ProcessState] */
   private val mProcessStates: MutableMap<Int, ProcessState> = HashMap()
-  private val mPortForwarders: MutableMap<Int, PortForwarder?> = HashMap()
-  private val mReversePortForwarders: MutableMap<Int, PortForwarder?> = HashMap()
+  private val mPortForwarders: MutableMap<Int, PortForwarder> = HashMap()
+  private val mReversePortForwarders: MutableMap<Int, PortForwarder> = HashMap()
   val features: Set<String>
   val properties: Map<String, String>
   private var mDeviceStatus: DeviceStatus
@@ -293,14 +293,14 @@ internal constructor(
     }
   }
 
-  val allPortForwarders: ImmutableMap<Int, PortForwarder?>
+  val allPortForwarders: ImmutableMap<Int, PortForwarder>
     get() {
       synchronized(mPortForwarders) {
         return ImmutableMap.copyOf(mPortForwarders)
       }
     }
 
-  val allReversePortForwarders: ImmutableMap<Int, PortForwarder?>
+  val allReversePortForwarders: ImmutableMap<Int, PortForwarder>
     get() {
       synchronized(mReversePortForwarders) {
         return ImmutableMap.copyOf(mReversePortForwarders)

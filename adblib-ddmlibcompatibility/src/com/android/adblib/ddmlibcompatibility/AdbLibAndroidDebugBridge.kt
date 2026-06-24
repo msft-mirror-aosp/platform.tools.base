@@ -45,7 +45,6 @@ import com.android.ddmlib.clientmanager.ClientManager
 import com.android.ddmlib.idevicemanager.IDeviceManager
 import com.google.common.base.Preconditions
 import com.google.common.base.Throwables
-import com.google.common.collect.ImmutableMap
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.ListeningExecutorService
@@ -136,7 +135,7 @@ class AdbLibAndroidDebugBridge(
   }
 
   override fun init(clientSupport: Boolean) {
-    logUsage(AdbDelegateUsageTracker.Method.INIT_1) { init(clientSupport, false, ImmutableMap.of()) }
+    logUsage(AdbDelegateUsageTracker.Method.INIT_1) { init(clientSupport, false, emptyMap()) }
   }
 
   override fun init(clientSupport: Boolean, useLibusb: Boolean, env: Map<String?, String?>) {

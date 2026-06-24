@@ -49,10 +49,10 @@ fun toUpperCamelCase(string: String): String {
     string.forEach { c ->
       when {
         c == '_' -> Unit
-        isEmpty() -> append(c.toUpperCase())
-        last().isUpperCase() -> append(c.toLowerCase())
-        previous == '_' -> append(c.toUpperCase())
-        previous.isUpperCase() -> append(c.toLowerCase())
+        isEmpty() -> append(c.uppercaseChar())
+        last().isUpperCase() -> append(c.lowercaseChar())
+        previous == '_' -> append(c.uppercaseChar())
+        previous.isUpperCase() -> append(c.lowercaseChar())
         else -> append(c)
       }
       previous = c
@@ -77,11 +77,11 @@ fun escapeKotlinIdentifier(identifier: String): String =
  * @return the string as a Java class, or null if a class name could not be extracted
  */
 fun extractClassName(string: String): String? {
-  val javaIdentifier = string.dropWhile { !Character.isJavaIdentifierStart(it.toUpperCase()) }.filter(Character::isJavaIdentifierPart)
+  val javaIdentifier = string.dropWhile { !Character.isJavaIdentifierStart(it.uppercaseChar()) }.filter(Character::isJavaIdentifierPart)
   if (javaIdentifier.isBlank()) {
     return null
   }
-  return javaIdentifier.first().toUpperCase() + javaIdentifier.substring(1)
+  return javaIdentifier.first().uppercaseChar() + javaIdentifier.substring(1)
 }
 
 fun layoutToActivity(name: String): String = AssetNameConverter(Type.LAYOUT, name).getValue(Type.ACTIVITY)

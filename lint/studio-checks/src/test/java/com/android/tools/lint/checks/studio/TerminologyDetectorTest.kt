@@ -289,8 +289,8 @@ class TerminologyDetectorTest {
       printer.println("                    state = when (c) {")
       for (prefix in prefixes) {
         if (prefix.length == statePrefix.length + 1 && prefix.startsWith(statePrefix)) {
-          val c1 = prefix[statePrefix.length].toLowerCase()
-          val c2 = c1.toUpperCase()
+          val c1 = prefix[statePrefix.length].lowercaseChar()
+          val c2 = c1.uppercaseChar()
           printer.print("                        ")
           printer.print("'$c1'")
           if (c2 != c1) {

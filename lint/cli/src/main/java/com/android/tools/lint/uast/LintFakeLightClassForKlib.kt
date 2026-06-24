@@ -82,7 +82,7 @@ internal class LintFakeLightClassForKlib(
     return listBuilder
   }
 
-  override fun getChildren(): Array<out PsiElement> {
+  override fun getChildren(): Array<PsiElement> {
     return listOfNotNull(*fields, *methods, *innerClasses).toTypedArray()
   }
 

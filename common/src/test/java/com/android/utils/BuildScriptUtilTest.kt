@@ -23,6 +23,7 @@ import com.android.utils.FileUtils.writeToFile
 import com.google.common.io.Files
 import java.io.File
 import junit.framework.TestCase
+import kotlin.io.path.createTempDirectory
 
 class BuildScriptUtilTest : TestCase() {
   fun testFindGradleBuildFile() {
@@ -34,7 +35,7 @@ class BuildScriptUtilTest : TestCase() {
   }
 
   fun testFindGradleBuildFileKts() {
-    val tempDir = createTempDir()
+    val tempDir = createTempDirectory().toFile()
     val ktsBuildFilePath = File(tempDir, FN_BUILD_GRADLE_KTS)
     writeToFile(ktsBuildFilePath, "")
     assertEquals(ktsBuildFilePath, findGradleBuildFile(tempDir))
@@ -49,7 +50,7 @@ class BuildScriptUtilTest : TestCase() {
   }
 
   fun testFindGradleSettingsFileKts() {
-    val tempDir = createTempDir()
+    val tempDir = createTempDirectory().toFile()
     val ktsBuildFilePath = File(tempDir, FN_SETTINGS_GRADLE_KTS)
     writeToFile(ktsBuildFilePath, "")
     assertEquals(ktsBuildFilePath, findGradleSettingsFile(tempDir))

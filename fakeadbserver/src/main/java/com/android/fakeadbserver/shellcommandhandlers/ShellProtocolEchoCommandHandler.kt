@@ -87,7 +87,7 @@ class ShellProtocolEchoCommandHandler() : SimpleShellHandler(ShellProtocolType.S
     fun process(bytes: ByteArray) {
       for (b in bytes) {
         buffer.put(b)
-        if (b.toChar() == '\n') {
+        if (b.toInt().toChar() == '\n') {
           flush()
         }
       }
