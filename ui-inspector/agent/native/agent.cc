@@ -27,7 +27,7 @@
 #include "tools/base/transport/native/utils/tokenizer.h"
 
 namespace {
-constexpr const char* kLogTag = "studio.ui-inspector";
+constexpr const char* kLogTag = "studio.ui-inspector.native";
 constexpr const char* kInspectorServiceClassName =
     "com/android/tools/ui/inspector/service/InspectorService";
 constexpr const char* kInitializeMethodName = "initialize";

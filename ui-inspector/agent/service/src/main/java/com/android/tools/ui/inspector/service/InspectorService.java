@@ -36,7 +36,7 @@ public class InspectorService {
     public static final int RESULT_ERROR = 1;
     public static final int RESULT_EXCEPTION = -1;
 
-    private static final String TAG = "studio.InspectorService";
+    private static final String TAG = "studio.ui-inspector.InspectorService";
     private static final String INSPECTOR_LAUNCHER_CLASS_NAME =
             "com.android.tools.ui.inspector.payload.InspectorLauncher";
     private static final String START_METHOD_NAME = "start";

@@ -21,6 +21,7 @@ public final class ProtocolConstants {
     private ProtocolConstants() {}
 
     public static final String SOCKET_NAME_PREFIX = "ui_inspector_";
+    public static final String LOG_TAG_PREFIX = "studio.ui-inspector";
     public static final String VIEW_INSPECTOR_ID = "ui.inspector.inspectors.view.inspector";
     public static final String COMPOSE_INSPECTOR_ID = "layoutinspector.compose.inspection";
     public static final String COMPOSE_UI_LIBRARY_ID = "androidx.compose.ui:ui";

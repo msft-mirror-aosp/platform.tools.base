@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /** Handles the server socket listener and connection lifecycle for the UI Inspector. */
 public final class Server {
-  private static final String TAG = "studio.Server";
+  private static final String TAG = ProtocolConstants.LOG_TAG_PREFIX + ".Server";
   private static final long INACTIVITY_TIMEOUT_MS = TimeUnit.MINUTES.toMillis(5);
 
   private Server() {}
