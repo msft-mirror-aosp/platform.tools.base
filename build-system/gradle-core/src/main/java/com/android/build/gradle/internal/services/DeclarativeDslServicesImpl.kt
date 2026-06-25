@@ -44,7 +44,8 @@ import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.services.BuildServiceRegistry
 
 open class DeclarativeBaseServicesImpl(private val objectFactory: ObjectFactory, providers: ProviderFactory) : BaseServices {
-  final override fun <T : Any> newInstance(type: Class<T>, vararg args: Any?): T = objectFactory.newInstance(type, *args)
+  @Suppress("UNCHECKED_CAST") // ObjectFactory#newInstance can handle null args but is incorrectly annotated.
+  final override fun <T : Any> newInstance(type: Class<T>, vararg args: Any?): T = objectFactory.newInstance(type, *args as Array<Any>)
 
   final override fun file(file: Any): File = throw UnsupportedOperationException("Not supported")
 

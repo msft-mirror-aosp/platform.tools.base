@@ -395,7 +395,7 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
   }
 
   /** Creates the merge manifests task. */
-  protected open fun createMergeManifestTasks(creationConfig: ApkCreationConfig): TaskProvider<out ManifestProcessorTask?>? {
+  protected open fun createMergeManifestTasks(creationConfig: ApkCreationConfig): TaskProvider<out ManifestProcessorTask>? {
     taskFactory.register(ProcessManifestForBundleTask.CreationAction(creationConfig))
     taskFactory.register(ProcessManifestForMetadataFeatureTask.CreationAction(creationConfig))
     taskFactory.register(ProcessPackagedManifestTask.CreationAction(creationConfig))

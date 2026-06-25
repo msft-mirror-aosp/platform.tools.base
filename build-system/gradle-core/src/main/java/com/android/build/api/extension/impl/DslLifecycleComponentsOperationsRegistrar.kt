@@ -19,7 +19,7 @@ package com.android.build.api.extension.impl
 import java.util.concurrent.atomic.AtomicBoolean
 import org.gradle.api.Action
 
-open class DslLifecycleComponentsOperationsRegistrar<T>(private val extension: T) {
+open class DslLifecycleComponentsOperationsRegistrar<T : Any>(private val extension: T) {
   private val dslFinalizationOperations = mutableListOf<Action<T>>()
   private val finalizationOperationsExecuted = AtomicBoolean(false)
 

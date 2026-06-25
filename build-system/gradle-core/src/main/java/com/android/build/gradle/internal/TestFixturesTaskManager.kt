@@ -237,8 +237,12 @@ class TestFixturesTaskManager(project: Project, globalConfig: GlobalTaskCreation
           ?: localConfig.componentFactory.adhoc(componentName).let { project.components.add(it) } as AdhocComponentWithVariants
       val apiPub = variantDependencies.getElements(PublishedConfigSpec(AndroidArtifacts.PublishedConfigType.API_PUBLICATION, it))
       val runtimePub = variantDependencies.getElements(PublishedConfigSpec(AndroidArtifacts.PublishedConfigType.RUNTIME_PUBLICATION, it))
-      component.addVariantsFromConfiguration(apiPub, ConfigurationVariantMapping("compile", it.isClassifierRequired))
-      component.addVariantsFromConfiguration(runtimePub, ConfigurationVariantMapping("runtime", it.isClassifierRequired))
+      if (apiPub != null) {
+        component.addVariantsFromConfiguration(apiPub, ConfigurationVariantMapping("compile", it.isClassifierRequired))
+      }
+      if (runtimePub != null) {
+        component.addVariantsFromConfiguration(runtimePub, ConfigurationVariantMapping("runtime", it.isClassifierRequired))
+      }
     }
   }
 

@@ -65,9 +65,9 @@ internal class ScreenshotClassPageRenderer(reportType: ReportType, isRecordGolde
     addFailuresTab()
     addTab(
       "Tests",
-      object : ErroringAction<SimpleHtmlWriter?>() {
+      object : ErroringAction<SimpleHtmlWriter>() {
         @Throws(IOException::class)
-        override fun doExecute(writer: SimpleHtmlWriter?) {
+        override fun doExecute(writer: SimpleHtmlWriter) {
           renderTests(writer)
         }
       },

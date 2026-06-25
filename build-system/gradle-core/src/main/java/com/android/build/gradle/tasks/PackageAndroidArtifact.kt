@@ -291,7 +291,7 @@ abstract class PackageAndroidArtifact : NewIncrementalTask() {
         }
       } else {
         // Dynamic feature
-        val appAbiFilters: List<String?> =
+        val appAbiFilters: List<String> =
           try {
             load(baseModuleMetadata.singleFile).abiFilters
           } catch (e: IOException) {

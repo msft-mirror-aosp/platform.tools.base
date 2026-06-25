@@ -328,8 +328,12 @@ class LibraryTaskManager(
       variantDependencies.getElements(PublishedConfigSpec(PublishedConfigType.SOURCE_PUBLICATION, componentName, isClassifierRequired))
     val javaDocPub =
       variantDependencies.getElements(PublishedConfigSpec(PublishedConfigType.JAVA_DOC_PUBLICATION, componentName, isClassifierRequired))
-    component!!.addVariantsFromConfiguration(apiPub, ConfigurationVariantMapping("compile", optional = false))
-    component.addVariantsFromConfiguration(runtimePub, ConfigurationVariantMapping("runtime", optional = false))
+    if (apiPub != null) {
+      component.addVariantsFromConfiguration(apiPub, ConfigurationVariantMapping("compile", optional = false))
+    }
+    if (runtimePub != null) {
+      component.addVariantsFromConfiguration(runtimePub, ConfigurationVariantMapping("runtime", optional = false))
+    }
     if (sourcePub != null) {
       component.addVariantsFromConfiguration(sourcePub, ConfigurationVariantMapping("runtime", true))
     }

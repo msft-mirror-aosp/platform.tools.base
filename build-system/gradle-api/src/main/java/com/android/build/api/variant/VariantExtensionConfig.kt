@@ -31,7 +31,7 @@ interface VariantExtensionConfig<VariantT : Variant> {
    * Returns the project (across variants) extension registered through the
    * [com.android.build.api.variant.DslExtension.projectExtensionType] API.
    */
-  fun <T> projectExtension(extensionType: Class<T>): T
+  fun <T : Any> projectExtension(extensionType: Class<T>): T
 
   /**
    * Returns the [variant] specific extension registered through the [com.android.build.api.variant.DslExtension.buildTypeExtensionType]
@@ -39,7 +39,7 @@ interface VariantExtensionConfig<VariantT : Variant> {
    *
    * @return the custom extension for the [variant]'s build type.
    */
-  fun <T> buildTypeExtension(extensionType: Class<T>): T
+  fun <T : Any> buildTypeExtension(extensionType: Class<T>): T
 
   /**
    * Returns the [variant] specific extension registered through the [com.android.build.api.variant.DslExtension.productFlavorExtensionType]
@@ -48,5 +48,5 @@ interface VariantExtensionConfig<VariantT : Variant> {
    * @return a [List] of [T] extension for all the defined product flavors in the project. The order of the elements is the same as the
    *   order of product flavors returned by the [Variant.productFlavors]
    */
-  fun <T> productFlavorsExtensions(extensionType: Class<T>): List<T>
+  fun <T : Any> productFlavorsExtensions(extensionType: Class<T>): List<T>
 }

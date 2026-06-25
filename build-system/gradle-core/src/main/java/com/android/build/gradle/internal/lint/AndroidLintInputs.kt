@@ -2383,7 +2383,7 @@ internal fun maybeCreateLintChecksClasspath(
   return lintChecksClasspath
 }
 
-private fun <T> copyAttribute(key: Attribute<T>, from: AttributeContainer, to: AttributeContainer) {
+private fun <T : Any> copyAttribute(key: Attribute<T>, from: AttributeContainer, to: AttributeContainer) {
   if (from.contains(key)) {
     to.attribute(key, from.getAttribute(key)!!)
   }

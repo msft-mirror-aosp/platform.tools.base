@@ -259,7 +259,7 @@ constructor(
     params.profileDir.set(profileDir)
     params.taskMetadata.set(taskMetadata)
     params.rootProjectPath.set(rootProjectPath)
-    params.applicationId.set(applicationIds)
+    applicationIds?.let(params.applicationId::set)
   }
 
   fun recordGlobalProperties(project: Project, configurationCacheActive: Boolean, projectIsolationActive: Boolean) {

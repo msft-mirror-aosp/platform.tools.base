@@ -28,7 +28,9 @@ import org.gradle.api.services.BuildServiceRegistry
 /** Impl for BaseScope over a [ProjectServices] */
 open class BaseServicesImpl(protected val projectServices: ProjectServices) : BaseServices {
 
-  final override fun <T : Any> newInstance(type: Class<T>, vararg args: Any?): T = projectServices.objectFactory.newInstance(type, *args)
+  @Suppress("UNCHECKED_CAST") // ObjectFactory#newInstance can handle null args but is incorrectly annotated.
+  final override fun <T : Any> newInstance(type: Class<T>, vararg args: Any?): T =
+    projectServices.objectFactory.newInstance(type, *args as Array<Any>)
 
   final override fun file(file: Any): File = projectServices.fileResolver.invoke(file)
 

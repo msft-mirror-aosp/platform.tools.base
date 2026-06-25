@@ -55,9 +55,9 @@ interface TaskCreationServices : BaseServices {
 
   fun regularFileProperty(): RegularFileProperty
 
-  fun <T> listProperty(type: Class<T>): ListProperty<T>
+  fun <T : Any> listProperty(type: Class<T>): ListProperty<T>
 
-  fun <K, V> mapProperty(keyType: Class<K>, valueType: Class<V>): MapProperty<K, V>
+  fun <K : Any, V : Any> mapProperty(keyType: Class<K>, valueType: Class<V>): MapProperty<K, V>
 
   fun fileCollection(): ConfigurableFileCollection
 
@@ -65,12 +65,12 @@ interface TaskCreationServices : BaseServices {
 
   fun initializeAapt2Input(aapt2Input: Aapt2Input, task: Task)
 
-  fun <T> provider(callable: () -> T?): Provider<T>
+  fun <T : Any> provider(callable: () -> T?): Provider<T>
 
   fun createEmptyTask(name: String): TaskProvider<*>
 
   @Suppress("UnstableApiUsage")
-  fun <T, P : ValueSourceParameters> providerOf(
+  fun <T : Any, P : ValueSourceParameters> providerOf(
     valueSourceType: Class<out ValueSource<T, P>>,
     configuration: Action<in ValueSourceSpec<P>>,
   ): Provider<T>
