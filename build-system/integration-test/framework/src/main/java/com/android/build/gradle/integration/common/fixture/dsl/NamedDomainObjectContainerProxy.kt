@@ -32,7 +32,7 @@ import org.gradle.api.Rule
 import org.gradle.api.provider.Provider
 import org.gradle.api.specs.Spec
 
-class NamedDomainObjectContainerProxy<T>(
+class NamedDomainObjectContainerProxy<T : Any>(
   private val theInterface: Class<T>,
   internal val dslRecorder: DslRecorder,
   /**

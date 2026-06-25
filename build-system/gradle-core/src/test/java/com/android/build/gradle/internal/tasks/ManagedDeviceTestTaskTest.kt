@@ -147,7 +147,7 @@ class ManagedDeviceTestTaskTest {
     assertThat(exception).hasMessageThat().contains("There were failing tests for Device: myDevice.")
   }
 
-  private inline fun <reified ValueClass> realPropertyFor(providedValue: ValueClass): Property<ValueClass> {
+  private inline fun <reified ValueClass : Any> realPropertyFor(providedValue: ValueClass): Property<ValueClass> {
 
     val property = project.objects.property(ValueClass::class.java)
     property.set(providedValue)

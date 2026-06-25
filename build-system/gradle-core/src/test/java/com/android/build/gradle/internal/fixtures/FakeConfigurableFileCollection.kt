@@ -25,7 +25,7 @@ class FakeConfigurableFileCollection(vararg files: Any?) : FakeFileCollection(*f
     TODO("not implemented") // To change body of created functions use File | Settings | File Templates.
   }
 
-  private var _builtBy = mutableSetOf<Any?>()
+  private var _builtBy = mutableSetOf<Any>()
 
   override fun from(vararg collection: Any?): ConfigurableFileCollection {
     rawFiles.addAll(collection)
@@ -37,7 +37,7 @@ class FakeConfigurableFileCollection(vararg files: Any?) : FakeFileCollection(*f
     TODO("not implemented") // To change body of created functions use File | Settings | File Templates.
   }
 
-  override fun setFrom(p0: MutableIterable<*>?) {
+  override fun setFrom(p0: MutableIterable<*>) {
     TODO("not implemented") // To change body of created functions use File | Settings | File Templates.
   }
 
@@ -53,17 +53,17 @@ class FakeConfigurableFileCollection(vararg files: Any?) : FakeFileCollection(*f
     TODO("Not yet implemented")
   }
 
-  override fun builtBy(vararg tasks: Any?): ConfigurableFileCollection {
+  override fun builtBy(vararg tasks: Any): ConfigurableFileCollection {
     tasks.forEach { _builtBy.add(it) }
     return this
   }
 
-  override fun getBuiltBy(): MutableSet<Any?> {
+  override fun getBuiltBy(): MutableSet<Any> {
     return _builtBy
   }
 
-  override fun setBuiltBy(tasks: MutableIterable<*>?): ConfigurableFileCollection {
-    _builtBy = tasks!!.toMutableSet()
+  override fun setBuiltBy(tasks: MutableIterable<*>): ConfigurableFileCollection {
+    _builtBy = tasks.map(::checkNotNull).toMutableSet()
     return this
   }
 

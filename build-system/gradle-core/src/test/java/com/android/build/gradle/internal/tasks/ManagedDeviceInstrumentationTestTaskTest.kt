@@ -144,7 +144,7 @@ class ManagedDeviceInstrumentationTestTaskTest {
     workerExecutor = FakeGradleWorkExecutor(project.objects, temporaryFolderRule.newFolder())
   }
 
-  private fun <T> mockEmptyProperty(): Property<T> {
+  private fun <T : Any> mockEmptyProperty(): Property<T> {
     @Suppress("UNCHECKED_CAST")
     return mock<Property<T>>()
   }

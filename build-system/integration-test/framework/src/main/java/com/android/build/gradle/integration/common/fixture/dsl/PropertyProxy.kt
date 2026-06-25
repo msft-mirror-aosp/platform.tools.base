@@ -23,7 +23,7 @@ import org.gradle.api.provider.Provider
 import org.gradle.api.specs.Spec
 
 /** Proxy class used to implement Gradle's Property. This wraps a [DslRecorder] to record the calls we care about. */
-class PropertyProxy<T>(private val dslRecorder: DslRecorder) : Property<T> {
+class PropertyProxy<T : Any>(private val dslRecorder: DslRecorder) : Property<T> {
 
   override fun set(value: T?) {
     dslRecorder.call("set", listOf(value), isVarArgs = false)
@@ -85,7 +85,7 @@ class PropertyProxy<T>(private val dslRecorder: DslRecorder) : Property<T> {
     throw RuntimeException("Not yet implemented")
   }
 
-  override fun <U : Any?, R : Any?> zip(right: Provider<U>, combiner: BiFunction<in T, in U, out R?>): Provider<R> {
+  override fun <U : Any, R : Any> zip(right: Provider<U>, combiner: BiFunction<in T, in U, out R?>): Provider<R> {
     throw RuntimeException("Not yet implemented")
   }
 
@@ -97,7 +97,7 @@ class PropertyProxy<T>(private val dslRecorder: DslRecorder) : Property<T> {
     throw RuntimeException("Not yet implemented")
   }
 
-  override fun <S : Any?> flatMap(transformer: Transformer<out Provider<out S>?, in T>): Provider<S> {
+  override fun <S : Any> flatMap(transformer: Transformer<out Provider<out S>?, in T>): Provider<S> {
     throw RuntimeException("Not yet implemented")
   }
 
@@ -105,7 +105,7 @@ class PropertyProxy<T>(private val dslRecorder: DslRecorder) : Property<T> {
     throw RuntimeException("Not yet implemented")
   }
 
-  override fun <S : Any?> map(transformer: Transformer<out S?, in T>): Provider<S> {
+  override fun <S : Any> map(transformer: Transformer<out S?, in T>): Provider<S> {
     throw RuntimeException("Not yet implemented")
   }
 

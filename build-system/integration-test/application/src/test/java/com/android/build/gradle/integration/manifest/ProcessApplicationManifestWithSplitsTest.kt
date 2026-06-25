@@ -87,7 +87,7 @@ class ProcessApplicationManifestWithSplitsTest(private val abi: String, private 
     @JvmStatic
     @Parameterized.Parameters(name = "{0}_{1}")
     fun parameters() =
-      listOf(
+      listOf<Array<Any>>(
         arrayOf("armeabi-v7a", 2001),
         arrayOf("arm64-v8a", 3001),
         arrayOf("arm64-v8a,armeabi-v7a", 3001),

@@ -38,7 +38,7 @@ data class FakeResolvedDependencyResult(
 
   override fun getRequested() = requested ?: error("value not set")
 
-  override fun getResolvedVariant(): ResolvedVariantResult? = resolvedVariant ?: error("value not set")
+  override fun getResolvedVariant(): ResolvedVariantResult = resolvedVariant ?: error("value not set")
 
   fun addConstraint(constraintNode: FakeResolvedDependencyResult) {
     check(constraintNode.isConstraint)

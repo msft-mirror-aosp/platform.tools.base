@@ -1253,19 +1253,19 @@ apply plugin: 'com.android.application'
 
     // [Check cartesianOf(...)]---
     val cartesian = cartesianOf(arrayOf(1, 2), arrayOf("b", "c"), arrayOf(1.1, 1.2))
-    assertThat(cartesian[0]).isEqualTo(arrayOf(1, "b", 1.1))
-    assertThat(cartesian[7]).isEqualTo(arrayOf(2, "c", 1.2))
+    assertThat(cartesian[0]).isEqualTo(arrayOf<Any>(1, "b", 1.1))
+    assertThat(cartesian[7]).isEqualTo(arrayOf<Any>(2, "c", 1.2))
     assertThat(cartesian).hasLength(8)
 
     // [Check minimizeUsingTupleCoverage(...)]---
     val minimized = cartesian.minimizeUsingTupleCoverage(maxTupleSize = 2)
     assertThat(minimized).hasLength(5) // Smaller than cartesian which is 8
     // These should be the least needed to cover each pair of argument
-    assertThat(minimized[0]).isEqualTo(arrayOf(1, "b", 1.1))
-    assertThat(minimized[1]).isEqualTo(arrayOf(2, "c", 1.2))
-    assertThat(minimized[2]).isEqualTo(arrayOf(1, "b", 1.2))
-    assertThat(minimized[3]).isEqualTo(arrayOf(1, "c", 1.1))
-    assertThat(minimized[4]).isEqualTo(arrayOf(2, "b", 1.1))
+    assertThat(minimized[0]).isEqualTo(arrayOf<Any>(1, "b", 1.1))
+    assertThat(minimized[1]).isEqualTo(arrayOf<Any>(2, "c", 1.2))
+    assertThat(minimized[2]).isEqualTo(arrayOf<Any>(1, "b", 1.2))
+    assertThat(minimized[3]).isEqualTo(arrayOf<Any>(1, "c", 1.1))
+    assertThat(minimized[4]).isEqualTo(arrayOf<Any>(2, "b", 1.1))
   }
 
   @Test

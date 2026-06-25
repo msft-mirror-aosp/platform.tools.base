@@ -49,7 +49,7 @@ class DomainObjectSetProxy<T : Any>(private val dslRecorder: DslRecorder) : Doma
     return true
   }
 
-  override fun <S : T> withType(type: Class<S?>): DomainObjectSet<S> {
+  override fun <S : T> withType(type: Class<S>): DomainObjectSet<S> {
     throw RuntimeException("Not yet implemented")
   }
 
@@ -61,7 +61,7 @@ class DomainObjectSetProxy<T : Any>(private val dslRecorder: DslRecorder) : Doma
     throw RuntimeException("Not yet implemented")
   }
 
-  override fun findAll(spec: Closure<*>): Set<T?> {
+  override fun findAll(spec: Closure<*>): Set<T> {
     throw RuntimeException("Not yet implemented")
   }
 
@@ -73,7 +73,7 @@ class DomainObjectSetProxy<T : Any>(private val dslRecorder: DslRecorder) : Doma
     throw RuntimeException("Not yet implemented")
   }
 
-  override fun <S : T> withType(type: Class<S?>, configureAction: Action<in S>): DomainObjectCollection<S> {
+  override fun <S : T> withType(type: Class<S>, configureAction: Action<in S>): DomainObjectCollection<S> {
     throw RuntimeException("Not yet implemented")
   }
 

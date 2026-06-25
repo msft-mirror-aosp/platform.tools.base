@@ -121,16 +121,16 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
     return task
   }
 
-  private inline fun <reified ValueClass> realEmptyPropertyFor(): Property<ValueClass> = project.objects.property(ValueClass::class.java)
+  private inline fun <reified ValueClass : Any> realEmptyPropertyFor(): Property<ValueClass> = project.objects.property(ValueClass::class.java)
 
-  private inline fun <reified ValueClass> realPropertyFor(providedValue: ValueClass): Property<ValueClass> {
+  private inline fun <reified ValueClass : Any> realPropertyFor(providedValue: ValueClass): Property<ValueClass> {
 
     val property = project.objects.property(ValueClass::class.java)
     property.set(providedValue)
     return property
   }
 
-  private fun <T> mockEmptyProperty(): Property<T> {
+  private fun <T : Any> mockEmptyProperty(): Property<T> {
     @Suppress("UNCHECKED_CAST")
     return mock<Property<T>>()
   }

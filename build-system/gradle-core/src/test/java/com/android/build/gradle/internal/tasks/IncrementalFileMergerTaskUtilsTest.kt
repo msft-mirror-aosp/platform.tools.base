@@ -71,7 +71,7 @@ class IncrementalFileMergerTaskUtilsTest {
     changedInputs[jarInput] = FileStatus.NEW
 
     val result = toIncrementalInput(jarInput, "name", changedInputs, zipCache, cacheUpdates)
-    assertThat(result.allPaths).containsExactly("foo", "bar")
+    assertThat(result.getAllPaths()).containsExactly("foo", "bar")
     assertThat(result.updatedPaths).containsExactly("foo", "bar")
   }
 
@@ -101,7 +101,7 @@ class IncrementalFileMergerTaskUtilsTest {
     changedInputs[jarInput] = FileStatus.CHANGED
 
     val result = toIncrementalInput(jarInput, "name", changedInputs, zipCache, cacheUpdates)
-    assertThat(result.allPaths).containsExactly("foo", "bar", "baz")
+    assertThat(result.getAllPaths()).containsExactly("foo", "bar", "baz")
     assertThat(result.updatedPaths).containsExactly("baz")
   }
 
@@ -114,7 +114,7 @@ class IncrementalFileMergerTaskUtilsTest {
     jarInput.delete()
 
     val result = toIncrementalInput(jarInput, "name", changedInputs, zipCache, cacheUpdates)
-    assertThat(result.allPaths).isEmpty()
+    assertThat(result.getAllPaths()).isEmpty()
     assertThat(result.updatedPaths).containsExactly("foo", "bar")
   }
 
@@ -124,7 +124,7 @@ class IncrementalFileMergerTaskUtilsTest {
     changedInputs[dirFileBar] = FileStatus.NEW
 
     val result = toIncrementalInput(dirInput, "name", changedInputs, zipCache, cacheUpdates)
-    assertThat(result.allPaths).containsExactly("foo.txt", "bar.txt")
+    assertThat(result.getAllPaths()).containsExactly("foo.txt", "bar.txt")
     assertThat(result.updatedPaths).containsExactly("foo.txt", "bar.txt")
   }
 
@@ -137,7 +137,7 @@ class IncrementalFileMergerTaskUtilsTest {
     changedInputs[dirFileFoo] = FileStatus.CHANGED
 
     val result = toIncrementalInput(dirInput, "name", changedInputs, zipCache, cacheUpdates)
-    assertThat(result.allPaths).containsExactly("foo.txt", "bar.txt")
+    assertThat(result.getAllPaths()).containsExactly("foo.txt", "bar.txt")
     assertThat(result.updatedPaths).containsExactly("foo.txt")
   }
 
@@ -149,7 +149,7 @@ class IncrementalFileMergerTaskUtilsTest {
     dirFileFoo.delete()
 
     val result = toIncrementalInput(dirInput, "name", changedInputs, zipCache, cacheUpdates)
-    assertThat(result.allPaths).containsExactly("bar.txt")
+    assertThat(result.getAllPaths()).containsExactly("bar.txt")
     assertThat(result.updatedPaths).containsExactly("foo.txt")
   }
 
@@ -157,7 +157,7 @@ class IncrementalFileMergerTaskUtilsTest {
   fun `test toNonIncrementalInput with jar input`() {
     val result = toNonIncrementalInput(jarInput, "name", zipCache, cacheUpdates)
     assertThat(result).isNotNull()
-    assertThat(result?.allPaths).containsExactly("foo", "bar")
+    assertThat(result?.getAllPaths()).containsExactly("foo", "bar")
     assertThat(result?.updatedPaths).containsExactly("foo", "bar")
   }
 
@@ -165,7 +165,7 @@ class IncrementalFileMergerTaskUtilsTest {
   fun `test toNonIncrementalInput with dir input`() {
     val result = toNonIncrementalInput(dirInput, "name", zipCache, cacheUpdates)
     assertThat(result).isNotNull()
-    assertThat(result?.allPaths).containsExactly("foo.txt", "bar.txt")
+    assertThat(result?.getAllPaths()).containsExactly("foo.txt", "bar.txt")
     assertThat(result?.updatedPaths).containsExactly("foo.txt", "bar.txt")
   }
 }

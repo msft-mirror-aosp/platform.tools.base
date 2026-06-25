@@ -198,7 +198,7 @@ private fun String.toMacroCase(): String {
         if (!inNumber) result.append("_")
         true
       } else false
-    result.append(c.toUpperCase())
+    result.append(c.uppercaseChar())
   }
   return result.toString().trim('_')
 }

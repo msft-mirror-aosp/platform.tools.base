@@ -101,7 +101,7 @@ class LibraryAarJarsTest {
       )
 
     // Exclude excludes from final jar
-    val excludes = Predicate { archivePath: String -> !archivePath.toLowerCase(Locale.US).startsWith("exclude") }
+    val excludes = Predicate { archivePath: String -> !archivePath.lowercase(Locale.US).startsWith("exclude") }
 
     LibraryAarJarsTask.mergeInputs(
       localJars,

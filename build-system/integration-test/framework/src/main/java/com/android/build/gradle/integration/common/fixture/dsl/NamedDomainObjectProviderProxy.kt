@@ -29,7 +29,7 @@ import org.gradle.api.specs.Spec
  * This can only be used when we are sure that the provider is not dangling. This is mostly going to be use for things like
  * [com.android.build.gradle.integration.common.fixture.project.builder.kotlin.KotlinMultiplatformExtension.androidMain]
  */
-class NamedDomainObjectProviderProxy<T>(private val theInterface: Class<T>, private val dslRecorder: DslRecorder) :
+class NamedDomainObjectProviderProxy<T : Any>(private val theInterface: Class<T>, private val dslRecorder: DslRecorder) :
   NamedDomainObjectProvider<T> {
 
   override fun configure(action: Action<in T>) {
@@ -54,7 +54,7 @@ class NamedDomainObjectProviderProxy<T>(private val theInterface: Class<T>, priv
     throw RuntimeException("Do not use NamedDomainObjectProvider.getName")
   }
 
-  override fun <U : Any?, R : Any?> zip(right: Provider<U>, combiner: BiFunction<in T, in U, out R?>): Provider<R> {
+  override fun <U : Any, R : Any> zip(right: Provider<U>, combiner: BiFunction<in T, in U, out R?>): Provider<R> {
     throw RuntimeException("Do not use NamedDomainObjectProvider.zip")
   }
 
@@ -66,7 +66,7 @@ class NamedDomainObjectProviderProxy<T>(private val theInterface: Class<T>, priv
     throw RuntimeException("Do not use NamedDomainObjectProvider.orElse")
   }
 
-  override fun <S : Any?> flatMap(transformer: Transformer<out Provider<out S>?, in T>): Provider<S> {
+  override fun <S : Any> flatMap(transformer: Transformer<out Provider<out S>?, in T>): Provider<S> {
     throw RuntimeException("Do not use NamedDomainObjectProvider.flatMap")
   }
 
@@ -74,7 +74,7 @@ class NamedDomainObjectProviderProxy<T>(private val theInterface: Class<T>, priv
     throw RuntimeException("Do not use NamedDomainObjectProvider.filter")
   }
 
-  override fun <S : Any?> map(transformer: Transformer<out S?, in T>): Provider<S> {
+  override fun <S : Any> map(transformer: Transformer<out S?, in T>): Provider<S> {
     throw RuntimeException("Do not use NamedDomainObjectProvider.map")
   }
 

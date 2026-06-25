@@ -22,7 +22,7 @@ import org.gradle.api.provider.Provider
 import org.gradle.api.provider.SetProperty
 import org.gradle.api.specs.Spec
 
-class SetPropertyProxy<T>(private val dslRecorder: DslRecorder) : SetProperty<T> {
+class SetPropertyProxy<T : Any>(private val dslRecorder: DslRecorder) : SetProperty<T> {
 
   override fun addAll(elements: MutableIterable<T>) {
     dslRecorder.call("addAll", elements.toList(), isVarArgs = false)
@@ -108,7 +108,7 @@ class SetPropertyProxy<T>(private val dslRecorder: DslRecorder) : SetProperty<T>
     throw RuntimeException("Not yet implemented")
   }
 
-  override fun <U : Any?, R : Any?> zip(right: Provider<U>, combiner: BiFunction<in MutableSet<T>, in U, out R?>): Provider<R> {
+  override fun <U : Any, R : Any> zip(right: Provider<U>, combiner: BiFunction<in MutableSet<T>, in U, out R?>): Provider<R> {
     throw RuntimeException("Not yet implemented")
   }
 
@@ -120,7 +120,7 @@ class SetPropertyProxy<T>(private val dslRecorder: DslRecorder) : SetProperty<T>
     throw RuntimeException("Not yet implemented")
   }
 
-  override fun <S : Any?> flatMap(transformer: Transformer<out Provider<out S>?, in MutableSet<T>>): Provider<S> {
+  override fun <S : Any> flatMap(transformer: Transformer<out Provider<out S>?, in MutableSet<T>>): Provider<S> {
     throw RuntimeException("Not yet implemented")
   }
 
@@ -128,7 +128,7 @@ class SetPropertyProxy<T>(private val dslRecorder: DslRecorder) : SetProperty<T>
     throw RuntimeException("Not yet implemented")
   }
 
-  override fun <S : Any?> map(transformer: Transformer<out S?, in MutableSet<T>>): Provider<S> {
+  override fun <S : Any> map(transformer: Transformer<out S?, in MutableSet<T>>): Provider<S> {
     throw RuntimeException("Not yet implemented")
   }
 

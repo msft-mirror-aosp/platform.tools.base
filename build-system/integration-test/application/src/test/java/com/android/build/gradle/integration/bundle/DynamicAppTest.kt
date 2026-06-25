@@ -972,8 +972,8 @@ class DynamicAppTest {
     Zip(bundleFile).use {
       val entries = it.entries.map { it.toString() }
       assertThat(entries).contains("/META-INF/MANIFEST.MF")
-      assertThat(entries).contains("/META-INF/${keyAlias.toUpperCase(Locale.US)}.RSA")
-      assertThat(entries).contains("/META-INF/${keyAlias.toUpperCase(Locale.US)}.SF")
+      assertThat(entries).contains("/META-INF/${keyAlias.uppercase(Locale.US)}.RSA")
+      assertThat(entries).contains("/META-INF/${keyAlias.uppercase(Locale.US)}.SF")
     }
 
     val result = ApkVerifier.Builder(bundleFile).setMaxCheckedPlatformVersion(18).setMinCheckedPlatformVersion(18).build().verify()
@@ -1062,8 +1062,8 @@ class DynamicAppTest {
     Zip(bundleFile).use {
       val entries = it.entries.map { it.toString() }
       assertThat(entries).contains("/META-INF/MANIFEST.MF")
-      assertThat(entries).contains("/META-INF/${keyAlias.toUpperCase(Locale.US)}.RSA")
-      assertThat(entries).contains("/META-INF/${keyAlias.toUpperCase(Locale.US)}.SF")
+      assertThat(entries).contains("/META-INF/${keyAlias.uppercase(Locale.US)}.RSA")
+      assertThat(entries).contains("/META-INF/${keyAlias.uppercase(Locale.US)}.SF")
     }
 
     val result = ApkVerifier.Builder(bundleFile).setMaxCheckedPlatformVersion(18).setMinCheckedPlatformVersion(18).build().verify()

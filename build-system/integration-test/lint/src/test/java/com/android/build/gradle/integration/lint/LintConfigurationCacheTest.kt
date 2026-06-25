@@ -99,7 +99,7 @@ class MyOldDslCallback : LegacyLibraryCallback {
     extension.libraryVariants.all { variant ->
       if (variant.name == "debug") {
         val cTree: ConfigurableFileTree = project.fileTree(File(project.layout.buildDirectory.asFile.get(), "generated/source/kapt/debug"))
-        cTree.builtBy(project.tasks.findByName("generateSrcs"))
+        cTree.builtBy(checkNotNull(project.tasks.findByName("generateSrcs")))
         cTree.include("**/*.java")
         variant.registerExternalAptJavaOutput(cTree)
       }

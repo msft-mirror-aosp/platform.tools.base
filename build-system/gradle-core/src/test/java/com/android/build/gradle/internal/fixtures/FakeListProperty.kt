@@ -22,7 +22,7 @@ import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Provider
 import org.gradle.api.specs.Spec
 
-class FakeListProperty<T>(private val values: MutableList<T>? = null) : ListProperty<T> {
+class FakeListProperty<T : Any>(private val values: MutableList<T>? = null) : ListProperty<T> {
 
   override fun get(): List<T> = values ?: listOf()
 
@@ -34,11 +34,11 @@ class FakeListProperty<T>(private val values: MutableList<T>? = null) : ListProp
 
   override fun getOrElse(p0: List<T>): List<T> = values ?: p0
 
-  override fun <S : Any?> map(p0: Transformer<out S, in List<T>>): Provider<S> {
-    return FakeGradleProvider<S> { p0.transform(get()) }
+  override fun <S : Any> map(p0: Transformer<out S?, in List<T>>): Provider<S> {
+    return FakeGradleProvider<S> { checkNotNull(p0.transform(get())) }
   }
 
-  override fun <S : Any?> flatMap(p0: Transformer<out Provider<out S>, in MutableList<T>>): Provider<S> {
+  override fun <S : Any> flatMap(p0: Transformer<out Provider<out S>?, in MutableList<T>>): Provider<S> {
     TODO("Not yet implemented")
   }
 
@@ -52,7 +52,7 @@ class FakeListProperty<T>(private val values: MutableList<T>? = null) : ListProp
     TODO("Not yet implemented")
   }
 
-  override fun <U : Any?, R : Any?> zip(p0: Provider<U>, p1: BiFunction<in MutableList<T>, in U, out R>): Provider<R> {
+  override fun <U : Any, R : Any> zip(p0: Provider<U>, p1: BiFunction<in MutableList<T>, in U, out R?>): Provider<R> {
     TODO("Not yet implemented")
   }
 

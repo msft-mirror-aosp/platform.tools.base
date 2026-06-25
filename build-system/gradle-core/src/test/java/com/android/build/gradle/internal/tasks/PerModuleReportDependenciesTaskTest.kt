@@ -255,5 +255,7 @@ private class FakeResolvedComponentResultInternal(thingy: ResolvedComponentResul
     TODO("Not yet implemented")
   }
 
-  override fun getSelectionReason(): ComponentSelectionReasonInternal? = null
+  override fun getSelectionReason(): ComponentSelectionReasonInternal {
+    error("Not implemented for test")
+  }
 }
