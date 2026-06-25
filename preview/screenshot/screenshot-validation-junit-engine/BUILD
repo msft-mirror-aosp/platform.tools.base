@@ -35,6 +35,7 @@ kotlin_test(
     deps = [
         ":screenshot-validation-junit-engine",
         "//tools/base/common:tools.common",
+        "//tools/base/multipreview-asm:compose-preview-detector",
         "//tools/base/preview/screenshot/screenshot-validation-api",
         "//tools/base/sdk-common:tools.sdk-common",
         "//tools/base/sdklib:tools.sdklib",
