@@ -183,7 +183,9 @@ class LogcatCollector(
   }
 
   private fun generateLogcatFileName(deviceId: String, testPackage: String, testClass: String, testMethod: String): File {
-    val fileName = "logcat-$testPackage.$testClass-$testMethod.txt"
+    // Sanitize parameters parsed from untrusted logcat output to prevent path traversal (b/509645146).
+    val safe = Regex("[^a-zA-Z0-9._-]")
+    val fileName = "logcat-${safe.replace(testPackage, "_")}.${safe.replace(testClass, "_")}-${safe.replace(testMethod, "_")}.txt"
     return File(resultsDir, fileName)
   }
 }

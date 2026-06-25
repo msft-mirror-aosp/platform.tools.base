@@ -101,4 +101,63 @@ class LogcatCollectorTest {
 
     collector.cleanup()
   }
+
+  @Test
+  fun startCapture_sanitizesLogcatPath() {
+    val deviceSerial = "emulator-5554"
+    val deviceId = "device1"
+
+    // Mock for "shell date"
+    val dateOutput = "03-05 10:00:00"
+    val dateProcess =
+      mock<Process> {
+        on { inputStream } doReturn dateOutput.byteInputStream()
+        on { waitFor() } doReturn 0
+      }
+    val dateProcessBuilder = mock<ProcessBuilder> { on { start() } doReturn dateProcess }
+
+    // Mock for "logcat" with traversal payload in test name
+    val logcatOutput =
+      """
+      03-05 10:00:01.000  123  456 I TestRunner: started: ..\..\..\evil(com.example.MyTest)
+      03-05 10:00:02.000  123  456 D MyTag: some log
+      03-05 10:00:03.000  123  456 I TestRunner: finished: ..\..\..\evil(com.example.MyTest)
+      """
+        .trimIndent()
+    val logcatProcess =
+      mock<Process> {
+        on { inputStream } doReturn logcatOutput.byteInputStream()
+        on { waitFor(any(), any()) } doReturn true
+      }
+    val logcatProcessBuilder = mock<ProcessBuilder> { on { start() } doReturn logcatProcess }
+
+    val collector =
+      LogcatCollector(resultsDir, adb.absolutePath) { command ->
+        if (command.contains("shell") && command.contains("date")) {
+          dateProcessBuilder
+        } else {
+          logcatProcessBuilder
+        }
+      }
+
+    collector.startCapture(deviceId, deviceSerial)
+
+    // Wait for the reader thread to catch the "started" line
+    var logcatPath: String? = null
+    val startTime = System.currentTimeMillis()
+    while (System.currentTimeMillis() - startTime < 5000) {
+      logcatPath = collector.getLogcatPath(deviceId, "com.example.MyTest...\\..\\..\\evil")
+      if (logcatPath != null) break
+      Thread.sleep(100)
+    }
+
+    assertThat(logcatPath).isNotNull()
+    val logcatFile = File(logcatPath!!)
+    // Verify that backslashes are sanitized, preventing traversal.
+    assertThat(logcatFile.name).isEqualTo("logcat-com.example.MyTest-.._.._.._evil.txt")
+    assertThat(logcatFile.parentFile.absolutePath).isEqualTo(resultsDir.absolutePath)
+    assertThat(logcatFile.exists()).isTrue()
+
+    collector.cleanup()
+  }
 }

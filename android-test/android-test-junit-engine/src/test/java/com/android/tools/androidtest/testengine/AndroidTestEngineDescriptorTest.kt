@@ -58,4 +58,50 @@ class AndroidTestEngineDescriptorTest {
     assertThat(descriptors[1].uniqueId.segments.last().value).isEqualTo("serial2")
     assertThat(descriptors[1].parent.get()).isSameInstanceAs(descriptor)
   }
+
+  @Test
+  fun `execute sanitizes device serials and versions with unsafe characters`() {
+    val uniqueId = UniqueId.forEngine("android-test-engine")
+    val descriptor = AndroidTestEngineDescriptor(uniqueId)
+
+    val context = mock<AndroidTestExecutionContext>()
+    val configuration = mock<AndroidTestConfiguration>()
+    whenever(context.configuration).thenReturn(configuration)
+    whenever(configuration.deviceSerials).thenReturn(listOf("../../../evil serial"))
+    whenever(configuration.adb).thenReturn(File("adb"))
+
+    val dynamicTestExecutor = mock<Node.DynamicTestExecutor>()
+
+    descriptor.execute(context, dynamicTestExecutor)
+
+    val captor = argumentCaptor<AndroidDeviceDescriptor>()
+    verify(dynamicTestExecutor).execute(captor.capture())
+
+    val deviceDescriptor = captor.firstValue
+    assertThat(deviceDescriptor.deviceSerial).isEqualTo("../../../evil serial")
+    assertThat(deviceDescriptor.deviceId).isEqualTo(".._.._.._evil serial")
+    assertThat(deviceDescriptor.deviceDisplayName).isEqualTo(".._.._.._evil serial")
+  }
+
+  @Test
+  fun `execute falls back to device if sanitized name is empty or all dots`() {
+    val uniqueId = UniqueId.forEngine("android-test-engine")
+    val descriptor = AndroidTestEngineDescriptor(uniqueId)
+
+    val context = mock<AndroidTestExecutionContext>()
+    val configuration = mock<AndroidTestConfiguration>()
+    whenever(context.configuration).thenReturn(configuration)
+    whenever(configuration.deviceSerials).thenReturn(listOf(".."))
+    whenever(configuration.adb).thenReturn(File("adb"))
+
+    val dynamicTestExecutor = mock<Node.DynamicTestExecutor>()
+
+    descriptor.execute(context, dynamicTestExecutor)
+
+    val captor = argumentCaptor<AndroidDeviceDescriptor>()
+    verify(dynamicTestExecutor).execute(captor.capture())
+
+    val deviceDescriptor = captor.firstValue
+    assertThat(deviceDescriptor.deviceId).isEqualTo("device")
+  }
 }

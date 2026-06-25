@@ -262,4 +262,101 @@ class AndroidAdditionalTestOutputCollectorTest {
     verify(adbController)
       .pull(eq(deviceSerial), eq("$benchmarkOutputDir/trace.pb"), eq(File(hostOutputDir, "trace.pb").absolutePath), anyOrNull())
   }
+
+  @Test
+  fun prepare_refusesUnnormalizedHostDir() {
+    val unnormalizedDir = File(hostOutputDir, "sub/../../outside")
+    val collector =
+      AndroidAdditionalTestOutputCollector(
+        adbController,
+        deviceSerial,
+        unnormalizedDir,
+        deviceOutputDir,
+        instrumentationTargetPackageId = "instr.pkg",
+        testedApplicationId = "pkg",
+        useTestStorageService = false,
+      )
+
+    // Mock API level 33 for the test
+    doReturn(AdbController.CommandResult(0, "33", ""))
+      .`when`(adbController)
+      .runAdbShellCommand(eq(deviceSerial), eq(listOf("getprop", "ro.build.version.sdk")), anyOrNull())
+
+    try {
+      collector.prepare()
+      org.junit.Assert.fail("Expected IllegalArgumentException")
+    } catch (e: IllegalArgumentException) {
+      assertThat(e.message).contains("Refusing deleteRecursively() on un-normalised path")
+    }
+  }
+
+  @Test
+  fun collect_skipsAllDotsFiles() {
+    val collector =
+      AndroidAdditionalTestOutputCollector(
+        adbController,
+        deviceSerial,
+        hostOutputDir,
+        deviceOutputDir,
+        instrumentationTargetPackageId = "instr.pkg",
+        testedApplicationId = "pkg",
+        useTestStorageService = false,
+      )
+
+    // Mock isDirectory to return true for the deviceOutputDir
+    doReturn(AdbController.CommandResult(0, "", ""))
+      .`when`(adbController)
+      .runAdbShellCommand(eq(deviceSerial), eq(listOf("test", "-d", deviceOutputDir)), anyOrNull())
+    // Mock ls to return a malicious path element containing only dots
+    doReturn(AdbController.CommandResult(0, "..", ""))
+      .`when`(adbController)
+      .runAdbShellCommand(eq(deviceSerial), eq(listOf("ls", deviceOutputDir)), anyOrNull())
+    // Mock isDirectory for the file to return false
+    doReturn(AdbController.CommandResult(1, "", ""))
+      .`when`(adbController)
+      .runAdbShellCommand(eq(deviceSerial), eq(listOf("test", "-d", "$deviceOutputDir/..")), anyOrNull())
+
+    // Mock API level check
+    doReturn(AdbController.CommandResult(0, "33", ""))
+      .`when`(adbController)
+      .runAdbShellCommand(eq(deviceSerial), eq(listOf("getprop", "ro.build.version.sdk")), anyOrNull())
+
+    collector.collect()
+
+    // Verify pull was never called
+    org.mockito.Mockito.verify(adbController, org.mockito.Mockito.never()).pull(anyString(), anyString(), anyString(), anyOrNull())
+  }
+
+  @Test
+  fun pullDirectory_sanitizesAndBlocksTraversal() {
+    val collector =
+      AndroidAdditionalTestOutputCollector(
+        adbController,
+        deviceSerial,
+        hostOutputDir,
+        additionalOutputDirectoryOnDevice = null,
+        instrumentationTargetPackageId = "instr.pkg",
+        testedApplicationId = "pkg",
+        useTestStorageService = false,
+      )
+
+    val deviceDir = "/sdcard/files"
+    // Mock ls to return files, including malicious ones
+    doReturn(AdbController.CommandResult(0, "safe.txt\n..\nsub/../../evil.txt", ""))
+      .`when`(adbController)
+      .runAdbShellCommand(eq(deviceSerial), eq(listOf("ls", deviceDir)), anyOrNull())
+
+    collector.pullDirectory(deviceDir, hostOutputDir)
+
+    // verify safe.txt is pulled
+    verify(adbController).pull(eq(deviceSerial), eq("$deviceDir/safe.txt"), eq(File(hostOutputDir, "safe.txt").absolutePath), anyOrNull())
+
+    // verify ".." is not pulled
+    org.mockito.Mockito.verify(adbController, org.mockito.Mockito.never())
+      .pull(eq(deviceSerial), eq("$deviceDir/.."), anyString(), anyOrNull())
+
+    // verify "sub/../../evil.txt" is sanitized and pulled as "sub_.._.._evil.txt"
+    verify(adbController)
+      .pull(eq(deviceSerial), eq("$deviceDir/sub/../../evil.txt"), eq(File(hostOutputDir, "sub_.._.._evil.txt").absolutePath), anyOrNull())
+  }
 }

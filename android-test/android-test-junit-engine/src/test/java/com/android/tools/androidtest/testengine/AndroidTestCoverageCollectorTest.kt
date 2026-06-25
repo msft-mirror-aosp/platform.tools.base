@@ -354,6 +354,31 @@ class AndroidTestCoverageCollectorTest {
     verify(additionalOutputCollector).pullFile(eq("coverage.ec"), anyOrNull())
   }
 
+  @Test
+  fun prepare_refusesUnnormalizedHostDir() {
+    val unnormalizedDir = File(coverageDirOnHost, "sub/../../outside")
+    val collector =
+      AndroidTestCoverageCollector(
+        adbController,
+        deviceSerial,
+        unnormalizedDir,
+        coverageFileOnDevice = "/data/data/pkg/coverage.ec",
+        coverageDirOnDevice = null,
+        useTestStorageService = false,
+        additionalOutputCollector,
+      )
+
+    // Mock API level and test service check
+    mockAdbResponse(listOf("pm", "list", "packages", "androidx.test.services"), "package:other")
+
+    try {
+      collector.prepare()
+      org.junit.Assert.fail("Expected IllegalArgumentException")
+    } catch (e: IllegalArgumentException) {
+      assertThat(e.message).contains("Refusing deleteRecursively() on un-normalised path")
+    }
+  }
+
   private fun mockAdbResponse(args: List<String>, output: String, exitCode: Int = 0) {
     doReturn(AdbController.CommandResult(exitCode, output, ""))
       .`when`(adbController)
