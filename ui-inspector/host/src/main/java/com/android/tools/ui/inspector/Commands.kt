@@ -250,6 +250,7 @@ internal suspend fun dumpUi(
   }
 
   // Print output
+  uiDump.appContext?.let { printAppContext(it, uiDump.stringTable) }
   uiDump.configuration?.let { printDeviceConfiguration(it, uiDump.stringTable) }
   uiDump.roots.forEach { printUiTree(it, 0, includeAttributes, includeSemantics) }
 }

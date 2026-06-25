@@ -63,5 +63,6 @@ internal suspend fun dumpViews(commandSender: CommandSender, includeAttributes: 
 
   val roots = dumpResponse.nodesList.map { convertViewNode(it, stringTable) }
   val configuration = if (dumpResponse.hasConfiguration()) dumpResponse.configuration else null
-  return UiDump(roots, configuration, stringTable)
+  val appContext = if (dumpResponse.hasAppContext()) dumpResponse.appContext else null
+  return UiDump(roots, configuration, stringTable, appContext)
 }

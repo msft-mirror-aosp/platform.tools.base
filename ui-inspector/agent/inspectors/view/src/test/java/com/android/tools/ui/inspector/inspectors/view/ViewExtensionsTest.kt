@@ -17,6 +17,7 @@
 package com.android.tools.ui.inspector.inspectors.view
 
 import android.app.Activity
+import android.hardware.display.DisplayManager
 import android.view.View
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
@@ -73,5 +74,30 @@ class ViewExtensionsTest {
     // 3. Test non-existent positive ID (triggers NotFoundException internally)
     val nonExistentResourceStr = view.resolveResourceToString(999999)
     assertThat(nonExistentResourceStr).isNull()
+  }
+
+  @Test
+  @Config(qualifiers = "w400dp-h800dp-port")
+  fun testCreateAppContext() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    activity.setTheme(android.R.style.Theme_Material)
+    val view = View(activity)
+    val stringTable = StringTable()
+    val appContext = view.createAppContext(stringTable)
+
+    // Verify theme resolved
+    val stringMap = stringTable.toStringEntries().associate { it.id to it.value }
+    val themeStr = stringMap[appContext.theme]
+    assertThat(themeStr).isEqualTo("@android:style/Theme.Material")
+
+    // Verify display info
+    assertThat(appContext.displayInfoCount).isAtLeast(1)
+    val display = appContext.getDisplayInfo(0)
+    val displayManager = activity.getSystemService(DisplayManager::class.java)
+    val expectedDisplayId = displayManager?.displays?.firstOrNull()?.displayId
+    assertThat(display.id).isEqualTo(expectedDisplayId)
+    assertThat(display.widthPx).isGreaterThan(0)
+    assertThat(display.heightPx).isGreaterThan(0)
+    assertThat(display.orientation).isEqualTo(0) // ROTATION_0
   }
 }

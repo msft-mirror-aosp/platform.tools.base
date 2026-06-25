@@ -52,17 +52,21 @@ class ViewInspector(connection: Connection, private val environment: InspectorEn
     val includeResolutionStack = dumpViewsCommand.includeResolutionStack
     scope.launch {
       val stringTable = StringTable()
-      val (nodes, systemConfig) =
+      val (nodes, systemConfig, appContext) =
         withContext(mainDispatcher) {
           val roots = RootsDetector.getRootViews()
           val config = roots.firstOrNull()?.context?.resources?.configuration
+          val appCtx = roots.firstOrNull()?.createAppContext(stringTable)
           val viewNodes = roots.map { it.toViewNode(stringTable, includeAttributes, includeResolutionStack) }
-          viewNodes to config
+          Triple(viewNodes, config, appCtx)
         }
       callback.reply {
         val builder = DumpViewsResponse.newBuilder().addAllNodes(nodes)
         if (systemConfig != null) {
           builder.configuration = systemConfig.convert(stringTable)
+        }
+        if (appContext != null) {
+          builder.appContext = appContext
         }
         builder.addAllStrings(stringTable.toStringEntries())
         dumpViewsResponse = builder.build()
