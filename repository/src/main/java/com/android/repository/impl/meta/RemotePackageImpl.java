@@ -26,10 +26,13 @@ import com.android.repository.api.RepoManager;
 import com.android.repository.api.RepoPackage;
 import com.android.repository.api.Repository;
 import com.android.repository.api.RepositorySource;
+
 import com.google.common.annotations.VisibleForTesting;
+
 import java.io.File;
 import java.nio.file.Path;
 import java.util.List;
+
 import javax.xml.bind.annotation.XmlTransient;
 
 /**
@@ -95,9 +98,23 @@ public abstract class RemotePackageImpl extends RepoPackageImpl implements Remot
     @NonNull
     @Override
     public Path getInstallDir(@NonNull RepoManager manager, @NonNull ProgressIndicator progress) {
-        assert manager.getLocalPath() != null;
-        String path = getPath().replace(RepoPackage.PATH_SEPARATOR, File.separatorChar);
-        return manager.getLocalPath().resolve(path);
+        Path sdkRoot = manager.getLocalPath();
+        assert sdkRoot != null;
+        sdkRoot = sdkRoot.toAbsolutePath().normalize();
+        String relPath = getPath().replace(RepoPackage.PATH_SEPARATOR, File.separatorChar);
+        Path result = sdkRoot.resolve(relPath).toAbsolutePath().normalize();
+        // The package path comes from a network manifest; it MUST resolve under $SDK.
+        if (!result.startsWith(sdkRoot) || result.equals(sdkRoot)) {
+            throw new IllegalArgumentException(
+                    "Package path '"
+                            + getPath()
+                            + "' resolves outside the SDK root ("
+                            + result
+                            + " vs "
+                            + sdkRoot
+                            + ")");
+        }
+        return result;
     }
 
     /**
