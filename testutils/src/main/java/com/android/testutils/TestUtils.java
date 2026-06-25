@@ -84,7 +84,7 @@ public class TestUtils {
      * <p>The following script updates the dev Kotlin version:
      * sync-memory-tests/src/com/android/tools/idea/gradle/project/sync/UpdateBenchmarkVersions.kt
      */
-    public static final String LATEST_KOTLIN_VERSION = "2.4.0-dev-8268";
+    public static final String LATEST_KOTLIN_VERSION = "2.4.20-dev-6612";
 
     /** Compose compiler compatible with {@link #KOTLIN_VERSION_FOR_COMPOSE_TESTS}. */
     public static final String COMPOSE_COMPILER_FOR_TESTS = "1.5.11";
@@ -192,7 +192,7 @@ public class TestUtils {
             // it. If we're using Bazel, we should still look to see if there's a larger outermost
             // workspace since we might be within a nested workspace.
             while (currDir != null) {
-                Path workspacePath = currDir.resolve("WORKSPACE");
+                Path workspacePath = currDir.resolve("MODULE.bazel");
                 // Ensure that the workspacePath being looked at is NOT a directory.
                 if (Files.isRegularFile(workspacePath)) {
                     workspaceRoot = currDir;
@@ -202,7 +202,7 @@ public class TestUtils {
 
             if (workspaceRoot == null) {
                 throw new IllegalStateException(
-                        "Could not find WORKSPACE root. Is the original working directory a "
+                        "Could not find MODULE.bazel. Is the original working directory a "
                                 + "subdirectory of the Android Studio codebase?\n\n"
                                 + "pwd = "
                                 + initialDir);

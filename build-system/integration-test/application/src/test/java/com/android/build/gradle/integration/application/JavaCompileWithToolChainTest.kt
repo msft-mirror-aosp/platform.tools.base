@@ -51,7 +51,7 @@ class JavaCompileWithToolChainTest {
 
     rule.build.reconfigureGradleProperties {
       add("org.gradle.java.installations.paths", latestJdkLocationInGradleFile)
-      add("toolchainVersion", latestJdkVersion.toString())
+      add("toolchainVersion", jdkVersion)
     }
 
     result = rule.build.executor.withArgument("--info").run("assembleDebug")
@@ -63,7 +63,7 @@ class JavaCompileWithToolChainTest {
       gradleProperties {
         add("org.gradle.java.installations.auto-detect", "false")
         add("org.gradle.java.installations.paths", latestJdkLocationInGradleFile)
-        add("toolchainVersion", latestJdkVersion.toString())
+        add("toolchainVersion", jdkVersion)
       }
       androidApplication { kotlin { compilerOptions { allWarningsAsErrors.set(true) } } }
     }
@@ -86,7 +86,7 @@ class JavaCompileWithToolChainTest {
             // Reading targetCompatibility after configuration should succeed
             afterEvaluate {
                 def targetCompatibility = android.compileOptions.targetCompatibility
-                if (targetCompatibility != JavaVersion.toVersion($latestJdkVersion)) {
+                if (targetCompatibility != JavaVersion.toVersion($jdkVersion)) {
                     throw new IllegalStateException("Unexpected targetCompatibility: " + targetCompatibility)
                 }
             }
@@ -118,8 +118,8 @@ class JavaCompileWithToolChainTest {
     val androidProject = rule.build.modelBuilder.fetchModels(variantName = "debug").container.getProject(":app").androidProject!!
     assertThat(androidProject.javaCompileOptions).isNotNull()
     androidProject.javaCompileOptions?.let {
-      assertThat(it.sourceCompatibility).isEqualTo(latestJdkVersion.toString())
-      assertThat(it.targetCompatibility).isEqualTo(latestJdkVersion.toString())
+      assertThat(it.sourceCompatibility).isEqualTo(jdkVersion)
+      assertThat(it.targetCompatibility).isEqualTo(jdkVersion)
     }
   }
 
@@ -129,7 +129,7 @@ class JavaCompileWithToolChainTest {
       gradleProperties {
         add("org.gradle.java.installations.auto-detect", "false")
         add("org.gradle.java.installations.paths", latestJdkLocationInGradleFile)
-        add("toolchainVersion", latestJdkVersion.toString())
+        add("toolchainVersion", jdkVersion)
         add(BooleanOption.BUILT_IN_KOTLIN, false)
         add(BooleanOption.USE_NEW_DSL, false)
       }
@@ -157,7 +157,7 @@ class JavaCompileWithToolChainTest {
             // Reading targetCompatibility after configuration should succeed
             afterEvaluate {
                 def targetCompatibility = android.compileOptions.targetCompatibility
-                if (targetCompatibility != JavaVersion.toVersion($latestJdkVersion)) {
+                if (targetCompatibility != JavaVersion.toVersion($jdkVersion)) {
                     throw new IllegalStateException("Unexpected targetCompatibility: " + targetCompatibility)
                 }
             }
@@ -192,8 +192,8 @@ class JavaCompileWithToolChainTest {
         .androidProject!!
     assertThat(androidProject.javaCompileOptions).isNotNull()
     androidProject.javaCompileOptions?.let {
-      assertThat(it.sourceCompatibility).isEqualTo(latestJdkVersion.toString())
-      assertThat(it.targetCompatibility).isEqualTo(latestJdkVersion.toString())
+      assertThat(it.sourceCompatibility).isEqualTo(jdkVersion)
+      assertThat(it.targetCompatibility).isEqualTo(jdkVersion)
     }
   }
 
@@ -252,16 +252,11 @@ class JavaCompileWithToolChainTest {
   companion object {
     private val jdk8Location = TestUtils.getJava8Jdk().toString()
 
-    private val latestJdkVersion = Runtime.version().feature()
-    private val latestJdkLocation =
-      when (latestJdkVersion) {
-        17 -> TestUtils.getJava17Jdk()
-        21 -> TestUtils.getJava21Jdk()
-        else -> throw Exception("Finding the jdk path of jdk $latestJdkVersion is not supported")
-      }.toString()
+    private val jdkVersion = "21"
+    private val jdk21Location = TestUtils.getJava21Jdk().toString()
 
     val jdk8LocationInGradleFile = jdk8Location.replace("\\", "/")
-    val latestJdkLocationInGradleFile = latestJdkLocation.replace("\\", "/")
+    val latestJdkLocationInGradleFile = jdk21Location.replace("\\", "/")
 
     val jdk8LocationFromStdout =
       if (OsType.getHostOs() == OsType.WINDOWS) {
@@ -272,9 +267,9 @@ class JavaCompileWithToolChainTest {
 
     val latestJdkLocationFromStdout =
       if (OsType.getHostOs() == OsType.WINDOWS) {
-        latestJdkLocation.replace("/", "\\")
+        jdk21Location.replace("/", "\\")
       } else {
-        latestJdkLocation
+        jdk21Location
       }
   }
 }

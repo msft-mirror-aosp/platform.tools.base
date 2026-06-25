@@ -145,7 +145,7 @@ interface Template {
     override val name: String = "No Activity"
     override val description: String = "Creates a new empty project"
     override val documentationUrl: String? = null
-    override val minSdk: Int = 1
+    override val minSdk: Int = 23
     override val category: Category = Category.Activity
     override val formFactor: FormFactor = FormFactor.Mobile
     override val useGenericInstrumentedTests = true

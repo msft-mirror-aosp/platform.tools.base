@@ -1,5 +1,5 @@
-load("//tools/base/bazel/jarjar:jarjar.bzl", "jarjar")
 load("@bazel_skylib//lib:paths.bzl", "paths")
+load("//tools/base/bazel/jarjar:jarjar.bzl", "jarjar")
 
 def _fileset_impl(ctx):
     srcs = depset(order = "postorder", transitive = [src.files for src in ctx.attr.srcs])
@@ -303,3 +303,30 @@ def is_release():
         "@//tools/base/bazel:release": True,
         "//conditions:default": False,
     })
+
+def endswith_glob(path, pattern):
+    """
+    Check if the end of a path matches a glob pattern that contains at most one '*'.
+    The '*' character matches any sequence of zero or more characters,
+    excluding path separators.
+    """
+    if "*" not in pattern:
+        return path.endswith(pattern)
+
+    parts = pattern.split("*")
+    if len(parts) == 2:
+        prefix, suffix = parts[0], parts[1]
+        if not path.endswith(suffix):
+            return False
+        remainder = path
+        if suffix:
+            remainder = path[:-len(suffix)]
+
+        idx = remainder.rfind(prefix)
+        if idx == -1:
+            return False
+
+        wildcard_part = remainder[idx + len(prefix):]
+        return "/" not in wildcard_part
+
+    fail("Patterns with more than one '*' are not supported.")

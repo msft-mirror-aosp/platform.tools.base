@@ -245,6 +245,19 @@ internal class TemplateFileContentProcessor(val messageSink: TemplateMessageSink
   fun processTemplateFileContent(inputFile: TemplateFile, lineTransformer: (Int, String) -> String): TemplateFile {
     val byteArray = inputFile.content
 
+    val isCrlf = run {
+      var found = false
+      for (i in 0 until byteArray.size - 1) {
+        if (byteArray[i] == '\r'.code.toByte() && byteArray[i + 1] == '\n'.code.toByte()) {
+          found = true
+          break
+        }
+      }
+      found
+    }
+    val separator = if (isCrlf) "\r\n" else "\n"
+    val postfix = if (byteArray.isNotEmpty() && byteArray.last() == '\n'.code.toByte()) separator else ""
+
     var hasChanges = false
     val newContent =
       ByteArrayInputStream(byteArray).bufferedReader().useLines { lines ->
@@ -257,7 +270,7 @@ internal class TemplateFileContentProcessor(val messageSink: TemplateMessageSink
               }
             }
           }
-          .joinToString(separator = "\n", postfix = if (byteArray.isNotEmpty() && byteArray.last() == '\n'.code.toByte()) "\n" else "")
+          .joinToString(separator = separator, postfix = postfix)
       }
 
     return if (hasChanges) {

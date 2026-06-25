@@ -27,7 +27,6 @@ build --verbose_failures
 common --noincompatible_disallow_empty_glob
 # TODO(b/416777191) PerfgateDataCollector relies on zipped test outputs.
 test --zip_undeclared_test_outputs
-common --enable_workspace
 
 # Needed by rules_android.
 common --experimental_google_legacy_api
@@ -99,10 +98,6 @@ build --tool_java_runtime_version=jbr-next
 
 build --stripopt=--strip-unneeded
 
-# lnzipper expects workspace filesystem state (i.e. symlinks) which may not
-# be the same when run inside a sandbox or remotely.
-build --strategy=lnzipper=local
-
 # Do not register auto-generated cpp toolchains
 common --repo_env='BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1'
 
@@ -160,6 +155,8 @@ build:ants --bes_keywords=antswatcher:skip_tests_if_timeout
 build:ants --bes_keywords=antswatcher:use_dependent_jobs
 build:ants --bes_keywords=antswatcher:android_module_behavior
 build:ants --bes_keywords=antswatcher:enable_resultdb
+build:ants --bes_keywords=antswatcher:enable_ants_v4
+build:ants --bes_keywords=antswatcher:enable_ants_v4_writes
 
 ## Base config for using the remote cache.
 ## This avoids building things which were already built by CI.

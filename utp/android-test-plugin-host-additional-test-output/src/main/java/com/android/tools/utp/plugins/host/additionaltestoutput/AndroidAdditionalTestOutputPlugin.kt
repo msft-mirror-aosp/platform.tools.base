@@ -17,6 +17,7 @@ package com.android.tools.utp.plugins.host.additionaltestoutput
 
 import com.android.tools.utp.plugins.common.HostPluginAdapter
 import com.android.tools.utp.plugins.host.additionaltestoutput.proto.AndroidAdditionalTestOutputConfigProto.AndroidAdditionalTestOutputConfig
+import com.android.utils.FileUtils
 import com.google.common.io.Files
 import com.google.testing.platform.api.config.ProtoConfig
 import com.google.testing.platform.api.context.Context
@@ -91,6 +92,8 @@ class AndroidAdditionalTestOutputPlugin(private val logger: Logger = getLogger()
   /** Creates an empty directory on host machine. If a directory exists at the given path, it removes all contents in the directory. */
   private fun createEmptyDirectoryOnHost() {
     val dir = File(config.additionalOutputDirectoryOnHost)
+    val p = dir.toPath().toAbsolutePath()
+    require(p == p.normalize()) { "Refusing deleteRecursively() on un-normalised path: $p" }
     if (dir.exists()) {
       dir.deleteRecursively()
     }
@@ -270,8 +273,12 @@ class AndroidAdditionalTestOutputPlugin(private val logger: Logger = getLogger()
 
     // Note: "ls -1" doesn't work on API level 21.
     deviceController.deviceShellAndCheckSuccess("ls \"${deviceDir}\" | cat").output.filter(String::isNotBlank).forEach {
+      val sanitized = FileUtils.sanitizeFileName(it)
+      if (sanitized.isBlank() || sanitized == "." || sanitized == "..") {
+        return@forEach
+      }
       val deviceFilePath = "${deviceDir}/${it}"
-      val hostFilePath = "${hostDir}${File.separator}${it}"
+      val hostFilePath = "${hostDir}${File.separator}${sanitized}"
       logger.info("Copying $deviceFilePath to $hostFilePath")
       if (deviceController.isDirectory(deviceFilePath)) {
         File(hostFilePath).let {
@@ -322,8 +329,13 @@ class AndroidAdditionalTestOutputPlugin(private val logger: Logger = getLogger()
         val matchResult = regex.find(it) ?: return@forEach
         val (id, path) = matchResult.destructured
         val relativeFilePath = path.removePrefix(normalizedDeviceDir).removePrefix("/")
-        if (filter(relativeFilePath)) {
-          val hostFile = File(hostDir + File.separator + relativeFilePath)
+        val safeSegments = relativeFilePath.split('/').map { FileUtils.sanitizeFileName(it) }
+        if (safeSegments.any { it == "." || it == ".." || it.isBlank() }) {
+          return@forEach
+        }
+        val safeRelativeFilePath = safeSegments.joinToString(File.separator)
+        if (filter(safeRelativeFilePath)) {
+          val hostFile = File(hostDir, safeRelativeFilePath)
           hostFile.parentFile.let { parentFile ->
             if (!parentFile.exists()) {
               parentFile.mkdirs()

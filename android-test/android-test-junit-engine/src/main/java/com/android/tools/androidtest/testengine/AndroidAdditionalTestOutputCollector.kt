@@ -143,7 +143,7 @@ class AndroidAdditionalTestOutputCollector(
       logger.warning("Failed to list directory on device: $deviceDirPath. exitCode=${result.exitCode}, error=${result.errorOutput}")
       return
     }
-    val fileNames = result.output.lines().filter { it.isNotBlank() && (extension == null || it.endsWith(extension)) }
+    val fileNames = result.output.lines().map { it.trim() }.filter { it.isNotBlank() && (extension == null || it.endsWith(extension)) }
     fileNames.forEach { fileName -> pullFile("$deviceDirPath/$fileName", File(hostDirPath, fileName)) }
   }
 

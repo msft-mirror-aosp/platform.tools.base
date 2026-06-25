@@ -58,7 +58,7 @@ maven_library(
 java_library(
     name = "groovy_neverlink",
     neverlink = 1,
-    exports = ["@maven//:org.codehaus.groovy.groovy"],
+    exports = ["@maven//:org.apache.groovy.groovy"],
 )
 
 sdk_java_binary(

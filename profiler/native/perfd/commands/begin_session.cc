@@ -22,6 +22,7 @@
 
 #include "perfd/sessions/sessions_manager.h"
 #include "proto/common.pb.h"
+#include "utils/bash_command.h"
 #include "utils/log.h"
 #include "utils/process_manager.h"
 
@@ -41,6 +42,20 @@ Status BeginSession::ExecuteOn(Daemon* daemon) {
     return Status(StatusCode::NOT_FOUND,
                   "Process isn't running. Cannot create session.");
   }
+
+  if (data_.jvmti_config().attach_agent()) {
+    string package_name = data_.jvmti_config().package_name();
+
+    if (app_name.find_first_not_of(kSafeNameChars) != string::npos ||
+        package_name.find_first_not_of(kSafeNameChars) != string::npos ||
+        data_.jvmti_config().agent_lib_file_name().find_first_not_of(
+            kSafeNameChars) != string::npos) {
+      return Status(
+          StatusCode::INVALID_ARGUMENT,
+          "Invalid package/process/agent-lib name. Cannot attach agent.");
+    }
+  }
+
   SessionsManager::Instance()->BeginSession(daemon, command().stream_id(), pid,
                                             data_, is_task_based_ux_enabled_);
 

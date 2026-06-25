@@ -79,6 +79,15 @@ class OsBehaviorTests {
     }
   }
 
+  @Test
+  fun `quoteCommandLineArgument on Linux`() {
+    val os = createOsBehavior(platform = PLATFORM_LINUX)
+    assertThat(os.quoteCommandLineArgument("foo")).isEqualTo("'foo'")
+    assertThat(os.quoteCommandLineArgument("foo bar")).isEqualTo("'foo bar'")
+    assertThat(os.quoteCommandLineArgument(" \$(touch PWNED)")).isEqualTo("' \$(touch PWNED)'")
+    assertThat(os.quoteCommandLineArgument("foo'bar")).isEqualTo("'foo'\\''bar'")
+  }
+
   private fun setupFolders(platform: Int, vararg files: String): TestFolders {
     val base = tempFolder.newFolder()
 

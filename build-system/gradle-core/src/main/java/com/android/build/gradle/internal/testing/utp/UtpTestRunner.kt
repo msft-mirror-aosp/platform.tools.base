@@ -25,6 +25,7 @@ import com.android.ide.common.workers.ExecutorServiceAdapter
 import com.android.tools.utp.gradle.api.EmulatorControlConfig
 import com.android.tools.utp.gradle.api.TargetApkConfigBundle
 import com.android.tools.utp.gradle.api.UtpDependencies
+import com.android.utils.FileUtils
 import com.android.utils.ILogger
 import com.google.common.collect.ImmutableList
 import java.io.File
@@ -67,15 +68,17 @@ class UtpTestRunner(
       apksForDevice
         .filter { (device, _) -> !versionedSdkLoader.adbHelper.get().isManagedDevice(device.getSerialNumber(), logger) }
         .map { (deviceConnector, apks) ->
+          val safeDeviceName =
+            FileUtils.sanitizeFileName(deviceConnector.name).let { if (it.isBlank() || it.all { c -> c == '.' }) "device" else it }
           val utpOutputDir =
-            File(resultsDir, deviceConnector.name).apply {
+            File(resultsDir, safeDeviceName).apply {
               if (!exists()) {
                 mkdirs()
               }
             }
           val additionalTestOutputDir =
             if (additionalTestOutputEnabled && additionalTestOutputDir != null) {
-              File(additionalTestOutputDir, deviceConnector.name)
+              File(additionalTestOutputDir, safeDeviceName)
             } else {
               null
             }
@@ -97,7 +100,7 @@ class UtpTestRunner(
             uninstallIncompatibleApks,
             utpOutputDir,
             emulatorControlConfig,
-            File(coverageDir, deviceConnector.name),
+            File(coverageDir, safeDeviceName),
             useOrchestrator,
             forceCompilation,
             additionalTestOutputDir,

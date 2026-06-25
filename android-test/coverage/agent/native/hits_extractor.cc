@@ -133,7 +133,7 @@ bool HitsExtractor::ExtractAndWrite(JNIEnv* jni) const {
   hits_proto.set_version(1);
   hits_proto.set_hit_mask(bitmask);
 
-  std::string path = data_dir_ + "/code_cache/coverage_hits.pb";
+  std::string path = data_dir_ + "/coverage_hits.pb";
   std::string tmp_path = path + ".tmp";
 
   std::ofstream out(tmp_path, std::ios::binary | std::ios::trunc);

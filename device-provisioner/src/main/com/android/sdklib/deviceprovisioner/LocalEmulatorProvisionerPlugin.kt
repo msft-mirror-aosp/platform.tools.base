@@ -384,7 +384,6 @@ class LocalEmulatorDeviceHandle(
                     LocalEmulatorProperties.build(activeAvdInfo) {
                       readCommonProperties(newProperties)
                       populateDeviceInfoProto(PLUGIN_ID, connectedDevice.serialNumber, newProperties, randomConnectionId())
-                      // Device type is not always reliably read from properties
                       deviceType = activeAvdInfo.toDeviceType()
                       density = newProperties[DevicePropertyNames.QEMU_SF_LCD_DENSITY]?.toIntOrNull()
                       resolution = message.resolution
@@ -637,6 +636,7 @@ data class LocalEmulatorProperties(
   override val disambiguator: String?,
   override val deviceType: DeviceType?,
   override val isVirtual: Boolean?,
+  override val emulatorType: EmulatorType? = null,
   override val isRemote: Boolean?,
   override val isDebuggable: Boolean?,
   override val isResizable: Boolean?,
@@ -699,6 +699,7 @@ data class LocalEmulatorProperties(
 
     fun setAvdInfo(avdInfo: AvdInfo) {
       isVirtual = true
+      emulatorType = EmulatorType.GOLDFISH
       manufacturer = avdInfo.deviceManufacturer
       model = avdInfo.deviceName
       androidVersion = avdInfo.androidVersion
@@ -734,6 +735,7 @@ data class LocalEmulatorProperties(
         disambiguator = disambiguator,
         deviceType = deviceType,
         isVirtual = isVirtual,
+        emulatorType = emulatorType,
         isRemote = isRemote,
         isDebuggable = isDebuggable,
         isResizable = isResizable,

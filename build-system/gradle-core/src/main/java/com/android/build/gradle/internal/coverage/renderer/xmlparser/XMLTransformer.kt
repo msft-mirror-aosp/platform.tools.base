@@ -84,17 +84,25 @@ object XMLTransformer {
    * @param projectBaseDir The base directory of the project, used to calculate relative paths.
    * @param coverageBuilder The main builder for the entire coverage report.
    * @param sourceFileReportsBuilder The top-level builder for all source file reports.
+   * @param modulePathOverride Optional override for the module path.
+   * @param variantNameOverride Optional override for the variant name.
+   * @param testSuiteNameOverride Optional override for the test suite name.
+   * @param sourcePaths Optional list of relative source paths to use if the XML doesn't contain source locations.
    */
   fun transform(
     xmlFile: File,
     projectBaseDir: File,
     coverageBuilder: CoverageReportBuilder,
     sourceFileReportsBuilder: SourceFileReportsBuilder,
+    modulePathOverride: String? = null,
+    variantNameOverride: String? = null,
+    testSuiteNameOverride: String? = null,
+    sourcePaths: List<String>? = null,
   ) {
     if (!xmlFile.exists()) return
 
     val factory = DocumentBuilderFactory.newInstance()
-    factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true)
+    factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", false)
     factory.setFeature("http://xml.org/sax/features/external-general-entities", false)
     factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false)
     factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
@@ -104,7 +112,7 @@ object XMLTransformer {
     val doc = factory.newDocumentBuilder().parse(xmlFile)
     val rootElement = doc.documentElement.apply { normalize() }
 
-    val context = parseReportContext(rootElement)
+    val context = parseReportContext(rootElement, modulePathOverride, variantNameOverride, testSuiteNameOverride)
     if (context.testSuiteName != VALUE_AGGREGATED) coverageBuilder.allTestSuiteNames.add(context.testSuiteName + context.moduleName)
 
     val moduleReportBuilder = coverageBuilder.moduleReportBuilders.getOrPut(context.moduleName) { ModuleReportBuilder(context.moduleName) }
@@ -116,19 +124,24 @@ object XMLTransformer {
       .variantCoverages
       .add(VariantCoverage(context.variantName, overallCoverage.instruction, overallCoverage.branch))
 
-    val sourceFileLocations = parseSourceFileLocations(doc.documentElement)
+    val sourceFileLocations = sourcePaths ?: parseSourceFileLocations(doc.documentElement).takeIf { it.isNotEmpty() } ?: emptyList()
 
     for (packageNode in rootElement.getElementsByTagName(TAG_PACKAGE).elements) {
       parsePackage(packageNode, context, projectBaseDir, moduleReportBuilder, sourceFileReportsBuilder, sourceFileLocations)
     }
   }
 
-  private fun parseReportContext(rootElement: Element): ReportContext {
+  private fun parseReportContext(
+    rootElement: Element,
+    modulePathOverride: String?,
+    variantNameOverride: String?,
+    testSuiteNameOverride: String?,
+  ): ReportContext {
     val propertiesNode = rootElement.getElementsByTagName(TAG_PROPERTIES).item(0) as? Element
     return ReportContext(
-      moduleName = findProperty(propertiesNode, KEY_MODULE_PATH)?.takeIf { it.isNotEmpty() } ?: VALUE_DEFAULT,
-      variantName = findProperty(propertiesNode, KEY_VARIANT_NAME) ?: VALUE_UNKNOWN,
-      testSuiteName = findProperty(propertiesNode, KEY_TEST_SUITE_NAME) ?: VALUE_AGGREGATED,
+      moduleName = modulePathOverride ?: findProperty(propertiesNode, KEY_MODULE_PATH)?.takeIf { it.isNotEmpty() } ?: VALUE_DEFAULT,
+      variantName = variantNameOverride ?: findProperty(propertiesNode, KEY_VARIANT_NAME) ?: VALUE_UNKNOWN,
+      testSuiteName = testSuiteNameOverride ?: findProperty(propertiesNode, KEY_TEST_SUITE_NAME) ?: VALUE_AGGREGATED,
     )
   }
 

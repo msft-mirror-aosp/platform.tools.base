@@ -61,6 +61,7 @@ class PhysicalDeviceProvisionerPlugin(val scope: CoroutineScope, private val dev
         readAdbSerialNumber(device.serialNumber)
         disambiguator = wearPairingId
         readCommonProperties(properties)
+        readDeviceType(device, properties)
         populateDeviceInfoProto(PLUGIN_ID, device.serialNumber, properties, randomConnectionId())
         if (connectionType != ConnectionType.WIFI) {
           connectionType = ConnectionType.USB

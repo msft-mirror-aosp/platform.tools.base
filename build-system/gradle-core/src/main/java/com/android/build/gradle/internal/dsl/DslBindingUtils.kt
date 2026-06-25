@@ -38,6 +38,13 @@ object DslBindingUtils {
    */
   @JvmStatic
   fun copyProperties(source: Any, target: Any) {
+    copyPropertiesInternal(source, target, mutableSetOf())
+  }
+
+  private fun copyPropertiesInternal(source: Any, target: Any, visited: MutableSet<IdentityPair>) {
+    val pair = IdentityPair(source, target)
+    if (!visited.add(pair)) return
+
     for (method in source.javaClass.methods) {
       val name = method.name
 
@@ -96,7 +103,7 @@ object DslBindingUtils {
                   val sourceName = (sourceElement as Named).name
                   val targetElement = targetValue.maybeCreate(sourceName)
                   if (targetElement != null) {
-                    copyProperties(sourceElement, targetElement)
+                    copyPropertiesInternal(sourceElement, targetElement, visited)
                   }
                 }
               }
@@ -113,10 +120,10 @@ object DslBindingUtils {
                 }
               }
               isDslObject(value.javaClass) -> {
-                copyProperties(value, targetValue)
+                copyPropertiesInternal(value, targetValue, visited)
               }
               isNamedDomainObjectContainer(value.javaClass) -> {
-                copyProperties(value, targetValue)
+                copyPropertiesInternal(value, targetValue, visited)
               }
               else -> {
                 if (value != targetValue) {
@@ -131,6 +138,18 @@ object DslBindingUtils {
           }
         }
       }
+    }
+  }
+
+  private class IdentityPair(val first: Any, val second: Any) {
+    override fun equals(other: Any?): Boolean {
+      if (this === other) return true
+      if (other !is IdentityPair) return false
+      return first === other.first && second === other.second
+    }
+
+    override fun hashCode(): Int {
+      return System.identityHashCode(first) * 31 + System.identityHashCode(second)
     }
   }
 

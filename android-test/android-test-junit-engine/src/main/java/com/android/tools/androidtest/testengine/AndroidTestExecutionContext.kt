@@ -19,6 +19,7 @@ package com.android.tools.androidtest.testengine
 import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.AAPT2_PATH
 import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.ADB_PATH
 import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.ANDROID_TEST_EXECUTION_MODE
+import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.ANIMATIONS_DISABLED
 import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.APK_INSTALL_OPTIONS
 import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.DEVICE_SERIALS
 import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.INSTALL_TIMEOUT_MS
@@ -100,6 +101,7 @@ class AndroidTestConfiguration(request: ExecutionRequest) {
   val apkInstallOptions: List<String> = get(APK_INSTALL_OPTIONS)?.split(",")?.map { opt -> opt.trim() } ?: listOf()
   val uninstallApksAfterTests: Boolean = get(UNINSTALL_AFTER_TESTS)?.toBoolean() ?: true
   val executionMode: String? = get(ANDROID_TEST_EXECUTION_MODE, AgpTestSuiteInput.ANDROID_TEST_EXECUTION_MODE)
+  val animationsDisabled: Boolean = get(ANIMATIONS_DISABLED, AgpTestSuiteInput.ANIMATIONS_DISABLED)?.toBoolean() ?: false
 
   val instrumentationRunnerClass: String =
     get(INSTRUMENTATION_RUNNER_CLASS) ?: throw RuntimeException("$INSTRUMENTATION_RUNNER_CLASS configuration is required")
@@ -148,7 +150,7 @@ class AndroidTestConfiguration(request: ExecutionRequest) {
   }
 
   fun getCoverageDirOnHost(deviceSerial: String? = null): File? =
-    get("", AgpTestSuiteInput.COVERAGE_DIR, deviceSerial)?.let { File(it, "coverage_data") }
+    get(AndroidTestConfigurationKeys.COVERAGE_DIR_ON_HOST, AgpTestSuiteInput.COVERAGE_DIR, deviceSerial)?.let { File(it, "coverage_data") }
 
   val coverageFileOnDevice: String? = get(AndroidTestConfigurationKeys.COVERAGE_FILE_ON_DEVICE)
   val coverageDirOnDevice: String? = get(AndroidTestConfigurationKeys.COVERAGE_DIR_ON_DEVICE)

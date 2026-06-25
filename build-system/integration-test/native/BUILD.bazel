@@ -60,7 +60,7 @@ DEPS = [
     "@maven//:com.google.protobuf.protobuf-java-util",
     "@maven//:com.google.truth.truth",
     "@maven//:org.apache.commons.commons-compress",
-    "@maven//:org.codehaus.groovy.groovy-all",  # required by //tools/base/build-system:gradle-api
+    "@maven//:org.apache.groovy.groovy-all",  # required by //tools/base/build-system:gradle-api
     "@maven//:org.jetbrains.kotlin.kotlin-stdlib",
     "@maven//:org.jetbrains.kotlin.kotlin-test",
     "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-android",

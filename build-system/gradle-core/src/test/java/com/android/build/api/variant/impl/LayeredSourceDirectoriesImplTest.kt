@@ -147,6 +147,30 @@ internal class LayeredSourceDirectoriesImplTest {
     Truth.assertThat(allSources[3].single().asFile.name).isEqualTo("lowestStatic")
   }
 
+  @Test
+  fun testMultipleStaticSourceDirectories() {
+    val testTarget = LayeredSourceDirectoriesImpl("_for_test", variantServices, null)
+
+    val dir1 = temporaryFolder.newFolder("dir1")
+    val dir2 = temporaryFolder.newFolder("dir2")
+
+    testTarget.addStaticSourceDirectory(dir1.absolutePath)
+    testTarget.addStaticSourceDirectory(dir2.absolutePath)
+
+    val staticSources = testTarget.static.get()
+    val allSources = testTarget.all.get()
+
+    Truth.assertThat(staticSources).hasSize(1)
+    Truth.assertThat(staticSources[0]).hasSize(2)
+    val files = staticSources[0].map { it.asFile }
+    Truth.assertThat(files).containsExactly(dir1, dir2)
+
+    Truth.assertThat(allSources).hasSize(1)
+    Truth.assertThat(allSources[0]).hasSize(2)
+    val allFiles = allSources[0].map { it.asFile }
+    Truth.assertThat(allFiles).containsExactly(dir1, dir2)
+  }
+
   private fun createTestTarget(): LayeredSourceDirectoriesImpl {
 
     val testTarget = LayeredSourceDirectoriesImpl("_for_test", variantServices, null)

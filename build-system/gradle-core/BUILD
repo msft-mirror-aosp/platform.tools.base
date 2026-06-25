@@ -103,8 +103,8 @@ kotlin_library(
         "@maven//:com.squareup.javapoet",
         "@maven//:commons-io.commons-io",  # TODO: remove?
         "@maven//:net.sf.jopt-simple.jopt-simple",
+        "@maven//:org.apache.groovy.groovy-all",  # TODO: Not in the pom, but required to compile (?)
         "@maven//:org.apache.httpcomponents.httpmime",
-        "@maven//:org.codehaus.groovy.groovy-all",  # TODO: Not in the pom, but required to compile (?)
         "@maven//:org.glassfish.jaxb.jaxb-runtime",
         "@maven//:org.jetbrains.dokka.dokka-core",
         "@maven//:org.jetbrains.kotlin.kotlin-gradle-plugin",
@@ -233,8 +233,8 @@ kotlin_test(
         "@maven//:commons-io.commons-io",  # TODO: remove?
         "@maven//:junit.junit",
         "@maven//:nl.jqno.equalsverifier.equalsverifier",
+        "@maven//:org.apache.groovy.groovy-all",  # required by //tools/base/build-system:gradle-api
         "@maven//:org.apache.httpcomponents.httpmime",
-        "@maven//:org.codehaus.groovy.groovy-all",  # required by //tools/base/build-system:gradle-api
         "@maven//:org.jacoco.org.jacoco.core",
         "@maven//:org.jacoco.org.jacoco.report",
         "@maven//:org.jetbrains.kotlin.kotlin-gradle-plugin",

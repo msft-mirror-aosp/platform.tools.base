@@ -65,7 +65,6 @@ class DevicePropertiesTest {
     assertThat(props.androidVersion).isEqualTo(AndroidVersion(29))
     assertThat(props.androidRelease).isEqualTo("10")
     assertThat(props.primaryAbi).isEqualTo(Abi.ARM64_V8A)
-    assertThat(props.deviceType).isEqualTo(DeviceType.WEAR)
     assertThat(props.isVirtual).isTrue()
     assertThat(props.isDebuggable).isTrue()
   }
@@ -90,6 +89,20 @@ class DevicePropertiesTest {
     // Some Samsung physical devices do this:
     assertThat(props("ro.kernel.qemu" to "0").isVirtual).isFalse()
     assertThat(props("ro.kernel.qemu" to "1").isVirtual).isTrue()
+  }
+
+  @Test
+  fun readCommonProperties_goldfish() {
+    val props = props("ro.kernel.qemu" to "1", "ro.hardware" to "goldfish")
+    assertThat(props.isVirtual).isTrue()
+    assertThat(props.emulatorType).isEqualTo(EmulatorType.GOLDFISH)
+  }
+
+  @Test
+  fun readCommonProperties_cuttlefish() {
+    val props = props("ro.product.board" to "gce_x86_phone", "ro.product.device" to "vsoc_x86_64")
+    assertThat(props.isVirtual).isTrue()
+    assertThat(props.emulatorType).isEqualTo(EmulatorType.CUTTLEFISH)
   }
 
   @Test
@@ -132,7 +145,9 @@ class DevicePropertiesTest {
 
   private fun props(vararg pairs: Pair<String, String>) =
     DeviceProperties.buildForTest {
-      readCommonProperties(mapOf(*pairs))
+      val map = mapOf(*pairs)
+      readCommonProperties(map)
+      deviceType = DeviceType.fromProperties(map)
       icon = EmptyIcon.DEFAULT
     }
 }
@@ -152,6 +167,7 @@ private val pixel8Props =
       disambiguator = "emulator-5554"
       deviceType = DeviceType.HANDHELD
       isVirtual = true
+      emulatorType = EmulatorType.GOLDFISH
       isRemote = false
       isDebuggable = true
       isResizable = false

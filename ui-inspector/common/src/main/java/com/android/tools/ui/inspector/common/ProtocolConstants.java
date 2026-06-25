@@ -24,6 +24,7 @@ public final class ProtocolConstants {
     public static final String VIEW_INSPECTOR_ID = "ui.inspector.inspectors.view.inspector";
     public static final String COMPOSE_INSPECTOR_ID = "layoutinspector.compose.inspection";
     public static final String COMPOSE_UI_LIBRARY_ID = "androidx.compose.ui:ui";
+    public static final int MIN_SUPPORTED_API_LEVEL = 29;
 
     /* Returns the unique socket name for a given process ID. */
     public static String getSocketName(String pid) {

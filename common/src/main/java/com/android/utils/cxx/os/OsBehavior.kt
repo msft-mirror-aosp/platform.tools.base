@@ -211,20 +211,9 @@ fun createOsBehavior(
       override fun tokenizeCommandLineToEscaped(command: String) = StringHelperPOSIX.tokenizeCommandLineToEscaped(command)
 
       override fun quoteCommandLineArgument(argument: String): String {
-        // The only character that seems not to work on *nix even with quoting or escaping is 0x00
         if (argument.contains("\u0000")) error("argument had embedded 0x0000")
-        return if (listOf(" ", "*", ";", "<", ">", "~", "|", "&", "'", "\n").any { argument.contains(it) }) {
-          "\"${argument
-                    .replace("\"", "\\\"")}\""
-        } else {
-          argument
-            .replace("\\", "\\\\")
-            .replace("\"", "\\\"")
-            .replace("$", "\\$")
-            .replace("`", "\\`")
-            .replace("(", "\\(")
-            .replace(")", "\\)")
-        }
+        // POSIX: single-quotes preserve everything literally; close+escape+reopen for '.
+        return "'" + argument.replace("'", "'\\''") + "'"
       }
 
       override fun quoteExecutablePath(executable: String) = executable

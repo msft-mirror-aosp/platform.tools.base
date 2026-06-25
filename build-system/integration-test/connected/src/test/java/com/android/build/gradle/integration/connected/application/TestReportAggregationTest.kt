@@ -161,6 +161,7 @@ class TestReportAggregationTest(val runWithBuiltInPlatform: Boolean) {
         )
       }
       gradleProperties {
+        add(BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM, runWithBuiltInPlatform)
         // this is to test the multi-variant support for coverage reporting
         add(BooleanOption.ONLY_ENABLE_UNIT_TEST_BY_DEFAULT_FOR_THE_TESTED_BUILD_TYPE, false)
         add(BooleanOption.REPORT_AGGREGATION_SUPPORT, true)

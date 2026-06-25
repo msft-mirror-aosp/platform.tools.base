@@ -51,6 +51,7 @@ class AndroidTestUtil(
   lateinit var testCoverageXmlPath: String
   lateinit var testLogcatPath: String
   lateinit var testAdditionalOutputPath: String
+  lateinit var moduleName: String
 
   val project: Path
     get() = rule.build.directory
@@ -62,6 +63,7 @@ class AndroidTestUtil(
       )
 
   fun selectModule(moduleName: String) {
+    this.moduleName = moduleName
     onSelectModule(moduleName, this)
   }
 
@@ -169,6 +171,24 @@ class AndroidTestUtil(
     result.assertOutputContains("Agent extraction VERIFIED")
     result.assertOutputContains("-e listener com.android.tools.coverage.CoverageAgentAttacher")
     result.assertOutputContains("-e coverage-agent-config")
+
+    // Verify binary artifacts were pulled to the host.
+    // We search in a targeted directory based on the test platform.
+    val coverageSearchDir =
+      if (runWithBuiltInPlatform) {
+          project.resolve("$moduleName/build/intermediates/test_suite_code_coverage")
+        } else {
+          project.resolve("$moduleName/build/reports/coverage")
+        }
+        .toFile()
+
+    val hitsFile = coverageSearchDir.walkTopDown().find { it.name == "coverage_hits.pb" }
+    val metadataFile = coverageSearchDir.walkTopDown().find { it.name == "coverage_metadata.pb" }
+
+    assertThat(hitsFile).named("coverage_hits.pb in $coverageSearchDir").isNotNull()
+    assertThat(metadataFile).named("coverage_metadata.pb in $coverageSearchDir").isNotNull()
+    assertThat(hitsFile?.exists()).isTrue()
+    assertThat(metadataFile?.exists()).isTrue()
   }
 
   fun androidTestWithTestFailures() {
@@ -213,8 +233,24 @@ class AndroidTestUtil(
 
     executor.run(testTaskName)
 
-    assertThat(project.resolve(testReportPath).resolveSibling("index.html")).exists()
-    assertThat(project.resolve(testReportPath)).exists()
+    verifyReport(enableReportAggregation = false)
+
+    val testResultPb = resolveTestResultPbPath()
+    assertThat(testResultPb).exists()
+
+    val testSuiteResult = testResultPb.toFile().inputStream().use { TestSuiteResult.parseFrom(it) }
+    assertThat(testSuiteResult.testResultCount).isAtLeast(1)
+    assertThat(testSuiteResult.testResultList.any { it.testCase.testMethod == "useAppContext" }).isTrue()
+  }
+
+  fun androidTestWithNewReportFormat() {
+    selectModule("app")
+
+    rule.build.reconfigureGradleProperties { add(BooleanOption.REPORT_AGGREGATION_SUPPORT, true) }
+
+    executor.run(testTaskName)
+
+    verifyReport(enableReportAggregation = true)
 
     val testResultPb = resolveTestResultPbPath()
     assertThat(testResultPb).exists()
@@ -720,6 +756,24 @@ class AndroidTestUtil(
         assertOutputDoesNotContain("java.lang.NoClassDefFoundError")
         assertErrorDoesNotContain("java.lang.NoClassDefFoundError")
       }
+    }
+  }
+
+  fun verifyReport(enableReportAggregation: Boolean = false) {
+    val reportFile = project.resolve(testReportPath)
+    val reportDir = reportFile.parent
+
+    if (enableReportAggregation) {
+      assertThat(reportDir.resolve("index.html")).exists()
+      assertThat(reportDir.resolve("script.js")).exists()
+      assertThat(reportDir.resolve("styles.css")).exists()
+      assertThat(reportDir.resolve("data.js")).exists()
+
+      val dataJsContent = reportDir.resolve("data.js").readText()
+      assertThat(dataJsContent).contains("const TEST_DATA_SOURCE = ")
+    } else {
+      assertThat(reportFile).exists()
+      assertThat(reportDir.resolve("index.html")).exists()
     }
   }
 }

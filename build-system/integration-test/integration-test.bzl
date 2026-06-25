@@ -1,20 +1,9 @@
+"""Rules and macros for running Gradle integration tests."""
+
 load("//tools/base/bazel:coverage.bzl", "coverage_java_test")
 load("//tools/base/bazel:kotlin.bzl", "kotlin_library")
 load("//tools/base/bazel/validations:timeout.bzl", "APPROVED_ETERNAL_TESTS")
 
-# A gradle integration test
-#
-# Usage:
-# gradle_integration_test(
-#     name = 'name',
-#     srcs = glob(['**/*.java'], ['**/*.kt'])
-#     deps = test classes output
-#     data = test data: SDK parts and test projects.
-#     maven_repos = Absolute targets for maven repos containing the plugin(s) under test.
-#                   The targets supplied here must be in the manifest format (use_zip =
-#                   False or omitted for maven_repo targets).
-#     maven_repo_zips = Absolute targets for maven_repo targets that set use_zip = True.
-#     shard_count = 8)
 def gradle_integration_test(
         name,
         srcs,
@@ -31,6 +20,25 @@ def gradle_integration_test(
         lint_baseline = None,
         lint_enabled = True,
         **kwargs):
+    """A gradle integration test.
+
+    Args:
+        name: The name of the test target.
+        srcs: The test source files.
+        deps: The test dependencies.
+        data: The test data dependencies.
+        friends: Friend targets for Kotlin compilation.
+        maven_repos: Maven repositories containing the plugin(s) under test.
+        maven_repo_zips: Maven repository zips.
+        resources: Test resources.
+        runtime_deps: Runtime dependencies.
+        tags: Tags to add to the target.
+        jvm_flags: JVM flags.
+        timeout: Test timeout.
+        lint_baseline: Lint baseline file.
+        lint_enabled: Whether to enable lint.
+        **kwargs: Extra arguments.
+    """
     lib_name = name + ".testlib"
     kotlin_library(
         name = lib_name,
@@ -91,7 +99,6 @@ def single_gradle_integration_test(name, deps, data, maven_repos, srcs = "", run
         **kwargs
     )
 
-# Given a glob, this will create integration gradle test target for each of the sources in the glob.
 def single_gradle_integration_test_per_source(
         name,
         deps,
@@ -103,9 +110,25 @@ def single_gradle_integration_test_per_source(
         non_target_srcs = [],
         runtime_deps = [],
         flaky_targets = [],
-        very_flaky_targets = [],
         tags = [],
         **kwargs):
+    """Creates a separate integration test target for each source file in the glob.
+
+    Args:
+        name: The base name of the test suite.
+        deps: Dependencies for the test library.
+        data: Test data files.
+        maven_repos: Maven repositories under test.
+        package_name: The package name of the test targets.
+        srcs: List of source files.
+        friends: Friend targets for Kotlin compilation.
+        non_target_srcs: Extra sources to compile but not run as standalone tests.
+        runtime_deps: Runtime dependencies for the test execution.
+        flaky_targets: List of targets to mark as flaky.
+        tags: Tags to add to the test targets.
+        **kwargs: Extra arguments passed to gradle_integration_test.
+    """
+
     # List of target names approved to use an eternal timeout.
     eternal_target_names = []
     eternal_target_prefix = "//" + package_name + ":"

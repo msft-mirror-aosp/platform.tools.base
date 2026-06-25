@@ -47,6 +47,7 @@ import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationAction
 import com.android.build.gradle.internal.tasks.getApkFiles
 import com.android.build.gradle.internal.test.report.ReportType
 import com.android.build.gradle.internal.test.report.TestReport
+import com.android.build.gradle.internal.test.report.XMLReportAggregator
 import com.android.build.gradle.internal.test.report.processTestReportAggregation
 import com.android.build.gradle.internal.testing.TestData
 import com.android.build.gradle.internal.testing.configureAndroidTestEngine
@@ -68,6 +69,7 @@ import kotlin.collections.joinToString
 import kotlin.collections.plus
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.file.FileCollection
 import org.gradle.api.file.FileSystemLocation
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.plugins.JavaBasePlugin
@@ -122,6 +124,8 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
   /** The execution mode for the test suite. */
   @get:Input @get:Optional abstract val executionMode: Property<String>
 
+  @get:Input @get:Optional abstract val animationsDisabled: Property<Boolean>
+
   @get:OutputFile abstract val engineInputPropertiesFiles: RegularFileProperty
 
   @get:OutputFile abstract val julConfigurationFile: RegularFileProperty
@@ -167,6 +171,8 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
 
   @get:Internal abstract val avdService: Property<AvdComponentsBuildService>
 
+  @get:Input @get:Optional abstract val reportAggregationSupport: Property<Boolean>
+
   @Input
   override fun getIgnoreFailures(): Boolean {
     return super.getIgnoreFailures()
@@ -198,7 +204,8 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
 
     val engineInputParameters: List<TestEngineInputProperty> =
       engineInputParameters.get().map { inputProperty ->
-        TestEngineInputProperty(inputProperty.type.propertyName, inputProperty.value.get().asFile.absolutePath)
+        val resolvedPath = inputProperty.fileCollection.files.joinToString(java.io.File.pathSeparator) { it.absolutePath }
+        TestEngineInputProperty(inputProperty.type.propertyName, resolvedPath)
       }
 
     doExecuteTests(engineInputParameters)
@@ -219,21 +226,29 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
   }
 
   private fun provisionDevicesAndExecute(onDevicesReady: (onlineDevices: List<DeviceTestTarget>) -> Unit) {
-    provisionConnectedDevicesAndExecute { connectedDevices ->
-      provisionManagedDevicesAndExecute { managedDevices -> onDevicesReady(connectedDevices + managedDevices) }
+    provisionConnectedDevicesAndExecute { connectedDevices, deviceException ->
+      provisionManagedDevicesAndExecute { managedDevices ->
+        val onlineDevices = connectedDevices + managedDevices
+        if (onlineDevices.isEmpty()) {
+          throw deviceException ?: DeviceException("No connected devices!")
+        }
+        onDevicesReady(onlineDevices)
+      }
     }
   }
 
-  private fun provisionConnectedDevicesAndExecute(onDevicesReady: (onlineDevices: List<DeviceTestTarget>) -> Unit) {
+  private fun provisionConnectedDevicesAndExecute(
+    onDevicesReady: (onlineDevices: List<DeviceTestTarget>, exception: DeviceException?) -> Unit
+  ) {
     val deviceProvider = deviceProviderFactory.getDeviceProvider(buildTools.adbExecutable(), androidDeviceSerials.orNull)
     try {
       deviceProvider.use {
         val targets =
           deviceProvider.devices.map { connector -> DeviceTestTarget(connector.serialNumber, DeviceConfigProviderImpl(connector)) }
-        onDevicesReady(targets)
+        onDevicesReady(targets, null)
       }
-    } catch (_: DeviceException) {
-      onDevicesReady(listOf())
+    } catch (e: DeviceException) {
+      onDevicesReady(listOf(), e)
     }
   }
 
@@ -295,6 +310,12 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
 
     if (executionMode.isPresent) {
       standardInputs.add(TestEngineInputProperty(AgpTestSuiteInputParameters.ANDROID_TEST_EXECUTION_MODE.propertyName, executionMode.get()))
+    }
+
+    if (animationsDisabled.isPresent) {
+      // TODO(b/525084361): Replace hardcoded string with AgpTestSuiteInputParameters.ANIMATIONS_DISABLED.propertyName once exposed in DSL
+      // API.
+      standardInputs.add(TestEngineInputProperty("com.android.agp.test.ANIMATIONS_DISABLED", animationsDisabled.get().toString()))
     }
 
     if (!sourceFolders.isEmpty) {
@@ -384,9 +405,6 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       val testResultsDir = resultsDir.get().asFile
       val htmlOutputDirFile = this.reports.html.outputLocation.get().asFile
 
-      val report = TestReport(ReportType.SINGLE_FLAVOR, testResultsDir, htmlOutputDirFile)
-      report.generateReport()
-
       val metadataContent =
         """
               $TEST_SUITE_METADATA_MODULE_KEY=${this.modulePath.get()}
@@ -405,6 +423,14 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
         this.testSuiteTarget.get(),
         logger,
       )
+
+      if (reportAggregationSupport.isPresent && reportAggregationSupport.get()) {
+        val aggregator = XMLReportAggregator(listOf(testResultsDir), this.modulePath.get())
+        aggregator.writeReport(htmlOutputDirFile)
+      } else {
+        val report = TestReport(ReportType.SINGLE_FLAVOR, testResultsDir, htmlOutputDirFile)
+        report.generateReport()
+      }
 
       // Also write metadata to coverage directory so that the coverage collection task can identify the suite
       val coverageMetadataDir = this.coverageDir.get().asFile.also { it.mkdirs() }
@@ -506,6 +532,12 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
         task.executionMode.setDisallowChanges(creationConfig.global.androidTestOptions.execution)
       }
 
+      // TODO(b/525084361): Wrap with creationConfig.junitEngineSpec.inputs.contains(AgpTestSuiteInputParameters.ANIMATIONS_DISABLED) once
+      // exposed in DSL API.
+      task.animationsDisabled.setDisallowChanges(
+        creationConfig.services.provider { creationConfig.global.androidTestOptions.animationsDisabled }
+      )
+
       if (creationConfig.junitEngineSpec.inputs.contains(AgpTestSuiteInputParameters.TEST_UTIL_APKS)) {
         val androidTestUtil = task.project.configurations.findByName(SdkConstants.GRADLE_ANDROID_TEST_UTIL_CONFIGURATION)
         if (androidTestUtil != null) {
@@ -525,25 +557,101 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
             task.engineInputParameters.add(
               AgpTestSuiteInputParameter(
                 AgpTestSuiteInputParameters.MERGED_MANIFEST,
-                testedVariant.artifacts.get(SingleArtifact.MERGED_MANIFEST),
+                task.project.files(testedVariant.artifacts.get(SingleArtifact.MERGED_MANIFEST)),
               )
             )
           }
 
           AgpTestSuiteInputParameters.TESTED_APKS -> {
             task.engineInputParameters.add(
-              AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.TESTED_APKS, testedVariant.artifacts.get(SingleArtifact.APK))
-            )
-          }
-
-          AgpTestSuiteInputParameters.LOCAL_TESTED_APKS -> {
-            task.engineInputParameters.add(
               AgpTestSuiteInputParameter(
-                AgpTestSuiteInputParameters.LOCAL_TESTED_APKS,
-                creationConfig.artifacts.get(InternalArtifactType.APK_FOR_LOCAL_TEST),
+                AgpTestSuiteInputParameters.TESTED_APKS,
+                task.project.files(testedVariant.artifacts.get(SingleArtifact.APK)),
               )
             )
           }
+
+          AgpTestSuiteInputParameters.RESOURCES_AP_ARCHIVE -> {
+            task.engineInputParameters.add(
+              AgpTestSuiteInputParameter(
+                AgpTestSuiteInputParameters.RESOURCES_AP_ARCHIVE,
+                task.project.files(creationConfig.artifacts.get(InternalArtifactType.APK_FOR_LOCAL_TEST)),
+              )
+            )
+          }
+
+          AgpTestSuiteInputParameters.TEST_CLASSES -> {
+            val testClasses =
+              task.project.objects.fileCollection().also { fc ->
+                creationConfig.sourceContainers.forEach { sc ->
+                  fc.from(sc.artifacts.forScope(ScopedArtifacts.Scope.PROJECT).getFinalArtifacts(ScopedArtifact.CLASSES))
+                }
+              }
+            task.engineInputParameters.add(AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.TEST_CLASSES, testClasses))
+          }
+
+          AgpTestSuiteInputParameters.TEST_CLASSPATH -> {
+            val testClasspath =
+              task.project.objects.fileCollection().also { fc ->
+                creationConfig.sourceContainers.forEach { sc -> fc.from(sc.suiteSourceClasspath.runtimeClasspath) }
+              }
+            task.engineInputParameters.add(AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.TEST_CLASSPATH, testClasspath))
+          }
+
+          AgpTestSuiteInputParameters.ANDROID_RES_DIRS -> {
+            val testResourceDirs =
+              task.project.objects.fileCollection().also { fc ->
+                creationConfig.sourceContainers.forEach { sc ->
+                  fc.from(
+                    sc.suiteSourceClasspath.getRuntimeClasspathArtifacts(
+                      com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.ANDROID_RES
+                    )
+                  )
+                  fc.from(
+                    sc.suiteSourceClasspath.getCompileClasspathArtifacts(
+                      com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.ANDROID_RES
+                    )
+                  )
+                }
+              }
+            task.engineInputParameters.add(AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.ANDROID_RES_DIRS, testResourceDirs))
+          }
+
+          AgpTestSuiteInputParameters.R_CLASS_JARS -> {
+            val testRClassJars =
+              task.project.objects.fileCollection().also { fc ->
+                creationConfig.sourceContainers.forEach { sc ->
+                  fc.from(
+                    sc.suiteSourceClasspath.getRuntimeClasspathArtifacts(
+                      com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.R_CLASS_JAR
+                    )
+                  )
+                  fc.from(
+                    sc.suiteSourceClasspath.getCompileClasspathArtifacts(
+                      com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.R_CLASS_JAR
+                    )
+                  )
+                }
+              }
+            task.engineInputParameters.add(AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.R_CLASS_JARS, testRClassJars))
+          }
+
+          AgpTestSuiteInputParameters.MAIN_CLASSES -> {
+            val mainClasses =
+              task.project.objects
+                .fileCollection()
+                .from(testedVariant.artifacts.forScope(ScopedArtifacts.Scope.PROJECT).getFinalArtifacts(ScopedArtifact.CLASSES))
+            task.engineInputParameters.add(AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.MAIN_CLASSES, mainClasses))
+          }
+
+          AgpTestSuiteInputParameters.MAIN_CLASSPATH -> {
+            val mainClasspath =
+              task.project.objects
+                .fileCollection()
+                .from(testedVariant.artifacts.forScope(ScopedArtifacts.Scope.ALL).getFinalArtifacts(ScopedArtifact.CLASSES))
+            task.engineInputParameters.add(AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.MAIN_CLASSPATH, mainClasspath))
+          }
+
           AgpTestSuiteInputParameters.ADB_EXECUTABLE -> {
             // do nothing so far, we always do it but it might change in the near future.
           }
@@ -559,12 +667,17 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
               } else {
                 creationConfig.artifacts.get(SingleArtifact.APK)
               }
-            task.engineInputParameters.add(AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.TEST_APKS, apkProvider))
+            task.engineInputParameters.add(
+              AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.TEST_APKS, task.project.files(apkProvider))
+            )
           }
 
           AgpTestSuiteInputParameters.AAPT2_EXECUTABLE -> {
             task.engineInputParameters.add(
-              AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.AAPT2_EXECUTABLE, task.buildTools.aapt2ExecutableProvider())
+              AgpTestSuiteInputParameter(
+                AgpTestSuiteInputParameters.AAPT2_EXECUTABLE,
+                task.project.files(task.buildTools.aapt2ExecutableProvider()),
+              )
             )
           }
 
@@ -667,6 +780,8 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       task.legacyTestReportingRedirectionEnabled.setDisallowChanges(
         task.project.providers.gradleProperty(LegacyReportingTestSuiteTestTask.ENABLE_UTP_REPORTING_PROPERTY).orNull?.toBoolean() ?: false
       )
+
+      task.reportAggregationSupport.setDisallowChanges(creationConfig.services.projectOptions.get(BooleanOption.REPORT_AGGREGATION_SUPPORT))
     }
 
     override fun handleProvider(taskProvider: TaskProvider<LegacyReportingTestSuiteTestTask>) {
@@ -778,6 +893,8 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
           creationConfig.services.projectInfo.getReportsDir().map { it.dir("${BuilderConstants.FD_ANDROID_TESTS}/$subFolder") }
         )
       }
+
+      task.reportAggregationSupport.setDisallowChanges(creationConfig.services.projectOptions.get(BooleanOption.REPORT_AGGREGATION_SUPPORT))
     }
 
     override fun handleProvider(taskProvider: TaskProvider<LegacyReportingTestSuiteTestTask>) {
@@ -795,6 +912,11 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
           .use(taskProvider)
           .wiredWith(TestSuiteTestTask::coverageDir)
           .toAppendTo(InternalMultipleArtifactType.TEST_SUITE_CODE_COVERAGE)
+
+        creationConfig.mainVariant.artifacts
+          .use(taskProvider)
+          .wiredWith(TestSuiteTestTask::xmlResultsDirectory)
+          .toAppendTo(InternalMultipleArtifactType.TEST_SUITE_RESULTS)
       }
 
       val artifacts =
@@ -938,7 +1060,7 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
 
   class AgpTestSuiteInputParameter(
     @get:Input val type: AgpTestSuiteInputParameters,
-    @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) val value: Provider<out FileSystemLocation>,
+    @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) val fileCollection: FileCollection,
   )
 
   class DeviceTestTarget(val serialNumber: String, val deviceConfigProvider: DeviceConfigProvider, val deviceName: String? = null)
@@ -985,6 +1107,8 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
     const val TEST_SUITE_METADATA_TARGET_KEY = "testTarget"
 
     const val CONNECTED_TEST_TEST_SUITE_NAME = "androidTest"
+
+    const val UNIT_TEST_TEST_SUITE_NAME = "UnitTest"
 
     const val CONNECTED_TEST_TEST_SUITE_TARGET_NAME = "connected"
 

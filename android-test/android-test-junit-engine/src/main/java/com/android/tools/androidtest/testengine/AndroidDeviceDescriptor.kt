@@ -122,6 +122,8 @@ class AndroidDeviceDescriptor(
 
     val isOrchestratorEnabled = config.executionMode?.uppercase() in listOf("ANDROIDX_TEST_ORCHESTRATOR", "ANDROID_TEST_ORCHESTRATOR")
 
+    val isCoverageActive = config.isTestCoverageEnabled || config.coverageType == AndroidTestConfiguration.CoverageType.ON_THE_FLY
+
     val effectiveCoverageFileOnDevice =
       config.coverageFileOnDevice.takeIf { !it.isNullOrBlank() }
         ?: if (config.isTestCoverageEnabled && !isOrchestratorEnabled) {
@@ -150,6 +152,8 @@ class AndroidDeviceDescriptor(
     val baseCoverageDirOnHost = config.getCoverageDirOnHost()
     val coverageDirOnHost = deviceSpecificCoverageDirOnHost ?: baseCoverageDirOnHost
 
+    val agentFilesystemInfo = CoverageAgentFilesystemInfo()
+
     val coverageCollector =
       AndroidTestCoverageCollector(
         adbController = AdbController(config.adb),
@@ -160,6 +164,7 @@ class AndroidDeviceDescriptor(
         useTestStorageService = config.useTestStorageService,
         additionalTestOutputCollector = additionalTestOutputCollector,
         runAsPackageName = config.instrumentationTargetPackageId,
+        agentFilesystemInfo = agentFilesystemInfo,
       )
 
     val deviceInfoFile =
@@ -178,12 +183,12 @@ class AndroidDeviceDescriptor(
     val listener = Listener(context, reporter, logcatCollector, deviceInfoFile, additionalTestOutputCollector)
 
     val instrumentationArgs = config.instrumentationArgs.toMutableMap()
-    if (config.isTestCoverageEnabled) {
+    if (isCoverageActive) {
       instrumentationArgs["coverage"] = "true"
       if (isOrchestratorEnabled) {
-        instrumentationArgs["coverageFilePath"] = effectiveCoverageDirOnDevice!!
+        effectiveCoverageDirOnDevice?.let { instrumentationArgs["coverageFilePath"] = it }
       } else {
-        instrumentationArgs["coverageFile"] = effectiveCoverageFileOnDevice!!
+        effectiveCoverageFileOnDevice?.let { instrumentationArgs["coverageFile"] = it }
       }
     }
     if (additionalOutputDirectoryOnHost != null) {
@@ -201,10 +206,12 @@ class AndroidDeviceDescriptor(
         config.testPackageId,
         config.instrumentationTargetPackageId,
         config.executionMode,
-        jvmtiCodeCoverageAgentPathProvider = jvmtiCodeCoverageAgentPathProvider,
         instrumentationArgs,
         setOf(listener),
+        agentFilesystemInfo = agentFilesystemInfo,
       )
+
+    val deviceSettingsController = DeviceSettingsController(config, deviceSerial, adbControllerFactory(config.adb))
 
     val runner =
       AndroidTestRunner(
@@ -217,9 +224,15 @@ class AndroidDeviceDescriptor(
         config.getTestUtilApks(deviceSerial),
         config.uninstallApksAfterTests,
         config.forceAotCompilation,
+        deviceSettingsController = deviceSettingsController,
         onBeforeInstrumentation = {
           additionalTestOutputCollector.prepare()
           coverageCollector.prepare()
+
+          jvmtiCodeCoverageAgentPathProvider()?.let { (agentBinaryPath, dataDir) ->
+            agentFilesystemInfo.agentBinaryPathOnDevice = agentBinaryPath
+            agentFilesystemInfo.dataDirectoryOnDevice = dataDir
+          }
         },
         onTestFinished = {
           additionalTestOutputCollector.collect()

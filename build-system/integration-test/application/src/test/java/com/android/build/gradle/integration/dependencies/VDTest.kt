@@ -33,7 +33,10 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
-class VariantDependencyTest : ModelComparator() {
+// Renamed to VDTest to keep the macro-generated Bazel target name (deps-tests__VDTest)
+// short enough to avoid exceeding the Windows 260-character path limit (MAX_PATH)
+// for its runfiles dependencies.
+class VDTest : ModelComparator() {
 
   @get:Rule val project = GradleTestProject.builder().fromTestApp(HelloWorldApp.noBuildFile()).withHeap("2048m").create()
 

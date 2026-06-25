@@ -19,7 +19,7 @@ package com.android.template.engine.impl
  * A Comparator that compares two strings representing relative file paths. It ensures that files are sorted before directories within the
  * same directory.
  */
-internal class DirectoryBeforeFileComparator : Comparator<String> {
+internal class FileBeforeDirectoryComparator : Comparator<String> {
   override fun compare(path1: String, path2: String): Int {
     if (path1 == path2) return 0
 

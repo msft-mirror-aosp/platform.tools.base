@@ -23,6 +23,7 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.options.BooleanOption
+import com.android.testutils.TestUtils
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.usLocaleCapitalize
 import com.google.common.truth.Truth.assertThat
@@ -41,6 +42,10 @@ class WearTileScreenshotTest {
   @get:Rule
   val rule =
     GradleRule.configure().withProfileOutput().from {
+      gradleProperties {
+        add("org.gradle.java.installations.auto-detect", "false")
+        add("org.gradle.java.installations.paths", TestUtils.getJava21Jdk().toString())
+      }
       androidApplication {
         applyPlugin(
           PluginType.Custom(

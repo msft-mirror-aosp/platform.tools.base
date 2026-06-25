@@ -115,7 +115,10 @@ class AvdManager(
     val systemImage = retrieveSystemImage(sdkHandler, imageLocation)
     systemImage ?: error("System image does not exist at $imageLocation")
 
-    val device = deviceManager.getDevices().find { it.displayName == hardwareProfile }
+    val device =
+      deviceManager.getDevices(DeviceManager.DeviceCategory.DEFAULT, DeviceManager.DeviceCategory.VENDOR).find {
+        it.displayName == hardwareProfile
+      }
     if (device == null) {
       val availableDevices =
         getHardwareProfiles(hardwareProfile).ifEmpty {

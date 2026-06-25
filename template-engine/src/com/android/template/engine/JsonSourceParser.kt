@@ -70,12 +70,14 @@ internal class JsonSourceParser(private val reader: JsonReader) {
 
   // Accessing the private line number field in JsonReader via reflection
   private fun getLineNumber(): Int {
-    val field = JsonReader::class.java.getDeclaredField("lineNumber")
-    field.isAccessible = true
-    return field.get(reader) as Int
+    val field = lineNumberField ?: return 0
+    return runCatching { field.get(reader) as Int }.getOrDefault(0)
   }
 
   companion object {
+    private val lineNumberField: java.lang.reflect.Field? =
+      runCatching { JsonReader::class.java.getDeclaredField("lineNumber").apply { isAccessible = true } }.getOrNull()
+
     fun parseReader(reader: Reader): JsonSourceElement {
       return parseJsonReader(JsonReader(reader))
     }

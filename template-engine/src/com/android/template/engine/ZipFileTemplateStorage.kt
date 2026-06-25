@@ -45,12 +45,15 @@ internal class ZipFileTemplateStorage(private val zipFile: Path) : TemplateDefin
 
   private fun acquire(): FileSystem =
     synchronized(lock) {
-      openRefCount++
-      return if (openRefCount == 1) {
-        check(fileSystem == null) { "Internal error: file system for '$zipFile' should be null when openRefCount is 1" }
-        FileSystems.newFileSystem(zipFile, null as ClassLoader?).also { fileSystem = it }
+      if (openRefCount == 0) {
+        check(fileSystem == null) { "Internal error: file system for '$zipFile' should be null when openRefCount is 0" }
+        val fs = FileSystems.newFileSystem(zipFile, null as ClassLoader?)
+        fileSystem = fs
+        openRefCount = 1
+        return fs
       } else {
-        fileSystem ?: throw IllegalStateException("Internal error: file system for '$zipFile' should be active")
+        openRefCount++
+        return fileSystem ?: throw IllegalStateException("Internal error: file system for '$zipFile' should be active")
       }
     }
 

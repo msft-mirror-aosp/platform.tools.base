@@ -393,9 +393,16 @@ package com.android.build.api.dsl {
     property public String propertyName;
     enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.AgpTestSuiteInputParameters AAPT2_EXECUTABLE;
     enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.AgpTestSuiteInputParameters ADB_EXECUTABLE;
+    enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.AgpTestSuiteInputParameters ANDROID_RES_DIRS;
     enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.AgpTestSuiteInputParameters ANDROID_TEST_EXECUTION_MODE;
-    enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.AgpTestSuiteInputParameters LOCAL_TESTED_APKS;
+    enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.AgpTestSuiteInputParameters LAYOUTLIB_CLASSPATH;
+    enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.AgpTestSuiteInputParameters LAYOUTLIB_DATA_DIR;
+    enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.AgpTestSuiteInputParameters MAIN_CLASSES;
+    enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.AgpTestSuiteInputParameters MAIN_CLASSPATH;
     enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.AgpTestSuiteInputParameters MERGED_MANIFEST;
+    enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.AgpTestSuiteInputParameters RESOURCES_AP_ARCHIVE;
+    enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.AgpTestSuiteInputParameters R_CLASS_JARS;
+    enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.AgpTestSuiteInputParameters SDK_FONTS_DIR;
     enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.AgpTestSuiteInputParameters STATIC_FILES;
     enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.AgpTestSuiteInputParameters TESTED_APKS;
     enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.AgpTestSuiteInputParameters TEST_APKS;
@@ -2255,6 +2262,15 @@ package com.android.build.api.dsl {
     property public abstract java.util.Set<java.lang.String> pickFirsts;
   }
 
+  @org.gradle.api.Incubating public interface ScreenshotTestSuite {
+    method @org.gradle.api.Incubating public void dependencies(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AgpTestSuiteDependencies,kotlin.Unit> action);
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public String? getEngineVersion();
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public java.util.List<java.lang.String> getTargetVariants();
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public void setEngineVersion(String?);
+    property @org.gradle.api.Incubating public abstract String? engineVersion;
+    property @org.gradle.api.Incubating public abstract java.util.List<java.lang.String> targetVariants;
+  }
+
   public interface SdkComponents {
     method @InaccessibleFromKotlin public org.gradle.api.provider.Provider<com.android.build.api.variant.Aapt2> getAapt2();
     method @InaccessibleFromKotlin public org.gradle.api.provider.Provider<org.gradle.api.file.RegularFile> getAdb();
@@ -2442,6 +2458,7 @@ package com.android.build.api.dsl {
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public com.android.build.api.dsl.ManagedDevices getManagedDevices();
     method @InaccessibleFromKotlin public String? getReportDir();
     method @InaccessibleFromKotlin public String? getResultsDir();
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.ScreenshotTestSuite> getScreenshotTests();
     method @InaccessibleFromKotlin @org.gradle.api.Incubating @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public org.gradle.api.ExtensiblePolymorphicDomainObjectContainer<com.android.build.api.dsl.AgpTestSuite> getSuites();
     method @InaccessibleFromKotlin public Integer? getTargetSdk();
     method @InaccessibleFromKotlin public String? getTargetSdkPreview();
@@ -2461,6 +2478,7 @@ package com.android.build.api.dsl {
     property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.ManagedDevices managedDevices;
     property public abstract String? reportDir;
     property public abstract String? resultsDir;
+    property @org.gradle.api.Incubating public abstract org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.ScreenshotTestSuite> screenshotTests;
     property @org.gradle.api.Incubating @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public abstract org.gradle.api.ExtensiblePolymorphicDomainObjectContainer<com.android.build.api.dsl.AgpTestSuite> suites;
     property public abstract Integer? targetSdk;
     property public abstract String? targetSdkPreview;

@@ -99,7 +99,7 @@ internal fun DslProductFlavor.convert(features: BuildFeatureValues) =
     versionName = versionName,
     minSdkVersion = minSdkVersion?.convert(),
     targetSdkVersion = targetSdkVersion?.convert(),
-    matchingFallbacks = matchingFallbacks.toImmutableList(),
+    matchingFallbacks = (matchingFallbacks as Iterable<*>).map { it.toString() }.toImmutableList(),
     missingDimensionStrategy =
       missingDimensionStrategies.mapValues { (_, requests) -> listOf(requests.requested).plus(requests.fallbacks) },
     maxSdkVersion = maxSdkVersion,
@@ -143,7 +143,7 @@ internal fun DslBuildType.convert(features: BuildFeatureValues) =
     isMinifyEnabled = isMinifyEnabled,
     isZipAlignEnabled = isZipAlignEnabled,
     isEmbedMicroApp = isEmbedMicroApp,
-    matchingFallbacks = matchingFallbacks.toImmutableList(),
+    matchingFallbacks = (matchingFallbacks as Iterable<*>).map { it.toString() }.toImmutableList(),
     signingConfig = signingConfig?.name,
     applicationIdSuffix = applicationIdSuffix,
     versionNameSuffix = versionNameSuffix,

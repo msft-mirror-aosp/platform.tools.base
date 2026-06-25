@@ -73,8 +73,8 @@ class TestSuiteDeviceTest {
   val rule =
     GradleRule.configure()
       .withMavenRepository {
-        jar("org.junit.platform:junit-platform-engine:1.12.0")
-        jar("org.junit.platform:junit-platform-launcher:1.12.0")
+        jar("org.junit.platform:junit-platform-engine:1.13.3")
+        jar("org.junit.platform:junit-platform-launcher:1.13.3")
         jar("com.test:my-test-engine:1.0.0")
           .addClasses(
             MyTestDescriptor::class.java,

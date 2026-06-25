@@ -38,6 +38,7 @@ import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_MET
 import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_METADATA_MODULE_KEY
 import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_METADATA_SUITE_KEY
 import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_METADATA_VARIANT_KEY
+import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.UNIT_TEST_TEST_SUITE_NAME
 import com.android.buildanalyzer.common.TaskCategory
 import java.io.File
 import java.io.IOException
@@ -269,7 +270,7 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
         }
 
         val unitTestCoverageFile = parameters.unitTestCoverageFile.files.filter { it.exists() }
-        generateXmlReport(unitTestCoverageFile, "UnitTest")
+        generateXmlReport(unitTestCoverageFile, UNIT_TEST_TEST_SUITE_NAME)
 
         val connectedTestCoverageFile =
           parameters.connectedTestCoverageDirectory.asFileTree.files.filter { file ->

@@ -57,6 +57,7 @@ class DefaultProvisionerPlugin(val scope: CoroutineScope, private val defaultIco
         readAdbSerialNumber(device.serialNumber)
         disambiguator = wearPairingId
         readCommonProperties(properties)
+        readDeviceType(device, properties)
         populateDeviceInfoProto(PLUGIN_ID, device.serialNumber, properties, randomConnectionId())
         icon = defaultIcons.iconForDeviceType(deviceType)
         resolution = Resolution.readFromDevice(device)

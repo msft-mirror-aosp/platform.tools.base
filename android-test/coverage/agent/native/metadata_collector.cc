@@ -65,10 +65,12 @@ proto::MethodMetadata* MetadataCollector::AddMethod(
 
 void MetadataCollector::AddBlock(
     proto::MethodMetadata* method_meta, uint32_t block_id,
-    const std::vector<std::pair<int32_t, uint32_t>>& lines) {
+    const std::vector<std::pair<int32_t, uint32_t>>& lines,
+    uint32_t branch_count) {
   std::lock_guard<std::mutex> lock(mutex_);
   auto* block_meta = method_meta->add_blocks();
   block_meta->set_block_id(block_id);
+  block_meta->set_branch_count(branch_count);
 
   for (const auto& line_info : lines) {
     auto* line_meta = block_meta->add_lines();
@@ -84,7 +86,7 @@ bool MetadataCollector::WriteToDisk() const {
     return false;
   }
 
-  std::string path = data_dir_ + "/code_cache/coverage_metadata.pb";
+  std::string path = data_dir_ + "/coverage_metadata.pb";
 
   // Use a temporary file for atomic write.
   std::string tmp_path = path + ".tmp";

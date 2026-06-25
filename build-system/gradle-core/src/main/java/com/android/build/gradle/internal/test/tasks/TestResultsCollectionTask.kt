@@ -23,6 +23,7 @@ import com.android.build.gradle.internal.scope.InternalMultipleArtifactType
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
 import com.android.build.gradle.internal.tasks.NonIncrementalTask
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
+import com.android.build.gradle.options.BooleanOption
 import com.android.buildanalyzer.common.TaskCategory
 import java.io.File
 import org.gradle.api.file.ConfigurableFileCollection
@@ -142,7 +143,9 @@ abstract class TestResultsCollectionTask : NonIncrementalTask() {
 
       task.unitTestResults.set(creationConfig.artifacts.get(InternalArtifactType.UNIT_TEST_RESULTS))
 
-      task.androidTestResults.set(creationConfig.artifacts.get(InternalArtifactType.ANDROID_TEST_RESULTS))
+      if (!creationConfig.services.projectOptions[BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM]) {
+        task.androidTestResults.set(creationConfig.artifacts.get(InternalArtifactType.ANDROID_TEST_RESULTS))
+      }
     }
   }
 }

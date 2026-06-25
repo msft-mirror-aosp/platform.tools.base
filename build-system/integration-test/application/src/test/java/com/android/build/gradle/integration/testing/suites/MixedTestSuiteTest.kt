@@ -21,20 +21,35 @@ import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.options.BooleanOption
+import com.android.testutils.TestUtils
+import com.android.tools.bazel.avd.Emulator
 import com.google.common.truth.Truth
 import java.io.File
+import org.junit.ClassRule
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.ExternalResource
 
 class MixedTestSuiteTest {
+
+  companion object {
+    @ClassRule
+    @JvmField
+    val emulator =
+      if (TestUtils.runningFromBazel()) {
+        Emulator(System.getProperty("EMULATOR_SCRIPT_PATH"), 5554)
+      } else {
+        object : ExternalResource() {}
+      }
+  }
 
   @get:Rule
   val rule =
     GradleRule.configure()
       .withMavenRepository {
         jar("com.google.truth:truth:0.44")
-        jar("org.junit.platform:junit-platform-engine:1.10.1")
-        jar("org.junit.platform:junit-platform-launcher:1.10.1")
+        jar("org.junit.platform:junit-platform-engine:1.13.3")
+        jar("org.junit.platform:junit-platform-launcher:1.13.3")
         jar("org.jetbrains.kotlin:kotlin-stdlib:2.1.20")
         jar("com.test:toy-junit-engine:1.0")
           .addClasses(ToyJunitEngineForTesting::class.java, ToyTestDescriptor::class.java, TestEngineLogger::class.java)
@@ -50,9 +65,9 @@ class MixedTestSuiteTest {
               it.useJunitEngine.apply {
                 includeEngines.add("[engine:toy-junit-engine-for-tests]")
                 enginesDependencies.add("com.android.tools.build:gradle-api:${Version.ANDROID_GRADLE_PLUGIN_VERSION}")
-                enginesDependencies.add("org.junit.platform:junit-platform-launcher")
+                enginesDependencies.add("org.junit.platform:junit-platform-launcher:1.13.3")
                 enginesDependencies.add("com.test:toy-junit-engine:1.0")
-                enginesDependencies.add("org.junit.platform:junit-platform-engine:1.12.0")
+                enginesDependencies.add("org.junit.platform:junit-platform-engine:1.13.3")
                 inputs.add(AgpTestSuiteInputParameters.TEST_APKS)
               }
               it.hostJar {}

@@ -58,7 +58,7 @@ kotlin_library(
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
         "@maven//:org.jetbrains.kotlin.kotlin-gradle-plugin",
         "@maven//:com.google.devtools.ksp.symbol-processing-gradle-plugin",
-        "@maven//:org.codehaus.groovy.groovy-all",
+        "@maven//:org.apache.groovy.groovy-all",
     ],
 )
 

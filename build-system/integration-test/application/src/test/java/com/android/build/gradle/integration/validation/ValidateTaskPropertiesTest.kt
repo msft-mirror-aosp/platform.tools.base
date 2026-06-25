@@ -46,10 +46,12 @@ class ValidateTaskPropertiesTest {
     val paths =
       classPathInfo.resources
         .map { it.url() }
-        .mapNotNull {
-          val url = it.toString()
-          if (url.toString().startsWith("jar:file:")) {
-            url.substringAfter("jar:file:").substringBeforeLast("!")
+        .mapNotNull { url ->
+          val urlStr = url.toString()
+          if (urlStr.startsWith("jar:file:")) {
+            val fileUrlStr = urlStr.substringAfter("jar:").substringBeforeLast("!")
+            val fileUri = java.net.URI(fileUrlStr)
+            File(fileUri).absolutePath
           } else {
             null
           }

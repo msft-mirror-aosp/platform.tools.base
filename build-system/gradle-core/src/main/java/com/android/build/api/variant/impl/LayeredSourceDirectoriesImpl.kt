@@ -39,6 +39,8 @@ open class LayeredSourceDirectoriesImpl(
   @Suppress("UNCHECKED_CAST")
   protected val variantSources: ListProperty<DirectoryEntries> = variantServices.newListPropertyForInternalUse(DirectoryEntries::class.java)
 
+  private val directoriesByName = mutableMapOf<String, ListProperty<Directory>>()
+
   // this will contain all the directories
   @Suppress("UNCHECKED_CAST")
   internal val directories: ListProperty<Collection<Directory>> =
@@ -76,9 +78,11 @@ open class LayeredSourceDirectoriesImpl(
     val existingDirectories = variantSources.get().find { entries -> entries.name == directoryEntry.name }
     if (existingDirectories != null) {
       existingDirectories.directoryEntries.add(directoryEntry)
+      directoriesByName[directoryEntry.name]?.let { directoryEntry.addTo(variantServices.projectInfo.projectDirectory, it) }
     } else {
       variantSources.add(DirectoryEntries(directoryEntry.name, mutableListOf(directoryEntry)))
       variantServices.newListPropertyForInternalUse(Directory::class.java).also {
+        directoriesByName[directoryEntry.name] = it
         directoryEntry.addTo(variantServices.projectInfo.projectDirectory, it)
         directories.add(it)
         if (isStatic) {
@@ -92,6 +96,7 @@ open class LayeredSourceDirectoriesImpl(
     variantSources.add(sources)
 
     variantServices.newListPropertyForInternalUse(Directory::class.java).also {
+      directoriesByName[sources.name] = it
       sources.directoryEntries.forEach { directoryEntry -> directoryEntry.addTo(variantServices.projectInfo.projectDirectory, it) }
       directories.add(it)
       staticDirectories.add(it)

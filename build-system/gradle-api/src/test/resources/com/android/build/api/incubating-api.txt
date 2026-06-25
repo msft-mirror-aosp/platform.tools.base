@@ -803,3 +803,10 @@ https://issuetracker.google.com/501095983
 https://issuetracker.google.com/517066980
   * com.android.build.api.variant.SigningConfig.from: void (com.android.build.api.dsl.SigningConfig)
   * com.android.build.api.variant.SigningConfig.from: void (org.gradle.api.provider.Provider<com.android.build.api.variant.SigningConfigInfo>)
+https://issuetracker.google.com/518472902
+  * com.android.build.api.dsl.ScreenshotTestSuite
+  * com.android.build.api.dsl.ScreenshotTestSuite.dependencies: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AgpTestSuiteDependencies, kotlin.Unit>)
+  * com.android.build.api.dsl.ScreenshotTestSuite.getEngineVersion: java.lang.String ()
+  * com.android.build.api.dsl.ScreenshotTestSuite.getTargetVariants: java.util.List<java.lang.String> ()
+  * com.android.build.api.dsl.ScreenshotTestSuite.setEngineVersion: void (java.lang.String)
+  * com.android.build.api.dsl.TestOptions.getScreenshotTests: org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.ScreenshotTestSuite> ()

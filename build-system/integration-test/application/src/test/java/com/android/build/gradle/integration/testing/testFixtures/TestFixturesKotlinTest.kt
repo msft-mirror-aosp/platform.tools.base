@@ -20,6 +20,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.options.BooleanOption
+import com.android.testutils.TestUtils
 import com.android.testutils.apk.Apk
 import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.truth.Truth
@@ -35,6 +36,8 @@ class TestFixturesKotlinTest {
     GradleTestProject.builder()
       .fromTestProject("testFixturesKotlinApp")
       .addGradleProperty(BooleanOption.ENABLE_TEST_FIXTURES_KOTLIN_SUPPORT, true)
+      .addGradleProperties("org.gradle.java.installations.auto-detect=false")
+      .addGradleProperties("org.gradle.java.installations.paths=${TestUtils.getJava21Jdk()}")
       .create()
 
   private fun setUpProject(publishJavaLib: Boolean, publishAndroidLib: Boolean) {

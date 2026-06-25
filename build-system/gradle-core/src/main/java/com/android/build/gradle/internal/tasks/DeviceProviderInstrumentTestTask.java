@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.tasks;
 
 import static com.android.build.gradle.internal.testing.utp.emulatorcontrol.EmulatorControlConfigKt.createEmulatorControlConfig;
+import static com.android.build.gradle.tasks.TestSuiteTestTask.CONNECTED_TEST_TEST_SUITE_NAME;
 import static com.android.builder.core.BuilderConstants.CONNECTED;
 import static com.android.builder.core.BuilderConstants.DEVICE;
 import static com.android.builder.core.BuilderConstants.FD_ANDROID_RESULTS;
@@ -53,6 +54,7 @@ import com.android.build.gradle.internal.test.report.CompositeTestResults;
 import com.android.build.gradle.internal.test.report.ReportType;
 import com.android.build.gradle.internal.test.report.TestReport;
 import com.android.build.gradle.internal.test.report.TestReportAggregationUtils;
+import com.android.build.gradle.internal.test.report.XMLReportAggregator;
 import com.android.build.gradle.internal.testing.ConnectedDeviceProvider;
 import com.android.build.gradle.internal.testing.StaticTestData;
 import com.android.build.gradle.internal.testing.TestData;
@@ -195,9 +197,6 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
         @Input
         @Optional
         public abstract Property<Boolean> getKeepInstalledApks();
-
-        public static final String TEST_RESULT_METADATA_FILE = "metadata.txt";
-        public static final String CURRENT_TEST_SUITE = "AndroidTest";
 
         @Internal
         public abstract Property<String> getModulePath();
@@ -398,8 +397,7 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
         File reportOutDir = reportDir;
         FileUtils.cleanOutputDir(reportOutDir);
 
-        TestReport report = new TestReport(ReportType.SINGLE_FLAVOR, resultsOutputDir, reportOutDir);
-        CompositeTestResults results = report.generateReport();
+        int testCount;
 
         if (enableTestReportAggregation) {
             TestReportAggregationUtils.processTestReportAggregation(
@@ -410,13 +408,23 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                     testRunnerFactory.getTestSuiteName().get(),
                     testRunnerFactory.getTestSuiteTarget().get(),
                     logger);
+            XMLReportAggregator aggregator =
+                    new XMLReportAggregator(
+                            List.of(xmlResultsDirectory.get().getAsFile()), projectPath);
+            aggregator.writeReport(reportOutDir);
+            testCount = aggregator.getTestCount();
+        } else {
+            TestReport report =
+                    new TestReport(ReportType.SINGLE_FLAVOR, resultsOutputDir, reportOutDir);
+            CompositeTestResults results = report.generateReport();
+            testCount = results.getTestCount();
         }
 
         TestsAnalytics.recordOkInstrumentedTestRun(
                 dependencies,
                 testRunnerFactory.getExecutionEnum().get(),
                 enableCoverage,
-                results.getTestCount(),
+                testCount,
                 analyticsService);
 
         if (!success) {
@@ -879,9 +887,7 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                     .getModulePath()
                     .set(creationConfig.getServices().getProjectInfo().getPath());
             task.getTestRunnerFactory().getTestedVariantName().set(variantName);
-            task.getTestRunnerFactory()
-                    .getTestSuiteName()
-                    .set(TestRunnerFactory.CURRENT_TEST_SUITE);
+            task.getTestRunnerFactory().getTestSuiteName().set(CONNECTED_TEST_TEST_SUITE_NAME);
             task.getTestRunnerFactory().getTestSuiteTarget().set(deviceProviderName);
 
             if (connectedCheckTargetSerials != null) {

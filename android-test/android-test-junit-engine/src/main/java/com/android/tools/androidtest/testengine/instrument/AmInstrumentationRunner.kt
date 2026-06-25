@@ -16,6 +16,7 @@
 
 package com.android.tools.androidtest.testengine.instrument
 
+import com.android.tools.androidtest.testengine.CoverageAgentFilesystemInfo
 import com.android.utils.GrabProcessOutput
 import java.io.File
 import java.util.concurrent.TimeUnit
@@ -43,9 +44,9 @@ class AmInstrumentationRunner(
   private val testPackageId: String,
   private val instrumentationTargetPackageId: String,
   private val executionMode: String? = null,
-  private val jvmtiCodeCoverageAgentPathProvider: () -> Pair<String, String>? = { null },
   private val instrumentationArgs: Map<String, String> = emptyMap(),
   private val listeners: Set<AmInstrumentationListener> = emptySet(),
+  private val agentFilesystemInfo: CoverageAgentFilesystemInfo = CoverageAgentFilesystemInfo(),
   private val logger: Logger = Logger.getLogger(AmInstrumentationRunner::class.java.name),
   private val processBuilder: (command: List<String>) -> ProcessBuilder = { ProcessBuilder(it) },
 ) {
@@ -91,10 +92,17 @@ class AmInstrumentationRunner(
         .setExecutionMode(executionMode)
         .addInstrumentationArgs(instrumentationArgs)
 
-    jvmtiCodeCoverageAgentPathProvider()?.let { (agentPath, dataDir) ->
+    val agentPath = agentFilesystemInfo.agentBinaryPathOnDevice
+    val dataDir = agentFilesystemInfo.dataDirectoryOnDevice
+
+    if (agentPath != null && dataDir != null) {
+      builder.addInstrumentationArg("coverage", "true")
+
       // The agent expects options in the format: "package_name,prefix,data_dir"
       val targetPackage = instrumentationArgs["targetPackage"] ?: instrumentationTargetPackageId
-      val prefix = targetPackage.replace(".", "/")
+      val basePackage = targetPackage.split(".").take(2).joinToString(".")
+      val prefix = basePackage.replace(".", "/")
+
       val options = "$testPackageId,$prefix,$dataDir"
       val config = "$agentPath=$options"
 

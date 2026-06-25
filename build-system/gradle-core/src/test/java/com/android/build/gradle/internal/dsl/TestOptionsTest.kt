@@ -16,9 +16,15 @@
 
 package com.android.build.gradle.internal.dsl
 
+import com.android.build.api.dsl.ScreenshotTestSuite
 import com.android.build.api.dsl.TestOptions
+import com.android.build.gradle.internal.fixtures.FakeProviderFactory
+import com.android.build.gradle.internal.fixtures.FakeSyncIssueReporter
 import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.services.createDslServices
+import com.android.build.gradle.internal.services.createProjectServices
+import com.android.build.gradle.options.ProjectOptions
+import com.google.common.collect.ImmutableMap
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
 import org.junit.Test
@@ -70,5 +76,45 @@ class TestOptionsTest {
     testOptions { targetSdk { version = preview("Baklava") } }
     assertThat(testOptions.targetSdk).named("testOptions.targetSdk").isEqualTo(35)
     assertThat(testOptions.targetSdkPreview).named("testOptions.targetSdkPreview").isEqualTo("Baklava")
+  }
+
+  @Test
+  fun testScreenshotTestDisabledByFlag() {
+    val wrapper = dslServices.newDecoratedInstance(TestOptionsWrapper::class.java, dslServices)
+    wrapper.testOptions {
+      screenshotTests.create("myTest") {
+        // This should fail because accessing the container reports an error
+      }
+    }
+    val reporter = dslServices.issueReporter as FakeSyncIssueReporter
+    assertThat(reporter.errors).hasSize(1)
+    assertThat(reporter.errors.first()).contains("Compose Preview Screenshot Testing is an experimental feature")
+  }
+
+  @Test
+  fun testScreenshotTestGetterAllowedWhenFlagDisabled() {
+    val wrapper = dslServices.newDecoratedInstance(TestOptionsWrapper::class.java, dslServices)
+    wrapper.testOptions {
+      val test = screenshotTests // Safe read for reflective model traversers and internal task managers
+    }
+    val reporter = dslServices.issueReporter as FakeSyncIssueReporter
+    assertThat(reporter.errors).isEmpty()
+  }
+
+  @Test
+  fun testScreenshotTestEnabledByFlag() {
+    val providerFactory =
+      FakeProviderFactory(FakeProviderFactory.factory, ImmutableMap.of("android.experimental.enableScreenshotTest", "true"))
+    val projectOptions = ProjectOptions(providerFactory)
+    val projectServices = createProjectServices(projectOptions = projectOptions)
+    val customDslServices = createDslServices(projectServices = projectServices)
+
+    val wrapper = customDslServices.newDecoratedInstance(TestOptionsWrapper::class.java, customDslServices)
+    wrapper.testOptions { screenshotTests.create("screenshotTest") { it.engineVersion = "1.0" } }
+
+    val reporter = customDslServices.issueReporter as FakeSyncIssueReporter
+    assertThat(reporter.errors).isEmpty()
+    val suite = wrapper.testOptions.screenshotTests.getByName("screenshotTest") as ScreenshotTestSuite
+    assertThat(suite.engineVersion).isEqualTo("1.0")
   }
 }

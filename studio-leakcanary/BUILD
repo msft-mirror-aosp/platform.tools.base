@@ -14,6 +14,7 @@
 
 load("@rules_android//rules:rules.bzl", "android_library")
 load("//tools/base/bazel:maven.bzl", "custom_maven_library", "maven_repository")
+load("//tools/base/bazel:robolectric.bzl", "robolectric_test")
 load(":release_version.bzl", "STUDIO_LEAKCANARY_VERSION_DEV", "STUDIO_LEAKCANARY_VERSION_RELEASE")
 
 # Switch between dev and release versions based on the build config
@@ -73,4 +74,22 @@ maven_repository(
     ],
     include_transitive_deps = False,
     visibility = ["//visibility:public"],
+)
+
+# Test target for the studio-leakcanary library
+robolectric_test(
+    name = "studio-leakcanary_tests",
+    srcs = glob(["testSrc/main/java/**/*.java"]),
+    custom_package = "com.android.tools.studio.leakcanary",
+    test_class = "com.android.tools.studio.leakcanary.StudioLeakCanaryTestSuite",
+    deps = [
+        ":studio-leakcanary_lib",
+        "//prebuilts/studio/sdk:platforms/latest_jar",
+        "//tools/base/fakeandroid",
+        "//tools/base/testutils:tools.testutils",
+        "@maven//:com.google.truth.truth",
+        "@maven//:junit.junit",
+        "@maven//:org.mockito.mockito-core",
+        "@maven//:org.robolectric.robolectric",
+    ],
 )

@@ -26,7 +26,11 @@ class CoverageAgentExtractor(
 ) {
 
   /** Extracts the native agent if needed and returns the pair of (agentPath, dataDir) on device. */
-  fun extractAgentIfNeeded(testPackageId: String, instrumentationTargetPackageId: String): Pair<String, String>? {
+  fun extractAgentIfNeeded(
+    testPackageId: String,
+    instrumentationTargetPackageId: String,
+    preResolvedDataDir: String? = null,
+  ): Pair<String, String>? {
     // 1. Determine Device ABI
     val abi = adbController.runAdbShellCommand(deviceSerial, listOf("getprop", "ro.product.cpu.abi")).output.trim()
     if (abi.isBlank()) {
@@ -60,7 +64,8 @@ class CoverageAgentExtractor(
     // 3. Extract to the App's Internal Private Data directory (Secure and production-ready)
     // We target the instrumentationTargetPackageId because the instrumented process runs as the target app.
     val dataDir =
-      adbController.runAdbShellCommand(deviceSerial, listOf("run-as", instrumentationTargetPackageId, "sh", "-c", "pwd")).output.trim()
+      preResolvedDataDir
+        ?: adbController.runAdbShellCommand(deviceSerial, listOf("run-as", instrumentationTargetPackageId, "sh", "-c", "pwd")).output.trim()
 
     if (dataDir.isBlank() || dataDir.contains("not debuggable")) {
       logger.warning("Extraction Failed - Could not resolve data directory for $instrumentationTargetPackageId via run-as.")

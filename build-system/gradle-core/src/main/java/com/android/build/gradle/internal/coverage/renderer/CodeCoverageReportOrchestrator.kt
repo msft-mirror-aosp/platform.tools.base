@@ -54,10 +54,23 @@ object CodeCoverageReportOrchestrator {
    * @param htmlReportDir The output directory where the final HTML report will be written.
    * @param rootProjectName The display name of the root project.
    * @param rootProjectDir The root directory of the project, used to resolve relative source file paths.
+   * @param modulePathOverride Optional override for the module path.
+   * @param variantNameOverride Optional override for the variant name.
+   * @param testSuiteNameOverride Optional override for the test suite name.
+   * @param sourcePaths Optional list of relative source paths to use if the XML doesn't contain source locations.
    * @return `true` if the report was generated successfully, `false` if no coverage data was found and report generation was skipped.
    * @throws GradleException if any of the input XML report files cannot be parsed.
    */
-  fun orchestrate(inputDirectories: List<File>, htmlReportDir: DirectoryProperty, rootProjectName: String, rootProjectDir: File): Boolean {
+  fun orchestrate(
+    inputDirectories: List<File>,
+    htmlReportDir: DirectoryProperty,
+    rootProjectName: String,
+    rootProjectDir: File,
+    modulePathOverride: String? = null,
+    variantNameOverride: String? = null,
+    testSuiteNameOverride: String? = null,
+    sourcePaths: List<String>? = null,
+  ): Boolean {
     val reportDir = htmlReportDir.get().asFile
 
     val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)
@@ -72,7 +85,16 @@ object CodeCoverageReportOrchestrator {
       .filter { it.isFile && it.extension == "xml" }
       .forEach { xmlFile ->
         try {
-          XMLTransformer.transform(xmlFile, rootProjectDir, coverageBuilder, sourceFileReportsBuilder)
+          XMLTransformer.transform(
+            xmlFile,
+            rootProjectDir,
+            coverageBuilder,
+            sourceFileReportsBuilder,
+            modulePathOverride,
+            variantNameOverride,
+            testSuiteNameOverride,
+            sourcePaths,
+          )
         } catch (e: Exception) {
           throw GradleException(
             "Failed to parse code coverage XML report: ${xmlFile.absolutePath}. " + "This may indicate a corrupt or invalid report file.",

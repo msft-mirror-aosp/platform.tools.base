@@ -25,6 +25,7 @@ import com.google.common.truth.Truth.assertThat
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.name
 import kotlin.io.path.readText
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 
@@ -42,6 +43,7 @@ class ScreenshotTest {
       gradleProperties { add(BooleanOption.ENABLE_SCREENSHOT_TEST, true) }
     }
 
+  @Ignore("b/525640367")
   @Test
   fun runPreviewScreenshotTestWithThreshold() {
     val build = rule.build

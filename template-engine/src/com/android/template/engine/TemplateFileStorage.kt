@@ -41,9 +41,12 @@ internal class DefaultFileStorage(private val messageSink: TemplateMessageSink, 
 
   override fun checkDestinationDirectoryIsEmpty() {
     if (Files.exists(destinationPath)) {
-      val count = Files.walk(destinationPath).count()
-      if (count > 1) {
-        throw IOException("Directory (or file) '$destinationPath' is not empty")
+      if (!Files.isDirectory(destinationPath)) {
+        throw IOException("Path '$destinationPath' exists but is not a directory")
+      }
+      val isNotEmpty = Files.list(destinationPath).use { it.findAny().isPresent }
+      if (isNotEmpty) {
+        throw IOException("Directory '$destinationPath' is not empty")
       }
     }
   }

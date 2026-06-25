@@ -20,6 +20,7 @@
 #include "daemon/event_buffer.h"
 #include "daemon/transport_service.h"
 #include "perfd/perfd.h"
+#include "perfd/sessions/sessions_manager.h"
 #include "proto/common.grpc.pb.h"
 #include "utils/daemon_config.h"
 #include "utils/fake_clock.h"
@@ -82,6 +83,7 @@ class TransportServiceCommandTest : public ::testing::Test {
   }
 
   void TearDown() override {
+    SessionsManager::Instance()->ClearSessions();
     // Stop client and server listeners.
     daemon_.InterruptWriteEvents();
     events_context_.TryCancel();

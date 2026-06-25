@@ -31,6 +31,11 @@ namespace profiler {
 bool BashCommandRunner::RunAs(const string &parameters,
                               const string &package_name, const string &user,
                               string *output) const {
+  if (package_name.empty() ||
+      package_name.find_first_not_of(kSafeNameChars) != string::npos) {
+    if (output) *output = "Invalid package name";
+    return false;
+  }
   // TODO: The single quote can interfer with parameters. Disregarding
   // this potential issue for now.
   std::ostringstream oss;

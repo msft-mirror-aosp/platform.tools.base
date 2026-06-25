@@ -39,17 +39,21 @@ import org.gradle.internal.logging.ConsoleRenderer
  */
 class XMLReportAggregator(private val files: List<File>, projectName: String) {
 
-  @VisibleForTesting fun getInputFiles(): List<File> = files
-
   private val logger = LoggerWrapper.getLogger(XMLReportAggregator::class.java)
 
   // Global set of all unique variant names encountered.
   private val rootReportBuilder = RootReportBuilder(projectName)
 
-  /** Generates the final [RootReport] by processing all input files. */
-  fun generateReport(): RootReport {
+  /** The lazily evaluated and cached [RootReport] data model. */
+  private val rootReport: RootReport by lazy {
     getInputFiles().forEach { file -> processXmlForAggregation(file) }
-    return getReport()
+    getReport()
+  }
+
+  private val lazyTestCount: Int by lazy {
+    rootReport.modules.sumOf { module ->
+      module.testSuiteSummaries.filter { it.name == AGGREGATED_TEST_SUITE_NAME }.flatMap { it.variantSummaries }.sumOf { it.total }
+    }
   }
 
   /** Generates the RootReport and writes it to the specified output directory along with the necessary JSON, JS, and HTML resources. */
@@ -77,6 +81,14 @@ class XMLReportAggregator(private val files: List<File>, projectName: String) {
     val reportLocation = ConsoleRenderer().asClickableFileUrl(File(outputDir, "index.html"))
     logger.quiet("Test report generated at: $reportLocation")
   }
+
+  /** Returns the total test count from the aggregated report. */
+  fun getTestCount(): Int = lazyTestCount
+
+  /** Generates the final [RootReport] by returning the cached report property. */
+  @VisibleForTesting fun generateReport(): RootReport = rootReport
+
+  private fun getInputFiles(): List<File> = files
 
   /**
    * Processes all XML files in the given directory for aggregation.

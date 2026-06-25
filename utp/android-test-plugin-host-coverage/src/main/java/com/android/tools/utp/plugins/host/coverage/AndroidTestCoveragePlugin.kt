@@ -18,6 +18,7 @@ package com.android.tools.utp.plugins.host.coverage
 
 import com.android.tools.utp.plugins.host.coverage.proto.AndroidTestCoverageConfigProto.AndroidTestCoverageConfig
 import com.android.tools.utp.plugins.host.coverage.proto.AndroidTestCoverageConfigProto.AndroidTestCoverageConfig.TestCoveragePathOnDeviceCase
+import com.android.utils.FileUtils
 import com.google.testing.platform.api.config.ProtoConfig
 import com.google.testing.platform.api.context.Context
 import com.google.testing.platform.api.device.CommandResult
@@ -79,6 +80,8 @@ class AndroidTestCoveragePlugin(
 
   /** Creates an empty directory. If a directory exists at the given path, it removes all contents in the directory. */
   private fun createEmptyDirectoryOnHost(directory: File) {
+    val p = directory.toPath().toAbsolutePath()
+    require(p == p.normalize()) { "Refusing deleteRecursively() on un-normalised path: $p" }
     if (directory.exists()) {
       directory.deleteRecursively()
     }
@@ -179,6 +182,10 @@ class AndroidTestCoveragePlugin(
     val covFileNames =
       deviceController.deviceShellWithRunAs("ls", "\"${coverageDir}\"", "|", "cat").output.filter { it.endsWith(".ec") }.toList()
     covFileNames.forEach { covFileName ->
+      val safeCovFileName = FileUtils.sanitizeFileName(covFileName)
+      if (safeCovFileName.isBlank() || safeCovFileName == "." || safeCovFileName == "..") {
+        return@forEach
+      }
       val covFilePath = "${coverageDir}/${covFileName}"
       val tmpCovFilePath = "${tmpDir}/${covFileName}"
       deviceController.deviceShellWithRunAs("cat", "\"${covFilePath}\"", ">", "\"${tmpCovFilePath}\"")
@@ -186,7 +193,7 @@ class AndroidTestCoveragePlugin(
         TestArtifactProto.Artifact.newBuilder()
           .apply {
             destinationPathBuilder.path = tmpCovFilePath
-            sourcePathBuilder.path = "${testCoverageConfig.outputDirectoryOnHost}/${covFileName}"
+            sourcePathBuilder.path = "${testCoverageConfig.outputDirectoryOnHost}/${safeCovFileName}"
           }
           .build()
       )

@@ -37,9 +37,9 @@ class HostJarTestSuiteAndroidResourcesTest {
       .withMavenRepository {
         jar("com.google.truth:truth:0.44")
         jar("com.google.guava:guava:31.1-jre")
-        jar("org.junit.platform:junit-platform-engine:1.12.0")
-        jar("org.junit.platform:junit-platform-launcher:1.12.0")
-        jar("org.junit.platform:junit-platform-commons:1.12.0")
+        jar("org.junit.platform:junit-platform-engine:1.13.3")
+        jar("org.junit.platform:junit-platform-launcher:1.13.3")
+        jar("org.junit.platform:junit-platform-commons:1.13.3")
         jar("org.opentest4j:opentest4j:1.3.0")
         jar("org.apiguardian:apiguardian-api:1.1.2")
         jar("org.jetbrains.kotlin:kotlin-stdlib:1.8.20")
@@ -58,12 +58,12 @@ class HostJarTestSuiteAndroidResourcesTest {
             // Android Resources Suite
             testOptions.suites.create("androidResSuite", AgpTestSuite::class.java) {
               it.useJunitEngine.apply {
-                inputs.add(com.android.build.api.dsl.AgpTestSuiteInputParameters.LOCAL_TESTED_APKS)
+                inputs.add(com.android.build.api.dsl.AgpTestSuiteInputParameters.RESOURCES_AP_ARCHIVE)
                 includeEngines.add("verifying-junit-engine")
                 enginesDependencies.add("com.android.tools.build:gradle-api:${Version.ANDROID_GRADLE_PLUGIN_VERSION}")
-                enginesDependencies.add("org.junit.platform:junit-platform-launcher:1.12.0")
-                enginesDependencies.add("org.junit.platform:junit-platform-engine:1.12.0")
-                enginesDependencies.add("org.junit.platform:junit-platform-commons:1.12.0")
+                enginesDependencies.add("org.junit.platform:junit-platform-launcher:1.13.3")
+                enginesDependencies.add("org.junit.platform:junit-platform-engine:1.13.3")
+                enginesDependencies.add("org.junit.platform:junit-platform-commons:1.13.3")
                 enginesDependencies.add("org.opentest4j:opentest4j:1.3.0")
                 enginesDependencies.add("org.apiguardian:apiguardian-api:1.1.2")
                 enginesDependencies.add("com.android.build.gradle.integration.testing.suites:verifying-junit-engine:1.0")

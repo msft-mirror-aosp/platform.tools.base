@@ -20,6 +20,8 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Message;
 import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
 
 /**
  * An executor that runs tasks on a dedicated [HandlerThread]. It replicates the behavior of App Inspection's HandlerThreadExecutor to
@@ -59,11 +61,16 @@ public final class HandlerThreadExecutor implements Executor {
   @Override
   public void execute(Runnable command) {
     if (!handler.post(command)) {
-      throw new java.util.concurrent.RejectedExecutionException("Handler thread has quit");
+      throw new RejectedExecutionException("Handler thread has quit");
     }
   }
 
   public void quitSafely() {
     thread.quitSafely();
+  }
+
+  public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
+    thread.join(unit.toMillis(timeout));
+    return !thread.isAlive();
   }
 }

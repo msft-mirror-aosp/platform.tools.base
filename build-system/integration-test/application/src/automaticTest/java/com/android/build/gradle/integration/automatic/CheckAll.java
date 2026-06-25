@@ -26,6 +26,7 @@ import com.android.build.gradle.integration.common.runner.FilterableParameterize
 import com.android.build.gradle.options.BooleanOption;
 import com.android.testutils.AssumeUtil;
 
+import com.android.testutils.TestUtils;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 
@@ -90,14 +91,18 @@ public class CheckAll {
 
     public CheckAll(String projectName, Boolean newDsl) {
         this.newDsl = newDsl;
-        project =
+        var projectBuilder =
                 GradleTestProject.builder()
                         .fromTestProject(projectName)
                         .withConfigurationCaching(ConfigurationCaching.ON)
                         .withHeap("2048M")
                         .withComposeCompilerGradlePlugin(true)
-                        .addGradleProperty(BooleanOption.USE_NEW_DSL, newDsl)
-                        .create();
+                        .addGradleProperty(BooleanOption.USE_NEW_DSL, newDsl);
+        if (projectName.equals("testFixturesKotlinApp") ||  projectName.equals("buildConfigBytecode")) {
+            projectBuilder.addGradleProperties("org.gradle.java.installations.auto-detect=false");
+            projectBuilder.addGradleProperties("org.gradle.java.installations.paths=" + TestUtils.getJava21Jdk());
+        }
+        project = projectBuilder.create();
     }
 
     @Test

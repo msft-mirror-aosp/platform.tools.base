@@ -25,6 +25,8 @@ import java.nio.file.Path
 import java.util.concurrent.TimeUnit
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.readLines
+import kotlin.io.path.readText
+import kotlin.io.path.writeText
 import org.junit.rules.TemporaryFolder
 import org.junit.rules.TestRule
 import org.junit.runner.Description
@@ -47,15 +49,18 @@ class GradleProjectRule(
   private val tmpFolder: TemporaryFolder,
   private val relativeAndroidGradleProjectPath: String,
   private val relativeGradleDistributionPath: String,
+  private val relativeJdkPath: String,
 ) : TestRule {
   private lateinit var projectFolderPath: Path
   private lateinit var gradleUserHomePath: Path
+  private var originalJavaHome: String? = null
 
   override fun apply(base: Statement?, description: Description?): Statement {
     return object : Statement() {
       override fun evaluate() {
         init()
         base?.evaluate()
+        restoreJavaHome()
       }
     }
   }
@@ -76,8 +81,6 @@ class GradleProjectRule(
         .directory(projectFolderPath.toFile())
         .redirectOutput(ProcessBuilder.Redirect.PIPE)
         .redirectError(ProcessBuilder.Redirect.PIPE)
-    // We have to specify JAVA_HOME for gradlew to run properly
-    procBuilder.environment()["JAVA_HOME"] = System.getProperty("java.home")
     // Need to specify custom gradle cache otherwise, it will fail trying to get a lock on the
     // parent folder of ~/.gradle
     procBuilder.environment()["GRADLE_USER_HOME"] = gradleUserHomePath.absolutePathString()
@@ -136,6 +139,30 @@ class GradleProjectRule(
     injectSdk()
 
     gradleUserHomePath = tmpFolder.newFolder("gradle-cache").toPath()
+    val jdkPath = TestUtils.resolveWorkspacePath(relativeJdkPath).absolutePathString()
+    originalJavaHome = System.getProperty("java.home")
+
+    // Set java home for use by compose-cli invocation and Gradle via the properties file
+    System.setProperty("java.home", jdkPath)
+
+    with(projectFolderPath.resolve("gradle.properties")) {
+      writeText(
+        readText() +
+          """
+
+        org.gradle.java.home=$jdkPath
+      """
+            .trimIndent()
+      )
+    }
+  }
+
+  private fun restoreJavaHome() {
+    if (originalJavaHome != null) {
+      System.setProperty("java.home", originalJavaHome)
+    } else {
+      System.clearProperty("java.home")
+    }
   }
 
   private fun injectGradleDistribution() {
@@ -148,11 +175,18 @@ class GradleProjectRule(
   }
 
   private fun injectRepositories() {
-    val gradleSettings = projectFolderPath.resolve("settings.gradle.kts")
-    val rootPath = TestUtils.getWorkspaceRoot()
-    val content =
-      Files.readString(gradleSettings).replace("google\\(\\)".toRegex(), "maven(url = \"${TestUtils.getLocalMavenRepoFile("")}\")")
-    Files.writeString(gradleSettings, content)
+    val settingsGradle = projectFolderPath.resolve("settings.gradle")
+    val settingsGradleKts = projectFolderPath.resolve("settings.gradle.kts")
+    val localMavenRepo = TestUtils.getLocalMavenRepoFile("")
+    if (Files.exists(settingsGradle)) {
+      val content = Files.readString(settingsGradle).replace("google\\(\\)".toRegex(), "maven { url \"$localMavenRepo\" }")
+      Files.writeString(settingsGradle, content)
+    } else if (Files.exists(settingsGradleKts)) {
+      val content = Files.readString(settingsGradleKts).replace("google\\(\\)".toRegex(), "maven { url = uri(\"$localMavenRepo\") }")
+      Files.writeString(settingsGradleKts, content)
+    } else {
+      throw AssertionError("Neither settings.gradle nor settings.gradle.kts was found in $projectFolderPath")
+    }
   }
 
   private fun injectSdk() {

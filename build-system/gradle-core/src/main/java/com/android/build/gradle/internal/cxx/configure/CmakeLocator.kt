@@ -191,12 +191,12 @@ data class CmakeVersionRequirements(val cmakeVersionFromDsl: String?) {
     }
   }
 
-  /** Get the version of CMake to be downloaded. null is returned if there is no possible version to download. */
-  val downloadVersion =
+  /** Get the version of CMake to be downloaded. Returns the folder name or the requested version. */
+  val downloadVersion: String =
     when {
       effectiveRequestVersion.compareTo(forkCmakeReportedVersion, Revision.PreviewComparison.IGNORE) == 0 -> CMakeVersion.FORK.sdkFolderName
       isSatisfiedBy(defaultCmakeVersion) -> CMakeVersion.DEFAULT.sdkFolderName
-      else -> null
+      else -> effectiveRequestVersion.toString()
     }
 
   private fun computeEffectiveRequestVersion(): Revision {
@@ -323,7 +323,7 @@ fun findCmakePathLogic(
   if (cmakePaths.isEmpty()) {
     // If there is a downloader, then try downloading and re-invoke findCmakePathLogic but with
     // no downloader this time.
-    if (downloader != null && dsl.downloadVersion != null) {
+    if (downloader != null) {
       downloader.accept(dsl.downloadVersion)
       return findCmakePathLogic(
         cmakeVersionFromDsl,

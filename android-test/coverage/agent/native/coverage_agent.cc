@@ -52,13 +52,8 @@ bool WriteAndLoadRuntimeJar(jvmtiEnv* jvmti, const std::string& data_dir) {
     return false;
   }
 
-  std::string code_cache_dir = data_dir + "/code_cache";
-
-  // Ensure the code_cache directory exists.
-  if (mkdir(code_cache_dir.c_str(), S_IRWXU) != 0 && errno != EEXIST) {
-    coverage::Log::E("Failed to create code_cache directory %s: %s",
-                     code_cache_dir.c_str(), strerror(errno));
-  }
+  // Use the provided data directory directly.
+  std::string code_cache_dir = data_dir;
 
   std::string jar_path = code_cache_dir + "/coverage_rt.jar";
   std::string tmp_path = jar_path + ".tmp";
@@ -224,4 +219,12 @@ cleanup_on_failure:
   delete g_instrumenter;
   g_instrumenter = nullptr;
   return JNI_OK;
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_android_tools_coverage_CoverageTracker_dumpCoverageData(JNIEnv* env,
+                                                                 jclass clazz) {
+  coverage::Log::I("Explicit coverage dump requested from Java.");
+  coverage::HitsExtractor::Instance().ExtractAndWrite(env);
+  coverage::MetadataCollector::Instance().WriteToDisk();
 }

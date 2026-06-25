@@ -122,4 +122,26 @@ class StringInterpolationLexerTest {
     assertThat(iterator.next()).isEqualTo(StringInterpolationToken(TokenType.END_INTERPOLATION, "}", 19, 20))
     assertThat(iterator.next()).isEqualTo(StringInterpolationToken(TokenType.EOF, "", 20, 20))
   }
+
+  @Test
+  fun `test unclosed single quote throws exception`() {
+    val lexer = StringInterpolationLexer("\${'hello}")
+    try {
+      lexer.tokenize()
+      assert(false) { "Expected StringInterpolationException" }
+    } catch (unused: StringInterpolationException) {
+      // expected
+    }
+  }
+
+  @Test
+  fun `test unclosed double quote throws exception`() {
+    val lexer = StringInterpolationLexer("\${\"hello}")
+    try {
+      lexer.tokenize()
+      assert(false) { "Expected StringInterpolationException" }
+    } catch (unused: StringInterpolationException) {
+      // expected
+    }
+  }
 }

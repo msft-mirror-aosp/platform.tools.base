@@ -18,7 +18,7 @@ using std::vector;
 
 namespace {
 // When running on host, we are testing. Use a URL as the cmdline of the app.
-const char* const kTestAppCmdline = "http://127.0.0.1:";
+const char* const kTestAppCmdline = "127.0.0.1:";
 }  // namespace
 
 namespace profiler {
@@ -64,7 +64,7 @@ std::string ProcessManager::GetAttachAgentParams(
     const std::string& app_name, const std::string& data_path,
     const std::string& config_path, const std::string& lib_file_name) {
   std::ostringstream attach_params;
-  attach_params << app_name << "?attach-agent=" << data_path << "/"
+  attach_params << "http://" << app_name << "?attach-agent=" << data_path << "/"
                 << lib_file_name << "=" << config_path;
   return attach_params.str();
 }

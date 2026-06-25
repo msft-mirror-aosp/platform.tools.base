@@ -52,7 +52,10 @@ enum class AgpTestSuiteInput(val key: String) {
   TEST_UTIL_APKS("com.android.agp.test.TEST_UTIL_APKS"),
 
   /** Alias for [AndroidTestConfigurationKeys.ANDROID_TEST_EXECUTION_MODE]. */
-  ANDROID_TEST_EXECUTION_MODE("com.android.agp.test.ANDROID_TEST_EXECUTION_MODE");
+  ANDROID_TEST_EXECUTION_MODE("com.android.agp.test.ANDROID_TEST_EXECUTION_MODE"),
+
+  /** Alias for [AndroidTestConfigurationKeys.ANIMATIONS_DISABLED]. */
+  ANIMATIONS_DISABLED("com.android.agp.test.ANIMATIONS_DISABLED");
 
   /** Returns the property value from the input parameters file. */
   fun get(): String? = fileProperties.getProperty(key)

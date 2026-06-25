@@ -69,7 +69,7 @@ enum class AgpTestSuiteInputParameters(val propertyName: String) {
    * These local test APKs are generated when Android resources are included in local test suites, allowing tests (such as screenshot tests
    * or unit tests) to access these resources at execution time.
    */
-  @Incubating LOCAL_TESTED_APKS("com.android.agp.test.LOCAL_TESTED_APKS"),
+  @Incubating RESOURCES_AP_ARCHIVE("com.android.agp.test.RESOURCES_AP_ARCHIVE"),
 
   /** Path to the test APKs. */
   @Incubating TEST_APKS("com.android.agp.test.TEST_APKS"),
@@ -85,4 +85,25 @@ enum class AgpTestSuiteInputParameters(val propertyName: String) {
 
   /** Path to the ADB executable. */
   @Incubating ADB_EXECUTABLE("com.android.agp.test.ADB_EXECUTABLE"),
+
+  /** Path to the directory containing Android SDK fonts. */
+  @Incubating SDK_FONTS_DIR("com.android.agp.test.SDK_FONTS_DIR"),
+
+  /** Path to the directory containing LayoutLib framework data resources. */
+  @Incubating LAYOUTLIB_DATA_DIR("com.android.agp.test.LAYOUTLIB_DATA_DIR"),
+
+  /** [java.io.File.pathSeparator] separated list of LayoutLib classpath JAR files. */
+  @Incubating LAYOUTLIB_CLASSPATH("com.android.agp.test.LAYOUTLIB_CLASSPATH"),
+
+  /** [java.io.File.pathSeparator] separated list of merged Android resource directories. */
+  @Incubating ANDROID_RES_DIRS("com.android.agp.test.ANDROID_RES_DIRS"),
+
+  /** [java.io.File.pathSeparator] separated list of compiled R class JARs. */
+  @Incubating R_CLASS_JARS("com.android.agp.test.R_CLASS_JARS"),
+
+  /** [java.io.File.pathSeparator] separated list of directories or JAR files of the main application's compiled classes. */
+  @Incubating MAIN_CLASSES("com.android.agp.test.MAIN_CLASSES"),
+
+  /** [java.io.File.pathSeparator] separated list of the main application's runtime classpath JAR files. */
+  @Incubating MAIN_CLASSPATH("com.android.agp.test.MAIN_CLASSPATH"),
 }

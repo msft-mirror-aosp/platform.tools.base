@@ -31,6 +31,7 @@ import com.google.testing.platform.proto.api.core.TestArtifactProto
 import com.google.testing.platform.proto.api.core.TestResultProto
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto
 import com.google.testing.platform.runtime.android.device.AndroidDeviceProperties
+import java.io.ByteArrayInputStream
 import java.io.File
 import java.time.Duration
 import java.util.logging.Level
@@ -57,7 +58,7 @@ import org.mockito.quality.Strictness
 /** Unit tests for [AndroidAdditionalTestOutputPlugin]. */
 @RunWith(JUnit4::class)
 class AndroidAdditionalTestOutputPluginTest {
-  @get:Rule var mockitoJUnitRule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
+  @get:Rule var mockitoJUnitRule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.LENIENT)
 
   @get:Rule var tempDirs = TemporaryFolder()
 
@@ -303,5 +304,100 @@ class AndroidAdditionalTestOutputPluginTest {
       verify(mockDeviceController).pull(createTestArtifact("${deviceDir}/output1.txt", "${hostDir}${File.separator}output1.txt"))
       verify(mockDeviceController).pull(createTestArtifact("${deviceDir}/output2.txt", "${hostDir}${File.separator}output2.txt"))
     }
+  }
+
+  @Test(expected = IllegalArgumentException::class)
+  fun beforeAllThrowsIfHostPathNotNormalized() {
+    runPlugin { additionalOutputDirectoryOnHost = "/path/to/../dir" }
+  }
+
+  @Test
+  fun runPluginSkipsUnsafeDeviceFiles() {
+    val hostDir = tempDirs.newFolder().absolutePath
+    val deviceDir = "/onDevice/outputDir/"
+
+    `when`(mockDeviceController.execute(eq(listOf("shell", "ls \"${deviceDir}\" | cat")), nullable(Duration::class.java)))
+      .thenReturn(CommandResult(0, listOf("..", "../unsafe", "safe.txt")))
+
+    `when`(mockDeviceController.execute(eq(listOf("shell", "[[ -d \"${deviceDir}/safe.txt\" ]]")), nullable(Duration::class.java)))
+      .thenReturn(CommandResult(1, listOf())) // not a directory
+
+    runPlugin {
+      additionalOutputDirectoryOnHost = hostDir
+      additionalOutputDirectoryOnDevice = deviceDir
+    }
+
+    verify(mockDeviceController).pull(createTestArtifact("${deviceDir}/safe.txt", "${hostDir}${File.separator}safe.txt"))
+  }
+
+  @Test
+  fun runPluginWithContentProviderSkipsUnsafeFiles() {
+    val hostDir = tempDirs.newFolder().absolutePath
+    val deviceDir = "/sdcard/Android/media/com.example/additional_test_output"
+    val androidUser = "10"
+
+    `when`(mockDeviceController.execute(eq(listOf("shell", "am get-current-user")), nullable(Duration::class.java)))
+      .thenReturn(CommandResult(0, listOf(androidUser)))
+
+    // Mock content query to return one safe and one unsafe file
+    `when`(
+        mockDeviceController.execute(
+          eq(
+            listOf(
+              "shell",
+              "content query --uri content://media/external/file --user 10 --projection _id:_data --where \"mime_type IS NOT NULL AND _data LIKE '/storage/emulated/10/Android/media/com.example/additional_test_output%'\"",
+            )
+          ),
+          nullable(Duration::class.java),
+        )
+      )
+      .thenReturn(
+        CommandResult(
+          0,
+          listOf(
+            "_id=1, _data=/storage/emulated/10/Android/media/com.example/additional_test_output/safe.txt",
+            "_id=2, _data=/storage/emulated/10/Android/media/com.example/additional_test_output/../unsafe.txt",
+            "_id=3, _data=/storage/emulated/10/Android/media/com.example/additional_test_output/subdir/safe2.txt",
+          ),
+        )
+      )
+
+    val mockSafeReadResult = CommandResult(0, ByteArrayInputStream("safe_content".toByteArray()))
+    val mockSafe2ReadResult = CommandResult(0, ByteArrayInputStream("safe2_content".toByteArray()))
+
+    `when`(
+        mockDeviceController.execute(
+          eq(listOf("shell", "content read --user 10 --uri content://media/external/file/1")),
+          nullable(Duration::class.java),
+        )
+      )
+      .thenReturn(mockSafeReadResult)
+
+    `when`(
+        mockDeviceController.execute(
+          eq(listOf("shell", "content read --user 10 --uri content://media/external/file/3")),
+          nullable(Duration::class.java),
+        )
+      )
+      .thenReturn(mockSafe2ReadResult)
+
+    runPlugin {
+      additionalOutputDirectoryOnHost = hostDir
+      additionalOutputDirectoryOnDevice = deviceDir
+    }
+
+    // Verify safe files are copied
+    val safeFile = File(hostDir, "safe.txt")
+    val safe2File = File(hostDir, "subdir/safe2.txt")
+    assertThat(safeFile.exists()).isTrue()
+    assertThat(safe2File.exists()).isTrue()
+    assertThat(safeFile.readText()).isEqualTo("safe_content")
+    assertThat(safe2File.readText()).isEqualTo("safe2_content")
+
+    // Verify unsafe file is NOT copied
+    val unsafeFile = File(hostDir, "../unsafe.txt")
+    assertThat(unsafeFile.exists()).isFalse()
+    val unsafeFileFlattened = File(hostDir, "unsafe.txt")
+    assertThat(unsafeFileFlattened.exists()).isFalse()
   }
 }

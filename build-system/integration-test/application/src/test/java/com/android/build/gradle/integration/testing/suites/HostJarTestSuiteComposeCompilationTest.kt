@@ -24,9 +24,7 @@ import com.android.build.gradle.options.BooleanOption
 import org.junit.Rule
 import org.junit.Test
 
-/**
- * Integration test that verifies the JVM compilation of Compose and cross-module Composable references inside AGP test suites.
- */
+/** Integration test that verifies the JVM compilation of Compose and cross-module Composable references inside AGP test suites. */
 class HostJarTestSuiteComposeCompilationTest {
 
   @get:Rule
@@ -35,9 +33,9 @@ class HostJarTestSuiteComposeCompilationTest {
       .withMavenRepository {
         jar("com.google.truth:truth:0.44")
         jar("com.google.guava:guava:31.1-jre")
-        jar("org.junit.platform:junit-platform-engine:1.12.0")
-        jar("org.junit.platform:junit-platform-launcher:1.12.0")
-        jar("org.junit.platform:junit-platform-commons:1.12.0")
+        jar("org.junit.platform:junit-platform-engine:1.13.3")
+        jar("org.junit.platform:junit-platform-launcher:1.13.3")
+        jar("org.junit.platform:junit-platform-commons:1.13.3")
         jar("org.opentest4j:opentest4j:1.3.0")
         jar("org.apiguardian:apiguardian-api:1.1.2")
         jar("org.jetbrains.kotlin:kotlin-stdlib:1.8.20")
@@ -60,17 +58,14 @@ class HostJarTestSuiteComposeCompilationTest {
               it.useJunitEngine.apply {
                 includeEngines.add("verifying-junit-engine")
                 enginesDependencies.add("com.android.tools.build:gradle-api:${Version.ANDROID_GRADLE_PLUGIN_VERSION}")
-                enginesDependencies.add("org.junit.platform:junit-platform-launcher:1.12.0")
-                enginesDependencies.add("org.junit.platform:junit-platform-engine:1.12.0")
-                enginesDependencies.add("org.junit.platform:junit-platform-commons:1.12.0")
+                enginesDependencies.add("org.junit.platform:junit-platform-launcher:1.13.3")
+                enginesDependencies.add("org.junit.platform:junit-platform-engine:1.13.3")
+                enginesDependencies.add("org.junit.platform:junit-platform-commons:1.13.3")
                 enginesDependencies.add("org.opentest4j:opentest4j:1.3.0")
                 enginesDependencies.add("org.apiguardian:apiguardian-api:1.1.2")
                 enginesDependencies.add("org.jetbrains.kotlin:kotlin-stdlib:1.8.20")
                 enginesDependencies.add("com.android.build.gradle.integration.testing.suites:verifying-junit-engine:1.0")
-                addInputProperty(
-                  "com.android.junit.engine.expected.classes",
-                  "some.compose.AppClassKt, some.compose.TestClassKt",
-                )
+                addInputProperty("com.android.junit.engine.expected.classes", "some.compose.AppClassKt, some.compose.TestClassKt")
               }
               it.hostJar {}
               it.targetVariants.add("debug")
