@@ -400,14 +400,14 @@ public class ManifestModel implements DocumentModel<ManifestModel.NodeTypes> {
         GRANT_URI_PERMISSION(MergeType.MERGE, DEFAULT_NO_KEY_NODE_RESOLVER),
 
         /**
-         * Instrumentation (contained in intent-filter)
-         * <br>
-         * <b>See also : </b>
-         * {@link <a href=http://developer.android.com/guide/topics/manifest/instrumentation-element.html>
-         *     Instrunentation Xml documentation</a>}
+         * Instrumentation (contained in intent-filter) <br>
+         * <b>See also : </b> {@link <a
+         * href=http://developer.android.com/guide/topics/manifest/instrumentation-element.html>
+         * Instrumentation Xml documentation</a>}
          */
         INSTRUMENTATION(
-                MergeType.MERGE, DEFAULT_NO_KEY_NODE_RESOLVER,
+                MergeType.MERGE,
+                DEFAULT_NO_KEY_NODE_RESOLVER,
                 AttributeModel.newModel("name").setMergingPolicy(AttributeModel.NO_MERGING_POLICY),
                 AttributeModel.newModel("targetPackage")
                         .setMergingPolicy(AttributeModel.NO_MERGING_POLICY),
@@ -415,8 +415,8 @@ public class ManifestModel implements DocumentModel<ManifestModel.NodeTypes> {
                         .setMergingPolicy(AttributeModel.NO_MERGING_POLICY),
                 AttributeModel.newModel("handleProfiling")
                         .setMergingPolicy(AttributeModel.NO_MERGING_POLICY),
-                AttributeModel.newModel("label").setMergingPolicy(AttributeModel.NO_MERGING_POLICY)
-        ),
+                AttributeModel.newModel("label")
+                        .setMergingPolicy(AttributeModel.NO_MERGING_POLICY)),
 
         /**
          * Intent (contained in queries) <br>
