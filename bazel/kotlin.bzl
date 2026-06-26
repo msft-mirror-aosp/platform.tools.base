@@ -9,7 +9,7 @@ load(":merge_archives.bzl", "run_singlejar")
 
 # buildifier: disable=native-java-common
 # buildifier: disable=native-java-info
-def kotlin_compile(ctx, name, srcs, deps, friend_jars, out, out_ijar, java_runtime, kotlinc_opts, kotlin_version = "2.0", warn = "off"):
+def kotlin_compile(ctx, name, srcs, deps, friend_jars, out, out_ijar, java_runtime, kotlinc_opts, kotlin_version, warn = "off"):
     """Runs kotlinc on the given source files.
 
     Args:
@@ -208,6 +208,7 @@ def kotlin_library(
         deps = None,
         exports = None,
         javacopts = [],
+        kotlin_version = "2.0",  # The default value corresponds to the minimum kotlin-stdlib across AGP, google3, etc.
         jvm_target = "17",  # The default value corresponds to the minimum JDK across AGP, google3, etc.
         kotlinc_opts = [],
         lint_enabled = True,
@@ -232,6 +233,7 @@ def kotlin_library(
         deps: The dependencies of this library.
         exports: A list of exports. Optional.
         javacopts: Additional javac options.
+        kotlin_version: The Kotlin language level and target API level.
         jvm_target: The target JVM version.
         kotlinc_opts: Additional kotlinc options.
         lint_enabled: enable or disable Lint checks
@@ -269,6 +271,7 @@ def kotlin_library(
         name = name,
         srcs = srcs,
         jar = jar,
+        kotlin_version = kotlin_version,
         jvm_target = jvm_target,
         deps = deps,
         exports = exports,
@@ -364,6 +367,7 @@ def _kotlin_library_impl(ctx):
             out_ijar = kotlin_ijar,
             java_runtime = java_runtime,
             kotlinc_opts = kotlinc_opts,
+            kotlin_version = ctx.attr.kotlin_version,
             warn = warn,
         ))
         cjars.append(kotlin_jar)
@@ -451,6 +455,7 @@ _kotlin_library = rule(
         "data": attr.label_list(allow_files = True),
         "friends": attr.label_list(),
         "jar": attr.output(mandatory = True),
+        "kotlin_version": attr.string(mandatory = True),
         "jvm_target": attr.string(mandatory = True),
         "deps": attr.label_list(providers = [JavaInfo]),
         "exports": attr.label_list(providers = [JavaInfo]),
