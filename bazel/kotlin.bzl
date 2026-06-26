@@ -208,7 +208,7 @@ def kotlin_library(
         deps = None,
         exports = None,
         javacopts = [],
-        kotlin_version = "2.0",  # The default value corresponds to the minimum kotlin-stdlib across AGP, google3, etc.
+        kotlin_version = "2.2",  # The default value corresponds to the minimum kotlin-stdlib across AGP, google3, etc.
         jvm_target = "17",  # The default value corresponds to the minimum JDK across AGP, google3, etc.
         kotlinc_opts = [],
         lint_enabled = True,
