@@ -21,6 +21,11 @@ package com.android.builder.utils
 import java.io.File
 import java.util.zip.ZipEntry
 
+/** Validates the raw zip entry name string to prevent traversal attacks. */
+fun isValidZipEntryName(name: String): Boolean {
+  return !name.contains(":") && name.split('/', '\\').none { it == ".." || it == "." } && name.none { it < ' ' }
+}
+
 /**
  * Validates the name of a zip entry to prevent directory traversal attacks (e.g., Zip-Slip).
  *
@@ -38,8 +43,7 @@ import java.util.zip.ZipEntry
  * @return `true` if the entry name is considered safe, `false` otherwise.
  */
 fun isValidZipEntryName(entry: ZipEntry): Boolean {
-  val name = entry.name
-  return !name.contains(":") && name.split('/', '\\').none { it == ".." || it == "." } && name.none { it < ' ' }
+  return isValidZipEntryName(entry.name)
 }
 
 /** Helper function to validate the path inside a zipfile does not leave the output directory. */

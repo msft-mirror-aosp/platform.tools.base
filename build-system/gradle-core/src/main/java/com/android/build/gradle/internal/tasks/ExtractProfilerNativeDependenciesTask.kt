@@ -23,6 +23,7 @@ import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.utils.isValidZipEntryName
+import com.android.builder.utils.isValidZipEntryPath
 import com.android.utils.FileUtils
 import java.io.ByteArrayInputStream
 import java.io.File
@@ -115,11 +116,13 @@ abstract class ExtractProfilerNativeDependenciesTask : NonIncrementalTask() {
           val relativePath = zipEntry.name.substringAfter('/')
           val osRelativePath = relativePath.replace('/', File.separatorChar)
           val outFile = FileUtils.join(outputDir, osRelativePath)
-          if (outFile.exists()) {
-            throw RuntimeException("Unexpected duplicate profiler native dependency: $relativePath")
+          if (isValidZipEntryPath(outFile, outputDir)) {
+            if (outFile.exists()) {
+              throw RuntimeException("Unexpected duplicate profiler native dependency: $relativePath")
+            }
+            FileUtils.mkdirs(outFile.parentFile)
+            outFile.writeBytes(nativeLibBytes)
           }
-          FileUtils.mkdirs(outFile.parentFile)
-          outFile.writeBytes(nativeLibBytes)
         },
       )
     }
@@ -131,9 +134,11 @@ abstract class ExtractProfilerNativeDependenciesTask : NonIncrementalTask() {
      */
     private fun actOnMatchingZipEntries(zis: ZipInputStream, predicate: Predicate<String>, action: (ZipEntry, ByteArray) -> Unit) {
       var entry: ZipEntry? = zis.nextEntry
-      while (entry != null && isValidZipEntryName(entry)) {
-        if (predicate.test(entry.name)) {
-          action(entry, zis.readBytes())
+      while (entry != null) {
+        if (isValidZipEntryName(entry)) {
+          if (predicate.test(entry.name)) {
+            action(entry, zis.readBytes())
+          }
         }
         zis.closeEntry()
         entry = zis.nextEntry

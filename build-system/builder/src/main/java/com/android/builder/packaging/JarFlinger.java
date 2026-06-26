@@ -18,14 +18,17 @@ package com.android.builder.packaging;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.builder.utils.ZipEntryUtils;
 import com.android.utils.PathUtils;
 import com.android.zipflinger.Entry;
 import com.android.zipflinger.Source;
 import com.android.zipflinger.Sources;
 import com.android.zipflinger.ZipArchive;
 import com.android.zipflinger.ZipSource;
+
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.ImmutableSortedSet;
+
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.Closeable;
@@ -202,7 +205,7 @@ public class JarFlinger implements Closeable {
                 if (filter != null && !filter.test(name)) {
                     continue;
                 }
-                if (name.contains("../")) {
+                if (!ZipEntryUtils.isValidZipEntryName(name)) {
                     throw new InvalidPathException(name, "Entry name contains invalid characters");
                 }
                 // b/246948010: Read all bytes and create a new input stream as ZipFlinger closes
@@ -230,7 +233,7 @@ public class JarFlinger implements Closeable {
             if (relocator != null) {
                 name = relocator.relocate(name);
             }
-            if (name.contains("../")) {
+            if (!ZipEntryUtils.isValidZipEntryName(name)) {
                 throw new InvalidPathException(name, "Entry name contains invalid characters");
             }
             source.select(entry.getName(), name);

@@ -40,7 +40,7 @@ class LibraryJniLibsTaskTest {
 
   @Before
   fun setUp() {
-    outputDirectory = tmpDir.newFile("out")
+    outputDirectory = tmpDir.newFile("out").canonicalFile
     with(ProjectBuilder.builder().withProjectDir(tmpDir.newFolder()).build()) {
       workers = FakeGradleWorkExecutor(objects, tmpDir.newFolder())
       task = tasks.create("task", AndroidVariantTask::class.java)
@@ -69,5 +69,28 @@ class LibraryJniLibsTaskTest {
     assertThat(File(outputDirectory, "x86/bar.so")).isFile()
     assertThat(File(outputDirectory, "x86/baz.so")).isFile()
     assertThat(File(outputDirectory, "x86/notAnSoFile")).doesNotExist()
+  }
+
+  @Test
+  fun testZipSlip() {
+    val dir1 = File(tmpDir.root, "dir1")
+    FileUtils.mkdirs(dir1)
+
+    // Create a jar with zip-slip entry names
+    val jarFile = File(tmpDir.root, "malicious.jar")
+    TestInputsGenerator.writeJarWithEmptyEntries(
+      jarFile.toPath(),
+      listOf("lib/x86/foo.so", "lib/x86/../../evil.so", "lib/x86/..\\..\\evil2.so"),
+    )
+
+    LibraryJniLibsTask.LibraryJniLibsDelegate(dir1, listOf(jarFile), outputDirectory, workers, task).copyFiles()
+
+    assertThat(outputDirectory).isDirectory()
+    assertThat(File(outputDirectory, "x86/foo.so")).isFile()
+    // Malicious files should not be written (either rejected by isValidZipEntryName or isValidZipEntryPath)
+    assertThat(File(outputDirectory, "x86/../../evil.so")).doesNotExist()
+    assertThat(File(outputDirectory, "x86/..\\..\\evil2.so")).doesNotExist()
+    assertThat(File(tmpDir.root, "evil.so")).doesNotExist()
+    assertThat(File(tmpDir.root, "evil2.so")).doesNotExist()
   }
 }

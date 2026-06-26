@@ -52,7 +52,7 @@ abstract class ExtractJniTransform : TransformAction<GenericTransformParameters>
           .filter { entry ->
             MergeNativeLibsTask.predicate.test(entry.name.substringAfterLast('/')) &&
               JAR_JNI_PATTERN.matcher(entry.name).matches() &&
-              com.android.builder.utils.isValidZipEntryName(entry)
+              isValidZipEntryName(entry)
           }
           .iterator()
       if (!entries.hasNext()) {

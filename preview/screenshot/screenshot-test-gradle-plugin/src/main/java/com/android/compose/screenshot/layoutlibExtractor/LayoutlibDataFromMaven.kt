@@ -79,16 +79,21 @@ class LayoutlibDataFromMaven(val layoutlibDataDirectory: FileCollection) {
       ZipInputStream(input.inputStream().buffered()).use { zipInputStream ->
         while (true) {
           val entry = zipInputStream.nextEntry ?: break
-          if (entry.name.contains("../") || entry.isDirectory) {
+          val destinationFile = outDir.resolve(entry.name).normalize()
+          if (entry.isDirectory || !destinationFile.startsWith(outDir.normalize()) || !isSafeZipEntryName(entry.name)) {
             continue
           }
-          val destinationFile = outDir.resolve(entry.name)
           Files.createDirectories(destinationFile.parent)
           Files.newOutputStream(destinationFile).buffered().use { output -> ByteStreams.copy(zipInputStream, output) }
         }
       }
       val resJar = outDir.resolve("data").resolve("framework_res.jar").toFile()
       FileUtils.copyFile(parameters.frameworkRes.singleFile, resJar)
+    }
+
+    /** Validates that the entry name is a safe relative path component. */
+    private fun isSafeZipEntryName(name: String): Boolean {
+      return !name.contains(":") && name.split('/', '\\').none { it == ".." || it == "." } && name.none { it < ' ' }
     }
   }
 }
