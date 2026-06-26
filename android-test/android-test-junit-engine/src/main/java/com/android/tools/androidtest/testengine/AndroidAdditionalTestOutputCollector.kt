@@ -144,12 +144,9 @@ class AndroidAdditionalTestOutputCollector(
       return
     }
     val fileNames = result.output.lines().map { it.trim() }.filter { it.isNotBlank() && (extension == null || it.endsWith(extension)) }
-    val hostDirCanon = hostDirPath.canonicalFile.toPath()
     fileNames.forEach { fileName ->
-      val safeLeaf =
-        fileName.replace(Regex("[^a-zA-Z0-9._-]"), "_").let { if (it.isBlank() || it.all { c -> c == '.' }) return@forEach else it }
-      val hostFile = File(hostDirPath, safeLeaf)
-      if (!hostFile.canonicalFile.toPath().startsWith(hostDirCanon)) return@forEach
+      val safeLeaf = PathSafety.sanitizeLeafName(fileName) ?: return@forEach
+      val hostFile = PathSafety.resolveContainedFile(hostDirPath, safeLeaf) ?: return@forEach
       pullFile("$deviceDirPath/$fileName", hostFile)
     }
   }
@@ -316,17 +313,15 @@ class AndroidAdditionalTestOutputCollector(
       logger.warning("Failed to list $normalizedDeviceDir: ${result.errorOutput}")
       return
     }
-    val hostDirCanon = File(hostDir).canonicalFile.toPath()
+    val hostDirFile = File(hostDir)
     result.output
       .split("\n")
       .map { it.trim() }
       .filter { it.isNotBlank() }
       .forEach { rawName ->
         val deviceFilePath = "${normalizedDeviceDir}/${rawName}"
-        val safeLeaf =
-          rawName.replace(Regex("[^a-zA-Z0-9._-]"), "_").let { if (it.isBlank() || it.all { c -> c == '.' }) return@forEach else it }
-        val hostFile = File(hostDir, safeLeaf)
-        if (!hostFile.canonicalFile.toPath().startsWith(hostDirCanon)) return@forEach
+        val safeLeaf = PathSafety.sanitizeLeafName(rawName) ?: return@forEach
+        val hostFile = PathSafety.resolveContainedFile(hostDirFile, safeLeaf) ?: return@forEach
         val hostFilePath = hostFile.absolutePath
         if (isDirectory(deviceFilePath)) {
           hostFile.let { file ->
@@ -382,14 +377,13 @@ class AndroidAdditionalTestOutputCollector(
         ),
       )
 
-    val hostDirCanon = File(hostDir).canonicalFile.toPath()
+    val hostDirFile = File(hostDir)
     result.output.lines().forEach {
       val matchResult = regex.find(it) ?: return@forEach
       val (id, path) = matchResult.destructured
       val relativeFilePath = path.removePrefix(normalizedDeviceDir).removePrefix("/")
       if (relativeFilePath.isNotEmpty() && filter(relativeFilePath)) {
-        val hostFile = File(hostDir, relativeFilePath)
-        if (!hostFile.canonicalFile.toPath().startsWith(hostDirCanon)) return@forEach
+        val hostFile = PathSafety.resolveContainedFile(hostDirFile, relativeFilePath) ?: return@forEach
         hostFile.parentFile?.let { parentFile ->
           if (!parentFile.exists()) {
             parentFile.mkdirs()
@@ -441,7 +435,13 @@ class AndroidAdditionalTestOutputCollector(
     val testIdentifier = testResult.testIdentifier
     val packageName = testIdentifier.testPackage
     val fullClassName = if (packageName.isNotEmpty()) "$packageName.${testIdentifier.testClass}" else testIdentifier.testClass
-    val fileNameSuffix = "${fullClassName}.${testIdentifier.testMethod}".replace(Regex("[^a-zA-Z0-9._-]"), "_")
+    val rawSuffix = "${fullClassName}.${testIdentifier.testMethod}"
+    val fileNameSuffix =
+      PathSafety.sanitizeLeafName(rawSuffix)
+        ?: run {
+          logger.warning("Skipping benchmark output due to invalid test identifier name: '$rawSuffix'")
+          return
+        }
     val benchmarkMessageOutputFile = File(hostOutputDir, "additionaltestoutput.benchmark.message_${fileNameSuffix}.txt")
     benchmarkMessageOutputFile.writeText(benchmarkMessage, StandardCharsets.UTF_8)
   }

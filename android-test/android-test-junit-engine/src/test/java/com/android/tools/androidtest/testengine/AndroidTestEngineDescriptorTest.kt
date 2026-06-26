@@ -84,14 +84,50 @@ class AndroidTestEngineDescriptorTest {
   }
 
   @Test
-  fun `execute falls back to device if sanitized name is empty or all dots`() {
+  fun `execute sanitizes device serials and versions when empty or all dots`() {
+    val uniqueId = UniqueId.forEngine("android-test-engine")
+    val descriptor = AndroidTestEngineDescriptor(uniqueId)
+
+    // Test Case A: All dots ("..") -> should sanitize to underscores ("__") to prevent collision
+    val contextA = mock<AndroidTestExecutionContext>()
+    val configurationA = mock<AndroidTestConfiguration>()
+    whenever(contextA.configuration).thenReturn(configurationA)
+    whenever(configurationA.deviceSerials).thenReturn(listOf(".."))
+    whenever(configurationA.adb).thenReturn(File("adb"))
+
+    val dynamicTestExecutorA = mock<Node.DynamicTestExecutor>()
+    descriptor.execute(contextA, dynamicTestExecutorA)
+
+    val captorA = argumentCaptor<AndroidDeviceDescriptor>()
+    verify(dynamicTestExecutorA).execute(captorA.capture())
+    assertThat(captorA.firstValue.deviceId).isEqualTo("__")
+
+    // Test Case B: Empty/Blank custom device ID ("   ") -> should fall back to "device"
+    val contextB = mock<AndroidTestExecutionContext>()
+    val configurationB = mock<AndroidTestConfiguration>()
+    whenever(contextB.configuration).thenReturn(configurationB)
+    whenever(configurationB.deviceSerials).thenReturn(listOf("serial1"))
+    whenever(configurationB.getDeviceId("serial1")).thenReturn("   ")
+    whenever(configurationB.adb).thenReturn(File("adb"))
+
+    val dynamicTestExecutorB = mock<Node.DynamicTestExecutor>()
+    descriptor.execute(contextB, dynamicTestExecutorB)
+
+    val captorB = argumentCaptor<AndroidDeviceDescriptor>()
+    verify(dynamicTestExecutorB).execute(captorB.capture())
+    assertThat(captorB.firstValue.deviceId).isEqualTo("device")
+  }
+
+  @Test
+  fun `execute sanitizes custom deviceIds retrieved from configuration`() {
     val uniqueId = UniqueId.forEngine("android-test-engine")
     val descriptor = AndroidTestEngineDescriptor(uniqueId)
 
     val context = mock<AndroidTestExecutionContext>()
     val configuration = mock<AndroidTestConfiguration>()
     whenever(context.configuration).thenReturn(configuration)
-    whenever(configuration.deviceSerials).thenReturn(listOf(".."))
+    whenever(configuration.deviceSerials).thenReturn(listOf("serial1"))
+    whenever(configuration.getDeviceId("serial1")).thenReturn("../../evil_custom_id")
     whenever(configuration.adb).thenReturn(File("adb"))
 
     val dynamicTestExecutor = mock<Node.DynamicTestExecutor>()
@@ -102,6 +138,8 @@ class AndroidTestEngineDescriptorTest {
     verify(dynamicTestExecutor).execute(captor.capture())
 
     val deviceDescriptor = captor.firstValue
-    assertThat(deviceDescriptor.deviceId).isEqualTo("device")
+    assertThat(deviceDescriptor.deviceSerial).isEqualTo("serial1")
+    assertThat(deviceDescriptor.deviceId).isEqualTo(".._.._evil_custom_id")
+    assertThat(deviceDescriptor.deviceDisplayName).isEqualTo(".._.._evil_custom_id (serial1)")
   }
 }
