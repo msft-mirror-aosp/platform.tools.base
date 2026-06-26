@@ -1,0 +1,35 @@
+#
+# Test:
+# - original-package, restrict-update, protected-broadcast elements from libraries are not merged in main manifest.
+#
+
+@main
+
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.app1" >
+
+    <application android:name="com.example.TheApp" />
+
+</manifest>
+
+
+@lib1
+
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.lib1" >
+
+    <original-package android:name="com.example.old.app1" />
+    <restrict-update android:hash="123456" />
+    <protected-broadcast android:name="com.example.MY_BROADCAST" />
+
+</manifest>
+
+@result
+
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.app1" >
+
+    <application android:name="com.example.TheApp" />
+
+</manifest>

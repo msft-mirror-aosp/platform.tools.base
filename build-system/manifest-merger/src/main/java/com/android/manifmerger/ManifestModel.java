@@ -471,6 +471,20 @@ public class ManifestModel implements DocumentModel<ManifestModel.NodeTypes> {
         /** Module node for bundle */
         MODULE(MergeType.MERGE, DEFAULT_NO_KEY_NODE_RESOLVER, EnumSet.of(Type.MAIN, Type.OVERLAY)),
 
+        /**
+         * b/509645944 hardening: framework <manifest> children with no legitimate library use;
+         * modelled explicitly so they do not fall through to CUSTOM (which is library-mergeable for
+         * vendor-namespace extensibility).
+         */
+        ORIGINAL_PACKAGE(
+                MergeType.MERGE, DEFAULT_NO_KEY_NODE_RESOLVER, EnumSet.of(Type.MAIN, Type.OVERLAY)),
+        RESTRICT_UPDATE(
+                MergeType.MERGE, DEFAULT_NO_KEY_NODE_RESOLVER, EnumSet.of(Type.MAIN, Type.OVERLAY)),
+        PROTECTED_BROADCAST(
+                MergeType.MERGE,
+                DEFAULT_NAME_ATTRIBUTE_RESOLVER,
+                EnumSet.of(Type.MAIN, Type.OVERLAY)),
+
         /** Nav-graph (contained in activity), expanded into intent-filter by manifest merger */
         NAV_GRAPH(MergeType.MERGE, DEFAULT_NO_KEY_NODE_RESOLVER),
 
@@ -585,6 +599,13 @@ public class ManifestModel implements DocumentModel<ManifestModel.NodeTypes> {
                 MergeType.MERGE,
                 DEFAULT_NAME_ATTRIBUTE_RESOLVER,
                 AttributeModel.newModel(SdkConstants.ATTR_NAME).setIsPackageDependent()),
+
+        /**
+         * <application> child, API 31+; lib could otherwise downgrade per-process
+         * memtagMode/gwpAsanMode or <deny-permission>.
+         */
+        PROCESSES(
+                MergeType.MERGE, DEFAULT_NO_KEY_NODE_RESOLVER, EnumSet.of(Type.MAIN, Type.OVERLAY)),
 
         /**
          * Provider (contained in application or queries) <br>

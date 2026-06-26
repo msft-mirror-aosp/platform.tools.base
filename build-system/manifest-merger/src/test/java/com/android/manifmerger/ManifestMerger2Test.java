@@ -171,7 +171,9 @@ public class ManifestMerger2Test {
                 "109g_dup_uses_sdk_node_validation.xml",
                 "110_allow_component_access.xml",
                 "111_isPrivateComputeCoreProcess_attr.xml",
-                "112_ignore_key_sets_from_library.xml"
+                "112_ignore_key_sets_from_library.xml",
+                "113_ignore_other_manifest_children_from_library.xml",
+                "114_ignore_processes_from_library.xml"
             };
 
     private static final Multimap<Predicate<String>, ManifestMerger2.Invoker.Feature>
