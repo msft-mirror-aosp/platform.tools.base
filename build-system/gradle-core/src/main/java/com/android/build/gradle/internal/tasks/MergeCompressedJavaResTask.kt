@@ -36,7 +36,7 @@ import com.android.builder.merge.FileMergerInput
 import com.android.builder.merge.FileMergerInputNonIncremental
 import com.android.builder.merge.FileMergerOutputs
 import com.android.builder.merge.FilterFileMergerInput
-import com.android.builder.merge.InputStreamMerger
+import com.android.builder.merge.JavaResZipSourceMerger
 import com.android.builder.merge.LazyFileMergerInput
 import com.android.builder.merge.MergeOutputWriters
 import com.android.builder.packaging.PackagingUtils
@@ -228,7 +228,7 @@ abstract class MergeJavaResOptimizedWorkAction : ProfileAwareWorkAction<MergeJav
         }
         .toList()
 
-    val merger = InputStreamMerger(packagingOptions)
+    val merger = JavaResZipSourceMerger(packagingOptions)
     val baseOutput = FileMergerOutputs.fromAlgorithmAndWriter(merger, MergeOutputWriters.toZipWithZipFlinger(outputFile))
 
     val output =

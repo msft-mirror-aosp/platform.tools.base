@@ -52,23 +52,6 @@ class FileMergerOutputsTest {
   }
 
   @Test
-  fun testFromAlgorithmAndWriter() {
-    val algorithm = InputStreamMerger(ParsedPackagingOptions(emptyList(), emptyList(), emptyList()))
-    val writer = MockSourceMergeOutputWriter()
-    val output = FileMergerOutputs.fromAlgorithmAndWriter(algorithm, writer)
-
-    output.open()
-    output.use {
-      val input = FileMergerTestInput("i0")
-      input.add("path")
-      output.create("path", listOf(input), true)
-      Assert.assertTrue(writer.createInputStreamCalled)
-    }
-    Assert.assertTrue(writer.openCalled)
-    Assert.assertTrue(writer.closeCalled)
-  }
-
-  @Test
   fun testFromAlgorithmAndWriterWithJavaResZipSourceWriter() {
     val algorithm = JavaResZipSourceMerger(ParsedPackagingOptions(emptyList(), emptyList(), emptyList()))
     val writer = MockSourceMergeOutputWriter()
