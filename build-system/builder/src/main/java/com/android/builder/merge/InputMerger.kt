@@ -19,5 +19,5 @@ package com.android.builder.merge
 /** Used for merging [FileMergerInput]s */
 interface InputMerger<in T, out U> {
 
-  fun merge(path: String, from: () -> List<T>, action: (mergedOutput: U) -> Unit)
+  fun merge(path: String, compress: Boolean, from: () -> List<T>, action: (mergedOutput: U) -> Unit)
 }

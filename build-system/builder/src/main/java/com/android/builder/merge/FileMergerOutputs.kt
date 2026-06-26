@@ -66,7 +66,7 @@ object FileMergerOutputs {
       }
 
       override fun create(path: String, inputs: List<FileMergerInputNonIncremental>, compress: Boolean) {
-        merger.merge(path, { inputs }) { result ->
+        merger.merge(path, compress, { inputs }) { result ->
           when (result) {
             is MergedSourceResult.ZipSource -> writer.create(path, result.source)
             is MergedSourceResult.InputStream -> writer.create(path, result.stream, compress)

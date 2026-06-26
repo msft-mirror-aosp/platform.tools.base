@@ -22,6 +22,7 @@ import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.TestInputsGenerator.jarWithTextEntries
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth.assertThat
+import java.util.zip.ZipFile
 import kotlin.io.path.exists
 import org.junit.Rule
 import org.junit.Test
@@ -234,5 +235,41 @@ class MergeJavaResourceTaskTest(val enableOptimizations: Boolean) {
     assertThat(newResourceFile.exists()).isFalse()
     FileUtils.writeToFile(newResourceFile.toFile(), "resource")
     build.executor.run(":app:mergeDebugJavaResource")
+  }
+
+  @Test
+  fun testNoCompressDecompression() {
+    val build =
+      rule.build {
+        androidApplication {
+          android { androidResources { noCompress += "no_compress.txt" } }
+          files {
+            add(
+              "src/main/resources/no_compress.txt",
+              "The compressor leaves very small entries uncompressed if their uncompressed size is less than their " +
+                "compressed size, so content must be large enough to use the compressed data.",
+            )
+            add(
+              "src/main/resources/compress.txt",
+              "The compressor leaves very small entries uncompressed if their " +
+                "uncompressed size is less than their compressed size, so content must be large enough to use the compressed data.",
+            )
+          }
+        }
+      }
+
+    build.executor.run(":app:mergeDebugJavaResource")
+
+    val mergedJar =
+      build.androidApplication().resolve(InternalArtifactType.MERGED_JAVA_RES).resolve("debug/mergeDebugJavaResource/base.jar")
+    assertThat(mergedJar.toFile().exists()).isTrue()
+
+    ZipFile(mergedJar.toFile()).use { zip ->
+      val uncompressedEntry = zip.getEntry("no_compress.txt")
+      assertThat(uncompressedEntry.method).isEqualTo(java.util.zip.ZipEntry.STORED)
+
+      val compressedEntry = zip.getEntry("compress.txt")
+      assertThat(compressedEntry.method).isEqualTo(java.util.zip.ZipEntry.DEFLATED)
+    }
   }
 }

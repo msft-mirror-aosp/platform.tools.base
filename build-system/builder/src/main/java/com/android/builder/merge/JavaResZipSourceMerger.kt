@@ -24,7 +24,12 @@ class JavaResZipSourceMerger(
   private val inputStreamMerger: InputMerger<MergeInput, InputStream> = InputStreamMerger(packagingOption),
 ) : InputMerger<FileMergerInputNonIncremental, MergedSourceResult> {
 
-  override fun merge(path: String, from: () -> List<FileMergerInputNonIncremental>, action: (mergedSource: MergedSourceResult) -> Unit) {
+  override fun merge(
+    path: String,
+    compress: Boolean,
+    from: () -> List<FileMergerInputNonIncremental>,
+    action: (mergedSource: MergedSourceResult) -> Unit,
+  ) {
     val inputs = from()
     when (val packagingAction = packagingOption.getAction(path)) {
       ParsedPackagingOptions.JavaResPackagingFileAction.NONE,
@@ -39,12 +44,17 @@ class JavaResZipSourceMerger(
             inputs.first()
           }
         input.open()
-        action(MergedSourceResult.ZipSource(input.openAsZipSource(path)))
+        if (!compress) {
+          action(MergedSourceResult.InputStream(input.openPath(path)))
+        } else {
+          action(MergedSourceResult.ZipSource(input.openAsZipSource(path)))
+        }
       }
       ParsedPackagingOptions.JavaResPackagingFileAction.MERGE -> {
         // Fallback to InputStream merger for actual concatenation
         inputStreamMerger.merge(
           path,
+          compress,
           {
             inputs.map { input ->
               input.open()

@@ -31,7 +31,7 @@ class InputStreamMerger(val packagingOption: ParsedPackagingOptions) : InputMerg
     }
   }
 
-  override fun merge(path: String, from: () -> List<MergeInput>, action: (mergedInputStream: InputStream) -> Unit) {
+  override fun merge(path: String, compress: Boolean, from: () -> List<MergeInput>, action: (mergedInputStream: InputStream) -> Unit) {
     val inStreams = from()
     merger.invoke(path, inStreams).use { action(it) }
     inStreams.forEach { it.stream.close() }
