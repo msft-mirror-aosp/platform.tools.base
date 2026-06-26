@@ -79,9 +79,12 @@ public class InstrumentMethodVisitor extends AdviceAdapter {
         if (threadingAnnotations == null && classThreadingAnnotation == null) {
             return;
         }
-        if ((methodAccess & ACC_SYNTHETIC) != 0 || methodName.contains("$lambda$")) {
-            // Do not process synthetic methods such as synthetic accessors, lambdas, and bridge
-            // methods.
+        if (threadingAnnotations == null && methodName.contains("$lambda$")) {
+            // Class-level annotations do not apply to lambdas.
+            return;
+        }
+        if ((methodAccess & ACC_SYNTHETIC) != 0) {
+            // Do not process synthetic methods such as synthetic accessors and bridge methods.
             if (threadingAnnotations != null && (methodAccess & ACC_BRIDGE) == 0) {
                 LOGGER.warning(
                         "Threading annotation found on a generated method which is not a bridge"

@@ -502,16 +502,7 @@ public class AgentTest {
             throws IOException, IllegalAccessException, InstantiationException,
                     NoSuchMethodException, InvocationTargetException, ClassNotFoundException {
 
-        // Kotlin lambda is implemented as inner class
-        Class<?> lambdaImplementationClass =
-                this.getClass()
-                        .getClassLoader()
-                        .loadClass(
-                                "com.android.tools.instrumentation.threading.agent.SampleClassesKotlin$callMethodAcceptingLambda$1");
-
-        Class<?> transformedClass =
-                loadAndTransformMultiple(SampleClassesKotlin.class, lambdaImplementationClass)
-                        .get(0);
+        Class<?> transformedClass = loadAndTransform(SampleClassesKotlin.class);
         Object instance = transformedClass.getDeclaredConstructor().newInstance();
         callMethod(transformedClass, instance, "callMethodAcceptingLambda", false);
 
@@ -523,16 +514,7 @@ public class AgentTest {
             throws IOException, IllegalAccessException, InstantiationException,
                     NoSuchMethodException, InvocationTargetException, ClassNotFoundException {
 
-        // Kotlin lambda is implemented as inner class
-        Class<?> lambdaImplementationClass =
-                this.getClass()
-                        .getClassLoader()
-                        .loadClass(
-                                "com.android.tools.instrumentation.threading.agent.SampleClassesKotlin$callMethodAcceptingFunctionalInterface$1");
-
-        Class<?> transformedClass =
-                loadAndTransformMultiple(SampleClassesKotlin.class, lambdaImplementationClass)
-                        .get(0);
+        Class<?> transformedClass = loadAndTransform(SampleClassesKotlin.class);
         Object instance = transformedClass.getDeclaredConstructor().newInstance();
         callMethod(transformedClass, instance, "callMethodAcceptingFunctionalInterface", false);
 
