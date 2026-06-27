@@ -12,6 +12,7 @@
     <orderEntry type="library" name="studio-plugin-com.intellij.java" level="project" />
     <orderEntry type="library" name="studio-plugin-org.jetbrains.kotlin" level="project" />
     <orderEntry type="library" name="studio-plugin-intellij.platform.uast" level="project" />
+    <orderEntry type="library" name="studio-plugin-com.intellij.gradle" level="project" />
     <orderEntry type="module" module-name="android.sdktools.android-annotations" exported="" />
     <orderEntry type="module" module-name="android.sdktools.lint-model" exported="" />
     <orderEntry type="module" module-name="android.sdktools.common" />

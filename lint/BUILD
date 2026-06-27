@@ -93,6 +93,7 @@ iml_module(
         "@intellij//:com.intellij.java",
         "@intellij//:org.jetbrains.kotlin",
         "@intellij//:intellij.platform.uast",
+        "@intellij//:com.intellij.gradle",
         "//tools/base/annotations:studio.android.sdktools.android-annotations",
         "//tools/base/lint:studio.android.sdktools.lint-model",
         "//tools/base/common:studio.android.sdktools.common",
