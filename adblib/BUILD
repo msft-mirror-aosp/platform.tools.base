@@ -52,6 +52,7 @@ maven_library(
         "//tools/base/deploy/deployer:__subpackages__",
         "//tools/base/deploy/service:__subpackages__",
         "//tools/base/gmaven:__subpackages__",
+        "//tools/profiler:__subpackages__",
         "//tools/vendor/google/android:__subpackages__",
         "//tools/vendor/google/directaccess-client:__subpackages__",
     ],
