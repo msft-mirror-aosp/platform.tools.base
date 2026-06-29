@@ -24,8 +24,6 @@ import com.android.utils.ILogger;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -259,46 +257,6 @@ public class LiveUpdateDeployer {
         public Deploy.UnsupportedChange.Type getType() {
             return type;
         }
-    }
-
-    /** Temp solution. Going to refactor / move this elsewhere later. */
-    public List<UpdateLiveEditError> updateLiveLiteral(
-            Installer installer,
-            AdbClient adb,
-            String packageName,
-            Collection<UpdateLiveLiteralParam> params) {
-
-        List<Integer> pids = adb.getPids(packageName);
-        Deploy.Arch arch = adb.getArch(pids);
-
-        Deploy.LiveLiteralUpdateRequest.Builder requestBuilder =
-                Deploy.LiveLiteralUpdateRequest.newBuilder();
-        for (UpdateLiveLiteralParam param : params) {
-            requestBuilder.addUpdates(
-                    Deploy.LiveLiteral.newBuilder()
-                            .setKey(param.key)
-                            .setOffset(param.offset)
-                            .setHelperClass(param.helper)
-                            .setType(param.type)
-                            .setValue(param.value));
-        }
-
-        requestBuilder.setPackageName(packageName);
-        requestBuilder.addAllProcessIds(pids);
-        requestBuilder.setArch(arch);
-
-        Deploy.LiveLiteralUpdateRequest request = requestBuilder.build();
-
-        List<UpdateLiveEditError> errors = new LinkedList<>();
-        try {
-            Deploy.LiveLiteralUpdateResponse response = installer.updateLiveLiterals(request);
-            for (Deploy.AgentResponse failure : response.getFailedAgentsList()) {
-                errors.add(new UpdateLiveEditError(failure.getLiveLiteralResponse().getExtra()));
-            }
-        } catch (IOException e) {
-            logger.error(e, Arrays.toString(errors.toArray()));
-        }
-        return errors;
     }
 
     /** Temp solution. Going to refactor / move this elsewhere later. */
