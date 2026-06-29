@@ -23,6 +23,7 @@ import com.android.SdkConstants
 import com.android.Version
 import com.android.build.gradle.internal.dependency.GenericTransformParameters
 import com.android.build.gradle.options.StringOption
+import com.android.builder.utils.isValidZipEntryName
 import com.google.common.collect.Sets
 import com.google.common.io.ByteStreams
 import java.io.File
@@ -164,7 +165,7 @@ class Aapt2FromMaven(val aapt2Directory: FileCollection, val version: String) {
               continue
             }
             val destinationFile = outDir.resolve(entry.name).normalize()
-            if (!destinationFile.startsWith(normalizedOutDir)) {
+            if (!destinationFile.startsWith(normalizedOutDir) || !isValidZipEntryName(entry)) {
               // Skip entries that resolve outside the output directory (zip-slip).
               continue
             }
