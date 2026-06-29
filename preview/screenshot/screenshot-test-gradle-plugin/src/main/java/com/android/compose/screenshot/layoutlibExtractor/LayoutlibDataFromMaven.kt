@@ -93,7 +93,7 @@ class LayoutlibDataFromMaven(val layoutlibDataDirectory: FileCollection) {
 
     /** Validates that the entry name is a safe relative path component. */
     private fun isSafeZipEntryName(name: String): Boolean {
-      return !name.contains(":") && name.split('/', '\\').none { it == ".." || it == "." } && name.none { it < ' ' }
+      return !name.contains(":") && name.split('/', '\\').none { it == ".." } && name.none { it < ' ' }
     }
   }
 }

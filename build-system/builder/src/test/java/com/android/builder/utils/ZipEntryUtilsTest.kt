@@ -27,6 +27,8 @@ class ZipEntryUtilsTest {
   @Test
   fun testZipEntryNameValidation() {
     assertThat(isValidZipEntryName("good/file/path/file.txt")).isTrue()
+    assertThat(isValidZipEntryName("good/./path/file.txt")).isTrue()
+    assertThat(isValidZipEntryName("./goodfile.txt")).isTrue()
     assertThat(isValidZipEntryName("../../../mybadfile.txt")).isFalse()
     assertThat(isValidZipEntryName("..\\..\\..\\mybadfile.txt")).isFalse()
     assertThat(isValidZipEntryName("C:\\mybadfile.txt")).isFalse()
