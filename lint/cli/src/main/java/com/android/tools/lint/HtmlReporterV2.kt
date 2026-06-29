@@ -28,11 +28,15 @@ import java.io.File
  * [HtmlReporter], and will be implemented later.
  */
 class HtmlReporterV2(client: LintCliClient, output: File, flags: LintCliFlags) : HtmlReporter(client, output, flags) {
+  private val reportTitle: String
+    get() {
+      val titleSuffix = if (flags.isCheckDependencies) "With Dependencies" else "Without Dependencies"
+      return "$title $titleSuffix"
+    }
+
   override fun write(stats: LintStats, incidents: List<Incident>, registry: IssueRegistry) {
     val output = this.output ?: return
     val rootProjectDir = client.getRootDir() ?: output.parentFile ?: File(".")
-    val titlePrefix = if (flags.isCheckDependencies) "Aggregate" else "Local"
-    val reportTitle = "$titlePrefix $title"
 
     val builder = LintReportBuilder(client, reportTitle, rootProjectDir, client.getClientDisplayName()) { getUrl(it) }
     val lintReport = builder.buildReport(incidents, computeExtraIssues(registry), computeMissingIssues(registry, incidents))
@@ -53,8 +57,6 @@ class HtmlReporterV2(client: LintCliClient, output: File, flags: LintCliFlags) :
 
   override fun writeProjectList(stats: LintStats, projects: List<MultiProjectHtmlReporter.ProjectEntry>) {
     val output = this.output ?: return
-    val titlePrefix = if (flags.isCheckDependencies) "Aggregate" else "Local"
-    val reportTitle = "$titlePrefix $title"
     val finalHtml = getMultiProjectIndexHtml(reportTitle, stats, projects, client.getClientDisplayName(), client.getClientRevision())
     output.writeText(finalHtml)
   }

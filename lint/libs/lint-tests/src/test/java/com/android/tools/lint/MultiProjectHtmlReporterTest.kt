@@ -121,7 +121,7 @@ class MultiProjectHtmlReporterTest : AbstractCheckTest() {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Aggregate Lint Report</title>
+<title>Lint Report With Dependencies</title>
 <style>
 ${"$"}STYLE_CSS
 </style>
@@ -131,7 +131,7 @@ ${"$"}STYLE_CSS
 <div class="header-top-row">
     <div class="header-left">
         <div class="header-branding">
-            <h1 class="header-title" id="project-name">Aggregate Lint Report</h1>
+            <h1 class="header-title" id="project-name">Lint Report With Dependencies</h1>
             <p class="header-date" id="report-date">${"$"}DATE</p>
         </div>
     </div>

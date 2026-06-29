@@ -34,12 +34,12 @@ class HtmlReporterV2IndexTest {
   @Test
   fun testGetIndexHtml() {
     val reportData = "const lintReport = { 'issues': [] };"
-    val html = getIndexHtml(reportData, "Local Lint Report")
+    val html = getIndexHtml(reportData, "Lint Report Without Dependencies")
 
     // Check basic structure
     assertTrue(html.contains("<!DOCTYPE html>"))
     assertTrue(html.contains("<html lang=\"en\">"))
-    assertTrue(html.contains("<title>Local Lint Report</title>"))
+    assertTrue(html.contains("<title>Lint Report Without Dependencies</title>"))
 
     // Check inclusion of CSS and JS
     assertTrue(html.contains(STYLE_CSS))
@@ -83,7 +83,7 @@ class HtmlReporterV2IndexTest {
   @Test
   fun testDensityControls() {
     val reportData = "const lintReport = { 'issues': [] };"
-    val html = getIndexHtml(reportData, "Aggregate Lint Report")
+    val html = getIndexHtml(reportData, "Lint Report With Dependencies")
 
     // Check for density control buttons
     assertTrue(html.contains("data-value=\"comfy\""))
@@ -151,7 +151,7 @@ class HtmlReporterV2IndexTest {
   fun testGetIndexHtmlWithFullReport() {
     val report =
       LintReport(
-        name = "Local Lint Report",
+        name = "Lint Report Without Dependencies",
         timeStamp = "2026-05-20 12:00:00",
         issues =
           listOf(
@@ -202,8 +202,8 @@ class HtmlReporterV2IndexTest {
     val html = getIndexHtml(reportData, report.name)
 
     assertTrue(html.contains(reportData))
-    assertTrue(html.contains("<title>Local Lint Report</title>"))
-    assertTrue(html.contains("<h1 class=\"header-title\" id=\"project-name\">Local Lint Report</h1>"))
+    assertTrue(html.contains("<title>Lint Report Without Dependencies</title>"))
+    assertTrue(html.contains("<h1 class=\"header-title\" id=\"project-name\">Lint Report Without Dependencies</h1>"))
     assertTrue(html.contains("\"id\":\"TestIssue\""))
     assertTrue(html.contains("\"severityDescription\":\"Error\""))
     assertTrue(html.contains("\"message\":\"This is a test message with \\\"quotes\\\"\""))
@@ -223,14 +223,14 @@ class HtmlReporterV2IndexTest {
 
   @Test
   fun testGetIndexHtmlNoIssues() {
-    val report = LintReport(name = "Local Lint Report", timeStamp = "2026-05-20", issues = emptyList(), numberOfIssues = 0)
+    val report = LintReport(name = "Lint Report Without Dependencies", timeStamp = "2026-05-20", issues = emptyList(), numberOfIssues = 0)
     val json = GsonBuilder().create().toJson(report)
     val reportData = "const lintReport = $json;"
     val html = getIndexHtml(reportData, report.name)
 
     assertTrue(html.contains(reportData))
-    assertTrue(html.contains("<title>Local Lint Report</title>"))
-    assertTrue(html.contains("<h1 class=\"header-title\" id=\"project-name\">Local Lint Report</h1>"))
+    assertTrue(html.contains("<title>Lint Report Without Dependencies</title>"))
+    assertTrue(html.contains("<h1 class=\"header-title\" id=\"project-name\">Lint Report Without Dependencies</h1>"))
     assertTrue(html.contains("\"issues\":[]"))
   }
 
