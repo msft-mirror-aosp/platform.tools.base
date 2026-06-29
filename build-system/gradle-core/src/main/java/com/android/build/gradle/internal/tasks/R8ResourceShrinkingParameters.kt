@@ -103,6 +103,14 @@ abstract class R8ResourceShrinkingParameters {
   fun toConfig(): ResourceShrinkingConfig? {
     return if (enabled.get()) {
       val inputArtifacts = loadInputBuiltArtifacts().elements
+      val shrinkOutput =
+        if (shrunkResourcesOutputDir.isPresent) {
+          ResourceShrinkingConfig.ShrinkOutput(
+            shrunkResourcesOutputFiles = inputArtifacts.map { File(getOutputBuiltArtifact(it).outputFile) },
+            featureShrunkResourcesOutputDir = featureShrunkResourcesOutputDir.asFile.orNull,
+          )
+        } else null
+
       ResourceShrinkingConfig(
         linkedResourcesInputFiles = inputArtifacts.map { File(it.outputFile) },
         mergedNotCompiledResourcesInputDirs =
@@ -111,8 +119,7 @@ abstract class R8ResourceShrinkingParameters {
         optimizedShrinking = optimizedShrinking.get(),
         nonFinalResIds = nonFinalResIds.get(),
         logFile = logFile.asFile.orNull,
-        shrunkResourcesOutputFiles = inputArtifacts.map { File(getOutputBuiltArtifact(it).outputFile) },
-        featureShrunkResourcesOutputDir = featureShrunkResourcesOutputDir.asFile.orNull,
+        shrinkOutput = shrinkOutput,
       )
     } else null
   }

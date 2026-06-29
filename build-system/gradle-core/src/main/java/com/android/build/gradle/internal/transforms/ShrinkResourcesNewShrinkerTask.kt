@@ -125,7 +125,7 @@ abstract class ShrinkProtoResourcesAction @Inject constructor() : WorkAction<Shr
   override fun execute() {
     val config = parameters.config.get()
     val originalProtoFile = config.linkedResourcesInputFiles[parameters.index.get()]
-    val shrunkProtoFile = config.shrunkResourcesOutputFiles[parameters.index.get()]
+    val shrunkProtoFile = config.shrinkOutput!!.shrunkResourcesOutputFiles[parameters.index.get()]
 
     FileUtils.createZipFilesystem(originalProtoFile.toPath()).use { fs ->
       val dexRecorders = parameters.dex.files.map { DexUsageRecorder(it.toPath()) }
@@ -163,7 +163,7 @@ abstract class ShrinkProtoResourcesAction @Inject constructor() : WorkAction<Shr
 
           // Dump some stats
           if (shrinker.unusedResourceCount > 0) {
-            val before = shrunkProtoFile.length()
+            val before = originalProtoFile.length()
             val after = shrunkProtoFile.length()
             val percent = ((before - after) * 100 / before).toInt()
 
