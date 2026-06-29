@@ -64,32 +64,36 @@ public final class AppInspectionUtils {
       String inspectorId,
       OutputStream outputStream,
       HandlerThreadExecutor.CrashListener crashListener) {
-    return new Connection() {
-      @Override
-      public void sendEvent(byte[] event) {
-        try {
-          ByteString payload = ByteString.copyFrom(event);
-          UiInspectorProtocol.InspectorMessageEvent inspectorEvent =
-              UiInspectorProtocol.InspectorMessageEvent.newBuilder()
-                  .setInspectorId(inspectorId)
-                  .setPayload(payload)
-                  .build();
-          UiInspectorProtocol.Event eventWrapper =
-              UiInspectorProtocol.Event.newBuilder()
-                  .setInspectorMessage(inspectorEvent)
-                  .build();
-          // Enforce sequential writing of messages to the output stream
-          synchronized (outputStream) {
-            FramingProtocol.writeMessage(outputStream, eventWrapper.toByteArray());
-          }
-        } catch (IOException e) {
-          Log.e(TAG, "IO error sending event", e);
-        } catch (Exception e) {
-          Log.e(TAG, "Unexpected error sending event", e);
-          crashListener.onCrash(e);
-        }
-      }
-    };
+        return new Connection() {
+            @Override
+            public void sendEvent(byte[] event) {
+                try {
+                    ByteString payload = ByteString.copyFrom(event);
+                    UiInspectorProtocol.InspectorMessageEvent inspectorEvent =
+                            UiInspectorProtocol.InspectorMessageEvent.newBuilder()
+                                    .setInspectorId(inspectorId)
+                                    .setPayload(payload)
+                                    .build();
+                    UiInspectorProtocol.Event eventWrapper =
+                            UiInspectorProtocol.Event.newBuilder()
+                                    .setInspectorMessage(inspectorEvent)
+                                    .build();
+                    UiInspectorProtocol.AgentMessage agentMessage =
+                            UiInspectorProtocol.AgentMessage.newBuilder()
+                                    .setEvent(eventWrapper)
+                                    .build();
+                    FramingProtocol.writeMessage(outputStream, agentMessage.toByteArray());
+                } catch (IOException e) {
+                    // Connection is broken, making it impossible to report the error back to the
+                    // host.
+                    Log.e(TAG, "IO error sending event", e);
+                } catch (Exception e) {
+                    // Internal inspector crash. Report it to the host to trigger a crash state.
+                    Log.e(TAG, "Unexpected error sending event", e);
+                    crashListener.onCrash(e);
+                }
+            }
+        };
   }
 
   /**

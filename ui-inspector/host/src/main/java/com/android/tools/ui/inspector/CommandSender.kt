@@ -17,6 +17,7 @@
 package com.android.tools.ui.inspector
 
 import com.android.tools.ui.inspector.common.FramingProtocol
+import com.android.tools.ui.inspector.protocol.UiInspectorProtocol.AgentMessage
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol.Command
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol.InspectorMessageCommand
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol.Response
@@ -25,6 +26,10 @@ import java.net.Socket
 import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+
+/** Exception thrown when the UI Inspector agent crashes on the device. */
+class InspectorCrashException(errorMessage: String, val stackTrace: String) :
+  RuntimeException("UI Inspector agent crashed: $errorMessage\nAgent Stack Trace:\n$stackTrace")
 
 /**
  * Sends messages to the UI Inspector agent running on the device and receives responses. Uses the shared FramingProtocol for message
@@ -55,8 +60,18 @@ class CommandSender(host: String, port: Int) : AutoCloseable {
 
       // Read framed response
       val responseBytes = FramingProtocol.readMessage(inputStream)
-      val response = Response.parseFrom(responseBytes)
+      val agentMessage = AgentMessage.parseFrom(responseBytes)
 
+      if (agentMessage.hasEvent()) {
+        val event = agentMessage.event
+        if (event.hasCrash()) {
+          val crash = event.crash
+          throw InspectorCrashException(crash.errorMessage, crash.stackTrace)
+        }
+        error("Received unexpected event: ${event.specializedCase}")
+      }
+
+      val response = agentMessage.response
       require(response.commandId == commandId) { "Received response for wrong command. Expected: $commandId, Got: ${response.commandId}" }
 
       response

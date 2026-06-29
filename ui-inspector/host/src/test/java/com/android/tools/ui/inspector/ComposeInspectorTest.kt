@@ -43,6 +43,11 @@ class ComposeInspectorTest {
 
   @get:Rule val tempFolder = TemporaryFolder()
 
+  private fun writeResponse(output: java.io.OutputStream, response: UiInspectorProtocol.Response) {
+    val agentMessage = UiInspectorProtocol.AgentMessage.newBuilder().setResponse(response).build()
+    FramingProtocol.writeMessage(output, agentMessage.toByteArray())
+  }
+
   private val deviceSerial = "123"
   private val packageName = "com.example"
 
@@ -93,7 +98,7 @@ class ComposeInspectorTest {
               UiInspectorProtocol.GetVersionResponse.newBuilder().putVersions(ProtocolConstants.COMPOSE_UI_LIBRARY_ID, "1.6.0")
             )
             .build()
-        FramingProtocol.writeMessage(output, versionResponse.toByteArray())
+        writeResponse(output, versionResponse)
 
         // B. Handle CreateInspectorCommand
         val cmdBytes2 = FramingProtocol.readMessage(input)
@@ -106,7 +111,7 @@ class ComposeInspectorTest {
             .setStatus(UiInspectorProtocol.Response.Status.SUCCESS)
             .setCreateInspector(UiInspectorProtocol.CreateInspectorResponse.getDefaultInstance())
             .build()
-        FramingProtocol.writeMessage(output, createResponse.toByteArray())
+        writeResponse(output, createResponse)
       }
     }
 
@@ -221,7 +226,7 @@ class ComposeInspectorTest {
               UiInspectorProtocol.GetVersionResponse.newBuilder().putVersions(ProtocolConstants.COMPOSE_UI_LIBRARY_ID, "1.6.0")
             )
             .build()
-        FramingProtocol.writeMessage(output, versionResponse.toByteArray())
+        writeResponse(output, versionResponse)
 
         // B. Handle CreateInspectorCommand
         val cmdBytes2 = FramingProtocol.readMessage(input)
@@ -232,7 +237,7 @@ class ComposeInspectorTest {
             .setStatus(UiInspectorProtocol.Response.Status.SUCCESS)
             .setCreateInspector(UiInspectorProtocol.CreateInspectorResponse.getDefaultInstance())
             .build()
-        FramingProtocol.writeMessage(output, createResponse.toByteArray())
+        writeResponse(output, createResponse)
 
         // C. Handle ViewInspector Message (DumpViewsCommand)
         val cmdBytes3 = FramingProtocol.readMessage(input)
@@ -293,7 +298,7 @@ class ComposeInspectorTest {
                 .setPayload(com.google.protobuf.ByteString.copyFrom(viewResponse.toByteArray()))
             )
             .build()
-        FramingProtocol.writeMessage(output, viewMsgResponse.toByteArray())
+        writeResponse(output, viewMsgResponse)
 
         // D. Handle COMPOSE_COMMAND (GetComposablesCommand)
         val cmdBytes4 = FramingProtocol.readMessage(input)
@@ -360,7 +365,7 @@ class ComposeInspectorTest {
                 .setPayload(com.google.protobuf.ByteString.copyFrom(composeResponse.toByteArray()))
             )
             .build()
-        FramingProtocol.writeMessage(output, composeMsgResponse.toByteArray())
+        writeResponse(output, composeMsgResponse)
       }
     }
 
@@ -492,7 +497,7 @@ class ComposeInspectorTest {
               UiInspectorProtocol.GetVersionResponse.newBuilder().putVersions(ProtocolConstants.COMPOSE_UI_LIBRARY_ID, "1.6.0")
             )
             .build()
-        FramingProtocol.writeMessage(output, versionResponse.toByteArray())
+        writeResponse(output, versionResponse)
 
         // B. Handle CreateInspectorCommand (Compose)
         val cmdBytes2 = FramingProtocol.readMessage(input)
@@ -503,7 +508,7 @@ class ComposeInspectorTest {
             .setStatus(UiInspectorProtocol.Response.Status.SUCCESS)
             .setCreateInspector(UiInspectorProtocol.CreateInspectorResponse.getDefaultInstance())
             .build()
-        FramingProtocol.writeMessage(output, createResponse.toByteArray())
+        writeResponse(output, createResponse)
 
         // C. Handle ViewInspector Message (DumpViewsCommand)
         val cmdBytes3 = FramingProtocol.readMessage(input)
@@ -564,7 +569,7 @@ class ComposeInspectorTest {
                 .setPayload(com.google.protobuf.ByteString.copyFrom(viewResponse.toByteArray()))
             )
             .build()
-        FramingProtocol.writeMessage(output, viewMsgResponse.toByteArray())
+        writeResponse(output, viewMsgResponse)
 
         // D. Handle COMPOSE_COMMAND (GetComposablesCommand)
         val cmdBytes4 = FramingProtocol.readMessage(input)
@@ -631,7 +636,7 @@ class ComposeInspectorTest {
                 .setPayload(com.google.protobuf.ByteString.copyFrom(composeResponse.toByteArray()))
             )
             .build()
-        FramingProtocol.writeMessage(output, composeMsgResponse.toByteArray())
+        writeResponse(output, composeMsgResponse)
 
         // E. Handle COMPOSE_COMMAND (GetAllParametersCommand)
         val cmdBytes5 = FramingProtocol.readMessage(input)
@@ -674,7 +679,7 @@ class ComposeInspectorTest {
                 .setPayload(com.google.protobuf.ByteString.copyFrom(allParamsResponse.toByteArray()))
             )
             .build()
-        FramingProtocol.writeMessage(output, paramsMsgResponse.toByteArray())
+        writeResponse(output, paramsMsgResponse)
       }
     }
 
@@ -809,7 +814,7 @@ class ComposeInspectorTest {
               UiInspectorProtocol.GetVersionResponse.newBuilder().putVersions(ProtocolConstants.COMPOSE_UI_LIBRARY_ID, "1.6.0")
             )
             .build()
-        FramingProtocol.writeMessage(output, versionResponse.toByteArray())
+        writeResponse(output, versionResponse)
 
         // B. Handle CreateInspectorCommand
         val cmdBytes2 = FramingProtocol.readMessage(input)
@@ -820,7 +825,7 @@ class ComposeInspectorTest {
             .setStatus(UiInspectorProtocol.Response.Status.SUCCESS)
             .setCreateInspector(UiInspectorProtocol.CreateInspectorResponse.getDefaultInstance())
             .build()
-        FramingProtocol.writeMessage(output, createResponse.toByteArray())
+        writeResponse(output, createResponse)
 
         // C. Handle ViewInspector Message (DumpViewsCommand)
         val cmdBytes3 = FramingProtocol.readMessage(input)
@@ -881,7 +886,7 @@ class ComposeInspectorTest {
                 .setPayload(com.google.protobuf.ByteString.copyFrom(viewResponse.toByteArray()))
             )
             .build()
-        FramingProtocol.writeMessage(output, viewMsgResponse.toByteArray())
+        writeResponse(output, viewMsgResponse)
 
         // D. Handle COMPOSE_COMMAND (GetComposablesCommand)
         val cmdBytes4 = FramingProtocol.readMessage(input)
@@ -948,7 +953,7 @@ class ComposeInspectorTest {
                 .setPayload(com.google.protobuf.ByteString.copyFrom(composeResponse.toByteArray()))
             )
             .build()
-        FramingProtocol.writeMessage(output, composeMsgResponse.toByteArray())
+        writeResponse(output, composeMsgResponse)
 
         // E. Handle COMPOSE_COMMAND (GetAllParametersCommand)
         val cmdBytes5 = FramingProtocol.readMessage(input)
@@ -1006,7 +1011,7 @@ class ComposeInspectorTest {
                 .setPayload(com.google.protobuf.ByteString.copyFrom(allParamsResponse.toByteArray()))
             )
             .build()
-        FramingProtocol.writeMessage(output, allParamsMsgResponse.toByteArray())
+        writeResponse(output, allParamsMsgResponse)
       }
     }
 

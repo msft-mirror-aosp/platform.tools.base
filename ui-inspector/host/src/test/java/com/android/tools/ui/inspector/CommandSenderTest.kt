@@ -17,6 +17,7 @@
 package com.android.tools.ui.inspector
 
 import com.android.tools.ui.inspector.common.FramingProtocol
+import com.android.tools.ui.inspector.protocol.UiInspectorProtocol.AgentMessage
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol.Command
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol.InspectorMessageResponse
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol.Response
@@ -60,8 +61,9 @@ class CommandSenderTest {
               val request = Command.parseFrom(requestBytes)
 
               val response = Response.newBuilder().setCommandId(request.commandId).setStatus(Response.Status.SUCCESS).build()
+              val agentMessage = AgentMessage.newBuilder().setResponse(response).build()
 
-              FramingProtocol.writeMessage(output, response.toByteArray())
+              FramingProtocol.writeMessage(output, agentMessage.toByteArray())
             }
           } catch (e: Exception) {
             // Silence socket exceptions during close/cancellation
@@ -102,8 +104,9 @@ class CommandSenderTest {
 
               // Send back wrong ID
               val response = Response.newBuilder().setCommandId(request.commandId + 1).setStatus(Response.Status.SUCCESS).build()
+              val agentMessage = AgentMessage.newBuilder().setResponse(response).build()
 
-              FramingProtocol.writeMessage(output, response.toByteArray())
+              FramingProtocol.writeMessage(output, agentMessage.toByteArray())
             }
           } catch (e: Exception) {
             // Silence socket exceptions during close/cancellation
@@ -159,8 +162,9 @@ class CommandSenderTest {
                   .setStatus(Response.Status.SUCCESS)
                   .setInspectorMessage(responseEnvelope)
                   .build()
+              val agentMessage = AgentMessage.newBuilder().setResponse(response).build()
 
-              FramingProtocol.writeMessage(output, response.toByteArray())
+              FramingProtocol.writeMessage(output, agentMessage.toByteArray())
             }
           } catch (e: Exception) {
             // Silence socket exceptions during close/cancellation

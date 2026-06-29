@@ -108,3 +108,13 @@ message Event {
         CrashEvent crash = 2;
     }
 }
+
+// Top-level envelope for all messages sent from agent to host.
+message AgentMessage {
+    oneof specialized {
+        // A synchronous reply to a specific Command sent by the host.
+        Response response = 1;
+        // An asynchronous message initiated by the agent.
+        Event event = 2;
+    }
+}

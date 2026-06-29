@@ -111,7 +111,10 @@ public final class SessionHandlerTest {
 
     byte[] writtenBytes = outputStream.toByteArray();
     byte[] responseBytes = FramingProtocol.readMessage(new ByteArrayInputStream(writtenBytes));
-    UiInspectorProtocol.Response response = UiInspectorProtocol.Response.parseFrom(responseBytes);
+        UiInspectorProtocol.AgentMessage agentMessage =
+                UiInspectorProtocol.AgentMessage.parseFrom(responseBytes);
+        assertThat(agentMessage.hasResponse()).isTrue();
+        UiInspectorProtocol.Response response = agentMessage.getResponse();
 
     assertThat(response.getCommandId()).isEqualTo(1);
     assertThat(response.getStatus()).isEqualTo(UiInspectorProtocol.Response.Status.SUCCESS);
@@ -195,7 +198,10 @@ public final class SessionHandlerTest {
 
     byte[] writtenBytes = outputStream.toByteArray();
     byte[] responseBytes = FramingProtocol.readMessage(new ByteArrayInputStream(writtenBytes));
-    UiInspectorProtocol.Response response = UiInspectorProtocol.Response.parseFrom(responseBytes);
+        UiInspectorProtocol.AgentMessage agentMessage =
+                UiInspectorProtocol.AgentMessage.parseFrom(responseBytes);
+        assertThat(agentMessage.hasResponse()).isTrue();
+        UiInspectorProtocol.Response response = agentMessage.getResponse();
 
     assertThat(response.getCommandId()).isEqualTo(1);
     assertThat(response.getStatus()).isEqualTo(UiInspectorProtocol.Response.Status.ERROR);
@@ -233,7 +239,10 @@ public final class SessionHandlerTest {
 
     byte[] writtenBytes = outputStream.toByteArray();
     byte[] responseBytes = FramingProtocol.readMessage(new ByteArrayInputStream(writtenBytes));
-    UiInspectorProtocol.Response response = UiInspectorProtocol.Response.parseFrom(responseBytes);
+        UiInspectorProtocol.AgentMessage agentMessage =
+                UiInspectorProtocol.AgentMessage.parseFrom(responseBytes);
+        assertThat(agentMessage.hasResponse()).isTrue();
+        UiInspectorProtocol.Response response = agentMessage.getResponse();
 
     assertThat(response.getCommandId()).isEqualTo(1);
     assertThat(response.getStatus()).isEqualTo(UiInspectorProtocol.Response.Status.ERROR);
@@ -311,11 +320,17 @@ public final class SessionHandlerTest {
     ByteArrayInputStream responseInputStream = new ByteArrayInputStream(writtenBytes);
 
     byte[] responseBytes1 = FramingProtocol.readMessage(responseInputStream);
-    UiInspectorProtocol.Response response1 = UiInspectorProtocol.Response.parseFrom(responseBytes1);
+        UiInspectorProtocol.AgentMessage agentMessage1 =
+                UiInspectorProtocol.AgentMessage.parseFrom(responseBytes1);
+        assertThat(agentMessage1.hasResponse()).isTrue();
+        UiInspectorProtocol.Response response1 = agentMessage1.getResponse();
     assertThat(response1.getCommandId()).isEqualTo(1);
 
     byte[] responseBytes2 = FramingProtocol.readMessage(responseInputStream);
-    UiInspectorProtocol.Response response2 = UiInspectorProtocol.Response.parseFrom(responseBytes2);
+        UiInspectorProtocol.AgentMessage agentMessage2 =
+                UiInspectorProtocol.AgentMessage.parseFrom(responseBytes2);
+        assertThat(agentMessage2.hasResponse()).isTrue();
+        UiInspectorProtocol.Response response2 = agentMessage2.getResponse();
     assertThat(response2.getCommandId()).isEqualTo(2);
   }
 
@@ -360,7 +375,10 @@ public final class SessionHandlerTest {
 
     byte[] writtenBytes = outputStream.toByteArray();
     byte[] responseBytes = FramingProtocol.readMessage(new ByteArrayInputStream(writtenBytes));
-    UiInspectorProtocol.Response response = UiInspectorProtocol.Response.parseFrom(responseBytes);
+        UiInspectorProtocol.AgentMessage agentMessage =
+                UiInspectorProtocol.AgentMessage.parseFrom(responseBytes);
+        assertThat(agentMessage.hasResponse()).isTrue();
+        UiInspectorProtocol.Response response = agentMessage.getResponse();
 
     assertThat(response.getCommandId()).isEqualTo(1);
     assertThat(response.getStatus()).isEqualTo(UiInspectorProtocol.Response.Status.SUCCESS);
@@ -419,7 +437,10 @@ public final class SessionHandlerTest {
 
     byte[] writtenBytes = outputStream.toByteArray();
     byte[] responseBytes = FramingProtocol.readMessage(new ByteArrayInputStream(writtenBytes));
-    UiInspectorProtocol.Response response = UiInspectorProtocol.Response.parseFrom(responseBytes);
+        UiInspectorProtocol.AgentMessage agentMessage =
+                UiInspectorProtocol.AgentMessage.parseFrom(responseBytes);
+        assertThat(agentMessage.hasResponse()).isTrue();
+        UiInspectorProtocol.Response response = agentMessage.getResponse();
 
     assertThat(response.getCommandId()).isEqualTo(1);
     assertThat(response.getStatus()).isEqualTo(UiInspectorProtocol.Response.Status.SUCCESS);
@@ -460,7 +481,10 @@ public final class SessionHandlerTest {
 
     byte[] writtenBytes = outputStream.toByteArray();
     byte[] responseBytes = FramingProtocol.readMessage(new ByteArrayInputStream(writtenBytes));
-    UiInspectorProtocol.Response response = UiInspectorProtocol.Response.parseFrom(responseBytes);
+        UiInspectorProtocol.AgentMessage agentMessage =
+                UiInspectorProtocol.AgentMessage.parseFrom(responseBytes);
+        assertThat(agentMessage.hasResponse()).isTrue();
+        UiInspectorProtocol.Response response = agentMessage.getResponse();
 
     assertThat(response.getCommandId()).isEqualTo(1);
     assertThat(response.getStatus()).isEqualTo(UiInspectorProtocol.Response.Status.ERROR);

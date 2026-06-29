@@ -98,7 +98,10 @@ public final class AppInspectionUtilsTest {
 
     byte[] writtenBytes = outputStream.toByteArray();
     byte[] responseBytes = FramingProtocol.readMessage(new ByteArrayInputStream(writtenBytes));
-    UiInspectorProtocol.Event event = UiInspectorProtocol.Event.parseFrom(responseBytes);
+        UiInspectorProtocol.AgentMessage agentMessage =
+                UiInspectorProtocol.AgentMessage.parseFrom(responseBytes);
+        assertThat(agentMessage.hasEvent()).isTrue();
+        UiInspectorProtocol.Event event = agentMessage.getEvent();
 
     assertThat(event.getSpecializedCase())
         .isEqualTo(UiInspectorProtocol.Event.SpecializedCase.INSPECTOR_MESSAGE);
