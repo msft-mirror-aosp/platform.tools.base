@@ -10,4 +10,13 @@
 //tools/adt/idea/android/integration/adb_wifi:AdbWifiPairTest_mac
 //tools/adt/idea/android/integration/adb_wifi:AdbWifiPairTest_linux
 //tools/adt/idea/android/integration/adb_wifi:AdbWifiPairTest_windows
+//tools/adt/idea/android/integration:ApplyChangesTest_canary_linux
+//tools/adt/idea/android/integration:ApplyChangesTest_nightly_linux
+//tools/adt/idea/android/integration:ApplyChangesTest_stable_linux
+//tools/adt/idea/android/integration:ApplyChangesTest_canary_windows
+//tools/adt/idea/android/integration:ApplyChangesTest_nightly_windows
+//tools/adt/idea/android/integration:ApplyChangesTest_stable_windows
+//tools/adt/idea/android/integration:ApplyChangesTest_canary_mac
+//tools/adt/idea/android/integration:ApplyChangesTest_nightly_mac
+//tools/adt/idea/android/integration:ApplyChangesTest_stable_mac
 
