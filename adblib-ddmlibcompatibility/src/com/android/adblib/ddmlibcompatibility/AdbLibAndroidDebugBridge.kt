@@ -61,6 +61,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.io.path.Path
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -381,15 +382,24 @@ class AdbLibAndroidDebugBridge(
   override fun startAdb(timeout: Long, unit: TimeUnit): Boolean {
     return logUsage(AdbDelegateUsageTracker.Method.START_ADB) {
       runBlocking {
-        withTimeoutOrNull(unit.toMillis(timeout)) {
-          try {
+        try {
+          withTimeoutOrNull(unit.toMillis(timeout)) {
             adbServerController.start()
             true
-          } catch (t: Throwable) {
-            logger.warn(t, "Failed to start adb server")
-            false
           }
-        } ?: run { false }
+            ?: run {
+              logger.warn("Start adb server timed out")
+              false
+            }
+        } catch (t: Throwable) {
+          // Error running `adbServerController.start()`
+          if (t is CancellationException) {
+            logger.debug { "AdbServerController `start` operation cancelled" }
+          } else {
+            logger.warn(t, "Failed to start adb server")
+          }
+          false
+        }
       }
     }
   }
@@ -781,17 +791,25 @@ class AdbLibAndroidDebugBridge(
   }
 
   override fun stopAdb(timeout: Long, unit: TimeUnit): Boolean {
-
     return runBlocking {
-      withTimeoutOrNull(unit.toMillis(timeout)) {
-        try {
+      try {
+        withTimeoutOrNull(unit.toMillis(timeout)) {
           adbServerController.stop()
           true
-        } catch (t: Throwable) {
-          logger.warn(t, "Failed to stop adb server")
-          false
         }
-      } ?: run { false }
+          ?: run {
+            logger.warn("Stop adb server timed out")
+            false
+          }
+      } catch (t: Throwable) {
+        // Error running `adbServerController.stop()`
+        if (t is CancellationException) {
+          logger.debug { "AdbServerController `stop` operation cancelled" }
+        } else {
+          logger.warn(t, "Failed to stop adb server")
+        }
+        false
+      }
     }
   }
 

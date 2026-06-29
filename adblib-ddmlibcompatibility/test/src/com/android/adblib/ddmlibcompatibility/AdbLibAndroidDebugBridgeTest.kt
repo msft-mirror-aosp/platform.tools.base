@@ -16,6 +16,7 @@
 package com.android.adblib.ddmlibcompatibility
 
 import com.android.adblib.AdbChannel
+import com.android.adblib.AdbLogger
 import com.android.adblib.AdbServerChannelProvider
 import com.android.adblib.AdbServerConfiguration
 import com.android.adblib.AdbServerController
@@ -72,7 +73,20 @@ class AdbLibAndroidDebugBridgeTest {
   }
 
   @Test
-  fun startReturnsFalse_whenItTimesOut() {
+  fun startAdb_success() {
+    val session = FakeAdbSession()
+    val adbServerController = FakeAdbServerController()
+    val bridge = AdbLibAndroidDebugBridge(session, adbServerController, config)
+
+    // Act
+    val result = bridge.startAdb(50, TimeUnit.MILLISECONDS)
+
+    // Assert
+    assertTrue(result)
+  }
+
+  @Test
+  fun startAdb_timeout() {
     val session = FakeAdbSession()
     val adbServerController = FakeAdbServerController(startDelayMs = 200)
     val bridge = AdbLibAndroidDebugBridge(session, adbServerController, config)
@@ -82,13 +96,17 @@ class AdbLibAndroidDebugBridgeTest {
 
     // Assert
     assertFalse(result)
+    val timeoutWarnings =
+      session.host.loggerFactory.logEntries.filter { it.level == AdbLogger.Level.WARN && it.message.contains("Start adb server timed out") }
+    assertEquals(1, timeoutWarnings.size)
   }
 
   @Test
-  fun startAdbReturnsFalse_whenAdbServerControllerThrows() {
+  fun startAdb_exception() {
     val session = FakeAdbSession()
     val adbServerController = FakeAdbServerController()
-    adbServerController.throwOnStart = IOException("my exception")
+    val exception = IOException("my exception")
+    adbServerController.throwOnStart = exception
     val bridge = AdbLibAndroidDebugBridge(session, adbServerController, config)
 
     // Act
@@ -96,13 +114,19 @@ class AdbLibAndroidDebugBridgeTest {
 
     // Assert
     assertFalse(result)
+    val errorLogs =
+      session.host.loggerFactory.logEntries.filter { it.level == AdbLogger.Level.WARN && it.message.contains("Failed to start adb server") }
+    assertEquals(1, errorLogs.size)
+    assertEquals(exception.message, errorLogs.first().exception?.message)
+    assertEquals(exception.javaClass, errorLogs.first().exception?.javaClass)
   }
 
   @Test
-  fun startAdbReturnsFalse_whenAdbServerControllerThrowsCancellation() {
+  fun startAdb_cancellation() {
     val session = FakeAdbSession()
     val adbServerController = FakeAdbServerController()
-    adbServerController.throwOnStart = CancellationException("my cancellation exception")
+    val exception = CancellationException("my cancellation exception")
+    adbServerController.throwOnStart = exception
     val bridge = AdbLibAndroidDebugBridge(session, adbServerController, config)
 
     // Act
@@ -110,13 +134,30 @@ class AdbLibAndroidDebugBridgeTest {
 
     // Assert
     assertFalse(result)
+    val debugLogs =
+      session.host.loggerFactory.logEntries.filter {
+        it.level == AdbLogger.Level.DEBUG && it.message.contains("AdbServerController `start` operation cancelled")
+      }
+    assertEquals(1, debugLogs.size)
   }
 
   @Test
-  fun stopAdbReturnsFalse_whenAdbServerControllerThrows() {
+  fun stopAdb_success() {
     val session = FakeAdbSession()
     val adbServerController = FakeAdbServerController()
-    adbServerController.throwOnStop = IOException("my exception")
+    val bridge = AdbLibAndroidDebugBridge(session, adbServerController, config)
+
+    // Act
+    val result = bridge.stopAdb(50, TimeUnit.MILLISECONDS)
+
+    // Assert
+    assertTrue(result)
+  }
+
+  @Test
+  fun stopAdb_timeout() {
+    val session = FakeAdbSession()
+    val adbServerController = FakeAdbServerController(stopDelayMs = 200)
     val bridge = AdbLibAndroidDebugBridge(session, adbServerController, config)
 
     // Act
@@ -124,13 +165,17 @@ class AdbLibAndroidDebugBridgeTest {
 
     // Assert
     assertFalse(result)
+    val timeoutWarnings =
+      session.host.loggerFactory.logEntries.filter { it.level == AdbLogger.Level.WARN && it.message.contains("Stop adb server timed out") }
+    assertEquals(1, timeoutWarnings.size)
   }
 
   @Test
-  fun stopAdbReturnsFalse_whenAdbServerControllerThrowsCancellation() {
+  fun stopAdb_exception() {
     val session = FakeAdbSession()
     val adbServerController = FakeAdbServerController()
-    adbServerController.throwOnStop = CancellationException("my cancellation exception")
+    val exception = IOException("my exception")
+    adbServerController.throwOnStop = exception
     val bridge = AdbLibAndroidDebugBridge(session, adbServerController, config)
 
     // Act
@@ -138,6 +183,31 @@ class AdbLibAndroidDebugBridgeTest {
 
     // Assert
     assertFalse(result)
+    val errorLogs =
+      session.host.loggerFactory.logEntries.filter { it.level == AdbLogger.Level.WARN && it.message.contains("Failed to stop adb server") }
+    assertEquals(1, errorLogs.size)
+    assertEquals(exception.message, errorLogs.first().exception?.message)
+    assertEquals(exception.javaClass, errorLogs.first().exception?.javaClass)
+  }
+
+  @Test
+  fun stopAdb_cancellation() {
+    val session = FakeAdbSession()
+    val adbServerController = FakeAdbServerController()
+    val exception = CancellationException("my cancellation exception")
+    adbServerController.throwOnStop = exception
+    val bridge = AdbLibAndroidDebugBridge(session, adbServerController, config)
+
+    // Act
+    val result = bridge.stopAdb(50, TimeUnit.MILLISECONDS)
+
+    // Assert
+    assertFalse(result)
+    val debugLogs =
+      session.host.loggerFactory.logEntries.filter {
+        it.level == AdbLogger.Level.DEBUG && it.message.contains("AdbServerController `stop` operation cancelled")
+      }
+    assertEquals(1, debugLogs.size)
   }
 
   @Test
@@ -462,7 +532,11 @@ class AdbLibAndroidDebugBridgeTest {
     }
   }
 
-  private class FakeAdbServerController(private val startDelayMs: Long = 0, startedByDefault: Boolean = true) : AdbServerController {
+  private class FakeAdbServerController(
+    private val startDelayMs: Long = 0,
+    private val stopDelayMs: Long = 0,
+    startedByDefault: Boolean = true,
+  ) : AdbServerController {
 
     var throwOnStart: Throwable? = null
     var throwOnStop: Throwable? = null
@@ -480,6 +554,7 @@ class AdbLibAndroidDebugBridgeTest {
 
     override suspend fun stop() {
       throwOnStop?.let { throw it }
+      delay(stopDelayMs)
       isStarted = false
     }
 
