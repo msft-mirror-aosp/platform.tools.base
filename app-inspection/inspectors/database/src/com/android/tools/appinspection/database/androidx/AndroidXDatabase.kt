@@ -19,7 +19,6 @@ import android.database.SQLException
 import android.os.CancellationSignal
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.driver.bundled.SQLITE_OPEN_MEMORY
-import androidx.sqlite.driver.bundled.SQLITE_OPEN_READONLY
 import com.android.tools.appinspection.database.AbstractDatabase
 import com.android.tools.appinspection.database.AbstractDatabase.Companion.IN_MEMORY_DATABASE_PATH
 import com.android.tools.appinspection.database.Cursor
@@ -27,8 +26,17 @@ import com.android.tools.appinspection.database.Cursor
 /** A [com.android.tools.appinspection.database.Database] for AndroidX [SQLiteConnection] */
 internal class AndroidXDatabase(connection: SQLiteConnection, path: String, flags: Int = 0) :
   AbstractDatabase<SQLiteConnection>(connection, getPath(path, flags)) {
-  // TODO(aalbert): Try to tst for RO status from DB without flags
-  override val isReadOnly = flags and SQLITE_OPEN_READONLY != 0
+  override val isReadOnly: Boolean
+    get() {
+      return try {
+        delegate.prepare("PRAGMA query_only").use {
+          it.step()
+          it.getInt(0) == 1
+        }
+      } catch (_: SQLException) {
+        false
+      }
+    }
 
   override val apiClassName: String = connection::class.java.name
 
