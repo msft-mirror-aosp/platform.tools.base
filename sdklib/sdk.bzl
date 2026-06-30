@@ -5,7 +5,7 @@ load("@rules_license//rules_gathering:gather_metadata.bzl", "gather_metadata_inf
 load("@rules_license//rules_gathering:gathering_providers.bzl", "TransitiveMetadataInfo")
 load("//tools/base/bazel/sdk:sdk_utils.bzl", "calculate_jar_name_for_sdk_package", "tool_start_script")
 
-platforms = ["win", "linux", "mac"]
+platforms = ["win", "linux", "mac_x86_64", "mac_arm64"]
 
 def _generate_classpath_jar_impl(ctx):
     stamp = ctx.actions.declare_file(ctx.label.name + ".stamp.txt")
@@ -74,11 +74,16 @@ def sdk_java_binary(name, command_name = None, main_class = None, runtime_deps =
     classpath_jar = command_name + "-classpath.jar"
     generate_classpath_jar(java_binary = command_name, name = command_name + "-classpath", classpath_jar = classpath_jar, visibility = ["//visibility:public"])
     for platform in platforms:
+        jvm_opts = default_jvm_opts.get(platform)
+        if jvm_opts == None and platform.startswith("mac_"):
+            jvm_opts = default_jvm_opts.get("mac")
+        if jvm_opts == None:
+            jvm_opts = ""
         tool_start_script(
             name = name + "_wrapper_" + platform,
             platform = platform,
             command_name = command_name,
-            default_jvm_opts = default_jvm_opts.get(platform) or "",
+            default_jvm_opts = jvm_opts,
             main_class_name = main_class,
             classpath_jar = classpath_jar,
             visibility = visibility,
@@ -202,7 +207,7 @@ package_component = rule(
     outputs = {"out": "%{name}.zip"},
 )
 
-def sdk_package(name, binaries, sourceprops, visibility):
+def sdk_package(name, binaries, sourceprops, visibility, platform_others = {}):
     """Packages the SDK and handles platform-specific files.
 
     Args:
@@ -210,6 +215,7 @@ def sdk_package(name, binaries, sourceprops, visibility):
         binaries: The binaries to include.
         sourceprops: The source properties file.
         visibility: The visibility of the target.
+        platform_others: Optional dictionary mapping platforms to additional files.
     """
     combine_licenses(name = name + "_combined_licenses", out = "NOTICE.txt", deps = binaries)
     for platform in platforms:
@@ -219,8 +225,11 @@ def sdk_package(name, binaries, sourceprops, visibility):
             "README.libs": "cmdline-tools/lib/README",
         }
 
-        if platform == "mac":
+        if platform.startswith("mac"):
             others["macos_codesign_filelist.txt"] = "_codesign/filelist"
+
+        # Merge platform-specific files
+        others.update(platform_others.get(platform, {}))
 
         package_component(
             name = "%s_%s" % (name, platform),

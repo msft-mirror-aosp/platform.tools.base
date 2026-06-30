@@ -69,10 +69,11 @@ expand_template = rule(
 
 def tool_start_script(name, platform, command_name, main_class_name, classpath_jar, default_jvm_opts, visibility):
     is_windows = platform == "win"
+    template_platform = "mac" if platform.startswith("mac") else platform
     expand_template(
         name = name,
         visibility = visibility,
-        template = "//tools/base/bazel/sdk/resources:" + platform + "_start_script",
+        template = "//tools/base/bazel/sdk/resources:" + template_platform + "_start_script",
         out = platform + "/" + command_name + (".bat" if is_windows else ""),
         substitutions = {
             "${COMMAND_NAME}": command_name,

@@ -19,7 +19,8 @@ import com.android.testutils.TestUtils
 import java.nio.file.Path
 
 enum class AndroidSdkCommandLineToolsPlatform(val zipSuffix: String, val binarySuffix: String = "") {
-  MAC(zipSuffix = "mac"),
+  MAC_X86_64(zipSuffix = "mac_x86_64"),
+  MAC_ARM64(zipSuffix = "mac_arm64"),
   LINUX(zipSuffix = "linux"),
   WINDOWS(zipSuffix = "win", binarySuffix = ".bat");
 
