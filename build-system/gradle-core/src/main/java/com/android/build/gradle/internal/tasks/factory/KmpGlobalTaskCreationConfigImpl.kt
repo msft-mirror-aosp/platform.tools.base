@@ -80,7 +80,11 @@ internal class KmpGlobalTaskCreationConfigImpl(
 
   override val asmApiVersion = ASM_API_VERSION
 
-  override val createdBy: String = "Android Gradle ${Version.ANDROID_GRADLE_PLUGIN_VERSION}"
+  override val createdBy: String by lazy {
+    val stringOption: String? = services.projectOptions[StringOption.PROJECT_CREATOR_TOOL]
+    val defaultCreatedBy = "Android Gradle ${Version.ANDROID_GRADLE_PLUGIN_VERSION}"
+    if (stringOption != null) "$stringOption/$defaultCreatedBy" else defaultCreatedBy
+  }
 
   override val globalArtifacts: ArtifactsImpl = ArtifactsImpl(project, "global")
 
