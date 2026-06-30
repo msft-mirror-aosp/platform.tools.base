@@ -33,6 +33,7 @@ import com.android.build.gradle.internal.tasks.AarMetadataTask
 import com.android.build.gradle.internal.tasks.BundleLibraryClassesDir
 import com.android.build.gradle.internal.tasks.BundleLibraryClassesJar
 import com.android.build.gradle.internal.tasks.LibraryAarJarsTask
+import com.android.build.gradle.internal.tasks.MergeCompressedJavaResTask
 import com.android.build.gradle.internal.tasks.MergeJavaResourceTask
 import com.android.build.gradle.internal.tasks.ProcessNavigationXmlTask
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
@@ -70,10 +71,16 @@ class TestFixturesTaskManager(project: Project, globalConfig: GlobalTaskCreation
     // java resources tasks
     createProcessJavaResTask(testFixturesComponent)
 
-    // java resources merging task
-    taskFactory.register(
-      MergeJavaResourceTask.CreationAction(javaResMergingScopes, testFixturesComponent.mainVariant.packaging, testFixturesComponent)
-    )
+    if (testFixturesComponent.services.projectOptions.get(BooleanOption.ENABLE_JAVA_RESOURCE_OPTIMIZATIONS)) {
+      taskFactory.register(
+        MergeCompressedJavaResTask.CreationAction(javaResMergingScopes, testFixturesComponent.mainVariant.packaging, testFixturesComponent)
+      )
+    } else {
+      // java resources merging task
+      taskFactory.register(
+        MergeJavaResourceTask.CreationAction(javaResMergingScopes, testFixturesComponent.mainVariant.packaging, testFixturesComponent)
+      )
+    }
 
     // android resources tasks
     if (testFixturesComponent.buildFeatures.androidResources) {

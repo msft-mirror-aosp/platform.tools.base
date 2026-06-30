@@ -173,9 +173,13 @@ class KmpTaskManager(project: Project, global: GlobalTaskCreationConfig) : TaskM
           variant.taskContainer.processJavaResourcesTask = task
         }
       }
-    project.tasks.registerTask(ProcessJavaResTask.CreationAction(taskConfig))
-    project.tasks.registerTask(MergeJavaResourceTask.CreationAction(javaResMergingScopes, variant.packaging, variant))
-
+    if (variant.services.projectOptions[BooleanOption.ENABLE_JAVA_RESOURCE_OPTIMIZATIONS]) {
+      project.tasks.registerTask(CompressJavaResTask.CreationAction(taskConfig))
+      project.tasks.registerTask(MergeCompressedJavaResTask.CreationAction(javaResMergingScopes, variant.packaging, variant))
+    } else {
+      project.tasks.registerTask(ProcessJavaResTask.CreationAction(taskConfig))
+      project.tasks.registerTask(MergeJavaResourceTask.CreationAction(javaResMergingScopes, variant.packaging, variant))
+    }
     taskFactory.register(ProcessLibraryArtProfileTask.CreationAction(variant))
 
     if (variant.optimizationCreationConfig.minifiedEnabled) {
