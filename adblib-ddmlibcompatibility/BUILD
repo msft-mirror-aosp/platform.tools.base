@@ -94,5 +94,6 @@ kotlin_test(
         "//tools/base/ddmlib:test-utils",
         "//tools/base/annotations",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-guava",
     ],
 )
