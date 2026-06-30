@@ -39,6 +39,7 @@ import com.android.build.gradle.internal.services.Aapt2DaemonBuildService
 import com.android.build.gradle.internal.services.Aapt2ThreadPoolBuildService
 import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.services.SymbolTableBuildService
+import com.android.build.gradle.internal.tasks.MergeCompressedJavaResTask
 import com.android.build.gradle.internal.tasks.MergeJavaResourcesGlobalTask
 import com.android.build.gradle.internal.tasks.factory.TaskCreationAction
 import com.android.build.gradle.options.BooleanOption
@@ -224,6 +225,12 @@ constructor(
 
   override fun createTasks(project: Project) {
     configureTransformsForFusedLibrary(project, projectServices)
+    val mergeJavaResTask =
+      if (projectServices.projectOptions[BooleanOption.ENABLE_JAVA_RESOURCE_OPTIMIZATIONS]) {
+        MergeCompressedJavaResTask.FusedLibraryCreationAction(variantScope)
+      } else {
+        MergeJavaResourcesGlobalTask.FusedLibraryCreationAction(variantScope)
+      }
     createTasks(
       project,
       variantScope.artifacts,
@@ -247,11 +254,10 @@ constructor(
         FusedLibraryBundleClasses.CreationActionClassesJar(variantScope),
         FusedLibraryBundleClasses.CreationActionLintJar(variantScope),
         FusedLibraryBundleAar.CreationAction(variantScope),
-        MergeJavaResourcesGlobalTask.FusedLibraryCreationAction(variantScope),
         FusedLibraryMergeResourceCompileSymbolsTask.CreationAction(variantScope),
         FusedLibraryReportTask.CreationAction(variantScope),
         FusedLibraryDependencyValidationTask.CreationAction(variantScope),
-      ) + FusedLibraryMergeArtifactTask.getCreationActions(variantScope),
+      ) + FusedLibraryMergeArtifactTask.getCreationActions(variantScope) + mergeJavaResTask,
     )
   }
 
