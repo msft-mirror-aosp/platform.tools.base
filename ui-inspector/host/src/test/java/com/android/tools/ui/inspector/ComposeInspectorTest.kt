@@ -168,7 +168,7 @@ class ComposeInspectorTest {
     injectionManager.injectAndAttach()
 
     // 3. Execute E2E Orchestrator with dynamic lambda jar resolution mock
-    CommandSender("127.0.0.1", serverPort).use { commandSender ->
+    CommandSender.connect("127.0.0.1", serverPort, this).use { commandSender ->
       createComposeInspector(
         commandSender = commandSender,
         injectionManager = injectionManager,
@@ -425,7 +425,7 @@ class ComposeInspectorTest {
     System.setOut(java.io.PrintStream(stdoutCapture))
 
     try {
-      CommandSender("127.0.0.1", serverPort).use { commandSender ->
+      CommandSender.connect("127.0.0.1", serverPort, this).use { commandSender ->
         // Inject Compose Inspector with a mock resolveJar lambda returning a dummy file
         val composeInspectorConnected =
           createComposeInspector(
@@ -739,7 +739,7 @@ class ComposeInspectorTest {
     System.setOut(java.io.PrintStream(stdoutCapture))
 
     try {
-      CommandSender("127.0.0.1", serverPort).use { commandSender ->
+      CommandSender.connect("127.0.0.1", serverPort, this).use { commandSender ->
         // Inject Compose Inspector with a mock resolveJar lambda returning a dummy file
         val composeInspectorConnected =
           createComposeInspector(
@@ -1082,7 +1082,7 @@ class ComposeInspectorTest {
     System.setOut(java.io.PrintStream(stdoutCapture))
 
     try {
-      CommandSender("127.0.0.1", serverPort).use { commandSender ->
+      CommandSender.connect("127.0.0.1", serverPort, this).use { commandSender ->
         val composeInspectorConnected =
           createComposeInspector(
             commandSender = commandSender,
