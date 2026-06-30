@@ -71,7 +71,7 @@ class CommandSenderTest {
         }
 
       try {
-        CommandSender("localhost", port).use { sender ->
+        CommandSender("127.0.0.1", port).use { sender ->
           val command = Command.newBuilder().setShutdown(ShutdownCommand.getDefaultInstance()).build()
           val response = sender.sendMessage(command)
 
@@ -114,7 +114,7 @@ class CommandSenderTest {
         }
 
       try {
-        CommandSender("localhost", port).use { sender ->
+        CommandSender("127.0.0.1", port).use { sender ->
           val command = Command.newBuilder().setShutdown(ShutdownCommand.getDefaultInstance()).build()
           try {
             sender.sendMessage(command)
@@ -172,7 +172,7 @@ class CommandSenderTest {
         }
 
       try {
-        CommandSender("localhost", port).use { sender ->
+        CommandSender("127.0.0.1", port).use { sender ->
           val payload = "hello".toByteArray()
           val responseBytes = sender.sendInspectorCommand("my-inspector", payload)
 

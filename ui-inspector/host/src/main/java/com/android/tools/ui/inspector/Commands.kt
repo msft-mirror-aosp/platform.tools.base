@@ -197,7 +197,7 @@ private suspend fun runWithConnectedInspectors(
   try {
     val injectionManager = InjectionManager(adbSession, serial, packageName)
     val port = injectionManager.injectAndAttach()
-    CommandSender(host = "localhost", port = port.toInt()).use { commandSender ->
+    CommandSender(host = "127.0.0.1", port = port.toInt()).use { commandSender ->
       createViewInspector(commandSender, injectionManager)
 
       val localJarProvider =
