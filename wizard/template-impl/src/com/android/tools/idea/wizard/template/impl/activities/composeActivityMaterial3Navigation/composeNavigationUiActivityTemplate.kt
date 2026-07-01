@@ -28,6 +28,7 @@ import com.android.tools.idea.wizard.template.ModuleTemplateData
 import com.android.tools.idea.wizard.template.PackageNameWidget
 import com.android.tools.idea.wizard.template.TemplateConstraint
 import com.android.tools.idea.wizard.template.TemplateData
+import com.android.tools.idea.wizard.template.TemplateFlag
 import com.android.tools.idea.wizard.template.TextFieldWidget
 import com.android.tools.idea.wizard.template.WizardUiContext
 import com.android.tools.idea.wizard.template.booleanParameter
@@ -42,6 +43,7 @@ val composeNavigationUiActivityMaterial3Template
     description = "Create a Jetpack Compose activity with navigation UI"
     minApi = 21
     constraints = listOf(TemplateConstraint.AndroidX, TemplateConstraint.Kotlin, TemplateConstraint.Material3, TemplateConstraint.Compose)
+    flags = listOf(TemplateFlag.LightBuild)
 
     category = Category.Compose
     formFactor = FormFactor.Mobile

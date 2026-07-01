@@ -71,6 +71,7 @@ enum class TemplateFlag {
   WatchFace,
   NewProjectAgent,
   FirebaseAi,
+  LightBuild,
 }
 
 /**

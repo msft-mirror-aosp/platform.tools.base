@@ -42,7 +42,7 @@ val aiStarterTemplate
     minApi = 21
     constraints = listOf(TemplateConstraint.AndroidX, TemplateConstraint.Kotlin, TemplateConstraint.Material3, TemplateConstraint.Compose)
     category = Category.Application
-    flags = listOf(TemplateFlag.NewProjectAgent)
+    flags = listOf(TemplateFlag.NewProjectAgent, TemplateFlag.LightBuild)
     formFactor = FormFactor.Mobile
     screens =
       listOfNotNull(
