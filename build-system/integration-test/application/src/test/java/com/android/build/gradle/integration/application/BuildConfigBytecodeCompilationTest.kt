@@ -18,11 +18,17 @@ package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.testutils.TestUtils
+import com.android.testutils.ignore.IgnoreTestRule
+import com.android.testutils.ignore.IgnoreWithCondition
+import com.android.testutils.ignore.OnWindows
 import org.junit.Rule
 import org.junit.Test
 
 // Regression test for b/363031540
 class BuildConfigBytecodeCompilationTest {
+
+  @get:Rule
+  val ignoreTests = IgnoreTestRule()
 
   @get:Rule
   val project =
@@ -32,6 +38,10 @@ class BuildConfigBytecodeCompilationTest {
       .addGradleProperties("org.gradle.java.installations.paths=${TestUtils.getJava21Jdk()}")
       .create()
 
+  @IgnoreWithCondition(
+    reason = "b/530211050",
+    condition = OnWindows::class,
+  )
   @Test
   fun testBuildConfigCompilation() {
     project.execute(
