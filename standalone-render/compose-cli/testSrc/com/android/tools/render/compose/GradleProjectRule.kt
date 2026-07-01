@@ -22,6 +22,7 @@ import com.android.tools.render.common.writePreviewRenderingToJson
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.concurrent.TimeUnit
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.readLines
 import kotlin.io.path.readText
@@ -84,15 +85,14 @@ class GradleProjectRule(
     // parent folder of ~/.gradle
     procBuilder.environment()["GRADLE_USER_HOME"] = gradleUserHomePath.absolutePathString()
     val proc = procBuilder.start()
-    val exitCode = proc.waitFor()
-    val stdout = proc.inputStream.bufferedReader().readText()
-    val stderr =
+    proc.waitFor(5, TimeUnit.MINUTES)
+    val error =
       proc.errorStream.bufferedReader().readLines().filter { line -> !line.startsWith("Warning: SDK processing.") }.joinToString("\n")
-    if (exitCode != 0) {
+    if (error.trim().isNotEmpty()) {
       val commandStr = command.joinToString(" ")
-      throw AssertionError("Gradle command \"$commandStr\" failed with exit code $exitCode.\n" + "Stderr:\n$stderr\n" + "Stdout:\n$stdout")
+      throw AssertionError("Error while executing gradle command \"$commandStr\":\n$error")
     }
-    return stdout
+    return proc.inputStream.bufferedReader().readText()
   }
 
   /** Path to the root folder of the gradle project. */

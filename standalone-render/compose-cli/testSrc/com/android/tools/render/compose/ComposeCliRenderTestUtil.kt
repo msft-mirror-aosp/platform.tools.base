@@ -25,16 +25,9 @@ import kotlin.io.path.absolutePathString
 private val ALLOWED_ERRORS =
   listOf(
     "WARNING: A terminally deprecated method in java.lang.System has been called",
-    "WARNING: System::setSecurityManager has been called by",
-    "WARNING: Please consider reporting this to the maintainers",
+    "WARNING: System::setSecurityManager has been called by com.android.tools.rendering.security.RenderSecurityManager",
+    "WARNING: Please consider reporting this to the maintainers of com.android.tools.rendering.security.RenderSecurityManager",
     "WARNING: System::setSecurityManager will be removed in a future release",
-    "WARNING: A terminally deprecated method in sun.misc.Unsafe has been called",
-    "WARNING: sun.misc.Unsafe::objectFieldOffset has been called by",
-    "WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release",
-    "WARNING: A restricted method in java.lang.System has been called",
-    "WARNING: java.lang.System::load has been called by",
-    "WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning",
-    "WARNING: Restricted methods will be blocked in a future release",
     "Tracing Skia with Perfetto is not supported in this environment (host build?)",
   )
 
@@ -53,7 +46,7 @@ fun runComposeCliRender(args: List<String>): String {
   val proc = procBuilder.start()
   proc.waitFor(5, TimeUnit.MINUTES)
   val error =
-    proc.errorStream.bufferedReader().readLines().filter { line -> ALLOWED_ERRORS.none { line.trim().startsWith(it) } }.joinToString("\n")
+    proc.errorStream.bufferedReader().readLines().filter { line -> ALLOWED_ERRORS.none { line.startsWith(it) } }.joinToString("\n")
   if (error.isNotEmpty() || proc.exitValue() != 0) {
     val commandStr = command.joinToString(" ")
     throw AssertionError("Error while executing gradle command \"$commandStr\" (exit code ${proc.exitValue()}):\n$error")
