@@ -152,6 +152,7 @@ class ManagedDeviceInstrumentationTestTaskTest {
   private fun mockDirectoryProperty(directory: Directory): DirectoryProperty {
     val property = mock<DirectoryProperty>()
     whenever(property.get()).thenReturn(directory)
+    whenever(property.isPresent).thenReturn(true)
     return property
   }
 
@@ -196,6 +197,13 @@ class ManagedDeviceInstrumentationTestTaskTest {
     doReturn(mockDirectoryProperty(resultsDirectory)).whenever(task).resultsDir
     doReturn(mockDirectoryProperty(coverageDirectory)).whenever(task).getCoverageDirectory()
     doReturn(mockDirectoryProperty(reportsDirectory)).whenever(task).getReportsDir()
+    val xmlResultsDirectory: Directory = mock()
+    val xmlResultsFolder = temporaryFolderRule.newFolder("xml_results")
+    whenever(xmlResultsDirectory.asFile).thenReturn(xmlResultsFolder)
+    doReturn(mockDirectoryProperty(xmlResultsDirectory)).whenever(task).xmlResultsDirectory
+
+    doReturn(FakeGradleProperty(false)).whenever(task).testReportAggregationEnabled
+    doReturn(FakeGradleProperty("variant_name")).whenever(task).testedVariantName
 
     doReturn(workerExecutor).whenever(task).workerExecutor
 
@@ -243,6 +251,7 @@ class ManagedDeviceInstrumentationTestTaskTest {
     whenever(creationConfig.services.projectOptions[BooleanOption.ANDROID_TEST_USES_UNIFIED_TEST_PLATFORM]).thenReturn(true)
     // Needed to ensure the ExecutionEnum
     whenever(creationConfig.global.testOptionExecutionEnum).thenReturn(TestOptions.Execution.ANDROIDX_TEST_ORCHESTRATOR)
+    whenever(creationConfig.services.projectInfo.path).thenReturn("project_path")
     val config =
       ManagedDeviceInstrumentationTestTask.CreationAction(
         creationConfig,
@@ -271,6 +280,11 @@ class ManagedDeviceInstrumentationTestTaskTest {
     val device = mockEmptyProperty<ManagedVirtualDevice>()
     whenever(task.device).thenReturn(device)
 
+    val testReportAggregationEnabled = mockEmptyProperty<Boolean>()
+    whenever(task.testReportAggregationEnabled).thenReturn(testReportAggregationEnabled)
+    val testedVariantName = mockEmptyProperty<String>()
+    whenever(task.testedVariantName).thenReturn(testedVariantName)
+
     config.configure(task)
 
     verify(executionEnum).set(TestOptions.Execution.ANDROIDX_TEST_ORCHESTRATOR)
@@ -288,6 +302,14 @@ class ManagedDeviceInstrumentationTestTaskTest {
     verify(avdComponents).set(any<Provider<AvdComponentsBuildService>>())
     verify(avdComponents).disallowChanges()
     verifyNoMoreInteractions(avdComponents)
+
+    verify(testReportAggregationEnabled).set(any<Boolean>())
+    verify(testReportAggregationEnabled).disallowChanges()
+    verifyNoMoreInteractions(testReportAggregationEnabled)
+
+    verify(testedVariantName).set("AndroidDebugTest")
+    verify(testedVariantName).disallowChanges()
+    verifyNoMoreInteractions(testedVariantName)
   }
 
   @Test
@@ -434,5 +456,26 @@ class ManagedDeviceInstrumentationTestTaskTest {
     task.doTaskAction()
 
     verifyNoInteractions(testRunner)
+  }
+
+  @Test
+  fun taskAction_noTestsWithReportAggregation() {
+    val task = basicTaskSetup()
+
+    val testRunner = mock<ManagedDeviceTestRunner>()
+    doReturn(testRunner).whenever(runnerFactory).createTestRunner(any(), any(), eq(null))
+    whenever(runnerFactory.executionEnum).thenReturn(FakeGradleProperty(TestOptions.Execution.ANDROIDX_TEST_ORCHESTRATOR))
+
+    // When the data has no Tests, but report aggregation is enabled, the testRunner should not run
+    // but report aggregation should execute.
+    doReturn(FakeGradleProperty(false)).whenever(testData).hasTests(any(), any(), any())
+    doReturn(FakeGradleProperty(true)).whenever(task).testReportAggregationEnabled
+
+    task.doTaskAction()
+
+    verifyNoInteractions(testRunner)
+
+    // Verify that data.js is generated in reportsFolder since report aggregation is enabled
+    assertThat(File(reportsFolder, "data.js").exists()).isTrue()
   }
 }
