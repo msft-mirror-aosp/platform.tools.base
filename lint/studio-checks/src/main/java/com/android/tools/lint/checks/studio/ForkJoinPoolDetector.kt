@@ -48,8 +48,7 @@ class ForkJoinPoolDetector : Detector(), SourceCodeScanner {
                 `AppExecutorUtil.getAppExecutorService()` executor.
 
                 For the Android Gradle Plugin use \
-                `com.android.build.gradle.internal.tasks.Workers.preferWorkers` or \
-                `com.android.build.gradle.internal.tasks.Workers.preferThreads`
+                `com.android.build.gradle.internal.tasks.Workers.withGradleWorkers`
 
                 For more, see `go/do-not-freeze`.
             """,
@@ -75,8 +74,7 @@ class ForkJoinPoolDetector : Detector(), SourceCodeScanner {
                 `AppExecutorUtil.getAppExecutorService()` executor.
 
                 For the Android Gradle Plugin use \
-                `com.android.build.gradle.internal.tasks.Workers.preferWorkers` or \
-                `com.android.build.gradle.internal.tasks.Workers.preferThreads`
+                `com.android.build.gradle.internal.tasks.Workers.withGradleWorkers`
 
                 For more, see `go/do-not-freeze`.
             """,
