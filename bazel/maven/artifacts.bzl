@@ -57,7 +57,6 @@ ARTIFACTS = [
     "com.google.api-client:google-api-client:1.35.2",
     "com.google.apis:google-api-services-cloudresourcemanager:v3-rev20230416-2.0.0",
     "com.google.apis:google-api-services-oauth2:v2-rev20200213-2.0.0",
-    "com.google.apis:google-api-services-serviceusage:v1-rev20240220-2.0.0",
     "com.google.apis:google-api-services-storage:v1-rev20230301-2.0.0",
     "com.google.apis:google-api-services-testing:v1-rev20250327-2.0.0",
     "com.google.apis:google-api-services-toolresults:v1beta3-rev20230410-2.0.0",
