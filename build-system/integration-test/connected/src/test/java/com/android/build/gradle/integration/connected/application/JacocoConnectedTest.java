@@ -94,6 +94,41 @@ public class JacocoConnectedTest {
     }
 
     @Test
+    public void onTheFlyConnectedCheck() throws Exception {
+        // Skip for the legacy flow
+        if (!runWithBuiltInPlatform) {
+            return;
+        }
+
+        TestFileUtils.appendToFile(
+                project.getBuildFile(),
+                "\n"
+                        + "dependencies {\n"
+                        + "  androidTestImplementation 'com.android.tools.test:coverage-agent:1.0.0'\n"
+                        + "}");
+
+        project.executor()
+                .with(BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM, runWithBuiltInPlatform)
+                .with(BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE, true)
+                .with(BooleanOption.REPORT_AGGREGATION_SUPPORT, true)
+                .run("createDebugCoverageReport");
+
+        // 1. Verify that raw binary .pb files were successfully written and pulled to host output directory
+        File coverageDir = getCoverageDir();
+        java.util.List<File> pbFiles = FileUtils.find(coverageDir, Pattern.compile(".*\\.pb"));
+        Truth.assertThat(pbFiles.size()).isAtLeast(2);
+
+        // 2. Verify that the reporting task successfully compiled the standardized report.xml
+        File reportXml = project.file("build/reports/coverage/androidTest/debug/connected/report.xml");
+        assertThat(reportXml).exists();
+
+        // 3. Verify XML contents contain HelloWorld coverage trace
+        String content = Files.readString(reportXml.toPath());
+        Truth.assertThat(content).contains("<package name=\"com/example/helloworld\">");
+        Truth.assertThat(content).contains("<class name=\"com/example/helloworld/HelloWorld\"");
+    }
+
+    @Test
     public void connectedCheckWithOrchestrator() throws Exception {
         runConnectedCheckAndAssertCoverageReportExists(/*enableClearPackageDataOption=*/ false);
     }

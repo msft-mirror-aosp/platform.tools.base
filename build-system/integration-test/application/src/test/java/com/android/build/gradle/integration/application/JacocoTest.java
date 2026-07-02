@@ -43,6 +43,7 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Collections;
 import java.util.Scanner;
 
@@ -156,7 +157,7 @@ public class JacocoTest {
         File dataSrc = new File(project.getMainSrcDir(), "test/Data.java");
         FileUtils.mkdirs(dataSrc.getParentFile());
         String dataSrcContent = "package test; public class Data {} class AnotherClass {}";
-        java.nio.file.Files.write(dataSrc.toPath(), dataSrcContent.getBytes(Charsets.UTF_8));
+        Files.write(dataSrc.toPath(), dataSrcContent.getBytes(Charsets.UTF_8));
 
         GradleBuildResult result =
                 project.executor().withEnableInfoLogging(true).run("assembleDebug");
@@ -184,7 +185,7 @@ public class JacocoTest {
                         + "    <string name=\"app_name\">HelloWorld</string>\n"
                         + "    <string name=\"app_name2\">HelloWorld2</string>\n"
                         + "</resources>\n";
-        java.nio.file.Files.write(strings.toPath(), dataSrcContent.getBytes(Charsets.UTF_8));
+        Files.write(strings.toPath(), dataSrcContent.getBytes(Charsets.UTF_8));
 
         GradleBuildResult result =
                 project.executor().withEnableInfoLogging(true).run("assembleDebug");
@@ -206,6 +207,162 @@ public class JacocoTest {
         assertThat(numberOfFilesProcessed)
                 .named("number of files processed with Jacoco")
                 .isEqualTo(0);
+    }
+
+    @Test
+    public void testJacocoBypassWithOnTheFly() throws Exception {
+        GradleBuildResult result = project.executor()
+                .with(BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE, true)
+                .withEnableInfoLogging(true)
+                .run("assembleDebug");
+
+        try (Scanner scanner = result.getStdout()) {
+            while (scanner.hasNextLine()) {
+                assertThat(scanner.nextLine()).doesNotContain("Instrumenting file: ");
+            }
+        }
+
+        try (Apk mainApk = project.getApk(GradleTestProject.ApkType.DEBUG)) {
+            Dex mainDexClasses = mainApk.getMainDexFile().get();
+            DexClassSubject classSubject = DexClassSubject.assertThat(
+                    mainDexClasses.getClasses().get("Lcom/example/helloworld/HelloWorld;"));
+
+            classSubject.doesNotHaveMethod("$jacocoInit");
+            classSubject.doesNotHaveField("$jacocoData");
+        }
+    }
+
+@Test
+public void testOnTheFlyRequiresReportAggregation() throws Exception {
+    File coverageDir = new File(project.getProjectDir(), "build/outputs/code_coverage/debugAndroidTest/connected");
+    FileUtils.mkdirs(coverageDir);
+    File dummyPb = new File(coverageDir, "coverage_metadata.pb");
+    Files.write(dummyPb.toPath(), "dummy content".getBytes(Charsets.UTF_8));
+
+    GradleBuildResult result = project.executor()
+            .with(BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE, true)
+            .with(BooleanOption.REPORT_AGGREGATION_SUPPORT, false)
+            .withArgument("-x")
+            .withArgument("connectedDebugAndroidTest")
+            .expectFailure()
+            .run("createDebugAndroidTestCoverageReport");
+
+    assertThat(result.getFailureMessage()).contains(
+            "On-the-fly coverage requires 'android.experimental.reportAggregationSupport' to be enabled.");
+}
+
+@Test
+public void testOnTheFlySuccessWithEmptyPbFiles() throws Exception {
+    File coverageDir = new File(project.getProjectDir(), "build/outputs/code_coverage/debugAndroidTest/connected");
+    FileUtils.mkdirs(coverageDir);
+    // Protocol Buffers allow 0-byte files as valid empty serialized messages.
+    File metadataPb = new File(coverageDir, "coverage_metadata.pb");
+    Files.write(metadataPb.toPath(), new byte[0]);
+    File hitsPb = new File(coverageDir, "coverage_hits.pb");
+    Files.write(hitsPb.toPath(), new byte[0]);
+
+    project.executor()
+            .with(BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE, true)
+            .with(BooleanOption.REPORT_AGGREGATION_SUPPORT, true)
+            .withArgument("-x")
+            .withArgument("connectedDebugAndroidTest")
+            .run("createDebugAndroidTestCoverageReport");
+
+    // Verify report.xml was successfully generated
+    File reportXml = new File(project.getProjectDir(), "build/reports/coverage/androidTest/debug/connected/report.xml");
+    assertThat(reportXml.isFile()).isTrue();
+    String content = new String(java.nio.file.Files.readAllBytes(reportXml.toPath()), Charsets.UTF_8);
+    assertThat(content).contains("<?xml");
+}
+
+@Test
+public void testOnTheFlyAnchorTaskIsRegisteredAndRuns() throws Exception {
+    File coverageDir = new File(project.getProjectDir(), "build/outputs/code_coverage/debugAndroidTest/connected");
+    FileUtils.mkdirs(coverageDir);
+    // Protocol Buffers allow 0-byte files as valid empty serialized messages.
+    File metadataPb = new File(coverageDir, "coverage_metadata.pb");
+    Files.write(metadataPb.toPath(), new byte[0]);
+    File hitsPb = new File(coverageDir, "coverage_hits.pb");
+    Files.write(hitsPb.toPath(), new byte[0]);
+
+    // Run the main anchor task "createDebugCoverageReport"
+    project.executor()
+            .with(BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE, true)
+            .with(BooleanOption.REPORT_AGGREGATION_SUPPORT, true)
+            .withArgument("-x")
+            .withArgument("connectedDebugAndroidTest")
+            .run("createDebugCoverageReport");
+
+    // Verify report.xml was successfully generated via the anchor task flow
+    File reportXml = new File(project.getProjectDir(), "build/reports/coverage/androidTest/debug/connected/report.xml");
+    assertThat(reportXml.isFile()).isTrue();
+}
+
+@Test
+public void testOnTheFlyFailsIfPbFilesAreMissing() throws Exception {
+
+    File coverageDir = new File(project.getProjectDir(), "build/outputs/code_coverage/debugAndroidTest/connected");
+    FileUtils.mkdirs(coverageDir);
+    // Put a pb file to satisfy the outer check in doTaskAction()
+    File dummyPb = new File(coverageDir, "some_unrelated_file.pb");
+    Files.write(dummyPb.toPath(), "dummy content".getBytes(Charsets.UTF_8));
+
+    GradleBuildResult result = project.executor()
+            .with(BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE, true)
+            .with(BooleanOption.REPORT_AGGREGATION_SUPPORT, true)
+            .withArgument("-x")
+            .withArgument("connectedDebugAndroidTest")
+            .expectFailure()
+            .run("createDebugAndroidTestCoverageReport");
+
+    assertThat(result.getFailureMessage()).contains(
+            "On-the-fly coverage is enabled but required .pb files were not found.");
+}
+
+@Test
+public void testLegacyFailsIfNoLegacyFilesFoundEvenWithPb() throws Exception {
+    File coverageDir = new File(project.getProjectDir(), "build/outputs/code_coverage/debugAndroidTest/connected");
+    FileUtils.mkdirs(coverageDir);
+    // Only plant a pb file, no ec/exec files
+    File dummyPb = new File(coverageDir, "coverage_metadata.pb");
+    Files.write(dummyPb.toPath(), "dummy content".getBytes(Charsets.UTF_8));
+
+    GradleBuildResult result = project.executor()
+            .with(BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE, false)
+            .with(BooleanOption.REPORT_AGGREGATION_SUPPORT, true)
+            .withArgument("-x")
+            .withArgument("connectedDebugAndroidTest")
+            .expectFailure()
+            .run("createDebugAndroidTestCoverageReport");
+
+    assertThat(result.getFailureMessage()).contains(
+            "failed because no coverage data was found.");
+}
+
+    @Test
+    public void testLibraryJacocoBypassWithOnTheFly() throws Exception {
+        TestFileUtils.searchAndReplace(
+                project.getBuildFile(), "com.android.application", "com.android.library");
+
+        GradleBuildResult result = project.executor()
+                .with(BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE, true)
+                .withEnableInfoLogging(true)
+                .run("assembleDebugAndroidTest");
+
+        try (Scanner scanner = result.getStdout()) {
+            while (scanner.hasNextLine()) {
+                assertThat(scanner.nextLine()).doesNotContain("Instrumenting file: ");
+            }
+        }
+
+        try (Apk androidTestApk = project.getApk(GradleTestProject.ApkType.ANDROIDTEST_DEBUG)) {
+            Dex dexClasses = androidTestApk.getMainDexFile().get();
+            DexClassSubject classSubject = DexClassSubject.assertThat(
+                    dexClasses.getClasses().get("Lcom/example/helloworld/HelloWorldTest;"));
+
+            classSubject.doesNotHaveMethod("$jacocoInit");
+            classSubject.doesNotHaveField("$jacocoData");
+        }
     }
 
     @Test

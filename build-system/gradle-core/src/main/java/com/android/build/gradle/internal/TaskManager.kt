@@ -1273,7 +1273,9 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
     initializeAllScope(creationConfig.artifacts)
 
     // New gradle-transform jacoco instrumentation support.
-    if (creationConfig.requiresJacocoTransformation && !creationConfig.componentType.isForTesting) {
+    val requiresJacocoBytecodeTransform =
+      creationConfig.requiresJacocoTransformation && !creationConfig.services.projectOptions[BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE]
+    if (requiresJacocoBytecodeTransform && !creationConfig.componentType.isForTesting) {
       createJacocoTask(creationConfig)
     } else {
       // When the Jacoco task does not run, republish CLASSES into FINAL_TRANSFORMED_CLASSES

@@ -210,7 +210,9 @@ class KmpTaskManager(project: Project, global: GlobalTaskCreationConfig) : TaskM
       taskFactory.register(ExtractAnnotations.CreationAction(variant))
     }
 
-    if (variant.requiresJacocoTransformation) {
+    val requiresJacocoBytecodeTransform =
+      variant.requiresJacocoTransformation && !variant.services.projectOptions[BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE]
+    if (requiresJacocoBytecodeTransform) {
       val jacocoTask = project.tasks.registerTask(JacocoTask.CreationAction(variant))
       variant.artifacts
         .forScope(ScopedArtifacts.Scope.PROJECT)

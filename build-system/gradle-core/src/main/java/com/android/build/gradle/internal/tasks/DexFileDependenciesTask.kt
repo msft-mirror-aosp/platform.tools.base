@@ -28,6 +28,7 @@ import com.android.build.gradle.internal.tasks.factory.features.DexingTaskCreati
 import com.android.build.gradle.internal.utils.getDesugarLibConfig
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.build.gradle.internal.utils.useUniversalGlobalSyntheticsDex
+import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.SyncOptions
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.dexing.ClassFileInputs
@@ -176,7 +177,9 @@ abstract class DexFileDependenciesTask : NonIncrementalTask() {
       super.configure(task)
 
       val classesAreInstrumentedWithAsm = creationConfig.instrumentationCreationConfig?.dependenciesClassesAreInstrumented == true
-      val classesAreInstrumentedWithJacoco = creationConfig.requiresJacocoTransformation
+      val classesAreInstrumentedWithJacoco =
+        creationConfig.requiresJacocoTransformation &&
+          !creationConfig.services.projectOptions[BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE]
       val inputClassesArtifact =
         when {
           classesAreInstrumentedWithJacoco && classesAreInstrumentedWithAsm -> AndroidArtifacts.ArtifactType.JACOCO_ASM_INSTRUMENTED_JARS
