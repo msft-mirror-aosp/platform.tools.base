@@ -31,6 +31,7 @@ class JavaPreCompileTaskCreationConfigImpl(
   val testSuite: TestSuiteCreationConfig,
   val sourceContainer: TestSuiteSourceContainer,
   override val services: TaskCreationServices,
+  override val taskContainer: MutableTaskContainer = MutableTaskContainer(),
 ) : JavaPreCompileTaskCreationConfig {
 
   override val annotationProcessorArtifacts: ArtifactCollection?
@@ -43,7 +44,6 @@ class JavaPreCompileTaskCreationConfigImpl(
   override val name: String
     get() = sourceContainer.identifier
 
-  override val taskContainer: MutableTaskContainer = MutableTaskContainer()
   override val artifacts: ArtifactsImpl
     get() = sourceContainer.artifacts
 

@@ -593,7 +593,18 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
           AgpTestSuiteInputParameters.TEST_CLASSPATH -> {
             val testClasspath =
               task.project.objects.fileCollection().also { fc ->
-                creationConfig.sourceContainers.forEach { sc -> fc.from(sc.suiteSourceClasspath.runtimeClasspath) }
+                creationConfig.sourceContainers.forEach { sc ->
+                  fc.from(
+                    sc.suiteSourceClasspath.getRuntimeClasspathArtifacts(
+                      com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.CLASSES_JAR
+                    )
+                  )
+                  fc.from(
+                    sc.suiteSourceClasspath.getRuntimeClasspathArtifacts(
+                      com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.JAVA_RES
+                    )
+                  )
+                }
               }
             task.engineInputParameters.add(AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.TEST_CLASSPATH, testClasspath))
           }

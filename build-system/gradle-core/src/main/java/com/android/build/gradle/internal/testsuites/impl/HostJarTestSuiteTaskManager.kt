@@ -21,7 +21,6 @@ import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.api.component.impl.LifecycleTasksImpl
 import com.android.build.api.variant.impl.FlatSourceDirectoriesImpl
 import com.android.build.api.variant.impl.TestSuiteSourceContainer
-import com.android.build.gradle.internal.TaskManager.PreBuildCreationAction
 import com.android.build.gradle.internal.TestSuiteTaskManager
 import com.android.build.gradle.internal.api.HostJarTestSuiteSourceSet
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
@@ -61,6 +60,9 @@ class HostJarTestSuiteTaskManager(val project: Project, val testSuiteTaskManager
     taskFactory: TaskFactory,
     taskCreationServices: TaskCreationServices,
   ): TaskProvider<out Task> {
+    val hostJarConfig = TestSuiteHostJarCreationConfig(testSuite, sourceContainer)
+
+    testSuiteTaskManager.createAnchorTasksForSuite(hostJarConfig)
 
     // first process java resources.
     val config =
@@ -103,31 +105,35 @@ class HostJarTestSuiteTaskManager(val project: Project, val testSuiteTaskManager
 
     val task = taskFactory.register(ProcessJavaResTask.CreationAction(config))
 
+    createCompilationTasks(testSuite, sourceContainer, source, taskFactory, taskCreationServices, hostJarConfig)
+
     if (testSuite.androidResourcesIncluded) {
-      setupAndroidResourceTasks(testSuite, taskFactory)
+      setupAndroidResourceTasks(testSuite, taskFactory, hostJarConfig)
     }
 
-    createCompilationTasks(testSuite, sourceContainer, source, taskFactory, taskCreationServices)
     return task
   }
 
-  private fun setupAndroidResourceTasks(testSuite: TestSuiteCreationConfig, taskFactory: TaskFactory) {
+  private fun setupAndroidResourceTasks(
+    testSuite: TestSuiteCreationConfig,
+    taskFactory: TaskFactory,
+    hostJarConfig: TestSuiteHostJarCreationConfig,
+  ) {
     val testedVariant = testSuite.testedVariant
     if (testedVariant.componentType.isApk) {
-      // Add a task to process the manifest.
-      // For now we don't have createProcessTestManifestTask in TestSuiteTaskManager,
-      // but we can copy artifacts from testedVariant if it's an APK.
-      // TODO(b/514656326): Add createProcessTestManifestTask in TestSuiteTaskManager
+      if (hostJarConfig.androidResourcesIncluded) {
+        testSuiteTaskManager.createTestSuiteProcessTestManifestTask(hostJarConfig)
+        testSuite.artifacts.copy(InternalArtifactType.MERGED_MANIFESTS, hostJarConfig.artifacts)
+      }
       testSuite.artifacts.copy(InternalArtifactType.LINKED_RESOURCES_BINARY_FORMAT, testedVariant.artifacts)
       testSuite.artifacts.copy(SingleArtifact.ASSETS, testedVariant.artifacts)
-      testSuite.artifacts.copy(InternalArtifactType.MERGED_MANIFESTS, testedVariant.artifacts)
 
       taskFactory.register(PackageForHostTest.TestSuiteCreationAction(testSuite))
     } else if (testedVariant.componentType.isAar) {
-      // TODO(b/514664196): Handle Android resources for Library modules (AARs).
-      // Currently, TestSuiteCreationConfig does not implement ComponentCreationConfig,
-      // preventing us from calling standard TaskManager resource-merging methods.
-      // Without this, apk-for-local-test.ap_ is never generated for libraries.
+      testSuiteTaskManager.createHostJarTestSuiteResourcesTasks(hostJarConfig)
+
+      taskFactory.register(PackageForHostTest.CreationAction(hostJarConfig))
+      testSuite.artifacts.copy(InternalArtifactType.APK_FOR_LOCAL_TEST, hostJarConfig.artifacts)
     }
   }
 
@@ -137,10 +143,11 @@ class HostJarTestSuiteTaskManager(val project: Project, val testSuiteTaskManager
     source: HostJarTestSuiteSourceSet,
     taskFactory: TaskFactory,
     taskCreationServices: TaskCreationServices,
+    hostJarConfig: TestSuiteHostJarCreationConfig,
   ) {
 
-    val javaPreCompileTaskCreationConfig = JavaPreCompileTaskCreationConfigImpl(testSuite, sourceContainer, taskCreationServices)
-    taskFactory.register(PreBuildCreationAction(javaPreCompileTaskCreationConfig))
+    val javaPreCompileTaskCreationConfig =
+      JavaPreCompileTaskCreationConfigImpl(testSuite, sourceContainer, taskCreationServices, hostJarConfig.taskContainer)
 
     taskFactory.register(JavaPreCompileTask.CreationAction(javaPreCompileTaskCreationConfig))
 
@@ -153,6 +160,7 @@ class HostJarTestSuiteTaskManager(val project: Project, val testSuiteTaskManager
         javaPreCompileTaskCreationConfig.taskContainer,
       )
     val javacTask = taskFactory.register(JavaCompileCreationAction(javaCompileConfig))
+    hostJarConfig.taskContainer.compileTask?.configure { it.dependsOn(javacTask) }
     testSuiteTaskManager.setupCompilationContext(
       artifacts = sourceContainer.artifacts,
       useBuiltInKotlinSupport = true,

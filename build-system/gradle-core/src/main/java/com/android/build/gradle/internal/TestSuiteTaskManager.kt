@@ -20,7 +20,9 @@ import com.android.build.api.artifact.impl.InternalScopedArtifacts
 import com.android.build.api.dsl.TestTaskContext
 import com.android.build.api.variant.impl.TestSuiteSourceContainer
 import com.android.build.gradle.internal.component.ComponentCreationConfig
+import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
+import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.tasks.AndroidTestDiscoveryTask
 import com.android.build.gradle.internal.tasks.CompressAssetsTask
 import com.android.build.gradle.internal.tasks.DeviceSerialTestTask
@@ -32,6 +34,7 @@ import com.android.build.gradle.internal.tasks.ValidateResourcesTask
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.tasks.factory.dependsOn
 import com.android.build.gradle.internal.testsuites.impl.TestSuiteApkCreationConfig
+import com.android.build.gradle.internal.testsuites.impl.TestSuiteHostJarCreationConfig
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.tasks.CompileNavigationXmlTask
 import com.android.build.gradle.tasks.TestSuiteTestTask
@@ -99,6 +102,30 @@ class TestSuiteTaskManager(project: Project, globalConfig: GlobalTaskCreationCon
     createPackagingTask(apkCreationConfig)
 
     return assembleTask
+  }
+
+  fun createHostJarTestSuiteResourcesTasks(hostJarConfig: TestSuiteHostJarCreationConfig) {
+    // Add a task to process the manifest
+    createProcessTestManifestTask(hostJarConfig)
+
+    // Add a task to create the res values
+    createGenerateResValuesTask(hostJarConfig)
+
+    // Add a task to merge the assets folders
+    createMergeAssetsTask(hostJarConfig, includeDependencies = true)
+
+    createMergeResourcesTask(hostJarConfig, true, emptySet())
+
+    // Add a task to process the Android Resources and generate source files
+    createApkProcessResTask(hostJarConfig, InternalArtifactType.FEATURE_RESOURCE_PKG)
+  }
+
+  fun createTestSuiteProcessTestManifestTask(config: TestComponentCreationConfig) {
+    createProcessTestManifestTask(config)
+  }
+
+  fun createAnchorTasksForSuite(creationConfig: ComponentCreationConfig) {
+    createAnchorTasks(creationConfig)
   }
 
   override val javaResMergingScopes: Set<InternalScopedArtifacts.InternalScope>
