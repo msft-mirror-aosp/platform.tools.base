@@ -43,7 +43,7 @@ class TestFixturesKotlinTest {
       .fromTestProject("testFixturesKotlinApp")
       .addGradleProperty(BooleanOption.ENABLE_TEST_FIXTURES_KOTLIN_SUPPORT, true)
       .addGradleProperties("org.gradle.java.installations.auto-detect=false")
-      .addGradleProperties("org.gradle.java.installations.paths=${TestUtils.getJava21Jdk()}")
+      .addGradleProperties("org.gradle.java.installations.paths=${TestUtils.getJava21Jdk().toString().replace("\\", "/")}")
       .create()
 
   private fun setUpProject(publishJavaLib: Boolean, publishAndroidLib: Boolean) {

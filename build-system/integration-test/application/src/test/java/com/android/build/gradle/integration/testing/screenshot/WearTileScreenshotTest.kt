@@ -44,7 +44,7 @@ class WearTileScreenshotTest {
     GradleRule.configure().withProfileOutput().from {
       gradleProperties {
         add("org.gradle.java.installations.auto-detect", "false")
-        add("org.gradle.java.installations.paths", TestUtils.getJava21Jdk().toString())
+        add("org.gradle.java.installations.paths", TestUtils.getJava21Jdk().toString().replace("\\", "/"))
       }
       androidApplication {
         applyPlugin(
