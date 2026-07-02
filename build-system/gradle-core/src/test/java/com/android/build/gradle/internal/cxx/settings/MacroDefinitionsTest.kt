@@ -109,7 +109,7 @@ class MacroDefinitionsTest {
           }
           c.isUpperCase() -> sb.append("_$c")
           c == '.' -> sb.append("_")
-          else -> sb.append(c.toUpperCase())
+          else -> sb.append(c.uppercaseChar())
         }
         lastWasDigit = c.isDigit()
       }

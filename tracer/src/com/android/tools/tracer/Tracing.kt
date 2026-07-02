@@ -30,11 +30,13 @@ import androidx.tracing.wire.createPerfettoFile
 import com.android.tools.tracer.Tracing.initialize
 import java.io.File
 import java.util.concurrent.atomic.AtomicReference
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import okio.appendingSink
 import okio.buffer
 import org.jetbrains.annotations.VisibleForTesting
 
-@OptIn(ExperimentalRingBufferApi::class)
+@OptIn(ExperimentalRingBufferApi::class, DelicateTracingApi::class)
 object Tracing {
   private val state = AtomicReference<TracingState?>(null)
 
@@ -72,6 +74,12 @@ object Tracing {
         }
 
       state.set(newState)
+      // Setting the global tracer allows anyone running in the same process
+      // to depend directly on the library and access the tracer without having
+      // to utilize this module. We always reset it to ensure we have the latest
+      // tracer.
+      Tracer.resetGlobalTracer()
+      Tracer.setGlobalTracer(newState.driver.tracer)
     }
 
     oldState?.close()
@@ -83,7 +91,7 @@ object Tracing {
     val traceDirectory = config.getTraceDirectory()
     val traceFile = fileProvider(traceDirectory)
     val sink = TracingSink(capacity, traceFile)
-    val driver = TraceDriver(sink.sink, isEnabled)
+    val driver = if (isEnabled) TraceDriver(sink.sink) else TraceDriver.getStubTraceDriver()
     return TracingState(config, isEnabled, capacity, traceDirectory, traceFile, driver, sink, fileProvider)
   }
 
@@ -169,7 +177,7 @@ object Tracing {
   }
 
   private class StandardTracingSink(file: File) : TracingSink {
-    override val sink = TraceSink(1, file.appendingSink().buffer())
+    override val sink = TraceSink(1, file.appendingSink().buffer(), Dispatchers.IO + NonCancellable)
     override val canReuse = false
 
     override fun flushTo(file: File) {

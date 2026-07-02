@@ -23,41 +23,49 @@ import com.android.build.gradle.internal.fixtures.FakeTransformOutputs
 import com.android.testutils.TestInputsGenerator
 import com.google.common.truth.Truth.assertThat
 import java.io.File
+import org.gradle.api.file.FileCollection
 import org.gradle.api.file.FileSystemLocation
 import org.gradle.api.provider.Provider
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.`when`
 
 class LayoutlibExtractorTest {
 
-    @get:Rule val tmp = TemporaryFolder()
+  @get:Rule val tmp = TemporaryFolder()
 
-    @Test
-    fun testExtractsData() {
-        val inputJar = tmp.newFile("layoutlib-runtime.jar")
-        TestInputsGenerator.writeJarWithEmptyEntries(
-            inputJar.toPath(),
-            listOf("data/fonts/Font.ttf", "data/platform_data.txt", "data/framework_res.jar"),
-        )
+  @Test
+  fun testExtractsData() {
+    val inputJar = tmp.newFile("layoutlib-runtime.jar")
+    TestInputsGenerator.writeJarWithEmptyEntries(
+      inputJar.toPath(),
+      listOf("data/fonts/Font.ttf", "data/platform_data.txt", "data/framework_res.jar"),
+    )
 
-        val transformOutputs = FakeTransformOutputs(tmp)
+    val resourcesJar = tmp.newFile("layoutlib-resources.jar")
+    val fileCollectionMock = mock(FileCollection::class.java)
+    `when`(fileCollectionMock.files).thenReturn(setOf(resourcesJar))
 
-        val transform =
-            object : LayoutlibExtractor() {
-                override val layoutlibDistributionArtifact: Provider<FileSystemLocation> = FakeGradleProvider(FakeGradleRegularFile(inputJar))
+    val transformOutputs = FakeTransformOutputs(tmp)
 
-                override fun getParameters(): GenericTransformParameters {
-                    return FakeGenericTransformParameters("project_name")
-                }
-            }
+    val transform =
+      object : LayoutlibExtractor() {
+        override val layoutlibDistributionArtifact: Provider<FileSystemLocation> = FakeGradleProvider(FakeGradleRegularFile(inputJar))
+        override val artifactDependencies: FileCollection = fileCollectionMock
 
-        transform.transform(transformOutputs)
+        override fun getParameters(): GenericTransformParameters {
+          return FakeGenericTransformParameters("project_name")
+        }
+      }
 
-        val extractedDir = transformOutputs.outputDirectory
+    transform.transform(transformOutputs)
 
-        assertThat(File(extractedDir, "data/fonts/Font.ttf").exists()).isTrue()
-        assertThat(File(extractedDir, "data/platform_data.txt").exists()).isTrue()
-        assertThat(File(extractedDir, "data/framework_res.jar").exists()).isTrue()
-    }
+    val extractedDir = transformOutputs.outputDirectory
+
+    assertThat(File(extractedDir, "data/fonts/Font.ttf").exists()).isTrue()
+    assertThat(File(extractedDir, "data/platform_data.txt").exists()).isTrue()
+    assertThat(File(extractedDir, "data/framework_res.jar").exists()).isTrue()
+  }
 }

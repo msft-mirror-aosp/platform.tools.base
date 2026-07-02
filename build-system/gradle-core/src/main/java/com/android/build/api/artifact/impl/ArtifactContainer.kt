@@ -36,7 +36,7 @@ import org.gradle.api.tasks.TaskProvider
  *   elements.
  */
 internal abstract class ArtifactContainer<FileTypeT, StoredT, AdapterT>(private val allocator: () -> AdapterT)
-  where FileTypeT : FileSystemLocation, AdapterT : PropertyAdapter<FileTypeT, StoredT> {
+  where FileTypeT : FileSystemLocation, StoredT : Any, AdapterT : PropertyAdapter<FileTypeT, StoredT> {
 
   // this represents the current provider(s) for the artifact.
   protected var current = allocator()

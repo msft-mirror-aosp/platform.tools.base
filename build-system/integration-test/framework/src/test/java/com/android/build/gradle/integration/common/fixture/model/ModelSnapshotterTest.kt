@@ -55,7 +55,7 @@ class ModelSnapshotterTest {
   fun `item with modifier`() {
     val smallObject = SmallObject("a")
 
-    val snapshot = snapshot(smallObject) { item("property1", SmallObject::property1) { it?.toUpperCase() } }
+    val snapshot = snapshot(smallObject) { item("property1", SmallObject::property1) { it?.uppercase() } }
 
     Truth.assertThat(snapshot)
       .isEqualTo(
@@ -123,7 +123,7 @@ class ModelSnapshotterTest {
   fun `list with format`() {
     val smallObject = SmallObject(listOf("b", "c"))
 
-    val snapshot = snapshot(smallObject) { list("property2", SmallObject::property2) { toUpperCase() } }
+    val snapshot = snapshot(smallObject) { list("property2", SmallObject::property2) { uppercase() } }
 
     Truth.assertThat(snapshot)
       .isEqualTo(

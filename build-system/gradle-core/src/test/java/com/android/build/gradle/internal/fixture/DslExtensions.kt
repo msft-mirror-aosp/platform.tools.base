@@ -23,7 +23,7 @@ import org.gradle.api.NamedDomainObjectContainer
  *
  * The function passed in parameter is an extension function of the created object and therefore doesn't need to use "it"
  */
-fun <T> NamedDomainObjectContainer<T>.createAndConfig(name: String, action: T.() -> Unit) {
+fun <T : Any> NamedDomainObjectContainer<T>.createAndConfig(name: String, action: T.() -> Unit) {
   val value = this.maybeCreate(name)
   action.invoke(value)
 }

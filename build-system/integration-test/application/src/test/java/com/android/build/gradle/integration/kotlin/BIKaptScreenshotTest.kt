@@ -32,7 +32,10 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
-class BuiltInKaptForScreenshotTestTest {
+// Renamed to BIKaptScreenshotTest to keep the macro-generated Bazel target name (kotlin-tests__BIKaptScreenshotTest)
+// short enough to avoid exceeding the Windows 260-character path limit (MAX_PATH)
+// for its runfiles dependencies.
+class BIKaptScreenshotTest {
 
   @Rule
   @JvmField

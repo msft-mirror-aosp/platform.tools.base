@@ -51,7 +51,7 @@ class UseEmbeddedDexPackagingTest(
     @JvmStatic
     @Parameterized.Parameters(name = "useEmbeddedDex_{0}_minSdk_{1}_useLegacyPackaging_{2}")
     fun parameters() =
-      listOf(
+      listOf<Array<Any?>>(
         arrayOf(true, O, true, true, ZipEntry.STORED),
         arrayOf(true, O, false, true, ZipEntry.STORED),
         arrayOf(true, O, null, true, ZipEntry.STORED),

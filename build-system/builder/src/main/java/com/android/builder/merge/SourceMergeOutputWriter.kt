@@ -15,9 +15,9 @@
  */
 package com.android.builder.merge
 
-import com.android.zipflinger.Source
+import com.android.zipflinger.ZipSource
 
-/** Extension of [MergeOutputWriter] that also supports adding and replacing content from a [Source]. */
+/** Extension of [MergeOutputWriter] that also supports adding and replacing content from a [ZipSource]. */
 interface SourceMergeOutputWriter : MergeOutputWriter {
   /**
    * Creates a new path in the output.
@@ -25,7 +25,7 @@ interface SourceMergeOutputWriter : MergeOutputWriter {
    * @param path the path to create
    * @param source ZipFlinger source
    */
-  fun create(path: String, source: Source)
+  fun create(path: String, source: ZipSource)
 
   /**
    * Replaces a path's contents with new contents.
@@ -33,5 +33,5 @@ interface SourceMergeOutputWriter : MergeOutputWriter {
    * @param path the path to replace
    * @param source ZipFlinger source to replace
    */
-  fun replace(path: String, source: Source)
+  fun replace(path: String, source: ZipSource)
 }

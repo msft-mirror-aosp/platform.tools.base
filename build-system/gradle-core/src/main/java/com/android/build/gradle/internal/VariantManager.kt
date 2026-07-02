@@ -964,7 +964,7 @@ class VariantManager<
         override val variant: Variant
           get() = userVisibleVariant
 
-        override fun <T> projectExtension(extensionType: Class<T>): T {
+        override fun <T : Any> projectExtension(extensionType: Class<T>): T {
           val ext: ExtensionAware =
             if (projectServices.projectOptions[BooleanOption.USE_NEW_DSL]) {
               dslExtension
@@ -975,9 +975,9 @@ class VariantManager<
           return ext.extensions.getByType(extensionType)
         }
 
-        override fun <T> buildTypeExtension(extensionType: Class<T>): T = buildTypeData.buildType.extensions.getByType(extensionType)
+        override fun <T : Any> buildTypeExtension(extensionType: Class<T>): T = buildTypeData.buildType.extensions.getByType(extensionType)
 
-        override fun <T> productFlavorsExtensions(extensionType: Class<T>): List<T> =
+        override fun <T : Any> productFlavorsExtensions(extensionType: Class<T>): List<T> =
           productFlavorDataList.map { productFlavorData -> productFlavorData.productFlavor.extensions.getByType(extensionType) }
       }
 

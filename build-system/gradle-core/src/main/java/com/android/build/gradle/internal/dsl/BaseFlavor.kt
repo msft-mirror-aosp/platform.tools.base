@@ -369,7 +369,7 @@ abstract class BaseFlavor(name: String, private val dslServices: DslServices) :
   }
 
   override fun setProguardFiles(proguardFileIterable: Iterable<*>) {
-    val replacementFiles = Iterables.toArray(proguardFileIterable, Any::class.java)
+    val replacementFiles = proguardFileIterable.filterNotNull().toTypedArray()
     proguardFiles.clear()
     proguardFiles(*replacementFiles)
   }

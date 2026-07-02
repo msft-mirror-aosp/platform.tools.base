@@ -281,7 +281,7 @@ class Incident(
     val secondary2 = other.location.secondary
     val secondFile1 = secondary1?.file
     val secondFile2 = secondary2?.file
-    val nullableIntComparator: Comparator<Int> = Comparator.nullsLast<Int?>(Comparator.naturalOrder())
+    val nullableIntComparator: Comparator<Int?> = Comparator.nullsLast<Int?>(Comparator.naturalOrder())
     return ComparisonChain.start()
       .compare(issue.category, other.issue.category)
       .compare(issue.priority, other.issue.priority, Comparator.reverseOrder())

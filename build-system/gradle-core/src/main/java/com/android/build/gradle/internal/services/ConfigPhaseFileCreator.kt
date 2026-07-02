@@ -33,7 +33,7 @@ import org.gradle.api.provider.ValueSourceParameters
  * cache to be invalided. It can be a constant like [IGNORE_FILE_CREATION] if you don't need this function to return anything(Note [Unit]
  * won't work). It can also be a [File] or other types.
  */
-interface ConfigPhaseFileCreator<T, P : ConfigPhaseFileCreator.Params> : ValueSource<T, P> {
+interface ConfigPhaseFileCreator<T : Any, P : ConfigPhaseFileCreator.Params> : ValueSource<T, P> {
 
   interface Params : ValueSourceParameters
 }

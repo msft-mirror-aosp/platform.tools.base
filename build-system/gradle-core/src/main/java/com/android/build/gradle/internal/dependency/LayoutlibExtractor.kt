@@ -17,11 +17,14 @@
 package com.android.build.gradle.internal.dependency
 
 import com.android.build.gradle.internal.caching.DisabledCachingReason
+import com.android.utils.FileUtils
 import java.nio.file.Files
 import java.util.zip.ZipInputStream
 import org.gradle.api.artifacts.transform.InputArtifact
+import org.gradle.api.artifacts.transform.InputArtifactDependencies
 import org.gradle.api.artifacts.transform.TransformAction
 import org.gradle.api.artifacts.transform.TransformOutputs
+import org.gradle.api.file.FileCollection
 import org.gradle.api.file.FileSystemLocation
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.PathSensitive
@@ -36,6 +39,8 @@ import org.gradle.work.DisableCachingByDefault
 abstract class LayoutlibExtractor : TransformAction<GenericTransformParameters> {
 
   @get:PathSensitive(PathSensitivity.NAME_ONLY) @get:InputArtifact abstract val layoutlibDistributionArtifact: Provider<FileSystemLocation>
+
+  @get:PathSensitive(PathSensitivity.NONE) @get:InputArtifactDependencies abstract val artifactDependencies: FileCollection
 
   override fun transform(transformOutputs: TransformOutputs) {
     val input = layoutlibDistributionArtifact.get().asFile
@@ -58,5 +63,22 @@ abstract class LayoutlibExtractor : TransformAction<GenericTransformParameters> 
         zipInputStream.closeEntry()
       }
     }
+
+    /**
+     * Reconstructs the expected Android SDK platform directory structure for LayoutLib.
+     *
+     * LayoutLib expects the platform resources to be located at `data/framework_res.jar` relative to its data directory. Since Maven
+     * packages the native runtime (ZIP) and resources (JAR) separately, this transform copies the resolved resources JAR into the extracted
+     * runtime directory to satisfy LayoutLib's initialization.
+     */
+    val frameworkResJar = artifactDependencies.files.find { it.name.startsWith("layoutlib-resources") && it.name.endsWith(".jar") }
+    requireNotNull(frameworkResJar) {
+      "Failed to resolve LayoutLib resources. " +
+        "Could not find 'layoutlib-resources' JAR in the dependencies of 'layoutlib-runtime'. " +
+        "Please check your dependency configuration."
+    }
+    val resJar = outDir.resolve("data").resolve("framework_res.jar").toFile()
+    Files.createDirectories(resJar.parentFile.toPath())
+    FileUtils.copyFile(frameworkResJar, resJar)
   }
 }

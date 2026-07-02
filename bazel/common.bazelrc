@@ -26,7 +26,7 @@ build --verbose_failures
 
 common --noincompatible_disallow_empty_glob
 # TODO(b/416777191) PerfgateDataCollector relies on zipped test outputs.
-test --zip_undeclared_test_outputs
+build --zip_undeclared_test_outputs
 
 # Needed by rules_android.
 common --experimental_google_legacy_api
@@ -39,41 +39,41 @@ common --legacy_important_outputs
 build --jvmopt='-XX:CompileCommand=quiet -XX:CompileCommand=exclude,com/intellij/openapi/vfs/impl/FilePartNodeRoot,trieDescend'
 
 #  Workaround for C2 crashes b/377324522
-test  --jvmopt='-XX:CompileCommand=exclude,org.jetbrains.kotlin.serialization.deserialization.TypeDeserializer::simpleType'
-test  --jvmopt='-XX:CompileCommand=exclude,org.jetbrains.kotlin.serialization.deserialization.TypeDeserializer::toAttributes'
+build  --jvmopt='-XX:CompileCommand=exclude,org.jetbrains.kotlin.serialization.deserialization.TypeDeserializer::simpleType'
+build  --jvmopt='-XX:CompileCommand=exclude,org.jetbrains.kotlin.serialization.deserialization.TypeDeserializer::toAttributes'
 
 # JetBrainsRuntime version to bundle into Android Studio
 # and java runtime for running tests
 build:jbr25 --//prebuilts/studio/jdk:jdk_bundle_version=25
 build:jbr25 --java_runtime_version=jbr25
-test:jbr25 --jvmopt='-Dembedded.jdk.path=prebuilts/studio/jdk/jbr25'
+build:jbr25 --jvmopt='-Dembedded.jdk.path=prebuilts/studio/jdk/jbr25'
 
 # Enable Kotlin K2 mode (b/373746515).
-test --jvmopt='-Didea.kotlin.plugin.use.k1=false'
+build --jvmopt='-Didea.kotlin.plugin.use.k1=false'
 # Enable K2 UAST by default (b/448273436)
-test --jvmopt='-Dlint.use.fir.uast=true'
+build --jvmopt='-Dlint.use.fir.uast=true'
 
 # Local runs require longer timeouts.
-test:local --test_timeout=120,600,1800,7200
+build:local --test_timeout=120,600,1800,7200
 
 # Don't use JUnit from Bazel.
 build --explicit_java_test_deps
 
 # Tests depend on not having a real user name, but bazel now returns the
 # real one. This flag keeps the old behavior of not having a home directory.
-test --sandbox_fake_username
+build --sandbox_fake_username
 
 # The --sandbox_fake_username option changes the user to "nobody".
 # This causes tests that rely on HOME (e.g., those using adb) to fail.
 # Explicitly set HOME="$TEST_TMPDIR" to ensure these tests can run.
-test --test_env=HOME="$TEST_TMPDIR"
+build --test_env=HOME="$TEST_TMPDIR"
 
-test:ignored --jvmopt=-Dignored.tests.only=true
+build:ignored --jvmopt=-Dignored.tests.only=true
 
 # Attach aspects for validation of targets
-test --aspects=tools/base/bazel/validations/timeout.bzl%no_eternal_tests
-test --aspects=tools/base/bazel/validations/flaky.bzl%limit_flaky_tests
-test --aspects=tools/base/bazel/validations/py2.bzl%no_py2_targets
+build --aspects=tools/base/bazel/validations/timeout.bzl%no_eternal_tests
+build --aspects=tools/base/bazel/validations/flaky.bzl%limit_flaky_tests
+build --aspects=tools/base/bazel/validations/py2.bzl%no_py2_targets
 # Generates a ${TARGET}.datasize.txt output which shows the size of data
 # dependencies for each target. See the aspect definition for more.
 build:datasize_aspect --aspects=tools/base/bazel/validations/size.bzl%data_size
@@ -85,10 +85,6 @@ build --incompatible_strict_action_env # Ensures actions don't pick up env chang
 build --copt=-fvisibility=hidden
 
 build --define=grpc_no_ares=true
-
-# Forwards the system $SHELL environment variable so remote execution of bazel
-# finds make in the ndk-build script (see b/72179674).
-build --test_env=SHELL
 
 # Bazel will find the matching java toolchain registered in bzlmod/toolchains.MODULE.bazel
 build --java_language_version=21

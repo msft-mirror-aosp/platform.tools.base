@@ -60,7 +60,7 @@ class DependencyCollectorProxy(private val dslRecorder: DslRecorder) : Dependenc
     throw RuntimeException("Implement as needed")
   }
 
-  override fun <D : Dependency?> add(dependency: D, configuration: Action<in D>) {
+  override fun <D : Dependency> add(dependency: D, configuration: Action<in D>) {
     throw RuntimeException("Implement as needed")
   }
 
@@ -68,7 +68,7 @@ class DependencyCollectorProxy(private val dslRecorder: DslRecorder) : Dependenc
     throw RuntimeException("Implement as needed")
   }
 
-  override fun <D : Dependency?> add(dependency: Provider<out D>, configuration: Action<in D>) {
+  override fun <D : Dependency> add(dependency: Provider<out D>, configuration: Action<in D>) {
     throw RuntimeException("Implement as needed")
   }
 
@@ -88,27 +88,27 @@ class DependencyCollectorProxy(private val dslRecorder: DslRecorder) : Dependenc
     throw RuntimeException("Implement as needed")
   }
 
-  override fun <D : Dependency?> bundle(bundle: MutableIterable<D>) {
+  override fun <D : Dependency> bundle(bundle: MutableIterable<D>) {
     throw RuntimeException("Implement as needed")
   }
 
-  override fun <D : Dependency?> bundle(bundle: MutableIterable<D>, configuration: Action<in D>) {
+  override fun <D : Dependency> bundle(bundle: MutableIterable<D>, configuration: Action<in D>) {
     throw RuntimeException("Implement as needed")
   }
 
-  override fun <D : Dependency?> bundle(bundle: Provider<out MutableIterable<D>>) {
+  override fun <D : Dependency> bundle(bundle: Provider<out MutableIterable<D>>) {
     throw RuntimeException("Implement as needed")
   }
 
-  override fun <D : Dependency?> bundle(bundle: Provider<out MutableIterable<D>>, configuration: Action<in D>) {
+  override fun <D : Dependency> bundle(bundle: Provider<out MutableIterable<D>>, configuration: Action<in D>) {
     throw RuntimeException("Implement as needed")
   }
 
-  override fun <D : Dependency?> bundle(bundle: ProviderConvertible<out MutableIterable<D>>) {
+  override fun <D : Dependency> bundle(bundle: ProviderConvertible<out MutableIterable<D>>) {
     throw RuntimeException("Implement as needed")
   }
 
-  override fun <D : Dependency?> bundle(bundle: ProviderConvertible<out MutableIterable<D>>, configuration: Action<in D>) {
+  override fun <D : Dependency> bundle(bundle: ProviderConvertible<out MutableIterable<D>>, configuration: Action<in D>) {
     throw RuntimeException("Implement as needed")
   }
 

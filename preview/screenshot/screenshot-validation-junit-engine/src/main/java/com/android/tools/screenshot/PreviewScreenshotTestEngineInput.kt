@@ -67,7 +67,8 @@ object PreviewScreenshotTestEngineInput {
 
 private val properties: java.util.Properties =
   java.util.Properties().apply {
-    val configFile = System.getProperty("PreviewScreenshotTestEngineInput.configFile")
+    val configFile =
+      System.getProperty("PreviewScreenshotTestEngineInput.configFile") ?: System.getenv("com.android.junit.engine.input.parameters")
     if (!configFile.isNullOrEmpty()) {
       val file = File(configFile)
       if (file.exists()) {
@@ -77,8 +78,40 @@ private val properties: java.util.Properties =
   }
 
 private fun getSystemProperty(propertyName: String, defaultValue: String = ""): String {
-  val key = "PreviewScreenshotTestEngineInput.$propertyName"
-  return System.getProperty(key) ?: properties.getProperty(key) ?: defaultValue
+  val standalonePluginProperty = "PreviewScreenshotTestEngineInput.$propertyName"
+  val agpSuiteProperty = getAgpSuitePropertyMap(propertyName) ?: standalonePluginProperty
+
+  return System.getProperty(standalonePluginProperty)
+    ?: properties.getProperty(standalonePluginProperty)
+    ?: System.getProperty(agpSuiteProperty)
+    ?: properties.getProperty(agpSuiteProperty)
+    ?: defaultValue
+}
+
+/**
+ * Maps legacy PreviewScreenshotTestEngineInput system property names to the newer AgpTestSuiteInputParameters expected by AGP's native
+ * screenshot test suite.
+ */
+private fun getAgpSuitePropertyMap(propertyName: String): String? {
+  return when (propertyName) {
+    "screenshotTestDirectory" -> "com.android.agp.test.TEST_CLASSES"
+    "screenshotTestJars" -> "com.android.agp.test.TEST_CLASSES"
+    "mainDirectory" -> "com.android.agp.test.MAIN_CLASSES"
+    "mainJars" -> "com.android.agp.test.MAIN_CLASSES"
+    "dependencyJars" -> "com.android.agp.test.TEST_CLASSPATH"
+    "Renderer.fontsPath" -> "com.android.agp.test.SDK_FONTS_DIR"
+    "Renderer.resourceApkPath" -> "com.android.agp.test.RESOURCES_AP_ARCHIVE"
+    "Renderer.namespace" -> "com.android.junit.engine.tested.application.id"
+    "Renderer.mainAllClassPath" -> "com.android.agp.test.MAIN_CLASSPATH"
+    "Renderer.mainProjectClassPath" -> "com.android.agp.test.MAIN_CLASSES"
+    "Renderer.screenshotAllClassPath" -> "com.android.agp.test.TEST_CLASSPATH"
+    "Renderer.screenshotProjectClassPath" -> "com.android.agp.test.TEST_CLASSES"
+    "Renderer.layoutlibDataDir" -> "com.android.agp.test.LAYOUTLIB_DATA_DIR"
+    "Renderer.layoutlibClassPath" -> "com.android.agp.test.LAYOUTLIB_CLASSPATH"
+    "Renderer.testRuntimeResourceDirs" -> "com.android.agp.test.ANDROID_RES_DIRS"
+    "Renderer.testRuntimeRClassJars" -> "com.android.agp.test.R_CLASS_JARS"
+    else -> null
+  }
 }
 
 private fun getFileFromSystemProperty(propertyName: String): File {

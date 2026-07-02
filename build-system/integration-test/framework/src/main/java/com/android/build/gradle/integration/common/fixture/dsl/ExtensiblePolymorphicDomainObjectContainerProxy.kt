@@ -32,11 +32,10 @@ import org.gradle.api.Rule
 import org.gradle.api.provider.Provider
 import org.gradle.api.specs.Spec
 
-@Suppress("WRONG_NULLABILITY_FOR_JAVA_OVERRIDE")
 class ExtensiblePolymorphicDomainObjectContainerProxy<T : Any>(private val theInterface: Class<T>, internal val dslRecorder: DslRecorder) :
   ExtensiblePolymorphicDomainObjectContainer<T> {
 
-  override fun <U : T> create(name: String, type: Class<U?>, configuration: Action<in U>): U {
+  override fun <U : T> create(name: String, type: Class<U>, configuration: Action<in U>): U {
     dslRecorder.runNestedBlock(name = "create", parameters = listOf(name, type), instanceProvider = { DslProxy.createProxy(type, it) }) {
       configuration.execute(this)
     }
@@ -65,35 +64,35 @@ class ExtensiblePolymorphicDomainObjectContainerProxy<T : Any>(private val theIn
 
   // -------
 
-  override fun <U : T> registerFactory(type: Class<U?>, factory: NamedDomainObjectFactory<out U>) {
+  override fun <U : T> registerFactory(type: Class<U>, factory: NamedDomainObjectFactory<out U>) {
     throw RuntimeException("Not Supported")
   }
 
-  override fun <U : T?> registerFactory(type: Class<U?>, factory: Closure<out U?>) {
+  override fun <U : T> registerFactory(type: Class<U>, factory: Closure<out U>) {
     throw RuntimeException("Not Supported")
   }
 
-  override fun <U : T?> registerBinding(type: Class<U?>, implementationType: Class<out U?>) {
+  override fun <U : T> registerBinding(type: Class<U>, implementationType: Class<out U>) {
     throw RuntimeException("Not Supported")
   }
 
-  override fun <U : T?> create(name: String, type: Class<U?>): U & Any {
+  override fun <U : T> create(name: String, type: Class<U>): U {
     throw RuntimeException("Not Supported")
   }
 
-  override fun <U : T?> maybeCreate(name: String, type: Class<U?>): U & Any {
+  override fun <U : T> maybeCreate(name: String, type: Class<U>): U {
     throw RuntimeException("Not Supported")
   }
 
-  override fun <U : T> containerWithType(type: Class<U?>): NamedDomainObjectContainer<U> {
+  override fun <U : T> containerWithType(type: Class<U>): NamedDomainObjectContainer<U> {
     throw RuntimeException("Not Supported")
   }
 
-  override fun <U : T> register(name: String, type: Class<U?>, configurationAction: Action<in U>): NamedDomainObjectProvider<U> {
+  override fun <U : T> register(name: String, type: Class<U>, configurationAction: Action<in U>): NamedDomainObjectProvider<U> {
     throw RuntimeException("Not Supported")
   }
 
-  override fun <U : T> register(name: String, type: Class<U?>): NamedDomainObjectProvider<U> {
+  override fun <U : T> register(name: String, type: Class<U>): NamedDomainObjectProvider<U> {
     throw RuntimeException("Not Supported")
   }
 
@@ -131,11 +130,11 @@ class ExtensiblePolymorphicDomainObjectContainerProxy<T : Any>(private val theIn
     throw RuntimeException("Not Supported")
   }
 
-  override fun <S : T> withType(type: Class<S?>): NamedDomainObjectSet<S> {
+  override fun <S : T> withType(type: Class<S>): NamedDomainObjectSet<S> {
     throw RuntimeException("Not Supported")
   }
 
-  override fun named(nameFilter: Spec<String?>): NamedDomainObjectSet<T> {
+  override fun named(nameFilter: Spec<String>): NamedDomainObjectSet<T> {
     throw RuntimeException("Not Supported")
   }
 
@@ -147,7 +146,7 @@ class ExtensiblePolymorphicDomainObjectContainerProxy<T : Any>(private val theIn
     throw RuntimeException("Not Supported")
   }
 
-  override fun findAll(spec: Closure<*>): Set<T?> {
+  override fun findAll(spec: Closure<*>): Set<T> {
     throw RuntimeException("Not Supported")
   }
 
@@ -155,15 +154,15 @@ class ExtensiblePolymorphicDomainObjectContainerProxy<T : Any>(private val theIn
     throw RuntimeException("Not Supported")
   }
 
-  override fun addAllLater(provider: Provider<out Iterable<T?>>) {
+  override fun addAllLater(provider: Provider<out Iterable<T>>) {
     throw RuntimeException("Not Supported")
   }
 
-  override fun <S : T> withType(type: Class<S?>, configureAction: Action<in S>): DomainObjectCollection<S> {
+  override fun <S : T> withType(type: Class<S>, configureAction: Action<in S>): DomainObjectCollection<S> {
     throw RuntimeException("Not Supported")
   }
 
-  override fun <S : T> withType(type: Class<S?>, configureClosure: Closure<*>): DomainObjectCollection<S> {
+  override fun <S : T> withType(type: Class<S>, configureClosure: Closure<*>): DomainObjectCollection<S> {
     throw RuntimeException("Not Supported")
   }
 
@@ -203,11 +202,11 @@ class ExtensiblePolymorphicDomainObjectContainerProxy<T : Any>(private val theIn
     throw RuntimeException("Not Supported")
   }
 
-  override fun getAsMap(): SortedMap<String?, T?> {
+  override fun getAsMap(): SortedMap<String, T> {
     throw RuntimeException("Not Supported")
   }
 
-  override fun getNames(): SortedSet<String?> {
+  override fun getNames(): SortedSet<String> {
     throw RuntimeException("Not Supported")
   }
 
@@ -243,7 +242,7 @@ class ExtensiblePolymorphicDomainObjectContainerProxy<T : Any>(private val theIn
     throw RuntimeException("Not Supported")
   }
 
-  override fun getRules(): List<Rule?> {
+  override fun getRules(): List<Rule> {
     throw RuntimeException("Not Supported")
   }
 
@@ -251,11 +250,11 @@ class ExtensiblePolymorphicDomainObjectContainerProxy<T : Any>(private val theIn
     throw RuntimeException("Not Supported")
   }
 
-  override fun <S : T> named(name: String, type: Class<S?>): NamedDomainObjectProvider<S> {
+  override fun <S : T> named(name: String, type: Class<S>): NamedDomainObjectProvider<S> {
     throw RuntimeException("Not Supported")
   }
 
-  override fun <S : T> named(name: String, type: Class<S?>, configurationAction: Action<in S>): NamedDomainObjectProvider<S> {
+  override fun <S : T> named(name: String, type: Class<S>, configurationAction: Action<in S>): NamedDomainObjectProvider<S> {
     throw RuntimeException("Not Supported")
   }
 

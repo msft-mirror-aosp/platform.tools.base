@@ -40,6 +40,7 @@
 #include "utils/thread_name.h"
 #include "utils/tokenizer.h"
 #include "utils/trace.h"
+#include "utils/uid_fetcher.h"
 
 using profiler::BashCommandRunner;
 using profiler::DiskFileSystem;
@@ -310,11 +311,12 @@ void ProfileableDetector::GenerateProcessEvent(const ProcessInfo& process,
         event.mutable_process()->mutable_process_started()->mutable_process();
     data->set_name(process.package_name);
     data->set_pid(process.pid);
-    // No need to set |device_id|. Host knowns which stream an event comes from.
+    // No need to set |device_id|. Host knows which stream an event comes from.
     data->set_state(proto::Process::ALIVE);
     data->set_start_timestamp_ns(clock_->GetCurrentTime());
     // No need to set abi_cpu_arch for profileable processes.
     data->set_exposure_level(Process::PROFILEABLE);
+    data->set_uid(UidFetcher::GetUid(process.pid));
   }
   buffer_->Add(event);
 }

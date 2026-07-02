@@ -19,16 +19,8 @@ package com.android.builder.merge
 /** Factories for instances of [FileMergerOutput]. */
 object FileMergerOutputs {
 
-  /**
-   * Creates a new output that merges files using the provided algorithm and writes the merged file using the provided writer. This output
-   * decouples the actual file-merging algorithm (how to merge files) from file writing.
-   *
-   * @param algorithm the algorithm to merge files
-   * @param writer the writer that builds the output
-   * @return the output
-   */
   @JvmStatic
-  fun fromAlgorithmAndWriter(merger: InputStreamMerger, writer: MergeOutputWriter): FileMergerOutput {
+  fun fromAlgorithmAndWriter(merger: JavaResZipSourceMerger, writer: SourceMergeOutputWriter): FileMergerOutput {
     return object : FileMergerOutput {
       override fun open() {
         writer.open()
@@ -38,17 +30,12 @@ object FileMergerOutputs {
         writer.close()
       }
 
-      override fun <T : FileMergerInput> create(path: String, inputs: List<T>, compress: Boolean) {
-        merger.merge(
-          path,
-          {
-            inputs.map { input ->
-              input.open()
-              MergeInput(input.openPath(path), input.getName())
-            }
-          },
-        ) {
-          writer.create(path, it, compress)
+      override fun create(path: String, inputs: List<FileMergerInputNonIncremental>, compress: Boolean) {
+        merger.merge(path, compress, { inputs }) { result ->
+          when (result) {
+            is MergedSourceResult.ZipSource -> writer.create(path, result.source)
+            is MergedSourceResult.InputStream -> writer.create(path, result.stream, compress)
+          }
         }
       }
     }

@@ -171,7 +171,7 @@ internal fun getFusedLibraryDependencyModuleVersionIdentifiers(sourceConfigurati
 
 internal class FusedLibraryTargetJvmEnvironmentCompatibilityRule : AttributeCompatibilityRule<TargetJvmEnvironment> {
 
-  override fun execute(details: CompatibilityCheckDetails<TargetJvmEnvironment?>) {
+  override fun execute(details: CompatibilityCheckDetails<TargetJvmEnvironment>) {
     with(details) {
       // 'standard-jvm' is acceptable when a dependency doesn't have the preferred
       // 'android' TargetJvmEnvironment attribute value.

@@ -22,10 +22,12 @@ import java.util.function.Predicate
  * Filters a [FileMergerInput] based on a predicate over the paths. This input treats the underlying input as non-incremental (all paths are
  * considered updated). If you wish to handle incremental file changes use [IncrementalFileMergerInput].
  */
-class FilterFileMergerInput(private val input: FileMergerInput, private val pathsAccepted: Predicate<String>) :
-  DelegateFileMergerInput(input) {
+class FilterFileMergerInput(private val input: FileMergerInputNonIncremental, private val pathsAccepted: Predicate<String>) :
+  DelegateFileMergerInputNonIncremental(input) {
+
+  private val filteredPaths: Set<String> by lazy { input.getAllPaths().asSequence().filter { pathsAccepted.test(it) }.toSet() }
 
   override fun getAllPaths(): Set<String> {
-    return input.getAllPaths().toList().filter { pathsAccepted.test(it) }.toSet()
+    return filteredPaths
   }
 }

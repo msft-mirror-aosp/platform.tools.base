@@ -27,18 +27,22 @@ import com.android.repository.testframework.FakeDependency;
 import com.android.repository.testframework.FakeProgressIndicator;
 import com.android.testutils.file.InMemoryFileSystems;
 import com.android.utils.PathUtils;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
+
+import junit.framework.TestCase;
+
+import org.apache.commons.compress.archivers.zip.UnixStat;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
-import junit.framework.TestCase;
-import org.apache.commons.compress.archivers.zip.UnixStat;
-import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
-import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 
 /**
  * Tests for {@link InstallerUtil}.
@@ -519,16 +523,17 @@ public class InstallerUtilTest extends TestCase {
         InMemoryFileSystems.recordExistingFile(
                 sdkRoot.resolve("foo/package.xml"),
                 "<repo:repository\n"
-                        + "        xmlns:repo=\"http://schemas.android.com/repository/android/generic/01\"\n"
-                        + "        xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n"
-                        + "    <localPackage path=\"foo\">\n"
-                        + "        <type-details xsi:type=\"repo:genericDetailsType\"/>\n"
-                        + "        <revision>\n"
-                        + "            <major>3</major>\n"
-                        + "        </revision>\n"
-                        + "        <display-name>The first Android platform ever</display-name>\n"
-                        + "    </localPackage>\n"
-                        + "</repo:repository>");
+                    + "       "
+                    + " xmlns:repo=\"http://schemas.android.com/repository/android/generic/01\"\n"
+                    + "        xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n"
+                    + "    <localPackage path=\"foo\">\n"
+                    + "        <type-details xsi:type=\"repo:genericDetailsType\"/>\n"
+                    + "        <revision>\n"
+                    + "            <major>3</major>\n"
+                    + "        </revision>\n"
+                    + "        <display-name>The first Android platform ever</display-name>\n"
+                    + "    </localPackage>\n"
+                    + "</repo:repository>");
         RepoManager mgr = new RepoManagerImpl(sdkRoot);
         FakeProgressIndicator progress = new FakeProgressIndicator();
         mgr.loadSynchronously(0, progress, null, null);
@@ -541,16 +546,17 @@ public class InstallerUtilTest extends TestCase {
         InMemoryFileSystems.recordExistingFile(
                 sdkRoot.resolve("foo/bar/package.xml"),
                 "<repo:repository\n"
-                        + "        xmlns:repo=\"http://schemas.android.com/repository/android/generic/01\"\n"
-                        + "        xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n"
-                        + "    <localPackage path=\"foo;bar\">\n"
-                        + "        <type-details xsi:type=\"repo:genericDetailsType\"/>\n"
-                        + "        <revision>\n"
-                        + "            <major>3</major>\n"
-                        + "        </revision>\n"
-                        + "        <display-name>The first Android platform ever</display-name>\n"
-                        + "    </localPackage>\n"
-                        + "</repo:repository>");
+                    + "       "
+                    + " xmlns:repo=\"http://schemas.android.com/repository/android/generic/01\"\n"
+                    + "        xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n"
+                    + "    <localPackage path=\"foo;bar\">\n"
+                    + "        <type-details xsi:type=\"repo:genericDetailsType\"/>\n"
+                    + "        <revision>\n"
+                    + "            <major>3</major>\n"
+                    + "        </revision>\n"
+                    + "        <display-name>The first Android platform ever</display-name>\n"
+                    + "    </localPackage>\n"
+                    + "</repo:repository>");
         RepoManager mgr = new RepoManagerImpl(sdkRoot);
         FakeProgressIndicator progress = new FakeProgressIndicator();
         mgr.loadSynchronously(0, progress, null, null);
@@ -563,16 +569,17 @@ public class InstallerUtilTest extends TestCase {
         InMemoryFileSystems.recordExistingFile(
                 sdkRoot.resolve("foo2/package.xml"),
                 "<repo:repository\n"
-                        + "        xmlns:repo=\"http://schemas.android.com/repository/android/generic/01\"\n"
-                        + "        xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n"
-                        + "    <localPackage path=\"foo2\">\n"
-                        + "        <type-details xsi:type=\"repo:genericDetailsType\"/>\n"
-                        + "        <revision>\n"
-                        + "            <major>3</major>\n"
-                        + "        </revision>\n"
-                        + "        <display-name>The first Android platform ever</display-name>\n"
-                        + "    </localPackage>\n"
-                        + "</repo:repository>");
+                    + "       "
+                    + " xmlns:repo=\"http://schemas.android.com/repository/android/generic/01\"\n"
+                    + "        xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n"
+                    + "    <localPackage path=\"foo2\">\n"
+                    + "        <type-details xsi:type=\"repo:genericDetailsType\"/>\n"
+                    + "        <revision>\n"
+                    + "            <major>3</major>\n"
+                    + "        </revision>\n"
+                    + "        <display-name>The first Android platform ever</display-name>\n"
+                    + "    </localPackage>\n"
+                    + "</repo:repository>");
         RepoManager mgr = new RepoManagerImpl(sdkRoot);
         FakeProgressIndicator progress = new FakeProgressIndicator();
         mgr.loadSynchronously(0, progress, null, null);
@@ -585,21 +592,35 @@ public class InstallerUtilTest extends TestCase {
         InMemoryFileSystems.recordExistingFile(
                 sdkRoot.resolve("foo/package.xml"),
                 "<repo:repository\n"
-                        + "        xmlns:repo=\"http://schemas.android.com/repository/android/generic/01\"\n"
-                        + "        xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n"
-                        + "    <localPackage path=\"foo\">\n"
-                        + "        <type-details xsi:type=\"repo:genericDetailsType\"/>\n"
-                        + "        <revision>\n"
-                        + "            <major>3</major>\n"
-                        + "        </revision>\n"
-                        + "        <display-name>The first Android platform ever</display-name>\n"
-                        + "    </localPackage>\n"
-                        + "</repo:repository>");
+                    + "       "
+                    + " xmlns:repo=\"http://schemas.android.com/repository/android/generic/01\"\n"
+                    + "        xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n"
+                    + "    <localPackage path=\"foo\">\n"
+                    + "        <type-details xsi:type=\"repo:genericDetailsType\"/>\n"
+                    + "        <revision>\n"
+                    + "            <major>3</major>\n"
+                    + "        </revision>\n"
+                    + "        <display-name>The first Android platform ever</display-name>\n"
+                    + "    </localPackage>\n"
+                    + "</repo:repository>");
         RepoManager mgr = new RepoManagerImpl(sdkRoot);
         FakeProgressIndicator progress = new FakeProgressIndicator();
         mgr.loadSynchronously(0, progress, null, null);
         assertTrue(InstallerUtil.checkValidPath(sdkRoot.resolve("foo2"), mgr, progress));
         progress.assertNoErrorsOrWarnings();
+    }
+
+    public void testInstallOutsideSdkRoot() {
+        Path sdkRoot = InMemoryFileSystems.createInMemoryFileSystemAndFolder("sdk");
+        RepoManager mgr = new RepoManagerImpl(sdkRoot);
+        FakeProgressIndicator progress = new FakeProgressIndicator();
+        mgr.loadSynchronously(0, progress, null, null);
+
+        Path outside = sdkRoot.getParent().resolve("outside");
+        assertFalse(InstallerUtil.checkValidPath(outside, mgr, progress));
+        assertFalse(progress.getWarnings().isEmpty());
+        assertTrue(
+                progress.getWarnings().get(0).contains("Refusing to install outside the SDK root"));
     }
 
     private static void zipDirectory(Path outZip, Path root, boolean includeDirectoryEntries)

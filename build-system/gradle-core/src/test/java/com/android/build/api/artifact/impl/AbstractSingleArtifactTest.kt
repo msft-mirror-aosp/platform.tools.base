@@ -164,7 +164,7 @@ abstract class AbstractSingleArtifactTest<T : FileSystemLocation>(
   @Test
   fun testAgpProducer() {
     val artifact = SingleArtifactContainer { allocateProperty() }
-    abstract class ConsumerTask<T> : DefaultTask() {
+    abstract class ConsumerTask<T : Any> : DefaultTask() {
       @InputFile abstract fun getInputFile(): Property<T>
     }
     @Suppress("Unchecked_cast")
@@ -187,7 +187,7 @@ abstract class AbstractSingleArtifactTest<T : FileSystemLocation>(
   fun testAgpProducerReplaced() {
     val artifact = SingleArtifactContainer { allocateProperty() }
 
-    abstract class ConsumerTask<T> : DefaultTask() {
+    abstract class ConsumerTask<T : Any> : DefaultTask() {
       @InputFile abstract fun getInputFile(): Property<T>
     }
     @Suppress("Unchecked_cast")

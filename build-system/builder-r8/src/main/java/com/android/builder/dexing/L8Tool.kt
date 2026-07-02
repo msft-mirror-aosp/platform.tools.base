@@ -25,15 +25,26 @@ import com.android.tools.r8.DexIndexedConsumer
 import com.android.tools.r8.DiagnosticsHandler
 import com.android.tools.r8.L8
 import com.android.tools.r8.L8Command
+import com.android.tools.r8.PartitionMapConsumer
 import com.android.tools.r8.origin.Origin
+import com.android.tools.r8.retrace.MappingPartition
+import com.android.tools.r8.retrace.MappingPartitionFromKeySupplier
+import com.android.tools.r8.retrace.MappingPartitionMetadata
+import com.android.tools.r8.retrace.Partition
+import com.android.tools.r8.retrace.PartitionCommand
+import com.android.tools.r8.retrace.PartitionMappingSupplier
 import com.android.utils.FileUtils
 import com.google.common.util.concurrent.MoreExecutors
+import java.io.BufferedOutputStream
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
 import java.util.logging.Level
 import java.util.logging.Logger
+import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
+import java.util.zip.ZipOutputStream
 import kotlin.io.path.exists
 
 // Starting index to make sure output dex files' names differ from classes.dex
@@ -79,6 +90,9 @@ fun runL8(
   outputArtProfile: Path? = null,
   inputMappingFile: Path? = null,
   outputMappingFile: Path? = null,
+  inputPartitionMappingFile: Path? = null,
+  outputPartitionMappingFile: Path? = null,
+  tempDir: Path? = null,
 ) {
   val logger: Logger = Logger.getLogger("L8")
   if (logger.isLoggable(Level.FINE)) {
@@ -118,8 +132,9 @@ fun runL8(
     wireArtProfileRewriting(l8CommandBuilder, inputArtProfile, outputArtProfile)
   }
 
+  var r8MapId: String? = null
   if (inputMappingFile != null && Files.exists(inputMappingFile)) {
-    val r8MapId = extractMapId(inputMappingFile)
+    r8MapId = extractMapId(inputMappingFile)
     if (r8MapId != null) {
       if (logger.isLoggable(Level.FINE)) {
         logger.fine("Stamping L8 Dex with R8 Map ID: $r8MapId")
@@ -134,10 +149,22 @@ fun runL8(
     }
   }
 
-  val tempL8Mapping: Path? = if (outputMappingFile != null) Files.createTempFile("l8_map", ".txt") else null
+  val tempL8Mapping: Path? =
+    if (outputMappingFile != null) {
+      if (tempDir != null) Files.createTempFile(tempDir, "l8_map", ".txt") else Files.createTempFile("l8_map", ".txt")
+    } else null
 
   if (tempL8Mapping != null) {
     l8CommandBuilder.setProguardMapOutputPath(tempL8Mapping)
+  }
+
+  val tempL8PartitionMapping: Path? =
+    if (outputPartitionMappingFile != null) {
+      if (tempDir != null) Files.createTempFile(tempDir, "l8_map", ".prt") else Files.createTempFile("l8_map", ".prt")
+    } else null
+
+  if (tempL8PartitionMapping != null) {
+    l8CommandBuilder.setPartitionMapOutputPath(tempL8PartitionMapping)
   }
 
   l8CommandBuilder
@@ -191,9 +218,15 @@ fun runL8(
         }
       }
     }
+    if (outputPartitionMappingFile != null) {
+      mergePartitionMappings(inputPartitionMappingFile, tempL8PartitionMapping, outputPartitionMappingFile, r8MapId, logger)
+    }
   } finally {
     if (tempL8Mapping != null) {
       Files.deleteIfExists(tempL8Mapping)
+    }
+    if (tempL8PartitionMapping != null) {
+      Files.deleteIfExists(tempL8PartitionMapping)
     }
   }
 }
@@ -221,3 +254,99 @@ private fun extractMapId(mappingFile: Path): String? {
 }
 
 data class KeepRulesConfig(val keepRulesFiles: List<Path>, val keepRulesConfigurations: List<String>)
+
+/**
+ * Merges R8's minified app partition mappings with L8's desugared library partition mappings. If both inputs are valid and an R8 map ID is
+ * found, they are merged using R8's [PartitionCommand] API. Otherwise, the sole valid partition mapping file is copied to the final
+ * destination, or an empty Zip archive is written to satisfy the Gradle task's output property contracts.
+ */
+private fun mergePartitionMappings(inputPrt: Path?, tempL8Prt: Path?, outputPartitionMappingFile: Path, r8MapId: String?, logger: Logger) {
+  val inputPrtValid = inputPrt?.exists() == true && Files.size(inputPrt) > 0
+  val tempL8PrtValid = tempL8Prt?.exists() == true && Files.size(tempL8Prt) > 0
+
+  if (inputPrtValid && tempL8PrtValid && r8MapId != null) {
+    if (logger.isLoggable(Level.FINE)) {
+      logger.fine("Merging L8 partition mapping into main partition mapping file")
+    }
+    ZipOutputStream(BufferedOutputStream(Files.newOutputStream(outputPartitionMappingFile))).use { zos ->
+      ZipFile(inputPrt!!.toFile()).use { inputZip ->
+        ZipFile(tempL8Prt!!.toFile()).use { l8Zip ->
+          val partitionCommand =
+            PartitionCommand.builder()
+              .addPartitionMapSupplier(createLazyPartitionMappingSupplier(inputZip, true))
+              .addPartitionMapSupplier(createLazyPartitionMappingSupplier(l8Zip, true))
+              .setPartitionMapId(r8MapId)
+              .setPartitionMapConsumer(
+                object : PartitionMapConsumer {
+                  override fun acceptMappingPartition(partition: MappingPartition) {
+                    val payload = partition.payload ?: ByteArray(0)
+                    synchronized(zos) {
+                      zos.putNextEntry(ZipEntry(partition.key))
+                      zos.write(payload)
+                      zos.closeEntry()
+                    }
+                  }
+
+                  override fun acceptMappingPartitionMetadata(metadata: MappingPartitionMetadata) {
+                    val bytes = metadata.bytes ?: ByteArray(0)
+                    synchronized(zos) {
+                      zos.putNextEntry(ZipEntry("METADATA"))
+                      zos.write(bytes)
+                      zos.closeEntry()
+                    }
+                  }
+
+                  override fun finished(handler: DiagnosticsHandler?) {
+                    // Stream is safely closed by the surrounding 'use' block.
+                  }
+                }
+              )
+              .build()
+          Partition.run(partitionCommand)
+        }
+      }
+    }
+  } else if (inputPrtValid) {
+    inputPrt!!.toFile().copyTo(outputPartitionMappingFile.toFile(), overwrite = true)
+  } else if (tempL8PrtValid) {
+    tempL8Prt!!.toFile().copyTo(outputPartitionMappingFile.toFile(), overwrite = true)
+  } else {
+    if (!outputPartitionMappingFile.exists()) {
+      // Write a structurally valid empty Zip archive to satisfy the @OutputFile contract.
+      ZipOutputStream(BufferedOutputStream(Files.newOutputStream(outputPartitionMappingFile))).use { zos -> }
+    }
+  }
+}
+
+/**
+ * Wraps an open [ZipFile] and returns a [PartitionMappingSupplier] that lazily reads partition payloads. The caller is responsible for
+ * ensuring the [ZipFile] is closed after use. This avoids OOMs on large mapping files while ensuring file handles are not leaked by R8
+ * internals.
+ */
+private fun createLazyPartitionMappingSupplier(zipFile: ZipFile, includeMetadata: Boolean): PartitionMappingSupplier {
+  val keySupplier = MappingPartitionFromKeySupplier { key ->
+    zipFile.getEntry(key)?.let { entry -> zipFile.getInputStream(entry).use { it.readBytes() } }
+  }
+
+  val metadataBytes =
+    if (includeMetadata) {
+      zipFile.getEntry("METADATA")?.let { entry -> zipFile.getInputStream(entry).use { it.readBytes() } }
+    } else {
+      null
+    }
+
+  return if (metadataBytes != null) {
+    PartitionMappingSupplier.builder()
+      .setMetadata(metadataBytes)
+      .setRegisterMappingPartitionCallback { _ -> }
+      .setPrepareMappingPartitionsCallback {}
+      .setMappingPartitionFromKeySupplier(keySupplier)
+      .build()
+  } else {
+    PartitionMappingSupplier.noMetadataBuilder(com.android.tools.r8.naming.MapVersion.MAP_VERSION_NONE)
+      .setRegisterMappingPartitionCallback { _ -> }
+      .setPrepareMappingPartitionsCallback {}
+      .setMappingPartitionFromKeySupplier(keySupplier)
+      .build()
+  }
+}

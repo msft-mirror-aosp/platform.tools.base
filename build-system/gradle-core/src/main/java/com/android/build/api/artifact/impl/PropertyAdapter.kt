@@ -30,7 +30,7 @@ import org.gradle.api.provider.Provider
  * @param FileTypeT the type of [FileSystemLocation], a file or a directory
  * @param T is either a [FileSystemLocation] subclass (so basically the same as [FileTypeT] or a [List] of [FileTypeT]
  */
-interface PropertyAdapter<FileTypeT, T> {
+interface PropertyAdapter<FileTypeT : Any, T : Any> {
   /** Sets this [Property] or [ListProperty] with single provider of [FileTypeT] */
   fun set(with: Provider<FileTypeT>)
 

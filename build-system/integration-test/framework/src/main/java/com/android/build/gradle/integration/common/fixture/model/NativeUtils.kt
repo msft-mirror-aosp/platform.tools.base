@@ -212,9 +212,9 @@ private fun ModelBuilderV2.FetchResult<ModelContainerV2>.hashEquivalents(): List
       .flatMap { it.variants }
       .flatMap { it.abis.map { abi -> it to abi } }
   val segments =
-    (abis.map { (variant, abi) -> findConfigurationSegment(abi.sourceFlagsFile)!! to "{${variant.name.toUpperCase(Locale.ROOT)}}" } +
+    (abis.map { (variant, abi) -> findConfigurationSegment(abi.sourceFlagsFile)!! to "{${variant.name.uppercase()}}" } +
         abis.map { (variant, abi) ->
-          findConfigurationSegment(abi.symbolFolderIndexFile)!! to "{${variant.name.toUpperCase(Locale.ROOT)}}"
+          findConfigurationSegment(abi.symbolFolderIndexFile)!! to "{${variant.name.uppercase()}}"
         })
       .distinct()
   val configurationAliases = segments.map { (segment, alias) -> "/.cxx/$segment" to "/.cxx/$alias" }
@@ -292,9 +292,9 @@ fun ModelBuilderV2.FetchResult<ModelContainerV2>.dump(map: (NativeModule) -> Nat
   withCxxFileNormalizer().apply {
     container.infoMaps.forEach { (_, modelMap) ->
       modelMap.forEach { (moduleName, modelInfo) ->
-        sb.appendln("[$moduleName]")
+        sb.appendLine("[$moduleName]")
         modelInfo.nativeModule?.let {
-          sb.appendln(
+          sb.appendLine(
             snapshotModel(modelName = "NativeModule", modelAction = { it }, project = this, referenceProject = null) {
               snapshotNativeModule()
             }

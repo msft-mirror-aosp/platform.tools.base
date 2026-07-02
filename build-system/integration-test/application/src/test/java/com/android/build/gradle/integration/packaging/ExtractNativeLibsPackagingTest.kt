@@ -57,7 +57,7 @@ class ExtractNativeLibsPackagingTest(
         "extractNativeLibs_{0}_minSdk_{1}_compileSdk_{2}_useLegacyPackaging_{3}_expectedMergedManifestValue_{4}_expectedCompression_{5}_customJavaVersion_{6}"
     )
     fun parameters() =
-      listOf(
+      listOf<Array<Any?>>(
         arrayOf(true, 22, DEFAULT_COMPILE_SDK_VERSION, true, true, DEFLATED, null),
         arrayOf(true, 22, DEFAULT_COMPILE_SDK_VERSION, false, true, DEFLATED, null),
         arrayOf(true, 22, DEFAULT_COMPILE_SDK_VERSION, null, true, DEFLATED, null),

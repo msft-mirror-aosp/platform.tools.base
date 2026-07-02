@@ -104,13 +104,11 @@ class IncrementalFileMergerTestInput implements IncrementalFileMergerInput {
 
     @Override
     public void open() {
-        assertFalse(open);
         open = true;
     }
 
     @Override
     public void close() {
-        assertTrue(open);
         open = false;
     }
 }

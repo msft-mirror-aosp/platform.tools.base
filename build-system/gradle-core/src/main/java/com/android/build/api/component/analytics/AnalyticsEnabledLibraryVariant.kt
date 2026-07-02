@@ -60,9 +60,11 @@ constructor(override val delegate: LibraryVariant, stats: GradleBuildVariant.Bui
       return userVisibleTestFixtures
     }
 
-  private val userVisibleRenderscript: Renderscript by
+  private val userVisibleRenderscript: Renderscript? by
     lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
-      objectFactory.newInstance(AnalyticsEnabledRenderscript::class.java, delegate.renderscript, stats)
+      delegate.renderscript?.let { delegateRenderscript ->
+        objectFactory.newInstance(AnalyticsEnabledRenderscript::class.java, delegateRenderscript, stats)
+      }
     }
 
   override val renderscript: Renderscript?

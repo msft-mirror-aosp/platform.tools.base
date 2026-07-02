@@ -60,10 +60,12 @@ abstract class AnalyticsEnabledComponent(
       return objectFactory.newInstance(AnalyticsEnabledSources::class.java, delegate.sources, stats, objectFactory)
     }
 
-  override val javaCompilation: JavaCompilation
+  override val javaCompilation: JavaCompilation?
     get() {
       stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.JAVA_COMPILATION_OPTIONS_VALUE
-      return objectFactory.newInstance(AnalyticsEnabledJavaCompilation::class.java, delegate.javaCompilation, stats, objectFactory)
+      return delegate.javaCompilation?.let { delegateJavaCompilation ->
+        objectFactory.newInstance(AnalyticsEnabledJavaCompilation::class.java, delegateJavaCompilation, stats, objectFactory)
+      }
     }
 
   override val instrumentation: Instrumentation

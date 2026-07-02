@@ -193,7 +193,7 @@ class AnalyticsEnabledComponentTest {
     val javaCompilation = mock<JavaCompilation>()
     whenever(delegate.javaCompilation).thenReturn(javaCompilation)
 
-    val javaCompilationProxy = proxy.javaCompilation
+    val javaCompilationProxy = checkNotNull(proxy.javaCompilation)
     Truth.assertThat(javaCompilationProxy.javaClass).`is`(AnalyticsEnabledJavaCompilation::class.java)
     Truth.assertThat((javaCompilationProxy as AnalyticsEnabledJavaCompilation).delegate).isEqualTo(javaCompilation)
 

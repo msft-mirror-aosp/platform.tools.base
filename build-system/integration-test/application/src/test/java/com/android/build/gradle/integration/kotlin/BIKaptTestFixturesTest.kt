@@ -32,7 +32,10 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
-class BuiltInKaptForTestFixturesTest {
+// Renamed to BIKaptTestFixturesTest to keep the macro-generated Bazel target name (deps-tests__BIKaptTestFixturesTest)
+// short enough to avoid exceeding the Windows 260-character path limit (MAX_PATH)
+// for its runfiles dependencies.
+class BIKaptTestFixturesTest {
 
   @Rule
   @JvmField

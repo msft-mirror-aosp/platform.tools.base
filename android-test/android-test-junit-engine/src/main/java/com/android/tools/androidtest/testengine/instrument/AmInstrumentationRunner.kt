@@ -17,9 +17,7 @@
 package com.android.tools.androidtest.testengine.instrument
 
 import com.android.tools.androidtest.testengine.CoverageAgentFilesystemInfo
-import com.android.utils.GrabProcessOutput
 import java.io.File
-import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
 
 /**
@@ -67,18 +65,22 @@ class AmInstrumentationRunner(
     logger.info("Running instrumentation: $adbPath ${adbArgs.joinToString(" ")} shell \"${shellCommand.joinToString(" ")}\"")
     val process = processBuilder(command).start()
     val parser = AmInstrumentationParser(listeners = listeners)
-    val handler =
-      object : GrabProcessOutput.IProcessOutput {
-        override fun out(line: String?) {
-          line?.let { parser.parse(it) }
-        }
+    val outThread =
+      Thread(
+        { process.inputStream.bufferedReader().useLines { lines -> lines.forEach { parser.parse(it) } } },
+        "AmInstrumentationRunner-out",
+      )
+    val errThread =
+      Thread(
+        { process.errorStream.bufferedReader().useLines { lines -> lines.forEach { logger.warning(it) } } },
+        "AmInstrumentationRunner-err",
+      )
 
-        override fun err(line: String?) {
-          line?.let { logger.warning(line) }
-        }
-      }
+    outThread.start()
+    errThread.start()
 
-    GrabProcessOutput.grabProcessOutput(process, GrabProcessOutput.Wait.WAIT_FOR_READERS, handler, null, TimeUnit.MILLISECONDS)
+    outThread.join()
+    errThread.join()
 
     parser.done()
   }

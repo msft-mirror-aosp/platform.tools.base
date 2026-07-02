@@ -32,17 +32,17 @@ class FakeGradleDirectory(private val dir: File) : Directory {
     TODO("not implemented") // To change body of created functions use File | Settings | File Templates.
   }
 
-  override fun file(p0: String?): RegularFile {
+  override fun file(p0: String): RegularFile {
     TODO("not implemented") // To change body of created functions use File | Settings | File Templates.
   }
 
-  override fun file(p0: Provider<out CharSequence>?): Provider<RegularFile> {
+  override fun file(p0: Provider<out CharSequence>): Provider<RegularFile> {
     TODO("not implemented") // To change body of created functions use File | Settings | File Templates.
   }
 
   override fun dir(p0: String): Directory = FakeGradleDirectory(File(dir, p0))
 
-  override fun dir(p0: Provider<out CharSequence>?): Provider<Directory> {
+  override fun dir(p0: Provider<out CharSequence>): Provider<Directory> {
     TODO("not implemented") // To change body of created functions use File | Settings | File Templates.
   }
 

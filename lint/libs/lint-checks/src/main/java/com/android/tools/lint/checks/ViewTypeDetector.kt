@@ -393,7 +393,7 @@ open class ViewTypeDetector : ResourceXmlDetector(), SourceCodeScanner {
       if (event == XmlPullParser.START_TAG) {
         var id: String? = parser.getAttributeValue(ANDROID_URI, ATTR_ID)
         if (!id.isNullOrEmpty()) {
-          id = ResourceUrl.parse(id)?.name
+          id = ResourceUrl.parse(id)?.name ?: continue
           var tag = parser.name ?: continue
           if (tag == VIEW_TAG || tag == VIEW_FRAGMENT) {
             tag = parser.getAttributeValue(null, ATTR_CLASS) ?: continue

@@ -22,12 +22,12 @@ import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.specs.Spec
 
-class FakeGradleProperty<T>(private var value: T? = null) : Property<T> {
+class FakeGradleProperty<T : Any>(private var value: T? = null) : Property<T> {
 
   private var valueProvider: Provider<out T>? = null
   private var convention: T? = null
 
-  override fun <S : Any?> flatMap(p0: Transformer<out Provider<out S>, in T>): Provider<S> {
+  override fun <S : Any> flatMap(p0: Transformer<out Provider<out S>?, in T>): Provider<S> {
     TODO("not yet implemented")
   }
 
@@ -35,7 +35,7 @@ class FakeGradleProperty<T>(private var value: T? = null) : Property<T> {
 
   override fun getOrElse(defaultValue: T) = value ?: valueProvider?.get() ?: convention ?: defaultValue
 
-  override fun <S : Any?> map(p0: Transformer<out S, in T>?): Provider<S> {
+  override fun <S : Any> map(p0: Transformer<out S?, in T>): Provider<S> {
     TODO("not yet implemented")
   }
 
@@ -107,7 +107,7 @@ class FakeGradleProperty<T>(private var value: T? = null) : Property<T> {
     TODO("Not yet implemented")
   }
 
-  override fun <U : Any?, R : Any?> zip(p0: Provider<U>, p1: BiFunction<in T, in U, out R>): Provider<R> {
+  override fun <U : Any, R : Any> zip(p0: Provider<U>, p1: BiFunction<in T, in U, out R?>): Provider<R> {
     TODO("Not yet implemented")
   }
 }

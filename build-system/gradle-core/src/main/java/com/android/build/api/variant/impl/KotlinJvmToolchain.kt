@@ -53,7 +53,6 @@ object KotlinJvmToolchain {
 
   private fun mapToJvm(javaLauncher: JavaLauncher): Jvm {
     val metadata = javaLauncher.metadata
-    @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
-    return Jvm.discovered(metadata.installationPath.asFile, null, metadata.languageVersion.asInt())
+    return Jvm.discovered(metadata.installationPath.asFile, metadata.languageVersion.toString(), metadata.languageVersion.asInt())
   }
 }

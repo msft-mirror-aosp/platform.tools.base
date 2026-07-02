@@ -371,8 +371,8 @@ com.android.build.gradle.integration.instrumentation.AsmTransformApiIncrementali
 com.android.build.gradle.integration.instrumentation.AsmTransformApiInstrumentationTest
 com.android.build.gradle.integration.instrumentation.AsmTransformApiRegistrationTest
 com.android.build.gradle.integration.instrumentation.AsmTransformTestCoverageIntegrationTest
-com.android.build.gradle.integration.kotlin.BuiltInKaptForScreenshotTestTest
-com.android.build.gradle.integration.kotlin.BuiltInKaptForTestFixturesTest
+com.android.build.gradle.integration.kotlin.BIKaptScreenshotTest
+com.android.build.gradle.integration.kotlin.BIKaptTestFixturesTest
 com.android.build.gradle.integration.kotlin.BuiltInKaptTest
 com.android.build.gradle.integration.library.AidlTest
 com.android.build.gradle.integration.library.ApiTest

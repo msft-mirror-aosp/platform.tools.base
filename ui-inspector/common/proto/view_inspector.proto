@@ -239,6 +239,22 @@ message Configuration {
     GrammaticalGender grammatical_gender = 24;
 }
 
+message Display {
+    int32 id = 1;
+    // Physical width in pixels
+    int32 width_px = 2;
+    // Physical height in pixels
+    int32 height_px = 3;
+    // Display rotation in degrees: 0, 90, 180, 270
+    int32 orientation = 4;
+}
+
+message AppContext {
+    // String table index of the theme resource (e.g., "@style/Theme.AppCompat")
+    int32 theme = 1;
+    repeated Display display_info = 2;
+}
+
 // Command to dump the view hierarchy of all root views.
 message DumpViewsCommand {
     bool include_attributes = 1;
@@ -255,6 +271,8 @@ message DumpViewsResponse {
     repeated StringEntry strings = 2;
 
     Configuration configuration = 3;
+
+    AppContext app_context = 4;
 }
 
 message Command {

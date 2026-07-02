@@ -8,6 +8,6 @@ Fields:
   $i1       : int
   label     : int
 ====== Local Variables ==================================================
-4  [31-34]    [19-49]   : $result                       : java.lang.Object
+4  [30-34]    [0-49]    : $result                       : java.lang.Object
 0  [32-34]    [20-49]   : i3                            : int
 

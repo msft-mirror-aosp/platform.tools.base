@@ -35,7 +35,7 @@ import java.util.concurrent.CountDownLatch;
 
 /** Handles a single connection session with the host. */
 public final class SessionHandler {
-  private static final String TAG = "studio.SessionHandler";
+  private static final String TAG = ProtocolConstants.LOG_TAG_PREFIX + ".SessionHandler";
 
   private final InputStream inputStream;
   private final OutputStream outputStream;

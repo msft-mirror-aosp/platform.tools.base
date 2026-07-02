@@ -16,12 +16,14 @@
 
 package com.android.tools.ui.inspector.service;
 
+import android.app.Application;
 import android.os.Looper;
 import android.util.Log;
 
 import dalvik.system.DexClassLoader;
 
 import java.lang.reflect.Method;
+import java.util.List;
 
 /**
  * Service loaded into the app process by the native agent.
@@ -34,14 +36,11 @@ public class InspectorService {
     public static final int RESULT_ERROR = 1;
     public static final int RESULT_EXCEPTION = -1;
 
-    private static final String TAG = "studio.InspectorService";
+    private static final String TAG = "studio.ui-inspector.InspectorService";
     private static final String INSPECTOR_LAUNCHER_CLASS_NAME =
             "com.android.tools.ui.inspector.payload.InspectorLauncher";
     private static final String START_METHOD_NAME = "start";
 
-    // TODO: Once we implement the Protobuf protocol for communication, we should adopt a strategy
-    // similar to AppInspectionService to report bootstrap failures back to the host in a structured
-    // way rather than relying on log scraping or simple return codes.
     /**
      * Initializes the inspector service, loads the payload JAR, and launches the inspector payload.
      *
@@ -92,8 +91,22 @@ public class InspectorService {
     }
 
     private static ClassLoader getAppClassLoader() {
-        // TODO: Use JVMTI to find Application instance as the primary strategy once we have art tooling,
-        // similar to what AppInspectionService does. The Looper strategy should be the fallback.
+        List<Application> applications = ArtToolingBridge.findInstances(Application.class);
+
+        for (Application application : applications) {
+            if (application != null) {
+                try {
+                    ClassLoader classLoader = application.getClassLoader();
+                    if (classLoader != null) {
+                        return classLoader;
+                    }
+                } catch (Exception e) {
+                    Log.w(TAG, "Failed to get application classloader via JVMTI", e);
+                }
+            }
+        }
+
+        // Fallback strategy: Only executed if JVMTI strategy fails or returns null
         Looper looper = Looper.getMainLooper();
         if (looper != null && looper.getThread() != null) {
             return looper.getThread().getContextClassLoader();

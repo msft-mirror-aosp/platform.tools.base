@@ -17,6 +17,7 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <chrono>
+#include <cstdlib>
 #include <thread>
 
 #include "absl/flags/flag.h"
@@ -92,6 +93,22 @@ void RunServer(GRPC_GlobalCallback* callback,
   }
 
   // Register the handler for TraceProcessorService.
+  // Perfetto's posix_spawnp internally requires llvm-symbolizer to be
+  // discoverable via the system PATH. We inject its directory here before gRPC
+  // threads are spawned.
+  size_t last_slash = llvm_path.find_last_of('/');
+  if (last_slash != std::string::npos) {
+    std::string llvm_dir = llvm_path.substr(0, last_slash);
+    const char* current_path = getenv("PATH");
+#if defined(_WIN32)
+    std::string new_path = llvm_dir + ";" + (current_path ? current_path : "");
+    _putenv_s("PATH", new_path.c_str());
+#else
+    std::string new_path = llvm_dir + ":" + (current_path ? current_path : "");
+    setenv("PATH", new_path.c_str(), 1);
+#endif
+  }
+
   TraceProcessorServiceImpl service(llvm_path);
   builder.RegisterService(&service);
 

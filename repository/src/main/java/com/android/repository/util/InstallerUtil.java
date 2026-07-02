@@ -40,10 +40,15 @@ import com.android.repository.impl.meta.RepositoryPackages;
 import com.android.repository.impl.meta.RevisionType;
 import com.android.repository.impl.meta.SchemaModuleUtil;
 import com.android.repository.io.FileOpUtils;
+
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipFile;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
@@ -62,10 +67,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
+
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
-import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
-import org.apache.commons.compress.archivers.zip.ZipFile;
 
 /**
  * Utility methods for {@link PackageOperation} implementations.
@@ -375,7 +379,8 @@ public class InstallerUtil {
         for (RemotePackage request : requests) {
             UpdatablePackage updatable = consolidatedPackages.get(request.getPath());
             if (updatable == null) {
-                logger.logWarning(String.format("No package with key %s found!", request.getPath()));
+                logger.logWarning(
+                        String.format("No package with key %s found!", request.getPath()));
                 return null;
             }
             if (!updatable.hasLocal() || updatable.isUpdate()) {
@@ -487,7 +492,15 @@ public class InstallerUtil {
      */
     public static boolean checkValidPath(
             @NonNull Path path, @NonNull RepoManager manager, @NonNull ProgressIndicator progress) {
-        String check = path.normalize() + File.separator;
+        Path sdkRoot = manager.getLocalPath();
+        Path normalized = path.toAbsolutePath().normalize();
+        if (sdkRoot == null
+                || !normalized.startsWith(sdkRoot.toAbsolutePath().normalize())
+                || normalized.equals(sdkRoot.toAbsolutePath().normalize())) {
+            progress.logWarning("Refusing to install outside the SDK root: " + normalized);
+            return false;
+        }
+        String check = normalized + File.separator;
 
         for (LocalPackage p : manager.getPackages().getLocalPackages().values()) {
             String existing = p.getLocation().normalize() + File.separator;

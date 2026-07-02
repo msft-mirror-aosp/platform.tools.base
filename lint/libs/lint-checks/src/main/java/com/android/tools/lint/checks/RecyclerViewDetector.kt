@@ -145,7 +145,10 @@ class RecyclerViewDetector : Detector(), SourceCodeScanner {
         // want
         val statement = reference.getParentOfType<UExpression>(UExpression::class.java, true)
         if (statement != null) {
-          parentToChildren[statement.uastParent] = reference
+          val parent = statement.uastParent
+          if (parent != null) {
+            parentToChildren[parent] = reference
+          }
         }
       }
 

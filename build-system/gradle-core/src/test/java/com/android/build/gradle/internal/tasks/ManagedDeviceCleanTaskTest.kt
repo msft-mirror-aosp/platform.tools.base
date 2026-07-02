@@ -68,29 +68,29 @@ class ManagedDeviceCleanTaskTest {
     project = ProjectBuilder.builder().withProjectDir(temporaryFolderRule.newFolder()).build()
   }
 
-  private inline fun <reified ValueClass> realPropertyFor(providedValue: ValueClass): Property<ValueClass> {
+  private inline fun <reified ValueClass : Any> realPropertyFor(providedValue: ValueClass): Property<ValueClass> {
 
     val property = project.objects.property(ValueClass::class.java)
     property.set(providedValue)
     return property
   }
 
-  private inline fun <reified ValueClass> realListPropertyFor(vararg provided: ValueClass): ListProperty<ValueClass> =
+  private inline fun <reified ValueClass : Any> realListPropertyFor(vararg provided: ValueClass): ListProperty<ValueClass> =
     realListPropertyFor(provided.toList())
 
-  private inline fun <reified ValueClass> realListPropertyFor(providedList: List<ValueClass>): ListProperty<ValueClass> {
+  private inline fun <reified ValueClass : Any> realListPropertyFor(providedList: List<ValueClass>): ListProperty<ValueClass> {
 
     val property = project.objects.listProperty(ValueClass::class.java)
     property.set(providedList)
     return property
   }
 
-  private fun <T> mockEmptyProperty(): Property<T> {
+  private fun <T : Any> mockEmptyProperty(): Property<T> {
     @Suppress("UNCHECKED_CAST")
     return mock<Property<T>>()
   }
 
-  private fun <T> mockEmptyListProperty(): ListProperty<T> {
+  private fun <T : Any> mockEmptyListProperty(): ListProperty<T> {
     return mock<ListProperty<T>>()
   }
 

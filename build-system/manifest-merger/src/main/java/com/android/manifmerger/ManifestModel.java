@@ -400,14 +400,14 @@ public class ManifestModel implements DocumentModel<ManifestModel.NodeTypes> {
         GRANT_URI_PERMISSION(MergeType.MERGE, DEFAULT_NO_KEY_NODE_RESOLVER),
 
         /**
-         * Instrumentation (contained in intent-filter)
-         * <br>
-         * <b>See also : </b>
-         * {@link <a href=http://developer.android.com/guide/topics/manifest/instrumentation-element.html>
-         *     Instrunentation Xml documentation</a>}
+         * Instrumentation (contained in intent-filter) <br>
+         * <b>See also : </b> {@link <a
+         * href=http://developer.android.com/guide/topics/manifest/instrumentation-element.html>
+         * Instrumentation Xml documentation</a>}
          */
         INSTRUMENTATION(
-                MergeType.MERGE, DEFAULT_NO_KEY_NODE_RESOLVER,
+                MergeType.MERGE,
+                DEFAULT_NO_KEY_NODE_RESOLVER,
                 AttributeModel.newModel("name").setMergingPolicy(AttributeModel.NO_MERGING_POLICY),
                 AttributeModel.newModel("targetPackage")
                         .setMergingPolicy(AttributeModel.NO_MERGING_POLICY),
@@ -415,8 +415,8 @@ public class ManifestModel implements DocumentModel<ManifestModel.NodeTypes> {
                         .setMergingPolicy(AttributeModel.NO_MERGING_POLICY),
                 AttributeModel.newModel("handleProfiling")
                         .setMergingPolicy(AttributeModel.NO_MERGING_POLICY),
-                AttributeModel.newModel("label").setMergingPolicy(AttributeModel.NO_MERGING_POLICY)
-        ),
+                AttributeModel.newModel("label")
+                        .setMergingPolicy(AttributeModel.NO_MERGING_POLICY)),
 
         /**
          * Intent (contained in queries) <br>
@@ -441,6 +441,16 @@ public class ManifestModel implements DocumentModel<ManifestModel.NodeTypes> {
                 MULTIPLE_DECLARATION_FOR_SAME_KEY_ALLOWED),
 
         /**
+         * Key-sets (contained in manifest). b/509645944: this element rebinds the package's
+         * upgrade-signer trust root (KeySetManagerService replaces compareSignatures() with
+         * checkUpgradeKeySetLocked() when it is present). A third-party library AAR must not be
+         * able to declare one on the consuming app's behalf, so it is gated to MAIN/OVERLAY only -
+         * same as MODULE.
+         */
+        KEY_SETS(
+                MergeType.MERGE, DEFAULT_NO_KEY_NODE_RESOLVER, EnumSet.of(Type.MAIN, Type.OVERLAY)),
+
+        /**
          * Manifest (top level node)
          * <br>
          * <b>See also : </b>
@@ -460,6 +470,20 @@ public class ManifestModel implements DocumentModel<ManifestModel.NodeTypes> {
 
         /** Module node for bundle */
         MODULE(MergeType.MERGE, DEFAULT_NO_KEY_NODE_RESOLVER, EnumSet.of(Type.MAIN, Type.OVERLAY)),
+
+        /**
+         * b/509645944 hardening: framework <manifest> children with no legitimate library use;
+         * modelled explicitly so they do not fall through to CUSTOM (which is library-mergeable for
+         * vendor-namespace extensibility).
+         */
+        ORIGINAL_PACKAGE(
+                MergeType.MERGE, DEFAULT_NO_KEY_NODE_RESOLVER, EnumSet.of(Type.MAIN, Type.OVERLAY)),
+        RESTRICT_UPDATE(
+                MergeType.MERGE, DEFAULT_NO_KEY_NODE_RESOLVER, EnumSet.of(Type.MAIN, Type.OVERLAY)),
+        PROTECTED_BROADCAST(
+                MergeType.MERGE,
+                DEFAULT_NAME_ATTRIBUTE_RESOLVER,
+                EnumSet.of(Type.MAIN, Type.OVERLAY)),
 
         /** Nav-graph (contained in activity), expanded into intent-filter by manifest merger */
         NAV_GRAPH(MergeType.MERGE, DEFAULT_NO_KEY_NODE_RESOLVER),
@@ -575,6 +599,13 @@ public class ManifestModel implements DocumentModel<ManifestModel.NodeTypes> {
                 MergeType.MERGE,
                 DEFAULT_NAME_ATTRIBUTE_RESOLVER,
                 AttributeModel.newModel(SdkConstants.ATTR_NAME).setIsPackageDependent()),
+
+        /**
+         * <application> child, API 31+; lib could otherwise downgrade per-process
+         * memtagMode/gwpAsanMode or <deny-permission>.
+         */
+        PROCESSES(
+                MergeType.MERGE, DEFAULT_NO_KEY_NODE_RESOLVER, EnumSet.of(Type.MAIN, Type.OVERLAY)),
 
         /**
          * Provider (contained in application or queries) <br>

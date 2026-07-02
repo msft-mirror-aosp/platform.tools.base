@@ -50,6 +50,8 @@ class JourneyFileDescriptor(parentId: UniqueId, private val journeyFile: File, p
   companion object {
 
     const val SEGMENT_TYPE: String = "journeyFile"
+
+    private val DEVICE_ID_SANITIZATION_REGEX = Regex("""[:\\/*"?|<>']""")
   }
 
   override fun getType() = TestDescriptor.Type.TEST
@@ -78,8 +80,15 @@ class JourneyFileDescriptor(parentId: UniqueId, private val journeyFile: File, p
     val streamingConsumer = StreamingEventConsumer(reportEntryPublisher)
 
     val outputDirName = journeyFileRelativePath.removeSuffixIgnoreCase(".journey.xml")
+    // Sanitize targetDeviceId to prevent path traversal and ensure filesystem compatibility.
+    val safeDeviceId = context.targetDeviceId.replace(DEVICE_ID_SANITIZATION_REGEX, "_")
     val outputPath =
-      Path(JourneysTestEngineInput.resultsDir.absolutePath, context.targetDeviceId, outputDirName).also { it.toFile().mkdirs() }
+      Path(JourneysTestEngineInput.resultsDir.absolutePath, safeDeviceId, outputDirName).normalize().also {
+        require(it.startsWith(JourneysTestEngineInput.resultsDir.toPath().normalize())) {
+          "Target device ID escapes the results directory: ${context.targetDeviceId}"
+        }
+        it.toFile().mkdirs()
+      }
     val fileConsumer = JourneyRunAggregatorConsumer(outputPath.toFile())
 
     val compositeConsumer = CompositeJourneyRunEventConsumer(listOf(streamingConsumer, fileConsumer))
@@ -102,7 +111,18 @@ class JourneyFileDescriptor(parentId: UniqueId, private val journeyFile: File, p
       val resultAdapter = createAdapter(context.backendId, adapterConfig)
 
       val artifactProcessor = { artifact: Artifact ->
-        val hostPath = outputPath.resolve(artifact.name)
+        // Restrict to simple leaf filenames to prevent directory traversal and arbitrary host writes.
+        require(
+          !artifact.name.contains('/') &&
+            !artifact.name.contains('\\') &&
+            artifact.name.isNotBlank() &&
+            artifact.name != "." &&
+            artifact.name != ".."
+        ) {
+          "Crawler-backend artifact name must be a simple filename: ${artifact.name}"
+        }
+        val hostPath = outputPath.resolve(artifact.name).normalize()
+        require(hostPath.startsWith(outputPath)) { "Crawler-backend artifact name escapes the results directory: ${artifact.name}" }
         hostPath.outputStream(StandardOpenOption.CREATE, StandardOpenOption.APPEND).use(artifact.data::writeTo)
         if (artifact.name in setOf(RoboConfigConstants.ROBO_RESULTS_FILE_NAME, RoboConfigConstants.ROBO_PRE_ACTIONS_FILE_NAME)) {
           resultAdapter.process(artifact.data.toByteArray())

@@ -1,0 +1,236 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Template Definition",
+  "description": "Schema for the Android Template Engine template-definition.json file.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "The user-friendly display name of the template (e.g., 'Empty Activity Compose')."
+    },
+    "short-name": {
+      "type": "string",
+      "description": "The unique identifier for the template, typically written in kebab-case (e.g., 'empty-activity-compose')."
+    },
+    "description": {
+      "type": "string",
+      "description": "An optional explanation or documentation of the template's purpose and functionality."
+    },
+    "comment": {
+      "type": "string",
+      "description": "An optional developer note or comment regarding this template definition."
+    },
+    "tags": {
+      "type": "array",
+      "description": "A list of tags used to categorize, filter, or group templates (e.g., ['compose', 'activity']).",
+      "items": {
+        "type": "string"
+      }
+    },
+    "schema-version": {
+      "type": "string",
+      "description": "The version of the schema used by this template definition file (e.g., '1.2' or '2.3.4'). This allows template engines to verify if they can process this definition.",
+      "pattern": "^[0-9]+\\.[0-9]+(\\.[0-9]+)?$"
+    },
+    "arguments": {
+      "type": "array",
+      "description": "The list of dynamic input arguments required when generating files from this template.",
+      "items": {
+        "type": "object",
+        "description": "An argument definition specifying a unique ID and its default value.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The unique identifier for the argument. This ID can be referenced in string interpolation expressions as '${id}'."
+          },
+          "description": {
+            "type": "string",
+            "description": "An optional comment or description explaining what this argument is used for."
+          },
+          "comment": {
+            "type": "string",
+            "description": "An optional comment or developer note about this argument."
+          },
+          "default-value": {
+            "type": "string",
+            "description": "The default value of the argument if no explicit value is provided. Supports string interpolation expressions (e.g., '${package-name.replace('.', '/')}') and built-in methods like '.toLower()'."
+          }
+        },
+        "required": [
+          "id",
+          "default-value"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "dependencies": {
+      "type": "array",
+      "description": "Dependencies, such as Android SDK packages, required by this template.",
+      "items": {
+        "type": "object",
+        "description": "An individual dependency descriptor.",
+        "properties": {
+          "sdk-package": {
+            "type": "string",
+            "description": "The unique identifier of the required SDK package (e.g., 'platforms;android-33')."
+          },
+          "description": {
+            "type": "string",
+            "description": "An optional comment or description explaining why this dependency is required."
+          },
+          "comment": {
+            "type": "string",
+            "description": "An optional comment or developer note about this dependency."
+          }
+        },
+        "required": [
+          "sdk-package"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "extra-files": {
+      "type": "array",
+      "description": "List of extra files that must be preloaded, relative to the template root. Paths must be relative, cannot contain '..' or ':' or start with '/' or '\\'.",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "transformations": {
+      "type": "array",
+      "description": "A list of file and directory transformation rules to apply when generating output from the template.",
+      "items": {
+        "type": "object",
+        "description": "A single transformation operation definition.",
+        "oneOf": [
+          {
+            "description": "A string replacement transformation applied to the content of matching template files.",
+            "properties": {
+              "comment": {
+                "type": "string",
+                "description": "An optional comment or developer note for this transformation step."
+              },
+              "description": {
+                "type": "string",
+                "description": "An optional explanation or documentation of this transformation step's purpose."
+              },
+              "string-replace": {
+                "type": "object",
+                "description": "Replaces all occurrences of a specific string inside the selected files' content. Supports both single-line and multi-line replacement (if either 'from' or 'to' contains a newline, the replacement is applied to the entire file content at once instead of line-by-line).",
+                "properties": {
+                  "description": {
+                    "type": "string",
+                    "description": "An optional description of the string replacement operation."
+                  },
+                  "comment": {
+                    "type": "string",
+                    "description": "An optional developer note or comment."
+                  },
+                  "selector": {
+                    "type": "object",
+                    "description": "Specifies which files this transformation applies to.",
+                    "properties": {
+                      "glob": {
+                        "type": "string",
+                        "description": "A glob pattern matching relative paths inside the template."
+                      }
+                    },
+                    "required": [
+                      "glob"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "from": {
+                    "type": "string",
+                    "description": "The literal text string within the selected files to find and replace. Cannot be empty. Can contain newlines for multi-line replacement.",
+                    "minLength": 1
+                  },
+                  "to": {
+                    "type": "string",
+                    "description": "The replacement string to insert, supporting string interpolation expressions (e.g., '${package-name}'). Can contain newlines for multi-line replacement."
+                  }
+                },
+                "required": [
+                  "selector",
+                  "from",
+                  "to"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "string-replace"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "description": "A file or directory renaming transformation applied to the paths of matching template entries.",
+            "properties": {
+              "comment": {
+                "type": "string",
+                "description": "An optional comment or developer note for this transformation step."
+              },
+              "description": {
+                "type": "string",
+                "description": "An optional explanation or documentation of this transformation step's purpose."
+              },
+              "rename-file": {
+                "type": "object",
+                "description": "Renames or moves matching files or directories in the generated template output.",
+                "properties": {
+                  "description": {
+                    "type": "string",
+                    "description": "An optional description of the file renaming operation."
+                  },
+                  "comment": {
+                    "type": "string",
+                    "description": "An optional developer note or comment."
+                  },
+                  "selector": {
+                    "type": "object",
+                    "description": "Specifies which files or directories this transformation applies to.",
+                    "properties": {
+                      "glob": {
+                        "type": "string",
+                        "description": "A glob pattern matching relative paths inside the template."
+                      }
+                    },
+                    "required": [
+                      "glob"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "source-path": {
+                    "type": "string",
+                    "description": "The exact substring of the relative path that should be replaced. Cannot be empty.",
+                    "minLength": 1
+                  },
+                  "target-path": {
+                    "type": "string",
+                    "description": "The replacement string for the path segment, supporting string interpolation expressions (e.g., '${package-name.replace('.', '/')}') to dynamically compute the destination directories."
+                  }
+                },
+                "required": [
+                  "selector",
+                  "source-path",
+                  "target-path"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "rename-file"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      }
+    }
+  },
+  "required": [
+    "name",
+    "short-name"
+  ],
+  "additionalProperties": false
+}

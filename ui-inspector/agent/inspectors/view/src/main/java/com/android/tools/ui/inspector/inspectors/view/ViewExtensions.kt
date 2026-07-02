@@ -16,12 +16,17 @@
 
 package com.android.tools.ui.inspector.inspectors.view
 
+import android.content.Context
 import android.content.res.Resources
+import android.hardware.display.DisplayManager
+import android.view.Surface
 import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.VisibleForTesting
 import com.android.tools.ui.inspector.inspectors.view.property.PropertyCache
 import com.android.tools.ui.inspector.inspectors.view.property.ProtoAttributeReader
+import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.AppContext
+import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.Display
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.Rect
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.ViewNode
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.ViewNode.Attribute
@@ -93,7 +98,6 @@ private fun createViewNode(view: View, stringTable: StringTable, attributeExtrac
       layoutResource = stringTable.put(layoutRes)
     }
 
-    // TODO: add support for DLI AppContext (theme and display info)
     // TODO: add support for XR
 
     when (attributeExtraction) {
@@ -186,4 +190,59 @@ internal fun isValidResourceId(resourceId: Int): Boolean {
   // Both package and type must be non-zero.
   // Package ID 0xFF is disallowed in AssetManager2.
   return packageId != 0 && packageId != 0xFF && typeId != 0
+}
+
+internal fun View.createAppContext(stringTable: StringTable): AppContext {
+  val displayInfo = buildDisplayInfo(context)
+  return AppContext.newBuilder()
+    .apply {
+      val themeResId = context.getThemeResIdReflective()
+      resolveResourceToString(themeResId)?.let { themeStr -> theme = stringTable.put(themeStr) }
+      addAllDisplayInfo(displayInfo)
+    }
+    .build()
+}
+
+/**
+ * Reflectively retrieves the theme resource ID from the [Context]. Accesses the hidden `Context.getThemeResId()` framework API reflectively
+ * to avoid adding a compile time dependency to fake-android like layout inspector does.
+ */
+private fun Context.getThemeResIdReflective(): Int {
+  return try {
+    // Fast-path: Search the runtime class (e.g. Activity, ContextThemeWrapper) which exposes it as public in API 29+.
+    val method = this.javaClass.getMethod("getThemeResId")
+    method.invoke(this) as Int
+  } catch (e: Exception) {
+    try {
+      // Fallback: Search the base Context class for the hidden method (safely silenced by our native JVMTI agent at runtime).
+      val method = Context::class.java.getDeclaredMethod("getThemeResId")
+      method.isAccessible = true
+      method.invoke(this) as Int
+    } catch (ex: Exception) {
+      0
+    }
+  }
+}
+
+private fun buildDisplayInfo(context: Context): List<Display> {
+  val displayManager = context.getSystemService(DisplayManager::class.java)
+  val displays = displayManager?.displays ?: return emptyList()
+  return displays.map { display ->
+    val mode = display.mode
+    Display.newBuilder()
+      .apply {
+        id = display.displayId
+        orientation =
+          when (display.rotation) {
+            Surface.ROTATION_0 -> 0
+            Surface.ROTATION_90 -> 90
+            Surface.ROTATION_180 -> 180
+            Surface.ROTATION_270 -> 270
+            else -> -1
+          }
+        widthPx = mode.physicalWidth
+        heightPx = mode.physicalHeight
+      }
+      .build()
+  }
 }

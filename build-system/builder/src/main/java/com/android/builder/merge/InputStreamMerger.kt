@@ -19,7 +19,7 @@ package com.android.builder.merge
 import com.android.builder.packaging.ParsedPackagingOptions
 import java.io.InputStream
 
-class InputStreamMerger(val packagingOption: ParsedPackagingOptions) {
+class InputStreamMerger(val packagingOption: ParsedPackagingOptions) : InputMerger<MergeInput, InputStream> {
 
   private val merger = { path: String, inStreams: List<MergeInput> ->
     val packagingAction = packagingOption.getAction(path)
@@ -31,7 +31,7 @@ class InputStreamMerger(val packagingOption: ParsedPackagingOptions) {
     }
   }
 
-  fun merge(path: String, from: () -> List<MergeInput>, action: (mergedInputStream: InputStream) -> Unit) {
+  override fun merge(path: String, compress: Boolean, from: () -> List<MergeInput>, action: (mergedInputStream: InputStream) -> Unit) {
     val inStreams = from()
     merger.invoke(path, inStreams).use { action(it) }
     inStreams.forEach { it.stream.close() }

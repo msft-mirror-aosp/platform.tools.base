@@ -500,7 +500,7 @@ class TypesLogger(private val indent: String) : AbstractUastVisitor() {
         else -> null
       }
     type?.let { builder.append(" : ").append(it) }
-    builder.appendln()
+    builder.appendLine()
     level++
     return false
   }

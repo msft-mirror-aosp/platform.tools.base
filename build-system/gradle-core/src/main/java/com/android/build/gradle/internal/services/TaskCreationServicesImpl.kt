@@ -51,9 +51,9 @@ class TaskCreationServicesImpl(projectServices: ProjectServices) : BaseServicesI
 
   override fun regularFileProperty(): RegularFileProperty = projectServices.objectFactory.fileProperty()
 
-  override fun <T> listProperty(type: Class<T>): ListProperty<T> = projectServices.objectFactory.listProperty(type)
+  override fun <T : Any> listProperty(type: Class<T>): ListProperty<T> = projectServices.objectFactory.listProperty(type)
 
-  override fun <K, V> mapProperty(keyType: Class<K>, valueType: Class<V>): MapProperty<K, V> =
+  override fun <K : Any, V : Any> mapProperty(keyType: Class<K>, valueType: Class<V>): MapProperty<K, V> =
     projectServices.objectFactory.mapProperty(keyType, valueType)
 
   override fun fileCollection(): ConfigurableFileCollection = projectServices.objectFactory.fileCollection()
@@ -66,12 +66,12 @@ class TaskCreationServicesImpl(projectServices: ProjectServices) : BaseServicesI
 
   override fun createEmptyTask(name: String): TaskProvider<*> = projectServices.emptyTaskCreator(name)
 
-  override fun <T> provider(callable: () -> T?): Provider<T> {
+  override fun <T : Any> provider(callable: () -> T?): Provider<T> {
     return projectServices.providerFactory.provider(callable)
   }
 
   @Suppress("UnstableApiUsage")
-  override fun <T, P : ValueSourceParameters> providerOf(
+  override fun <T : Any, P : ValueSourceParameters> providerOf(
     valueSourceType: Class<out ValueSource<T, P>>,
     configuration: Action<in ValueSourceSpec<P>>,
   ): Provider<T> {

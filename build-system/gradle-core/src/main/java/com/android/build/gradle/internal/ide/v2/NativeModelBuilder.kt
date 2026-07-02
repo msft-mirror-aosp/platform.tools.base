@@ -84,9 +84,12 @@ constructor(
 
   override fun canBuild(modelName: String): Boolean = modelName == NativeModule::class.java.name
 
-  override fun buildAll(modelName: String, project: Project): NativeModule? = buildAll(modelName, null, project)
+  override fun buildAll(modelName: String, project: Project): NativeModule? = buildAllImpl(modelName, null, project)
 
-  override fun buildAll(unusedModelName: String, params: NativeModelBuilderParameter?, project: Project): NativeModule? {
+  override fun buildAll(unusedModelName: String, params: NativeModelBuilderParameter, project: Project): NativeModule? =
+    buildAllImpl(unusedModelName, params, project)
+
+  private fun buildAllImpl(unusedModelName: String, params: NativeModelBuilderParameter?, project: Project): NativeModule? {
     // Nested IssueReporterLoggingEnvironment is due to the fact that we always want to
     // capture the structured log outcome. If there are no configuration models then we
     // log NO_CONFIGURATION_MODELS outcome but we need an IssueReporterLoggingEnvironment

@@ -55,7 +55,8 @@ sealed class SingleArtifact<T : FileSystemLocation>(
     override fun getFolderName(): String = "mapping"
   }
 
-  object OBFUSCATION_MAPPING_PARTITION_FILE : SingleArtifact<RegularFile>(FILE, Category.OUTPUTS, "mapping.prt") {
+  object OBFUSCATION_MAPPING_PARTITION_FILE :
+    SingleArtifact<RegularFile>(FILE, Category.OUTPUTS, "mapping.prt"), Replaceable, Transformable {
 
     override fun getFolderName(): String = "mapping"
   }

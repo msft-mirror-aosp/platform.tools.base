@@ -26,7 +26,9 @@ import com.android.sdklib.internal.avd.AvdManager
 import com.android.testutils.file.createInMemoryFileSystemAndFolder
 import com.google.common.truth.Truth.assertThat
 import java.time.Duration
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Instant
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
@@ -40,8 +42,6 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runTest
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 import org.junit.Test
 
 class LocalEmulatorDeviceHandleTest {

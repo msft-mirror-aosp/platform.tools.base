@@ -39,6 +39,6 @@ fun <K : Any, V : Any> Cache<K, V>.getAndUnwrap(key: K, loader: () -> V): V {
   }
 }
 
-fun <K, V> Cache<K, V>.retainAll(keys: Collection<K>) {
+fun <K : Any, V : Any> Cache<K, V>.retainAll(keys: Collection<K>) {
   asMap().keys.retainAll(keys)
 }

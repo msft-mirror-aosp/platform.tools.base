@@ -101,3 +101,17 @@ internal fun printDeviceConfiguration(config: ViewInspectorProtocol.Configuratio
   }
   System.out.println()
 }
+
+/** Prints the application context (theme and display info) to the console. */
+internal fun printAppContext(appContext: ViewInspectorProtocol.AppContext, stringTable: Map<Int, String>) {
+  val themeStr = stringTable[appContext.theme] ?: "undefined"
+  System.out.println("App Context:")
+  System.out.println(" Theme: $themeStr")
+  if (appContext.displayInfoCount > 0) {
+    System.out.println(" Displays:")
+    appContext.displayInfoList.forEach { display ->
+      System.out.println("  - Display ${display.id}: ${display.widthPx}x${display.heightPx} px, rotation ${display.orientation}°")
+    }
+  }
+  System.out.println()
+}

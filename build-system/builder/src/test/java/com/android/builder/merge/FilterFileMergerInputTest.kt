@@ -27,7 +27,7 @@ class FilterFileMergerInputTest {
 
   @Test
   fun testFiltering() {
-    val delegate = mock(FileMergerInput::class.java)
+    val delegate = mock(FileMergerInputNonIncremental::class.java)
     `when`(delegate.getName()).thenReturn("delegate")
     `when`(delegate.getAllPaths()).thenReturn(ImmutableSet.of("accepted", "rejected"))
 

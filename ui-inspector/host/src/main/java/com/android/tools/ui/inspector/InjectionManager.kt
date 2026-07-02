@@ -28,6 +28,7 @@ import com.android.tools.ui.inspector.common.ProtocolConstants
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.attribute.PosixFilePermission
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -136,10 +137,11 @@ class InjectionManager(
 
     copyAndSetupFiles(deviceSelector, packageName, agentRemoteTmpPath, serviceJarRemoteTmpPath, payloadRemoteTmpPath)
 
+    val deviceTime = queryDeviceTime(deviceSelector)
     attachAgent(deviceSelector, packageName, pid)
 
     val socketName = ProtocolConstants.getSocketName(pid)
-    waitForAgentSocket(deviceSelector, socketName)
+    waitForAgentSocket(deviceSelector, socketName, pid, deviceTime)
 
     setupAdbForward(deviceSelector, socketName)
   }
@@ -156,7 +158,7 @@ class InjectionManager(
    * Waits for the abstract socket to appear in /proc/net/unix. Since the agent acts as the server, we must wait for it to create the socket
    * before the host can connect to it.
    */
-  private suspend fun waitForAgentSocket(deviceSelector: DeviceSelector, socketName: String) {
+  private suspend fun waitForAgentSocket(deviceSelector: DeviceSelector, socketName: String, pid: String, deviceTime: String?) {
     val maxAttempts = 10
     var attempts = 0
     var delayMs = 100L
@@ -166,11 +168,56 @@ class InjectionManager(
       if (output.contains(socketName)) {
         return
       }
+
+      if (attempts >= 2) {
+        // If the agent already logged a bootstrap error, throw it immediately, to avoid exponential backoff.
+        val agentError = readAgentErrorFromLogcat(deviceSelector, pid, deviceTime)
+        if (agentError != null) {
+          throw IllegalStateException("Failed to attach UI Inspector agent. Agent error in logcat:\n$agentError")
+        }
+      }
+
       attempts++
       delay(delayMs)
       delayMs = (delayMs * 2).coerceAtMost(1000L)
     }
     throw IllegalStateException("Timed out waiting for agent socket $socketName")
+  }
+
+  /**
+   * Queries logcat for error logs produced by the UI Inspector agent. Filters logs by the target app's PID and the agent's known logging
+   * tags.
+   */
+  private suspend fun readAgentErrorFromLogcat(deviceSelector: DeviceSelector, pid: String, deviceTime: String?): String? {
+    try {
+      // Query error logs for this process ID, optionally filtering since the start of this injection attempt
+      val timeFilter = if (deviceTime != null) " -t '$deviceTime'" else ""
+      val cmd = "logcat -d$timeFilter --pid=$pid *:E"
+      val output = adbSession.deviceServices.shellAsText(deviceSelector, cmd).stdout.trim()
+      if (output.isEmpty()) return null
+
+      val uiInspectorLogs = output.lines().filter { line -> line.contains(ProtocolConstants.LOG_TAG_PREFIX) }
+
+      return if (uiInspectorLogs.isNotEmpty()) uiInspectorLogs.joinToString("\n") else null
+    } catch (e: CancellationException) {
+      throw e
+    } catch (e: Exception) {
+      return null
+    }
+  }
+
+  /** Queries the device for its current time in a logcat-compatible format. */
+  private suspend fun queryDeviceTime(deviceSelector: DeviceSelector): String? {
+    return try {
+      // Format matching logcat timestamp: "MM-DD HH:MM:SS.000"
+      val result = adbSession.deviceServices.shellAsText(deviceSelector, "date +\"%m-%d %H:%M:%S.000\"")
+      val stdout = result.stdout.trim()
+      if (result.exitCode == 0 && stdout.isNotEmpty()) stdout else null
+    } catch (e: CancellationException) {
+      throw e
+    } catch (e: Exception) {
+      null
+    }
   }
 
   /** Queries the device for the PID of the specified package. */

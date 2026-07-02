@@ -33,6 +33,7 @@ class R8AnalysisTaskTest {
           buildTypes {
             named("release") {
               it.isMinifyEnabled = true
+              it.isShrinkResources = true
               it.proguardFiles += listOf(File("proguard-rules.pro"), getDefaultProguardFile("proguard-android-optimize.txt"))
             }
           }

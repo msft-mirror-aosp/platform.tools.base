@@ -64,6 +64,10 @@ class AndroidTestCoverageCollector(
 
   /** Creates an empty directory. If a directory exists at the given path, it removes all contents in the directory. */
   private fun createEmptyDirectoryOnHost(directory: File) {
+    val p = directory.toPath().toAbsolutePath()
+    // Defense-in-depth: Ensure the path is lexically normalized to prevent
+    // directory traversal via deleteRecursively() (b/509645146).
+    require(p == p.normalize()) { "Refusing deleteRecursively() on un-normalised path: $p" }
     if (directory.exists()) {
       directory.deleteRecursively()
     }

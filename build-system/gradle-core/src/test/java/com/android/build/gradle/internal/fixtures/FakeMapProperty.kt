@@ -22,7 +22,7 @@ import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Provider
 import org.gradle.api.specs.Spec
 
-class FakeMapProperty<K, V>(private val values: MutableMap<K, V>? = null) : MapProperty<K, V> {
+class FakeMapProperty<K : Any, V : Any>(private val values: MutableMap<K, V>? = null) : MapProperty<K, V> {
 
   override fun get(): Map<K, V> = values ?: mapOf()
 
@@ -34,11 +34,11 @@ class FakeMapProperty<K, V>(private val values: MutableMap<K, V>? = null) : MapP
 
   override fun getOrElse(p0: Map<K, V>): Map<K, V> = values ?: p0
 
-  override fun <S : Any?> map(p0: Transformer<out S, in MutableMap<K, V>>): Provider<S> {
+  override fun <S : Any> map(p0: Transformer<out S?, in MutableMap<K, V>>): Provider<S> {
     TODO("Not yet implemented")
   }
 
-  override fun <S : Any?> flatMap(p0: Transformer<out Provider<out S>, in MutableMap<K, V>>): Provider<S> {
+  override fun <S : Any> flatMap(p0: Transformer<out Provider<out S>?, in MutableMap<K, V>>): Provider<S> {
     TODO("Not yet implemented")
   }
 
@@ -54,7 +54,7 @@ class FakeMapProperty<K, V>(private val values: MutableMap<K, V>? = null) : MapP
     TODO("Not yet implemented")
   }
 
-  override fun <U : Any?, R : Any?> zip(p0: Provider<U>, p1: BiFunction<in MutableMap<K, V>, in U, out R>): Provider<R> {
+  override fun <U : Any, R : Any> zip(p0: Provider<U>, p1: BiFunction<in MutableMap<K, V>, in U, out R?>): Provider<R> {
     TODO("Not yet implemented")
   }
 

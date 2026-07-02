@@ -22,6 +22,7 @@ import com.android.ide.common.blame.parser.util.OutputLineReader
 import com.android.utils.ILogger
 import com.android.utils.StdLogger
 import com.google.common.truth.Truth.assertThat
+import java.io.File
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -47,7 +48,7 @@ class Aapt2OutputParserTest {
 
   @Test
   fun parseErrorWithLineAndColumn() {
-    val file = createTempFile("colors", ".xml", temporaryFolder.newFolder())
+    val file = File.createTempFile("colors", ".xml", temporaryFolder.newFolder())
     val line = "${file.absolutePath}:5:5-49: invalid color."
 
     val messages = parser.parseToolOutput(line)
@@ -68,7 +69,7 @@ class Aapt2OutputParserTest {
 
   @Test
   fun parseErrorWithPathOnly() {
-    val file = createTempFile("foo", ".9.png", temporaryFolder.newFolder())
+    val file = File.createTempFile("foo", ".9.png", temporaryFolder.newFolder())
     val line = "${file.absolutePath}: error: failed to read PNG signature: file does not start with PNG signature.\n"
     val messages = parser.parseToolOutput(line, true)
 
@@ -86,8 +87,8 @@ class Aapt2OutputParserTest {
 
   @Test
   fun testMultipleErrorsParsing() {
-    val file1 = createTempFile("ic_launcher", ".xml", temporaryFolder.newFolder())
-    val file2 = createTempFile("colors", ".xml", temporaryFolder.newFolder())
+    val file1 = File.createTempFile("ic_launcher", ".xml", temporaryFolder.newFolder())
+    val file2 = File.createTempFile("colors", ".xml", temporaryFolder.newFolder())
     val text =
       """2 exception was raised by workers:
                         com.android.builder.internal.aapt.v2.Aapt2Exception: Android resource linking failed

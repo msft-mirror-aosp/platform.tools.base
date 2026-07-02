@@ -70,7 +70,7 @@ open class FakeFileCollection(vararg collection: Any?) : FileCollection {
     return resolvedFiles
   }
 
-  override fun contains(file: File?): Boolean {
+  override fun contains(file: File): Boolean {
     return files.contains(file)
   }
 
@@ -84,11 +84,11 @@ open class FakeFileCollection(vararg collection: Any?) : FileCollection {
     return files.isEmpty()
   }
 
-  override fun addToAntBuilder(builder: Any?, nodeName: String?, type: FileCollection.AntType?) {
+  override fun addToAntBuilder(builder: Any, nodeName: String, type: FileCollection.AntType) {
     throw UnsupportedOperationException("Not implemented")
   }
 
-  override fun addToAntBuilder(builder: Any?, nodeName: String?): Any {
+  override fun addToAntBuilder(builder: Any, nodeName: String): Any {
     throw UnsupportedOperationException("Not implemented")
   }
 
@@ -96,7 +96,7 @@ open class FakeFileCollection(vararg collection: Any?) : FileCollection {
     throw UnsupportedOperationException("Not implemented")
   }
 
-  override fun minus(collection: FileCollection?): FileCollection {
+  override fun minus(collection: FileCollection): FileCollection {
     TODO("not implemented")
   }
 
@@ -108,15 +108,15 @@ open class FakeFileCollection(vararg collection: Any?) : FileCollection {
     return files.iterator()
   }
 
-  override fun filter(filter: Closure<*>?): FileCollection {
+  override fun filter(filter: Closure<*>): FileCollection {
     TODO("not implemented")
   }
 
-  override fun filter(spec: Spec<in File>?): FileCollection {
+  override fun filter(spec: Spec<in File>): FileCollection {
     TODO("not implemented")
   }
 
-  override fun plus(collection: FileCollection?): FileCollection {
+  override fun plus(collection: FileCollection): FileCollection {
     TODO("not implemented")
   }
 

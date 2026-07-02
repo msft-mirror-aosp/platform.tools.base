@@ -24,6 +24,7 @@ internal data class UiDump(
   val roots: List<UiNode.ViewNode>,
   val configuration: ViewInspectorProtocol.Configuration?,
   val stringTable: Map<Int, String>,
+  val appContext: ViewInspectorProtocol.AppContext?,
 )
 
 /** Represents a captured UI hierarchy dump along with the elapsed time since tracking began. */

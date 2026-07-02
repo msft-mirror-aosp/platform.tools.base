@@ -16,15 +16,19 @@
 
 package com.android.builder.merge
 
+import com.android.zipflinger.ZipMap
 import com.android.zipflinger.ZipRepo
+import com.android.zipflinger.ZipSource
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
 import java.io.UncheckedIOException
 
-class LazyFileMergerInput(private val name: String, private val jarFile: File) : FileMergerInput {
+class LazyFileMergerInput(private val name: String, private val jarFile: File) : FileMergerInputNonIncremental {
 
   private var zipRepo: ZipRepo? = null
+  private var zipMap: ZipMap? = null
+
   private val paths: Lazy<Set<String>> = lazy {
     if (!jarFile.exists()) {
       emptySet()
@@ -38,11 +42,12 @@ class LazyFileMergerInput(private val name: String, private val jarFile: File) :
   override fun getAllPaths(): Set<String> = paths.value
 
   override fun open() {
-    if (zipRepo != null) {
+    if (zipRepo != null || zipMap != null) {
       return
     }
     try {
       zipRepo = ZipRepo(jarFile.toPath())
+      zipMap = ZipMap.from(jarFile.toPath())
     } catch (e: IOException) {
       throw UncheckedIOException(e)
     }
@@ -55,6 +60,7 @@ class LazyFileMergerInput(private val name: String, private val jarFile: File) :
       throw UncheckedIOException(e)
     } finally {
       zipRepo = null
+      zipMap = null
     }
   }
 
@@ -64,5 +70,12 @@ class LazyFileMergerInput(private val name: String, private val jarFile: File) :
     } catch (e: IOException) {
       throw UncheckedIOException(e)
     }
+  }
+
+  override fun openAsZipSource(path: String): ZipSource {
+    val map = zipMap ?: error("Zip map is not open.")
+    val zs = ZipSource(map)
+    zs.select(path, path)
+    return zs
   }
 }

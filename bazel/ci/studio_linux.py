@@ -98,8 +98,7 @@ _ARTIFACTS = [
     ('tools/vendor/google/aswb/android-studio-with-blaze-qa.deb', 'artifacts'),
     ('tools/vendor/google/aswb/android-studio-with-blaze-qa.mac.zip', 'artifacts'),
     ('tools/vendor/google/aswb/android-studio-with-blaze-qa.mac_arm.zip', 'artifacts'),
-    ('tools/vendor/google/skia/skiaparser.zip', 'artifacts'),
-    ('tools/vendor/google/skia/skia_test_support.zip', 'artifacts'),
+
 
     ('tools/base/sdklib/commandlinetools_*.zip', 'artifacts'),
     ('tools/base/ddmlib/tools.ddmlib.jar', 'artifacts/ddmlib.jar'),

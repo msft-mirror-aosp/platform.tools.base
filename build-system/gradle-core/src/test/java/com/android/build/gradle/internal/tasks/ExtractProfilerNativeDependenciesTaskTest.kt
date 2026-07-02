@@ -173,6 +173,38 @@ class ExtractProfilerNativeDependenciesTaskTest {
     assertThat(outputDir.resolve("x86").list()!!.asList()).containsExactly("bar.so", "baz.so")
   }
 
+  @Test
+  fun testZipSlip() {
+    val tempFolder = temp.newFolder()
+    val outputDir = temp.newFolder().canonicalFile
+
+    val maliciousLibJar =
+      tempFolder.resolve("maliciousLibJar.jar").also {
+        TestInputsGenerator.writeJarWithEmptyEntries(
+          it.toPath(),
+          listOf("lib/x86/foo.so", "lib/x86/../../evil.so", "lib/x86/..\\..\\evil2.so"),
+        )
+      }
+
+    val jarWithMaliciousDep =
+      tempFolder.resolve("jarWithMaliciousDep.jar").also { jarJar ->
+        ZipOutputStream(FileOutputStream(jarJar)).use { zip ->
+          zip.putNextEntry(ZipEntry("dependencies/maliciousLibJar.jar"))
+          BufferedInputStream(FileInputStream(maliciousLibJar)).use { ByteStreams.copy(it, zip) }
+        }
+      }
+
+    executeWorkerAction(listOf(jarWithMaliciousDep), outputDir)
+
+    assertThat(outputDir.list()!!.asList()).containsExactly("x86")
+    assertThat(outputDir.resolve("x86").list()!!.asList()).containsExactly("foo.so")
+
+    assertThat(outputDir.resolve("x86/../../evil.so").exists()).isFalse()
+    assertThat(outputDir.resolve("x86/..\\..\\evil2.so").exists()).isFalse()
+    assertThat(outputDir.parentFile.resolve("evil.so").exists()).isFalse()
+    assertThat(outputDir.parentFile.resolve("evil2.so").exists()).isFalse()
+  }
+
   private fun executeWorkerAction(inputJars: List<File>, outputDir: File) {
     object : ExtractProfilerNativeDependenciesTask.ExtractProfilerNativeDepsWorkerAction() {
         override fun getParameters() =

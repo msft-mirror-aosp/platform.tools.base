@@ -205,14 +205,25 @@ public class MergeOutputWritersTests {
     }
 
     @Test
-    public void zipWriterCreateFileFromSource() throws Exception {
+    public void zipWriterCreateFileFromZipSource() throws Exception {
         File dir = temporaryFolder.newFolder();
         File zipFile = new File(dir, "test.zip");
 
+        File srcZip = new File(dir, "src.zip");
+        try (com.android.zipflinger.ZipArchive srcArchive = new com.android.zipflinger.ZipArchive(srcZip.toPath())) {
+            srcArchive.add(new BytesSource(new byte[] {1, 2, 3}, "a", Deflater.NO_COMPRESSION));
+            srcArchive.add(new BytesSource(new byte[] {4, 5}, "b/c", Deflater.DEFAULT_COMPRESSION));
+        }
+
         SourceMergeOutputWriter w = MergeOutputWriters.toZipWithZipFlinger(zipFile);
         w.open();
-        w.create("a", new BytesSource(new byte[] {1, 2, 3}, "a", Deflater.NO_COMPRESSION));
-        w.create("b/c", new BytesSource(new byte[] {4, 5}, "b/c", Deflater.DEFAULT_COMPRESSION));
+        com.android.zipflinger.ZipSource zs1 = new com.android.zipflinger.ZipSource(srcZip.toPath());
+        zs1.select("a", "a");
+        w.create("a", zs1);
+
+        com.android.zipflinger.ZipSource zs2 = new com.android.zipflinger.ZipSource(srcZip.toPath());
+        zs2.select("b/c", "b/c");
+        w.create("b/c", zs2);
         w.close();
 
         try (ZFile zf = ZFile.openReadOnly(zipFile)) {
@@ -288,14 +299,25 @@ public class MergeOutputWritersTests {
     }
 
     @Test
-    public void zipFlingerWriterCreateFileFromSource() throws Exception {
+    public void zipFlingerWriterCreateFileFromZipSource() throws Exception {
         File dir = temporaryFolder.newFolder();
         File zipFile = new File(dir, "test.zip");
 
+        File srcZip = new File(dir, "src.zip");
+        try (com.android.zipflinger.ZipArchive srcArchive = new com.android.zipflinger.ZipArchive(srcZip.toPath())) {
+            srcArchive.add(new BytesSource(new byte[] {1, 2, 3}, "a", Deflater.NO_COMPRESSION));
+            srcArchive.add(new BytesSource(new byte[] {4, 5}, "b/c", Deflater.DEFAULT_COMPRESSION));
+        }
+
         SourceMergeOutputWriter w = MergeOutputWriters.toZipWithZipFlinger(zipFile);
         w.open();
-        w.create("a", new BytesSource(new byte[] {1, 2, 3}, "a", Deflater.NO_COMPRESSION));
-        w.create("b/c", new BytesSource(new byte[] {4, 5}, "b/c", Deflater.DEFAULT_COMPRESSION));
+        com.android.zipflinger.ZipSource zs1 = new com.android.zipflinger.ZipSource(srcZip.toPath());
+        zs1.select("a", "a");
+        w.create("a", zs1);
+
+        com.android.zipflinger.ZipSource zs2 = new com.android.zipflinger.ZipSource(srcZip.toPath());
+        zs2.select("b/c", "b/c");
+        w.create("b/c", zs2);
         w.close();
 
         try (ZipArchive archive = new ZipArchive(zipFile.toPath())) {

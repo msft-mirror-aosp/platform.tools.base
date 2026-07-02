@@ -248,7 +248,7 @@ private data class FakeAttributeContainer(private val map: Map<Attribute<*>, Any
     error("do not call this")
   }
 
-  override fun <T : Any?> getAttribute(key: Attribute<T>): T? {
+  override fun <T : Any> getAttribute(key: Attribute<T>): T? {
     return map[key] as? T?
   }
 
@@ -256,7 +256,7 @@ private data class FakeAttributeContainer(private val map: Map<Attribute<*>, Any
 
   override fun contains(key: Attribute<*>): Boolean = map.containsKey(key)
 
-  override fun <T : Any?> attributeProvider(p0: Attribute<T>, p1: Provider<out T>): AttributeContainer {
+  override fun <T : Any> attributeProvider(p0: Attribute<T>, p1: Provider<out T>): AttributeContainer {
     error("not yet implemented")
   }
 
@@ -264,7 +264,7 @@ private data class FakeAttributeContainer(private val map: Map<Attribute<*>, Any
     error("not yet implemented")
   }
 
-  override fun <T : Named?> named(type: Class<T?>?, name: String?): T? {
+  override fun <T : Named> named(type: Class<T>, name: String): T {
     error("Not yet implemented")
   }
 }

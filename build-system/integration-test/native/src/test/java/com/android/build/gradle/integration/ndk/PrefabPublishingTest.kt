@@ -68,8 +68,8 @@ class PrefabPublishingTest(private val buildType: String, private val buildSyste
     fun data() =
       arrayOf("debug", "release")
         .map { config ->
-          CMakeVersion.FOR_TESTING.map { arrayOf(config, NativeBuildSystem.CMAKE, it.version) } +
-            arrayOf(arrayOf(config, NativeBuildSystem.NDK_BUILD, "N/A"))
+          CMakeVersion.FOR_TESTING.map { arrayOf<Any>(config, NativeBuildSystem.CMAKE, it.version) } +
+            listOf(arrayOf<Any>(config, NativeBuildSystem.NDK_BUILD, "N/A"))
         }
         .flatten()
   }

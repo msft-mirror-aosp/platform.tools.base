@@ -321,11 +321,13 @@ message Process {
   // The device time when this Process was first detected by the profiler.
   int64 start_timestamp_ns = 5;
   // e.g. 'arm', 'arm86', 'x86', 'x86_64'
-  // Also see SdkConstans.CPU_ARCH_*
+  // Also see SdkConstants.CPU_ARCH_*
   string abi_cpu_arch = 6;
   ExposureLevel exposure_level = 7;
   // Package name known only for debuggable processes in Transport Pipeline.
   string package_name = 8;
+  // Android UID (User ID) of the process.
+  int32 uid = 9;
 }
 
 // A Session represents a range of profiling data for an app running on a
@@ -368,7 +370,7 @@ message SessionMetaData {
   bool jvmti_enabled = 4;
   // Session's type which indicates what data it has.
   SessionType type = 6;
-  // See SdkConstans.CPU_ARCH_* as provided by the BeginSessionRequest.
+  // See SdkConstants.CPU_ARCH_* as provided by the BeginSessionRequest.
   string process_abi = 7;
   // Session's task type indicating the type of task the session is underlying.
   ProfilerTaskType task_type = 8;
@@ -454,7 +456,7 @@ message SessionData {
     bool jvmti_enabled = 6;
     // Session's type which indicates what data it has.
     SessionType type = 9;
-    // See SdkConstans.CPU_ARCH_*
+    // See SdkConstants.CPU_ARCH_*
     string process_abi = 10;
     // Session's task type indicating the type of task the session is underlying.
     ProfilerTaskType task_type = 11;

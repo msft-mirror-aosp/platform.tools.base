@@ -32,7 +32,7 @@ import org.gradle.api.provider.Provider
 import org.gradle.api.specs.Spec
 
 /** implementation of [NamedDomainObjectFactory] over a simple [Map] for tests. */
-open class FakeNamedDomainObjectContainer<T>(
+open class FakeNamedDomainObjectContainer<T : Any>(
   private val itemFactory: NamedDomainObjectFactory<out T>,
   private val nameSupplier: (T) -> String,
 ) // this is because Configuration does not extend Named
@@ -75,9 +75,9 @@ open class FakeNamedDomainObjectContainer<T>(
     return createAndAddItem(name)
   }
 
-  override fun getByName(name: String?): T = items[name] ?: throw RuntimeException("Item '$name' not found")
+  override fun getByName(name: String): T = items[name] ?: throw RuntimeException("Item '$name' not found")
 
-  override fun findByName(name: String?): T? = items[name]
+  override fun findByName(name: String): T? = items[name]
 
   override fun whenObjectAdded(action: Action<in T>): Action<in T> {
     whenAddedActions.add(action)
@@ -113,11 +113,11 @@ open class FakeNamedDomainObjectContainer<T>(
   }
 
   // ---
-  override fun create(p0: String?, p1: Action<in T>?): T {
+  override fun create(p0: String, p1: Action<in T>): T {
     TODO("not implemented")
   }
 
-  override fun create(p0: String?, p1: Closure<*>?): T {
+  override fun create(p0: String, p1: Closure<*>): T {
     TODO("not implemented")
   }
 
@@ -125,27 +125,27 @@ open class FakeNamedDomainObjectContainer<T>(
     TODO("not implemented")
   }
 
-  override fun whenObjectAdded(p0: Closure<*>?) {
+  override fun whenObjectAdded(p0: Closure<*>) {
     TODO("not implemented")
   }
 
-  override fun all(p0: Closure<*>?) {
+  override fun all(p0: Closure<*>) {
     TODO("not implemented")
   }
 
-  override fun all(p0: Action<in T>?) {
+  override fun all(p0: Action<in T>) {
     TODO("not implemented")
   }
 
-  override fun <S : T> withType(p0: Class<S>?): NamedDomainObjectSet<S> {
+  override fun <S : T> withType(p0: Class<S>): NamedDomainObjectSet<S> {
     TODO("not implemented")
   }
 
-  override fun <S : T> withType(p0: Class<S>?, p1: Closure<*>?): DomainObjectCollection<S> {
+  override fun <S : T> withType(p0: Class<S>, p1: Closure<*>): DomainObjectCollection<S> {
     TODO("not implemented")
   }
 
-  override fun <S : T> withType(p0: Class<S>?, p1: Action<in S>?): DomainObjectCollection<S> {
+  override fun <S : T> withType(p0: Class<S>, p1: Action<in S>): DomainObjectCollection<S> {
     TODO("not implemented")
   }
 
@@ -153,15 +153,15 @@ open class FakeNamedDomainObjectContainer<T>(
     TODO("not implemented")
   }
 
-  override fun addRule(p0: String?, p1: Closure<*>?): Rule {
+  override fun addRule(p0: String, p1: Closure<*>): Rule {
     TODO("not implemented")
   }
 
-  override fun addRule(p0: Rule?): Rule {
+  override fun addRule(p0: Rule): Rule {
     TODO("not implemented")
   }
 
-  override fun addRule(p0: String?, p1: Action<String>?): Rule {
+  override fun addRule(p0: String, p1: Action<String>): Rule {
     TODO("not implemented")
   }
 
@@ -177,11 +177,11 @@ open class FakeNamedDomainObjectContainer<T>(
     TODO("not implemented")
   }
 
-  override fun getByName(p0: String?, p1: Action<in T>?): T {
+  override fun getByName(p0: String, p1: Action<in T>): T {
     TODO("not implemented")
   }
 
-  override fun getByName(p0: String?, p1: Closure<*>?): T {
+  override fun getByName(p0: String, p1: Closure<*>): T {
     TODO("not implemented")
   }
 
@@ -193,7 +193,7 @@ open class FakeNamedDomainObjectContainer<T>(
     TODO("not implemented")
   }
 
-  override fun findAll(p0: Closure<*>?): MutableSet<T> {
+  override fun findAll(p0: Closure<*>): MutableSet<T> {
     TODO("not implemented")
   }
 
@@ -201,11 +201,11 @@ open class FakeNamedDomainObjectContainer<T>(
     TODO("not implemented")
   }
 
-  override fun matching(p0: Closure<*>?): NamedDomainObjectSet<T> {
+  override fun matching(p0: Closure<*>): NamedDomainObjectSet<T> {
     TODO("not implemented")
   }
 
-  override fun matching(p0: Spec<in T>?): NamedDomainObjectSet<T> {
+  override fun matching(p0: Spec<in T>): NamedDomainObjectSet<T> {
     TODO("not implemented")
   }
 
@@ -217,11 +217,11 @@ open class FakeNamedDomainObjectContainer<T>(
     TODO("not implemented")
   }
 
-  override fun whenObjectRemoved(p0: Closure<*>?) {
+  override fun whenObjectRemoved(p0: Closure<*>) {
     TODO("not implemented")
   }
 
-  override fun getAt(p0: String?): T {
+  override fun getAt(p0: String): T {
     TODO("not implemented")
   }
 
@@ -237,27 +237,27 @@ open class FakeNamedDomainObjectContainer<T>(
     TODO("not implemented")
   }
 
-  override fun configure(p0: Closure<*>?): NamedDomainObjectContainer<T> {
+  override fun configure(p0: Closure<*>): NamedDomainObjectContainer<T> {
     TODO("not implemented")
   }
 
-  override fun configureEach(p0: Action<in T>?) {
+  override fun configureEach(p0: Action<in T>) {
     TODO("not implemented")
   }
 
-  override fun addLater(p0: Provider<out T>?) {
+  override fun addLater(p0: Provider<out T>) {
     TODO("not implemented")
   }
 
-  override fun register(p0: String?, p1: Action<in T>?): NamedDomainObjectProvider<T> {
+  override fun register(p0: String, p1: Action<in T>): NamedDomainObjectProvider<T> {
     TODO("not implemented") // To change body of created functions use File | Settings | File Templates.
   }
 
-  override fun register(p0: String?): NamedDomainObjectProvider<T> {
+  override fun register(p0: String): NamedDomainObjectProvider<T> {
     TODO("not implemented") // To change body of created functions use File | Settings | File Templates.
   }
 
-  override fun named(p0: String?): NamedDomainObjectProvider<T> {
+  override fun named(p0: String): NamedDomainObjectProvider<T> {
     TODO("not implemented") // To change body of created functions use File | Settings | File Templates.
   }
 

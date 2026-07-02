@@ -16,8 +16,6 @@
 
 package com.android.tools.androidtest.testengine
 
-import com.android.ddmlib.testrunner.TestIdentifier as DdmlibTestIdentifier
-import com.android.ddmlib.testrunner.XmlTestRunListener
 import com.android.tools.androidtest.testengine.instrument.AmInstrumentationListener
 import com.android.tools.androidtest.testengine.instrument.AmInstrumentationParser
 import com.android.tools.androidtest.testengine.instrument.AmInstrumentationRunner

@@ -541,4 +541,37 @@ class ViewInspectorTest {
       assertThat(stringTable[configuration.locale.language]).isEqualTo("ar")
       assertThat(configuration.locale.country).isEqualTo(0)
     }
+
+  @Test
+  fun testDumpViews_appContext() =
+    runTest(testDispatcher) {
+      val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+      activity.setTheme(android.R.style.Theme_Material)
+      activity.setContentView(setupViews(activity))
+
+      val inspector =
+        ViewInspector(
+          object : Connection() {
+            override fun sendEvent(data: ByteArray) {}
+          },
+          mockEnvironment,
+        )
+      val response = runDumpCommand(inspector)
+
+      assertThat(response.specializedCase).isEqualTo(Response.SpecializedCase.DUMP_VIEWS_RESPONSE)
+      val dumpResponse = response.dumpViewsResponse
+      assertThat(dumpResponse.hasAppContext()).isTrue()
+
+      val appContext = dumpResponse.appContext
+      val stringTable = dumpResponse.stringsList.associate { it.id to it.value }
+
+      // Verify theme string resolution
+      assertThat(stringTable[appContext.theme]).isEqualTo("@android:style/Theme.Material")
+
+      // Verify display info presence
+      assertThat(appContext.displayInfoCount).isAtLeast(1)
+      val display = appContext.getDisplayInfo(0)
+      assertThat(display.widthPx).isGreaterThan(0)
+      assertThat(display.heightPx).isGreaterThan(0)
+    }
 }

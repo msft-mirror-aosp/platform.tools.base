@@ -45,8 +45,10 @@ import com.android.utils.ILogger
 import com.google.wireless.android.sdk.stats.DeviceInfo
 import java.nio.file.Path
 import javax.swing.Icon
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Instant
 import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.collections.immutable.toImmutableMap
 import kotlinx.coroutines.CancellationException
@@ -72,8 +74,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 
 /**
  * Provides access to emulators running on the local machine from the standard AVD directory. Supports creating, editing, starting, and

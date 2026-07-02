@@ -30,6 +30,11 @@ import org.junit.platform.engine.support.hierarchical.Node
 class AndroidTestEngineDescriptor(uniqueId: UniqueId) :
   EngineDescriptor(uniqueId, "Android Test Engine"), Node<AndroidTestExecutionContext> {
 
+  // Allowlist regex to sanitize device-reported strings (serials/OS versions) before
+  // using them as host path components to prevent path traversal (b/509645146).
+  // Space is allowed to preserve default device directory names (e.g., "emulator-5554 - 13").
+  private val safeNameRegex = Regex("[^a-zA-Z0-9._ -]")
+
   override fun mayRegisterTests(): Boolean = true
 
   /**
@@ -43,7 +48,9 @@ class AndroidTestEngineDescriptor(uniqueId: UniqueId) :
 
     config.deviceSerials.forEach { deviceSerial ->
       val androidVersion = getAndroidVersion(adbController, deviceSerial)
-      val defaultDisplayName = if (androidVersion.isNotEmpty()) "$deviceSerial - $androidVersion" else deviceSerial
+      val rawDefaultDisplayName = if (androidVersion.isNotEmpty()) "$deviceSerial - $androidVersion" else deviceSerial
+      val defaultDisplayName =
+        safeNameRegex.replace(rawDefaultDisplayName, "_").let { if (it.isBlank() || it.all { c -> c == '.' }) "device" else it }
       val deviceId = config.getDeviceId(deviceSerial) ?: defaultDisplayName
       // Android Studio expects the device serial in the UniqueId to match results
       // with its internal device model.

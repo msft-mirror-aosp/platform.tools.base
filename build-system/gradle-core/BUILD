@@ -223,6 +223,7 @@ kotlin_test(
         "@maven//:com.android.tools.build.bundletool",
         "@maven//:com.android.tools.desugar_jdk_libs",
         "@maven//:com.android.tools.desugar_jdk_libs_configuration",
+        "@maven//:com.android.tools.smali.smali-dexlib2",
         "@maven//:com.google.code.gson.gson",
         "@maven//:com.google.crypto.tink.tink",
         "@maven//:com.google.jimfs.jimfs",

@@ -9,7 +9,7 @@ load(":merge_archives.bzl", "run_singlejar")
 
 # buildifier: disable=native-java-common
 # buildifier: disable=native-java-info
-def kotlin_compile(ctx, name, srcs, deps, friend_jars, out, out_ijar, java_runtime, kotlinc_opts, warn = "off"):
+def kotlin_compile(ctx, name, srcs, deps, friend_jars, out, out_ijar, java_runtime, kotlinc_opts, kotlin_version, warn = "off"):
     """Runs kotlinc on the given source files.
 
     Args:
@@ -22,6 +22,7 @@ def kotlin_compile(ctx, name, srcs, deps, friend_jars, out, out_ijar, java_runti
         out_ijar: the output ijar file or None to disable ijar creation
         java_runtime: a JavaRuntimeInfo provider corresponding to the target JVM
         kotlinc_opts: list of additional flags to pass to the Kotlin compiler
+        kotlin_version: the Kotlin language/API version to target (constrained by the stdlib version available at runtime)
         warn: how to treat compiler warnings. "off", "report" or "error".
 
     Returns:
@@ -46,8 +47,8 @@ def kotlin_compile(ctx, name, srcs, deps, friend_jars, out, out_ijar, java_runti
     # [1] tools/idea/.idea/libraries/kotlin_stdlib.xml
     # [2] https://docs.gradle.org/current/userguide/compatibility.html#kotlin
     # [3] https://developer.android.com/build/releases/gradle-plugin#updating-gradle
-    args.add("-api-version", "2.0")
-    args.add("-language-version", "2.0")
+    args.add("-api-version", kotlin_version)
+    args.add("-language-version", kotlin_version)
     args.add("-module-name", name)
     args.add("-Xsuppress-version-warnings")
 
@@ -207,6 +208,7 @@ def kotlin_library(
         deps = None,
         exports = None,
         javacopts = [],
+        kotlin_version = "2.2",  # The default value corresponds to the minimum kotlin-stdlib across AGP, google3, etc.
         jvm_target = "17",  # The default value corresponds to the minimum JDK across AGP, google3, etc.
         kotlinc_opts = [],
         lint_enabled = True,
@@ -231,6 +233,7 @@ def kotlin_library(
         deps: The dependencies of this library.
         exports: A list of exports. Optional.
         javacopts: Additional javac options.
+        kotlin_version: The Kotlin language level and target API level.
         jvm_target: The target JVM version.
         kotlinc_opts: Additional kotlinc options.
         lint_enabled: enable or disable Lint checks
@@ -268,6 +271,7 @@ def kotlin_library(
         name = name,
         srcs = srcs,
         jar = jar,
+        kotlin_version = kotlin_version,
         jvm_target = jvm_target,
         deps = deps,
         exports = exports,
@@ -363,6 +367,7 @@ def _kotlin_library_impl(ctx):
             out_ijar = kotlin_ijar,
             java_runtime = java_runtime,
             kotlinc_opts = kotlinc_opts,
+            kotlin_version = ctx.attr.kotlin_version,
             warn = warn,
         ))
         cjars.append(kotlin_jar)
@@ -450,6 +455,7 @@ _kotlin_library = rule(
         "data": attr.label_list(allow_files = True),
         "friends": attr.label_list(),
         "jar": attr.output(mandatory = True),
+        "kotlin_version": attr.string(mandatory = True),
         "jvm_target": attr.string(mandatory = True),
         "deps": attr.label_list(providers = [JavaInfo]),
         "exports": attr.label_list(providers = [JavaInfo]),

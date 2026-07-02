@@ -17,32 +17,75 @@
 package com.android.builder.merge
 
 import com.android.builder.packaging.ParsedPackagingOptions
-import java.io.ByteArrayInputStream
-import java.io.InputStream
+import org.junit.Assert
 import org.junit.Test
-import org.mockito.ArgumentMatchers.any
-import org.mockito.ArgumentMatchers.eq
-import org.mockito.Mockito.mock
-import org.mockito.Mockito.verify
 
 class FileMergerOutputsTest {
 
+  class MockSourceMergeOutputWriter : SourceMergeOutputWriter {
+    var createZipSourceCalled = false
+    var createInputStreamCalled = false
+    var openCalled = false
+    var closeCalled = false
+
+    override fun create(path: String, source: com.android.zipflinger.ZipSource) {
+      createZipSourceCalled = true
+    }
+
+    override fun create(path: String, data: java.io.InputStream, compress: Boolean) {
+      createInputStreamCalled = true
+    }
+
+    override fun replace(path: String, source: com.android.zipflinger.ZipSource) {}
+
+    override fun replace(path: String, data: java.io.InputStream, compress: Boolean) {}
+
+    override fun remove(path: String) {}
+
+    override fun open() {
+      openCalled = true
+    }
+
+    override fun close() {
+      closeCalled = true
+    }
+  }
+
   @Test
-  fun testFromAlgorithmAndWriter() {
-    val mergedStream = ByteArrayInputStream(byteArrayOf(1))
-    val algorithm = InputStreamMerger(ParsedPackagingOptions(emptyList(), emptyList(), emptyList()))
-    val writer = mock(MergeOutputWriter::class.java)
+  fun testFromAlgorithmAndWriterWithJavaResZipSourceWriter() {
+    val algorithm = JavaResZipSourceMerger(ParsedPackagingOptions(emptyList(), emptyList(), emptyList()))
+    val writer = MockSourceMergeOutputWriter()
     val output = FileMergerOutputs.fromAlgorithmAndWriter(algorithm, writer)
 
-    writer.open()
-    writer.use {
-      output.open()
-      output.use {
-        val input = FileMergerTestInput("i0")
+    output.open()
+    output.use {
+      val input = FileMergerTestInput("i0")
+      input.use {
+        input.open()
         input.add("path")
         output.create("path", listOf(input), true)
-        verify(writer).create(eq("path"), any(InputStream::class.java), eq(true))
       }
+      // Since FileMergerTestInput.openAsZipSource returns a ZipSource,
+      // FileMergerOutputs will call writer.create(path, zipSource)
+      Assert.assertTrue(writer.createZipSourceCalled)
+    }
+  }
+
+  @Test
+  fun testFromAlgorithmAndWriterWithJavaResZipSourceWriterMerged() {
+    // Force MERGE action to trigger InputStream fallback (returns ByteArray from merger)
+    val algorithm = JavaResZipSourceMerger(ParsedPackagingOptions(emptyList(), emptyList(), listOf("path")))
+    val writer = MockSourceMergeOutputWriter()
+    val output = FileMergerOutputs.fromAlgorithmAndWriter(algorithm, writer)
+
+    output.open()
+    output.use {
+      val input = FileMergerTestInput("i0")
+      input.add("path")
+      output.create("path", listOf(input), true)
+      // Since it's a MERGE action, JavaResZipSourceMerger returns a ByteArray,
+      // and FileMergerOutputs will call writer.create(path, inputStream, compress)
+      Assert.assertTrue(writer.createInputStreamCalled)
     }
   }
 }

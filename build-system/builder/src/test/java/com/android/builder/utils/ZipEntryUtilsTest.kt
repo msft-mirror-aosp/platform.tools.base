@@ -26,6 +26,14 @@ class ZipEntryUtilsTest {
 
   @Test
   fun testZipEntryNameValidation() {
+    assertThat(isValidZipEntryName("good/file/path/file.txt")).isTrue()
+    assertThat(isValidZipEntryName("good/./path/file.txt")).isTrue()
+    assertThat(isValidZipEntryName("./goodfile.txt")).isTrue()
+    assertThat(isValidZipEntryName("../../../mybadfile.txt")).isFalse()
+    assertThat(isValidZipEntryName("..\\..\\..\\mybadfile.txt")).isFalse()
+    assertThat(isValidZipEntryName("C:\\mybadfile.txt")).isFalse()
+    assertThat(isValidZipEntryName("mybadfile\n.txt")).isFalse()
+
     val invalidEntry = ZipEntry("../../../mybadfile.txt")
     val validEntry = ZipEntry("good/file/path/file.txt")
     assertThat(isValidZipEntryName(validEntry)).isTrue()
@@ -39,5 +47,11 @@ class ZipEntryUtilsTest {
     val invalidFile = File("/tmp/output/../../../../someFile.txt")
     assertThat(isValidZipEntryPath(validFile, outputDir)).isTrue()
     assertThat(isValidZipEntryPath(invalidFile, outputDir)).isFalse()
+
+    if (File.separatorChar == '\\') {
+      val winOutputDir = File("C:\\tmp\\output")
+      val winEscapedFile = File("C:\\tmp\\output\\..\\..\\evil.txt")
+      assertThat(isValidZipEntryPath(winEscapedFile, winOutputDir)).isFalse()
+    }
   }
 }

@@ -144,6 +144,7 @@ def _iml_module_jar_impl(
             out_ijar = kotlin_ijar,
             java_runtime = java_runtime,
             kotlinc_opts = kotlinc_opts,
+            kotlin_version = "2.3",  # Constrained by the kotlin-stdlib version in IntelliJ.
         ))
         jars.append(kotlin_jar)
         ijars.append(kotlin_ijar)

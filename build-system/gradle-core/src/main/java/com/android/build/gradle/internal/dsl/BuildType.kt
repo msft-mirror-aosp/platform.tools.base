@@ -333,7 +333,7 @@ constructor(
    * except for enabling optimizations.
    */
   override fun setProguardFiles(proguardFileIterable: Iterable<*>): BuildType {
-    val replacementFiles = Iterables.toArray(proguardFileIterable, Any::class.java)
+    val replacementFiles = proguardFileIterable.filterNotNull().toTypedArray()
     proguardFiles.clear()
     proguardFiles(*replacementFiles)
     return this

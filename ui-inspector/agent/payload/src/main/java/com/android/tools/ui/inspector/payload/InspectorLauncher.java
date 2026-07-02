@@ -17,11 +17,12 @@
 package com.android.tools.ui.inspector.payload;
 
 import android.util.Log;
+import com.android.tools.ui.inspector.common.ProtocolConstants;
 import java.util.function.Consumer;
 
 /** Entry point for the UI Inspector payload. Starts a Unix domain socket server to listen for commands from the host. */
 public final class InspectorLauncher {
-  private static final String TAG = "studio.Inspector";
+  private static final String TAG = ProtocolConstants.LOG_TAG_PREFIX + ".InspectorLauncher";
   private static Thread serverThread = null;
 
   private InspectorLauncher() {}

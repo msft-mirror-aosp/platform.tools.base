@@ -109,8 +109,6 @@ class ${mediaBrowserServiceName} : MediaBrowserServiceCompat() {
         session = MediaSessionCompat(this, "${mediaBrowserServiceName}")
         sessionToken = session.sessionToken
         session.setCallback(callback)
-        session.setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS or
-                MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS)
     }
 
     override fun onDestroy() {

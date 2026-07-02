@@ -22,7 +22,6 @@ import com.android.build.api.dsl.ScreenshotTestSuite
 import com.android.build.gradle.internal.services.DslServices
 import javax.inject.Inject
 import org.gradle.api.Action
-import org.gradle.api.GradleException
 import org.gradle.api.artifacts.dsl.DependencyHandler
 import org.gradle.api.provider.ProviderFactory
 
@@ -61,7 +60,9 @@ constructor(
     get() = screenshotSuite.targetVariants
 
   init {
-    // Automatically populate default engines and inputs
+    // Automatically populate default targets, engines and inputs
+    targets.create("default")
+
     useJunitEngine {
       includeEngines.add(SCREENSHOT_TEST_ENGINE_ID)
       inputs.addAll(
@@ -73,6 +74,9 @@ constructor(
           AgpTestSuiteInputParameters.R_CLASS_JARS,
           AgpTestSuiteInputParameters.ANDROID_RES_DIRS,
           AgpTestSuiteInputParameters.RESOURCES_AP_ARCHIVE,
+          AgpTestSuiteInputParameters.LAYOUTLIB_CLASSPATH,
+          AgpTestSuiteInputParameters.LAYOUTLIB_DATA_DIR,
+          AgpTestSuiteInputParameters.SDK_FONTS_DIR,
         )
       )
 
@@ -82,7 +86,7 @@ constructor(
           if (version.isNullOrBlank()) {
             dslServices.issueReporter.reportError(
               com.android.builder.errors.IssueReporter.Type.GENERIC,
-              "Screenshot test engine version must be specified. e.g. engineVersion = \"0.0.1-alpha01\""
+              "Screenshot test engine version must be specified. e.g. engineVersion = \"0.0.1-alpha01\"",
             )
             "unspecified"
           } else {
@@ -94,12 +98,6 @@ constructor(
         versionProvider.map { version ->
           dependencyHandler.create("com.android.tools.screenshot:screenshot-validation-junit-engine:$version")
         }
-      )
-      enginesDependencies.add(
-        versionProvider.map { version -> dependencyHandler.create("com.android.tools.compose:compose-preview-renderer:$version") }
-      )
-      enginesDependencies.add(
-        versionProvider.map { version -> dependencyHandler.create("com.android.tools.screenshot:screenshot-validation-api:$version") }
       )
     }
 

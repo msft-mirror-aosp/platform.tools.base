@@ -104,6 +104,7 @@ fi
 
 # --- Get Impacted Targets ---
 "${bazel_wrapper}" run //tools/base/bazel:bazel-diff get-impacted-targets -- \
+ --workspacePath="${WORKSPACE}" \
  --startingHashes="${start_hashes_filepath}" \
  --finalHashes="${final_hashes_filepath}" \
  --output="${impacted_targets_filepath}" \

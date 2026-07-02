@@ -147,5 +147,27 @@ Device Configuration:
     assertThat(output.normalizeLineEndings()).isEqualTo(expectedOutput.normalizeLineEndings())
   }
 
+  @Test
+  fun testPrintAppContext() {
+    val stringTable = mapOf(1 to "@style/Theme.AppCompat")
+    val display = ViewInspectorProtocol.Display.newBuilder().setId(0).setWidthPx(1080).setHeightPx(1920).setOrientation(90).build()
+    val appContext = ViewInspectorProtocol.AppContext.newBuilder().setTheme(1).addDisplayInfo(display).build()
+
+    printAppContext(appContext, stringTable)
+
+    val output = outContent.toString().trim()
+
+    val expectedOutput =
+      """
+App Context:
+ Theme: @style/Theme.AppCompat
+ Displays:
+  - Display 0: 1080x1920 px, rotation 90°
+"""
+        .trim()
+
+    assertThat(output.normalizeLineEndings()).isEqualTo(expectedOutput.normalizeLineEndings())
+  }
+
   private fun String.normalizeLineEndings(): String = this.replace("\r\n", "\n").replace('\r', '\n')
 }

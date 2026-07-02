@@ -29,6 +29,7 @@ import com.android.build.gradle.internal.utils.fromDisallowChanges
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.utils.isValidZipEntryName
+import com.android.builder.utils.isValidZipEntryPath
 import com.android.utils.FileUtils
 import com.google.common.base.Joiner
 import com.google.common.base.Preconditions
@@ -198,6 +199,9 @@ private fun copyFromJar(jarFile: File, outputDirectory: File) {
 
       // get the output file and write to it.
       val to = computeFile(outputDirectory, entryPath)
+      if (!isValidZipEntryPath(to, outputDirectory)) {
+        continue
+      }
       FileUtils.mkdirs(to.parentFile)
       Files.write(byteBuffer.array(), to)
     }

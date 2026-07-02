@@ -30,7 +30,7 @@ open class DelegateFileMergerOutput(private val delegate: FileMergerOutput) : Fi
     isOpen = false
   }
 
-  override fun <T : FileMergerInput> create(path: String, inputs: List<T>, compress: Boolean) {
+  override fun create(path: String, inputs: List<FileMergerInputNonIncremental>, compress: Boolean) {
     if (!isOpen) error("File Merger is not open.")
     delegate.create(path, inputs, compress)
   }

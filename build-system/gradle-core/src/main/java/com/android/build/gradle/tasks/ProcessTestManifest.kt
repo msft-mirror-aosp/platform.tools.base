@@ -162,7 +162,7 @@ abstract class ProcessTestManifest : ManifestProcessorTask() {
     appManifestOverlays: List<File>,
     testedAppManifestFile: File?,
     manifestProviders: List<ManifestProvider?>,
-    manifestPlaceholders: Map<String?, Any?>,
+    manifestPlaceholders: Map<String, Any>,
     navigationJsons: Collection<File>,
     extractNativeLibs: Boolean?,
     debuggable: Boolean,

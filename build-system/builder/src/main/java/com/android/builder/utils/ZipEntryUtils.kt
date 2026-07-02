@@ -21,11 +21,16 @@ package com.android.builder.utils
 import java.io.File
 import java.util.zip.ZipEntry
 
+/** Validates the raw zip entry name string to prevent traversal attacks. */
+fun isValidZipEntryName(name: String): Boolean {
+  return !name.contains(":") && name.split('/', '\\').none { it == ".." } && name.none { it < ' ' }
+}
+
 /**
  * Validates the name of a zip entry to prevent directory traversal attacks (e.g., Zip-Slip).
  *
  * This function returns true if the entry is safe. It specifically rejects:
- * - Traversal sequences (`..`) and current directory (`.`) components.
+ * - Traversal sequences (`..`) components.
  * - Absolute Windows paths with drives (`:`).
  * - Control characters (e.g., line feeds), which can be used for command injection.
  *
@@ -38,13 +43,12 @@ import java.util.zip.ZipEntry
  * @return `true` if the entry name is considered safe, `false` otherwise.
  */
 fun isValidZipEntryName(entry: ZipEntry): Boolean {
-  val name = entry.name
-  return !name.contains(":") && name.split('/', '\\').none { it == ".." || it == "." } && name.none { it < ' ' }
+  return isValidZipEntryName(entry.name)
 }
 
 /** Helper function to validate the path inside a zipfile does not leave the output directory. */
 fun isValidZipEntryPath(filePath: File, outputDir: File): Boolean {
-  return filePath.canonicalPath.startsWith(outputDir.canonicalPath + File.separator)
+  return filePath.canonicalFile.toPath().startsWith(outputDir.canonicalFile.toPath())
 }
 
 /** Creates a new zip entry with time set to zero. */
