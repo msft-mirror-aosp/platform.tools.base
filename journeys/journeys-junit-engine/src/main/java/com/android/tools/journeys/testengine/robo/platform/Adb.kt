@@ -113,15 +113,17 @@ class Adb(private val adbPath: String, private val executor: ProcessExecutor) {
    * Forwards a host port to a device port using `adb forward`.
    *
    * @param deviceId The ID of the target device.
-   * @param hostPort The port on the host machine.
+   * @param hostPort The port on the host machine. Passing 0 enables dynamic port assignment.
    * @param devicePort The port on the device.
+   * @return The standard output of the forward command.
    */
-  fun forward(deviceId: String, hostPort: Int, devicePort: Int) {
-    execCmdSync(
+  fun forward(deviceId: String, hostPort: Int, devicePort: Int): String {
+    return execCmdSync(
       deviceId = deviceId,
       adbCmd = "forward tcp:$hostPort tcp:$devicePort",
-      hasFailed = { exitValue != 0 || !fullOut.contains("$hostPort") },
+      hasFailed = { exitValue != 0 || (hostPort != 0 && !fullOut.contains("$hostPort")) },
     )
+    .stdout
   }
 
   /**

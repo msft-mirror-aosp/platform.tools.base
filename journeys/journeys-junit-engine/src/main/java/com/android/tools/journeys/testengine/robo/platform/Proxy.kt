@@ -36,8 +36,6 @@ import io.grpc.ManagedChannel
 import io.grpc.MethodDescriptor
 import java.io.File
 import java.io.FileOutputStream
-import java.io.IOException
-import java.net.ServerSocket
 import java.nio.file.Path
 import java.util.logging.Level
 import java.util.logging.Logger
@@ -298,13 +296,9 @@ class Proxy(
     try {
       return retryIf(
         block = {
-          val hostPort = findAvailablePort()
-          if (hostPort != 0) {
-            adb.forward(deviceId, hostPort, roboDevicePort)
-            hostPort
-          } else {
-            0
-          }
+          val output = adb.forward(deviceId, 0, roboDevicePort)
+          val hostPort = output.lines().map { it.trim() }.firstOrNull { it.toIntOrNull() != null }?.toInt() ?: 0
+          hostPort
         },
         retryCondition = { hostPort -> hostPort == 0 },
         blockDoc = "setup adb forward",
@@ -340,19 +334,6 @@ class Proxy(
       )
     } catch (e: Exception) {
       throw JourneyExecutionException(e.message, e, JourneyFailureReason.ROBO_PORT_EXTRACTION_FAILED)
-    }
-  }
-
-  /**
-   * Finds an available ephemeral port by binding a ServerSocket to port 0.
-   *
-   * @return An available port number, or 0 if an error occurs during binding.
-   */
-  private fun findAvailablePort(): Int {
-    return try {
-      ServerSocket(0).use { it.localPort }
-    } catch (e: IOException) {
-      0
     }
   }
 
@@ -427,10 +408,18 @@ class Proxy(
     sleepBetweenRetries: Long = 0,
     maxRetries: Int = 5,
   ): T {
+    var lastException: Exception? = null
     for (attempt in 1..maxRetries) {
-      val result = block()
-      if (!retryCondition(result)) {
-        return result
+      try {
+        lastException = null
+
+        val result = block()
+        if (!retryCondition(result)) {
+          return result
+        }
+      } catch (e: Exception) {
+        System.err.println("Attempt $attempt of $maxRetries failed: ${e.message ?: e.toString()}")
+        lastException = e
       }
       if (attempt < maxRetries) {
         if (sleepBetweenRetries > 0) {
@@ -438,7 +427,7 @@ class Proxy(
         }
       }
     }
-    throw IllegalStateException("Failed to $blockDoc after $maxRetries attempts.")
+    throw IllegalStateException("Failed to $blockDoc after $maxRetries attempts.", lastException)
   }
 
   /**
