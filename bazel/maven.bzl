@@ -15,6 +15,7 @@ def generate_pom(
         version,
         output_pom,
         deps = [],
+        deps_compile_only = [],
         exports = [],
         description = None,
         pom_name = None,
@@ -62,9 +63,11 @@ def generate_pom(
         for (dependency, exclusions) in exclusions.items():
             args += ["--exclusion", dependency, ",".join([e for e in exclusions])]
 
+    if deps_compile_only:
+        args += ["--deps_compile_only", ":".join([p.path for p in deps_compile_only])]
     args += ["--deps", ":".join([dep.path for dep in deps])]
     args += ["--exports", ":".join([dep.path for dep in exports])]
-    inputs += deps + exports
+    inputs += deps + exports + deps_compile_only
 
     ctx.actions.run(
         mnemonic = "GenPom",
@@ -480,8 +483,10 @@ def split_coordinates(coordinates, version):
 
 def _maven_library_impl(ctx):
     infos_deps = [dep[MavenInfo] for dep in ctx.attr.deps]
+    infos_deps_compile_only = [dep[MavenInfo] for dep in getattr(ctx.attr, "deps_compile_only", [])]
     infos_exports = [dep[MavenInfo] for dep in ctx.attr.exports]
     pom_deps = [info.pom for info in infos_deps]
+    pom_deps_compile_only = [info.pom for info in infos_deps_compile_only]
     pom_exports = [info.pom for info in infos_exports]
 
     coordinates = split_coordinates(ctx.attr.coordinates, ctx.attr.version)
@@ -497,6 +502,7 @@ def _maven_library_impl(ctx):
         description = ctx.attr.description,
         pom_name = pom_name,
         deps = pom_deps,
+        deps_compile_only = pom_deps_compile_only,
         exports = pom_exports,
     )
     outputs = [ctx.outputs.pom]
@@ -598,6 +604,7 @@ _maven_library = rule(
             allow_single_file = True,
         ),
         "deps": attr.label_list(providers = [MavenInfo]),
+        "deps_compile_only": attr.label_list(providers = [MavenInfo]),
         "exports": attr.label_list(providers = [MavenInfo]),
         "_zipper": attr.label(
             default = Label("@bazel_tools//tools/zip:zipper"),
@@ -632,6 +639,7 @@ def maven_library(
         resource_strip_prefix = None,
         data = [],
         deps = [],
+        deps_compile_only = [],
         exports = [],
         runtime_deps = [],
         bundled_deps = [],
@@ -651,6 +659,7 @@ def maven_library(
         plugins = [],
         manifest_lines = None,
         warn = "off",
+        kotlin_use_serialization = False,
         **kwargs):
     """Compiles a library jar from Java and Kotlin sources
 
@@ -661,6 +670,7 @@ def maven_library(
         resources: Resources to add to the jar.
         resources_strip_prefix: The prefix to strip from the resources path.
         deps: The dependencies of this library.
+        deps_compile_only: The compile-only (provided) dependencies of this library.
         exports: The exported dependencies of this library.
         runtime_deps: The runtime dependencies.
         bundled_deps: The dependencies that are bundled inside the output jar and not treated as a maven dependency
@@ -685,7 +695,7 @@ def maven_library(
         kotlinc_opts = kotlinc_opts,
         compress_resources = is_release(),
         data = data,
-        deps = deps + bundled_deps + neverlink_deps,
+        deps = deps + deps_compile_only + bundled_deps + neverlink_deps,
         exports = exports,
         friends = friends,
         notice = notice,
@@ -696,6 +706,7 @@ def maven_library(
         runtime_deps = runtime_deps,
         coverage_baseline_enabled = False,
         stdlib = None,  # Maven libraries use the stdlib in different scopes and versions.
+        kotlin_use_serialization = kotlin_use_serialization,
         plugins = plugins,
         warn = warn,
         **kwargs
@@ -706,6 +717,7 @@ def maven_library(
         jar_name = jar_name,
         notice = notice,
         deps = deps,
+        deps_compile_only = deps_compile_only,
         bundled_deps = bundled_deps,
         exports = exports,
         coordinates = coordinates,

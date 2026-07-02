@@ -18,13 +18,14 @@ package com.android.tools.binaries;
 
 import static org.junit.Assert.fail;
 
+import org.junit.Test;
+
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import org.junit.Test;
 
 public class PomGeneratorTest {
 
@@ -53,6 +54,7 @@ public class PomGeneratorTest {
                 null,
                 outputPom,
                 pomDependencies,
+                null,
                 pomExports,
                 "group",
                 "artifact",

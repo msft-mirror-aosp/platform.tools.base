@@ -17,9 +17,17 @@
 package com.android.tools.binaries;
 
 import com.android.tools.maven.MavenCoordinates;
+
 import com.google.common.base.Splitter;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+
+import org.apache.maven.model.Dependency;
+import org.apache.maven.model.Exclusion;
+import org.apache.maven.model.Model;
+import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
+import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -34,11 +42,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
 import java.util.stream.Collectors;
-import org.apache.maven.model.Dependency;
-import org.apache.maven.model.Exclusion;
-import org.apache.maven.model.Model;
-import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
-import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
 
 /**
  * A tool to create pom files. Usage:
@@ -83,6 +86,7 @@ public class PomGenerator {
         File in = null;
         File out = null;
         List<File> deps = null;
+        List<File> depsCompileOnly = null;
         List<File> exports = null;
         String group = null;
         String artifact = null;
@@ -134,6 +138,14 @@ public class PomGenerator {
                                     .map(File::new)
                                     .collect(Collectors.toList());
                 }
+            } else if (arg.equals("--deps_compile_only") && it.hasNext()) {
+                String val = it.next();
+                if (!val.isEmpty()) {
+                    depsCompileOnly =
+                            Arrays.stream(val.split(":"))
+                                    .map(File::new)
+                                    .collect(Collectors.toList());
+                }
             } else if (arg.equals("--exclusion")) {
                 exclusions.putAll(it.next(), Splitter.on(',').split(it.next()));
             } else if (arg.equals("-x")) {
@@ -155,7 +167,18 @@ public class PomGenerator {
             }
             version = getVersionFromPropertiesFiles(properties_files, version_property);
         }
-        generatePom(in, out, deps, exports, group, artifact, version, description, name, export);
+        generatePom(
+                in,
+                out,
+                deps,
+                depsCompileOnly,
+                exports,
+                group,
+                artifact,
+                version,
+                description,
+                name,
+                export);
     }
 
     private static String getVersionFromPropertiesFiles(
@@ -195,6 +218,7 @@ public class PomGenerator {
             File in,
             File out,
             List<File> pomDependencies,
+            List<File> pomDepsCompileOnly,
             List<File> pomExports,
             String group,
             String artifact,
@@ -207,6 +231,7 @@ public class PomGenerator {
         if ((in != null
                         && out != null
                         && pomDependencies == null
+                        && pomDepsCompileOnly == null
                         && pomExports == null
                         && group == null
                         && artifact == null
@@ -250,6 +275,11 @@ public class PomGenerator {
         if (pomDependencies != null) {
             for (File pom : pomDependencies) {
                 addDependencyTo(pom, "runtime", deps);
+            }
+        }
+        if (pomDepsCompileOnly != null) {
+            for (File pom : pomDepsCompileOnly) {
+                addDependencyTo(pom, "provided", deps);
             }
         }
         model.setDependencies(deps);
