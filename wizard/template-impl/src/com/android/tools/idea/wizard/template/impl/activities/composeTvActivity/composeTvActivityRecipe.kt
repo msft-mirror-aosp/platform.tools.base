@@ -17,7 +17,6 @@ package com.android.tools.idea.wizard.template.impl.activities.composeTvActivity
 
 import com.android.tools.idea.wizard.template.ModuleTemplateData
 import com.android.tools.idea.wizard.template.RecipeExecutor
-import com.android.tools.idea.wizard.template.impl.activities.common.COMPOSE_BOM_VERSION
 import com.android.tools.idea.wizard.template.impl.activities.common.addAllKotlinDependencies
 import com.android.tools.idea.wizard.template.impl.activities.common.addComposeDependencies
 import com.android.tools.idea.wizard.template.impl.activities.common.generateManifestStrings
@@ -35,7 +34,6 @@ fun RecipeExecutor.composeTvActivityRecipe(
   isLauncher: Boolean,
   greeting: String,
   defaultPreview: String,
-  composeBomVersion: String = COMPOSE_BOM_VERSION,
 ) {
   val (_, srcOut, resOut, _) = moduleData
 
@@ -44,7 +42,7 @@ fun RecipeExecutor.composeTvActivityRecipe(
   addDependency("androidx.appcompat:appcompat:+")
 
   // Add Compose dependencies, using the BOM to set versions
-  addComposeDependencies(moduleData, composeBomVersion)
+  addComposeDependencies(moduleData, composeBomVersion = "2026.02.01")
 
   // Add Compose for TV dependencies; the Compose BOM does not include Compose for TV.
   addDependency(mavenCoordinate = "androidx.tv:tv-foundation:+")
