@@ -37,7 +37,7 @@ cc_library(
     deps = [
         "//prebuilts/studio/jdk:jni_headers",
         "//tools/base/android-test/coverage/common:log",
-        "//tools/base/android-test/coverage/proto:coverage_metadata_cc_proto",
+        "//tools/base/build-system/gradle-core:coverage_metadata_cc_proto",
         "@slicer",
     ],
 )

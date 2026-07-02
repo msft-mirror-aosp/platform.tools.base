@@ -22,7 +22,7 @@
 #include <string>
 #include <vector>
 
-#include "tools/base/android-test/coverage/proto/coverage_metadata.pb.h"
+#include "tools/base/build-system/gradle-core/src/main/proto/coverage_metadata.pb.h"
 
 namespace coverage {
 

@@ -685,11 +685,15 @@ com/android/tools/build/gradle
   com/android/tools/build/
   com/android/tools/build/libraries/
   com/android/tools/build/libraries/metadata/
+  com/android/tools/coverage/
+  com/android/tools/coverage/proto/
+  com/android/tools/coverage/reporter/
   com/android/tools/idea/
   com/android/tools/idea/insights/
   com/android/tools/idea/insights/proto/
   com/android/tools/mlkit/
   com/android/tools/profgen/
+  coverage_metadata.proto
   cxx_attribution.proto
   cxx_caching.proto
   cxx_configure.proto
