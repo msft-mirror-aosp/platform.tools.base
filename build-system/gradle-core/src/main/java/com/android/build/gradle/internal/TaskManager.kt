@@ -29,6 +29,7 @@ import com.android.build.api.artifact.impl.InternalScopedArtifacts
 import com.android.build.api.dsl.Device
 import com.android.build.api.dsl.DeviceGroup
 import com.android.build.api.instrumentation.FramesComputationMode
+import com.android.build.api.variant.Packaging
 import com.android.build.api.variant.ScopedArtifacts
 import com.android.build.api.variant.impl.FlatSourceDirectoriesImpl
 import com.android.build.api.variant.impl.TaskProviderBasedDirectoryEntryImpl
@@ -739,7 +740,7 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
    *
    * This sets up only the Sync part. The java res merging is setup via [ ][.createMergeJavaResTask]
    */
-  protected fun createProcessJavaResTask(creationConfig: ComponentCreationConfig) {
+  protected fun createProcessJavaResTask(creationConfig: ComponentCreationConfig, packaging: Packaging) {
     // Copy the source folders java resources into the temporary location, mainly to
     // maintain the PluginDsl COPY semantics.
     val taskConfig =
@@ -762,6 +763,9 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
 
         override val sources: FlatSourceDirectoriesImpl?
           get() = creationConfig.sources.resources
+
+        override val packaging: Packaging
+          get() = packaging
 
         override fun setJavaResTask(task: TaskProvider<out Sync>) {
           creationConfig.taskContainer.processJavaResourcesTask = task

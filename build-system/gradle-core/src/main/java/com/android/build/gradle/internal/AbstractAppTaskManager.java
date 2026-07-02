@@ -146,7 +146,7 @@ public abstract class AbstractAppTaskManager<
         createApkProcessResTask(creationConfig);
 
         // Add a task to process the java resources
-        createProcessJavaResTask(creationConfig);
+        createProcessJavaResTask(creationConfig, creationConfig.getPackaging());
 
         createAidlTask(creationConfig);
 

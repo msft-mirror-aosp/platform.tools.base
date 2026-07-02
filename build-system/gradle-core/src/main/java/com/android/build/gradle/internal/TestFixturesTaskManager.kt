@@ -69,7 +69,7 @@ class TestFixturesTaskManager(project: Project, globalConfig: GlobalTaskCreation
     createDependencyStreams(testFixturesComponent)
 
     // java resources tasks
-    createProcessJavaResTask(testFixturesComponent)
+    createProcessJavaResTask(testFixturesComponent, testFixturesComponent.mainVariant.packaging)
 
     if (testFixturesComponent.services.projectOptions.get(BooleanOption.ENABLE_JAVA_RESOURCE_OPTIMIZATIONS)) {
       taskFactory.register(

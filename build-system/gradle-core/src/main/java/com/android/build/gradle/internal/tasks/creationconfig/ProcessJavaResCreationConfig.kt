@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.tasks.creationconfig
 
+import com.android.build.api.variant.Packaging
 import com.android.build.api.variant.impl.FlatSourceDirectoriesImpl
 import com.android.build.gradle.internal.component.TaskCreationConfig
 import org.gradle.api.artifacts.Configuration
@@ -43,6 +44,8 @@ interface ProcessJavaResCreationConfig : TaskCreationConfig {
 
   /** The Java/Kotlin `resources` directories if there are any. */
   val sources: FlatSourceDirectoriesImpl?
+
+  val packaging: Packaging
 
   /**
    * g Saves the [com.android.build.gradle.internal.tasks.ProcessJavaResTask] to the [com.android.build.gradle.internal.scope.TaskContainer]

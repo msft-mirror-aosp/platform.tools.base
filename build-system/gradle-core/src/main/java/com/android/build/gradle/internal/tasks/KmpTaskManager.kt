@@ -23,6 +23,7 @@ import com.android.build.api.artifact.impl.InternalScopedArtifact
 import com.android.build.api.artifact.impl.InternalScopedArtifacts
 import com.android.build.api.component.impl.KmpAndroidTestImpl
 import com.android.build.api.component.impl.KmpHostTestImpl
+import com.android.build.api.variant.Packaging
 import com.android.build.api.variant.ScopedArtifacts
 import com.android.build.api.variant.impl.FlatSourceDirectoriesImpl
 import com.android.build.gradle.internal.AndroidTestTaskManager
@@ -168,6 +169,9 @@ class KmpTaskManager(project: Project, global: GlobalTaskCreationConfig) : TaskM
 
         override val sources: FlatSourceDirectoriesImpl?
           get() = variant.sources.resources
+
+        override val packaging: Packaging
+          get() = variant.packaging
 
         override fun setJavaResTask(task: TaskProvider<out Sync>) {
           variant.taskContainer.processJavaResourcesTask = task

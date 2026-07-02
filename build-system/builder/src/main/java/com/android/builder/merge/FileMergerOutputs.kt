@@ -20,6 +20,34 @@ package com.android.builder.merge
 object FileMergerOutputs {
 
   @JvmStatic
+  fun fromAlgorithmAndWriter(merger: InputStreamMerger, writer: MergeOutputWriter): FileMergerOutput {
+    return object : FileMergerOutput {
+      override fun open() {
+        writer.open()
+      }
+
+      override fun close() {
+        writer.close()
+      }
+
+      override fun create(path: String, inputs: List<FileMergerInput>, compress: Boolean) {
+        merger.merge(
+          path,
+          compress,
+          {
+            inputs.map { input ->
+              input.open()
+              MergeInput(input.openPath(path), input.getName())
+            }
+          },
+        ) {
+          writer.create(path, it, compress)
+        }
+      }
+    }
+  }
+
+  @JvmStatic
   fun fromAlgorithmAndWriter(merger: JavaResZipSourceMerger, writer: SourceMergeOutputWriter): FileMergerOutput {
     return object : FileMergerOutput {
       override fun open() {
@@ -30,7 +58,7 @@ object FileMergerOutputs {
         writer.close()
       }
 
-      override fun create(path: String, inputs: List<FileMergerInputNonIncremental>, compress: Boolean) {
+      override fun create(path: String, inputs: List<FileMergerInput>, compress: Boolean) {
         merger.merge(path, compress, { inputs }) { result ->
           when (result) {
             is MergedSourceResult.ZipSource -> writer.create(path, result.source)

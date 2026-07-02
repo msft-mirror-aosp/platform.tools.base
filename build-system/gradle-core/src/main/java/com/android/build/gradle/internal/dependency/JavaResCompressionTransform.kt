@@ -17,17 +17,26 @@
 package com.android.build.gradle.internal.dependency
 
 import com.android.SdkConstants
+import com.android.builder.packaging.ParsedPackagingOptions
 import org.gradle.api.artifacts.transform.CacheableTransform
 import org.gradle.api.artifacts.transform.InputArtifact
 import org.gradle.api.artifacts.transform.TransformAction
 import org.gradle.api.artifacts.transform.TransformOutputs
 import org.gradle.api.file.FileSystemLocation
 import org.gradle.api.provider.Provider
+import org.gradle.api.provider.SetProperty
 import org.gradle.api.tasks.Classpath
+import org.gradle.api.tasks.Input
 
 /* Compresses Java resources (directory or JAR) into a single JAR. */
 @CacheableTransform
-abstract class JavaResCompressionTransform : TransformAction<GenericTransformParameters> {
+abstract class JavaResCompressionTransform : TransformAction<JavaResCompressionTransform.Parameters> {
+
+  interface Parameters : GenericTransformParameters {
+    @get:Input val excludes: SetProperty<String>
+    @get:Input val pickFirsts: SetProperty<String>
+    @get:Input val merges: SetProperty<String>
+  }
 
   @get:Classpath @get:InputArtifact abstract val inputArtifact: Provider<FileSystemLocation>
 
@@ -35,19 +44,21 @@ abstract class JavaResCompressionTransform : TransformAction<GenericTransformPar
     val inputFile = inputArtifact.get().asFile
     if (!inputFile.exists()) return
     val outputFile = outputs.file("${inputFile.nameWithoutExtension}${SdkConstants.DOT_JAR}")
-    UncompressedJavaRes.Jar(inputFile).compressToJar(outputFile)
+    val packagingOptions = ParsedPackagingOptions(parameters.excludes.get(), parameters.pickFirsts.get(), parameters.merges.get())
+    UncompressedJavaRes.Jar(inputFile, packagingOptions).compressToJar(outputFile)
   }
 }
 
 /* Compresses Java resources from an exploded aar into a single JAR. */
 @CacheableTransform
-abstract class JavaResCompressionFromExplodedAarTransform : TransformAction<GenericTransformParameters> {
+abstract class JavaResCompressionFromExplodedAarTransform : TransformAction<JavaResCompressionTransform.Parameters> {
 
   @get:Classpath @get:InputArtifact abstract val inputArtifact: Provider<FileSystemLocation>
 
   override fun transform(outputs: TransformOutputs) {
     val explodedAarJars = getJars(inputArtifact.get().asFile)
     val outputFile = outputs.file("${inputArtifact.get().asFile.name}${SdkConstants.DOT_JAR}")
-    UncompressedJavaRes.MultipleJars(explodedAarJars).compressToJar(outputFile)
+    val packagingOptions = ParsedPackagingOptions(parameters.excludes.get(), parameters.pickFirsts.get(), parameters.merges.get())
+    UncompressedJavaRes.MultipleJars(explodedAarJars, packagingOptions).compressToJar(outputFile)
   }
 }

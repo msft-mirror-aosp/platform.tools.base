@@ -88,7 +88,7 @@ class TestSuiteTaskManager(project: Project, globalConfig: GlobalTaskCreationCon
     taskFactory.register(CompressAssetsTask.CreationAction(apkCreationConfig))
     createNavigationProcessingTasks(apkCreationConfig)
     createApkProcessResTask(apkCreationConfig)
-    createProcessJavaResTask(apkCreationConfig)
+    createProcessJavaResTask(apkCreationConfig, apkCreationConfig.packaging)
     createMergeJniLibFoldersTasks(apkCreationConfig)
     taskFactory.register(StripDebugSymbolsTask.CreationAction(apkCreationConfig))
     createPostCompilationTasks(apkCreationConfig)

@@ -37,7 +37,6 @@ import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.merge.DelegateFileMergerOutput
 import com.android.builder.merge.FileMerger
 import com.android.builder.merge.FileMergerInput
-import com.android.builder.merge.FileMergerInputNonIncremental
 import com.android.builder.merge.FileMergerOutputs
 import com.android.builder.merge.FilterFileMergerInput
 import com.android.builder.merge.JavaResZipSourceMerger
@@ -274,11 +273,11 @@ abstract class MergeJavaResOptimizedWorkAction : ProfileAwareWorkAction<MergeJav
 
     val output =
       object : DelegateFileMergerOutput(baseOutput) {
-        override fun create(path: String, inputs: List<FileMergerInputNonIncremental>, compress: Boolean) {
+        override fun create(path: String, inputs: List<FileMergerInput>, compress: Boolean) {
           super.create(path, filter(path, inputs), compress)
         }
 
-        private fun filter(path: String, inputs: List<FileMergerInputNonIncremental>): ImmutableList<FileMergerInputNonIncremental> {
+        private fun filter(path: String, inputs: List<FileMergerInput>): ImmutableList<FileMergerInput> {
           val packagingAction = packagingOptions.getAction(path)
           val shouldFilterInputs =
             packagingAction == ParsedPackagingOptions.JavaResPackagingFileAction.NONE && inputs.any { highPriorityInputs.contains(it) }

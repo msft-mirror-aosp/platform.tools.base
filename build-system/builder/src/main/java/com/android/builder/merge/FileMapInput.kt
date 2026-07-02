@@ -16,22 +16,25 @@
 
 package com.android.builder.merge
 
-open class DelegateFileMergerOutput(private val delegate: FileMergerOutput) : FileMergerOutput {
+import java.io.File
+import java.io.InputStream
+import kotlin.io.inputStream
 
-  var isOpen = false
+class FileMapInput(private val name: String, private val fileMap: Map<String, File>) : FileMergerInput {
 
-  override fun open() {
-    delegate.open()
-    isOpen = true
-  }
+  val streamMap = mutableMapOf<String, InputStream>()
+
+  override fun getAllPaths(): Set<String> = fileMap.keys
+
+  override fun getName(): String = name
+
+  override fun open() {}
 
   override fun close() {
-    delegate.close()
-    isOpen = false
+    streamMap.forEach { (_, stream) -> stream.close() }
+    streamMap.clear()
   }
 
-  override fun create(path: String, inputs: List<FileMergerInput>, compress: Boolean) {
-    if (!isOpen) error("File Merger is not open.")
-    delegate.create(path, inputs, compress)
-  }
+  override fun openPath(path: String): InputStream =
+    streamMap.computeIfAbsent(path) { (fileMap[path] ?: error("File not found: $path")).inputStream() }
 }

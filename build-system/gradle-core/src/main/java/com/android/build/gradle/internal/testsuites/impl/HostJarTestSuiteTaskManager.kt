@@ -19,6 +19,7 @@ package com.android.build.gradle.internal.testsuites.impl
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.api.component.impl.LifecycleTasksImpl
+import com.android.build.api.variant.Packaging
 import com.android.build.api.variant.impl.FlatSourceDirectoriesImpl
 import com.android.build.api.variant.impl.TestSuiteSourceContainer
 import com.android.build.gradle.internal.TestSuiteTaskManager
@@ -81,6 +82,9 @@ class HostJarTestSuiteTaskManager(val project: Project, val testSuiteTaskManager
 
         override val sources: FlatSourceDirectoriesImpl
           get() = source.resources
+
+        override val packaging: Packaging
+          get() = testSuite.testedVariant.packaging
 
         override fun setJavaResTask(task: TaskProvider<out Sync>) {}
 
