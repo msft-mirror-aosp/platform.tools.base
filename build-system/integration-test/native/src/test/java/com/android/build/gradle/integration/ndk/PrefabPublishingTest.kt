@@ -28,9 +28,6 @@ import com.android.build.gradle.internal.cxx.model.CxxAbiModel
 import com.android.build.gradle.internal.cxx.model.minSdkVersion
 import com.android.build.gradle.internal.cxx.model.name
 import com.android.build.gradle.tasks.NativeBuildSystem
-import com.android.testutils.ignore.IgnoreTestRule
-import com.android.testutils.ignore.IgnoreWithCondition
-import com.android.testutils.ignore.OnWindows
 import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.truth.Truth
 import java.io.File
@@ -43,9 +40,6 @@ import org.junit.runners.Parameterized
 
 @RunWith(Parameterized::class)
 class PrefabPublishingTest(private val buildType: String, private val buildSystem: NativeBuildSystem, private val cmakeVersion: String) {
-
-  @get:Rule
-  val ignoreTests = IgnoreTestRule()
 
   private val projectName = "prefabPublishing"
   private val gradleModuleName = "foo"
@@ -435,7 +429,6 @@ class PrefabPublishingTest(private val buildType: String, private val buildSyste
       )
   }
 
-  @IgnoreWithCondition(reason = "b/530211050", condition = OnWindows::class)
   @Test
   fun `modules with hyphenated names that are prefixes of other modules match appropriately`() {
     val subproject = project.getSubproject(gradleModuleName)

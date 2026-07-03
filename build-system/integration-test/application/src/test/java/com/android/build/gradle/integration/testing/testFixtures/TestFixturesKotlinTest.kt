@@ -22,9 +22,6 @@ import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.TestUtils
 import com.android.testutils.apk.Apk
-import com.android.testutils.ignore.IgnoreTestRule
-import com.android.testutils.ignore.IgnoreWithCondition
-import com.android.testutils.ignore.OnWindows
 import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.truth.Truth
 import java.io.File
@@ -33,9 +30,6 @@ import org.junit.Test
 
 /** Similar to [TestFixturesTest], but using a project with kotlin test fixtures */
 class TestFixturesKotlinTest {
-
-  @get:Rule
-  val ignoreTests = IgnoreTestRule()
 
   @get:Rule
   val project: GradleTestProject =
@@ -136,68 +130,58 @@ class TestFixturesKotlinTest {
     }
   }
 
-  @IgnoreWithCondition(reason = "b/530211050", condition = OnWindows::class)
   @Test
   fun `library consumes local test fixtures`() {
     executor().run(":lib:testDebugUnitTest")
   }
 
-  @IgnoreWithCondition(reason = "b/530211050", condition = OnWindows::class)
   @Test
   fun `verify library test fixtures resources dependency on main resources`() {
     executor().run(":lib:verifyReleaseTestFixturesResources")
   }
 
-  @IgnoreWithCondition(reason = "b/530211050", condition = OnWindows::class)
   @Test
   fun `verify library resources dependency on test fixtures resources from local project`() {
     setUpProject(publishJavaLib = false, publishAndroidLib = false)
     executor().run(":lib2:verifyReleaseResources")
   }
 
-  @IgnoreWithCondition(reason = "b/530211050", condition = OnWindows::class)
   @Test
   fun `verify library resources dependency on test fixtures resources from published lib`() {
     setUpProject(publishJavaLib = false, publishAndroidLib = true)
     executor().run(":lib2:verifyReleaseResources")
   }
 
-  @IgnoreWithCondition(reason = "b/530211050", condition = OnWindows::class)
   @Test
   fun `verify library test dependency on test fixtures resources from local project`() {
     setUpProject(publishJavaLib = false, publishAndroidLib = false)
     executor().run(":lib2:testDebugUnitTest")
   }
 
-  @IgnoreWithCondition(reason = "b/530211050", condition = OnWindows::class)
   @Test
   fun `verify library test dependency on test fixtures resources from published lib`() {
     setUpProject(publishJavaLib = false, publishAndroidLib = true)
     executor().run(":lib2:testDebugUnitTest")
   }
 
-  @IgnoreWithCondition(reason = "b/530211050", condition = OnWindows::class)
   @Test
   fun `app consumes local, java and android library test fixtures`() {
     setUpProject(publishJavaLib = false, publishAndroidLib = false)
     executor().run(":app:testDebugUnitTest")
   }
 
-  @IgnoreWithCondition(reason = "b/530211050", condition = OnWindows::class)
   @Test
   fun `app consumes local, published java and android library test fixtures`() {
     setUpProject(publishJavaLib = true, publishAndroidLib = true)
     executor().run(":app:testDebugUnitTest")
   }
 
-  @IgnoreWithCondition(reason = "b/530211050", condition = OnWindows::class)
   @Test
   fun `app consumes android library test fixtures published using new publishing dsl`() {
     setUpProject(publishJavaLib = false, publishAndroidLib = true)
     executor().run(":app:testDebugUnitTest")
   }
 
-  @IgnoreWithCondition(reason = "b/530211050", condition = OnWindows::class)
   @Test
   fun `publish android library main variant without its test fixtures`() {
     TestFileUtils.appendToFile(
@@ -221,7 +205,6 @@ class TestFixturesKotlinTest {
     assertThat(project.projectDir.resolve(mainVariantAar)).exists()
   }
 
-  @IgnoreWithCondition(reason = "b/530211050", condition = OnWindows::class)
   @Test
   fun `lint analyzes local and library module testFixtures sources`() {
     setUpProjectForLint(ignoreTestFixturesSourcesInApp = false)
@@ -236,7 +219,6 @@ class TestFixturesKotlinTest {
       )
   }
 
-  @IgnoreWithCondition(reason = "b/530211050", condition = OnWindows::class)
   @Test
   fun `lint ignores local testFixtures sources`() {
     setUpProjectForLint(ignoreTestFixturesSourcesInApp = true)
@@ -250,7 +232,6 @@ class TestFixturesKotlinTest {
       )
   }
 
-  @IgnoreWithCondition(reason = "b/530211050", condition = OnWindows::class)
   @Test
   fun `test plugin consumes test fixtures`() {
     setUpProject(publishAndroidLib = false, publishJavaLib = false)
@@ -264,7 +245,6 @@ class TestFixturesKotlinTest {
     )
   }
 
-  @IgnoreWithCondition(reason = "b/530211050", condition = OnWindows::class)
   @Test
   fun `test plugin consumes published test fixtures`() {
     setUpProject(publishAndroidLib = true, publishJavaLib = true)
@@ -278,7 +258,6 @@ class TestFixturesKotlinTest {
     )
   }
 
-  @IgnoreWithCondition(reason = "b/530211050", condition = OnWindows::class)
   @Test
   fun `test plugin excludes main lib classes but includes test fixtures`() {
     setUpProject(publishAndroidLib = false, publishJavaLib = false)
@@ -294,7 +273,6 @@ class TestFixturesKotlinTest {
     )
   }
 
-  @IgnoreWithCondition(reason = "b/530211050", condition = OnWindows::class)
   @Test
   fun `instrumentation tests consume test fixtures`() {
     setUpProject(publishAndroidLib = false, publishJavaLib = false)
@@ -308,7 +286,6 @@ class TestFixturesKotlinTest {
     )
   }
 
-  @IgnoreWithCondition(reason = "b/530211050", condition = OnWindows::class)
   @Test
   fun `instrumentation tests consume published test fixtures`() {
     setUpProject(publishAndroidLib = true, publishJavaLib = true)
@@ -322,7 +299,6 @@ class TestFixturesKotlinTest {
     )
   }
 
-  @IgnoreWithCondition(reason = "b/530211050", condition = OnWindows::class)
   @Test
   fun `instrumentation tests exclude main lib classes but include test fixtures`() {
     setUpProject(publishAndroidLib = false, publishJavaLib = false)
