@@ -370,7 +370,7 @@ class SdkParsingUtilsTest {
     assertThat(issueReporter.messages)
       .containsExactly(
         """
-        compile SDK preview version "S" has not been tested with this version of the Android Gradle plugin.
+        Compile SDK preview version "S" has not been tested with this version of the Android Gradle plugin.
 
         This Android Gradle plugin (7.0.0-beta01) was tested up to compile SDK version 30.
 
@@ -427,7 +427,7 @@ class SdkParsingUtilsTest {
     assertThat(issueReporter.messages)
       .containsExactly(
         """
-        compile SDK preview version "C" has not been tested with this version of the Android Gradle plugin.
+        Compile SDK preview version "C" has not been tested with this version of the Android Gradle plugin.
 
         This Android Gradle plugin (8.13.0-alpha01) was tested up to compile SDK version 36.1.
 
@@ -458,7 +458,7 @@ class SdkParsingUtilsTest {
     assertThat(issueReporter.messages)
       .containsExactly(
         """
-        compile SDK preview version "S2" has not been tested with this version of the Android Gradle plugin.
+        Compile SDK preview version "S2" has not been tested with this version of the Android Gradle plugin.
 
         This Android Gradle plugin (7.0.0-beta01) was tested up to compile SDK version 30 (and compile SDK preview version "S").
 
@@ -658,5 +658,36 @@ class SdkParsingUtilsTest {
     )
     assertThat(issueReporter.messages).isEmpty()
     assertThat(issueReporter.syncIssues).isEmpty()
+  }
+
+  @Test
+  fun `testMessageForAndroidPlatformBetas`() {
+    val issueReporter = FakeSyncIssueReporter(throwOnError = true)
+    warnIfCompileSdkTooNew(
+      version = AndroidVersion(37, 1).withBetaNumber(2),
+      issueReporter = issueReporter,
+      maxVersion = AndroidVersion(37, 0),
+      androidGradlePluginVersion = AgpVersion.parse("9.5.0"),
+    )
+    assertThat(issueReporter.messages)
+      .containsExactly(
+        """
+        Compile SDK preview version "37.1-beta2" has not been tested with this version of the Android Gradle plugin.
+
+        This Android Gradle plugin (9.5.0) was tested up to compile SDK version 37.0.
+
+        While it may work as expected, you might encounter compatibility issues.
+        If you do, please check for a newer version of the Android Gradle plugin.
+
+        For more information refer to the compatibility table:
+        https://d.android.com/r/tools/api-level-support
+
+        To suppress this warning, add/update
+            android.suppressUnsupportedCompileSdk=37.1-beta2
+        to this project's gradle.properties.
+        """
+          .trimIndent()
+      )
+    assertThat(issueReporter.syncIssues[0].data).isEqualTo("android.suppressUnsupportedCompileSdk=37.1-beta2")
   }
 }
