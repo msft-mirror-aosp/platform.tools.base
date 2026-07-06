@@ -28,6 +28,7 @@ package com.android.build.gradle.internal.test.report
  * @property numberOfClasses The total count of classes.
  * @property variants A list of all variant names included in this report.
  * @property testSuites A list of all unique test suite names.
+ * @property targets A list of all unique test target names.
  * @property modules A list of modules in the project.
  */
 data class RootReport(
@@ -38,6 +39,7 @@ data class RootReport(
   val numberOfClasses: Int,
   val variants: List<String>,
   val testSuites: List<String>,
+  val targets: List<String>,
   val modules: List<Module>,
 )
 
@@ -100,19 +102,27 @@ data class VariantTestResult(
 data class TestSuiteTestResult(val testSuiteName: String, val variantResults: Map<String, VariantTestResult>)
 
 /**
- * Represents a test method with results across multiple suites and variants.
+ * Represents a device target execution under a test case.
  *
- * @property name The name of the test case.
- * @property testSuiteSummaries Summaries of the test suites for this specific test case.
+ * @property name The name of the target device/platform.
+ * @property testSuiteSummaries Summaries of the test suites for this target.
  * @property testSuiteResults A list of results grouped by test suite.
- * @property commonStackTraces A list of unique stack traces encountered for this test case.
+ * @property commonStackTraces A list of unique stack traces encountered for this target.
  */
-data class TestCase(
+data class Target(
   val name: String,
   val testSuiteSummaries: List<TestSuiteSummary>,
   val testSuiteResults: List<TestSuiteTestResult>,
   val commonStackTraces: List<StackTraceGroup>,
 )
+
+/**
+ * Represents a test method with results across multiple suites, variants, and targets.
+ *
+ * @property name The name of the test case.
+ * @property targets A list of targets on which this test case was executed.
+ */
+data class TestCase(val name: String, val targets: List<Target>)
 
 /**
  * Represents a unique stack trace and its occurrences.

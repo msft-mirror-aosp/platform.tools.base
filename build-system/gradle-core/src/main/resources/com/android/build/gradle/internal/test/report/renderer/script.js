@@ -1742,12 +1742,15 @@ const TestReportApp = {
   // --- HELPERS ---
 
   getVariantResultForTestCase(testCase, suiteName, variantName) {
-      if (!testCase.testSuiteResults) return null;
+      // For now, use the first target's properties. This works for all non-GMD current use cases out of the box.
+      // Device-specific UI and naming will be added in a subsequent phase (bug b/525671605).
+      const testSuiteResults = (testCase.targets && testCase.targets[0]) ? testCase.targets[0].testSuiteResults : testCase.testSuiteResults;
+      if (!testSuiteResults) return null;
       let suitesToSearch = [];
       if (suiteName === 'all') {
-          suitesToSearch = testCase.testSuiteResults;
+          suitesToSearch = testSuiteResults;
       } else {
-          const specific = testCase.testSuiteResults.find(ts => ts.testSuiteName === suiteName);
+          const specific = testSuiteResults.find(ts => ts.testSuiteName === suiteName);
           if (specific) suitesToSearch = [specific];
       }
 
@@ -1769,7 +1772,10 @@ const TestReportApp = {
     const activeSuite = this.state.filters.testSuite;
     const activeVariants = this.state.filters.variants;
 
-    return (node.commonStackTraces || []).some(group => {
+    // For now, use the first target's properties. This works for all non-GMD current use cases out of the box.
+    // Device-specific UI and naming will be added in a subsequent phase (see bug b/525671605).
+    const commonStackTraces = (node.targets && node.targets[0]) ? node.targets[0].commonStackTraces : node.commonStackTraces;
+    return (commonStackTraces || []).some(group => {
         for (const [suite, variants] of Object.entries(group.occurrences)) {
             if (activeSuite !== 'all' && suite !== activeSuite) continue;
             if (variants.some(v => activeVariants.includes(v))) return true;
@@ -1787,15 +1793,19 @@ const TestReportApp = {
 
     const suiteFilter = this.state.filters.testSuite;
 
+    // For now, use the first target's properties. This works for all non-GMD current use cases out of the box.
+    // Device-specific UI and naming will be added in a subsequent phase (see bug b/525671605).
+    const testSuiteSummaries = (node.targets && node.targets[0]) ? node.targets[0].testSuiteSummaries : node.testSuiteSummaries;
+
     return `${variantsToShow.map(v => {
         let variantSummary = null;
         if (suiteFilter === 'all') {
-            const aggregatedSuite = node.testSuiteSummaries.find(ts => ts.name === 'Aggregated');
+            const aggregatedSuite = testSuiteSummaries ? testSuiteSummaries.find(ts => ts.name === 'Aggregated') : null;
             if (aggregatedSuite) {
                 variantSummary = aggregatedSuite.variantSummaries.find(vs => vs.name === v);
             }
         } else {
-            const suiteSummary = node.testSuiteSummaries.find(ts => ts.name === suiteFilter);
+            const suiteSummary = testSuiteSummaries ? testSuiteSummaries.find(ts => ts.name === suiteFilter) : null;
             if (suiteSummary) {
                 variantSummary = suiteSummary.variantSummaries.find(vs => vs.name === v);
             }
@@ -1883,8 +1893,12 @@ const TestReportApp = {
     const activeSuite = this.state.filters.testSuite;
     const activeVariants = this.state.filters.variants;
 
+    // For now, use the first target's properties. This works for all non-GMD current use cases out of the box.
+    // Device-specific UI and naming will be added in a subsequent phase (see bug b/525671605).
+    const commonStackTraces = (testCase.targets && testCase.targets[0]) ? testCase.targets[0].commonStackTraces : testCase.commonStackTraces;
+
     // Filter groups and their internal occurrences based on active filters
-    const filteredGroups = (testCase.commonStackTraces || []).map(group => {
+    const filteredGroups = (commonStackTraces || []).map(group => {
         const filteredOccurrences = {};
         let hasMatch = false;
 

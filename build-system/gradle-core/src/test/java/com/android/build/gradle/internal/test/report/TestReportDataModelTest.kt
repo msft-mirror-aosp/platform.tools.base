@@ -36,17 +36,20 @@ class TestReportDataModelTest {
           mapOf("debug" to VariantTestResult(status = "pass"), "release" to VariantTestResult(status = "fail", stackTraceId = "st-1")),
       )
 
-    val testCase =
-      TestCase(
-        name = "testSomething",
+    val target =
+      Target(
+        name = UNKNOWN_TARGET,
         testSuiteSummaries = emptyList(),
         testSuiteResults = listOf(testSuiteResult),
         commonStackTraces = listOf(stackTraceGroup),
       )
 
+    val testCase = TestCase(name = "testSomething", targets = listOf(target))
+
     val jsonString = gson.toJson(testCase)
 
     assertThat(jsonString).contains("\"name\":\"testSomething\"")
+    assertThat(jsonString).contains("\"name\":\"$UNKNOWN_TARGET\"")
     assertThat(jsonString).contains("\"testSuiteName\":\"unitTest\"")
     assertThat(jsonString).contains("\"status\":\"pass\"")
     assertThat(jsonString).contains("\"status\":\"fail\"")
@@ -58,13 +61,14 @@ class TestReportDataModelTest {
   fun `test RootReport serialization`() {
     val testSuiteResult =
       TestSuiteTestResult(testSuiteName = "unitTest", variantResults = mapOf("debug" to VariantTestResult(status = "pass")))
-    val testCase =
-      TestCase(
-        name = "test1",
+    val target =
+      Target(
+        name = UNKNOWN_TARGET,
         testSuiteSummaries = emptyList(),
         testSuiteResults = listOf(testSuiteResult),
         commonStackTraces = emptyList(),
       )
+    val testCase = TestCase(name = "test1", targets = listOf(target))
     val classType = ClassType(name = "MyTest", testSuiteSummaries = emptyList(), testCases = listOf(testCase))
     val pkg = Package(name = "com.example", testSuiteSummaries = emptyList(), classes = listOf(classType))
     val module = Module(name = ":app", testSuiteSummaries = emptyList(), packages = listOf(pkg))
@@ -78,6 +82,7 @@ class TestReportDataModelTest {
         numberOfClasses = 1,
         variants = listOf("debug", "release"),
         testSuites = listOf("unitTest"),
+        targets = listOf(UNKNOWN_TARGET),
         modules = listOf(module),
       )
 
@@ -85,7 +90,7 @@ class TestReportDataModelTest {
 
     val expectedJson =
       """
-      {"projectName":"project","timestamp":"Mar 4, 2026, 6:09PM","numberOfModules":1,"numberOfPackages":1,"numberOfClasses":1,"variants":["debug","release"],"testSuites":["unitTest"],"modules":[{"name":":app","testSuiteSummaries":[],"packages":[{"name":"com.example","testSuiteSummaries":[],"classes":[{"name":"MyTest","testSuiteSummaries":[],"testCases":[{"name":"test1","testSuiteSummaries":[],"testSuiteResults":[{"testSuiteName":"unitTest","variantResults":{"debug":{"status":"pass"}}}],"commonStackTraces":[]}]}]}]}]}
+      {"projectName":"project","timestamp":"Mar 4, 2026, 6:09PM","numberOfModules":1,"numberOfPackages":1,"numberOfClasses":1,"variants":["debug","release"],"testSuites":["unitTest"],"targets":["$UNKNOWN_TARGET"],"modules":[{"name":":app","testSuiteSummaries":[],"packages":[{"name":"com.example","testSuiteSummaries":[],"classes":[{"name":"MyTest","testSuiteSummaries":[],"testCases":[{"name":"test1","targets":[{"name":"$UNKNOWN_TARGET","testSuiteSummaries":[],"testSuiteResults":[{"testSuiteName":"unitTest","variantResults":{"debug":{"status":"pass"}}}],"commonStackTraces":[]}]}]}]}]}]}
       """
         .trimIndent()
         .replace(Regex("\\s"), "")
