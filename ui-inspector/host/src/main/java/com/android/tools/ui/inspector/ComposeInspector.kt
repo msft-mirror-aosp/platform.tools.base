@@ -30,7 +30,6 @@ internal suspend fun createComposeInspector(
   injectionManager: InjectionManager,
   resolveJar: (version: String) -> File = { version ->
     val artifactId = getComposeArtifactId(version)
-    // TODO: add support for caching
     MavenArtifactResolver().resolve(COMPOSE_UI_GROUP_ID, artifactId, version)
   },
 ): Boolean {
