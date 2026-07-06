@@ -175,8 +175,11 @@ abstract class MergeJavaResourceTask : MergeJavaResourcesInputsOutputs, NewIncre
               AndroidArtifacts.ArtifactType.JAVA_RES,
             )
           )
-        } else if (mergeScopes.contains(InternalScopedArtifacts.InternalScope.LOCAL_DEPS)) {
-          task.localDepsJavaRes.from(creationConfig.computeLocalPackagedJars())
+        }
+        if (mergeScopes.contains(InternalScopedArtifacts.InternalScope.LOCAL_DEPS)) {
+          task.localDepsJavaRes.from(
+            creationConfig.artifacts.forScope(InternalScopedArtifacts.InternalScope.LOCAL_DEPS).getFinalArtifacts(ScopedArtifact.JAVA_RES)
+          )
         }
         task.externalLibJavaRes.disallowChanges()
         task.localDepsJavaRes.disallowChanges()

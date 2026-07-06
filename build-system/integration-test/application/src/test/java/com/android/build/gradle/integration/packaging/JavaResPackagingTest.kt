@@ -24,6 +24,7 @@ import com.android.build.gradle.integration.common.fixture.project.GeneratesAar
 import com.android.build.gradle.integration.common.fixture.project.GeneratesApk
 import com.android.build.gradle.integration.common.output.AbstractAndroidArchiveSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.options.BooleanOption
 import com.android.utils.FileUtils
 import com.google.common.base.Charsets
 import com.google.common.io.Files
@@ -31,10 +32,23 @@ import java.io.File
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
 /** test for packaging of java resources. */
-class JavaResPackagingTest {
-  @get:Rule val project = GradleTestProject.builder().fromTestProject("projectWithModules").create()
+@RunWith(Parameterized::class)
+class JavaResPackagingTest(private val enableOptimizations: Boolean) {
+
+  companion object {
+    @JvmStatic @Parameterized.Parameters(name = "enableOptimizations_{0}") fun parameters() = listOf(true, false)
+  }
+
+  @get:Rule
+  val project =
+    GradleTestProject.builder()
+      .fromTestProject("projectWithModules")
+      .addGradleProperty(BooleanOption.ENABLE_JAVA_RESOURCE_OPTIMIZATIONS, enableOptimizations)
+      .create()
 
   private lateinit var appProject: GradleTestProject
   private lateinit var libProject: GradleTestProject
