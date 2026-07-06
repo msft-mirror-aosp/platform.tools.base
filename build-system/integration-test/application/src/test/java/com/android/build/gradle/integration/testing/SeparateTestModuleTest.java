@@ -19,6 +19,7 @@ import com.android.builder.model.v2.ide.Variant;
 import com.android.testutils.apk.Apk;
 import com.android.utils.FileUtils;
 
+import com.android.build.gradle.options.BooleanOption;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.truth.Truth;
@@ -236,6 +237,30 @@ public class SeparateTestModuleTest {
                                 + " test module specifies a valid module in"
                                 + " \"targetProjectPath\". Currently, library modules are not"
                                 + " supported as a target project.");
+    }
+
+    @Test
+    public void testTestReportAndCoverageTasksAreNotRegistered() throws Exception {
+        // Run with report aggregation support enabled.
+        // It should register test report aggregation tasks in the separate test module (':test'),
+        // but NOT code coverage report aggregation tasks.
+        project.executor()
+                .with(BooleanOption.REPORT_AGGREGATION_SUPPORT, true)
+                // Disable configuration caching to bypass serialization checks,
+                // which cannot be resolved in an offline integration test environment.
+                .withConfigurationCaching(ConfigurationCaching.OFF)
+                .withArguments(ImmutableList.of("-m"))
+                .run(":test:createTestReport");
+
+        GradleBuildResult result2 = project.executor()
+                .with(BooleanOption.REPORT_AGGREGATION_SUPPORT, true)
+                // Disable configuration caching to bypass serialization checks of UTP host plugins,
+                // which cannot be resolved in the sandboxed, offline integration test environment.
+                .withConfigurationCaching(ConfigurationCaching.OFF)
+                .expectFailure()
+                .run(":test:createCoverageReport");
+        ScannerSubject.assertThat(result2.getStderr())
+                .contains("createCoverageReport' not found in project ':test'");
     }
 
     private void addInstrumentationToManifest() throws IOException {
