@@ -399,7 +399,7 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
 
         int testCount;
 
-        if (enableTestReportAggregation) {
+        if (enableTestReportAggregation && xmlResultsDirectory.isPresent()) {
             TestReportAggregationUtils.processTestReportAggregation(
                     resultsOutputDir,
                     xmlResultsDirectory,
@@ -800,9 +800,22 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                 creationConfig.getServices().getConfigurations(),
                 creationConfig.getServices().getDependencies());
 
+            // Register the XML results output directory to the appropriate variant artifacts.
+            // Separate test-only modules (com.android.test) do not implement
+            // DeviceTestCreationConfig,
+            // so we must register the provider on creationConfig.getArtifacts() directly rather
+            // than
+            // the main variant's artifacts container.
             if (creationConfig instanceof DeviceTestCreationConfig) {
                 ((DeviceTestCreationConfig) creationConfig)
                         .getMainVariant()
+                        .getArtifacts()
+                        .setInitialProvider(
+                                taskProvider,
+                                DeviceProviderInstrumentTestTask::getXmlResultsDirectory)
+                        .on(InternalArtifactType.ANDROID_TEST_RESULTS.INSTANCE);
+            } else {
+                creationConfig
                         .getArtifacts()
                         .setInitialProvider(
                                 taskProvider,
