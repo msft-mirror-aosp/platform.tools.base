@@ -18,6 +18,10 @@ package com.android.build.gradle.internal.scope
 
 import com.android.build.api.artifact.Artifact
 import com.android.build.api.artifact.ArtifactKind
+import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_METADATA_MODULE_KEY
+import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_METADATA_SUITE_KEY
+import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_METADATA_TARGET_KEY
+import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_METADATA_VARIANT_KEY
 import org.gradle.api.file.Directory
 import org.gradle.api.file.FileSystemLocation
 
@@ -84,7 +88,10 @@ sealed class InternalMultipleArtifactType<T : FileSystemLocation>(kind: Artifact
   object TEST_SUITE_RESULTS : InternalMultipleArtifactType<Directory>(DIRECTORY)
 
   // Code coverage data from all test suite tasks of a single variant.
-  object TEST_SUITE_CODE_COVERAGE : InternalMultipleArtifactType<Directory>(DIRECTORY)
+  object TEST_SUITE_CODE_COVERAGE : InternalMultipleArtifactType<Directory>(DIRECTORY), Artifact.WithQualifiers {
+    override val qualifierKeys: List<String> =
+      listOf(TEST_SUITE_METADATA_MODULE_KEY, TEST_SUITE_METADATA_VARIANT_KEY, TEST_SUITE_METADATA_SUITE_KEY, TEST_SUITE_METADATA_TARGET_KEY)
+  }
 
   // Test result data collected from all variants of the current module.
   object PROJECT_LEVEL_TEST_RESULTS : InternalMultipleArtifactType<Directory>(DIRECTORY)
