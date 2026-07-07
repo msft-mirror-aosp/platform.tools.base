@@ -77,12 +77,13 @@ class MutationRegexMatcher:
 
         # Rule 2: Mutate a 'val' declaration by inserting a new line before it.
         # Exclude line which have fun, class, override or ",","(",")","{","}" in it
-        (
-            "val_exception",
-            re.compile(r"^([ \t]*)val "),
-            lambda m: f"{m.group(1)}println(\"{MUTATION_LOG_LINE}\")\n{m.group(1)}val __catch_me:Nothing = throw RuntimeException(\"{MUTATION_ERROR_MESSAGE}\")\n{m.group(1)}val ",
-            lambda line: bool(re.search(r'\b(class|fun|override)\b|[,(){}]', line))
-        ),
+        # Reason for disabling mutation: b/532415568
+        # (
+        #     "val_exception",
+        #     re.compile(r"^([ \t]*)val "),
+        #     lambda m: f"{m.group(1)}println(\"{MUTATION_LOG_LINE}\")\n{m.group(1)}val __catch_me:Nothing = throw RuntimeException(\"{MUTATION_ERROR_MESSAGE}\")\n{m.group(1)}val ",
+        #     lambda line: bool(re.search(r'\b(class|fun|override)\b|[,(){}]', line))
+        # ),
     ]
 
     JAVA_REGEX_PATTERNS = [
