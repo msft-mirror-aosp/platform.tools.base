@@ -355,7 +355,6 @@ open class BuiltinIssueRegistry : IssueRegistry() {
           OpenForTestingDetector.ISSUE,
           OverdrawDetector.ISSUE,
           OverrideConcreteDetector.ISSUE,
-          OverrideDetector.ISSUE,
           PackageManagerDetector.ISSUE,
           PackageVisibilityDetector.QUERY_ALL_PACKAGES_PERMISSION,
           PackageVisibilityDetector.QUERY_PERMISSIONS_NEEDED,
