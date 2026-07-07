@@ -21,6 +21,7 @@ import com.android.build.gradle.internal.dsl.LintImpl
 import com.android.build.gradle.internal.services.createDslServices
 import com.google.common.truth.Truth.assertThat
 import java.io.File
+import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.junit.Before
 import org.junit.Test
 
@@ -170,5 +171,15 @@ class LintSettingsUtilTest {
     assertThat(lint.lintConfig).named("lintConfig").isEqualTo(configFile)
     assertThat(lint.targetSdk).named("targetSdk").isEqualTo(30)
     assertThat(lint.targetSdkPreview).named("targetSdkPreview").isEqualTo("S")
+  }
+
+  @Test
+  fun testApplySettings_toolchainSpec() {
+    settingsLint.toolchain { languageVersion.set(JavaLanguageVersion.of(21)) }
+
+    lint.applySettings(settingsLint)
+
+    val toolchain = lint.toolchain
+    assertThat(toolchain.languageVersion.orNull?.asInt()).isEqualTo(21)
   }
 }

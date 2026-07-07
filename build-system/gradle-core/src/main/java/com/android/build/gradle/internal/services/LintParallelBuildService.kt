@@ -16,6 +16,9 @@
 
 package com.android.build.gradle.internal.services
 
+import com.android.build.api.dsl.Lint
+import com.android.build.gradle.internal.lint.hasToolchainSpec
+import com.android.build.gradle.internal.lint.isLintRunInProcess
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.ProjectOptions
 import com.android.build.gradle.options.StringOption.LINT_HEAP_SIZE
@@ -41,7 +44,12 @@ abstract class LintParallelBuildService : BuildService<BuildServiceParameters.No
       projectOptions: ProjectOptions,
       maxRuntimeMemory: Long,
       totalPhysicalMemory: Long?,
-      runInProcess: Boolean = projectOptions.get(BooleanOption.RUN_LINT_IN_PROCESS),
+      lintOptions: Lint? = null,
+      runInProcess: Boolean =
+        isLintRunInProcess(
+          runInProcess = projectOptions.get(BooleanOption.RUN_LINT_IN_PROCESS),
+          hasToolchainSpec = hasToolchainSpec(lintOptions?.toolchain),
+        ),
     ): Int? {
       return if (runInProcess) {
         calculateMaxParallelUsagesInProcess(projectOptions, maxRuntimeMemory)
@@ -114,7 +122,7 @@ abstract class LintParallelBuildService : BuildService<BuildServiceParameters.No
 @JvmOverloads
 fun BuildServiceRegistry.getLintParallelBuildService(
   projectOptions: ProjectOptions,
-  runInProcess: Boolean = projectOptions.get(BooleanOption.RUN_LINT_IN_PROCESS),
+  runInProcess: Boolean,
 ): Provider<LintParallelBuildService> {
   val serviceName =
     if (runInProcess) {

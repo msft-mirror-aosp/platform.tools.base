@@ -60,6 +60,7 @@ import com.google.common.annotations.VisibleForTesting
 import java.io.File
 import java.util.Collections
 import javax.inject.Inject
+import org.gradle.api.JavaVersion
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.Directory
 import org.gradle.api.file.FileCollection
@@ -633,7 +634,13 @@ abstract class AndroidLintTask : NonIncrementalTask() {
       task.description = description
 
       task.initializeOutputTypesConvention()
-      task.initializeGlobalInputs(variant.main.services, isAndroid = true, lintMode)
+      task.initializeGlobalInputs(
+        variant.main.services,
+        isAndroid = true,
+        lintMode,
+        creationConfig.global.lintOptions,
+        creationConfig.global.compileOptions.targetCompatibility,
+      )
       task.lintRuleJars.from(creationConfig.global.localCustomLintChecks)
       task.lintRuleJars.from(
         creationConfig.variantDependencies.getArtifactFileCollection(
@@ -824,7 +831,12 @@ abstract class AndroidLintTask : NonIncrementalTask() {
       task.dependencyPartialResults.disallowChanges()
       task.nestedComponentLintModels.disallowChanges()
       task.nestedComponentPartialResults.disallowChanges()
-      task.lintTool.initialize(creationConfig.services, task)
+      task.lintTool.initialize(
+        creationConfig.services,
+        task,
+        creationConfig.global.lintOptions,
+        creationConfig.global.compileOptions.targetCompatibility,
+      )
       if (autoFix) {
         task.outputs.upToDateWhen {
           it.logger.debug(LINT_FIX_UP_TO_DATE_MESSAGE)
@@ -925,7 +937,13 @@ abstract class AndroidLintTask : NonIncrementalTask() {
     useHtmlV2.disallowChanges()
   }
 
-  private fun initializeGlobalInputs(services: TaskCreationServices, isAndroid: Boolean, lintMode: LintMode) {
+  private fun initializeGlobalInputs(
+    services: TaskCreationServices,
+    isAndroid: Boolean,
+    lintMode: LintMode,
+    lintOptions: Lint? = null,
+    projectTargetCompatibility: JavaVersion? = null,
+  ) {
     val buildServiceRegistry = project.gradle.sharedServices
     this.androidGradlePluginVersion.setDisallowChanges(Version.ANDROID_GRADLE_PLUGIN_VERSION)
     this.android.setDisallowChanges(isAndroid)
@@ -954,9 +972,17 @@ abstract class AndroidLintTask : NonIncrementalTask() {
           .orElse(services.projectOptions.getProvider(BooleanOption.PRINT_LINT_STACK_TRACE))
       )
     }
-    systemPropertyInputs.initialize(project.providers, lintMode)
+
+    val runInProcess =
+      isLintRunInProcess(
+        runInProcess = services.projectOptions.get(BooleanOption.RUN_LINT_IN_PROCESS),
+        hasToolchainSpec = hasToolchainSpec(lintOptions?.toolchain),
+      )
+    val launcherProvider = getLintJavaLauncherProvider(project, lintOptions, projectTargetCompatibility, services.projectOptions)
+
+    systemPropertyInputs.initialize(project.providers, lintMode, launcherProvider)
     environmentVariableInputs.initialize(project.providers, lintMode)
-    this.usesService(services.buildServiceRegistry.getLintParallelBuildService(services.projectOptions))
+    this.usesService(services.buildServiceRegistry.getLintParallelBuildService(services.projectOptions, runInProcess))
   }
 
   fun configureForStandalone(
@@ -974,7 +1000,7 @@ abstract class AndroidLintTask : NonIncrementalTask() {
     autoFix: Boolean = false,
   ) {
     this.initializeOutputTypesConvention()
-    initializeGlobalInputs(taskCreationServices, isAndroid = false, lintMode)
+    initializeGlobalInputs(taskCreationServices, isAndroid = false, lintMode, lintOptions, javaPluginExtension.targetCompatibility)
     this.variantName = ""
     this.analyticsService.setDisallowChanges(getBuildService(taskCreationServices.buildServiceRegistry))
     this.fatalOnly.setDisallowChanges(fatalOnly)
@@ -985,7 +1011,7 @@ abstract class AndroidLintTask : NonIncrementalTask() {
     }
     this.lintFixBuildService.disallowChanges()
     this.checkOnly.setDisallowChanges(lintOptions.checkOnly)
-    this.lintTool.initialize(taskCreationServices, this)
+    this.lintTool.initialize(taskCreationServices, this, lintOptions, javaPluginExtension.targetCompatibility)
     this.projectInputs.initializeForStandalone(project, taskCreationServices.projectOptions, javaPluginExtension, lintOptions, lintMode)
     // Workaround for b/193244776 - Ensure the task runs if a baseline file is set and the file
     // doesn't exist, unless missingBaselineIsEmptyBaseline is true or the default baseline convention is used.

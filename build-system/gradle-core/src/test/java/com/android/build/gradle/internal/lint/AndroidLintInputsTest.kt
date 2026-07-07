@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.lint
 
+import com.android.build.api.dsl.Lint
 import com.android.build.gradle.internal.dsl.LintImpl
 import com.android.build.gradle.internal.fixtures.FakeSyncIssueReporter
 import com.android.build.gradle.internal.services.createDslServices
@@ -23,12 +24,20 @@ import com.android.build.gradle.options.ProjectOptions
 import com.android.testutils.SystemPropertyOverrides
 import com.google.common.truth.Truth.assertThat
 import java.io.File
+import org.gradle.api.GradleException
+import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
+import org.gradle.jvm.toolchain.JavaLanguageVersion
+import org.gradle.jvm.toolchain.JavaToolchainSpec
+import org.gradle.jvm.toolchain.JvmVendorSpec
 import org.gradle.testfixtures.ProjectBuilder
+import org.junit.Assert.assertThrows
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 
 class AndroidLintInputsTest {
 
@@ -128,6 +137,17 @@ class AndroidLintInputsTest {
       check("17.0.17+10-LTS", "17")
       check("17+35-LTS-2724", "17")
     }
+  }
+
+  @Test
+  fun `check isLintRunInProcess logic`() {
+    // When no toolchain spec is provided, runInProcess respects its parameter
+    assertThat(isLintRunInProcess(runInProcess = true)).isTrue()
+    assertThat(isLintRunInProcess(runInProcess = false)).isFalse()
+
+    // When toolchain spec is present, runInProcess is always forced to false
+    assertThat(isLintRunInProcess(runInProcess = true, hasToolchainSpec = true)).isFalse()
+    assertThat(isLintRunInProcess(runInProcess = false, hasToolchainSpec = true)).isFalse()
   }
 
   @Test
@@ -252,5 +272,107 @@ class AndroidLintInputsTest {
         "<project><modelVersion>4.0.0</modelVersion><groupId>$group</groupId><artifactId>$artifact</artifactId><version>$version</version></project>"
       )
     File(dir, "$artifact-$version.jar").writeText("foo-bar")
+  }
+
+  @Test
+  fun `check getLintJavaLauncherProvider with valid toolchain spec`() {
+    project.pluginManager.apply("jvm-toolchains")
+    val dslServices = createDslServices()
+    val lintOptions = dslServices.newDecoratedInstance(LintImpl::class.java, dslServices)
+    val currentJavaVersion = JavaVersion.current().majorVersion.toInt()
+    lintOptions.toolchain { languageVersion.set(JavaLanguageVersion.of(currentJavaVersion)) }
+
+    val launcherProvider = getLintJavaLauncherProvider(project, lintOptions, JavaVersion.VERSION_17)
+    assertThat(launcherProvider.isPresent).isTrue()
+  }
+
+  @Test
+  fun `check getLintJavaLauncherProvider below baseline throws GradleException`() {
+    project.pluginManager.apply("jvm-toolchains")
+    val dslServices = createDslServices()
+    val lintOptions = dslServices.newDecoratedInstance(LintImpl::class.java, dslServices)
+    lintOptions.toolchain { languageVersion.set(JavaLanguageVersion.of(11)) }
+
+    val exception =
+      assertThrows(GradleException::class.java) { getLintJavaLauncherProvider(project, lintOptions, JavaVersion.VERSION_11).get() }
+    assertThat(exception.message).contains("below AGP's minimum required JDK (17)")
+  }
+
+  @Test
+  fun `check getLintJavaLauncherProvider below bytecode compatibility throws GradleException`() {
+    project.pluginManager.apply("jvm-toolchains")
+    val dslServices = createDslServices()
+    val lintOptions = dslServices.newDecoratedInstance(LintImpl::class.java, dslServices)
+    lintOptions.toolchain { languageVersion.set(JavaLanguageVersion.of(17)) }
+
+    val exception =
+      assertThrows(GradleException::class.java) { getLintJavaLauncherProvider(project, lintOptions, JavaVersion.VERSION_21).get() }
+    assertThat(exception.message).contains("cannot analyze project code compiled for Java 21")
+  }
+
+  @Test
+  fun `check getLintRunInProcessProvider with toolchain spec forces out of process`() {
+    val dslServices = createDslServices()
+    val lintOptions = dslServices.newDecoratedInstance(LintImpl::class.java, dslServices)
+    lintOptions.toolchain { languageVersion.set(JavaLanguageVersion.of(21)) }
+
+    val runInProcess = getLintRunInProcessProvider(ProjectOptions(project.providers), lintOptions).get()
+    assertThat(runInProcess).isFalse()
+  }
+
+  @Test
+  fun `check getLintJavaLauncherProvider and getLintRunInProcessProvider evaluate toolchain spec lazily`() {
+    project.pluginManager.apply("jvm-toolchains")
+    val dslServices = createDslServices()
+    val lintOptions = dslServices.newDecoratedInstance(LintImpl::class.java, dslServices)
+
+    // Obtain providers BEFORE configuring toolchain
+    val runInProcessProvider = getLintRunInProcessProvider(ProjectOptions(project.providers), lintOptions)
+    val launcherProvider = getLintJavaLauncherProvider(project, lintOptions, JavaVersion.VERSION_17)
+
+    // Initially toolchain is empty, so runInProcess is true and launcher is null
+    assertThat(runInProcessProvider.get()).isTrue()
+    assertThat(launcherProvider.orNull).isNull()
+
+    // Configure toolchain AFTER provider creation
+    val currentJavaVersion = JavaVersion.current().majorVersion.toInt()
+    lintOptions.toolchain { languageVersion.set(JavaLanguageVersion.of(currentJavaVersion)) }
+
+    // After configuring, providers lazily reflect the new toolchain configuration
+    assertThat(runInProcessProvider.get()).isFalse()
+    assertThat(launcherProvider.orNull).isNotNull()
+  }
+
+  @Test
+  fun `check custom Lint implementation toolchainSpec support`() {
+    project.pluginManager.apply("jvm-toolchains")
+    val dslServices = createDslServices()
+    val currentJavaVersion = JavaVersion.current().majorVersion.toInt()
+    val toolchainSpec = dslServices.newInstance(JavaToolchainSpec::class.java)
+    toolchainSpec.languageVersion.set(JavaLanguageVersion.of(currentJavaVersion))
+
+    val customLint = mock<Lint>()
+    whenever(customLint.toolchain).thenReturn(toolchainSpec)
+
+    val runInProcess = getLintRunInProcessProvider(ProjectOptions(project.providers), customLint).get()
+    assertThat(runInProcess).isFalse()
+
+    val launcherProvider = getLintJavaLauncherProvider(project, customLint, JavaVersion.VERSION_17)
+    assertThat(launcherProvider.isPresent).isTrue()
+  }
+
+  @Test
+  fun `check getLintJavaLauncherProvider with vendor specified without languageVersion`() {
+    project.pluginManager.apply("jvm-toolchains")
+    val dslServices = createDslServices()
+    val lintOptions = dslServices.newDecoratedInstance(LintImpl::class.java, dslServices)
+    lintOptions.toolchain { vendor.set(JvmVendorSpec.ADOPTIUM) }
+
+    val runInProcess = getLintRunInProcessProvider(ProjectOptions(project.providers), lintOptions).get()
+    assertThat(runInProcess).isFalse()
+
+    val launcherProvider = getLintJavaLauncherProvider(project, lintOptions, JavaVersion.VERSION_17)
+    val exception = assertThrows(GradleException::class.java) { launcherProvider.get() }
+    assertThat(exception.message).contains("must specify a 'languageVersion'")
   }
 }

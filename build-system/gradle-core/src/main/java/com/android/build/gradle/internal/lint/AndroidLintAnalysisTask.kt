@@ -52,6 +52,7 @@ import com.android.utils.FileUtils
 import com.google.common.annotations.VisibleForTesting
 import java.io.File
 import java.util.Collections
+import org.gradle.api.JavaVersion
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.Directory
@@ -232,7 +233,12 @@ abstract class AndroidLintAnalysisTask : NonIncrementalTask() {
 
       task.description = description
 
-      task.initializeGlobalInputs(services = variant.main.services, isAndroid = true)
+      task.initializeGlobalInputs(
+        services = variant.main.services,
+        isAndroid = true,
+        creationConfig.global.lintOptions,
+        creationConfig.global.compileOptions.targetCompatibility,
+      )
       task.lintModelDirectory.set(variant.main.paths.getIncrementalDir(task.name))
       task.lintRuleJars.from(creationConfig.global.localCustomLintChecks)
       task.lintRuleJars.from(
@@ -254,7 +260,12 @@ abstract class AndroidLintAnalysisTask : NonIncrementalTask() {
         LintMode.ANALYSIS,
         fatalOnly = fatalOnly,
       )
-      task.lintTool.initialize(creationConfig.services, task)
+      task.lintTool.initialize(
+        creationConfig.services,
+        task,
+        creationConfig.global.lintOptions,
+        creationConfig.global.compileOptions.targetCompatibility,
+      )
       task.desugaredMethodsFiles.from(
         getDesugaredMethods(
           creationConfig.services,
@@ -310,7 +321,12 @@ abstract class AndroidLintAnalysisTask : NonIncrementalTask() {
 
       task.description = description
 
-      task.initializeGlobalInputs(services = creationConfig.services, isAndroid = true)
+      task.initializeGlobalInputs(
+        services = creationConfig.services,
+        isAndroid = true,
+        creationConfig.global.lintOptions,
+        creationConfig.global.compileOptions.targetCompatibility,
+      )
       task.lintModelDirectory.set(creationConfig.paths.getIncrementalDir(task.name))
       val mainVariant =
         if (creationConfig is NestedComponentCreationConfig) {
@@ -347,7 +363,12 @@ abstract class AndroidLintAnalysisTask : NonIncrementalTask() {
         isPerComponentLintAnalysis = true,
       )
 
-      task.lintTool.initialize(mainVariant.services, task)
+      task.lintTool.initialize(
+        mainVariant.services,
+        task,
+        mainVariant.global.lintOptions,
+        mainVariant.global.compileOptions.targetCompatibility,
+      )
       task.desugaredMethodsFiles.from(
         getDesugaredMethods(
           mainVariant.services,
@@ -361,7 +382,12 @@ abstract class AndroidLintAnalysisTask : NonIncrementalTask() {
     }
   }
 
-  private fun initializeGlobalInputs(services: TaskCreationServices, isAndroid: Boolean) {
+  private fun initializeGlobalInputs(
+    services: TaskCreationServices,
+    isAndroid: Boolean,
+    lintOptions: Lint? = null,
+    projectTargetCompatibility: JavaVersion? = null,
+  ) {
     val buildServiceRegistry = services.buildServiceRegistry
     this.androidGradlePluginVersion.setDisallowChanges(Version.ANDROID_GRADLE_PLUGIN_VERSION)
     val sdkComponentsBuildService = getBuildService(buildServiceRegistry, SdkComponentsBuildService::class.java)
@@ -390,9 +416,17 @@ abstract class AndroidLintAnalysisTask : NonIncrementalTask() {
           .orElse(services.projectOptions.getProvider(BooleanOption.PRINT_LINT_STACK_TRACE))
       )
     }
-    systemPropertyInputs.initialize(project.providers, LintMode.ANALYSIS)
+
+    val runInProcess =
+      isLintRunInProcess(
+        runInProcess = services.projectOptions.get(BooleanOption.RUN_LINT_IN_PROCESS),
+        hasToolchainSpec = hasToolchainSpec(lintOptions?.toolchain),
+      )
+    val launcherProvider = getLintJavaLauncherProvider(project, lintOptions, projectTargetCompatibility, services.projectOptions)
+
+    systemPropertyInputs.initialize(project.providers, LintMode.ANALYSIS, launcherProvider)
     environmentVariableInputs.initialize(project.providers, LintMode.ANALYSIS)
-    this.usesService(services.buildServiceRegistry.getLintParallelBuildService(services.projectOptions))
+    this.usesService(services.buildServiceRegistry.getLintParallelBuildService(services.projectOptions, runInProcess))
   }
 
   /**
@@ -418,12 +452,17 @@ abstract class AndroidLintAnalysisTask : NonIncrementalTask() {
     testCompileClasspath: Configuration? = null,
     testRuntimeClasspath: Configuration? = null,
   ) {
-    initializeGlobalInputs(services = taskCreationServices, isAndroid = false)
+    initializeGlobalInputs(
+      services = taskCreationServices,
+      isAndroid = false,
+      lintOptions = lintOptions,
+      projectTargetCompatibility = javaPluginExtension.targetCompatibility,
+    )
     this.variantName = ""
     this.analyticsService.setDisallowChanges(getBuildService(taskCreationServices.buildServiceRegistry))
     this.fatalOnly.setDisallowChanges(fatalOnly)
     this.checkOnly.setDisallowChanges(lintOptions.checkOnly)
-    this.lintTool.initialize(taskCreationServices, this)
+    this.lintTool.initialize(taskCreationServices, this, lintOptions, javaPluginExtension.targetCompatibility)
     this.projectInputs.initializeForStandalone(
       project,
       taskCreationServices.projectOptions,

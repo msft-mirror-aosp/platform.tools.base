@@ -17,6 +17,7 @@
 package com.android.build.api.dsl
 
 import java.io.File
+import org.gradle.jvm.toolchain.JavaToolchainSpec
 
 /**
  * DSL object for configuring lint options. Example:
@@ -285,4 +286,26 @@ interface Lint {
 
   /** The target sdk preview version used when generating a lint report for a library. Must be set for libraries only. */
   var targetSdkPreview: String?
+
+  /**
+   * The Java toolchain specification used to execute Lint.
+   *
+   * By default, Lint executes using the same JDK that runs the Gradle daemon.
+   *
+   * You can configure a toolchain to run Lint with a specific JDK version that differs from the JDK running the Gradle daemon. This can be
+   * useful when custom Lint checks or dependencies require a newer JDK, or to ensure build reproducibility across different environments
+   * regardless of the Gradle daemon JDK.
+   */
+  val toolchain: JavaToolchainSpec
+
+  /**
+   * Configures the Java toolchain used to execute Lint.
+   *
+   * By default, Lint executes using the same JDK that runs the Gradle daemon.
+   *
+   * You can configure a toolchain to run Lint with a specific JDK version that differs from the JDK running the Gradle daemon. This can be
+   * useful when custom Lint checks or dependencies require a newer JDK, or to ensure build reproducibility across different environments
+   * regardless of the Gradle daemon JDK.
+   */
+  fun toolchain(action: JavaToolchainSpec.() -> Unit)
 }

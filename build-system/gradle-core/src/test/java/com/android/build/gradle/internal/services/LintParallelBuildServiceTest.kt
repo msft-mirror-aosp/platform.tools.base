@@ -16,12 +16,15 @@
 
 package com.android.build.gradle.internal.services
 
+import com.android.build.gradle.internal.dsl.LintImpl
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.ProjectOptions
 import com.android.build.gradle.options.StringOption.LINT_HEAP_SIZE
 import com.android.build.gradle.options.StringOption.LINT_RESERVED_MEMORY_PER_TASK
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.fail
+import org.gradle.api.internal.provider.Providers
+import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.Test
 import org.mockito.kotlin.mock
@@ -34,6 +37,7 @@ class LintParallelBuildServiceTest {
   @Test
   fun testCalculateMaxParallelUsagesInProcess() {
     whenever(projectOptions.get(BooleanOption.RUN_LINT_IN_PROCESS)).thenReturn(true)
+    whenever(projectOptions.getProvider(BooleanOption.RUN_LINT_IN_PROCESS)).thenReturn(Providers.of(true))
 
     // Check normal case
     assertThat(
@@ -87,6 +91,7 @@ class LintParallelBuildServiceTest {
   @Test
   fun testCalculateMaxParallelUsagesOutOfProcess() {
     whenever(projectOptions.get(BooleanOption.RUN_LINT_IN_PROCESS)).thenReturn(false)
+    whenever(projectOptions.getProvider(BooleanOption.RUN_LINT_IN_PROCESS)).thenReturn(Providers.of(false))
 
     // Check no specified lint heap size
     whenever(projectOptions.get(LINT_HEAP_SIZE)).thenReturn(null)
@@ -201,6 +206,42 @@ class LintParallelBuildServiceTest {
     // Verify each registration has its maxParallelUsages set
     assertThat(inProcessReg.maxParallelUsages.orNull).isNotNull()
     assertThat(outOfProcessReg.maxParallelUsages.orNull).isNotNull()
+  }
+
+  @Test
+  fun testCalculateMaxParallelUsagesWithToolchain() {
+    whenever(projectOptions.get(BooleanOption.RUN_LINT_IN_PROCESS)).thenReturn(true)
+    whenever(projectOptions.getProvider(BooleanOption.RUN_LINT_IN_PROCESS)).thenReturn(Providers.of(true))
+    whenever(projectOptions.get(LINT_HEAP_SIZE)).thenReturn("2g")
+
+    val dslServices = createDslServices()
+    val lintOptions = dslServices.newDecoratedInstance(LintImpl::class.java, dslServices)
+    lintOptions.toolchain { languageVersion.set(JavaLanguageVersion.of(21)) }
+
+    // Even though RUN_LINT_IN_PROCESS is true, having a toolchain forces out-of-process calculation
+    assertThat(
+        LintParallelBuildService.calculateMaxParallelUsages(
+          projectOptions,
+          maxRuntimeMemory = 10 * GB,
+          totalPhysicalMemory = 40 * GB,
+          lintOptions = lintOptions,
+        )
+      )
+      .isEqualTo(18)
+  }
+
+  @Test
+  fun testGetLintParallelBuildServiceInAndOutOfProcess() {
+    val project = ProjectBuilder.builder().build()
+    whenever(projectOptions.get(BooleanOption.RUN_LINT_IN_PROCESS)).thenReturn(true)
+    whenever(projectOptions.getProvider(BooleanOption.RUN_LINT_IN_PROCESS)).thenReturn(Providers.of(true))
+
+    val inProcessProvider = project.gradle.sharedServices.getLintParallelBuildService(projectOptions, runInProcess = true)
+    val outOfProcessProvider = project.gradle.sharedServices.getLintParallelBuildService(projectOptions, runInProcess = false)
+
+    assertThat(inProcessProvider).isNotSameInstanceAs(outOfProcessProvider)
+    assertThat(inProcessProvider.isPresent).isTrue()
+    assertThat(outOfProcessProvider.isPresent).isTrue()
   }
 }
 

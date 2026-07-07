@@ -83,6 +83,7 @@ package com.android.build.api.dsl {
     method @InaccessibleFromKotlin public String? getTargetSdkPreview();
     method @InaccessibleFromKotlin @Deprecated public java.io.File? getTextOutput();
     method @InaccessibleFromKotlin @Deprecated public boolean getTextReport();
+    method @InaccessibleFromKotlin public org.gradle.jvm.toolchain.JavaToolchainSpec getToolchain();
     method @InaccessibleFromKotlin public java.util.Set<java.lang.String> getWarning();
     method @InaccessibleFromKotlin public boolean getWarningsAsErrors();
     method @InaccessibleFromKotlin @Deprecated public java.io.File? getXmlOutput();
@@ -116,6 +117,7 @@ package com.android.build.api.dsl {
     method @InaccessibleFromKotlin @Deprecated public void setXmlOutput(java.io.File?);
     method @InaccessibleFromKotlin @Deprecated public void setXmlReport(boolean);
     method public void targetSdk(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TargetSdkSpec,kotlin.Unit> action);
+    method public void toolchain(kotlin.jvm.functions.Function1<? super org.gradle.jvm.toolchain.JavaToolchainSpec,kotlin.Unit> action);
     property public abstract boolean abortOnError;
     property public abstract boolean absolutePaths;
     property public abstract java.io.File? baseline;
@@ -148,6 +150,7 @@ package com.android.build.api.dsl {
     property public abstract String? targetSdkPreview;
     property @Deprecated public abstract java.io.File? textOutput;
     property @Deprecated public abstract boolean textReport;
+    property public abstract org.gradle.jvm.toolchain.JavaToolchainSpec toolchain;
     property public abstract java.util.Set<java.lang.String> warning;
     property public abstract boolean warningsAsErrors;
     property @Deprecated public abstract java.io.File? xmlOutput;

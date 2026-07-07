@@ -27,6 +27,7 @@ import java.io.File
 import java.util.Collections
 import javax.inject.Inject
 import org.gradle.api.Action
+import org.gradle.jvm.toolchain.JavaToolchainSpec
 
 abstract class LintImpl @Inject constructor(private val dslServices: DslServices) : Lint {
 
@@ -348,5 +349,15 @@ abstract class LintImpl @Inject constructor(private val dslServices: DslServices
 
   private fun createTargetSdkSpec(): TargetSdkSpecImpl {
     return dslServices.newDecoratedInstance(TargetSdkSpecImpl::class.java, dslServices).also { it.version = targetSdkApiVersion }
+  }
+
+  override val toolchain: JavaToolchainSpec = dslServices.newInstance(JavaToolchainSpec::class.java)
+
+  override fun toolchain(action: JavaToolchainSpec.() -> Unit) {
+    action.invoke(toolchain)
+  }
+
+  fun toolchain(action: Action<JavaToolchainSpec>) {
+    action.execute(toolchain)
   }
 }
