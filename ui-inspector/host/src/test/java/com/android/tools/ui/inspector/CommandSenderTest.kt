@@ -418,18 +418,23 @@ class CommandSenderTest {
       val childJob = Job()
       val childScope = CoroutineScope(coroutineContext + childJob)
 
-      var senderRef: CommandSender? = null
+      val senderReady = CompletableDeferred<CommandSender>()
       val sendJob =
         childScope.async {
-          CommandSender.connect("127.0.0.1", port, this).use { sender ->
-            senderRef = sender
-            val cmd = Command.newBuilder().setShutdown(ShutdownCommand.getDefaultInstance()).build()
-            sender.sendMessage(cmd)
+          try {
+            CommandSender.connect("127.0.0.1", port, this).use { sender ->
+              senderReady.complete(sender)
+              val cmd = Command.newBuilder().setShutdown(ShutdownCommand.getDefaultInstance()).build()
+              sender.sendMessage(cmd)
+            }
+          } catch (e: Throwable) {
+            senderReady.completeExceptionally(e)
+            throw e
           }
         }
 
       connectionAccepted.await()
-      runCurrent()
+      val sender = senderReady.await()
 
       // Cancel the parent scope of the CommandSender
       childJob.cancel()
@@ -442,9 +447,8 @@ class CommandSenderTest {
       }
 
       // Verify that the sender is closed after its parent scope was cancelled
-      assertThat(senderRef).isNotNull()
       try {
-        senderRef!!.sendMessage(Command.newBuilder().setShutdown(ShutdownCommand.getDefaultInstance()).build())
+        sender.sendMessage(Command.newBuilder().setShutdown(ShutdownCommand.getDefaultInstance()).build())
         fail("Expected IOException because sender should be closed")
       } catch (e: IOException) {
         assertThat(e.message).contains("CommandSender scope cancelled")
@@ -534,25 +538,27 @@ class CommandSenderTest {
     try {
       val persistentScope = CoroutineScope(coroutineContext + Job())
 
-      val connectJob = launch {
-        try {
-          CommandSender.connect("127.0.0.1", port, persistentScope)
-        } catch (e: CancellationException) {
-          throw e
-        }
-      }
+      val connectJob = async { CommandSender.connect("127.0.0.1", port, persistentScope) }
 
       connectionAccepted.await()
 
       // The socket has connected.
       // Cancel the connect call coroutine. This is running the `connect` function.
       connectJob.cancel()
-      connectJob.join()
+
+      try {
+        val sender = connectJob.await()
+        // If we reached here, the connect call completed before the cancellation was processed.
+        // Close the sender to prevent leaking the socket.
+        sender.close()
+      } catch (e: CancellationException) {
+        // Expected if cancelled in flight
+      }
 
       // The calling coroutine is cancelled. If the socket leaked, the server-side client socket
       // will not see EOF or close because the client-side socket is still held open.
       // Let's verify if the server-side socket is closed.
-      runCurrent()
+      serverSocketClosed.await()
 
       // Verify that the server socket has closed (meaning the client socket was closed as well)
       assertThat(serverSocketClosed.isCompleted).isTrue()
@@ -587,14 +593,18 @@ class CommandSenderTest {
       val childJob = Job()
       val childScope = CoroutineScope(coroutineContext + childJob)
 
-      var senderRef: CommandSender? = null
+      val senderReady = CompletableDeferred<CommandSender>()
       childScope.launch {
-        val sender = CommandSender.connect("127.0.0.1", port, this)
-        senderRef = sender
+        try {
+          val sender = CommandSender.connect("127.0.0.1", port, this)
+          senderReady.complete(sender)
+        } catch (e: Throwable) {
+          senderReady.completeExceptionally(e)
+        }
       }
 
       connectionAccepted.await()
-      runCurrent()
+      val sender = senderReady.await()
 
       // Cancel the parent scope of the CommandSender
       childJob.cancel()
@@ -603,9 +613,8 @@ class CommandSenderTest {
       childJob.join()
 
       // Verify that the sender is closed after its parent scope was cancelled
-      assertThat(senderRef).isNotNull()
       try {
-        senderRef!!.sendMessage(Command.newBuilder().setShutdown(ShutdownCommand.getDefaultInstance()).build())
+        sender.sendMessage(Command.newBuilder().setShutdown(ShutdownCommand.getDefaultInstance()).build())
         fail("Expected IOException because sender should be closed")
       } catch (e: IOException) {
         assertThat(e.message).contains("CommandSender scope cancelled")
