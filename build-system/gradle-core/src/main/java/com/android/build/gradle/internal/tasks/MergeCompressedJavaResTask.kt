@@ -60,7 +60,7 @@ import org.gradle.api.provider.Property
 import org.gradle.api.provider.SetProperty
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
@@ -80,7 +80,7 @@ import org.gradle.work.DisableCachingByDefault
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.JAVA_RESOURCES, secondaryTaskCategories = [TaskCategory.MERGING])
 abstract class MergeCompressedJavaResTask : NonIncrementalTask(), GlobalTask {
 
-  @get:InputFile @get:PathSensitive(PathSensitivity.NAME_ONLY) @get:Optional abstract val projectJavaResJar: RegularFileProperty
+  @get:InputFiles @get:PathSensitive(PathSensitivity.NAME_ONLY) @get:Optional abstract val projectJavaResJar: RegularFileProperty
 
   @get:Classpath abstract val mergedDependenciesJavaRes: ConfigurableFileCollection
 
@@ -111,7 +111,9 @@ abstract class MergeCompressedJavaResTask : NonIncrementalTask(), GlobalTask {
   override fun doTaskAction() {
     workerExecutor.noIsolation().submit(MergeJavaResOptimizedWorkAction::class.java) {
       it.initializeFromBaseTask(this)
-      it.projectJavaResJar.set(projectJavaResJar)
+      if (projectJavaResJar.isPresent && projectJavaResJar.get().asFile.exists()) {
+        it.projectJavaResJar.set(projectJavaResJar)
+      }
       val displayBuildInfo = hasIncludedBuilds.get()
       it.subProjectJavaRes.set(subProjectJavaRes.sourceFileToModuleId(displayBuildInfo))
       it.externalLibJavaRes.set(externalLibJavaRes.sourceFileToModuleId(displayBuildInfo) + localDepsJavaRes.toSourcedInputs())

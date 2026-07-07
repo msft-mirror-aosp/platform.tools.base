@@ -42,6 +42,7 @@ import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
+import org.gradle.api.tasks.SkipWhenEmpty
 import org.gradle.api.tasks.TaskProvider
 
 /** Task to compress project Java resources into a JAR. */
@@ -50,7 +51,7 @@ import org.gradle.api.tasks.TaskProvider
 abstract class CompressJavaResTask @Inject constructor(@get:Internal internal val archiveOperations: ArchiveOperations) :
   NonIncrementalTask() {
 
-  @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val javaResFiles: ConfigurableFileCollection
+  @get:InputFiles @get:SkipWhenEmpty @get:PathSensitive(PathSensitivity.RELATIVE) abstract val javaResFiles: ConfigurableFileCollection
 
   @get:Input abstract val excludes: SetProperty<String>
 
