@@ -180,6 +180,21 @@ class TestSuiteDeviceTest {
               it.targets.create("t1") {}
               it.testApk {}
             }
+            testOptions.suites.create("myPureEmptyTestSuite", AgpTestSuite::class.java) {
+              it.useJunitEngine.apply {
+                inputs.add(AgpTestSuiteInputParameters.TESTED_APKS)
+                inputs.add(AgpTestSuiteInputParameters.ADB_EXECUTABLE)
+                includeEngines.add("MyTestEngine")
+                enginesDependencies.add("com.android.tools.build:gradle-api:${Version.ANDROID_GRADLE_PLUGIN_VERSION}")
+                enginesDependencies.add("org.junit.platform:junit-platform-engine:+")
+                enginesDependencies.add("org.junit.platform:junit-platform-launcher:+")
+                enginesDependencies.add("org.jetbrains.kotlin:kotlin-stdlib:+")
+                enginesDependencies.add("com.test:my-test-engine:+")
+                enginesDependencies.add("com.google.truth:truth:+")
+              }
+              it.targetVariants.add("debug")
+              it.targets.create("t1") {}
+            }
           }
           pluginCallbacks += PrintTestLogsCallback::class.java
           pluginCallbacks += ConfigureSerialsCallback::class.java
@@ -243,6 +258,13 @@ class TestSuiteDeviceTest {
   @Test
   fun testApkSuiteShouldFailWhenNoTests() {
     executor.expectFailure().run(":app:testMyEmptyTestSuiteApkT1DebugTestSuite")
+  }
+
+  @Test
+  fun pureEmptySuiteShouldBeSkipped() {
+    val result = executor.run(":app:testMyPureEmptyTestSuiteT1DebugTestSuite")
+    result.assertOutputDoesNotContain("Serial IDs =")
+    assertThat(result.findTask(":app:testMyPureEmptyTestSuiteT1DebugTestSuite")?.wasSkipped()).isTrue()
   }
 }
 

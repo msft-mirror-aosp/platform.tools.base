@@ -45,26 +45,41 @@ abstract class AndroidTestDiscoveryTask : NewIncrementalTask() {
 
   override fun doTaskAction(inputChanges: org.gradle.work.InputChanges) {
     val discoveredTests = mutableSetOf<String>()
+    var sawClassFiles = false
 
     testClasses.files.forEach { file ->
       if (file.isDirectory) {
         file
           .walkTopDown()
           .filter { it.isFile && it.extension == "class" }
-          .forEach { classFile -> scanClassFile(classFile, discoveredTests) }
+          .forEach { classFile ->
+            sawClassFiles = true
+            scanClassFile(classFile, discoveredTests)
+          }
       } else if (file.extension == "jar") {
         ZipFile(file).use { zipFile ->
           zipFile
             .entries()
             .asSequence()
             .filter { it.name.endsWith(SdkConstants.DOT_CLASS) }
-            .forEach { entry -> zipFile.getInputStream(entry).use { inputStream -> scanClass(inputStream.readBytes(), discoveredTests) } }
+            .forEach { entry ->
+              sawClassFiles = true
+              zipFile.getInputStream(entry).use { inputStream -> scanClass(inputStream.readBytes(), discoveredTests) }
+            }
         }
       }
     }
 
-    val outputFile = outputDirectory.file("test-list.txt").get().asFile
-    outputFile.writeText(discoveredTests.sorted().joinToString("\n"))
+    // Only write the test list file if we actually had class files to scan.
+    // If there were no class files at all, we leave the output directory empty
+    // so Gradle can skip any dependent test execution tasks as NO-SOURCE.
+    // If we have class files but found 0 tests, we still write an empty test-list.txt
+    // to enforce failure (if configured) because it might be a configuration error
+    // (e.g. missing @Test annotations).
+    if (sawClassFiles) {
+      val outputFile = outputDirectory.file("test-list.txt").get().asFile
+      outputFile.writeText(discoveredTests.sorted().joinToString("\n"))
+    }
   }
 
   private fun scanClassFile(classFile: File, discoveredTests: MutableSet<String>) {
