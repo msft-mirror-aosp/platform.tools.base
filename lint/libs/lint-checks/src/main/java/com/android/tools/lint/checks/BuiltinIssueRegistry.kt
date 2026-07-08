@@ -132,6 +132,7 @@ open class BuiltinIssueRegistry : IssueRegistry() {
           CommentDetector.EASTER_EGG,
           CommentDetector.STOP_SHIP,
           CommunicationDeviceDetector.ISSUE,
+          CompileTimeConstantDetector.ISSUE,
           ConstraintLayoutDetector.ISSUE,
           CordovaVersionDetector.ISSUE,
           CredentialManagerDependencyDetector.CREDENTIAL_DEP,
