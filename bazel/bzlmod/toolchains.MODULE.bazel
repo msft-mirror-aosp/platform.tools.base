@@ -62,6 +62,7 @@ register_toolchains(
     "//prebuilts/studio/jdk:java11_compile_toolchain_definition",
     "//prebuilts/studio/jdk:java17_compile_toolchain_definition",
     "//prebuilts/studio/jdk:java21_compile_toolchain_definition",
+    "//prebuilts/studio/jdk:java25_compile_toolchain_definition",
 
     # Bazel want those for bootclasspath shenanigans. Not used in studio-main rules
     # https://github.com/bazelbuild/rules_java/blob/master/toolchains/BUILD#L75
