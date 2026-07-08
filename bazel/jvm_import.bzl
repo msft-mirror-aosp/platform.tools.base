@@ -1,10 +1,9 @@
 """Provides a stripped down version of java_import."""
 
+load("@rules_java//java:defs.bzl", "JavaInfo", "java_common")
+
 def _jvm_import(ctx):
     infos = []
-    if len(ctx.files.jars) > 1 and ctx.files.srcjar:
-        fail("cannot specify multiple jars when srcjar attribute is present")
-
     for jar in ctx.files.jars:
         filename = "%s/compiletime_%s" % (jar.dirname, jar.basename)
         compile_jar = ctx.actions.declare_file(filename)
@@ -24,13 +23,12 @@ def _jvm_import(ctx):
             mnemonic = "CreateJvmCompileJar",
             progress_message = "JvmCompileJar creating %s" % compile_jar.short_path,
         )
-        source_jar = ctx.files.srcjar[0] if ctx.files.srcjar else None
         infos.append(JavaInfo(
             compile_jar = compile_jar,
             output_jar = jar,
             deps = [dep[JavaInfo] for dep in ctx.attr.deps],
             exports = [export[JavaInfo] for export in ctx.attr.exports],
-            source_jar = source_jar,
+            source_jar = ctx.file.srcjar,
             add_exports = ctx.attr.add_exports,
             add_opens = ctx.attr.add_opens,
         ))
@@ -60,7 +58,7 @@ Args:
     """,
     attrs = {
         "jars": attr.label_list(allow_files = [".jar"], mandatory = True),
-        "srcjar": attr.label(allow_files = [".jar"]),
+        "srcjar": attr.label(allow_single_file = [".jar", ".zip"]),
         "deps": attr.label_list(
             default = [],
             providers = [JavaInfo],
