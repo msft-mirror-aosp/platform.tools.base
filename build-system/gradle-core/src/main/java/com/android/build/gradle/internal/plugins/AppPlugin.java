@@ -211,6 +211,8 @@ public class AppPlugin
         }
 
         if (getProjectServices().getProjectOptions().useNewDsl(project.getPath())) {
+            // This was already done correctly in AGP 9.0, so no need to check
+            // USE_NEW_DSL_INTERFACES_FOR_KTS
             project.getExtensions()
                     .add(new TypeOf<ApplicationExtension>() {}, "android", applicationExtension);
 

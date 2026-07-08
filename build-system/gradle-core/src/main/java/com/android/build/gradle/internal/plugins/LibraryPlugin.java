@@ -233,7 +233,18 @@ public class LibraryPlugin
         }
 
         if (getProjectServices().getProjectOptions().useNewDsl(project.getPath())) {
-            project.getExtensions().add(new TypeOf<>() {}, "android", libraryExtension);
+            if (getProjectServices()
+                    .getProjectOptions()
+                    .get(BooleanOption.USE_NEW_DSL_INTERFACES_FOR_KTS)) {
+                project.getExtensions()
+                        .add(
+                                new TypeOf<com.android.build.api.dsl.LibraryExtension>() {},
+                                "android",
+                                libraryExtension);
+            } else {
+                project.getExtensions()
+                        .add(new TypeOf<LibraryExtensionImpl>() {}, "android", libraryExtension);
+            }
 
             initExtensionFromSettings(libraryExtension);
 
