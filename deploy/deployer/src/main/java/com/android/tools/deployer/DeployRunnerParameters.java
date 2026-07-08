@@ -28,7 +28,6 @@ import java.util.Locale;
 
 public class DeployRunnerParameters {
 
-    static final String PARAMETER_CREATE_ADBLIB_SESSION = "--create_adblib_session";
 
     public enum Command {
         INSTALL,
@@ -56,7 +55,6 @@ public class DeployRunnerParameters {
 
     private Component componentToActivate = null;
 
-    private boolean createAdblibSession = false;
 
     private DeployRunnerParameters() {}
 
@@ -81,8 +79,7 @@ public class DeployRunnerParameters {
             useRootPushInstall = true;
         } else if (arg.startsWith("--no-jdwp-client-support")) {
             jdwpClientSupport = false;
-        } else if (arg.equals(PARAMETER_CREATE_ADBLIB_SESSION)) {
-            createAdblibSession = true;
+
         } else if (arg.startsWith("--install-flags=")) {
             userInstallFlags = arg.substring("--install-flags=".length()).split(" +");
         } else if (arg.startsWith("--strategy=")) {
@@ -200,9 +197,6 @@ public class DeployRunnerParameters {
         return componentToActivate;
     }
 
-    public boolean getCreateAdblibSession() {
-        return createAdblibSession;
-    }
 
     public String[] getUserInstallFlags() {
         return userInstallFlags;

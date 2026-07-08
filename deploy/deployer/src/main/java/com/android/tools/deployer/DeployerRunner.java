@@ -49,7 +49,6 @@ import com.google.common.collect.ImmutableMap;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
@@ -109,11 +108,7 @@ public class DeployerRunner {
                         new File(DEX_DB_PATH),
                         new AlwaysYesService());
 
-        // When used from CLI, we use adblib to install.
-        String[] parameters = Arrays.copyOf(args, args.length + 1);
-        parameters[args.length] = DeployRunnerParameters.PARAMETER_CREATE_ADBLIB_SESSION;
-
-        int errorCode = runner.run(parameters);
+        int errorCode = runner.run(args);
         Trace.end();
         Trace.flush();
         System.exit(errorCode);
@@ -250,13 +245,10 @@ public class DeployerRunner {
 
         // Use an adblib connection. This is piggybagging on the adb server guaranteed to be
         // spawned by DDMLIB.
-        AdbSession session = null;
-        if (parameters.getCreateAdblibSession()) {
-            session =
-                    AdbLibSessionFactoryKt.createSocketConnectSession(
-                            AndroidDebugBridge::getSocketAddress,
-                            new DeployerRunnerLoggerFactory(parameters.getLogLevel()));
-        }
+        AdbSession session =
+                AdbLibSessionFactoryKt.createSocketConnectSession(
+                        AndroidDebugBridge::getSocketAddress,
+                        new DeployerRunnerLoggerFactory(parameters.getLogLevel()));
 
         AdbClient adb = new AdbClient(device, logger, session);
         Installer installer =
@@ -346,6 +338,11 @@ public class DeployerRunner {
             return e.getError().ordinal();
         } finally {
             service.shutdown();
+            try {
+                session.close();
+            } catch (Exception e) {
+                logger.warning("Failed to close AdbSession: " + e.getMessage());
+            }
         }
         return SUCCESS;
     }

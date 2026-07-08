@@ -256,7 +256,7 @@ public class AdbClient {
                         "Splits are not supported below API 21");
             }
             if (reinstall) {
-                options.add("-r");
+                options.add(0, "-r");
             }
             DeviceSelector deviceSelector =
                     DeviceSelector.fromSerialNumber(device.getSerialNumber());

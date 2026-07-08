@@ -147,6 +147,7 @@ abstract class DeployRunnerTestBase {
     Mockito.verifyNoMoreInteractions(service)
   }
 
+  /** Compares shell command history ignoring common commands related to inner workings of adblib: `getprop` and `echo foo`. */
   @Throws(IOException::class)
   protected fun assertHistory(device: FakeDevice, vararg expectedHistory: String) {
     val actualHistory = device.shell.history
@@ -175,7 +176,14 @@ abstract class DeployRunnerTestBase {
     matcher.appendTail(buffer)
     expected = buffer.toString()
 
-    Assert.assertEquals(expected, actual)
+    // adblib uses `getprop` and `echo foo` to determine capabilities of the adb shell command.
+    // We simply skip these commands as they have nothing to do with the install commands that
+    // we are testing here.
+    val sanitizeShellCommands = { text: String ->
+      text.lineSequence().map { it.trim() }.filter { it != "echo foo" && it != "getprop" }.joinToString(System.lineSeparator())
+    }
+
+    Assert.assertEquals(sanitizeShellCommands(expected), sanitizeShellCommands(actual))
   }
 
   protected fun assertHistoryContain(device: FakeDevice, line: String) {

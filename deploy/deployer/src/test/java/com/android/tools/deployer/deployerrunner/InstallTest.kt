@@ -121,7 +121,7 @@ class InstallTestTest : DeployRunnerTestBase() {
 
     if (device.api < 21) {
       assertMetrics(runner.metrics, "DELTAINSTALL:API_NOT_SUPPORTED", "INSTALL:OK", "DDMLIB_UPLOAD", "DDMLIB_INSTALL")
-      assertHistory(device, "getprop", "pm install -r -t \"/data/local/tmp/sample.apk\"", "rm \"/data/local/tmp/sample.apk\"")
+      assertHistory(device, "getprop", "pm install -r -t /data/local/tmp/adblib_tmp.apk", "rm -f /data/local/tmp/adblib_tmp.apk")
     } else if (device.api < 24) {
       assertMetrics(runner.metrics, "DELTAINSTALL:API_NOT_SUPPORTED", "INSTALL:OK", "DDMLIB_UPLOAD", "DDMLIB_INSTALL")
       assertHistory(
@@ -403,13 +403,7 @@ class InstallTestTest : DeployRunnerTestBase() {
     assertInstalled("com.example.simpleapp", v2)
 
     if (device.api == 19) {
-      assertHistory(
-        device,
-        "getprop",
-        "pm install -r -t \"/data/local/tmp/simple.apk\"", // ,"rm \"/data/local/tmp/simple.apk\""
-        // TODO: ddmlib doesn't remove when
-        // installation fails
-      )
+      assertHistory(device, "getprop", "pm install -r -t /data/local/tmp/adblib_tmp.apk", "rm -f /data/local/tmp/adblib_tmp.apk")
       assertMetrics(runner.metrics, "DELTAINSTALL:API_NOT_SUPPORTED", "INSTALL:INSTALL_FAILED_VERSION_DOWNGRADE")
     } else if (device.api < 24) {
       assertHistory(
