@@ -250,6 +250,11 @@ public class AdbClient {
     private InstallResult installWithAdbLib(
             @NonNull List<Path> paths, List<String> options, boolean reinstall) {
         try {
+            if (!device.getVersion().isAtLeast(AndroidVersion.VersionCodes.LOLLIPOP) && paths.size() > 1) {
+                return new InstallResult(
+                        InstallStatus.MULTI_APKS_NO_SUPPORTED_BELOW21,
+                        "Splits are not supported below API 21");
+            }
             if (reinstall) {
                 options.add("-r");
             }
