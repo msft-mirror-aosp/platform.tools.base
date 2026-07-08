@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<issues format="6" by="lint 9.4.0-dev" type="baseline" client="" dependencies="true" name="" variant="all" version="9.4.0-dev">
+
+    <issue
+        id="WrongThread"
+        message="Call must be from `@{Slow,WorkerThread}`, but context is allowing `@UiThread`"
+        errorLine1="  f3()"
+        errorLine2="  ~~~~">
+        <location
+            file="tools/base/lint/studio-checks/integration-test/IntellijInferredThreadDetectorChain/top/test/chain/top/Top.kt"
+            line="24"
+            column="3"/>
+    </issue>
+
+</issues>

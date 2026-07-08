@@ -1,0 +1,221 @@
+# Copyright (C) 2026 The Android Open Source Project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load("//tools/base/bazel:kotlin.bzl", "kotlin_library")
+load(":lint_test_wiring_test.bzl", "lint_test_wiring_test")
+
+licenses(["notice"])
+
+# See lint_test_wiring_test.bzl. The lint tests here have nothing to report; only how the
+# kotlin_library macro and lint_test wire them up is checked.
+
+kotlin_library(
+    name = "base",
+    srcs = ["base/test/wiring/base/Base.kt"],
+)
+
+kotlin_library(
+    name = "lib",
+    srcs = ["lib/test/wiring/lib/Lib.kt"],
+    deps = [":base"],
+)
+
+kotlin_library(
+    name = "extra",
+    srcs = ["extra/test/wiring/extra/Extra.kt"],
+)
+
+# Default configuration (the --java-language-level the macro always passes does not count
+# as an extra argument): the aspect's analysis is used and the transitive partial results
+# are carried, but no dependency jar.
+kotlin_library(
+    name = "consumer",
+    srcs = ["consumer/test/wiring/consumer/Consumer.kt"],
+    lint_partial_analysis = True,
+    deps = [":lib"],
+)
+
+lint_test_wiring_test(
+    name = "consumer_wiring_test",
+    analysis = "aspect",
+    launcher_contains = ["--report-only"],
+    lint_test = ":consumer_lint_test",
+    module = ":consumer",
+    partial_results_of = [
+        ":base",
+        ":lib",
+    ],
+    project_xml_contains = [
+        "<root dir=\".\" />",
+        ":consumer\" android=\"false\" partial-results-dir=\"",
+        "<dep module=\"",
+        ":lib\" android=\"false\" partial-results-dir=\"",
+        ":base\" android=\"false\" partial-results-dir=\"",
+        "consumer/test/wiring/consumer/Consumer.kt\" />",
+    ],
+    project_xml_lacks = [
+        "<classpath",
+        "Lib.kt",
+        "test=\"true\"",
+    ],
+    deps = [
+        ":base",
+        ":lib",
+    ],
+)
+
+# Single-pass mode: no aspect, jars on the classpath, no partial results.
+kotlin_library(
+    name = "consumer_single_pass",
+    srcs = ["consumer/test/wiring/consumer/Consumer.kt"],
+    lint_partial_analysis = False,
+    deps = [":lib"],
+)
+
+lint_test_wiring_test(
+    name = "consumer_single_pass_wiring_test",
+    analysis = "none",
+    launcher_lacks = ["--report-only"],
+    lint_test = ":consumer_single_pass_lint_test",
+    project_xml_contains = ["<classpath jar=\""],
+    project_xml_lacks = [
+        "partial-results-dir",
+        "<dep module=\"",
+    ],
+    deps = [
+        ":base",
+        ":lib",
+    ],
+)
+
+# Extra custom rules: the test analyzes the module itself.
+kotlin_library(
+    name = "consumer_custom_rules",
+    srcs = ["consumer/test/wiring/consumer/Consumer.kt"],
+    lint_custom_rules = ["@maven//:androidx.lint.lint-gradle"],
+    lint_partial_analysis = True,
+    deps = [":lib"],
+)
+
+lint_test_wiring_test(
+    name = "consumer_custom_rules_wiring_test",
+    analysis = "own",
+    lint_test = ":consumer_custom_rules_lint_test",
+    module = ":consumer_custom_rules",
+    partial_results_of = [
+        ":base",
+        ":lib",
+    ],
+    project_xml_contains = ["lint-gradle"],
+    deps = [
+        ":base",
+        ":lib",
+    ],
+)
+
+# Extra lint arguments: the test analyzes the module itself.
+kotlin_library(
+    name = "consumer_extra_args",
+    srcs = ["consumer/test/wiring/consumer/Consumer.kt"],
+    lint_extra_args = [
+        "--disable",
+        "VisibleForTests",
+    ],
+    lint_partial_analysis = True,
+    deps = [":lib"],
+)
+
+lint_test_wiring_test(
+    name = "consumer_extra_args_wiring_test",
+    analysis = "own",
+    launcher_contains = ["--disable VisibleForTests"],
+    lint_test = ":consumer_extra_args_lint_test",
+    module = ":consumer_extra_args",
+    deps = [
+        ":base",
+        ":lib",
+    ],
+)
+
+# Test sources of a testonly module: the aspect's analysis (of test sources) is used.
+kotlin_library(
+    name = "consumer_test_sources",
+    testonly = True,
+    srcs = ["consumer/test/wiring/consumer/Consumer.kt"],
+    lint_is_test_sources = True,
+    lint_partial_analysis = True,
+    deps = [":lib"],
+)
+
+lint_test_wiring_test(
+    name = "consumer_test_sources_wiring_test",
+    analysis = "aspect",
+    lint_test = ":consumer_test_sources_lint_test",
+    module = ":consumer_test_sources",
+    project_xml_contains = ["test=\"true\""],
+    deps = [
+        ":base",
+        ":lib",
+    ],
+)
+
+# Production sources of a testonly module: the aspect's analysis is of test sources, so
+# the test analyzes the module itself.
+kotlin_library(
+    name = "consumer_testonly",
+    testonly = True,
+    srcs = ["consumer/test/wiring/consumer/Consumer.kt"],
+    lint_partial_analysis = True,
+    deps = [":lib"],
+)
+
+lint_test_wiring_test(
+    name = "consumer_testonly_wiring_test",
+    analysis = "own",
+    lint_test = ":consumer_testonly_lint_test",
+    module = ":consumer_testonly",
+    project_xml_lacks = ["test=\"true\""],
+    deps = [
+        ":base",
+        ":lib",
+    ],
+)
+
+# lint_classpath: the extra module is analyzed and merged too, and the test analyzes the
+# module itself (with the extra module's partial results).
+kotlin_library(
+    name = "consumer_lint_classpath",
+    srcs = ["consumer/test/wiring/consumer/Consumer.kt"],
+    lint_classpath = [":extra"],
+    lint_partial_analysis = True,
+    deps = [":lib"],
+)
+
+lint_test_wiring_test(
+    name = "consumer_lint_classpath_wiring_test",
+    analysis = "own",
+    lint_test = ":consumer_lint_classpath_lint_test",
+    module = ":consumer_lint_classpath",
+    partial_results_of = [
+        ":base",
+        ":extra",
+        ":lib",
+    ],
+    project_xml_contains = [":extra\" android=\"false\" partial-results-dir=\""],
+    deps = [
+        ":base",
+        ":extra",
+        ":lib",
+    ],
+)

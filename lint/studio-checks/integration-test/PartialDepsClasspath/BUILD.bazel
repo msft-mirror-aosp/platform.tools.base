@@ -1,0 +1,59 @@
+# Copyright (C) 2026 The Android Open Source Project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load("@rules_java//java:defs.bzl", "java_import")
+load("//tools/base/bazel:kotlin.bzl", "kotlin_library")
+
+licenses(["notice"])
+
+# lint_classpath names modules lint should analyze that are not reachable through the
+# library's deps/exports (lint_test's partial_deps). Here :lib only reaches :consumer as a
+# jar (java_import has no sources the aspect can analyze), so its inferred @UiThread is
+# only known when :lib itself is listed on lint_classpath.
+
+kotlin_library(
+    name = "lib",
+    srcs = ["lib/test/pdeps/lib/Lib.kt"],
+    deps = ["//tools/base/annotations"],
+)
+
+java_import(
+    name = "lib_jar",
+    jars = [":liblib.jar"],
+)
+
+# Without lint_classpath: only the call to the locally annotated function is reported.
+kotlin_library(
+    name = "consumer_without",
+    srcs = ["consumer/test/pdeps/consumer/Consumer.kt"],
+    lint_baseline = "consumer/LocalOnly.xml",
+    lint_partial_analysis = True,
+    deps = [
+        ":lib_jar",
+        "//tools/base/annotations",
+    ],
+)
+
+# With lint_classpath: :lib is analyzed too and its inferred @UiThread is reported.
+kotlin_library(
+    name = "consumer_with",
+    srcs = ["consumer/test/pdeps/consumer/Consumer.kt"],
+    lint_baseline = "consumer/WithLib.xml",
+    lint_classpath = [":lib"],
+    lint_partial_analysis = True,
+    deps = [
+        ":lib_jar",
+        "//tools/base/annotations",
+    ],
+)
