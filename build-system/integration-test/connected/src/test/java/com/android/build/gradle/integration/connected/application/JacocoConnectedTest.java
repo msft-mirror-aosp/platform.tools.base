@@ -95,11 +95,6 @@ public class JacocoConnectedTest {
 
     @Test
     public void onTheFlyConnectedCheck() throws Exception {
-        // Skip for the legacy flow
-        if (!runWithBuiltInPlatform) {
-            return;
-        }
-
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
                 "\n"

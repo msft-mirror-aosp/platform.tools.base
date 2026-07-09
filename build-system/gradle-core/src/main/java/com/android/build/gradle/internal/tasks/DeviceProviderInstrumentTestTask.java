@@ -296,6 +296,7 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                 getTestRunnerFactory(),
                 getReportsDir().getAsFile().get(),
                 getCodeCoverageEnabled().get(),
+                getOnTheFlyCoverageEnabled().get(),
                 getTestReportAggregationEnabled().get(),
                 getAnalyticsService().get(),
                 getIgnoreFailures(),
@@ -322,6 +323,7 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
             TestRunnerFactory testRunnerFactory,
             File reportDir,
             Boolean enableCoverage,
+            Boolean onTheFlyCoverageEnabled,
             Boolean enableTestReportAggregation,
             AnalyticsService analyticsService,
             boolean ignoreFailures,
@@ -371,8 +373,12 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
         if (!testsFound) {
             logger.info("No tests found, nothing to do.");
             // If we don't create the coverage file, createXxxCoverageReport task will fail.
-            File emptyCoverageFile = new File(coverageDir, "coverage.ec");
-            emptyCoverageFile.createNewFile();
+            if (onTheFlyCoverageEnabled) {
+                new File(coverageDir, "coverage_metadata.pb").createNewFile();
+                new File(coverageDir, "coverage_hits.pb").createNewFile();
+            } else {
+                new File(coverageDir, "coverage.ec").createNewFile();
+            }
             success = true;
         } else {
             TestRunner testRunner =
@@ -594,6 +600,9 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
 
     @Input
     public abstract Property<Boolean> getCodeCoverageEnabled();
+
+    @Input
+    public abstract Property<Boolean> getOnTheFlyCoverageEnabled();
 
     @Input
     public abstract Property<Boolean> getTestReportAggregationEnabled();
@@ -952,6 +961,8 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                     .getTargetIsSplitApk()
                     .set(componentType != null && componentType.isDynamicFeature());
             task.getCodeCoverageEnabled().set(creationConfig.getCodeCoverageEnabled());
+            task.getOnTheFlyCoverageEnabled()
+                    .set(projectOptions.get(BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE));
             boolean useJacocoTransformOutputs = creationConfig.getCodeCoverageEnabled();
             task.getTestReportAggregationEnabled()
                     .set(projectOptions.get(BooleanOption.REPORT_AGGREGATION_SUPPORT));

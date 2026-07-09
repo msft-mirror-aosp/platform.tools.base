@@ -23,6 +23,7 @@ import com.android.build.gradle.internal.tasks.databinding.DATA_BINDING_TRIGGER_
 import com.android.build.gradle.internal.test.BuiltArtifactsSplitOutputMatcher.computeBestOutput
 import com.android.build.gradle.internal.testing.StaticTestData
 import com.android.build.gradle.internal.testing.TestData
+import com.android.build.gradle.options.BooleanOption
 import com.android.builder.testing.api.DeviceConfigProvider
 import com.android.ide.common.util.toPathString
 import com.google.common.io.Files
@@ -104,6 +105,9 @@ abstract class AbstractTestDataImpl(
     // lazily set the instrumentationRunnerArguments
     instrumentationRunnerArguments.set(creationConfig.instrumentationRunnerArguments)
     instrumentationRunnerArguments.putAll(extraInstrumentationTestRunnerArgs)
+    if (creationConfig.services.projectOptions[BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE]) {
+      instrumentationRunnerArguments.put("com.android.tools.coverage.onTheFly", "true")
+    }
     // memoize the value which makes it similar to `by lazy`
     instrumentationRunnerArguments.finalizeValueOnRead()
   }

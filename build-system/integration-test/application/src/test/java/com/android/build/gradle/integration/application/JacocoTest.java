@@ -40,14 +40,37 @@ import com.google.common.truth.Truth8;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Scanner;
 
+@RunWith(Parameterized.class)
 public class JacocoTest {
+
+    @Parameterized.Parameters(name = "runWithBuiltInPlatform={0}")
+    public static Collection<Boolean> data() {
+        return Arrays.asList(true, false);
+    }
+
+    private final boolean runWithBuiltInPlatform;
+
+    @Rule
+    public final GradleTestProject project;
+
+    public JacocoTest(boolean runWithBuiltInPlatform) {
+        this.runWithBuiltInPlatform = runWithBuiltInPlatform;
+        this.project = GradleTestProject.builder()
+                .fromTestApp(TEST_APP)
+                .addGradleProperty(BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM, runWithBuiltInPlatform)
+                .create();
+    }
 
     private static final String CLASS_NAME = "com/example/B";
     private static final String CLASS_FULL_TYPE = "L" + CLASS_NAME + ";";
@@ -60,9 +83,11 @@ public class JacocoTest {
     private static final GradleProject TEST_APP =
             HelloWorldApp.forPlugin("com.android.application");
 
-    @Rule
-    public final GradleTestProject project =
-            GradleTestProject.builder().fromTestApp(TEST_APP).create();
+    private File getCoverageDir() {
+        return runWithBuiltInPlatform
+                ? new File(project.getProjectDir(), "build/intermediates/test_suite_code_coverage/debug/connectedDebugAndroidTest")
+                : new File(project.getProjectDir(), "build/outputs/code_coverage/debugAndroidTest/connected");
+    }
 
     @Before
     public void setup() throws Exception {
@@ -234,7 +259,7 @@ public class JacocoTest {
 
 @Test
 public void testOnTheFlyRequiresReportAggregation() throws Exception {
-    File coverageDir = new File(project.getProjectDir(), "build/outputs/code_coverage/debugAndroidTest/connected");
+    File coverageDir = getCoverageDir();
     FileUtils.mkdirs(coverageDir);
     File dummyPb = new File(coverageDir, "coverage_metadata.pb");
     Files.write(dummyPb.toPath(), "dummy content".getBytes(Charsets.UTF_8));
@@ -253,7 +278,7 @@ public void testOnTheFlyRequiresReportAggregation() throws Exception {
 
 @Test
 public void testOnTheFlySuccessWithEmptyPbFiles() throws Exception {
-    File coverageDir = new File(project.getProjectDir(), "build/outputs/code_coverage/debugAndroidTest/connected");
+    File coverageDir = getCoverageDir();
     FileUtils.mkdirs(coverageDir);
     // Protocol Buffers allow 0-byte files as valid empty serialized messages.
     File metadataPb = new File(coverageDir, "coverage_metadata.pb");
@@ -277,7 +302,7 @@ public void testOnTheFlySuccessWithEmptyPbFiles() throws Exception {
 
 @Test
 public void testOnTheFlyAnchorTaskIsRegisteredAndRuns() throws Exception {
-    File coverageDir = new File(project.getProjectDir(), "build/outputs/code_coverage/debugAndroidTest/connected");
+    File coverageDir = getCoverageDir();
     FileUtils.mkdirs(coverageDir);
     // Protocol Buffers allow 0-byte files as valid empty serialized messages.
     File metadataPb = new File(coverageDir, "coverage_metadata.pb");
@@ -301,7 +326,7 @@ public void testOnTheFlyAnchorTaskIsRegisteredAndRuns() throws Exception {
 @Test
 public void testOnTheFlyFailsIfPbFilesAreMissing() throws Exception {
 
-    File coverageDir = new File(project.getProjectDir(), "build/outputs/code_coverage/debugAndroidTest/connected");
+    File coverageDir = getCoverageDir();
     FileUtils.mkdirs(coverageDir);
     // Put a pb file to satisfy the outer check in doTaskAction()
     File dummyPb = new File(coverageDir, "some_unrelated_file.pb");
@@ -321,7 +346,7 @@ public void testOnTheFlyFailsIfPbFilesAreMissing() throws Exception {
 
 @Test
 public void testLegacyFailsIfNoLegacyFilesFoundEvenWithPb() throws Exception {
-    File coverageDir = new File(project.getProjectDir(), "build/outputs/code_coverage/debugAndroidTest/connected");
+    File coverageDir = getCoverageDir();
     FileUtils.mkdirs(coverageDir);
     // Only plant a pb file, no ec/exec files
     File dummyPb = new File(coverageDir, "coverage_metadata.pb");

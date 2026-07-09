@@ -398,15 +398,39 @@ private fun createTestDriver(
 
         useTestStorageService = testData.instrumentationRunnerArguments.getOrDefault("useTestStorageService", "false").toBoolean()
 
+        val onTheFlyEnabled =
+          testData.instrumentationRunnerArguments.getOrDefault("com.android.tools.coverage.onTheFly", "false").toBoolean()
+
         if (testData.isTestCoverageEnabled) {
           putArgsMap("coverage", "true")
-          val testCoverageArgName =
-            if (useOrchestrator) {
-              "coverageFilePath"
-            } else {
-              "coverageFile"
-            }
-          putArgsMap(testCoverageArgName, testData.getTestCoverageFilePath(useOrchestrator))
+          if (onTheFlyEnabled) {
+            val existingListener = testData.instrumentationRunnerArguments.get("listener")
+            val newListener =
+              if (!existingListener.isNullOrBlank()) {
+                "$existingListener,com.android.tools.coverage.CoverageAgentAttacher"
+              } else {
+                "com.android.tools.coverage.CoverageAgentAttacher"
+              }
+            putArgsMap("listener", newListener)
+
+            val testPackageId = testData.applicationId
+            val targetPackage = testData.instrumentationTargetPackageId
+            val basePackage = targetPackage.split(".").take(2).joinToString(".")
+            val prefix = basePackage.replace(".", "/")
+            val agentPath = "/data/data/${targetPackage}/code_cache/coverage_agent.so"
+            val dataDir = "/data/data/${targetPackage}/code_cache"
+            val options = "$testPackageId,$prefix,$dataDir"
+            val config = "$agentPath=$options"
+            putArgsMap("coverage-agent-config", config)
+          } else {
+            val testCoverageArgName =
+              if (useOrchestrator) {
+                "coverageFilePath"
+              } else {
+                "coverageFile"
+              }
+            putArgsMap(testCoverageArgName, testData.getTestCoverageFilePath(useOrchestrator))
+          }
         }
 
         if (additionalTestOutputOnDeviceDir != null) {
@@ -451,10 +475,16 @@ private fun createAndroidTestCoveragePlugin(
   testData: TestData,
   utpDependencies: UtpDependencies,
 ): Extension {
-  val coverageFilePath = testData.getTestCoverageFilePath(useOrchestrator)
+  val onTheFlyCoverage = testData.instrumentationRunnerArguments.getOrDefault("com.android.tools.coverage.onTheFly", "false").toBoolean()
+  val coverageFilePath =
+    if (onTheFlyCoverage) {
+      "/data/data/${testData.instrumentationTargetPackageId}/code_cache/"
+    } else {
+      testData.getTestCoverageFilePath(useOrchestrator)
+    }
 
   return UtpDependency.ANDROID_TEST_COVERAGE_PLUGIN.toExtensionProto(utpDependencies, AndroidTestCoverageConfig::newBuilder) {
-    if (useOrchestrator) {
+    if (useOrchestrator || onTheFlyCoverage) {
       multipleCoverageFilesInDirectory = coverageFilePath
     } else {
       singleCoverageFile = coverageFilePath
