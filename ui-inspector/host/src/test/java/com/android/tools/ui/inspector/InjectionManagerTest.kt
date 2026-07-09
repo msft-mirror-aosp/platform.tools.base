@@ -25,6 +25,7 @@ import com.android.adblib.testing.FakeAdbSession
 import com.android.tools.ui.inspector.common.ProtocolConstants
 import com.google.common.truth.Truth.assertThat
 import java.nio.file.Path
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertThrows
 import org.junit.Assert.fail
@@ -67,11 +68,30 @@ class InjectionManagerTest {
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "settings put global debug_view_attributes 1", "")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "date +\"%m-%d %H:%M:%S.000\"", "06-24 15:44:32.000\n")
+    listOf(
+        "/data/local/tmp/lib_ui_inspector_agent.so",
+        "/data/local/tmp/lib_ui_inspector_service.jar",
+        "/data/local/tmp/lib_ui_inspector_payload.jar",
+        "/data/local/tmp/ui-inspector/my-inspector.jar",
+      )
+      .forEach { target ->
+        fakeSession.deviceServices.configureShellCommand(deviceSelector, "mv -f '$target.test.tmp' '$target'", "")
+        fakeSession.deviceServices.configureShellCommand(deviceSelector, "rm -f '$target.test.tmp'", "")
+      }
   }
 
   @Test
   fun testInjectAndAttach() = runTest {
-    val injectionManager = InjectionManager(testSession, deviceSerial, packageName, agentPathResolver, dummyJar, dummyPayload)
+    val injectionManager =
+      InjectionManager(
+        testSession,
+        deviceSerial,
+        packageName,
+        agentPathResolver,
+        dummyJar,
+        dummyPayload,
+        tempFileSuffixGenerator = { "test.tmp" },
+      )
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
     // Mock expected shell commands for the injection flow
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
@@ -107,15 +127,24 @@ class InjectionManagerTest {
     val paths = testDeviceServices.recordedSyncSends.map { it.remoteFilePath }
     assertThat(paths.sorted())
       .containsExactly(
-        "/data/local/tmp/lib_ui_inspector_agent.so",
-        "/data/local/tmp/lib_ui_inspector_payload.jar",
-        "/data/local/tmp/lib_ui_inspector_service.jar",
+        "/data/local/tmp/lib_ui_inspector_agent.so.test.tmp",
+        "/data/local/tmp/lib_ui_inspector_payload.jar.test.tmp",
+        "/data/local/tmp/lib_ui_inspector_service.jar.test.tmp",
       )
   }
 
   @Test
   fun testInjectAndAttach_CommandFails() = runTest {
-    val injectionManager = InjectionManager(testSession, deviceSerial, packageName, agentPathResolver, dummyJar, dummyPayload)
+    val injectionManager =
+      InjectionManager(
+        testSession,
+        deviceSerial,
+        packageName,
+        agentPathResolver,
+        dummyJar,
+        dummyPayload,
+        tempFileSuffixGenerator = { "test.tmp" },
+      )
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
@@ -154,15 +183,24 @@ class InjectionManagerTest {
     val paths = testDeviceServices.recordedSyncSends.map { it.remoteFilePath }
     assertThat(paths.sorted())
       .containsExactly(
-        "/data/local/tmp/lib_ui_inspector_agent.so",
-        "/data/local/tmp/lib_ui_inspector_payload.jar",
-        "/data/local/tmp/lib_ui_inspector_service.jar",
+        "/data/local/tmp/lib_ui_inspector_agent.so.test.tmp",
+        "/data/local/tmp/lib_ui_inspector_payload.jar.test.tmp",
+        "/data/local/tmp/lib_ui_inspector_service.jar.test.tmp",
       )
   }
 
   @Test
   fun testInjectAndAttach_FastFailLogcatDiagnostics() = runTest {
-    val injectionManager = InjectionManager(testSession, deviceSerial, packageName, agentPathResolver, dummyJar, dummyPayload)
+    val injectionManager =
+      InjectionManager(
+        testSession,
+        deviceSerial,
+        packageName,
+        agentPathResolver,
+        dummyJar,
+        dummyPayload,
+        tempFileSuffixGenerator = { "test.tmp" },
+      )
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
 
     // Mock expected shell commands for the injection flow
@@ -210,7 +248,16 @@ class InjectionManagerTest {
   @Test
   fun testPushInspectorPayload() = runTest {
     val dummyPayload = tempFolder.root.toPath().resolve("lib_ui_inspector_payload.jar")
-    val injectionManager = InjectionManager(testSession, deviceSerial, packageName, agentPathResolver, dummyJar, dummyPayload)
+    val injectionManager =
+      InjectionManager(
+        testSession,
+        deviceSerial,
+        packageName,
+        agentPathResolver,
+        dummyJar,
+        dummyPayload,
+        tempFileSuffixGenerator = { "test.tmp" },
+      )
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
 
     // Mock injectAndAttach dependencies so we can initialize appDataDir
@@ -248,7 +295,7 @@ class InjectionManagerTest {
 
     // Verify the inspector jar was pushed to tmp
     val pushedPaths = testDeviceServices.recordedSyncSends.map { it.remoteFilePath }
-    assertThat(pushedPaths).contains("/data/local/tmp/ui-inspector/my-inspector.jar")
+    assertThat(pushedPaths).contains("/data/local/tmp/ui-inspector/my-inspector.jar.test.tmp")
   }
 
   @Test
@@ -378,5 +425,67 @@ class InjectionManagerTest {
     } catch (e: IllegalStateException) {
       assertThat(e.message).contains("Failed to retrieve device CPU ABI")
     }
+  }
+
+  @Test
+  fun testPushInspectorPayload_Cancelled_cleansUpTempFile() = runTest {
+    val dummyPayload = tempFolder.root.toPath().resolve("lib_ui_inspector_payload.jar")
+    val injectionManager =
+      InjectionManager(
+        testSession,
+        deviceSerial,
+        packageName,
+        agentPathResolver,
+        dummyJar,
+        dummyPayload,
+        tempFileSuffixGenerator = { "test.tmp" },
+      )
+    val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
+
+    // Mock injectAndAttach dependencies so we can initialize appDataDir
+    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pidof $packageName", "1234\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      "cat /proc/net/unix | grep ui_inspector_1234 || true",
+      "ui_inspector_1234\n",
+    )
+
+    val agentSetupCmd =
+      "run-as $packageName sh -c 'rm -f lib_ui_inspector_agent.so lib_ui_inspector_service.jar lib_ui_inspector_payload.jar && " +
+        "cat /data/local/tmp/lib_ui_inspector_agent.so > lib_ui_inspector_agent.so && " +
+        "cat /data/local/tmp/lib_ui_inspector_service.jar > lib_ui_inspector_service.jar && " +
+        "cat /data/local/tmp/lib_ui_inspector_payload.jar > lib_ui_inspector_payload.jar && " +
+        "chmod 444 lib_ui_inspector_agent.so && " +
+        "chmod 444 lib_ui_inspector_service.jar && " +
+        "chmod 444 lib_ui_inspector_payload.jar'"
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, agentSetupCmd, "")
+    val attachCmd =
+      "cmd activity attach-agent $packageName \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;1234\""
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, attachCmd, "")
+
+    injectionManager.injectAndAttach()
+
+    val inspectorJar = tempFolder.newFile("my-inspector.jar").toPath()
+    val inspector = InspectorMetadata(id = "my.inspector", localJarPath = inspectorJar)
+
+    // Configure rm command for the temp file and simulate cancellation during syncSend
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "rm -f '/data/local/tmp/ui-inspector/my-inspector.jar.test.tmp'", "")
+    testDeviceServices.throwOnSyncSend = true
+
+    var exceptionThrown = false
+    try {
+      injectionManager.pushInspectorPayload(inspector)
+    } catch (e: CancellationException) {
+      exceptionThrown = true
+    }
+    assertThat(exceptionThrown).isTrue()
+
+    // Verify rm command was still invoked despite cancellation
+    val rmRequests =
+      fakeSession.deviceServices.shellV2Requests.filter { it.command == "rm -f '/data/local/tmp/ui-inspector/my-inspector.jar.test.tmp'" }
+    assertThat(rmRequests).isNotEmpty()
   }
 }

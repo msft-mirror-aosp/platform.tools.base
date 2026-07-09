@@ -34,6 +34,7 @@ import com.android.adblib.testing.FakeAdbDeviceServices
 import com.android.adblib.testing.FakeAdbHostServices
 import com.android.adblib.testing.FakeAdbSession
 import java.nio.file.attribute.FileTime
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 
 /** A custom [AdbSession] for testing that allows overriding [deviceServices] and [hostServices]. */
@@ -65,6 +66,7 @@ class TestAdbDeviceServices(val delegate: FakeAdbDeviceServices) : AdbDeviceServ
   data class SyncSendParams(val remoteFilePath: String, val remoteFileMode: RemoteFileMode)
 
   val recordedSyncSends = mutableListOf<SyncSendParams>()
+  var throwOnSyncSend: Boolean = false
 
   override suspend fun sync(device: DeviceSelector, readAheadBufferSize: Int, writeBackBufferSize: Int): AdbDeviceSyncServices {
     return object : AdbDeviceSyncServices {
@@ -76,6 +78,9 @@ class TestAdbDeviceServices(val delegate: FakeAdbDeviceServices) : AdbDeviceServ
         progress: SyncProgress?,
         bufferSize: Int,
       ) {
+        if (throwOnSyncSend) {
+          throw CancellationException("Simulated syncSend cancellation")
+        }
         recordedSyncSends.add(SyncSendParams(remoteFilePath, remoteFileMode))
       }
 

@@ -28,10 +28,13 @@ import com.android.tools.ui.inspector.common.ProtocolConstants
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.attribute.PosixFilePermission
+import java.util.UUID
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 
 /** The name of the agent binary file. */
 private const val AGENT_FILE_NAME = "lib_ui_inspector_agent.so"
@@ -63,7 +66,6 @@ private const val HOST_AGENT_PATH = "tools/base/ui-inspector/agent/native/$AGENT
 /** The relative path to the service jar in the runfiles. */
 private const val HOST_SERVICE_JAR_PATH = "tools/base/ui-inspector/agent/service/$SERVICE_JAR_FILE_NAME"
 
-// TODO: Consider using unique names or subdirectories to avoid race conditions if multiple instances run concurrently on the same device.
 /** The temporary path on the device where the agent is first pushed. */
 private const val DEVICE_TMP_AGENT_PATH = "$DEVICE_TMP_DIR/$AGENT_FILE_NAME"
 
@@ -78,6 +80,7 @@ private val DEFAULT_AGENT_PATH_RESOLVER: (String) -> Path = { abi -> Paths.get(H
  *
  * @param adbSession The [AdbSession] to use for device communication.
  * @param agentPathResolver A function that takes a device ABI string and returns the [Path] to the agent binary on the host.
+ * @param tempFileSuffixGenerator A function that generates unique suffixes for temporary files pushed to the device.
  */
 class InjectionManager(
   private val adbSession: AdbSession,
@@ -86,6 +89,7 @@ class InjectionManager(
   private val agentPathResolver: (String) -> Path = DEFAULT_AGENT_PATH_RESOLVER,
   private val serviceJarPath: Path = Paths.get(HOST_SERVICE_JAR_PATH),
   private val payloadJarPath: Path = Paths.get(HOST_PAYLOAD_JAR_PATH),
+  internal val tempFileSuffixGenerator: () -> String = { "${UUID.randomUUID()}.tmp" },
 ) {
   init {
     validateSerial(serial)
@@ -309,7 +313,7 @@ class InjectionManager(
     runShellCommand(deviceSelector, setupCmd)
   }
 
-  /** Pushes a file to a temporary location on the device. */
+  /** Pushes a file to a temporary location on the device using an atomic rename to prevent concurrent read/write corruption. */
   // TODO: Add a check to verify file hash on device before pushing to avoid redundant pushes if the file is already there.
   private suspend fun pushFileToDevice(deviceSelector: DeviceSelector, localPath: Path, remoteTmpPath: String): String {
     // App needs read permission to copy it from /data/local/tmp (run-as uses a different user).
@@ -317,7 +321,25 @@ class InjectionManager(
     // dex file requirements on API 34+ without needing an extra chmod shell round trip.
     val permissions =
       RemoteFileMode.fromPosixPermissions(PosixFilePermission.OWNER_READ, PosixFilePermission.GROUP_READ, PosixFilePermission.OTHERS_READ)
-    adbSession.deviceServices.syncSend(deviceSelector, localPath, remoteTmpPath, permissions)
+    val tempRemotePath = "$remoteTmpPath.${tempFileSuffixGenerator()}"
+    var moveSuccessful = false
+    try {
+      adbSession.deviceServices.syncSend(deviceSelector, localPath, tempRemotePath, permissions)
+      // Moving a file within the same Linux filesystem is an atomic rename (rename() syscall).
+      // Pushing to unique temporary files prevents concurrent transfers from interleaved writing or
+      // exposing half-written data. When renamed, the last writer atomically wins without disrupting
+      // active readers of the old file inode.
+      runShellCommand(deviceSelector, "mv -f '$tempRemotePath' '$remoteTmpPath'")
+      moveSuccessful = true
+    } finally {
+      if (!moveSuccessful) {
+        withContext(NonCancellable) {
+          try {
+            adbSession.deviceServices.shellAsText(deviceSelector, "rm -f '$tempRemotePath'")
+          } catch (_: Exception) {}
+        }
+      }
+    }
     return remoteTmpPath
   }
 

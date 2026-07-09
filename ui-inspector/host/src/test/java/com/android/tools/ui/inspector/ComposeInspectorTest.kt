@@ -133,7 +133,17 @@ class ComposeInspectorTest {
     val dummyPayload = tempFolder.newFile("lib_ui_inspector_payload.jar").toPath()
 
     val agentPathResolver = { abi: String -> dummyAgent }
-    val injectionManager = InjectionManager(testSession, deviceSerial, packageName, agentPathResolver, dummyJar, dummyPayload)
+    configureAtomicMoveCommands(fakeSession, deviceSelector)
+    val injectionManager =
+      InjectionManager(
+        testSession,
+        deviceSerial,
+        packageName,
+        agentPathResolver,
+        dummyJar,
+        dummyPayload,
+        tempFileSuffixGenerator = { "test.tmp" },
+      )
 
     // Trigger injectAndAttach so we populate the appDataDir internal states
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "pidof $packageName", "1234\n")
@@ -181,7 +191,7 @@ class ComposeInspectorTest {
 
     // B. Check inspector jar file was pushed to simulated device
     val remoteFilePushed =
-      testDeviceServices.recordedSyncSends.any { it.remoteFilePath == "/data/local/tmp/ui-inspector/compose-inspector.jar" }
+      testDeviceServices.recordedSyncSends.any { it.remoteFilePath == "/data/local/tmp/ui-inspector/compose-inspector.jar.test.tmp" }
     assertThat(remoteFilePushed).isTrue()
 
     // C. Check CreateInspectorCommand parameters
@@ -383,7 +393,17 @@ class ComposeInspectorTest {
     val dummyPayload = tempFolder.newFile("lib_ui_inspector_payload.jar").toPath()
 
     val agentPathResolver = { abi: String -> dummyAgent }
-    val injectionManager = InjectionManager(testSession, deviceSerial, packageName, agentPathResolver, dummyJar, dummyPayload)
+    configureAtomicMoveCommands(fakeSession, deviceSelector)
+    val injectionManager =
+      InjectionManager(
+        testSession,
+        deviceSerial,
+        packageName,
+        agentPathResolver,
+        dummyJar,
+        dummyPayload,
+        tempFileSuffixGenerator = { "test.tmp" },
+      )
 
     // Trigger injectAndAttach so we populate the appDataDir internal states
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "settings put global debug_view_attributes 1", "")
@@ -692,7 +712,17 @@ class ComposeInspectorTest {
     val dummyPayload = tempFolder.newFile("lib_ui_inspector_payload.jar").toPath()
 
     val agentPathResolver = { abi: String -> dummyAgent }
-    val injectionManager = InjectionManager(testSession, deviceSerial, packageName, agentPathResolver, dummyJar, dummyPayload)
+    configureAtomicMoveCommands(fakeSession, deviceSelector)
+    val injectionManager =
+      InjectionManager(
+        testSession,
+        deviceSerial,
+        packageName,
+        agentPathResolver,
+        dummyJar,
+        dummyPayload,
+        tempFileSuffixGenerator = { "test.tmp" },
+      )
 
     // Trigger injectAndAttach so we populate the appDataDir internal states
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "settings put global debug_view_attributes 1", "")
@@ -1025,7 +1055,17 @@ class ComposeInspectorTest {
     val dummyPayload = tempFolder.newFile("lib_ui_inspector_payload.jar").toPath()
 
     val agentPathResolver = { _: String -> dummyAgent }
-    val injectionManager = InjectionManager(testSession, deviceSerial, packageName, agentPathResolver, dummyJar, dummyPayload)
+    configureAtomicMoveCommands(fakeSession, deviceSelector)
+    val injectionManager =
+      InjectionManager(
+        testSession,
+        deviceSerial,
+        packageName,
+        agentPathResolver,
+        dummyJar,
+        dummyPayload,
+        tempFileSuffixGenerator = { "test.tmp" },
+      )
 
     // Trigger injectAndAttach so we populate the appDataDir internal states
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "pidof $packageName", "1234\n")
@@ -1102,5 +1142,19 @@ class ComposeInspectorTest {
     // Cleanup
     testScope.cancel()
     serverSocket.close()
+  }
+
+  private fun configureAtomicMoveCommands(fakeSession: FakeAdbSession, deviceSelector: DeviceSelector) {
+    listOf(
+        "/data/local/tmp/lib_ui_inspector_agent.so",
+        "/data/local/tmp/lib_ui_inspector_service.jar",
+        "/data/local/tmp/lib_ui_inspector_payload.jar",
+        "/data/local/tmp/ui-inspector/compose-inspector.jar",
+        "/data/local/tmp/compose-inspector.jar",
+      )
+      .forEach { target ->
+        fakeSession.deviceServices.configureShellCommand(deviceSelector, "mv -f '$target.test.tmp' '$target'", "")
+        fakeSession.deviceServices.configureShellCommand(deviceSelector, "rm -f '$target.test.tmp'", "")
+      }
   }
 }
