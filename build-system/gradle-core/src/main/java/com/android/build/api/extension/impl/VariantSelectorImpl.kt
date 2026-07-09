@@ -37,10 +37,10 @@ open class VariantSelectorImpl : VariantSelector {
     }
   }
 
-  override fun withFlavor(flavorToDimension: Pair<String, String>): VariantSelectorImpl {
+  override fun withFlavor(dimensionToFlavor: Pair<String, String>): VariantSelectorImpl {
     return object : VariantSelectorImpl() {
       override fun appliesTo(variant: ComponentIdentity): Boolean {
-        return variant.productFlavors.contains(flavorToDimension) && this@VariantSelectorImpl.appliesTo(variant)
+        return variant.productFlavors.contains(dimensionToFlavor) && this@VariantSelectorImpl.appliesTo(variant)
       }
     }
   }

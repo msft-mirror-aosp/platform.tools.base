@@ -214,6 +214,7 @@ java_import(
         "//tools/base/studio-leakcanary:__subpackages__",
         "//tools/base/ui-inspector/agent:__subpackages__",
         "//tools/base/ui-inspector/agent/service:__pkg__",
+        "//tools/vendor/google/android/interact:__pkg__",
     ],
 )
 

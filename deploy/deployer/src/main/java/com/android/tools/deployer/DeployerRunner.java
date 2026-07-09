@@ -70,8 +70,22 @@ public class DeployerRunner {
     private static final int ERR_NO_MATCHING_DEVICE = 1003;
     private static final int ERR_BAD_ARGS = 1004;
 
-    private static final String DEX_DB_PATH = "/tmp/studio_dex.db";
-    private static final String DEPLOY_DB_PATH = "/tmp/studio_deploy.db";
+    private static final String DB_DIR_PATH = getDbDirPath();
+    private static final String DEX_DB_PATH = DB_DIR_PATH + File.separator + "studio_dex.db";
+    private static final String DEPLOY_DB_PATH = DB_DIR_PATH + File.separator + "studio_deploy.db";
+
+    @VisibleForTesting
+    public static String getDbDirPath() {
+        String tmpDir = System.getProperty("java.io.tmpdir");
+        String userName = System.getProperty("user.name");
+        if (tmpDir == null) {
+            tmpDir = "/tmp";
+        }
+        if (userName == null || userName.isEmpty()) {
+            userName = "unknown";
+        }
+        return tmpDir + File.separator + "android-" + userName;
+    }
 
     private final InstallOptions defaultInstallOptions;
     private final DeploymentCacheDatabase cacheDb;
@@ -114,11 +128,48 @@ public class DeployerRunner {
             File deployCacheFile,
             File databaseFile,
             UIService service) {
+        ensurePrivateDir(deployCacheFile.getParentFile());
+        ensurePrivateDir(databaseFile.getParentFile());
         this.defaultInstallOptions = defaultInstallOptions;
         this.cacheDb = new DeploymentCacheDatabase(deployCacheFile);
         this.dexDb = new SqlApkFileDatabase(databaseFile, null);
         this.service = service;
         this.metrics = new MetricsRecorder();
+    }
+
+    /**
+     * Ensures that the database directory exists and is secured.
+     *
+     * <p>On POSIX systems (Linux/macOS), we explicitly restrict the directory to 0700 (owner-only
+     * read/write/execute) to prevent other users on a shared machine from accessing the database
+     * files.
+     *
+     * <p>On Windows, we rely on the fact that {@code java.io.tmpdir} resolves to the user's local
+     * AppData Temp directory (e.g., C:\Users\<username>\AppData\Local\Temp), which is already
+     * secured by Windows NTFS ACLs to be owner-only accessible. The file permission calls here act
+     * as a best-effort fallback.
+     */
+    private static void ensurePrivateDir(File dir) {
+        if (dir == null) {
+            return;
+        }
+        try {
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+            dir.setReadable(false, false);
+            dir.setReadable(true, true);
+            dir.setWritable(false, false);
+            dir.setWritable(true, true);
+            dir.setExecutable(false, false);
+            dir.setExecutable(true, true);
+        } catch (SecurityException e) {
+            System.err.println(
+                    "Warning: Failed to secure database directory: "
+                            + dir.getAbsolutePath()
+                            + " - "
+                            + e.getMessage());
+        }
     }
 
     @VisibleForTesting

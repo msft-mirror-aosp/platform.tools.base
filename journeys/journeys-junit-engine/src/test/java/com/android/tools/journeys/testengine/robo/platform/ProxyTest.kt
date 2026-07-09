@@ -39,6 +39,7 @@ import org.mockito.ArgumentMatchers.anyLong
 import org.mockito.ArgumentMatchers.anyMap
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.Mockito.RETURNS_DEEP_STUBS
+import org.mockito.Mockito.atLeastOnce
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.mockConstruction
 import org.mockito.Mockito.mockStatic
@@ -223,7 +224,7 @@ class ProxyTest {
 
     assertThrows(JourneyExecutionException::class.java) { proxy.executeJourney("run-1", "device-123", validJourneyPath) {} }
     val devicePortCaptor = ArgumentCaptor.forClass(Int::class.java)
-    verify(mockAdb).forward(eq("device-123"), anyInt(), devicePortCaptor.capture())
+    verify(mockAdb, atLeastOnce()).forward(eq("device-123"), anyInt(), devicePortCaptor.capture())
     assertEquals(12345, devicePortCaptor.value)
   }
 
@@ -252,7 +253,8 @@ class ProxyTest {
     assertThrows(JourneyExecutionException::class.java) { proxy.executeJourney("run-1", "device-123", validJourneyPath) {} }
       .apply {
         assertEquals(JourneyFailureReason.ADB_FORWARDING_FAILED, reason)
-        assertContains(message!!, "Forwarding failed")
+        assertContains(message!!, "Failed to setup adb forward")
+        assertContains(cause!!.cause!!.message!!, "Forwarding failed")
       }
   }
 
@@ -262,7 +264,7 @@ class ProxyTest {
     `when`(mockAdb.install(anyString(), anyString(), anyList(), anyLong())).thenAnswer {}
     `when`(mockAdb.runInstrumentation(anyString(), anyString(), anyString(), anyMap())).thenReturn(mockProcess)
     `when`(mockAdb.dumpsys(anyString(), anyString(), anyLong())).thenReturn("port_is_bound 12345")
-    `when`(mockAdb.forward(anyString(), anyInt(), anyInt())).thenAnswer {}
+    `when`(mockAdb.forward(anyString(), anyInt(), anyInt())).thenReturn("8080")
 
     val tempDir = tempFolder.newFolder()
 
@@ -288,7 +290,7 @@ class ProxyTest {
     `when`(mockAdb.install(anyString(), anyString(), anyList(), anyLong())).thenAnswer {}
     `when`(mockAdb.runInstrumentation(anyString(), anyString(), anyString(), anyMap())).thenReturn(mockProcess)
     `when`(mockAdb.dumpsys(anyString(), anyString(), anyLong())).thenReturn("port_is_bound 12345")
-    `when`(mockAdb.forward(anyString(), anyInt(), anyInt())).thenAnswer {}
+    `when`(mockAdb.forward(anyString(), anyInt(), anyInt())).thenReturn("8080")
 
     val fakeTokenFile = tempFolder.newFile("fake_token.json")
     fakeTokenFile.writeText(

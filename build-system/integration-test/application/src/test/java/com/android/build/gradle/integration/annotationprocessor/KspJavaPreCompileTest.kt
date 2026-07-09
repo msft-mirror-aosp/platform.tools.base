@@ -106,7 +106,9 @@ class KspJavaPreCompileTest(private val useKagp: Boolean) {
       InternalArtifactType.ANNOTATION_PROCESSOR_LIST.getOutputDir(project.getSubproject("app").buildDir)
         .resolve("debug/javaPreCompileDebug/$ANNOTATION_PROCESSOR_LIST_FILE_NAME")
         .readText()
-    Truth.assertThat(annotationProcessorList).isEqualTo("{\"mock-processor.jar (project :mock-processor)\":\"KSP_PROCESSOR\"}")
+    val misquote = "\\u0027"
+    Truth.assertThat(annotationProcessorList)
+      .isEqualTo("{\"mock-processor.jar (project $misquote:mock-processor$misquote)\":\"KSP_PROCESSOR\"}")
   }
 
   /** Regression test for b/331806519. */
@@ -133,6 +135,8 @@ class KspJavaPreCompileTest(private val useKagp: Boolean) {
       InternalArtifactType.ANNOTATION_PROCESSOR_LIST.getOutputDir(project.getSubproject("app").buildDir)
         .resolve("debug/javaPreCompileDebug/$ANNOTATION_PROCESSOR_LIST_FILE_NAME")
         .readText()
-    Truth.assertThat(annotationProcessorList).isEqualTo("{\"mock-processor.jar (project :mock-processor)\":\"KSP_PROCESSOR\"}")
+    val misquote = "\\u0027"
+    Truth.assertThat(annotationProcessorList)
+      .isEqualTo("{\"mock-processor.jar (project $misquote:mock-processor$misquote)\":\"KSP_PROCESSOR\"}")
   }
 }

@@ -966,7 +966,7 @@ class VariantManager<
 
         override fun <T : Any> projectExtension(extensionType: Class<T>): T {
           val ext: ExtensionAware =
-            if (projectServices.projectOptions[BooleanOption.USE_NEW_DSL]) {
+            if (projectServices.projectOptions.useNewDsl(projectServices.projectInfo.path)) {
               dslExtension
             } else {
               @Suppress("DEPRECATION")

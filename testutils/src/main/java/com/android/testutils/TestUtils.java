@@ -563,7 +563,7 @@ public class TestUtils {
     public static Path getEmbeddedJdkPath() {
         String hostDir = getJdkHostDir();
         String embeddedJdkPath =
-                System.getProperty("embedded.jdk.path", "prebuilts/studio/jdk/jbr-next/").trim();
+                System.getProperty("embedded.jdk.path", "prebuilts/studio/jdk/jbr25/").trim();
         if (!embeddedJdkPath.endsWith("/")) {
             embeddedJdkPath = embeddedJdkPath + "/";
         }

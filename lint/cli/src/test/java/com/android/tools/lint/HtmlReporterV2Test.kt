@@ -38,8 +38,8 @@ class HtmlReporterV2Test {
     reporter.write(stats, emptyList(), createFakeRegistry())
 
     val html = output.readText()
-    assertTrue(html.contains("<title>Local Lint Report</title>"))
-    assertTrue(html.contains("<h1 class=\"header-title\" id=\"project-name\">Local Lint Report</h1>"))
+    assertTrue(html.contains("<title>Lint Report Without Dependencies</title>"))
+    assertTrue(html.contains("<h1 class=\"header-title\" id=\"project-name\">Lint Report Without Dependencies</h1>"))
   }
 
   @Test
@@ -54,8 +54,8 @@ class HtmlReporterV2Test {
     reporter.write(stats, emptyList(), createFakeRegistry())
 
     val html = output.readText()
-    assertTrue(html.contains("<title>Aggregate Lint Report</title>"))
-    assertTrue(html.contains("<h1 class=\"header-title\" id=\"project-name\">Aggregate Lint Report</h1>"))
+    assertTrue(html.contains("<title>Lint Report With Dependencies</title>"))
+    assertTrue(html.contains("<h1 class=\"header-title\" id=\"project-name\">Lint Report With Dependencies</h1>"))
   }
 
   @Test
@@ -71,8 +71,8 @@ class HtmlReporterV2Test {
     reporter.write(stats, emptyList(), createFakeRegistry())
 
     val html = output.readText()
-    assertTrue(html.contains("<title>Local Custom Report</title>"))
-    assertTrue(html.contains("<h1 class=\"header-title\" id=\"project-name\">Local Custom Report</h1>"))
+    assertTrue(html.contains("<title>Custom Report Without Dependencies</title>"))
+    assertTrue(html.contains("<h1 class=\"header-title\" id=\"project-name\">Custom Report Without Dependencies</h1>"))
   }
 
   @Test

@@ -20,6 +20,7 @@ from tools.base.bazel.ci import studio_mac
 from tools.base.bazel.ci import studio_nightly
 from tools.base.bazel.ci import studio_win
 from tools.base.bazel.ci import studio_evals
+from tools.base.bazel.ci import studio_autobot
 
 _ARCH_ALIAS = {
     'amd64': 'x86_64',
@@ -176,7 +177,7 @@ def main():
     case 'studio-nightly':
       ci.run(studio_nightly.studio_nightly)
     case 'studio-autobot':
-      pass  # No-op. To be filled in later.
+      ci.run(studio_autobot.studio_journeys)
     case 'studio-evals':
         ci.run(studio_evals.studio_evals)
     case 'uitools_evals': # deprecated, to be removed

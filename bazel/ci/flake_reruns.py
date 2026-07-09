@@ -48,6 +48,9 @@ def studio_win_flake_reruns(build_env: bazel.BuildEnv) -> None:
       # This target uses the network to get an emulator connection. Running
       # it multiple times will cause quota issues.
       '//tools/adt/idea/android/integration:BuildAndRunTest_windows',
+      '//tools/adt/idea/android/integration:ApplyChangesTest_canary_windows',
+      '//tools/adt/idea/android/integration:ApplyChangesTest_nightly_windows',
+      '//tools/adt/idea/android/integration:ApplyChangesTest_stable_windows',
   ]
   rerun_flaky_tests(build_env, known_flakes, disallowed_targets)
 

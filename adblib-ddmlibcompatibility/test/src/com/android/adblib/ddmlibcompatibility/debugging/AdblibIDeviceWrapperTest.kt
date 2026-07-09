@@ -40,8 +40,12 @@ import kotlin.io.path.readBytes
 import kotlin.time.Duration
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.launch
 import org.hamcrest.CoreMatchers
 import org.junit.Assert.assertArrayEquals
@@ -565,6 +569,27 @@ class AdblibIDeviceWrapperTest {
 
     // Assert
     assertEquals("updated_value", updatedValue)
+  }
+
+  @Test
+  fun getSystemProperty_concurrentCalls_doNotHang() = runBlockingWithTimeout {
+    // Prepare
+    val (connectedDevice, _) = createConnectedDevice("device1", DeviceState.DeviceStatus.ONLINE)
+    val adblibIDeviceWrapper = createAdblibIDeviceWrapper(connectedDevice, bridge)
+
+    // Act
+    val deferredList =
+      (1..500).map { i ->
+        async(Dispatchers.Default) {
+          // Getting the value of a non-existent property should return "null"
+          val propName = "fake.test.prop.$i"
+          adblibIDeviceWrapper.getSystemProperty(propName).await()
+        }
+      }
+
+    // Assert
+    val results = deferredList.awaitAll()
+    results.forEach { assertNull(it) }
   }
 
   @Test

@@ -156,6 +156,12 @@ enum class StringOption(override val propertyName: String, stage: ApiStage) : Op
    */
   SUPPRESS_AGP_SYNC_WARNINGS("android.sync.suppressAgpWarnings", ApiStage.Experimental),
 
+  /**
+   * A comma-separated list of project paths (e.g., ":lib1,:lib2") that should opt out of the new DSL enforcement when android.newDsl=true
+   * is enabled globally.
+   */
+  NEW_DSL_OPT_OUT("android.newDsl.optOut", ApiStage.Experimental),
+
   /* ---------------
    * DEPRECATED APIs
    */

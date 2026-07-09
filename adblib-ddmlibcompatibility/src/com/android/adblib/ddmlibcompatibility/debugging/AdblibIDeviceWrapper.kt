@@ -81,8 +81,6 @@ import java.nio.channels.SocketChannel
 import java.nio.file.Files
 import java.time.Duration
 import java.util.ArrayList
-import java.util.Collections
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
@@ -132,7 +130,7 @@ internal class AdblibIDeviceWrapper(
 
   private val inProgressAllPropertiesJob = AtomicReference<Job?>(null)
 
-  private val pendingPropertyFutures = ConcurrentHashMap<String, MutableList<SettableFuture<String?>>>()
+  private val pendingPropertyFutures = HashMap<String, MutableList<SettableFuture<String?>>>()
 
   init {
     connectedDevice.scope.launch { fetchAvdData() }
@@ -203,7 +201,7 @@ internal class AdblibIDeviceWrapper(
     }
 
     val future = SettableFuture.create<String?>()
-    pendingPropertyFutures.computeIfAbsent(name) { Collections.synchronizedList(ArrayList()) }.add(future)
+    synchronized(pendingPropertyFutures) { pendingPropertyFutures.computeIfAbsent(name) { ArrayList() }.add(future) }
     triggerAllPropertiesFetch()
     return future
   }
@@ -325,8 +323,12 @@ internal class AdblibIDeviceWrapper(
             propertiesMapRef.set(props)
 
             // Resolve all pending futures and clear the map
-            val snapshot = HashMap(pendingPropertyFutures)
-            pendingPropertyFutures.clear()
+            val snapshot =
+              synchronized(pendingPropertyFutures) {
+                val copy = HashMap(pendingPropertyFutures)
+                pendingPropertyFutures.clear()
+                copy
+              }
 
             snapshot.forEach { (propName, futures) ->
               val value = props[propName]
@@ -334,15 +336,20 @@ internal class AdblibIDeviceWrapper(
             }
           }
           .onFailure { t ->
-            val snapshot = HashMap(pendingPropertyFutures)
-            pendingPropertyFutures.clear()
+            val snapshot =
+              synchronized(pendingPropertyFutures) {
+                val copy = HashMap(pendingPropertyFutures)
+                pendingPropertyFutures.clear()
+                copy
+              }
             snapshot.forEach { (_, futures) -> futures.forEach { it.setException(t) } }
           }
           .also {
             inProgressAllPropertiesJob.set(null)
             // One last check to avoid the race condition where a request was added
             // just before we set the job to null.
-            if (pendingPropertyFutures.isNotEmpty()) {
+            val hasPending = synchronized(pendingPropertyFutures) { pendingPropertyFutures.isNotEmpty() }
+            if (hasPending) {
               triggerAllPropertiesFetch()
             }
           }

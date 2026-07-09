@@ -17,14 +17,17 @@
 package com.android.tools.ui.inspector.payload;
 
 import android.util.Log;
+
 import androidx.annotation.VisibleForTesting;
 import androidx.inspection.Connection;
+
 import com.android.tools.idea.protobuf.ByteString;
 import com.android.tools.ui.inspector.common.FramingProtocol;
 import com.android.tools.ui.inspector.common.ProtocolConstants;
 import com.android.tools.ui.inspector.payload.appinspection.AppInspectionUtils;
 import com.android.tools.ui.inspector.payload.appinspection.HandlerThreadExecutor;
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol;
+
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -117,8 +120,9 @@ public final class SessionHandler {
           handleGetVersion(command.getGetVersion(), commandId);
           return false;
         default:
-          throw new IllegalStateException("Unhandled top-level command: " + command.getSpecializedCase());
-      }
+                    throw new IllegalStateException(
+                            "Unhandled top-level command: " + command.getSpecializedCase());
+            }
     } catch (IOException e) {
       throw e;
     } catch (Exception e) {
@@ -213,6 +217,10 @@ public final class SessionHandler {
     if (errorMessage != null) {
       responseBuilder.setErrorMessage(errorMessage);
     }
-    FramingProtocol.writeMessage(outputStream, responseBuilder.build().toByteArray());
+        UiInspectorProtocol.AgentMessage agentMessage =
+                UiInspectorProtocol.AgentMessage.newBuilder()
+                        .setResponse(responseBuilder.build())
+                        .build();
+        FramingProtocol.writeMessage(outputStream, agentMessage.toByteArray());
   }
 }

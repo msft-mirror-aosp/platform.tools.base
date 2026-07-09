@@ -41,10 +41,10 @@ interface VariantSelector {
   /**
    * Returns a new selector for [ComponentIdentity] objects with a given (dimension, flavorName).
    *
-   * @param flavorToDimension Dimension and flavor to filter [ComponentIdentity] on.
+   * @param dimensionToFlavor Dimension and flavor to filter [ComponentIdentity] on.
    * @return [VariantSelector] instance to further filter instances of [ComponentIdentity]
    */
-  fun withFlavor(flavorToDimension: Pair<String, String>): VariantSelector
+  fun withFlavor(dimensionToFlavor: Pair<String, String>): VariantSelector
 
   /**
    * Returns a new selector for [ComponentIdentity] objects with a given (flavorName).

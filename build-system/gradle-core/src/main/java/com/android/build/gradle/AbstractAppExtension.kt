@@ -7,7 +7,6 @@ import com.android.build.gradle.internal.dependency.SourceSetManager
 import com.android.build.gradle.internal.errors.DeprecationReporter
 import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.tasks.factory.BootClasspathConfig
-import com.android.build.gradle.options.BooleanOption
 import com.google.wireless.android.sdk.stats.GradleBuildProject
 import org.gradle.api.DomainObjectSet
 import org.gradle.api.NamedDomainObjectContainer
@@ -65,7 +64,7 @@ abstract class AbstractAppExtension(
   private val _applicationVariants: DomainObjectSet<ApplicationVariant> = dslServices.domainObjectSet(ApplicationVariant::class.java)
 
   override fun addVariant(variant: BaseVariant) {
-    if (dslServices.projectOptions[BooleanOption.USE_NEW_DSL]) return
+    if (dslServices.projectOptions.useNewDsl(dslServices.projectInfo.path)) return
     _applicationVariants.add(variant as ApplicationVariant)
   }
 }

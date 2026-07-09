@@ -21,10 +21,15 @@ import android.net.LocalSocket;
 import android.net.LocalSocketAddress;
 import android.util.Log;
 
+import com.android.tools.ui.inspector.common.FramingProtocol;
 import com.android.tools.ui.inspector.common.ProtocolConstants;
 import com.android.tools.ui.inspector.payload.appinspection.HandlerThreadExecutor;
+import com.android.tools.ui.inspector.protocol.UiInspectorProtocol;
 
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -55,9 +60,51 @@ public final class Server {
     // allow inspectors to maintain state across host reconnections.
     private final Map<String, InspectorBridge> inspectorBridges = new ConcurrentHashMap<>();
 
-    // TODO: report crashes to host
-    private final HandlerThreadExecutor.CrashListener crashListener = throwable ->
-        Log.e(TAG, "Uncaught exception in inspector", throwable);
+        /** The output stream of the active connection session. Null if no connection is active. */
+        private volatile OutputStream activeOutputStream;
+
+        private final HandlerThreadExecutor.CrashListener crashListener =
+                throwable -> {
+                    Log.e(TAG, "Uncaught exception in inspector", throwable);
+                    reportCrashToHost(throwable);
+                };
+
+        private void reportCrashToHost(Throwable throwable) {
+            OutputStream output = activeOutputStream;
+            if (output == null) {
+                Log.w(TAG, "Cannot report crash to host: no active connection");
+                return;
+            }
+            try {
+                StringWriter sw = new StringWriter();
+                PrintWriter pw = new PrintWriter(sw);
+                throwable.printStackTrace(pw);
+                String stackTrace = sw.toString();
+                String message =
+                        throwable.getMessage() != null
+                                ? throwable.getMessage()
+                                : throwable.getClass().getName();
+
+                UiInspectorProtocol.CrashEvent crashEvent =
+                        UiInspectorProtocol.CrashEvent.newBuilder()
+                                .setErrorMessage(message)
+                                .setStackTrace(stackTrace)
+                                .build();
+
+                UiInspectorProtocol.Event eventWrapper =
+                        UiInspectorProtocol.Event.newBuilder().setCrash(crashEvent).build();
+
+                UiInspectorProtocol.AgentMessage agentMessage =
+                        UiInspectorProtocol.AgentMessage.newBuilder()
+                                .setEvent(eventWrapper)
+                                .build();
+
+                FramingProtocol.writeMessage(output, agentMessage.toByteArray());
+                Log.i(TAG, "Sent crash event to host");
+            } catch (IOException e) {
+                Log.e(TAG, "Failed to send crash event to host", e);
+            }
+        }
 
     private final ScheduledExecutorService timeoutExecutor = Executors.newSingleThreadScheduledExecutor();
 
@@ -120,15 +167,17 @@ public final class Server {
           cancelTimeout();
 
           try {
-            SessionHandler sessionHandler = new SessionHandler(
-                clientSocket.getInputStream(),
-                clientSocket.getOutputStream(),
-                crashListener,
-                shutdownLatch,
-                inspectorBridges
-            );
+                        activeOutputStream = clientSocket.getOutputStream();
+                        SessionHandler sessionHandler =
+                                new SessionHandler(
+                                        clientSocket.getInputStream(),
+                                        activeOutputStream,
+                                        crashListener,
+                                        shutdownLatch,
+                                        inspectorBridges);
             sessionHandler.processCommands();
           } finally {
+                        activeOutputStream = null;
             try {
               clientSocket.close();
             } catch (IOException e) {

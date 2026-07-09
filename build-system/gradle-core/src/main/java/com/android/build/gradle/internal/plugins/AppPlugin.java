@@ -25,6 +25,7 @@ import com.android.build.api.dsl.ApplicationExtension;
 import com.android.build.api.dsl.SdkComponents;
 import com.android.build.api.extension.impl.ApplicationAndroidComponentsExtensionImpl;
 import com.android.build.api.extension.impl.VariantApiOperationsRegistrar;
+import com.android.build.api.variant.AndroidApplicationModuleModel;
 import com.android.build.api.variant.AndroidComponentsExtension;
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension;
 import com.android.build.api.variant.ApplicationVariant;
@@ -65,9 +66,12 @@ import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Project;
 import org.gradle.api.component.SoftwareComponentFactory;
 import org.gradle.api.configuration.BuildFeatures;
+import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.reflect.TypeOf;
 import org.gradle.build.event.BuildEventsListenerRegistry;
 import org.gradle.features.annotations.BindsProjectType;
+import org.gradle.features.binding.ProjectFeatureApplicationContext;
+import org.gradle.features.binding.ProjectTypeApplyAction;
 import org.gradle.features.binding.ProjectTypeBinding;
 import org.gradle.features.binding.ProjectTypeBindingBuilder;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
@@ -100,24 +104,39 @@ public class AppPlugin
     protected void pluginSpecificApply(@NonNull Project project) {
     }
 
+    static class AppProjectTypeApplyAction
+            implements ProjectTypeApplyAction<
+                    ApplicationDeclarativeDefinition, AndroidApplicationModuleModel> {
+        private final ObjectFactory objectFactory;
+
+        @Inject
+        public AppProjectTypeApplyAction(ObjectFactory objectFactory) {
+            this.objectFactory = objectFactory;
+        }
+
+        @Override
+        public void apply(
+                ProjectFeatureApplicationContext context,
+                ApplicationDeclarativeDefinition definition,
+                AndroidApplicationModuleModel buildModel) {
+            DeclarativeServices services = objectFactory.newInstance(DeclarativeServices.class);
+
+            DeclarativeApplicationExtension extension =
+                    (DeclarativeApplicationExtension)
+                            Objects.requireNonNull(services)
+                                    .getProject()
+                                    .getExtensions()
+                                    .getByName("android");
+            DslBindingUtils.copyProperties(definition, extension);
+        }
+    }
+
     static class Binding implements ProjectTypeBinding {
         public void bind(ProjectTypeBindingBuilder builder) {
             builder.bindProjectType(
                             "androidApp",
                             ApplicationDeclarativeDefinition.class,
-                            (context, definition, buildModel) -> {
-                                DeclarativeServices services =
-                                        context.getObjectFactory()
-                                                .newInstance(DeclarativeServices.class);
-
-                                DeclarativeApplicationExtension extension =
-                                        (DeclarativeApplicationExtension)
-                                                Objects.requireNonNull(services)
-                                                        .getProject()
-                                                        .getExtensions()
-                                                        .getByName("android");
-                                DslBindingUtils.copyProperties(definition, extension);
-                            })
+                            AppProjectTypeApplyAction.class)
                     .withUnsafeDefinitionImplementationType(
                             ApplicationDeclarativeDefinitionImpl.class)
                     .withUnsafeApplyAction();
@@ -191,9 +210,9 @@ public class AppPlugin
             return new ExtensionData<>(internalOnly, android, bootClasspathConfig);
         }
 
-        if (getProjectServices()
-                .getProjectOptions()
-                .get(BooleanOption.USE_NEW_DSL)) {
+        if (getProjectServices().getProjectOptions().useNewDsl(project.getPath())) {
+            // This was already done correctly in AGP 9.0, so no need to check
+            // USE_NEW_DSL_INTERFACES_FOR_KTS
             project.getExtensions()
                     .add(new TypeOf<ApplicationExtension>() {}, "android", applicationExtension);
 

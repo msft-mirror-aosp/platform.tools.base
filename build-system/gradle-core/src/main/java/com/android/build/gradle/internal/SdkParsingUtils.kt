@@ -32,6 +32,7 @@ import com.android.sdklib.OptionalLibrary
 import com.android.sdklib.repository.AndroidSdkHandler
 import com.android.sdklib.repository.meta.DetailsTypes
 import com.android.sdklib.repository.targets.PlatformTarget
+import com.android.utils.usLocaleCapitalize
 import com.google.common.annotations.VisibleForTesting
 import com.google.common.collect.ImmutableList
 import java.io.File
@@ -152,7 +153,7 @@ internal fun warnIfCompileSdkTooNew(
   val preview = (if (version.isPreview) "preview " else "")
   val headline =
     if (version.isPreview) {
-      "$currentCompileSdk has not been tested with this version of the Android Gradle plugin."
+      "${currentCompileSdk.usLocaleCapitalize()} has not been tested with this version of the Android Gradle plugin."
     } else {
       "We recommend using a newer Android Gradle plugin to use $currentCompileSdk"
     }
@@ -198,7 +199,7 @@ internal fun warnIfCompileSdkTooNew(
 
 private fun AndroidVersion.toStringDescription(): String {
   return if (isPreview) {
-    """compile SDK preview version "$codename""""
+    """compile SDK preview version "$apiStringWithoutExtension""""
   } else {
     "compile SDK version $apiStringWithoutExtension"
   }

@@ -308,6 +308,45 @@ class AndroidTestUtil(
     assertThat(resolveTestResultPbPath()).exists()
   }
 
+  fun connectedAndroidTestFromTestOnlyModuleWithNewReportFormat() {
+    selectModule("test")
+
+    rule.build.reconfigureGradleProperties { add(BooleanOption.REPORT_AGGREGATION_SUPPORT, true) }
+
+    executor.run(testTaskName)
+
+    val reportFile = project.resolve(testReportPath)
+    val reportDir = reportFile.parent
+    assertThat(reportDir.resolve("index.html")).exists()
+    assertThat(reportDir.resolve("script.js")).exists()
+    assertThat(reportDir.resolve("styles.css")).exists()
+    assertThat(reportDir.resolve("data.js")).exists()
+
+    if (!runWithBuiltInPlatform) {
+      val dataJsContent = reportDir.resolve("data.js").readText()
+      assertThat(dataJsContent).contains("const TEST_DATA_SOURCE = ")
+      assertThat(dataJsContent).contains("\"projectName\":\":test\"")
+      assertThat(dataJsContent).contains("\"numberOfModules\":1")
+      assertThat(dataJsContent).contains("\"numberOfPackages\":1")
+      assertThat(dataJsContent).contains("\"numberOfClasses\":1")
+      assertThat(dataJsContent).contains("\"variants\":[\"debug\"]")
+      assertThat(dataJsContent).contains("\"testSuites\"")
+      assertThat(dataJsContent).contains("\"androidTest\"")
+      assertThat(dataJsContent).contains("\"name\":\":test\"")
+      assertThat(dataJsContent).contains("\"name\":\"com.example.android.kotlin\"")
+      assertThat(dataJsContent).contains("\"name\":\"ExampleInstrumentedTest\"")
+      assertThat(dataJsContent).contains("\"name\":\"useAppContext\"")
+      assertThat(dataJsContent).contains("\"status\":\"pass\"")
+    }
+
+    val testResultPb = resolveTestResultPbPath()
+    assertThat(testResultPb).exists()
+
+    val testSuiteResult = testResultPb.toFile().inputStream().use { TestSuiteResult.parseFrom(it) }
+    assertThat(testSuiteResult.testResultCount).isAtLeast(1)
+    assertThat(testSuiteResult.testResultList.any { it.testCase.testMethod == "useAppContext" }).isTrue()
+  }
+
   fun additionalTestOutputWithTestStorageService() {
     selectModule("app")
 

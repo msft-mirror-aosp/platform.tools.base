@@ -143,6 +143,15 @@ py_library(
 )
 
 py_library(
+    name = "studio_autobot",
+    srcs = ["studio_autobot.py"],
+    deps = [
+        ":bazel",
+        ":studio",
+    ],
+)
+
+py_library(
     name = "ci_lib",
     srcs = ["ci.py"],
     deps = [
@@ -151,6 +160,7 @@ py_library(
         ":flake_reruns",
         ":owners_checks",
         ":query_checks",
+        ":studio_autobot",
         ":studio_evals",
         ":studio_linux",
         ":studio_mac",

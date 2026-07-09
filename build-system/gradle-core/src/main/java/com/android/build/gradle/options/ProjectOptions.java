@@ -50,6 +50,7 @@ public final class ProjectOptions {
     private final ImmutableMap<ReplacedOption, OptionValue<ReplacedOption, String>>
             replacedOptionValues;
     private final ImmutableMap<StringOption, OptionValue<StringOption, String>> stringOptionValues;
+    private final Provider<Set<String>> newDslOptedOutProjects;
 
     public ProjectOptions(@NonNull ProviderFactory providerFactory) {
         this.providerFactory = providerFactory;
@@ -60,6 +61,10 @@ public final class ProjectOptions {
         replacedOptionValues = createOptionValues(ReplacedOption.values());
         stringOptionValues = createOptionValues(StringOption.values());
         Environment.initialize(Environment.Companion.getSYSTEM());
+        newDslOptedOutProjects =
+                parseNewDslOptOutProperty(
+                        providerFactory.gradleProperty(
+                                StringOption.NEW_DSL_OPT_OUT.getPropertyName()));
     }
 
     @NonNull
@@ -199,6 +204,20 @@ public final class ProjectOptions {
                 });
     }
 
+    /**
+     * Helper function to support opting out subprojects from the newDsl when migrating to AGP 9.
+     * This workaround should be removed with the removal of the newDsl option in AGP 10.
+     */
+    public boolean useNewDsl(@Nullable String projectPath) {
+        if (projectPath != null) {
+            Set<String> optedOut = newDslOptedOutProjects.getOrNull();
+            if (optedOut != null && optedOut.contains(projectPath)) {
+                return false;
+            }
+        }
+        return get(BooleanOption.USE_NEW_DSL);
+    }
+
     public AgpVersion getSimulatedAGPVersion() {
         String simulatedVersionString = get(StringOption.SIMULATE_AGP_VERSION_BEHAVIOR);
         if (simulatedVersionString != null) {
@@ -292,5 +311,16 @@ public final class ProjectOptions {
                         return option.parse(str);
                     });
         }
+    }
+
+    private static Provider<Set<String>> parseNewDslOptOutProperty(
+            Provider<String> optOutPropertyProvider) {
+        return optOutPropertyProvider.map(
+                content ->
+                        Arrays.stream(content.split(","))
+                                .map(String::trim)
+                                .filter(line -> !line.isEmpty())
+                                .map(path -> path.startsWith(":") ? path : ":" + path)
+                                .collect(Collectors.toSet()));
     }
 }

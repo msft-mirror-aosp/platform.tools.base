@@ -251,7 +251,9 @@ private class FakeResolvedComponentResultInternal(thingy: ResolvedComponentResul
     TODO("Not yet implemented")
   }
 
-  override fun getVariant(id: Long): ResolvedVariantResult? {
+  override fun index(): Int = 0
+
+  override fun graph(): org.gradle.api.internal.artifacts.result.ResolvedGraphResult {
     TODO("Not yet implemented")
   }
 

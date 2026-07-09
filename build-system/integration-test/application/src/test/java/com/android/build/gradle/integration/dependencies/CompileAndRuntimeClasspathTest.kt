@@ -61,8 +61,8 @@ class CompileAndRuntimeClasspathTest(private val enableAlignment: Boolean) {
           "     Required by:\n" +
           "         project ':app'\n" +
           "      > Cannot find a version of 'com.google.guava:guava' that satisfies the version constraints:\n" +
-          "           Dependency path: 'project :app' (debugCompileClasspath) --> 'com.google.guava:guava:20.0'\n" +
-          "           Constraint path: 'project :app' (debugCompileClasspath) --> 'com.google.guava:guava:{strictly 19.0}' because of the following reason:" +
+          "           Dependency path: 'project ':app'' (debugCompileClasspath) --> 'com.google.guava:guava:20.0'\n" +
+          "           Constraint path: 'project ':app'' (debugCompileClasspath) --> 'com.google.guava:guava:{strictly 19.0}' because of the following reason:" +
           " version resolved in configuration ':app:debugRuntimeClasspath' by consistent resolution\n"
       )
     } else {

@@ -133,10 +133,22 @@ public class DynamicFeaturePlugin
         GradleBuildProject.Builder stats =
                 getConfiguratorService().getProjectBuilder(project.getPath());
 
-        if (getProjectServices()
-                .getProjectOptions()
-                .get(BooleanOption.USE_NEW_DSL)) {
-            project.getExtensions().add(new TypeOf<>() {}, "android", dynamicFeatureExtension);
+        if (getProjectServices().getProjectOptions().useNewDsl(project.getPath())) {
+            if (getProjectServices()
+                    .getProjectOptions()
+                    .get(BooleanOption.USE_NEW_DSL_INTERFACES_FOR_KTS)) {
+                project.getExtensions()
+                        .add(
+                                new TypeOf<com.android.build.api.dsl.DynamicFeatureExtension>() {},
+                                "android",
+                                dynamicFeatureExtension);
+            } else {
+                project.getExtensions()
+                        .add(
+                                new TypeOf<DynamicFeatureExtensionImpl>() {},
+                                "android",
+                                dynamicFeatureExtension);
+            }
 
             initExtensionFromSettings(dynamicFeatureExtension);
 

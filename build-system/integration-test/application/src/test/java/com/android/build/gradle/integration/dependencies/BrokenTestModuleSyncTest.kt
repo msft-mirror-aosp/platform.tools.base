@@ -79,10 +79,10 @@ class BrokenTestModuleSyncTest(private val useNewDsl: Boolean) {
     TruthHelper.assertThat(syncIssues[0].severity).isEqualTo(SyncIssue.SEVERITY_ERROR)
     TruthHelper.assertThat(syncIssues[0].type).isEqualTo(SyncIssue.TYPE_UNRESOLVED_DEPENDENCY)
     TruthHelper.assertThat(syncIssues[0].message)
-      .isEqualTo("Unable to resolve dependency for ':test@debug/testTarget': Could not resolve project :app.")
+      .isEqualTo("Unable to resolve dependency for ':test@debug/testTarget': Could not resolve project ':app'.")
 
     TruthHelper.assertThat(unresolvedDeps).hasSize(1)
-    TruthHelper.assertThat(unresolvedDeps?.get(0)?.name).isEqualTo("project :app")
-    TruthHelper.assertThat(unresolvedDeps?.get(0)?.cause).contains("cannot choose between the following variants of project :app:")
+    TruthHelper.assertThat(unresolvedDeps?.get(0)?.name).isEqualTo("project ':app'")
+    TruthHelper.assertThat(unresolvedDeps?.get(0)?.cause).contains("cannot choose between the following variants of project ':app'")
   }
 }

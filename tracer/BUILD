@@ -98,9 +98,6 @@ iml_module(
     # do not sort: must match IML order
     deps = [
         "@intellij//:intellij-sdk",
-        "//prebuilts/tools/common/m2:wire-runtime-jvm-6.4.0",
-        "//prebuilts/tools/common/m2:tracing-wire-desktop-2.0.0-alpha09",
-        "//prebuilts/tools/common/m2:tracing-desktop-2.0.0-alpha09",
-        "//prebuilts/tools/common/m2:okio-jvm-3.17.0",
+        "//tools/adt/idea/.idea/libraries:androidx-tracing",
     ],
 )

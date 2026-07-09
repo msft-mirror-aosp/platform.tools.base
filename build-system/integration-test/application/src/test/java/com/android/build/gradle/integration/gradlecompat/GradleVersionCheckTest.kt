@@ -47,8 +47,8 @@ class GradleVersionCheckTest {
 /**
  * An old version of Gradle to use in this test.
  *
- * (This can't be lower than 8.4 as those Gradle versions do not support JDK 21, similar to b/243592738.)
+ * (This can't be lower than 9.1.0 as those Gradle versions do not support JDK 25, similar to b/243592738.)
  */
-private const val OLD_GRADLE_VERSION = "8.4"
+private const val OLD_GRADLE_VERSION = "9.1.0"
 
 private const val ERROR_MESSAGE = "Minimum supported Gradle version is $GRADLE_LATEST_VERSION. Current version is $OLD_GRADLE_VERSION."

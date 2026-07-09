@@ -19,6 +19,7 @@ import com.android.builder.model.v2.ide.Variant;
 import com.android.testutils.apk.Apk;
 import com.android.utils.FileUtils;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.truth.Truth;
 
@@ -122,6 +123,62 @@ public class SeparateTestModuleTest {
                         "<instrumentation",
                         "android:name=\"android.support.test.runner.AndroidJUnitRunner\"",
                         "android:targetPackage=\"com.android.tests.basic\"");
+    }
+
+    @Test
+    public void checkConnectedAndroidTestTaskConfiguration_withReportAggregationEnabled()
+            throws Exception {
+        // Runs the connectedAndroidTest task in dry-run mode (-m) to verify task-graph wiring
+        // and configuration do not fail for separate test (com.android.test) modules
+        // when report aggregation is enabled.
+        project.executor()
+                .with(BooleanOption.REPORT_AGGREGATION_SUPPORT, true)
+                .withArguments(ImmutableList.of("-m"))
+                .run(":test:connectedDebugAndroidTest");
+    }
+
+    @Test
+    public void checkConnectedAndroidTestTaskConfiguration_withReportAggregationDisabled()
+            throws Exception {
+        // Runs the connectedAndroidTest task in dry-run mode (-m) to verify task-graph wiring
+        // and configuration do not fail for separate test (com.android.test) modules
+        // when report aggregation is disabled.
+        project.executor()
+                .with(BooleanOption.REPORT_AGGREGATION_SUPPORT, false)
+                .withArguments(ImmutableList.of("-m"))
+                .run(":test:connectedDebugAndroidTest");
+    }
+
+    @Test
+    public void
+            checkTestResultsCollectionTask_dependsOn_connectedAndroidTestTask_withReportAggregationEnabled()
+                    throws Exception {
+        // Verify that the testResultsCollectionDebug task is registered and correctly
+        // establishes a task dependency on connectedDebugAndroidTest (via ANDROID_TEST_RESULTS)
+        // when report aggregation is enabled.
+        GradleBuildResult result =
+                project.executor()
+                        .with(BooleanOption.REPORT_AGGREGATION_SUPPORT, true)
+                        .withArguments(ImmutableList.of("-m"))
+                        .run(":test:testResultsCollectionDebug");
+
+        result.assertOutputContains(":test:connectedDebugAndroidTest SKIPPED");
+        result.assertOutputContains(":test:testResultsCollectionDebug SKIPPED");
+    }
+
+    @Test
+    public void checkTestResultsCollectionTask_isNotRegistered_withReportAggregationDisabled()
+            throws Exception {
+        // Verify that the testResultsCollectionDebug task is NOT registered when report
+        // aggregation is disabled.
+        GradleBuildResult result =
+                project.executor()
+                        .with(BooleanOption.REPORT_AGGREGATION_SUPPORT, false)
+                        .expectFailure()
+                        .run(":test:testResultsCollectionDebug");
+
+        ScannerSubject.assertThat(result.getStderr())
+                .contains("task 'testResultsCollectionDebug' not found in project ':test'");
     }
 
     @Test

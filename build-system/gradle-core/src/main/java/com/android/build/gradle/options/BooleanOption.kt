@@ -393,6 +393,12 @@ enum class BooleanOption(
     futureStage = FutureStage(Version.VERSION_10_0, true, FeatureStage.Experimental),
   ),
   ENABLE_GLOBAL_SYNTHETICS_FOR_ALL_DEBUG_BUILDS("android.enableGlobalSyntheticsForAllDebugBuilds", true, FeatureStage.Experimental),
+  USE_NEW_DSL_INTERFACES_FOR_KTS(
+    "android.useNewDslInterfacesForKts",
+    false,
+    FeatureStage.Experimental,
+    futureStage = FutureStage(version = Version.VERSION_10_0, stage = FeatureStage.Experimental, defaultValue = true),
+  ),
 
   /* ------------------------
    * SOFTLY-ENFORCED FEATURES

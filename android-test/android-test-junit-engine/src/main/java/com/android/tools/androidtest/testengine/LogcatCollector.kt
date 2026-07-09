@@ -184,8 +184,10 @@ class LogcatCollector(
 
   private fun generateLogcatFileName(deviceId: String, testPackage: String, testClass: String, testMethod: String): File {
     // Sanitize parameters parsed from untrusted logcat output to prevent path traversal (b/509645146).
-    val safe = Regex("[^a-zA-Z0-9._-]")
-    val fileName = "logcat-${safe.replace(testPackage, "_")}.${safe.replace(testClass, "_")}-${safe.replace(testMethod, "_")}.txt"
+    val cleanPackage = PathSafety.sanitizeLeafName(testPackage)
+    val cleanClass = PathSafety.sanitizeLeafName(testClass)
+    val cleanMethod = PathSafety.sanitizeLeafName(testMethod)
+    val fileName = "logcat-$cleanPackage.$cleanClass-$cleanMethod.txt"
     return File(resultsDir, fileName)
   }
 }

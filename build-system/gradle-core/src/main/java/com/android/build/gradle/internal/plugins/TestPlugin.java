@@ -122,10 +122,19 @@ public class TestPlugin
         GradleBuildProject.Builder stats =
                 getConfiguratorService().getProjectBuilder(project.getPath());
 
-        if (getProjectServices()
-                .getProjectOptions()
-                .get(BooleanOption.USE_NEW_DSL)) {
-            project.getExtensions().add(new TypeOf<>() {}, "android", testExtension);
+        if (getProjectServices().getProjectOptions().useNewDsl(project.getPath())) {
+            if (getProjectServices()
+                    .getProjectOptions()
+                    .get(BooleanOption.USE_NEW_DSL_INTERFACES_FOR_KTS)) {
+                project.getExtensions()
+                        .add(
+                                new TypeOf<com.android.build.api.dsl.TestExtension>() {},
+                                "android",
+                                testExtension);
+            } else {
+                project.getExtensions()
+                        .add(new TypeOf<TestExtensionImpl>() {}, "android", testExtension);
+            }
 
             initExtensionFromSettings(testExtension);
 

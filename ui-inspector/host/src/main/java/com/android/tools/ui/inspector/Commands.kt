@@ -25,6 +25,7 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeSource
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 
 /**
@@ -193,11 +194,11 @@ private suspend fun runWithConnectedInspectors(
   packageName: String,
   composeInspectorJarPath: String?,
   block: suspend (CommandSender, Boolean) -> Unit,
-) {
+) = coroutineScope {
   try {
     val injectionManager = InjectionManager(adbSession, serial, packageName)
     val port = injectionManager.injectAndAttach()
-    CommandSender(host = "localhost", port = port.toInt()).use { commandSender ->
+    CommandSender.connect(host = "127.0.0.1", port = port.toInt(), scope = this).use { commandSender ->
       createViewInspector(commandSender, injectionManager)
 
       val localJarProvider =

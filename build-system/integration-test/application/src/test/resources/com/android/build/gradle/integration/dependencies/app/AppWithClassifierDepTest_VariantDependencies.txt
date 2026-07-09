@@ -27,7 +27,7 @@
    < mainArtifact
    > androidTestArtifact:
       > compileDependencies:
-         - com.foo|sample|1.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|com.foo:sample:1.0:
+         - com.foo|sample|1.0|org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|com.foo:sample:1.0:
             - requestedCoordinates = (null)
             - dependencies         = []
          - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
@@ -39,15 +39,14 @@
          - :|:|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.usage>java-api|:projectWithClassifierDep:unspecified:
             - requestedCoordinates = (null)
             - dependencies:
-               - com.foo|sample|1.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|com.foo:sample:1.0:
+               - com.foo|sample|1.0|org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|com.foo:sample:1.0:
                   - dependencies = "*visited*"
                - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
                   - dependencies = "*visited*"
       < compileDependencies
       - runtimeDependencies:
          - com.foo|sample|1.0|org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|com.foo:sample:1.0:
-            - requestedCoordinates = (null)
-            - dependencies         = []
+            - dependencies = "*visited*"
       - unresolvedDependencies = []
    < androidTestArtifact
    > unitTestArtifact:

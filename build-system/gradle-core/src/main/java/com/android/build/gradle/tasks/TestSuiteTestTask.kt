@@ -1020,13 +1020,6 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
         request.atLocation(defaultLocation)
       }
       request.on(InternalArtifactType.ANDROID_TEST_RESULTS)
-
-      if (creationConfig is DeviceTestCreationConfig) {
-        creationConfig.mainVariant.artifacts
-          .use(taskProvider)
-          .wiredWith(TestSuiteTestTask::xmlResultsDirectory)
-          .toAppendTo(InternalMultipleArtifactType.TEST_SUITE_RESULTS)
-      }
     }
   }
 

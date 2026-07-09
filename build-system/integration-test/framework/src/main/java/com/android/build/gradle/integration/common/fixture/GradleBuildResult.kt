@@ -257,7 +257,7 @@ class GradleBuildResult(
             (linkRegex.findAll(line) + scriptRegex.findAll(line) + hyperlinkRegex.findAll(line)).forEach { matchResult ->
               val relativePath = matchResult.groupValues[1]
               val referencedFile = file.resolveSibling(relativePath).normalize()
-              if (referencedFile !in filesToCopy) {
+              if (referencedFile.exists() && referencedFile !in filesToCopy) {
                 filesToCopy.add(referencedFile)
                 findAndProcessFiles(referencedFile)
               }

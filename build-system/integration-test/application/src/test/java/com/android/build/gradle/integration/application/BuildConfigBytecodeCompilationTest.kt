@@ -29,7 +29,7 @@ class BuildConfigBytecodeCompilationTest {
     GradleTestProject.builder()
       .fromTestProject("buildConfigBytecode")
       .addGradleProperties("org.gradle.java.installations.auto-detect=false")
-      .addGradleProperties("org.gradle.java.installations.paths=${TestUtils.getJava21Jdk()}")
+      .addGradleProperties("org.gradle.java.installations.paths=${TestUtils.getJava21Jdk().toString().replace("\\", "/")}")
       .create()
 
   @Test
