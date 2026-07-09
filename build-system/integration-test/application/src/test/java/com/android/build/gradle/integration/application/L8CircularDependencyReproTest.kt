@@ -19,7 +19,6 @@ package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.fixture.DEFAULT_COMPILE_SDK_VERSION
 import com.android.build.gradle.integration.common.fixture.DESUGAR_DEPENDENCY_VERSION
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 
@@ -88,7 +87,6 @@ class L8CircularDependencyReproTest {
       }
     }
 
-  @Ignore("b/491718901")
   @Test
   fun testCircularDependency() {
     // The build is expected to pass as the circular dependency is resolved by breaking

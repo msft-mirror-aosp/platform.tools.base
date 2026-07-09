@@ -129,14 +129,12 @@ abstract class L8DexDesugarLibTask : NonIncrementalTask() {
       creationConfig.artifacts.setInitialProvider(taskProvider, L8DexDesugarLibTask::desugarLibDex).on(InternalArtifactType.DESUGAR_LIB_DEX)
       if (dexingCreationConfig.needsShrinkDesugarLibrary && creationConfig.optimizationCreationConfig.minifiedEnabled) {
         creationConfig.artifacts
-          .use(taskProvider)
-          .wiredWithFiles(L8DexDesugarLibTask::inputMappingFile, L8DexDesugarLibTask::outputMappingFile)
-          .toTransform(SingleArtifact.OBFUSCATION_MAPPING_FILE)
+          .setInitialProvider(taskProvider, L8DexDesugarLibTask::outputMappingFile)
+          .on(SingleArtifact.OBFUSCATION_MAPPING_FILE)
 
         creationConfig.artifacts
-          .use(taskProvider)
-          .wiredWithFiles(L8DexDesugarLibTask::inputPartitionMappingFile, L8DexDesugarLibTask::outputPartitionMappingFile)
-          .toTransform(SingleArtifact.OBFUSCATION_MAPPING_PARTITION_FILE)
+          .setInitialProvider(taskProvider, L8DexDesugarLibTask::outputPartitionMappingFile)
+          .on(SingleArtifact.OBFUSCATION_MAPPING_PARTITION_FILE)
       }
       creationConfig.artifacts
         .use(taskProvider)
@@ -157,6 +155,14 @@ abstract class L8DexDesugarLibTask : NonIncrementalTask() {
       task.minSdkVersion.set(dexingCreationConfig.minSdkVersionForDexing)
       task.debuggable.set(creationConfig.debuggable)
       task.fullBootClasspath.from(creationConfig.global.fullBootClasspath)
+
+      if (dexingCreationConfig.needsShrinkDesugarLibrary && creationConfig.optimizationCreationConfig.minifiedEnabled) {
+        creationConfig.artifacts.setTaskInputToFinalProduct(InternalArtifactType.UNMERGED_OBFUSCATION_MAPPING_FILE, task.inputMappingFile)
+        creationConfig.artifacts.setTaskInputToFinalProduct(
+          InternalArtifactType.UNMERGED_OBFUSCATION_MAPPING_PARTITION_FILE,
+          task.inputPartitionMappingFile,
+        )
+      }
 
       if (dexingCreationConfig.needsShrinkDesugarLibrary) {
         task.desugaredDesugarLibJar.from(getDesugaredDesugarLib(creationConfig))

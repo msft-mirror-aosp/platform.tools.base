@@ -23,6 +23,7 @@ import com.android.build.api.artifact.impl.InternalScopedArtifacts
 import com.android.build.api.variant.InternalLibrarySources
 import com.android.build.api.variant.ScopedArtifacts.Scope
 import com.android.build.gradle.ProguardFiles
+import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.ApplicationCreationConfig
 import com.android.build.gradle.internal.component.ConsumableCreationConfig
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
@@ -358,20 +359,37 @@ abstract class ProguardConfigurableTask(@get:Internal val projectLayout: Project
     override fun handleProvider(taskProvider: TaskProvider<TaskT>) {
       super.handleProvider(taskProvider)
 
-      creationConfig.artifacts
-        .setInitialProvider(taskProvider, ProguardConfigurableTask::mappingFile)
-        .on(SingleArtifact.OBFUSCATION_MAPPING_FILE)
+      val needsShrinkDesugarLibrary = (creationConfig as? ApkCreationConfig)?.dexing?.needsShrinkDesugarLibrary == true
+      if (needsShrinkDesugarLibrary) {
+        creationConfig.artifacts
+          .setInitialProvider(taskProvider, ProguardConfigurableTask::mappingFile)
+          .on(InternalArtifactType.UNMERGED_OBFUSCATION_MAPPING_FILE)
 
-      creationConfig.artifacts
-        .setInitialProvider(taskProvider, ProguardConfigurableTask::mappingPartitionFile)
-        .on(SingleArtifact.OBFUSCATION_MAPPING_PARTITION_FILE)
+        creationConfig.artifacts
+          .setInitialProvider(taskProvider, ProguardConfigurableTask::mappingPartitionFile)
+          .on(InternalArtifactType.UNMERGED_OBFUSCATION_MAPPING_PARTITION_FILE)
+      } else {
+        creationConfig.artifacts
+          .setInitialProvider(taskProvider, ProguardConfigurableTask::mappingFile)
+          .on(SingleArtifact.OBFUSCATION_MAPPING_FILE)
+
+        creationConfig.artifacts
+          .setInitialProvider(taskProvider, ProguardConfigurableTask::mappingPartitionFile)
+          .on(SingleArtifact.OBFUSCATION_MAPPING_PARTITION_FILE)
+      }
     }
 
     override fun configure(task: TaskT) {
       super.configure(task)
 
       if (testedConfig is ConsumableCreationConfig && testedConfig.optimizationCreationConfig.minifiedEnabled) {
-        task.testedMappingFile.from(testedConfig.artifacts.get(SingleArtifact.OBFUSCATION_MAPPING_FILE))
+        val testedMappingFile =
+          if ((testedConfig as? ApkCreationConfig)?.dexing?.needsShrinkDesugarLibrary == true) {
+            testedConfig.artifacts.get(InternalArtifactType.UNMERGED_OBFUSCATION_MAPPING_FILE)
+          } else {
+            testedConfig.artifacts.get(SingleArtifact.OBFUSCATION_MAPPING_FILE)
+          }
+        task.testedMappingFile.from(testedMappingFile)
       } else if (isTestApplication) {
         task.testedMappingFile.from(creationConfig.variantDependencies.getArtifactFileCollection(COMPILE_CLASSPATH, ALL, APK_MAPPING))
       }
