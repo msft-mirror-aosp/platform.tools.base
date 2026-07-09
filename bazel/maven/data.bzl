@@ -984,6 +984,7 @@ _CLASS_JARS = [
     "com.google.oauth-client:google-oauth-client-java6:1.34.1",
     "com.google.oboe:oboe:1.6.1",
     "com.google.prefab:cli:jar:all:2.1.0",
+    "com.google.protobuf:com.google.protobuf.gradle.plugin:pom:0.10.0",
     "com.google.protobuf:protobuf-bom:pom:3.17.2",
     "com.google.protobuf:protobuf-bom:pom:3.19.3",
     "com.google.protobuf:protobuf-bom:pom:3.21.8",
@@ -1007,6 +1008,7 @@ _CLASS_JARS = [
     "com.google.protobuf:protobuf-javalite:4.28.2",  # XR template
     "com.google.protobuf:protobuf-kotlin:3.24.4",
     "com.google.protobuf:protobuf-kotlin:4.28.3",  # Dependency for UTP.
+    "com.google.protobuf:protobuf-kotlin-lite:4.28.2",
     "com.google.protobuf:protobuf-parent:pom:3.19.3",
     "com.google.protobuf:protobuf-parent:pom:3.22.3",
     "com.google.protobuf:protobuf-parent:pom:3.24.4",
@@ -1015,21 +1017,25 @@ _CLASS_JARS = [
     "com.google.protobuf:protoc:exe:linux-x86_64:3.19.6",
     "com.google.protobuf:protoc:exe:linux-x86_64:3.22.3",
     "com.google.protobuf:protoc:exe:linux-x86_64:3.24.4",
+    "com.google.protobuf:protoc:exe:linux-x86_64:3.25.3",
     "com.google.protobuf:protoc:exe:linux-x86_64:4.28.3",  # Dependency for UTP.
     "com.google.protobuf:protoc:exe:linux-x86_64:4.33.2",  # Dependency for ASwB logs.
     "com.google.protobuf:protoc:exe:osx-aarch_64:3.19.6",
     "com.google.protobuf:protoc:exe:osx-aarch_64:3.22.3",
     "com.google.protobuf:protoc:exe:osx-aarch_64:3.24.4",
+    "com.google.protobuf:protoc:exe:osx-aarch_64:3.25.3",
     "com.google.protobuf:protoc:exe:osx-aarch_64:4.28.3",  # Dependency for UTP.
     "com.google.protobuf:protoc:exe:osx-aarch_64:4.33.2",  # Dependency for ASwB logs.
     "com.google.protobuf:protoc:exe:osx-x86_64:3.19.6",
     "com.google.protobuf:protoc:exe:osx-x86_64:3.22.3",
     "com.google.protobuf:protoc:exe:osx-x86_64:3.24.4",
+    "com.google.protobuf:protoc:exe:osx-x86_64:3.25.3",
     "com.google.protobuf:protoc:exe:osx-x86_64:4.28.3",  # Dependency for UTP.
     "com.google.protobuf:protoc:exe:osx-x86_64:4.33.2",  # Dependency for ASwB logs.
     "com.google.protobuf:protoc:exe:windows-x86_64:3.19.6",
     "com.google.protobuf:protoc:exe:windows-x86_64:3.22.3",
     "com.google.protobuf:protoc:exe:windows-x86_64:3.24.4",
+    "com.google.protobuf:protoc:exe:windows-x86_64:3.25.3",
     "com.google.protobuf:protoc:exe:windows-x86_64:4.28.3",  # Dependency for UTP.
     "com.google.protobuf:protoc:exe:windows-x86_64:4.33.2",  # Dependency for ASwB logs.
     "com.google.testing.platform:android-device-provider-local:0.0.8-alpha07",
