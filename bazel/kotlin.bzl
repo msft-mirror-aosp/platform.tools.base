@@ -37,6 +37,14 @@ def kotlin_compile(ctx, name, srcs, deps, friend_jars, out, out_ijar, java_runti
     merged_deps = java_common.merge(deps)
     classpath = merged_deps.compile_jars
 
+    # We want the tool list to remain constant so that persistent workers can always be reused.
+    # Therefore, we add all compiler plugin jars here even if some are unused in a given compilation.
+    tools = [
+        ctx.file._compose_plugin,
+        ctx.file._jvm_abi_gen,
+        ctx.file._kotlin_serialization_plugin,
+    ]
+
     args = ctx.actions.args()
 
     # The target language/API level is constrained by the minimum kotlin-stdlib version we link to
@@ -61,8 +69,6 @@ def kotlin_compile(ctx, name, srcs, deps, friend_jars, out, out_ijar, java_runti
     args.add("-jvm-default=enable")
     args.add("-no-stdlib")
 
-    tools = []
-    tools.append(ctx.file._jvm_abi_gen)
     if out_ijar:
         args.add(ctx.file._jvm_abi_gen, format = "-Xplugin=%s")
         args.add("-P", out_ijar, format = "plugin:org.jetbrains.kotlin.jvm.abi:outputDir=%s")
@@ -79,11 +85,9 @@ def kotlin_compile(ctx, name, srcs, deps, friend_jars, out, out_ijar, java_runti
     # For this to work correctly in both iml and Bazel BUILD files, we need to declare an explicit
     # dependency on the kotlinx-serialization library *before* studio-sdk.
     if ctx.attr.kotlin_use_serialization:
-        tools.append(ctx.file._kotlin_serialization_plugin)
         args.add(ctx.file._kotlin_serialization_plugin, format = "-Xplugin=%s")
 
     # Use the Compiler Compose plugin
-    tools.append(ctx.file._compose_plugin)
     if ctx.attr.kotlin_use_compose:
         args.add(ctx.file._compose_plugin, format = "-Xplugin=%s")
         args.add("-P", "plugin:androidx.compose.compiler.plugins.kotlin:suppressKotlinVersionCompatibilityCheck=true")
