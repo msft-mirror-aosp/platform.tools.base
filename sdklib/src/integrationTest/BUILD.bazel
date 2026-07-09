@@ -10,6 +10,11 @@ kotlin_test(
         "//tools/base/sdklib:commandlinetools",
     ],
     jvm_flags = ["-Dtest.suite.jar=integration-test.jar"],
+    tags = [
+        "ci:studio-mac",
+        "ci:studio-mac-arm",
+        "cpu:1",
+    ],
     test_class = "com.android.testutils.JarTestSuite",
     visibility = ["//tools/base/sdklib:__pkg__"],
     deps = [

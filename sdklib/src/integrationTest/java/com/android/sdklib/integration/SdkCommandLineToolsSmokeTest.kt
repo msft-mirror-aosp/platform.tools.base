@@ -30,18 +30,21 @@ class SdkCommandLineToolsSmokeTest {
 
   @get:Rule val temporaryFolder = TemporaryFolder()
 
-  val usage =
+  val deprecationWarning =
     """
-    WARNING: The SDK Manager CLI tool (sdkmanager) is deprecated. Use Android CLI instead.
+    WARNING: The SDK Manager CLI tool (sdkmanager) is deprecated. Android CLI will be used instead.
     The 'android' binary can also be found in the cmdline-tools directory, and 'android sdk' is the replacement for 'sdkmanager'.
     To learn more about the Android CLI and how to use it, see the documentation (https://d.android.com/tools/agents/android-cli)
+    """
+      .trimIndent()
 
+  val usage =
+    """
     Usage:
       sdkmanager [--uninstall] [<common args>] [--package_file=<file>] [<packages>...]
       sdkmanager --update [<common args>]
       sdkmanager --list [<common args>]
       sdkmanager --list_installed [<common args>]
-      sdkmanager --licenses [<common args>]
       sdkmanager --version
 
     With --install (optional), installs or updates packages.
@@ -49,8 +52,8 @@ class SdkCommandLineToolsSmokeTest {
         updated to the latest version.
     With --uninstall, uninstall the listed packages.
 
-        <package> is a sdk-style path (e.g. "build-tools;23.0.0" or
-                 "platforms;android-23").
+        <package> is a sdk-style path (e.g. "build-tools/23.0.0" or
+                 "platforms/android-23").
         <package-file> is a text file where each line is a sdk-style path
                        of a package to install or uninstall.
         Multiple --package_file arguments may be specified in combination
@@ -62,9 +65,6 @@ class SdkCommandLineToolsSmokeTest {
 
     With --list_installed, all installed packages are printed out.
 
-    With --licenses, show and offer the option to accept licenses for all
-         available packages that have not already been accepted.
-
     With --version, prints the current version of sdkmanager.
 
     Common Arguments:
@@ -75,22 +75,6 @@ class SdkCommandLineToolsSmokeTest {
                                Common channels are:
                                0 (Stable), 1 (Beta), 2 (Dev), and 3 (Canary).
 
-        --include_obsolete: With --list, show obsolete packages in the
-                            package listing. With --update, update obsolete
-                            packages as well as non-obsolete.
-
-        --newer: With --list, show only new and/or updatable packages.
-
-        --no_https: Force all connections to use http rather than https.
-
-        --proxy=<http | socks>: Connect via a proxy of the given type.
-
-        --proxy_host=<IP or DNS address>: IP or DNS address of the proxy to use.
-
-        --proxy_port=<port #>: Proxy port to connect to.
-
-        --verbose: Enable verbose output.
-
     * If the env var REPO_OS_OVERRIDE is set to "windows",
       "macosx", or "linux", packages will be downloaded for that OS.
     """
@@ -98,36 +82,32 @@ class SdkCommandLineToolsSmokeTest {
 
   @Before
   fun assumeLinux() {
-    AssumeUtil.assumeIsLinux()
+    AssumeUtil.assumeNotWindows()
   }
 
   @Test
-  fun sdkManagerSmokeTestOnLinux() {
+  fun sdkManagerSmokeTest() {
     val extractedDir = extract()
 
     val sdkManagerBinary = extractedDir.resolve("cmdline-tools/bin/sdkmanager")
-    // Make sure process is started with the JDK used to run tests
-    val envVars = mapOf("JAVA_HOME" to System.getProperty("java.home"))
 
     var outFile = temporaryFolder.newFile("out")
     var errFile = temporaryFolder.newFile("err")
     var processBuilder = ProcessBuilder().redirectError(errFile).redirectOutput(outFile).command("sh", sdkManagerBinary.toString())
-    processBuilder.environment().putAll(envVars)
 
     var returnCode = processBuilder.start().waitFor()
     assertThat(returnCode).named("returnCode").isEqualTo(1)
     assertThat(Files.readAllLines(outFile.toPath())).isEmpty()
-    assertThat(Files.readAllLines(errFile.toPath()).joinToString("\n")).isEqualTo(usage)
+    assertThat(Files.readAllLines(errFile.toPath()).joinToString("\n")).isEqualTo("$deprecationWarning\n\n$usage")
 
     outFile = temporaryFolder.newFile("outHelp")
     errFile = temporaryFolder.newFile("errHelp")
     processBuilder = ProcessBuilder().redirectError(errFile).redirectOutput(outFile).command("sh", sdkManagerBinary.toString(), "--help")
-    processBuilder.environment().putAll(envVars)
 
     returnCode = processBuilder.start().waitFor()
-    assertThat(returnCode).named("returnCode").isEqualTo(1)
-    assertThat(Files.readAllLines(outFile.toPath())).isEmpty()
-    assertThat(Files.readAllLines(errFile.toPath()).joinToString("\n")).isEqualTo(usage)
+    assertThat(returnCode).named("returnCode").isEqualTo(0)
+    assertThat(Files.readAllLines(outFile.toPath()).joinToString("\n")).isEqualTo(usage)
+    assertThat(Files.readAllLines(errFile.toPath()).joinToString("\n").trim()).isEqualTo(deprecationWarning)
   }
 
   fun extract(): Path {
