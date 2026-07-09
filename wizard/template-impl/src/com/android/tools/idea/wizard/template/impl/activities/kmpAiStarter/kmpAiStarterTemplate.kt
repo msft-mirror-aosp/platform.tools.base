@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tools.idea.wizard.template.impl.activities.aiStarter
+package com.android.tools.idea.wizard.template.impl.activities.kmpAiStarter
 
 import com.android.tools.idea.wizard.template.Category
 import com.android.tools.idea.wizard.template.CheckBoxWidget
@@ -35,20 +35,16 @@ import com.android.tools.idea.wizard.template.stringParameter
 import com.android.tools.idea.wizard.template.template
 import java.io.File
 
-val aiStarterTemplate
+val kmpAiStarterTemplate
   get() = template {
-    name = "AI Starter"
-    description = "Create a new app using AI"
+    name = "KMP AI Starter"
+    description = "Create a new KMP app using AI"
     minApi = 21
     constraints = listOf(TemplateConstraint.AndroidX, TemplateConstraint.Kotlin, TemplateConstraint.Material3, TemplateConstraint.Compose)
     category = Category.Application
-    flags = listOf(TemplateFlag.NewProjectAgent, TemplateFlag.LightBuild)
+    flags = listOf(TemplateFlag.NewProjectAgent)
     formFactor = FormFactor.Mobile
-    screens =
-      listOfNotNull(
-        // Only used for Gemini-based project creation for now, and for testing.
-        WizardUiContext.NewProject
-      )
+    screens = listOfNotNull(WizardUiContext.NewProject)
 
     val activityClass = stringParameter {
       name = "Activity Name"
@@ -62,7 +58,7 @@ val aiStarterTemplate
 
     val isLauncher = booleanParameter {
       name = "Launcher Activity"
-      default = false
+      default = true
       help = "If true, this activity will have a CATEGORY_LAUNCHER intent filter, making it visible in the launcher"
     }
 
@@ -70,5 +66,7 @@ val aiStarterTemplate
 
     thumb { File("compose-activity-material3").resolve("template_compose_empty_activity_material3.png") }
 
-    recipe = { data: TemplateData -> aiStarterRecipe(data as ModuleTemplateData, activityClass.value, packageName.value, isLauncher.value) }
+    recipe = { data: TemplateData ->
+      kmpAiStarterRecipe(data as ModuleTemplateData, activityClass.value, packageName.value, isLauncher.value)
+    }
   }

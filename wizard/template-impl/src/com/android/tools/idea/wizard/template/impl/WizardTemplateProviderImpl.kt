@@ -38,6 +38,7 @@ import com.android.tools.idea.wizard.template.impl.activities.googleAdMobAdsActi
 import com.android.tools.idea.wizard.template.impl.activities.googleMapsActivity.googleMapsActivityTemplate
 import com.android.tools.idea.wizard.template.impl.activities.googlePayActivity.googlePayActivityTemplate
 import com.android.tools.idea.wizard.template.impl.activities.googleWalletActivity.googleWalletActivityTemplate
+import com.android.tools.idea.wizard.template.impl.activities.kmpAiStarter.kmpAiStarterTemplate
 import com.android.tools.idea.wizard.template.impl.activities.loginActivity.loginActivityTemplate
 import com.android.tools.idea.wizard.template.impl.activities.navigationDrawerActivity.navigationDrawerActivityTemplate
 import com.android.tools.idea.wizard.template.impl.activities.primaryDetailFlow.primaryDetailFlowTemplate
@@ -84,6 +85,7 @@ class WizardTemplateProviderImpl : WizardTemplateProvider() {
       composeNavigationUiActivityMaterial3Template,
       archStarterActivityTemplate,
       aiStarterTemplate,
+      kmpAiStarterTemplate,
       xrActivityTemplate,
       aiGlassesActivityTemplate,
       androidTVActivityTemplate,
