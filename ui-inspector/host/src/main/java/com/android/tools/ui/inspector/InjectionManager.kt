@@ -45,6 +45,9 @@ private const val SERVICE_JAR_FILE_NAME = "lib_ui_inspector_service.jar"
  */
 private const val DEVICE_TMP_DIR = "/data/local/tmp"
 
+/** Subdirectory in the device temporary directory for dynamically pushed inspector jars. */
+private const val DEVICE_TMP_INSPECTORS_DIR = "$DEVICE_TMP_DIR/ui-inspector"
+
 /** The name of the payload jar file. */
 private const val PAYLOAD_JAR_FILE_NAME = "lib_ui_inspector_payload.jar"
 
@@ -309,14 +312,11 @@ class InjectionManager(
   /** Pushes a file to a temporary location on the device. */
   // TODO: Add a check to verify file hash on device before pushing to avoid redundant pushes if the file is already there.
   private suspend fun pushFileToDevice(deviceSelector: DeviceSelector, localPath: Path, remoteTmpPath: String): String {
-    // App needs read permission to copy it from /data/local/tmp (run-as uses a different user)
+    // App needs read permission to copy it from /data/local/tmp (run-as uses a different user).
+    // Setting read-only permissions (444) directly during syncSend also satisfies ART W^X read-only
+    // dex file requirements on API 34+ without needing an extra chmod shell round trip.
     val permissions =
-      RemoteFileMode.fromPosixPermissions(
-        PosixFilePermission.OWNER_READ,
-        PosixFilePermission.OWNER_WRITE,
-        PosixFilePermission.GROUP_READ,
-        PosixFilePermission.OTHERS_READ,
-      )
+      RemoteFileMode.fromPosixPermissions(PosixFilePermission.OWNER_READ, PosixFilePermission.GROUP_READ, PosixFilePermission.OTHERS_READ)
     adbSession.deviceServices.syncSend(deviceSelector, localPath, remoteTmpPath, permissions)
     return remoteTmpPath
   }
@@ -329,20 +329,12 @@ class InjectionManager(
    */
   suspend fun pushInspectorPayload(inspector: InspectorMetadata): String {
     val remoteFileName = inspector.localJarPath.fileName.toString()
-    val remoteTmpPath = "$DEVICE_TMP_DIR/$remoteFileName"
+    val remoteTmpPath = "$DEVICE_TMP_INSPECTORS_DIR/$remoteFileName"
 
     // Push to tmp folder
     pushFileToDevice(deviceSelector, inspector.localJarPath, remoteTmpPath)
 
-    // Copy to app dir via run-as
-    val setupCmd =
-      "run-as $packageName sh -c '" +
-        "rm -f $remoteFileName && " +
-        "cat $remoteTmpPath > $remoteFileName && " +
-        "chmod 444 $remoteFileName'"
-    runShellCommand(deviceSelector, setupCmd)
-
-    return "$appDataDir/$remoteFileName"
+    return remoteTmpPath
   }
 
   private suspend fun attachAgent(deviceSelector: DeviceSelector, packageName: String, pid: String) {

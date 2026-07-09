@@ -128,12 +128,6 @@ class ComposeInspectorTest {
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
 
-    val expectedSetupCmd =
-      "run-as $packageName sh -c 'rm -f compose-inspector.jar && " +
-        "cat /data/local/tmp/compose-inspector.jar > compose-inspector.jar && " +
-        "chmod 444 compose-inspector.jar'"
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, expectedSetupCmd, "")
-
     val dummyAgent = tempFolder.newFile("lib_ui_inspector_agent.so").toPath()
     val dummyJar = tempFolder.newFile("lib_ui_inspector_service.jar").toPath()
     val dummyPayload = tempFolder.newFile("lib_ui_inspector_payload.jar").toPath()
@@ -186,13 +180,14 @@ class ComposeInspectorTest {
     assertThat(vCmd.getVersion.libraryIdsList).containsExactly(ProtocolConstants.COMPOSE_UI_LIBRARY_ID)
 
     // B. Check inspector jar file was pushed to simulated device
-    val remoteFilePushed = testDeviceServices.recordedSyncSends.any { it.remoteFilePath == "/data/local/tmp/compose-inspector.jar" }
+    val remoteFilePushed =
+      testDeviceServices.recordedSyncSends.any { it.remoteFilePath == "/data/local/tmp/ui-inspector/compose-inspector.jar" }
     assertThat(remoteFilePushed).isTrue()
 
     // C. Check CreateInspectorCommand parameters
     val cCmd = createCmdReceived.await()
     assertThat(cCmd.createInspector.inspectorId).isEqualTo(ProtocolConstants.COMPOSE_INSPECTOR_ID)
-    assertThat(cCmd.createInspector.dexPath).isEqualTo("/data/data/$packageName/compose-inspector.jar")
+    assertThat(cCmd.createInspector.dexPath).isEqualTo("/data/local/tmp/ui-inspector/compose-inspector.jar")
 
     // Cleanup
     testScope.cancel()
@@ -412,11 +407,6 @@ class ComposeInspectorTest {
       "cat /proc/net/unix | grep ui_inspector_1234 || true",
       "ui_inspector_1234\n",
     )
-    val composeSetupCmd =
-      "run-as $packageName sh -c 'rm -f compose-inspector.jar && " +
-        "cat /data/local/tmp/compose-inspector.jar > compose-inspector.jar && " +
-        "chmod 444 compose-inspector.jar'"
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, composeSetupCmd, "")
     injectionManager.injectAndAttach()
 
     // 3. Capture System.out to verify the printed merged tree!
@@ -726,11 +716,6 @@ class ComposeInspectorTest {
       "cat /proc/net/unix | grep ui_inspector_1234 || true",
       "ui_inspector_1234\n",
     )
-    val composeSetupCmd =
-      "run-as $packageName sh -c 'rm -f compose-inspector.jar && " +
-        "cat /data/local/tmp/compose-inspector.jar > compose-inspector.jar && " +
-        "chmod 444 compose-inspector.jar'"
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, composeSetupCmd, "")
     injectionManager.injectAndAttach()
 
     // 3. Capture System.out to verify the printed merged tree!
@@ -1066,11 +1051,6 @@ class ComposeInspectorTest {
       "cat /proc/net/unix | grep ui_inspector_1234 || true",
       "ui_inspector_1234\n",
     )
-    val composeSetupCmd =
-      "run-as $packageName sh -c 'rm -f compose-inspector.jar && " +
-        "cat /data/local/tmp/compose-inspector.jar > compose-inspector.jar && " +
-        "chmod 444 compose-inspector.jar'"
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, composeSetupCmd, "")
     injectionManager.injectAndAttach()
 
     val originalFactory = sessionFactory

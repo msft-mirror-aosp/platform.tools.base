@@ -242,21 +242,13 @@ class InjectionManagerTest {
 
     val inspectorJar = tempFolder.newFile("my-inspector.jar").toPath()
     val inspector = InspectorMetadata(id = "my.inspector", localJarPath = inspectorJar)
-
-    val inspectorSetupCmd =
-      "run-as $packageName sh -c '" +
-        "rm -f my-inspector.jar && " +
-        "cat /data/local/tmp/my-inspector.jar > my-inspector.jar && " +
-        "chmod 444 my-inspector.jar'"
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, inspectorSetupCmd, "")
-
     val remotePath = injectionManager.pushInspectorPayload(inspector)
 
-    assertThat(remotePath).isEqualTo("/data/data/$packageName/my-inspector.jar")
+    assertThat(remotePath).isEqualTo("/data/local/tmp/ui-inspector/my-inspector.jar")
 
     // Verify the inspector jar was pushed to tmp
     val pushedPaths = testDeviceServices.recordedSyncSends.map { it.remoteFilePath }
-    assertThat(pushedPaths).contains("/data/local/tmp/my-inspector.jar")
+    assertThat(pushedPaths).contains("/data/local/tmp/ui-inspector/my-inspector.jar")
   }
 
   @Test
