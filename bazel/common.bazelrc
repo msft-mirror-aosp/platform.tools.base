@@ -149,8 +149,6 @@ build:ants --bes_keywords=antswatcher:skip_tests_if_timeout
 build:ants --bes_keywords=antswatcher:use_dependent_jobs
 build:ants --bes_keywords=antswatcher:android_module_behavior
 build:ants --bes_keywords=antswatcher:enable_resultdb
-build:ants --bes_keywords=antswatcher:enable_ants_v4
-build:ants --bes_keywords=antswatcher:enable_ants_v4_writes
 
 ## Base config for using the remote cache.
 ## This avoids building things which were already built by CI.
