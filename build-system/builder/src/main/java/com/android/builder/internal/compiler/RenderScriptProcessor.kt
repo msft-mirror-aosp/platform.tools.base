@@ -21,10 +21,10 @@ import com.android.SdkConstants.FN_ANDROIDX_RENDERSCRIPT_PACKAGE
 import com.android.SdkConstants.FN_ANDROIDX_RS_JAR
 import com.android.SdkConstants.FN_RENDERSCRIPT_V8_JAR
 import com.android.SdkConstants.FN_RENDERSCRIPT_V8_PACKAGE
-import com.android.ide.common.internal.WaitableExecutor
 import com.android.ide.common.process.ProcessExecutor
 import com.android.ide.common.process.ProcessInfoBuilder
 import com.android.ide.common.process.ProcessOutputHandler
+import com.android.ide.common.workers.WorkerExecutorFacade
 import com.android.io.CancellableFileIo
 import com.android.sdklib.BuildToolInfo
 import com.android.sdklib.BuildToolInfo.PathId
@@ -127,7 +127,7 @@ class RenderScriptProcessor(
     }
   }
 
-  fun build(processExecutor: ProcessExecutor, processOutputHandler: ProcessOutputHandler) {
+  fun build(processExecutor: ProcessExecutor, processOutputHandler: ProcessOutputHandler, workerExecutor: WorkerExecutorFacade) {
     val renderscriptFiles = mutableListOf<File>()
     for (dir in sourceFolders) {
       DirectoryWalker.builder()
@@ -153,7 +153,7 @@ class RenderScriptProcessor(
     doMainCompilation(renderscriptFiles, processExecutor, processOutputHandler, env)
 
     if (supportMode) {
-      createSupportFiles(processExecutor, processOutputHandler, env)
+      createSupportFiles(processExecutor, processOutputHandler, env, workerExecutor)
     }
   }
 
@@ -253,16 +253,21 @@ class RenderScriptProcessor(
     result.rethrowFailure().assertNormalExitValue()
   }
 
-  private fun createSupportFiles(processExecutor: ProcessExecutor, processOutputHandler: ProcessOutputHandler, env: Map<String, String>) {
+  private fun createSupportFiles(
+    processExecutor: ProcessExecutor,
+    processOutputHandler: ProcessOutputHandler,
+    env: Map<String, String>,
+    workerExecutor: WorkerExecutorFacade,
+  ) {
     // get the generated BC files.
     if (actualTargetApi < 21) {
       val rawFolder = genericRawFolder
-      createSupportFilesHelper(rawFolder, abis32, processExecutor, processOutputHandler, env)
+      createSupportFilesHelper(rawFolder, abis32, processExecutor, processOutputHandler, env, workerExecutor)
     } else {
       val rawFolder32 = getArchSpecificRawFolder("32")
-      createSupportFilesHelper(rawFolder32, abis32, processExecutor, processOutputHandler, env)
+      createSupportFilesHelper(rawFolder32, abis32, processExecutor, processOutputHandler, env, workerExecutor)
       val rawFolder64 = getArchSpecificRawFolder("64")
-      createSupportFilesHelper(rawFolder64, abis64, processExecutor, processOutputHandler, env)
+      createSupportFilesHelper(rawFolder64, abis64, processExecutor, processOutputHandler, env, workerExecutor)
     }
   }
 
@@ -272,33 +277,31 @@ class RenderScriptProcessor(
     processExecutor: ProcessExecutor,
     processOutputHandler: ProcessOutputHandler,
     env: Map<String, String>,
+    workerExecutor: WorkerExecutorFacade,
   ) {
-    val mExecutor = WaitableExecutor.useGlobalSharedThreadPool()
-
     val files = mutableListOf<File>()
     DirectoryWalker.builder().root(rawFolder.toPath()).extensions(EXT_BC).action { _, path -> files.add(path.toFile()) }.build().walk()
 
-    for (bcFile in files) {
-      val name = bcFile.name
-      val objName = name.replace("\\.bc".toRegex(), ".o")
-      val soName = "librs." + name.replace("\\.bc".toRegex(), ".so")
+    if (files.isEmpty()) return
 
-      for (abi in abis) {
-        if (abiFilters.isNotEmpty() && !abiFilters.contains(abi.device)) {
-          continue
-        }
-        // only build for the ABIs bundled in Build-Tools.
-        if (libClCore[abi.device] == null) {
+    val workContext = RenderScriptWorkContext(processExecutor, processOutputHandler, env, buildToolInfo, optimizationLevel, rsLib)
+
+    val abisToBuild =
+      abis.filter { abi ->
+        if (abiFilters.isNotEmpty() && !abiFilters.contains(abi.device)) return@filter false
+
+        val libClCorePath = libClCore[abi.device]
+        if (libClCorePath == null) {
           // warn the user to update Build-Tools if the desired ABI is not found.
           logger.warning(
             """|Skipped RenderScript support mode compilation for ${abi.device} : required components not found in Build-Tools ${buildToolInfo.revision}
-                           |Please check and update your BuildTools."""
+                         |Please check and update your BuildTools."""
               .trimMargin("|")
           )
-          continue
+          return@filter false
         }
 
-        // make sure the dest folders exist
+        // make sure the dest folders exist once per ABI
         val objAbiFolder = File(objOutputDir, abi.device)
         if (!objAbiFolder.isDirectory && !objAbiFolder.mkdirs()) {
           throw IOException("Unable to create dir ${objAbiFolder.absolutePath}")
@@ -309,88 +312,107 @@ class RenderScriptProcessor(
           throw IOException("Unable to create dir ${libAbiFolder.absolutePath}")
         }
 
-        mExecutor.execute {
-          val objFile = createSupportObjFile(bcFile, abi, objName, objAbiFolder, processExecutor, processOutputHandler, env)
-          createSupportLibFile(objFile, abi, soName, libAbiFolder, processExecutor, processOutputHandler, env)
-          null
-        }
+        true
+      }
+
+    for (bcFile in files) {
+      for (abi in abisToBuild) {
+        workerExecutor.submit(
+          RenderScriptWorkAction(
+            bcFile,
+            abi,
+            File(objOutputDir, abi.device),
+            File(libOutputDir, abi.device),
+            libClCore.getValue(abi.device),
+            workContext,
+          )
+        )
       }
     }
 
-    mExecutor.waitForTasksWithQuickFail<Any>(true /*cancelRemaining*/)
+    workerExecutor.await()
   }
 
-  private fun createSupportObjFile(
-    bcFile: File,
-    abi: Abi,
-    objName: String,
-    objAbiFolder: File,
-    processExecutor: ProcessExecutor,
-    processOutputHandler: ProcessOutputHandler,
-    env: Map<String, String>,
-  ): File {
+  private class RenderScriptWorkAction(
+    private val bcFile: File,
+    private val abi: Abi,
+    private val objAbiFolder: File,
+    private val libAbiFolder: File,
+    private val libClCorePath: Path,
+    private val context: RenderScriptWorkContext,
+  ) : WorkerExecutorFacade.WorkAction {
 
-    val builder = ProcessInfoBuilder()
-    builder.setExecutable(buildToolInfo.getPath(PathId.BCC_COMPAT))
-    builder.addEnvironments(env)
+    override fun run() {
+      val baseName = bcFile.name.removeSuffix(".bc")
+      val objName = "$baseName.o"
+      val soName = "librs.$baseName.so"
 
-    builder.addArgs("-O$optimizationLevel")
+      val objFile = createSupportObjFile(objName, objAbiFolder, libClCorePath)
+      createSupportLibFile(objFile, soName, libAbiFolder)
+    }
 
-    val outFile = File(objAbiFolder, objName)
-    builder.addArgs("-o", outFile.absolutePath)
-    builder.addArgs("-fPIC")
-    builder.addArgs("-shared")
+    private fun createSupportObjFile(objName: String, objAbiFolder: File, libClCorePath: Path): File {
+      val builder = ProcessInfoBuilder()
+      builder.setExecutable(context.buildToolInfo.getPath(PathId.BCC_COMPAT))
+      builder.addEnvironments(context.env)
 
-    builder.addArgs("-rt-path", libClCore.getValue(abi.device).toAbsolutePath().toString())
+      builder.addArgs("-O${context.optimizationLevel}")
 
-    builder.addArgs("-mtriple", abi.toolchain)
-    builder.addArgs(bcFile.absolutePath)
+      val outFile = File(objAbiFolder, objName)
+      builder.addArgs("-o", outFile.absolutePath)
+      builder.addArgs("-fPIC")
+      builder.addArgs("-shared")
 
-    processExecutor.execute(builder.createProcess(), processOutputHandler).rethrowFailure().assertNormalExitValue()
+      builder.addArgs("-rt-path", libClCorePath.toAbsolutePath().toString())
 
-    return outFile
+      builder.addArgs("-mtriple", abi.toolchain)
+      builder.addArgs(bcFile.absolutePath)
+
+      context.processExecutor.execute(builder.createProcess(), context.processOutputHandler).rethrowFailure().assertNormalExitValue()
+
+      return outFile
+    }
+
+    private fun createSupportLibFile(objFile: File, soName: String, libAbiFolder: File) {
+      val root = context.rsLib ?: Paths.get("")
+      val intermediatesAbiFolder = root.resolve("intermediates").resolve(abi.device)
+      val packagedAbiFolder = root.resolve("packaged").resolve(abi.device)
+      val builder = ProcessInfoBuilder()
+      builder.setExecutable(context.buildToolInfo.getPath(abi.linker))
+      builder.addEnvironments(context.env)
+
+      builder
+        .addArgs(abi.getLinkerArgs())
+        .addArgs("--eh-frame-hdr")
+        .addArgs("-shared", "-Bsymbolic", "-z", "noexecstack", "-z", "relro", "-z", "now")
+
+      val outFile = File(libAbiFolder, soName)
+      builder.addArgs("-o", outFile.absolutePath)
+
+      builder.addArgs(
+        "-L${intermediatesAbiFolder.toAbsolutePath()}",
+        "-L${packagedAbiFolder.toAbsolutePath()}",
+        "-soname",
+        soName,
+        objFile.absolutePath,
+        intermediatesAbiFolder.resolve("libcompiler_rt.a").toAbsolutePath().toString(),
+        "-lRSSupport",
+        "-lm",
+        "-lc",
+      )
+
+      context.processExecutor.execute(builder.createProcess(), context.processOutputHandler).rethrowFailure().assertNormalExitValue()
+    }
   }
 
-  private fun createSupportLibFile(
-    objFile: File,
-    abi: Abi,
-    soName: String,
-    libAbiFolder: File,
-    processExecutor: ProcessExecutor,
-    processOutputHandler: ProcessOutputHandler,
-    env: Map<String, String>,
-  ) {
-    val root = rsLib ?: Paths.get("")
-    val intermediatesFolder = root.resolve("intermediates")
-    val intermediatesAbiFolder = intermediatesFolder.resolve(abi.device)
-    val packagedFolder = root.resolve("packaged")
-    val packagedAbiFolder = packagedFolder.resolve(abi.device)
-    val builder = ProcessInfoBuilder()
-    builder.setExecutable(buildToolInfo.getPath(abi.linker))
-    builder.addEnvironments(env)
-
-    builder
-      .addArgs(abi.getLinkerArgs())
-      .addArgs("--eh-frame-hdr")
-      .addArgs("-shared", "-Bsymbolic", "-z", "noexecstack", "-z", "relro", "-z", "now")
-
-    val outFile = File(libAbiFolder, soName)
-    builder.addArgs("-o", outFile.absolutePath)
-
-    builder.addArgs(
-      "-L${intermediatesAbiFolder.toAbsolutePath()}",
-      "-L${packagedAbiFolder.toAbsolutePath()}",
-      "-soname",
-      soName,
-      objFile.absolutePath,
-      intermediatesAbiFolder.resolve("libcompiler_rt.a").toAbsolutePath().toString(),
-      "-lRSSupport",
-      "-lm",
-      "-lc",
-    )
-
-    processExecutor.execute(builder.createProcess(), processOutputHandler).rethrowFailure().assertNormalExitValue()
-  }
+  private class RenderScriptWorkContext(
+    val processExecutor: ProcessExecutor,
+    val processOutputHandler: ProcessOutputHandler,
+    val env: Map<String, String>,
+    val buildToolInfo: BuildToolInfo,
+    val optimizationLevel: Int,
+    val rsLib: Path?,
+  )
 
   companion object {
     @JvmStatic

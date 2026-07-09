@@ -30,6 +30,7 @@ import com.android.build.gradle.internal.scope.InternalArtifactType.RENDERSCRIPT
 import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
 import com.android.build.gradle.internal.tasks.NdkTask
+import com.android.build.gradle.internal.tasks.Workers
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.features.RenderscriptTaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.features.RenderscriptTaskCreationActionImpl
@@ -273,7 +274,9 @@ abstract class RenderscriptCompile : NdkTask() {
         abiFilters,
         LoggerWrapper(logger),
       )
-    processor.build(GradleProcessExecutor(execOperations::exec), processOutputHandler)
+    Workers.withThreads(path, analyticsService.get()).use { workerExecutor ->
+      processor.build(GradleProcessExecutor(execOperations::exec), processOutputHandler, workerExecutor)
+    }
   }
 
   // ----- CreationAction -----
