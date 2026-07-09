@@ -1127,6 +1127,8 @@ _CLASS_JARS = [
     "net.thauvin.erik.urlencoder:urlencoder-lib-jvm:1.5.0",
     "org.apache.commons:commons-compress:1.20",
     "org.apache.commons:commons-lang3:3.13.0",
+    "org.apache.commons:commons-parent:pom:69",
+    "org.apache.commons:commons-parent:pom:72",
     "org.apache.commons:commons-text:1.11.0",
     "org.apache.httpcomponents:httpclient:4.5.14",
     "org.apache.httpcomponents:httpcore:4.4.16",
