@@ -26,8 +26,6 @@ import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.tasks.factory.TaskManagerConfig
 import com.android.build.gradle.internal.tasks.factory.dependsOn
 import com.android.build.gradle.internal.test.SeparateTestModuleTestData
-import com.android.build.gradle.internal.test.tasks.TestReportTask
-import com.android.build.gradle.internal.test.tasks.TestResultsCollectionTask
 import com.android.build.gradle.internal.variant.ComponentInfo
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.tasks.CheckTestedAppObfuscation
@@ -129,22 +127,5 @@ class TestApplicationTaskManager(
 
     taskFactory.register(ProcessTestManifestPackaging.CreationAction(taskConfig))
     return taskFactory.register(ProcessTestManifest.CreationAction(taskConfig))
-  }
-
-  override fun registerTestAndCodeCoverageReportTasks() {
-    if (isReportAggregationEnabled) {
-      taskFactory.register(TestReportTask.TestReportCreationAction(globalConfig))
-    }
-  }
-
-  override fun registerTestAndCodeCoverageCollectionTasks(
-    variantInfo: ComponentInfo<TestVariantBuilder, TestVariantCreationConfig>,
-    testResultsCollectionTasks: MutableList<TaskProvider<TestResultsCollectionTask>>,
-  ) {
-    if (isReportAggregationEnabled) {
-      testResultsCollectionTasks.add(
-        taskFactory.register(TestResultsCollectionTask.TestResultsCollectionCreationAction(variantInfo.variant))
-      )
-    }
   }
 }
