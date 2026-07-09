@@ -112,8 +112,8 @@ fi
 
 # -- Check if Impacted Target File is non-empty ---
 if [[ ! -s "${impacted_targets_filepath}" ]]; then
-  echo "Mutation did not impact any test targets. Marking Mutation Testing as failed."
-  exit 1
+  echo "Mutation did not impact any test targets. Adding noop_test target to impacted targets file."
+  echo "//tools/base/bazel/mutation:noop_test" >> "${impacted_targets_filepath}"
 fi
 
 # --- 2. Run Impacted Android Studio Targets ---

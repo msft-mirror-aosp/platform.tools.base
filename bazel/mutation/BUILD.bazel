@@ -50,6 +50,14 @@ py_test(
 )
 
 py_test(
+    name = "noop_test",
+    srcs = ["noop_test.py"],
+    deps = [
+        "@absl-py//absl/testing:absltest",
+    ],
+)
+
+py_test(
     name = "exclude_filter_test",
     srcs = ["utils/exclude_filter_test.py"],
     deps = [
