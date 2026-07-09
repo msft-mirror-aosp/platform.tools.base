@@ -15,10 +15,10 @@ allprojects {
                         it.inputs.files(runtimeClasses)
 
                         doFirst {
-
                             try (def deps = new FileOutputStream(new File("deps.txt"))) {
-
-                                deps.write("${buildDir}/intermediates/compile_app_classes_jar/${v.name}/classes.jar\n".getBytes())
+                                def capName = v.name.capitalize()
+                                deps.write("${buildDir}/intermediates/compile_app_classes_jar/${v.name}/bundle${capName}ClassesToCompileJar/classes.jar\n".getBytes())
+                                deps.write("${buildDir}/intermediates/compile_and_runtime_r_class_jar/${v.name}/process${capName}Resources/R.jar\n".getBytes())
                                 def fileNames = runtimeClasses.files.collect { "${it}".toString() }
                                 fileNames.forEach {
                                     deps.write("${it}\n".getBytes())
