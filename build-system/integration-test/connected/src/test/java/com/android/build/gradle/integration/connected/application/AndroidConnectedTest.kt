@@ -113,6 +113,10 @@ class AndroidConnectedTest(val runWithBuiltInPlatform: Boolean) {
 
   @Test fun connectedAndroidTestFromTestOnlyModuleWithNewReportFormat() = util.connectedAndroidTestFromTestOnlyModuleWithNewReportFormat()
 
+  @Test
+  fun connectedAndroidTestFromTestOnlyModuleWithCreateTestReportTask() =
+    util.connectedAndroidTestFromTestOnlyModuleWithCreateTestReportTask()
+
   @Test fun additionalTestOutputWithTestStorageService() = util.additionalTestOutputWithTestStorageService()
 
   @Test fun additionalTestOutputWithoutTestStorageService() = util.additionalTestOutputWithoutTestStorageService()

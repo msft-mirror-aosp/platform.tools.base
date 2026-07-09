@@ -315,29 +315,27 @@ class AndroidTestUtil(
 
     executor.run(testTaskName)
 
-    val reportFile = project.resolve(testReportPath)
-    val reportDir = reportFile.parent
-    assertThat(reportDir.resolve("index.html")).exists()
-    assertThat(reportDir.resolve("script.js")).exists()
-    assertThat(reportDir.resolve("styles.css")).exists()
-    assertThat(reportDir.resolve("data.js")).exists()
+    val expectedContents =
+      if (!runWithBuiltInPlatform) {
+        listOf(
+          "\"projectName\":\":test\"",
+          "\"numberOfModules\":1",
+          "\"numberOfPackages\":1",
+          "\"numberOfClasses\":1",
+          "\"variants\":[\"debug\"]",
+          "\"testSuites\"",
+          "\"androidTest\"",
+          "\"name\":\":test\"",
+          "\"name\":\"com.example.android.kotlin\"",
+          "\"name\":\"ExampleInstrumentedTest\"",
+          "\"name\":\"useAppContext\"",
+          "\"status\":\"pass\"",
+        )
+      } else {
+        emptyList()
+      }
 
-    if (!runWithBuiltInPlatform) {
-      val dataJsContent = reportDir.resolve("data.js").readText()
-      assertThat(dataJsContent).contains("const TEST_DATA_SOURCE = ")
-      assertThat(dataJsContent).contains("\"projectName\":\":test\"")
-      assertThat(dataJsContent).contains("\"numberOfModules\":1")
-      assertThat(dataJsContent).contains("\"numberOfPackages\":1")
-      assertThat(dataJsContent).contains("\"numberOfClasses\":1")
-      assertThat(dataJsContent).contains("\"variants\":[\"debug\"]")
-      assertThat(dataJsContent).contains("\"testSuites\"")
-      assertThat(dataJsContent).contains("\"androidTest\"")
-      assertThat(dataJsContent).contains("\"name\":\":test\"")
-      assertThat(dataJsContent).contains("\"name\":\"com.example.android.kotlin\"")
-      assertThat(dataJsContent).contains("\"name\":\"ExampleInstrumentedTest\"")
-      assertThat(dataJsContent).contains("\"name\":\"useAppContext\"")
-      assertThat(dataJsContent).contains("\"status\":\"pass\"")
-    }
+    verifyReport(enableReportAggregation = true, expectedDataJsContents = expectedContents)
 
     val testResultPb = resolveTestResultPbPath()
     assertThat(testResultPb).exists()
@@ -345,6 +343,24 @@ class AndroidTestUtil(
     val testSuiteResult = testResultPb.toFile().inputStream().use { TestSuiteResult.parseFrom(it) }
     assertThat(testSuiteResult.testResultCount).isAtLeast(1)
     assertThat(testSuiteResult.testResultList.any { it.testCase.testMethod == "useAppContext" }).isTrue()
+  }
+
+  fun connectedAndroidTestFromTestOnlyModuleWithCreateTestReportTask() {
+    selectModule("test")
+
+    rule.build.reconfigureGradleProperties { add(BooleanOption.REPORT_AGGREGATION_SUPPORT, true) }
+
+    executor.run(testTaskName, ":test:createTestReport")
+
+    val reportDir = project.resolve("test/build/reports/tests/test-report")
+    val expectedContents =
+      if (!runWithBuiltInPlatform) {
+        listOf("\"projectName\":\"project\"", "\"name\":\":test\"", "\"numberOfModules\":1")
+      } else {
+        emptyList()
+      }
+
+    verifyReport(enableReportAggregation = true, customReportDir = reportDir, expectedDataJsContents = expectedContents)
   }
 
   fun additionalTestOutputWithTestStorageService() {
@@ -798,9 +814,13 @@ class AndroidTestUtil(
     }
   }
 
-  fun verifyReport(enableReportAggregation: Boolean = false) {
+  fun verifyReport(
+    enableReportAggregation: Boolean = false,
+    customReportDir: Path? = null,
+    expectedDataJsContents: List<String> = emptyList(),
+  ) {
+    val reportDir = customReportDir ?: project.resolve(testReportPath).parent
     val reportFile = project.resolve(testReportPath)
-    val reportDir = reportFile.parent
 
     if (enableReportAggregation) {
       assertThat(reportDir.resolve("index.html")).exists()
@@ -810,6 +830,9 @@ class AndroidTestUtil(
 
       val dataJsContent = reportDir.resolve("data.js").readText()
       assertThat(dataJsContent).contains("const TEST_DATA_SOURCE = ")
+      for (content in expectedDataJsContents) {
+        assertThat(dataJsContent).contains(content)
+      }
     } else {
       assertThat(reportFile).exists()
       assertThat(reportDir.resolve("index.html")).exists()
