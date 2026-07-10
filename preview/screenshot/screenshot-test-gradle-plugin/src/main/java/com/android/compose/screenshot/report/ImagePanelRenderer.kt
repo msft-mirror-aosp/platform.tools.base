@@ -24,7 +24,7 @@ class ImagePanelRenderer : ReportRenderer<ScreenshotTestImages, SimpleHtmlWriter
 
   val ALT_TEXT_PREFIX = "Error displaying image at "
   val COLUMN_NAME_REFERENCE = "Reference Image"
-  val COLUMN_NAME_ACTUAL = "Actual Image"
+  val COLUMN_NAME_ACTUAL = "New Image"
   val COLUMN_NAME_DIFF = "Diff Image"
 
   override fun render(ssImages: ScreenshotTestImages, htmlWriter: SimpleHtmlWriter) {
@@ -33,8 +33,8 @@ class ImagePanelRenderer : ReportRenderer<ScreenshotTestImages, SimpleHtmlWriter
     htmlWriter.startElement("span").startElement("table").attribute("style", "table-layout: fixed").startElement("thead").startElement("tr")
 
     addColumn(htmlWriter, COLUMN_NAME_REFERENCE)
-    addColumn(htmlWriter, COLUMN_NAME_ACTUAL)
     addColumn(htmlWriter, COLUMN_NAME_DIFF)
+    addColumn(htmlWriter, COLUMN_NAME_ACTUAL)
 
     htmlWriter.endElement().endElement()
     htmlWriter
@@ -45,8 +45,8 @@ class ImagePanelRenderer : ReportRenderer<ScreenshotTestImages, SimpleHtmlWriter
       .startElement("tr")
     val texts = getTexts(ssImages)
     renderImage(htmlWriter, ssImages.reference, texts.referenceImageText)
-    renderImage(htmlWriter, ssImages.actual, texts.actualText)
     renderImage(htmlWriter, ssImages.diff, texts.diffText)
+    renderImage(htmlWriter, ssImages.actual, texts.actualText)
     htmlWriter.endElement().endElement().endElement().endElement()
   }
 

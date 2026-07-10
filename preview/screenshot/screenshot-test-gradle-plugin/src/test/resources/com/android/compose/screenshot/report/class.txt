@@ -82,8 +82,8 @@
 <thead>
 <tr>
 <th style="width: 33.33%%">Reference Image</th>
-<th style="width: 33.33%%">Actual Image</th>
 <th style="width: 33.33%%">Diff Image</th>
+<th style="width: 33.33%%">New Image</th>
 </tr>
 </thead>
 <tbody class="grid" style="width: 100%%">
@@ -110,8 +110,8 @@
 <thead>
 <tr>
 <th style="width: 33.33%%">Reference Image</th>
-<th style="width: 33.33%%">Actual Image</th>
 <th style="width: 33.33%%">Diff Image</th>
+<th style="width: 33.33%%">New Image</th>
 </tr>
 </thead>
 <tbody class="grid" style="width: 100%%">
@@ -119,10 +119,10 @@
 <td style="width: 33.33%%; padding: 1em">
 <img src="%1$s" style="max-width: 100%%; height: auto;" alt="Error displaying image at %2$s"/>
 </td>
-<td style="width: 33.33%%; padding: 1em">
-<img src="%3$s" style="max-width: 100%%; height: auto;" alt="Error displaying image at %4$s"/>
-</td>
 <td style="width: 33.33%%">Size Mismatch. Reference image: 5x5 Actual image: 4x5</td>
+<td style="width: 33.33%%; padding: 1em">
+<img src="%5$s" style="max-width: 100%%; height: auto;" alt="Error displaying image at %6$s"/>
+</td>
 </tr>
 </tbody>
 </table>
@@ -136,17 +136,17 @@
 <thead>
 <tr>
 <th style="width: 33.33%%">Reference Image</th>
-<th style="width: 33.33%%">Actual Image</th>
 <th style="width: 33.33%%">Diff Image</th>
+<th style="width: 33.33%%">New Image</th>
 </tr>
 </thead>
 <tbody class="grid" style="width: 100%%">
 <tr>
 <td style="width: 33.33%%">Reference image does not exist</td>
-<td style="width: 33.33%%; padding: 1em">
-<img src="%3$s" style="max-width: 100%%; height: auto;" alt="Error displaying image at %4$s"/>
-</td>
 <td style="width: 33.33%%">No diff</td>
+<td style="width: 33.33%%; padding: 1em">
+<img src="%5$s" style="max-width: 100%%; height: auto;" alt="Error displaying image at %6$s"/>
+</td>
 </tr>
 </tbody>
 </table>
@@ -163,8 +163,8 @@
 <thead>
 <tr>
 <th style="width: 33.33%%">Reference Image</th>
-<th style="width: 33.33%%">Actual Image</th>
 <th style="width: 33.33%%">Diff Image</th>
+<th style="width: 33.33%%">New Image</th>
 </tr>
 </thead>
 <tbody class="grid" style="width: 100%%">
@@ -172,10 +172,10 @@
 <td style="width: 33.33%%; padding: 1em">
 <img src="%1$s" style="max-width: 100%%; height: auto;" alt="Error displaying image at %2$s"/>
 </td>
-<td style="width: 33.33%%; padding: 1em">
-<img src="%3$s" style="max-width: 100%%; height: auto;" alt="Error displaying image at %4$s"/>
-</td>
 <td style="width: 33.33%%">Images match</td>
+<td style="width: 33.33%%; padding: 1em">
+<img src="%5$s" style="max-width: 100%%; height: auto;" alt="Error displaying image at %6$s"/>
+</td>
 </tr>
 </tbody>
 </table>
@@ -189,8 +189,8 @@
 <thead>
 <tr>
 <th style="width: 33.33%%">Reference Image</th>
-<th style="width: 33.33%%">Actual Image</th>
 <th style="width: 33.33%%">Diff Image</th>
+<th style="width: 33.33%%">New Image</th>
 </tr>
 </thead>
 <tbody class="grid" style="width: 100%%">
@@ -217,8 +217,8 @@
 <thead>
 <tr>
 <th style="width: 33.33%%">Reference Image</th>
-<th style="width: 33.33%%">Actual Image</th>
 <th style="width: 33.33%%">Diff Image</th>
+<th style="width: 33.33%%">New Image</th>
 </tr>
 </thead>
 <tbody class="grid" style="width: 100%%">
@@ -226,10 +226,10 @@
 <td style="width: 33.33%%; padding: 1em">
 <img src="%1$s" style="max-width: 100%%; height: auto;" alt="Error displaying image at %2$s"/>
 </td>
-<td style="width: 33.33%%; padding: 1em">
-<img src="%3$s" style="max-width: 100%%; height: auto;" alt="Error displaying image at %4$s"/>
-</td>
 <td style="width: 33.33%%">Size Mismatch. Reference image: 5x5 Actual image: 4x5</td>
+<td style="width: 33.33%%; padding: 1em">
+<img src="%5$s" style="max-width: 100%%; height: auto;" alt="Error displaying image at %6$s"/>
+</td>
 </tr>
 </tbody>
 </table>
@@ -243,17 +243,17 @@
 <thead>
 <tr>
 <th style="width: 33.33%%">Reference Image</th>
-<th style="width: 33.33%%">Actual Image</th>
 <th style="width: 33.33%%">Diff Image</th>
+<th style="width: 33.33%%">New Image</th>
 </tr>
 </thead>
 <tbody class="grid" style="width: 100%%">
 <tr>
 <td style="width: 33.33%%">Reference image does not exist</td>
-<td style="width: 33.33%%; padding: 1em">
-<img src="%3$s" style="max-width: 100%%; height: auto;" alt="Error displaying image at %4$s"/>
-</td>
 <td style="width: 33.33%%">No diff</td>
+<td style="width: 33.33%%; padding: 1em">
+<img src="%5$s" style="max-width: 100%%; height: auto;" alt="Error displaying image at %6$s"/>
+</td>
 </tr>
 </tbody>
 </table>

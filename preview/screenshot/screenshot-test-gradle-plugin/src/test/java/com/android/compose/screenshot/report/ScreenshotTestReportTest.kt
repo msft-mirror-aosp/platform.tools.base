@@ -84,10 +84,10 @@ class ScreenshotTestReportTest {
           classFileContentExcludingFooter,
           getBase64SrcFromPath(reference.absolutePath),
           reference.absolutePath,
-          getBase64SrcFromPath(actual.absolutePath),
-          actual.absolutePath,
           getBase64SrcFromPath(diff.absolutePath),
           diff.absolutePath,
+          getBase64SrcFromPath(actual.absolutePath),
+          actual.absolutePath,
         )
         .lines()
         .joinToString(System.lineSeparator())
