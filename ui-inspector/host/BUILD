@@ -23,9 +23,11 @@ iml_module(
         "//tools/base/common:studio.android.sdktools.common",
         "//tools/base/ui-inspector/common",
         "//tools/base/ui-inspector/common/proto:ui_inspector_protocol_java_proto-nojarjar",
-        "@intellij//:com.intellij.java",
-        "@intellij//:intellij-sdk",
+        "@maven//:com.google.guava.guava",
+        "@maven//:com.google.protobuf.protobuf-java",
         "@maven//:info.picocli.picocli",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
     ],
 )
 
