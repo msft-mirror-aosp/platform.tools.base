@@ -17,10 +17,10 @@
 package com.android.tools.screenshot.descriptor
 
 import com.android.tools.render.common.PreviewScreenshotResult
+import com.android.tools.screenshot.ImageComparisonAssertionError
 import com.android.tools.screenshot.PreviewScreenshotExecutionContext
 import com.android.tools.screenshot.PreviewScreenshotTestEngineInput
 import com.android.tools.screenshot.PreviewScreenshotTestEngineInput.ImageDifferInput
-import com.android.tools.screenshot.ImageComparisonAssertionError
 import com.android.tools.screenshot.ScreenshotRenderException
 import com.android.tools.screenshot.differ.ImageDiffer
 import com.android.tools.screenshot.differ.ImageUpdater
@@ -109,9 +109,11 @@ class PreviewScreenshotDescriptor(
 
     try {
       if (PreviewScreenshotTestEngineInput.TestOption.recordingModeEnabled) {
-        ImageUpdater(PixelPerfect(ImageDifferInput.threshold)).updateIfDifferent(newImageFile, refImageFile, absoluteProjectRoot)
+        ImageUpdater(PixelPerfect(ImageDifferInput.threshold))
+          .updateIfDifferent(newImageFile.absoluteFile, refImageFile.absoluteFile, absoluteProjectRoot)
       } else {
-        verificationResult = imageVerifier.verify(newImageFile, refImageFile, diffImageFile, absoluteProjectRoot)
+        verificationResult =
+          imageVerifier.verify(newImageFile.absoluteFile, refImageFile.absoluteFile, diffImageFile.absoluteFile, absoluteProjectRoot)
 
         if (verificationResult.diffResult is ImageDiffer.DiffResult.Different) {
           throw ImageComparisonAssertionError(relativeRefPath, relativeNewPath, verificationResult.diffPercent, relativeDiffPath)
@@ -138,4 +140,3 @@ class PreviewScreenshotDescriptor(
     return context
   }
 }
-

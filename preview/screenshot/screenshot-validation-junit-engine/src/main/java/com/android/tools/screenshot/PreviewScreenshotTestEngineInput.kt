@@ -25,8 +25,12 @@ object PreviewScreenshotTestEngineInput {
   val mainJars: List<File> = getFilesFromSystemProperty("mainJars")
   val dependencyJars: List<File> = getFilesFromSystemProperty("dependencyJars")
 
-  val previewImageOutputDir: File = getFileFromSystemProperty("previewImageOutputDir")
-  val previewDiffImageOutputDir: File = getFileFromSystemProperty("previewDiffImageOutputDir")
+  val resultsDir: File? =
+    (System.getProperty("com.android.junit.engine.results.dir") ?: properties.getProperty("com.android.junit.engine.results.dir"))
+      ?.takeIf { it.isNotEmpty() }
+      ?.let { File(it) }
+  val previewImageOutputDir: File = resultsDir?.resolve("rendered") ?: getFileFromSystemProperty("previewImageOutputDir")
+  val previewDiffImageOutputDir: File = resultsDir?.resolve("diffs") ?: getFileFromSystemProperty("previewDiffImageOutputDir")
   val referenceImageDir: File = getFileFromSystemProperty("referenceImageDir")
   val projectRoot: File = getFileFromSystemProperty("projectRoot")
 
