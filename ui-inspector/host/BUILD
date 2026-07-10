@@ -15,9 +15,7 @@ iml_module(
     visibility = ["//visibility:public"],
     deps = [
         # Add Compose Inspector protobuf Java classes
-        "//prebuilts/tools/common/app-inspection/androidx/compose/ui:layout_inspector_compose_java_proto",
-        # Required to provide shaded com.android.tools.idea.protobuf classes used by the Compose proto.
-        "//tools/base/bazel:studio-proto",
+        "//prebuilts/tools/common/app-inspection/androidx/compose/ui:layout_inspector_compose_java_proto-nojarjar",
         "//tools/base/adblib:studio.android.sdktools.adblib",
         "//tools/base/adblib-tools:studio.android.sdktools.adblib.tools",
         "//tools/base/common:studio.android.sdktools.common",
