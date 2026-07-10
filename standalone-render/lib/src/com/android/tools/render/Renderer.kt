@@ -99,6 +99,8 @@ class Renderer(
             PreviewScreenshotResult(previewId, methodFQN, relativeImagePath, screenshotError)
           } catch (t: Throwable) {
             PreviewScreenshotResult(previewId, methodFQN, relativeImagePath, ScreenshotError(t))
+          } finally {
+            Disposer.dispose(renderResult)
           }
         screenshotResult
       }
@@ -118,13 +120,16 @@ class Renderer(
     val logger = RenderLogger()
     return try {
       val renderTask =
-        renderService.taskBuilder(module, configuration, logger).disableImagePool().disableCachingImageFactory().build(disposable).get()
-          ?: return RenderResult.createRenderTaskErrorResult(
-            module,
-            { throw NotImplementedError("PsiFile supplier is not supported") },
-            null,
-            logger,
-          )
+        renderService.taskBuilder(module, configuration, logger).build(disposable).get()
+          ?: run {
+            Disposer.dispose(disposable)
+            return RenderResult.createRenderTaskErrorResult(
+              module,
+              { throw NotImplementedError("PsiFile supplier is not supported") },
+              null,
+              logger,
+            )
+          }
 
       // b/469819154: Release render after use to avoid accumulating heap memory usage.
       Disposer.register(disposable) { renderTask.releaseRender() }
@@ -133,11 +138,12 @@ class Renderer(
 
       renderTask.setXmlFile(xmlFile)
 
-      renderTask.render().get(100, TimeUnit.SECONDS)
+      val result = renderTask.render().get(100, TimeUnit.SECONDS)
+      Disposer.register(result, disposable)
+      result
     } catch (t: Throwable) {
-      RenderResult.createRenderTaskErrorResult(module, { throw NotImplementedError("PsiFile supplier is not supported") }, t, logger)
-    } finally {
       Disposer.dispose(disposable)
+      RenderResult.createRenderTaskErrorResult(module, { throw NotImplementedError("PsiFile supplier is not supported") }, t, logger)
     }
   }
 

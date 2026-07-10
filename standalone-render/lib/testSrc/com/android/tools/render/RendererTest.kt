@@ -95,6 +95,7 @@ class RendererTest {
       val (_, result) = it.render(request).single()
       assertNull("A single RenderResult is expected", outputImage)
       outputImage = result.renderedImage.copy
+      result.dispose()
     }
 
     assertNotNull(outputImage)
