@@ -44,7 +44,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -169,14 +168,11 @@ public class AdbClient {
             logger.info("    " + p.getFileName());
         }
 
-        InstallResult ir;
-        if (adbSession.isPresent()) {
-            logger.info("Installing with adblib");
-            ir = installWithAdbLib(paths, options, reinstall);
-        } else {
-            logger.info("Installing with ddmlib");
-            ir = installWithDdmLib(paths, options, reinstall);
+        if (!adbSession.isPresent()) {
+            throw new IllegalStateException("AdbSession is required for installation");
         }
+        logger.info("Installing with adblib");
+        InstallResult ir = installWithAdbLib(paths, options, reinstall);
 
         if (!bps.isEmpty() && baselineInstallationStatusSupported()) {
             // Expected output from this command:
@@ -292,35 +288,6 @@ public class AdbClient {
                             pushStartTimeNs, pushEndTimeNs, installStartTimeNs, installEndTimeNs);
             return new InstallResult(InstallStatus.OK, null, ddmMetrics);
         } catch (com.android.adblib.tools.InstallException e) {
-            String code = e.getErrorCode();
-            String message = e.getMessage();
-            return makeInstallResult(code, message, e);
-        }
-    }
-
-    private InstallResult installWithDdmLib(
-            @NonNull List<Path> paths, List<String> options, boolean reinstall) {
-
-        List<File> files = paths.stream().map(Path::toFile).collect(Collectors.toList());
-        try {
-            if (device.getVersion().isAtLeast(AndroidVersion.VersionCodes.LOLLIPOP)) {
-                device.installPackages(files, reinstall, options, 5, TimeUnit.MINUTES);
-                return new InstallResult(InstallStatus.OK, null, device.getLastInstallMetrics());
-            } else {
-                if (files.size() != 1) {
-                    return new InstallResult(
-                            InstallStatus.MULTI_APKS_NO_SUPPORTED_BELOW21,
-                            "Splits are not supported below API 21");
-                } else {
-                    device.installPackage(
-                            files.get(0).getAbsolutePath(),
-                            reinstall,
-                            options.toArray(new String[0]));
-                    return new InstallResult(
-                            InstallStatus.OK, null, device.getLastInstallMetrics());
-                }
-            }
-        } catch (InstallException e) {
             String code = e.getErrorCode();
             String message = e.getMessage();
             return makeInstallResult(code, message, e);
