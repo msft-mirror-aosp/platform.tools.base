@@ -39,6 +39,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.yield
 import org.junit.After
 import org.junit.Assert.fail
 import org.junit.Test
@@ -441,9 +442,11 @@ class CommandSenderTest {
 
       try {
         sendJob.await()
-        fail("Expected CancellationException")
-      } catch (e: CancellationException) {
-        // Expected
+        fail("Expected CancellationException or IOException due to socket closure")
+      } catch (_: CancellationException) {
+        // Expected if coroutine cancellation interrupts before socket write
+      } catch (_: IOException) {
+        // Expected if socket closure during cancellation interrupts ongoing write
       }
 
       // Verify that the sender is closed after its parent scope was cancelled
@@ -605,6 +608,10 @@ class CommandSenderTest {
 
       connectionAccepted.await()
       val sender = senderReady.await()
+
+      // Ensure background cleanup job has had a chance to start before cancelling
+      yield()
+      runCurrent()
 
       // Cancel the parent scope of the CommandSender
       childJob.cancel()
