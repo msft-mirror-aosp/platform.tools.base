@@ -168,7 +168,8 @@ fun getInternalName(psiClass: PsiClass): String? {
     val parent = PsiTreeUtil.getParentOfType(psiClass, PsiClass::class.java)
     if (parent != null) {
       val internalName = getInternalName(parent) ?: return null
-      return internalName + JavaAnonymousClassesHelper.getName(psiClass)!!
+      val myName = JavaAnonymousClassesHelper.getName(psiClass)
+      if (myName != null) return internalName + myName
     }
   }
   var sig = ClassUtil.getJVMClassName(psiClass)
