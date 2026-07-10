@@ -25,10 +25,16 @@ import com.android.adblib.SocketSpec
 import com.android.adblib.shellAsText
 import com.android.adblib.syncSend
 import com.android.tools.ui.inspector.common.ProtocolConstants
+import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.nio.file.StandardCopyOption
 import java.nio.file.attribute.PosixFilePermission
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
+import kotlin.io.path.extension
+import kotlin.io.path.invariantSeparatorsPathString
+import kotlin.io.path.nameWithoutExtension
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.async
@@ -268,27 +274,36 @@ class InjectionManager(
 
   /** Resolves the local path to the agent binary for the given ABI. */
   private fun getAgentLocalPath(deviceAbi: String): Path {
-    val localPath = agentPathResolver(deviceAbi)
-    if (!localPath.toFile().exists()) {
-      throw IllegalStateException("Agent binary not found at $localPath")
-    }
-    return localPath
+    return resolveLocalPathOrExtractFromClasspath(agentPathResolver(deviceAbi))
   }
 
   /** Resolves the local path to the service jar. */
   private fun getServiceJarLocalPath(): Path {
-    if (!serviceJarPath.toFile().exists()) {
-      throw IllegalStateException("Service JAR not found at $serviceJarPath")
-    }
-    return serviceJarPath
+    return resolveLocalPathOrExtractFromClasspath(serviceJarPath)
   }
 
   /** Resolves the local path to the payload jar. */
   private fun getPayloadJarLocalPath(): Path {
-    if (!payloadJarPath.toFile().exists()) {
-      throw IllegalStateException("Payload JAR not found at $payloadJarPath")
+    return resolveLocalPathOrExtractFromClasspath(payloadJarPath)
+  }
+
+  private fun resolveLocalPathOrExtractFromClasspath(path: Path): Path {
+    if (path.toFile().exists()) {
+      // Use direct filesystem path when running from local builds, Bazel runfiles, or tests.
+      return path
     }
-    return payloadJarPath
+    val resourcePath = "/" + path.invariantSeparatorsPathString
+    return extractedResourcesCache.computeIfAbsent(resourcePath) { pathStr ->
+      val stream =
+        javaClass.getResourceAsStream(pathStr)
+          ?: throw IllegalStateException("File not found on filesystem at $path nor in classpath resources at $pathStr")
+      val prefix = "ui_inspector_${path.nameWithoutExtension}_"
+      val suffix = if (path.extension.isNotEmpty()) ".${path.extension}" else ".tmp"
+      val tempFile = Files.createTempFile(prefix, suffix)
+      tempFile.toFile().deleteOnExit()
+      stream.use { input -> Files.copy(input, tempFile, StandardCopyOption.REPLACE_EXISTING) }
+      tempFile
+    }
   }
 
   private suspend fun copyAndSetupFiles(
@@ -353,8 +368,10 @@ class InjectionManager(
     val remoteFileName = inspector.localJarPath.fileName.toString()
     val remoteTmpPath = "$DEVICE_TMP_INSPECTORS_DIR/$remoteFileName"
 
+    val actualLocalPath = resolveLocalPathOrExtractFromClasspath(inspector.localJarPath)
+
     // Push to tmp folder
-    pushFileToDevice(deviceSelector, inspector.localJarPath, remoteTmpPath)
+    pushFileToDevice(deviceSelector, actualLocalPath, remoteTmpPath)
 
     return remoteTmpPath
   }
@@ -377,6 +394,8 @@ class InjectionManager(
   }
 
   companion object {
+    /** Cache of resources extracted to temporary disk files, ensuring each resource is only extracted once per JVM lifecycle. */
+    private val extractedResourcesCache = ConcurrentHashMap<String, Path>()
     private val PACKAGE_NAME_REGEX = Regex("^[a-zA-Z0-9._]+$")
     private val SERIAL_REGEX = Regex("^[a-zA-Z0-9.:_-]+$")
 
