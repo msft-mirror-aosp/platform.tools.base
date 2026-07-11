@@ -42,6 +42,7 @@ kotlin_library(
     ]),
     visibility = [
         "//tools/adt/idea/as-driver:__subpackages__",
+        "//tools/vendor/google/android/remotedevices:__subpackages__",
         "//tools/vendor/google/directaccess-client:__subpackages__",
     ],
     deps = [
