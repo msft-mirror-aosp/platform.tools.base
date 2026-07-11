@@ -49,12 +49,10 @@ class SdkCommandLineToolsPackagingTest(private val platform: AndroidSdkCommandLi
         "cmdline-tools/bin/resourceshrinker$suffix",
         "cmdline-tools/bin/screenshot2$suffix",
         "cmdline-tools/bin/sdkmanager$suffix",
-        "cmdline-tools/bin/android${if (platform == AndroidSdkCommandLineToolsPlatform.WINDOWS) ".exe" else ""}",
         "cmdline-tools/NOTICE.txt",
         "cmdline-tools/source.properties",
         "cmdline-tools/lib/README",
-        "_codesign/filelist"
-          .takeIf { platform == AndroidSdkCommandLineToolsPlatform.MAC_X86_64 || platform == AndroidSdkCommandLineToolsPlatform.MAC_ARM64 },
+        "_codesign/filelist".takeIf { platform == AndroidSdkCommandLineToolsPlatform.MAC },
       )
 
     assertThat(entries.filter { !(it.startsWith("cmdline-tools/lib/") && it.endsWith(".jar")) })

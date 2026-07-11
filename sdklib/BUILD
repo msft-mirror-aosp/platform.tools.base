@@ -279,20 +279,6 @@ sdk_package(
         "//tools/base/misc/screenshot2:screenshot2",
         "//tools/base/profgen/profgen-cli:profgen",
     ],
-    platform_others = {
-        "linux": {
-            "@android_cli_linux//file": "cmdline-tools/bin/android",
-        },
-        "mac_x86_64": {
-            "@android_cli_mac_x86_64//file": "cmdline-tools/bin/android",
-        },
-        "mac_arm64": {
-            "@android_cli_mac_arm64//file": "cmdline-tools/bin/android",
-        },
-        "win": {
-            "@android_cli_win//file": "cmdline-tools/bin/android.exe",
-        },
-    },
     sourceprops = ":source.properties",
     visibility = ["//visibility:public"],
 )

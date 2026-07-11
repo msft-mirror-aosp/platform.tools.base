@@ -1,11 +1,8 @@
-"""Build rules for packaging the Android SDK."""
-
-load("@rules_java//java:defs.bzl", "JavaInfo", "java_binary", "java_library")
 load("@rules_license//rules_gathering:gather_metadata.bzl", "gather_metadata_info")
 load("@rules_license//rules_gathering:gathering_providers.bzl", "TransitiveMetadataInfo")
 load("//tools/base/bazel/sdk:sdk_utils.bzl", "calculate_jar_name_for_sdk_package", "tool_start_script")
 
-platforms = ["win", "linux", "mac_x86_64", "mac_arm64"]
+platforms = ["win", "linux", "mac"]
 
 def _generate_classpath_jar_impl(ctx):
     stamp = ctx.actions.declare_file(ctx.label.name + ".stamp.txt")
@@ -23,7 +20,7 @@ def _generate_classpath_jar_impl(ctx):
     mffile = ctx.actions.declare_file(ctx.attr.java_binary.label.name + "-manifest")
     ctx.actions.write(output = mffile, content = "Class-Path: \n " + " \n ".join(jars) + " \n")
     arguments = ["c", ctx.outputs.classpath_jar.path, "META-INF/MANIFEST.MF=" + mffile.path]
-    arguments.append("resources/stamp.txt=" + stamp.path)
+    arguments += ["resources/stamp.txt=" + stamp.path]
     outputs = [ctx.outputs.classpath_jar]
     ctx.actions.run(
         inputs = [mffile, stamp],
@@ -36,10 +33,10 @@ generate_classpath_jar = rule(
     implementation = _generate_classpath_jar_impl,
     attrs = {
         "java_binary": attr.label(allow_single_file = True, mandatory = True),
-        "_zipper": attr.label(default = Label("@bazel_tools//tools/zip:zipper"), cfg = "exec", executable = True),
+        "_zipper": attr.label(default = Label("@bazel_tools//tools/zip:zipper"), cfg = "host", executable = True),
         "_status_reader": attr.label(
             default = Label("//tools/base/bazel:status_reader"),
-            cfg = "exec",
+            cfg = "host",
             executable = True,
         ),
         "classpath_jar": attr.output(),
@@ -47,24 +44,14 @@ generate_classpath_jar = rule(
 )
 
 def sdk_java_binary(name, command_name = None, main_class = None, runtime_deps = [], default_jvm_opts = {}, visibility = None):
-    """Helper macro to define a Java binary target for the SDK.
-
-    Args:
-        name: The name of the target.
-        command_name: The name of the command if different from name.
-        main_class: The main class to run.
-        runtime_deps: Runtime dependencies.
-        default_jvm_opts: Default JVM options.
-        visibility: Visibility of the target.
-    """
     command_name = command_name if command_name else name
-    java_library(
+    native.java_library(
         name = command_name,
         runtime_deps = runtime_deps,
         javacopts = ["--release", "8"],
         visibility = visibility,
     )
-    java_binary(
+    native.java_binary(
         # Convenience for running through bazel during testing. Not used in release.
         name = command_name + "_binary",
         runtime_deps = [":" + command_name],
@@ -74,16 +61,11 @@ def sdk_java_binary(name, command_name = None, main_class = None, runtime_deps =
     classpath_jar = command_name + "-classpath.jar"
     generate_classpath_jar(java_binary = command_name, name = command_name + "-classpath", classpath_jar = classpath_jar, visibility = ["//visibility:public"])
     for platform in platforms:
-        jvm_opts = default_jvm_opts.get(platform)
-        if jvm_opts == None and platform.startswith("mac_"):
-            jvm_opts = default_jvm_opts.get("mac")
-        if jvm_opts == None:
-            jvm_opts = ""
         tool_start_script(
             name = name + "_wrapper_" + platform,
             platform = platform,
             command_name = command_name,
-            default_jvm_opts = jvm_opts,
+            default_jvm_opts = default_jvm_opts.get(platform) or "",
             main_class_name = main_class,
             classpath_jar = classpath_jar,
             visibility = visibility,
@@ -116,7 +98,7 @@ combine_licenses = rule(
     attrs = {
         "deps": attr.label_list(aspects = [gather_metadata_info]),
         "out": attr.output(mandatory = True),
-        "_combine_notices": attr.label(executable = True, cfg = "exec", default = Label("//tools/base/bazel/sdk:combine_notices")),
+        "_combine_notices": attr.label(executable = True, cfg = "host", default = Label("//tools/base/bazel/sdk:combine_notices")),
     },
 )
 
@@ -127,7 +109,7 @@ def _package_component_impl(ctx):
         file = bin.files.to_list()[0]
         prefix = ctx.attr.bin_prefix + "/" if ctx.attr.bin_prefix else ""
         args.append("%s%s=%s" % (prefix, file.basename, file.path))
-        inputs.append(file)
+        inputs += [file]
 
     runtime_jars = depset(transitive = [java_lib[JavaInfo].transitive_runtime_jars for java_lib in ctx.attr.java_libs])
     runtime_jar_names = {}
@@ -144,7 +126,7 @@ def _package_component_impl(ctx):
         else:
             prefix = ctx.attr.lib_prefix + "/" if ctx.attr.lib_prefix else ""
             args.append("%s%s=%s" % (prefix, name, jar.path))
-            inputs.append(jar)
+            inputs += [jar]
 
     if ctx.attr.merge_internal_jars and internal_jars:
         merged_jar = ctx.actions.declare_file(ctx.attr.merged_jar_name)
@@ -195,28 +177,19 @@ package_component = rule(
         "allow_duplicates": attr.bool(default = False),
         "_singlejar": attr.label(
             default = Label("@bazel_tools//tools/jdk:singlejar"),
-            cfg = "exec",
+            cfg = "host",
             executable = True,
         ),
         "_zipper": attr.label(
             default = Label("@bazel_tools//tools/zip:zipper"),
-            cfg = "exec",
+            cfg = "host",
             executable = True,
         ),
     },
     outputs = {"out": "%{name}.zip"},
 )
 
-def sdk_package(name, binaries, sourceprops, visibility, platform_others = {}):
-    """Packages the SDK and handles platform-specific files.
-
-    Args:
-        name: The name of the package.
-        binaries: The binaries to include.
-        sourceprops: The source properties file.
-        visibility: The visibility of the target.
-        platform_others: Optional dictionary mapping platforms to additional files.
-    """
+def sdk_package(name, binaries, sourceprops, visibility):
     combine_licenses(name = name + "_combined_licenses", out = "NOTICE.txt", deps = binaries)
     for platform in platforms:
         others = {
@@ -225,11 +198,8 @@ def sdk_package(name, binaries, sourceprops, visibility, platform_others = {}):
             "README.libs": "cmdline-tools/lib/README",
         }
 
-        if platform.startswith("mac"):
+        if platform == "mac":
             others["macos_codesign_filelist.txt"] = "_codesign/filelist"
-
-        # Merge platform-specific files
-        others.update(platform_others.get(platform, {}))
 
         package_component(
             name = "%s_%s" % (name, platform),

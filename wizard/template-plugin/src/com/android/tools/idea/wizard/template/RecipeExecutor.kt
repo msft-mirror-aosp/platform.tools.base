@@ -68,15 +68,6 @@ interface RecipeExecutor {
   fun addPlugin(pluginId: String, classpathModule: String, version: String)
 
   /**
-   * Adds a plugin declaration to the root project's build.gradle[.kts] file with `apply false`, and registers the plugin in the version
-   * catalog if it exists.
-   */
-  @Deprecated(
-    message = "Only intended for use in Multiplatform Module/Project templates to bootstrap plugin declarations. Avoid general use."
-  )
-  fun addPluginDeclaration(pluginId: String, classpathModule: String, version: String)
-
-  /**
    * Adds "plugins { id '`plugin`' }" statement to the [module] build.gradle[.kts] file and if settings.gradle[.kts] has a
    * `pluginManagement` block, it also adds "plugins { id '`plugin`' version '`revision`'}" statement to the project top level
    * build.gradle[.kts] file.

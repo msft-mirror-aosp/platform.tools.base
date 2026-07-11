@@ -1,5 +1,3 @@
-"""Utility functions for Android SDK packaging."""
-
 # Creates a filegroup for a given platform directory in the Android SDK.
 #
 # It excludes files that are not necessary for testing
@@ -44,7 +42,7 @@ def _sdk_glob(platform, include, exclude):
         exclude = [platform + "/" + name for name in exclude],
     )
 
-def _expand_template_impl(ctx):
+def expand_template_impl(ctx):
     jar_name = calculate_jar_name_for_sdk_package(ctx.attr.classpath_jar.files.to_list()[0].short_path)
     lib_path = "%APP_HOME%\\lib\\" if ctx.attr.is_windows else "$APP_HOME/lib/"
     jar_path = lib_path + jar_name
@@ -57,7 +55,7 @@ def _expand_template_impl(ctx):
     )
 
 expand_template = rule(
-    implementation = _expand_template_impl,
+    implementation = expand_template_impl,
     attrs = {
         "template": attr.label(mandatory = True, allow_single_file = True),
         "substitutions": attr.string_dict(mandatory = True),
@@ -69,11 +67,10 @@ expand_template = rule(
 
 def tool_start_script(name, platform, command_name, main_class_name, classpath_jar, default_jvm_opts, visibility):
     is_windows = platform == "win"
-    template_platform = "mac" if platform.startswith("mac") else platform
     expand_template(
         name = name,
         visibility = visibility,
-        template = "//tools/base/bazel/sdk/resources:" + template_platform + "_start_script",
+        template = "//tools/base/bazel/sdk/resources:" + platform + "_start_script",
         out = platform + "/" + command_name + (".bat" if is_windows else ""),
         substitutions = {
             "${COMMAND_NAME}": command_name,
@@ -87,13 +84,6 @@ def tool_start_script(name, platform, command_name, main_class_name, classpath_j
     )
 
 def calculate_jar_name_for_sdk_package(path):
-    """Calculates the relative layout path of the jar file within the SDK package.
-
-    Args:
-        path: The Bazel short_path of the jar file.
-    Returns:
-        The relative installation/layout path within the SDK package.
-    """
     path = path.replace("/libtools.", "/", 1)
     if path.endswith("-classpath.jar"):
         return path[path.rfind("/") + 1:]
@@ -103,7 +93,6 @@ def calculate_jar_name_for_sdk_package(path):
             return sdk_jar_prefix_to_zip_location[prefix] + path[len(prefix):]
     fail("Unknown path mapping for jar " + path)
 
-# buildifier: disable=external-path
 sdk_jar_prefix_to_zip_location = {
     "prebuilts/r8/": "",
     "prebuilts/tools/common/m2/repository/": "external/",
