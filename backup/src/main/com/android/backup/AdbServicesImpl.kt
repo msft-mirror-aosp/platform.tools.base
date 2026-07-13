@@ -56,7 +56,7 @@ internal class AdbServicesImpl(
       }
 
     if (logger.isDebugEnabled) {
-      logger.debug("Executed on `$serialNumber`: '$command' ${output.describe()}")
+      logger.debug("Executed on '$serialNumber': '$command' ${output.describe()}")
       // Log each line separately, so it shows up in the log file with the complete prefix
       output.describe().lines().filter { it.isNotEmpty() }.forEach { logger.debug("  $it") }
     }

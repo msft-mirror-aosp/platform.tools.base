@@ -80,10 +80,10 @@ abstract class AbstractAdbServices(
     return when (last) {
       "Initialization result: 0" -> true
       "Initialization result: -1000" -> {
-        logger.warn("Failed to initialize '$transport`: $out")
+        logger.warn("Failed to initialize '$transport': $out")
         false
       }
-      else -> throw BackupException(TRANSPORT_INIT_FAILED, "Failed to initialize '$transport`: $out")
+      else -> throw BackupException(TRANSPORT_INIT_FAILED, "Failed to initialize '$transport': $out")
     }
   }
 
@@ -99,7 +99,7 @@ abstract class AbstractAdbServices(
       throw BackupException(APP_STOPPED, "Application '$applicationId' is in a stopped state. Please launch the app and try again.")
     }
     val errorCode = if (initOk) BMGR_ERROR_BACKUP else TRANSPORT_INIT_FAILED
-    val message = "Failed to backup '$applicationId`:\n${errors.joinToString("\n") { it.message }}"
+    val message = "Failed to backup '$applicationId':\n${errors.joinToString("\n") { it.message }}"
     throw BackupException(errorCode, message, BmgrException(command, out, errors))
   }
 
@@ -120,7 +120,7 @@ abstract class AbstractAdbServices(
       return
     }
     val errorCode = if (initOk) BMGR_ERROR_RESTORE else TRANSPORT_INIT_FAILED
-    val message = "Failed to restore '$applicationId`:\n${errors.joinToString("\n") { it.message }}"
+    val message = "Failed to restore '$applicationId':\n${errors.joinToString("\n") { it.message }}"
     throw BackupException(errorCode, message, BmgrException(command, out, errors))
   }
 
