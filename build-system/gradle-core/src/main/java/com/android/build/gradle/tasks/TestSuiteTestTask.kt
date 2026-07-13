@@ -45,8 +45,6 @@ import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask.
 import com.android.build.gradle.internal.tasks.GlobalTask
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationAction
 import com.android.build.gradle.internal.tasks.getApkFiles
-import com.android.build.gradle.internal.test.report.ReportType
-import com.android.build.gradle.internal.test.report.TestReport
 import com.android.build.gradle.internal.test.report.XMLReportAggregator
 import com.android.build.gradle.internal.test.report.processTestReportAggregation
 import com.android.build.gradle.internal.testing.TestData
@@ -170,8 +168,6 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
   @get:Input @get:Optional abstract val shardCount: Property<Int>
 
   @get:Internal abstract val avdService: Property<AvdComponentsBuildService>
-
-  @get:Input @get:Optional abstract val reportAggregationSupport: Property<Boolean>
 
   @Input
   override fun getIgnoreFailures(): Boolean {
@@ -414,7 +410,7 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
           """
           .trimIndent()
 
-      if (reportAggregationSupport.isPresent && reportAggregationSupport.get() && xmlResultsDirectory.isPresent) {
+      if (xmlResultsDirectory.isPresent) {
         processTestReportAggregation(
           testResultsDir,
           xmlResultsDirectory,
@@ -424,11 +420,9 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
           this.testSuiteTarget.get(),
           logger,
         )
+
         val aggregator = XMLReportAggregator(listOf(xmlResultsDirectory.get().asFile), this.modulePath.get())
         aggregator.writeReport(htmlOutputDirFile)
-      } else {
-        val report = TestReport(ReportType.SINGLE_FLAVOR, testResultsDir, htmlOutputDirFile)
-        report.generateReport()
       }
 
       // Also write metadata to coverage directory so that the coverage collection task can identify the suite
@@ -845,8 +839,6 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       task.legacyTestReportingRedirectionEnabled.setDisallowChanges(
         task.project.providers.gradleProperty(LegacyReportingTestSuiteTestTask.ENABLE_UTP_REPORTING_PROPERTY).orNull?.toBoolean() ?: false
       )
-
-      task.reportAggregationSupport.setDisallowChanges(creationConfig.services.projectOptions.get(BooleanOption.REPORT_AGGREGATION_SUPPORT))
     }
 
     override fun handleProvider(taskProvider: TaskProvider<LegacyReportingTestSuiteTestTask>) {
@@ -958,8 +950,6 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
           creationConfig.services.projectInfo.getReportsDir().map { it.dir("${BuilderConstants.FD_ANDROID_TESTS}/$subFolder") }
         )
       }
-
-      task.reportAggregationSupport.setDisallowChanges(creationConfig.services.projectOptions.get(BooleanOption.REPORT_AGGREGATION_SUPPORT))
     }
 
     override fun handleProvider(taskProvider: TaskProvider<LegacyReportingTestSuiteTestTask>) {
@@ -1097,7 +1087,6 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       task.testSuiteTarget.setDisallowChanges(device.name)
       task.testedVariantName.setDisallowChanges(variantName)
       task.modulePath.setDisallowChanges(creationConfig.services.projectInfo.path)
-      task.reportAggregationSupport.setDisallowChanges(creationConfig.services.projectOptions.get(BooleanOption.REPORT_AGGREGATION_SUPPORT))
 
       task.deviceProviderFactory.timeOutInMs.setDisallowChanges(globalConfig.installationOptions.timeOutInMs)
 

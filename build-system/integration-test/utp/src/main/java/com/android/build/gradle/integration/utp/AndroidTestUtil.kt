@@ -155,7 +155,7 @@ class AndroidTestUtil(
 
     executor.run(testTaskName)
 
-    assertThat(project.resolve(testReportPath)).exists()
+    verifyReport()
     assertThat(resolveTestResultPbPath()).exists()
     assertThat(project.resolve(testCoverageXmlPath)).contains("""<method name="stubFuncForTestingCodeCoverage" desc="()V" line="9">""")
     assertThat(project.resolve(testCoverageXmlPath)).contains("""<counter type="INSTRUCTION" missed="3" covered="5"/>""")
@@ -224,7 +224,7 @@ class AndroidTestUtil(
 
     executor.expectFailure().run(testTaskName)
 
-    assertThat(project.resolve(testReportPath)).exists()
+    verifyReport()
     assertThat(resolveTestResultPbPath()).exists()
   }
 
@@ -284,7 +284,7 @@ class AndroidTestUtil(
 
     executor.run(testTaskName)
 
-    assertThat(project.resolve(testReportPath)).exists()
+    verifyReport()
     assertThat(resolveTestResultPbPath()).exists()
   }
 
@@ -298,7 +298,7 @@ class AndroidTestUtil(
 
     executor.run(testTaskName)
 
-    assertThat(project.resolve(testReportPath)).exists()
+    verifyReport()
     assertThat(resolveTestResultPbPath()).exists()
     assertThat(project.resolve(testCoverageXmlPath)).contains("""<method name="stubFuncForTestingCodeCoverage" desc="()V" line="9">""")
     assertThat(project.resolve(testCoverageXmlPath)).contains("""<counter type="INSTRUCTION" missed="3" covered="5"/>""")
@@ -321,7 +321,7 @@ class AndroidTestUtil(
 
     executor.run(testTaskName)
 
-    assertThat(project.resolve(testReportPath)).exists()
+    verifyReport()
     assertThat(resolveTestResultPbPath()).exists()
   }
 
@@ -645,7 +645,7 @@ class AndroidTestUtil(
     executor.run(testTaskName)
 
     assertThat(project.resolve(testResultXmlPath)).exists()
-    assertThat(project.resolve(testReportPath)).exists()
+    verifyReport()
 
     val testResultPb = resolveTestResultPbPath()
     assertThat(testResultPb).exists()
@@ -665,7 +665,7 @@ class AndroidTestUtil(
     executor.run(testTaskName)
 
     assertThat(project.resolve(testResultXmlPath)).exists()
-    assertThat(project.resolve(testReportPath)).exists()
+    verifyReport()
     assertThat(resolveTestResultPbPath()).exists()
   }
 
@@ -677,7 +677,7 @@ class AndroidTestUtil(
 
     executor.run(testTaskName)
 
-    assertThat(project.resolve(testReportPath)).exists()
+    verifyReport()
     assertThat(resolveTestResultPbPath()).exists()
   }
 
@@ -757,7 +757,7 @@ class AndroidTestUtil(
 
     val result = executor.withEnableInfoLogging(true).run(testTaskName)
 
-    assertThat(project.resolve(testReportPath)).exists()
+    verifyReport()
     assertThat(resolveTestResultPbPath()).exists()
 
     result.assertOutputContains("Running force AOT compilation (speed) for com.example.android.kotlin")
@@ -779,7 +779,7 @@ class AndroidTestUtil(
 
     executor.run(testTaskName)
 
-    assertThat(project.resolve(testReportPath)).exists()
+    verifyReport()
     assertThat(resolveTestResultPbPath()).exists()
     assertThat(project.resolve(testCoverageXmlPath))
       .contains("""<method name="stubDynamicFeature1FuncForTestingCodeCoverage" desc="()V" line="8">""")
@@ -797,7 +797,7 @@ class AndroidTestUtil(
 
     executor.run(testTaskName)
 
-    assertThat(project.resolve(testReportPath)).exists()
+    verifyReport()
     assertThat(resolveTestResultPbPath()).exists()
     assertThat(project.resolve(testCoverageXmlPath))
       .contains("""<method name="stubDynamicFeature1FuncForTestingCodeCoverage" desc="()V" line="8">""")
@@ -839,7 +839,7 @@ class AndroidTestUtil(
     val reportDir = customReportDir ?: project.resolve(testReportPath).parent
     val reportFile = project.resolve(testReportPath)
 
-    if (enableReportAggregation) {
+    if (enableReportAggregation || runWithBuiltInPlatform) {
       assertThat(reportDir.resolve("index.html")).exists()
       assertThat(reportDir.resolve("script.js")).exists()
       assertThat(reportDir.resolve("styles.css")).exists()

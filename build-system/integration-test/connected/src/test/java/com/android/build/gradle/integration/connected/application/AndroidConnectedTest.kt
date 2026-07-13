@@ -195,7 +195,7 @@ class AndroidConnectedTest(val runWithBuiltInPlatform: Boolean) {
       assertThat(it).contains("<UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>")
       assertThat(it).contains("</UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>")
     }
-    assertThat(util.project.resolve(util.testReportPath)).exists()
+    util.verifyReport()
     assertThat(util.project.resolve(util.testResultPbPath)).exists()
 
     // Run the task again after clean. This time the task configuration is
@@ -222,7 +222,7 @@ class AndroidConnectedTest(val runWithBuiltInPlatform: Boolean) {
       assertThat(it).contains("<UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>")
       assertThat(it).contains("</UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>")
     }
-    assertThat(util.project.resolve(util.testReportPath)).exists()
+    util.verifyReport()
     assertThat(util.project.resolve(util.testResultPbPath)).exists()
     val timeTaken = System.currentTimeMillis() - startTime
     benchmark.log("connectedAndroidTestWithUtpTestResultListener_time", timeTaken)
@@ -249,7 +249,7 @@ class AndroidConnectedTest(val runWithBuiltInPlatform: Boolean) {
       assertThat(it).doesNotContain("<UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>")
       assertThat(it).doesNotContain("</UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>")
     }
-    assertThat(util.project.resolve(util.testReportPath)).exists()
+    util.verifyReport()
     assertThat(util.project.resolve(util.testResultPbPath)).exists()
     val timeTaken = System.currentTimeMillis() - startTime
     benchmark.log("connectedAndroidTestWithUtpTestResultListenerAndTestReportingDisabled_time", timeTaken)
@@ -285,7 +285,7 @@ class AndroidConnectedTest(val runWithBuiltInPlatform: Boolean) {
     // If it doesn't, JacocoReportTask will fail with "Unknown block type".
     util.executor.run(util.testTaskName)
 
-    assertThat(util.project.resolve(util.testReportPath)).exists()
+    util.verifyReport()
     assertThat(util.project.resolve(util.testCoverageXmlPath)).exists()
 
     // Verify the corrupted file is gone from the device.
