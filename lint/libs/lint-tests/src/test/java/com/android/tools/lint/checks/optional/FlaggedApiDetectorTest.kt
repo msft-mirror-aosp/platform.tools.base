@@ -1822,6 +1822,75 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
       .run()
       .expectClean()
   }
+
+  fun testClassLiteralInFlagCheck() {
+    val apiXml =
+      """
+      <api version="4">
+        <class name="java/lang/Object" since="2">
+          <method name="&lt;init>()V"/>
+        </class>
+        <class name="test/api/MyApi" since="10000">
+          <extends name="java/lang/Object"/>
+          <method name="&lt;init>()V"/>
+        </class>
+      </api>
+      """
+        .trimIndent()
+
+    ApiLookupTest.runLintWithCustomLookup(
+        apiXml,
+        false,
+        {
+          super.lint()
+            .files(
+              java(
+                  """
+                package test.api;
+                import android.annotation.RequiresFlag;
+                import com.example.foobar.Flags;
+
+                @RequiresFlag(Flags.FLAG_FOOBAR)
+                public class MyApi {
+                }
+                """
+                )
+                .indented(),
+              java(
+                  """
+                package test.pkg;
+                import test.api.MyApi;
+                import com.example.foobar.Flags;
+
+                public class Test {
+                  public void test() {
+                    if (Flags.foobar()) {
+                      Object o = MyApi.class; // OK
+                    }
+                  }
+                }
+                """
+                )
+                .indented(),
+              java(
+                  """
+                package com.example.foobar;
+
+                public class Flags {
+                    public static final String FLAG_FOOBAR = "com.example.foobar.foobar";
+                    public static boolean foobar() { return true; }
+                }
+                """
+                )
+                .indented(),
+              requiresFlagAnnotationStub,
+            )
+        },
+        FlaggedApiDetector.ISSUE,
+        ApiDetector.UNSUPPORTED,
+      )
+      .expectClean()
+  }
 }
 
 private val flaggedApiAnnotationStub: TestFile =
