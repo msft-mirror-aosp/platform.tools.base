@@ -291,7 +291,8 @@ private suspend fun fetchAndMergeComposeTrees(
         skipSystemComposables = skipSystemComposables,
       )
     if (composeResult != null) {
-      val (roots, stringsMap) = composeResult
+      val stringsMap = composeResult.stringsList.associate { it.id to it.str }
+      val roots = composeResult.rootsList
 
       val composeParameters =
         if (fetchComposeDetails) {

@@ -51,7 +51,7 @@ internal suspend fun queryComposeTree(
   rootViewId: Long,
   includeParameters: Boolean,
   skipSystemComposables: Boolean,
-): Pair<List<LayoutInspectorComposeProtocol.ComposableRoot>, Map<Int, String>>? {
+): LayoutInspectorComposeProtocol.GetComposablesResponse? {
   val getComposablesCmd =
     LayoutInspectorComposeProtocol.Command.newBuilder()
       .setGetComposablesCommand(
@@ -75,10 +75,7 @@ internal suspend fun queryComposeTree(
     return null
   }
 
-  // TODO return GetComposablesResponse directly, like we do for queryComposeParameters
-  val getCompResp = composeResponse.getComposablesResponse
-  val stringsMap = getCompResp.stringsList.associate { it.id to it.str }
-  return Pair(getCompResp.rootsList, stringsMap)
+  return composeResponse.getComposablesResponse
 }
 
 /** Queries the Compose inspector on the agent for the parameters of all active Composable views in a root layout tree. */
