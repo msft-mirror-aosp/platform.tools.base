@@ -137,47 +137,28 @@ public class TestGroup {
 
     static void addManifestClassPath(String jarPath, Queue<String> existingPaths)
             throws IOException {
-        if (jarPath.endsWith(".jar")) {
-            File file = new File(jarPath);
-            try (ZipFile zipFile = new ZipFile(file)) {
-                ZipEntry entry = zipFile.getEntry("META-INF/MANIFEST.MF");
-                if (entry != null) {
-                    try (InputStream is = zipFile.getInputStream(entry)) {
-                        Manifest manifest = new Manifest(is);
-                        Attributes attributes = manifest.getMainAttributes();
-                        String cp = attributes.getValue("Class-Path");
-                        if (cp != null) {
-                            String[] paths = cp.split(" ");
-                            for (String path : paths) {
-                                File absoluteFile;
-                                if (path.startsWith("file:")) {
-                                    try {
-                                        absoluteFile = new File(new URI(path));
-                                    } catch (URISyntaxException e) {
-                                        absoluteFile = new File(path);
-                                    }
-                                } else {
-                                    absoluteFile = new File(path);
-                                }
-                                if (absoluteFile.exists()) {
-                                    existingPaths.add(absoluteFile.getAbsolutePath());
-                                } else {
-                                    File relFile = null;
-                                    if (!path.startsWith("file:")) {
-                                        relFile = new File(file.getParentFile(), path);
-                                    }
-                                    if (relFile != null && relFile.exists()) {
-                                        existingPaths.add(relFile.getAbsolutePath());
-                                    } else {
-                                        System.err.println(
-                                                "Cannot find class-path jar: "
-                                                        + path
-                                                        + " referenced from "
-                                                        + file.getName());
-                                    }
-                                }
-                            }
-                        }
+        // https://docs.oracle.com/en/java/javase/25/docs/specs/jar/jar.html#class-path-attribute.
+        File file = new File(jarPath);
+        if (!file.isFile()) return;
+        try (ZipFile zipFile = new ZipFile(file)) {
+            ZipEntry entry = zipFile.getEntry("META-INF/MANIFEST.MF");
+            if (entry == null) return;
+            try (InputStream is = zipFile.getInputStream(entry)) {
+                Manifest manifest = new Manifest(is);
+                String cp = manifest.getMainAttributes().getValue("Class-Path");
+                if (cp == null) return;
+                URI baseUri = file.toURI();
+                for (String path : cp.split("\\s+")) {
+                    if (path.isEmpty()) continue;
+                    File resolvedFile = new File(baseUri.resolve(path));
+                    if (resolvedFile.isFile()) {
+                        existingPaths.add(resolvedFile.getAbsolutePath());
+                    } else {
+                        System.err.println(
+                                "Cannot find class-path jar: "
+                                + path
+                                + " referenced from "
+                                + file.getName());
                     }
                 }
             }

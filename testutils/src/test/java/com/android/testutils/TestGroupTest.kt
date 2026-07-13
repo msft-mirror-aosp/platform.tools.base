@@ -49,18 +49,6 @@ class TestGroupTest {
   @Test
   fun testValidAbsolutePath() {
     val absTarget = tmp.newFile("abs_target.jar")
-    val classPath = absTarget.absolutePath
-    val wrapperJar = createJarWithClassPath(classPath)
-    val existingPaths = ArrayDeque<String>()
-
-    TestGroup.addManifestClassPath(wrapperJar.absolutePath, existingPaths)
-
-    assertThat(existingPaths).containsExactly(absTarget.absolutePath)
-  }
-
-  @Test
-  fun testValidAbsolutePathWithPrefix() {
-    val absTarget = tmp.newFile("abs_target.jar")
     val classPath = absTarget.toURI().toURL().toString()
     assertThat(classPath).startsWith("file:")
     val wrapperJar = createJarWithClassPath(classPath)
