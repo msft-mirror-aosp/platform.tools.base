@@ -1,6 +1,7 @@
 load("@bazel_skylib//rules:common_settings.bzl", "bool_flag", "string_flag")
 load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("@npm_android_vsix//:defs.bzl", "npm_link_all_packages")
 load("@rules_java//java:defs.bzl", "java_binary", "java_library", "java_test")
 load("@rules_python//python:defs.bzl", "py_binary", "py_test")
 load("//tools/base/bazel:coverage.bzl", "coverage_java_test")
@@ -13,6 +14,26 @@ load("//tools/base/bazel:proto.bzl", "PROTOC_VERSION", "java_proto_library")
 load("//tools/base/bazel:utils.bzl", "java_jarjar")
 
 exports_files(["jarjar_rules.txt"])
+
+# Creates the virtual npm package store (.aspect_rules_js/node_modules) in this workspace
+# root package from pnpm-lock.yaml. Member packages (such as //tools/vendor/google/android-vsix)
+# resolve and link their dependencies from this central store.
+npm_link_all_packages(name = "node_modules")
+
+# Helper target to update tools/base/bazel/pnpm-lock.yaml when dependencies are added,
+# removed, or updated in member package.json files across the workspace.
+# Runs the hermetic pnpm binary managed by Bazel without requiring local Node.js or pnpm.
+# Usage:
+#   tools/base/bazel/bazel run //tools/base/bazel:pnpm_update
+# Or pass custom pnpm arguments:
+#   tools/base/bazel/bazel run //tools/base/bazel:pnpm_update -- audit
+py_binary(
+    name = "pnpm_update",
+    srcs = ["pnpm_update.py"],
+    data = ["@pnpm"],
+    main = "pnpm_update.py",
+    tags = ["no_windows"],
+)
 
 java_library(
     name = "utils",

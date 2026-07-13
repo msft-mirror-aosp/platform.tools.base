@@ -169,6 +169,43 @@ single_version_override(
     version = "1.69.0",
 )
 
+# rules for typescript + node support
+bazel_dep(name = "aspect_bazel_lib", version = "2.22.5")
+bazel_dep(name = "aspect_rules_js", version = "2.0.0")
+bazel_dep(name = "aspect_rules_ts", version = "3.0.0")
+bazel_dep(name = "rules_nodejs", version = "6.2.0")
+
+node = use_extension("@rules_nodejs//nodejs:extensions.bzl", "node", dev_dependency = True)
+node.toolchain(node_version = "20.14.0")
+use_repo(node, "nodejs_toolchains")
+
+npm = use_extension("@aspect_rules_js//npm:extensions.bzl", "npm", dev_dependency = True)
+npm.npm_translate_lock(
+    name = "npm_android_vsix",
+    bins = {
+        "vsce": ["vsce=vsce"],
+    },
+    npmrc = "//tools/base/bazel:.npmrc",
+    pnpm_lock = "//tools/base/bazel:pnpm-lock.yaml",
+)
+use_repo(
+    npm,
+    "npm_android_vsix",
+)
+
+pnpm = use_extension("@aspect_rules_js//npm:extensions.bzl", "pnpm", dev_dependency = True)
+pnpm.pnpm(
+    name = "pnpm",
+    pnpm_version = "9.7.0",
+)
+use_repo(pnpm, "pnpm")
+
+rules_ts_ext = use_extension("@aspect_rules_ts//ts:extensions.bzl", "ext", dev_dependency = True)
+rules_ts_ext.deps(
+    ts_version_from = "//tools/vendor/google/android-vsix:package.json",
+)
+use_repo(rules_ts_ext, "npm_typescript")
+
 # rules_apple is included by grpc, but override to a newer version to pick up
 # fixes for Bazel 8.
 single_version_override(
@@ -261,6 +298,7 @@ archive_override(
 )
 
 include("//tools/base/bazel/bzlmod:external.MODULE.bazel")
+
 # TODO(b/537756990): include("//tools/base/bazel/bzlmod:idea.MODULE.bazel")
 include("//tools/base/bazel/bzlmod:toolchains.MODULE.bazel")
 include("//tools/base/bazel/bzlmod:prebuilts.MODULE.bazel")

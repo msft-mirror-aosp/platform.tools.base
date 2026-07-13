@@ -35,6 +35,11 @@ common --experimental_enable_android_migration_apis
 # Exposes artifacts to Sponge.
 common --legacy_important_outputs
 
+# TypeScript support: aspect_rules_ts requires every workspace to explicitly declare
+# its skipLibCheck strategy in .bazelrc. "honor_tsconfig" means respecting whatever
+# skipLibCheck setting is configured inside each package's local tsconfig.json file.
+common --@aspect_rules_ts//ts:skipLibCheck=honor_tsconfig
+
 # JetBrainsRuntime version to bundle into Android Studio
 # and java runtime for running tests
 build:jbr25 --//prebuilts/studio/jdk:jdk_bundle_version=25
