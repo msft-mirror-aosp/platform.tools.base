@@ -52,6 +52,9 @@ public class SdkManagerCli {
     }
 
     private static void main(@NonNull List<String> args) throws CommandFailedException {
+        System.err.println("WARNING: The SDK Manager CLI tool (sdkmanager) is deprecated. Use Android CLI instead.");
+        System.err.println("The 'android' binary can also be found in the cmdline-tools directory, and 'android sdk' is the replacement for 'sdkmanager'.");
+        System.err.println("To learn more about the Android CLI and how to use it, see the documentation (https://d.android.com/tools/agents/android-cli)\n");
         SdkManagerCliSettings settings;
         try {
             settings = SdkManagerCliSettings.createSettings(args, FileSystems.getDefault());
