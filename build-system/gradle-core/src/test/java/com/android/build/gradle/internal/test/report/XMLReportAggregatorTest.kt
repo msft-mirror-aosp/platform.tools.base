@@ -472,4 +472,52 @@ class XMLReportAggregatorTest {
     // Assert that the parsed variants are sorted alphabetically
     assertThat(report.variants).containsExactly("variantA", "variantB", "variantC").inOrder()
   }
+
+  @Test
+  fun testGenerateReport_screenshotProperties() {
+    val xmlContent =
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <testsuite name="com.example.app.MyTestSuite" tests="1" failures="0" errors="0" skipped="0" time="0.1">
+          <properties>
+              <property name="testedVariantName" value="debug"/>
+              <property name="modulePath" value=":app"/>
+              <property name="testSuiteName" value="screenshotTest"/>
+          </properties>
+          <testcase name="testScreenshot" classname="com.example.app.MyScreenshotTest" time="0.1">
+              <properties>
+                  <property name="PreviewScreenshot.diffPercent" value="0.08"/>
+                  <property name="PreviewScreenshot.previewName" value="Phone"/>
+                  <property name="PreviewScreenshot.methodName" value="MessagesScreenPreview"/>
+                  <property name="PreviewScreenshot.refImagePath" value="path/to/ref.png"/>
+                  <property name="PreviewScreenshot.newImagePath" value="path/to/new.png"/>
+                  <property name="PreviewScreenshot.diffImagePath" value="path/to/diff.png"/>
+              </properties>
+          </testcase>
+      </testsuite>
+      """
+        .trimIndent()
+    createXmlReport(inputDir1, "screenshot-test-report.xml", xmlContent)
+
+    val aggregator = XMLReportAggregator(files = listOf(inputDir1), projectName = "ScreenshotProject")
+    val report = aggregator.generateReport()
+
+    val module = report.modules.first()
+    val pkg = module.packages.first()
+    val clazz = pkg.classes.first()
+    val testCase = clazz.testCases.first()
+
+    assertThat(testCase.name).isEqualTo("testScreenshot")
+
+    val suiteResult = testCase.testSuiteResults.find { it.testSuiteName == "screenshotTest" }
+    val variantResult = suiteResult?.variantResults?.get("debug")
+
+    assertThat(variantResult).isNotNull()
+    assertThat(variantResult?.diffPercent).isEqualTo("0.08")
+    assertThat(variantResult?.previewName).isEqualTo("Phone")
+    assertThat(variantResult?.methodName).isEqualTo("MessagesScreenPreview")
+    assertThat(variantResult?.refImagePath).isEqualTo("path/to/ref.png")
+    assertThat(variantResult?.newImagePath).isEqualTo("path/to/new.png")
+    assertThat(variantResult?.diffImagePath).isEqualTo("path/to/diff.png")
+  }
 }

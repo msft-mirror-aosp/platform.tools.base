@@ -73,8 +73,23 @@ data class ClassType(val name: String, val testSuiteSummaries: List<TestSuiteSum
  *
  * @property status The result status (e.g., "passed", "failed", "skipped").
  * @property stackTraceId The ID of the stack trace if the test failed, referencing [TestCase.commonStackTraces].
+ * @property diffPercent The percentage difference in the screenshot test.
+ * @property previewName The name of the preview used in the screenshot test.
+ * @property methodName The method name of the screenshot test.
+ * @property refImagePath The path to the reference image.
+ * @property newImagePath The path to the newly generated image.
+ * @property diffImagePath The path to the image showing the differences.
  */
-data class VariantTestResult(val status: String, val stackTraceId: String? = null)
+data class VariantTestResult(
+  val status: String,
+  val stackTraceId: String? = null,
+  val diffPercent: String? = null,
+  val previewName: String? = null,
+  val methodName: String? = null,
+  val refImagePath: String? = null,
+  val newImagePath: String? = null,
+  val diffImagePath: String? = null,
+)
 
 /**
  * Groups test results for a specific test suite within a test case.
