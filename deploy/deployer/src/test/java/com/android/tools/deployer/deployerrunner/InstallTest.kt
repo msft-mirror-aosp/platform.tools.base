@@ -1363,6 +1363,7 @@ class InstallTestTest : DeployRunnerTestBase() {
 
   @Test
   @Throws(Exception::class)
+  @ApiLevel.InRange(min = 21) // Requires adb shell EXEC support
   fun testDump() {
     AssumeUtil.assumeNotWindows() // This test runs the installer on the host
 
