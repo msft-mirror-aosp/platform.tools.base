@@ -420,9 +420,9 @@ _CLASS_JARS = [
     "androidx.savedstate:savedstate-ktx:1.3.2",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.savedstate:savedstate-ktx:1.3.3",
     "androidx.slice:slice-builders:1.0.0",
-    "androidx.sqlite:sqlite:2.5.0-beta01",  # Database Inspector
-    "androidx.sqlite:sqlite-bundled:2.5.0-beta01",  # Database Inspector
-    "androidx.sqlite:sqlite-bundled-jvm:2.5.0-beta01",  # Database Inspector
+    "androidx.sqlite:sqlite:2.7.0",  # Database Inspector
+    "androidx.sqlite:sqlite-bundled:2.7.0",  # Database Inspector
+    "androidx.sqlite:sqlite-bundled-jvm:2.7.0",  # Database Inspector
     "androidx.startup:startup-runtime:1.1.1",
     "androidx.test:core:1.3.0",  # TODO: To be removed once dependent tests pass b/273872043
     "androidx.test:core:1.4.0-alpha06",
@@ -1619,7 +1619,7 @@ _SOURCE_JARS = [
     "androidx.lifecycle:lifecycle-common-jvm:jar:sources:2.8.7",
     "androidx.lifecycle:lifecycle-runtime-desktop:jar:sources:2.8.7",
     "androidx.lifecycle:lifecycle-viewmodel-desktop:jar:sources:2.8.7",
-    "androidx.sqlite:sqlite-bundled-jvm:jar:sources:2.5.0-beta01",  # Database Inspector
+    "androidx.sqlite:sqlite-bundled-jvm:jar:sources:2.7.0",  # Database Inspector
     "com.agentclientprotocol:acp-jvm:jar:sources:0.24.0",
     "com.agentclientprotocol:acp-model-jvm:jar:sources:0.24.0",
     "com.anthropic:anthropic-java-core:jar:sources:2.26.0",

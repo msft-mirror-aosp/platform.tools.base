@@ -47999,64 +47999,64 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "androidx.sqlite.sqlite-android_2.5.0-beta01",
-    pom = "repository/androidx/sqlite/sqlite-android/2.5.0-beta01/sqlite-android-2.5.0-beta01.pom",
+    name = "androidx.sqlite.sqlite-android_2.7.0",
+    pom = "repository/androidx/sqlite/sqlite-android/2.7.0/sqlite-android-2.7.0.pom",
     repo_root_path = "repository",
-    repo_path = "androidx/sqlite/sqlite-android/2.5.0-beta01",
+    repo_path = "androidx/sqlite/sqlite-android/2.7.0",
     deps = [
-        "androidx.annotation.annotation-jvm_1.8.1",
-        "org.jetbrains.kotlin.kotlin-stdlib_2.1.10",
+        "androidx.annotation.annotation-jvm_1.9.1",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.20",
     ],
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "androidx.sqlite.sqlite-bundled-android_2.5.0-beta01",
-    pom = "repository/androidx/sqlite/sqlite-bundled-android/2.5.0-beta01/sqlite-bundled-android-2.5.0-beta01.pom",
+    name = "androidx.sqlite.sqlite-bundled-android_2.7.0",
+    pom = "repository/androidx/sqlite/sqlite-bundled-android/2.7.0/sqlite-bundled-android-2.7.0.pom",
     repo_root_path = "repository",
-    repo_path = "androidx/sqlite/sqlite-bundled-android/2.5.0-beta01",
+    repo_path = "androidx/sqlite/sqlite-bundled-android/2.7.0",
     deps = [
-        "androidx.sqlite.sqlite_2.5.0-beta01",
-        "org.jetbrains.kotlin.kotlin-stdlib_2.1.10",
+        "androidx.sqlite.sqlite-android_2.7.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.20",
     ],
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "androidx.sqlite.sqlite-bundled-jvm_2.5.0-beta01",
-    pom = "repository/androidx/sqlite/sqlite-bundled-jvm/2.5.0-beta01/sqlite-bundled-jvm-2.5.0-beta01.pom",
+    name = "androidx.sqlite.sqlite-bundled-jvm_2.7.0",
+    pom = "repository/androidx/sqlite/sqlite-bundled-jvm/2.7.0/sqlite-bundled-jvm-2.7.0.pom",
     repo_root_path = "repository",
-    repo_path = "androidx/sqlite/sqlite-bundled-jvm/2.5.0-beta01",
+    repo_path = "androidx/sqlite/sqlite-bundled-jvm/2.7.0",
     deps = [
-        "androidx.sqlite.sqlite_2.5.0-beta01",
-        "org.jetbrains.kotlin.kotlin-stdlib_2.1.10",
+        "androidx.sqlite.sqlite-jvm_2.7.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.20",
     ],
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "androidx.sqlite.sqlite-bundled_2.5.0-beta01",
-    pom = "repository/androidx/sqlite/sqlite-bundled/2.5.0-beta01/sqlite-bundled-2.5.0-beta01.pom",
+    name = "androidx.sqlite.sqlite-bundled_2.7.0",
+    pom = "repository/androidx/sqlite/sqlite-bundled/2.7.0/sqlite-bundled-2.7.0.pom",
     repo_root_path = "repository",
-    repo_path = "androidx/sqlite/sqlite-bundled/2.5.0-beta01",
+    repo_path = "androidx/sqlite/sqlite-bundled/2.7.0",
     deps = [
-        "androidx.sqlite.sqlite_2.5.0-beta01",
-        "org.jetbrains.kotlin.kotlin-stdlib_2.1.10",
-        "androidx.sqlite.sqlite-bundled-android_2.5.0-beta01",
-        "androidx.sqlite.sqlite-framework_2.5.0-beta01",
+        "androidx.sqlite.sqlite_2.7.0",
+        "androidx.sqlite.sqlite-bundled-android_2.7.0",
+        "androidx.sqlite.sqlite-framework_2.7.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.20",
     ],
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "androidx.sqlite.sqlite-framework-android_2.5.0-beta01",
-    pom = "repository/androidx/sqlite/sqlite-framework-android/2.5.0-beta01/sqlite-framework-android-2.5.0-beta01.pom",
+    name = "androidx.sqlite.sqlite-framework-android_2.7.0",
+    pom = "repository/androidx/sqlite/sqlite-framework-android/2.7.0/sqlite-framework-android-2.7.0.pom",
     repo_root_path = "repository",
-    repo_path = "androidx/sqlite/sqlite-framework-android/2.5.0-beta01",
+    repo_path = "androidx/sqlite/sqlite-framework-android/2.7.0",
     deps = [
-        "androidx.annotation.annotation-jvm_1.8.1",
-        "androidx.sqlite.sqlite_2.5.0-beta01",
-        "org.jetbrains.kotlin.kotlin-stdlib_2.1.10",
+        "androidx.annotation.annotation-jvm_1.9.1",
+        "androidx.sqlite.sqlite-android_2.7.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.20",
     ],
     visibility = ["//visibility:public"],
 )
@@ -48111,15 +48111,27 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "androidx.sqlite.sqlite-framework_2.5.0-beta01",
-    pom = "repository/androidx/sqlite/sqlite-framework/2.5.0-beta01/sqlite-framework-2.5.0-beta01.pom",
+    name = "androidx.sqlite.sqlite-framework_2.7.0",
+    pom = "repository/androidx/sqlite/sqlite-framework/2.7.0/sqlite-framework-2.7.0.pom",
     repo_root_path = "repository",
-    repo_path = "androidx/sqlite/sqlite-framework/2.5.0-beta01",
+    repo_path = "androidx/sqlite/sqlite-framework/2.7.0",
     deps = [
         "androidx.annotation.annotation_1.8.1",
-        "androidx.sqlite.sqlite_2.5.0-beta01",
-        "androidx.sqlite.sqlite-framework-android_2.5.0-beta01",
-        "org.jetbrains.kotlin.kotlin-stdlib_2.1.10",
+        "androidx.sqlite.sqlite_2.7.0",
+        "androidx.sqlite.sqlite-framework-android_2.7.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.20",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.sqlite.sqlite-jvm_2.7.0",
+    pom = "repository/androidx/sqlite/sqlite-jvm/2.7.0/sqlite-jvm-2.7.0.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/sqlite/sqlite-jvm/2.7.0",
+    deps = [
+        "androidx.annotation.annotation-jvm_1.9.1",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.20",
     ],
     visibility = ["//visibility:public"],
 )
@@ -48170,14 +48182,14 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "androidx.sqlite.sqlite_2.5.0-beta01",
-    pom = "repository/androidx/sqlite/sqlite/2.5.0-beta01/sqlite-2.5.0-beta01.pom",
+    name = "androidx.sqlite.sqlite_2.7.0",
+    pom = "repository/androidx/sqlite/sqlite/2.7.0/sqlite-2.7.0.pom",
     repo_root_path = "repository",
-    repo_path = "androidx/sqlite/sqlite/2.5.0-beta01",
+    repo_path = "androidx/sqlite/sqlite/2.7.0",
     deps = [
-        "androidx.annotation.annotation_1.8.1",
-        "androidx.sqlite.sqlite-android_2.5.0-beta01",
-        "org.jetbrains.kotlin.kotlin-stdlib_2.1.10",
+        "androidx.annotation.annotation_1.9.1",
+        "androidx.sqlite.sqlite-android_2.7.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.20",
     ],
     visibility = ["//visibility:public"],
 )
