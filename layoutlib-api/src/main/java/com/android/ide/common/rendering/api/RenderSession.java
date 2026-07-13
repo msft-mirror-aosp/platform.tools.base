@@ -91,6 +91,10 @@ public class RenderSession {
      * @return a {@link RecyclableImage} or null if the rendering failed.
      */
     public RecyclableImage getRecyclableImage() {
+        BufferedImage image = getImage();
+        if (image != null && image.getWidth() > 1 && image.getHeight() > 1) {
+            return RecyclableImage.create(image);
+        }
         return null;
     }
 
@@ -124,11 +128,10 @@ public class RenderSession {
     }
 
     /**
-     * Re-renders the layout as-is.
-     * In case of success, this should be followed by calls to {@link #getRootViews()} and
-     * {@link #getImage()} to access the result of the rendering.
+     * Re-renders the layout as-is. In case of success, this should be followed by calls to {@link
+     * #getRootViews()} and {@link #getRecyclableImage()} to access the result of the rendering.
      *
-     * This is equivalent to calling <code>render(SceneParams.DEFAULT_TIMEOUT)</code>
+     * <p>This is equivalent to calling <code>render(SceneParams.DEFAULT_TIMEOUT)</code>
      *
      * @return a {@link Result} indicating the status of the action.
      */
@@ -138,8 +141,8 @@ public class RenderSession {
 
     /**
      * Re-renders the layout as-is. In case of success, this should be followed by calls to {@link
-     * #getRootViews()} and {@link #getImage()} to access the result of the rendering. This call
-     * also allows triggering a forced measure.
+     * #getRootViews()} and {@link #getRecyclableImage()} to access the result of the rendering.
+     * This call also allows triggering a forced measure.
      *
      * <p>This is equivalent to calling <code>render(SceneParams.DEFAULT_TIMEOUT, forceMeasure)
      * </code>
@@ -152,17 +155,16 @@ public class RenderSession {
     }
 
     /**
-     * Re-renders the layout as-is, with a given timeout in case other renderings are being done.
-     * In case of success, this should be followed by calls to {@link #getRootViews()} and
-     * {@link #getImage()} to access the result of the rendering.
+     * Re-renders the layout as-is, with a given timeout in case other renderings are being done. In
+     * case of success, this should be followed by calls to {@link #getRootViews()} and {@link
+     * #getRecyclableImage()} to access the result of the rendering.
      *
-     * The {@link Bridge} is only able to inflate or render one layout at a time. There
-     * is an internal lock object whenever such an action occurs. The timeout parameter is used
-     * when attempting to acquire the lock. If the timeout expires, the method will return
-     * {@link Status#ERROR_TIMEOUT}.
+     * <p>The {@link Bridge} is only able to inflate or render one layout at a time. There is an
+     * internal lock object whenever such an action occurs. The timeout parameter is used when
+     * attempting to acquire the lock. If the timeout expires, the method will return {@link
+     * Status#ERROR_TIMEOUT}.
      *
      * @param timeout timeout for the rendering, in milliseconds.
-     *
      * @return a {@link Result} indicating the status of the action.
      */
     public Result render(long timeout) {
@@ -178,7 +180,6 @@ public class RenderSession {
      * is an internal lock object whenever such an action occurs. The timeout parameter is used
      * when attempting to acquire the lock. If the timeout expires, the method will return
      * {@link Status#ERROR_TIMEOUT}.
-     * @param timeout timeout for the measure call, in milliseconds.
      * @return a {@link Result} indicating the status of the action.
      */
     public Result measure() {
@@ -200,19 +201,18 @@ public class RenderSession {
     }
 
     /**
-     * Re-renders the layout as-is, with a given timeout in case other renderings are being done.
-     * In case of success, this should be followed by calls to {@link #getRootViews()} and
-     * {@link #getImage()} to access the result of the rendering.
-     * This call also allows triggering a forced measure.
+     * Re-renders the layout as-is, with a given timeout in case other renderings are being done. In
+     * case of success, this should be followed by calls to {@link #getRootViews()} and {@link
+     * #getRecyclableImage()} to access the result of the rendering. This call also allows
+     * triggering a forced measure.
      *
-     * The {@link Bridge} is only able to inflate or render one layout at a time. There
-     * is an internal lock object whenever such an action occurs. The timeout parameter is used
-     * when attempting to acquire the lock. If the timeout expires, the method will return
-     * {@link Status#ERROR_TIMEOUT}.
+     * <p>The {@link Bridge} is only able to inflate or render one layout at a time. There is an
+     * internal lock object whenever such an action occurs. The timeout parameter is used when
+     * attempting to acquire the lock. If the timeout expires, the method will return {@link
+     * Status#ERROR_TIMEOUT}.
      *
      * @param timeout timeout for the rendering, in milliseconds.
      * @param forceMeasure force running measure for the layout.
-     *
      * @return a {@link Result} indicating the status of the action.
      */
     public Result render(long timeout, boolean forceMeasure) {
