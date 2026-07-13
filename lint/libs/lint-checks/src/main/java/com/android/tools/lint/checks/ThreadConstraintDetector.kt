@@ -36,6 +36,7 @@ import com.android.tools.lint.checks.fx.utils.Encoder
 import com.android.tools.lint.checks.fx.utils.Encoder.Companion.adapt
 import com.android.tools.lint.checks.fx.utils.Lattice
 import com.android.tools.lint.client.api.JavaEvaluator
+import com.android.tools.lint.client.api.LintBaseline.Companion.stringsEquivalent
 import com.android.tools.lint.detector.api.Context
 import com.android.tools.lint.detector.api.Issue
 import com.android.tools.lint.detector.api.JavaContext
@@ -57,6 +58,7 @@ import org.jetbrains.uast.UMethod
 import org.jetbrains.uast.USwitchExpression
 import org.jetbrains.uast.getContainingUClass
 import org.jetbrains.uast.resolveToUElement
+import org.jetbrains.uast.util.isConstructorCall
 
 /**
  * An abstract thread detector parameterized by:
@@ -151,6 +153,11 @@ abstract class ThreadConstraintDetector<T : Enum<T>>(
           null -> context.report(violationIssue, context.locationOf(call), "Call fails thread requirements on arguments")
           else -> {
             assert(constraints.isNotEmpty())
+            fun requiring(inferredLower: ThreadConstraint<T>) =
+              when (inferredLower) {
+                lattice.NoThread -> UNSATISFIABLE_REQUIREMENT
+                else -> "is requiring $inferredLower"
+              }
             val concreteReasons = constraints.mapNotNull { failure ->
               when (val arg = paramToArg[failure.invocation.chain.first]) {
                 null -> null
@@ -164,9 +171,9 @@ abstract class ThreadConstraintDetector<T : Enum<T>>(
                     val (param, chain) = symCall.chain
                     when {
                       chain.size == 1 && chain.first().name == "invoke" ->
-                        "Argument at `$param` must run from $expectedUpper, but is requiring $inferredLower."
+                        "Argument at `$param` must run from $expectedUpper, but ${requiring(inferredLower)}."
                       else ->
-                        "Argument at `$param` must allow calling `${chain.joinToString(".") {"${it.name}()"}}` from $expectedUpper, but that call is requiring $inferredLower."
+                        "Argument at `$param` must allow calling `${chain.joinToString(".") {"${it.name}()"}}` from $expectedUpper, but that call ${requiring(inferredLower)}."
                     }
                   }
                 context.report(violationIssue, context.locationOf(call), message)
@@ -181,9 +188,9 @@ abstract class ThreadConstraintDetector<T : Enum<T>>(
                   val message =
                     when {
                       chain.size == 1 && chain.first().name == "invoke" ->
-                        "Argument must run from $expectedUpper, but is requiring $inferredLower"
+                        "Argument must run from $expectedUpper, but ${requiring(inferredLower)}"
                       else ->
-                        "Argument must allow calling `${chain.joinToString(".") {"${it.name}()"}}` from $expectedUpper, but that call is requiring $inferredLower"
+                        "Argument must allow calling `${chain.joinToString(".") {"${it.name}()"}}` from $expectedUpper, but that call ${requiring(inferredLower)}"
                     }
                   context.report(violationIssue, context.locationOf(arg), message)
                 }
@@ -225,23 +232,48 @@ abstract class ThreadConstraintDetector<T : Enum<T>>(
       }
       is Error.ConflictingInference -> {
         val baseAnn = error.conflictingBase.annotated
-        val baseStr =
-          when (val baseName = (error.conflictingBase.origin as? UMethod)?.getContainingUClass()?.javaPsi?.name) {
-            null -> "a super method"
-            else -> "super method `$baseName.${error.conflictingBase.origin.name}(…)`"
-          }
-
-        val message =
+        val requirement =
           when (error.inferredLowerBound) {
-            lattice.NoThread -> "Call has an unsatisfiable thread requirement, but $baseStr is allowing $baseAnn"
-            else -> "Call must be from ${error.inferredLowerBound}, but $baseStr is allowing $baseAnn"
+            lattice.NoThread -> "Call $UNSATISFIABLE_REQUIREMENT"
+            else -> "Call must be from ${error.inferredLowerBound}"
           }
 
-        context.report(violationIssue, context.locationOf(error.site), message)
+        val conflict =
+          when (val origin = error.conflictingBase.origin) {
+            is UCallExpression -> {
+              val callee =
+                when {
+                  origin.isConstructorCall() ->
+                    (origin.classReference?.resolvedName ?: origin.resolve()?.containingClass?.name)?.let { "constructor `$it`" }
+                  else -> (origin.methodName ?: origin.methodIdentifier?.name)?.let { "`$it`" }
+                } ?: "the call"
+              "the work passed to $callee is expected to run from $baseAnn"
+            }
+            else -> {
+              val baseStr =
+                when (val baseName = (origin as? UMethod)?.getContainingUClass()?.javaPsi?.name) {
+                  null -> "a super method"
+                  else -> "super method `$baseName.${origin.name}(…)`"
+                }
+              "$baseStr is allowing $baseAnn"
+            }
+          }
+
+        context.report(violationIssue, context.locationOf(error.site), "$requirement, but $conflict")
       }
     }
 
   private fun Context.locationOf(site: UElement) = client.getUastParser(project).createLocation(site)
+
+  override fun sameMessage(issue: Issue, new: String, old: String): Boolean {
+    // Keep matching baselines from before improvements addressing b/459895811
+    if (issue.id != violationIssue.id) return super.sameMessage(issue, new, old)
+    // An unsatisfiable requirement used to be spelled as requiring `@NoThread`
+    val reworded = old.replace(LEGACY_NO_THREAD_REQUIREMENT, UNSATISFIABLE_REQUIREMENT)
+    if (stringsEquivalent(reworded, new)) return true
+    val newExpected = CALLBACK_BODY_MESSAGE.find(new)?.groupValues?.get(1) ?: return false
+    return LEGACY_ARGUMENT_MESSAGE.findAll(old).any { stringsEquivalent(it.groupValues[1], newExpected) }
+  }
 
   override fun resolveAnnotations(
     context: JavaContext,
@@ -376,6 +408,20 @@ abstract class ThreadConstraintDetector<T : Enum<T>>(
   }
 
   companion object {
+    private const val UNSATISFIABLE_REQUIREMENT = "has an unsatisfiable thread requirement"
+
+    /** How [UNSATISFIABLE_REQUIREMENT] read before improvements to b/459895811 */
+    private const val LEGACY_NO_THREAD_REQUIREMENT = "is requiring `@NoThread`"
+
+    /** Whole-argument report before improvements to b/459895811. Group 1 is the expected thread. */
+    private val LEGACY_ARGUMENT_MESSAGE = Regex("""Argument (?:at \S+ )?must (?:run|allow calling \S+) from (.+?), but """)
+
+    /** Report on statement inside callback passed to an assumed callee. Group 1 is the expected thread. */
+    private val CALLBACK_BODY_MESSAGE =
+      Regex(
+        """^Call (?:must be from .+?|has an unsatisfiable thread requirement), but the work passed to .+ is expected to run from (.+)$"""
+      )
+
     /**
      * Adds assumptions on common concurrency utilities whose callbacks execute on some other thread.
      *

@@ -19,7 +19,9 @@ import com.android.tools.lint.checks.InferredThreadDetector.Thread
 import com.android.tools.lint.checks.infrastructure.LintDetectorTest
 import com.android.tools.lint.checks.infrastructure.TestLintTask
 import com.android.tools.lint.checks.infrastructure.TestMode
+import com.android.tools.lint.client.api.LintBaseline
 import com.google.common.truth.Truth
+import java.io.File
 
 @Suppress("LintDocExample")
 class InferredThreadDetectorTest : AbstractCheckTest() {
@@ -2991,6 +2993,84 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
       )
   }
 
+  fun `test lambda passed to method from different module`() {
+    val project1 =
+      project()
+        .files(
+          kotlin(
+              """
+              package module1
+              import androidx.annotation.UiThread
+
+              @UiThread fun onUi(f: () -> Unit) = f()
+              """
+                .trimIndent()
+            )
+            .indented(),
+          SUPPORT_ANNOTATIONS_JAR,
+        )
+
+    val project2 =
+      project()
+        .files(
+          kotlin(
+              """
+              package module2
+              import androidx.annotation.UiThread
+              import androidx.annotation.WorkerThread
+              import module1.onUi
+
+              @WorkerThread fun work() { }
+              @UiThread fun ui() { }
+
+              fun caller() {
+                onUi {
+                  work() // ERROR: pinpointed against the lambda's requirement
+                  ui() // OK
+                }
+              }
+              """
+                .trimIndent()
+            )
+            .indented(),
+          SUPPORT_ANNOTATIONS_JAR,
+        )
+        .dependsOn(project1)
+
+    lint()
+      // Windows CI runs only the default mode; force the partial one, which is checked separately
+      .testModes(TestMode.DEFAULT, TestMode.PARTIAL)
+      .projects(project1, project2)
+      // In global analysis the callee is indexed in the module, whose evolving summary can't
+      // soundly seed the lambda's inference, so the report stays on the whole argument. In
+      // partial analysis the callee's summary is a loaded, final result, so its constraint
+      // checks the lambda body statement by statement.
+      .expectIdenticalTestModeOutput(false)
+      .run()
+      .expect(
+        """
+        src/module2/test.kt:10: Error: Argument must run from @{Main,Ui}Thread, but has an unsatisfiable thread requirement [ThreadConstraint]
+          onUi {
+               ^
+        src/module2/test.kt:11: Error: Statement must run from @{Main,Ui}Thread, incompatible with earlier code that must run from @WorkerThread [ThreadConstraint]
+            work() // ERROR: pinpointed against the lambda's requirement
+            ^
+        2 errors
+        """
+          .trimIndent()
+      )
+      .expect(
+        """
+        src/module2/test.kt:11: Error: Call must be from @WorkerThread, but the work passed to onUi is expected to run from @{Main,Ui}Thread [ThreadConstraint]
+            work() // ERROR: pinpointed against the lambda's requirement
+            ~~~~~~
+        1 error
+        """
+          .trimIndent(),
+        testMode = TestMode.PARTIAL,
+      )
+  }
+
   /* Old tests from [ThreadDetectorTest] */
 
   fun testThreading() {
@@ -3285,13 +3365,172 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        src/test/pkg/MyActivity.kt:14: Error: Argument at x₀ must allow calling run() from @{Main,Ui}Thread, but that call is requiring @WorkerThread. [ThreadConstraint]
+        src/test/pkg/MyActivity.kt:14: Error: Call must be from @WorkerThread, but the work passed to runOnUiThread is expected to run from @{Main,Ui}Thread [ThreadConstraint]
                 runOnUiThread { worker() } // ERROR: the runnable runs on the UI thread
-                ~~~~~~~~~~~~~~~~~~~~~~~~~~
+                                ~~~~~~~~
         1 error
         """
           .trimIndent()
       )
+  }
+
+  fun testRunOnUiThreadSamConstructor() {
+    lint()
+      .files(
+        kotlin(
+            """
+            package test.pkg
+            import android.app.Activity
+            import androidx.annotation.WorkerThread
+
+            @WorkerThread fun worker() { }
+
+            class MyActivity : Activity() {
+                @WorkerThread
+                fun scheduleFromWorker() {
+                    runOnUiThread(Runnable { worker() }) // ERROR: pinpointed like a bare lambda
+                    runOnUiThread(Runnable { }) // OK
+                }
+            }
+            """
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/MyActivity.kt:10: Error: Call must be from @WorkerThread, but the work passed to runOnUiThread is expected to run from @{Main,Ui}Thread [ThreadConstraint]
+                runOnUiThread(Runnable { worker() }) // ERROR: pinpointed like a bare lambda
+                                         ~~~~~~~~
+        1 error
+        """
+          .trimIndent()
+      )
+  }
+
+  fun testRunOnUiThreadMatchesLegacyBaseline() {
+    // After b/459895811 fixed, old baseline holding the coarser report should still silence the new report
+    lint()
+      .files(
+        kotlin(
+            """
+            package test.pkg
+            import android.app.Activity
+            import androidx.annotation.UiThread
+            import androidx.annotation.WorkerThread
+
+            @WorkerThread fun worker() { }
+
+            class MyActivity : Activity() {
+                @WorkerThread
+                fun scheduleFromWorker() {
+                    runOnUiThread { worker() } // ERROR: the runnable runs on the UI thread
+                }
+            }
+            """
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .baseline(
+        xml(
+          "lint-baseline.xml",
+          """
+          <issues format="5">
+              <issue
+                  id="ThreadConstraint"
+                  message="Argument at `x₀` must allow calling `run()` from @{Main,Ui}Thread, but that call is requiring @WorkerThread."
+                  errorLine1="        runOnUiThread { worker() } // ERROR: the runnable runs on the UI thread"
+                  errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+                  <location
+                      file="src/test/pkg/MyActivity.kt"
+                      line="11"/>
+              </issue>
+          </issues>
+          """,
+        )
+      )
+      .run()
+      .expectClean()
+  }
+
+  fun testLegacyArgumentMessagesInBaselines() {
+    val baseline = LintBaseline(ToolsBaseTestLintClient(), File(""))
+    val issue = InferredThreadDetector.THREAD
+    val pinpointed = "Call must be from @WorkerThread, but the work passed to `runOnUiThread` is expected to run from @{Main,Ui}Thread"
+
+    // Both legacy forms, on the call and on the argument, with or without backticks
+    assertTrue(
+      baseline.sameMessage(
+        issue,
+        pinpointed,
+        "Argument at `x₀` must allow calling `run()` from @{Main,Ui}Thread, but that call is requiring @WorkerThread.",
+      )
+    )
+    assertTrue(baseline.sameMessage(issue, pinpointed, "Argument must run from @{Main,Ui}Thread, but is requiring @WorkerThread"))
+    // The legacy requirement was the whole callback's; the pinpointed one is a single statement's, so only the expectation is compared
+    assertTrue(baseline.sameMessage(issue, pinpointed, "Argument must run from @{Main,Ui}Thread, but is requiring `@NoThread`"))
+    assertTrue(
+      baseline.sameMessage(
+        issue,
+        "Call has an unsatisfiable thread requirement, but the work passed to `runOnUiThread` is expected to run from @{Main,Ui}Thread",
+        "Argument at `x₀` must run from @{Main,Ui}Thread, but is requiring @WorkerThread.",
+      )
+    )
+    // Several failing arguments used to be joined into one message
+    assertTrue(
+      baseline.sameMessage(
+        issue,
+        pinpointed,
+        "Argument at `x₀` must run from @WorkerThread, but is requiring @{Main,Ui}Thread. " +
+          "Argument at `x₁` must allow calling `run()` from @{Main,Ui}Thread, but that call is requiring @WorkerThread.",
+      )
+    )
+
+    // Different expected thread
+    assertFalse(
+      baseline.sameMessage(
+        issue,
+        pinpointed,
+        "Argument at `x₀` must allow calling `run()` from @WorkerThread, but that call is requiring @{Main,Ui}Thread.",
+      )
+    )
+
+    // An unsatisfiable requirement used to be spelled as requiring `@NoThread`, on the argument and on the whole call alike
+    assertTrue(
+      baseline.sameMessage(
+        issue,
+        "Argument must run from @{Main,Ui}Thread, but has an unsatisfiable thread requirement",
+        "Argument must run from @{Main,Ui}Thread, but is requiring `@NoThread`",
+      )
+    )
+    assertTrue(
+      baseline.sameMessage(
+        issue,
+        "Argument at `x₀` must allow calling `run()` from @{Main,Ui}Thread, but that call has an unsatisfiable thread requirement.",
+        "Argument at `x₀` must allow calling `run()` from @{Main,Ui}Thread, but that call is requiring `@NoThread`.",
+      )
+    )
+    assertFalse(
+      baseline.sameMessage(
+        issue,
+        "Argument must run from @{Main,Ui}Thread, but has an unsatisfiable thread requirement",
+        "Argument must run from @{Main,Ui}Thread, but is requiring @WorkerThread",
+      )
+    )
+
+    // Unrelated messages
+    assertFalse(baseline.sameMessage(issue, pinpointed, "Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread"))
+    assertFalse(
+      baseline.sameMessage(
+        issue,
+        "Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread",
+        "Argument at `x₀` must allow calling `run()` from @{Main,Ui}Thread, but that call is requiring @WorkerThread.",
+      )
+    )
   }
 
   fun testBaseAssumption_concurrencyUtils() {
@@ -3336,18 +3575,18 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        src/test/pkg/test.kt:16: Error: Argument at x₀ must run from @WorkerThread, but is requiring @{Main,Ui}Thread. [ThreadConstraint]
+        src/test/pkg/test.kt:16: Error: Call must be from @{Main,Ui}Thread, but the work passed to thread is expected to run from @WorkerThread [ThreadConstraint]
             thread { ui() } // ERROR
-            ~~~~~~~~~~~~~~~
-        src/test/pkg/test.kt:18: Error: Argument at x₀ must allow calling run() from @WorkerThread, but that call is requiring @{Main,Ui}Thread. [ThreadConstraint]
+                     ~~~~
+        src/test/pkg/test.kt:18: Error: Call must be from @{Main,Ui}Thread, but the work passed to constructor Thread is expected to run from @WorkerThread [ThreadConstraint]
             Thread { ui() }.start() // ERROR
-            ~~~~~~~~~~~~~~~
-        src/test/pkg/test.kt:20: Error: Argument at x₀ must allow calling run() from @WorkerThread, but that call is requiring @{Main,Ui}Thread. [ThreadConstraint]
+                     ~~~~
+        src/test/pkg/test.kt:20: Error: Call must be from @{Main,Ui}Thread, but the work passed to runAsync is expected to run from @WorkerThread [ThreadConstraint]
             CompletableFuture.runAsync { ui() } // ERROR
-                              ~~~~~~~~~~~~~~~~~
-        src/test/pkg/test.kt:25: Error: Argument at x₀ must allow calling run() from @WorkerThread, but that call is requiring @{Main,Ui}Thread. [ThreadConstraint]
-            timer.schedule(object : TimerTask() {
-                  ^
+                                         ~~~~
+        src/test/pkg/test.kt:26: Error: Call must be from @{Main,Ui}Thread, but the work passed to schedule is expected to run from @WorkerThread [ThreadConstraint]
+                override fun run() { ui() } // ERROR
+                                     ~~~~
         4 errors
         """
           .trimIndent()

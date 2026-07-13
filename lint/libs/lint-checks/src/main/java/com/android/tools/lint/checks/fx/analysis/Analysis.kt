@@ -71,6 +71,7 @@ import com.android.tools.lint.detector.api.asCall
 import com.android.tools.lint.detector.api.isImmutable
 import com.android.tools.lint.detector.api.nameFromSource
 import com.intellij.openapi.progress.ProgressManager
+import com.intellij.psi.LambdaUtil
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiClassType
 import com.intellij.psi.PsiEllipsisType
@@ -319,12 +320,16 @@ internal open class Analysis<FX : Any>(
                 }
               }
             }
-          is MethodBody.Status.ForInference ->
-            with(inferenceMode(status.base)) {
+          is MethodBody.Status.ForInference -> {
+            // Guards first: inference blames the first conflicting base, and the guards' call-anchored message should win
+            val guards = assumedObjectLiteralGuards(method)
+            val base = if (guards.isEmpty()) status.base else EffectAnnotation.Implicit(guards + status.base.nearestBaseAnnotations)
+            with(inferenceMode(base)) {
               val defaultParamFx = fxInferenceLattice.catchError { defaultParameterEffects() }
               val (t, fx) = inferenceLattice.catchError { eval(status.body) }
               Result(t, defaultParamFx join fx)
             }
+          }
         }
       }
       is Point.Instantiation -> instantiationLattice.catchError { point.subst.instType(rec, point.type) }
@@ -559,7 +564,10 @@ internal open class Analysis<FX : Any>(
 
       fun call(call: UCallExpression): Result<Type<FX>, R> {
         val method = call.resolveToUElement()
+        val samLambda = if (method == null) call.samConvertedLambda() else null
         return when {
+          // Kotlin's `Intf { … }` is the lambda, as far as effects go
+          samLambda != null -> loop(samLambda)
           // constructor call, with constructor definition missing or explicitly "default"
           call.isConstructorCall() && (method?.javaPsi as? PsiMethod)?.isDefaultConstructor != false -> pure(getType(call))
           method is UMethod -> {
@@ -745,18 +753,19 @@ internal open class Analysis<FX : Any>(
         }
         is ULambdaExpression -> {
           // TODO best effort resolving to right super-interface
-          val funIntf = resolvePossiblyAnnotatedSuperClass(e)
-          val mode =
-            when (funIntf) {
-              null -> unboundedInferenceMode
-              else ->
-                when (val status = module.getSAMStatus(funIntf)) {
-                  is MethodBody.Status.ForChecking -> inferenceMode(EffectAnnotation.Implicit(listOf(status.upperBound)))
-                  is MethodBody.Status.ForInference,
-                  is MethodBody.Status.Abstract -> unboundedInferenceMode
-                  is MethodBody.Status.BasicConstructor -> throw IllegalStateException()
-                }
+          val site = argumentSiteOf(e)
+          val funIntf = resolvePossiblyAnnotatedSuperClass(e, site)
+          val samBases =
+            when (val status = funIntf?.let(module::getSAMStatus)) {
+              is MethodBody.Status.ForChecking -> listOf(status.upperBound)
+              null,
+              is MethodBody.Status.ForInference,
+              is MethodBody.Status.Abstract -> emptyList()
+              is MethodBody.Status.BasicConstructor -> throw IllegalStateException()
             }
+          // The SAM interface's own annotation is an obligation on the lambda itself, which no callee summary shadows, so the assumed
+          // callee's bounds add to it rather than replace it.
+          val mode = inferenceMode(EffectAnnotation.Implicit(assumedMethodGuards(site) + samBases))
           val lambdaParams: List<Pair<String, Type<FX>>> =
             e.parameters.map {
               val param = it.javaPsi as PsiParameter
@@ -1331,23 +1340,56 @@ internal open class Analysis<FX : Any>(
       }
     }
 
-  private fun resolvePossiblyAnnotatedSuperClass(e: UExpression): ClassId? {
+  /** [e]'s enclosing call, with the callee and the parameter [e] is passed as resolved once, for the resolution-hungry helpers to share */
+  private fun argumentSiteOf(e: UExpression): ArgumentSite? {
+    val call = e.uastParent as? UCallExpression ?: return null
+    return if (call.samConvertedLambda() == e) argumentSiteOf(call) else ArgumentSite(call, e)
+  }
+
+  /** The lambda in Kotlin's `Intf { ... }`, which UAST presents as an unresolvable constructor call of the interface */
+  private fun UCallExpression.samConvertedLambda(): ULambdaExpression? {
+    if (!isConstructorCall() || resolve() != null) return null
+    val lambda = valueArguments.singleOrNull() as? ULambdaExpression ?: return null
+    return lambda.takeIf { (classReference?.resolve() as? PsiClass)?.isInterface == true }
+  }
+
+  private class ArgumentSite(val call: UCallExpression, arg: UExpression) {
+    val callee: PsiMethod? = call.resolve()
+    val param: PsiParameter? = call.getParameterForArgument(arg)
+
+    /** The callee as the module and assumption tables key it, or null when it can't be keyed (no containing class) */
+    val calleeRef: Type.MethodRef?
+      get() = callee?.takeIf { it.containingClass != null }?.let(Type<*>::MethodRef)
+
+    /** Position of the argument in the callee's assumption domain, which leads with the receiver for virtual callees */
+    val domainIndex: Int?
+      get() {
+        val ref = calleeRef ?: return null
+        val index = callee!!.parameterList.getParameterIndex(param ?: return null)
+        return if (index < 0) null else index + if (ref.method.isVirtual) 1 else 0
+      }
+
+    /** The single abstract method a lambda passed here implements, per the parameter's declared type */
+    val samMethod: MethodId?
+      get() = param?.type?.let(LambdaUtil::getFunctionalInterfaceMethod)?.let { MethodId(it) }
+  }
+
+  private fun resolvePossiblyAnnotatedSuperClass(e: UExpression, site: ArgumentSite? = argumentSiteOf(e)): ClassId? {
     fun typeOf(t: PsiType?) = (t as? PsiClassType)?.let(ClassId::of)
     fun default() =
       when {
         e is ULambdaExpression -> typeOf(e.functionalInterfaceType)
         else ->
           when (val parent = e.uastParent) {
-            is UCallExpression -> typeOf(parent.getParameterForArgument(e)?.type)
+            is UCallExpression -> typeOf(site?.param?.type)
             is ULocalVariable -> if (e.isDelegateOf(parent)) null else typeOf((parent.javaPsi as PsiVariable).type)
             else -> null
           }
       }
 
-    val call = e.uastParent as? UCallExpression ?: return default()
-    val param = call.getParameterForArgument(e) ?: return default()
-    val callee = call.resolve() ?: return typeOf(param.type)
-    val calleeRef = Type.MethodRef(callee)
+    if (site == null) return default()
+    val param = site.param ?: return default()
+    val calleeRef = site.calleeRef ?: return typeOf(param.type)
     val calleeHeader = module[calleeRef] ?: return typeOf(param.type)
     val paramBound =
       with(calleeHeader.initEnvironment) { types[boundParamNames[param.name] ?: return typeOf(param.type)] } ?: return typeOf(param.type)
@@ -1357,6 +1399,38 @@ internal open class Analysis<FX : Any>(
         bound.constructor as? ClassId.Guarded ?: typeOf(param.type)
       }
       else -> typeOf(param.type)
+    }
+  }
+
+  // Keyed on the overriding method's own descriptor, which also covers literals over abstract classes, where there's no SAM method to find
+  private fun assumedObjectLiteralGuards(method: MethodBody<FX>): List<EffectAnnotation.Explicit<FX>> {
+    val uMethod = method.source as? UMethod ?: return listOf()
+    val literal = uMethod.getContainingUClass()?.uastParent as? UObjectLiteralExpression ?: return listOf()
+    val site = argumentSiteOf(literal) ?: return listOf()
+    return assumedMethodGuards(site, MethodId(uMethod.javaPsi))
+  }
+
+  private fun assumedMethodGuards(site: ArgumentSite?, samMethod: MethodId? = site?.samMethod): List<EffectAnnotation.Explicit<FX>> {
+    val calleeRef = site?.calleeRef ?: return listOf()
+    val assumption = assumptions[calleeRef] ?: return listOf()
+    val domainIndex = site.domainIndex ?: return listOf()
+    val domain = assumption.domains.getOrNull(domainIndex) as? Type.Sym ?: return listOf()
+    val bounds = assumption.effect.constraint.concreteUpperbounds ?: return listOf()
+    // Constraint keys may be generated symbols standing for the actual invocations, via the template's substitution. A single step
+    // suffices for the templates built and loaded today; a longer `Name → Name` chain would only degrade to the whole-call report.
+    fun resolve(sym: Type.Sym<FX>): Type.Sym<FX> =
+      when (sym) {
+        is Type.Sym.Name -> (assumption.subst[sym] as? Type.Sym) ?: sym
+        else -> sym
+      }
+    return bounds.mapNotNull { (invocation, bound) ->
+      val resolved = resolve(invocation)
+      // A null `samMethod` (undeterminable SAM) degrades to matching on the receiver alone — all today's assumptions warrant
+      when {
+        resolved is Type.Sym.Invoke && resolve(resolved.receiver) == domain && (samMethod == null || resolved.method == samMethod) ->
+          EffectAnnotation.Explicit(bound, site.call)
+        else -> null
+      }
     }
   }
 
