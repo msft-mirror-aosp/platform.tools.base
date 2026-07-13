@@ -47,6 +47,14 @@ abstract class ShellHandler protected constructor(protected val shellProtocolTyp
     if (this.command != command) {
       return false
     }
+    if (shellProtocolType == ShellProtocolType.EXEC && device.buildVersionSdk.majorVersion < 21) {
+      return false
+    }
+    // TODO: Even though it is equivalent to use API level to check for shell_v2 the answer
+    //       should come from the list of features contained in [deviceState].
+    if (shellProtocolType == ShellProtocolType.SHELL_V2 && device.buildVersionSdk.majorVersion < 24) {
+      return false
+    }
     val split = args.trim().split(" ", limit = 2)
     val shellCommand = split[0]
     val shellCommandArgs = if (split.size > 1) split[1] else null
