@@ -343,6 +343,9 @@ enum class BooleanOption(
   /** When enabled, registers code coverage and test results aggregation tasks. */
   REPORT_AGGREGATION_SUPPORT("android.experimental.reportAggregationSupport", false, FeatureStage.Experimental),
 
+  /** When enabled, migrates test and coverage reports to the new format for individual suites. */
+  TEST_SUITE_NEW_REPORT_FORMAT("android.experimental.testSuite.newReportFormat", false, FeatureStage.Experimental),
+
   /** Temporary workaround to continue using R8 param of --main-dex-list */
   R8_MAIN_DEX_LIST_DISALLOWED(
     "android.r8.mainDexList.disallowed",
