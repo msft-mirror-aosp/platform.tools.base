@@ -443,7 +443,7 @@ def iml_module(
         visibility = [],
         module_visibility = [],
         exports = [],
-        jvm_target = "21",
+        jvm_target = "25",
         javacopts = [],
         javacopts_from_jps = [],
         kotlinc_opts = [],
