@@ -29,9 +29,7 @@ internal fun printTrackedChanges(samples: List<TimedUiDump>, includeAttributes: 
   System.out.println("--- Frame 1 (+0ms) ---")
   val firstSample = samples.first()
   firstSample.uiDump.configuration?.let { printDeviceConfiguration(it, firstSample.uiDump.stringTable) }
-  val firstDensityDpi = firstSample.uiDump.configuration?.density
-  val firstFontScale = firstSample.uiDump.configuration?.fontScale
-  firstSample.uiDump.roots.forEach { printUiTree(it, 0, includeAttributes, includeSemantics, firstDensityDpi, firstFontScale) }
+  firstSample.uiDump.roots.forEach { printUiTree(it, 0, includeAttributes, includeSemantics) }
   System.out.println()
 
   var prevSample = firstSample
@@ -47,9 +45,7 @@ internal fun printTrackedChanges(samples: List<TimedUiDump>, includeAttributes: 
       )
     printConfigurationDiff(configDiff)
     val diff = diffTrees(prevSample.uiDump.roots, sample.uiDump.roots)
-    val densityDpi = sample.uiDump.configuration?.density
-    val fontScale = sample.uiDump.configuration?.fontScale
-    printTreeDiff(diff, includeAttributes, includeSemantics, densityDpi, fontScale)
+    printTreeDiff(diff, includeAttributes, includeSemantics)
     System.out.println()
     prevSample = sample
   }
@@ -106,7 +102,7 @@ private fun formatFieldValue(fieldDescriptor: Descriptors.FieldDescriptor, value
 }
 
 /** Prints the added, removed, and modified nodes from a [TreeDiff] to the console. */
-private fun printTreeDiff(diff: TreeDiff, includeAttributes: Boolean, includeSemantics: Boolean, densityDpi: Int?, fontScale: Float?) {
+private fun printTreeDiff(diff: TreeDiff, includeAttributes: Boolean, includeSemantics: Boolean) {
   if (diff.added.isEmpty() && diff.removed.isEmpty() && diff.modified.isEmpty()) {
     System.out.println(" No changes")
     return
@@ -124,7 +120,7 @@ private fun printTreeDiff(diff: TreeDiff, includeAttributes: Boolean, includeSem
       if (includeAttributes) {
         when (node) {
           is UiNode.ViewNode -> {
-            node.attributes.forEach { attr -> System.out.println("  ${attr.format(densityDpi, fontScale)}") }
+            node.attributes.forEach { attr -> System.out.println("  ${attr.format()}") }
           }
           is UiNode.ComposeNode -> {
             node.parameters.forEach { param ->
@@ -145,7 +141,7 @@ private fun printTreeDiff(diff: TreeDiff, includeAttributes: Boolean, includeSem
       val node = mod.node
       System.out.println("  * ${node.formatHeader()} (id=${node.id})")
       mod.changes.forEach { change ->
-        val changeStr = formatNodeChange(node, change, densityDpi, fontScale)
+        val changeStr = formatNodeChange(node, change)
         System.out.println("   $changeStr")
       }
     }
@@ -153,7 +149,7 @@ private fun printTreeDiff(diff: TreeDiff, includeAttributes: Boolean, includeSem
 }
 
 /** Formats a single [NodeChange] (class, bounds, parent, or property changes) into a human-readable string. */
-internal fun formatNodeChange(node: UiNode, change: NodeChange, densityDpi: Int?, fontScale: Float?): String {
+internal fun formatNodeChange(node: UiNode, change: NodeChange): String {
   return when (change) {
     is NodeChange.ClassChange -> "class: ${change.oldClassName} -> ${change.newClassName}"
     is NodeChange.BoundsChange ->
@@ -165,27 +161,27 @@ internal fun formatNodeChange(node: UiNode, change: NodeChange, densityDpi: Int?
     }
     is NodeChange.PropertyChange.Removed -> {
       val prefix = if (node is UiNode.ComposeNode) "param" else "prop"
-      val valStr = formatRawPropertyValue(change.name, change.oldValue, densityDpi, fontScale)
+      val valStr = formatRawPropertyValue(change.name, change.oldValue)
       "$prefix: ${change.name} removed (was $valStr)"
     }
     is NodeChange.PropertyChange.Added -> {
       val prefix = if (node is UiNode.ComposeNode) "param" else "prop"
-      val valStr = formatRawPropertyValue(change.name, change.newValue, densityDpi, fontScale)
+      val valStr = formatRawPropertyValue(change.name, change.newValue)
       "$prefix: ${change.name}=$valStr added"
     }
     is NodeChange.PropertyChange.Modified -> {
       val prefix = if (node is UiNode.ComposeNode) "param" else "prop"
-      val oldStr = formatRawPropertyValue(change.name, change.oldValue, densityDpi, fontScale)
-      val newStr = formatRawPropertyValue(change.name, change.newValue, densityDpi, fontScale)
+      val oldStr = formatRawPropertyValue(change.name, change.oldValue)
+      val newStr = formatRawPropertyValue(change.name, change.newValue)
       "$prefix: ${change.name}=$oldStr -> $newStr"
     }
   }
 }
 
-internal fun formatRawPropertyValue(name: String, value: Any, densityDpi: Int?, fontScale: Float?): String {
+internal fun formatRawPropertyValue(name: String, value: Any): String {
   return when (value) {
     is UiNode.ComposeParameter -> formatComposeParameter(value)
-    is UiNode.AttributeValue -> value.format(name, densityDpi, fontScale)
+    is UiNode.AttributeValue -> value.format()
     else -> value.toString()
   }
 }

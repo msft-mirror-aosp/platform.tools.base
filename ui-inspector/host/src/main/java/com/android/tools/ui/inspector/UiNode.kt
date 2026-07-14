@@ -35,7 +35,7 @@ sealed class UiNode {
 
     data class ColorVal(val colorInt: Int) : AttributeValue()
 
-    data class DimensionVal(val value: Float) : AttributeValue()
+    data class DimensionVal(val value: Float, val dp: Float? = null, val sp: Float? = null) : AttributeValue()
 
     object NullVal : AttributeValue()
   }
