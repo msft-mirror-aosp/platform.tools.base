@@ -696,13 +696,7 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
 
                 // We map the FileCollection to a provider of the single valid directory to avoid passing multiple paths
                 layoutlibDataDir.set(
-                  task.project.layout.dir(
-                    extractedLayoutlib.elements.map { elements ->
-                      val dir = elements.firstOrNull { it.asFile.isDirectory && it.asFile.resolve("data").exists() }?.asFile
-                      requireNotNull(dir) { "Could not find extracted layoutlib-runtime with data directory" }
-                      dir
-                    }
-                  )
+                  task.project.layout.dir(extractedLayoutlib.elements.map { elements -> elements.firstOrNull()?.asFile })
                 )
               }
             }
@@ -716,7 +710,7 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
               task.project.objects.fileCollection().also { fc ->
                 creationConfig.sourceContainers.forEach { sc ->
                   if (sc.source is TestSuiteSourceSet.HostJar) {
-                    fc.from(sc.suiteSourceClasspath.hostRuntimeClasspath)
+                    fc.from(sc.suiteSourceClasspath.getHostRuntimeClasspathArtifacts(AndroidArtifacts.ArtifactType.CLASSES_JAR))
                   }
                 }
               }
