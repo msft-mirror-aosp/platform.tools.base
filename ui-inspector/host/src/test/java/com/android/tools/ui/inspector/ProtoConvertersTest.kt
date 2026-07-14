@@ -16,6 +16,7 @@
 
 package com.android.tools.ui.inspector
 
+import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol
 import com.google.common.truth.Truth.assertThat
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol
 import org.junit.Test
@@ -216,5 +217,41 @@ class ProtoConvertersTest {
     assertThat(pMap.isCollection).isFalse()
     assertThat(pMap.elements).hasSize(1)
     assertThat(formatComposeParameter(pMap)).isEqualTo("{key1=val1}")
+  }
+
+  @Test
+  fun testConvertViewNode_PrimitiveAttributes() {
+    val stringTable = mapOf(1 to "myView", 2 to "myCharAttr", 3 to "myIntAttr")
+
+    val viewNodeProto =
+      ViewInspectorProtocol.ViewNode.newBuilder()
+        .setId(100L)
+        .setClassName(1) // myView
+        .setBounds(ViewInspectorProtocol.Rect.newBuilder().setX(0).setY(0).setWidth(100).setHeight(100))
+        .addAttributes(
+          ViewInspectorProtocol.ViewNode.Attribute.newBuilder()
+            .setName(2) // myCharAttr
+            .setType(ViewInspectorProtocol.ViewNode.Attribute.Type.CHAR)
+            .setInt32Value(65) // 'A'
+        )
+        .addAttributes(
+          ViewInspectorProtocol.ViewNode.Attribute.newBuilder()
+            .setName(3) // myIntAttr
+            .setType(ViewInspectorProtocol.ViewNode.Attribute.Type.INT32)
+            .setInt32Value(42)
+        )
+        .build()
+
+    val viewNode = convertViewNode(viewNodeProto, stringTable)
+
+    assertThat(viewNode.attributes).hasSize(2)
+
+    val charAttr = viewNode.attributes[0]
+    assertThat(charAttr.name).isEqualTo("myCharAttr")
+    assertThat(charAttr.value).isEqualTo(UiNode.AttributeValue.StringVal("A"))
+
+    val intAttr = viewNode.attributes[1]
+    assertThat(intAttr.name).isEqualTo("myIntAttr")
+    assertThat(intAttr.value).isEqualTo(UiNode.AttributeValue.NumberVal(42))
   }
 }

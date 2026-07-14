@@ -25,7 +25,27 @@ sealed class UiNode {
 
   data class Bounds(val x: Int, val y: Int, val width: Int, val height: Int)
 
-  data class Attribute(val name: String, val value: String, val directSource: String? = null, val styleChain: List<String> = emptyList())
+  /** Represents a strongly-typed value for a [ViewNode] attribute. */
+  sealed class AttributeValue {
+    data class StringVal(val value: String) : AttributeValue()
+
+    data class BooleanVal(val value: Boolean) : AttributeValue()
+
+    data class NumberVal(val value: Number) : AttributeValue()
+
+    data class ColorVal(val colorInt: Int) : AttributeValue()
+
+    data class DimensionVal(val value: Float) : AttributeValue()
+
+    object NullVal : AttributeValue()
+  }
+
+  data class Attribute(
+    val name: String,
+    val value: AttributeValue,
+    val directSource: String? = null,
+    val styleChain: List<String> = emptyList(),
+  )
 
   /** Represents the location in the source code where a layout node is defined. */
   data class SourceLocation(val filename: String, val lineNumber: Int)

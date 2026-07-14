@@ -16,8 +16,17 @@
 
 package com.android.tools.ui.inspector
 
+import java.util.Locale
+
 /** Recursively walks and formats the unified UiNode layout tree to console. */
-internal fun printUiTree(node: UiNode, indent: Int, includeAttributes: Boolean, includeSemantics: Boolean) {
+internal fun printUiTree(
+  node: UiNode,
+  indent: Int,
+  includeAttributes: Boolean,
+  includeSemantics: Boolean,
+  densityDpi: Int?,
+  fontScale: Float?,
+) {
   if (indent == 0) {
     System.out.println("View Hierarchy:")
   }
@@ -28,7 +37,7 @@ internal fun printUiTree(node: UiNode, indent: Int, includeAttributes: Boolean, 
     is UiNode.ViewNode -> {
       if (includeAttributes) {
         node.attributes.forEach { attr ->
-          System.out.println("$prefix ${attr.format()}")
+          System.out.println("$prefix ${attr.format(densityDpi, fontScale)}")
 
           val sourceStr = attr.directSource ?: ""
           if (sourceStr.isNotEmpty()) {
@@ -70,7 +79,7 @@ internal fun printUiTree(node: UiNode, indent: Int, includeAttributes: Boolean, 
       }
     }
   }
-  node.children.forEach { printUiTree(it, indent + 1, includeAttributes, includeSemantics) }
+  node.children.forEach { printUiTree(it, indent + 1, includeAttributes, includeSemantics, densityDpi, fontScale) }
 }
 
 /** Recursively formats a rich ComposeParameter to its display string. */
@@ -139,9 +148,60 @@ internal fun UiNode.formatHeader(): String {
   }
 }
 
+/**
+ * Common platform dimension attributes mapped to sp. Hardcoded and non-exhaustive because PropertyMapper only exposes raw pixels and lacks
+ * unit metadata.
+ */
+private val DIMENSION_SP_ATTRIBUTES =
+  setOf(
+    "textSize",
+    "lineHeight",
+    "lineSpacingExtra",
+    "firstBaselineToTopHeight",
+    "lastBaselineToBottomHeight",
+    "titleTextSize",
+    "subtitleTextSize",
+    "tabTextSize",
+  )
+
+// TODO: it should not be responsibility of the printer to convert values to dp and sp
 /** Formats an attribute key-value pair consistently. */
-internal fun UiNode.Attribute.format(): String {
-  return "prop: $name=$value"
+internal fun UiNode.Attribute.format(densityDpi: Int?, fontScale: Float?): String {
+  return "prop: $name=${value.format(name, densityDpi, fontScale)}"
+}
+
+/** Formats an attribute value consistently. */
+internal fun UiNode.AttributeValue.format(name: String, densityDpi: Int?, fontScale: Float?): String {
+  return when (this) {
+    is UiNode.AttributeValue.StringVal -> value
+    is UiNode.AttributeValue.BooleanVal -> value.toString()
+    is UiNode.AttributeValue.ColorVal -> "#%08X".format(Locale.US, colorInt)
+    is UiNode.AttributeValue.DimensionVal -> {
+      val num = value
+      val px = num.toDouble()
+      val numStr = if (num % 1.0f == 0.0f) num.toInt().toString() else "%.2f".format(Locale.US, num)
+      if (densityDpi != null) {
+        val densityScale = densityDpi / 160.0
+        if (name in DIMENSION_SP_ATTRIBUTES) {
+          val scale = densityScale * (fontScale ?: 1.0f)
+          val sp = px / scale
+          val spStr = if (sp % 1.0 == 0.0) sp.toInt().toString() else "%.2f".format(Locale.US, sp)
+          "${numStr}px (${spStr}sp)"
+        } else {
+          val dp = px / densityScale
+          val dpStr = if (dp % 1.0 == 0.0) dp.toInt().toString() else "%.2f".format(Locale.US, dp)
+          "${numStr}px (${dpStr}dp)"
+        }
+      } else {
+        "${numStr}px"
+      }
+    }
+    is UiNode.AttributeValue.NumberVal -> {
+      val num = value
+      if (num is Double || num is Float) "%.2f".format(Locale.US, num.toDouble()) else num.toString()
+    }
+    UiNode.AttributeValue.NullVal -> ""
+  }
 }
 
 /** Formats a Compose parameter key-value pair consistently (returns empty if value is empty/null). */

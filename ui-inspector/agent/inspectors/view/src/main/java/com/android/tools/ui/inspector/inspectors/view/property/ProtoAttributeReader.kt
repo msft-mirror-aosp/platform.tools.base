@@ -95,11 +95,11 @@ internal class ProtoAttributeReader(
   }
 
   override fun readColor(id: Int, color: Long) {
-    emit(id, color)
+    emit(id, Color.toArgb(color))
   }
 
   override fun readColor(id: Int, color: Color?) {
-    emit(id, color)
+    emit(id, color?.toArgb())
   }
 
   override fun readGravity(id: Int, value: Int) {

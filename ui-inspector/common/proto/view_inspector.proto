@@ -51,16 +51,41 @@ message ViewNode {
 
     // Represents a key-value pair for a view property.
     message Attribute {
-        // TODO: mapping everything to strings has issues:
-        //  1. Everything is converted to string, even primitives like int
-        //  2. We loose the type of objects which can make things more difficult,
-        //     for example Dimension attributes are converted to strings without any
-        //     indication about the unit used (pixel, dp, sp)
-
         // Index in the string table for the attribute name
         int32 name = 1;
-        // Index in the string table for the attribute value
-        int32 value = 2;
+
+        enum Type {
+            UNSPECIFIED = 0;
+            STRING = 1;
+            BOOLEAN = 2;
+            BYTE = 3;
+            CHAR = 4;
+            DOUBLE = 5;
+            FLOAT = 6;
+            INT16 = 7;
+            INT32 = 8;
+            INT64 = 9;
+            OBJECT = 10;
+            COLOR = 11;
+            GRAVITY = 12;
+            INT_ENUM = 13;
+            INT_FLAG = 14;
+            RESOURCE = 15;
+            DRAWABLE = 16;
+            ANIM = 17;
+            ANIMATOR = 18;
+            INTERPOLATOR = 19;
+            DIMENSION = 20;
+        }
+        Type type = 2;
+
+        oneof value {
+            // string table index for STRING, raw value for INT32/BOOLEAN/COLOR
+            int32 int32_value = 101;
+            int64 int64_value = 102;
+            double double_value = 103;
+            float float_value = 104;
+        }
 
         // String table indices for style resolution stack (e.g., [@style/MyStyle, @style/ParentStyle])
         repeated int32 style_chain = 3;

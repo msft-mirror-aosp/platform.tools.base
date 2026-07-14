@@ -49,7 +49,7 @@ internal fun convertViewNode(node: ViewInspectorProtocol.ViewNode, stringTable: 
       val styleChain = attr.styleChainList.map { stringTable[it] ?: "unknown" }
       UiNode.Attribute(
         name = stringTable[attr.name] ?: "unknown",
-        value = if (attr.value == 0) "" else stringTable[attr.value] ?: "unknown",
+        value = attr.toAttributeValue(stringTable),
         directSource = directSource,
         styleChain = styleChain,
       )
@@ -64,6 +64,53 @@ internal fun convertViewNode(node: ViewInspectorProtocol.ViewNode, stringTable: 
     attributes = attributes,
     children = children,
   )
+}
+
+private fun ViewInspectorProtocol.ViewNode.Attribute.toAttributeValue(stringTable: Map<Int, String>): UiNode.AttributeValue {
+  return when (type) {
+    ViewInspectorProtocol.ViewNode.Attribute.Type.STRING -> {
+      UiNode.AttributeValue.StringVal(stringTable[int32Value] ?: "")
+    }
+    ViewInspectorProtocol.ViewNode.Attribute.Type.BOOLEAN -> {
+      UiNode.AttributeValue.BooleanVal(int32Value != 0)
+    }
+    ViewInspectorProtocol.ViewNode.Attribute.Type.INT32,
+    ViewInspectorProtocol.ViewNode.Attribute.Type.INT16,
+    ViewInspectorProtocol.ViewNode.Attribute.Type.BYTE -> {
+      UiNode.AttributeValue.NumberVal(int32Value)
+    }
+    ViewInspectorProtocol.ViewNode.Attribute.Type.CHAR -> {
+      UiNode.AttributeValue.StringVal(int32Value.toChar().toString())
+    }
+    ViewInspectorProtocol.ViewNode.Attribute.Type.INT64 -> {
+      UiNode.AttributeValue.NumberVal(int64Value)
+    }
+    ViewInspectorProtocol.ViewNode.Attribute.Type.DOUBLE -> {
+      UiNode.AttributeValue.NumberVal(doubleValue)
+    }
+    ViewInspectorProtocol.ViewNode.Attribute.Type.FLOAT -> {
+      UiNode.AttributeValue.NumberVal(floatValue)
+    }
+    ViewInspectorProtocol.ViewNode.Attribute.Type.DIMENSION -> {
+      UiNode.AttributeValue.DimensionVal(floatValue)
+    }
+    ViewInspectorProtocol.ViewNode.Attribute.Type.COLOR -> {
+      UiNode.AttributeValue.ColorVal(int32Value)
+    }
+    ViewInspectorProtocol.ViewNode.Attribute.Type.INT_ENUM,
+    ViewInspectorProtocol.ViewNode.Attribute.Type.GRAVITY,
+    ViewInspectorProtocol.ViewNode.Attribute.Type.INT_FLAG,
+    ViewInspectorProtocol.ViewNode.Attribute.Type.RESOURCE,
+    ViewInspectorProtocol.ViewNode.Attribute.Type.DRAWABLE,
+    ViewInspectorProtocol.ViewNode.Attribute.Type.ANIM,
+    ViewInspectorProtocol.ViewNode.Attribute.Type.ANIMATOR,
+    ViewInspectorProtocol.ViewNode.Attribute.Type.INTERPOLATOR,
+    ViewInspectorProtocol.ViewNode.Attribute.Type.OBJECT,
+    ViewInspectorProtocol.ViewNode.Attribute.Type.UNSPECIFIED -> {
+      UiNode.AttributeValue.StringVal(stringTable[int32Value] ?: "")
+    }
+    else -> UiNode.AttributeValue.NullVal
+  }
 }
 
 /**

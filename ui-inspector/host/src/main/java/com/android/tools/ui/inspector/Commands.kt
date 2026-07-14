@@ -253,7 +253,9 @@ internal suspend fun dumpUi(
   // Print output
   uiDump.appContext?.let { printAppContext(it, uiDump.stringTable) }
   uiDump.configuration?.let { printDeviceConfiguration(it, uiDump.stringTable) }
-  uiDump.roots.forEach { printUiTree(it, 0, includeAttributes, includeSemantics) }
+  val densityDpi = uiDump.configuration?.density
+  val fontScale = uiDump.configuration?.fontScale
+  uiDump.roots.forEach { printUiTree(it, 0, includeAttributes, includeSemantics, densityDpi, fontScale) }
 }
 
 private suspend fun fetchUiDump(
