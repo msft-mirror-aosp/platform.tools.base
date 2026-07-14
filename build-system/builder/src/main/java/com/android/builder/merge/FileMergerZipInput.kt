@@ -18,7 +18,7 @@ package com.android.builder.merge
 
 import com.android.zipflinger.ZipSource
 
-interface FileMergerInputNonIncremental : FileMergerInput {
+interface FileMergerZipInput : FileMergerInput {
 
   /**
    * Opens a path as a ZipFlinger source. Open must be called first.

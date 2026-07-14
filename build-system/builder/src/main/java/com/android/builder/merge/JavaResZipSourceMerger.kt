@@ -47,7 +47,7 @@ class JavaResZipSourceMerger(
         // Prefer returning as a ZipSource when possible unless compression is false for the input.
         // ZipSource allows for copy in place when merging zips and maintains compression level.
         // InputStream should be utilized only for entries that will be modified e.g. decompressed.
-        if (!compress || input !is FileMergerInputNonIncremental) {
+        if (!compress || input !is FileMergerZipInput) {
           action(MergedSourceResult.InputStream(input.openPath(path)))
         } else {
           action(MergedSourceResult.ZipSource(input.openAsZipSource(path)))
