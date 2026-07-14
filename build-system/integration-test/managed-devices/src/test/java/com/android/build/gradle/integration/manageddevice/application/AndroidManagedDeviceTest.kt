@@ -136,6 +136,21 @@ class AndroidManagedDeviceTest(val runWithBuiltInPlatform: Boolean) {
   }
 
   @Test
+  fun connectedAndroidTestFromTestOnlyModuleWithReportAggregation() {
+    util.connectedAndroidTestFromTestOnlyModuleWithNewReportFormat()
+  }
+
+  @Test
+  fun androidTestFromApplicationModuleWithReportAggregation() {
+    util.androidTestWithNewReportFormat()
+  }
+
+  @Test
+  fun androidTestFromLibraryModuleWithReportAggregation() {
+    util.androidTestFromLibraryModuleWithNewReportFormat()
+  }
+
+  @Test
   fun additionalTestOutputWithTestStorageService() {
     util.additionalTestOutputWithTestStorageService()
   }

@@ -373,7 +373,7 @@ class BackupServiceImplTest {
     assertThat(result)
       .isEqualTo(
         TRANSPORT_INIT_FAILED.asBackupResult(
-          "Failed to initialize 'com.google.android.gms/.backup.migrate.service.D2dTransport`: Initialization result: -100"
+          "Failed to initialize 'com.google.android.gms/.backup.migrate.service.D2dTransport': Initialization result: -100"
         )
       )
   }
@@ -426,7 +426,7 @@ class BackupServiceImplTest {
     assertThat(error.throwable.message)
       .isEqualTo(
         """
-        Failed to backup 'com.app`:
+        Failed to backup 'com.app':
         Backup was cancelled by either the user or backup service lifecycle.
         Backup failed for package: com.example.empty
         Backup operation failed.
@@ -479,7 +479,7 @@ class BackupServiceImplTest {
     assertThat(backupException.message)
       .isEqualTo(
         """
-        Failed to backup 'com.app`:
+        Failed to backup 'com.app':
         Backup was cancelled by either the user or backup service lifecycle.
         Backup failed for package: com.example.empty
         Backup operation failed.
@@ -912,7 +912,7 @@ class BackupServiceImplTest {
     assertThat(backupException.message)
       .isEqualTo(
         """
-        Failed to restore 'com.app`:
+        Failed to restore 'com.app':
         Signature of the app for which restore is called doesn't match the signature of the app corresponding to the backup.
         Restore operation failed
         """

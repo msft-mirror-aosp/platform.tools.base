@@ -12,6 +12,7 @@ import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.IntegerOption
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.FileUtils
+import com.google.common.truth.Truth
 import java.io.File
 import kotlin.io.path.pathString
 import org.gradle.api.Project
@@ -61,13 +62,68 @@ class SimpleManagedDeviceTest(val runWithBuiltInPlatform: Boolean) {
 
   private fun assertTestReportExists() {
     val reportDir =
-      FileUtils.join(rule.build.androidApplication().buildDir.pathString, "reports", "androidTests", "managedDevice", "debug", "device1")
+      File(
+        FileUtils.join(rule.build.androidApplication().buildDir.pathString, "reports", "androidTests", "managedDevice", "debug", "device1")
+      )
     assertThat(File(reportDir, "index.html")).exists()
     assertThat(File(reportDir, "com.example.android.kotlin.html")).exists()
     assertThat(File(reportDir, "com.example.android.kotlin.ExampleInstrumentedTest.html")).exists()
 
     val mergedTestReportDir =
-      FileUtils.join(rule.build.androidApplication().buildDir.pathString, "reports", "androidTests", "managedDevice", "debug", "allDevices")
+      File(
+        FileUtils.join(
+          rule.build.androidApplication().buildDir.pathString,
+          "reports",
+          "androidTests",
+          "managedDevice",
+          "debug",
+          "allDevices",
+        )
+      )
+    assertThat(File(mergedTestReportDir, "index.html")).exists()
+    assertThat(File(mergedTestReportDir, "com.example.android.kotlin.html")).exists()
+    assertThat(File(mergedTestReportDir, "com.example.android.kotlin.ExampleInstrumentedTest.html")).exists()
+  }
+
+  private fun verifyMetadataInjected(enabled: Boolean) {
+    val reportDir =
+      File(
+        FileUtils.join(rule.build.androidApplication().buildDir.pathString, "reports", "androidTests", "managedDevice", "debug", "device1")
+      )
+    assertThat(File(reportDir, "index.html")).exists()
+
+    val aggregationActive = enabled
+
+    if (aggregationActive) {
+      assertThat(File(reportDir, "data.js")).exists()
+      assertThat(File(reportDir, "script.js")).exists()
+      assertThat(File(reportDir, "styles.css")).exists()
+      assertThat(File(reportDir, "com.example.android.kotlin.html")).doesNotExist()
+
+      val dataJsContent = File(reportDir, "data.js").readText()
+      Truth.assertThat(dataJsContent).contains("const TEST_DATA_SOURCE = ")
+      Truth.assertThat(dataJsContent).contains("\"testSuites\"")
+      Truth.assertThat(dataJsContent).contains("\"androidTest\"")
+      Truth.assertThat(dataJsContent).contains("\"variants\"")
+      Truth.assertThat(dataJsContent).contains("\"debug\"")
+      Truth.assertThat(dataJsContent).contains("\"name\":\":app\"")
+      Truth.assertThat(dataJsContent).contains("\"name\":\"useAppContext\"")
+    } else {
+      assertThat(File(reportDir, "com.example.android.kotlin.html")).exists()
+      assertThat(File(reportDir, "com.example.android.kotlin.ExampleInstrumentedTest.html")).exists()
+    }
+
+    val mergedTestReportDir =
+      File(
+        FileUtils.join(
+          rule.build.androidApplication().buildDir.pathString,
+          "reports",
+          "androidTests",
+          "managedDevice",
+          "debug",
+          "allDevices",
+        )
+      )
     assertThat(File(mergedTestReportDir, "index.html")).exists()
     assertThat(File(mergedTestReportDir, "com.example.android.kotlin.html")).exists()
     assertThat(File(mergedTestReportDir, "com.example.android.kotlin.ExampleInstrumentedTest.html")).exists()
@@ -77,7 +133,7 @@ class SimpleManagedDeviceTest(val runWithBuiltInPlatform: Boolean) {
     val xmlDir = File(rule.build.androidApplication().buildDir.pathString, "outputs/androidTest-results/managedDevice/debug/device1")
     val xmlFiles =
       xmlDir.walkTopDown().filter { file -> file.isFile && file.name.startsWith("TEST-device1") && file.name.endsWith(".xml") }.toList()
-    com.google.common.truth.Truth.assertThat(xmlFiles).isNotEmpty()
+    Truth.assertThat(xmlFiles).isNotEmpty()
 
     val testPassed =
       xmlFiles.any { file ->
@@ -86,7 +142,7 @@ class SimpleManagedDeviceTest(val runWithBuiltInPlatform: Boolean) {
           content.contains("""failures="0"""") &&
           content.contains("""errors="0"""")
       }
-    com.google.common.truth.Truth.assertWithMessage("useAppContext test case not found or failed in XML reports").that(testPassed).isTrue()
+    Truth.assertWithMessage("useAppContext test case not found or failed in XML reports").that(testPassed).isTrue()
   }
 
   companion object {
@@ -101,6 +157,14 @@ class SimpleManagedDeviceTest(val runWithBuiltInPlatform: Boolean) {
 
     assertTestReportExists()
     assertTestPassedInReport()
+    verifyMetadataInjected(enabled = false)
+  }
+
+  @Test
+  fun runBasicManagedDeviceWithReportAggregation() {
+    val result = executor.with(BooleanOption.REPORT_AGGREGATION_SUPPORT, true).run(":app:device1DebugAndroidTest")
+
+    verifyMetadataInjected(enabled = true)
   }
 
   @Test

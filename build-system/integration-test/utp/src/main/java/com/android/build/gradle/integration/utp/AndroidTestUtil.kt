@@ -260,6 +260,23 @@ class AndroidTestUtil(
     assertThat(testSuiteResult.testResultList.any { it.testCase.testMethod == "useAppContext" }).isTrue()
   }
 
+  fun androidTestFromLibraryModuleWithNewReportFormat() {
+    selectModule("lib")
+
+    rule.build.reconfigureGradleProperties { add(BooleanOption.REPORT_AGGREGATION_SUPPORT, true) }
+
+    executor.run(testTaskName)
+
+    verifyReport(enableReportAggregation = true)
+
+    val testResultPb = resolveTestResultPbPath()
+    assertThat(testResultPb).exists()
+
+    val testSuiteResult = testResultPb.toFile().inputStream().use { TestSuiteResult.parseFrom(it) }
+    assertThat(testSuiteResult.testResultCount).isAtLeast(1)
+    assertThat(testSuiteResult.testResultList.any { it.testCase.testMethod == "useAppContext" }).isTrue()
+  }
+
   fun androidTestWithOrchestrator() {
     selectModule("app")
 

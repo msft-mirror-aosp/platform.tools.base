@@ -28,6 +28,7 @@ import com.android.build.gradle.internal.dsl.EmulatorControl
 import com.android.build.gradle.internal.dsl.ManagedVirtualDevice
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.InternalArtifactType
+import com.android.build.gradle.internal.scope.InternalMultipleArtifactType
 import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.test.AbstractTestDataImpl
@@ -35,6 +36,8 @@ import com.android.build.gradle.internal.test.recordCrashedInstrumentedTestRun
 import com.android.build.gradle.internal.test.recordOkInstrumentedTestRun
 import com.android.build.gradle.internal.test.report.ReportType
 import com.android.build.gradle.internal.test.report.TestReport
+import com.android.build.gradle.internal.test.report.XMLReportAggregator
+import com.android.build.gradle.internal.test.report.processTestReportAggregation
 import com.android.build.gradle.internal.testing.TestData
 import com.android.build.gradle.internal.testing.utp.ManagedDeviceTestRunner
 import com.android.build.gradle.internal.testing.utp.emulatorcontrol.createEmulatorControlConfig
@@ -43,6 +46,7 @@ import com.android.build.gradle.internal.testing.utp.resolveDependencies
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.IntegerOption
+import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.CONNECTED_TEST_TEST_SUITE_NAME
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.model.TestOptions
 import com.android.repository.Revision
@@ -185,6 +189,12 @@ abstract class ManagedDeviceInstrumentationTestTask : NonIncrementalTask(), Andr
   )
   fun setDisplayEmulatorOption(value: Boolean) = enableEmulatorDisplay.set(value)
 
+  @get:Optional @get:OutputDirectory abstract val xmlResultsDirectory: DirectoryProperty
+
+  @get:Input abstract val testReportAggregationEnabled: Property<Boolean>
+
+  @get:Input abstract val testedVariantName: Property<String>
+
   public override fun doTaskAction() {
     val device = device.get()
     DeviceProviderInstrumentTestTask.checkForNonApks(buddyApks.files) { message: String -> throw InvalidUserDataException(message) }
@@ -232,10 +242,28 @@ abstract class ManagedDeviceInstrumentationTestTask : NonIncrementalTask(), Andr
     val reportOutDir = getReportsDir().get().asFile
     FileUtils.cleanOutputDir(reportOutDir)
 
-    val report = TestReport(ReportType.SINGLE_FLAVOR, resultsOutDir, reportOutDir)
-    val results = report.generateReport()
+    val testCount: Int
+    if (testReportAggregationEnabled.getOrElse(false) && xmlResultsDirectory.isPresent) {
+      FileUtils.cleanOutputDir(xmlResultsDirectory.get().asFile)
+      processTestReportAggregation(
+        resultsOutDir,
+        xmlResultsDirectory,
+        projectPath.get(),
+        testedVariantName.get(),
+        CONNECTED_TEST_TEST_SUITE_NAME,
+        device.name,
+        logger,
+      )
+      val aggregator = XMLReportAggregator(listOf(xmlResultsDirectory.get().asFile), projectPath.get())
+      aggregator.writeReport(reportOutDir)
+      testCount = aggregator.getTestCount()
+    } else {
+      val report = TestReport(ReportType.SINGLE_FLAVOR, resultsOutDir, reportOutDir)
+      val results = report.generateReport()
+      testCount = results.testCount
+    }
 
-    recordOkInstrumentedTestRun(dependencies, testRunnerFactory.executionEnum.get(), false, results.testCount, analyticsService.get())
+    recordOkInstrumentedTestRun(dependencies, testRunnerFactory.executionEnum.get(), false, testCount, analyticsService.get())
 
     if (!success) {
       val reportUrl = ConsoleRenderer().asClickableFileUrl(File(reportOutDir, "index.html"))
@@ -289,6 +317,18 @@ abstract class ManagedDeviceInstrumentationTestTask : NonIncrementalTask(), Andr
           .on(InternalArtifactType.MANAGED_DEVICE_ANDROID_TEST_ADDITIONAL_OUTPUT)
       }
 
+      if (creationConfig is DeviceTestCreationConfig) {
+        creationConfig.mainVariant.artifacts
+          .use(taskProvider)
+          .wiredWith(ManagedDeviceInstrumentationTestTask::xmlResultsDirectory)
+          .toAppendTo(InternalMultipleArtifactType.TEST_SUITE_RESULTS)
+      } else {
+        creationConfig.artifacts
+          .use(taskProvider)
+          .wiredWith(ManagedDeviceInstrumentationTestTask::xmlResultsDirectory)
+          .toAppendTo(InternalMultipleArtifactType.TEST_SUITE_RESULTS)
+      }
+
       maybeCreateUtpConfigurations(creationConfig.services.configurations, creationConfig.services.dependencies)
     }
 
@@ -307,6 +347,9 @@ abstract class ManagedDeviceInstrumentationTestTask : NonIncrementalTask(), Andr
       val variantName = testedConfig?.name ?: creationConfig.name
 
       task.description = "Installs and runs the test for $variantName " + " on the managed device ${device.name}"
+
+      task.testReportAggregationEnabled.setDisallowChanges(projectOptions.get(BooleanOption.REPORT_AGGREGATION_SUPPORT))
+      task.testedVariantName.setDisallowChanges(variantName)
 
       task.device.setDisallowChanges(device)
 

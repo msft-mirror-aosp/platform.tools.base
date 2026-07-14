@@ -414,18 +414,17 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
           """
           .trimIndent()
 
-      processTestReportAggregation(
-        testResultsDir,
-        xmlResultsDirectory,
-        this.modulePath.get(),
-        this.testedVariantName.get(),
-        this.testSuiteName.get(),
-        this.testSuiteTarget.get(),
-        logger,
-      )
-
-      if (reportAggregationSupport.isPresent && reportAggregationSupport.get()) {
-        val aggregator = XMLReportAggregator(listOf(testResultsDir), this.modulePath.get())
+      if (reportAggregationSupport.isPresent && reportAggregationSupport.get() && xmlResultsDirectory.isPresent) {
+        processTestReportAggregation(
+          testResultsDir,
+          xmlResultsDirectory,
+          this.modulePath.get(),
+          this.testedVariantName.get(),
+          this.testSuiteName.get(),
+          this.testSuiteTarget.get(),
+          logger,
+        )
+        val aggregator = XMLReportAggregator(listOf(xmlResultsDirectory.get().asFile), this.modulePath.get())
         aggregator.writeReport(htmlOutputDirFile)
       } else {
         val report = TestReport(ReportType.SINGLE_FLAVOR, testResultsDir, htmlOutputDirFile)
@@ -989,6 +988,11 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
           .use(taskProvider)
           .wiredWith(TestSuiteTestTask::xmlResultsDirectory)
           .toAppendTo(InternalMultipleArtifactType.TEST_SUITE_RESULTS)
+      } else {
+        creationConfig.artifacts
+          .use(taskProvider)
+          .wiredWith(TestSuiteTestTask::xmlResultsDirectory)
+          .toAppendTo(InternalMultipleArtifactType.TEST_SUITE_RESULTS)
       }
 
       val artifacts =
@@ -1070,6 +1074,18 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
           .atLocation(additionalTestOutputDir.absolutePath)
           .on(InternalArtifactType.MANAGED_DEVICE_ANDROID_TEST_ADDITIONAL_OUTPUT)
       }
+
+      if (creationConfig is DeviceTestCreationConfig) {
+        creationConfig.mainVariant.artifacts
+          .use(taskProvider)
+          .wiredWith(TestSuiteTestTask::xmlResultsDirectory)
+          .toAppendTo(InternalMultipleArtifactType.TEST_SUITE_RESULTS)
+      } else {
+        creationConfig.artifacts
+          .use(taskProvider)
+          .wiredWith(TestSuiteTestTask::xmlResultsDirectory)
+          .toAppendTo(InternalMultipleArtifactType.TEST_SUITE_RESULTS)
+      }
     }
 
     override fun configure(task: LegacyReportingTestSuiteTestTask) {
@@ -1083,10 +1099,11 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       task.description = "Installs and runs the tests for $variantName on managed device ${device.name}."
       task.outputs.upToDateWhen { false }
 
-      task.testSuiteName.setDisallowChanges("androidTest")
+      task.testSuiteName.setDisallowChanges(CONNECTED_TEST_TEST_SUITE_NAME)
       task.testSuiteTarget.setDisallowChanges(device.name)
       task.testedVariantName.setDisallowChanges(variantName)
       task.modulePath.setDisallowChanges(creationConfig.services.projectInfo.path)
+      task.reportAggregationSupport.setDisallowChanges(creationConfig.services.projectOptions.get(BooleanOption.REPORT_AGGREGATION_SUPPORT))
 
       task.deviceProviderFactory.timeOutInMs.setDisallowChanges(globalConfig.installationOptions.timeOutInMs)
 
