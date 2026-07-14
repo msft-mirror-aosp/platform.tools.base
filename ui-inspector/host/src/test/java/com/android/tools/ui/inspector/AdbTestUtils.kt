@@ -86,16 +86,20 @@ class TestAdbDeviceServices(val delegate: FakeAdbDeviceServices) : AdbDeviceServ
 
       override suspend fun shutdown() {}
 
-      override suspend fun recv(remoteFilePath: String, destinationChannel: AdbOutputChannel, progress: SyncProgress?, bufferSize: Int) =
-        TODO()
+      override suspend fun recv(remoteFilePath: String, destinationChannel: AdbOutputChannel, progress: SyncProgress?, bufferSize: Int) {
+        throw NotImplementedError("Not needed for testing")
+      }
 
-      override suspend fun stat(remoteFilePath: String): FileStat? = TODO()
+      override suspend fun stat(remoteFilePath: String): FileStat? = throw NotImplementedError("Not needed for testing")
 
-      override fun list(remoteFilePath: String, options: AdbDeviceSyncServices.ListOptions): Flow<DirectoryEntry> = TODO()
+      override fun list(remoteFilePath: String, options: AdbDeviceSyncServices.ListOptions): Flow<DirectoryEntry> =
+        throw NotImplementedError("Not needed for testing")
 
-      override suspend fun statV2(remoteFilePath: String, options: AdbDeviceSyncServices.StatV2Options): FileStatV2 = TODO()
+      override suspend fun statV2(remoteFilePath: String, options: AdbDeviceSyncServices.StatV2Options): FileStatV2 =
+        throw NotImplementedError("Not needed for testing")
 
-      override fun listV2(remoteFilePath: String, options: AdbDeviceSyncServices.ListV2Options): Flow<DirectoryEntryV2> = TODO()
+      override fun listV2(remoteFilePath: String, options: AdbDeviceSyncServices.ListV2Options): Flow<DirectoryEntryV2> =
+        throw NotImplementedError("Not needed for testing")
 
       override fun close() {}
     }
