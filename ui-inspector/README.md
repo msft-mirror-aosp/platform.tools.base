@@ -282,8 +282,7 @@ remain unimplemented in the current version.
   device. The obvious downside is that an extra round trip to the device
   would be necessary.
 * Where should the code for the agent package live? Moving it to
-  `androidx` has the advantage of having testing infrastructure. TODO:
-  verify what we can realistically test.
+  `androidx` has the advantage of having testing infrastructure.
 
 ## Future of Layout Inspector - integrating CLI code into Android Studio
 
