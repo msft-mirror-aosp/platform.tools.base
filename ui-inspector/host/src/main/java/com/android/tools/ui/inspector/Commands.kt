@@ -20,6 +20,10 @@ import com.android.adblib.AdbHostServices
 import com.android.adblib.AdbSession
 import com.android.adblib.DeviceSelector
 import com.android.adblib.shellAsText
+import com.android.tools.ui.inspector.printer.printAppContext
+import com.android.tools.ui.inspector.printer.printDeviceConfiguration
+import com.android.tools.ui.inspector.printer.printTrackedChanges
+import com.android.tools.ui.inspector.printer.printUiTree
 import java.io.File
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds

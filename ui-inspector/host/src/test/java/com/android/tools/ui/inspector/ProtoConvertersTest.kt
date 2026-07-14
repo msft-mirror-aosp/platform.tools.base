@@ -16,6 +16,7 @@
 
 package com.android.tools.ui.inspector
 
+import com.android.tools.ui.inspector.printer.formatComposeParameter
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol
 import com.google.common.truth.Truth.assertThat
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol

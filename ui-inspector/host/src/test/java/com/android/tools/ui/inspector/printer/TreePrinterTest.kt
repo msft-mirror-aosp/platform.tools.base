@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package com.android.tools.ui.inspector
+package com.android.tools.ui.inspector.printer
 
+import com.android.tools.ui.inspector.NodeChange
+import com.android.tools.ui.inspector.UiNode
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 

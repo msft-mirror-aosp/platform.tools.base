@@ -14,8 +14,15 @@
  * limitations under the License.
  */
 
-package com.android.tools.ui.inspector
+package com.android.tools.ui.inspector.printer
 
+import com.android.tools.ui.inspector.ConfigurationDiff
+import com.android.tools.ui.inspector.NodeChange
+import com.android.tools.ui.inspector.TimedUiDump
+import com.android.tools.ui.inspector.TreeDiff
+import com.android.tools.ui.inspector.UiNode
+import com.android.tools.ui.inspector.createConfigurationDiff
+import com.android.tools.ui.inspector.diffTrees
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol
 import com.google.protobuf.Descriptors
 

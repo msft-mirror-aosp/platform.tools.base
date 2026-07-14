@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.android.tools.ui.inspector
+package com.android.tools.ui.inspector.printer
 
+import com.android.tools.ui.inspector.UiNode
 import java.util.Locale
 
 /** Recursively walks and formats the unified UiNode layout tree to console. */

@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package com.android.tools.ui.inspector
+package com.android.tools.ui.inspector.printer
 
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol
 
-// TODO: rename to ConfigurationPrinter.kt
 /** Converts a CamelCase string into a snake_case string. */
 internal fun String.camelToSnake(): String = buildString {
   for (char in this@camelToSnake) {
