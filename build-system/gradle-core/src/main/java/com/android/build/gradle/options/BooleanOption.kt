@@ -332,10 +332,10 @@ enum class BooleanOption(
     FutureStage(Version.VERSION_9_0, true, FeatureStage.Enforced(Version.VERSION_9_0)),
   ),
 
-  /** Switches Android Test execution from the Unified Test Platform (UTP) to the Android Test JUnit Engine. */
+  /** Switches Android Test execution from the Unified Test Platform (UTP) to the experimental direct-to-AGP implementation. */
   ANDROID_BUILTIN_TEST_PLATFORM(
     "android.experimental.androidTest.builtin_test_platform",
-    true,
+    false,
     FeatureStage.Experimental,
     futureStage = FutureStage(defaultValue = true, stage = FeatureStage.SoftlyEnforced(VERSION_10_0), version = Version.VERSION_9_0),
   ),
