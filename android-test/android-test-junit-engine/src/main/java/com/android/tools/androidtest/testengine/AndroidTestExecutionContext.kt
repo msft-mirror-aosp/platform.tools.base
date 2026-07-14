@@ -26,6 +26,7 @@ import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.INS
 import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.INSTRUMENTATION_ARGS
 import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.INSTRUMENTATION_RUNNER_CLASS
 import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.INSTRUMENTATION_TARGET_PACKAGE_ID
+import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.INSTRUMENT_IN_PCC
 import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.RESULTS_DIR
 import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.TESTED_APKS
 import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.TESTED_APPLICATION_ID
@@ -102,6 +103,7 @@ class AndroidTestConfiguration(request: ExecutionRequest) {
   val uninstallApksAfterTests: Boolean = get(UNINSTALL_AFTER_TESTS)?.toBoolean() ?: true
   val executionMode: String? = get(ANDROID_TEST_EXECUTION_MODE, AgpTestSuiteInput.ANDROID_TEST_EXECUTION_MODE)
   val animationsDisabled: Boolean = get(ANIMATIONS_DISABLED, AgpTestSuiteInput.ANIMATIONS_DISABLED)?.toBoolean() ?: false
+  val instrumentInPcc: Boolean = get(INSTRUMENT_IN_PCC)?.toBoolean() ?: false
 
   val instrumentationRunnerClass: String =
     get(INSTRUMENTATION_RUNNER_CLASS) ?: throw RuntimeException("$INSTRUMENTATION_RUNNER_CLASS configuration is required")

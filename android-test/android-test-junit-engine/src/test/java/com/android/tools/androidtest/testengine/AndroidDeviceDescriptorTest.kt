@@ -122,7 +122,7 @@ class AndroidDeviceDescriptorTest {
           EmulatorGrpcInfo(testPort, testToken)
         },
         adbApkInstallerFactory = { _, _, _, _, _ -> mockAdbApkInstaller },
-        instrumentationRunnerFactory = { _, serial, _, _, _, _, args, _, _ ->
+        instrumentationRunnerFactory = { _, serial, _, _, _, _, args, _, _, _ ->
           assertThat(serial).isEqualTo(deviceSerial)
           assertThat(args["grpc.port"]).isEqualTo(testPort.toString())
           assertThat(args["grpc.token"]).isEqualTo(testToken)
@@ -146,7 +146,7 @@ class AndroidDeviceDescriptorTest {
         deviceSerial,
         findGrpcInfoProvider = { throw RuntimeException("findGrpcInfoProvider should not be called when emulator control is disabled") },
         adbApkInstallerFactory = { _, _, _, _, _ -> mockAdbApkInstaller },
-        instrumentationRunnerFactory = { _, _, _, _, _, _, args, _, _ ->
+        instrumentationRunnerFactory = { _, _, _, _, _, _, args, _, _, _ ->
           assertThat(args.containsKey("grpc.port")).isFalse()
           assertThat(args.containsKey("grpc.token")).isFalse()
           mockAmInstrumentationRunner

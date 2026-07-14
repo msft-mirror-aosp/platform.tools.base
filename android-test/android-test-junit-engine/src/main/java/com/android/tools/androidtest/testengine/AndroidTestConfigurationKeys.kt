@@ -99,6 +99,9 @@ object AndroidTestConfigurationKeys {
   /** Whether to disable window animations on the device. */
   const val ANIMATIONS_DISABLED = "android-test.animations-disabled"
 
+  /** Whether to enable Private Compute Core on-device environment during instrumentation. */
+  const val INSTRUMENT_IN_PCC = "android-test.instrument-in-pcc"
+
   /** Whether emulator control is enabled. */
   const val EMULATOR_CONTROL_ENABLED = "android-test.emulator-control-enabled"
 }

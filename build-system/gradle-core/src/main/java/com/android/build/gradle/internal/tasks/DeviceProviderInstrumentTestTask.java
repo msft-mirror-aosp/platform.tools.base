@@ -165,6 +165,9 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
         @Input
         public abstract Property<Boolean> getTargetIsSplitApk();
 
+        @Input
+        public abstract Property<Boolean> getPccInstrumentationEnabled();
+
         /**
          * Property for the serials passed into the connectedCheck task. This is used to filter the
          * device serials if and only if the --serial command line argument is not set on this task.
@@ -248,6 +251,7 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                     getInstallApkTimeout().getOrNull(),
                     getTargetIsSplitApk().getOrElse(false),
                     !getKeepInstalledApks().get(),
+                    getPccInstrumentationEnabled().getOrElse(false),
                     getProviders());
         }
     }
@@ -954,6 +958,11 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                             createEmulatorControlConfig(
                                     projectOptions,
                                     (EmulatorControl) testOptions.getEmulatorControl()));
+
+            task.getTestRunnerFactory()
+                    .getPccInstrumentationEnabled()
+                    .set(testOptions.getInstrumentInPrivateComputeCore());
+
             task.getTestRunnerFactory()
                     .getInstallApkTimeout()
                     .set(projectOptions.getProvider(IntegerOption.INSTALL_APK_TIMEOUT));

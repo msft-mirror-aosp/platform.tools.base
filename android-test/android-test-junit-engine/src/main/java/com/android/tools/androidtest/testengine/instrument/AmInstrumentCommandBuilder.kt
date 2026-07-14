@@ -26,6 +26,7 @@ class AmInstrumentCommandBuilder {
   private val instrumentationArgs = mutableMapOf<String, String>()
   private var isRaw: Boolean = true
   private var isWait: Boolean = true
+  private var isInstrumentInPcc: Boolean = false
 
   /** Sets the path to the ADB executable. */
   fun setAdbPath(adbPath: String) = apply { this.adbPath = adbPath }
@@ -53,6 +54,9 @@ class AmInstrumentCommandBuilder {
 
   /** Sets whether to wait for instrumentation to terminate (-w). Defaults to true. */
   fun setWait(wait: Boolean) = apply { this.isWait = wait }
+
+  /** Sets whether to run the instrumentation with a Private Compute Core environment. */
+  fun setInstrumentInPcc(instrumentInPcc: Boolean) = apply { this.isInstrumentInPcc = instrumentInPcc }
 
   /**
    * Builds the command as a list of strings.
@@ -92,6 +96,7 @@ class AmInstrumentCommandBuilder {
       add("instrument")
       if (isRaw) add("-r")
       if (isWait) add("-w")
+      if (isInstrumentInPcc) add("--instrument-in-pcc")
 
       instrumentationArgs.forEach { (key, value) ->
         add("-e")

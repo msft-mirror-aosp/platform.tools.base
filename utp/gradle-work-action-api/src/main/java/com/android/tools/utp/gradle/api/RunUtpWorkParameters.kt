@@ -98,6 +98,8 @@ interface RunUtpWorkParameters : WorkParameters {
     val reinstallIncompatibleApksBeforeTest: Property<Boolean>
     /** Sharding configuration, if any. */
     val shardConfig: Property<ShardConfig>
+    /** Run Android test within Private Compute Core environment. */
+    val privateComputeCoreInstrumentationEnabled: Property<Boolean>
   }
 }
 

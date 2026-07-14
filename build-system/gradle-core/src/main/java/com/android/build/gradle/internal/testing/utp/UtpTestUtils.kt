@@ -122,6 +122,7 @@ fun runUtpTestSuiteAndWait(
           fork.systemProperty("android-test.execution-mode", "ANDROIDX_TEST_ORCHESTRATOR")
         }
         fork.systemProperty("android-test.animations-disabled", firstConfig.testData.get().animationsDisabled.toString())
+        fork.systemProperty("android-test.instrument-in-pcc", firstConfig.privateComputeCoreInstrumentationEnabled)
         if (firstConfig.additionalTestOutputOnDeviceDir.isPresent) {
           fork.systemProperty("android-test.additional-test-output-dir-on-device", firstConfig.additionalTestOutputOnDeviceDir.get())
         }
@@ -208,6 +209,7 @@ fun createUtpRunConfig(
   uninstallApksAfterTest: Boolean,
   reinstallIncompatibleApksBeforeTest: Boolean,
   shardConfig: ShardConfig?,
+  privateComputeCoreInstrumentationEnabled: Boolean,
 ): RunUtpWorkParameters.UtpRunConfig {
   val utpRunConfig = objectFactory.newInstance(RunUtpWorkParameters.UtpRunConfig::class.java)
 
@@ -238,6 +240,7 @@ fun createUtpRunConfig(
   utpRunConfig.uninstallApksAfterTest.setDisallowChanges(uninstallApksAfterTest)
   utpRunConfig.reinstallIncompatibleApksBeforeTest.setDisallowChanges(reinstallIncompatibleApksBeforeTest)
   utpRunConfig.shardConfig.setDisallowChanges(shardConfig)
+  utpRunConfig.privateComputeCoreInstrumentationEnabled.setDisallowChanges(privateComputeCoreInstrumentationEnabled)
 
   return utpRunConfig
 }

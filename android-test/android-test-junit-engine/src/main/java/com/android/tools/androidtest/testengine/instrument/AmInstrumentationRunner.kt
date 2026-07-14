@@ -46,6 +46,7 @@ class AmInstrumentationRunner(
   private val listeners: Set<AmInstrumentationListener> = emptySet(),
   private val agentFilesystemInfo: CoverageAgentFilesystemInfo = CoverageAgentFilesystemInfo(),
   private val logger: Logger = Logger.getLogger(AmInstrumentationRunner::class.java.name),
+  private val instrumentInPcc: Boolean = false,
   private val processBuilder: (command: List<String>) -> ProcessBuilder = { ProcessBuilder(it) },
 ) {
 
@@ -93,6 +94,7 @@ class AmInstrumentationRunner(
         .setInstrumentationRunner(testPackageId, instrumentationRunnerClass)
         .setExecutionMode(executionMode)
         .addInstrumentationArgs(instrumentationArgs)
+        .setInstrumentInPcc(instrumentInPcc)
 
     val agentPath = agentFilesystemInfo.agentBinaryPathOnDevice
     val dataDir = agentFilesystemInfo.dataDirectoryOnDevice

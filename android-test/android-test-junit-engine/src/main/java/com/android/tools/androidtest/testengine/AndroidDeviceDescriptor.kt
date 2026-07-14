@@ -68,9 +68,21 @@ class AndroidDeviceDescriptor(
       instrumentationArgs: Map<String, String>,
       listeners: Set<com.android.tools.androidtest.testengine.instrument.AmInstrumentationListener>,
       agentFilesystemInfo: CoverageAgentFilesystemInfo,
+      instrumentInPcc: Boolean,
     ) -> AmInstrumentationRunner =
-    { adb, serial, runnerClass, pkgId, targetPkgId, execMode, args, listeners, agentInfo ->
-      AmInstrumentationRunner(adb, serial, runnerClass, pkgId, targetPkgId, execMode, args, listeners, agentInfo)
+    { adb, serial, runnerClass, pkgId, targetPkgId, execMode, args, listeners, agentInfo, instrumentInPcc ->
+      AmInstrumentationRunner(
+        adb,
+        serial,
+        runnerClass,
+        pkgId,
+        targetPkgId,
+        execMode,
+        args,
+        listeners,
+        agentInfo,
+        instrumentInPcc = instrumentInPcc,
+      )
     },
 ) : AbstractTestDescriptor(uniqueId, deviceDisplayName), Node<AndroidTestExecutionContext> {
 
@@ -228,6 +240,22 @@ class AndroidDeviceDescriptor(
         instrumentationArgs["additionalTestOutputDir"] = additionalTestOutputOnDeviceDir
       }
     }
+    val isInstrumentInPcc = config.instrumentInPcc
+    val usePcc =
+      if (isInstrumentInPcc) {
+        val deviceApiLevel = deviceApiLevelProvider.deviceApiLevel
+        if (deviceApiLevel >= 37) {
+          true
+        } else {
+          logger.warning(
+            "Private Compute Core instrumentation is enabled but device $deviceSerial " +
+              "(API $deviceApiLevel) does not support it. Private Compute Core instrumentation requires API 37+."
+          )
+          false
+        }
+      } else {
+        false
+      }
 
     val instrumentationRunner =
       instrumentationRunnerFactory(
@@ -240,6 +268,7 @@ class AndroidDeviceDescriptor(
         instrumentationArgs,
         setOf(listener),
         agentFilesystemInfo,
+        usePcc,
       )
 
     val deviceSettingsController = DeviceSettingsController(config, deviceSerial, adbControllerFactory(config.adb))
