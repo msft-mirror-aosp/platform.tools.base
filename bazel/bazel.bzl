@@ -465,7 +465,7 @@ def iml_module(
         test_main_class = None,
         lint_baseline = None,
         lint_enabled = True,
-        lint_partial_analysis = False,
+        lint_partial_analysis = True,
         lint_timeout = None,
         exec_properties = {},
         kotlin_use_compose = False,

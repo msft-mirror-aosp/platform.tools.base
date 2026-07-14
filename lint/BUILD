@@ -309,7 +309,6 @@ kotlin_library(
     ]),
     lint_baseline = "studio-checks/lint_baseline.xml",
     lint_classpath = ["//tools/base/lint/cli"],
-    lint_partial_analysis = True,
     visibility = ["//visibility:public"],
     deps = [
         ":tools.lint-api",

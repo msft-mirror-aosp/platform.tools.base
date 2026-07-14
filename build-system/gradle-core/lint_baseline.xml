@@ -1608,17 +1608,6 @@
     </issue>
 
     <issue
-        id="DiscouragedApi"
-        message="Use of `scheduleAtFixedRate` is strongly discouraged because it can lead to unexpected behavior when Android processes become cached (tasks may unexpectedly execute hundreds or thousands of times in quick succession when a process changes from cached to uncached); prefer using `scheduleWithFixedDelay`"
-        errorLine1="      maintainExecutor!!.scheduleAtFixedRate("
-        errorLine2="      ^">
-        <location
-            file="src/main/java/com/android/build/gradle/internal/services/Aapt2DaemonBuildService.kt"
-            line="220"
-            column="7"/>
-    </issue>
-
-    <issue
         id="FileComparisons"
         message="Do not compare java.io.File with `equals` or `==`: will not work correctly on case insensitive file systems! See `go/files-howto`."
         errorLine1="      if (request.inputFile == request.originalInputFile) {"
