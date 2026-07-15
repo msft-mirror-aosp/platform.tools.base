@@ -379,6 +379,12 @@ enum class BooleanOption(
     stage = FeatureStage.Experimental,
     FutureStage(version = Version.VERSION_10_0, defaultValue = true, stage = FeatureStage.Enforced(enforcedVersion = Version.VERSION_10_0)),
   ),
+  ENFORCE_DYNAMIC_FEATURE_VARIANT_MATCHING(
+    "android.enforceDynamicFeatureVariantMatching",
+    false,
+    FeatureStage.Experimental,
+    FutureStage(Version.VERSION_10_0, true, FeatureStage.Enforced(Version.VERSION_10_0)),
+  ),
 
   /** When enabled, tasks for local and aggregated lint reports are registered. */
   LINT_REPORT_AGGREGATION(

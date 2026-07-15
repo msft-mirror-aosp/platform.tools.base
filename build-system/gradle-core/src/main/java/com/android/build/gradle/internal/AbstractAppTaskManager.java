@@ -35,6 +35,7 @@ import com.android.build.gradle.internal.tasks.AndroidVariantTask;
 import com.android.build.gradle.internal.tasks.ApkZipPackagingTask;
 import com.android.build.gradle.internal.tasks.AppClasspathCheckTask;
 import com.android.build.gradle.internal.tasks.ApplicationIdWriterTask;
+import com.android.build.gradle.internal.tasks.CheckDynamicFeatureVariantsTask;
 import com.android.build.gradle.internal.tasks.CheckManifest;
 import com.android.build.gradle.internal.tasks.CheckMultiApkLibrariesTask;
 import com.android.build.gradle.internal.tasks.CompressAssetsTask;
@@ -234,6 +235,12 @@ public abstract class AbstractAppTaskManager<
                             new CheckMultiApkLibrariesTask.CreationAction(creationConfig));
 
             TaskFactoryUtils.dependsOn(task, checkMultiApkLibrariesTask);
+
+            TaskProvider<CheckDynamicFeatureVariantsTask> checkDynamicFeatureVariantsTask =
+                    taskFactory.register(
+                            new CheckDynamicFeatureVariantsTask.CreationAction(creationConfig));
+
+            TaskFactoryUtils.dependsOn(task, checkDynamicFeatureVariantsTask);
         }
     }
 

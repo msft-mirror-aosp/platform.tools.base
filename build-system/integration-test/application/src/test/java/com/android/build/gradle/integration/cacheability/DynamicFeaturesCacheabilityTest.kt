@@ -61,6 +61,7 @@ class DynamicFeaturesCacheabilityTest {
           ),
         FROM_CACHE to
           setOf(
+              ":app:checkDebugDynamicFeatureVariants",
               ":app:checkDebugLibraries",
               ":app:compileDebugJavaWithJavac",
               ":app:compileDebugNavigationResources",
