@@ -195,7 +195,7 @@ class DeployServer : DeployServiceImplBase {
   override fun runNetworkTest(request: Service.NetworkTestRequest, responseObserver: StreamObserver<Service.NetworkTestResponse>) {
     val device = getDeviceBySerial(request.deviceId)
     val logger = DeployLogger(DeployLogger.Level.ERROR)
-    val adb = AdbClient(device, logger)
+    val adb = AdbClient(device, logger, AdbHelper.session)
     val metrics = mutableListOf<DeployMetric>()
     val installer: Installer = AdbInstaller(null, adb, metrics, logger, AdbInstaller.Mode.DAEMON)
     var response = Service.NetworkTestResponse.newBuilder()

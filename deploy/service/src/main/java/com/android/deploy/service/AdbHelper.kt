@@ -45,7 +45,8 @@ private val logger: Logger = Logger.getLogger(AdbHelper::class.java.getName())
 
 object AdbHelper {
 
-  private lateinit var session: AdbSession
+  lateinit var session: AdbSession
+    private set
 
   /** Initializes the AndroidDebugBridge, using adblib or ddmlib. */
   fun initAndroidDebugBridge() {
