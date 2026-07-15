@@ -22,6 +22,7 @@ import com.android.build.gradle.internal.fixtures.FakeObjectFactory
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.common.truth.Truth
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
+import org.gradle.api.provider.Provider
 import org.junit.Rule
 import org.junit.Test
 import org.mockito.Mockito
@@ -78,5 +79,18 @@ class AnalyticsEnabledTestSuiteTest {
     Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
       .isEqualTo(VariantPropertiesMethodType.TEST_SUITE_SOURCES_VALUE)
     verify(delegate).sources
+  }
+
+  @Test
+  fun requiresUpdateTask() {
+    val booleanProvider = Mockito.mock<Provider<Boolean>>()
+    Mockito.`when`(delegate.requiresUpdateTask).thenReturn(booleanProvider)
+    val requiresUpdateTaskProxy = proxy.requiresUpdateTask
+
+    Truth.assertThat(requiresUpdateTaskProxy).isEqualTo(booleanProvider)
+
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.TEST_SUITE_REQUIRES_UPDATE_TASK_VALUE)
+    verify(delegate).requiresUpdateTask
   }
 }

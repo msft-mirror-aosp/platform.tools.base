@@ -28,4 +28,7 @@ class TestSuiteTargetImpl(private val testSuiteBuilder: TestSuiteTargetBuilderIm
   override fun getName(): String = testSuiteBuilder.name
 
   override val targetDevices: Collection<String> = testSuiteBuilder.targetDevices
+
+  override val uniqueName: String
+    get() = testSuiteBuilder.uniqueName()
 }

@@ -437,11 +437,12 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
   class CreationAction(
     val creationConfig: TestSuiteCreationConfig,
     val testSuiteTarget: TestSuiteTargetCreationConfig,
+    val taskName: String,
     private val deviceSerials: Provider<List<String>>? = null,
   ) : GlobalTaskCreationAction<LegacyReportingTestSuiteTestTask>() {
 
     override val name: String
-      get() = testSuiteTarget.testTaskName
+      get() = taskName
 
     override val type: Class<LegacyReportingTestSuiteTestTask> = LegacyReportingTestSuiteTestTask::class.java
 

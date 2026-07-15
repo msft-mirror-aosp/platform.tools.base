@@ -819,3 +819,8 @@ https://issuetracker.google.com/527037384
   * com.android.build.api.variant.LintReportsBuilder.setEnableReportWithDependencies: void (boolean)
   * com.android.build.api.variant.LintReportsBuilder.setEnableReportWithoutDependencies: void (boolean)
   * com.android.build.api.variant.VariantBuilder.getLint: com.android.build.api.variant.LintBuilder ()
+https://issuetracker.google.com/534880695
+  * com.android.build.api.dsl.AgpTestSuite.getRequiresUpdateTask: boolean ()
+  * com.android.build.api.dsl.AgpTestSuite.setRequiresUpdateTask: void (boolean)
+  * com.android.build.api.dsl.TestTaskContext.isUpdateTask: boolean ()
+  * com.android.build.api.variant.TestSuite.getRequiresUpdateTask: org.gradle.api.provider.Provider<java.lang.Boolean> ()

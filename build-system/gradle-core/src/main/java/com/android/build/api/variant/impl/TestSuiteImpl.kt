@@ -88,6 +88,8 @@ internal constructor(
       )
     }
 
+  override val requiresUpdateTask: Provider<Boolean> = variantServices.provider { testSuiteBuilder.testSuite.requiresUpdateTask }
+
   override val sources: Collection<TestSuiteSourceSet>
     get() = sourceContainers.map { it.source }
 
