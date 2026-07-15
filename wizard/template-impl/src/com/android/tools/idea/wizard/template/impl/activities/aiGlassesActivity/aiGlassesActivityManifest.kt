@@ -23,10 +23,11 @@ fun aiGlassesActivityManifestXml(activityClass: String, packageName: String) =
         <activity
             android:name="$packageName.$activityClass"
             android:exported="true"
-            android:requiredDisplayCategory="xr_projected"
+            android:requiredDisplayCategory="android.hardware.display.category.XR_PROJECTED"
             android:label="@string/app_name">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.XR_PROJECTED_LAUNCHER"/>
             </intent-filter>
         </activity>
     </application>
