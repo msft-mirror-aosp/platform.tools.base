@@ -1,9 +1,19 @@
+load("@bazel_skylib//rules:diff_test.bzl", "diff_test")
 load("@rules_java//java:defs.bzl", "java_import", "java_library")
+load("@rules_python//python:defs.bzl", "py_binary")
 load("//tools/base/bazel:gradle.bzl", "gradle_build", "gradle_test")
 load("//tools/base/bazel:maven.bzl", "maven_library", "maven_repository")
 load("//tools/base/build-system/integration-test:common-dependencies.bzl", "KGP_FOR_TESTS", "KGP_VERSION_FOR_TESTS")
 load("//tools/base/common:version.bzl", "BUILD_VERSION", "IS_AGP_RELEASE_BRANCH")
 load("hybrid_build.bzl", "GRADLE_PROPERTIES")
+
+exports_files(["convert_problems.py"])  # Needed for other BUILD files to be able to use "gradle_build"
+
+py_binary(
+    name = "convert_problems",
+    srcs = ["convert_problems.py"],
+    visibility = ["//visibility:public"],
+)
 
 maven_library(
     name = "tools.apksig",
@@ -524,12 +534,27 @@ gradle_build(
     gradle_properties = GRADLE_PROPERTIES,
     output_file = "android_gradle_plugin.zip",
     output_file_source = "dist/repo.zip",
+    problems_report_path = "build/build/root/reports/problems/problems-report.html",
     repos = [
         "//tools/base:agp_dependencies",
         "//tools/base:agp_artifacts",
     ],
     tasks = [":zipPlugin"],
     visibility = ["//visibility:public"],
+)
+
+diff_test(
+    name = "android_gradle_plugin_problems_test",
+    failure_message = """
+       Run the following command to update:
+         bazel build //tools/base/build-system:android_gradle_plugin_problems.txt && cp `bazel info bazel-genfiles`/tools/base/build-system/android_gradle_plugin_problems.txt `bazel info workspace`/tools/base/build-system/known_problems.txt
+    """,
+    file1 = ":android_gradle_plugin_problems.txt",
+    file2 = "known_problems.txt",
+    # No need to run this on Windows.
+    tags = [
+        "noci:studio-win",
+    ]
 )
 
 gradle_build(
