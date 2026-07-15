@@ -106,8 +106,6 @@ private fun createViewNode(view: View, stringTable: StringTable, attributeExtrac
       layoutResource = stringTable.put(layoutRes)
     }
 
-    // TODO: add support for XR
-
     when (attributeExtraction) {
       is AttributeExtraction.Enabled ->
         populateAttributes(

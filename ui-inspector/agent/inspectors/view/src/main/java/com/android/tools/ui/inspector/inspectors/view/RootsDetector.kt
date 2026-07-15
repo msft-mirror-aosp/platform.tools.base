@@ -18,6 +18,7 @@ package com.android.tools.ui.inspector.inspectors.view
 
 import android.view.View
 import android.view.inspector.WindowInspector
+import com.android.tools.agent.appinspection.XrHelper
 
 internal object RootsDetector {
   /**
@@ -26,7 +27,20 @@ internal object RootsDetector {
    * Note: This relies on [WindowInspector.getGlobalWindowViews], which requires API 29+. This is intentional as the UI Inspector targets
    * modern Android versions.
    */
-  fun getRootViews(): List<View> {
-    return WindowInspector.getGlobalWindowViews().filter { it.visibility == View.VISIBLE && it.isAttachedToWindow }.sortedBy { it.z }
+  fun getRootViews(xrHelper: XrHelper): List<View> {
+    val xrViews = xrHelper.getXrViews()
+    val views =
+      if (xrViews.isNotEmpty()) {
+        // If there are xr panels, xrViews already contains both XR panel views and regular
+        // window views merged without duplicates.
+        xrViews
+      } else {
+        getAndroidViews()
+      }
+    return views.filter { it.visibility == View.VISIBLE && it.isAttachedToWindow }.sortedBy { it.z }
+  }
+
+  private fun getAndroidViews(): List<View> {
+    return WindowInspector.getGlobalWindowViews()
   }
 }
