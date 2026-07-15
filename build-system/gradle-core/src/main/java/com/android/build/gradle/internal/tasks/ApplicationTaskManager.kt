@@ -45,8 +45,10 @@ import com.android.build.gradle.internal.test.tasks.TestReportTask
 import com.android.build.gradle.internal.test.tasks.TestResultsCollectionTask
 import com.android.build.gradle.internal.variant.ComponentInfo
 import com.android.build.gradle.options.BooleanOption
+import com.android.build.gradle.options.StringOption
 import com.android.build.gradle.tasks.ExtractSupportedLocalesTask
 import com.android.build.gradle.tasks.GenerateLocaleConfigTask
+import java.io.File
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.tasks.TaskProvider
@@ -239,6 +241,16 @@ class ApplicationTaskManager(
         }
       }
       taskFactory.register(FinalizeBundleTask.CreationAction(variant))
+      val apkLocationOverride = variant.services.projectOptions.get(StringOption.IDE_APK_LOCATION)
+      if (apkLocationOverride != null) {
+        val targetDir = File(variant.services.file(apkLocationOverride), variant.dirName)
+        val redirectBundleTask = taskFactory.register(RedirectIdeBundleOutputsTask.CreationAction(variant, targetDir))
+        variant.taskContainer.redirectIdeBundleOutputsTask = redirectBundleTask
+        variant.taskContainer.bundleTask?.configure { task -> task.dependsOn(redirectBundleTask) }
+        variant.taskContainer.redirectIdeApkOutputsTask?.let { redirectApkTask ->
+          redirectBundleTask.configure { it.mustRunAfter(redirectApkTask) }
+        }
+      }
       taskFactory.register(BundleIdeModelProducerTask.CreationAction(variant))
       taskFactory.register(
         ListingFileRedirectTask.CreationAction(

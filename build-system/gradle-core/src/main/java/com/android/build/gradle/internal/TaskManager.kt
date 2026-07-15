@@ -121,6 +121,7 @@ import com.android.build.gradle.internal.tasks.ProcessJavaResTask
 import com.android.build.gradle.internal.tasks.R8AnalysisTask
 import com.android.build.gradle.internal.tasks.R8Task
 import com.android.build.gradle.internal.tasks.RecalculateStackFramesTask
+import com.android.build.gradle.internal.tasks.RedirectIdeApkOutputsTask
 import com.android.build.gradle.internal.tasks.UninstallTask
 import com.android.build.gradle.internal.tasks.ValidateResourcesTask
 import com.android.build.gradle.internal.tasks.ValidateSigningTask
@@ -160,6 +161,7 @@ import com.android.build.gradle.internal.utils.isKspPluginApplied
 import com.android.build.gradle.internal.utils.useUniversalGlobalSyntheticsDex
 import com.android.build.gradle.internal.variant.ApkVariantData
 import com.android.build.gradle.options.BooleanOption
+import com.android.build.gradle.options.StringOption
 import com.android.build.gradle.tasks.AidlCompile
 import com.android.build.gradle.tasks.CompatibleScreensManifest
 import com.android.build.gradle.tasks.GenerateBuildConfig
@@ -1713,7 +1715,15 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
       )
     )
 
-    taskContainer.assembleTask.configure { task: Task -> task.dependsOn(creationConfig.artifacts.get(SingleArtifact.APK)) }
+    val apkLocationOverride = creationConfig.services.projectOptions.get(StringOption.IDE_APK_LOCATION)
+    if (apkLocationOverride != null) {
+      val targetDir = File(creationConfig.services.file(apkLocationOverride), creationConfig.dirName)
+      val redirectTask = taskFactory.register(RedirectIdeApkOutputsTask.CreationAction(creationConfig, targetDir))
+      taskContainer.redirectIdeApkOutputsTask = redirectTask
+      taskContainer.assembleTask.configure { task: Task -> task.dependsOn(redirectTask) }
+    } else {
+      taskContainer.assembleTask.configure { task: Task -> task.dependsOn(creationConfig.artifacts.get(SingleArtifact.APK)) }
+    }
 
     // create install task for the variant Data. This will deal with finding the
     // right output if there are more than one.

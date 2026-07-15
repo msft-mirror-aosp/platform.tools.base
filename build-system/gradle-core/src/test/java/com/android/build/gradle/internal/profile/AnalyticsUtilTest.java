@@ -30,6 +30,7 @@ import com.android.build.gradle.internal.services.DslServices;
 import com.android.build.gradle.internal.services.FakeServices;
 import com.android.build.gradle.internal.tasks.AndroidGlobalTask;
 import com.android.build.gradle.internal.tasks.BaseR8Task;
+import com.android.build.gradle.internal.tasks.BaseRedirectIdeOutputsTask;
 import com.android.build.gradle.internal.tasks.UnsafeOutputsGlobalTask;
 import com.android.build.gradle.options.BooleanOption;
 import com.android.build.gradle.options.IntegerOption;
@@ -77,6 +78,7 @@ public class AnalyticsUtilTest {
                     AndroidGlobalTask.class.getName(),
                     UnsafeOutputsGlobalTask.class.getName(),
                     BaseR8Task.class.getName(),
+                    BaseRedirectIdeOutputsTask.class.getName(),
                     ConvertResourcesTask.class.getName());
 
     @Test

@@ -19,6 +19,8 @@ package com.android.build.gradle.internal.scope
 import com.android.build.gradle.internal.cxx.gradle.generator.CxxConfigurationModel
 import com.android.build.gradle.internal.tasks.CheckManifest
 import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask
+import com.android.build.gradle.internal.tasks.RedirectIdeApkOutputsTask
+import com.android.build.gradle.internal.tasks.RedirectIdeBundleOutputsTask
 import com.android.build.gradle.internal.tasks.ValidateSigningTask
 import com.android.build.gradle.tasks.AidlCompile
 import com.android.build.gradle.tasks.ExternalNativeBuildTask
@@ -87,6 +89,8 @@ class MutableTaskContainer : TaskContainer {
   // anything below is scheduled for removal, using BuildableArtifact to link tasks.
 
   var bundleTask: TaskProvider<out Task>? = null
+  var redirectIdeApkOutputsTask: TaskProvider<RedirectIdeApkOutputsTask>? = null
+  var redirectIdeBundleOutputsTask: TaskProvider<RedirectIdeBundleOutputsTask>? = null
   lateinit var resourceGenTask: TaskProvider<out Task>
   lateinit var assetGenTask: TaskProvider<Task>
   var cxxConfigurationModel: CxxConfigurationModel? = null

@@ -31,7 +31,6 @@ import com.android.build.gradle.internal.signing.SigningInputs
 import com.android.build.gradle.internal.tasks.factory.AndroidVariantTaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.utils.setDisallowChanges
-import com.android.build.gradle.options.StringOption
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.internal.packaging.AabFlinger
 import com.android.ide.common.signing.KeystoreHelper
@@ -224,19 +223,10 @@ abstract class FinalizeBundleTask : NonIncrementalTask(), SigningInputs {
       super.handleProvider(taskProvider)
 
       val bundleNameProvider = creationConfig.services.projectInfo.getProjectBaseName().map { "$it-${creationConfig.baseName}.aab" }
-      val apkLocationOverride = creationConfig.services.projectOptions.get(StringOption.IDE_APK_LOCATION)
-      if (apkLocationOverride == null) {
-        creationConfig.artifacts
-          .setInitialProvider(taskProvider, FinalizeBundleTask::finalBundleFile)
-          .withName(bundleNameProvider)
-          .on(SingleArtifact.BUNDLE)
-      } else {
-        creationConfig.artifacts
-          .setInitialProvider(taskProvider, FinalizeBundleTask::finalBundleFile)
-          .atLocation(FileUtils.join(creationConfig.services.file(apkLocationOverride), creationConfig.dirName).absolutePath)
-          .withName(bundleNameProvider)
-          .on(SingleArtifact.BUNDLE)
-      }
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, FinalizeBundleTask::finalBundleFile)
+        .withName(bundleNameProvider)
+        .on(SingleArtifact.BUNDLE)
     }
 
     override fun configure(task: FinalizeBundleTask) {
