@@ -1125,6 +1125,7 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
       desc: String? = null,
       desugaring: Desugaring? = null,
       original: String? = null,
+      target: PsiElement? = null,
     ) {
       val missing = minSdk.firstMissing(requires) ?: requires
       val apiLevel = getApiLevelString(missing, context)
@@ -1154,7 +1155,7 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
         suggestedFix = fix().alternatives(createRemoveFirstFix(location, name, replacement, display), suggestedFix)
       }
 
-      report(issue, node, location, formatString, suggestedFix, owner, name, desc, missing, minSdk, desugaring)
+      report(issue, node, location, formatString, suggestedFix, owner, name, desc, missing, minSdk, desugaring, target)
     }
 
     private fun report(
@@ -1169,8 +1170,10 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
       requires: ApiConstraint,
       min: ApiConstraint,
       desugaring: Desugaring? = null,
+      target: PsiElement? = null,
     ) {
-      if (isHandledByFlaggedApiDetector(requires, node)) {
+      val resolved = target ?: node.tryResolve() ?: (owner?.let { context.evaluator.findClass(it.replace('/', '.').replace('$', '.')) })
+      if (isHandledByFlaggedApiDetector(requires, resolved)) {
         return
       }
 
@@ -1208,14 +1211,17 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
     }
 
     /**
-     * Returns true if the given node is referencing an API that is in development, and is flagged (`@FlaggedApi`), and the
+     * Returns true if the given API is in development, and is flagged (`@FlaggedApi`), and the
      * [FlaggedApiDetector] is active. If so, we'll let that detector enforce usage.
      */
-    private fun isHandledByFlaggedApiDetector(requires: ApiConstraint, node: UElement): Boolean {
+    private fun isHandledByFlaggedApiDetector(
+      requires: ApiConstraint,
+      resolved: PsiElement?,
+    ): Boolean {
       return requires.getSdk() == ANDROID_SDK_ID &&
         requires.min() == CUR_DEVELOPMENT &&
         context.isEnabled(FlaggedApiDetector.ISSUE) &&
-        FlaggedApiDetector.isAlreadyAnnotated(context.evaluator, node)
+        FlaggedApiDetector.isAlreadyAnnotated(context.evaluator, resolved)
     }
 
     override fun visitAnnotation(node: UAnnotation) {
@@ -1387,7 +1393,7 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
       minSdk = max(minSdk, localMinSdk)
 
       val location = context.getLocation(node)
-      report(UNSUPPORTED, node, location, "Class", expressionOwner, api, minSdk, null, expressionOwner)
+      report(UNSUPPORTED, node, location, "Class", expressionOwner, api, minSdk, null, expressionOwner, target = classType.resolve())
       return false
     }
 
@@ -1640,11 +1646,11 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
       val owner = context.evaluator.getQualifiedName(cls) ?: return
       val fqcn = cls.qualifiedName
       if (fqcn != null) {
-        checkClass(element, null, owner, fqcn)
+        checkClass(element, null, owner, fqcn, target = cls)
       }
     }
 
-    private fun checkClass(element: UElement, descriptor: String?, owner: String, fqcn: String) {
+    private fun checkClass(element: UElement, descriptor: String?, owner: String, fqcn: String, target: PsiElement? = null) {
       val apiDatabase = apiDatabase ?: return
       val api = apiDatabase.getClassVersions(owner)
       if (api == ApiConstraint.UNKNOWN) {
@@ -1664,7 +1670,7 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
 
       val location = context.getNameLocation(element)
       val desc = descriptor ?: "Class"
-      report(UNSUPPORTED, element, location, desc, fqcn, api, minSdk, null, owner)
+      report(UNSUPPORTED, element, location, desc, fqcn, api, minSdk, null, owner, target = target)
     }
 
     override fun visitForEachExpression(node: UForEachExpression) {

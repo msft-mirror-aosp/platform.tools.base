@@ -54,6 +54,7 @@ import com.intellij.psi.PsiMember
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiModifierListOwner
 import com.intellij.psi.PsiNamedElement
+import com.intellij.psi.PsiVariable
 import org.jetbrains.uast.UAnnotated
 import org.jetbrains.uast.UAnnotation
 import org.jetbrains.uast.UBlockExpression
@@ -113,18 +114,13 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
       return FLAGGED_API_ANNOTATION.isEquals(qualifiedName) || REQUIRES_FLAG_ANNOTATION.isEquals(qualifiedName)
     }
 
-    /** Is the given [element] referencing an annotated element */
-    fun isAlreadyAnnotated(evaluator: JavaEvaluator, element: UElement?): Boolean {
-      if (element == null) return false
-      val resolved = element.tryResolve()
-        ?: (element as? UTypeReferenceExpression)?.let { (it.type as? PsiClassType)?.resolve() }
-        ?: return false
-      return isAlreadyAnnotated(evaluator, resolved)
-    }
-
     /** Is the given [resolved] class/method/field annotated with a `@FlaggedApi` or `@RequiresFlag` annotation? */
     fun isAlreadyAnnotated(evaluator: JavaEvaluator, resolved: PsiElement?): Boolean {
       if (resolved !is PsiModifierListOwner) return false
+      val typeClass = (resolved as? PsiVariable)?.let { (it.type.deepComponentType as? PsiClassType)?.resolve() }
+      if (typeClass != null && isAlreadyAnnotated(evaluator, typeClass)) {
+        return true
+      }
       val containingClass = (resolved as? PsiMember)?.containingClass
       // Check both the annotation on the member itself and its surrounding class.
       return listOfNotNull(resolved, containingClass).any { owner ->
