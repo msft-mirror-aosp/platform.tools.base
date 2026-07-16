@@ -1871,7 +1871,7 @@ index 2e1b0f2..69adb1d 100644
 +    "com.android.tools.build:bundletool:1.15.5": "com.android.tools.build:bundletool:1.17.1",
 +    "com.android:zipflinger:8.7.0": "com.android:zipflinger:8.11.0-alpha10",
 +    "com.google.guava:guava:32.1.2-jre": "com.google.guava:guava:33.3.1-jre",
-+    "org.bouncycastle:bcprov-jdk18on:1.77": "org.bouncycastle:bcprov-jdk18on:1.79",
++    "org.bouncycastle:bcprov-jdk18on:1.77": "org.bouncycastle:bcprov-jdk18on:1.80.2",
 +    "org.ow2.asm:asm-commons:9.6": "org.ow2.asm:asm-commons:9.7.1",
 +    "org.ow2.asm:asm-tree:9.6": "org.ow2.asm:asm-tree:9.7.1",
 +    "org.ow2.asm:asm-util:9.6": "org.ow2.asm:asm-util:9.7.1",
@@ -2749,28 +2749,28 @@ index 2e1b0f2..69adb1d 100644
 +    "org.bouncycastle:bcpkix-jdk18on": {
        "shasums": {
 -        "jar": "efbca754880ce3922ca47a43c1f0b72c45731450a0ef193b9db33bf4bb38ce5f"
-+        "jar": "3639a24ddf9ba4b7eba0659b44770e91eba816421888e571f285aadefe532cd6"
++        "jar": "d43bacacb557e7e9dd6e03f03ca56213214a646cee584e2c657b0e0b0db4a3f5"
        },
 -      "version": "1.67"
-+      "version": "1.79"
++      "version": "1.80.2"
      },
 -    "org.bouncycastle:bcprov-jdk15on": {
 +    "org.bouncycastle:bcprov-jdk18on": {
        "shasums": {
 -        "jar": "fa0041a36f9f20af3c6b8dbf6eb49a969e2c9cc029049d61acc526ba3247b3ef"
-+        "jar": "0d81ecc3124536b539bce9aa3fe9621b7f84c9cee371b635a5b31c78b79ab1da"
++        "jar": "b33227f07dce264daf1aac2e798ef109a4901f31abedac53635746dd93679d3b"
        },
 -      "version": "1.67"
-+      "version": "1.79"
++      "version": "1.80.2"
      },
 -    "org.bouncycastle:bcprov-jdk18on": {
 +    "org.bouncycastle:bcutil-jdk18on": {
        "shasums": {
 -        "jar": "dabb98c24d72c9b9f585633d1df9c5cd58d9ad373d0cd681367e6a603a495d58"
-+        "jar": "c70b88ada58938cbc2f005d40329054078bcfa1149e6ffc03e9242eb6ab21836"
++        "jar": "bc78d32d7ffb141ee27e4fb77df04259d842c899e7e8eaf912f990d7253bd3b4"
        },
 -      "version": "1.77"
-+      "version": "1.79"
++      "version": "1.80.2"
 +    },
 +    "org.checkerframework:checker-compat-qual": {
 +      "shasums": {
