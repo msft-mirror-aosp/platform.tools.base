@@ -33,7 +33,11 @@ import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProto
 
 /** Models the configuration for attribute extraction. */
 internal sealed class AttributeExtraction {
-  data class Enabled(val propertyCache: PropertyCache<View>, val includeResolutionStack: Boolean) : AttributeExtraction()
+  data class Enabled(
+    val propertyCache: PropertyCache<View>,
+    val layoutParamsPropertyCache: PropertyCache<ViewGroup.LayoutParams>,
+    val includeResolutionStack: Boolean,
+  ) : AttributeExtraction()
 
   object Disabled : AttributeExtraction()
 }
@@ -46,7 +50,11 @@ internal fun View.toViewNode(
 ): ViewNode {
   val attributeExtraction =
     if (includeAttributes || includeResolutionStack) {
-      AttributeExtraction.Enabled(PropertyCache.createViewPropertyCache(), includeResolutionStack)
+      AttributeExtraction.Enabled(
+        PropertyCache.createViewPropertyCache(),
+        PropertyCache.createLayoutParamsPropertyCache(),
+        includeResolutionStack,
+      )
     } else {
       AttributeExtraction.Disabled
     }
@@ -102,7 +110,14 @@ private fun createViewNode(view: View, stringTable: StringTable, attributeExtrac
 
     when (attributeExtraction) {
       is AttributeExtraction.Enabled ->
-        populateAttributes(this, view, stringTable, attributeExtraction.propertyCache, attributeExtraction.includeResolutionStack)
+        populateAttributes(
+          this,
+          view,
+          stringTable,
+          attributeExtraction.propertyCache,
+          attributeExtraction.layoutParamsPropertyCache,
+          attributeExtraction.includeResolutionStack,
+        )
       AttributeExtraction.Disabled -> {}
     }
 
@@ -125,11 +140,25 @@ private fun populateAttributes(
   view: View,
   stringTable: StringTable,
   viewPropertyCache: PropertyCache<View>,
+  layoutParamsPropertyCache: PropertyCache<ViewGroup.LayoutParams>,
   includeResolutionStack: Boolean,
 ) {
-  val viewPropertyData = viewPropertyCache.getOrResolve(view)
-  view.forEachProtoAttribute(viewPropertyData, stringTable, includeResolutionStack) { attribute ->
-    viewNodeBuilder.addAttributes(attribute)
+  view.forEachProtoAttribute(viewPropertyCache.getOrResolve(view), stringTable, includeResolutionStack, viewNodeBuilder::addAttributes)
+
+  val layoutParams = view.layoutParams
+  if (layoutParams != null) {
+    val layoutParamsPropertyData = layoutParamsPropertyCache.getOrResolve(layoutParams)
+    val reader =
+      ProtoAttributeReader(
+        view = view,
+        properties = layoutParamsPropertyData.properties,
+        stringTable = stringTable,
+        includeResolutionStack = includeResolutionStack,
+        onAttributeResolved = viewNodeBuilder::addAttributes,
+      )
+    for (companion in layoutParamsPropertyData.companions) {
+      companion.readProperties(layoutParams, reader)
+    }
   }
 }
 

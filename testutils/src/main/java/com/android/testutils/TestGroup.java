@@ -19,12 +19,22 @@ import static com.google.common.base.MoreObjects.firstNonNull;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
+
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
+
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -41,11 +51,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
 
 /**
  * Defines how to extract tests from class path jars or any particular given jar. Once built, tests
@@ -130,7 +135,7 @@ public class TestGroup {
         return testClasses;
     }
 
-    private static void addManifestClassPath(String jarPath, Queue<String> existingPaths)
+    static void addManifestClassPath(String jarPath, Queue<String> existingPaths)
             throws IOException {
         if (jarPath.endsWith(".jar")) {
             File file = new File(jarPath);
@@ -144,12 +149,24 @@ public class TestGroup {
                         if (cp != null) {
                             String[] paths = cp.split(" ");
                             for (String path : paths) {
-                                File absoluteFile = new File(path);
-                                if (absoluteFile.exists()) {
-                                    existingPaths.add(path);
+                                File absoluteFile;
+                                if (path.startsWith("file:")) {
+                                    try {
+                                        absoluteFile = new File(new URI(path));
+                                    } catch (URISyntaxException e) {
+                                        absoluteFile = new File(path);
+                                    }
                                 } else {
-                                    File relFile = new File(file.getParentFile(), path);
-                                    if (relFile.exists()) {
+                                    absoluteFile = new File(path);
+                                }
+                                if (absoluteFile.exists()) {
+                                    existingPaths.add(absoluteFile.getAbsolutePath());
+                                } else {
+                                    File relFile = null;
+                                    if (!path.startsWith("file:")) {
+                                        relFile = new File(file.getParentFile(), path);
+                                    }
+                                    if (relFile != null && relFile.exists()) {
                                         existingPaths.add(relFile.getAbsolutePath());
                                     } else {
                                         System.err.println(

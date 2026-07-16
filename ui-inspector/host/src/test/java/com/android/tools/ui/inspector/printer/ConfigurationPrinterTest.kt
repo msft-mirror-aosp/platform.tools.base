@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.tools.ui.inspector
+package com.android.tools.ui.inspector.printer
 
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol
 import com.google.common.truth.Truth.assertThat
@@ -24,7 +24,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 
-class ConfigurationTest {
+class ConfigurationPrinterTest {
   private val outContent = ByteArrayOutputStream()
   private val originalOut = System.out
 

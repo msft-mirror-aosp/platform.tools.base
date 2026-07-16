@@ -6009,7 +6009,6 @@ tools/base/sdk-common/src/main/java/com/android/ide/common/fonts/SdkFonts.kt
 tools/base/sdk-common/src/main/java/com/android/ide/common/fonts/SdkFontsFolderProvider.kt
 tools/base/sdk-common/src/main/java/com/android/ide/common/internal/ResourceCompilationException.java
 tools/base/sdk-common/src/main/java/com/android/ide/common/internal/ResourceProcessor.java
-tools/base/sdk-common/src/main/java/com/android/ide/common/internal/WaitableExecutor.java
 tools/base/sdk-common/src/main/java/com/android/ide/common/pagealign/PageAlignUtils.kt
 tools/base/sdk-common/src/main/java/com/android/ide/common/process/BaseProcessOutputHandler.java
 tools/base/sdk-common/src/main/java/com/android/ide/common/process/BuildCommandException.java
@@ -6236,7 +6235,6 @@ tools/base/sdk-common/src/test/java/com/android/ide/common/fonts/FontFamilyTest.
 tools/base/sdk-common/src/test/java/com/android/ide/common/fonts/MutableDetailTest.kt
 tools/base/sdk-common/src/test/java/com/android/ide/common/fonts/QueryResolverLegacyTest.kt
 tools/base/sdk-common/src/test/java/com/android/ide/common/fonts/QueryResolverTest.kt
-tools/base/sdk-common/src/test/java/com/android/ide/common/internal/WaitableExecutorTest.java
 tools/base/sdk-common/src/test/java/com/android/ide/common/pagealign/PageAlignUtilsTest.kt
 tools/base/sdk-common/src/test/java/com/android/ide/common/rendering/HardwareConfigHelperTest.java
 tools/base/sdk-common/src/test/java/com/android/ide/common/repository/AgpVersionTest.kt

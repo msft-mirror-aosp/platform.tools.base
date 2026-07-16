@@ -25,6 +25,7 @@ import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.tools.build.gradle.internal.profile.GradleTaskExecutionType
 import com.google.common.truth.Truth.assertThat
+import kotlin.io.path.listDirectoryEntries
 import org.gradle.api.Project
 import org.junit.Rule
 import org.junit.Test
@@ -367,6 +368,71 @@ class ScreenshotFeaturesTest {
     updateResult.assertOutputDoesNotContain("File not found")
 
     val validateResult = build.sstExecutor().run(":appWithWrapper:validateDebugScreenshotTest")
+    validateResult.assertOutputDoesNotContain("ScreenshotError")
+    validateResult.assertOutputDoesNotContain("File not found")
+  }
+
+  @Test
+  fun runPreviewScreenshotTestWithLayoutInflater() {
+    val build =
+      rule.build {
+        androidApplication {
+          files {
+            add(
+              "src/main/res/layout/my_custom_layout.xml",
+              """
+              <?xml version="1.0" encoding="utf-8"?>
+              <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:orientation="vertical">
+                  <TextView
+                      android:id="@+id/textView"
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:text="Inflated from XML" />
+              </LinearLayout>
+              """
+                .trimIndent(),
+            )
+            add(
+              "src/screenshotTest/java/com/LayoutInflaterTest.kt",
+              """
+              package pkg.name
+
+              import android.view.LayoutInflater
+              import androidx.compose.runtime.Composable
+              import androidx.compose.ui.tooling.preview.Preview
+              import androidx.compose.ui.viewinterop.AndroidView
+              import com.android.tools.screenshot.PreviewTest
+              import pkg.name.app.R
+
+              class LayoutInflaterTest {
+                  @PreviewTest
+                  @Preview(showBackground = true)
+                  @Composable
+                  fun testLayoutInflaterPreview() {
+                      AndroidView(factory = { context ->
+                          LayoutInflater.from(context).inflate(R.layout.my_custom_layout, null)
+                      })
+                  }
+              }
+              """
+                .trimIndent(),
+            )
+          }
+        }
+      }
+    val appProject = build.androidApplication()
+
+    val updateResult = build.updateReferenceImage()
+    updateResult.assertOutputDoesNotContain("ScreenshotError")
+    updateResult.assertOutputDoesNotContain("File not found")
+
+    val referenceScreenshotDir = appProject.resolve("src/screenshotTestDebug/reference/pkg/name/LayoutInflaterTest")
+    assertThat(referenceScreenshotDir.listDirectoryEntries()).isNotEmpty()
+
+    val validateResult = build.sstExecutor().run(":app:validateDebugScreenshotTest")
     validateResult.assertOutputDoesNotContain("ScreenshotError")
     validateResult.assertOutputDoesNotContain("File not found")
   }

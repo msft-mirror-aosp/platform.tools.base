@@ -33,7 +33,7 @@ class TreeDifferTest {
         bounds = bounds1,
         idResource = "btn",
         layoutResource = null,
-        attributes = listOf(UiNode.Attribute("text", "Click")),
+        attributes = listOf(UiNode.Attribute("text", UiNode.AttributeValue.StringVal("Click"))),
       )
     val prev = listOf(node)
     val curr = listOf(node.copy())
@@ -221,7 +221,11 @@ class TreeDifferTest {
           bounds = bounds1,
           idResource = "btn",
           layoutResource = null,
-          attributes = listOf(UiNode.Attribute("text", "Click"), UiNode.Attribute("enabled", "true")),
+          attributes =
+            listOf(
+              UiNode.Attribute("text", UiNode.AttributeValue.StringVal("Click")),
+              UiNode.Attribute("enabled", UiNode.AttributeValue.StringVal("true")),
+            ),
         )
       )
     val curr =
@@ -232,7 +236,11 @@ class TreeDifferTest {
           bounds = bounds1,
           idResource = "btn",
           layoutResource = null,
-          attributes = listOf(UiNode.Attribute("text", "Clicked"), UiNode.Attribute("visible", "true")),
+          attributes =
+            listOf(
+              UiNode.Attribute("text", UiNode.AttributeValue.StringVal("Clicked")),
+              UiNode.Attribute("visible", UiNode.AttributeValue.StringVal("true")),
+            ),
         )
       )
 
@@ -245,9 +253,9 @@ class TreeDifferTest {
     assertThat(mod.node.id).isEqualTo(1L)
     assertThat(mod.changes)
       .containsExactly(
-        NodeChange.PropertyChange.Modified("text", "Click", "Clicked"),
-        NodeChange.PropertyChange.Removed("enabled", "true"),
-        NodeChange.PropertyChange.Added("visible", "true"),
+        NodeChange.PropertyChange.Modified("text", UiNode.AttributeValue.StringVal("Click"), UiNode.AttributeValue.StringVal("Clicked")),
+        NodeChange.PropertyChange.Removed("enabled", UiNode.AttributeValue.StringVal("true")),
+        NodeChange.PropertyChange.Added("visible", UiNode.AttributeValue.StringVal("true")),
       )
   }
 
@@ -481,7 +489,7 @@ class TreeDifferTest {
           bounds = bounds1,
           idResource = "btn",
           layoutResource = null,
-          attributes = listOf(UiNode.Attribute("text", "Click")),
+          attributes = listOf(UiNode.Attribute("text", UiNode.AttributeValue.StringVal("Click"))),
         )
       )
 

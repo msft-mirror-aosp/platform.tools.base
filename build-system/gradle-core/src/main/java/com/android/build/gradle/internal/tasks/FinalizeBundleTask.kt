@@ -27,6 +27,7 @@ import com.android.build.gradle.internal.services.ProjectServices
 import com.android.build.gradle.internal.signing.SigningConfigData
 import com.android.build.gradle.internal.signing.SigningConfigDataProvider
 import com.android.build.gradle.internal.signing.SigningConfigProviderParams
+import com.android.build.gradle.internal.signing.SigningInputs
 import com.android.build.gradle.internal.tasks.factory.AndroidVariantTaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.utils.setDisallowChanges
@@ -43,6 +44,8 @@ import java.util.zip.Deflater
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
+import kotlin.collections.emptyList
+import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
@@ -65,7 +68,7 @@ import org.gradle.work.DisableCachingByDefault
  */
 @DisableCachingByDefault
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.BUNDLE_PACKAGING)
-abstract class FinalizeBundleTask : NonIncrementalTask() {
+abstract class FinalizeBundleTask : NonIncrementalTask(), SigningInputs {
 
   @get:InputFiles @get:PathSensitive(PathSensitivity.NAME_ONLY) abstract val intermediaryBundleFile: RegularFileProperty
 
@@ -78,6 +81,8 @@ abstract class FinalizeBundleTask : NonIncrementalTask() {
   @get:Optional
   var codeTransparencySigningConfigData: SigningConfigData? = null
     private set
+
+  abstract override val signingKeystoreFile: ConfigurableFileCollection
 
   @get:Internal abstract val tmpDir: DirectoryProperty
 
@@ -198,13 +203,9 @@ abstract class FinalizeBundleTask : NonIncrementalTask() {
       artifacts.setTaskInputToFinalProduct(InternalArtifactType.INTERMEDIARY_BUNDLE, task.intermediaryBundleFile)
 
       if (isSigningReady) {
-        val signingConfigData = SigningConfigData.fromDslSigningConfig(signingConfig)
-        task.signingConfigData =
-          SigningConfigDataProvider(
-            signingConfigData = projectServices.providerFactory.provider { signingConfigData },
-            signingConfigFileCollection = null,
-            signingConfigValidationResultDir = artifacts.get(InternalArtifactType.VALIDATE_SIGNING_CONFIG),
-          )
+        val provider = SigningConfigDataProvider.create(projectServices.objectFactory, signingConfig)
+        provider.signingConfigValidationResultDir.set(artifacts.get(InternalArtifactType.VALIDATE_SIGNING_CONFIG))
+        task.signingConfigData = provider
       }
     }
   }
@@ -244,6 +245,8 @@ abstract class FinalizeBundleTask : NonIncrementalTask() {
       creationConfig.artifacts.setTaskInputToFinalProduct(InternalArtifactType.INTERMEDIARY_BUNDLE, task.intermediaryBundleFile)
 
       task.signingConfigData = SigningConfigDataProvider.create(creationConfig)
+      creationConfig.signingConfig?.let { config -> task.signingKeystoreFile.from(config.storeFile.map { listOf(it) }.orElse(emptyList())) }
+      task.signingKeystoreFile.disallowChanges()
 
       creationConfig.bundleConfig?.codeTransparency?.signingConfiguration?.let { codeSigning ->
         if (codeSigning.storeFile != null && codeSigning.keyAlias != null) {

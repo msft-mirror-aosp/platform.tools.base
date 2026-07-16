@@ -579,6 +579,181 @@ class KeepRuleDetectorTest : AbstractCheckTest() {
       )
   }
 
+  fun testReflectionInnerFunction() {
+    // Adapted from WorkManager's use of reflection
+    lint()
+      .files(
+        kotlin(
+            """
+          package android.content
+          class Context {
+            // Stub
+          }
+        """
+          )
+          .indented(),
+        kotlin(
+            """
+          package androidx.work
+          class WorkerParameters {
+            // Stub
+          }
+        """
+          )
+          .indented(),
+        kotlin(
+            """
+          package androidx.work
+          import android.content.Context
+          import androidx.work.WorkerParameters
+          abstract class ListenableWorker(private val context: Context, private val parameters: WorkerParameters) {
+            // Stub
+          }
+        """
+          )
+          .indented(),
+        kotlin(
+            """
+          package androidx.work
+          import android.content.Context
+          import androidx.work.WorkerParameters
+          import androidx.work.ListenableWorker
+          abstract class WorkerFactory {
+            abstract fun createWorker(context: Context, name: String, parameters: WorkerParameters): ListenableWorker?
+          }
+        """
+          )
+          .indented(),
+        kotlin(
+            """
+          package androidx.work
+          import android.content.Context
+          import androidx.work.WorkerParameters
+          import androidx.work.ListenableWorker
+          import androidx.work.WorkerFactory
+          import java.lang.reflect.Constructor
+
+          class ReflectiveFactory: WorkerFactory() {
+            override fun createWorker(context: Context, name: String, parameters: WorkerParameters): ListenableWorker? {
+              fun createWorkerBlock(): ListenableWorker {
+                val klass = Class.forName(name).asSubclass(ListenableWorker::class.java)
+                val constructor = klass.getDeclaredConstructor(Context::class.java, WorkerParameters::class.java)
+                val instance = constructor.newInstance(context, parameters)
+                return instance
+              }
+
+              return createWorkerBlock()
+            }
+          }
+        """
+          )
+          .indented(),
+        *usesReflectionStubs,
+      )
+      .run()
+      .expect(
+        """
+        src/androidx/work/ReflectiveFactory.kt:13: Warning: This method calls androidx.work.ListenableWorker.<init>() reflectively, so it should be annotated with @UsesReflectionToConstruct(...) [ReflectionAnnotation]
+              val instance = constructor.newInstance(context, parameters)
+                                         ~~~~~~~~~~~
+        0 errors, 1 warning
+      """
+      )
+      .expectFixDiffs(
+        """
+        Autofix for src/androidx/work/ReflectiveFactory.kt line 13: Annotate with @UsesReflectionToConstruct:
+        @@ -3,0 +4 @@
+        +import androidx.annotation.keep.UsesReflectionToConstruct
+        @@ -8,0 +10,4 @@
+        +  @UsesReflectionToConstruct(
+        +      classConstant = ListenableWorker::class,
+        +      parameterTypes = [Context::class, WorkerParameters::class]
+        +  )
+        """
+          .trimIndent()
+      )
+  }
+
+  fun testReflectionAnnotatedInnerFunction() {
+    // Adapted from WorkManager's use of reflection
+    lint()
+      .files(
+        kotlin(
+            """
+          package android.content
+          class Context {
+            // Stub
+          }
+        """
+          )
+          .indented(),
+        kotlin(
+            """
+          package androidx.work
+          class WorkerParameters {
+            // Stub
+          }
+        """
+          )
+          .indented(),
+        kotlin(
+            """
+          package androidx.work
+          import android.content.Context
+          import androidx.work.WorkerParameters
+          abstract class ListenableWorker(private val context: Context, private val parameters: WorkerParameters) {
+            // Stub
+          }
+        """
+          )
+          .indented(),
+        kotlin(
+            """
+          package androidx.work
+          import android.content.Context
+          import androidx.work.WorkerParameters
+          import androidx.work.ListenableWorker
+          abstract class WorkerFactory {
+            abstract fun createWorker(context: Context, name: String, parameters: WorkerParameters): ListenableWorker?
+          }
+        """
+          )
+          .indented(),
+        kotlin(
+            """
+          package androidx.work
+          import android.content.Context
+          import androidx.annotation.keep.UsesReflectionToConstruct
+          import androidx.work.WorkerParameters
+          import androidx.work.ListenableWorker
+          import androidx.work.WorkerFactory
+          import java.lang.reflect.Constructor
+
+          class ReflectiveFactory: WorkerFactory() {
+            @UsesReflectionToConstruct(
+              classConstant = ListenableWorker::class,
+              parameterTypes = [Context::class, WorkerParameters::class]
+            )
+            override fun createWorker(context: Context, name: String, parameters: WorkerParameters): ListenableWorker? {
+              fun createWorkerBlock(): ListenableWorker {
+                val klass = Class.forName(name).asSubclass(ListenableWorker::class.java)
+                val constructor = klass.getDeclaredConstructor(Context::class.java, WorkerParameters::class.java)
+                val instance = constructor.newInstance(context, parameters)
+                return instance
+              }
+
+              return createWorkerBlock()
+            }
+          }
+        """
+          )
+          .indented(),
+        *usesReflectionStubs,
+      )
+      .run()
+      .expectClean()
+  }
+
   fun testField1() {
     lint()
       .files(

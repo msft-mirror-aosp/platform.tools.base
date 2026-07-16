@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-package com.android.tools.ui.inspector
+package com.android.tools.ui.inspector.printer
+
+import com.android.tools.ui.inspector.UiNode
+import java.util.Locale
 
 /** Recursively walks and formats the unified UiNode layout tree to console. */
 internal fun printUiTree(node: UiNode, indent: Int, includeAttributes: Boolean, includeSemantics: Boolean) {
@@ -141,7 +144,34 @@ internal fun UiNode.formatHeader(): String {
 
 /** Formats an attribute key-value pair consistently. */
 internal fun UiNode.Attribute.format(): String {
-  return "prop: $name=$value"
+  return "prop: $name=${value.format()}"
+}
+
+/** Formats an attribute value consistently. */
+internal fun UiNode.AttributeValue.format(): String {
+  return when (this) {
+    is UiNode.AttributeValue.StringVal -> value
+    is UiNode.AttributeValue.BooleanVal -> value.toString()
+    is UiNode.AttributeValue.ColorVal -> "#%08X".format(Locale.US, colorInt)
+    is UiNode.AttributeValue.DimensionVal -> {
+      val num = value
+      val numStr = if (num % 1.0f == 0.0f) num.toInt().toString() else "%.2f".format(Locale.US, num)
+      if (sp != null) {
+        val spStr = if (sp % 1.0f == 0.0f) sp.toInt().toString() else "%.2f".format(Locale.US, sp)
+        "${numStr}px (${spStr}sp)"
+      } else if (dp != null) {
+        val dpStr = if (dp % 1.0f == 0.0f) dp.toInt().toString() else "%.2f".format(Locale.US, dp)
+        "${numStr}px (${dpStr}dp)"
+      } else {
+        "${numStr}px"
+      }
+    }
+    is UiNode.AttributeValue.NumberVal -> {
+      val num = value
+      if (num is Double || num is Float) "%.2f".format(Locale.US, num.toDouble()) else num.toString()
+    }
+    UiNode.AttributeValue.NullVal -> ""
+  }
 }
 
 /** Formats a Compose parameter key-value pair consistently (returns empty if value is empty/null). */

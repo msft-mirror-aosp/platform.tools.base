@@ -162,6 +162,9 @@ enum class StringOption(override val propertyName: String, stage: ApiStage) : Op
    */
   NEW_DSL_OPT_OUT("android.newDsl.optOut", ApiStage.Experimental),
 
+  /** To identify tool (e.g. Lightbuild) that the project is created by */
+  PROJECT_CREATOR_TOOL("android.project.createdBy", ApiStage.Experimental),
+
   /* ---------------
    * DEPRECATED APIs
    */

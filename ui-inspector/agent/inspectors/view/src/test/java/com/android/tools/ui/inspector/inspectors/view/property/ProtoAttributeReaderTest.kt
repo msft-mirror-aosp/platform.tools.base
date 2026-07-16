@@ -17,6 +17,7 @@
 package com.android.tools.ui.inspector.inspectors.view.property
 
 import android.app.Activity
+import android.graphics.Color
 import android.view.View
 import com.android.tools.ui.inspector.inspectors.view.StringTable
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.ViewNode.Attribute
@@ -45,7 +46,8 @@ class ProtoAttributeReaderTest {
 
     assertThat(resolved).hasSize(1)
     assertThat(stringTable.getString(resolved[0].name)).isEqualTo("clickable")
-    assertThat(stringTable.getString(resolved[0].value)).isEqualTo("true")
+    assertThat(resolved[0].type).isEqualTo(Attribute.Type.BOOLEAN)
+    assertThat(resolved[0].int32Value).isEqualTo(1)
   }
 
   @Test
@@ -61,7 +63,8 @@ class ProtoAttributeReaderTest {
     reader.readInt(0, 100)
 
     assertThat(resolved).hasSize(1)
-    assertThat(stringTable.getString(resolved[0].value)).isEqualTo("100")
+    assertThat(resolved[0].type).isEqualTo(Attribute.Type.INT32)
+    assertThat(resolved[0].int32Value).isEqualTo(100)
   }
 
   @Test
@@ -77,7 +80,8 @@ class ProtoAttributeReaderTest {
     reader.readColor(0, 0xFFFF0000.toInt())
 
     assertThat(resolved).hasSize(1)
-    assertThat(stringTable.getString(resolved[0].value)).isEqualTo("#FFFF0000")
+    assertThat(resolved[0].type).isEqualTo(Attribute.Type.COLOR)
+    assertThat(resolved[0].int32Value).isEqualTo(0xFFFF0000.toInt())
   }
 
   @Test
@@ -94,7 +98,8 @@ class ProtoAttributeReaderTest {
     reader.readIntEnum(0, 0)
 
     assertThat(resolved).hasSize(1)
-    assertThat(stringTable.getString(resolved[0].value)).isEqualTo("VISIBLE")
+    assertThat(resolved[0].type).isEqualTo(Attribute.Type.INT_ENUM)
+    assertThat(stringTable.getString(resolved[0].int32Value)).isEqualTo("VISIBLE")
   }
 
   @Test
@@ -111,7 +116,8 @@ class ProtoAttributeReaderTest {
     reader.readIntFlag(0, 1)
 
     assertThat(resolved).hasSize(1)
-    assertThat(stringTable.getString(resolved[0].value)).isEqualTo("flag1")
+    assertThat(resolved[0].type).isEqualTo(Attribute.Type.INT_FLAG)
+    assertThat(stringTable.getString(resolved[0].int32Value)).isEqualTo("flag1")
   }
 
   @Test
@@ -127,5 +133,39 @@ class ProtoAttributeReaderTest {
     reader.readObject(0, null)
 
     assertThat(resolved).isEmpty()
+  }
+
+  @Test
+  fun testReadColor_colorLong() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val view = View(activity)
+    val stringTable = StringTable()
+    val resolved = mutableListOf<Attribute>()
+
+    val metadata = AttributeMetadata("textColor", 0, PropertyType.COLOR)
+    val reader = ProtoAttributeReader(view, listOf(metadata), stringTable) { resolved.add(it) }
+
+    reader.readColor(0, Color.pack(0xFFFF0000.toInt()))
+
+    assertThat(resolved).hasSize(1)
+    assertThat(resolved[0].type).isEqualTo(Attribute.Type.COLOR)
+    assertThat(resolved[0].int32Value).isEqualTo(0xFFFF0000.toInt())
+  }
+
+  @Test
+  fun testReadColor_colorObject() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val view = View(activity)
+    val stringTable = StringTable()
+    val resolved = mutableListOf<Attribute>()
+
+    val metadata = AttributeMetadata("textColor", 0, PropertyType.COLOR)
+    val reader = ProtoAttributeReader(view, listOf(metadata), stringTable) { resolved.add(it) }
+
+    reader.readColor(0, Color.valueOf(0xFFFF0000.toInt()))
+
+    assertThat(resolved).hasSize(1)
+    assertThat(resolved[0].type).isEqualTo(Attribute.Type.COLOR)
+    assertThat(resolved[0].int32Value).isEqualTo(0xFFFF0000.toInt())
   }
 }

@@ -698,6 +698,16 @@ coverage_report(
     ],
 )
 
+coverage_report(
+    name = "emulator-ui",
+    srcpath_include = [
+        "tools/vendor/google/emulator/ui/src",
+    ],
+    tests = [
+        "//tools/vendor/google/emulator/ui:emulator_ui_tests.test",
+    ],
+)
+
 # Coverage report for suggested import.
 coverage_report(
     name = "suggested-import",

@@ -17,6 +17,8 @@
 package com.android.build.gradle.internal.tasks
 
 import com.android.SdkConstants.DOT_JAR
+import com.android.build.api.artifact.ScopedArtifact
+import com.android.build.api.variant.ScopedArtifacts
 import com.android.build.gradle.internal.dependency.UncompressedJavaRes
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.tasks.creationconfig.ProcessJavaResCreationConfig
@@ -112,5 +114,12 @@ private fun getProjectJavaRes(
   if (creationConfig.packageJacocoRuntime) {
     javaRes.from(creationConfig.artifacts.get(InternalArtifactType.JACOCO_CONFIG_RESOURCES))
   }
+
+  val projectJavaRes = creationConfig.artifacts.forScope(ScopedArtifacts.Scope.PROJECT).getFinalArtifacts(ScopedArtifact.JAVA_RES)
+  javaRes.from(projectJavaRes.filter { file -> !file.name.endsWith(DOT_JAR) })
+  javaRes.from(
+    projectJavaRes.filter { file -> file.name.endsWith(DOT_JAR) }.elements.map { jars -> jars.map { jar -> zipTree(jar.asFile) } }
+  )
+
   return javaRes.asFileTree.matching(MergeJavaResourceTask.patternSet)
 }

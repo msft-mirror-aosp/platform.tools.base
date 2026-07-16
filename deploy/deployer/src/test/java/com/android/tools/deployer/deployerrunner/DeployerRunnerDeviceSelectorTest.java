@@ -19,6 +19,8 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.android.adblib.ddmlibcompatibility.testutils.UseAdbLibAndroidDebugBridgeRule;
+import com.android.adblib.testingutils.FakeAdbServerProviderRule;
 import com.android.ddmlib.AndroidDebugBridge;
 import com.android.fakeadbserver.FakeAdbServer;
 import com.android.testutils.TestUtils;
@@ -36,7 +38,9 @@ import com.android.utils.FileUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.RuleChain;
 import org.mockito.Mockito;
 
 import java.io.File;
@@ -47,12 +51,23 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class DeployerRunnerDeviceSelectorTest {
-    private static final long WAIT_TIME_MS = TimeUnit.SECONDS.toMillis(10);
     private static final String BASE = "tools/base/deploy/deployer/src/test/resource/";
 
-    private FakeAdbServer fakeAdbServer;
     private final FakeDeviceHandler handler = new FakeDeviceHandler();
 
+    private final FakeAdbServerProviderRule fakeAdbRule =
+            new FakeAdbServerProviderRule(
+                    provider -> {
+                        provider.installDeviceHandler(handler);
+                        return kotlin.Unit.INSTANCE;
+                    });
+
+    @Rule
+    public final RuleChain chain =
+            RuleChain.outerRule(fakeAdbRule)
+                    .around(new UseAdbLibAndroidDebugBridgeRule(fakeAdbRule::getAdbSession));
+
+    private FakeAdbServer fakeAdbServer;
     private static File dexDbFile;
     private DeploymentCacheDatabase cacheDb;
     private SqlApkFileDatabase dexDb;
@@ -82,19 +97,13 @@ public class DeployerRunnerDeviceSelectorTest {
         cacheDb = new DeploymentCacheDatabase(2);
         service = Mockito.mock(UIService.class);
 
-        fakeAdbServer =
-                new FakeAdbServer.Builder()
-                        .installDefaultCommandHandlers()
-                        .addDeviceHandler(handler)
-                        .build();
-        fakeAdbServer.start();
+        fakeAdbServer = fakeAdbRule.getFakeAdb().getFakeAdbServer();
+        AndroidDebugBridge.enableFakeAdbServerMode(fakeAdbServer.getPort());
 
         FakeDeviceLibrary library = new FakeDeviceLibrary();
         device0 = library.build(DeviceId.API_28, "Google", "Pixel", "0");
         device1 = library.build(DeviceId.API_28, "Google", "Pixel", "1");
         device2 = library.build(DeviceId.API_28, "Google", "Pixel", "2");
-
-        AndroidDebugBridge.enableFakeAdbServerMode(fakeAdbServer.getPort());
     }
 
     @Test
@@ -211,10 +220,16 @@ public class DeployerRunnerDeviceSelectorTest {
     }
 
     @After
-    public void after() throws InterruptedException {
-        fakeAdbServer.stop();
-        boolean status = fakeAdbServer.awaitServerTermination(WAIT_TIME_MS, TimeUnit.MILLISECONDS);
-        assertTrue(status);
+    public void after() throws Exception {
+        if (device0 != null) {
+            device0.shutdown();
+        }
+        if (device1 != null) {
+            device1.shutdown();
+        }
+        if (device2 != null) {
+            device2.shutdown();
+        }
         AndroidDebugBridge.disconnectBridge(10, TimeUnit.SECONDS);
         AndroidDebugBridge.terminate();
         AndroidDebugBridge.disableFakeAdbServerMode();

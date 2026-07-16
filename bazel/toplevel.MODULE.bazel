@@ -201,6 +201,9 @@ single_version_override(
         # Lock maven_install so rules_android does not call out to coursier for
         # maven resolution.
         "//tools/base/bazel/bzlmod:rules_android_lock_maven_install.patch",
+        # Configure toolchain_android_only to use current_java_runtime for executing javac,
+        # to keep it in sync with the JDK used to generate the system bootclasspath.
+        "//tools/base/bazel/bzlmod:rules_android_toolchain_java_runtime.patch",
     ],
     version = "0.6.5",
 )

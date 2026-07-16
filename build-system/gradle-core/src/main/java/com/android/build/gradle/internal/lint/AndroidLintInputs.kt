@@ -152,8 +152,9 @@ abstract class LintTool {
    *
    * Used both for the [lintCacheDirectory] and for the classloader cache in [AndroidLintWorkAction]
    *
-   * For published versions it will include the version of lint from maven e.g. `30.2.0-alpha05` and for -dev versions, also a hash of the
-   * jars: `30.2.0-dev_920ff9cabfbb40d0318735f9fe403b9/`
+   * For published versions it will include the version of lint from maven and hash calculated from classpath filenames e.g.
+   * `30.2.0-alpha05_920ff9cabfbb40d0318735f9fe403b9` For -dev versions it will include a hash of the jars:
+   * `30.2.0-dev_920ff9cabfbb40d0318735f9fe403b9/`
    */
   @get:Input abstract val versionKey: Property<String>
 

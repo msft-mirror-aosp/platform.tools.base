@@ -23,6 +23,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.view.View
+import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.inspection.ArtTooling
@@ -137,6 +138,42 @@ class ViewInspectorTest {
     }
 
   @Test
+  fun testDumpViews_layoutParams() =
+    runTest(testDispatcher) {
+      val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+      val textView =
+        TextView(activity).apply {
+          id = 101
+          layoutParams = ViewGroup.LayoutParams(120, 80)
+        }
+      val layout =
+        LinearLayout(activity).apply {
+          id = 100
+          addView(textView)
+        }
+      activity.setContentView(layout)
+
+      val mockConnection =
+        object : Connection() {
+          override fun sendEvent(data: ByteArray) {}
+        }
+      val inspector = ViewInspector(mockConnection, mockEnvironment)
+      val response = runDumpCommand(inspector, includeAttributes = true)
+      val dumpResponse = response.dumpViewsResponse
+      val stringTable = dumpResponse.stringsList.associate { it.id to it.value }
+      val root = dumpResponse.nodesList.first()
+      val textNode = findNodeByClassName(root, "TextView", stringTable)!!
+
+      val widthAttr = textNode.attributesList.find { stringTable[it.name] == "layout_width" }!!
+      assertThat(widthAttr.type).isEqualTo(ViewInspectorProtocol.ViewNode.Attribute.Type.DIMENSION)
+      assertThat(widthAttr.floatValue).isEqualTo(120f)
+
+      val heightAttr = textNode.attributesList.find { stringTable[it.name] == "layout_height" }!!
+      assertThat(heightAttr.type).isEqualTo(ViewInspectorProtocol.ViewNode.Attribute.Type.DIMENSION)
+      assertThat(heightAttr.floatValue).isEqualTo(80f)
+    }
+
+  @Test
   fun testDumpViews_visibility() =
     runTest(testDispatcher) {
       val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
@@ -156,12 +193,12 @@ class ViewInspectorTest {
       val testRoot = findNodeByClassName(dumpResponse.getNodes(0), "LinearLayout", stringTable)
 
       assertThat(testRoot).isNotNull()
-      assertThat(stringTable[testRoot!!.attributesList.find { stringTable[it.name] == "visibility" }!!.value]).isEqualTo("visible")
-      assertThat(stringTable[testRoot.getChildren(0).attributesList.find { stringTable[it.name] == "visibility" }!!.value])
+      assertThat(stringTable[testRoot!!.attributesList.find { stringTable[it.name] == "visibility" }!!.int32Value]).isEqualTo("visible")
+      assertThat(stringTable[testRoot.getChildren(0).attributesList.find { stringTable[it.name] == "visibility" }!!.int32Value])
         .isEqualTo("visible")
-      assertThat(stringTable[testRoot.getChildren(1).attributesList.find { stringTable[it.name] == "visibility" }!!.value])
+      assertThat(stringTable[testRoot.getChildren(1).attributesList.find { stringTable[it.name] == "visibility" }!!.int32Value])
         .isEqualTo("invisible")
-      assertThat(stringTable[testRoot.getChildren(2).attributesList.find { stringTable[it.name] == "visibility" }!!.value])
+      assertThat(stringTable[testRoot.getChildren(2).attributesList.find { stringTable[it.name] == "visibility" }!!.int32Value])
         .isEqualTo("gone")
     }
 
@@ -422,7 +459,7 @@ class ViewInspectorTest {
     assertThat(gravityAttr).isNotNull()
 
     // Verify that the value is resolved correctly as flags joined by "|"
-    assertThat(stringTable[gravityAttr!!.value]).isEqualTo("top|start")
+    assertThat(stringTable[gravityAttr!!.int32Value]).isEqualTo("top|start")
   }
 
   private class TestView(context: Context) : View(context) {

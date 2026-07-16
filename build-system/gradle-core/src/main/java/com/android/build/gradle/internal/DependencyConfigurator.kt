@@ -163,8 +163,19 @@ class DependencyConfigurator(private val project: Project, private val projectSe
     registerTransform(
       LayoutlibExtractor::class.java,
       ArtifactTypeDefinition.JAR_TYPE,
-      AndroidArtifacts.ArtifactType.EXTRACTED_LAYOUTLIB.type
+      AndroidArtifacts.ArtifactType.EXTRACTED_LAYOUTLIB.type,
     )
+    // LayoutlibExtractor requires layoutlib-resources JAR in the dependency graph of layoutlib-runtime
+    // so it can copy the resources to data/framework_res.jar inside the extracted runtime directory.
+    // Since prebuilt POMs for layoutlib-runtime do not declare this dependency, we dynamically add it here.
+    // TODO (b/534359480) Remove this once layoutlib-resources is added as dependency in layoutlib-runtime POM
+    project.dependencies.components.withModule("com.android.tools.layoutlib:layoutlib-runtime") { details ->
+      details.allVariants { variant ->
+        if (details.id.version == "16.1.0-jdk17") {
+          variant.withDependencies { deps -> deps.add("com.android.tools.layoutlib:layoutlib-resources:${details.id.version}") }
+        }
+      }
+    }
     dependencies.registerTransform(MockableJarTransform::class.java) { spec: TransformSpec<MockableJarTransform.Parameters> ->
       // Query for JAR instead of PROCESSED_JAR as android.jar doesn't need processing
       spec.parameters.projectName.set(project.name)

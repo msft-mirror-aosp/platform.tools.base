@@ -126,9 +126,15 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-/** Run instrumentation tests for a given variant */
+/**
+ * Run instrumentation tests for a given variant
+ *
+ * @deprecated Will be replaced with {@link com.android.build.gradle.tasks.TestSuiteTestTask}. Will
+ *     be removed in AGP 10.0. See b/516536626
+ */
 @DisableCachingByDefault
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.TEST)
+@Deprecated // b/516536626
 public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTask
         implements AndroidTestTask {
 

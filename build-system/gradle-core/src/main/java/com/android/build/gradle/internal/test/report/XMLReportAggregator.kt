@@ -150,6 +150,13 @@ class XMLReportAggregator(private val files: List<File>, projectName: String) {
         var currentTestcaseName: String? = null
         var currentStatus = STATUS_PASS // Default status
 
+        var currentDiffPercent: String? = null
+        var currentPreviewName: String? = null
+        var currentMethodName: String? = null
+        var currentRefImagePath: String? = null
+        var currentNewImagePath: String? = null
+        var currentDiffImagePath: String? = null
+
         // Buffer to accumulate text content (stack trace)
         var failureBuffer: StringBuilder? = null
 
@@ -160,11 +167,26 @@ class XMLReportAggregator(private val files: List<File>, projectName: String) {
                 TAG_PROPERTY -> {
                   val name = reader.getAttributeValue(null, ATTR_NAME)
                   val value = reader.getAttributeValue(null, ATTR_VALUE)
-                  if (name == KEY_MODULE_PATH) modulePath = value
-                  if (name == KEY_TEST_SUITE_NAME) testSuiteName = value
-                  if (name == KEY_TESTED_VARIANT_NAME) {
-                    rootReportBuilder.addVariant(value)
-                    variantName = value
+                  if (name != null && value != null) {
+                    if (currentTestcaseName != null) {
+                      when (name) {
+                        "PreviewScreenshot.diffPercent" -> currentDiffPercent = value
+                        "PreviewScreenshot.previewName" -> currentPreviewName = value
+                        "PreviewScreenshot.methodName" -> currentMethodName = value
+                        "PreviewScreenshot.refImagePath" -> currentRefImagePath = value
+                        "PreviewScreenshot.newImagePath" -> currentNewImagePath = value
+                        "PreviewScreenshot.diffImagePath" -> currentDiffImagePath = value
+                      }
+                    } else {
+                      when (name) {
+                        KEY_MODULE_PATH -> modulePath = value
+                        KEY_TEST_SUITE_NAME -> testSuiteName = value
+                        KEY_TESTED_VARIANT_NAME -> {
+                          rootReportBuilder.addVariant(value)
+                          variantName = value
+                        }
+                      }
+                    }
                   }
                 }
                 TAG_TESTCASE -> {
@@ -172,6 +194,12 @@ class XMLReportAggregator(private val files: List<File>, projectName: String) {
                   currentTestcaseName = reader.getAttributeValue(null, ATTR_NAME)
                   currentStatus = STATUS_PASS // Reset status for this new test
                   failureBuffer = null // Reset failure buffer
+                  currentDiffPercent = null
+                  currentPreviewName = null
+                  currentMethodName = null
+                  currentRefImagePath = null
+                  currentNewImagePath = null
+                  currentDiffImagePath = null
                 }
                 TAG_SKIPPED -> {
                   currentStatus = STATUS_SKIPPED
@@ -203,12 +231,32 @@ class XMLReportAggregator(private val files: List<File>, projectName: String) {
                   // Extract and clean stack trace
                   val stackTrace = failureBuffer?.toString()?.trim()?.takeIf { it.isNotEmpty() }
 
-                  addTestResult(modulePath, testSuiteName, currentClassname, currentTestcaseName, variantName, currentStatus, stackTrace)
+                  addTestResult(
+                    modulePath,
+                    testSuiteName,
+                    currentClassname,
+                    currentTestcaseName,
+                    variantName,
+                    currentStatus,
+                    stackTrace,
+                    currentDiffPercent,
+                    currentPreviewName,
+                    currentMethodName,
+                    currentRefImagePath,
+                    currentNewImagePath,
+                    currentDiffImagePath,
+                  )
                 }
                 // Clear testcase-specific data
                 currentClassname = null
                 currentTestcaseName = null
                 failureBuffer = null
+                currentDiffPercent = null
+                currentPreviewName = null
+                currentMethodName = null
+                currentRefImagePath = null
+                currentNewImagePath = null
+                currentDiffImagePath = null
               }
             }
           }
@@ -331,13 +379,48 @@ class XMLReportAggregator(private val files: List<File>, projectName: String) {
     }
   }
 
-  private data class TestCaseExecution(val testSuiteName: String, val variantName: String, val status: String, val stackTrace: String?)
+  private data class TestCaseExecution(
+    val testSuiteName: String,
+    val variantName: String,
+    val status: String,
+    val stackTrace: String?,
+    val diffPercent: String?,
+    val previewName: String?,
+    val methodName: String?,
+    val refImagePath: String?,
+    val newImagePath: String?,
+    val diffImagePath: String?,
+  )
 
   private class TestCaseBuilder(val name: String) {
     val executions = mutableListOf<TestCaseExecution>()
 
-    fun addResult(testSuiteName: String, variantName: String, status: String, stackTrace: String?) {
-      executions.add(TestCaseExecution(testSuiteName, variantName, status, stackTrace))
+    fun addResult(
+      testSuiteName: String,
+      variantName: String,
+      status: String,
+      stackTrace: String?,
+      diffPercent: String?,
+      previewName: String?,
+      methodName: String?,
+      refImagePath: String?,
+      newImagePath: String?,
+      diffImagePath: String?,
+    ) {
+      executions.add(
+        TestCaseExecution(
+          testSuiteName,
+          variantName,
+          status,
+          stackTrace,
+          diffPercent,
+          previewName,
+          methodName,
+          refImagePath,
+          newImagePath,
+          diffImagePath,
+        )
+      )
     }
 
     fun build(): TestCase {
@@ -368,7 +451,17 @@ class XMLReportAggregator(private val files: List<File>, projectName: String) {
                   (existing.status != STATUS_FAIL && exec.status == STATUS_FAIL) ||
                   (existing.status == STATUS_SKIPPED && exec.status == STATUS_PASS)
               ) {
-                variantResults[exec.variantName] = VariantTestResult(exec.status, exec.stackTrace?.let { stackTraceToId[it] })
+                variantResults[exec.variantName] =
+                  VariantTestResult(
+                    exec.status,
+                    exec.stackTrace?.let { stackTraceToId[it] },
+                    exec.diffPercent,
+                    exec.previewName,
+                    exec.methodName,
+                    exec.refImagePath,
+                    exec.newImagePath,
+                    exec.diffImagePath,
+                  )
               }
             }
             TestSuiteTestResult(suiteName, variantResults)
@@ -541,6 +634,12 @@ class XMLReportAggregator(private val files: List<File>, projectName: String) {
     variantName: String,
     status: String,
     stackTrace: String?,
+    diffPercent: String?,
+    previewName: String?,
+    methodName: String?,
+    refImagePath: String?,
+    newImagePath: String?,
+    diffImagePath: String?,
   ) {
     try {
       val packageName = classname.substringBeforeLast('.', "")
@@ -551,7 +650,18 @@ class XMLReportAggregator(private val files: List<File>, projectName: String) {
         .getOrAddPackage(packageName)
         .getOrAddClass(className)
         .getOrAddTestCase(testcaseName)
-        .addResult(testSuiteName, variantName, status, stackTrace)
+        .addResult(
+          testSuiteName,
+          variantName,
+          status,
+          stackTrace,
+          diffPercent,
+          previewName,
+          methodName,
+          refImagePath,
+          newImagePath,
+          diffImagePath,
+        )
     } catch (e: Exception) {
       logger.error(e, "Error processing test case: $classname.$testcaseName")
     }

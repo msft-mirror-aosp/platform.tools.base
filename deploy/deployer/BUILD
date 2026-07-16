@@ -14,7 +14,6 @@ iml_module(
     iml_files = ["android.sdktools.deployer.iml"],
     lint_baseline = "lint_baseline.xml",
     tags = ["noci:studio-win"],
-    test_class = "com.android.tools.deployer.deployerrunner.DeployerTestSuite",
     test_data = glob(["src/test/resource/**"]) + select({
         "@platforms//os:windows": [],
         "//conditions:default": [
@@ -474,7 +473,6 @@ kotlin_test(
             "src/test/java/com/android/tools/deployer/deployerrunner/*.java",
             "src/test/java/com/android/tools/deployer/deployerrunner/*.kt",
         ],
-        exclude = ["src/test/java/com/android/tools/deployer/deployerrunner/DeployerTestSuite.java"],
     ),
     data = glob(["src/test/resource/**"]) + select({
         "@platforms//os:windows": [],
@@ -499,6 +497,8 @@ kotlin_test(
         ":tools.deployer",
         ":tools.deployer.common",
         ":tools.deployer.install",
+        "//tools/base/adblib:adblib.tests.testlib",
+        "//tools/base/adblib-ddmlibcompatibility:adblib.ddmlibcompatibility.tests.testlib",
         "//tools/base/bazel:studio-proto",
         "//tools/base/common:tools.common",
         "//tools/base/ddmlib:tools.ddmlib",

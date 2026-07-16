@@ -80,9 +80,14 @@ import org.gradle.internal.logging.ConsoleRenderer
 import org.gradle.work.DisableCachingByDefault
 import org.gradle.workers.WorkerExecutor
 
-/** Runs instrumentation tests of a variant on a device defined in the DSL. */
+/**
+ * Runs instrumentation tests of a variant on a device defined in the DSL.
+ *
+ * @deprecated Will be replaced with [com.android.build.gradle.tasks.TestSuiteTestTask]. Will be removed in AGP 10.0. See b/516536626
+ */
 @DisableCachingByDefault
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.TEST)
+@Deprecated("Will be replaced with TestSuiteTestTask. Will be removed in AGP 10.0") // b/516536626
 abstract class ManagedDeviceInstrumentationTestTask : NonIncrementalTask(), AndroidTestTask {
 
   abstract class TestRunnerFactory {

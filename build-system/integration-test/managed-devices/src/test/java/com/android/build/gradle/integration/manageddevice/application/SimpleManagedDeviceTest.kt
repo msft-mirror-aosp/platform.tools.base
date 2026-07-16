@@ -66,8 +66,10 @@ class SimpleManagedDeviceTest(val runWithBuiltInPlatform: Boolean) {
         FileUtils.join(rule.build.androidApplication().buildDir.pathString, "reports", "androidTests", "managedDevice", "debug", "device1")
       )
     assertThat(File(reportDir, "index.html")).exists()
-    assertThat(File(reportDir, "com.example.android.kotlin.html")).exists()
-    assertThat(File(reportDir, "com.example.android.kotlin.ExampleInstrumentedTest.html")).exists()
+    if (!runWithBuiltInPlatform) {
+      assertThat(File(reportDir, "com.example.android.kotlin.html")).exists()
+      assertThat(File(reportDir, "com.example.android.kotlin.ExampleInstrumentedTest.html")).exists()
+    }
 
     val mergedTestReportDir =
       File(
@@ -81,8 +83,10 @@ class SimpleManagedDeviceTest(val runWithBuiltInPlatform: Boolean) {
         )
       )
     assertThat(File(mergedTestReportDir, "index.html")).exists()
-    assertThat(File(mergedTestReportDir, "com.example.android.kotlin.html")).exists()
-    assertThat(File(mergedTestReportDir, "com.example.android.kotlin.ExampleInstrumentedTest.html")).exists()
+    if (!runWithBuiltInPlatform) {
+      assertThat(File(mergedTestReportDir, "com.example.android.kotlin.html")).exists()
+      assertThat(File(mergedTestReportDir, "com.example.android.kotlin.ExampleInstrumentedTest.html")).exists()
+    }
   }
 
   private fun verifyMetadataInjected(enabled: Boolean) {
@@ -92,7 +96,7 @@ class SimpleManagedDeviceTest(val runWithBuiltInPlatform: Boolean) {
       )
     assertThat(File(reportDir, "index.html")).exists()
 
-    val aggregationActive = enabled
+    val aggregationActive = enabled || runWithBuiltInPlatform
 
     if (aggregationActive) {
       assertThat(File(reportDir, "data.js")).exists()
@@ -125,8 +129,10 @@ class SimpleManagedDeviceTest(val runWithBuiltInPlatform: Boolean) {
         )
       )
     assertThat(File(mergedTestReportDir, "index.html")).exists()
-    assertThat(File(mergedTestReportDir, "com.example.android.kotlin.html")).exists()
-    assertThat(File(mergedTestReportDir, "com.example.android.kotlin.ExampleInstrumentedTest.html")).exists()
+    if (!aggregationActive) {
+      assertThat(File(mergedTestReportDir, "com.example.android.kotlin.html")).exists()
+      assertThat(File(mergedTestReportDir, "com.example.android.kotlin.ExampleInstrumentedTest.html")).exists()
+    }
   }
 
   private fun assertTestPassedInReport() {

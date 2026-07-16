@@ -14,8 +14,15 @@
  * limitations under the License.
  */
 
-package com.android.tools.ui.inspector
+package com.android.tools.ui.inspector.printer
 
+import com.android.tools.ui.inspector.ConfigurationDiff
+import com.android.tools.ui.inspector.NodeChange
+import com.android.tools.ui.inspector.TimedUiDump
+import com.android.tools.ui.inspector.TreeDiff
+import com.android.tools.ui.inspector.UiNode
+import com.android.tools.ui.inspector.createConfigurationDiff
+import com.android.tools.ui.inspector.diffTrees
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol
 import com.google.protobuf.Descriptors
 
@@ -149,7 +156,7 @@ private fun printTreeDiff(diff: TreeDiff, includeAttributes: Boolean, includeSem
 }
 
 /** Formats a single [NodeChange] (class, bounds, parent, or property changes) into a human-readable string. */
-private fun formatNodeChange(node: UiNode, change: NodeChange): String {
+internal fun formatNodeChange(node: UiNode, change: NodeChange): String {
   return when (change) {
     is NodeChange.ClassChange -> "class: ${change.oldClassName} -> ${change.newClassName}"
     is NodeChange.BoundsChange ->
@@ -161,26 +168,27 @@ private fun formatNodeChange(node: UiNode, change: NodeChange): String {
     }
     is NodeChange.PropertyChange.Removed -> {
       val prefix = if (node is UiNode.ComposeNode) "param" else "prop"
-      val valStr = formatRawPropertyValue(change.oldValue)
+      val valStr = formatRawPropertyValue(change.name, change.oldValue)
       "$prefix: ${change.name} removed (was $valStr)"
     }
     is NodeChange.PropertyChange.Added -> {
       val prefix = if (node is UiNode.ComposeNode) "param" else "prop"
-      val valStr = formatRawPropertyValue(change.newValue)
+      val valStr = formatRawPropertyValue(change.name, change.newValue)
       "$prefix: ${change.name}=$valStr added"
     }
     is NodeChange.PropertyChange.Modified -> {
       val prefix = if (node is UiNode.ComposeNode) "param" else "prop"
-      val oldStr = formatRawPropertyValue(change.oldValue)
-      val newStr = formatRawPropertyValue(change.newValue)
+      val oldStr = formatRawPropertyValue(change.name, change.oldValue)
+      val newStr = formatRawPropertyValue(change.name, change.newValue)
       "$prefix: ${change.name}=$oldStr -> $newStr"
     }
   }
 }
 
-private fun formatRawPropertyValue(value: Any): String {
+internal fun formatRawPropertyValue(name: String, value: Any): String {
   return when (value) {
     is UiNode.ComposeParameter -> formatComposeParameter(value)
+    is UiNode.AttributeValue -> value.format()
     else -> value.toString()
   }
 }

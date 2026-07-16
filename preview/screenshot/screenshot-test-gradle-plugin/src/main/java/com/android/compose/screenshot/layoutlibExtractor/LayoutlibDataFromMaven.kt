@@ -56,7 +56,12 @@ class LayoutlibDataFromMaven(val layoutlibDataDirectory: FileCollection) {
 
       val layoutlibDataDirectory =
         configuration.incoming
-          .artifactView { config -> config.attributes { it.attribute(ARTIFACT_TYPE_ATTRIBUTE, TYPE_EXTRACTED_LAYOUTLIB_DATA) } }
+          .artifactView { config ->
+            config.attributes { it.attribute(ARTIFACT_TYPE_ATTRIBUTE, TYPE_EXTRACTED_LAYOUTLIB_DATA) }
+            config.componentFilter { id ->
+              id is org.gradle.api.artifacts.component.ModuleComponentIdentifier && id.group == MAVEN_GROUP && id.module == MAVEN_ARTIFACT
+            }
+          }
           .artifacts
           .artifactFiles
       return LayoutlibDataFromMaven(layoutlibDataDirectory)
