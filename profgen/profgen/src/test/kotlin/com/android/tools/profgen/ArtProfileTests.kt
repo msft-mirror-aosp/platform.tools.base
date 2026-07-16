@@ -382,6 +382,31 @@ class ArtProfileTests {
     assertSerializationIntegrity(profile, ArtProfileSerializer.V0_1_5_S)
   }
 
+  @Test
+  fun testDexV41ProfileBuildingAndSerialization() {
+    val dexFile = testData("dex041.dex")
+    val parsedDexes = parseDexFiles(dexFile.readBytes())
+    assertThat(parsedDexes).hasSize(2)
+    assertThat(parsedDexes[0].header.version).isEqualTo(41)
+    assertThat(parsedDexes[1].header.version).isEqualTo(41)
+
+    val apk = Apk(parsedDexes)
+    val hrpText = "LFoo;\nLBar;\n"
+    val tempFile = createTempFile(suffix = ".txt").toFile()
+    tempFile.writeText(hrpText)
+    val hrp = HumanReadableProfile(tempFile, strictDiagnostics)!!
+    val prof = ArtProfile(hrp, ObfuscationMap.Empty, apk)
+
+    assertSerializationIntegrity(prof, ArtProfileSerializer.V0_1_5_S)
+    assertSerializationIntegrity(prof, ArtProfileSerializer.V0_1_0_P)
+
+    val builder = StringBuilder()
+    dumpProfile(builder, prof, apk, ObfuscationMap.Empty, strict = false)
+    val dumped = builder.toString()
+    assertThat(dumped).contains("LFoo;")
+    assertThat(dumped).contains("LBar;")
+  }
+
   private fun inputStreamOf(apkFile: File, name: String): InputStream {
     val zip = ZipFile(apkFile)
     val entry = zip.entries().asSequence().first { it.name == name }

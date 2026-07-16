@@ -30,6 +30,16 @@ internal fun profileKey(dexName: String, apkName: String, separator: String): St
   return "$apkName$separator$dexName"
 }
 
+internal fun profileKey(dex: DexFile, apkName: String, separator: String): String {
+  val name =
+    when {
+      dex.header.version >= 41 -> dex.dexIndex.toString()
+      dex.dexIndex == 0 -> "classes.dex"
+      else -> "classes${dex.dexIndex + 1}.dex"
+    }
+  return profileKey(name, apkName, separator)
+}
+
 private fun enforceSeparator(value: String, separator: String): String {
   return when (separator) {
     "!" -> value.replace(":", "!")
@@ -84,7 +94,7 @@ enum class ArtProfileSerializer(
   V0_1_5_S(byteArrayOf('0', '1', '5', '\u0000')) {
 
     override fun write(os: OutputStream, profileData: Map<DexFile, DexFileData>, apkName: String) {
-      writeProfileSections(os, profileData.entries.sortedBy { it.key.name }, apkName)
+      writeProfileSections(os, profileData.entries.sortedBy { it.key.dexIndex }, apkName)
     }
 
     override fun read(src: InputStream): Map<DexFile, DexFileData> {
@@ -157,6 +167,8 @@ enum class ArtProfileSerializer(
                 .trimMargin()
             }
             val profileKey = src.readString(profileKeySize)
+            val dexName = extractName(profileKey)
+            val dexIndex = getDexIndexFromName(dexName)
             val dexFile =
               DexFile(
                 header =
@@ -167,9 +179,10 @@ enum class ArtProfileSerializer(
                     methodIds = Span(numMethodIds.toInt(), 0),
                     classDefs = Span.Empty,
                     data = Span.Empty,
+                    version = if (dexName.toIntOrNull() != null) 41 else 0,
                   ),
                 dexChecksum = dexChecksum,
-                name = profileKey,
+                dexIndex = dexIndex,
               )
             MutableDexFileData(
               classIdSetSize = 0,
@@ -256,7 +269,7 @@ enum class ArtProfileSerializer(
           expectedSize += UINT_32_SIZE
           out.writeUInt32(dexFile.header.methodIds.size.toLong())
           // Profile key
-          val profileKey = profileKey(dexFile.name, apkName, "!")
+          val profileKey = profileKey(dexFile, apkName, "!")
           // Profile key size
           expectedSize += UINT_16_SIZE
           out.writeUInt16(profileKey.utf8Length)
@@ -433,7 +446,7 @@ enum class ArtProfileSerializer(
         // Write the profile data in a byte array first. The array will need to be compressed
         // before
         // writing it in the final output stream.
-        val profileBytes = createCompressibleBody(profileData.entries.sortedBy { it.key.name }, apkName)
+        val profileBytes = createCompressibleBody(profileData.entries.sortedBy { it.key.dexIndex }, apkName)
         writeUInt8(profileData.size) // number of dex files
         writeUInt32(profileBytes.size.toLong()) // uncompressed data size
         writeCompressed(profileBytes)
@@ -454,8 +467,7 @@ enum class ArtProfileSerializer(
         val lineHeaderSize =
           (UINT_16_SIZE // classes set size
           + UINT_16_SIZE) // dex location size
-        requiredCapacity +=
-          (lineHeaderSize + profileKey(dexFile.name, apkName, "!").utf8Length + dexFileData.classIndexes.size * UINT_16_SIZE)
+        requiredCapacity += (lineHeaderSize + profileKey(dexFile, apkName, "!").utf8Length + dexFileData.classIndexes.size * UINT_16_SIZE)
       }
 
       // Start serializing the data.
@@ -468,7 +480,7 @@ enum class ArtProfileSerializer(
       // Write dex file line headers.
       for ((dexFile, dexData) in profileData) {
         with(dataBos) {
-          val profileKey = profileKey(dexFile.name, apkName, "!")
+          val profileKey = profileKey(dexFile, apkName, "!")
           writeUInt16(profileKey.utf8Length)
           writeUInt16(dexData.classIndexes.size)
           writeString(profileKey)
@@ -514,6 +526,8 @@ enum class ArtProfileSerializer(
           val profileKeySize = readUInt16()
           val classSetSize = readUInt16()
           val profileKey = readString(profileKeySize)
+          val dexName = extractName(profileKey)
+          val dexIndex = getDexIndexFromName(dexName)
           val dexFile =
             DexFile(
               header =
@@ -524,9 +538,10 @@ enum class ArtProfileSerializer(
                   methodIds = Span.Empty,
                   classDefs = Span.Empty,
                   data = Span.Empty,
+                  version = if (dexName.toIntOrNull() != null) 41 else 0,
                 ),
               dexChecksum = 0,
-              name = profileKey,
+              dexIndex = dexIndex,
             )
           MutableDexFileData(
             classIdSetSize = classSetSize,
@@ -561,7 +576,7 @@ enum class ArtProfileSerializer(
       os.use {
         // Number of Dex Files
         os.writeUInt16(profileData.size)
-        writeMetadataSection(os, profileData.entries.sortedBy { it.key.name }, apkName)
+        writeMetadataSection(os, profileData.entries.sortedBy { it.key.dexIndex }, apkName)
       }
     }
 
@@ -576,7 +591,7 @@ enum class ArtProfileSerializer(
           expectedSize += UINT_16_SIZE
           out.writeUInt16(index)
           // Profile Key Size
-          val profileKey = profileKey(dexFile.name, apkName, "!")
+          val profileKey = profileKey(dexFile, apkName, "!")
           expectedSize += UINT_16_SIZE
           out.writeUInt16(profileKey.utf8Length)
           // Profile Key
@@ -623,6 +638,8 @@ enum class ArtProfileSerializer(
                   .trimMargin()
               }
               val profileKey = input.readString(profileKeySize)
+              val dexName = extractName(profileKey)
+              val dexIndex = getDexIndexFromName(dexName)
               // Total number of type ids
               val typeIdSize = input.readUInt32()
               // Class Index Size
@@ -637,9 +654,10 @@ enum class ArtProfileSerializer(
                       methodIds = Span.Empty,
                       classDefs = Span.Empty,
                       data = Span.Empty,
+                      version = if (dexName.toIntOrNull() != null) 41 else 0,
                     ),
                   dexChecksum = 0L,
-                  name = profileKey,
+                  dexIndex = dexIndex,
                 )
               val dexFileData =
                 MutableDexFileData(
@@ -690,7 +708,7 @@ enum class ArtProfileSerializer(
         // Write the profile data in a byte array first. The array will need to be compressed
         // before
         // writing it in the final output stream.
-        val profileBytes = createCompressibleBody(profileData.entries.sortedBy { it.key.name }, apkName)
+        val profileBytes = createCompressibleBody(profileData.entries.sortedBy { it.key.dexIndex }, apkName)
         writeUInt8(profileData.size) // number of dex files
         writeUInt32(profileBytes.size.toLong())
         writeCompressed(profileBytes)
@@ -722,7 +740,7 @@ enum class ArtProfileSerializer(
             UINT_32_SIZE) // number of method ids
         requiredCapacity +=
           (lineHeaderSize +
-            profileKey(dexFile.name, apkName, "!").utf8Length +
+            profileKey(dexFile, apkName, "!").utf8Length +
             dexFileData.typeIndexes.size * UINT_16_SIZE +
             hotMethodRegionSize +
             getMethodBitmapStorageSize(dexFile.header.methodIds.size))
@@ -783,6 +801,8 @@ enum class ArtProfileSerializer(
           val dexChecksum = readUInt32()
           val numMethodIds = readUInt32()
           val profileKey = readString(profileKeySize)
+          val dexName = extractName(profileKey)
+          val dexIndex = getDexIndexFromName(dexName)
           val dexFile =
             DexFile(
               header =
@@ -793,9 +813,10 @@ enum class ArtProfileSerializer(
                   methodIds = Span(numMethodIds.toInt(), 0),
                   classDefs = Span.Empty,
                   data = Span.Empty,
+                  version = if (dexName.toIntOrNull() != null) 41 else 0,
                 ),
               dexChecksum = dexChecksum,
-              name = profileKey,
+              dexIndex = dexIndex,
             )
           MutableDexFileData(
             classIdSetSize = 0,
@@ -847,7 +868,7 @@ enum class ArtProfileSerializer(
         // Write the profile data in a byte array first. The array will need to be compressed
         // before
         // writing it in the final output stream.
-        val profileBytes = createCompressibleBody(profileData.entries.sortedBy { it.key.name }, apkName)
+        val profileBytes = createCompressibleBody(profileData.entries.sortedBy { it.key.dexIndex }, apkName)
         writeUInt8(profileData.size) // number of dex files
         writeUInt32(profileBytes.size.toLong())
         writeCompressed(profileBytes)
@@ -879,7 +900,7 @@ enum class ArtProfileSerializer(
             UINT_32_SIZE) // number of method ids
         requiredCapacity +=
           (lineHeaderSize +
-            profileKey(dexFile.name, apkName, "!").utf8Length +
+            profileKey(dexFile, apkName, "!").utf8Length +
             dexFileData.typeIndexes.size * UINT_16_SIZE +
             hotMethodRegionSize +
             getMethodBitmapStorageSize(dexFile.header.methodIds.size))
@@ -936,6 +957,8 @@ enum class ArtProfileSerializer(
           val dexChecksum = readUInt32()
           val numMethodIds = readUInt32()
           val profileKey = readString(profileKeySize)
+          val dexName = extractName(profileKey)
+          val dexIndex = getDexIndexFromName(dexName)
           val dexFile =
             DexFile(
               header =
@@ -946,9 +969,10 @@ enum class ArtProfileSerializer(
                   methodIds = Span(numMethodIds.toInt(), 0),
                   classDefs = Span.Empty,
                   data = Span.Empty,
+                  version = if (dexName.toIntOrNull() != null) 41 else 0,
                 ),
               dexChecksum = dexChecksum,
-              name = profileKey,
+              dexIndex = dexIndex,
             )
           val data =
             MutableDexFileData(
@@ -996,7 +1020,7 @@ enum class ArtProfileSerializer(
       with(os) {
         writeUInt8(profileData.size) // number of dex files
         for ((dex, data) in profileData.toSortedMap(DexFile)) {
-          val profileKey = profileKey(dex.name, apkName, ":")
+          val profileKey = profileKey(dex, apkName, ":")
           val hotMethodRegionSize =
             data.methods.size *
               (UINT_16_SIZE + // method id
@@ -1033,7 +1057,23 @@ enum class ArtProfileSerializer(
             val hotMethodRegionSize = readUInt32()
             val dexChecksum = readUInt32()
             val profileKey = readString(profileKeySize)
-            val dexFile = DexFile(header = DexHeader.Empty, dexChecksum = dexChecksum, name = profileKey)
+            val dexName = extractName(profileKey)
+            val dexIndex = getDexIndexFromName(dexName)
+            val dexFile =
+              DexFile(
+                header =
+                  DexHeader(
+                    Span.Empty,
+                    Span.Empty,
+                    Span.Empty,
+                    Span.Empty,
+                    Span.Empty,
+                    Span.Empty,
+                    version = if (dexName.toIntOrNull() != null) 41 else 0,
+                  ),
+                dexChecksum = dexChecksum,
+                dexIndex = dexIndex,
+              )
             val data =
               MutableDexFileData(
                 classIdSetSize = 0,
@@ -1111,7 +1151,7 @@ enum class ArtProfileSerializer(
       with(os) {
         writeUInt16(profileData.size) // one line is one dex
         for ((dex, data) in profileData.toSortedMap(DexFile)) {
-          val profileKey = profileKey(dex.name, apkName, ":")
+          val profileKey = profileKey(dex, apkName, ":")
           writeUInt16(profileKey.utf8Length)
           writeUInt16(data.methods.size)
           writeUInt16(data.classIndexes.size)
@@ -1147,7 +1187,23 @@ enum class ArtProfileSerializer(
             val classSetSize = readUInt16()
             val dexChecksum = readUInt32()
             val profileKey = readString(profileKeySize)
-            val dexFile = DexFile(header = DexHeader.Empty, dexChecksum = dexChecksum, name = profileKey)
+            val dexName = extractName(profileKey)
+            val dexIndex = getDexIndexFromName(dexName)
+            val dexFile =
+              DexFile(
+                header =
+                  DexHeader(
+                    Span.Empty,
+                    Span.Empty,
+                    Span.Empty,
+                    Span.Empty,
+                    Span.Empty,
+                    Span.Empty,
+                    version = if (dexName.toIntOrNull() != null) 41 else 0,
+                  ),
+                dexChecksum = dexChecksum,
+                dexIndex = dexIndex,
+              )
             val data =
               MutableDexFileData(
                 classIdSetSize = classSetSize,
@@ -1238,7 +1294,7 @@ enum class ArtProfileSerializer(
    * @param hotMethodRegionSize the size (in bytes) for the method region that will be serialized as part of the dex data
    */
   internal fun OutputStream.writeLineHeader(dexFile: DexFile, apkName: String, dexData: DexFileData, hotMethodRegionSize: Int) {
-    val profileKey = profileKey(dexFile.name, apkName, "!")
+    val profileKey = profileKey(dexFile, apkName, "!")
     writeUInt16(profileKey.utf8Length)
     writeUInt16(dexData.typeIndexes.size)
     writeUInt32(hotMethodRegionSize.toLong())

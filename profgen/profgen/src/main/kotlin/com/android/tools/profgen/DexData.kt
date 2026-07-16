@@ -17,7 +17,6 @@
 package com.android.tools.profgen
 
 import java.io.File
-import java.io.InputStream
 import java.util.zip.ZipFile
 import kotlin.math.min
 
@@ -26,28 +25,22 @@ class Apk(val dexes: List<DexFile>, val name: String = "")
 fun Apk(file: File, name: String = ""): Apk {
   return ZipFile(file).use { zipFile ->
     val dexes = mutableListOf<DexFile>()
-    val entries = zipFile.entries()
-    while (entries.hasMoreElements()) {
-      val zipEntry = entries.nextElement()
-      // Check if the file name is one of the DEX files, but for AAB it can be within a subdirectory
-      val fileName = zipEntry.name
-
-      // Fast path to skip any non-dex files
-      if (!fileName.endsWith(".dex")) {
-        continue
+    val prefix =
+      when {
+        zipFile.getEntry("classes.dex") != null -> ""
+        zipFile.getEntry("base/dex/classes.dex") != null -> "base/dex/"
+        else -> null
       }
-
-      // Match the whole pattern and remember the file name part
-      val fileNameMatches = dexClassesPattern.matchEntire(fileName)
-      if (fileNameMatches == null) {
-        continue
-      }
-      // Take just the filename without the path, which is later compared with the one from the
-      // profile itself
-      val (dexFileName) = fileNameMatches.destructured
-      zipFile.getInputStream(zipEntry)!!.use { inputStream ->
-        val dex = parseDexFile(inputStream.readBytes(), dexFileName)
-        dexes.add(dex)
+    if (prefix != null) {
+      var n = 1
+      while (true) {
+        val entryName = if (n == 1) "${prefix}classes.dex" else "${prefix}classes$n.dex"
+        val zipEntry = zipFile.getEntry(entryName) ?: break
+        zipFile.getInputStream(zipEntry)!!.use { inputStream ->
+          val parsedDexes = parseDexFiles(inputStream.readBytes(), dexes.size)
+          dexes.addAll(parsedDexes)
+        }
+        n++
       }
     }
     Apk(dexes, name)
@@ -65,18 +58,11 @@ fun Apk(bytes: ByteArray, name: String = ""): Apk {
 }
 
 /**
- * Pattern for finding DEX files in a file name with any prefix. Matches
- * - classes(N).dex
- * - base/dex/classes(N).dex // for AAB dex files
- */
-private val dexClassesPattern = Regex("^(?:base/dex/|)(classes[0-9]*\\.dex)$")
-
-/**
  * Slimmed-down in-memory representation of a Dex file. This data structure contains the minimal amount of information that profgen needs in
  * order to generate a profile. This means that a lot of information is missing, such as the field pool, all code points, and various bits
  * of information of the class defs.
  */
-class DexFile internal constructor(internal val header: DexHeader, val dexChecksum: Long, val name: String) {
+class DexFile internal constructor(internal val header: DexHeader, val dexChecksum: Long, val dexIndex: Int) {
 
   internal val stringPool = ArrayList<String>(header.stringIds.size)
   internal val typePool = ArrayList<String>(header.typeIds.size)
@@ -93,12 +79,42 @@ class DexFile internal constructor(internal val header: DexHeader, val dexChecks
   companion object : Comparator<DexFile> {
 
     override fun compare(o1: DexFile, o2: DexFile): Int {
-      return o1.name.compareTo(o2.name)
+      return o1.dexIndex.compareTo(o2.dexIndex)
     }
   }
 }
 
-fun DexFile(src: InputStream, name: String): DexFile = parseDexFile(src.readBytes(), name)
+internal fun getDexIndexFromName(name: String): Int {
+  val intVal = name.toIntOrNull()
+  if (intVal != null) {
+    return intVal
+  }
+  val baseName = name.substringBefore('.')
+  if (baseName == "classes") return 0
+  if (baseName.startsWith("classes")) {
+    val numStr = baseName.substring("classes".length)
+    return (numStr.toIntOrNull() ?: 1) - 1
+  }
+  return 0
+}
+
+/**
+ * Extracts the dex name from the incoming profile key.
+ *
+ * `base.apk!classes.dex` is a typical profile key.
+ *
+ * On Android O or lower, the delimiter used is a `:`.
+ */
+internal fun extractName(profileKey: String): String {
+  var index = profileKey.indexOf("!")
+  if (index < 0) {
+    index = profileKey.indexOf(":")
+  }
+  if (index < 0 && profileKey.endsWith(".apk")) {
+    return "classes.dex"
+  }
+  return profileKey.substring(index + 1)
+}
 
 internal class DexHeader(
   val stringIds: Span,
@@ -107,6 +123,10 @@ internal class DexHeader(
   val methodIds: Span,
   val classDefs: Span,
   val data: Span,
+  val fileSize: Int = 0,
+  val containerSize: Int = 0,
+  val headerOffset: Int = 0,
+  val version: Int = 0,
 ) {
   internal companion object {
     val Empty =

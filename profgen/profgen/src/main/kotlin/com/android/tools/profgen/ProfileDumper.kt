@@ -21,9 +21,9 @@ import java.io.File
 fun dumpProfile(os: Appendable, profile: ArtProfile, apk: Apk, obf: ObfuscationMap, strict: Boolean = true) {
   for ((dexFile, dexFileData) in profile.profileData) {
     val file =
-      apk.dexes.find { it.name == extractName(dexFile.name) }
+      apk.dexes.find { it.dexIndex == dexFile.dexIndex }
         ?: if (strict) {
-          throw IllegalStateException("Cannot find Dex File ${dexFile.name}")
+          throw IllegalStateException("Cannot find Dex File ${dexFile.dexIndex}")
         } else {
           continue
         }
@@ -34,7 +34,7 @@ fun dumpProfile(os: Appendable, profile: ArtProfile, apk: Apk, obf: ObfuscationM
                 Profile header not compatible with the Dex header.
                 -----------------------------------------------------------------------------------
                 APK: ${apk.name}
-                Dex: ${dexFile.name}
+                Dex: ${dexFile.dexIndex}
                 -----------------------------------------------------------------------------------
                 Dex Checksum: ${dexFile.dexChecksum}              | ${file.dexChecksum}
                 Method ids  : ${dexFile.header.methodIds.size}    | ${file.header.methodIds.size}
@@ -91,23 +91,4 @@ private fun DexFile.compatibleWith(other: DexFile): Boolean {
 fun dumpProfile(file: File, profile: ArtProfile, apk: Apk, obf: ObfuscationMap, strict: Boolean = true) {
   val writer = file.outputStream().bufferedWriter()
   writer.use { dumpProfile(writer, profile, apk, obf, strict = strict) }
-}
-
-/**
- * Extracts the dex name from the incoming profile key.
- *
- * `base.apk!classes.dex` is a typical profile key.
- *
- * On Android O or lower, the delimiter used is a `:`.
- */
-private fun extractName(profileKey: String): String {
-  var index = profileKey.indexOf("!")
-  if (index < 0) {
-    index = profileKey.indexOf(":")
-  }
-  if (index < 0 && profileKey.endsWith(".apk")) {
-    // `base.apk` is equivalent to `base.apk!classes.dex`
-    return "classes.dex"
-  }
-  return profileKey.substring(index + 1)
 }
