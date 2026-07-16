@@ -28,16 +28,10 @@ import org.jetbrains.kotlin.analysis.api.KaExperimentalApi
 import org.jetbrains.kotlin.analysis.api.KaSession
 import org.jetbrains.kotlin.analysis.api.analyze
 import org.jetbrains.kotlin.analysis.api.resolution.KaApplicableCallCandidateInfo
-import org.jetbrains.kotlin.analysis.api.resolution.KaCall
-import org.jetbrains.kotlin.analysis.api.resolution.KaCallCandidateInfo
 import org.jetbrains.kotlin.analysis.api.resolution.KaCallableMemberCall
-import org.jetbrains.kotlin.analysis.api.resolution.KaCompoundArrayAccessCall
-import org.jetbrains.kotlin.analysis.api.resolution.KaCompoundVariableAccessCall
 import org.jetbrains.kotlin.analysis.api.resolution.KaPartiallyAppliedSymbol
-import org.jetbrains.kotlin.analysis.api.resolution.symbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaCallableSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaClassSymbol
-import org.jetbrains.kotlin.analysis.api.symbols.KaSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.name
 import org.jetbrains.kotlin.builtins.StandardNames
 import org.jetbrains.kotlin.idea.references.mainReference
@@ -198,9 +192,13 @@ class MemberExtensionConflictDetector : Detector(), SourceCodeScanner {
         return callableId.packageName.startsWith(StandardNames.BUILT_INS_PACKAGE_FQ_NAME)
       }
 
-      private fun KaSession.reportConflict(node: UElement, member: KaCallCandidateInfo, extension: KaCallCandidateInfo) {
-        val mem = member.candidate.symbol()
-        val ext = extension.candidate.symbol() as? KaCallableSymbol ?: return
+      private fun KaSession.reportConflict(
+        node: UElement,
+        member: KaApplicableCallCandidateInfo,
+        extension: KaApplicableCallCandidateInfo,
+      ) {
+        val mem = member.partialSymbol()?.signature?.symbol ?: return
+        val ext = extension.partialSymbol()?.signature?.symbol ?: return
         val message = buildString {
           append("`${mem.name?.asString() ?: "<unnamed>"}`")
           append(" is defined both as a member in class ")
@@ -216,12 +214,5 @@ class MemberExtensionConflictDetector : Detector(), SourceCodeScanner {
         }
         context.report(ISSUE, node, context.getLocation(node), message)
       }
-
-      private fun KaCall.symbol(): KaSymbol =
-        when (this) {
-          is KaCompoundVariableAccessCall -> compoundOperation.operationPartiallyAppliedSymbol.symbol
-          is KaCompoundArrayAccessCall -> compoundOperation.operationPartiallyAppliedSymbol.symbol
-          is KaCallableMemberCall<*, *> -> symbol
-        }
     }
 }
