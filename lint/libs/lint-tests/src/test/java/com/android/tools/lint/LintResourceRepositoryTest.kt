@@ -61,7 +61,6 @@ import java.util.EnumSet
 import java.util.regex.Pattern
 import org.jetbrains.uast.UCallExpression
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -211,65 +210,20 @@ class LintResourceRepositoryTest {
         repository.prettyPrint(root).dos2unix(),
       )
 
-      fun indexInEscaped(s: String, char: Char, from: Int = 0): Int {
-        var i = from
-        val n = s.length
-        while (i < n) {
-          when (s[i]) {
-            char -> return i
-            '\\' -> i += 2
-            else -> i++
-          }
-        }
-        return -1
-      }
-
       // Check persistence format
 
       if (repository is LintResourceRepository) {
-        fun format(s: String): String {
-          val sb = StringBuilder(s.length)
-          var i = indexInEscaped(s, '+', 0)
-          assertNotEquals(-1, i) // this method doesn't work right on empty
-          sb.append(s.substring(0, i).split(",").joinToString(separator = "\n"))
-          val n = s.length
-          while (i < n) {
-            val end = indexInEscaped(s, '+', i + 1)
-            sb.append(s.substring(i, if (end == -1) n else end))
-            sb.append('\n')
-            if (end == -1) {
-              break
-            }
-            i = end
-          }
-
-          return sb.toString()
-        }
-
-        // See [LintResourcePersistenceTest]; including it here since it's a more
+        // See [LintResourcePersistenceTest]; including this here since it's a more
         // complex set of resources.
-        val expected =
-          "http://schemas.android.com/apk/res-auto;;${"$"}ROOT/app/res/values/duplicates.xml\n" +
-            "${"$"}ROOT/app/res/values-v11/values.xml\n" +
-            "${"$"}ROOT/app/res/drawable-xhdpi-v4/ic_launcher2.png\n" +
-            "${"$"}ROOT/app/res/drawable/ic_launcher.png\n" +
-            "${"$"}ROOT/app/res/layout/activity_main.xml\n" +
-            "${"$"}ROOT/app/res/values/test.xml\n" +
-            "${"$"}ROOT/app/res/values/styles.xml\n" +
-            "+array:typography,0,V40011027d,13001402f7,;\\\"Ages 1\\, 3-5\\\",Age\\: 5 1/2\\+,;\n" +
-            "+attr:content,0,V80017033f,3200170369,;reference:;contentId,0,V800180372,340018039e,;reference:;fastScrollOverlayPosition,0,V8001f04b0,f00230575,;enum:floating:0,atThumb:1,aboveThumb:2,;windowSoftInputMode,0,V8001903a7,f001e04a7,;flags:stateUnspecified:0,stateUnchanged:1,;\n" +
-            "+dimen:activity_horizontal_margin,0,V400020033,3900020068,;\"16dp\";activity_horizontal_margin,1,V400010010,3900010045,;\"16dp\";negative,0,V400040095,28000400b9,;\"-16dp\";positive,0,V40003006d,2700030090,;\"16dp\";\n" +
-            "+drawable:ic_launcher,3,F;ic_launcher2,2,F;\n" +
-            "+id:name,0,V400010010,220001002e,;\"\";\n" +
-            "+layout:activity_main,4,F;\n" +
-            "+plurals:my_plural,0,V400250593,e00290657,;one:@string/hello1,few:@string/hello2,other:@string/hello3,;\n" +
-            "+string:js_dialog_title,5,V40003009e,840003011e,;\"På siden på \\\"\${TITLE}\\\" står der\\:\"\\\"På siden på \\\\\\\"<xliff\\:g id=\\\"TITLE\\\">%s</xliff\\:g>\\\\\\\" står der\\:\\\";string1,5,V400010044,2c0001006c,;\"String 1\";string2,5,V400020071,2c00020099,;\"String 2\";\n" +
-            "+style:MyStyle,0,V4000600bf,c000b0210,;Dandroid\\:Theme.Holo.Light.DarkActionBar,android\\:layout_margin:5dp,android\\:layout_marginLeft:@dimen/positive,android\\:layout_marginTop:@dimen/negative,android\\:layout_marginBottom:-5dp,;MyStyle.Another,0,V4000d0216,c000f0277,;Nandroid\\:layout_margin:5dp,;Notification.Header,6,V1400020031,1c00060174,;EpaddingTop:@dimen/notification_header_padding_top,paddingBottom:@dimen/notification_header_padding_bottom,gravity:top,;\n" +
-            "+styleable:ContentFrame,0,V40016030f,180024058e,;-content:reference:-contentId:reference:-windowSoftInputMode:flags:stateUnspecified:0,stateUnchanged:1,-fastScrollOverlayPosition:enum:floating:0,atThumb:1,aboveThumb:2,;\n"
-        val actual = serialize(repository)
-        assertEquals(expected, format(actual))
-        val reserialized = serialize(deserialize(actual) as LintResourceRepository)
-        assertEquals(expected, format(reserialized))
+        val serialized = serialize(repository)
+        val deserialized = deserialize(serialized) as LintResourceRepository
+
+        // The deserialized repository is equivalent to the original
+        assertEquals(repository.prettyPrint(root), deserialized.prettyPrint(root))
+
+        // Serialization is deterministic and round-trip stable
+        val reserialized = serialize(deserialized)
+        assertTrue("Serialization is not round-trip stable", serialized.contentEquals(reserialized))
       }
 
       val findByActual = repository.getResources(namespace, ResourceType.STYLE, "MyStyle.Another")
@@ -459,13 +413,13 @@ class LintResourceRepositoryTest {
     }
   }
 
-  private fun serialize(repository: LintResourceRepository): String {
+  private fun serialize(repository: LintResourceRepository): ByteArray {
     val pathVariables = getPathVariables()
     return repository.serialize(pathVariables, temporaryFolder.root, sort = true)
   }
 
-  private fun deserialize(s: String): ResourceRepository {
-    return LintResourcePersistence.deserialize(s, getPathVariables(), temporaryFolder.root, null)
+  private fun deserialize(bytes: ByteArray): ResourceRepository {
+    return LintResourcePersistence.deserialize(bytes, getPathVariables(), temporaryFolder.root, null)
   }
 
   private fun getPathVariables(): PathVariables {
@@ -670,7 +624,8 @@ class LintResourceRepositoryTest {
             "set of path variable names. Attempting to gracefully recover.\n" +
             "The serialized content was:\n" +
             "mangled2\n" +
-            "Stack: java.lang.StringIndexOutOfBoundsException: Index 8 out of bounds for length"
+            "Stack: com.android.utils.Base128InputStream＄StreamFormatException: " +
+            "Not a lint resource repository (missing file header)"
         ) + ".*\\) \\[LintWarning]\n" + "0 errors, 1 warning"
       )
   }
@@ -702,7 +657,7 @@ class LintResourceRepositoryTest {
       val repository: ResourceRepository = client.getResources(project, ResourceRepositoryScope.PROJECT_ONLY)
 
       // Check that the resource repository has indeed been overwritten.
-      assert(file.readText().length > 100) { "Expected a larger resource repository file" }
+      assert(file.length() > 100) { "Expected a larger resource repository file" }
 
       // While we are here, check that the resource repository contents is correct.
       val resources = repository.prettyPrint(project.dir)
@@ -729,7 +684,7 @@ class LintResourceRepositoryTest {
       val file = client.getSerializationFile(project, XmlFileType.RESOURCE_REPOSITORY)
 
       // The resource repository should still exist.
-      assert(file.readText().length > 100) { "Expected a larger resource repository file" }
+      assert(file.length() > 100) { "Expected a larger resource repository file" }
 
       // Write out a corrupt version of the resource repository.
       val mangled = "mangled2"

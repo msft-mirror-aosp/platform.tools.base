@@ -19,6 +19,7 @@ package com.android.tools.lint
 import com.android.ide.common.blame.SourcePosition
 import com.android.ide.common.rendering.api.ArrayResourceValue
 import com.android.ide.common.rendering.api.ArrayResourceValueImpl
+import com.android.ide.common.rendering.api.AttrResourceValue
 import com.android.ide.common.rendering.api.AttrResourceValueImpl
 import com.android.ide.common.rendering.api.AttributeFormat
 import com.android.ide.common.rendering.api.DensityBasedResourceValue
@@ -48,548 +49,400 @@ import com.android.tools.lint.detector.api.Location
 import com.android.tools.lint.detector.api.Location.LocationAware
 import com.android.tools.lint.detector.api.Project
 import com.android.tools.lint.model.PathVariables
+import com.android.utils.Base128InputStream
+import com.android.utils.Base128InputStream.StreamFormatException
+import com.android.utils.Base128OutputStream
 import com.google.common.collect.BiMap
 import com.google.common.collect.HashBiMap
 import com.google.common.collect.ListMultimap
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.util.EnumMap
-import kotlin.math.max
-import kotlin.math.min
 
 /**
  * Persists a [LintResourceRepository] (and later reconstitutes it), intended for caching of resources for projects, libraries and
  * frameworks.
  *
- * This is temporary; the plan is to extract tools/adt/idea/resources-base code into tools/base and use that binary format directly.
+ * The format is a compact binary stream built on the LEB128 varint encoding provided by [Base128OutputStream] and [Base128InputStream] (the
+ * same primitives used by the resource repository caches in `com.android.resources.base`). Unlike those caches, this format also records
+ * source positions, `tools:ignore` ids and raw XML values, which lint requires.
  */
 object LintResourcePersistence {
+  /** File starts with these bytes; anything else is rejected (e.g. files from the older text-based format). */
+  private val MAGIC = byteArrayOf('L'.code.toByte(), 'R'.code.toByte(), 'R'.code.toByte())
+
+  /** Bump when making incompatible changes to the format (and consider renaming the cache directories; see [LintResourceRepository]). */
+  private const val FORMAT_VERSION = 1
+
+  /** Per-item flags */
+  private enum class ItemFlag {
+    FileBased,
+    HasPosition,
+    HasIgnoredIds,
+    HasText,
+    HasRawSource,
+    HasArguments;
+
+    val asFlag: Int = 1 shl ordinal
+
+    companion object {
+      fun of(vararg entries: Pair<ItemFlag, Boolean>): Int =
+        entries.fold(0) { flags, (key, value) -> if (value) flags or key.asFlag else flags }
+    }
+  }
+
+  private operator fun Int.contains(key: ItemFlag): Boolean = this and key.asFlag != 0
+
   /**
    * Serializes the lint resource repository; can be deserialized with [deserialize]. The [pathVariables] help write relative paths. If
    * [sort] is true, elements will be sorted by name; this is used in tests to ensure stable output.
    */
-  fun serialize(repository: LintResourceRepository, pathVariables: PathVariables, root: File?, sort: Boolean = false): String {
+  fun serialize(repository: LintResourceRepository, pathVariables: PathVariables, root: File?, sort: Boolean = false): ByteArray {
     val typeToMap = repository.typeToMap
     if (typeToMap.isEmpty()) {
-      return ""
+      return ByteArray(0)
     }
 
     val namespace = repository.namespace
     val framework = namespace == ResourceNamespace.ANDROID
-    val stringBuilder = StringBuilder(if (framework) 20000000 else 1000)
-    val writer = SerializationWriter(stringBuilder)
-    writer.write(namespace.xmlNamespaceUri)
-    writer.write(';')
-    repository.libraryName?.let { writer.write(it) }
-    writer.write(';')
+    val byteStream = ByteArrayOutputStream(1 shl (if (framework) 20 else 10))
 
-    val fileMap: BiMap<PathString, Int> = HashBiMap.create(if (framework) 11000 else 100)
-    var fileCount = 0
-    for (multimap in typeToMap.values) {
-      for (item in multimap.values()) {
-        val source = item.source
-        fileMap[source] ?: run { fileMap[source] = fileCount++ }
+    fun <X> Collection<X>.maybeSortedBy(key: (X) -> Comparable<*>) = if (sort) sortedWith(compareBy(key)) else this
+
+    Base128OutputStream(byteStream).use { out ->
+      MAGIC.forEach(out::writeByte)
+      out.writeInt(FORMAT_VERSION)
+      out.writeString(namespace.xmlNamespaceUri)
+      out.writeString(repository.libraryName)
+
+      val fileMap: BiMap<PathString, Int> = HashBiMap.create(if (framework) 11000 else 100)
+      var fileCount = 0
+      for (multimap in typeToMap.values) {
+        for (item in multimap.values()) {
+          fileMap.computeIfAbsent(item.source) { fileCount++ }
+        }
+      }
+
+      val rootPath = root?.path
+      val indexToFile = fileMap.inverse()
+      out.writeInt(fileCount)
+      repeat(fileCount) { i ->
+        val source = indexToFile[i] ?: error("Missing file for index $i")
+        out.writeString(pathVariables.toPathString(source.rawPath, rootPath, unix = true))
+      }
+
+      val entries = typeToMap.entries.maybeSortedBy { it.key }
+
+      out.writeInt(entries.count { !it.value.isEmpty })
+      for ((type, map) in entries) {
+        if (map.isEmpty) continue
+        out.writeString(type.getName())
+
+        val values = map.values().maybeSortedBy { it.name }
+        out.writeInt(values.size)
+        for (item in values) {
+          writeItem(out, item, fileMap)
+        }
       }
     }
 
-    val rootPath = root?.path
-    val indexToFile = fileMap.inverse()
-    for (i in 0 until fileCount) {
-      val source = indexToFile[i] ?: continue
-      writer.writePath(pathVariables, rootPath, source.rawPath)
-      writer.write(',')
+    return byteStream.toByteArray()
+  }
+
+  private fun writeItem(out: Base128OutputStream, item: ResourceItem, fileMap: Map<PathString, Int>) {
+    val position: SourcePosition?
+    val ignoredIds: String
+    val fileBased = item.isFileBased
+
+    when {
+      !fileBased && item is LintResourceItem -> {
+        position = item.position.takeUnless { it == SourcePosition.UNKNOWN }
+        ignoredIds = item.getIgnoredIds()
+      }
+      !fileBased && item is LocationAware -> {
+        if (!LintClient.isUnitTest) {
+          // This path is only used from tests (where we serialize a deserialized repository;
+          // we don't do that in the product, but in the tests we do it to very efficiently
+          // compare all aspects of the repository being identical
+          throw IllegalStateException()
+        }
+        val location = item.getLocation()
+        val start = location.start
+        val end = location.end
+        position =
+          if (start != null || end != null) {
+            SourcePosition(
+              start?.line ?: -1,
+              start?.column ?: -1,
+              start?.offset ?: -1,
+              end?.line ?: (start?.line ?: -1),
+              end?.column ?: (start?.column ?: -1),
+              end?.offset ?: (start?.offset ?: -1),
+            )
+          } else null
+        ignoredIds = if (item is IgnoredIdProvider) item.getIgnoredIds() else ""
+      }
+      else -> {
+        position = null
+        ignoredIds = ""
+      }
     }
 
-    val entries =
-      if (sort) {
-        typeToMap.entries.sortedWith(compareBy { it.key })
+    // Compute the value content the same way the resource value will be reconstructed
+    // in [LintDeserializedResourceItem.createResourceValue].
+    var text: String? = null
+    var rawSource: String? = null
+    var arguments: ByteArray? = null
+    val resourceValue = if (fileBased) null else item.resourceValue
+    if (resourceValue != null) {
+      val type = item.type
+      when {
+        type == ResourceType.ARRAY && resourceValue is ArrayResourceValue -> {
+          arguments = encodeArguments { args ->
+            args.writeInt(resourceValue.elementCount)
+            repeat(resourceValue.elementCount) { i -> args.writeString(resourceValue.getElement(i)) }
+          }
+        }
+        type == ResourceType.PLURALS && resourceValue is PluralsResourceValue -> {
+          arguments = encodeArguments { args ->
+            args.writeInt(resourceValue.pluralsCount)
+            repeat(resourceValue.pluralsCount) { i ->
+              args.writeString(resourceValue.getQuantity(i))
+              args.writeString(resourceValue.getValue(i))
+            }
+          }
+        }
+        type == ResourceType.STYLE && resourceValue is StyleResourceValue -> {
+          arguments = encodeArguments { args ->
+            val parentStyleName = resourceValue.parentStyleName
+            when {
+              // Need to distinguish between empty (no parent) and null
+              // (can inherit from implied parent, e.g. Foo.Bar will
+              // inherit from "Foo" is parent is not set, but
+              // won't if parent=""
+              parentStyleName == null -> args.writeInt(0)
+              parentStyleName.isEmpty() -> args.writeInt(1)
+              else -> {
+                args.writeInt(2)
+                args.writeString(parentStyleName)
+              }
+            }
+            val definedItems = resourceValue.definedItems
+            args.writeInt(definedItems.size)
+            for (styleItem in definedItems) {
+              args.writeString(styleItem.attrName)
+              // or null?
+              args.writeString(styleItem.value ?: "")
+            }
+          }
+        }
+        type == ResourceType.ATTR && resourceValue is AttrResourceValueImpl -> {
+          arguments = encodeArguments { args -> writeAttrValue(args, resourceValue) }
+        }
+        type == ResourceType.STYLEABLE && resourceValue is StyleableResourceValue -> {
+          arguments = encodeArguments { args ->
+            val attributes = resourceValue.allAttributes
+            args.writeInt(attributes.size)
+            for (attribute in attributes) {
+              args.writeString(attribute.name)
+              writeAttrValue(args, attribute)
+            }
+          }
+        }
+        DensityBasedResourceValue.isDensityBasedResourceType(type) && resourceValue is DensityBasedResourceValue -> {
+          arguments = encodeArguments { args -> args.writeString(resourceValue.resourceDensity.resourceValue) }
+        }
+        else -> {
+          text = resourceValue.value
+          if (text != null) {
+            val raw: String? = resourceValue.rawXmlValue
+            if (raw != null && raw != text) {
+              rawSource = raw
+            }
+          }
+        }
+      }
+    }
+
+    val flags =
+      ItemFlag.of(
+        ItemFlag.FileBased to fileBased,
+        ItemFlag.HasPosition to (position != null),
+        ItemFlag.HasIgnoredIds to ignoredIds.isNotEmpty(),
+        ItemFlag.HasText to (text != null),
+        ItemFlag.HasRawSource to (rawSource != null),
+        ItemFlag.HasArguments to (arguments != null),
+      )
+
+    out.writeString(item.name)
+    out.writeInt(fileMap[item.source] ?: error("Missing file index for ${item.source}"))
+    out.writeInt(flags)
+    if (position != null) {
+      // Written as value + 1 so that the common "unknown" value -1 encodes as a single 0 byte.
+      // Unlike the previous text-based format, these are full-width varints; large files
+      // with offsets above 64K are persisted without truncation (b/533056758).
+      out.writeInt(position.startLine + 1)
+      out.writeInt(position.startColumn + 1)
+      out.writeInt(position.startOffset + 1)
+      out.writeInt(position.endLine + 1)
+      out.writeInt(position.endColumn + 1)
+      out.writeInt(position.endOffset + 1)
+    }
+    if (ignoredIds.isNotEmpty()) out.writeString(ignoredIds)
+    if (text != null) out.writeString(text)
+    if (rawSource != null) out.writeString(rawSource)
+    if (arguments != null) out.writeBytes(arguments)
+  }
+
+  /** Formats and enumeration/flag values for an attr; shared between attr and styleable payloads. */
+  private fun writeAttrValue(args: Base128OutputStream, attr: AttrResourceValue) {
+    // Descriptions, group names etc are only supported for the framework
+    val formats = attr.formats
+    args.writeString(if (formats.isEmpty()) null else formats.joinToString("|") { it.getName() })
+    val attributeValues = attr.attributeValues
+    args.writeInt(attributeValues.size)
+    for ((key, value) in attributeValues) {
+      args.writeString(key)
+      if (value == null) {
+        args.writeBoolean(false)
       } else {
-        typeToMap.entries
+        args.writeBoolean(true)
+        args.writeInt(value)
       }
-
-    for ((type, map) in entries) {
-      if (map.isEmpty) {
-        continue
-      }
-      writer.write('+')
-      writer.write(type.getName())
-      writer.write(':')
-
-      val values =
-        if (sort) {
-          map.values().sortedWith(compareBy { it?.name })
-        } else {
-          map.values()
-        }
-
-      for (item in values) {
-        writer.escape(item.name)
-        writer.write(',')
-        writer.write(fileMap[item.source].toString())
-        writer.write(',')
-        if (item.isFileBased) { // This could be stored in the file list instead
-          writer.write('F')
-        } else {
-          writer.write('V')
-          if (item is LintResourceItem) {
-            val position = item.position ?: SourcePosition.UNKNOWN
-            writer.writeHex(encodeLineColumnOffset(position.startLine, position.startColumn, position.startOffset))
-            writer.write(',')
-            writer.writeHex(encodeLineColumnOffset(position.endLine, position.endColumn, position.endOffset))
-            writer.write(',')
-            val ignoredIds = item.getIgnoredIds()
-            if (ignoredIds.isNotEmpty()) {
-              writer.write(ignoredIds)
-            }
-          } else if (item is LocationAware) {
-            if (!LintClient.isUnitTest) {
-              // This path is only used from tests (where we serialize a deserialized repository;
-              // we don't do that in the product, but in the tests we do it to very efficiently
-              // compare all aspects of the repository being identical
-              throw IllegalStateException()
-            }
-            val location = item.getLocation()
-            val start = location.start
-            val end = location.end
-            writer.writeHex(encodeLineColumnOffset(start?.line ?: -1, start?.column ?: -1, start?.offset ?: -1))
-            writer.write(',')
-            writer.writeHex(encodeLineColumnOffset(end?.line ?: -1, end?.column ?: -1, end?.offset ?: -1))
-            writer.write(',')
-            if (item is IgnoredIdProvider) {
-              val ignoredIds = item.getIgnoredIds()
-              if (ignoredIds.isNotEmpty()) {
-                writer.write(ignoredIds)
-              }
-            }
-          } else {
-            writer.write("-,-,")
-          }
-          writer.write(';')
-        }
-        item.resourceValue?.let { resourceValue ->
-          when {
-            item.isFileBased -> {}
-            item.type == ResourceType.ARRAY && resourceValue is ArrayResourceValue -> {
-              for (i in 0 until resourceValue.elementCount) {
-                writer.escape(resourceValue.getElement(i))
-                writer.write(',')
-              }
-            }
-            item.type == ResourceType.PLURALS && resourceValue is PluralsResourceValue -> {
-              for (i in 0 until resourceValue.pluralsCount) {
-                writer.write(resourceValue.getQuantity(i))
-                writer.write(':')
-                writer.escape(resourceValue.getValue(i))
-                writer.write(',')
-              }
-            }
-            item.type == ResourceType.STYLE && resourceValue is StyleResourceValue -> {
-              val parentStyleName = resourceValue.parentStyleName
-              when {
-                // Need to distinguish between empty (no parent) and null
-                // (can inherit from implied parent, e.g. Foo.Bar will
-                // inherit from "Foo" is parent is not set, but
-                // won't if parent=""
-                parentStyleName == null -> writer.write("N")
-                parentStyleName.isEmpty() -> writer.write("E")
-                else -> writer.write("D").escape(parentStyleName).write(',')
-              }
-              for (styleItem in resourceValue.definedItems) {
-                writer.escape(styleItem.attrName)
-                writer.write(':')
-                // or null?
-                writer.escape(styleItem.value ?: "")
-                writer.write(',')
-              }
-            }
-            item.type == ResourceType.ATTR && resourceValue is AttrResourceValueImpl -> {
-              // Descriptions, group names etc are only supported for the framework
-              if (resourceValue.formats.isNotEmpty()) {
-                writer.write(resourceValue.formats.joinToString("|") { it.getName() })
-              }
-              writer.write(':')
-              for ((key, value) in resourceValue.attributeValues) {
-                writer.escape(key)
-                writer.write(':')
-                // or null?
-                writer.escape(value?.toString() ?: "")
-                writer.write(',')
-              }
-            }
-            item.type == ResourceType.STYLEABLE && resourceValue is StyleableResourceValue -> {
-              for (attribute in resourceValue.allAttributes) {
-                writer.write('-').escape(attribute.name).write(':')
-                if (attribute.formats.isNotEmpty()) {
-                  writer.write(attribute.formats.joinToString("|") { it.getName() })
-                }
-                writer.write(':')
-                // Descriptions, group names etc are only supported for the framework
-                for ((key, value) in attribute.attributeValues) {
-                  writer.escape(key)
-                  writer.write(':')
-                  // or null?
-                  writer.escape(value?.toString() ?: "")
-                  writer.write(',')
-                }
-              }
-            }
-            DensityBasedResourceValue.isDensityBasedResourceType(type) && resourceValue is DensityBasedResourceValue -> {
-              val density = resourceValue.resourceDensity.resourceValue
-              writer.write(density)
-            }
-            else -> {
-              resourceValue.value?.let {
-                writer.write('\"')
-                writer.escape(it)
-                writer.write('\"')
-                val rawSource: String? = item.resourceValue?.rawXmlValue
-                if (rawSource != null && it != rawSource) {
-                  writer.escape(rawSource)
-                }
-              }
-            }
-          }
-        }
-        writer.write(';')
-      }
-    }
-
-    return stringBuilder.toString()
-  }
-
-  /** Encodes a line, column and offset into a single long for persistence. */
-  private fun encodeLineColumnOffset(line: Int, column: Int, offset: Int): Long {
-    // Use 16 bits for offset. Use 16 bits for line, and then column at the top.
-    return (column.toLong() shl 32) or (line.toLong() shl 16) or offset.toLong()
-  }
-
-  /** From a value encoded via [encodeLineColumnOffset], extract the original line. */
-  private fun decodeLine(bits: Long): Int {
-    return ((bits shr 16) and 0xFFFFL).toInt()
-  }
-
-  /** From a value encoded via [encodeLineColumnOffset], extract the original column. */
-  private fun decodeColumn(bits: Long): Int {
-    return ((bits shr 32) and 0xFFFFL).toInt()
-  }
-
-  /** From a value encoded via [encodeLineColumnOffset], extract the original offset. */
-  private fun decodeOffset(bits: Long): Int {
-    return (bits and 0xFFFFL).toInt()
-  }
-
-  /**
-   * Writes characters and strings into a string builder, escaping characters which allows later usages of the [DeserializationReader] to
-   * pick out substrings while still allowing all kinds of characters to be used in the various string fragments.
-   */
-  private class SerializationWriter(private val sb: StringBuilder) {
-    fun write(char: Char): SerializationWriter {
-      sb.append(char)
-      return this
-    }
-
-    fun write(string: String): SerializationWriter {
-      sb.append(string)
-      return this
-    }
-
-    fun writeHex(long: Long): SerializationWriter {
-      sb.append(long.toString(16))
-      return this
-    }
-
-    /**
-     * Given a string, replaces all occurrences of the various reserved separator characters (+:;,\) with a preceding \ to indicate that
-     * this is a literal occurrence of this character.
-     */
-    fun escape(s: String): SerializationWriter {
-      val n = s.length
-      for (i in 0 until n) {
-        when (val c = s[i]) {
-          '\\',
-          '+',
-          ',',
-          ';',
-          ':',
-          '"' -> write('\\').write(c)
-          else -> write(c)
-        }
-      }
-      return this
-    }
-
-    /** Writes the given path, stripping out the path prefix if under the given (optional) [rootPath] */
-    fun writePath(pathVariables: PathVariables, rootPath: String?, path: String) {
-      escape(pathVariables.toPathString(path, rootPath, unix = true))
-    }
-
-    override fun toString(): String {
-      return sb.toString()
     }
   }
 
-  @Suppress("NOTHING_TO_INLINE")
-  private class DeserializationReader(private val s: String) {
-    private var i = 0
-    private val n = s.length
-
-    inline fun peek(): Char {
-      return if (i < n) {
-        s[i]
-      } else {
-        0.toChar()
-      }
-    }
-
-    fun readString(terminator: Char): String {
-      // Common scenario 1: nothing
-      if (s[i] == terminator) {
-        i++
-        return ""
-      }
-
-      // Common scenario 2:
-      // First see if it's a simple substring (e.g. no escapes before we
-      // reach the terminator -- that way we don't have to create a new
-      // copy in a StringBuilder etc.
-      for (index in i until n) {
-        val c = s[index]
-        if (c == '\\') {
-          break
-        } else if (c == terminator) {
-          val string = s.substring(i, index)
-          i = index + 1
-          return string
-        }
-      }
-
-      // General case: there are escaped characters in the string
-
-      val contentBuilder = StringBuilder()
-      while (i < n) {
-        val p = s[i++]
-        val c =
-          if (p == '\\') {
-            if (i < n) {
-              s[i++]
-            } else {
-              break
-            }
-          } else {
-            p
-          }
-        if (p == terminator) {
-          break
-        } else {
-          contentBuilder.append(c)
-        }
-      }
-      return contentBuilder.toString()
-    }
-
-    /**
-     * Like [readString] but does not remove escape characters. This is intended for cases like the argument lists where we want to pick out
-     * the serialized arguments to for example an array, but we will later need to pick out elements from these as well.
-     */
-    fun readRaw(terminator: Char): String {
-      val begin = i
-      while (i < n) {
-        val p = s[i]
-        if (p == terminator) {
-          break
-        } else if (p == '\\') {
-          i++
-        }
-        i++
-      }
-      return s.substring(begin, i++)
-    }
-
-    inline fun next(): Char {
-      try {
-        return peek()
-      } finally {
-        i++
-      }
-    }
-
-    inline fun advance() {
-      i++
-    }
-
-    inline fun eof(): Boolean {
-      return i >= n
-    }
-
-    override fun toString(): String {
-      val windowSize = 100
-      val start = max(0, i - windowSize)
-      val end = min(n, i + windowSize)
-      return s.substring(start, i) + " | " + s.substring(i, end)
-    }
+  private inline fun encodeArguments(block: (Base128OutputStream) -> Unit): ByteArray {
+    val bytes = ByteArrayOutputStream(64)
+    Base128OutputStream(bytes).use { block(it) }
+    return bytes.toByteArray()
   }
 
   /** Deserializes a lint resource repository created by [serialize] */
   fun deserialize(
-    s: String,
+    bytes: ByteArray,
     pathVariables: PathVariables,
     root: File? = null,
     project: Project? = null,
     allowMissingPathVariable: Boolean = false,
   ): LintResourceRepository {
-    if (s.isEmpty()) {
+    if (bytes.isEmpty()) {
       return LintResourceRepository.Companion.EmptyRepository
     }
 
-    val map: MutableMap<ResourceType, ListMultimap<String, ResourceItem>> = EnumMap(ResourceType::class.java)
-
-    val reader = DeserializationReader(s)
-    val namespaceUri = reader.readString(';')
-    val namespace = ResourceNamespace.fromNamespaceUri(namespaceUri) ?: ResourceNamespace.RES_AUTO
-    val libraryName = reader.readString(';').ifBlank { null }
-
-    val size = if (namespace == ResourceNamespace.ANDROID) 11000 else 100
-    val fileList = ArrayList<File>(size)
-
-    while (!reader.eof() && reader.peek() != '+') {
-      val path = reader.readString(',')
-      val file = pathVariables.fromPathString(path, root, allowMissingPathVariable)
-      fileList.add(file)
-    }
-
-    val parentConfigMap = HashMap<String, FolderConfiguration>(size / 4)
-    val folderConfigMap = HashMap<File, FolderConfiguration>(size)
-    for (file in fileList) {
-      val folderName = file.parentFile?.name ?: continue
-      val config =
-        parentConfigMap[folderName]
-          ?: FolderConfiguration.getConfigForFolder(folderName)?.also {
-            it.normalizeByAddingImpliedVersionQualifier()
-            parentConfigMap[folderName] = it
-          }
-          ?: continue
-      folderConfigMap[file] = config
-    }
-
-    // Map of the values added from each resource file
-    val valueItems = HashMap<File, MutableList<LintDeserializedResourceItem>>()
-
-    // Per type lists
-    var type = ResourceType.AAPT
-    while (!reader.eof()) {
-      // Look for resource type
-      if (reader.peek() == ';') {
-        reader.advance()
-        if (reader.eof()) {
-          break
-        }
+    Base128InputStream(ByteArrayInputStream(bytes)).use { input ->
+      if (!input.validateContents(MAGIC)) {
+        throw StreamFormatException("Not a lint resource repository (missing file header)")
       }
-
-      if (reader.peek() == '+') {
-        reader.advance()
-        val typeClass = reader.readString(':')
-        val typeString = ResourceType.fromClassName(typeClass)
-        assert(typeString != null) { typeClass }
-        type = typeString!!
+      val version = input.readInt()
+      if (version != FORMAT_VERSION) {
+        throw StreamFormatException("Unsupported lint resource repository version $version (expected $FORMAT_VERSION)")
       }
+      input.setStringCache(HashMap()) // enables string instance sharing
 
-      // Find items
-      val name = reader.readString(',')
-      val fileNumString = reader.readString(',')
-      val fileNum = fileNumString.toInt()
-      val fileBased = reader.next() == 'F'
-      var args: String? = null
-      var rawSource: String? = null
-      var start = -1L
-      var end = -1L
-      var ignore = ""
-      if (!fileBased) {
-        // Read offsets
-        val startString = reader.readString(',')
-        val endString = reader.readString(',')
-        try {
-          if (startString != "-") {
-            start = startString.toLong(16)
-          }
-          if (endString != "-") {
-            end = endString.toLong(16)
-          } else {
-            end = start
-          }
-        } catch (ignore: Throwable) {
-          // Leave offsets as -1
+      val map: MutableMap<ResourceType, ListMultimap<String, ResourceItem>> = EnumMap(ResourceType::class.java)
+
+      val namespaceUri = input.readString() ?: throw StreamFormatException("Missing namespace")
+      val namespace = ResourceNamespace.fromNamespaceUri(namespaceUri) ?: ResourceNamespace.RES_AUTO
+      val libraryName = input.readString()
+
+      val fileCount = input.readInt()
+      val fileList =
+        List(fileCount) { i ->
+          val path = input.readString() ?: throw StreamFormatException("Missing path for file $i")
+          pathVariables.fromPathString(path, root, allowMissingPathVariable)
         }
 
-        ignore = reader.readString(';')
-      }
-
-      val peek = reader.peek()
-      val content =
-        when {
-          peek == '\"' -> {
-            reader.advance() // "
-            val content = reader.readString('"')
-
-            if (reader.peek() != ';') {
-              // raw source provided as well
-              rawSource = reader.readString(';')
+      val parentConfigMap = HashMap<String, FolderConfiguration>(fileCount / 4 + 1)
+      val folderConfigMap = HashMap<File, FolderConfiguration>(fileCount * 2)
+      for (file in fileList) {
+        val folderName = file.parentFile?.name ?: continue
+        val config =
+          parentConfigMap[folderName]
+            ?: FolderConfiguration.getConfigForFolder(folderName)?.also {
+              it.normalizeByAddingImpliedVersionQualifier()
+              parentConfigMap[folderName] = it
             }
-            content
-          }
-          peek != ';' -> {
-            // Arguments
-            args = reader.readRaw(';')
-            null
-          }
-          else -> {
-            null
+            ?: continue
+        folderConfigMap[file] = config
+      }
+
+      // Map of the values added from each resource file
+      val valueItems = HashMap<File, MutableList<LintDeserializedResourceItem>>()
+
+      val typeCount = input.readInt()
+      repeat(typeCount) {
+        val typeName = input.readString() ?: throw StreamFormatException("Missing resource type name")
+        val type = ResourceType.fromClassName(typeName) ?: throw StreamFormatException("Unknown resource type $typeName")
+        val itemCount = input.readInt()
+        repeat(itemCount) {
+          val name = input.readString() ?: throw StreamFormatException("Missing resource name")
+          val fileIndex = input.readInt()
+          val flags = input.readInt()
+          val file = fileList[fileIndex]
+          val config = folderConfigMap[file] ?: throw StreamFormatException("Missing folder configuration for $file")
+
+          val position =
+            if (ItemFlag.HasPosition in flags) {
+              SourcePosition(
+                input.readInt() - 1,
+                input.readInt() - 1,
+                input.readInt() - 1,
+                input.readInt() - 1,
+                input.readInt() - 1,
+                input.readInt() - 1,
+              )
+            } else null
+          val ignoredIds = if (ItemFlag.HasIgnoredIds in flags) input.readString() ?: "" else ""
+          val text = if (ItemFlag.HasText in flags) input.readString() ?: "" else null
+          val rawSource = if (ItemFlag.HasRawSource in flags) input.readString() else null
+          val arguments = if (ItemFlag.HasArguments in flags) input.readBytes() else null
+
+          if (ItemFlag.FileBased in flags) {
+            val item = LintResourceItem(file, name, namespace, type, null, false, libraryName, config, true, ignoredIds, null)
+            LintResourceRepository.recordItem(map, type, name, item)
+
+            // As a side effect sets item.sourceFile
+            ResourceFile(file, item, config)
+          } else {
+            val item =
+              LintDeserializedResourceItem(
+                file,
+                name,
+                namespace,
+                type,
+                config,
+                false,
+                rawSource,
+                text,
+                arguments,
+                libraryName,
+                ignoredIds,
+                position,
+              )
+            LintResourceRepository.recordItem(map, type, name, item)
+            valueItems.getOrPut(file, ::ArrayList).add(item)
           }
         }
-      val file = fileList[fileNum]
-      val config = folderConfigMap[file]!!
-      if (fileBased) {
-        val item = LintResourceItem(file, name, namespace, type, null, false, libraryName, config, true, ignore, null)
-        LintResourceRepository.recordItem(map, type, name, item)
-
-        // As a side effect sets item.sourceFile
-        ResourceFile(file, item, config)
-      } else {
-        val item =
-          LintDeserializedResourceItem(
-            file,
-            name,
-            namespace,
-            type,
-            config,
-            false,
-            rawSource,
-            content,
-            args,
-            libraryName,
-            ignore,
-            start,
-            end,
-          )
-        LintResourceRepository.recordItem(map, type, name, item)
-        val list = valueItems[file] ?: ArrayList<LintDeserializedResourceItem>().also { valueItems[file] = it }
-        list.add(item)
       }
-    }
 
-    // Initialize resource files for value resources; we couldn't do that
-    // during initialization since we need to pass in all items for each
-    // file at the same time
-    for ((file, items) in valueItems) {
-      val config = folderConfigMap[file]!!
-      val itemList: List<LintDeserializedResourceItem> = items
-      // Constructor has side effect of recording itself on each item
-      ResourceFile(file, itemList, config)
-    }
+      // Initialize resource files for value resources; we couldn't do that
+      // during initialization since we need to pass in all items for each
+      // file at the same time
+      for ((file, items) in valueItems) {
+        val config = folderConfigMap[file]!!
+        val itemList: List<LintDeserializedResourceItem> = items
+        // Constructor has side effect of recording itself on each item
+        ResourceFile(file, itemList, config)
+      }
 
-    return LintResourceRepository(project, map, namespace, libraryName)
+      return LintResourceRepository(project, map, namespace, libraryName)
+    }
   }
 
   /** Serializes a lint resource repository. */
-  fun serialize(repository: LintResourceRepository, pathVariables: PathVariables): String {
+  fun serialize(repository: LintResourceRepository, pathVariables: PathVariables): ByteArray {
     return serialize(repository, pathVariables, null)
   }
 
@@ -608,11 +461,10 @@ object LintResourcePersistence {
      * resource values for anything other than strings and dimensions (and only usually when some other potentially triggering issue is
      * there.)
      */
-    private val arguments: String?,
+    private val arguments: ByteArray?,
     private val library: String?,
     private val ignoredIds: String,
-    private val start: Long,
-    private val end: Long,
+    private val position: SourcePosition?,
   ) : ResourceMergerItem(name, namespace, type, null, false, null), LocationAware, IgnoredIdProvider {
     override fun getConfiguration(): FolderConfiguration {
       return config
@@ -669,95 +521,71 @@ object LintResourcePersistence {
         }
       } else {
         assert(arguments.isNotEmpty())
-        val reader = DeserializationReader(arguments)
-        when {
-          type == ResourceType.ARRAY -> {
-            // Array
-            val array = ArrayResourceValueImpl(namespace, name, library)
-            while (!reader.eof()) {
-              val element = reader.readString(',')
-              array.addElement(element)
-            }
-            array
-          }
-          type == ResourceType.PLURALS -> {
-            val plural = PluralsResourceValueImpl(namespace, name, text, library)
-            while (!reader.eof()) {
-              val quantity = reader.readString(':')
-              val value = reader.readString(',')
-              plural.addPlural(quantity, value)
-            }
-            plural
-          }
-          type == ResourceType.STYLE -> {
-            val parent =
-              when (reader.next()) {
-                'E' -> ""
-                'N' -> null
-                else -> reader.readString(',')
-              }
-            val style = StyleResourceValueImpl(namespace, name, parent, library)
-            while (!reader.eof()) {
-              val name = reader.readString(':')
-              val value = reader.readString(',')
-              val item = StyleItemResourceValueImpl(namespace, name, value, library)
-              style.addItem(item)
-            }
-            style
-          }
-          type == ResourceType.STYLEABLE -> {
-            val style = StyleableResourceValueImpl(namespace, name, null, library)
-            val separator = reader.next()
-            assert(separator == '-')
-            while (!reader.eof()) {
-              val attrName = reader.readString(':')
-              val attr = AttrResourceValueImpl(namespace, attrName, library)
-              style.addValue(attr)
-              val format = reader.readString(':')
-              if (format.isNotEmpty()) {
-                val formats = AttributeFormat.parse(format)
-                attr.setFormats(formats)
-              }
-              while (!reader.eof()) {
-                if (reader.peek() == '-') {
-                  reader.advance()
-                  break
+        Base128InputStream(ByteArrayInputStream(arguments)).use { reader ->
+          when {
+            type == ResourceType.ARRAY ->
+              ArrayResourceValueImpl(namespace, name, library).apply { repeat(reader.readInt()) { addElement(reader.readString() ?: "") } }
+            type == ResourceType.PLURALS -> {
+              PluralsResourceValueImpl(namespace, name, text, library).apply {
+                repeat(reader.readInt()) {
+                  val quantity = reader.readString() ?: ""
+                  val value = reader.readString() ?: ""
+                  addPlural(quantity, value)
                 }
-                val name = reader.readString(':')
-                val value = reader.readString(',')
-                attr.addValue(name, if (value.isNotBlank()) value.toInt() else null, null)
               }
             }
-            style
-          }
-          type == ResourceType.ATTR -> {
-            val attr = AttrResourceValueImpl(namespace, name, library)
-            val format = reader.readString(':')
-            if (format.isEmpty()) {
-              // Only specified format, not arguments
-              val formats = listOf(AttributeFormat.REFERENCE)
-              attr.setFormats(formats)
-            } else {
-              val formats = AttributeFormat.parse(format)
-              attr.setFormats(formats)
+            type == ResourceType.STYLE -> {
+              val parent =
+                when (reader.readInt()) {
+                  0 -> null
+                  1 -> ""
+                  else -> reader.readString()
+                }
+              StyleResourceValueImpl(namespace, name, parent, library).apply {
+                repeat(reader.readInt()) {
+                  val itemName = reader.readString() ?: ""
+                  val value = reader.readString() ?: ""
+                  val item = StyleItemResourceValueImpl(namespace, itemName, value, library)
+                  addItem(item)
+                }
+              }
             }
-
-            while (!reader.eof()) {
-              val name = reader.readString(':')
-              val value = reader.readString(',')
-              attr.addValue(name, if (value.isNotBlank()) value.toInt() else null, null)
+            type == ResourceType.STYLEABLE ->
+              StyleableResourceValueImpl(namespace, name, null, library).apply {
+                repeat(reader.readInt()) {
+                  val attrName = reader.readString() ?: ""
+                  val attr = AttrResourceValueImpl(namespace, attrName, library)
+                  addValue(attr)
+                  readAttrValue(reader, attr, defaultToReference = false)
+                }
+              }
+            type == ResourceType.ATTR ->
+              AttrResourceValueImpl(namespace, name, library).also { readAttrValue(reader, it, defaultToReference = true) }
+            DensityBasedResourceValue.isDensityBasedResourceType(type) -> {
+              val density = Density.getEnum(reader.readString())!!
+              // value path or null?
+              DensityBasedResourceValueImpl(namespace, type, name, null, density, library)
             }
-            attr
-          }
-          DensityBasedResourceValue.isDensityBasedResourceType(type) -> {
-            val density = Density.getEnum(arguments)!!
-            // value path or null?
-            DensityBasedResourceValueImpl(namespace, type, name, null, density, library)
-          }
-          else -> {
-            ResourceValueImpl(namespace, type, name, file.path, library)
+            else -> ResourceValueImpl(namespace, type, name, file.path, library)
           }
         }
+      }
+    }
+
+    private fun readAttrValue(reader: Base128InputStream, attr: AttrResourceValueImpl, defaultToReference: Boolean) {
+      val format = reader.readString()
+      if (format.isNullOrEmpty()) {
+        if (defaultToReference) {
+          // Only specified format, not arguments
+          attr.setFormats(listOf(AttributeFormat.REFERENCE))
+        }
+      } else {
+        attr.setFormats(AttributeFormat.parse(format))
+      }
+      repeat(reader.readInt()) {
+        val valueName = reader.readString() ?: ""
+        val value = if (reader.readBoolean()) reader.readInt() else null
+        attr.addValue(valueName, value, null)
       }
     }
 
@@ -776,14 +604,15 @@ object LintResourcePersistence {
     }
 
     override fun getLocation(): Location {
-      if (start != -1L && end != -1L) {
-        return Location.create(
+      val position = position
+      return if (position != null) {
+        Location.create(
           file,
-          DefaultPosition(decodeLine(start), decodeColumn(start), decodeOffset(start)),
-          DefaultPosition(decodeLine(end), decodeColumn(end), decodeOffset(end)),
+          DefaultPosition(position.startLine, position.startColumn, position.startOffset),
+          DefaultPosition(position.endLine, position.endColumn, position.endOffset),
         )
       } else {
-        return Location.create(file)
+        Location.create(file)
       }
     }
 
