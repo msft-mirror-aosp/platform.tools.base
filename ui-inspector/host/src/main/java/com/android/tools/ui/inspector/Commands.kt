@@ -260,7 +260,7 @@ internal suspend fun dumpUi(
   uiDump.roots.forEach { printUiTree(it, 0, includeAttributes, includeSemantics) }
 }
 
-private suspend fun fetchUiDump(
+internal suspend fun fetchUiDump(
   commandSender: CommandSender,
   includeAttributes: Boolean,
   includeResolutionStack: Boolean,
