@@ -29,6 +29,7 @@ import com.android.tools.deployer.common.AdbClient
 import com.android.tools.deployer.common.DeployMetric
 import com.android.tools.deployer.common.DeployerException
 import com.android.tools.deployer.common.DeployerTestConstants
+import com.android.tools.deployer.common.DeviceHolder
 import com.android.tools.deployer.common.Installer
 import com.android.tools.deployer.rules.ApiLevel
 import com.android.utils.ILogger
@@ -1379,7 +1380,7 @@ class InstallTestTest : DeployRunnerTestBase() {
     }
     val iDevice = bridge.devices[0]
     val logger: ILogger = TestLogger()
-    val adb = AdbClient(iDevice, logger)
+    val adb = AdbClient(DeviceHolder(iDevice, null), logger)
     val metrics = ArrayList<DeployMetric>()
     val installer: Installer = AdbInstaller(installersPath.toString(), adb, metrics, logger)
 

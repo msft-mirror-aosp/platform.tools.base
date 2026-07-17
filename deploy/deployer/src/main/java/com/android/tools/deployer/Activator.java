@@ -16,9 +16,9 @@
 package com.android.tools.deployer;
 
 import com.android.annotations.NonNull;
-import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
 import com.android.tools.deployer.common.DeployerException;
+import com.android.tools.deployer.common.DeviceHolder;
 import com.android.tools.deployer.model.Apk;
 import com.android.tools.deployer.model.App;
 import com.android.tools.deployer.model.ModelException;
@@ -51,7 +51,7 @@ public class Activator {
             @NonNull ComponentType type,
             @NonNull String componentName,
             @NonNull IShellOutputReceiver receiver,
-            @NonNull IDevice device)
+            @NonNull DeviceHolder device)
             throws DeployerException {
         activate(type, componentName, NO_FLAGS, AppComponent.Mode.RUN, receiver, device);
     }
@@ -61,7 +61,7 @@ public class Activator {
             @NonNull String componentName,
             @NonNull String extraFlags,
             @NonNull IShellOutputReceiver receiver,
-            @NonNull IDevice device)
+            @NonNull DeviceHolder device)
             throws DeployerException {
         activate(type, componentName, extraFlags, AppComponent.Mode.RUN, receiver, device);
     }
@@ -71,7 +71,7 @@ public class Activator {
             @NonNull String componentName,
             @NonNull AppComponent.Mode mode,
             @NonNull IShellOutputReceiver receiver,
-            @NonNull IDevice device)
+            @NonNull DeviceHolder device)
             throws DeployerException {
         activate(type, componentName, NO_FLAGS, mode, receiver, device);
     }
@@ -82,7 +82,7 @@ public class Activator {
             @NonNull String extraFlags,
             @NonNull AppComponent.Mode mode,
             @NonNull IShellOutputReceiver receiver,
-            @NonNull IDevice device)
+            @NonNull DeviceHolder device)
             throws DeployerException {
         String qualifiedName =
                 componentName.startsWith(".") ? app.getAppId() + componentName : componentName;
@@ -142,8 +142,8 @@ public class Activator {
         return component;
     }
 
-    public void forceStop(@NonNull IDevice device) {
-        device.forceStop(app.getAppId());
+    public void forceStop(@NonNull DeviceHolder device) {
+        device.getIDevice().forceStop(app.getAppId());
     }
 
     @NonNull

@@ -283,7 +283,7 @@ public class ApkInstaller {
         }
 
         if (!plan.getApp()
-                .getBaselineProfile(adb.getDevice().getVersion().getApiLevel())
+                .getBaselineProfile(adb.getVersion().getApiLevel())
                 .isEmpty()) {
             // Supporting baseline profile install via delta-push is a significant change.
             // The gain is not worth it in the context of a release apk (we only get baseline

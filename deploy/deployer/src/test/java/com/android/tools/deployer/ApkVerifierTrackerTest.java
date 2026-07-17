@@ -33,6 +33,7 @@ import com.android.ddmlib.IDevice;
 import com.android.fakeadbserver.DeviceState;
 import com.android.fakeadbserver.FakeAdbServer;
 import com.android.tools.deployer.common.ApkVerifierTracker;
+import com.android.tools.deployer.common.DeviceHolder;
 import com.android.tools.deployer.devices.FakeDevice;
 import com.android.tools.deployer.devices.FakeDeviceHandler;
 import com.android.tools.deployer.devices.shell.GetProp;
@@ -76,8 +77,8 @@ public class ApkVerifierTrackerTest {
     private FakeAdbServer fakeAdbServer;
     private AndroidDebugBridge bridge;
 
-    private Set<IDevice> disabledDevices;
-    private final List<IDevice> devices = new ArrayList<>();
+    private Set<DeviceHolder> disabledDevices;
+    private final List<DeviceHolder> devices = new ArrayList<>();
 
     @Before
     public void before() throws Exception {
@@ -114,7 +115,7 @@ public class ApkVerifierTrackerTest {
             deviceStates.add(connectAndWaitForDevice(fakeDevice));
         }
 
-        Map<FakeDevice, IDevice> devicesMap = new HashMap<>();
+        Map<FakeDevice, DeviceHolder> devicesMap = new HashMap<>();
 
         // Map FakeDevices to their corresponding IDevices.
         for (FakeDevice device : fakeDevices) {
@@ -127,7 +128,7 @@ public class ApkVerifierTrackerTest {
                             .findFirst()
                             .orElse(null);
             assertNotNull(iDevice);
-            devicesMap.put(device, iDevice);
+            devicesMap.put(device, new DeviceHolder(iDevice, null));
         }
 
         disabledDevices = Sets.newHashSet(devicesMap.get(oDevice), devicesMap.get(rDeviceDp1));
@@ -144,7 +145,7 @@ public class ApkVerifierTrackerTest {
 
     @Test
     public void verifyOnFirstInstall() {
-        for (IDevice device : devices) {
+        for (DeviceHolder device : devices) {
             assertNull(getSkipVerificationInstallationFlag(device, FIRST_PACKAGE));
             assertNull(getSkipVerificationInstallationFlag(device, SECOND_PACKAGE));
         }
@@ -152,7 +153,7 @@ public class ApkVerifierTrackerTest {
 
     @Test
     public void skipVerifyOnSecondInstall() {
-        for (IDevice device : devices) {
+        for (DeviceHolder device : devices) {
             assertNull(getSkipVerificationInstallationFlag(device, FIRST_PACKAGE, 0));
 
             // Ensure that a fast followup install does not incur verification.
@@ -171,7 +172,7 @@ public class ApkVerifierTrackerTest {
 
     @Test
     public void reverifiesAfterAnHourThenNoVerification() {
-        for (IDevice device : devices) {
+        for (DeviceHolder device : devices) {
             assertNull(getSkipVerificationInstallationFlag(device, FIRST_PACKAGE, 0));
 
             long hour = TimeUnit.HOURS.toMillis(1);

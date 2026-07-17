@@ -22,6 +22,7 @@ import com.android.ddmlib.SimpleConnectedSocket;
 import com.android.testutils.AssumeUtil;
 import com.android.tools.deployer.common.AdbClient;
 import com.android.tools.deployer.common.DeployMetric;
+import com.android.tools.deployer.common.DeviceHolder;
 import com.android.tools.deployer.common.Timeouts;
 import com.android.tools.deployer.devices.FakeDevice;
 import com.android.tools.deployer.rules.ApiLevel;
@@ -78,7 +79,9 @@ public class AdbInstallerChannelManagerTest {
         List<DeployMetric> noop = new ArrayList<>();
         LocalHostInstallerAdbClient client =
                 new LocalHostInstallerAdbClient(
-                        getDevice(bridge), logger, installersPath + "/x86/installer");
+                        new DeviceHolder(getDevice(bridge), null),
+                        logger,
+                        installersPath + "/x86/installer");
 
         String executable = installersPath.getAbsolutePath();
         AdbInstaller installer =
@@ -115,7 +118,7 @@ public class AdbInstallerChannelManagerTest {
         }
 
         IDevice device = getDevice(bridge);
-        AdbClient client = new AdbClient(device, logger);
+        AdbClient client = new AdbClient(new DeviceHolder(device, null), logger);
 
         AdbInstallerChannel c1 =
                 AdbInstallerChannelManager.getChannel(
@@ -144,7 +147,8 @@ public class AdbInstallerChannelManagerTest {
 
         private final String installerPath;
 
-        public LocalHostInstallerAdbClient(IDevice device, ILogger logger, String installerPath) {
+        public LocalHostInstallerAdbClient(
+                DeviceHolder device, ILogger logger, String installerPath) {
             super(device, logger);
             this.installerPath = installerPath;
         }

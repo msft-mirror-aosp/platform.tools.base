@@ -25,6 +25,7 @@ import com.android.ddmlib.NullOutputReceiver;
 import com.android.ddmlib.ShellCommandUnresponsiveException;
 import com.android.ddmlib.TimeoutException;
 import com.android.testutils.TestUtils;
+import com.android.tools.deployer.common.DeviceHolder;
 import com.android.tools.deployer.model.ModelException;
 import com.android.tools.deployer.model.TestLogger;
 import com.android.tools.deployer.model.activate.ActivationCommand;
@@ -94,6 +95,7 @@ public class ActivityTest {
                     IOException,
                     TimeoutException {
         IDevice device = Mockito.mock(IDevice.class);
+        DeviceHolder deviceHolder = new DeviceHolder(device, null);
         ManifestActivityInfo info =
                 new ManifestActivityInfo(new XmlNode(), "com.example.myApp") {
                     @Override
@@ -102,7 +104,8 @@ public class ActivityTest {
                     }
                 };
         ActivityV1 activity = new ActivityV1(info, "com.example.myApp", new TestLogger());
-        activity.activate(" --user 123", AppComponent.Mode.DEBUG, new NullOutputReceiver(), device);
+        activity.activate(
+                " --user 123", AppComponent.Mode.DEBUG, new NullOutputReceiver(), deviceHolder);
 
         String expectedCommand =
                 "am start -n com.example.myApp/com.example.myApp.MainActivity -a"
@@ -120,6 +123,7 @@ public class ActivityTest {
     @Test
     public void useCategoryFromManifest() throws Exception {
         IDevice device = Mockito.mock(IDevice.class);
+        DeviceHolder deviceHolder = new DeviceHolder(device, null);
         URL url =
                 TestUtils.resolveWorkspacePath(
                                 "tools/base/deploy/deployer/src/test/resource/manifestWithCategory/AndroidManifest.bxml")
@@ -133,7 +137,7 @@ public class ActivityTest {
                             manifestInfo.activities().get(0),
                             "com.example.myApp",
                             new TestLogger());
-            activity.activate("", AppComponent.Mode.RUN, new NullOutputReceiver(), device);
+            activity.activate("", AppComponent.Mode.RUN, new NullOutputReceiver(), deviceHolder);
 
             String expectedCommand =
                     "am start -n com.example.myApp/com.example.tv_app.MainActivity -a"

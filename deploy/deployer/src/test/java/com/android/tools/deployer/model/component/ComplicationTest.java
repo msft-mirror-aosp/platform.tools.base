@@ -21,6 +21,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.NullOutputReceiver;
+import com.android.tools.deployer.common.DeviceHolder;
 import com.android.tools.deployer.model.ModelException;
 import com.android.tools.deployer.model.TestLogger;
 import com.android.tools.deployer.model.activate.ActivationCommands;
@@ -120,7 +121,7 @@ public class ComplicationTest {
                 "debug.app.watchface com.example.WatchFaces$InnerWatchFace 1 LONG_TEXT",
                 AppComponent.Mode.RUN,
                 new NullOutputReceiver(),
-                device);
+                new DeviceHolder(device, null));
 
         String expectedCommand =
                 "am broadcast -a com.google.android.wearable.app.DEBUG_SURFACE --es operation"
@@ -154,7 +155,7 @@ public class ComplicationTest {
                 "debug.app.watchface com.example.WatchFaces$InnerWatchFace 1 LONG_TEXT",
                 AppComponent.Mode.DEBUG,
                 new NullOutputReceiver(),
-                device);
+                new DeviceHolder(device, null));
 
         inOrderDevice
                 .verify(device)

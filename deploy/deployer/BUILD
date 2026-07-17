@@ -102,6 +102,7 @@ kotlin_library(
         "src/main/java/com/android/tools/deployer/common/DeployerException.java",
         "src/main/java/com/android/tools/deployer/common/DeployerOption.java",
         "src/main/java/com/android/tools/deployer/common/DeploymentCacheDatabase.java",
+        "src/main/java/com/android/tools/deployer/common/DeviceHolder.kt",
         "src/main/java/com/android/tools/deployer/common/InstallMetrics.java",
         "src/main/java/com/android/tools/deployer/common/InstallOptions.java",
         "src/main/java/com/android/tools/deployer/common/InstallStatus.java",
@@ -156,6 +157,7 @@ kotlin_library(
     ]),
     visibility = ["//visibility:public"],
     deps = [
+        ":tools.deployer.common",
         ":tools.deployer.model",
         "//tools/base/annotations",
         "//tools/base/common:tools.common",
@@ -384,6 +386,7 @@ coverage_java_test(
     jvm_flags = ["-Dtest.suite.jar=tools.deployer.model.tests.jar"],
     test_class = "com.android.testutils.JarTestSuite",
     deps = [
+        ":tools.deployer.common",
         ":tools.deployer.model",
         ":tools.deployer.modelv1",
         "//tools/base/annotations",
@@ -498,6 +501,7 @@ kotlin_test(
         ":tools.deployer",
         ":tools.deployer.common",
         ":tools.deployer.install",
+        "//tools/base/adblib",
         "//tools/base/adblib:adblib.tests.testlib",
         "//tools/base/adblib-ddmlibcompatibility:adblib.ddmlibcompatibility.tests.testlib",
         "//tools/base/bazel:studio-proto",

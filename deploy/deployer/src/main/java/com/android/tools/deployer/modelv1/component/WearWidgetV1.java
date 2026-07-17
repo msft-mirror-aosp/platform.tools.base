@@ -16,8 +16,8 @@
 package com.android.tools.deployer.modelv1.component;
 
 import com.android.annotations.NonNull;
-import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
+import com.android.tools.deployer.common.DeviceHolder;
 import com.android.tools.deployer.model.ModelException;
 import com.android.tools.deployer.model.component.WearWidget;
 import com.android.tools.manifest.parser.components.ManifestServiceInfo;
@@ -35,7 +35,7 @@ public class WearWidgetV1 extends WearWidget implements WearComponentV1 {
             @NonNull String extraFlags,
             @NonNull Mode activationMode,
             @NonNull IShellOutputReceiver addWearWidgetReceiver,
-            @NonNull IDevice device)
+            @NonNull DeviceHolder device)
             throws ModelException {
         validate(extraFlags);
         logger.info(

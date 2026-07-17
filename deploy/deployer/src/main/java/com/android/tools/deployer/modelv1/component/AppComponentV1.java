@@ -16,8 +16,8 @@
 package com.android.tools.deployer.modelv1.component;
 
 import com.android.annotations.NonNull;
-import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
+import com.android.tools.deployer.common.DeviceHolder;
 import com.android.tools.deployer.model.ModelException;
 import com.android.tools.deployer.model.component.AppComponent;
 
@@ -33,16 +33,17 @@ public interface AppComponentV1 {
             @NonNull String extraFlags,
             AppComponent.Mode activationMode,
             @NonNull IShellOutputReceiver receiver,
-            @NonNull IDevice device)
+            @NonNull DeviceHolder device)
             throws ModelException;
 
     default void runShellCommand(
             @NonNull String command,
             @NonNull IShellOutputReceiver receiver,
-            @NonNull IDevice device)
+            @NonNull DeviceHolder device)
             throws ModelException {
         try {
-            device.executeShellCommand(command, receiver, SHELL_TIMEOUT, SHELL_TIMEUNIT);
+            device.getIDevice()
+                    .executeShellCommand(command, receiver, SHELL_TIMEOUT, SHELL_TIMEUNIT);
         } catch (Exception e) {
             throw new ModelException(e.getMessage());
         }

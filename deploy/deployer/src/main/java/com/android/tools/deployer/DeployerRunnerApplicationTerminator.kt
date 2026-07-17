@@ -15,11 +15,11 @@
  */
 package com.android.tools.deployer
 
-import com.android.ddmlib.IDevice
+import com.android.tools.deployer.common.DeviceHolder
 
 private fun killFunction(device: DeployerDevice, appId: String): Unit {
   throw UnsupportedOperationException("Commandline deployer does not support application termination without package manager.")
 }
 
-internal class DeployerRunnerApplicationTerminator(device: IDevice, appId: String) :
-  DeployerApplicationTerminator(listOf(DeployerDevice(device.serialNumber)), appId, ::killFunction) {}
+internal class DeployerRunnerApplicationTerminator(device: DeviceHolder, appId: String) :
+  DeployerApplicationTerminator(listOf(DeployerDevice(device.iDevice.serialNumber)), appId, ::killFunction) {}

@@ -62,7 +62,7 @@ class RootPushApkInstaller {
 
         // Apk push installation requires root to overwrite files in the /data/app directory.
         try {
-            if (!adb.getDevice().isRoot() && !adb.getDevice().root()) {
+            if (!adb.getDeviceHolder().getIDevice().isRoot() && !adb.getDeviceHolder().getIDevice().root()) {
                 logger.warning("RootPush: Could not elevate to root");
                 return false;
             }

@@ -32,6 +32,7 @@ import com.android.tools.deployer.common.DeployMetric;
 import com.android.tools.deployer.common.DeployerException;
 import com.android.tools.deployer.common.DeployerOption;
 import com.android.tools.deployer.common.DeploymentCacheDatabase;
+import com.android.tools.deployer.common.DeviceHolder;
 import com.android.tools.deployer.common.InstallOptions;
 import com.android.tools.deployer.common.Installer;
 import com.android.tools.deployer.common.UIService;
@@ -196,7 +197,7 @@ public class DeployerRunner {
         try {
             DeployRunnerParameters parameters = DeployRunnerParameters.parse(args);
             ILogger logger = new StdLogger(parameters.getLogLevel());
-            Map<String, IDevice> devices =
+            Map<String, DeviceHolder> devices =
                     waitForDevices(
                             parameters.getAdbExecutablePath(),
                             parameters.getTargetDevices(),
@@ -215,10 +216,11 @@ public class DeployerRunner {
                 }
             }
 
-            for (IDevice device : devices.values()) {
+            for (DeviceHolder device : devices.values()) {
                 int status = run(device, parameters, logger);
                 if (status != SUCCESS) {
-                    logger.error(null, "Error deploying to device: %s", device.getName());
+                    logger.error(
+                            null, "Error deploying to device: %s", device.getIDevice().getName());
                     return status;
                 }
             }
@@ -231,10 +233,13 @@ public class DeployerRunner {
 
     // Left in to support how DeployService calls us.
     public int run(IDevice device, String[] args, ILogger logger) {
-        return run(device, DeployRunnerParameters.parse(args), logger);
+        DeployRunnerParameters parameters = DeployRunnerParameters.parse(args);
+        // TODO: We need to lookup ConnectedDevice here or in DeployService to fully migrate.
+        DeviceHolder deviceHolder = new DeviceHolder(device, null);
+        return run(deviceHolder, parameters, logger);
     }
 
-    private int run(IDevice device, DeployRunnerParameters parameters, ILogger logger) {
+    private int run(DeviceHolder device, DeployRunnerParameters parameters, ILogger logger) {
         EnumSet<ChangeType> optimisticInstallSupport = EnumSet.noneOf(ChangeType.class);
         if (parameters.isOptimisticInstall()) {
             optimisticInstallSupport.add(ChangeType.DEX);
@@ -265,7 +270,7 @@ public class DeployerRunner {
                         .setFastRestartOnSwapFail(false)
                         .setOptimisticInstallSupport(optimisticInstallSupport)
                         .enableCoroutineDebugger(true)
-                        .setAllowAssumeVerified(device.getVersion().isAtLeast(35))
+                        .setAllowAssumeVerified(device.getIDevice().getVersion().isAtLeast(35))
                         .skipPostInstallTasks(parameters.getSkipPostInstallTasks())
                         .useRootPushInstall(parameters.getUseRootPushInstall())
                         .build();
@@ -296,7 +301,7 @@ public class DeployerRunner {
             if (parameters.getCommands().contains(DeployRunnerParameters.Command.INSTALL)) {
                 InstallOptions.Builder options = defaultInstallOptions.toBuilder();
 
-                if (device.supportsFeature(IDevice.HardwareFeature.EMBEDDED)) {
+                if (device.getIDevice().supportsFeature(IDevice.HardwareFeature.EMBEDDED)) {
                     options.setGrantAllPermissions();
                 }
 
@@ -369,7 +374,7 @@ public class DeployerRunner {
         }
     }
 
-    private Map<String, IDevice> waitForDevices(
+    private Map<String, DeviceHolder> waitForDevices(
             String adbExecutablePath,
             List<String> deviceSerials,
             boolean jdwpClientSupport,
@@ -377,7 +382,7 @@ public class DeployerRunner {
         try (Trace unused = Trace.begin("waitForDevices()")) {
             int expectedDevices = deviceSerials.isEmpty() ? 1 : deviceSerials.size();
             CountDownLatch latch = new CountDownLatch(expectedDevices);
-            ConcurrentHashMap<String, IDevice> devices = new ConcurrentHashMap<>();
+            ConcurrentHashMap<String, DeviceHolder> devices = new ConcurrentHashMap<>();
 
             AndroidDebugBridge.IDeviceChangeListener listener =
                     new AndroidDebugBridge.IDeviceChangeListener() {
@@ -386,7 +391,7 @@ public class DeployerRunner {
                             final String serial = device.getSerialNumber();
                             logger.info("Found device with serial: %s", serial);
                             if (deviceSerials.isEmpty() || deviceSerials.contains(serial)) {
-                                devices.put(serial, device);
+                                devices.put(serial, new DeviceHolder(device, null));
                                 latch.countDown();
                             }
                         }

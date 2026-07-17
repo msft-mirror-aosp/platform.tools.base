@@ -22,6 +22,7 @@ import com.android.testutils.AssumeUtil;
 import com.android.tools.deployer.common.AdbClient;
 import com.android.tools.deployer.common.DeployMetric;
 import com.android.tools.deployer.common.DeployerTestConstants;
+import com.android.tools.deployer.common.DeviceHolder;
 import com.android.tools.deployer.devices.FakeDevice;
 import com.android.tools.deployer.rules.ApiLevel;
 import com.android.tools.deployer.rules.FakeDeviceConnection;
@@ -76,7 +77,7 @@ public class AdbInstallerTest {
         }
 
         List<DeployMetric> unusedMetric = new ArrayList<>();
-        AdbClient client = new AdbClient(getDevice(bridge), logger);
+        AdbClient client = new AdbClient(new DeviceHolder(getDevice(bridge), null), logger);
 
         AdbInstaller installer =
                 new AdbInstaller(installersPath.getAbsolutePath(), client, unusedMetric, logger);
@@ -116,7 +117,7 @@ public class AdbInstallerTest {
         }
 
         List<DeployMetric> unusedMetric = new ArrayList<>();
-        AdbClient client = new AdbClient(getDevice(bridge), logger);
+        AdbClient client = new AdbClient(new DeviceHolder(getDevice(bridge), null), logger);
 
         AdbInstaller installer =
                 new AdbInstaller(
