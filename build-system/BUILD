@@ -546,15 +546,17 @@ gradle_build(
 diff_test(
     name = "android_gradle_plugin_problems_test",
     failure_message = """
-       Run the following command to update:
-         bazel build //tools/base/build-system:android_gradle_plugin_problems.txt && cp `bazel info bazel-genfiles`/tools/base/build-system/android_gradle_plugin_problems.txt `bazel info workspace`/tools/base/build-system/known_problems.txt
+       Replace the known_problems.txt file in this directory with android_gradle_plugin_problems.txt from the artifacts of //tools/base/build-system:android_gradle_plugin target in this bazel invocation.
+
+       Alternatively, run the following command to update (make sure build is executed remotely by adding --config=remote, or --config=remote-exec):
+         bazel build --config=remote //tools/base/build-system:android_gradle_plugin_problems.txt && cp `bazel info bazel-genfiles`/tools/base/build-system/android_gradle_plugin_problems.txt `bazel info workspace`/tools/base/build-system/known_problems.txt
     """,
     file1 = ":android_gradle_plugin_problems.txt",
     file2 = "known_problems.txt",
     # No need to run this on Windows.
     tags = [
         "noci:studio-win",
-    ]
+    ],
 )
 
 gradle_build(
