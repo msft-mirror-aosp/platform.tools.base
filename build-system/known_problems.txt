@@ -1,4 +1,3 @@
-deprecation > declaring-dependencies-using-multi-string-notation | plugin:com.google.protobuf | Please use single-string notation instead: "com.google.protobuf:protoc:3.22.3:linux-x86_64@exe".
 deprecation > implicit-lookup-of-properties-in-parent-projects | tools/base/build-analyzer/common/build.gradle:10 | Property 'libs' was not declared in project ':base:build-analyzer:common' and was resolved from root project 'tools-gradle'.
 deprecation > implicit-lookup-of-properties-in-parent-projects | tools/base/build-analyzer/common/build.gradle:11 | Property 'libs' was not declared in project ':base:build-analyzer:common' and was resolved from root project 'tools-gradle'.
 deprecation > implicit-lookup-of-properties-in-parent-projects | tools/base/build-analyzer/common/build.gradle:12 | Property 'libs' was not declared in project ':base:build-analyzer:common' and was resolved from root project 'tools-gradle'.

@@ -43,7 +43,7 @@ File baseInstrumentedClasses = new File(classesDir, "baseInstrumented")
 sourceSets {
     main {
         java.srcDirs += 'src/fromGradle/java'
-        resources.srcDirs = ['src/main/resources', 'src/fromGradle/resources', tasks.findByName("writeVersionProperties").getOutputDirectory()]
+        resources.srcDirs += ['src/fromGradle/resources', tasks.findByName("writeVersionProperties").getOutputDirectory()]
         compileClasspath += configurations.provided
     }
 
@@ -323,6 +323,7 @@ tasks.processResources {
     from(rootProject.file("../prebuilts/tools/common/aapt/aapt2_version.properties")) {
         into "com/android/build/gradle/internal/res/"
     }
+    dependsOn('processProtoResources')
 }
 
 // Incremental update test support
