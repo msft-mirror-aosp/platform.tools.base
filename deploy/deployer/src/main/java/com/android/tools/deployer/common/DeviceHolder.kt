@@ -45,19 +45,17 @@ class DeviceHolder
 constructor(
   private val iDevice: IDevice,
   /**
-   * [connectedDevice] is Optional to indicate whether we attempted to find a device corresponding to [iDevice] in the [AdbSession].
-   * - null: Lookup was not attempted (e.g. in legacy paths or tests).
-   * - Optional.empty(): Lookup was attempted but failed (device not found or error occurred).
-   * - Optional.of(device): Lookup was attempted and succeeded.
+   * The resolved [ConnectedDevice] from the [AdbSession] when adblib migration is enabled.
+   *
+   * The nullability of this [Optional] reflects the lookup outcome:
+   * - `null`: Lookup was not attempted (legacy execution path or tests).
+   * - `Optional.empty()`: Lookup was attempted, but no matching [ConnectedDevice] was found, e.g. because the device got disconnected.
+   * - `Optional.of(device)`: Lookup was attempted and a matching [ConnectedDevice] was successfully resolved.
    */
   private val connectedDevice: Optional<ConnectedDevice>?,
-  private val adbSession: AdbSession? = null,
+  /** Whether the adblib migration is enabled. */
+  private val useConnectedDevice: Boolean = false,
 ) {
-  init {
-    if (connectedDevice != null && adbSession == null) {
-      throw IllegalArgumentException("adbSession is required with connectedDevice in case the optional is empty")
-    }
-  }
 
   val version: AndroidVersion
     get() {
@@ -246,11 +244,17 @@ constructor(
     // TODO: Once we add code that looks up `connectedDevice` using AdbSession.connectedDeviceTracker
     //  and feed it to DeviceHolder across the codebase we could remove the check for
     //  `connectedDevice != null`.
-    val enabled = adbSession?.property(DeployerProperties.USE_CONNECTED_DEVICE) ?: false
-    return if (enabled && connectedDevice != null) {
+    return if (useConnectedDevice && connectedDevice != null) {
       onMigrated(connectedDevice)
     } else {
       onLegacy()
+    }
+  }
+
+  companion object {
+    @JvmStatic
+    fun checkEnableUseConnectedDevice(session: AdbSession): Boolean {
+      return session.property(DeployerProperties.USE_CONNECTED_DEVICE)
     }
   }
 }

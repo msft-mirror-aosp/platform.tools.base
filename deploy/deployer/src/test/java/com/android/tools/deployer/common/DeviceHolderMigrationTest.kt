@@ -15,13 +15,11 @@
  */
 package com.android.tools.deployer.common
 
-import com.android.adblib.AdbSession
 import com.android.adblib.connectedDevicesTracker
 import com.android.adblib.ddmlibcompatibility.testutils.InitAndroidDebugBridgeRule
 import com.android.adblib.ddmlibcompatibility.testutils.UseAdbLibAndroidDebugBridgeRule
 import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.adblib.testingutils.FakeAdbServerProviderRule
-import com.android.adblib.testingutils.TestingAdbSessionHost
 import com.android.adblib.waitForDevice
 import com.android.ddmlib.AndroidDebugBridge
 import com.android.ddmlib.IDevice
@@ -159,14 +157,9 @@ class DeviceHolderMigrationTest {
     return if (useConnectedDevice) {
       val session = fakeAdbRule.adbSession
       val connectedDevice = session.connectedDevicesTracker.waitForDevice(iDevice.serialNumber)
-      enableUseConnectedDevice(session)
-      DeviceHolder(iDevice, Optional.of(connectedDevice), session)
+      DeviceHolder(iDevice, Optional.of(connectedDevice), useConnectedDevice = true)
     } else {
-      DeviceHolder(iDevice, null)
+      DeviceHolder(iDevice, null, useConnectedDevice = false)
     }
-  }
-
-  private fun enableUseConnectedDevice(session: AdbSession) {
-    (session.host as TestingAdbSessionHost).setPropertyValue(DeployerProperties.USE_CONNECTED_DEVICE, true)
   }
 }

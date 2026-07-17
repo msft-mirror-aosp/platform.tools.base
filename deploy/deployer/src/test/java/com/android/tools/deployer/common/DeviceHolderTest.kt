@@ -47,7 +47,7 @@ class DeviceHolderTest {
   private val connectedDevice = mock(ConnectedDevice::class.java)
   private val iDevice = mock(IDevice::class.java)
   private val adbSession = TestingAdbSession()
-  private val deviceHolder = DeviceHolder(iDevice, Optional.of(connectedDevice), adbSession)
+  private val deviceHolder = DeviceHolder(iDevice, Optional.of(connectedDevice))
 
   @Test
   fun testIDeviceDelegatedProperties() {

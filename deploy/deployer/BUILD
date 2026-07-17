@@ -208,6 +208,7 @@ kotlin_library(
         "@maven//:com.google.guava.guava",
         "@maven//:com.google.protobuf.protobuf-java",
         "@maven//:org.jetbrains.annotations",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
         "@maven//:org.xerial.sqlite-jdbc",
     ],
 )

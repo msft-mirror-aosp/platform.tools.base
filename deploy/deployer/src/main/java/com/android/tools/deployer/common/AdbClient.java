@@ -83,7 +83,14 @@ public class AdbClient {
 
     @Deprecated
     public AdbClient(IDevice device, ILogger logger, AdbSession adbSession) {
-        this(new DeviceHolder(device, null, adbSession), logger, adbSession);
+        this(
+                new DeviceHolder(
+                        device,
+                        null,
+                        adbSession != null
+                                && DeviceHolder.checkEnableUseConnectedDevice(adbSession)),
+                logger,
+                adbSession);
     }
 
     public static class InstallResult {
