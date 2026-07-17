@@ -1,10 +1,10 @@
 #buildifier: disable=module-docstring
-BASE_VERSION = "32.4.0-rc01"
-BUILD_VERSION = "9.4.0-rc01"
+BASE_VERSION = "32.4.0-alpha04"
+BUILD_VERSION = "9.4.0-alpha04"
 COMMANDLINE_TOOLS_VERSION = "23.0-alpha01"
 
 # These are used for nightly releases
-LAST_STABLE_BUILD_VERSION = "9.2.1"
+LAST_STABLE_BUILD_VERSION = "9.3.0"
 
 # This is to discriminate between release cycles with or without AGP.
 # Should be "true" on studio-main, and "false" on stabilization
