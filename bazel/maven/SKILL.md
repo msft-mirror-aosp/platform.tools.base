@@ -11,16 +11,25 @@ description: |
 This skill provides step-by-step instructions for updating third-party Maven dependency versions across the `studio-main` monorepo, regenerating Bazel definitions (`BUILD.maven`), updating Gradle dependency properties, handling `NOTICE` files, and synchronizing Bzlmod external lockfiles.
 
 ## When to use this skill
-- Use this when upgrading external Maven libraries pinned in `tools/base/bazel/maven/artifacts.bzl` or `tools/buildSrc/base/dependencies.properties`.
+- Use this when upgrading external Maven libraries pinned in `tools/base/bazel/maven/artifacts.bzl`, exact test fixtures / multi-version plugins in `tools/base/bazel/maven/data.bzl`, or `tools/buildSrc/base/dependencies.properties`.
 - Use this when running `local_maven_repository_generator` (`maven_fetch.sh`) to download prebuilt artifacts into `prebuilts/tools/common/m2/repository/`.
 - This is helpful for resolving Bzlmod lockfile conflicts in `rules_android_lock_maven_install.patch` or diagnosing missing `NOTICE` file errors (`Creating symlink ..._license.NOTICE failed`) when building SDK packages.
 
 ## How to use it
 
 ### 1. Update Version Pins in Configuration Files
-When upgrading a Maven dependency (such as `org.bouncycastle:bcprov-jdk18on`), update the central pinned version across both Bazel and Gradle configurations:
+When upgrading a Maven dependency (such as `org.bouncycastle:bcprov-jdk18on` or `androidx.navigation:navigation-safe-args-gradle-plugin`), first determine whether the dependency should be defined in `artifacts.bzl` (`ARTIFACTS`) or `data.bzl` (`DATA`).
 
-1. **Bazel Artifacts (`artifacts.bzl`)**
+As explained in [`tools/base/bazel/README.md`](file:///usr/local/google/home/hmehmed/studio-main/tools/base/bazel/README.md):
+
+#### Choosing the Right File: `artifacts.bzl` vs. `data.bzl` (`README.md` Guidelines)
+- **`data.bzl` (`DATA` / `_CLASS_JARS` / `_SOURCE_JARS`)**: In most cases, dependencies should be added to `DATA`. Specifically:
+  - If the artifact is only used in the `data` section of rules (e.g., it is used as a Gradle dependency artifact or plugin in tests).
+  - If the artifact is going to be used to build Android Studio (i.e., added to an IntelliJ IDEA library either in `.idea/libraries/*.xml`, or an inline library in `*.iml` files). Note that the Android Studio build case requires running `iml_to_build` (`bazel run //tools/base/bazel:iml_to_build`), which generates a `java_import` rule that wraps the files listed in the library.
+  - Dependencies in `data.bzl` bypass version conflict resolution (`+` prefix / `noresolveCoords`), meaning `local_maven_repository_generator` generates **only versioned rules** (`@maven//:group.artifact_version`). No unversioned `@maven//:group.artifact` alias is created. This allows exact pinned test fixtures, multi-version snapshot integration tests (`2.3.1`, `2.5.3`, `2.6.0`, `2.9.8`), and Gradle plugins to coexist without conflict resolution overriding them.
+- **`artifacts.bzl` (`ARTIFACTS`)**: If you need to use the artifact directly in the `deps` or `runtime_deps` section of a `(maven|kotlin|java)_library` rule, then add it to `ARTIFACTS`. This performs all the same work that adding the library to `DATA` would do, but additionally resolves and validates the entire dependency graph, and generates an unversioned alias/import rule (`@maven//:group.artifact` without the version suffix) which can be used in `deps` or `runtime_deps` and models the resolved transitive dependencies.
+
+1. **Bazel Standard Artifacts (`artifacts.bzl`)**
    Locate `tools/base/bazel/maven/artifacts.bzl` and update the coordinate list under `ARTIFACTS`:
    ```python
    ARTIFACTS = [
@@ -31,15 +40,24 @@ When upgrading a Maven dependency (such as `org.bouncycastle:bcprov-jdk18on`), u
        ...
    ]
    ```
-2. **Gradle Build Properties (`dependencies.properties`)**
-   Locate `tools/buildSrc/base/dependencies.properties` and update the version strings so Gradle builds (`buildSrc`) stay aligned with Bazel:
+2. **Bazel Exact/Multi-Version Fixtures & Plugins (`data.bzl`)**
+   Locate `tools/base/bazel/maven/data.bzl` and add or update coordinates under `_CLASS_JARS` (or `_SOURCE_JARS`):
+   ```python
+   _CLASS_JARS = [
+       ...
+       "androidx.navigation:navigation-safe-args-gradle-plugin:2.9.8",
+       ...
+   ]
+   ```
+3. **Gradle Build Properties (`dependencies.properties`)**
+   If the dependency is also used during `buildSrc` or Gradle builds, locate `tools/buildSrc/base/dependencies.properties` and update the version strings so Gradle builds stay aligned with Bazel:
    ```properties
    bouncycastle_pkix = org.bouncycastle:bcpkix-jdk18on:1.80.2
    bouncycastle_prov = org.bouncycastle:bcprov-jdk18on:1.80.2
    ```
 
 ### 2. Synchronize Prebuilts & Regenerate `BUILD.maven`
-After modifying `artifacts.bzl`, execute the repository generator script to fetch the new JARs/POMs and regenerate `tools/base/bazel/maven/BUILD.maven`:
+After modifying `artifacts.bzl` or `data.bzl`, execute the repository generator script to fetch the new JARs/POMs and regenerate `tools/base/bazel/maven/BUILD.maven`:
 
 ```bash
 cd tools/base/bazel/maven
@@ -49,6 +67,10 @@ Or via `bazel`:
 ```bash
 bazel run //tools/base/bazel:local_maven_repository_generator
 ```
+
+> [!WARNING]
+> **Cleaning up unused dependencies (`maven_clean.sh`)**: As noted in [`README.md`](file:///usr/local/google/home/hmehmed/studio-main/tools/base/bazel/README.md), if you remove or modify artifact lists, you may run `tools/base/bazel/maven/maven_clean.sh` before `maven_fetch.sh` to clean up orphaned prebuilts.
+> **Important**: If you run `maven_clean.sh`, you **must** follow it up with `maven_fetch.sh`. This is crucial because `maven_clean.sh` can be overly aggressive and remove an entire dependency if it considers the JAR artifact to be orphaned, even when the associated `sources` artifact is still explicitly required in `DATA` or `ARTIFACTS`.
 
 What `local_maven_repository_generator` does:
 - Resolves all coordinates listed in `artifacts.bzl` (`ARTIFACTS`) plus test data fixtures (`DATA`).
@@ -86,11 +108,14 @@ How notice resolution works and how to fix missing notices:
    - **Best Practice**: Also place a copy of the `NOTICE` file in the parent group directory (`prebuilts/tools/common/m2/repository/<group>/NOTICE`). This ensures that all future version upgrades processed by `maven_fetch.sh` automatically detect and copy the `NOTICE` file without manual intervention.
 
 ### 5. Audit and Clean Up Legacy Version References
-Check if any `BUILD` files or custom scripts hardcode legacy version suffixes (`_1.79`):
+After regenerating `BUILD.maven`, check whether any `BUILD` files or custom scripts hardcode legacy version suffixes (`_1.79` or `_2.5.3`):
 ```bash
 grep -rn "bcprov-jdk18on_1.79" tools/
+grep -rn "navigation-safe-args-gradle-plugin_2.5.3" tools/
 ```
-In general, `BUILD` files should reference the unversioned alias `@maven//:org.bouncycastle.bcprov-jdk18on` so upgrades via `artifacts.bzl` propagate automatically without modifying individual `BUILD` targets.
+
+- **For dependencies in `artifacts.bzl`**: In general, `BUILD` files should reference the unversioned alias `@maven//:org.bouncycastle.bcprov-jdk18on` so future upgrades propagate automatically without modifying individual `BUILD` targets.
+- **For dependencies in `data.bzl`**: Because `data.bzl` dependencies bypass conflict resolution (`noresolveCoords`), no unversioned alias is generated. All downstream `BUILD` files depend directly on the versioned rule (`@maven//:androidx.navigation.navigation-safe-args-gradle-plugin_2.9.8`). When upgrading a `data.bzl` dependency, you **must** locate all downstream `BUILD` files using `grep_search` and manually update their `@maven//:..._oldversion` target strings to `@maven//:..._newversion`.
 
 ### 6. Build Verification, Multi-Repo CI Coordination & Version Control
 

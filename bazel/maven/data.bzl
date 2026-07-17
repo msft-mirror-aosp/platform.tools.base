@@ -38,6 +38,7 @@ _CLASS_JARS = [
     "androidx.annotation:annotation:1.2.0-beta01",
     "androidx.annotation:annotation:1.6.0",
     "androidx.annotation:annotation:1.7.0-beta01",
+    "androidx.annotation:annotation:1.9.1",
     "androidx.annotation:annotation-jvm:1.6.0",
     "androidx.annotation:annotation-jvm:1.9.0",
     "androidx.appcompat:appcompat:1.0.2",
@@ -375,6 +376,7 @@ _CLASS_JARS = [
     "androidx.navigation:navigation-safe-args-gradle-plugin:2.5.2",
     "androidx.navigation:navigation-safe-args-gradle-plugin:2.5.3",
     "androidx.navigation:navigation-safe-args-gradle-plugin:2.6.0",
+    "androidx.navigation:navigation-safe-args-gradle-plugin:2.9.8",
     "androidx.navigation:navigation-testing:2.5.3",  # Dependency of architecture-samples
     "androidx.navigation:navigation-ui:2.5.2",
     "androidx.navigation:navigation-ui:2.5.3",
@@ -1074,6 +1076,7 @@ _CLASS_JARS = [
     "com.openai:openai-java:4.32.0",
     "com.squareup.dagger:dagger-compiler:1.2.2",
     "com.squareup:kotlinpoet:1.12.0",
+    "com.squareup:kotlinpoet:2.0.0",
     "com.squareup:kotlinpoet:2.1.0",
     "com.squareup.leakcanary:shark:2.14",
     "com.squareup.leakcanary:shark-android:2.14",
