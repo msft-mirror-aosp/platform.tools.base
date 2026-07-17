@@ -218,6 +218,68 @@ internal class FusedLibraryManifestMergerTaskTest {
     val manifestBlame = outputDir.resolve("logs/manifest-merger-mergeManifest-report.txt")
     assertThat(manifestBlame.toFile().length()).isGreaterThan(0)
   }
+
+  /**
+   * Verifies that changing the order of included libraries in a fused library project correctly invalidates the build cache and triggers
+   * manifest merging (b/514242899).
+   */
+  @Test
+  fun testFusedLibraryManifestMergingOrderCorrectnessAndCaching() {
+    val build = rule.build
+    val fusedLib = build.fusedLibrary(":fusedLib1")
+    val libBluetooth = build.androidLibrary(":androidLib2")
+    val libWifi = build.androidLibrary(":androidLib3")
+
+    // Configure distinct permissions
+    libBluetooth.files.update("src/main/AndroidManifest.xml") {
+      replaceWith(
+        """
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+            <uses-permission android:name="android.permission.BLUETOOTH"/>
+        </manifest>
+        """
+          .trimIndent()
+      )
+    }
+
+    libWifi.files.update("src/main/AndroidManifest.xml") {
+      replaceWith(
+        """
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+            <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
+        </manifest>
+        """
+          .trimIndent()
+      )
+    }
+
+    var result = build.executor.run(":fusedLib1:mergeManifest")
+    assertThat(result.failedTasks).isEmpty()
+
+    val manifestFile = fusedLib.resolve(MERGED_MANIFEST).resolve("single/mergeManifest/AndroidManifest.xml").toFile()
+    assertThat(manifestFile.exists()).isTrue()
+
+    var content = manifestFile.readText()
+    var bluetoothIndex = content.indexOf("android.permission.BLUETOOTH")
+    var wifiIndex = content.indexOf("android.permission.ACCESS_WIFI_STATE")
+    assertThat(wifiIndex).isLessThan(bluetoothIndex)
+
+    // Swap include order in fusedLib1/build.gradle
+    fusedLib.files.update("build.gradle") {
+      searchAndReplace("include(project(':androidLib3'))", "temp_placeholder")
+        .searchAndReplace("include(project(':androidLib2'))", "include(project(':androidLib3'))")
+        .searchAndReplace("temp_placeholder", "include(project(':androidLib2'))")
+    }
+
+    result = build.executor.run(":fusedLib1:mergeManifest")
+    assertThat(result.failedTasks).isEmpty()
+    result.assertTask(":fusedLib1:mergeManifest").didWork()
+
+    content = manifestFile.readText()
+    bluetoothIndex = content.indexOf("android.permission.BLUETOOTH")
+    wifiIndex = content.indexOf("android.permission.ACCESS_WIFI_STATE")
+    assertThat(bluetoothIndex).isLessThan(wifiIndex)
+  }
 }
 
 private val manifestIssueDataReporter: IssueReporter =

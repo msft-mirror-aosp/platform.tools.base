@@ -753,4 +753,76 @@ class ProcessTestManifestTest {
 
     build.executor.run(":app:processDebugUnitTestManifest")
   }
+
+  /**
+   * Verifies that changing the order of dependencies correctly invalidates the build cache and triggers manifest merging for test
+   * components (b/514242899).
+   */
+  @Test
+  fun testTestManifestMergingOrderCorrectnessAndCaching() {
+    val build =
+      rule.build {
+        androidLibrary {
+          dependencies {
+            androidTestImplementation(project(":libbluetooth"))
+            androidTestImplementation(project(":libwifi"))
+          }
+        }
+        androidLibrary(":libbluetooth") {}
+        androidLibrary(":libwifi") {}
+      }
+    val libProject = build.androidLibrary()
+    val libBluetooth = build.androidLibrary(":libbluetooth")
+    val libWifi = build.androidLibrary(":libwifi")
+
+    libBluetooth.files.update("src/main/AndroidManifest.xml") {
+      replaceWith(
+        """
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+            <uses-permission android:name="android.permission.BLUETOOTH"/>
+        </manifest>
+        """
+          .trimIndent()
+      )
+    }
+
+    libWifi.files.update("src/main/AndroidManifest.xml") {
+      replaceWith(
+        """
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+            <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
+        </manifest>
+        """
+          .trimIndent()
+      )
+    }
+
+    var result = build.executor.run(":lib:processDebugAndroidTestManifest")
+    assertTrue(result.failedTasks.isEmpty())
+
+    val manifestFile =
+      libProject.resolve("build/intermediates/packaged_manifests/debugAndroidTest/processDebugAndroidTestManifest/AndroidManifest.xml")
+    assertThat(manifestFile).exists()
+
+    var content = manifestFile.toFile().readText()
+    var bluetoothIndex = content.indexOf("android.permission.BLUETOOTH")
+    var wifiIndex = content.indexOf("android.permission.ACCESS_WIFI_STATE")
+    assertTrue(bluetoothIndex < wifiIndex)
+
+    // Swap order
+    libProject.files.update("build.gradle") {
+      searchAndReplace("androidTestImplementation(project(':libbluetooth'))", "temp_placeholder")
+        .searchAndReplace("androidTestImplementation(project(':libwifi'))", "androidTestImplementation(project(':libbluetooth'))")
+        .searchAndReplace("temp_placeholder", "androidTestImplementation(project(':libwifi'))")
+    }
+
+    result = build.executor.run(":lib:processDebugAndroidTestManifest")
+    assertTrue(result.failedTasks.isEmpty())
+    result.assertTask(":lib:processDebugAndroidTestManifest").didWork()
+
+    content = manifestFile.toFile().readText()
+    bluetoothIndex = content.indexOf("android.permission.BLUETOOTH")
+    wifiIndex = content.indexOf("android.permission.ACCESS_WIFI_STATE")
+    assertTrue(wifiIndex < bluetoothIndex)
+  }
 }
