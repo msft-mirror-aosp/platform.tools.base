@@ -553,10 +553,8 @@ diff_test(
     """,
     file1 = ":android_gradle_plugin_problems.txt",
     file2 = "known_problems.txt",
-    # No need to run this on Windows.
-    tags = [
-        "noci:studio-win",
-    ],
+    # Only run on linux, as the problems are uninterestingly different across platforms
+    target_compatible_with = ["@platforms//os:linux"],
 )
 
 gradle_build(
