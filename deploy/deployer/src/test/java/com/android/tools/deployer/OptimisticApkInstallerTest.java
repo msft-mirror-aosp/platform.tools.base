@@ -64,10 +64,9 @@ import java.util.Map;
 public class OptimisticApkInstallerTest {
 
     private class TestTerminator extends DeployerApplicationTerminator {
-        public TestTerminator(
-                @NotNull Collection<? extends @NotNull IDevice> devices, @NotNull String appId) {
+        public TestTerminator(@NotNull Collection<DeployerDevice> devices, @NotNull String appId) {
             super(
-                    devices,
+                    ImmutableList.copyOf(devices),
                     appId,
                     (device, s) -> {
                         killCount++;
@@ -121,7 +120,10 @@ public class OptimisticApkInstallerTest {
         cache = new DeploymentCacheDatabase(DeploymentCacheDatabase.DEFAULT_SIZE);
         metrics = new MetricsRecorder();
         logger = new NullLogger();
-        terminator = new TestTerminator(List.of(device), "com.example.app.id");
+        terminator =
+                new TestTerminator(
+                        List.of(new DeployerDevice(device.getSerialNumber())),
+                        "com.example.app.id");
         killCount = 0;
     }
 
