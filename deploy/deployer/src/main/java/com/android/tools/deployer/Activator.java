@@ -143,7 +143,7 @@ public class Activator {
     }
 
     public void forceStop(@NonNull DeviceHolder device) {
-        device.getIDevice().forceStop(app.getAppId());
+        device.forceStop(app.getAppId());
     }
 
     @NonNull

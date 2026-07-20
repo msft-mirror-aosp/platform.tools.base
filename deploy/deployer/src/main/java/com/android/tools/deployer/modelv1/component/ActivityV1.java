@@ -42,7 +42,7 @@ public class ActivityV1 extends Activity implements AppComponentV1 {
                 "Activating Activity '%s' %s on device %s",
                 info.getQualifiedName(),
                 activationMode.equals(Mode.DEBUG) ? "for debug" : "",
-                device.getIDevice().getSerialNumber());
+                device.getSerialNumber());
         if (activationMode.equals(Mode.DEBUG)
                 && !extraFlags.contains(Flag.ENABLE_DEBUGGING.string)) {
             extraFlags = "-D" + (extraFlags.isEmpty() ? "" : (" " + extraFlags));

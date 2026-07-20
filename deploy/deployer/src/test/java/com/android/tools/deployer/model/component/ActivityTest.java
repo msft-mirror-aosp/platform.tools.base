@@ -95,6 +95,7 @@ public class ActivityTest {
                     IOException,
                     TimeoutException {
         IDevice device = Mockito.mock(IDevice.class);
+        Mockito.when(device.getSerialNumber()).thenReturn("1234");
         DeviceHolder deviceHolder = new DeviceHolder(device, null);
         ManifestActivityInfo info =
                 new ManifestActivityInfo(new XmlNode(), "com.example.myApp") {
@@ -123,6 +124,7 @@ public class ActivityTest {
     @Test
     public void useCategoryFromManifest() throws Exception {
         IDevice device = Mockito.mock(IDevice.class);
+        Mockito.when(device.getSerialNumber()).thenReturn("1234");
         DeviceHolder deviceHolder = new DeviceHolder(device, null);
         URL url =
                 TestUtils.resolveWorkspacePath(

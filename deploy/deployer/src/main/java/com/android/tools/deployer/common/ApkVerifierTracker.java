@@ -57,7 +57,7 @@ public class ApkVerifierTracker {
         // In R, ADB reports both real package name (instead of process name) and also allows
         // the user to skip app verification on install. We use the real package name flag
         // here to avoid creating another flag for a feature that's on the same Android version.
-        if (!device.getIDevice().supportsFeature(IDevice.Feature.SKIP_VERIFICATION)) {
+        if (!device.supportsFeature(IDevice.Feature.SKIP_VERIFICATION)) {
             return null;
         }
 
@@ -84,6 +84,6 @@ public class ApkVerifierTracker {
     @NonNull
     private static String getVerifiedTimeMapKey(
             @NonNull DeviceHolder device, @NonNull String packageName) {
-        return String.format("%s:%s", device.getIDevice().getSerialNumber(), packageName);
+        return String.format("%s:%s", device.getSerialNumber(), packageName);
     }
 }

@@ -22,4 +22,4 @@ private fun killFunction(device: DeployerDevice, appId: String): Unit {
 }
 
 internal class DeployerRunnerApplicationTerminator(device: DeviceHolder, appId: String) :
-  DeployerApplicationTerminator(listOf(DeployerDevice(device.iDevice.serialNumber)), appId, ::killFunction) {}
+  DeployerApplicationTerminator(listOf(DeployerDevice(device.serialNumber)), appId, ::killFunction) {}

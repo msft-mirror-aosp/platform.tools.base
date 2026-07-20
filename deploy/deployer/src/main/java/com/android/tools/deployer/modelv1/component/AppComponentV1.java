@@ -42,8 +42,7 @@ public interface AppComponentV1 {
             @NonNull DeviceHolder device)
             throws ModelException {
         try {
-            device.getIDevice()
-                    .executeShellCommand(command, receiver, SHELL_TIMEOUT, SHELL_TIMEUNIT);
+            device.executeShellCommand(command, receiver, SHELL_TIMEOUT, SHELL_TIMEUNIT);
         } catch (Exception e) {
             throw new ModelException(e.getMessage());
         }

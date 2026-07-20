@@ -16,11 +16,23 @@
 package com.android.tools.deployer.common
 
 import com.android.adblib.ConnectedDevice
+import com.android.ddmlib.AdbCommandRejectedException
+import com.android.ddmlib.Client
 import com.android.ddmlib.IDevice
+import com.android.ddmlib.IShellOutputReceiver
+import com.android.ddmlib.InstallException
+import com.android.ddmlib.ShellCommandUnresponsiveException
+import com.android.ddmlib.SimpleConnectedSocket
+import com.android.ddmlib.SyncException
+import com.android.ddmlib.TimeoutException
+import com.android.sdklib.AndroidVersion
+import java.io.IOException
+import java.io.InputStream
 import java.util.Optional
+import java.util.concurrent.TimeUnit
 
 class DeviceHolder(
-  val iDevice: IDevice,
+  private val iDevice: IDevice,
   /**
    * [connectedDevice] is Optional to indicate whether we attempted to find a device corresponding to [iDevice] in the [AdbSession].
    * - null: Lookup was not attempted (e.g. in legacy paths or tests).
@@ -29,6 +41,89 @@ class DeviceHolder(
    */
   private val connectedDevice: Optional<ConnectedDevice>?,
 ) {
+
+  val version: AndroidVersion
+    get() = iDevice.version
+
+  val serialNumber: String
+    get() = iDevice.serialNumber
+
+  val abis: List<String>
+    get() = iDevice.abis
+
+  val name: String
+    get() = iDevice.name
+
+  val clients: Array<Client>
+    get() = iDevice.clients
+
+  val isRoot: Boolean
+    get() = iDevice.isRoot
+
+  @Throws(AdbCommandRejectedException::class, IOException::class, TimeoutException::class)
+  fun rawExec2(executable: String, parameters: Array<String>): SimpleConnectedSocket {
+    return iDevice.rawExec2(executable, parameters)
+  }
+
+  @Throws(AdbCommandRejectedException::class, ShellCommandUnresponsiveException::class, TimeoutException::class, IOException::class)
+  fun executeShellCommand(
+    command: String,
+    receiver: IShellOutputReceiver,
+    maxTimeToOutputResponse: Long,
+    maxTimeToOutputResponseUnit: TimeUnit,
+    `is`: InputStream?,
+  ) {
+    iDevice.executeShellCommand(command, receiver, maxTimeToOutputResponse, maxTimeToOutputResponseUnit, `is`)
+  }
+
+  @Throws(AdbCommandRejectedException::class, ShellCommandUnresponsiveException::class, TimeoutException::class, IOException::class)
+  fun executeShellCommand(
+    command: String,
+    receiver: IShellOutputReceiver,
+    maxTimeToOutputResponse: Long,
+    maxTimeToOutputResponseUnit: TimeUnit,
+  ) {
+    iDevice.executeShellCommand(command, receiver, maxTimeToOutputResponse, maxTimeToOutputResponseUnit)
+  }
+
+  @Throws(AdbCommandRejectedException::class, ShellCommandUnresponsiveException::class, TimeoutException::class, IOException::class)
+  fun executeBinderCommand(
+    parameters: Array<String>,
+    receiver: IShellOutputReceiver,
+    maxTimeToOutputResponse: Long,
+    maxTimeToOutputResponseUnit: TimeUnit,
+    `is`: InputStream?,
+  ) {
+    iDevice.executeBinderCommand(parameters, receiver, maxTimeToOutputResponse, maxTimeToOutputResponseUnit, `is`)
+  }
+
+  @Throws(InstallException::class)
+  fun uninstallPackage(packageName: String): String? {
+    return iDevice.uninstallPackage(packageName)
+  }
+
+  fun supportsFeature(feature: IDevice.Feature): Boolean {
+    return iDevice.supportsFeature(feature)
+  }
+
+  fun supportsFeature(feature: IDevice.HardwareFeature): Boolean {
+    return iDevice.supportsFeature(feature)
+  }
+
+  @Throws(AdbCommandRejectedException::class, SyncException::class, TimeoutException::class, IOException::class)
+  fun pushFile(local: String, remote: String) {
+    iDevice.pushFile(local, remote)
+  }
+
+  @Throws(TimeoutException::class, AdbCommandRejectedException::class, IOException::class, ShellCommandUnresponsiveException::class)
+  fun root(): Boolean {
+    return iDevice.root()
+  }
+
+  fun forceStop(packageName: String) {
+    iDevice.forceStop(packageName)
+  }
+
   /**
    * Overridden to support tracking DeviceHolder instances in collections (e.g., in DeployerApplicationTerminator's HashSet). Equality is
    * defined by the underlying device identity (currently IDevice).

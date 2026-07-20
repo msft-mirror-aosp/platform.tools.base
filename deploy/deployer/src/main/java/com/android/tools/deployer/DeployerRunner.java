@@ -220,7 +220,9 @@ public class DeployerRunner {
                 int status = run(device, parameters, logger);
                 if (status != SUCCESS) {
                     logger.error(
-                            null, "Error deploying to device: %s", device.getIDevice().getName());
+                            null,
+                            "Error deploying to device: %s",
+                            device.getName());
                     return status;
                 }
             }
@@ -270,7 +272,7 @@ public class DeployerRunner {
                         .setFastRestartOnSwapFail(false)
                         .setOptimisticInstallSupport(optimisticInstallSupport)
                         .enableCoroutineDebugger(true)
-                        .setAllowAssumeVerified(device.getIDevice().getVersion().isAtLeast(35))
+                        .setAllowAssumeVerified(device.getVersion().isAtLeast(35))
                         .skipPostInstallTasks(parameters.getSkipPostInstallTasks())
                         .useRootPushInstall(parameters.getUseRootPushInstall())
                         .build();
@@ -301,7 +303,7 @@ public class DeployerRunner {
             if (parameters.getCommands().contains(DeployRunnerParameters.Command.INSTALL)) {
                 InstallOptions.Builder options = defaultInstallOptions.toBuilder();
 
-                if (device.getIDevice().supportsFeature(IDevice.HardwareFeature.EMBEDDED)) {
+                if (device.supportsFeature(IDevice.HardwareFeature.EMBEDDED)) {
                     options.setGrantAllPermissions();
                 }
 
