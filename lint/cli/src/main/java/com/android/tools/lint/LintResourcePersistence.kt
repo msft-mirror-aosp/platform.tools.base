@@ -85,12 +85,9 @@ object LintResourcePersistence {
     HasArguments;
 
     val asFlag: Int = 1 shl ordinal
-
-    companion object {
-      fun of(vararg entries: Pair<ItemFlag, Boolean>): Int =
-        entries.fold(0) { flags, (key, value) -> if (value) flags or key.asFlag else flags }
-    }
   }
+
+  private fun Int.add(key: ItemFlag, set: Boolean): Int = if (set) this or key.asFlag else this
 
   private operator fun Int.contains(key: ItemFlag): Boolean = this and key.asFlag != 0
 
@@ -266,14 +263,12 @@ object LintResourcePersistence {
     }
 
     val flags =
-      ItemFlag.of(
-        ItemFlag.FileBased to fileBased,
-        ItemFlag.HasPosition to (position != null),
-        ItemFlag.HasIgnoredIds to ignoredIds.isNotEmpty(),
-        ItemFlag.HasText to (text != null),
-        ItemFlag.HasRawSource to (rawSource != null),
-        ItemFlag.HasArguments to (arguments != null),
-      )
+      0.add(ItemFlag.FileBased, fileBased)
+        .add(ItemFlag.HasPosition, position != null)
+        .add(ItemFlag.HasIgnoredIds, ignoredIds.isNotEmpty())
+        .add(ItemFlag.HasText, text != null)
+        .add(ItemFlag.HasRawSource, rawSource != null)
+        .add(ItemFlag.HasArguments, arguments != null)
 
     out.writeString(item.name)
     out.writeInt(fileMap[item.source] ?: error("Missing file index for ${item.source}"))
