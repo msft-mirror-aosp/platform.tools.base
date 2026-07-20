@@ -18,6 +18,7 @@ package com.android.tools.ui.inspector.printer
 
 import com.android.tools.ui.inspector.ConfigurationDiff
 import com.android.tools.ui.inspector.DeviceLocale
+import com.android.tools.ui.inspector.Dimension
 import com.android.tools.ui.inspector.NodeChange
 import com.android.tools.ui.inspector.TimedUiDump
 import com.android.tools.ui.inspector.TreeDiff
@@ -72,15 +73,9 @@ private fun formatFieldValue(fieldName: String, value: Any?): String {
   return when (value) {
     is Enum<*> -> value.name.lowercase()
     is DeviceLocale -> value.format()
-    else -> {
-      val lowerName = fieldName.lowercase()
-      when {
-        // TODO this is brittle
-        lowerName.endsWith("dp") -> "$value dp"
-        lowerName == "density" -> "$value dpi"
-        else -> value.toString()
-      }
-    }
+    is Dimension.Dp -> "${value.value} dp"
+    is Dimension.Dpi -> "${value.value} dpi"
+    else -> value.toString()
   }
 }
 

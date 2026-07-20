@@ -288,10 +288,10 @@ class ProtoConvertersTest {
 
     val config = convertConfiguration(configProto, stringTable)
 
-    assertThat(config.density).isEqualTo(420)
-    assertThat(config.screenWidthDp).isEqualTo(1080)
-    assertThat(config.screenHeightDp).isEqualTo(1920)
-    assertThat(config.smallestScreenWidthDp).isEqualTo(720)
+    assertThat(config.density).isEqualTo(Dimension.Dpi(420))
+    assertThat(config.screenWidthDp).isEqualTo(Dimension.Dp(1080))
+    assertThat(config.screenHeightDp).isEqualTo(Dimension.Dp(1920))
+    assertThat(config.smallestScreenWidthDp).isEqualTo(Dimension.Dp(720))
     assertThat(config.fontScale).isEqualTo(1.2f)
     assertThat(config.orientation).isEqualTo(Orientation.LANDSCAPE)
     assertThat(config.screenLayoutSize).isEqualTo(ScreenLayoutSize.LARGE)

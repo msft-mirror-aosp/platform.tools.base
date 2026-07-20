@@ -23,14 +23,14 @@ class ConfigurationDiffTest {
 
   @Test
   fun testDiffConfigurations_noChanges() {
-    val config = DeviceConfiguration(density = 160)
+    val config = DeviceConfiguration(density = Dimension.Dpi(160))
     val diff = createConfigurationDiff(config, config)
     assertThat(diff).isNull()
   }
 
   @Test
   fun testDiffConfigurations_nullInputs() {
-    val config = DeviceConfiguration(density = 160)
+    val config = DeviceConfiguration(density = Dimension.Dpi(160))
     assertThat(createConfigurationDiff(null, config)).isNull()
     assertThat(createConfigurationDiff(config, null)).isNull()
     assertThat(createConfigurationDiff(null, null)).isNull()
@@ -49,7 +49,7 @@ class ConfigurationDiffTest {
   fun testDiffConfigurations_withChanges() {
     val oldConfig =
       DeviceConfiguration(
-        density = 160,
+        density = Dimension.Dpi(160),
         orientation = Orientation.PORTRAIT,
         uiModeNight = UiModeNight.NO,
         locale = DeviceLocale(language = "en", country = null, variant = null, script = null),
@@ -57,7 +57,7 @@ class ConfigurationDiffTest {
 
     val newConfig =
       DeviceConfiguration(
-        density = 240,
+        density = Dimension.Dpi(240),
         orientation = Orientation.LANDSCAPE,
         uiModeNight = UiModeNight.YES,
         locale = DeviceLocale(language = "en", country = "US", variant = null, script = null),
@@ -73,8 +73,8 @@ class ConfigurationDiffTest {
     assertThat(orientationDiff.newValue).isEqualTo(Orientation.LANDSCAPE)
 
     val densityDiff = diffs.first { it.name == "density" }
-    assertThat(densityDiff.oldValue).isEqualTo(160)
-    assertThat(densityDiff.newValue).isEqualTo(240)
+    assertThat(densityDiff.oldValue).isEqualTo(Dimension.Dpi(160))
+    assertThat(densityDiff.newValue).isEqualTo(Dimension.Dpi(240))
 
     val uiModeNightDiff = diffs.first { it.name == "uiModeNight" }
     assertThat(uiModeNightDiff.oldValue).isEqualTo(UiModeNight.NO)
@@ -91,7 +91,7 @@ class ConfigurationDiffTest {
       DeviceConfiguration(
         fontScale = 1.0f,
         screenLayoutSize = ScreenLayoutSize.NORMAL,
-        smallestScreenWidthDp = 320,
+        smallestScreenWidthDp = Dimension.Dp(320),
         uiModeNight = UiModeNight.NO,
         grammaticalGender = GrammaticalGender.NEUTRAL,
       )
@@ -99,7 +99,7 @@ class ConfigurationDiffTest {
       DeviceConfiguration(
         fontScale = 1.2f,
         screenLayoutSize = ScreenLayoutSize.LARGE,
-        smallestScreenWidthDp = 600,
+        smallestScreenWidthDp = Dimension.Dp(600),
         uiModeNight = UiModeNight.YES,
         grammaticalGender = GrammaticalGender.FEMININE,
       )

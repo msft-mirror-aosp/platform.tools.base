@@ -128,6 +128,13 @@ enum class GrammaticalGender {
   MASCULINE,
 }
 
+/** Dimension qualifiers (e.g. Dp, Dpi). */
+sealed class Dimension(open val value: Int) {
+  data class Dp(override val value: Int) : Dimension(value)
+
+  data class Dpi(override val value: Int) : Dimension(value)
+}
+
 /** Represents host-side device configuration. */
 data class DeviceConfiguration(
   val fontScale: Float? = null,
@@ -148,10 +155,10 @@ data class DeviceConfiguration(
   val navigationHidden: NavigationHidden? = null,
   val uiModeType: UiModeType? = null,
   val uiModeNight: UiModeNight? = null,
-  val smallestScreenWidthDp: Int? = null,
-  val density: Int? = null,
+  val smallestScreenWidthDp: Dimension.Dp? = null,
+  val density: Dimension.Dpi? = null,
   val orientation: Orientation? = null,
-  val screenWidthDp: Int? = null,
-  val screenHeightDp: Int? = null,
+  val screenWidthDp: Dimension.Dp? = null,
+  val screenHeightDp: Dimension.Dp? = null,
   val grammaticalGender: GrammaticalGender? = null,
 )

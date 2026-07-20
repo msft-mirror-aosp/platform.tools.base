@@ -35,7 +35,8 @@ private val DIMENSION_SP_ATTRIBUTES =
 /**
  * Traverses the unified UI layout tree recursively and resolves raw pixel dimensions to dp and sp values based on density and fontScale.
  */
-internal fun UiNode.resolveDimensions(densityDpi: Int?, fontScale: Float?): UiNode {
+internal fun UiNode.resolveDimensions(density: Dimension.Dpi?, fontScale: Float?): UiNode {
+  val densityDpi = density?.value
   return when (this) {
     is UiNode.ViewNode -> {
       val resolvedAttributes =
@@ -60,13 +61,13 @@ internal fun UiNode.resolveDimensions(densityDpi: Int?, fontScale: Float?): UiNo
             attr
           }
         }
-      val resolvedChildren = children.map { it.resolveDimensions(densityDpi, fontScale) }.toMutableList()
+      val resolvedChildren = children.map { it.resolveDimensions(density, fontScale) }.toMutableList()
       this.copy(attributes = resolvedAttributes, children = resolvedChildren)
     }
     is UiNode.ComposeNode -> {
       // Compose parameter dimensions are already resolved on the wire.
       // We only need to recursively resolve potential ViewNodes inside children.
-      val resolvedChildren = children.map { it.resolveDimensions(densityDpi, fontScale) }.toMutableList()
+      val resolvedChildren = children.map { it.resolveDimensions(density, fontScale) }.toMutableList()
       this.copy(children = resolvedChildren)
     }
   }

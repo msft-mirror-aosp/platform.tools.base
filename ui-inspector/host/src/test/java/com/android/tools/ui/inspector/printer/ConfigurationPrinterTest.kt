@@ -21,6 +21,7 @@ import com.android.tools.ui.inspector.ColorModeHdr
 import com.android.tools.ui.inspector.ColorModeWideGamut
 import com.android.tools.ui.inspector.DeviceConfiguration
 import com.android.tools.ui.inspector.DeviceLocale
+import com.android.tools.ui.inspector.Dimension
 import com.android.tools.ui.inspector.DisplayInfo
 import com.android.tools.ui.inspector.GrammaticalGender
 import com.android.tools.ui.inspector.HardKeyboardHidden
@@ -61,10 +62,10 @@ class ConfigurationPrinterTest {
   fun testPrintDeviceConfiguration() {
     val config =
       DeviceConfiguration(
-        density = 420,
-        screenWidthDp = 1080,
-        screenHeightDp = 1920,
-        smallestScreenWidthDp = 720,
+        density = Dimension.Dpi(420),
+        screenWidthDp = Dimension.Dp(1080),
+        screenHeightDp = Dimension.Dp(1920),
+        smallestScreenWidthDp = Dimension.Dp(720),
         fontScale = 1.2f,
         orientation = Orientation.LANDSCAPE,
         screenLayoutSize = ScreenLayoutSize.LARGE,
@@ -122,7 +123,7 @@ Device Configuration:
 
   @Test
   fun testPrintDeviceConfiguration_minimal() {
-    val config = DeviceConfiguration(density = 160, grammaticalGender = null)
+    val config = DeviceConfiguration(density = Dimension.Dpi(160), grammaticalGender = null)
 
     printDeviceConfiguration(config)
 

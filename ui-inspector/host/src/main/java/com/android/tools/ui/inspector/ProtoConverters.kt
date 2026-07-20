@@ -372,8 +372,8 @@ internal fun convertConfiguration(config: ViewInspectorProtocol.Configuration, s
         ViewInspectorProtocol.UiModeNight.UI_MODE_NIGHT_YES -> UiModeNight.YES
         else -> null
       },
-    smallestScreenWidthDp = if (config.smallestScreenWidthDp != 0) config.smallestScreenWidthDp else null,
-    density = if (config.density != 0) config.density else null,
+    smallestScreenWidthDp = if (config.smallestScreenWidthDp != 0) Dimension.Dp(config.smallestScreenWidthDp) else null,
+    density = if (config.density != 0) Dimension.Dpi(config.density) else null,
     orientation =
       when (config.orientation) {
         ViewInspectorProtocol.Orientation.ORIENTATION_PORTRAIT -> Orientation.PORTRAIT
@@ -381,8 +381,8 @@ internal fun convertConfiguration(config: ViewInspectorProtocol.Configuration, s
         ViewInspectorProtocol.Orientation.ORIENTATION_SQUARE -> Orientation.SQUARE
         else -> null
       },
-    screenWidthDp = if (config.screenWidthDp != 0) config.screenWidthDp else null,
-    screenHeightDp = if (config.screenHeightDp != 0) config.screenHeightDp else null,
+    screenWidthDp = if (config.screenWidthDp != 0) Dimension.Dp(config.screenWidthDp) else null,
+    screenHeightDp = if (config.screenHeightDp != 0) Dimension.Dp(config.screenHeightDp) else null,
     grammaticalGender =
       when (config.grammaticalGender) {
         ViewInspectorProtocol.GrammaticalGender.GRAMMATICAL_GENDER_NEUTRAL -> GrammaticalGender.NEUTRAL

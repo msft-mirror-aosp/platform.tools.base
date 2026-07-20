@@ -19,6 +19,7 @@ package com.android.tools.ui.inspector.printer
 import com.android.tools.ui.inspector.AppContext
 import com.android.tools.ui.inspector.DeviceConfiguration
 import com.android.tools.ui.inspector.DeviceLocale
+import com.android.tools.ui.inspector.Dimension
 import java.lang.reflect.Field
 import java.lang.reflect.Modifier
 
@@ -45,14 +46,13 @@ internal fun printDeviceConfiguration(config: DeviceConfiguration) {
 }
 
 private fun formatValueForPrinting(field: Field, value: Any?): String? {
-  // TODO this is brittle
-  val propertyName = field.name
   return when {
     value is DeviceLocale -> {
       val str = value.format()
       if (str.isNotEmpty()) str else null
     }
-    propertyName == "grammaticalGender" -> {
+    // TODO this is brittle
+    field.name == "grammaticalGender" -> {
       (value as? Enum<*>)?.let { getEnumDisplayValue(it) }
     }
     Enum::class.java.isAssignableFrom(field.type) -> {
@@ -62,15 +62,12 @@ private fun formatValueForPrinting(field: Field, value: Any?): String? {
         "undefined"
       }
     }
-    propertyName.endsWith("Dp") -> {
-      "${value ?: 0} dp"
-    }
-    propertyName == "density" -> {
-      "${value ?: 0} dpi"
-    }
-    propertyName == "fontScale" -> {
-      "${value ?: 0.0}"
-    }
+    value is Dimension.Dp -> "${value.value} dp"
+    value is Dimension.Dpi -> "${value.value} dpi"
+    // Fallback default values for null/unset fields in minimal configuration dumps
+    field.type == Dimension.Dp::class.java -> "0 dp"
+    field.type == Dimension.Dpi::class.java -> "0 dpi"
+    field.type == Float::class.javaObjectType || field.type == Float::class.java -> "${value ?: 0.0}"
     value != null -> value.toString()
     else -> null
   }

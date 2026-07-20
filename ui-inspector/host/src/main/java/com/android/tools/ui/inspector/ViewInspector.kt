@@ -66,9 +66,9 @@ internal suspend fun dumpViews(commandSender: CommandSender, includeAttributes: 
     dumpResponse.nodesList
       .map { convertViewNode(it, stringTable) }
       .map { node ->
-        val densityDpi = configuration?.density
+        val density = configuration?.density
         val fontScale = configuration?.fontScale
-        node.resolveDimensions(densityDpi, fontScale) as UiNode.ViewNode
+        node.resolveDimensions(density, fontScale) as UiNode.ViewNode
       }
   val appContext = if (dumpResponse.hasAppContext()) convertAppContext(dumpResponse.appContext, stringTable) else null
   return UiDump(roots, configuration, stringTable, appContext)
