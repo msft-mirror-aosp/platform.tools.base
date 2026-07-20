@@ -16,6 +16,7 @@
 
 package com.android.tools.ui.inspector
 
+import com.android.tools.ui.inspector.printer.format
 import com.android.tools.ui.inspector.printer.formatComposeParameter
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol
 import com.google.common.truth.Truth.assertThat
@@ -254,5 +255,77 @@ class ProtoConvertersTest {
     val intAttr = viewNode.attributes[1]
     assertThat(intAttr.name).isEqualTo("myIntAttr")
     assertThat(intAttr.value).isEqualTo(UiNode.AttributeValue.NumberVal(42))
+  }
+
+  @Test
+  fun testConvertConfiguration() {
+    val stringTable = mapOf(1 to "en", 2 to "US", 3 to "variant", 4 to "Latn")
+    val configProto =
+      ViewInspectorProtocol.Configuration.newBuilder()
+        .setDensity(420)
+        .setScreenWidthDp(1080)
+        .setScreenHeightDp(1920)
+        .setSmallestScreenWidthDp(720)
+        .setFontScale(1.2f)
+        .setOrientation(ViewInspectorProtocol.Orientation.ORIENTATION_LANDSCAPE)
+        .setScreenLayoutSize(ViewInspectorProtocol.ScreenLayoutSize.SCREEN_LAYOUT_SIZE_LARGE)
+        .setScreenLayoutLong(ViewInspectorProtocol.ScreenLayoutLong.SCREEN_LAYOUT_LONG_YES)
+        .setLayoutDirection(ViewInspectorProtocol.LayoutDirection.LAYOUT_DIRECTION_RTL)
+        .setScreenLayoutRound(ViewInspectorProtocol.ScreenLayoutRound.SCREEN_LAYOUT_ROUND_YES)
+        .setColorModeWideGamut(ViewInspectorProtocol.ColorModeWideGamut.COLOR_MODE_WIDE_GAMUT_YES)
+        .setColorModeHdr(ViewInspectorProtocol.ColorModeHdr.COLOR_MODE_HDR_YES)
+        .setTouchScreen(ViewInspectorProtocol.TouchScreen.TOUCH_SCREEN_FINGER)
+        .setKeyboard(ViewInspectorProtocol.Keyboard.KEYBOARD_QWERTY)
+        .setKeyboardHidden(ViewInspectorProtocol.KeyboardHidden.KEYBOARD_HIDDEN_NO)
+        .setHardKeyboardHidden(ViewInspectorProtocol.HardKeyboardHidden.HARD_KEYBOARD_HIDDEN_NO)
+        .setNavigation(ViewInspectorProtocol.Navigation.NAVIGATION_NONAV)
+        .setNavigationHidden(ViewInspectorProtocol.NavigationHidden.NAVIGATION_HIDDEN_YES)
+        .setUiModeType(ViewInspectorProtocol.UiModeType.UI_MODE_TYPE_NORMAL)
+        .setUiModeNight(ViewInspectorProtocol.UiModeNight.UI_MODE_NIGHT_YES)
+        .setLocale(ViewInspectorProtocol.Locale.newBuilder().setLanguage(1).setCountry(2).setVariant(3).setScript(4))
+        .setGrammaticalGender(ViewInspectorProtocol.GrammaticalGender.GRAMMATICAL_GENDER_FEMININE)
+        .build()
+
+    val config = convertConfiguration(configProto, stringTable)
+
+    assertThat(config.density).isEqualTo(420)
+    assertThat(config.screenWidthDp).isEqualTo(1080)
+    assertThat(config.screenHeightDp).isEqualTo(1920)
+    assertThat(config.smallestScreenWidthDp).isEqualTo(720)
+    assertThat(config.fontScale).isEqualTo(1.2f)
+    assertThat(config.orientation).isEqualTo(Orientation.LANDSCAPE)
+    assertThat(config.screenLayoutSize).isEqualTo(ScreenLayoutSize.LARGE)
+    assertThat(config.screenLayoutLong).isEqualTo(ScreenLayoutLong.YES)
+    assertThat(config.layoutDirection).isEqualTo(LayoutDirection.RTL)
+    assertThat(config.screenLayoutRound).isEqualTo(ScreenLayoutRound.YES)
+    assertThat(config.colorModeWideGamut).isEqualTo(ColorModeWideGamut.YES)
+    assertThat(config.colorModeHdr).isEqualTo(ColorModeHdr.YES)
+    assertThat(config.touchScreen).isEqualTo(TouchScreen.FINGER)
+    assertThat(config.keyboard).isEqualTo(Keyboard.QWERTY)
+    assertThat(config.keyboardHidden).isEqualTo(KeyboardHidden.NO)
+    assertThat(config.hardKeyboardHidden).isEqualTo(HardKeyboardHidden.NO)
+    assertThat(config.navigation).isEqualTo(Navigation.NONAV)
+    assertThat(config.navigationHidden).isEqualTo(NavigationHidden.YES)
+    assertThat(config.uiModeType).isEqualTo(UiModeType.NORMAL)
+    assertThat(config.uiModeNight).isEqualTo(UiModeNight.YES)
+    assertThat(config.locale?.format()).isEqualTo("en-US-variant-Latn")
+    assertThat(config.grammaticalGender).isEqualTo(GrammaticalGender.FEMININE)
+  }
+
+  @Test
+  fun testConvertAppContext() {
+    val stringTable = mapOf(1 to "@style/Theme.AppCompat")
+    val displayProto = ViewInspectorProtocol.Display.newBuilder().setId(0).setWidthPx(1080).setHeightPx(1920).setOrientation(90).build()
+    val appContextProto = ViewInspectorProtocol.AppContext.newBuilder().setTheme(1).addDisplayInfo(displayProto).build()
+
+    val appContext = convertAppContext(appContextProto, stringTable)
+
+    assertThat(appContext.theme).isEqualTo("@style/Theme.AppCompat")
+    assertThat(appContext.displays).hasSize(1)
+    val display = appContext.displays.first()
+    assertThat(display.id).isEqualTo(0)
+    assertThat(display.widthPx).isEqualTo(1080)
+    assertThat(display.heightPx).isEqualTo(1920)
+    assertThat(display.orientation).isEqualTo(90)
   }
 }

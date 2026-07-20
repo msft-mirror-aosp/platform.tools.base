@@ -16,7 +16,26 @@
 
 package com.android.tools.ui.inspector.printer
 
-import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol
+import com.android.tools.ui.inspector.AppContext
+import com.android.tools.ui.inspector.ColorModeHdr
+import com.android.tools.ui.inspector.ColorModeWideGamut
+import com.android.tools.ui.inspector.DeviceConfiguration
+import com.android.tools.ui.inspector.DeviceLocale
+import com.android.tools.ui.inspector.DisplayInfo
+import com.android.tools.ui.inspector.GrammaticalGender
+import com.android.tools.ui.inspector.HardKeyboardHidden
+import com.android.tools.ui.inspector.Keyboard
+import com.android.tools.ui.inspector.KeyboardHidden
+import com.android.tools.ui.inspector.LayoutDirection
+import com.android.tools.ui.inspector.Navigation
+import com.android.tools.ui.inspector.NavigationHidden
+import com.android.tools.ui.inspector.Orientation
+import com.android.tools.ui.inspector.ScreenLayoutLong
+import com.android.tools.ui.inspector.ScreenLayoutRound
+import com.android.tools.ui.inspector.ScreenLayoutSize
+import com.android.tools.ui.inspector.TouchScreen
+import com.android.tools.ui.inspector.UiModeNight
+import com.android.tools.ui.inspector.UiModeType
 import com.google.common.truth.Truth.assertThat
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
@@ -40,63 +59,61 @@ class ConfigurationPrinterTest {
 
   @Test
   fun testPrintDeviceConfiguration() {
-    val stringTable = mapOf(1 to "en", 2 to "US", 3 to "variant", 4 to "Latn")
-
     val config =
-      ViewInspectorProtocol.Configuration.newBuilder()
-        .setDensity(420)
-        .setScreenWidthDp(1080)
-        .setScreenHeightDp(1920)
-        .setSmallestScreenWidthDp(720)
-        .setFontScale(1.2f)
-        .setOrientation(ViewInspectorProtocol.Orientation.ORIENTATION_LANDSCAPE)
-        .setScreenLayoutSize(ViewInspectorProtocol.ScreenLayoutSize.SCREEN_LAYOUT_SIZE_LARGE)
-        .setScreenLayoutLong(ViewInspectorProtocol.ScreenLayoutLong.SCREEN_LAYOUT_LONG_YES)
-        .setLayoutDirection(ViewInspectorProtocol.LayoutDirection.LAYOUT_DIRECTION_RTL)
-        .setScreenLayoutRound(ViewInspectorProtocol.ScreenLayoutRound.SCREEN_LAYOUT_ROUND_YES)
-        .setColorModeWideGamut(ViewInspectorProtocol.ColorModeWideGamut.COLOR_MODE_WIDE_GAMUT_YES)
-        .setColorModeHdr(ViewInspectorProtocol.ColorModeHdr.COLOR_MODE_HDR_YES)
-        .setTouchScreen(ViewInspectorProtocol.TouchScreen.TOUCH_SCREEN_FINGER)
-        .setKeyboard(ViewInspectorProtocol.Keyboard.KEYBOARD_QWERTY)
-        .setKeyboardHidden(ViewInspectorProtocol.KeyboardHidden.KEYBOARD_HIDDEN_NO)
-        .setHardKeyboardHidden(ViewInspectorProtocol.HardKeyboardHidden.HARD_KEYBOARD_HIDDEN_NO)
-        .setNavigation(ViewInspectorProtocol.Navigation.NAVIGATION_NONAV)
-        .setNavigationHidden(ViewInspectorProtocol.NavigationHidden.NAVIGATION_HIDDEN_YES)
-        .setUiModeType(ViewInspectorProtocol.UiModeType.UI_MODE_TYPE_NORMAL)
-        .setUiModeNight(ViewInspectorProtocol.UiModeNight.UI_MODE_NIGHT_YES)
-        .setLocale(ViewInspectorProtocol.Locale.newBuilder().setLanguage(1).setCountry(2).setVariant(3).setScript(4))
-        .setGrammaticalGender(ViewInspectorProtocol.GrammaticalGender.GRAMMATICAL_GENDER_FEMININE)
-        .build()
+      DeviceConfiguration(
+        density = 420,
+        screenWidthDp = 1080,
+        screenHeightDp = 1920,
+        smallestScreenWidthDp = 720,
+        fontScale = 1.2f,
+        orientation = Orientation.LANDSCAPE,
+        screenLayoutSize = ScreenLayoutSize.LARGE,
+        screenLayoutLong = ScreenLayoutLong.YES,
+        layoutDirection = LayoutDirection.RTL,
+        screenLayoutRound = ScreenLayoutRound.YES,
+        colorModeWideGamut = ColorModeWideGamut.YES,
+        colorModeHdr = ColorModeHdr.YES,
+        touchScreen = TouchScreen.FINGER,
+        keyboard = Keyboard.QWERTY,
+        keyboardHidden = KeyboardHidden.NO,
+        hardKeyboardHidden = HardKeyboardHidden.NO,
+        navigation = Navigation.NONAV,
+        navigationHidden = NavigationHidden.YES,
+        uiModeType = UiModeType.NORMAL,
+        uiModeNight = UiModeNight.YES,
+        locale = DeviceLocale(language = "en", country = "US", variant = "variant", script = "Latn"),
+        grammaticalGender = GrammaticalGender.FEMININE,
+      )
 
-    printDeviceConfiguration(config, stringTable)
+    printDeviceConfiguration(config)
 
     val output = outContent.toString().trim()
 
     val expectedOutput =
       """
 Device Configuration:
- Orientation: landscape
+ Color Mode Hdr: yes
+ Color Mode Wide Gamut: yes
  Density: 420 dpi
- Screen Width: 1080 dp
- Screen Height: 1920 dp
- Smallest Screen Width: 720 dp
- Screen Size: large
- Screen Aspect: yes
- Layout Direction: rtl
- Screen Shape: yes
- Color Wide Gamut: yes
- Color HDR: yes
- Touchscreen: finger
- Keyboard: qwerty
- Keyboard Hidden: no
- Hard Keyboard Hidden: no
- Navigation: nonav
- Navigation Hidden: yes
- UI Mode Type: normal
- UI Mode Night: yes
- Locale: en-US-variant-Latn
  Font Scale: 1.2
  Grammatical Gender: feminine
+ Hard Keyboard Hidden: no
+ Keyboard: qwerty
+ Keyboard Hidden: no
+ Layout Direction: rtl
+ Locale: en-US-variant-Latn
+ Navigation: nonav
+ Navigation Hidden: yes
+ Orientation: landscape
+ Screen Height Dp: 1920 dp
+ Screen Layout Long: yes
+ Screen Layout Round: yes
+ Screen Layout Size: large
+ Screen Width Dp: 1080 dp
+ Smallest Screen Width Dp: 720 dp
+ Touch Screen: finger
+ Ui Mode Night: yes
+ Ui Mode Type: normal
 """
         .trim()
 
@@ -105,42 +122,35 @@ Device Configuration:
 
   @Test
   fun testPrintDeviceConfiguration_minimal() {
-    val config =
-      ViewInspectorProtocol.Configuration.newBuilder()
-        .setDensity(160)
-        .setGrammaticalGender(ViewInspectorProtocol.GrammaticalGender.GRAMMATICAL_GENDER_UNDEFINED)
-        .build()
+    val config = DeviceConfiguration(density = 160, grammaticalGender = null)
 
-    printDeviceConfiguration(config, emptyMap())
+    printDeviceConfiguration(config)
 
     val output = outContent.toString().trim()
 
-    // Enums are set to default (0), which is typically undefined/unknown.
-    // Locale is empty, so it's not printed.
-    // Grammatical gender is undefined, so it's not printed.
     val expectedOutput =
       """
 Device Configuration:
- Orientation: undefined
+ Color Mode Hdr: undefined
+ Color Mode Wide Gamut: undefined
  Density: 160 dpi
- Screen Width: 0 dp
- Screen Height: 0 dp
- Smallest Screen Width: 0 dp
- Screen Size: undefined
- Screen Aspect: undefined
- Layout Direction: undefined
- Screen Shape: undefined
- Color Wide Gamut: undefined
- Color HDR: undefined
- Touchscreen: undefined
+ Font Scale: 0.0
+ Hard Keyboard Hidden: undefined
  Keyboard: undefined
  Keyboard Hidden: undefined
- Hard Keyboard Hidden: undefined
+ Layout Direction: undefined
  Navigation: undefined
  Navigation Hidden: undefined
- UI Mode Type: undefined
- UI Mode Night: undefined
- Font Scale: 0.0
+ Orientation: undefined
+ Screen Height Dp: 0 dp
+ Screen Layout Long: undefined
+ Screen Layout Round: undefined
+ Screen Layout Size: undefined
+ Screen Width Dp: 0 dp
+ Smallest Screen Width Dp: 0 dp
+ Touch Screen: undefined
+ Ui Mode Night: undefined
+ Ui Mode Type: undefined
 """
         .trim()
 
@@ -149,11 +159,13 @@ Device Configuration:
 
   @Test
   fun testPrintAppContext() {
-    val stringTable = mapOf(1 to "@style/Theme.AppCompat")
-    val display = ViewInspectorProtocol.Display.newBuilder().setId(0).setWidthPx(1080).setHeightPx(1920).setOrientation(90).build()
-    val appContext = ViewInspectorProtocol.AppContext.newBuilder().setTheme(1).addDisplayInfo(display).build()
+    val appContext =
+      AppContext(
+        theme = "@style/Theme.AppCompat",
+        displays = listOf(DisplayInfo(id = 0, widthPx = 1080, heightPx = 1920, orientation = 90)),
+      )
 
-    printAppContext(appContext, stringTable)
+    printAppContext(appContext)
 
     val output = outContent.toString().trim()
 
@@ -167,6 +179,15 @@ App Context:
         .trim()
 
     assertThat(output.normalizeLineEndings()).isEqualTo(expectedOutput.normalizeLineEndings())
+  }
+
+  @Test
+  fun testFormatPropertyName() {
+    assertThat(formatPropertyName("fontScale")).isEqualTo("Font Scale")
+    assertThat(formatPropertyName("screenLayoutSize")).isEqualTo("Screen Layout Size")
+    assertThat(formatPropertyName("smallestScreenWidthDp")).isEqualTo("Smallest Screen Width Dp")
+    assertThat(formatPropertyName("uiModeNight")).isEqualTo("Ui Mode Night")
+    assertThat(formatPropertyName("grammaticalGender")).isEqualTo("Grammatical Gender")
   }
 
   private fun String.normalizeLineEndings(): String = this.replace("\r\n", "\n").replace('\r', '\n')

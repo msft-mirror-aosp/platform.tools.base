@@ -61,7 +61,7 @@ internal suspend fun dumpViews(commandSender: CommandSender, includeAttributes: 
   val dumpResponse = viewInspectorResponse.dumpViewsResponse
   val stringTable = dumpResponse.stringsList.associate { it.id to it.value }
 
-  val configuration = if (dumpResponse.hasConfiguration()) dumpResponse.configuration else null
+  val configuration = if (dumpResponse.hasConfiguration()) convertConfiguration(dumpResponse.configuration, stringTable) else null
   val roots =
     dumpResponse.nodesList
       .map { convertViewNode(it, stringTable) }
@@ -70,6 +70,6 @@ internal suspend fun dumpViews(commandSender: CommandSender, includeAttributes: 
         val fontScale = configuration?.fontScale
         node.resolveDimensions(densityDpi, fontScale) as UiNode.ViewNode
       }
-  val appContext = if (dumpResponse.hasAppContext()) dumpResponse.appContext else null
+  val appContext = if (dumpResponse.hasAppContext()) convertAppContext(dumpResponse.appContext, stringTable) else null
   return UiDump(roots, configuration, stringTable, appContext)
 }

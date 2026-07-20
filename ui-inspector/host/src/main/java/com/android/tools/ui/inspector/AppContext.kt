@@ -16,15 +16,8 @@
 
 package com.android.tools.ui.inspector
 
-import kotlin.time.Duration
+/** Represents physical display information. */
+data class DisplayInfo(val id: Int, val widthPx: Int, val heightPx: Int, val orientation: Int)
 
-/** Represents a complete snapshot of the UI tree, including the root view nodes, device configuration, and string table. */
-internal data class UiDump(
-  val roots: List<UiNode.ViewNode>,
-  val configuration: DeviceConfiguration?,
-  val stringTable: Map<Int, String>,
-  val appContext: AppContext?,
-)
-
-/** Represents a captured UI hierarchy dump along with the elapsed time since tracking began. */
-internal data class TimedUiDump(val elapsedTime: Duration, val uiDump: UiDump)
+/** Represents the host-side application context (theme and active displays). */
+data class AppContext(val theme: String?, val displays: List<DisplayInfo>)

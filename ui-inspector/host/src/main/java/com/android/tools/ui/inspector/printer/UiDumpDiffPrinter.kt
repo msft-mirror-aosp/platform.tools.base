@@ -17,14 +17,13 @@
 package com.android.tools.ui.inspector.printer
 
 import com.android.tools.ui.inspector.ConfigurationDiff
+import com.android.tools.ui.inspector.DeviceLocale
 import com.android.tools.ui.inspector.NodeChange
 import com.android.tools.ui.inspector.TimedUiDump
 import com.android.tools.ui.inspector.TreeDiff
 import com.android.tools.ui.inspector.UiNode
 import com.android.tools.ui.inspector.createConfigurationDiff
 import com.android.tools.ui.inspector.diffTrees
-import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol
-import com.google.protobuf.Descriptors
 
 /** Prints the detailed layout diffs between sequential frames collected during tracking. */
 internal fun printTrackedChanges(samples: List<TimedUiDump>, includeAttributes: Boolean, includeSemantics: Boolean) {
@@ -35,7 +34,7 @@ internal fun printTrackedChanges(samples: List<TimedUiDump>, includeAttributes: 
 
   System.out.println("--- Frame 1 (+0ms) ---")
   val firstSample = samples.first()
-  firstSample.uiDump.configuration?.let { printDeviceConfiguration(it, firstSample.uiDump.stringTable) }
+  firstSample.uiDump.configuration?.let { printDeviceConfiguration(it) }
   firstSample.uiDump.roots.forEach { printUiTree(it, 0, includeAttributes, includeSemantics) }
   System.out.println()
 
@@ -43,13 +42,7 @@ internal fun printTrackedChanges(samples: List<TimedUiDump>, includeAttributes: 
   for (i in 1 until samples.size) {
     val sample = samples[i]
     System.out.println("--- Frame ${i + 1} (+${sample.elapsedTime.inWholeMilliseconds}ms) ---")
-    val configDiff =
-      createConfigurationDiff(
-        prevSample.uiDump.configuration,
-        sample.uiDump.configuration,
-        prevSample.uiDump.stringTable,
-        sample.uiDump.stringTable,
-      )
+    val configDiff = createConfigurationDiff(prevSample.uiDump.configuration, sample.uiDump.configuration)
     printConfigurationDiff(configDiff)
     val diff = diffTrees(prevSample.uiDump.roots, sample.uiDump.roots)
     printTreeDiff(diff, includeAttributes, includeSemantics)
@@ -63,46 +56,29 @@ internal fun printConfigurationDiff(diff: ConfigurationDiff?) {
   if (diff == null || diff.differences.isEmpty()) return
   System.out.println(" Modified Configuration:")
   for (diffItem in diff.differences) {
-    val displayName = getDisplayName(diffItem.field.name)
-    val oldStr = formatFieldValue(diffItem.field, diffItem.oldValue, diff.oldStrings)
-    val newStr = formatFieldValue(diffItem.field, diffItem.newValue, diff.newStrings)
+    val displayName = formatPropertyName(diffItem.name)
+    val oldStr = formatFieldValue(diffItem.name, diffItem.oldValue)
+    val newStr = formatFieldValue(diffItem.name, diffItem.newValue)
     System.out.println("  $displayName: $oldStr -> $newStr")
   }
 }
 
-/** Converts a snake_case protobuf field name into a space-separated human-readable display name. */
-private fun getDisplayName(name: String): String {
-  return name.replace('_', ' ')
-}
+internal fun formatPropertyName(propertyName: String): String =
+  propertyName.replace(Regex("([a-z])([A-Z])"), "$1 $2").replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
 
-/** Formats a configuration field value into a human-readable string based on its protobuf type descriptor. */
-private fun formatFieldValue(fieldDescriptor: Descriptors.FieldDescriptor, value: Any, stringTable: Map<Int, String>): String {
-  return when (fieldDescriptor.type) {
-    Descriptors.FieldDescriptor.Type.ENUM -> {
-      val enumVal = value as Descriptors.EnumValueDescriptor
-      val prefix = fieldDescriptor.enumType.name.camelToSnake()
-      enumVal.name.lowercase().removePrefix("${prefix}_")
-    }
-    Descriptors.FieldDescriptor.Type.MESSAGE -> {
-      if (fieldDescriptor.messageType.fullName == ViewInspectorProtocol.Locale.getDescriptor().fullName) {
-        formatLocale(value as ViewInspectorProtocol.Locale, stringTable)
-      } else {
-        value.toString()
-      }
-    }
+/** Formats a configuration field value into a human-readable string. */
+private fun formatFieldValue(fieldName: String, value: Any?): String {
+  if (value == null) return "null"
+  return when (value) {
+    is Enum<*> -> value.name.lowercase()
+    is DeviceLocale -> value.format()
     else -> {
-      when (fieldDescriptor.number) {
-        ViewInspectorProtocol.Configuration.SMALLEST_SCREEN_WIDTH_DP_FIELD_NUMBER,
-        ViewInspectorProtocol.Configuration.SCREEN_WIDTH_DP_FIELD_NUMBER,
-        ViewInspectorProtocol.Configuration.SCREEN_HEIGHT_DP_FIELD_NUMBER -> {
-          "$value dp"
-        }
-        ViewInspectorProtocol.Configuration.DENSITY_FIELD_NUMBER -> {
-          "$value dpi"
-        }
-        else -> {
-          value.toString()
-        }
+      val lowerName = fieldName.lowercase()
+      when {
+        // TODO this is brittle
+        lowerName.endsWith("dp") -> "$value dp"
+        lowerName == "density" -> "$value dpi"
+        else -> value.toString()
       }
     }
   }

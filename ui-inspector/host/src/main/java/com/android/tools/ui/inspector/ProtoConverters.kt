@@ -255,3 +255,150 @@ private fun getParameterValue(
     else -> UiNode.ComposeParameter.Value.NullVal
   }
 }
+
+/** Converts a protobuf [ViewInspectorProtocol.Configuration] into a domain [DeviceConfiguration]. */
+internal fun convertConfiguration(config: ViewInspectorProtocol.Configuration, stringTable: Map<Int, String>): DeviceConfiguration {
+  val locale =
+    if (config.hasLocale()) {
+      DeviceLocale(
+        language = stringTable[config.locale.language],
+        country = stringTable[config.locale.country],
+        variant = stringTable[config.locale.variant],
+        script = stringTable[config.locale.script],
+      )
+    } else {
+      null
+    }
+
+  return DeviceConfiguration(
+    // In Android Configuration, 0 / 0.0f represent sentinel constants for UNDEFINED values.
+    // We map them to null to cleanly express absent/unspecified attributes in the domain layer.
+    fontScale = if (config.fontScale != 0.0f) config.fontScale else null,
+    countryCode = if (config.countryCode != 0) config.countryCode else null,
+    networkCode = if (config.networkCode != 0) config.networkCode else null,
+    locale = locale,
+    screenLayoutSize =
+      when (config.screenLayoutSize) {
+        ViewInspectorProtocol.ScreenLayoutSize.SCREEN_LAYOUT_SIZE_SMALL -> ScreenLayoutSize.SMALL
+        ViewInspectorProtocol.ScreenLayoutSize.SCREEN_LAYOUT_SIZE_NORMAL -> ScreenLayoutSize.NORMAL
+        ViewInspectorProtocol.ScreenLayoutSize.SCREEN_LAYOUT_SIZE_LARGE -> ScreenLayoutSize.LARGE
+        ViewInspectorProtocol.ScreenLayoutSize.SCREEN_LAYOUT_SIZE_XLARGE -> ScreenLayoutSize.XLARGE
+        else -> null
+      },
+    screenLayoutLong =
+      when (config.screenLayoutLong) {
+        ViewInspectorProtocol.ScreenLayoutLong.SCREEN_LAYOUT_LONG_NO -> ScreenLayoutLong.NO
+        ViewInspectorProtocol.ScreenLayoutLong.SCREEN_LAYOUT_LONG_YES -> ScreenLayoutLong.YES
+        else -> null
+      },
+    layoutDirection =
+      when (config.layoutDirection) {
+        ViewInspectorProtocol.LayoutDirection.LAYOUT_DIRECTION_LTR -> LayoutDirection.LTR
+        ViewInspectorProtocol.LayoutDirection.LAYOUT_DIRECTION_RTL -> LayoutDirection.RTL
+        else -> null
+      },
+    screenLayoutRound =
+      when (config.screenLayoutRound) {
+        ViewInspectorProtocol.ScreenLayoutRound.SCREEN_LAYOUT_ROUND_NO -> ScreenLayoutRound.NO
+        ViewInspectorProtocol.ScreenLayoutRound.SCREEN_LAYOUT_ROUND_YES -> ScreenLayoutRound.YES
+        else -> null
+      },
+    colorModeWideGamut =
+      when (config.colorModeWideGamut) {
+        ViewInspectorProtocol.ColorModeWideGamut.COLOR_MODE_WIDE_GAMUT_NO -> ColorModeWideGamut.NO
+        ViewInspectorProtocol.ColorModeWideGamut.COLOR_MODE_WIDE_GAMUT_YES -> ColorModeWideGamut.YES
+        else -> null
+      },
+    colorModeHdr =
+      when (config.colorModeHdr) {
+        ViewInspectorProtocol.ColorModeHdr.COLOR_MODE_HDR_NO -> ColorModeHdr.NO
+        ViewInspectorProtocol.ColorModeHdr.COLOR_MODE_HDR_YES -> ColorModeHdr.YES
+        else -> null
+      },
+    touchScreen =
+      when (config.touchScreen) {
+        ViewInspectorProtocol.TouchScreen.TOUCH_SCREEN_NOTOUCH -> TouchScreen.NOTOUCH
+        ViewInspectorProtocol.TouchScreen.TOUCH_SCREEN_STYLUS -> TouchScreen.STYLUS
+        ViewInspectorProtocol.TouchScreen.TOUCH_SCREEN_FINGER -> TouchScreen.FINGER
+        else -> null
+      },
+    keyboard =
+      when (config.keyboard) {
+        ViewInspectorProtocol.Keyboard.KEYBOARD_NOKEYS -> Keyboard.NOKEYS
+        ViewInspectorProtocol.Keyboard.KEYBOARD_QWERTY -> Keyboard.QWERTY
+        ViewInspectorProtocol.Keyboard.KEYBOARD_12KEY -> Keyboard.KEY_12
+        else -> null
+      },
+    keyboardHidden =
+      when (config.keyboardHidden) {
+        ViewInspectorProtocol.KeyboardHidden.KEYBOARD_HIDDEN_NO -> KeyboardHidden.NO
+        ViewInspectorProtocol.KeyboardHidden.KEYBOARD_HIDDEN_YES -> KeyboardHidden.YES
+        else -> null
+      },
+    hardKeyboardHidden =
+      when (config.hardKeyboardHidden) {
+        ViewInspectorProtocol.HardKeyboardHidden.HARD_KEYBOARD_HIDDEN_NO -> HardKeyboardHidden.NO
+        ViewInspectorProtocol.HardKeyboardHidden.HARD_KEYBOARD_HIDDEN_YES -> HardKeyboardHidden.YES
+        else -> null
+      },
+    navigation =
+      when (config.navigation) {
+        ViewInspectorProtocol.Navigation.NAVIGATION_NONAV -> Navigation.NONAV
+        ViewInspectorProtocol.Navigation.NAVIGATION_DPAD -> Navigation.DPAD
+        ViewInspectorProtocol.Navigation.NAVIGATION_TRACKBALL -> Navigation.TRACKBALL
+        ViewInspectorProtocol.Navigation.NAVIGATION_WHEEL -> Navigation.WHEEL
+        else -> null
+      },
+    navigationHidden =
+      when (config.navigationHidden) {
+        ViewInspectorProtocol.NavigationHidden.NAVIGATION_HIDDEN_NO -> NavigationHidden.NO
+        ViewInspectorProtocol.NavigationHidden.NAVIGATION_HIDDEN_YES -> NavigationHidden.YES
+        else -> null
+      },
+    uiModeType =
+      when (config.uiModeType) {
+        ViewInspectorProtocol.UiModeType.UI_MODE_TYPE_NORMAL -> UiModeType.NORMAL
+        ViewInspectorProtocol.UiModeType.UI_MODE_TYPE_DESK -> UiModeType.DESK
+        ViewInspectorProtocol.UiModeType.UI_MODE_TYPE_CAR -> UiModeType.CAR
+        ViewInspectorProtocol.UiModeType.UI_MODE_TYPE_TELEVISION -> UiModeType.TELEVISION
+        ViewInspectorProtocol.UiModeType.UI_MODE_TYPE_APPLIANCE -> UiModeType.APPLIANCE
+        ViewInspectorProtocol.UiModeType.UI_MODE_TYPE_WATCH -> UiModeType.WATCH
+        ViewInspectorProtocol.UiModeType.UI_MODE_TYPE_VR_HEADSET -> UiModeType.VR_HEADSET
+        else -> null
+      },
+    uiModeNight =
+      when (config.uiModeNight) {
+        ViewInspectorProtocol.UiModeNight.UI_MODE_NIGHT_NO -> UiModeNight.NO
+        ViewInspectorProtocol.UiModeNight.UI_MODE_NIGHT_YES -> UiModeNight.YES
+        else -> null
+      },
+    smallestScreenWidthDp = if (config.smallestScreenWidthDp != 0) config.smallestScreenWidthDp else null,
+    density = if (config.density != 0) config.density else null,
+    orientation =
+      when (config.orientation) {
+        ViewInspectorProtocol.Orientation.ORIENTATION_PORTRAIT -> Orientation.PORTRAIT
+        ViewInspectorProtocol.Orientation.ORIENTATION_LANDSCAPE -> Orientation.LANDSCAPE
+        ViewInspectorProtocol.Orientation.ORIENTATION_SQUARE -> Orientation.SQUARE
+        else -> null
+      },
+    screenWidthDp = if (config.screenWidthDp != 0) config.screenWidthDp else null,
+    screenHeightDp = if (config.screenHeightDp != 0) config.screenHeightDp else null,
+    grammaticalGender =
+      when (config.grammaticalGender) {
+        ViewInspectorProtocol.GrammaticalGender.GRAMMATICAL_GENDER_NEUTRAL -> GrammaticalGender.NEUTRAL
+        ViewInspectorProtocol.GrammaticalGender.GRAMMATICAL_GENDER_FEMININE -> GrammaticalGender.FEMININE
+        ViewInspectorProtocol.GrammaticalGender.GRAMMATICAL_GENDER_MASCULINE -> GrammaticalGender.MASCULINE
+        else -> null
+      },
+  )
+}
+
+/** Converts a protobuf [ViewInspectorProtocol.AppContext] into a domain [AppContext]. */
+internal fun convertAppContext(appContext: ViewInspectorProtocol.AppContext, stringTable: Map<Int, String>): AppContext {
+  val theme = stringTable[appContext.theme]
+  val displays =
+    appContext.displayInfoList.map { display ->
+      DisplayInfo(id = display.id, widthPx = display.widthPx, heightPx = display.heightPx, orientation = display.orientation)
+    }
+  return AppContext(theme = theme, displays = displays)
+}

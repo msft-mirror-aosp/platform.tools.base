@@ -16,99 +16,77 @@
 
 package com.android.tools.ui.inspector.printer
 
-import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol
+import com.android.tools.ui.inspector.AppContext
+import com.android.tools.ui.inspector.DeviceConfiguration
+import com.android.tools.ui.inspector.DeviceLocale
+import java.lang.reflect.Field
+import java.lang.reflect.Modifier
 
-/** Converts a CamelCase string into a snake_case string. */
-internal fun String.camelToSnake(): String = buildString {
-  for (char in this@camelToSnake) {
-    if (char.isUpperCase()) {
-      if (isNotEmpty()) append('_')
-      append(char.lowercaseChar())
-    } else {
-      append(char)
-    }
-  }
-}
-
-/**
- * Formats a protobuf Enum value name into a clean, human-readable lowercase string.
- *
- * Protobuf enum names are traditionally declared in UPPERCASE and prefixed with their enum type prefix (e.g., `ORIENTATION_LANDSCAPE` or
- * `TOUCH_SCREEN_FINGER`) to avoid namespace conflicts in generated bindings. This helper dynamically determines the prefix from the enum's
- * class name, removes it, and converts the remaining string to lowercase for clean console output.
- */
-internal fun Enum<*>.protobufPrettyPrint(): String {
-  val prefix = this::class.java.simpleName.camelToSnake()
-  return name.lowercase().removePrefix("${prefix}_")
-}
-
-internal fun formatLocale(locale: ViewInspectorProtocol.Locale, stringTable: Map<Int, String>): String {
-  val language = stringTable[locale.language] ?: ""
-  val country = stringTable[locale.country] ?: ""
-  val variant = stringTable[locale.variant] ?: ""
-  val script = stringTable[locale.script] ?: ""
-  return listOf(language, country, variant, script).filter { it.isNotEmpty() }.joinToString("-")
-}
+internal fun DeviceLocale.format(): String = listOfNotNull(language, country, variant, script).filter { it.isNotEmpty() }.joinToString("-")
 
 /** Prints the device configuration to the console in a human-readable format. */
-internal fun printDeviceConfiguration(config: ViewInspectorProtocol.Configuration, stringTable: Map<Int, String>) {
-  val localeStr = formatLocale(config.locale, stringTable)
-
-  val orientationStr = config.orientation.protobufPrettyPrint()
-  val sizeStr = config.screenLayoutSize.protobufPrettyPrint()
-  val aspectStr = config.screenLayoutLong.protobufPrettyPrint()
-  val directionStr = config.layoutDirection.protobufPrettyPrint()
-  val shapeStr = config.screenLayoutRound.protobufPrettyPrint()
-  val wideGamutStr = config.colorModeWideGamut.protobufPrettyPrint()
-  val hdrStr = config.colorModeHdr.protobufPrettyPrint()
-  val touchStr = config.touchScreen.protobufPrettyPrint()
-  val keyboardStr = config.keyboard.protobufPrettyPrint()
-  val keyboardHiddenStr = config.keyboardHidden.protobufPrettyPrint()
-  val hardKeyboardHiddenStr = config.hardKeyboardHidden.protobufPrettyPrint()
-  val navigationStr = config.navigation.protobufPrettyPrint()
-  val navigationHiddenStr = config.navigationHidden.protobufPrettyPrint()
-  val uiModeTypeStr = config.uiModeType.protobufPrettyPrint()
-  val uiModeNightStr = config.uiModeNight.protobufPrettyPrint()
-  val grammaticalGenderStr = config.grammaticalGender.protobufPrettyPrint()
-
+internal fun printDeviceConfiguration(config: DeviceConfiguration) {
   System.out.println("Device Configuration:")
-  System.out.println(" Orientation: $orientationStr")
-  System.out.println(" Density: ${config.density} dpi")
-  System.out.println(" Screen Width: ${config.screenWidthDp} dp")
-  System.out.println(" Screen Height: ${config.screenHeightDp} dp")
-  System.out.println(" Smallest Screen Width: ${config.smallestScreenWidthDp} dp")
-  System.out.println(" Screen Size: $sizeStr")
-  System.out.println(" Screen Aspect: $aspectStr")
-  System.out.println(" Layout Direction: $directionStr")
-  System.out.println(" Screen Shape: $shapeStr")
-  System.out.println(" Color Wide Gamut: $wideGamutStr")
-  System.out.println(" Color HDR: $hdrStr")
-  System.out.println(" Touchscreen: $touchStr")
-  System.out.println(" Keyboard: $keyboardStr")
-  System.out.println(" Keyboard Hidden: $keyboardHiddenStr")
-  System.out.println(" Hard Keyboard Hidden: $hardKeyboardHiddenStr")
-  System.out.println(" Navigation: $navigationStr")
-  System.out.println(" Navigation Hidden: $navigationHiddenStr")
-  System.out.println(" UI Mode Type: $uiModeTypeStr")
-  System.out.println(" UI Mode Night: $uiModeNightStr")
-  if (localeStr.isNotEmpty()) {
-    System.out.println(" Locale: $localeStr")
-  }
-  System.out.println(" Font Scale: ${config.fontScale}")
-  if (config.grammaticalGender != ViewInspectorProtocol.GrammaticalGender.GRAMMATICAL_GENDER_UNDEFINED) {
-    System.out.println(" Grammatical Gender: $grammaticalGenderStr")
-  }
+  DeviceConfiguration::class
+    .java
+    .declaredFields
+    .filter { field -> !field.isSynthetic && !Modifier.isStatic(field.modifiers) }
+    .sortedBy { it.name }
+    .forEach { field ->
+      field.isAccessible = true
+      val name = formatPropertyName(field.name)
+      val rawValue = field.get(config)
+      val formattedValue = formatValueForPrinting(field, rawValue)
+      if (formattedValue != null) {
+        System.out.println(" $name: $formattedValue")
+      }
+    }
   System.out.println()
 }
 
+private fun formatValueForPrinting(field: Field, value: Any?): String? {
+  // TODO this is brittle
+  val propertyName = field.name
+  return when {
+    value is DeviceLocale -> {
+      val str = value.format()
+      if (str.isNotEmpty()) str else null
+    }
+    propertyName == "grammaticalGender" -> {
+      (value as? Enum<*>)?.let { getEnumDisplayValue(it) }
+    }
+    Enum::class.java.isAssignableFrom(field.type) -> {
+      if (value is Enum<*>) {
+        getEnumDisplayValue(value)
+      } else {
+        "undefined"
+      }
+    }
+    propertyName.endsWith("Dp") -> {
+      "${value ?: 0} dp"
+    }
+    propertyName == "density" -> {
+      "${value ?: 0} dpi"
+    }
+    propertyName == "fontScale" -> {
+      "${value ?: 0.0}"
+    }
+    value != null -> value.toString()
+    else -> null
+  }
+}
+
+private fun getEnumDisplayValue(enumValue: Enum<*>): String {
+  return enumValue.name.lowercase()
+}
+
 /** Prints the application context (theme and display info) to the console. */
-internal fun printAppContext(appContext: ViewInspectorProtocol.AppContext, stringTable: Map<Int, String>) {
-  val themeStr = stringTable[appContext.theme] ?: "undefined"
+internal fun printAppContext(appContext: AppContext) {
   System.out.println("App Context:")
-  System.out.println(" Theme: $themeStr")
-  if (appContext.displayInfoCount > 0) {
+  System.out.println(" Theme: ${appContext.theme ?: "undefined"}")
+  if (appContext.displays.isNotEmpty()) {
     System.out.println(" Displays:")
-    appContext.displayInfoList.forEach { display ->
+    appContext.displays.forEach { display ->
       System.out.println("  - Display ${display.id}: ${display.widthPx}x${display.heightPx} px, rotation ${display.orientation}°")
     }
   }

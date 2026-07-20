@@ -16,85 +16,97 @@
 
 package com.android.tools.ui.inspector
 
-import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol
 import com.google.common.truth.Truth.assertThat
-import com.google.protobuf.Descriptors
 import org.junit.Test
 
 class ConfigurationDiffTest {
 
   @Test
   fun testDiffConfigurations_noChanges() {
-    val config = ViewInspectorProtocol.Configuration.newBuilder().setDensity(160).build()
-    val diff = createConfigurationDiff(config, config, emptyMap(), emptyMap())
+    val config = DeviceConfiguration(density = 160)
+    val diff = createConfigurationDiff(config, config)
     assertThat(diff).isNull()
   }
 
   @Test
   fun testDiffConfigurations_nullInputs() {
-    val config = ViewInspectorProtocol.Configuration.newBuilder().setDensity(160).build()
-    assertThat(createConfigurationDiff(null, config, emptyMap(), emptyMap())).isNull()
-    assertThat(createConfigurationDiff(config, null, emptyMap(), emptyMap())).isNull()
-    assertThat(createConfigurationDiff(null, null, emptyMap(), emptyMap())).isNull()
+    val config = DeviceConfiguration(density = 160)
+    assertThat(createConfigurationDiff(null, config)).isNull()
+    assertThat(createConfigurationDiff(config, null)).isNull()
+    assertThat(createConfigurationDiff(null, null)).isNull()
   }
 
   @Test
   fun testDiffConfigurations_unsetVsDefault() {
-    val emptyConfig = ViewInspectorProtocol.Configuration.getDefaultInstance()
-    val configWithDefaults =
-      ViewInspectorProtocol.Configuration.newBuilder()
-        .setDensity(0)
-        .setFontScale(0.0f)
-        .setOrientation(ViewInspectorProtocol.Orientation.ORIENTATION_UNDEFINED)
-        .build()
+    val emptyConfig = DeviceConfiguration()
+    val configWithDefaults = DeviceConfiguration(density = null, fontScale = null, orientation = null)
 
-    val diff = createConfigurationDiff(emptyConfig, configWithDefaults, emptyMap(), emptyMap())
+    val diff = createConfigurationDiff(emptyConfig, configWithDefaults)
     assertThat(diff).isNull()
   }
 
   @Test
   fun testDiffConfigurations_withChanges() {
-    val stringTable = mapOf(1 to "en", 2 to "US")
     val oldConfig =
-      ViewInspectorProtocol.Configuration.newBuilder()
-        .setDensity(160)
-        .setOrientation(ViewInspectorProtocol.Orientation.ORIENTATION_PORTRAIT)
-        .setUiModeNight(ViewInspectorProtocol.UiModeNight.UI_MODE_NIGHT_NO)
-        .setLocale(ViewInspectorProtocol.Locale.newBuilder().setLanguage(1))
-        .build()
+      DeviceConfiguration(
+        density = 160,
+        orientation = Orientation.PORTRAIT,
+        uiModeNight = UiModeNight.NO,
+        locale = DeviceLocale(language = "en", country = null, variant = null, script = null),
+      )
 
     val newConfig =
-      ViewInspectorProtocol.Configuration.newBuilder()
-        .setDensity(240)
-        .setOrientation(ViewInspectorProtocol.Orientation.ORIENTATION_LANDSCAPE)
-        .setUiModeNight(ViewInspectorProtocol.UiModeNight.UI_MODE_NIGHT_YES)
-        .setLocale(ViewInspectorProtocol.Locale.newBuilder().setLanguage(1).setCountry(2))
-        .build()
+      DeviceConfiguration(
+        density = 240,
+        orientation = Orientation.LANDSCAPE,
+        uiModeNight = UiModeNight.YES,
+        locale = DeviceLocale(language = "en", country = "US", variant = null, script = null),
+      )
 
-    val diff = createConfigurationDiff(oldConfig, newConfig, stringTable, stringTable)
+    val diff = createConfigurationDiff(oldConfig, newConfig)
     assertThat(diff).isNotNull()
     val diffs = diff!!.differences
     assertThat(diffs).hasSize(4)
 
-    val orientationField = ViewInspectorProtocol.Configuration.getDescriptor().findFieldByName("orientation")
-    val densityField = ViewInspectorProtocol.Configuration.getDescriptor().findFieldByName("density")
-    val uiModeNightField = ViewInspectorProtocol.Configuration.getDescriptor().findFieldByName("ui_mode_night")
-    val localeField = ViewInspectorProtocol.Configuration.getDescriptor().findFieldByName("locale")
+    val orientationDiff = diffs.first { it.name == "orientation" }
+    assertThat(orientationDiff.oldValue).isEqualTo(Orientation.PORTRAIT)
+    assertThat(orientationDiff.newValue).isEqualTo(Orientation.LANDSCAPE)
 
-    val orientationDiff = diffs.first { it.field == orientationField }
-    assertThat((orientationDiff.oldValue as Descriptors.EnumValueDescriptor).name).isEqualTo("ORIENTATION_PORTRAIT")
-    assertThat((orientationDiff.newValue as Descriptors.EnumValueDescriptor).name).isEqualTo("ORIENTATION_LANDSCAPE")
-
-    val densityDiff = diffs.first { it.field == densityField }
+    val densityDiff = diffs.first { it.name == "density" }
     assertThat(densityDiff.oldValue).isEqualTo(160)
     assertThat(densityDiff.newValue).isEqualTo(240)
 
-    val uiModeNightDiff = diffs.first { it.field == uiModeNightField }
-    assertThat((uiModeNightDiff.oldValue as Descriptors.EnumValueDescriptor).name).isEqualTo("UI_MODE_NIGHT_NO")
-    assertThat((uiModeNightDiff.newValue as Descriptors.EnumValueDescriptor).name).isEqualTo("UI_MODE_NIGHT_YES")
+    val uiModeNightDiff = diffs.first { it.name == "uiModeNight" }
+    assertThat(uiModeNightDiff.oldValue).isEqualTo(UiModeNight.NO)
+    assertThat(uiModeNightDiff.newValue).isEqualTo(UiModeNight.YES)
 
-    val localeDiff = diffs.first { it.field == localeField }
-    assertThat((localeDiff.oldValue as ViewInspectorProtocol.Locale).language).isEqualTo(1)
-    assertThat((localeDiff.newValue as ViewInspectorProtocol.Locale).country).isEqualTo(2)
+    val localeDiff = diffs.first { it.name == "locale" }
+    assertThat((localeDiff.oldValue as DeviceLocale).language).isEqualTo("en")
+    assertThat((localeDiff.newValue as DeviceLocale).country).isEqualTo("US")
+  }
+
+  @Test
+  fun testRawPropertyNamesInDifferences() {
+    val oldConfig =
+      DeviceConfiguration(
+        fontScale = 1.0f,
+        screenLayoutSize = ScreenLayoutSize.NORMAL,
+        smallestScreenWidthDp = 320,
+        uiModeNight = UiModeNight.NO,
+        grammaticalGender = GrammaticalGender.NEUTRAL,
+      )
+    val newConfig =
+      DeviceConfiguration(
+        fontScale = 1.2f,
+        screenLayoutSize = ScreenLayoutSize.LARGE,
+        smallestScreenWidthDp = 600,
+        uiModeNight = UiModeNight.YES,
+        grammaticalGender = GrammaticalGender.FEMININE,
+      )
+
+    val diff = createConfigurationDiff(oldConfig, newConfig)!!
+    val fieldNames = diff.differences.map { it.name }
+
+    assertThat(fieldNames).containsExactly("fontScale", "screenLayoutSize", "smallestScreenWidthDp", "uiModeNight", "grammaticalGender")
   }
 }
