@@ -22,16 +22,14 @@ import com.android.adblib.DeviceSelector;
 import com.android.adblib.tools.InstallerKt;
 import com.android.adblib.tools.JavaBridge;
 import com.android.annotations.NonNull;
-import com.android.ddmlib.AdbCommandRejectedException;
 import com.android.ddmlib.Client;
 import com.android.ddmlib.ClientData;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.InstallException;
+import com.android.ddmlib.InstallMetrics;
 import com.android.ddmlib.ShellCommandUnresponsiveException;
 import com.android.ddmlib.SimpleConnectedSocket;
-import com.android.ddmlib.SyncException;
-import com.android.ddmlib.TimeoutException;
 import com.android.sdklib.AndroidVersion;
 import com.android.tools.deploy.proto.Deploy;
 import com.android.tools.deployer.model.Apk;
@@ -112,7 +110,7 @@ public class AdbClient {
     }
 
     public SimpleConnectedSocket rawExec(String executable, String[] parameters)
-            throws AdbCommandRejectedException, IOException, TimeoutException {
+            throws IOException {
         return deviceHolder.rawExec2(executable, parameters);
     }
 
@@ -137,10 +135,6 @@ public class AdbClient {
             deviceHolder.executeShellCommand(
                     String.join(" ", parameters), receiver, maxTimeOutMs, timeUnit, input);
             return receiver.toByteArray();
-        } catch (AdbCommandRejectedException
-                | ShellCommandUnresponsiveException
-                | TimeoutException e) {
-            throw new IOException(e);
         }
     }
 
@@ -155,10 +149,6 @@ public class AdbClient {
             receiver = new ByteArrayOutputReceiver();
             deviceHolder.executeBinderCommand(parameters, receiver, 5, TimeUnit.MINUTES, input);
             return receiver.toByteArray();
-        } catch (AdbCommandRejectedException
-                | ShellCommandUnresponsiveException
-                | TimeoutException e) {
-            throw new IOException(e);
         }
     }
 
@@ -307,7 +297,7 @@ public class AdbClient {
         try {
             deviceHolder.uninstallPackage(packageName);
             return true;
-        } catch (InstallException e) {
+        } catch (IOException e) {
         }
         return false;
     }
@@ -418,8 +408,6 @@ public class AdbClient {
     public void push(String from, String to) throws IOException {
         try (Trace ignored = Trace.begin("adb push")) {
             deviceHolder.pushFile(from, to);
-        } catch (SyncException | TimeoutException | AdbCommandRejectedException e) {
-            throw new IOException(e);
         }
     }
 

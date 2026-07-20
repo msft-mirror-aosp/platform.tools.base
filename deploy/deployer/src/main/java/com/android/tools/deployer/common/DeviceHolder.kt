@@ -60,12 +60,20 @@ class DeviceHolder(
   val isRoot: Boolean
     get() = iDevice.isRoot
 
-  @Throws(AdbCommandRejectedException::class, IOException::class, TimeoutException::class)
+  @Throws(IOException::class)
   fun rawExec2(executable: String, parameters: Array<String>): SimpleConnectedSocket {
-    return iDevice.rawExec2(executable, parameters)
+    try {
+      return iDevice.rawExec2(executable, parameters)
+    } catch (e: Exception) {
+      when (e) {
+        is AdbCommandRejectedException,
+        is TimeoutException -> throw IOException(e)
+        else -> throw e
+      }
+    }
   }
 
-  @Throws(AdbCommandRejectedException::class, ShellCommandUnresponsiveException::class, TimeoutException::class, IOException::class)
+  @Throws(IOException::class)
   fun executeShellCommand(
     command: String,
     receiver: IShellOutputReceiver,
@@ -73,20 +81,38 @@ class DeviceHolder(
     maxTimeToOutputResponseUnit: TimeUnit,
     `is`: InputStream?,
   ) {
-    iDevice.executeShellCommand(command, receiver, maxTimeToOutputResponse, maxTimeToOutputResponseUnit, `is`)
+    try {
+      iDevice.executeShellCommand(command, receiver, maxTimeToOutputResponse, maxTimeToOutputResponseUnit, `is`)
+    } catch (e: Exception) {
+      when (e) {
+        is AdbCommandRejectedException,
+        is ShellCommandUnresponsiveException,
+        is TimeoutException -> throw IOException(e)
+        else -> throw e
+      }
+    }
   }
 
-  @Throws(AdbCommandRejectedException::class, ShellCommandUnresponsiveException::class, TimeoutException::class, IOException::class)
+  @Throws(IOException::class)
   fun executeShellCommand(
     command: String,
     receiver: IShellOutputReceiver,
     maxTimeToOutputResponse: Long,
     maxTimeToOutputResponseUnit: TimeUnit,
   ) {
-    iDevice.executeShellCommand(command, receiver, maxTimeToOutputResponse, maxTimeToOutputResponseUnit)
+    try {
+      iDevice.executeShellCommand(command, receiver, maxTimeToOutputResponse, maxTimeToOutputResponseUnit)
+    } catch (e: Exception) {
+      when (e) {
+        is AdbCommandRejectedException,
+        is ShellCommandUnresponsiveException,
+        is TimeoutException -> throw IOException(e)
+        else -> throw e
+      }
+    }
   }
 
-  @Throws(AdbCommandRejectedException::class, ShellCommandUnresponsiveException::class, TimeoutException::class, IOException::class)
+  @Throws(IOException::class)
   fun executeBinderCommand(
     parameters: Array<String>,
     receiver: IShellOutputReceiver,
@@ -94,12 +120,25 @@ class DeviceHolder(
     maxTimeToOutputResponseUnit: TimeUnit,
     `is`: InputStream?,
   ) {
-    iDevice.executeBinderCommand(parameters, receiver, maxTimeToOutputResponse, maxTimeToOutputResponseUnit, `is`)
+    try {
+      iDevice.executeBinderCommand(parameters, receiver, maxTimeToOutputResponse, maxTimeToOutputResponseUnit, `is`)
+    } catch (e: Exception) {
+      when (e) {
+        is AdbCommandRejectedException,
+        is ShellCommandUnresponsiveException,
+        is TimeoutException -> throw IOException(e)
+        else -> throw e
+      }
+    }
   }
 
-  @Throws(InstallException::class)
+  @Throws(IOException::class)
   fun uninstallPackage(packageName: String): String? {
-    return iDevice.uninstallPackage(packageName)
+    try {
+      return iDevice.uninstallPackage(packageName)
+    } catch (e: InstallException) {
+      throw IOException(e)
+    }
   }
 
   fun supportsFeature(feature: IDevice.Feature): Boolean {
@@ -110,28 +149,31 @@ class DeviceHolder(
     return iDevice.supportsFeature(feature)
   }
 
-  @Throws(AdbCommandRejectedException::class, SyncException::class, TimeoutException::class, IOException::class)
+  @Throws(IOException::class)
   fun pushFile(local: String, remote: String) {
-    iDevice.pushFile(local, remote)
+    try {
+      iDevice.pushFile(local, remote)
+    } catch (e: Exception) {
+      when (e) {
+        is AdbCommandRejectedException,
+        is SyncException,
+        is TimeoutException -> throw IOException(e)
+        else -> throw e
+      }
+    }
   }
 
-  @Throws(TimeoutException::class, AdbCommandRejectedException::class, IOException::class, ShellCommandUnresponsiveException::class)
+  @Throws(IOException::class)
   fun root(): Boolean {
-    return iDevice.root()
-  }
-
-  /**
-   * Overridden to support tracking DeviceHolder instances in collections (e.g., in DeployerApplicationTerminator's HashSet). Equality is
-   * defined by the underlying device identity (currently IDevice).
-   */
-  override fun equals(other: Any?): Boolean {
-    if (this === other) return true
-    if (other == null || javaClass != other.javaClass) return false
-    val that = other as DeviceHolder
-    return iDevice == that.iDevice
-  }
-
-  override fun hashCode(): Int {
-    return iDevice.hashCode()
+    try {
+      return iDevice.root()
+    } catch (e: Exception) {
+      when (e) {
+        is AdbCommandRejectedException,
+        is ShellCommandUnresponsiveException,
+        is TimeoutException -> throw IOException(e)
+        else -> throw e
+      }
+    }
   }
 }

@@ -15,9 +15,7 @@
  */
 package com.android.tools.deployer;
 
-import com.android.ddmlib.AdbCommandRejectedException;
 import com.android.ddmlib.SimpleConnectedSocket;
-import com.android.ddmlib.TimeoutException;
 import com.android.tools.deployer.common.AdbClient;
 import com.android.utils.ILogger;
 
@@ -65,13 +63,8 @@ public class AdbInstallerChannelManager {
             parameters.add("-daemon");
         }
 
-        try {
-            channel =
-                    client.rawExec(AdbInstaller.INSTALLER_PATH, parameters.toArray(new String[0]));
-        } catch (AdbCommandRejectedException | TimeoutException e) {
-            try (SimpleConnectedSocket c = channel) {}
-            throw new IOException(e);
-        }
+        channel =
+                client.rawExec(AdbInstaller.INSTALLER_PATH, parameters.toArray(new String[0]));
         return new AdbInstallerChannel(channel, logger);
     }
 
