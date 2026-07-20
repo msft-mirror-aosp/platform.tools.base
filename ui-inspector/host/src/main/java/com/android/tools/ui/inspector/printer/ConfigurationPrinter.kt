@@ -51,10 +51,6 @@ private fun formatValueForPrinting(field: Field, value: Any?): String? {
       val str = value.format()
       if (str.isNotEmpty()) str else null
     }
-    // TODO this is brittle
-    field.name == "grammaticalGender" -> {
-      (value as? Enum<*>)?.let { getEnumDisplayValue(it) }
-    }
     Enum::class.java.isAssignableFrom(field.type) -> {
       if (value is Enum<*>) {
         getEnumDisplayValue(value)

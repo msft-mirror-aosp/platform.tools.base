@@ -136,6 +136,7 @@ Device Configuration:
  Color Mode Wide Gamut: undefined
  Density: 160 dpi
  Font Scale: 0.0
+ Grammatical Gender: undefined
  Hard Keyboard Hidden: undefined
  Keyboard: undefined
  Keyboard Hidden: undefined
