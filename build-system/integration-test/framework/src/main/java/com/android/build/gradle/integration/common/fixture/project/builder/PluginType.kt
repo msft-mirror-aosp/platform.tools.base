@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.common.fixture.project.builder
 
 import com.android.Version
 import com.android.build.api.dsl.Lint
+import com.android.build.api.dsl.R8Extension
 import com.android.build.gradle.integration.common.fixture.project.builder.kotlin.KotlinExtension
 import com.android.build.gradle.internal.utils.ANDROID_BUILT_IN_KAPT_PLUGIN_ID
 import com.android.build.gradle.internal.utils.ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID
@@ -124,6 +125,16 @@ sealed class PluginType(
       isSettings = true,
       artifact = "com.android.tools.build:gradle-settings",
       version = Version.ANDROID_GRADLE_PLUGIN_VERSION,
+    )
+
+  object R8 :
+    PluginTypeWithExtension<R8Extension>(
+      id = "com.android.r8",
+      isAndroid = false,
+      artifact = "com.android.tools.build:gradle",
+      version = Version.ANDROID_GRADLE_PLUGIN_VERSION,
+      extensionType = R8Extension::class.java,
+      extensionName = "r8",
     )
 
   /** A custom Plugin type when we need to apply a plugin that is not already defined, */

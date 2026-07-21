@@ -22,6 +22,7 @@
   com/android/legacy-kapt:com.android.legacy-kapt.gradle.plugin
   com/android/library:com.android.library.gradle.plugin
   com/android/lint:com.android.lint.gradle.plugin
+  com/android/r8:com.android.r8.gradle.plugin
   com/android/settings:com.android.settings.gradle.plugin
   com/android/test:com.android.test.gradle.plugin
   com/android/tools/adblib:adblib

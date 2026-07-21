@@ -331,6 +331,7 @@ enum class BooleanOption(
     FeatureStage.Experimental,
     FutureStage(Version.VERSION_9_0, true, FeatureStage.Enforced(Version.VERSION_9_0)),
   ),
+  R8_PLUGIN_SUPPORT("android.experimental.r8.plugin.support", false, FeatureStage.Experimental),
 
   /** Switches Android Test execution from the Unified Test Platform (UTP) to the experimental direct-to-AGP implementation. */
   ANDROID_BUILTIN_TEST_PLATFORM(

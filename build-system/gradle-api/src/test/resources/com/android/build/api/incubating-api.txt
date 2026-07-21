@@ -824,3 +824,5 @@ https://issuetracker.google.com/534880695
   * com.android.build.api.dsl.AgpTestSuite.setRequiresUpdateTask: void (boolean)
   * com.android.build.api.dsl.TestTaskContext.isUpdateTask: boolean ()
   * com.android.build.api.variant.TestSuite.getRequiresUpdateTask: org.gradle.api.provider.Provider<java.lang.Boolean> ()
+https://issuetracker.google.com/537432993
+  * com.android.build.api.dsl.R8Extension

@@ -2257,6 +2257,9 @@ package com.android.build.api.dsl {
     method public void withSourcesJar();
   }
 
+  @org.gradle.api.Incubating public interface R8Extension {
+  }
+
   public interface ResourcesPackaging {
     method @InaccessibleFromKotlin public java.util.Set<java.lang.String> getExcludes();
     method @InaccessibleFromKotlin public java.util.Set<java.lang.String> getMerges();
@@ -3988,6 +3991,10 @@ package com.android.build.gradle {
 
   public abstract class LintPlugin extends com.android.build.gradle.BasePlugin {
     ctor public LintPlugin();
+  }
+
+  @org.gradle.api.Incubating public abstract class R8Plugin extends com.android.build.gradle.BasePlugin {
+    ctor public R8Plugin();
   }
 
   public final class TestPlugin extends com.android.build.gradle.BasePlugin {
