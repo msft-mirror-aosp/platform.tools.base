@@ -14,66 +14,61 @@
  * limitations under the License.
  */
 
-package com.android.tools.ui.inspector.printer
+package com.android.tools.ui.inspector.printer.text
 
 import com.android.tools.ui.inspector.UiNode
+import java.io.PrintStream
 import java.util.Locale
 
-/** Recursively walks and formats the unified UiNode layout tree to console. */
-internal fun printUiTree(node: UiNode, indent: Int, includeAttributes: Boolean, includeSemantics: Boolean) {
+/** Recursively walks and formats the unified UiNode layout tree to target [PrintStream]. */
+internal fun printUiTree(node: UiNode, indent: Int = 0, out: PrintStream) {
   if (indent == 0) {
-    System.out.println("View Hierarchy:")
+    out.println("View Hierarchy:")
   }
   val prefix = " ".repeat(indent)
-  System.out.println("$prefix${node.formatHeader()}")
+  out.println("$prefix${node.formatHeader()}")
 
   when (node) {
     is UiNode.ViewNode -> {
-      if (includeAttributes) {
-        node.attributes.forEach { attr ->
-          System.out.println("$prefix ${attr.format()}")
+      node.attributes.forEach { attr ->
+        out.println("$prefix ${attr.format()}")
 
-          val sourceStr = attr.directSource ?: ""
-          if (sourceStr.isNotEmpty()) {
-            System.out.println("$prefix  Defined in: $sourceStr")
-          }
-
-          attr.styleChain.forEach { style -> System.out.println("$prefix  Inherited from: $style") }
+        val sourceStr = attr.directSource ?: ""
+        if (sourceStr.isNotEmpty()) {
+          out.println("$prefix  Defined in: $sourceStr")
         }
+
+        attr.styleChain.forEach { style -> out.println("$prefix  Inherited from: $style") }
       }
     }
     is UiNode.ComposeNode -> {
-      if (includeAttributes) {
-        node.parameters.forEach { param ->
-          val formatted = param.format()
-          if (formatted.isNotEmpty()) {
-            System.out.println("$prefix $formatted")
-          }
+      node.parameters.forEach { param ->
+        val formatted = param.format()
+        if (formatted.isNotEmpty()) {
+          out.println("$prefix $formatted")
         }
       }
 
-      if (includeSemantics) {
-        // Print Merged Semantics (preferred for general accessibility audits)
-        node.mergedSemantics.forEach { param ->
+      // Print Merged Semantics (preferred for general accessibility audits)
+      node.mergedSemantics.forEach { param ->
+        val formattedValue = formatComposeParameter(param)
+        if (formattedValue.isNotEmpty()) {
+          out.println("$prefix semantics: ${param.name}=$formattedValue")
+        }
+      }
+
+      // Optionally, if merged is empty but unmerged has elements, print unmerged
+      if (node.mergedSemantics.isEmpty()) {
+        node.unmergedSemantics.forEach { param ->
           val formattedValue = formatComposeParameter(param)
           if (formattedValue.isNotEmpty()) {
-            System.out.println("$prefix semantics: ${param.name}=$formattedValue")
-          }
-        }
-
-        // Optionally, if merged is empty but unmerged has elements, print unmerged
-        if (node.mergedSemantics.isEmpty()) {
-          node.unmergedSemantics.forEach { param ->
-            val formattedValue = formatComposeParameter(param)
-            if (formattedValue.isNotEmpty()) {
-              System.out.println("$prefix semantics: ${param.name}=$formattedValue")
-            }
+            out.println("$prefix semantics: ${param.name}=$formattedValue")
           }
         }
       }
     }
   }
-  node.children.forEach { printUiTree(it, indent + 1, includeAttributes, includeSemantics) }
+  node.children.forEach { printUiTree(it, indent + 1, out) }
 }
 
 /** Recursively formats a rich ComposeParameter to its display string. */

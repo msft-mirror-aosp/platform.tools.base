@@ -20,10 +20,7 @@ import com.android.adblib.AdbHostServices
 import com.android.adblib.AdbSession
 import com.android.adblib.DeviceSelector
 import com.android.adblib.shellAsText
-import com.android.tools.ui.inspector.printer.printAppContext
-import com.android.tools.ui.inspector.printer.printDeviceConfiguration
-import com.android.tools.ui.inspector.printer.printTrackedChanges
-import com.android.tools.ui.inspector.printer.printUiTree
+import com.android.tools.ui.inspector.printer.UiDumpPrinter
 import java.io.File
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
@@ -101,7 +98,7 @@ suspend fun doListPackages(adbSession: AdbSession, serial: String) {
  * @param includeSemantics If true, includes accessibility semantics in the Compose dump.
  * @param composeInspectorJarPath Optional path to a local Compose Inspector JAR file.
  */
-suspend fun doDumpUi(
+internal suspend fun doDumpUi(
   adbSession: AdbSession,
   serial: String,
   packageName: String,
@@ -110,6 +107,7 @@ suspend fun doDumpUi(
   includeSystemComposables: Boolean,
   includeSemantics: Boolean,
   composeInspectorJarPath: String?,
+  printer: UiDumpPrinter,
 ) {
   runWithConnectedInspectors(adbSession, serial, packageName, composeInspectorJarPath) { commandSender, composeInspectorConnected ->
     dumpUi(
@@ -119,6 +117,7 @@ suspend fun doDumpUi(
       composeInspectorConnected = composeInspectorConnected,
       skipSystemComposables = !includeSystemComposables,
       includeSemantics = includeSemantics,
+      printer = printer,
     )
   }
 }
@@ -138,7 +137,7 @@ suspend fun doDumpUi(
  * @param includeSemantics If true, includes accessibility semantics in the Compose sampled dumps.
  * @param composeInspectorJarPath Optional path to a local Compose Inspector JAR file.
  */
-suspend fun doTrackChanges(
+internal suspend fun doTrackChanges(
   adbSession: AdbSession,
   serial: String,
   packageName: String,
@@ -149,6 +148,7 @@ suspend fun doTrackChanges(
   includeSystemComposables: Boolean,
   includeSemantics: Boolean,
   composeInspectorJarPath: String?,
+  printer: UiDumpPrinter,
 ) {
   runWithConnectedInspectors(adbSession, serial, packageName, composeInspectorJarPath) { commandSender, composeInspectorConnected ->
     System.err.println("Sampling UI hierarchy for ${durationSec}s every ${intervalMs}ms...")
@@ -187,7 +187,7 @@ suspend fun doTrackChanges(
     }
     System.err.println("Sampling complete. Collected $sampleCount samples. Analyzing...")
 
-    printTrackedChanges(samples, includeAttributes, includeSemantics)
+    printer.printTrackedChanges(samples)
   }
 }
 
@@ -240,6 +240,7 @@ internal suspend fun dumpUi(
   composeInspectorConnected: Boolean,
   skipSystemComposables: Boolean,
   includeSemantics: Boolean,
+  printer: UiDumpPrinter,
 ) {
   val uiDump =
     fetchUiDump(
@@ -254,10 +255,7 @@ internal suspend fun dumpUi(
     throw EmptyViewRootsException()
   }
 
-  // Print output
-  uiDump.appContext?.let { printAppContext(it) }
-  uiDump.configuration?.let { printDeviceConfiguration(it) }
-  uiDump.roots.forEach { printUiTree(it, 0, includeAttributes, includeSemantics) }
+  printer.printDump(uiDump)
 }
 
 internal suspend fun fetchUiDump(

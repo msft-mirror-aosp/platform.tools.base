@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.tools.ui.inspector.printer
+package com.android.tools.ui.inspector.printer.text
 
 import com.android.tools.ui.inspector.NodeChange
 import com.android.tools.ui.inspector.UiNode

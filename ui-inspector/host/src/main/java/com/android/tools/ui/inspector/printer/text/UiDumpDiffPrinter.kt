@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.tools.ui.inspector.printer
+package com.android.tools.ui.inspector.printer.text
 
 import com.android.tools.ui.inspector.ConfigurationDiff
 import com.android.tools.ui.inspector.DeviceLocale
@@ -25,42 +25,43 @@ import com.android.tools.ui.inspector.TreeDiff
 import com.android.tools.ui.inspector.UiNode
 import com.android.tools.ui.inspector.createConfigurationDiff
 import com.android.tools.ui.inspector.diffTrees
+import java.io.PrintStream
 
 /** Prints the detailed layout diffs between sequential frames collected during tracking. */
-internal fun printTrackedChanges(samples: List<TimedUiDump>, includeAttributes: Boolean, includeSemantics: Boolean) {
+internal fun printTrackedChanges(samples: List<TimedUiDump>, out: PrintStream) {
   if (samples.isEmpty()) {
-    System.out.println("No samples collected.")
+    out.println("No samples collected.")
     return
   }
 
-  System.out.println("--- Frame 1 (+0ms) ---")
+  out.println("--- Frame 1 (+0ms) ---")
   val firstSample = samples.first()
-  firstSample.uiDump.configuration?.let { printDeviceConfiguration(it) }
-  firstSample.uiDump.roots.forEach { printUiTree(it, 0, includeAttributes, includeSemantics) }
-  System.out.println()
+  firstSample.uiDump.configuration?.let { printDeviceConfiguration(it, out) }
+  firstSample.uiDump.roots.forEach { printUiTree(it, 0, out) }
+  out.println()
 
   var prevSample = firstSample
   for (i in 1 until samples.size) {
     val sample = samples[i]
-    System.out.println("--- Frame ${i + 1} (+${sample.elapsedTime.inWholeMilliseconds}ms) ---")
+    out.println("--- Frame ${i + 1} (+${sample.elapsedTime.inWholeMilliseconds}ms) ---")
     val configDiff = createConfigurationDiff(prevSample.uiDump.configuration, sample.uiDump.configuration)
-    printConfigurationDiff(configDiff)
+    printConfigurationDiff(configDiff, out)
     val diff = diffTrees(prevSample.uiDump.roots, sample.uiDump.roots)
-    printTreeDiff(diff, includeAttributes, includeSemantics)
-    System.out.println()
+    printTreeDiff(diff, out)
+    out.println()
     prevSample = sample
   }
 }
 
 /** Prints a [ConfigurationDiff] to the console in a human-readable format. */
-internal fun printConfigurationDiff(diff: ConfigurationDiff?) {
+internal fun printConfigurationDiff(diff: ConfigurationDiff?, out: PrintStream) {
   if (diff == null || diff.differences.isEmpty()) return
-  System.out.println(" Modified Configuration:")
+  out.println(" Modified Configuration:")
   for (diffItem in diff.differences) {
     val displayName = formatPropertyName(diffItem.name)
     val oldStr = formatFieldValue(diffItem.name, diffItem.oldValue)
     val newStr = formatFieldValue(diffItem.name, diffItem.newValue)
-    System.out.println("  $displayName: $oldStr -> $newStr")
+    out.println("  $displayName: $oldStr -> $newStr")
   }
 }
 
@@ -80,32 +81,30 @@ private fun formatFieldValue(fieldName: String, value: Any?): String {
 }
 
 /** Prints the added, removed, and modified nodes from a [TreeDiff] to the console. */
-private fun printTreeDiff(diff: TreeDiff, includeAttributes: Boolean, includeSemantics: Boolean) {
+private fun printTreeDiff(diff: TreeDiff, out: PrintStream) {
   if (diff.added.isEmpty() && diff.removed.isEmpty() && diff.modified.isEmpty()) {
-    System.out.println(" No changes")
+    out.println(" No changes")
     return
   }
 
   if (diff.removed.isNotEmpty()) {
-    System.out.println(" Removed nodes:")
-    diff.removed.forEach { node -> System.out.println("  - ${node.formatHeader()} (id=${node.id})") }
+    out.println(" Removed nodes:")
+    diff.removed.forEach { node -> out.println("  - ${node.formatHeader()} (id=${node.id})") }
   }
 
   if (diff.added.isNotEmpty()) {
-    System.out.println(" Added nodes:")
+    out.println(" Added nodes:")
     diff.added.forEach { node ->
-      System.out.println("  + ${node.formatHeader()} (id=${node.id})")
-      if (includeAttributes) {
-        when (node) {
-          is UiNode.ViewNode -> {
-            node.attributes.forEach { attr -> System.out.println("  ${attr.format()}") }
-          }
-          is UiNode.ComposeNode -> {
-            node.parameters.forEach { param ->
-              val formatted = param.format()
-              if (formatted.isNotEmpty()) {
-                System.out.println("  $formatted")
-              }
+      out.println("  + ${node.formatHeader()} (id=${node.id})")
+      when (node) {
+        is UiNode.ViewNode -> {
+          node.attributes.forEach { attr -> out.println("  ${attr.format()}") }
+        }
+        is UiNode.ComposeNode -> {
+          node.parameters.forEach { param ->
+            val formatted = param.format()
+            if (formatted.isNotEmpty()) {
+              out.println("  $formatted")
             }
           }
         }
@@ -114,13 +113,13 @@ private fun printTreeDiff(diff: TreeDiff, includeAttributes: Boolean, includeSem
   }
 
   if (diff.modified.isNotEmpty()) {
-    System.out.println(" Modified nodes:")
+    out.println(" Modified nodes:")
     diff.modified.forEach { mod ->
       val node = mod.node
-      System.out.println("  * ${node.formatHeader()} (id=${node.id})")
+      out.println("  * ${node.formatHeader()} (id=${node.id})")
       mod.changes.forEach { change ->
         val changeStr = formatNodeChange(node, change)
-        System.out.println("   $changeStr")
+        out.println("   $changeStr")
       }
     }
   }

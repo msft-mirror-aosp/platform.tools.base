@@ -14,20 +14,21 @@
  * limitations under the License.
  */
 
-package com.android.tools.ui.inspector.printer
+package com.android.tools.ui.inspector.printer.text
 
 import com.android.tools.ui.inspector.AppContext
 import com.android.tools.ui.inspector.DeviceConfiguration
 import com.android.tools.ui.inspector.DeviceLocale
 import com.android.tools.ui.inspector.Dimension
+import java.io.PrintStream
 import java.lang.reflect.Field
 import java.lang.reflect.Modifier
 
 internal fun DeviceLocale.format(): String = listOfNotNull(language, country, variant, script).filter { it.isNotEmpty() }.joinToString("-")
 
-/** Prints the device configuration to the console in a human-readable format. */
-internal fun printDeviceConfiguration(config: DeviceConfiguration) {
-  System.out.println("Device Configuration:")
+/** Prints the device configuration to the target [PrintStream] in a human-readable format. */
+internal fun printDeviceConfiguration(config: DeviceConfiguration, out: PrintStream) {
+  out.println("Device Configuration:")
   DeviceConfiguration::class
     .java
     .declaredFields
@@ -39,10 +40,10 @@ internal fun printDeviceConfiguration(config: DeviceConfiguration) {
       val rawValue = field.get(config)
       val formattedValue = formatValueForPrinting(field, rawValue)
       if (formattedValue != null) {
-        System.out.println(" $name: $formattedValue")
+        out.println(" $name: $formattedValue")
       }
     }
-  System.out.println()
+  out.println()
 }
 
 private fun formatValueForPrinting(field: Field, value: Any?): String? {
@@ -73,15 +74,15 @@ private fun getEnumDisplayValue(enumValue: Enum<*>): String {
   return enumValue.name.lowercase()
 }
 
-/** Prints the application context (theme and display info) to the console. */
-internal fun printAppContext(appContext: AppContext) {
-  System.out.println("App Context:")
-  System.out.println(" Theme: ${appContext.theme ?: "undefined"}")
+/** Prints the application context (theme and display info) to the target [PrintStream]. */
+internal fun printAppContext(appContext: AppContext, out: PrintStream) {
+  out.println("App Context:")
+  out.println(" Theme: ${appContext.theme ?: "undefined"}")
   if (appContext.displays.isNotEmpty()) {
-    System.out.println(" Displays:")
+    out.println(" Displays:")
     appContext.displays.forEach { display ->
-      System.out.println("  - Display ${display.id}: ${display.widthPx}x${display.heightPx} px, rotation ${display.orientation}°")
+      out.println("  - Display ${display.id}: ${display.widthPx}x${display.heightPx} px, rotation ${display.orientation}°")
     }
   }
-  System.out.println()
+  out.println()
 }

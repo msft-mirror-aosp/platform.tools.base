@@ -20,6 +20,7 @@ import com.android.adblib.AdbLogger
 import com.android.adblib.AdbLoggerFactory
 import com.android.adblib.AdbSession
 import com.android.adblib.tools.createStandaloneSession
+import com.android.tools.ui.inspector.printer.text.TextUiDumpPrinter
 import java.util.concurrent.Callable
 import kotlin.system.exitProcess
 import kotlinx.coroutines.runBlocking
@@ -107,6 +108,7 @@ class DumpUiCommand : UiInspectorDumpCommand() {
           includeSystemComposables = includeSystemComposables,
           includeSemantics = includeSemantics,
           composeInspectorJarPath = composeInspectorJarPath,
+          printer = TextUiDumpPrinter(),
         )
       }
       return EXIT_OK
@@ -138,6 +140,7 @@ class TrackChangesCommand : UiInspectorDumpCommand() {
           includeSystemComposables = includeSystemComposables,
           includeSemantics = includeSemantics,
           composeInspectorJarPath = composeInspectorJarPath,
+          printer = TextUiDumpPrinter(),
         )
       }
       return EXIT_OK

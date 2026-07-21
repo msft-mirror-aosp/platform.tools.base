@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.tools.ui.inspector.printer
+package com.android.tools.ui.inspector.printer.text
 
 import com.android.tools.ui.inspector.AppContext
 import com.android.tools.ui.inspector.ColorModeHdr
@@ -40,23 +40,9 @@ import com.android.tools.ui.inspector.UiModeType
 import com.google.common.truth.Truth.assertThat
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
-import org.junit.After
-import org.junit.Before
 import org.junit.Test
 
 class ConfigurationPrinterTest {
-  private val outContent = ByteArrayOutputStream()
-  private val originalOut = System.out
-
-  @Before
-  fun setUpStreams() {
-    System.setOut(PrintStream(outContent))
-  }
-
-  @After
-  fun restoreStreams() {
-    System.setOut(originalOut)
-  }
 
   @Test
   fun testPrintDeviceConfiguration() {
@@ -86,9 +72,7 @@ class ConfigurationPrinterTest {
         grammaticalGender = GrammaticalGender.FEMININE,
       )
 
-    printDeviceConfiguration(config)
-
-    val output = outContent.toString().trim()
+    val output = captureOutput { printDeviceConfiguration(config, it) }
 
     val expectedOutput =
       """
@@ -125,9 +109,7 @@ Device Configuration:
   fun testPrintDeviceConfiguration_minimal() {
     val config = DeviceConfiguration(density = Dimension.Dpi(160), grammaticalGender = null)
 
-    printDeviceConfiguration(config)
-
-    val output = outContent.toString().trim()
+    val output = captureOutput { printDeviceConfiguration(config, it) }
 
     val expectedOutput =
       """
@@ -167,9 +149,7 @@ Device Configuration:
         displays = listOf(DisplayInfo(id = 0, widthPx = 1080, heightPx = 1920, orientation = 90)),
       )
 
-    printAppContext(appContext)
-
-    val output = outContent.toString().trim()
+    val output = captureOutput { printAppContext(appContext, it) }
 
     val expectedOutput =
       """
@@ -190,6 +170,12 @@ App Context:
     assertThat(formatPropertyName("smallestScreenWidthDp")).isEqualTo("Smallest Screen Width Dp")
     assertThat(formatPropertyName("uiModeNight")).isEqualTo("Ui Mode Night")
     assertThat(formatPropertyName("grammaticalGender")).isEqualTo("Grammatical Gender")
+  }
+
+  private fun captureOutput(action: (PrintStream) -> Unit): String {
+    val outContent = ByteArrayOutputStream()
+    action(PrintStream(outContent))
+    return outContent.toString().trim()
   }
 
   private fun String.normalizeLineEndings(): String = this.replace("\r\n", "\n").replace('\r', '\n')
