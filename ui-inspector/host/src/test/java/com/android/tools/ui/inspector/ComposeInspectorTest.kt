@@ -145,7 +145,7 @@ class ComposeInspectorTest {
       )
 
     // Trigger injectAndAttach so we populate the appDataDir internal states
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pidof $packageName", "1234\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pgrep -f '^${packageName.replace(".", "\\.")}(:.*)?$'", "1234\n")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "settings put global debug_view_attributes 1", "")
 
     val baseAgentSetupCmd =
@@ -160,7 +160,7 @@ class ComposeInspectorTest {
     fakeSession.deviceServices.configureShellCommand(deviceSelector, baseAgentSetupCmd, "")
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
-      "cmd activity attach-agent $packageName \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;1234\"",
+      "cmd activity attach-agent 1234 \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;1234\"",
       "",
     )
     fakeSession.deviceServices.configureShellCommand(
@@ -384,7 +384,7 @@ class ComposeInspectorTest {
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pidof $packageName", "1234\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pgrep -f '^${packageName.replace(".", "\\.")}(:.*)?$'", "1234\n")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
 
     val dummyAgent = tempFolder.newFile("lib_ui_inspector_agent.so").toPath()
@@ -418,7 +418,7 @@ class ComposeInspectorTest {
     fakeSession.deviceServices.configureShellCommand(deviceSelector, baseAgentSetupCmd, "")
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
-      "cmd activity attach-agent $packageName \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;1234\"",
+      "cmd activity attach-agent 1234 \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;1234\"",
       "",
     )
     fakeSession.deviceServices.configureShellCommand(
@@ -695,7 +695,7 @@ class ComposeInspectorTest {
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pidof $packageName", "1234\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pgrep -f '^${packageName.replace(".", "\\.")}(:.*)?$'", "1234\n")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
 
     val dummyAgent = tempFolder.newFile("lib_ui_inspector_agent.so").toPath()
@@ -729,7 +729,7 @@ class ComposeInspectorTest {
     fakeSession.deviceServices.configureShellCommand(deviceSelector, baseAgentSetupCmd, "")
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
-      "cmd activity attach-agent $packageName \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;1234\"",
+      "cmd activity attach-agent 1234 \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;1234\"",
       "",
     )
     fakeSession.deviceServices.configureShellCommand(
@@ -1026,7 +1026,7 @@ class ComposeInspectorTest {
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pidof $packageName", "1234\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pgrep -f '^${packageName.replace(".", "\\.")}(:.*)?$'", "1234\n")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
 
     val expectedSetupCmd =
@@ -1053,7 +1053,7 @@ class ComposeInspectorTest {
       )
 
     // Trigger injectAndAttach so we populate the appDataDir internal states
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pidof $packageName", "1234\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pgrep -f '^${packageName.replace(".", "\\.")}(:.*)?$'", "1234\n")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "settings put global debug_view_attributes 1", "")
 
     val baseAgentSetupCmd =
@@ -1068,7 +1068,7 @@ class ComposeInspectorTest {
     fakeSession.deviceServices.configureShellCommand(deviceSelector, baseAgentSetupCmd, "")
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
-      "cmd activity attach-agent $packageName \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;1234\"",
+      "cmd activity attach-agent 1234 \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;1234\"",
       "",
     )
     fakeSession.deviceServices.configureShellCommand(

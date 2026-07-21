@@ -151,7 +151,7 @@ class InjectionManager(
     copyAndSetupFiles(deviceSelector, packageName, agentRemoteTmpPath, serviceJarRemoteTmpPath, payloadRemoteTmpPath)
 
     val deviceTime = queryDeviceTime(deviceSelector)
-    attachAgent(deviceSelector, packageName, pid)
+    attachAgent(deviceSelector, pid)
 
     val socketName = ProtocolConstants.getSocketName(pid)
     waitForAgentSocket(deviceSelector, socketName, pid, deviceTime)
@@ -233,17 +233,60 @@ class InjectionManager(
     }
   }
 
-  /** Queries the device for the PID of the specified package. */
+  /** Queries the device for the PID of the target application. */
   private suspend fun getPid(deviceSelector: DeviceSelector, packageName: String): String {
-    val result = adbSession.deviceServices.shellAsText(deviceSelector, "pidof $packageName")
-    val stdout = result.stdout.trim()
-    if (result.exitCode != 0 || stdout.isEmpty()) {
+    val candidatePids = getCandidatePids(deviceSelector, packageName)
+    if (candidatePids.isEmpty()) {
       throw IllegalStateException("The application '$packageName' is not running on the device. Please start the app and try again.")
     }
-    // pidof can return multiple PIDs if there are multiple processes.
-    // We take the first one, which is usually the main process.
-    // TODO: Handle multi-process apps more robustly.
-    return stdout.split(" ")[0]
+    if (candidatePids.size == 1) {
+      // If packageName has only one pid associated to it, use that.
+      // This is going to be the case for most apps.
+      return candidatePids[0]
+    }
+
+    // For multi-process applications, check if any of the pids is the pid of the foreground activity
+    val topActivityPid = getTopActivityPid(deviceSelector, candidatePids)
+    if (topActivityPid != null) {
+      return topActivityPid
+    }
+
+    // Fall back to the first candidate PID
+    return candidatePids[0]
+  }
+
+  /** Queries the device for candidate process IDs matching the given package name via `pgrep`. */
+  private suspend fun getCandidatePids(deviceSelector: DeviceSelector, packageName: String): List<String> {
+    val escapedPackage = packageName.replace(".", "\\.")
+    val result = adbSession.deviceServices.shellAsText(deviceSelector, "pgrep -f '^$escapedPackage(:.*)?$'")
+    val stdout = result.stdout.trim()
+    if (result.exitCode == 0 && stdout.isNotEmpty()) {
+      return stdout.split("\\s+".toRegex()).filter { it.isNotEmpty() }.distinct()
+    }
+    return emptyList()
+  }
+
+  /** Queries `dumpsys activity processes` to identify the PID currently hosting the top (foreground) activity. */
+  private suspend fun getTopActivityPid(deviceSelector: DeviceSelector, candidatePids: List<String>): String? {
+    return try {
+      val output = adbSession.deviceServices.shellAsText(deviceSelector, "dumpsys activity processes | grep top-activity").stdout.trim()
+      if (output.isEmpty()) return null
+      val candidateSet = candidatePids.toSet()
+      for (line in output.lines()) {
+        val match = TOP_ACTIVITY_REGEX.find(line)
+        if (match != null) {
+          val pid = match.groupValues[1]
+          if (candidateSet.contains(pid)) {
+            return pid
+          }
+        }
+      }
+      null
+    } catch (e: CancellationException) {
+      throw e
+    } catch (_: Exception) {
+      null
+    }
   }
 
   /** Queries the device for the absolute path to the app's data directory. */
@@ -376,11 +419,11 @@ class InjectionManager(
     return remoteTmpPath
   }
 
-  private suspend fun attachAgent(deviceSelector: DeviceSelector, packageName: String, pid: String) {
+  private suspend fun attachAgent(deviceSelector: DeviceSelector, pid: String) {
     val appPath = "$appDataDir/$AGENT_FILE_NAME"
     val appJarPath = "$appDataDir/$SERVICE_JAR_FILE_NAME"
     val appPayloadJarPath = "$appDataDir/$PAYLOAD_JAR_FILE_NAME"
-    val attachCmd = "cmd activity attach-agent $packageName \"$appPath=$appJarPath;$appPayloadJarPath;$pid\""
+    val attachCmd = "cmd activity attach-agent $pid \"$appPath=$appJarPath;$appPayloadJarPath;$pid\""
     runShellCommand(deviceSelector, attachCmd)
   }
 
@@ -398,6 +441,7 @@ class InjectionManager(
     private val extractedResourcesCache = ConcurrentHashMap<String, Path>()
     private val PACKAGE_NAME_REGEX = Regex("^[a-zA-Z0-9._]+$")
     private val SERIAL_REGEX = Regex("^[a-zA-Z0-9.:_-]+$")
+    private val TOP_ACTIVITY_REGEX = Regex("(\\d+):\\S+?/\\S+\\s+\\(.*top-activity\\)")
 
     private fun validatePackageName(packageName: String) {
       require(packageName.length <= 255 && PACKAGE_NAME_REGEX.matches(packageName)) { "Invalid package name: $packageName" }
