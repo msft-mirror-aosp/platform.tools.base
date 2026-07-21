@@ -204,12 +204,14 @@ kotlin_test(
     ],
 )
 
-java_binary(
-    name = "compose-preview-renderer-cli",
-    main_class = "com.android.tools.render.common.MainKt",
+java_library(
+    name = "compose-preview-renderer-cli-lib",
     visibility = ["//visibility:public"],
-    runtime_deps = [
+    exports = [
         ":tools.compose-preview-renderer",
+        "//tools/base/standalone-render/lib:tools.standalone-render.lib",
+    ],
+    runtime_deps = [
         "//prebuilts/tools/common/lint-psi/intellij-core",
         "//tools/adt/idea/compose-designer:ui-animation-tooling-internal",
         "//tools/adt/idea/layoutlib:tools.layoutlib",
@@ -231,7 +233,6 @@ java_binary(
         "//tools/base/resource-repository:tools.resource-repository",
         "//tools/base/sdk-common:tools.sdk-common",
         "//tools/base/sdklib:tools.sdklib",
-        "//tools/base/standalone-render/lib:tools.standalone-render.lib",
         "//tools/base/zipflinger",
         "@maven//:com.google.code.gson.gson",
         "@maven//:com.google.guava.guava",
@@ -241,5 +242,14 @@ java_binary(
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
         "@maven//:org.ow2.asm.asm",
         "@maven//:org.ow2.asm.asm-commons",
+    ],
+)
+
+java_binary(
+    name = "compose-preview-renderer-cli",
+    main_class = "com.android.tools.render.common.MainKt",
+    visibility = ["//visibility:public"],
+    runtime_deps = [
+        ":compose-preview-renderer-cli-lib",
     ],
 )
