@@ -25,7 +25,9 @@ import com.android.tools.lint.detector.api.Issue.IgnoredIdProvider
 import com.android.utils.CharSequences.indexOf
 import com.android.utils.CharSequences.lastIndexOf
 import com.android.utils.CharSequences.startsWith
+import com.google.common.collect.MapMaker
 import java.io.File
+import java.util.Arrays
 import kotlin.math.max
 import kotlin.math.min
 import org.jetbrains.uast.UIdentifier
@@ -540,8 +542,9 @@ protected constructor(
       var endOffset = endOffset
       endOffset = min(endOffset, size)
       startOffset = min(startOffset, endOffset)
-      var lineOffset = findLineBeginFromOffset(startOffset, contents)
-      var line = findLineFromOffset(lineOffset, contents)
+      val lineStarts = getLineStarts(contents)
+      var line = findLineFromOffset(startOffset, contents)
+      var lineOffset = lineStarts[line]
       val start = DefaultPosition(line, startOffset - lineOffset, startOffset)
       for (offset in startOffset..size) {
         if (offset == endOffset) {
@@ -600,7 +603,7 @@ protected constructor(
         val index: Int
         if (direction == SearchDirection.BACKWARD) {
           index = findPreviousMatch(contents, offset, targetPattern, hints)
-          targetLine = adjustLine(contents, targetLine, offset, index)
+          targetLine = adjustLine(contents, targetLine, index)
         } else if (direction == SearchDirection.EOL_BACKWARD) {
           var lineEnd = indexOf(contents, '\n', offset)
           if (lineEnd == -1) {
@@ -608,10 +611,10 @@ protected constructor(
           }
 
           index = findPreviousMatch(contents, lineEnd, targetPattern, hints)
-          targetLine = adjustLine(contents, targetLine, offset, index)
+          targetLine = adjustLine(contents, targetLine, index)
         } else if (direction == SearchDirection.FORWARD) {
           index = findNextMatch(contents, offset, targetPattern, hints)
-          targetLine = adjustLine(contents, targetLine, offset, index)
+          targetLine = adjustLine(contents, targetLine, index)
         } else {
           assert(direction == SearchDirection.NEAREST || direction == SearchDirection.EOL_NEAREST)
 
@@ -626,10 +629,10 @@ protected constructor(
 
           if (before == -1) {
             index = after
-            targetLine = adjustLine(contents, targetLine, offset, index)
+            targetLine = adjustLine(contents, targetLine, index)
           } else if (after == -1) {
             index = before
-            targetLine = adjustLine(contents, targetLine, offset, index)
+            targetLine = adjustLine(contents, targetLine, index)
           } else {
             var newLinesBefore = 0
             for (i in before until offset) {
@@ -645,10 +648,10 @@ protected constructor(
             }
             if (newLinesBefore < newLinesAfter || newLinesBefore == newLinesAfter && offset - before < after - offset) {
               index = before
-              targetLine = adjustLine(contents, targetLine, offset, index)
+              targetLine = adjustLine(contents, targetLine, index)
             } else {
               index = after
-              targetLine = adjustLine(contents, targetLine, offset, index)
+              targetLine = adjustLine(contents, targetLine, index)
             }
           }
         }
@@ -785,29 +788,11 @@ protected constructor(
     }
 
     @JvmStatic
-    private fun adjustLine(doc: CharSequence, line: Int, offset: Int, newOffset: Int): Int {
+    private fun adjustLine(doc: CharSequence, line: Int, newOffset: Int): Int {
       if (newOffset == -1) {
         return line
       }
-
-      return if (newOffset < offset) {
-        line - countLines(doc, newOffset, offset)
-      } else {
-        line + countLines(doc, offset, newOffset)
-      }
-    }
-
-    @JvmStatic
-    private fun countLines(doc: CharSequence, start: Int, end: Int): Int {
-      var lines = 0
-      for (offset in start until end) {
-        val c = doc[offset]
-        if (c == '\n') {
-          lines++
-        }
-      }
-
-      return lines
+      return findLineFromOffset(newOffset, doc)
     }
 
     /**
@@ -831,51 +816,34 @@ protected constructor(
       return currentLocation
     }
 
-    /** Returns the offset of the first character on the given line. */
-    private fun findLineBeginFromOffset(offset: Int, contents: CharSequence): Int {
-      var i = offset - 1
-      while (i >= 0) {
-        if (contents[i] == '\n') {
-          return i + 1
-        }
-        i--
-      }
-      return 0
-    }
-
     private fun findLineOffset(targetLine: Int, contents: CharSequence): Int {
-      var currentLine = 0
-      var offset = 0
-
-      while (currentLine < targetLine) {
-        offset = indexOf(contents, '\n', offset)
-        if (offset == -1) {
-          return -1
-        }
-        currentLine++
-        offset++
-      }
-
-      return offset
+      if (targetLine <= 0) return 0
+      val lineStarts = getLineStarts(contents)
+      return if (targetLine < lineStarts.size) lineStarts[targetLine] else -1
     }
 
-    private fun findLineFromOffset(startOffset: Int, contents: CharSequence): Int {
-      val size = contents.length
-      val target = min(startOffset, size)
-      var line = 0
-
-      for (offset in 0..size) {
-        if (offset == target) {
-          return line
-        }
-        val c = contents[offset]
-        if (c == '\n') {
-          line++
-        }
-      }
-
-      return line
+    private fun findLineFromOffset(offset: Int, contents: CharSequence): Int {
+      val index = Arrays.binarySearch(getLineStarts(contents), offset)
+      return if (index >= 0) index else -index - 2
     }
+
+    /**
+     * Maps each file content to its lines' first characters' offsets. Without this index, finding an offset to a line number rescans the
+     * contents from the beginning, making location creation O(n²) aggregate across a large file. Entries of [CharSequence] are weakly
+     * retained by referential equality: they'll go away when the contents are no longer referenced.
+     */
+    private val getLineStarts: (CharSequence) -> IntArray =
+      MapMaker().weakKeys().makeMap<CharSequence, IntArray>().let { cache ->
+        fun(contents) =
+          cache.computeIfAbsent(contents) { text ->
+            // First line always 0. We're storing it to simplify lookup.
+            val lineCount = 1 + text.count { it == '\n' }
+            IntArray(lineCount).also { starts ->
+              var line = 1
+              for (i in text.indices) if (text[i] == '\n') starts[line++] = i + 1
+            }
+          }
+      }
   }
 
   /** Interface implemented by classes that can provide a related location. */
