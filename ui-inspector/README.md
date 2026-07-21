@@ -46,7 +46,32 @@ composables.
 ui-inspector dump-ui --serial 123 --package com.my.app
 ```
 
-> TODO: add json output example
+Example JSON output:
+
+```json
+{
+  "roots": [
+    {
+      "type": "ViewNode",
+      "id": 1,
+      "className": "android.widget.FrameLayout",
+      "bounds": { "x": 0, "y": 0, "width": 1080, "height": 2400 },
+      "children": [
+        {
+          "type": "ComposeNode",
+          "id": 2,
+          "className": "androidx.compose.material3.Text",
+          "bounds": { "x": 48, "y": 96, "width": 200, "height": 48 },
+          "sourceLocation": { "filename": "MainActivity.kt", "lineNumber": 18 },
+          "parameters": [
+            { "name": "text", "value": "Hello World" }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
 
 Developing an MVP first will enable us to establish the tool's core
 architecture and identify any unexpected challenges. Should this initial
