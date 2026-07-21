@@ -36,6 +36,7 @@ import org.gradle.api.file.Directory
 import org.gradle.api.logging.Logger
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Provider
+import org.gradle.api.provider.ProviderFactory
 import org.gradle.workers.WorkerExecutor
 import org.junit.Before
 import org.junit.Rule
@@ -142,6 +143,12 @@ class ManagedDeviceTestRunnerTest {
 
   private fun runUtp(results: Boolean, numShards: Int? = null): Boolean {
     return runInLinuxEnvironment {
+      val mockProvider: Provider<String> = mock()
+      whenever(mockProvider.orNull).thenReturn(null)
+      val mockProviderFactory: ProviderFactory = mock()
+      whenever(mockProviderFactory.gradleProperty("com.android.tools.utp.GradleAndroidProjectResolverExtension.enable"))
+        .thenReturn(mockProvider)
+
       val runner =
         ManagedDeviceTestRunner(
           mockWorkerExecutor,
@@ -156,13 +163,14 @@ class ManagedDeviceTestRunnerTest {
           null,
           false,
           false,
+          mockProviderFactory,
         )
 
       outputDirectory = temporaryFolderRule.newFolder("results")
 
       mockStatic(::runUtpTestSuiteAndWait.javaMethod!!.declaringClass, Answers.CALLS_REAL_METHODS).use { mockedStatic ->
         mockedStatic
-          .whenever<Boolean> { runUtpTestSuiteAndWait(runnerConfigsCaptor.capture(), any(), any(), any(), any(), any(), any()) }
+          .whenever<Boolean> { runUtpTestSuiteAndWait(runnerConfigsCaptor.capture(), any(), any(), any(), any(), any(), any(), any()) }
           .thenReturn(results)
 
         runner.runTests(

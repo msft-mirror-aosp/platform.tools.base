@@ -46,6 +46,10 @@ maven_repository(
         "//tools/base/utp/android-test-plugin-host-emulator-control-proto",
         "//tools/base/utp/android-test-plugin-host-logcat-proto",
         "//tools/base/utp/android-test-plugin-result-listener-gradle-proto",
+        "@maven//:com.android.tools.androidtest.android-test-engine",
+        "@maven//:com.android.tools.androidtest.android-test-engine-result-listener",
+        "@maven//:com.android.tools.androidtest.test-result-event-proto",
+        "@maven//:com.android.tools.androidtest.test-result-proto",
         "@maven//:com.google.crypto.tink.tink_1.18.0",
         "@maven//:com.google.protobuf.protobuf-bom_4.28.3",
         "@maven//:com.google.protobuf.protobuf-java-util_4.28.3",
@@ -57,6 +61,8 @@ maven_repository(
         "@maven//:com.google.testing.platform.core-proto_0.0.9-alpha04",
         "@maven//:com.google.testing.platform.core_0.0.9-alpha04",
         "@maven//:com.google.testing.platform.launcher_0.0.9-alpha04",
+        "@maven//:org.junit.platform.junit-platform-engine",
+        "@maven//:org.junit.platform.junit-platform-launcher",
     ],
 )
 

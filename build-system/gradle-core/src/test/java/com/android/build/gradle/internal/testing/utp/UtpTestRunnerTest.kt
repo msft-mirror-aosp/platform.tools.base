@@ -100,13 +100,14 @@ class UtpTestRunnerTest {
         null,
         false,
         false,
+        mock(),
       )
 
     resultsDirectory = temporaryFolderRule.newFolder("results_${System.currentTimeMillis()}")
 
     mockStatic(::runUtpTestSuiteAndWait.javaMethod!!.declaringClass, Answers.CALLS_REAL_METHODS).use { mockedStatic ->
       mockedStatic
-        .whenever<Boolean> { runUtpTestSuiteAndWait(runnerConfigsCaptor.capture(), any(), any(), any(), any(), any(), any()) }
+        .whenever<Boolean> { runUtpTestSuiteAndWait(runnerConfigsCaptor.capture(), any(), any(), any(), any(), any(), any(), any()) }
         .thenReturn(result)
 
       return runner.runTests(

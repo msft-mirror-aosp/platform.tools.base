@@ -65,6 +65,7 @@ import org.gradle.api.model.ObjectFactory
 import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
+import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
@@ -108,6 +109,8 @@ abstract class ManagedDeviceInstrumentationTestTask : NonIncrementalTask(), Andr
 
     @get:Internal abstract val avdComponents: Property<AvdComponentsBuildService>
 
+    @get:Inject abstract val providers: ProviderFactory
+
     @get:Nested abstract val utpDependencies: UtpDependencies
 
     @get:Input @get:Optional abstract val installApkTimeout: Property<Int>
@@ -138,6 +141,7 @@ abstract class ManagedDeviceInstrumentationTestTask : NonIncrementalTask(), Andr
         installApkTimeout.getOrNull(),
         enableEmulatorDisplay.get(),
         getTargetIsSplitApk.getOrElse(false),
+        providers,
       )
     }
   }

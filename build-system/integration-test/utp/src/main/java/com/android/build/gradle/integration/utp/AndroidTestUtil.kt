@@ -69,7 +69,7 @@ class AndroidTestUtil(
 
   private fun resolvePath(relativePath: String): Path {
     val path = project.resolve(relativePath)
-    if (runWithBuiltInPlatform && !path.exists()) {
+    if (!path.exists()) {
       // For built-in platform, the output might be in a different level of directory.
       // Search for the file in the parent or siblings.
       val fileName = path.fileName.toString()

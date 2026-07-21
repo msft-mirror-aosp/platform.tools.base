@@ -28,15 +28,12 @@ dependencies {
     implementation libs.com.android.tools.ddms.ddmlib
     implementation "com.google.crypto.tink:tink:1.18.0"
     implementation libs.apache_commons_io
-    implementation libs.com.android.tools.utp.androidDeviceProviderDdmlibProto
-    implementation libs.com.android.tools.utp.androidTestPluginHostAdditionalTestOutputProto
-    implementation libs.com.android.tools.utp.androidTestPluginHostApkInstallerProto
-    implementation libs.com.android.tools.utp.androidTestPluginHostCoverageProto
-    implementation libs.com.android.tools.utp.androidTestPluginHostEmulatorControlProto
-    implementation libs.com.android.tools.utp.androidTestPluginHostLogcatProto
-    implementation libs.com.android.tools.utp.androidTestPluginResultListenerGradleProto
-    implementation libs.unified_test_platform
-    implementation libs.unified_test_platform_launcher
+    implementation libs.junit_platform_launcher
+    implementation libs.junit_platform_engine
+    implementation libs.android_test_engine
+    implementation libs.android_test_engine_result_listener
+    implementation libs.android_test_result_proto
+    implementation libs.protobuf
     implementation "com.google.dagger:dagger:2.48"
 
     testImplementation gradleApi()

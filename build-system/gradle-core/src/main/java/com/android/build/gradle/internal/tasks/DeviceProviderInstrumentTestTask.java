@@ -96,6 +96,7 @@ import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.Property;
 import org.gradle.api.provider.Provider;
+import org.gradle.api.provider.ProviderFactory;
 import org.gradle.api.tasks.Classpath;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFiles;
@@ -193,6 +194,11 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
             throw new UnsupportedOperationException("Injected by Gradle.");
         }
 
+        @Inject
+        public ProviderFactory getProviders() {
+            throw new UnsupportedOperationException("Injected by Gradle.");
+        }
+
         @Nested
         public abstract BuildToolsExecutableInput getBuildTools();
 
@@ -241,7 +247,8 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                     getUninstallIncompatibleApks().get(),
                     getInstallApkTimeout().getOrNull(),
                     getTargetIsSplitApk().getOrElse(false),
-                    !getKeepInstalledApks().get());
+                    !getKeepInstalledApks().get(),
+                    getProviders());
         }
     }
 

@@ -54,12 +54,7 @@ class AndroidConnectedTest(val runWithBuiltInPlatform: Boolean) {
       onSelectModule = { moduleName, util ->
         val moduleTestOutputRootDir = "$moduleName/$TEST_OUTPUT_ROOT_DIR"
         util.testTaskName = ":$moduleName:connectedAndroidTest"
-        util.testResultXmlPath =
-          if (util.runWithBuiltInPlatform) {
-            "$moduleTestOutputRootDir/TEST-$DEVICE_NAME.xml"
-          } else {
-            "$moduleTestOutputRootDir/TEST-$DEVICE_NAME-_$moduleName-.xml"
-          }
+        util.testResultXmlPath = "$moduleTestOutputRootDir/TEST-$DEVICE_NAME.xml"
         if (rule.build.subProject(":$moduleName") is AndroidDynamicFeatureProject) {
           util.testReportPath = "$moduleName/$TEST_REPORT_FOR_DYNAMIC_FEATURE"
           util.testLogcatPath = "$moduleName/$LOGCAT_FOR_DYNAMIC_FEATURE"
@@ -158,12 +153,7 @@ class AndroidConnectedTest(val runWithBuiltInPlatform: Boolean) {
     util.executor.run(util.testTaskName)
 
     val subFolder = "connected/debug"
-    val xmlFileName =
-      if (util.runWithBuiltInPlatform) {
-        "TEST-$DEVICE_NAME.xml"
-      } else {
-        "TEST-$DEVICE_NAME-_app-.xml"
-      }
+    val xmlFileName = "TEST-$DEVICE_NAME.xml"
     assertThat(util.project.resolve("$customResultsDir/$subFolder/$xmlFileName")).exists()
     assertThat(util.project.resolve("$customReportsDir/$subFolder/index.html")).exists()
   }

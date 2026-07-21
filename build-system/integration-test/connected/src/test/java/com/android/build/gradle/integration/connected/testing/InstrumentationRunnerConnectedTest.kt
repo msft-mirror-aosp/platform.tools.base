@@ -102,48 +102,29 @@ class InstrumentationRunnerConnectedTest(val runWithBuiltInPlatform: Boolean) {
   }
 
   private fun checkArgsInOutput(f2ArgPresent: Boolean, f3ArgPresent: Boolean, f4ArgPresent: Boolean, result: GradleBuildResult) {
-    if (runWithBuiltInPlatform) {
-      assertThat(result.stdout).contains("-e size small")
-      assertThat(result.stdout).doesNotContain("-e otherValue f4.1")
+    assertThat(result.stdout).contains("-e size small")
+    assertThat(result.stdout).doesNotContain("-e otherValue f4.1")
 
-      val f2String = "-e value f2"
-      if (f2ArgPresent) {
-        assertThat(result.stdout).contains(f2String)
-      } else {
-        assertThat(result.stdout).doesNotContain(f2String)
-        assertThat(result.stdout).contains("-e value default")
-      }
-
-      val f3String = "-e otherValue f3"
-      if (f3ArgPresent) {
-        assertThat(result.stdout).contains(f3String)
-      } else {
-        assertThat(result.stdout).doesNotContain(f3String)
-      }
-
-      val f4String = "-e otherValue f4.2"
-      if (f4ArgPresent) {
-        assertThat(result.stdout).contains(f4String)
-      } else {
-        assertThat(result.stdout).doesNotContain(f4String)
-      }
+    val f2String = "-e value f2"
+    if (f2ArgPresent) {
+      assertThat(result.stdout).contains(f2String)
     } else {
-      assertThat(result.stdout).contains("key: \"size\"\nvalue: \"small\"")
-      assertThat(result.stdout).doesNotContain("key: \"otherValue\"\nvalue: \"f4.1\"")
+      assertThat(result.stdout).doesNotContain(f2String)
+      assertThat(result.stdout).contains("-e value default")
+    }
 
-      val f2String = "key: \"value\"\nvalue: \"f2\""
-      if (f2ArgPresent) {
-        assertThat(result.stdout).contains(f2String)
-      } else {
-        assertThat(result.stdout).doesNotContain(f2String)
-        assertThat(result.stdout).contains("key: \"value\"\nvalue: \"default\"")
-      }
+    val f3String = "-e otherValue f3"
+    if (f3ArgPresent) {
+      assertThat(result.stdout).contains(f3String)
+    } else {
+      assertThat(result.stdout).doesNotContain(f3String)
+    }
 
-      val f3String = "key: \"otherValue\"\nvalue: \"f3\""
-      if (f3ArgPresent) assertThat(result.stdout).contains(f3String) else assertThat(result.stdout).doesNotContain(f3String)
-
-      val f4String = "key: \"otherValue\"\nvalue: \"f4.2\""
-      if (f4ArgPresent) assertThat(result.stdout).contains(f4String) else assertThat(result.stdout).doesNotContain(f4String)
+    val f4String = "-e otherValue f4.2"
+    if (f4ArgPresent) {
+      assertThat(result.stdout).contains(f4String)
+    } else {
+      assertThat(result.stdout).doesNotContain(f4String)
     }
   }
 
@@ -162,10 +143,6 @@ class InstrumentationRunnerConnectedTest(val runWithBuiltInPlatform: Boolean) {
     )
 
     val result = executor().run(":test:connectedCheck")
-    if (runWithBuiltInPlatform) {
-      assertThat(result.stdout).contains("-e testKey testValue")
-    } else {
-      assertThat(result.stdout).contains("key: \"testKey\"\nvalue: \"testValue\"")
-    }
+    assertThat(result.stdout).contains("-e testKey testValue")
   }
 }
