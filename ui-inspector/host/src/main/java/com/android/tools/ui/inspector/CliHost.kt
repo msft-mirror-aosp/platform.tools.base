@@ -20,7 +20,7 @@ import com.android.adblib.AdbLogger
 import com.android.adblib.AdbLoggerFactory
 import com.android.adblib.AdbSession
 import com.android.adblib.tools.createStandaloneSession
-import com.android.tools.ui.inspector.printer.text.TextUiDumpPrinter
+import com.android.tools.ui.inspector.printer.json.JsonUiDumpPrinter
 import java.util.concurrent.Callable
 import kotlin.system.exitProcess
 import kotlinx.coroutines.runBlocking
@@ -83,6 +83,7 @@ open class UiInspectorDumpCommand : Callable<Int> {
   var includeSystemComposables: Boolean = false
   @Option(names = ["--include-semantics"], description = ["Include Compose accessibility/semantics properties in the dump"])
   var includeSemantics: Boolean = false
+  @Option(names = ["--pretty", "-p"], description = ["Pretty-print the returned JSON"]) var prettyPrint: Boolean = false
   @Option(
     names = ["--compose-inspector"],
     description = ["Path to a local Compose Inspector JAR file to use instead of the one from maven"],
@@ -108,7 +109,7 @@ class DumpUiCommand : UiInspectorDumpCommand() {
           includeSystemComposables = includeSystemComposables,
           includeSemantics = includeSemantics,
           composeInspectorJarPath = composeInspectorJarPath,
-          printer = TextUiDumpPrinter(),
+          printer = JsonUiDumpPrinter(out = System.out, prettyPrint = prettyPrint),
         )
       }
       return EXIT_OK
@@ -140,7 +141,7 @@ class TrackChangesCommand : UiInspectorDumpCommand() {
           includeSystemComposables = includeSystemComposables,
           includeSemantics = includeSemantics,
           composeInspectorJarPath = composeInspectorJarPath,
-          printer = TextUiDumpPrinter(),
+          printer = JsonUiDumpPrinter(out = System.out, prettyPrint = prettyPrint),
         )
       }
       return EXIT_OK
