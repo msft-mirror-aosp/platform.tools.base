@@ -34,7 +34,7 @@ import org.gradle.api.file.FileCollection
  * modern builds.
  */
 val ApkCreationConfig.useUniversalGlobalSyntheticsDex: Boolean
-  get() = this.debuggable && this.enableGlobalSynthetics && this.minSdk.apiLevel >= 21
+  get() = this.debuggable && this.enableGlobalSynthetics && this.dexing.minSdkVersionForDexing >= 21
 
 fun getGlobalSyntheticsInput(
   creationConfig: ApkCreationConfig,

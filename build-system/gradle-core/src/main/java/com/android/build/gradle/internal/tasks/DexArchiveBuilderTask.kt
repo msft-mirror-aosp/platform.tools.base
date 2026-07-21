@@ -420,6 +420,10 @@ abstract class DexParameterInputs {
 
   @get:Input abstract val errorFormatMode: Property<SyncOptions.ErrorFormatMode>
 
+  /**
+   * Whether to use a no-op consumer for global synthetics in D8. When true, D8 desugaring skips generating individual per-class `.globals`
+   * files because a pre-baked shared `globals.dex` will be bundled in the final APK instead.
+   */
   @get:Input abstract val useNoOpGlobalSyntheticsConsumer: Property<Boolean>
 
   fun toDexParameters(): DexParameters {
