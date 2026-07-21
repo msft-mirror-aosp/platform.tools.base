@@ -21,7 +21,6 @@ import com.android.tools.ui.inspector.DeviceConfiguration
 import com.android.tools.ui.inspector.DeviceLocale
 import com.android.tools.ui.inspector.Dimension
 import java.io.PrintStream
-import java.lang.reflect.Field
 import java.lang.reflect.Modifier
 
 internal fun DeviceLocale.format(): String = listOfNotNull(language, country, variant, script).filter { it.isNotEmpty() }.joinToString("-")
@@ -38,7 +37,7 @@ internal fun printDeviceConfiguration(config: DeviceConfiguration, out: PrintStr
       field.isAccessible = true
       val name = formatPropertyName(field.name)
       val rawValue = field.get(config)
-      val formattedValue = formatValueForPrinting(field, rawValue)
+      val formattedValue = formatValueForPrinting(rawValue)
       if (formattedValue != null) {
         out.println(" $name: $formattedValue")
       }
@@ -46,27 +45,17 @@ internal fun printDeviceConfiguration(config: DeviceConfiguration, out: PrintStr
   out.println()
 }
 
-private fun formatValueForPrinting(field: Field, value: Any?): String? {
-  return when {
-    value is DeviceLocale -> {
+private fun formatValueForPrinting(value: Any?): String? {
+  if (value == null) return null
+  return when (value) {
+    is DeviceLocale -> {
       val str = value.format()
       if (str.isNotEmpty()) str else null
     }
-    Enum::class.java.isAssignableFrom(field.type) -> {
-      if (value is Enum<*>) {
-        getEnumDisplayValue(value)
-      } else {
-        "undefined"
-      }
-    }
-    value is Dimension.Dp -> "${value.value} dp"
-    value is Dimension.Dpi -> "${value.value} dpi"
-    // Fallback default values for null/unset fields in minimal configuration dumps
-    field.type == Dimension.Dp::class.java -> "0 dp"
-    field.type == Dimension.Dpi::class.java -> "0 dpi"
-    field.type == Float::class.javaObjectType || field.type == Float::class.java -> "${value ?: 0.0}"
-    value != null -> value.toString()
-    else -> null
+    is Enum<*> -> getEnumDisplayValue(value)
+    is Dimension.Dp -> "${value.value} dp"
+    is Dimension.Dpi -> "${value.value} dpi"
+    else -> value.toString()
   }
 }
 
@@ -77,7 +66,7 @@ private fun getEnumDisplayValue(enumValue: Enum<*>): String {
 /** Prints the application context (theme and display info) to the target [PrintStream]. */
 internal fun printAppContext(appContext: AppContext, out: PrintStream) {
   out.println("App Context:")
-  out.println(" Theme: ${appContext.theme ?: "undefined"}")
+  appContext.theme?.let { out.println(" Theme: $it") }
   if (appContext.displays.isNotEmpty()) {
     out.println(" Displays:")
     appContext.displays.forEach { display ->

@@ -114,27 +114,7 @@ Device Configuration:
     val expectedOutput =
       """
 Device Configuration:
- Color Mode Hdr: undefined
- Color Mode Wide Gamut: undefined
  Density: 160 dpi
- Font Scale: 0.0
- Grammatical Gender: undefined
- Hard Keyboard Hidden: undefined
- Keyboard: undefined
- Keyboard Hidden: undefined
- Layout Direction: undefined
- Navigation: undefined
- Navigation Hidden: undefined
- Orientation: undefined
- Screen Height Dp: 0 dp
- Screen Layout Long: undefined
- Screen Layout Round: undefined
- Screen Layout Size: undefined
- Screen Width Dp: 0 dp
- Smallest Screen Width Dp: 0 dp
- Touch Screen: undefined
- Ui Mode Night: undefined
- Ui Mode Type: undefined
 """
         .trim()
 
@@ -155,6 +135,23 @@ Device Configuration:
       """
 App Context:
  Theme: @style/Theme.AppCompat
+ Displays:
+  - Display 0: 1080x1920 px, rotation 90°
+"""
+        .trim()
+
+    assertThat(output.normalizeLineEndings()).isEqualTo(expectedOutput.normalizeLineEndings())
+  }
+
+  @Test
+  fun testPrintAppContext_nullTheme() {
+    val appContext = AppContext(theme = null, displays = listOf(DisplayInfo(id = 0, widthPx = 1080, heightPx = 1920, orientation = 90)))
+
+    val output = captureOutput { printAppContext(appContext, it) }
+
+    val expectedOutput =
+      """
+App Context:
  Displays:
   - Display 0: 1080x1920 px, rotation 90°
 """
