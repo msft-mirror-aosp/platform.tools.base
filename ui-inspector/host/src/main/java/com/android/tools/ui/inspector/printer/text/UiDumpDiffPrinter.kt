@@ -25,10 +25,17 @@ import com.android.tools.ui.inspector.TreeDiff
 import com.android.tools.ui.inspector.UiNode
 import com.android.tools.ui.inspector.createConfigurationDiff
 import com.android.tools.ui.inspector.diffTrees
+import com.android.tools.ui.inspector.printer.SemanticsDisplayMode
 import java.io.PrintStream
 
-/** Prints the detailed layout diffs between sequential frames collected during tracking. */
-internal fun printTrackedChanges(samples: List<TimedUiDump>, out: PrintStream) {
+/**
+ * Prints the detailed layout diffs between sequential frames collected during tracking.
+ *
+ * @param samples Sampled UI dump frames.
+ * @param out Target output stream.
+ * @param semanticsMode Strategy for displaying Compose accessibility semantics properties.
+ */
+internal fun printTrackedChanges(samples: List<TimedUiDump>, out: PrintStream, semanticsMode: SemanticsDisplayMode) {
   if (samples.isEmpty()) {
     out.println("No samples collected.")
     return
@@ -37,7 +44,7 @@ internal fun printTrackedChanges(samples: List<TimedUiDump>, out: PrintStream) {
   out.println("--- Frame 1 (+0ms) ---")
   val firstSample = samples.first()
   firstSample.uiDump.configuration?.let { printDeviceConfiguration(it, out) }
-  firstSample.uiDump.roots.forEach { printUiTree(it, 0, out) }
+  firstSample.uiDump.roots.forEach { printUiTree(it, 0, out, semanticsMode) }
   out.println()
 
   var prevSample = firstSample

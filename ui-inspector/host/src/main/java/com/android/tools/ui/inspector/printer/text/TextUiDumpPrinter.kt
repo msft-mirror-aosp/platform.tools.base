@@ -18,18 +18,27 @@ package com.android.tools.ui.inspector.printer.text
 
 import com.android.tools.ui.inspector.TimedUiDump
 import com.android.tools.ui.inspector.UiDump
+import com.android.tools.ui.inspector.printer.SemanticsDisplayMode
 import com.android.tools.ui.inspector.printer.UiDumpPrinter
 import java.io.PrintStream
 
-/** Human-readable plain text console implementation of [UiDumpPrinter]. */
-internal class TextUiDumpPrinter(private val out: PrintStream = System.out) : UiDumpPrinter {
+/**
+ * Human-readable plain text console implementation of [UiDumpPrinter].
+ *
+ * @param out Target output stream for printed dumps.
+ * @param semanticsMode Strategy for displaying Compose accessibility semantics properties.
+ */
+internal class TextUiDumpPrinter(
+  private val out: PrintStream = System.out,
+  private val semanticsMode: SemanticsDisplayMode = SemanticsDisplayMode.BOTH,
+) : UiDumpPrinter {
   override fun printDump(uiDump: UiDump) {
     uiDump.appContext?.let { printAppContext(it, out) }
     uiDump.configuration?.let { printDeviceConfiguration(it, out) }
-    uiDump.roots.forEach { printUiTree(it, 0, out) }
+    uiDump.roots.forEach { printUiTree(it, 0, out, semanticsMode) }
   }
 
   override fun printTrackedChanges(samples: List<TimedUiDump>) {
-    printTrackedChanges(samples, out)
+    printTrackedChanges(samples, out, semanticsMode)
   }
 }

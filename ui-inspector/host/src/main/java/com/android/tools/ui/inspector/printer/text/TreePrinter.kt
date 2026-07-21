@@ -17,11 +17,19 @@
 package com.android.tools.ui.inspector.printer.text
 
 import com.android.tools.ui.inspector.UiNode
+import com.android.tools.ui.inspector.printer.SemanticsDisplayMode
 import java.io.PrintStream
 import java.util.Locale
 
-/** Recursively walks and formats the unified UiNode layout tree to target [PrintStream]. */
-internal fun printUiTree(node: UiNode, indent: Int = 0, out: PrintStream) {
+/**
+ * Recursively walks and formats the unified UiNode layout tree to target [PrintStream].
+ *
+ * @param node The layout root or node to format.
+ * @param indent Indentation depth for nested printing.
+ * @param out Target output stream.
+ * @param semanticsMode Strategy for displaying Compose accessibility semantics properties.
+ */
+internal fun printUiTree(node: UiNode, indent: Int, out: PrintStream, semanticsMode: SemanticsDisplayMode) {
   if (indent == 0) {
     out.println("View Hierarchy:")
   }
@@ -49,26 +57,44 @@ internal fun printUiTree(node: UiNode, indent: Int = 0, out: PrintStream) {
         }
       }
 
-      // Print Merged Semantics (preferred for general accessibility audits)
-      node.mergedSemantics.forEach { param ->
-        val formattedValue = formatComposeParameter(param)
-        if (formattedValue.isNotEmpty()) {
-          out.println("$prefix semantics: ${param.name}=$formattedValue")
+      val printMerged =
+        when (semanticsMode) {
+          SemanticsDisplayMode.BOTH,
+          SemanticsDisplayMode.MERGED_ONLY -> true
+          SemanticsDisplayMode.MERGED_WITH_UNMERGED_FALLBACK -> node.mergedSemantics.isNotEmpty()
+          SemanticsDisplayMode.UNMERGED_ONLY,
+          SemanticsDisplayMode.NONE -> false
+        }
+
+      val printUnmerged =
+        when (semanticsMode) {
+          SemanticsDisplayMode.BOTH,
+          SemanticsDisplayMode.UNMERGED_ONLY -> true
+          SemanticsDisplayMode.MERGED_WITH_UNMERGED_FALLBACK -> node.mergedSemantics.isEmpty()
+          SemanticsDisplayMode.MERGED_ONLY,
+          SemanticsDisplayMode.NONE -> false
+        }
+
+      if (printMerged) {
+        node.mergedSemantics.forEach { param ->
+          val formattedValue = formatComposeParameter(param)
+          if (formattedValue.isNotEmpty()) {
+            out.println("$prefix merged semantics: ${param.name}=$formattedValue")
+          }
         }
       }
 
-      // Optionally, if merged is empty but unmerged has elements, print unmerged
-      if (node.mergedSemantics.isEmpty()) {
+      if (printUnmerged) {
         node.unmergedSemantics.forEach { param ->
           val formattedValue = formatComposeParameter(param)
           if (formattedValue.isNotEmpty()) {
-            out.println("$prefix semantics: ${param.name}=$formattedValue")
+            out.println("$prefix unmerged semantics: ${param.name}=$formattedValue")
           }
         }
       }
     }
   }
-  node.children.forEach { printUiTree(it, indent + 1, out) }
+  node.children.forEach { printUiTree(it, indent + 1, out, semanticsMode) }
 }
 
 /** Recursively formats a rich ComposeParameter to its display string. */

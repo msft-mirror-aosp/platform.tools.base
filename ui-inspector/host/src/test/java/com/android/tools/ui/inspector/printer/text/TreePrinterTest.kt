@@ -18,6 +18,7 @@ package com.android.tools.ui.inspector.printer.text
 
 import com.android.tools.ui.inspector.NodeChange
 import com.android.tools.ui.inspector.UiNode
+import com.android.tools.ui.inspector.printer.SemanticsDisplayMode
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
@@ -137,4 +138,183 @@ class TreePrinterTest {
       )
     assertThat(formatNodeChange(node, changeString)).isEqualTo("prop: text=Click -> Clicked")
   }
+
+  @Test
+  fun testPrintUiTree_SemanticsMode_Both() {
+    val node =
+      UiNode.ComposeNode(
+        id = 1L,
+        className = "MyButton",
+        bounds = UiNode.Bounds(0, 0, 100, 50),
+        parameters = emptyList(),
+        mergedSemantics = listOf(UiNode.ComposeParameter.Single("Role", UiNode.ComposeParameter.Value.StringVal("Button"))),
+        unmergedSemantics = listOf(UiNode.ComposeParameter.Single("OnClick", UiNode.ComposeParameter.Value.StringVal("[lambda]"))),
+      )
+
+    val output = captureOutput { printUiTree(node, 0, it, SemanticsDisplayMode.BOTH) }
+
+    val expected =
+      """
+View Hierarchy:
+[MyButton] [compose] (0, 0, 100, 50)
+ merged semantics: Role=Button
+ unmerged semantics: OnClick=[lambda]
+"""
+        .trim()
+
+    assertThat(output.normalizeLineEndings()).isEqualTo(expected.normalizeLineEndings())
+  }
+
+  @Test
+  fun testPrintUiTree_SemanticsMode_MergedWithUnmergedFallback() {
+    // 1. With merged semantics non-empty -> prints merged
+    val nodeWithMerged =
+      UiNode.ComposeNode(
+        id = 1L,
+        className = "MyButton",
+        bounds = UiNode.Bounds(0, 0, 100, 50),
+        parameters = emptyList(),
+        mergedSemantics = listOf(UiNode.ComposeParameter.Single("Role", UiNode.ComposeParameter.Value.StringVal("Button"))),
+        unmergedSemantics = listOf(UiNode.ComposeParameter.Single("OnClick", UiNode.ComposeParameter.Value.StringVal("[lambda]"))),
+      )
+
+    val outputMerged = captureOutput { printUiTree(nodeWithMerged, 0, it, SemanticsDisplayMode.MERGED_WITH_UNMERGED_FALLBACK) }
+
+    val expectedMerged =
+      """
+View Hierarchy:
+[MyButton] [compose] (0, 0, 100, 50)
+ merged semantics: Role=Button
+"""
+        .trim()
+
+    assertThat(outputMerged.normalizeLineEndings()).isEqualTo(expectedMerged.normalizeLineEndings())
+
+    // 2. With merged semantics empty -> falls back to unmerged
+    val nodeWithoutMerged =
+      UiNode.ComposeNode(
+        id = 2L,
+        className = "MyText",
+        bounds = UiNode.Bounds(0, 0, 50, 20),
+        parameters = emptyList(),
+        mergedSemantics = emptyList(),
+        unmergedSemantics = listOf(UiNode.ComposeParameter.Single("Text", UiNode.ComposeParameter.Value.StringVal("Hello"))),
+      )
+
+    val outputUnmerged = captureOutput { printUiTree(nodeWithoutMerged, 0, it, SemanticsDisplayMode.MERGED_WITH_UNMERGED_FALLBACK) }
+
+    val expectedUnmerged =
+      """
+View Hierarchy:
+[MyText] [compose] (0, 0, 50, 20)
+ unmerged semantics: Text=Hello
+"""
+        .trim()
+
+    assertThat(outputUnmerged.normalizeLineEndings()).isEqualTo(expectedUnmerged.normalizeLineEndings())
+
+    // 3. With both merged and unmerged semantics empty -> prints neither
+    val nodeBothEmpty =
+      UiNode.ComposeNode(
+        id = 3L,
+        className = "MyBox",
+        bounds = UiNode.Bounds(0, 0, 10, 10),
+        parameters = emptyList(),
+        mergedSemantics = emptyList(),
+        unmergedSemantics = emptyList(),
+      )
+
+    val outputBothEmpty = captureOutput { printUiTree(nodeBothEmpty, 0, it, SemanticsDisplayMode.MERGED_WITH_UNMERGED_FALLBACK) }
+
+    val expectedBothEmpty =
+      """
+View Hierarchy:
+[MyBox] [compose] (0, 0, 10, 10)
+"""
+        .trim()
+
+    assertThat(outputBothEmpty.normalizeLineEndings()).isEqualTo(expectedBothEmpty.normalizeLineEndings())
+  }
+
+  @Test
+  fun testPrintUiTree_SemanticsMode_MergedOnly() {
+    val node =
+      UiNode.ComposeNode(
+        id = 1L,
+        className = "MyButton",
+        bounds = UiNode.Bounds(0, 0, 100, 50),
+        parameters = emptyList(),
+        mergedSemantics = listOf(UiNode.ComposeParameter.Single("Role", UiNode.ComposeParameter.Value.StringVal("Button"))),
+        unmergedSemantics = listOf(UiNode.ComposeParameter.Single("OnClick", UiNode.ComposeParameter.Value.StringVal("[lambda]"))),
+      )
+
+    val output = captureOutput { printUiTree(node, 0, it, SemanticsDisplayMode.MERGED_ONLY) }
+
+    val expected =
+      """
+View Hierarchy:
+[MyButton] [compose] (0, 0, 100, 50)
+ merged semantics: Role=Button
+"""
+        .trim()
+
+    assertThat(output.normalizeLineEndings()).isEqualTo(expected.normalizeLineEndings())
+  }
+
+  @Test
+  fun testPrintUiTree_SemanticsMode_UnmergedOnly() {
+    val node =
+      UiNode.ComposeNode(
+        id = 1L,
+        className = "MyButton",
+        bounds = UiNode.Bounds(0, 0, 100, 50),
+        parameters = emptyList(),
+        mergedSemantics = listOf(UiNode.ComposeParameter.Single("Role", UiNode.ComposeParameter.Value.StringVal("Button"))),
+        unmergedSemantics = listOf(UiNode.ComposeParameter.Single("OnClick", UiNode.ComposeParameter.Value.StringVal("[lambda]"))),
+      )
+
+    val output = captureOutput { printUiTree(node, 0, it, SemanticsDisplayMode.UNMERGED_ONLY) }
+
+    val expected =
+      """
+View Hierarchy:
+[MyButton] [compose] (0, 0, 100, 50)
+ unmerged semantics: OnClick=[lambda]
+"""
+        .trim()
+
+    assertThat(output.normalizeLineEndings()).isEqualTo(expected.normalizeLineEndings())
+  }
+
+  @Test
+  fun testPrintUiTree_SemanticsMode_None() {
+    val node =
+      UiNode.ComposeNode(
+        id = 1L,
+        className = "MyButton",
+        bounds = UiNode.Bounds(0, 0, 100, 50),
+        parameters = emptyList(),
+        mergedSemantics = listOf(UiNode.ComposeParameter.Single("Role", UiNode.ComposeParameter.Value.StringVal("Button"))),
+        unmergedSemantics = listOf(UiNode.ComposeParameter.Single("OnClick", UiNode.ComposeParameter.Value.StringVal("[lambda]"))),
+      )
+
+    val output = captureOutput { printUiTree(node, 0, it, SemanticsDisplayMode.NONE) }
+
+    val expected =
+      """
+View Hierarchy:
+[MyButton] [compose] (0, 0, 100, 50)
+"""
+        .trim()
+
+    assertThat(output.normalizeLineEndings()).isEqualTo(expected.normalizeLineEndings())
+  }
+
+  private fun captureOutput(action: (java.io.PrintStream) -> Unit): String {
+    val outContent = java.io.ByteArrayOutputStream()
+    action(java.io.PrintStream(outContent))
+    return outContent.toString().trim()
+  }
+
+  private fun String.normalizeLineEndings(): String = this.replace("\r\n", "\n").replace('\r', '\n')
 }
