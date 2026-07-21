@@ -31,7 +31,6 @@ maven_library(
     deps = [
         ":test_result_event_proto",
         "//tools/base/android-test/test-result-proto",
-        "//tools/base/common:tools.common",
         "@maven//:com.google.guava.guava",
         "@maven//:com.google.protobuf.protobuf-java",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
