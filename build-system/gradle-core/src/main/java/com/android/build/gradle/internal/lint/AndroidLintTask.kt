@@ -1039,8 +1039,6 @@ abstract class AndroidLintTask : NonIncrementalTask() {
   }
 
   companion object {
-    private const val LINT_PRINT_STACKTRACE_ENVIRONMENT_VARIABLE = "LINT_PRINT_STACKTRACE"
-    private const val ANDROID_LINT_JARS_ENVIRONMENT_VARIABLE = "ANDROID_LINT_JARS"
     private const val LINT_FIX_UP_TO_DATE_MESSAGE = "Lint fix task potentially modifies sources so cannot be up-to-date"
 
     /**
