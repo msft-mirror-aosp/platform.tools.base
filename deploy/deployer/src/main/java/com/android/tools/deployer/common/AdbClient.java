@@ -28,7 +28,6 @@ import com.android.ddmlib.ClientData;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.InstallException;
-import com.android.ddmlib.InstallMetrics;
 import com.android.ddmlib.ShellCommandUnresponsiveException;
 import com.android.ddmlib.SimpleConnectedSocket;
 import com.android.ddmlib.SyncException;

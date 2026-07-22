@@ -102,6 +102,7 @@ kotlin_library(
         "src/main/java/com/android/tools/deployer/common/DeployerException.java",
         "src/main/java/com/android/tools/deployer/common/DeployerOption.java",
         "src/main/java/com/android/tools/deployer/common/DeploymentCacheDatabase.java",
+        "src/main/java/com/android/tools/deployer/common/InstallMetrics.java",
         "src/main/java/com/android/tools/deployer/common/InstallOptions.java",
         "src/main/java/com/android/tools/deployer/common/InstallStatus.java",
         "src/main/java/com/android/tools/deployer/common/Installer.java",
