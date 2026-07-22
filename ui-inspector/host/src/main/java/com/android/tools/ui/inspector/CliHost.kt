@@ -79,7 +79,8 @@ class ListPackagesCommand : Callable<Int> {
 /** Base class containing common command line options for subcommands that query layout trees. */
 open class UiInspectorDumpCommand : Callable<Int> {
   @Option(names = ["--device"], description = [DEVICE_OPTION_DESCRIPTION]) var device: String? = null
-  @Option(names = ["--package"], required = true, description = ["App package name"]) var packageName: String = ""
+  @Option(names = ["--package"], description = ["The app package name. Defaults to the app currently in the foreground"])
+  var packageName: String? = null
   @Option(names = ["--include-attributes"], description = ["Include view attributes in the dump"]) var includeAttributes: Boolean = false
   @Option(names = ["--include-resolution-stack"], description = ["Include attribute resolution stack in the dump"])
   var includeResolutionStack: Boolean = false
@@ -104,14 +105,18 @@ class DumpUiCommand : UiInspectorDumpCommand() {
   override fun call(): Int {
     val adbSession = sessionFactory()
     try {
-      val serial = runBlocking { resolveDeviceSerial(adbSession, device) }
-      System.err.println("Executing dump-ui for package: $packageName on device: $serial")
+      val (serial, targetPackage) =
+        runBlocking {
+          val serial = resolveDeviceSerial(adbSession, device)
+          serial to resolveTargetPackage(adbSession, serial, packageName)
+        }
+      System.err.println("Executing dump-ui for package: $targetPackage on device: $serial")
       withJsonPrinter(output, prettyPrint) { printer ->
         runBlocking {
           doDumpUi(
             adbSession = adbSession,
             serial = serial,
-            packageName = packageName,
+            packageName = targetPackage,
             includeAttributes = includeAttributes,
             includeResolutionStack = includeResolutionStack,
             includeSystemComposables = includeSystemComposables,
@@ -137,14 +142,18 @@ class TrackChangesCommand : UiInspectorDumpCommand() {
   override fun call(): Int {
     val adbSession = sessionFactory()
     try {
-      val serial = runBlocking { resolveDeviceSerial(adbSession, device) }
-      System.err.println("Executing track-changes for package: $packageName on device: $serial")
+      val (serial, targetPackage) =
+        runBlocking {
+          val serial = resolveDeviceSerial(adbSession, device)
+          serial to resolveTargetPackage(adbSession, serial, packageName)
+        }
+      System.err.println("Executing track-changes for package: $targetPackage on device: $serial")
       withJsonPrinter(output, prettyPrint) { printer ->
         runBlocking {
           doTrackChanges(
             adbSession = adbSession,
             serial = serial,
-            packageName = packageName,
+            packageName = targetPackage,
             intervalMs = intervalMs,
             durationSec = durationSec,
             includeAttributes = includeAttributes,

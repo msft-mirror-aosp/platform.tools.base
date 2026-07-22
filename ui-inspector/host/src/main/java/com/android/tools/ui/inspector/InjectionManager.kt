@@ -269,19 +269,9 @@ class InjectionManager(
   /** Queries `dumpsys activity processes` to identify the PID currently hosting the top (foreground) activity. */
   private suspend fun getTopActivityPid(deviceSelector: DeviceSelector, candidatePids: List<String>): String? {
     return try {
-      val output = adbSession.deviceServices.shellAsText(deviceSelector, "dumpsys activity processes | grep top-activity").stdout.trim()
-      if (output.isEmpty()) return null
+      val output = adbSession.deviceServices.shellAsText(deviceSelector, TOP_ACTIVITY_SHELL_COMMAND).stdout
       val candidateSet = candidatePids.toSet()
-      for (line in output.lines()) {
-        val match = TOP_ACTIVITY_REGEX.find(line)
-        if (match != null) {
-          val pid = match.groupValues[1]
-          if (candidateSet.contains(pid)) {
-            return pid
-          }
-        }
-      }
-      null
+      parseTopActivityProcesses(output).firstOrNull { it.pid in candidateSet }?.pid
     } catch (e: CancellationException) {
       throw e
     } catch (_: Exception) {
@@ -441,7 +431,6 @@ class InjectionManager(
     private val extractedResourcesCache = ConcurrentHashMap<String, Path>()
     private val PACKAGE_NAME_REGEX = Regex("^[a-zA-Z0-9._]+$")
     private val SERIAL_REGEX = Regex("^[a-zA-Z0-9.:_-]+$")
-    private val TOP_ACTIVITY_REGEX = Regex("(\\d+):\\S+?/\\S+\\s+\\(.*top-activity\\)")
 
     private fun validatePackageName(packageName: String) {
       require(packageName.length <= 255 && PACKAGE_NAME_REGEX.matches(packageName)) { "Invalid package name: $packageName" }

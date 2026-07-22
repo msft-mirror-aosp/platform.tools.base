@@ -16,7 +16,10 @@
 
 package com.android.tools.ui.inspector
 
+import com.android.adblib.DeviceInfo
 import com.android.adblib.DeviceList
+import com.android.adblib.DeviceSelector
+import com.android.adblib.DeviceState
 import com.android.adblib.testing.FakeAdbSession
 import com.google.common.truth.Truth.assertThat
 import java.nio.file.Files
@@ -38,9 +41,12 @@ class CliHostTest {
   }
 
   @Test
-  fun testDumpUiMissingArgsReturnsError() {
-    val exitCode = CommandLine(UiInspectorCommand()).addSubcommand("dump-ui", DumpUiCommand()).execute("dump-ui")
-    assertThat(exitCode).isEqualTo(2)
+  fun testDumpUiParsesWithNoOptions() {
+    val cmd = CommandLine(UiInspectorCommand()).addSubcommand("dump-ui", DumpUiCommand())
+    val parseResult = cmd.parseArgs("dump-ui")
+    val dumpCmd = parseResult.subcommand().commandSpec().userObject() as DumpUiCommand
+    assertThat(dumpCmd.device).isNull()
+    assertThat(dumpCmd.packageName).isNull()
   }
 
   @Test
@@ -122,6 +128,28 @@ class CliHostTest {
         CommandLine(UiInspectorCommand())
           .addSubcommand("dump-ui", DumpUiCommand())
           .execute("dump-ui", "--package", "com.example", "-o", outputFile.toString())
+
+      assertThat(exitCode).isEqualTo(1)
+      assertThat(String(Files.readAllBytes(outputFile), Charsets.UTF_8)).isEqualTo("existing content")
+    } finally {
+      sessionFactory = originalFactory
+    }
+  }
+
+  @Test
+  fun testDumpUiPackageResolutionFailureLeavesOutputFileUntouched() {
+    val outputFile = tempFolder.newFile("dump.json").toPath()
+    Files.write(outputFile, "existing content".toByteArray(Charsets.UTF_8))
+    val session =
+      FakeAdbSession().apply {
+        hostServices.devices = DeviceList(listOf(DeviceInfo("abc", DeviceState.ONLINE)), emptyList())
+        deviceServices.configureShellCommand(DeviceSelector.fromSerialNumber("abc"), TOP_ACTIVITY_SHELL_COMMAND, "", exitCode = 1)
+      }
+    val originalFactory = sessionFactory
+    sessionFactory = { session }
+    try {
+      val exitCode =
+        CommandLine(UiInspectorCommand()).addSubcommand("dump-ui", DumpUiCommand()).execute("dump-ui", "-o", outputFile.toString())
 
       assertThat(exitCode).isEqualTo(1)
       assertThat(String(Files.readAllBytes(outputFile), Charsets.UTF_8)).isEqualTo("existing content")

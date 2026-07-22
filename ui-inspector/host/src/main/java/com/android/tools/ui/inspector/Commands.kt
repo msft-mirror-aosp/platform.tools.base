@@ -72,6 +72,29 @@ internal suspend fun resolveDeviceSerial(adbSession: AdbSession, requested: Stri
 }
 
 /**
+ * Resolves the package name of the application to target. A [requested] package is returned unchanged; when omitted, the package of the app
+ * currently hosting the top (foreground) activity is used.
+ *
+ * @throws IllegalStateException when no package is requested and the foreground app cannot be determined unambiguously.
+ */
+internal suspend fun resolveTargetPackage(adbSession: AdbSession, serial: String, requested: String?): String {
+  // A requested package is used as-is: whether it exists, is running, and is debuggable is established downstream
+  // during injection, which owns those checks for resolved packages as well.
+  if (requested != null) return requested
+  val selector = DeviceSelector.fromSerialNumber(serial)
+  val output = adbSession.deviceServices.shellAsText(selector, TOP_ACTIVITY_SHELL_COMMAND).stdout
+  val packages = parseTopActivityProcesses(output).map { it.packageName }.distinct()
+  return when {
+    packages.size == 1 -> packages.single()
+    packages.isEmpty() ->
+      throw IllegalStateException(
+        "Could not determine the foreground app. Unlock the device and bring the target app to the foreground, or select the app with --package."
+      )
+    else -> throw IllegalStateException("Multiple foreground apps found: ${packages.sorted().joinToString()}. Select one with --package.")
+  }
+}
+
+/**
  * Scans running processes on the device and prints the package names of all debuggable applications.
  *
  * @param adbSession The [AdbSession] to communicate with the local ADB server.
