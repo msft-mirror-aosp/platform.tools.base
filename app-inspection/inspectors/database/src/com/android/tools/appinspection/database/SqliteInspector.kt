@@ -24,6 +24,9 @@ import android.database.Cursor.FIELD_TYPE_NULL
 import android.database.Cursor.FIELD_TYPE_STRING
 import android.database.CursorWrapper
 import android.database.DatabaseUtils
+import android.database.DatabaseUtils.STATEMENT_DDL
+import android.database.DatabaseUtils.STATEMENT_SELECT
+import android.database.DatabaseUtils.STATEMENT_UPDATE
 import android.database.sqlite.SQLiteClosable
 import android.database.sqlite.SQLiteCursor
 import android.database.sqlite.SQLiteDatabase
@@ -83,6 +86,7 @@ import com.android.tools.appinspection.database.EntryExitMatchingHookRegistry.On
 import com.android.tools.appinspection.database.SqliteInspectionExecutors.submit
 import com.android.tools.appinspection.database.Utils.isDatabase
 import com.android.tools.appinspection.database.androidx.AndroidXDatabase
+import com.android.tools.appinspection.database.androidx.ConnectionLocking
 import com.android.tools.appinspection.database.androidx.SQLiteStatementWrapper
 import com.android.tools.appinspection.database.framework.FrameworkDatabase
 import com.android.tools.idea.protobuf.ByteString
@@ -557,7 +561,7 @@ internal class SqliteInspector(
 
       // Only track cursors that might modify the database.
       // TODO: handle PRAGMA select queries, e.g. PRAGMA_TABLE_INFO
-      if (cursor != null && query != null && DatabaseUtils.getSqlStatementType(query) != DatabaseUtils.STATEMENT_SELECT) {
+      if (cursor != null && query != null && DatabaseUtils.getSqlStatementType(query) != STATEMENT_SELECT) {
         trackedCursors[cursor] = null
       }
       result
@@ -605,18 +609,28 @@ internal class SqliteInspector(
 
   private fun registerAndroidXInvalidationHooks(hookRegistry: EntryExitMatchingHookRegistry, cls: Class<out SQLiteConnection>) {
     Log.i(TAG, "registerAndroidXInvalidationHooks: ${cls.name}")
-    hookRegistry.registerHook<SQLiteConnection, androidx.sqlite.SQLiteStatement>(cls, ANDROIDX_CONNECTION_PREPARE_SIG) { _, args, result ->
-      // if the prepared statement is not a SELECT, we wrap it with a wrapper that triggers
-      // invalidation when step() is
-      // called
-      val statement = result ?: return@registerHook null
-      val sql = args.firstOrNull() as? String ?: return@registerHook statement
-      val type = DatabaseUtils.getSqlStatementType(sql)
-      when {
-        type == DatabaseUtils.STATEMENT_SELECT -> statement
-        else -> SQLiteStatementWrapper(statement) { throttler.submitRequest() }
-      }
-    }
+    hookRegistry.registerHook<SQLiteConnection, androidx.sqlite.SQLiteStatement>(
+      cls,
+      ANDROIDX_CONNECTION_PREPARE_SIG,
+      entryHook = { connection, _ -> ConnectionLocking.acquireLock(connection as SQLiteConnection) },
+      onExitCallback = { connection, args, result ->
+        // if the prepared statement is not a SELECT, we wrap it with a wrapper that triggers
+        // invalidation when step() is
+        // called
+        if (connection == null) {
+          // Should not happen because prepare is an instance method and must have a non-null thisObject.
+          throw IllegalStateException("Unexpected null connection")
+        }
+        val statement = result ?: return@registerHook null
+        val sql = args.firstOrNull() as? String ?: return@registerHook statement
+        val lambda =
+          when (shouldInvalidate(sql)) {
+            true -> { -> throttler.submitRequest() }
+            false -> { -> }
+          }
+        SQLiteStatementWrapper(connection, statement, lambda)
+      },
+    )
   }
 
   // Gets a SQLiteCursor from a passed-in Object (if possible)
@@ -730,8 +744,8 @@ internal class SqliteInspector(
     }
   }
 
-  private fun triggerInvalidation(query: String) {
-    if (DatabaseUtils.getSqlStatementType(query) != DatabaseUtils.STATEMENT_SELECT) {
+  private fun triggerInvalidation(sql: String) {
+    if (shouldInvalidate(sql)) {
       for (invalidation in invalidations) {
         invalidation.triggerInvalidations()
       }
@@ -1051,4 +1065,9 @@ private inline fun <reified T> loadClass(className: String): Class<T>? {
     Log.w("SqliteInspector", "Can't load class '$className'", e)
     null
   }
+}
+
+private fun shouldInvalidate(sql: String): Boolean {
+  val type = DatabaseUtils.getSqlStatementType(sql)
+  return type == STATEMENT_UPDATE || type == STATEMENT_DDL
 }
