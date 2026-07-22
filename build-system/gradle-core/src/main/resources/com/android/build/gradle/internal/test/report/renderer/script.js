@@ -2099,6 +2099,130 @@ const TestReportApp = {
       }
     }
 
+
+    // 3. Image Differences & Comparison Card
+    const comparisonCard = document.createElement('div');
+    comparisonCard.className = 'screenshot-comparison-card';
+
+    const refUrl = this.resolveImagePath(item.refImagePath);
+    const newUrl = this.resolveImagePath(item.newImagePath);
+    const diffUrl = this.resolveImagePath(item.diffImagePath);
+
+    comparisonCard.innerHTML = `
+      <div class="comparison-toolbar">
+        <div class="comparison-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+            <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+            <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+          </svg>
+          <span>Screenshot Comparison & Differences</span>
+        </div>
+      </div>
+
+      <!-- Mode 1: Side-by-Side Cards -->
+      <div id="sc-view-side-by-side" class="image-cards-grid">
+        <!-- Reference Image Card -->
+        <div class="img-card">
+          <div class="img-card-header">
+            <span class="img-card-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              Reference Image (Golden)
+            </span>
+          </div>
+          <div class="img-card-body">
+            ${item.refImagePath ? `
+              <img src="${refUrl}" alt="Reference Image" class="preview-img" onclick="TestReportApp.openLightbox('${refUrl}', 'Reference Image')" onerror="TestReportApp.handleImageError(this, 'Reference Image Missing')">
+              <button class="img-zoom-btn" onclick="TestReportApp.openLightbox('${refUrl}', 'Reference Image')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+                Zoom
+              </button>
+            ` : `
+              <div class="img-placeholder-card">
+                <div class="placeholder-icon warn">📷</div>
+                <div class="placeholder-title">No Reference Image</div>
+                <div class="placeholder-desc">Reference image file has not been saved yet for this test.</div>
+              </div>
+            `}
+          </div>
+          <div class="img-card-footer">
+            <span class="truncate">${UIUtils.escapeHTML(item.refImagePath || 'N/A')}</span>
+          </div>
+        </div>
+
+        <!-- Rendered Image Card -->
+        <div class="img-card">
+          <div class="img-card-header">
+            <span class="img-card-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              Rendered Image (Actual)
+            </span>
+          </div>
+          <div class="img-card-body">
+            ${item.newImagePath ? `
+              <img src="${newUrl}" alt="Rendered Image" class="preview-img" onclick="TestReportApp.openLightbox('${newUrl}', 'Rendered Image')" onerror="TestReportApp.handleImageError(this, 'Rendered Image Missing')">
+              <button class="img-zoom-btn" onclick="TestReportApp.openLightbox('${newUrl}', 'Rendered Image')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+                Zoom
+              </button>
+            ` : `
+              <div class="img-placeholder-card">
+                <div class="placeholder-icon warn">⚠️</div>
+                <div class="placeholder-title">No Rendered Image</div>
+                <div class="placeholder-desc">Rendered screenshot is not available.</div>
+              </div>
+            `}
+          </div>
+          <div class="img-card-footer">
+            <span class="truncate">${UIUtils.escapeHTML(item.newImagePath || 'N/A')}</span>
+          </div>
+        </div>
+
+        <!-- Diff Image Card -->
+        <div class="img-card">
+          <div class="img-card-header">
+            <span class="img-card-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h1"/><rect x="8" y="2" width="13" height="13" rx="2"/></svg>
+              Difference Image (Diff)
+            </span>
+          </div>
+          <div class="img-card-body">
+            ${item.diffImagePath ? `
+              <img src="${diffUrl}" alt="Diff Image" class="preview-img" onclick="TestReportApp.openLightbox('${diffUrl}', 'Difference Image')" onerror="TestReportApp.handleImageError(this, 'Diff Image Missing')">
+              <button class="img-zoom-btn" onclick="TestReportApp.openLightbox('${diffUrl}', 'Difference Image')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+                Zoom
+              </button>
+            ` : `
+              <div class="img-placeholder-card">
+                ${isPassed ? `
+                  <div class="placeholder-icon pass">✓</div>
+                  <div class="placeholder-title" style="color: #16a34a;">No Differences</div>
+                  <div class="placeholder-desc">The rendered image matches the reference image perfectly (100% match).</div>
+                ` : (item.stackTrace.includes('Size Mismatch') ? `
+                  <div class="placeholder-icon warn">📐</div>
+                  <div class="placeholder-title" style="color: #d97706;">Size Mismatch</div>
+                  <div class="placeholder-desc">Image dimensions differ between reference and actual screenshots. Diff image could not be generated.</div>
+                ` : (!item.refImagePath ? `
+                  <div class="placeholder-icon">ℹ️</div>
+                  <div class="placeholder-title">Reference Missing</div>
+                  <div class="placeholder-desc">Reference image does not exist. Update test task to generate reference image.</div>
+                ` : `
+                  <div class="placeholder-icon warn">❌</div>
+                  <div class="placeholder-title" style="color: #dc2626;">No Diff Image</div>
+                  <div class="placeholder-desc">No pixel difference image was generated for this test run.</div>
+                `))}
+              </div>
+            `}
+          </div>
+          <div class="img-card-footer">
+            <span class="truncate">${UIUtils.escapeHTML(item.diffImagePath || (isPassed ? 'No Diff (Passed)' : 'N/A'))}</span>
+          </div>
+        </div>
+      </div>
+    `;
+
+    wrapper.appendChild(comparisonCard);
     container.appendChild(wrapper);
   },
 
@@ -2116,6 +2240,54 @@ const TestReportApp = {
     const origText = btn.innerHTML;
     btn.innerHTML = `<span>Copied!</span>`;
     setTimeout(() => { btn.innerHTML = origText; }, 1800);
+  },
+
+
+  handleImageError(imgElement, placeholderText) {
+    const parent = imgElement.parentElement;
+    if (parent) {
+      parent.innerHTML = `
+        <div class="img-placeholder-card">
+          <div class="placeholder-icon warn">⚠️</div>
+          <div class="placeholder-title">${UIUtils.escapeHTML(placeholderText)}</div>
+          <div class="placeholder-desc">File could not be loaded from disk or path does not exist.</div>
+        </div>
+      `;
+    }
+  },
+
+  openLightbox(imgSrc, title) {
+    let overlay = document.getElementById('screenshot-lightbox');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'screenshot-lightbox';
+      overlay.className = 'lightbox-overlay';
+      overlay.innerHTML = `
+        <div class="lightbox-content">
+          <img id="lightbox-main-img" class="lightbox-img" src="" alt="">
+          <div class="lightbox-toolbar">
+            <span id="lightbox-title" class="font-bold"></span>
+            <button class="lightbox-btn" onclick="TestReportApp.closeLightbox()">✕ Close</button>
+          </div>
+        </div>
+      `;
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) TestReportApp.closeLightbox();
+      });
+      document.body.appendChild(overlay);
+    }
+
+    const img = overlay.querySelector('#lightbox-main-img');
+    const titleEl = overlay.querySelector('#lightbox-title');
+    if (img) img.src = imgSrc;
+    if (titleEl) titleEl.textContent = title || 'Image Zoom';
+
+    overlay.classList.remove('hidden');
+  },
+
+  closeLightbox() {
+    const overlay = document.getElementById('screenshot-lightbox');
+    if (overlay) overlay.classList.add('hidden');
   },
 
   showReportView() {
