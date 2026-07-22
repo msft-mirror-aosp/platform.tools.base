@@ -1644,7 +1644,7 @@ const TestReportApp = {
 
       let nameContent = `<span class="font-medium">${UIUtils.escapeHTML(node.name)}</span>`;
       if (type === 'testCase' && this.isTestCaseClickable(node)) {
-        nameContent = `<span class="font-medium text-blue-700 hover-underline cursor-pointer stack-trace-trigger" data-module="${UIUtils.escapeHTML(currentContext.moduleName || '')}" data-package="${UIUtils.escapeHTML(currentContext.packageName || '')}" data-class="${UIUtils.escapeHTML(currentContext.className || '')}" onclick="TestReportApp.openStackTrace(this)" data-test-case="${UIUtils.escapeHTML(node.name || '')}" tabindex="0" role="button" aria-label="View details for ${UIUtils.escapeHTML(node.name)}">${UIUtils.escapeHTML(node.name)}</span>`;
+        nameContent = `<span class="font-medium text-blue-700 hover-underline cursor-pointer stack-trace-trigger" data-module="${UIUtils.escapeHTML(currentContext.moduleName || '')}" data-package="${UIUtils.escapeHTML(currentContext.packageName || '')}" data-class="${UIUtils.escapeHTML(currentContext.className || '')}" data-test-case="${UIUtils.escapeHTML(node.name || '')}" tabindex="0" role="button" aria-label="View details for ${UIUtils.escapeHTML(node.name)}">${UIUtils.escapeHTML(node.name)}</span>`;
       }
 
       const chevron = `<svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="collapsible-arrow ${!hasChildren ? 'invisible' : ''}"><path d="m9 18 6-6-6-6"></path></svg>`;
@@ -1688,7 +1688,7 @@ const TestReportApp = {
       if (item.type !== 'testCase') {
         nameTd = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover-underline cursor-pointer" tabindex="0" role="link" title="${UIUtils.escapeHTML(item.name)}" data-name="${UIUtils.escapeHTML(item.name)}" data-type="${item.type}" data-module-name="${UIUtils.escapeHTML(item.moduleName || '')}" data-package-name="${UIUtils.escapeHTML(item.packageName || '')}" data-interactive="flat">${UIUtils.escapeHTML(item.name)}</td>`;
       } else if (this.isTestCaseClickable(item)) {
-        nameTd = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover-underline cursor-pointer stack-trace-trigger" data-module="${UIUtils.escapeHTML(item.moduleName || '')}" data-package="${UIUtils.escapeHTML(item.packageName || '')}" data-class="${UIUtils.escapeHTML(item.className || '')}" onclick="TestReportApp.openStackTrace(this)" data-test-case="${UIUtils.escapeHTML(item.name || '')}" tabindex="0" role="button" aria-label="View details for ${UIUtils.escapeHTML(item.name)}">${UIUtils.escapeHTML(item.name)}</td>`;
+        nameTd = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover-underline cursor-pointer stack-trace-trigger" data-module="${UIUtils.escapeHTML(item.moduleName || '')}" data-package="${UIUtils.escapeHTML(item.packageName || '')}" data-class="${UIUtils.escapeHTML(item.className || '')}" data-test-case="${UIUtils.escapeHTML(item.name || '')}" tabindex="0" role="button" aria-label="View details for ${UIUtils.escapeHTML(item.name)}">${UIUtils.escapeHTML(item.name)}</td>`;
       } else {
         nameTd = `<td class="py-3 px-6 sticky-name font-medium text-gray-800" title="${UIUtils.escapeHTML(item.name)}">${UIUtils.escapeHTML(item.name)}</td>`;
       }
@@ -1787,7 +1787,7 @@ const TestReportApp = {
     return finalRes;
   },
 
-  isTestCaseClickable(node) {
+  hasVisibleFailures(node) {
     if (!node || node.type !== 'testCase') return false;
     const activeSuite = this.state.filters.testSuite;
     const activeVariants = this.state.filters.variants;
@@ -1802,6 +1802,13 @@ const TestReportApp = {
       }
       return false;
     });
+  },
+
+  isTestCaseClickable(node) {
+    if (!node) return false;
+    const screenshotItems = this.getScreenshotData(node);
+    if (screenshotItems && screenshotItems.length > 0) return true;
+    return this.hasVisibleFailures(node);
   },
 
   _renderStatusCell(node, context = {}) {
@@ -1874,10 +1881,18 @@ const TestReportApp = {
           }
         }
       }
+      for (const m of modules) {
+        for (const p of (m.packages || [])) {
+          for (const c of (p.classes || [])) {
+            const t = (c.testCases || []).find(tc => tc.name === tcName || tc.name.toLowerCase() === (tcName || '').toLowerCase());
+            if (t) return { testCase: t, moduleName: m.name, packageName: p.name, className: c.name };
+          }
+        }
+      }
       return null;
     };
 
-    const res = findTestCase(this.processedData?.modules);
+    const res = findTestCase(this.processedData ? this.processedData.modules : null);
     if (res) {
       this.activeTrigger = element;
       const context = {
@@ -1924,7 +1939,6 @@ const TestReportApp = {
       this.renderScreenshotTestView(grid, testCase, screenshotItems);
       return;
     }
-    const activeVariants = this.state.filters.variants;
 
     // For now, use the first target's properties. This works for all non-GMD current use cases out of the box.
     // Device-specific UI and naming will be added in a subsequent phase (see bug b/525671605).
@@ -2015,6 +2029,58 @@ const TestReportApp = {
   },
 
 
+  getScreenshotData(testCase) {
+    const items = [];
+    const targets = testCase.targets || [testCase];
+
+    targets.forEach(target => {
+      const results = target.testSuiteResults || [];
+      results.forEach(suiteResult => {
+        const suiteName = suiteResult.testSuiteName || "screenshotTest";
+        const variantResults = suiteResult.variantResults || {};
+
+        for (const [variantName, res] of Object.entries(variantResults)) {
+          if (res.refImagePath || res.newImagePath || res.diffImagePath || suiteName === "screenshotTest" || res.previewName) {
+            let stackTrace = "";
+            const commonStackTraces = target.commonStackTraces || testCase.commonStackTraces || [];
+            if (res.stackTraceId) {
+              const match = commonStackTraces.find(st => st.id === res.stackTraceId);
+              if (match) stackTrace = match.stackTrace;
+            }
+            if (!stackTrace && commonStackTraces.length > 0) {
+              stackTrace = commonStackTraces[0].stackTrace;
+            }
+
+            items.push({
+              targetName: target.name || "",
+              suiteName: suiteName,
+              variantName: variantName,
+              status: res.status || "pass",
+              previewName: res.previewName || testCase.name,
+              methodName: res.methodName || testCase.name,
+              refImagePath: res.refImagePath || "",
+              newImagePath: res.newImagePath || "",
+              diffImagePath: res.diffImagePath || "",
+              stackTrace: stackTrace
+            });
+          }
+        }
+      });
+    });
+    return items;
+  },
+
+  resolveImagePath(imagePath) {
+    if (!imagePath) return '';
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://') || imagePath.startsWith('data:') || imagePath.startsWith('file://')) {
+      return imagePath;
+    }
+    let cleanPath = imagePath.startsWith('/') ? imagePath.slice(1) : imagePath;
+    if (cleanPath.startsWith('../')) {
+      return cleanPath;
+    }
+    return '../../../../../' + cleanPath;
+  },
 
   renderScreenshotTestView(container, testCase, screenshotItems) {
     const activeVariants = this.state.filters.variants || [];
@@ -2054,7 +2120,7 @@ const TestReportApp = {
     `;
     wrapper.appendChild(headerCard);
 
-    // 2. Error Section
+    // 2. Error Section (if test failed or error or stack trace exists)
     if (!isPassed || item.stackTrace) {
       const errorBox = document.createElement('div');
       errorBox.className = 'screenshot-error-box';
@@ -2099,7 +2165,6 @@ const TestReportApp = {
       }
     }
 
-
     // 3. Image Differences & Comparison Card
     const comparisonCard = document.createElement('div');
     comparisonCard.className = 'screenshot-comparison-card';
@@ -2118,6 +2183,14 @@ const TestReportApp = {
           </svg>
           <span>Screenshot Comparison & Differences</span>
         </div>
+        <div class="mode-switcher" role="tablist" aria-label="Comparison View Mode">
+          <button class="mode-btn active" data-mode="side-by-side" onclick="TestReportApp.switchScreenshotMode('side-by-side', this)" role="tab" aria-selected="true">
+            🔲 Side-by-Side
+          </button>
+          <button class="mode-btn" data-mode="slider" onclick="TestReportApp.switchScreenshotMode('slider', this)" role="tab" aria-selected="false">
+            ↔️ Split Slider
+          </button>
+        </div>
       </div>
 
       <!-- Mode 1: Side-by-Side Cards -->
@@ -2132,7 +2205,7 @@ const TestReportApp = {
           </div>
           <div class="img-card-body">
             ${item.refImagePath ? `
-              <img src="${refUrl}" alt="Reference Image" class="preview-img" onclick="TestReportApp.openLightbox('${refUrl}', 'Reference Image')" onerror="TestReportApp.handleImageError(this, 'Reference Image Missing')">
+              <img src="${refUrl}" alt="Reference Image" class="preview-img" draggable="false" onclick="TestReportApp.openLightbox('${refUrl}', 'Reference Image')" onerror="TestReportApp.handleImageError(this, 'Reference Image Missing')">
               <button class="img-zoom-btn" onclick="TestReportApp.openLightbox('${refUrl}', 'Reference Image')">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
                 Zoom
@@ -2160,7 +2233,7 @@ const TestReportApp = {
           </div>
           <div class="img-card-body">
             ${item.newImagePath ? `
-              <img src="${newUrl}" alt="Rendered Image" class="preview-img" onclick="TestReportApp.openLightbox('${newUrl}', 'Rendered Image')" onerror="TestReportApp.handleImageError(this, 'Rendered Image Missing')">
+              <img src="${newUrl}" alt="Rendered Image" class="preview-img" draggable="false" onclick="TestReportApp.openLightbox('${newUrl}', 'Rendered Image')" onerror="TestReportApp.handleImageError(this, 'Rendered Image Missing')">
               <button class="img-zoom-btn" onclick="TestReportApp.openLightbox('${newUrl}', 'Rendered Image')">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
                 Zoom
@@ -2188,7 +2261,7 @@ const TestReportApp = {
           </div>
           <div class="img-card-body">
             ${item.diffImagePath ? `
-              <img src="${diffUrl}" alt="Diff Image" class="preview-img" onclick="TestReportApp.openLightbox('${diffUrl}', 'Difference Image')" onerror="TestReportApp.handleImageError(this, 'Diff Image Missing')">
+              <img src="${diffUrl}" alt="Diff Image" class="preview-img" draggable="false" onclick="TestReportApp.openLightbox('${diffUrl}', 'Difference Image')" onerror="TestReportApp.handleImageError(this, 'Diff Image Missing')">
               <button class="img-zoom-btn" onclick="TestReportApp.openLightbox('${diffUrl}', 'Difference Image')">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
                 Zoom
@@ -2220,10 +2293,131 @@ const TestReportApp = {
           </div>
         </div>
       </div>
+
+      <!-- Mode 2: Split Slider View -->
+      <div class="slider-view-wrapper hidden">
+        <div class="slider-controls-bar">
+          <span>Drag the divider line to compare Reference (Left) vs Rendered (Right)</span>
+          <span class="slider-split-percent text-blue-600 font-bold">50% Reference | 50% Rendered</span>
+        </div>
+        <div class="slider-container">
+          <img src="${newUrl}" class="slider-img-base" alt="Rendered Base" draggable="false">
+          <div class="slider-img-overlay" style="clip-path: inset(0 50% 0 0);">
+            <img src="${refUrl}" alt="Reference Overlay" draggable="false">
+          </div>
+          <div class="slider-divider" style="left: 50%;">
+            <div class="slider-handle">↔</div>
+          </div>
+        </div>
+      </div>
     `;
 
     wrapper.appendChild(comparisonCard);
+
+    // 4. File Paths Summary Card
+    const pathsCard = document.createElement('div');
+    pathsCard.className = 'screenshot-paths-card';
+    pathsCard.innerHTML = `
+      <h3 class="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        Image File Paths & Details
+      </h3>
+      <div class="path-row">
+        <span class="path-label">Reference Image Path:</span>
+        <span class="path-value">${UIUtils.escapeHTML(item.refImagePath || 'Not set')}</span>
+        ${item.refImagePath ? `<button class="copy-btn" id="btn-copy-ref-path">Copy</button>` : ''}
+      </div>
+      <div class="path-row">
+        <span class="path-label">Rendered Image Path:</span>
+        <span class="path-value">${UIUtils.escapeHTML(item.newImagePath || 'Not set')}</span>
+        ${item.newImagePath ? `<button class="copy-btn" id="btn-copy-new-path">Copy</button>` : ''}
+      </div>
+      <div class="path-row">
+        <span class="path-label">Diff Image Path:</span>
+        <span class="path-value">${UIUtils.escapeHTML(item.diffImagePath || 'None')}</span>
+        ${item.diffImagePath ? `<button class="copy-btn" id="btn-copy-diff-path">Copy</button>` : ''}
+      </div>
+    `;
+    wrapper.appendChild(pathsCard);
+
+    // Attach copy button listeners
+    const copyRefBtn = pathsCard.querySelector('#btn-copy-ref-path');
+    if (copyRefBtn) copyRefBtn.addEventListener('click', () => this.copyToClipboard(item.refImagePath, copyRefBtn));
+
+    const copyNewBtn = pathsCard.querySelector('#btn-copy-new-path');
+    if (copyNewBtn) copyNewBtn.addEventListener('click', () => this.copyToClipboard(item.newImagePath, copyNewBtn));
+
+    const copyDiffBtn = pathsCard.querySelector('#btn-copy-diff-path');
+    if (copyDiffBtn) copyDiffBtn.addEventListener('click', () => this.copyToClipboard(item.diffImagePath, copyDiffBtn));
+
     container.appendChild(wrapper);
+
+    // Initialize interactive split slider
+    setTimeout(() => this.initSplitSlider(comparisonCard), 50);
+  },
+
+  switchScreenshotMode(mode, btnElement) {
+    const container = btnElement.closest('.screenshot-comparison-card');
+    if (!container) return;
+    container.querySelectorAll('.mode-btn').forEach(btn => {
+      const isActive = btn.dataset.mode === mode;
+      btn.classList.toggle('active', isActive);
+      btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    });
+
+    const sideBySideView = container.querySelector('.image-cards-grid');
+    const sliderView = container.querySelector('.slider-view-wrapper');
+
+    if (sideBySideView) sideBySideView.classList.toggle('hidden', mode !== 'side-by-side');
+    if (sliderView) sliderView.classList.toggle('hidden', mode !== 'slider');
+  },
+
+  initSplitSlider(container) {
+    if (!container) return;
+    const sliderBox = container.querySelector('.slider-container');
+    const overlayBox = container.querySelector('.slider-img-overlay');
+    const divider = container.querySelector('.slider-divider');
+    const percentText = container.querySelector('.slider-split-percent');
+
+    if (!sliderBox || !overlayBox || !divider) return;
+
+    let isDragging = false;
+
+    const setPosition = (clientX) => {
+      const rect = sliderBox.getBoundingClientRect();
+      let x = clientX - rect.left;
+      if (x < 0) x = 0;
+      if (x > rect.width) x = rect.width;
+
+      const pct = Math.round((x / rect.width) * 100);
+      divider.style.left = `${pct}%`;
+      overlayBox.style.clipPath = `inset(0 ${100 - pct}% 0 0)`;
+      if (percentText) {
+        percentText.textContent = `${pct}% Reference | ${100 - pct}% Rendered`;
+      }
+    };
+
+    sliderBox.addEventListener('pointerdown', (e) => {
+      isDragging = true;
+      setPosition(e.clientX);
+      sliderBox.setPointerCapture(e.pointerId);
+    });
+
+    sliderBox.addEventListener('pointermove', (e) => {
+      if (isDragging) {
+        setPosition(e.clientX);
+      }
+    });
+
+    const stopDrag = (e) => {
+      if (isDragging) {
+        isDragging = false;
+        try { sliderBox.releasePointerCapture(e.pointerId); } catch (err) { }
+      }
+    };
+
+    sliderBox.addEventListener('pointerup', stopDrag);
+    sliderBox.addEventListener('pointercancel', stopDrag);
   },
 
   copyToClipboard(text, btn) {
@@ -2241,7 +2435,6 @@ const TestReportApp = {
     btn.innerHTML = `<span>Copied!</span>`;
     setTimeout(() => { btn.innerHTML = origText; }, 1800);
   },
-
 
   handleImageError(imgElement, placeholderText) {
     const parent = imgElement.parentElement;
