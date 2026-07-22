@@ -24,6 +24,8 @@ import com.android.adblib.testing.FakeAdbSession
 import com.google.common.truth.Truth.assertThat
 import java.nio.file.Files
 import java.nio.file.Paths
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 import org.junit.Assert.assertThrows
 import org.junit.Rule
 import org.junit.Test
@@ -34,86 +36,167 @@ class CliHostTest {
 
   @get:Rule val tempFolder = TemporaryFolder()
 
+  private fun parseDumpUi(vararg args: String): DumpUiCommand {
+    val parseResult = createCommandLine().parseArgs("dump-ui", *args)
+    return parseResult.subcommand().commandSpec().userObject() as DumpUiCommand
+  }
+
   @Test
   fun testNoArgsReturnsError() {
-    val exitCode = CommandLine(UiInspectorCommand()).addSubcommand("dump-ui", DumpUiCommand()).execute()
+    val exitCode = createCommandLine().execute()
     assertThat(exitCode).isEqualTo(1)
   }
 
   @Test
   fun testDumpUiParsesWithNoOptions() {
-    val cmd = CommandLine(UiInspectorCommand()).addSubcommand("dump-ui", DumpUiCommand())
-    val parseResult = cmd.parseArgs("dump-ui")
-    val dumpCmd = parseResult.subcommand().commandSpec().userObject() as DumpUiCommand
+    val dumpCmd = parseDumpUi()
     assertThat(dumpCmd.device).isNull()
     assertThat(dumpCmd.packageName).isNull()
   }
 
   @Test
   fun testCommandLineOptionsDefaults() {
-    val cmd = CommandLine(UiInspectorCommand()).addSubcommand("dump-ui", DumpUiCommand())
-    val parseResult = cmd.parseArgs("dump-ui", "--device", "123", "--package", "com.example")
-    val dumpCmd = parseResult.subcommand().commandSpec().userObject() as DumpUiCommand
+    val dumpCmd = parseDumpUi("--device", "123", "--package", "com.example")
     assertThat(dumpCmd.includeSystemComposables).isFalse()
     assertThat(dumpCmd.includeAttributes).isFalse()
     assertThat(dumpCmd.composeInspectorJarPath).isNull()
     assertThat(dumpCmd.output).isNull()
+    assertThat(dumpCmd.recordOptions).isNull()
   }
 
   @Test
   fun testCommandLineOptionsFlags() {
-    val cmd = CommandLine(UiInspectorCommand()).addSubcommand("dump-ui", DumpUiCommand())
-    val parseResult = cmd.parseArgs("dump-ui", "--device", "123", "--package", "com.example", "--include-system-composables")
-    val dumpCmd = parseResult.subcommand().commandSpec().userObject() as DumpUiCommand
+    val dumpCmd = parseDumpUi("--device", "123", "--package", "com.example", "--include-system-composables")
     assertThat(dumpCmd.includeSystemComposables).isTrue()
   }
 
   @Test
   fun testCommandLineOptionsComposeInspector() {
-    val cmd = CommandLine(UiInspectorCommand()).addSubcommand("dump-ui", DumpUiCommand())
-    val parseResult =
-      cmd.parseArgs("dump-ui", "--device", "123", "--package", "com.example", "--compose-inspector", "local/path/to/inspector.jar")
-    val dumpCmd = parseResult.subcommand().commandSpec().userObject() as DumpUiCommand
+    val dumpCmd = parseDumpUi("--device", "123", "--package", "com.example", "--compose-inspector", "local/path/to/inspector.jar")
     assertThat(dumpCmd.composeInspectorJarPath).isEqualTo("local/path/to/inspector.jar")
   }
 
   @Test
   fun testCommandLineOptionsOutput() {
-    val cmd = CommandLine(UiInspectorCommand()).addSubcommand("dump-ui", DumpUiCommand())
-    val parseResult = cmd.parseArgs("dump-ui", "--device", "123", "--package", "com.example", "--output", "out/dump.json")
-    val dumpCmd = parseResult.subcommand().commandSpec().userObject() as DumpUiCommand
+    val dumpCmd = parseDumpUi("--device", "123", "--package", "com.example", "--output", "out/dump.json")
     assertThat(dumpCmd.output).isEqualTo(Paths.get("out/dump.json"))
   }
 
   @Test
   fun testCommandLineOptionsOutputShortName() {
-    val cmd = CommandLine(UiInspectorCommand()).addSubcommand("dump-ui", DumpUiCommand())
-    val parseResult = cmd.parseArgs("dump-ui", "--device", "123", "--package", "com.example", "-o", "dump.json")
-    val dumpCmd = parseResult.subcommand().commandSpec().userObject() as DumpUiCommand
+    val dumpCmd = parseDumpUi("--device", "123", "--package", "com.example", "-o", "dump.json")
     assertThat(dumpCmd.output).isEqualTo(Paths.get("dump.json"))
   }
 
   @Test
   fun testListPackagesDeviceOption() {
-    val cmd = CommandLine(UiInspectorCommand()).addSubcommand("list-packages", ListPackagesCommand())
-    val parseResult = cmd.parseArgs("list-packages", "--device", "123")
+    val parseResult = createCommandLine().parseArgs("list-packages", "--device", "123")
     val listCmd = parseResult.subcommand().commandSpec().userObject() as ListPackagesCommand
     assertThat(listCmd.device).isEqualTo("123")
   }
 
   @Test
   fun testDeviceOptionIsOptional() {
-    val dumpCmd = CommandLine(UiInspectorCommand()).addSubcommand("dump-ui", DumpUiCommand())
-    val dumpParse = dumpCmd.parseArgs("dump-ui", "--package", "com.example")
-    assertThat((dumpParse.subcommand().commandSpec().userObject() as DumpUiCommand).device).isNull()
+    assertThat(parseDumpUi("--package", "com.example").device).isNull()
 
-    val trackCmd = CommandLine(UiInspectorCommand()).addSubcommand("track-changes", TrackChangesCommand())
-    val trackParse = trackCmd.parseArgs("track-changes", "--package", "com.example")
-    assertThat((trackParse.subcommand().commandSpec().userObject() as TrackChangesCommand).device).isNull()
-
-    val listCmd = CommandLine(UiInspectorCommand()).addSubcommand("list-packages", ListPackagesCommand())
-    val listParse = listCmd.parseArgs("list-packages")
+    val listParse = createCommandLine().parseArgs("list-packages")
     assertThat((listParse.subcommand().commandSpec().userObject() as ListPackagesCommand).device).isNull()
+  }
+
+  @Test
+  fun testSerialOptionNoLongerSupported() {
+    assertThrows(CommandLine.UnmatchedArgumentException::class.java) {
+      createCommandLine().parseArgs("dump-ui", "--device", "123", "--serial", "456", "--package", "com.example")
+    }
+    assertThrows(CommandLine.UnmatchedArgumentException::class.java) {
+      createCommandLine().parseArgs("list-packages", "--device", "123", "--serial", "456")
+    }
+  }
+
+  @Test
+  fun testTrackChangesCommandRemoved() {
+    assertThrows(CommandLine.UnmatchedArgumentException::class.java) { createCommandLine().parseArgs("track-changes") }
+  }
+
+  @Test
+  fun testRecordOptionsParse() {
+    val dumpCmd = parseDumpUi("--record", "--interval", "50ms", "--duration", "10s")
+    val recordOptions = dumpCmd.recordOptions
+    assertThat(recordOptions).isNotNull()
+    assertThat(recordOptions!!.record).isTrue()
+    assertThat(recordOptions.interval).isEqualTo(50.milliseconds)
+    assertThat(recordOptions.duration).isEqualTo(10.seconds)
+  }
+
+  @Test
+  fun testRecordIntervalDefaultsToUnset() {
+    val dumpCmd = parseDumpUi("--record", "--duration", "10s")
+    assertThat(dumpCmd.recordOptions!!.interval).isNull()
+  }
+
+  @Test
+  fun testMalformedDurationRejected() {
+    val exception =
+      assertThrows(CommandLine.ParameterException::class.java) {
+        createCommandLine().parseArgs("dump-ui", "--record", "--interval", "fast")
+      }
+    assertThat(exception).hasMessageThat().contains("Invalid duration")
+  }
+
+  @Test
+  fun testNonPositiveDurationRejected() {
+    val exception =
+      assertThrows(CommandLine.ParameterException::class.java) { createCommandLine().parseArgs("dump-ui", "--record", "--duration", "0s") }
+    assertThat(exception).hasMessageThat().contains("Invalid duration")
+  }
+
+  @Test
+  fun testInfiniteDurationRejected() {
+    val exception =
+      assertThrows(CommandLine.ParameterException::class.java) {
+        createCommandLine().parseArgs("dump-ui", "--record", "--duration", "Infinity")
+      }
+    assertThat(exception).hasMessageThat().contains("Invalid duration")
+  }
+
+  @Test
+  fun testNegativeIntervalRejected() {
+    val exception =
+      assertThrows(CommandLine.ParameterException::class.java) {
+        createCommandLine().parseArgs("dump-ui", "--record", "--interval=-5s", "--duration", "5s")
+      }
+    assertThat(exception).hasMessageThat().contains("Invalid duration")
+  }
+
+  @Test
+  fun testIntervalWithoutRecordIsUsageError() {
+    assertThat(executeWithForbiddenSession("dump-ui", "--interval", "50ms")).isEqualTo(2)
+  }
+
+  @Test
+  fun testDurationWithoutRecordIsUsageError() {
+    assertThat(executeWithForbiddenSession("dump-ui", "--duration", "5s")).isEqualTo(2)
+  }
+
+  @Test
+  fun testRecordWithoutDurationIsUsageError() {
+    assertThat(executeWithForbiddenSession("dump-ui", "--record")).isEqualTo(2)
+  }
+
+  @Test
+  fun testRecordFalseWithRecordingOptionsIsUsageError() {
+    assertThat(executeWithForbiddenSession("dump-ui", "--record=false", "--duration", "5s")).isEqualTo(2)
+  }
+
+  /** Executes the CLI with a session factory that fails the test if invoked, proving validation runs before any device work. */
+  private fun executeWithForbiddenSession(vararg args: String): Int {
+    val originalFactory = sessionFactory
+    sessionFactory = { error("The AdbSession must not be created for invalid command lines") }
+    try {
+      return createCommandLine().execute(*args)
+    } finally {
+      sessionFactory = originalFactory
+    }
   }
 
   @Test
@@ -124,10 +207,7 @@ class CliHostTest {
     val originalFactory = sessionFactory
     sessionFactory = { noDevicesSession }
     try {
-      val exitCode =
-        CommandLine(UiInspectorCommand())
-          .addSubcommand("dump-ui", DumpUiCommand())
-          .execute("dump-ui", "--package", "com.example", "-o", outputFile.toString())
+      val exitCode = createCommandLine().execute("dump-ui", "--package", "com.example", "-o", outputFile.toString())
 
       assertThat(exitCode).isEqualTo(1)
       assertThat(String(Files.readAllBytes(outputFile), Charsets.UTF_8)).isEqualTo("existing content")
@@ -148,45 +228,12 @@ class CliHostTest {
     val originalFactory = sessionFactory
     sessionFactory = { session }
     try {
-      val exitCode =
-        CommandLine(UiInspectorCommand()).addSubcommand("dump-ui", DumpUiCommand()).execute("dump-ui", "-o", outputFile.toString())
+      val exitCode = createCommandLine().execute("dump-ui", "-o", outputFile.toString())
 
       assertThat(exitCode).isEqualTo(1)
       assertThat(String(Files.readAllBytes(outputFile), Charsets.UTF_8)).isEqualTo("existing content")
     } finally {
       sessionFactory = originalFactory
     }
-  }
-
-  @Test
-  fun testSerialOptionNoLongerSupported() {
-    val dumpCmd = CommandLine(UiInspectorCommand()).addSubcommand("dump-ui", DumpUiCommand())
-    assertThrows(CommandLine.UnmatchedArgumentException::class.java) {
-      dumpCmd.parseArgs("dump-ui", "--device", "123", "--serial", "456", "--package", "com.example")
-    }
-    val listCmd = CommandLine(UiInspectorCommand()).addSubcommand("list-packages", ListPackagesCommand())
-    assertThrows(CommandLine.UnmatchedArgumentException::class.java) {
-      listCmd.parseArgs("list-packages", "--device", "123", "--serial", "456")
-    }
-  }
-
-  @Test
-  fun testTrackChangesOptionsDefaults() {
-    val cmd = CommandLine(UiInspectorCommand()).addSubcommand("track-changes", TrackChangesCommand())
-    val parseResult = cmd.parseArgs("track-changes", "--device", "123", "--package", "com.example")
-    val trackCmd = parseResult.subcommand().commandSpec().userObject() as TrackChangesCommand
-    assertThat(trackCmd.includeSystemComposables).isFalse()
-    assertThat(trackCmd.includeAttributes).isFalse()
-    assertThat(trackCmd.intervalMs).isEqualTo(100)
-    assertThat(trackCmd.durationSec).isEqualTo(5)
-  }
-
-  @Test
-  fun testTrackChangesCustomIntervalAndDuration() {
-    val cmd = CommandLine(UiInspectorCommand()).addSubcommand("track-changes", TrackChangesCommand())
-    val parseResult = cmd.parseArgs("track-changes", "--device", "123", "--package", "com.example", "--interval", "50", "--duration", "10")
-    val trackCmd = parseResult.subcommand().commandSpec().userObject() as TrackChangesCommand
-    assertThat(trackCmd.intervalMs).isEqualTo(50)
-    assertThat(trackCmd.durationSec).isEqualTo(10)
   }
 }

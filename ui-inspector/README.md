@@ -43,8 +43,11 @@ number and app package, dumps the UI tree including views and
 composables.
 
 ```bash
-ui-inspector dump-ui --serial 123 --package com.my.app
+ui-inspector dump-ui --device 123 --package com.my.app
 ```
+
+Both options are optional: `--device` defaults to the only online
+device and `--package` defaults to the app currently in the foreground.
 
 Example JSON output:
 
@@ -283,13 +286,19 @@ by passing command-line flags:
 
 ## Periodic Sampling of UI Changes
 
-In addition to `dump-ui`, the CLI supports a `track-changes` command. This command
-samples the UI tree structure periodically over a specified duration and interval,
-printing a diff representation of structural and attribute changes:
+`dump-ui --record` samples the UI tree at a fixed interval for a bounded
+duration — for example to inspect an animation — and then reports a
+single JSON document: the initial tree plus one frame per subsequent
+sample, carrying that sample's structural, attribute, and
+configuration diffs:
 
 ```bash
-ui-inspector track-changes --serial 123 --package com.my.app --interval 100 --duration 5
+ui-inspector dump-ui --record --interval 100ms --duration 5s
 ```
+
+Durations take explicit units (`100ms`, `5s`, `1m`). `--duration` is
+required: a recording is always bounded, reported when the
+window ends.
 
 ## Retrieving recomposition counts and state reads
 

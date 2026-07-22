@@ -24,8 +24,6 @@ import com.android.adblib.shellAsText
 import com.android.tools.ui.inspector.printer.UiDumpPrinter
 import java.io.File
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeSource
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -174,14 +172,14 @@ internal suspend fun doDumpUi(
 }
 
 /**
- * Injects the UI Inspector agent into the target application, attaches to its layout inspector service, and samples the UI hierarchy
- * changes over time.
+ * Injects the UI Inspector agent into the target application, attaches to its layout inspector service, samples the UI hierarchy for a
+ * bounded window, and prints the observed changes.
  *
  * @param adbSession The [AdbSession] to communicate with the local ADB server.
  * @param serial The serial number of the target device.
  * @param packageName The target application package name.
- * @param intervalMs The sampling interval in milliseconds.
- * @param durationSec The total duration of tracking in seconds.
+ * @param interval The sampling interval.
+ * @param duration The total sampling duration.
  * @param includeAttributes If true, includes view attributes in the sampled dumps.
  * @param includeResolutionStack If true, includes attribute resolution stacks in the sampled dumps.
  * @param includeSystemComposables If true, includes system/framework composable nodes.
@@ -192,8 +190,8 @@ internal suspend fun doTrackChanges(
   adbSession: AdbSession,
   serial: String,
   packageName: String,
-  intervalMs: Long,
-  durationSec: Long,
+  interval: Duration,
+  duration: Duration,
   includeAttributes: Boolean,
   includeResolutionStack: Boolean,
   includeSystemComposables: Boolean,
@@ -202,21 +200,10 @@ internal suspend fun doTrackChanges(
   printer: UiDumpPrinter,
 ) {
   runWithConnectedInspectors(adbSession, serial, packageName, composeInspectorJarPath) { commandSender, composeInspectorConnected ->
-    System.err.println("Sampling UI hierarchy for ${durationSec}s every ${intervalMs}ms...")
+    System.err.println("Sampling UI hierarchy for $duration every $interval...")
 
-    val interval = intervalMs.milliseconds
-    val duration = durationSec.seconds
-    val timeSource = TimeSource.Monotonic
-    val startTime = timeSource.markNow()
-    val endTime = startTime + duration
-    // Stores each collected UI tree sample mapped to the elapsed duration since the start of tracking.
-    val samples = mutableListOf<TimedUiDump>()
-
-    var sampleCount = 0
-    while (timeSource.markNow() < endTime) {
-      val sampleStart = timeSource.markNow()
-
-      val uiDump =
+    val samples =
+      collectSamples(interval = interval, duration = duration) {
         fetchUiDump(
           commandSender = commandSender,
           includeAttributes = includeAttributes,
@@ -225,21 +212,47 @@ internal suspend fun doTrackChanges(
           skipSystemComposables = !includeSystemComposables,
           includeSemantics = includeSemantics,
         )
-      val elapsedSinceStart = startTime.elapsedNow()
-      samples.add(TimedUiDump(elapsedSinceStart, uiDump))
-      sampleCount++
-
-      val elapsedForSample = sampleStart.elapsedNow()
-      // Adjust sleep time to compensate for the round-trip overhead of fetching the UI tree.
-      val remainingWait = interval - elapsedForSample
-      if (remainingWait > Duration.ZERO) {
-        delay(remainingWait)
       }
-    }
-    System.err.println("Sampling complete. Collected $sampleCount samples. Analyzing...")
+    System.err.println("Sampling complete. Collected ${samples.size} samples. Analyzing...")
 
     printer.printTrackedChanges(samples)
   }
+}
+
+/**
+ * Samples the UI via [fetch] at [interval] until [duration] elapses, returning each sample with its elapsed time since the start.
+ * [timeSource] and [delayFn] are injectable so tests can drive the schedule deterministically.
+ */
+internal suspend fun collectSamples(
+  interval: Duration,
+  duration: Duration,
+  timeSource: TimeSource.WithComparableMarks = TimeSource.Monotonic,
+  delayFn: suspend (Duration) -> Unit = { delay(it) },
+  fetch: suspend () -> UiDump,
+): List<TimedUiDump> {
+  val startTime = timeSource.markNow()
+  val endTime = startTime + duration
+  // Stores each collected UI tree sample mapped to the elapsed duration since the start of tracking.
+  val samples = mutableListOf<TimedUiDump>()
+
+  while (timeSource.markNow() < endTime) {
+    val sampleStart = timeSource.markNow()
+    val uiDump = fetch()
+    samples.add(TimedUiDump(startTime.elapsedNow(), uiDump))
+
+    val intervalWait = interval - sampleStart.elapsedNow()
+    val endWait = endTime - timeSource.markNow()
+    if (intervalWait >= endWait) {
+      if (endWait > Duration.ZERO) {
+        delayFn(endWait)
+      }
+      break
+    }
+    if (intervalWait > Duration.ZERO) {
+      delayFn(intervalWait)
+    }
+  }
+  return samples
 }
 
 /** Connects to the device, injects inspector agents, starts View and Compose inspectors, and runs [block] with the active connection. */
