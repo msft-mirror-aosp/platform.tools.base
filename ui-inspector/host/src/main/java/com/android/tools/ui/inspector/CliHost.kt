@@ -96,7 +96,8 @@ class DumpUiCommand : Callable<Int> {
     description =
       [
         "Data to include in the dump: attributes, semantics, resolution-stack, system-composables, or all. " +
-          "Repeatable or comma-separated; resolution-stack implies attributes"
+          "Repeatable or comma-separated; resolution-stack implies attributes and, on first use for an app, " +
+          "restarts its activities (enables a persistent device setting)"
       ],
   )
   internal var include: List<IncludeFacet> = emptyList()

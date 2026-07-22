@@ -158,7 +158,9 @@ internal suspend fun doDumpUi(
   composeInspectorJarPath: String?,
   printer: UiDumpPrinter,
 ) {
-  runWithConnectedInspectors(adbSession, serial, packageName, composeInspectorJarPath) { commandSender, composeInspectorConnected ->
+  runWithConnectedInspectors(adbSession, serial, packageName, includeResolutionStack, composeInspectorJarPath) {
+    commandSender,
+    composeInspectorConnected ->
     dumpUi(
       commandSender = commandSender,
       includeAttributes = includeAttributes,
@@ -199,7 +201,9 @@ internal suspend fun doTrackChanges(
   composeInspectorJarPath: String?,
   printer: UiDumpPrinter,
 ) {
-  runWithConnectedInspectors(adbSession, serial, packageName, composeInspectorJarPath) { commandSender, composeInspectorConnected ->
+  runWithConnectedInspectors(adbSession, serial, packageName, includeResolutionStack, composeInspectorJarPath) {
+    commandSender,
+    composeInspectorConnected ->
     System.err.println("Sampling UI hierarchy for $duration every $interval...")
 
     val samples =
@@ -260,12 +264,13 @@ private suspend fun runWithConnectedInspectors(
   adbSession: AdbSession,
   serial: String,
   packageName: String,
+  needsDebugViewAttributes: Boolean,
   composeInspectorJarPath: String?,
   block: suspend (CommandSender, Boolean) -> Unit,
 ) = coroutineScope {
   try {
     val injectionManager = InjectionManager(adbSession, serial, packageName)
-    val port = injectionManager.injectAndAttach()
+    val port = injectionManager.injectAndAttach(needsDebugViewAttributes)
     CommandSender.connect(host = "127.0.0.1", port = port.toInt(), scope = this).use { commandSender ->
       createViewInspector(commandSender, injectionManager)
 

@@ -146,7 +146,6 @@ class ComposeInspectorTest {
 
     // Trigger injectAndAttach so we populate the appDataDir internal states
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "pgrep -f '^${packageName.replace(".", "\\.")}(:.*)?$'", "1234\n")
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "settings put global debug_view_attributes 1", "")
 
     val baseAgentSetupCmd =
       "run-as $packageName sh -c '" +
@@ -168,7 +167,7 @@ class ComposeInspectorTest {
       "cat /proc/net/unix | grep ui_inspector_1234 || true",
       "ui_inspector_1234\n",
     )
-    injectionManager.injectAndAttach()
+    injectionManager.injectAndAttach(needsDebugViewAttributes = false)
 
     // 3. Execute E2E Orchestrator with dynamic lambda jar resolution mock
     CommandSender.connect("127.0.0.1", serverPort, this).use { commandSender ->
@@ -405,7 +404,6 @@ class ComposeInspectorTest {
       )
 
     // Trigger injectAndAttach so we populate the appDataDir internal states
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "settings put global debug_view_attributes 1", "")
     val baseAgentSetupCmd =
       "run-as $packageName sh -c '" +
         "rm -f lib_ui_inspector_agent.so lib_ui_inspector_service.jar lib_ui_inspector_payload.jar && " +
@@ -426,7 +424,7 @@ class ComposeInspectorTest {
       "cat /proc/net/unix | grep ui_inspector_1234 || true",
       "ui_inspector_1234\n",
     )
-    injectionManager.injectAndAttach()
+    injectionManager.injectAndAttach(needsDebugViewAttributes = false)
 
     val uiDump =
       CommandSender.connect("127.0.0.1", serverPort, this).use { commandSender ->
@@ -716,7 +714,6 @@ class ComposeInspectorTest {
       )
 
     // Trigger injectAndAttach so we populate the appDataDir internal states
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "settings put global debug_view_attributes 1", "")
     val baseAgentSetupCmd =
       "run-as $packageName sh -c '" +
         "rm -f lib_ui_inspector_agent.so lib_ui_inspector_service.jar lib_ui_inspector_payload.jar && " +
@@ -737,7 +734,7 @@ class ComposeInspectorTest {
       "cat /proc/net/unix | grep ui_inspector_1234 || true",
       "ui_inspector_1234\n",
     )
-    injectionManager.injectAndAttach()
+    injectionManager.injectAndAttach(needsDebugViewAttributes = false)
 
     val uiDump =
       CommandSender.connect("127.0.0.1", serverPort, this).use { commandSender ->
@@ -1054,7 +1051,6 @@ class ComposeInspectorTest {
 
     // Trigger injectAndAttach so we populate the appDataDir internal states
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "pgrep -f '^${packageName.replace(".", "\\.")}(:.*)?$'", "1234\n")
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "settings put global debug_view_attributes 1", "")
 
     val baseAgentSetupCmd =
       "run-as $packageName sh -c '" +
@@ -1076,7 +1072,7 @@ class ComposeInspectorTest {
       "cat /proc/net/unix | grep ui_inspector_1234 || true",
       "ui_inspector_1234\n",
     )
-    injectionManager.injectAndAttach()
+    injectionManager.injectAndAttach(needsDebugViewAttributes = false)
 
     val originalFactory = sessionFactory
     sessionFactory = { testSession }

@@ -81,6 +81,16 @@ private const val DEVICE_TMP_SERVICE_JAR_PATH = "$DEVICE_TMP_DIR/$SERVICE_JAR_FI
 /** Default resolver that locates the agent binary in the Bazel runfiles directory. It uses the device ABI to find the correct binary. */
 private val DEFAULT_AGENT_PATH_RESOLVER: (String) -> Path = { abi -> Paths.get(HOST_AGENT_PATH, abi, AGENT_FILE_NAME) }
 
+/** The per-app setting that makes the platform expose attribute resolution stacks for a single package. */
+private const val DEBUG_VIEW_ATTRIBUTES_PACKAGE_SETTING = "debug_view_attributes_application_package"
+
+/** Marker separating the two `settings get` outputs when both settings are read in a single shell invocation. */
+private const val SETTINGS_OUTPUT_SEPARATOR = "__UI_INSPECTOR_SETTINGS_SEPARATOR__"
+
+/** Reads the global and per-app debug-view-attributes settings in one shell invocation. */
+private const val READ_DEBUG_VIEW_ATTRIBUTES_CMD =
+  "settings get global debug_view_attributes ; echo $SETTINGS_OUTPUT_SEPARATOR ; settings get global $DEBUG_VIEW_ATTRIBUTES_PACKAGE_SETTING"
+
 /**
  * Manages the lifecycle of injecting and attaching the native agent to a target application.
  *
@@ -113,11 +123,12 @@ class InjectionManager(
   /**
    * Push the agent to the device and attach it to the specified app.
    *
-   * @param serial The device serial number.
-   * @param packageName The package name of the app to attach the agent to.
+   * @param needsDebugViewAttributes Whether the platform must expose attribute resolution stacks for the inspected app, i.e. whether the
+   *   `resolution-stack` facet was requested. When true, the per-app debug-view-attributes setting is enabled (see
+   *   [enableDebugViewAttributes]); when false, device settings are left untouched.
    * @return The forwarded TCP port number on the host. Connect to this port to communicate with the agent.
    */
-  suspend fun injectAndAttach(): String = coroutineScope {
+  suspend fun injectAndAttach(needsDebugViewAttributes: Boolean): String = coroutineScope {
     val (deviceAbi, sdkVersion) = retrieveDeviceMetadata(deviceSelector)
     if (sdkVersion < ProtocolConstants.MIN_SUPPORTED_API_LEVEL) {
       throw IllegalStateException(
@@ -125,19 +136,18 @@ class InjectionManager(
       )
     }
 
-    // Query app data dir and pid synchronously at the beginning to verify that the app is installed and running
+    // Query app data dir and pid synchronously at the beginning to verify that the app is installed and running. The pid is deliberately
+    // captured before any debug-view-attributes flip: the flip only relaunches activities within the existing process, so the pid stays
+    // valid, and reading it first avoids mutating device settings when the target is not running.
     appDataDir = queryAppDataDir(deviceSelector, packageName)
     val pid = getPid(deviceSelector, packageName)
 
-    // Enable debug view attributes before attaching.
-    // This is needed for the platform to expose attribute resolution traces.
-    // We don't clean this up because changing this flag causes the activity to restart. We do it once so the activity doesn't need to
-    // restart each time.
-    val flagSet = async { adbSession.deviceServices.shellAsText(deviceSelector, "settings put global debug_view_attributes 1") }
-
+    // Resolve local paths before touching device settings, so a missing host artifact cannot restart the app's activities for nothing.
     val agentLocalPath = getAgentLocalPath(deviceAbi)
     val serviceJarLocalPath = getServiceJarLocalPath()
     val payloadJarLocalPath = getPayloadJarLocalPath()
+
+    val debugViewAttributesSetup = async { if (needsDebugViewAttributes) enableDebugViewAttributes() }
 
     val agentPush = async { pushFileToDevice(deviceSelector, agentLocalPath, DEVICE_TMP_AGENT_PATH) }
     val jarPush = async { pushFileToDevice(deviceSelector, serviceJarLocalPath, DEVICE_TMP_SERVICE_JAR_PATH) }
@@ -146,7 +156,7 @@ class InjectionManager(
     val agentRemoteTmpPath = agentPush.await()
     val serviceJarRemoteTmpPath = jarPush.await()
     val payloadRemoteTmpPath = payloadPush.await()
-    flagSet.await()
+    debugViewAttributesSetup.await()
 
     copyAndSetupFiles(deviceSelector, packageName, agentRemoteTmpPath, serviceJarRemoteTmpPath, payloadRemoteTmpPath)
 
@@ -157,6 +167,34 @@ class InjectionManager(
     waitForAgentSocket(deviceSelector, socketName, pid, deviceTime)
 
     setupAdbForward(deviceSelector, socketName)
+  }
+
+  /**
+   * Makes the platform expose attribute resolution stacks for the inspected app by enabling the per-app
+   * [DEBUG_VIEW_ATTRIBUTES_PACKAGE_SETTING] setting.
+   *
+   * The setting is read before writing: if the global `debug_view_attributes` is already enabled (developer options, or residue from older
+   * builds of this tool that set it globally) or the per-app setting already names [packageName], no device mutation happens. When the
+   * setting is actually flipped it is left set. Changing it in either direction restarts the app's activities, so clearing it per run would
+   * pay two restarts. Set-and-leave confines the restart to the first resolution-stack request per app.
+   */
+  private suspend fun enableDebugViewAttributes() {
+    val output = runShellCommand(deviceSelector, READ_DEBUG_VIEW_ATTRIBUTES_CMD).stdout
+    val values = output.split(SETTINGS_OUTPUT_SEPARATOR)
+    if (values.size != 2) {
+      throw IllegalStateException("Unexpected output while reading debug-view-attributes settings: $output")
+    }
+    // `settings get` prints the literal "null" for an unset key; exact comparisons below treat it as any other non-matching value.
+    val global = values[0].trim()
+    val perApp = values[1].trim()
+    if (global == "1" || perApp == packageName) {
+      return
+    }
+    runShellCommand(deviceSelector, "settings put global $DEBUG_VIEW_ATTRIBUTES_PACKAGE_SETTING $packageName")
+    System.err.println(
+      "Enabled view-attribute debugging for $packageName: its activities will restart now, and the setting stays enabled for this app. " +
+        "Clear it with: adb shell settings delete global $DEBUG_VIEW_ATTRIBUTES_PACKAGE_SETTING"
+    )
   }
 
   /** Sets up adb port forwarding to the agent. */

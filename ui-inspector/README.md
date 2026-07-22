@@ -182,9 +182,13 @@ It then starts the injection sequence:
 
 * Queries the app private data directory dynamically using `run-as <package> pwd`
   to support custom multi-user environments (e.g. `/data/user/10/`).
-* Automatically enables global view debugging by running
-  `settings put global debug_view_attributes 1` (allowing the platform to expose
-  attribute resolution stacks).
+* When the `resolution-stack` facet is requested, enables view debugging for the
+  inspected app via `settings put global debug_view_attributes_application_package
+  <package>` (allowing the platform to expose attribute resolution stacks). The
+  setting is read first and skipped if it already names the package or the global
+  `debug_view_attributes` is already enabled; when actually flipped it is left set
+  (changing it in either direction restarts the app's activities) and a stderr
+  notice explains how to clear it.
 * Runs `adb shell run-as <package> cp` to move files from
   `/data/local/tmp` to the app memory space.
 * Uses `run-as <package>` to `chmod` all binary and jar files to read-only (`444`),

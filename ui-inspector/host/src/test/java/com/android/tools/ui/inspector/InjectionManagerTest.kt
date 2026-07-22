@@ -24,6 +24,8 @@ import com.android.adblib.DeviceState
 import com.android.adblib.testing.FakeAdbSession
 import com.android.tools.ui.inspector.common.ProtocolConstants
 import com.google.common.truth.Truth.assertThat
+import java.io.ByteArrayOutputStream
+import java.io.PrintStream
 import java.nio.file.Path
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.runTest
@@ -49,6 +51,11 @@ class InjectionManagerTest {
 
   private val deviceSerial = "123"
   private val packageName = "com.example"
+  private val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
+  private val settingsSeparator = "__UI_INSPECTOR_SETTINGS_SEPARATOR__"
+  private val readSettingsCmd =
+    "settings get global debug_view_attributes ; echo $settingsSeparator ; settings get global debug_view_attributes_application_package"
+  private val putSettingsCmd = "settings put global debug_view_attributes_application_package $packageName"
 
   @Before
   fun setUp() {
@@ -66,7 +73,6 @@ class InjectionManagerTest {
     agentPathResolver = { abi -> dummyAgent }
 
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "settings put global debug_view_attributes 1", "")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "date +\"%m-%d %H:%M:%S.000\"", "06-24 15:44:32.000\n")
     listOf(
         "/data/local/tmp/lib_ui_inspector_agent.so",
@@ -119,7 +125,7 @@ class InjectionManagerTest {
       "ui_inspector_1234\n",
     )
 
-    val port = injectionManager.injectAndAttach()
+    val port = injectionManager.injectAndAttach(needsDebugViewAttributes = false)
     assertThat(port).isEqualTo("12345")
 
     // Verify that syncSend was called with correct parameters
@@ -171,7 +177,7 @@ class InjectionManagerTest {
     )
 
     try {
-      injectionManager.injectAndAttach()
+      injectionManager.injectAndAttach(needsDebugViewAttributes = false)
       fail("Expected IllegalStateException was not thrown")
     } catch (e: IllegalStateException) {
       assertThat(e.message).isEqualTo("Command '$setupCmd' failed with exit code 1. Stderr: Package is not debuggable")
@@ -236,7 +242,7 @@ class InjectionManagerTest {
     fakeSession.deviceServices.configureShellCommand(deviceSelector, logcatCmd, mockErrorLog)
 
     try {
-      injectionManager.injectAndAttach()
+      injectionManager.injectAndAttach(needsDebugViewAttributes = false)
       fail("Expected IllegalStateException due to agent bootstrap failure")
     } catch (e: IllegalStateException) {
       assertThat(e.message).contains("Failed to attach UI Inspector agent. Agent error in logcat:")
@@ -285,7 +291,7 @@ class InjectionManagerTest {
     fakeSession.deviceServices.configureShellCommand(deviceSelector, attachCmd, "")
 
     // Initialize appDataDir
-    injectionManager.injectAndAttach()
+    injectionManager.injectAndAttach(needsDebugViewAttributes = false)
 
     val inspectorJar = tempFolder.newFile("my-inspector.jar").toPath()
     val inspector = InspectorMetadata(id = "my.inspector", localJarPath = inspectorJar)
@@ -318,7 +324,7 @@ class InjectionManagerTest {
     )
 
     try {
-      injectionManager.injectAndAttach()
+      injectionManager.injectAndAttach(needsDebugViewAttributes = false)
       fail("Expected IllegalStateException for failing run-as pwd")
     } catch (e: IllegalStateException) {
       assertThat(e.message)
@@ -349,7 +355,7 @@ class InjectionManagerTest {
     )
 
     try {
-      injectionManager.injectAndAttach()
+      injectionManager.injectAndAttach(needsDebugViewAttributes = false)
       fail("Expected IllegalStateException for failing pidof")
     } catch (e: IllegalStateException) {
       assertThat(e.message).contains("The application '$packageName' is not running on the device. Please start the app and try again.")
@@ -369,7 +375,7 @@ class InjectionManagerTest {
     // Note: pgrep shell command is deliberately unconfigured so FakeAdbDeviceServices throws an exception simulating an ADB failure.
 
     try {
-      injectionManager.injectAndAttach()
+      injectionManager.injectAndAttach(needsDebugViewAttributes = false)
       fail("Expected exception for unconfigured pgrep command")
     } catch (e: Exception) {
       assertThat(e.message).doesNotContain("The application '$packageName' is not running on the device")
@@ -414,7 +420,7 @@ class InjectionManagerTest {
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n27\n")
 
     try {
-      injectionManager.injectAndAttach()
+      injectionManager.injectAndAttach(needsDebugViewAttributes = false)
       fail("Expected IllegalStateException for unsupported API level")
     } catch (e: IllegalStateException) {
       assertThat(e.message).contains("The UI Inspector only supports API level ${ProtocolConstants.MIN_SUPPORTED_API_LEVEL} and above")
@@ -431,7 +437,7 @@ class InjectionManagerTest {
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\ninvalid_sdk\n")
 
     try {
-      injectionManager.injectAndAttach()
+      injectionManager.injectAndAttach(needsDebugViewAttributes = false)
       fail("Expected IllegalStateException for failed SDK version retrieval")
     } catch (e: IllegalStateException) {
       assertThat(e.message).contains("Failed to retrieve device SDK API level")
@@ -447,7 +453,7 @@ class InjectionManagerTest {
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "\n30\n")
 
     try {
-      injectionManager.injectAndAttach()
+      injectionManager.injectAndAttach(needsDebugViewAttributes = false)
       fail("Expected IllegalStateException for failed CPU ABI retrieval")
     } catch (e: IllegalStateException) {
       assertThat(e.message).contains("Failed to retrieve device CPU ABI")
@@ -493,7 +499,7 @@ class InjectionManagerTest {
       "cmd activity attach-agent 1234 \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;1234\""
     fakeSession.deviceServices.configureShellCommand(deviceSelector, attachCmd, "")
 
-    injectionManager.injectAndAttach()
+    injectionManager.injectAndAttach(needsDebugViewAttributes = false)
 
     val inspectorJar = tempFolder.newFile("my-inspector.jar").toPath()
     val inspector = InspectorMetadata(id = "my.inspector", localJarPath = inspectorJar)
@@ -564,7 +570,167 @@ class InjectionManagerTest {
       "ui_inspector_1234\n",
     )
 
-    val port = injectionManager.injectAndAttach()
+    val port = injectionManager.injectAndAttach(needsDebugViewAttributes = false)
     assertThat(port).isEqualTo("12345")
+  }
+
+  @Test
+  fun testInjectAndAttach_withoutResolutionStackDemand_leavesSettingsUntouched() = runTest {
+    val injectionManager = createInjectionManager()
+    configureSuccessfulInjection()
+
+    injectionManager.injectAndAttach(needsDebugViewAttributes = false)
+
+    val settingsCommands = fakeSession.deviceServices.shellV2Requests.map { it.command }.filter { it.startsWith("settings ") }
+    assertThat(settingsCommands).isEmpty()
+  }
+
+  @Test
+  fun testInjectAndAttach_globalDebugViewAttributesAlreadyEnabled_skipsWrite() = runTest {
+    val injectionManager = createInjectionManager()
+    configureSuccessfulInjection()
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, readSettingsCmd, "1\n$settingsSeparator\nnull\n")
+
+    injectionManager.injectAndAttach(needsDebugViewAttributes = true)
+
+    val settingsCommands = fakeSession.deviceServices.shellV2Requests.map { it.command }.filter { it.startsWith("settings ") }
+    assertThat(settingsCommands).containsExactly(readSettingsCmd)
+  }
+
+  @Test
+  fun testInjectAndAttach_perAppSettingAlreadyNamesPackage_skipsWrite() = runTest {
+    val injectionManager = createInjectionManager()
+    configureSuccessfulInjection()
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, readSettingsCmd, "null\n$settingsSeparator\n$packageName\n")
+
+    injectionManager.injectAndAttach(needsDebugViewAttributes = true)
+
+    val settingsCommands = fakeSession.deviceServices.shellV2Requests.map { it.command }.filter { it.startsWith("settings ") }
+    assertThat(settingsCommands).containsExactly(readSettingsCmd)
+  }
+
+  @Test
+  fun testInjectAndAttach_enablesPerAppDebugViewAttributes_andPrintsNotice() = runTest {
+    val injectionManager = createInjectionManager()
+    configureSuccessfulInjection()
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, readSettingsCmd, "null\n$settingsSeparator\nnull\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, putSettingsCmd, "")
+
+    val stderr = captureStderr { injectionManager.injectAndAttach(needsDebugViewAttributes = true) }
+
+    val commands = fakeSession.deviceServices.shellV2Requests.map { it.command }
+    assertThat(commands).contains(putSettingsCmd)
+    assertThat(stderr).contains("settings delete global debug_view_attributes_application_package")
+    // The pid is captured before the settings flip: the activity relaunch keeps the process alive, and reading the pid first avoids
+    // mutating settings when the target is not running.
+    val pgrepIndex = commands.indexOfFirst { it.startsWith("pgrep ") }
+    val settingsReadIndex = commands.indexOf(readSettingsCmd)
+    assertThat(pgrepIndex).isAtLeast(0)
+    assertThat(pgrepIndex).isLessThan(settingsReadIndex)
+  }
+
+  @Test
+  fun testInjectAndAttach_settingsReadFails_failsWithoutWriting() = runTest {
+    val injectionManager = createInjectionManager()
+    configureSuccessfulInjection()
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, readSettingsCmd, stdout = "", stderr = "boom", exitCode = 1)
+
+    try {
+      injectionManager.injectAndAttach(needsDebugViewAttributes = true)
+      fail("Expected IllegalStateException for failing settings read")
+    } catch (e: IllegalStateException) {
+      assertThat(e.message).contains("failed with exit code 1")
+    }
+
+    val putCommands = fakeSession.deviceServices.shellV2Requests.map { it.command }.filter { it.startsWith("settings put ") }
+    assertThat(putCommands).isEmpty()
+  }
+
+  @Test
+  fun testInjectAndAttach_malformedSettingsReadOutput_failsWithoutWriting() = runTest {
+    val injectionManager = createInjectionManager()
+    configureSuccessfulInjection()
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, readSettingsCmd, "garbage without the separator\n")
+
+    try {
+      injectionManager.injectAndAttach(needsDebugViewAttributes = true)
+      fail("Expected IllegalStateException for malformed settings output")
+    } catch (e: IllegalStateException) {
+      assertThat(e.message).contains("Unexpected output while reading debug-view-attributes settings")
+    }
+
+    val putCommands = fakeSession.deviceServices.shellV2Requests.map { it.command }.filter { it.startsWith("settings put ") }
+    assertThat(putCommands).isEmpty()
+  }
+
+  @Test
+  fun testInjectAndAttach_settingsPutFails_throwsWithoutNotice() = runTest {
+    val injectionManager = createInjectionManager()
+    configureSuccessfulInjection()
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, readSettingsCmd, "null\n$settingsSeparator\nnull\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, putSettingsCmd, stdout = "", stderr = "denied", exitCode = 1)
+
+    val stderr = captureStderr {
+      try {
+        injectionManager.injectAndAttach(needsDebugViewAttributes = true)
+        fail("Expected IllegalStateException for failing settings put")
+      } catch (e: IllegalStateException) {
+        assertThat(e.message).contains("failed with exit code 1")
+      }
+    }
+
+    assertThat(stderr).doesNotContain("settings delete global")
+  }
+
+  private fun createInjectionManager() =
+    InjectionManager(
+      testSession,
+      deviceSerial,
+      packageName,
+      agentPathResolver,
+      dummyJar,
+      dummyPayload,
+      tempFileSuffixGenerator = { "test.tmp" },
+    )
+
+  /** Configures every shell command of the happy-path injection flow, except the debug-view-attributes settings commands. */
+  private fun configureSuccessfulInjection() {
+    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pgrep -f '^${packageName.replace(".", "\\.")}(:.*)?$'", "1234\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
+    val setupCmd =
+      "run-as $packageName sh -c '" +
+        "rm -f lib_ui_inspector_agent.so lib_ui_inspector_service.jar lib_ui_inspector_payload.jar && " +
+        "cat /data/local/tmp/lib_ui_inspector_agent.so > lib_ui_inspector_agent.so && " +
+        "cat /data/local/tmp/lib_ui_inspector_service.jar > lib_ui_inspector_service.jar && " +
+        "cat /data/local/tmp/lib_ui_inspector_payload.jar > lib_ui_inspector_payload.jar && " +
+        "chmod 444 lib_ui_inspector_agent.so && " +
+        "chmod 444 lib_ui_inspector_service.jar && " +
+        "chmod 444 lib_ui_inspector_payload.jar'"
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, setupCmd, "")
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      "cmd activity attach-agent 1234 \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;1234\"",
+      "",
+    )
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      "cat /proc/net/unix | grep ui_inspector_1234 || true",
+      "ui_inspector_1234\n",
+    )
+  }
+
+  /** Runs [block] with [System.err] redirected and returns everything it printed. */
+  private inline fun captureStderr(block: () -> Unit): String {
+    val originalErr = System.err
+    val buffer = ByteArrayOutputStream()
+    System.setErr(PrintStream(buffer))
+    try {
+      block()
+    } finally {
+      System.setErr(originalErr)
+    }
+    return buffer.toString()
   }
 }
