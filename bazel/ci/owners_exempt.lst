@@ -3393,7 +3393,6 @@ tools/adt/idea/android/testSrc/com/android/tools/idea/widget/AdbConnectionWidget
 tools/adt/idea/android/ui/testSrc/com/android/tools/idea/ui/ChooseApiLevelDialogTest.kt
 tools/adt/idea/android/ui/testSrc/com/android/tools/idea/ui/CreateDiagnosticReportDialogTest.kt
 tools/adt/idea/android/ui/testSrc/com/android/tools/idea/ui/resourcechooser/CompactResourcePickerTest.kt
-tools/adt/idea/android/ui/testSrc/com/android/tools/idea/ui/resourcechooser/DrawableGridTest.kt
 tools/adt/idea/android/ui/testSrc/com/android/tools/idea/ui/resourcechooser/HorizontalTabbedPanelBuilderTest.kt
 tools/adt/idea/android/ui/testSrc/com/android/tools/idea/ui/validation/validators/PathValidatorTest.kt
 tools/adt/idea/android/ui/testSrc/com/android/tools/idea/ui/validation/validators/StringPathValidatorTest.kt
