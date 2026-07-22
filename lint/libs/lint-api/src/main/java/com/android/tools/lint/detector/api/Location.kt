@@ -543,7 +543,7 @@ protected constructor(
       endOffset = min(endOffset, size)
       startOffset = min(startOffset, endOffset)
       val lineStarts = getLineStarts(contents)
-      var line = findLineFromOffset(startOffset, contents)
+      var line = findLineFromOffset(startOffset, lineStarts)
       var lineOffset = lineStarts[line]
       val start = DefaultPosition(line, startOffset - lineOffset, startOffset)
       for (offset in startOffset..size) {
@@ -589,7 +589,8 @@ protected constructor(
 
       var targetLine = line
       var targetPattern = patternStart
-      var offset = findLineOffset(targetLine, contents)
+      val lineStarts = getLineStarts(contents)
+      var offset = findLineOffset(targetLine, lineStarts)
       if (offset == -1) {
         return create(file)
       }
@@ -603,7 +604,7 @@ protected constructor(
         val index: Int
         if (direction == SearchDirection.BACKWARD) {
           index = findPreviousMatch(contents, offset, targetPattern, hints)
-          targetLine = adjustLine(contents, targetLine, index)
+          targetLine = adjustLine(lineStarts, targetLine, index)
         } else if (direction == SearchDirection.EOL_BACKWARD) {
           var lineEnd = indexOf(contents, '\n', offset)
           if (lineEnd == -1) {
@@ -611,10 +612,10 @@ protected constructor(
           }
 
           index = findPreviousMatch(contents, lineEnd, targetPattern, hints)
-          targetLine = adjustLine(contents, targetLine, index)
+          targetLine = adjustLine(lineStarts, targetLine, index)
         } else if (direction == SearchDirection.FORWARD) {
           index = findNextMatch(contents, offset, targetPattern, hints)
-          targetLine = adjustLine(contents, targetLine, index)
+          targetLine = adjustLine(lineStarts, targetLine, index)
         } else {
           assert(direction == SearchDirection.NEAREST || direction == SearchDirection.EOL_NEAREST)
 
@@ -629,10 +630,10 @@ protected constructor(
 
           if (before == -1) {
             index = after
-            targetLine = adjustLine(contents, targetLine, index)
+            targetLine = adjustLine(lineStarts, targetLine, index)
           } else if (after == -1) {
             index = before
-            targetLine = adjustLine(contents, targetLine, index)
+            targetLine = adjustLine(lineStarts, targetLine, index)
           } else {
             var newLinesBefore = 0
             for (i in before until offset) {
@@ -648,10 +649,10 @@ protected constructor(
             }
             if (newLinesBefore < newLinesAfter || newLinesBefore == newLinesAfter && offset - before < after - offset) {
               index = before
-              targetLine = adjustLine(contents, targetLine, index)
+              targetLine = adjustLine(lineStarts, targetLine, index)
             } else {
               index = after
-              targetLine = adjustLine(contents, targetLine, index)
+              targetLine = adjustLine(lineStarts, targetLine, index)
             }
           }
         }
@@ -788,11 +789,11 @@ protected constructor(
     }
 
     @JvmStatic
-    private fun adjustLine(doc: CharSequence, line: Int, newOffset: Int): Int {
+    private fun adjustLine(lineStarts: IntArray, line: Int, newOffset: Int): Int {
       if (newOffset == -1) {
         return line
       }
-      return findLineFromOffset(newOffset, doc)
+      return findLineFromOffset(newOffset, lineStarts)
     }
 
     /**
@@ -816,14 +817,15 @@ protected constructor(
       return currentLocation
     }
 
-    private fun findLineOffset(targetLine: Int, contents: CharSequence): Int {
-      if (targetLine <= 0) return 0
-      val lineStarts = getLineStarts(contents)
-      return if (targetLine < lineStarts.size) lineStarts[targetLine] else -1
-    }
+    private fun findLineOffset(targetLine: Int, lineStarts: IntArray): Int =
+      when {
+        targetLine <= 0 -> 0
+        targetLine < lineStarts.size -> lineStarts[targetLine]
+        else -> -1
+      }
 
-    private fun findLineFromOffset(offset: Int, contents: CharSequence): Int {
-      val index = Arrays.binarySearch(getLineStarts(contents), offset)
+    private fun findLineFromOffset(offset: Int, lineStarts: IntArray): Int {
+      val index = Arrays.binarySearch(lineStarts, offset)
       return if (index >= 0) index else -index - 2
     }
 
