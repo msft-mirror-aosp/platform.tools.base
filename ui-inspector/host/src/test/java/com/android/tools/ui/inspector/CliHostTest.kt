@@ -16,13 +16,20 @@
 
 package com.android.tools.ui.inspector
 
+import com.android.adblib.DeviceList
+import com.android.adblib.testing.FakeAdbSession
 import com.google.common.truth.Truth.assertThat
+import java.nio.file.Files
 import java.nio.file.Paths
 import org.junit.Assert.assertThrows
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 import picocli.CommandLine
 
 class CliHostTest {
+
+  @get:Rule val tempFolder = TemporaryFolder()
 
   @Test
   fun testNoArgsReturnsError() {
@@ -86,6 +93,41 @@ class CliHostTest {
     val parseResult = cmd.parseArgs("list-packages", "--device", "123")
     val listCmd = parseResult.subcommand().commandSpec().userObject() as ListPackagesCommand
     assertThat(listCmd.device).isEqualTo("123")
+  }
+
+  @Test
+  fun testDeviceOptionIsOptional() {
+    val dumpCmd = CommandLine(UiInspectorCommand()).addSubcommand("dump-ui", DumpUiCommand())
+    val dumpParse = dumpCmd.parseArgs("dump-ui", "--package", "com.example")
+    assertThat((dumpParse.subcommand().commandSpec().userObject() as DumpUiCommand).device).isNull()
+
+    val trackCmd = CommandLine(UiInspectorCommand()).addSubcommand("track-changes", TrackChangesCommand())
+    val trackParse = trackCmd.parseArgs("track-changes", "--package", "com.example")
+    assertThat((trackParse.subcommand().commandSpec().userObject() as TrackChangesCommand).device).isNull()
+
+    val listCmd = CommandLine(UiInspectorCommand()).addSubcommand("list-packages", ListPackagesCommand())
+    val listParse = listCmd.parseArgs("list-packages")
+    assertThat((listParse.subcommand().commandSpec().userObject() as ListPackagesCommand).device).isNull()
+  }
+
+  @Test
+  fun testDumpUiDeviceResolutionFailureLeavesOutputFileUntouched() {
+    val outputFile = tempFolder.newFile("dump.json").toPath()
+    Files.write(outputFile, "existing content".toByteArray(Charsets.UTF_8))
+    val noDevicesSession = FakeAdbSession().apply { hostServices.devices = DeviceList(emptyList(), emptyList()) }
+    val originalFactory = sessionFactory
+    sessionFactory = { noDevicesSession }
+    try {
+      val exitCode =
+        CommandLine(UiInspectorCommand())
+          .addSubcommand("dump-ui", DumpUiCommand())
+          .execute("dump-ui", "--package", "com.example", "-o", outputFile.toString())
+
+      assertThat(exitCode).isEqualTo(1)
+      assertThat(String(Files.readAllBytes(outputFile), Charsets.UTF_8)).isEqualTo("existing content")
+    } finally {
+      sessionFactory = originalFactory
+    }
   }
 
   @Test

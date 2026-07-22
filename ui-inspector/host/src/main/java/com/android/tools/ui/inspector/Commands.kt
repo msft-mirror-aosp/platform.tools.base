@@ -19,6 +19,7 @@ package com.android.tools.ui.inspector
 import com.android.adblib.AdbHostServices
 import com.android.adblib.AdbSession
 import com.android.adblib.DeviceSelector
+import com.android.adblib.DeviceState
 import com.android.adblib.shellAsText
 import com.android.tools.ui.inspector.printer.UiDumpPrinter
 import java.io.File
@@ -40,6 +41,33 @@ suspend fun doListDevices(adbSession: AdbSession) {
     println("No devices connected.")
   } else {
     devices.forEach { println(it.serialNumber) }
+  }
+}
+
+/**
+ * Resolves the serial number of the device to target. A [requested] serial is returned unchanged; when omitted, the serial of the only
+ * online device is used.
+ *
+ * @throws IllegalStateException when no serial is requested and there is not exactly one online device.
+ */
+internal suspend fun resolveDeviceSerial(adbSession: AdbSession, requested: String?): String {
+  // A requested serial is deliberately not validated against the device list: the list is only a snapshot (a device
+  // can change state right after the check), and the adb server already rejects unusable serials authoritatively
+  // when the first command reaches it. This matches adb's own behavior with -s.
+  if (requested != null) return requested
+  val devices = adbSession.hostServices.devices(AdbHostServices.DeviceInfoFormat.SHORT_FORMAT)
+  val onlineDevices = devices.filter { it.deviceState == DeviceState.ONLINE }
+  return when {
+    onlineDevices.size == 1 -> onlineDevices.single().serialNumber
+    devices.isEmpty() -> throw IllegalStateException("No connected devices found. Connect a device or select one with --device.")
+    onlineDevices.isEmpty() -> {
+      val states = devices.sortedBy { it.serialNumber }.joinToString { "${it.serialNumber} (${it.deviceStateString})" }
+      throw IllegalStateException("No online devices found. Connected devices: $states.")
+    }
+    else -> {
+      val serials = onlineDevices.map { it.serialNumber }.sorted().joinToString()
+      throw IllegalStateException("Multiple online devices found: $serials. Select one with --device.")
+    }
   }
 }
 

@@ -32,6 +32,9 @@ import picocli.CommandLine.Option
 private const val EXIT_OK = 0
 private const val EXIT_ERROR = 1
 
+private const val DEVICE_OPTION_DESCRIPTION =
+  "The device serial number. Defaults to the only online device; required when multiple online devices are connected"
+
 /** Factory for creating [AdbSession]. Can be overridden in tests. */
 var sessionFactory: () -> AdbSession = { createStandaloneSession(NO_LOGGING) }
 
@@ -59,12 +62,12 @@ class ListDevicesCommand : Callable<Int> {
 
 @Command(name = "list-packages", description = ["List debuggable application package names on the device"])
 class ListPackagesCommand : Callable<Int> {
-  @Option(names = ["--device"], required = true, description = ["The device serial number"]) var device: String = ""
+  @Option(names = ["--device"], description = [DEVICE_OPTION_DESCRIPTION]) var device: String? = null
 
   override fun call(): Int {
     val adbSession = sessionFactory()
     try {
-      runBlocking { doListPackages(adbSession, device) }
+      runBlocking { doListPackages(adbSession, resolveDeviceSerial(adbSession, device)) }
       return EXIT_OK
     } catch (e: Exception) {
       System.err.println("Error listing packages: ${e.message}")
@@ -75,7 +78,7 @@ class ListPackagesCommand : Callable<Int> {
 
 /** Base class containing common command line options for subcommands that query layout trees. */
 open class UiInspectorDumpCommand : Callable<Int> {
-  @Option(names = ["--device"], required = true, description = ["The device serial number"]) var device: String = ""
+  @Option(names = ["--device"], description = [DEVICE_OPTION_DESCRIPTION]) var device: String? = null
   @Option(names = ["--package"], required = true, description = ["App package name"]) var packageName: String = ""
   @Option(names = ["--include-attributes"], description = ["Include view attributes in the dump"]) var includeAttributes: Boolean = false
   @Option(names = ["--include-resolution-stack"], description = ["Include attribute resolution stack in the dump"])
@@ -99,14 +102,15 @@ open class UiInspectorDumpCommand : Callable<Int> {
 @Command(name = "dump-ui", description = ["Dump UI hierarchy"])
 class DumpUiCommand : UiInspectorDumpCommand() {
   override fun call(): Int {
-    System.err.println("Executing dump-ui for package: $packageName on device: $device")
     val adbSession = sessionFactory()
     try {
+      val serial = runBlocking { resolveDeviceSerial(adbSession, device) }
+      System.err.println("Executing dump-ui for package: $packageName on device: $serial")
       withJsonPrinter(output, prettyPrint) { printer ->
         runBlocking {
           doDumpUi(
             adbSession = adbSession,
-            serial = device,
+            serial = serial,
             packageName = packageName,
             includeAttributes = includeAttributes,
             includeResolutionStack = includeResolutionStack,
@@ -131,14 +135,15 @@ class TrackChangesCommand : UiInspectorDumpCommand() {
   @Option(names = ["--duration"], description = ["Sampling duration in seconds"], defaultValue = "5") var durationSec: Long = 5
 
   override fun call(): Int {
-    System.err.println("Executing track-changes for package: $packageName on device: $device")
     val adbSession = sessionFactory()
     try {
+      val serial = runBlocking { resolveDeviceSerial(adbSession, device) }
+      System.err.println("Executing track-changes for package: $packageName on device: $serial")
       withJsonPrinter(output, prettyPrint) { printer ->
         runBlocking {
           doTrackChanges(
             adbSession = adbSession,
-            serial = device,
+            serial = serial,
             packageName = packageName,
             intervalMs = intervalMs,
             durationSec = durationSec,
