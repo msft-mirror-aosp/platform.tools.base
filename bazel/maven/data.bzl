@@ -948,6 +948,7 @@ _CLASS_JARS = [
     "com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin:pom:1.9.0-1.0.11",
     "com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin:pom:2.2.10-2.0.2",  # Used by AGP privacy-sandbox tests
     "com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin:pom:2.2.20-RC-2.0.2",  # Used by AGP tests
+    "com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin:pom:2.3.10",  # Used by Lightbuild
     "com.google.devtools.ksp:symbol-processing:1.7.10-1.0.6",
     "com.google.devtools.ksp:symbol-processing:1.8.10-1.0.9",
     "com.google.devtools.ksp:symbol-processing:1.8.21-1.0.11",
@@ -955,6 +956,7 @@ _CLASS_JARS = [
     "com.google.devtools.ksp:symbol-processing:2.2.20-RC-2.0.2",  # Used by AGP tests
     "com.google.devtools.ksp:symbol-processing-aa-embeddable:2.2.10-2.0.2",  # Used by AGP privacy-sandbox tests
     "com.google.devtools.ksp:symbol-processing-aa-embeddable:2.2.20-RC-2.0.2",  # Used by AGP tests
+    "com.google.devtools.ksp:symbol-processing-aa-embeddable:2.3.10",  # Used by by Lightbuild
     "com.google.devtools.ksp:symbol-processing-api:1.7.10-1.0.6",
     "com.google.devtools.ksp:symbol-processing-gradle-plugin:1.7.10-1.0.6",
     "com.google.devtools.ksp:symbol-processing-gradle-plugin:1.8.21-1.0.11",
@@ -1083,7 +1085,9 @@ _CLASS_JARS = [
     "com.squareup.leakcanary:shark-graph:2.14",
     "com.squareup.leakcanary:shark-hprof:2.14",
     "com.squareup.leakcanary:shark-log:2.14",
+    "com.squareup.moshi:moshi-kotlin-codegen:1.15.2",  # For Lightbuild tests
     "com.squareup.okio:okio:3.4.0",
+    "com.squareup.okio:okio:3.7.0",
     "com.squareup.okio:okio-jvm:3.9.0",
     "com.vladsch.flexmark:flexmark:0.64.8",
     "com.vladsch.flexmark:flexmark-ext-autolink:0.64.8",
