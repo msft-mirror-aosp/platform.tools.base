@@ -58,6 +58,8 @@ class HostJarTestSuiteSourceSetTest {
     val sourceSet =
       HostJarTestSuiteSourceSet(
         sourceSetName = "test",
+        testSuiteName = "test",
+        isMixed = false,
         variantServices = variantServices,
         userAddedSourceSets = emptyList(),
         javaEnabled = true,
@@ -73,6 +75,8 @@ class HostJarTestSuiteSourceSetTest {
     val sourceSet =
       HostJarTestSuiteSourceSet(
         sourceSetName = "test",
+        testSuiteName = "test",
+        isMixed = false,
         variantServices = variantServices,
         userAddedSourceSets = emptyList(),
         javaEnabled = false,
@@ -88,6 +92,8 @@ class HostJarTestSuiteSourceSetTest {
     val sourceSet =
       HostJarTestSuiteSourceSet(
         sourceSetName = "test",
+        testSuiteName = "test",
+        isMixed = false,
         variantServices = variantServices,
         userAddedSourceSets = emptyList(),
         javaEnabled = true,
@@ -104,6 +110,8 @@ class HostJarTestSuiteSourceSetTest {
     val sourceSet =
       HostJarTestSuiteSourceSet(
         sourceSetName = "test",
+        testSuiteName = "test",
+        isMixed = false,
         variantServices = variantServices,
         userAddedSourceSets = emptyList(),
         javaEnabled = true,
@@ -117,12 +125,37 @@ class HostJarTestSuiteSourceSetTest {
   }
 
   @Test
+  fun testIsMixedSourceSet() {
+    val sourceSet =
+      HostJarTestSuiteSourceSet(
+        sourceSetName = "backupTestTest",
+        testSuiteName = "backupTest",
+        isMixed = true,
+        variantServices = variantServices,
+        userAddedSourceSets = emptyList(),
+        javaEnabled = true,
+        kotlinEnabled = true,
+        includeAndroidResources = includeAndroidResources,
+        dependencies = dependencies,
+      )
+    Truth.assertThat(sourceSet.kotlin?.all?.get())
+      .containsExactly(project.layout.projectDirectory.dir("src/backupTest/backupTestTest/kotlin"))
+    Truth.assertThat(sourceSet.java?.all?.get()).containsExactly(project.layout.projectDirectory.dir("src/backupTest/backupTestTest/java"))
+    Truth.assertThat(sourceSet.resources.all.get())
+      .containsExactly(project.layout.projectDirectory.dir("src/backupTest/backupTestTest/resources"))
+    Truth.assertThat(sourceSet.manifestFileCandidate)
+      .isEqualTo(project.layout.projectDirectory.file("src/backupTest/backupTestTest/AndroidManifest.xml").asFile)
+  }
+
+  @Test
   fun testUserAddedSourceSet() {
     val userAddedSourceSet = tmpFolder.newFolder("userAdded")
     val dir = project.layout.projectDirectory.dir(userAddedSourceSet.absolutePath)
     val sourceSet =
       HostJarTestSuiteSourceSet(
         sourceSetName = "test",
+        testSuiteName = "test",
+        isMixed = false,
         variantServices = variantServices,
         userAddedSourceSets = listOf(dir),
         javaEnabled = true,

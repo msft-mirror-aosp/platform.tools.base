@@ -59,11 +59,13 @@ internal constructor(objects: ObjectFactory, name: String, projectDirectory: Dir
     val sourceSetName = if (isMixed) "${name}Test" else name
     return HostJarTestSuiteSourceSet(
       sourceSetName = sourceSetName,
+      testSuiteName = name,
+      isMixed = isMixed,
       variantServices = variantServices,
       userAddedSourceSets = userAddedSourcesSets,
       javaEnabled = javaEnabled,
       kotlinEnabled = kotlinEnabled,
-      androidResourcesFlag,
+      includeAndroidResources = androidResourcesFlag,
       dependencies = dependencies,
     )
   }

@@ -27,15 +27,25 @@ import org.gradle.api.provider.Provider
 
 internal class HostJarTestSuiteSourceSet(
   sourceSetName: String,
+  testSuiteName: String = sourceSetName,
+  isMixed: Boolean = false,
   variantServices: VariantServices,
   userAddedSourceSets: Collection<Directory>,
   javaEnabled: Boolean,
   kotlinEnabled: Boolean,
   includeAndroidResources: Provider<Boolean>,
   override val dependencies: AgpTestSuiteDependencies?,
-) : AbstractTestSuiteSourceSet(sourceSetName, variantServices, userAddedSourceSets), TestSuiteSourceSet.HostJar {
+) :
+  AbstractTestSuiteSourceSet(
+    sourceSetName = sourceSetName,
+    testSuiteName = testSuiteName,
+    isMixed = isMixed,
+    variantServices = variantServices,
+    userAddedSourceSets = userAddedSourceSets,
+  ),
+  TestSuiteSourceSet.HostJar {
 
-  val manifestFileCandidate = File(variantServices.projectInfo.projectDirectory.asFile, "src/$sourceSetName/$FN_ANDROID_MANIFEST_XML")
+  val manifestFileCandidate = File(rootFolder, FN_ANDROID_MANIFEST_XML)
 
   override val manifestFile: File? = manifestFileCandidate.takeIf { includeAndroidResources.get() }
 
