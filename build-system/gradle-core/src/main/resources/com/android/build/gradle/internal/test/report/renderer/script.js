@@ -1919,6 +1919,13 @@ const TestReportApp = {
     const activeSuite = this.state.filters.testSuite;
     const activeVariants = this.state.filters.variants;
 
+    const screenshotItems = this.getScreenshotData(testCase);
+    if (screenshotItems.length > 0) {
+      this.renderScreenshotTestView(grid, testCase, screenshotItems);
+      return;
+    }
+    const activeVariants = this.state.filters.variants;
+
     // For now, use the first target's properties. This works for all non-GMD current use cases out of the box.
     // Device-specific UI and naming will be added in a subsequent phase (see bug b/525671605).
     const commonStackTraces = (testCase.targets && testCase.targets[0]) ? testCase.targets[0].commonStackTraces : testCase.commonStackTraces;
@@ -2007,6 +2014,109 @@ const TestReportApp = {
     }
   },
 
+
+
+  renderScreenshotTestView(container, testCase, screenshotItems) {
+    const activeVariants = this.state.filters.variants || [];
+    let item = screenshotItems.find(i => activeVariants.includes(i.variantName)) || screenshotItems[0];
+
+    const isPassed = item.status === 'pass';
+    const isFailed = item.status === 'fail';
+    const statusClass = isPassed ? 'pass' : (isFailed ? 'fail' : 'error');
+    const statusText = isPassed ? 'PASSED' : (isFailed ? 'FAILED' : 'ERROR');
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'screenshot-view-container';
+
+    // 1. Header Card
+    const headerCard = document.createElement('div');
+    headerCard.className = 'screenshot-header-card';
+    headerCard.innerHTML = `
+      <div class="screenshot-title-zone">
+        <div class="screenshot-main-title">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/>
+            <polyline points="21 15 16 10 5 21"/>
+          </svg>
+          <span>${UIUtils.escapeHTML(testCase.name)}</span>
+        </div>
+        <div class="screenshot-meta-badges">
+          <span class="meta-pill"><span class="meta-pill-label">Method:</span> ${UIUtils.escapeHTML(item.methodName)}</span>
+          <span class="meta-pill"><span class="meta-pill-label">Preview:</span> ${UIUtils.escapeHTML(item.previewName)}</span>
+          <span class="meta-pill"><span class="meta-pill-label">Variant:</span> ${UIUtils.escapeHTML(item.variantName)}</span>
+          <span class="meta-pill"><span class="meta-pill-label">Suite:</span> ${UIUtils.escapeHTML(item.suiteName)}</span>
+        </div>
+      </div>
+      <div>
+        <span class="status-badge-lg ${statusClass}">${statusText}</span>
+      </div>
+    `;
+    wrapper.appendChild(headerCard);
+
+    // 2. Error Section
+    if (!isPassed || item.stackTrace) {
+      const errorBox = document.createElement('div');
+      errorBox.className = 'screenshot-error-box';
+
+      let errorTitle = 'Screenshot Test Failure';
+      if (item.stackTrace.includes('ScreenshotImageNotFoundException') || item.stackTrace.includes('Reference image file does not exist')) {
+        errorTitle = 'Reference Image Missing';
+      } else if (item.stackTrace.includes('Size Mismatch')) {
+        errorTitle = 'Image Size Mismatch';
+      } else if (item.stackTrace.includes('mismatch') || item.stackTrace.includes('differ')) {
+        errorTitle = 'Screenshot Pixel Mismatch';
+      }
+
+      const safeTrace = UIUtils.escapeHTML(item.stackTrace);
+      errorBox.innerHTML = `
+        <div class="error-box-header">
+          <div class="error-box-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <span>${UIUtils.escapeHTML(errorTitle)}</span>
+          </div>
+          ${item.stackTrace ? `<button class="copy-btn" id="btn-copy-stack-trace">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
+            <span>Copy Stack Trace</span>
+          </button>` : ''}
+        </div>
+        ${item.stackTrace ? `<pre class="error-stack-pre">${safeTrace}</pre>` : ''}
+      `;
+      wrapper.appendChild(errorBox);
+
+      const copyBtn = errorBox.querySelector('#btn-copy-stack-trace');
+      if (copyBtn) {
+        copyBtn.addEventListener('click', () => {
+          this.copyToClipboard(item.stackTrace, copyBtn);
+        });
+      }
+    }
+
+    container.appendChild(wrapper);
+  },
+
+  copyToClipboard(text, btn) {
+    if (!navigator.clipboard) {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+    } else {
+      navigator.clipboard.writeText(text);
+    }
+    const origText = btn.innerHTML;
+    btn.innerHTML = `<span>Copied!</span>`;
+    setTimeout(() => { btn.innerHTML = origText; }, 1800);
+  },
 
   showReportView() {
     this.announce("Returning to report view");
