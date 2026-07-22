@@ -599,6 +599,15 @@ const TestReportApp = {
     if (this.elements.totalPackages) this.elements.totalPackages.textContent = rootReport.numberOfPackages || 0;
     if (this.elements.totalClasses) this.elements.totalClasses.textContent = rootReport.numberOfClasses || 0;
 
+    this.processedData = rootReport;
+
+    // Build O(1) test case index asynchronously in time-sliced background chunks to prevent UI thread freezing
+    this.buildTestCaseIndexAsync(rootReport);
+  },
+
+  async buildTestCaseIndexAsync(rootReport) {
+    this.testCaseIndex = new Map();
+
     const annotateType = (node, type) => {
       node.type = type;
       const childType = this.getChildType(type);
@@ -608,9 +617,30 @@ const TestReportApp = {
       const children = node[childKey] || (type === 'class' ? node.testCases : []) || [];
       children.forEach(child => annotateType(child, childType));
     };
-    rootReport.modules.forEach(m => annotateType(m, 'module'));
 
-    this.processedData = rootReport;
+    const modules = rootReport.modules || [];
+    let itemsProcessed = 0;
+    const CHUNK_SIZE = 200; // Yield to event loop every 200 classes to keep UI responsive
+
+    for (const m of modules) {
+      annotateType(m, 'module');
+      for (const p of (m.packages || [])) {
+        for (const c of (p.classes || [])) {
+          itemsProcessed++;
+          for (const tc of (c.testCases || [])) {
+            const entry = { testCase: tc, moduleName: m.name, packageName: p.name, className: c.name };
+            this.testCaseIndex.set(`${m.name}:${p.name}:${c.name}:${tc.name}`, entry);
+            const nameKey = (tc.name || '').toLowerCase();
+            if (!this.testCaseIndex.has(nameKey)) {
+              this.testCaseIndex.set(nameKey, entry);
+            }
+          }
+          if (itemsProcessed % CHUNK_SIZE === 0) {
+            await new Promise(resolve => setTimeout(resolve, 0));
+          }
+        }
+      }
+    }
   },
 
   populateFilters() {
@@ -1864,35 +1894,42 @@ const TestReportApp = {
 
   openStackTrace(element) {
     const { module, package: pkg, class: clz, testCase: tcName } = element.dataset;
+    if (!tcName) return;
 
-    const findTestCase = (modules) => {
-      if (!modules) return null;
-      for (const m of modules) {
+    let res = null;
+
+    if (this.testCaseIndex) {
+      // 1. Try exact fully-qualified key lookup O(1)
+      const exactKey = `${module}:${pkg}:${clz}:${tcName}`;
+      res = this.testCaseIndex.get(exactKey);
+
+      // 2. Fallback to case-insensitive testCase name lookup O(1)
+      if (!res) {
+        res = this.testCaseIndex.get((tcName || '').toLowerCase());
+      }
+    }
+
+    // 3. Fallback to direct search if index is still populating in background
+    if (!res && this.processedData?.modules) {
+      for (const m of this.processedData.modules) {
         if (!module || m.name === module) {
           for (const p of (m.packages || [])) {
             if (!pkg || p.name === pkg) {
               for (const c of (p.classes || [])) {
                 if (!clz || c.name === clz) {
                   const t = (c.testCases || []).find(tc => tc.name === tcName || tc.name.toLowerCase() === (tcName || '').toLowerCase());
-                  if (t) return { testCase: t, moduleName: m.name, packageName: p.name, className: c.name };
+                  if (t) {
+                    res = { testCase: t, moduleName: m.name, packageName: p.name, className: c.name };
+                    break;
+                  }
                 }
               }
             }
           }
         }
       }
-      for (const m of modules) {
-        for (const p of (m.packages || [])) {
-          for (const c of (p.classes || [])) {
-            const t = (c.testCases || []).find(tc => tc.name === tcName || tc.name.toLowerCase() === (tcName || '').toLowerCase());
-            if (t) return { testCase: t, moduleName: m.name, packageName: p.name, className: c.name };
-          }
-        }
-      }
-      return null;
-    };
+    }
 
-    const res = findTestCase(this.processedData ? this.processedData.modules : null);
     if (res) {
       this.activeTrigger = element;
       const context = {
