@@ -198,6 +198,16 @@ class KotlinMultiplatformAndroidPluginNativeTest {
     TestFileUtils.searchAndReplace(project.getSubproject("kmpFirstLib").ktsBuildFile, "plugins {", "plugins {\n  id(\"maven-publish\")")
     TestFileUtils.searchAndReplace(project.getSubproject("kmpSecondLib").ktsBuildFile, "plugins {", "plugins {\n  id(\"maven-publish\")")
     TestFileUtils.searchAndReplace(project.getSubproject("kmpJvmOnly").ktsBuildFile, "plugins {", "plugins {\n  id(\"maven-publish\")")
+    TestFileUtils.searchAndReplace(project.getSubproject("androidLib").ktsBuildFile, "plugins {", "plugins {\n  id(\"maven-publish\")")
+    TestFileUtils.appendToFile(
+      project.getSubproject("androidLib").ktsBuildFile,
+      """
+      publishing {
+        publications.create("default", org.gradle.api.publish.maven.MavenPublication::class.java)
+      }
+      """
+        .trimIndent(),
+    )
     TestFileUtils.appendToFile(
       project.getSubproject("kmpFirstLib").ktsBuildFile,
       """
