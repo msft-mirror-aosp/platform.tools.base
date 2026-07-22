@@ -21,8 +21,8 @@ target_include_directories(
         include
         ../../transport/native
         ../../../../external/dexter/slicer/export
-        ../../../../prebuilts/studio/jdk/jdk8/linux/include
-        ../../../../prebuilts/studio/jdk/jdk8/linux/include/linux
+        ../../../../prebuilts/studio/jdk/jni_headers/jdk8
+        ../../../../prebuilts/studio/jdk/jni_headers/jdk8/linux
 )
 
 add_library(
