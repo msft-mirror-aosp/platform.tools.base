@@ -170,8 +170,8 @@ const UIUtils = {
               dropdownMenu.classList.add('hidden');
               const btn = TestReportApp.getDropdownConfigs().find(c => c.dropdown === dropdownMenu)?.btn;
               if (btn) {
-                  btn.setAttribute('aria-expanded', 'false');
-                  btn.focus();
+                btn.setAttribute('aria-expanded', 'false');
+                btn.focus();
               }
             }
           };
@@ -274,14 +274,14 @@ const Tooltip = {
 
     // Establish programmatic connection for ALL targets
     if (!target.hasAttribute('aria-describedby')) {
-        target.setAttribute('aria-describedby', 'a11y-tooltip');
-        target.dataset.addedAriaDescribedby = 'true';
+      target.setAttribute('aria-describedby', 'a11y-tooltip');
+      target.dataset.addedAriaDescribedby = 'true';
     }
 
     // Ensure accessible name is preserved if no other source exists
     if (!target.hasAttribute('aria-label') && !target.hasAttribute('aria-labelledby')) {
-        target.setAttribute('aria-label', text);
-        target.dataset.addedAriaLabel = 'true';
+      target.setAttribute('aria-label', text);
+      target.dataset.addedAriaLabel = 'true';
     }
 
     this.activeTarget = target;
@@ -333,12 +333,12 @@ const Tooltip = {
         delete this.activeTarget.dataset.storedTitle;
       }
       if (this.activeTarget.dataset.addedAriaDescribedby) {
-          this.activeTarget.removeAttribute('aria-describedby');
-          delete this.activeTarget.dataset.addedAriaDescribedby;
+        this.activeTarget.removeAttribute('aria-describedby');
+        delete this.activeTarget.dataset.addedAriaDescribedby;
       }
       if (this.activeTarget.dataset.addedAriaLabel) {
-          // Keep aria-label intact to ensure permanent accessible name
-          delete this.activeTarget.dataset.addedAriaLabel;
+        // Keep aria-label intact to ensure permanent accessible name
+        delete this.activeTarget.dataset.addedAriaLabel;
       }
     }
 
@@ -399,100 +399,100 @@ const TestReportApp = {
     const headerRow = this.elements.tableHeaders;
 
     const setColumnWidth = (id, width) => {
-        document.documentElement.style.setProperty(`--col-width-${id.replace(/\./g, '-')}`, `${width}px`);
-        const resizer = this.elements.tableHeaders.querySelector(`.resizer[data-resizer-id="${id}"]`);
-        if (resizer) resizer.setAttribute('aria-valuenow', Math.round(width));
+      document.documentElement.style.setProperty(`--col-width-${id.replace(/\./g, '-')}`, `${width}px`);
+      const resizer = this.elements.tableHeaders.querySelector(`.resizer[data-resizer-id="${id}"]`);
+      if (resizer) resizer.setAttribute('aria-valuenow', Math.round(width));
     };
 
     headerRow.addEventListener('pointerdown', (e) => {
-        if (e.target.classList.contains('resizer')) {
-            if (this.state.isResizing) return;
+      if (e.target.classList.contains('resizer')) {
+        if (this.state.isResizing) return;
 
-            const resizer = e.target;
-            const resizerId = resizer.dataset.resizerId;
-            const columnTh = resizer.closest('th');
-            const startX = e.pageX;
-            const startWidth = columnTh.getBoundingClientRect().width;
-            let animationFrameId = null;
+        const resizer = e.target;
+        const resizerId = resizer.dataset.resizerId;
+        const columnTh = resizer.closest('th');
+        const startX = e.pageX;
+        const startWidth = columnTh.getBoundingClientRect().width;
+        let animationFrameId = null;
 
-            resizer.setPointerCapture(e.pointerId);
-            resizer.classList.add('resizing');
-            this.state.isResizing = true;
+        resizer.setPointerCapture(e.pointerId);
+        resizer.classList.add('resizing');
+        this.state.isResizing = true;
 
-            const onPointerMove = (moveEvt) => {
-                const diffX = moveEvt.pageX - startX;
-                const newWidth = Math.max(50, startWidth + diffX);
-                this.state.columnWidths[resizerId] = newWidth;
+        const onPointerMove = (moveEvt) => {
+          const diffX = moveEvt.pageX - startX;
+          const newWidth = Math.max(50, startWidth + diffX);
+          this.state.columnWidths[resizerId] = newWidth;
 
-                if (animationFrameId) cancelAnimationFrame(animationFrameId);
-                animationFrameId = requestAnimationFrame(() => {
-                    setColumnWidth(resizerId, newWidth);
-                });
-            };
+          if (animationFrameId) cancelAnimationFrame(animationFrameId);
+          animationFrameId = requestAnimationFrame(() => {
+            setColumnWidth(resizerId, newWidth);
+          });
+        };
 
-            const onPointerUp = (upEvt) => {
-                resizer.releasePointerCapture(upEvt.pointerId);
-                resizer.classList.remove('resizing');
-                resizer.removeEventListener('pointermove', onPointerMove);
-                resizer.removeEventListener('pointerup', onPointerUp);
-                resizer.removeEventListener('pointercancel', onPointerUp);
-                setTimeout(() => { this.state.isResizing = false; }, 0);
-            };
+        const onPointerUp = (upEvt) => {
+          resizer.releasePointerCapture(upEvt.pointerId);
+          resizer.classList.remove('resizing');
+          resizer.removeEventListener('pointermove', onPointerMove);
+          resizer.removeEventListener('pointerup', onPointerUp);
+          resizer.removeEventListener('pointercancel', onPointerUp);
+          setTimeout(() => { this.state.isResizing = false; }, 0);
+        };
 
-            resizer.addEventListener('pointermove', onPointerMove);
-            resizer.addEventListener('pointerup', onPointerUp);
-            resizer.addEventListener('pointercancel', onPointerUp);
+        resizer.addEventListener('pointermove', onPointerMove);
+        resizer.addEventListener('pointerup', onPointerUp);
+        resizer.addEventListener('pointercancel', onPointerUp);
 
-            e.preventDefault();
-            e.stopPropagation();
-        }
+        e.preventDefault();
+        e.stopPropagation();
+      }
     });
 
     headerRow.addEventListener('dblclick', (e) => {
-        if (e.target.classList.contains('resizer')) {
-            const id = e.target.dataset.resizerId;
-            delete this.state.columnWidths[id];
-            document.documentElement.style.removeProperty(`--col-width-${id.replace(/\./g, '-')}`);
-            // Update to default width instead of removing
-            const newWidth = e.target.closest('th').getBoundingClientRect().width;
-            e.target.setAttribute('aria-valuenow', Math.round(newWidth));
-            e.preventDefault();
-            e.stopPropagation();
-        }
+      if (e.target.classList.contains('resizer')) {
+        const id = e.target.dataset.resizerId;
+        delete this.state.columnWidths[id];
+        document.documentElement.style.removeProperty(`--col-width-${id.replace(/\./g, '-')}`);
+        // Update to default width instead of removing
+        const newWidth = e.target.closest('th').getBoundingClientRect().width;
+        e.target.setAttribute('aria-valuenow', Math.round(newWidth));
+        e.preventDefault();
+        e.stopPropagation();
+      }
     });
 
     headerRow.addEventListener('keydown', (e) => {
-        if (e.target.classList.contains('resizer')) {
-            const id = e.target.dataset.resizerId;
-            const columnTh = e.target.closest('th');
-            const currentWidth = columnTh.getBoundingClientRect().width;
-            let newWidth = this.state.columnWidths[id] || currentWidth;
+      if (e.target.classList.contains('resizer')) {
+        const id = e.target.dataset.resizerId;
+        const columnTh = e.target.closest('th');
+        const currentWidth = columnTh.getBoundingClientRect().width;
+        let newWidth = this.state.columnWidths[id] || currentWidth;
 
-            if (e.key === 'ArrowLeft') {
-                newWidth = Math.max(50, newWidth - 10);
-                this.state.columnWidths[id] = newWidth;
-                setColumnWidth(id, newWidth);
-                e.preventDefault();
-            } else if (e.key === 'ArrowRight') {
-                newWidth = Math.min(1000, newWidth + 10);
-                this.state.columnWidths[id] = newWidth;
-                setColumnWidth(id, newWidth);
-                e.preventDefault();
-            } else if (e.key === 'Enter' || e.key === ' ') {
-                e.stopImmediatePropagation();
-                delete this.state.columnWidths[id];
-                document.documentElement.style.removeProperty(`--col-width-${id.replace(/\./g, '-')}`);
-                // Update to default width instead of removing
-                const resetWidth = e.target.closest('th').getBoundingClientRect().width;
-                e.target.setAttribute('aria-valuenow', Math.round(resetWidth));
-                e.preventDefault();
-            }
+        if (e.key === 'ArrowLeft') {
+          newWidth = Math.max(50, newWidth - 10);
+          this.state.columnWidths[id] = newWidth;
+          setColumnWidth(id, newWidth);
+          e.preventDefault();
+        } else if (e.key === 'ArrowRight') {
+          newWidth = Math.min(1000, newWidth + 10);
+          this.state.columnWidths[id] = newWidth;
+          setColumnWidth(id, newWidth);
+          e.preventDefault();
+        } else if (e.key === 'Enter' || e.key === ' ') {
+          e.stopImmediatePropagation();
+          delete this.state.columnWidths[id];
+          document.documentElement.style.removeProperty(`--col-width-${id.replace(/\./g, '-')}`);
+          // Update to default width instead of removing
+          const resetWidth = e.target.closest('th').getBoundingClientRect().width;
+          e.target.setAttribute('aria-valuenow', Math.round(resetWidth));
+          e.preventDefault();
         }
+      }
     });
 
     // Apply initial widths if any
     for (const [id, width] of Object.entries(this.state.columnWidths)) {
-        setColumnWidth(id, width);
+      setColumnWidth(id, width);
     }
   },
 
@@ -589,13 +589,13 @@ const TestReportApp = {
     if (this.elements.totalClasses) this.elements.totalClasses.textContent = rootReport.numberOfClasses || 0;
 
     const annotateType = (node, type) => {
-        node.type = type;
-        const childType = this.getChildType(type);
-        if (!childType) return;
+      node.type = type;
+      const childType = this.getChildType(type);
+      if (!childType) return;
 
-        const childKey = this.pluralize(childType);
-        const children = node[childKey] || (type === 'class' ? node.testCases : []) || [];
-        children.forEach(child => annotateType(child, childType));
+      const childKey = this.pluralize(childType);
+      const children = node[childKey] || (type === 'class' ? node.testCases : []) || [];
+      children.forEach(child => annotateType(child, childType));
     };
     rootReport.modules.forEach(m => annotateType(m, 'module'));
 
@@ -644,21 +644,21 @@ const TestReportApp = {
       { name: 'Skipped', value: 'skipped' }
     ];
     if (!Array.isArray(this.state.filters.status)) {
-        this.state.filters.status = ['passed', 'failed', 'skipped'];
+      this.state.filters.status = ['passed', 'failed', 'skipped'];
     }
 
     const updateStatusButtonText = () => {
       let label = 'Status: All';
       const statusArr = this.state.filters.status;
       if (statusArr.length === 0 || statusArr.length === statusOptions.length) {
-          label = 'Status: All';
+        label = 'Status: All';
       } else if (statusArr.length === 1) {
-          label = 'Status: ' + statusOptions.find(o => o.value === statusArr[0])?.name;
+        label = 'Status: ' + statusOptions.find(o => o.value === statusArr[0])?.name;
       } else {
-          label = `Status: ${statusArr.length} Selected`;
+        label = `Status: ${statusArr.length} Selected`;
       }
       if (this.elements.statusFilterText) {
-          this.elements.statusFilterText.textContent = label;
+        this.elements.statusFilterText.textContent = label;
       }
     };
 
@@ -679,11 +679,11 @@ const TestReportApp = {
     if (this.elements.variantFilterBtn) {
       let label = 'Filter by Variant';
       if (selectedCount === totalCount && totalCount > 0) {
-          label = 'Filter by Variant: All';
+        label = 'Filter by Variant: All';
       } else if (selectedCount === 1) {
-          label = `Filter by Variant: ${this.state.filters.variants[0]}`;
+        label = `Filter by Variant: ${this.state.filters.variants[0]}`;
       } else {
-          label = `Filter by Variant: ${selectedCount} Selected`;
+        label = `Filter by Variant: ${selectedCount} Selected`;
       }
       this.elements.variantFilterBtn.setAttribute('data-tooltip', label);
       this.elements.variantFilterBtn.setAttribute('aria-label', label);
@@ -695,8 +695,8 @@ const TestReportApp = {
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         if (Tooltip.activeTarget) {
-            Tooltip.hide();
-            return;
+          Tooltip.hide();
+          return;
         }
         const openDropdownConf = this.getDropdownConfigs().find(c => c.dropdown && !c.dropdown.classList.contains('hidden'));
         if (openDropdownConf) {
@@ -706,76 +706,76 @@ const TestReportApp = {
         } else if (this.elements.searchWrapper && this.elements.searchWrapper.classList.contains('expanded')) {
           this.elements.searchWrapper.classList.remove('expanded');
           setTimeout(() => {
-              this.elements.searchRevealBtn.classList.remove('hidden');
-              this.elements.searchRevealBtn.focus();
+            this.elements.searchRevealBtn.classList.remove('hidden');
+            this.elements.searchRevealBtn.focus();
           }, 300);
         }
       }
     });
 
     this.getDropdownConfigs().forEach(({ btn, dropdown }) => {
-        if (btn && dropdown) {
-            btn.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    this.toggleDropdown(dropdown, btn);
-                } else if (e.key === 'ArrowDown') {
-                    e.preventDefault();
-                    if (dropdown.classList.contains('hidden')) {
-                        this.toggleDropdown(dropdown, btn);
-                    } else {
-                        const firstItem = dropdown.querySelector('button, [tabindex="0"], input');
-                        if (firstItem) firstItem.focus();
-                    }
-                }
-            });
-            dropdown.addEventListener('keydown', (e) => {
-                if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-                    e.preventDefault();
-                    const items = Array.from(dropdown.querySelectorAll('input:not([disabled]), button:not([disabled]), [role="option"], [role="menuitem"]'))
-                        .filter(el => el.style.display !== 'none' && el.offsetWidth > 0 && el.offsetHeight > 0);
-                    if (items.length === 0) return;
-                    const currentIndex = items.indexOf(document.activeElement);
-                    let nextIndex = 0;
-                    if (e.key === 'ArrowDown') {
-                        nextIndex = currentIndex < items.length - 1 ? currentIndex + 1 : 0;
-                    } else {
-                        nextIndex = currentIndex > 0 ? currentIndex - 1 : items.length - 1;
-                    }
-                    items[nextIndex].focus();
-                }
-            });
-        }
+      if (btn && dropdown) {
+        btn.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            e.stopPropagation();
+            this.toggleDropdown(dropdown, btn);
+          } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (dropdown.classList.contains('hidden')) {
+              this.toggleDropdown(dropdown, btn);
+            } else {
+              const firstItem = dropdown.querySelector('button, [tabindex="0"], input');
+              if (firstItem) firstItem.focus();
+            }
+          }
+        });
+        dropdown.addEventListener('keydown', (e) => {
+          if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            const items = Array.from(dropdown.querySelectorAll('input:not([disabled]), button:not([disabled]), [role="option"], [role="menuitem"]'))
+              .filter(el => el.style.display !== 'none' && el.offsetWidth > 0 && el.offsetHeight > 0);
+            if (items.length === 0) return;
+            const currentIndex = items.indexOf(document.activeElement);
+            let nextIndex = 0;
+            if (e.key === 'ArrowDown') {
+              nextIndex = currentIndex < items.length - 1 ? currentIndex + 1 : 0;
+            } else {
+              nextIndex = currentIndex > 0 ? currentIndex - 1 : items.length - 1;
+            }
+            items[nextIndex].focus();
+          }
+        });
+      }
     });
 
     this.elements.searchInput.addEventListener('input', () => {
       this.state.filters.search = this.elements.searchInput.value.trim();
       if (this.state.filters.search.length > 0) {
-          this.elements.searchClearBtn.classList.remove('hidden');
+        this.elements.searchClearBtn.classList.remove('hidden');
       } else {
-          this.elements.searchClearBtn.classList.add('hidden');
+        this.elements.searchClearBtn.classList.add('hidden');
       }
       this.render();
     });
 
     if (this.elements.searchClearBtn) {
-        this.elements.searchClearBtn.addEventListener('click', () => {
-            this.elements.searchInput.value = '';
-            this.state.filters.search = '';
-            this.elements.searchClearBtn.classList.add('hidden');
-            this.render();
-            this.elements.searchInput.focus();
-        });
+      this.elements.searchClearBtn.addEventListener('click', () => {
+        this.elements.searchInput.value = '';
+        this.state.filters.search = '';
+        this.elements.searchClearBtn.classList.add('hidden');
+        this.render();
+        this.elements.searchInput.focus();
+      });
     }
 
     if (this.elements.searchRevealBtn) {
-        this.elements.searchRevealBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.elements.searchRevealBtn.classList.add('hidden');
-            this.elements.searchWrapper.classList.add('expanded');
-            this.elements.searchInput.focus();
-        });
+      this.elements.searchRevealBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.elements.searchRevealBtn.classList.add('hidden');
+        this.elements.searchWrapper.classList.add('expanded');
+        this.elements.searchInput.focus();
+      });
     }
 
     this.elements.testSuiteFilterBtn.addEventListener('click', () => this.toggleDropdown(this.elements.testSuiteFilterDropdown, this.elements.testSuiteFilterBtn));
@@ -789,292 +789,299 @@ const TestReportApp = {
 
     // Add Filter Logic
     if (this.elements.addFilterBtn) {
-        this.elements.addFilterBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.toggleDropdown(this.elements.addFilterDropdown, this.elements.addFilterBtn);
-        });
+      this.elements.addFilterBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggleDropdown(this.elements.addFilterDropdown, this.elements.addFilterBtn);
+      });
     }
 
     const filterTypeConfig = {
-        'status': { container: this.elements.statusChipContainer, dropdown: this.elements.statusFilterDropdown, btn: this.elements.statusFilterBtn },
-        'module': { container: this.elements.modChipContainer, dropdown: this.elements.moduleFilterDropdown, btn: this.elements.moduleFilterBtn, stateKey: 'modules' },
-        'package': { container: this.elements.pkgChipContainer, dropdown: this.elements.packageFilterDropdown, btn: this.elements.packageFilterBtn, stateKey: 'packages' },
-        'class': { container: this.elements.clsChipContainer, dropdown: this.elements.classFilterDropdown, btn: this.elements.classFilterBtn, stateKey: 'classes' },
-        'testCase': { container: this.elements.tcChipContainer, dropdown: this.elements.tcFilterDropdown, btn: this.elements.tcFilterBtn, stateKey: 'testCases' }
+      'status': { container: this.elements.statusChipContainer, dropdown: this.elements.statusFilterDropdown, btn: this.elements.statusFilterBtn },
+      'module': { container: this.elements.modChipContainer, dropdown: this.elements.moduleFilterDropdown, btn: this.elements.moduleFilterBtn, stateKey: 'modules' },
+      'package': { container: this.elements.pkgChipContainer, dropdown: this.elements.packageFilterDropdown, btn: this.elements.packageFilterBtn, stateKey: 'packages' },
+      'class': { container: this.elements.clsChipContainer, dropdown: this.elements.classFilterDropdown, btn: this.elements.classFilterBtn, stateKey: 'classes' },
+      'testCase': { container: this.elements.tcChipContainer, dropdown: this.elements.tcFilterDropdown, btn: this.elements.tcFilterBtn, stateKey: 'testCases' }
     };
 
     if (this.elements.addFilterList) {
-        this.elements.addFilterList.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const target = e.target.closest('.dropdown-item');
-            if (!target) return;
+      this.elements.addFilterList.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const target = e.target.closest('.dropdown-item');
+        if (!target) return;
 
-            const filterType = target.dataset.filterType;
-            const config = filterTypeConfig[filterType];
+        const filterType = target.dataset.filterType;
+        const config = filterTypeConfig[filterType];
 
-            if (config) {
-                config.container.classList.remove('hidden');
-                this.elements.addFilterDropdown.classList.add('hidden');
-                this.handleHeaderFilterChange(filterType);
-                this.updateFilterButtons();
-                this.render();
-                Navigation.push();
+        if (config) {
+          config.container.classList.remove('hidden');
+          this.elements.addFilterDropdown.classList.add('hidden');
+          this.handleHeaderFilterChange(filterType);
+          this.updateFilterButtons();
+          this.render();
+          Navigation.push();
 
-                setTimeout(() => {
-                    this.toggleDropdown(config.dropdown, config.btn);
-                }, 0);
-            }
-        });
+          setTimeout(() => {
+            this.toggleDropdown(config.dropdown, config.btn);
+          }, 0);
+        }
+      });
     }
 
     // Close Filter Logic
     document.querySelectorAll('.chip-close').forEach(closeBtn => {
-        closeBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const filterType = closeBtn.dataset.filterClose;
-            const config = filterTypeConfig[filterType];
+      closeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const filterType = closeBtn.dataset.filterClose;
+        const config = filterTypeConfig[filterType];
 
-            if (config) {
-                if (filterType === 'status') {
-                    this.state.filters.status = ['passed', 'failed', 'skipped'];
-                    this.buildStatusDropdown();
-                } else {
-                    this.state.filters[config.stateKey] = [];
-                }
-                config.container.classList.add('hidden');
-                this.handleHeaderFilterChange();
-                this.updateFilterButtons();
-                this.render();
-                Navigation.push();
-            }
-        });
+        if (config) {
+          if (filterType === 'status') {
+            this.state.filters.status = ['passed', 'failed', 'skipped'];
+            this.buildStatusDropdown();
+          } else {
+            this.state.filters[config.stateKey] = [];
+          }
+          config.container.classList.add('hidden');
+          this.handleHeaderFilterChange();
+          this.updateFilterButtons();
+          this.render();
+          Navigation.push();
+        }
+      });
     });
 
     if (this.elements.viewSegments) {
-        this.elements.viewSegments.addEventListener('click', (e) => {
-            const btn = e.target.closest('.segment-btn');
-            if (!btn) return;
-            this.state.viewMode = btn.dataset.value;
-            this.updateViewModeUI();
-            this.resetSelection();
-            this.render();
-            Navigation.push();
-        });
+      this.elements.viewSegments.addEventListener('click', (e) => {
+        const btn = e.target.closest('.segment-btn');
+        if (!btn) return;
+        this.state.viewMode = btn.dataset.value;
+        this.updateViewModeUI();
+        this.resetSelection();
+        this.render();
+        Navigation.push();
+      });
     }
 
     if (this.elements.densitySegments) {
-        this.elements.densitySegments.addEventListener('click', (e) => {
-            const btn = e.target.closest('.segment-btn');
-            if (!btn) return;
-            this.elements.densitySegments.querySelectorAll('.segment-btn').forEach(b => {
-                b.classList.remove('active');
-                b.setAttribute('aria-pressed', 'false');
-            });
-            btn.classList.add('active');
-            btn.setAttribute('aria-pressed', 'true');
-            this.state.density = btn.dataset.value;
-            if (this.elements.mainTable) {
-                if (this.state.density === 'compact') {
-                    this.elements.mainTable.classList.add('table-compact');
-                } else {
-                    this.elements.mainTable.classList.remove('table-compact');
-                }
-            }
+      this.elements.densitySegments.addEventListener('click', (e) => {
+        const btn = e.target.closest('.segment-btn');
+        if (!btn) return;
+        this.elements.densitySegments.querySelectorAll('.segment-btn').forEach(b => {
+          b.classList.remove('active');
+          b.setAttribute('aria-pressed', 'false');
         });
+        btn.classList.add('active');
+        btn.setAttribute('aria-pressed', 'true');
+        this.state.density = btn.dataset.value;
+        if (this.elements.mainTable) {
+          if (this.state.density === 'compact') {
+            this.elements.mainTable.classList.add('table-compact');
+          } else {
+            this.elements.mainTable.classList.remove('table-compact');
+          }
+        }
+      });
     }
 
     if (this.elements.groupByBtn) {
-        this.elements.groupByBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.toggleDropdown(this.elements.groupByDropdown, this.elements.groupByBtn);
-        });
+      this.elements.groupByBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggleDropdown(this.elements.groupByDropdown, this.elements.groupByBtn);
+      });
     }
 
     if (this.elements.groupByDropdown) {
-        this.elements.groupByDropdown.addEventListener('click', (e) => {
-            const target = e.target.closest('.dropdown-item');
-            if (target) {
-                this.state.currentFlatView = target.dataset.value;
-                this.elements.groupByDropdown.classList.add('hidden');
-                this.elements.groupByBtn.setAttribute('aria-expanded', 'false');
-                this.elements.groupByBtn.focus();
+      this.elements.groupByDropdown.addEventListener('click', (e) => {
+        const target = e.target.closest('.dropdown-item');
+        if (target) {
+          this.state.currentFlatView = target.dataset.value;
+          this.elements.groupByDropdown.classList.add('hidden');
+          this.elements.groupByBtn.setAttribute('aria-expanded', 'false');
+          this.elements.groupByBtn.focus();
 
-                // When changing the grouping via the dropdown, we reset all selections
-                // to show the global list for that grouping, consistent with coverage report.
-                this.resetSelection();
+          // When changing the grouping via the dropdown, we reset all selections
+          // to show the global list for that grouping, consistent with coverage report.
+          this.resetSelection();
 
-                this.render();
-                Navigation.push();
-            }
-        });
+          this.render();
+          Navigation.push();
+        }
+      });
     }
     this.elements.resultsData.addEventListener('click', (e) => {
-        if (this.state.viewMode === 'flat') {
-            const clickable = e.target.closest('[data-interactive="flat"]');
-            if (clickable) {
-                e.preventDefault();
-                this.handleFlatRowClick(clickable);
-            }
-        } else {
-            const treeToggle = e.target.closest('[data-interactive="tree"]');
-            if (treeToggle) {
-                e.preventDefault();
-                this.handleTreeRowClick(treeToggle);
-            }
+      const stackTrigger = e.target.closest('.stack-trace-trigger');
+      if (stackTrigger) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.openStackTrace(stackTrigger);
+        return;
+      }
+      if (this.state.viewMode === 'flat') {
+        const clickable = e.target.closest('[data-interactive="flat"]');
+        if (clickable) {
+          e.preventDefault();
+          this.handleFlatRowClick(clickable);
         }
+      } else {
+        const treeToggle = e.target.closest('[data-interactive="tree"]');
+        if (treeToggle) {
+          e.preventDefault();
+          this.handleTreeRowClick(treeToggle);
+        }
+      }
     });
     this.elements.resultsData.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-            const clickable = e.target.closest('[data-interactive="flat"], [data-interactive="tree"], .clickable-status, .stack-trace-trigger');
-            if (clickable) {
-                e.preventDefault();
-                clickable.click();
-            }
+      if (e.key === 'Enter' || e.key === ' ') {
+        const clickable = e.target.closest('[data-interactive="flat"], [data-interactive="tree"], .clickable-status, .stack-trace-trigger');
+        if (clickable) {
+          e.preventDefault();
+          clickable.click();
         }
+      }
     });
     const handleBreadcrumbAction = (e) => {
-        const link = e.target.closest('a[data-action]');
-        if (!link) return;
-        e.preventDefault();
-        const { action, moduleName, packageName } = link.dataset;
+      const link = e.target.closest('a[data-action]');
+      if (!link) return;
+      e.preventDefault();
+      const { action, moduleName, packageName } = link.dataset;
 
-        if (action === BREADCRUMB_ACTIONS.GO_TO_MODULES) {
-            this.state.selectedModule = null;
-            this.state.selectedPackage = null;
-            this.state.selectedClass = null;
-            this.state.currentFlatView = 'modules';
-        } else if (action === BREADCRUMB_ACTIONS.GO_TO_PACKAGES) {
-            this.state.selectedModule = moduleName || this.state.selectedModule;
-            this.state.selectedPackage = null;
-            this.state.selectedClass = null;
-            this.state.currentFlatView = 'packages';
-        } else if (action === BREADCRUMB_ACTIONS.GO_TO_CLASSES) {
-            this.state.selectedModule = moduleName || this.state.selectedModule;
-            this.state.selectedPackage = packageName || this.state.selectedPackage;
-            this.state.selectedClass = null;
-            this.state.currentFlatView = 'classes';
-        } else if (action === BREADCRUMB_ACTIONS.GO_TO_TEST_CASES) {
-            this.state.selectedModule = moduleName || this.state.selectedModule;
-            this.state.selectedPackage = packageName || this.state.selectedPackage;
-            this.state.selectedClass = link.dataset.className || this.state.selectedClass;
-            this.state.currentFlatView = 'testCases';
-        }
+      if (action === BREADCRUMB_ACTIONS.GO_TO_MODULES) {
+        this.state.selectedModule = null;
+        this.state.selectedPackage = null;
+        this.state.selectedClass = null;
+        this.state.currentFlatView = 'modules';
+      } else if (action === BREADCRUMB_ACTIONS.GO_TO_PACKAGES) {
+        this.state.selectedModule = moduleName || this.state.selectedModule;
+        this.state.selectedPackage = null;
+        this.state.selectedClass = null;
+        this.state.currentFlatView = 'packages';
+      } else if (action === BREADCRUMB_ACTIONS.GO_TO_CLASSES) {
+        this.state.selectedModule = moduleName || this.state.selectedModule;
+        this.state.selectedPackage = packageName || this.state.selectedPackage;
+        this.state.selectedClass = null;
+        this.state.currentFlatView = 'classes';
+      } else if (action === BREADCRUMB_ACTIONS.GO_TO_TEST_CASES) {
+        this.state.selectedModule = moduleName || this.state.selectedModule;
+        this.state.selectedPackage = packageName || this.state.selectedPackage;
+        this.state.selectedClass = link.dataset.className || this.state.selectedClass;
+        this.state.currentFlatView = 'testCases';
+      }
 
-        this.state.viewMode = 'flat';
-        this.updateViewModeUI();
-        this.showReportView();
-        this.render();
-        Navigation.push();
+      this.state.viewMode = 'flat';
+      this.updateViewModeUI();
+      this.showReportView();
+      this.render();
+      Navigation.push();
     };
 
     this.elements.breadcrumbs.addEventListener('click', handleBreadcrumbAction);
     this.elements.stackTraceBreadcrumbs.addEventListener('click', handleBreadcrumbAction);
 
     this.elements.breadcrumbs.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-            const link = e.target.closest('.breadcrumb-link');
-            if (link) {
-                e.preventDefault();
-                link.click();
-            }
+      if (e.key === 'Enter' || e.key === ' ') {
+        const link = e.target.closest('.breadcrumb-link');
+        if (link) {
+          e.preventDefault();
+          link.click();
         }
+      }
     });
 
     this.elements.stackTraceBreadcrumbs.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-            const link = e.target.closest('.breadcrumb-link');
-            if (link) {
-                e.preventDefault();
-                link.click();
-            }
+      if (e.key === 'Enter' || e.key === ' ') {
+        const link = e.target.closest('.breadcrumb-link');
+        if (link) {
+          e.preventDefault();
+          link.click();
         }
+      }
     });
 
     this.elements.tableHeaders.addEventListener('click', (e) => {
-        if (this.state.isResizing || e.target.classList.contains('resizer')) return;
-        const th = e.target.closest('[data-sort-by]');
-        if (!th) return;
+      if (this.state.isResizing || e.target.classList.contains('resizer')) return;
+      const th = e.target.closest('[data-sort-by]');
+      if (!th) return;
 
-        const newSortBy = th.dataset.sortBy;
-        if (this.state.sort.by === newSortBy) {
-            this.state.sort.order = this.state.sort.order === 'asc' ? 'desc' : 'asc';
-        } else {
-            this.state.sort.by = newSortBy;
-            this.state.sort.order = 'asc';
-        }
+      const newSortBy = th.dataset.sortBy;
+      if (this.state.sort.by === newSortBy) {
+        this.state.sort.order = this.state.sort.order === 'asc' ? 'desc' : 'asc';
+      } else {
+        this.state.sort.by = newSortBy;
+        this.state.sort.order = 'asc';
+      }
 
-        const headerName = th.textContent.replace(/[▲▼]/g, '').trim();
-        const orderText = this.state.sort.order === 'asc' ? 'ascending' : 'descending';
-        this.announce(`Sorted by ${headerName}, ${orderText}`);
+      const headerName = th.textContent.replace(/[▲▼]/g, '').trim();
+      const orderText = this.state.sort.order === 'asc' ? 'ascending' : 'descending';
+      this.announce(`Sorted by ${headerName}, ${orderText}`);
 
-        this.render();
-        Navigation.push();
+      this.render();
+      Navigation.push();
     });
     this.elements.tableHeaders.addEventListener('keydown', (e) => {
-        if (e.target.classList.contains('resizer')) return;
-        if (e.key === 'Enter' || e.key === ' ') {
-            const th = e.target.closest('[data-sort-by]');
-            if (th) {
-                e.preventDefault();
-                th.click();
-            }
+      if (e.target.classList.contains('resizer')) return;
+      if (e.key === 'Enter' || e.key === ' ') {
+        const th = e.target.closest('[data-sort-by]');
+        if (th) {
+          e.preventDefault();
+          th.click();
         }
+      }
     });
 
   },
 
   updateFilterButtons() {
-      let activeChipsCount = 0;
-      const { filters } = this.state;
+    let activeChipsCount = 0;
+    const { filters } = this.state;
 
-      const updateChip = (type, stateArray, totalCount, textElement, chipContainer) => {
-          if (!textElement) return;
+    const updateChip = (type, stateArray, totalCount, textElement, chipContainer) => {
+      if (!textElement) return;
 
-          let label = `${type.charAt(0).toUpperCase() + type.slice(1)}: All`;
-          if (stateArray.length > 0 && stateArray.length < totalCount) {
-              if (stateArray.length === 1) {
-                  label = `${type.charAt(0).toUpperCase() + type.slice(1)}: ${stateArray[0]}`;
-              } else {
-                  label = `${type.charAt(0).toUpperCase() + type.slice(1)}: ${stateArray.length} Selected`;
-              }
-          }
-          textElement.textContent = label;
+      let label = `${type.charAt(0).toUpperCase() + type.slice(1)}: All`;
+      if (stateArray.length > 0 && stateArray.length < totalCount) {
+        if (stateArray.length === 1) {
+          label = `${type.charAt(0).toUpperCase() + type.slice(1)}: ${stateArray[0]}`;
+        } else {
+          label = `${type.charAt(0).toUpperCase() + type.slice(1)}: ${stateArray.length} Selected`;
+        }
+      }
+      textElement.textContent = label;
 
-          if (stateArray.length > 0 || !chipContainer.classList.contains('hidden')) {
-              chipContainer.classList.remove('hidden');
-              activeChipsCount++;
-              this.toggleAddFilterOption(type, false);
-          } else {
-              this.toggleAddFilterOption(type, true);
-          }
-      };
-
-      const totalModules = this.processedData.modules ? this.processedData.modules.length : 0;
-      const totalPackages = this.processedData.modules ? [...new Set(this.processedData.modules.flatMap(m => (m.packages || []).map(p => p.name)))].length : 0;
-      const totalClasses = this.processedData.modules ? [...new Set(this.processedData.modules.flatMap(m => (m.packages || []).flatMap(p => (p.classes || []).map(c => c.name))))].length : 0;
-      const totalTestCases = this.processedData.modules ? [...new Set(this.processedData.modules.flatMap(m => (m.packages || []).flatMap(p => (p.classes || []).flatMap(c => (c.testCases || []).map(tc => tc.name)))))].length : 0;
-
-      updateChip('module', filters.modules, totalModules, this.elements.moduleFilterText, this.elements.modChipContainer);
-      updateChip('package', filters.packages, totalPackages, this.elements.packageFilterText, this.elements.pkgChipContainer);
-      updateChip('class', filters.classes, totalClasses, this.elements.classFilterText, this.elements.clsChipContainer);
-      updateChip('testCase', filters.testCases, totalTestCases, this.elements.tcFilterText, this.elements.tcChipContainer);
-
-      const isStatusVisible = !this.elements.statusChipContainer.classList.contains('hidden');
-      if (isStatusVisible) {
-          activeChipsCount++;
-          this.toggleAddFilterOption('status', false);
+      if (stateArray.length > 0 || !chipContainer.classList.contains('hidden')) {
+        chipContainer.classList.remove('hidden');
+        activeChipsCount++;
+        this.toggleAddFilterOption(type, false);
       } else {
-          this.toggleAddFilterOption('status', true);
+        this.toggleAddFilterOption(type, true);
       }
+    };
 
-      if (this.elements.addFilterBtn) {
-          if (activeChipsCount === 5) { // module, package, class, testCase, status
-              this.elements.addFilterBtn.closest('#add-filter-container').classList.add('hidden');
-          } else {
-              this.elements.addFilterBtn.closest('#add-filter-container').classList.remove('hidden');
-          }
+    const totalModules = this.processedData.modules ? this.processedData.modules.length : 0;
+    const totalPackages = this.processedData.modules ? [...new Set(this.processedData.modules.flatMap(m => (m.packages || []).map(p => p.name)))].length : 0;
+    const totalClasses = this.processedData.modules ? [...new Set(this.processedData.modules.flatMap(m => (m.packages || []).flatMap(p => (p.classes || []).map(c => c.name))))].length : 0;
+    const totalTestCases = this.processedData.modules ? [...new Set(this.processedData.modules.flatMap(m => (m.packages || []).flatMap(p => (p.classes || []).flatMap(c => (c.testCases || []).map(tc => tc.name)))))].length : 0;
+
+    updateChip('module', filters.modules, totalModules, this.elements.moduleFilterText, this.elements.modChipContainer);
+    updateChip('package', filters.packages, totalPackages, this.elements.packageFilterText, this.elements.pkgChipContainer);
+    updateChip('class', filters.classes, totalClasses, this.elements.classFilterText, this.elements.clsChipContainer);
+    updateChip('testCase', filters.testCases, totalTestCases, this.elements.tcFilterText, this.elements.tcChipContainer);
+
+    const isStatusVisible = !this.elements.statusChipContainer.classList.contains('hidden');
+    if (isStatusVisible) {
+      activeChipsCount++;
+      this.toggleAddFilterOption('status', false);
+    } else {
+      this.toggleAddFilterOption('status', true);
+    }
+
+    if (this.elements.addFilterBtn) {
+      if (activeChipsCount === 5) { // module, package, class, testCase, status
+        this.elements.addFilterBtn.closest('#add-filter-container').classList.add('hidden');
+      } else {
+        this.elements.addFilterBtn.closest('#add-filter-container').classList.remove('hidden');
       }
+    }
   },
 
   updateViewModeUI() {
@@ -1088,109 +1095,109 @@ const TestReportApp = {
   },
 
   toggleAddFilterOption(type, show) {
-      if (!this.elements.addFilterList) return;
-      const option = this.elements.addFilterList.querySelector(`[data-filter-type="${type}"]`);
-      if (option) {
-          if (show) {
-              option.classList.remove('hidden');
-              option.style.display = '';
-          } else {
-              option.classList.add('hidden');
-              option.style.display = 'none';
-          }
+    if (!this.elements.addFilterList) return;
+    const option = this.elements.addFilterList.querySelector(`[data-filter-type="${type}"]`);
+    if (option) {
+      if (show) {
+        option.classList.remove('hidden');
+        option.style.display = '';
+      } else {
+        option.classList.add('hidden');
+        option.style.display = 'none';
       }
+    }
   },
 
   getDropdownConfigs() {
-      return [
-          { btn: this.elements.testSuiteFilterBtn, dropdown: this.elements.testSuiteFilterDropdown },
-          { btn: this.elements.variantFilterBtn, dropdown: this.elements.variantFilterDropdown },
-          { btn: this.elements.statusFilterBtn, dropdown: this.elements.statusFilterDropdown },
-          { btn: this.elements.moduleFilterBtn, dropdown: this.elements.moduleFilterDropdown },
-          { btn: this.elements.packageFilterBtn, dropdown: this.elements.packageFilterDropdown },
-          { btn: this.elements.classFilterBtn, dropdown: this.elements.classFilterDropdown },
-          { btn: this.elements.tcFilterBtn, dropdown: this.elements.tcFilterDropdown },
-          { btn: this.elements.addFilterBtn, dropdown: this.elements.addFilterDropdown },
-          { btn: this.elements.groupByBtn, dropdown: this.elements.groupByDropdown }
-      ];
+    return [
+      { btn: this.elements.testSuiteFilterBtn, dropdown: this.elements.testSuiteFilterDropdown },
+      { btn: this.elements.variantFilterBtn, dropdown: this.elements.variantFilterDropdown },
+      { btn: this.elements.statusFilterBtn, dropdown: this.elements.statusFilterDropdown },
+      { btn: this.elements.moduleFilterBtn, dropdown: this.elements.moduleFilterDropdown },
+      { btn: this.elements.packageFilterBtn, dropdown: this.elements.packageFilterDropdown },
+      { btn: this.elements.classFilterBtn, dropdown: this.elements.classFilterDropdown },
+      { btn: this.elements.tcFilterBtn, dropdown: this.elements.tcFilterDropdown },
+      { btn: this.elements.addFilterBtn, dropdown: this.elements.addFilterDropdown },
+      { btn: this.elements.groupByBtn, dropdown: this.elements.groupByDropdown }
+    ];
   },
 
   toggleDropdown(dropdownToToggle, button) {
     this.getDropdownConfigs().forEach(({ btn, dropdown }) => {
-        if (dropdown && dropdown !== dropdownToToggle) {
-            dropdown.classList.add('hidden');
-            if (btn) btn.setAttribute('aria-expanded', 'false');
-        }
+      if (dropdown && dropdown !== dropdownToToggle) {
+        dropdown.classList.add('hidden');
+        if (btn) btn.setAttribute('aria-expanded', 'false');
+      }
     });
 
     if (dropdownToToggle) {
-        const isHidden = dropdownToToggle.classList.contains('hidden');
-        if (isHidden) {
-            dropdownToToggle.classList.remove('hidden');
-            if (button) button.setAttribute('aria-expanded', 'true');
+      const isHidden = dropdownToToggle.classList.contains('hidden');
+      if (isHidden) {
+        dropdownToToggle.classList.remove('hidden');
+        if (button) button.setAttribute('aria-expanded', 'true');
 
-            // Focus management
-            setTimeout(() => {
-                const searchInput = dropdownToToggle.querySelector('input');
-                if (searchInput) {
-                    searchInput.focus();
-                } else {
-                    const firstItem = dropdownToToggle.querySelector('button, [tabindex="0"], input');
-                    if (firstItem) firstItem.focus();
-                }
-            }, 0);
-        } else {
-            dropdownToToggle.classList.add('hidden');
-            if (button) {
-                button.setAttribute('aria-expanded', 'false');
-                button.focus();
-            }
+        // Focus management
+        setTimeout(() => {
+          const searchInput = dropdownToToggle.querySelector('input');
+          if (searchInput) {
+            searchInput.focus();
+          } else {
+            const firstItem = dropdownToToggle.querySelector('button, [tabindex="0"], input');
+            if (firstItem) firstItem.focus();
+          }
+        }, 0);
+      } else {
+        dropdownToToggle.classList.add('hidden');
+        if (button) {
+          button.setAttribute('aria-expanded', 'false');
+          button.focus();
         }
+      }
     }
   },
 
   closeAllDropdowns() {
     this.getDropdownConfigs().forEach(({ btn, dropdown }) => {
-        if (dropdown && !dropdown.classList.contains('hidden')) {
-            dropdown.classList.add('hidden');
-            if (btn) {
-                btn.setAttribute('aria-expanded', 'false');
-                btn.focus();
-            }
+      if (dropdown && !dropdown.classList.contains('hidden')) {
+        dropdown.classList.add('hidden');
+        if (btn) {
+          btn.setAttribute('aria-expanded', 'false');
+          btn.focus();
         }
+      }
     });
   },
 
   announce(message) {
-      const announcer = document.getElementById('a11y-announcer');
-      if (announcer) {
-          announcer.textContent = '';
-          if (this.announceTimeout) clearTimeout(this.announceTimeout);
-          // Small delay to ensure the DOM change is registered
-          this.announceTimeout = setTimeout(() => {
-              announcer.textContent = message;
-          }, 50);
-      }
+    const announcer = document.getElementById('a11y-announcer');
+    if (announcer) {
+      announcer.textContent = '';
+      if (this.announceTimeout) clearTimeout(this.announceTimeout);
+      // Small delay to ensure the DOM change is registered
+      this.announceTimeout = setTimeout(() => {
+        announcer.textContent = message;
+      }, 50);
+    }
   },
   closeDropdownsOnClickOutside() {
     document.addEventListener('click', (e) => {
       this.getDropdownConfigs().forEach(({ btn, dropdown }) => {
-          if (btn && dropdown && !btn.contains(e.target) && !dropdown.contains(e.target)) {
-              dropdown.classList.add('hidden');
-              if (btn) btn.setAttribute('aria-expanded', 'false');
-          }
+        if (btn && dropdown && !btn.contains(e.target) && !dropdown.contains(e.target)) {
+          dropdown.classList.add('hidden');
+          if (btn) btn.setAttribute('aria-expanded', 'false');
+        }
       });
 
       // Search Input Collapse
       if (this.elements.searchWrapper && this.elements.searchRevealBtn) {
-          if (!this.elements.searchWrapper.contains(e.target) && !this.elements.searchRevealBtn.contains(e.target)) {
-              if (this.elements.searchInput && this.elements.searchInput.value === '') {
-                  this.elements.searchWrapper.classList.remove('expanded');
-                  setTimeout(() => {
-                      this.elements.searchRevealBtn.classList.remove('hidden');
-                  }, 300);
-              }
+        if (!this.elements.searchWrapper.contains(e.target) && !this.elements.searchRevealBtn.contains(e.target)) {
+          if (this.elements.searchInput && this.elements.searchInput.value === '') {
+            this.elements.searchWrapper.classList.remove('expanded');
+            setTimeout(() => {
+              this.elements.searchRevealBtn.classList.remove('hidden');
+            }, 300);
           }
+        }
       }
     });
   },
@@ -1199,28 +1206,28 @@ const TestReportApp = {
     if (this.state.viewMode !== 'flat') return;
 
     if (explicitType) {
-        const viewMap = { 'module': 'modules', 'package': 'packages', 'class': 'classes', 'testCase': 'testCases' };
-        if (viewMap[explicitType]) {
-            this.state.currentFlatView = viewMap[explicitType];
-        }
+      const viewMap = { 'module': 'modules', 'package': 'packages', 'class': 'classes', 'testCase': 'testCases' };
+      if (viewMap[explicitType]) {
+        this.state.currentFlatView = viewMap[explicitType];
+      }
     } else {
-        const { classes, packages, modules, testCases } = this.state.filters;
-        const activeChips = [];
-        if (!this.elements.tcChipContainer.classList.contains('hidden')) activeChips.push('testCase');
-        if (!this.elements.clsChipContainer.classList.contains('hidden')) activeChips.push('class');
-        if (!this.elements.pkgChipContainer.classList.contains('hidden')) activeChips.push('package');
-        if (!this.elements.modChipContainer.classList.contains('hidden')) activeChips.push('module');
+      const { classes, packages, modules, testCases } = this.state.filters;
+      const activeChips = [];
+      if (!this.elements.tcChipContainer.classList.contains('hidden')) activeChips.push('testCase');
+      if (!this.elements.clsChipContainer.classList.contains('hidden')) activeChips.push('class');
+      if (!this.elements.pkgChipContainer.classList.contains('hidden')) activeChips.push('package');
+      if (!this.elements.modChipContainer.classList.contains('hidden')) activeChips.push('module');
 
-        if (testCases.length > 0 || activeChips.includes('testCase')) {
-            this.state.currentFlatView = 'testCases';
-        } else if (classes.length > 0 || activeChips.includes('class')) {
-            this.state.currentFlatView = 'classes';
-        } else if (packages.length > 0 || activeChips.includes('package')) {
-            this.state.currentFlatView = 'packages';
-        } else {
-            // Always fallback to modules if deeper hierarchies aren't active
-            this.state.currentFlatView = 'modules';
-        }
+      if (testCases.length > 0 || activeChips.includes('testCase')) {
+        this.state.currentFlatView = 'testCases';
+      } else if (classes.length > 0 || activeChips.includes('class')) {
+        this.state.currentFlatView = 'classes';
+      } else if (packages.length > 0 || activeChips.includes('package')) {
+        this.state.currentFlatView = 'packages';
+      } else {
+        // Always fallback to modules if deeper hierarchies aren't active
+        this.state.currentFlatView = 'modules';
+      }
     }
 
     // Reset drill-down context to avoid confusing states when grouping abruptly changes
@@ -1236,17 +1243,17 @@ const TestReportApp = {
   handleFlatRowClick(target) {
     const { name, type, moduleName, packageName } = target.dataset;
     if (type === 'module') {
-        this.state.selectedModule = name;
-        this.state.currentFlatView = 'packages';
+      this.state.selectedModule = name;
+      this.state.currentFlatView = 'packages';
     } else if (type === 'package') {
-        this.state.selectedModule = moduleName;
-        this.state.selectedPackage = name;
-        this.state.currentFlatView = 'classes';
+      this.state.selectedModule = moduleName;
+      this.state.selectedPackage = name;
+      this.state.currentFlatView = 'classes';
     } else if (type === 'class') {
-        this.state.selectedModule = moduleName;
-        this.state.selectedPackage = packageName;
-        this.state.selectedClass = name;
-        this.state.currentFlatView = 'testCases';
+      this.state.selectedModule = moduleName;
+      this.state.selectedPackage = packageName;
+      this.state.selectedClass = name;
+      this.state.currentFlatView = 'testCases';
     }
     this.render();
     Navigation.push();
@@ -1264,13 +1271,13 @@ const TestReportApp = {
       document.querySelectorAll(`[data-parent-id="${row.dataset.id}"]`).forEach(child => {
         child.classList.toggle('hidden', !isOpen);
         if (!isOpen) {
-            const childArrow = child.querySelector('.collapsible-arrow.open');
-            const childToggle = child.querySelector('[data-interactive="tree"]');
-            if (childArrow) {
-                childArrow.classList.remove('open');
-                if (childToggle) childToggle.setAttribute('aria-expanded', 'false');
-                this.collapseDescendants(child);
-            }
+          const childArrow = child.querySelector('.collapsible-arrow.open');
+          const childToggle = child.querySelector('[data-interactive="tree"]');
+          if (childArrow) {
+            childArrow.classList.remove('open');
+            if (childToggle) childToggle.setAttribute('aria-expanded', 'false');
+            this.collapseDescendants(child);
+          }
         }
       });
     }
@@ -1282,9 +1289,9 @@ const TestReportApp = {
       const childArrow = child.querySelector('.collapsible-arrow.open');
       const childToggle = child.querySelector('[data-interactive="tree"]');
       if (childArrow) {
-          childArrow.classList.remove('open');
-          if (childToggle) childToggle.setAttribute('aria-expanded', 'false');
-          this.collapseDescendants(child);
+        childArrow.classList.remove('open');
+        if (childToggle) childToggle.setAttribute('aria-expanded', 'false');
+        this.collapseDescendants(child);
       }
     });
   },
@@ -1298,9 +1305,9 @@ const TestReportApp = {
       if (!nodes) return [];
       const hasSearch = !!this.state.filters.search;
       const hasDropdownFilters = this.state.filters.modules.length > 0 ||
-                                 this.state.filters.packages.length > 0 ||
-                                 this.state.filters.classes.length > 0 ||
-                                 this.state.filters.testCases.length > 0;
+        this.state.filters.packages.length > 0 ||
+        this.state.filters.classes.length > 0 ||
+        this.state.filters.testCases.length > 0;
       const ALL_STATUSES = ['passed', 'failed', 'skipped'];
       const hasStatusFilters = this.state.filters.status.length < ALL_STATUSES.length;
       const hasTestSuiteFilter = this.state.filters.testSuite !== 'all';
@@ -1362,9 +1369,9 @@ const TestReportApp = {
             this.state.filters.variants.forEach(v => {
               const res = this.getVariantResultForTestCase(node, this.state.filters.testSuite, v);
               if (res) {
-                  if (res.status === 'fail') hasFail = true;
-                  if (res.status === 'pass') hasPass = true;
-                  if (res.status === 'skipped') hasSkipped = true;
+                if (res.status === 'fail') hasFail = true;
+                if (res.status === 'pass') hasPass = true;
+                if (res.status === 'skipped') hasSkipped = true;
               }
             });
 
@@ -1381,7 +1388,7 @@ const TestReportApp = {
         if (!isFiltering) return true;
 
         if (!this.getChildType(type)) { // Leaf node (testCase)
-            return hasSearch ? effectiveMatchesSearch : true;
+          return hasSearch ? effectiveMatchesSearch : true;
         }
 
         return effectiveMatchesSearch || hasVisibleChildren;
@@ -1418,12 +1425,12 @@ const TestReportApp = {
     this.updateDynamicFilters();
 
     if (this.state.currentView === 'stack-trace') {
-        this.renderStackTraceGrid(this.state.currentTestCase);
+      this.renderStackTraceGrid(this.state.currentTestCase);
     } else {
-        const data = this.getFilteredAndSortedData();
-        this.renderTable(data);
-        this.updateGroupByText();
-        this.updateTooltipsForOverflow();
+      const data = this.getFilteredAndSortedData();
+      this.renderTable(data);
+      this.updateGroupByText();
+      this.updateTooltipsForOverflow();
     }
 
     const visibleItemsCount = this.elements.resultsData.querySelectorAll('tr.table-row:not(.hidden)').length;
@@ -1497,27 +1504,27 @@ const TestReportApp = {
   updateGroupByText() {
     if (!this.elements.groupByText) return;
     const viewMap = {
-        'modules': 'Modules',
-        'packages': 'Packages',
-        'classes': 'Classes',
-        'testCases': 'Test Cases'
+      'modules': 'Modules',
+      'packages': 'Packages',
+      'classes': 'Classes',
+      'testCases': 'Test Cases'
     };
     this.elements.groupByText.textContent = viewMap[this.state.currentFlatView] || 'Modules';
 
     if (this.elements.groupByDropdown) {
-        this.elements.groupByDropdown.querySelectorAll('.dropdown-item').forEach(item => {
-            if (item.dataset.value === this.state.currentFlatView) {
-                item.classList.add('active-popover-item');
-                item.setAttribute('aria-selected', 'true');
-            } else {
-                item.classList.remove('active-popover-item');
-                item.setAttribute('aria-selected', 'false');
-            }
-        });
+      this.elements.groupByDropdown.querySelectorAll('.dropdown-item').forEach(item => {
+        if (item.dataset.value === this.state.currentFlatView) {
+          item.classList.add('active-popover-item');
+          item.setAttribute('aria-selected', 'true');
+        } else {
+          item.classList.remove('active-popover-item');
+          item.setAttribute('aria-selected', 'false');
+        }
+      });
     }
 
     if (this.elements.groupByBtn) {
-        this.elements.groupByBtn.parentElement.style.display = this.state.viewMode === 'flat' ? 'block' : 'none';
+      this.elements.groupByBtn.parentElement.style.display = this.state.viewMode === 'flat' ? 'block' : 'none';
     }
   },
 
@@ -1567,43 +1574,43 @@ const TestReportApp = {
 
   renderBreadcrumbs() {
     if (this.state.viewMode !== 'flat') {
-        this.elements.breadcrumbs.innerHTML = '';
-        return;
+      this.elements.breadcrumbs.innerHTML = '';
+      return;
     }
     const { selectedModule, selectedPackage, selectedClass } = this.state;
     let html = '';
 
     // "Project" is the root link
     if (selectedModule) {
-        html += `<a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_MODULES}" aria-label="Go back to Project Overview">Project</a>`;
+      html += `<a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_MODULES}" aria-label="Go back to Project Overview">Project</a>`;
     } else {
-        html += `<span class="breadcrumb-current">Project</span>`;
+      html += `<span class="breadcrumb-current">Project</span>`;
     }
 
     // Module level
     if (selectedModule) {
-        html += `<span class="breadcrumb-separator" aria-hidden="true">/</span>`;
-        if (selectedPackage) {
-            html += `<a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_PACKAGES}" aria-label="Go back to module: ${UIUtils.escapeHTML(selectedModule)}">${UIUtils.escapeHTML(selectedModule)}</a>`;
-        } else {
-            html += `<span class="breadcrumb-current">${UIUtils.escapeHTML(selectedModule)}</span>`;
-        }
+      html += `<span class="breadcrumb-separator" aria-hidden="true">/</span>`;
+      if (selectedPackage) {
+        html += `<a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_PACKAGES}" aria-label="Go back to module: ${UIUtils.escapeHTML(selectedModule)}">${UIUtils.escapeHTML(selectedModule)}</a>`;
+      } else {
+        html += `<span class="breadcrumb-current">${UIUtils.escapeHTML(selectedModule)}</span>`;
+      }
     }
 
     // Package level
     if (selectedPackage) {
-        html += `<span class="breadcrumb-separator" aria-hidden="true">/</span>`;
-        if (selectedClass) {
-            html += `<a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_CLASSES}" aria-label="Go back to package: ${UIUtils.escapeHTML(selectedPackage)}">${UIUtils.escapeHTML(selectedPackage)}</a>`;
-        } else {
-            html += `<span class="breadcrumb-current">${UIUtils.escapeHTML(selectedPackage)}</span>`;
-        }
+      html += `<span class="breadcrumb-separator" aria-hidden="true">/</span>`;
+      if (selectedClass) {
+        html += `<a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_CLASSES}" aria-label="Go back to package: ${UIUtils.escapeHTML(selectedPackage)}">${UIUtils.escapeHTML(selectedPackage)}</a>`;
+      } else {
+        html += `<span class="breadcrumb-current">${UIUtils.escapeHTML(selectedPackage)}</span>`;
+      }
     }
 
     // Class level
     if (selectedClass) {
-        html += `<span class="breadcrumb-separator" aria-hidden="true">/</span>`;
-        html += `<span class="breadcrumb-current">${UIUtils.escapeHTML(selectedClass)}</span>`;
+      html += `<span class="breadcrumb-separator" aria-hidden="true">/</span>`;
+      html += `<span class="breadcrumb-current">${UIUtils.escapeHTML(selectedClass)}</span>`;
     }
 
     this.elements.breadcrumbs.innerHTML = html;
@@ -1625,8 +1632,8 @@ const TestReportApp = {
       const uniqueId = `${parentId}-${node.name}`.replace(/[^a-zA-Z0-9-_]/g, '');
 
       let nameContent = `<span class="font-medium">${UIUtils.escapeHTML(node.name)}</span>`;
-      if (type === 'testCase' && this.hasVisibleFailures(node)) {
-          nameContent = `<span class="font-medium text-blue-700 hover-underline cursor-pointer stack-trace-trigger" onclick="TestReportApp.openStackTrace(this)" data-module="${UIUtils.escapeHTML(currentContext.moduleName || '')}" data-package="${UIUtils.escapeHTML(currentContext.packageName || '')}" data-class="${UIUtils.escapeHTML(currentContext.className || '')}" data-test-case="${UIUtils.escapeHTML(node.name || '')}" tabindex="0" role="button" aria-label="View stack trace for ${UIUtils.escapeHTML(node.name)}">${UIUtils.escapeHTML(node.name)}</span>`;
+      if (type === 'testCase' && this.isTestCaseClickable(node)) {
+        nameContent = `<span class="font-medium text-blue-700 hover-underline cursor-pointer stack-trace-trigger" data-module="${UIUtils.escapeHTML(currentContext.moduleName || '')}" data-package="${UIUtils.escapeHTML(currentContext.packageName || '')}" data-class="${UIUtils.escapeHTML(currentContext.className || '')}" data-test-case="${UIUtils.escapeHTML(node.name || '')}" tabindex="0" role="button" aria-label="View details for ${UIUtils.escapeHTML(node.name)}">${UIUtils.escapeHTML(node.name)}</span>`;
       }
 
       const chevron = `<svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="collapsible-arrow ${!hasChildren ? 'invisible' : ''}"><path d="m9 18 6-6-6-6"></path></svg>`;
@@ -1659,48 +1666,50 @@ const TestReportApp = {
     let items = [];
     const view = this.state.currentFlatView;
     if (data.modules) {
-        if (view === 'modules') items = data.modules.map(i => ({ ...i, type: 'module' }));
-        else if (view === 'packages') items = data.modules.flatMap(m => m.packages.map(i => ({ ...i, parent: m.name, moduleName: m.name, type: 'package' })));
-        else if (view === 'classes') items = data.modules.flatMap(m => m.packages.flatMap(p => p.classes.map(i => ({ ...i, parent: p.name, moduleName: m.name, packageName: p.name, type: 'class' }))));
-        else if (view === 'testCases') items = data.modules.flatMap(m => m.packages.flatMap(p => p.classes.flatMap(c => c.testCases.map(i => ({ ...i, parent: c.name, moduleName: m.name, packageName: p.name, className: c.name, type: 'testCase' })))));
+      if (view === 'modules') items = data.modules.map(i => ({ ...i, type: 'module' }));
+      else if (view === 'packages') items = data.modules.flatMap(m => m.packages.map(i => ({ ...i, parent: m.name, moduleName: m.name, type: 'package' })));
+      else if (view === 'classes') items = data.modules.flatMap(m => m.packages.flatMap(p => p.classes.map(i => ({ ...i, parent: p.name, moduleName: m.name, packageName: p.name, type: 'class' }))));
+      else if (view === 'testCases') items = data.modules.flatMap(m => m.packages.flatMap(p => p.classes.flatMap(c => c.testCases.map(i => ({ ...i, parent: c.name, moduleName: m.name, packageName: p.name, className: c.name, type: 'testCase' })))));
     }
 
     this.elements.resultsData.innerHTML = items.map(item => {
-        let nameTd = `<td class="py-3 px-6 sticky-name font-medium" title="${UIUtils.escapeHTML(item.name)}">${UIUtils.escapeHTML(item.name)}</td>`;
-        if (item.type !== 'testCase') {
-            nameTd = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover-underline cursor-pointer" tabindex="0" role="link" title="${UIUtils.escapeHTML(item.name)}" data-name="${UIUtils.escapeHTML(item.name)}" data-type="${item.type}" data-module-name="${UIUtils.escapeHTML(item.moduleName || '')}" data-package-name="${UIUtils.escapeHTML(item.packageName || '')}" data-interactive="flat">${UIUtils.escapeHTML(item.name)}</td>`;
-        } else if (this.hasVisibleFailures(item)) {
-            nameTd = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover-underline cursor-pointer stack-trace-trigger" onclick="TestReportApp.openStackTrace(this)" data-module="${UIUtils.escapeHTML(item.moduleName || '')}" data-package="${UIUtils.escapeHTML(item.packageName || '')}" data-class="${UIUtils.escapeHTML(item.className || '')}" data-test-case="${UIUtils.escapeHTML(item.name || '')}" tabindex="0" role="button" aria-label="View stack trace for ${UIUtils.escapeHTML(item.name)}">${UIUtils.escapeHTML(item.name)}</td>`;
-        }
+      let nameTd = `<td class="py-3 px-6 sticky-name font-medium" title="${UIUtils.escapeHTML(item.name)}">${UIUtils.escapeHTML(item.name)}</td>`;
+      if (item.type !== 'testCase') {
+        nameTd = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover-underline cursor-pointer" tabindex="0" role="link" title="${UIUtils.escapeHTML(item.name)}" data-name="${UIUtils.escapeHTML(item.name)}" data-type="${item.type}" data-module-name="${UIUtils.escapeHTML(item.moduleName || '')}" data-package-name="${UIUtils.escapeHTML(item.packageName || '')}" data-interactive="flat">${UIUtils.escapeHTML(item.name)}</td>`;
+      } else if (this.isTestCaseClickable(item)) {
+        nameTd = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover-underline cursor-pointer stack-trace-trigger" data-module="${UIUtils.escapeHTML(item.moduleName || '')}" data-package="${UIUtils.escapeHTML(item.packageName || '')}" data-class="${UIUtils.escapeHTML(item.className || '')}" data-test-case="${UIUtils.escapeHTML(item.name || '')}" tabindex="0" role="button" aria-label="View details for ${UIUtils.escapeHTML(item.name)}">${UIUtils.escapeHTML(item.name)}</td>`;
+      } else {
+        nameTd = `<td class="py-3 px-6 sticky-name font-medium text-gray-800" title="${UIUtils.escapeHTML(item.name)}">${UIUtils.escapeHTML(item.name)}</td>`;
+      }
 
-        let pathCell = '';
-        if (this.state.viewMode === 'flat' && !this.state.selectedModule) {
-            if (view === 'packages') {
-                pathCell = `<td class="py-3 px-6 text-gray-500 text-sm truncate col-module" title="${UIUtils.escapeHTML(item.moduleName)}">${UIUtils.escapeHTML(item.moduleName)}</td>`;
-            } else if (view === 'classes') {
-                pathCell = `<td class="px-2 col-path" title="${UIUtils.escapeHTML(item.moduleName)} > ${UIUtils.escapeHTML(item.packageName)}">
+      let pathCell = '';
+      if (this.state.viewMode === 'flat' && !this.state.selectedModule) {
+        if (view === 'packages') {
+          pathCell = `<td class="py-3 px-6 text-gray-500 text-sm truncate col-module" title="${UIUtils.escapeHTML(item.moduleName)}">${UIUtils.escapeHTML(item.moduleName)}</td>`;
+        } else if (view === 'classes') {
+          pathCell = `<td class="px-2 col-path" title="${UIUtils.escapeHTML(item.moduleName)} > ${UIUtils.escapeHTML(item.packageName)}">
                     <div class="flex flex-col" style="overflow: hidden; width: 100%;">
                         <span class="text-xs text-gray-500 truncate-block">${UIUtils.escapeHTML(item.moduleName)}</span>
                         <span class="text-sm text-gray-500 truncate-block">${UIUtils.escapeHTML(item.packageName)}</span>
                     </div>
                 </td>`;
-            } else if (view === 'testCases') {
-                pathCell = `<td class="px-2 col-path" title="${UIUtils.escapeHTML(item.moduleName)} > ${UIUtils.escapeHTML(item.packageName)} > ${UIUtils.escapeHTML(item.className)}">
+        } else if (view === 'testCases') {
+          pathCell = `<td class="px-2 col-path" title="${UIUtils.escapeHTML(item.moduleName)} > ${UIUtils.escapeHTML(item.packageName)} > ${UIUtils.escapeHTML(item.className)}">
                     <div class="flex flex-col" style="overflow: hidden; width: 100%;">
                         <span class="text-xs text-gray-500 truncate-block">${UIUtils.escapeHTML(item.moduleName)}</span>
                         <span class="text-sm text-gray-500 truncate-block">${UIUtils.escapeHTML(item.packageName)} > ${UIUtils.escapeHTML(item.className)}</span>
                     </div>
                 </td>`;
-            }
         }
+      }
 
-        const context = {
-            moduleName: item.moduleName,
-            packageName: item.packageName,
-            className: item.className
-        };
+      const context = {
+        moduleName: item.moduleName,
+        packageName: item.packageName,
+        className: item.className
+      };
 
-        return `<tr class="table-row">
+      return `<tr class="table-row">
             ${nameTd}
             ${pathCell}
             ${this._renderStatusCell(item, context)}
@@ -1742,32 +1751,32 @@ const TestReportApp = {
   // --- HELPERS ---
 
   getVariantResultForTestCase(testCase, suiteName, variantName) {
-      // For now, use the first target's properties. This works for all non-GMD current use cases out of the box.
-      // Device-specific UI and naming will be added in a subsequent phase (bug b/525671605).
-      const testSuiteResults = (testCase.targets && testCase.targets[0]) ? testCase.targets[0].testSuiteResults : testCase.testSuiteResults;
-      if (!testSuiteResults) return null;
-      let suitesToSearch = [];
-      if (suiteName === 'all') {
-          suitesToSearch = testSuiteResults;
-      } else {
-          const specific = testSuiteResults.find(ts => ts.testSuiteName === suiteName);
-          if (specific) suitesToSearch = [specific];
-      }
+    // For now, use the first target's properties. This works for all non-GMD current use cases out of the box.
+    // Device-specific UI and naming will be added in a subsequent phase (bug b/525671605).
+    const testSuiteResults = (testCase.targets && testCase.targets[0]) ? testCase.targets[0].testSuiteResults : testCase.testSuiteResults;
+    if (!testSuiteResults) return null;
+    let suitesToSearch = [];
+    if (suiteName === 'all') {
+      suitesToSearch = testSuiteResults;
+    } else {
+      const specific = testSuiteResults.find(ts => ts.testSuiteName === suiteName);
+      if (specific) suitesToSearch = [specific];
+    }
 
-      // Priority: Fail > Pass > Skipped
-      let finalRes = null;
-      for (const suite of suitesToSearch) {
-          const res = suite.variantResults[variantName];
-          if (res) {
-              if (res.status === 'fail') return res;
-              if (res.status === 'pass') finalRes = res;
-              if (res.status === 'skipped' && !finalRes) finalRes = res;
-          }
+    // Priority: Fail > Pass > Skipped
+    let finalRes = null;
+    for (const suite of suitesToSearch) {
+      const res = suite.variantResults[variantName];
+      if (res) {
+        if (res.status === 'fail') return res;
+        if (res.status === 'pass') finalRes = res;
+        if (res.status === 'skipped' && !finalRes) finalRes = res;
       }
-      return finalRes;
+    }
+    return finalRes;
   },
 
-  hasVisibleFailures(node) {
+  isTestCaseClickable(node) {
     if (!node || node.type !== 'testCase') return false;
     const activeSuite = this.state.filters.testSuite;
     const activeVariants = this.state.filters.variants;
@@ -1776,11 +1785,11 @@ const TestReportApp = {
     // Device-specific UI and naming will be added in a subsequent phase (see bug b/525671605).
     const commonStackTraces = (node.targets && node.targets[0]) ? node.targets[0].commonStackTraces : node.commonStackTraces;
     return (commonStackTraces || []).some(group => {
-        for (const [suite, variants] of Object.entries(group.occurrences)) {
-            if (activeSuite !== 'all' && suite !== activeSuite) continue;
-            if (variants.some(v => activeVariants.includes(v))) return true;
-        }
-        return false;
+      for (const [suite, variants] of Object.entries(group.occurrences)) {
+        if (activeSuite !== 'all' && suite !== activeSuite) continue;
+        if (variants.some(v => activeVariants.includes(v))) return true;
+      }
+      return false;
     });
   },
 
@@ -1798,31 +1807,31 @@ const TestReportApp = {
     const testSuiteSummaries = (node.targets && node.targets[0]) ? node.targets[0].testSuiteSummaries : node.testSuiteSummaries;
 
     return `${variantsToShow.map(v => {
-        let variantSummary = null;
-        if (suiteFilter === 'all') {
-            const aggregatedSuite = testSuiteSummaries ? testSuiteSummaries.find(ts => ts.name === 'Aggregated') : null;
-            if (aggregatedSuite) {
-                variantSummary = aggregatedSuite.variantSummaries.find(vs => vs.name === v);
-            }
-        } else {
-            const suiteSummary = testSuiteSummaries ? testSuiteSummaries.find(ts => ts.name === suiteFilter) : null;
-            if (suiteSummary) {
-                variantSummary = suiteSummary.variantSummaries.find(vs => vs.name === v);
-            }
+      let variantSummary = null;
+      if (suiteFilter === 'all') {
+        const aggregatedSuite = testSuiteSummaries ? testSuiteSummaries.find(ts => ts.name === 'Aggregated') : null;
+        if (aggregatedSuite) {
+          variantSummary = aggregatedSuite.variantSummaries.find(vs => vs.name === v);
         }
+      } else {
+        const suiteSummary = testSuiteSummaries ? testSuiteSummaries.find(ts => ts.name === suiteFilter) : null;
+        if (suiteSummary) {
+          variantSummary = suiteSummary.variantSummaries.find(vs => vs.name === v);
+        }
+      }
 
-        if (!variantSummary || variantSummary.total === 0) return '<td colspan="4" class="text-center text-gray-500 border-l border-gray-200">-</td>';
+      if (!variantSummary || variantSummary.total === 0) return '<td colspan="4" class="text-center text-gray-500 border-l border-gray-200">-</td>';
 
-        const { passed, failed, skipped, rate } = variantSummary;
-        const relevantTotal = passed + failed;
-        const passRateColor = rate >= 95 ? 'text-green-600' : rate >= 80 ? 'text-yellow-600' : 'text-red-600';
+      const { passed, failed, skipped, rate } = variantSummary;
+      const relevantTotal = passed + failed;
+      const passRateColor = rate >= 95 ? 'text-green-600' : rate >= 80 ? 'text-yellow-600' : 'text-red-600';
 
-        const filter = this.state.filters.status;
-        const showPassed = filter.includes('passed');
-        const showFailed = filter.includes('failed');
-        const showSkipped = filter.includes('skipped');
+      const filter = this.state.filters.status;
+      const showPassed = filter.includes('passed');
+      const showFailed = filter.includes('failed');
+      const showSkipped = filter.includes('skipped');
 
-        return `
+      return `
             <td class="py-3 px-4 text-center ${showPassed ? 'text-green-600' : 'text-gray-500'} font-medium border-l border-gray-200" aria-label="${showPassed ? passed : '-'} passed tests for ${UIUtils.escapeHTML(v)}">${showPassed ? passed : '-'}</td>
             <td class="py-3 px-4 text-center ${showFailed && failed > 0 ? 'text-red-600 font-bold' : 'text-gray-500'} border-l border-gray-200" aria-label="${showFailed ? failed : '-'} failed tests for ${UIUtils.escapeHTML(v)}">${showFailed ? failed : '-'}</td>
             <td class="py-3 px-4 text-center ${showSkipped ? 'text-yellow-600' : 'text-gray-500'}" aria-label="${showSkipped ? skipped : '-'} skipped tests for ${UIUtils.escapeHTML(v)}">${showSkipped ? skipped : '-'}</td>
@@ -1838,30 +1847,36 @@ const TestReportApp = {
   openStackTrace(element) {
     const { module, package: pkg, class: clz, testCase: tcName } = element.dataset;
 
-    // Find the test case object in the processed data
-    const findTestCase = (nodes) => {
-        for (const m of nodes) {
-            if (m.name === module) {
-                for (const p of m.packages) {
-                    if (p.name === pkg) {
-                        for (const c of p.classes) {
-                            if (c.name === clz) {
-                                return c.testCases.find(t => t.name === tcName);
-                            }
-                        }
-                    }
+    const findTestCase = (modules) => {
+      if (!modules) return null;
+      for (const m of modules) {
+        if (!module || m.name === module) {
+          for (const p of (m.packages || [])) {
+            if (!pkg || p.name === pkg) {
+              for (const c of (p.classes || [])) {
+                if (!clz || c.name === clz) {
+                  const t = (c.testCases || []).find(tc => tc.name === tcName || tc.name.toLowerCase() === (tcName || '').toLowerCase());
+                  if (t) return { testCase: t, moduleName: m.name, packageName: p.name, className: c.name };
                 }
+              }
             }
+          }
         }
-        return null;
+      }
+      return null;
     };
 
-    const testCase = findTestCase(this.processedData.modules);
-    if (testCase) {
-        this.activeTrigger = element;
-        const context = { moduleName: module, packageName: pkg, className: clz, testCaseName: tcName };
-        this.showStackTraceView(testCase, context);
-        Navigation.push();
+    const res = findTestCase(this.processedData?.modules);
+    if (res) {
+      this.activeTrigger = element;
+      const context = {
+        moduleName: module || res.moduleName,
+        packageName: pkg || res.packageName,
+        className: clz || res.className,
+        testCaseName: tcName
+      };
+      this.showStackTraceView(res.testCase, context);
+      Navigation.push();
     }
   },
 
@@ -1875,7 +1890,7 @@ const TestReportApp = {
     this.elements.reportView.classList.add('hidden-view');
     this.elements.stackTraceView.classList.remove('hidden-view');
     if (this.elements.filterControlsGroup) {
-        this.elements.filterControlsGroup.classList.add('hidden');
+      this.elements.filterControlsGroup.classList.add('hidden');
     }
     if (this.elements.searchContainer) this.elements.searchContainer.classList.add('hidden');
     if (this.elements.viewSegments) this.elements.viewSegments.classList.add('hidden');
@@ -1899,46 +1914,46 @@ const TestReportApp = {
 
     // Filter groups and their internal occurrences based on active filters
     const filteredGroups = (commonStackTraces || []).map(group => {
-        const filteredOccurrences = {};
-        let hasMatch = false;
+      const filteredOccurrences = {};
+      let hasMatch = false;
 
-        for (const [suite, variants] of Object.entries(group.occurrences)) {
-            if (activeSuite !== 'all' && suite !== activeSuite) continue;
+      for (const [suite, variants] of Object.entries(group.occurrences)) {
+        if (activeSuite !== 'all' && suite !== activeSuite) continue;
 
-            const matchedVariants = variants.filter(v => activeVariants.includes(v));
-            if (matchedVariants.length > 0) {
-                filteredOccurrences[suite] = matchedVariants;
-                hasMatch = true;
-            }
+        const matchedVariants = variants.filter(v => activeVariants.includes(v));
+        if (matchedVariants.length > 0) {
+          filteredOccurrences[suite] = matchedVariants;
+          hasMatch = true;
         }
+      }
 
-        return hasMatch ? { ...group, filteredOccurrences } : null;
+      return hasMatch ? { ...group, filteredOccurrences } : null;
     }).filter(g => g !== null);
 
     if (filteredGroups.length === 0) {
-        grid.innerHTML = '<div class="p-8 text-center text-gray-500 w-full">No stack trace available for the selected filters.</div>';
-        return;
+      grid.innerHTML = '<div class="p-8 text-center text-gray-500 w-full">No stack trace available for the selected filters.</div>';
+      return;
     }
 
     const isMultiView = filteredGroups.length > 1;
 
     filteredGroups.forEach((group, index) => {
-        const viewId = `st-view-${index}`;
-        const titleId = `st-title-${index}`;
+      const viewId = `st-view-${index}`;
+      const titleId = `st-title-${index}`;
 
-        const variantView = document.createElement("div");
-        variantView.className = "variant-code-view";
-        variantView.id = viewId;
-        if (isMultiView) {
-            variantView.classList.add("multi-view");
-        }
+      const variantView = document.createElement("div");
+      variantView.className = "variant-code-view";
+      variantView.id = viewId;
+      if (isMultiView) {
+        variantView.classList.add("multi-view");
+      }
 
-        const header = document.createElement("div");
-        header.className = "variant-header";
+      const header = document.createElement("div");
+      header.className = "variant-header";
 
-        const titleDiv = document.createElement("div");
-        titleDiv.className = "flex items-center gap-2";
-        titleDiv.innerHTML = `
+      const titleDiv = document.createElement("div");
+      titleDiv.className = "flex items-center gap-2";
+      titleDiv.innerHTML = `
             <svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-600">
                 <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
                 <line x1="12" y1="9" x2="12" y2="13"></line>
@@ -1946,40 +1961,41 @@ const TestReportApp = {
             </svg>
             <h2 class="text-sm font-semibold text-gray-900" id="${titleId}">Stack Trace</h2>
         `;
-        header.appendChild(titleDiv);
+      header.appendChild(titleDiv);
 
-        const occurrencesDiv = document.createElement("div");
-        occurrencesDiv.className = "flex flex-wrap gap-1 mt-2";
+      const occurrencesDiv = document.createElement("div");
+      occurrencesDiv.className = "flex flex-wrap gap-1 mt-2";
 
-        for (const [suite, variants] of Object.entries(group.filteredOccurrences)) {
-            const tag = document.createElement("span");
-            tag.className = "occurrence-tag";
-            tag.textContent = `${suite} (${variants.join(", ")})`;
-            occurrencesDiv.appendChild(tag);
-        }
-        header.appendChild(occurrencesDiv);
-        variantView.appendChild(header);
+      for (const [suite, variants] of Object.entries(group.filteredOccurrences)) {
+        const tag = document.createElement("span");
+        tag.className = "occurrence-tag";
+        tag.textContent = `${suite} (${variants.join(", ")})`;
+        occurrencesDiv.appendChild(tag);
+      }
+      header.appendChild(occurrencesDiv);
+      variantView.appendChild(header);
 
-        const container = document.createElement("div");
-        container.className = "code-container";
-        container.setAttribute("tabindex", "0");
-        container.setAttribute("aria-labelledby", titleId);
+      const container = document.createElement("div");
+      container.className = "code-container";
+      container.setAttribute("tabindex", "0");
+      container.setAttribute("aria-labelledby", titleId);
 
-        const pre = document.createElement("pre");
-        pre.className = "font-mono text-sm text-red-600 whitespace-pre-wrap break-all";
-        pre.textContent = group.stackTrace;
-        container.appendChild(pre);
+      const pre = document.createElement("pre");
+      pre.className = "font-mono text-sm text-red-600 whitespace-pre-wrap break-all";
+      pre.textContent = group.stackTrace;
+      container.appendChild(pre);
 
-        variantView.appendChild(container);
-        grid.appendChild(variantView);
+      variantView.appendChild(container);
+      grid.appendChild(variantView);
     });
 
     // Auto-focus the first stack trace for keyboard users
     const firstContainer = grid.querySelector('.code-container');
     if (firstContainer) {
-        setTimeout(() => firstContainer.focus(), 100);
+      setTimeout(() => firstContainer.focus(), 100);
     }
   },
+
 
   showReportView() {
     this.announce("Returning to report view");
@@ -1991,15 +2007,15 @@ const TestReportApp = {
     this.elements.stackTraceView.classList.add('hidden-view');
     this.elements.reportView.classList.remove('hidden-view');
     if (this.elements.filterControlsGroup) {
-        this.elements.filterControlsGroup.classList.remove('hidden');
+      this.elements.filterControlsGroup.classList.remove('hidden');
     }
     if (this.elements.searchContainer) this.elements.searchContainer.classList.remove('hidden');
     if (this.elements.viewSegments) this.elements.viewSegments.classList.remove('hidden');
     if (this.elements.densitySegments) this.elements.densitySegments.classList.remove('hidden');
 
     if (this.activeTrigger) {
-        this.activeTrigger.focus();
-        this.activeTrigger = null;
+      this.activeTrigger.focus();
+      this.activeTrigger = null;
     }
   },
 
@@ -2009,22 +2025,22 @@ const TestReportApp = {
         <a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_MODULES}" aria-label="Go back to Project Overview">Project</a>`;
 
     if (moduleName) {
-        html += `
+      html += `
             <span class="breadcrumb-separator" aria-hidden="true">/</span>
             <a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_PACKAGES}" data-module-name="${UIUtils.escapeHTML(moduleName)}" aria-label="Go back to module: ${UIUtils.escapeHTML(moduleName)}">${UIUtils.escapeHTML(moduleName)}</a>`;
     }
     if (packageName) {
-         html += `
+      html += `
             <span class="breadcrumb-separator" aria-hidden="true">/</span>
             <a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_CLASSES}" data-module-name="${UIUtils.escapeHTML(moduleName)}" data-package-name="${UIUtils.escapeHTML(packageName)}" aria-label="Go back to package: ${UIUtils.escapeHTML(packageName)}">${UIUtils.escapeHTML(packageName)}</a>`;
     }
     if (className) {
-        html += `
+      html += `
             <span class="breadcrumb-separator" aria-hidden="true">/</span>
             <a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_TEST_CASES}" data-module-name="${UIUtils.escapeHTML(moduleName)}" data-package-name="${UIUtils.escapeHTML(packageName)}" data-class-name="${UIUtils.escapeHTML(className)}" aria-label="Go back to class: ${UIUtils.escapeHTML(className)}">${UIUtils.escapeHTML(className)}</a>`;
     }
     if (testCaseName) {
-        html += `
+      html += `
             <span class="breadcrumb-separator" aria-hidden="true">/</span>
             <span class="font-semibold text-gray-800">${UIUtils.escapeHTML(testCaseName)}</span>`;
     }
@@ -2118,21 +2134,21 @@ const Navigation = {
       TestReportApp.elements.searchInput.value = TestReportApp.state.filters.search || '';
       if (TestReportApp.elements.searchInput.value) {
         if (TestReportApp.elements.searchWrapper) {
-            TestReportApp.elements.searchWrapper.classList.add('expanded');
+          TestReportApp.elements.searchWrapper.classList.add('expanded');
         }
         if (TestReportApp.elements.searchRevealBtn) {
-            TestReportApp.elements.searchRevealBtn.classList.add('transparent');
+          TestReportApp.elements.searchRevealBtn.classList.add('transparent');
         }
         if (TestReportApp.elements.searchClearBtn) {
           TestReportApp.elements.searchClearBtn.classList.remove('hidden');
         }
       } else {
         if (TestReportApp.elements.searchWrapper) {
-            TestReportApp.elements.searchWrapper.classList.remove('expanded');
+          TestReportApp.elements.searchWrapper.classList.remove('expanded');
         }
         if (TestReportApp.elements.searchRevealBtn) {
-            TestReportApp.elements.searchRevealBtn.classList.remove('transparent');
-            TestReportApp.elements.searchRevealBtn.classList.remove('hidden');
+          TestReportApp.elements.searchRevealBtn.classList.remove('transparent');
+          TestReportApp.elements.searchRevealBtn.classList.remove('hidden');
         }
         if (TestReportApp.elements.searchClearBtn) {
           TestReportApp.elements.searchClearBtn.classList.add('hidden');
@@ -2184,12 +2200,12 @@ const Navigation = {
 
     // Re-render
     if (TestReportApp.state.currentView === 'stack-trace') {
-        TestReportApp.showStackTraceView(TestReportApp.state.currentTestCase, TestReportApp.state.currentStackTraceContext);
+      TestReportApp.showStackTraceView(TestReportApp.state.currentTestCase, TestReportApp.state.currentStackTraceContext);
     } else {
-        TestReportApp.showReportView();
-        if (selectionChanged || oldView === 'report') {
-            TestReportApp.render();
-        }
+      TestReportApp.showReportView();
+      if (selectionChanged || oldView === 'report') {
+        TestReportApp.render();
+      }
     }
     TestReportApp.updateFilterButtons();
   }
@@ -2204,99 +2220,99 @@ document.addEventListener('DOMContentLoaded', () => {
  * HELP HUB INITIALIZATION
  */
 function initHelpHub() {
-    const helpHubFab = document.getElementById("help-hub-fab");
-    const helpHubPanel = document.getElementById("help-hub-panel");
-    const closeHelpHubBtn = document.getElementById("close-help-hub");
+  const helpHubFab = document.getElementById("help-hub-fab");
+  const helpHubPanel = document.getElementById("help-hub-panel");
+  const closeHelpHubBtn = document.getElementById("close-help-hub");
 
-    if (!helpHubFab || !helpHubPanel) return;
+  if (!helpHubFab || !helpHubPanel) return;
 
-    function togglePanel(open) {
-        const isOpening = typeof open === 'boolean' ? open : !helpHubPanel.classList.contains("open");
-        helpHubPanel.classList.toggle("open", isOpening);
-        helpHubFab.setAttribute("aria-expanded", isOpening);
-        helpHubPanel.setAttribute("aria-hidden", !isOpening);
+  function togglePanel(open) {
+    const isOpening = typeof open === 'boolean' ? open : !helpHubPanel.classList.contains("open");
+    helpHubPanel.classList.toggle("open", isOpening);
+    helpHubFab.setAttribute("aria-expanded", isOpening);
+    helpHubPanel.setAttribute("aria-hidden", !isOpening);
 
-        if (isOpening) {
-            requestAnimationFrame(() => {
-                closeHelpHubBtn?.focus();
-            });
-        } else {
-            helpHubFab.focus();
-        }
+    if (isOpening) {
+      requestAnimationFrame(() => {
+        closeHelpHubBtn?.focus();
+      });
+    } else {
+      helpHubFab.focus();
     }
+  }
 
-    // Focus Trap
-    helpHubPanel.addEventListener("keydown", (e) => {
-        if (e.key !== "Tab") return;
+  // Focus Trap
+  helpHubPanel.addEventListener("keydown", (e) => {
+    if (e.key !== "Tab") return;
 
-        const focusableElements = helpHubPanel.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
-        const firstElement = focusableElements[0];
-        const lastElement = focusableElements[focusableElements.length - 1];
+    const focusableElements = helpHubPanel.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
 
-        if (e.shiftKey) { // Shift + Tab
-            if (document.activeElement === firstElement) {
-                lastElement.focus();
-                e.preventDefault();
-            }
-        } else { // Tab
-            if (document.activeElement === lastElement) {
-                firstElement.focus();
-                e.preventDefault();
-            }
-        }
+    if (e.shiftKey) { // Shift + Tab
+      if (document.activeElement === firstElement) {
+        lastElement.focus();
+        e.preventDefault();
+      }
+    } else { // Tab
+      if (document.activeElement === lastElement) {
+        firstElement.focus();
+        e.preventDefault();
+      }
+    }
+  });
+
+  helpHubFab.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    togglePanel();
+  });
+
+  if (closeHelpHubBtn) {
+    closeHelpHubBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      togglePanel(false);
+    });
+  }
+
+  document.addEventListener("click", (e) => {
+    if (helpHubPanel.classList.contains("open") && !helpHubPanel.contains(e.target) && !helpHubFab.contains(e.target)) {
+      togglePanel(false);
+    }
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && helpHubPanel.classList.contains("open")) {
+      togglePanel(false);
+    }
+  });
+
+  const legendItems = helpHubPanel.querySelectorAll(".legend-item");
+  legendItems.forEach(item => {
+    const header = item.querySelector(".legend-item-header");
+    const toggle = () => {
+      const isOpen = item.classList.contains("open");
+      legendItems.forEach(i => {
+        i.classList.remove("open");
+        const h = i.querySelector(".legend-item-header");
+        if (h) h.setAttribute("aria-expanded", "false");
+      });
+      item.classList.toggle("open", !isOpen);
+      header.setAttribute("aria-expanded", !isOpen);
+    };
+
+    header.addEventListener("click", (e) => {
+      e.stopPropagation();
+      toggle();
     });
 
-    helpHubFab.addEventListener("click", (e) => {
+    header.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
         e.stopPropagation();
-        togglePanel();
+        toggle();
+      }
     });
-
-    if (closeHelpHubBtn) {
-        closeHelpHubBtn.addEventListener("click", (e) => {
-            e.stopPropagation();
-            togglePanel(false);
-        });
-    }
-
-    document.addEventListener("click", (e) => {
-        if (helpHubPanel.classList.contains("open") && !helpHubPanel.contains(e.target) && !helpHubFab.contains(e.target)) {
-            togglePanel(false);
-        }
-    });
-
-    document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape" && helpHubPanel.classList.contains("open")) {
-            togglePanel(false);
-        }
-    });
-
-    const legendItems = helpHubPanel.querySelectorAll(".legend-item");
-    legendItems.forEach(item => {
-        const header = item.querySelector(".legend-item-header");
-        const toggle = () => {
-            const isOpen = item.classList.contains("open");
-            legendItems.forEach(i => {
-                i.classList.remove("open");
-                const h = i.querySelector(".legend-item-header");
-                if (h) h.setAttribute("aria-expanded", "false");
-            });
-            item.classList.toggle("open", !isOpen);
-            header.setAttribute("aria-expanded", !isOpen);
-        };
-
-        header.addEventListener("click", (e) => {
-            e.stopPropagation();
-            toggle();
-        });
-
-        header.addEventListener("keydown", (e) => {
-            if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                e.stopPropagation();
-                toggle();
-            }
-        });
-    });
+  });
 }
 
