@@ -223,7 +223,7 @@ ARTIFACTS = [
     "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4",
     "org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.6.4",
     "org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.6.4",
-    "org.jetbrains.kotlinx:kotlinx-coroutines-test-jvm:1.6.4",
+    "org.jetbrains.kotlinx:kotlinx-coroutines-test-jvm:1.10.2",
     "org.jetbrains.kotlinx:kotlinx-io-bytestring-jvm:0.6.0",
     "org.jetbrains.kotlinx:kotlinx-io-core-jvm:0.6.0",
     "org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:1.7.3",
