@@ -20,7 +20,8 @@ import com.android.adblib.AdbLogger
 import com.android.adblib.AdbLoggerFactory
 import com.android.adblib.AdbSession
 import com.android.adblib.tools.createStandaloneSession
-import com.android.tools.ui.inspector.printer.json.JsonUiDumpPrinter
+import com.android.tools.ui.inspector.printer.json.withJsonPrinter
+import java.nio.file.Path
 import java.util.concurrent.Callable
 import kotlin.system.exitProcess
 import kotlinx.coroutines.runBlocking
@@ -84,6 +85,8 @@ open class UiInspectorDumpCommand : Callable<Int> {
   @Option(names = ["--include-semantics"], description = ["Include Compose accessibility/semantics properties in the dump"])
   var includeSemantics: Boolean = false
   @Option(names = ["--pretty", "-p"], description = ["Pretty-print the returned JSON"]) var prettyPrint: Boolean = false
+  @Option(names = ["-o", "--output"], description = ["Writes the output to the specified file. If omitted, prints to standard output"])
+  var output: Path? = null
   @Option(
     names = ["--compose-inspector"],
     description = ["Path to a local Compose Inspector JAR file to use instead of the one from maven"],
@@ -99,18 +102,20 @@ class DumpUiCommand : UiInspectorDumpCommand() {
     System.err.println("Executing dump-ui for package: $packageName on device: $device")
     val adbSession = sessionFactory()
     try {
-      runBlocking {
-        doDumpUi(
-          adbSession = adbSession,
-          serial = device,
-          packageName = packageName,
-          includeAttributes = includeAttributes,
-          includeResolutionStack = includeResolutionStack,
-          includeSystemComposables = includeSystemComposables,
-          includeSemantics = includeSemantics,
-          composeInspectorJarPath = composeInspectorJarPath,
-          printer = JsonUiDumpPrinter(out = System.out, prettyPrint = prettyPrint),
-        )
+      withJsonPrinter(output, prettyPrint) { printer ->
+        runBlocking {
+          doDumpUi(
+            adbSession = adbSession,
+            serial = device,
+            packageName = packageName,
+            includeAttributes = includeAttributes,
+            includeResolutionStack = includeResolutionStack,
+            includeSystemComposables = includeSystemComposables,
+            includeSemantics = includeSemantics,
+            composeInspectorJarPath = composeInspectorJarPath,
+            printer = printer,
+          )
+        }
       }
       return EXIT_OK
     } catch (e: Exception) {
@@ -129,20 +134,22 @@ class TrackChangesCommand : UiInspectorDumpCommand() {
     System.err.println("Executing track-changes for package: $packageName on device: $device")
     val adbSession = sessionFactory()
     try {
-      runBlocking {
-        doTrackChanges(
-          adbSession = adbSession,
-          serial = device,
-          packageName = packageName,
-          intervalMs = intervalMs,
-          durationSec = durationSec,
-          includeAttributes = includeAttributes,
-          includeResolutionStack = includeResolutionStack,
-          includeSystemComposables = includeSystemComposables,
-          includeSemantics = includeSemantics,
-          composeInspectorJarPath = composeInspectorJarPath,
-          printer = JsonUiDumpPrinter(out = System.out, prettyPrint = prettyPrint),
-        )
+      withJsonPrinter(output, prettyPrint) { printer ->
+        runBlocking {
+          doTrackChanges(
+            adbSession = adbSession,
+            serial = device,
+            packageName = packageName,
+            intervalMs = intervalMs,
+            durationSec = durationSec,
+            includeAttributes = includeAttributes,
+            includeResolutionStack = includeResolutionStack,
+            includeSystemComposables = includeSystemComposables,
+            includeSemantics = includeSemantics,
+            composeInspectorJarPath = composeInspectorJarPath,
+            printer = printer,
+          )
+        }
       }
       return EXIT_OK
     } catch (e: Exception) {

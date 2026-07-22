@@ -27,12 +27,20 @@ import com.android.tools.ui.inspector.UiNode
 import com.google.common.truth.Truth.assertThat
 import com.google.gson.JsonParser
 import java.io.ByteArrayOutputStream
+import java.io.IOException
+import java.io.OutputStream
 import java.io.PrintStream
+import java.nio.file.Files
 import kotlin.time.Duration.Companion.milliseconds
+import org.junit.Assert.assertThrows
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 
 class JsonUiDumpPrinterTest {
+
+  @get:Rule val tempFolder = TemporaryFolder()
 
   private lateinit var outputStream: ByteArrayOutputStream
   private lateinit var printStream: PrintStream
@@ -41,6 +49,67 @@ class JsonUiDumpPrinterTest {
   fun setUp() {
     outputStream = ByteArrayOutputStream()
     printStream = PrintStream(outputStream)
+  }
+
+  @Test
+  fun testWithJsonPrinterWritesToFile() {
+    val outputFile = tempFolder.root.toPath().resolve("dump.json")
+
+    withJsonPrinter(output = outputFile, prettyPrint = false) { printer -> printer.printDump(EMPTY_DUMP) }
+
+    assertThat(String(Files.readAllBytes(outputFile), Charsets.UTF_8).trim()).isEqualTo("""{"roots":[]}""")
+  }
+
+  @Test
+  fun testWithJsonPrinterOverwritesExistingFile() {
+    val outputFile = tempFolder.newFile("dump.json").toPath()
+    Files.write(outputFile, "previous content longer than the new dump".toByteArray(Charsets.UTF_8))
+
+    withJsonPrinter(output = outputFile, prettyPrint = false) { printer -> printer.printDump(EMPTY_DUMP) }
+
+    assertThat(String(Files.readAllBytes(outputFile), Charsets.UTF_8).trim()).isEqualTo("""{"roots":[]}""")
+  }
+
+  @Test
+  fun testWithJsonPrinterDefaultsToStdout() {
+    val capturedOut = ByteArrayOutputStream()
+    val originalOut = System.out
+    System.setOut(PrintStream(capturedOut))
+    try {
+      withJsonPrinter(output = null, prettyPrint = false) { printer -> printer.printDump(EMPTY_DUMP) }
+    } finally {
+      System.setOut(originalOut)
+    }
+
+    assertThat(capturedOut.toString(Charsets.UTF_8.name()).trim()).isEqualTo("""{"roots":[]}""")
+  }
+
+  @Test
+  fun testWithJsonPrinterReportsStdoutWriteFailure() {
+    val failingStream =
+      PrintStream(
+        object : OutputStream() {
+          override fun write(b: Int) {
+            throw IOException("stdout unavailable")
+          }
+        }
+      )
+    val originalOut = System.out
+    System.setOut(failingStream)
+    try {
+      assertThrows(IOException::class.java) {
+        withJsonPrinter(output = null, prettyPrint = false) { printer -> printer.printDump(EMPTY_DUMP) }
+      }
+    } finally {
+      System.setOut(originalOut)
+    }
+  }
+
+  @Test
+  fun testWithJsonPrinterRejectsDirectory() {
+    val exception = assertThrows(IOException::class.java) { withJsonPrinter(output = tempFolder.root.toPath(), prettyPrint = false) {} }
+
+    assertThat(exception).hasMessageThat().contains("directory")
   }
 
   @Test
@@ -384,5 +453,9 @@ class JsonUiDumpPrinterTest {
     assertThat(changeObj.get("name").asString).isEqualTo("a")
     assertThat(changeObj.get("oldValue").asString).isEqualTo("old")
     assertThat(changeObj.get("newValue").asString).isEqualTo("new")
+  }
+
+  private companion object {
+    val EMPTY_DUMP = UiDump(roots = emptyList(), configuration = null, stringTable = emptyMap(), appContext = null)
   }
 }

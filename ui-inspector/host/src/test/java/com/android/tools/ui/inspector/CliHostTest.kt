@@ -17,6 +17,7 @@
 package com.android.tools.ui.inspector
 
 import com.google.common.truth.Truth.assertThat
+import java.nio.file.Paths
 import org.junit.Assert.assertThrows
 import org.junit.Test
 import picocli.CommandLine
@@ -43,6 +44,7 @@ class CliHostTest {
     assertThat(dumpCmd.includeSystemComposables).isFalse()
     assertThat(dumpCmd.includeAttributes).isFalse()
     assertThat(dumpCmd.composeInspectorJarPath).isNull()
+    assertThat(dumpCmd.output).isNull()
   }
 
   @Test
@@ -60,6 +62,22 @@ class CliHostTest {
       cmd.parseArgs("dump-ui", "--device", "123", "--package", "com.example", "--compose-inspector", "local/path/to/inspector.jar")
     val dumpCmd = parseResult.subcommand().commandSpec().userObject() as DumpUiCommand
     assertThat(dumpCmd.composeInspectorJarPath).isEqualTo("local/path/to/inspector.jar")
+  }
+
+  @Test
+  fun testCommandLineOptionsOutput() {
+    val cmd = CommandLine(UiInspectorCommand()).addSubcommand("dump-ui", DumpUiCommand())
+    val parseResult = cmd.parseArgs("dump-ui", "--device", "123", "--package", "com.example", "--output", "out/dump.json")
+    val dumpCmd = parseResult.subcommand().commandSpec().userObject() as DumpUiCommand
+    assertThat(dumpCmd.output).isEqualTo(Paths.get("out/dump.json"))
+  }
+
+  @Test
+  fun testCommandLineOptionsOutputShortName() {
+    val cmd = CommandLine(UiInspectorCommand()).addSubcommand("dump-ui", DumpUiCommand())
+    val parseResult = cmd.parseArgs("dump-ui", "--device", "123", "--package", "com.example", "-o", "dump.json")
+    val dumpCmd = parseResult.subcommand().commandSpec().userObject() as DumpUiCommand
+    assertThat(dumpCmd.output).isEqualTo(Paths.get("dump.json"))
   }
 
   @Test

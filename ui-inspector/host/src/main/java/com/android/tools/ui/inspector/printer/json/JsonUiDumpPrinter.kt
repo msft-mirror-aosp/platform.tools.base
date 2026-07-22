@@ -35,12 +35,39 @@ import com.google.gson.JsonElement
 import com.google.gson.JsonNull
 import com.google.gson.JsonObject
 import com.google.gson.JsonPrimitive
+import java.io.IOException
 import java.io.OutputStreamWriter
 import java.io.PrintStream
+import java.nio.file.Files
+import java.nio.file.Path
 import java.util.Locale
 
 private val GSON_COMPACT: Gson = GsonBuilder().serializeNulls().create()
 private val GSON_PRETTY: Gson = GsonBuilder().serializeNulls().setPrettyPrinting().create()
+
+/**
+ * Runs [block] with a JSON printer targeting the destination selected by [output]: the given file, or standard output when null. File
+ * streams are closed on completion and write failures are reported as [IOException].
+ */
+internal fun withJsonPrinter(output: Path?, prettyPrint: Boolean, block: (UiDumpPrinter) -> Unit) {
+  if (output == null) {
+    val stdout = System.out
+    block(JsonUiDumpPrinter(out = stdout, prettyPrint = prettyPrint))
+    if (stdout.checkError()) {
+      throw IOException("Failed to write output to standard output")
+    }
+    return
+  }
+  if (Files.isDirectory(output)) {
+    throw IOException("Output path is a directory, expected a file: $output")
+  }
+  val fileOut = PrintStream(Files.newOutputStream(output), false, Charsets.UTF_8)
+  fileOut.use { block(JsonUiDumpPrinter(out = it, prettyPrint = prettyPrint)) }
+  // Checked after close so that errors recorded while closing are observed too.
+  if (fileOut.checkError()) {
+    throw IOException("Failed to write output to: $output")
+  }
+}
 
 /**
  * Explicit JSON key constants defining the external serialization schema contract. Keys are hardcoded constants to ensure internal Kotlin
