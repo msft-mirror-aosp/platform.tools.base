@@ -346,6 +346,34 @@ class JsonUiDumpPrinterTest {
   }
 
   @Test
+  fun testPrintTrackedChangesUnchangedSampleEmitsFrameWithoutDiffs() {
+    fun makeDump(): UiDump {
+      val node =
+        UiNode.ViewNode(
+          id = 1L,
+          className = "android.view.View",
+          bounds = UiNode.Bounds(0, 0, 10, 10),
+          idResource = null,
+          layoutResource = null,
+          attributes = emptyList(),
+        )
+      return UiDump(roots = listOf(node), configuration = null, stringTable = emptyMap(), appContext = null)
+    }
+    val samples = listOf(TimedUiDump(0.milliseconds, makeDump()), TimedUiDump(250.milliseconds, makeDump()))
+
+    val printer = JsonUiDumpPrinter(out = printStream, prettyPrint = false)
+    printer.printTrackedChanges(samples)
+
+    val json = JsonParser.parseString(outputStream.toString(Charsets.UTF_8)).asJsonObject
+    val frames = json.getAsJsonArray("frames")
+    assertThat(frames.size()).isEqualTo(1)
+    val frame0 = frames[0].asJsonObject
+    assertThat(frame0.get("elapsedTimeMs").asLong).isEqualTo(250L)
+    assertThat(frame0.has("configurationDiff")).isFalse()
+    assertThat(frame0.has("treeDiff")).isFalse()
+  }
+
+  @Test
   fun testPrintTrackedChangesFullDiffWithAddedRemovedAndConfigDiff() {
     val initialNode =
       UiNode.ViewNode(

@@ -23,8 +23,7 @@ import com.android.tools.ui.inspector.NodeChange
 import com.android.tools.ui.inspector.TimedUiDump
 import com.android.tools.ui.inspector.TreeDiff
 import com.android.tools.ui.inspector.UiNode
-import com.android.tools.ui.inspector.createConfigurationDiff
-import com.android.tools.ui.inspector.diffTrees
+import com.android.tools.ui.inspector.diffUiDumps
 import com.android.tools.ui.inspector.printer.SemanticsDisplayMode
 import java.io.PrintStream
 
@@ -51,10 +50,14 @@ internal fun printTrackedChanges(samples: List<TimedUiDump>, out: PrintStream, s
   for (i in 1 until samples.size) {
     val sample = samples[i]
     out.println("--- Frame ${i + 1} (+${sample.elapsedTime.inWholeMilliseconds}ms) ---")
-    val configDiff = createConfigurationDiff(prevSample.uiDump.configuration, sample.uiDump.configuration)
-    printConfigurationDiff(configDiff, out)
-    val diff = diffTrees(prevSample.uiDump.roots, sample.uiDump.roots)
-    printTreeDiff(diff, out)
+    val diff = diffUiDumps(prevSample.uiDump, sample.uiDump)
+    printConfigurationDiff(diff.configurationDiff, out)
+    val treeDiff = diff.treeDiff
+    if (treeDiff == null) {
+      out.println(" No changes")
+    } else {
+      printTreeDiff(treeDiff, out)
+    }
     out.println()
     prevSample = sample
   }

@@ -25,8 +25,7 @@ import com.android.tools.ui.inspector.TimedUiDump
 import com.android.tools.ui.inspector.TreeDiff
 import com.android.tools.ui.inspector.UiDump
 import com.android.tools.ui.inspector.UiNode
-import com.android.tools.ui.inspector.createConfigurationDiff
-import com.android.tools.ui.inspector.diffTrees
+import com.android.tools.ui.inspector.diffUiDumps
 import com.android.tools.ui.inspector.printer.UiDumpPrinter
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
@@ -216,15 +215,9 @@ internal class JsonUiDumpPrinter(private val out: PrintStream, private val prett
       val frameObj = JsonObject()
       frameObj.addProperty(JsonKeys.ELAPSED_TIME_MS, sample.elapsedTime.inWholeMilliseconds)
 
-      val configDiff = createConfigurationDiff(prevSample.uiDump.configuration, sample.uiDump.configuration)
-      if (configDiff != null && configDiff.differences.isNotEmpty()) {
-        frameObj.add(JsonKeys.CONFIGURATION_DIFF, serializeConfigurationDiff(configDiff))
-      }
-
-      val treeDiff = diffTrees(prevSample.uiDump.roots, sample.uiDump.roots)
-      if (treeDiff.added.isNotEmpty() || treeDiff.removed.isNotEmpty() || treeDiff.modified.isNotEmpty()) {
-        frameObj.add(JsonKeys.TREE_DIFF, serializeTreeDiff(treeDiff))
-      }
+      val diff = diffUiDumps(prevSample.uiDump, sample.uiDump)
+      diff.configurationDiff?.let { frameObj.add(JsonKeys.CONFIGURATION_DIFF, serializeConfigurationDiff(it)) }
+      diff.treeDiff?.let { frameObj.add(JsonKeys.TREE_DIFF, serializeTreeDiff(it)) }
 
       framesArray.add(frameObj)
       prevSample = sample
