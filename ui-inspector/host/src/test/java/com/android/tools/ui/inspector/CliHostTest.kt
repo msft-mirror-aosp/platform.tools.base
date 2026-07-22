@@ -57,17 +57,37 @@ class CliHostTest {
   @Test
   fun testCommandLineOptionsDefaults() {
     val dumpCmd = parseDumpUi("--device", "123", "--package", "com.example")
-    assertThat(dumpCmd.includeSystemComposables).isFalse()
-    assertThat(dumpCmd.includeAttributes).isFalse()
+    assertThat(dumpCmd.include).isEmpty()
     assertThat(dumpCmd.composeInspectorJarPath).isNull()
     assertThat(dumpCmd.output).isNull()
     assertThat(dumpCmd.recordOptions).isNull()
   }
 
   @Test
-  fun testCommandLineOptionsFlags() {
-    val dumpCmd = parseDumpUi("--device", "123", "--package", "com.example", "--include-system-composables")
-    assertThat(dumpCmd.includeSystemComposables).isTrue()
+  fun testIncludeParsesSingleFacet() {
+    val dumpCmd = parseDumpUi("--include", "system-composables")
+    assertThat(dumpCmd.include).containsExactly(IncludeFacet.SYSTEM_COMPOSABLES)
+  }
+
+  @Test
+  fun testIncludeParsesCommaSeparatedAndRepeatedForms() {
+    val dumpCmd = parseDumpUi("--include", "attributes,semantics", "--include", "resolution-stack")
+    assertThat(dumpCmd.include).containsExactly(IncludeFacet.ATTRIBUTES, IncludeFacet.SEMANTICS, IncludeFacet.RESOLUTION_STACK).inOrder()
+  }
+
+  @Test
+  fun testIncludeRejectsUnknownFacet() {
+    val exception =
+      assertThrows(CommandLine.ParameterException::class.java) { createCommandLine().parseArgs("dump-ui", "--include", "everything") }
+    assertThat(exception).hasMessageThat().contains("Invalid value for --include: 'everything'")
+    assertThat(exception).hasMessageThat().contains("attributes, semantics, resolution-stack, system-composables, all")
+  }
+
+  @Test
+  fun testOldIncludeFlagsRemoved() {
+    for (oldFlag in listOf("--include-attributes", "--include-resolution-stack", "--include-system-composables", "--include-semantics")) {
+      assertThrows(CommandLine.UnmatchedArgumentException::class.java) { createCommandLine().parseArgs("dump-ui", oldFlag) }
+    }
   }
 
   @Test

@@ -275,12 +275,14 @@ subsequent `attach-agent` calls gracefully (duplicate server threads exit cleanl
 
 ## Retrieving view attributes and composables parameters
 
-Attributes and parameters are fetched inline during the single-shot dump commands
-by passing command-line flags:
+The dump is lean by default. Additional data is selected with `--include`,
+taking one or more comma-separated facets (the option is also repeatable):
 
-* `--include-attributes`: Includes view attributes and parameters in the dump.
-* `--include-resolution-stack`: Exposes attribute style/theme resolution traces.
-* `--include-semantics`: Includes Compose accessibility and semantics properties.
+* `attributes`: view attributes and composable parameters.
+* `resolution-stack`: attribute style/theme resolution traces (implies `attributes`).
+* `semantics`: Compose accessibility and semantics properties.
+* `system-composables`: system/framework Composable nodes.
+* `all`: everything above.
 
 *Note: The separate `get-params` command proposed in early designs is not implemented.*
 

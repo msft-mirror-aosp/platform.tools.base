@@ -89,13 +89,17 @@ class DumpUiCommand : Callable<Int> {
   @Option(names = ["--device"], description = [DEVICE_OPTION_DESCRIPTION]) var device: String? = null
   @Option(names = ["--package"], description = ["The app package name. Defaults to the app currently in the foreground"])
   var packageName: String? = null
-  @Option(names = ["--include-attributes"], description = ["Include view attributes in the dump"]) var includeAttributes: Boolean = false
-  @Option(names = ["--include-resolution-stack"], description = ["Include attribute resolution stack in the dump"])
-  var includeResolutionStack: Boolean = false
-  @Option(names = ["--include-system-composables"], description = ["Include system/framework Composable nodes in the dump"])
-  var includeSystemComposables: Boolean = false
-  @Option(names = ["--include-semantics"], description = ["Include Compose accessibility/semantics properties in the dump"])
-  var includeSemantics: Boolean = false
+  @Option(
+    names = ["--include"],
+    split = ",",
+    converter = [IncludeFacetConverter::class],
+    description =
+      [
+        "Data to include in the dump: attributes, semantics, resolution-stack, system-composables, or all. " +
+          "Repeatable or comma-separated; resolution-stack implies attributes"
+      ],
+  )
+  internal var include: List<IncludeFacet> = emptyList()
   @Option(names = ["--pretty", "-p"], description = ["Pretty-print the returned JSON"]) var prettyPrint: Boolean = false
   @Option(names = ["-o", "--output"], description = ["Writes the output to the specified file. If omitted, prints to standard output"])
   var output: Path? = null
@@ -147,6 +151,7 @@ class DumpUiCommand : Callable<Int> {
           serial to resolveTargetPackage(adbSession, serial, packageName)
         }
       System.err.println("Executing dump-ui for package: $targetPackage on device: $serial")
+      val facets = expandIncludeFacets(include)
       withJsonPrinter(output, prettyPrint) { printer ->
         runBlocking {
           val recordOptions = recordOptions
@@ -157,10 +162,10 @@ class DumpUiCommand : Callable<Int> {
               packageName = targetPackage,
               interval = recordOptions.interval ?: DEFAULT_RECORD_INTERVAL,
               duration = requireNotNull(recordOptions.duration),
-              includeAttributes = includeAttributes,
-              includeResolutionStack = includeResolutionStack,
-              includeSystemComposables = includeSystemComposables,
-              includeSemantics = includeSemantics,
+              includeAttributes = IncludeFacet.ATTRIBUTES in facets,
+              includeResolutionStack = IncludeFacet.RESOLUTION_STACK in facets,
+              includeSystemComposables = IncludeFacet.SYSTEM_COMPOSABLES in facets,
+              includeSemantics = IncludeFacet.SEMANTICS in facets,
               composeInspectorJarPath = composeInspectorJarPath,
               printer = printer,
             )
@@ -169,10 +174,10 @@ class DumpUiCommand : Callable<Int> {
               adbSession = adbSession,
               serial = serial,
               packageName = targetPackage,
-              includeAttributes = includeAttributes,
-              includeResolutionStack = includeResolutionStack,
-              includeSystemComposables = includeSystemComposables,
-              includeSemantics = includeSemantics,
+              includeAttributes = IncludeFacet.ATTRIBUTES in facets,
+              includeResolutionStack = IncludeFacet.RESOLUTION_STACK in facets,
+              includeSystemComposables = IncludeFacet.SYSTEM_COMPOSABLES in facets,
+              includeSemantics = IncludeFacet.SEMANTICS in facets,
               composeInspectorJarPath = composeInspectorJarPath,
               printer = printer,
             )
