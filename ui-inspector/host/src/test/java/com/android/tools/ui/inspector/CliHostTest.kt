@@ -17,6 +17,7 @@
 package com.android.tools.ui.inspector
 
 import com.google.common.truth.Truth.assertThat
+import org.junit.Assert.assertThrows
 import org.junit.Test
 import picocli.CommandLine
 
@@ -37,7 +38,7 @@ class CliHostTest {
   @Test
   fun testCommandLineOptionsDefaults() {
     val cmd = CommandLine(UiInspectorCommand()).addSubcommand("dump-ui", DumpUiCommand())
-    val parseResult = cmd.parseArgs("dump-ui", "--serial", "123", "--package", "com.example")
+    val parseResult = cmd.parseArgs("dump-ui", "--device", "123", "--package", "com.example")
     val dumpCmd = parseResult.subcommand().commandSpec().userObject() as DumpUiCommand
     assertThat(dumpCmd.includeSystemComposables).isFalse()
     assertThat(dumpCmd.includeAttributes).isFalse()
@@ -47,7 +48,7 @@ class CliHostTest {
   @Test
   fun testCommandLineOptionsFlags() {
     val cmd = CommandLine(UiInspectorCommand()).addSubcommand("dump-ui", DumpUiCommand())
-    val parseResult = cmd.parseArgs("dump-ui", "--serial", "123", "--package", "com.example", "--include-system-composables")
+    val parseResult = cmd.parseArgs("dump-ui", "--device", "123", "--package", "com.example", "--include-system-composables")
     val dumpCmd = parseResult.subcommand().commandSpec().userObject() as DumpUiCommand
     assertThat(dumpCmd.includeSystemComposables).isTrue()
   }
@@ -56,15 +57,35 @@ class CliHostTest {
   fun testCommandLineOptionsComposeInspector() {
     val cmd = CommandLine(UiInspectorCommand()).addSubcommand("dump-ui", DumpUiCommand())
     val parseResult =
-      cmd.parseArgs("dump-ui", "--serial", "123", "--package", "com.example", "--compose-inspector", "local/path/to/inspector.jar")
+      cmd.parseArgs("dump-ui", "--device", "123", "--package", "com.example", "--compose-inspector", "local/path/to/inspector.jar")
     val dumpCmd = parseResult.subcommand().commandSpec().userObject() as DumpUiCommand
     assertThat(dumpCmd.composeInspectorJarPath).isEqualTo("local/path/to/inspector.jar")
   }
 
   @Test
+  fun testListPackagesDeviceOption() {
+    val cmd = CommandLine(UiInspectorCommand()).addSubcommand("list-packages", ListPackagesCommand())
+    val parseResult = cmd.parseArgs("list-packages", "--device", "123")
+    val listCmd = parseResult.subcommand().commandSpec().userObject() as ListPackagesCommand
+    assertThat(listCmd.device).isEqualTo("123")
+  }
+
+  @Test
+  fun testSerialOptionNoLongerSupported() {
+    val dumpCmd = CommandLine(UiInspectorCommand()).addSubcommand("dump-ui", DumpUiCommand())
+    assertThrows(CommandLine.UnmatchedArgumentException::class.java) {
+      dumpCmd.parseArgs("dump-ui", "--device", "123", "--serial", "456", "--package", "com.example")
+    }
+    val listCmd = CommandLine(UiInspectorCommand()).addSubcommand("list-packages", ListPackagesCommand())
+    assertThrows(CommandLine.UnmatchedArgumentException::class.java) {
+      listCmd.parseArgs("list-packages", "--device", "123", "--serial", "456")
+    }
+  }
+
+  @Test
   fun testTrackChangesOptionsDefaults() {
     val cmd = CommandLine(UiInspectorCommand()).addSubcommand("track-changes", TrackChangesCommand())
-    val parseResult = cmd.parseArgs("track-changes", "--serial", "123", "--package", "com.example")
+    val parseResult = cmd.parseArgs("track-changes", "--device", "123", "--package", "com.example")
     val trackCmd = parseResult.subcommand().commandSpec().userObject() as TrackChangesCommand
     assertThat(trackCmd.includeSystemComposables).isFalse()
     assertThat(trackCmd.includeAttributes).isFalse()
@@ -75,7 +96,7 @@ class CliHostTest {
   @Test
   fun testTrackChangesCustomIntervalAndDuration() {
     val cmd = CommandLine(UiInspectorCommand()).addSubcommand("track-changes", TrackChangesCommand())
-    val parseResult = cmd.parseArgs("track-changes", "--serial", "123", "--package", "com.example", "--interval", "50", "--duration", "10")
+    val parseResult = cmd.parseArgs("track-changes", "--device", "123", "--package", "com.example", "--interval", "50", "--duration", "10")
     val trackCmd = parseResult.subcommand().commandSpec().userObject() as TrackChangesCommand
     assertThat(trackCmd.intervalMs).isEqualTo(50)
     assertThat(trackCmd.durationSec).isEqualTo(10)
