@@ -76,11 +76,11 @@ class KotlinMultiplatformAndroidPluginBasicTest {
           android {
               afterEvaluate {
                   compilations {
-                      val main by getting {
+                      getByName("main") {
                       }
-                      val hostTest by getting {
+                      getByName("hostTest") {
                       }
-                      val deviceTest by getting {
+                      getByName("deviceTest") {
                       }
                   }
               }
