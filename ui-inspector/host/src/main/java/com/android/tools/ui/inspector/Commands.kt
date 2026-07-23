@@ -362,13 +362,14 @@ private suspend fun fetchAndMergeComposeTrees(
 ) {
   viewRoots.forEach { viewRoot ->
     // In the compose inspector, standard parameters and semantics (accessibility properties) are fetched together with a single command.
+    // Each facet is still an independent demand, so the conversion below only copies the requested ones into the tree.
     val fetchComposeDetails = includeParameters || includeSemantics
 
     val composeResult =
       queryComposeTree(
         commandSender = commandSender,
         rootViewId = viewRoot.id,
-        includeParameters = fetchComposeDetails,
+        extractAllParameters = fetchComposeDetails,
         skipSystemComposables = skipSystemComposables,
       )
     if (composeResult != null) {
@@ -377,7 +378,10 @@ private suspend fun fetchAndMergeComposeTrees(
 
       val composeParameters =
         if (fetchComposeDetails) {
+          // An explicit --include facet is a demand: if the details it needs cannot be fetched, fail loudly instead of
+          // silently emitting a dump that is missing exactly what was asked for.
           queryComposeParameters(commandSender, viewRoot.id, skipSystemComposables)
+            ?: throw IllegalStateException("The requested attributes/semantics facets could not be fetched from the Compose inspector.")
         } else {
           null
         }
@@ -390,6 +394,8 @@ private suspend fun fetchAndMergeComposeTrees(
           stringTable = stringsMap,
           viewsToSkip = composeRoot.viewsToSkipList,
           parameters = composeParameters,
+          includeParameters = includeParameters,
+          includeSemantics = includeSemantics,
         )
       }
     }

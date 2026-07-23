@@ -26,6 +26,8 @@ internal fun attachComposeTree(
   stringTable: Map<Int, String>,
   viewsToSkip: List<Long>,
   parameters: LayoutInspectorComposeProtocol.GetAllParametersResponse?,
+  includeParameters: Boolean,
+  includeSemantics: Boolean,
 ): Boolean {
   if (viewNode.id == targetViewId) {
     viewNode.children.removeAll { child -> child is UiNode.ViewNode && viewsToSkip.contains(child.id) }
@@ -43,14 +45,14 @@ internal fun attachComposeTree(
     }
 
     composeNodes.forEach { composeNode ->
-      val parsedComposeNode = convertComposeNode(composeNode, stringTable, hostedViewsMap, parameters)
+      val parsedComposeNode = convertComposeNode(composeNode, stringTable, hostedViewsMap, parameters, includeParameters, includeSemantics)
       viewNode.children.add(parsedComposeNode)
     }
     return true
   }
   for (child in viewNode.children) {
     if (child is UiNode.ViewNode) {
-      if (attachComposeTree(child, targetViewId, composeNodes, stringTable, viewsToSkip, parameters)) {
+      if (attachComposeTree(child, targetViewId, composeNodes, stringTable, viewsToSkip, parameters, includeParameters, includeSemantics)) {
         return true
       }
     }

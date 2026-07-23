@@ -112,6 +112,8 @@ class TreeMergerTest {
         stringTable = stringTable,
         viewsToSkip = emptyList(),
         parameters = mockAllParamsResponse,
+        includeParameters = true,
+        includeSemantics = true,
       )
 
     // 4. Assertions
@@ -172,6 +174,8 @@ class TreeMergerTest {
         stringTable = mapOf(1 to "Column"),
         viewsToSkip = emptyList(),
         parameters = null,
+        includeParameters = true,
+        includeSemantics = true,
       )
 
     // Must skip grafting because the view id 999 does not exist in the View tree!
@@ -251,6 +255,8 @@ class TreeMergerTest {
         stringTable = stringTable,
         viewsToSkip = listOf(777L),
         parameters = null,
+        includeParameters = true,
+        includeSemantics = true,
       )
 
     // 4. Assertions
@@ -336,6 +342,8 @@ class TreeMergerTest {
         stringTable = stringTable,
         viewsToSkip = emptyList(),
         parameters = null,
+        includeParameters = true,
+        includeSemantics = true,
       )
 
     // 4. Assertions

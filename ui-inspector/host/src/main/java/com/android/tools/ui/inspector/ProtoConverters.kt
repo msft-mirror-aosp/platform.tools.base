@@ -19,34 +19,53 @@ package com.android.tools.ui.inspector
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol
 
-/** Holds pre-indexed parameters mapping and string table for efficient Compose node parsing. */
-private class ComposeParameters(response: LayoutInspectorComposeProtocol.GetAllParametersResponse) {
+/**
+ * Holds pre-indexed parameters mapping and string table for efficient Compose node parsing.
+ *
+ * The device protocol returns parameters and semantics together, but each facet is an independent `--include` demand: only the maps for
+ * requested facets are built, so unrequested data never reaches the domain model or the output.
+ */
+private class ComposeParameters(
+  response: LayoutInspectorComposeProtocol.GetAllParametersResponse,
+  includeParameters: Boolean,
+  includeSemantics: Boolean,
+) {
   /** Maps Composable ID to its list of parameters. */
   val parametersMap: Map<Long, List<LayoutInspectorComposeProtocol.Parameter>> =
-    response.parameterGroupsList.associate { group -> group.composableId to group.parameterList }
+    if (includeParameters) response.parameterGroupsList.associate { group -> group.composableId to group.parameterList } else emptyMap()
 
   /** Maps Composable ID to its list of merged semantics. */
   val mergedSemanticsMap: Map<Long, List<LayoutInspectorComposeProtocol.Parameter>> =
-    response.parameterGroupsList.associate { group -> group.composableId to group.mergedSemanticsList }
+    if (includeSemantics) response.parameterGroupsList.associate { group -> group.composableId to group.mergedSemanticsList }
+    else emptyMap()
 
   /** Maps Composable ID to its list of unmerged semantics. */
   val unmergedSemanticsMap: Map<Long, List<LayoutInspectorComposeProtocol.Parameter>> =
-    response.parameterGroupsList.associate { group -> group.composableId to group.unmergedSemanticsList }
+    if (includeSemantics) response.parameterGroupsList.associate { group -> group.composableId to group.unmergedSemanticsList }
+    else emptyMap()
 
   /** String table for resolving parameter names and string values. */
   val parameterStringTable: Map<Int, String> = response.stringsList.associate { it.id to it.str }
 }
 
-/** Converts a protobuf [ViewInspectorProtocol.ViewNode] into a domain [UiNode.ViewNode]. */
-internal fun convertViewNode(node: ViewInspectorProtocol.ViewNode, stringTable: Map<Int, String>): UiNode.ViewNode {
+/**
+ * Converts a protobuf [ViewInspectorProtocol.ViewNode] into a domain [UiNode.ViewNode].
+ *
+ * @param includeResolutionStack whether the `resolution-stack` facet was requested.
+ */
+internal fun convertViewNode(
+  node: ViewInspectorProtocol.ViewNode,
+  stringTable: Map<Int, String>,
+  includeResolutionStack: Boolean,
+): UiNode.ViewNode {
   val className = stringTable[node.className] ?: "unknown view"
   val bounds = UiNode.Bounds(x = node.bounds.x, y = node.bounds.y, width = node.bounds.width, height = node.bounds.height)
   val idResource = stringTable[node.idResource]
   val layoutResource = stringTable[node.layoutResource]
   val attributes =
     node.attributesList.map { attr ->
-      val directSource = stringTable[attr.directSource]
-      val styleChain = attr.styleChainList.map { stringTable[it] ?: "unknown" }
+      val directSource = if (includeResolutionStack) stringTable[attr.directSource] else null
+      val styleChain = if (includeResolutionStack) attr.styleChainList.map { stringTable[it] ?: "unknown" } else emptyList()
       UiNode.Attribute(
         name = stringTable[attr.name] ?: "unknown",
         value = attr.toAttributeValue(stringTable),
@@ -54,7 +73,7 @@ internal fun convertViewNode(node: ViewInspectorProtocol.ViewNode, stringTable: 
         styleChain = styleChain,
       )
     }
-  val children = node.childrenList.map { convertViewNode(it, stringTable) }.toMutableList<UiNode>()
+  val children = node.childrenList.map { convertViewNode(it, stringTable, includeResolutionStack) }.toMutableList<UiNode>()
   return UiNode.ViewNode(
     id = node.id,
     className = className,
@@ -120,14 +139,18 @@ private fun ViewInspectorProtocol.ViewNode.Attribute.toAttributeValue(stringTabl
  * @param stringTable string table containing all the text resources indexed by ID.
  * @param hostedViews a map of View ID to [UiNode.ViewNode] representing all Android views hosted within the entire Compose tree.
  * @param parameters optional Composable parameters.
+ * @param includeParameters whether the `attributes` facet was requested: only then are Compose parameters copied into the nodes.
+ * @param includeSemantics whether the `semantics` facet was requested: only then are the semantics lists copied into the nodes.
  */
 internal fun convertComposeNode(
   node: LayoutInspectorComposeProtocol.ComposableNode,
   stringTable: Map<Int, String>,
   hostedViews: Map<Long, UiNode.ViewNode>,
   parameters: LayoutInspectorComposeProtocol.GetAllParametersResponse? = null,
+  includeParameters: Boolean,
+  includeSemantics: Boolean,
 ): UiNode.ComposeNode {
-  val composeParameters = parameters?.let { ComposeParameters(it) }
+  val composeParameters = parameters?.let { ComposeParameters(it, includeParameters, includeSemantics) }
   return doConvertComposeNode(node, stringTable, hostedViews, composeParameters)
 }
 

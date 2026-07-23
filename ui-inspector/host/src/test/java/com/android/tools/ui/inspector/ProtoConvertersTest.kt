@@ -111,7 +111,15 @@ class ProtoConvertersTest {
         .addStrings(LayoutInspectorComposeProtocol.StringEntry.newBuilder().setId(11).setStr("File.kt"))
         .build()
 
-    val composeNode = convertComposeNode(node = composableNode, stringTable = stringTable, hostedViews = emptyMap(), parameters = allParams)
+    val composeNode =
+      convertComposeNode(
+        node = composableNode,
+        stringTable = stringTable,
+        hostedViews = emptyMap(),
+        parameters = allParams,
+        includeParameters = true,
+        includeSemantics = true,
+      )
 
     assertThat(composeNode.parameters).hasSize(6)
 
@@ -202,7 +210,15 @@ class ProtoConvertersTest {
         .addStrings(LayoutInspectorComposeProtocol.StringEntry.newBuilder().setId(7).setStr("val1"))
         .build()
 
-    val composeNode = convertComposeNode(node = composableNode, stringTable = stringTable, hostedViews = emptyMap(), parameters = allParams)
+    val composeNode =
+      convertComposeNode(
+        node = composableNode,
+        stringTable = stringTable,
+        hostedViews = emptyMap(),
+        parameters = allParams,
+        includeParameters = true,
+        includeSemantics = true,
+      )
 
     assertThat(composeNode.parameters).hasSize(2)
 
@@ -244,7 +260,7 @@ class ProtoConvertersTest {
         )
         .build()
 
-    val viewNode = convertViewNode(viewNodeProto, stringTable)
+    val viewNode = convertViewNode(viewNodeProto, stringTable, includeResolutionStack = true)
 
     assertThat(viewNode.attributes).hasSize(2)
 
@@ -327,5 +343,140 @@ class ProtoConvertersTest {
     assertThat(display.widthPx).isEqualTo(1080)
     assertThat(display.heightPx).isEqualTo(1920)
     assertThat(display.orientation).isEqualTo(90)
+  }
+
+  @Test
+  fun testConvertComposeNode_facetsAreIndependent() {
+    val stringTable = mapOf(1 to "MyComponent")
+    val composableNode = LayoutInspectorComposeProtocol.ComposableNode.newBuilder().setId(100).setName(1).build()
+
+    val allParams =
+      LayoutInspectorComposeProtocol.GetAllParametersResponse.newBuilder()
+        .addParameterGroups(
+          LayoutInspectorComposeProtocol.ParameterGroup.newBuilder()
+            .setComposableId(100)
+            .addParameter(
+              LayoutInspectorComposeProtocol.Parameter.newBuilder()
+                .setName(2) // text
+                .setType(LayoutInspectorComposeProtocol.Parameter.Type.STRING)
+                .setInt32Value(3) // "Hello"
+            )
+            .addMergedSemantics(
+              LayoutInspectorComposeProtocol.Parameter.newBuilder()
+                .setName(4) // ContentDescription
+                .setType(LayoutInspectorComposeProtocol.Parameter.Type.STRING)
+                .setInt32Value(5) // "Button"
+            )
+            .addUnmergedSemantics(
+              LayoutInspectorComposeProtocol.Parameter.newBuilder()
+                .setName(4) // ContentDescription
+                .setType(LayoutInspectorComposeProtocol.Parameter.Type.STRING)
+                .setInt32Value(5) // "Button"
+            )
+        )
+        .addStrings(LayoutInspectorComposeProtocol.StringEntry.newBuilder().setId(2).setStr("text"))
+        .addStrings(LayoutInspectorComposeProtocol.StringEntry.newBuilder().setId(3).setStr("Hello"))
+        .addStrings(LayoutInspectorComposeProtocol.StringEntry.newBuilder().setId(4).setStr("ContentDescription"))
+        .addStrings(LayoutInspectorComposeProtocol.StringEntry.newBuilder().setId(5).setStr("Button"))
+        .build()
+
+    fun convert(includeParameters: Boolean, includeSemantics: Boolean) =
+      convertComposeNode(
+        node = composableNode,
+        stringTable = stringTable,
+        hostedViews = emptyMap(),
+        parameters = allParams,
+        includeParameters = includeParameters,
+        includeSemantics = includeSemantics,
+      )
+
+    // The device response carries both facets, but each is copied into the node only when requested.
+    val attributesOnly = convert(includeParameters = true, includeSemantics = false)
+    assertThat(attributesOnly.parameters).hasSize(1)
+    assertThat(attributesOnly.mergedSemantics).isEmpty()
+    assertThat(attributesOnly.unmergedSemantics).isEmpty()
+
+    val semanticsOnly = convert(includeParameters = false, includeSemantics = true)
+    assertThat(semanticsOnly.parameters).isEmpty()
+    assertThat(semanticsOnly.mergedSemantics).hasSize(1)
+    assertThat(semanticsOnly.unmergedSemantics).hasSize(1)
+    assertThat((semanticsOnly.mergedSemantics.single() as UiNode.ComposeParameter.Single).name).isEqualTo("ContentDescription")
+
+    val both = convert(includeParameters = true, includeSemantics = true)
+    assertThat(both.parameters).hasSize(1)
+    assertThat(both.mergedSemantics).hasSize(1)
+    assertThat(both.unmergedSemantics).hasSize(1)
+  }
+
+  @Test
+  fun testConvertComposeNode_noFacetsRequested_copiesNothing() {
+    val stringTable = mapOf(1 to "MyComponent")
+    val composableNode = LayoutInspectorComposeProtocol.ComposableNode.newBuilder().setId(100).setName(1).build()
+    val allParams =
+      LayoutInspectorComposeProtocol.GetAllParametersResponse.newBuilder()
+        .addParameterGroups(
+          LayoutInspectorComposeProtocol.ParameterGroup.newBuilder()
+            .setComposableId(100)
+            .addParameter(
+              LayoutInspectorComposeProtocol.Parameter.newBuilder()
+                .setName(2)
+                .setType(LayoutInspectorComposeProtocol.Parameter.Type.STRING)
+                .setInt32Value(3)
+            )
+            .addMergedSemantics(
+              LayoutInspectorComposeProtocol.Parameter.newBuilder()
+                .setName(2)
+                .setType(LayoutInspectorComposeProtocol.Parameter.Type.STRING)
+                .setInt32Value(3)
+            )
+        )
+        .addStrings(LayoutInspectorComposeProtocol.StringEntry.newBuilder().setId(2).setStr("text"))
+        .addStrings(LayoutInspectorComposeProtocol.StringEntry.newBuilder().setId(3).setStr("Hello"))
+        .build()
+
+    // Even with a response present, the converter is the contract: nothing requested, nothing copied.
+    val node =
+      convertComposeNode(
+        node = composableNode,
+        stringTable = stringTable,
+        hostedViews = emptyMap(),
+        parameters = allParams,
+        includeParameters = false,
+        includeSemantics = false,
+      )
+
+    assertThat(node.parameters).isEmpty()
+    assertThat(node.mergedSemantics).isEmpty()
+    assertThat(node.unmergedSemantics).isEmpty()
+  }
+
+  @Test
+  fun testConvertViewNode_withoutResolutionStack_omitsProvenance() {
+    val stringTable = mapOf(1 to "android.widget.TextView", 2 to "text", 3 to "Hello", 4 to "layout.xml", 5 to "AppTheme")
+    // The agent reports provenance whenever the device setting is enabled — which an earlier resolution-stack run
+    // leaves set — so the converter must drop it when the facet was not requested.
+    val viewNodeProto =
+      ViewInspectorProtocol.ViewNode.newBuilder()
+        .setId(1)
+        .setClassName(1)
+        .addAttributes(
+          ViewInspectorProtocol.ViewNode.Attribute.newBuilder()
+            .setName(2)
+            .setType(ViewInspectorProtocol.ViewNode.Attribute.Type.STRING)
+            .setInt32Value(3)
+            .setDirectSource(4)
+            .addStyleChain(5)
+        )
+        .build()
+
+    val withProvenance = convertViewNode(viewNodeProto, stringTable, includeResolutionStack = true)
+    assertThat(withProvenance.attributes.single().directSource).isEqualTo("layout.xml")
+    assertThat(withProvenance.attributes.single().styleChain).containsExactly("AppTheme")
+
+    val withoutProvenance = convertViewNode(viewNodeProto, stringTable, includeResolutionStack = false)
+    assertThat(withoutProvenance.attributes.single().directSource).isNull()
+    assertThat(withoutProvenance.attributes.single().styleChain).isEmpty()
+    // The attribute value itself is unaffected: provenance is the resolution-stack facet, the value is the attributes facet.
+    assertThat(withoutProvenance.attributes.single().value).isEqualTo(UiNode.AttributeValue.StringVal("Hello"))
   }
 }

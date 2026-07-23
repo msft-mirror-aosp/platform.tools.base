@@ -49,7 +49,7 @@ internal suspend fun createComposeInspector(
 internal suspend fun queryComposeTree(
   commandSender: CommandSender,
   rootViewId: Long,
-  includeParameters: Boolean,
+  extractAllParameters: Boolean,
   skipSystemComposables: Boolean,
 ): LayoutInspectorComposeProtocol.GetComposablesResponse? {
   val getComposablesCmd =
@@ -61,9 +61,9 @@ internal suspend fun queryComposeTree(
           // Set generation to 0 to force the persistent agent inspector to bypass its layout cache
           // and always return a fresh capture of the active screen on subsequent reconnections.
           .setGeneration(0)
-          // If includeParameters is true, we instruct the agent to pre-extract and warm up the Compose
-          // parameter cache in background memory so they are ready for subsequent queries.
-          .setExtractAllParameters(includeParameters)
+          // If extractAllParameters is true, the agent pre-extracts and warms up its combined parameters-and-semantics
+          // cache in background memory so the subsequent GetAllParameters query is served from it.
+          .setExtractAllParameters(extractAllParameters)
       )
       .build()
 
