@@ -23,9 +23,11 @@ import com.android.adblib.DeviceSelector
 import com.android.adblib.DeviceState
 import com.android.adblib.testing.FakeAdbSession
 import com.android.tools.ui.inspector.common.ProtocolConstants
+import com.android.tools.ui.inspector.printer.UiDumpPrinter
 import com.google.common.truth.Truth.assertThat
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
+import java.net.ServerSocket
 import java.nio.file.Path
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.runTest
@@ -680,6 +682,116 @@ class InjectionManagerTest {
     }
 
     assertThat(stderr).doesNotContain("settings delete global")
+  }
+
+  @Test
+  fun testRemoveAdbForward_killsForwardOnce() = runTest {
+    val injectionManager = createInjectionManager()
+    configureSuccessfulInjection()
+    injectionManager.injectAndAttach(needsDebugViewAttributes = false)
+
+    injectionManager.removeAdbForward()
+    // A second call is a no-op: the forward was already removed.
+    injectionManager.removeAdbForward()
+
+    assertThat(testHostServices.recordedKillForwardCalls).hasSize(1)
+    val (device, localSpec) = testHostServices.recordedKillForwardCalls.single()
+    assertThat(device.toString()).contains(deviceSerial)
+    assertThat(localSpec.toQueryString()).isEqualTo("tcp:12345")
+  }
+
+  @Test
+  fun testRemoveAdbForward_noopWhenInjectionFailedBeforeForward() = runTest {
+    val injectionManager = createInjectionManager()
+    // Nothing configured: injectAndAttach fails at the first device query, before any forward is created.
+    try {
+      injectionManager.injectAndAttach(needsDebugViewAttributes = false)
+      fail("Expected injection to fail")
+    } catch (e: Exception) {}
+
+    injectionManager.removeAdbForward()
+
+    assertThat(testHostServices.recordedKillForwardCalls).isEmpty()
+  }
+
+  @Test
+  fun testDoDumpUi_removesForwardWhenConnectionFails() = runTest {
+    configureSuccessfulInjection()
+    // Forward to a port that is guaranteed closed, so the CLI's socket connection fails right after a successful
+    // injection: the cleanup in runWithConnectedInspectors must still remove the forward.
+    testHostServices.forwardedPort = findClosedPort().toString()
+
+    try {
+      doDumpUiWithNoopPrinter()
+      fail("Expected connection failure")
+    } catch (e: Exception) {}
+
+    assertThat(testHostServices.recordedKillForwardCalls).hasSize(1)
+    assertThat(testHostServices.recordedKillForwardCalls.single().second.toQueryString()).isEqualTo("tcp:${testHostServices.forwardedPort}")
+  }
+
+  @Test
+  fun testDoDumpUi_killForwardFailure_preservesPrimaryFailure() = runTest {
+    configureSuccessfulInjection()
+    testHostServices.forwardedPort = findClosedPort().toString()
+    testHostServices.throwOnKillForward = true
+
+    var thrown: Exception? = null
+    val stderr = captureStderr {
+      try {
+        doDumpUiWithNoopPrinter()
+        fail("Expected connection failure")
+      } catch (e: Exception) {
+        thrown = e
+      }
+    }
+
+    // The connection failure stays the primary error; the cleanup failure is only a warning.
+    assertThat(thrown!!.message).doesNotContain("Simulated killForward failure")
+    assertThat(stderr).contains("failed to remove adb forward")
+  }
+
+  /**
+   * Runs a plain [doDumpUi] with all facets off and a printer that discards output, routing [injectionManagerFactory] to this test's dummy
+   * artifact paths for the duration of the call.
+   */
+  private suspend fun doDumpUiWithNoopPrinter() {
+    val noopPrinter =
+      object : UiDumpPrinter {
+        override fun printDump(uiDump: UiDump) {}
+
+        override fun printTrackedChanges(samples: List<TimedUiDump>) {}
+      }
+    doDumpUi(
+      adbSession = testSession,
+      serial = deviceSerial,
+      packageName = packageName,
+      includeAttributes = false,
+      includeResolutionStack = false,
+      includeSystemComposables = false,
+      includeSemantics = false,
+      composeInspectorJarPath = null,
+      printer = noopPrinter,
+      injectionManagerFactory = { session, serial, pkg ->
+        InjectionManager(session, serial, pkg, agentPathResolver, dummyJar, dummyPayload, tempFileSuffixGenerator = { "test.tmp" })
+      },
+    )
+  }
+
+  /** Returns a local TCP port that nothing is listening on. */
+  private fun findClosedPort(): Int = ServerSocket(0).use { it.localPort }
+
+  @Test
+  fun testRemoveAdbForward_killFailure_warnsInsteadOfThrowing() = runTest {
+    val injectionManager = createInjectionManager()
+    configureSuccessfulInjection()
+    injectionManager.injectAndAttach(needsDebugViewAttributes = false)
+    testHostServices.throwOnKillForward = true
+
+    val stderr = captureStderr { injectionManager.removeAdbForward() }
+
+    assertThat(stderr).contains("failed to remove adb forward")
+    assertThat(testHostServices.recordedKillForwardCalls).isEmpty()
   }
 
   private fun createInjectionManager() =

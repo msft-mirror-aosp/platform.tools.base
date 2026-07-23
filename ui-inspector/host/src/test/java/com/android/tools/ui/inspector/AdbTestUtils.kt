@@ -48,10 +48,19 @@ class TestAdbSession(
 class TestAdbHostServices(val delegate: FakeAdbHostServices) : AdbHostServices by delegate {
   var forwardedPort: String? = "12345"
   val recordedForwardCalls = mutableListOf<Triple<DeviceSelector, SocketSpec, SocketSpec>>()
+  val recordedKillForwardCalls = mutableListOf<Pair<DeviceSelector, SocketSpec>>()
+  var throwOnKillForward: Boolean = false
 
   override suspend fun forward(device: DeviceSelector, local: SocketSpec, remote: SocketSpec, rebind: Boolean): String? {
     recordedForwardCalls.add(Triple(device, local, remote))
     return forwardedPort
+  }
+
+  override suspend fun killForward(device: DeviceSelector, local: SocketSpec) {
+    if (throwOnKillForward) {
+      throw IllegalStateException("Simulated killForward failure")
+    }
+    recordedKillForwardCalls.add(device to local)
   }
 }
 

@@ -32,6 +32,7 @@ import java.nio.file.StandardCopyOption
 import java.nio.file.attribute.PosixFilePermission
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.io.path.extension
 import kotlin.io.path.invariantSeparatorsPathString
 import kotlin.io.path.nameWithoutExtension
@@ -120,6 +121,9 @@ class InjectionManager(
    */
   @Volatile private var appDataDir: String? = null
 
+  /** The local TCP spec of the adb forward created by [injectAndAttach]. Cleared by [removeAdbForward]. */
+  private val forwardedPortSpec = AtomicReference<SocketSpec.Tcp?>(null)
+
   /**
    * Push the agent to the device and attach it to the specified app.
    *
@@ -201,8 +205,25 @@ class InjectionManager(
   private suspend fun setupAdbForward(deviceSelector: DeviceSelector, socketName: String): String {
     val localSpec = SocketSpec.Tcp()
     val remoteSpec = SocketSpec.LocalAbstract(socketName)
-    val port = adbSession.hostServices.forward(deviceSelector, localSpec, remoteSpec)
-    return port ?: throw IllegalStateException("Failed to set up adb forward")
+    val port =
+      adbSession.hostServices.forward(deviceSelector, localSpec, remoteSpec) ?: throw IllegalStateException("Failed to set up adb forward")
+    forwardedPortSpec.set(SocketSpec.Tcp(port.toInt()))
+    return port
+  }
+
+  /**
+   * Removes the adb forward created by [injectAndAttach], if any. Forwards outlive the CLI process, so every run must remove its own on
+   * success, failure, and cancellation alike.
+   */
+  suspend fun removeAdbForward() {
+    val localSpec = forwardedPortSpec.getAndSet(null) ?: return
+    try {
+      adbSession.hostServices.killForward(deviceSelector, localSpec)
+    } catch (e: CancellationException) {
+      throw e
+    } catch (e: Exception) {
+      System.err.println("Warning: failed to remove adb forward ${localSpec.toQueryString()}: ${e.message}")
+    }
   }
 
   /**

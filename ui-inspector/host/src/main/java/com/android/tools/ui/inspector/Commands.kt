@@ -25,8 +25,10 @@ import com.android.tools.ui.inspector.printer.UiDumpPrinter
 import java.io.File
 import kotlin.time.Duration
 import kotlin.time.TimeSource
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 
 /**
  * Discovers and prints the serial number of all currently connected Android devices.
@@ -146,6 +148,7 @@ suspend fun doListPackages(adbSession: AdbSession, serial: String) {
  * @param includeSystemComposables If true, includes system/framework composable nodes.
  * @param includeSemantics If true, includes accessibility semantics in the Compose dump.
  * @param composeInspectorJarPath Optional path to a local Compose Inspector JAR file.
+ * @param injectionManagerFactory Creates the [InjectionManager].
  */
 internal suspend fun doDumpUi(
   adbSession: AdbSession,
@@ -157,8 +160,9 @@ internal suspend fun doDumpUi(
   includeSemantics: Boolean,
   composeInspectorJarPath: String?,
   printer: UiDumpPrinter,
+  injectionManagerFactory: (AdbSession, String, String) -> InjectionManager = ::InjectionManager,
 ) {
-  runWithConnectedInspectors(adbSession, serial, packageName, includeResolutionStack, composeInspectorJarPath) {
+  runWithConnectedInspectors(adbSession, serial, packageName, includeResolutionStack, composeInspectorJarPath, injectionManagerFactory) {
     commandSender,
     composeInspectorConnected ->
     dumpUi(
@@ -187,6 +191,7 @@ internal suspend fun doDumpUi(
  * @param includeSystemComposables If true, includes system/framework composable nodes.
  * @param includeSemantics If true, includes accessibility semantics in the Compose sampled dumps.
  * @param composeInspectorJarPath Optional path to a local Compose Inspector JAR file.
+ * @param injectionManagerFactory Creates the [InjectionManager].
  */
 internal suspend fun doTrackChanges(
   adbSession: AdbSession,
@@ -200,8 +205,9 @@ internal suspend fun doTrackChanges(
   includeSemantics: Boolean,
   composeInspectorJarPath: String?,
   printer: UiDumpPrinter,
+  injectionManagerFactory: (AdbSession, String, String) -> InjectionManager = ::InjectionManager,
 ) {
-  runWithConnectedInspectors(adbSession, serial, packageName, includeResolutionStack, composeInspectorJarPath) {
+  runWithConnectedInspectors(adbSession, serial, packageName, includeResolutionStack, composeInspectorJarPath, injectionManagerFactory) {
     commandSender,
     composeInspectorConnected ->
     System.err.println("Sampling UI hierarchy for $duration every $interval...")
@@ -266,10 +272,11 @@ private suspend fun runWithConnectedInspectors(
   packageName: String,
   needsDebugViewAttributes: Boolean,
   composeInspectorJarPath: String?,
+  injectionManagerFactory: (AdbSession, String, String) -> InjectionManager,
   block: suspend (CommandSender, Boolean) -> Unit,
 ) = coroutineScope {
+  val injectionManager = injectionManagerFactory(adbSession, serial, packageName)
   try {
-    val injectionManager = InjectionManager(adbSession, serial, packageName)
     val port = injectionManager.injectAndAttach(needsDebugViewAttributes)
     CommandSender.connect(host = "127.0.0.1", port = port.toInt(), scope = this).use { commandSender ->
       createViewInspector(commandSender, injectionManager)
@@ -298,6 +305,9 @@ private suspend fun runWithConnectedInspectors(
     throw Exception(
       "No active window roots found for package '$packageName'. Please make sure the app is in the foreground and has visible layout views."
     )
+  } finally {
+    // The forward outlives the CLI process, so every run removes its own — on success, failure, and cancellation alike.
+    withContext(NonCancellable) { injectionManager.removeAdbForward() }
   }
 }
 
