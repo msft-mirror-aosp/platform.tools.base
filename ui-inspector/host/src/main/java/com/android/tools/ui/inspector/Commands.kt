@@ -23,11 +23,8 @@ import com.android.adblib.DeviceState
 import com.android.adblib.shellAsText
 import com.android.tools.ui.inspector.printer.UiDumpPrinter
 import java.io.File
-import kotlin.time.Duration
-import kotlin.time.TimeSource
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
 /**
@@ -175,94 +172,6 @@ internal suspend fun doDumpUi(
       printer = printer,
     )
   }
-}
-
-/**
- * Injects the UI Inspector agent into the target application, attaches to its layout inspector service, samples the UI hierarchy for a
- * bounded window, and prints the observed changes.
- *
- * @param adbSession The [AdbSession] to communicate with the local ADB server.
- * @param serial The serial number of the target device.
- * @param packageName The target application package name.
- * @param interval The sampling interval.
- * @param duration The total sampling duration.
- * @param includeAttributes If true, includes view attributes in the sampled dumps.
- * @param includeResolutionStack If true, includes attribute resolution stacks in the sampled dumps.
- * @param includeSystemComposables If true, includes system/framework composable nodes.
- * @param includeSemantics If true, includes accessibility semantics in the Compose sampled dumps.
- * @param composeInspectorJarPath Optional path to a local Compose Inspector JAR file.
- * @param injectionManagerFactory Creates the [InjectionManager].
- */
-internal suspend fun doTrackChanges(
-  adbSession: AdbSession,
-  serial: String,
-  packageName: String,
-  interval: Duration,
-  duration: Duration,
-  includeAttributes: Boolean,
-  includeResolutionStack: Boolean,
-  includeSystemComposables: Boolean,
-  includeSemantics: Boolean,
-  composeInspectorJarPath: String?,
-  printer: UiDumpPrinter,
-  injectionManagerFactory: (AdbSession, String, String) -> InjectionManager = ::InjectionManager,
-) {
-  runWithConnectedInspectors(adbSession, serial, packageName, includeResolutionStack, composeInspectorJarPath, injectionManagerFactory) {
-    commandSender,
-    composeInspectorConnected ->
-    System.err.println("Sampling UI hierarchy for $duration every $interval...")
-
-    val samples =
-      collectSamples(interval = interval, duration = duration) {
-        fetchUiDump(
-          commandSender = commandSender,
-          includeAttributes = includeAttributes,
-          includeResolutionStack = includeResolutionStack,
-          composeInspectorConnected = composeInspectorConnected,
-          skipSystemComposables = !includeSystemComposables,
-          includeSemantics = includeSemantics,
-        )
-      }
-    System.err.println("Sampling complete. Collected ${samples.size} samples. Analyzing...")
-
-    printer.printTrackedChanges(samples)
-  }
-}
-
-/**
- * Samples the UI via [fetch] at [interval] until [duration] elapses, returning each sample with its elapsed time since the start.
- * [timeSource] and [delayFn] are injectable so tests can drive the schedule deterministically.
- */
-internal suspend fun collectSamples(
-  interval: Duration,
-  duration: Duration,
-  timeSource: TimeSource.WithComparableMarks = TimeSource.Monotonic,
-  delayFn: suspend (Duration) -> Unit = { delay(it) },
-  fetch: suspend () -> UiDump,
-): List<TimedUiDump> {
-  val startTime = timeSource.markNow()
-  val endTime = startTime + duration
-  // Stores each collected UI tree sample mapped to the elapsed duration since the start of tracking.
-  val samples = mutableListOf<TimedUiDump>()
-
-  while (timeSource.markNow() < endTime) {
-    val sampleStart = timeSource.markNow()
-    val uiDump = fetch()
-    samples.add(TimedUiDump(startTime.elapsedNow(), uiDump))
-
-    val intervalWait = interval - sampleStart.elapsedNow()
-    val endWait = endTime - timeSource.markNow()
-    if (intervalWait >= endWait) {
-      if (endWait > Duration.ZERO) {
-        delayFn(endWait)
-      }
-      break
-    }
-    if (intervalWait > Duration.ZERO) {
-      delayFn(intervalWait)
-    }
-  }
-  return samples
 }
 
 /** Connects to the device, injects inspector agents, starts View and Compose inspectors, and runs [block] with the active connection. */

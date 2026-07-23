@@ -16,14 +16,10 @@
 
 package com.android.tools.ui.inspector.printer
 
-import com.android.tools.ui.inspector.TimedUiDump
 import com.android.tools.ui.inspector.UiDump
 
-/** Interface for formatting and outputting UI inspection dumps and tracked layout changes. */
+/** Interface for formatting and outputting UI inspection dumps. */
 internal interface UiDumpPrinter {
   /** Prints a single [UiDump]. */
   fun printDump(uiDump: UiDump)
-
-  /** Prints tracked layout changes across multiple sampled frames ([TimedUiDump]s). */
-  fun printTrackedChanges(samples: List<TimedUiDump>)
 }

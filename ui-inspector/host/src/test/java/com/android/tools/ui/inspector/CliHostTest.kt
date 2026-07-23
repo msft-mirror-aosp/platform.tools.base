@@ -24,8 +24,6 @@ import com.android.adblib.testing.FakeAdbSession
 import com.google.common.truth.Truth.assertThat
 import java.nio.file.Files
 import java.nio.file.Paths
-import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.seconds
 import org.junit.Assert.assertThrows
 import org.junit.Rule
 import org.junit.Test
@@ -60,7 +58,6 @@ class CliHostTest {
     assertThat(dumpCmd.include).isEmpty()
     assertThat(dumpCmd.composeInspectorJarPath).isNull()
     assertThat(dumpCmd.output).isNull()
-    assertThat(dumpCmd.recordOptions).isNull()
   }
 
   @Test
@@ -139,83 +136,9 @@ class CliHostTest {
   }
 
   @Test
-  fun testRecordOptionsParse() {
-    val dumpCmd = parseDumpUi("--record", "--interval", "50ms", "--duration", "10s")
-    val recordOptions = dumpCmd.recordOptions
-    assertThat(recordOptions).isNotNull()
-    assertThat(recordOptions!!.record).isTrue()
-    assertThat(recordOptions.interval).isEqualTo(50.milliseconds)
-    assertThat(recordOptions.duration).isEqualTo(10.seconds)
-  }
-
-  @Test
-  fun testRecordIntervalDefaultsToUnset() {
-    val dumpCmd = parseDumpUi("--record", "--duration", "10s")
-    assertThat(dumpCmd.recordOptions!!.interval).isNull()
-  }
-
-  @Test
-  fun testMalformedDurationRejected() {
-    val exception =
-      assertThrows(CommandLine.ParameterException::class.java) {
-        createCommandLine().parseArgs("dump-ui", "--record", "--interval", "fast")
-      }
-    assertThat(exception).hasMessageThat().contains("Invalid duration")
-  }
-
-  @Test
-  fun testNonPositiveDurationRejected() {
-    val exception =
-      assertThrows(CommandLine.ParameterException::class.java) { createCommandLine().parseArgs("dump-ui", "--record", "--duration", "0s") }
-    assertThat(exception).hasMessageThat().contains("Invalid duration")
-  }
-
-  @Test
-  fun testInfiniteDurationRejected() {
-    val exception =
-      assertThrows(CommandLine.ParameterException::class.java) {
-        createCommandLine().parseArgs("dump-ui", "--record", "--duration", "Infinity")
-      }
-    assertThat(exception).hasMessageThat().contains("Invalid duration")
-  }
-
-  @Test
-  fun testNegativeIntervalRejected() {
-    val exception =
-      assertThrows(CommandLine.ParameterException::class.java) {
-        createCommandLine().parseArgs("dump-ui", "--record", "--interval=-5s", "--duration", "5s")
-      }
-    assertThat(exception).hasMessageThat().contains("Invalid duration")
-  }
-
-  @Test
-  fun testIntervalWithoutRecordIsUsageError() {
-    assertThat(executeWithForbiddenSession("dump-ui", "--interval", "50ms")).isEqualTo(2)
-  }
-
-  @Test
-  fun testDurationWithoutRecordIsUsageError() {
-    assertThat(executeWithForbiddenSession("dump-ui", "--duration", "5s")).isEqualTo(2)
-  }
-
-  @Test
-  fun testRecordWithoutDurationIsUsageError() {
-    assertThat(executeWithForbiddenSession("dump-ui", "--record")).isEqualTo(2)
-  }
-
-  @Test
-  fun testRecordFalseWithRecordingOptionsIsUsageError() {
-    assertThat(executeWithForbiddenSession("dump-ui", "--record=false", "--duration", "5s")).isEqualTo(2)
-  }
-
-  /** Executes the CLI with a session factory that fails the test if invoked, proving validation runs before any device work. */
-  private fun executeWithForbiddenSession(vararg args: String): Int {
-    val originalFactory = sessionFactory
-    sessionFactory = { error("The AdbSession must not be created for invalid command lines") }
-    try {
-      return createCommandLine().execute(*args)
-    } finally {
-      sessionFactory = originalFactory
+  fun testRecordOptionsRemoved() {
+    assertThrows(CommandLine.UnmatchedArgumentException::class.java) {
+      createCommandLine().parseArgs("dump-ui", "--record", "--duration", "5s")
     }
   }
 

@@ -21,7 +21,7 @@ import com.android.tools.ui.inspector.DeviceConfiguration
 import com.android.tools.ui.inspector.DeviceLocale
 import com.android.tools.ui.inspector.Dimension
 import com.android.tools.ui.inspector.DisplayInfo
-import com.android.tools.ui.inspector.TimedUiDump
+import com.android.tools.ui.inspector.Orientation
 import com.android.tools.ui.inspector.UiDump
 import com.android.tools.ui.inspector.UiNode
 import com.google.common.truth.Truth.assertThat
@@ -36,7 +36,6 @@ import java.io.PrintStream
 import java.io.StringReader
 import java.math.BigDecimal
 import java.nio.file.Files
-import kotlin.time.Duration.Companion.milliseconds
 import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Rule
@@ -411,191 +410,34 @@ class JsonUiDumpPrinterTest {
   }
 
   @Test
-  fun testPrintTrackedChangesNormalizesNonFiniteNumbersInDiffs() {
-    fun makeDump(alpha: Float): UiDump {
-      val viewNode =
-        UiNode.ViewNode(
-          id = 1L,
-          className = "android.view.View",
-          bounds = UiNode.Bounds(0, 0, 100, 100),
-          idResource = null,
-          layoutResource = null,
-          attributes = emptyList(),
-        )
-      val composeNode =
-        UiNode.ComposeNode(
-          id = 2L,
-          className = "androidx.compose.foundation.layout.Box",
-          bounds = UiNode.Bounds(0, 0, 100, 100),
-          sourceLocation = null,
-          parameters = listOf(UiNode.ComposeParameter.Single("alpha", UiNode.ComposeParameter.Value.NumberVal(alpha))),
-          mergedSemantics = emptyList(),
-          unmergedSemantics = emptyList(),
-        )
-      viewNode.children.add(composeNode)
-      return UiDump(roots = listOf(viewNode), configuration = null, stringTable = emptyMap(), appContext = null)
-    }
-    val samples = listOf(TimedUiDump(0.milliseconds, makeDump(Float.NaN)), TimedUiDump(100.milliseconds, makeDump(2f)))
+  fun testPrintDumpConfigurationValueEncodings() {
+    fun dumpWith(config: DeviceConfiguration) =
+      UiDump(roots = emptyList(), configuration = config, stringTable = emptyMap(), appContext = null)
 
+    val config =
+      DeviceConfiguration(
+        density = Dimension.Dpi(420),
+        fontScale = Float.NaN,
+        orientation = Orientation.PORTRAIT,
+        locale = DeviceLocale("en", "US", null, null),
+      )
     val printer = JsonUiDumpPrinter(out = printStream, prettyPrint = false)
-    printer.printTrackedChanges(samples)
+    printer.printDump(dumpWith(config))
 
-    val jsonString = outputStream.toString(Charsets.UTF_8)
-    assertParsesStrictly(jsonString)
+    val json = JsonParser.parseString(outputStream.toString(Charsets.UTF_8)).asJsonObject.getAsJsonObject("configuration")
+    // The single configuration-value encoding: bare numbers for dimensions, lowercase enum names, joined locale tags,
+    // non-finite numbers normalized to null.
+    assertThat(json.get("density").asJsonPrimitive.isNumber).isTrue()
+    assertThat(json.get("density").asInt).isEqualTo(420)
+    assertThat(json.get("orientation").asString).isEqualTo("portrait")
+    assertThat(json.get("locale").asString).isEqualTo("en-US")
+    assertThat(json.get("fontScale").isJsonNull).isTrue()
 
-    val json = JsonParser.parseString(jsonString).asJsonObject
-    val modified = json.getAsJsonArray("frames")[0].asJsonObject.getAsJsonObject("treeDiff").getAsJsonArray("modified")
-    val change = modified[0].asJsonObject.getAsJsonArray("changes")[0].asJsonObject
-    assertThat(change.get("type").asString).isEqualTo("propertyModified")
-    assertThat(change.getAsJsonObject("oldValue").get("value").isJsonNull).isTrue()
-    assertThat(change.getAsJsonObject("newValue").get("value").asFloat).isEqualTo(2f)
-  }
-
-  @Test
-  fun testPrintTrackedChangesEmptySamples() {
-    val printer = JsonUiDumpPrinter(out = printStream, prettyPrint = false)
-    printer.printTrackedChanges(emptyList())
-
-    val jsonString = outputStream.toString(Charsets.UTF_8).trim()
-    assertThat(jsonString).isEqualTo("{}")
-  }
-
-  @Test
-  fun testPrintTrackedChangesUnchangedSampleEmitsFrameWithoutDiffs() {
-    fun makeDump(): UiDump {
-      val node =
-        UiNode.ViewNode(
-          id = 1L,
-          className = "android.view.View",
-          bounds = UiNode.Bounds(0, 0, 10, 10),
-          idResource = null,
-          layoutResource = null,
-          attributes = emptyList(),
-        )
-      return UiDump(roots = listOf(node), configuration = null, stringTable = emptyMap(), appContext = null)
-    }
-    val samples = listOf(TimedUiDump(0.milliseconds, makeDump()), TimedUiDump(250.milliseconds, makeDump()))
-
-    val printer = JsonUiDumpPrinter(out = printStream, prettyPrint = false)
-    printer.printTrackedChanges(samples)
-
-    val json = JsonParser.parseString(outputStream.toString(Charsets.UTF_8)).asJsonObject
-    val frames = json.getAsJsonArray("frames")
-    assertThat(frames.size()).isEqualTo(1)
-    val frame0 = frames[0].asJsonObject
-    assertThat(frame0.get("elapsedTimeMs").asLong).isEqualTo(250L)
-    assertThat(frame0.has("configurationDiff")).isFalse()
-    assertThat(frame0.has("treeDiff")).isFalse()
-  }
-
-  @Test
-  fun testPrintTrackedChangesFullDiffWithAddedRemovedAndConfigDiff() {
-    val initialNode =
-      UiNode.ViewNode(
-        id = 1L,
-        className = "View1",
-        bounds = UiNode.Bounds(0, 0, 10, 10),
-        idResource = null,
-        layoutResource = null,
-        attributes = emptyList(),
-      )
-    val removedNode =
-      UiNode.ViewNode(
-        id = 2L,
-        className = "View2",
-        bounds = UiNode.Bounds(0, 0, 10, 10),
-        idResource = null,
-        layoutResource = null,
-        attributes = emptyList(),
-      )
-    val modifiedNodeOld =
-      UiNode.ViewNode(
-        id = 3L,
-        className = "View3",
-        bounds = UiNode.Bounds(0, 0, 10, 10),
-        idResource = null,
-        layoutResource = null,
-        attributes = listOf(UiNode.Attribute("a", UiNode.AttributeValue.StringVal("old"))),
-      )
-    initialNode.children.addAll(listOf(removedNode, modifiedNodeOld))
-
-    val config1 = DeviceConfiguration(fontScale = 1.0f)
-    val dump1 = UiDump(roots = listOf(initialNode), configuration = config1, stringTable = emptyMap(), appContext = null)
-
-    val addedNode =
-      UiNode.ViewNode(
-        id = 4L,
-        className = "View4",
-        bounds = UiNode.Bounds(0, 0, 10, 10),
-        idResource = null,
-        layoutResource = null,
-        attributes = emptyList(),
-      )
-    val modifiedNodeNew =
-      UiNode.ViewNode(
-        id = 3L,
-        className = "View3",
-        bounds = UiNode.Bounds(0, 0, 10, 10),
-        idResource = null,
-        layoutResource = null,
-        attributes = listOf(UiNode.Attribute("a", UiNode.AttributeValue.StringVal("new"))),
-      )
-    val secondNode =
-      UiNode.ViewNode(
-        id = 1L,
-        className = "View1",
-        bounds = UiNode.Bounds(0, 0, 10, 10),
-        idResource = null,
-        layoutResource = null,
-        attributes = emptyList(),
-      )
-    secondNode.children.addAll(listOf(addedNode, modifiedNodeNew))
-
-    val config2 = DeviceConfiguration(fontScale = 1.5f)
-    val dump2 = UiDump(roots = listOf(secondNode), configuration = config2, stringTable = emptyMap(), appContext = null)
-
-    @Suppress("DEPRECATION") val samples = listOf(TimedUiDump(0.milliseconds, dump1), TimedUiDump(250.milliseconds, dump2))
-
-    val printer = JsonUiDumpPrinter(out = printStream, prettyPrint = true)
-    printer.printTrackedChanges(samples)
-
-    val jsonString = outputStream.toString(Charsets.UTF_8)
-    val json = JsonParser.parseString(jsonString).asJsonObject
-
-    assertThat(json.has("initialFrame")).isTrue()
-    val frames = json.getAsJsonArray("frames")
-    assertThat(frames.size()).isEqualTo(1)
-
-    val frame0 = frames[0].asJsonObject
-    assertThat(frame0.get("elapsedTimeMs").asLong).isEqualTo(250L)
-
-    assertThat(frame0.has("configurationDiff")).isTrue()
-    val configDiff = frame0.getAsJsonObject("configurationDiff")
-    val diffsArray = configDiff.getAsJsonArray("differences")
-    assertThat(diffsArray.size()).isAtLeast(1)
-
-    val treeDiff = frame0.getAsJsonObject("treeDiff")
-    assertThat(treeDiff.has("removed")).isTrue()
-    assertThat(treeDiff.getAsJsonArray("removed").size()).isEqualTo(1)
-    assertThat(treeDiff.getAsJsonArray("removed")[0].asJsonObject.get("id").asLong).isEqualTo(2L)
-
-    assertThat(treeDiff.has("added")).isTrue()
-    assertThat(treeDiff.getAsJsonArray("added").size()).isEqualTo(1)
-    assertThat(treeDiff.getAsJsonArray("added")[0].asJsonObject.get("id").asLong).isEqualTo(4L)
-
-    assertThat(treeDiff.has("modified")).isTrue()
-    val modifiedArray = treeDiff.getAsJsonArray("modified")
-    assertThat(modifiedArray.size()).isEqualTo(1)
-    val modifiedObj = modifiedArray[0].asJsonObject
-    assertThat(modifiedObj.get("id").asLong).isEqualTo(3L)
-
-    val changesArray = modifiedObj.getAsJsonArray("changes")
-    assertThat(changesArray.size()).isEqualTo(1)
-    val changeObj = changesArray[0].asJsonObject
-    assertThat(changeObj.get("type").asString).isEqualTo("propertyModified")
-    assertThat(changeObj.get("name").asString).isEqualTo("a")
-    assertThat(changeObj.get("oldValue").asString).isEqualTo("old")
-    assertThat(changeObj.get("newValue").asString).isEqualTo("new")
+    outputStream.reset()
+    printer.printDump(dumpWith(DeviceConfiguration(locale = DeviceLocale("", "", null, null))))
+    val emptyLocaleJson = JsonParser.parseString(outputStream.toString(Charsets.UTF_8)).asJsonObject.getAsJsonObject("configuration")
+    // An empty locale has no representation: the property is omitted entirely.
+    assertThat(emptyLocaleJson.has("locale")).isFalse()
   }
 
   /** Parses [json] with a strict (spec-compliant) reader, failing on any non-JSON token such as a bare NaN or Infinity. */

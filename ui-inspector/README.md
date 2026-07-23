@@ -290,21 +290,15 @@ taking one or more comma-separated facets (the option is also repeatable):
 
 *Note: The separate `get-params` command proposed in early designs is not implemented.*
 
-## Periodic Sampling of UI Changes
+## Change detection
 
-`dump-ui --record` samples the UI tree at a fixed interval for a bounded
-duration — for example to inspect an animation — and then reports a
-single JSON document: the initial tree plus one frame per subsequent
-sample, carrying that sample's structural, attribute, and
-configuration diffs:
-
-```bash
-ui-inspector dump-ui --record --interval 100ms --duration 5s
-```
-
-Durations take explicit units (`100ms`, `5s`, `1m`). `--duration` is
-required: a recording is always bounded, reported when the
-window ends.
+The standalone CLI deliberately ships no change-detection mode. An
+earlier `dump-ui --record` sampling mode (bounded-window recording with
+per-frame diffs) was removed before the CLI-team pitch: the
+change-record schema was the least settled part of the interface, and
+`android layout` already has `--diff` semantics that any change
+detection should be designed against, together with the CLI team, at
+integration time.
 
 ## Retrieving recomposition counts and state reads
 

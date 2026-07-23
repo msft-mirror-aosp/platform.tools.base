@@ -759,8 +759,6 @@ class InjectionManagerTest {
     val noopPrinter =
       object : UiDumpPrinter {
         override fun printDump(uiDump: UiDump) {}
-
-        override fun printTrackedChanges(samples: List<TimedUiDump>) {}
       }
     doDumpUi(
       adbSession = testSession,

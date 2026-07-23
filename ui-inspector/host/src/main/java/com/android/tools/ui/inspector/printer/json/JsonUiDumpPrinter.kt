@@ -17,15 +17,10 @@
 package com.android.tools.ui.inspector.printer.json
 
 import com.android.tools.ui.inspector.AppContext
-import com.android.tools.ui.inspector.ConfigurationDiff
 import com.android.tools.ui.inspector.DeviceConfiguration
 import com.android.tools.ui.inspector.DeviceLocale
-import com.android.tools.ui.inspector.NodeChange
-import com.android.tools.ui.inspector.TimedUiDump
-import com.android.tools.ui.inspector.TreeDiff
 import com.android.tools.ui.inspector.UiDump
 import com.android.tools.ui.inspector.UiNode
-import com.android.tools.ui.inspector.diffUiDumps
 import com.android.tools.ui.inspector.printer.UiDumpPrinter
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
@@ -76,11 +71,6 @@ private object JsonKeys {
   const val APP_CONTEXT = "appContext"
   const val CONFIGURATION = "configuration"
   const val ROOTS = "roots"
-  const val INITIAL_FRAME = "initialFrame"
-  const val FRAMES = "frames"
-  const val ELAPSED_TIME_MS = "elapsedTimeMs"
-  const val CONFIGURATION_DIFF = "configurationDiff"
-  const val TREE_DIFF = "treeDiff"
   const val TYPE = "type"
   const val VIEW_NODE = "ViewNode"
   const val COMPOSE_NODE = "ComposeNode"
@@ -115,23 +105,8 @@ private object JsonKeys {
   const val WIDTH_PX = "widthPx"
   const val HEIGHT_PX = "heightPx"
   const val ORIENTATION = "orientation"
-  const val DIFFERENCES = "differences"
-  const val OLD_VALUE = "oldValue"
-  const val NEW_VALUE = "newValue"
-  const val REMOVED = "removed"
-  const val ADDED = "added"
-  const val MODIFIED = "modified"
-  const val CHANGES = "changes"
   const val DP = "dp"
   const val SP = "sp"
-
-  // NodeChange types
-  const val CHANGE_CLASS = "class"
-  const val CHANGE_BOUNDS = "bounds"
-  const val CHANGE_PARENT = "parent"
-  const val CHANGE_PROPERTY_ADDED = "propertyAdded"
-  const val CHANGE_PROPERTY_REMOVED = "propertyRemoved"
-  const val CHANGE_PROPERTY_MODIFIED = "propertyModified"
 
   // DeviceConfiguration keys
   const val FONT_SCALE = "fontScale"
@@ -169,10 +144,6 @@ internal class JsonUiDumpPrinter(private val out: PrintStream, private val prett
 
   override fun printDump(uiDump: UiDump) {
     writeJson(serializeUiDump(uiDump))
-  }
-
-  override fun printTrackedChanges(samples: List<TimedUiDump>) {
-    writeJson(serializeTrackedChanges(samples))
   }
 
   /** Serializes [jsonObject] to the output stream. */
@@ -225,34 +196,6 @@ internal class JsonUiDumpPrinter(private val out: PrintStream, private val prett
     val rootsArray = JsonArray()
     uiDump.roots.forEach { viewRoot -> rootsArray.add(serializeNodeTree(viewRoot)) }
     root.add(JsonKeys.ROOTS, rootsArray)
-
-    return root
-  }
-
-  private fun serializeTrackedChanges(samples: List<TimedUiDump>): JsonObject {
-    val root = JsonObject()
-    if (samples.isEmpty()) {
-      return root
-    }
-
-    val firstSample = samples.first()
-    root.add(JsonKeys.INITIAL_FRAME, serializeUiDump(firstSample.uiDump))
-
-    val framesArray = JsonArray()
-    var prevSample = firstSample
-    for (i in 1 until samples.size) {
-      val sample = samples[i]
-      val frameObj = JsonObject()
-      frameObj.addProperty(JsonKeys.ELAPSED_TIME_MS, sample.elapsedTime.inWholeMilliseconds)
-
-      val diff = diffUiDumps(prevSample.uiDump, sample.uiDump)
-      diff.configurationDiff?.let { frameObj.add(JsonKeys.CONFIGURATION_DIFF, serializeConfigurationDiff(it)) }
-      diff.treeDiff?.let { frameObj.add(JsonKeys.TREE_DIFF, serializeTreeDiff(it)) }
-
-      framesArray.add(frameObj)
-      prevSample = sample
-    }
-    root.add(JsonKeys.FRAMES, framesArray)
 
     return root
   }
@@ -449,105 +392,4 @@ internal class JsonUiDumpPrinter(private val out: PrintStream, private val prett
 
   private fun DeviceLocale.listOfNotNullFormat(): String =
     listOfNotNull(language, country, variant, script).filter { it.isNotEmpty() }.joinToString("-")
-
-  private fun serializeConfigurationDiff(diff: ConfigurationDiff): JsonObject {
-    val obj = JsonObject()
-    val diffsArray = JsonArray()
-    diff.differences.forEach { diffItem ->
-      val itemObj = JsonObject()
-      itemObj.addProperty(JsonKeys.NAME, diffItem.name)
-      diffItem.oldValue?.let { itemObj.addProperty(JsonKeys.OLD_VALUE, it.toString()) }
-      diffItem.newValue?.let { itemObj.addProperty(JsonKeys.NEW_VALUE, it.toString()) }
-      diffsArray.add(itemObj)
-    }
-    obj.add(JsonKeys.DIFFERENCES, diffsArray)
-    return obj
-  }
-
-  private fun serializeTreeDiff(diff: TreeDiff): JsonObject {
-    val obj = JsonObject()
-
-    if (diff.removed.isNotEmpty()) {
-      val removedArray = JsonArray()
-      diff.removed.forEach { node ->
-        val nodeObj = JsonObject()
-        nodeObj.addProperty(JsonKeys.ID, node.id)
-        nodeObj.addProperty(JsonKeys.CLASS_NAME, node.className)
-        removedArray.add(nodeObj)
-      }
-      obj.add(JsonKeys.REMOVED, removedArray)
-    }
-
-    if (diff.added.isNotEmpty()) {
-      val addedArray = JsonArray()
-      diff.added.forEach { node -> addedArray.add(serializeNodeTree(node)) }
-      obj.add(JsonKeys.ADDED, addedArray)
-    }
-
-    if (diff.modified.isNotEmpty()) {
-      val modifiedArray = JsonArray()
-      diff.modified.forEach { mod ->
-        val modObj = JsonObject()
-        modObj.addProperty(JsonKeys.ID, mod.node.id)
-        modObj.addProperty(JsonKeys.CLASS_NAME, mod.node.className)
-        val changesArray = JsonArray()
-        mod.changes.forEach { change -> changesArray.add(serializeNodeChange(change)) }
-        modObj.add(JsonKeys.CHANGES, changesArray)
-        modifiedArray.add(modObj)
-      }
-      obj.add(JsonKeys.MODIFIED, modifiedArray)
-    }
-
-    return obj
-  }
-
-  private fun serializeNodeChange(change: NodeChange): JsonObject {
-    val obj = JsonObject()
-    when (change) {
-      is NodeChange.ClassChange -> {
-        obj.addProperty(JsonKeys.TYPE, JsonKeys.CHANGE_CLASS)
-        obj.addProperty(JsonKeys.OLD_VALUE, change.oldClassName)
-        obj.addProperty(JsonKeys.NEW_VALUE, change.newClassName)
-      }
-      is NodeChange.BoundsChange -> {
-        obj.addProperty(JsonKeys.TYPE, JsonKeys.CHANGE_BOUNDS)
-        obj.add(JsonKeys.OLD_VALUE, serializeBounds(change.oldBounds))
-        obj.add(JsonKeys.NEW_VALUE, serializeBounds(change.newBounds))
-      }
-      is NodeChange.ParentChange -> {
-        obj.addProperty(JsonKeys.TYPE, JsonKeys.CHANGE_PARENT)
-        change.oldParentId?.let { obj.addProperty(JsonKeys.OLD_VALUE, it) }
-        change.newParentId?.let { obj.addProperty(JsonKeys.NEW_VALUE, it) }
-      }
-      is NodeChange.PropertyChange.Added -> {
-        obj.addProperty(JsonKeys.TYPE, JsonKeys.CHANGE_PROPERTY_ADDED)
-        obj.addProperty(JsonKeys.NAME, change.name)
-        obj.add(JsonKeys.NEW_VALUE, serializeAnyValue(change.newValue))
-      }
-      is NodeChange.PropertyChange.Removed -> {
-        obj.addProperty(JsonKeys.TYPE, JsonKeys.CHANGE_PROPERTY_REMOVED)
-        obj.addProperty(JsonKeys.NAME, change.name)
-        obj.add(JsonKeys.OLD_VALUE, serializeAnyValue(change.oldValue))
-      }
-      is NodeChange.PropertyChange.Modified -> {
-        obj.addProperty(JsonKeys.TYPE, JsonKeys.CHANGE_PROPERTY_MODIFIED)
-        obj.addProperty(JsonKeys.NAME, change.name)
-        obj.add(JsonKeys.OLD_VALUE, serializeAnyValue(change.oldValue))
-        obj.add(JsonKeys.NEW_VALUE, serializeAnyValue(change.newValue))
-      }
-    }
-    return obj
-  }
-
-  private fun serializeAnyValue(value: Any): JsonElement {
-    return when (value) {
-      is UiNode.AttributeValue -> serializeAttributeValue(value)
-      is UiNode.ComposeParameter.Value -> serializeComposeParameterValue(value)
-      is UiNode.ComposeParameter -> serializeComposeParameter(value)
-      is String -> JsonPrimitive(value)
-      is Boolean -> JsonPrimitive(value)
-      is Number -> JsonPrimitive(value)
-      else -> JsonPrimitive(value.toString())
-    }
-  }
 }

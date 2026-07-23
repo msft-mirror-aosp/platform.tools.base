@@ -16,7 +16,6 @@
 
 package com.android.tools.ui.inspector.printer.text
 
-import com.android.tools.ui.inspector.TimedUiDump
 import com.android.tools.ui.inspector.UiDump
 import com.android.tools.ui.inspector.printer.SemanticsDisplayMode
 import com.android.tools.ui.inspector.printer.UiDumpPrinter
@@ -36,9 +35,5 @@ internal class TextUiDumpPrinter(
     uiDump.appContext?.let { printAppContext(it, out) }
     uiDump.configuration?.let { printDeviceConfiguration(it, out) }
     uiDump.roots.forEach { printUiTree(it, 0, out, semanticsMode) }
-  }
-
-  override fun printTrackedChanges(samples: List<TimedUiDump>) {
-    printTrackedChanges(samples, out, semanticsMode)
   }
 }

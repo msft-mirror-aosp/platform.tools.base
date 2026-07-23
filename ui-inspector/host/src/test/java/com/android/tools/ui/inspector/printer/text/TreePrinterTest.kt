@@ -16,7 +16,6 @@
 
 package com.android.tools.ui.inspector.printer.text
 
-import com.android.tools.ui.inspector.NodeChange
 import com.android.tools.ui.inspector.UiNode
 import com.android.tools.ui.inspector.printer.SemanticsDisplayMode
 import com.google.common.truth.Truth.assertThat
@@ -96,47 +95,6 @@ class TreePrinterTest {
     // Float number
     val attrFloat = UiNode.Attribute(name = "scale", value = UiNode.AttributeValue.NumberVal(1.5f))
     assertThat(attrFloat.format()).isEqualTo("prop: scale=1.50")
-  }
-
-  @Test
-  fun testFormatNodeChange_AttributeValue() {
-    val node =
-      UiNode.ViewNode(
-        id = 1L,
-        className = "Button",
-        bounds = UiNode.Bounds(0, 0, 10, 10),
-        idResource = "btn",
-        layoutResource = null,
-        attributes = emptyList(),
-      )
-
-    // 1. Dimension change with pre-calculated dp values
-    val changeDim =
-      NodeChange.PropertyChange.Modified(
-        name = "layout_width",
-        oldValue = UiNode.AttributeValue.DimensionVal(120f, dp = 120f),
-        newValue = UiNode.AttributeValue.DimensionVal(240f, dp = 240f),
-      )
-
-    assertThat(formatNodeChange(node, changeDim)).isEqualTo("prop: layout_width=120px (120dp) -> 240px (240dp)")
-
-    // 2. Dimension change without pre-calculated values
-    val changeDimNoDensity =
-      NodeChange.PropertyChange.Modified(
-        name = "layout_width",
-        oldValue = UiNode.AttributeValue.DimensionVal(120f),
-        newValue = UiNode.AttributeValue.DimensionVal(240f),
-      )
-    assertThat(formatNodeChange(node, changeDimNoDensity)).isEqualTo("prop: layout_width=120px -> 240px")
-
-    // 3. String change
-    val changeString =
-      NodeChange.PropertyChange.Modified(
-        name = "text",
-        oldValue = UiNode.AttributeValue.StringVal("Click"),
-        newValue = UiNode.AttributeValue.StringVal("Clicked"),
-      )
-    assertThat(formatNodeChange(node, changeString)).isEqualTo("prop: text=Click -> Clicked")
   }
 
   @Test
