@@ -26,10 +26,15 @@ import com.android.tools.ui.inspector.UiDump
 import com.android.tools.ui.inspector.UiNode
 import com.google.common.truth.Truth.assertThat
 import com.google.gson.JsonParser
+import com.google.gson.Strictness
+import com.google.gson.stream.JsonReader
+import com.google.gson.stream.JsonToken
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.OutputStream
 import java.io.PrintStream
+import java.io.StringReader
+import java.math.BigDecimal
 import java.nio.file.Files
 import kotlin.time.Duration.Companion.milliseconds
 import org.junit.Assert.assertThrows
@@ -337,6 +342,116 @@ class JsonUiDumpPrinterTest {
   }
 
   @Test
+  fun testPrintDumpNormalizesNonFiniteNumbersToNull() {
+    val viewNode =
+      UiNode.ViewNode(
+        id = 1L,
+        className = "android.view.View",
+        bounds = UiNode.Bounds(0, 0, 100, 100),
+        idResource = null,
+        layoutResource = null,
+        attributes =
+          listOf(
+            UiNode.Attribute("nan", UiNode.AttributeValue.NumberVal(Float.NaN)),
+            UiNode.Attribute("negInf", UiNode.AttributeValue.NumberVal(Double.NEGATIVE_INFINITY)),
+            UiNode.Attribute("dim", UiNode.AttributeValue.DimensionVal(Float.NaN, dp = Float.POSITIVE_INFINITY, sp = 18f)),
+            UiNode.Attribute("finite", UiNode.AttributeValue.NumberVal(42)),
+            // Finite but beyond Double range: doubleValue() overflows to Infinity, yet this is a valid JSON number and must survive.
+            UiNode.Attribute("huge", UiNode.AttributeValue.NumberVal(BigDecimal("1e400"))),
+          ),
+      )
+    val composeNode =
+      UiNode.ComposeNode(
+        id = 2L,
+        className = "androidx.compose.foundation.layout.Box",
+        bounds = UiNode.Bounds(0, 0, 100, 100),
+        sourceLocation = null,
+        parameters =
+          listOf(
+            UiNode.ComposeParameter.Single("alpha", UiNode.ComposeParameter.Value.NumberVal(Float.NaN)),
+            UiNode.ComposeParameter.Single(
+              "size",
+              UiNode.ComposeParameter.Value.DimensionVal(Float.NaN, UiNode.ComposeParameter.DimensionUnit.DP),
+            ),
+          ),
+        mergedSemantics = emptyList(),
+        unmergedSemantics = emptyList(),
+      )
+    viewNode.children.add(composeNode)
+
+    val config = DeviceConfiguration(fontScale = Float.NaN)
+    val uiDump = UiDump(roots = listOf(viewNode), configuration = config, stringTable = emptyMap(), appContext = null)
+
+    val printer = JsonUiDumpPrinter(out = printStream, prettyPrint = false)
+    printer.printDump(uiDump)
+
+    val jsonString = outputStream.toString(Charsets.UTF_8)
+    // The real contract: a spec-compliant parser accepts the document (bare NaN/Infinity tokens would be rejected).
+    assertParsesStrictly(jsonString)
+
+    val json = JsonParser.parseString(jsonString).asJsonObject
+    assertThat(json.getAsJsonObject("configuration").get("fontScale").isJsonNull).isTrue()
+
+    val rootObj = json.getAsJsonArray("roots")[0].asJsonObject
+    val attrs = rootObj.getAsJsonArray("attributes")
+    assertThat(attrs[0].asJsonObject.get("value").isJsonNull).isTrue()
+    assertThat(attrs[1].asJsonObject.get("value").isJsonNull).isTrue()
+    val dimVal = attrs[2].asJsonObject.getAsJsonObject("value")
+    assertThat(dimVal.get("value").isJsonNull).isTrue()
+    assertThat(dimVal.get("dp").isJsonNull).isTrue()
+    assertThat(dimVal.get("sp").asFloat).isEqualTo(18f)
+    assertThat(attrs[3].asJsonObject.get("value").asInt).isEqualTo(42)
+    assertThat(attrs[4].asJsonObject.get("value").asBigDecimal).isEqualTo(BigDecimal("1e400"))
+
+    val params = rootObj.getAsJsonArray("children")[0].asJsonObject.getAsJsonArray("parameters")
+    assertThat(params[0].asJsonObject.get("value").isJsonNull).isTrue()
+    val paramDim = params[1].asJsonObject.getAsJsonObject("value")
+    assertThat(paramDim.get("value").isJsonNull).isTrue()
+    assertThat(paramDim.get("unit").asString).isEqualTo("DP")
+  }
+
+  @Test
+  fun testPrintTrackedChangesNormalizesNonFiniteNumbersInDiffs() {
+    fun makeDump(alpha: Float): UiDump {
+      val viewNode =
+        UiNode.ViewNode(
+          id = 1L,
+          className = "android.view.View",
+          bounds = UiNode.Bounds(0, 0, 100, 100),
+          idResource = null,
+          layoutResource = null,
+          attributes = emptyList(),
+        )
+      val composeNode =
+        UiNode.ComposeNode(
+          id = 2L,
+          className = "androidx.compose.foundation.layout.Box",
+          bounds = UiNode.Bounds(0, 0, 100, 100),
+          sourceLocation = null,
+          parameters = listOf(UiNode.ComposeParameter.Single("alpha", UiNode.ComposeParameter.Value.NumberVal(alpha))),
+          mergedSemantics = emptyList(),
+          unmergedSemantics = emptyList(),
+        )
+      viewNode.children.add(composeNode)
+      return UiDump(roots = listOf(viewNode), configuration = null, stringTable = emptyMap(), appContext = null)
+    }
+    val samples = listOf(TimedUiDump(0.milliseconds, makeDump(Float.NaN)), TimedUiDump(100.milliseconds, makeDump(2f)))
+
+    val printer = JsonUiDumpPrinter(out = printStream, prettyPrint = false)
+    printer.printTrackedChanges(samples)
+
+    val jsonString = outputStream.toString(Charsets.UTF_8)
+    assertParsesStrictly(jsonString)
+
+    val json = JsonParser.parseString(jsonString).asJsonObject
+    val modified = json.getAsJsonArray("frames")[0].asJsonObject.getAsJsonObject("treeDiff").getAsJsonArray("modified")
+    val change = modified[0].asJsonObject.getAsJsonArray("changes")[0].asJsonObject
+    assertThat(change.get("type").asString).isEqualTo("propertyModified")
+    assertThat(change.getAsJsonObject("oldValue").get("value").isJsonNull).isTrue()
+    assertThat(change.getAsJsonObject("newValue").get("value").asFloat).isEqualTo(2f)
+  }
+
+  @Test
   fun testPrintTrackedChangesEmptySamples() {
     val printer = JsonUiDumpPrinter(out = printStream, prettyPrint = false)
     printer.printTrackedChanges(emptyList())
@@ -481,6 +596,14 @@ class JsonUiDumpPrinterTest {
     assertThat(changeObj.get("name").asString).isEqualTo("a")
     assertThat(changeObj.get("oldValue").asString).isEqualTo("old")
     assertThat(changeObj.get("newValue").asString).isEqualTo("new")
+  }
+
+  /** Parses [json] with a strict (spec-compliant) reader, failing on any non-JSON token such as a bare NaN or Infinity. */
+  private fun assertParsesStrictly(json: String) {
+    val reader = JsonReader(StringReader(json))
+    reader.strictness = Strictness.STRICT
+    JsonParser.parseReader(reader)
+    assertThat(reader.peek()).isEqualTo(JsonToken.END_DOCUMENT)
   }
 
   private companion object {

@@ -168,7 +168,16 @@ private object JsonKeys {
 internal class JsonUiDumpPrinter(private val out: PrintStream, private val prettyPrint: Boolean) : UiDumpPrinter {
 
   override fun printDump(uiDump: UiDump) {
-    val jsonObject = serializeUiDump(uiDump)
+    writeJson(serializeUiDump(uiDump))
+  }
+
+  override fun printTrackedChanges(samples: List<TimedUiDump>) {
+    writeJson(serializeTrackedChanges(samples))
+  }
+
+  /** Serializes [jsonObject] to the output stream. */
+  private fun writeJson(jsonObject: JsonObject) {
+    normalizeNonFiniteNumbers(jsonObject)
     val gson = if (prettyPrint) GSON_PRETTY else GSON_COMPACT
     val writer = OutputStreamWriter(out, Charsets.UTF_8)
     gson.toJson(jsonObject, writer)
@@ -176,13 +185,34 @@ internal class JsonUiDumpPrinter(private val out: PrintStream, private val prett
     out.println()
   }
 
-  override fun printTrackedChanges(samples: List<TimedUiDump>) {
-    val jsonObject = serializeTrackedChanges(samples)
-    val gson = if (prettyPrint) GSON_PRETTY else GSON_COMPACT
-    val writer = OutputStreamWriter(out, Charsets.UTF_8)
-    gson.toJson(jsonObject, writer)
-    writer.flush()
-    out.println()
+  /**
+   * Replaces every non-finite numeric primitive in the tree with JSON null, in place. JSON has no NaN or Infinity token, Compose routinely
+   * reports Float.NaN for unspecified values (e.g. Dp.Unspecified), and Gson would write them verbatim, producing output every strict
+   * parser rejects.
+   */
+  private fun normalizeNonFiniteNumbers(element: JsonElement) {
+    when (element) {
+      is JsonObject ->
+        for (entry in element.entrySet()) {
+          if (entry.value.isNonFiniteNumber()) entry.setValue(JsonNull.INSTANCE) else normalizeNonFiniteNumbers(entry.value)
+        }
+      is JsonArray ->
+        for (i in 0 until element.size()) {
+          if (element.get(i).isNonFiniteNumber()) element.set(i, JsonNull.INSTANCE) else normalizeNonFiniteNumbers(element.get(i))
+        }
+      else -> Unit
+    }
+  }
+
+  // Only Float and Double can carry non-finite values; other Number types (including arbitrary-precision ones whose doubleValue()
+  // overflows to Infinity, like BigDecimal("1e400")) are always valid JSON numbers and must pass through untouched.
+  private fun JsonElement.isNonFiniteNumber(): Boolean {
+    if (this !is JsonPrimitive || !isNumber) return false
+    return when (val number = asNumber) {
+      is Float -> !number.isFinite()
+      is Double -> !number.isFinite()
+      else -> false
+    }
   }
 
   private fun serializeUiDump(uiDump: UiDump): JsonObject {
