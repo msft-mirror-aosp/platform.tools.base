@@ -51,7 +51,9 @@ class AdbApkInstaller(
     if (result.exitCode == 0) {
       result.output.trim().toIntOrNull() ?: throw RuntimeException("Failed to parse device API level for $deviceSerial: '${result.output}'")
     } else {
-      throw RuntimeException("Failed to get device API level for $deviceSerial via ADB (exit code: ${result.exitCode})")
+      throw RuntimeException(
+        "Failed to get device API level for $deviceSerial via ADB (exit code: ${result.exitCode}). Stdout: '${result.output}'. Stderr: '${result.errorOutput}'"
+      )
     }
   }
 
