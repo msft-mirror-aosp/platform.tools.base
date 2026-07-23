@@ -71,5 +71,12 @@ open class AnalyticsEnabledTestSuite(
       return delegate.codeCoverage
     }
 
+  override val requiresUpdateTask: Provider<Boolean>
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
+        VariantPropertiesMethodType.TEST_SUITE_REQUIRES_UPDATE_TASK_VALUE
+      return delegate.requiresUpdateTask
+    }
+
   override fun instrumentationRunner(source: TestSuiteSourceSet.TestApk): Provider<String> = delegate.instrumentationRunner(source)
 }

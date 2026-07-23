@@ -15,39 +15,35 @@
  */
 package com.android.tools.deployer
 
-import com.android.ddmlib.IDevice
-
 /**
- * This interface provides abstraction on how the Deployment pipeline terminate an application.
+ * This class provides an abstraction on how the Deployment pipeline terminates an application.
  *
- * Historically, Deployer does not perform any application terminations. Instead, we rely on the
- * IDE for termination. However, doing some results in many race conditions between deployer,
- * IDE, package manager and knowing issues in the package manager.
+ * Historically, Deployer did not perform any application terminations. Instead, we relied on the IDE for termination. However, doing so
+ * resulted in many race conditions between deployer, IDE, package manager and known issues in the package manager.
  *
- * Starting with AP33+, all race conditions with the package manager should be fixed. Most normal
- * installation will rely completely on package manager to terminate the application correctly.
+ * Starting with API 33+, all race conditions with the package manager should be fixed. Most normal installations will rely completely on
+ * the package manager to terminate the application correctly.
  *
- * IWI is the only case post API33+ where this is not true. Since we are not interacting with
- * the package manager by definition, we will need to terminate the application within deployment.
- * Instead of relying on interactions with the IDE, the IDE will provide us with a single callback
- * to terminate the running application with this API.
+ * IWI is the only case post-API 33+ where this is not true. Since we are not interacting with the package manager by definition, we need to
+ * terminate the application within deployment. Instead of relying on complex interactions with the IDE, the IDE provides a single callback
+ * (`killFunction`) to terminate the running application with this API.
  *
- * @param devices: List of all devices where deployment and application termination will take place.
- * @param appId: Application ID.
- * @param killFunction: A synchronous function that terminate the running application of the given
- *                      ID. Upon return, the application should contain no running process on that
- *                      device.
+ * @param devices List of all target devices where deployment and application termination will take place.
+ * @param appId Application ID.
+ * @param killFunction A synchronous function that terminates the running application of the given ID. Upon return, the application should
+ *   contain no running process on that device.
  */
-open class DeployerApplicationTerminator (
-    devices: Collection<IDevice>,
-    private val appId: String,
-    private val killFunction: (IDevice, String) -> Unit) {
+open class DeployerApplicationTerminator(
+  devices: Collection<DeployerDevice>,
+  private val appId: String,
+  private val killFunction: (DeployerDevice, String) -> Unit,
+) {
 
-    private val devices: HashSet<IDevice> = HashSet(devices)
+  private val devices: HashSet<DeployerDevice> = HashSet(devices)
 
-    fun terminate(device: IDevice) {
-        if (devices.remove(device))  {
-            killFunction(device, appId)
-        }
+  fun terminate(device: DeployerDevice) {
+    if (devices.remove(device)) {
+      killFunction(device, appId)
     }
+  }
 }

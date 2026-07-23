@@ -45,31 +45,26 @@ private val logger: Logger = Logger.getLogger(AdbHelper::class.java.getName())
 
 object AdbHelper {
 
-  private lateinit var session: AdbSession
+  lateinit var session: AdbSession
+    private set
 
   /** Initializes the AndroidDebugBridge, using adblib or ddmlib. */
   fun initAndroidDebugBridge() {
-    if (System.getProperty("deploy.service.use.adblib").toBoolean()) {
-      logger.info("adblib is enabled")
-      val host = AdbSessionHost()
-      session = create(host)
+    val host = AdbSessionHost()
+    session = create(host)
 
-      val inventoryServerEnabled = {
-        val enabled = System.getProperty("deploy.service.use.adblib.inventory.server").toBoolean()
-        logger.info("adblib inventory server is $enabled")
-        enabled
-      }
-
-      val inventoryServerConfig = GameToolsProcessInventoryServerConfiguration()
-      val inventoryServerConnection = ProcessInventoryServerConnection.create(session, inventoryServerConfig)
-      session.installProcessInventoryJdwpProcessPropertiesCollectorFactory(inventoryServerConnection, inventoryServerEnabled)
-      session.installProcessInventoryJdwpProcessCommandDispatcherFactory(inventoryServerConnection, inventoryServerEnabled)
-      val options = AdbInitOptions.Builder().setIDeviceManagerFactory(AdbLibIDeviceManagerFactory(session)).build()
-      AndroidDebugBridge.init(options)
-    } else {
-      logger.info("adblib is disabled")
-      AndroidDebugBridge.init(true)
+    val inventoryServerEnabled = {
+      val enabled = System.getProperty("deploy.service.use.adblib.inventory.server").toBoolean()
+      logger.info("adblib inventory server is $enabled")
+      enabled
     }
+
+    val inventoryServerConfig = GameToolsProcessInventoryServerConfiguration()
+    val inventoryServerConnection = ProcessInventoryServerConnection.create(session, inventoryServerConfig)
+    session.installProcessInventoryJdwpProcessPropertiesCollectorFactory(inventoryServerConnection, inventoryServerEnabled)
+    session.installProcessInventoryJdwpProcessCommandDispatcherFactory(inventoryServerConnection, inventoryServerEnabled)
+    val options = AdbInitOptions.Builder().setIDeviceManagerFactory(AdbLibIDeviceManagerFactory(session)).build()
+    AndroidDebugBridge.init(options)
   }
 
   suspend fun resumeProcess(serialNumber: String, pid: Int) {

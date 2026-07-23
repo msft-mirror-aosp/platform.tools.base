@@ -83,6 +83,8 @@ constructor(private val name: String, val dslServices: DslServices, val androidR
 
   override fun getTargets(): NamedDomainObjectContainer<AgpTestSuiteTarget> = targets
 
+  override var requiresUpdateTask = false
+
   override fun assets(action: TestSuiteAssetsSpec.() -> Unit) {
     addSource<TestSuiteAssetsSpecImpl>(action)
   }

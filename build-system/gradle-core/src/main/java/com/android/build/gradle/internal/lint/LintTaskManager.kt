@@ -91,13 +91,20 @@ class LintTaskManager(
       val variantLintTextOutputTask =
         if (componentType.isDynamicFeature) {
           null
+        } else if (
+          globalTaskCreationConfig.services.projectOptions.get(BooleanOption.LINT_REPORT_AGGREGATION) &&
+            !mainVariant.enableReportWithoutDependencies
+        ) {
+          null
         } else {
           taskFactory.register(AndroidLintTextOutputTask.SingleVariantCreationAction(mainVariant))
         }
 
       val variantAggregatedLintTextOutputTask =
         if (
-          componentType.isDynamicFeature || !globalTaskCreationConfig.services.projectOptions.get(BooleanOption.LINT_REPORT_AGGREGATION)
+          componentType.isDynamicFeature ||
+            !globalTaskCreationConfig.services.projectOptions.get(BooleanOption.LINT_REPORT_AGGREGATION) ||
+            !mainVariant.enableReportWithDependencies
         ) {
           null
         } else {
@@ -191,16 +198,20 @@ class LintTaskManager(
       val variantLintTask =
         if (globalTaskCreationConfig.services.projectOptions.get(BooleanOption.LINT_REPORT_AGGREGATION)) {
           val localLintReportTask =
-            taskFactory.register(AndroidLintTask.LocalLintReportCreationAction(variantWithTests)).also {
-              it.configure { task -> task.mustRunAfter(updateLintBaselineTask) }
-            }
+            if (mainVariant.enableReportWithoutDependencies) {
+              taskFactory.register(AndroidLintTask.LocalLintReportCreationAction(variantWithTests)).also {
+                it.configure { task -> task.mustRunAfter(updateLintBaselineTask) }
+              }
+            } else null
           val aggregatedLintReportTask =
-            taskFactory.register(AndroidLintTask.AggregatedLintReportCreationAction(variantWithTests)).also {
-              it.configure { task -> task.mustRunAfter(updateLintBaselineTask) }
-            }
-          variantLintTextOutputTask?.configure { it.dependsOn(localLintReportTask) }
-          variantAggregatedLintTextOutputTask?.configure { it.dependsOn(aggregatedLintReportTask) }
-          localLintReportTask
+            if (mainVariant.enableReportWithDependencies) {
+              taskFactory.register(AndroidLintTask.AggregatedLintReportCreationAction(variantWithTests)).also {
+                it.configure { task -> task.mustRunAfter(updateLintBaselineTask) }
+              }
+            } else null
+          localLintReportTask?.let { local -> variantLintTextOutputTask?.configure { it.dependsOn(local) } }
+          aggregatedLintReportTask?.let { aggregated -> variantAggregatedLintTextOutputTask?.configure { it.dependsOn(aggregated) } }
+          localLintReportTask ?: aggregatedLintReportTask
         } else {
           taskFactory.register(AndroidLintTask.SingleVariantCreationAction(variantWithTests)).also {
             it.configure { task -> task.mustRunAfter(updateLintBaselineTask) }
@@ -241,7 +252,7 @@ class LintTaskManager(
         val lintVitalTextOutputTask = taskFactory.register(AndroidLintTextOutputTask.LintVitalCreationAction(mainVariant))
 
         // If lint is being run, we do not need to run lint vital.
-        variantLintTaskToLintVitalTask[getTaskPath(variantLintTask)] = lintVitalTask
+        variantLintTask?.let { variantLintTaskToLintVitalTask[getTaskPath(it)] = lintVitalTask }
         variantLintTextOutputTask?.let { variantLintTaskToLintVitalTask[getTaskPath(it)] = lintVitalTextOutputTask }
         variantAggregatedLintTextOutputTask?.let { variantLintTaskToLintVitalTask[getTaskPath(it)] = lintVitalTextOutputTask }
       }
@@ -267,9 +278,13 @@ class LintTaskManager(
     }
 
     if (actualDefaultVariant != null) {
+      val defaultVariantWithTests = variantsWithTests[actualDefaultVariant]!!
       taskFactory.configure(AndroidLintGlobalTask.GlobalCreationAction.name, AndroidLintGlobalTask::class.java) { globalTask ->
-        globalTask.dependsOn("lint".appendCapitalized(actualDefaultVariant))
-        if (globalTaskCreationConfig.services.projectOptions.get(BooleanOption.LINT_REPORT_AGGREGATION)) {
+        val aggregationEnabled = globalTaskCreationConfig.services.projectOptions.get(BooleanOption.LINT_REPORT_AGGREGATION)
+        if (!aggregationEnabled || defaultVariantWithTests.main.enableReportWithoutDependencies) {
+          globalTask.dependsOn("lint".appendCapitalized(actualDefaultVariant))
+        }
+        if (aggregationEnabled && defaultVariantWithTests.main.enableReportWithDependencies) {
           globalTask.dependsOn("lintAggregated".appendCapitalized(actualDefaultVariant))
         }
       }

@@ -15,6 +15,7 @@
  */
 
 #include "tools/base/android-test/coverage/agent/native/hits_extractor.h"
+#include "tools/base/android-test/coverage/agent/native/instrumenter.h"
 
 #include <gtest/gtest.h>
 
@@ -69,6 +70,65 @@ TEST(HitsExtractorTest, PackHitsEmpty) {
   std::string bitmask = HitsExtractor::PackHits(hits, 10, &last_hit_index);
 
   EXPECT_TRUE(bitmask.empty());
+}
+
+TEST(InstrumenterTest, IsSyntheticOrCompilerGenerated) {
+  // 1. Standard user-written outer classes (Should NOT be filtered)
+  EXPECT_FALSE(
+      Instrumenter::IsSyntheticOrCompilerGenerated("com/example/MyClass"));
+  EXPECT_FALSE(
+      Instrumenter::IsSyntheticOrCompilerGenerated("com/example/MyViewModel"));
+  EXPECT_FALSE(
+      Instrumenter::IsSyntheticOrCompilerGenerated("com/example/MyClass2"));
+
+  // 2. User-written nested & inner classes (Should NOT be filtered)
+  EXPECT_FALSE(Instrumenter::IsSyntheticOrCompilerGenerated(
+      "com/example/MyClass$MyInnerClass"));
+  EXPECT_FALSE(Instrumenter::IsSyntheticOrCompilerGenerated(
+      "com/example/MyClass$InnerHelper2"));
+  EXPECT_FALSE(Instrumenter::IsSyntheticOrCompilerGenerated(
+      "com/example/MyClass2$InnerClass"));
+  EXPECT_FALSE(Instrumenter::IsSyntheticOrCompilerGenerated(
+      "com/example/MyClass$InnerClass2"));
+
+  // 3. User-written inner classes containing "Lambda" or "Sam" (Should NOT be
+  // filtered)
+  EXPECT_FALSE(Instrumenter::IsSyntheticOrCompilerGenerated(
+      "com/example/MyLambdaClass"));
+  EXPECT_FALSE(
+      Instrumenter::IsSyntheticOrCompilerGenerated("com/example/SamClass"));
+  EXPECT_FALSE(Instrumenter::IsSyntheticOrCompilerGenerated(
+      "com/example/MyClass$MyLambdaHelper"));
+  EXPECT_FALSE(Instrumenter::IsSyntheticOrCompilerGenerated(
+      "com/example/MyClass$SamHelper"));
+
+  // 4. Java anonymous inner classes and Kotlin numbered closures (Should be
+  // filtered)
+  EXPECT_TRUE(
+      Instrumenter::IsSyntheticOrCompilerGenerated("com/example/MyClass$1"));
+  EXPECT_TRUE(
+      Instrumenter::IsSyntheticOrCompilerGenerated("com/example/MyClass$2"));
+  EXPECT_TRUE(Instrumenter::IsSyntheticOrCompilerGenerated(
+      "com/example/MyClass$test$1"));
+
+  // 5. Kotlin Coroutine State Machines / Suspend Lambdas (Should be filtered)
+  EXPECT_TRUE(Instrumenter::IsSyntheticOrCompilerGenerated(
+      "com/example/ScrollbarExtKt$scrollbarState$6$1"));
+  EXPECT_TRUE(Instrumenter::IsSyntheticOrCompilerGenerated(
+      "com/example/MyViewModel$fetchData$2$1"));
+
+  // 6. Kotlin Compiler Synthetic Lambdas, SAMs, and Inlined Helpers (Should be
+  // filtered)
+  EXPECT_TRUE(Instrumenter::IsSyntheticOrCompilerGenerated(
+      "com/example/MyClass$lambda-0"));
+  EXPECT_TRUE(Instrumenter::IsSyntheticOrCompilerGenerated(
+      "com/example/MyClass$sam$0"));
+  EXPECT_TRUE(Instrumenter::IsSyntheticOrCompilerGenerated(
+      "com/example/MyClass$sam$i$org_junit_Test$0"));
+  EXPECT_TRUE(Instrumenter::IsSyntheticOrCompilerGenerated(
+      "com/example/MyClass$inlined$0"));
+  EXPECT_TRUE(Instrumenter::IsSyntheticOrCompilerGenerated(
+      "com/example/MyClass$inlined$MyHelper$1"));
 }
 
 }  // namespace coverage

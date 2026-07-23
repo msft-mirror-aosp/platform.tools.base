@@ -93,10 +93,14 @@ class XMLReportAggregatorTest {
 
     val testCase = clazz.testCases.first()
     assertThat(testCase.name).isEqualTo("testExample")
-    assertThat(testCase.testSuiteSummaries.map { it.name }).containsExactly("unitTest", "Aggregated")
-    assertThat(testCase.testSuiteResults).hasSize(1)
 
-    val suiteResult = testCase.testSuiteResults.find { it.testSuiteName == "unitTest" }
+    // Extract properties from the first target (Host default)
+    val target = testCase.targets.first()
+    assertThat(target.name).isEqualTo(UNKNOWN_TARGET)
+    assertThat(target.testSuiteSummaries.map { it.name }).containsExactly("unitTest", "Aggregated")
+    assertThat(target.testSuiteResults).hasSize(1)
+
+    val suiteResult = target.testSuiteResults.find { it.testSuiteName == "unitTest" }
     assertThat(suiteResult).isNotNull()
     assertThat(suiteResult?.variantResults?.get("debug")?.status).isEqualTo("pass")
   }
@@ -164,24 +168,24 @@ class XMLReportAggregatorTest {
     assertThat(unitTestClass.testCases).hasSize(2)
 
     val testPass = unitTestClass.testCases.find { it.name == "testPass" }
-    assertThat(testPass?.testSuiteResults?.first()?.variantResults?.get("debug")?.status).isEqualTo("pass")
+    assertThat(testPass?.targets?.first()?.testSuiteResults?.first()?.variantResults?.get("debug")?.status).isEqualTo("pass")
 
     val testFail = unitTestClass.testCases.find { it.name == "testFail" }
-    assertThat(testFail?.testSuiteResults?.first()?.variantResults?.get("debug")?.status).isEqualTo("fail")
+    assertThat(testFail?.targets?.first()?.testSuiteResults?.first()?.variantResults?.get("debug")?.status).isEqualTo("fail")
 
-    val stackTraceId = testFail?.testSuiteResults?.first()?.variantResults?.get("debug")?.stackTraceId
+    val stackTraceId = testFail?.targets?.first()?.testSuiteResults?.first()?.variantResults?.get("debug")?.stackTraceId
     assertThat(stackTraceId).isNotNull()
-    val group = testFail?.commonStackTraces?.find { it.id == stackTraceId }
+    val group = testFail?.targets?.first()?.commonStackTraces?.find { it.id == stackTraceId }
     assertThat(group?.stackTrace).contains("stacktrace here")
 
     val otherTestClass = pkg.classes.findOrThrow({ it.name == "MyOtherClassTest" }) { "MyOtherClassTest not found" }
     assertThat(otherTestClass.testCases).hasSize(2)
 
     val testAnotherPass = otherTestClass.testCases.find { it.name == "testAnotherPass" }
-    assertThat(testAnotherPass?.testSuiteResults?.first()?.variantResults?.get("release")?.status).isEqualTo("pass")
+    assertThat(testAnotherPass?.targets?.first()?.testSuiteResults?.first()?.variantResults?.get("release")?.status).isEqualTo("pass")
 
     val testSkipped = otherTestClass.testCases.find { it.name == "testSkipped" }
-    assertThat(testSkipped?.testSuiteResults?.first()?.variantResults?.get("release")?.status).isEqualTo("skipped")
+    assertThat(testSkipped?.targets?.first()?.testSuiteResults?.first()?.variantResults?.get("release")?.status).isEqualTo("skipped")
   }
 
   @Test
@@ -250,11 +254,11 @@ class XMLReportAggregatorTest {
 
     assertThat(testCase.name).isEqualTo("testFailure")
 
-    val suiteResult = testCase.testSuiteResults.find { it.testSuiteName == "failedUnitTest" }
+    val suiteResult = testCase.targets.first().testSuiteResults.find { it.testSuiteName == "failedUnitTest" }
     assertThat(suiteResult?.variantResults?.get("debug")?.status).isEqualTo("fail")
 
     val stackTraceId = suiteResult?.variantResults?.get("debug")?.stackTraceId
-    val group = testCase.commonStackTraces.find { it.id == stackTraceId }
+    val group = testCase.targets.first().commonStackTraces.find { it.id == stackTraceId }
     assertThat(group?.stackTrace).contains("java.lang.RuntimeException: This is a test exception")
     assertThat(group?.stackTrace).contains("at com.example.app.MyFailedClassTest.testFailure(MyFailedClassTest.kt:10)")
   }
@@ -315,7 +319,7 @@ class XMLReportAggregatorTest {
     val exampleTestCase =
       exampleInstrumentedTest.testCases.findOrThrow({ it.name == "useAppContext" }) { "useAppContext in ExampleInstrumentedTest not found" }
 
-    val exampleSuiteResult = exampleTestCase.testSuiteResults.find { it.testSuiteName == "AndroidTest" }
+    val exampleSuiteResult = exampleTestCase.targets.first().testSuiteResults.find { it.testSuiteName == "AndroidTest" }
     assertThat(exampleSuiteResult?.variantResults).hasSize(2)
     assertThat(exampleSuiteResult?.variantResults?.get("stagingDebug")?.status).isEqualTo("pass")
     assertThat(exampleSuiteResult?.variantResults?.get("trialDebug")?.status).isEqualTo("pass")
@@ -325,7 +329,7 @@ class XMLReportAggregatorTest {
     val stagingTestCase =
       stagingInstrumentedTest.testCases.findOrThrow({ it.name == "useAppContext" }) { "useAppContext in StagingInstrumentedTest not found" }
 
-    val stagingSuiteResult = stagingTestCase.testSuiteResults.find { it.testSuiteName == "AndroidTest" }
+    val stagingSuiteResult = stagingTestCase.targets.first().testSuiteResults.find { it.testSuiteName == "AndroidTest" }
     assertThat(stagingSuiteResult?.variantResults).hasSize(1)
     assertThat(stagingSuiteResult?.variantResults).containsKey("stagingDebug")
     assertThat(stagingSuiteResult?.variantResults?.get("stagingDebug")?.status).isEqualTo("pass")
@@ -509,7 +513,7 @@ class XMLReportAggregatorTest {
 
     assertThat(testCase.name).isEqualTo("testScreenshot")
 
-    val suiteResult = testCase.testSuiteResults.find { it.testSuiteName == "screenshotTest" }
+    val suiteResult = testCase.targets.first().testSuiteResults.find { it.testSuiteName == "screenshotTest" }
     val variantResult = suiteResult?.variantResults?.get("debug")
 
     assertThat(variantResult).isNotNull()
@@ -519,5 +523,77 @@ class XMLReportAggregatorTest {
     assertThat(variantResult?.refImagePath).isEqualTo("path/to/ref.png")
     assertThat(variantResult?.newImagePath).isEqualTo("path/to/new.png")
     assertThat(variantResult?.diffImagePath).isEqualTo("path/to/diff.png")
+  }
+
+  @Test
+  fun testGenerateReport_multipleTargets() {
+    val pixel7Xml =
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <testsuite name="com.example.app.MyTestSuite" tests="1" failures="0" errors="0" skipped="0" time="0.1">
+          <properties>
+              <property name="testedVariantName" value="debug"/>
+              <property name="modulePath" value=":app"/>
+              <property name="testSuiteName" value="unitTest"/>
+              <property name="testTarget" value="pixel7"/>
+          </properties>
+          <testcase name="testExample" classname="com.example.app.MyClassTest" time="0.1"/>
+      </testsuite>
+      """
+        .trimIndent()
+    createXmlReport(inputDir1, "pixel7-report.xml", pixel7Xml)
+
+    val pixel8Xml =
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <testsuite name="com.example.app.MyTestSuite" tests="1" failures="1" errors="0" skipped="0" time="0.15">
+          <properties>
+              <property name="testedVariantName" value="debug"/>
+              <property name="modulePath" value=":app"/>
+              <property name="testSuiteName" value="unitTest"/>
+              <property name="testTarget" value="pixel8"/>
+          </properties>
+          <testcase name="testExample" classname="com.example.app.MyClassTest" time="0.15">
+              <failure message="assertion failed">stacktrace here</failure>
+          </testcase>
+      </testsuite>
+      """
+        .trimIndent()
+    createXmlReport(inputDir2, "pixel8-report.xml", pixel8Xml)
+
+    val aggregator = XMLReportAggregator(files = listOf(inputDir1, inputDir2), projectName = "MultiTargetProject")
+    val report = aggregator.generateReport()
+
+    assertThat(report.projectName).isEqualTo("MultiTargetProject")
+    // Should capture both unique targets
+    assertThat(report.targets).containsExactly("pixel7", "pixel8").inOrder()
+
+    val module = report.modules.first()
+    val pkg = module.packages.first()
+    val clazz = pkg.classes.first()
+    val testCase = clazz.testCases.first()
+
+    assertThat(testCase.name).isEqualTo("testExample")
+    // There should be two targets under this testcase
+    assertThat(testCase.targets).hasSize(2)
+
+    val target7 = testCase.targets.find { it.name == "pixel7" }
+    assertThat(target7).isNotNull()
+    val suiteResult7 = target7?.testSuiteResults?.find { it.testSuiteName == "unitTest" }
+    assertThat(suiteResult7?.variantResults?.get("debug")?.status).isEqualTo("pass")
+
+    val target8 = testCase.targets.find { it.name == "pixel8" }
+    assertThat(target8).isNotNull()
+    val suiteResult8 = target8?.testSuiteResults?.find { it.testSuiteName == "unitTest" }
+    assertThat(suiteResult8?.variantResults?.get("debug")?.status).isEqualTo("fail")
+
+    // Check package level aggregation
+    // Both pixel7 (passed) and pixel8 (failed) should be aggregated
+    val packageSummary = pkg.testSuiteSummaries.find { it.name == "unitTest" }
+    assertThat(packageSummary).isNotNull()
+    val debugSummary = packageSummary?.variantSummaries?.find { it.name == "debug" }
+    assertThat(debugSummary?.total).isEqualTo(2)
+    assertThat(debugSummary?.passed).isEqualTo(1)
+    assertThat(debugSummary?.failed).isEqualTo(1)
   }
 }

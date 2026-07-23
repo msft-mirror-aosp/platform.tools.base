@@ -24,6 +24,9 @@ interface TestTaskContext {
   /** [AgpTestSuiteTarget] name the [org.gradle.api.tasks.testing.Test] task is targeting. */
   @get:Incubating val targetName: String
 
+  /** Whether the [org.gradle.api.tasks.testing.Test] task is an update task. */
+  @get:Incubating val isUpdateTask: Boolean
+
   /**
    * Suite name the [org.gradle.api.tasks.testing.Test] task is testing.
    *

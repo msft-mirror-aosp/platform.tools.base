@@ -48,6 +48,8 @@ class TestOptionsTest {
     override fun getName(): String = name
 
     override var codeCoverage: Boolean = false
+    override var requiresUpdateTask: Boolean = false
+
     override val targetVariants: MutableList<String>
       get() = throw RuntimeException("Unexpected call")
 

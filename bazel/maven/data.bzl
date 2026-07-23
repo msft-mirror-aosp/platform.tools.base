@@ -38,6 +38,7 @@ _CLASS_JARS = [
     "androidx.annotation:annotation:1.2.0-beta01",
     "androidx.annotation:annotation:1.6.0",
     "androidx.annotation:annotation:1.7.0-beta01",
+    "androidx.annotation:annotation:1.9.1",
     "androidx.annotation:annotation-jvm:1.6.0",
     "androidx.annotation:annotation-jvm:1.9.0",
     "androidx.appcompat:appcompat:1.0.2",
@@ -375,6 +376,7 @@ _CLASS_JARS = [
     "androidx.navigation:navigation-safe-args-gradle-plugin:2.5.2",
     "androidx.navigation:navigation-safe-args-gradle-plugin:2.5.3",
     "androidx.navigation:navigation-safe-args-gradle-plugin:2.6.0",
+    "androidx.navigation:navigation-safe-args-gradle-plugin:2.9.8",
     "androidx.navigation:navigation-testing:2.5.3",  # Dependency of architecture-samples
     "androidx.navigation:navigation-ui:2.5.2",
     "androidx.navigation:navigation-ui:2.5.3",
@@ -420,9 +422,9 @@ _CLASS_JARS = [
     "androidx.savedstate:savedstate-ktx:1.3.2",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.savedstate:savedstate-ktx:1.3.3",
     "androidx.slice:slice-builders:1.0.0",
-    "androidx.sqlite:sqlite:2.5.0-beta01",  # Database Inspector
-    "androidx.sqlite:sqlite-bundled:2.5.0-beta01",  # Database Inspector
-    "androidx.sqlite:sqlite-bundled-jvm:2.5.0-beta01",  # Database Inspector
+    "androidx.sqlite:sqlite:2.7.0",  # Database Inspector
+    "androidx.sqlite:sqlite-bundled:2.7.0",  # Database Inspector
+    "androidx.sqlite:sqlite-bundled-jvm:2.7.0",  # Database Inspector
     "androidx.startup:startup-runtime:1.1.1",
     "androidx.test:core:1.3.0",  # TODO: To be removed once dependent tests pass b/273872043
     "androidx.test:core:1.4.0-alpha06",
@@ -1074,6 +1076,7 @@ _CLASS_JARS = [
     "com.openai:openai-java:4.32.0",
     "com.squareup.dagger:dagger-compiler:1.2.2",
     "com.squareup:kotlinpoet:1.12.0",
+    "com.squareup:kotlinpoet:2.0.0",
     "com.squareup:kotlinpoet:2.1.0",
     "com.squareup.leakcanary:shark:2.14",
     "com.squareup.leakcanary:shark-android:2.14",
@@ -1619,7 +1622,7 @@ _SOURCE_JARS = [
     "androidx.lifecycle:lifecycle-common-jvm:jar:sources:2.8.7",
     "androidx.lifecycle:lifecycle-runtime-desktop:jar:sources:2.8.7",
     "androidx.lifecycle:lifecycle-viewmodel-desktop:jar:sources:2.8.7",
-    "androidx.sqlite:sqlite-bundled-jvm:jar:sources:2.5.0-beta01",  # Database Inspector
+    "androidx.sqlite:sqlite-bundled-jvm:jar:sources:2.7.0",  # Database Inspector
     "com.agentclientprotocol:acp-jvm:jar:sources:0.24.0",
     "com.agentclientprotocol:acp-model-jvm:jar:sources:0.24.0",
     "com.anthropic:anthropic-java-core:jar:sources:2.26.0",

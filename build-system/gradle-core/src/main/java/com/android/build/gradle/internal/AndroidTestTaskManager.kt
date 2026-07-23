@@ -171,7 +171,7 @@ class AndroidTestTaskManager(project: Project, globalConfig: GlobalTaskCreationC
     createApkProcessResTask(androidTestProperties)
 
     // process java resources
-    createProcessJavaResTask(androidTestProperties)
+    createProcessJavaResTask(androidTestProperties, androidTestProperties.packaging)
     createAidlTask(androidTestProperties)
 
     // add tasks to merge jni libs.

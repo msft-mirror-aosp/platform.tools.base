@@ -26,7 +26,6 @@ import com.android.tools.ui.inspector.common.FramingProtocol
 import com.android.tools.ui.inspector.common.ProtocolConstants
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol
 import com.google.common.truth.Truth.assertThat
-import java.io.ByteArrayOutputStream
 import java.net.ServerSocket
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -146,7 +145,7 @@ class ComposeInspectorTest {
       )
 
     // Trigger injectAndAttach so we populate the appDataDir internal states
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pidof $packageName", "1234\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pgrep -f '^${packageName.replace(".", "\\.")}(:.*)?$'", "1234\n")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "settings put global debug_view_attributes 1", "")
 
     val baseAgentSetupCmd =
@@ -161,7 +160,7 @@ class ComposeInspectorTest {
     fakeSession.deviceServices.configureShellCommand(deviceSelector, baseAgentSetupCmd, "")
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
-      "cmd activity attach-agent $packageName \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;1234\"",
+      "cmd activity attach-agent 1234 \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;1234\"",
       "",
     )
     fakeSession.deviceServices.configureShellCommand(
@@ -385,7 +384,7 @@ class ComposeInspectorTest {
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pidof $packageName", "1234\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pgrep -f '^${packageName.replace(".", "\\.")}(:.*)?$'", "1234\n")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
 
     val dummyAgent = tempFolder.newFile("lib_ui_inspector_agent.so").toPath()
@@ -419,7 +418,7 @@ class ComposeInspectorTest {
     fakeSession.deviceServices.configureShellCommand(deviceSelector, baseAgentSetupCmd, "")
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
-      "cmd activity attach-agent $packageName \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;1234\"",
+      "cmd activity attach-agent 1234 \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;1234\"",
       "",
     )
     fakeSession.deviceServices.configureShellCommand(
@@ -429,12 +428,7 @@ class ComposeInspectorTest {
     )
     injectionManager.injectAndAttach()
 
-    // 3. Capture System.out to verify the printed merged tree!
-    val stdoutCapture = ByteArrayOutputStream()
-    val originalStdout = System.out
-    System.setOut(java.io.PrintStream(stdoutCapture))
-
-    try {
+    val uiDump =
       CommandSender.connect("127.0.0.1", serverPort, this).use { commandSender ->
         // Inject Compose Inspector with a mock resolveJar lambda returning a dummy file
         val composeInspectorConnected =
@@ -449,8 +443,7 @@ class ComposeInspectorTest {
           )
         assertThat(composeInspectorConnected).isTrue()
 
-        // Trigger dumpUi which will fetch both trees, merge them, and print them!
-        dumpUi(
+        fetchUiDump(
           commandSender = commandSender,
           includeAttributes = false,
           includeResolutionStack = false,
@@ -459,20 +452,18 @@ class ComposeInspectorTest {
           includeSemantics = false,
         )
       }
-    } finally {
-      System.setOut(originalStdout)
-    }
 
     // 4. Assertions
-    val output = stdoutCapture.toString()
-    // Check that the View tree was printed correctly
-    assertThat(output).contains("[android.widget.FrameLayout]")
-    assertThat(output).contains("[androidx.compose.ui.platform.AndroidComposeView]")
-
-    // Check that the Compose tree was merged and printed under AndroidComposeView with the [compose] tag!
-    assertThat(output).contains(" [androidx.compose.ui.platform.AndroidComposeView]")
-    assertThat(output).contains("  [Column] [compose]")
-    assertThat(output).contains("   [Text] [compose]")
+    val roots = uiDump.roots
+    assertThat(roots).hasSize(1)
+    val viewRoot = roots[0]
+    assertThat(viewRoot.className).isEqualTo("android.widget.FrameLayout")
+    val composeView = viewRoot.children[0]
+    assertThat(composeView.className).isEqualTo("androidx.compose.ui.platform.AndroidComposeView")
+    val column = composeView.children[0]
+    assertThat(column.className).isEqualTo("Column")
+    val text = column.children[0]
+    assertThat(text.className).isEqualTo("Text")
 
     // Cleanup
     testScope.cancel()
@@ -704,7 +695,7 @@ class ComposeInspectorTest {
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pidof $packageName", "1234\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pgrep -f '^${packageName.replace(".", "\\.")}(:.*)?$'", "1234\n")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
 
     val dummyAgent = tempFolder.newFile("lib_ui_inspector_agent.so").toPath()
@@ -738,7 +729,7 @@ class ComposeInspectorTest {
     fakeSession.deviceServices.configureShellCommand(deviceSelector, baseAgentSetupCmd, "")
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
-      "cmd activity attach-agent $packageName \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;1234\"",
+      "cmd activity attach-agent 1234 \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;1234\"",
       "",
     )
     fakeSession.deviceServices.configureShellCommand(
@@ -748,12 +739,7 @@ class ComposeInspectorTest {
     )
     injectionManager.injectAndAttach()
 
-    // 3. Capture System.out to verify the printed merged tree!
-    val stdoutCapture = ByteArrayOutputStream()
-    val originalStdout = System.out
-    System.setOut(java.io.PrintStream(stdoutCapture))
-
-    try {
+    val uiDump =
       CommandSender.connect("127.0.0.1", serverPort, this).use { commandSender ->
         // Inject Compose Inspector with a mock resolveJar lambda returning a dummy file
         val composeInspectorConnected =
@@ -768,33 +754,32 @@ class ComposeInspectorTest {
           )
         assertThat(composeInspectorConnected).isTrue()
 
-        // Trigger dumpUi which will fetch both trees, merge them, and print them!
-        dumpUi(
+        fetchUiDump(
           commandSender = commandSender,
-          includeAttributes = true, // <-- Enable Attributes!
+          includeAttributes = true,
           includeResolutionStack = false,
           composeInspectorConnected = composeInspectorConnected,
           skipSystemComposables = false,
           includeSemantics = false,
         )
       }
-    } finally {
-      System.setOut(originalStdout)
-    }
 
     // 4. Assertions
-    val output = stdoutCapture.toString()
-    // Check that the View tree was printed correctly
-    assertThat(output).contains("[android.widget.FrameLayout]")
-    assertThat(output).contains("[androidx.compose.ui.platform.AndroidComposeView]")
+    val roots = uiDump.roots
+    assertThat(roots).hasSize(1)
+    val viewRoot = roots[0]
+    assertThat(viewRoot.className).isEqualTo("android.widget.FrameLayout")
+    val composeView = viewRoot.children[0]
+    assertThat(composeView.className).isEqualTo("androidx.compose.ui.platform.AndroidComposeView")
+    val column = composeView.children[0]
+    assertThat(column.className).isEqualTo("Column")
+    val textNode = column.children[0] as UiNode.ComposeNode
+    assertThat(textNode.className).isEqualTo("Text")
 
-    // Check that the Compose tree was merged and printed under AndroidComposeView with the [compose] tag!
-    assertThat(output).contains(" [androidx.compose.ui.platform.AndroidComposeView]")
-    assertThat(output).contains("  [Column] [compose]")
-    assertThat(output).contains("   [Text] [compose]")
-
-    // Verify that Composable parameters were parsed and printed successfully!
-    assertThat(output).contains("  param: text=Hello")
+    // Check parameters
+    val p = textNode.parameters[0] as UiNode.ComposeParameter.Single
+    assertThat(p.name).isEqualTo("text")
+    assertThat((p.value as UiNode.ComposeParameter.Value.StringVal).value).isEqualTo("Hello")
 
     // Cleanup
     testScope.cancel()
@@ -1041,7 +1026,7 @@ class ComposeInspectorTest {
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pidof $packageName", "1234\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pgrep -f '^${packageName.replace(".", "\\.")}(:.*)?$'", "1234\n")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
 
     val expectedSetupCmd =
@@ -1068,7 +1053,7 @@ class ComposeInspectorTest {
       )
 
     // Trigger injectAndAttach so we populate the appDataDir internal states
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pidof $packageName", "1234\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pgrep -f '^${packageName.replace(".", "\\.")}(:.*)?$'", "1234\n")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "settings put global debug_view_attributes 1", "")
 
     val baseAgentSetupCmd =
@@ -1083,7 +1068,7 @@ class ComposeInspectorTest {
     fakeSession.deviceServices.configureShellCommand(deviceSelector, baseAgentSetupCmd, "")
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
-      "cmd activity attach-agent $packageName \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;1234\"",
+      "cmd activity attach-agent 1234 \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;1234\"",
       "",
     )
     fakeSession.deviceServices.configureShellCommand(
@@ -1096,48 +1081,55 @@ class ComposeInspectorTest {
     val originalFactory = sessionFactory
     sessionFactory = { testSession }
 
-    // 3. Capture System.out to verify the printed merged tree!
-    val stdoutCapture = ByteArrayOutputStream()
-    val originalStdout = System.out
-    System.setOut(java.io.PrintStream(stdoutCapture))
+    val uiDump =
+      try {
+        CommandSender.connect("127.0.0.1", serverPort, this).use { commandSender ->
+          val composeInspectorConnected =
+            createComposeInspector(
+              commandSender = commandSender,
+              injectionManager = injectionManager,
+              resolveJar = {
+                val fixedJar = tempFolder.newFile("compose-inspector.jar")
+                fixedJar.writeText("fake pre-compiled compose dex classes")
+                fixedJar
+              },
+            )
+          assertThat(composeInspectorConnected).isTrue()
 
-    try {
-      CommandSender.connect("127.0.0.1", serverPort, this).use { commandSender ->
-        val composeInspectorConnected =
-          createComposeInspector(
+          fetchUiDump(
             commandSender = commandSender,
-            injectionManager = injectionManager,
-            resolveJar = {
-              val fixedJar = tempFolder.newFile("compose-inspector.jar")
-              fixedJar.writeText("fake pre-compiled compose dex classes")
-              fixedJar
-            },
+            includeAttributes = true,
+            includeResolutionStack = false,
+            composeInspectorConnected = composeInspectorConnected,
+            skipSystemComposables = false,
+            includeSemantics = true,
           )
-        assertThat(composeInspectorConnected).isTrue()
-
-        dumpUi(
-          commandSender = commandSender,
-          includeAttributes = true,
-          includeResolutionStack = false,
-          composeInspectorConnected = composeInspectorConnected,
-          skipSystemComposables = false,
-          includeSemantics = true,
-        )
+        }
+      } finally {
+        sessionFactory = originalFactory
       }
-    } finally {
-      System.setOut(originalStdout)
-      sessionFactory = originalFactory
-    }
 
     // 4. Assertions
-    val output = stdoutCapture.toString()
-    assertThat(output).contains("[android.widget.FrameLayout]")
-    assertThat(output).contains("[androidx.compose.ui.platform.AndroidComposeView]")
+    val roots = uiDump.roots
+    assertThat(roots).hasSize(1)
+    val viewRoot = roots[0]
+    assertThat(viewRoot.className).isEqualTo("android.widget.FrameLayout")
+    val composeView = viewRoot.children[0]
+    assertThat(composeView.className).isEqualTo("androidx.compose.ui.platform.AndroidComposeView")
+    val column = composeView.children[0]
+    assertThat(column.className).isEqualTo("Column")
+    val textNode = column.children[0] as UiNode.ComposeNode
+    assertThat(textNode.className).isEqualTo("Text")
 
-    // Verify semantics printing are successful!
-    assertThat(output).contains("   [Text] [compose]")
-    assertThat(output).contains("  param: text=Hello")
-    assertThat(output).contains("  semantics: contentDescription=My Button")
+    // Check parameters
+    val p = textNode.parameters[0] as UiNode.ComposeParameter.Single
+    assertThat(p.name).isEqualTo("text")
+    assertThat((p.value as UiNode.ComposeParameter.Value.StringVal).value).isEqualTo("Hello")
+
+    // Check semantics
+    val s = textNode.mergedSemantics[0] as UiNode.ComposeParameter.Single
+    assertThat(s.name).isEqualTo("contentDescription")
+    assertThat((s.value as UiNode.ComposeParameter.Value.StringVal).value).isEqualTo("My Button")
 
     // Cleanup
     testScope.cancel()

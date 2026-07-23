@@ -31,6 +31,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
+import org.mockito.kotlin.any
 
 class TestSuiteImplTest {
 
@@ -40,6 +41,7 @@ class TestSuiteImplTest {
     val agpTestSuite = mock(AgpTestSuiteImpl::class.java)
     val junitEngineSpec = mock(com.android.build.gradle.internal.testsuites.impl.JUnitEngineSpecForVariantBuilder::class.java)
     `when`(testSuiteBuilder.testSuite).thenReturn(agpTestSuite)
+    `when`(agpTestSuite.requiresUpdateTask).thenReturn(false)
     `when`(testSuiteBuilder.junitEngineSpec).thenReturn(junitEngineSpec)
     `when`(agpTestSuite.androidResourcesIncluded).thenReturn(true)
 
@@ -53,6 +55,9 @@ class TestSuiteImplTest {
     `when`(booleanProperty.get()).thenReturn(true)
     `when`(variantServices.propertyOf(Boolean::class.java, false)).thenReturn(booleanProperty)
     `when`(variantServices.propertyOf(Boolean::class.java, true)).thenReturn(booleanProperty)
+    val booleanProvider = mock(org.gradle.api.provider.Provider::class.java) as org.gradle.api.provider.Provider<Boolean>
+    `when`(booleanProvider.get()).thenReturn(false)
+    `when`(variantServices.provider<Boolean>(any())).thenReturn(booleanProvider)
     val services = mock(TaskCreationServices::class.java)
     val artifacts = mock(ArtifactsImpl::class.java)
     val defaultConfig = mock(DefaultConfig::class.java)

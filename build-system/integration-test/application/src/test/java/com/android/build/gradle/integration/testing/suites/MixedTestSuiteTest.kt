@@ -62,6 +62,7 @@ class MixedTestSuiteTest {
           android {
             namespace = "com.example.app"
             testOptions.suites.create("mixed", AgpTestSuite::class.java) {
+              it.requiresUpdateTask = true
               it.useJunitEngine.apply {
                 includeEngines.add("[engine:toy-junit-engine-for-tests]")
                 enginesDependencies.add("com.android.tools.build:gradle-api:${Version.ANDROID_GRADLE_PLUGIN_VERSION}")
@@ -124,5 +125,23 @@ class MixedTestSuiteTest {
     Truth.assertThat(apkDir.exists()).isTrue()
     Truth.assertThat(apkPath).endsWith("mixedTestApkDebug")
     Truth.assertThat(File(apkDir, "app-mixedTestApkDebug.apk").exists()).isTrue()
+  }
+
+  @Test
+  fun testMixedSuiteUpdateExecution() {
+    val project = rule.build
+    val result = project.executor.run(":app:updateMixedT1DebugTestSuite")
+
+    // Verify compilation tasks ran (should be the same as test task)
+    Truth.assertThat(result.didWorkTasks).contains(":app:compileMixedHostJarDebugJavaWithJavac")
+    Truth.assertThat(result.didWorkTasks).contains(":app:compileMixedTestApkDebugJavaWithJavac")
+
+    // Verify packaging task ran
+    Truth.assertThat(result.didWorkTasks).contains(":app:packageMixedTestApkDebug")
+
+    // Verify junit_inputs.txt exists and has the APK
+    val buildDir = project.subProject(":app").buildDir.toFile()
+    val junitInputsFile = buildDir.resolve("intermediates/debug/updateMixedT1DebugTestSuite/junit_inputs.txt")
+    Truth.assertThat(junitInputsFile.exists()).isTrue()
   }
 }

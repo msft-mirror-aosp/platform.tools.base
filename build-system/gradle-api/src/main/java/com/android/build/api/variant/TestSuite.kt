@@ -89,6 +89,13 @@ interface TestSuite : Named {
   @get:Incubating val codeCoverage: Property<Boolean>
 
   /**
+   * Whether this test suite requires an extra update task.
+   *
+   * Initialized from the corresponding [com.android.build.api.dsl.AgpTestSuite.requiresUpdateTask]
+   */
+  @get:Incubating val requiresUpdateTask: Provider<Boolean>
+
+  /**
    * The instrumentationRunner to use to run the tests.
    *
    * @return the instrumentation test runner name

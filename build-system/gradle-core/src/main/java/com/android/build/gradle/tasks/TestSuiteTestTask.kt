@@ -59,6 +59,7 @@ import com.android.builder.core.ComponentType
 import com.android.builder.testing.api.DeviceConfigProvider
 import com.android.builder.testing.api.DeviceConfigProviderImpl
 import com.android.builder.testing.api.DeviceException
+import com.android.utils.FileUtils
 import java.io.File
 import java.util.Locale
 import java.util.Properties
@@ -437,11 +438,12 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
   class CreationAction(
     val creationConfig: TestSuiteCreationConfig,
     val testSuiteTarget: TestSuiteTargetCreationConfig,
+    val taskName: String,
     private val deviceSerials: Provider<List<String>>? = null,
   ) : GlobalTaskCreationAction<LegacyReportingTestSuiteTestTask>() {
 
     override val name: String
-      get() = testSuiteTarget.testTaskName
+      get() = taskName
 
     override val type: Class<LegacyReportingTestSuiteTestTask> = LegacyReportingTestSuiteTestTask::class.java
 
@@ -688,10 +690,35 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
                     .artifacts
                     .artifactFiles
 
-                // We map the FileCollection to a provider of the single valid directory to avoid passing multiple paths
-                layoutlibDataDir.set(
-                  task.project.layout.dir(extractedLayoutlib.elements.map { elements -> elements.firstOrNull()?.asFile })
-                )
+                val layoutlibResources =
+                  sc.suiteSourceClasspath.hostRuntimeClasspath.incoming
+                    .artifactView { config ->
+                      config.componentFilter { id ->
+                        id is org.gradle.api.artifacts.component.ModuleComponentIdentifier &&
+                          id.group == "com.android.tools.layoutlib" &&
+                          id.module == "layoutlib-resources"
+                      }
+                    }
+                    .artifacts
+                    .artifactFiles
+
+                val layoutlibDirProvider =
+                  task.project.layout.dir(
+                    extractedLayoutlib.elements.zip(layoutlibResources.elements) { extElements, resElements ->
+                      val extDir = extElements.firstOrNull()?.asFile ?: return@zip null
+                      val resJar = resElements.firstOrNull()?.asFile
+                      if (resJar != null && resJar.exists()) {
+                        val targetResFile = extDir.resolve("data").resolve("framework_res.jar")
+                        if (!targetResFile.exists()) {
+                          targetResFile.parentFile.mkdirs()
+                          FileUtils.copyFile(resJar, targetResFile)
+                        }
+                      }
+                      extDir
+                    }
+                  )
+
+                layoutlibDataDir.set(layoutlibDirProvider)
               }
             }
             task.engineInputParameters.add(

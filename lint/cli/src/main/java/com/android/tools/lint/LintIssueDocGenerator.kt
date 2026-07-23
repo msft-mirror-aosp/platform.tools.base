@@ -4701,7 +4701,10 @@ class LintIssueDocGenerator(
         "<!-- Markdeep: -->" +
           "<style class=\"fallback\">body{visibility:hidden;white-space:pre;font-family:monospace}</style>" +
           "<script src=\"markdeep.min.js\" charset=\"utf-8\"></script>" +
-          "<script src=\"https://morgan3d.github.io/markdeep/latest/markdeep.min.js\" charset=\"utf-8\"></script>" +
+          // Markdeep 1.18 inserts ⟨L:n⟩ source line markers which leak into
+          // auto-linked bare URLs (https://issuetracker.google.com/issues/526710349),
+          // so pin to 1.17 rather than tracking the latest version.
+          "<script src=\"https://morgan3d.github.io/markdeep/1.17/markdeep.min.js\" charset=\"utf-8\"></script>" +
           "<script>window.alreadyProcessedMarkdeep||(document.body.style.visibility=\"visible\")</script>",
     ),
     MARKDOWN(".md"),

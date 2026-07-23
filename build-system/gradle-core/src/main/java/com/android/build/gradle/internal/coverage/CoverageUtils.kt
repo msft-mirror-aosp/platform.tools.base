@@ -19,6 +19,7 @@ package com.android.build.gradle.internal.coverage
 import com.android.build.gradle.internal.coverage.report.ReportType
 import com.android.build.gradle.internal.coverage.report.createHtmlReportVisitor
 import com.android.build.gradle.internal.coverage.report.createXmlReportVisitor
+import com.android.tools.coverage.reporter.CoverageXmlGenerator
 import com.google.common.io.Closeables
 import java.io.File
 import java.io.FileInputStream
@@ -34,6 +35,46 @@ import org.jacoco.report.FileMultiReportOutput
 import org.jacoco.report.IReportVisitor
 import org.jacoco.report.MultiReportVisitor
 import org.jacoco.report.MultiSourceFileLocator
+
+/** Generates an on-the-fly coverage XML report. */
+@Throws(IOException::class)
+internal fun generateOnTheFlyXml(
+  metadataFile: File?,
+  hitsFile: File?,
+  outputFile: File,
+  reportName: String,
+  testPackageId: String?,
+  exclusions: Set<String>,
+) {
+  if (metadataFile == null || hitsFile == null) {
+    throw IOException("On-the-fly coverage is enabled but required .pb files were not found.")
+  }
+  CoverageXmlGenerator()
+    .generate(
+      metadataFile = metadataFile,
+      hitsFile = hitsFile,
+      outputFile = outputFile,
+      reportName = reportName,
+      testPackageId = testPackageId,
+      exclusions = exclusions,
+    )
+}
+
+/** Computes automated exclusions by scanning test class files. */
+internal fun computeAutomatedExclusions(testClassFiles: Set<File>): Set<String> {
+  val automatedExclusions = mutableSetOf<String>()
+  testClassFiles.forEach { file ->
+    if (file.isDirectory) {
+      file
+        .walkTopDown()
+        .filter { it.isFile && it.extension == "class" }
+        .forEach { classFile ->
+          automatedExclusions.add(classFile.relativeTo(file).path.removeSuffix(".class").replace(File.separatorChar, '/'))
+        }
+    }
+  }
+  return automatedExclusions
+}
 
 @Throws(IOException::class)
 @JvmOverloads

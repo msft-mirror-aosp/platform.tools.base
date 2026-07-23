@@ -451,8 +451,6 @@ abstract class AndroidLintAnalysisTask : NonIncrementalTask() {
   }
 
   companion object {
-    private const val LINT_PRINT_STACKTRACE_ENVIRONMENT_VARIABLE = "LINT_PRINT_STACKTRACE"
-    private const val ANDROID_LINT_JARS_ENVIRONMENT_VARIABLE = "ANDROID_LINT_JARS"
     const val PARTIAL_RESULTS_DIR_NAME = "out"
 
     fun registerOutputArtifacts(

@@ -42,6 +42,7 @@ import com.android.tools.lint.detector.api.UastLintUtils.Companion.getAnnotation
 import com.android.tools.lint.detector.api.UastLintUtils.Companion.isMinusOne
 import com.intellij.psi.PsiArrayType
 import com.intellij.psi.PsiClass
+import com.intellij.psi.PsiClassOwner
 import com.intellij.psi.PsiCompiledElement
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiField
@@ -52,6 +53,7 @@ import com.intellij.psi.PsiModifierListOwner
 import com.intellij.psi.PsiTypes
 import com.intellij.psi.PsiVariable
 import com.intellij.psi.impl.PsiJavaParserFacadeImpl
+import com.intellij.psi.util.parentsOfType
 import com.intellij.util.containers.sequenceOfNotNull
 import org.jetbrains.kotlin.analysis.api.KaSession
 import org.jetbrains.kotlin.analysis.api.analyze
@@ -60,7 +62,9 @@ import org.jetbrains.kotlin.analysis.api.resolution.symbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaClassKind
 import org.jetbrains.kotlin.analysis.api.symbols.KaFunctionSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaNamedClassSymbol
-import org.jetbrains.kotlin.analysis.utils.classId
+import org.jetbrains.kotlin.asJava.classes.KtLightClass
+import org.jetbrains.kotlin.name.ClassId
+import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.uast.UAnnotation
 import org.jetbrains.uast.UBinaryExpression
@@ -685,9 +689,23 @@ class TypedefDetector : AbstractAnnotationDetector(), SourceCodeScanner {
    */
   private fun PsiElement?.asSeqWithDuplicatedConstants(useSiteElement: PsiElement?): Sequence<PsiElement> {
 
+    // TODO(b/535598134): this is a copy of org.jetbrains.kotlin.idea.base.psi.classIdIfNonLocal which can be removed
+    //  once both Lint IDE and Lint CLI are running on IntelliJ 2026.2+.
+    fun PsiClass.classIdIfNonLocal(): ClassId? {
+      if (this is KtLightClass) {
+        return this.kotlinOrigin?.getClassId()
+      }
+      val packageName = (containingFile as? PsiClassOwner)?.packageName ?: return null
+      val packageFqName = FqName(packageName)
+
+      val classesNames = parentsOfType<PsiClass>().map { it.name }.toList().asReversed()
+      if (classesNames.any { it == null }) return null
+      return ClassId(packageFqName, FqName(classesNames.joinToString(separator = ".")), false)
+    }
+
     fun PsiClass.isCompanion(useSiteElement: PsiElement): Boolean {
       return analyzeFromPsi(useSiteElement) {
-        val classId = classId ?: return false
+        val classId = classIdIfNonLocal() ?: return false
         val namedClass = findClass(classId) as? KaNamedClassSymbol ?: return false
         namedClass.classKind == KaClassKind.COMPANION_OBJECT
       }

@@ -43,10 +43,38 @@ number and app package, dumps the UI tree including views and
 composables.
 
 ```bash
-ui-inspector dump-ui --serial 123 --package com.my.app
+ui-inspector dump-ui --device 123 --package com.my.app
 ```
 
-> TODO: add json output example
+Both options are optional: `--device` defaults to the only online
+device and `--package` defaults to the app currently in the foreground.
+
+Example JSON output:
+
+```json
+{
+  "roots": [
+    {
+      "type": "ViewNode",
+      "id": 1,
+      "className": "android.widget.FrameLayout",
+      "bounds": { "x": 0, "y": 0, "width": 1080, "height": 2400 },
+      "children": [
+        {
+          "type": "ComposeNode",
+          "id": 2,
+          "className": "androidx.compose.material3.Text",
+          "bounds": { "x": 48, "y": 96, "width": 200, "height": 48 },
+          "sourceLocation": { "filename": "MainActivity.kt", "lineNumber": 18 },
+          "parameters": [
+            { "name": "text", "value": "Hello World" }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
 
 Developing an MVP first will enable us to establish the tool's core
 architecture and identify any unexpected challenges. Should this initial
@@ -247,24 +275,32 @@ subsequent `attach-agent` calls gracefully (duplicate server threads exit cleanl
 
 ## Retrieving view attributes and composables parameters
 
-Attributes and parameters are fetched inline during the single-shot dump commands
-by passing command-line flags:
+The dump is lean by default. Additional data is selected with `--include`,
+taking one or more comma-separated facets (the option is also repeatable):
 
-* `--include-attributes`: Includes view attributes and parameters in the dump.
-* `--include-resolution-stack`: Exposes attribute style/theme resolution traces.
-* `--include-semantics`: Includes Compose accessibility and semantics properties.
+* `attributes`: view attributes and composable parameters.
+* `resolution-stack`: attribute style/theme resolution traces (implies `attributes`).
+* `semantics`: Compose accessibility and semantics properties.
+* `system-composables`: system/framework Composable nodes.
+* `all`: everything above.
 
 *Note: The separate `get-params` command proposed in early designs is not implemented.*
 
 ## Periodic Sampling of UI Changes
 
-In addition to `dump-ui`, the CLI supports a `track-changes` command. This command
-samples the UI tree structure periodically over a specified duration and interval,
-printing a diff representation of structural and attribute changes:
+`dump-ui --record` samples the UI tree at a fixed interval for a bounded
+duration — for example to inspect an animation — and then reports a
+single JSON document: the initial tree plus one frame per subsequent
+sample, carrying that sample's structural, attribute, and
+configuration diffs:
 
 ```bash
-ui-inspector track-changes --serial 123 --package com.my.app --interval 100 --duration 5
+ui-inspector dump-ui --record --interval 100ms --duration 5s
 ```
+
+Durations take explicit units (`100ms`, `5s`, `1m`). `--duration` is
+required: a recording is always bounded, reported when the
+window ends.
 
 ## Retrieving recomposition counts and state reads
 

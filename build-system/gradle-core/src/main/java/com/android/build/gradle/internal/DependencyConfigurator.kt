@@ -70,6 +70,7 @@ import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactTyp
 import com.android.build.gradle.internal.services.ProjectServices
 import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.tasks.factory.BootClasspathConfig
+import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.utils.ATTR_ENABLE_CORE_LIBRARY_DESUGARING
 import com.android.build.gradle.internal.utils.ATTR_LINT_MIN_SDK
 import com.android.build.gradle.internal.utils.D8BackportedMethodsGenerator
@@ -163,19 +164,8 @@ class DependencyConfigurator(private val project: Project, private val projectSe
     registerTransform(
       LayoutlibExtractor::class.java,
       ArtifactTypeDefinition.JAR_TYPE,
-      AndroidArtifacts.ArtifactType.EXTRACTED_LAYOUTLIB.type,
+      AndroidArtifacts.ArtifactType.EXTRACTED_LAYOUTLIB.type
     )
-    // LayoutlibExtractor requires layoutlib-resources JAR in the dependency graph of layoutlib-runtime
-    // so it can copy the resources to data/framework_res.jar inside the extracted runtime directory.
-    // Since prebuilt POMs for layoutlib-runtime do not declare this dependency, we dynamically add it here.
-    // TODO (b/534359480) Remove this once layoutlib-resources is added as dependency in layoutlib-runtime POM
-    project.dependencies.components.withModule("com.android.tools.layoutlib:layoutlib-runtime") { details ->
-      details.allVariants { variant ->
-        if (details.id.version == "16.1.0-jdk17") {
-          variant.withDependencies { deps -> deps.add("com.android.tools.layoutlib:layoutlib-resources:${details.id.version}") }
-        }
-      }
-    }
     dependencies.registerTransform(MockableJarTransform::class.java) { spec: TransformSpec<MockableJarTransform.Parameters> ->
       // Query for JAR instead of PROCESSED_JAR as android.jar doesn't need processing
       spec.parameters.projectName.set(project.name)
@@ -278,10 +268,7 @@ class DependencyConfigurator(private val project: Project, private val projectSe
     // same exact file but with different types, since a jar file can contain both.
     registerTransform(IdentityTransform::class.java, aarOrJarTypeToConsume.jar, AndroidArtifacts.ArtifactType.CLASSES_JAR)
     registerTransform(ExtractJniTransform::class.java, aarOrJarTypeToConsume.jar, AndroidArtifacts.ArtifactType.JNI)
-    if (javaResOptimizations) {
-      registerTransform(JavaResCompressionTransform::class.java, aarOrJarTypeToConsume.jar, AndroidArtifacts.ArtifactType.JAVA_RES)
-      registerTransform(JavaResCompressionFromExplodedAarTransform::class.java, ArtifactType.EXPLODED_AAR, ArtifactType.JAVA_RES)
-    } else {
+    if (!javaResOptimizations) {
       registerTransform(IdentityTransform::class.java, aarOrJarTypeToConsume.jar, AndroidArtifacts.ArtifactType.JAVA_RES)
     }
     // The Kotlin Kapt plugin should query for PROCESSED_JAR, but it is currently querying for
@@ -497,7 +484,7 @@ class DependencyConfigurator(private val project: Project, private val projectSe
   fun configureVariantTransforms(
     variants: List<VariantCreationConfig>,
     nestedComponents: List<ComponentCreationConfig>,
-    bootClasspathConfig: BootClasspathConfig,
+    globalConfig: GlobalTaskCreationConfig,
   ): DependencyConfigurator {
 
     val allComponents: List<ComponentCreationConfig> = variants.plus(nestedComponents)
@@ -509,9 +496,32 @@ class DependencyConfigurator(private val project: Project, private val projectSe
       registerAsmTransformForComponent(project.name, dependencies, component)
 
       registerRecalculateStackFramesTransformForComponent(project.name, dependencies, component)
+
+      if (projectOptions[BooleanOption.ENABLE_JAVA_RESOURCE_OPTIMIZATIONS]) {
+        val excludes = if (component is ConsumableCreationConfig) component.packaging.resources.excludes else null
+        val pickFirst = if (component is ConsumableCreationConfig) component.packaging.resources.pickFirsts else null
+        val merges = if (component is ConsumableCreationConfig) component.packaging.resources.merges else null
+        val params: (JavaResCompressionTransform.Parameters) -> Unit = { params: JavaResCompressionTransform.Parameters ->
+          excludes?.let { params.excludes.setDisallowChanges(it) }
+          pickFirst?.let { params.pickFirsts.setDisallowChanges(it) }
+          merges?.let { params.merges.setDisallowChanges(it) }
+        }
+        registerTransform(
+          JavaResCompressionTransform::class.java,
+          globalConfig.aarOrJarTypeToConsume.jar,
+          AndroidArtifacts.ArtifactType.JAVA_RES,
+          params,
+        )
+        registerTransform(
+          JavaResCompressionFromExplodedAarTransform::class.java,
+          ArtifactType.EXPLODED_AAR,
+          AndroidArtifacts.ArtifactType.JAVA_RES,
+          params,
+        )
+      }
     }
     if (allComponents.isNotEmpty()) {
-      val bootClasspath = project.files(bootClasspathConfig.bootClasspath)
+      val bootClasspath = project.files(globalConfig.bootClasspath)
       val services = allComponents.first().services
       DexingRegistration.registerTransforms(
         allComponents,

@@ -118,6 +118,9 @@ interface AgpTestSuite : TestSuite {
   /** Targets for this test suite, must be manually created in order to provide the variants this test suite applies to. */
   @Incubating override fun getTargets(): NamedDomainObjectContainer<AgpTestSuiteTarget>
 
+  /** Whether this test suite requires an extra update task. */
+  @get:Incubating @set:Incubating var requiresUpdateTask: Boolean
+
   /**
    * Configure the test tasks for this test target.
    *

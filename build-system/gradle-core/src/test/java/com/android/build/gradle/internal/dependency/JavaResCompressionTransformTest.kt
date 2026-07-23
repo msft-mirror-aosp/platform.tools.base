@@ -16,8 +16,10 @@
 
 package com.android.build.gradle.internal.dependency
 
+import com.android.build.gradle.internal.fixtures.FakeGradleProperty
 import com.android.build.gradle.internal.fixtures.FakeGradleProvider
 import com.android.build.gradle.internal.fixtures.FakeGradleRegularFile
+import com.android.build.gradle.internal.fixtures.FakeObjectFactory
 import com.android.testutils.TestInputsGenerator
 import com.android.testutils.assertThrows
 import com.google.common.truth.Truth.assertThat
@@ -28,7 +30,9 @@ import java.util.zip.ZipOutputStream
 import org.gradle.api.Project
 import org.gradle.api.artifacts.transform.TransformOutputs
 import org.gradle.api.file.FileSystemLocation
+import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
+import org.gradle.api.provider.SetProperty
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.Before
 import org.junit.Rule
@@ -150,7 +154,14 @@ class JavaResCompressionTransformTest {
 
   private fun getTestableCompressJavaResTransform(input: File): JavaResCompressionTransform {
     return object : JavaResCompressionTransform() {
-      override fun getParameters(): GenericTransformParameters = error("Parameters not used")
+      override fun getParameters(): JavaResCompressionTransform.Parameters {
+        return object : Parameters {
+          override val projectName: Property<String> = FakeGradleProperty("")
+          override val excludes: SetProperty<String> = FakeObjectFactory.factory.setProperty(String::class.java).value(emptySet())
+          override val pickFirsts: SetProperty<String> = FakeObjectFactory.factory.setProperty(String::class.java).value(emptySet())
+          override val merges: SetProperty<String> = FakeObjectFactory.factory.setProperty(String::class.java).value(emptySet())
+        }
+      }
 
       override fun transform(outputs: TransformOutputs) {
         super.transform(outputs)
@@ -163,7 +174,14 @@ class JavaResCompressionTransformTest {
 
   private fun getTestableCompressJavaResForExploadedAarTransform(aarDir: File): JavaResCompressionFromExplodedAarTransform {
     return object : JavaResCompressionFromExplodedAarTransform() {
-      override fun getParameters(): GenericTransformParameters = error("Parameters not used")
+      override fun getParameters(): JavaResCompressionTransform.Parameters {
+        return object : JavaResCompressionTransform.Parameters {
+          override val projectName: Property<String> = FakeGradleProperty("")
+          override val excludes: SetProperty<String> = FakeObjectFactory.factory.setProperty(String::class.java).value(emptySet())
+          override val pickFirsts: SetProperty<String> = FakeObjectFactory.factory.setProperty(String::class.java).value(setOf("**/entry2"))
+          override val merges: SetProperty<String> = FakeObjectFactory.factory.setProperty(String::class.java).value(emptySet())
+        }
+      }
 
       override val inputArtifact: Provider<FileSystemLocation>
         get() = FakeGradleProvider(FakeGradleRegularFile(aarDir))

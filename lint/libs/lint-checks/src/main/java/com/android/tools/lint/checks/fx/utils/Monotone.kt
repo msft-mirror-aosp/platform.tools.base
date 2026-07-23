@@ -80,14 +80,14 @@ private fun <K : Any, V> DependentMonotone<K, V>.step(domain: Collection<K>, boo
   val cacheUpdates = mutableSetOf<K>()
   val cacheUpdateTriggers = hashMapOf<K, MutableSet<K>>()
 
-  class Step(private val root: K) : (K) -> V {
+  class Step(private val caller: K?) : (K) -> V {
     override fun invoke(point: K): V =
       when (val deps = cacheDependents[point]) {
         null -> {
-          cacheDependents[point] = mutableSetOf()
+          cacheDependents[point] = if (caller != null) mutableSetOf(caller) else mutableSetOf()
           val lattice = latticeAt(point)
           val knownAnswer = if (point in bootstrap) bootstrap[point] as V else lattice.bottom
-          when (val iteratedAnswer = lattice.joinOf(knownAnswer, invoke(this, point))) {
+          when (val iteratedAnswer = lattice.joinOf(knownAnswer, invoke(Step(point), point))) {
             knownAnswer -> knownAnswer
             else ->
               iteratedAnswer.also {
@@ -97,14 +97,16 @@ private fun <K : Any, V> DependentMonotone<K, V>.step(domain: Collection<K>, boo
           }
         }
         else -> {
-          deps.add(root)
-          if (point !in cacheUpdates) cacheUpdateTriggers.getOrPut(point, ::mutableSetOf).add(root)
+          if (caller != null) {
+            deps.add(caller)
+            if (point !in cacheUpdates) cacheUpdateTriggers.getOrPut(point, ::mutableSetOf).add(caller)
+          }
           if (point in learned) learned[point] as V else latticeAt(point).bottom
         }
       }
   }
 
-  for (d in domain) Step(d)(d)
+  for (d in domain) Step(null)(d)
 
   val invalidated = buildSet {
     fun visit(k: K) {

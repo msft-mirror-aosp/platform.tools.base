@@ -81,8 +81,12 @@ class FakeAdbDeviceProvisionerPlugin(
    * To get the device in the [Connected] state, it needs to be made known to the plugin using [addDevice], and activated using its
    * [ActivationAction], which adds it to FakeAdb.
    */
-  fun newDevice(serialNumber: String = nextSerial(), properties: DeviceProperties = DEFAULT_PROPERTIES): FakeDeviceHandle {
-    return FakeDeviceHandle(scope.createChildScope(true), Disconnected(properties), serialNumber)
+  fun newDevice(
+    serialNumber: String = nextSerial(),
+    properties: DeviceProperties = DEFAULT_PROPERTIES,
+    id: DeviceId? = null,
+  ): FakeDeviceHandle {
+    return FakeDeviceHandle(scope.createChildScope(true), Disconnected(properties), serialNumber, id)
   }
 
   /** Creates a FakeDeviceHandle in the Disconnected state that is already known to the plugin. */
@@ -125,9 +129,10 @@ class FakeAdbDeviceProvisionerPlugin(
       }
   }
 
-  inner class FakeDeviceHandle(override val scope: CoroutineScope, initialState: DeviceState, val serialNumber: String) : DeviceHandle {
+  inner class FakeDeviceHandle(override val scope: CoroutineScope, initialState: DeviceState, val serialNumber: String, id: DeviceId?) :
+    DeviceHandle {
 
-    override val id = DeviceId(PLUGIN_ID, false, "serial=$serialNumber")
+    override val id = id ?: DeviceId(PLUGIN_ID, false, "serial=$serialNumber")
 
     var fakeAdbDevice: com.android.fakeadbserver.DeviceState? = null
       get() =

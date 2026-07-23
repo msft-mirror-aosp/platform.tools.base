@@ -16,44 +16,38 @@
 
 package com.android.tools.ui.inspector
 
-import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol
-import com.google.protobuf.Descriptors
+import java.lang.reflect.Modifier
 
 /** Holds the set of modifications between two device configurations. */
-internal data class ConfigurationDiff(
-  val oldConfig: ViewInspectorProtocol.Configuration,
-  val newConfig: ViewInspectorProtocol.Configuration,
-  val oldStrings: Map<Int, String>,
-  val newStrings: Map<Int, String>,
-) {
+internal data class ConfigurationDiff(val oldConfig: DeviceConfiguration, val newConfig: DeviceConfiguration) {
   val hasChanges: Boolean
     get() = oldConfig != newConfig
 
   /** Represents a difference in a single configuration field. */
-  class FieldDifference(val field: Descriptors.FieldDescriptor, val oldValue: Any, val newValue: Any)
+  data class FieldDifference(val name: String, val oldValue: Any?, val newValue: Any?)
 
   val differences: List<FieldDifference> by lazy {
-    val diffs = mutableListOf<FieldDifference>()
-    val descriptor = ViewInspectorProtocol.Configuration.getDescriptor()
-    for (fieldDescriptor in descriptor.fields) {
-      val oldVal = oldConfig.getField(fieldDescriptor)
-      val newVal = newConfig.getField(fieldDescriptor)
-      if (oldVal != newVal) {
-        diffs.add(FieldDifference(fieldDescriptor, oldVal, newVal))
+    DeviceConfiguration::class
+      .java
+      .declaredFields
+      .filter { field -> !field.isSynthetic && !Modifier.isStatic(field.modifiers) }
+      .sortedBy { it.name }
+      .mapNotNull { field ->
+        field.isAccessible = true
+        val oldVal = field.get(oldConfig)
+        val newVal = field.get(newConfig)
+        if (oldVal != newVal) {
+          FieldDifference(field.name, oldVal, newVal)
+        } else {
+          null
+        }
       }
-    }
-    diffs
   }
 }
 
 /** Compares two configurations and returns a [ConfigurationDiff] representing the changes, or null if equal or one is missing. */
-internal fun createConfigurationDiff(
-  oldConfig: ViewInspectorProtocol.Configuration?,
-  newConfig: ViewInspectorProtocol.Configuration?,
-  oldStrings: Map<Int, String>,
-  newStrings: Map<Int, String>,
-): ConfigurationDiff? {
+internal fun createConfigurationDiff(oldConfig: DeviceConfiguration?, newConfig: DeviceConfiguration?): ConfigurationDiff? {
   if (oldConfig == null || newConfig == null) return null
   if (oldConfig == newConfig) return null
-  return ConfigurationDiff(oldConfig, newConfig, oldStrings, newStrings)
+  return ConfigurationDiff(oldConfig, newConfig)
 }

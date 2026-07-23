@@ -19,7 +19,6 @@ package com.android.ide.common.rendering.api;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
-import java.awt.image.WritableRaster;
 import java.util.function.Consumer;
 
 /**
@@ -46,11 +45,6 @@ public interface RecyclableImage extends AutoCloseable {
                 @Override
                 public int getHeight() {
                     return 0;
-                }
-
-                @Override
-                public BufferedImage getImage() {
-                    return null;
                 }
 
                 @Override
@@ -88,63 +82,21 @@ public interface RecyclableImage extends AutoCloseable {
     /** Returns the logical height of the rendered layout. */
     int getHeight();
 
-    /**
-     * Returns the {@link BufferedImage} containing the rendered pixels.
-     *
-     * @deprecated Use functional drawing/copying methods instead. Kept for layoutlib transition.
-     */
-    @Deprecated
-    BufferedImage getImage();
-
     /** Returns true if the image is valid and has not been closed or recycled. */
-    default boolean isValid() {
-        return getImage() != null;
-    }
+    boolean isValid();
 
     /** Draws the current image to the given {@link Graphics} context. */
-    default void drawImageTo(
-            Graphics g, int dx1, int dy1, int dx2, int dy2, int sx1, int sy1, int sx2, int sy2) {
-        BufferedImage img = getImage();
-        if (img == null) {
-            throw new IllegalArgumentException("This image has already been closed");
-        }
-        g.drawImage(img, dx1, dy1, dx2, dy2, sx1, sy1, sx2, sy2, null);
-    }
+    void drawImageTo(
+            Graphics g, int dx1, int dy1, int dx2, int dy2, int sx1, int sy1, int sx2, int sy2);
 
     /**
      * Allows painting into the image. The passed {@link Graphics2D} context will be disposed right
      * after this call finishes, so do not keep a reference to it.
      */
-    default void paint(Consumer<Graphics2D> command) {
-        BufferedImage img = getImage();
-        if (img == null) {
-            throw new IllegalArgumentException("This image has already been closed");
-        }
-        Graphics2D g = img.createGraphics();
-        try {
-            command.accept(g);
-        } finally {
-            g.dispose();
-        }
-    }
+    void paint(Consumer<Graphics2D> command);
 
     /** Returns a {@link BufferedImage} with a copy of a sub-image of the rendered frame. */
-    default BufferedImage getCopy(int x, int y, int w, int h) {
-        BufferedImage img = getImage();
-        if (img == null) {
-            throw new IllegalArgumentException("This image has already been closed");
-        }
-        BufferedImage toCopy;
-        if (x == 0 && y == 0 && w == getWidth() && h == getHeight()) {
-            toCopy = img;
-        } else {
-            toCopy = img.getSubimage(x, y, w, h);
-        }
-        WritableRaster raster =
-                toCopy.copyData(toCopy.getRaster().createCompatibleWritableRaster());
-        return new BufferedImage(
-                toCopy.getColorModel(), raster, toCopy.isAlphaPremultiplied(), null);
-    }
+    BufferedImage getCopy(int x, int y, int w, int h);
 
     /** Draws the current image to the given {@link Graphics} context. */
     default void drawImageTo(Graphics g, int x, int y, int w, int h) {
@@ -173,13 +125,6 @@ public interface RecyclableImage extends AutoCloseable {
     static RecyclableImage copyOf(RecyclableImage image) {
         BufferedImage copy = image.getCopy();
         return create(copy);
-    }
-
-    static BufferedImage copy(BufferedImage originalImage) {
-        WritableRaster raster =
-                originalImage.copyData(originalImage.getRaster().createCompatibleWritableRaster());
-        return new BufferedImage(
-                originalImage.getColorModel(), raster, originalImage.isAlphaPremultiplied(), null);
     }
 
     /** Closes the image and returns the backing physical buffer to Layoutlib. */

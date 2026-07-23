@@ -405,6 +405,11 @@ bool Instrumenter::ShouldInstrument(jobject loader, const char* name,
 
   std::string_view class_name(name);
 
+  // Skip synthetic compiler-generated and nested classes.
+  if (IsSyntheticOrCompilerGenerated(class_name)) {
+    return false;
+  }
+
   // Explicitly skip our own runtime tracker to avoid infinite recursion.
   if (class_name == "com/android/tools/coverage/CoverageTracker") {
     return false;
@@ -526,6 +531,30 @@ void Instrumenter::RetransformLoadedClasses(JNIEnv* jni) {
   }
 
   jvmti_->Deallocate(reinterpret_cast<unsigned char*>(classes));
+}
+
+bool Instrumenter::IsSyntheticOrCompilerGenerated(std::string_view class_name) {
+  size_t dollar_pos = class_name.find('$');
+  if (dollar_pos == std::string_view::npos) {
+    return false;
+  }
+
+  // Check if there is a digit immediately following any '$'
+  for (size_t i = dollar_pos; i < class_name.size(); ++i) {
+    if (class_name[i] == '$' && i + 1 < class_name.size() &&
+        std::isdigit(class_name[i + 1])) {
+      return true;
+    }
+  }
+
+  // Check for common Kotlin compiler synthetic patterns
+  if (class_name.find("$lambda-") != std::string_view::npos ||
+      class_name.find("$sam$") != std::string_view::npos ||
+      class_name.find("$inlined$") != std::string_view::npos) {
+    return true;
+  }
+
+  return false;
 }
 
 }  // namespace coverage

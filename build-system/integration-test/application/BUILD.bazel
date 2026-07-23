@@ -1093,9 +1093,8 @@ single_gradle_integration_test_per_source(
 )
 
 # Test for KotlinMultiplatformAndroidPluginTest specifically
-single_gradle_integration_test_per_source(
+gradle_integration_test(
     name = "kmp-android-plugin-tests",
-    package_name = "tools/base/build-system/integration-test/application",
     timeout = "long",
     srcs = [
         "src/test/java/com/android/build/gradle/integration/multiplatform/v2/KotlinMultiplatformAndroidPluginTest.kt",
@@ -1117,6 +1116,7 @@ single_gradle_integration_test_per_source(
         "//tools/base/build-system/integration-test/application:prebuilts",
     ],
     resources = glob(["src/test/resources/**"]),
+    shard_count = 7,
     deps = TEST_DEPS + [
         ":kmp_fixture",
     ],

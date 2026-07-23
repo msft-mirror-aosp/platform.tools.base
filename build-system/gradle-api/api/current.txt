@@ -367,14 +367,17 @@ package com.android.build.api.dsl {
     method @org.gradle.api.Incubating public void assets(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TestSuiteAssetsSpec,kotlin.Unit> action);
     method @org.gradle.api.Incubating public void configureTestTasks(kotlin.jvm.functions.Function2<? super org.gradle.api.tasks.testing.Test,? super com.android.build.api.dsl.TestTaskContext,kotlin.Unit> action);
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public boolean getCodeCoverage();
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public boolean getRequiresUpdateTask();
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public java.util.List<java.lang.String> getTargetVariants();
     method @org.gradle.api.Incubating public org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.AgpTestSuiteTarget> getTargets();
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public com.android.build.api.dsl.JUnitEngineSpec getUseJunitEngine();
     method @org.gradle.api.Incubating public void hostJar(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TestSuiteHostJarSpec,kotlin.Unit> action);
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public void setCodeCoverage(boolean);
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public void setRequiresUpdateTask(boolean);
     method @org.gradle.api.Incubating public void testApk(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TestSuiteTestApkSpec,kotlin.Unit> action);
     method @org.gradle.api.Incubating public void useJunitEngine(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.JUnitEngineSpec,kotlin.Unit> action);
     property @org.gradle.api.Incubating public abstract boolean codeCoverage;
+    property @org.gradle.api.Incubating public abstract boolean requiresUpdateTask;
     property @org.gradle.api.Incubating public abstract java.util.List<java.lang.String> targetVariants;
     property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.JUnitEngineSpec useJunitEngine;
   }
@@ -2511,6 +2514,8 @@ package com.android.build.api.dsl {
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public String getTargetName();
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public java.util.Collection<java.lang.String> getTargetedDevices();
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public String getTargetedVariant();
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public boolean isUpdateTask();
+    property @org.gradle.api.Incubating public abstract boolean isUpdateTask;
     property @org.gradle.api.Incubating public abstract String suiteName;
     property @org.gradle.api.Incubating public abstract String targetName;
     property @org.gradle.api.Incubating public abstract java.util.Collection<java.lang.String> targetedDevices;
@@ -3544,7 +3549,21 @@ package com.android.build.api.variant {
     method public void registerPreInstallation(java.lang.Object... objects);
   }
 
+  @org.gradle.api.Incubating public interface LintBuilder {
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public com.android.build.api.variant.LintReportsBuilder getReports();
+    property @org.gradle.api.Incubating public abstract com.android.build.api.variant.LintReportsBuilder reports;
+  }
+
   public interface LintLifecycleExtension extends com.android.build.api.variant.DslLifecycle<com.android.build.api.dsl.Lint> {
+  }
+
+  @org.gradle.api.Incubating public interface LintReportsBuilder {
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public boolean getEnableReportWithDependencies();
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public boolean getEnableReportWithoutDependencies();
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public void setEnableReportWithDependencies(boolean);
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public void setEnableReportWithoutDependencies(boolean);
+    property @org.gradle.api.Incubating public abstract boolean enableReportWithDependencies;
+    property @org.gradle.api.Incubating public abstract boolean enableReportWithoutDependencies;
   }
 
   public interface ManifestFiles extends org.gradle.api.Named {
@@ -3712,11 +3731,13 @@ package com.android.build.api.variant {
     method public void configureTestTasks(kotlin.jvm.functions.Function2<? super org.gradle.api.tasks.testing.Test,? super com.android.build.api.dsl.TestTaskContext,kotlin.Unit> action);
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public org.gradle.api.provider.Property<java.lang.Boolean> getCodeCoverage();
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public com.android.build.api.variant.JUnitEngineSpec getJunitEngineSpec();
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public org.gradle.api.provider.Provider<java.lang.Boolean> getRequiresUpdateTask();
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public java.util.Collection<com.android.build.api.variant.TestSuiteSourceSet> getSources();
     method @InaccessibleFromKotlin public java.util.Map<java.lang.String,com.android.build.api.variant.TestSuiteTarget> getTargets();
     method @org.gradle.api.Incubating public org.gradle.api.provider.Provider<java.lang.String> instrumentationRunner(com.android.build.api.variant.TestSuiteSourceSet.TestApk source);
     property @org.gradle.api.Incubating public abstract org.gradle.api.provider.Property<java.lang.Boolean> codeCoverage;
     property @org.gradle.api.Incubating public abstract com.android.build.api.variant.JUnitEngineSpec junitEngineSpec;
+    property @org.gradle.api.Incubating public abstract org.gradle.api.provider.Provider<java.lang.Boolean> requiresUpdateTask;
     property @org.gradle.api.Incubating public abstract java.util.Collection<com.android.build.api.variant.TestSuiteSourceSet> sources;
     property public abstract java.util.Map<java.lang.String,com.android.build.api.variant.TestSuiteTarget> targets;
   }
@@ -3851,6 +3872,7 @@ package com.android.build.api.variant {
 
   public interface VariantBuilder extends com.android.build.api.variant.ComponentBuilder {
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public boolean getEnableLint();
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public com.android.build.api.variant.LintBuilder getLint();
     method @InaccessibleFromKotlin public Integer? getMaxSdk();
     method @InaccessibleFromKotlin public Integer? getMinSdk();
     method @InaccessibleFromKotlin public String? getMinSdkPreview();
@@ -3862,6 +3884,7 @@ package com.android.build.api.variant {
     method @InaccessibleFromKotlin public void setMinSdkPreview(String?);
     method @InaccessibleFromKotlin public void setRenderscriptTargetApi(int);
     property @org.gradle.api.Incubating public abstract boolean enableLint;
+    property @org.gradle.api.Incubating public abstract com.android.build.api.variant.LintBuilder lint;
     property public abstract Integer? maxSdk;
     property public abstract Integer? minSdk;
     property public abstract String? minSdkPreview;

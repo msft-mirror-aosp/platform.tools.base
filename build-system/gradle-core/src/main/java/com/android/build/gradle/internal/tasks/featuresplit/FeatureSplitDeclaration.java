@@ -18,15 +18,20 @@ package com.android.build.gradle.internal.tasks.featuresplit;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.google.common.annotations.VisibleForTesting;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+
+import org.gradle.api.file.FileCollection;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
-import org.apache.commons.io.FileUtils;
-import org.gradle.api.file.FileCollection;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.Map;
 
 /**
  * Information containing a feature split declaration that can be consumed by other modules as
@@ -34,14 +39,26 @@ import org.gradle.api.file.FileCollection;
  */
 public class FeatureSplitDeclaration {
 
-    @VisibleForTesting static final String PERSISTED_FILE_NAME = "feature-split.json";
+    public static final String PERSISTED_FILE_NAME = "feature-split.json";
 
     @NonNull private final String modulePath;
     @NonNull private final String namespace;
+    @Nullable private final String buildType;
+    @NonNull private final Map<String, String> productFlavors;
 
-    public FeatureSplitDeclaration(@NonNull String modulePath, @NonNull String namespace) {
+    public FeatureSplitDeclaration(
+            @NonNull String modulePath,
+            @NonNull String namespace,
+            @Nullable String buildType,
+            @NonNull Map<String, String> productFlavors) {
         this.modulePath = modulePath;
         this.namespace = namespace;
+        this.buildType = buildType;
+        this.productFlavors = productFlavors;
+    }
+
+    public FeatureSplitDeclaration(@NonNull String modulePath, @NonNull String namespace) {
+        this(modulePath, namespace, null, Collections.emptyMap());
     }
 
     @NonNull
@@ -54,11 +71,23 @@ public class FeatureSplitDeclaration {
         return namespace;
     }
 
+    @Nullable
+    public String getBuildType() {
+        return buildType;
+    }
+
+    @NonNull
+    public Map<String, String> getProductFlavors() {
+        return productFlavors == null ? Collections.emptyMap() : productFlavors;
+    }
+
     public void save(@NonNull File outputDirectory) throws IOException {
         File outputFile = new File(outputDirectory, PERSISTED_FILE_NAME);
         GsonBuilder gsonBuilder = new GsonBuilder();
         Gson gson = gsonBuilder.create();
-        FileUtils.write(outputFile, gson.toJson(this));
+        try (FileWriter writer = new FileWriter(outputFile, StandardCharsets.UTF_8)) {
+            gson.toJson(this, writer);
+        }
     }
 
     @NonNull
@@ -74,8 +103,8 @@ public class FeatureSplitDeclaration {
     public static FeatureSplitDeclaration load(@NonNull File input) throws IOException {
         GsonBuilder gsonBuilder = new GsonBuilder();
         Gson gson = gsonBuilder.create();
-        try (FileReader fileReader = new FileReader(input)) {
-            return gson.fromJson(fileReader, FeatureSplitDeclaration.class);
+        try (FileReader reader = new FileReader(input, StandardCharsets.UTF_8)) {
+            return gson.fromJson(reader, FeatureSplitDeclaration.class);
         }
     }
 

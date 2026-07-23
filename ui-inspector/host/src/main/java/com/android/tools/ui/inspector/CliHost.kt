@@ -20,15 +20,28 @@ import com.android.adblib.AdbLogger
 import com.android.adblib.AdbLoggerFactory
 import com.android.adblib.AdbSession
 import com.android.adblib.tools.createStandaloneSession
+import com.android.tools.ui.inspector.printer.json.withJsonPrinter
+import java.nio.file.Path
 import java.util.concurrent.Callable
 import kotlin.system.exitProcess
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.runBlocking
 import picocli.CommandLine
+import picocli.CommandLine.ArgGroup
 import picocli.CommandLine.Command
+import picocli.CommandLine.Model.CommandSpec
 import picocli.CommandLine.Option
+import picocli.CommandLine.ParameterException
+import picocli.CommandLine.Spec
 
 private const val EXIT_OK = 0
 private const val EXIT_ERROR = 1
+
+private const val DEVICE_OPTION_DESCRIPTION =
+  "The device serial number. Defaults to the only online device; required when multiple online devices are connected"
+
+private val DEFAULT_RECORD_INTERVAL = 100.milliseconds
 
 /** Factory for creating [AdbSession]. Can be overridden in tests. */
 var sessionFactory: () -> AdbSession = { createStandaloneSession(NO_LOGGING) }
@@ -57,12 +70,12 @@ class ListDevicesCommand : Callable<Int> {
 
 @Command(name = "list-packages", description = ["List debuggable application package names on the device"])
 class ListPackagesCommand : Callable<Int> {
-  @Option(names = ["--serial"], required = true, description = ["Device serial number"]) var serial: String = ""
+  @Option(names = ["--device"], description = [DEVICE_OPTION_DESCRIPTION]) var device: String? = null
 
   override fun call(): Int {
     val adbSession = sessionFactory()
     try {
-      runBlocking { doListPackages(adbSession, serial) }
+      runBlocking { doListPackages(adbSession, resolveDeviceSerial(adbSession, device)) }
       return EXIT_OK
     } catch (e: Exception) {
       System.err.println("Error listing packages: ${e.message}")
@@ -71,43 +84,105 @@ class ListPackagesCommand : Callable<Int> {
   }
 }
 
-/** Base class containing common command line options for subcommands that query layout trees. */
-open class UiInspectorDumpCommand : Callable<Int> {
-  @Option(names = ["--serial"], required = true, description = ["Device serial number"]) var serial: String = ""
-  @Option(names = ["--package"], required = true, description = ["App package name"]) var packageName: String = ""
-  @Option(names = ["--include-attributes"], description = ["Include view attributes in the dump"]) var includeAttributes: Boolean = false
-  @Option(names = ["--include-resolution-stack"], description = ["Include attribute resolution stack in the dump"])
-  var includeResolutionStack: Boolean = false
-  @Option(names = ["--include-system-composables"], description = ["Include system/framework Composable nodes in the dump"])
-  var includeSystemComposables: Boolean = false
-  @Option(names = ["--include-semantics"], description = ["Include Compose accessibility/semantics properties in the dump"])
-  var includeSemantics: Boolean = false
+@Command(name = "dump-ui", description = ["Dump UI hierarchy"])
+class DumpUiCommand : Callable<Int> {
+  @Option(names = ["--device"], description = [DEVICE_OPTION_DESCRIPTION]) var device: String? = null
+  @Option(names = ["--package"], description = ["The app package name. Defaults to the app currently in the foreground"])
+  var packageName: String? = null
+  @Option(
+    names = ["--include"],
+    split = ",",
+    converter = [IncludeFacetConverter::class],
+    description =
+      [
+        "Data to include in the dump: attributes, semantics, resolution-stack, system-composables, or all. " +
+          "Repeatable or comma-separated; resolution-stack implies attributes"
+      ],
+  )
+  internal var include: List<IncludeFacet> = emptyList()
+  @Option(names = ["--pretty", "-p"], description = ["Pretty-print the returned JSON"]) var prettyPrint: Boolean = false
+  @Option(names = ["-o", "--output"], description = ["Writes the output to the specified file. If omitted, prints to standard output"])
+  var output: Path? = null
   @Option(
     names = ["--compose-inspector"],
     description = ["Path to a local Compose Inspector JAR file to use instead of the one from maven"],
   )
   var composeInspectorJarPath: String? = null
+  @ArgGroup(exclusive = false, heading = "Record a bounded window:%n") var recordOptions: RecordOptions? = null
 
-  override fun call(): Int = EXIT_OK
-}
+  /** Options for recording UI changes over a bounded window. Grouped so picocli enforces and documents them as a unit. */
+  class RecordOptions {
+    @Option(
+      names = ["--record"],
+      required = true,
+      description = ["Sample the UI over a bounded duration and report the observed changes, e.g. to inspect an animation"],
+    )
+    var record: Boolean = false
+    @Option(
+      names = ["--duration"],
+      required = true,
+      converter = [DurationConverter::class],
+      description = ["Total sampling duration, e.g. 5s or 1m"],
+    )
+    var duration: Duration? = null
+    @Option(
+      names = ["--interval"],
+      converter = [DurationConverter::class],
+      description = ["Sampling interval, e.g. 100ms or 1s. Defaults to 100ms"],
+    )
+    var interval: Duration? = null
+  }
 
-@Command(name = "dump-ui", description = ["Dump UI hierarchy"])
-class DumpUiCommand : UiInspectorDumpCommand() {
+  @Spec lateinit var spec: CommandSpec
+
   override fun call(): Int {
-    System.err.println("Executing dump-ui for package: $packageName on device: $serial")
+    // The group guarantees --duration when any recording option is present, but a boolean option still accepts an
+    // explicit "=false", which would contradict the other recording options rather than disable them.
+    recordOptions?.let {
+      if (!it.record) {
+        throw ParameterException(spec.commandLine(), "--record=false cannot be combined with recording options")
+      }
+    }
     val adbSession = sessionFactory()
     try {
-      runBlocking {
-        doDumpUi(
-          adbSession = adbSession,
-          serial = serial,
-          packageName = packageName,
-          includeAttributes = includeAttributes,
-          includeResolutionStack = includeResolutionStack,
-          includeSystemComposables = includeSystemComposables,
-          includeSemantics = includeSemantics,
-          composeInspectorJarPath = composeInspectorJarPath,
-        )
+      val (serial, targetPackage) =
+        runBlocking {
+          val serial = resolveDeviceSerial(adbSession, device)
+          serial to resolveTargetPackage(adbSession, serial, packageName)
+        }
+      System.err.println("Executing dump-ui for package: $targetPackage on device: $serial")
+      val facets = expandIncludeFacets(include)
+      withJsonPrinter(output, prettyPrint) { printer ->
+        runBlocking {
+          val recordOptions = recordOptions
+          if (recordOptions != null) {
+            doTrackChanges(
+              adbSession = adbSession,
+              serial = serial,
+              packageName = targetPackage,
+              interval = recordOptions.interval ?: DEFAULT_RECORD_INTERVAL,
+              duration = requireNotNull(recordOptions.duration),
+              includeAttributes = IncludeFacet.ATTRIBUTES in facets,
+              includeResolutionStack = IncludeFacet.RESOLUTION_STACK in facets,
+              includeSystemComposables = IncludeFacet.SYSTEM_COMPOSABLES in facets,
+              includeSemantics = IncludeFacet.SEMANTICS in facets,
+              composeInspectorJarPath = composeInspectorJarPath,
+              printer = printer,
+            )
+          } else {
+            doDumpUi(
+              adbSession = adbSession,
+              serial = serial,
+              packageName = targetPackage,
+              includeAttributes = IncludeFacet.ATTRIBUTES in facets,
+              includeResolutionStack = IncludeFacet.RESOLUTION_STACK in facets,
+              includeSystemComposables = IncludeFacet.SYSTEM_COMPOSABLES in facets,
+              includeSemantics = IncludeFacet.SEMANTICS in facets,
+              composeInspectorJarPath = composeInspectorJarPath,
+              printer = printer,
+            )
+          }
+        }
       }
       return EXIT_OK
     } catch (e: Exception) {
@@ -117,46 +192,35 @@ class DumpUiCommand : UiInspectorDumpCommand() {
   }
 }
 
-@Command(name = "track-changes", description = ["Track UI hierarchy changes over time by sampling"])
-class TrackChangesCommand : UiInspectorDumpCommand() {
-  @Option(names = ["--interval"], description = ["Sampling interval in milliseconds"], defaultValue = "100") var intervalMs: Long = 100
-  @Option(names = ["--duration"], description = ["Sampling duration in seconds"], defaultValue = "5") var durationSec: Long = 5
-
-  override fun call(): Int {
-    System.err.println("Executing track-changes for package: $packageName on device: $serial")
-    val adbSession = sessionFactory()
-    try {
-      runBlocking {
-        doTrackChanges(
-          adbSession = adbSession,
-          serial = serial,
-          packageName = packageName,
-          intervalMs = intervalMs,
-          durationSec = durationSec,
-          includeAttributes = includeAttributes,
-          includeResolutionStack = includeResolutionStack,
-          includeSystemComposables = includeSystemComposables,
-          includeSemantics = includeSemantics,
-          composeInspectorJarPath = composeInspectorJarPath,
-        )
-      }
-      return EXIT_OK
-    } catch (e: Exception) {
-      System.err.println("Error: ${e.message}")
-      return EXIT_ERROR
-    }
-  }
-}
+/**
+ * Creates the fully configured command line used by [main]. Tests use it too, so production command registration is what gets exercised.
+ */
+internal fun createCommandLine(): CommandLine =
+  CommandLine(UiInspectorCommand())
+    .addSubcommand("dump-ui", DumpUiCommand())
+    .addSubcommand("list-devices", ListDevicesCommand())
+    .addSubcommand("list-packages", ListPackagesCommand())
 
 fun main(args: Array<String>) {
-  val exitCode =
-    CommandLine(UiInspectorCommand())
-      .addSubcommand("dump-ui", DumpUiCommand())
-      .addSubcommand("track-changes", TrackChangesCommand())
-      .addSubcommand("list-devices", ListDevicesCommand())
-      .addSubcommand("list-packages", ListPackagesCommand())
-      .execute(*args)
-  exitProcess(exitCode)
+  exitProcess(createCommandLine().execute(*args))
+}
+
+/** Converts humane duration values such as `100ms`, `5s`, or `1m` for picocli options. */
+private class DurationConverter : CommandLine.ITypeConverter<Duration> {
+  override fun convert(value: String): Duration {
+    val duration =
+      try {
+        Duration.parse(value)
+      } catch (_: IllegalArgumentException) {
+        throw CommandLine.TypeConversionException(invalidDurationMessage(value))
+      }
+    if (!duration.isPositive() || duration.isInfinite()) {
+      throw CommandLine.TypeConversionException(invalidDurationMessage(value))
+    }
+    return duration
+  }
+
+  private fun invalidDurationMessage(value: String) = "Invalid duration: '$value'. Expected a positive duration such as 100ms, 5s, or 1m."
 }
 
 /** A logger factory that silences all adblib logs to keep the CLI output clean. */

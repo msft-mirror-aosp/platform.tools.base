@@ -2365,6 +2365,9 @@ enum class LintMode {
 
 const val LINT_XML_CONFIG_FILE_NAME = "lint.xml"
 
+internal const val LINT_PRINT_STACKTRACE_ENVIRONMENT_VARIABLE = "LINT_PRINT_STACKTRACE"
+internal const val ANDROID_LINT_JARS_ENVIRONMENT_VARIABLE = "ANDROID_LINT_JARS"
+
 internal fun maybeCreateLintChecksClasspath(
   project: Project,
   variantName: String?,

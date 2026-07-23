@@ -176,6 +176,11 @@ class InteractiveShellV2Handler : DeviceCommandHandler("") {
     if (args.isNotEmpty() || !isShellV2Command(command)) {
       return false
     }
+    // TODO: Even though it is equivalent to use API level to check for shell_v2 the answer
+    //       should come from the list of features contained in [deviceState].
+    if (device.buildVersionSdk.majorVersion < 24) {
+      return false
+    }
     execute(server, socketScope, socket, device, statusWriter)
     return true
   }

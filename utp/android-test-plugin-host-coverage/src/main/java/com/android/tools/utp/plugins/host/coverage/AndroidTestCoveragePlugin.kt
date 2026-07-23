@@ -76,6 +76,54 @@ class AndroidTestCoveragePlugin(
 
     createEmptyDirectoryOnHost(File(testCoverageConfig.outputDirectoryOnHost))
     cleanPreviousCodeCoverageOnDevice(deviceController)
+
+    val onTheFly =
+      testCoverageConfig.multipleCoverageFilesInDirectory.contains("/code_cache/") ||
+        testCoverageConfig.singleCoverageFile.contains("/code_cache/")
+    if (onTheFly) {
+      logger.info("On-the-fly coverage active. Extracting JVMTI agent on device...")
+      extractAgentOnDevice(deviceController)
+    }
+  }
+
+  private fun extractAgentOnDevice(deviceController: DeviceController) {
+    val runAsPackage = testCoverageConfig.runAsPackageName
+    if (runAsPackage.isBlank()) return
+
+    // 1. Get ABI
+    val abiResult = deviceController.deviceShellAndCheckSuccess("getprop", "ro.product.cpu.abi")
+    val abi = abiResult.output.firstOrNull()?.trim() ?: ""
+    if (abi.isBlank()) {
+      logger.warning("Failed to detect ABI on target device")
+      return
+    }
+
+    // 2. Find test APK path
+    var apkPath = ""
+    for (pkg in listOf("${runAsPackage}.test", runAsPackage)) {
+      val pathResult = deviceController.deviceShellAndCheckSuccess("pm", "path", pkg)
+      apkPath = pathResult.output.firstOrNull { it.startsWith("package:") }?.substringAfter("package:")?.trim() ?: ""
+      if (apkPath.isNotBlank()) break
+    }
+
+    if (apkPath.isBlank()) {
+      logger.warning("Failed to locate test APK path for extraction")
+      return
+    }
+
+    // 3. Extract agent
+    val extractShellCmd =
+      "\"mkdir -p code_cache 2>/dev/null; unzip -p '$apkPath' lib/$abi/coverage_agent.so > code_cache/coverage_agent.so\""
+    logger.info("Extracting agent for ABI: $abi from $apkPath into code_cache/ for $runAsPackage")
+    deviceController.deviceShellWithRunAs("sh", "-c", extractShellCmd)
+
+    // Verify extraction
+    val verifyResult = deviceController.deviceShellWithRunAs("ls", "-l", "code_cache/coverage_agent.so")
+    if (verifyResult.statusCode == 0) {
+      logger.info("Successfully extracted and verified agent inside sandbox!")
+    } else {
+      logger.warning("Agent verification failed: ${verifyResult.output.joinToString("\n")}")
+    }
   }
 
   /** Creates an empty directory. If a directory exists at the given path, it removes all contents in the directory. */
@@ -180,7 +228,11 @@ class AndroidTestCoveragePlugin(
       }
     // Note: "ls -1" doesn't work on API level 21.
     val covFileNames =
-      deviceController.deviceShellWithRunAs("ls", "\"${coverageDir}\"", "|", "cat").output.filter { it.endsWith(".ec") }.toList()
+      deviceController
+        .deviceShellWithRunAs("ls", "\"${coverageDir}\"", "|", "cat")
+        .output
+        .filter { it.endsWith(".ec") || it.endsWith(".pb") }
+        .toList()
     covFileNames.forEach { covFileName ->
       val safeCovFileName = FileUtils.sanitizeFileName(covFileName)
       if (safeCovFileName.isBlank() || safeCovFileName == "." || safeCovFileName == "..") {

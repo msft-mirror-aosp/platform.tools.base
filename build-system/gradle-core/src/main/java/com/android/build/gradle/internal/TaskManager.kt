@@ -29,6 +29,7 @@ import com.android.build.api.artifact.impl.InternalScopedArtifacts
 import com.android.build.api.dsl.Device
 import com.android.build.api.dsl.DeviceGroup
 import com.android.build.api.instrumentation.FramesComputationMode
+import com.android.build.api.variant.Packaging
 import com.android.build.api.variant.ScopedArtifacts
 import com.android.build.api.variant.impl.FlatSourceDirectoriesImpl
 import com.android.build.api.variant.impl.TaskProviderBasedDirectoryEntryImpl
@@ -121,6 +122,7 @@ import com.android.build.gradle.internal.tasks.ProcessJavaResTask
 import com.android.build.gradle.internal.tasks.R8AnalysisTask
 import com.android.build.gradle.internal.tasks.R8Task
 import com.android.build.gradle.internal.tasks.RecalculateStackFramesTask
+import com.android.build.gradle.internal.tasks.RedirectIdeApkOutputsTask
 import com.android.build.gradle.internal.tasks.UninstallTask
 import com.android.build.gradle.internal.tasks.ValidateResourcesTask
 import com.android.build.gradle.internal.tasks.ValidateSigningTask
@@ -160,6 +162,7 @@ import com.android.build.gradle.internal.utils.isKspPluginApplied
 import com.android.build.gradle.internal.utils.useUniversalGlobalSyntheticsDex
 import com.android.build.gradle.internal.variant.ApkVariantData
 import com.android.build.gradle.options.BooleanOption
+import com.android.build.gradle.options.StringOption
 import com.android.build.gradle.tasks.AidlCompile
 import com.android.build.gradle.tasks.CompatibleScreensManifest
 import com.android.build.gradle.tasks.GenerateBuildConfig
@@ -737,7 +740,7 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
    *
    * This sets up only the Sync part. The java res merging is setup via [ ][.createMergeJavaResTask]
    */
-  protected fun createProcessJavaResTask(creationConfig: ComponentCreationConfig) {
+  protected fun createProcessJavaResTask(creationConfig: ComponentCreationConfig, packaging: Packaging) {
     // Copy the source folders java resources into the temporary location, mainly to
     // maintain the PluginDsl COPY semantics.
     val taskConfig =
@@ -760,6 +763,9 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
 
         override val sources: FlatSourceDirectoriesImpl?
           get() = creationConfig.sources.resources
+
+        override val packaging: Packaging
+          get() = packaging
 
         override fun setJavaResTask(task: TaskProvider<out Sync>) {
           creationConfig.taskContainer.processJavaResourcesTask = task
@@ -1267,7 +1273,9 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
     initializeAllScope(creationConfig.artifacts)
 
     // New gradle-transform jacoco instrumentation support.
-    if (creationConfig.requiresJacocoTransformation && !creationConfig.componentType.isForTesting) {
+    val requiresJacocoBytecodeTransform =
+      creationConfig.requiresJacocoTransformation && !creationConfig.services.projectOptions[BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE]
+    if (requiresJacocoBytecodeTransform && !creationConfig.componentType.isForTesting) {
       createJacocoTask(creationConfig)
     } else {
       // When the Jacoco task does not run, republish CLASSES into FINAL_TRANSFORMED_CLASSES
@@ -1713,7 +1721,15 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
       )
     )
 
-    taskContainer.assembleTask.configure { task: Task -> task.dependsOn(creationConfig.artifacts.get(SingleArtifact.APK)) }
+    val apkLocationOverride = creationConfig.services.projectOptions.get(StringOption.IDE_APK_LOCATION)
+    if (apkLocationOverride != null) {
+      val targetDir = File(creationConfig.services.file(apkLocationOverride), creationConfig.dirName)
+      val redirectTask = taskFactory.register(RedirectIdeApkOutputsTask.CreationAction(creationConfig, targetDir))
+      taskContainer.redirectIdeApkOutputsTask = redirectTask
+      taskContainer.assembleTask.configure { task: Task -> task.dependsOn(redirectTask) }
+    } else {
+      taskContainer.assembleTask.configure { task: Task -> task.dependsOn(creationConfig.artifacts.get(SingleArtifact.APK)) }
+    }
 
     // create install task for the variant Data. This will deal with finding the
     // right output if there are more than one.

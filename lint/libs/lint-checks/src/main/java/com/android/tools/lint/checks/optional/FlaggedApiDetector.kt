@@ -47,11 +47,14 @@ import com.intellij.psi.PsiAnnotation
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiCompiledElement
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiClassType
 import com.intellij.psi.PsiField
 import com.intellij.psi.PsiLiteralValue
 import com.intellij.psi.PsiMember
 import com.intellij.psi.PsiMethod
+import com.intellij.psi.PsiModifierListOwner
 import com.intellij.psi.PsiNamedElement
+import com.intellij.psi.PsiVariable
 import org.jetbrains.uast.UAnnotated
 import org.jetbrains.uast.UAnnotation
 import org.jetbrains.uast.UBlockExpression
@@ -65,6 +68,7 @@ import org.jetbrains.uast.UMethod
 import org.jetbrains.uast.UParenthesizedExpression
 import org.jetbrains.uast.UPolyadicExpression
 import org.jetbrains.uast.UReferenceExpression
+import org.jetbrains.uast.UTypeReferenceExpression
 import org.jetbrains.uast.UUnaryExpression
 import org.jetbrains.uast.UastBinaryOperator
 import org.jetbrains.uast.UastFacade
@@ -110,17 +114,16 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
       return FLAGGED_API_ANNOTATION.isEquals(qualifiedName) || REQUIRES_FLAG_ANNOTATION.isEquals(qualifiedName)
     }
 
-    /** Is the given [element] referencing an annotated element */
-    fun isAlreadyAnnotated(evaluator: JavaEvaluator, element: UElement?): Boolean {
-      val resolved = element?.tryResolve() ?: return false
-      return isAlreadyAnnotated(evaluator, resolved)
-    }
-
     /** Is the given [resolved] class/method/field annotated with a `@FlaggedApi` or `@RequiresFlag` annotation? */
     fun isAlreadyAnnotated(evaluator: JavaEvaluator, resolved: PsiElement?): Boolean {
-      if (resolved !is PsiMember) return false
+      if (resolved !is PsiModifierListOwner) return false
+      val typeClass = (resolved as? PsiVariable)?.let { (it.type.deepComponentType as? PsiClassType)?.resolve() }
+      if (typeClass != null && isAlreadyAnnotated(evaluator, typeClass)) {
+        return true
+      }
+      val containingClass = (resolved as? PsiMember)?.containingClass
       // Check both the annotation on the member itself and its surrounding class.
-      return listOfNotNull(resolved, resolved.containingClass).any { owner ->
+      return listOfNotNull(resolved, containingClass).any { owner ->
         evaluator.getAnnotations(owner).any { isFlagAnnotation(it.qualifiedName) }
       }
     }

@@ -434,7 +434,9 @@ object DexingRegistration {
       dependenciesClassesAreInstrumented = creationConfig.instrumentationCreationConfig?.dependenciesClassesAreInstrumented == true,
       asmTransformComponent =
         creationConfig.name.takeIf { creationConfig.instrumentationCreationConfig?.dependenciesClassesAreInstrumented == true },
-      useJacocoTransformInstrumentation = creationConfig.requiresJacocoTransformation,
+      useJacocoTransformInstrumentation =
+        creationConfig.requiresJacocoTransformation &&
+          !creationConfig.services.projectOptions[BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE],
       enableDesugaring = needsDesugaring(creationConfig.dexing),
       needsClasspath = needsClasspath(creationConfig.dexing),
       useFullClasspath = useFullClasspath(creationConfig.dexing, creationConfig.services),
@@ -454,7 +456,9 @@ object DexingRegistration {
       dependenciesClassesAreInstrumented = creationConfig.instrumentationCreationConfig?.dependenciesClassesAreInstrumented == true,
       asmTransformComponent =
         creationConfig.name.takeIf { creationConfig.instrumentationCreationConfig?.dependenciesClassesAreInstrumented == true },
-      useJacocoTransformInstrumentation = creationConfig.requiresJacocoTransformation,
+      useJacocoTransformInstrumentation =
+        creationConfig.requiresJacocoTransformation &&
+          !creationConfig.services.projectOptions[BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE],
       enableDesugaring = needsDesugaring(creationConfig.dexing),
       needsClasspath = needsClasspath(creationConfig.dexing),
       useFullClasspath = useFullClasspath(creationConfig.dexing, creationConfig.services),

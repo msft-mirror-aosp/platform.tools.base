@@ -96,7 +96,7 @@ class InjectionManagerTest {
     // Mock expected shell commands for the injection flow
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pidof $packageName", "1234\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pgrep -f '^${packageName.replace(".", "\\.")}(:.*)?$'", "1234\n")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
     val setupCmd =
       "run-as $packageName sh -c '" +
@@ -110,7 +110,7 @@ class InjectionManagerTest {
     fakeSession.deviceServices.configureShellCommand(deviceSelector, setupCmd, "")
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
-      "cmd activity attach-agent $packageName \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;1234\"",
+      "cmd activity attach-agent 1234 \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;1234\"",
       "",
     )
     fakeSession.deviceServices.configureShellCommand(
@@ -148,7 +148,7 @@ class InjectionManagerTest {
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pidof $packageName", "1234\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pgrep -f '^${packageName.replace(".", "\\.")}(:.*)?$'", "1234\n")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
 
     val setupCmd =
@@ -206,7 +206,7 @@ class InjectionManagerTest {
     // Mock expected shell commands for the injection flow
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pidof $packageName", "1234\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pgrep -f '^${packageName.replace(".", "\\.")}(:.*)?$'", "1234\n")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
 
     val setupCmd =
@@ -221,7 +221,7 @@ class InjectionManagerTest {
     fakeSession.deviceServices.configureShellCommand(deviceSelector, setupCmd, "")
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
-      "cmd activity attach-agent $packageName \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;1234\"",
+      "cmd activity attach-agent 1234 \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;1234\"",
       "",
     )
 
@@ -263,7 +263,7 @@ class InjectionManagerTest {
     // Mock injectAndAttach dependencies so we can initialize appDataDir
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pidof $packageName", "1234\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pgrep -f '^${packageName.replace(".", "\\.")}(:.*)?$'", "1234\n")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
@@ -281,7 +281,7 @@ class InjectionManagerTest {
         "chmod 444 lib_ui_inspector_payload.jar'"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, agentSetupCmd, "")
     val attachCmd =
-      "cmd activity attach-agent $packageName \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;1234\""
+      "cmd activity attach-agent 1234 \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;1234\""
     fakeSession.deviceServices.configureShellCommand(deviceSelector, attachCmd, "")
 
     // Initialize appDataDir
@@ -306,7 +306,7 @@ class InjectionManagerTest {
 
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pidof $packageName", "1234\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pgrep -f '^${packageName.replace(".", "\\.")}(:.*)?$'", "1234\n")
 
     // Configure run-as pwd to fail
     fakeSession.deviceServices.configureShellCommand(
@@ -339,14 +339,41 @@ class InjectionManagerTest {
 
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
 
-    // Configure pidof to fail
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pidof $packageName", stdout = "", stderr = "", exitCode = 1)
+    // Configure pgrep to fail
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      "pgrep -f '^${packageName.replace(".", "\\.")}(:.*)?$'",
+      stdout = "",
+      stderr = "",
+      exitCode = 1,
+    )
 
     try {
       injectionManager.injectAndAttach()
       fail("Expected IllegalStateException for failing pidof")
     } catch (e: IllegalStateException) {
       assertThat(e.message).contains("The application '$packageName' is not running on the device. Please start the app and try again.")
+    }
+  }
+
+  @Test
+  fun testGetPid_adbException_propagates() = runTest {
+    val dummyPayload = tempFolder.root.toPath().resolve("lib_ui_inspector_payload.jar")
+    val injectionManager = InjectionManager(testSession, deviceSerial, packageName, agentPathResolver, dummyJar, dummyPayload)
+    val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
+
+    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
+
+    // Note: pgrep shell command is deliberately unconfigured so FakeAdbDeviceServices throws an exception simulating an ADB failure.
+
+    try {
+      injectionManager.injectAndAttach()
+      fail("Expected exception for unconfigured pgrep command")
+    } catch (e: Exception) {
+      assertThat(e.message).doesNotContain("The application '$packageName' is not running on the device")
+      assertThat(e.message).contains("Command not setup")
     }
   }
 
@@ -445,7 +472,7 @@ class InjectionManagerTest {
     // Mock injectAndAttach dependencies so we can initialize appDataDir
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pidof $packageName", "1234\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pgrep -f '^${packageName.replace(".", "\\.")}(:.*)?$'", "1234\n")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
@@ -463,7 +490,7 @@ class InjectionManagerTest {
         "chmod 444 lib_ui_inspector_payload.jar'"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, agentSetupCmd, "")
     val attachCmd =
-      "cmd activity attach-agent $packageName \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;1234\""
+      "cmd activity attach-agent 1234 \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;1234\""
     fakeSession.deviceServices.configureShellCommand(deviceSelector, attachCmd, "")
 
     injectionManager.injectAndAttach()
@@ -487,5 +514,57 @@ class InjectionManagerTest {
     val rmRequests =
       fakeSession.deviceServices.shellV2Requests.filter { it.command == "rm -f '/data/local/tmp/ui-inspector/my-inspector.jar.test.tmp'" }
     assertThat(rmRequests).isNotEmpty()
+  }
+
+  @Test
+  fun testInjectAndAttach_multiProcess_topActivitySelection() = runTest {
+    val injectionManager =
+      InjectionManager(
+        testSession,
+        deviceSerial,
+        packageName,
+        agentPathResolver = agentPathResolver,
+        serviceJarPath = dummyJar,
+        payloadJarPath = dummyPayload,
+        tempFileSuffixGenerator = { "test.tmp" },
+      )
+    val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
+    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
+    // pgrep returns two PIDs: 5678 (secondary process) and 1234 (main UI process)
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      "pgrep -f '^${packageName.replace(".", "\\.")}(:.*)?$'",
+      "5678\n1234\n",
+    )
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      "dumpsys activity processes | grep top-activity",
+      "  Proc #0: adj=top /F/TOP TRM=0 1234:$packageName/u0a123 (top-activity)\n",
+    )
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
+    val setupCmd =
+      "run-as $packageName sh -c '" +
+        "rm -f lib_ui_inspector_agent.so lib_ui_inspector_service.jar lib_ui_inspector_payload.jar && " +
+        "cat /data/local/tmp/lib_ui_inspector_agent.so > lib_ui_inspector_agent.so && " +
+        "cat /data/local/tmp/lib_ui_inspector_service.jar > lib_ui_inspector_service.jar && " +
+        "cat /data/local/tmp/lib_ui_inspector_payload.jar > lib_ui_inspector_payload.jar && " +
+        "chmod 444 lib_ui_inspector_agent.so && " +
+        "chmod 444 lib_ui_inspector_service.jar && " +
+        "chmod 444 lib_ui_inspector_payload.jar'"
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, setupCmd, "")
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      "cmd activity attach-agent 1234 \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;1234\"",
+      "",
+    )
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      "cat /proc/net/unix | grep ui_inspector_1234 || true",
+      "ui_inspector_1234\n",
+    )
+
+    val port = injectionManager.injectAndAttach()
+    assertThat(port).isEqualTo("12345")
   }
 }

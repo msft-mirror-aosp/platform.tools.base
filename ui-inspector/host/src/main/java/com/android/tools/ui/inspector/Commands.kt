@@ -19,15 +19,11 @@ package com.android.tools.ui.inspector
 import com.android.adblib.AdbHostServices
 import com.android.adblib.AdbSession
 import com.android.adblib.DeviceSelector
+import com.android.adblib.DeviceState
 import com.android.adblib.shellAsText
-import com.android.tools.ui.inspector.printer.printAppContext
-import com.android.tools.ui.inspector.printer.printDeviceConfiguration
-import com.android.tools.ui.inspector.printer.printTrackedChanges
-import com.android.tools.ui.inspector.printer.printUiTree
+import com.android.tools.ui.inspector.printer.UiDumpPrinter
 import java.io.File
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeSource
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -43,6 +39,56 @@ suspend fun doListDevices(adbSession: AdbSession) {
     println("No devices connected.")
   } else {
     devices.forEach { println(it.serialNumber) }
+  }
+}
+
+/**
+ * Resolves the serial number of the device to target. A [requested] serial is returned unchanged; when omitted, the serial of the only
+ * online device is used.
+ *
+ * @throws IllegalStateException when no serial is requested and there is not exactly one online device.
+ */
+internal suspend fun resolveDeviceSerial(adbSession: AdbSession, requested: String?): String {
+  // A requested serial is deliberately not validated against the device list: the list is only a snapshot (a device
+  // can change state right after the check), and the adb server already rejects unusable serials authoritatively
+  // when the first command reaches it. This matches adb's own behavior with -s.
+  if (requested != null) return requested
+  val devices = adbSession.hostServices.devices(AdbHostServices.DeviceInfoFormat.SHORT_FORMAT)
+  val onlineDevices = devices.filter { it.deviceState == DeviceState.ONLINE }
+  return when {
+    onlineDevices.size == 1 -> onlineDevices.single().serialNumber
+    devices.isEmpty() -> throw IllegalStateException("No connected devices found. Connect a device or select one with --device.")
+    onlineDevices.isEmpty() -> {
+      val states = devices.sortedBy { it.serialNumber }.joinToString { "${it.serialNumber} (${it.deviceStateString})" }
+      throw IllegalStateException("No online devices found. Connected devices: $states.")
+    }
+    else -> {
+      val serials = onlineDevices.map { it.serialNumber }.sorted().joinToString()
+      throw IllegalStateException("Multiple online devices found: $serials. Select one with --device.")
+    }
+  }
+}
+
+/**
+ * Resolves the package name of the application to target. A [requested] package is returned unchanged; when omitted, the package of the app
+ * currently hosting the top (foreground) activity is used.
+ *
+ * @throws IllegalStateException when no package is requested and the foreground app cannot be determined unambiguously.
+ */
+internal suspend fun resolveTargetPackage(adbSession: AdbSession, serial: String, requested: String?): String {
+  // A requested package is used as-is: whether it exists, is running, and is debuggable is established downstream
+  // during injection, which owns those checks for resolved packages as well.
+  if (requested != null) return requested
+  val selector = DeviceSelector.fromSerialNumber(serial)
+  val output = adbSession.deviceServices.shellAsText(selector, TOP_ACTIVITY_SHELL_COMMAND).stdout
+  val packages = parseTopActivityProcesses(output).map { it.packageName }.distinct()
+  return when {
+    packages.size == 1 -> packages.single()
+    packages.isEmpty() ->
+      throw IllegalStateException(
+        "Could not determine the foreground app. Unlock the device and bring the target app to the foreground, or select the app with --package."
+      )
+    else -> throw IllegalStateException("Multiple foreground apps found: ${packages.sorted().joinToString()}. Select one with --package.")
   }
 }
 
@@ -101,7 +147,7 @@ suspend fun doListPackages(adbSession: AdbSession, serial: String) {
  * @param includeSemantics If true, includes accessibility semantics in the Compose dump.
  * @param composeInspectorJarPath Optional path to a local Compose Inspector JAR file.
  */
-suspend fun doDumpUi(
+internal suspend fun doDumpUi(
   adbSession: AdbSession,
   serial: String,
   packageName: String,
@@ -110,6 +156,7 @@ suspend fun doDumpUi(
   includeSystemComposables: Boolean,
   includeSemantics: Boolean,
   composeInspectorJarPath: String?,
+  printer: UiDumpPrinter,
 ) {
   runWithConnectedInspectors(adbSession, serial, packageName, composeInspectorJarPath) { commandSender, composeInspectorConnected ->
     dumpUi(
@@ -119,53 +166,44 @@ suspend fun doDumpUi(
       composeInspectorConnected = composeInspectorConnected,
       skipSystemComposables = !includeSystemComposables,
       includeSemantics = includeSemantics,
+      printer = printer,
     )
   }
 }
 
 /**
- * Injects the UI Inspector agent into the target application, attaches to its layout inspector service, and samples the UI hierarchy
- * changes over time.
+ * Injects the UI Inspector agent into the target application, attaches to its layout inspector service, samples the UI hierarchy for a
+ * bounded window, and prints the observed changes.
  *
  * @param adbSession The [AdbSession] to communicate with the local ADB server.
  * @param serial The serial number of the target device.
  * @param packageName The target application package name.
- * @param intervalMs The sampling interval in milliseconds.
- * @param durationSec The total duration of tracking in seconds.
+ * @param interval The sampling interval.
+ * @param duration The total sampling duration.
  * @param includeAttributes If true, includes view attributes in the sampled dumps.
  * @param includeResolutionStack If true, includes attribute resolution stacks in the sampled dumps.
  * @param includeSystemComposables If true, includes system/framework composable nodes.
  * @param includeSemantics If true, includes accessibility semantics in the Compose sampled dumps.
  * @param composeInspectorJarPath Optional path to a local Compose Inspector JAR file.
  */
-suspend fun doTrackChanges(
+internal suspend fun doTrackChanges(
   adbSession: AdbSession,
   serial: String,
   packageName: String,
-  intervalMs: Long,
-  durationSec: Long,
+  interval: Duration,
+  duration: Duration,
   includeAttributes: Boolean,
   includeResolutionStack: Boolean,
   includeSystemComposables: Boolean,
   includeSemantics: Boolean,
   composeInspectorJarPath: String?,
+  printer: UiDumpPrinter,
 ) {
   runWithConnectedInspectors(adbSession, serial, packageName, composeInspectorJarPath) { commandSender, composeInspectorConnected ->
-    System.err.println("Sampling UI hierarchy for ${durationSec}s every ${intervalMs}ms...")
+    System.err.println("Sampling UI hierarchy for $duration every $interval...")
 
-    val interval = intervalMs.milliseconds
-    val duration = durationSec.seconds
-    val timeSource = TimeSource.Monotonic
-    val startTime = timeSource.markNow()
-    val endTime = startTime + duration
-    // Stores each collected UI tree sample mapped to the elapsed duration since the start of tracking.
-    val samples = mutableListOf<TimedUiDump>()
-
-    var sampleCount = 0
-    while (timeSource.markNow() < endTime) {
-      val sampleStart = timeSource.markNow()
-
-      val uiDump =
+    val samples =
+      collectSamples(interval = interval, duration = duration) {
         fetchUiDump(
           commandSender = commandSender,
           includeAttributes = includeAttributes,
@@ -174,21 +212,47 @@ suspend fun doTrackChanges(
           skipSystemComposables = !includeSystemComposables,
           includeSemantics = includeSemantics,
         )
-      val elapsedSinceStart = startTime.elapsedNow()
-      samples.add(TimedUiDump(elapsedSinceStart, uiDump))
-      sampleCount++
-
-      val elapsedForSample = sampleStart.elapsedNow()
-      // Adjust sleep time to compensate for the round-trip overhead of fetching the UI tree.
-      val remainingWait = interval - elapsedForSample
-      if (remainingWait > Duration.ZERO) {
-        delay(remainingWait)
       }
-    }
-    System.err.println("Sampling complete. Collected $sampleCount samples. Analyzing...")
+    System.err.println("Sampling complete. Collected ${samples.size} samples. Analyzing...")
 
-    printTrackedChanges(samples, includeAttributes, includeSemantics)
+    printer.printTrackedChanges(samples)
   }
+}
+
+/**
+ * Samples the UI via [fetch] at [interval] until [duration] elapses, returning each sample with its elapsed time since the start.
+ * [timeSource] and [delayFn] are injectable so tests can drive the schedule deterministically.
+ */
+internal suspend fun collectSamples(
+  interval: Duration,
+  duration: Duration,
+  timeSource: TimeSource.WithComparableMarks = TimeSource.Monotonic,
+  delayFn: suspend (Duration) -> Unit = { delay(it) },
+  fetch: suspend () -> UiDump,
+): List<TimedUiDump> {
+  val startTime = timeSource.markNow()
+  val endTime = startTime + duration
+  // Stores each collected UI tree sample mapped to the elapsed duration since the start of tracking.
+  val samples = mutableListOf<TimedUiDump>()
+
+  while (timeSource.markNow() < endTime) {
+    val sampleStart = timeSource.markNow()
+    val uiDump = fetch()
+    samples.add(TimedUiDump(startTime.elapsedNow(), uiDump))
+
+    val intervalWait = interval - sampleStart.elapsedNow()
+    val endWait = endTime - timeSource.markNow()
+    if (intervalWait >= endWait) {
+      if (endWait > Duration.ZERO) {
+        delayFn(endWait)
+      }
+      break
+    }
+    if (intervalWait > Duration.ZERO) {
+      delayFn(intervalWait)
+    }
+  }
+  return samples
 }
 
 /** Connects to the device, injects inspector agents, starts View and Compose inspectors, and runs [block] with the active connection. */
@@ -240,6 +304,7 @@ internal suspend fun dumpUi(
   composeInspectorConnected: Boolean,
   skipSystemComposables: Boolean,
   includeSemantics: Boolean,
+  printer: UiDumpPrinter,
 ) {
   val uiDump =
     fetchUiDump(
@@ -254,13 +319,10 @@ internal suspend fun dumpUi(
     throw EmptyViewRootsException()
   }
 
-  // Print output
-  uiDump.appContext?.let { printAppContext(it, uiDump.stringTable) }
-  uiDump.configuration?.let { printDeviceConfiguration(it, uiDump.stringTable) }
-  uiDump.roots.forEach { printUiTree(it, 0, includeAttributes, includeSemantics) }
+  printer.printDump(uiDump)
 }
 
-private suspend fun fetchUiDump(
+internal suspend fun fetchUiDump(
   commandSender: CommandSender,
   includeAttributes: Boolean,
   includeResolutionStack: Boolean,

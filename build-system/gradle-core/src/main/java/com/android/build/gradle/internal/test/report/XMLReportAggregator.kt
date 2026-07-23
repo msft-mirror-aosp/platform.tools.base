@@ -144,6 +144,7 @@ class XMLReportAggregator(private val files: List<File>, projectName: String) {
         val reader = factory.createXMLStreamReader(stream)
         var modulePath: String? = null
         var testSuiteName: String? = null
+        var testTarget: String? = null
 
         // Variables for the current test case being processed
         var currentClassname: String? = null
@@ -181,6 +182,7 @@ class XMLReportAggregator(private val files: List<File>, projectName: String) {
                       when (name) {
                         KEY_MODULE_PATH -> modulePath = value
                         KEY_TEST_SUITE_NAME -> testSuiteName = value
+                        KEY_TEST_TARGET -> testTarget = value
                         KEY_TESTED_VARIANT_NAME -> {
                           rootReportBuilder.addVariant(value)
                           variantName = value
@@ -230,6 +232,8 @@ class XMLReportAggregator(private val files: List<File>, projectName: String) {
 
                   // Extract and clean stack trace
                   val stackTrace = failureBuffer?.toString()?.trim()?.takeIf { it.isNotEmpty() }
+                  val target = testTarget ?: UNKNOWN_TARGET
+                  rootReportBuilder.addTarget(target)
 
                   addTestResult(
                     modulePath,
@@ -237,6 +241,7 @@ class XMLReportAggregator(private val files: List<File>, projectName: String) {
                     currentClassname,
                     currentTestcaseName,
                     variantName,
+                    target,
                     currentStatus,
                     stackTrace,
                     currentDiffPercent,
@@ -279,10 +284,15 @@ class XMLReportAggregator(private val files: List<File>, projectName: String) {
 
   private class RootReportBuilder(private val projectName: String) {
     private val variants = HashSet<String>()
+    private val targets = HashSet<String>()
     private val moduleBuilders = mutableMapOf<String, ModuleBuilder>()
 
     fun addVariant(variant: String) {
       variants.add(variant)
+    }
+
+    fun addTarget(target: String) {
+      targets.add(target)
     }
 
     fun getOrAddModule(name: String) = moduleBuilders.getOrPut(name) { ModuleBuilder(name) }
@@ -298,6 +308,7 @@ class XMLReportAggregator(private val files: List<File>, projectName: String) {
       val numberOfClasses = modules.sumOf { module -> module.packages.sumOf { pkg -> pkg.classes.size } }
 
       val testSuites = modules.flatMap { it.testSuiteSummaries.map { ts -> ts.name } }.distinct().sorted()
+      val targetsSorted = if (targets.isEmpty()) listOf(UNKNOWN_TARGET) else targets.sorted()
 
       return RootReport(
         projectName = projectName,
@@ -307,6 +318,7 @@ class XMLReportAggregator(private val files: List<File>, projectName: String) {
         numberOfClasses = numberOfClasses,
         variants = variants.sorted(),
         testSuites = testSuites,
+        targets = targetsSorted,
         modules = modules,
       )
     }
@@ -369,7 +381,11 @@ class XMLReportAggregator(private val files: List<File>, projectName: String) {
       val allVariants =
         testCasesList
           .flatMap { tc ->
-            tc.testSuiteSummaries.filter { it.name != AGGREGATED_TEST_SUITE_NAME }.flatMap { ts -> ts.variantSummaries.map { v -> v.name } }
+            tc.targets.flatMap { target ->
+              target.testSuiteSummaries
+                .filter { it.name != AGGREGATED_TEST_SUITE_NAME }
+                .flatMap { ts -> ts.variantSummaries.map { v -> v.name } }
+            }
           }
           .distinct()
           .sorted()
@@ -382,6 +398,7 @@ class XMLReportAggregator(private val files: List<File>, projectName: String) {
   private data class TestCaseExecution(
     val testSuiteName: String,
     val variantName: String,
+    val targetName: String,
     val status: String,
     val stackTrace: String?,
     val diffPercent: String?,
@@ -398,6 +415,7 @@ class XMLReportAggregator(private val files: List<File>, projectName: String) {
     fun addResult(
       testSuiteName: String,
       variantName: String,
+      targetName: String,
       status: String,
       stackTrace: String?,
       diffPercent: String?,
@@ -411,6 +429,7 @@ class XMLReportAggregator(private val files: List<File>, projectName: String) {
         TestCaseExecution(
           testSuiteName,
           variantName,
+          targetName,
           status,
           stackTrace,
           diffPercent,
@@ -424,64 +443,73 @@ class XMLReportAggregator(private val files: List<File>, projectName: String) {
     }
 
     fun build(): TestCase {
-      val stackTraceGroups = mutableListOf<StackTraceGroup>()
-      val stackTraceToId = mutableMapOf<String, String>()
-
-      executions
-        .filter { it.stackTrace != null }
-        .groupBy { it.stackTrace!! }
-        .forEach { (stackTrace, execs) ->
-          val id = "st-${UUID.nameUUIDFromBytes(stackTrace.toByteArray(Charsets.UTF_8))}"
-          stackTraceToId[stackTrace] = id
-          val occurrences = execs.groupBy({ it.testSuiteName }, { it.variantName }).mapValues { it.value.distinct() }
-          stackTraceGroups.add(StackTraceGroup(id, stackTrace, occurrences))
-        }
-
-      val testSuiteResults =
+      val targetsList =
         executions
-          .groupBy { it.testSuiteName }
-          .map { (suiteName, suiteExecs) ->
-            val variantResults = mutableMapOf<String, VariantTestResult>()
-            suiteExecs.forEach { exec ->
-              val existing = variantResults[exec.variantName]
-              // Prioritize statuses: Fail > Pass > Skipped. This ensures flaky tests are surfaced
-              // to the user and that successful retries are favored over skips.
-              if (
-                existing == null ||
-                  (existing.status != STATUS_FAIL && exec.status == STATUS_FAIL) ||
-                  (existing.status == STATUS_SKIPPED && exec.status == STATUS_PASS)
-              ) {
-                variantResults[exec.variantName] =
-                  VariantTestResult(
-                    exec.status,
-                    exec.stackTrace?.let { stackTraceToId[it] },
-                    exec.diffPercent,
-                    exec.previewName,
-                    exec.methodName,
-                    exec.refImagePath,
-                    exec.newImagePath,
-                    exec.diffImagePath,
-                  )
+          .groupBy { it.targetName }
+          .map { (targetName, targetExecutions) ->
+            val stackTraceGroups = mutableListOf<StackTraceGroup>()
+            val stackTraceToId = mutableMapOf<String, String>()
+
+            targetExecutions
+              .filter { it.stackTrace != null }
+              .groupBy { it.stackTrace!! }
+              .forEach { (stackTrace, execs) ->
+                val id = "st-${UUID.nameUUIDFromBytes(stackTrace.toByteArray(Charsets.UTF_8))}"
+                stackTraceToId[stackTrace] = id
+                val occurrences = execs.groupBy({ it.testSuiteName }, { it.variantName }).mapValues { it.value.distinct() }
+                stackTraceGroups.add(StackTraceGroup(id, stackTrace, occurrences))
               }
-            }
-            TestSuiteTestResult(suiteName, variantResults)
+
+            val testSuiteResults =
+              targetExecutions
+                .groupBy { it.testSuiteName }
+                .map { (suiteName, suiteExecs) ->
+                  val variantResults = mutableMapOf<String, VariantTestResult>()
+                  suiteExecs.forEach { exec ->
+                    val existing = variantResults[exec.variantName]
+                    // Prioritize statuses: Fail > Pass > Skipped. This ensures flaky tests are surfaced
+                    // to the user and that successful retries are favored over skips.
+                    if (
+                      existing == null ||
+                        (existing.status != STATUS_FAIL && exec.status == STATUS_FAIL) ||
+                        (existing.status == STATUS_SKIPPED && exec.status == STATUS_PASS)
+                    ) {
+                      variantResults[exec.variantName] =
+                        VariantTestResult(
+                          status = exec.status,
+                          stackTraceId = exec.stackTrace?.let { stackTraceToId[it] },
+                          diffPercent = exec.diffPercent,
+                          previewName = exec.previewName,
+                          methodName = exec.methodName,
+                          refImagePath = exec.refImagePath,
+                          newImagePath = exec.newImagePath,
+                          diffImagePath = exec.diffImagePath,
+                        )
+                    }
+                  }
+                  TestSuiteTestResult(suiteName, variantResults)
+                }
+
+            val testSuiteSummaries = calculateTestCaseTestSuiteSummaries(targetExecutions).toMutableList()
+            val allVariants = targetExecutions.map { it.variantName }.distinct().sorted()
+            val aggregatedVariantSummaries =
+              testSuiteSummaries.flatMap { it.variantSummaries }.let { flattenVariantSummaries(it, allVariants) }
+            testSuiteSummaries.add(TestSuiteSummary(AGGREGATED_TEST_SUITE_NAME, aggregatedVariantSummaries))
+
+            Target(
+              name = targetName,
+              testSuiteSummaries = testSuiteSummaries,
+              testSuiteResults = testSuiteResults,
+              commonStackTraces = stackTraceGroups,
+            )
           }
+          .sortedBy { it.name }
 
-      val testSuiteSummaries = calculateTestCaseTestSuiteSummaries().toMutableList()
-      val allVariants = executions.map { it.variantName }.distinct().sorted()
-      val aggregatedVariantSummaries = testSuiteSummaries.flatMap { it.variantSummaries }.let { flattenVariantSummaries(it, allVariants) }
-      testSuiteSummaries.add(TestSuiteSummary(AGGREGATED_TEST_SUITE_NAME, aggregatedVariantSummaries))
-
-      return TestCase(
-        name = name,
-        testSuiteSummaries = testSuiteSummaries,
-        testSuiteResults = testSuiteResults,
-        commonStackTraces = stackTraceGroups,
-      )
+      return TestCase(name = name, targets = targetsList)
     }
 
-    private fun calculateTestCaseTestSuiteSummaries(): List<TestSuiteSummary> {
-      return executions
+    private fun calculateTestCaseTestSuiteSummaries(targetExecutions: List<TestCaseExecution>): List<TestSuiteSummary> {
+      return targetExecutions
         .groupBy { it.testSuiteName }
         .map { (suiteName, suiteExecs) ->
           val variants = suiteExecs.map { it.variantName }.distinct().sorted()
@@ -576,7 +604,8 @@ class XMLReportAggregator(private val files: List<File>, projectName: String) {
         val suiteToVariantExec = mutableMapOf<String, MutableMap<String, TestCaseExecution>>()
         tc.executions.forEach { exec ->
           val existingMap = suiteToVariantExec.getOrPut(exec.testSuiteName) { mutableMapOf() }
-          val existing = existingMap[exec.variantName]
+          val key = "${exec.variantName}_${exec.targetName}"
+          val existing = existingMap[key]
           // Prioritize statuses: Fail > Pass > Skipped. This ensures flaky tests are surfaced
           // to the user and that successful retries are favored over skips.
           if (
@@ -584,7 +613,7 @@ class XMLReportAggregator(private val files: List<File>, projectName: String) {
               (existing.status != STATUS_FAIL && exec.status == STATUS_FAIL) ||
               (existing.status == STATUS_SKIPPED && exec.status == STATUS_PASS)
           ) {
-            existingMap[exec.variantName] = exec
+            existingMap[key] = exec
           }
         }
 
@@ -632,6 +661,7 @@ class XMLReportAggregator(private val files: List<File>, projectName: String) {
     classname: String,
     testcaseName: String,
     variantName: String,
+    targetName: String,
     status: String,
     stackTrace: String?,
     diffPercent: String?,
@@ -653,6 +683,7 @@ class XMLReportAggregator(private val files: List<File>, projectName: String) {
         .addResult(
           testSuiteName,
           variantName,
+          targetName,
           status,
           stackTrace,
           diffPercent,

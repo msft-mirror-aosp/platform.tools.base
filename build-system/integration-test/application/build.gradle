@@ -26,6 +26,7 @@ dependencies {
     testImplementation libs.com.android.tools.layoutlib.layoutlibApi
     testImplementation project(':base:profgen')
     testImplementation project(':base:preview:screenshot:screenshot-test-gradle-plugin')
+    testImplementation project(':base:bazel:avd')
 
     testImplementation libs.kotlin_stdlib
     testImplementation libs.kotlin_test
