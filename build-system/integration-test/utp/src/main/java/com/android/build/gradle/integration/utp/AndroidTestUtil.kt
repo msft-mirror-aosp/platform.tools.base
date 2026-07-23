@@ -894,6 +894,18 @@ class AndroidTestUtil(
       assertThat(reportFile).exists()
       assertThat(reportDir.resolve("index.html")).exists()
     }
+
+    if (testTaskName.contains("allDevices")) {
+      val mergedReportDir = reportDir.parent.resolve("allDevices")
+      if (enableReportAggregation) {
+        assertThat(mergedReportDir.resolve("index.html")).exists()
+        assertThat(mergedReportDir.resolve("script.js")).exists()
+        assertThat(mergedReportDir.resolve("styles.css")).exists()
+        assertThat(mergedReportDir.resolve("data.js")).exists()
+      } else if (mergedReportDir.exists()) {
+        assertThat(mergedReportDir.resolve("index.html")).exists()
+      }
+    }
   }
 }
 

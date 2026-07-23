@@ -129,7 +129,12 @@ class SimpleManagedDeviceTest(val runWithBuiltInPlatform: Boolean) {
         )
       )
     assertThat(File(mergedTestReportDir, "index.html")).exists()
-    if (!aggregationActive) {
+    if (enabled) {
+      assertThat(File(mergedTestReportDir, "data.js")).exists()
+      assertThat(File(mergedTestReportDir, "script.js")).exists()
+      assertThat(File(mergedTestReportDir, "styles.css")).exists()
+      assertThat(File(mergedTestReportDir, "com.example.android.kotlin.html")).doesNotExist()
+    } else {
       assertThat(File(mergedTestReportDir, "com.example.android.kotlin.html")).exists()
       assertThat(File(mergedTestReportDir, "com.example.android.kotlin.ExampleInstrumentedTest.html")).exists()
     }
