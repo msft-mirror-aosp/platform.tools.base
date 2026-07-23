@@ -19,12 +19,16 @@ package com.android.tools.ui.inspector
 import com.google.common.truth.Truth.assertThat
 import java.io.File
 import java.io.IOException
+import java.net.ServerSocket
+import java.net.SocketTimeoutException
 import java.util.concurrent.Callable
 import java.util.concurrent.CyclicBarrier
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 import org.junit.Assert.assertThrows
 import org.junit.Rule
 import org.junit.Test
@@ -47,6 +51,17 @@ class MavenArtifactResolverTest {
         zos.write(jarContent.toByteArray())
         zos.closeEntry()
       }
+    }
+  }
+
+  @Test(timeout = 5_000)
+  fun testHttpArtifactDownloader_timesOutOnStalledServer() {
+    // A server that accepts the connection but never writes a byte: without a read timeout the download hangs forever.
+    ServerSocket(0).use { server ->
+      val downloader = HttpArtifactDownloader(connectTimeout = 5.seconds, readTimeout = 200.milliseconds)
+      val output = tempFolder.newFile("stalled.aar")
+
+      assertThrows(SocketTimeoutException::class.java) { downloader.download("http://127.0.0.1:${server.localPort}/x.aar", output) }
     }
   }
 
