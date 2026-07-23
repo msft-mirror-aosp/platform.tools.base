@@ -1,6 +1,7 @@
-package(default_visibility = ["//visibility:public"])
-
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
 load("//tools/base/bazel:utils.bzl", "java_jarjar")
+
+package(default_visibility = ["//visibility:public"])
 
 cc_binary(
     name = "trace_processor_daemon",
@@ -68,9 +69,11 @@ cc_test(
         "-Itools/base/profiler/native/trace_processor_daemon",
     ],
     data = [
+        "testdata/deobfuscated.heapprofd",
         "testdata/garbage.trace",
         "testdata/tank.trace",
         "testdata/unity.heapprofd",
+        "testdata/unity.tar",
     ],
     linkstatic = 1,
     deps = [
