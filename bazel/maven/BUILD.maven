@@ -3811,6 +3811,150 @@ maven_import(
 )
 
 maven_artifact(
+    name = "com.android.tools.androidtest.android-test-engine-result-listener_0.1.0-alpha02",
+    pom = "repository/com/android/tools/androidtest/android-test-engine-result-listener/0.1.0-alpha02/android-test-engine-result-listener-0.1.0-alpha02.pom",
+    repo_root_path = "repository",
+    repo_path = "com/android/tools/androidtest/android-test-engine-result-listener/0.1.0-alpha02",
+    deps = [
+        "com.android.tools.androidtest.test-result-event-proto_0.1.0-alpha02",
+        "com.android.tools.androidtest.test-result-proto_0.1.0-alpha02",
+        "com.google.protobuf.protobuf-java_3.25.5",
+        "org.jetbrains.kotlin.kotlin-stdlib-jdk8_2.2.10",
+        "org.junit.platform.junit-platform-launcher_1.13.3",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "com.android.tools.androidtest.android-test-engine-result-listener",
+    classifiers = [],
+    jars = [
+        "repository/com/android/tools/androidtest/android-test-engine-result-listener/0.1.0-alpha02/android-test-engine-result-listener-0.1.0-alpha02.jar"
+    ],
+    exports = [
+        "org.junit.platform.junit-platform-launcher",
+    ],
+    deps = [
+        "com.android.tools.androidtest.test-result-event-proto",
+        "com.android.tools.androidtest.test-result-proto",
+        "com.google.protobuf.protobuf-java",
+        "org.jetbrains.kotlin.kotlin-stdlib-jdk8",
+    ],
+    original_deps = [
+        "com.android.tools.androidtest.test-result-event-proto_0.1.0-alpha02",
+        "com.android.tools.androidtest.test-result-proto_0.1.0-alpha02",
+        "com.google.protobuf.protobuf-java_3.25.5",
+        "org.jetbrains.kotlin.kotlin-stdlib-jdk8_2.2.10",
+        "org.junit.platform.junit-platform-launcher_1.13.3",
+    ],
+    pom = "repository/com/android/tools/androidtest/android-test-engine-result-listener/0.1.0-alpha02/android-test-engine-result-listener-0.1.0-alpha02.pom",
+    repo_root_path = "repository",
+    repo_path = "com/android/tools/androidtest/android-test-engine-result-listener/0.1.0-alpha02",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.android.tools.androidtest.android-test-engine_0.1.0-alpha02",
+    pom = "repository/com/android/tools/androidtest/android-test-engine/0.1.0-alpha02/android-test-engine-0.1.0-alpha02.pom",
+    repo_root_path = "repository",
+    repo_path = "com/android/tools/androidtest/android-test-engine/0.1.0-alpha02",
+    deps = [
+        "com.android.tools.androidtest.test-result-proto_0.1.0-alpha02",
+        "com.google.protobuf.protobuf-java_3.25.5",
+        "org.jetbrains.kotlin.kotlin-stdlib-jdk8_2.2.10",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.9.0",
+        "org.junit.platform.junit-platform-engine_1.13.3",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "com.android.tools.androidtest.android-test-engine",
+    classifiers = [],
+    jars = [
+        "repository/com/android/tools/androidtest/android-test-engine/0.1.0-alpha02/android-test-engine-0.1.0-alpha02.jar"
+    ],
+    exports = [
+        "com.android.tools.androidtest.test-result-proto",
+        "org.jetbrains.kotlin.kotlin-stdlib-jdk8",
+        "org.junit.platform.junit-platform-engine",
+    ],
+    deps = [
+        "com.google.protobuf.protobuf-java",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core",
+    ],
+    original_deps = [
+        "com.android.tools.androidtest.test-result-proto_0.1.0-alpha02",
+        "com.google.protobuf.protobuf-java_3.25.5",
+        "org.jetbrains.kotlin.kotlin-stdlib-jdk8_2.2.10",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.9.0",
+        "org.junit.platform.junit-platform-engine_1.13.3",
+    ],
+    pom = "repository/com/android/tools/androidtest/android-test-engine/0.1.0-alpha02/android-test-engine-0.1.0-alpha02.pom",
+    repo_root_path = "repository",
+    repo_path = "com/android/tools/androidtest/android-test-engine/0.1.0-alpha02",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.android.tools.androidtest.test-result-event-proto_0.1.0-alpha02",
+    pom = "repository/com/android/tools/androidtest/test-result-event-proto/0.1.0-alpha02/test-result-event-proto-0.1.0-alpha02.pom",
+    repo_root_path = "repository",
+    repo_path = "com/android/tools/androidtest/test-result-event-proto/0.1.0-alpha02",
+    deps = [
+        "com.google.protobuf.protobuf-java_3.25.5",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "com.android.tools.androidtest.test-result-event-proto",
+    classifiers = [],
+    jars = [
+        "repository/com/android/tools/androidtest/test-result-event-proto/0.1.0-alpha02/test-result-event-proto-0.1.0-alpha02.jar"
+    ],
+    deps = [
+        "com.google.protobuf.protobuf-java",
+    ],
+    original_deps = [
+        "com.google.protobuf.protobuf-java_3.25.5",
+    ],
+    pom = "repository/com/android/tools/androidtest/test-result-event-proto/0.1.0-alpha02/test-result-event-proto-0.1.0-alpha02.pom",
+    repo_root_path = "repository",
+    repo_path = "com/android/tools/androidtest/test-result-event-proto/0.1.0-alpha02",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.android.tools.androidtest.test-result-proto_0.1.0-alpha02",
+    pom = "repository/com/android/tools/androidtest/test-result-proto/0.1.0-alpha02/test-result-proto-0.1.0-alpha02.pom",
+    repo_root_path = "repository",
+    repo_path = "com/android/tools/androidtest/test-result-proto/0.1.0-alpha02",
+    deps = [
+        "com.google.protobuf.protobuf-java_3.25.5",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "com.android.tools.androidtest.test-result-proto",
+    classifiers = [],
+    jars = [
+        "repository/com/android/tools/androidtest/test-result-proto/0.1.0-alpha02/test-result-proto-0.1.0-alpha02.jar"
+    ],
+    exports = [
+        "com.google.protobuf.protobuf-java",
+    ],
+    original_deps = [
+        "com.google.protobuf.protobuf-java_3.25.5",
+    ],
+    pom = "repository/com/android/tools/androidtest/test-result-proto/0.1.0-alpha02/test-result-proto-0.1.0-alpha02.pom",
+    repo_root_path = "repository",
+    repo_path = "com/android/tools/androidtest/test-result-proto/0.1.0-alpha02",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.android.tools.build.jetifier.jetifier-core_1.0.0-beta10",
     pom = "repository/com/android/tools/build/jetifier/jetifier-core/1.0.0-beta10/jetifier-core-1.0.0-beta10.pom",
     repo_root_path = "repository",
@@ -4020,11 +4164,11 @@ maven_import(
         "repository/com/android/tools/fakeadbserver/fakeadbserver/31.13.0/fakeadbserver-31.13.0.jar"
     ],
     exports = [
-        "com.google.protobuf.protobuf-java",
         "net.sf.kxml.kxml2",
     ],
     deps = [
         "com.android.tools.common",
+        "com.google.protobuf.protobuf-java",
         "org.jetbrains.kotlin.kotlin-reflect",
         "org.jetbrains.kotlin.kotlin-stdlib-jdk8",
         "org.jetbrains.kotlinx.kotlinx-coroutines-core",
@@ -18056,9 +18200,9 @@ maven_import(
     ],
     exports = [
         "org.jetbrains.kotlin.kotlin-build-tools-api",
-        "org.jetbrains.kotlin.kotlin-stdlib",
     ],
     deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib",
         "org.jetbrains.kotlin.kotlin-compiler-embeddable",
         "org.jetbrains.kotlin.kotlin-compiler-runner",
         "org.jetbrains.kotlin.kotlin-scripting-compiler-embeddable",
