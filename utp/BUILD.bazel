@@ -2,7 +2,6 @@ load("//tools/base/bazel:gradle.bzl", "gradle_build")
 load("//tools/base/bazel:maven.bzl", "maven_repository")
 load("//tools/base/bazel:utils.bzl", "merged_zip")
 load("//tools/base/build-system:hybrid_build.bzl", "GRADLE_PROPERTIES")
-load(":utp_maven.bzl", "maven_to_java")
 
 filegroup(
     name = "agp_gradle_build_files",
@@ -14,17 +13,8 @@ UTP_SOURCE_FILES = [
     ":agp_gradle_build_files",
     "//tools:agp_gradle_build_files",
     "//tools/base/common:agp_gradle_build_files",
-    "//tools/base/utp/android-device-provider-ddmlib:agp_gradle_build_files",
-    "//tools/base/utp/android-test-plugin-host-additional-test-output:agp_gradle_build_files",
-    "//tools/base/utp/android-test-plugin-host-apk-installer:agp_gradle_build_files",
-    "//tools/base/utp/android-test-plugin-host-coverage:agp_gradle_build_files",
-    "//tools/base/utp/android-test-plugin-host-device-info:agp_gradle_build_files",
-    "//tools/base/utp/android-test-plugin-host-emulator-control:agp_gradle_build_files",
-    "//tools/base/utp/android-test-plugin-host-logcat:agp_gradle_build_files",
-    "//tools/base/utp/android-test-plugin-result-listener-gradle:agp_gradle_build_files",
     "//tools/base/utp/gradle-work-action:agp_gradle_build_files",
     "//tools/base/utp/gradle-work-action-api:agp_gradle_build_files",
-    "//tools/base/utp/utp-common:agp_gradle_build_files",
     "//tools/buildSrc:agp_gradle_build_files",
     "//tools/buildSrc/base:agp_gradle_build_files",
 ]
@@ -35,17 +25,8 @@ maven_repository(
     artifacts = [
         "//tools/base/common:tools.common",
         "//tools/base/ddmlib:tools.ddmlib",
-        "//tools/base/emulator/proto",
         "//tools/base/sdk-common:tools.sdk-common",
         "//tools/base/sdklib:tools.sdklib",
-        "//tools/base/utp/android-device-provider-ddmlib-proto",
-        "//tools/base/utp/android-test-plugin-host-additional-test-output-proto",
-        "//tools/base/utp/android-test-plugin-host-apk-installer-proto",
-        "//tools/base/utp/android-test-plugin-host-coverage-proto",
-        "//tools/base/utp/android-test-plugin-host-device-info-proto",
-        "//tools/base/utp/android-test-plugin-host-emulator-control-proto",
-        "//tools/base/utp/android-test-plugin-host-logcat-proto",
-        "//tools/base/utp/android-test-plugin-result-listener-gradle-proto",
         "@maven//:com.android.tools.androidtest.android-test-engine",
         "@maven//:com.android.tools.androidtest.android-test-engine-result-listener",
         "@maven//:com.android.tools.androidtest.test-result-event-proto",
@@ -54,13 +35,6 @@ maven_repository(
         "@maven//:com.google.protobuf.protobuf-bom_4.28.3",
         "@maven//:com.google.protobuf.protobuf-java-util_4.28.3",
         "@maven//:com.google.protobuf.protobuf-java_4.28.3",
-        "@maven//:com.google.testing.compile.compile-testing",
-        "@maven//:com.google.testing.platform.android-device-provider-local_0.0.9-alpha04",
-        "@maven//:com.google.testing.platform.android-driver-instrumentation_0.0.9-alpha04",
-        "@maven//:com.google.testing.platform.android-test-plugin_0.0.9-alpha04",
-        "@maven//:com.google.testing.platform.core-proto_0.0.9-alpha04",
-        "@maven//:com.google.testing.platform.core_0.0.9-alpha04",
-        "@maven//:com.google.testing.platform.launcher_0.0.9-alpha04",
         "@maven//:org.junit.platform.junit-platform-engine",
         "@maven//:org.junit.platform.junit-platform-launcher",
     ],
@@ -95,67 +69,5 @@ merged_zip(
         "//tools/vendor/google/android-ndk:__subpackages__",
         "//tools/vendor/google/lldb-integration-tests:__subpackages__",
         "//tools/vendor/google/ml:__subpackages__",
-    ],
-)
-
-maven_to_java(
-    name = "com.google.testing.platform.core-proto",
-    artifact = "@maven//:com.google.testing.platform.core-proto_0.0.9-alpha04",
-    visibility = [
-        "//tools/base/build-system/integration-test/utp:__subpackages__",
-        "//tools/base/utp:__subpackages__",
-    ],
-    deps = [
-        ":utp.protobuf-java",
-        ":utp.protobuf-kotlin",
-    ],
-)
-
-maven_to_java(
-    name = "utp.protobuf-java",
-    artifact = "@maven//:com.google.protobuf.protobuf-java_4.28.3",
-    visibility = [
-        "//tools/base/build-system/integration-test/utp:__subpackages__",
-        "//tools/base/utp:__subpackages__",
-    ],
-)
-
-maven_to_java(
-    name = "utp.protobuf-kotlin",
-    artifact = "@maven//:com.google.protobuf.protobuf-kotlin_4.28.3",
-    visibility = ["//tools/base/utp:__subpackages__"],
-)
-
-maven_to_java(
-    name = "utp.dagger",
-    artifact = "@maven//:com.google.dagger.dagger_2.48",
-    visibility = ["//tools/base/utp:__subpackages__"],
-)
-
-maven_to_java(
-    name = "com.google.testing.platform.launcher",
-    artifact = "@maven//:com.google.testing.platform.launcher_0.0.9-alpha04",
-    visibility = ["//tools/base/utp:__subpackages__"],
-    deps = [":com.google.testing.platform.core-proto"],
-)
-
-maven_to_java(
-    name = "com.google.testing.platform.android-device-provider-local",
-    artifact = "@maven//:com.google.testing.platform.android-device-provider-local_0.0.9-alpha04",
-    visibility = ["//tools/base/utp:__subpackages__"],
-)
-
-maven_to_java(
-    name = "com.google.testing.platform.android-driver-instrumentation",
-    artifact = "@maven//:com.google.testing.platform.android-driver-instrumentation_0.0.9-alpha04",
-    visibility = ["//tools/base/utp:__subpackages__"],
-)
-
-maven_to_java(
-    name = "utp.tink",
-    artifact = "@maven//:com.google.crypto.tink.tink_1.18.0",
-    visibility = ["//tools/base/utp:__subpackages__"],
-    deps = [
-        ":utp.protobuf-java",
     ],
 )

@@ -8,15 +8,12 @@ kotlin_library(
     ]),
     visibility = ["//tools/base/build-system/integration-test:__subpackages__"],
     deps = [
-        # Put UTP protobuf-java runtime first in the list to ignore other versions in the deps.
-        "//tools/base/utp:utp.protobuf-java",
-        # Other dependencies.
         "//tools/base/build-system:gradle-api",
         "//tools/base/build-system/gradle-common-api",
         "//tools/base/build-system/gradle-core",
         "//tools/base/build-system/integration-test/framework",
         "//tools/base/testutils:tools.testutils",
-        "//tools/base/utp:com.google.testing.platform.core-proto",
-        "//tools/base/utp/android-test-plugin-host-device-info-proto",
+        "@maven//:com.android.tools.androidtest.test-result-proto",
+        "@maven//:com.google.protobuf.protobuf-java",
     ],
 )

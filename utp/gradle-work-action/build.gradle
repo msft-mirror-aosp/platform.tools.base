@@ -26,7 +26,6 @@ dependencies {
     compileOnly project(':base:utp:gradle-work-action-api')
     implementation libs.com.android.tools.common
     implementation libs.com.android.tools.ddms.ddmlib
-    implementation "com.google.crypto.tink:tink:1.18.0"
     implementation libs.apache_commons_io
     implementation libs.junit_platform_launcher
     implementation libs.junit_platform_engine
@@ -34,7 +33,6 @@ dependencies {
     implementation libs.android_test_engine_result_listener
     implementation libs.android_test_result_proto
     implementation libs.protobuf
-    implementation "com.google.dagger:dagger:2.48"
 
     testImplementation gradleApi()
     testImplementation project(':base:utp:gradle-work-action-api')

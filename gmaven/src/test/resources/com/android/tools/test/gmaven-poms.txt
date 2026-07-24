@@ -817,155 +817,6 @@ com.android.tools.pixelprobe:pixelprobe
   dependencies:
     com.android.tools.chunkio:chunkio (runtime)
 
-com.android.tools.utp:android-device-provider-ddmlib
-  pomName=com.android.tools.utp.android-device-provider-ddmlib
-  description=Library providing UTP plugins to talk to AGP
-  dependencies:
-    com.android.tools:common (runtime)
-    com.android.tools.ddms:ddmlib (runtime)
-    com.google.protobuf:protobuf-java (runtime)
-    com.android.tools.utp:android-device-provider-ddmlib-proto (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib (runtime)
-    org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm (runtime)
-    com.google.testing.platform:core-proto (runtime)
-    com.google.testing.platform:android-device-provider-local (runtime)
-
-com.android.tools.utp:android-device-provider-ddmlib-proto
-  pomName=com.android.tools.utp.android-device-provider-ddmlib-proto
-  description=A protobuf messages used in a UTP plugin to provide Android device using ddmlib
-  dependencies:
-    com.google.protobuf:protobuf-java (runtime)
-
-com.android.tools.utp:android-test-plugin-host-additional-test-output
-  pomName=com.android.tools.utp.android-test-plugin-host-additional-test-output
-  description=A UTP plugin to copy additional test output to host machine
-  dependencies:
-    com.android.tools:common (runtime)
-    com.android.tools.utp:utp-common (runtime)
-    com.android.tools.utp:android-test-plugin-host-additional-test-output-proto (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib (runtime)
-    com.google.protobuf:protobuf-java (runtime)
-    com.google.testing.platform:android-device-provider-local (runtime)
-
-com.android.tools.utp:android-test-plugin-host-additional-test-output-proto
-  pomName=com.android.tools.utp.android-test-plugin-host-additional-test-output-proto
-  description=A protobuf messages used in a UTP plugin to export additional test outputs
-  dependencies:
-    com.google.protobuf:protobuf-java (runtime)
-
-com.android.tools.utp:android-test-plugin-host-apk-installer
-  pomName=com.android.tools.utp.android-test-plugin-host-apk-installer
-  description=A UTP plugin to install test APKs on Android devices
-  dependencies:
-    com.android.tools:common (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib (runtime)
-    org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm (runtime)
-    com.google.protobuf:protobuf-java (runtime)
-    com.android.tools.utp:android-test-plugin-host-apk-installer-proto (runtime)
-    com.google.testing.platform:android-device-provider-local (runtime)
-    com.google.testing.platform:core-proto (runtime)
-
-com.android.tools.utp:android-test-plugin-host-apk-installer-proto
-  pomName=com.android.tools.utp.android-test-plugin-host-apk-installer-proto
-  description=A protobuf messages used in a UTP plugin to install APKs
-  dependencies:
-    com.google.protobuf:protobuf-java (runtime)
-
-com.android.tools.utp:android-test-plugin-host-coverage
-  pomName=com.android.tools.utp.android-test-plugin-host-coverage
-  description=A UTP plugin to export test coverage data
-  dependencies:
-    com.android.tools:common (runtime)
-    com.android.tools.utp:android-test-plugin-host-coverage-proto (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib (runtime)
-    com.google.protobuf:protobuf-java (runtime)
-    com.google.testing.platform:android-device-provider-local (runtime)
-
-com.android.tools.utp:android-test-plugin-host-coverage-proto
-  pomName=com.android.tools.utp.android-test-plugin-host-coverage-proto
-  description=A protobuf messages used in a UTP plugin to export test coverage data
-  dependencies:
-    com.google.protobuf:protobuf-java (runtime)
-
-com.android.tools.utp:android-test-plugin-host-device-info
-  pomName=com.android.tools.utp.android-test-plugin-host-device-info
-  description=A UTP plugin to export additional Android device information
-  dependencies:
-    com.android.tools:common (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib (runtime)
-    com.google.protobuf:protobuf-java (runtime)
-    com.android.tools.utp:utp-common (runtime)
-    com.android.tools.utp:android-test-plugin-host-device-info-proto (runtime)
-    com.google.testing.platform:android-device-provider-local (runtime)
-
-com.android.tools.utp:android-test-plugin-host-device-info-proto
-  pomName=com.android.tools.utp.android-test-plugin-host-device-info-proto
-  description=A protobuf message used in a UTP plugin to export additional Android device information
-  dependencies:
-    com.google.protobuf:protobuf-java (runtime)
-
-com.android.tools.utp:android-test-plugin-host-emulator-control
-  pomName=com.android.tools.utp.android-test-plugin-host-emulator-control
-  description=A UTP plugin that provides access to the gRPC endpoint of the emulator.
-  dependencies:
-    com.android.tools:common (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib (runtime)
-    org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm (runtime)
-    commons-io:commons-io (runtime)
-    com.google.code.gson:gson (runtime)
-    com.google.protobuf:protobuf-java (runtime)
-    com.google.guava:guava (runtime)
-    com.android.tools.utp:android-test-plugin-host-emulator-control-proto (runtime)
-    com.android.tools.emulator:proto (runtime)
-    com.google.testing.platform:android-device-provider-local (runtime)
-    com.google.crypto.tink:tink (runtime)
-    com.google.testing.platform:android-driver-instrumentation (runtime)
-
-com.android.tools.utp:android-test-plugin-host-emulator-control-proto
-  pomName=com.android.tools.utp.android-test-plugin-host-emulator-control-proto
-  description=A protobuf message used in UTP plugin to make the emulator gRPC endpoint .
-  dependencies:
-    org.jetbrains.kotlin:kotlin-stdlib-jdk8 (compile)
-    com.google.protobuf:protobuf-java (runtime)
-
-com.android.tools.utp:android-test-plugin-host-logcat
-  pomName=com.android.tools.utp.android-test-plugin-host-logcat
-  description=A UTP plugin to export logcat information
-  dependencies:
-    com.android.tools:common (runtime)
-    com.android.tools.utp:utp-common (runtime)
-    com.android.tools.utp:android-test-plugin-host-logcat-proto (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib (runtime)
-    com.google.protobuf:protobuf-java (runtime)
-    com.google.testing.platform:android-device-provider-local (runtime)
-
-com.android.tools.utp:android-test-plugin-host-logcat-proto
-  pomName=com.android.tools.utp.android-test-plugin-host-logcat-proto
-  description=A protobuf message used in a UTP plugin to export logcat information
-  dependencies:
-    com.google.protobuf:protobuf-java (runtime)
-
-com.android.tools.utp:android-test-plugin-result-listener-gradle
-  pomName=com.android.tools.utp.android-test-plugin-result-listener-gradle
-  description=A UTP plugin to listen test results
-  dependencies:
-    com.android.tools:common (runtime)
-    com.android.tools.ddms:ddmlib (runtime)
-    com.android.tools:sdk-common (runtime)
-    com.android.tools.utp:android-test-plugin-result-listener-gradle-proto (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib (runtime)
-    org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm (runtime)
-    com.google.protobuf:protobuf-java (runtime)
-    com.google.guava:guava (runtime)
-    com.google.testing.platform:core-proto (runtime)
-    com.google.testing.platform:android-device-provider-local (runtime)
-
-com.android.tools.utp:android-test-plugin-result-listener-gradle-proto
-  pomName=com.android.tools.utp.android-test-plugin-result-listener-gradle-proto
-  description=A protobuf messages used in a UTP plugin to listen test results
-  dependencies:
-    com.google.protobuf:protobuf-java (runtime)
-
 com.android.tools.utp:gradle-work-action
   pomName=com.android.tools.utp.gradle-work-action
   description=Provides Gradle WorkAction implementations for executing the Unified Test Platform (UTP) in isolation.
@@ -973,7 +824,6 @@ com.android.tools.utp:gradle-work-action
     org.jetbrains.kotlin:kotlin-stdlib (compile)
     com.android.tools:common (runtime)
     com.android.tools.ddms:ddmlib (runtime)
-    com.google.crypto.tink:tink (runtime)
     commons-io:commons-io (runtime)
     org.junit.platform:junit-platform-launcher (runtime)
     org.junit.platform:junit-platform-engine (runtime)
@@ -981,16 +831,9 @@ com.android.tools.utp:gradle-work-action
     com.android.tools.androidtest:android-test-engine-result-listener (runtime)
     com.android.tools.androidtest:test-result-proto (runtime)
     com.google.protobuf:protobuf-java (runtime)
-    com.google.dagger:dagger (runtime)
 
 com.android.tools.utp:gradle-work-action-api
   pomName=com.android.tools.utp.gradle-work-action-api
   description=Provides Gradle WorkAction API for executing the Unified Test Platform (UTP) in isolation.
-  dependencies:
-    org.jetbrains.kotlin:kotlin-stdlib (compile)
-
-com.android.tools.utp:utp-common
-  pomName=com.android.tools.utp.utp-common
-  description=Foundational utility classes and helpers common to Android Gradle UTP plugins.
   dependencies:
     org.jetbrains.kotlin:kotlin-stdlib (compile)

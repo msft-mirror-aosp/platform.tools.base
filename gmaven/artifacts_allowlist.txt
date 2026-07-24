@@ -70,25 +70,8 @@
   com/android/tools/lint:lint-tests
   com/android/tools/lint:lint-typedef-remover
   com/android/tools/pixelprobe:pixelprobe
-  com/android/tools/utp:android-device-provider-ddmlib
-  com/android/tools/utp:android-device-provider-ddmlib-proto
-  com/android/tools/utp:android-test-plugin-host-additional-test-output
-  com/android/tools/utp:android-test-plugin-host-additional-test-output-proto
-  com/android/tools/utp:android-test-plugin-host-apk-installer
-  com/android/tools/utp:android-test-plugin-host-apk-installer-proto
-  com/android/tools/utp:android-test-plugin-host-coverage
-  com/android/tools/utp:android-test-plugin-host-coverage-proto
-  com/android/tools/utp:android-test-plugin-host-device-info
-  com/android/tools/utp:android-test-plugin-host-device-info-proto
-  com/android/tools/utp:android-test-plugin-host-emulator-control
-  com/android/tools/utp:android-test-plugin-host-emulator-control-proto
-  com/android/tools/utp:android-test-plugin-host-logcat
-  com/android/tools/utp:android-test-plugin-host-logcat-proto
-  com/android/tools/utp:android-test-plugin-result-listener-gradle
-  com/android/tools/utp:android-test-plugin-result-listener-gradle-proto
   com/android/tools/utp:gradle-work-action
   com/android/tools/utp:gradle-work-action-api
-  com/android/tools/utp:utp-common
   com/android/tools:annotations
   com/android/tools:common
   com/android/tools:draw9patch
