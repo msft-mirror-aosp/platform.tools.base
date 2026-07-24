@@ -46,36 +46,6 @@ class UiInspectorCommand : Callable<Int> {
   }
 }
 
-@Command(name = "list-devices", description = ["List serial numbers of connected devices"])
-class ListDevicesCommand : Callable<Int> {
-  override fun call(): Int {
-    val adbSession = sessionFactory()
-    try {
-      runBlocking { doListDevices(adbSession) }
-      return EXIT_OK
-    } catch (e: Exception) {
-      System.err.println("Error listing devices: ${e.message}")
-      return EXIT_ERROR
-    }
-  }
-}
-
-@Command(name = "list-packages", description = ["List debuggable application package names on the device"])
-class ListPackagesCommand : Callable<Int> {
-  @Option(names = ["--device"], description = [DEVICE_OPTION_DESCRIPTION]) var device: String? = null
-
-  override fun call(): Int {
-    val adbSession = sessionFactory()
-    try {
-      runBlocking { doListPackages(adbSession, resolveDeviceSerial(adbSession, device)) }
-      return EXIT_OK
-    } catch (e: Exception) {
-      System.err.println("Error listing packages: ${e.message}")
-      return EXIT_ERROR
-    }
-  }
-}
-
 @Command(name = "dump-ui", description = ["Dump UI hierarchy"])
 class DumpUiCommand : Callable<Int> {
   @Option(names = ["--device"], description = [DEVICE_OPTION_DESCRIPTION]) var device: String? = null
@@ -138,11 +108,7 @@ class DumpUiCommand : Callable<Int> {
 /**
  * Creates the fully configured command line used by [main]. Tests use it too, so production command registration is what gets exercised.
  */
-internal fun createCommandLine(): CommandLine =
-  CommandLine(UiInspectorCommand())
-    .addSubcommand("dump-ui", DumpUiCommand())
-    .addSubcommand("list-devices", ListDevicesCommand())
-    .addSubcommand("list-packages", ListPackagesCommand())
+internal fun createCommandLine(): CommandLine = CommandLine(UiInspectorCommand()).addSubcommand("dump-ui", DumpUiCommand())
 
 fun main(args: Array<String>) {
   exitProcess(createCommandLine().execute(*args))

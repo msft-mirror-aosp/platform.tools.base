@@ -106,27 +106,14 @@ class CliHostTest {
   }
 
   @Test
-  fun testListPackagesDeviceOption() {
-    val parseResult = createCommandLine().parseArgs("list-packages", "--device", "123")
-    val listCmd = parseResult.subcommand().commandSpec().userObject() as ListPackagesCommand
-    assertThat(listCmd.device).isEqualTo("123")
-  }
-
-  @Test
   fun testDeviceOptionIsOptional() {
     assertThat(parseDumpUi("--package", "com.example").device).isNull()
-
-    val listParse = createCommandLine().parseArgs("list-packages")
-    assertThat((listParse.subcommand().commandSpec().userObject() as ListPackagesCommand).device).isNull()
   }
 
   @Test
   fun testSerialOptionNoLongerSupported() {
     assertThrows(CommandLine.UnmatchedArgumentException::class.java) {
       createCommandLine().parseArgs("dump-ui", "--device", "123", "--serial", "456", "--package", "com.example")
-    }
-    assertThrows(CommandLine.UnmatchedArgumentException::class.java) {
-      createCommandLine().parseArgs("list-packages", "--device", "123", "--serial", "456")
     }
   }
 
