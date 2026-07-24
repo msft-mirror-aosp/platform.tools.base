@@ -93,9 +93,19 @@ class AndroidTestEngineRunner(
         val deviceId = config.deviceId.get()
         val sanitizedDeviceId = PathSafety.sanitizeDisplayName(deviceId)
 
-        // Find file under resultsDir where parent directory contains sanitizedDeviceId
+        // Find file under resultsDir where parent directory matches sanitizedDeviceId
         val file =
-          resultsDir.walkTopDown().filter { it.name == "test-result.pb" && it.parentFile.name.contains(sanitizedDeviceId) }.firstOrNull()
+          resultsDir
+            .walkTopDown()
+            .filter {
+              if (it.name != "test-result.pb") {
+                false
+              } else {
+                val parentName = it.parentFile.name
+                parentName == sanitizedDeviceId || parentName.startsWith("$sanitizedDeviceId (")
+              }
+            }
+            .firstOrNull()
 
         if (file != null) {
           val targetFile = config.utpResultProtoOutputFile.get().asFile

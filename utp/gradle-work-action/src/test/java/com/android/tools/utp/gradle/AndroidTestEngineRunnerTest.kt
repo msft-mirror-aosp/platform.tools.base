@@ -239,6 +239,68 @@ class AndroidTestEngineRunnerTest {
   }
 
   @Test
+  fun execute_substringDeviceIds_successfulRun() {
+    val parameters = mock<RunUtpWorkParameters>()
+    val config1 = mock<UtpRunConfig>()
+    val config2 = mock<UtpRunConfig>()
+    val xmlReportDir = temporaryFolder.newFolder("xml-report")
+    val outputDir1 = temporaryFolder.newFolder("output1")
+    val outputDir2 = temporaryFolder.newFolder("output2")
+
+    // We want to simulate the case where device10 is matched when we look for device1.
+    // If we name the directories "device10" and "device1", "device10" contains "device1".
+    val utpResultFile10 = File(File(xmlReportDir, "device10").also { it.mkdirs() }, "test-result.pb")
+    val utpResultFile1 = File(File(xmlReportDir, "device1").also { it.mkdirs() }, "test-result.pb")
+
+    val dummyResult10 =
+      TestSuiteResult.newBuilder()
+        .setTestSuiteMetaData(TestSuiteResultProto.TestSuiteMetaData.newBuilder().setScheduledTestCaseCount(10))
+        .build()
+    utpResultFile10.outputStream().use { dummyResult10.writeTo(it) }
+
+    val dummyResult1 =
+      TestSuiteResult.newBuilder()
+        .setTestSuiteMetaData(TestSuiteResultProto.TestSuiteMetaData.newBuilder().setScheduledTestCaseCount(1))
+        .build()
+    utpResultFile1.outputStream().use { dummyResult1.writeTo(it) }
+
+    val targetResultFile1 = File(outputDir1, "test-result.pb")
+    val targetResultFile2 = File(outputDir2, "test-result.pb")
+
+    configureMockConfig(config1, "device1", "serial1", outputDir1, targetResultFile1)
+    configureMockConfig(config2, "device10", "serial10", outputDir2, targetResultFile2)
+
+    val xmlReportDirProp = mockDirectoryProperty(xmlReportDir)
+    val adbProp = mockRegularFileProperty(File("adb"))
+    val aaptProp = mockRegularFileProperty(File("aapt2"))
+    val runConfigsProp = mockListProperty(listOf(config1, config2))
+
+    whenever(parameters.adbExecutable).thenReturn(adbProp)
+    whenever(parameters.aaptExecutable).thenReturn(aaptProp)
+    whenever(parameters.utpRunConfigs).thenReturn(runConfigsProp)
+    whenever(parameters.xmlTestReportOutputDirectory).thenReturn(xmlReportDirProp)
+
+    val runner = AndroidTestEngineRunner { request, listener -> mapOf("serial1" to true, "serial10" to true) }
+
+    runner.execute(parameters, emptyList(), mergedResultFile, exitCodeFile)
+
+    assertThat(exitCodeFile.readText()).isEqualTo("0")
+    assertThat(mergedResultFile.exists()).isTrue()
+
+    val mergedResult = TestSuiteResult.parseFrom(mergedResultFile.inputStream())
+
+    assertThat(targetResultFile1.exists()).isTrue()
+    assertThat(targetResultFile2.exists()).isTrue()
+
+    val result1 = TestSuiteResult.parseFrom(targetResultFile1.inputStream())
+    val result2 = TestSuiteResult.parseFrom(targetResultFile2.inputStream())
+
+    assertThat(result1.testSuiteMetaData.scheduledTestCaseCount).isEqualTo(1)
+    assertThat(result2.testSuiteMetaData.scheduledTestCaseCount).isEqualTo(10)
+    assertThat(mergedResult.testSuiteMetaData.scheduledTestCaseCount).isEqualTo(11)
+  }
+
+  @Test
   fun execute_failedRun() {
     val parameters = mock<RunUtpWorkParameters>()
     val config = mock<UtpRunConfig>()
