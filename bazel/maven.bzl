@@ -482,7 +482,7 @@ def split_coordinates(coordinates, version):
     )
 
 def _maven_library_impl(ctx):
-    infos_deps = [dep[MavenInfo] for dep in ctx.attr.deps]
+    infos_deps = [dep[MavenInfo] for dep in ctx.attr.deps + getattr(ctx.attr, "data_deps", [])]
     infos_deps_compile_only = [dep[MavenInfo] for dep in getattr(ctx.attr, "deps_compile_only", [])]
     infos_exports = [dep[MavenInfo] for dep in ctx.attr.exports]
     pom_deps = [info.pom for info in infos_deps]
@@ -605,6 +605,7 @@ _maven_library = rule(
         ),
         "deps": attr.label_list(providers = [MavenInfo]),
         "deps_compile_only": attr.label_list(providers = [MavenInfo]),
+        "data_deps": attr.label_list(providers = [MavenInfo]),
         "exports": attr.label_list(providers = [MavenInfo]),
         "_zipper": attr.label(
             default = Label("@bazel_tools//tools/zip:zipper"),
@@ -642,6 +643,7 @@ def maven_library(
         deps_compile_only = [],
         exports = [],
         runtime_deps = [],
+        data_deps = [],
         bundled_deps = [],
         friends = [],
         notice = None,
@@ -669,6 +671,8 @@ def maven_library(
         kotlinc_opts: Additional Kotlinc options.
         resources: Resources to add to the jar.
         resources_strip_prefix: The prefix to strip from the resources path.
+        data: Additional runtime data files/runfiles for Bazel execution (omitted from the generated POM file).
+        data_deps: Maven dependency targets needed at runtime. Unlike normal `deps`, these are NOT added to kotlinc's compile-time classpath or JVM system classpath, but ARE emitted as `<scope>runtime</scope>` in the published POM file, and included as runfiles for execution.
         deps: The dependencies of this library.
         deps_compile_only: The compile-only (provided) dependencies of this library.
         exports: The exported dependencies of this library.
@@ -694,7 +698,7 @@ def maven_library(
         javacopts = javacopts,
         kotlinc_opts = kotlinc_opts,
         compress_resources = is_release(),
-        data = data,
+        data = data + data_deps,
         deps = deps + deps_compile_only + bundled_deps + neverlink_deps,
         exports = exports,
         friends = friends,
@@ -718,6 +722,7 @@ def maven_library(
         notice = notice,
         deps = deps,
         deps_compile_only = deps_compile_only,
+        data_deps = data_deps,
         bundled_deps = bundled_deps,
         exports = exports,
         coordinates = coordinates,
