@@ -27,6 +27,7 @@ def studio_mac(build_env: bazel.BuildEnv) -> None:
       '//tools/vendor/google/android:android-cli.zip',
       '//tools/base/profiler/native/trace_processor_daemon',
       '//tools/base/profiler/native/sherlock/perfetto-cropper:sherlock-perfetto-cropper',
+      '//tools/base/profiler/native/sherlock/perfetto-gpu-counters:sherlock-perfetto-gpu-counters',
       '//tools/base/profiler/native/sherlock:sherlock_trace_processor',
       '//tools/vendor/google/lume/dist:lightbuild',
   ]
@@ -46,6 +47,10 @@ def studio_mac(build_env: bazel.BuildEnv) -> None:
               ),
               (
                   'tools/base/profiler/native/sherlock/perfetto-cropper/sherlock-perfetto-cropper',
+                  '',
+              ),
+              (
+                  'tools/base/profiler/native/sherlock/perfetto-gpu-counters/sherlock-perfetto-gpu-counters',
                   '',
               ),
               (
@@ -75,6 +80,7 @@ def studio_mac_arm(build_env: bazel.BuildEnv) -> None:
       '//tools/vendor/google/android:android-cli.zip',
       '//tools/base/profiler/native/trace_processor_daemon',
       '//tools/base/profiler/native/sherlock/perfetto-cropper:sherlock-perfetto-cropper',
+      '//tools/base/profiler/native/sherlock/perfetto-gpu-counters:sherlock-perfetto-gpu-counters',
       '//tools/base/profiler/native/sherlock:sherlock_trace_processor',
       '//tools/adt/idea/android/native/diagnostics/heap:libjni_object_tagger',
       '//tools/vendor/google/lume/dist:lightbuild',
@@ -95,6 +101,10 @@ def studio_mac_arm(build_env: bazel.BuildEnv) -> None:
               ),
               (
                   'tools/base/profiler/native/sherlock/perfetto-cropper/sherlock-perfetto-cropper',
+                  '',
+              ),
+              (
+                  'tools/base/profiler/native/sherlock/perfetto-gpu-counters/sherlock-perfetto-gpu-counters',
                   '',
               ),
               (

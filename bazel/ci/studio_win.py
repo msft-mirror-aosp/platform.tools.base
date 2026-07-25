@@ -28,6 +28,7 @@ def studio_win(build_env: bazel.BuildEnv):
   extra_targets = [
       '//tools/base/profiler/native/trace_processor_daemon',
       '//tools/base/profiler/native/sherlock/perfetto-cropper:sherlock-perfetto-cropper',
+      '//tools/base/profiler/native/sherlock/perfetto-gpu-counters:sherlock-perfetto-gpu-counters',
       '//tools/base/profiler/native/sherlock:sherlock_trace_processor',
       '//tools/adt/idea/studio:android-studio.linux.zip',
       '//tools/adt/idea/studio:android-studio.mac.zip',
@@ -81,6 +82,7 @@ def studio_win(build_env: bazel.BuildEnv):
           ('tools/vendor/google/android/android-cli.zip', ''),
           ('tools/base/profiler/native/trace_processor_daemon/trace_processor_daemon.exe', ''),
           ('tools/base/profiler/native/sherlock/perfetto-cropper/sherlock-perfetto-cropper.exe', ''),
+          ('tools/base/profiler/native/sherlock/perfetto-gpu-counters/sherlock-perfetto-gpu-counters.exe', ''),
           ('tools/base/profiler/native/sherlock/sherlock_trace_processor.exe', ''),
           ('tools/vendor/google/lume/dist/lightbuild.zip', ''),
       ],
