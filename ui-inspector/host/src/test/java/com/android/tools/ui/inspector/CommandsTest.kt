@@ -22,7 +22,10 @@ import com.android.adblib.DeviceSelector
 import com.android.adblib.DeviceState
 import com.android.adblib.testing.FakeAdbSession
 import com.google.common.truth.Truth.assertThat
+import java.io.ByteArrayOutputStream
+import java.io.PrintStream
 import kotlinx.coroutines.runBlocking
+import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol
 import org.junit.Assert.assertThrows
 import org.junit.Test
 
@@ -150,5 +153,102 @@ class CommandsTest {
 
     assertThat(exception).hasMessageThat().contains("Multiple foreground apps found: com.first, com.second")
     assertThat(exception).hasMessageThat().contains("--package")
+  }
+
+  @Test
+  fun testMergeComposeRootsWarnsOnStderrWhenTargetViewIsMissing() {
+    val viewRoot = viewNode(1)
+    val composeRoots = listOf(composableRoot(targetViewId = 999, composableId = 100))
+
+    val stderr = captureStderr {
+      mergeComposeRoots(
+        viewRoot,
+        composeRoots,
+        stringTable = emptyMap(),
+        parameters = null,
+        includeParameters = false,
+        includeSemantics = false,
+      )
+    }
+
+    assertThat(stderr).contains("target view id 999")
+    assertThat(stderr).contains("view root 1")
+    assertThat(viewRoot.children).isEmpty()
+  }
+
+  @Test
+  fun testMergeComposeRootsContinuesAfterFailedAttachment() {
+    val composeView = viewNode(20)
+    val viewRoot = viewNode(1, composeView)
+    val composeRoots = listOf(composableRoot(targetViewId = 999, composableId = 100), composableRoot(targetViewId = 20, composableId = 200))
+
+    val stderr = captureStderr {
+      mergeComposeRoots(
+        viewRoot,
+        composeRoots,
+        stringTable = emptyMap(),
+        parameters = null,
+        includeParameters = false,
+        includeSemantics = false,
+      )
+    }
+
+    // The missing target is warned about; the valid root after it still attaches.
+    assertThat(stderr).contains("target view id 999")
+    assertThat(composeView.children.map { it.id }).containsExactly(200L)
+  }
+
+  @Test
+  fun testMergeComposeRootsAttachesNestedRootsInEitherResponseOrder() {
+    // The inner AndroidComposeView (30) sits below the outer one (20); both orders must fully attach.
+    for (reversed in listOf(false, true)) {
+      val innerComposeView = viewNode(30)
+      val viewRoot = viewNode(1, viewNode(20, innerComposeView))
+      val composeRoots =
+        listOf(composableRoot(targetViewId = 20, composableId = 100), composableRoot(targetViewId = 30, composableId = 200))
+
+      val stderr = captureStderr {
+        mergeComposeRoots(
+          viewRoot,
+          if (reversed) composeRoots.reversed() else composeRoots,
+          stringTable = emptyMap(),
+          parameters = null,
+          includeParameters = false,
+          includeSemantics = false,
+        )
+      }
+
+      assertThat(stderr).isEmpty()
+      assertThat(innerComposeView.children.map { it.id }).containsExactly(200L)
+    }
+  }
+
+  private fun viewNode(id: Long, vararg children: UiNode): UiNode.ViewNode =
+    UiNode.ViewNode(
+      id = id,
+      className = "android.view.View",
+      bounds = UiNode.Bounds(0, 0, 100, 100),
+      idResource = null,
+      layoutResource = null,
+      attributes = emptyList(),
+      children = children.toMutableList(),
+    )
+
+  private fun composableRoot(targetViewId: Long, composableId: Long): LayoutInspectorComposeProtocol.ComposableRoot =
+    LayoutInspectorComposeProtocol.ComposableRoot.newBuilder()
+      .setViewId(targetViewId)
+      .addNodes(LayoutInspectorComposeProtocol.ComposableNode.newBuilder().setId(composableId))
+      .build()
+
+  private fun captureStderr(block: () -> Unit): String {
+    val original = System.err
+    val buffer = ByteArrayOutputStream()
+    System.setErr(PrintStream(buffer, true, Charsets.UTF_8))
+    try {
+      block()
+    } finally {
+      System.setErr(original)
+    }
+    return buffer.toString(Charsets.UTF_8)
   }
 }

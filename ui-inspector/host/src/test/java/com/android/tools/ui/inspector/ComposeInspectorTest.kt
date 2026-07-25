@@ -247,7 +247,8 @@ class ComposeInspectorTest {
         val cmd3 = UiInspectorProtocol.Command.parseFrom(cmdBytes3)
         dumpCmdReceived.complete(cmd3)
 
-        // Build a mock View tree: FrameLayout (ID 1000) -> AndroidComposeView (ID 2000)
+        // Build a mock View tree mirroring a real hosted-view capture:
+        // FrameLayout (1000) -> AndroidComposeView (2000) -> AndroidViewsHandler (2100) -> ViewFactoryHolder (2200) -> TextView (2300)
         val viewNode1 =
           com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.ViewNode.newBuilder()
             .setId(1000)
@@ -270,6 +271,21 @@ class ComposeInspectorTest {
                     .setWidth(1080)
                     .setHeight(1920)
                 )
+                .addChildren(
+                  com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.ViewNode.newBuilder()
+                    .setId(2100)
+                    .setClassName(3) // index for AndroidViewsHandler
+                    .addChildren(
+                      com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.ViewNode.newBuilder()
+                        .setId(2200)
+                        .setClassName(4) // index for ViewFactoryHolder
+                        .addChildren(
+                          com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.ViewNode.newBuilder()
+                            .setId(2300)
+                            .setClassName(5) // index for TextView
+                        )
+                    )
+                )
             )
             .build()
 
@@ -286,6 +302,21 @@ class ComposeInspectorTest {
                   com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.StringEntry.newBuilder()
                     .setId(2)
                     .setValue("androidx.compose.ui.platform.AndroidComposeView")
+                )
+                .addStrings(
+                  com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.StringEntry.newBuilder()
+                    .setId(3)
+                    .setValue("androidx.compose.ui.platform.AndroidViewsHandler")
+                )
+                .addStrings(
+                  com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.StringEntry.newBuilder()
+                    .setId(4)
+                    .setValue("androidx.compose.ui.viewinterop.ViewFactoryHolder")
+                )
+                .addStrings(
+                  com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.StringEntry.newBuilder()
+                    .setId(5)
+                    .setValue("android.widget.TextView")
                 )
                 .addNodes(viewNode1)
             )
@@ -308,7 +339,7 @@ class ComposeInspectorTest {
         val cmd4 = UiInspectorProtocol.Command.parseFrom(cmdBytes4)
         composeCmdReceived.complete(cmd4)
 
-        // Build a mock Compose tree: Column (ID 3000) -> Text (ID 4000)
+        // Build a mock Compose tree: Column (ID 3000) -> [Text (ID 4000), AndroidView (ID 5000, hosting View 2200)]
         val composeRoot =
           layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.ComposableRoot.newBuilder()
             .setViewId(2000)
@@ -341,6 +372,12 @@ class ComposeInspectorTest {
                         )
                     )
                 )
+                .addChildren(
+                  layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.ComposableNode.newBuilder()
+                    .setId(5000)
+                    .setName(3) // index for AndroidView
+                    .setViewId(2200) // References the ViewFactoryHolder hosted under the AndroidViewsHandler
+                )
             )
             .build()
 
@@ -353,6 +390,9 @@ class ComposeInspectorTest {
                 )
                 .addStrings(
                   layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.StringEntry.newBuilder().setId(2).setStr("Text")
+                )
+                .addStrings(
+                  layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.StringEntry.newBuilder().setId(3).setStr("AndroidView")
                 )
                 .addRoots(composeRoot)
             )
@@ -458,10 +498,19 @@ class ComposeInspectorTest {
     assertThat(viewRoot.className).isEqualTo("android.widget.FrameLayout")
     val composeView = viewRoot.children[0]
     assertThat(composeView.className).isEqualTo("androidx.compose.ui.platform.AndroidComposeView")
+    // The emptied AndroidViewsHandler is dropped: the Compose root is the only remaining child.
+    assertThat(composeView.children).hasSize(1)
     val column = composeView.children[0]
     assertThat(column.className).isEqualTo("Column")
     val text = column.children[0]
     assertThat(text.className).isEqualTo("Text")
+    // The hosted subtree (holder + payload) is grafted under the AndroidView composable.
+    val androidView = column.children[1] as UiNode.ComposeNode
+    assertThat(androidView.className).isEqualTo("AndroidView")
+    val holder = androidView.children.single() as UiNode.ViewNode
+    assertThat(holder.className).isEqualTo("androidx.compose.ui.viewinterop.ViewFactoryHolder")
+    val payload = holder.children.single() as UiNode.ViewNode
+    assertThat(payload.className).isEqualTo("android.widget.TextView")
 
     // Cleanup
     testScope.cancel()

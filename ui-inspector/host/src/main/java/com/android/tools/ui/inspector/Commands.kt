@@ -26,6 +26,7 @@ import java.io.File
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
+import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol
 
 /**
  * Resolves the serial number of the device to target. A [requested] serial is returned unchanged; when omitted, the serial of the only
@@ -239,18 +240,44 @@ private suspend fun fetchAndMergeComposeTrees(
           null
         }
 
-      roots.forEach { composeRoot ->
-        attachComposeTree(
-          viewNode = viewRoot,
-          targetViewId = composeRoot.viewId,
-          composeNodes = composeRoot.nodesList,
-          stringTable = stringsMap,
-          viewsToSkip = composeRoot.viewsToSkipList,
-          parameters = composeParameters,
-          includeParameters = includeParameters,
-          includeSemantics = includeSemantics,
-        )
-      }
+      mergeComposeRoots(
+        viewRoot = viewRoot,
+        composeRoots = roots,
+        stringTable = stringsMap,
+        parameters = composeParameters,
+        includeParameters = includeParameters,
+        includeSemantics = includeSemantics,
+      )
+    }
+  }
+}
+
+/** Grafts each Compose root under [viewRoot], warning on stderr when a root's target view is not present in the tree. */
+internal fun mergeComposeRoots(
+  viewRoot: UiNode.ViewNode,
+  composeRoots: List<LayoutInspectorComposeProtocol.ComposableRoot>,
+  stringTable: Map<Int, String>,
+  parameters: LayoutInspectorComposeProtocol.GetAllParametersResponse?,
+  includeParameters: Boolean,
+  includeSemantics: Boolean,
+) {
+  composeRoots.forEach { composeRoot ->
+    val attached =
+      attachComposeTree(
+        viewNode = viewRoot,
+        targetViewId = composeRoot.viewId,
+        composeNodes = composeRoot.nodesList,
+        stringTable = stringTable,
+        viewsToSkip = composeRoot.viewsToSkipList,
+        parameters = parameters,
+        includeParameters = includeParameters,
+        includeSemantics = includeSemantics,
+      )
+    if (!attached) {
+      System.err.println(
+        "Warning: could not attach a Compose tree (target view id ${composeRoot.viewId}) under view root ${viewRoot.id}; " +
+          "the dump may be incomplete."
+      )
     }
   }
 }

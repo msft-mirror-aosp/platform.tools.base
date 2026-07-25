@@ -451,6 +451,54 @@ class ProtoConvertersTest {
   }
 
   @Test
+  fun testConvertComposeNode_appendsHostedSubtreeIntactAfterComposeChildren() {
+    val stringTable = mapOf(1 to "AndroidView", 2 to "Text")
+    // AndroidView (100) with one Compose child (101) and a hosted subtree reference: the mapped value is the carrier
+    // that held the embedded View (a ViewFactoryHolder), whose own subtree must move wholesale.
+    val composableNode =
+      LayoutInspectorComposeProtocol.ComposableNode.newBuilder()
+        .setId(100)
+        .setName(1)
+        .setViewId(12)
+        .addChildren(LayoutInspectorComposeProtocol.ComposableNode.newBuilder().setId(101).setName(2))
+        .build()
+    val payload =
+      UiNode.ViewNode(
+        id = 13,
+        className = "android.widget.TextView",
+        bounds = UiNode.Bounds(0, 0, 100, 50),
+        idResource = null,
+        layoutResource = null,
+        attributes = emptyList(),
+      )
+    val holder =
+      UiNode.ViewNode(
+        id = 12,
+        className = "androidx.compose.ui.viewinterop.ViewFactoryHolder",
+        bounds = UiNode.Bounds(0, 0, 100, 50),
+        idResource = null,
+        layoutResource = null,
+        attributes = emptyList(),
+        children = mutableListOf(payload),
+      )
+
+    val node =
+      convertComposeNode(
+        node = composableNode,
+        stringTable = stringTable,
+        hostedViews = mapOf(12L to holder),
+        parameters = null,
+        includeParameters = false,
+        includeSemantics = false,
+      )
+
+    // The hosted subtree is appended after the Compose children, intact.
+    assertThat(node.children.map { it.id }).containsExactly(101L, 12L).inOrder()
+    val graftedHolder = node.children[1] as UiNode.ViewNode
+    assertThat((graftedHolder.children.single() as UiNode.ViewNode).id).isEqualTo(13)
+  }
+
+  @Test
   fun testConvertViewNode_withoutResolutionStack_omitsProvenance() {
     val stringTable = mapOf(1 to "android.widget.TextView", 2 to "text", 3 to "Hello", 4 to "layout.xml", 5 to "AppTheme")
     // The agent reports provenance whenever the device setting is enabled — which an earlier resolution-stack run

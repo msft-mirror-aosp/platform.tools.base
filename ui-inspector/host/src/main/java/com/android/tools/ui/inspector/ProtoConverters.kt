@@ -137,7 +137,8 @@ private fun ViewInspectorProtocol.ViewNode.Attribute.toAttributeValue(stringTabl
  *
  * @param node the protobuf Composable node to convert.
  * @param stringTable string table containing all the text resources indexed by ID.
- * @param hostedViews a map of View ID to [UiNode.ViewNode] representing all Android views hosted within the entire Compose tree.
+ * @param hostedViews hosted Android View subtrees keyed by the ID `ComposableNode.view_id` references — the root of each subtree is the
+ *   carrier that held the embedded View (a ViewFactoryHolder on current Compose), not necessarily the payload View itself.
  * @param parameters optional Composable parameters.
  * @param includeParameters whether the `attributes` facet was requested: only then are Compose parameters copied into the nodes.
  * @param includeSemantics whether the `semantics` facet was requested: only then are the semantics lists copied into the nodes.

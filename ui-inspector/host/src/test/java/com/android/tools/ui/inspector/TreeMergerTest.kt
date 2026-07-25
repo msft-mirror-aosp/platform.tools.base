@@ -277,96 +277,289 @@ class TreeMergerTest {
   }
 
   @Test
-  fun testAttachComposeTreeGraftsHostedViews() {
-    // 1. Setup standard View tree:
-    // Root (FrameLayout)
-    //   -> AndroidComposeView (id = 123)
-    //        -> HostedView (id = 999) -- this view is hosted by Composable id 201
+  fun testHostedViewGraftedThroughAndroidViewsHandler() {
+    // The shape Compose actually produces: the hosted subtree sits under an AndroidViewsHandler carrier, and
+    // ComposableNode.view_id references the handler's direct child (the ViewFactoryHolder), not the payload.
     val rootNode =
-      UiNode.ViewNode(
-        id = 1,
-        className = "android.widget.FrameLayout",
-        bounds = UiNode.Bounds(0, 0, 1080, 1920),
-        idResource = "root",
-        layoutResource = "main_layout",
-        attributes = emptyList(),
-        children =
-          mutableListOf(
-            UiNode.ViewNode(
-              id = 123,
-              className = "androidx.compose.ui.platform.AndroidComposeView",
-              bounds = UiNode.Bounds(0, 0, 1080, 1000),
-              idResource = null,
-              layoutResource = null,
-              attributes = emptyList(),
-              children =
-                mutableListOf(
-                  UiNode.ViewNode(
-                    id = 999,
-                    className = "android.widget.Button",
-                    bounds = UiNode.Bounds(50, 50, 200, 50),
-                    idResource = "button_in_compose",
-                    layoutResource = null,
-                    attributes = emptyList(),
-                    children = mutableListOf(),
-                  )
-                ),
-            )
-          ),
+      view(
+        1,
+        "FrameLayout",
+        view(10, "AndroidComposeView", view(11, "AndroidViewsHandler", view(12, "ViewFactoryHolder", view(13, "TextView")))),
       )
+    val composeNodes = listOf(composable(100, COLUMN, composable(101, ANDROID_VIEW, viewId = 12)))
 
-    // 2. Setup Composable children nodes to graft:
-    // Column (id = 200)
-    //   -> AndroidView (id = 201, viewId = 999)
-    val stringTable = mapOf(1 to "Column", 2 to "AndroidView")
-    val composeNodes =
-      listOf(
-        LayoutInspectorComposeProtocol.ComposableNode.newBuilder()
-          .setId(200)
-          .setName(1) // Column
-          .addChildren(
-            LayoutInspectorComposeProtocol.ComposableNode.newBuilder()
-              .setId(201)
-              .setName(2) // AndroidView
-              .setViewId(999) // References the View 999
-          )
-          .build()
-      )
+    val wasAttached = attach(rootNode, targetViewId = 10, composeNodes = composeNodes)
 
-    // 3. Execute grafting
-    val wasAttached =
-      attachComposeTree(
-        viewNode = rootNode,
-        targetViewId = 123,
-        composeNodes = composeNodes,
-        stringTable = stringTable,
-        viewsToSkip = emptyList(),
-        parameters = null,
-        includeParameters = true,
-        includeSemantics = true,
-      )
-
-    // 4. Assertions
     assertThat(wasAttached).isTrue()
-
     val composeView = rootNode.children[0] as UiNode.ViewNode
-
-    // The HostedView with id 999 should no longer be a child of AndroidComposeView
-    assertThat(composeView.children).hasSize(1)
-
-    // The grafted ComposeNode Column is the only child of AndroidComposeView
-    val columnNode = composeView.children[0] as UiNode.ComposeNode
-    assertThat(columnNode.id).isEqualTo(200)
-    assertThat(columnNode.children).hasSize(1)
-
-    // AndroidView is a child of Column
-    val androidViewNode = columnNode.children[0] as UiNode.ComposeNode
-    assertThat(androidViewNode.id).isEqualTo(201)
-
-    // The HostedView 999 is now grafted as a child of the AndroidView ComposableNode!
-    assertThat(androidViewNode.children).hasSize(1)
-    val graftedView = androidViewNode.children[0] as UiNode.ViewNode
-    assertThat(graftedView.id).isEqualTo(999)
-    assertThat(graftedView.className).isEqualTo("android.widget.Button")
+    // The emptied AndroidViewsHandler is gone; the grafted Compose root is the only child.
+    assertThat(composeView.children.map { it.id }).containsExactly(100L)
+    val androidView = (composeView.children[0] as UiNode.ComposeNode).children[0] as UiNode.ComposeNode
+    assertThat(androidView.id).isEqualTo(101)
+    // The whole holder subtree moved under the AndroidView composable.
+    val holder = androidView.children.single() as UiNode.ViewNode
+    assertThat(holder.id).isEqualTo(12)
+    assertThat((holder.children.single() as UiNode.ViewNode).id).isEqualTo(13)
+    assertThat(viewIds(rootNode)).containsExactly(1L, 10L, 12L, 13L)
+    assertThat(composeIds(rootNode)).containsExactly(100L, 101L)
   }
+
+  @Test
+  fun testHostedViewGraftedWhenTargetIsAncestorOfComposeView() {
+    // The lean fetch currently anchors the Compose root above the AndroidComposeView (e.g. the DecorView), so carrier
+    // discovery must search the whole target subtree. This pins hosted grafting for that shape, not the anchoring itself.
+    val rootNode =
+      view(
+        1,
+        "DecorView",
+        view(
+          2,
+          "LinearLayout",
+          view(10, "AndroidComposeView", view(11, "AndroidViewsHandler", view(12, "ViewFactoryHolder", view(13, "TextView")))),
+        ),
+      )
+    val composeNodes = listOf(composable(100, COLUMN, composable(101, ANDROID_VIEW, viewId = 12)))
+
+    val wasAttached = attach(rootNode, targetViewId = 1, composeNodes = composeNodes)
+
+    assertThat(wasAttached).isTrue()
+    val androidView = findCompose(rootNode, 101)
+    assertThat((androidView.children.single() as UiNode.ViewNode).id).isEqualTo(12)
+    assertThat(viewIds(rootNode)).containsExactly(1L, 2L, 10L, 12L, 13L)
+  }
+
+  @Test
+  fun testLegacyHostedShapeWithoutHolderIsGrafted() {
+    // Older Compose versions place the payload View directly under the handler; view_id then references the payload.
+    val rootNode =
+      view(1, "FrameLayout", view(10, "AndroidComposeView", view(11, "AndroidViewsHandler", view(12, "Button", view(13, "TextView")))))
+    val composeNodes = listOf(composable(100, COLUMN, composable(101, ANDROID_VIEW, viewId = 12)))
+
+    val wasAttached = attach(rootNode, targetViewId = 10, composeNodes = composeNodes)
+
+    assertThat(wasAttached).isTrue()
+    val androidView = findCompose(rootNode, 101)
+    val payload = androidView.children.single() as UiNode.ViewNode
+    assertThat(payload.id).isEqualTo(12)
+    assertThat((payload.children.single() as UiNode.ViewNode).id).isEqualTo(13)
+    assertThat(viewIds(rootNode)).containsExactly(1L, 10L, 12L, 13L)
+  }
+
+  @Test
+  fun testMultipleHostedViewsMatchedByIdNotOrder() {
+    // Compose order deliberately differs from handler child order: ownership must follow ids.
+    val rootNode =
+      view(
+        1,
+        "FrameLayout",
+        view(10, "AndroidComposeView", view(11, "AndroidViewsHandler", view(12, "ViewFactoryHolder"), view(13, "ViewFactoryHolder"))),
+      )
+    val composeNodes =
+      listOf(composable(100, COLUMN, composable(101, ANDROID_VIEW, viewId = 13), composable(102, ANDROID_VIEW, viewId = 12)))
+
+    val wasAttached = attach(rootNode, targetViewId = 10, composeNodes = composeNodes)
+
+    assertThat(wasAttached).isTrue()
+    assertThat((findCompose(rootNode, 101).children.single() as UiNode.ViewNode).id).isEqualTo(13)
+    assertThat((findCompose(rootNode, 102).children.single() as UiNode.ViewNode).id).isEqualTo(12)
+    // Each holder appears exactly once and the emptied handler is gone.
+    assertThat(viewIds(rootNode)).containsExactly(1L, 10L, 12L, 13L)
+  }
+
+  @Test
+  fun testPartiallyEmptiedHandlerIsKept() {
+    val rootNode =
+      view(
+        1,
+        "FrameLayout",
+        view(10, "AndroidComposeView", view(11, "AndroidViewsHandler", view(12, "ViewFactoryHolder"), view(14, "SurfaceView"))),
+      )
+    val composeNodes = listOf(composable(100, COLUMN, composable(101, ANDROID_VIEW, viewId = 12)))
+
+    val wasAttached = attach(rootNode, targetViewId = 10, composeNodes = composeNodes)
+
+    assertThat(wasAttached).isTrue()
+    val composeView = rootNode.children[0] as UiNode.ViewNode
+    // The handler keeps its unmatched child.
+    val handler = composeView.children.filterIsInstance<UiNode.ViewNode>().single { it.id == 11L }
+    assertThat(handler.children.map { it.id }).containsExactly(14L)
+    assertThat((findCompose(rootNode, 101).children.single() as UiNode.ViewNode).id).isEqualTo(12)
+  }
+
+  @Test
+  fun testNestedInteropAttachesInEitherOrder() {
+    // ComposeView inside a hosted AndroidView: the inner AndroidComposeView is only reachable through the grafted
+    // Compose subtree once the outer root is attached, so attachment must be order-independent.
+    val outer = ComposeRootFixture(targetViewId = 10, nodes = listOf(composable(100, COLUMN, composable(101, ANDROID_VIEW, viewId = 12))))
+    val inner = ComposeRootFixture(targetViewId = 15, nodes = listOf(composable(200, TEXT)))
+
+    val outerFirst = nestedFixture()
+    assertThat(attach(outerFirst, outer.targetViewId, outer.nodes)).isTrue()
+    assertThat(attach(outerFirst, inner.targetViewId, inner.nodes)).isTrue()
+
+    val innerFirst = nestedFixture()
+    assertThat(attach(innerFirst, inner.targetViewId, inner.nodes)).isTrue()
+    assertThat(attach(innerFirst, outer.targetViewId, outer.nodes)).isTrue()
+
+    assertThat(parentPairs(innerFirst)).isEqualTo(parentPairs(outerFirst))
+    // The inner Compose tree hangs off the inner AndroidComposeView, which stays inside the hosted subtree.
+    assertThat(parentPairs(outerFirst))
+      .containsAllOf("C200" to "V15", "V15" to "V14", "V14" to "V13", "V13" to "V12", "V12" to "C101", "C101" to "C100", "C100" to "V10")
+    assertThat(viewIds(outerFirst)).containsExactly(1L, 10L, 12L, 13L, 14L, 15L)
+    assertThat(composeIds(outerFirst)).containsExactly(100L, 101L, 200L)
+  }
+
+  @Test
+  fun testThreeLevelNestingIsOrderIndependent() {
+    val roots =
+      listOf(
+        ComposeRootFixture(targetViewId = 10, nodes = listOf(composable(100, COLUMN, composable(101, ANDROID_VIEW, viewId = 12)))),
+        ComposeRootFixture(targetViewId = 15, nodes = listOf(composable(200, BOX, composable(201, ANDROID_VIEW, viewId = 17)))),
+        ComposeRootFixture(targetViewId = 20, nodes = listOf(composable(300, TEXT))),
+      )
+
+    val expected = threeLevelFixture().also { fixture -> roots.forEach { assertThat(attach(fixture, it.targetViewId, it.nodes)).isTrue() } }
+
+    permutations(roots).forEach { order ->
+      val fixture = threeLevelFixture()
+      order.forEach { assertThat(attach(fixture, it.targetViewId, it.nodes)).isTrue() }
+      assertThat(parentPairs(fixture)).isEqualTo(parentPairs(expected))
+      // Both emptied handlers (11, 16) are gone; everything else appears exactly once.
+      assertThat(viewIds(fixture)).containsExactly(1L, 10L, 12L, 13L, 14L, 15L, 17L, 18L, 19L, 20L)
+      assertThat(composeIds(fixture)).containsExactly(100L, 101L, 200L, 201L, 300L)
+    }
+  }
+
+  private companion object {
+    const val COLUMN = 1
+    const val ANDROID_VIEW = 2
+    const val TEXT = 3
+    const val BOX = 4
+
+    val STRING_TABLE = mapOf(COLUMN to "Column", ANDROID_VIEW to "AndroidView", TEXT to "Text", BOX to "Box")
+  }
+
+  private data class ComposeRootFixture(val targetViewId: Long, val nodes: List<LayoutInspectorComposeProtocol.ComposableNode>)
+
+  private fun attach(
+    root: UiNode.ViewNode,
+    targetViewId: Long,
+    composeNodes: List<LayoutInspectorComposeProtocol.ComposableNode>,
+  ): Boolean =
+    attachComposeTree(
+      viewNode = root,
+      targetViewId = targetViewId,
+      composeNodes = composeNodes,
+      stringTable = STRING_TABLE,
+      viewsToSkip = emptyList(),
+      parameters = null,
+      includeParameters = false,
+      includeSemantics = false,
+    )
+
+  private fun view(id: Long, className: String, vararg children: UiNode): UiNode.ViewNode =
+    UiNode.ViewNode(
+      id = id,
+      className = className,
+      bounds = UiNode.Bounds(0, 0, 100, 100),
+      idResource = null,
+      layoutResource = null,
+      attributes = emptyList(),
+      children = children.toMutableList(),
+    )
+
+  private fun composable(
+    id: Long,
+    name: Int,
+    vararg children: LayoutInspectorComposeProtocol.ComposableNode,
+    viewId: Long = 0,
+  ): LayoutInspectorComposeProtocol.ComposableNode =
+    LayoutInspectorComposeProtocol.ComposableNode.newBuilder()
+      .setId(id)
+      .setName(name)
+      .setViewId(viewId)
+      .addAllChildren(children.toList())
+      .build()
+
+  /** DecorView > AndroidComposeView(10) > handler(11) > holder(12) > FrameLayout(13) > ComposeView(14) > AndroidComposeView(15). */
+  private fun nestedFixture(): UiNode.ViewNode =
+    view(
+      1,
+      "DecorView",
+      view(
+        10,
+        "AndroidComposeView",
+        view(
+          11,
+          "AndroidViewsHandler",
+          view(12, "ViewFactoryHolder", view(13, "FrameLayout", view(14, "ComposeView", view(15, "AndroidComposeView")))),
+        ),
+      ),
+    )
+
+  /** [nestedFixture] with a second hosting level inside the inner AndroidComposeView(15), ending in AndroidComposeView(20). */
+  private fun threeLevelFixture(): UiNode.ViewNode =
+    view(
+      1,
+      "DecorView",
+      view(
+        10,
+        "AndroidComposeView",
+        view(
+          11,
+          "AndroidViewsHandler",
+          view(
+            12,
+            "ViewFactoryHolder",
+            view(
+              13,
+              "FrameLayout",
+              view(
+                14,
+                "ComposeView",
+                view(
+                  15,
+                  "AndroidComposeView",
+                  view(
+                    16,
+                    "AndroidViewsHandler",
+                    view(17, "ViewFactoryHolder", view(18, "FrameLayout", view(19, "ComposeView", view(20, "AndroidComposeView")))),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    )
+
+  private fun findCompose(node: UiNode, id: Long): UiNode.ComposeNode =
+    findComposeOrNull(node, id) ?: throw AssertionError("ComposeNode $id not found")
+
+  private fun findComposeOrNull(node: UiNode, id: Long): UiNode.ComposeNode? {
+    if (node is UiNode.ComposeNode && node.id == id) return node
+    for (child in node.children) {
+      findComposeOrNull(child, id)?.let {
+        return it
+      }
+    }
+    return null
+  }
+
+  /** Pre-order ids of all View nodes in the tree. */
+  private fun viewIds(node: UiNode): List<Long> =
+    (if (node is UiNode.ViewNode) listOf(node.id) else emptyList()) + node.children.flatMap { viewIds(it) }
+
+  /** Pre-order ids of all Compose nodes in the tree. */
+  private fun composeIds(node: UiNode): List<Long> =
+    (if (node is UiNode.ComposeNode) listOf(node.id) else emptyList()) + node.children.flatMap { composeIds(it) }
+
+  /** Child-to-parent labels ("V<id>"/"C<id>") for structural equality across attach orders. */
+  private fun parentPairs(node: UiNode, parent: String? = null): List<Pair<String, String?>> {
+    val label = (if (node is UiNode.ViewNode) "V" else "C") + node.id
+    return listOf(label to parent) + node.children.flatMap { parentPairs(it, label) }
+  }
+
+  private fun <T> permutations(items: List<T>): List<List<T>> =
+    if (items.size <= 1) listOf(items) else items.flatMap { head -> permutations(items - head).map { rest -> listOf(head) + rest } }
 }
