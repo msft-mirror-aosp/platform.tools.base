@@ -21,7 +21,6 @@ import com.android.build.gradle.integration.common.fixture.project.GradleBuild
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.getOutputDir
-import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.FileUtils
 import java.io.File
@@ -32,7 +31,6 @@ class IncludeDefaultRulesTest {
   @get:Rule
   val rule =
     GradleRule.from {
-      gradleProperties { add(BooleanOption.R8_GRADUAL_API, true) }
       androidApplication {
         android {
           defaultConfig.minSdk = 24

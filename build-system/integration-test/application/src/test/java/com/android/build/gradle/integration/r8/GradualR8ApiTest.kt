@@ -34,7 +34,6 @@ class GradualR8ApiTest {
   @get:Rule
   val rule =
     GradleRule.from {
-      gradleProperties { add(BooleanOption.R8_GRADUAL_API, true) }
       androidApplication {
         android {
           defaultConfig.minSdk = 24
@@ -277,7 +276,7 @@ class GradualR8ApiTest {
   fun `test gradual r8 requires flag`() {
     val build =
       rule.build {
-        gradleProperties { remove(BooleanOption.R8_GRADUAL_API) }
+        gradleProperties { add(BooleanOption.R8_GRADUAL_API, false) }
         androidApplication {
           android { buildTypes { named("release") { it.optimization { packageScope.add("com.example.androidlib.*") } } } }
         }

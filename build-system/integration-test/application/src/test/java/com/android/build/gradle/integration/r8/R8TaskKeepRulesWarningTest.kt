@@ -20,7 +20,6 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_APP_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_FEATURE_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
-import com.android.build.gradle.options.BooleanOption
 import java.io.File
 import org.junit.Rule
 import org.junit.Test
@@ -30,7 +29,6 @@ class R8TaskKeepRulesWarningTest {
   @get:Rule
   val rule =
     GradleRule.from {
-      gradleProperties { add(BooleanOption.R8_GRADUAL_API, true) }
       androidApplication {
         android {
           defaultConfig.minSdk = 24
