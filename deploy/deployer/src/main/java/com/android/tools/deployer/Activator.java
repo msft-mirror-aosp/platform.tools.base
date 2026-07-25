@@ -142,10 +142,6 @@ public class Activator {
         return component;
     }
 
-    public void forceStop(@NonNull DeviceHolder device) {
-        device.forceStop(app.getAppId());
-    }
-
     @NonNull
     private Optional<ManifestActivityInfo> getActivity(@NonNull String qualifiedName) {
         for (Apk apk : app.getApks()) {

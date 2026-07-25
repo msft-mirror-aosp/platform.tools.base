@@ -120,10 +120,6 @@ class DeviceHolder(
     return iDevice.root()
   }
 
-  fun forceStop(packageName: String) {
-    iDevice.forceStop(packageName)
-  }
-
   /**
    * Overridden to support tracking DeviceHolder instances in collections (e.g., in DeployerApplicationTerminator's HashSet). Equality is
    * defined by the underlying device identity (currently IDevice).
