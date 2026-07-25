@@ -55,10 +55,14 @@ public class ManifestInfoParserTest {
                               activity.hasCategory("android.intent.category.LAUNCHER"));
             Assert.assertEquals("Exported 0", true, activity.getExported());
             Assert.assertTrue("Enabled 0", activity.isEnabled());
+            Assert.assertFalse("MainActivity is not alias", activity.isAlias());
+            Assert.assertEquals(
+                    "com.example.activityapplication.MainActivity", activity.getTargetActivity());
 
             // Activity alias
             activity = getActivityByQName("com.example.activityapplication.foo", activities);
             Assert.assertNotEquals("Aliased Activity", null, activity);
+            Assert.assertTrue("foo is alias", activity.isAlias());
 
             activity = getActivityByQName("com.example.activityapplication.MissingActivity",
                                           activities);

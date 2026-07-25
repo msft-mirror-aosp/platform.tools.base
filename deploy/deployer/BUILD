@@ -90,6 +90,20 @@ kotlin_library(
 )
 
 kotlin_library(
+    name = "tools.deployer.apktestutils",
+    srcs = glob(
+        ["src/test/java/com/android/tools/deployer/apktestutils/**/*.kt"],
+        exclude = ["**/*Test.kt"],
+    ),
+    visibility = ["//visibility:public"],
+    deps = [
+        ":tools.deployer.model",
+        "//tools/base/manifest-parser:tools.manifest-parser",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib",
+    ],
+)
+
+kotlin_library(
     name = "tools.deployer.common",
     srcs = [
         "src/main/java/com/android/tools/deployer/common/AdbClient.java",
@@ -211,34 +225,6 @@ kotlin_library(
         "@maven//:org.jetbrains.annotations",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
         "@maven//:org.xerial.sqlite-jdbc",
-    ],
-)
-
-# TODO:
-#
-# The run.cli related rules are just going to be temporary. It represent how we *might* integrate
-# into other headless caller of deployer. It will be remove shorty when the integration actually
-# happen.
-kotlin_library(
-    name = "run.cli-lib",
-    srcs = ["src/main/java/com/android/tools/deployer/cli/CliActivator.kt"],
-    deps = [
-        ":tools.deployer.model",
-        "//tools/base/adblib",
-        "//tools/base/adblib-tools:adblib.tools",
-        "//tools/base/common:tools.common",
-        "//tools/base/manifest-parser:tools.manifest-parser",
-        "@maven//:org.jetbrains.kotlin.kotlin-stdlib",
-        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
-    ],
-)
-
-java_binary(
-    name = "run.cli",
-    data = glob(["src/test/resource/**"]),
-    main_class = "com.android.tools.deployer.cli.CliActivator",
-    runtime_deps = [
-        ":run.cli-lib",
     ],
 )
 
@@ -376,12 +362,13 @@ java_library(
     ],
 )
 
-coverage_java_test(
+kotlin_test(
     name = "tools.deployer.model.tests",
     size = "medium",
     srcs = glob(
         [
             "src/test/java/com/android/tools/deployer/model/*.java",
+            "src/test/java/com/android/tools/deployer/model/*.kt",
             "src/test/java/com/android/tools/deployer/model/component/*.java",
         ],
     ),
@@ -389,6 +376,7 @@ coverage_java_test(
     jvm_flags = ["-Dtest.suite.jar=tools.deployer.model.tests.jar"],
     test_class = "com.android.testutils.JarTestSuite",
     deps = [
+        ":tools.deployer.apktestutils",
         ":tools.deployer.common",
         ":tools.deployer.model",
         ":tools.deployer.modelv1",
@@ -524,8 +512,10 @@ kotlin_test(
     srcs = [
         "src/test/java/com/android/tools/deployer/DeployStrategyReaderTest.kt",
         "src/test/java/com/android/tools/deployer/TestLogger.java",
+        "src/test/java/com/android/tools/deployer/apktestutils/BinaryXmlEncoderTest.kt",
         "src/test/java/com/android/tools/deployer/common/DeviceHolderMigrationTest.kt",
         "src/test/java/com/android/tools/deployer/common/DeviceHolderTest.kt",
+        "src/test/java/com/android/tools/deployer/model/AppTest.kt",
         "src/test/java/com/android/tools/deployer/model/component/DeclarativeWatchFaceTest.kt",
     ],
     data = glob(["src/test/resource/**"]),
@@ -534,6 +524,7 @@ kotlin_test(
     deps = [
         ":deployer.runner.testlib",
         ":tools.deployer",
+        ":tools.deployer.apktestutils",
         ":tools.deployer.common",
         ":tools.deployer.install",
         ":tools.deployer.model",
@@ -546,6 +537,7 @@ kotlin_test(
         "//tools/base/ddmlib:tools.ddmlib",
         "//tools/base/deploy/proto:deploy_java_proto",
         "//tools/base/fakeadbserver:tools.fakeadbserver",
+        "//tools/base/manifest-parser:tools.manifest-parser",
         "//tools/base/testutils:tools.testutils",
         "@maven//:com.google.guava.guava",
         "@maven//:junit.junit",

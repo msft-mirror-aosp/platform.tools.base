@@ -23,7 +23,7 @@ import com.android.tools.deployer.model.component.ComponentType
 import com.android.tools.deployer.model.component.Tile
 import com.android.tools.deployer.model.component.WatchFace
 import com.android.tools.deployer.model.component.WearWidget
-import com.android.utils.ILogger
+import com.android.utils.NullLogger
 import java.nio.file.Path
 
 class App(
@@ -128,40 +128,41 @@ class App(
     }
   }
 
-  fun getMatchingComponents(type: ComponentType, logger: ILogger): List<AppComponent> {
+  fun getMatchingComponents(type: ComponentType): List<AppComponent> {
     val components = mutableListOf<AppComponent>()
+    val nullLogger = NullLogger.getLogger()
     for (apk in getApks()) {
       when (type) {
         ComponentType.ACTIVITY -> {
           for (info in apk.activities) {
-            components.add(Activity(info, appId, logger))
+            components.add(Activity(info, appId, nullLogger))
           }
         }
         ComponentType.WATCH_FACE -> {
           for (info in apk.services) {
             if (info.hasAction("android.service.wallpaper.WallpaperService")) {
-              components.add(WatchFace(info, appId, logger))
+              components.add(WatchFace(info, appId, nullLogger))
             }
           }
         }
         ComponentType.TILE -> {
           for (info in apk.services) {
             if (info.hasAction("androidx.wear.tiles.action.BIND_TILE_PROVIDER")) {
-              components.add(Tile(info, appId, logger))
+              components.add(Tile(info, appId, nullLogger))
             }
           }
         }
         ComponentType.WEAR_WIDGET -> {
           for (info in apk.services) {
             if (info.hasAction("androidx.glance.wear.action.BIND_WIDGET_PROVIDER")) {
-              components.add(WearWidget(info, appId, logger))
+              components.add(WearWidget(info, appId, nullLogger))
             }
           }
         }
         ComponentType.COMPLICATION -> {
           for (info in apk.services) {
             if (info.hasAction("android.support.wearable.complications.ACTION_COMPLICATION_UPDATE_REQUEST")) {
-              components.add(Complication(info, appId, logger))
+              components.add(Complication(info, appId, nullLogger))
             }
           }
         }
