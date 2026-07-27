@@ -29,6 +29,7 @@ import com.android.adblib.ddmlibcompatibility.AdbLibDdmlibCompatibilityPropertie
 import com.android.adblib.ddmlibcompatibility.AdbLibIDeviceManager
 import com.android.adblib.ddmlibcompatibility.DEFAULT_DDMLIB_TIMEOUT
 import com.android.adblib.deviceProperties
+import com.android.adblib.isRoot
 import com.android.adblib.property
 import com.android.adblib.rootAndWait
 import com.android.adblib.scope
@@ -47,7 +48,6 @@ import com.android.ddmlib.AdbHelper
 import com.android.ddmlib.AndroidDebugBridge
 import com.android.ddmlib.AvdData
 import com.android.ddmlib.Client
-import com.android.ddmlib.CollectingOutputReceiver
 import com.android.ddmlib.FileListingService
 import com.android.ddmlib.IDevice
 import com.android.ddmlib.IDevice.DeviceState
@@ -700,10 +700,7 @@ internal class AdblibIDeviceWrapper(
 
   override fun isRoot(): Boolean =
     logUsage(IDeviceUsageTracker.Method.IS_ROOT) {
-      val receiver = CollectingOutputReceiver()
-      executeShellCommand("echo \$USER_ID", receiver, QUERY_IS_ROOT_TIMEOUT_MS, TimeUnit.MILLISECONDS)
-      val userID = receiver.output.trim { it <= ' ' }
-      userID == "0"
+      runBlockingLegacy(timeout = Duration.ofMillis(QUERY_IS_ROOT_TIMEOUT_MS)) { connectedDevice.isRoot() }
     }
 
   @Deprecated("")

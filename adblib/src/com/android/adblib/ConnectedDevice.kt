@@ -713,6 +713,15 @@ suspend fun ConnectedDevice.hasAvailableFeature(feature: String): Boolean {
   return session.hostServices.hasAvailableFeature(selector, feature)
 }
 
+/**
+ * Returns `true` if the device supports running commands as root, i.e. if the `adbd` daemon on the device is running with root permissions.
+ */
+suspend fun ConnectedDevice.isRoot(): Boolean {
+  val result = session.deviceServices.shellAsText(selector, "echo \$USER_ID")
+  val userID = result.stdout.trim { it <= ' ' }
+  return userID == "0"
+}
+
 fun AdbLogger.withDevicePrefix(device: ConnectedDevice): AdbLogger {
   return withPrefix("${device.session} - $device - ")
 }
