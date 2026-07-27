@@ -53,5 +53,5 @@ interface Optimization {
    *
    * Default (convention) value is "**"
    */
-  @get:HiddenInDefinition @get:Incubating val packageScope: SetProperty<String>
+  @get:HiddenInDefinition val packageScope: SetProperty<String>
 }

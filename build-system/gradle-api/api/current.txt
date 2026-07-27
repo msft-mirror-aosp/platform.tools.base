@@ -2183,11 +2183,11 @@ package com.android.build.api.dsl {
   public interface Optimization {
     method @Deprecated @org.gradle.api.Incubating public void baselineProfile(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BaselineProfile,kotlin.Unit> action);
     method @InaccessibleFromKotlin public boolean getEnable();
-    method @InaccessibleFromKotlin @org.gradle.api.Incubating @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public org.gradle.api.provider.SetProperty<java.lang.String> getPackageScope();
+    method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public org.gradle.api.provider.SetProperty<java.lang.String> getPackageScope();
     method public void keepRules(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KeepRules,kotlin.Unit> action);
     method @InaccessibleFromKotlin public void setEnable(boolean);
     property public abstract boolean enable;
-    property @org.gradle.api.Incubating @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public abstract org.gradle.api.provider.SetProperty<java.lang.String> packageScope;
+    property @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public abstract org.gradle.api.provider.SetProperty<java.lang.String> packageScope;
   }
 
   public interface Packaging {
