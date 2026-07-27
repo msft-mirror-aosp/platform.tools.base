@@ -110,21 +110,17 @@ public class ApkVerifierTrackerTest {
         // Wait for ADB.
         waitFor(() -> bridge.isConnected());
 
-        List<DeviceState> deviceStates = new ArrayList<>();
         for (FakeDevice fakeDevice : fakeDevices) {
-            deviceStates.add(connectAndWaitForDevice(fakeDevice));
+            connectAndWaitForDevice(fakeDevice);
         }
 
         Map<FakeDevice, DeviceHolder> devicesMap = new HashMap<>();
 
         // Map FakeDevices to their corresponding IDevices.
         for (FakeDevice device : fakeDevices) {
-            DeviceState state =
-                    deviceStates.stream().filter(device::isDevice).findFirst().orElse(null);
-            assertNotNull(state);
             IDevice iDevice =
                     Arrays.stream(AndroidDebugBridge.getBridge().getDevices())
-                            .filter(d -> state.getDeviceId().equals(d.getSerialNumber()))
+                            .filter(d -> device.getSerial().equals(d.getSerialNumber()))
                             .findFirst()
                             .orElse(null);
             assertNotNull(iDevice);
