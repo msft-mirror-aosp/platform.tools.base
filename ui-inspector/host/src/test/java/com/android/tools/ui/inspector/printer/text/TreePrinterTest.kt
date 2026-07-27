@@ -107,6 +107,7 @@ class TreePrinterTest {
         parameters = emptyList(),
         mergedSemantics = listOf(UiNode.ComposeParameter.Single("Role", UiNode.ComposeParameter.Value.StringVal("Button"))),
         unmergedSemantics = listOf(UiNode.ComposeParameter.Single("OnClick", UiNode.ComposeParameter.Value.StringVal("[lambda]"))),
+        isSystemCreated = false,
       )
 
     val output = captureOutput { printUiTree(node, 0, it, SemanticsDisplayMode.BOTH) }
@@ -134,6 +135,7 @@ View Hierarchy:
         parameters = emptyList(),
         mergedSemantics = listOf(UiNode.ComposeParameter.Single("Role", UiNode.ComposeParameter.Value.StringVal("Button"))),
         unmergedSemantics = listOf(UiNode.ComposeParameter.Single("OnClick", UiNode.ComposeParameter.Value.StringVal("[lambda]"))),
+        isSystemCreated = false,
       )
 
     val outputMerged = captureOutput { printUiTree(nodeWithMerged, 0, it, SemanticsDisplayMode.MERGED_WITH_UNMERGED_FALLBACK) }
@@ -157,6 +159,7 @@ View Hierarchy:
         parameters = emptyList(),
         mergedSemantics = emptyList(),
         unmergedSemantics = listOf(UiNode.ComposeParameter.Single("Text", UiNode.ComposeParameter.Value.StringVal("Hello"))),
+        isSystemCreated = false,
       )
 
     val outputUnmerged = captureOutput { printUiTree(nodeWithoutMerged, 0, it, SemanticsDisplayMode.MERGED_WITH_UNMERGED_FALLBACK) }
@@ -180,6 +183,7 @@ View Hierarchy:
         parameters = emptyList(),
         mergedSemantics = emptyList(),
         unmergedSemantics = emptyList(),
+        isSystemCreated = false,
       )
 
     val outputBothEmpty = captureOutput { printUiTree(nodeBothEmpty, 0, it, SemanticsDisplayMode.MERGED_WITH_UNMERGED_FALLBACK) }
@@ -204,6 +208,7 @@ View Hierarchy:
         parameters = emptyList(),
         mergedSemantics = listOf(UiNode.ComposeParameter.Single("Role", UiNode.ComposeParameter.Value.StringVal("Button"))),
         unmergedSemantics = listOf(UiNode.ComposeParameter.Single("OnClick", UiNode.ComposeParameter.Value.StringVal("[lambda]"))),
+        isSystemCreated = false,
       )
 
     val output = captureOutput { printUiTree(node, 0, it, SemanticsDisplayMode.MERGED_ONLY) }
@@ -229,6 +234,7 @@ View Hierarchy:
         parameters = emptyList(),
         mergedSemantics = listOf(UiNode.ComposeParameter.Single("Role", UiNode.ComposeParameter.Value.StringVal("Button"))),
         unmergedSemantics = listOf(UiNode.ComposeParameter.Single("OnClick", UiNode.ComposeParameter.Value.StringVal("[lambda]"))),
+        isSystemCreated = false,
       )
 
     val output = captureOutput { printUiTree(node, 0, it, SemanticsDisplayMode.UNMERGED_ONLY) }
@@ -254,6 +260,7 @@ View Hierarchy:
         parameters = emptyList(),
         mergedSemantics = listOf(UiNode.ComposeParameter.Single("Role", UiNode.ComposeParameter.Value.StringVal("Button"))),
         unmergedSemantics = listOf(UiNode.ComposeParameter.Single("OnClick", UiNode.ComposeParameter.Value.StringVal("[lambda]"))),
+        isSystemCreated = false,
       )
 
     val output = captureOutput { printUiTree(node, 0, it, SemanticsDisplayMode.NONE) }

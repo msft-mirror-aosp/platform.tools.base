@@ -159,6 +159,7 @@ class JsonUiDumpPrinterTest {
           ),
         mergedSemantics = listOf(UiNode.ComposeParameter.Single("Role", UiNode.ComposeParameter.Value.StringVal("Button"))),
         unmergedSemantics = emptyList(),
+        isSystemCreated = false,
       )
 
     viewNode.children.add(composeNode)
@@ -300,6 +301,7 @@ class JsonUiDumpPrinterTest {
         parameters = listOf(pString, pBool, pNum, pColor, pDim, pRes, pLambda, pNull, pGroup),
         mergedSemantics = emptyList(),
         unmergedSemantics = listOf(UiNode.ComposeParameter.Single("ContentDescription", UiNode.ComposeParameter.Value.StringVal("Icon"))),
+        isSystemCreated = false,
       )
     rootNode.children.add(composeNode)
 
@@ -375,6 +377,7 @@ class JsonUiDumpPrinterTest {
           ),
         mergedSemantics = emptyList(),
         unmergedSemantics = emptyList(),
+        isSystemCreated = false,
       )
     viewNode.children.add(composeNode)
 

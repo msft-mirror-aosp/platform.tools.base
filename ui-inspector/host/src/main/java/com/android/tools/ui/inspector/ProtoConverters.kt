@@ -200,6 +200,7 @@ private fun doConvertComposeNode(
     parameters = mappedParameters,
     mergedSemantics = mappedMergedSemantics,
     unmergedSemantics = mappedUnmergedSemantics,
+    isSystemCreated = (node.flags and LayoutInspectorComposeProtocol.ComposableNode.Flags.SYSTEM_CREATED_VALUE) != 0,
   )
 }
 

@@ -451,6 +451,27 @@ class ProtoConvertersTest {
   }
 
   @Test
+  fun testConvertComposeNode_systemCreatedFlag() {
+    val stringTable = mapOf(1 to "MyComponent")
+    val unknownBit = 0x8000
+
+    fun convert(flags: Int) =
+      convertComposeNode(
+        node = LayoutInspectorComposeProtocol.ComposableNode.newBuilder().setId(100).setName(1).setFlags(flags).build(),
+        stringTable = stringTable,
+        hostedViews = emptyMap(),
+        includeParameters = false,
+        includeSemantics = false,
+      )
+
+    // Only the SYSTEM_CREATED bit decides; other bits neither mark a node as system-created nor mask the bit when set.
+    assertThat(convert(0).isSystemCreated).isFalse()
+    assertThat(convert(LayoutInspectorComposeProtocol.ComposableNode.Flags.SYSTEM_CREATED_VALUE).isSystemCreated).isTrue()
+    assertThat(convert(unknownBit).isSystemCreated).isFalse()
+    assertThat(convert(LayoutInspectorComposeProtocol.ComposableNode.Flags.SYSTEM_CREATED_VALUE or unknownBit).isSystemCreated).isTrue()
+  }
+
+  @Test
   fun testConvertComposeNode_appendsHostedSubtreeIntactAfterComposeChildren() {
     val stringTable = mapOf(1 to "AndroidView", 2 to "Text")
     // AndroidView (100) with one Compose child (101) and a hosted subtree reference: the mapped value is the carrier

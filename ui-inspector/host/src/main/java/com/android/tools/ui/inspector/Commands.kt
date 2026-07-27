@@ -112,7 +112,7 @@ internal suspend fun doDumpUi(
       includeAttributes = includeAttributes,
       includeResolutionStack = includeResolutionStack,
       composeInspectorConnected = composeInspectorConnected,
-      skipSystemComposables = !includeSystemComposables,
+      includeSystemComposables = includeSystemComposables,
       includeSemantics = includeSemantics,
       printer = printer,
     )
@@ -171,24 +171,17 @@ internal suspend fun dumpUi(
   includeAttributes: Boolean,
   includeResolutionStack: Boolean,
   composeInspectorConnected: Boolean,
-  skipSystemComposables: Boolean,
+  includeSystemComposables: Boolean,
   includeSemantics: Boolean,
   printer: UiDumpPrinter,
 ) {
-  val uiDump =
-    fetchUiDump(
-      commandSender,
-      includeAttributes,
-      includeResolutionStack,
-      composeInspectorConnected,
-      skipSystemComposables,
-      includeSemantics,
-    )
+  val uiDump = fetchUiDump(commandSender, includeAttributes, includeResolutionStack, composeInspectorConnected, includeSemantics)
   if (uiDump.roots.isEmpty()) {
     throw EmptyViewRootsException()
   }
 
-  printer.printDump(uiDump)
+  val outputDump = if (includeSystemComposables) uiDump else stripSystemComposables(uiDump)
+  printer.printDump(outputDump)
 }
 
 internal suspend fun fetchUiDump(
@@ -196,12 +189,11 @@ internal suspend fun fetchUiDump(
   includeAttributes: Boolean,
   includeResolutionStack: Boolean,
   composeInspectorConnected: Boolean,
-  skipSystemComposables: Boolean,
   includeSemantics: Boolean,
 ): UiDump {
   val result = dumpViews(commandSender, includeAttributes, includeResolutionStack)
   if (composeInspectorConnected) {
-    fetchAndMergeComposeTrees(commandSender, result.roots, includeAttributes, skipSystemComposables, includeSemantics)
+    fetchAndMergeComposeTrees(commandSender, result.roots, includeAttributes, includeSemantics)
   }
   return result
 }
@@ -211,7 +203,6 @@ private suspend fun fetchAndMergeComposeTrees(
   commandSender: CommandSender,
   viewRoots: List<UiNode.ViewNode>,
   includeParameters: Boolean,
-  skipSystemComposables: Boolean,
   includeSemantics: Boolean,
 ) {
   viewRoots.forEach { viewRoot ->
@@ -220,12 +211,7 @@ private suspend fun fetchAndMergeComposeTrees(
     val fetchComposeDetails = includeParameters || includeSemantics
 
     val composeResult =
-      queryComposeTree(
-        commandSender = commandSender,
-        rootViewId = viewRoot.id,
-        extractAllParameters = fetchComposeDetails,
-        skipSystemComposables = skipSystemComposables,
-      )
+      queryComposeTree(commandSender = commandSender, rootViewId = viewRoot.id, extractAllParameters = fetchComposeDetails)
     if (composeResult != null) {
       val stringsMap = composeResult.stringsList.associate { it.id to it.str }
       val roots = composeResult.rootsList
@@ -234,7 +220,7 @@ private suspend fun fetchAndMergeComposeTrees(
         if (fetchComposeDetails) {
           // An explicit --include facet is a demand: if the details it needs cannot be fetched, fail loudly instead of
           // silently emitting a dump that is missing exactly what was asked for.
-          queryComposeParameters(commandSender, viewRoot.id, skipSystemComposables)
+          queryComposeParameters(commandSender, viewRoot.id)
             ?: throw IllegalStateException("The requested attributes/semantics facets could not be fetched from the Compose inspector.")
         } else {
           null

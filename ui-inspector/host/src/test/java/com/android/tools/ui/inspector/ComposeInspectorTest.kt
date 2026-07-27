@@ -486,12 +486,18 @@ class ComposeInspectorTest {
           includeAttributes = false,
           includeResolutionStack = false,
           composeInspectorConnected = composeInspectorConnected,
-          skipSystemComposables = true,
           includeSemantics = false,
         )
       }
 
     // 4. Assertions
+    // The device is never asked to filter: the facet is applied by stripping system composables on the host.
+    val sentComposeCmd =
+      layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.Command.parseFrom(
+        composeCmdReceived.await().inspectorMessage.payload
+      )
+    assertThat(sentComposeCmd.getComposablesCommand.skipSystemComposables).isFalse()
+
     val roots = uiDump.roots
     assertThat(roots).hasSize(1)
     val viewRoot = roots[0]
@@ -805,7 +811,6 @@ class ComposeInspectorTest {
           includeAttributes = true,
           includeResolutionStack = false,
           composeInspectorConnected = composeInspectorConnected,
-          skipSystemComposables = false,
           includeSemantics = false,
         )
       }
@@ -1146,7 +1151,6 @@ class ComposeInspectorTest {
             includeAttributes = true,
             includeResolutionStack = false,
             composeInspectorConnected = composeInspectorConnected,
-            skipSystemComposables = false,
             includeSemantics = true,
           )
         }

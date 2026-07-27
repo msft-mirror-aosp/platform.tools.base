@@ -50,15 +50,16 @@ internal suspend fun queryComposeTree(
   commandSender: CommandSender,
   rootViewId: Long,
   extractAllParameters: Boolean,
-  skipSystemComposables: Boolean,
 ): LayoutInspectorComposeProtocol.GetComposablesResponse? {
   val getComposablesCmd =
     LayoutInspectorComposeProtocol.Command.newBuilder()
       .setGetComposablesCommand(
         LayoutInspectorComposeProtocol.GetComposablesCommand.newBuilder()
           .setRootViewId(rootViewId)
-          .setSkipSystemComposables(skipSystemComposables)
-          // Set generation to 0 to force the persistent agent inspector to bypass its layout cache
+          // Always get the full tree from the device: the device-side filter does more than remove nodes (it changes which view the
+          // compose root reports as its parent), so system composables are stripped host-side instead.
+          .setSkipSystemComposables(false)
+          // Set generation to 0 to force the persistent agent inspector to bypass the layout cache
           // and always return a fresh capture of the active screen on subsequent reconnections.
           .setGeneration(0)
           // If extractAllParameters is true, the agent pre-extracts and warms up its combined parameters-and-semantics
@@ -82,14 +83,14 @@ internal suspend fun queryComposeTree(
 internal suspend fun queryComposeParameters(
   commandSender: CommandSender,
   rootViewId: Long,
-  skipSystemComposables: Boolean,
 ): LayoutInspectorComposeProtocol.GetAllParametersResponse? {
   val getAllParamsCmd =
     LayoutInspectorComposeProtocol.Command.newBuilder()
       .setGetAllParametersCommand(
         LayoutInspectorComposeProtocol.GetAllParametersCommand.newBuilder()
           .setRootViewId(rootViewId)
-          .setSkipSystemComposables(skipSystemComposables)
+          // Never filtered on the device, same as the tree command.
+          .setSkipSystemComposables(false)
           // Use the same generation from the get composables command so that we get the cached parameters
           .setGeneration(0)
           // Allow traversal up to 2 levels deep (Layout Inspector standard) to fully capture properties
