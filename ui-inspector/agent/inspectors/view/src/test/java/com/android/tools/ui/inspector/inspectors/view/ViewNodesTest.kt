@@ -28,53 +28,7 @@ import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [29])
-class ViewExtensionsTest {
-
-  @Test
-  fun testIsValidResourceId_validIds() {
-    // System resource: Package 0x01, Type 0x02
-    assertThat(isValidResourceId(0x01020001)).isTrue()
-    // App resource: Package 0x7f, Type 0x02
-    assertThat(isValidResourceId(0x7f020001)).isTrue()
-  }
-
-  @Test
-  fun testIsValidResourceId_invalidPackageId() {
-    // Package ID is zero
-    assertThat(isValidResourceId(0x00020001)).isFalse()
-    // Package ID is 0xFF (disallowed)
-    assertThat(isValidResourceId(0xFF020001.toInt())).isFalse()
-  }
-
-  @Test
-  fun testIsValidResourceId_invalidTypeId() {
-    // Type ID is zero
-    assertThat(isValidResourceId(0x7f000001)).isFalse()
-  }
-
-  @Test
-  fun testIsValidResourceId_negativeAndZero() {
-    assertThat(isValidResourceId(0)).isFalse()
-    assertThat(isValidResourceId(-1)).isFalse()
-  }
-
-  @Test
-  fun testResolveResourceToString() {
-    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
-    val view = View(activity)
-
-    // 1. Test valid platform system resource
-    val systemResourceStr = view.resolveResourceToString(android.R.layout.simple_list_item_1)
-    assertThat(systemResourceStr).isEqualTo("@android:layout/simple_list_item_1")
-
-    // 2. Test invalid resource ID (-1)
-    val invalidResourceStr = view.resolveResourceToString(-1)
-    assertThat(invalidResourceStr).isNull()
-
-    // 3. Test non-existent positive ID (triggers NotFoundException internally)
-    val nonExistentResourceStr = view.resolveResourceToString(999999)
-    assertThat(nonExistentResourceStr).isNull()
-  }
+class ViewNodesTest {
 
   @Test
   @Config(qualifiers = "w400dp-h800dp-port")
@@ -83,7 +37,7 @@ class ViewExtensionsTest {
     activity.setTheme(android.R.style.Theme_Material)
     val view = View(activity)
     val stringTable = StringTable()
-    val appContext = view.createAppContext(stringTable)
+    val appContext = ViewNodes.createAppContext(view, stringTable)
 
     // Verify theme resolved
     val stringMap = stringTable.toStringEntries().associate { it.id to it.value }

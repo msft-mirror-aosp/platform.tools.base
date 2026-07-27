@@ -14,15 +14,21 @@
  * limitations under the License.
  */
 
-package com.android.tools.agent.appinspection
+package com.android.tools.agent.appinspection;
 
-import androidx.inspection.Connection
-import androidx.inspection.Inspector
+import androidx.inspection.Connection;
+import androidx.inspection.Inspector;
 
 /**
- * Marker Inspector created solely so Compose Inspector's reflection lookup (`javaClass.name ==
- * "com.android.tools.agent.appinspection.ViewLayoutInspector"`) discovers this agent's ClassLoader to load XrHelper.
+ * Marker Inspector created solely so Compose Inspector's reflection lookup (matching the class name
+ * "com.android.tools.agent.appinspection.ViewLayoutInspector") discovers this agent's ClassLoader
+ * to load XrHelper.
  */
-class ViewLayoutInspector(connection: Connection) : Inspector(connection) {
-  override fun onReceiveCommand(data: ByteArray, callback: CommandCallback) {}
+public final class ViewLayoutInspector extends Inspector {
+    public ViewLayoutInspector(Connection connection) {
+        super(connection);
+    }
+
+    @Override
+    public void onReceiveCommand(byte[] data, CommandCallback callback) {}
 }

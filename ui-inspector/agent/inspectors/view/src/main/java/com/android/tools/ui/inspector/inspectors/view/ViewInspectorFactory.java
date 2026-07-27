@@ -14,17 +14,21 @@
  * limitations under the License.
  */
 
-package com.android.tools.ui.inspector.inspectors.view
+package com.android.tools.ui.inspector.inspectors.view;
 
-import android.os.Handler
-import android.os.Looper
-import java.util.concurrent.Executor
+import androidx.inspection.Connection;
+import androidx.inspection.InspectorEnvironment;
+import androidx.inspection.InspectorFactory;
 
-/** An executor that runs tasks on the app's main thread */
-internal class MainThreadExecutor : Executor {
-  private val handler = Handler(Looper.getMainLooper())
+import com.android.tools.ui.inspector.common.ProtocolConstants;
 
-  override fun execute(command: Runnable) {
-    handler.post(command)
-  }
+public final class ViewInspectorFactory extends InspectorFactory<ViewInspector> {
+    public ViewInspectorFactory() {
+        super(ProtocolConstants.VIEW_INSPECTOR_ID);
+    }
+
+    @Override
+    public ViewInspector createInspector(Connection connection, InspectorEnvironment environment) {
+        return new ViewInspector(connection, environment);
+    }
 }

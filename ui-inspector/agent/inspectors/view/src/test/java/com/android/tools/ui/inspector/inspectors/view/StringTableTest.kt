@@ -45,6 +45,13 @@ class StringTableTest {
   }
 
   @Test
+  fun testPut_nullStringReturnsZero() {
+    val table = StringTable()
+    val id = table.put(null)
+    assertThat(id).isEqualTo(0)
+  }
+
+  @Test
   fun testPut_distinctStringsGetDifferentIds() {
     val table = StringTable()
     val id1 = table.put("hello")
@@ -55,7 +62,7 @@ class StringTableTest {
   }
 
   @Test
-  fun testToStringEntries_returnsAllEntries() {
+  fun testToStringEntries_returnsAllEntriesInInsertionOrder() {
     val table = StringTable()
     table.put("hello")
     table.put("world")
@@ -63,9 +70,10 @@ class StringTableTest {
     val entries = table.toStringEntries()
     assertThat(entries).hasSize(2)
 
-    val map = entries.associate { it.id to it.value }
-    assertThat(map[1]).isEqualTo("hello")
-    assertThat(map[2]).isEqualTo("world")
+    assertThat(entries[0].value).isEqualTo("hello")
+    assertThat(entries[0].id).isEqualTo(1)
+    assertThat(entries[1].value).isEqualTo("world")
+    assertThat(entries[1].id).isEqualTo(2)
   }
 
   @Test
