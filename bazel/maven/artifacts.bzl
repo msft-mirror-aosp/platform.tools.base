@@ -27,7 +27,7 @@ ARTIFACTS = [
     "androidx.compose.ui:ui-test-manifest-lint:1.11.0-rc01",
     "androidx.compose.ui:ui-text-lint:1.11.0-rc01",
     "androidx.core:core:1.1.0",
-    "androidx.lint:lint-gradle:1.0.0-alpha01",
+    "androidx.lint:lint-gradle:1.0.0",
     "androidx.multidex:multidex:2.0.1",
     "androidx.test:runner:1.4.0",
     "androidx.test.uiautomator:uiautomator:2.3.0",

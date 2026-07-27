@@ -3103,10 +3103,10 @@ maven_import(
 )
 
 maven_artifact(
-    name = "androidx.lint.lint-gradle_1.0.0-alpha01",
-    pom = "repository/androidx/lint/lint-gradle/1.0.0-alpha01/lint-gradle-1.0.0-alpha01.pom",
+    name = "androidx.lint.lint-gradle_1.0.0",
+    pom = "repository/androidx/lint/lint-gradle/1.0.0/lint-gradle-1.0.0.pom",
     repo_root_path = "repository",
-    repo_path = "androidx/lint/lint-gradle/1.0.0-alpha01",
+    repo_path = "androidx/lint/lint-gradle/1.0.0",
     visibility = ["//visibility:public"],
 )
 
@@ -3114,12 +3114,12 @@ maven_import(
     name = "androidx.lint.lint-gradle",
     classifiers = [],
     jars = [
-        "repository/androidx/lint/lint-gradle/1.0.0-alpha01/lint-gradle-1.0.0-alpha01.jar"
+        "repository/androidx/lint/lint-gradle/1.0.0/lint-gradle-1.0.0.jar"
     ],
     original_deps = [],
-    pom = "repository/androidx/lint/lint-gradle/1.0.0-alpha01/lint-gradle-1.0.0-alpha01.pom",
+    pom = "repository/androidx/lint/lint-gradle/1.0.0/lint-gradle-1.0.0.pom",
     repo_root_path = "repository",
-    repo_path = "androidx/lint/lint-gradle/1.0.0-alpha01",
+    repo_path = "androidx/lint/lint-gradle/1.0.0",
     visibility = ["//visibility:public"],
 )
 

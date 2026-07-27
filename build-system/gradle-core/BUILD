@@ -64,6 +64,8 @@ kotlin_library(
     lint_extra_args = [
         "--disable",
         "InternalGradleApiUsage",
+        "--disable",
+        "InternalAgpApiUsage",
     ],
     lint_timeout = "long",
     module_name = "gradle_core",

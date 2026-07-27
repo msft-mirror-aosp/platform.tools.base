@@ -1,4 +1,48 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.5.0-dev" type="baseline" client="" dependencies="true" name="" variant="all" version="8.5.0-dev">
+<issues format="6" by="lint 9.4.0-dev" type="baseline" client="" dependencies="true" name="" variant="all" version="9.4.0-dev">
+
+    <issue
+        id="EagerGradleConfiguration"
+        message="Use register instead of create"
+        errorLine1="      container.create(previewScreenshotTestEngineConfigurationName).apply {"
+        errorLine2="                ~~~~~~">
+        <location
+            file="src/main/java/com/android/compose/screenshot/PreviewScreenshotGradlePlugin.kt"
+            line="460"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="EagerGradleConfiguration"
+        message="Use register instead of create"
+        errorLine1="      container.create(layoutlibJarConfigurationName).apply {"
+        errorLine2="                ~~~~~~">
+        <location
+            file="src/main/java/com/android/compose/screenshot/PreviewScreenshotGradlePlugin.kt"
+            line="478"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="EagerGradleConfiguration"
+        message="Use register instead of create"
+        errorLine1="      container.create(layoutlibResourcesConfigurationName).apply {"
+        errorLine2="                ~~~~~~">
+        <location
+            file="src/main/java/com/android/compose/screenshot/PreviewScreenshotGradlePlugin.kt"
+            line="495"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="WithTypeWithoutConfigureEach"
+        message="Avoid passing a closure to withType, use withType().configureEach instead"
+        errorLine1="    project.plugins.withType(AndroidBasePlugin::class.java) {"
+        errorLine2="                    ~~~~~~~~">
+        <location
+            file="src/main/java/com/android/compose/screenshot/PreviewScreenshotGradlePlugin.kt"
+            line="126"
+            column="21"/>
+    </issue>
 
 </issues>
