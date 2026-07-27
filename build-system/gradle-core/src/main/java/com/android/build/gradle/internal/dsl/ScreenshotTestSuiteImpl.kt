@@ -30,6 +30,7 @@ import org.gradle.api.provider.ProviderFactory
 abstract class ScreenshotTestSuiteImpl @Inject constructor(val name: String, dslServices: DslServices) : ScreenshotTestSuite {
 
   abstract override var engineVersion: String?
+  abstract override var imageDifferenceThreshold: Float?
 
   internal val dependenciesActions = mutableListOf<AgpTestSuiteDependencies.() -> Unit>()
   internal var dependenciesHandler: ((AgpTestSuiteDependencies.() -> Unit) -> Unit)? = null
@@ -108,7 +109,9 @@ constructor(
       screenshotSuite.dependenciesActions.clear()
     }
 
-    configureTestTasks { context -> screenshotTaskConfigurator.configureTask(this, context, dslServices, providers) }
+    configureTestTasks { context ->
+      screenshotTaskConfigurator.configureTask(this, context, dslServices, providers, screenshotSuite.imageDifferenceThreshold)
+    }
   }
 
   private val screenshotTaskConfigurator = ScreenshotTestSuiteTaskConfigurator(name)

@@ -30,6 +30,7 @@ import org.gradle.api.Incubating
  *         screenshotTests {
  *             create("myScreenshotTest") {
  *                 engineVersion = "1.0.0"
+ *                 imageDifferenceThreshold = 0.0001f
  *                 targetVariants.add("debug")
  *                 dependencies {
  *                     implementation(project(":my-test-helpers"))
@@ -53,6 +54,16 @@ interface ScreenshotTestSuite {
    * This property is mandatory. A valid version must be provided; otherwise, a Gradle sync error will be reported.
    */
   @get:Incubating @set:Incubating var engineVersion: String?
+
+  /**
+   * The maximum allowed percentage difference between the reference image and the rendered image for a screenshot test to pass.
+   *
+   * Specified as a floating-point value between `0.0f` (exact match required) and `1.0f` (100% difference allowed). For example, a value of
+   * `0.0001f` represents a 0.01% difference threshold.
+   *
+   * If `null`, the default engine threshold (0.0f) will be used.
+   */
+  @get:Incubating @set:Incubating var imageDifferenceThreshold: Float?
 
   /** Defines which variants this test suite targets. */
   @get:Incubating val targetVariants: MutableList<String>

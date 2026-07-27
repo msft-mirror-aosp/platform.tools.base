@@ -2283,9 +2283,12 @@ package com.android.build.api.dsl {
   @org.gradle.api.Incubating public interface ScreenshotTestSuite {
     method @org.gradle.api.Incubating public void dependencies(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AgpTestSuiteDependencies,kotlin.Unit> action);
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public String? getEngineVersion();
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public Float? getImageDifferenceThreshold();
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public java.util.List<java.lang.String> getTargetVariants();
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public void setEngineVersion(String?);
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public void setImageDifferenceThreshold(Float?);
     property @org.gradle.api.Incubating public abstract String? engineVersion;
+    property @org.gradle.api.Incubating public abstract Float? imageDifferenceThreshold;
     property @org.gradle.api.Incubating public abstract java.util.List<java.lang.String> targetVariants;
   }
 

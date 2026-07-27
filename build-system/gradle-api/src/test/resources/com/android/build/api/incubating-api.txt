@@ -807,8 +807,10 @@ https://issuetracker.google.com/518472902
   * com.android.build.api.dsl.ScreenshotTestSuite
   * com.android.build.api.dsl.ScreenshotTestSuite.dependencies: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AgpTestSuiteDependencies, kotlin.Unit>)
   * com.android.build.api.dsl.ScreenshotTestSuite.getEngineVersion: java.lang.String ()
+  * com.android.build.api.dsl.ScreenshotTestSuite.getImageDifferenceThreshold: java.lang.Float ()
   * com.android.build.api.dsl.ScreenshotTestSuite.getTargetVariants: java.util.List<java.lang.String> ()
   * com.android.build.api.dsl.ScreenshotTestSuite.setEngineVersion: void (java.lang.String)
+  * com.android.build.api.dsl.ScreenshotTestSuite.setImageDifferenceThreshold: void (java.lang.Float)
   * com.android.build.api.dsl.TestOptions.getScreenshotTests: org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.ScreenshotTestSuite> ()
 https://issuetracker.google.com/519009084
   * com.android.build.api.dsl.BackupTestSuite
