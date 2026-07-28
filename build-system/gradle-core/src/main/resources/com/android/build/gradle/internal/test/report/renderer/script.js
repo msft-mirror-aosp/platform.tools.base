@@ -2119,6 +2119,13 @@ const TestReportApp = {
     return '../../../../../' + cleanPath;
   },
 
+  hasValidImagePath(imagePath) {
+    if (!imagePath || typeof imagePath !== 'string') return false;
+    const lower = imagePath.trim().toLowerCase();
+    if (lower === 'no diff' || lower === 'images match' || lower === 'no diff (passed)' || lower === 'none' || lower === 'n/a') return false;
+    return lower.endsWith('.png') || lower.endsWith('.jpg') || lower.endsWith('.jpeg') || lower.endsWith('.webp') || lower.endsWith('.svg');
+  },
+
   renderScreenshotTestView(container, testCase, screenshotItems) {
     const activeVariants = this.state.filters.variants || [];
     let item = screenshotItems.find(i => activeVariants.includes(i.variantName)) || screenshotItems[0];
@@ -2206,8 +2213,15 @@ const TestReportApp = {
     const comparisonCard = document.createElement('div');
     comparisonCard.className = 'screenshot-comparison-card';
 
+    const hasValidRef = this.hasValidImagePath(item.refImagePath);
+    const hasValidDiff = this.hasValidImagePath(item.diffImagePath);
+    const hasValidNew = this.hasValidImagePath(item.newImagePath) || (isPassed && hasValidRef);
+
     const refUrl = this.resolveImagePath(item.refImagePath);
-    const newUrl = this.resolveImagePath(item.newImagePath);
+    let newUrl = this.resolveImagePath(item.newImagePath);
+    if ((!item.newImagePath || !this.hasValidImagePath(item.newImagePath)) && isPassed && item.refImagePath) {
+      newUrl = refUrl;
+    }
     const diffUrl = this.resolveImagePath(item.diffImagePath);
 
     comparisonCard.innerHTML = `
@@ -2241,7 +2255,7 @@ const TestReportApp = {
             </span>
           </div>
           <div class="img-card-body">
-            ${item.refImagePath ? `
+            ${hasValidRef ? `
               <img src="${refUrl}" alt="Reference Image" class="preview-img" draggable="false" onclick="TestReportApp.openLightbox('${refUrl}', 'Reference Image')" onerror="TestReportApp.handleImageError(this, 'Reference Image Missing')">
               <button class="img-zoom-btn" onclick="TestReportApp.openLightbox('${refUrl}', 'Reference Image')">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
@@ -2269,7 +2283,7 @@ const TestReportApp = {
             </span>
           </div>
           <div class="img-card-body">
-            ${item.diffImagePath ? `
+            ${hasValidDiff ? `
               <img src="${diffUrl}" alt="Diff Image" class="preview-img" draggable="false" onclick="TestReportApp.openLightbox('${diffUrl}', 'Difference Image')" onerror="TestReportApp.handleImageError(this, 'Diff Image Missing')">
               <button class="img-zoom-btn" onclick="TestReportApp.openLightbox('${diffUrl}', 'Difference Image')">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
@@ -2281,7 +2295,7 @@ const TestReportApp = {
                   <div class="placeholder-icon pass">✓</div>
                   <div class="placeholder-title" style="color: #16a34a;">No Differences</div>
                   <div class="placeholder-desc">The new image matches the reference image perfectly (100% match).</div>
-                ` : (item.stackTrace.includes('Size Mismatch') ? `
+                ` : (item.stackTrace && item.stackTrace.includes('Size Mismatch') ? `
                   <div class="placeholder-icon warn">📐</div>
                   <div class="placeholder-title" style="color: #d97706;">Size Mismatch</div>
                   <div class="placeholder-desc">Image dimensions differ between reference and actual screenshots. Diff image could not be generated.</div>
@@ -2311,7 +2325,7 @@ const TestReportApp = {
             </span>
           </div>
           <div class="img-card-body">
-            ${item.newImagePath ? `
+            ${hasValidNew ? `
               <img src="${newUrl}" alt="New Image" class="preview-img" draggable="false" onclick="TestReportApp.openLightbox('${newUrl}', 'New Image')" onerror="TestReportApp.handleImageError(this, 'New Image Missing')">
               <button class="img-zoom-btn" onclick="TestReportApp.openLightbox('${newUrl}', 'New Image')">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
@@ -2326,7 +2340,7 @@ const TestReportApp = {
             `}
           </div>
           <div class="img-card-footer">
-            <span class="truncate">${UIUtils.escapeHTML(item.newImagePath || 'N/A')}</span>
+            <span class="truncate">${UIUtils.escapeHTML(item.newImagePath || (isPassed ? 'Same as Reference' : 'N/A'))}</span>
           </div>
         </div>
       </div>
