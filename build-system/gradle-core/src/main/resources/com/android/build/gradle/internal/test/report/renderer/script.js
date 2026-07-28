@@ -2358,6 +2358,8 @@ const TestReportApp = {
             <span class="slider-split-percent text-blue-600 font-bold">50% Reference | 50% New</span>
           </div>
           <div class="slider-container">
+            <span class="slider-badge left-badge">Reference (Golden)</span>
+            <span class="slider-badge right-badge">New (Rendered)</span>
             <img src="${newUrl}" class="slider-img-base" alt="New Base" draggable="false">
             <div class="slider-img-overlay" style="clip-path: inset(0 50% 0 0);">
               <img src="${refUrl}" alt="Reference Overlay" draggable="false">
