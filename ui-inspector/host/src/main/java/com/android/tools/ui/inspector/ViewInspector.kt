@@ -52,7 +52,7 @@ internal suspend fun dumpViews(commandSender: CommandSender, includeAttributes: 
       .build()
 
   val responsePayload = commandSender.sendInspectorCommand(ProtocolConstants.VIEW_INSPECTOR_ID, viewInspectorCommand.toByteArray())
-  val viewInspectorResponse = ViewInspectorProtocol.Response.parseFrom(responsePayload)
+  val viewInspectorResponse = ViewInspectorProtocol.Response.parser().parseTreeResponse(responsePayload)
 
   if (viewInspectorResponse.specializedCase != ViewInspectorProtocol.Response.SpecializedCase.DUMP_VIEWS_RESPONSE) {
     throw IllegalStateException("Unexpected response: ${viewInspectorResponse.specializedCase}")

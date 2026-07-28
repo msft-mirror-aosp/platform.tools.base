@@ -69,7 +69,7 @@ internal suspend fun queryComposeTree(
       .build()
 
   val responsePayload = commandSender.sendInspectorCommand(ProtocolConstants.COMPOSE_INSPECTOR_ID, getComposablesCmd.toByteArray())
-  val composeResponse = LayoutInspectorComposeProtocol.Response.parseFrom(responsePayload)
+  val composeResponse = LayoutInspectorComposeProtocol.Response.parser().parseTreeResponse(responsePayload)
 
   if (composeResponse.specializedCase != LayoutInspectorComposeProtocol.Response.SpecializedCase.GET_COMPOSABLES_RESPONSE) {
     System.err.println("Warning: Unexpected Compose Response: ${composeResponse.specializedCase}")
@@ -101,7 +101,7 @@ internal suspend fun queryComposeParameters(
       .build()
 
   val responsePayload = commandSender.sendInspectorCommand(ProtocolConstants.COMPOSE_INSPECTOR_ID, getAllParamsCmd.toByteArray())
-  val composeResponse = LayoutInspectorComposeProtocol.Response.parseFrom(responsePayload)
+  val composeResponse = LayoutInspectorComposeProtocol.Response.parser().parseTreeResponse(responsePayload)
 
   if (composeResponse.specializedCase != LayoutInspectorComposeProtocol.Response.SpecializedCase.GET_ALL_PARAMETERS_RESPONSE) {
     System.err.println("Warning: Unexpected Compose Response: ${composeResponse.specializedCase}")
