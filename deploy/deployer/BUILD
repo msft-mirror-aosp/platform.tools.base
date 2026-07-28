@@ -194,7 +194,6 @@ kotlin_library(
         "//tools/base/adblib-tools:adblib.tools",
         "//tools/base/annotations",
         "//tools/base/apkparser:tools.binary-resources",
-        "//tools/base/bazel:langtools",
         "//tools/base/bazel:studio-proto",
         "//tools/base/common:tools.common",
         "//tools/base/ddmlib:tools.ddmlib",

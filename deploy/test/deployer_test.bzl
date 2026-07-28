@@ -56,7 +56,6 @@ def deployer_test(name, srcs):
             ":original_kotlin",
             ":swapped_java",
             ":swapped_kotlin",
-            "//tools/base/bazel:langtools",
             "//tools/base/bazel:studio-proto",
             "//tools/base/deploy/deployer:tools.deployer",
             "//tools/base/deploy/agent/runtime:live_edit_dex",

@@ -1,7 +1,7 @@
 load("@bazel_skylib//rules:common_settings.bzl", "bool_flag", "string_flag")
 load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
-load("@rules_java//java:defs.bzl", "java_binary", "java_import", "java_library", "java_test")
+load("@rules_java//java:defs.bzl", "java_binary", "java_library", "java_test")
 load("@rules_python//python:defs.bzl", "py_binary", "py_test")
 load("//tools/base/bazel:coverage.bzl", "coverage_java_test")
 load("//tools/base/bazel:kotlin_common.bzl", "kt_java_toolchain_bundle")
@@ -63,12 +63,6 @@ java_library(
     deps = [
         "@intellij//:intellij-sdk",
     ],
-)
-
-java_import(
-    name = "langtools",
-    jars = ["//prebuilts/studio/jdk/jdk8:langtools"],
-    visibility = ["//visibility:public"],
 )
 
 java_binary(
