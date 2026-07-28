@@ -46,7 +46,7 @@ maven_repository(
     name = "maven_dependencies",
     # keep sorted
     artifacts = [
-        "@maven//:com.android.tools.utp.android-test-plugin-host-device-info-proto_30.2.0",
+        "@maven//:com.android.tools.androidtest.test-result-proto",
         "@maven//:com.google.api-client.google-api-client_1.22.0",
         "@maven//:com.google.apis.google-api-services-storage_v1-rev82-1.22.0",
         "@maven//:com.google.apis.google-api-services-testing_v1-rev82-1.22.0",
@@ -55,7 +55,6 @@ maven_repository(
         "@maven//:com.google.http-client.google-http-client_1.43.3",
         "@maven//:com.google.oauth-client.google-oauth-client_1.22.0",
         "@maven//:com.google.protobuf.protobuf-java-util",
-        "@maven//:com.google.testing.platform.core-proto_0.0.9-alpha03",
         "@maven//:org.junit.junit-bom_5.10.2",
     ],
     visibility = [
@@ -144,13 +143,12 @@ kotlin_library(
     ],
     deps = [
         ":testlab-gradle-plugin-dsl",
-        "//prebuilts/tools/common/m2:utp-core-proto",
         "//tools/base/build-system:gradle-api",
         "//tools/base/build-system/builder-model",
         "//tools/base/build-system/builder-test-api:tools.builder-test-api",
         "//tools/base/build-system/gradle-common-api",
         "//tools/base/build-system/gradle-core",
-        "//tools/base/utp/android-test-plugin-host-device-info-proto",
+        "@maven//:com.android.tools.androidtest.test-result-proto",
         "@maven//:com.google.apis.google-api-services-storage",
         "@maven//:com.google.apis.google-api-services-testing",
         "@maven//:com.google.apis.google-api-services-toolresults",
