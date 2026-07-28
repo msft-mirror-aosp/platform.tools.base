@@ -32,7 +32,9 @@ import com.google.gson.JsonPrimitive
 import java.io.IOException
 import java.io.OutputStreamWriter
 import java.io.PrintStream
+import java.nio.file.AccessDeniedException
 import java.nio.file.Files
+import java.nio.file.NoSuchFileException
 import java.nio.file.Path
 import java.util.Locale
 
@@ -53,13 +55,24 @@ internal fun withJsonPrinter(output: Path?, prettyPrint: Boolean, block: (UiDump
     return
   }
   if (Files.isDirectory(output)) {
-    throw IOException("Output path is a directory, expected a file: $output")
+    throw IOException("Cannot write output file '$output': path is a directory")
   }
-  val fileOut = PrintStream(Files.newOutputStream(output), false, Charsets.UTF_8)
+  val fileOut =
+    try {
+      PrintStream(Files.newOutputStream(output), false, Charsets.UTF_8)
+    } catch (e: IOException) {
+      val reason =
+        when (e) {
+          is NoSuchFileException -> output.parent?.let { "$it does not exist" } ?: "parent directory does not exist"
+          is AccessDeniedException -> "access denied"
+          else -> e.message ?: e.javaClass.simpleName
+        }
+      throw IOException("Cannot write output file '$output': $reason", e)
+    }
   fileOut.use { block(JsonUiDumpPrinter(out = it, prettyPrint = prettyPrint)) }
   // Checked after close so that errors recorded while closing are observed too.
   if (fileOut.checkError()) {
-    throw IOException("Failed to write output to: $output")
+    throw IOException("Cannot write output file '$output': I/O error while writing")
   }
 }
 

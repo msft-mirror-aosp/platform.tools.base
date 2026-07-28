@@ -40,14 +40,18 @@ var sessionFactory: () -> AdbSession = { createStandaloneSession(NO_LOGGING) }
 
 @Command(name = "ui-inspector", mixinStandardHelpOptions = true, version = ["1.0"], description = ["UI Inspector CLI"])
 class UiInspectorCommand : Callable<Int> {
+  @CommandLine.Spec lateinit var spec: CommandLine.Model.CommandSpec
+
   override fun call(): Int {
-    CommandLine.usage(this, System.err)
+    spec.commandLine().usage(spec.commandLine().err)
     return EXIT_ERROR
   }
 }
 
 @Command(name = "dump-ui", description = ["Dump UI hierarchy"])
 class DumpUiCommand : Callable<Int> {
+  @CommandLine.Spec lateinit var spec: CommandLine.Model.CommandSpec
+
   @Option(names = ["--device"], description = [DEVICE_OPTION_DESCRIPTION]) var device: String? = null
   @Option(names = ["--package"], description = ["The app package name. Defaults to the app currently in the foreground"])
   var packageName: String? = null
@@ -80,7 +84,7 @@ class DumpUiCommand : Callable<Int> {
           val serial = resolveDeviceSerial(adbSession, device)
           serial to resolveTargetPackage(adbSession, serial, packageName)
         }
-      System.err.println("Executing dump-ui for package: $targetPackage on device: $serial")
+      spec.commandLine().err.println("Executing dump-ui for package: $targetPackage on device: $serial")
       val facets = expandIncludeFacets(include)
       withJsonPrinter(output, prettyPrint) { printer ->
         runBlocking {
@@ -99,7 +103,7 @@ class DumpUiCommand : Callable<Int> {
       }
       return EXIT_OK
     } catch (e: Exception) {
-      System.err.println("Error: ${e.message}")
+      spec.commandLine().err.println("Error: ${e.message}")
       return EXIT_ERROR
     }
   }

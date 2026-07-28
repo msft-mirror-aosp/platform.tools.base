@@ -22,6 +22,8 @@ import com.android.adblib.DeviceSelector
 import com.android.adblib.DeviceState
 import com.android.adblib.testing.FakeAdbSession
 import com.google.common.truth.Truth.assertThat
+import java.io.PrintWriter
+import java.io.StringWriter
 import java.nio.file.Files
 import java.nio.file.Paths
 import org.junit.Assert.assertThrows
@@ -141,6 +143,26 @@ class CliHostTest {
 
       assertThat(exitCode).isEqualTo(1)
       assertThat(String(Files.readAllBytes(outputFile), Charsets.UTF_8)).isEqualTo("existing content")
+    } finally {
+      sessionFactory = originalFactory
+    }
+  }
+
+  @Test
+  fun testDumpUiUnwritableOutputPathReportsReason() {
+    val output = tempFolder.root.toPath().resolve("missing").resolve("dump.json")
+    val session = FakeAdbSession().apply { hostServices.devices = DeviceList(listOf(DeviceInfo("abc", DeviceState.ONLINE)), emptyList()) }
+    val originalFactory = sessionFactory
+    sessionFactory = { session }
+    try {
+      val capturedErr = StringWriter()
+      val cmd = createCommandLine()
+      cmd.setErr(PrintWriter(capturedErr))
+
+      val exitCode = cmd.execute("dump-ui", "--package", "com.example", "-o", output.toString())
+
+      assertThat(exitCode).isEqualTo(1)
+      assertThat(capturedErr.toString()).contains("Error: Cannot write output file '$output': ${output.parent} does not exist")
     } finally {
       sessionFactory = originalFactory
     }

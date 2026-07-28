@@ -36,6 +36,7 @@ import java.io.PrintStream
 import java.io.StringReader
 import java.math.BigDecimal
 import java.nio.file.Files
+import java.nio.file.NoSuchFileException
 import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Rule
@@ -111,9 +112,21 @@ class JsonUiDumpPrinterTest {
 
   @Test
   fun testWithJsonPrinterRejectsDirectory() {
-    val exception = assertThrows(IOException::class.java) { withJsonPrinter(output = tempFolder.root.toPath(), prettyPrint = false) {} }
+    val output = tempFolder.root.toPath()
 
-    assertThat(exception).hasMessageThat().contains("directory")
+    val exception = assertThrows(IOException::class.java) { withJsonPrinter(output = output, prettyPrint = false) {} }
+
+    assertThat(exception).hasMessageThat().isEqualTo("Cannot write output file '$output': path is a directory")
+  }
+
+  @Test
+  fun testWithJsonPrinterReportsMissingParentDirectory() {
+    val output = tempFolder.root.toPath().resolve("missing").resolve("dump.json")
+
+    val exception = assertThrows(IOException::class.java) { withJsonPrinter(output = output, prettyPrint = false) {} }
+
+    assertThat(exception).hasMessageThat().isEqualTo("Cannot write output file '$output': ${output.parent} does not exist")
+    assertThat(exception).hasCauseThat().isInstanceOf(NoSuchFileException::class.java)
   }
 
   @Test
