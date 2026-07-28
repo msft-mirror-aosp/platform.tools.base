@@ -281,13 +281,7 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : BaseR8
       it.proguardConfigurations.set(proguardConfigurations)
       it.legacyMultiDexEnabled.set(legacyMultiDexEnabled)
       it.referencedInputs.from((referencedClasses + referencedResources).toList())
-      it.classes.from(
-        if (shrinkingWithDynamicFeatures.get() && !hasAllAccessTransformers.get()) {
-          listOf(baseJar.get().asFile)
-        } else {
-          classes.toList()
-        }
-      )
+      it.classes.from(getProgramClasses())
       it.resourcesJar.set(resourcesJar)
       if (enableR8ConfigurationAnalyzerReport.get()) {
         it.r8ConfigurationAnalyzerDataOutput.set(r8ConfigurationAnalyzerDataOutput.get().asFile)

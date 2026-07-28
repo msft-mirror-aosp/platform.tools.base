@@ -86,4 +86,35 @@ class R8AnalysisTaskTest {
     val result = build.executor.run(":app:assembleRelease")
     com.google.common.truth.Truth.assertThat(result.tasks).doesNotContain(":app:analyzeReleaseR8Config")
   }
+
+  @Test
+  fun testR8AnalysisTaskWithDynamicFeatures() {
+    val build =
+      rule.build {
+        androidApplication {
+          android {
+            dynamicFeatures += setOf(":feature")
+            buildTypes {
+              named("release") {
+                it.isMinifyEnabled = true
+                it.isShrinkResources = true
+              }
+            }
+          }
+        }
+        androidFeature {
+          android { namespace = "com.example.feature" }
+          dependencies { implementation(project(":app")) }
+        }
+      }
+    val app = build.androidApplication()
+
+    build.executor.run(":app:analyzeReleaseR8Config").apply { assertTask(":app:analyzeReleaseR8Config").didWork() }
+
+    val pbReport = app.resolve("build/reports/r8/r8-config-analyzer-release.pb")
+    val htmlReport = app.resolve("build/reports/r8/r8-config-analyzer-release.html")
+
+    assertThat(pbReport).exists()
+    assertThat(htmlReport).exists()
+  }
 }

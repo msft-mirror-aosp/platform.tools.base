@@ -109,4 +109,78 @@ class R8AnalysisTest {
     val filesInOutputDir = Files.list(outputDir).use { it.count() }
     assertThat(filesInOutputDir).isEqualTo(0)
   }
+
+  @Test
+  fun testAnalysisRunsWithDynamicFeatures() {
+    val classes = tmp.root.toPath().resolve("classes.jar")
+    ZipOutputStream(classes.toFile().outputStream()).use { zip ->
+      zip.putNextEntry(ZipEntry("test/A.class"))
+      zip.write(TestClassesGenerator.emptyClass("test", "A"))
+      zip.closeEntry()
+    }
+    val featureClasses = tmp.newFolder("classes").toPath().resolve("feature1.jar")
+    ZipOutputStream(featureClasses.toFile().outputStream()).use { zip ->
+      zip.putNextEntry(ZipEntry("test/FeatureA.class"))
+      zip.write(TestClassesGenerator.emptyClass("test", "FeatureA"))
+      zip.closeEntry()
+    }
+    val featureRes = tmp.newFolder("res").toPath().resolve("feature1.jar")
+    ZipOutputStream(featureRes.toFile().outputStream()).use { zip ->
+      zip.putNextEntry(ZipEntry("res.txt"))
+      zip.write("content".toByteArray())
+      zip.closeEntry()
+    }
+
+    val pbReport = tmp.root.resolve("configanalyzer_feature.pb")
+    val htmlReport = tmp.root.resolve("configanalyzer_feature.html")
+
+    val proguardOutputReports = ProguardOutputReports(pbReport.toPath(), htmlReport.toPath())
+    val proguardConfig = ProguardConfig(listOf(), null, mutableListOf("-keep class test.A", "-ignorewarnings"), null, proguardOutputReports)
+    val toolConfig =
+      ToolConfig(
+        minSdkVersion = 21,
+        debuggable = true,
+        disableTreeShaking = false,
+        disableMinification = false,
+        disableDesugaring = true,
+        fullMode = true,
+        strictFullModeForKeepRules = BooleanOption.R8_STRICT_FULL_MODE_FOR_KEEP_RULES.defaultValue,
+        isolatedSplits = null,
+        r8OutputType = R8OutputType.DEX,
+        mainDexListDisallowed = BooleanOption.R8_MAIN_DEX_LIST_DISALLOWED.defaultValue,
+      )
+
+    runR8(
+      inputClasses = listOf(classes),
+      output = null,
+      inputJavaResJar = classes,
+      javaResourcesJar = null,
+      libraries = listOf(TestUtils.resolvePlatformPath("android.jar", TestUtils.TestType.AGP)),
+      classpath = listOf(),
+      toolConfig = toolConfig,
+      proguardConfig = proguardConfig,
+      mainDexListConfig = com.android.builder.dexing.MainDexListConfig(),
+      resourceShrinkingConfig = null,
+      messageReceiver = { _ -> },
+      featureClassJars = listOf(featureClasses),
+      featureJavaResourceJars = listOf(featureRes),
+      featureDexDir = null,
+      featureJavaResourceOutputDir = null,
+      libConfiguration = null,
+      inputArtProfile = null,
+      outputArtProfile = null,
+      inputProfileForDexStartupOptimization = null,
+      r8Metadata = null,
+      partialShrinking = null,
+      r8ExecutorService = MoreExecutors.newDirectExecutorService(),
+    )
+
+    // Verify reports generated
+    assertThat(pbReport.toPath()).exists()
+    assertThat(htmlReport.toPath()).exists()
+
+    // Since the empty consumer is passed, no Dex output should exist inside outputDir
+    val filesInOutputDir = Files.list(outputDir).use { it.count() }
+    assertThat(filesInOutputDir).isEqualTo(0)
+  }
 }
