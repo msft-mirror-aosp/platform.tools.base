@@ -22,6 +22,7 @@ import com.android.adblib.DeviceSelector
 import com.android.adblib.DeviceState
 import com.android.adblib.testing.FakeAdbSession
 import com.google.common.truth.Truth.assertThat
+import java.io.ByteArrayOutputStream
 import java.io.PrintWriter
 import java.io.StringWriter
 import java.nio.file.Files
@@ -146,6 +147,20 @@ class CliHostTest {
     } finally {
       sessionFactory = originalFactory
     }
+  }
+
+  @Test
+  fun testDumpUiHelpPrintsUsageAndExitsZero() {
+    val capturedOut = ByteArrayOutputStream()
+    val commandLine = createCommandLine()
+    commandLine.setOut(PrintWriter(capturedOut, true, Charsets.UTF_8))
+
+    val exitCode = commandLine.execute("dump-ui", "--help")
+
+    val output = capturedOut.toString(Charsets.UTF_8)
+    assertThat(exitCode).isEqualTo(0)
+    assertThat(output).contains("Usage: ui-inspector dump-ui")
+    assertThat(output).contains("--include")
   }
 
   @Test

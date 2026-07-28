@@ -51,7 +51,7 @@ class UiInspectorCommand : Callable<Int> {
 @Command(name = "dump-ui", description = ["Dump UI hierarchy"])
 class DumpUiCommand : Callable<Int> {
   @CommandLine.Spec lateinit var spec: CommandLine.Model.CommandSpec
-
+  @Option(names = ["-h", "--help"], usageHelp = true, description = ["Show this help message and exit"]) private var helpRequested = false
   @Option(names = ["--device"], description = [DEVICE_OPTION_DESCRIPTION]) var device: String? = null
   @Option(names = ["--package"], description = ["The app package name. Defaults to the app currently in the foreground"])
   var packageName: String? = null
