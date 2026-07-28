@@ -2213,6 +2213,9 @@ const TestReportApp = {
     const comparisonCard = document.createElement('div');
     comparisonCard.className = 'screenshot-comparison-card';
 
+    const isSizeMismatch = item.stackTrace && item.stackTrace.includes('Size Mismatch');
+    const disableSlider = isPassed || isSizeMismatch;
+
     const hasValidRef = this.hasValidImagePath(item.refImagePath);
     const hasValidDiff = this.hasValidImagePath(item.diffImagePath);
     const hasValidNew = this.hasValidImagePath(item.newImagePath) || (isPassed && hasValidRef);
@@ -2234,14 +2237,16 @@ const TestReportApp = {
           </svg>
           <span>Screenshot Comparison & Differences</span>
         </div>
-        <div class="mode-switcher" role="tablist" aria-label="Comparison View Mode">
-          <button class="mode-btn active" data-mode="side-by-side" onclick="TestReportApp.switchScreenshotMode('side-by-side', this)" role="tab" aria-selected="true">
-            🔲 Side-by-Side
-          </button>
-          <button class="mode-btn" data-mode="slider" onclick="TestReportApp.switchScreenshotMode('slider', this)" role="tab" aria-selected="false">
-            ↔️ Split Slider
-          </button>
-        </div>
+        ${!disableSlider ? `
+          <div class="mode-switcher" role="tablist" aria-label="Comparison View Mode">
+            <button class="mode-btn active" data-mode="side-by-side" onclick="TestReportApp.switchScreenshotMode('side-by-side', this)" role="tab" aria-selected="true">
+              🔲 Side-by-Side
+            </button>
+            <button class="mode-btn" data-mode="slider" onclick="TestReportApp.switchScreenshotMode('slider', this)" role="tab" aria-selected="false">
+              ↔️ Split Slider
+            </button>
+          </div>
+        ` : ''}
       </div>
 
       <!-- Mode 1: Side-by-Side Cards -->
@@ -2345,22 +2350,24 @@ const TestReportApp = {
         </div>
       </div>
 
-      <!-- Mode 2: Split Slider View -->
-      <div class="slider-view-wrapper hidden">
-        <div class="slider-controls-bar">
-          <span>Drag the divider line to compare Reference (Left) vs New (Right)</span>
-          <span class="slider-split-percent text-blue-600 font-bold">50% Reference | 50% New</span>
-        </div>
-        <div class="slider-container">
-          <img src="${newUrl}" class="slider-img-base" alt="New Base" draggable="false">
-          <div class="slider-img-overlay" style="clip-path: inset(0 50% 0 0);">
-            <img src="${refUrl}" alt="Reference Overlay" draggable="false">
+      ${!disableSlider ? `
+        <!-- Mode 2: Split Slider View -->
+        <div class="slider-view-wrapper hidden">
+          <div class="slider-controls-bar">
+            <span>Drag the divider line to compare Reference (Left) vs New (Right)</span>
+            <span class="slider-split-percent text-blue-600 font-bold">50% Reference | 50% New</span>
           </div>
-          <div class="slider-divider" style="left: 50%;">
-            <div class="slider-handle">↔</div>
+          <div class="slider-container">
+            <img src="${newUrl}" class="slider-img-base" alt="New Base" draggable="false">
+            <div class="slider-img-overlay" style="clip-path: inset(0 50% 0 0);">
+              <img src="${refUrl}" alt="Reference Overlay" draggable="false">
+            </div>
+            <div class="slider-divider" style="left: 50%;">
+              <div class="slider-handle">↔</div>
+            </div>
           </div>
         </div>
-      </div>
+      ` : ''}
     `;
 
     wrapper.appendChild(comparisonCard);
