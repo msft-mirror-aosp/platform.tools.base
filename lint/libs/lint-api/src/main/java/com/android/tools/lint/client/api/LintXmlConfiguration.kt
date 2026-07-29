@@ -1155,7 +1155,6 @@ protected constructor(
       writer.write(TAG_LINT)
       fileClients?.let { writeAttribute(writer, ATTR_IN, it) }
       baselineFile?.let { baselineFile ->
-        writer.write(" $ATTR_BASELINE=\"")
         val path = Project.getRelativePath(configFile.parentFile, baselineFile)
         writeAttribute(writer, ATTR_BASELINE, path.replace('\\', '/'))
       }

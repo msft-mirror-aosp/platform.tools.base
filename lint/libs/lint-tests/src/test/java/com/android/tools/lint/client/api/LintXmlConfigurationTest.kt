@@ -1048,13 +1048,14 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
         assertNull(configuration.getDefinedSeverity(ApiDetector.UNSUPPORTED))
         val file = File(project.dir, "lint.xml")
         assertFalse(file.exists())
+        configuration.baselineFile = File(project.dir, "lint-baseline.xml")
         configuration.setSeverity(ApiDetector.UNSUPPORTED, Severity.FATAL)
         configuration.ignore(IconDetector.DUPLICATES_NAMES, File("name.xml"))
         assertSame(Severity.FATAL, configuration.getDefinedSeverity(ApiDetector.UNSUPPORTED))
         assertEquals(
           """
           <?xml version="1.0" encoding="UTF-8"?>
-          <lint>
+          <lint baseline="lint-baseline.xml">
               <issue id="IconDuplicates">
                   <ignore path="name.xml" />
               </issue>
