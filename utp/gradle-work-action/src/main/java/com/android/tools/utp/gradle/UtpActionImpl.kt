@@ -16,18 +16,11 @@
 
 package com.android.tools.utp.gradle
 
-import com.android.ddmlib.AndroidDebugBridge
 import com.android.tools.utp.gradle.api.RunUtpWorkParameters
 import com.android.tools.utp.gradle.api.UtpAction
 import org.gradle.api.provider.ProviderFactory
 
 class UtpActionImpl : UtpAction {
-
-  init {
-    // ADB should be initialized only once when this ADB classes are loaded.
-    // UTP may assume that ADB classes are initialized.
-    AndroidDebugBridge.init(false)
-  }
 
   override fun run(parameters: RunUtpWorkParameters, provider: ProviderFactory) {
     val utpRunConfigs = parameters.utpRunConfigs.get()
