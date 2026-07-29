@@ -25,10 +25,10 @@ import android.view.inspector.InspectionCompanion;
 
 import com.android.tools.ui.inspector.inspectors.view.property.PropertyCache;
 import com.android.tools.ui.inspector.inspectors.view.property.ProtoAttributeReader;
-import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.AppContext;
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.Display;
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.Rect;
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.ViewNode;
+import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.WindowInfo;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -71,6 +71,38 @@ final class ViewNodes {
                                 includeResolutionStack)
                         : null;
         return createViewNode(view, stringTable, attributeExtraction).build();
+    }
+
+    /** Captures a view hierarchy and the metadata associated with its root context. */
+    static WindowInfo toWindowInfo(
+            View root,
+            StringTable stringTable,
+            boolean includeAttributes,
+            boolean includeResolutionStack,
+            PropertyCache<View> viewPropertyCache,
+            PropertyCache<ViewGroup.LayoutParams> layoutParamsPropertyCache) {
+        Context context = root.getContext();
+        WindowInfo.Builder builder =
+                WindowInfo.newBuilder()
+                        .setRoot(
+                                toViewNode(
+                                        root,
+                                        stringTable,
+                                        includeAttributes,
+                                        includeResolutionStack,
+                                        viewPropertyCache,
+                                        layoutParamsPropertyCache))
+                        .setConfiguration(
+                                ConfigurationProtoConverter.convert(
+                                        context.getResources().getConfiguration(), stringTable));
+        Integer themeResId = getThemeResIdReflective(context);
+        if (themeResId != null) {
+            String theme = ResourceIds.resolveResourceToString(root, themeResId);
+            if (theme != null) {
+                builder.setTheme(stringTable.put(theme));
+            }
+        }
+        return builder.build();
     }
 
     /**
@@ -178,24 +210,12 @@ final class ViewNodes {
         }
     }
 
-    static AppContext createAppContext(View view, StringTable stringTable) {
-        List<Display> displayInfo = buildDisplayInfo(view.getContext());
-        AppContext.Builder builder = AppContext.newBuilder();
-        int themeResId = getThemeResIdReflective(view.getContext());
-        String themeStr = ResourceIds.resolveResourceToString(view, themeResId);
-        if (themeStr != null) {
-            builder.setTheme(stringTable.put(themeStr));
-        }
-        builder.addAllDisplayInfo(displayInfo);
-        return builder.build();
-    }
-
     /**
      * Reflectively retrieves the theme resource ID from the {@link Context}. Accesses the hidden
      * {@code Context.getThemeResId()} framework API reflectively to avoid adding a compile time
      * dependency to fake-android like layout inspector does.
      */
-    private static int getThemeResIdReflective(Context context) {
+    private static Integer getThemeResIdReflective(Context context) {
         try {
             // Fast-path: Search the runtime class (e.g. Activity, ContextThemeWrapper) which
             // exposes it as public in API 29+.
@@ -209,12 +229,12 @@ final class ViewNodes {
                 method.setAccessible(true);
                 return (Integer) method.invoke(context);
             } catch (Exception ex) {
-                return 0;
+                return null;
             }
         }
     }
 
-    private static List<Display> buildDisplayInfo(Context context) {
+    static List<Display> buildDisplayInfo(Context context) {
         DisplayManager displayManager = context.getSystemService(DisplayManager.class);
         android.view.Display[] displays =
                 displayManager != null ? displayManager.getDisplays() : null;
@@ -224,7 +244,7 @@ final class ViewNodes {
         List<Display> displayInfo = new ArrayList<>(displays.length);
         for (android.view.Display display : displays) {
             android.view.Display.Mode mode = display.getMode();
-            int orientation;
+            Integer orientation;
             switch (display.getRotation()) {
                 case Surface.ROTATION_0:
                     orientation = 0;
@@ -239,16 +259,18 @@ final class ViewNodes {
                     orientation = 270;
                     break;
                 default:
-                    orientation = -1;
+                    orientation = null;
                     break;
             }
-            displayInfo.add(
+            Display.Builder builder =
                     Display.newBuilder()
                             .setId(display.getDisplayId())
-                            .setOrientation(orientation)
                             .setWidthPx(mode.getPhysicalWidth())
-                            .setHeightPx(mode.getPhysicalHeight())
-                            .build());
+                            .setHeightPx(mode.getPhysicalHeight());
+            if (orientation != null) {
+                builder.setOrientation(orientation);
+            }
+            displayInfo.add(builder.build());
         }
         return displayInfo;
     }

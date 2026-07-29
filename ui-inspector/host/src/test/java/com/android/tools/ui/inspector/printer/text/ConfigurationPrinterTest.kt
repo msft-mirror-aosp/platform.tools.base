@@ -16,7 +16,6 @@
 
 package com.android.tools.ui.inspector.printer.text
 
-import com.android.tools.ui.inspector.AppContext
 import com.android.tools.ui.inspector.ColorModeHdr
 import com.android.tools.ui.inspector.ColorModeWideGamut
 import com.android.tools.ui.inspector.DeviceConfiguration
@@ -122,21 +121,22 @@ Device Configuration:
   }
 
   @Test
-  fun testPrintAppContext() {
-    val appContext =
-      AppContext(
-        theme = "@style/Theme.AppCompat",
-        displays = listOf(DisplayInfo(id = 0, widthPx = 1080, heightPx = 1920, orientation = 90)),
+  fun testPrintDisplays() {
+    val output = captureOutput {
+      printDisplays(
+        listOf(
+          DisplayInfo(id = 0, widthPx = 1080, heightPx = 1920, orientation = 90),
+          DisplayInfo(id = 1, widthPx = 800, heightPx = 600, orientation = null),
+        ),
+        it,
       )
-
-    val output = captureOutput { printAppContext(appContext, it) }
+    }
 
     val expectedOutput =
       """
-App Context:
- Theme: @style/Theme.AppCompat
- Displays:
-  - Display 0: 1080x1920 px, rotation 90°
+Displays:
+ - Display 0: 1080x1920 px, rotation 90°
+ - Display 1: 800x600 px
 """
         .trim()
 
@@ -144,20 +144,13 @@ App Context:
   }
 
   @Test
-  fun testPrintAppContext_nullTheme() {
-    val appContext = AppContext(theme = null, displays = listOf(DisplayInfo(id = 0, widthPx = 1080, heightPx = 1920, orientation = 90)))
+  fun testPrintDisplays_empty() {
+    assertThat(captureOutput { printDisplays(emptyList(), it) }).isEmpty()
+  }
 
-    val output = captureOutput { printAppContext(appContext, it) }
-
-    val expectedOutput =
-      """
-App Context:
- Displays:
-  - Display 0: 1080x1920 px, rotation 90°
-"""
-        .trim()
-
-    assertThat(output.normalizeLineEndings()).isEqualTo(expectedOutput.normalizeLineEndings())
+  @Test
+  fun testPrintTheme() {
+    assertThat(captureOutput { printTheme("@style/Theme.AppCompat", it) }).isEqualTo("Theme: @style/Theme.AppCompat")
   }
 
   @Test

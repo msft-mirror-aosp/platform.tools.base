@@ -17,8 +17,11 @@
 package com.android.tools.ui.inspector.inspectors.view
 
 import android.app.Activity
+import android.content.res.Configuration
 import android.hardware.display.DisplayManager
+import android.view.ContextThemeWrapper
 import android.view.View
+import com.android.tools.ui.inspector.inspectors.view.property.PropertyCache
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -32,26 +35,84 @@ class ViewNodesTest {
 
   @Test
   @Config(qualifiers = "w400dp-h800dp-port")
-  fun testCreateAppContext() {
+  fun testToWindowInfo() {
     val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
     activity.setTheme(android.R.style.Theme_Material)
     val view = View(activity)
     val stringTable = StringTable()
-    val appContext = ViewNodes.createAppContext(view, stringTable)
+    val window =
+      ViewNodes.toWindowInfo(
+        view,
+        stringTable,
+        false,
+        false,
+        PropertyCache.createViewPropertyCache(),
+        PropertyCache.createLayoutParamsPropertyCache(),
+      )
 
-    // Verify theme resolved
     val stringMap = stringTable.toStringEntries().associate { it.id to it.value }
-    val themeStr = stringMap[appContext.theme]
-    assertThat(themeStr).isEqualTo("@android:style/Theme.Material")
+    assertThat(window.hasRoot()).isTrue()
+    assertThat(window.root.id).isEqualTo(view.uniqueDrawingId)
+    assertThat(window.hasConfiguration()).isTrue()
+    assertThat(window.configuration.density).isEqualTo(activity.resources.configuration.densityDpi)
+    assertThat(stringMap[window.theme]).isEqualTo("@android:style/Theme.Material")
+  }
 
-    // Verify display info
-    assertThat(appContext.displayInfoCount).isAtLeast(1)
-    val display = appContext.getDisplayInfo(0)
+  @Test
+  @Config(qualifiers = "w400dp-h800dp-port")
+  fun testBuildDisplayInfo() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val displays = ViewNodes.buildDisplayInfo(activity)
+
+    assertThat(displays).isNotEmpty()
+    val display = displays.first()
     val displayManager = activity.getSystemService(DisplayManager::class.java)
     val expectedDisplayId = displayManager?.displays?.firstOrNull()?.displayId
     assertThat(display.id).isEqualTo(expectedDisplayId)
     assertThat(display.widthPx).isGreaterThan(0)
     assertThat(display.heightPx).isGreaterThan(0)
-    assertThat(display.orientation).isEqualTo(0) // ROTATION_0
+    assertThat(display.hasOrientation()).isTrue()
+    assertThat(display.orientation).isEqualTo(0)
+  }
+
+  @Test
+  fun testToWindowInfo_usesEachRootContext() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val density160Context =
+      ContextThemeWrapper(
+        activity.createConfigurationContext(Configuration(activity.resources.configuration).apply { densityDpi = 160 }),
+        android.R.style.Theme_Material,
+      )
+    val density420Context =
+      ContextThemeWrapper(
+        activity.createConfigurationContext(Configuration(activity.resources.configuration).apply { densityDpi = 420 }),
+        android.R.style.Theme_Holo,
+      )
+    val stringTable = StringTable()
+
+    val density160Window =
+      ViewNodes.toWindowInfo(
+        View(density160Context),
+        stringTable,
+        false,
+        false,
+        PropertyCache.createViewPropertyCache(),
+        PropertyCache.createLayoutParamsPropertyCache(),
+      )
+    val density420Window =
+      ViewNodes.toWindowInfo(
+        View(density420Context),
+        stringTable,
+        false,
+        false,
+        PropertyCache.createViewPropertyCache(),
+        PropertyCache.createLayoutParamsPropertyCache(),
+      )
+
+    val strings = stringTable.toStringEntries().associate { it.id to it.value }
+    assertThat(density160Window.configuration.density).isEqualTo(160)
+    assertThat(density420Window.configuration.density).isEqualTo(420)
+    assertThat(strings[density160Window.theme]).isEqualTo("@android:style/Theme.Material")
+    assertThat(strings[density420Window.theme]).isEqualTo("@android:style/Theme.Holo")
   }
 }

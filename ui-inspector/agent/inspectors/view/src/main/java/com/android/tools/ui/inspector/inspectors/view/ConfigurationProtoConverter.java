@@ -38,8 +38,8 @@ import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProto
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.UiModeType;
 
 /**
- * Converts the Android system {@link android.content.res.Configuration} and {@link
- * java.util.Locale} into their proto representations.
+ * Converts Android resource {@link android.content.res.Configuration} and {@link java.util.Locale}
+ * values into proto representations.
  */
 final class ConfigurationProtoConverter {
     private ConfigurationProtoConverter() {}

@@ -16,7 +16,6 @@
 
 package com.android.tools.ui.inspector.printer.json
 
-import com.android.tools.ui.inspector.AppContext
 import com.android.tools.ui.inspector.DeviceConfiguration
 import com.android.tools.ui.inspector.DeviceLocale
 import com.android.tools.ui.inspector.UiDump
@@ -81,9 +80,9 @@ internal fun withJsonPrinter(output: Path?, prettyPrint: Boolean, block: (UiDump
  * domain model refactorings do not accidentally break the public JSON schema and to avoid runtime reflection overhead.
  */
 private object JsonKeys {
-  const val APP_CONTEXT = "appContext"
   const val CONFIGURATION = "configuration"
-  const val ROOTS = "roots"
+  const val WINDOWS = "windows"
+  const val ROOT = "root"
   const val TYPE = "type"
   const val VIEW_NODE = "ViewNode"
   const val COMPOSE_NODE = "ComposeNode"
@@ -202,13 +201,26 @@ internal class JsonUiDumpPrinter(private val out: PrintStream, private val prett
   private fun serializeUiDump(uiDump: UiDump): JsonObject {
     val root = JsonObject()
 
-    uiDump.appContext?.let { appContext -> root.add(JsonKeys.APP_CONTEXT, serializeAppContext(appContext)) }
+    val displaysArray = JsonArray()
+    uiDump.displays.forEach { display ->
+      val displayObj = JsonObject()
+      displayObj.addProperty(JsonKeys.ID, display.id)
+      displayObj.addProperty(JsonKeys.WIDTH_PX, display.widthPx)
+      displayObj.addProperty(JsonKeys.HEIGHT_PX, display.heightPx)
+      display.orientation?.let { displayObj.addProperty(JsonKeys.ORIENTATION, it) }
+      displaysArray.add(displayObj)
+    }
+    root.add(JsonKeys.DISPLAYS, displaysArray)
 
-    uiDump.configuration?.let { config -> root.add(JsonKeys.CONFIGURATION, serializeDeviceConfiguration(config)) }
-
-    val rootsArray = JsonArray()
-    uiDump.roots.forEach { viewRoot -> rootsArray.add(serializeNodeTree(viewRoot)) }
-    root.add(JsonKeys.ROOTS, rootsArray)
+    val windowsArray = JsonArray()
+    uiDump.windows.forEach { window ->
+      val windowObject = JsonObject()
+      window.theme?.let { windowObject.addProperty(JsonKeys.THEME, it) }
+      window.configuration?.let { windowObject.add(JsonKeys.CONFIGURATION, serializeDeviceConfiguration(it)) }
+      windowObject.add(JsonKeys.ROOT, serializeNodeTree(window.root))
+      windowsArray.add(windowObject)
+    }
+    root.add(JsonKeys.WINDOWS, windowsArray)
 
     return root
   }
@@ -354,24 +366,6 @@ internal class JsonUiDumpPrinter(private val out: PrintStream, private val prett
       }
       UiNode.ComposeParameter.Value.NullVal -> JsonNull.INSTANCE
     }
-  }
-
-  private fun serializeAppContext(appContext: AppContext): JsonObject {
-    val obj = JsonObject()
-    appContext.theme?.let { obj.addProperty(JsonKeys.THEME, it) }
-    if (appContext.displays.isNotEmpty()) {
-      val displaysArray = JsonArray()
-      appContext.displays.forEach { display ->
-        val displayObj = JsonObject()
-        displayObj.addProperty(JsonKeys.ID, display.id)
-        displayObj.addProperty(JsonKeys.WIDTH_PX, display.widthPx)
-        displayObj.addProperty(JsonKeys.HEIGHT_PX, display.heightPx)
-        displayObj.addProperty(JsonKeys.ORIENTATION, display.orientation)
-        displaysArray.add(displayObj)
-      }
-      obj.add(JsonKeys.DISPLAYS, displaysArray)
-    }
-    return obj
   }
 
   private fun serializeDeviceConfiguration(config: DeviceConfiguration): JsonObject {

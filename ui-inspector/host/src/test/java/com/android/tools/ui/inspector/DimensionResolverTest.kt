@@ -39,7 +39,7 @@ class DimensionResolverTest {
       )
 
     // 1. Resolve with density scale (densityDpi = 320 -> densityScale = 2.0) and fontScale = 1.5
-    val resolved = node.resolveDimensions(density = Dimension.Dpi(320), fontScale = 1.5f) as UiNode.ViewNode
+    val resolved = node.resolveDimensions(DeviceConfiguration(density = Dimension.Dpi(320), fontScale = 1.5f)) as UiNode.ViewNode
 
     assertThat(resolved.attributes).hasSize(3)
 
@@ -55,7 +55,7 @@ class DimensionResolverTest {
     assertThat(textAttr.value).isEqualTo(UiNode.AttributeValue.StringVal("Hello"))
 
     // 2. Resolve without density scale (no changes to dimension attributes)
-    val unresolved = node.resolveDimensions(density = null, fontScale = null) as UiNode.ViewNode
+    val unresolved = node.resolveDimensions(null) as UiNode.ViewNode
     assertThat(unresolved.attributes[0].value).isEqualTo(UiNode.AttributeValue.DimensionVal(10f, dp = null, sp = null))
   }
 
@@ -86,7 +86,7 @@ class DimensionResolverTest {
         isSystemCreated = false,
       )
 
-    val resolved = composeNode.resolveDimensions(density = Dimension.Dpi(320), fontScale = 1.0f) as UiNode.ComposeNode
+    val resolved = composeNode.resolveDimensions(DeviceConfiguration(density = Dimension.Dpi(320), fontScale = 1.0f)) as UiNode.ComposeNode
     val resolvedChild = resolved.children[0] as UiNode.ViewNode
     val heightAttr = resolvedChild.attributes[0]
     assertThat(heightAttr.value).isEqualTo(UiNode.AttributeValue.DimensionVal(20f, dp = 10f, sp = null))
@@ -108,11 +108,11 @@ class DimensionResolverTest {
           ),
       )
 
-    val resolvedZero = node.resolveDimensions(density = Dimension.Dpi(0), fontScale = 1.0f) as UiNode.ViewNode
+    val resolvedZero = node.resolveDimensions(DeviceConfiguration(density = Dimension.Dpi(0), fontScale = 1.0f)) as UiNode.ViewNode
     assertThat(resolvedZero.attributes[0].value).isEqualTo(UiNode.AttributeValue.DimensionVal(10f, dp = null, sp = null))
     assertThat(resolvedZero.attributes[1].value).isEqualTo(UiNode.AttributeValue.DimensionVal(15f, dp = null, sp = null))
 
-    val resolvedNegative = node.resolveDimensions(density = Dimension.Dpi(-160), fontScale = 1.0f) as UiNode.ViewNode
+    val resolvedNegative = node.resolveDimensions(DeviceConfiguration(density = Dimension.Dpi(-160), fontScale = 1.0f)) as UiNode.ViewNode
     assertThat(resolvedNegative.attributes[0].value).isEqualTo(UiNode.AttributeValue.DimensionVal(10f, dp = null, sp = null))
     assertThat(resolvedNegative.attributes[1].value).isEqualTo(UiNode.AttributeValue.DimensionVal(15f, dp = null, sp = null))
   }
@@ -129,10 +129,16 @@ class DimensionResolverTest {
         attributes = listOf(UiNode.Attribute(name = "textSize", value = UiNode.AttributeValue.DimensionVal(15f))),
       )
 
-    val resolvedZeroFontScale = node.resolveDimensions(density = Dimension.Dpi(320), fontScale = 0.0f) as UiNode.ViewNode
+    val resolvedZeroFontScale =
+      node.resolveDimensions(DeviceConfiguration(density = Dimension.Dpi(320), fontScale = 0.0f)) as UiNode.ViewNode
     assertThat(resolvedZeroFontScale.attributes[0].value).isEqualTo(UiNode.AttributeValue.DimensionVal(15f, dp = null, sp = null))
 
-    val resolvedNegativeFontScale = node.resolveDimensions(density = Dimension.Dpi(320), fontScale = -1.0f) as UiNode.ViewNode
+    val resolvedNegativeFontScale =
+      node.resolveDimensions(DeviceConfiguration(density = Dimension.Dpi(320), fontScale = -1.0f)) as UiNode.ViewNode
     assertThat(resolvedNegativeFontScale.attributes[0].value).isEqualTo(UiNode.AttributeValue.DimensionVal(15f, dp = null, sp = null))
+
+    val resolvedMissingFontScale =
+      node.resolveDimensions(DeviceConfiguration(density = Dimension.Dpi(320), fontScale = null)) as UiNode.ViewNode
+    assertThat(resolvedMissingFontScale.attributes[0].value).isEqualTo(UiNode.AttributeValue.DimensionVal(15f, dp = null, sp = null))
   }
 }

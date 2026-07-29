@@ -176,7 +176,7 @@ internal suspend fun dumpUi(
   printer: UiDumpPrinter,
 ) {
   val uiDump = fetchUiDump(commandSender, includeAttributes, includeResolutionStack, composeInspectorConnected, includeSemantics)
-  if (uiDump.roots.isEmpty()) {
+  if (uiDump.windows.isEmpty()) {
     throw EmptyViewRootsException()
   }
 
@@ -193,19 +193,20 @@ internal suspend fun fetchUiDump(
 ): UiDump {
   val result = dumpViews(commandSender, includeAttributes, includeResolutionStack)
   if (composeInspectorConnected) {
-    fetchAndMergeComposeTrees(commandSender, result.roots, includeAttributes, includeSemantics)
+    fetchAndMergeComposeTrees(commandSender, result.windows, includeAttributes, includeSemantics)
   }
   return result
 }
 
-/** Queries the Compose Layout Inspector on the device and merges its trees into [viewRoots] in-place. */
+/** Queries the Compose Layout Inspector on the device and merges its trees into [windows] in-place. */
 private suspend fun fetchAndMergeComposeTrees(
   commandSender: CommandSender,
-  viewRoots: List<UiNode.ViewNode>,
+  windows: List<UiWindow>,
   includeParameters: Boolean,
   includeSemantics: Boolean,
 ) {
-  viewRoots.forEach { viewRoot ->
+  windows.forEach { window ->
+    val viewRoot = window.root
     // In the compose inspector, standard parameters and semantics (accessibility properties) are fetched together with a single command.
     // Each facet is still an independent demand, so the conversion below only copies the requested ones into the tree.
     val fetchComposeDetails = includeParameters || includeSemantics

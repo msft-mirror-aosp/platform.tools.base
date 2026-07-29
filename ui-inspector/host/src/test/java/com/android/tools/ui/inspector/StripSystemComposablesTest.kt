@@ -28,7 +28,7 @@ class StripSystemComposablesTest {
     val stripped = stripSystemComposables(dump(root))
 
     // The system node's children take its position, between its former siblings.
-    assertThat(stripped.roots.single().children.map { it.id }).containsExactly(10L, 21L, 22L, 30L).inOrder()
+    assertThat(stripped.windows.single().root.children.map { it.id }).containsExactly(10L, 21L, 22L, 30L).inOrder()
   }
 
   @Test
@@ -44,7 +44,7 @@ class StripSystemComposablesTest {
 
     val stripped = stripSystemComposables(dump(root))
 
-    assertThat(stripped.roots.single().children.map { it.id }).containsExactly(201L, 103L).inOrder()
+    assertThat(stripped.windows.single().root.children.map { it.id }).containsExactly(201L, 103L).inOrder()
   }
 
   @Test
@@ -53,7 +53,7 @@ class StripSystemComposablesTest {
 
     val stripped = stripSystemComposables(dump(root))
 
-    assertThat(stripped.roots.single().children.map { it.id }).containsExactly(10L, 30L).inOrder()
+    assertThat(stripped.windows.single().root.children.map { it.id }).containsExactly(10L, 30L).inOrder()
   }
 
   @Test
@@ -64,7 +64,7 @@ class StripSystemComposablesTest {
 
     val stripped = stripSystemComposables(dump(root))
 
-    assertThat(stripped.roots.single().children.map { it.id }).containsExactly(11L, 99L).inOrder()
+    assertThat(stripped.windows.single().root.children.map { it.id }).containsExactly(11L, 99L).inOrder()
   }
 
   @Test
@@ -77,7 +77,7 @@ class StripSystemComposablesTest {
     stripSystemComposables(input)
 
     // Same instances, same lists: the capture is untouched.
-    assertThat(input.roots.single()).isSameAs(root)
+    assertThat(input.windows.single().root).isSameAs(root)
     assertThat(root.children).isEqualTo(childrenBefore)
     assertThat((root.children[1] as UiNode.ComposeNode).children.map { it.id }).containsExactly(21L)
   }
@@ -107,15 +107,23 @@ class StripSystemComposablesTest {
         attributes = emptyList(),
       )
 
-    val stripped = stripSystemComposables(dump(root))
+    val configuration = DeviceConfiguration(density = Dimension.Dpi(420), fontScale = 1.2f)
+    val displays = listOf(DisplayInfo(id = 0, widthPx = 1080, heightPx = 1920, orientation = 0))
+    val input =
+      UiDump(windows = listOf(UiWindow(root = root, configuration = configuration, theme = "@style/Theme.Main")), displays = displays)
 
-    val strippedRoot = stripped.roots.single()
+    val stripped = stripSystemComposables(input)
+
+    val strippedRoot = stripped.windows.single().root
     assertThat(strippedRoot).isEqualTo(root)
     assertThat(strippedRoot.children.single()).isEqualTo(child)
+    assertThat(stripped.windows.single().configuration).isSameAs(configuration)
+    assertThat(stripped.windows.single().theme).isEqualTo("@style/Theme.Main")
+    assertThat(stripped.displays).isSameAs(displays)
   }
 
   private fun dump(vararg roots: UiNode.ViewNode): UiDump =
-    UiDump(roots = roots.toList(), configuration = null, stringTable = emptyMap(), appContext = null)
+    UiDump(windows = roots.map { UiWindow(root = it, configuration = null, theme = null) }, displays = emptyList())
 
   private fun view(id: Long, vararg children: UiNode): UiNode.ViewNode =
     UiNode.ViewNode(

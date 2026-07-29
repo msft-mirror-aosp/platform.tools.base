@@ -17,7 +17,8 @@
 package com.android.tools.ui.inspector
 
 /** Returns a copy of [uiDump] without system-created Compose nodes: each one is replaced by its own children, in order. */
-internal fun stripSystemComposables(uiDump: UiDump): UiDump = uiDump.copy(roots = uiDump.roots.map { stripViewNode(it) })
+internal fun stripSystemComposables(uiDump: UiDump): UiDump =
+  uiDump.copy(windows = uiDump.windows.map { window -> window.copy(root = stripViewNode(window.root)) })
 
 private fun stripViewNode(node: UiNode.ViewNode): UiNode.ViewNode =
   node.copy(children = node.children.flatMap { stripNode(it) }.toMutableList())

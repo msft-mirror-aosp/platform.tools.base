@@ -319,7 +319,9 @@ class ComposeInspectorTest {
                     .setId(5)
                     .setValue("android.widget.TextView")
                 )
-                .addNodes(viewNode1)
+                .addWindows(
+                  com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.WindowInfo.newBuilder().setRoot(viewNode1)
+                )
             )
             .build()
 
@@ -499,9 +501,8 @@ class ComposeInspectorTest {
       )
     assertThat(sentComposeCmd.getComposablesCommand.skipSystemComposables).isFalse()
 
-    val roots = uiDump.roots
-    assertThat(roots).hasSize(1)
-    val viewRoot = roots[0]
+    assertThat(uiDump.windows).hasSize(1)
+    val viewRoot = uiDump.windows.single().root
     assertThat(viewRoot.className).isEqualTo("android.widget.FrameLayout")
     val composeView = viewRoot.children[0]
     assertThat(composeView.className).isEqualTo("androidx.compose.ui.platform.AndroidComposeView")
@@ -610,7 +611,9 @@ class ComposeInspectorTest {
                     .setId(2)
                     .setValue("androidx.compose.ui.platform.AndroidComposeView")
                 )
-                .addNodes(viewNode1)
+                .addWindows(
+                  com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.WindowInfo.newBuilder().setRoot(viewNode1)
+                )
             )
             .build()
 
@@ -817,9 +820,8 @@ class ComposeInspectorTest {
       }
 
     // 4. Assertions
-    val roots = uiDump.roots
-    assertThat(roots).hasSize(1)
-    val viewRoot = roots[0]
+    assertThat(uiDump.windows).hasSize(1)
+    val viewRoot = uiDump.windows.single().root
     assertThat(viewRoot.className).isEqualTo("android.widget.FrameLayout")
     val composeView = viewRoot.children[0]
     assertThat(composeView.className).isEqualTo("androidx.compose.ui.platform.AndroidComposeView")
@@ -924,7 +926,9 @@ class ComposeInspectorTest {
                     .setId(2)
                     .setValue("androidx.compose.ui.platform.AndroidComposeView")
                 )
-                .addNodes(viewNode1)
+                .addWindows(
+                  com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.WindowInfo.newBuilder().setRoot(viewNode1)
+                )
             )
             .build()
 
@@ -1160,9 +1164,8 @@ class ComposeInspectorTest {
       }
 
     // 4. Assertions
-    val roots = uiDump.roots
-    assertThat(roots).hasSize(1)
-    val viewRoot = roots[0]
+    assertThat(uiDump.windows).hasSize(1)
+    val viewRoot = uiDump.windows.single().root
     assertThat(viewRoot.className).isEqualTo("android.widget.FrameLayout")
     val composeView = viewRoot.children[0]
     assertThat(composeView.className).isEqualTo("androidx.compose.ui.platform.AndroidComposeView")

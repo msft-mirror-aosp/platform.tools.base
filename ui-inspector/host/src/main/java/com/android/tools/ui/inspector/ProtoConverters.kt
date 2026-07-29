@@ -418,12 +418,11 @@ internal fun convertConfiguration(config: ViewInspectorProtocol.Configuration, s
   )
 }
 
-/** Converts a protobuf [ViewInspectorProtocol.AppContext] into a domain [AppContext]. */
-internal fun convertAppContext(appContext: ViewInspectorProtocol.AppContext, stringTable: Map<Int, String>): AppContext {
-  val theme = stringTable[appContext.theme]
-  val displays =
-    appContext.displayInfoList.map { display ->
-      DisplayInfo(id = display.id, widthPx = display.widthPx, heightPx = display.heightPx, orientation = display.orientation)
-    }
-  return AppContext(theme = theme, displays = displays)
-}
+/** Converts a protobuf [ViewInspectorProtocol.Display] into a domain [DisplayInfo]. */
+internal fun convertDisplay(display: ViewInspectorProtocol.Display): DisplayInfo =
+  DisplayInfo(
+    id = display.id,
+    widthPx = display.widthPx,
+    heightPx = display.heightPx,
+    orientation = display.orientation.takeIf { display.hasOrientation() },
+  )

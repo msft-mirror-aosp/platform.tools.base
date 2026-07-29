@@ -271,13 +271,19 @@ message Display {
     // Physical height in pixels
     int32 height_px = 3;
     // Display rotation in degrees: 0, 90, 180, 270
-    int32 orientation = 4;
+    optional int32 orientation = 4;
 }
 
-message AppContext {
-    // String table index of the theme resource (e.g., "@style/Theme.AppCompat")
-    int32 theme = 1;
-    repeated Display display_info = 2;
+// A window owned by the app.
+message WindowInfo {
+    // Root of the window's view hierarchy.
+    ViewNode root = 1;
+
+    // Resource configuration associated with the root view's context.
+    Configuration configuration = 2;
+
+    // String table index for the theme resource associated with the root view's context.
+    int32 theme = 3;
 }
 
 // Command to dump the view hierarchy of all root views.
@@ -289,15 +295,12 @@ message DumpViewsCommand {
 }
 
 message DumpViewsResponse {
-    // The flattened list of root views.
-    repeated ViewNode nodes = 1;
+    repeated WindowInfo windows = 1;
 
-    // Deduplicated strings referenced by indices in ViewNode.
+    // Deduplicated strings referenced by this response.
     repeated StringEntry strings = 2;
 
-    Configuration configuration = 3;
-
-    AppContext app_context = 4;
+    repeated Display displays = 3;
 }
 
 message Command {

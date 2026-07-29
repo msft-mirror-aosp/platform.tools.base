@@ -329,20 +329,17 @@ class ProtoConvertersTest {
   }
 
   @Test
-  fun testConvertAppContext() {
-    val stringTable = mapOf(1 to "@style/Theme.AppCompat")
+  fun testConvertDisplay() {
     val displayProto = ViewInspectorProtocol.Display.newBuilder().setId(0).setWidthPx(1080).setHeightPx(1920).setOrientation(90).build()
-    val appContextProto = ViewInspectorProtocol.AppContext.newBuilder().setTheme(1).addDisplayInfo(displayProto).build()
-
-    val appContext = convertAppContext(appContextProto, stringTable)
-
-    assertThat(appContext.theme).isEqualTo("@style/Theme.AppCompat")
-    assertThat(appContext.displays).hasSize(1)
-    val display = appContext.displays.first()
+    val display = convertDisplay(displayProto)
     assertThat(display.id).isEqualTo(0)
     assertThat(display.widthPx).isEqualTo(1080)
     assertThat(display.heightPx).isEqualTo(1920)
     assertThat(display.orientation).isEqualTo(90)
+
+    val displayWithoutOrientation =
+      convertDisplay(ViewInspectorProtocol.Display.newBuilder().setId(1).setWidthPx(800).setHeightPx(600).build())
+    assertThat(displayWithoutOrientation.orientation).isNull()
   }
 
   @Test
