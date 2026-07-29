@@ -100,10 +100,6 @@ _ARTIFACTS = [
     ('tools/vendor/google/aswb/android-studio-with-blaze-stable.deb', 'artifacts'),
     ('tools/vendor/google/aswb/android-studio-with-blaze-stable.mac.zip', 'artifacts'),
     ('tools/vendor/google/aswb/android-studio-with-blaze-stable.mac_arm.zip', 'artifacts'),
-    ('tools/vendor/google/aswb/android-studio-with-blaze-qa.deb', 'artifacts'),
-    ('tools/vendor/google/aswb/android-studio-with-blaze-qa.mac.zip', 'artifacts'),
-    ('tools/vendor/google/aswb/android-studio-with-blaze-qa.mac_arm.zip', 'artifacts'),
-
 
     ('tools/base/sdklib/commandlinetools_*.zip', 'artifacts'),
     ('tools/base/ddmlib/tools.ddmlib.jar', 'artifacts/ddmlib.jar'),
