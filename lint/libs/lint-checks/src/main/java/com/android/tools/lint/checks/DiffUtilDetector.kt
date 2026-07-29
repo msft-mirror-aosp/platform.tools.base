@@ -106,6 +106,7 @@ class DiffUtilDetector : Detector(), SourceCodeScanner {
       }
       is UCallExpression -> {
         resolved = node.resolve()
+        if (resolved?.name != "equals") return false
       }
       is UParenthesizedExpression -> {
         return defaultEquals(context, node.expression)
