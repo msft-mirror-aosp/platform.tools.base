@@ -25,7 +25,6 @@ import com.android.tools.lint.checks.TypedefDetector
 import com.android.tools.lint.client.api.JavaEvaluator
 import com.android.tools.lint.client.api.LintBaseline.Companion.stringsEquivalent
 import com.android.tools.lint.detector.api.AnnotationInfo
-import com.android.tools.lint.detector.api.AnnotationOrigin
 import com.android.tools.lint.detector.api.AnnotationUsageInfo
 import com.android.tools.lint.detector.api.AnnotationUsageType
 import com.android.tools.lint.detector.api.ApiConstraint
@@ -45,9 +44,9 @@ import com.android.tools.lint.detector.api.isUnconditionalReturn
 import com.android.utils.SdkUtils.constantNameToCamelCase
 import com.intellij.psi.PsiAnnotation
 import com.intellij.psi.PsiClass
+import com.intellij.psi.PsiClassType
 import com.intellij.psi.PsiCompiledElement
 import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiClassType
 import com.intellij.psi.PsiField
 import com.intellij.psi.PsiLiteralValue
 import com.intellij.psi.PsiMember
@@ -68,7 +67,6 @@ import org.jetbrains.uast.UMethod
 import org.jetbrains.uast.UParenthesizedExpression
 import org.jetbrains.uast.UPolyadicExpression
 import org.jetbrains.uast.UReferenceExpression
-import org.jetbrains.uast.UTypeReferenceExpression
 import org.jetbrains.uast.UUnaryExpression
 import org.jetbrains.uast.UastBinaryOperator
 import org.jetbrains.uast.UastFacade
@@ -181,12 +179,7 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
     }
   }
 
-  private fun checkFlagApiUsage(
-    context: JavaContext,
-    element: UElement,
-    annotationInfo: AnnotationInfo,
-    usageInfo: AnnotationUsageInfo,
-  ) {
+  private fun checkFlagApiUsage(context: JavaContext, element: UElement, annotationInfo: AnnotationInfo, usageInfo: AnnotationUsageInfo) {
     val annotation = annotationInfo.annotation
     val compiled = usageInfo.referenced is PsiCompiledElement
     val evaluator = context.evaluator
@@ -467,7 +460,7 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
         }
       } else if (curr is UPolyadicExpression && curr.operator == UastBinaryOperator.LOGICAL_AND) {
         for (operand in curr.operands) {
-          if (operand === curr) {
+          if (operand === prev) {
             break
           } else if (isFlagExpression(operand, flagClass1, flagClass2, flagMethodName)) {
             return true

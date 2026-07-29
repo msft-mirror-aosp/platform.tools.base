@@ -2048,6 +2048,62 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
         """
       )
   }
+
+  fun testLogicalAndOrder() {
+    lint()
+      .files(
+        java(
+            """
+            package test.api;
+            import android.annotation.RequiresFlag;
+            import com.example.foobar.Flags;
+
+            public class MyApi {
+              @RequiresFlag(Flags.FLAG_FOOBAR)
+              public boolean apiMethod() { return true; }
+            }
+            """
+          )
+          .indented(),
+        java(
+            """
+            package test.pkg;
+            import test.api.MyApi;
+            import com.example.foobar.Flags;
+
+            public class Test {
+              public void test(MyApi api) {
+                if (api.apiMethod() && Flags.foobar()) { // ERROR
+                }
+                if (Flags.foobar() && api.apiMethod()) { // OK
+                }
+              }
+            }
+            """
+          )
+          .indented(),
+        requiresFlagAnnotationStub,
+        java(
+            """
+            package com.example.foobar;
+            public class Flags {
+                public static boolean foobar() { return true; }
+                public static final String FLAG_FOOBAR = "com.example.foobar.foobar";
+            }
+            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/Test.java:7: Error: Method apiMethod() is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+            if (api.apiMethod() && Flags.foobar()) { // ERROR
+                ~~~~~~~~~~~~~~~
+        1 errors, 0 warnings
+        """
+      )
+  }
 }
 
 private val flaggedApiAnnotationStub: TestFile =
