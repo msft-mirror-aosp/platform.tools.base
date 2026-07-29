@@ -3652,6 +3652,13 @@ package com.android.build.api.variant {
     method public <ArtifactT extends com.android.build.api.artifact.ScopedArtifact & com.android.build.api.artifact.Artifact.Transformable> void toTransform(ArtifactT type, kotlin.jvm.functions.Function1<? super T,? extends org.gradle.api.provider.ListProperty<org.gradle.api.file.RegularFile>> inputJars, kotlin.jvm.functions.Function1<? super T,? extends org.gradle.api.provider.ListProperty<org.gradle.api.file.Directory>> inputDirectories, kotlin.jvm.functions.Function1<? super T,? extends org.gradle.api.file.RegularFileProperty> into);
   }
 
+  @org.gradle.api.Incubating public interface ScreenshotTestSuite extends com.android.build.api.variant.TestSuite {
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public org.gradle.api.provider.Provider<java.lang.String> getEngineVersion();
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public org.gradle.api.provider.Provider<java.lang.Float> getImageDifferenceThreshold();
+    property @org.gradle.api.Incubating public abstract org.gradle.api.provider.Provider<java.lang.String> engineVersion;
+    property @org.gradle.api.Incubating public abstract org.gradle.api.provider.Provider<java.lang.Float> imageDifferenceThreshold;
+  }
+
   public interface SigningConfig {
     method @org.gradle.api.Incubating public void from(com.android.build.api.dsl.SigningConfig signingConfig);
     method @org.gradle.api.Incubating public void from(org.gradle.api.provider.Provider<com.android.build.api.variant.SigningConfigInfo> provider);
