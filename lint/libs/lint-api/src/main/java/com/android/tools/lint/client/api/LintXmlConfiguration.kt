@@ -579,25 +579,10 @@ protected constructor(
   }
 
   override fun getDefinedSeverity(issue: Issue, source: Configuration, visibleDefault: Severity): Severity? {
-    if (issue.suppressNames != null && !issue.suppressNames.contains(issue.id)) {
-      // Not allowed to suppress this issue via lint.xml.
-      // Consider reporting this as well (not easy here since we don't have
-      // a context.)
-      // Ideally we'd report this to the user too, but we can't really do
-      // that here because we can't access the flag which lets you opt out
-      // of the restrictions, where we'd unconditionally continue to
-      // report this warning:
-      //    if (this.severity.get(issue.getId()) != null) {
-      //        LintClient.Companion.report(client, IssueRegistry.LINT_ERROR,
-      //                "Issue `" + issue.getId() + "` is not allowed to be suppressed",
-      //                configFile, project);
-      //    }
-      return getDefaultSeverity(issue, visibleDefault)
-    }
-
+    var severity: Severity? = null
     val issueMaps = getIssueMaps()
     for (issueMap in issueMaps) {
-      val severity =
+      severity =
         issueMap[issue.id]?.severity
           ?: issueMap[issue.category.name]?.severity // id's can also refer to categories
           ?: issueMap[issue.category.fullName]?.severity
@@ -614,20 +599,42 @@ protected constructor(
             s
           }
       if (severity != null) {
-        return severity
+        break
       }
     }
 
-    // if not set, also match by "all"
-    for (issueMap in issueMaps) {
-      val severity = issueMap[VALUE_ALL]?.severity
-      if (severity != null) {
-        return severity
+    if (severity == null) {
+      // if not set, also match by "all"
+      for (issueMap in issueMaps) {
+        severity = issueMap[VALUE_ALL]?.severity
+        if (severity != null) {
+          break
+        }
       }
     }
 
-    // or inherited?
-    return parent?.getDefinedSeverity(issue, source, visibleDefault) ?: super.getDefinedSeverity(issue, source, visibleDefault)
+    if (severity == null) {
+      // or inherited?
+      severity = parent?.getDefinedSeverity(issue, source, visibleDefault) ?: super.getDefinedSeverity(issue, source, visibleDefault)
+    }
+
+    if (issue.suppressNames != null && !issue.suppressNames.contains(issue.id)) {
+      // Not allowed to suppress this issue via lint.xml.
+      // Consider reporting this as well (not easy here since we don't have
+      // a context.)
+      // Ideally we'd report this to the user too, but we can't really do
+      // that here because we can't access the flag which lets you opt out
+      // of the restrictions, where we'd unconditionally continue to
+      // report this warning:
+      //    if (this.severity.get(issue.getId()) != null) {
+      //        LintClient.Companion.report(client, IssueRegistry.LINT_ERROR,
+      //                "Issue `" + issue.getId() + "` is not allowed to be suppressed",
+      //                configFile, project);
+      //    }
+      return Severity.max(severity ?: Severity.IGNORE, getDefaultSeverity(issue, visibleDefault))
+    }
+
+    return severity
   }
 
   private fun ensureInitialized() {

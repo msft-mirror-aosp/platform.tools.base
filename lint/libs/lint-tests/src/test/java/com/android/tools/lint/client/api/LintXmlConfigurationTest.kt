@@ -36,6 +36,7 @@ import com.android.tools.lint.checks.infrastructure.TestMode
 import com.android.tools.lint.checks.infrastructure.portablePath
 import com.android.tools.lint.detector.api.Context
 import com.android.tools.lint.detector.api.Detector
+import com.android.tools.lint.detector.api.Issue
 import com.android.tools.lint.detector.api.Location.Companion.create
 import com.android.tools.lint.detector.api.Project
 import com.android.tools.lint.detector.api.Severity
@@ -1183,6 +1184,83 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
       .testModes(TestMode.DEFAULT)
       .run()
       .expect(expected)
+  }
+
+  fun testEnableIssueWithSuppressAnnotations() {
+    val myIssue =
+      Issue.create(
+        id = "MyCustomIssue",
+        briefDescription = "My custom issue",
+        explanation = "My custom issue explanation",
+        implementation = SdCardDetector.ISSUE.implementation,
+        severity = Severity.WARNING,
+        enabledByDefault = false,
+        suppressAnnotations = listOf("com.example.MySuppress"),
+      )
+
+    val configuration =
+      getConfiguration(
+        """
+        <lint>
+            <issue id="MyCustomIssue" severity="error" />
+        </lint>
+        """
+          .trimIndent()
+      )
+
+    assertEquals(Severity.ERROR, configuration.getSeverity(myIssue))
+  }
+
+  fun testDisableIssueWithSuppressAnnotations() {
+    val myIssue =
+      Issue.create(
+        id = "MyCustomIssue",
+        briefDescription = "My custom issue",
+        explanation = "My custom issue explanation",
+        implementation = SdCardDetector.ISSUE.implementation,
+        severity = Severity.WARNING,
+        enabledByDefault = true,
+        suppressAnnotations = listOf("com.example.MySuppress"),
+      )
+
+    val configuration =
+      getConfiguration(
+        """
+        <lint>
+            <issue id="MyCustomIssue" severity="ignore" />
+        </lint>
+        """
+          .trimIndent()
+      )
+
+    // Should not be allowed to suppress it, so it remains WARNING
+    assertEquals(Severity.WARNING, configuration.getSeverity(myIssue))
+  }
+
+  fun testDowngradeIssueWithSuppressAnnotations() {
+    val myIssue =
+      Issue.create(
+        id = "MyCustomIssue",
+        briefDescription = "My custom issue",
+        explanation = "My custom issue explanation",
+        implementation = SdCardDetector.ISSUE.implementation,
+        severity = Severity.ERROR,
+        enabledByDefault = true,
+        suppressAnnotations = listOf("com.example.MySuppress"),
+      )
+
+    val configuration =
+      getConfiguration(
+        """
+        <lint>
+            <issue id="MyCustomIssue" severity="warning" />
+        </lint>
+        """
+          .trimIndent()
+      )
+
+    // Should not be allowed to suppress it, so it remains ERROR
+    assertEquals(Severity.ERROR, configuration.getSeverity(myIssue))
   }
 
   private val mOnclick = xml("res/layout/onclick.xml", LAYOUT_XML)
