@@ -1592,4 +1592,31 @@ src/test/pkg/ConstructorTest.java:14: Error: Value must be ≥ 5 (was 3) [Range]
         """
       )
   }
+
+  fun testStrictIntegerComparisons() {
+    lint()
+      .files(
+        java(
+            """
+            package test.pkg;
+
+            import androidx.annotation.IntRange;
+
+            public class RangeTest {
+                public void setLevel(@IntRange(from = 1, to = 9) int level) { }
+
+                public void test(int x) {
+                    if (x > 0 && x < 10) {
+                        setLevel(x);
+                    }
+                }
+            }
+            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
+  }
 }
