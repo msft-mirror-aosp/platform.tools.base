@@ -42,7 +42,8 @@ final class AttributeProtoConverter {
             View view,
             Object value,
             Map<Integer, Integer> sourceMap,
-            boolean includeResolutionStack) {
+            boolean includeResolutionStack,
+            PropertyType typeOverride) {
         Attribute.Builder builder =
                 Attribute.newBuilder().setName(stringTable.put(metadata.getName()));
         String name = metadata.getName();
@@ -51,7 +52,9 @@ final class AttributeProtoConverter {
                 isLayoutSize && value instanceof Number && ((Number) value).intValue() < 0;
 
         Attribute.Type protoType;
-        if (isLayoutSize && value instanceof Number && !isNegativeLayoutSize) {
+        if (typeOverride != null) {
+            protoType = toProtoType(typeOverride);
+        } else if (isLayoutSize && value instanceof Number && !isNegativeLayoutSize) {
             // Platform companions map layout_width/height to INT_ENUM. For positive sizes, override
             // this to DIMENSION.
             protoType = Attribute.Type.DIMENSION;

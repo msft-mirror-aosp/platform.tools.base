@@ -40,64 +40,93 @@ class AttributeProtoConverterTest {
 
     // 1. Test String type
     val stringMetadata = AttributeMetadata("text", 0, PropertyType.STRING, null, null)
-    val stringProto = AttributeProtoConverter.toProtoAttribute(stringMetadata, stringTable, view, "Hello World", emptyMap(), false)
+    val stringProto = AttributeProtoConverter.toProtoAttribute(stringMetadata, stringTable, view, "Hello World", emptyMap(), false, null)
     assertThat(stringProto.type).isEqualTo(Attribute.Type.STRING)
     assertThat(stringTable.getString(stringProto.name)).isEqualTo("text")
     assertThat(stringTable.getString(stringProto.int32Value)).isEqualTo("Hello World")
 
     // 2. Test Boolean type (Boolean true)
     val boolMetadata = AttributeMetadata("clickable", 1, PropertyType.BOOLEAN, null, null)
-    val boolProto = AttributeProtoConverter.toProtoAttribute(boolMetadata, stringTable, view, true, emptyMap(), false)
+    val boolProto = AttributeProtoConverter.toProtoAttribute(boolMetadata, stringTable, view, true, emptyMap(), false, null)
     assertThat(boolProto.type).isEqualTo(Attribute.Type.BOOLEAN)
     assertThat(boolProto.int32Value).isEqualTo(1)
 
     // 3. Test Boolean type (Int true)
-    val boolIntProto = AttributeProtoConverter.toProtoAttribute(boolMetadata, stringTable, view, 1, emptyMap(), false)
+    val boolIntProto = AttributeProtoConverter.toProtoAttribute(boolMetadata, stringTable, view, 1, emptyMap(), false, null)
     assertThat(boolIntProto.type).isEqualTo(Attribute.Type.BOOLEAN)
     assertThat(boolIntProto.int32Value).isEqualTo(1)
 
     // 4. Test Color type
     val colorMetadata = AttributeMetadata("textColor", 2, PropertyType.COLOR, null, null)
-    val colorProto = AttributeProtoConverter.toProtoAttribute(colorMetadata, stringTable, view, 0xFFFFFFFF.toInt(), emptyMap(), false)
+    val colorProto = AttributeProtoConverter.toProtoAttribute(colorMetadata, stringTable, view, 0xFFFFFFFF.toInt(), emptyMap(), false, null)
     assertThat(colorProto.type).isEqualTo(Attribute.Type.COLOR)
     assertThat(colorProto.int32Value).isEqualTo(0xFFFFFFFF.toInt())
 
     // 5. Test Resource type (Valid System Resource)
     val resMetadata = AttributeMetadata("background", 3, PropertyType.RESOURCE, null, null)
     val resProto =
-      AttributeProtoConverter.toProtoAttribute(resMetadata, stringTable, view, android.R.layout.simple_list_item_1, emptyMap(), false)
+      AttributeProtoConverter.toProtoAttribute(resMetadata, stringTable, view, android.R.layout.simple_list_item_1, emptyMap(), false, null)
     assertThat(resProto.type).isEqualTo(Attribute.Type.RESOURCE)
     assertThat(stringTable.getString(resProto.int32Value)).isEqualTo("@android:layout/simple_list_item_1")
 
     // 6. Test Enum type (Passes post-resolved String)
     val enumMetadata = AttributeMetadata("visibility", 4, PropertyType.INT_ENUM, null, null)
-    val enumProto = AttributeProtoConverter.toProtoAttribute(enumMetadata, stringTable, view, "GONE", emptyMap(), false)
+    val enumProto = AttributeProtoConverter.toProtoAttribute(enumMetadata, stringTable, view, "GONE", emptyMap(), false, null)
     assertThat(enumProto.type).isEqualTo(Attribute.Type.INT_ENUM)
     assertThat(stringTable.getString(enumProto.int32Value)).isEqualTo("GONE")
 
     // 7. Test Flag type (Passes post-resolved Set of Strings)
     val flagMetadata = AttributeMetadata("gravity", 5, PropertyType.INT_FLAG, null, null)
-    val flagProto = AttributeProtoConverter.toProtoAttribute(flagMetadata, stringTable, view, setOf("left", "top"), emptyMap(), false)
+    val flagProto = AttributeProtoConverter.toProtoAttribute(flagMetadata, stringTable, view, setOf("left", "top"), emptyMap(), false, null)
     assertThat(flagProto.type).isEqualTo(Attribute.Type.INT_FLAG)
     assertThat(stringTable.getString(flagProto.int32Value)).isEqualTo("left|top")
 
     // 8. Test Float type
     val floatMetadata = AttributeMetadata("alpha", 6, PropertyType.FLOAT, null, null)
-    val floatProto = AttributeProtoConverter.toProtoAttribute(floatMetadata, stringTable, view, 1.0f, emptyMap(), false)
+    val floatProto = AttributeProtoConverter.toProtoAttribute(floatMetadata, stringTable, view, 1.0f, emptyMap(), false, null)
     assertThat(floatProto.type).isEqualTo(Attribute.Type.FLOAT)
     assertThat(floatProto.floatValue).isEqualTo(1.0f)
 
     // 9. Test Double type
     val doubleMetadata = AttributeMetadata("scale", 7, PropertyType.DOUBLE, null, null)
-    val doubleProto = AttributeProtoConverter.toProtoAttribute(doubleMetadata, stringTable, view, 3.0, emptyMap(), false)
+    val doubleProto = AttributeProtoConverter.toProtoAttribute(doubleMetadata, stringTable, view, 3.0, emptyMap(), false, null)
     assertThat(doubleProto.type).isEqualTo(Attribute.Type.DOUBLE)
     assertThat(doubleProto.doubleValue).isEqualTo(3.0)
 
     // 10. Test Char type
     val charMetadata = AttributeMetadata("character", 8, PropertyType.CHAR, null, null)
-    val charProto = AttributeProtoConverter.toProtoAttribute(charMetadata, stringTable, view, 'A', emptyMap(), false)
+    val charProto = AttributeProtoConverter.toProtoAttribute(charMetadata, stringTable, view, 'A', emptyMap(), false, null)
     assertThat(charProto.type).isEqualTo(Attribute.Type.CHAR)
     assertThat(charProto.int32Value).isEqualTo(65)
+  }
+
+  @Test
+  fun testToProtoAttribute_usesTypeOverride() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val view = View(activity)
+    val stringTable = StringTable()
+    val metadata = AttributeMetadata("background", 0, PropertyType.OBJECT, null, null)
+    val color = 0xFF123456.toInt()
+
+    val proto = AttributeProtoConverter.toProtoAttribute(metadata, stringTable, view, color, emptyMap(), false, PropertyType.COLOR)
+
+    assertThat(proto.type).isEqualTo(Attribute.Type.COLOR)
+    assertThat(proto.int32Value).isEqualTo(color)
+  }
+
+  @Test
+  fun testToProtoAttribute_typeOverridePrecedesLayoutSizeHeuristics() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val view = View(activity)
+    val stringTable = StringTable()
+    val metadata = AttributeMetadata("layout_width", 0, PropertyType.INT_ENUM, null, null)
+
+    for (value in intArrayOf(100, -1)) {
+      val proto = AttributeProtoConverter.toProtoAttribute(metadata, stringTable, view, value, emptyMap(), false, PropertyType.COLOR)
+
+      assertThat(proto.type).isEqualTo(Attribute.Type.COLOR)
+      assertThat(proto.int32Value).isEqualTo(value)
+    }
   }
 
   private class TestViewWithStack(context: Context) : View(context) {
@@ -114,7 +143,7 @@ class AttributeProtoConverterTest {
     val metadata = AttributeMetadata("text", 0, PropertyType.STRING, null, null)
     val sourceMap = mapOf(0 to android.R.id.content)
 
-    val proto = AttributeProtoConverter.toProtoAttribute(metadata, stringTable, view, "Hello World", sourceMap, true)
+    val proto = AttributeProtoConverter.toProtoAttribute(metadata, stringTable, view, "Hello World", sourceMap, true, null)
 
     // Verify direct source
     assertThat(stringTable.getString(proto.directSource)).isEqualTo("@android:id/content")
@@ -131,18 +160,18 @@ class AttributeProtoConverterTest {
 
     // Positive layout_width should be DIMENSION
     val widthMetadata = AttributeMetadata("layout_width", 0, PropertyType.INT_ENUM, null, null)
-    val positiveWidthProto = AttributeProtoConverter.toProtoAttribute(widthMetadata, stringTable, view, 100, emptyMap(), false)
+    val positiveWidthProto = AttributeProtoConverter.toProtoAttribute(widthMetadata, stringTable, view, 100, emptyMap(), false, null)
     assertThat(positiveWidthProto.type).isEqualTo(Attribute.Type.DIMENSION)
     assertThat(positiveWidthProto.floatValue).isEqualTo(100f)
 
     // Negative -1 layout_width should be INT_ENUM containing "MATCH_PARENT"
-    val matchParentProto = AttributeProtoConverter.toProtoAttribute(widthMetadata, stringTable, view, -1, emptyMap(), false)
+    val matchParentProto = AttributeProtoConverter.toProtoAttribute(widthMetadata, stringTable, view, -1, emptyMap(), false, null)
     assertThat(matchParentProto.type).isEqualTo(Attribute.Type.INT_ENUM)
     assertThat(stringTable.getString(matchParentProto.int32Value)).isEqualTo("MATCH_PARENT")
 
     // Negative -2 layout_height should be INT_ENUM containing "WRAP_CONTENT"
     val heightMetadata = AttributeMetadata("layout_height", 1, PropertyType.INT_ENUM, null, null)
-    val wrapContentProto = AttributeProtoConverter.toProtoAttribute(heightMetadata, stringTable, view, -2, emptyMap(), false)
+    val wrapContentProto = AttributeProtoConverter.toProtoAttribute(heightMetadata, stringTable, view, -2, emptyMap(), false, null)
     assertThat(wrapContentProto.type).isEqualTo(Attribute.Type.INT_ENUM)
     assertThat(stringTable.getString(wrapContentProto.int32Value)).isEqualTo("WRAP_CONTENT")
   }
@@ -155,19 +184,19 @@ class AttributeProtoConverterTest {
 
     // 1. String metadata with non-string value (Int)
     val stringMetadata = AttributeMetadata("text", 0, PropertyType.STRING, null, null)
-    val stringProto = AttributeProtoConverter.toProtoAttribute(stringMetadata, stringTable, view, 12345, emptyMap(), false)
+    val stringProto = AttributeProtoConverter.toProtoAttribute(stringMetadata, stringTable, view, 12345, emptyMap(), false, null)
     assertThat(stringProto.type).isEqualTo(Attribute.Type.STRING)
     assertThat(stringTable.getString(stringProto.int32Value)).isEqualTo("12345")
 
     // 2. Boolean metadata with non-boolean value (String)
     val boolMetadata = AttributeMetadata("clickable", 1, PropertyType.BOOLEAN, null, null)
-    val boolProto = AttributeProtoConverter.toProtoAttribute(boolMetadata, stringTable, view, "true", emptyMap(), false)
+    val boolProto = AttributeProtoConverter.toProtoAttribute(boolMetadata, stringTable, view, "true", emptyMap(), false, null)
     assertThat(boolProto.type).isEqualTo(Attribute.Type.BOOLEAN)
     assertThat(boolProto.int32Value).isEqualTo(1)
 
     // 3. Gravity metadata with non-set value (String)
     val gravityMetadata = AttributeMetadata("gravity", 2, PropertyType.GRAVITY, null, null)
-    val gravityProto = AttributeProtoConverter.toProtoAttribute(gravityMetadata, stringTable, view, "center", emptyMap(), false)
+    val gravityProto = AttributeProtoConverter.toProtoAttribute(gravityMetadata, stringTable, view, "center", emptyMap(), false, null)
     assertThat(gravityProto.type).isEqualTo(Attribute.Type.GRAVITY)
     assertThat(stringTable.getString(gravityProto.int32Value)).isEqualTo("center")
   }
