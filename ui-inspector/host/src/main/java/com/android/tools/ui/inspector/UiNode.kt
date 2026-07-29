@@ -23,6 +23,10 @@ sealed class UiNode {
   abstract val bounds: Bounds
   abstract val children: MutableList<UiNode>
 
+  /**
+   * Where the node appears on screen: the straight (non-tilted) rectangle enclosing the node as rendered, in screen coordinates. For a node
+   * without a visual transform this is simply its position and size.
+   */
   data class Bounds(val x: Int, val y: Int, val width: Int, val height: Int)
 
   /** Represents a strongly-typed value for a [ViewNode] attribute. */

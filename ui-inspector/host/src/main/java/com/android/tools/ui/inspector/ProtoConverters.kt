@@ -139,6 +139,8 @@ private fun ViewInspectorProtocol.ViewNode.Attribute.toAttributeValue(stringTabl
  * @param stringTable string table containing all the text resources indexed by ID.
  * @param hostedViews hosted Android View subtrees keyed by the ID `ComposableNode.view_id` references — the root of each subtree is the
  *   carrier that held the embedded View (a ViewFactoryHolder on current Compose), not necessarily the payload View itself.
+ * @param renderOffsetX horizontal screen offset to apply to window-relative render bounds.
+ * @param renderOffsetY vertical screen offset to apply to window-relative render bounds.
  * @param parameters optional Composable parameters.
  * @param includeParameters whether the `attributes` facet was requested: only then are Compose parameters copied into the nodes.
  * @param includeSemantics whether the `semantics` facet was requested: only then are the semantics lists copied into the nodes.
@@ -147,12 +149,14 @@ internal fun convertComposeNode(
   node: LayoutInspectorComposeProtocol.ComposableNode,
   stringTable: Map<Int, String>,
   hostedViews: Map<Long, UiNode.ViewNode>,
+  renderOffsetX: Int,
+  renderOffsetY: Int,
   parameters: LayoutInspectorComposeProtocol.GetAllParametersResponse? = null,
   includeParameters: Boolean,
   includeSemantics: Boolean,
 ): UiNode.ComposeNode {
   val composeParameters = parameters?.let { ComposeParameters(it, includeParameters, includeSemantics) }
-  return doConvertComposeNode(node, stringTable, hostedViews, composeParameters)
+  return doConvertComposeNode(node, stringTable, hostedViews, renderOffsetX, renderOffsetY, composeParameters)
 }
 
 /** Private recursive helper that maps the Composable nodes and propagates pre-indexed parameters. */
@@ -160,13 +164,26 @@ private fun doConvertComposeNode(
   node: LayoutInspectorComposeProtocol.ComposableNode,
   stringTable: Map<Int, String>,
   hostedViews: Map<Long, UiNode.ViewNode>,
+  renderOffsetX: Int,
+  renderOffsetY: Int,
   parameters: ComposeParameters? = null,
 ): UiNode.ComposeNode {
   val name = stringTable[node.name] ?: "unknown composable"
   val bounds =
     if (node.hasBounds()) {
-      val layout = node.bounds.layout
-      UiNode.Bounds(x = layout.x, y = layout.y, width = layout.w, height = layout.h)
+      // The compose inspector sends the render quad (the composable's four corners after its visual transform, window-relative) only when
+      // it differs from the layout rect; its absence means the composable is untransformed and the layout rect is the rendered shape.
+      if (node.bounds.hasRender()) {
+        val render = node.bounds.render
+        val minX = minOf(render.x0, render.x1, render.x2, render.x3)
+        val minY = minOf(render.y0, render.y1, render.y2, render.y3)
+        val maxX = maxOf(render.x0, render.x1, render.x2, render.x3)
+        val maxY = maxOf(render.y0, render.y1, render.y2, render.y3)
+        UiNode.Bounds(x = renderOffsetX + minX, y = renderOffsetY + minY, width = maxX - minX, height = maxY - minY)
+      } else {
+        val layout = node.bounds.layout
+        UiNode.Bounds(x = layout.x, y = layout.y, width = layout.w, height = layout.h)
+      }
     } else {
       UiNode.Bounds(x = 0, y = 0, width = 0, height = 0)
     }
@@ -180,7 +197,10 @@ private fun doConvertComposeNode(
   val mappedMergedSemantics = nodeMergedSemantics.map { convertParameterToComposeParameter(it, paramStringTable) }
   val mappedUnmergedSemantics = nodeUnmergedSemantics.map { convertParameterToComposeParameter(it, paramStringTable) }
 
-  val children = node.childrenList.map { doConvertComposeNode(it, stringTable, hostedViews, parameters) }.toMutableList<UiNode>()
+  val children =
+    node.childrenList
+      .map { doConvertComposeNode(it, stringTable, hostedViews, renderOffsetX, renderOffsetY, parameters) }
+      .toMutableList<UiNode>()
   if (node.viewId != 0L) {
     hostedViews[node.viewId]?.let { hostedView -> children.add(hostedView) }
   }

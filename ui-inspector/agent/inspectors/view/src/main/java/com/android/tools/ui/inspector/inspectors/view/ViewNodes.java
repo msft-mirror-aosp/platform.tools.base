@@ -17,6 +17,7 @@
 package com.android.tools.ui.inspector.inspectors.view;
 
 import android.content.Context;
+import android.graphics.Matrix;
 import android.hardware.display.DisplayManager;
 import android.view.Surface;
 import android.view.View;
@@ -70,7 +71,14 @@ final class ViewNodes {
                                 layoutParamsPropertyCache,
                                 includeResolutionStack)
                         : null;
-        return createViewNode(view, stringTable, attributeExtraction).build();
+        // Seed the transform chain with the window's position on screen. The recursion extends it
+        // with each child's offset and matrix, so mapping a view's corners through its accumulated
+        // matrix yields bounds directly in screen coordinates.
+        int[] location = new int[2];
+        view.getLocationOnScreen(location);
+        Matrix rootToScreen = new Matrix();
+        rootToScreen.setTranslate(location[0], location[1]);
+        return createViewNode(view, rootToScreen, stringTable, attributeExtraction).build();
     }
 
     /** Captures a view hierarchy and the metadata associated with its root context. */
@@ -110,15 +118,20 @@ final class ViewNodes {
      *
      * <p>Returns a {@link ViewNode.Builder} to allow the parent to add it directly to its children
      * list without eager building, optimizing memory allocations during traversal.
+     *
+     * @param view The view to convert; its subtree is converted recursively.
+     * @param viewToScreen The accumulated transform mapping {@code view}'s local coordinates to
+     *     screen coordinates; used to compute the node's bounds.
+     * @param stringTable The lookup table used to deduplicate and intern strings.
+     * @param attributeExtraction The attribute extraction configuration; null when attributes are
+     *     not requested.
      */
     private static ViewNode.Builder createViewNode(
-            View view, StringTable stringTable, AttributeExtraction attributeExtraction) {
+            View view,
+            Matrix viewToScreen,
+            StringTable stringTable,
+            AttributeExtraction attributeExtraction) {
         Class<?> viewClass = view.getClass();
-
-        int[] location = new int[2];
-        view.getLocationOnScreen(location);
-        int absPosX = location[0];
-        int absPosY = location[1];
 
         ViewNode.Builder builder = ViewNode.newBuilder();
         builder.setId(view.getUniqueDrawingId());
@@ -133,13 +146,7 @@ final class ViewNodes {
             builder.setPackageName(stringTable.put(pkg.getName()));
         }
 
-        builder.setBounds(
-                Rect.newBuilder()
-                        .setX(absPosX)
-                        .setY(absPosY)
-                        .setWidth(view.getWidth())
-                        .setHeight(view.getHeight())
-                        .build());
+        builder.setBounds(screenBounds(view, viewToScreen));
 
         // Create and set view id resource
         String res = ResourceIds.resolveResourceToString(view, view.getId());
@@ -159,12 +166,59 @@ final class ViewNodes {
 
         if (view instanceof ViewGroup) {
             ViewGroup viewGroup = (ViewGroup) view;
+            // Extends the parent's screen transform to each child: the child sits at (left, top)
+            // inside the parent, shifted by the parent's scrolling, and getMatrix() adds the
+            // child's own visual transform (scale/rotation/translation). This is the composition
+            // the framework's hidden View.transformMatrixToGlobal performs, inlined. The scratch
+            // matrix is reset from the parent's transform for every sibling.
+            Matrix childToScreen = new Matrix();
             for (int i = 0; i < viewGroup.getChildCount(); i++) {
+                View child = viewGroup.getChildAt(i);
+                childToScreen.set(viewToScreen);
+                childToScreen.preTranslate(
+                        child.getLeft() - viewGroup.getScrollX(),
+                        child.getTop() - viewGroup.getScrollY());
+                childToScreen.preConcat(child.getMatrix());
                 builder.addChildren(
-                        createViewNode(viewGroup.getChildAt(i), stringTable, attributeExtraction));
+                        createViewNode(child, childToScreen, stringTable, attributeExtraction));
             }
         }
         return builder;
+    }
+
+    /**
+     * Computes the box that {@code view} occupies on screen. Layout position and size alone
+     * misstate views carrying a visual transform (scaled, rotated, or translated through their
+     * transform properties), so the view's four corners are mapped through {@code viewToScreen} and
+     * the box spans the extremes of the mapped corners. For an untransformed view this is exactly
+     * its position on screen and its layout size; fractional edges produced by a transform are
+     * rounded outward so the box always covers the rendered pixels.
+     */
+    private static Rect screenBounds(View view, Matrix viewToScreen) {
+        int width = view.getWidth();
+        int height = view.getHeight();
+        // The view's corners in its own coordinates, as (x, y) pairs: top-left, top-right,
+        // bottom-right, bottom-left.
+        float[] corners = {0, 0, width, 0, width, height, 0, height};
+        viewToScreen.mapPoints(corners);
+        // A transform can move any corner to any side of the box, so each edge is the min/max over
+        // all four corners. Matrix.mapRect would compute the same box on a device, but the
+        // Robolectric fake used by the agent tests gets it wrong; this way production and tests
+        // run the same math.
+        float minX = Math.min(Math.min(corners[0], corners[2]), Math.min(corners[4], corners[6]));
+        float maxX = Math.max(Math.max(corners[0], corners[2]), Math.max(corners[4], corners[6]));
+        float minY = Math.min(Math.min(corners[1], corners[3]), Math.min(corners[5], corners[7]));
+        float maxY = Math.max(Math.max(corners[1], corners[3]), Math.max(corners[5], corners[7]));
+        int left = (int) Math.floor(minX);
+        int top = (int) Math.floor(minY);
+        int right = (int) Math.ceil(maxX);
+        int bottom = (int) Math.ceil(maxY);
+        return Rect.newBuilder()
+                .setX(left)
+                .setY(top)
+                .setWidth(right - left)
+                .setHeight(bottom - top)
+                .build();
     }
 
     /**

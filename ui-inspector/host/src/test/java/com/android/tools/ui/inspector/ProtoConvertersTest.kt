@@ -116,6 +116,8 @@ class ProtoConvertersTest {
         node = composableNode,
         stringTable = stringTable,
         hostedViews = emptyMap(),
+        renderOffsetX = 0,
+        renderOffsetY = 0,
         parameters = allParams,
         includeParameters = true,
         includeSemantics = true,
@@ -215,6 +217,8 @@ class ProtoConvertersTest {
         node = composableNode,
         stringTable = stringTable,
         hostedViews = emptyMap(),
+        renderOffsetX = 0,
+        renderOffsetY = 0,
         parameters = allParams,
         includeParameters = true,
         includeSemantics = true,
@@ -382,6 +386,8 @@ class ProtoConvertersTest {
         node = composableNode,
         stringTable = stringTable,
         hostedViews = emptyMap(),
+        renderOffsetX = 0,
+        renderOffsetY = 0,
         parameters = allParams,
         includeParameters = includeParameters,
         includeSemantics = includeSemantics,
@@ -437,6 +443,8 @@ class ProtoConvertersTest {
         node = composableNode,
         stringTable = stringTable,
         hostedViews = emptyMap(),
+        renderOffsetX = 0,
+        renderOffsetY = 0,
         parameters = allParams,
         includeParameters = false,
         includeSemantics = false,
@@ -457,6 +465,8 @@ class ProtoConvertersTest {
         node = LayoutInspectorComposeProtocol.ComposableNode.newBuilder().setId(100).setName(1).setFlags(flags).build(),
         stringTable = stringTable,
         hostedViews = emptyMap(),
+        renderOffsetX = 0,
+        renderOffsetY = 0,
         includeParameters = false,
         includeSemantics = false,
       )
@@ -505,6 +515,8 @@ class ProtoConvertersTest {
         node = composableNode,
         stringTable = stringTable,
         hostedViews = mapOf(12L to holder),
+        renderOffsetX = 0,
+        renderOffsetY = 0,
         parameters = null,
         includeParameters = false,
         includeSemantics = false,
@@ -514,6 +526,62 @@ class ProtoConvertersTest {
     assertThat(node.children.map { it.id }).containsExactly(101L, 12L).inOrder()
     val graftedHolder = node.children[1] as UiNode.ViewNode
     assertThat((graftedHolder.children.single() as UiNode.ViewNode).id).isEqualTo(13)
+  }
+
+  @Test
+  fun testConvertComposeNode_irregularRenderQuadUsesAxisAlignedBounds() {
+    val bounds =
+      LayoutInspectorComposeProtocol.Bounds.newBuilder()
+        .setLayout(LayoutInspectorComposeProtocol.Rect.newBuilder().setX(100).setY(200).setW(10).setH(20))
+        .setRender(
+          LayoutInspectorComposeProtocol.Quad.newBuilder().setX0(20).setY0(-10).setX1(70).setY1(15).setX2(55).setY2(80).setX3(-5).setY3(60)
+        )
+        .build()
+
+    assertThat(convertBounds(bounds)).isEqualTo(UiNode.Bounds(-5, -10, 75, 90))
+  }
+
+  @Test
+  fun testConvertComposeNode_renderQuadIncludesWindowOffset() {
+    val bounds =
+      LayoutInspectorComposeProtocol.Bounds.newBuilder()
+        .setRender(
+          LayoutInspectorComposeProtocol.Quad.newBuilder().setX0(10).setY0(20).setX1(50).setY1(15).setX2(60).setY2(40).setX3(20).setY3(50)
+        )
+        .build()
+
+    assertThat(convertBounds(bounds, renderOffsetX = 300, renderOffsetY = 400)).isEqualTo(UiNode.Bounds(310, 415, 50, 35))
+  }
+
+  @Test
+  fun testConvertComposeNode_missingRenderUsesScreenRelativeLayout() {
+    val bounds =
+      LayoutInspectorComposeProtocol.Bounds.newBuilder()
+        .setLayout(LayoutInspectorComposeProtocol.Rect.newBuilder().setX(310).setY(420).setW(50).setH(60))
+        .build()
+
+    assertThat(convertBounds(bounds, renderOffsetX = 300, renderOffsetY = 400)).isEqualTo(UiNode.Bounds(310, 420, 50, 60))
+  }
+
+  @Test
+  fun testConvertComposeNode_identityRenderAndLayoutFallbackMatch() {
+    val layout = LayoutInspectorComposeProtocol.Rect.newBuilder().setX(12).setY(34).setW(56).setH(78)
+    val renderedBounds =
+      LayoutInspectorComposeProtocol.Bounds.newBuilder()
+        .setLayout(layout)
+        .setRender(
+          LayoutInspectorComposeProtocol.Quad.newBuilder().setX0(12).setY0(34).setX1(68).setY1(34).setX2(68).setY2(112).setX3(12).setY3(112)
+        )
+        .build()
+    val layoutBounds = LayoutInspectorComposeProtocol.Bounds.newBuilder().setLayout(layout).build()
+
+    assertThat(convertBounds(renderedBounds)).isEqualTo(UiNode.Bounds(12, 34, 56, 78))
+    assertThat(convertBounds(layoutBounds)).isEqualTo(UiNode.Bounds(12, 34, 56, 78))
+  }
+
+  @Test
+  fun testConvertComposeNode_missingBoundsRemainsZero() {
+    assertThat(convertBounds(null, renderOffsetX = 300, renderOffsetY = 400)).isEqualTo(UiNode.Bounds(0, 0, 0, 0))
   }
 
   @Test
@@ -544,5 +612,20 @@ class ProtoConvertersTest {
     assertThat(withoutProvenance.attributes.single().styleChain).isEmpty()
     // The attribute value itself is unaffected: provenance is the resolution-stack facet, the value is the attributes facet.
     assertThat(withoutProvenance.attributes.single().value).isEqualTo(UiNode.AttributeValue.StringVal("Hello"))
+  }
+
+  private fun convertBounds(bounds: LayoutInspectorComposeProtocol.Bounds?, renderOffsetX: Int = 0, renderOffsetY: Int = 0): UiNode.Bounds {
+    val node = LayoutInspectorComposeProtocol.ComposableNode.newBuilder().setId(1)
+    bounds?.let { node.setBounds(it) }
+    return convertComposeNode(
+        node = node.build(),
+        stringTable = emptyMap(),
+        hostedViews = emptyMap(),
+        renderOffsetX = renderOffsetX,
+        renderOffsetY = renderOffsetY,
+        includeParameters = false,
+        includeSemantics = false,
+      )
+      .bounds
   }
 }

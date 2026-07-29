@@ -19,6 +19,8 @@ package ui.inspector.view.inspector.protocol;
 option java_package = "com.android.tools.ui.inspector.view.inspector.protocol";
 option java_outer_classname = "ViewInspectorProtocol";
 
+// Where a node appears on screen: the straight (non-tilted) rectangle enclosing the
+// node as rendered, in screen coordinates.
 message Rect {
     int32 x = 1;
     int32 y = 2;
@@ -39,7 +41,7 @@ message ViewNode {
     // String table index for package name
     int32 package_name = 4;
 
-    // The absolute bounds of the view in screen coordinates.
+    // Where the view appears on screen; see Rect.
     Rect bounds = 5;
 
 
@@ -314,5 +316,3 @@ message Response {
         DumpViewsResponse dump_views_response = 1;
     }
 }
-
-
