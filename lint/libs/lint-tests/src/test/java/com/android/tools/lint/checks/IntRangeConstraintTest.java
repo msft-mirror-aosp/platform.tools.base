@@ -18,6 +18,7 @@ package com.android.tools.lint.checks;
 import static com.android.tools.lint.checks.IntRangeConstraint.atLeast;
 import static com.android.tools.lint.checks.IntRangeConstraint.atMost;
 import static com.android.tools.lint.checks.IntRangeConstraint.range;
+
 import static com.google.common.truth.Truth.assertThat;
 
 import org.junit.Test;
@@ -145,6 +146,7 @@ public class IntRangeConstraintTest {
         assertThat(atMost(10).remove(range(10, 10)).toString()).isEqualTo("Value must be ≤ 9");
         assertThat(atMost(10).remove(range(9, 12)).toString()).isEqualTo("Value must be ≤ 8");
         assertThat(atLeast(-1).remove(range(-2, -2))).isNull();
+        assertThat(range(0, 100).remove(atMost(100))).isNull();
         assertThat(atLeast(-1).remove(FloatRangeConstraint.range(-1, -1)).toString())
                 .isEqualTo("Value must be > -1.0");
     }
