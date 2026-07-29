@@ -17,7 +17,6 @@ package com.android.tools.deployer.common
 
 import com.android.adblib.ConnectedDevice
 import com.android.ddmlib.AdbCommandRejectedException
-import com.android.ddmlib.Client
 import com.android.ddmlib.IDevice
 import com.android.ddmlib.IShellOutputReceiver
 import com.android.ddmlib.InstallException
@@ -26,6 +25,7 @@ import com.android.ddmlib.SimpleConnectedSocket
 import com.android.ddmlib.SyncException
 import com.android.ddmlib.TimeoutException
 import com.android.sdklib.AndroidVersion
+import com.android.tools.deploy.proto.Deploy
 import java.io.IOException
 import java.io.InputStream
 import java.util.Optional
@@ -54,8 +54,19 @@ class DeviceHolder(
   val name: String
     get() = iDevice.name
 
-  val clients: Array<Client>
-    get() = iDevice.clients
+  fun getPidsForPackageName(packageName: String): List<Int> {
+    return iDevice.clients.filter { packageName == it.clientData.packageName }.map { it.clientData.pid }
+  }
+
+  fun getArchForPid(pid: Int): Deploy.Arch {
+    val client = iDevice.clients.firstOrNull { it.clientData.pid == pid } ?: return Deploy.Arch.ARCH_UNKNOWN
+    val abi = client.clientData.abi ?: return Deploy.Arch.ARCH_UNKNOWN
+    return when {
+      abi.startsWith("32-bit") -> Deploy.Arch.ARCH_32_BIT
+      abi.startsWith("64-bit") -> Deploy.Arch.ARCH_64_BIT
+      else -> AdbClient.getArchForAbi(abi) ?: Deploy.Arch.ARCH_UNKNOWN
+    }
+  }
 
   val isRoot: Boolean
     get() = iDevice.isRoot

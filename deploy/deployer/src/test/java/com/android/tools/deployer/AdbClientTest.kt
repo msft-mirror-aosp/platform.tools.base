@@ -13,124 +13,65 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tools.deployer.common
+package com.android.tools.deployer
 
-import com.android.ddmlib.Client
-import com.android.ddmlib.ClientData
-import com.android.ddmlib.DebugViewDumpHandler
 import com.android.ddmlib.IDevice
 import com.android.tools.deploy.proto.Deploy.Arch
-import java.util.concurrent.TimeUnit
+import com.android.tools.deployer.common.AdbClient
+import com.android.tools.deployer.common.DeviceHolder
+import com.android.utils.ILogger
 import org.junit.Assert
 import org.junit.Test
+import org.mockito.Mockito
 
 class AdbClientTest {
 
   @Test
-  fun testDdmClients() {
-    var result = AdbClient.getArchFromDdmClient(createFakeClientData("x86"))
-    Assert.assertEquals(Arch.ARCH_32_BIT, result)
+  fun testGetPids() {
+    val deviceHolder = Mockito.mock(DeviceHolder::class.java)
+    val logger = Mockito.mock(ILogger::class.java)
 
-    result = AdbClient.getArchFromDdmClient(createFakeClientData("x86_64"))
-    Assert.assertEquals(Arch.ARCH_64_BIT, result)
+    Mockito.`when`(deviceHolder.supportsFeature(IDevice.Feature.REAL_PKG_NAME)).thenReturn(true)
+    Mockito.`when`(deviceHolder.getPidsForPackageName("com.example.app")).thenReturn(listOf(101, 102))
 
-    result = AdbClient.getArchFromDdmClient(createFakeClientData("32-bit"))
-    Assert.assertEquals(Arch.ARCH_32_BIT, result)
+    val adbClient = AdbClient(deviceHolder, logger)
+    val pids = adbClient.getPids("com.example.app")
 
-    result = AdbClient.getArchFromDdmClient(createFakeClientData("64-bit"))
-    Assert.assertEquals(Arch.ARCH_64_BIT, result)
-
-    result = AdbClient.getArchFromDdmClient(createFakeClientData("way-too-many-bit"))
-    Assert.assertEquals(Arch.ARCH_UNKNOWN, result)
+    Assert.assertEquals(listOf(101, 102), pids)
+    Mockito.verify(deviceHolder).getPidsForPackageName("com.example.app")
   }
 
-  private fun createFakeClientData(abi: String) =
-    object : ClientData(FakeClient(), 1) {
-      override fun getAbi() = abi
-    }
+  @Test
+  fun testGetPidsThrows_whenRealPkgNameNotSupported() {
+    val deviceHolder = Mockito.mock(DeviceHolder::class.java)
+    val logger = Mockito.mock(ILogger::class.java)
 
-  class FakeClient : Client {
+    Mockito.`when`(deviceHolder.supportsFeature(IDevice.Feature.REAL_PKG_NAME)).thenReturn(false)
+    Mockito.`when`(deviceHolder.serialNumber).thenReturn("serial-abc")
 
-    override fun getDevice(): IDevice {
-      TODO("Not yet implemented")
-    }
+    val adbClient = AdbClient(deviceHolder, logger)
+    val exception = Assert.assertThrows(IllegalStateException::class.java) { adbClient.getPids("com.example.app") }
 
-    override fun isDdmAware(): Boolean {
-      TODO("Not yet implemented")
-    }
+    Assert.assertTrue(exception.message!!.contains("serial-abc"))
+    Assert.assertTrue(exception.message!!.contains("does not support REAL_PKG_NAME"))
+  }
 
-    override fun getClientData(): ClientData {
-      TODO("Not yet implemented")
-    }
+  @Test
+  fun testGetArch() {
+    val deviceHolder = Mockito.mock(DeviceHolder::class.java)
+    val logger = Mockito.mock(ILogger::class.java)
 
-    override fun kill() {
-      TODO("Not yet implemented")
-    }
+    Mockito.`when`(deviceHolder.getArchForPid(101)).thenReturn(Arch.ARCH_64_BIT)
+    Mockito.`when`(deviceHolder.getArchForPid(102)).thenReturn(Arch.ARCH_32_BIT)
 
-    override fun isValid(): Boolean {
-      TODO("Not yet implemented")
-    }
+    val adbClient = AdbClient(deviceHolder, logger)
+    val arch = adbClient.getArch(listOf(101, 102))
 
-    override fun getDebuggerListenPort(): Int {
-      TODO("Not yet implemented")
-    }
+    Assert.assertEquals(Arch.ARCH_64_BIT, arch)
+    Mockito.verify(deviceHolder).getArchForPid(101)
+    Mockito.verify(deviceHolder).getArchForPid(102)
 
-    override fun isDebuggerAttached(): Boolean {
-      TODO("Not yet implemented")
-    }
-
-    override fun executeGarbageCollector() {
-      TODO("Not yet implemented")
-    }
-
-    override fun startMethodTracer() {
-      TODO("Not yet implemented")
-    }
-
-    override fun stopMethodTracer() {
-      TODO("Not yet implemented")
-    }
-
-    override fun startSamplingProfiler(samplingInterval: Int, timeUnit: TimeUnit?) {
-      TODO("Not yet implemented")
-    }
-
-    override fun stopSamplingProfiler() {
-      TODO("Not yet implemented")
-    }
-
-    override fun requestAllocationDetails() {
-      TODO("Not yet implemented")
-    }
-
-    override fun enableAllocationTracker(enabled: Boolean) {
-      TODO("Not yet implemented")
-    }
-
-    override fun notifyVmMirrorExited() {
-      TODO("Not yet implemented")
-    }
-
-    override fun listViewRoots(replyHandler: DebugViewDumpHandler?) {
-      TODO("Not yet implemented")
-    }
-
-    override fun captureView(viewRoot: String, view: String, handler: DebugViewDumpHandler) {
-      TODO("Not yet implemented")
-    }
-
-    override fun dumpViewHierarchy(
-      viewRoot: String,
-      skipChildren: Boolean,
-      includeProperties: Boolean,
-      useV2: Boolean,
-      handler: DebugViewDumpHandler,
-    ) {
-      TODO("Not yet implemented")
-    }
-
-    override fun dumpDisplayList(viewRoot: String, view: String) {
-      TODO("Not yet implemented")
-    }
+    // Verify warning is logged due to mixed ABIs
+    Mockito.verify(logger).warning(Mockito.anyString(), Mockito.eq(Arch.ARCH_64_BIT), Mockito.eq(Arch.ARCH_32_BIT))
   }
 }

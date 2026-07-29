@@ -22,11 +22,8 @@ import com.android.adblib.DeviceSelector;
 import com.android.adblib.tools.InstallerKt;
 import com.android.adblib.tools.JavaBridge;
 import com.android.annotations.NonNull;
-import com.android.ddmlib.Client;
-import com.android.ddmlib.ClientData;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
-import com.android.ddmlib.InstallException;
 import com.android.ddmlib.InstallMetrics;
 import com.android.ddmlib.ShellCommandUnresponsiveException;
 import com.android.ddmlib.SimpleConnectedSocket;
@@ -37,7 +34,6 @@ import com.android.tools.deployer.model.DeploymentPlan;
 import com.android.tools.tracer.Trace;
 import com.android.utils.ILogger;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 
 import java.io.ByteArrayOutputStream;
@@ -315,15 +311,10 @@ public class AdbClient {
         if (!deviceHolder.supportsFeature(IDevice.Feature.REAL_PKG_NAME)) {
             throw new IllegalStateException(
                     String.format(
-                            "Device %s, do not support REAL_PKG_NAME", deviceHolder.getSerialNumber()));
+                            "Device %s, does not support REAL_PKG_NAME",
+                            deviceHolder.getSerialNumber()));
         }
-        List<Integer> results = new ArrayList<>();
-        for (Client client : deviceHolder.getClients()) {
-            if (packageName.equals(client.getClientData().getPackageName())) {
-                results.add(client.getClientData().getPid());
-            }
-        }
-        return results;
+        return deviceHolder.getPidsForPackageName(packageName);
     }
 
     public Deploy.Arch getArch(List<Integer> pids) {
@@ -376,33 +367,7 @@ public class AdbClient {
     }
 
     private Deploy.Arch getArch(int pid) {
-        for (Client client : deviceHolder.getClients()) {
-            if (client.getClientData().getPid() != pid) {
-                continue;
-            } else {
-                return getArchFromDdmClient(client.getClientData());
-            }
-        }
-        return Deploy.Arch.ARCH_UNKNOWN;
-    }
-
-    @VisibleForTesting
-    static Deploy.Arch getArchFromDdmClient(ClientData clientData) {
-        String abi = clientData.getAbi();
-        if (abi == null) {
-            return Deploy.Arch.ARCH_UNKNOWN;
-        } else if (abi.startsWith("32-bit")) {
-            return Deploy.Arch.ARCH_32_BIT;
-        } else if (abi.startsWith("64-bit")) {
-            return Deploy.Arch.ARCH_64_BIT;
-        } else {
-            Deploy.Arch fromMapping = getArchForAbi(abi);
-            if (fromMapping == null) {
-                return Deploy.Arch.ARCH_UNKNOWN;
-            } else {
-                return fromMapping;
-            }
-        }
+        return deviceHolder.getArchForPid(pid);
     }
 
     public void push(String from, String to) throws IOException {
@@ -453,7 +418,9 @@ public class AdbClient {
     // AbortSessionResponse.
     public String abortSession(String sessionId) {
         String prefix =
-                deviceHolder.getVersion().isAtLeast(AndroidVersion.VersionCodes.N) ? "cmd package" : "pm";
+                deviceHolder.getVersion().isAtLeast(AndroidVersion.VersionCodes.N)
+                        ? "cmd package"
+                        : "pm";
 
         String[] command = {prefix, "install-abandon", sessionId};
 
