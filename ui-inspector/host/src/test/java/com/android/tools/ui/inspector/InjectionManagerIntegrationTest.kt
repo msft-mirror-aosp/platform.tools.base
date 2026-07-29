@@ -17,12 +17,12 @@
 package com.android.tools.ui.inspector
 
 import com.android.adblib.ConnectedDevice
+import com.android.adblib.DeviceSelector
 import com.android.adblib.connectedDevicesTracker
 import com.android.adblib.serialNumber
 import com.android.adblib.tools.createStandaloneSession
 import com.android.adblib.tools.debugging.appProcessTracker
 import com.android.adblib.tools.debugging.debuggable
-import com.android.adblib.tools.debugging.retrieveProcessName
 import com.google.common.truth.Truth.assertThat
 import java.net.Socket
 import java.nio.file.Paths
@@ -75,7 +75,10 @@ class InjectionManagerIntegrationTest {
     val appList = appTracker.appProcessFlow.value
     val debuggableApp = appList.firstOrNull { it.debuggable } ?: return null
     return try {
-      debuggableApp.retrieveProcessName()
+      val selector = DeviceSelector.fromSerialNumber(device.serialNumber)
+      val uidResolver = UidResolver(device.session, selector)
+      val uid = uidResolver.processUid(debuggableApp.pid.toString()) ?: return null
+      uidResolver.allPackageUids().mapNotNull { it.takeIf { packageUid -> packageUid.uid == uid }?.packageName }.distinct().singleOrNull()
     } catch (e: Exception) {
       null
     }

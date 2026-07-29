@@ -66,17 +66,55 @@ internal suspend fun resolveTargetPackage(adbSession: AdbSession, serial: String
   // during injection, which owns those checks for resolved packages as well.
   if (requested != null) return requested
   val selector = DeviceSelector.fromSerialNumber(serial)
-  val output = adbSession.deviceServices.shellAsText(selector, TOP_ACTIVITY_SHELL_COMMAND).stdout
-  val packages = parseTopActivityProcesses(output).map { it.packageName }.distinct()
+  val uidResolver = UidResolver(adbSession, selector)
+  val foregroundUids = queryForegroundUids(adbSession, selector, uidResolver)
+  if (foregroundUids.isEmpty()) {
+    // dumpsys reported no process hosting a top activity: nothing is in the foreground to resolve (locked or transitioning screen).
+    throw foregroundAppResolutionException()
+  }
+  val packagesByUid = uidResolver.allPackageUids().groupBy { it.uid }
+  // Distinct UIDs always resolve to distinct packages: several foreground UIDs means several apps are in the foreground (split screen).
+  val packages = foregroundUids.map { uid -> singlePackageForUid(uid, packagesByUid) }
   return when {
     packages.size == 1 -> packages.single()
-    packages.isEmpty() ->
-      throw IllegalStateException(
-        "Could not determine the foreground app. Unlock the device and bring the target app to the foreground, or select the app with --package."
-      )
     else -> throw IllegalStateException("Multiple foreground apps found: ${packages.sorted().joinToString()}. Select one with --package.")
   }
 }
+
+/** Returns the UID of each app currently hosting a top (foreground) activity: one normally, several in split screen. */
+private suspend fun queryForegroundUids(adbSession: AdbSession, selector: DeviceSelector, uidResolver: UidResolver): List<Int> {
+  val output = adbSession.deviceServices.shellAsText(selector, TOP_ACTIVITY_SHELL_COMMAND).stdout
+  return parseTopActivityProcesses(output)
+    .map { it.pid }
+    .distinct()
+    .map { pid ->
+      // A PID from the top-activity snapshot that no longer resolves to a live process means the foreground is mid-transition; resolving
+      // from the remaining processes could pick the wrong app.
+      uidResolver.processUid(pid) ?: throw foregroundAppResolutionException()
+    }
+    .distinct()
+}
+
+/**
+ * Returns the single package that owns [uid], looked up in [packagesByUid]. Throws when no package owns the UID, or when several share it
+ * (legacy sharedUserId): a UID alone cannot tell which of them is in the foreground.
+ */
+private fun singlePackageForUid(uid: Int, packagesByUid: Map<Int, List<PackageUid>>): String {
+  val candidates = packagesByUid[uid].orEmpty().map { it.packageName }.distinct().sorted()
+  return when {
+    candidates.isEmpty() -> throw foregroundAppResolutionException()
+    candidates.size > 1 ->
+      throw IllegalStateException(
+        "The foreground process UID matches multiple packages: ${candidates.joinToString()}. Select one with --package."
+      )
+    else -> candidates.single()
+  }
+}
+
+private fun foregroundAppResolutionException() =
+  IllegalStateException(
+    "Could not determine the foreground app. Unlock the device and bring the target app to the foreground, or select the app with --package."
+  )
 
 /**
  * Injects the UI Inspector agent into the target application, attaches to its layout inspector service, and dumps the unified View and

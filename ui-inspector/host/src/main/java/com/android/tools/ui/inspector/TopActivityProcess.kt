@@ -23,14 +23,7 @@ internal const val TOP_ACTIVITY_SHELL_COMMAND = "dumpsys activity processes | gr
 private val TOP_ACTIVITY_REGEX = Regex("(\\d+):([^/\\s]+)/\\S+\\s+\\(.*top-activity\\)")
 
 /** A process currently hosting the top (foreground) activity. */
-internal data class TopActivityProcess(val pid: String, val processName: String) {
-  /**
-   * The application package name derived from [processName] by stripping any `android:process` suffix (`com.app:ui` -> `com.app`). A
-   * manifest can assign a process name unrelated to the package name; such apps are not supported by this derivation.
-   */
-  val packageName: String
-    get() = processName.substringBefore(':')
-}
+internal data class TopActivityProcess(val pid: String, val processName: String)
 
 /** Parses the output of [TOP_ACTIVITY_SHELL_COMMAND] into the processes hosting the top activity. */
 internal fun parseTopActivityProcesses(dumpsysOutput: String): List<TopActivityProcess> =

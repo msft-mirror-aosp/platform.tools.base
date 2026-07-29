@@ -38,6 +38,18 @@ class CommandsTest {
     fakeSession.deviceServices.configureShellCommand(selector, TOP_ACTIVITY_SHELL_COMMAND, stdout, exitCode = exitCode)
   }
 
+  private fun configureProcessUid(pid: String, uid: String) {
+    fakeSession.deviceServices.configureShellCommand(selector, "ps -o UID= -p $pid", "$uid\n")
+  }
+
+  private fun configurePackageUids(vararg packageUids: PackageUid) {
+    val output =
+      packageUids.joinToString(separator = "\n", postfix = if (packageUids.isEmpty()) "" else "\n") {
+        "package:${it.packageName} uid:${it.uid}"
+      }
+    fakeSession.deviceServices.configureShellCommand(selector, "pm list packages -U --user 0", output)
+  }
+
   @Test
   fun testResolveDeviceSerialReturnsRequestedSerialUnchanged() {
     fakeSession.hostServices.devices = DeviceList(emptyList(), emptyList())
@@ -106,17 +118,21 @@ class CommandsTest {
   }
 
   @Test
-  fun testResolveTargetPackageUsesForegroundApp() {
-    configureTopActivityOutput("    APP  UID 1234:com.example/u0a123 (top-activity)\n")
+  fun testResolveTargetPackageUsesUidForFullyQualifiedProcessName() {
+    configureTopActivityOutput("    APP  UID 1234:com.example.uiprocess/u0a123 (top-activity)\n")
+    configureProcessUid("1234", "10123")
+    configurePackageUids(PackageUid("com.example.qaviews", 10123))
 
     val packageName = runBlocking { resolveTargetPackage(fakeSession, "abc", null) }
 
-    assertThat(packageName).isEqualTo("com.example")
+    assertThat(packageName).isEqualTo("com.example.qaviews")
   }
 
   @Test
-  fun testResolveTargetPackageNormalizesSubprocessNames() {
+  fun testResolveTargetPackageUsesUidForColonSuffixProcessName() {
     configureTopActivityOutput("    APP  UID 1234:com.example:ui/u0a123 (top-activity)\n")
+    configureProcessUid("1234", "10123")
+    configurePackageUids(PackageUid("com.example", 10123))
 
     val packageName = runBlocking { resolveTargetPackage(fakeSession, "abc", null) }
 
@@ -124,10 +140,13 @@ class CommandsTest {
   }
 
   @Test
-  fun testResolveTargetPackageAcceptsMultipleProcessesOfSamePackage() {
+  fun testResolveTargetPackageAcceptsMultipleProcessesWithSameUid() {
     configureTopActivityOutput(
       "    APP  UID 1234:com.example/u0a123 (top-activity)\n    APP  UID 5678:com.example:render/u0a123 (top-activity)\n"
     )
+    configureProcessUid("1234", "10123")
+    configureProcessUid("5678", "10123")
+    configurePackageUids(PackageUid("com.example", 10123))
 
     val packageName = runBlocking { resolveTargetPackage(fakeSession, "abc", null) }
 
@@ -148,11 +167,48 @@ class CommandsTest {
   @Test
   fun testResolveTargetPackageFailsWithMultipleForegroundApps() {
     configureTopActivityOutput("    APP  UID 1234:com.second/u0a123 (top-activity)\n    APP  UID 5678:com.first/u0a124 (top-activity)\n")
+    configureProcessUid("1234", "10123")
+    configureProcessUid("5678", "10456")
+    configurePackageUids(PackageUid("com.second", 10123), PackageUid("com.first", 10456))
 
     val exception = assertThrows(IllegalStateException::class.java) { runBlocking { resolveTargetPackage(fakeSession, "abc", null) } }
 
     assertThat(exception).hasMessageThat().contains("Multiple foreground apps found: com.first, com.second")
     assertThat(exception).hasMessageThat().contains("--package")
+  }
+
+  @Test
+  fun testResolveTargetPackageFailsWhenUidMatchesMultiplePackages() {
+    configureTopActivityOutput("    APP  UID 1234:arbitrary.process/u0a123 (top-activity)\n")
+    configureProcessUid("1234", "10123")
+    configurePackageUids(PackageUid("com.second", 10123), PackageUid("com.first", 10123))
+
+    val exception = assertThrows(IllegalStateException::class.java) { runBlocking { resolveTargetPackage(fakeSession, "abc", null) } }
+
+    assertThat(exception)
+      .hasMessageThat()
+      .isEqualTo("The foreground process UID matches multiple packages: com.first, com.second. Select one with --package.")
+  }
+
+  @Test
+  fun testResolveTargetPackageFailsWhenProcessUidIsMissing() {
+    configureTopActivityOutput("    APP  UID 1234:com.example/u0a123 (top-activity)\n")
+    fakeSession.deviceServices.configureShellCommand(selector, "ps -o UID= -p 1234", "")
+
+    val exception = assertThrows(IllegalStateException::class.java) { runBlocking { resolveTargetPackage(fakeSession, "abc", null) } }
+
+    assertThat(exception).hasMessageThat().contains("Could not determine the foreground app")
+  }
+
+  @Test
+  fun testResolveTargetPackageFailsWhenUidPackageMappingIsMissing() {
+    configureTopActivityOutput("    APP  UID 1234:com.example/u0a123 (top-activity)\n")
+    configureProcessUid("1234", "10123")
+    configurePackageUids()
+
+    val exception = assertThrows(IllegalStateException::class.java) { runBlocking { resolveTargetPackage(fakeSession, "abc", null) } }
+
+    assertThat(exception).hasMessageThat().contains("Could not determine the foreground app")
   }
 
   @Test
