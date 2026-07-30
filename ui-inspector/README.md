@@ -91,13 +91,48 @@ host is running on the user’s machine and the agent on the device.
 ### Host-agent communication
 
 The agent acts as the server, when it launches it creates a socket bound
-to `localabstract:ui_inspector_<pid>`.
+to `localabstract:ui_inspector_<pid>_<digest>`, where `<digest>` is a
+12-hex-character SHA-256 fingerprint the host computes over the artifacts
+it ships (in order: the ABI-selected native agent, the service jar, the
+payload jar, the view inspector jar; each hashed as its 64-bit big-endian
+length followed by its bytes). The compose inspector jar is excluded: it
+is selected by the app's compose version, which cannot change within a
+process's lifetime. The digest identifies the host's intended artifact
+set, so a host only connects to a server started with the same intended
+artifacts: a resident server from the same build wins the bind race and
+is reused, while after a host rebuild the freshly attached agent binds
+its own name and the stale server expires through the inactivity
+timeout. The socket name minus the `ui_inspector_` prefix is the "server
+token": the host passes it as the third attach option, and the native,
+service, and payload layers treat it as an opaque string (the native
+library and service classes of a resident process cannot be reloaded, so
+they must accept tokens from hosts of any build).
+
+One thing the digest cannot do is refresh the two bottom layers of an
+agent already resident in the process — the platform pins them there:
+
+* The native library is loaded by path, and `dlopen` caches it: a
+  re-attach at the same path re-runs the *already loaded* library's
+  entry point, regardless of what bytes now sit on disk.
+* The service jar is appended to the bootstrap classloader's search path
+  on first attach, and a classloader never redefines a class it has
+  already loaded: later attaches keep resolving the original
+  `InspectorService`.
+
+So in a resident process the native and service layers stay at their
+first-attach build until the app process restarts. The payload is the
+exception: every attach loads it through a fresh `DexClassLoader`, so
+the server, the protocol, and the inspectors — everything the host
+actually talks to over the socket — always come from the build that
+attached last. A native or service change still flips the digest and
+yields a fresh server; only those two thin pass-through layers keep
+running their old code.
 
 The host runs the following command to map a local port on the user’s
 machine to the device’s socket:
 
 ```bash
-adb -s <device> forward tcp:<localHostPort> localabstract:ui_inspector_<pid>
+adb -s <device> forward tcp:<localHostPort> localabstract:ui_inspector_<pid>_<digest>
 ```
 
 Then connects to `<localHostPort>`.
@@ -155,7 +190,7 @@ It is responsible for:
 
 * Spawning a background coroutine/thread.
 * Creating a `LocalServerSocket` bound to
-  `localabstract:ui_inspector_<pid>`.
+  `localabstract:ui_inspector_<pid>_<digest>`.
 * Entering a loop to accept connections from the
   Host CLI.
 * Processing commands and interacting with the app's UI hierarchy.
@@ -197,7 +232,7 @@ It then starts the injection sequence:
 * Periodically polls `/proc/net/unix` on the device using a retry loop until the
   agent's abstract Unix socket appears, preventing host connection race conditions.
 * Creates the adb tunnel and triggers payload injection via
-  `adb shell cmd activity attach-agent <package> /data/data/<package>/lib_ui_inspector_agent.so=/data/data/<package>/lib_ui_inspector_service.jar;/data/data/<package>/lib_ui_inspector_payload.jar;<pid>`.
+  `adb shell cmd activity attach-agent <package> /data/data/<package>/lib_ui_inspector_agent.so=/data/data/<package>/lib_ui_inspector_service.jar;/data/data/<package>/lib_ui_inspector_payload.jar;<pid>_<digest>`.
 
 ## Compose Inspector
 
@@ -255,7 +290,7 @@ commands can just re-connect to it.
 Before running a command the host would:
 
 * Discover the PID of the app.
-* Run `adb forward tcp:<host_port> localabstract:ui_inspector_<PID>`.
+* Run `adb forward tcp:<host_port> localabstract:ui_inspector_<PID>_<digest>`.
 * Attempt connection to `tcp:<host_port>`.
 * Send `PING`.
 * If `PONG`: warm hit.

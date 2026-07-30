@@ -36,12 +36,15 @@ constexpr const char* kInitializeMethodSignature =
 
 // Options passed to the agent on attach.
 struct AgentOptions {
+  // Absolute path of the service jar to add to the bootstrap classloader.
   std::string service_jar;
+  // Absolute path of the payload jar the service loads dynamically.
   std::string payload_jar;
-  std::string pid;
+  // Host-chosen string identifying the server the payload must start.
+  std::string server_token;
 };
 
-// Parses options in format: service_jar;payload_jar;pid
+// Parses options in format: service_jar;payload_jar;server_token
 std::optional<AgentOptions> parseOptions(const char* options) {
   if (options == nullptr || strlen(options) == 0) return std::nullopt;
 
@@ -65,15 +68,15 @@ extern "C" JNIEXPORT jint JNICALL Agent_OnAttach(JavaVM* vm, char* options,
   // Parse options
   auto options_opt = parseOptions(options);
   if (!options_opt) {
-    profiler::Log::E(
-        kLogTag,
-        "Invalid options format. Expected: service_jar;payload_jar;pid");
+    profiler::Log::E(kLogTag,
+                     "Invalid options format. Expected: "
+                     "service_jar;payload_jar;server_token");
     return JNI_OK;
   }
 
   std::string service_jar_path = options_opt->service_jar;
   std::string payload_jar_path = options_opt->payload_jar;
-  std::string pid = options_opt->pid;
+  std::string server_token = options_opt->server_token;
 
   JNIEnv* env = profiler::GetThreadLocalJNI(vm);
   if (env == nullptr) {
@@ -142,7 +145,7 @@ extern "C" JNIEXPORT jint JNICALL Agent_OnAttach(JavaVM* vm, char* options,
 
   // Call initialize
   jstring arg1 = env->NewStringUTF(payload_jar_path.c_str());
-  jstring arg2 = env->NewStringUTF(pid.c_str());
+  jstring arg2 = env->NewStringUTF(server_token.c_str());
 
   // Get or instantiate the singleton JvmtiArtTooling engine, then cast its
   // pointer to a jlong so it can be passed to and stored by the Java service

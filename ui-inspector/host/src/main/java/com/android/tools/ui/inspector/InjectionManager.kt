@@ -106,6 +106,7 @@ class InjectionManager(
   private val agentPathResolver: (String) -> Path = DEFAULT_AGENT_PATH_RESOLVER,
   private val serviceJarPath: Path = Paths.get(HOST_SERVICE_JAR_PATH),
   private val payloadJarPath: Path = Paths.get(HOST_PAYLOAD_JAR_PATH),
+  private val viewInspectorJarPath: Path = InspectorRegistry.VIEW_INSPECTOR.localJarPath,
   internal val tempFileSuffixGenerator: () -> String = { "${UUID.randomUUID()}.tmp" },
 ) {
   init {
@@ -157,6 +158,12 @@ class InjectionManager(
     val agentLocalPath = getAgentLocalPath(deviceAbi)
     val serviceJarLocalPath = getServiceJarLocalPath()
     val payloadJarLocalPath = getPayloadJarLocalPath()
+    val viewInspectorJarLocalPath = resolveLocalPathOrExtractFromClasspath(viewInspectorJarPath)
+
+    // Build digest based on artifacts pushed to the device. The digest is part of the server socket name on the device and allows the host
+    // to identify which version of the pushed artifacts it's connecting to.
+    val artifactDigest = shippedArtifactsDigest(agentLocalPath, serviceJarLocalPath, payloadJarLocalPath, viewInspectorJarLocalPath)
+    val serverToken = "${pid}_$artifactDigest"
 
     val debugViewAttributesSetup = async { if (needsDebugViewAttributes) enableDebugViewAttributes() }
 
@@ -172,9 +179,9 @@ class InjectionManager(
     copyAndSetupFiles(deviceSelector, packageName, agentRemoteTmpPath, serviceJarRemoteTmpPath, payloadRemoteTmpPath)
 
     val deviceTime = queryDeviceTime(deviceSelector)
-    attachAgent(deviceSelector, pid)
+    attachAgent(deviceSelector, pid, serverToken)
 
-    val socketName = ProtocolConstants.getSocketName(pid)
+    val socketName = ProtocolConstants.getSocketName(serverToken)
     waitForAgentSocket(deviceSelector, socketName, pid, deviceTime)
 
     setupAdbForward(deviceSelector, socketName)
@@ -467,11 +474,11 @@ class InjectionManager(
     return remoteTmpPath
   }
 
-  private suspend fun attachAgent(deviceSelector: DeviceSelector, pid: String) {
+  private suspend fun attachAgent(deviceSelector: DeviceSelector, pid: String, serverToken: String) {
     val appPath = "$appDataDir/$AGENT_FILE_NAME"
     val appJarPath = "$appDataDir/$SERVICE_JAR_FILE_NAME"
     val appPayloadJarPath = "$appDataDir/$PAYLOAD_JAR_FILE_NAME"
-    val attachCmd = "cmd activity attach-agent $pid \"$appPath=$appJarPath;$appPayloadJarPath;$pid\""
+    val attachCmd = "cmd activity attach-agent $pid \"$appPath=$appJarPath;$appPayloadJarPath;$serverToken\""
     runShellCommand(deviceSelector, attachCmd)
   }
 

@@ -51,6 +51,9 @@ class ComposeInspectorTest {
   private val deviceSerial = "123"
   private val packageName = "com.example"
 
+  /** The attach server token for pid 1234 with the four dummy artifacts, all empty files (see [ShippedArtifactsDigestTest]). */
+  private val serverToken = "1234_66687aadf862"
+
   @Test
   fun testGetComposeArtifactId_legacyAndKmpVersions() {
     // Legacy (Pre-KMP) versions should return "ui"
@@ -131,6 +134,7 @@ class ComposeInspectorTest {
     val dummyAgent = tempFolder.newFile("lib_ui_inspector_agent.so").toPath()
     val dummyJar = tempFolder.newFile("lib_ui_inspector_service.jar").toPath()
     val dummyPayload = tempFolder.newFile("lib_ui_inspector_payload.jar").toPath()
+    val dummyViewInspector = tempFolder.newFile("view-inspector.jar").toPath()
 
     val agentPathResolver = { abi: String -> dummyAgent }
     configureAtomicMoveCommands(fakeSession, deviceSelector)
@@ -142,6 +146,7 @@ class ComposeInspectorTest {
         agentPathResolver,
         dummyJar,
         dummyPayload,
+        dummyViewInspector,
         tempFileSuffixGenerator = { "test.tmp" },
       )
 
@@ -160,13 +165,13 @@ class ComposeInspectorTest {
     fakeSession.deviceServices.configureShellCommand(deviceSelector, baseAgentSetupCmd, "")
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
-      "cmd activity attach-agent 1234 \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;1234\"",
+      "cmd activity attach-agent 1234 \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;$serverToken\"",
       "",
     )
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
-      "cat /proc/net/unix | grep ui_inspector_1234 || true",
-      "ui_inspector_1234\n",
+      "cat /proc/net/unix | grep ui_inspector_$serverToken || true",
+      "ui_inspector_$serverToken\n",
     )
     injectionManager.injectAndAttach(needsDebugViewAttributes = false)
 
@@ -432,6 +437,7 @@ class ComposeInspectorTest {
     val dummyAgent = tempFolder.newFile("lib_ui_inspector_agent.so").toPath()
     val dummyJar = tempFolder.newFile("lib_ui_inspector_service.jar").toPath()
     val dummyPayload = tempFolder.newFile("lib_ui_inspector_payload.jar").toPath()
+    val dummyViewInspector = tempFolder.newFile("view-inspector.jar").toPath()
 
     val agentPathResolver = { abi: String -> dummyAgent }
     configureAtomicMoveCommands(fakeSession, deviceSelector)
@@ -443,6 +449,7 @@ class ComposeInspectorTest {
         agentPathResolver,
         dummyJar,
         dummyPayload,
+        dummyViewInspector,
         tempFileSuffixGenerator = { "test.tmp" },
       )
 
@@ -459,13 +466,13 @@ class ComposeInspectorTest {
     fakeSession.deviceServices.configureShellCommand(deviceSelector, baseAgentSetupCmd, "")
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
-      "cmd activity attach-agent 1234 \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;1234\"",
+      "cmd activity attach-agent 1234 \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;$serverToken\"",
       "",
     )
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
-      "cat /proc/net/unix | grep ui_inspector_1234 || true",
-      "ui_inspector_1234\n",
+      "cat /proc/net/unix | grep ui_inspector_$serverToken || true",
+      "ui_inspector_$serverToken\n",
     )
     injectionManager.injectAndAttach(needsDebugViewAttributes = false)
 
@@ -758,6 +765,7 @@ class ComposeInspectorTest {
     val dummyAgent = tempFolder.newFile("lib_ui_inspector_agent.so").toPath()
     val dummyJar = tempFolder.newFile("lib_ui_inspector_service.jar").toPath()
     val dummyPayload = tempFolder.newFile("lib_ui_inspector_payload.jar").toPath()
+    val dummyViewInspector = tempFolder.newFile("view-inspector.jar").toPath()
 
     val agentPathResolver = { abi: String -> dummyAgent }
     configureAtomicMoveCommands(fakeSession, deviceSelector)
@@ -769,6 +777,7 @@ class ComposeInspectorTest {
         agentPathResolver,
         dummyJar,
         dummyPayload,
+        dummyViewInspector,
         tempFileSuffixGenerator = { "test.tmp" },
       )
 
@@ -785,13 +794,13 @@ class ComposeInspectorTest {
     fakeSession.deviceServices.configureShellCommand(deviceSelector, baseAgentSetupCmd, "")
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
-      "cmd activity attach-agent 1234 \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;1234\"",
+      "cmd activity attach-agent 1234 \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;$serverToken\"",
       "",
     )
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
-      "cat /proc/net/unix | grep ui_inspector_1234 || true",
-      "ui_inspector_1234\n",
+      "cat /proc/net/unix | grep ui_inspector_$serverToken || true",
+      "ui_inspector_$serverToken\n",
     )
     injectionManager.injectAndAttach(needsDebugViewAttributes = false)
 
@@ -1094,6 +1103,7 @@ class ComposeInspectorTest {
     val dummyAgent = tempFolder.newFile("lib_ui_inspector_agent.so").toPath()
     val dummyJar = tempFolder.newFile("lib_ui_inspector_service.jar").toPath()
     val dummyPayload = tempFolder.newFile("lib_ui_inspector_payload.jar").toPath()
+    val dummyViewInspector = tempFolder.newFile("view-inspector.jar").toPath()
 
     val agentPathResolver = { _: String -> dummyAgent }
     configureAtomicMoveCommands(fakeSession, deviceSelector)
@@ -1105,6 +1115,7 @@ class ComposeInspectorTest {
         agentPathResolver,
         dummyJar,
         dummyPayload,
+        dummyViewInspector,
         tempFileSuffixGenerator = { "test.tmp" },
       )
 
@@ -1123,13 +1134,13 @@ class ComposeInspectorTest {
     fakeSession.deviceServices.configureShellCommand(deviceSelector, baseAgentSetupCmd, "")
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
-      "cmd activity attach-agent 1234 \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;1234\"",
+      "cmd activity attach-agent 1234 \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;$serverToken\"",
       "",
     )
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
-      "cat /proc/net/unix | grep ui_inspector_1234 || true",
-      "ui_inspector_1234\n",
+      "cat /proc/net/unix | grep ui_inspector_$serverToken || true",
+      "ui_inspector_$serverToken\n",
     )
     injectionManager.injectAndAttach(needsDebugViewAttributes = false)
 
