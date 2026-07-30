@@ -1474,6 +1474,7 @@ class LintModelSerializationTest {
       .about(PathSubject.paths())
       .that(debugVariant2.partialResultsDir?.toPath())
       .isEqualTo(partialResultsDir)
+    assertRoundTrip(module)
   }
 
   @Test
@@ -1535,6 +1536,7 @@ class LintModelSerializationTest {
     assertEquals(futurePreviewPlus1, minSdkVersion)
     val targetSdkVersion = debugVariant.targetSdkVersion!!
     assertEquals(futurePreviewPlus2, targetSdkVersion)
+    assertRoundTrip(module)
   }
 
   @Test
@@ -1624,6 +1626,7 @@ class LintModelSerializationTest {
     val debugVariant = module.defaultVariant()
     val minSdkVersion = debugVariant?.minSdkVersion!!
     assertEquals("API $apiLevel, $codename preview", minSdkVersion.toString())
+    assertRoundTrip(module)
   }
 
   // ----------------------------------------------------------------------------------
@@ -1680,19 +1683,7 @@ class LintModelSerializationTest {
     }
     assertThat(remainingExpectedXml).isEmpty()
 
-    val newModule =
-      LintModelSerialization.readModule(
-        LintModelSerializationStringAdapter(
-          reader = { target, variantName, artifact ->
-            val contents = xml[getMapKey(target, variantName, artifact)]!!
-            StringReader(contents)
-          }
-        )
-      )
-    val newXml = writeModule(newModule)
-    for ((key, contents) in xml) {
-      assertEquals("XML parsed and written back out does not match original for file " + key, contents, newXml[key])
-    }
+    assertRoundTrip(module)
   }
 
   @Test
@@ -1730,6 +1721,7 @@ class LintModelSerializationTest {
     val moduleXml = xml["module"]!!
     assertThat(moduleXml).contains("check=\"NewApi,InlinedApi\"")
     assertThat(moduleXml).contains("disable=\"TypographyQuotes\"")
+    assertRoundTrip(module)
   }
 
   private fun assertValidXml(xml: String) {
@@ -1777,6 +1769,24 @@ class LintModelSerializationTest {
     val writer = StringWriter()
     LintModelSerialization.writeVariant(variant, LintModelSerializationStringAdapter(writer = { _, _, _ -> writer }))
     return writer.toString()
+  }
+
+  private fun assertRoundTrip(module: LintModelModule) {
+    val xml = writeModule(module)
+    val newModule =
+      LintModelSerialization.readModule(
+        LintModelSerializationStringAdapter(
+          reader = { target, variantName, artifact ->
+            val contents = xml[getMapKey(target, variantName, artifact)]!!
+            StringReader(contents)
+          }
+        )
+      )
+    val newXml = writeModule(newModule)
+    assertThat(newXml.keys).containsExactlyElementsIn(xml.keys) // ensure `newXml` has nothing more
+    for ((key, contents) in xml) {
+      assertEquals("XML parsed and written back out does not match original for file " + key, contents, newXml[key])
+    }
   }
 
   private class LintModelSerializationStringAdapter(
