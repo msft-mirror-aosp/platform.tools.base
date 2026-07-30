@@ -29404,6 +29404,72 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "androidx.compose.material3.adaptive.adaptive-layout-android_1.2.0",
+    pom = "repository/androidx/compose/material3/adaptive/adaptive-layout-android/1.2.0/adaptive-layout-android-1.2.0.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/material3/adaptive/adaptive-layout-android/1.2.0",
+    deps = [
+        "androidx.annotation.annotation-experimental_1.5.1",
+        "androidx.annotation.annotation-jvm_1.9.1",
+        "androidx.core.core_1.15.0",
+        "androidx.compose.animation.animation-core-android_1.9.0",
+        "androidx.compose.animation.animation-android_1.9.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "androidx.compose.foundation.foundation-layout-android_1.9.0",
+        "androidx.window.window-core-android_1.4.0",
+        "androidx.compose.material3.adaptive.adaptive-android_1.2.0",
+        "androidx.compose.ui.ui-android_1.9.0",
+        "androidx.compose.runtime.runtime-android_1.9.0",
+        "androidx.compose.foundation.foundation-android_1.9.0",
+        "androidx.compose.ui.ui-geometry-android_1.9.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.compose.material3.adaptive.adaptive-layout_1.2.0",
+    pom = "repository/androidx/compose/material3/adaptive/adaptive-layout/1.2.0/adaptive-layout-1.2.0.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/material3/adaptive/adaptive-layout/1.2.0",
+    deps = [
+        "androidx.compose.animation.animation-core_1.9.0",
+        "androidx.compose.material3.adaptive.adaptive_1.2.0",
+        "androidx.compose.material3.adaptive.adaptive-layout-android_1.2.0",
+        "androidx.compose.ui.ui_1.9.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.compose.material3.adaptive.adaptive-navigation-android_1.2.0",
+    pom = "repository/androidx/compose/material3/adaptive/adaptive-navigation-android/1.2.0/adaptive-navigation-android-1.2.0.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/material3/adaptive/adaptive-navigation-android/1.2.0",
+    deps = [
+        "androidx.compose.material3.adaptive.adaptive-layout-android_1.2.0",
+        "androidx.annotation.annotation-experimental_1.5.1",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "androidx.annotation.annotation-jvm_1.9.1",
+        "androidx.compose.ui.ui-util-android_1.9.0",
+        "androidx.activity.activity-compose_1.10.1",
+        "androidx.compose.foundation.foundation-android_1.9.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.compose.material3.adaptive.adaptive-navigation_1.2.0",
+    pom = "repository/androidx/compose/material3/adaptive/adaptive-navigation/1.2.0/adaptive-navigation-1.2.0.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/material3/adaptive/adaptive-navigation/1.2.0",
+    deps = [
+        "androidx.compose.material3.adaptive.adaptive-layout_1.2.0",
+        "androidx.compose.material3.adaptive.adaptive-navigation-android_1.2.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.compose.material3.adaptive.adaptive_1.0.0",
     pom = "repository/androidx/compose/material3/adaptive/adaptive/1.0.0/adaptive-1.0.0.pom",
     repo_root_path = "repository",
@@ -47606,6 +47672,18 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "androidx.lifecycle.lifecycle-livedata-core-ktx_2.10.0",
+    pom = "repository/androidx/lifecycle/lifecycle-livedata-core-ktx/2.10.0/lifecycle-livedata-core-ktx-2.10.0.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/lifecycle/lifecycle-livedata-core-ktx/2.10.0",
+    deps = [
+        "androidx.lifecycle.lifecycle-livedata-core_2.10.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.lifecycle.lifecycle-livedata-core-ktx_2.2.0",
     pom = "repository/androidx/lifecycle/lifecycle-livedata-core-ktx/2.2.0/lifecycle-livedata-core-ktx-2.2.0.pom",
     repo_root_path = "repository",
@@ -48255,6 +48333,23 @@ maven_artifact(
         "androidx.lifecycle.lifecycle-livedata-core-ktx_2.8.7",
         "org.jetbrains.kotlin.kotlin-stdlib_1.8.22",
         "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.7.3",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.lifecycle.lifecycle-livedata_2.10.0",
+    pom = "repository/androidx/lifecycle/lifecycle-livedata/2.10.0/lifecycle-livedata-2.10.0.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/lifecycle/lifecycle-livedata/2.10.0",
+    deps = [
+        "androidx.arch.core.core-common_2.2.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.9.0",
+        "androidx.arch.core.core-runtime_2.2.0",
+        "androidx.lifecycle.lifecycle-livedata-core_2.10.0",
+        "androidx.lifecycle.lifecycle-livedata-core-ktx_2.10.0",
+        "org.jspecify.jspecify_1.0.0",
     ],
     visibility = ["//visibility:public"],
 )
