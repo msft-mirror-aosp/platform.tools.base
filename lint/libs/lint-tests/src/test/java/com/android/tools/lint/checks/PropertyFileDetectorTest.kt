@@ -212,6 +212,16 @@ class PropertyFileDetectorTest : AbstractCheckTest() {
     lint().files(source("gradle.properties", "systemProp.http.proxyPassword=something\n")).run().expect(expected)
   }
 
+  fun testPasswordsNotFirstLine() {
+    val expected =
+      """
+            gradle.properties:2: Warning: Storing passwords in clear text is risky; make sure this file is not shared or checked in via version control [ProxyPassword]
+            systemProp.http.proxyPassword=something
+                                          ~~~~~~~~~
+            0 errors, 1 warnings"""
+    lint().files(source("gradle.properties", "# comment\nsystemProp.http.proxyPassword=something\n")).run().expect(expected)
+  }
+
   fun testPasswords2() {
     lint()
       .files(
