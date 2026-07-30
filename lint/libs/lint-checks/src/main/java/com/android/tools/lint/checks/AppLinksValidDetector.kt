@@ -517,7 +517,7 @@ class AppLinksValidDetector : Detector(), XmlScanner {
 
       // The first child is the (potentially whitespace) element immediately after
       // <intent-filter ... >
-      val firstChildStart = context.getLocation(intentFilter.firstChild).start
+      val firstChildStart = intentFilter.firstChild?.let { context.getLocation(it).start }
       // If the content to insert ended up being empty, don't report an issue. (This will happen if
       // there's a "more fundamental" issue with the intent filter, such as a port with no
       // host, and we don't want to report redundant issues in these cases.)
