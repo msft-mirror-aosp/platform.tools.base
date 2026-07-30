@@ -1695,6 +1695,43 @@ class LintModelSerializationTest {
     }
   }
 
+  @Test
+  fun testCheckOnlySerialization() {
+    val temp = temporaryFolder.newFolder()
+    val projectDirectory = temp.resolve("projectDir").createDirectories()
+    val buildDirectory = temp.resolve("buildDir").createDirectories()
+    val modelsDir = buildDirectory.resolve("intermediates/lint-models").createDirectories()
+    modelsDir
+      .resolve("module.xml")
+      .writeText(
+        """<lint-module
+                    format="1"
+                    dir="${projectDirectory.absolutePath}"
+                    name="test_project-build"
+                    type="APP"
+                    maven="com.android.tools.demo:test_project-build:"
+                    agpVersion="4.0.0-beta01"
+                    buildFolder="${buildDirectory.absolutePath}"
+                    javaSourceLevel="1.7"
+                    compileTarget="android-25"
+                    neverShrinking="true">
+                  <lintOptions
+                      check="NewApi,InlinedApi"
+                      disable="TypographyQuotes" />
+                </lint-module>"""
+      )
+
+    val module = LintModelSerialization.readModule(source = modelsDir, readDependencies = false)
+    val lintOptions = module.lintOptions
+    assertThat(lintOptions.check).containsExactly("NewApi", "InlinedApi")
+    assertThat(lintOptions.disable).containsExactly("TypographyQuotes")
+
+    val xml = writeModule(module)
+    val moduleXml = xml["module"]!!
+    assertThat(moduleXml).contains("check=\"NewApi,InlinedApi\"")
+    assertThat(moduleXml).contains("disable=\"TypographyQuotes\"")
+  }
+
   private fun assertValidXml(xml: String) {
     try {
       val document = XmlUtils.parseDocument(xml, false)

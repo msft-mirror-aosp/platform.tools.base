@@ -547,7 +547,7 @@ private class LintModelModuleWriter(adapter: LintModelSerializationAdapter) :
       printer.printStrings("enable", lintOptions.enable, indent)
     }
     if (lintOptions.check?.isNotEmpty() == true) {
-      printer.printStrings("check", lintOptions.disable, indent)
+      printer.printStrings("check", lintOptions.check!!, indent)
     }
     if (lintOptions.abortOnError) {
       printer.printAttribute("abortOnError", VALUE_TRUE, indent)
