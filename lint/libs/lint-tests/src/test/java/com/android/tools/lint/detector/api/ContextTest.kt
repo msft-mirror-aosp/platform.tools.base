@@ -81,6 +81,18 @@ class ContextTest : AbstractCheckTest() {
     assertTrue(isSuppressedWithComment("A, Messages, B", TEST_ISSUE))
   }
 
+  fun testGetSuppressionDirective() {
+    val source =
+      """
+      package test.pkg
+
+      /* noinspection _TestIssueId */ val x = 1
+      """
+        .trimIndent() + "\n"
+    val offset = source.indexOf("/* noinspection")
+    assertEquals("_TestIssueId */ val x = 1", Context.getSuppressionDirective("noinspection ", source, offset))
+  }
+
   fun testSuppressObjectAnnotation() {
     // Regression test for https://issuetracker.google.com/116838536
     lint()
