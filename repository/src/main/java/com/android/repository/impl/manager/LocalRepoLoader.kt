@@ -13,39 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.android.repository.impl.manager
 
-package com.android.repository.impl.manager;
+import com.android.repository.api.LocalPackage
+import com.android.repository.api.ProgressIndicator
 
-import com.android.annotations.NonNull;
-import com.android.repository.api.LocalPackage;
-import com.android.repository.api.ProgressIndicator;
-import com.android.repository.api.RepoPackage;
-import java.util.Map;
+/** A facility for loading [RepoPackage]s that are installed locally. */
+interface LocalRepoLoader {
+  /**
+   * Gets our packages, loading them if necessary.
+   *
+   * @param progress A [ProgressIndicator] used to show progress (unimplemented) and logging.
+   * @return A map of install path to [LocalPackage], containing all the packages found in the given root.
+   */
+  fun getPackages(progress: ProgressIndicator): Map<String, LocalPackage>
 
-/**
- * A facility for loading {@link RepoPackage}s that are installed locally.
- */
-public interface LocalRepoLoader {
-
-
-    /**
-     * Gets our packages, loading them if necessary.
-     *
-     * @param progress A {@link ProgressIndicator} used to show progress (unimplemented) and
-     *                 logging.
-     * @return A map of install path to {@link LocalPackage}, containing all the packages found in
-     * the given root.
-     */
-    @NonNull
-    Map<String, LocalPackage> getPackages(@NonNull ProgressIndicator progress);
-
-    /**
-     * Checks whether it looks like we need to be reloaded.
-     *
-     * @param lastLocalRefreshMs The last time a load was done
-     * @param deepCheck How vigorously to check. If {@code false}, the check should be quite fast.
-     *                  If {@code true} it should still be reasonably fast, but less so.
-     * @return {@code true} if a reload is needed, {@code false} otherwise.
-     */
-    boolean needsUpdate(long lastLocalRefreshMs, boolean deepCheck);
+  /**
+   * Checks whether it looks like we need to be reloaded.
+   *
+   * @param lastLocalRefreshMs The last time a load was done
+   * @param deepCheck How vigorously to check. If `false`, the check should be quite fast. If `true` it should still be reasonably fast, but
+   *   less so.
+   * @return `true` if a reload is needed, `false` otherwise.
+   */
+  fun needsUpdate(lastLocalRefreshMs: Long, deepCheck: Boolean): Boolean
 }

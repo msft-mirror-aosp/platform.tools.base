@@ -22,7 +22,7 @@ import com.android.SdkConstants.DOT_XML
 import com.android.SdkConstants.FD_PLATFORMS
 import com.android.SdkConstants.VALUE_TRUE
 import com.android.ide.common.repository.AgpVersion
-import com.android.repository.impl.manager.LocalRepoLoaderImpl.PACKAGE_XML_FN
+import com.android.repository.impl.manager.LocalRepoLoaderImpl.Companion.PACKAGE_XML_FN
 import com.android.sdklib.AndroidTargetHash.PLATFORM_HASH_PREFIX
 import com.android.sdklib.AndroidVersion
 import com.android.sdklib.SdkVersionInfo

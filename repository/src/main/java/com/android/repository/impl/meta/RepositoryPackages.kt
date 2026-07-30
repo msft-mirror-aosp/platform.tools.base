@@ -13,277 +13,174 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.android.repository.impl.meta
 
-package com.android.repository.impl.meta;
+import com.android.repository.api.LocalPackage
+import com.android.repository.api.RemotePackage
+import com.android.repository.api.RepoPackage
+import com.android.repository.api.UpdatablePackage
+import com.android.repository.util.getAllRepoPackagePrefixes
+import com.google.common.collect.Multimap
+import com.google.common.collect.TreeMultimap
+import java.util.TreeMap
+import javax.xml.bind.annotation.XmlTransient
 
-import static com.android.repository.util.RepoPackageUtilKt.getAllRepoPackagePrefixes;
-
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
-import com.android.repository.api.LocalPackage;
-import com.android.repository.api.RemotePackage;
-import com.android.repository.api.RepoPackage;
-import com.android.repository.api.UpdatablePackage;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
-import com.google.common.collect.TreeMultimap;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import javax.xml.bind.annotation.XmlTransient;
-
-/**
- * Store of currently-known local and remote packages, in convenient forms.
- */
+/** Store of currently-known local and remote packages, in convenient forms. */
 @XmlTransient
-public final class RepositoryPackages {
+class RepositoryPackages() {
+  constructor(localPkgs: Collection<LocalPackage>, remotePkgs: Collection<RemotePackage>) : this() {
+    setLocalPkgInfos(localPkgs)
+    setRemotePkgInfos(remotePkgs)
+  }
 
-    /**
-     * All the packages that are locally-installed and have a remotely-available update.
-     */
-    private Set<UpdatablePackage> mUpdatedPkgs = Sets.newTreeSet();
+  /** Map from `path` (the unique ID of a package) to [LocalPackage], including all installed packages. */
+  var localPackages: Map<String, LocalPackage> = mutableMapOf()
+    private set
 
-    /**
-     * All the packages that are available remotely and don't have an installed version.
-     */
-    private Set<RemotePackage> mNewPkgs = Sets.newTreeSet();
+  /**
+   * Map from `path` (the unique ID of a package) to [RemotePackage]. There may be more than one version of the same [RemotePackage]
+   * available, for example if there is a stable and a preview version available.
+   */
+  var remotePackages: Map<String, RemotePackage> = TreeMap()
+    private set
 
-    /**
-     * When this object was created.
-     */
-    private final long myTimestampMs;
+  /** Multimap from all prefixes of `path`s (the unique IDs of packages) to [LocalPackage]s with that path prefix. */
+  private var mLocalPackagesByPrefix: Multimap<String, LocalPackage> = TreeMultimap.create()
 
-    /**
-     * Multimap from all prefixes of {@code path}s (the unique IDs of packages) to
-     * {@link LocalPackage}s with that path prefix.
-     *
-     * For example, if there are packages
-     * {@code foo;bar;baz},
-     * {@code foo;bar;qux}, and
-     * {@code foo;xyzzy},
-     * this map will contain
-     * {@code foo->[Baz package, Qux package, Xyzzy package]},
-     * {@code foo;bar->[Baz package, Qux package]},
-     * {@code foo;bar;baz->[Baz package]},
-     * {@code foo;bar;qux->[Qux package]},
-     * {@code foo;xyzzy->[Xyzzy package]}
-     */
-    private Multimap<String, LocalPackage> mLocalPackagesByPrefix = TreeMultimap.create();
+  /** Multimap from all prefixes of `path`s (the unique IDs of packages) to [RemotePackage]s with that path prefix. */
+  private var mRemotePackagesByPrefix: Multimap<String, RemotePackage> = TreeMultimap.create()
 
-    /**
-     * Multimap from all prefixes of {@code path}s (the unique IDs of packages) to
-     * {@link RemotePackage}s with that path prefix.
-     *
-     * @see #mLocalPackagesByPrefix for examples.
-     */
-    private Multimap<String, RemotePackage> mRemotePackagesByPrefix = TreeMultimap.create();
+  /** All the packages that are locally-installed and have a remotely-available update. */
+  private var mUpdatedPkgs: MutableSet<UpdatablePackage>? = sortedSetOf()
 
-    /**
-     * Map from {@code path} (the unique ID of a package) to {@link UpdatablePackage}, including all
-     * packages installed or available.
-     */
-    private Map<String, UpdatablePackage> mConsolidatedPkgs = Maps.newTreeMap();
+  /** All the packages that are available remotely and don't have an installed version. */
+  private var mNewPkgs: MutableSet<RemotePackage>? = sortedSetOf()
 
-    /**
-     * Map from {@code path} (the unique ID of a package) to {@link LocalPackage}, including all
-     * installed packages.
-     */
-    private Map<String, LocalPackage> mLocalPackages = Maps.newHashMap();
+  /** Map from `path` (the unique ID of a package) to [UpdatablePackage], including all packages installed or available. */
+  private var mConsolidatedPkgs: MutableMap<String, UpdatablePackage>? = TreeMap()
 
-    /**
-     * Map from {@code path} (the unique ID of a package) to {@link RemotePackage}. There may be
-     * more than one version of the same {@link RemotePackage} available, for example if there is a
-     * stable and a preview version available.
-     */
-    private Map<String, RemotePackage> mRemotePackages = Maps.newTreeMap();
+  private val mLock = Any()
 
-    private final Object mLock = new Object();
-
-    public RepositoryPackages() {
-        myTimestampMs = System.currentTimeMillis();
-    }
-
-    public RepositoryPackages(@NonNull List<LocalPackage> localPkgs,
-            @NonNull List<RemotePackage> remotePkgs) {
-        this();
-        setLocalPkgInfos(localPkgs);
-        setRemotePkgInfos(remotePkgs);
-    }
-
-    /**
-     * Returns the timestamp (in {@link System#currentTimeMillis()} time) when this object was
-     * created.
-     */
-    public long getTimestampMs() {
-        return myTimestampMs;
-    }
-
-    /**
-     * Returns the set of packages that have local updates available.
-     *
-     * @return A non-null, possibly empty Set of update candidates.
-     */
-    @NonNull
-    public Set<UpdatablePackage> getUpdatedPkgs() {
-        Set<UpdatablePackage> result = mUpdatedPkgs;
-        if (result == null) {
-            synchronized (mLock) {
-                computeUpdates();
-                result = mUpdatedPkgs;
-            }
+  /**
+   * Returns the set of packages that have local updates available.
+   *
+   * @return A non-null, possibly empty Set of update candidates.
+   */
+  val updatedPkgs: Set<UpdatablePackage>
+    get() {
+      synchronized(mLock) {
+        if (mUpdatedPkgs == null) {
+          computeUpdates()
         }
-        return result;
+        return mUpdatedPkgs!!
+      }
     }
 
-    /**
-     * Returns the set of new remote packages that are not locally present and that the user could
-     * install.
-     *
-     * @return A non-null, possibly empty Set of new install candidates.
-     */
-    @NonNull
-    public Set<RemotePackage> getNewPkgs() {
-        Set<RemotePackage> result = mNewPkgs;
-        if (result == null) {
-            synchronized (mLock) {
-                computeUpdates();
-                result = mNewPkgs;
-            }
+  /**
+   * Returns the set of new remote packages that are not locally present and that the user could install.
+   *
+   * @return A non-null, possibly empty Set of new install candidates.
+   */
+  val newPkgs: Set<RemotePackage>
+    get() {
+      synchronized(mLock) {
+        if (mNewPkgs == null) {
+          computeUpdates()
         }
-        return result;
+        return mNewPkgs!!
+      }
     }
 
-    /**
-     * Returns a map of package install ids to {@link UpdatablePackage}s representing all known
-     * local and remote packages. Remote packages corresponding to local packages will be
-     * represented by a single item containing both the local and remote info. {@see
-     * IPkgDesc#getInstallId()}
-     */
-    @NonNull
-    public Map<String, UpdatablePackage> getConsolidatedPkgs() {
-        Map<String, UpdatablePackage> result = mConsolidatedPkgs;
-        if (result == null) {
-            synchronized (mLock) {
-                computeUpdates();
-                result = mConsolidatedPkgs;
-            }
+  /**
+   * Returns a map of package install ids to [UpdatablePackage]s representing all known local and remote packages. Remote packages
+   * corresponding to local packages will be represented by a single item containing both the local and remote info. {@see *
+   * IPkgDesc#getInstallId()}
+   */
+  val consolidatedPkgs: Map<String, UpdatablePackage>
+    get() {
+      synchronized(mLock) {
+        if (mConsolidatedPkgs == null) {
+          computeUpdates()
         }
-        return result;
+        return mConsolidatedPkgs!!
+      }
     }
 
-    /**
-     * Returns a map of {@code path} (the unique ID of a package) to {@link LocalPackage}, for all
-     * packages currently installed.
-     */
-    @NonNull
-    public Map<String, LocalPackage> getLocalPackages() {
-        return mLocalPackages;
-    }
+  fun getLocalPackagesForPrefix(pathPrefix: String?): Collection<LocalPackage> {
+    return pathPrefix?.let { mLocalPackagesByPrefix.get(it) } ?: emptyList()
+  }
 
-    /**
-     * Returns a {@link Map} from {@code path} (the unique ID of a package) to
-     * {@link RemotePackage}.
-     */
-    @NonNull
-    public Map<String, RemotePackage> getRemotePackages() {
-        return mRemotePackages;
-    }
+  fun getRemotePackagesForPrefix(pathPrefix: String?): Collection<RemotePackage> {
+    return pathPrefix?.let { mRemotePackagesByPrefix.get(it) } ?: emptyList()
+  }
 
-    @NonNull
-    public Collection<LocalPackage> getLocalPackagesForPrefix(
-            @Nullable String pathPrefix) {
-        return mLocalPackagesByPrefix.get(pathPrefix);
+  /**
+   * Sets the collection of known [LocalPackage]s, and recomputes the list of updates and new packages, if [RemotePackage]s have been set.
+   */
+  fun setLocalPkgInfos(packages: Collection<LocalPackage>) {
+    synchronized(mLock) {
+      this.localPackages = packages.associateBy { it.path }
+      invalidate()
+      mLocalPackagesByPrefix = computePackagePrefixes(this.localPackages)
     }
+  }
 
-    @NonNull
-    public Collection<RemotePackage> getRemotePackagesForPrefix(
-            @Nullable String pathPrefix) {
-        return mRemotePackagesByPrefix.get(pathPrefix);
+  /**
+   * Sets the collection of known [RemotePackage]s, and recomputes the list of updates and new packages, if [LocalPackage]s have been set.
+   */
+  fun setRemotePkgInfos(packages: Collection<RemotePackage>) {
+    synchronized(mLock) {
+      this.remotePackages = packages.associateByTo(TreeMap()) { it.path }
+      invalidate()
+      mRemotePackagesByPrefix = computePackagePrefixes(this.remotePackages)
     }
+  }
 
-    /**
-     * Sets the collection of known {@link LocalPackage}s, and recomputes the list of updates and
-     * new packages, if {@link RemotePackage}s have been set.
-     */
-    public void setLocalPkgInfos(@NonNull Collection<LocalPackage> packages) {
-        synchronized (mLock) {
-            mLocalPackages = mapByPath(packages);
-            invalidate();
-            mLocalPackagesByPrefix = computePackagePrefixes(mLocalPackages);
+  private fun invalidate() {
+    mConsolidatedPkgs = null
+    mNewPkgs = null
+    mUpdatedPkgs = null
+  }
+
+  private fun computeUpdates() {
+    val newConsolidatedPkgs = TreeMap<String, UpdatablePackage>()
+    val updates = mutableSetOf<UpdatablePackage>()
+
+    for ((path, local) in localPackages) {
+      val updatable = UpdatablePackage(local)
+      newConsolidatedPkgs[path] = updatable
+      remotePackages[path]?.let { remote ->
+        updatable.setRemote(remote)
+        if (updatable.isUpdate) {
+          updates.add(updatable)
         }
+      }
     }
 
-    /**
-     * Sets the collection of known {@link RemotePackage}s, and recomputes the list of updates and
-     * new packages, if {@link LocalPackage}s have been set.
-     */
-    public void setRemotePkgInfos(@NonNull Collection<RemotePackage> packages) {
-        synchronized (mLock) {
-            mRemotePackages = mapByPath(packages);
-            invalidate();
-            mRemotePackagesByPrefix = computePackagePrefixes(mRemotePackages);
+    val news = mutableSetOf<RemotePackage>()
+    for ((path, remote) in remotePackages) {
+      if (!newConsolidatedPkgs.containsKey(path)) {
+        news.add(remote)
+        val updatable = UpdatablePackage(remote)
+        newConsolidatedPkgs[path] = updatable
+      }
+    }
+
+    mNewPkgs = news
+    mUpdatedPkgs = updates
+    mConsolidatedPkgs = newConsolidatedPkgs
+  }
+
+  companion object {
+    private fun <P : RepoPackage> computePackagePrefixes(packages: Map<String, P>): Multimap<String, P> {
+      val packagesByPrefix: Multimap<String, P> = TreeMultimap.create()
+      for ((path, p) in packages) {
+        val prefixes = getAllRepoPackagePrefixes(path)
+        for (prefix in prefixes) {
+          packagesByPrefix.put(prefix, p)
         }
+      }
+      return packagesByPrefix
     }
-
-    @NonNull
-    private static <T extends RepoPackage> Map<String, T> mapByPath(
-      @NonNull Collection<T> packages) {
-        return ImmutableMap.copyOf(
-                packages.stream()
-                        .collect(Collectors.toMap(RepoPackage::getPath, Function.identity())));
-    }
-
-    private void invalidate() {
-        mConsolidatedPkgs = null;
-        mNewPkgs = null;
-        mUpdatedPkgs = null;
-    }
-
-    private void computeUpdates() {
-        Map<String, UpdatablePackage> newConsolidatedPkgs = Maps.newTreeMap();
-        Set<UpdatablePackage> updates = Sets.newHashSet();
-        for (String path : mLocalPackages.keySet()) {
-            LocalPackage local = mLocalPackages.get(path);
-            UpdatablePackage updatable = new UpdatablePackage(local);
-            newConsolidatedPkgs.put(path, updatable);
-            if (mRemotePackages.containsKey(path)) {
-                updatable.setRemote(mRemotePackages.get(path));
-                if (updatable.isUpdate()) {
-                    updates.add(updatable);
-                }
-            }
-        }
-        Set<RemotePackage> news = Sets.newHashSet();
-        for (String path : mRemotePackages.keySet()) {
-            if (!newConsolidatedPkgs.containsKey(path)) {
-                RemotePackage remote = mRemotePackages.get(path);
-                news.add(remote);
-                UpdatablePackage updatable = new UpdatablePackage(remote);
-                newConsolidatedPkgs.put(path, updatable);
-            }
-        }
-        mNewPkgs = news;
-        mUpdatedPkgs = updates;
-        mConsolidatedPkgs = newConsolidatedPkgs;
-    }
-
-    private static <P extends RepoPackage> Multimap<String, P> computePackagePrefixes(
-            Map<String, ? extends P> packages) {
-        Multimap<String, P> packagesByPrefix = TreeMultimap.create();
-        for (Map.Entry<String, ? extends P> entry : packages.entrySet()) {
-            String path = entry.getKey();
-            P p = entry.getValue();
-            List<String> prefixes = getAllRepoPackagePrefixes(path);
-            for (String prefix : prefixes) {
-                packagesByPrefix.put(prefix, p);
-            }
-        }
-        return packagesByPrefix;
-    }
-
+  }
 }
