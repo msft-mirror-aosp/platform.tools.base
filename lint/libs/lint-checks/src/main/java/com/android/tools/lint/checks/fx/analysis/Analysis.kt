@@ -149,6 +149,7 @@ import org.jetbrains.uast.getContainingUClass
 import org.jetbrains.uast.getParameterForArgument
 import org.jetbrains.uast.java.isJava
 import org.jetbrains.uast.resolveToUElement
+import org.jetbrains.uast.textRange
 import org.jetbrains.uast.toUElement
 import org.jetbrains.uast.tryResolve
 import org.jetbrains.uast.util.isConstructorCall
@@ -399,6 +400,9 @@ internal open class Analysis<FX : Any>(
       /** Analyze local sub-expression that might be shared and reusable */
       fun loopCached(e: UExpression) = cache.getOrPut(e) { loop(e) }
 
+      fun UExpression.staticContext(): Scope =
+        Scope.Generated(textRange?.startOffset ?: /* slow case for synthetic UAST */ asSourceString().hashCode())
+
       fun callMethod(receiver: UExpression?, method: PsiMethod, args: List<UExpression>): Result<Type<FX>, R> {
         fun implicitThis() = e.getContainingUClass()?.javaPsi?.let { PsiClassAdapter.translate(typeParams, it) }!!
 
@@ -435,7 +439,7 @@ internal open class Analysis<FX : Any>(
                     virRecvType to virRecvFx.subst!!,
                     MethodId(method),
                     (listOf(extRecvType) + restTypes) to (substLattice.joinOf(extRecvFx.subst, restFx.subst)!!),
-                    Type.Sym.Param("virt*", Scope.Generated(e.hashCode())),
+                    Type.Sym.Param("virt*", e.staticContext()),
                   )
               }
             Result(appType, virRecvFx join extRecvFx join restFx join onInvocationEffect(e, appFx))
@@ -453,7 +457,7 @@ internal open class Analysis<FX : Any>(
                     virRecvType to virRecvFx.subst!!,
                     MethodId(method),
                     restTypes to restFx.subst!!,
-                    Type.Sym.Param("virt", Scope.Generated(e.hashCode())),
+                    Type.Sym.Param("virt", e.staticContext()),
                   )
               }
             Result(appType, virRecvFx join restFx join onInvocationEffect(e, appFx))
@@ -725,7 +729,7 @@ internal open class Analysis<FX : Any>(
             }
           val (t, fx) = mode.eval(rec, env.withVars<FX>(lambdaParams), e.body, returns.add(ReturnRecord(e)))
           val r = Type.Lambda(lambdaParams.map { (_, t) -> t }, Result(t, fx.result), funIntf)
-          val name = Type.Sym.Param("lam", Scope.Generated(e.hashCode()))
+          val name = Type.Sym.Param("lam", e.staticContext())
           val subst = fx.subst!!.put(name, r)
           Result(name, bottom.binding(substLattice, subst) + fx.errors)
         }
