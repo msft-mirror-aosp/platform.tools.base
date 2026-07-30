@@ -16,6 +16,7 @@
 package com.android.tools.deployer.common
 
 import com.android.adblib.ConnectedDevice
+import com.android.adblib.testingutils.TestingAdbSession
 import com.android.ddmlib.AdbCommandRejectedException
 import com.android.ddmlib.Client
 import com.android.ddmlib.ClientData
@@ -45,7 +46,8 @@ class DeviceHolderTest {
 
   private val connectedDevice = mock(ConnectedDevice::class.java)
   private val iDevice = mock(IDevice::class.java)
-  private val deviceHolder = DeviceHolder(iDevice, Optional.of(connectedDevice))
+  private val adbSession = TestingAdbSession()
+  private val deviceHolder = DeviceHolder(iDevice, Optional.of(connectedDevice), adbSession)
 
   @Test
   fun testIDeviceDelegatedProperties() {

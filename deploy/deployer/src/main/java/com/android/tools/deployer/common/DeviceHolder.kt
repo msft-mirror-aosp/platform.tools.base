@@ -15,7 +15,10 @@
  */
 package com.android.tools.deployer.common
 
+import com.android.adblib.AdbSession
 import com.android.adblib.ConnectedDevice
+import com.android.adblib.deviceProperties
+import com.android.adblib.property
 import com.android.ddmlib.AdbCommandRejectedException
 import com.android.ddmlib.IDevice
 import com.android.ddmlib.IShellOutputReceiver
@@ -25,13 +28,21 @@ import com.android.ddmlib.SimpleConnectedSocket
 import com.android.ddmlib.SyncException
 import com.android.ddmlib.TimeoutException
 import com.android.sdklib.AndroidVersion
+import com.android.sdklib.AndroidVersionUtil
 import com.android.tools.deploy.proto.Deploy
 import java.io.IOException
 import java.io.InputStream
 import java.util.Optional
 import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 
-class DeviceHolder(
+private val DEVICE_PROPERTIES_TIMEOUT = 2000.milliseconds
+
+class DeviceHolder
+@JvmOverloads
+constructor(
   private val iDevice: IDevice,
   /**
    * [connectedDevice] is Optional to indicate whether we attempted to find a device corresponding to [iDevice] in the [AdbSession].
@@ -40,10 +51,42 @@ class DeviceHolder(
    * - Optional.of(device): Lookup was attempted and succeeded.
    */
   private val connectedDevice: Optional<ConnectedDevice>?,
+  private val adbSession: AdbSession? = null,
 ) {
+  init {
+    if (connectedDevice != null && adbSession == null) {
+      throw IllegalArgumentException("adbSession is required with connectedDevice in case the optional is empty")
+    }
+  }
 
   val version: AndroidVersion
-    get() = iDevice.version
+    get() {
+      return runMigratedOrElse(
+        onLegacy = {
+          // Retrieve using IDevice
+          iDevice.version
+        },
+        onMigrated = { connectedDevice ->
+          // Retrieve using ConnectedDevice
+          val properties =
+            try {
+              runBlocking {
+                // `version` is build from device properties and this call may take 2 seconds for
+                // the properties to load
+                withTimeout(DEVICE_PROPERTIES_TIMEOUT) {
+                  if (connectedDevice.isPresent) {
+                    connectedDevice.get().deviceProperties().allReadonly()
+                  } else null
+                }
+              }
+            } catch (_: Exception) {
+              // Do not throw exceptions to match the iDevice.version behavior
+              null
+            }
+          properties?.let { AndroidVersionUtil.androidVersionFromDeviceProperties(it) } ?: AndroidVersion.DEFAULT
+        },
+      )
+    }
 
   val serialNumber: String
     get() = iDevice.serialNumber
@@ -165,6 +208,23 @@ class DeviceHolder(
         is TimeoutException -> throw IOException(e)
         else -> throw e
       }
+    }
+  }
+
+  private inline fun <T> runMigratedOrElse(
+    crossinline onLegacy: () -> T,
+    // `onMigrated` accepts an Optional<ConnectedDevice> since the ConnectedDevice lookup could have failed (e.g. because device has
+    // disconnected)
+    crossinline onMigrated: (Optional<ConnectedDevice>) -> T,
+  ): T {
+    // TODO: Once we add code that looks up `connectedDevice` using AdbSession.connectedDeviceTracker
+    //  and feed it to DeviceHolder across the codebase we could remove the check for
+    //  `connectedDevice != null`.
+    val enabled = adbSession?.property(DeployerProperties.USE_CONNECTED_DEVICE) ?: false
+    return if (enabled && connectedDevice != null) {
+      onMigrated(connectedDevice)
+    } else {
+      onLegacy()
     }
   }
 }
