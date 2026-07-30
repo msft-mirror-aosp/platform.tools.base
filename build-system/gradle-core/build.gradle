@@ -130,6 +130,12 @@ gradlePlugin {
             id = "com.android.kotlin.multiplatform.library"
             implementationClass = "com.android.build.gradle.api.KotlinMultiplatformAndroidPlugin"
         }
+        // Even through the plugin extension is @Incubating, we still want to publish this,
+        // so our tests in CI can test the plugin end to end.
+        comAndroidR8 {
+            id = "com.android.r8"
+            implementationClass = "com.android.build.gradle.R8Plugin"
+        }
     }
 }
 

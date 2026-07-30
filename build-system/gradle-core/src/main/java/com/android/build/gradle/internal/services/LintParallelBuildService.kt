@@ -24,6 +24,7 @@ import com.sun.management.OperatingSystemMXBean
 import java.lang.management.ManagementFactory
 import java.util.Locale
 import org.gradle.api.logging.Logging
+import org.gradle.api.provider.Provider
 import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceParameters
 import org.gradle.api.services.BuildServiceRegistry
@@ -32,8 +33,17 @@ import org.gradle.api.services.BuildServiceRegistry
 abstract class LintParallelBuildService : BuildService<BuildServiceParameters.None> {
 
   companion object {
-    fun calculateMaxParallelUsages(projectOptions: ProjectOptions, maxRuntimeMemory: Long, totalPhysicalMemory: Long?): Int? {
-      return if (projectOptions.get(BooleanOption.RUN_LINT_IN_PROCESS)) {
+    const val LINT_PARALLEL_BUILD_SERVICE_IN_PROCESS = "LintParallelBuildServiceInProcess"
+    const val LINT_PARALLEL_BUILD_SERVICE_OUT_OF_PROCESS = "LintParallelBuildServiceOutOfProcess"
+
+    @JvmOverloads
+    fun calculateMaxParallelUsages(
+      projectOptions: ProjectOptions,
+      maxRuntimeMemory: Long,
+      totalPhysicalMemory: Long?,
+      runInProcess: Boolean = projectOptions.get(BooleanOption.RUN_LINT_IN_PROCESS),
+    ): Int? {
+      return if (runInProcess) {
         calculateMaxParallelUsagesInProcess(projectOptions, maxRuntimeMemory)
       } else {
         calculateMaxParallelUsagesOutOfProcess(projectOptions, maxRuntimeMemory, totalPhysicalMemory ?: return null)
@@ -96,16 +106,33 @@ abstract class LintParallelBuildService : BuildService<BuildServiceParameters.No
  * Returns a Provider of the [LintParallelBuildService].
  *
  * Use this function instead of [getBuildService] to get the [LintParallelBuildService] because we don't want an instance of the
- * [LintParallelBuildService] per class loader.
+ * [LintParallelBuildService] per class loader, and we register separate build service instances for in-process and out-of-process lint
+ * executions.
  *
  * This function uses registerIfAbsent in order to ensure locking when accessing build services.
  */
-fun BuildServiceRegistry.getLintParallelBuildService(projectOptions: ProjectOptions) =
-  registerIfAbsent("LintParallelBuildService", LintParallelBuildService::class.java) { spec ->
+@JvmOverloads
+fun BuildServiceRegistry.getLintParallelBuildService(
+  projectOptions: ProjectOptions,
+  runInProcess: Boolean = projectOptions.get(BooleanOption.RUN_LINT_IN_PROCESS),
+): Provider<LintParallelBuildService> {
+  val serviceName =
+    if (runInProcess) {
+      LintParallelBuildService.LINT_PARALLEL_BUILD_SERVICE_IN_PROCESS
+    } else {
+      LintParallelBuildService.LINT_PARALLEL_BUILD_SERVICE_OUT_OF_PROCESS
+    }
+  return registerIfAbsent(serviceName, LintParallelBuildService::class.java) { spec ->
     spec.maxParallelUsages.set(
-      LintParallelBuildService.calculateMaxParallelUsages(projectOptions, Runtime.getRuntime().maxMemory(), getTotalPhysicalMemory())
+      LintParallelBuildService.calculateMaxParallelUsages(
+        projectOptions = projectOptions,
+        maxRuntimeMemory = Runtime.getRuntime().maxMemory(),
+        totalPhysicalMemory = getTotalPhysicalMemory(),
+        runInProcess = runInProcess,
+      )
     )
   }
+}
 
 private fun getTotalPhysicalMemory() =
   try {

@@ -16,8 +16,8 @@
 package com.android.tools.deployer.modelv1.component;
 
 import com.android.annotations.NonNull;
-import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
+import com.android.tools.deployer.common.DeviceHolder;
 import com.android.tools.deployer.model.ModelException;
 import com.android.tools.deployer.model.component.AppComponent;
 import com.android.tools.deployer.model.component.Tile;
@@ -36,7 +36,7 @@ public class TileV1 extends Tile implements WearComponentV1 {
             @NonNull String extraFlags,
             @NonNull AppComponent.Mode activationMode,
             @NonNull IShellOutputReceiver addTileReceiver,
-            @NonNull IDevice device)
+            @NonNull DeviceHolder device)
             throws ModelException {
         validate(extraFlags);
         logger.info(

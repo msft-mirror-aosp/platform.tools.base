@@ -82,6 +82,13 @@ abstract class BaseDexingTransform<T : BaseDexingTransform.Parameters> : Transfo
     @get:Internal val errorFormat: Property<ErrorFormatMode>
     @get:Optional @get:InputFiles @get:PathSensitive(PathSensitivity.NONE) val desugarLibConfigFiles: ConfigurableFileCollection
     @get:Input val enableGlobalSynthetics: Property<Boolean>
+
+    /**
+     * Whether to use a no-op consumer for global synthetics in D8.
+     *
+     * When true (e.g. for debug builds with minSdkVersion >= 21), D8 desugaring will skip generating individual per-class `.globals` files
+     * since the build uses a pre-baked shared `globals.dex` instead. This prevents duplicate class issues.
+     */
     @get:Input val useNoOpGlobalSyntheticsConsumer: Property<Boolean>
     @get:Input val enableApiModeling: Property<Boolean>
   }
@@ -109,7 +116,7 @@ abstract class BaseDexingTransform<T : BaseDexingTransform.Parameters> : Transfo
     val provideIncrementalSupport = inputDirOrJar.isDirectory && classpath == null
 
     val (dexOutputDir, globalSyntheticsOutputDir) =
-      if (parameters.enableGlobalSynthetics.get()) {
+      if (parameters.enableGlobalSynthetics.get() && !parameters.useNoOpGlobalSyntheticsConsumer.get()) {
         Pair(outputDir.resolve(computeDexDirName(outputDir)), outputDir.resolve(computeGlobalSyntheticsDirName(outputDir)))
       } else {
         Pair(outputDir, null)
@@ -249,6 +256,7 @@ abstract class BaseDexingTransform<T : BaseDexingTransform.Parameters> : Transfo
             coreLibDesugarConfig = combineFileContents(parameters.desugarLibConfigFiles.files),
             enableApiModeling = parameters.enableApiModeling.get(),
             messageReceiver = MessageReceiverImpl(parameters.errorFormat.get(), LoggerFactory.getLogger(BaseDexingTransform::class.java)),
+            useNoOpGlobalSyntheticsConsumer = parameters.useNoOpGlobalSyntheticsConsumer.get(),
           )
         )
 
@@ -410,6 +418,10 @@ object DexingRegistration {
     val debuggable: Boolean,
     val enableCoreLibraryDesugaring: Boolean,
     val enableGlobalSynthetics: Boolean,
+    /**
+     * Whether the variant's dexing should use a no-op consumer for global synthetics. When true, D8 desugaring skips generating individual
+     * per-class `.globals` files because a pre-baked shared `globals.dex` will be bundled in the final APK instead.
+     */
     val useNoOpGlobalSyntheticsConsumer: Boolean,
     val enableApiModeling: Boolean,
     val dependenciesClassesAreInstrumented: Boolean,
@@ -588,7 +600,7 @@ object DexingRegistration {
       }
 
       spec.from.attribute(ARTIFACT_TYPE_ATTRIBUTE, inputArtifactType.type)
-      if (component.enableGlobalSynthetics) {
+      if (component.enableGlobalSynthetics && !component.useNoOpGlobalSyntheticsConsumer) {
         spec.to.attribute(ARTIFACT_TYPE_ATTRIBUTE, AndroidArtifacts.ArtifactType.D8_OUTPUTS.type)
       } else {
         spec.to.attribute(ARTIFACT_TYPE_ATTRIBUTE, AndroidArtifacts.ArtifactType.DEX.type)

@@ -62,18 +62,18 @@ class ArtProfile internal constructor(val profileData: Map<DexFile, DexFileData>
    * [ArtProfile] formats.
    */
   fun addMetadata(other: ArtProfile, version: MetadataVersion): ArtProfile {
-    val keys = mutableSetOf<String>()
-    val files = mutableMapOf<String, DexFile>()
-    val outFiles = mutableMapOf<String, DexFile>()
-    val outValues = mutableMapOf<String, DexFileData>()
+    val keys = mutableSetOf<Int>()
+    val files = mutableMapOf<Int, DexFile>()
+    val outFiles = mutableMapOf<Int, DexFile>()
+    val outValues = mutableMapOf<Int, DexFileData>()
     for ((file, value) in profileData) {
-      val key = extractKey(file.name)
+      val key = file.dexIndex
       keys += key
       files[key] = file
       outValues[key] = value
     }
     for ((file, value) in other.profileData) {
-      val key = extractKey(file.name)
+      val key = file.dexIndex
       keys += key
       val source = files[key]
       outFiles +=
@@ -82,7 +82,8 @@ class ArtProfile internal constructor(val profileData: Map<DexFile, DexFileData>
         } else {
           key to file
         }
-      outValues[key] = value + outValues[key]
+      val existing = outValues[key]
+      outValues[key] = if (existing != null) value + existing else value
     }
     // Create new profile
     val combinedMap = mutableMapOf<DexFile, DexFileData>()
@@ -96,13 +97,6 @@ class ArtProfile internal constructor(val profileData: Map<DexFile, DexFileData>
     return ArtProfile(combinedMap, apkName)
   }
 
-  private fun extractKey(key: String): String {
-    val result = key.substringAfter('!').substringAfter(':')
-    assert(result.indexOf(':') == -1)
-    assert(result.indexOf('!') == -1)
-    return result
-  }
-
   private fun DexFile.addMetadata(other: DexFile, version: MetadataVersion): DexFile {
     return when (version) {
       MetadataVersion.V_001 -> this
@@ -111,8 +105,8 @@ class ArtProfile internal constructor(val profileData: Map<DexFile, DexFileData>
         // Otherwise fall back to the original profile and treat it as the source of truth.
 
         // Ensure it's the same DexFile
-        if (name == other.name) {
-          DexFile(header = this.header.addMetadata(other.header), name = name, dexChecksum = dexChecksum)
+        if (dexIndex == other.dexIndex) {
+          DexFile(header = this.header.addMetadata(other.header), dexChecksum = dexChecksum, dexIndex = dexIndex)
         } else {
           this
         }

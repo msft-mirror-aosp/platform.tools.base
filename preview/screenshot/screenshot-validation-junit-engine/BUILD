@@ -9,6 +9,12 @@ maven_library(
         "src/main/java/**/*.kt",
     ]),
     coordinates = "com.android.tools.screenshot:screenshot-validation-junit-engine",
+    data_deps = [
+        "//tools/base/layoutlib-api:tools.layoutlib-api",
+        "@maven//:com.android.tools.layoutlib.layoutlib_16.1.0-jdk17",
+        "@maven//:com.android.tools.layoutlib.layoutlib-resources_16.1.0-jdk17",
+        "@maven//:com.android.tools.layoutlib.layoutlib-runtime_16.1.0-jdk17",
+    ],
     resource_strip_prefix = "tools/base/preview/screenshot/screenshot-validation-junit-engine/src/main/resources/",
     resources = glob(["src/main/resources/**"]),
     version = SCREENSHOT_TEST_PLUGIN_VERSION,

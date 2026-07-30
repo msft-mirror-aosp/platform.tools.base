@@ -630,7 +630,6 @@ https://issuetracker.google.com/398918561
   * com.android.build.api.dsl.ManagedVirtualDevice.setTestedAbi: void (java.lang.String)
 https://issuetracker.google.com/422422985
   * com.android.build.api.dsl.KeepRules.getFiles: org.gradle.api.provider.SetProperty<java.io.File> ()
-  * com.android.build.api.dsl.Optimization.getPackageScope: org.gradle.api.provider.SetProperty<java.lang.String> ()
 https://issuetracker.google.com/438803230
   * com.android.build.api.variant.CanProduceConsumerProguardFiles
   * com.android.build.api.variant.CanProduceConsumerProguardFiles.getConsumerProguardFiles: org.gradle.api.provider.ListProperty<org.gradle.api.file.RegularFile> ()
@@ -824,3 +823,5 @@ https://issuetracker.google.com/534880695
   * com.android.build.api.dsl.AgpTestSuite.setRequiresUpdateTask: void (boolean)
   * com.android.build.api.dsl.TestTaskContext.isUpdateTask: boolean ()
   * com.android.build.api.variant.TestSuite.getRequiresUpdateTask: org.gradle.api.provider.Provider<java.lang.Boolean> ()
+https://issuetracker.google.com/537432993
+  * com.android.build.api.dsl.R8Extension

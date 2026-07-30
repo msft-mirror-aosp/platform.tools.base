@@ -18,11 +18,14 @@ package com.android.tools.ui.inspector
 
 import com.android.prefs.AndroidLocationsSingleton
 import java.io.File
+import java.net.HttpURLConnection
 import java.net.URL
 import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 import java.util.zip.ZipInputStream
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 /** Abstraction for downloading remote artifacts. */
 interface ArtifactDownloader {
@@ -36,10 +39,30 @@ interface ArtifactDownloader {
   fun download(url: String, outputFile: File)
 }
 
-/** Default implementation of [ArtifactDownloader] that downloads files over standard HTTP. */
-class HttpArtifactDownloader : ArtifactDownloader {
+/** Default connect timeout for artifact downloads. */
+private val DEFAULT_CONNECT_TIMEOUT = 30.seconds
+
+/** Default read timeout for artifact downloads. Bounds each read stall, not the total transfer time. */
+private val DEFAULT_READ_TIMEOUT = 30.seconds
+
+/**
+ * Default implementation of [ArtifactDownloader] that downloads files over standard HTTP. Connect and read timeouts prevent an unresponsive
+ * server from hanging the CLI forever; a read timeout bounds each stall rather than the total transfer, so large artifacts on slow
+ * connections still complete.
+ */
+class HttpArtifactDownloader(
+  private val connectTimeout: Duration = DEFAULT_CONNECT_TIMEOUT,
+  private val readTimeout: Duration = DEFAULT_READ_TIMEOUT,
+) : ArtifactDownloader {
   override fun download(url: String, outputFile: File) {
-    URL(url).openStream().use { input -> outputFile.outputStream().use { output -> input.copyTo(output) } }
+    val connection = URL(url).openConnection()
+    connection.connectTimeout = connectTimeout.inWholeMilliseconds.toInt()
+    connection.readTimeout = readTimeout.inWholeMilliseconds.toInt()
+    try {
+      connection.getInputStream().use { input -> outputFile.outputStream().use { output -> input.copyTo(output) } }
+    } finally {
+      (connection as? HttpURLConnection)?.disconnect()
+    }
   }
 }
 

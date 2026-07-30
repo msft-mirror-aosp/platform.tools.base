@@ -89,8 +89,17 @@ public class JarTestSuiteRunner extends Suite {
             throws ClassNotFoundException, IOException {
         String jarSuffix = System.getProperty("test.suite.jar");
         if (jarSuffix == null) {
-            throw new RuntimeException(
-                    "Must set test.suite.jar to the name of the jar containing JUnit tests");
+            if (TestUtils.runningFromBazel()) {
+                throw new RuntimeException(
+                        "Must set test.suite.jar to the name of the jar containing JUnit tests");
+            }
+
+            // When running tests outside of Bazel (such as via JPS or IntelliJ IDE), test.suite.jar
+            // is not set.
+            // Returning an empty array allows the test suite class to complete gracefully while
+            // individual test
+            // classes are discovered and executed directly by the IDE test runner.
+            return new Class<?>[0];
         }
 
         long start = System.currentTimeMillis();

@@ -51,22 +51,25 @@ void MemoryRequestHandler::PopulateEvents(NativeAllocationContext* batch) {
   }
 
   auto frames = processor_->ExecuteQuery(
-      "select spf.id, spf.name, spm.name, sps.name, sps.source_file, "
-      "sps.line_number, sps.id as SymbolId "
+      "select spf.id, spf.name, sps.name, spf.deobfuscated_name, "
+      "spm.name, sps.source_file, sps.line_number, sps.id as SymbolId "
       "from stack_profile_frame spf join stack_profile_mapping spm "
       "on spf.mapping = spm.id LEFT join stack_profile_symbol sps on "
       "sps.symbol_set_id = spf.symbol_set_id order by SymbolId asc");
   while (frames.Next()) {
     auto id = frames.Get(0).long_value;
     auto frame_name = GetStringOrNull(frames.Get(1));
-    auto module_name = GetStringOrNull(frames.Get(2));
-    auto symbol_name = GetStringOrNull(frames.Get(3));
-    auto source_file = GetStringOrNull(frames.Get(4));
-    auto line_number = GetLongOrDefault(frames.Get(5), 0);
+    auto symbol_name = GetStringOrNull(frames.Get(2));
+    auto deobfuscated_name = GetStringOrNull(frames.Get(3));
+    auto module_name = GetStringOrNull(frames.Get(4));
+    auto source_file = GetStringOrNull(frames.Get(5));
+    auto line_number = GetLongOrDefault(frames.Get(6), 0);
     auto frame = batch->add_frames();
     char* demangled_name = nullptr;
     // TODO (b/151081845): Enable demangling support on windows.
-    if (symbol_name != nullptr) {
+    if (deobfuscated_name != nullptr) {
+      frame_name = deobfuscated_name;
+    } else if (symbol_name != nullptr) {
       frame_name = symbol_name;
     } else if (frame_name != nullptr) {
 #ifndef _MSC_VER

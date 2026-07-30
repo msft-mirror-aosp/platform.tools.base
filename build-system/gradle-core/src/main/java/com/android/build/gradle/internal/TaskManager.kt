@@ -319,6 +319,9 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
     creationConfig.artifacts
       .forScope(InternalScopedArtifacts.InternalScope.LOCAL_DEPS)
       .setInitialContent(ScopedArtifact.CLASSES, creationConfig.computeLocalPackagedJars())
+    creationConfig.artifacts
+      .forScope(InternalScopedArtifacts.InternalScope.LOCAL_DEPS)
+      .setInitialContent(ScopedArtifact.JAVA_RES, creationConfig.computeLocalPackagedJars())
 
     // Add stream of external java resources if EXTERNAL_LIBRARIES isn't in the set of java res
     // merging scopes.

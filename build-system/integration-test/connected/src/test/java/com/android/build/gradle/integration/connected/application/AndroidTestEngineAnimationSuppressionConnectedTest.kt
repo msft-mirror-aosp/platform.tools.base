@@ -68,6 +68,7 @@ class AndroidTestEngineAnimationSuppressionConnectedTest {
                 inputs.add(AgpTestSuiteInputParameters.TEST_APKS)
                 inputs.add(AgpTestSuiteInputParameters.ADB_EXECUTABLE)
                 inputs.add(AgpTestSuiteInputParameters.AAPT2_EXECUTABLE)
+                inputs.add(AgpTestSuiteInputParameters.ANIMATIONS_DISABLED)
                 includeEngines.add("android-test-engine")
                 addInputProperty("android-test.listener.stream-base64-encoded-result", "true")
                 addInputProperty("android-test.instrumentation-runner-class", "androidx.test.runner.AndroidJUnitRunner")

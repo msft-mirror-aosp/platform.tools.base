@@ -182,9 +182,13 @@ It then starts the injection sequence:
 
 * Queries the app private data directory dynamically using `run-as <package> pwd`
   to support custom multi-user environments (e.g. `/data/user/10/`).
-* Automatically enables global view debugging by running
-  `settings put global debug_view_attributes 1` (allowing the platform to expose
-  attribute resolution stacks).
+* When the `resolution-stack` facet is requested, enables view debugging for the
+  inspected app via `settings put global debug_view_attributes_application_package
+  <package>` (allowing the platform to expose attribute resolution stacks). The
+  setting is read first and skipped if it already names the package or the global
+  `debug_view_attributes` is already enabled; when actually flipped it is left set
+  (changing it in either direction restarts the app's activities) and a stderr
+  notice explains how to clear it.
 * Runs `adb shell run-as <package> cp` to move files from
   `/data/local/tmp` to the app memory space.
 * Uses `run-as <package>` to `chmod` all binary and jar files to read-only (`444`),
@@ -286,21 +290,15 @@ taking one or more comma-separated facets (the option is also repeatable):
 
 *Note: The separate `get-params` command proposed in early designs is not implemented.*
 
-## Periodic Sampling of UI Changes
+## Change detection
 
-`dump-ui --record` samples the UI tree at a fixed interval for a bounded
-duration — for example to inspect an animation — and then reports a
-single JSON document: the initial tree plus one frame per subsequent
-sample, carrying that sample's structural, attribute, and
-configuration diffs:
-
-```bash
-ui-inspector dump-ui --record --interval 100ms --duration 5s
-```
-
-Durations take explicit units (`100ms`, `5s`, `1m`). `--duration` is
-required: a recording is always bounded, reported when the
-window ends.
+The standalone CLI deliberately ships no change-detection mode. An
+earlier `dump-ui --record` sampling mode (bounded-window recording with
+per-frame diffs) was removed before the CLI-team pitch: the
+change-record schema was the least settled part of the interface, and
+`android layout` already has `--diff` semantics that any change
+detection should be designed against, together with the CLI team, at
+integration time.
 
 ## Retrieving recomposition counts and state reads
 

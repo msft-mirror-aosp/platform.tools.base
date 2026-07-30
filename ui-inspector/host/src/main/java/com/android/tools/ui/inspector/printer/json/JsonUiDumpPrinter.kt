@@ -17,15 +17,10 @@
 package com.android.tools.ui.inspector.printer.json
 
 import com.android.tools.ui.inspector.AppContext
-import com.android.tools.ui.inspector.ConfigurationDiff
 import com.android.tools.ui.inspector.DeviceConfiguration
 import com.android.tools.ui.inspector.DeviceLocale
-import com.android.tools.ui.inspector.NodeChange
-import com.android.tools.ui.inspector.TimedUiDump
-import com.android.tools.ui.inspector.TreeDiff
 import com.android.tools.ui.inspector.UiDump
 import com.android.tools.ui.inspector.UiNode
-import com.android.tools.ui.inspector.diffUiDumps
 import com.android.tools.ui.inspector.printer.UiDumpPrinter
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
@@ -37,7 +32,9 @@ import com.google.gson.JsonPrimitive
 import java.io.IOException
 import java.io.OutputStreamWriter
 import java.io.PrintStream
+import java.nio.file.AccessDeniedException
 import java.nio.file.Files
+import java.nio.file.NoSuchFileException
 import java.nio.file.Path
 import java.util.Locale
 
@@ -58,13 +55,24 @@ internal fun withJsonPrinter(output: Path?, prettyPrint: Boolean, block: (UiDump
     return
   }
   if (Files.isDirectory(output)) {
-    throw IOException("Output path is a directory, expected a file: $output")
+    throw IOException("Cannot write output file '$output': path is a directory")
   }
-  val fileOut = PrintStream(Files.newOutputStream(output), false, Charsets.UTF_8)
+  val fileOut =
+    try {
+      PrintStream(Files.newOutputStream(output), false, Charsets.UTF_8)
+    } catch (e: IOException) {
+      val reason =
+        when (e) {
+          is NoSuchFileException -> output.parent?.let { "$it does not exist" } ?: "parent directory does not exist"
+          is AccessDeniedException -> "access denied"
+          else -> e.message ?: e.javaClass.simpleName
+        }
+      throw IOException("Cannot write output file '$output': $reason", e)
+    }
   fileOut.use { block(JsonUiDumpPrinter(out = it, prettyPrint = prettyPrint)) }
   // Checked after close so that errors recorded while closing are observed too.
   if (fileOut.checkError()) {
-    throw IOException("Failed to write output to: $output")
+    throw IOException("Cannot write output file '$output': I/O error while writing")
   }
 }
 
@@ -76,11 +84,6 @@ private object JsonKeys {
   const val APP_CONTEXT = "appContext"
   const val CONFIGURATION = "configuration"
   const val ROOTS = "roots"
-  const val INITIAL_FRAME = "initialFrame"
-  const val FRAMES = "frames"
-  const val ELAPSED_TIME_MS = "elapsedTimeMs"
-  const val CONFIGURATION_DIFF = "configurationDiff"
-  const val TREE_DIFF = "treeDiff"
   const val TYPE = "type"
   const val VIEW_NODE = "ViewNode"
   const val COMPOSE_NODE = "ComposeNode"
@@ -115,23 +118,8 @@ private object JsonKeys {
   const val WIDTH_PX = "widthPx"
   const val HEIGHT_PX = "heightPx"
   const val ORIENTATION = "orientation"
-  const val DIFFERENCES = "differences"
-  const val OLD_VALUE = "oldValue"
-  const val NEW_VALUE = "newValue"
-  const val REMOVED = "removed"
-  const val ADDED = "added"
-  const val MODIFIED = "modified"
-  const val CHANGES = "changes"
   const val DP = "dp"
   const val SP = "sp"
-
-  // NodeChange types
-  const val CHANGE_CLASS = "class"
-  const val CHANGE_BOUNDS = "bounds"
-  const val CHANGE_PARENT = "parent"
-  const val CHANGE_PROPERTY_ADDED = "propertyAdded"
-  const val CHANGE_PROPERTY_REMOVED = "propertyRemoved"
-  const val CHANGE_PROPERTY_MODIFIED = "propertyModified"
 
   // DeviceConfiguration keys
   const val FONT_SCALE = "fontScale"
@@ -168,7 +156,12 @@ private object JsonKeys {
 internal class JsonUiDumpPrinter(private val out: PrintStream, private val prettyPrint: Boolean) : UiDumpPrinter {
 
   override fun printDump(uiDump: UiDump) {
-    val jsonObject = serializeUiDump(uiDump)
+    writeJson(serializeUiDump(uiDump))
+  }
+
+  /** Serializes [jsonObject] to the output stream. */
+  private fun writeJson(jsonObject: JsonObject) {
+    normalizeNonFiniteNumbers(jsonObject)
     val gson = if (prettyPrint) GSON_PRETTY else GSON_COMPACT
     val writer = OutputStreamWriter(out, Charsets.UTF_8)
     gson.toJson(jsonObject, writer)
@@ -176,13 +169,34 @@ internal class JsonUiDumpPrinter(private val out: PrintStream, private val prett
     out.println()
   }
 
-  override fun printTrackedChanges(samples: List<TimedUiDump>) {
-    val jsonObject = serializeTrackedChanges(samples)
-    val gson = if (prettyPrint) GSON_PRETTY else GSON_COMPACT
-    val writer = OutputStreamWriter(out, Charsets.UTF_8)
-    gson.toJson(jsonObject, writer)
-    writer.flush()
-    out.println()
+  /**
+   * Replaces every non-finite numeric primitive in the tree with JSON null, in place. JSON has no NaN or Infinity token, Compose routinely
+   * reports Float.NaN for unspecified values (e.g. Dp.Unspecified), and Gson would write them verbatim, producing output every strict
+   * parser rejects.
+   */
+  private fun normalizeNonFiniteNumbers(element: JsonElement) {
+    when (element) {
+      is JsonObject ->
+        for (entry in element.entrySet()) {
+          if (entry.value.isNonFiniteNumber()) entry.setValue(JsonNull.INSTANCE) else normalizeNonFiniteNumbers(entry.value)
+        }
+      is JsonArray ->
+        for (i in 0 until element.size()) {
+          if (element.get(i).isNonFiniteNumber()) element.set(i, JsonNull.INSTANCE) else normalizeNonFiniteNumbers(element.get(i))
+        }
+      else -> Unit
+    }
+  }
+
+  // Only Float and Double can carry non-finite values; other Number types (including arbitrary-precision ones whose doubleValue()
+  // overflows to Infinity, like BigDecimal("1e400")) are always valid JSON numbers and must pass through untouched.
+  private fun JsonElement.isNonFiniteNumber(): Boolean {
+    if (this !is JsonPrimitive || !isNumber) return false
+    return when (val number = asNumber) {
+      is Float -> !number.isFinite()
+      is Double -> !number.isFinite()
+      else -> false
+    }
   }
 
   private fun serializeUiDump(uiDump: UiDump): JsonObject {
@@ -195,34 +209,6 @@ internal class JsonUiDumpPrinter(private val out: PrintStream, private val prett
     val rootsArray = JsonArray()
     uiDump.roots.forEach { viewRoot -> rootsArray.add(serializeNodeTree(viewRoot)) }
     root.add(JsonKeys.ROOTS, rootsArray)
-
-    return root
-  }
-
-  private fun serializeTrackedChanges(samples: List<TimedUiDump>): JsonObject {
-    val root = JsonObject()
-    if (samples.isEmpty()) {
-      return root
-    }
-
-    val firstSample = samples.first()
-    root.add(JsonKeys.INITIAL_FRAME, serializeUiDump(firstSample.uiDump))
-
-    val framesArray = JsonArray()
-    var prevSample = firstSample
-    for (i in 1 until samples.size) {
-      val sample = samples[i]
-      val frameObj = JsonObject()
-      frameObj.addProperty(JsonKeys.ELAPSED_TIME_MS, sample.elapsedTime.inWholeMilliseconds)
-
-      val diff = diffUiDumps(prevSample.uiDump, sample.uiDump)
-      diff.configurationDiff?.let { frameObj.add(JsonKeys.CONFIGURATION_DIFF, serializeConfigurationDiff(it)) }
-      diff.treeDiff?.let { frameObj.add(JsonKeys.TREE_DIFF, serializeTreeDiff(it)) }
-
-      framesArray.add(frameObj)
-      prevSample = sample
-    }
-    root.add(JsonKeys.FRAMES, framesArray)
 
     return root
   }
@@ -419,105 +405,4 @@ internal class JsonUiDumpPrinter(private val out: PrintStream, private val prett
 
   private fun DeviceLocale.listOfNotNullFormat(): String =
     listOfNotNull(language, country, variant, script).filter { it.isNotEmpty() }.joinToString("-")
-
-  private fun serializeConfigurationDiff(diff: ConfigurationDiff): JsonObject {
-    val obj = JsonObject()
-    val diffsArray = JsonArray()
-    diff.differences.forEach { diffItem ->
-      val itemObj = JsonObject()
-      itemObj.addProperty(JsonKeys.NAME, diffItem.name)
-      diffItem.oldValue?.let { itemObj.addProperty(JsonKeys.OLD_VALUE, it.toString()) }
-      diffItem.newValue?.let { itemObj.addProperty(JsonKeys.NEW_VALUE, it.toString()) }
-      diffsArray.add(itemObj)
-    }
-    obj.add(JsonKeys.DIFFERENCES, diffsArray)
-    return obj
-  }
-
-  private fun serializeTreeDiff(diff: TreeDiff): JsonObject {
-    val obj = JsonObject()
-
-    if (diff.removed.isNotEmpty()) {
-      val removedArray = JsonArray()
-      diff.removed.forEach { node ->
-        val nodeObj = JsonObject()
-        nodeObj.addProperty(JsonKeys.ID, node.id)
-        nodeObj.addProperty(JsonKeys.CLASS_NAME, node.className)
-        removedArray.add(nodeObj)
-      }
-      obj.add(JsonKeys.REMOVED, removedArray)
-    }
-
-    if (diff.added.isNotEmpty()) {
-      val addedArray = JsonArray()
-      diff.added.forEach { node -> addedArray.add(serializeNodeTree(node)) }
-      obj.add(JsonKeys.ADDED, addedArray)
-    }
-
-    if (diff.modified.isNotEmpty()) {
-      val modifiedArray = JsonArray()
-      diff.modified.forEach { mod ->
-        val modObj = JsonObject()
-        modObj.addProperty(JsonKeys.ID, mod.node.id)
-        modObj.addProperty(JsonKeys.CLASS_NAME, mod.node.className)
-        val changesArray = JsonArray()
-        mod.changes.forEach { change -> changesArray.add(serializeNodeChange(change)) }
-        modObj.add(JsonKeys.CHANGES, changesArray)
-        modifiedArray.add(modObj)
-      }
-      obj.add(JsonKeys.MODIFIED, modifiedArray)
-    }
-
-    return obj
-  }
-
-  private fun serializeNodeChange(change: NodeChange): JsonObject {
-    val obj = JsonObject()
-    when (change) {
-      is NodeChange.ClassChange -> {
-        obj.addProperty(JsonKeys.TYPE, JsonKeys.CHANGE_CLASS)
-        obj.addProperty(JsonKeys.OLD_VALUE, change.oldClassName)
-        obj.addProperty(JsonKeys.NEW_VALUE, change.newClassName)
-      }
-      is NodeChange.BoundsChange -> {
-        obj.addProperty(JsonKeys.TYPE, JsonKeys.CHANGE_BOUNDS)
-        obj.add(JsonKeys.OLD_VALUE, serializeBounds(change.oldBounds))
-        obj.add(JsonKeys.NEW_VALUE, serializeBounds(change.newBounds))
-      }
-      is NodeChange.ParentChange -> {
-        obj.addProperty(JsonKeys.TYPE, JsonKeys.CHANGE_PARENT)
-        change.oldParentId?.let { obj.addProperty(JsonKeys.OLD_VALUE, it) }
-        change.newParentId?.let { obj.addProperty(JsonKeys.NEW_VALUE, it) }
-      }
-      is NodeChange.PropertyChange.Added -> {
-        obj.addProperty(JsonKeys.TYPE, JsonKeys.CHANGE_PROPERTY_ADDED)
-        obj.addProperty(JsonKeys.NAME, change.name)
-        obj.add(JsonKeys.NEW_VALUE, serializeAnyValue(change.newValue))
-      }
-      is NodeChange.PropertyChange.Removed -> {
-        obj.addProperty(JsonKeys.TYPE, JsonKeys.CHANGE_PROPERTY_REMOVED)
-        obj.addProperty(JsonKeys.NAME, change.name)
-        obj.add(JsonKeys.OLD_VALUE, serializeAnyValue(change.oldValue))
-      }
-      is NodeChange.PropertyChange.Modified -> {
-        obj.addProperty(JsonKeys.TYPE, JsonKeys.CHANGE_PROPERTY_MODIFIED)
-        obj.addProperty(JsonKeys.NAME, change.name)
-        obj.add(JsonKeys.OLD_VALUE, serializeAnyValue(change.oldValue))
-        obj.add(JsonKeys.NEW_VALUE, serializeAnyValue(change.newValue))
-      }
-    }
-    return obj
-  }
-
-  private fun serializeAnyValue(value: Any): JsonElement {
-    return when (value) {
-      is UiNode.AttributeValue -> serializeAttributeValue(value)
-      is UiNode.ComposeParameter.Value -> serializeComposeParameterValue(value)
-      is UiNode.ComposeParameter -> serializeComposeParameter(value)
-      is String -> JsonPrimitive(value)
-      is Boolean -> JsonPrimitive(value)
-      is Number -> JsonPrimitive(value)
-      else -> JsonPrimitive(value.toString())
-    }
-  }
 }

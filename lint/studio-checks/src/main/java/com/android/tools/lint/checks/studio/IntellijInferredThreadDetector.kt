@@ -48,12 +48,16 @@ class IntellijInferredThreadDetector : ThreadConstraintDetector<Thread>(lattice,
 
   override fun parse(ann: UAnnotation) =
     when (ann.qualifiedName) {
-      AnyThread::class.java.canonicalName -> lattice.AnyThread
+      AnyThread::class.java.canonicalName,
+      "androidx.annotation.AnyThread" -> lattice.AnyThread
       RequiresBackgroundThread::class.java.canonicalName,
       Slow::class.java.canonicalName,
-      WorkerThread::class.java.canonicalName -> lattice.of(Thread.Slow)
+      WorkerThread::class.java.canonicalName,
+      "androidx.annotation.WorkerThread" -> lattice.of(Thread.Slow)
       UiThread::class.java.canonicalName,
-      RequiresEdt::class.java.canonicalName -> lattice.of(Thread.Ui)
+      RequiresEdt::class.java.canonicalName,
+      "androidx.annotation.UiThread",
+      "androidx.annotation.MainThread" -> lattice.of(Thread.Ui)
       else -> null
     }
 

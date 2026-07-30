@@ -1,7 +1,7 @@
 load("//tools/base/android-test:version.bzl", "ANDROID_TEST_ENGINE_VERSION")
 load("//tools/base/bazel:kotlin.bzl", "kotlin_test")
 load("//tools/base/bazel:maven.bzl", "maven_library")
-load("//tools/base/bazel:proto.bzl", "maven_proto_library")
+load("//tools/base/bazel:proto.bzl", "android_java_proto_library", "maven_proto_library")
 
 maven_proto_library(
     name = "test_result_event_proto",
@@ -31,7 +31,6 @@ maven_library(
     deps = [
         ":test_result_event_proto",
         "//tools/base/android-test/test-result-proto",
-        "@maven//:com.google.guava.guava",
         "@maven//:com.google.protobuf.protobuf-java",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
         "@maven//:org.junit.platform.junit-platform-launcher",
@@ -60,4 +59,11 @@ kotlin_test(
         "@maven//:org.mockito.kotlin.mockito-kotlin",
         "@maven//:org.mockito.mockito-core",
     ],
+)
+
+# Compiles proto for Android Studio, repackaging protobuf to avoid version conflicts.
+android_java_proto_library(
+    name = "libstudio.android-test-engine-result-listener-proto",
+    srcs = glob(["proto/**/*.proto"]),
+    visibility = ["//visibility:public"],
 )

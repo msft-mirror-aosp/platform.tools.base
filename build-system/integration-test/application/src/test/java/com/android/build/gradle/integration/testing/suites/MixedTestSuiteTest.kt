@@ -80,7 +80,7 @@ class MixedTestSuiteTest {
           dependencies { implementation("com.google.truth:truth:0.44") }
           files {
             add(
-              "src/mixedTest/java/com/example/app/HostTest.java",
+              "src/mixed/mixedTest/java/com/example/app/HostTest.java",
               """
               package com.example.app;
               public class HostTest {}
@@ -88,7 +88,7 @@ class MixedTestSuiteTest {
                 .trimIndent(),
             )
             add(
-              "src/mixedAndroidTest/java/com/example/app/DeviceTest.java",
+              "src/mixed/mixedAndroidTest/java/com/example/app/DeviceTest.java",
               """
               package com.example.app;
               public class DeviceTest {}

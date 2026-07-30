@@ -45,6 +45,10 @@ internal fun printDeviceConfiguration(config: DeviceConfiguration, out: PrintStr
   out.println()
 }
 
+/** Converts a camelCase field name into a capitalized human-readable label (e.g. "fontScale" -> "Font Scale"). */
+internal fun formatPropertyName(propertyName: String): String =
+  propertyName.replace(Regex("([a-z])([A-Z])"), "$1 $2").replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+
 private fun formatValueForPrinting(value: Any?): String? {
   if (value == null) return null
   return when (value) {

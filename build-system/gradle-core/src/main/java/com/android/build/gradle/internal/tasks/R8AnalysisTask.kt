@@ -91,6 +91,7 @@ abstract class R8AnalysisTask @Inject constructor(projectLayout: ProjectLayout) 
 
     val reportFile = r8ConfigurationAnalyzerReportOutput.get().asFile
     val dataFile = r8ConfigurationAnalyzerDataOutput.get().asFile
+    val relativePath = projectLayout.projectDirectory.asFile.toURI().relativize(reportFile.toURI()).path
 
     val workerAction = { it: R8RunnableAnalysis.Params ->
       it.bootClasspath.from(bootClasspath.toList())
@@ -109,10 +110,11 @@ abstract class R8AnalysisTask @Inject constructor(projectLayout: ProjectLayout) 
       it.proguardConfigurations.set(proguardConfigurations)
       it.legacyMultiDexEnabled.set(legacyMultiDexEnabled)
       it.referencedInputs.from((referencedClasses + referencedResources).toList())
-      it.classes.from(classes.toList())
+      it.classes.from(getProgramClasses())
       it.resourcesJar.set(resourcesJar)
       it.r8ConfigurationAnalyzerDataOutput.set(dataFile)
       it.r8ConfigurationAnalyzerReportOutput.set(reportFile)
+      it.reportRelativePath.set(relativePath)
       it.featureClassJars.from(featureClassJars.toList())
       it.featureJavaResourceJars.from(featureJavaResourceJars.toList())
       it.libConfiguration.set(coreLibDesugarConfig.orNull)
@@ -140,10 +142,6 @@ abstract class R8AnalysisTask @Inject constructor(projectLayout: ProjectLayout) 
     } else {
       workerExecutor.noIsolation().submit(R8RunnableAnalysis::class.java, workerAction)
     }
-
-    // Print relative path to the report file
-    val relativePath = projectLayout.projectDirectory.asFile.toURI().relativize(reportFile.toURI()).path
-    logger.lifecycle("R8 Keep Rules analysis report generated: $relativePath")
   }
 
   abstract class R8RunnableAnalysis : WorkAction<R8RunnableAnalysis.Params> {
@@ -157,6 +155,7 @@ abstract class R8AnalysisTask @Inject constructor(projectLayout: ProjectLayout) 
       abstract val proguardConfigurations: ListProperty<String>
       abstract val r8ConfigurationAnalyzerDataOutput: RegularFileProperty
       abstract val r8ConfigurationAnalyzerReportOutput: RegularFileProperty
+      abstract val reportRelativePath: Property<String>
       abstract val legacyMultiDexEnabled: Property<Boolean>
       abstract val referencedInputs: ConfigurableFileCollection
       abstract val classes: ConfigurableFileCollection
@@ -243,6 +242,8 @@ abstract class R8AnalysisTask @Inject constructor(projectLayout: ProjectLayout) 
           parameters.partialShrinkingIncludes.orNull,
           r8ThreadPool,
         )
+
+        logger.lifecycle("R8 Keep Rules analysis report generated: ${parameters.reportRelativePath.get()}")
       } finally {
         if (isolationMode) {
           r8ThreadPool.doClose()

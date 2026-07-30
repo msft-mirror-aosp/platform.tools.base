@@ -26,17 +26,8 @@ import com.android.tools.appinspection.database.Cursor
 /** A [com.android.tools.appinspection.database.Database] for AndroidX [SQLiteConnection] */
 internal class AndroidXDatabase(connection: SQLiteConnection, path: String, flags: Int = 0) :
   AbstractDatabase<SQLiteConnection>(connection, getPath(path, flags)) {
-  override val isReadOnly: Boolean
-    get() {
-      return try {
-        delegate.prepare("PRAGMA query_only").use {
-          it.step()
-          it.getInt(0) == 1
-        }
-      } catch (_: SQLException) {
-        false
-      }
-    }
+
+  override val isReadOnly: Boolean = getReadOnly()
 
   override val apiClassName: String = connection::class.java.name
 
@@ -74,6 +65,17 @@ internal class AndroidXDatabase(connection: SQLiteConnection, path: String, flag
         }
       }
     return AndroidXCursor(statement)
+  }
+
+  private fun getReadOnly(): Boolean {
+    return try {
+      delegate.prepare("PRAGMA query_only").use {
+        it.step()
+        it.getInt(0) == 1
+      }
+    } catch (_: SQLException) {
+      false
+    }
   }
 
   override fun close() {

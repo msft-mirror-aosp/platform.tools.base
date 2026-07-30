@@ -71,6 +71,11 @@ abstract class DexFileDependenciesTask : NonIncrementalTask() {
   @get:Optional @get:Input abstract val libConfiguration: Property<String>
 
   @get:Input abstract val enableApiModeling: Property<Boolean>
+
+  /**
+   * Whether to use a no-op consumer for global synthetics in D8. When true, D8 desugaring skips generating individual per-class `.globals`
+   * files because a pre-baked shared `globals.dex` will be bundled in the final APK instead.
+   */
   @get:Input abstract val useNoOpGlobalSyntheticsConsumer: Property<Boolean>
 
   private lateinit var errorFormatMode: SyncOptions.ErrorFormatMode
@@ -109,6 +114,11 @@ abstract class DexFileDependenciesTask : NonIncrementalTask() {
     abstract val errorFormatMode: Property<SyncOptions.ErrorFormatMode>
     abstract val libConfiguration: Property<String>
     abstract val enableApiModeling: Property<Boolean>
+
+    /**
+     * Whether to use a no-op consumer for global synthetics in D8. When true, D8 desugaring skips generating individual per-class
+     * `.globals` files because a pre-baked shared `globals.dex` will be bundled in the final APK instead.
+     */
     abstract val useNoOpGlobalSyntheticsConsumer: Property<Boolean>
     abstract val outputGlobalSynthetics: DirectoryProperty
   }

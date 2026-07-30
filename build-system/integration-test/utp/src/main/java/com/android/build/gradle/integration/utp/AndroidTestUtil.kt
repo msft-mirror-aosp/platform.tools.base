@@ -25,8 +25,8 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Andro
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
-import com.android.tools.utp.plugins.host.device.info.proto.AndroidTestDeviceInfoProto.AndroidTestDeviceInfo
 import com.google.common.truth.Truth.assertThat
+import com.google.testing.platform.proto.api.core.AndroidTestDeviceInfoProto.AndroidTestDeviceInfo
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
 import java.io.File
 import java.nio.file.Path
@@ -69,7 +69,7 @@ class AndroidTestUtil(
 
   private fun resolvePath(relativePath: String): Path {
     val path = project.resolve(relativePath)
-    if (runWithBuiltInPlatform && !path.exists()) {
+    if (!path.exists()) {
       // For built-in platform, the output might be in a different level of directory.
       // Search for the file in the parent or siblings.
       val fileName = path.fileName.toString()

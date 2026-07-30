@@ -595,6 +595,12 @@ class AdbLibAndroidDebugBridge(
     return session.scope
       .async {
         val processResult = session.host.processRunner.runProcess(adbPath, listOf("version"), adbEnvVars)
+        if (processResult.exitCode != 0) {
+          logger.warn(
+            "'$adbPath version' exited with code ${processResult.exitCode}\n" +
+              "Stdout: ${processResult.stdout}\nStderr: ${processResult.stderr}"
+          )
+        }
 
         processResult.stdout.forEach { line ->
           val version = AdbVersion.parseFrom(line)
@@ -644,6 +650,12 @@ class AdbLibAndroidDebugBridge(
       session.scope
         .async {
           val processResult = session.host.processRunner.runProcess(adbPath, listOf("devices", "-l"), envVars)
+          if (processResult.exitCode != 0) {
+            logger.warn(
+              "'$adbPath devices -l' exited with code ${processResult.exitCode}\n" +
+                "Stdout: ${processResult.stdout}\nStderr: ${processResult.stderr}"
+            )
+          }
           // The first line of the output is a header, and not a part of the device list. Skip it.
           val devices = processResult.stdout.drop(1).mapNotNull { AdbDevice.parseAdbLine(it) }
           devices

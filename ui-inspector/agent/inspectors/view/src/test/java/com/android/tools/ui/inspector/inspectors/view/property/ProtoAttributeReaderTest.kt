@@ -39,8 +39,8 @@ class ProtoAttributeReaderTest {
     val stringTable = StringTable()
     val resolved = mutableListOf<Attribute>()
 
-    val metadata = AttributeMetadata("clickable", 0, PropertyType.BOOLEAN)
-    val reader = ProtoAttributeReader(view, listOf(metadata), stringTable) { resolved.add(it) }
+    val metadata = AttributeMetadata("clickable", 0, PropertyType.BOOLEAN, null, null)
+    val reader = ProtoAttributeReader(view, listOf(metadata), stringTable, false) { resolved.add(it) }
 
     reader.readBoolean(0, true)
 
@@ -57,8 +57,8 @@ class ProtoAttributeReaderTest {
     val stringTable = StringTable()
     val resolved = mutableListOf<Attribute>()
 
-    val metadata = AttributeMetadata("width", 0, PropertyType.INT32)
-    val reader = ProtoAttributeReader(view, listOf(metadata), stringTable) { resolved.add(it) }
+    val metadata = AttributeMetadata("width", 0, PropertyType.INT32, null, null)
+    val reader = ProtoAttributeReader(view, listOf(metadata), stringTable, false) { resolved.add(it) }
 
     reader.readInt(0, 100)
 
@@ -74,8 +74,8 @@ class ProtoAttributeReaderTest {
     val stringTable = StringTable()
     val resolved = mutableListOf<Attribute>()
 
-    val metadata = AttributeMetadata("textColor", 0, PropertyType.COLOR)
-    val reader = ProtoAttributeReader(view, listOf(metadata), stringTable) { resolved.add(it) }
+    val metadata = AttributeMetadata("textColor", 0, PropertyType.COLOR, null, null)
+    val reader = ProtoAttributeReader(view, listOf(metadata), stringTable, false) { resolved.add(it) }
 
     reader.readColor(0, 0xFFFF0000.toInt())
 
@@ -91,9 +91,8 @@ class ProtoAttributeReaderTest {
     val stringTable = StringTable()
     val resolved = mutableListOf<Attribute>()
 
-    val metadata =
-      AttributeMetadata("visibility", 0, PropertyType.INT_ENUM, enumMapping = { value -> if (value == 0) "VISIBLE" else "INVISIBLE" })
-    val reader = ProtoAttributeReader(view, listOf(metadata), stringTable) { resolved.add(it) }
+    val metadata = AttributeMetadata("visibility", 0, PropertyType.INT_ENUM, { value -> if (value == 0) "VISIBLE" else "INVISIBLE" }, null)
+    val reader = ProtoAttributeReader(view, listOf(metadata), stringTable, false) { resolved.add(it) }
 
     reader.readIntEnum(0, 0)
 
@@ -110,8 +109,8 @@ class ProtoAttributeReaderTest {
     val resolved = mutableListOf<Attribute>()
 
     val metadata =
-      AttributeMetadata("flags", 0, PropertyType.INT_FLAG, flagMapping = { value -> if (value and 1 != 0) setOf("flag1") else emptySet() })
-    val reader = ProtoAttributeReader(view, listOf(metadata), stringTable) { resolved.add(it) }
+      AttributeMetadata("flags", 0, PropertyType.INT_FLAG, null, { value -> if (value and 1 != 0) setOf("flag1") else emptySet() })
+    val reader = ProtoAttributeReader(view, listOf(metadata), stringTable, false) { resolved.add(it) }
 
     reader.readIntFlag(0, 1)
 
@@ -127,8 +126,8 @@ class ProtoAttributeReaderTest {
     val stringTable = StringTable()
     val resolved = mutableListOf<Attribute>()
 
-    val metadata = AttributeMetadata("text", 0, PropertyType.STRING)
-    val reader = ProtoAttributeReader(view, listOf(metadata), stringTable) { resolved.add(it) }
+    val metadata = AttributeMetadata("text", 0, PropertyType.STRING, null, null)
+    val reader = ProtoAttributeReader(view, listOf(metadata), stringTable, false) { resolved.add(it) }
 
     reader.readObject(0, null)
 
@@ -142,8 +141,8 @@ class ProtoAttributeReaderTest {
     val stringTable = StringTable()
     val resolved = mutableListOf<Attribute>()
 
-    val metadata = AttributeMetadata("textColor", 0, PropertyType.COLOR)
-    val reader = ProtoAttributeReader(view, listOf(metadata), stringTable) { resolved.add(it) }
+    val metadata = AttributeMetadata("textColor", 0, PropertyType.COLOR, null, null)
+    val reader = ProtoAttributeReader(view, listOf(metadata), stringTable, false) { resolved.add(it) }
 
     reader.readColor(0, Color.pack(0xFFFF0000.toInt()))
 
@@ -159,8 +158,8 @@ class ProtoAttributeReaderTest {
     val stringTable = StringTable()
     val resolved = mutableListOf<Attribute>()
 
-    val metadata = AttributeMetadata("textColor", 0, PropertyType.COLOR)
-    val reader = ProtoAttributeReader(view, listOf(metadata), stringTable) { resolved.add(it) }
+    val metadata = AttributeMetadata("textColor", 0, PropertyType.COLOR, null, null)
+    val reader = ProtoAttributeReader(view, listOf(metadata), stringTable, false) { resolved.add(it) }
 
     reader.readColor(0, Color.valueOf(0xFFFF0000.toInt()))
 

@@ -22,12 +22,10 @@ import com.android.adblib.DeviceSelector
 import com.android.adblib.DeviceState
 import com.android.adblib.testing.FakeAdbSession
 import com.google.common.truth.Truth.assertThat
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.hours
-import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.seconds
-import kotlin.time.TestTimeSource
+import java.io.ByteArrayOutputStream
+import java.io.PrintStream
 import kotlinx.coroutines.runBlocking
+import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol
 import org.junit.Assert.assertThrows
 import org.junit.Test
 
@@ -158,87 +156,99 @@ class CommandsTest {
   }
 
   @Test
-  fun testCollectSamplesStopsWhenDurationIsShorterThanInterval() {
-    val timeSource = TestTimeSource()
-    val delays = mutableListOf<Duration>()
-    var fetchCount = 0
+  fun testMergeComposeRootsWarnsOnStderrWhenTargetViewIsMissing() {
+    val viewRoot = viewNode(1)
+    val composeRoots = listOf(composableRoot(targetViewId = 999, composableId = 100))
 
-    val samples = runBlocking {
-      collectSamples(
-        interval = 1.hours,
-        duration = 1.seconds,
-        timeSource = timeSource,
-        delayFn = {
-          delays += it
-          timeSource += it
-        },
-        fetch = {
-          fetchCount++
-          dumpOf(viewNode(id = 1, width = 10))
-        },
+    val stderr = captureStderr {
+      mergeComposeRoots(
+        viewRoot,
+        composeRoots,
+        stringTable = emptyMap(),
+        parameters = null,
+        includeParameters = false,
+        includeSemantics = false,
       )
     }
 
-    // The wait is bounded by the remaining duration, not the (much longer) interval.
-    assertThat(samples).hasSize(1)
-    assertThat(fetchCount).isEqualTo(1)
-    assertThat(delays).containsExactly(1.seconds)
+    assertThat(stderr).contains("target view id 999")
+    assertThat(stderr).contains("view root 1")
+    assertThat(viewRoot.children).isEmpty()
   }
 
   @Test
-  fun testCollectSamplesSamplesAtInterval() {
-    val timeSource = TestTimeSource()
+  fun testMergeComposeRootsContinuesAfterFailedAttachment() {
+    val composeView = viewNode(20)
+    val viewRoot = viewNode(1, composeView)
+    val composeRoots = listOf(composableRoot(targetViewId = 999, composableId = 100), composableRoot(targetViewId = 20, composableId = 200))
 
-    val samples = runBlocking {
-      collectSamples(
-        interval = 10.milliseconds,
-        duration = 35.milliseconds,
-        timeSource = timeSource,
-        delayFn = { timeSource += it },
-        fetch = { dumpOf(viewNode(id = 1, width = 10)) },
+    val stderr = captureStderr {
+      mergeComposeRoots(
+        viewRoot,
+        composeRoots,
+        stringTable = emptyMap(),
+        parameters = null,
+        includeParameters = false,
+        includeSemantics = false,
       )
     }
 
-    assertThat(samples).hasSize(4)
-    assertThat(samples.map { it.elapsedTime }).containsExactly(0.milliseconds, 10.milliseconds, 20.milliseconds, 30.milliseconds).inOrder()
+    // The missing target is warned about; the valid root after it still attaches.
+    assertThat(stderr).contains("target view id 999")
+    assertThat(composeView.children.map { it.id }).containsExactly(200L)
   }
 
   @Test
-  fun testCollectSamplesHandlesFetchSlowerThanInterval() {
-    val timeSource = TestTimeSource()
-    val delays = mutableListOf<Duration>()
+  fun testMergeComposeRootsAttachesNestedRootsInEitherResponseOrder() {
+    // The inner AndroidComposeView (30) sits below the outer one (20); both orders must fully attach.
+    for (reversed in listOf(false, true)) {
+      val innerComposeView = viewNode(30)
+      val viewRoot = viewNode(1, viewNode(20, innerComposeView))
+      val composeRoots =
+        listOf(composableRoot(targetViewId = 20, composableId = 100), composableRoot(targetViewId = 30, composableId = 200))
 
-    val samples = runBlocking {
-      collectSamples(
-        interval = 10.milliseconds,
-        duration = 100.milliseconds,
-        timeSource = timeSource,
-        delayFn = { delays += it },
-        fetch = {
-          timeSource += 25.milliseconds
-          dumpOf(viewNode(id = 1, width = 10))
-        },
-      )
+      val stderr = captureStderr {
+        mergeComposeRoots(
+          viewRoot,
+          if (reversed) composeRoots.reversed() else composeRoots,
+          stringTable = emptyMap(),
+          parameters = null,
+          includeParameters = false,
+          includeSemantics = false,
+        )
+      }
+
+      assertThat(stderr).isEmpty()
+      assertThat(innerComposeView.children.map { it.id }).containsExactly(200L)
     }
-
-    // Each 25ms fetch overshoots the 10ms interval, so sampling proceeds back-to-back without any sleeps.
-    assertThat(delays).isEmpty()
-    assertThat(samples).hasSize(4)
-    assertThat(samples.map { it.elapsedTime })
-      .containsExactly(25.milliseconds, 50.milliseconds, 75.milliseconds, 100.milliseconds)
-      .inOrder()
   }
 
-  private fun viewNode(id: Long, width: Int) =
+  private fun viewNode(id: Long, vararg children: UiNode): UiNode.ViewNode =
     UiNode.ViewNode(
       id = id,
       className = "android.view.View",
-      bounds = UiNode.Bounds(0, 0, width, 10),
+      bounds = UiNode.Bounds(0, 0, 100, 100),
       idResource = null,
       layoutResource = null,
       attributes = emptyList(),
+      children = children.toMutableList(),
     )
 
-  private fun dumpOf(root: UiNode.ViewNode, configuration: DeviceConfiguration? = null) =
-    UiDump(roots = listOf(root), configuration = configuration, stringTable = emptyMap(), appContext = null)
+  private fun composableRoot(targetViewId: Long, composableId: Long): LayoutInspectorComposeProtocol.ComposableRoot =
+    LayoutInspectorComposeProtocol.ComposableRoot.newBuilder()
+      .setViewId(targetViewId)
+      .addNodes(LayoutInspectorComposeProtocol.ComposableNode.newBuilder().setId(composableId))
+      .build()
+
+  private fun captureStderr(block: () -> Unit): String {
+    val original = System.err
+    val buffer = ByteArrayOutputStream()
+    System.setErr(PrintStream(buffer, true, Charsets.UTF_8))
+    try {
+      block()
+    } finally {
+      System.setErr(original)
+    }
+    return buffer.toString(Charsets.UTF_8)
+  }
 }

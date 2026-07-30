@@ -26,14 +26,24 @@ import org.gradle.api.file.Directory
 
 class TestApkTestSuiteSourceSet(
   sourceSetName: String,
+  testSuiteName: String = sourceSetName,
+  isMixed: Boolean = false,
   variantServices: VariantServices,
   userAddedSourceSets: Collection<Directory>,
   javaEnabled: Boolean,
   kotlinEnabled: Boolean,
   override val dependencies: AgpTestSuiteDependencies?,
-) : AbstractTestSuiteSourceSet(sourceSetName, variantServices, userAddedSourceSets), TestSuiteSourceSet.TestApk {
+) :
+  AbstractTestSuiteSourceSet(
+    sourceSetName = sourceSetName,
+    testSuiteName = testSuiteName,
+    isMixed = isMixed,
+    variantServices = variantServices,
+    userAddedSourceSets = userAddedSourceSets,
+  ),
+  TestSuiteSourceSet.TestApk {
 
-  override val manifestFile = File(variantServices.projectInfo.projectDirectory.asFile, "src/$sourceSetName/$FN_ANDROID_MANIFEST_XML")
+  override val manifestFile = File(rootFolder, FN_ANDROID_MANIFEST_XML)
 
   override val java: FlatSourceDirectoriesImpl? = if (javaEnabled) createJavaSources(variantServices) else null
 

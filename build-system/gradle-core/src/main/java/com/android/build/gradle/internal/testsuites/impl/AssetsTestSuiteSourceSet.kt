@@ -26,18 +26,28 @@ import java.io.File
 
 internal class AssetsTestSuiteSourceSet(
   private val sourceSetName: String,
+  private val testSuiteName: String = sourceSetName,
+  private val isMixed: Boolean = false,
   variantServices: VariantServices,
   override val dependencies: AgpTestSuiteDependencies?,
 ) : TestSuiteSourceSet.Assets {
 
   override fun getName(): String = sourceSetName
 
+  /** The root-level directory for this test suite source set. */
+  private val rootFolder =
+    if (isMixed) {
+      File(variantServices.projectInfo.projectDirectory.asFile, "src/$testSuiteName/$sourceSetName")
+    } else {
+      File(variantServices.projectInfo.projectDirectory.asFile, "src/$testSuiteName")
+    }
+
   private val assetsSourcesFolder =
     FlatSourceDirectoriesImpl(sourceSetName, variantServices, null).also {
       it.addSource(
         FileBasedDirectoryEntryImpl(
           name = sourceSetName,
-          directory = File(variantServices.projectInfo.projectDirectory.asFile, "src/$sourceSetName"),
+          directory = rootFolder,
           filter = null,
           isUserAdded = false,
           shouldBeAddedToIdeModel = true,

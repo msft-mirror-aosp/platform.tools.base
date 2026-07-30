@@ -16,8 +16,6 @@
 
 package com.android.tools.ui.inspector
 
-import kotlin.time.Duration
-
 /** Represents a complete snapshot of the UI tree, including the root view nodes, device configuration, and string table. */
 internal data class UiDump(
   val roots: List<UiNode.ViewNode>,
@@ -25,6 +23,3 @@ internal data class UiDump(
   val stringTable: Map<Int, String>,
   val appContext: AppContext?,
 )
-
-/** Represents a captured UI hierarchy dump along with the elapsed time since tracking began. */
-internal data class TimedUiDump(val elapsedTime: Duration, val uiDump: UiDump)

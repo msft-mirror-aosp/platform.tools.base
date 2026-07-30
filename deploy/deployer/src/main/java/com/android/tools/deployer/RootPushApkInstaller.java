@@ -16,9 +16,6 @@
 package com.android.tools.deployer;
 
 import com.android.annotations.NonNull;
-import com.android.ddmlib.AdbCommandRejectedException;
-import com.android.ddmlib.ShellCommandUnresponsiveException;
-import com.android.ddmlib.TimeoutException;
 import com.android.sdklib.AndroidVersion;
 import com.android.tools.deploy.proto.Deploy;
 import com.android.tools.deployer.common.AdbClient;
@@ -62,14 +59,11 @@ class RootPushApkInstaller {
 
         // Apk push installation requires root to overwrite files in the /data/app directory.
         try {
-            if (!adb.getDevice().isRoot() && !adb.getDevice().root()) {
+            if (!adb.getDeviceHolder().isRoot() && !adb.getDeviceHolder().root()) {
                 logger.warning("RootPush: Could not elevate to root");
                 return false;
             }
-        } catch (ShellCommandUnresponsiveException
-                | IOException
-                | TimeoutException
-                | AdbCommandRejectedException ex) {
+        } catch (IOException ex) {
             logger.warning("RootPush: Elevation to root threw exception: " + ex);
             return false;
         }

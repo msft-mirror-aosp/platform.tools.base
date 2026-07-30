@@ -125,6 +125,7 @@ class BooleanOptionTest {
         BooleanOption.REPORT_AGGREGATION_SUPPORT,
         BooleanOption.TEST_SUITE_NEW_REPORT_FORMAT,
         BooleanOption.ENABLE_GLOBAL_SYNTHETICS_FOR_ALL_DEBUG_BUILDS,
+        BooleanOption.R8_PLUGIN_SUPPORT,
       )
 
     checkViolatingProjectOptions(

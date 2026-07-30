@@ -137,6 +137,15 @@ abstract class BaseR8Task(projectLayout: ProjectLayout) : ProguardConfigurableTa
       }
     }
 
+  /** Returns the program classes input for R8, accounting for dynamic feature splits. */
+  @Internal
+  protected fun getProgramClasses(): List<File> =
+    if (shrinkingWithDynamicFeatures.get() && !hasAllAccessTransformers.get()) {
+      listOf(baseJar.get().asFile)
+    } else {
+      classes.toList()
+    }
+
   protected fun verifyGradualShrinkingConfiguration() {
     if (gradualShrinkingEnabled.orNull == true && gradualShrinkingPackages.get().isEmpty()) {
       throw RuntimeException("Wrong configuration. optimization.packageScope is an empty set, at least one package must be specified.")

@@ -23,7 +23,7 @@ maven_library(
         "//tools/base/signflinger:__subpackages__",
         "//tools/base/standalone-render/compose-cli:__subpackages__",
         "//tools/base/zipflinger/tools:__subpackages__",
-        "//tools/vendor/google/android/sdk:__subpackages__",
+        "//tools/vendor/google/android:__subpackages__",
     ],
     deps = [
         "//tools/base/annotations",

@@ -1673,7 +1673,9 @@ const TestReportApp = {
       const uniqueId = `${parentId}-${node.name}`.replace(/[^a-zA-Z0-9-_]/g, '');
 
       let nameContent = `<span class="font-medium">${UIUtils.escapeHTML(node.name)}</span>`;
-      if (type === 'testCase' && this.isTestCaseClickable(node)) {
+      if (type === 'class' && this.isScreenshotClass(node)) {
+        nameContent += `<span style="background-color: #f3e8ff; color: #6b21a8; font-size: 0.65rem; font-weight: 700; border-radius: 4px; padding: 0.15rem 0.35rem; margin-left: 0.5rem; text-transform: uppercase;">Screenshot</span>`;
+      } else if (type === 'testCase' && this.isTestCaseClickable(node)) {
         nameContent = `<span class="font-medium text-blue-700 hover-underline cursor-pointer stack-trace-trigger" data-module="${UIUtils.escapeHTML(currentContext.moduleName || '')}" data-package="${UIUtils.escapeHTML(currentContext.packageName || '')}" data-class="${UIUtils.escapeHTML(currentContext.className || '')}" data-test-case="${UIUtils.escapeHTML(node.name || '')}" tabindex="0" role="button" aria-label="View details for ${UIUtils.escapeHTML(node.name)}">${UIUtils.escapeHTML(node.name)}</span>`;
       }
 
@@ -1716,7 +1718,10 @@ const TestReportApp = {
     this.elements.resultsData.innerHTML = items.map(item => {
       let nameTd = `<td class="py-3 px-6 sticky-name font-medium" title="${UIUtils.escapeHTML(item.name)}">${UIUtils.escapeHTML(item.name)}</td>`;
       if (item.type !== 'testCase') {
-        nameTd = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover-underline cursor-pointer" tabindex="0" role="link" title="${UIUtils.escapeHTML(item.name)}" data-name="${UIUtils.escapeHTML(item.name)}" data-type="${item.type}" data-module-name="${UIUtils.escapeHTML(item.moduleName || '')}" data-package-name="${UIUtils.escapeHTML(item.packageName || '')}" data-interactive="flat">${UIUtils.escapeHTML(item.name)}</td>`;
+        const screenshotBadge = (item.type === 'class' && this.isScreenshotClass(item))
+          ? `<span style="background-color: #f3e8ff; color: #6b21a8; font-size: 0.65rem; font-weight: 700; border-radius: 4px; padding: 0.15rem 0.35rem; margin-left: 0.5rem; text-transform: uppercase;">Screenshot</span>`
+          : '';
+        nameTd = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover-underline cursor-pointer" tabindex="0" role="link" title="${UIUtils.escapeHTML(item.name)}" data-name="${UIUtils.escapeHTML(item.name)}" data-type="${item.type}" data-module-name="${UIUtils.escapeHTML(item.moduleName || '')}" data-package-name="${UIUtils.escapeHTML(item.packageName || '')}" data-interactive="flat">${UIUtils.escapeHTML(item.name)}${screenshotBadge}</td>`;
       } else if (this.isTestCaseClickable(item)) {
         nameTd = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover-underline cursor-pointer stack-trace-trigger" data-module="${UIUtils.escapeHTML(item.moduleName || '')}" data-package="${UIUtils.escapeHTML(item.packageName || '')}" data-class="${UIUtils.escapeHTML(item.className || '')}" data-test-case="${UIUtils.escapeHTML(item.name || '')}" tabindex="0" role="button" aria-label="View details for ${UIUtils.escapeHTML(item.name)}">${UIUtils.escapeHTML(item.name)}</td>`;
       } else {
@@ -1839,6 +1844,21 @@ const TestReportApp = {
     const screenshotItems = this.getScreenshotData(node);
     if (screenshotItems && screenshotItems.length > 0) return true;
     return this.hasVisibleFailures(node);
+  },
+
+  isScreenshotClass(node) {
+    if (!node) return false;
+    if (node._isScreenshot !== undefined) return node._isScreenshot;
+
+    const summaries = (node.targets && node.targets[0]) ? node.targets[0].testSuiteSummaries : node.testSuiteSummaries;
+    if (summaries && summaries.length > 0) {
+      node._isScreenshot = summaries.some(ts => ts.name === 'screenshotTest' || (ts.name && ts.name.toLowerCase().includes('screenshot')));
+      return node._isScreenshot;
+    }
+
+    const firstTc = node.testCases && node.testCases[0];
+    node._isScreenshot = firstTc ? (this.getScreenshotData(firstTc).length > 0) : false;
+    return node._isScreenshot;
   },
 
   _renderStatusCell(node, context = {}) {
@@ -2119,6 +2139,13 @@ const TestReportApp = {
     return '../../../../../' + cleanPath;
   },
 
+  hasValidImagePath(imagePath) {
+    if (!imagePath || typeof imagePath !== 'string') return false;
+    const lower = imagePath.trim().toLowerCase();
+    if (lower === 'no diff' || lower === 'images match' || lower === 'no diff (passed)' || lower === 'none' || lower === 'n/a') return false;
+    return lower.endsWith('.png') || lower.endsWith('.jpg') || lower.endsWith('.jpeg') || lower.endsWith('.webp') || lower.endsWith('.svg');
+  },
+
   renderScreenshotTestView(container, testCase, screenshotItems) {
     const activeVariants = this.state.filters.variants || [];
     let item = screenshotItems.find(i => activeVariants.includes(i.variantName)) || screenshotItems[0];
@@ -2206,8 +2233,18 @@ const TestReportApp = {
     const comparisonCard = document.createElement('div');
     comparisonCard.className = 'screenshot-comparison-card';
 
+    const isSizeMismatch = item.stackTrace && item.stackTrace.includes('Size Mismatch');
+    const disableSlider = isPassed || isSizeMismatch;
+
+    const hasValidRef = this.hasValidImagePath(item.refImagePath);
+    const hasValidDiff = this.hasValidImagePath(item.diffImagePath);
+    const hasValidNew = this.hasValidImagePath(item.newImagePath) || (isPassed && hasValidRef);
+
     const refUrl = this.resolveImagePath(item.refImagePath);
-    const newUrl = this.resolveImagePath(item.newImagePath);
+    let newUrl = this.resolveImagePath(item.newImagePath);
+    if ((!item.newImagePath || !this.hasValidImagePath(item.newImagePath)) && isPassed && item.refImagePath) {
+      newUrl = refUrl;
+    }
     const diffUrl = this.resolveImagePath(item.diffImagePath);
 
     comparisonCard.innerHTML = `
@@ -2220,14 +2257,16 @@ const TestReportApp = {
           </svg>
           <span>Screenshot Comparison & Differences</span>
         </div>
-        <div class="mode-switcher" role="tablist" aria-label="Comparison View Mode">
-          <button class="mode-btn active" data-mode="side-by-side" onclick="TestReportApp.switchScreenshotMode('side-by-side', this)" role="tab" aria-selected="true">
-            🔲 Side-by-Side
-          </button>
-          <button class="mode-btn" data-mode="slider" onclick="TestReportApp.switchScreenshotMode('slider', this)" role="tab" aria-selected="false">
-            ↔️ Split Slider
-          </button>
-        </div>
+        ${!disableSlider ? `
+          <div class="mode-switcher" role="tablist" aria-label="Comparison View Mode">
+            <button class="mode-btn active" data-mode="side-by-side" onclick="TestReportApp.switchScreenshotMode('side-by-side', this)" role="tab" aria-selected="true">
+              🔲 Side-by-Side
+            </button>
+            <button class="mode-btn" data-mode="slider" onclick="TestReportApp.switchScreenshotMode('slider', this)" role="tab" aria-selected="false">
+              ↔️ Split Slider
+            </button>
+          </div>
+        ` : ''}
       </div>
 
       <!-- Mode 1: Side-by-Side Cards -->
@@ -2241,7 +2280,7 @@ const TestReportApp = {
             </span>
           </div>
           <div class="img-card-body">
-            ${item.refImagePath ? `
+            ${hasValidRef ? `
               <img src="${refUrl}" alt="Reference Image" class="preview-img" draggable="false" onclick="TestReportApp.openLightbox('${refUrl}', 'Reference Image')" onerror="TestReportApp.handleImageError(this, 'Reference Image Missing')">
               <button class="img-zoom-btn" onclick="TestReportApp.openLightbox('${refUrl}', 'Reference Image')">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
@@ -2260,34 +2299,6 @@ const TestReportApp = {
           </div>
         </div>
 
-        <!-- Rendered Image Card -->
-        <div class="img-card">
-          <div class="img-card-header">
-            <span class="img-card-title">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-              Rendered Image (Actual)
-            </span>
-          </div>
-          <div class="img-card-body">
-            ${item.newImagePath ? `
-              <img src="${newUrl}" alt="Rendered Image" class="preview-img" draggable="false" onclick="TestReportApp.openLightbox('${newUrl}', 'Rendered Image')" onerror="TestReportApp.handleImageError(this, 'Rendered Image Missing')">
-              <button class="img-zoom-btn" onclick="TestReportApp.openLightbox('${newUrl}', 'Rendered Image')">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
-                Zoom
-              </button>
-            ` : `
-              <div class="img-placeholder-card">
-                <div class="placeholder-icon warn">⚠️</div>
-                <div class="placeholder-title">No Rendered Image</div>
-                <div class="placeholder-desc">Rendered screenshot is not available.</div>
-              </div>
-            `}
-          </div>
-          <div class="img-card-footer">
-            <span class="truncate">${UIUtils.escapeHTML(item.newImagePath || 'N/A')}</span>
-          </div>
-        </div>
-
         <!-- Diff Image Card -->
         <div class="img-card">
           <div class="img-card-header">
@@ -2297,7 +2308,7 @@ const TestReportApp = {
             </span>
           </div>
           <div class="img-card-body">
-            ${item.diffImagePath ? `
+            ${hasValidDiff ? `
               <img src="${diffUrl}" alt="Diff Image" class="preview-img" draggable="false" onclick="TestReportApp.openLightbox('${diffUrl}', 'Difference Image')" onerror="TestReportApp.handleImageError(this, 'Diff Image Missing')">
               <button class="img-zoom-btn" onclick="TestReportApp.openLightbox('${diffUrl}', 'Difference Image')">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
@@ -2308,8 +2319,8 @@ const TestReportApp = {
                 ${isPassed ? `
                   <div class="placeholder-icon pass">✓</div>
                   <div class="placeholder-title" style="color: #16a34a;">No Differences</div>
-                  <div class="placeholder-desc">The rendered image matches the reference image perfectly (100% match).</div>
-                ` : (item.stackTrace.includes('Size Mismatch') ? `
+                  <div class="placeholder-desc">The new image matches the reference image perfectly (100% match).</div>
+                ` : (item.stackTrace && item.stackTrace.includes('Size Mismatch') ? `
                   <div class="placeholder-icon warn">📐</div>
                   <div class="placeholder-title" style="color: #d97706;">Size Mismatch</div>
                   <div class="placeholder-desc">Image dimensions differ between reference and actual screenshots. Diff image could not be generated.</div>
@@ -2329,24 +2340,56 @@ const TestReportApp = {
             <span class="truncate">${UIUtils.escapeHTML(item.diffImagePath || (isPassed ? 'No Diff (Passed)' : 'N/A'))}</span>
           </div>
         </div>
+
+        <!-- New Image Card -->
+        <div class="img-card">
+          <div class="img-card-header">
+            <span class="img-card-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              New Image (Actual)
+            </span>
+          </div>
+          <div class="img-card-body">
+            ${hasValidNew ? `
+              <img src="${newUrl}" alt="New Image" class="preview-img" draggable="false" onclick="TestReportApp.openLightbox('${newUrl}', 'New Image')" onerror="TestReportApp.handleImageError(this, 'New Image Missing')">
+              <button class="img-zoom-btn" onclick="TestReportApp.openLightbox('${newUrl}', 'New Image')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+                Zoom
+              </button>
+            ` : `
+              <div class="img-placeholder-card">
+                <div class="placeholder-icon warn">⚠️</div>
+                <div class="placeholder-title">No New Image</div>
+                <div class="placeholder-desc">New screenshot is not available.</div>
+              </div>
+            `}
+          </div>
+          <div class="img-card-footer">
+            <span class="truncate">${UIUtils.escapeHTML(item.newImagePath || (isPassed ? 'Same as Reference' : 'N/A'))}</span>
+          </div>
+        </div>
       </div>
 
-      <!-- Mode 2: Split Slider View -->
-      <div class="slider-view-wrapper hidden">
-        <div class="slider-controls-bar">
-          <span>Drag the divider line to compare Reference (Left) vs Rendered (Right)</span>
-          <span class="slider-split-percent text-blue-600 font-bold">50% Reference | 50% Rendered</span>
-        </div>
-        <div class="slider-container">
-          <img src="${newUrl}" class="slider-img-base" alt="Rendered Base" draggable="false">
-          <div class="slider-img-overlay" style="clip-path: inset(0 50% 0 0);">
-            <img src="${refUrl}" alt="Reference Overlay" draggable="false">
+      ${!disableSlider ? `
+        <!-- Mode 2: Split Slider View -->
+        <div class="slider-view-wrapper hidden">
+          <div class="slider-controls-bar">
+            <span>Drag the divider line to compare Reference (Left) vs New (Right)</span>
+            <span class="slider-split-percent text-blue-600 font-bold">50% Reference | 50% New</span>
           </div>
-          <div class="slider-divider" style="left: 50%;">
-            <div class="slider-handle">↔</div>
+          <div class="slider-container">
+            <span class="slider-badge left-badge">Reference (Golden)</span>
+            <span class="slider-badge right-badge">New (Rendered)</span>
+            <img src="${newUrl}" class="slider-img-base" alt="New Base" draggable="false">
+            <div class="slider-img-overlay" style="clip-path: inset(0 50% 0 0);">
+              <img src="${refUrl}" alt="Reference Overlay" draggable="false">
+            </div>
+            <div class="slider-divider" style="left: 50%;">
+              <div class="slider-handle">↔</div>
+            </div>
           </div>
         </div>
-      </div>
+      ` : ''}
     `;
 
     wrapper.appendChild(comparisonCard);
@@ -2365,14 +2408,14 @@ const TestReportApp = {
         ${item.refImagePath ? `<button class="copy-btn" id="btn-copy-ref-path">Copy</button>` : ''}
       </div>
       <div class="path-row">
-        <span class="path-label">Rendered Image Path:</span>
-        <span class="path-value">${UIUtils.escapeHTML(item.newImagePath || 'Not set')}</span>
-        ${item.newImagePath ? `<button class="copy-btn" id="btn-copy-new-path">Copy</button>` : ''}
-      </div>
-      <div class="path-row">
         <span class="path-label">Diff Image Path:</span>
         <span class="path-value">${UIUtils.escapeHTML(item.diffImagePath || 'None')}</span>
         ${item.diffImagePath ? `<button class="copy-btn" id="btn-copy-diff-path">Copy</button>` : ''}
+      </div>
+      <div class="path-row">
+        <span class="path-label">New Image Path:</span>
+        <span class="path-value">${UIUtils.escapeHTML(item.newImagePath || 'Not set')}</span>
+        ${item.newImagePath ? `<button class="copy-btn" id="btn-copy-new-path">Copy</button>` : ''}
       </div>
     `;
     wrapper.appendChild(pathsCard);
@@ -2381,11 +2424,11 @@ const TestReportApp = {
     const copyRefBtn = pathsCard.querySelector('#btn-copy-ref-path');
     if (copyRefBtn) copyRefBtn.addEventListener('click', () => this.copyToClipboard(item.refImagePath, copyRefBtn));
 
-    const copyNewBtn = pathsCard.querySelector('#btn-copy-new-path');
-    if (copyNewBtn) copyNewBtn.addEventListener('click', () => this.copyToClipboard(item.newImagePath, copyNewBtn));
-
     const copyDiffBtn = pathsCard.querySelector('#btn-copy-diff-path');
     if (copyDiffBtn) copyDiffBtn.addEventListener('click', () => this.copyToClipboard(item.diffImagePath, copyDiffBtn));
+
+    const copyNewBtn = pathsCard.querySelector('#btn-copy-new-path');
+    if (copyNewBtn) copyNewBtn.addEventListener('click', () => this.copyToClipboard(item.newImagePath, copyNewBtn));
 
     container.appendChild(wrapper);
 
@@ -2430,7 +2473,7 @@ const TestReportApp = {
       divider.style.left = `${pct}%`;
       overlayBox.style.clipPath = `inset(0 ${100 - pct}% 0 0)`;
       if (percentText) {
-        percentText.textContent = `${pct}% Reference | ${100 - pct}% Rendered`;
+        percentText.textContent = `${pct}% Reference | ${100 - pct}% New`;
       }
     };
 

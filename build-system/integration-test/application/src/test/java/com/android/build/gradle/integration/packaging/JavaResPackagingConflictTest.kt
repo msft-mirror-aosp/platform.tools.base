@@ -18,12 +18,15 @@ package com.android.build.gradle.integration.packaging
 
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
+import com.android.build.gradle.options.BooleanOption
 import com.android.builder.merge.DuplicateRelativeFileException
 import com.google.common.truth.Truth
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
-private val basicSetupAction: GradleBuildDefinition.() -> Unit = {
+private val baseProject: GradleBuildDefinition.() -> Unit = {
   androidApplication {
     dependencies {
       implementation(project(":library"))
@@ -34,8 +37,19 @@ private val basicSetupAction: GradleBuildDefinition.() -> Unit = {
   androidLibrary(":library2") {}
 }
 
-class JavaResPackagingConflictTest {
-  @get:Rule val rule = GradleRule.from(configAction = basicSetupAction)
+@RunWith(Parameterized::class)
+class JavaResPackagingConflictTest(private val enableOptimizations: Boolean) {
+
+  companion object {
+    @JvmStatic @Parameterized.Parameters(name = "enableOptimizations_{0}") fun parameters() = listOf(true, false)
+  }
+
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      baseProject()
+      gradleProperties { add(BooleanOption.ENABLE_JAVA_RESOURCE_OPTIMIZATIONS, enableOptimizations) }
+    }
 
   @Test
   fun testConflictBetweenLibraries() {
@@ -65,20 +79,31 @@ class JavaResPackagingConflictTest {
   }
 }
 
-class JavaResPackagingConflictWithIncludedBuildTest {
+@RunWith(Parameterized::class)
+class JavaResPackagingConflictWithIncludedBuildTest(private val enableOptimizations: Boolean) {
+
+  companion object {
+    @JvmStatic @Parameterized.Parameters(name = "enableOptimizations_{0}") fun parameters() = listOf(true, false)
+  }
 
   @get:Rule
   val rule =
     GradleRule.from {
-      basicSetupAction()
+      baseProject()
+      configureProperties()
       androidApplication { dependencies { implementation("included.build:anotherLib:1.0") } }
       includedBuild("includedBuild") {
         androidLibrary(":anotherLib") {
           group = "included.build"
           version = "1.0"
         }
+        configureProperties()
       }
     }
+
+  private fun GradleBuildDefinition.configureProperties() {
+    gradleProperties { add(BooleanOption.ENABLE_JAVA_RESOURCE_OPTIMIZATIONS, enableOptimizations) }
+  }
 
   @Test
   fun testConflictBetweenLibraries() {
@@ -111,14 +136,20 @@ class JavaResPackagingConflictWithIncludedBuildTest {
   }
 }
 
-class JavaResPackagingConflictWithExternalLibrariesTest {
+@RunWith(Parameterized::class)
+class JavaResPackagingConflictWithExternalLibrariesTest(private val enableOptimizations: Boolean) {
+
+  companion object {
+    @JvmStatic @Parameterized.Parameters(name = "enableOptimizations_{0}") fun parameters() = listOf(true, false)
+  }
 
   @get:Rule
   val rule =
     GradleRule.configure()
       .withMavenRepository { jar("com.example:jar:1.0").addTextFile("foo.txt", "blah") }
       .from {
-        basicSetupAction()
+        baseProject()
+        gradleProperties { add(BooleanOption.ENABLE_JAVA_RESOURCE_OPTIMIZATIONS, enableOptimizations) }
         androidApplication { dependencies { implementation("com.example:jar:1.0") } }
       }
 
@@ -153,11 +184,11 @@ class JavaResPackagingConflictWithExternalLibrariesTest {
 
 private fun findCause(e: Throwable): Throwable? {
   var cause: Throwable? = e
-  while (cause?.cause != null) {
-    cause = cause.cause
-    if (cause?.javaClass?.canonicalName == DuplicateRelativeFileException::class.qualifiedName) {
+  while (cause != null) {
+    if (cause.javaClass.canonicalName == DuplicateRelativeFileException::class.qualifiedName) {
       return cause
     }
+    cause = cause.cause
   }
 
   return null

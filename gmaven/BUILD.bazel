@@ -27,7 +27,6 @@ maven_repository(
         "//tools/base/ninepatch:tools.ninepatch",
         "//tools/base/pixelprobe:tools.pixelprobe",
         "//tools/base/testutils:tools.testutils",
-        "//tools/base/utp/android-test-plugin-host-device-info-proto",
         "//tools/data-binding:tools.compiler",
     ],
     include_transitive_deps = False,

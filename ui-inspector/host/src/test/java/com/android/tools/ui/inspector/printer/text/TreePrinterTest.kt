@@ -16,7 +16,6 @@
 
 package com.android.tools.ui.inspector.printer.text
 
-import com.android.tools.ui.inspector.NodeChange
 import com.android.tools.ui.inspector.UiNode
 import com.android.tools.ui.inspector.printer.SemanticsDisplayMode
 import com.google.common.truth.Truth.assertThat
@@ -99,47 +98,6 @@ class TreePrinterTest {
   }
 
   @Test
-  fun testFormatNodeChange_AttributeValue() {
-    val node =
-      UiNode.ViewNode(
-        id = 1L,
-        className = "Button",
-        bounds = UiNode.Bounds(0, 0, 10, 10),
-        idResource = "btn",
-        layoutResource = null,
-        attributes = emptyList(),
-      )
-
-    // 1. Dimension change with pre-calculated dp values
-    val changeDim =
-      NodeChange.PropertyChange.Modified(
-        name = "layout_width",
-        oldValue = UiNode.AttributeValue.DimensionVal(120f, dp = 120f),
-        newValue = UiNode.AttributeValue.DimensionVal(240f, dp = 240f),
-      )
-
-    assertThat(formatNodeChange(node, changeDim)).isEqualTo("prop: layout_width=120px (120dp) -> 240px (240dp)")
-
-    // 2. Dimension change without pre-calculated values
-    val changeDimNoDensity =
-      NodeChange.PropertyChange.Modified(
-        name = "layout_width",
-        oldValue = UiNode.AttributeValue.DimensionVal(120f),
-        newValue = UiNode.AttributeValue.DimensionVal(240f),
-      )
-    assertThat(formatNodeChange(node, changeDimNoDensity)).isEqualTo("prop: layout_width=120px -> 240px")
-
-    // 3. String change
-    val changeString =
-      NodeChange.PropertyChange.Modified(
-        name = "text",
-        oldValue = UiNode.AttributeValue.StringVal("Click"),
-        newValue = UiNode.AttributeValue.StringVal("Clicked"),
-      )
-    assertThat(formatNodeChange(node, changeString)).isEqualTo("prop: text=Click -> Clicked")
-  }
-
-  @Test
   fun testPrintUiTree_SemanticsMode_Both() {
     val node =
       UiNode.ComposeNode(
@@ -149,6 +107,7 @@ class TreePrinterTest {
         parameters = emptyList(),
         mergedSemantics = listOf(UiNode.ComposeParameter.Single("Role", UiNode.ComposeParameter.Value.StringVal("Button"))),
         unmergedSemantics = listOf(UiNode.ComposeParameter.Single("OnClick", UiNode.ComposeParameter.Value.StringVal("[lambda]"))),
+        isSystemCreated = false,
       )
 
     val output = captureOutput { printUiTree(node, 0, it, SemanticsDisplayMode.BOTH) }
@@ -176,6 +135,7 @@ View Hierarchy:
         parameters = emptyList(),
         mergedSemantics = listOf(UiNode.ComposeParameter.Single("Role", UiNode.ComposeParameter.Value.StringVal("Button"))),
         unmergedSemantics = listOf(UiNode.ComposeParameter.Single("OnClick", UiNode.ComposeParameter.Value.StringVal("[lambda]"))),
+        isSystemCreated = false,
       )
 
     val outputMerged = captureOutput { printUiTree(nodeWithMerged, 0, it, SemanticsDisplayMode.MERGED_WITH_UNMERGED_FALLBACK) }
@@ -199,6 +159,7 @@ View Hierarchy:
         parameters = emptyList(),
         mergedSemantics = emptyList(),
         unmergedSemantics = listOf(UiNode.ComposeParameter.Single("Text", UiNode.ComposeParameter.Value.StringVal("Hello"))),
+        isSystemCreated = false,
       )
 
     val outputUnmerged = captureOutput { printUiTree(nodeWithoutMerged, 0, it, SemanticsDisplayMode.MERGED_WITH_UNMERGED_FALLBACK) }
@@ -222,6 +183,7 @@ View Hierarchy:
         parameters = emptyList(),
         mergedSemantics = emptyList(),
         unmergedSemantics = emptyList(),
+        isSystemCreated = false,
       )
 
     val outputBothEmpty = captureOutput { printUiTree(nodeBothEmpty, 0, it, SemanticsDisplayMode.MERGED_WITH_UNMERGED_FALLBACK) }
@@ -246,6 +208,7 @@ View Hierarchy:
         parameters = emptyList(),
         mergedSemantics = listOf(UiNode.ComposeParameter.Single("Role", UiNode.ComposeParameter.Value.StringVal("Button"))),
         unmergedSemantics = listOf(UiNode.ComposeParameter.Single("OnClick", UiNode.ComposeParameter.Value.StringVal("[lambda]"))),
+        isSystemCreated = false,
       )
 
     val output = captureOutput { printUiTree(node, 0, it, SemanticsDisplayMode.MERGED_ONLY) }
@@ -271,6 +234,7 @@ View Hierarchy:
         parameters = emptyList(),
         mergedSemantics = listOf(UiNode.ComposeParameter.Single("Role", UiNode.ComposeParameter.Value.StringVal("Button"))),
         unmergedSemantics = listOf(UiNode.ComposeParameter.Single("OnClick", UiNode.ComposeParameter.Value.StringVal("[lambda]"))),
+        isSystemCreated = false,
       )
 
     val output = captureOutput { printUiTree(node, 0, it, SemanticsDisplayMode.UNMERGED_ONLY) }
@@ -296,6 +260,7 @@ View Hierarchy:
         parameters = emptyList(),
         mergedSemantics = listOf(UiNode.ComposeParameter.Single("Role", UiNode.ComposeParameter.Value.StringVal("Button"))),
         unmergedSemantics = listOf(UiNode.ComposeParameter.Single("OnClick", UiNode.ComposeParameter.Value.StringVal("[lambda]"))),
+        isSystemCreated = false,
       )
 
     val output = captureOutput { printUiTree(node, 0, it, SemanticsDisplayMode.NONE) }

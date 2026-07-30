@@ -30,6 +30,7 @@ import com.android.utils.ILogger
 import com.google.common.collect.ImmutableList
 import java.io.File
 import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.ProviderFactory
 import org.gradle.workers.WorkerExecutor
 
 /** Runs Android Instrumentation tests using UTP (Unified Test Platform). */
@@ -47,6 +48,7 @@ class UtpTestRunner(
   private val installApkTimeout: Int?,
   private val targetIsSplitApk: Boolean,
   private val uninstallApksAfterTest: Boolean,
+  private val provider: ProviderFactory,
 ) : BaseTestRunner(processExecutor, executor) {
 
   override fun scheduleTests(
@@ -113,6 +115,15 @@ class UtpTestRunner(
         }
         .toList()
 
-    return runUtpTestSuiteAndWait(runnerConfigs, workerExecutor, projectName, variantName, resultsDir, utpDependencies, versionedSdkLoader)
+    return runUtpTestSuiteAndWait(
+      runnerConfigs,
+      workerExecutor,
+      projectName,
+      variantName,
+      resultsDir,
+      utpDependencies,
+      versionedSdkLoader,
+      provider,
+    )
   }
 }

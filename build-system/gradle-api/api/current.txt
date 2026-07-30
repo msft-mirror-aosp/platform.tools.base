@@ -398,6 +398,7 @@ package com.android.build.api.dsl {
     enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.AgpTestSuiteInputParameters ADB_EXECUTABLE;
     enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.AgpTestSuiteInputParameters ANDROID_RES_DIRS;
     enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.AgpTestSuiteInputParameters ANDROID_TEST_EXECUTION_MODE;
+    enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.AgpTestSuiteInputParameters ANIMATIONS_DISABLED;
     enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.AgpTestSuiteInputParameters LAYOUTLIB_CLASSPATH;
     enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.AgpTestSuiteInputParameters LAYOUTLIB_DATA_DIR;
     enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.AgpTestSuiteInputParameters MAIN_CLASSES;
@@ -2182,11 +2183,11 @@ package com.android.build.api.dsl {
   public interface Optimization {
     method @Deprecated @org.gradle.api.Incubating public void baselineProfile(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BaselineProfile,kotlin.Unit> action);
     method @InaccessibleFromKotlin public boolean getEnable();
-    method @InaccessibleFromKotlin @org.gradle.api.Incubating @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public org.gradle.api.provider.SetProperty<java.lang.String> getPackageScope();
+    method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public org.gradle.api.provider.SetProperty<java.lang.String> getPackageScope();
     method public void keepRules(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KeepRules,kotlin.Unit> action);
     method @InaccessibleFromKotlin public void setEnable(boolean);
     property public abstract boolean enable;
-    property @org.gradle.api.Incubating @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public abstract org.gradle.api.provider.SetProperty<java.lang.String> packageScope;
+    property @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public abstract org.gradle.api.provider.SetProperty<java.lang.String> packageScope;
   }
 
   public interface Packaging {
@@ -2254,6 +2255,9 @@ package com.android.build.api.dsl {
   public interface PublishingOptions {
     method public void withJavadocJar();
     method public void withSourcesJar();
+  }
+
+  @org.gradle.api.Incubating public interface R8Extension {
   }
 
   public interface ResourcesPackaging {
@@ -3987,6 +3991,10 @@ package com.android.build.gradle {
 
   public abstract class LintPlugin extends com.android.build.gradle.BasePlugin {
     ctor public LintPlugin();
+  }
+
+  @org.gradle.api.Incubating public abstract class R8Plugin extends com.android.build.gradle.BasePlugin {
+    ctor public R8Plugin();
   }
 
   public final class TestPlugin extends com.android.build.gradle.BasePlugin {

@@ -46,6 +46,19 @@ class DexPackagingUtilsTest {
 
     assertThat(compare(File("a/classes2.dex"), File("a/classes3.dex"))).isEqualTo(-1)
     assertThat(compare(File("a/classes2.dex"), File("b/classes3.dex"))).isEqualTo(-1)
-    assertThat(compare(File("b/classes2.dex"), File("a/classes3.dex"))).isEqualTo(1)
+    assertThat(compare(File("b/classes2.dex"), File("a/classes3.dex"))).isEqualTo(-1)
+
+    // Case 4. Numerical sorting: classes2.dex < classes10.dex
+    assertThat(compare(File("a/classes2.dex"), File("a/classes10.dex"))).isEqualTo(-1)
+    assertThat(compare(File("b/classes2.dex"), File("a/classes10.dex"))).isEqualTo(-1)
+    assertThat(compare(File("a/classes10.dex"), File("a/classes2.dex"))).isEqualTo(1)
+
+    // Case 5. classesN.dex vs non-classesN.dex
+    assertThat(compare(File("z/classes2.dex"), File("a/other.dex"))).isEqualTo(-1)
+    assertThat(compare(File("a/other.dex"), File("z/classes2.dex"))).isEqualTo(1)
+
+    // Case 6. Non-classesN.dex vs Non-classesN.dex
+    assertThat(compare(File("a/other.dex"), File("b/other.dex"))).isEqualTo(-1)
+    assertThat(compare(File("b/other.dex"), File("a/other.dex"))).isEqualTo(1)
   }
 }

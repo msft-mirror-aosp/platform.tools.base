@@ -83,6 +83,7 @@ class DimensionResolverTest {
         parameters = emptyList(),
         mergedSemantics = emptyList(),
         unmergedSemantics = emptyList(),
+        isSystemCreated = false,
       )
 
     val resolved = composeNode.resolveDimensions(density = Dimension.Dpi(320), fontScale = 1.0f) as UiNode.ComposeNode
