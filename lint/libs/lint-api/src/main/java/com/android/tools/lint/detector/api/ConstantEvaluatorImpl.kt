@@ -924,7 +924,7 @@ private fun ArgList<Any?>.div() =
 private fun ArgList<Any?>.mod() =
   ifFirst { it == 0 }?.const(0)
     ?: ifFirst { it == 0L }?.const(0L)
-    ?: ifAll { it != 0 && it != 0L }?.reduceAsNumbers(Double::mod, Float::mod, Long::mod, Int::mod)
+    ?: ifAll { it != 0 && it != 0L }?.reduceAsNumbers(Double::rem, Float::rem, Long::rem, Int::rem)
 
 private fun ArgList<Any?>.shl() = shift(Long::shl, Int::shl)
 
