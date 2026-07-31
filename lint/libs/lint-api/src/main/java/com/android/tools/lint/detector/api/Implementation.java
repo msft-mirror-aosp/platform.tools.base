@@ -166,11 +166,13 @@ public class Implementation {
             }
         }
 
-        if (this.scope.size() == scope.size() + 1
+        if (this.scope.size() <= scope.size() + 1
                 && !scope.contains(Scope.TEST_SOURCES)
                 && this.scope.contains(Scope.TEST_SOURCES)) {
             // TEST_SOURCES is a special marker scope
-            return this.scope.contains(scope.iterator().next());
+            EnumSet<Scope> required = EnumSet.copyOf(this.scope);
+            required.remove(Scope.TEST_SOURCES);
+            return scope.containsAll(required);
         }
 
         return false;
