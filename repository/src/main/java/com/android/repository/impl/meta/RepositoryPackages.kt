@@ -17,11 +17,8 @@ package com.android.repository.impl.meta
 
 import com.android.repository.api.LocalPackage
 import com.android.repository.api.RemotePackage
-import com.android.repository.api.RepoPackage
 import com.android.repository.api.UpdatablePackage
-import com.android.repository.util.getAllRepoPackagePrefixes
-import com.google.common.collect.Multimap
-import com.google.common.collect.TreeMultimap
+import com.google.common.collect.ImmutableSortedMap
 import java.util.TreeMap
 import javax.xml.bind.annotation.XmlTransient
 
@@ -34,21 +31,15 @@ class RepositoryPackages() {
   }
 
   /** Map from `path` (the unique ID of a package) to [LocalPackage], including all installed packages. */
-  var localPackages: Map<String, LocalPackage> = mutableMapOf()
+  var localPackages: ImmutableSortedMap<String, LocalPackage> = ImmutableSortedMap.of()
     private set
 
   /**
    * Map from `path` (the unique ID of a package) to [RemotePackage]. There may be more than one version of the same [RemotePackage]
    * available, for example if there is a stable and a preview version available.
    */
-  var remotePackages: Map<String, RemotePackage> = TreeMap()
+  var remotePackages: ImmutableSortedMap<String, RemotePackage> = ImmutableSortedMap.of()
     private set
-
-  /** Multimap from all prefixes of `path`s (the unique IDs of packages) to [LocalPackage]s with that path prefix. */
-  private var mLocalPackagesByPrefix: Multimap<String, LocalPackage> = TreeMultimap.create()
-
-  /** Multimap from all prefixes of `path`s (the unique IDs of packages) to [RemotePackage]s with that path prefix. */
-  private var mRemotePackagesByPrefix: Multimap<String, RemotePackage> = TreeMultimap.create()
 
   /** All the packages that are locally-installed and have a remotely-available update. */
   private var mUpdatedPkgs: MutableSet<UpdatablePackage>? = sortedSetOf()
@@ -106,12 +97,12 @@ class RepositoryPackages() {
       }
     }
 
-  fun getLocalPackagesForPrefix(pathPrefix: String?): Collection<LocalPackage> {
-    return pathPrefix?.let { mLocalPackagesByPrefix.get(it) } ?: emptyList()
+  fun getLocalPackagesForPrefix(pathPrefix: String): Collection<LocalPackage> {
+    return localPackages.tailMap(pathPrefix).values.takeWhile { it.path == pathPrefix || it.path.startsWith("$pathPrefix;") }
   }
 
-  fun getRemotePackagesForPrefix(pathPrefix: String?): Collection<RemotePackage> {
-    return pathPrefix?.let { mRemotePackagesByPrefix.get(it) } ?: emptyList()
+  fun getRemotePackagesForPrefix(pathPrefix: String): Collection<RemotePackage> {
+    return remotePackages.tailMap(pathPrefix).values.takeWhile { it.path == pathPrefix || it.path.startsWith("$pathPrefix;") }
   }
 
   /**
@@ -119,9 +110,8 @@ class RepositoryPackages() {
    */
   fun setLocalPkgInfos(packages: Collection<LocalPackage>) {
     synchronized(mLock) {
-      this.localPackages = packages.associateBy { it.path }
+      this.localPackages = ImmutableSortedMap.copyOf(packages.associateBy { it.path })
       invalidate()
-      mLocalPackagesByPrefix = computePackagePrefixes(this.localPackages)
     }
   }
 
@@ -130,9 +120,8 @@ class RepositoryPackages() {
    */
   fun setRemotePkgInfos(packages: Collection<RemotePackage>) {
     synchronized(mLock) {
-      this.remotePackages = packages.associateByTo(TreeMap()) { it.path }
+      this.remotePackages = ImmutableSortedMap.copyOf(packages.associateBy { it.path })
       invalidate()
-      mRemotePackagesByPrefix = computePackagePrefixes(this.remotePackages)
     }
   }
 
@@ -169,18 +158,5 @@ class RepositoryPackages() {
     mNewPkgs = news
     mUpdatedPkgs = updates
     mConsolidatedPkgs = newConsolidatedPkgs
-  }
-
-  companion object {
-    private fun <P : RepoPackage> computePackagePrefixes(packages: Map<String, P>): Multimap<String, P> {
-      val packagesByPrefix: Multimap<String, P> = TreeMultimap.create()
-      for ((path, p) in packages) {
-        val prefixes = getAllRepoPackagePrefixes(path)
-        for (prefix in prefixes) {
-          packagesByPrefix.put(prefix, p)
-        }
-      }
-      return packagesByPrefix
-    }
   }
 }
