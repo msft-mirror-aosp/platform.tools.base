@@ -110,26 +110,19 @@ public class AdbClient {
         return deviceHolder.rawExec2(executable, parameters);
     }
 
-    /** Executes the given command with no stdin and returns stdout as a byte[] */
+    /** Executes the given command and returns stdout as a byte[] */
     public byte[] shell(String[] parameters, long timeOutmS) throws IOException {
-        return shell(parameters, null, timeOutmS);
+        return shell(parameters, timeOutmS, TimeUnit.MILLISECONDS);
     }
 
-    public byte[] shell(String[] parameters, InputStream input, long timeOutmS) throws IOException {
-        return shell(parameters, input, timeOutmS, TimeUnit.MILLISECONDS);
-    }
-
-    /**
-     * Executes the given command and sends {@code input} to stdin and returns stdout as a byte[]
-     */
-    public byte[] shell(
-            String[] parameters, InputStream input, long maxTimeOutMs, TimeUnit timeUnit)
+    /** Executes the given command and returns stdout as a byte[] */
+    public byte[] shell(String[] parameters, long maxTimeOutMs, TimeUnit timeUnit)
             throws IOException {
         ByteArrayOutputReceiver receiver;
         try (Trace ignored = Trace.begin("adb shell" + Arrays.toString(parameters))) {
             receiver = new ByteArrayOutputReceiver();
             deviceHolder.executeShellCommand(
-                    String.join(" ", parameters), receiver, maxTimeOutMs, timeUnit, input);
+                    String.join(" ", parameters), receiver, maxTimeOutMs, timeUnit);
             return receiver.toByteArray();
         }
     }

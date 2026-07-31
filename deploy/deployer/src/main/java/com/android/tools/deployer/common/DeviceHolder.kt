@@ -90,26 +90,6 @@ class DeviceHolder(
     receiver: IShellOutputReceiver,
     maxTimeToOutputResponse: Long,
     maxTimeToOutputResponseUnit: TimeUnit,
-    `is`: InputStream?,
-  ) {
-    try {
-      iDevice.executeShellCommand(command, receiver, maxTimeToOutputResponse, maxTimeToOutputResponseUnit, `is`)
-    } catch (e: Exception) {
-      when (e) {
-        is AdbCommandRejectedException,
-        is ShellCommandUnresponsiveException,
-        is TimeoutException -> throw IOException(e)
-        else -> throw e
-      }
-    }
-  }
-
-  @Throws(IOException::class)
-  fun executeShellCommand(
-    command: String,
-    receiver: IShellOutputReceiver,
-    maxTimeToOutputResponse: Long,
-    maxTimeToOutputResponseUnit: TimeUnit,
   ) {
     try {
       iDevice.executeShellCommand(command, receiver, maxTimeToOutputResponse, maxTimeToOutputResponseUnit)

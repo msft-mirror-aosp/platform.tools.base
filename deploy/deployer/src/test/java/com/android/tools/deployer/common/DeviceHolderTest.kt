@@ -104,56 +104,6 @@ class DeviceHolderTest {
   }
 
   @Test
-  fun testIDeviceExecuteShellCommandWithInputStream() {
-    val receiver = mock(IShellOutputReceiver::class.java)
-    val inputStream = mock(InputStream::class.java)
-
-    deviceHolder.executeShellCommand("cmd", receiver, 5L, TimeUnit.SECONDS, inputStream)
-    verify(iDevice).executeShellCommand("cmd", receiver, 5L, TimeUnit.SECONDS, inputStream)
-    Mockito.verifyNoInteractions(connectedDevice)
-  }
-
-  @Test
-  fun testIDeviceExecuteShellCommandWithInputStream_convertsAdbCommandRejectedExceptionToIOException() {
-    val receiver = mock(IShellOutputReceiver::class.java)
-    val inputStream = mock(InputStream::class.java)
-    Mockito.doThrow(AdbCommandRejectedException("rejected"))
-      .`when`(iDevice)
-      .executeShellCommand("cmd", receiver, 5L, TimeUnit.SECONDS, inputStream)
-
-    val e =
-      Assert.assertThrows(IOException::class.java) { deviceHolder.executeShellCommand("cmd", receiver, 5L, TimeUnit.SECONDS, inputStream) }
-    Assert.assertTrue(e.cause is AdbCommandRejectedException)
-    Mockito.verifyNoInteractions(connectedDevice)
-  }
-
-  @Test
-  fun testIDeviceExecuteShellCommandWithInputStream_convertsShellCommandUnresponsiveExceptionToIOException() {
-    val receiver = mock(IShellOutputReceiver::class.java)
-    val inputStream = mock(InputStream::class.java)
-    Mockito.doThrow(ShellCommandUnresponsiveException())
-      .`when`(iDevice)
-      .executeShellCommand("cmd", receiver, 5L, TimeUnit.SECONDS, inputStream)
-
-    val e =
-      Assert.assertThrows(IOException::class.java) { deviceHolder.executeShellCommand("cmd", receiver, 5L, TimeUnit.SECONDS, inputStream) }
-    Assert.assertTrue(e.cause is ShellCommandUnresponsiveException)
-    Mockito.verifyNoInteractions(connectedDevice)
-  }
-
-  @Test
-  fun testIDeviceExecuteShellCommandWithInputStream_convertsTimeoutExceptionToIOException() {
-    val receiver = mock(IShellOutputReceiver::class.java)
-    val inputStream = mock(InputStream::class.java)
-    Mockito.doThrow(TimeoutException("timeout")).`when`(iDevice).executeShellCommand("cmd", receiver, 5L, TimeUnit.SECONDS, inputStream)
-
-    val e =
-      Assert.assertThrows(IOException::class.java) { deviceHolder.executeShellCommand("cmd", receiver, 5L, TimeUnit.SECONDS, inputStream) }
-    Assert.assertTrue(e.cause is TimeoutException)
-    Mockito.verifyNoInteractions(connectedDevice)
-  }
-
-  @Test
   fun testIDeviceExecuteShellCommandWithoutInputStream() {
     val receiver = mock(IShellOutputReceiver::class.java)
 
