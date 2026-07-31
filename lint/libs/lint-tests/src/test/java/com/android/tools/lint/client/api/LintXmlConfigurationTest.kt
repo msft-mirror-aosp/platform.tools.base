@@ -264,6 +264,8 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
       "/child/new-exceptions.xml",
       getPath(configuration.getOptionAsFile(InteroperabilityDetector.PLATFORM_NULLNESS, "exceptions")),
     )
+    assertEquals("api/list.xml", configuration.getOption(ApiDetector.UNSUPPORTED, "allowed", "default"))
+    assertEquals("default", configuration.getOption(ApiDetector.UNSUPPORTED, "unknown", "default"))
   }
 
   fun testClientFilters() {

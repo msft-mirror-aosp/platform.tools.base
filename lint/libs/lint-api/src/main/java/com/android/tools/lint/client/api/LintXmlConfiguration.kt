@@ -275,7 +275,7 @@ protected constructor(
   }
 
   override fun getOption(issue: Issue, name: String, default: String?): String? {
-    getLocalOption(issue, name, default)?.let {
+    getLocalOption(issue, name, null)?.let {
       return it
     }
     return parent?.getOption(issue, name, default) ?: default
