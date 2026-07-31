@@ -2392,6 +2392,21 @@ class AdbDeviceServicesTest {
   }
 
   @Test
+  fun testRootIfAlreadyRoot(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val fakeDevice = addFakeDevice(fakeAdb)
+    fakeAdb.fakeAdbServer.restartDeviceAsync(fakeDevice) { it.copy(isRoot = true) }.await()
+    val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
+
+    // Act
+    val status = deviceServices.root(deviceSelector)
+
+    // Assert
+    Assert.assertFalse(status.restarting)
+    Assert.assertEquals(status.rawStatus, status.status + '\n')
+  }
+
+  @Test
   fun testUnRoot(): Unit = runBlockingWithTimeout {
     // Prepare
     val fakeDevice = addFakeDevice(fakeAdb)
@@ -2434,6 +2449,10 @@ class AdbDeviceServicesTest {
     Assert.assertTrue(status.restarting)
     Assert.assertTrue(status.status.startsWith("restarting"))
     Assert.assertEquals(status.rawStatus, status.status + '\n')
+
+    val deviceState = fakeAdb.fakeAdbServer.deviceListCopy.get().first { it.deviceId == fakeDevice.deviceId }
+    Assert.assertEquals(DeviceState.DeviceStatus.ONLINE, deviceState.deviceStatus)
+    Assert.assertTrue(deviceState.isRoot)
   }
 
   @Test
@@ -2450,6 +2469,10 @@ class AdbDeviceServicesTest {
     Assert.assertTrue(status.restarting)
     Assert.assertTrue(status.status.startsWith("restarting"))
     Assert.assertEquals(status.rawStatus, status.status + '\n')
+
+    val deviceState = fakeAdb.fakeAdbServer.deviceListCopy.get().first { it.deviceId == fakeDevice.deviceId }
+    Assert.assertEquals(DeviceState.DeviceStatus.ONLINE, deviceState.deviceStatus)
+    Assert.assertFalse(deviceState.isRoot)
   }
 
   @Test
