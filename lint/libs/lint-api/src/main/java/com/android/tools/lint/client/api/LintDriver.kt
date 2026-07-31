@@ -1691,7 +1691,7 @@ class LintDriver(
         if (peek == null) {
           break
         }
-        if (classNode.name.startsWith(peek.name)) {
+        if (classNode.name.length > peek.name.length && classNode.name[peek.name.length] == '$' && classNode.name.startsWith(peek.name)) {
           break
         } else {
           outerClasses?.pop()

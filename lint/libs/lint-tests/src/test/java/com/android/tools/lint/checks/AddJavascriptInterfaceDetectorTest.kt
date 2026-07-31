@@ -53,6 +53,42 @@ class AddJavascriptInterfaceDetectorTest : AbstractCheckTest() {
     lint().files(manifest().minSdk(10), file, SUPPORT_ANNOTATIONS_JAR).run().expectClean()
   }
 
+  fun testOuterClassPrefixSuppression() {
+    val expected =
+      """
+      src/test/pkg/Utils.java:6: Warning: WebView.addJavascriptInterface should not be called with minSdkVersion < 17 for security reasons: JavaScript can use reflection to manipulate application [AddJavascriptInterface]
+                        webView.addJavascriptInterface(object, string);
+                                ~~~~~~~~~~~~~~~~~~~~~~
+      0 errors, 1 warnings
+      """
+    lint()
+      .files(
+        manifest().minSdk(10),
+        java(
+          """
+          package test.pkg;
+          import android.annotation.SuppressLint;
+          @SuppressLint("AddJavascriptInterface")
+          public class Util {
+          }
+          """
+        ),
+        java(
+          """
+          package test.pkg;
+          import android.webkit.WebView;
+          public class Utils {
+              public void addJavascriptInterfaceToWebView(WebView webView, Object object, String string) {
+                  webView.addJavascriptInterface(object, string);
+              }
+          }
+          """
+        ),
+      )
+      .run()
+      .expect(expected)
+  }
+
   private val testFile =
     java(
         "src/test/pkg/AddJavascriptInterfaceTest.java",
