@@ -22,6 +22,7 @@
 #include <mutex>
 
 #include "counters/counters_request_handler.h"
+#include "memory/heap_dump_request_handler.h"
 #include "memory/memory_request_handler.h"
 #include "perfetto/ext/base/file_utils.h"
 #include "perfetto/trace_processor/basic_types.h"
@@ -271,6 +272,28 @@ grpc::Status TraceProcessorServiceImpl::QueryBatch(
         handler.PopulateFrameTimeline(
             request.android_frame_timeline_request(),
             query_result->mutable_android_frame_timeline_result());
+      } break;
+      case QueryParameters::kHeapDumpRequest: {
+        HeapDumpRequestHandler handler(tp_.get());
+        handler.PopulateEvents(query_result->mutable_heap_dump_result());
+      } break;
+      case QueryParameters::kGetPrimitiveFieldsRequest: {
+        HeapDumpRequestHandler handler(tp_.get());
+        handler.PopulatePrimitiveFields(
+            request.get_primitive_fields_request(),
+            query_result->mutable_get_primitive_fields_result());
+      } break;
+      case QueryParameters::kHeapDumpInstancesRequest: {
+        HeapDumpRequestHandler handler(tp_.get());
+        handler.PopulateInstances(
+            request.heap_dump_instances_request(),
+            query_result->mutable_heap_dump_instances_result());
+      } break;
+      case QueryParameters::kGetReferencesRequest: {
+        HeapDumpRequestHandler handler(tp_.get());
+        handler.PopulateReferences(
+            request.get_references_request(),
+            query_result->mutable_get_references_result());
       } break;
       case QueryParameters::QUERY_NOT_SET:
         // Do nothing.
