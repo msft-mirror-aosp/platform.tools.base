@@ -20,4 +20,5 @@
     <string name="fragment_b_title">Fragment B</string>
     <string name="nav_to_a">Go to Fragment A</string>
 
+    <string name="leak_count_prompt">Number of leaks to trigger:</string>
 </resources>

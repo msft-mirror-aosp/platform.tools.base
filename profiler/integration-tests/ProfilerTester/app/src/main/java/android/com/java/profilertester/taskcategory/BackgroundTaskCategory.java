@@ -2,7 +2,6 @@ package android.com.java.profilertester.taskcategory;
 
 import static android.content.Context.ALARM_SERVICE;
 import static android.content.Context.JOB_SCHEDULER_SERVICE;
-import static android.content.Context.POWER_SERVICE;
 import static android.os.PowerManager.PARTIAL_WAKE_LOCK;
 
 import android.annotation.SuppressLint;
@@ -20,9 +19,15 @@ import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.PowerManager;
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
+import android.os.SystemClock;
 import android.util.Log;
+import android.view.View;
+import android.widget.EditText;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -40,19 +45,43 @@ public final class BackgroundTaskCategory extends TaskCategory {
     // Repeating alarms have system-enforced minimum interval so we need a longer task time.
     private static final long ALARM_TASK_TIME_MS = TimeUnit.MINUTES.toMillis(2);
 
-    @NonNull
-    private final List<? extends Task> mTasks =
-            Arrays.asList(
-                    new WakeLockTask(),
-                    new AlarmTask(),
-                    new RepeatingAlarmTask(),
-                    new SingleJobTask(),
-                    new PeriodicJobTask());
+    private static PowerManager.WakeLock sLeakedWakeLock = null;
+
+    @NonNull private final List<? extends Task> mTasks;
 
     @NonNull private final Activity mHostActivity;
 
     public BackgroundTaskCategory(@NonNull Activity hostActivity) {
+        this(hostActivity, null);
+    }
+
+    public BackgroundTaskCategory(@NonNull Activity hostActivity, @Nullable EditText textEditor) {
         mHostActivity = hostActivity;
+        mTasks =
+                Arrays.asList(
+                        new TimedWakeLockTask(
+                                TimeUnit.SECONDS.toMillis(15),
+                                "Short Wake Lock (15s)",
+                                "ShortWakeLock"),
+                        new TimedWakeLockTask(
+                                TimeUnit.SECONDS.toMillis(65),
+                                "Long Wake Lock (65s - BatteryStats)",
+                                "LongWakeLock65s"),
+                        new TimedWakeLockTask(
+                                TimeUnit.SECONDS.toMillis(120),
+                                "Long Wake Lock (120s - 2 min)",
+                                "LongWakeLock120s"),
+                        new TimedWakeLockTask(
+                                TimeUnit.SECONDS.toMillis(300),
+                                "Long Wake Lock (300s - 5 min)",
+                                "LongWakeLock300s"),
+                        new CustomWakeLockTask(textEditor),
+                        new AcquireLeakedWakeLockTask(),
+                        new ReleaseLeakedWakeLockTask(),
+                        new AlarmTask(),
+                        new RepeatingAlarmTask(),
+                        new SingleJobTask(),
+                        new PeriodicJobTask());
     }
 
     @NonNull
@@ -67,32 +96,178 @@ public final class BackgroundTaskCategory extends TaskCategory {
         return "Background Tasks";
     }
 
-    private final class WakeLockTask extends Task {
+    private final class TimedWakeLockTask extends Task {
+        private final long mDurationMs;
+        @NonNull private final String mDescription;
+        @NonNull private final String mTagSuffix;
+
+        TimedWakeLockTask(long durationMs, @NonNull String description, @NonNull String tagSuffix) {
+            mDurationMs = durationMs;
+            mDescription = description;
+            mTagSuffix = tagSuffix;
+        }
+
         @NonNull
         @Override
         protected String execute() {
-            PowerManager powerManager =
-                    (PowerManager) mHostActivity.getSystemService(POWER_SERVICE);
+            PowerManager powerManager = mHostActivity.getSystemService(PowerManager.class);
             if (powerManager == null) {
                 return "Could not acquire the PowerManager!";
             }
-            PowerManager.WakeLock wakeLock =
-                    powerManager.newWakeLock(
-                            PARTIAL_WAKE_LOCK, mHostActivity.getPackageName() + ":WakeLockTaskTag");
-            wakeLock.acquire(LONG_TASK_TIME_MS);
+            String tag = mHostActivity.getPackageName() + ":" + mTagSuffix;
+            PowerManager.WakeLock wakeLock = powerManager.newWakeLock(PARTIAL_WAKE_LOCK, tag);
+            wakeLock.acquire(mDurationMs);
             try {
-                Thread.sleep(LONG_TASK_TIME_MS);
-            } catch (InterruptedException e) {
+                SystemClock.sleep(mDurationMs);
+            } catch (Exception e) {
                 e.printStackTrace();
-                Thread.currentThread().interrupt();
+            } finally {
+                if (wakeLock.isHeld()) {
+                    wakeLock.release();
+                }
             }
-            return "Released wake lock.";
+            return "Released wake lock after "
+                    + TimeUnit.MILLISECONDS.toSeconds(mDurationMs)
+                    + "s.";
         }
 
         @NonNull
         @Override
         protected String getTaskDescription() {
-            return "Wake Lock";
+            return mDescription;
+        }
+    }
+
+    private final class CustomWakeLockTask extends Task {
+        @Nullable private final EditText mTextEditor;
+        @Nullable private final CustomWakeLockSelectionListener mListener;
+
+        private long mParsedDurationMs =
+                70000; // default 70 seconds (> 60s long wake lock threshold)
+
+        CustomWakeLockTask(@Nullable EditText textEditor) {
+            mTextEditor = textEditor;
+            mListener = textEditor != null ? new CustomWakeLockSelectionListener(textEditor) : null;
+        }
+
+        @Override
+        public void preExecute() {
+            if (mTextEditor != null) {
+                String input = mTextEditor.getText().toString().trim();
+                if (!input.isEmpty()) {
+                    try {
+                        mParsedDurationMs = TimeUnit.SECONDS.toMillis(Long.parseLong(input));
+                    } catch (NumberFormatException e) {
+                        Log.w("BackgroundTaskCategory", "Invalid duration input: " + input);
+                    }
+                }
+            }
+        }
+
+        @Override
+        public boolean usesTextEditor() {
+            return true;
+        }
+
+        @NonNull
+        @Override
+        protected String execute() {
+            long durationMs = mParsedDurationMs;
+            long durationSec = TimeUnit.MILLISECONDS.toSeconds(durationMs);
+            PowerManager powerManager = mHostActivity.getSystemService(PowerManager.class);
+            if (powerManager == null) {
+                return "Could not acquire the PowerManager!";
+            }
+            String tag = mHostActivity.getPackageName() + ":CustomWakeLockTag_" + durationSec + "s";
+            PowerManager.WakeLock wakeLock = powerManager.newWakeLock(PARTIAL_WAKE_LOCK, tag);
+            wakeLock.acquire(durationMs);
+            try {
+                SystemClock.sleep(durationMs);
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                if (wakeLock.isHeld()) {
+                    wakeLock.release();
+                }
+            }
+            return "Released custom wake lock after " + durationSec + "s.";
+        }
+
+        @NonNull
+        @Override
+        protected String getTaskDescription() {
+            return "Custom Duration Wake Lock";
+        }
+
+        @Nullable
+        @Override
+        protected SelectionListener getSelectionListener() {
+            return mListener;
+        }
+
+        private final class CustomWakeLockSelectionListener implements SelectionListener {
+            @NonNull private final EditText mTextEditor;
+
+            private CustomWakeLockSelectionListener(@NonNull EditText textEditor) {
+                mTextEditor = textEditor;
+            }
+
+            @Override
+            public void onSelection(@NonNull Object selectedItem) {
+                if (selectedItem instanceof Task && ((Task) selectedItem).usesTextEditor()) {
+                    mTextEditor.setVisibility(View.VISIBLE);
+                    mTextEditor.setHint("Duration in seconds (default 70)");
+                } else {
+                    mTextEditor.setVisibility(View.INVISIBLE);
+                }
+            }
+        }
+    }
+
+    private final class AcquireLeakedWakeLockTask extends Task {
+        @SuppressLint("WakelockTimeout")
+        @NonNull
+        @Override
+        protected String execute() {
+            PowerManager powerManager = mHostActivity.getSystemService(PowerManager.class);
+            if (powerManager == null) {
+                return "Could not acquire the PowerManager!";
+            }
+            if (sLeakedWakeLock != null && sLeakedWakeLock.isHeld()) {
+                return "Leaked wake lock is already acquired and held!";
+            }
+            sLeakedWakeLock =
+                    powerManager.newWakeLock(
+                            PARTIAL_WAKE_LOCK,
+                            mHostActivity.getPackageName() + ":LeakedWakeLockTag");
+            sLeakedWakeLock.acquire();
+            return "Acquired leaked wake lock indefinitely! (Use 'Release Leaked Wake Lock' to"
+                    + " release)";
+        }
+
+        @NonNull
+        @Override
+        protected String getTaskDescription() {
+            return "Leaked Wake Lock (Acquire & Keep)";
+        }
+    }
+
+    private final class ReleaseLeakedWakeLockTask extends Task {
+        @NonNull
+        @Override
+        protected String execute() {
+            if (sLeakedWakeLock != null && sLeakedWakeLock.isHeld()) {
+                sLeakedWakeLock.release();
+                sLeakedWakeLock = null;
+                return "Released leaked wake lock.";
+            }
+            return "No leaked wake lock is currently held.";
+        }
+
+        @NonNull
+        @Override
+        protected String getTaskDescription() {
+            return "Release Leaked Wake Lock";
         }
     }
 
@@ -125,10 +300,9 @@ public final class BackgroundTaskCategory extends TaskCategory {
             }
 
             try {
-                Thread.sleep(ALARM_TASK_TIME_MS);
-            } catch (InterruptedException e) {
+                SystemClock.sleep(ALARM_TASK_TIME_MS);
+            } catch (Exception e) {
                 e.printStackTrace();
-                Thread.currentThread().interrupt();
             }
 
             alarmManager.cancel(pendingIntent);
@@ -158,10 +332,9 @@ public final class BackgroundTaskCategory extends TaskCategory {
                     AlarmManager.RTC_WAKEUP, TimeUnit.SECONDS.toMillis(5), "TEST", listener, null);
 
             try {
-                Thread.sleep(TimeUnit.SECONDS.toMillis(4));
-            } catch (InterruptedException e) {
+                SystemClock.sleep(TimeUnit.SECONDS.toMillis(4));
+            } catch (Exception e) {
                 e.printStackTrace();
-                Thread.currentThread().interrupt();
             }
 
             alarmManager.cancel(listener);
@@ -214,8 +387,8 @@ public final class BackgroundTaskCategory extends TaskCategory {
             public Void doInBackground(JobParameters... parameters) {
                 Log.d(TAG, "Job running with ID: " + parameters[0].getJobId());
                 try {
-                    Thread.sleep(TimeUnit.SECONDS.toMillis(2L));
-                } catch (InterruptedException e) {
+                    SystemClock.sleep(TimeUnit.SECONDS.toMillis(2L));
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
                 jobFinished(parameters[0], false);
@@ -259,9 +432,8 @@ public final class BackgroundTaskCategory extends TaskCategory {
             scheduler.schedule(createJob(componentName));
 
             try {
-                Thread.sleep(TimeUnit.SECONDS.toMillis(6L));
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
+                SystemClock.sleep(TimeUnit.SECONDS.toMillis(6L));
+            } catch (Exception e) {
                 return getTaskDescription() + " interrupted!";
             } finally {
                 scheduler.cancelAll();

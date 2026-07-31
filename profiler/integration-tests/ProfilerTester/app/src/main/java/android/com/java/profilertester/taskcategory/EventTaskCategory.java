@@ -3,10 +3,12 @@ package android.com.java.profilertester.taskcategory;
 import android.app.Activity;
 import android.com.java.profilertester.fragment.FragmentHostActivity;
 import android.content.Intent;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import android.view.View;
 import android.widget.EditText;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -71,6 +73,11 @@ public class EventTaskCategory extends TaskCategory {
         @Override
         protected String getTaskDescription() {
             return "Type Words";
+        }
+
+        @Override
+        public boolean usesTextEditor() {
+            return true;
         }
 
         @NonNull
