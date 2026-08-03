@@ -303,7 +303,7 @@ public class DeployerRunner {
             if (parameters.getCommands().contains(DeployRunnerParameters.Command.INSTALL)) {
                 InstallOptions.Builder options = defaultInstallOptions.toBuilder();
 
-                if (device.supportsFeature(IDevice.HardwareFeature.EMBEDDED)) {
+                if (device.isEmbedded()) {
                     options.setGrantAllPermissions();
                 }
 

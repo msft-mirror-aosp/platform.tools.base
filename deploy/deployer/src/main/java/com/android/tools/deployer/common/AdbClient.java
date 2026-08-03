@@ -300,7 +300,7 @@ public class AdbClient {
      * @return a {@link List} of PIDs, or null if this isn't supported on the device.
      */
     public List<Integer> getPids(String packageName) {
-        if (!deviceHolder.supportsFeature(IDevice.Feature.REAL_PKG_NAME)) {
+        if (!deviceHolder.isRealPkgNameSupported()) {
             throw new IllegalStateException(
                     String.format(
                             "Device %s, does not support REAL_PKG_NAME",

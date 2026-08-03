@@ -75,26 +75,83 @@ class DeviceHolderMigrationTest {
     Assert.assertEquals(AndroidVersion.DEFAULT.apiLevel, deviceHolder.version.apiLevel)
   }
 
-  private suspend fun connectAndGetDevice(serialNumber: String = "serial_123"): IDevice {
-    connectDevice(serialNumber)
+  @Test
+  fun testSupportsRealPkgNameConsistency() = runBlocking {
+    val iDevice = connectAndGetDevice()
+    val deviceHolderLegacy = createDeviceHolder(iDevice, useConnectedDevice = false)
+    val deviceHolderNew = createDeviceHolder(iDevice, useConnectedDevice = true)
+
+    Assert.assertEquals(deviceHolderLegacy.isRealPkgNameSupported, deviceHolderNew.isRealPkgNameSupported)
+
+    val api = deviceId!!.api()
+    if (api >= 30) {
+      Assert.assertTrue(deviceHolderNew.isRealPkgNameSupported)
+    } else {
+      Assert.assertFalse(deviceHolderNew.isRealPkgNameSupported)
+    }
+  }
+
+  @Test
+  fun testSupportsSkipVerificationConsistency() = runBlocking {
+    val iDevice = connectAndGetDevice()
+    val deviceHolderLegacy = createDeviceHolder(iDevice, useConnectedDevice = false)
+    val deviceHolderNew = createDeviceHolder(iDevice, useConnectedDevice = true)
+
+    Assert.assertEquals(deviceHolderLegacy.isSkipVerificationSupported, deviceHolderNew.isSkipVerificationSupported)
+
+    val api = deviceId!!.api()
+    if (api >= 30) {
+      Assert.assertTrue(deviceHolderNew.isSkipVerificationSupported)
+    } else {
+      Assert.assertFalse(deviceHolderNew.isSkipVerificationSupported)
+    }
+  }
+
+  @Test
+  fun testIsEmbedded_returnsFalse_whenNotEmbedded() = runBlocking {
+    val iDevice = connectAndGetDevice()
+    val deviceHolderLegacy = createDeviceHolder(iDevice, useConnectedDevice = false)
+    val deviceHolderNew = createDeviceHolder(iDevice, useConnectedDevice = true)
+
+    Assert.assertEquals(deviceHolderLegacy.isEmbedded, deviceHolderNew.isEmbedded)
+    Assert.assertFalse(deviceHolderNew.isEmbedded)
+  }
+
+  @Test
+  fun testIsEmbedded_returnsTrue_whenEmbedded() = runBlocking {
+    val iDevice = connectAndGetDevice(extraProperties = mapOf("ro.build.characteristics" to "embedded"))
+    val deviceHolderLegacy = createDeviceHolder(iDevice, useConnectedDevice = false)
+    val deviceHolderNew = createDeviceHolder(iDevice, useConnectedDevice = true)
+
+    Assert.assertEquals(deviceHolderLegacy.isEmbedded, deviceHolderNew.isEmbedded)
+    Assert.assertTrue(deviceHolderNew.isEmbedded)
+  }
+
+  private suspend fun connectAndGetDevice(serialNumber: String = "serial_123", extraProperties: Map<String, String> = emptyMap()): IDevice {
+    connectDevice(serialNumber, extraProperties)
     val bridge = AndroidDebugBridge.getBridge() ?: throw IllegalStateException("Bridge not initialized")
     yieldUntil { bridge.devices.any { it.serialNumber == serialNumber } }
     return bridge.devices.first { it.serialNumber == serialNumber }
   }
 
-  private fun connectDevice(serialNumber: String): DeviceState {
+  private fun connectDevice(serialNumber: String, extraProperties: Map<String, String> = emptyMap()): DeviceState {
     val deviceId = this.deviceId ?: throw IllegalStateException("deviceId not initialized")
     val deviceState =
-      fakeAdbRule.fakeAdb.connectDevice(
-        deviceId = serialNumber,
-        manufacturer = "Google",
-        deviceModel = "Pixel",
-        release = deviceId.api().toString(),
-        sdk = AndroidApiLevel(deviceId.api()),
-        hostConnectionType = DeviceState.HostConnectionType.USB,
-        maxSpeedMbps = 0,
-        negotiatedSpeedMbps = 0,
-      )
+      fakeAdbRule.fakeAdb.fakeAdbServer
+        .connectDevice(
+          deviceId = serialNumber,
+          manufacturer = "Google",
+          deviceModel = "Pixel",
+          release = deviceId.api().toString(),
+          sdk = AndroidApiLevel(deviceId.api()),
+          cpuAbi = "x86_64",
+          properties = extraProperties,
+          hostConnectionType = DeviceState.HostConnectionType.USB,
+          maxSpeedMbps = 0,
+          negotiatedSpeedMbps = 0,
+        )
+        .get()
+    deviceState.deviceStatus = DeviceState.DeviceStatus.ONLINE
     return deviceState
   }
 

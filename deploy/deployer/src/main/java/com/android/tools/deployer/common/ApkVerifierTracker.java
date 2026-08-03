@@ -16,7 +16,6 @@
 package com.android.tools.deployer.common;
 
 import com.android.annotations.NonNull;
-import com.android.ddmlib.IDevice;
 
 import com.google.common.annotations.VisibleForTesting;
 
@@ -57,7 +56,7 @@ public class ApkVerifierTracker {
         // In R, ADB reports both real package name (instead of process name) and also allows
         // the user to skip app verification on install. We use the real package name flag
         // here to avoid creating another flag for a feature that's on the same Android version.
-        if (!device.supportsFeature(IDevice.Feature.SKIP_VERIFICATION)) {
+        if (!device.isSkipVerificationSupported()) {
             return null;
         }
 

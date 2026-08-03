@@ -175,13 +175,39 @@ constructor(
     }
   }
 
-  fun supportsFeature(feature: IDevice.Feature): Boolean {
-    return iDevice.supportsFeature(feature)
-  }
+  val isRealPkgNameSupported: Boolean
+    get() =
+      runMigratedOrElse(
+        onLegacy = { iDevice.supportsFeature(IDevice.Feature.REAL_PKG_NAME) },
+        onMigrated = { connectedDevice ->
+          if (!connectedDevice.isPresent) throw IOException("Device not found")
+          version.isAtLeast(29, "R")
+        },
+      )
 
-  fun supportsFeature(feature: IDevice.HardwareFeature): Boolean {
-    return iDevice.supportsFeature(feature)
-  }
+  val isSkipVerificationSupported: Boolean
+    get() =
+      runMigratedOrElse(
+        onLegacy = { iDevice.supportsFeature(IDevice.Feature.SKIP_VERIFICATION) },
+        onMigrated = { connectedDevice ->
+          if (!connectedDevice.isPresent) throw IOException("Device not found")
+          // Relaxed check: only support API >= 30, ignoring pre-release R previews (API 29 with "R" codename).
+          version.isAtLeast(30)
+        },
+      )
+
+  val isEmbedded: Boolean
+    get() =
+      runMigratedOrElse(
+        onLegacy = { iDevice.supportsFeature(IDevice.HardwareFeature.EMBEDDED) },
+        onMigrated = { connectedDevice ->
+          if (!connectedDevice.isPresent) throw IOException("Device not found")
+          runBlocking {
+            val characteristics = connectedDevice.get().deviceProperties().allReadonly()["ro.build.characteristics"] ?: ""
+            characteristics.split(",").contains(IDevice.HardwareFeature.EMBEDDED.characteristic)
+          }
+        },
+      )
 
   @Throws(IOException::class)
   fun pushFile(local: String, remote: String) {

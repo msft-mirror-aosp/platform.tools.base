@@ -15,7 +15,6 @@
  */
 package com.android.tools.deployer
 
-import com.android.ddmlib.IDevice
 import com.android.tools.deploy.proto.Deploy.Arch
 import com.android.tools.deployer.common.AdbClient
 import com.android.tools.deployer.common.DeviceHolder
@@ -31,7 +30,7 @@ class AdbClientTest {
     val deviceHolder = Mockito.mock(DeviceHolder::class.java)
     val logger = Mockito.mock(ILogger::class.java)
 
-    Mockito.`when`(deviceHolder.supportsFeature(IDevice.Feature.REAL_PKG_NAME)).thenReturn(true)
+    Mockito.`when`(deviceHolder.isRealPkgNameSupported).thenReturn(true)
     Mockito.`when`(deviceHolder.getPidsForPackageName("com.example.app")).thenReturn(listOf(101, 102))
 
     val adbClient = AdbClient(deviceHolder, logger)
@@ -46,7 +45,7 @@ class AdbClientTest {
     val deviceHolder = Mockito.mock(DeviceHolder::class.java)
     val logger = Mockito.mock(ILogger::class.java)
 
-    Mockito.`when`(deviceHolder.supportsFeature(IDevice.Feature.REAL_PKG_NAME)).thenReturn(false)
+    Mockito.`when`(deviceHolder.isRealPkgNameSupported).thenReturn(false)
     Mockito.`when`(deviceHolder.serialNumber).thenReturn("serial-abc")
 
     val adbClient = AdbClient(deviceHolder, logger)

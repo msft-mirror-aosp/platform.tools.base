@@ -223,14 +223,13 @@ class DeviceHolderTest {
 
   @Test
   fun testIDeviceSupportsFeature() {
-    val feature = IDevice.Feature.SHELL_V2
-    val hardwareFeature = IDevice.HardwareFeature.WATCH
+    `when`(iDevice.supportsFeature(IDevice.Feature.REAL_PKG_NAME)).thenReturn(true)
+    `when`(iDevice.supportsFeature(IDevice.Feature.SKIP_VERIFICATION)).thenReturn(true)
+    `when`(iDevice.supportsFeature(IDevice.HardwareFeature.EMBEDDED)).thenReturn(true)
 
-    `when`(iDevice.supportsFeature(feature)).thenReturn(true)
-    `when`(iDevice.supportsFeature(hardwareFeature)).thenReturn(false)
-
-    Assert.assertTrue(deviceHolder.supportsFeature(feature))
-    Assert.assertFalse(deviceHolder.supportsFeature(hardwareFeature))
+    Assert.assertTrue(deviceHolder.isRealPkgNameSupported)
+    Assert.assertTrue(deviceHolder.isSkipVerificationSupported)
+    Assert.assertTrue(deviceHolder.isEmbedded)
     Mockito.verifyNoInteractions(connectedDevice)
   }
 
