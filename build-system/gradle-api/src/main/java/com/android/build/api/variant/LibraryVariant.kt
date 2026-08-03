@@ -29,6 +29,7 @@ interface LibraryVariant :
   HasHostTests,
   HasUnitTest,
   HasTestFixtures,
+  HasTestSuites,
   CanMinifyCode,
   CanProduceConsumerProguardFiles {
 

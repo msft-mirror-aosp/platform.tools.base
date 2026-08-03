@@ -24,6 +24,7 @@ import com.android.build.api.variant.LibrarySources
 import com.android.build.api.variant.LibraryVariant
 import com.android.build.api.variant.Renderscript
 import com.android.build.api.variant.TestFixtures
+import com.android.build.api.variant.TestSuite
 import com.android.build.api.variant.TestedComponentPackaging
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
@@ -112,6 +113,12 @@ constructor(override val delegate: LibraryVariant, stats: GradleBuildVariant.Bui
       // return a new list everytime as items may eventually be added through future APIs.
       // we may consider returning a live map instead.
       return delegate.hostTests.mapValues { AnalyticsEnabledHostTest(it.value, stats, objectFactory) }
+    }
+
+  override val suites: Map<String, TestSuite>
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.TEST_SUITES_VALUE
+      return delegate.suites.mapValues { AnalyticsEnabledTestSuite(it.value, stats, objectFactory) }
     }
 
   private val userVisiblePackaging: TestedComponentPackaging by
