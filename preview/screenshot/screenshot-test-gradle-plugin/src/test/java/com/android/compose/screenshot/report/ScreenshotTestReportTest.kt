@@ -133,6 +133,32 @@ class ScreenshotTestReportTest {
     assertThat(packageHtml).doesNotExist()
   }
 
+  @Test
+  fun generateScreenshotReportErrorWithoutImageProperties() {
+    val reportXml = File(resultsOutDir, "TEST-render-error-no-properties.xml")
+    Files.asCharSink(reportXml, Charsets.UTF_8)
+      .write(
+        """
+        <?xml version='1.0' encoding='UTF-8' ?>
+        <testsuite name="com.example.myapplication.ExampleInstrumentedTest" tests="1" failures="0" errors="1" skipped="0" time="1.0" timestamp="2021-08-10T21:09:43" hostname="localhost">
+          <properties>
+            <property name="device" value="Previews" />
+          </properties>
+          <testcase name="renderErrorTest" classname="com.example.myapplication.ExampleInstrumentedTest" time="0.5">
+            <error message="Screenshot rendering failed: Cyclic style parent definitions" type="com.android.tools.screenshot.ScreenshotRenderException"/>
+          </testcase>
+        </testsuite>
+        """
+          .trimIndent()
+      )
+
+    TestReport(resultsOutDir, reportOutDir).generateScreenshotTestReport()
+
+    val classHtml = File(reportOutDir, "com.example.myapplication.ExampleInstrumentedTest.html")
+    assertThat(classHtml).exists()
+    assertThat(classHtml.readText()).contains("Screenshot rendering failed: Cyclic style parent definitions")
+  }
+
   private fun createTempImageFile(dir: File, name: String): File {
     val width = 5
     val height = 5

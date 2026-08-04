@@ -105,28 +105,50 @@ class TestReport(private val resultDir: File, private val reportDir: File) {
           val ref = xPath.evaluate("property[@name='PreviewScreenshot.refImagePath']/@value", image)
           val actual = xPath.evaluate("property[@name='PreviewScreenshot.newImagePath']/@value", image)
           val diff = xPath.evaluate("property[@name='PreviewScreenshot.diffImagePath']/@value", image)
-          referenceImagePathOrMessage =
-            if (isImage(ref)) {
-              ImagePathOrMessage.ImagePath(ref)
-            } else {
-              ImagePathOrMessage.ErrorMessage(ref)
-            }
+          if (ref.isNotBlank() || actual.isNotBlank() || diff.isNotBlank()) {
+            referenceImagePathOrMessage =
+              if (isImage(ref)) {
+                ImagePathOrMessage.ImagePath(ref)
+              } else {
+                ImagePathOrMessage.ErrorMessage(ref)
+              }
 
-          actualImagePathOrMessage =
-            if (isImage(actual)) {
-              ImagePathOrMessage.ImagePath(actual)
-            } else {
-              ImagePathOrMessage.ErrorMessage(actual)
-            }
+            actualImagePathOrMessage =
+              if (isImage(actual)) {
+                ImagePathOrMessage.ImagePath(actual)
+              } else {
+                ImagePathOrMessage.ErrorMessage(actual)
+              }
 
-          diffImagePathOrMessage =
-            if (isImage(diff)) {
-              ImagePathOrMessage.ImagePath(diff)
-            } else {
-              ImagePathOrMessage.ErrorMessage(diff)
-            }
+            diffImagePathOrMessage =
+              if (isImage(diff)) {
+                ImagePathOrMessage.ImagePath(diff)
+              } else {
+                ImagePathOrMessage.ErrorMessage(diff)
+              }
 
-          ssImages = ScreenshotTestImages(referenceImagePathOrMessage, actualImagePathOrMessage, diffImagePathOrMessage)
+            ssImages = ScreenshotTestImages(referenceImagePathOrMessage, actualImagePathOrMessage, diffImagePathOrMessage)
+          }
+        }
+        if (ssImages == null || ssImages.isEmpty()) {
+          val errorMsg =
+            if (errors.length > 0) {
+              val errElement = errors.item(0) as Element
+              errElement.getAttribute("message").ifBlank { errElement.textContent.trim() }
+            } else if (failures.length > 0) {
+              val failElement = failures.item(0) as Element
+              failElement.getAttribute("message").ifBlank { failElement.textContent.trim() }
+            } else {
+              ""
+            }
+          if (errorMsg.isNotBlank()) {
+            ssImages =
+              ScreenshotTestImages(
+                ImagePathOrMessage.ErrorMessage(""),
+                ImagePathOrMessage.ErrorMessage(errorMsg),
+                ImagePathOrMessage.ErrorMessage(""),
+              )
+          }
         }
         val testResult: TestResult = model.addTest(className, testName, duration.toLong(), projectName!!, flavorName!!, ssImages)
         for (j in 0 until failures.length) {
