@@ -1242,8 +1242,6 @@ com.android.build.gradle.internal.dsl.CmakeOptions.setBuildStagingDirectory: voi
 com.android.build.gradle.internal.dsl.CmakeOptions.setPath: void (java.lang.Object)
 com.android.build.gradle.internal.dsl.CompileSdkDelegate implements com.android.build.gradle.internal.dsl.CompileSdkProperties
 com.android.build.gradle.internal.dsl.CompileSdkDelegate.<init>: com.android.build.gradle.internal.dsl.CompileSdkDelegate (kotlin.jvm.functions.Function0<? extends com.android.build.api.dsl.CompileSdkVersion>, kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.CompileSdkVersion, kotlin.Unit>, com.android.builder.errors.IssueReporter, com.android.build.gradle.internal.services.DslServices)
-com.android.build.gradle.internal.dsl.CompileSdkDelegate.access$getGetCompileSdk$p: kotlin.jvm.functions.Function0 (com.android.build.gradle.internal.dsl.CompileSdkDelegate)
-com.android.build.gradle.internal.dsl.CompileSdkDelegate.access$getSetCompileSdk$p: kotlin.jvm.functions.Function1 (com.android.build.gradle.internal.dsl.CompileSdkDelegate)
 com.android.build.gradle.internal.dsl.CompileSdkDelegate.compileSdk: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.CompileSdkSpec, kotlin.Unit>)
 com.android.build.gradle.internal.dsl.CompileSdkDelegate.compileSdk: void (org.gradle.api.Action<com.android.build.api.dsl.CompileSdkSpec>)
 com.android.build.gradle.internal.dsl.CompileSdkDelegate.compileSdkAddon: void (java.lang.String, java.lang.String, int)
@@ -1331,7 +1329,6 @@ com.android.build.gradle.internal.dsl.DeclarativeApplicationExtension.getDepende
 com.android.build.gradle.internal.dsl.DeclarativeApplicationExtension.getProductFlavors: org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.DeclarativeApplicationFlavor> ()
 com.android.build.gradle.internal.dsl.DeclarativeBuildType extends com.android.build.gradle.internal.dsl.BuildType implements com.android.build.api.dsl.DeclarativeApplicationBuildType, com.android.build.api.dsl.DeclarativeLibraryBuildType
 com.android.build.gradle.internal.dsl.DeclarativeBuildType.<init>: com.android.build.gradle.internal.dsl.DeclarativeBuildType (java.lang.String, com.android.build.gradle.internal.services.DslServices, com.android.builder.core.ComponentType, org.gradle.api.model.ObjectFactory)
-com.android.build.gradle.internal.dsl.DeclarativeBuildType.access$getDslServices$p: com.android.build.gradle.internal.services.DslServices (com.android.build.gradle.internal.dsl.DeclarativeBuildType)
 com.android.build.gradle.internal.dsl.DeclarativeBuildType.dependencies: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BuildTypeDependenciesExtension, kotlin.Unit>)
 com.android.build.gradle.internal.dsl.DeclarativeBuildType.getDependencies: com.android.build.api.dsl.BuildTypeDependenciesExtension ()
 com.android.build.gradle.internal.dsl.DeclarativeBuildType.isUseProguard: java.lang.Boolean ()
@@ -1831,7 +1828,6 @@ com.android.build.gradle.internal.dsl.ManagedVirtualDeviceFactory.create: java.l
 com.android.build.gradle.internal.dsl.ManagedVirtualDeviceKt
 com.android.build.gradle.internal.dsl.MinSdkDelegate implements com.android.build.gradle.internal.dsl.MinSdkProperties
 com.android.build.gradle.internal.dsl.MinSdkDelegate.<init>: com.android.build.gradle.internal.dsl.MinSdkDelegate (kotlin.jvm.functions.Function0<? extends com.android.build.api.dsl.MinSdkVersion>, kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.MinSdkVersion, kotlin.Unit>, com.android.build.gradle.internal.services.DslServices)
-com.android.build.gradle.internal.dsl.MinSdkDelegate.access$getSetMinSdk$p: kotlin.jvm.functions.Function1 (com.android.build.gradle.internal.dsl.MinSdkDelegate)
 com.android.build.gradle.internal.dsl.MinSdkDelegate.getMinSdk: java.lang.Integer ()
 com.android.build.gradle.internal.dsl.MinSdkDelegate.getMinSdkPreview: java.lang.String ()
 com.android.build.gradle.internal.dsl.MinSdkDelegate.getMinSdkVersion: com.android.builder.model.ApiVersion ()
@@ -1971,10 +1967,8 @@ com.android.build.gradle.internal.dsl.TestOptions$UnitTestOptions.isReturnDefaul
 com.android.build.gradle.internal.dsl.TestOptions$UnitTestOptions.setIncludeAndroidResources: void (boolean)
 com.android.build.gradle.internal.dsl.TestOptions$UnitTestOptions.setReturnDefaultValues: void (boolean)
 com.android.build.gradle.internal.dsl.TestOptions.<init>: com.android.build.gradle.internal.dsl.TestOptions (com.android.build.gradle.internal.services.DslServices)
-com.android.build.gradle.internal.dsl.TestOptions.access$checkNonLibraryModule: void (com.android.build.gradle.internal.dsl.TestOptions, com.android.build.api.dsl.TargetSdkVersion)
 com.android.build.gradle.internal.dsl.TestOptions.access$checkScreenshotTestEnabled: void (com.android.build.gradle.internal.dsl.TestOptions)
 com.android.build.gradle.internal.dsl.TestOptions.access$getDslServices$p: com.android.build.gradle.internal.services.DslServices (com.android.build.gradle.internal.dsl.TestOptions)
-com.android.build.gradle.internal.dsl.TestOptions.access$setTargetSdkVersion$p: void (com.android.build.gradle.internal.dsl.TestOptions, com.android.build.api.dsl.TargetSdkVersion)
 com.android.build.gradle.internal.dsl.TestOptions.emulatorControl: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.EmulatorControl, kotlin.Unit>)
 com.android.build.gradle.internal.dsl.TestOptions.emulatorControl: void (org.gradle.api.Action<com.android.build.api.dsl.EmulatorControl>)
 com.android.build.gradle.internal.dsl.TestOptions.getAnimationsDisabled: boolean ()

@@ -1,8 +1,9 @@
-Breakpoint: SimpleLambda.kt:32 - tests.SimpleLambda$start$1.invoke(java.lang.String)
+Breakpoint: SimpleLambda.kt:32 - tests.SimpleLambda.start$lambda$0(int, java.lang.String)
 ========================================================
 Not an Inline Stack Frame
-Call location: SimpleLambda.kt:32 - tests.SimpleLambda$start$1.invoke(java.lang.String)
+Call location: SimpleLambda.kt:32 - tests.SimpleLambda.start$lambda$0(int, java.lang.String)
 ------------------------------------------------------
+  $i1                           : int
   i3                            : int
   s                             : java.lang.String
 
