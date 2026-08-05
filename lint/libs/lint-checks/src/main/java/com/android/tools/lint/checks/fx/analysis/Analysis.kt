@@ -168,6 +168,7 @@ internal open class Analysis<FX : Any>(
   private val module: Module<FX>,
   private val concreteEffect: Lattice<FX>,
   private val assumptions: ResultTable<FX> = ResultTable.of(persistentMapOf()),
+  private val externalAnnotation: (Type.MethodRef) -> FX? = { null },
   private val log: (() -> String) -> Unit = { /* ignore */ },
 ) : DependentMonotone<Point<FX>, Ans<FX>> {
 
@@ -1026,7 +1027,13 @@ internal open class Analysis<FX : Any>(
         when (val assumption = assumptions[method]) {
           null ->
             when (val methodDefn = module[method]) {
-              null -> instantiationLattice.bottom // If method not found, we ASSUME it's from a spurious call
+              // The method isn't indexed (e.g. defined in a file outside the analysis scope, or spurious).
+              // If it's explicitly annotated, honor the annotation.
+              null ->
+                when (val fx = externalAnnotation(method)) {
+                  null -> instantiationLattice.bottom
+                  else -> Result(typeLattice.unsure, Instantiation(Effect(fx)))
+                }
               else -> {
                 val (t, methodEffectResult) = rec[method]
                 val methodFx: Effect<FX> =

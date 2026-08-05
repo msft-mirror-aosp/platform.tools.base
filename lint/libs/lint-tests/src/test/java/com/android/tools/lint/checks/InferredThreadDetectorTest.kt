@@ -4189,6 +4189,106 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
       .expectClean()
   }
 
+  fun testExplicitAnnotationAcrossFiles() {
+    // Sanity check for the batch mode counterpart of
+    // [testExplicitAnnotationAcrossFiles_isolated], where all files are indexed
+    lint()
+      .files(CROSS_FILE_CALLER, CROSS_FILE_CALLEE, SUPPORT_ANNOTATIONS_JAR)
+      .run()
+      .expect(
+        """
+        src/test/pkg/Caller.kt:6: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            w.doWork()
+              ~~~~~~~~
+        1 error
+        """
+          .trimIndent()
+      )
+  }
+
+  fun testExplicitAnnotationAcrossFiles_isolated() {
+    // Emulates the IDE's on-the-fly mode, where only the current file is analyzed:
+    // calls to explicitly annotated methods declared in a *different* file must still be
+    // checked (like `ThreadDetector` does), even though only the current file is indexed.
+    lint()
+      .files(CROSS_FILE_CALLER, CROSS_FILE_CALLEE, SUPPORT_ANNOTATIONS_JAR)
+      .isolated("src/test/pkg/Caller.kt")
+      .run()
+      .expect(
+        """
+        src/test/pkg/Caller.kt:6: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            w.doWork()
+              ~~~~~~~~
+        1 error
+        """
+          .trimIndent()
+      )
+  }
+
+  fun testExplicitAnnotationAcrossFiles_isolated_classAndInherited() {
+    // Like [testExplicitAnnotationAcrossFiles_isolated], but with the callee's constraint
+    // coming from a class-level annotation and from an annotated super method, respectively
+    lint()
+      .files(
+        kotlin(
+            """
+            package test.pkg
+            import androidx.annotation.UiThread
+
+            class Caller2 {
+              @UiThread fun callFromUi(s: Store, w: WorkerImpl) {
+                s.query()
+                w.doWork()
+              }
+            }
+            """
+          )
+          .indented(),
+        kotlin(
+            """
+            package test.pkg
+            import androidx.annotation.WorkerThread
+
+            @WorkerThread
+            class Store {
+              fun query() { }
+            }
+            """
+          )
+          .indented(),
+        kotlin(
+            """
+            package test.pkg
+            import androidx.annotation.WorkerThread
+
+            abstract class WorkerBase {
+              @WorkerThread abstract fun doWork()
+            }
+
+            class WorkerImpl : WorkerBase() {
+              override fun doWork() { }
+            }
+            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .isolated("src/test/pkg/Caller2.kt")
+      .run()
+      .expect(
+        """
+        src/test/pkg/Caller2.kt:6: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            s.query()
+              ~~~~~~~
+        src/test/pkg/Caller2.kt:7: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            w.doWork()
+              ~~~~~~~~
+        2 errors
+        """
+          .trimIndent()
+      )
+  }
+
   fun testLambdas() {
     lint()
       .files(
@@ -4575,3 +4675,31 @@ class AndroidThreadConstraintLatticeTest : ThreadConstraintLatticeTest<Thread>(t
     val threadLattice = ThreadConstraintDetector.ThreadConstraintLattice(Thread::class.java)
   }
 }
+
+private val CROSS_FILE_CALLER =
+  LintDetectorTest.kotlin(
+      """
+      package test.pkg
+      import androidx.annotation.UiThread
+
+      class Caller {
+        @UiThread fun callFromUi(w: Worker) {
+          w.doWork()
+        }
+      }
+      """
+    )
+    .indented()
+
+private val CROSS_FILE_CALLEE =
+  LintDetectorTest.kotlin(
+      """
+      package test.pkg
+      import androidx.annotation.WorkerThread
+
+      class Worker {
+        @WorkerThread fun doWork() { }
+      }
+      """
+    )
+    .indented()
