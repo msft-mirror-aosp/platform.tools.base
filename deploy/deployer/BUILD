@@ -27,6 +27,7 @@ iml_module(
         "//tools/base/fakeadbserver:studio.android.sdktools.fakeadbserver",
         "//tools/adt/idea/.idea/libraries:junit4",
         "//tools/adt/idea/.idea/libraries:mockito",
+        "//tools/adt/idea/.idea/libraries:mockito-kotlin",
         "//tools/base/perf-logger:studio.perf-logger",
         "//tools/base/deploy/deployer:fake_device_proto",
         "//tools/adt/idea/.idea/libraries:studio-grpc",
@@ -549,6 +550,7 @@ kotlin_test(
         "@maven//:com.google.guava.guava",
         "@maven//:junit.junit",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
+        "@maven//:org.mockito.kotlin.mockito-kotlin",
         "@maven//:org.mockito.mockito-core",
     ],
 )

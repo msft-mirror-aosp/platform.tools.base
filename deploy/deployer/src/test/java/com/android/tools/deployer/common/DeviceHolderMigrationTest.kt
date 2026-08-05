@@ -23,14 +23,26 @@ import com.android.adblib.testingutils.FakeAdbServerProviderRule
 import com.android.adblib.waitForDevice
 import com.android.ddmlib.AndroidDebugBridge
 import com.android.ddmlib.IDevice
+import com.android.ddmlib.IShellOutputReceiver
 import com.android.fakeadbserver.DeviceState
+import com.android.fakeadbserver.shellcommandhandlers.ShellConstants
 import com.android.sdklib.AndroidApiLevel
 import com.android.sdklib.AndroidVersion
 import com.android.tools.deployer.devices.DeviceId
 import com.android.tools.deployer.rules.ApiLevel
+import java.io.File
+import java.io.IOException
+import java.nio.ByteBuffer
+import java.nio.file.Files
 import java.util.Optional
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.runBlocking
-import org.junit.Assert
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.RuleChain
@@ -57,8 +69,8 @@ class DeviceHolderMigrationTest {
     val deviceHolderNew = createDeviceHolder(iDevice, useConnectedDevice = true)
 
     // Act/Assert: Both should return the same version
-    Assert.assertEquals(deviceHolderLegacy.version, deviceHolderNew.version)
-    Assert.assertEquals(deviceId!!.api(), deviceHolderNew.version.apiLevel)
+    assertEquals(deviceHolderLegacy.version, deviceHolderNew.version)
+    assertEquals(deviceId!!.api(), deviceHolderNew.version.apiLevel)
   }
 
   @Test
@@ -70,7 +82,7 @@ class DeviceHolderMigrationTest {
     fakeAdbRule.fakeAdb.disconnectDevice(iDevice.serialNumber)
 
     // Act / Assert
-    Assert.assertEquals(AndroidVersion.DEFAULT.apiLevel, deviceHolder.version.apiLevel)
+    assertEquals(AndroidVersion.DEFAULT.apiLevel, deviceHolder.version.apiLevel)
   }
 
   @Test
@@ -79,13 +91,13 @@ class DeviceHolderMigrationTest {
     val deviceHolderLegacy = createDeviceHolder(iDevice, useConnectedDevice = false)
     val deviceHolderNew = createDeviceHolder(iDevice, useConnectedDevice = true)
 
-    Assert.assertEquals(deviceHolderLegacy.isRealPkgNameSupported, deviceHolderNew.isRealPkgNameSupported)
+    assertEquals(deviceHolderLegacy.isRealPkgNameSupported, deviceHolderNew.isRealPkgNameSupported)
 
     val api = deviceId!!.api()
     if (api >= 30) {
-      Assert.assertTrue(deviceHolderNew.isRealPkgNameSupported)
+      assertTrue(deviceHolderNew.isRealPkgNameSupported)
     } else {
-      Assert.assertFalse(deviceHolderNew.isRealPkgNameSupported)
+      assertFalse(deviceHolderNew.isRealPkgNameSupported)
     }
   }
 
@@ -95,13 +107,13 @@ class DeviceHolderMigrationTest {
     val deviceHolderLegacy = createDeviceHolder(iDevice, useConnectedDevice = false)
     val deviceHolderNew = createDeviceHolder(iDevice, useConnectedDevice = true)
 
-    Assert.assertEquals(deviceHolderLegacy.isSkipVerificationSupported, deviceHolderNew.isSkipVerificationSupported)
+    assertEquals(deviceHolderLegacy.isSkipVerificationSupported, deviceHolderNew.isSkipVerificationSupported)
 
     val api = deviceId!!.api()
     if (api >= 30) {
-      Assert.assertTrue(deviceHolderNew.isSkipVerificationSupported)
+      assertTrue(deviceHolderNew.isSkipVerificationSupported)
     } else {
-      Assert.assertFalse(deviceHolderNew.isSkipVerificationSupported)
+      assertFalse(deviceHolderNew.isSkipVerificationSupported)
     }
   }
 
@@ -111,8 +123,8 @@ class DeviceHolderMigrationTest {
     val deviceHolderLegacy = createDeviceHolder(iDevice, useConnectedDevice = false)
     val deviceHolderNew = createDeviceHolder(iDevice, useConnectedDevice = true)
 
-    Assert.assertEquals(deviceHolderLegacy.isEmbedded, deviceHolderNew.isEmbedded)
-    Assert.assertFalse(deviceHolderNew.isEmbedded)
+    assertEquals(deviceHolderLegacy.isEmbedded, deviceHolderNew.isEmbedded)
+    assertFalse(deviceHolderNew.isEmbedded)
   }
 
   @Test
@@ -121,15 +133,315 @@ class DeviceHolderMigrationTest {
     val deviceHolderLegacy = createDeviceHolder(iDevice, useConnectedDevice = false)
     val deviceHolderNew = createDeviceHolder(iDevice, useConnectedDevice = true)
 
-    Assert.assertEquals(deviceHolderLegacy.isEmbedded, deviceHolderNew.isEmbedded)
-    Assert.assertTrue(deviceHolderNew.isEmbedded)
+    assertEquals(deviceHolderLegacy.isEmbedded, deviceHolderNew.isEmbedded)
+    assertTrue(deviceHolderNew.isEmbedded)
+  }
+
+  @Test
+  fun testSerialNumberConsistency() = runBlocking {
+    val iDevice = connectAndGetDevice()
+    val deviceHolderLegacy = createDeviceHolder(iDevice, useConnectedDevice = false)
+    val deviceHolderNew = createDeviceHolder(iDevice, useConnectedDevice = true)
+
+    assertEquals(deviceHolderLegacy.serialNumber, deviceHolderNew.serialNumber)
+    assertEquals(iDevice.serialNumber, deviceHolderNew.serialNumber)
+  }
+
+  @Test
+  fun testSerialNumberFallback_whenConnectedDeviceIsEmpty() = runBlocking {
+    val iDevice = connectAndGetDevice()
+    val deviceHolder = DeviceHolder(iDevice, connectedDevice = Optional.empty(), useConnectedDevice = true)
+
+    assertEquals(iDevice.serialNumber, deviceHolder.serialNumber)
+  }
+
+  @Test
+  fun testMethodsThatThrow_whenConnectedDeviceIsEmpty() = runBlocking {
+    val iDevice = connectAndGetDevice()
+    val deviceHolder = DeviceHolder(iDevice, connectedDevice = Optional.empty(), useConnectedDevice = true)
+
+    assertThrows(IOException::class.java) { deviceHolder.isRoot }
+    assertThrows(IOException::class.java) { deviceHolder.rawExec2("cmd", emptyArray()) }
+    assertThrows(IOException::class.java) { deviceHolder.executeShellCommand("cmd", CollectingShellOutputReceiver(), 5, TimeUnit.SECONDS) }
+    assertThrows(IOException::class.java) {
+      deviceHolder.executeBinderCommand(arrayOf("cmd"), CollectingShellOutputReceiver(), 5, TimeUnit.SECONDS, null)
+    }
+    assertThrows(IOException::class.java) { deviceHolder.uninstallPackage("com.example") }
+    assertThrows(IOException::class.java) { deviceHolder.root() }
+    Unit
+  }
+
+  @Test
+  fun testMethodsThatReturnDefault_whenConnectedDeviceIsEmpty() = runBlocking {
+    val iDevice = connectAndGetDevice()
+    val deviceHolder = DeviceHolder(iDevice, connectedDevice = Optional.empty(), useConnectedDevice = true)
+
+    assertFalse(deviceHolder.isRealPkgNameSupported)
+    assertFalse(deviceHolder.isSkipVerificationSupported)
+    assertFalse(deviceHolder.isEmbedded)
+    assertEquals(AndroidVersion.DEFAULT, deviceHolder.version)
+  }
+
+  @Test
+  fun testAbisConsistency() = runBlocking {
+    val iDevice = connectAndGetDevice()
+    val deviceHolderLegacy = createDeviceHolder(iDevice, useConnectedDevice = false)
+    val deviceHolderNew = createDeviceHolder(iDevice, useConnectedDevice = true)
+
+    assertEquals(deviceHolderLegacy.abis, deviceHolderNew.abis)
+    assertEquals(iDevice.abis, deviceHolderNew.abis)
+  }
+
+  @Test
+  fun testAbisFallback_whenConnectedDeviceIsEmpty() = runBlocking {
+    val iDevice = connectAndGetDevice()
+    val deviceHolder = DeviceHolder(iDevice, connectedDevice = Optional.empty(), useConnectedDevice = true)
+
+    assertEquals(iDevice.abis, deviceHolder.abis)
+  }
+
+  @Test
+  fun testIsRootConsistency() = runBlocking {
+    val iDevice = connectAndGetDevice()
+    val deviceHolderLegacy = createDeviceHolder(iDevice, useConnectedDevice = false)
+    val deviceHolderNew = createDeviceHolder(iDevice, useConnectedDevice = true)
+
+    assertEquals(deviceHolderLegacy.isRoot, deviceHolderNew.isRoot)
+  }
+
+  @Test
+  fun testRoot() = runBlocking {
+    val iDevice = connectAndGetDevice()
+    val deviceHolder = createDeviceHolder(iDevice, useConnectedDevice = true)
+
+    // Initially not root
+    assertFalse(deviceHolder.isRoot)
+
+    // Elevate to root
+    val rootResult = deviceHolder.root()
+    assertTrue(rootResult)
+    assertTrue(deviceHolder.isRoot)
+  }
+
+  @Test
+  fun testPushFile() = runBlocking {
+    val iDevice = connectAndGetDevice()
+    val deviceHolder = createDeviceHolder(iDevice, useConnectedDevice = true)
+
+    // Create a temporary file
+    val tempFile = File.createTempFile("test_push", ".txt")
+    tempFile.deleteOnExit()
+    Files.write(tempFile.toPath(), "hello world".toByteArray())
+
+    val remotePath = "/data/local/tmp/test_push.txt"
+    deviceHolder.pushFile(tempFile.absolutePath, remotePath)
+
+    // Verify file exists on fake device
+    val fakeDeviceState = fakeAdbRule.fakeAdb.device(iDevice.serialNumber)
+    val remoteFile = fakeDeviceState.getFile(remotePath)
+    assertNotNull(remoteFile)
+    assertEquals("hello world", String(remoteFile!!.bytes))
+  }
+
+  @Test
+  fun testNameConsistencyNonEmulator() = runBlocking {
+    val usbDeviceSerial = "ABCDEF123"
+    val iDevice = connectAndGetDevice(usbDeviceSerial)
+    val deviceHolderLegacy = createDeviceHolder(iDevice, useConnectedDevice = false)
+    val deviceHolderNew = createDeviceHolder(iDevice, useConnectedDevice = true)
+
+    assertEquals(deviceHolderLegacy.name, deviceHolderNew.name)
+    assertEquals("google-pixel-ABCDEF123", deviceHolderNew.name)
+  }
+
+  @Test
+  fun testNameConsistencyEmulator() = runBlocking {
+    val avdName = "my-avd-name"
+    val console = fakeAdbRule.fakeAdb.fakeAdbServer.connectEmulatorConsole(avdName, "/path/to/avd").get()
+    val serialNumber = "emulator-${console.port}"
+    val iDevice = connectAndGetDevice(serialNumber)
+    val deviceHolderLegacy = createDeviceHolder(iDevice, useConnectedDevice = false)
+    val deviceHolderNew = createDeviceHolder(iDevice, useConnectedDevice = true)
+
+    assertEquals(deviceHolderLegacy.name, deviceHolderNew.name)
+    assertEquals("$avdName [$serialNumber]", deviceHolderNew.name)
+  }
+
+  @Test
+  fun testExecuteShellCommandConsistency() = runBlocking {
+    val command = "echo hello from fake device"
+    val expectedOutput = "hello from fake device"
+
+    val iDevice = connectAndGetDevice()
+    val deviceHolderLegacy = createDeviceHolder(iDevice, useConnectedDevice = false)
+    val deviceHolderNew = createDeviceHolder(iDevice, useConnectedDevice = true)
+
+    val receiverLegacy = CollectingShellOutputReceiver()
+    deviceHolderLegacy.executeShellCommand(command, receiverLegacy, 5, TimeUnit.SECONDS)
+
+    val receiverNew = CollectingShellOutputReceiver()
+    deviceHolderNew.executeShellCommand(command, receiverNew, 5, TimeUnit.SECONDS)
+
+    assertEquals(expectedOutput, receiverLegacy.output.trim())
+    assertEquals(expectedOutput, receiverNew.output.trim())
+  }
+
+  @Test
+  @ApiLevel.InRange(min = 21)
+  fun testRawExec2Consistency() = runBlocking {
+    val command = "echo"
+    val args = arrayOf("hello raw output")
+    val expectedOutput = "hello raw output"
+
+    val iDevice = connectAndGetDevice()
+    val deviceHolderLegacy = createDeviceHolder(iDevice, useConnectedDevice = false)
+    val deviceHolderNew = createDeviceHolder(iDevice, useConnectedDevice = true)
+
+    val socketLegacy = deviceHolderLegacy.rawExec2(command, args)
+    val bufferLegacy = ByteBuffer.allocate(100)
+    val readLegacy = socketLegacy.read(bufferLegacy, 5000)
+    val outputLegacy = String(bufferLegacy.array(), 0, readLegacy)
+
+    val socketNew = deviceHolderNew.rawExec2(command, args)
+    val bufferNew = ByteBuffer.allocate(100)
+    val readNew = socketNew.read(bufferNew, 5000)
+    val outputNew = String(bufferNew.array(), 0, readNew)
+
+    assertEquals(expectedOutput, outputLegacy.trim())
+    assertEquals(expectedOutput, outputNew.trim())
+  }
+
+  @Test
+  @ApiLevel.InRange(min = 21)
+  fun testExecuteBinderCommandConsistency() = runBlocking {
+    val appId = "com.example.app"
+    val expectedOutput = "/data/app/$appId/base.apk"
+
+    val iDevice = connectAndGetDevice()
+    val deviceHolderLegacy = createDeviceHolder(iDevice, useConnectedDevice = false)
+    val deviceHolderNew = createDeviceHolder(iDevice, useConnectedDevice = true)
+
+    val receiverLegacy = CollectingShellOutputReceiver()
+    deviceHolderLegacy.executeBinderCommand(arrayOf("package", "path", appId), receiverLegacy, 5, TimeUnit.SECONDS, null)
+
+    val receiverNew = CollectingShellOutputReceiver()
+    deviceHolderNew.executeBinderCommand(arrayOf("package", "path", appId), receiverNew, 5, TimeUnit.SECONDS, null)
+
+    assertEquals(expectedOutput, receiverLegacy.output.trim())
+    assertEquals(expectedOutput, receiverNew.output.trim())
+  }
+
+  @Test
+  fun testUninstallPackageSuccessConsistency() = runBlocking {
+    val iDevice = connectAndGetDevice()
+    val deviceHolderLegacy = createDeviceHolder(iDevice, useConnectedDevice = false)
+    val deviceHolderNew = createDeviceHolder(iDevice, useConnectedDevice = true)
+
+    // FakeAdbServer considers every package installed unless its name is `ShellConstants.NON_INSTALLED_APP_ID`
+    val resultLegacy = deviceHolderLegacy.uninstallPackage("com.example.installed")
+    val resultNew = deviceHolderNew.uninstallPackage("com.example.installed")
+
+    assertNull(resultLegacy)
+    assertNull(resultNew)
+  }
+
+  @Test
+  fun testUninstallPackageFailureConsistency() = runBlocking {
+    val iDevice = connectAndGetDevice()
+    val deviceHolderLegacy = createDeviceHolder(iDevice, useConnectedDevice = false)
+    val deviceHolderNew = createDeviceHolder(iDevice, useConnectedDevice = true)
+
+    val resultLegacy = deviceHolderLegacy.uninstallPackage(ShellConstants.NON_INSTALLED_APP_ID)
+    val resultNew = deviceHolderNew.uninstallPackage(ShellConstants.NON_INSTALLED_APP_ID)
+
+    assertNotNull(resultLegacy)
+    assertNotNull(resultNew)
+    // The exact error message might vary slightly depending on API level (stdout vs stderr, usage info) and buffering,
+    // but the main error code (first line) should be consistent.
+    assertEquals(resultLegacy!!.trim().lines().first(), resultNew!!.trim().lines().first())
+  }
+
+  @Test
+  fun testPushFileConsistency() = runBlocking {
+    val iDevice = connectAndGetDevice()
+    val deviceHolderLegacy = createDeviceHolder(iDevice, useConnectedDevice = false)
+    val deviceHolderNew = createDeviceHolder(iDevice, useConnectedDevice = true)
+
+    val tempFile = File.createTempFile("test_push_const", ".txt")
+    tempFile.deleteOnExit()
+    Files.write(tempFile.toPath(), "hello consistency".toByteArray())
+
+    val remotePathLegacy = "/data/local/tmp/test_push_legacy.txt"
+    val remotePathNew = "/data/local/tmp/test_push_new.txt"
+
+    deviceHolderLegacy.pushFile(tempFile.absolutePath, remotePathLegacy)
+    deviceHolderNew.pushFile(tempFile.absolutePath, remotePathNew)
+
+    val fakeDeviceState = fakeAdbRule.fakeAdb.device(iDevice.serialNumber)
+    val fileLegacy = fakeDeviceState.getFile(remotePathLegacy)
+    val fileNew = fakeDeviceState.getFile(remotePathNew)
+
+    assertNotNull(fileLegacy)
+    assertNotNull(fileNew)
+    assertEquals("hello consistency", String(fileLegacy!!.bytes))
+    assertEquals("hello consistency", String(fileNew!!.bytes))
+  }
+
+  @Test
+  fun testPushFileFailureConsistency() = runBlocking {
+    val iDevice = connectAndGetDevice()
+    val deviceHolderLegacy = createDeviceHolder(iDevice, useConnectedDevice = false)
+    val deviceHolderNew = createDeviceHolder(iDevice, useConnectedDevice = true)
+
+    val nonExistentFile = "/non/existent/file/path/foo.txt"
+    val remotePath = "/data/local/tmp/foo.txt"
+
+    assertThrows(IOException::class.java) { deviceHolderLegacy.pushFile(nonExistentFile, remotePath) }
+    assertThrows(IOException::class.java) { deviceHolderNew.pushFile(nonExistentFile, remotePath) }
+    Unit
+  }
+
+  @Test
+  fun testRootAndIsRootLegacy() = runBlocking {
+    val iDevice = connectAndGetDevice()
+    val deviceHolderLegacy = createDeviceHolder(iDevice, useConnectedDevice = false)
+    assertFalse(deviceHolderLegacy.isRoot)
+    val rootResultLegacy = deviceHolderLegacy.root()
+    assertTrue(rootResultLegacy)
+    assertTrue(deviceHolderLegacy.isRoot)
+  }
+
+  @Test
+  fun testRootAndIsRootMigrated() = runBlocking {
+    val iDevice = connectAndGetDevice()
+    val deviceHolderNew = createDeviceHolder(iDevice, useConnectedDevice = true)
+    assertFalse(deviceHolderNew.isRoot)
+    val rootResultNew = deviceHolderNew.root()
+    assertTrue(rootResultNew)
+    assertTrue(deviceHolderNew.isRoot)
+  }
+
+  private class CollectingShellOutputReceiver : IShellOutputReceiver {
+    private val builder = StringBuilder()
+    val output: String
+      get() = builder.toString()
+
+    override fun addOutput(data: ByteArray, offset: Int, length: Int) {
+      builder.append(String(data, offset, length))
+    }
+
+    override fun flush() {}
+
+    override fun isCancelled(): Boolean = false
   }
 
   private suspend fun connectAndGetDevice(serialNumber: String = "serial_123", extraProperties: Map<String, String> = emptyMap()): IDevice {
     connectDevice(serialNumber, extraProperties)
     val bridge = AndroidDebugBridge.getBridge() ?: throw IllegalStateException("Bridge not initialized")
     yieldUntil { bridge.devices.any { it.serialNumber == serialNumber } }
-    return bridge.devices.first { it.serialNumber == serialNumber }
+    val device = bridge.devices.first { it.serialNumber == serialNumber }
+    yieldUntil { device.arePropertiesSet() }
+    return device
   }
 
   private fun connectDevice(serialNumber: String, extraProperties: Map<String, String> = emptyMap()): DeviceState {

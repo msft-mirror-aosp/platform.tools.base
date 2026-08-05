@@ -15,7 +15,11 @@
  */
 package com.android.tools.deployer.common
 
+import com.android.adblib.AdbDeviceServices
+import com.android.adblib.AdbSession
 import com.android.adblib.ConnectedDevice
+import com.android.adblib.DeviceInfo
+import com.android.adblib.DeviceState
 import com.android.adblib.testingutils.TestingAdbSession
 import com.android.ddmlib.AdbCommandRejectedException
 import com.android.ddmlib.Client
@@ -33,6 +37,8 @@ import java.io.IOException
 import java.io.InputStream
 import java.util.Optional
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert
 import org.junit.Test
 import org.mockito.ArgumentMatchers.any
@@ -41,6 +47,9 @@ import org.mockito.Mockito
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
+import org.mockito.kotlin.any as wheneverAny
+import org.mockito.kotlin.doAnswer
+import org.mockito.kotlin.whenever
 
 class DeviceHolderTest {
 
@@ -93,6 +102,21 @@ class DeviceHolderTest {
     val e = Assert.assertThrows(IOException::class.java) { deviceHolder.rawExec2("exe", arrayOf("param")) }
     Assert.assertTrue(e.cause is TimeoutException)
     Mockito.verifyNoInteractions(connectedDevice)
+  }
+
+  @Test
+  fun testConnectedDeviceRawExec2_convertsTimeoutExceptionToIOException() = runBlocking {
+    val mockSession = mock(AdbSession::class.java)
+    val mockServices = mock(AdbDeviceServices::class.java)
+    `when`(connectedDevice.deviceInfoFlow).thenReturn(MutableStateFlow(DeviceInfo("serial-123", DeviceState.ONLINE)))
+    `when`(connectedDevice.session).thenReturn(mockSession)
+    `when`(mockSession.deviceServices).thenReturn(mockServices)
+    doAnswer { throw java.util.concurrent.TimeoutException("timeout") }.whenever(mockServices).rawExec(wheneverAny(), wheneverAny())
+
+    val deviceHolderNew = DeviceHolder(iDevice, Optional.of(connectedDevice), useConnectedDevice = true)
+
+    val e = Assert.assertThrows(IOException::class.java) { deviceHolderNew.rawExec2("exe", arrayOf("param")) }
+    Assert.assertTrue(e.cause is java.util.concurrent.TimeoutException)
   }
 
   @Test
