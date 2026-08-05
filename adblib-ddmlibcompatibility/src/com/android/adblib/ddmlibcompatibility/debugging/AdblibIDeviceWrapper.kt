@@ -842,6 +842,28 @@ internal class AdblibIDeviceWrapper(
     }
   }
 
+  override fun executeBinderCommand(
+    parameters: Array<out String>,
+    receiver: IShellOutputReceiver,
+    maxTimeToOutputResponse: Long,
+    maxTimeUnits: TimeUnit,
+    inputStream: InputStream?,
+  ) {
+    if (supportsFeature(IDevice.Feature.ABB_EXEC)) {
+      executeRemoteCommand(
+        AdbHelper.AdbService.ABB_EXEC,
+        parameters.joinToString("\u0000"),
+        receiver,
+        0L,
+        maxTimeToOutputResponse,
+        maxTimeUnits,
+        inputStream,
+      )
+    } else {
+      executeShellCommand("cmd " + parameters.joinToString(" "), receiver, maxTimeToOutputResponse, maxTimeUnits, inputStream)
+    }
+  }
+
   override fun rawExec(executable: String, parameters: Array<out String>): SocketChannel {
     unsupportedMethod()
   }
