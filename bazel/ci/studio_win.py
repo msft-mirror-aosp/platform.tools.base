@@ -35,6 +35,7 @@ def studio_win(build_env: bazel.BuildEnv):
       '//tools/adt/idea/studio:android-studio.mac_arm.zip',
       '//tools/adt/idea/studio:android-studio.win.zip',
       '//tools/vendor/google/lume/dist:lightbuild',
+      '//tools/vendor/google/lume/lightbuild-cli/dist:release_pkg',
   ]
   test_tag_filters = '-noci:studio-win,-qa_smoke,-qa_fast,-qa_unreliable,-perfgate-release,-no_k2'
 
@@ -85,6 +86,7 @@ def studio_win(build_env: bazel.BuildEnv):
           ('tools/base/profiler/native/sherlock/perfetto-gpu-counters/sherlock-perfetto-gpu-counters.exe', ''),
           ('tools/base/profiler/native/sherlock/sherlock_trace_processor.exe', ''),
           ('tools/vendor/google/lume/dist/lightbuild.zip', ''),
+          ('tools/vendor/google/lume/lightbuild-cli/dist/lightbuild-cli.zip', ''),
       ],
       missing_ok=(build_type == studio.BuildType.PRESUBMIT),
   )
