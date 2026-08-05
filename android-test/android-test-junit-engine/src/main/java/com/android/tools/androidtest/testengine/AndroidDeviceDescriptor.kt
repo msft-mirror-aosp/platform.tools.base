@@ -66,7 +66,11 @@ class AndroidDeviceDescriptor(
   override fun execute(context: AndroidTestExecutionContext, dynamicTestExecutor: Node.DynamicTestExecutor): AndroidTestExecutionContext {
     val config = context.configuration
 
-    val adbApkInstaller = AdbApkInstaller(config.adb, config.aapt2, deviceSerial, config.installTimeoutMs)
+    val adbController = adbControllerFactory(config.adb)
+    val deviceApiLevelProvider = DeviceApiLevelProvider(adbController, deviceSerial)
+
+    val adbApkInstaller =
+      AdbApkInstaller(config.adb, config.aapt2, deviceSerial, config.installTimeoutMs, deviceApiLevelProvider = deviceApiLevelProvider)
 
     val deviceSpecificResultsDir = config.getResultsDir(deviceSerial)
     val baseResultsDir = config.getResultsDir()
@@ -116,6 +120,7 @@ class AndroidDeviceDescriptor(
         testPackageId = config.testPackageId,
         useTestStorageService = config.useTestStorageService,
         runAsPackageName = config.instrumentationTargetPackageId,
+        deviceApiLevelProvider = deviceApiLevelProvider,
       )
 
     val isOrchestratorEnabled = config.executionMode?.uppercase() in listOf("ANDROIDX_TEST_ORCHESTRATOR", "ANDROID_TEST_ORCHESTRATOR")
@@ -163,6 +168,7 @@ class AndroidDeviceDescriptor(
         additionalTestOutputCollector = additionalTestOutputCollector,
         runAsPackageName = config.instrumentationTargetPackageId,
         agentFilesystemInfo = agentFilesystemInfo,
+        deviceApiLevelProvider = deviceApiLevelProvider,
       )
 
     val deviceInfoFile =

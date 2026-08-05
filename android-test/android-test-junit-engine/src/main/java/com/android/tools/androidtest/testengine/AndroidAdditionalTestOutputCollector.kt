@@ -38,6 +38,7 @@ class AndroidAdditionalTestOutputCollector(
   private val useTestStorageService: Boolean,
   private val runAsPackageName: String? = null,
   private val logger: Logger = Logger.getLogger(AndroidAdditionalTestOutputCollector::class.java.name),
+  private val deviceApiLevelProvider: DeviceApiLevelProvider? = null,
 ) {
 
   companion object {
@@ -152,7 +153,9 @@ class AndroidAdditionalTestOutputCollector(
   }
 
   private fun getApiLevel(): Int {
-    return adbController.runAdbShellCommand(deviceSerial, listOf("getprop", "ro.build.version.sdk")).output.trim().toIntOrNull() ?: 0
+    return deviceApiLevelProvider?.deviceApiLevel
+      ?: adbController.runAdbShellCommand(deviceSerial, listOf("getprop", "ro.build.version.sdk")).output.trim().toIntOrNull()
+      ?: 0
   }
 
   private fun createEmptyDirectoryOnHost() {

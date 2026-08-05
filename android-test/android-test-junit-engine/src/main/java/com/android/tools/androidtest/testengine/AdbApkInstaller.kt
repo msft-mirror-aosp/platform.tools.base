@@ -40,6 +40,7 @@ class AdbApkInstaller(
   private val deviceSerial: String,
   private val installTimeoutMs: Long,
   private val logger: Logger = Logger.getLogger(AdbApkInstaller::class.java.name),
+  private val deviceApiLevelProvider: DeviceApiLevelProvider? = null,
   processBuilder: (command: List<String>) -> ProcessBuilder = { ProcessBuilder(it) },
 ) {
 
@@ -47,14 +48,18 @@ class AdbApkInstaller(
 
   /** The API level of the target device. */
   val deviceApiLevel: Int by lazy {
-    val result = adbController.runAdbShellCommand(deviceSerial, listOf("getprop", "ro.build.version.sdk"))
-    if (result.exitCode == 0) {
-      result.output.trim().toIntOrNull() ?: throw RuntimeException("Failed to parse device API level for $deviceSerial: '${result.output}'")
-    } else {
-      throw RuntimeException(
-        "Failed to get device API level for $deviceSerial via ADB (exit code: ${result.exitCode}). Stdout: '${result.output}'. Stderr: '${result.errorOutput}'"
-      )
-    }
+    deviceApiLevelProvider?.deviceApiLevel
+      ?: run {
+        val result = adbController.runAdbShellCommand(deviceSerial, listOf("getprop", "ro.build.version.sdk"))
+        if (result.exitCode == 0) {
+          result.output.trim().toIntOrNull()
+            ?: throw RuntimeException("Failed to parse device API level for $deviceSerial: '${result.output}'")
+        } else {
+          throw RuntimeException(
+            "Failed to get device API level for $deviceSerial via ADB (exit code: ${result.exitCode}). Stdout: '${result.output}'. Stderr: '${result.errorOutput}'"
+          )
+        }
+      }
   }
 
   companion object {
