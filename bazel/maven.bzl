@@ -242,6 +242,18 @@ Args:
     },
 )
 
+def _for_target(x, y):
+    idx = x.rfind(":")
+    if idx != -1:
+        prefix = x[:idx + 1]
+        target_name = x[idx + 1:]
+    else:
+        prefix = ""
+        target_name = x
+    # We use the hash of the string rather than the whole string, since otherwise the path
+    # gets to be too long on windows.
+    return prefix + "for_" + str(abs(hash(target_name + "_for_" + y)))
+
 def maven_import(
         name,
         jars = [],
@@ -289,8 +301,8 @@ def maven_import(
     """
     java_import_name = name + "_jars"
     aar_import_name = name + "_aar"
-    renamed_deps = {d: d + "_for_" + name if d in deps_with_exclusions else d for d in deps}
-    renamed_exports = {e: e + "_for_" + name if e in deps_with_exclusions else e for e in exports}
+    renamed_deps = {d: _for_target(d, name) if d in deps_with_exclusions else d for d in deps}
+    renamed_exports = {e: _for_target(e, name) if e in deps_with_exclusions else e for e in exports}
 
     jvm_import(
         name = java_import_name,
@@ -306,13 +318,13 @@ def maven_import(
 
     for parent, exclusions in exclusions_for_parents.items():
         jvm_import(
-            name = name + "_for_" + parent + "_jars",
+            name = _for_target(name, parent) + "_jars",
             jars = jars,
             deps = [renamed for (d, renamed) in renamed_deps.items() if d not in exclusions],
         )
         if aar:
             aar_import(
-                name = name + "_for_" + parent + "_aar",
+                name = _for_target(name, parent) + "_aar",
                 aar = aar,
                 deps = [renamed for (d, renamed) in renamed_deps.items() if d not in exclusions],
             )
@@ -342,9 +354,9 @@ def maven_import(
 
     for parent, exclusions in exclusions_for_parents.items():
         _maven_import(
-            name = name + "_for_" + parent,
-            java_deps = [":" + name + "_for_" + parent + "_jars"],
-            aar_dep = (":" + name + "_for_" + parent + "_aar") if aar else None,
+            name = _for_target(name, parent),
+            java_deps = [":" + _for_target(name, parent) + "_jars"],
+            aar_dep = (":" + _for_target(name, parent) + "_aar") if aar else None,
             deps = [renamed for (d, renamed) in renamed_deps.items() if d not in exclusions],
             original_deps = original_deps,
             repo_path = repo_path,
