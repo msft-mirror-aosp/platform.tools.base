@@ -37,6 +37,8 @@ import com.android.build.gradle.internal.computeAvdName
 import com.android.build.gradle.internal.dsl.ManagedVirtualDevice
 import com.android.build.gradle.internal.initialize
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.CLASSES_JAR
+import com.android.build.gradle.internal.publishing.PublishingSpecs
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalMultipleArtifactType
 import com.android.build.gradle.internal.services.getBuildService
@@ -470,11 +472,13 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
         creationConfig.services.fileCollection().also { fileCollection ->
           if (hasHostJar) {
             fileCollection.from(classesDir)
-            fileCollection.from(
-              creationConfig.testedVariant.artifacts
-                .forScope(ScopedArtifacts.Scope.PROJECT)
-                .getFinalArtifacts(ScopedArtifact.POST_COMPILATION_CLASSES)
-            )
+            val testedVariant = creationConfig.testedVariant
+            val spec =
+              PublishingSpecs.getVariantPublishingSpec(testedVariant.componentType)
+                .getSpec(CLASSES_JAR, AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH.publishedTo)
+                ?: error("No CLASSES_JAR spec found for ${testedVariant.componentType}")
+            val mainComponentClassesJar = spec.outputType
+            fileCollection.from(testedVariant.artifacts.get(mainComponentClassesJar))
             creationConfig.sourceContainers
               .filter { it.source is TestSuiteSourceSet.HostJar }
               .forEach { sourceContainer ->

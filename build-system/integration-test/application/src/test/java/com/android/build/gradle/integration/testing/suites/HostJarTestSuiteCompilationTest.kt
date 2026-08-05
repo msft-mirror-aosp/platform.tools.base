@@ -122,8 +122,11 @@ class HostJarTestSuiteCompilationTest {
             )
 
             // Kotlin files
-            add("src/main/kotlin/some/kotlin/AppClassKt.kt", "package some.kotlin; class AppClassKt")
-            add("src/kotlinSuite/kotlin/some/kotlin/TestClassKt.kt", "package some.kotlin; class TestClassKt { val a = AppClassKt() }")
+            add("src/main/kotlin/some/kotlin/AppClassKt.kt", "package some.kotlin; class AppClassKt { internal val internalVal = 1 }")
+            add(
+              "src/kotlinSuite/kotlin/some/kotlin/TestClassKt.kt",
+              "package some.kotlin; class TestClassKt { val a = AppClassKt().internalVal }",
+            )
 
             // Mixed files
             add("src/main/java/some/mixed/AppClassJ.java", "package some.mixed; public class AppClassJ {}")
