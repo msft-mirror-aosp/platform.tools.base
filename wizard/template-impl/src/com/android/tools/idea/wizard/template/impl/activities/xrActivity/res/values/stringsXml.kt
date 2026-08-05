@@ -20,7 +20,7 @@ fun stringsXml() =
 <resources>
     <string name="app_name">Basic Headset Activity</string>
     <string name="hello_android_xr">Hello Android XR.</string>
-    <string name="switch_to_home_space_mode">Switch to Home Space Mode</string>
-    <string name="switch_to_full_space_mode">Switch to Full Space Mode</string>
+    <string name="switch_to_home_space">Switch to Home Space</string>
+    <string name="switch_to_full_space">Switch to Full Space</string>
 </resources>
 """
