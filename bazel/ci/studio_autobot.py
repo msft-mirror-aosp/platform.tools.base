@@ -12,7 +12,7 @@ def studio_journeys(build_env: bazel.BuildEnv):
     '--test_timeout=3600',
     '--nocache_test_results',
     '--config=remote-exec',
-    '--test_env=SECRET_MANAGER_PROJECT_ID=experimental-studio-journeys',
+    '--test_env=SECRET_MANAGER_PROJECT_ID=android-studio-test-automation',
     '--test_env=SECRET_MANAGER_KEY=GEMINI_API_KEY',
     '--jobs=5',  # avoid having too many jobs in parallel to prevent quota issues
   ]
