@@ -111,11 +111,14 @@ public class VmTraceParser {
     }
 
     private static boolean verifyStreamingTrace(File mTraceFile) throws IOException {
-        final DataInputStream mInputStream = new DataInputStream(new FileInputStream(mTraceFile));
-        // Read the magic number and validate it
-        int magic = doReadNumberLE(4, mInputStream);
-        validateMagic(magic);
-        return true;
+        if (mTraceFile.length() < 4) {
+            return false;
+        }
+        try (InputStream inputStream = new FileInputStream(mTraceFile)) {
+            // Read the magic number and validate it
+            int magic = doReadNumberLE(4, inputStream);
+            return magic == TRACE_MAGIC;
+        }
     }
 
     private static boolean verifyNonStreamingTrace(File mTraceFile, VmTraceParser parser)
@@ -125,17 +128,14 @@ public class VmTraceParser {
     }
 
     private static boolean isStreamingTrace(File file) throws IOException {
-        BufferedReader in =
+        try (BufferedReader in =
                 new BufferedReader(
-                        new InputStreamReader(new FileInputStream(file), Charsets.US_ASCII));
-        try {
+                        new InputStreamReader(new FileInputStream(file), Charsets.US_ASCII))) {
             String firstLine = in.readLine();
             if (firstLine != null && firstLine.startsWith(HEADER_SECTION_VERSION)) {
                 // Trace file not obtained by using streaming mode
                 return false;
             }
-        } finally {
-            in.close();
         }
         return true;
     }
