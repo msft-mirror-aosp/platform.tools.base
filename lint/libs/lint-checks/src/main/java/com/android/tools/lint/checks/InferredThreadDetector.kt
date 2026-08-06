@@ -17,6 +17,12 @@ package com.android.tools.lint.checks
 
 import com.android.tools.lint.checks.InferredThreadDetector.Thread
 import com.android.tools.lint.checks.fx.AssumptionTableBuilder.Companion.build
+import com.android.tools.lint.checks.fx.get
+import com.android.tools.lint.checks.fx.invoke
+import com.android.tools.lint.checks.fx.result.ClassId
+import com.android.tools.lint.checks.fx.result.Type
+import com.android.tools.lint.checks.fx.result.Type.MethodRef.Companion.rawVirtual
+import com.android.tools.lint.checks.fx.result.plus
 import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.Implementation
 import com.android.tools.lint.detector.api.Issue
@@ -93,6 +99,72 @@ class InferredThreadDetector : ThreadConstraintDetector<Thread>(lattice, assumpt
 
     val lattice = ThreadConstraintLattice.of<Thread>()
 
-    val assumptions by lazy(LazyThreadSafetyMode.NONE) { lattice.build { assumeCommonJavaAndKotlinSignatures() } }
+    val assumptions by
+      lazy(LazyThreadSafetyMode.NONE) {
+        lattice.build {
+          assumeCommonJavaAndKotlinSignatures()
+
+          val runnableId = ClassId.of<Runnable>()
+          val longId = ClassId.of("long")
+          val intId = ClassId.of("int")
+
+          // The `View.post*` family is safe to call from any thread, even though the SDK's external annotations (android-36 and up) mark
+          // `View` itself `@UiThread` without exempting these methods. The posted runnables execute on the UI thread.
+          run {
+            val viewFqn = "android.view.View"
+            val view = ClassId.of(viewFqn)
+
+            rawVirtual("post", viewFqn, runnableId) assumedAs
+              forAll<Runnable> { runnable ->
+                given(view(), runnable) {
+                  range = Type.Boolean
+                  constraint += runnable[Runnable::run] to lattice.of(Thread.MainOrUi)
+                }
+              }
+            rawVirtual("postDelayed", viewFqn, runnableId, longId) assumedAs
+              forAll<Runnable> { runnable ->
+                given(view(), runnable, Type.Long) {
+                  range = Type.Boolean
+                  constraint += runnable[Runnable::run] to lattice.of(Thread.MainOrUi)
+                }
+              }
+            rawVirtual("postOnAnimation", viewFqn, runnableId) assumedAs
+              forAll<Runnable> { runnable ->
+                given(view(), runnable) { constraint += runnable[Runnable::run] to lattice.of(Thread.MainOrUi) }
+              }
+            rawVirtual("postOnAnimationDelayed", viewFqn, runnableId, longId) assumedAs
+              forAll<Runnable> { runnable ->
+                given(view(), runnable, Type.Long) { constraint += runnable[Runnable::run] to lattice.of(Thread.MainOrUi) }
+              }
+            rawVirtual("postInvalidate", viewFqn) assumedMonoAs {}
+            rawVirtual("postInvalidate", viewFqn, intId, intId, intId, intId) assumedMonoAs {}
+            rawVirtual("postInvalidateDelayed", viewFqn, longId) assumedMonoAs {}
+            rawVirtual("postInvalidateDelayed", viewFqn, longId, intId, intId, intId, intId) assumedMonoAs {}
+            rawVirtual("postInvalidateOnAnimation", viewFqn) assumedMonoAs {}
+            rawVirtual("postInvalidateOnAnimation", viewFqn, intId, intId, intId, intId) assumedMonoAs {}
+          }
+
+          // The `Handler.post*` family is likewise safe to call from any thread. Unlike `View`'s, the posted runnables execute on the
+          // handler's looper thread, which isn't determinable here, so they're left unconstrained.
+          run {
+            val handlerFqn = "android.os.Handler"
+            val handler = ClassId.of(handlerFqn)
+            val objectId = ClassId.of<Any>()
+
+            rawVirtual("post", handlerFqn, runnableId) assumedAs
+              forAll<Runnable> { runnable -> given(handler(), runnable) { range = Type.Boolean } }
+            rawVirtual("postAtFrontOfQueue", handlerFqn, runnableId) assumedAs
+              forAll<Runnable> { runnable -> given(handler(), runnable) { range = Type.Boolean } }
+            rawVirtual("postDelayed", handlerFqn, runnableId, longId) assumedAs
+              forAll<Runnable> { runnable -> given(handler(), runnable, Type.Long) { range = Type.Boolean } }
+            rawVirtual("postDelayed", handlerFqn, runnableId, objectId, longId) assumedAs
+              forAll<Runnable> { runnable -> given(handler(), runnable, Type.Any, Type.Long) { range = Type.Boolean } }
+            rawVirtual("postAtTime", handlerFqn, runnableId, longId) assumedAs
+              forAll<Runnable> { runnable -> given(handler(), runnable, Type.Long) { range = Type.Boolean } }
+            rawVirtual("postAtTime", handlerFqn, runnableId, objectId, longId) assumedAs
+              forAll<Runnable> { runnable -> given(handler(), runnable, Type.Any, Type.Long) { range = Type.Boolean } }
+          }
+        }
+      }
   }
 }
