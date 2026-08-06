@@ -146,7 +146,7 @@ class ComposeInspectorTest {
       )
 
     // Trigger injectAndAttach so we populate the appDataDir internal states
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pgrep -f '^${packageName.replace(".", "\\.")}(:.*)?$'", "1234\n")
+    configureUidCommands(fakeSession, deviceSelector, packageName)
 
     val baseAgentSetupCmd =
       "run-as $packageName sh -c '" +
@@ -319,7 +319,9 @@ class ComposeInspectorTest {
                     .setId(5)
                     .setValue("android.widget.TextView")
                 )
-                .addNodes(viewNode1)
+                .addWindows(
+                  com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.WindowInfo.newBuilder().setRoot(viewNode1)
+                )
             )
             .build()
 
@@ -424,7 +426,7 @@ class ComposeInspectorTest {
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pgrep -f '^${packageName.replace(".", "\\.")}(:.*)?$'", "1234\n")
+    configureUidCommands(fakeSession, deviceSelector, packageName)
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
 
     val dummyAgent = tempFolder.newFile("lib_ui_inspector_agent.so").toPath()
@@ -499,9 +501,8 @@ class ComposeInspectorTest {
       )
     assertThat(sentComposeCmd.getComposablesCommand.skipSystemComposables).isFalse()
 
-    val roots = uiDump.roots
-    assertThat(roots).hasSize(1)
-    val viewRoot = roots[0]
+    assertThat(uiDump.windows).hasSize(1)
+    val viewRoot = uiDump.windows.single().root
     assertThat(viewRoot.className).isEqualTo("android.widget.FrameLayout")
     val composeView = viewRoot.children[0]
     assertThat(composeView.className).isEqualTo("androidx.compose.ui.platform.AndroidComposeView")
@@ -610,7 +611,9 @@ class ComposeInspectorTest {
                     .setId(2)
                     .setValue("androidx.compose.ui.platform.AndroidComposeView")
                 )
-                .addNodes(viewNode1)
+                .addWindows(
+                  com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.WindowInfo.newBuilder().setRoot(viewNode1)
+                )
             )
             .build()
 
@@ -749,7 +752,7 @@ class ComposeInspectorTest {
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pgrep -f '^${packageName.replace(".", "\\.")}(:.*)?$'", "1234\n")
+    configureUidCommands(fakeSession, deviceSelector, packageName)
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
 
     val dummyAgent = tempFolder.newFile("lib_ui_inspector_agent.so").toPath()
@@ -817,9 +820,8 @@ class ComposeInspectorTest {
       }
 
     // 4. Assertions
-    val roots = uiDump.roots
-    assertThat(roots).hasSize(1)
-    val viewRoot = roots[0]
+    assertThat(uiDump.windows).hasSize(1)
+    val viewRoot = uiDump.windows.single().root
     assertThat(viewRoot.className).isEqualTo("android.widget.FrameLayout")
     val composeView = viewRoot.children[0]
     assertThat(composeView.className).isEqualTo("androidx.compose.ui.platform.AndroidComposeView")
@@ -924,7 +926,9 @@ class ComposeInspectorTest {
                     .setId(2)
                     .setValue("androidx.compose.ui.platform.AndroidComposeView")
                 )
-                .addNodes(viewNode1)
+                .addWindows(
+                  com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.WindowInfo.newBuilder().setRoot(viewNode1)
+                )
             )
             .build()
 
@@ -1078,7 +1082,7 @@ class ComposeInspectorTest {
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pgrep -f '^${packageName.replace(".", "\\.")}(:.*)?$'", "1234\n")
+    configureUidCommands(fakeSession, deviceSelector, packageName)
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
 
     val expectedSetupCmd =
@@ -1105,7 +1109,7 @@ class ComposeInspectorTest {
       )
 
     // Trigger injectAndAttach so we populate the appDataDir internal states
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pgrep -f '^${packageName.replace(".", "\\.")}(:.*)?$'", "1234\n")
+    configureUidCommands(fakeSession, deviceSelector, packageName)
 
     val baseAgentSetupCmd =
       "run-as $packageName sh -c '" +
@@ -1160,9 +1164,8 @@ class ComposeInspectorTest {
       }
 
     // 4. Assertions
-    val roots = uiDump.roots
-    assertThat(roots).hasSize(1)
-    val viewRoot = roots[0]
+    assertThat(uiDump.windows).hasSize(1)
+    val viewRoot = uiDump.windows.single().root
     assertThat(viewRoot.className).isEqualTo("android.widget.FrameLayout")
     val composeView = viewRoot.children[0]
     assertThat(composeView.className).isEqualTo("androidx.compose.ui.platform.AndroidComposeView")
@@ -1296,5 +1299,14 @@ class ComposeInspectorTest {
         fakeSession.deviceServices.configureShellCommand(deviceSelector, "mv -f '$target.test.tmp' '$target'", "")
         fakeSession.deviceServices.configureShellCommand(deviceSelector, "rm -f '$target.test.tmp'", "")
       }
+  }
+
+  private fun configureUidCommands(fakeSession: FakeAdbSession, deviceSelector: DeviceSelector, packageName: String) {
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      "pm list packages -U --user 0 $packageName",
+      "package:$packageName uid:10123\n",
+    )
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "ps -A -o PID,UID,NAME", "PID UID NAME\n1234 10123 $packageName\n")
   }
 }

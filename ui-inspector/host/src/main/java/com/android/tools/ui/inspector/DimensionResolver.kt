@@ -32,11 +32,10 @@ private val DIMENSION_SP_ATTRIBUTES =
     "tabTextSize",
   )
 
-/**
- * Traverses the unified UI layout tree recursively and resolves raw pixel dimensions to dp and sp values based on density and fontScale.
- */
-internal fun UiNode.resolveDimensions(density: Dimension.Dpi?, fontScale: Float?): UiNode {
-  val densityDpi = density?.value
+/** Traverses the unified UI layout tree recursively and resolves raw pixel dimensions using a device configuration. */
+internal fun UiNode.resolveDimensions(configuration: DeviceConfiguration?): UiNode {
+  val densityDpi = configuration?.density?.value
+  val fontScale = configuration?.fontScale
   return when (this) {
     is UiNode.ViewNode -> {
       val resolvedAttributes =
@@ -48,8 +47,8 @@ internal fun UiNode.resolveDimensions(density: Dimension.Dpi?, fontScale: Float?
             if (densityDpi != null && densityDpi > 0) {
               val densityScale = densityDpi.toFloat() / 160.0f
               if (attr.name in DIMENSION_SP_ATTRIBUTES) {
-                val scale = densityScale * (fontScale ?: 1.0f)
-                if (scale > 0.0f) {
+                if (fontScale != null && fontScale > 0.0f) {
+                  val scale = densityScale * fontScale
                   sp = px / scale
                 }
               } else {
@@ -61,13 +60,13 @@ internal fun UiNode.resolveDimensions(density: Dimension.Dpi?, fontScale: Float?
             attr
           }
         }
-      val resolvedChildren = children.map { it.resolveDimensions(density, fontScale) }.toMutableList()
+      val resolvedChildren = children.map { it.resolveDimensions(configuration) }.toMutableList()
       this.copy(attributes = resolvedAttributes, children = resolvedChildren)
     }
     is UiNode.ComposeNode -> {
       // Compose parameter dimensions are already resolved on the wire.
       // We only need to recursively resolve potential ViewNodes inside children.
-      val resolvedChildren = children.map { it.resolveDimensions(density, fontScale) }.toMutableList()
+      val resolvedChildren = children.map { it.resolveDimensions(configuration) }.toMutableList()
       this.copy(children = resolvedChildren)
     }
   }

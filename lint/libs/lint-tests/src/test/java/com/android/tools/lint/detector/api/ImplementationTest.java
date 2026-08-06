@@ -98,6 +98,16 @@ public class ImplementationTest extends TestCase {
         assertTrue(implementation.isAdequate(RESOURCE_FILE_SCOPE));
         assertTrue(implementation.isAdequate(ALL));
 
+        implementation =
+                new Implementation(
+                        Detector.class,
+                        EnumSet.of(Scope.JAVA_FILE, Scope.GRADLE_FILE, Scope.TEST_SOURCES));
+        assertFalse(implementation.isAdequate(EnumSet.of(Scope.JAVA_FILE, Scope.MANIFEST)));
+        assertTrue(implementation.isAdequate(EnumSet.of(Scope.JAVA_FILE, Scope.GRADLE_FILE)));
+        assertTrue(
+                implementation.isAdequate(
+                        EnumSet.of(Scope.JAVA_FILE, Scope.GRADLE_FILE, Scope.MANIFEST)));
+
         assertFalse(
                 SecureRandomGeneratorDetector.ISSUE
                         .getImplementation()

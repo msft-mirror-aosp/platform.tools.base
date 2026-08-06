@@ -3540,7 +3540,7 @@ package com.android.build.api.variant {
     property @org.gradle.api.Incubating public abstract com.android.build.api.variant.SourceDirectories.Flat? aarKeepRules;
   }
 
-  public interface LibraryVariant extends com.android.build.api.variant.Variant com.android.build.api.variant.CanMinifyCode com.android.build.api.variant.CanProduceConsumerProguardFiles com.android.build.api.variant.GeneratesAar com.android.build.api.variant.HasAndroidTest com.android.build.api.variant.HasDeviceTests com.android.build.api.variant.HasHostTests com.android.build.api.variant.HasTestFixtures com.android.build.api.variant.HasUnitTest {
+  public interface LibraryVariant extends com.android.build.api.variant.Variant com.android.build.api.variant.CanMinifyCode com.android.build.api.variant.CanProduceConsumerProguardFiles com.android.build.api.variant.GeneratesAar com.android.build.api.variant.HasAndroidTest com.android.build.api.variant.HasDeviceTests com.android.build.api.variant.HasHostTests com.android.build.api.variant.HasTestFixtures com.android.build.api.variant.HasTestSuites com.android.build.api.variant.HasUnitTest {
     method @InaccessibleFromKotlin public com.android.build.api.variant.Renderscript? getRenderscript();
     property public abstract com.android.build.api.variant.Renderscript? renderscript;
   }

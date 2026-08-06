@@ -256,10 +256,7 @@ def kotlin_library(
         **kwargs: arguments to pass through to _kotlin_library
     """
 
-    kotlinc_opts = ["-jvm-target", jvm_target] + kotlinc_opts
-
-    # b/382592220: various AGP-related targets are not ready for lambdas compiled with invokedynamic.
-    kotlinc_opts = ["-Xlambdas=class", "-Xsam-conversions=class"] + kotlinc_opts
+    kotlinc_opts = ["-jvm-target", jvm_target, "-Xsam-conversions=class"] + kotlinc_opts
 
     # Include non-test kotlin libraries in coverage
     cb_jar = name + "_coverage.baseline.classes.jar"  # a jar for coverage baseline classfiles

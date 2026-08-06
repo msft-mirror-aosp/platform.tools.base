@@ -104,7 +104,7 @@ class InjectionManagerTest {
     // Mock expected shell commands for the injection flow
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pgrep -f '^${packageName.replace(".", "\\.")}(:.*)?$'", "1234\n")
+    configurePackageUidAndProcesses()
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
     val setupCmd =
       "run-as $packageName sh -c '" +
@@ -156,7 +156,7 @@ class InjectionManagerTest {
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pgrep -f '^${packageName.replace(".", "\\.")}(:.*)?$'", "1234\n")
+    configurePackageUidAndProcesses()
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
 
     val setupCmd =
@@ -214,7 +214,7 @@ class InjectionManagerTest {
     // Mock expected shell commands for the injection flow
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pgrep -f '^${packageName.replace(".", "\\.")}(:.*)?$'", "1234\n")
+    configurePackageUidAndProcesses()
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
 
     val setupCmd =
@@ -271,7 +271,7 @@ class InjectionManagerTest {
     // Mock injectAndAttach dependencies so we can initialize appDataDir
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pgrep -f '^${packageName.replace(".", "\\.")}(:.*)?$'", "1234\n")
+    configurePackageUidAndProcesses()
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
@@ -314,7 +314,7 @@ class InjectionManagerTest {
 
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pgrep -f '^${packageName.replace(".", "\\.")}(:.*)?$'", "1234\n")
+    configurePackageUidAndProcesses()
 
     // Configure run-as pwd to fail
     fakeSession.deviceServices.configureShellCommand(
@@ -337,52 +337,138 @@ class InjectionManagerTest {
   }
 
   @Test
-  fun testGetPid_Fails() = runTest {
+  fun testInjectAndAttach_notRunningPreservesError() = runTest {
     val dummyPayload = tempFolder.root.toPath().resolve("lib_ui_inspector_payload.jar")
     val injectionManager = InjectionManager(testSession, deviceSerial, packageName, agentPathResolver, dummyJar, dummyPayload)
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
 
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
-
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
-
-    // Configure pgrep to fail
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
-      "pgrep -f '^${packageName.replace(".", "\\.")}(:.*)?$'",
-      stdout = "",
-      stderr = "",
-      exitCode = 1,
+      "pm list packages -U --user 0 $packageName",
+      "package:$packageName uid:10123\n",
     )
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "ps -A -o PID,UID,NAME", "PID UID NAME\n")
 
     try {
       injectionManager.injectAndAttach(needsDebugViewAttributes = false)
-      fail("Expected IllegalStateException for failing pidof")
+      fail("Expected IllegalStateException for an app with no running process")
     } catch (e: IllegalStateException) {
-      assertThat(e.message).contains("The application '$packageName' is not running on the device. Please start the app and try again.")
+      assertThat(e.message).isEqualTo("The application '$packageName' is not running on the device. Please start the app and try again.")
     }
   }
 
   @Test
-  fun testGetPid_adbException_propagates() = runTest {
+  fun testInjectAndAttach_psAdbExceptionPropagates() = runTest {
     val dummyPayload = tempFolder.root.toPath().resolve("lib_ui_inspector_payload.jar")
     val injectionManager = InjectionManager(testSession, deviceSerial, packageName, agentPathResolver, dummyJar, dummyPayload)
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
 
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      "pm list packages -U --user 0 $packageName",
+      "package:$packageName uid:10123\n",
+    )
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
 
-    // Note: pgrep shell command is deliberately unconfigured so FakeAdbDeviceServices throws an exception simulating an ADB failure.
+    // The ps command is deliberately unconfigured so FakeAdbDeviceServices throws an exception simulating an ADB failure.
 
     try {
       injectionManager.injectAndAttach(needsDebugViewAttributes = false)
-      fail("Expected exception for unconfigured pgrep command")
+      fail("Expected exception for unconfigured ps command")
     } catch (e: Exception) {
       assertThat(e.message).doesNotContain("The application '$packageName' is not running on the device")
       assertThat(e.message).contains("Command not setup")
     }
+  }
+
+  @Test
+  fun testInjectAndAttach_packageNotInstalledPreservesAccessError() = runTest {
+    val injectionManager = createInjectionManager()
+    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pm list packages -U --user 0 $packageName", "")
+
+    var exception: IllegalStateException? = null
+    try {
+      injectionManager.injectAndAttach(needsDebugViewAttributes = false)
+      fail("Expected package-not-installed failure")
+    } catch (e: IllegalStateException) {
+      exception = e
+    }
+
+    assertThat(exception!!.message)
+      .isEqualTo(
+        "Failed to access the application '$packageName'. Please make sure the app is installed, debuggable, and running under the current user."
+      )
+    val commands = fakeSession.deviceServices.shellV2Requests.map { it.command }
+    assertThat(commands).doesNotContain("run-as $packageName pwd")
+    assertThat(commands).doesNotContain("ps -A -o PID,UID,NAME")
+  }
+
+  @Test
+  fun testInjectAndAttach_pmAdbExceptionPropagates() = runTest {
+    val injectionManager = createInjectionManager()
+    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
+
+    try {
+      injectionManager.injectAndAttach(needsDebugViewAttributes = false)
+      fail("Expected exception for unconfigured pm command")
+    } catch (e: Exception) {
+      assertThat(e.message).doesNotContain("Failed to access the application")
+      assertThat(e.message).contains("Command not setup")
+    }
+  }
+
+  @Test
+  fun testInjectAndAttach_acceptsColonSuffixCandidate() = runTest {
+    val injectionManager = createInjectionManager()
+    configureSuccessfulInjection(processName = "$packageName:ui")
+
+    val port = injectionManager.injectAndAttach(needsDebugViewAttributes = false)
+
+    assertThat(port).isEqualTo("12345")
+  }
+
+  @Test
+  fun testResolveAndInject_fullyQualifiedProcessName() = runTest {
+    val targetPackage = "com.example.qaviews"
+    val processName = "com.example.uiprocess"
+    val pid = "4321"
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      TOP_ACTIVITY_SHELL_COMMAND,
+      "    APP  UID $pid:$processName/u0a123 (top-activity)\n",
+    )
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "ps -o UID= -p $pid", "10123\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pm list packages -U --user 0", "package:$targetPackage uid:10123\n")
+    configureSuccessfulInjection(targetPackage = targetPackage, pid = pid, processName = processName)
+
+    val resolvedPackage = resolveTargetPackage(testSession, deviceSerial, requested = null)
+    val injectionManager =
+      InjectionManager(
+        testSession,
+        deviceSerial,
+        resolvedPackage,
+        agentPathResolver,
+        dummyJar,
+        dummyPayload,
+        tempFileSuffixGenerator = { "test.tmp" },
+      )
+
+    val port = injectionManager.injectAndAttach(needsDebugViewAttributes = false)
+
+    assertThat(resolvedPackage).isEqualTo(targetPackage)
+    assertThat(port).isEqualTo("12345")
+    assertThat(fakeSession.deviceServices.shellV2Requests.map { it.command })
+      .contains(
+        "cmd activity attach-agent $pid \"/data/data/$targetPackage/lib_ui_inspector_agent.so=/data/data/$targetPackage/lib_ui_inspector_service.jar;/data/data/$targetPackage/lib_ui_inspector_payload.jar;$pid\""
+      )
   }
 
   @Test
@@ -480,7 +566,7 @@ class InjectionManagerTest {
     // Mock injectAndAttach dependencies so we can initialize appDataDir
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pgrep -f '^${packageName.replace(".", "\\.")}(:.*)?$'", "1234\n")
+    configurePackageUidAndProcesses()
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
@@ -539,11 +625,16 @@ class InjectionManagerTest {
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
-    // pgrep returns two PIDs: 5678 (secondary process) and 1234 (main UI process)
+    // ps returns two PIDs with the package UID: 5678 (secondary process) and 1234 (main UI process).
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
-      "pgrep -f '^${packageName.replace(".", "\\.")}(:.*)?$'",
-      "5678\n1234\n",
+      "pm list packages -U --user 0 $packageName",
+      "package:$packageName uid:10123\n",
+    )
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      "ps -A -o PID,UID,NAME",
+      "PID UID NAME\n5678 10123 $packageName:worker\n1234 10123 $packageName\n",
     )
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
@@ -625,10 +716,10 @@ class InjectionManagerTest {
     assertThat(stderr).contains("settings delete global debug_view_attributes_application_package")
     // The pid is captured before the settings flip: the activity relaunch keeps the process alive, and reading the pid first avoids
     // mutating settings when the target is not running.
-    val pgrepIndex = commands.indexOfFirst { it.startsWith("pgrep ") }
+    val processLookupIndex = commands.indexOf("ps -A -o PID,UID,NAME")
     val settingsReadIndex = commands.indexOf(readSettingsCmd)
-    assertThat(pgrepIndex).isAtLeast(0)
-    assertThat(pgrepIndex).isLessThan(settingsReadIndex)
+    assertThat(processLookupIndex).isAtLeast(0)
+    assertThat(processLookupIndex).isLessThan(settingsReadIndex)
   }
 
   @Test
@@ -803,14 +894,27 @@ class InjectionManagerTest {
       tempFileSuffixGenerator = { "test.tmp" },
     )
 
+  private fun configurePackageUidAndProcesses(
+    targetPackage: String = packageName,
+    packageUid: Int = 10123,
+    processOutput: String = "PID UID NAME\n1234 $packageUid $targetPackage\n",
+  ) {
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      "pm list packages -U --user 0 $targetPackage",
+      "package:$targetPackage uid:$packageUid\n",
+    )
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "ps -A -o PID,UID,NAME", processOutput)
+  }
+
   /** Configures every shell command of the happy-path injection flow, except the debug-view-attributes settings commands. */
-  private fun configureSuccessfulInjection() {
+  private fun configureSuccessfulInjection(targetPackage: String = packageName, pid: String = "1234", processName: String = targetPackage) {
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pgrep -f '^${packageName.replace(".", "\\.")}(:.*)?$'", "1234\n")
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
+    configurePackageUidAndProcesses(targetPackage, processOutput = "PID UID NAME\n$pid 10123 $processName\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $targetPackage pwd", "/data/data/$targetPackage\n")
     val setupCmd =
-      "run-as $packageName sh -c '" +
+      "run-as $targetPackage sh -c '" +
         "rm -f lib_ui_inspector_agent.so lib_ui_inspector_service.jar lib_ui_inspector_payload.jar && " +
         "cat /data/local/tmp/lib_ui_inspector_agent.so > lib_ui_inspector_agent.so && " +
         "cat /data/local/tmp/lib_ui_inspector_service.jar > lib_ui_inspector_service.jar && " +
@@ -821,13 +925,13 @@ class InjectionManagerTest {
     fakeSession.deviceServices.configureShellCommand(deviceSelector, setupCmd, "")
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
-      "cmd activity attach-agent 1234 \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;1234\"",
+      "cmd activity attach-agent $pid \"/data/data/$targetPackage/lib_ui_inspector_agent.so=/data/data/$targetPackage/lib_ui_inspector_service.jar;/data/data/$targetPackage/lib_ui_inspector_payload.jar;$pid\"",
       "",
     )
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
-      "cat /proc/net/unix | grep ui_inspector_1234 || true",
-      "ui_inspector_1234\n",
+      "cat /proc/net/unix | grep ui_inspector_$pid || true",
+      "ui_inspector_$pid\n",
     )
   }
 

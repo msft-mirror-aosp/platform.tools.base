@@ -16,10 +16,10 @@
 
 package com.android.tools.ui.inspector.printer.text
 
-import com.android.tools.ui.inspector.AppContext
 import com.android.tools.ui.inspector.DeviceConfiguration
 import com.android.tools.ui.inspector.DeviceLocale
 import com.android.tools.ui.inspector.Dimension
+import com.android.tools.ui.inspector.DisplayInfo
 import java.io.PrintStream
 import java.lang.reflect.Modifier
 
@@ -67,15 +67,18 @@ private fun getEnumDisplayValue(enumValue: Enum<*>): String {
   return enumValue.name.lowercase()
 }
 
-/** Prints the application context (theme and display info) to the target [PrintStream]. */
-internal fun printAppContext(appContext: AppContext, out: PrintStream) {
-  out.println("App Context:")
-  appContext.theme?.let { out.println(" Theme: $it") }
-  if (appContext.displays.isNotEmpty()) {
-    out.println(" Displays:")
-    appContext.displays.forEach { display ->
-      out.println("  - Display ${display.id}: ${display.widthPx}x${display.heightPx} px, rotation ${display.orientation}°")
-    }
+/** Prints display information to the target [PrintStream]. */
+internal fun printDisplays(displays: List<DisplayInfo>, out: PrintStream) {
+  if (displays.isEmpty()) return
+  out.println("Displays:")
+  displays.forEach { display ->
+    val rotation = display.orientation?.let { ", rotation $it°" }.orEmpty()
+    out.println(" - Display ${display.id}: ${display.widthPx}x${display.heightPx} px$rotation")
   }
   out.println()
+}
+
+/** Prints a theme resource to the target [PrintStream]. */
+internal fun printTheme(theme: String, out: PrintStream) {
+  out.println(" Theme: $theme")
 }

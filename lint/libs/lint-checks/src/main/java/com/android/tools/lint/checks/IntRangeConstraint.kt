@@ -153,7 +153,7 @@ class IntRangeConstraint private constructor(val from: Long, val to: Long) : Ran
       if (from <= other.to) {
         if (other.to != MAX_VALUE && to > other.to + 1) {
           return IntRangeConstraint(other.to + 1, to)
-        } else if (other.from != MAX_VALUE && from < other.from - 1) {
+        } else if (other.from != MIN_VALUE && from < other.from - 1) {
           return IntRangeConstraint(from, other.from - 1)
         }
       }

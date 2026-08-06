@@ -13,11 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.android.tools.deployer.common
 
-package com.android.tools.ui.inspector
+import com.android.adblib.AdbSessionHost
 
-/** Represents physical display information. */
-data class DisplayInfo(val id: Int, val widthPx: Int, val heightPx: Int, val orientation: Int)
-
-/** Represents the host-side application context (theme and active displays). */
-data class AppContext(val theme: String?, val displays: List<DisplayInfo>)
+object DeployerProperties {
+  val USE_CONNECTED_DEVICE = AdbSessionHost.BooleanProperty("com.android.tools.deployer.use.connected.device", false)
+}

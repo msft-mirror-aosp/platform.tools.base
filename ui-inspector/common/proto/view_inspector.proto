@@ -19,6 +19,8 @@ package ui.inspector.view.inspector.protocol;
 option java_package = "com.android.tools.ui.inspector.view.inspector.protocol";
 option java_outer_classname = "ViewInspectorProtocol";
 
+// Where a node appears on screen: the straight (non-tilted) rectangle enclosing the
+// node as rendered, in screen coordinates.
 message Rect {
     int32 x = 1;
     int32 y = 2;
@@ -39,7 +41,7 @@ message ViewNode {
     // String table index for package name
     int32 package_name = 4;
 
-    // The absolute bounds of the view in screen coordinates.
+    // Where the view appears on screen; see Rect.
     Rect bounds = 5;
 
 
@@ -271,13 +273,19 @@ message Display {
     // Physical height in pixels
     int32 height_px = 3;
     // Display rotation in degrees: 0, 90, 180, 270
-    int32 orientation = 4;
+    optional int32 orientation = 4;
 }
 
-message AppContext {
-    // String table index of the theme resource (e.g., "@style/Theme.AppCompat")
-    int32 theme = 1;
-    repeated Display display_info = 2;
+// A window owned by the app.
+message WindowInfo {
+    // Root of the window's view hierarchy.
+    ViewNode root = 1;
+
+    // Resource configuration associated with the root view's context.
+    Configuration configuration = 2;
+
+    // String table index for the theme resource associated with the root view's context.
+    int32 theme = 3;
 }
 
 // Command to dump the view hierarchy of all root views.
@@ -289,15 +297,12 @@ message DumpViewsCommand {
 }
 
 message DumpViewsResponse {
-    // The flattened list of root views.
-    repeated ViewNode nodes = 1;
+    repeated WindowInfo windows = 1;
 
-    // Deduplicated strings referenced by indices in ViewNode.
+    // Deduplicated strings referenced by this response.
     repeated StringEntry strings = 2;
 
-    Configuration configuration = 3;
-
-    AppContext app_context = 4;
+    repeated Display displays = 3;
 }
 
 message Command {
@@ -311,5 +316,3 @@ message Response {
         DumpViewsResponse dump_views_response = 1;
     }
 }
-
-

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
@@ -13,18 +14,26 @@
     <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <!-- Storage permissions for modern Android (API 33+) -->
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
     <uses-permission android:name="android.permission.WRITE_SETTINGS" />
 
     <uses-feature
         android:name="android.hardware.bluetooth_le"
         android:required="false" />
     <uses-feature android:name="android.hardware.camera" />
-    <uses-feature android:name="android.hardware.camera.autofocus" />
+    <uses-feature
+        android:name="android.hardware.camera.autofocus"
+        android:required="false" />
     <uses-feature
         android:name="android.hardware.location.network"
         android:required="false" />
@@ -40,11 +49,11 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
-        android:networkSecurityConfig="@xml/network_security_config">
-        <activity android:name=".fragment.FragmentHostActivity"></activity>
+        android:networkSecurityConfig="@xml/network_security_config"
+        tools:targetApi="n">
+        <activity android:name=".fragment.FragmentHostActivity" />
         <activity
             android:name=".MainActivity"
-            android:label="@string/app_name"
             android:theme="@style/AppTheme.NoActionBar"
             android:exported="true">
             <intent-filter>
@@ -54,7 +63,7 @@
             </intent-filter>
         </activity>
 
-        <profileable android:shell="true" />
+        <profileable android:shell="true" tools:targetApi="q" />
 
         <receiver android:name=".taskcategory.BackgroundTaskCategory$AlarmReceiver" />
 
@@ -62,6 +71,15 @@
             android:name=".taskcategory.BackgroundTaskCategory$MyJobService"
             android:exported="true"
             android:permission="android.permission.BIND_JOB_SERVICE" />
+
+        <!-- Leak Activities and Services -->
+        <activity android:name="android.com.java.profilertester.leaks.LeakingActivity" android:theme="@style/Theme.AppCompat.Light.NoActionBar"/>
+        <activity android:name="android.com.java.profilertester.leaks.LeakingViewModelActivity" android:theme="@style/Theme.AppCompat.Light.NoActionBar"/>
+        <service android:name="android.com.java.profilertester.leaks.LeakingService$LS1" />
+        <service android:name="android.com.java.profilertester.leaks.LeakingService$LS2" />
+        <service android:name="android.com.java.profilertester.leaks.LeakingService$LS3" />
+        <service android:name="android.com.java.profilertester.leaks.LeakingService$LS4" />
+        <service android:name="android.com.java.profilertester.leaks.LeakingService$LS5" />
     </application>
 
 </manifest>

@@ -32,8 +32,15 @@ internal class TextUiDumpPrinter(
   private val semanticsMode: SemanticsDisplayMode = SemanticsDisplayMode.BOTH,
 ) : UiDumpPrinter {
   override fun printDump(uiDump: UiDump) {
-    uiDump.appContext?.let { printAppContext(it, out) }
-    uiDump.configuration?.let { printDeviceConfiguration(it, out) }
-    uiDump.roots.forEach { printUiTree(it, 0, out, semanticsMode) }
+    printDisplays(uiDump.displays, out)
+    uiDump.windows.forEachIndexed { index, window ->
+      out.println("Window ${index + 1}:")
+      window.theme?.let { printTheme(it, out) }
+      window.configuration?.let { printDeviceConfiguration(it, out) }
+      printUiTree(window.root, 0, out, semanticsMode)
+      if (index < uiDump.windows.lastIndex) {
+        out.println()
+      }
+    }
   }
 }

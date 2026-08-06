@@ -42,6 +42,7 @@ import com.android.build.api.variant.KotlinMultiplatformAndroidVariant
 import com.android.build.api.variant.Renderscript
 import com.android.build.api.variant.ResValue
 import com.android.build.api.variant.TestFixtures
+import com.android.build.api.variant.TestSuite
 import com.android.build.api.variant.TestedComponentPackaging
 import com.android.build.gradle.internal.DependencyConfigurator
 import com.android.build.gradle.internal.component.HostTestCreationConfig
@@ -277,5 +278,10 @@ constructor(
   override fun <T> getExtension(type: Class<T>): T? = null
 
   override val testFixtures: TestFixtures? = null
+
+  // Internal API used by AGP during task creation. KMP variant does not support test suites yet.
   override val testSuites: List<TestSuiteCreationConfig> = listOf()
+
+  // Public API exposed to users. KMP variant does not support test suites yet.
+  override val suites: Map<String, TestSuite> = emptyMap()
 }

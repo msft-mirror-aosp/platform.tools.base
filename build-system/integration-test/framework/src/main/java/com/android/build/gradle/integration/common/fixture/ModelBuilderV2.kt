@@ -107,6 +107,10 @@ internal constructor(
     return this
   }
 
+  fun interface ParameterMutator : Serializable {
+    operator fun invoke(parameter: ModelBuilderParameter)
+  }
+
   /**
    * Fetches the model for each project and return them as a [ModelContainerV2]
    *
@@ -115,7 +119,7 @@ internal constructor(
    */
   fun fetchModels(
     variantName: String? = null,
-    parameterMutator: (ModelBuilderParameter) -> Unit = { it.buildAllRuntimeClasspaths() },
+    parameterMutator: ParameterMutator = ParameterMutator { it.buildAllRuntimeClasspaths() },
     nativeParams: NativeModuleParams? = null,
   ): FetchResult<ModelContainerV2> {
     // TODO(b/528235271): Enable back consistency check for problem API. 9.6.0. changed behaviour of problems API severity.

@@ -191,7 +191,7 @@ class TypedefDetector : AbstractAnnotationDetector(), SourceCodeScanner {
 
   private fun KaSession.isPrimitiveTypeConvertingMethod(functionSymbol: KaFunctionSymbol?): Boolean =
     isPrimitiveTypeMethod(functionSymbol, 0) { name ->
-      name.substring(0, 2) == "to" && PsiJavaParserFacadeImpl.getPrimitiveType(name.substring(2).lowercase()) != null
+      name.startsWith("to") && PsiJavaParserFacadeImpl.getPrimitiveType(name.substring(2).lowercase()) != null
     }
 
   private fun KaSession.isPrimitiveTypeReturningMethod(functionSymbol: KaFunctionSymbol?): Boolean =

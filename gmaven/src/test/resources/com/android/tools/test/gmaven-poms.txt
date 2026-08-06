@@ -822,9 +822,6 @@ com.android.tools.utp:gradle-work-action
   description=Provides Gradle WorkAction implementations for executing the Unified Test Platform (UTP) in isolation.
   dependencies:
     org.jetbrains.kotlin:kotlin-stdlib (compile)
-    com.android.tools:common (runtime)
-    com.android.tools.ddms:ddmlib (runtime)
-    commons-io:commons-io (runtime)
     org.junit.platform:junit-platform-launcher (runtime)
     org.junit.platform:junit-platform-engine (runtime)
     com.android.tools.androidtest:android-test-engine (runtime)

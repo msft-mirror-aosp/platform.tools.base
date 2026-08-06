@@ -1265,6 +1265,12 @@ class AnnotationDetectorTest : AbstractCheckTest() {
                     @RequiresExtension(extension = Build.VERSION_CODES.R, version=4)
                     @RequiresExtension(extension = 1000000, version=4)
                     public void testApi6() { }
+
+                    @RequiresApi(30)
+                    @RequiresExtension(extension = 28, version = 3) // OK
+                    @RequiresExtension(extension = 29, version = 3) // OK
+                    @RequiresExtension(extension = 30, version = 1) // OK
+                    public void testApi7Ascending() { }
                 }
                 """
           )

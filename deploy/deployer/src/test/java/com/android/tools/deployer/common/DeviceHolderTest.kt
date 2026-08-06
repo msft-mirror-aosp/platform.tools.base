@@ -16,8 +16,10 @@
 package com.android.tools.deployer.common
 
 import com.android.adblib.ConnectedDevice
+import com.android.adblib.testingutils.TestingAdbSession
 import com.android.ddmlib.AdbCommandRejectedException
 import com.android.ddmlib.Client
+import com.android.ddmlib.ClientData
 import com.android.ddmlib.IDevice
 import com.android.ddmlib.IShellOutputReceiver
 import com.android.ddmlib.InstallException
@@ -26,6 +28,7 @@ import com.android.ddmlib.SimpleConnectedSocket
 import com.android.ddmlib.SyncException
 import com.android.ddmlib.TimeoutException
 import com.android.sdklib.AndroidVersion
+import com.android.tools.deploy.proto.Deploy.Arch
 import java.io.IOException
 import java.io.InputStream
 import java.util.Optional
@@ -43,6 +46,7 @@ class DeviceHolderTest {
 
   private val connectedDevice = mock(ConnectedDevice::class.java)
   private val iDevice = mock(IDevice::class.java)
+  private val adbSession = TestingAdbSession()
   private val deviceHolder = DeviceHolder(iDevice, Optional.of(connectedDevice))
 
   @Test
@@ -59,7 +63,7 @@ class DeviceHolderTest {
     Assert.assertEquals("serial-123", deviceHolder.serialNumber)
     Assert.assertEquals(listOf("arm64-v8a"), deviceHolder.abis)
     Assert.assertEquals("FakeDevice", deviceHolder.name)
-    Assert.assertTrue(deviceHolder.clients.isEmpty())
+    Assert.assertTrue(deviceHolder.getPidsForPackageName("FakePkg").isEmpty())
     Assert.assertTrue(deviceHolder.isRoot)
     Mockito.verifyNoInteractions(connectedDevice)
   }
@@ -98,56 +102,6 @@ class DeviceHolderTest {
 
     val e = Assert.assertThrows(RuntimeException::class.java) { deviceHolder.rawExec2("exe", arrayOf("param")) }
     Assert.assertEquals(runtimeException, e)
-    Mockito.verifyNoInteractions(connectedDevice)
-  }
-
-  @Test
-  fun testIDeviceExecuteShellCommandWithInputStream() {
-    val receiver = mock(IShellOutputReceiver::class.java)
-    val inputStream = mock(InputStream::class.java)
-
-    deviceHolder.executeShellCommand("cmd", receiver, 5L, TimeUnit.SECONDS, inputStream)
-    verify(iDevice).executeShellCommand("cmd", receiver, 5L, TimeUnit.SECONDS, inputStream)
-    Mockito.verifyNoInteractions(connectedDevice)
-  }
-
-  @Test
-  fun testIDeviceExecuteShellCommandWithInputStream_convertsAdbCommandRejectedExceptionToIOException() {
-    val receiver = mock(IShellOutputReceiver::class.java)
-    val inputStream = mock(InputStream::class.java)
-    Mockito.doThrow(AdbCommandRejectedException("rejected"))
-      .`when`(iDevice)
-      .executeShellCommand("cmd", receiver, 5L, TimeUnit.SECONDS, inputStream)
-
-    val e =
-      Assert.assertThrows(IOException::class.java) { deviceHolder.executeShellCommand("cmd", receiver, 5L, TimeUnit.SECONDS, inputStream) }
-    Assert.assertTrue(e.cause is AdbCommandRejectedException)
-    Mockito.verifyNoInteractions(connectedDevice)
-  }
-
-  @Test
-  fun testIDeviceExecuteShellCommandWithInputStream_convertsShellCommandUnresponsiveExceptionToIOException() {
-    val receiver = mock(IShellOutputReceiver::class.java)
-    val inputStream = mock(InputStream::class.java)
-    Mockito.doThrow(ShellCommandUnresponsiveException())
-      .`when`(iDevice)
-      .executeShellCommand("cmd", receiver, 5L, TimeUnit.SECONDS, inputStream)
-
-    val e =
-      Assert.assertThrows(IOException::class.java) { deviceHolder.executeShellCommand("cmd", receiver, 5L, TimeUnit.SECONDS, inputStream) }
-    Assert.assertTrue(e.cause is ShellCommandUnresponsiveException)
-    Mockito.verifyNoInteractions(connectedDevice)
-  }
-
-  @Test
-  fun testIDeviceExecuteShellCommandWithInputStream_convertsTimeoutExceptionToIOException() {
-    val receiver = mock(IShellOutputReceiver::class.java)
-    val inputStream = mock(InputStream::class.java)
-    Mockito.doThrow(TimeoutException("timeout")).`when`(iDevice).executeShellCommand("cmd", receiver, 5L, TimeUnit.SECONDS, inputStream)
-
-    val e =
-      Assert.assertThrows(IOException::class.java) { deviceHolder.executeShellCommand("cmd", receiver, 5L, TimeUnit.SECONDS, inputStream) }
-    Assert.assertTrue(e.cause is TimeoutException)
     Mockito.verifyNoInteractions(connectedDevice)
   }
 
@@ -269,14 +223,13 @@ class DeviceHolderTest {
 
   @Test
   fun testIDeviceSupportsFeature() {
-    val feature = IDevice.Feature.SHELL_V2
-    val hardwareFeature = IDevice.HardwareFeature.WATCH
+    `when`(iDevice.supportsFeature(IDevice.Feature.REAL_PKG_NAME)).thenReturn(true)
+    `when`(iDevice.supportsFeature(IDevice.Feature.SKIP_VERIFICATION)).thenReturn(true)
+    `when`(iDevice.supportsFeature(IDevice.HardwareFeature.EMBEDDED)).thenReturn(true)
 
-    `when`(iDevice.supportsFeature(feature)).thenReturn(true)
-    `when`(iDevice.supportsFeature(hardwareFeature)).thenReturn(false)
-
-    Assert.assertTrue(deviceHolder.supportsFeature(feature))
-    Assert.assertFalse(deviceHolder.supportsFeature(hardwareFeature))
+    Assert.assertTrue(deviceHolder.isRealPkgNameSupported)
+    Assert.assertTrue(deviceHolder.isSkipVerificationSupported)
+    Assert.assertTrue(deviceHolder.isEmbedded)
     Mockito.verifyNoInteractions(connectedDevice)
   }
 
@@ -311,5 +264,65 @@ class DeviceHolderTest {
     val e = Assert.assertThrows(IOException::class.java) { deviceHolder.root() }
     Assert.assertTrue(e.cause is AdbCommandRejectedException)
     Mockito.verifyNoInteractions(connectedDevice)
+  }
+
+  @Test
+  fun testIDeviceGetPidsForPackageName() {
+    val client1 = mock(Client::class.java)
+    val clientData1 = mock(ClientData::class.java)
+    `when`(client1.clientData).thenReturn(clientData1)
+    `when`(clientData1.pid).thenReturn(101)
+    `when`(clientData1.packageName).thenReturn("com.example.app")
+
+    val client2 = mock(Client::class.java)
+    val clientData2 = mock(ClientData::class.java)
+    `when`(client2.clientData).thenReturn(clientData2)
+    `when`(clientData2.pid).thenReturn(102)
+    `when`(clientData2.packageName).thenReturn("com.example.other")
+
+    val client3 = mock(Client::class.java)
+    val clientData3 = mock(ClientData::class.java)
+    `when`(client3.clientData).thenReturn(clientData3)
+    `when`(clientData3.pid).thenReturn(103)
+    `when`(clientData3.packageName).thenReturn("com.example.app")
+
+    `when`(iDevice.clients).thenReturn(arrayOf(client1, client2, client3))
+
+    Assert.assertEquals(listOf(101, 103), deviceHolder.getPidsForPackageName("com.example.app"))
+    Assert.assertEquals(listOf(102), deviceHolder.getPidsForPackageName("com.example.other"))
+    Assert.assertTrue(deviceHolder.getPidsForPackageName("com.nonexistent").isEmpty())
+  }
+
+  @Test
+  fun testIDeviceGetArchForPid() {
+    val testCases =
+      mapOf(
+        "x86" to Arch.ARCH_32_BIT,
+        "x86_64" to Arch.ARCH_64_BIT,
+        "armeabi-v7a" to Arch.ARCH_32_BIT,
+        "arm64-v8a" to Arch.ARCH_64_BIT,
+        "32-bit" to Arch.ARCH_32_BIT,
+        "64-bit" to Arch.ARCH_64_BIT,
+        "way-too-many-bit" to Arch.ARCH_UNKNOWN,
+      )
+
+    for ((abi, expectedArch) in testCases) {
+      val client = mock(Client::class.java)
+      val clientData = mock(ClientData::class.java)
+      `when`(client.clientData).thenReturn(clientData)
+      `when`(clientData.pid).thenReturn(200)
+      `when`(clientData.abi).thenReturn(abi)
+
+      `when`(iDevice.clients).thenReturn(arrayOf(client))
+
+      val arch = deviceHolder.getArchForPid(200)
+      Assert.assertEquals("Failed for ABI: $abi", expectedArch, arch)
+    }
+  }
+
+  @Test
+  fun testIDeviceGetArchForPid_nonExistentPidReturnsUnknown() {
+    `when`(iDevice.clients).thenReturn(emptyArray())
+    Assert.assertEquals(Arch.ARCH_UNKNOWN, deviceHolder.getArchForPid(999))
   }
 }

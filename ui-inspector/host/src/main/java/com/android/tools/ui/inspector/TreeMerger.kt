@@ -43,7 +43,17 @@ internal fun attachComposeTree(
   val hostedViews = extractHostedViewSubtrees(target, collectHostedViewIds(composeNodes))
 
   composeNodes.forEach { composeNode ->
-    val parsedComposeNode = convertComposeNode(composeNode, stringTable, hostedViews, parameters, includeParameters, includeSemantics)
+    val parsedComposeNode =
+      convertComposeNode(
+        composeNode,
+        stringTable,
+        hostedViews,
+        viewNode.bounds.x,
+        viewNode.bounds.y,
+        parameters,
+        includeParameters,
+        includeSemantics,
+      )
     target.children.add(parsedComposeNode)
   }
   return true

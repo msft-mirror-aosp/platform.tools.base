@@ -105,6 +105,25 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
         implementation = IMPLEMENTATION,
       )
 
+    /** Specifying flag as a raw string literal instead of a constant. */
+    @JvmField
+    val FLAG_AS_RAW_STRING =
+      Issue.create(
+        id = "FlagAsRawString",
+        explanation =
+          """
+          This lint check looks for `@FlaggedApi` or `@RequiresFlag` annotations \
+          that specify raw string literals instead of flag constants. Raw string literals \
+          are discouraged and not enforced.
+          """,
+        briefDescription = "Flag specified as raw string literal",
+        category = Category.CORRECTNESS,
+        priority = 6,
+        severity = Severity.ERROR,
+        androidSpecific = true,
+        implementation = IMPLEMENTATION,
+      )
+
     private val FLAGGED_API_ANNOTATION = AndroidxName("android.annotation.FlaggedApi", "androidx.annotation.FlaggedApi")
     private val REQUIRES_FLAG_ANNOTATION = AndroidxName("android.annotation.RequiresFlag", "androidx.annotation.RequiresFlag")
 
@@ -154,7 +173,7 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
   }
 
   override fun sameMessage(issue: Issue, new: String, old: String): Boolean {
-    if (issue !== ISSUE) return super.sameMessage(issue, new, old)
+    if (issue !== ISSUE && issue !== FLAG_AS_RAW_STRING) return super.sameMessage(issue, new, old)
     if (new == old) return true
     val normalizedNew = new.replace("FlaggedApi", "RequiresFlag")
     val normalizedOld = old.replace("FlaggedApi", "RequiresFlag")
@@ -288,12 +307,11 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
         } else {
           val incident =
             Incident(
-              ISSUE,
+              FLAG_AS_RAW_STRING,
               expression,
               context.getLocation(expression),
-              "@$label should specify an actual flag constant; " + "raw strings are discouraged (and more importantly, **not enforced**)",
+              "@$label should specify an actual flag constant; " + "raw strings are discouraged",
             )
-          incident.overrideSeverity(Severity.WARNING)
           context.report(incident)
         }
       }

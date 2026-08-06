@@ -39,7 +39,7 @@ internal suspend fun createViewInspector(commandSender: CommandSender, injection
   }
 }
 
-/** Sends a dump command to the view inspector and returns the parsed View tree roots. */
+/** Sends a dump command to the view inspector and returns the parsed UI snapshot. */
 internal suspend fun dumpViews(commandSender: CommandSender, includeAttributes: Boolean, includeResolutionStack: Boolean): UiDump {
   val viewInspectorCommand =
     ViewInspectorProtocol.Command.newBuilder()
@@ -61,15 +61,15 @@ internal suspend fun dumpViews(commandSender: CommandSender, includeAttributes: 
   val dumpResponse = viewInspectorResponse.dumpViewsResponse
   val stringTable = dumpResponse.stringsList.associate { it.id to it.value }
 
-  val configuration = if (dumpResponse.hasConfiguration()) convertConfiguration(dumpResponse.configuration, stringTable) else null
-  val roots =
-    dumpResponse.nodesList
-      .map { convertViewNode(it, stringTable, includeResolutionStack) }
-      .map { node ->
-        val density = configuration?.density
-        val fontScale = configuration?.fontScale
-        node.resolveDimensions(density, fontScale) as UiNode.ViewNode
+  val displays = dumpResponse.displaysList.map(::convertDisplay)
+  val windows =
+    dumpResponse.windowsList.mapIndexed { index, window ->
+      if (!window.hasRoot()) {
+        throw IllegalStateException("Window at index $index is missing its root")
       }
-  val appContext = if (dumpResponse.hasAppContext()) convertAppContext(dumpResponse.appContext, stringTable) else null
-  return UiDump(roots, configuration, stringTable, appContext)
+      val configuration = if (window.hasConfiguration()) convertConfiguration(window.configuration, stringTable) else null
+      val root = (convertViewNode(window.root, stringTable, includeResolutionStack).resolveDimensions(configuration) as UiNode.ViewNode)
+      UiWindow(root = root, configuration = configuration, theme = stringTable[window.theme])
+    }
+  return UiDump(windows = windows, displays = displays)
 }

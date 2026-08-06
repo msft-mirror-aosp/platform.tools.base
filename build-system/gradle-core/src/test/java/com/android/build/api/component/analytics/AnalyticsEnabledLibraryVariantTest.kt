@@ -25,6 +25,7 @@ import com.android.build.api.variant.LibrarySources
 import com.android.build.api.variant.LibraryVariant
 import com.android.build.api.variant.ResourcesPackaging
 import com.android.build.api.variant.TestFixtures
+import com.android.build.api.variant.TestSuite
 import com.android.build.api.variant.TestedComponentPackaging
 import com.android.build.gradle.internal.fixtures.FakeGradleProperty
 import com.android.build.gradle.internal.fixtures.FakeObjectFactory
@@ -180,5 +181,21 @@ class AnalyticsEnabledLibraryVariantTest {
     Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
       .isEqualTo(VariantPropertiesMethodType.COMPONENT_SOURCES_ACCESS_VALUE)
     verify(delegate, times(1)).sources
+  }
+
+  @Test
+  fun getSuites() {
+    val testSuite = mock<TestSuite>()
+    whenever(delegate.suites).thenReturn(mapOf("foo" to testSuite))
+    val suitesProxy = proxy.suites
+
+    Truth.assertThat(suitesProxy.size).isEqualTo(1)
+    val testSuiteProxy = suitesProxy["foo"]
+    Truth.assertThat(testSuiteProxy is AnalyticsEnabledTestSuite).isTrue()
+    Truth.assertThat((testSuiteProxy as AnalyticsEnabledTestSuite).delegate).isEqualTo(testSuite)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.TEST_SUITES_VALUE)
+    verify(delegate, times(1)).suites
   }
 }

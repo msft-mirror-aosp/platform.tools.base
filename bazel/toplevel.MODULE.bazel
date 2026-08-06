@@ -261,7 +261,7 @@ archive_override(
 )
 
 include("//tools/base/bazel/bzlmod:external.MODULE.bazel")
-include("//tools/base/bazel/bzlmod:idea.MODULE.bazel")
+# TODO(b/537756990): include("//tools/base/bazel/bzlmod:idea.MODULE.bazel")
 include("//tools/base/bazel/bzlmod:toolchains.MODULE.bazel")
 include("//tools/base/bazel/bzlmod:prebuilts.MODULE.bazel")
 include("//tools/base/bazel/bzlmod:coverage.MODULE.bazel")

@@ -36,6 +36,7 @@ import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProto
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.Response
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.ViewNode
 import com.google.common.truth.Truth.assertThat
+import java.util.ArrayDeque
 import java.util.Locale
 import java.util.concurrent.Executor
 import org.junit.Test
@@ -118,7 +119,7 @@ class ViewInspectorTest {
     val dumpResponse = response.dumpViewsResponse
     val stringTable = dumpResponse.stringsList.associate { it.id to it.value }
 
-    val testRoot = findNodeByClassName(dumpResponse.getNodes(0), "LinearLayout", stringTable)
+    val testRoot = findNodeByClassName(dumpResponse.getWindows(0).root, "LinearLayout", stringTable)
     assertThat(testRoot).isNotNull()
     assertThat(testRoot!!.childrenCount).isEqualTo(3)
   }
@@ -146,7 +147,7 @@ class ViewInspectorTest {
     val response = runDumpCommand(inspector, includeAttributes = true)
     val dumpResponse = response.dumpViewsResponse
     val stringTable = dumpResponse.stringsList.associate { it.id to it.value }
-    val root = dumpResponse.nodesList.first()
+    val root = dumpResponse.windowsList.first().root
     val textNode = findNodeByClassName(root, "TextView", stringTable)!!
 
     val widthAttr = textNode.attributesList.find { stringTable[it.name] == "layout_width" }!!
@@ -174,7 +175,7 @@ class ViewInspectorTest {
 
     val dumpResponse = response.dumpViewsResponse
     val stringTable = dumpResponse.stringsList.associate { it.id to it.value }
-    val testRoot = findNodeByClassName(dumpResponse.getNodes(0), "LinearLayout", stringTable)
+    val testRoot = findNodeByClassName(dumpResponse.getWindows(0).root, "LinearLayout", stringTable)
 
     assertThat(testRoot).isNotNull()
     assertThat(stringTable[testRoot!!.attributesList.find { stringTable[it.name] == "visibility" }!!.int32Value]).isEqualTo("visible")
@@ -229,7 +230,7 @@ class ViewInspectorTest {
 
     val dumpResponse = response.dumpViewsResponse
     val stringTable = dumpResponse.stringsList.associate { it.id to it.value }
-    val testRoot = findNodeByClassName(dumpResponse.getNodes(0), "LinearLayout", stringTable)
+    val testRoot = findNodeByClassName(dumpResponse.getWindows(0).root, "LinearLayout", stringTable)
 
     assertThat(testRoot).isNotNull()
     val child1 = testRoot!!.getChildren(0)
@@ -254,7 +255,7 @@ class ViewInspectorTest {
     val dumpResponse = response.dumpViewsResponse
     val stringTable = dumpResponse.stringsList.associate { it.id to it.value }
 
-    val testRoot = findNodeByClassName(dumpResponse.getNodes(0), "LinearLayout", stringTable)
+    val testRoot = findNodeByClassName(dumpResponse.getWindows(0).root, "LinearLayout", stringTable)
     assertThat(testRoot).isNotNull()
 
     val resource = testRoot!!.idResource
@@ -280,7 +281,7 @@ class ViewInspectorTest {
     val dumpResponse = response.dumpViewsResponse
     val stringTable = dumpResponse.stringsList.associate { it.id to it.value }
 
-    val testViewNode = findNodeByClassName(dumpResponse.getNodes(0), "TestView", stringTable)
+    val testViewNode = findNodeByClassName(dumpResponse.getWindows(0).root, "TestView", stringTable)
     assertThat(testViewNode).isNotNull()
 
     val layoutResource = testViewNode!!.layoutResource
@@ -307,7 +308,7 @@ class ViewInspectorTest {
     val dumpResponse = response.dumpViewsResponse
     val stringTable = dumpResponse.stringsList.associate { it.id to it.value }
 
-    val topLinearLayout = findNodeByClassName(dumpResponse.getNodes(0), "LinearLayout", stringTable)
+    val topLinearLayout = findNodeByClassName(dumpResponse.getWindows(0).root, "LinearLayout", stringTable)
     assertThat(topLinearLayout).isNotNull()
     assertThat(topLinearLayout!!.childrenCount).isEqualTo(1)
 
@@ -340,13 +341,15 @@ class ViewInspectorTest {
 
     val dumpResponse = response.dumpViewsResponse
 
-    // We expect at least 2 roots now (Activity DecorView and Dialog DecorView)
-    assertThat(dumpResponse.nodesCount).isAtLeast(2)
+    // The Activity DecorView and Dialog DecorView are represented as distinct windows.
+    assertThat(dumpResponse.windowsCount).isAtLeast(2)
+    assertThat(dumpResponse.windowsList.all { it.hasRoot() && it.hasConfiguration() }).isTrue()
 
     val stringTable = dumpResponse.stringsList.associate { it.id to it.value }
 
-    // Verify we can find elements from both roots
-    val dialogTextView = findNodeByClassName(dumpResponse.getNodes(1), "TextView", stringTable)
+    // Elements from both window roots are present.
+    val dialogTextView =
+      dumpResponse.windowsList.mapNotNull { window -> findNodeByClassName(window.root, "TextView", stringTable) }.firstOrNull()
     assertThat(dialogTextView).isNotNull()
 
     dialog.dismiss()
@@ -469,7 +472,7 @@ class ViewInspectorTest {
     val dumpResponse = response.dumpViewsResponse
     val stringTable = dumpResponse.stringsList.associate { it.id to it.value }
 
-    val textViewNode = findNodeByClassName(dumpResponse.getNodes(0), "TextView", stringTable)
+    val textViewNode = findNodeByClassName(dumpResponse.getWindows(0).root, "TextView", stringTable)
     assertThat(textViewNode).isNotNull()
 
     // Verify that we have attributes
@@ -505,7 +508,7 @@ class ViewInspectorTest {
     val dumpResponse = response.dumpViewsResponse
     val stringTable = dumpResponse.stringsList.associate { it.id to it.value }
 
-    val textViewNode = findNodeByClassName(dumpResponse.getNodes(0), "TextView", stringTable)
+    val textViewNode = findNodeByClassName(dumpResponse.getWindows(0).root, "TextView", stringTable)
     assertThat(textViewNode).isNotNull()
 
     // Verify that we have NO attributes collected
@@ -566,9 +569,10 @@ class ViewInspectorTest {
 
     assertThat(response.specializedCase).isEqualTo(Response.SpecializedCase.DUMP_VIEWS_RESPONSE)
     val dumpResponse = response.dumpViewsResponse
-    assertThat(dumpResponse.hasConfiguration()).isTrue()
+    assertThat(dumpResponse.windowsList).hasSize(1)
+    assertThat(dumpResponse.windowsList.single().hasConfiguration()).isTrue()
 
-    val configuration = dumpResponse.configuration
+    val configuration = dumpResponse.windowsList.single().configuration
     assertThat(configuration.density).isEqualTo(320)
     assertThat(configuration.orientation).isEqualTo(ViewInspectorProtocol.Orientation.ORIENTATION_LANDSCAPE)
     assertThat(configuration.screenLayoutSize).isEqualTo(ViewInspectorProtocol.ScreenLayoutSize.SCREEN_LAYOUT_SIZE_LARGE)
@@ -599,7 +603,7 @@ class ViewInspectorTest {
   }
 
   @Test
-  fun testDumpViews_appContext() {
+  fun testDumpViews_windowMetadataAndDisplays() {
     val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
     activity.setTheme(android.R.style.Theme_Material)
     activity.setContentView(setupViews(activity))
@@ -615,18 +619,88 @@ class ViewInspectorTest {
 
     assertThat(response.specializedCase).isEqualTo(Response.SpecializedCase.DUMP_VIEWS_RESPONSE)
     val dumpResponse = response.dumpViewsResponse
-    assertThat(dumpResponse.hasAppContext()).isTrue()
-
-    val appContext = dumpResponse.appContext
+    val window = dumpResponse.windowsList.single()
     val stringTable = dumpResponse.stringsList.associate { it.id to it.value }
 
-    // Verify theme string resolution
-    assertThat(stringTable[appContext.theme]).isEqualTo("@android:style/Theme.Material")
+    assertThat(stringTable[window.theme]).isEqualTo("@android:style/Theme.Material")
 
-    // Verify display info presence
-    assertThat(appContext.displayInfoCount).isAtLeast(1)
-    val display = appContext.getDisplayInfo(0)
+    assertThat(dumpResponse.displaysCount).isAtLeast(1)
+    val display = dumpResponse.getDisplays(0)
     assertThat(display.widthPx).isGreaterThan(0)
     assertThat(display.heightPx).isGreaterThan(0)
+  }
+
+  @Test
+  fun testDumpViews_noRoots() {
+    val inspector =
+      ViewInspector(
+        object : Connection() {
+          override fun sendEvent(data: ByteArray) {}
+        },
+        mockEnvironment,
+      )
+
+    val dumpResponse = runDumpCommand(inspector).dumpViewsResponse
+
+    assertThat(dumpResponse.windowsList).isEmpty()
+    assertThat(dumpResponse.displaysList).isEmpty()
+    assertThat(dumpResponse.stringsList).isEmpty()
+  }
+
+  @Test
+  fun testDumpViews_configurationIsCapturedBeforeReply() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val configuration = activity.resources.configuration
+    configuration.densityDpi = 320
+    activity.resources.updateConfiguration(configuration, activity.resources.displayMetrics)
+    activity.setContentView(setupViews(activity))
+
+    val primaryTasks = ArrayDeque<Runnable>()
+    val delayedEnvironment =
+      object : InspectorEnvironment {
+        override fun executors(): InspectorExecutors =
+          object : InspectorExecutors {
+            override fun primary() = Executor { primaryTasks.addLast(it) }
+
+            override fun io() = Executor { it.run() }
+
+            override fun handler() = Handler(Looper.getMainLooper())
+          }
+
+        override fun artTooling(): ArtTooling {
+          throw UnsupportedOperationException("Not implemented")
+        }
+      }
+    val inspector =
+      ViewInspector(
+        object : Connection() {
+          override fun sendEvent(data: ByteArray) {}
+        },
+        delayedEnvironment,
+      )
+    var replyData: ByteArray? = null
+    val callback =
+      object : Inspector.CommandCallback {
+        override fun reply(response: ByteArray) {
+          replyData = response
+        }
+
+        override fun addCancellationListener(executor: Executor, runnable: Runnable) {}
+      }
+    val command =
+      Command.newBuilder()
+        .setDumpViewsCommand(ViewInspectorProtocol.DumpViewsCommand.newBuilder().setIncludeAttributes(false).build())
+        .build()
+
+    inspector.onReceiveCommand(command.toByteArray(), callback)
+    primaryTasks.removeFirst().run()
+    shadowOf(Looper.getMainLooper()).idle()
+
+    configuration.densityDpi = 420
+    activity.resources.updateConfiguration(configuration, activity.resources.displayMetrics)
+    primaryTasks.removeFirst().run()
+
+    val dumpResponse = Response.parseFrom(replyData!!).dumpViewsResponse
+    assertThat(dumpResponse.windowsList.single().configuration.density).isEqualTo(320)
   }
 }

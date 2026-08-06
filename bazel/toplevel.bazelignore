@@ -9,6 +9,9 @@ tools/vendor/intellij/cidr
 tools/adt/idea/aswb/testing/test_deps/projects
 prebuilts/rust
 
+# TODO(b/537756990)
+tools/adt/idea/ij-debugger-tests
+
 # Packages that are typically ignored in WORKSPACE due to a local_repository
 # pointing to them are not ignored with bzlmod.
 # See https://github.com/bazelbuild/bazel/issues/22208#issuecomment-2174586425

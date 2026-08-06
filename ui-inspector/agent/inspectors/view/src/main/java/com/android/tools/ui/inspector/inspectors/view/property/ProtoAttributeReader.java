@@ -120,9 +120,10 @@ public final class ProtoAttributeReader implements PropertyReader {
             emit(
                     id,
                     colorStateList.getColorForState(
-                            view.getDrawableState(), colorStateList.getDefaultColor()));
+                            view.getDrawableState(), colorStateList.getDefaultColor()),
+                    PropertyType.COLOR);
         } else if (o instanceof ColorDrawable) {
-            emit(id, ((ColorDrawable) o).getColor());
+            emit(id, ((ColorDrawable) o).getColor(), PropertyType.COLOR);
         } else {
             emit(id, o);
         }
@@ -174,6 +175,10 @@ public final class ProtoAttributeReader implements PropertyReader {
     }
 
     private void emit(int id, Object value) {
+        emit(id, value, null);
+    }
+
+    private void emit(int id, Object value, PropertyType typeOverride) {
         if (value == null) {
             return;
         }
@@ -183,7 +188,13 @@ public final class ProtoAttributeReader implements PropertyReader {
         }
         onAttributeResolved.accept(
                 AttributeProtoConverter.toProtoAttribute(
-                        metadata, stringTable, view, value, resourceMap, includeResolutionStack));
+                        metadata,
+                        stringTable,
+                        view,
+                        value,
+                        resourceMap,
+                        includeResolutionStack,
+                        typeOverride));
     }
 
     private AttributeMetadata getMetadata(int id) {

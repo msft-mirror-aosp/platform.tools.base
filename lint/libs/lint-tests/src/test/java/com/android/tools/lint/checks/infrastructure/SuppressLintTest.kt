@@ -684,7 +684,7 @@ class SuppressLintTest {
           )
           .indented(),
       )
-      .issues(MySecurityDetector.TEST_ISSUE)
+      .issues(MySecurityDetector.TEST_ISSUE, MySecurityDetector.TEST_ISSUE_NEVER_SUPPRESSIBLE)
       .skipTestModes(TestMode.PARTIAL)
       .sdkHome(TestUtils.getSdk().toFile())
       .run()
@@ -697,6 +697,48 @@ class SuppressLintTest {
                     forbidden()
                     ~~~~~~~~~~~
                 0 errors, 2 warnings
+                """
+      )
+  }
+
+  @Test
+  fun checkAllowUnsupressableCheckUpgradeWithLintOptions() {
+    lint()
+      .allowCompilationErrors()
+      .files(
+        kotlin(
+            """
+                    fun forbidden() {
+                        forbidden()
+                    }"""
+          )
+          .indented(),
+        gradle(
+            """
+                    apply plugin: 'com.android.application'
+
+                    android {
+                        lintOptions {
+                            error '_SecureIssue'
+                        }
+                    }
+                    """
+          )
+          .indented(),
+      )
+      .issues(MySecurityDetector.TEST_ISSUE, MySecurityDetector.TEST_ISSUE_NEVER_SUPPRESSIBLE)
+      .skipTestModes(TestMode.PARTIAL)
+      .sdkHome(TestUtils.getSdk().toFile())
+      .run()
+      .expect(
+        """
+                src/main/kotlin/test.kt:2: Error: Some error message here [_SecureIssue]
+                    forbidden()
+                    ~~~~~~~~~~~
+                src/main/kotlin/test.kt:2: Warning: Some error message here [_SecureIssue2]
+                    forbidden()
+                    ~~~~~~~~~~~
+                1 errors, 1 warnings
                 """
       )
   }

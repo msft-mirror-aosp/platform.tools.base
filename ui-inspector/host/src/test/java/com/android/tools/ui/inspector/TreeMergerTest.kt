@@ -151,6 +151,75 @@ class TreeMergerTest {
   }
 
   @Test
+  fun testAttachComposeTreeAlignsBoundsInNonOriginWindow() {
+    // The target view's origin deliberately differs from the window root's: the render offset must come from the window root.
+    val target =
+      UiNode.ViewNode(
+        id = 123,
+        className = "androidx.compose.ui.platform.AndroidComposeView",
+        bounds = UiNode.Bounds(350, 450, 200, 200),
+        idResource = null,
+        layoutResource = null,
+        attributes = emptyList(),
+      )
+    val rootNode =
+      UiNode.ViewNode(
+        id = 1,
+        className = "android.widget.FrameLayout",
+        bounds = UiNode.Bounds(300, 400, 500, 600),
+        idResource = null,
+        layoutResource = null,
+        attributes = emptyList(),
+        children = mutableListOf(target),
+      )
+    val composeNodes =
+      listOf(
+        LayoutInspectorComposeProtocol.ComposableNode.newBuilder()
+          .setId(200)
+          .setName(1)
+          .setBounds(
+            LayoutInspectorComposeProtocol.Bounds.newBuilder()
+              .setRender(
+                LayoutInspectorComposeProtocol.Quad.newBuilder()
+                  .setX0(10)
+                  .setY0(20)
+                  .setX1(50)
+                  .setY1(10)
+                  .setX2(60)
+                  .setY2(40)
+                  .setX3(20)
+                  .setY3(50)
+              )
+          )
+          .build(),
+        LayoutInspectorComposeProtocol.ComposableNode.newBuilder()
+          .setId(201)
+          .setName(2)
+          .setBounds(
+            LayoutInspectorComposeProtocol.Bounds.newBuilder()
+              .setLayout(LayoutInspectorComposeProtocol.Rect.newBuilder().setX(320).setY(430).setW(20).setH(10))
+          )
+          .build(),
+      )
+
+    val wasAttached =
+      attachComposeTree(
+        viewNode = rootNode,
+        targetViewId = 123,
+        composeNodes = composeNodes,
+        stringTable = mapOf(1 to "Rotated", 2 to "Fallback"),
+        viewsToSkip = emptyList(),
+        parameters = null,
+        includeParameters = false,
+        includeSemantics = false,
+      )
+
+    assertThat(wasAttached).isTrue()
+    assertThat((target.children[0] as UiNode.ComposeNode).bounds).isEqualTo(UiNode.Bounds(310, 410, 50, 40))
+    assertThat((target.children[1] as UiNode.ComposeNode).bounds).isEqualTo(UiNode.Bounds(320, 430, 20, 10))
+  }
+
+  @Test
   fun testAttachComposeTreeSkipsNonMatchingId() {
     val rootNode =
       UiNode.ViewNode(

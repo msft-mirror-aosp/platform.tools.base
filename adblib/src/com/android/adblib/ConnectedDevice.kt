@@ -247,42 +247,6 @@ val ConnectedDevice.reverseForward: ReverseForwardManager
     return cache.getOrPut(ReverseForwardManagerKey) { ReverseForwardManager(this) }
   }
 
-/**
- * Restarts the device as "root"
- *
- * @see AdbDeviceServices.root
- */
-suspend fun ConnectedDevice.root(): RootResult {
-  return session.deviceServices.root(selector)
-}
-
-/**
- * Restarts the device as "unroot"
- *
- * @see AdbDeviceServices.unRoot
- */
-suspend fun ConnectedDevice.unRoot(): RootResult {
-  return session.deviceServices.unRoot(selector)
-}
-
-/**
- * Restarts the device as "root", waiting until it is restarted
- *
- * @see AdbDeviceServices.rootAndWait
- */
-suspend fun ConnectedDevice.rootAndWait(): RootResult {
-  return session.deviceServices.rootAndWait(selector)
-}
-
-/**
- * Restarts the device as "unroot", waiting until it is restarted
- *
- * @see AdbDeviceServices.unRootAndWait
- */
-suspend fun ConnectedDevice.unRootAndWait(): RootResult {
-  return session.deviceServices.unRootAndWait(selector)
-}
-
 /** Manages "reverse forward" connections of a given [ConnectedDevice] */
 class ReverseForwardManager(val device: ConnectedDevice) {
   /**

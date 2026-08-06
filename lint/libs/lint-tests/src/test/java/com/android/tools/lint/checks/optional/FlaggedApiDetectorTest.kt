@@ -36,7 +36,7 @@ import java.io.File
 import org.intellij.lang.annotations.Language
 
 class FlaggedApiDetectorTest : LintDetectorTest() {
-  override fun getIssues(): List<Issue> = listOf(FlaggedApiDetector.ISSUE)
+  override fun getIssues(): List<Issue> = listOf(FlaggedApiDetector.ISSUE, FlaggedApiDetector.FLAG_AS_RAW_STRING)
 
   override fun getDetector(): Detector {
     return FlaggedApiDetector()
@@ -917,7 +917,7 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
             import android.annotation.FlaggedApi;
 
             public class JavaTest {
-                @SuppressWarnings("FlaggedApi") // Don't warn about deprecation of raw strings here
+                @SuppressWarnings("FlagAsRawString") // Don't warn about deprecation of raw strings here
                 @FlaggedApi("flag.package.flag.name")
                 class Foo {
                     public void someMethod() { }
@@ -968,19 +968,19 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
       .run()
       .expect(
         """
+        src/test/pkg/JavaTest.java:6: Error: @FlaggedApi should specify an actual flag constant; raw strings are discouraged [FlagAsRawString]
+        @FlaggedApi("test.pkg.FLAG_MY_FLAG")
+                    ~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/JavaTest.java:13: Error: @RequiresFlag should specify an actual flag constant; raw strings are discouraged [FlagAsRawString]
+            @RequiresFlag("test.pkg.FLAG_MY_FLAG")
+                          ~~~~~~~~~~~~~~~~~~~~~~~
         src/test/pkg/JavaTest.java:8: Error: Invalid @FlaggedApi descriptor; should be package.name [FlaggedApi]
             @FlaggedApi("FLAG_MY_FLAG")
                         ~~~~~~~~~~~~~~
         src/test/pkg/JavaTest.java:15: Error: Invalid @RequiresFlag descriptor; should be package.name [FlaggedApi]
                 @RequiresFlag("FLAG_MY_FLAG")
                               ~~~~~~~~~~~~~~
-        src/test/pkg/JavaTest.java:6: Warning: @FlaggedApi should specify an actual flag constant; raw strings are discouraged (and more importantly, not enforced) [FlaggedApi]
-        @FlaggedApi("test.pkg.FLAG_MY_FLAG")
-                    ~~~~~~~~~~~~~~~~~~~~~~~
-        src/test/pkg/JavaTest.java:13: Warning: @RequiresFlag should specify an actual flag constant; raw strings are discouraged (and more importantly, not enforced) [FlaggedApi]
-            @RequiresFlag("test.pkg.FLAG_MY_FLAG")
-                          ~~~~~~~~~~~~~~~~~~~~~~~
-        2 errors, 2 warnings
+        4 errors
         """
           .trimIndent()
       )

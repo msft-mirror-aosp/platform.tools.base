@@ -16,7 +16,6 @@
 
 package com.android.tools.ui.inspector.printer.json
 
-import com.android.tools.ui.inspector.AppContext
 import com.android.tools.ui.inspector.DeviceConfiguration
 import com.android.tools.ui.inspector.DeviceLocale
 import com.android.tools.ui.inspector.Dimension
@@ -24,6 +23,7 @@ import com.android.tools.ui.inspector.DisplayInfo
 import com.android.tools.ui.inspector.Orientation
 import com.android.tools.ui.inspector.UiDump
 import com.android.tools.ui.inspector.UiNode
+import com.android.tools.ui.inspector.UiWindow
 import com.google.common.truth.Truth.assertThat
 import com.google.gson.JsonParser
 import com.google.gson.Strictness
@@ -62,7 +62,7 @@ class JsonUiDumpPrinterTest {
 
     withJsonPrinter(output = outputFile, prettyPrint = false) { printer -> printer.printDump(EMPTY_DUMP) }
 
-    assertThat(String(Files.readAllBytes(outputFile), Charsets.UTF_8).trim()).isEqualTo("""{"roots":[]}""")
+    assertThat(String(Files.readAllBytes(outputFile), Charsets.UTF_8).trim()).isEqualTo("""{"displays":[],"windows":[]}""")
   }
 
   @Test
@@ -72,7 +72,7 @@ class JsonUiDumpPrinterTest {
 
     withJsonPrinter(output = outputFile, prettyPrint = false) { printer -> printer.printDump(EMPTY_DUMP) }
 
-    assertThat(String(Files.readAllBytes(outputFile), Charsets.UTF_8).trim()).isEqualTo("""{"roots":[]}""")
+    assertThat(String(Files.readAllBytes(outputFile), Charsets.UTF_8).trim()).isEqualTo("""{"displays":[],"windows":[]}""")
   }
 
   @Test
@@ -86,7 +86,7 @@ class JsonUiDumpPrinterTest {
       System.setOut(originalOut)
     }
 
-    assertThat(capturedOut.toString(Charsets.UTF_8.name()).trim()).isEqualTo("""{"roots":[]}""")
+    assertThat(capturedOut.toString(Charsets.UTF_8.name()).trim()).isEqualTo("""{"displays":[],"windows":[]}""")
   }
 
   @Test
@@ -177,11 +177,13 @@ class JsonUiDumpPrinterTest {
 
     viewNode.children.add(composeNode)
 
-    val appContext = AppContext(theme = "AppTheme", displays = listOf(DisplayInfo(0, 1080, 1920, 0)))
-
     val config = DeviceConfiguration(density = Dimension.Dpi(420), fontScale = 1.0f, locale = DeviceLocale("en", "US", null, null))
 
-    val uiDump = UiDump(roots = listOf(viewNode), configuration = config, stringTable = emptyMap(), appContext = appContext)
+    val uiDump =
+      UiDump(
+        windows = listOf(UiWindow(root = viewNode, configuration = config, theme = "AppTheme")),
+        displays = listOf(DisplayInfo(0, 1080, 1920, 0)),
+      )
 
     val printer = JsonUiDumpPrinter(out = printStream, prettyPrint = true)
     printer.printDump(uiDump)
@@ -190,14 +192,16 @@ class JsonUiDumpPrinterTest {
     assertThat(jsonString).isNotEmpty()
 
     val json = JsonParser.parseString(jsonString).asJsonObject
-    assertThat(json.has("appContext")).isTrue()
-    assertThat(json.has("configuration")).isTrue()
-    assertThat(json.has("roots")).isTrue()
+    assertThat(json.keySet()).containsExactly("displays", "windows")
 
-    val roots = json.getAsJsonArray("roots")
-    assertThat(roots.size()).isEqualTo(1)
+    val windows = json.getAsJsonArray("windows")
+    assertThat(windows.size()).isEqualTo(1)
+    val window = windows[0].asJsonObject
+    assertThat(window.keySet()).containsExactly("theme", "configuration", "root")
+    assertThat(window.get("theme").asString).isEqualTo("AppTheme")
+    assertThat(window.getAsJsonObject("configuration").get("density").asInt).isEqualTo(420)
 
-    val rootNode = roots[0].asJsonObject
+    val rootNode = window.getAsJsonObject("root")
     assertThat(rootNode.get("type").asString).isEqualTo("ViewNode")
     assertThat(rootNode.get("id").asLong).isEqualTo(1L)
     assertThat(rootNode.get("idResource").asString).isEqualTo("title_id")
@@ -222,7 +226,7 @@ class JsonUiDumpPrinterTest {
         layoutResource = null,
         attributes = emptyList(),
       )
-    val uiDump = UiDump(roots = listOf(node), configuration = null, stringTable = emptyMap(), appContext = null)
+    val uiDump = dump(node)
 
     val printer = JsonUiDumpPrinter(out = printStream, prettyPrint = false)
     printer.printDump(uiDump)
@@ -230,7 +234,47 @@ class JsonUiDumpPrinterTest {
     val jsonString = outputStream.toString(Charsets.UTF_8).trim()
     assertThat(jsonString).doesNotContain("\n")
     val json = JsonParser.parseString(jsonString).asJsonObject
-    assertThat(json.has("roots")).isTrue()
+    assertThat(json.keySet()).containsExactly("displays", "windows")
+    assertThat(json.getAsJsonArray("windows")[0].asJsonObject.keySet()).containsExactly("root")
+  }
+
+  @Test
+  fun testPrintDumpPreservesWindowAssociationsAndOmitsAbsentMetadata() {
+    fun node(id: Long) =
+      UiNode.ViewNode(
+        id = id,
+        className = "View$id",
+        bounds = UiNode.Bounds(0, 0, 10, 10),
+        idResource = null,
+        layoutResource = null,
+        attributes = emptyList(),
+      )
+    val uiDump =
+      UiDump(
+        windows =
+          listOf(
+            UiWindow(
+              root = node(1),
+              configuration = DeviceConfiguration(density = Dimension.Dpi(160), fontScale = 1.0f),
+              theme = "@style/Theme.One",
+            ),
+            UiWindow(root = node(2), configuration = DeviceConfiguration(density = Dimension.Dpi(420)), theme = null),
+          ),
+        displays = listOf(DisplayInfo(id = 0, widthPx = 1080, heightPx = 1920, orientation = null)),
+      )
+
+    JsonUiDumpPrinter(out = printStream, prettyPrint = false).printDump(uiDump)
+
+    val json = JsonParser.parseString(outputStream.toString(Charsets.UTF_8)).asJsonObject
+    val display = json.getAsJsonArray("displays")[0].asJsonObject
+    assertThat(display.keySet()).containsExactly("id", "widthPx", "heightPx")
+    val windows = json.getAsJsonArray("windows")
+    assertThat(windows[0].asJsonObject.get("theme").asString).isEqualTo("@style/Theme.One")
+    assertThat(windows[0].asJsonObject.getAsJsonObject("configuration").get("density").asInt).isEqualTo(160)
+    assertThat(windows[0].asJsonObject.getAsJsonObject("root").get("id").asLong).isEqualTo(1)
+    assertThat(windows[1].asJsonObject.keySet()).containsExactly("configuration", "root")
+    assertThat(windows[1].asJsonObject.getAsJsonObject("configuration").get("density").asInt).isEqualTo(420)
+    assertThat(windows[1].asJsonObject.getAsJsonObject("root").get("id").asLong).isEqualTo(2)
   }
 
   @Test
@@ -253,13 +297,13 @@ class JsonUiDumpPrinterTest {
         attributes = listOf(attrString, attrBool, attrNum, attrColor, attrDim, attrNull),
       )
 
-    val uiDump = UiDump(roots = listOf(viewNode), configuration = null, stringTable = emptyMap(), appContext = null)
+    val uiDump = dump(viewNode)
 
     val printer = JsonUiDumpPrinter(out = printStream, prettyPrint = false)
     printer.printDump(uiDump)
 
     val json = JsonParser.parseString(outputStream.toString(Charsets.UTF_8)).asJsonObject
-    val rootObj = json.getAsJsonArray("roots")[0].asJsonObject
+    val rootObj = json.getAsJsonArray("windows")[0].asJsonObject.getAsJsonObject("root")
     val attrs = rootObj.getAsJsonArray("attributes")
 
     assertThat(attrs.size()).isEqualTo(6)
@@ -318,13 +362,13 @@ class JsonUiDumpPrinterTest {
       )
     rootNode.children.add(composeNode)
 
-    val uiDump = UiDump(roots = listOf(rootNode), configuration = null, stringTable = emptyMap(), appContext = null)
+    val uiDump = dump(rootNode)
 
     val printer = JsonUiDumpPrinter(out = printStream, prettyPrint = false)
     printer.printDump(uiDump)
 
     val json = JsonParser.parseString(outputStream.toString(Charsets.UTF_8)).asJsonObject
-    val rootObj = json.getAsJsonArray("roots")[0].asJsonObject
+    val rootObj = json.getAsJsonArray("windows")[0].asJsonObject.getAsJsonObject("root")
     val nodeObj = rootObj.getAsJsonArray("children")[0].asJsonObject
     val params = nodeObj.getAsJsonArray("parameters")
 
@@ -395,7 +439,7 @@ class JsonUiDumpPrinterTest {
     viewNode.children.add(composeNode)
 
     val config = DeviceConfiguration(fontScale = Float.NaN)
-    val uiDump = UiDump(roots = listOf(viewNode), configuration = config, stringTable = emptyMap(), appContext = null)
+    val uiDump = dump(viewNode, configuration = config)
 
     val printer = JsonUiDumpPrinter(out = printStream, prettyPrint = false)
     printer.printDump(uiDump)
@@ -405,9 +449,10 @@ class JsonUiDumpPrinterTest {
     assertParsesStrictly(jsonString)
 
     val json = JsonParser.parseString(jsonString).asJsonObject
-    assertThat(json.getAsJsonObject("configuration").get("fontScale").isJsonNull).isTrue()
+    val window = json.getAsJsonArray("windows")[0].asJsonObject
+    assertThat(window.getAsJsonObject("configuration").get("fontScale").isJsonNull).isTrue()
 
-    val rootObj = json.getAsJsonArray("roots")[0].asJsonObject
+    val rootObj = window.getAsJsonObject("root")
     val attrs = rootObj.getAsJsonArray("attributes")
     assertThat(attrs[0].asJsonObject.get("value").isJsonNull).isTrue()
     assertThat(attrs[1].asJsonObject.get("value").isJsonNull).isTrue()
@@ -428,7 +473,17 @@ class JsonUiDumpPrinterTest {
   @Test
   fun testPrintDumpConfigurationValueEncodings() {
     fun dumpWith(config: DeviceConfiguration) =
-      UiDump(roots = emptyList(), configuration = config, stringTable = emptyMap(), appContext = null)
+      dump(
+        UiNode.ViewNode(
+          id = 1,
+          className = "View",
+          bounds = UiNode.Bounds(0, 0, 1, 1),
+          idResource = null,
+          layoutResource = null,
+          attributes = emptyList(),
+        ),
+        configuration = config,
+      )
 
     val config =
       DeviceConfiguration(
@@ -440,7 +495,12 @@ class JsonUiDumpPrinterTest {
     val printer = JsonUiDumpPrinter(out = printStream, prettyPrint = false)
     printer.printDump(dumpWith(config))
 
-    val json = JsonParser.parseString(outputStream.toString(Charsets.UTF_8)).asJsonObject.getAsJsonObject("configuration")
+    val json =
+      JsonParser.parseString(outputStream.toString(Charsets.UTF_8))
+        .asJsonObject
+        .getAsJsonArray("windows")[0]
+        .asJsonObject
+        .getAsJsonObject("configuration")
     // The single configuration-value encoding: bare numbers for dimensions, lowercase enum names, joined locale tags,
     // non-finite numbers normalized to null.
     assertThat(json.get("density").asJsonPrimitive.isNumber).isTrue()
@@ -451,7 +511,12 @@ class JsonUiDumpPrinterTest {
 
     outputStream.reset()
     printer.printDump(dumpWith(DeviceConfiguration(locale = DeviceLocale("", "", null, null))))
-    val emptyLocaleJson = JsonParser.parseString(outputStream.toString(Charsets.UTF_8)).asJsonObject.getAsJsonObject("configuration")
+    val emptyLocaleJson =
+      JsonParser.parseString(outputStream.toString(Charsets.UTF_8))
+        .asJsonObject
+        .getAsJsonArray("windows")[0]
+        .asJsonObject
+        .getAsJsonObject("configuration")
     // An empty locale has no representation: the property is omitted entirely.
     assertThat(emptyLocaleJson.has("locale")).isFalse()
   }
@@ -464,7 +529,14 @@ class JsonUiDumpPrinterTest {
     assertThat(reader.peek()).isEqualTo(JsonToken.END_DOCUMENT)
   }
 
+  private fun dump(
+    root: UiNode.ViewNode,
+    configuration: DeviceConfiguration? = null,
+    theme: String? = null,
+    displays: List<DisplayInfo> = emptyList(),
+  ): UiDump = UiDump(windows = listOf(UiWindow(root = root, configuration = configuration, theme = theme)), displays = displays)
+
   private companion object {
-    val EMPTY_DUMP = UiDump(roots = emptyList(), configuration = null, stringTable = emptyMap(), appContext = null)
+    val EMPTY_DUMP = UiDump(windows = emptyList(), displays = emptyList())
   }
 }

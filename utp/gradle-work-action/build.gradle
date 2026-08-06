@@ -24,9 +24,6 @@ version = rootProject.ext.baseVersion
 dependencies {
     compileOnly gradleApi()
     compileOnly project(':base:utp:gradle-work-action-api')
-    implementation libs.com.android.tools.common
-    implementation libs.com.android.tools.ddms.ddmlib
-    implementation libs.apache_commons_io
     implementation libs.junit_platform_launcher
     implementation libs.junit_platform_engine
     implementation libs.android_test_engine

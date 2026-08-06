@@ -114,10 +114,11 @@ class InjectionManager(
   }
 
   private val deviceSelector = DeviceSelector.fromSerialNumber(serial)
+  private val uidResolver = UidResolver(adbSession, deviceSelector)
 
   /**
-   * The absolute path to the application's private data directory on the device, queried via `run-as`. This is queried at runtime to
-   * correctly support multi-user environments (e.g. /data/user/10/) where the standard /data/data/ prefix is not applicable.
+   * The absolute path to the application's private data directory for Android user 0, queried via `run-as`. Querying the path avoids
+   * assuming that the standard /data/data/ prefix is applicable.
    */
   @Volatile private var appDataDir: String? = null
 
@@ -140,11 +141,17 @@ class InjectionManager(
       )
     }
 
-    // Query app data dir and pid synchronously at the beginning to verify that the app is installed and running. The pid is deliberately
+    val packageUid =
+      uidResolver.packageUid(packageName)
+        ?: throw IllegalStateException(
+          "Failed to access the application '$packageName'. Please make sure the app is installed, debuggable, and running under the current user."
+        )
+
+    // Query app data dir and pid synchronously at the beginning to verify that the app is accessible and running. The pid is deliberately
     // captured before any debug-view-attributes flip: the flip only relaunches activities within the existing process, so the pid stays
     // valid, and reading it first avoids mutating device settings when the target is not running.
     appDataDir = queryAppDataDir(deviceSelector, packageName)
-    val pid = getPid(deviceSelector, packageName)
+    val pid = getPid(deviceSelector, packageName, packageUid)
 
     // Resolve local paths before touching device settings, so a missing host artifact cannot restart the app's activities for nothing.
     val agentLocalPath = getAgentLocalPath(deviceAbi)
@@ -292,9 +299,12 @@ class InjectionManager(
     }
   }
 
-  /** Queries the device for the PID of the target application. */
-  private suspend fun getPid(deviceSelector: DeviceSelector, packageName: String): String {
-    val candidatePids = getCandidatePids(deviceSelector, packageName)
+  /**
+   * Queries the device for the PID of the target application: the process owned by [packageUid], preferring the one hosting the top
+   * activity when the app has several. Under legacy sharedUserId, sibling packages own the same UID, so their processes are candidates too.
+   */
+  private suspend fun getPid(deviceSelector: DeviceSelector, packageName: String, packageUid: Int): String {
+    val candidatePids = uidResolver.pidsForUid(packageUid)
     if (candidatePids.isEmpty()) {
       throw IllegalStateException("The application '$packageName' is not running on the device. Please start the app and try again.")
     }
@@ -312,17 +322,6 @@ class InjectionManager(
 
     // Fall back to the first candidate PID
     return candidatePids[0]
-  }
-
-  /** Queries the device for candidate process IDs matching the given package name via `pgrep`. */
-  private suspend fun getCandidatePids(deviceSelector: DeviceSelector, packageName: String): List<String> {
-    val escapedPackage = packageName.replace(".", "\\.")
-    val result = adbSession.deviceServices.shellAsText(deviceSelector, "pgrep -f '^$escapedPackage(:.*)?$'")
-    val stdout = result.stdout.trim()
-    if (result.exitCode == 0 && stdout.isNotEmpty()) {
-      return stdout.split("\\s+".toRegex()).filter { it.isNotEmpty() }.distinct()
-    }
-    return emptyList()
   }
 
   /** Queries `dumpsys activity processes` to identify the PID currently hosting the top (foreground) activity. */

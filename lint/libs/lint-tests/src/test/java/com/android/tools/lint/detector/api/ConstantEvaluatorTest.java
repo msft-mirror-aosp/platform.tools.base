@@ -495,6 +495,8 @@ public class ConstantEvaluatorTest extends TestCase {
         checkExpression(10, "2 * 5");
         checkExpression(2, "10 / 5");
         checkExpression(1, "11 % 5");
+        checkExpression(-7 % 3, "-7 % 3");
+        checkExpression(7 % -3, "7 % -3");
         checkExpression(8, "1 << 3");
         checkExpression(16, "32 >> 1");
         checkExpression(16, "32 >>> 1");

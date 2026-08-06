@@ -16,7 +16,6 @@
 
 package com.android.tools.ui.inspector.inspectors.view;
 
-import android.content.res.Configuration;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -28,14 +27,15 @@ import com.android.tools.agent.appinspection.ViewLayoutInspector;
 import com.android.tools.agent.appinspection.XrHelper;
 import com.android.tools.idea.protobuf.InvalidProtocolBufferException;
 import com.android.tools.ui.inspector.inspectors.view.property.PropertyCache;
-import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.AppContext;
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.Command;
+import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.Display;
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.DumpViewsCommand;
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.DumpViewsResponse;
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.Response;
-import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.ViewNode;
+import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.WindowInfo;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Executor;
 
@@ -89,22 +89,10 @@ public final class ViewInspector extends Inspector {
                             () -> {
                                 try {
                                     List<View> roots = RootsDetector.getRootViews(xrHelper);
-                                    Configuration systemConfig =
-                                            roots.isEmpty()
-                                                    ? null
-                                                    : roots.get(0)
-                                                            .getContext()
-                                                            .getResources()
-                                                            .getConfiguration();
-                                    AppContext appContext =
-                                            roots.isEmpty()
-                                                    ? null
-                                                    : ViewNodes.createAppContext(
-                                                            roots.get(0), stringTable);
-                                    List<ViewNode> nodes = new ArrayList<>(roots.size());
+                                    List<WindowInfo> windows = new ArrayList<>(roots.size());
                                     for (View root : roots) {
-                                        nodes.add(
-                                                ViewNodes.toViewNode(
+                                        windows.add(
+                                                ViewNodes.toWindowInfo(
                                                         root,
                                                         stringTable,
                                                         includeAttributes,
@@ -112,15 +100,15 @@ public final class ViewInspector extends Inspector {
                                                         viewPropertyCache,
                                                         layoutParamsPropertyCache));
                                     }
+                                    List<Display> displays =
+                                            roots.isEmpty()
+                                                    ? Collections.emptyList()
+                                                    : ViewNodes.buildDisplayInfo(
+                                                            roots.get(0).getContext());
                                     primaryExecutor.execute(
                                             () -> {
                                                 try {
-                                                    reply(
-                                                            callback,
-                                                            stringTable,
-                                                            nodes,
-                                                            systemConfig,
-                                                            appContext);
+                                                    reply(callback, stringTable, windows, displays);
                                                 } catch (Throwable t) {
                                                     reportUncaught(t);
                                                 }
@@ -135,19 +123,15 @@ public final class ViewInspector extends Inspector {
     private static void reply(
             CommandCallback callback,
             StringTable stringTable,
-            List<ViewNode> nodes,
-            Configuration systemConfig,
-            AppContext appContext) {
-        DumpViewsResponse.Builder builder = DumpViewsResponse.newBuilder().addAllNodes(nodes);
-        if (systemConfig != null) {
-            builder.setConfiguration(
-                    ConfigurationProtoConverter.convert(systemConfig, stringTable));
-        }
-        if (appContext != null) {
-            builder.setAppContext(appContext);
-        }
-        builder.addAllStrings(stringTable.toStringEntries());
-        callback.reply(Response.newBuilder().setDumpViewsResponse(builder).build().toByteArray());
+            List<WindowInfo> windows,
+            List<Display> displays) {
+        DumpViewsResponse response =
+                DumpViewsResponse.newBuilder()
+                        .addAllWindows(windows)
+                        .addAllDisplays(displays)
+                        .addAllStrings(stringTable.toStringEntries())
+                        .build();
+        callback.reply(Response.newBuilder().setDumpViewsResponse(response).build().toByteArray());
     }
 
     /**
