@@ -26,6 +26,7 @@ import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodTy
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.testing.Test
 
 open class AnalyticsEnabledTestSuite(
@@ -49,6 +50,11 @@ open class AnalyticsEnabledTestSuite(
   override fun configureTestTasks(action: Test.(context: TestTaskContext) -> Unit) {
     stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.CONFIGURE_TEST_TASK_VALUE
     delegate.configureTestTasks(action)
+  }
+
+  override fun withTestTaskProviders(action: TaskProvider<out Test>.(context: TestTaskContext) -> Unit) {
+    stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.WITH_TEST_TASK_PROVIDER_VALUE
+    delegate.withTestTaskProviders(action)
   }
 
   override val junitEngineSpec: JUnitEngineSpec

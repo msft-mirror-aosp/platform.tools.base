@@ -137,6 +137,7 @@ constructor(
     }
 
   val testTaskConfigurationActions = mutableListOf<(Test) -> Unit>()
+  private val taskProviderActions = mutableListOf<(TaskProvider<out Test>) -> Unit>()
 
   @Synchronized
   override fun configureTestTask(action: (Test) -> Unit) {
@@ -144,9 +145,16 @@ constructor(
   }
 
   @Synchronized
+  override fun withTestTaskProvider(action: (TaskProvider<out Test>) -> Unit) {
+    taskProviderActions.add(action)
+  }
+
+  @Synchronized
   override fun runTestTaskConfigurationActions(testTask: TaskProvider<out Test>) {
     registerTaskWithKotlinRegistry(testTask)
-    testTaskConfigurationActions.forEach { testTask.configure { testTask -> it(testTask) } }
+    @Suppress("UNCHECKED_CAST") val castedTask = testTask as TaskProvider<Test>
+    taskProviderActions.forEach { action2 -> action2(castedTask) }
+    testTaskConfigurationActions.forEach { action -> testTask.configure { task -> action(task) } }
   }
 
   override fun finalizeAndLock() {}

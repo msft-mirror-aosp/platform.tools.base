@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import org.gradle.api.Action
 import org.gradle.api.NamedDomainObjectContainer
+import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.testing.Test
 
 /**
@@ -116,10 +117,15 @@ constructor(private val name: String, val dslServices: DslServices, val androidR
     testTaskConfigActions.add(action)
   }
 
+  override fun withTestTaskProviders(action: TaskProvider<Test>.(TestTaskContext) -> Unit) {
+    testTaskProviderConfigActions.add { context -> @Suppress("UNCHECKED_CAST") (this as TaskProvider<Test>).action(context) }
+  }
+
   override var codeCoverage = false
 
   /** Internal APIs */
   internal val testTaskConfigActions = mutableListOf<Test.(TestTaskContext) -> Unit>()
+  internal val testTaskProviderConfigActions = mutableListOf<TaskProvider<out Test>.(TestTaskContext) -> Unit>()
 
   /** Private APIs */
   private inline fun <reified T : TestSuiteSourceCreationConfig> addSource(initializationBlock: T.() -> Unit) {

@@ -23,6 +23,7 @@ import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import javax.inject.Inject
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.MapProperty
+import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.testing.Test
 
 open class AnalyticsEnabledHostTest
@@ -38,6 +39,11 @@ constructor(override val delegate: HostTest, stats: GradleBuildVariant.Builder, 
   override fun configureTestTask(action: (Test) -> Unit) {
     stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.CONFIGURE_TEST_TASK_VALUE
     delegate.configureTestTask(action)
+  }
+
+  override fun withTestTaskProvider(action: (TaskProvider<out Test>) -> Unit) {
+    stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.WITH_TEST_TASK_PROVIDER_VALUE
+    delegate.withTestTaskProvider(action)
   }
 
   override val codeCoverageEnabled: Boolean

@@ -98,6 +98,11 @@ internal constructor(
     testTaskConfigActions.add(action)
   }
 
+  @Synchronized
+  override fun withTestTaskProviders(action: TaskProvider<out Test>.(context: TestTaskContext) -> Unit) {
+    testTaskProviderConfigActions.add(action)
+  }
+
   override val codeCoverage: Property<Boolean> = variantServices.propertyOf(Boolean::class.java, testSuiteBuilder.codeCoverage)
 
   override val androidResourcesIncluded: Boolean = testSuiteBuilder.testSuite.androidResourcesIncluded
@@ -122,9 +127,14 @@ internal constructor(
   /** Internal APIs */
   private val testTaskConfigActions =
     mutableListOf<Test.(TestTaskContext) -> Unit>().also { it.addAll(testSuiteBuilder.testSuite.testTaskConfigActions) }
+  private val testTaskProviderConfigActions =
+    mutableListOf<TaskProvider<out Test>.(TestTaskContext) -> Unit>().also {
+      it.addAll(testSuiteBuilder.testSuite.testTaskProviderConfigActions)
+    }
 
   @Synchronized
   override fun runTestTaskConfigurationActions(context: TestTaskContext, testTaskProvider: TaskProvider<out Test>) {
+    testTaskProviderConfigActions.forEach { testTaskProvider.it(context) }
     testTaskConfigActions.forEach { testTaskProvider.configure { testTask -> it(testTask, context) } }
   }
 }

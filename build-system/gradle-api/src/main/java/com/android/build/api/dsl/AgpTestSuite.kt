@@ -18,6 +18,7 @@ package com.android.build.api.dsl
 
 import org.gradle.api.Incubating
 import org.gradle.api.NamedDomainObjectContainer
+import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.testing.Test
 import org.gradle.testing.base.TestSuite
 
@@ -135,6 +136,35 @@ interface AgpTestSuite : TestSuite {
    * @param action a block to configure the [Test] tasks associated with this test suite target.
    */
   @Incubating fun configureTestTasks(action: Test.(context: TestTaskContext) -> Unit)
+
+  /**
+   * Runs some action on the Variant's device test task's[TaskProvider].
+   *
+   * There can be one to many instances of [Test] tasks for a particular test suite target. For instance, if the test suite targets more
+   * than one device, AGP may decide to create one [Test] instance per device.
+   *
+   * This is particularly useful to set manual tasks dependencies. However, you should avoid calling [TaskProvider.get] as it will
+   * automatically configure the task even if it is not scheduled to run, instead use the [configureTestTask] method
+   *
+   * Example :
+   * ```(kotlin)
+   *  androidComponents {
+   *      onVariants { variant ->
+   *          variant.suites.forEach { suite ->
+   *            // eliminate all test suites that requires a device, only hosts tests should be considered.
+   *            if (suite.sources.none { source -> source.type == TestSuiteSourceType.TEST_APK }) {
+   *              suite.withTestTaskProvider { testTaskProvider ->
+   *                someAnchorTask.dependsOn(testTaskProvider)
+   *              }
+   *            }
+   *         }
+   *      }
+   *  }
+   * ```
+   *
+   * @param action on the test task [TaskProvider].
+   */
+  @Incubating fun withTestTaskProviders(action: TaskProvider<Test>.(context: TestTaskContext) -> Unit)
 
   /**
    * Turns on or off the code coverage support.

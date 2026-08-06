@@ -828,3 +828,9 @@ https://issuetracker.google.com/534880695
   * com.android.build.api.variant.TestSuite.getRequiresUpdateTask: org.gradle.api.provider.Provider<java.lang.Boolean> ()
 https://issuetracker.google.com/537432993
   * com.android.build.api.dsl.R8Extension
+https://issuetracker.google.com/543456675
+  * com.android.build.api.dsl.AgpTestSuite.withTestTaskProviders: void (kotlin.jvm.functions.Function2<? super org.gradle.api.tasks.TaskProvider<org.gradle.api.tasks.testing.Test>, ? super com.android.build.api.dsl.TestTaskContext, kotlin.Unit>)
+  * com.android.build.api.variant.DeviceTest.configureTestTask: void (kotlin.jvm.functions.Function1<? super org.gradle.api.Task, kotlin.Unit>)
+  * com.android.build.api.variant.DeviceTest.withTestTaskProvider: void (kotlin.jvm.functions.Function1<? super org.gradle.api.tasks.TaskProvider<? extends org.gradle.api.Task>, kotlin.Unit>)
+  * com.android.build.api.variant.HostTest.withTestTaskProvider: void (kotlin.jvm.functions.Function1<? super org.gradle.api.tasks.TaskProvider<? extends org.gradle.api.tasks.testing.Test>, kotlin.Unit>)
+  * com.android.build.api.variant.TestSuite.withTestTaskProviders: void (kotlin.jvm.functions.Function2<? super org.gradle.api.tasks.TaskProvider<? extends org.gradle.api.tasks.testing.Test>, ? super com.android.build.api.dsl.TestTaskContext, kotlin.Unit>)

@@ -376,6 +376,7 @@ package com.android.build.api.dsl {
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public void setRequiresUpdateTask(boolean);
     method @org.gradle.api.Incubating public void testApk(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TestSuiteTestApkSpec,kotlin.Unit> action);
     method @org.gradle.api.Incubating public void useJunitEngine(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.JUnitEngineSpec,kotlin.Unit> action);
+    method @org.gradle.api.Incubating public void withTestTaskProviders(kotlin.jvm.functions.Function2<? super org.gradle.api.tasks.TaskProvider<org.gradle.api.tasks.testing.Test>,? super com.android.build.api.dsl.TestTaskContext,kotlin.Unit> action);
     property @org.gradle.api.Incubating public abstract boolean codeCoverage;
     property @org.gradle.api.Incubating public abstract boolean requiresUpdateTask;
     property @org.gradle.api.Incubating public abstract java.util.List<java.lang.String> targetVariants;
@@ -3202,11 +3203,13 @@ package com.android.build.api.variant {
   }
 
   public interface DeviceTest extends com.android.build.api.variant.GeneratesTestApk com.android.build.api.variant.HasAndroidResources com.android.build.api.variant.TestComponent {
+    method @org.gradle.api.Incubating public void configureTestTask(kotlin.jvm.functions.Function1<? super org.gradle.api.Task,kotlin.Unit> action);
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public org.gradle.api.provider.Property<java.lang.String> getApplicationId();
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public org.gradle.api.provider.MapProperty<java.lang.String,com.android.build.api.variant.BuildConfigField<? extends java.io.Serializable>>? getBuildConfigFields();
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public boolean getCodeCoverageEnabled();
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public org.gradle.api.provider.ListProperty<org.gradle.api.file.RegularFile> getProguardFiles();
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public com.android.build.api.variant.SigningConfig? getSigningConfig();
+    method @org.gradle.api.Incubating public void withTestTaskProvider(kotlin.jvm.functions.Function1<? super org.gradle.api.tasks.TaskProvider<? extends org.gradle.api.Task>,kotlin.Unit> action);
     property @org.gradle.api.Incubating public abstract org.gradle.api.provider.Property<java.lang.String> applicationId;
     property @org.gradle.api.Incubating public abstract org.gradle.api.provider.MapProperty<java.lang.String,com.android.build.api.variant.BuildConfigField<? extends java.io.Serializable>>? buildConfigFields;
     property @org.gradle.api.Incubating public abstract boolean codeCoverageEnabled;
@@ -3445,6 +3448,7 @@ package com.android.build.api.variant {
     method public void configureTestTask(kotlin.jvm.functions.Function1<? super org.gradle.api.tasks.testing.Test,kotlin.Unit> action);
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public boolean getAndroidResourcesIncluded();
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public boolean getCodeCoverageEnabled();
+    method @org.gradle.api.Incubating public void withTestTaskProvider(kotlin.jvm.functions.Function1<? super org.gradle.api.tasks.TaskProvider<? extends org.gradle.api.tasks.testing.Test>,kotlin.Unit> action);
     property @org.gradle.api.Incubating public abstract boolean androidResourcesIncluded;
     property @org.gradle.api.Incubating public abstract boolean codeCoverageEnabled;
   }
@@ -3742,6 +3746,7 @@ package com.android.build.api.variant {
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public java.util.Collection<com.android.build.api.variant.TestSuiteSourceSet> getSources();
     method @InaccessibleFromKotlin public java.util.Map<java.lang.String,com.android.build.api.variant.TestSuiteTarget> getTargets();
     method @org.gradle.api.Incubating public org.gradle.api.provider.Provider<java.lang.String> instrumentationRunner(com.android.build.api.variant.TestSuiteSourceSet.TestApk source);
+    method @org.gradle.api.Incubating public void withTestTaskProviders(kotlin.jvm.functions.Function2<? super org.gradle.api.tasks.TaskProvider<? extends org.gradle.api.tasks.testing.Test>,? super com.android.build.api.dsl.TestTaskContext,kotlin.Unit> action);
     property @org.gradle.api.Incubating public abstract org.gradle.api.provider.Property<java.lang.Boolean> codeCoverage;
     property @org.gradle.api.Incubating public abstract com.android.build.api.variant.JUnitEngineSpec junitEngineSpec;
     property @org.gradle.api.Incubating public abstract org.gradle.api.provider.Provider<java.lang.Boolean> requiresUpdateTask;

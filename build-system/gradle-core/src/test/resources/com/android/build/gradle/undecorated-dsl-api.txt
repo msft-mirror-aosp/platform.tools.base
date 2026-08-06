@@ -207,6 +207,7 @@ com.android.build.gradle.internal.dsl.AgpTestSuiteImpl.setCodeCoverage: void (bo
 com.android.build.gradle.internal.dsl.AgpTestSuiteImpl.setRequiresUpdateTask: void (boolean)
 com.android.build.gradle.internal.dsl.AgpTestSuiteImpl.testApk: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TestSuiteTestApkSpec, kotlin.Unit>)
 com.android.build.gradle.internal.dsl.AgpTestSuiteImpl.useJunitEngine: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.JUnitEngineSpec, kotlin.Unit>)
+com.android.build.gradle.internal.dsl.AgpTestSuiteImpl.withTestTaskProviders: void (kotlin.jvm.functions.Function2<? super org.gradle.api.tasks.TaskProvider<org.gradle.api.tasks.testing.Test>, ? super com.android.build.api.dsl.TestTaskContext, kotlin.Unit>)
 com.android.build.gradle.internal.dsl.AgpTestSuiteTargetImpl.getBinaryResultsDirectory: org.gradle.api.provider.Provider<org.gradle.api.file.Directory> ()
 com.android.build.gradle.internal.dsl.AgpTestSuiteTargetImpl.getName: java.lang.String ()
 com.android.build.gradle.internal.dsl.AgpTestSuiteTargetImpl.getTargetDevices: java.util.List<java.lang.String> ()
