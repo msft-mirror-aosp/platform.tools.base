@@ -40,6 +40,10 @@ class ProjectLocation(
     val newDir = File(projectDir, gradlePath.replace(":", "/"))
     return ProjectLocation(newDir, testLocation)
   }
+
+  fun withGradleUserHome(newGradleUserHome: java.nio.file.Path): ProjectLocation {
+    return ProjectLocation(projectDir, testLocation.withGradleUserHome(newGradleUserHome))
+  }
 }
 
 fun initializeProjectLocation(testClass: Class<*>, methodName: String?, projectName: String?): ProjectLocation {
