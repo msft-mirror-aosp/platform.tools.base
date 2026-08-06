@@ -34,13 +34,13 @@ interface SigningConfig : AndroidModel {
   val storeFile: File?
 
   /** The keystore password. */
-  val storePassword: String?
+  @Deprecated("Always null; use isSigningReady") val storePassword: String?
 
   /** The key alias name. */
   val keyAlias: String?
 
   /** The key password. */
-  val keyPassword: String?
+  @Deprecated("Always null; use isSigningReady") val keyPassword: String?
 
   /** Signing using JAR Signature Scheme (aka v1 scheme) is enabled. */
   val enableV1Signing: Boolean?

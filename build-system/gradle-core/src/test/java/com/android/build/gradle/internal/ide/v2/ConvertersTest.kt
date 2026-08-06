@@ -53,4 +53,28 @@ class ConvertersTest {
     val options3 = lint.convert(projectDir, useBaselineConvention = true)
     Truth.assertThat(options3.baseline).isEqualTo(explicitBaseline)
   }
+
+  @Test
+  fun `test SigningConfig convert drops passwords and preserves isSigningReady`() {
+    val dslSigningConfig = mock<com.android.build.api.dsl.ApkSigningConfig>()
+    whenever(dslSigningConfig.name).thenReturn("release")
+    whenever(dslSigningConfig.storeFile).thenReturn(File("/path/to/keystore"))
+    whenever(dslSigningConfig.storePassword).thenReturn("secretStorePassword")
+    whenever(dslSigningConfig.keyAlias).thenReturn("keyAlias")
+    whenever(dslSigningConfig.keyPassword).thenReturn("secretKeyPassword")
+    whenever(dslSigningConfig.enableV1Signing).thenReturn(true)
+    whenever(dslSigningConfig.enableV2Signing).thenReturn(true)
+    whenever(dslSigningConfig.enableV3Signing).thenReturn(true)
+    whenever(dslSigningConfig.enableV4Signing).thenReturn(true)
+
+    val converted = dslSigningConfig.convert()
+    Truth.assertThat(converted.name).isEqualTo("release")
+    Truth.assertThat(converted.storeFile).isEqualTo(File("/path/to/keystore"))
+    Truth.assertThat(converted.storePassword).isNull()
+    Truth.assertThat(converted.keyAlias).isEqualTo("keyAlias")
+    Truth.assertThat(converted.keyPassword).isNull()
+    Truth.assertThat(converted.isSigningReady).isTrue()
+    Truth.assertThat(converted.toString()).doesNotContain("secretStorePassword")
+    Truth.assertThat(converted.toString()).doesNotContain("secretKeyPassword")
+  }
 }
