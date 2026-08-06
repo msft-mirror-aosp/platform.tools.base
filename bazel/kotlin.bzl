@@ -256,6 +256,8 @@ def kotlin_library(
         **kwargs: arguments to pass through to _kotlin_library
     """
 
+    # Note: -Xsam-conversions=class is needed in AGP because Gradle relies on lambda classes for
+    # up-to-date checks, and SAM-converted lambdas are quite common when using Gradle APIs (b/382592220).
     kotlinc_opts = ["-jvm-target", jvm_target, "-Xsam-conversions=class"] + kotlinc_opts
 
     # Include non-test kotlin libraries in coverage
