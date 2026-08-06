@@ -5,14 +5,14 @@ maven_repository(
     name = "utp_dependencies",
     # keep sorted
     artifacts = [
+        "//tools/base/android-test/android-test-engine-result-listener:android-test-engine-result-listener",
+        "//tools/base/android-test/android-test-engine-result-listener:test_result_event_proto",
+        "//tools/base/android-test/android-test-junit-engine:android-test-engine",
+        "//tools/base/android-test/test-result-proto:test-result-proto",
         "//tools/base/common:tools.common",
         "//tools/base/ddmlib:tools.ddmlib",
         "//tools/base/sdk-common:tools.sdk-common",
         "//tools/base/sdklib:tools.sdklib",
-        "@maven//:com.android.tools.androidtest.android-test-engine",
-        "@maven//:com.android.tools.androidtest.android-test-engine-result-listener",
-        "@maven//:com.android.tools.androidtest.test-result-event-proto",
-        "@maven//:com.android.tools.androidtest.test-result-proto",
         "@maven//:com.google.crypto.tink.tink_1.18.0",
         "@maven//:com.google.protobuf.protobuf-bom_4.28.3",
         "@maven//:com.google.protobuf.protobuf-java-util_4.28.3",

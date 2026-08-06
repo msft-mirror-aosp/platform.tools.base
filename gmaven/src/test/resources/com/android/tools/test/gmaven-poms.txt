@@ -821,13 +821,14 @@ com.android.tools.utp:gradle-work-action
   pomName=com.android.tools.utp.gradle-work-action
   description=Provides Gradle WorkAction implementations for executing the Unified Test Platform (UTP) in isolation.
   dependencies:
-    com.android.tools.androidtest:android-test-engine (runtime)
     com.android.tools.androidtest:android-test-engine-result-listener (runtime)
+    com.android.tools.androidtest:android-test-engine (runtime)
     com.android.tools.androidtest:test-result-proto (runtime)
     com.google.protobuf:protobuf-java (runtime)
     org.junit.platform:junit-platform-engine (runtime)
     org.junit.platform:junit-platform-launcher (runtime)
     com.android.tools.utp:gradle-work-action-api (provided)
+    org.jetbrains.kotlin:kotlin-stdlib (provided)
 
 com.android.tools.utp:gradle-work-action-api
   pomName=com.android.tools.utp.gradle-work-action-api

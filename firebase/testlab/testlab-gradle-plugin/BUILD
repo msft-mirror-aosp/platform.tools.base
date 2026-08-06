@@ -46,7 +46,7 @@ maven_repository(
     name = "maven_dependencies",
     # keep sorted
     artifacts = [
-        "@maven//:com.android.tools.androidtest.test-result-proto",
+        "//tools/base/android-test/test-result-proto:test-result-proto",
         "@maven//:com.google.api-client.google-api-client_1.22.0",
         "@maven//:com.google.apis.google-api-services-storage_v1-rev82-1.22.0",
         "@maven//:com.google.apis.google-api-services-testing_v1-rev82-1.22.0",
@@ -143,12 +143,12 @@ kotlin_library(
     ],
     deps = [
         ":testlab-gradle-plugin-dsl",
+        "//tools/base/android-test/test-result-proto",
         "//tools/base/build-system:gradle-api",
         "//tools/base/build-system/builder-model",
         "//tools/base/build-system/builder-test-api:tools.builder-test-api",
         "//tools/base/build-system/gradle-common-api",
         "//tools/base/build-system/gradle-core",
-        "@maven//:com.android.tools.androidtest.test-result-proto",
         "@maven//:com.google.apis.google-api-services-storage",
         "@maven//:com.google.apis.google-api-services-testing",
         "@maven//:com.google.apis.google-api-services-toolresults",
