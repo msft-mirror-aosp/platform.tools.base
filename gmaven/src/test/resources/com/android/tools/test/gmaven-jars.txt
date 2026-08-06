@@ -4249,7 +4249,6 @@ com/android/tools/utp/gradle-work-action
   META-INF/
   META-INF/MANIFEST.MF
   META-INF/gradle-work-action.kotlin_module
-  META-INF/services/
   META-INF/services/com.android.tools.utp.gradle.api.UtpAction
   NOTICE
   com/

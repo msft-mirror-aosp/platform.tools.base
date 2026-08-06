@@ -1,4 +1,6 @@
 load("//tools/base/bazel:kotlin.bzl", "kotlin_library", "kotlin_test")
+load("//tools/base/bazel:maven.bzl", "maven_library")
+load("//tools/base/common:version.bzl", "BASE_VERSION")
 
 filegroup(
     name = "agp_gradle_build_files",
@@ -8,22 +10,34 @@ filegroup(
         "src/main/resources/**",
     ]) + [
         "NOTICE",
-        "build.gradle",
     ],
     visibility = ["//tools/base/utp:__pkg__"],
 )
 
-kotlin_library(
+maven_library(
     name = "gradle-work-action",
     srcs = glob([
         "src/main/java/**/*.kt",
         "src/main/java/**/*.java",
     ]),
-    deps = [
+    # gradle-api_neverlink is added to bundled_deps because it doesn't provide MavenInfo
+    # (required by deps_compile_only). The maven_library macro detects the _neverlink suffix
+    # and treats it as a compile-only dependency without actually bundling it.
+    bundled_deps = [
         "//tools/base/build-system:gradle-api_neverlink",
-        "//tools/base/build-system/gradle-api",
-        "//tools/base/sdk-common:tools.sdk-common",
+    ],
+    coordinates = "com.android.tools.utp:gradle-work-action",
+    deps_compile_only = [
         "//tools/base/utp/gradle-work-action-api",
+    ],
+    description = "Provides Gradle WorkAction implementations for executing the Unified Test Platform (UTP) in isolation.",
+    module_name = "gradle-work-action",
+    notice = "NOTICE",
+    resource_strip_prefix = "tools/base/utp/gradle-work-action/src/main/resources",
+    resources = glob(["src/main/resources/**"]),
+    version = BASE_VERSION,
+    visibility = ["//visibility:public"],
+    deps = [
         "@maven//:com.android.tools.androidtest.android-test-engine",
         "@maven//:com.android.tools.androidtest.android-test-engine-result-listener",
         "@maven//:com.android.tools.androidtest.test-result-proto",
