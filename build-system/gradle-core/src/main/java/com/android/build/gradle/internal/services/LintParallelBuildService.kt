@@ -119,7 +119,6 @@ abstract class LintParallelBuildService : BuildService<BuildServiceParameters.No
  *
  * This function uses registerIfAbsent in order to ensure locking when accessing build services.
  */
-@JvmOverloads
 fun BuildServiceRegistry.getLintParallelBuildService(
   projectOptions: ProjectOptions,
   runInProcess: Boolean,
