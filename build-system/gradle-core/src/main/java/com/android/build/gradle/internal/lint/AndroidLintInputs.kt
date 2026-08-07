@@ -632,6 +632,16 @@ internal fun getLintJavaLauncherProvider(
   return providerFactory
     .provider<JavaToolchainService> {
       if (!hasToolchainSpec(toolchainSpec)) {
+        if (projectTargetCompatibility != null && JavaVersion.current() < projectTargetCompatibility) {
+          throw GradleException(
+            """
+            The Gradle daemon is running on Java ${JavaVersion.current()}, but the project is compiled for Java $projectTargetCompatibility.
+            Lint requires the JVM executing it to be at least the same version as the project's target compatibility.
+            Please run Gradle on a newer JVM or configure a toolchain for Lint (e.g. `android.lint.toolchain.languageVersion.set(JavaLanguageVersion.of(${projectTargetCompatibility.majorVersion}))`).
+            """
+              .trimIndent()
+          )
+        }
         return@provider null
       }
 

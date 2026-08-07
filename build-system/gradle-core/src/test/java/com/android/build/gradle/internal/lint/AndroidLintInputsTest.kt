@@ -33,6 +33,7 @@ import org.gradle.jvm.toolchain.JavaToolchainSpec
 import org.gradle.jvm.toolchain.JvmVendorSpec
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.Assert.assertThrows
+import org.junit.Assume
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -318,6 +319,26 @@ class AndroidLintInputsTest {
 
     val runInProcess = getLintRunInProcessProvider(ProjectOptions(project.providers), lintOptions).get()
     assertThat(runInProcess).isFalse()
+  }
+
+  @Test
+  fun `check getLintJavaLauncherProvider without toolchain below bytecode compatibility throws GradleException`() {
+    val dslServices = createDslServices()
+    val lintOptions = dslServices.newDecoratedInstance(LintImpl::class.java, dslServices)
+    // No toolchain specified
+
+    val currentJava = JavaVersion.current()
+    val availableVersions = JavaVersion.values()
+
+    // Skip the test if we are already on the highest known Java version
+    Assume.assumeTrue("Test requires a higher known Java version to be available", currentJava < availableVersions.last())
+
+    val higherJavaVersion = availableVersions.first { it > currentJava }
+
+    val exception = assertThrows(GradleException::class.java) { getLintJavaLauncherProvider(project, lintOptions, higherJavaVersion).get() }
+    assertThat(exception.message).contains("The Gradle daemon is running on Java")
+    assertThat(exception.message).contains("but the project is compiled for Java")
+    assertThat(exception.message).contains("Please run Gradle on a newer JVM or configure a toolchain for Lint")
   }
 
   @Test
