@@ -16,9 +16,9 @@
 
 package com.android.build.api.dsl
 
-import org.gradle.api.ExtensiblePolymorphicDomainObjectContainer
 import org.gradle.api.Incubating
 import org.gradle.api.NamedDomainObjectContainer
+import org.gradle.api.PolymorphicDomainObjectContainer
 import org.gradle.declarative.dsl.model.annotations.HiddenInDefinition
 
 /** Options for running tests. */
@@ -113,7 +113,7 @@ interface TestOptions {
   fun targetSdk(action: TargetSdkSpec.() -> Unit)
 
   /**
-   * Available test suites in this project.
+   * Available custom test suites in this project.
    *
    * Test suites provide a way to define groups of tests that can be executed together. Each [AgpTestSuite] returned by this method will run
    * against the variants identified by the associated [AgpTestSuite.getTargets] targets.
@@ -126,7 +126,7 @@ interface TestOptions {
    * ```
    * android {
    *     testOptions {
-   *         suites {
+   *         customSuites {
    *             create("commonSuite") { ... }
    *             create("redSuite") { ... }
    *             create("blueSuite") { ... }
@@ -143,7 +143,10 @@ interface TestOptions {
    * The types of test suites available depend on the other plugins applied to your project.
    */
   /** @suppress */
-  @get:HiddenInDefinition @get:Incubating val suites: ExtensiblePolymorphicDomainObjectContainer<AgpTestSuite>
+  @get:HiddenInDefinition @get:Incubating val customSuites: NamedDomainObjectContainer<AgpTestSuite>
+
+  /** Deprecated, use [customSuites] */
+  @get:HiddenInDefinition @get:Incubating @get:Deprecated("Use customSuites") val suites: PolymorphicDomainObjectContainer<AgpTestSuite>
 
   /** Configures the specialized Screenshot TestSuite designed for Compose Preview Screenshot Testing. */
   @get:Incubating val screenshotTests: NamedDomainObjectContainer<ScreenshotTestSuite>

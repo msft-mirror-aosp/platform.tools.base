@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.testing.suites
 
 import com.android.Version
-import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.CommonExtension
@@ -108,7 +107,7 @@ class TestEngineWiringTest(
         configuration(this, modulePath) {
           android {
             namespace = "com.example.test"
-            testOptions.suites.create("first", AgpTestSuite::class.java) {
+            testOptions.customSuites.create("first") {
               it.useJunitEngine.apply {
                 inputs.add(AgpTestSuiteInputParameters.MERGED_MANIFEST)
                 includeEngines.add("[engine:toy-junit-engine-for-tests]")

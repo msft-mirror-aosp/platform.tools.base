@@ -2461,6 +2461,7 @@ package com.android.build.api.dsl {
   public interface TestOptions {
     method @org.gradle.api.Incubating public void emulatorControl(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.EmulatorControl,kotlin.Unit> action);
     method @InaccessibleFromKotlin public boolean getAnimationsDisabled();
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.AgpTestSuite> getCustomSuites();
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public com.android.build.api.dsl.EmulatorControl getEmulatorControl();
     method @InaccessibleFromKotlin public String getExecution();
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public boolean getInstrumentInPrivateComputeCore();
@@ -2468,7 +2469,7 @@ package com.android.build.api.dsl {
     method @InaccessibleFromKotlin public String? getReportDir();
     method @InaccessibleFromKotlin public String? getResultsDir();
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.ScreenshotTestSuite> getScreenshotTests();
-    method @InaccessibleFromKotlin @org.gradle.api.Incubating @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public org.gradle.api.ExtensiblePolymorphicDomainObjectContainer<com.android.build.api.dsl.AgpTestSuite> getSuites();
+    method @InaccessibleFromKotlin @Deprecated @org.gradle.api.Incubating @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public org.gradle.api.PolymorphicDomainObjectContainer<com.android.build.api.dsl.AgpTestSuite> getSuites();
     method @InaccessibleFromKotlin public Integer? getTargetSdk();
     method @InaccessibleFromKotlin public String? getTargetSdkPreview();
     method @InaccessibleFromKotlin public com.android.build.api.dsl.UnitTestOptions getUnitTests();
@@ -2483,6 +2484,7 @@ package com.android.build.api.dsl {
     method public void targetSdk(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TargetSdkSpec,kotlin.Unit> action);
     method public void unitTests(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.UnitTestOptions,kotlin.Unit> action);
     property public abstract boolean animationsDisabled;
+    property @org.gradle.api.Incubating @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public abstract org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.AgpTestSuite> customSuites;
     property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.EmulatorControl emulatorControl;
     property public abstract String execution;
     property @org.gradle.api.Incubating public abstract boolean instrumentInPrivateComputeCore;
@@ -2490,7 +2492,7 @@ package com.android.build.api.dsl {
     property public abstract String? reportDir;
     property public abstract String? resultsDir;
     property @org.gradle.api.Incubating public abstract org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.ScreenshotTestSuite> screenshotTests;
-    property @org.gradle.api.Incubating @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public abstract org.gradle.api.ExtensiblePolymorphicDomainObjectContainer<com.android.build.api.dsl.AgpTestSuite> suites;
+    property @Deprecated @org.gradle.api.Incubating @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public abstract org.gradle.api.PolymorphicDomainObjectContainer<com.android.build.api.dsl.AgpTestSuite> suites;
     property public abstract Integer? targetSdk;
     property public abstract String? targetSdkPreview;
     property public abstract com.android.build.api.dsl.UnitTestOptions unitTests;

@@ -8,6 +8,7 @@ Deprecated from AGP 9.5.0-alpha01
   * com.android.build.api.dsl.ApplicationVariantDimension.setMultiDexEnabled: void (java.lang.Boolean)
   * com.android.build.api.dsl.LibraryVariantDimension.getMultiDexEnabled: java.lang.Boolean ()
   * com.android.build.api.dsl.LibraryVariantDimension.setMultiDexEnabled: void (java.lang.Boolean)
+  * com.android.build.api.dsl.TestOptions.getSuites: org.gradle.api.PolymorphicDomainObjectContainer<com.android.build.api.dsl.AgpTestSuite> ()
   * com.android.build.api.dsl.TestVariantDimension.getMultiDexEnabled: java.lang.Boolean ()
   * com.android.build.api.dsl.TestVariantDimension.setMultiDexEnabled: void (java.lang.Boolean)
   * com.android.build.api.dsl.VariantDimension.getMultiDexKeepProguard: java.io.File ()

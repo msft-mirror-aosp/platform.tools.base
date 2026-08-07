@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.testing.suites
 
 import com.android.Version
-import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.api.variant.TestSuiteSourceSet
 import com.android.build.gradle.integration.common.fixture.GradleBuildResult
@@ -60,7 +59,7 @@ class TestSuiteWithAddedSourcesViaVariantAPITest {
         androidApplication {
           android {
             namespace = "com.example.test"
-            testOptions.suites.create("first", AgpTestSuite::class.java) {
+            testOptions.customSuites.create("first") {
               it.useJunitEngine.apply {
                 includeEngines.add("[engine:toy-junit-engine-for-tests]")
                 enginesDependencies.add("com.android.tools.build:gradle-api:${Version.ANDROID_GRADLE_PLUGIN_VERSION}")
@@ -73,7 +72,7 @@ class TestSuiteWithAddedSourcesViaVariantAPITest {
               it.targetVariants.add("release")
               it.targets.apply { create("t1") {} }
             }
-            testOptions.suites.create("second", AgpTestSuite::class.java) {
+            testOptions.customSuites.create("second") {
               it.useJunitEngine.apply {
                 includeEngines.add("[engine:toy-junit-engine-for-tests]")
                 enginesDependencies.add("com.android.tools.build:gradle-api:${Version.ANDROID_GRADLE_PLUGIN_VERSION}")

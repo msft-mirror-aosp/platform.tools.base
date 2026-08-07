@@ -95,14 +95,14 @@ class TestOptionsTest {
     val suites = project.objects.polymorphicDomainObjectContainer(AgpTestSuite::class.java)
 
     suites.registerBinding(AgpTestSuite::class.java, AgpTestSuiteImplForTest::class.java)
-    Mockito.`when`(testOptions.suites).thenReturn(suites)
+    Mockito.`when`(testOptions.customSuites).thenReturn(suites)
   }
 
   @Test
   fun testNewKnownTestSuite() {
-    testOptions.suites.create("generic", AgpTestSuite::class.java)
-    Truth.assertThat(testOptions.suites.size).isEqualTo(1)
-    Truth.assertThat(testOptions.suites.single().name).isEqualTo("generic")
+    testOptions.customSuites.create("generic")
+    Truth.assertThat(testOptions.customSuites.size).isEqualTo(1)
+    Truth.assertThat(testOptions.customSuites.single().name).isEqualTo("generic")
   }
 
   interface RandomTestSuite : AgpTestSuite {
@@ -120,23 +120,26 @@ class TestOptionsTest {
         DefaultInputsForAgpTestSuites.JOURNEYS_TEST.initialize(this.useJunitEngine)
       }
     }
-    testOptions.suites.registerBinding(RandomTestSuite::class.java, RandomTestSuiteImpl::class.java)
+    (testOptions.customSuites as ExtensiblePolymorphicDomainObjectContainer<AgpTestSuite>).registerBinding(
+      RandomTestSuite::class.java,
+      RandomTestSuiteImpl::class.java,
+    )
 
-    testOptions.suites.create("random", RandomTestSuite::class.java)
-    Truth.assertThat(testOptions.suites.size).isEqualTo(1)
-    (testOptions.suites.getByName("random") as RandomTestSuite).instructions = "some instructions"
+    (testOptions.customSuites as ExtensiblePolymorphicDomainObjectContainer<AgpTestSuite>).create("random", RandomTestSuite::class.java)
+    Truth.assertThat(testOptions.customSuites.size).isEqualTo(1)
+    (testOptions.customSuites.getByName("random") as RandomTestSuite).instructions = "some instructions"
   }
 
   @Test
   fun testExtraProperties() {
     // add a required test input parameter.
-    testOptions.suites.create("journeysTest") {
+    testOptions.customSuites.create("journeysTest") {
       it.useJunitEngine.let { junitEngine ->
         DefaultInputsForAgpTestSuites.JOURNEYS_TEST.initialize(junitEngine)
         junitEngine.inputs.add(AgpTestSuiteInputParameters.TEST_APKS)
       }
     }
-    val testSuite = testOptions.suites.getByName("journeysTest")
+    val testSuite = testOptions.customSuites.getByName("journeysTest")
     Truth.assertThat(testSuite).isNotNull()
     Truth.assertThat(testSuite.useJunitEngine.inputs)
       .containsExactlyElementsIn(

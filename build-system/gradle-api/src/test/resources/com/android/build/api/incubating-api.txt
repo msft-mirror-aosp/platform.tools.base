@@ -577,7 +577,8 @@ https://issuetracker.google.com/392162853
   * com.android.build.api.dsl.JUnitEngineSpec.getEnginesDependencies: org.gradle.api.artifacts.dsl.DependencyCollector ()
   * com.android.build.api.dsl.JUnitEngineSpec.getIncludeEngines: java.util.Set<java.lang.String> ()
   * com.android.build.api.dsl.JUnitEngineSpec.getInputs: java.util.List<com.android.build.api.dsl.AgpTestSuiteInputParameters> ()
-  * com.android.build.api.dsl.TestOptions.getSuites: org.gradle.api.ExtensiblePolymorphicDomainObjectContainer<com.android.build.api.dsl.AgpTestSuite> ()
+  * com.android.build.api.dsl.TestOptions.getCustomSuites: org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.AgpTestSuite> ()
+  * com.android.build.api.dsl.TestOptions.getSuites: org.gradle.api.PolymorphicDomainObjectContainer<com.android.build.api.dsl.AgpTestSuite> ()
   * com.android.build.api.dsl.TestSuiteHostJarSpec
   * com.android.build.api.dsl.TestSuiteHostJarSpec.dependencies: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AgpTestSuiteDependencies, kotlin.Unit>)
   * com.android.build.api.dsl.TestSuiteHostJarSpec.getDependencies: com.android.build.api.dsl.AgpTestSuiteDependencies ()

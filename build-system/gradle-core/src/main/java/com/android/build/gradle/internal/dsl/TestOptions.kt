@@ -30,9 +30,9 @@ import com.google.common.base.Preconditions
 import com.google.common.base.Verify
 import javax.inject.Inject
 import org.gradle.api.Action
-import org.gradle.api.ExtensiblePolymorphicDomainObjectContainer
 import org.gradle.api.Incubating
 import org.gradle.api.NamedDomainObjectContainer
+import org.gradle.api.PolymorphicDomainObjectContainer
 import org.gradle.api.tasks.testing.Test
 
 abstract class TestOptions @Inject constructor(private val dslServices: DslServices) : com.android.build.api.dsl.TestOptions {
@@ -184,7 +184,8 @@ abstract class TestOptions @Inject constructor(private val dslServices: DslServi
     }
   }
 
-  override val suites: ExtensiblePolymorphicDomainObjectContainer<AgpTestSuite> =
+  @get:Deprecated("use customSuites")
+  override val suites: PolymorphicDomainObjectContainer<AgpTestSuite> =
     dslServices.polymorphicDomainObjectContainer(AgpTestSuite::class.java).apply {
       registerFactory(AgpTestSuite::class.java) { name ->
         dslServices.newInstance(AgpTestSuiteImpl::class.java, name, dslServices, unitTests.isIncludeAndroidResources)
@@ -198,6 +199,8 @@ abstract class TestOptions @Inject constructor(private val dslServices: DslServi
         }
       }
     }
+
+  @Suppress("DEPRECATION") override val customSuites: NamedDomainObjectContainer<AgpTestSuite> = suites
 
   private fun checkScreenshotTestEnabled() {
     if (!dslServices.projectOptions.get(com.android.build.gradle.options.BooleanOption.ENABLE_SCREENSHOT_TEST)) {

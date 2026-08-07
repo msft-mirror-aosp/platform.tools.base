@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.testing.suites
 
 import com.android.Version
-import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.options.BooleanOption
@@ -63,7 +62,7 @@ class MixedTestSuiteTest {
         androidApplication {
           android {
             namespace = "com.example.app"
-            testOptions.suites.create("mixed", AgpTestSuite::class.java) {
+            testOptions.customSuites.create("mixed") {
               it.requiresUpdateTask = true
               it.useJunitEngine.apply {
                 includeEngines.add("[engine:toy-junit-engine-for-tests]")

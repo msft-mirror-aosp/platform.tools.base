@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.connected.application
 
-import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
@@ -59,7 +58,7 @@ class AndroidTestEngineConnectedTest {
       gradleProperties { add(BooleanOption.TEST_SUITE_SUPPORT, true) }
       androidApplication {
         android {
-          testOptions.suites.create("myAndroidTestSuite", AgpTestSuite::class.java) {
+          testOptions.customSuites.create("myAndroidTestSuite") {
             it.testApk {
               dependencies {
                 implementation.add("org.jetbrains.kotlin:kotlin-stdlib:1.8.20")

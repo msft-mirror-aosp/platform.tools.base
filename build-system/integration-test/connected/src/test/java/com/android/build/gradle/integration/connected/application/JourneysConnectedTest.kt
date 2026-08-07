@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.connected.application
 
-import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
@@ -83,7 +82,7 @@ class JourneysConnectedTest {
   private fun AndroidProjectDefinition<ApplicationExtension>.setupProject() {
     android {
       defaultConfig { minSdk = 24 }
-      testOptions.suites.create("journeysTest", AgpTestSuite::class.java) {
+      testOptions.customSuites.create("journeysTest") {
         it.useJunitEngine.apply {
           inputs.add(AgpTestSuiteInputParameters.TESTED_APKS)
           includeEngines.add("journeys-test-engine")
@@ -105,7 +104,7 @@ class JourneysConnectedTest {
 
     override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
       androidComponents.finalizeDsl { android ->
-        android.testOptions.suites.getByName("journeysTest") {
+        android.testOptions.customSuites.getByName("journeysTest") {
           it.useJunitEngine.apply { enginesDependencies.add("com.android.tools.journeys:journeys-junit-engine-test-support:+") }
         }
       }
@@ -122,7 +121,7 @@ class JourneysConnectedTest {
 
     override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
       androidComponents.finalizeDsl { android ->
-        android.testOptions.suites.getByName("journeysTest") {
+        android.testOptions.customSuites.getByName("journeysTest") {
           it.useJunitEngine.apply { enginesDependencies.add("com.android.tools.journeys:journeys-junit-engine:+") }
         }
       }
@@ -563,7 +562,12 @@ class JourneysConnectedTest {
           listOf(
             buildInteraction(CommandType.ADB_COMMAND, "ADB command: input tap 603 247", "$outputDir/displayState2.png", Status.SUCCEEDED),
             buildInteraction(CommandType.ADB_COMMAND, "ADB command: input text Compose", "$outputDir/displayState3.png", Status.SUCCEEDED),
-            buildInteraction(CommandType.ADB_COMMAND, "ADB command: input keyevent ENTER", "$outputDir/displayState4.png", Status.SUCCEEDED),
+            buildInteraction(
+              CommandType.ADB_COMMAND,
+              "ADB command: input keyevent ENTER",
+              "$outputDir/displayState4.png",
+              Status.SUCCEEDED,
+            ),
           ),
         ),
         buildTurnAddedEvent(
@@ -696,7 +700,12 @@ class JourneysConnectedTest {
           "$outputDir/displayState2.png",
           listOf(
             buildInteraction(CommandType.ENTER_TEXT, "ENTER_TEXT on element with ID 2", "$outputDir/displayState2.png", Status.SUCCEEDED),
-            buildInteraction(CommandType.ADB_COMMAND, "ADB command: input keyevent ENTER", "$outputDir/displayState3.png", Status.SUCCEEDED),
+            buildInteraction(
+              CommandType.ADB_COMMAND,
+              "ADB command: input keyevent ENTER",
+              "$outputDir/displayState3.png",
+              Status.SUCCEEDED,
+            ),
           ),
         ),
         buildTurnAddedEvent(
@@ -938,10 +947,9 @@ class JourneysConnectedTest {
   ) {
     val artifactLines = extractJourneyArtifactsBetween(result, startLinePrefix, endLinePrefix)
 
-    val actualEvents =
-      artifactLines.map { (description, encodedProto) ->
-        Pair(description, JourneyRunEvent.parseFrom(Base64.getDecoder().decode(encodedProto)))
-      }
+    val actualEvents = artifactLines.map { (description, encodedProto) ->
+      Pair(description, JourneyRunEvent.parseFrom(Base64.getDecoder().decode(encodedProto)))
+    }
 
     assertEquals(
       expectedEvents.size,

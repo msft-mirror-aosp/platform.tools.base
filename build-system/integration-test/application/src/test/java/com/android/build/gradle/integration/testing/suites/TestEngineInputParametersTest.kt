@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.testing.suites
 
 import com.android.Version
-import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.testsuites.TestEngineInputProperty
 import com.android.build.api.testsuites.TestSuiteExecutionClient
@@ -67,7 +66,7 @@ class TestEngineInputParametersTest {
           android {
             namespace = "com.example.app"
             defaultConfig { applicationId = "com.example.app" }
-            testOptions.suites.create("first", AgpTestSuite::class.java) {
+            testOptions.customSuites.create("first") {
               it.useJunitEngine.apply {
                 inputs.add(AgpTestSuiteInputParameters.MERGED_MANIFEST)
                 includeEngines.add("toy-junit-engine-for-system-properties")
