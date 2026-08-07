@@ -194,8 +194,12 @@ internal fun configureAnalysisApiProjectStructure(config: UastEnvironment.Config
     // Therefore, we call this only once here and use them with necessary filtering at use-site.
     val sourceFilePaths = getSourceFilePaths(m.sourceRoots + m.gradleBuildScripts)
 
-    // b/371220733: AGP library modules might refer to `out` directory w/o source files
-    if (proj is LintModelModuleLibraryProject && !sourceFilePaths.hasFiles()) {
+    // b/371220733: AGP library modules might refer to `out` directory w/o source files.
+    // Modules without any source or classpath roots (e.g. partial-analysis stubs for
+    // already-analyzed dependencies, which only name a partial-results-dir) cannot
+    // contribute a module either way; registering them here lets dependents skip them
+    // deliberately instead of warning about a missing module.
+    if (!sourceFilePaths.hasFiles() && (proj is LintModelModuleLibraryProject || (m.sourceRoots.isEmpty() && m.classpathRoots.isEmpty()))) {
       projectsWithNoSource.add(proj)
       continue
     }

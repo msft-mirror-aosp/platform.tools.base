@@ -1486,6 +1486,8 @@ public class Main {
                 flags.setAllowSuppress(false);
             } else if (arg.equals("--XallowBaselineSuppress")) {
                 flags.setAllowBaselineSuppress(true);
+            } else if (arg.equals("--XskipDefiniteIncidentsFromDeps")) {
+                flags.setSkipDefiniteIncidentsFromDependencies(true);
             } else if (arg.equals("--Xdesugared-methods")) {
                 if (index == args.length - 1) {
                     System.err.println("Missing desugared methods file");

@@ -90,6 +90,7 @@ public class LintCliFlags {
     private boolean allowSuppress;
     private boolean printInternalErrorStackTrace;
     private boolean allowBaselineSuppress;
+    private boolean skipDefiniteIncidentsFromDependencies;
     private boolean offline;
     private boolean useHtmlV2;
     private boolean useKlibLightElementProvider = false;
@@ -810,6 +811,24 @@ public class LintCliFlags {
     /** See {@link #setAllowBaselineSuppress}. */
     public boolean getAllowBaselineSuppress() {
         return allowBaselineSuppress;
+    }
+
+    /**
+     * Sets whether the merge phase of partial analysis should skip the definite incidents
+     * ({@code lint-definite.xml}) recorded for dependency modules, only reporting those of the
+     * reporting root modules themselves. Build systems which run a separate lint report per module
+     * use this to avoid re-reporting a dependency's definite incidents from every dependent: each
+     * module's definite incidents are reported exactly once, by that module's own report step, and
+     * the same per-module analysis results can then be shared, unmodified, between a module's own
+     * report and the reports of its dependents.
+     */
+    public void setSkipDefiniteIncidentsFromDependencies(boolean skip) {
+        this.skipDefiniteIncidentsFromDependencies = skip;
+    }
+
+    /** See {@link #setSkipDefiniteIncidentsFromDependencies}. */
+    public boolean getSkipDefiniteIncidentsFromDependencies() {
+        return skipDefiniteIncidentsFromDependencies;
     }
 
     /** Returns true if internal error stacktraces should be printed to stdout */
