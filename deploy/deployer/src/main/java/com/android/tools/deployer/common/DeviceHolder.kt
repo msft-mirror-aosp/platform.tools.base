@@ -19,6 +19,7 @@ import com.android.adblib.AdbChannel
 import com.android.adblib.AdbPackageManagerException
 import com.android.adblib.AdbSession
 import com.android.adblib.ConnectedDevice
+import com.android.adblib.DevicePropertyNames
 import com.android.adblib.DeviceSelector
 import com.android.adblib.RemoteFileMode
 import com.android.adblib.ShellCollector
@@ -33,6 +34,9 @@ import com.android.adblib.rootAndWait
 import com.android.adblib.serialNumber
 import com.android.adblib.shellCommand
 import com.android.adblib.syncSend
+import com.android.adblib.tools.debugging.getOrNull
+import com.android.adblib.tools.debugging.jdwpProcessTracker
+import com.android.adblib.tools.debugging.properties
 import com.android.adblib.write
 import com.android.ddmlib.AdbCommandRejectedException
 import com.android.ddmlib.IDevice
@@ -118,23 +122,71 @@ constructor(
       )
 
   val abis: List<String>
-    get() = iDevice.abis
+    get() =
+      runMigrated(
+        onLegacy = { iDevice.abis },
+        onMigrated = { connectedDevice ->
+          val properties =
+            try {
+              runBlocking { withTimeout(DEVICE_PROPERTIES_TIMEOUT) { connectedDevice.deviceProperties().allReadonly() } }
+            } catch (_: Exception) {
+              null
+            }
+          val abiList = properties?.get(DevicePropertyNames.RO_PRODUCT_CPU_ABILIST)
+          if (abiList != null) {
+            abiList.split(",")
+          } else {
+            val abi = properties?.get(DevicePropertyNames.RO_PRODUCT_CPU_ABI)
+            val abi2 = properties?.get(DevicePropertyNames.RO_PRODUCT_CPU_ABI2)
+            listOfNotNull(abi, abi2)
+          }
+        },
+        onMigratedWhenDeviceNotFound = { emptyList() },
+      )
 
   val name: String
     get() = iDevice.name
 
   fun getPidsForPackageName(packageName: String): List<Int> {
-    return iDevice.clients.filter { packageName == it.clientData.packageName }.map { it.clientData.pid }
+    return runMigrated(
+      onLegacy = { iDevice.clients.filter { packageName == it.clientData.packageName }.map { it.clientData.pid } },
+      onMigrated = { connectedDevice ->
+        val realPkgNameSupported = isRealPkgNameSupported
+        connectedDevice.jdwpProcessTracker.processesFlow.value
+          .filter { process ->
+            val properties = process.properties
+            val processPackageName =
+              if (realPkgNameSupported) {
+                properties.packageName.getOrNull()
+              } else {
+                properties.processName.getOrNull()?.substringBefore(':')
+              }
+            processPackageName == packageName
+          }
+          .map { it.pid }
+      },
+      onMigratedWhenDeviceNotFound = { emptyList() },
+    )
   }
 
   fun getArchForPid(pid: Int): Deploy.Arch {
-    val client = iDevice.clients.firstOrNull { it.clientData.pid == pid } ?: return Deploy.Arch.ARCH_UNKNOWN
-    val abi = client.clientData.abi ?: return Deploy.Arch.ARCH_UNKNOWN
-    return when {
-      abi.startsWith("32-bit") -> Deploy.Arch.ARCH_32_BIT
-      abi.startsWith("64-bit") -> Deploy.Arch.ARCH_64_BIT
-      else -> AdbClient.getArchForAbi(abi) ?: Deploy.Arch.ARCH_UNKNOWN
-    }
+    return runMigrated(
+      onLegacy = {
+        val client = iDevice.clients.firstOrNull { it.clientData.pid == pid } ?: return@runMigrated Deploy.Arch.ARCH_UNKNOWN
+        val abi = client.clientData.abi ?: return@runMigrated Deploy.Arch.ARCH_UNKNOWN
+        when {
+          abi.startsWith("32-bit") -> Deploy.Arch.ARCH_32_BIT
+          abi.startsWith("64-bit") -> Deploy.Arch.ARCH_64_BIT
+          else -> AdbClient.getArchForAbi(abi) ?: Deploy.Arch.ARCH_UNKNOWN
+        }
+      },
+      onMigrated = { connectedDevice ->
+        val process = connectedDevice.jdwpProcessTracker.processesFlow.value.firstOrNull { it.pid == pid }
+        val instructionSet = process?.properties?.instructionSet?.getOrNull() ?: return@runMigrated Deploy.Arch.ARCH_UNKNOWN
+        if (instructionSet.is64Bit) Deploy.Arch.ARCH_64_BIT else Deploy.Arch.ARCH_32_BIT
+      },
+      onMigratedWhenDeviceNotFound = { Deploy.Arch.ARCH_UNKNOWN },
+    )
   }
 
   val isRoot: Boolean

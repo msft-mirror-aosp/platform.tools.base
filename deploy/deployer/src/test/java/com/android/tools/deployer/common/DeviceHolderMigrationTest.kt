@@ -28,12 +28,14 @@ import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.shellcommandhandlers.ShellConstants
 import com.android.sdklib.AndroidApiLevel
 import com.android.sdklib.AndroidVersion
+import com.android.tools.deploy.proto.Deploy
 import com.android.tools.deployer.devices.DeviceId
 import com.android.tools.deployer.rules.ApiLevel
 import java.io.File
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.file.Files
+import java.time.Duration
 import java.util.Optional
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.runBlocking
@@ -180,6 +182,9 @@ class DeviceHolderMigrationTest {
     assertFalse(deviceHolder.isSkipVerificationSupported)
     assertFalse(deviceHolder.isEmbedded)
     assertEquals(AndroidVersion.DEFAULT, deviceHolder.version)
+    assertEquals(emptyList<String>(), deviceHolder.abis)
+    assertEquals(emptyList<Int>(), deviceHolder.getPidsForPackageName("com.example.app"))
+    assertEquals(Deploy.Arch.ARCH_UNKNOWN, deviceHolder.getArchForPid(9999))
   }
 
   @Test
@@ -189,15 +194,6 @@ class DeviceHolderMigrationTest {
     val deviceHolderNew = createDeviceHolder(iDevice, useConnectedDevice = true)
 
     assertEquals(deviceHolderLegacy.abis, deviceHolderNew.abis)
-    assertEquals(iDevice.abis, deviceHolderNew.abis)
-  }
-
-  @Test
-  fun testAbisFallback_whenConnectedDeviceIsEmpty() = runBlocking {
-    val iDevice = connectAndGetDevice()
-    val deviceHolder = DeviceHolder(iDevice, connectedDevice = Optional.empty(), useConnectedDevice = true)
-
-    assertEquals(iDevice.abis, deviceHolder.abis)
   }
 
   @Test
@@ -419,6 +415,67 @@ class DeviceHolderMigrationTest {
     val rootResultNew = deviceHolderNew.root()
     assertTrue(rootResultNew)
     assertTrue(deviceHolderNew.isRoot)
+  }
+
+  @Test
+  fun testGetPidsForPackageNameConsistency() = runBlocking {
+    val iDevice = connectAndGetDevice()
+    val deviceState = fakeAdbRule.fakeAdb.device(iDevice.serialNumber)
+
+    val deviceHolderLegacy = createDeviceHolder(iDevice, useConnectedDevice = false)
+    val deviceHolderNew = createDeviceHolder(iDevice, useConnectedDevice = true)
+
+    deviceState.startClient(pid = 101, userId = 0, processName = "com.example.app", packageName = "com.example.app", isWaiting = false)
+    deviceState.startClient(pid = 102, userId = 0, processName = "com.example.other", packageName = "com.example.other", isWaiting = false)
+    deviceState.startClient(
+      pid = 103,
+      userId = 0,
+      processName = "com.example.app:remote",
+      packageName = "com.example.app",
+      isWaiting = false,
+    )
+
+    yieldUntil(timeout = Duration.ofSeconds(5)) {
+      deviceHolderLegacy.getPidsForPackageName("com.example.app").isNotEmpty() &&
+        deviceHolderLegacy.getPidsForPackageName("com.example.other").isNotEmpty()
+    }
+    yieldUntil(timeout = Duration.ofSeconds(5)) {
+      deviceHolderNew.getPidsForPackageName("com.example.app").isNotEmpty() &&
+        deviceHolderNew.getPidsForPackageName("com.example.other").isNotEmpty()
+    }
+
+    assertEquals(listOf(101, 103), deviceHolderLegacy.getPidsForPackageName("com.example.app"))
+    assertEquals(listOf(101, 103), deviceHolderNew.getPidsForPackageName("com.example.app"))
+
+    assertEquals(listOf(102), deviceHolderLegacy.getPidsForPackageName("com.example.other"))
+    assertEquals(listOf(102), deviceHolderNew.getPidsForPackageName("com.example.other"))
+
+    assertTrue(deviceHolderLegacy.getPidsForPackageName("com.nonexistent").isEmpty())
+    assertTrue(deviceHolderNew.getPidsForPackageName("com.nonexistent").isEmpty())
+  }
+
+  @Test
+  fun testGetArchForPidConsistency() = runBlocking {
+    val iDevice = connectAndGetDevice()
+    val deviceState = fakeAdbRule.fakeAdb.device(iDevice.serialNumber)
+
+    val deviceHolderLegacy = createDeviceHolder(iDevice, useConnectedDevice = false)
+    val deviceHolderNew = createDeviceHolder(iDevice, useConnectedDevice = true)
+
+    deviceState.startClient(pid = 301, userId = 0, processName = "com.example.app", packageName = "com.example.app", isWaiting = false)
+
+    yieldUntil(timeout = Duration.ofSeconds(5)) { deviceHolderLegacy.getPidsForPackageName("com.example.app").contains(301) }
+    yieldUntil(timeout = Duration.ofSeconds(5)) { deviceHolderNew.getPidsForPackageName("com.example.app").contains(301) }
+
+    // On API 19 and 20, DDMS does not send ABI / instruction set information in the HELO response chunk (ABI reporting in HELO was
+    // introduced in API 21).
+    val expectedArch = if (deviceId!!.api() >= 21) Deploy.Arch.ARCH_64_BIT else Deploy.Arch.ARCH_UNKNOWN
+
+    assertEquals(expectedArch, deviceHolderLegacy.getArchForPid(301))
+    assertEquals(expectedArch, deviceHolderNew.getArchForPid(301))
+
+    assertEquals(Deploy.Arch.ARCH_UNKNOWN, deviceHolderLegacy.getArchForPid(99999))
+    assertEquals(Deploy.Arch.ARCH_UNKNOWN, deviceHolderNew.getArchForPid(99999))
   }
 
   private class CollectingShellOutputReceiver : IShellOutputReceiver {
