@@ -66,7 +66,6 @@ class LintSystemPropertiesTest(private val aggregateReports: Boolean) {
     val systemPropertiesWithValues =
       listOf(
         "android.lint.log-jar-problems=true",
-        "java.version=17",
         "lint.nullness.ignore-deprecated=true",
         "lint.unused-resources.exclude-tests=true",
         "lint.unused-resources.include-tests=true",

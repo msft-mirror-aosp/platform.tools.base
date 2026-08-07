@@ -736,9 +736,7 @@ abstract class SystemPropertyInputs {
     // Normalize the java.version to only capture the major version, because different JDK
     // vendors and minor versions can cause cache misses
     javaVersion.setDisallowChanges(
-      launcher
-        .map { it.metadata.languageVersion.asInt().toString() }
-        .orElse(providerFactory.systemProperty("java.version").map { JavaVersion.toVersion(it).majorVersion })
+      launcher.map { it.metadata.languageVersion.asInt().toString() }.orElse(JavaVersion.current().majorVersion)
     )
     lintApiDatabase.fileProvider(providerFactory.systemProperty("LINT_API_DATABASE").map { File(it) }.filter { it.isFile })
     lintApiDatabase.disallowChanges()

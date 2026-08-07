@@ -21,7 +21,6 @@ import com.android.build.gradle.internal.dsl.LintImpl
 import com.android.build.gradle.internal.fixtures.FakeSyncIssueReporter
 import com.android.build.gradle.internal.services.createDslServices
 import com.android.build.gradle.options.ProjectOptions
-import com.android.testutils.SystemPropertyOverrides
 import com.google.common.truth.Truth.assertThat
 import java.io.File
 import org.gradle.api.GradleException
@@ -123,21 +122,27 @@ class AndroidLintInputsTest {
   }
 
   @Test
-  fun `check java version normalization`() {
-    SystemPropertyOverrides().use { systemPropertyOverrides ->
-      fun check(javaVersion: String, expectedMajorVersion: String) {
-        val systemPropertyInputs = project.objects.newInstance(SystemPropertyInputs::class.java)
-        systemPropertyOverrides.setProperty("java.version", javaVersion)
-        systemPropertyInputs.initialize(project.providers, LintMode.ANALYSIS)
-        assertThat(systemPropertyInputs.javaVersion.get()).isEqualTo(expectedMajorVersion)
-      }
+  fun `check java version initialization`() {
+    val systemPropertyInputs = project.objects.newInstance(SystemPropertyInputs::class.java)
+    systemPropertyInputs.initialize(project.providers, LintMode.ANALYSIS)
 
-      check("1.8.0_292", "8")
-      check("11.0.1", "11")
-      check("17", "17")
-      check("17.0.17+10-LTS", "17")
-      check("17+35-LTS-2724", "17")
+    // Verify that the lint input gets populated with the current JVM's major version
+    assertThat(systemPropertyInputs.javaVersion.get()).isEqualTo(JavaVersion.current().majorVersion)
+  }
+
+  @Test
+  fun `check java version normalization expectations`() {
+    // Since we now rely on Gradle's JavaVersion to parse the system property,
+    // we verify that Gradle correctly normalizes these expected version strings.
+    fun check(javaVersion: String, expectedMajorVersion: String) {
+      assertThat(JavaVersion.toVersion(javaVersion).majorVersion).isEqualTo(expectedMajorVersion)
     }
+
+    check("1.8.0_292", "8")
+    check("11.0.1", "11")
+    check("17", "17")
+    check("17.0.17+10-LTS", "17")
+    check("17+35-LTS-2724", "17")
   }
 
   @Test
