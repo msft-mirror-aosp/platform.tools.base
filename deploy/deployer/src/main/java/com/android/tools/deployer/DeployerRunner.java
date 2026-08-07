@@ -239,7 +239,8 @@ public class DeployerRunner {
                 for (DeviceHolder device : devicesResult.devices.values()) {
                     int status = run(device, devicesResult.session, parameters, logger);
                     if (status != SUCCESS) {
-                        logger.error(null, "Error deploying to device: %s", device.getName());
+                        logger.error(
+                                null, "Error deploying to device: %s", device.getSerialNumber());
                         return status;
                     }
                 }

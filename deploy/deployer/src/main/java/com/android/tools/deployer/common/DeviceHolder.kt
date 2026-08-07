@@ -144,9 +144,6 @@ constructor(
         onMigratedWhenDeviceNotFound = { emptyList() },
       )
 
-  val name: String
-    get() = iDevice.name
-
   fun getPidsForPackageName(packageName: String): List<Int> {
     return runMigrated(
       onLegacy = { iDevice.clients.filter { packageName == it.clientData.packageName }.map { it.clientData.pid } },

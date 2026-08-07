@@ -240,30 +240,6 @@ class DeviceHolderMigrationTest {
   }
 
   @Test
-  fun testNameConsistencyNonEmulator() = runBlocking {
-    val usbDeviceSerial = "ABCDEF123"
-    val iDevice = connectAndGetDevice(usbDeviceSerial)
-    val deviceHolderLegacy = createDeviceHolder(iDevice, useConnectedDevice = false)
-    val deviceHolderNew = createDeviceHolder(iDevice, useConnectedDevice = true)
-
-    assertEquals(deviceHolderLegacy.name, deviceHolderNew.name)
-    assertEquals("google-pixel-ABCDEF123", deviceHolderNew.name)
-  }
-
-  @Test
-  fun testNameConsistencyEmulator() = runBlocking {
-    val avdName = "my-avd-name"
-    val console = fakeAdbRule.fakeAdb.fakeAdbServer.connectEmulatorConsole(avdName, "/path/to/avd").get()
-    val serialNumber = "emulator-${console.port}"
-    val iDevice = connectAndGetDevice(serialNumber)
-    val deviceHolderLegacy = createDeviceHolder(iDevice, useConnectedDevice = false)
-    val deviceHolderNew = createDeviceHolder(iDevice, useConnectedDevice = true)
-
-    assertEquals(deviceHolderLegacy.name, deviceHolderNew.name)
-    assertEquals("$avdName [$serialNumber]", deviceHolderNew.name)
-  }
-
-  @Test
   fun testExecuteShellCommandConsistency() = runBlocking {
     val command = "echo hello from fake device"
     val expectedOutput = "hello from fake device"
