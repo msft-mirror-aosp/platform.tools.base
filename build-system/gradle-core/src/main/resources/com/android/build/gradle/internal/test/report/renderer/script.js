@@ -1673,8 +1673,8 @@ const TestReportApp = {
       const uniqueId = `${parentId}-${node.name}`.replace(/[^a-zA-Z0-9-_]/g, '');
 
       let nameContent = `<span class="font-medium">${UIUtils.escapeHTML(node.name)}</span>`;
-      if (type === 'class' && this.isScreenshotClass(node)) {
-        nameContent += `<span style="background-color: #f3e8ff; color: #6b21a8; font-size: 0.65rem; font-weight: 700; border-radius: 4px; padding: 0.15rem 0.35rem; margin-left: 0.5rem; text-transform: uppercase;">Screenshot</span>`;
+      if (type === 'class') {
+        nameContent += this.getClassSuiteBadges(node);
       } else if (type === 'testCase' && this.isTestCaseClickable(node)) {
         nameContent = `<span class="font-medium text-blue-700 hover-underline cursor-pointer stack-trace-trigger" data-module="${UIUtils.escapeHTML(currentContext.moduleName || '')}" data-package="${UIUtils.escapeHTML(currentContext.packageName || '')}" data-class="${UIUtils.escapeHTML(currentContext.className || '')}" data-test-case="${UIUtils.escapeHTML(node.name || '')}" tabindex="0" role="button" aria-label="View details for ${UIUtils.escapeHTML(node.name)}">${UIUtils.escapeHTML(node.name)}</span>`;
       }
@@ -1718,10 +1718,8 @@ const TestReportApp = {
     this.elements.resultsData.innerHTML = items.map(item => {
       let nameTd = `<td class="py-3 px-6 sticky-name font-medium" title="${UIUtils.escapeHTML(item.name)}">${UIUtils.escapeHTML(item.name)}</td>`;
       if (item.type !== 'testCase') {
-        const screenshotBadge = (item.type === 'class' && this.isScreenshotClass(item))
-          ? `<span style="background-color: #f3e8ff; color: #6b21a8; font-size: 0.65rem; font-weight: 700; border-radius: 4px; padding: 0.15rem 0.35rem; margin-left: 0.5rem; text-transform: uppercase;">Screenshot</span>`
-          : '';
-        nameTd = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover-underline cursor-pointer" tabindex="0" role="link" title="${UIUtils.escapeHTML(item.name)}" data-name="${UIUtils.escapeHTML(item.name)}" data-type="${item.type}" data-module-name="${UIUtils.escapeHTML(item.moduleName || '')}" data-package-name="${UIUtils.escapeHTML(item.packageName || '')}" data-interactive="flat">${UIUtils.escapeHTML(item.name)}${screenshotBadge}</td>`;
+        const suiteBadges = (item.type === 'class') ? this.getClassSuiteBadges(item) : '';
+        nameTd = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover-underline cursor-pointer" tabindex="0" role="link" title="${UIUtils.escapeHTML(item.name)}" data-name="${UIUtils.escapeHTML(item.name)}" data-type="${item.type}" data-module-name="${UIUtils.escapeHTML(item.moduleName || '')}" data-package-name="${UIUtils.escapeHTML(item.packageName || '')}" data-interactive="flat">${UIUtils.escapeHTML(item.name)}${suiteBadges}</td>`;
       } else if (this.isTestCaseClickable(item)) {
         nameTd = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover-underline cursor-pointer stack-trace-trigger" data-module="${UIUtils.escapeHTML(item.moduleName || '')}" data-package="${UIUtils.escapeHTML(item.packageName || '')}" data-class="${UIUtils.escapeHTML(item.className || '')}" data-test-case="${UIUtils.escapeHTML(item.name || '')}" tabindex="0" role="button" aria-label="View details for ${UIUtils.escapeHTML(item.name)}">${UIUtils.escapeHTML(item.name)}</td>`;
       } else {
@@ -1846,19 +1844,29 @@ const TestReportApp = {
     return this.hasVisibleFailures(node);
   },
 
-  isScreenshotClass(node) {
-    if (!node) return false;
-    if (node._isScreenshot !== undefined) return node._isScreenshot;
+  getClassSuiteBadges(node) {
+    if (!node) return '';
+    if (node._suiteBadges !== undefined) return node._suiteBadges;
 
     const summaries = (node.targets && node.targets[0]) ? node.targets[0].testSuiteSummaries : node.testSuiteSummaries;
-    if (summaries && summaries.length > 0) {
-      node._isScreenshot = summaries.some(ts => ts.name === 'screenshotTest' || (ts.name && ts.name.toLowerCase().includes('screenshot')));
-      return node._isScreenshot;
+    if (!summaries || summaries.length === 0) {
+      node._suiteBadges = '';
+      return '';
     }
 
-    const firstTc = node.testCases && node.testCases[0];
-    node._isScreenshot = firstTc ? (this.getScreenshotData(firstTc).length > 0) : false;
-    return node._isScreenshot;
+    const suiteNames = summaries
+      .map(ts => ts.name)
+      .filter(name => name && name !== 'Aggregated');
+
+    if (suiteNames.length === 0) {
+      node._suiteBadges = '';
+      return '';
+    }
+
+    node._suiteBadges = suiteNames
+      .map(name => `<span style="background-color: #f3e8ff; color: #6b21a8; font-size: 0.65rem; font-weight: 700; border-radius: 4px; padding: 0.15rem 0.35rem; margin-left: 0.5rem;">${UIUtils.escapeHTML(name)}</span>`)
+      .join('');
+    return node._suiteBadges;
   },
 
   _renderStatusCell(node, context = {}) {
@@ -2097,7 +2105,7 @@ const TestReportApp = {
         const variantResults = suiteResult.variantResults || {};
 
         for (const [variantName, res] of Object.entries(variantResults)) {
-          if (res.refImagePath || res.newImagePath || res.diffImagePath || suiteName === "screenshotTest" || res.previewName) {
+          if (res.refImagePath || res.newImagePath || res.diffImagePath || res.previewName) {
             let stackTrace = "";
             const commonStackTraces = target.commonStackTraces || testCase.commonStackTraces || [];
             if (res.stackTraceId) {
