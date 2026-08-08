@@ -163,7 +163,9 @@ class TestSuiteTaskManager(project: Project, globalConfig: GlobalTaskCreationCon
               "TestSuite",
             )
           val testSuiteTestTask =
-            taskFactory.register(TestSuiteTestTask.CreationAction(creationConfig, target, taskName, connectedCheckSerials))
+            taskFactory.register(
+              TestSuiteTestTask.CreationAction(creationConfig, target, taskName, connectedCheckSerials, isUpdate = isUpdate)
+            )
           val context =
             object : TestTaskContext {
               override val targetName: String

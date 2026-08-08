@@ -442,6 +442,7 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
     val testSuiteTarget: TestSuiteTargetCreationConfig,
     val taskName: String,
     private val deviceSerials: Provider<List<String>>? = null,
+    private val isUpdate: Boolean = false,
   ) : GlobalTaskCreationAction<LegacyReportingTestSuiteTestTask>() {
 
     override val name: String
@@ -876,15 +877,19 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
     override fun handleProvider(taskProvider: TaskProvider<LegacyReportingTestSuiteTestTask>) {
       super.handleProvider(taskProvider)
 
-      creationConfig.testedVariant.artifacts
-        .use(taskProvider)
-        .wiredWith(TestSuiteTestTask::xmlResultsDirectory)
-        .toAppendTo(InternalMultipleArtifactType.TEST_SUITE_RESULTS)
+      // Verification test tasks publish to TEST_SUITE_RESULTS (which is aggregated into createTestReport).
+      // Update/recording tasks publish to TEST_SUITE_UPDATE_RESULTS so that running aggregate reporting tasks
+      // (like createTestReport) does not schedule update tasks.
+      val (resultsArtifact, coverageArtifact) =
+        if (isUpdate) {
+          Pair(InternalMultipleArtifactType.TEST_SUITE_UPDATE_RESULTS, InternalMultipleArtifactType.TEST_SUITE_UPDATE_CODE_COVERAGE)
+        } else {
+          Pair(InternalMultipleArtifactType.TEST_SUITE_RESULTS, InternalMultipleArtifactType.TEST_SUITE_CODE_COVERAGE)
+        }
 
-      creationConfig.testedVariant.artifacts
-        .use(taskProvider)
-        .wiredWith(TestSuiteTestTask::coverageDir)
-        .toAppendTo(InternalMultipleArtifactType.TEST_SUITE_CODE_COVERAGE)
+      creationConfig.testedVariant.artifacts.use(taskProvider).wiredWith(TestSuiteTestTask::xmlResultsDirectory).toAppendTo(resultsArtifact)
+
+      creationConfig.testedVariant.artifacts.use(taskProvider).wiredWith(TestSuiteTestTask::coverageDir).toAppendTo(coverageArtifact)
     }
   }
 
