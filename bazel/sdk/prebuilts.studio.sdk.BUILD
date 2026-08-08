@@ -213,7 +213,6 @@ java_import(
         "//tools/base/profiler/app:__pkg__",
         "//tools/base/studio-leakcanary:__subpackages__",
         "//tools/base/ui-inspector/agent:__subpackages__",
-        "//tools/base/ui-inspector/agent/service:__pkg__",
         "//tools/base/ui-inspector/art-tooling:__subpackages__",
         "//tools/vendor/google/android-cli/interact:__pkg__",
     ],
