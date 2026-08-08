@@ -40,14 +40,14 @@ internal val CONTENT_DIGEST_PATTERN: String = "[0-9a-f]".repeat(DIGEST_HEX_LENGT
  *   makes file boundaries part of the hash input, so byte-identical artifact sets produce equal digests. The override has no per-file
  *   digest property because it is staged independently (see [computeContentDigest]).
  * @property agentBinary The agent binary's own content digest (see [computeContentDigest]).
- * @property serviceJar The service jar's own content digest (see [computeContentDigest]).
+ * @property libraryDex The ART Tooling library dex's own content digest (see [computeContentDigest]).
  * @property payloadJar The payload jar's own content digest (see [computeContentDigest]).
  * @property viewInspectorJar The view inspector jar's own content digest (see [computeContentDigest]).
  */
 internal data class ShippedArtifactsDigests(
   val combined: String,
   val agentBinary: String,
-  val serviceJar: String,
+  val libraryDex: String,
   val payloadJar: String,
   val viewInspectorJar: String,
 )
@@ -58,7 +58,7 @@ internal data class ShippedArtifactsDigests(
  */
 internal fun computeArtifactDigests(
   agentBinary: Path,
-  serviceJar: Path,
+  libraryDex: Path,
   payloadJar: Path,
   viewInspectorJar: Path,
   composeInspectorOverrideJar: Path? = null,
@@ -66,7 +66,7 @@ internal fun computeArtifactDigests(
   val combined = MessageDigest.getInstance("SHA-256")
   val perFile = ArrayList<String>(4)
   val buffer = ByteArray(DIGEST_BUFFER_SIZE)
-  for (file in listOf(agentBinary, serviceJar, payloadJar, viewInspectorJar)) {
+  for (file in listOf(agentBinary, libraryDex, payloadJar, viewInspectorJar)) {
     val single = MessageDigest.getInstance("SHA-256")
     combined.update(ByteBuffer.allocate(Long.SIZE_BYTES).putLong(Files.size(file)).array())
     Files.newInputStream(file).use { input ->
@@ -92,7 +92,7 @@ internal fun computeArtifactDigests(
   return ShippedArtifactsDigests(
     combined = combined.digest().toTruncatedHex(),
     agentBinary = perFile[0],
-    serviceJar = perFile[1],
+    libraryDex = perFile[1],
     payloadJar = perFile[2],
     viewInspectorJar = perFile[3],
   )

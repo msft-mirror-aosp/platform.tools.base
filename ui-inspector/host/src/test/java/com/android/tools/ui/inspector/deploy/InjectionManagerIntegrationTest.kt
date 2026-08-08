@@ -30,15 +30,15 @@ import java.nio.file.Paths
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
-private const val SERVICE_JAR_PATH = "tools/base/ui-inspector/agent/service/lib_ui_inspector_service.jar"
-private const val PAYLOAD_JAR_PATH = "tools/base/ui-inspector/agent/inspector/lib_ui_inspector_payload.jar"
+private const val LIBRARY_DEX_PATH = "tools/base/ui-inspector/art-tooling/java/libarttooling.jar"
+private const val PAYLOAD_JAR_PATH = "tools/base/ui-inspector/agent/payload/lib_ui_inspector_payload.jar"
 
 /**
  * Integration test for [InjectionManager].
  *
  * This test performs an end-to-end verification of the injection process:
  * 1. Locates connected devices.
- * 2. Pushes the agent and service files to the device.
+ * 2. Pushes the agent, library dex, and payload files to the device.
  * 3. Attaches the agent to the target application.
  * 4. Sets up ADB port forwarding.
  * 5. Verifies connectivity by opening a socket to the forwarded port.
@@ -66,7 +66,7 @@ class InjectionManagerIntegrationTest {
         serial = serial,
         packageName = packageName!!,
         composeInspectorOverrideJarPath = null,
-        serviceJarPath = Paths.get(SERVICE_JAR_PATH),
+        libraryDexPath = Paths.get(LIBRARY_DEX_PATH),
       )
 
     val injected = injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)

@@ -39,9 +39,9 @@ kotlin_library(
     ]),
     resources = [
         "//tools/base/ui-inspector/agent/inspectors/view:view_inspector_jar",
-        "//tools/base/ui-inspector/agent/native:lib_ui_inspector_agent.so",
         "//tools/base/ui-inspector/agent/payload:lib_ui_inspector_payload",
-        "//tools/base/ui-inspector/agent/service:lib_ui_inspector_service",
+        "//tools/base/ui-inspector/art-tooling/java:libarttooling",
+        "//tools/base/ui-inspector/art-tooling/native:libarttooling_agent.so",
     ],
     visibility = ["//visibility:public"],
     deps = [
@@ -65,9 +65,9 @@ java_binary(
     # Needed during development to make the agent available in runfiles when running via 'bazel run'
     data = [
         "//tools/base/ui-inspector/agent/inspectors/view:view_inspector_jar",
-        "//tools/base/ui-inspector/agent/native:lib_ui_inspector_agent.so",
         "//tools/base/ui-inspector/agent/payload:lib_ui_inspector_payload",
-        "//tools/base/ui-inspector/agent/service:lib_ui_inspector_service",
+        "//tools/base/ui-inspector/art-tooling/java:libarttooling",
+        "//tools/base/ui-inspector/art-tooling/native:libarttooling_agent.so",
     ],
     main_class = "com.android.tools.ui.inspector.CliHostKt",
     visibility = ["//visibility:public"],

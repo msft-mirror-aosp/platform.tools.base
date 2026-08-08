@@ -58,25 +58,28 @@ private const val EMPTY_FILE_DIGEST = "e3b0c44298fc"
 /** The device staging directory every artifact is pushed into under its digest-carrying name. */
 private const val STAGING_DIR = "/data/local/tmp/ui-inspector"
 
-private const val EMPTY_SERVICE_JAR_NAME = "lib_ui_inspector_service.$EMPTY_FILE_DIGEST.jar"
+/** The ART Tooling agent class the attach command names, loaded from the payload dex. */
+private const val AGENT_CLASS_NAME = "com.android.tools.ui.inspector.payload.InspectorLauncher"
+
+private const val EMPTY_LIBRARY_DEX_NAME = "libarttooling.$EMPTY_FILE_DIGEST.jar"
 private const val EMPTY_PAYLOAD_JAR_NAME = "lib_ui_inspector_payload.$EMPTY_FILE_DIGEST.jar"
 
 /** The exact install command the production flow issues when all three base artifacts are empty files. */
 private fun emptyArtifactsInstallCommand(packageName: String): String =
   buildInstallCommand(
     packageName = packageName,
-    agentStagePath = "$STAGING_DIR/lib_ui_inspector_agent.$EMPTY_FILE_DIGEST.so",
-    serviceJarStagePath = "$STAGING_DIR/$EMPTY_SERVICE_JAR_NAME",
+    agentStagePath = "$STAGING_DIR/libarttooling_agent.$EMPTY_FILE_DIGEST.so",
+    libraryDexStagePath = "$STAGING_DIR/$EMPTY_LIBRARY_DEX_NAME",
     payloadJarStagePath = "$STAGING_DIR/$EMPTY_PAYLOAD_JAR_NAME",
-    serviceJarName = EMPTY_SERVICE_JAR_NAME,
+    libraryDexName = EMPTY_LIBRARY_DEX_NAME,
     payloadJarName = EMPTY_PAYLOAD_JAR_NAME,
     tempSuffix = "test.tmp",
   )
 
 /** The exact attach command the production flow issues when all three base artifacts are empty files. */
 private fun emptyArtifactsAttachCommand(packageName: String, serverToken: String): String =
-  "cmd activity attach-agent 1234 \"/data/data/$packageName/lib_ui_inspector_agent.so=" +
-    "/data/data/$packageName/$EMPTY_SERVICE_JAR_NAME;/data/data/$packageName/$EMPTY_PAYLOAD_JAR_NAME;$serverToken\""
+  "cmd activity attach-agent 1234 \"/data/data/$packageName/libarttooling_agent.so=" +
+    "/data/data/$packageName/$EMPTY_LIBRARY_DEX_NAME;/data/data/$packageName/$EMPTY_PAYLOAD_JAR_NAME;$AGENT_CLASS_NAME;$serverToken\""
 
 class ComposeInspectorTest {
 
@@ -170,8 +173,8 @@ class ComposeInspectorTest {
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
 
-    val dummyAgent = tempFolder.newFile("lib_ui_inspector_agent.so").toPath()
-    val dummyJar = tempFolder.newFile("lib_ui_inspector_service.jar").toPath()
+    val dummyAgent = tempFolder.newFile("libarttooling_agent.so").toPath()
+    val dummyJar = tempFolder.newFile("libarttooling.jar").toPath()
     val dummyPayload = tempFolder.newFile("lib_ui_inspector_payload.jar").toPath()
     val dummyViewInspector = tempFolder.newFile("view-inspector.jar").toPath()
 
@@ -288,7 +291,7 @@ class ComposeInspectorTest {
         packageName,
         composeInspectorOverrideJarPath = null,
         { _: String -> tempFolder.newFile("unused-agent.so").toPath() },
-        tempFolder.newFile("unused-service.jar").toPath(),
+        tempFolder.newFile("unused-library.jar").toPath(),
         tempFolder.newFile("unused-payload.jar").toPath(),
         tempFolder.newFile("unused-view-inspector.jar").toPath(),
         tempFileSuffixGenerator = { "test.tmp" },
@@ -536,8 +539,8 @@ class ComposeInspectorTest {
     configureUidCommands(fakeSession, deviceSelector, packageName)
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
 
-    val dummyAgent = tempFolder.newFile("lib_ui_inspector_agent.so").toPath()
-    val dummyJar = tempFolder.newFile("lib_ui_inspector_service.jar").toPath()
+    val dummyAgent = tempFolder.newFile("libarttooling_agent.so").toPath()
+    val dummyJar = tempFolder.newFile("libarttooling.jar").toPath()
     val dummyPayload = tempFolder.newFile("lib_ui_inspector_payload.jar").toPath()
     val dummyViewInspector = tempFolder.newFile("view-inspector.jar").toPath()
 
@@ -848,8 +851,8 @@ class ComposeInspectorTest {
     configureUidCommands(fakeSession, deviceSelector, packageName)
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
 
-    val dummyAgent = tempFolder.newFile("lib_ui_inspector_agent.so").toPath()
-    val dummyJar = tempFolder.newFile("lib_ui_inspector_service.jar").toPath()
+    val dummyAgent = tempFolder.newFile("libarttooling_agent.so").toPath()
+    val dummyJar = tempFolder.newFile("libarttooling.jar").toPath()
     val dummyPayload = tempFolder.newFile("lib_ui_inspector_payload.jar").toPath()
     val dummyViewInspector = tempFolder.newFile("view-inspector.jar").toPath()
 
@@ -1164,8 +1167,8 @@ class ComposeInspectorTest {
     configureUidCommands(fakeSession, deviceSelector, packageName)
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
 
-    val dummyAgent = tempFolder.newFile("lib_ui_inspector_agent.so").toPath()
-    val dummyJar = tempFolder.newFile("lib_ui_inspector_service.jar").toPath()
+    val dummyAgent = tempFolder.newFile("libarttooling_agent.so").toPath()
+    val dummyJar = tempFolder.newFile("libarttooling.jar").toPath()
     val dummyPayload = tempFolder.newFile("lib_ui_inspector_payload.jar").toPath()
     val dummyViewInspector = tempFolder.newFile("view-inspector.jar").toPath()
 
@@ -1348,8 +1351,8 @@ class ComposeInspectorTest {
 
   private fun configureAtomicMoveCommands(fakeSession: FakeAdbSession, deviceSelector: DeviceSelector) {
     listOf(
-        "lib_ui_inspector_agent.so" to EMPTY_FILE_DIGEST,
-        "lib_ui_inspector_service.jar" to EMPTY_FILE_DIGEST,
+        "libarttooling_agent.so" to EMPTY_FILE_DIGEST,
+        "libarttooling.jar" to EMPTY_FILE_DIGEST,
         "lib_ui_inspector_payload.jar" to EMPTY_FILE_DIGEST,
         // The compose fixture jar's content is "fake pre-compiled compose dex classes".
         "compose-inspector.jar" to "665e173983c8",

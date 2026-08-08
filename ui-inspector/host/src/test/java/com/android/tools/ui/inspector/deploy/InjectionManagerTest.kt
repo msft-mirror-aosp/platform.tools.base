@@ -68,11 +68,14 @@ private const val EMPTY_FILE_DIGEST = "e3b0c44298fc"
 /** The device staging directory every artifact is pushed into under its digest-carrying name. */
 private const val STAGING_DIR = "/data/local/tmp/ui-inspector"
 
+/** The ART Tooling agent class the attach command names, loaded from the payload dex. */
+private const val AGENT_CLASS_NAME = "com.android.tools.ui.inspector.payload.InspectorLauncher"
+
 /** The digest-named staging paths of the three (empty) base artifacts, in the order the staging batch lists them. */
 private val BASE_STAGING_PATHS =
   arrayOf(
-    "$STAGING_DIR/lib_ui_inspector_agent.$EMPTY_FILE_DIGEST.so",
-    "$STAGING_DIR/lib_ui_inspector_service.$EMPTY_FILE_DIGEST.jar",
+    "$STAGING_DIR/libarttooling_agent.$EMPTY_FILE_DIGEST.so",
+    "$STAGING_DIR/libarttooling.$EMPTY_FILE_DIGEST.jar",
     "$STAGING_DIR/lib_ui_inspector_payload.$EMPTY_FILE_DIGEST.jar",
   )
 
@@ -116,8 +119,8 @@ class InjectionManagerTest {
 
     fakeSession.hostServices.devices = DeviceList(listOf(DeviceInfo(deviceSerial, DeviceState.ONLINE)), emptyList())
 
-    dummyAgent = tempFolder.newFile("lib_ui_inspector_agent.so").toPath()
-    dummyJar = tempFolder.newFile("lib_ui_inspector_service.jar").toPath()
+    dummyAgent = tempFolder.newFile("libarttooling_agent.so").toPath()
+    dummyJar = tempFolder.newFile("libarttooling.jar").toPath()
     dummyPayload = tempFolder.newFile("lib_ui_inspector_payload.jar").toPath()
     dummyViewInspector = tempFolder.newFile("view-inspector.jar").toPath()
 
@@ -128,8 +131,8 @@ class InjectionManagerTest {
     listOf(
         "my-inspector.jar" to EMPTY_FILE_DIGEST,
         "view-inspector.jar" to EMPTY_FILE_DIGEST,
-        "lib_ui_inspector_agent.so" to EMPTY_FILE_DIGEST,
-        "lib_ui_inspector_service.jar" to EMPTY_FILE_DIGEST,
+        "libarttooling_agent.so" to EMPTY_FILE_DIGEST,
+        "libarttooling.jar" to EMPTY_FILE_DIGEST,
         "lib_ui_inspector_payload.jar" to EMPTY_FILE_DIGEST,
       )
       .forEach { (baseName, digest) -> configureStagedPush(baseName, digest) }
@@ -400,8 +403,8 @@ class InjectionManagerTest {
     // 2. Configure logcat command to return a mock agent crash log
     val logcatCmd = "logcat -d -t '06-24 15:44:32.000' --pid=1234 *:E"
     val mockErrorLog =
-      "06-24 15:44:32.764  7191  7191 E studio.ui-inspector.InspectorService: Error in InspectorService initialization\n" +
-        "06-24 15:44:32.764  7191  7191 E studio.ui-inspector.InspectorService: java.lang.RuntimeException: Simulated bootstrap failure"
+      "06-24 15:44:32.764  7191  7191 E studio.arttooling: Exception in com/android/tools/arttooling/AgentLoader.attach\n" +
+        "06-24 15:44:32.764  7191  7191 E studio.arttooling: java.lang.RuntimeException: Simulated bootstrap failure"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, logcatCmd, mockErrorLog)
 
     try {
@@ -409,7 +412,7 @@ class InjectionManagerTest {
       fail("Expected IllegalStateException due to agent bootstrap failure")
     } catch (e: IllegalStateException) {
       assertThat(e.message).contains("Failed to attach UI Inspector agent. Agent error in logcat:")
-      assertThat(e.message).contains("Error in InspectorService initialization")
+      assertThat(e.message).contains("Exception in com/android/tools/arttooling/AgentLoader.attach")
       assertThat(e.message).contains("java.lang.RuntimeException: Simulated bootstrap failure")
     }
   }
@@ -466,7 +469,7 @@ class InjectionManagerTest {
   fun testInjectAndAttach_partiallyStagedArtifacts_pushesOnlyWrongModeAndMissing() = runTest {
     val injectionManager = createInjectionManager()
     configureSuccessfulInjection()
-    // The agent is correctly staged; the service jar's path holds an entry with the wrong mode; the payload jar is missing entirely
+    // The agent is correctly staged; the library dex's path holds an entry with the wrong mode; the payload jar is missing entirely
     // (no record, nonzero exit, as stat behaves when a file is absent).
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
@@ -656,10 +659,10 @@ class InjectionManagerTest {
     val command =
       buildInstallCommand(
         packageName = "com.example",
-        agentStagePath = "$STAGING_DIR/lib_ui_inspector_agent.aaaaaaaaaaaa.so",
-        serviceJarStagePath = "$STAGING_DIR/lib_ui_inspector_service.bbbbbbbbbbbb.jar",
+        agentStagePath = "$STAGING_DIR/libarttooling_agent.aaaaaaaaaaaa.so",
+        libraryDexStagePath = "$STAGING_DIR/libarttooling.bbbbbbbbbbbb.jar",
         payloadJarStagePath = "$STAGING_DIR/lib_ui_inspector_payload.cccccccccccc.jar",
-        serviceJarName = "lib_ui_inspector_service.bbbbbbbbbbbb.jar",
+        libraryDexName = "libarttooling.bbbbbbbbbbbb.jar",
         payloadJarName = "lib_ui_inspector_payload.cccccccccccc.jar",
         tempSuffix = "suffix.tmp",
       )
@@ -667,19 +670,19 @@ class InjectionManagerTest {
     assertThat(command)
       .isEqualTo(
         "run-as com.example sh -c '" +
-          "trap \"rm -f lib_ui_inspector_agent.so.suffix.tmp lib_ui_inspector_service.bbbbbbbbbbbb.jar.suffix.tmp " +
+          "trap \"rm -f libarttooling_agent.so.suffix.tmp libarttooling.bbbbbbbbbbbb.jar.suffix.tmp " +
           "lib_ui_inspector_payload.cccccccccccc.jar.suffix.tmp\" 0 && " +
-          "test ! -d lib_ui_inspector_agent.so && test ! -d lib_ui_inspector_service.bbbbbbbbbbbb.jar && " +
+          "test ! -d libarttooling_agent.so && test ! -d libarttooling.bbbbbbbbbbbb.jar && " +
           "test ! -d lib_ui_inspector_payload.cccccccccccc.jar && " +
-          "rm -f lib_ui_inspector_service.$CONTENT_DIGEST_PATTERN.jar lib_ui_inspector_payload.$CONTENT_DIGEST_PATTERN.jar && " +
-          "cat $STAGING_DIR/lib_ui_inspector_agent.aaaaaaaaaaaa.so > lib_ui_inspector_agent.so.suffix.tmp && " +
-          "cat $STAGING_DIR/lib_ui_inspector_service.bbbbbbbbbbbb.jar > lib_ui_inspector_service.bbbbbbbbbbbb.jar.suffix.tmp && " +
+          "rm -f libarttooling.$CONTENT_DIGEST_PATTERN.jar lib_ui_inspector_payload.$CONTENT_DIGEST_PATTERN.jar && " +
+          "cat $STAGING_DIR/libarttooling_agent.aaaaaaaaaaaa.so > libarttooling_agent.so.suffix.tmp && " +
+          "cat $STAGING_DIR/libarttooling.bbbbbbbbbbbb.jar > libarttooling.bbbbbbbbbbbb.jar.suffix.tmp && " +
           "cat $STAGING_DIR/lib_ui_inspector_payload.cccccccccccc.jar > lib_ui_inspector_payload.cccccccccccc.jar.suffix.tmp && " +
-          "chmod 444 lib_ui_inspector_agent.so.suffix.tmp lib_ui_inspector_service.bbbbbbbbbbbb.jar.suffix.tmp " +
+          "chmod 444 libarttooling_agent.so.suffix.tmp libarttooling.bbbbbbbbbbbb.jar.suffix.tmp " +
           "lib_ui_inspector_payload.cccccccccccc.jar.suffix.tmp && " +
-          "mv -f lib_ui_inspector_service.bbbbbbbbbbbb.jar.suffix.tmp lib_ui_inspector_service.bbbbbbbbbbbb.jar && " +
+          "mv -f libarttooling.bbbbbbbbbbbb.jar.suffix.tmp libarttooling.bbbbbbbbbbbb.jar && " +
           "mv -f lib_ui_inspector_payload.cccccccccccc.jar.suffix.tmp lib_ui_inspector_payload.cccccccccccc.jar && " +
-          "mv -f lib_ui_inspector_agent.so.suffix.tmp lib_ui_inspector_agent.so'"
+          "mv -f libarttooling_agent.so.suffix.tmp libarttooling_agent.so'"
       )
   }
 
@@ -1193,7 +1196,7 @@ class InjectionManagerTest {
         packageName,
         composeInspectorOverrideJarPath = null,
         agentPathResolver = agentPathResolver,
-        serviceJarPath = dummyJar,
+        libraryDexPath = dummyJar,
         payloadJarPath = dummyPayload,
         viewInspectorJarPath = dummyViewInspector,
         tempFileSuffixGenerator = { "test.tmp" },
@@ -1426,7 +1429,7 @@ class InjectionManagerTest {
     // The forced attempt performed the full injection: three base artifact pushes and one attach. The view inspector jar was pushed only
     // by the second attempt — the first one failed before reaching it.
     val pushedPaths = testDeviceServices.recordedSyncSends.map { it.remoteFilePath }
-    assertThat(pushedPaths.filter { it.contains("/lib_ui_inspector_") }).hasSize(3)
+    assertThat(pushedPaths.filter { path -> baseStagingPaths().any { path.startsWith(it) } }).hasSize(3)
     assertThat(pushedPaths.filter { it.contains("/view-inspector.") }).hasSize(1)
     assertThat(fakeSession.deviceServices.shellV2Requests.map { it.command }.filter { it.startsWith("cmd activity attach-agent") })
       .hasSize(1)
@@ -1456,7 +1459,7 @@ class InjectionManagerTest {
     assertThat(blockRuns).isEqualTo(1)
     // Both attempts reached the view inspector push; only the forced one pushed the base artifacts.
     val pushedPaths = testDeviceServices.recordedSyncSends.map { it.remoteFilePath }
-    assertThat(pushedPaths.filter { it.contains("/lib_ui_inspector_") }).hasSize(3)
+    assertThat(pushedPaths.filter { path -> baseStagingPaths().any { path.startsWith(it) } }).hasSize(3)
     assertThat(pushedPaths.filter { it.contains("/view-inspector.") }).hasSize(2)
     assertThat(testHostServices.recordedForwardCalls).hasSize(2)
     assertThat(testHostServices.recordedKillForwardCalls).hasSize(2)
@@ -1499,7 +1502,10 @@ class InjectionManagerTest {
     assertThat(thrown).isNotNull()
     // No fallback happened: one forward, no base artifact pushes, no attach.
     assertThat(testHostServices.recordedForwardCalls).hasSize(1)
-    assertThat(testDeviceServices.recordedSyncSends.map { it.remoteFilePath }.filter { it.contains("/lib_ui_inspector_") }).isEmpty()
+    assertThat(
+        testDeviceServices.recordedSyncSends.map { it.remoteFilePath }.filter { path -> baseStagingPaths().any { path.startsWith(it) } }
+      )
+      .isEmpty()
     assertThat(fakeSession.deviceServices.shellV2Requests.map { it.command }.filter { it.startsWith("cmd activity attach-agent") })
       .isEmpty()
   }
@@ -1718,7 +1724,10 @@ class InjectionManagerTest {
 
     assertThat(thrown).isInstanceOf(InspectorCrashException::class.java)
     assertThat(testHostServices.recordedForwardCalls).hasSize(1)
-    assertThat(testDeviceServices.recordedSyncSends.map { it.remoteFilePath }.filter { it.contains("/lib_ui_inspector_") }).isEmpty()
+    assertThat(
+        testDeviceServices.recordedSyncSends.map { it.remoteFilePath }.filter { path -> baseStagingPaths().any { path.startsWith(it) } }
+      )
+      .isEmpty()
   }
 
   @Test
@@ -2028,8 +2037,8 @@ class InjectionManagerTest {
     configurePackageUidAndProcesses(targetPackage, processOutput = "PID UID NAME\n$pid 10123 $processName\n")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $targetPackage pwd", "/data/data/$targetPackage\n")
     val digests = computeArtifactDigests(dummyAgent, dummyJar, dummyPayload, dummyViewInspector)
-    configureStagedPush("lib_ui_inspector_agent.so", digests.agentBinary)
-    configureStagedPush("lib_ui_inspector_service.jar", digests.serviceJar)
+    configureStagedPush("libarttooling_agent.so", digests.agentBinary)
+    configureStagedPush("libarttooling.jar", digests.libraryDex)
     configureStagedPush("lib_ui_inspector_payload.jar", digests.payloadJar)
     fakeSession.deviceServices.configureShellCommand(deviceSelector, installCommand(targetPackage), "")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, attachCommand(targetPackage, pid, token), "")
@@ -2052,8 +2061,8 @@ class InjectionManagerTest {
   private fun baseStagingPaths(): List<String> {
     val digests = computeArtifactDigests(dummyAgent, dummyJar, dummyPayload, dummyViewInspector)
     return listOf(
-      "$STAGING_DIR/${fileNameWithHash("lib_ui_inspector_agent.so", digests.agentBinary)}",
-      "$STAGING_DIR/${fileNameWithHash("lib_ui_inspector_service.jar", digests.serviceJar)}",
+      "$STAGING_DIR/${fileNameWithHash("libarttooling_agent.so", digests.agentBinary)}",
+      "$STAGING_DIR/${fileNameWithHash("libarttooling.jar", digests.libraryDex)}",
       "$STAGING_DIR/${fileNameWithHash("lib_ui_inspector_payload.jar", digests.payloadJar)}",
     )
   }
@@ -2065,9 +2074,9 @@ class InjectionManagerTest {
     return buildInstallCommand(
       packageName = targetPackage,
       agentStagePath = stagingPaths[0],
-      serviceJarStagePath = stagingPaths[1],
+      libraryDexStagePath = stagingPaths[1],
       payloadJarStagePath = stagingPaths[2],
-      serviceJarName = fileNameWithHash("lib_ui_inspector_service.jar", digests.serviceJar),
+      libraryDexName = fileNameWithHash("libarttooling.jar", digests.libraryDex),
       payloadJarName = fileNameWithHash("lib_ui_inspector_payload.jar", digests.payloadJar),
       tempSuffix = "test.tmp",
     )
@@ -2081,10 +2090,10 @@ class InjectionManagerTest {
     appDataDir: String = "/data/data/$targetPackage",
   ): String {
     val digests = computeArtifactDigests(dummyAgent, dummyJar, dummyPayload, dummyViewInspector)
-    val serviceJarName = fileNameWithHash("lib_ui_inspector_service.jar", digests.serviceJar)
+    val libraryDexName = fileNameWithHash("libarttooling.jar", digests.libraryDex)
     val payloadJarName = fileNameWithHash("lib_ui_inspector_payload.jar", digests.payloadJar)
-    return "cmd activity attach-agent $pid \"$appDataDir/lib_ui_inspector_agent.so=" +
-      "$appDataDir/$serviceJarName;$appDataDir/$payloadJarName;$token\""
+    return "cmd activity attach-agent $pid \"$appDataDir/libarttooling_agent.so=" +
+      "$appDataDir/$libraryDexName;$appDataDir/$payloadJarName;$AGENT_CLASS_NAME;$token\""
   }
 
   /** Runs [block] with [System.err] redirected and returns everything it printed. */

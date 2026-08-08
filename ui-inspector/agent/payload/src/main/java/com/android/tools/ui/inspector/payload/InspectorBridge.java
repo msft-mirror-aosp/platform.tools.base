@@ -23,9 +23,9 @@ import androidx.inspection.Connection;
 import androidx.inspection.Inspector;
 import androidx.inspection.InspectorEnvironment;
 
+import com.android.tools.arttooling.ArtTooling;
 import com.android.tools.ui.inspector.payload.appinspection.AppInspectionUtils;
 import com.android.tools.ui.inspector.payload.appinspection.HandlerThreadExecutor;
-import com.android.tools.ui.inspector.service.ArtToolingBridge;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -123,7 +123,7 @@ public final class InspectorBridge {
         } finally {
           // Clear all bytecode hooks registered by this inspector session to prevent ClassLoader
           // memory leaks.
-          ArtToolingBridge.clear(inspectorId);
+          ArtTooling.clear(inspectorId);
         }
       });
     } catch (RejectedExecutionException e) {

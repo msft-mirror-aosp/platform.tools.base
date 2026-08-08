@@ -26,6 +26,9 @@ import kotlinx.coroutines.delay
 /** Splits a /proc/net/unix line into its whitespace-separated fields. */
 private val WHITESPACE_REGEX = Regex("\\s+")
 
+/** Log tag prefix used by the ART Tooling native agent and bootstrap loader. */
+private const val AGENT_LOG_TAG_PREFIX = "studio.arttooling"
+
 /**
  * Checks for the agent's server socket on the device. The socket is how an attached agent announces itself: [isPresent] answers whether a
  * server is already running (which is how a run decides it can reconnect instead of injecting), and [waitUntilPresent] waits for the socket
@@ -89,9 +92,10 @@ internal class AgentSocketChecker(private val adbSession: AdbSession, private va
       val output = adbSession.deviceServices.shellAsText(deviceSelector, cmd).stdout.trim()
       if (output.isEmpty()) return null
 
-      val uiInspectorLogs = output.lines().filter { line -> line.contains(ProtocolConstants.LOG_TAG_PREFIX) }
+      val relevantAgentLogs =
+        output.lines().filter { line -> line.contains(ProtocolConstants.LOG_TAG_PREFIX) || line.contains(AGENT_LOG_TAG_PREFIX) }
 
-      return if (uiInspectorLogs.isNotEmpty()) uiInspectorLogs.joinToString("\n") else null
+      return if (relevantAgentLogs.isNotEmpty()) relevantAgentLogs.joinToString("\n") else null
     } catch (e: CancellationException) {
       throw e
     } catch (e: Exception) {
