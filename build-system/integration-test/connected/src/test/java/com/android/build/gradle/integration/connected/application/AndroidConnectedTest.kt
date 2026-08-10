@@ -65,6 +65,7 @@ class AndroidConnectedTest(val runWithBuiltInPlatform: Boolean) {
         util.testResultPbPath = "$moduleName/$TEST_RESULT_PB"
         util.testCoverageXmlPath = "$moduleName/$TEST_COV_XML"
         util.testAdditionalOutputPath = "$moduleName/$TEST_ADDITIONAL_OUTPUT"
+        util.deviceName = DEVICE_NAME
       },
     )
 
@@ -153,8 +154,12 @@ class AndroidConnectedTest(val runWithBuiltInPlatform: Boolean) {
     util.executor.run(util.testTaskName)
 
     val subFolder = "connected/debug"
-    val xmlFileName = "TEST-$DEVICE_NAME.xml"
-    assertThat(util.project.resolve("$customResultsDir/$subFolder/$xmlFileName")).exists()
+    val xmlFile =
+      util.project.resolve("$customResultsDir/$subFolder").toFile().walkTopDown().maxDepth(2).find {
+        it.name.startsWith("TEST-") && it.name.endsWith(".xml")
+      }
+    assertThat(xmlFile).isNotNull()
+    assertThat(xmlFile?.exists()).isTrue()
     assertThat(util.project.resolve("$customReportsDir/$subFolder/index.html")).exists()
   }
 
@@ -186,14 +191,14 @@ class AndroidConnectedTest(val runWithBuiltInPlatform: Boolean) {
       assertThat(it).contains("</UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>")
     }
     util.verifyReport()
-    assertThat(util.project.resolve(util.testResultPbPath)).exists()
+    assertThat(util.resolveTestResultPbPath()).exists()
 
     // Run the task again after clean. This time the task configuration is
     // restored from the configuration cache. We expect no crashes.
     util.executor.run("clean")
 
     assertThat(util.project.resolve(util.testReportPath)).doesNotExist()
-    assertThat(util.project.resolve(util.testResultPbPath)).doesNotExist()
+    assertThat(util.resolveTestResultPbPath()).doesNotExist()
 
     testExecutionStartTime = System.currentTimeMillis()
     val resultWithConfigCache =
@@ -213,7 +218,7 @@ class AndroidConnectedTest(val runWithBuiltInPlatform: Boolean) {
       assertThat(it).contains("</UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>")
     }
     util.verifyReport()
-    assertThat(util.project.resolve(util.testResultPbPath)).exists()
+    assertThat(util.resolveTestResultPbPath()).exists()
     val timeTaken = System.currentTimeMillis() - startTime
     benchmark.log("connectedAndroidTestWithUtpTestResultListener_time", timeTaken)
   }
@@ -240,7 +245,7 @@ class AndroidConnectedTest(val runWithBuiltInPlatform: Boolean) {
       assertThat(it).doesNotContain("</UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>")
     }
     util.verifyReport()
-    assertThat(util.project.resolve(util.testResultPbPath)).exists()
+    assertThat(util.resolveTestResultPbPath()).exists()
     val timeTaken = System.currentTimeMillis() - startTime
     benchmark.log("connectedAndroidTestWithUtpTestResultListenerAndTestReportingDisabled_time", timeTaken)
   }

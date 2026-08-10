@@ -66,6 +66,7 @@ class AndroidManagedDeviceTest(val runWithBuiltInPlatform: Boolean) {
         util.testResultPbPath = "${moduleName}/$deviceOutputDir/test-result.pb"
         util.testCoverageXmlPath = "${moduleName}/$TEST_COV_XML"
         util.testAdditionalOutputPath = "${moduleName}/build/outputs/managed_device_android_test_additional_output/debug/$deviceName"
+        util.deviceName = deviceName
       },
     )
 

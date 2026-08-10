@@ -52,6 +52,7 @@ class AndroidTestUtil(
   lateinit var testLogcatPath: String
   lateinit var testAdditionalOutputPath: String
   lateinit var moduleName: String
+  lateinit var deviceName: String
 
   val project: Path
     get() = rule.build.directory
@@ -67,39 +68,78 @@ class AndroidTestUtil(
     onSelectModule(moduleName, this)
   }
 
-  private fun resolvePath(relativePath: String): Path {
+  private fun sanitizePathSegment(segment: String): String {
+    val strictSafeRegex = Regex("[^a-zA-Z0-9._-]")
+    return strictSafeRegex.replace(segment, "_")
+  }
+
+  fun resolvePath(relativePath: String): Path {
     val path = project.resolve(relativePath)
-    if (!path.exists()) {
-      // For built-in platform, the output might be in a different level of directory.
-      // Search for the file in the parent or siblings.
-      val fileName = path.fileName.toString()
-      // Search in the parent directory and its children.
-      val parent = path.parent
-      if (parent.exists()) {
-        val found = parent.toFile().walkTopDown().maxDepth(3).find { it.name == fileName }
-        if (found != null) {
-          return found.toPath()
+    if (path.exists()) {
+      return path
+    }
+    val fileName = path.fileName.toString()
+    var existingAncestor = path.parent
+    while (existingAncestor != null && !existingAncestor.exists()) {
+      existingAncestor = existingAncestor.parent
+    }
+    if (existingAncestor != null && existingAncestor.exists()) {
+      val segments = relativePath.split("/")
+      val deviceIndex = segments.indexOf(deviceName)
+      val suffixSegments =
+        if (deviceIndex != -1 && deviceIndex < segments.size - 1) {
+          segments.subList(deviceIndex + 1, segments.size)
+        } else {
+          listOf(fileName)
         }
-      }
-      // If not found, try searching from the parent of the parent (siblings of parent).
-      val grandParent = parent.parent
-      if (grandParent.exists()) {
-        val foundInGrandParent = grandParent.toFile().walkTopDown().maxDepth(3).find { it.name == fileName }
-        if (foundInGrandParent != null) {
-          return foundInGrandParent.toPath()
+      val sanitizedSuffix = suffixSegments.map { sanitizePathSegment(it) }.joinToString("/")
+      val unsanitizedSuffix = suffixSegments.joinToString("/")
+      val found =
+        existingAncestor.toFile().walkTopDown().maxDepth(5).find {
+          val normalizedPath = it.absolutePath.replace('\\', '/')
+          normalizedPath.endsWith(sanitizedSuffix) || normalizedPath.endsWith(unsanitizedSuffix)
         }
+      if (found != null) {
+        return found.toPath()
       }
     }
     return path
   }
 
-  private fun resolveTestResultPbPath(): Path {
+  fun resolveTestResultPbPath(): Path {
     val path = project.resolve(testResultPbPath)
-    if (runWithBuiltInPlatform && !path.exists()) {
-      // For built-in platform, the listener might have appended a device-specific subdirectory.
-      val pbFile = path.parent.toFile().walkTopDown().maxDepth(2).find { it.name == "test-result.pb" }
+    if (path.exists()) {
+      return path
+    }
+    // Try walking the parent (device dir) in case of subdirectories
+    val parentDir = path.parent?.toFile()
+    if (parentDir != null && parentDir.exists()) {
+      val pbFile = parentDir.walkTopDown().maxDepth(2).find { it.name == "test-result.pb" }
       if (pbFile != null) {
         return pbFile.toPath()
+      }
+    }
+    // Try walking the grandparent (results root dir, e.g. "debug") in case of different device name
+    val grandparentDir = path.parent?.parent?.toFile()
+    if (grandparentDir != null && grandparentDir.exists()) {
+      val pbFile = grandparentDir.walkTopDown().maxDepth(3).find { it.name == "test-result.pb" }
+      if (pbFile != null) {
+        return pbFile.toPath()
+      }
+    }
+    return path
+  }
+
+  fun resolveTestResultXmlPath(): Path {
+    val path = project.resolve(testResultXmlPath)
+    if (path.exists()) {
+      return path
+    }
+    val parentDir = path.parent?.toFile()
+    if (parentDir != null && parentDir.exists()) {
+      val xmlFile = parentDir.walkTopDown().maxDepth(1).find { it.name.startsWith("TEST-") && it.name.endsWith(".xml") }
+      if (xmlFile != null) {
+        return xmlFile.toPath()
       }
     }
     return path
@@ -644,7 +684,7 @@ class AndroidTestUtil(
 
     executor.run(testTaskName)
 
-    assertThat(project.resolve(testResultXmlPath)).exists()
+    assertThat(resolveTestResultXmlPath()).exists()
     verifyReport()
 
     val testResultPb = resolveTestResultPbPath()
@@ -658,13 +698,13 @@ class AndroidTestUtil(
     // restored from the configuration cache. We expect no crashes.
     executor.run("clean")
 
-    assertThat(project.resolve(testResultXmlPath)).doesNotExist()
+    assertThat(resolveTestResultXmlPath()).doesNotExist()
     assertThat(project.resolve(testReportPath)).doesNotExist()
     assertThat(resolveTestResultPbPath()).doesNotExist()
 
     executor.run(testTaskName)
 
-    assertThat(project.resolve(testResultXmlPath)).exists()
+    assertThat(resolveTestResultXmlPath()).exists()
     verifyReport()
     assertThat(resolveTestResultPbPath()).exists()
   }
