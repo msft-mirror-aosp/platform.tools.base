@@ -42,7 +42,7 @@ ARTIFACTS = [
     "com.android.tools:desugar_jdk_libs_configuration_nio:2.0.2",
     "com.android.tools:desugar_jdk_libs_nio:2.0.2",
     "com.android.tools.fakeadbserver:fakeadbserver:31.13.0",  # Sherlock dependency
-    "com.android.tools:r8:8.13.19",
+    "com.android.tools:r8:9.5.0-dev",
     "com.android.tools.smali:smali-baksmali:3.0.9",
     "com.android.tools.smali:smali-dexlib2:3.0.9",
     "com.charleskorn.kaml:kaml-jvm:0.61.0",

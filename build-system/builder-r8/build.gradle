@@ -18,7 +18,7 @@ apply plugin: 'com.android.tools.java-library'
 apply plugin: 'com.android.tools.kotlin'
 
 dependencies {
-    compileOnly files('../../../../prebuilts/r8/r8.jar')
+    compileOnly libs.r8
     implementation libs.com.android.tools.common
     implementation libs.com.android.tools.sdkCommon
     implementation libs.protobuf
@@ -32,5 +32,5 @@ dependencies {
     testImplementation libs.asm
     testImplementation libs.jimfs
     testImplementation libs.com.android.tools.build.apkzlib
-    testImplementation files('../../../../prebuilts/r8/r8.jar')
+    testImplementation libs.r8
 }
