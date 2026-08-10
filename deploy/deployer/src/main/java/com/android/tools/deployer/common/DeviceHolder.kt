@@ -84,6 +84,16 @@ constructor(
   private val useConnectedDevice: Boolean = false,
 ) {
 
+  constructor(
+    iDevice: IDevice,
+    connectedDevice: ConnectedDevice?,
+    session: AdbSession,
+  ) : this(
+    iDevice = iDevice,
+    connectedDevice = Optional.ofNullable(connectedDevice),
+    useConnectedDevice = checkEnableUseConnectedDevice(session),
+  )
+
   val version: AndroidVersion
     get() {
       return runMigrated(

@@ -20,7 +20,6 @@ import com.android.adblib.AdbSession
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.DeviceInfo
 import com.android.adblib.DeviceState
-import com.android.adblib.testingutils.TestingAdbSession
 import com.android.ddmlib.AdbCommandRejectedException
 import com.android.ddmlib.Client
 import com.android.ddmlib.ClientData
@@ -55,8 +54,7 @@ class DeviceHolderTest {
 
   private val connectedDevice = mock(ConnectedDevice::class.java)
   private val iDevice = mock(IDevice::class.java)
-  private val adbSession = TestingAdbSession()
-  private val deviceHolder = DeviceHolder(iDevice, Optional.of(connectedDevice))
+  private val deviceHolder = DeviceHolder(iDevice, Optional.of(connectedDevice), useConnectedDevice = false)
 
   @Test
   fun testIDeviceDelegatedProperties() {
