@@ -16,6 +16,7 @@
 
 package com.android.tools.utp.gradle
 
+import com.android.tools.utp.gradle.api.EmulatorControlConfig
 import com.android.tools.utp.gradle.api.RunUtpWorkParameters
 import com.android.tools.utp.gradle.api.RunUtpWorkParameters.UtpRunConfig
 import com.android.tools.utp.gradle.api.TargetApkConfigBundle
@@ -96,6 +97,13 @@ class AndroidTestEngineRunnerTest {
     return mock
   }
 
+  private fun <T : Any> mockEmptyProperty(): Property<T> {
+    val mock = mock<Property<T>>()
+    whenever(mock.get()).thenThrow(IllegalStateException("value not available"))
+    whenever(mock.orNull).thenReturn(null)
+    return mock
+  }
+
   private fun configureMockConfig(
     config: UtpRunConfig,
     deviceId: String,
@@ -103,6 +111,7 @@ class AndroidTestEngineRunnerTest {
     outputDir: File,
     utpResultFile: File,
     useOrchestrator: Boolean = false,
+    hasEmulatorControlConfig: Boolean = true,
   ) {
     val deviceIdProp = mockProperty(deviceId)
     val deviceSerialProp = mockProperty(serial)
@@ -111,6 +120,12 @@ class AndroidTestEngineRunnerTest {
     val installTimeoutProp = mockProperty(30)
     val targetApkBundleProp = mockProperty(targetApkConfigBundle)
     val testDataProp = mockProperty(testData)
+    val emulatorControlConfigProp =
+      if (hasEmulatorControlConfig) {
+        mockProperty(EmulatorControlConfig(enabled = false, allowedEndpoints = emptySet(), secondsValid = 0))
+      } else {
+        mockEmptyProperty()
+      }
 
     val mockHelperApks = mock<ConfigurableFileCollection>()
     whenever(mockHelperApks.files).thenReturn(emptySet())
@@ -128,6 +143,7 @@ class AndroidTestEngineRunnerTest {
     whenever(config.installApkTimeout).thenReturn(installTimeoutProp)
     whenever(config.targetApkConfigBundle).thenReturn(targetApkBundleProp)
     whenever(config.testData).thenReturn(testDataProp)
+    whenever(config.emulatorControlConfig).thenReturn(emulatorControlConfigProp)
     whenever(config.helperApks).thenReturn(mockHelperApks)
     whenever(config.additionalInstallOptions).thenReturn(installOptionsProp)
     whenever(config.uninstallApksAfterTest).thenReturn(uninstallApksProp)
@@ -332,5 +348,42 @@ class AndroidTestEngineRunnerTest {
     runner.execute(parameters, emptyList(), mergedResultFile, exitCodeFile)
 
     assertThat(exitCodeFile.readText()).isEqualTo("1")
+  }
+
+  @Test
+  fun execute_withoutEmulatorControlConfig_successfulRun() {
+    val parameters = mock<RunUtpWorkParameters>()
+    val config = mock<UtpRunConfig>()
+    val xmlReportDir = temporaryFolder.newFolder("xml-report")
+    val outputDir = temporaryFolder.newFolder("output")
+
+    val deviceDir = File(xmlReportDir, "device1")
+    deviceDir.mkdirs()
+    val localUtpResultFile = File(deviceDir, "test-result.pb")
+    val dummyResult = TestSuiteResult.newBuilder().build()
+    localUtpResultFile.outputStream().use { dummyResult.writeTo(it) }
+
+    val targetResultFile = File(outputDir, "test-result.pb")
+
+    configureMockConfig(config, "device1", "serial1", outputDir, targetResultFile, hasEmulatorControlConfig = false)
+
+    val xmlReportDirProp = mockDirectoryProperty(xmlReportDir)
+    val adbProp = mockRegularFileProperty(File("adb"))
+    val aaptProp = mockRegularFileProperty(File("aapt2"))
+    val runConfigsProp = mockListProperty(listOf(config))
+
+    whenever(parameters.adbExecutable).thenReturn(adbProp)
+    whenever(parameters.aaptExecutable).thenReturn(aaptProp)
+    whenever(parameters.utpRunConfigs).thenReturn(runConfigsProp)
+    whenever(parameters.xmlTestReportOutputDirectory).thenReturn(xmlReportDirProp)
+
+    val runner = AndroidTestEngineRunner { request, listener -> mapOf("serial1" to true) }
+
+    runner.execute(parameters, emptyList(), mergedResultFile, exitCodeFile)
+
+    assertThat(exitCodeFile.readText()).isEqualTo("0")
+    assertThat(mergedResultFile.exists()).isTrue()
+    assertThat(targetResultFile.exists()).isTrue()
+    assertThat(localUtpResultFile.exists()).isFalse()
   }
 }

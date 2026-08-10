@@ -101,6 +101,11 @@ fun configureAndroidTestEngine(
   )
   task.engineInputProperties.put("android-test.force-aot-compilation", creationConfig.isForceAotCompilation.toString())
 
+  val emulatorControl = globalConfig.androidTestOptions.emulatorControl
+  val projectOptions = creationConfig.services.projectOptions
+  val emulatorControlEnabled = emulatorControl.enable && projectOptions.get(BooleanOption.ENABLE_EMULATOR_CONTROL)
+  task.engineInputProperties.put("android-test.emulator-control-enabled", emulatorControlEnabled.toString())
+
   task.engineInputProperties.put(
     "android-test.use-test-storage-service",
     testData.instrumentationRunnerArguments.map { it.getOrDefault("useTestStorageService", "false") },

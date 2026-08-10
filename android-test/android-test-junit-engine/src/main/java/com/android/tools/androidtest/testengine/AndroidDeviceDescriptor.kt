@@ -49,6 +49,29 @@ class AndroidDeviceDescriptor(
   val deviceDisplayName: String = deviceId,
   private val adbControllerFactory: (File) -> AdbController = { AdbController(it) },
   private val jvmtiCodeCoverageAgentPathProvider: () -> Pair<String, String>? = { null },
+  private val findGrpcInfoProvider: (String) -> EmulatorGrpcInfo = ::findGrpcInfo,
+  private val adbApkInstallerFactory:
+    (
+      adb: File, aapt2: File, deviceSerial: String, installTimeoutMs: Long, deviceApiLevelProvider: DeviceApiLevelProvider?,
+    ) -> AdbApkInstaller =
+    { adb, aapt2, serial, timeout, apiLevelProvider ->
+      AdbApkInstaller(adb, aapt2, serial, timeout, deviceApiLevelProvider = apiLevelProvider)
+    },
+  private val instrumentationRunnerFactory:
+    (
+      adb: File,
+      deviceSerial: String,
+      instrumentationRunnerClass: String,
+      testPackageId: String,
+      instrumentationTargetPackageId: String,
+      executionMode: String?,
+      instrumentationArgs: Map<String, String>,
+      listeners: Set<com.android.tools.androidtest.testengine.instrument.AmInstrumentationListener>,
+      agentFilesystemInfo: CoverageAgentFilesystemInfo,
+    ) -> AmInstrumentationRunner =
+    { adb, serial, runnerClass, pkgId, targetPkgId, execMode, args, listeners, agentInfo ->
+      AmInstrumentationRunner(adb, serial, runnerClass, pkgId, targetPkgId, execMode, args, listeners, agentInfo)
+    },
 ) : AbstractTestDescriptor(uniqueId, deviceDisplayName), Node<AndroidTestExecutionContext> {
 
   private val logger = Logger.getLogger(AndroidDeviceDescriptor::class.java.name)
@@ -69,8 +92,7 @@ class AndroidDeviceDescriptor(
     val adbController = adbControllerFactory(config.adb)
     val deviceApiLevelProvider = DeviceApiLevelProvider(adbController, deviceSerial)
 
-    val adbApkInstaller =
-      AdbApkInstaller(config.adb, config.aapt2, deviceSerial, config.installTimeoutMs, deviceApiLevelProvider = deviceApiLevelProvider)
+    val adbApkInstaller = adbApkInstallerFactory(config.adb, config.aapt2, deviceSerial, config.installTimeoutMs, deviceApiLevelProvider)
 
     val deviceSpecificResultsDir = config.getResultsDir(deviceSerial)
     val baseResultsDir = config.getResultsDir()
@@ -187,6 +209,11 @@ class AndroidDeviceDescriptor(
     val listener = Listener(context, reporter, logcatCollector, deviceInfoFile, additionalTestOutputCollector)
 
     val instrumentationArgs = config.instrumentationArgs.toMutableMap()
+    if (config.isEmulatorControlEnabled(deviceSerial)) {
+      val grpcInfo = findGrpcInfoProvider(deviceSerial)
+      instrumentationArgs["grpc.port"] = grpcInfo.port.toString()
+      grpcInfo.token?.let { instrumentationArgs["grpc.token"] = it }
+    }
     if (isCoverageActive) {
       instrumentationArgs["coverage"] = "true"
       if (isOrchestratorEnabled) {
@@ -203,7 +230,7 @@ class AndroidDeviceDescriptor(
     }
 
     val instrumentationRunner =
-      AmInstrumentationRunner(
+      instrumentationRunnerFactory(
         config.adb,
         deviceSerial,
         config.instrumentationRunnerClass,
@@ -212,7 +239,7 @@ class AndroidDeviceDescriptor(
         config.executionMode,
         instrumentationArgs,
         setOf(listener),
-        agentFilesystemInfo = agentFilesystemInfo,
+        agentFilesystemInfo,
       )
 
     val deviceSettingsController = DeviceSettingsController(config, deviceSerial, adbControllerFactory(config.adb))

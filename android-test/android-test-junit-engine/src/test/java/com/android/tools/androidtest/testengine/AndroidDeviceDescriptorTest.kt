@@ -16,6 +16,7 @@
 
 package com.android.tools.androidtest.testengine
 
+import com.android.tools.androidtest.testengine.instrument.AmInstrumentationRunner
 import com.google.common.truth.Truth.assertThat
 import java.io.File
 import org.junit.Before
@@ -26,6 +27,7 @@ import org.junit.platform.engine.EngineExecutionListener
 import org.junit.platform.engine.ExecutionRequest
 import org.junit.platform.engine.UniqueId
 import org.junit.platform.engine.reporting.ReportEntry
+import org.junit.platform.engine.support.hierarchical.Node
 import org.junit.rules.TemporaryFolder
 import org.mockito.Mock
 import org.mockito.junit.MockitoJUnit
@@ -91,5 +93,62 @@ class AndroidDeviceDescriptorTest {
     val deviceInfoEntry = reportEntryCaptor.allValues.find { it.keyValuePairs.containsKey(AndroidTestReportKeys.DEVICE_INFO_PATH) }
     assertThat(deviceInfoEntry).isNotNull()
     assertThat(deviceInfoEntry?.keyValuePairs?.get(AndroidTestReportKeys.DEVICE_INFO_PATH)).isEqualTo(deviceInfoFile.absolutePath)
+  }
+
+  @Mock private lateinit var mockDynamicTestExecutor: Node.DynamicTestExecutor
+  @Mock private lateinit var mockAdbApkInstaller: AdbApkInstaller
+  @Mock private lateinit var mockAmInstrumentationRunner: AmInstrumentationRunner
+
+  @Test
+  fun execute_withEmulatorControlEnabled_injectsGrpcPortAndToken() {
+    val uniqueId = UniqueId.forEngine("android-test-engine").append("device", deviceSerial)
+
+    whenever(configurationParameters.get("android-test.emulator-control-enabled[$deviceSerial]")).thenReturn(java.util.Optional.of("true"))
+
+    val testPort = 1234
+    val testToken = "fake-token"
+
+    val descriptor =
+      AndroidDeviceDescriptor(
+        uniqueId,
+        deviceSerial,
+        findGrpcInfoProvider = { serial ->
+          assertThat(serial).isEqualTo(deviceSerial)
+          EmulatorGrpcInfo(testPort, testToken)
+        },
+        adbApkInstallerFactory = { _, _, _, _, _ -> mockAdbApkInstaller },
+        instrumentationRunnerFactory = { _, serial, _, _, _, _, args, _, _ ->
+          assertThat(serial).isEqualTo(deviceSerial)
+          assertThat(args["grpc.port"]).isEqualTo(testPort.toString())
+          assertThat(args["grpc.token"]).isEqualTo(testToken)
+          mockAmInstrumentationRunner
+        },
+      )
+
+    val context = AndroidTestExecutionContext(executionRequest)
+    descriptor.execute(context, mockDynamicTestExecutor)
+  }
+
+  @Test
+  fun execute_withEmulatorControlDisabled_doesNotInjectGrpcPortAndToken() {
+    val uniqueId = UniqueId.forEngine("android-test-engine").append("device", deviceSerial)
+
+    whenever(configurationParameters.get("android-test.emulator-control-enabled[$deviceSerial]")).thenReturn(java.util.Optional.of("false"))
+
+    val descriptor =
+      AndroidDeviceDescriptor(
+        uniqueId,
+        deviceSerial,
+        findGrpcInfoProvider = { throw RuntimeException("findGrpcInfoProvider should not be called when emulator control is disabled") },
+        adbApkInstallerFactory = { _, _, _, _, _ -> mockAdbApkInstaller },
+        instrumentationRunnerFactory = { _, _, _, _, _, _, args, _, _ ->
+          assertThat(args.containsKey("grpc.port")).isFalse()
+          assertThat(args.containsKey("grpc.token")).isFalse()
+          mockAmInstrumentationRunner
+        },
+      )
+
+    val context = AndroidTestExecutionContext(executionRequest)
+    descriptor.execute(context, mockDynamicTestExecutor)
   }
 }

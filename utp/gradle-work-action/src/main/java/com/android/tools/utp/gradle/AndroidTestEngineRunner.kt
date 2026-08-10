@@ -73,7 +73,14 @@ class AndroidTestEngineRunner(
 
     // Run launcher once for all devices
     try {
-      val request = LauncherDiscoveryRequestBuilder.request().filters(EngineFilter.includeEngines("android-test-engine")).build()
+      val requestBuilder = LauncherDiscoveryRequestBuilder.request().filters(EngineFilter.includeEngines("android-test-engine"))
+      for (config in utpRunConfigs) {
+        val serial = config.deviceSerialNumber.get()
+        val emulatorControlConfig = config.emulatorControlConfig.orNull
+        val enabled = emulatorControlConfig?.enabled ?: false
+        requestBuilder.configurationParameter("android-test.emulator-control-enabled[$serial]", enabled.toString())
+      }
+      val request = requestBuilder.build()
       val listener = AndroidTestResultListener()
       val perDeviceAllTestsPassed = launcherExecutor(request, listener)
       val serials = utpRunConfigs.map { it.deviceSerialNumber.get() }
