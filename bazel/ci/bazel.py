@@ -25,7 +25,6 @@ class BuildEnv:
   dist_dir: str
   tmp_dir: str
   bazel_path: str
-  bazel_version: str
   user: str
   branch: str
   is_studio_only_release: bool
@@ -110,7 +109,6 @@ class BuildEnv:
 def make_build_env(
     bazel_path: str,
     user: str = getpass.getuser(),
-    bazel_version: str = "",
     is_studio_only_release: bool = None,
 ):
   build_number = os.environ.get("BUILD_NUMBER", "SNAPSHOT")
@@ -122,9 +120,6 @@ def make_build_env(
     dist_dir = tempfile.mkdtemp('dist-dir')
   tmp_dir = os.environ.get("TMPDIR", "")
   bazel_path = os.path.normpath(bazel_path)
-  if not bazel_version:
-    with open(os.path.join(workspace_dir, ".bazelversion")) as f:
-      bazel_version = f.readline().rstrip()
   # Assuming the workspace root is the name of the branch.
   # Ideally, buildbot provides a concerete environment variable.
   branch = workspace_dir.split("/")[-1]
@@ -142,11 +137,10 @@ def make_build_env(
   if build_target_name and user == "android-build" and os.environ.get("INCREMENTAL_BUILD") != "true":  # AB environment
     # If INCREMENTAL_BUILD is set, bazel/ci and bazel/ci.cmd will set the
     # startup options in ci.bazelrc. If INCREMENTAL_BUILD is not set,
-    # then TMPDIR is used for the output base to avoid disk space issues.
-    install_base = os.path.join(tmp_dir, "bazel_install", bazel_version)
+    # then TMPDIR is used for Bazel outputs to avoid disk space issues.
     startup_options.extend([
+        f"--output_user_root={os.path.join(tmp_dir, 'bazel_user_root')}",
         f"--output_base={os.path.join(tmp_dir, 'bazel_out')}",
-        f"--install_base={install_base}",
     ])
 
   return BuildEnv(
@@ -156,7 +150,6 @@ def make_build_env(
       dist_dir=dist_dir,
       tmp_dir=tmp_dir,
       bazel_path=bazel_path,
-      bazel_version=bazel_version,
       user=user,
       branch=branch,
       is_studio_only_release=is_studio_only_release,
