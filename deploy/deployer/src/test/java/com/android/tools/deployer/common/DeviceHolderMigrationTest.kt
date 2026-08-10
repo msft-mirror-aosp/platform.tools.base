@@ -412,11 +412,11 @@ class DeviceHolderMigrationTest {
     )
 
     yieldUntil(timeout = Duration.ofSeconds(5)) {
-      deviceHolderLegacy.getPidsForPackageName("com.example.app").isNotEmpty() &&
+      deviceHolderLegacy.getPidsForPackageName("com.example.app").size >= 2 &&
         deviceHolderLegacy.getPidsForPackageName("com.example.other").isNotEmpty()
     }
     yieldUntil(timeout = Duration.ofSeconds(5)) {
-      deviceHolderNew.getPidsForPackageName("com.example.app").isNotEmpty() &&
+      deviceHolderNew.getPidsForPackageName("com.example.app").size >= 2 &&
         deviceHolderNew.getPidsForPackageName("com.example.other").isNotEmpty()
     }
 
