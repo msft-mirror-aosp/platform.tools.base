@@ -1,4 +1,3 @@
-load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
 load("@rules_java//java:defs.bzl", "java_library")
 load("//tools/base/bazel:bazel.bzl", "iml_module")
 load("//tools/base/bazel:expand_template.bzl", "expand_template")
@@ -266,14 +265,6 @@ expand_template(
     template = "tools_source.properties",
 )
 
-copy_file(
-    name = "sdkmanager_sh_executable",
-    src = "wrappers/sdkmanager.sh",
-    out = "sdkmanager_executable.sh",
-    is_executable = True,
-    visibility = ["//visibility:private"],
-)
-
 sdk_package(
     name = "commandlinetools",
     binaries = [
@@ -290,19 +281,19 @@ sdk_package(
     platform_others = {
         "linux": {
             "@android_cli_linux//file": "cmdline-tools/bin/android",
-            ":sdkmanager_sh_executable": "cmdline-tools/bin/sdkmanager",
+            "//tools/vendor/google/android:sdkmanager_sh_executable": "cmdline-tools/bin/sdkmanager",
         },
         "mac_x86_64": {
             "@android_cli_mac_x86_64//file": "cmdline-tools/bin/android",
-            ":sdkmanager_sh_executable": "cmdline-tools/bin/sdkmanager",
+            "//tools/vendor/google/android:sdkmanager_sh_executable": "cmdline-tools/bin/sdkmanager",
         },
         "mac_arm64": {
             "@android_cli_mac_arm64//file": "cmdline-tools/bin/android",
-            ":sdkmanager_sh_executable": "cmdline-tools/bin/sdkmanager",
+            "//tools/vendor/google/android:sdkmanager_sh_executable": "cmdline-tools/bin/sdkmanager",
         },
         "win": {
             "@android_cli_win//file": "cmdline-tools/bin/android.exe",
-            "wrappers/sdkmanager.bat": "cmdline-tools/bin/sdkmanager.bat",
+            "//tools/vendor/google/android:legacy/sdkmanager.bat": "cmdline-tools/bin/sdkmanager.bat",
         },
     },
     sourceprops = ":source.properties",
