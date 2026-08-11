@@ -107,6 +107,16 @@ abstract class AbstractTestDataImpl(
     instrumentationRunnerArguments.putAll(extraInstrumentationTestRunnerArgs)
     if (creationConfig.services.projectOptions[BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE]) {
       instrumentationRunnerArguments.put("com.android.tools.coverage.onTheFly", "true")
+
+      // Wrap the single-prefix resolution inside a lazy provider to delay
+      // evaluation until task execution.
+      val prefixProvider =
+        creationConfig.services.provider {
+          val mainVariant = (creationConfig as? com.android.build.gradle.internal.component.NestedComponentCreationConfig)?.mainVariant
+          val namespace = mainVariant?.namespace?.get() ?: creationConfig.namespace.get()
+          namespace.replace(".", "/")
+        }
+      instrumentationRunnerArguments.put("com.android.tools.coverage.prefixes", prefixProvider)
     }
     // memoize the value which makes it similar to `by lazy`
     instrumentationRunnerArguments.finalizeValueOnRead()

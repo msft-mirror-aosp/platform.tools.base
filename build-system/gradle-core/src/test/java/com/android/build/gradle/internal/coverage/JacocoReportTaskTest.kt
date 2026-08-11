@@ -128,6 +128,7 @@ class JacocoReportTaskTest {
     `when`(params.reportName).thenReturn(project.objects.property(String::class.java).value("testReport"))
     `when`(params.testPackageId).thenReturn(project.objects.property(String::class.java).value("com.example"))
     `when`(params.exclusions).thenReturn(project.objects.setProperty(String::class.java).value(emptySet()))
+    `when`(params.sourceFolders).thenReturn(project.files())
 
     val worker =
       object : JacocoReportTask.JacocoReportWorkerAction() {

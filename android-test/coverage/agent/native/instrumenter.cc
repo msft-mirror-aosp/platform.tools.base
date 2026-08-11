@@ -15,33 +15,49 @@
  */
 
 #include "tools/base/android-test/coverage/agent/native/instrumenter.h"
-
+#include <sys/types.h>
+#include <unistd.h>
 #include <algorithm>
 #include <atomic>
+#include <cstring>
 #include <limits>
 #include <map>
+#include <memory>
 #include <string_view>
 #include <unordered_map>
-
+#include <vector>
 #include "slicer/code_ir.h"
 #include "slicer/control_flow_graph.h"
+#include "slicer/dex_bytecode.h"
+#include "slicer/dex_format.h"
 #include "slicer/dex_ir.h"
 #include "slicer/dex_ir_builder.h"
 #include "slicer/instrumentation.h"
 #include "slicer/reader.h"
 #include "slicer/writer.h"
+#include "tools/base/android-test/coverage/agent/native/constructor_analyzer.h"
 #include "tools/base/android-test/coverage/agent/native/metadata_collector.h"
+#include "tools/base/android-test/coverage/agent/native/parameter_shifter.h"
+#include "tools/base/android-test/coverage/agent/native/register_scanner.h"
 #include "tools/base/android-test/coverage/common/log.h"
 
 namespace coverage {
 
+bool Instrumenter::IsSyntheticOrCompilerGenerated(std::string_view class_name) {
+  return class_name.find("$$") != std::string_view::npos ||
+         class_name.find("$Lambda$") != std::string_view::npos ||
+         class_name.find("$sam$") != std::string_view::npos ||
+         class_name.find("$inlined$") != std::string_view::npos;
+}
+
 namespace {
 
-/**
- * An allocator for Slicer that uses JVMTI's allocation mechanism.
- * This is necessary because ART will eventually deallocate the new class bytes
- * using JVMTI's Deallocate.
- */
+// Thread-safe unique counter for basic blocks across all instrumented classes.
+std::atomic<uint32_t> g_next_block_id{0};
+
+// An allocator for Slicer that uses JVMTI's allocation mechanism.
+// This is necessary because ART will deallocate the redefined class bytes
+// using JVMTI's Deallocate.
 class JvmtiAllocator : public dex::Writer::Allocator {
  public:
   explicit JvmtiAllocator(jvmtiEnv* jvmti) : jvmti_(jvmti) {}
@@ -67,9 +83,6 @@ class JvmtiAllocator : public dex::Writer::Allocator {
   jvmtiEnv* jvmti_;
 };
 
-// Global atomic counter for unique basic block IDs.
-static std::atomic<uint32_t> g_next_block_id(0);
-
 }  // namespace
 
 Instrumenter* Instrumenter::instance_ = nullptr;
@@ -77,6 +90,8 @@ Instrumenter* Instrumenter::instance_ = nullptr;
 Instrumenter::Instrumenter(jvmtiEnv* jvmti, const std::string& inclusion_prefix)
     : jvmti_(jvmti), inclusion_prefix_(inclusion_prefix) {
   instance_ = this;
+  Log::I("Coverage agent instrumenter initialized for prefix: %s",
+         inclusion_prefix.c_str());
 }
 
 Instrumenter::~Instrumenter() {
@@ -223,22 +238,88 @@ bool Instrumenter::InstrumentMethod(
     return false;  // Abstract or native method
   }
 
-  lir::CodeIr code_ir(ir_method, dex_ir);
+  std::string_view name(ir_method->decl->name->c_str());
 
-  // 1. Allocate 1 scratch register for our instrumentation.
-  // This is done first as it may insert prologue instructions.
-  slicer::AllocateScratchRegs alloc_regs(1);
-  if (!alloc_regs.Apply(&code_ir) || alloc_regs.ScratchRegs().empty()) {
-    Log::W("Failed to allocate scratch register for method %s. Skipping.",
-           ir_method->decl->name->c_str());
-    return false;
+  if (name == "<init>") {
+    // TODO: Implement the safe constructor implementation using
+    // ConstructorAnalyzer.
+    return false;  // Safely skip all constructors to avoid VerifyErrors and
+                   // preserve classes
   }
 
-  dex::u4 scratch_reg = *alloc_regs.ScratchRegs().begin();
+  // Skip synthetic compiler-generated methods unless they contain user lambdas
+  // or Compose logic.
+  if (ir_method->access_flags & dex::kAccSynthetic) {
+    // We allow synthetic methods if they are likely user-authored lambda bodies
+    // or Compose helpers.
+    if (name.find("invoke") == std::string_view::npos &&
+        name.find("lambda") == std::string_view::npos &&
+        name.find("Composable") == std::string_view::npos) {
+      return false;
+    }
+  }
 
-  // 2. Track line numbers for the entire method to map instructions to source
-  // lines. This pass is performed AFTER register allocation so that all
-  // instructions (including prologues) are mapped to the most relevant line.
+  lir::CodeIr code_ir(ir_method, dex_ir);
+
+  // Track the original first bytecode instruction before register allocation to
+  // align probes safely after Slicer's prologue.
+  lir::Instruction* orig_first_instr = nullptr;
+  for (auto* instr : code_ir.instructions) {
+    if (dynamic_cast<lir::Bytecode*>(instr) != nullptr) {
+      orig_first_instr = instr;
+      break;
+    }
+  }
+
+  // 1. Resolve a scratch register to hold our block IDs.
+  // We bypass Slicer's AllocateScratchRegs to avoid unstable global register
+  // renumbering, which is highly prone to generating out-of-bounds register
+  // VerifyErrors in large, complex classes (such as Jetpack Compose screens).
+  // Instead, we use a hybrid allocator:
+  //
+  // Fast Path: Scan the method's existing bytecode instructions to check if
+  // there is an untouched/unused register index < 16. If so, we use it directly
+  // as our scratch register, requiring zero frame modifications and zero
+  // parameter-shifting.
+  dex::u4 scratch_reg = 0;
+  bool found_unused = false;
+
+  scratch_reg = RegisterScanner::FindUnusedScratchRegister(ir_method, code_ir,
+                                                           found_unused);
+
+  // Slow Path: If no unused registers exist, we manually expand the method's
+  // register frame by exactly 1 slot, allocating the absolute highest register
+  // index as our scratch register.
+  if (!found_unused) {
+    scratch_reg = ir_method->code->registers;
+
+    // Dalvik const-loading instructions use an 8-bit register field (vAA).
+    // Therefore, we cannot encode constants or block IDs into scratch registers
+    // >= 256. If a method is so massive that it exceeds 255 registers, we must
+    // safely skip it to prevent assembler crashes.
+    if (scratch_reg > 255) {
+      Log::W("Method %s has too many registers (%d). Skipping.",
+             ir_method->decl->name->c_str(), scratch_reg);
+      return false;
+    }
+
+    // Expand the registers count by 1 to allocate our new scratch register.
+    ir_method->code->registers += 1;
+    const dex::u4 ins_count = ir_method->code->ins_count;
+
+    // Because Dalvik requires parameters (arguments) to always reside at the
+    // absolute end of the method's register frame, expanding the registers
+    // count by 1 shifts all incoming parameters upward in memory by exactly 1
+    // slot. We delegate the parameter-shifting relocation (prologue moves) to
+    // our modular ParameterShifter class to keep code clean, readable, and
+    // highly maintainable.
+    if (!ParameterShifter::ShiftParameters(ir_method, code_ir,
+                                           orig_first_instr)) {
+      return false;
+    }
+  }
+
+  // 2. Track line numbers to map instructions to source lines.
   std::unordered_map<lir::Instruction*, int32_t> instr_to_line;
   int32_t current_line = -1;
   if (ir_method->code->debug_info != nullptr) {
@@ -279,12 +360,16 @@ bool Instrumenter::InstrumentMethod(
     // Track metadata for this block: map line_number -> instruction_count
     std::map<int32_t, uint32_t> line_instruction_counts;
 
-    // Find the first bytecode instruction in this basic block and count
-    // instructions.
+    // 1. Gather line numbers for this block
     for (auto* instr = block.region.first; instr != nullptr;
          instr = (instr == block.region.last) ? nullptr : instr->next) {
-      if (dynamic_cast<lir::Bytecode*>(instr)) {
-        if (trace_point == nullptr) trace_point = instr;
+      if (auto* bytecode = dynamic_cast<lir::Bytecode*>(instr)) {
+        dex::Opcode op = bytecode->opcode;
+        if (op == dex::OP_NOP ||
+            (op >= dex::OP_MOVE && op <= dex::OP_MOVE_OBJECT_16) ||
+            op == dex::OP_CHECK_CAST) {
+          continue;
+        }
 
         auto it = instr_to_line.find(instr);
         int32_t line = (it != instr_to_line.end()) ? it->second : -1;
@@ -294,19 +379,60 @@ bool Instrumenter::InstrumentMethod(
       }
     }
 
+    // 2. Normal trace point finding for standard methods
+    for (auto* instr = block.region.first; instr != nullptr;
+         instr = (instr == block.region.last) ? nullptr : instr->next) {
+      if (auto* bytecode = dynamic_cast<lir::Bytecode*>(instr)) {
+        dex::Opcode op = bytecode->opcode;
+        if (op != dex::OP_NOP &&
+            !(op >= dex::OP_MOVE && op <= dex::OP_MOVE_OBJECT_16) &&
+            op != dex::OP_CHECK_CAST) {
+          trace_point = instr;
+          break;
+        }
+      }
+    }
+
     if (trace_point == nullptr) continue;
 
-    // Dalvik requires that OP_MOVE_RESULT_* and OP_MOVE_EXCEPTION instructions
-    // immediately follow the instruction that produced the result/exception.
-    // We cannot safely inject code between them, so we advance the trace point.
+    // Safety check: For standard methods, ensure we never inject any coverage
+    // probes before Slicer's parameter copy-back prologue. If the trace_point
+    // is topologically before our orig_first_instr (i.e. it is one of Slicer's
+    // prologue moves), we safely shift the injection target down to
+    // orig_first_instr.
+    if (orig_first_instr != nullptr) {
+      bool is_before_orig = false;
+      for (auto* instr : code_ir.instructions) {
+        if (instr == orig_first_instr) {
+          break;
+        }
+        if (instr == trace_point) {
+          is_before_orig = true;
+          break;
+        }
+      }
+      if (is_before_orig) {
+        trace_point = orig_first_instr;
+      }
+    }
+
+    if (trace_point == nullptr) continue;
+
+    // Dalvik requires that OP_MOVE_RESULT_*, OP_MOVE_EXCEPTION, and Slicer's
+    // copy-back move instructions immediately follow the instructions that
+    // produced them. We cannot safely inject code between them, so we advance
+    // the trace point.
     while (auto trace_bytecode = dynamic_cast<lir::Bytecode*>(trace_point)) {
       auto opcode = trace_bytecode->opcode;
-      if (opcode != dex::OP_MOVE_RESULT && opcode != dex::OP_MOVE_RESULT_WIDE &&
-          opcode != dex::OP_MOVE_RESULT_OBJECT &&
-          opcode != dex::OP_MOVE_EXCEPTION) {
+      if (opcode == dex::OP_MOVE_16 || opcode == dex::OP_MOVE_OBJECT_16 ||
+          opcode == dex::OP_MOVE_WIDE_16 || opcode == dex::OP_MOVE_RESULT ||
+          opcode == dex::OP_MOVE_RESULT_WIDE ||
+          opcode == dex::OP_MOVE_RESULT_OBJECT ||
+          opcode == dex::OP_MOVE_EXCEPTION) {
+        trace_point = trace_point->next;
+      } else {
         break;
       }
-      trace_point = trace_point->next;
     }
 
     if (trace_point == nullptr) continue;
@@ -415,39 +541,32 @@ bool Instrumenter::ShouldInstrument(jobject loader, const char* name,
     return false;
   }
 
-  // Only instrument the classes which belong to the package names provided
-  // by the build system.
-  // TODO: Update this logic to support a delimited list of multiple packages.
   if (inclusion_prefix_.empty()) {
     return false;
   }
 
+  bool prefix_match = false;
   std::string_view inc_prefix(inclusion_prefix_);
-  // The build system for this project is constrained to the C++17 standard.
-  // Since std::string_view::starts_with() was only introduced in C++20, we
-  // use rfind(prefix, 0) as a functionally equivalent and efficient way to
-  // verify that the class name begins with our inclusion prefix without
-  // incurring the overhead of string copies.
-  if (class_name.size() < inc_prefix.size() ||
-      class_name.rfind(inc_prefix, 0) != 0) {
-    return false;
-  }
-
-  // If the class name is longer than the prefix, the character immediately
-  // following the prefix match must be a separator ('/' or '$') unless
-  // the prefix itself already ended with a separator.
-  if (class_name.size() > inc_prefix.size() && inc_prefix.back() != '/' &&
-      inc_prefix.back() != '$') {
-    char next_char = class_name[inc_prefix.size()];
-    if (next_char != '/' && next_char != '$') {
-      return false;
+  if (class_name.size() >= inc_prefix.size() &&
+      class_name.rfind(inc_prefix, 0) == 0) {
+    if (class_name.size() > inc_prefix.size() && inc_prefix.back() != '/' &&
+        inc_prefix.back() != '$') {
+      char next_char = class_name[inc_prefix.size()];
+      if (next_char != '/' && next_char != '$') {
+        return false;
+      }
     }
+    prefix_match = true;
   }
 
-  return true;
+  return prefix_match;
 }
 
 void Instrumenter::RetransformLoadedClasses(JNIEnv* jni) {
+  if (inclusion_prefix_.empty()) {
+    return;
+  }
+
   jint class_count = 0;
   jclass* classes = nullptr;
   jvmtiError error = jvmti_->GetLoadedClasses(&class_count, &classes);
@@ -456,105 +575,51 @@ void Instrumenter::RetransformLoadedClasses(JNIEnv* jni) {
     return;
   }
 
-  std::vector<jclass> candidates;
+  std::vector<jclass> classes_to_retransform;
   for (jint i = 0; i < class_count; ++i) {
     jclass klass = classes[i];
-
-    // 1. Performance Optimization: Quick Prefix Check on Signature (Fastest)
-    char* sig_ptr = nullptr;
-    error = jvmti_->GetClassSignature(klass, &sig_ptr, nullptr);
-    if (error != JVMTI_ERROR_NONE) {
-      jni->DeleteLocalRef(klass);
-      continue;
-    }
-
-    std::string_view sig(sig_ptr);
-    bool prefix_match = false;
-    std::string internal_name;
-
-    // JNI signature format: "Lcom/example/MyClass;"
-    if (sig.length() > 2 && sig.front() == 'L' && sig.back() == ';') {
-      // Fast check: does the signature (skipping 'L') start with our prefix?
-      std::string_view name_view = sig.substr(1, sig.length() - 2);
-      if (name_view.rfind(inclusion_prefix_, 0) == 0) {
-        prefix_match = true;
-        internal_name = std::string(name_view);
+    char* signature = nullptr;
+    error = jvmti_->GetClassSignature(klass, &signature, nullptr);
+    if (error == JVMTI_ERROR_NONE && signature != nullptr) {
+      std::string_view class_name(signature);
+      if (class_name.front() == 'L' && class_name.back() == ';') {
+        class_name = class_name.substr(1, class_name.size() - 2);
       }
-    }
-
-    if (!prefix_match) {
-      jvmti_->Deallocate(reinterpret_cast<unsigned char*>(sig_ptr));
-      jni->DeleteLocalRef(klass);
-      continue;
-    }
-
-    // 2. Validation: Check Loader and Tags
-    jobject loader = nullptr;
-    jvmti_->GetClassLoader(klass, &loader);
-
-    bool should_instrument =
-        ShouldInstrument(loader, internal_name.c_str(), klass);
-
-    if (loader != nullptr) {
-      jni->DeleteLocalRef(loader);
-    }
-
-    // 3. Capability Check: Is it actually modifiable?
-    if (should_instrument) {
-      jboolean modifiable = JNI_FALSE;
-      jvmti_->IsModifiableClass(klass, &modifiable);
-      if (modifiable) {
-        // Use GlobalRef to avoid exceeding JNI local reference limits
-        // (typically 512).
-        candidates.push_back(
-            reinterpret_cast<jclass>(jni->NewGlobalRef(klass)));
+      jobject loader = nullptr;
+      jvmti_->GetClassLoader(klass, &loader);
+      if (ShouldInstrument(loader, std::string(class_name).c_str(), klass)) {
+        jboolean modifiable = JNI_FALSE;
+        jvmti_->IsModifiableClass(klass, &modifiable);
+        if (modifiable) {
+          // Use GlobalRef to avoid exceeding JNI local reference limits
+          // (typically 512).
+          classes_to_retransform.push_back(
+              reinterpret_cast<jclass>(jni->NewGlobalRef(klass)));
+        }
       }
+      if (loader != nullptr) {
+        jni->DeleteLocalRef(loader);
+      }
+      jvmti_->Deallocate(reinterpret_cast<unsigned char*>(signature));
     }
-
-    // Clean up temporary references for this iteration
-    jvmti_->Deallocate(reinterpret_cast<unsigned char*>(sig_ptr));
     jni->DeleteLocalRef(klass);
   }
 
-  if (!candidates.empty()) {
-    Log::I("Retransforming %zu loaded classes...", candidates.size());
-    error = jvmti_->RetransformClasses(static_cast<jint>(candidates.size()),
-                                       candidates.data());
-    if (error != JVMTI_ERROR_NONE) {
-      Log::E("Error: RetransformClasses failed. Error code: %d", error);
-    }
-
-    // Clean up GlobalRefs
-    for (jclass global_klass : candidates) {
-      jni->DeleteGlobalRef(global_klass);
+  if (!classes_to_retransform.empty()) {
+    Log::I("Retransforming %zu loaded classes...",
+           classes_to_retransform.size());
+    for (jclass klass : classes_to_retransform) {
+      jvmtiError err = jvmti_->RetransformClasses(1, &klass);
+      if (err != JVMTI_ERROR_NONE) {
+        // Safe to log warning and proceed to the next class
+        Log::W("Retransformation failed for class (error: %d). Skipping.", err);
+      }
+      // Release JNI global reference for the class after retransformation
+      jni->DeleteGlobalRef(klass);
     }
   }
 
   jvmti_->Deallocate(reinterpret_cast<unsigned char*>(classes));
-}
-
-bool Instrumenter::IsSyntheticOrCompilerGenerated(std::string_view class_name) {
-  size_t dollar_pos = class_name.find('$');
-  if (dollar_pos == std::string_view::npos) {
-    return false;
-  }
-
-  // Check if there is a digit immediately following any '$'
-  for (size_t i = dollar_pos; i < class_name.size(); ++i) {
-    if (class_name[i] == '$' && i + 1 < class_name.size() &&
-        std::isdigit(class_name[i + 1])) {
-      return true;
-    }
-  }
-
-  // Check for common Kotlin compiler synthetic patterns
-  if (class_name.find("$lambda-") != std::string_view::npos ||
-      class_name.find("$sam$") != std::string_view::npos ||
-      class_name.find("$inlined$") != std::string_view::npos) {
-    return true;
-  }
-
-  return false;
 }
 
 }  // namespace coverage

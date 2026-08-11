@@ -45,6 +45,7 @@ internal fun generateOnTheFlyXml(
   reportName: String,
   testPackageId: String?,
   exclusions: Set<String>,
+  sourceFolders: Collection<File>,
 ) {
   if (metadataFile == null || hitsFile == null) {
     throw IOException("On-the-fly coverage is enabled but required .pb files were not found.")
@@ -57,6 +58,7 @@ internal fun generateOnTheFlyXml(
       reportName = reportName,
       testPackageId = testPackageId,
       exclusions = exclusions,
+      sourceFolders = sourceFolders,
     )
 }
 

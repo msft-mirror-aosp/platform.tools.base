@@ -23,14 +23,20 @@ genrule(
 cc_library(
     name = "agent_lib",
     srcs = [
+        "constructor_analyzer.cc",
         "hits_extractor.cc",
         "instrumenter.cc",
         "metadata_collector.cc",
+        "parameter_shifter.cc",
+        "register_scanner.cc",
     ],
     hdrs = [
+        "constructor_analyzer.h",
         "hits_extractor.h",
         "instrumenter.h",
         "metadata_collector.h",
+        "parameter_shifter.h",
+        "register_scanner.h",
     ],
     copts = ANDROID_COPTS,
     tags = ["testonly"],
@@ -93,6 +99,7 @@ cc_test(
     name = "agent_unit_tests",
     size = "small",
     srcs = [
+        "bytecode_helpers_test.cc",
         "hits_extractor_test.cc",
         "metadata_collector_test.cc",
     ],

@@ -129,7 +129,7 @@ extern "C" JNIEXPORT jint JNICALL Agent_OnAttach(JavaVM* vm, char* options,
   // "com.example.app,com/example/app,/data/user/0/com.example.app.test"
   std::string options_str = (options != nullptr) ? options : "";
   std::string package_name;
-  std::string inclusion_prefixes;
+  std::string inclusion_prefix;
   std::string data_dir;
 
   size_t first_comma = options_str.find(',');
@@ -138,7 +138,7 @@ extern "C" JNIEXPORT jint JNICALL Agent_OnAttach(JavaVM* vm, char* options,
   if (first_comma != std::string::npos && last_comma != std::string::npos &&
       first_comma != last_comma) {
     package_name = options_str.substr(0, first_comma);
-    inclusion_prefixes =
+    inclusion_prefix =
         options_str.substr(first_comma + 1, last_comma - first_comma - 1);
     data_dir = options_str.substr(last_comma + 1);
   } else {
@@ -172,7 +172,7 @@ extern "C" JNIEXPORT jint JNICALL Agent_OnAttach(JavaVM* vm, char* options,
     coverage::HitsExtractor::Instance().Initialize(jni_env, data_dir);
 
     // c. Initialize instrumenter and register hooks
-    g_instrumenter = new coverage::Instrumenter(jvmti_env, inclusion_prefixes);
+    g_instrumenter = new coverage::Instrumenter(jvmti_env, inclusion_prefix);
 
     // d. Register JVMTI hooks centrally.
     jvmtiEventCallbacks callbacks = {};

@@ -42,10 +42,11 @@ class CoverageXmlGenerator {
     reportName: String = "debug",
     testPackageId: String? = null,
     exclusions: Set<String> = emptySet(),
+    sourceFolders: Collection<File> = emptyList(),
   ) {
     val coverageData = decoder.decode(metadataFile, hitsFile)
 
-    val reportModel = aggregator.aggregate(coverageData, reportName, testPackageId, exclusions)
+    val reportModel = aggregator.aggregate(coverageData, reportName, testPackageId, exclusions, sourceFolders)
 
     writer.write(reportModel, outputFile)
   }

@@ -285,6 +285,7 @@ abstract class JacocoReportTask : NonIncrementalTask() {
               parameters.reportName.get(),
               parameters.testPackageId.orNull,
               parameters.exclusions.get(),
+              parameters.sourceFolders.files,
             )
           } else if (jacocoFiles.isNotEmpty()) {
             generateReport(

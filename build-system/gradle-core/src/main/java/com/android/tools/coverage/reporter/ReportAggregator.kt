@@ -27,7 +27,13 @@ class ReportAggregator {
    * @param testPackageId Optional package ID of the test app to filter out.
    * @param exclusions Optional set of internal class names or package prefixes to exclude.
    */
-  fun aggregate(data: CoverageData, reportName: String, testPackageId: String? = null, exclusions: Set<String> = emptySet()): ReportModel {
+  fun aggregate(
+    data: CoverageData,
+    reportName: String,
+    testPackageId: String? = null,
+    exclusions: Set<String> = emptySet(),
+    sourceFolders: Collection<java.io.File> = emptyList(),
+  ): ReportModel {
     val report = ReportModel(reportName)
     val testPackagePrefix = testPackageId?.replace('.', '/')?.let { if (it.endsWith('/')) it else "$it/" }
     val internalExclusions = exclusions.map { it.replace('.', '/') }.toSet()
@@ -59,6 +65,17 @@ class ReportAggregator {
       // Filter 3: Generated Android R classes (Safe R filter)
       if ((className.endsWith("/R") || className.contains("/R$")) && sourceFilename.isBlank()) {
         continue
+      }
+
+      // Filter 4: Check if the physical source file exists in any of our source folders.
+      // If it doesn't, this class belongs to an external compiled library, and we exclude it!
+      if (sourceFolders.isNotEmpty() && !sourceFilename.isBlank()) {
+        val pkgPath = className.substringBeforeLast('/', "")
+        val relativeSourcePath = if (pkgPath.isEmpty()) sourceFilename else "$pkgPath/$sourceFilename"
+        val exists = sourceFolders.any { folder -> java.io.File(folder, relativeSourcePath).exists() }
+        if (!exists) {
+          continue
+        }
       }
 
       val pkgName = className.substringBeforeLast('/', "")
