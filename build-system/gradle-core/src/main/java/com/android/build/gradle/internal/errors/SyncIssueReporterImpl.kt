@@ -98,16 +98,21 @@ class SyncIssueReporterImpl(
   @Synchronized
   override fun reportIssue(type: Type, severity: Severity, exception: EvalIssueException) {
     val issue = SyncIssueImpl(type, severity, exception)
+    var problemException: RuntimeException? = null
     if (severity == Severity.WARNING && suppressedSyncIssues.contains(type.name)) {
       return
     }
     if (syncIssueKeyFrom(issue) !in _syncIssues) {
-      problemReporter.reportSyncIssue(type, severity, exception)
+      try {
+        problemReporter.reportSyncIssue(type, severity, exception)
+      } catch (e: RuntimeException) {
+        problemException = e
+      }
     }
     when (mode) {
       EvaluationMode.STANDARD -> {
         if (severity.severity != SyncIssue.SEVERITY_WARNING) {
-          throw exception
+          throw problemException ?: exception
         }
         messageReceiverImpl.receiveMessage(Message(Message.Kind.WARNING, exception.message))
       }

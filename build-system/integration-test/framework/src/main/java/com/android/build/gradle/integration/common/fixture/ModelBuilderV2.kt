@@ -122,10 +122,6 @@ internal constructor(
     parameterMutator: ParameterMutator = ParameterMutator { it.buildAllRuntimeClasspaths() },
     nativeParams: NativeModuleParams? = null,
   ): FetchResult<ModelContainerV2> {
-    // TODO(b/528235271): Enable back consistency check for problem API. 9.6.0. changed behaviour of problems API severity.
-    // See: https://github.com/gradle/gradle/issues/36515
-    // val container = checkSyncIssues(buildModelV2(GetAndroidModelV2Action(variantName, parameterMutator, nativeParams)))
-
     val container = checkSyncIssues(buildModelV2(GetAndroidModelV2Action(variantName, parameterMutator, nativeParams)))
 
     return FetchResult(container, normalizer = getFileNormalizer(container))
@@ -274,14 +270,8 @@ ${it.details?.details?.lines()}
         }
     val issuesAsStrings =
       allSyncIssues.map {
-        val severity =
-          when (it.severity) {
-            SyncIssue.SEVERITY_ERROR -> SyncIssue.SEVERITY_WARNING
-            SyncIssue.SEVERITY_WARNING -> SyncIssue.SEVERITY_WARNING
-            else -> 0
-          }
         """
-severity: $severity
+severity: ${it.severity}
 type: ${it.type}
 data: ${it.data}
 message:
