@@ -628,6 +628,7 @@ internal fun getLintJavaLauncherProvider(
     return providerFactory.provider { null }
   }
   val toolchainSpec = lintOptions.toolchain
+  val javaToolchainService = project.extensions.findByType(JavaToolchainService::class.java)
 
   return providerFactory
     .provider<JavaToolchainService> {
@@ -666,8 +667,7 @@ internal fun getLintJavaLauncherProvider(
         )
       }
 
-      project.extensions.findByType(JavaToolchainService::class.java)
-        ?: throw GradleException("Configured Lint toolchain requires 'JavaToolchainService'.")
+      javaToolchainService ?: throw GradleException("Configured Lint toolchain requires 'JavaToolchainService'.")
     }
     .flatMap { service: JavaToolchainService? ->
       if (service == null) {
