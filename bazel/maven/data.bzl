@@ -50,8 +50,12 @@ _CLASS_JARS = [
     "androidx.appcompat:appcompat:1.6.1",
     "androidx.appcompat:appcompat:1.7.0",
     "androidx.arch.core:core-testing:2.1.0",  # Dependency of architecture-samples
+    "androidx.baselineprofile:androidx.baselineprofile.gradle.plugin:pom:1.5.0-beta01",
     "androidx.benchmark:benchmark-baseline-profile-gradle-plugin:1.2.4",
+    "androidx.benchmark:benchmark-baseline-profile-gradle-plugin:1.5.0-beta01",
     "androidx.benchmark:benchmark-gradle-plugin:1.2.4",
+    "androidx.benchmark:benchmark-macro-junit4:1.5.0-beta01",
+    "androidx.benchmark:benchmark-traceprocessor-android:1.5.0-beta01",
     "androidx.car.app:app:1.4.0",
     "androidx.cardview:cardview:1.0.0",
     "androidx.collection:collection:1.4.0",
