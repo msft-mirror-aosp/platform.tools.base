@@ -402,4 +402,43 @@ TEST(PerfettoCropperTest,
   EXPECT_EQ(process_it.Get(0).long_value, 0);
 }
 
+TEST(PerfettoCropperTest,
+     TestSplitGpuFrameTimeline_Pixel10_Sample_Triangle_LastFrame) {
+  std::string test_trace_path =
+      "tools/base/profiler/native/sherlock/testdata/"
+      "gpu-render-stages-pixel10-sample-triangle.perfetto";
+
+  auto buffer = ReadFile(test_trace_path);
+  ASSERT_FALSE(buffer.empty());
+
+  // Crop window for the last frame (matching Frame 4 in Pixel 10 trace)
+  int64_t start_ns = 210125700109L;
+  int64_t end_ns = 210125922330L;
+
+  std::stringstream cropped_stream;
+  absl::Status status = SplitGpuFrameTimeline(buffer.data(), buffer.size(),
+                                              cropped_stream, start_ns, end_ns);
+  EXPECT_TRUE(status.ok()) << status;
+
+  std::string cropped_data = cropped_stream.str();
+  EXPECT_GT(cropped_data.size(), 0);
+
+  auto cropped_tp = ParseTrace(cropped_data);
+
+  // Verify only the target frame's render stage is present (no out-of-bounds
+  // compute stages)
+  auto rs = RenderStagesUtils::GetAllRenderStages(cropped_tp.get());
+  ASSERT_EQ(rs.size(), 1);
+  EXPECT_EQ(rs[0].type, RenderStageType::RENDER_PASS);
+  EXPECT_EQ(rs[0].submission_id, 545);
+  ASSERT_EQ(rs[0].parts.size(), 2);
+  EXPECT_EQ(rs[0].parts[0].name, "Vertex");
+  EXPECT_EQ(rs[0].parts[1].name, "Fragment");
+
+  // Verify process table is clean
+  auto process_it = cropped_tp->ExecuteQuery(kProcessTableCountSql);
+  ASSERT_TRUE(process_it.Next());
+  EXPECT_EQ(process_it.Get(0).long_value, 0);
+}
+
 }  // namespace sherlock

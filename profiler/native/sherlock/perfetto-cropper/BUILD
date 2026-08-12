@@ -37,6 +37,7 @@ cc_test(
     data = [
         "//tools/base/profiler/native/sherlock:testdata/cropper-test-specifications.perfetto",
         "//tools/base/profiler/native/sherlock:testdata/cropper-test-trace.pftrace",
+        "//tools/base/profiler/native/sherlock:testdata/gpu-render-stages-pixel10-sample-triangle.perfetto",
     ],
     linkstatic = 1,
     deps = [

@@ -326,10 +326,11 @@ void InjectInitialGpuCounters(
  * @param out Output stream to write the resulting packet to.
  * @param data Pointer to the raw packet data.
  * @param size Size of the raw packet data.
- * @param strip_timestamp If true, removes timestamp fields from the packet.
+ * @param keep_metadata_only If true, removes timestamp and event fields from
+ * the packet.
  */
 void WritePacketWithoutPidInfo(std::ostream& out, const uint8_t* data,
-                               size_t size, bool strip_timestamp = false) {
+                               size_t size, bool keep_metadata_only = false) {
   protozero::ProtoDecoder packet_decoder(data, size);
   protozero::HeapBuffered<perfetto::protos::pbzero::TracePacket> packet_builder;
 
@@ -348,7 +349,7 @@ void WritePacketWithoutPidInfo(std::ostream& out, const uint8_t* data,
     }
 
     // Optionally clear timestamp fields
-    if (strip_timestamp &&
+    if (keep_metadata_only &&
         (field_id ==
              perfetto::protos::pbzero::TracePacket::kTimestampFieldNumber ||
          field_id == perfetto::protos::pbzero::TracePacket::
@@ -403,7 +404,11 @@ void WritePacketWithoutPidInfo(std::ostream& out, const uint8_t* data,
             }
             specs_builder->AppendRawProtoBytes(sf_start, sf_end - sf_start);
           }
-        } else {
+        } else if (!keep_metadata_only) {
+          // Keep event fields only if we are not in metadata-only
+          // (keep_metadata_only) mode. This ensures that for pre-window
+          // metadata packets, we only keep the specifications and drop the
+          // actual event details.
           event_builder->AppendRawProtoBytes(ef_start, ef_end - ef_start);
         }
       }
@@ -620,8 +625,9 @@ absl::Status SplitGpuFrameTimeline(const uint8_t* data, size_t size,
       // to prevent Trace Processor from assuming the trace starts earlier than
       // intended.
       if (packet_ts <= static_cast<uint64_t>(end_ns)) {
+        bool keep_metadata_only = packet_ts < static_cast<uint64_t>(start_ns);
         WritePacketWithoutPidInfo(out, packet_data, packet_size,
-                                  /*strip_timestamp=*/true);
+                                  keep_metadata_only);
       }
       continue;
     }
