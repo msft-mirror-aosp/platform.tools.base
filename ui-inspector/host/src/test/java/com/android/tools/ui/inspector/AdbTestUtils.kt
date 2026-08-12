@@ -28,12 +28,17 @@ import com.android.adblib.DirectoryEntryV2
 import com.android.adblib.FileStat
 import com.android.adblib.FileStatV2
 import com.android.adblib.RemoteFileMode
+import com.android.adblib.ShellCollector
+import com.android.adblib.ShellOptions
+import com.android.adblib.ShellV2Collector
+import com.android.adblib.ShellWindowSize
 import com.android.adblib.SocketSpec
 import com.android.adblib.SyncProgress
 import com.android.adblib.testing.FakeAdbDeviceServices
 import com.android.adblib.testing.FakeAdbHostServices
 import com.android.adblib.testing.FakeAdbSession
 import java.nio.file.attribute.FileTime
+import java.time.Duration
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 
@@ -47,13 +52,15 @@ class TestAdbSession(
 /** A custom [AdbHostServices] for testing that provides a fake implementation of [forward]. */
 class TestAdbHostServices(val delegate: FakeAdbHostServices) : AdbHostServices by delegate {
   var forwardedPort: String? = "12345"
+  /** Ports returned by successive [forward] calls before falling back to [forwardedPort], letting each call target a different server. */
+  val queuedForwardPorts = ArrayDeque<String>()
   val recordedForwardCalls = mutableListOf<Triple<DeviceSelector, SocketSpec, SocketSpec>>()
   val recordedKillForwardCalls = mutableListOf<Pair<DeviceSelector, SocketSpec>>()
   var throwOnKillForward: Boolean = false
 
   override suspend fun forward(device: DeviceSelector, local: SocketSpec, remote: SocketSpec, rebind: Boolean): String? {
     recordedForwardCalls.add(Triple(device, local, remote))
-    return forwardedPort
+    return queuedForwardPorts.removeFirstOrNull() ?: forwardedPort
   }
 
   override suspend fun killForward(device: DeviceSelector, local: SocketSpec) {
@@ -76,6 +83,66 @@ class TestAdbDeviceServices(val delegate: FakeAdbDeviceServices) : AdbDeviceServ
 
   val recordedSyncSends = mutableListOf<SyncSendParams>()
   var throwOnSyncSend: Boolean = false
+
+  /**
+   * The session through which `ShellCommand` execution re-resolves its device services. It must point at the wrapping [TestAdbSession] for
+   * the [shell]/[shellV2] overrides below to observe `shellAsText` invocations; left at the delegate's session, those invocations bypass
+   * this wrapper entirely.
+   */
+  override var session: AdbSession = delegate.session
+
+  /**
+   * Per-command FIFO of stdout values: each shell invocation of the command consumes the next queued value, and the last value keeps
+   * repeating. Lets a test return different outputs for successive invocations of the same command (e.g. a socket probe that first misses
+   * and later hits), which [FakeAdbDeviceServices.configureShellCommand] alone cannot express. Requires [session] to be pointed at the
+   * wrapping [TestAdbSession].
+   */
+  val queuedShellOutputs = mutableMapOf<String, ArrayDeque<String>>()
+
+  private fun applyQueuedShellOutput(device: DeviceSelector, command: String) {
+    val queue = queuedShellOutputs[command] ?: return
+    val next = if (queue.size > 1) queue.removeFirst() else queue.first()
+    delegate.configureShellCommand(device, command, next)
+  }
+
+  override fun <T> shell(
+    device: DeviceSelector,
+    command: String,
+    shellCollector: ShellCollector<T>,
+    shellOptions: ShellOptions?,
+    stdinChannel: AdbInputChannel?,
+    commandTimeout: Duration,
+    bufferSize: Int,
+    shutdownOutput: Boolean,
+    stripCrLf: Boolean,
+  ): Flow<T> {
+    applyQueuedShellOutput(device, command)
+    return delegate.shell(
+      device,
+      command,
+      shellCollector,
+      shellOptions,
+      stdinChannel,
+      commandTimeout,
+      bufferSize,
+      shutdownOutput,
+      stripCrLf,
+    )
+  }
+
+  override fun <T> shellV2(
+    device: DeviceSelector,
+    command: String,
+    shellCollector: ShellV2Collector<T>,
+    shellOptions: ShellOptions?,
+    stdinChannel: AdbInputChannel?,
+    windowSizeFlow: Flow<ShellWindowSize>?,
+    commandTimeout: Duration,
+    bufferSize: Int,
+  ): Flow<T> {
+    applyQueuedShellOutput(device, command)
+    return delegate.shellV2(device, command, shellCollector, shellOptions, stdinChannel, windowSizeFlow, commandTimeout, bufferSize)
+  }
 
   override suspend fun sync(device: DeviceSelector, readAheadBufferSize: Int, writeBackBufferSize: Int): AdbDeviceSyncServices {
     return object : AdbDeviceSyncServices {

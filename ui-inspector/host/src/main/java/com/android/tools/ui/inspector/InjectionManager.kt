@@ -117,24 +117,26 @@ class InjectionManager(
   private val deviceSelector = DeviceSelector.fromSerialNumber(serial)
   private val uidResolver = UidResolver(adbSession, deviceSelector)
 
-  /**
-   * The absolute path to the application's private data directory for Android user 0, queried via `run-as`. Querying the path avoids
-   * assuming that the standard /data/data/ prefix is applicable.
-   */
-  @Volatile private var appDataDir: String? = null
-
   /** The local TCP spec of the adb forward created by [injectAndAttach]. Cleared by [removeAdbForward]. */
   private val forwardedPortSpec = AtomicReference<SocketSpec.Tcp?>(null)
 
   /**
-   * Push the agent to the device and attach it to the specified app.
+   * Ensures an agent server built from the host's artifact set is running in the target app, and returns an adb forward to its socket.
+   *
+   * The server socket name embeds the target pid and the digest of the shipped artifacts, so a live socket with the expected name proves
+   * that this exact process was already injected with byte-identical artifacts. In [InjectionMode.RECONNECT_IF_AVAILABLE], such a server is
+   * reused directly; the full injection sequence (pushing artifacts, staging them via `run-as`, attaching the agent) runs only when no
+   * matching socket exists or in [InjectionMode.FORCE_FULL_INJECTION]. Reconnection also skips the `run-as` accessibility check: the
+   * matching socket is the evidence of a prior successful injection.
    *
    * @param needsDebugViewAttributes Whether the platform must expose attribute resolution stacks for the inspected app, i.e. whether the
    *   `resolution-stack` facet was requested. When true, the per-app debug-view-attributes setting is enabled (see
-   *   [enableDebugViewAttributes]); when false, device settings are left untouched.
-   * @return The forwarded TCP port number on the host. Connect to this port to communicate with the agent.
+   *   [enableDebugViewAttributes]) on both the reconnect and full paths — the setting is independent of the server lifecycle; when false,
+   *   device settings are left untouched.
+   * @param mode Whether a running agent server may be reused; see [InjectionMode].
+   * @return An [InjectionResult] carrying the forwarded TCP port and how the server was obtained.
    */
-  suspend fun injectAndAttach(needsDebugViewAttributes: Boolean): String = coroutineScope {
+  suspend fun injectAndAttach(needsDebugViewAttributes: Boolean, mode: InjectionMode): InjectionResult {
     val (deviceAbi, sdkVersion) = retrieveDeviceMetadata(deviceSelector)
     if (sdkVersion < ProtocolConstants.MIN_SUPPORTED_API_LEVEL) {
       throw IllegalStateException(
@@ -148,10 +150,8 @@ class InjectionManager(
           "Failed to access the application '$packageName'. Please make sure the app is installed, debuggable, and running under the current user."
         )
 
-    // Query app data dir and pid synchronously at the beginning to verify that the app is accessible and running. The pid is deliberately
-    // captured before any debug-view-attributes flip: the flip only relaunches activities within the existing process, so the pid stays
-    // valid, and reading it first avoids mutating device settings when the target is not running.
-    appDataDir = queryAppDataDir(deviceSelector, packageName)
+    // The pid is deliberately captured before any debug-view-attributes flip: the flip only relaunches activities within the existing
+    // process, so the pid stays valid, and reading it first avoids mutating device settings when the target is not running.
     val pid = getPid(deviceSelector, packageName, packageUid)
 
     // Resolve local paths before touching device settings, so a missing host artifact cannot restart the app's activities for nothing.
@@ -164,6 +164,33 @@ class InjectionManager(
     // to identify which version of the pushed artifacts it's connecting to.
     val artifactDigest = shippedArtifactsDigest(agentLocalPath, serviceJarLocalPath, payloadJarLocalPath, viewInspectorJarLocalPath)
     val serverToken = "${pid}_$artifactDigest"
+    val socketName = ProtocolConstants.getSocketName(serverToken)
+
+    return when (mode) {
+      InjectionMode.RECONNECT_IF_AVAILABLE ->
+        if (isAgentSocketPresent(deviceSelector, socketName)) {
+          if (needsDebugViewAttributes) enableDebugViewAttributes()
+          InjectionResult.Reconnected(setupAdbForward(deviceSelector, socketName))
+        } else {
+          performFullInjection(needsDebugViewAttributes, pid, serverToken, agentLocalPath, serviceJarLocalPath, payloadJarLocalPath)
+        }
+      InjectionMode.FORCE_FULL_INJECTION ->
+        performFullInjection(needsDebugViewAttributes, pid, serverToken, agentLocalPath, serviceJarLocalPath, payloadJarLocalPath)
+    }
+  }
+
+  /** Pushes the agent artifacts to the device, stages them via `run-as`, attaches the agent to [pid], and waits for its server socket. */
+  private suspend fun performFullInjection(
+    needsDebugViewAttributes: Boolean,
+    pid: String,
+    serverToken: String,
+    agentLocalPath: Path,
+    serviceJarLocalPath: Path,
+    payloadJarLocalPath: Path,
+  ): InjectionResult.Injected = coroutineScope {
+    // Query the app data dir synchronously before mutating device settings or pushing files, to verify that the app is accessible
+    // (installed, debuggable, and running under the current user).
+    val appDataDir = queryAppDataDir(deviceSelector, packageName)
 
     val debugViewAttributesSetup = async { if (needsDebugViewAttributes) enableDebugViewAttributes() }
 
@@ -179,12 +206,12 @@ class InjectionManager(
     copyAndSetupFiles(deviceSelector, packageName, agentRemoteTmpPath, serviceJarRemoteTmpPath, payloadRemoteTmpPath)
 
     val deviceTime = queryDeviceTime(deviceSelector)
-    attachAgent(deviceSelector, pid, serverToken)
+    attachAgent(deviceSelector, pid, serverToken, appDataDir)
 
     val socketName = ProtocolConstants.getSocketName(serverToken)
     waitForAgentSocket(deviceSelector, socketName, pid, deviceTime)
 
-    setupAdbForward(deviceSelector, socketName)
+    InjectionResult.Injected(setupAdbForward(deviceSelector, socketName))
   }
 
   /**
@@ -241,6 +268,21 @@ class InjectionManager(
   }
 
   /**
+   * Returns whether an abstract socket named exactly [socketName] is currently bound on the device, by matching the path field of
+   * /proc/net/unix entries (abstract sockets are listed with a leading `@`). Exact matching prevents a socket whose name merely starts with
+   * [socketName] from counting as present.
+   */
+  private suspend fun isAgentSocketPresent(deviceSelector: DeviceSelector, socketName: String): Boolean {
+    // The whole file is read and matched host-side: a device-side filter would fold a failing read and a missing socket into the same
+    // empty output, and a read failure is not authoritative absence — runShellCommand throws on it instead.
+    val output = runShellCommand(deviceSelector, "cat /proc/net/unix").stdout
+    return output.lineSequence().any { line ->
+      val path = line.trim().split(WHITESPACE_REGEX).lastOrNull()
+      path == socketName || path == "@$socketName"
+    }
+  }
+
+  /**
    * Waits for the abstract socket to appear in /proc/net/unix. Since the agent acts as the server, we must wait for it to create the socket
    * before the host can connect to it.
    */
@@ -249,9 +291,7 @@ class InjectionManager(
     var attempts = 0
     var delayMs = 100L
     while (attempts < maxAttempts) {
-      val cmd = "cat /proc/net/unix | grep $socketName || true"
-      val output = runShellCommand(deviceSelector, cmd).stdout
-      if (output.contains(socketName)) {
+      if (isAgentSocketPresent(deviceSelector, socketName)) {
         return
       }
 
@@ -457,6 +497,13 @@ class InjectionManager(
   }
 
   /**
+   * Pushes the view inspector jar to the device and returns its remote path. The pushed file is the same [viewInspectorJarPath] the
+   * artifact digest covers, so a server reached by digest match was built from a byte-identical jar.
+   */
+  suspend fun pushViewInspectorPayload(): String =
+    pushInspectorPayload(InspectorMetadata(id = InspectorRegistry.VIEW_INSPECTOR.id, localJarPath = viewInspectorJarPath))
+
+  /**
    * Pushes an inspector payload jar to the device and sets it up in the app's data directory.
    *
    * @param inspector The metadata of the inspector to push.
@@ -474,7 +521,11 @@ class InjectionManager(
     return remoteTmpPath
   }
 
-  private suspend fun attachAgent(deviceSelector: DeviceSelector, pid: String, serverToken: String) {
+  /**
+   * Attaches the agent to the target process. [appDataDir] is the absolute path to the application's private data directory for Android
+   * user 0, queried via `run-as`; querying the path avoids assuming that the standard /data/data/ prefix is applicable.
+   */
+  private suspend fun attachAgent(deviceSelector: DeviceSelector, pid: String, serverToken: String, appDataDir: String) {
     val appPath = "$appDataDir/$AGENT_FILE_NAME"
     val appJarPath = "$appDataDir/$SERVICE_JAR_FILE_NAME"
     val appPayloadJarPath = "$appDataDir/$PAYLOAD_JAR_FILE_NAME"
@@ -496,6 +547,7 @@ class InjectionManager(
     private val extractedResourcesCache = ConcurrentHashMap<String, Path>()
     private val PACKAGE_NAME_REGEX = Regex("^[a-zA-Z0-9._]+$")
     private val SERIAL_REGEX = Regex("^[a-zA-Z0-9.:_-]+$")
+    private val WHITESPACE_REGEX = Regex("\\s+")
 
     private fun validatePackageName(packageName: String) {
       require(packageName.length <= 255 && PACKAGE_NAME_REGEX.matches(packageName)) { "Invalid package name: $packageName" }
@@ -508,3 +560,25 @@ class InjectionManager(
 }
 
 private data class DeviceMetadata(val abi: String, val sdkVersion: Int)
+
+/** Whether [InjectionManager.injectAndAttach] may reuse an already-running agent server. */
+enum class InjectionMode {
+  /**
+   * Reconnect to a running server whose socket matches the target pid and artifact digest; perform a full injection only when none does.
+   */
+  RECONNECT_IF_AVAILABLE,
+  /** Perform a full injection regardless of any running server. */
+  FORCE_FULL_INJECTION,
+}
+
+/** The outcome of [InjectionManager.injectAndAttach]: how the agent server was obtained, and the adb forward that reaches it. */
+sealed interface InjectionResult {
+  /** The forwarded TCP port number on the host. Connect to this port to communicate with the agent. */
+  val forwardedPort: String
+
+  /** An already-running server was reused; no message has been exchanged with it yet, so its liveness is not established. */
+  data class Reconnected(override val forwardedPort: String) : InjectionResult
+
+  /** The agent was freshly pushed and attached, and its server socket was observed. */
+  data class Injected(override val forwardedPort: String) : InjectionResult
+}

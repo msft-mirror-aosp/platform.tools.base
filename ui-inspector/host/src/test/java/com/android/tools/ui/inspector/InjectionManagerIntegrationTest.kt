@@ -62,12 +62,22 @@ class InjectionManagerIntegrationTest {
     val injectionManager =
       InjectionManager(adbSession = adbSession, serial = serial, packageName = packageName!!, serviceJarPath = Paths.get(SERVICE_JAR_PATH))
 
-    val port = injectionManager.injectAndAttach(needsDebugViewAttributes = false)
-    assertThat(port).isNotEmpty()
+    val injected = injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
+    assertThat(injected.forwardedPort).isNotEmpty()
 
-    val socket = Socket("localhost", port.toInt())
+    val socket = Socket("localhost", injected.forwardedPort.toInt())
     assertThat(socket.isConnected).isTrue()
     socket.close()
+    injectionManager.removeAdbForward()
+
+    // The server left running by the injection above is reused when reconnection is permitted.
+    val reconnected = injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.RECONNECT_IF_AVAILABLE)
+    assertThat(reconnected).isInstanceOf(InjectionResult.Reconnected::class.java)
+
+    val reconnectSocket = Socket("localhost", reconnected.forwardedPort.toInt())
+    assertThat(reconnectSocket.isConnected).isTrue()
+    reconnectSocket.close()
+    injectionManager.removeAdbForward()
   }
 
   private suspend fun findDebuggableApp(device: ConnectedDevice): String? {

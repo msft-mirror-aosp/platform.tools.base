@@ -20,16 +20,18 @@ import com.android.tools.ui.inspector.common.ProtocolConstants
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol
 
-/** Sends a command to the agent to load and create the view inspector dynamically. */
-internal suspend fun createViewInspector(commandSender: CommandSender, injectionManager: InjectionManager) {
-  val inspectorMetadata = InspectorRegistry.VIEW_INSPECTOR
-
-  // Push payload jar on demand and get the remote path
-  val dexPath = injectionManager.pushInspectorPayload(inspectorMetadata)
+/**
+ * Sends a command to the agent to create the view inspector, loading it from the [dexPath] previously pushed to the device. A server that
+ * already hosts the view inspector rebinds it to this connection instead of loading the dex again.
+ */
+internal suspend fun createViewInspector(commandSender: CommandSender, dexPath: String) {
   val createCommand =
     UiInspectorProtocol.Command.newBuilder()
       .setCreateInspector(
-        UiInspectorProtocol.CreateInspectorCommand.newBuilder().setInspectorId(inspectorMetadata.id).setDexPath(dexPath).build()
+        UiInspectorProtocol.CreateInspectorCommand.newBuilder()
+          .setInspectorId(InspectorRegistry.VIEW_INSPECTOR.id)
+          .setDexPath(dexPath)
+          .build()
       )
       .build()
 

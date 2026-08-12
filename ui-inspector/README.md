@@ -282,35 +282,34 @@ cache) and have its own cache where it can store the downloaded jars.
 
 ## UI Inspector daemon
 
-This CLI tool could be invoked many times for the same instance of an
-app. It would be a waste to re-inject the agent every time. For this
-reason we should inject the agent once and keep it running, so future
-commands can just re-connect to it.
+This CLI tool is typically invoked many times for the same instance of
+an app. It would be a waste to re-inject the agent every time, so the
+agent is injected once and kept running, and later commands reconnect
+to it.
 
-Before running a command the host would:
+Before injecting, the host:
 
-* Discover the PID of the app.
-* Run `adb forward tcp:<host_port> localabstract:ui_inspector_<PID>_<digest>`.
-* Attempt connection to `tcp:<host_port>`.
-* Send `PING`.
-* If `PONG`: warm hit.
-* If connection failed or no `PONG`: run `attach-agent` from scratch.
+* Discovers the PID of the app and computes the artifact digest.
+* Checks `/proc/net/unix` on the device for a socket named exactly
+  `ui_inspector_<PID>_<digest>`. Such a socket means a server started
+  from the same intended artifact set is already running in the target
+  process.
+* If the socket is present, the host skips the whole injection
+  sequence (staging, install, attach, socket wait) and just creates
+  the adb forward and connects. Only the first command round trip
+  proves the reused server is alive — it may have expired between the
+  check and the connection, and an adb forward's device side is only
+  established lazily — so if the connection or that first round trip
+  fails, the host falls back to one full injection and retries.
+* If the socket is absent, the host runs the full injection sequence.
 
 To prevent resource leaks if a device is unplugged, the agent implements a
 5-minute inactivity timeout. If no message is received within the timeout,
-the agent is terminated and resources are cleaned up.
-
-***
-
-**⚠️ Implementation Note:** The host-side connection reuse and `PING`/`PONG`
-warm-hit detection are **not yet implemented in the CLI host**. Currently, the
-host runs the full file-push and `attach-agent` injection sequence on every
-command execution.
-
-However, the agent (device) side **fully supports persistence**: the server socket
-runs in a persistent loop, caches active inspector instances, and handles
-subsequent `attach-agent` calls gracefully (duplicate server threads exit cleanly after detecting socket collision via `"Address already in use"` checks).
-***
+the agent is terminated and resources are cleaned up. The agent side also
+handles repeated `attach-agent` calls gracefully: the server socket runs in
+a persistent loop, caches active inspector instances, and duplicate server
+threads exit cleanly after detecting the socket collision via
+`"Address already in use"` checks.
 
 ## Retrieving view attributes and composables parameters
 

@@ -150,7 +150,7 @@ class ComposeInspectorTest {
         tempFileSuffixGenerator = { "test.tmp" },
       )
 
-    // Trigger injectAndAttach so we populate the appDataDir internal states
+    // Perform the full injection that precedes inspector creation in production
     configureUidCommands(fakeSession, deviceSelector, packageName)
 
     val baseAgentSetupCmd =
@@ -168,12 +168,8 @@ class ComposeInspectorTest {
       "cmd activity attach-agent 1234 \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;$serverToken\"",
       "",
     )
-    fakeSession.deviceServices.configureShellCommand(
-      deviceSelector,
-      "cat /proc/net/unix | grep ui_inspector_$serverToken || true",
-      "ui_inspector_$serverToken\n",
-    )
-    injectionManager.injectAndAttach(needsDebugViewAttributes = false)
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "cat /proc/net/unix", "ui_inspector_$serverToken\n")
+    injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
 
     // 3. Execute E2E Orchestrator with dynamic lambda jar resolution mock
     CommandSender.connect("127.0.0.1", serverPort, this).use { commandSender ->
@@ -453,7 +449,7 @@ class ComposeInspectorTest {
         tempFileSuffixGenerator = { "test.tmp" },
       )
 
-    // Trigger injectAndAttach so we populate the appDataDir internal states
+    // Perform the full injection that precedes inspector creation in production
     val baseAgentSetupCmd =
       "run-as $packageName sh -c '" +
         "rm -f lib_ui_inspector_agent.so lib_ui_inspector_service.jar lib_ui_inspector_payload.jar && " +
@@ -469,12 +465,8 @@ class ComposeInspectorTest {
       "cmd activity attach-agent 1234 \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;$serverToken\"",
       "",
     )
-    fakeSession.deviceServices.configureShellCommand(
-      deviceSelector,
-      "cat /proc/net/unix | grep ui_inspector_$serverToken || true",
-      "ui_inspector_$serverToken\n",
-    )
-    injectionManager.injectAndAttach(needsDebugViewAttributes = false)
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "cat /proc/net/unix", "ui_inspector_$serverToken\n")
+    injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
 
     val uiDump =
       CommandSender.connect("127.0.0.1", serverPort, this).use { commandSender ->
@@ -781,7 +773,7 @@ class ComposeInspectorTest {
         tempFileSuffixGenerator = { "test.tmp" },
       )
 
-    // Trigger injectAndAttach so we populate the appDataDir internal states
+    // Perform the full injection that precedes inspector creation in production
     val baseAgentSetupCmd =
       "run-as $packageName sh -c '" +
         "rm -f lib_ui_inspector_agent.so lib_ui_inspector_service.jar lib_ui_inspector_payload.jar && " +
@@ -797,12 +789,8 @@ class ComposeInspectorTest {
       "cmd activity attach-agent 1234 \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;$serverToken\"",
       "",
     )
-    fakeSession.deviceServices.configureShellCommand(
-      deviceSelector,
-      "cat /proc/net/unix | grep ui_inspector_$serverToken || true",
-      "ui_inspector_$serverToken\n",
-    )
-    injectionManager.injectAndAttach(needsDebugViewAttributes = false)
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "cat /proc/net/unix", "ui_inspector_$serverToken\n")
+    injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
 
     val uiDump =
       CommandSender.connect("127.0.0.1", serverPort, this).use { commandSender ->
@@ -1119,7 +1107,7 @@ class ComposeInspectorTest {
         tempFileSuffixGenerator = { "test.tmp" },
       )
 
-    // Trigger injectAndAttach so we populate the appDataDir internal states
+    // Perform the full injection that precedes inspector creation in production
     configureUidCommands(fakeSession, deviceSelector, packageName)
 
     val baseAgentSetupCmd =
@@ -1137,12 +1125,8 @@ class ComposeInspectorTest {
       "cmd activity attach-agent 1234 \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;$serverToken\"",
       "",
     )
-    fakeSession.deviceServices.configureShellCommand(
-      deviceSelector,
-      "cat /proc/net/unix | grep ui_inspector_$serverToken || true",
-      "ui_inspector_$serverToken\n",
-    )
-    injectionManager.injectAndAttach(needsDebugViewAttributes = false)
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "cat /proc/net/unix", "ui_inspector_$serverToken\n")
+    injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
 
     val originalFactory = sessionFactory
     sessionFactory = { testSession }

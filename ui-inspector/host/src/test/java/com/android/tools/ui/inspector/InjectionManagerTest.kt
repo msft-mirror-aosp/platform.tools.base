@@ -22,15 +22,25 @@ import com.android.adblib.DevicePropertyNames
 import com.android.adblib.DeviceSelector
 import com.android.adblib.DeviceState
 import com.android.adblib.testing.FakeAdbSession
+import com.android.tools.ui.inspector.common.FramingProtocol
 import com.android.tools.ui.inspector.common.ProtocolConstants
 import com.android.tools.ui.inspector.printer.UiDumpPrinter
+import com.android.tools.ui.inspector.protocol.UiInspectorProtocol
+import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol
 import com.google.common.truth.Truth.assertThat
+import com.google.protobuf.ByteString
 import java.io.ByteArrayOutputStream
+import java.io.OutputStream
 import java.io.PrintStream
 import java.net.ServerSocket
 import java.nio.file.Files
 import java.nio.file.Path
+import kotlin.concurrent.thread
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertThrows
 import org.junit.Assert.fail
@@ -75,6 +85,7 @@ class InjectionManagerTest {
     testDeviceServices = TestAdbDeviceServices(fakeSession.deviceServices)
     testHostServices = TestAdbHostServices(fakeSession.hostServices)
     testSession = TestAdbSession(fakeSession, testDeviceServices, testHostServices)
+    testDeviceServices.session = testSession
 
     fakeSession.hostServices.devices = DeviceList(listOf(DeviceInfo(deviceSerial, DeviceState.ONLINE)), emptyList())
 
@@ -92,6 +103,7 @@ class InjectionManagerTest {
         "/data/local/tmp/lib_ui_inspector_service.jar",
         "/data/local/tmp/lib_ui_inspector_payload.jar",
         "/data/local/tmp/ui-inspector/my-inspector.jar",
+        "/data/local/tmp/ui-inspector/view-inspector.jar",
       )
       .forEach { target ->
         fakeSession.deviceServices.configureShellCommand(deviceSelector, "mv -f '$target.test.tmp' '$target'", "")
@@ -133,13 +145,9 @@ class InjectionManagerTest {
       "cmd activity attach-agent 1234 \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;${serverToken("1234")}\"",
       "",
     )
-    fakeSession.deviceServices.configureShellCommand(
-      deviceSelector,
-      "cat /proc/net/unix | grep ${socketName("1234")} || true",
-      "${socketName("1234")}\n",
-    )
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "cat /proc/net/unix", "${socketName("1234")}\n")
 
-    val port = injectionManager.injectAndAttach(needsDebugViewAttributes = false)
+    val port = injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION).forwardedPort
     assertThat(port).isEqualTo("12345")
 
     // Verify that syncSend was called with correct parameters
@@ -154,6 +162,93 @@ class InjectionManagerTest {
   }
 
   @Test
+  fun testInjectAndAttach_reconnectsToRunningServer() = runTest {
+    val injectionManager = createInjectionManager()
+    // Only the commands of the reconnect path are configured: any injection-only command (run-as, pushes, attach) fails as unconfigured.
+    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
+    configurePackageUidAndProcesses()
+    // A realistic /proc/net/unix line: the abstract socket name is the last field, with a leading '@'.
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      "cat /proc/net/unix",
+      "0000000000000000: 00000002 00000000 00010000 0001 01 68812 @${socketName("1234")}\n",
+    )
+
+    val result = injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.RECONNECT_IF_AVAILABLE)
+
+    assertThat(result).isInstanceOf(InjectionResult.Reconnected::class.java)
+    assertThat(result.forwardedPort).isEqualTo("12345")
+    assertThat(testDeviceServices.recordedSyncSends).isEmpty()
+    val commands = fakeSession.deviceServices.shellV2Requests.map { it.command }
+    assertThat(commands.filter { it.startsWith("run-as ") }).isEmpty()
+    assertThat(commands.filter { it.startsWith("cmd activity attach-agent") }).isEmpty()
+    val remoteSpec = testHostServices.recordedForwardCalls.single().third
+    assertThat(remoteSpec.toQueryString()).isEqualTo("localabstract:${socketName("1234")}")
+  }
+
+  @Test
+  fun testInjectAndAttach_reconnectStillEnablesDebugViewAttributes() = runTest {
+    val injectionManager = createInjectionManager()
+    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
+    configurePackageUidAndProcesses()
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "cat /proc/net/unix", "${socketName("1234")}\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, readSettingsCmd, "null\n$settingsSeparator\nnull\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, putSettingsCmd, "")
+
+    val result = injectionManager.injectAndAttach(needsDebugViewAttributes = true, mode = InjectionMode.RECONNECT_IF_AVAILABLE)
+
+    assertThat(result).isInstanceOf(InjectionResult.Reconnected::class.java)
+    val commands = fakeSession.deviceServices.shellV2Requests.map { it.command }
+    assertThat(commands).contains(putSettingsCmd)
+    assertThat(testDeviceServices.recordedSyncSends).isEmpty()
+  }
+
+  @Test
+  fun testInjectAndAttach_prefixedSocketNameIsNotAMatch_fullInjectionRuns() = runTest {
+    val injectionManager = createInjectionManager()
+    configureSuccessfulInjection()
+    // The probe sees a socket whose name merely starts with the expected name; the post-attach wait then sees the exact socket.
+    testDeviceServices.queuedShellOutputs["cat /proc/net/unix"] = ArrayDeque(listOf("@${socketName("1234")}x\n", "${socketName("1234")}\n"))
+
+    val result = injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.RECONNECT_IF_AVAILABLE)
+
+    assertThat(result).isInstanceOf(InjectionResult.Injected::class.java)
+    assertThat(testDeviceServices.recordedSyncSends).hasSize(3)
+    assertThat(fakeSession.deviceServices.shellV2Requests.map { it.command }.filter { it.startsWith("cmd activity attach-agent") })
+      .hasSize(1)
+  }
+
+  @Test
+  fun testInjectAndAttach_absentSocket_fullInjectionRuns() = runTest {
+    val injectionManager = createInjectionManager()
+    configureSuccessfulInjection()
+    // The probe finds nothing; the post-attach wait then sees the socket the agent created.
+    testDeviceServices.queuedShellOutputs["cat /proc/net/unix"] = ArrayDeque(listOf("", "${socketName("1234")}\n"))
+
+    val result = injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.RECONNECT_IF_AVAILABLE)
+
+    assertThat(result).isInstanceOf(InjectionResult.Injected::class.java)
+    assertThat(testDeviceServices.recordedSyncSends).hasSize(3)
+  }
+
+  @Test
+  fun testInjectAndAttach_forceModeIgnoresRunningServer() = runTest {
+    val injectionManager = createInjectionManager()
+    // The exact socket is present throughout; forced injection must not probe for it and must run the full sequence anyway.
+    configureSuccessfulInjection()
+
+    val result = injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
+
+    assertThat(result).isInstanceOf(InjectionResult.Injected::class.java)
+    assertThat(testDeviceServices.recordedSyncSends).hasSize(3)
+    val socketChecks = fakeSession.deviceServices.shellV2Requests.map { it.command }.filter { it == "cat /proc/net/unix" }
+    // The only socket check is the post-attach wait.
+    assertThat(socketChecks).hasSize(1)
+  }
+
+  @Test
   fun testInjectAndAttach_staleSocketFromDifferentBuild_timesOut() = runTest {
     val injectionManager = createInjectionManager()
     // A resident server from different artifacts listens on a different name: only the exact digest-scoped socket satisfies the wait, a
@@ -162,7 +257,7 @@ class InjectionManagerTest {
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "logcat -d -t '06-24 15:44:32.000' --pid=1234 *:E", "")
 
     try {
-      injectionManager.injectAndAttach(needsDebugViewAttributes = false)
+      injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
       fail("Expected timeout waiting for the digest-scoped socket")
     } catch (e: IllegalStateException) {
       assertThat(e.message).contains("Timed out waiting for agent socket ${socketName("1234")}")
@@ -180,11 +275,13 @@ class InjectionManagerTest {
     val injectionManager = createInjectionManager()
     configureSuccessfulInjection(token = token)
 
-    val port = injectionManager.injectAndAttach(needsDebugViewAttributes = false)
+    val port = injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION).forwardedPort
 
     assertThat(port).isEqualTo("12345")
-    assertThat(fakeSession.deviceServices.shellV2Requests.map { it.command })
-      .contains("cat /proc/net/unix | grep ui_inspector_$token || true")
+    // The socket wait only saw the content-derived token socket (see configureSuccessfulInjection), so success proves the code waited for
+    // exactly that name.
+    val forwardTarget = testHostServices.recordedForwardCalls.single().third
+    assertThat(forwardTarget.toQueryString()).isEqualTo("localabstract:ui_inspector_$token")
   }
 
   @Test
@@ -205,7 +302,7 @@ class InjectionManagerTest {
     fakeSession.deviceServices.configureShellCommand(deviceSelector, putSettingsCmd, "")
 
     try {
-      injectionManager.injectAndAttach(needsDebugViewAttributes = true)
+      injectionManager.injectAndAttach(needsDebugViewAttributes = true, mode = InjectionMode.FORCE_FULL_INJECTION)
       fail("Expected IllegalStateException for a missing artifact")
     } catch (e: IllegalStateException) {
       assertThat(e.message).contains("File not found on filesystem")
@@ -256,7 +353,7 @@ class InjectionManagerTest {
     )
 
     try {
-      injectionManager.injectAndAttach(needsDebugViewAttributes = false)
+      injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
       fail("Expected IllegalStateException was not thrown")
     } catch (e: IllegalStateException) {
       assertThat(e.message).isEqualTo("Command '$setupCmd' failed with exit code 1. Stderr: Package is not debuggable")
@@ -312,7 +409,7 @@ class InjectionManagerTest {
     )
 
     // 1. Configure the socket check to fail (socket is not created by the agent)
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "cat /proc/net/unix | grep ${socketName("1234")} || true", "")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "cat /proc/net/unix", "")
 
     // 2. Configure logcat command to return a mock agent crash log
     val logcatCmd = "logcat -d -t '06-24 15:44:32.000' --pid=1234 *:E"
@@ -322,7 +419,7 @@ class InjectionManagerTest {
     fakeSession.deviceServices.configureShellCommand(deviceSelector, logcatCmd, mockErrorLog)
 
     try {
-      injectionManager.injectAndAttach(needsDebugViewAttributes = false)
+      injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
       fail("Expected IllegalStateException due to agent bootstrap failure")
     } catch (e: IllegalStateException) {
       assertThat(e.message).contains("Failed to attach UI Inspector agent. Agent error in logcat:")
@@ -345,34 +442,6 @@ class InjectionManagerTest {
         dummyViewInspector,
         tempFileSuffixGenerator = { "test.tmp" },
       )
-    val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
-
-    // Mock injectAndAttach dependencies so we can initialize appDataDir
-    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
-    configurePackageUidAndProcesses()
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
-    fakeSession.deviceServices.configureShellCommand(
-      deviceSelector,
-      "cat /proc/net/unix | grep ${socketName("1234")} || true",
-      "${socketName("1234")}\n",
-    )
-    val agentSetupCmd =
-      "run-as $packageName sh -c '" +
-        "rm -f lib_ui_inspector_agent.so lib_ui_inspector_service.jar lib_ui_inspector_payload.jar && " +
-        "cat /data/local/tmp/lib_ui_inspector_agent.so > lib_ui_inspector_agent.so && " +
-        "cat /data/local/tmp/lib_ui_inspector_service.jar > lib_ui_inspector_service.jar && " +
-        "cat /data/local/tmp/lib_ui_inspector_payload.jar > lib_ui_inspector_payload.jar && " +
-        "chmod 444 lib_ui_inspector_agent.so && " +
-        "chmod 444 lib_ui_inspector_service.jar && " +
-        "chmod 444 lib_ui_inspector_payload.jar'"
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, agentSetupCmd, "")
-    val attachCmd =
-      "cmd activity attach-agent 1234 \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;${serverToken("1234")}\""
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, attachCmd, "")
-
-    // Initialize appDataDir
-    injectionManager.injectAndAttach(needsDebugViewAttributes = false)
 
     val inspectorJar = tempFolder.newFile("my-inspector.jar").toPath()
     val inspector = InspectorMetadata(id = "my.inspector", localJarPath = inspectorJar)
@@ -406,7 +475,7 @@ class InjectionManagerTest {
     )
 
     try {
-      injectionManager.injectAndAttach(needsDebugViewAttributes = false)
+      injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
       fail("Expected IllegalStateException for failing run-as pwd")
     } catch (e: IllegalStateException) {
       assertThat(e.message)
@@ -434,7 +503,7 @@ class InjectionManagerTest {
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "ps -A -o PID,UID,NAME", "PID UID NAME\n")
 
     try {
-      injectionManager.injectAndAttach(needsDebugViewAttributes = false)
+      injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
       fail("Expected IllegalStateException for an app with no running process")
     } catch (e: IllegalStateException) {
       assertThat(e.message).isEqualTo("The application '$packageName' is not running on the device. Please start the app and try again.")
@@ -460,7 +529,7 @@ class InjectionManagerTest {
     // The ps command is deliberately unconfigured so FakeAdbDeviceServices throws an exception simulating an ADB failure.
 
     try {
-      injectionManager.injectAndAttach(needsDebugViewAttributes = false)
+      injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
       fail("Expected exception for unconfigured ps command")
     } catch (e: Exception) {
       assertThat(e.message).doesNotContain("The application '$packageName' is not running on the device")
@@ -477,7 +546,7 @@ class InjectionManagerTest {
 
     var exception: IllegalStateException? = null
     try {
-      injectionManager.injectAndAttach(needsDebugViewAttributes = false)
+      injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
       fail("Expected package-not-installed failure")
     } catch (e: IllegalStateException) {
       exception = e
@@ -499,7 +568,7 @@ class InjectionManagerTest {
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
 
     try {
-      injectionManager.injectAndAttach(needsDebugViewAttributes = false)
+      injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
       fail("Expected exception for unconfigured pm command")
     } catch (e: Exception) {
       assertThat(e.message).doesNotContain("Failed to access the application")
@@ -512,7 +581,7 @@ class InjectionManagerTest {
     val injectionManager = createInjectionManager()
     configureSuccessfulInjection(processName = "$packageName:ui")
 
-    val port = injectionManager.injectAndAttach(needsDebugViewAttributes = false)
+    val port = injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION).forwardedPort
 
     assertThat(port).isEqualTo("12345")
   }
@@ -544,7 +613,7 @@ class InjectionManagerTest {
         tempFileSuffixGenerator = { "test.tmp" },
       )
 
-    val port = injectionManager.injectAndAttach(needsDebugViewAttributes = false)
+    val port = injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION).forwardedPort
 
     assertThat(resolvedPackage).isEqualTo(targetPackage)
     assertThat(port).isEqualTo("12345")
@@ -592,7 +661,7 @@ class InjectionManagerTest {
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n27\n")
 
     try {
-      injectionManager.injectAndAttach(needsDebugViewAttributes = false)
+      injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
       fail("Expected IllegalStateException for unsupported API level")
     } catch (e: IllegalStateException) {
       assertThat(e.message).contains("The UI Inspector only supports API level ${ProtocolConstants.MIN_SUPPORTED_API_LEVEL} and above")
@@ -610,7 +679,7 @@ class InjectionManagerTest {
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\ninvalid_sdk\n")
 
     try {
-      injectionManager.injectAndAttach(needsDebugViewAttributes = false)
+      injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
       fail("Expected IllegalStateException for failed SDK version retrieval")
     } catch (e: IllegalStateException) {
       assertThat(e.message).contains("Failed to retrieve device SDK API level")
@@ -627,7 +696,7 @@ class InjectionManagerTest {
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "\n30\n")
 
     try {
-      injectionManager.injectAndAttach(needsDebugViewAttributes = false)
+      injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
       fail("Expected IllegalStateException for failed CPU ABI retrieval")
     } catch (e: IllegalStateException) {
       assertThat(e.message).contains("Failed to retrieve device CPU ABI")
@@ -649,32 +718,6 @@ class InjectionManagerTest {
         tempFileSuffixGenerator = { "test.tmp" },
       )
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
-
-    // Mock injectAndAttach dependencies so we can initialize appDataDir
-    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
-    configurePackageUidAndProcesses()
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
-    fakeSession.deviceServices.configureShellCommand(
-      deviceSelector,
-      "cat /proc/net/unix | grep ${socketName("1234")} || true",
-      "${socketName("1234")}\n",
-    )
-
-    val agentSetupCmd =
-      "run-as $packageName sh -c 'rm -f lib_ui_inspector_agent.so lib_ui_inspector_service.jar lib_ui_inspector_payload.jar && " +
-        "cat /data/local/tmp/lib_ui_inspector_agent.so > lib_ui_inspector_agent.so && " +
-        "cat /data/local/tmp/lib_ui_inspector_service.jar > lib_ui_inspector_service.jar && " +
-        "cat /data/local/tmp/lib_ui_inspector_payload.jar > lib_ui_inspector_payload.jar && " +
-        "chmod 444 lib_ui_inspector_agent.so && " +
-        "chmod 444 lib_ui_inspector_service.jar && " +
-        "chmod 444 lib_ui_inspector_payload.jar'"
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, agentSetupCmd, "")
-    val attachCmd =
-      "cmd activity attach-agent 1234 \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;${serverToken("1234")}\""
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, attachCmd, "")
-
-    injectionManager.injectAndAttach(needsDebugViewAttributes = false)
 
     val inspectorJar = tempFolder.newFile("my-inspector.jar").toPath()
     val inspector = InspectorMetadata(id = "my.inspector", localJarPath = inspectorJar)
@@ -745,13 +788,9 @@ class InjectionManagerTest {
       "cmd activity attach-agent 1234 \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;${serverToken("1234")}\"",
       "",
     )
-    fakeSession.deviceServices.configureShellCommand(
-      deviceSelector,
-      "cat /proc/net/unix | grep ${socketName("1234")} || true",
-      "${socketName("1234")}\n",
-    )
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "cat /proc/net/unix", "${socketName("1234")}\n")
 
-    val port = injectionManager.injectAndAttach(needsDebugViewAttributes = false)
+    val port = injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION).forwardedPort
     assertThat(port).isEqualTo("12345")
   }
 
@@ -760,7 +799,7 @@ class InjectionManagerTest {
     val injectionManager = createInjectionManager()
     configureSuccessfulInjection()
 
-    injectionManager.injectAndAttach(needsDebugViewAttributes = false)
+    injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
 
     val settingsCommands = fakeSession.deviceServices.shellV2Requests.map { it.command }.filter { it.startsWith("settings ") }
     assertThat(settingsCommands).isEmpty()
@@ -772,7 +811,7 @@ class InjectionManagerTest {
     configureSuccessfulInjection()
     fakeSession.deviceServices.configureShellCommand(deviceSelector, readSettingsCmd, "1\n$settingsSeparator\nnull\n")
 
-    injectionManager.injectAndAttach(needsDebugViewAttributes = true)
+    injectionManager.injectAndAttach(needsDebugViewAttributes = true, mode = InjectionMode.FORCE_FULL_INJECTION)
 
     val settingsCommands = fakeSession.deviceServices.shellV2Requests.map { it.command }.filter { it.startsWith("settings ") }
     assertThat(settingsCommands).containsExactly(readSettingsCmd)
@@ -784,7 +823,7 @@ class InjectionManagerTest {
     configureSuccessfulInjection()
     fakeSession.deviceServices.configureShellCommand(deviceSelector, readSettingsCmd, "null\n$settingsSeparator\n$packageName\n")
 
-    injectionManager.injectAndAttach(needsDebugViewAttributes = true)
+    injectionManager.injectAndAttach(needsDebugViewAttributes = true, mode = InjectionMode.FORCE_FULL_INJECTION)
 
     val settingsCommands = fakeSession.deviceServices.shellV2Requests.map { it.command }.filter { it.startsWith("settings ") }
     assertThat(settingsCommands).containsExactly(readSettingsCmd)
@@ -797,7 +836,9 @@ class InjectionManagerTest {
     fakeSession.deviceServices.configureShellCommand(deviceSelector, readSettingsCmd, "null\n$settingsSeparator\nnull\n")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, putSettingsCmd, "")
 
-    val stderr = captureStderr { injectionManager.injectAndAttach(needsDebugViewAttributes = true) }
+    val stderr = captureStderr {
+      injectionManager.injectAndAttach(needsDebugViewAttributes = true, mode = InjectionMode.FORCE_FULL_INJECTION)
+    }
 
     val commands = fakeSession.deviceServices.shellV2Requests.map { it.command }
     assertThat(commands).contains(putSettingsCmd)
@@ -817,7 +858,7 @@ class InjectionManagerTest {
     fakeSession.deviceServices.configureShellCommand(deviceSelector, readSettingsCmd, stdout = "", stderr = "boom", exitCode = 1)
 
     try {
-      injectionManager.injectAndAttach(needsDebugViewAttributes = true)
+      injectionManager.injectAndAttach(needsDebugViewAttributes = true, mode = InjectionMode.FORCE_FULL_INJECTION)
       fail("Expected IllegalStateException for failing settings read")
     } catch (e: IllegalStateException) {
       assertThat(e.message).contains("failed with exit code 1")
@@ -834,7 +875,7 @@ class InjectionManagerTest {
     fakeSession.deviceServices.configureShellCommand(deviceSelector, readSettingsCmd, "garbage without the separator\n")
 
     try {
-      injectionManager.injectAndAttach(needsDebugViewAttributes = true)
+      injectionManager.injectAndAttach(needsDebugViewAttributes = true, mode = InjectionMode.FORCE_FULL_INJECTION)
       fail("Expected IllegalStateException for malformed settings output")
     } catch (e: IllegalStateException) {
       assertThat(e.message).contains("Unexpected output while reading debug-view-attributes settings")
@@ -853,7 +894,7 @@ class InjectionManagerTest {
 
     val stderr = captureStderr {
       try {
-        injectionManager.injectAndAttach(needsDebugViewAttributes = true)
+        injectionManager.injectAndAttach(needsDebugViewAttributes = true, mode = InjectionMode.FORCE_FULL_INJECTION)
         fail("Expected IllegalStateException for failing settings put")
       } catch (e: IllegalStateException) {
         assertThat(e.message).contains("failed with exit code 1")
@@ -867,7 +908,7 @@ class InjectionManagerTest {
   fun testRemoveAdbForward_killsForwardOnce() = runTest {
     val injectionManager = createInjectionManager()
     configureSuccessfulInjection()
-    injectionManager.injectAndAttach(needsDebugViewAttributes = false)
+    injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
 
     injectionManager.removeAdbForward()
     // A second call is a no-op: the forward was already removed.
@@ -884,7 +925,7 @@ class InjectionManagerTest {
     val injectionManager = createInjectionManager()
     // Nothing configured: injectAndAttach fails at the first device query, before any forward is created.
     try {
-      injectionManager.injectAndAttach(needsDebugViewAttributes = false)
+      injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
       fail("Expected injection to fail")
     } catch (e: Exception) {}
 
@@ -896,8 +937,8 @@ class InjectionManagerTest {
   @Test
   fun testDoDumpUi_removesForwardWhenConnectionFails() = runTest {
     configureSuccessfulInjection()
-    // Forward to a port that is guaranteed closed, so the CLI's socket connection fails right after a successful
-    // injection: the cleanup in runWithConnectedInspectors must still remove the forward.
+    // Forward to a port that is guaranteed closed, so the CLI's socket connection fails on both attempts: the reconnect attempt (the
+    // probed socket is present), then the forced full injection it falls back to. Each attempt must remove its own forward.
     testHostServices.forwardedPort = findClosedPort().toString()
 
     try {
@@ -905,8 +946,10 @@ class InjectionManagerTest {
       fail("Expected connection failure")
     } catch (e: Exception) {}
 
-    assertThat(testHostServices.recordedKillForwardCalls).hasSize(1)
-    assertThat(testHostServices.recordedKillForwardCalls.single().second.toQueryString()).isEqualTo("tcp:${testHostServices.forwardedPort}")
+    assertThat(testHostServices.recordedKillForwardCalls).hasSize(2)
+    testHostServices.recordedKillForwardCalls.forEach { (_, localSpec) ->
+      assertThat(localSpec.toQueryString()).isEqualTo("tcp:${testHostServices.forwardedPort}")
+    }
   }
 
   @Test
@@ -928,6 +971,346 @@ class InjectionManagerTest {
     // The connection failure stays the primary error; the cleanup failure is only a warning.
     assertThat(thrown!!.message).doesNotContain("Simulated killForward failure")
     assertThat(stderr).contains("failed to remove adb forward")
+  }
+
+  @Test
+  fun testRunWithConnectedInspectors_deadReconnectPort_fallsBackToFullInjection() = runBlocking {
+    configureSuccessfulInjection()
+    // The probed socket is present, but the reconnect attempt's forward targets a closed port: the TCP connect fails, and the run must
+    // fall back to one full injection whose forward targets a live scripted agent.
+    val liveServer = ServerSocket(0)
+    val serverThread = startScriptedLiveAgent(liveServer)
+    testHostServices.queuedForwardPorts.addAll(listOf(findClosedPort().toString(), liveServer.localPort.toString()))
+
+    var blockRuns = 0
+    val stderr = captureStderr {
+      runWithConnectedInspectorsForTest { _, composeInspectorConnected ->
+        blockRuns++
+        assertThat(composeInspectorConnected).isFalse()
+      }
+    }
+    serverThread.join(5000)
+    liveServer.close()
+
+    assertThat(blockRuns).isEqualTo(1)
+    assertThat(stderr).contains("injecting a fresh agent")
+    // The forced attempt performed the full injection: three base artifact pushes and one attach. The view inspector jar was pushed only
+    // by the second attempt — the first one failed before reaching it.
+    val pushedPaths = testDeviceServices.recordedSyncSends.map { it.remoteFilePath }
+    assertThat(pushedPaths.filter { !it.contains("/ui-inspector/") }).hasSize(3)
+    assertThat(pushedPaths.filter { it.contains("/ui-inspector/view-inspector.jar") }).hasSize(1)
+    assertThat(fakeSession.deviceServices.shellV2Requests.map { it.command }.filter { it.startsWith("cmd activity attach-agent") })
+      .hasSize(1)
+    // Each attempt created one forward and removed its own.
+    assertThat(testHostServices.recordedForwardCalls).hasSize(2)
+    assertThat(testHostServices.recordedKillForwardCalls).hasSize(2)
+  }
+
+  @Test
+  fun testRunWithConnectedInspectors_reconnectDiesBeforeFirstResponse_fallsBack() = runBlocking {
+    configureSuccessfulInjection()
+    // A server that accepts and closes immediately: the TCP connect succeeds — as it does through an adb forward, whose device-side leg
+    // is only created lazily — and the failure appears on the first command round trip.
+    val acceptAndClose = ServerSocket(0)
+    val acceptThread = thread { runCatching { acceptAndClose.accept().close() } }
+    val liveServer = ServerSocket(0)
+    val serverThread = startScriptedLiveAgent(liveServer)
+    testHostServices.queuedForwardPorts.addAll(listOf(acceptAndClose.localPort.toString(), liveServer.localPort.toString()))
+
+    var blockRuns = 0
+    captureStderr { runWithConnectedInspectorsForTest { _, _ -> blockRuns++ } }
+    acceptThread.join(5000)
+    serverThread.join(5000)
+    acceptAndClose.close()
+    liveServer.close()
+
+    assertThat(blockRuns).isEqualTo(1)
+    // Both attempts reached the view inspector push; only the forced one pushed the base artifacts.
+    val pushedPaths = testDeviceServices.recordedSyncSends.map { it.remoteFilePath }
+    assertThat(pushedPaths.filter { !it.contains("/ui-inspector/") }).hasSize(3)
+    assertThat(pushedPaths.filter { it.contains("/ui-inspector/view-inspector.jar") }).hasSize(2)
+    assertThat(testHostServices.recordedForwardCalls).hasSize(2)
+    assertThat(testHostServices.recordedKillForwardCalls).hasSize(2)
+  }
+
+  @Test
+  fun testRunWithConnectedInspectors_noFallbackAfterFirstResponse() = runBlocking {
+    configureSuccessfulInjection()
+    // The reused server answers the first round trip, then the connection dies during Compose version detection: past the first
+    // response the server is proven alive, so the failure must propagate instead of triggering a full injection.
+    val server = ServerSocket(0)
+    val serverThread = thread {
+      runCatching {
+        server.accept().use { socket ->
+          val input = socket.getInputStream()
+          val create = UiInspectorProtocol.Command.parseFrom(FramingProtocol.readMessage(input))
+          writeAgentResponse(
+            socket.getOutputStream(),
+            UiInspectorProtocol.Response.newBuilder()
+              .setCommandId(create.commandId)
+              .setStatus(UiInspectorProtocol.Response.Status.SUCCESS)
+              .setCreateInspector(UiInspectorProtocol.CreateInspectorResponse.getDefaultInstance())
+              .build(),
+          )
+        }
+      }
+    }
+    testHostServices.queuedForwardPorts.add(server.localPort.toString())
+
+    var thrown: Exception? = null
+    try {
+      runWithConnectedInspectorsForTest { _, _ -> fail("The block must not run when Compose version detection fails") }
+      fail("Expected the connection failure to propagate")
+    } catch (e: Exception) {
+      thrown = e
+    }
+    serverThread.join(5000)
+    server.close()
+
+    assertThat(thrown).isNotNull()
+    // No fallback happened: one forward, no base artifact pushes, no attach.
+    assertThat(testHostServices.recordedForwardCalls).hasSize(1)
+    assertThat(testDeviceServices.recordedSyncSends.map { it.remoteFilePath }.filter { !it.contains("/ui-inspector/") }).isEmpty()
+    assertThat(fakeSession.deviceServices.shellV2Requests.map { it.command }.filter { it.startsWith("cmd activity attach-agent") })
+      .isEmpty()
+  }
+
+  @Test
+  fun testRunWithConnectedInspectors_agentCrashIsNotRetried() = runBlocking {
+    configureSuccessfulInjection()
+    // The reused server reports an explicit crash instead of answering the first command: the server is alive, so the crash must
+    // propagate instead of triggering a full injection.
+    val server = ServerSocket(0)
+    val serverThread = thread {
+      runCatching {
+        server.accept().use { socket ->
+          FramingProtocol.readMessage(socket.getInputStream())
+          val crash =
+            UiInspectorProtocol.AgentMessage.newBuilder()
+              .setEvent(
+                UiInspectorProtocol.Event.newBuilder()
+                  .setCrash(UiInspectorProtocol.CrashEvent.newBuilder().setErrorMessage("boom").setStackTrace("stack"))
+              )
+              .build()
+          FramingProtocol.writeMessage(socket.getOutputStream(), crash.toByteArray())
+        }
+      }
+    }
+    testHostServices.queuedForwardPorts.add(server.localPort.toString())
+
+    var thrown: Exception? = null
+    try {
+      runWithConnectedInspectorsForTest { _, _ -> fail("The block must not run when the agent crashes") }
+      fail("Expected the crash to propagate")
+    } catch (e: Exception) {
+      thrown = e
+    }
+    serverThread.join(5000)
+    server.close()
+
+    assertThat(thrown).isInstanceOf(InspectorCrashException::class.java)
+    assertThat(testHostServices.recordedForwardCalls).hasSize(1)
+    assertThat(testDeviceServices.recordedSyncSends.map { it.remoteFilePath }.filter { !it.contains("/ui-inspector/") }).isEmpty()
+  }
+
+  @Test
+  fun testRunWithConnectedInspectors_freshlyInjectedServerFailure_isNotRetried() = runBlocking {
+    configureSuccessfulInjection()
+    // The probe finds no socket, so the first attempt performs the full injection; its post-attach wait then sees the socket. The forward
+    // targets a closed port, so the freshly injected server fails its connect — that failure must propagate, never retry.
+    testDeviceServices.queuedShellOutputs["cat /proc/net/unix"] = ArrayDeque(listOf("", "${socketName("1234")}\n"))
+    testHostServices.forwardedPort = findClosedPort().toString()
+
+    var thrown: Exception? = null
+    val stderr = captureStderr {
+      try {
+        runWithConnectedInspectorsForTest { _, _ -> fail("The block must not run when the connection fails") }
+        fail("Expected the connection failure to propagate")
+      } catch (e: Exception) {
+        thrown = e
+      }
+    }
+
+    assertThat(thrown).isNotNull()
+    assertThat(stderr).doesNotContain("injecting a fresh agent")
+    assertThat(testHostServices.recordedForwardCalls).hasSize(1)
+    assertThat(fakeSession.deviceServices.shellV2Requests.map { it.command }.filter { it.startsWith("cmd activity attach-agent") })
+      .hasSize(1)
+  }
+
+  @Test
+  fun testRunWithConnectedInspectors_probeReadFailure_propagates() = runBlocking {
+    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
+    configurePackageUidAndProcesses()
+    // A failing /proc/net/unix read is not authoritative absence: it must fail the run, not silently fall through to a full injection.
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "cat /proc/net/unix", stdout = "", stderr = "boom", exitCode = 1)
+
+    var thrown: Exception? = null
+    try {
+      runWithConnectedInspectorsForTest { _, _ -> fail("The block must not run when the probe fails") }
+      fail("Expected the probe failure to propagate")
+    } catch (e: Exception) {
+      thrown = e
+    }
+
+    assertThat(thrown!!.message).contains("failed with exit code 1")
+    assertThat(testDeviceServices.recordedSyncSends).isEmpty()
+    assertThat(testHostServices.recordedForwardCalls).isEmpty()
+  }
+
+  @Test
+  fun testRunWithConnectedInspectors_cancellation_isNotRetried() = runBlocking {
+    configureSuccessfulInjection()
+    // A server that receives the first command and never answers: cancelling the caller while it awaits must propagate as cancellation,
+    // not be classified as a stale server.
+    val commandReceived = CompletableDeferred<Unit>()
+    val server = ServerSocket(0)
+    val serverThread = thread {
+      runCatching {
+        server.accept().use { socket ->
+          FramingProtocol.readMessage(socket.getInputStream())
+          commandReceived.complete(Unit)
+          socket.getInputStream().read()
+        }
+      }
+    }
+    testHostServices.queuedForwardPorts.add(server.localPort.toString())
+
+    val stderr = captureStderr {
+      val job = launch { runWithConnectedInspectorsForTest { _, _ -> fail("The block must not run when the run is cancelled") } }
+      commandReceived.await()
+      job.cancelAndJoin()
+    }
+    server.close()
+    serverThread.join(5000)
+
+    assertThat(stderr).doesNotContain("injecting a fresh agent")
+    assertThat(testHostServices.recordedForwardCalls).hasSize(1)
+    // The cancelled attempt still removed its own forward.
+    assertThat(testHostServices.recordedKillForwardCalls).hasSize(1)
+  }
+
+  @Test
+  fun testDoDumpUi_emptyRootsAfterFallback_keepsStaleDiagnostic() = runBlocking {
+    configureSuccessfulInjection()
+    // The reconnect attempt dies on a closed port; the forced attempt reaches a live agent whose dump has no windows. The user-facing
+    // empty-roots error must keep the stale-server failure as a suppressed diagnostic.
+    val emptyDump =
+      ViewInspectorProtocol.Response.newBuilder().setDumpViewsResponse(ViewInspectorProtocol.DumpViewsResponse.getDefaultInstance()).build()
+    val server = ServerSocket(0)
+    val serverThread = thread {
+      runCatching {
+        server.accept().use { socket ->
+          val input = socket.getInputStream()
+          val output = socket.getOutputStream()
+          val create = UiInspectorProtocol.Command.parseFrom(FramingProtocol.readMessage(input))
+          writeAgentResponse(
+            output,
+            UiInspectorProtocol.Response.newBuilder()
+              .setCommandId(create.commandId)
+              .setStatus(UiInspectorProtocol.Response.Status.SUCCESS)
+              .setCreateInspector(UiInspectorProtocol.CreateInspectorResponse.getDefaultInstance())
+              .build(),
+          )
+          val getVersion = UiInspectorProtocol.Command.parseFrom(FramingProtocol.readMessage(input))
+          writeAgentResponse(
+            output,
+            UiInspectorProtocol.Response.newBuilder()
+              .setCommandId(getVersion.commandId)
+              .setStatus(UiInspectorProtocol.Response.Status.SUCCESS)
+              .setGetVersion(UiInspectorProtocol.GetVersionResponse.getDefaultInstance())
+              .build(),
+          )
+          val dumpCmd = UiInspectorProtocol.Command.parseFrom(FramingProtocol.readMessage(input))
+          writeAgentResponse(
+            output,
+            UiInspectorProtocol.Response.newBuilder()
+              .setCommandId(dumpCmd.commandId)
+              .setStatus(UiInspectorProtocol.Response.Status.SUCCESS)
+              .setInspectorMessage(
+                UiInspectorProtocol.InspectorMessageResponse.newBuilder()
+                  .setInspectorId(ProtocolConstants.VIEW_INSPECTOR_ID)
+                  .setPayload(ByteString.copyFrom(emptyDump.toByteArray()))
+              )
+              .build(),
+          )
+        }
+      }
+    }
+    testHostServices.queuedForwardPorts.addAll(listOf(findClosedPort().toString(), server.localPort.toString()))
+
+    var thrown: Exception? = null
+    captureStderr {
+      try {
+        doDumpUiWithNoopPrinter()
+        fail("Expected the empty-roots failure to propagate")
+      } catch (e: Exception) {
+        thrown = e
+      }
+    }
+    serverThread.join(5000)
+    server.close()
+
+    assertThat(thrown!!.message).contains("No active window roots found")
+    assertThat(thrown!!.suppressed).hasLength(1)
+  }
+
+  /** Runs [runWithConnectedInspectors] with all facets off, routing [injectionManagerFactory] to this test's dummy artifact paths. */
+  private suspend fun runWithConnectedInspectorsForTest(block: suspend (CommandSender, Boolean) -> Unit) {
+    runWithConnectedInspectors(
+      adbSession = testSession,
+      serial = deviceSerial,
+      packageName = packageName,
+      needsDebugViewAttributes = false,
+      composeInspectorJarPath = null,
+      injectionManagerFactory = { session, serial, pkg ->
+        InjectionManager(
+          session,
+          serial,
+          pkg,
+          agentPathResolver,
+          dummyJar,
+          dummyPayload,
+          dummyViewInspector,
+          tempFileSuffixGenerator = { "test.tmp" },
+        )
+      },
+      block = block,
+    )
+  }
+
+  /** Starts a loopback agent that answers View inspector creation with success and Compose version detection with "no Compose". */
+  private fun startScriptedLiveAgent(serverSocket: ServerSocket): Thread = thread {
+    runCatching {
+      serverSocket.accept().use { socket ->
+        val input = socket.getInputStream()
+        val output = socket.getOutputStream()
+        val create = UiInspectorProtocol.Command.parseFrom(FramingProtocol.readMessage(input))
+        writeAgentResponse(
+          output,
+          UiInspectorProtocol.Response.newBuilder()
+            .setCommandId(create.commandId)
+            .setStatus(UiInspectorProtocol.Response.Status.SUCCESS)
+            .setCreateInspector(UiInspectorProtocol.CreateInspectorResponse.getDefaultInstance())
+            .build(),
+        )
+        val getVersion = UiInspectorProtocol.Command.parseFrom(FramingProtocol.readMessage(input))
+        writeAgentResponse(
+          output,
+          UiInspectorProtocol.Response.newBuilder()
+            .setCommandId(getVersion.commandId)
+            .setStatus(UiInspectorProtocol.Response.Status.SUCCESS)
+            .setGetVersion(UiInspectorProtocol.GetVersionResponse.getDefaultInstance())
+            .build(),
+        )
+      }
+    }
+  }
+
+  private fun writeAgentResponse(output: OutputStream, response: UiInspectorProtocol.Response) {
+    val agentMessage = UiInspectorProtocol.AgentMessage.newBuilder().setResponse(response).build()
+    FramingProtocol.writeMessage(output, agentMessage.toByteArray())
   }
 
   /**
@@ -971,7 +1354,7 @@ class InjectionManagerTest {
   fun testRemoveAdbForward_killFailure_warnsInsteadOfThrowing() = runTest {
     val injectionManager = createInjectionManager()
     configureSuccessfulInjection()
-    injectionManager.injectAndAttach(needsDebugViewAttributes = false)
+    injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
     testHostServices.throwOnKillForward = true
 
     val stderr = captureStderr { injectionManager.removeAdbForward() }
@@ -1032,11 +1415,7 @@ class InjectionManagerTest {
       "cmd activity attach-agent $pid \"/data/data/$targetPackage/lib_ui_inspector_agent.so=/data/data/$targetPackage/lib_ui_inspector_service.jar;/data/data/$targetPackage/lib_ui_inspector_payload.jar;$token\"",
       "",
     )
-    fakeSession.deviceServices.configureShellCommand(
-      deviceSelector,
-      "cat /proc/net/unix | grep ui_inspector_$token || true",
-      socketGrepOutput,
-    )
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "cat /proc/net/unix", socketGrepOutput)
   }
 
   /** Runs [block] with [System.err] redirected and returns everything it printed. */

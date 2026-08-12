@@ -23,8 +23,10 @@ import com.android.adblib.DeviceState
 import com.android.adblib.shellAsText
 import com.android.tools.ui.inspector.printer.UiDumpPrinter
 import java.io.File
+import java.io.IOException
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol
 
@@ -117,8 +119,8 @@ private fun foregroundAppResolutionException() =
   )
 
 /**
- * Injects the UI Inspector agent into the target application, attaches to its layout inspector service, and dumps the unified View and
- * Compose tree structure to the console.
+ * Ensures the UI Inspector agent is running in the target application (injecting it, or reconnecting to an already-running server of the
+ * same version), and dumps the unified View and Compose tree structure to the console.
  *
  * @param adbSession The [AdbSession] to communicate with the local ADB server.
  * @param serial The serial number of the target device.
@@ -157,8 +159,14 @@ internal suspend fun doDumpUi(
   }
 }
 
-/** Connects to the device, injects inspector agents, starts View and Compose inspectors, and runs [block] with the active connection. */
-private suspend fun runWithConnectedInspectors(
+/**
+ * Connects to the device, ensures the inspector agent is running in the target app (reusing an already-running server when possible),
+ * starts the View and Compose inspectors, and runs [block] with the active connection.
+ *
+ * A reused server can prove stale — see [connectAndRunInspectors] — in which case a single retry performs a full injection. A failure of
+ * the retry attempt carries the stale-server failure as a suppressed exception.
+ */
+internal suspend fun runWithConnectedInspectors(
   adbSession: AdbSession,
   serial: String,
   packageName: String,
@@ -166,12 +174,84 @@ private suspend fun runWithConnectedInspectors(
   composeInspectorJarPath: String?,
   injectionManagerFactory: (AdbSession, String, String) -> InjectionManager,
   block: suspend (CommandSender, Boolean) -> Unit,
-) = coroutineScope {
+) {
   val injectionManager = injectionManagerFactory(adbSession, serial, packageName)
   try {
-    val port = injectionManager.injectAndAttach(needsDebugViewAttributes)
-    CommandSender.connect(host = "127.0.0.1", port = port.toInt(), scope = this).use { commandSender ->
-      createViewInspector(commandSender, injectionManager)
+    try {
+      connectAndRunInspectors(
+        injectionManager,
+        InjectionMode.RECONNECT_IF_AVAILABLE,
+        needsDebugViewAttributes,
+        composeInspectorJarPath,
+        block,
+      )
+    } catch (stale: StaleReconnectException) {
+      System.err.println("The running UI Inspector server did not respond (${stale.cause?.message}); injecting a fresh agent.")
+      try {
+        connectAndRunInspectors(
+          injectionManager,
+          InjectionMode.FORCE_FULL_INJECTION,
+          needsDebugViewAttributes,
+          composeInspectorJarPath,
+          block,
+        )
+      } catch (e: Throwable) {
+        e.addSuppressed(stale)
+        throw e
+      }
+    }
+  } catch (e: EmptyViewRootsException) {
+    val userFacing =
+      Exception(
+        "No active window roots found for package '$packageName'. Please make sure the app is in the foreground and has visible layout views."
+      )
+    // The empty-roots failure may have happened on the forced retry, whose suppressed stale-server diagnostic must survive the rewording.
+    e.suppressed.forEach(userFacing::addSuppressed)
+    throw userFacing
+  }
+}
+
+/**
+ * One connection attempt: obtains an agent server per [mode], connects to it, starts the View and Compose inspectors, and runs [block]. The
+ * attempt owns its adb forward and removes it when done — forwards outlive the CLI process, so every attempt removes its own on success,
+ * failure, and cancellation alike.
+ *
+ * When the server was reused ([InjectionResult.Reconnected]), its liveness is only established by the first command round trip: the probed
+ * socket may have shut down since the probe (inactivity timeout), and adb creates the device-side leg of a forward lazily, so even a
+ * successful TCP connect proves nothing. A transport failure ([IOException]) up to and including that first round trip is therefore
+ * reported as [StaleReconnectException]. Anything after the first response, and any [InspectorCrashException] (an explicit agent-side
+ * report, so the server is alive), propagates unchanged. A freshly injected server ([InjectionResult.Injected]) never reports staleness.
+ */
+private suspend fun connectAndRunInspectors(
+  injectionManager: InjectionManager,
+  mode: InjectionMode,
+  needsDebugViewAttributes: Boolean,
+  composeInspectorJarPath: String?,
+  block: suspend (CommandSender, Boolean) -> Unit,
+) = coroutineScope {
+  try {
+    val injection = injectionManager.injectAndAttach(needsDebugViewAttributes, mode)
+    val commandSender =
+      try {
+        CommandSender.connect(host = "127.0.0.1", port = injection.forwardedPort.toInt(), scope = this)
+      } catch (e: IOException) {
+        // A cancelled scope can surface as an IOException from the connection; cancellation must propagate, not trigger a retry.
+        ensureActive()
+        if (injection is InjectionResult.Reconnected) throw StaleReconnectException(e)
+        throw e
+      }
+    commandSender.use {
+      val viewInspectorDexPath = injectionManager.pushViewInspectorPayload()
+      try {
+        createViewInspector(commandSender, viewInspectorDexPath)
+      } catch (e: InspectorCrashException) {
+        throw e
+      } catch (e: IOException) {
+        // A cancelled scope can surface as an IOException from the connection; cancellation must propagate, not trigger a retry.
+        ensureActive()
+        if (injection is InjectionResult.Reconnected) throw StaleReconnectException(e)
+        throw e
+      }
 
       val localJarProvider =
         composeInspectorJarPath?.let { path ->
@@ -193,12 +273,7 @@ private suspend fun runWithConnectedInspectors(
 
       block(commandSender, composeInspectorConnected)
     }
-  } catch (e: EmptyViewRootsException) {
-    throw Exception(
-      "No active window roots found for package '$packageName'. Please make sure the app is in the foreground and has visible layout views."
-    )
   } finally {
-    // The forward outlives the CLI process, so every run removes its own — on success, failure, and cancellation alike.
     withContext(NonCancellable) { injectionManager.removeAdbForward() }
   }
 }
@@ -308,3 +383,6 @@ internal fun mergeComposeRoots(
 }
 
 private class EmptyViewRootsException : Exception()
+
+/** A server reused via [InjectionResult.Reconnected] proved unreachable; [cause] is the transport failure that revealed it. */
+private class StaleReconnectException(cause: IOException) : Exception(cause)
