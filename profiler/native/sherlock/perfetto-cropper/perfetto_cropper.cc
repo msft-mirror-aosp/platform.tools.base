@@ -621,9 +621,9 @@ absl::Status SplitGpuFrameTimeline(const uint8_t* data, size_t size,
 
     if (packet.has_interned_data()) {
       // Keep interned data defined before the crop window so they can be
-      // resolved for events inside the window, stripping timestamp information
-      // to prevent Trace Processor from assuming the trace starts earlier than
-      // intended.
+      // resolved for events inside the window, stripping timestamp and event
+      // information for packets before the window to prevent Trace Processor
+      // from assuming the trace starts earlier than intended.
       if (packet_ts <= static_cast<uint64_t>(end_ns)) {
         bool keep_metadata_only = packet_ts < static_cast<uint64_t>(start_ns);
         WritePacketWithoutPidInfo(out, packet_data, packet_size,
