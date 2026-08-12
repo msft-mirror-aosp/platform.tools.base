@@ -17,14 +17,17 @@
 package com.android.ide.common.resources;
 
 import com.android.SdkConstants;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
+
 import junit.framework.TestCase;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 
 public class NodeUtilsTest extends TestCase {
 
@@ -350,8 +353,12 @@ public class NodeUtilsTest extends TestCase {
 
         assertEquals(3, node1.getAttributes().getLength());
         assertEquals(2, adoptedNode1.getAttributes().getLength());
-        assertEquals(node1.getAttributes().getNamedItem("tools:targetApi").getNodeValue(),
-                     adoptedNode1.getAttributes().getNamedItem(adoptedToolsPrefix + ":targetApi").getNodeValue());
+        assertEquals(
+                node1.getAttributes().getNamedItem("tools:targetApi").getNodeValue(),
+                adoptedNode1
+                        .getAttributes()
+                        .getNamedItem(adoptedToolsPrefix + ":targetApi")
+                        .getNodeValue());
         assertEquals(node1.getAttributes().getNamedItem("c").getNodeValue(),
                      adoptedNode1.getAttributes().getNamedItem("c").getNodeValue());
     }
@@ -422,6 +429,58 @@ public class NodeUtilsTest extends TestCase {
         assertEquals(node2.getAttributes().getNamedItem("prefix:attr2").getNodeValue(),
                      adoptedNode2.getAttributes().getNamedItem(
                        adoptedOtherNsPrefix + ":attr2").getNodeValue());
+    }
+
+    public void testAdoptNodePreservesParentNamespace() throws Exception {
+        Document document1 = createDocument();
+        Element root1 = document1.createElement("resources");
+        String nsUri = "http://schemas.android.com/apk/prv/res/android";
+        NodeUtils.addAttribute(document1, root1, SdkConstants.XMLNS_URI, "xmlns:androidprv", nsUri);
+        document1.appendChild(root1);
+
+        Element child = document1.createElement("color");
+        child.setAttribute("name", "test_color");
+        child.setTextContent("@androidprv:color/system_brand_a_light");
+        root1.appendChild(child);
+
+        Document document2 = createDocument();
+        Element root2 = document2.createElement("resources");
+        document2.appendChild(root2);
+
+        Node adoptedChild = NodeUtils.adoptNode(document2, child);
+        root2.appendChild(adoptedChild);
+
+        NamedNodeMap doc2NamespaceAttrs = NodeUtils.getDocumentNamespaceAttributes(document2);
+        assertNotNull(doc2NamespaceAttrs);
+        String prefix = NodeUtils.getPrefixForNs(doc2NamespaceAttrs, nsUri);
+        assertNotNull(prefix);
+        assertEquals("xmlns:androidprv", prefix);
+    }
+
+    public void testDuplicateAndAdoptNodePreservesParentNamespace() throws Exception {
+        Document document1 = createDocument();
+        Element root1 = document1.createElement("resources");
+        String nsUri = "http://schemas.android.com/apk/prv/res/android";
+        NodeUtils.addAttribute(document1, root1, SdkConstants.XMLNS_URI, "xmlns:androidprv", nsUri);
+        document1.appendChild(root1);
+
+        Element child = document1.createElement("color");
+        child.setAttribute("name", "test_color");
+        child.setTextContent("@androidprv:color/system_brand_a_light");
+        root1.appendChild(child);
+
+        Document document2 = createDocument();
+        Element root2 = document2.createElement("resources");
+        document2.appendChild(root2);
+
+        Node duplicatedAndAdopted = NodeUtils.duplicateAndAdoptNode(document2, child);
+        root2.appendChild(duplicatedAndAdopted);
+
+        NamedNodeMap doc2NamespaceAttrs = NodeUtils.getDocumentNamespaceAttributes(document2);
+        assertNotNull(doc2NamespaceAttrs);
+        String prefix = NodeUtils.getPrefixForNs(doc2NamespaceAttrs, nsUri);
+        assertNotNull(prefix);
+        assertEquals("xmlns:androidprv", prefix);
     }
 
     private static Document createDocument() throws ParserConfigurationException {
