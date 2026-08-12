@@ -239,13 +239,7 @@ bool Instrumenter::InstrumentMethod(
   }
 
   std::string_view name(ir_method->decl->name->c_str());
-
-  if (name == "<init>") {
-    // TODO: Implement the safe constructor implementation using
-    // ConstructorAnalyzer.
-    return false;  // Safely skip all constructors to avoid VerifyErrors and
-                   // preserve classes
-  }
+  const bool is_constructor = (name == "<init>");
 
   // Skip synthetic compiler-generated methods unless they contain user lambdas
   // or Compose logic.
@@ -261,13 +255,28 @@ bool Instrumenter::InstrumentMethod(
 
   lir::CodeIr code_ir(ir_method, dex_ir);
 
+  lir::Instruction* super_call_instr = nullptr;
+  if (is_constructor) {
+    super_call_instr =
+        ConstructorAnalyzer::FindSuperCallInstruction(code_ir, name);
+    if (super_call_instr == nullptr) {
+      Log::I("Constructor %s has complex/missing super delegation. Skipping.",
+             ir_method->decl->name->c_str());
+      return false;
+    }
+  }
+
   // Track the original first bytecode instruction before register allocation to
   // align probes safely after Slicer's prologue.
   lir::Instruction* orig_first_instr = nullptr;
-  for (auto* instr : code_ir.instructions) {
-    if (dynamic_cast<lir::Bytecode*>(instr) != nullptr) {
-      orig_first_instr = instr;
-      break;
+  if (is_constructor) {
+    orig_first_instr = super_call_instr->next;
+  } else {
+    for (auto* instr : code_ir.instructions) {
+      if (dynamic_cast<lir::Bytecode*>(instr) != nullptr) {
+        orig_first_instr = instr;
+        break;
+      }
     }
   }
 
@@ -316,6 +325,42 @@ bool Instrumenter::InstrumentMethod(
     if (!ParameterShifter::ShiftParameters(ir_method, code_ir,
                                            orig_first_instr)) {
       return false;
+    }
+
+    // If we are inside a constructor and we expanded the register frame, any
+    // instructions executing before our copy-back moves (such as the super()
+    // delegation call itself) must be adjusted to reference the shifted
+    // parameter indices. Stop adjusting after super_call_instr.
+    if (is_constructor && ins_count > 0) {
+      dex::u4 old_param_base = ir_method->code->registers - 1 - ins_count;
+      for (auto* instr : code_ir.instructions) {
+        if (auto* bytecode = dynamic_cast<lir::Bytecode*>(instr)) {
+          for (auto* operand : bytecode->operands) {
+            if (auto* vreg = dynamic_cast<lir::VReg*>(operand)) {
+              if (vreg->reg >= old_param_base) {
+                vreg->reg += 1;
+              }
+            } else if (auto* vpair = dynamic_cast<lir::VRegPair*>(operand)) {
+              if (vpair->base_reg >= old_param_base) {
+                vpair->base_reg += 1;
+              }
+            } else if (auto* vlist = dynamic_cast<lir::VRegList*>(operand)) {
+              for (size_t i = 0; i < vlist->registers.size(); ++i) {
+                if (vlist->registers[i] >= old_param_base) {
+                  vlist->registers[i] += 1;
+                }
+              }
+            } else if (auto* vrange = dynamic_cast<lir::VRegRange*>(operand)) {
+              if (vrange->base_reg >= old_param_base) {
+                vrange->base_reg += 1;
+              }
+            }
+          }
+        }
+        if (instr == super_call_instr) {
+          break;
+        }
+      }
     }
   }
 
@@ -417,6 +462,29 @@ bool Instrumenter::InstrumentMethod(
     }
 
     if (trace_point == nullptr) continue;
+
+    // Safety check for constructors: we must NOT inject any coverage probes
+    // topologically before or at the super()/this() delegation call. In Dalvik
+    // bytecode, super() is frequently NOT the first instruction. During this,
+    // the 'this' instance is officially "uninitialized" by the ART Verifier.
+    // Performing any virtual/static method calls (like our tracker probes)
+    // within this region will trigger a runtime VerifyError. Thus, any blocks
+    // occurring at or before the super_call_instr are safely skipped.
+    if (is_constructor) {
+      bool is_before_or_at_super = false;
+      for (auto* instr : code_ir.instructions) {
+        if (instr == trace_point) {
+          is_before_or_at_super = true;
+          break;
+        }
+        if (instr == super_call_instr) {
+          break;
+        }
+      }
+      if (is_before_or_at_super) {
+        continue;
+      }
+    }
 
     // Dalvik requires that OP_MOVE_RESULT_*, OP_MOVE_EXCEPTION, and Slicer's
     // copy-back move instructions immediately follow the instructions that

@@ -125,6 +125,28 @@ class JacocoOnTheFlyConnectedTest(val runWithBuiltInPlatform: Boolean) {
             .trimIndent(),
         )
         files.add(
+          "src/main/java/com/example/helloworld/ConstructorTestClass.kt",
+          """
+          package com.example.helloworld
+
+          class ConstructorTestClass {
+              var id: Int = 0
+              var name: String = ""
+
+              constructor() {
+                  this.id = 100
+                  this.name = "default"
+              }
+
+              constructor(id: Int, name: String) {
+                  this.id = id
+                  this.name = name
+              }
+          }
+          """
+            .trimIndent(),
+        )
+        files.add(
           "src/androidTest/java/com/example/helloworld/HelloWorldTest.java",
           """
           package com.example.helloworld;
@@ -142,6 +164,14 @@ class JacocoOnTheFlyConnectedTest(val runWithBuiltInPlatform: Boolean) {
                   complexInstance.MyComplexScreen(() -> {
                       System.out.println("Composable backclicked");
                   });
+
+                  ConstructorTestClass c1 = new ConstructorTestClass();
+                  assertEquals(100, c1.getId());
+                  assertEquals("default", c1.getName());
+
+                  ConstructorTestClass c2 = new ConstructorTestClass(42, "custom");
+                  assertEquals(42, c2.getId());
+                  assertEquals("custom", c2.getName());
               }
           }
           """
@@ -184,6 +214,7 @@ class JacocoOnTheFlyConnectedTest(val runWithBuiltInPlatform: Boolean) {
     assertThat(content).contains("<package name=\"com/example/helloworld\">")
     assertThat(content).contains("<class name=\"com/example/helloworld/AppHelper\"")
     assertThat(content).contains("<class name=\"com/example/helloworld/ComplexParamClass\"")
+    assertThat(content).contains("<class name=\"com/example/helloworld/ConstructorTestClass\"")
     assertThat(content).doesNotContain("<package name=\"com/example/libmodule\">")
   }
 }
