@@ -71,6 +71,12 @@ class AndroidTestResultListener : TestExecutionListener {
    */
   private val testLogcatFiles = ConcurrentHashMap<String, String>()
 
+  /** Tracks benchmark trace file paths for each test. UniqueId -> List of TracePaths. */
+  private val testBenchmarkTraces = ConcurrentHashMap<String, List<String>>()
+
+  /** Tracks benchmark message file paths for each test. UniqueId -> MessagePath. */
+  private val testBenchmarkMessages = ConcurrentHashMap<String, String>()
+
   /** Properties loaded from the file specified by AGP environment variable. */
   private val configurationProperties: Properties by lazy {
     val properties = Properties()
@@ -150,6 +156,16 @@ class AndroidTestResultListener : TestExecutionListener {
     val logcatPath = entry.keyValuePairs[AndroidTestReportKeys.LOGCAT_PATH]
     if (logcatPath != null) {
       testLogcatFiles[testIdentifier.uniqueId] = logcatPath
+    }
+
+    val benchmarkTraces = entry.keyValuePairs[AndroidTestReportKeys.BENCHMARK_TRACE_PATHS]
+    if (benchmarkTraces != null) {
+      testBenchmarkTraces[testIdentifier.uniqueId] = benchmarkTraces.split(",")
+    }
+
+    val benchmarkMessage = entry.keyValuePairs[AndroidTestReportKeys.BENCHMARK_MESSAGE_PATH]
+    if (benchmarkMessage != null) {
+      testBenchmarkMessages[testIdentifier.uniqueId] = benchmarkMessage
     }
   }
 
@@ -251,6 +267,24 @@ class AndroidTestResultListener : TestExecutionListener {
                 labelBuilder.label = "logcat"
                 labelBuilder.namespace = "android"
                 sourcePathBuilder.path = logcatPath
+              }
+            }
+            // Attach benchmark trace artifacts if they were published.
+            val traces = testBenchmarkTraces.remove(testIdentifier.uniqueId)
+            traces?.forEach { path ->
+              addOutputArtifactBuilder().apply {
+                labelBuilder.label = "additionaltestoutput.benchmark.trace"
+                labelBuilder.namespace = "android"
+                sourcePathBuilder.path = path
+              }
+            }
+            // Attach benchmark message artifact if it was published.
+            val messagePath = testBenchmarkMessages.remove(testIdentifier.uniqueId)
+            if (messagePath != null) {
+              addOutputArtifactBuilder().apply {
+                labelBuilder.label = "additionaltestoutput.benchmark.message"
+                labelBuilder.namespace = "android"
+                sourcePathBuilder.path = messagePath
               }
             }
           }

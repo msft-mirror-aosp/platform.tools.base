@@ -416,7 +416,7 @@ class AndroidAdditionalTestOutputCollector(
   }
 
   /** Retrieves benchmark output from a given [testResult] and copies benchmark files from device to host. */
-  fun addBenchmarkOutput(testResult: TestResult) {
+  fun addBenchmarkOutput(testResult: TestResult): BenchmarkOutput {
     val statusBundle = testResult.statusBundle
     val benchmarkMessage =
       statusBundle[BENCHMARK_V3_TEST_METRICS_KEY]
@@ -424,17 +424,18 @@ class AndroidAdditionalTestOutputCollector(
         ?: statusBundle[BENCHMARK_TEST_METRICS_KEY]
         ?: ""
 
-    if (benchmarkMessage.isBlank()) return
+    if (benchmarkMessage.isBlank()) return BenchmarkOutput()
 
     val benchmarkMessageWithoutPrefix = benchmarkPrefixRegex.replace(benchmarkMessage, "")
     val benchmarkOutputDir = statusBundle[BENCHMARK_V3_PATH_TEST_METRICS_KEY] ?: statusBundle[BENCHMARK_PATH_TEST_METRICS_KEY] ?: ""
 
-    addBenchmarkMessage(benchmarkMessageWithoutPrefix, testResult)
-    addBenchmarkFiles(benchmarkMessageWithoutPrefix, benchmarkOutputDir)
+    val messageFile = addBenchmarkMessage(benchmarkMessageWithoutPrefix, testResult)
+    val traceFiles = addBenchmarkFiles(benchmarkMessageWithoutPrefix, benchmarkOutputDir)
+    return BenchmarkOutput(traceFiles, messageFile)
   }
 
-  private fun addBenchmarkMessage(benchmarkMessage: String, testResult: TestResult) {
-    val hostOutputDir = additionalOutputDirectoryOnHost ?: return
+  private fun addBenchmarkMessage(benchmarkMessage: String, testResult: TestResult): File? {
+    val hostOutputDir = additionalOutputDirectoryOnHost ?: return null
     val testIdentifier = testResult.testIdentifier
     val packageName = testIdentifier.testPackage
     val fullClassName = if (packageName.isNotEmpty()) "$packageName.${testIdentifier.testClass}" else testIdentifier.testClass
@@ -443,14 +444,15 @@ class AndroidAdditionalTestOutputCollector(
       PathSafety.sanitizeLeafName(rawSuffix)
         ?: run {
           logger.warning("Skipping benchmark output due to invalid test identifier name: '$rawSuffix'")
-          return
+          return null
         }
     val benchmarkMessageOutputFile = File(hostOutputDir, "additionaltestoutput.benchmark.message_${fileNameSuffix}.txt")
     benchmarkMessageOutputFile.writeText(benchmarkMessage, StandardCharsets.UTF_8)
+    return benchmarkMessageOutputFile
   }
 
-  private fun addBenchmarkFiles(benchmarkMessage: String, benchmarkOutputDir: String) {
-    if (benchmarkMessage.isBlank() || benchmarkOutputDir.isBlank()) return
+  private fun addBenchmarkFiles(benchmarkMessage: String, benchmarkOutputDir: String): List<File> {
+    if (benchmarkMessage.isBlank() || benchmarkOutputDir.isBlank()) return emptyList()
 
     val benchmarkFileRelativePaths =
       benchmarkMessage
@@ -463,8 +465,10 @@ class AndroidAdditionalTestOutputCollector(
         .map { matchValue -> matchValue.replace(BENCHMARK_TRACE_FILE_PREFIX, "").replace(BENCHMARK_V3_TRACE_FILE_PREFIX, "") }
         .toSet()
 
-    val hostOutputDir = additionalOutputDirectoryOnHost?.absolutePath ?: return
-    copyFilesFromDeviceToHost(benchmarkOutputDir, hostOutputDir, benchmarkFileRelativePaths::contains)
+    val hostOutputDir = additionalOutputDirectoryOnHost ?: return emptyList()
+    copyFilesFromDeviceToHost(benchmarkOutputDir, hostOutputDir.absolutePath, benchmarkFileRelativePaths::contains)
+
+    return benchmarkFileRelativePaths.mapNotNull { PathSafety.resolveContainedFile(hostOutputDir, it) }.filter { it.exists() }
   }
 
   private fun isDirectory(deviceFilePath: String): Boolean {
@@ -488,3 +492,6 @@ class AndroidAdditionalTestOutputCollector(
       .firstOrNull { it.isNotBlank() } ?: "0"
   }
 }
+
+/** Represents the collected benchmark outputs. */
+data class BenchmarkOutput(val traceFiles: List<File> = emptyList(), val messageFile: File? = null)

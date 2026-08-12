@@ -29,4 +29,10 @@ object AndroidTestReportKeys {
 
   /** The report entry key for the device info path. */
   const val DEVICE_INFO_PATH = "android-test.device-info-path"
+
+  /** The report entry key for the benchmark trace paths. */
+  const val BENCHMARK_TRACE_PATHS = "android-test.benchmark-trace-paths"
+
+  /** The report entry key for the benchmark message path. */
+  const val BENCHMARK_MESSAGE_PATH = "android-test.benchmark-message-path"
 }

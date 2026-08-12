@@ -371,10 +371,21 @@ class AndroidDeviceDescriptor(
       }
       reporter?.testEnded(ddmlibTestId, emptyMap())
 
-      additionalTestOutputCollector?.addBenchmarkOutput(testResult)
+      val benchmarkOutput = additionalTestOutputCollector?.addBenchmarkOutput(testResult)
+      val traceFiles = benchmarkOutput?.traceFiles ?: emptyList()
+      val messageFile = benchmarkOutput?.messageFile
 
       val testDescriptor = testDescriptors[testIdentifier]
       if (testDescriptor != null) {
+        if (traceFiles.isNotEmpty()) {
+          val paths = traceFiles.joinToString(",") { it.absolutePath }
+          val reportEntry = ReportEntry.from(AndroidTestReportKeys.BENCHMARK_TRACE_PATHS, paths)
+          context.request.engineExecutionListener.reportingEntryPublished(testDescriptor, reportEntry)
+        }
+        if (messageFile != null) {
+          val reportEntry = ReportEntry.from(AndroidTestReportKeys.BENCHMARK_MESSAGE_PATH, messageFile.absolutePath)
+          context.request.engineExecutionListener.reportingEntryPublished(testDescriptor, reportEntry)
+        }
         val testName = "$packageName.${testIdentifier.testClass}.${testIdentifier.testMethod}"
         val logcatPath = logcatCollector?.getLogcatPath(deviceId, testName)
         if (logcatPath != null) {

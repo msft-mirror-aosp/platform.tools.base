@@ -17,6 +17,8 @@
 package com.android.tools.androidtest.testengine
 
 import com.android.tools.androidtest.testengine.instrument.AmInstrumentationRunner
+import com.android.tools.androidtest.testengine.instrument.TestIdentifier
+import com.android.tools.androidtest.testengine.instrument.TestResult
 import com.google.common.truth.Truth.assertThat
 import java.io.File
 import org.junit.Before
@@ -32,9 +34,11 @@ import org.junit.rules.TemporaryFolder
 import org.mockito.Mock
 import org.mockito.junit.MockitoJUnit
 import org.mockito.junit.MockitoRule
+import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
@@ -48,6 +52,7 @@ class AndroidDeviceDescriptorTest {
   @Mock private lateinit var executionRequest: ExecutionRequest
   @Mock private lateinit var engineExecutionListener: EngineExecutionListener
   @Mock private lateinit var configurationParameters: ConfigurationParameters
+  @Mock private lateinit var additionalTestOutputCollector: AndroidAdditionalTestOutputCollector
 
   private val deviceSerial = "device-1234"
   private lateinit var adbFile: File
@@ -150,5 +155,41 @@ class AndroidDeviceDescriptorTest {
 
     val context = AndroidTestExecutionContext(executionRequest)
     descriptor.execute(context, mockDynamicTestExecutor)
+  }
+
+  @Test
+  fun `testEnded reports benchmark trace paths and message path`() {
+    val uniqueId = UniqueId.forEngine("android-test-engine").append("device", deviceSerial)
+    val descriptor = AndroidDeviceDescriptor(uniqueId, deviceSerial)
+    val context = AndroidTestExecutionContext(executionRequest)
+
+    val testIdentifier = TestIdentifier("pkg", "Cls", "meth")
+    val mockTestResult = mock<TestResult>()
+    whenever(mockTestResult.testIdentifier).thenReturn(testIdentifier)
+    whenever(mockTestResult.status).thenReturn(0) // OK
+
+    val traceFiles = listOf(File("/path/to/trace1.pb"), File("/path/to/trace2.pb"))
+    val messageFile = File("/path/to/message.txt")
+    whenever(additionalTestOutputCollector.addBenchmarkOutput(mockTestResult)).thenReturn(BenchmarkOutput(traceFiles, messageFile))
+
+    val listener = descriptor.Listener(context, null, null, null, additionalTestOutputCollector)
+
+    // We need to call testStarted to register the test descriptor,
+    // so that testEnded can find it and publish the report entry.
+    listener.testStarted(testIdentifier)
+
+    listener.testEnded(mockTestResult)
+
+    val reportEntryCaptor = argumentCaptor<ReportEntry>()
+    verify(engineExecutionListener, atLeastOnce()).reportingEntryPublished(any(), reportEntryCaptor.capture())
+
+    val benchmarkEntry = reportEntryCaptor.allValues.find { it.keyValuePairs.containsKey(AndroidTestReportKeys.BENCHMARK_TRACE_PATHS) }
+    assertThat(benchmarkEntry).isNotNull()
+    val expectedTracePaths = traceFiles.joinToString(",") { it.absolutePath }
+    assertThat(benchmarkEntry?.keyValuePairs?.get(AndroidTestReportKeys.BENCHMARK_TRACE_PATHS)).isEqualTo(expectedTracePaths)
+
+    val messageEntry = reportEntryCaptor.allValues.find { it.keyValuePairs.containsKey(AndroidTestReportKeys.BENCHMARK_MESSAGE_PATH) }
+    assertThat(messageEntry).isNotNull()
+    assertThat(messageEntry?.keyValuePairs?.get(AndroidTestReportKeys.BENCHMARK_MESSAGE_PATH)).isEqualTo(messageFile.absolutePath)
   }
 }

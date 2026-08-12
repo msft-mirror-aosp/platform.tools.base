@@ -450,4 +450,41 @@ class AndroidTestResultListenerTest {
     assertThat(artifact.label.namespace).isEqualTo("android")
     assertThat(artifact.sourcePath.path).isEqualTo(logcatPath)
   }
+
+  @Test
+  fun reportingEntryPublished_withBenchmarkTracePaths_isIncludedInTestResult() {
+    val listener = AndroidTestResultListener()
+    val testIdentifier = mockTestIdentifier(uniqueIdStr = "[engine:android-test-engine]/[device:my-device]/[test:myTest]")
+    val tracePath1 = "/path/to/trace1.pb"
+    val tracePath2 = "/path/to/trace2.pb"
+    val reportEntry1 = ReportEntry.from(AndroidTestReportKeys.BENCHMARK_TRACE_PATHS, "$tracePath1,$tracePath2")
+    val messagePath = "/path/to/message.txt"
+    val reportEntry2 = ReportEntry.from(AndroidTestReportKeys.BENCHMARK_MESSAGE_PATH, messagePath)
+
+    listener.reportingEntryPublished(testIdentifier, reportEntry1)
+    listener.reportingEntryPublished(testIdentifier, reportEntry2)
+
+    outputStream.reset()
+    listener.executionFinished(testIdentifier, TestExecutionResult.successful())
+
+    val event = decodeEvent(outputStream.toString())
+    assertThat(event.hasTestCaseFinished()).isTrue()
+    val testResult = event.testCaseFinished.testCaseResult.unpack(TestResultProto.TestResult::class.java)
+    assertThat(testResult.outputArtifactCount).isEqualTo(3)
+
+    val artifact1 = testResult.getOutputArtifact(0)
+    assertThat(artifact1.label.label).isEqualTo("additionaltestoutput.benchmark.trace")
+    assertThat(artifact1.label.namespace).isEqualTo("android")
+    assertThat(artifact1.sourcePath.path).isEqualTo(tracePath1)
+
+    val artifact2 = testResult.getOutputArtifact(1)
+    assertThat(artifact2.label.label).isEqualTo("additionaltestoutput.benchmark.trace")
+    assertThat(artifact2.label.namespace).isEqualTo("android")
+    assertThat(artifact2.sourcePath.path).isEqualTo(tracePath2)
+
+    val artifact3 = testResult.getOutputArtifact(2)
+    assertThat(artifact3.label.label).isEqualTo("additionaltestoutput.benchmark.message")
+    assertThat(artifact3.label.namespace).isEqualTo("android")
+    assertThat(artifact3.sourcePath.path).isEqualTo(messagePath)
+  }
 }

@@ -34,6 +34,7 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 
 /** Unit tests for [AndroidAdditionalTestOutputCollector]. */
 class AndroidAdditionalTestOutputCollectorTest {
@@ -253,14 +254,24 @@ class AndroidAdditionalTestOutputCollectorTest {
       .`when`(adbController)
       .runAdbShellCommand(eq(deviceSerial), eq(listOf("getprop", "ro.build.version.sdk")), anyOrNull())
 
-    collector.addBenchmarkOutput(testResult)
+    // Mock pull to actually create the file so it exists when we check it.
+    val expectedTraceFile = File(hostOutputDir, "trace.pb")
+    whenever(adbController.pull(eq(deviceSerial), eq("$benchmarkOutputDir/trace.pb"), eq(expectedTraceFile.absolutePath), anyOrNull()))
+      .thenAnswer {
+        expectedTraceFile.createNewFile()
+        AdbController.CommandResult(0, "", "")
+      }
+
+    val result = collector.addBenchmarkOutput(testResult)
 
     val messageFile = File(hostOutputDir, "additionaltestoutput.benchmark.message_pkg.Cls.meth.txt")
     assertThat(messageFile.exists()).isTrue()
     assertThat(messageFile.readText(StandardCharsets.UTF_8)).isEqualTo("[file](uri://trace.pb)")
 
-    verify(adbController)
-      .pull(eq(deviceSerial), eq("$benchmarkOutputDir/trace.pb"), eq(File(hostOutputDir, "trace.pb").absolutePath), anyOrNull())
+    verify(adbController).pull(eq(deviceSerial), eq("$benchmarkOutputDir/trace.pb"), eq(expectedTraceFile.absolutePath), anyOrNull())
+
+    assertThat(result.traceFiles).containsExactly(expectedTraceFile)
+    assertThat(result.messageFile).isEqualTo(messageFile)
   }
 
   @Test
@@ -358,5 +369,81 @@ class AndroidAdditionalTestOutputCollectorTest {
     // verify "sub/../../evil.txt" is sanitized and pulled as "sub_.._.._evil.txt"
     verify(adbController)
       .pull(eq(deviceSerial), eq("$deviceDir/sub/../../evil.txt"), eq(File(hostOutputDir, "sub_.._.._evil.txt").absolutePath), anyOrNull())
+  }
+
+  @Test
+  fun addBenchmarkOutput_escapedPathsAreIgnored() {
+    val collector =
+      AndroidAdditionalTestOutputCollector(
+        adbController,
+        deviceSerial,
+        hostOutputDir,
+        deviceOutputDir,
+        instrumentationTargetPackageId = "instr.pkg",
+        testedApplicationId = "pkg",
+        useTestStorageService = false,
+      )
+
+    val benchmarkOutputDir = "/sdcard/benchmark"
+    val testResult =
+      TestResult(
+        TestIdentifier("pkg", "Cls", "meth"),
+        status = -1,
+        startTime = Instant.now(),
+        endTime = Instant.now(),
+        statusBundle =
+          mapOf(
+            AndroidAdditionalTestOutputCollector.BENCHMARK_V3_TEST_METRICS_KEY to
+              "benchmark: [file](uri://../evil.txt)\n[file](uri://safe.pb)",
+            AndroidAdditionalTestOutputCollector.BENCHMARK_V3_PATH_TEST_METRICS_KEY to benchmarkOutputDir,
+          ),
+      )
+
+    // Mock isDirectory for benchmarkOutputDir
+    doReturn(AdbController.CommandResult(0, "", ""))
+      .`when`(adbController)
+      .runAdbShellCommand(eq(deviceSerial), eq(listOf("test", "-d", benchmarkOutputDir)), anyOrNull())
+    // Mock ls for benchmarkOutputDir
+    doReturn(AdbController.CommandResult(0, "../evil.txt\nsafe.pb", ""))
+      .`when`(adbController)
+      .runAdbShellCommand(eq(deviceSerial), eq(listOf("ls", benchmarkOutputDir)), anyOrNull())
+    // Mock isDirectory for files (return 1 for failure, meaning it's not a directory)
+    doReturn(AdbController.CommandResult(1, "", ""))
+      .`when`(adbController)
+      .runAdbShellCommand(eq(deviceSerial), eq(listOf("test", "-d", "$benchmarkOutputDir/../evil.txt")), anyOrNull())
+    doReturn(AdbController.CommandResult(1, "", ""))
+      .`when`(adbController)
+      .runAdbShellCommand(eq(deviceSerial), eq(listOf("test", "-d", "$benchmarkOutputDir/safe.pb")), anyOrNull())
+
+    // Mock API level check
+    doReturn(AdbController.CommandResult(0, "33", ""))
+      .`when`(adbController)
+      .runAdbShellCommand(eq(deviceSerial), eq(listOf("getprop", "ro.build.version.sdk")), anyOrNull())
+
+    // Mock pull for safe.pb
+    val expectedSafeFile = File(hostOutputDir, "safe.pb")
+    whenever(adbController.pull(eq(deviceSerial), eq("$benchmarkOutputDir/safe.pb"), eq(expectedSafeFile.absolutePath), anyOrNull()))
+      .thenAnswer {
+        expectedSafeFile.createNewFile()
+        AdbController.CommandResult(0, "", "")
+      }
+
+    // Mock pull for ../evil.txt (should not be called, but if it is, we want to know)
+    val unexpectedEvilFile = File(hostOutputDir.parentFile, "evil.txt")
+    whenever(adbController.pull(eq(deviceSerial), eq("$benchmarkOutputDir/../evil.txt"), eq(unexpectedEvilFile.absolutePath), anyOrNull()))
+      .thenAnswer {
+        unexpectedEvilFile.createNewFile()
+        AdbController.CommandResult(0, "", "")
+      }
+
+    val result = collector.addBenchmarkOutput(testResult)
+
+    // verify safe.pb is pulled
+    verify(adbController).pull(eq(deviceSerial), eq("$benchmarkOutputDir/safe.pb"), eq(expectedSafeFile.absolutePath), anyOrNull())
+    // verify ../evil.txt is NOT pulled to the parent directory
+    org.mockito.Mockito.verify(adbController, org.mockito.Mockito.never())
+      .pull(eq(deviceSerial), eq("$benchmarkOutputDir/../evil.txt"), eq(unexpectedEvilFile.absolutePath), anyOrNull())
+
+    assertThat(result.traceFiles).containsExactly(expectedSafeFile)
   }
 }
