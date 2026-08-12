@@ -177,4 +177,18 @@ class HostJarTestSuiteAndroidResourcesTest {
 
     Zip(apkForLocalTest!!).use { zip -> assertThat(zip.entries.map { it.toString() }).contains("/resources.arsc") }
   }
+
+  @Test
+  fun testAssembleWithAndroidResources() {
+    val result = rule.build.executor.run(":app:assembleAndroidResSuiteHostJarDebug")
+
+    assertThat(result.didWorkTasks).contains(":app:packageDebugForAndroidResSuite")
+    assertThat(result.didWorkTasks).contains(":app:compileAndroidResSuiteHostJarDebugJavaWithJavac")
+    assertThat(result.getTask(":app:assembleAndroidResSuiteHostJarDebug")).isNotNull()
+
+    val intermediatesDir = rule.build.androidApplication(":app").intermediatesDir
+    val apkForLocalTest =
+      intermediatesDir.resolve("apk_for_local_test").toFile().walkTopDown().firstOrNull { it.name == "apk-for-local-test.ap_" }
+    assertThat(apkForLocalTest).isNotNull()
+  }
 }

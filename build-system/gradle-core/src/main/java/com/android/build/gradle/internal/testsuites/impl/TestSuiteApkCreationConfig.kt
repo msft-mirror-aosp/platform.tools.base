@@ -31,8 +31,10 @@ import com.android.build.api.variant.impl.TestSuiteSourceContainer
 import com.android.build.gradle.internal.api.TestApkTestSuiteSourceSet
 import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.ConsumableCreationConfig
+import com.android.build.gradle.internal.component.NestedComponentCreationConfig
 import com.android.build.gradle.internal.component.TargetSdkAwareConfig
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
+import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.component.features.DexingCreationConfig
 import com.android.build.gradle.internal.dependency.VariantDependencies
 import com.android.build.gradle.internal.scope.MutableTaskContainer
@@ -41,6 +43,7 @@ import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.Option
 import com.android.build.gradle.options.OptionalBooleanOption
 import com.android.build.gradle.options.getOption
+import com.android.builder.core.ComponentType
 import com.android.builder.core.ComponentTypeImpl
 import com.android.utils.appendCapitalized
 import java.io.File
@@ -48,8 +51,15 @@ import org.gradle.api.JavaVersion
 
 class TestSuiteApkCreationConfig(val testSuite: TestSuiteCreationConfig, val sourceContainer: TestSuiteSourceContainer) :
   ApkCreationConfig,
+  NestedComponentCreationConfig,
   ConsumableCreationConfig by testSuite.testedVariant,
   TargetSdkAwareConfig by (testSuite.testedVariant as TargetSdkAwareConfig) {
+
+  override val componentType: ComponentType
+    get() = ComponentTypeImpl.TEST_APK
+
+  override val mainVariant: VariantCreationConfig
+    get() = testSuite.testedVariant
 
   override val name: String
     get() = sourceContainer.identifier

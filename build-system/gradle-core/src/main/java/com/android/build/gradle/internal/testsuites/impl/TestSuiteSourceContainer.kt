@@ -24,11 +24,14 @@ import com.android.build.gradle.internal.ApkTestSuiteTaskManager
 import com.android.build.gradle.internal.TestSuiteTaskManager
 import com.android.build.gradle.internal.api.HostJarTestSuiteSourceSet
 import com.android.build.gradle.internal.api.TestApkTestSuiteSourceSet
+import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.dependency.TestSuiteSourceClasspath
 import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.tasks.factory.TaskFactoryImpl
 import com.android.build.gradle.internal.testsuites.impl.HostJarTestSuiteTaskManager
+import com.android.build.gradle.internal.testsuites.impl.TestSuiteApkCreationConfig
+import com.android.build.gradle.internal.testsuites.impl.TestSuiteHostJarCreationConfig
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.tasks.TaskProvider
@@ -59,6 +62,18 @@ class TestSuiteSourceContainer(
     get() = source.type
 
   val artifacts = ArtifactsImpl(project, identifier)
+
+  var creationConfig: ComponentCreationConfig? = null
+    internal set
+
+  fun initializeCreationConfig(testSuite: TestSuiteCreationConfig) {
+    creationConfig =
+      when (source.type) {
+        TestSuiteSourceType.TEST_APK -> TestSuiteApkCreationConfig(testSuite, this)
+        TestSuiteSourceType.HOST_JAR -> TestSuiteHostJarCreationConfig(testSuite, this)
+        TestSuiteSourceType.ASSETS -> null
+      }
+  }
 
   /**
    * Creates all the test source processing tasks and return the [TaskProvider] that can be used as a dependent of the

@@ -21,6 +21,7 @@ import com.android.build.api.component.impl.computeTaskName
 import com.android.build.api.dsl.TestTaskContext
 import com.android.build.api.variant.impl.TestSuiteSourceContainer
 import com.android.build.api.variant.impl.capitalizeFirstChar
+import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
@@ -35,7 +36,6 @@ import com.android.build.gradle.internal.tasks.StripDebugSymbolsTask
 import com.android.build.gradle.internal.tasks.ValidateResourcesTask
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.tasks.factory.dependsOn
-import com.android.build.gradle.internal.testsuites.impl.TestSuiteApkCreationConfig
 import com.android.build.gradle.internal.testsuites.impl.TestSuiteHostJarCreationConfig
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.tasks.CompileNavigationXmlTask
@@ -54,7 +54,7 @@ class TestSuiteTaskManager(project: Project, globalConfig: GlobalTaskCreationCon
     javacTask: TaskProvider<out JavaCompile>,
     preBuildTask: TaskProvider<out Task>,
   ): TaskProvider<out Task> {
-    val apkCreationConfig = TestSuiteApkCreationConfig(testSuite, sourceContainer)
+    val apkCreationConfig = sourceContainer.creationConfig as ApkCreationConfig
 
     val taskContainer = apkCreationConfig.taskContainer
     taskContainer.javacTask = javacTask
@@ -63,15 +63,17 @@ class TestSuiteTaskManager(project: Project, globalConfig: GlobalTaskCreationCon
     val sourceGenTask = taskFactory.register(apkCreationConfig.computeTaskNameInternal("generate", "Sources"))
     taskContainer.sourceGenTask = sourceGenTask
 
+    val compileTask = taskFactory.register(apkCreationConfig.computeTaskNameInternal("compile", "Sources"))
+    taskContainer.compileTask = compileTask
+    TaskManager.setJavaCompilerTask(javacTask, apkCreationConfig)
+
     val resourceGenTask = taskFactory.register(ValidateResourcesTask.CreateAction(apkCreationConfig))
     taskContainer.resourceGenTask = resourceGenTask
 
     val assetGenTask = taskFactory.register(apkCreationConfig.computeTaskNameInternal("generate", "Assets"))
     taskContainer.assetGenTask = assetGenTask
 
-    val assembleTaskName = apkCreationConfig.computeTaskNameInternal("assemble")
-    val assembleTask = taskFactory.register(assembleTaskName)
-    taskContainer.assembleTask = assembleTask
+    createAssembleTask(apkCreationConfig)
 
     createMergeResourcesTask(apkCreationConfig, true, emptySet())
     val appCompileRClass = apkCreationConfig.services.projectOptions[BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS]
@@ -103,7 +105,7 @@ class TestSuiteTaskManager(project: Project, globalConfig: GlobalTaskCreationCon
 
     createPackagingTask(apkCreationConfig)
 
-    return assembleTask
+    return taskContainer.assembleTask
   }
 
   fun createHostJarTestSuiteResourcesTasks(hostJarConfig: TestSuiteHostJarCreationConfig) {
@@ -128,6 +130,10 @@ class TestSuiteTaskManager(project: Project, globalConfig: GlobalTaskCreationCon
 
   fun createAnchorTasksForSuite(creationConfig: ComponentCreationConfig) {
     createAnchorTasks(creationConfig)
+  }
+
+  fun createAssembleTaskForSuite(creationConfig: ComponentCreationConfig) {
+    createAssembleTask(creationConfig)
   }
 
   override val javaResMergingScopes: Set<InternalScopedArtifacts.InternalScope>
