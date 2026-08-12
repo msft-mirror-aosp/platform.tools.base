@@ -77,6 +77,80 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
       )
   }
 
+  fun testDefaultParameters() {
+    lint()
+      .files(
+        kotlin(
+            """
+            package test.pkg
+            import androidx.annotation.UiThread
+            import androidx.annotation.WorkerThread
+
+            @WorkerThread fun loadId(): Int = 0
+
+            @UiThread fun render(id: Int = loadId()) {}
+
+            @UiThread fun a() = render()
+
+            @UiThread fun b() = render()
+
+            @UiThread fun uncalledRender(id: Int = loadId()) {}
+            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/test.kt:7: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+        @UiThread fun render(id: Int = loadId()) {}
+                                       ~~~~~~~~
+        src/test/pkg/test.kt:13: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+        @UiThread fun uncalledRender(id: Int = loadId()) {}
+                                               ~~~~~~~~
+        2 errors
+        """
+          .trimIndent()
+      )
+  }
+
+  fun testInferenceFromDefaultParameters() {
+    lint()
+      .files(
+        kotlin(
+            """
+            package test.pkg
+            import androidx.annotation.UiThread
+            import androidx.annotation.WorkerThread
+
+            @WorkerThread fun loadId(): Int = 0
+
+            fun middle(id: Int = loadId()): Int = id // conservatively inferred to always include `loadId`'s effects. TODO
+
+            @UiThread fun ui() = middle()
+
+            @UiThread fun uiExplicit() = middle(5)
+            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/test.kt:9: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+        @UiThread fun ui() = middle()
+                             ~~~~~~~~
+        src/test/pkg/test.kt:11: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+        @UiThread fun uiExplicit() = middle(5)
+                                     ~~~~~~~~~
+        2 errors
+        """
+          .trimIndent()
+      )
+  }
+
   fun testBaseAssumption_forEach() {
     lint()
       .files(

@@ -285,17 +285,45 @@ internal open class Analysis<FX : Any>(
         fun <R : EffectResult.Eval<FX>> Mode<FX, R>.eval(body: UExpression): Result<Type<FX>, R> =
           eval(rec, method.initEnvironment, body, persistentListOf(ReturnRecord(body.uastParent!!)))
 
+        // Analyze the default argument computation as part of the method's code, not at every call site!
+        fun <R : EffectResult.Eval<FX>> Mode<FX, R>.defaultParameterEffects(): R {
+          val params =
+            when (val source = method.source) {
+              is UMethod -> source.uastParameters
+              is ULambdaExpression -> source.valueParameters
+              else -> emptyList()
+            }
+          return params
+            .asSequence()
+            .mapNotNull { it.uastInitializer }
+            .fold(bottom) { acc, initExpr ->
+              acc join eval(rec, method.initEnvironment /* TODO previous args */, initExpr, persistentListOf(ReturnRecord(initExpr))).effect
+            }
+        }
+
         when (val status = method.status) {
           is MethodBody.Status.Abstract -> Result(method.returnTypeAnnotation, Inapplicable)
-          is MethodBody.Status.BasicConstructor -> unboundedInferenceMode.pure(method.returnTypeAnnotation)
+          is MethodBody.Status.BasicConstructor ->
+            with(unboundedInferenceMode) {
+              Result(method.returnTypeAnnotation, fxInferenceLattice.catchError { defaultParameterEffects() })
+            }
           is MethodBody.Status.ForChecking ->
             with(checkingMode(status.upperBound)) {
+              val defaultParamFx = fxCheckingLattice.catchError { defaultParameterEffects() }
               when (val body = status.body) {
-                null -> pure(method.returnTypeAnnotation)
-                else -> checkingLattice.catchError { eval(body) }
+                null -> Result(method.returnTypeAnnotation, defaultParamFx)
+                else -> {
+                  val (t, bodyFx) = checkingLattice.catchError { eval(body) }
+                  Result(t, defaultParamFx join bodyFx)
+                }
               }
             }
-          is MethodBody.Status.ForInference -> inferenceLattice.catchError { inferenceMode(status.base).eval(status.body) }
+          is MethodBody.Status.ForInference ->
+            with(inferenceMode(status.base)) {
+              val defaultParamFx = fxInferenceLattice.catchError { defaultParameterEffects() }
+              val (t, fx) = inferenceLattice.catchError { eval(status.body) }
+              Result(t, defaultParamFx join fx)
+            }
         }
       }
       is Point.Instantiation -> instantiationLattice.catchError { point.subst.instType(rec, point.type) }
@@ -1350,9 +1378,8 @@ internal open class Analysis<FX : Any>(
           val paramName = paramPsi.name
           val arg =
             call.getArgumentForParameter(i)
-              ?: param.uastInitializer // TODO wrong. Make it lexically, not dynamically scoped!
               ?: OpaqueConstant(PsiTypeAdapter.translate(typeParams, paramPsi.type)).also {
-                log { "WARNING: Can't retrieve default argument for $paramName, supplying $it" }
+                if (param.uastInitializer == null) log { "WARNING: Can't retrieve default argument for $paramName, supplying $it" }
               }
           // TODO (b/406877361)
           when {
