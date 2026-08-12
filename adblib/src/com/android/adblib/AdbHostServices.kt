@@ -238,6 +238,7 @@ data class ServerStatus(
     LIBUSB,
     NATIVE,
     USB_DISABLED,
+    LIBADBUSB,
   }
 
   enum class MdnsBackend {
