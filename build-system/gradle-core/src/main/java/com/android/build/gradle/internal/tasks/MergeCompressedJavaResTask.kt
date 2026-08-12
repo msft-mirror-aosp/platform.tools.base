@@ -26,7 +26,6 @@ import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryGlobalScope
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType
-import com.android.build.gradle.internal.profile.ProfileAwareWorkAction
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.tasks.MergeJavaResWorkAction.SourcedInput
@@ -46,6 +45,7 @@ import com.android.builder.merge.MergeOutputWriters
 import com.android.builder.packaging.PackagingUtils
 import com.android.builder.packaging.ParsedPackagingOptions
 import com.google.common.collect.ImmutableList
+import java.io.File
 import kotlin.sequences.map
 import kotlin.sequences.sortedBy
 import org.gradle.api.artifacts.ArtifactCollection
@@ -109,21 +109,27 @@ abstract class MergeCompressedJavaResTask : NonIncrementalTask(), GlobalTask {
   @get:OutputFile abstract val outputFile: RegularFileProperty
 
   override fun doTaskAction() {
-    workerExecutor.noIsolation().submit(MergeJavaResOptimizedWorkAction::class.java) {
-      it.initializeFromBaseTask(this)
-      if (projectJavaResJar.isPresent && projectJavaResJar.get().asFile.exists()) {
-        it.projectJavaResJar.set(projectJavaResJar)
-      }
-      val displayBuildInfo = hasIncludedBuilds.get()
-      it.subProjectJavaRes.set(subProjectJavaRes.sourceFileToModuleId(displayBuildInfo))
-      it.externalLibJavaRes.set(externalLibJavaRes.sourceFileToModuleId(displayBuildInfo) + localDepsJavaRes.toSourcedInputs())
-      it.featureJavaRes.set(featureJavaResProvenance.sourceFileToModuleId(displayBuildInfo))
-      it.outputFile.set(outputFile)
-      it.noCompress.set(noCompress)
-      it.excludes.set(excludes)
-      it.pickFirsts.set(pickFirsts)
-      it.merges.set(merges)
-    }
+    val displayBuildInfo = hasIncludedBuilds.get()
+    val projectJavaResJar = projectJavaResJar.orNull
+    val subProjectList = subProjectJavaRes.sourceFileToModuleId(displayBuildInfo)
+    val externalLibList = externalLibJavaRes.sourceFileToModuleId(displayBuildInfo) + localDepsJavaRes.toSourcedInputs()
+    val featureList = featureJavaResProvenance.sourceFileToModuleId(displayBuildInfo)
+
+    val projectJavaResJarFile = if (projectJavaResJar?.asFile?.exists() == true) projectJavaResJar.asFile else null
+
+    MergeJavaResCompressedJarsMerger(
+        projectPath = projectPath.get(),
+        projectJavaResJar = projectJavaResJarFile,
+        subProjectJavaRes = subProjectList,
+        externalLibJavaRes = externalLibList,
+        featureJavaRes = featureList,
+        outputFile = outputFile.get().asFile,
+        noCompress = noCompress.getOrElse(emptyList()),
+        excludes = excludes.get(),
+        pickFirsts = pickFirsts.get(),
+        merges = merges.get(),
+      )
+      .run()
   }
 
   private fun Property<ArtifactCollection>.sourceFileToModuleId(displayBuildInfo: Boolean): List<SourcedInput> {
@@ -281,34 +287,43 @@ abstract class MergeCompressedJavaResTask : NonIncrementalTask(), GlobalTask {
   }
 }
 
-/** [ProfileAwareWorkAction] to merge java resources when optimized. */
-abstract class MergeJavaResOptimizedWorkAction : ProfileAwareWorkAction<MergeJavaResOptimizedWorkAction.Params>() {
+/** Runs merging with [SourcedInput] */
+internal class MergeJavaResCompressedJarsMerger(
+  private val projectPath: String,
+  private val projectJavaResJar: File?,
+  private val subProjectJavaRes: List<SourcedInput>,
+  private val externalLibJavaRes: List<SourcedInput>,
+  private val featureJavaRes: List<SourcedInput>,
+  private val outputFile: File,
+  private val noCompress: List<String>,
+  private val excludes: Set<String>,
+  private val pickFirsts: Set<String>,
+  private val merges: Set<String>,
+) {
 
-  override fun run() {
-    val outputFile = parameters.outputFile.get().asFile
-
+  fun run() {
     val sources = immutableListBuilder {
-      if (parameters.projectJavaResJar.isPresent) {
+      if (projectJavaResJar != null) {
         add(
           CompressedJavaResJar(
-            "project(\"${parameters.projectPath.get()}\") - This project",
-            parameters.projectJavaResJar.get().asFile,
+            "project(\"${projectPath}\") - This project",
+            projectJavaResJar,
             JavaResMergingPriority.HIGH,
           )
         )
       }
-      parameters.subProjectJavaRes.get().forEach {
+      subProjectJavaRes.forEach {
         add(CompressedJavaResJar(it.source, it.input, determinePriority(InternalScopedArtifacts.InternalScope.SUB_PROJECTS)))
       }
-      parameters.externalLibJavaRes.get().forEach {
+      externalLibJavaRes.forEach {
         add(CompressedJavaResJar(it.source, it.input, determinePriority(InternalScopedArtifacts.InternalScope.EXTERNAL_LIBS)))
       }
-      parameters.featureJavaRes.get().forEach {
+      featureJavaRes.forEach {
         add(CompressedJavaResJar(it.source, it.input, determinePriority(InternalScopedArtifacts.InternalScope.FEATURES)))
       }
     }
 
-    val packagingOptions = ParsedPackagingOptions(parameters.excludes.get(), parameters.pickFirsts.get(), parameters.merges.get())
+    val packagingOptions = ParsedPackagingOptions(excludes, pickFirsts, merges)
     val inputFilter =
       MergeJavaResourceTask.predicate.and { path ->
         packagingOptions.getAction(path) != ParsedPackagingOptions.JavaResPackagingFileAction.EXCLUDE
@@ -365,19 +380,7 @@ abstract class MergeJavaResOptimizedWorkAction : ProfileAwareWorkAction<MergeJav
         }
       }
 
-    FileMerger.merge(finalInputList, output, PackagingUtils.getNoCompressPredicateForJavaRes(parameters.noCompress.get()))
-  }
-
-  abstract class Params : Parameters() {
-    abstract val projectJavaResJar: RegularFileProperty
-    abstract val subProjectJavaRes: ListProperty<SourcedInput>
-    abstract val externalLibJavaRes: ListProperty<SourcedInput>
-    abstract val featureJavaRes: ListProperty<SourcedInput>
-    abstract val outputFile: RegularFileProperty
-    abstract val noCompress: ListProperty<String>
-    abstract val excludes: SetProperty<String>
-    abstract val pickFirsts: SetProperty<String>
-    abstract val merges: SetProperty<String>
+    FileMerger.merge(finalInputList, output, PackagingUtils.getNoCompressPredicateForJavaRes(noCompress))
   }
 }
 

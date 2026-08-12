@@ -16,12 +16,8 @@
 
 package com.android.build.gradle.internal.tasks
 
-import com.android.build.gradle.internal.fixtures.FakeGradleProperty
-import com.android.build.gradle.internal.fixtures.FakeNoOpAnalyticsService
-import com.android.build.gradle.internal.fixtures.FakeObjectFactory
 import com.android.build.gradle.internal.packaging.defaultExcludes
 import com.android.build.gradle.internal.packaging.defaultMerges
-import com.android.build.gradle.internal.profile.AnalyticsService
 import com.android.build.gradle.internal.tasks.MergeJavaResWorkAction.SourcedInput
 import com.android.builder.packaging.JarFlinger
 import com.android.testutils.truth.ZipFileSubject.assertThat
@@ -32,12 +28,11 @@ import java.io.File
 import java.util.zip.DeflaterOutputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
-import org.gradle.api.provider.Property
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
-/** Test cases for [MergeJavaResOptimizedWorkAction]. */
+/** Test cases for [MergeJavaResCompressedJarsMerger]. */
 class MergeJavaResOptimizedWorkActionTest {
 
   @get:Rule val tmpDir = TemporaryFolder()
@@ -60,27 +55,19 @@ class MergeJavaResOptimizedWorkActionTest {
 
     val outputFile = tmpDir.root.resolve("out.jar")
 
-    object : MergeJavaResOptimizedWorkAction() {
-        override fun getParameters(): Params {
-          return object : Params() {
-            override val projectJavaResJar = FakeObjectFactory.factory.fileProperty().also { it.set(projectJar) }
-            override val subProjectJavaRes =
-              FakeObjectFactory.factory.listProperty(SourcedInput::class.java).also { it.add(SourcedInput(dependencyJar, "dependencyJar")) }
-            override val externalLibJavaRes = FakeObjectFactory.factory.listProperty(SourcedInput::class.java)
-            override val featureJavaRes = FakeObjectFactory.factory.listProperty(SourcedInput::class.java)
-            override val outputFile = FakeObjectFactory.factory.fileProperty().also { it.set(outputFile) }
-            override val noCompress = FakeObjectFactory.factory.listProperty(String::class.java)
-            override val excludes = FakeObjectFactory.factory.setProperty(String::class.java).also { it.set(defaultExcludes) }
-            override val pickFirsts = FakeObjectFactory.factory.setProperty(String::class.java)
-            override val merges = FakeObjectFactory.factory.setProperty(String::class.java).also { it.set(defaultMerges) }
-            override val projectPath = FakeGradleProperty("projectName")
-            override val taskOwner = FakeGradleProperty("taskOwner")
-            override val workerKey = FakeGradleProperty("workerKey")
-            override val analyticsService: Property<AnalyticsService> = FakeGradleProperty(FakeNoOpAnalyticsService())
-          }
-        }
-      }
-      .execute()
+    MergeJavaResCompressedJarsMerger(
+        projectPath = "projectName",
+        projectJavaResJar = projectJar,
+        subProjectJavaRes = listOf(SourcedInput(dependencyJar, "dependencyJar")),
+        externalLibJavaRes = emptyList(),
+        featureJavaRes = emptyList(),
+        outputFile = outputFile,
+        noCompress = emptyList(),
+        excludes = defaultExcludes,
+        pickFirsts = emptySet(),
+        merges = defaultMerges,
+      )
+      .run()
 
     assertThat(outputFile) {
       it.contains("projectFile")
@@ -99,27 +86,19 @@ class MergeJavaResOptimizedWorkActionTest {
     JarFlinger(dependencyJar.toPath()).use { it.addEntry("mergeFile", byteStream("dependency\n")) }
     val outputFile = tmpDir.root.resolve("out.jar")
 
-    object : MergeJavaResOptimizedWorkAction() {
-        override fun getParameters(): Params {
-          return object : Params() {
-            override val projectJavaResJar = FakeObjectFactory.factory.fileProperty().also { it.set(projectJar) }
-            override val subProjectJavaRes =
-              FakeObjectFactory.factory.listProperty(SourcedInput::class.java).also { it.add(SourcedInput(dependencyJar, "dependencyJar")) }
-            override val externalLibJavaRes = FakeObjectFactory.factory.listProperty(SourcedInput::class.java)
-            override val featureJavaRes = FakeObjectFactory.factory.listProperty(SourcedInput::class.java)
-            override val outputFile = FakeObjectFactory.factory.fileProperty().also { it.set(outputFile) }
-            override val noCompress = FakeObjectFactory.factory.listProperty(String::class.java)
-            override val excludes = FakeObjectFactory.factory.setProperty(String::class.java).also { it.set(defaultExcludes) }
-            override val pickFirsts = FakeObjectFactory.factory.setProperty(String::class.java)
-            override val merges = FakeObjectFactory.factory.setProperty(String::class.java).also { it.set(setOf("mergeFile")) }
-            override val projectPath = FakeGradleProperty("projectName")
-            override val taskOwner = FakeGradleProperty("taskOwner")
-            override val workerKey = FakeGradleProperty("workerKey")
-            override val analyticsService: Property<AnalyticsService> = FakeGradleProperty(FakeNoOpAnalyticsService())
-          }
-        }
-      }
-      .execute()
+    MergeJavaResCompressedJarsMerger(
+        projectPath = "projectName",
+        projectJavaResJar = projectJar,
+        subProjectJavaRes = listOf(SourcedInput(dependencyJar, "dependencyJar")),
+        externalLibJavaRes = emptyList(),
+        featureJavaRes = emptyList(),
+        outputFile = outputFile,
+        noCompress = emptyList(),
+        excludes = defaultExcludes,
+        pickFirsts = emptySet(),
+        merges = setOf("mergeFile"),
+      )
+      .run()
 
     assertThat(outputFile) { it.containsFileWithContent("mergeFile", "project\ndependency\n") }
   }
@@ -138,27 +117,19 @@ class MergeJavaResOptimizedWorkActionTest {
 
     val outputFile = tmpDir.root.resolve("out.jar")
 
-    object : MergeJavaResOptimizedWorkAction() {
-        override fun getParameters(): Params {
-          return object : Params() {
-            override val projectJavaResJar = FakeObjectFactory.factory.fileProperty().also { it.set(projectJar) }
-            override val subProjectJavaRes =
-              FakeObjectFactory.factory.listProperty(SourcedInput::class.java).also { it.add(SourcedInput(dependencyJar, "dependencyJar")) }
-            override val externalLibJavaRes = FakeObjectFactory.factory.listProperty(SourcedInput::class.java)
-            override val featureJavaRes = FakeObjectFactory.factory.listProperty(SourcedInput::class.java)
-            override val outputFile = FakeObjectFactory.factory.fileProperty().also { it.set(outputFile) }
-            override val noCompress = FakeObjectFactory.factory.listProperty(String::class.java)
-            override val excludes = FakeObjectFactory.factory.setProperty(String::class.java).also { it.set(defaultExcludes) }
-            override val pickFirsts = FakeObjectFactory.factory.setProperty(String::class.java).also { it.set(setOf("pickFirstFile")) }
-            override val merges = FakeObjectFactory.factory.setProperty(String::class.java).also { it.set(defaultMerges) }
-            override val projectPath = FakeGradleProperty("projectName")
-            override val taskOwner = FakeGradleProperty("taskOwner")
-            override val workerKey = FakeGradleProperty("workerKey")
-            override val analyticsService: Property<AnalyticsService> = FakeGradleProperty(FakeNoOpAnalyticsService())
-          }
-        }
-      }
-      .execute()
+    MergeJavaResCompressedJarsMerger(
+        projectPath = "projectName",
+        projectJavaResJar = projectJar,
+        subProjectJavaRes = listOf(SourcedInput(dependencyJar, "dependencyJar")),
+        externalLibJavaRes = emptyList(),
+        featureJavaRes = emptyList(),
+        outputFile = outputFile,
+        noCompress = emptyList(),
+        excludes = defaultExcludes,
+        pickFirsts = setOf("pickFirstFile"),
+        merges = defaultMerges,
+      )
+      .run()
 
     assertThat(outputFile) {
       // Selects project as it is a higher priority.
@@ -180,26 +151,19 @@ class MergeJavaResOptimizedWorkActionTest {
 
     val outputFile = tmpDir.root.resolve("out.jar")
 
-    object : MergeJavaResOptimizedWorkAction() {
-        override fun getParameters(): Params {
-          return object : Params() {
-            override val projectJavaResJar = FakeObjectFactory.factory.fileProperty().also { it.set(projectJar) }
-            override val subProjectJavaRes = FakeObjectFactory.factory.listProperty(SourcedInput::class.java)
-            override val externalLibJavaRes = FakeObjectFactory.factory.listProperty(SourcedInput::class.java)
-            override val featureJavaRes = FakeObjectFactory.factory.listProperty(SourcedInput::class.java)
-            override val outputFile = FakeObjectFactory.factory.fileProperty().also { it.set(outputFile) }
-            override val noCompress = FakeObjectFactory.factory.listProperty(String::class.java).also { it.set(listOf("uncompressedFile")) }
-            override val excludes = FakeObjectFactory.factory.setProperty(String::class.java).also { it.set(defaultExcludes) }
-            override val pickFirsts = FakeObjectFactory.factory.setProperty(String::class.java)
-            override val merges = FakeObjectFactory.factory.setProperty(String::class.java).also { it.set(defaultMerges) }
-            override val projectPath = FakeGradleProperty("projectName")
-            override val taskOwner = FakeGradleProperty("taskOwner")
-            override val workerKey = FakeGradleProperty("workerKey")
-            override val analyticsService: Property<AnalyticsService> = FakeGradleProperty(FakeNoOpAnalyticsService())
-          }
-        }
-      }
-      .execute()
+    MergeJavaResCompressedJarsMerger(
+        projectPath = "projectName",
+        projectJavaResJar = projectJar,
+        subProjectJavaRes = emptyList(),
+        externalLibJavaRes = emptyList(),
+        featureJavaRes = emptyList(),
+        outputFile = outputFile,
+        noCompress = listOf("uncompressedFile"),
+        excludes = defaultExcludes,
+        pickFirsts = emptySet(),
+        merges = defaultMerges,
+      )
+      .run()
 
     ZipFile(outputFile).use {
       assertThat(it.getEntry("compressedFile").method).isEqualTo(ZipEntry.DEFLATED)
@@ -225,27 +189,19 @@ class MergeJavaResOptimizedWorkActionTest {
 
     val outputFile = tmpDir.root.resolve("out.jar")
 
-    object : MergeJavaResOptimizedWorkAction() {
-        override fun getParameters(): Params {
-          return object : Params() {
-            override val projectJavaResJar = FakeObjectFactory.factory.fileProperty().also { it.set(projectJar) }
-            override val subProjectJavaRes =
-              FakeObjectFactory.factory.listProperty(SourcedInput::class.java).also { it.add(SourcedInput(dependencyJar, "dependencyJar")) }
-            override val externalLibJavaRes = FakeObjectFactory.factory.listProperty(SourcedInput::class.java)
-            override val featureJavaRes = FakeObjectFactory.factory.listProperty(SourcedInput::class.java)
-            override val outputFile = FakeObjectFactory.factory.fileProperty().also { it.set(outputFile) }
-            override val noCompress = FakeObjectFactory.factory.listProperty(String::class.java)
-            override val excludes = FakeObjectFactory.factory.setProperty(String::class.java).also { it.set(defaultExcludes) }
-            override val pickFirsts = FakeObjectFactory.factory.setProperty(String::class.java)
-            override val merges = FakeObjectFactory.factory.setProperty(String::class.java).also { it.set(defaultMerges) }
-            override val projectPath = FakeGradleProperty("projectName")
-            override val taskOwner = FakeGradleProperty("taskOwner")
-            override val workerKey = FakeGradleProperty("workerKey")
-            override val analyticsService: Property<AnalyticsService> = FakeGradleProperty(FakeNoOpAnalyticsService())
-          }
-        }
-      }
-      .execute()
+    MergeJavaResCompressedJarsMerger(
+        projectPath = "projectName",
+        projectJavaResJar = projectJar,
+        subProjectJavaRes = listOf(SourcedInput(dependencyJar, "dependencyJar")),
+        externalLibJavaRes = emptyList(),
+        featureJavaRes = emptyList(),
+        outputFile = outputFile,
+        noCompress = emptyList(),
+        excludes = defaultExcludes,
+        pickFirsts = emptySet(),
+        merges = defaultMerges,
+      )
+      .run()
 
     assertThat(outputFile) {
       it.contains("projectFile")
@@ -271,30 +227,19 @@ class MergeJavaResOptimizedWorkActionTest {
 
     val outputFile = tmpDir.root.resolve("out.jar")
 
-    object : MergeJavaResOptimizedWorkAction() {
-        override fun getParameters(): Params {
-          return object : Params() {
-            override val projectJavaResJar = FakeObjectFactory.factory.fileProperty()
-            override val subProjectJavaRes =
-              FakeObjectFactory.factory.listProperty(SourcedInput::class.java).also {
-                it.add(SourcedInput(dependencyJar1, "dependencyJar1"))
-                it.add(SourcedInput(dependencyJar2, "dependencyJar2"))
-              }
-            override val externalLibJavaRes = FakeObjectFactory.factory.listProperty(SourcedInput::class.java)
-            override val featureJavaRes = FakeObjectFactory.factory.listProperty(SourcedInput::class.java)
-            override val outputFile = FakeObjectFactory.factory.fileProperty().also { it.set(outputFile) }
-            override val noCompress = FakeObjectFactory.factory.listProperty(String::class.java)
-            override val excludes = FakeObjectFactory.factory.setProperty(String::class.java).also { it.set(defaultExcludes) }
-            override val pickFirsts = FakeObjectFactory.factory.setProperty(String::class.java)
-            override val merges = FakeObjectFactory.factory.setProperty(String::class.java).also { it.set(defaultMerges) }
-            override val projectPath = FakeGradleProperty("projectName")
-            override val taskOwner = FakeGradleProperty("taskOwner")
-            override val workerKey = FakeGradleProperty("workerKey")
-            override val analyticsService: Property<AnalyticsService> = FakeGradleProperty(FakeNoOpAnalyticsService())
-          }
-        }
-      }
-      .execute()
+    MergeJavaResCompressedJarsMerger(
+        projectPath = "projectName",
+        projectJavaResJar = null,
+        subProjectJavaRes = listOf(SourcedInput(dependencyJar1, "dependencyJar1"), SourcedInput(dependencyJar2, "dependencyJar2")),
+        externalLibJavaRes = emptyList(),
+        featureJavaRes = emptyList(),
+        outputFile = outputFile,
+        noCompress = emptyList(),
+        excludes = defaultExcludes,
+        pickFirsts = emptySet(),
+        merges = defaultMerges,
+      )
+      .run()
 
     assertThat(outputFile) {
       it.contains("dependencyFile1")
