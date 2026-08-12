@@ -513,6 +513,210 @@ src/test/pkg/Test.java:118: Error: Call must be from @{Slow,WorkerThread}, but a
     )
 
   @Test
+  fun testEdtAndReadActionAssumptions() {
+    studioLint()
+      .setUp()
+      .files(
+        kt(
+            """
+                    package test.pkg
+                    import com.android.annotations.concurrency.Slow
+                    import com.android.annotations.concurrency.UiThread
+                    import com.intellij.openapi.application.Application
+                    import com.intellij.openapi.application.ReadAction
+                    import com.intellij.openapi.application.WriteAction
+                    import com.intellij.openapi.project.DumbService
+                    import com.intellij.util.ui.UIUtil
+                    import javax.swing.SwingUtilities
+
+                    @Slow fun slow() { }
+
+                    @UiThread fun ui() { }
+
+                    @Slow
+                    fun fromBackground(app: Application, dumb: DumbService) {
+                        app.invokeAndWait { ui() } // OK: safe from any thread, and the runnable runs on the EDT
+                        app.invokeAndWait { slow() } // ERROR
+                        SwingUtilities.invokeLater { slow() } // ERROR
+                        UIUtil.invokeLaterIfNeeded { slow() } // ERROR
+                        dumb.smartInvokeLater { slow() } // ERROR
+                        WriteAction.runAndWait<RuntimeException> { slow() } // ERROR
+                        app.runReadAction { slow() } // OK: runs synchronously on this (background) thread
+                    }
+
+                    @UiThread
+                    fun fromUi(app: Application) {
+                        app.runReadAction { slow() } // ERROR: runs synchronously on the UI thread
+                        val n = app.runReadAction<Int> { slow(); 42 } // ERROR: likewise for the Computable overloading
+                        ReadAction.run<RuntimeException> { slow() } // ERROR
+                    }
+                """
+          )
+          .indented(),
+        java(
+            """
+                    // Stub until test infrastructure passes the right class path for non-Android
+                    // modules.
+                    package com.intellij.openapi.application;
+                    import com.intellij.openapi.util.Computable;
+
+                    @SuppressWarnings("ALL")
+                    public class Application {
+                        public void invokeAndWait(Runnable runnable) { }
+
+                        public void runReadAction(Runnable action) { }
+
+                        public <T> T runReadAction(Computable<T> computation) { return null; }
+                    }
+                """
+          )
+          .indented(),
+        java(
+            """
+                    package com.intellij.openapi.application;
+                    import com.intellij.util.ThrowableRunnable;
+
+                    @SuppressWarnings("ALL")
+                    public final class ReadAction {
+                        public static <E extends Throwable> void run(ThrowableRunnable<E> action) throws E { }
+                    }
+                """
+          )
+          .indented(),
+        java(
+            """
+                    package com.intellij.openapi.application;
+                    import com.intellij.util.ThrowableRunnable;
+
+                    @SuppressWarnings("ALL")
+                    public final class WriteAction {
+                        public static <E extends Throwable> void runAndWait(ThrowableRunnable<E> action) throws E { }
+                    }
+                """
+          )
+          .indented(),
+        java(
+            """
+                    package com.intellij.openapi.util;
+
+                    public interface Computable<T> {
+                        T compute();
+                    }
+                """
+          )
+          .indented(),
+        java(
+            """
+                    package com.intellij.util;
+
+                    public interface ThrowableRunnable<T extends Throwable> {
+                        void run() throws T;
+                    }
+                """
+          )
+          .indented(),
+        java(
+            """
+                    package com.intellij.openapi.project;
+
+                    @SuppressWarnings("ALL")
+                    public abstract class DumbService {
+                        public void smartInvokeLater(Runnable runnable) { }
+                    }
+                """
+          )
+          .indented(),
+        java(
+            """
+                    package com.intellij.util.ui;
+
+                    @SuppressWarnings("ALL")
+                    public final class UIUtil {
+                        public static void invokeLaterIfNeeded(Runnable runnable) { }
+                    }
+                """
+          )
+          .indented(),
+        *annotationDefinitions,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/test.kt:18: Error: Argument at x₀ must allow calling run() from @UiThread, but that call is requiring @{Slow,WorkerThread}. [WrongThread]
+            app.invokeAndWait { slow() } // ERROR
+                ~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:19: Error: Argument at x₀ must allow calling run() from @UiThread, but that call is requiring @{Slow,WorkerThread}. [WrongThread]
+            SwingUtilities.invokeLater { slow() } // ERROR
+                           ~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:20: Error: Argument at x₀ must allow calling run() from @UiThread, but that call is requiring @{Slow,WorkerThread}. [WrongThread]
+            UIUtil.invokeLaterIfNeeded { slow() } // ERROR
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:21: Error: Argument at x₀ must allow calling run() from @UiThread, but that call is requiring @{Slow,WorkerThread}. [WrongThread]
+            dumb.smartInvokeLater { slow() } // ERROR
+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:22: Error: Argument at x₀ must allow calling run() from @UiThread, but that call is requiring @{Slow,WorkerThread}. [WrongThread]
+            WriteAction.runAndWait<RuntimeException> { slow() } // ERROR
+                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:28: Error: Call must be from @{Slow,WorkerThread}, but context is allowing @UiThread [WrongThread]
+            app.runReadAction { slow() } // ERROR: runs synchronously on the UI thread
+                ~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:29: Error: Call must be from @{Slow,WorkerThread}, but context is allowing @UiThread [WrongThread]
+            val n = app.runReadAction<Int> { slow(); 42 } // ERROR: likewise for the Computable overloading
+                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:30: Error: Call must be from @{Slow,WorkerThread}, but context is allowing @UiThread [WrongThread]
+            ReadAction.run<RuntimeException> { slow() } // ERROR
+                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        8 errors
+        """
+          .trimIndent()
+      )
+  }
+
+  @Test
+  fun testConcurrencyAssumptions() {
+    studioLint()
+      .setUp()
+      .files(
+        kt(
+            """
+                    package test.pkg
+                    import com.android.annotations.concurrency.Slow
+                    import com.android.annotations.concurrency.UiThread
+                    import java.util.concurrent.CompletableFuture
+                    import kotlin.concurrent.thread
+
+                    @Slow fun slow() { }
+
+                    @UiThread fun ui() { }
+
+                    @UiThread
+                    fun schedule() {
+                        thread { slow() } // OK: the block runs on a fresh background thread
+                        thread { ui() } // ERROR
+                        CompletableFuture.runAsync { slow() } // OK
+                        CompletableFuture.runAsync { ui() } // ERROR
+                    }
+                """
+          )
+          .indented(),
+        *annotationDefinitions,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/test.kt:14: Error: Argument at x₀ must run from @{Slow,WorkerThread}, but is requiring @UiThread. [WrongThread]
+            thread { ui() } // ERROR
+            ~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:16: Error: Argument at x₀ must allow calling run() from @{Slow,WorkerThread}, but that call is requiring @UiThread. [WrongThread]
+            CompletableFuture.runAsync { ui() } // ERROR
+                              ~~~~~~~~~~~~~~~~~
+        2 errors
+        """
+          .trimIndent()
+      )
+  }
+
+  @Test
   fun testBaseAssumptions() {
     studioLint()
       .setUp()

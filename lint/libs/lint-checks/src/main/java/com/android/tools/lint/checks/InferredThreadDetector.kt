@@ -16,6 +16,7 @@
 package com.android.tools.lint.checks
 
 import com.android.tools.lint.checks.InferredThreadDetector.Thread
+import com.android.tools.lint.checks.ThreadConstraintDetector.Companion.assumeCommonConcurrencySignatures
 import com.android.tools.lint.checks.fx.AssumptionTableBuilder.Companion.build
 import com.android.tools.lint.checks.fx.get
 import com.android.tools.lint.checks.fx.invoke
@@ -103,6 +104,7 @@ class InferredThreadDetector : ThreadConstraintDetector<Thread>(lattice, assumpt
       lazy(LazyThreadSafetyMode.NONE) {
         lattice.build {
           assumeCommonJavaAndKotlinSignatures()
+          assumeCommonConcurrencySignatures(background = lattice.of(Thread.Worker))
 
           val runnableId = ClassId.of<Runnable>()
           val longId = ClassId.of("long")
@@ -163,6 +165,16 @@ class InferredThreadDetector : ThreadConstraintDetector<Thread>(lattice, assumpt
               forAll<Runnable> { runnable -> given(handler(), runnable, Type.Long) { range = Type.Boolean } }
             rawVirtual("postAtTime", handlerFqn, runnableId, objectId, longId) assumedAs
               forAll<Runnable> { runnable -> given(handler(), runnable, Type.Any, Type.Long) { range = Type.Boolean } }
+          }
+
+          // `Activity.runOnUiThread` is safe to call from any thread. Like `View.post*`'s, the posted runnable executes on the UI thread.
+          run {
+            val activity = ClassId.of("android.app.Activity")
+
+            rawVirtual("runOnUiThread", "android.app.Activity", runnableId) assumedAs
+              forAll<Runnable> { runnable ->
+                given(activity(), runnable) { constraint += runnable[Runnable::run] to lattice.of(Thread.MainOrUi) }
+              }
           }
         }
       }

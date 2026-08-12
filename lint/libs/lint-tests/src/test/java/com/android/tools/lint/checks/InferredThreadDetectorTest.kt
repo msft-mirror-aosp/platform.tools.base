@@ -3018,6 +3018,175 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
       .expectClean()
   }
 
+  fun testRunOnUiThread() {
+    lint()
+      .files(
+        kotlin(
+            """
+            package test.pkg
+            import android.app.Activity
+            import androidx.annotation.UiThread
+            import androidx.annotation.WorkerThread
+
+            @UiThread fun ui() { }
+
+            @WorkerThread fun worker() { }
+
+            class MyActivity : Activity() {
+                @WorkerThread
+                fun scheduleFromWorker() {
+                    runOnUiThread { ui() } // OK: safe from any thread, and the runnable runs on the UI thread
+                    runOnUiThread { worker() } // ERROR: the runnable runs on the UI thread
+                }
+            }
+            """
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/MyActivity.kt:14: Error: Argument at x₀ must allow calling run() from @{Main,Ui}Thread, but that call is requiring @WorkerThread. [ThreadConstraint]
+                runOnUiThread { worker() } // ERROR: the runnable runs on the UI thread
+                ~~~~~~~~~~~~~~~~~~~~~~~~~~
+        1 error
+        """
+          .trimIndent()
+      )
+  }
+
+  fun testBaseAssumption_concurrencyUtils() {
+    lint()
+      .files(
+        kotlin(
+            """
+            package test.pkg
+            import androidx.annotation.UiThread
+            import androidx.annotation.WorkerThread
+            import java.util.Timer
+            import java.util.TimerTask
+            import java.util.concurrent.CompletableFuture
+            import kotlin.concurrent.thread
+
+            @UiThread fun ui() { }
+
+            @WorkerThread fun worker() { }
+
+            @UiThread
+            fun schedule(timer: Timer) {
+                thread { worker() } // OK: the block runs on a fresh background thread
+                thread { ui() } // ERROR
+                Thread { worker() }.start() // OK
+                Thread { ui() }.start() // ERROR
+                CompletableFuture.runAsync { worker() } // OK
+                CompletableFuture.runAsync { ui() } // ERROR
+                CompletableFuture.supplyAsync { worker(); 42 } // OK
+                timer.schedule(object : TimerTask() {
+                    override fun run() { worker() } // OK
+                }, 100L)
+                timer.schedule(object : TimerTask() {
+                    override fun run() { ui() } // ERROR
+                }, 100L)
+            }
+            """
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/test.kt:16: Error: Argument at x₀ must run from @WorkerThread, but is requiring @{Main,Ui}Thread. [ThreadConstraint]
+            thread { ui() } // ERROR
+            ~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:18: Error: Argument at x₀ must allow calling run() from @WorkerThread, but that call is requiring @{Main,Ui}Thread. [ThreadConstraint]
+            Thread { ui() }.start() // ERROR
+            ~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:20: Error: Argument at x₀ must allow calling run() from @WorkerThread, but that call is requiring @{Main,Ui}Thread. [ThreadConstraint]
+            CompletableFuture.runAsync { ui() } // ERROR
+                              ~~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:25: Error: Argument at x₀ must allow calling run() from @WorkerThread, but that call is requiring @{Main,Ui}Thread. [ThreadConstraint]
+            timer.schedule(object : TimerTask() {
+                  ^
+        4 errors
+        """
+          .trimIndent()
+      )
+  }
+
+  fun testBaseAssumption_moreCombinators() {
+    lint()
+      .files(
+        kotlin(
+            """
+            package test.pkg
+            import androidx.annotation.WorkerThread
+            import androidx.annotation.UiThread
+            import java.io.Closeable
+
+            @WorkerThread fun worker() { }
+
+            @UiThread
+            fun ui(l: List<String>, m: MutableMap<String, Int>, c: Closeable) {
+                l.takeIf { worker(); it.isEmpty() }
+                runCatching { worker() }
+                c.use { worker() }
+                requireNotNull(l) { worker(); "message" }
+                buildList { worker(); add(1) }
+                l.mapNotNull { worker(); it }
+                l.firstOrNull { worker(); true }
+                l.groupBy { worker(); it }
+                l.sortedBy { worker(); it }
+                m.getOrPut("k") { worker(); 0 }
+            }
+            """
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/test.kt:10: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            l.takeIf { worker(); it.isEmpty() }
+              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:11: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            runCatching { worker() }
+            ~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:12: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            c.use { worker() }
+              ~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:13: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            requireNotNull(l) { worker(); "message" }
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:14: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            buildList { worker(); add(1) }
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:15: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            l.mapNotNull { worker(); it }
+              ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:16: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            l.firstOrNull { worker(); true }
+              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:17: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            l.groupBy { worker(); it }
+              ~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:18: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            l.sortedBy { worker(); it }
+              ~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:19: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            m.getOrPut("k") { worker(); 0 }
+              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        10 errors
+        """
+          .trimIndent()
+      )
+  }
+
   fun testAnyThread() {
     lint()
       .files(

@@ -16,13 +16,22 @@
 package com.android.tools.lint.checks
 
 import com.android.tools.lint.checks.ThreadConstraintDetector.ThreadConstraint
+import com.android.tools.lint.checks.fx.AssumptionTableBuilder
 import com.android.tools.lint.checks.fx.JoinEffectDetector
 import com.android.tools.lint.checks.fx.analysis.isKtProperty
+import com.android.tools.lint.checks.fx.get
+import com.android.tools.lint.checks.fx.invoke
 import com.android.tools.lint.checks.fx.result.AssumptionTable
+import com.android.tools.lint.checks.fx.result.ClassId
 import com.android.tools.lint.checks.fx.result.EffectAnnotation
 import com.android.tools.lint.checks.fx.result.EffectAnnotation.Explicit
 import com.android.tools.lint.checks.fx.result.Error
+import com.android.tools.lint.checks.fx.result.MethodId
+import com.android.tools.lint.checks.fx.result.Type
+import com.android.tools.lint.checks.fx.result.Type.MethodRef.Companion.rawStatic
+import com.android.tools.lint.checks.fx.result.Type.MethodRef.Companion.rawVirtual
 import com.android.tools.lint.checks.fx.result.Type.Sym.Companion.chain
+import com.android.tools.lint.checks.fx.result.plus
 import com.android.tools.lint.checks.fx.utils.Encoder
 import com.android.tools.lint.checks.fx.utils.Encoder.Companion.adapt
 import com.android.tools.lint.checks.fx.utils.Lattice
@@ -32,6 +41,9 @@ import com.android.tools.lint.detector.api.Issue
 import com.android.tools.lint.detector.api.JavaContext
 import com.android.tools.lint.detector.api.UastLintUtils.Companion.tryResolveUDeclaration
 import com.intellij.psi.PsiParameter
+import java.util.Date
+import java.util.TimerTask
+import java.util.function.Supplier
 import kotlinx.collections.immutable.persistentMapOf
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtPropertyAccessor
@@ -362,6 +374,102 @@ abstract class ThreadConstraintDetector<T : Enum<T>>(
 
     companion object {
       inline fun <reified T : Enum<T>> of(): ThreadConstraintLattice<T> = ThreadConstraintLattice(T::class.java)
+    }
+  }
+
+  companion object {
+    /**
+     * Adds assumptions on common concurrency utilities whose callbacks execute on some other thread.
+     *
+     * @param background denotes "some fresh or pooled background thread" (e.g. Android's `@WorkerThread`, Studio's `@Slow`)
+     */
+    fun <T : Enum<T>> AssumptionTableBuilder<ThreadConstraint<T>>.assumeCommonConcurrencySignatures(background: ThreadConstraint<T>) {
+      val runnableId = ClassId.of<Runnable>()
+      val longId = ClassId.of("long")
+      val stringId = ClassId.of<String>()
+
+      // `Thread`s constructed with a runnable execute it on a fresh (background) thread once started.
+      run {
+        val threadFqn = "java.lang.Thread"
+        val thread = ClassId.of(threadFqn)
+
+        rawStatic("Thread", threadFqn, runnableId) assumedAs
+          forAll<Runnable> { runnable ->
+            given(runnable) {
+              range = thread()
+              constraint += runnable[Runnable::run] to background
+            }
+          }
+        rawStatic("Thread", threadFqn, runnableId, stringId) assumedAs
+          forAll<Runnable> { runnable ->
+            given(runnable, Type.String) {
+              range = thread()
+              constraint += runnable[Runnable::run] to background
+            }
+          }
+
+        // `kotlin.concurrent.thread` likewise runs its block on a fresh thread.
+        rawStatic(
+          "thread",
+          "kotlin.concurrent.ThreadsKt",
+          ClassId.of("boolean"),
+          ClassId.of("boolean"),
+          ClassId.of<ClassLoader>(),
+          stringId,
+          ClassId.of("int"),
+          ClassId.of("kotlin.jvm.functions.Function0"),
+        ) assumedAs
+          forAll(Function0::class(Type.Unit)) { block ->
+            given(Type.Boolean, Type.Boolean, ClassLoader::class(), Type.String, Type.Int, block) {
+              range = thread()
+              constraint += block[MethodId.Invoke[0]] to background
+            }
+          }
+      }
+
+      // `CompletableFuture`'s no-executor `*Async` entry points run their callbacks on the common pool.
+      run {
+        val cfFqn = "java.util.concurrent.CompletableFuture"
+        val cf = ClassId.of(cfFqn)
+
+        rawStatic("runAsync", cfFqn, runnableId) assumedAs
+          forAll<Runnable> { runnable ->
+            given(runnable) {
+              range = cf(Type.Unit)
+              constraint += runnable[Runnable::run] to background
+            }
+          }
+        rawStatic("supplyAsync", cfFqn, ClassId.of<Supplier<*>>()) assumedAs
+          forAll { u ->
+            forAll(Supplier::class(u)) { supplier ->
+              given(supplier) {
+                range = cf(u)
+                constraint += supplier[Supplier<*>::get] to background
+              }
+            }
+          }
+      }
+
+      // `Timer` executes its tasks on its own dedicated (background) thread.
+      run {
+        val timerFqn = "java.util.Timer"
+        val timer = ClassId.of(timerFqn)
+        val timerTaskId = ClassId.of<TimerTask>()
+        val dateId = ClassId.of<Date>()
+
+        rawVirtual("schedule", timerFqn, timerTaskId, longId) assumedAs
+          forAll<TimerTask> { task -> given(timer(), task, Type.Long) { constraint += task[TimerTask::run] to background } }
+        rawVirtual("schedule", timerFqn, timerTaskId, dateId) assumedAs
+          forAll<TimerTask> { task -> given(timer(), task, Date::class()) { constraint += task[TimerTask::run] to background } }
+        rawVirtual("schedule", timerFqn, timerTaskId, longId, longId) assumedAs
+          forAll<TimerTask> { task -> given(timer(), task, Type.Long, Type.Long) { constraint += task[TimerTask::run] to background } }
+        rawVirtual("schedule", timerFqn, timerTaskId, dateId, longId) assumedAs
+          forAll<TimerTask> { task -> given(timer(), task, Date::class(), Type.Long) { constraint += task[TimerTask::run] to background } }
+        rawVirtual("scheduleAtFixedRate", timerFqn, timerTaskId, longId, longId) assumedAs
+          forAll<TimerTask> { task -> given(timer(), task, Type.Long, Type.Long) { constraint += task[TimerTask::run] to background } }
+        rawVirtual("scheduleAtFixedRate", timerFqn, timerTaskId, dateId, longId) assumedAs
+          forAll<TimerTask> { task -> given(timer(), task, Date::class(), Type.Long) { constraint += task[TimerTask::run] to background } }
+      }
     }
   }
 }
