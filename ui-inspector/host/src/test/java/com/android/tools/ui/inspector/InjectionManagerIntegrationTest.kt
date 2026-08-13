@@ -60,7 +60,13 @@ class InjectionManagerIntegrationTest {
     assertThat(packageName).isNotNull()
 
     val injectionManager =
-      InjectionManager(adbSession = adbSession, serial = serial, packageName = packageName!!, serviceJarPath = Paths.get(SERVICE_JAR_PATH))
+      InjectionManager(
+        adbSession = adbSession,
+        serial = serial,
+        packageName = packageName!!,
+        composeInspectorOverrideJarPath = null,
+        serviceJarPath = Paths.get(SERVICE_JAR_PATH),
+      )
 
     val injected = injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
     assertThat(injected.forwardedPort).isNotEmpty()

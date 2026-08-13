@@ -37,17 +37,24 @@ class ShippedArtifactsDigestTest {
     return path
   }
 
-  private fun digestsOf(agent: String, service: String, payload: String, viewInspector: String): ShippedArtifactsDigests {
+  private fun digestsOf(
+    agent: String,
+    service: String,
+    payload: String,
+    viewInspector: String,
+    composeOverride: String? = null,
+  ): ShippedArtifactsDigests {
     return computeArtifactDigests(
       agentBinary = file("agent-${counter++}", agent),
       serviceJar = file("service-${counter++}", service),
       payloadJar = file("payload-${counter++}", payload),
       viewInspectorJar = file("view-${counter++}", viewInspector),
+      composeInspectorOverrideJar = composeOverride?.let { file("compose-override-${counter++}", it) },
     )
   }
 
-  private fun digestOf(agent: String, service: String, payload: String, viewInspector: String): String =
-    digestsOf(agent, service, payload, viewInspector).combined
+  private fun digestOf(agent: String, service: String, payload: String, viewInspector: String, composeOverride: String? = null): String =
+    digestsOf(agent, service, payload, viewInspector, composeOverride).combined
 
   @Test
   fun digest_matchesKnownVector() {
@@ -78,6 +85,40 @@ class ShippedArtifactsDigestTest {
   fun digest_fileBoundariesAffectTheDigest() {
     // The same overall byte stream split differently across files must not collide: the length framing makes boundaries part of the hash.
     assertThat(digestOf("ab", "", "", "")).isNotEqualTo(digestOf("a", "b", "", ""))
+  }
+
+  @Test
+  fun digest_absentOverride_isTheSameAsExplicitNull() {
+    val agent = file("agent", "a")
+    val service = file("service", "bb")
+    val payload = file("payload", "ccc")
+    val view = file("view", "dddd")
+    assertThat(computeArtifactDigests(agent, service, payload, view))
+      .isEqualTo(computeArtifactDigests(agent, service, payload, view, composeInspectorOverrideJar = null))
+  }
+
+  @Test
+  fun digest_withComposeOverride_matchesKnownVector() {
+    // The override jar contributes as a fifth file with the same length-plus-bytes framing.
+    assertThat(digestOf("a", "bb", "ccc", "dddd", composeOverride = "eeeee")).isEqualTo("7e8104c20970")
+  }
+
+  @Test
+  fun digest_composeOverrideChangesTheDigest() {
+    val withoutOverride = digestOf("a", "b", "c", "d")
+    // Even an empty override differs from no override: its length framing still enters the hash.
+    assertThat(digestOf("a", "b", "c", "d", composeOverride = "")).isNotEqualTo(withoutOverride)
+    assertThat(digestOf("a", "b", "c", "d", composeOverride = "X")).isNotEqualTo(withoutOverride)
+    assertThat(digestOf("a", "b", "c", "d", composeOverride = "X")).isNotEqualTo(digestOf("a", "b", "c", "d", composeOverride = "Y"))
+  }
+
+  @Test
+  fun digest_composeOverrideLeavesPerFileDigestsUnchanged() {
+    val digests = digestsOf("", "abc", "", "abc", composeOverride = "anything")
+    assertThat(digests.agentBinary).isEqualTo("e3b0c44298fc")
+    assertThat(digests.serviceJar).isEqualTo("ba7816bf8f01")
+    assertThat(digests.payloadJar).isEqualTo("e3b0c44298fc")
+    assertThat(digests.viewInspectorJar).isEqualTo("ba7816bf8f01")
   }
 
   @Test

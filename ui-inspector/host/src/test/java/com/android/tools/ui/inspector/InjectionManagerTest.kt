@@ -35,6 +35,7 @@ import java.io.PrintStream
 import java.net.ServerSocket
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.Paths
 import kotlin.concurrent.thread
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
@@ -129,6 +130,7 @@ class InjectionManagerTest {
         testSession,
         deviceSerial,
         packageName,
+        composeInspectorOverrideJarPath = null,
         agentPathResolver,
         dummyJar,
         dummyPayload,
@@ -285,6 +287,7 @@ class InjectionManagerTest {
         testSession,
         deviceSerial,
         packageName,
+        composeInspectorOverrideJarPath = null,
         agentPathResolver,
         dummyJar,
         dummyPayload,
@@ -315,6 +318,7 @@ class InjectionManagerTest {
         testSession,
         deviceSerial,
         packageName,
+        composeInspectorOverrideJarPath = null,
         agentPathResolver,
         dummyJar,
         dummyPayload,
@@ -359,6 +363,7 @@ class InjectionManagerTest {
         testSession,
         deviceSerial,
         packageName,
+        composeInspectorOverrideJarPath = null,
         agentPathResolver,
         dummyJar,
         dummyPayload,
@@ -405,6 +410,7 @@ class InjectionManagerTest {
         testSession,
         deviceSerial,
         packageName,
+        composeInspectorOverrideJarPath = null,
         agentPathResolver,
         dummyJar,
         dummyPayload,
@@ -669,7 +675,7 @@ class InjectionManagerTest {
   fun testQueryAppDataDir_Fails() = runTest {
     val dummyPayload = tempFolder.root.toPath().resolve("lib_ui_inspector_payload.jar")
     val injectionManager =
-      InjectionManager(testSession, deviceSerial, packageName, agentPathResolver, dummyJar, dummyPayload, dummyViewInspector)
+      InjectionManager(testSession, deviceSerial, packageName, null, agentPathResolver, dummyJar, dummyPayload, dummyViewInspector)
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
 
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
@@ -700,7 +706,7 @@ class InjectionManagerTest {
   fun testInjectAndAttach_notRunningPreservesError() = runTest {
     val dummyPayload = tempFolder.root.toPath().resolve("lib_ui_inspector_payload.jar")
     val injectionManager =
-      InjectionManager(testSession, deviceSerial, packageName, agentPathResolver, dummyJar, dummyPayload, dummyViewInspector)
+      InjectionManager(testSession, deviceSerial, packageName, null, agentPathResolver, dummyJar, dummyPayload, dummyViewInspector)
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
 
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
@@ -725,7 +731,7 @@ class InjectionManagerTest {
   fun testInjectAndAttach_psAdbExceptionPropagates() = runTest {
     val dummyPayload = tempFolder.root.toPath().resolve("lib_ui_inspector_payload.jar")
     val injectionManager =
-      InjectionManager(testSession, deviceSerial, packageName, agentPathResolver, dummyJar, dummyPayload, dummyViewInspector)
+      InjectionManager(testSession, deviceSerial, packageName, null, agentPathResolver, dummyJar, dummyPayload, dummyViewInspector)
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
 
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
@@ -817,6 +823,7 @@ class InjectionManagerTest {
         testSession,
         deviceSerial,
         resolvedPackage,
+        composeInspectorOverrideJarPath = null,
         agentPathResolver,
         dummyJar,
         dummyPayload,
@@ -835,7 +842,7 @@ class InjectionManagerTest {
   fun testInvalidPackageName_Throws() {
     val exception =
       assertThrows(IllegalArgumentException::class.java) {
-        InjectionManager(testSession, deviceSerial, "com.example; id", agentPathResolver, dummyJar, dummyPayload, dummyViewInspector)
+        InjectionManager(testSession, deviceSerial, "com.example; id", null, agentPathResolver, dummyJar, dummyPayload, dummyViewInspector)
       }
     assertThat(exception.message).contains("Invalid package name")
   }
@@ -845,7 +852,7 @@ class InjectionManagerTest {
     val longPackageName = "a".repeat(256)
     val exception =
       assertThrows(IllegalArgumentException::class.java) {
-        InjectionManager(testSession, deviceSerial, longPackageName, agentPathResolver, dummyJar, dummyPayload, dummyViewInspector)
+        InjectionManager(testSession, deviceSerial, longPackageName, null, agentPathResolver, dummyJar, dummyPayload, dummyViewInspector)
       }
     assertThat(exception.message).contains("Invalid package name")
   }
@@ -854,7 +861,7 @@ class InjectionManagerTest {
   fun testInvalidSerial_Throws() {
     val exception =
       assertThrows(IllegalArgumentException::class.java) {
-        InjectionManager(testSession, "serial; rm -rf /", packageName, agentPathResolver, dummyJar, dummyPayload, dummyViewInspector)
+        InjectionManager(testSession, "serial; rm -rf /", packageName, null, agentPathResolver, dummyJar, dummyPayload, dummyViewInspector)
       }
     assertThat(exception.message).contains("Invalid serial number")
   }
@@ -862,7 +869,7 @@ class InjectionManagerTest {
   @Test
   fun testUnsupportedApi_Throws() = runTest {
     val injectionManager =
-      InjectionManager(testSession, deviceSerial, packageName, agentPathResolver, dummyJar, dummyPayload, dummyViewInspector)
+      InjectionManager(testSession, deviceSerial, packageName, null, agentPathResolver, dummyJar, dummyPayload, dummyViewInspector)
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
 
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
@@ -880,7 +887,7 @@ class InjectionManagerTest {
   @Test
   fun testFailedToRetrieveSdkVersion_Throws() = runTest {
     val injectionManager =
-      InjectionManager(testSession, deviceSerial, packageName, agentPathResolver, dummyJar, dummyPayload, dummyViewInspector)
+      InjectionManager(testSession, deviceSerial, packageName, null, agentPathResolver, dummyJar, dummyPayload, dummyViewInspector)
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
 
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
@@ -897,7 +904,7 @@ class InjectionManagerTest {
   @Test
   fun testFailedToRetrieveAbi_Throws() = runTest {
     val injectionManager =
-      InjectionManager(testSession, deviceSerial, packageName, agentPathResolver, dummyJar, dummyPayload, dummyViewInspector)
+      InjectionManager(testSession, deviceSerial, packageName, null, agentPathResolver, dummyJar, dummyPayload, dummyViewInspector)
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
 
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
@@ -919,6 +926,7 @@ class InjectionManagerTest {
         testSession,
         deviceSerial,
         packageName,
+        composeInspectorOverrideJarPath = null,
         agentPathResolver,
         dummyJar,
         dummyPayload,
@@ -961,6 +969,7 @@ class InjectionManagerTest {
         testSession,
         deviceSerial,
         packageName,
+        composeInspectorOverrideJarPath = null,
         agentPathResolver = agentPathResolver,
         serviceJarPath = dummyJar,
         payloadJarPath = dummyPayload,
@@ -1278,6 +1287,164 @@ class InjectionManagerTest {
   }
 
   @Test
+  fun testInjectAndAttach_changedComposeOverride_startsNewServer() = runTest {
+    val overrideJar = tempFolder.newFile("compose-override.jar").toPath()
+    Files.write(overrideJar, byteArrayOf(1, 2, 3))
+    val overrideToken = "1234_" + computeArtifactDigests(dummyAgent, dummyJar, dummyPayload, dummyViewInspector, overrideJar).combined
+    assertThat(overrideToken).isNotEqualTo(serverToken("1234"))
+    val injectionManager = createInjectionManager(composeInspectorOverrideJarPath = overrideJar)
+    configureSuccessfulInjection(token = overrideToken)
+    // A server without the override is running (the four-artifact socket), but this run's digest includes the override jar: the probe
+    // misses that socket and a fresh server starts under the override-scoped name. The first probe answer is the old socket, the
+    // post-attach wait then sees the new one.
+    testDeviceServices.queuedShellOutputs["cat /proc/net/unix"] =
+      ArrayDeque(listOf("ui_inspector_${serverToken("1234")}\n", "ui_inspector_$overrideToken\n"))
+
+    val result = injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.RECONNECT_IF_AVAILABLE)
+
+    assertThat(result).isInstanceOf(InjectionResult.Injected::class.java)
+    val commands = fakeSession.deviceServices.shellV2Requests.map { it.command }
+    assertThat(commands).contains(attachCommand(token = overrideToken))
+    assertThat(testHostServices.recordedForwardCalls.single().third.toQueryString()).isEqualTo("localabstract:ui_inspector_$overrideToken")
+    // Only the three base artifacts are staged at injection time; the override is staged later, when the Compose inspector is created.
+    assertThat(testDeviceServices.recordedSyncSends.map { it.remoteFilePath }.sorted())
+      .containsExactly(*BASE_STAGING_PATHS.map { "$it.test.tmp" }.sorted().toTypedArray())
+  }
+
+  @Test
+  fun testInjectAndAttach_sameComposeOverride_reconnects() = runTest {
+    val overrideJar = tempFolder.newFile("compose-override.jar").toPath()
+    Files.write(overrideJar, byteArrayOf(1, 2, 3))
+    val overrideToken = "1234_" + computeArtifactDigests(dummyAgent, dummyJar, dummyPayload, dummyViewInspector, overrideJar).combined
+    val injectionManager = createInjectionManager(composeInspectorOverrideJarPath = overrideJar)
+    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
+    configurePackageUidAndProcesses()
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "cat /proc/net/unix", "ui_inspector_$overrideToken\n")
+
+    val result = injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.RECONNECT_IF_AVAILABLE)
+
+    assertThat(result).isInstanceOf(InjectionResult.Reconnected::class.java)
+    assertThat(testDeviceServices.recordedSyncSends).isEmpty()
+    val commands = fakeSession.deviceServices.shellV2Requests.map { it.command }
+    assertThat(commands.filter { it.startsWith("cmd activity attach-agent") }).isEmpty()
+    assertThat(commands.filter { it.startsWith("run-as ") }).isEmpty()
+    assertThat(testHostServices.recordedForwardCalls.single().third.toQueryString()).isEqualTo("localabstract:ui_inspector_$overrideToken")
+  }
+
+  @Test
+  fun testInjectAndAttach_missingComposeOverride_failsBeforeAnyDeviceWork() = runTest {
+    val absentJar = tempFolder.root.toPath().resolve("absent.jar")
+    val injectionManager = createInjectionManager(composeInspectorOverrideJarPath = absentJar)
+
+    val exception =
+      assertThrows(IllegalArgumentException::class.java) {
+        runBlocking { injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.RECONNECT_IF_AVAILABLE) }
+      }
+
+    assertThat(exception.message).isEqualTo("Specified Compose Inspector JAR does not exist: $absentJar")
+    assertThat(fakeSession.deviceServices.shellV2Requests).isEmpty()
+    assertThat(testDeviceServices.recordedSyncSends).isEmpty()
+    assertThat(testHostServices.recordedForwardCalls).isEmpty()
+  }
+
+  @Test
+  fun testDoDumpUi_threadsComposeOverridePathToTheInjectionManager() = runTest {
+    val noopPrinter =
+      object : UiDumpPrinter {
+        override fun printDump(uiDump: UiDump) {}
+      }
+    val capturedOverridePaths = mutableListOf<Path?>()
+    // The factory records what it was handed and aborts the run: only the threading is under test.
+    class StopAfterCapture : Exception()
+    for (cliArgument in listOf("/some/override.jar", null)) {
+      try {
+        doDumpUi(
+          adbSession = testSession,
+          serial = deviceSerial,
+          packageName = packageName,
+          includeAttributes = false,
+          includeResolutionStack = false,
+          includeSystemComposables = false,
+          includeSemantics = false,
+          composeInspectorJarPath = cliArgument,
+          printer = noopPrinter,
+          injectionManagerFactory = { _, _, _, overridePath ->
+            capturedOverridePaths.add(overridePath)
+            throw StopAfterCapture()
+          },
+        )
+        fail("Expected the capturing factory to abort the run")
+      } catch (e: StopAfterCapture) {}
+    }
+
+    assertThat(capturedOverridePaths).containsExactly(Paths.get("/some/override.jar"), null).inOrder()
+  }
+
+  @Test
+  fun testRunWithConnectedInspectors_warmReconnectWithOverride_transfersNothingAndUsesOverridePath() = runBlocking {
+    val overrideJar = tempFolder.newFile("compose-override.jar").toPath()
+    Files.write(overrideJar, byteArrayOf(1, 2, 3))
+    val overrideToken = "1234_" + computeArtifactDigests(dummyAgent, dummyJar, dummyPayload, dummyViewInspector, overrideJar).combined
+    configureSuccessfulInjection(token = overrideToken)
+    // Both the view inspector jar and the override jar are already correctly staged.
+    val viewJarRemotePath = "$STAGING_DIR/view-inspector.$EMPTY_FILE_DIGEST.jar"
+    val overrideRemotePath = "$STAGING_DIR/${fileNameWithHash("compose-override.jar", computeContentDigest(overrideJar))}"
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, statProbeCommand(viewJarRemotePath), "8124 $viewJarRemotePath\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, statProbeCommand(overrideRemotePath), "8124 $overrideRemotePath\n")
+    val composeCreateCmd = CompletableDeferred<UiInspectorProtocol.Command>()
+    val liveServer = ServerSocket(0)
+    val serverThread = thread {
+      runCatching {
+        liveServer.accept().use { socket ->
+          val input = socket.getInputStream()
+          val output = socket.getOutputStream()
+          val viewCreate = UiInspectorProtocol.Command.parseFrom(FramingProtocol.readMessage(input))
+          writeAgentResponse(
+            output,
+            UiInspectorProtocol.Response.newBuilder()
+              .setCommandId(viewCreate.commandId)
+              .setStatus(UiInspectorProtocol.Response.Status.SUCCESS)
+              .setCreateInspector(UiInspectorProtocol.CreateInspectorResponse.getDefaultInstance())
+              .build(),
+          )
+          val getVersion = UiInspectorProtocol.Command.parseFrom(FramingProtocol.readMessage(input))
+          writeAgentResponse(
+            output,
+            UiInspectorProtocol.Response.newBuilder()
+              .setCommandId(getVersion.commandId)
+              .setStatus(UiInspectorProtocol.Response.Status.SUCCESS)
+              .setGetVersion(
+                UiInspectorProtocol.GetVersionResponse.newBuilder().putVersions(ProtocolConstants.COMPOSE_UI_LIBRARY_ID, "1.6.0")
+              )
+              .build(),
+          )
+          val composeCreate = UiInspectorProtocol.Command.parseFrom(FramingProtocol.readMessage(input))
+          composeCreateCmd.complete(composeCreate)
+          writeAgentResponse(
+            output,
+            UiInspectorProtocol.Response.newBuilder()
+              .setCommandId(composeCreate.commandId)
+              .setStatus(UiInspectorProtocol.Response.Status.SUCCESS)
+              .setCreateInspector(UiInspectorProtocol.CreateInspectorResponse.getDefaultInstance())
+              .build(),
+          )
+        }
+      }
+    }
+    testHostServices.queuedForwardPorts.add(liveServer.localPort.toString())
+
+    var composeConnected = false
+    runWithConnectedInspectorsForTest(composeInspectorOverrideJarPath = overrideJar) { _, connected -> composeConnected = connected }
+    serverThread.join(5000)
+    liveServer.close()
+
+    assertThat(composeConnected).isTrue()
+    assertThat(testDeviceServices.recordedSyncSends).isEmpty()
+    assertThat(composeCreateCmd.await().createInspector.dexPath).isEqualTo(overrideRemotePath)
+  }
+
+  @Test
   fun testRunWithConnectedInspectors_reconnectWithMatchingViewJar_transfersNothing() = runBlocking {
     configureSuccessfulInjection()
     // The probe finds the running server and the staged view inspector jar already matches: the whole run transfers no file at all.
@@ -1480,18 +1647,22 @@ class InjectionManagerTest {
   }
 
   /** Runs [runWithConnectedInspectors] with all facets off, routing [injectionManagerFactory] to this test's dummy artifact paths. */
-  private suspend fun runWithConnectedInspectorsForTest(block: suspend (CommandSender, Boolean) -> Unit) {
+  private suspend fun runWithConnectedInspectorsForTest(
+    composeInspectorOverrideJarPath: Path? = null,
+    block: suspend (CommandSender, Boolean) -> Unit,
+  ) {
     runWithConnectedInspectors(
       adbSession = testSession,
       serial = deviceSerial,
       packageName = packageName,
       needsDebugViewAttributes = false,
-      composeInspectorJarPath = null,
-      injectionManagerFactory = { session, serial, pkg ->
+      composeInspectorOverrideJarPath = composeInspectorOverrideJarPath,
+      injectionManagerFactory = { session, serial, pkg, overridePath ->
         InjectionManager(
           session,
           serial,
           pkg,
+          composeInspectorOverrideJarPath = overridePath,
           agentPathResolver,
           dummyJar,
           dummyPayload,
@@ -1555,11 +1726,12 @@ class InjectionManagerTest {
       includeSemantics = false,
       composeInspectorJarPath = null,
       printer = noopPrinter,
-      injectionManagerFactory = { session, serial, pkg ->
+      injectionManagerFactory = { session, serial, pkg, overridePath ->
         InjectionManager(
           session,
           serial,
           pkg,
+          composeInspectorOverrideJarPath = overridePath,
           agentPathResolver,
           dummyJar,
           dummyPayload,
@@ -1586,11 +1758,12 @@ class InjectionManagerTest {
     assertThat(testHostServices.recordedKillForwardCalls).isEmpty()
   }
 
-  private fun createInjectionManager() =
+  private fun createInjectionManager(composeInspectorOverrideJarPath: Path? = null) =
     InjectionManager(
       testSession,
       deviceSerial,
       packageName,
+      composeInspectorOverrideJarPath = composeInspectorOverrideJarPath,
       agentPathResolver,
       dummyJar,
       dummyPayload,

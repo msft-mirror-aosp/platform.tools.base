@@ -97,7 +97,11 @@ it ships (in order: the ABI-selected native agent, the service jar, the
 payload jar, the view inspector jar; each hashed as its 64-bit big-endian
 length followed by its bytes). The compose inspector jar is excluded: it
 is selected by the app's compose version, which cannot change within a
-process's lifetime. The digest identifies the host's intended artifact
+process's lifetime. The exception is a local override jar supplied via
+`--compose-inspector` — exactly the case where the inspector code can
+change while the app process lives — whose bytes then join the digest,
+so a changed override yields a fresh server instead of reconnecting to
+one that already loaded different inspector code. The digest identifies the host's intended artifact
 set, so a host only connects to a server started with the same intended
 artifacts: a resident server from the same build wins the bind race and
 is reused, while after a host rebuild the freshly attached agent binds

@@ -22,8 +22,9 @@ import com.android.adblib.DeviceSelector
 import com.android.adblib.DeviceState
 import com.android.adblib.shellAsText
 import com.android.tools.ui.inspector.printer.UiDumpPrinter
-import java.io.File
 import java.io.IOException
+import java.nio.file.Path
+import java.nio.file.Paths
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
@@ -142,11 +143,19 @@ internal suspend fun doDumpUi(
   includeSemantics: Boolean,
   composeInspectorJarPath: String?,
   printer: UiDumpPrinter,
-  injectionManagerFactory: (AdbSession, String, String) -> InjectionManager = ::InjectionManager,
+  injectionManagerFactory: (AdbSession, String, String, Path?) -> InjectionManager = { session, serial, pkg, overridePath ->
+    InjectionManager(session, serial, pkg, overridePath)
+  },
 ) {
-  runWithConnectedInspectors(adbSession, serial, packageName, includeResolutionStack, composeInspectorJarPath, injectionManagerFactory) {
-    commandSender,
-    composeInspectorConnected ->
+  val composeInspectorOverrideJarPath = composeInspectorJarPath?.let(Paths::get)
+  runWithConnectedInspectors(
+    adbSession,
+    serial,
+    packageName,
+    includeResolutionStack,
+    composeInspectorOverrideJarPath,
+    injectionManagerFactory,
+  ) { commandSender, composeInspectorConnected ->
     dumpUi(
       commandSender = commandSender,
       includeAttributes = includeAttributes,
@@ -171,18 +180,18 @@ internal suspend fun runWithConnectedInspectors(
   serial: String,
   packageName: String,
   needsDebugViewAttributes: Boolean,
-  composeInspectorJarPath: String?,
-  injectionManagerFactory: (AdbSession, String, String) -> InjectionManager,
+  composeInspectorOverrideJarPath: Path?,
+  injectionManagerFactory: (AdbSession, String, String, Path?) -> InjectionManager,
   block: suspend (CommandSender, Boolean) -> Unit,
 ) {
-  val injectionManager = injectionManagerFactory(adbSession, serial, packageName)
+  val injectionManager = injectionManagerFactory(adbSession, serial, packageName, composeInspectorOverrideJarPath)
   try {
     try {
       connectAndRunInspectors(
         injectionManager,
         InjectionMode.RECONNECT_IF_AVAILABLE,
         needsDebugViewAttributes,
-        composeInspectorJarPath,
+        composeInspectorOverrideJarPath,
         block,
       )
     } catch (stale: StaleReconnectException) {
@@ -192,7 +201,7 @@ internal suspend fun runWithConnectedInspectors(
           injectionManager,
           InjectionMode.FORCE_FULL_INJECTION,
           needsDebugViewAttributes,
-          composeInspectorJarPath,
+          composeInspectorOverrideJarPath,
           block,
         )
       } catch (e: Throwable) {
@@ -226,7 +235,7 @@ private suspend fun connectAndRunInspectors(
   injectionManager: InjectionManager,
   mode: InjectionMode,
   needsDebugViewAttributes: Boolean,
-  composeInspectorJarPath: String?,
+  composeInspectorOverrideJarPath: Path?,
   block: suspend (CommandSender, Boolean) -> Unit,
 ) = coroutineScope {
   try {
@@ -253,16 +262,7 @@ private suspend fun connectAndRunInspectors(
         throw e
       }
 
-      val localJarProvider =
-        composeInspectorJarPath?.let { path ->
-          { _: String ->
-            val file = File(path)
-            if (!file.exists() || !file.isFile) {
-              throw IllegalArgumentException("Specified Compose Inspector JAR does not exist: $path")
-            }
-            file
-          }
-        }
+      val localJarProvider = composeInspectorOverrideJarPath?.let { path -> { _: String -> path.toFile() } }
 
       val composeInspectorConnected =
         if (localJarProvider != null) {

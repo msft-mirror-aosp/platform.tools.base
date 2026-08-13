@@ -73,6 +73,9 @@ private const val READ_DEBUG_VIEW_ATTRIBUTES_CMD =
  * Manages the lifecycle of injecting and attaching the native agent to a target application.
  *
  * @param adbSession The [AdbSession] to use for device communication.
+ * @param composeInspectorOverrideJarPath A local Compose inspector jar substituting the maven-resolved one, or null when no override is
+ *   configured. When present, its bytes join the server digest, so a changed override yields a new server instead of reconnecting to one
+ *   that already loaded different inspector code.
  * @param agentPathResolver A function that takes a device ABI string and returns the [Path] to the agent binary on the host.
  * @param tempFileSuffixGenerator A function that generates unique suffixes for temporary files pushed to the device.
  */
@@ -80,6 +83,7 @@ class InjectionManager(
   private val adbSession: AdbSession,
   val serial: String,
   val packageName: String,
+  private val composeInspectorOverrideJarPath: Path?,
   private val agentPathResolver: (String) -> Path = DEFAULT_AGENT_PATH_RESOLVER,
   private val serviceJarPath: Path = Paths.get(HOST_SERVICE_JAR_PATH),
   private val payloadJarPath: Path = Paths.get(HOST_PAYLOAD_JAR_PATH),
@@ -101,11 +105,13 @@ class InjectionManager(
   /**
    * Ensures an agent server built from the host's artifact set is running in the target app, and returns an adb forward to its socket.
    *
-   * The server socket name embeds the target pid and the digest of the shipped artifacts, so a live socket with the expected name proves
-   * that this exact process was already injected with byte-identical artifacts. In [InjectionMode.RECONNECT_IF_AVAILABLE], such a server is
-   * reused directly; the full injection sequence (pushing artifacts, staging them via `run-as`, attaching the agent) runs only when no
-   * matching socket exists or in [InjectionMode.FORCE_FULL_INJECTION]. Reconnection also skips the `run-as` accessibility check: the
-   * matching socket is the evidence of a prior successful injection.
+   * The server socket name embeds the target pid and the digest of the artifact set this host intends to ship (including the Compose
+   * inspector override jar when one is configured), so a live socket with the expected name proves the process was injected by a host with
+   * the same intended set. For the base artifacts that also means they were staged and loaded; the override is only staged later, when the
+   * Compose inspector is created. In [InjectionMode.RECONNECT_IF_AVAILABLE], such a server is reused directly; the full injection sequence
+   * (pushing artifacts, staging them via `run-as`, attaching the agent) runs only when no matching socket exists or in
+   * [InjectionMode.FORCE_FULL_INJECTION]. Reconnection also skips the `run-as` accessibility check: the matching socket is the evidence of
+   * a prior successful injection.
    *
    * @param needsDebugViewAttributes Whether the platform must expose attribute resolution stacks for the inspected app, i.e. whether the
    *   `resolution-stack` facet was requested. When true, the per-app debug-view-attributes setting is enabled (see
@@ -115,6 +121,8 @@ class InjectionManager(
    * @return An [InjectionResult] carrying the forwarded TCP port and how the server was obtained.
    */
   suspend fun injectAndAttach(needsDebugViewAttributes: Boolean, mode: InjectionMode): InjectionResult {
+    // Fails fast on an unusable Compose inspector override, before any device work.
+    validateComposeInspectorOverride()
     val (deviceAbi, sdkVersion) = retrieveDeviceMetadata(deviceSelector)
     if (sdkVersion < ProtocolConstants.MIN_SUPPORTED_API_LEVEL) {
       throw IllegalStateException(
@@ -140,7 +148,14 @@ class InjectionManager(
 
     // Build digests from the artifacts pushed to the device. The combined digest is part of the server socket name on the device and
     // allows the host to identify which version of the pushed artifacts it's connecting to.
-    val digests = computeArtifactDigests(agentLocalPath, serviceJarLocalPath, payloadJarLocalPath, viewInspectorJarLocalPath)
+    val digests =
+      computeArtifactDigests(
+        agentLocalPath,
+        serviceJarLocalPath,
+        payloadJarLocalPath,
+        viewInspectorJarLocalPath,
+        composeInspectorOverrideJarPath,
+      )
     val serverToken = "${pid}_${digests.combined}"
     val socketName = ProtocolConstants.getSocketName(serverToken)
 
@@ -163,6 +178,12 @@ class InjectionManager(
       InjectionMode.FORCE_FULL_INJECTION ->
         performFullInjection(needsDebugViewAttributes, pid, serverToken, digests, agentLocalPath, serviceJarLocalPath, payloadJarLocalPath)
     }
+  }
+
+  private fun validateComposeInspectorOverride() {
+    val path = composeInspectorOverrideJarPath ?: return
+    require(Files.isRegularFile(path)) { "Specified Compose Inspector JAR does not exist: $path" }
+    require(Files.isReadable(path)) { "Specified Compose Inspector JAR is not readable: $path" }
   }
 
   /** Stages the agent artifacts on the device, installs them via `run-as`, attaches the agent to [pid], and waits for its server socket. */

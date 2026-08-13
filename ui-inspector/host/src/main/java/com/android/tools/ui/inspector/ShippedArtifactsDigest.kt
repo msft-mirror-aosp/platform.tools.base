@@ -36,8 +36,9 @@ internal val CONTENT_DIGEST_PATTERN: String = "[0-9a-f]".repeat(DIGEST_HEX_LENGT
  * characters.
  *
  * @property combined Fingerprint of the whole set: the SHA-256 over each file's length (big-endian 64-bit) followed by its bytes, in
- *   parameter order of [computeArtifactDigests]. The length framing makes file boundaries part of the hash input, so byte-identical
- *   artifact sets produce equal digests.
+ *   parameter order of [computeArtifactDigests], including the Compose inspector override jar when one was supplied. The length framing
+ *   makes file boundaries part of the hash input, so byte-identical artifact sets produce equal digests. The override has no per-file
+ *   digest property because it is staged independently (see [computeContentDigest]).
  * @property agentBinary The agent binary's own content digest (see [computeContentDigest]).
  * @property serviceJar The service jar's own content digest (see [computeContentDigest]).
  * @property payloadJar The payload jar's own content digest (see [computeContentDigest]).
@@ -51,12 +52,16 @@ internal data class ShippedArtifactsDigests(
   val viewInspectorJar: String,
 )
 
-/** Computes [ShippedArtifactsDigests] for the given artifacts, reading each file once. */
+/**
+ * Computes [ShippedArtifactsDigests] for the given artifacts, reading each file once. A non-null [composeInspectorOverrideJar] contributes
+ * its bytes to the combined digest as a fifth file; absence contributes nothing, leaving the four-file digest unchanged.
+ */
 internal fun computeArtifactDigests(
   agentBinary: Path,
   serviceJar: Path,
   payloadJar: Path,
   viewInspectorJar: Path,
+  composeInspectorOverrideJar: Path? = null,
 ): ShippedArtifactsDigests {
   val combined = MessageDigest.getInstance("SHA-256")
   val perFile = ArrayList<String>(4)
@@ -73,6 +78,16 @@ internal fun computeArtifactDigests(
       }
     }
     perFile.add(single.digest().toTruncatedHex())
+  }
+  if (composeInspectorOverrideJar != null) {
+    combined.update(ByteBuffer.allocate(Long.SIZE_BYTES).putLong(Files.size(composeInspectorOverrideJar)).array())
+    Files.newInputStream(composeInspectorOverrideJar).use { input ->
+      while (true) {
+        val read = input.read(buffer)
+        if (read < 0) break
+        combined.update(buffer, 0, read)
+      }
+    }
   }
   return ShippedArtifactsDigests(
     combined = combined.digest().toTruncatedHex(),
