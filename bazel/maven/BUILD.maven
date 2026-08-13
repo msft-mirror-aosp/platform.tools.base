@@ -3649,10 +3649,10 @@ maven_import(
 )
 
 maven_artifact(
-    name = "androidx.tracing.tracing-desktop_2.0.0-alpha09",
-    pom = "repository/androidx/tracing/tracing-desktop/2.0.0-alpha09/tracing-desktop-2.0.0-alpha09.pom",
+    name = "androidx.tracing.tracing-desktop_2.0.0",
+    pom = "repository/androidx/tracing/tracing-desktop/2.0.0/tracing-desktop-2.0.0.pom",
     repo_root_path = "repository",
-    repo_path = "androidx/tracing/tracing-desktop/2.0.0-alpha09",
+    repo_path = "androidx/tracing/tracing-desktop/2.0.0",
     deps = [
         "androidx.collection.collection-jvm_1.6.0",
         "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.9.0",
@@ -3666,7 +3666,7 @@ maven_import(
     name = "androidx.tracing.tracing-desktop",
     classifiers = [],
     jars = [
-        "repository/androidx/tracing/tracing-desktop/2.0.0-alpha09/tracing-desktop-2.0.0-alpha09.jar"
+        "repository/androidx/tracing/tracing-desktop/2.0.0/tracing-desktop-2.0.0.jar"
     ],
     exports = [
         "androidx.collection.collection-jvm",
@@ -3680,21 +3680,21 @@ maven_import(
         "org.jetbrains.kotlin.kotlin-stdlib_2.1.20",
         "androidx.annotation.annotation-jvm_1.10.0",
     ],
-    pom = "repository/androidx/tracing/tracing-desktop/2.0.0-alpha09/tracing-desktop-2.0.0-alpha09.pom",
+    pom = "repository/androidx/tracing/tracing-desktop/2.0.0/tracing-desktop-2.0.0.pom",
     repo_root_path = "repository",
-    repo_path = "androidx/tracing/tracing-desktop/2.0.0-alpha09",
+    repo_path = "androidx/tracing/tracing-desktop/2.0.0",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "androidx.tracing.tracing-wire-desktop_2.0.0-alpha09",
-    pom = "repository/androidx/tracing/tracing-wire-desktop/2.0.0-alpha09/tracing-wire-desktop-2.0.0-alpha09.pom",
+    name = "androidx.tracing.tracing-wire-desktop_2.0.0",
+    pom = "repository/androidx/tracing/tracing-wire-desktop/2.0.0/tracing-wire-desktop-2.0.0.pom",
     repo_root_path = "repository",
-    repo_path = "androidx/tracing/tracing-wire-desktop/2.0.0-alpha09",
+    repo_path = "androidx/tracing/tracing-wire-desktop/2.0.0",
     deps = [
         "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.9.0",
         "com.squareup.okio.okio-jvm_3.17.0",
-        "androidx.tracing.tracing-desktop_2.0.0-alpha09",
+        "androidx.tracing.tracing-desktop_2.0.0",
         "com.squareup.wire.wire-runtime-jvm_6.4.0",
         "org.jetbrains.kotlin.kotlin-stdlib_2.1.20",
         "androidx.annotation.annotation-jvm_1.7.0",
@@ -3706,7 +3706,7 @@ maven_import(
     name = "androidx.tracing.tracing-wire-desktop",
     classifiers = [],
     jars = [
-        "repository/androidx/tracing/tracing-wire-desktop/2.0.0-alpha09/tracing-wire-desktop-2.0.0-alpha09.jar"
+        "repository/androidx/tracing/tracing-wire-desktop/2.0.0/tracing-wire-desktop-2.0.0.jar"
     ],
     exports = [
         "org.jetbrains.kotlinx.kotlinx-coroutines-core",
@@ -3719,14 +3719,14 @@ maven_import(
     original_deps = [
         "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.9.0",
         "com.squareup.okio.okio-jvm_3.17.0",
-        "androidx.tracing.tracing-desktop_2.0.0-alpha09",
+        "androidx.tracing.tracing-desktop_2.0.0",
         "com.squareup.wire.wire-runtime-jvm_6.4.0",
         "org.jetbrains.kotlin.kotlin-stdlib_2.1.20",
         "androidx.annotation.annotation-jvm_1.7.0",
     ],
-    pom = "repository/androidx/tracing/tracing-wire-desktop/2.0.0-alpha09/tracing-wire-desktop-2.0.0-alpha09.pom",
+    pom = "repository/androidx/tracing/tracing-wire-desktop/2.0.0/tracing-wire-desktop-2.0.0.pom",
     repo_root_path = "repository",
-    repo_path = "androidx/tracing/tracing-wire-desktop/2.0.0-alpha09",
+    repo_path = "androidx/tracing/tracing-wire-desktop/2.0.0",
     visibility = ["//visibility:public"],
 )
 
