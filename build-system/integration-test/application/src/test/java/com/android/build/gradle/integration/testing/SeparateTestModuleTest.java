@@ -156,14 +156,19 @@ public class SeparateTestModuleTest {
         // Verify that the testResultsCollectionDebug task is registered and correctly
         // establishes a task dependency on connectedDebugAndroidTest (via ANDROID_TEST_RESULTS)
         // when report aggregation is enabled.
+        TestFileUtils.appendToFile(
+                project.getSubproject("test").getBuildFile(),
+                "\n"
+                    + "tasks.configureEach { if (name == 'connectedDebugAndroidTest') { enabled ="
+                    + " false } }\n");
+
         GradleBuildResult result =
                 project.executor()
                         .with(BooleanOption.REPORT_AGGREGATION_SUPPORT, true)
-                        .withArguments(ImmutableList.of("-m"))
                         .run(":test:testResultsCollectionDebug");
 
-        result.assertOutputContains(":test:connectedDebugAndroidTest SKIPPED");
-        result.assertOutputContains(":test:testResultsCollectionDebug SKIPPED");
+        result.assertTask(":test:connectedDebugAndroidTest").wasSkipped();
+        result.assertTask(":test:testResultsCollectionDebug").didWork();
     }
 
     @Test

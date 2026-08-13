@@ -43,6 +43,8 @@ import java.nio.file.Paths
 import java.util.concurrent.CancellationException
 import java.util.logging.Level
 import java.util.logging.Logger
+import kotlin.io.path.createTempFile
+import kotlin.io.path.outputStream
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -186,33 +188,33 @@ internal class ReverseForwardStream(
     }
 
     suspend fun run() {
-      while (true) {
-        headerBuffer.clear()
-        try {
+      try {
+        while (true) {
+          headerBuffer.clear()
           shellCommandInput.readExactly(headerBuffer)
-        } catch (e: Throwable) {
-          // CoroutineScope in which run() was called might have been cancelled.
-          // Don't log in that case
-          if (e !is CancellationException) {
-            logger.log(Level.WARNING, "Reverse daemon exited. Closing stream.", e)
-          }
-          shellCommandOutput.close()
-          shellCommandInput.close()
-          return
-        }
 
-        try {
-          val header = StreamDataHeader(headerBuffer.flip())
-          when (header.type) {
-            MessageType.OPEN -> handleOpen(header)
-            MessageType.DATA -> handleData(header)
-            MessageType.CLSE -> handleClose(header)
-            MessageType.REDY -> handleReady()
-            MessageType.KILL -> logger.warning("Unexpected KILL message from daemon")
+          try {
+            val header = StreamDataHeader(headerBuffer.flip())
+            when (header.type) {
+              MessageType.OPEN -> handleOpen(header)
+              MessageType.DATA -> handleData(header)
+              MessageType.CLSE -> handleClose(header)
+              MessageType.REDY -> handleReady()
+              MessageType.KILL -> logger.warning("Unexpected KILL message from daemon")
+            }
+          } catch (e: MessageParseException) {
+            logger.warning("Failed to parse message. Got: ${String(headerBuffer.array())}")
           }
-        } catch (e: MessageParseException) {
-          logger.warning("Failed to parse message. Got: ${String(headerBuffer.array())}")
         }
+      } catch (e: Throwable) {
+        // CoroutineScope in which run() was called might have been canceled.
+        // Don't log in that case
+        if (e !is CancellationException) {
+          logger.log(Level.WARNING, "Reverse daemon exited. Closing stream.", e)
+        }
+        shellCommandOutput.close()
+        shellCommandInput.close()
+        return
       }
     }
 
@@ -300,10 +302,10 @@ internal class ReverseForwardStream(
     }
 
     private val daemonPath: Path by lazy {
-      // TODO: this all needs to be handled by studio, ideally using DeployableFile
       val devRoot = ClassLoader.getSystemResource(".")
       var result: Path? = null
       if (devRoot != null) {
+        // Studio devbuild case
         try {
           val pluginDir = Paths.get(devRoot.toURI())
           val devPath = pluginDir.resolve("../../../../../../bazel-bin/tools/base/adb-proxy/reverse-daemon/reverse_daemon.dex")
@@ -315,6 +317,20 @@ internal class ReverseForwardStream(
         }
       }
       if (result == null) {
+        // Android CLI case
+        try {
+          val resourceStream =
+            ReverseForwardStream::class.java.getResourceAsStream("/tools/base/adb-proxy/reverse-daemon/reverse_daemon.dex")
+          if (resourceStream != null) {
+            result = createTempFile("reverse_daemon", ".dex")
+            resourceStream.use { input -> result.outputStream().use { output -> input.copyTo(output) } }
+          }
+        } catch (e: FileSystemNotFoundException) {
+          logger.info("Couldn't find reverse_daemon.dex from classloader using absolute path: ${e.message}")
+        }
+      }
+      if (result == null) {
+        // Studio prod case
         val resource = ReverseForwardStream::class.java.getResource("ReverseForwardStream.class")
         if (resource != null) {
           // we're just looking for the jar location, so remove the path within the jar.

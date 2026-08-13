@@ -14,9 +14,10 @@ maven_proto_library(
     version = ANDROID_TEST_ENGINE_VERSION,
     visibility = [
         "//tools/base:__pkg__",
-        "//tools/base/android-test:__pkg__",
-        "//tools/base/android-test/android-test-engine-result-listener:__pkg__",
-        "//tools/base/android-test/android-test-junit-engine:__pkg__",
+        "//tools/base/android-test:__subpackages__",
+        "//tools/base/build-system/integration-test/utp:__pkg__",
+        "//tools/base/firebase/testlab/testlab-gradle-plugin:__pkg__",
+        "//tools/base/utp:__subpackages__",
     ],
 )
 

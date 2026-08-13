@@ -77,6 +77,8 @@ abstract class TestOptions @Inject constructor(private val dslServices: DslServi
   override val emulatorControl: com.android.build.api.dsl.EmulatorControl =
     dslServices.newDecoratedInstance(EmulatorControl::class.java, dslServices)
 
+  @Incubating override var instrumentInPrivateComputeCore: Boolean = false
+
   override fun unitTests(action: com.android.build.api.dsl.UnitTestOptions.() -> Unit) {
     action.invoke(unitTests)
   }

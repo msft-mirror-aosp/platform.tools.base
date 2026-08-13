@@ -20,6 +20,7 @@ import com.android.build.api.dsl.AgpTestSuiteDependencies
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.dsl.ScreenshotTestSuite
 import com.android.build.gradle.internal.services.DslServices
+import com.android.build.gradle.internal.testsuites.ScreenshotTestSuiteTaskConfigurator
 import javax.inject.Inject
 import org.gradle.api.Action
 import org.gradle.api.artifacts.dsl.DependencyHandler
@@ -61,7 +62,8 @@ constructor(
 
   init {
     // Automatically populate default targets, engines and inputs
-    targets.create("default")
+    targets.register("default")
+    requiresUpdateTask = true
 
     useJunitEngine {
       includeEngines.add(SCREENSHOT_TEST_ENGINE_ID)
@@ -106,7 +108,11 @@ constructor(
       screenshotSuite.dependenciesActions.forEach { this.dependencies(it) }
       screenshotSuite.dependenciesActions.clear()
     }
+
+    configureTestTasks { context -> screenshotTaskConfigurator.configureTask(this, context, dslServices, providers) }
   }
+
+  private val screenshotTaskConfigurator = ScreenshotTestSuiteTaskConfigurator(name)
 
   companion object {
     const val SCREENSHOT_TEST_ENGINE_ID = "preview-screenshot-test-engine"

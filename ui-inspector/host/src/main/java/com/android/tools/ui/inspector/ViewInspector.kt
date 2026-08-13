@@ -39,7 +39,7 @@ internal suspend fun createViewInspector(commandSender: CommandSender, injection
   }
 }
 
-/** Sends a dump command to the view inspector and returns the parsed View tree roots. */
+/** Sends a dump command to the view inspector and returns the parsed UI snapshot. */
 internal suspend fun dumpViews(commandSender: CommandSender, includeAttributes: Boolean, includeResolutionStack: Boolean): UiDump {
   val viewInspectorCommand =
     ViewInspectorProtocol.Command.newBuilder()
@@ -52,7 +52,7 @@ internal suspend fun dumpViews(commandSender: CommandSender, includeAttributes: 
       .build()
 
   val responsePayload = commandSender.sendInspectorCommand(ProtocolConstants.VIEW_INSPECTOR_ID, viewInspectorCommand.toByteArray())
-  val viewInspectorResponse = ViewInspectorProtocol.Response.parseFrom(responsePayload)
+  val viewInspectorResponse = ViewInspectorProtocol.Response.parser().parseTreeResponse(responsePayload)
 
   if (viewInspectorResponse.specializedCase != ViewInspectorProtocol.Response.SpecializedCase.DUMP_VIEWS_RESPONSE) {
     throw IllegalStateException("Unexpected response: ${viewInspectorResponse.specializedCase}")
@@ -61,8 +61,15 @@ internal suspend fun dumpViews(commandSender: CommandSender, includeAttributes: 
   val dumpResponse = viewInspectorResponse.dumpViewsResponse
   val stringTable = dumpResponse.stringsList.associate { it.id to it.value }
 
-  val roots = dumpResponse.nodesList.map { convertViewNode(it, stringTable) }
-  val configuration = if (dumpResponse.hasConfiguration()) dumpResponse.configuration else null
-  val appContext = if (dumpResponse.hasAppContext()) dumpResponse.appContext else null
-  return UiDump(roots, configuration, stringTable, appContext)
+  val displays = dumpResponse.displaysList.map(::convertDisplay)
+  val windows =
+    dumpResponse.windowsList.mapIndexed { index, window ->
+      if (!window.hasRoot()) {
+        throw IllegalStateException("Window at index $index is missing its root")
+      }
+      val configuration = if (window.hasConfiguration()) convertConfiguration(window.configuration, stringTable) else null
+      val root = (convertViewNode(window.root, stringTable, includeResolutionStack).resolveDimensions(configuration) as UiNode.ViewNode)
+      UiWindow(root = root, configuration = configuration, theme = stringTable[window.theme])
+    }
+  return UiDump(windows = windows, displays = displays)
 }

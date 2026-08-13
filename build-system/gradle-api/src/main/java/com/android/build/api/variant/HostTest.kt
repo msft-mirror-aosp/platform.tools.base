@@ -17,6 +17,7 @@
 package com.android.build.api.variant
 
 import org.gradle.api.Incubating
+import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.testing.Test
 
 /**
@@ -53,6 +54,30 @@ interface HostTest : TestComponent {
    * @param action to configure the [Test] task.
    */
   fun configureTestTask(action: (Test) -> Unit)
+
+  /**
+   * Runs some action on the Variant's host test task's [TaskProvider].
+   *
+   * The action will only run if the [HostTest] is enabled. In particular the
+   * [HasHostTestsBuilder.hostTests[HasHostTestsBuilder.UNIT_TEST_TYPE]?.enable] must be set to true (it is true by default).
+   *
+   * This is particularly useful to set manual tasks dependencies. However, you should avoid calling [TaskProvider.get] as it will
+   * automatically configure the task even if it is not scheduled to run, instead use [configureTestTask]
+   *
+   * Example :
+   * ```(kotlin)
+   *  androidComponents {
+   *      onVariants { variant ->
+   *          variant.hostTests[HostTestsBuilder.UNIT_TEST_TYPE]?.withTestTaskProvider { testTaskProvider ->
+   *              someAnchorTask.dependsOn(testTaskProvider)
+   *          }
+   *      }
+   *  }
+   * ```
+   *
+   * @param action on the test task [TaskProvider].
+   */
+  @Incubating fun withTestTaskProvider(action: (TaskProvider<out Test>) -> Unit)
 
   /**
    * Whether test coverage is enabled for this host test.

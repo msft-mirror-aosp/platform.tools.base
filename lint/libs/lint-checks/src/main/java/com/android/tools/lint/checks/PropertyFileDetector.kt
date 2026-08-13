@@ -82,7 +82,7 @@ class PropertyFileDetector : Detector() {
       }
 
       val startOffset = offset + valueStart
-      val endOffset = line.length
+      val endOffset = offset + line.length
       val incident =
         Incident(context, PROXY_PASSWORD)
           .message("Storing passwords in clear text is risky; " + "make sure this file is not shared or checked in via version control")

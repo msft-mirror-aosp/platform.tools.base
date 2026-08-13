@@ -1,0 +1,12 @@
+diff --git a/tools/jdk/BUILD b/tools/jdk/BUILD
+index cdd56e4..b414410 100644
+--- a/tools/jdk/BUILD
++++ b/tools/jdk/BUILD
+@@ -87,6 +87,7 @@
+         bootclasspath = [
+             ":bootclasspath_android_only",
+         ],
++        java_runtime = ":current_java_runtime",
+         source_version = str(ver),
+         target_version = str(ver),
+         visibility = ["//visibility:public"],

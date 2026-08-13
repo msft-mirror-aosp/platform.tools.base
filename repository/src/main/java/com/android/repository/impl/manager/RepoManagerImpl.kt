@@ -365,7 +365,9 @@ internal constructor(
       val result: List<LocalPackage>
       if (
         localRepoLoader != null &&
-          (lastLocalRefreshMs + cacheExpirationMs <= System.currentTimeMillis() || localRepoLoader.needsUpdate(lastLocalRefreshMs, false))
+          (cacheExpirationMs == 0L ||
+            lastLocalRefreshMs + cacheExpirationMs <= System.currentTimeMillis() ||
+            localRepoLoader.needsUpdate(lastLocalRefreshMs, false))
       ) {
         indicator.setText("Loading local repository...")
         val newLocals = localRepoLoader.getPackages(indicator)

@@ -36,9 +36,7 @@
               "storeFile": {
                 "absolutePath": "{ANDROID_PREFS}/.android/debug.keystore"
               },
-              "storePassword": "android",
               "keyAlias": "AndroidDebugKey",
-              "keyPassword": "android",
               "enableV1Signing": false,
               "enableV2Signing": true,
               "enableV3Signing": false,

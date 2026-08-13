@@ -36,6 +36,7 @@ import com.google.common.base.Preconditions
 import java.io.File
 import org.gradle.api.logging.Logger
 import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.ProviderFactory
 import org.gradle.workers.WorkerExecutor
 
 class ManagedDeviceTestRunner(
@@ -51,6 +52,7 @@ class ManagedDeviceTestRunner(
   private val installApkTimeout: Int?,
   private val enableEmulatorDisplay: Boolean,
   private val targetIsSplitApk: Boolean,
+  private val provider: ProviderFactory,
 ) {
 
   /** @param additionalTestOutputDir output directory for additional test output, or null if disabled */
@@ -144,7 +146,16 @@ class ManagedDeviceTestRunner(
           )
         }
 
-      runUtpTestSuiteAndWait(runnerConfigs, workerExecutor, projectPath, variantName, outputDirectory, utpDependencies, versionedSdkLoader)
+      runUtpTestSuiteAndWait(
+        runnerConfigs,
+        workerExecutor,
+        projectPath,
+        variantName,
+        outputDirectory,
+        utpDependencies,
+        versionedSdkLoader,
+        provider,
+      )
     }
   }
 

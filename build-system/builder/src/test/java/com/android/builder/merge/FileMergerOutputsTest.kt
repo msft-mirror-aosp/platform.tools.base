@@ -17,6 +17,7 @@
 package com.android.builder.merge
 
 import com.android.builder.packaging.ParsedPackagingOptions
+import com.android.zipflinger.ZipSource
 import org.junit.Assert
 import org.junit.Test
 
@@ -86,6 +87,34 @@ class FileMergerOutputsTest {
       // Since it's a MERGE action, JavaResZipSourceMerger returns a ByteArray,
       // and FileMergerOutputs will call writer.create(path, inputStream, compress)
       Assert.assertTrue(writer.createInputStreamCalled)
+    }
+  }
+
+  @Test
+  fun testFromAlgorithmAndWriterWithFallbackToInputStream() {
+    val algorithm = JavaResZipSourceMerger(ParsedPackagingOptions(emptyList(), emptyList(), emptyList()))
+    val writer = MockSourceMergeOutputWriter()
+    val output = FileMergerOutputs.fromAlgorithmAndWriter(algorithm, writer)
+
+    output.open()
+    output.use {
+      val input =
+        object : FileMergerInput {
+          override fun getName() = "i0"
+
+          override fun getAllPaths() = setOf("path")
+
+          override fun open() {}
+
+          override fun close() {}
+
+          override fun openPath(path: String) = java.io.ByteArrayInputStream(byteArrayOf())
+        }
+      output.create("path", listOf(input), true)
+
+      // Should fall back to InputStream
+      Assert.assertTrue(writer.createInputStreamCalled)
+      Assert.assertFalse(writer.createZipSourceCalled)
     }
   }
 }

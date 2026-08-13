@@ -17,11 +17,15 @@
 package com.android.build.gradle.internal.tasks
 
 import com.android.SdkConstants.DOT_JAR
+import com.android.build.api.artifact.ScopedArtifact
+import com.android.build.api.variant.ScopedArtifacts
 import com.android.build.gradle.internal.dependency.UncompressedJavaRes
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.tasks.creationconfig.ProcessJavaResCreationConfig
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
+import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.buildanalyzer.common.TaskCategory
+import com.android.builder.packaging.ParsedPackagingOptions
 import java.io.File
 import java.util.concurrent.Callable
 import javax.inject.Inject
@@ -30,12 +34,15 @@ import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.FileTree
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.SetProperty
 import org.gradle.api.tasks.CacheableTask
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
+import org.gradle.api.tasks.SkipWhenEmpty
 import org.gradle.api.tasks.TaskProvider
 
 /** Task to compress project Java resources into a JAR. */
@@ -44,12 +51,19 @@ import org.gradle.api.tasks.TaskProvider
 abstract class CompressJavaResTask @Inject constructor(@get:Internal internal val archiveOperations: ArchiveOperations) :
   NonIncrementalTask() {
 
-  @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val javaResFiles: ConfigurableFileCollection
+  @get:InputFiles @get:SkipWhenEmpty @get:PathSensitive(PathSensitivity.RELATIVE) abstract val javaResFiles: ConfigurableFileCollection
+
+  @get:Input abstract val excludes: SetProperty<String>
+
+  @get:Input abstract val pickFirsts: SetProperty<String>
+
+  @get:Input abstract val merges: SetProperty<String>
 
   @get:OutputFile abstract val outputFile: RegularFileProperty
 
   override fun doTaskAction() {
-    UncompressedJavaRes.FileTree(javaResFiles.asFileTree).compressToJar(outputFile.get().asFile)
+    val packagingOptions = ParsedPackagingOptions(excludes.get(), pickFirsts.get(), merges.get())
+    UncompressedJavaRes.FileTree(javaResFiles.asFileTree, packagingOptions).compressToJar(outputFile.get().asFile)
   }
 
   class CreationAction(creationConfig: ProcessJavaResCreationConfig) :
@@ -73,6 +87,10 @@ abstract class CompressJavaResTask @Inject constructor(@get:Internal internal va
     override fun configure(task: CompressJavaResTask) {
       super.configure(task)
       task.javaResFiles.from(getProjectJavaRes(creationConfig, task, task.archiveOperations))
+      val packaging = creationConfig.packaging
+      task.excludes.setDisallowChanges(packaging.resources.excludes)
+      task.pickFirsts.setDisallowChanges(packaging.resources.pickFirsts)
+      task.merges.setDisallowChanges(packaging.resources.merges)
     }
   }
 }
@@ -112,5 +130,12 @@ private fun getProjectJavaRes(
   if (creationConfig.packageJacocoRuntime) {
     javaRes.from(creationConfig.artifacts.get(InternalArtifactType.JACOCO_CONFIG_RESOURCES))
   }
+
+  val projectJavaRes = creationConfig.artifacts.forScope(ScopedArtifacts.Scope.PROJECT).getFinalArtifacts(ScopedArtifact.JAVA_RES)
+  javaRes.from(projectJavaRes.filter { file -> !file.name.endsWith(DOT_JAR) })
+  javaRes.from(
+    projectJavaRes.filter { file -> file.name.endsWith(DOT_JAR) }.elements.map { jars -> jars.map { jar -> zipTree(jar.asFile) } }
+  )
+
   return javaRes.asFileTree.matching(MergeJavaResourceTask.patternSet)
 }

@@ -30,7 +30,6 @@ import com.android.build.api.variant.HostTestBuilder
 import com.android.build.api.variant.ScopedArtifacts
 import com.android.build.api.variant.Variant
 import com.android.build.gradle.api.AndroidBasePlugin
-import com.android.compose.screenshot.gradle.ScreenshotTestOptionsImpl
 import com.android.compose.screenshot.layoutlibExtractor.LayoutlibDataFromMaven
 import com.android.compose.screenshot.services.AnalyticsService
 import com.android.compose.screenshot.tasks.PreviewScreenshotTestEngineInput
@@ -164,8 +163,6 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
           validationEngineOverrideString
         } else SCREENSHOT_TEST_PLUGIN_VERSION
 
-      val screenshotExtension = project.extensions.create("screenshotTests", ScreenshotTestOptionsImpl::class.java)
-
       val analyticsServiceProvider =
         project.gradle.sharedServices.registerIfAbsent(getBuildServiceName(AnalyticsService::class.java), AnalyticsService::class.java) {
           spec ->
@@ -246,7 +243,6 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
             componentsExtension.sdkComponents,
             layoutlibDataFromMaven,
             sdkDirectory,
-            screenshotExtension,
             layoutlibJarConfig,
             null,
             { testEngineInput },
@@ -298,7 +294,6 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
             componentsExtension.sdkComponents,
             layoutlibDataFromMaven,
             sdkDirectory,
-            screenshotExtension,
             layoutlibJarConfig,
             { reports.junitXml.outputLocation.get() },
             { testEngineInput },
@@ -324,7 +319,6 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
     sdkComponents: SdkComponents,
     layoutlibDataFromMaven: LayoutlibDataFromMaven,
     sdkDirectory: Provider<Directory>,
-    screenshotExtension: ScreenshotTestOptionsImpl,
     layoutlibJarConfig: Configuration,
     junitXmlOutputDirectoryProvider: (T.() -> Directory)?,
     getTestEngineInput: T.() -> PreviewScreenshotTestEngineInput,
@@ -333,7 +327,8 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
     configure { task ->
       getTestEngineInput(task).apply {
         projectRoot.set(project.rootDir.absolutePath)
-        threshold.set(screenshotExtension.imageDifferenceThreshold)
+        // TODO: This will be removed once ScreenshotTestSuite supports imageDiffThreshold
+        threshold.convention(0.0f)
         namespace.set(variant.namespace)
         layoutlibDataDir.setFrom(layoutlibDataFromMaven.layoutlibDataDirectory)
         layoutlibClassPath.setFrom(layoutlibJarConfig, sdkComponents.bootClasspath)
@@ -606,14 +601,16 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
   private fun configureJvmArgsForRendering(task: Test) {
     val javaLauncherProvider = task.javaLauncher
     val defaultMajorVersion = task.javaVersion.majorVersion.toIntOrNull() ?: 0
-    task.jvmArgumentProviders.add(CommandLineArgumentProvider {
-      val launcher = javaLauncherProvider.orNull
-      val majorVersion = launcher?.metadata?.languageVersion?.asInt() ?: defaultMajorVersion
-      listOfNotNull(
-        if (majorVersion >= 21) "--enable-native-access=ALL-UNNAMED" else null,
-        if (majorVersion >= 24) "--sun-misc-unsafe-memory-access=allow" else null
-      )
-    })
+    task.jvmArgumentProviders.add(
+      CommandLineArgumentProvider {
+        val launcher = javaLauncherProvider.orNull
+        val majorVersion = launcher?.metadata?.languageVersion?.asInt() ?: defaultMajorVersion
+        listOfNotNull(
+          if (majorVersion >= 21) "--enable-native-access=ALL-UNNAMED" else null,
+          if (majorVersion >= 24) "--sun-misc-unsafe-memory-access=allow" else null,
+        )
+      }
+    )
   }
 }
 

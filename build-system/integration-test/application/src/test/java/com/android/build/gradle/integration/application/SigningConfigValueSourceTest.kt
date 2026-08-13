@@ -145,4 +145,119 @@ class SigningConfigValueSourceTest {
     val verificationResult2 = SigningHelper.assertApkSignaturesVerify(Apk(apkPath2), 30)
     assertThat(verificationResult2.signerCertificates.first().subjectX500Principal.name).isEqualTo("CN=Keystore B")
   }
+
+  @Test
+  fun testHelpDoesNotResolveSigningConfig() {
+    val build = rule.build
+    val app = build.androidApplication()
+
+    // Keystore A setup
+    val keyStoreFileA = build.directory.resolve("keystoreA.jks").toFile()
+    KeystoreHelper.createNewStore("jks", keyStoreFileA, "storePassword", "keyPassword", "keyAlias", "CN=Keystore A", 100)
+
+    // Initial properties file setup pointing to Keystore A
+    val propsFile = build.directory.resolve("signing.properties").toFile()
+    val properties =
+      Properties().apply {
+        setProperty("storeFile", keyStoreFileA.absolutePath)
+        setProperty("storePassword", "storePassword")
+        setProperty("keyAlias", "keyAlias")
+        setProperty("keyPassword", "keyPassword")
+        setProperty("storeType", "jks")
+      }
+    propsFile.outputStream().use { properties.store(it, null) }
+
+    // Update build.gradle.kts with the lazy signing config code
+    app.files.update("build.gradle.kts").transform { original ->
+      """
+      import com.android.build.api.variant.SigningConfigInfo
+      import java.util.Properties
+
+      """
+        .trimIndent() +
+        original +
+        """
+        abstract class SigningConfigValueSource : ValueSource<SigningConfigInfo, SigningConfigValueSource.Params> {
+            interface Params : ValueSourceParameters {
+                val propertiesFile: RegularFileProperty
+            }
+            override fun obtain(): SigningConfigInfo? {
+                println("=== SigningConfigValueSource.obtain() called ===")
+                val file = parameters.propertiesFile.orNull?.asFile ?: return null
+                if (!file.exists()) return null
+                val props = Properties().apply {
+                    file.inputStream().use { load(it) }
+                }
+                return SigningConfigInfo(
+                    File(props.getProperty("storeFile")),
+                    props.getProperty("storePassword"),
+                    props.getProperty("keyAlias"),
+                    props.getProperty("keyPassword"),
+                    props.getProperty("storeType")
+                )
+            }
+        }
+        android {
+             compileSdk = ${GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION}
+        }
+        androidComponents {
+            onVariants { variant ->
+                val lazySigningConfig = providers.of(SigningConfigValueSource::class.java) {
+                    parameters.propertiesFile.set(layout.projectDirectory.file("../signing.properties"))
+                }
+                variant.signingConfig.from(lazySigningConfig)
+            }
+        }
+        """
+          .trimIndent()
+    }
+
+    val executor = build.executor
+    val result = executor.run("help")
+    result.assertOutputDoesNotContain("=== SigningConfigValueSource.obtain() called ===")
+  }
+
+  @Test
+  fun testLazySigningConfigForReleaseNotUsedInDebug() {
+    val build = rule.build
+    val app = build.androidApplication()
+
+    // Update build.gradle.kts with a failing ValueSource registered only for release
+    app.files.update("build.gradle.kts").transform { original ->
+      """
+      import com.android.build.api.variant.SigningConfigInfo
+      import java.util.Properties
+
+      """
+        .trimIndent() +
+        original +
+        """
+        abstract class FailingSigningConfigValueSource : ValueSource<SigningConfigInfo, ValueSourceParameters.None> {
+            override fun obtain(): SigningConfigInfo? {
+                throw RuntimeException("FailingSigningConfigValueSource should not be evaluated")
+            }
+        }
+        android {
+             compileSdk = ${GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION}
+        }
+        androidComponents {
+            onVariants { variant ->
+                if (variant.name == "release") {
+                    val lazySigningConfig = providers.of(FailingSigningConfigValueSource::class.java) {}
+                    variant.signingConfig.from(lazySigningConfig)
+                }
+            }
+        }
+        """
+          .trimIndent()
+    }
+
+    val executor = build.executor
+    // This should succeed because assembleDebug does not need the release signing config
+    executor.run("assembleDebug")
+
+    // This should fail because assembleRelease needs the release signing config
+    val failure = executor.expectFailure().run("assembleRelease")
+    failure.assertErrorContains("FailingSigningConfigValueSource should not be evaluated")
+  }
 }

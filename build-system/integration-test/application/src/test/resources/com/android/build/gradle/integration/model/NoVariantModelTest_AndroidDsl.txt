@@ -101,9 +101,9 @@
       > debug:
          - name            = "debug"
          - storeFile       = {ANDROID_PREFS}/.android/debug.keystore{!}
-         - storePassword   = "android"
+         - storePassword   = (null)
          - keyAlias        = "AndroidDebugKey"
-         - keyPassword     = "android"
+         - keyPassword     = (null)
          - enableV1Signing = (null)
          - enableV2Signing = (null)
          - enableV3Signing = (null)

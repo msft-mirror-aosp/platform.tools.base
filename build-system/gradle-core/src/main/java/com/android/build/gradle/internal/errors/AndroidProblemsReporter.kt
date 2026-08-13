@@ -84,19 +84,16 @@ class AndroidProblemsReporterImpl(val problemReporter: ProblemReporter) : Androi
 
   override fun reportSyncIssue(type: Type, severity: Severity, exception: EvalIssueException) {
     val id = ProblemId.create(type.type.toString(), type.name, syncIssueProblemGroup)
-    val problem = problemReporter.create(id, AndroidSyncIssueProblemBuilder(type, severity, exception))
-    problemReporter.report(problem)
+    val problem = problemReporter.create(id, AndroidSyncIssueProblemBuilder(type, exception))
+    when (severity) {
+      Severity.WARNING -> problemReporter.report(problem)
+      Severity.ERROR -> problemReporter.throwing(exception, problem)
+    }
   }
 
-  class AndroidSyncIssueProblemBuilder(val type: Type, val severity: Severity, val exception: EvalIssueException) : Action<ProblemSpec> {
+  class AndroidSyncIssueProblemBuilder(val type: Type, val exception: EvalIssueException) : Action<ProblemSpec> {
 
     override fun execute(problem: ProblemSpec) {
-      val problemSeverity =
-        when (severity) {
-          Severity.WARNING -> org.gradle.api.problems.Severity.WARNING
-          Severity.ERROR -> org.gradle.api.problems.Severity.ERROR
-        }
-      problem.severity(problemSeverity)
       problem.contextualLabel(exception.message)
       exception.multilineMessage?.let { problem.details(it.joinToString(separator = "\n")) }
       exception.data?.let { problem.additionalData(SyncIssueData::class.java) { data -> data.data = it } }

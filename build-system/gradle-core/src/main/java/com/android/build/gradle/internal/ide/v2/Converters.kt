@@ -164,13 +164,16 @@ internal fun DslSigningConfig.convert() =
   SigningConfigImpl(
     name = name,
     storeFile = storeFile,
-    storePassword = storePassword,
+    // Do NOT ship keystore secrets over the Tooling API. Consumers that
+    // need to know whether the variant is signable use isSigningReady.
+    storePassword = null,
     keyAlias = keyAlias,
-    keyPassword = keyPassword,
+    keyPassword = null,
     enableV1Signing = enableV1Signing,
     enableV2Signing = enableV2Signing,
     enableV3Signing = enableV3Signing,
     enableV4Signing = enableV4Signing,
+    isSigningReady = storeFile != null && storePassword != null && keyAlias != null && keyPassword != null,
   )
 
 private fun Map<String, DslClassField>.convertBuildConfig(features: BuildFeatureValues): Map<String, ClassField>? =

@@ -54,6 +54,8 @@ internal constructor(objects: ObjectFactory, name: String, projectDirectory: Dir
     val sourceSetName = if (isMixed) "${name}AndroidTest" else name
     return TestApkTestSuiteSourceSet(
       sourceSetName = sourceSetName,
+      testSuiteName = name,
+      isMixed = isMixed,
       variantServices = variantServices,
       userAddedSourceSets = userAddedSourcesSets,
       javaEnabled = javaEnabled,

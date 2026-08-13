@@ -22,6 +22,7 @@ import com.android.build.gradle.internal.SdkComponentsBuildService
 import com.android.build.gradle.internal.testing.utp.worker.RunUtpWorkAction
 import com.android.build.gradle.internal.utils.fromDisallowChanges
 import com.android.build.gradle.internal.utils.setDisallowChanges
+import com.android.build.gradle.options.BooleanOption
 import com.android.sdklib.BuildToolInfo
 import com.android.tools.utp.gradle.api.EmulatorControlConfig
 import com.android.tools.utp.gradle.api.RunUtpWorkParameters
@@ -34,6 +35,7 @@ import java.io.File
 import org.gradle.api.artifacts.ConfigurationContainer
 import org.gradle.api.artifacts.dsl.DependencyHandler
 import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.ProviderFactory
 import org.gradle.workers.WorkerExecutor
 
 private const val TEST_RESULT_EXIT_CODE_FILE_NAME = "test-result-exit-code.txt"
@@ -48,11 +50,120 @@ fun runUtpTestSuiteAndWait(
   resultsDir: File,
   utpDependencies: UtpDependencies,
   versionedSdkLoader: SdkComponentsBuildService.VersionedSdkLoader,
+  provider: ProviderFactory,
 ): Boolean {
   val mergedUtpResultProtoOutputFile = File(resultsDir, TEST_RESULT_PB_FILE_NAME)
   val testResultExitCodeFile = File(resultsDir, TEST_RESULT_EXIT_CODE_FILE_NAME)
 
-  val workQueue = workerExecutor.classLoaderIsolation { spec -> spec.classpath.fromDisallowChanges(utpDependencies.gradleWorkAction) }
+  // If there are no runner configurations, there are no tests to run.
+  // We write "0" (success) to the exit code file and return early to avoid
+  // spinning up an expensive isolated worker process for a no-op run.
+  if (runnerConfigs.isEmpty()) {
+    testResultExitCodeFile.parentFile?.mkdirs()
+    testResultExitCodeFile.writeText("0")
+    return true
+  }
+
+  val enableUtpTestReportingForAndroidStudio =
+    provider.gradleProperty("com.android.tools.utp.GradleAndroidProjectResolverExtension.enable").orNull?.toBoolean() ?: false
+
+  val isOnTheFlyCoverageEnabled =
+    provider.gradleProperty(BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE.propertyName).orNull?.toBoolean() ?: false
+
+  val adbPath = versionedSdkLoader.adbExecutableProvider.get().asFile.absolutePath
+  val aapt2Path = versionedSdkLoader.buildToolInfoProvider.get().getPath(BuildToolInfo.PathId.AAPT)
+
+  val serials = runnerConfigs.map { it.deviceSerialNumber.get() }
+
+  val workQueue =
+    workerExecutor.processIsolation { spec ->
+      spec.classpath.fromDisallowChanges(utpDependencies.gradleWorkAction)
+      spec.forkOptions { fork ->
+        if (enableUtpTestReportingForAndroidStudio) {
+          fork.systemProperty("android-test.listener.stream-base64-encoded-result", "true")
+        }
+
+        fork.systemProperty("android-test.adb-path", adbPath)
+        fork.systemProperty("android-test.aapt2-path", aapt2Path)
+        fork.systemProperty("android-test.device-serials", serials.joinToString(","))
+
+        // Common configurations (using first config as representative, assuming they are mostly same)
+        val firstConfig = runnerConfigs.first()
+        fork.systemProperty("android-test.instrumentation-runner-class", firstConfig.testData.get().instrumentationRunner)
+        fork.systemProperty("android-test.test-package-id", firstConfig.testData.get().applicationId)
+        fork.systemProperty("android-test.instrumentation-target-package-id", firstConfig.testData.get().instrumentationTargetPackageId)
+        firstConfig.testData.get().testedApplicationId?.let { fork.systemProperty("com.android.junit.engine.tested.application.id", it) }
+        val instArgs = firstConfig.testData.get().instrumentationRunnerArguments
+        if (instArgs.isNotEmpty()) {
+          fork.systemProperty("android-test.instrumentation-args", instArgs.map { "${it.key}=${it.value}" }.joinToString(","))
+        }
+        val useTestStorageService = instArgs["useTestStorageService"]?.toBoolean() ?: false
+        fork.systemProperty("android-test.use-test-storage-service", useTestStorageService.toString())
+        fork.systemProperty("android-test.is-test-coverage-enabled", firstConfig.testData.get().isTestCoverageEnabled.toString())
+        if (firstConfig.testData.get().isTestCoverageEnabled) {
+          val coverageType = if (isOnTheFlyCoverageEnabled) "ON_THE_FLY" else "NONE"
+          fork.systemProperty("android-test.coverage-type", coverageType)
+        }
+        fork.systemProperty("android-test.force-aot-compilation", firstConfig.forceCompilation.get().toString())
+        fork.systemProperty("android-test.uninstall-after-tests", firstConfig.uninstallApksAfterTest.get().toString())
+        if (firstConfig.testData.get().isTestCoverageEnabled) {
+          val useOrchestrator = firstConfig.useOrchestrator.get()
+          val customCoveragePath = instArgs["coverageFilePath"] ?: instArgs["coverageFile"]
+          if (customCoveragePath != null) {
+            if (useOrchestrator) {
+              fork.systemProperty("android-test.coverage-dir-on-device", customCoveragePath)
+            } else {
+              fork.systemProperty("android-test.coverage-file-on-device", customCoveragePath)
+            }
+          }
+        }
+        fork.systemProperty("com.android.junit.engine.results.dir", resultsDir.absolutePath)
+        if (firstConfig.useOrchestrator.get()) {
+          fork.systemProperty("android-test.execution-mode", "ANDROIDX_TEST_ORCHESTRATOR")
+        }
+        fork.systemProperty("android-test.animations-disabled", firstConfig.testData.get().animationsDisabled.toString())
+        if (firstConfig.additionalTestOutputOnDeviceDir.isPresent) {
+          fork.systemProperty("android-test.additional-test-output-dir-on-device", firstConfig.additionalTestOutputOnDeviceDir.get())
+        }
+
+        // Device-specific configurations
+        runnerConfigs.forEach { config ->
+          val serial = config.deviceSerialNumber.get()
+          fork.systemProperty("android-test.device-id[$serial]", config.deviceId.get())
+          fork.systemProperty("android-test.results-dir[$serial]", config.outputDir.get().asFile.absolutePath)
+          fork.systemProperty("android-test.coverage-dir-on-host[$serial]", config.coverageOutputDir.get().asFile.absolutePath)
+          if (config.additionalTestOutputDir.isPresent) {
+            fork.systemProperty(
+              "android-test.additional-test-output-dir-on-host[$serial]",
+              config.additionalTestOutputDir.get().asFile.absolutePath,
+            )
+          }
+
+          val appApks = config.targetApkConfigBundle.get().appApks
+          if (appApks.isNotEmpty()) {
+            fork.systemProperty("android-test.tested-apks[$serial]", appApks.joinToString(",") { it.absolutePath })
+          }
+          fork.systemProperty("android-test.test-apks[$serial]", config.testData.get().testApk.absolutePath)
+
+          val helperApks = config.helperApks.files
+          if (helperApks.isNotEmpty()) {
+            fork.systemProperty("android-test.test-util-apks[$serial]", helperApks.joinToString(",") { it.absolutePath })
+          }
+
+          val installOptions = config.additionalInstallOptions.get()
+          if (installOptions.isNotEmpty()) {
+            fork.systemProperty("android-test.apk-install-options[$serial]", installOptions.joinToString(","))
+          }
+
+          fork.systemProperty("android-test.install-timeout-ms[$serial]", ((config.installApkTimeout.orNull ?: 0) * 1000).toString())
+        }
+
+        // Propagate HOME environment variable to ensure:
+        // 1. Bazel sandbox compatibility (reusing the writable HOME directory set by Bazel).
+        // 2. ADB/Emulator configurations (e.g. adbkey authentication) can be resolved.
+        System.getenv("HOME")?.let { fork.environment("HOME", it) }
+      }
+    }
 
   workQueue.submit(RunUtpWorkAction::class.java) { params ->
     params.utpRunConfigs.setDisallowChanges(runnerConfigs)

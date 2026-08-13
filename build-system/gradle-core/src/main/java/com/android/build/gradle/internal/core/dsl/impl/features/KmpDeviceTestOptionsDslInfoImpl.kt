@@ -59,6 +59,10 @@ internal class KmpDeviceTestOptionsDslInfoImpl(private val extension: KotlinMult
   override val codeCoverageEnabled: Boolean
     get() = extension.androidTestOnJvmOptions!!.enableCoverage
 
+  // Not supported by KMP.
+  override val instrumentInPrivateComputeCore: Boolean
+    get() = false
+
   private val compileSdk: AndroidVersion?
     get() =
       extension.compileSdk?.let(::AndroidVersionImpl)

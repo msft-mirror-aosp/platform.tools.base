@@ -18,6 +18,7 @@ package com.android.build.gradle.tasks
 
 import com.android.build.gradle.internal.tasks.AndroidGlobalTask
 import com.android.build.gradle.internal.tasks.AndroidVariantTask
+import com.android.build.gradle.internal.tasks.BaseRedirectIdeOutputsTask
 import com.android.build.gradle.internal.tasks.BaseTask
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
 import com.android.build.gradle.internal.tasks.NewIncrementalGlobalTask
@@ -54,6 +55,7 @@ class BuildAnalyzerTest {
       UnsafeOutputsGlobalTask::class.java,
       TestPreBuildTask::class.java,
       PackageAndroidArtifact::class.java,
+      BaseRedirectIdeOutputsTask::class.java,
     )
 
   @Test

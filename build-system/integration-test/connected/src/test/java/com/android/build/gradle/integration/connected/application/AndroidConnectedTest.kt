@@ -54,12 +54,7 @@ class AndroidConnectedTest(val runWithBuiltInPlatform: Boolean) {
       onSelectModule = { moduleName, util ->
         val moduleTestOutputRootDir = "$moduleName/$TEST_OUTPUT_ROOT_DIR"
         util.testTaskName = ":$moduleName:connectedAndroidTest"
-        util.testResultXmlPath =
-          if (util.runWithBuiltInPlatform) {
-            "$moduleTestOutputRootDir/TEST-$DEVICE_NAME.xml"
-          } else {
-            "$moduleTestOutputRootDir/TEST-$DEVICE_NAME-_$moduleName-.xml"
-          }
+        util.testResultXmlPath = "$moduleTestOutputRootDir/TEST-$DEVICE_NAME.xml"
         if (rule.build.subProject(":$moduleName") is AndroidDynamicFeatureProject) {
           util.testReportPath = "$moduleName/$TEST_REPORT_FOR_DYNAMIC_FEATURE"
           util.testLogcatPath = "$moduleName/$LOGCAT_FOR_DYNAMIC_FEATURE"
@@ -70,6 +65,7 @@ class AndroidConnectedTest(val runWithBuiltInPlatform: Boolean) {
         util.testResultPbPath = "$moduleName/$TEST_RESULT_PB"
         util.testCoverageXmlPath = "$moduleName/$TEST_COV_XML"
         util.testAdditionalOutputPath = "$moduleName/$TEST_ADDITIONAL_OUTPUT"
+        util.deviceName = DEVICE_NAME
       },
     )
 
@@ -102,6 +98,8 @@ class AndroidConnectedTest(val runWithBuiltInPlatform: Boolean) {
   @Test fun androidTest() = util.androidTest()
 
   @Test fun androidTestWithNewReportFormat() = util.androidTestWithNewReportFormat()
+
+  @Test fun androidTestFromLibraryModuleWithNewReportFormat() = util.androidTestFromLibraryModuleWithNewReportFormat()
 
   @Test fun androidTestWithOrchestrator() = util.androidTestWithOrchestrator()
 
@@ -156,13 +154,12 @@ class AndroidConnectedTest(val runWithBuiltInPlatform: Boolean) {
     util.executor.run(util.testTaskName)
 
     val subFolder = "connected/debug"
-    val xmlFileName =
-      if (util.runWithBuiltInPlatform) {
-        "TEST-$DEVICE_NAME.xml"
-      } else {
-        "TEST-$DEVICE_NAME-_app-.xml"
+    val xmlFile =
+      util.project.resolve("$customResultsDir/$subFolder").toFile().walkTopDown().maxDepth(2).find {
+        it.name.startsWith("TEST-") && it.name.endsWith(".xml")
       }
-    assertThat(util.project.resolve("$customResultsDir/$subFolder/$xmlFileName")).exists()
+    assertThat(xmlFile).isNotNull()
+    assertThat(xmlFile?.exists()).isTrue()
     assertThat(util.project.resolve("$customReportsDir/$subFolder/index.html")).exists()
   }
 
@@ -193,15 +190,15 @@ class AndroidConnectedTest(val runWithBuiltInPlatform: Boolean) {
       assertThat(it).contains("<UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>")
       assertThat(it).contains("</UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>")
     }
-    assertThat(util.project.resolve(util.testReportPath)).exists()
-    assertThat(util.project.resolve(util.testResultPbPath)).exists()
+    util.verifyReport()
+    assertThat(util.resolveTestResultPbPath()).exists()
 
     // Run the task again after clean. This time the task configuration is
     // restored from the configuration cache. We expect no crashes.
     util.executor.run("clean")
 
     assertThat(util.project.resolve(util.testReportPath)).doesNotExist()
-    assertThat(util.project.resolve(util.testResultPbPath)).doesNotExist()
+    assertThat(util.resolveTestResultPbPath()).doesNotExist()
 
     testExecutionStartTime = System.currentTimeMillis()
     val resultWithConfigCache =
@@ -220,8 +217,8 @@ class AndroidConnectedTest(val runWithBuiltInPlatform: Boolean) {
       assertThat(it).contains("<UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>")
       assertThat(it).contains("</UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>")
     }
-    assertThat(util.project.resolve(util.testReportPath)).exists()
-    assertThat(util.project.resolve(util.testResultPbPath)).exists()
+    util.verifyReport()
+    assertThat(util.resolveTestResultPbPath()).exists()
     val timeTaken = System.currentTimeMillis() - startTime
     benchmark.log("connectedAndroidTestWithUtpTestResultListener_time", timeTaken)
   }
@@ -247,8 +244,8 @@ class AndroidConnectedTest(val runWithBuiltInPlatform: Boolean) {
       assertThat(it).doesNotContain("<UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>")
       assertThat(it).doesNotContain("</UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>")
     }
-    assertThat(util.project.resolve(util.testReportPath)).exists()
-    assertThat(util.project.resolve(util.testResultPbPath)).exists()
+    util.verifyReport()
+    assertThat(util.resolveTestResultPbPath()).exists()
     val timeTaken = System.currentTimeMillis() - startTime
     benchmark.log("connectedAndroidTestWithUtpTestResultListenerAndTestReportingDisabled_time", timeTaken)
   }
@@ -283,7 +280,7 @@ class AndroidConnectedTest(val runWithBuiltInPlatform: Boolean) {
     // If it doesn't, JacocoReportTask will fail with "Unknown block type".
     util.executor.run(util.testTaskName)
 
-    assertThat(util.project.resolve(util.testReportPath)).exists()
+    util.verifyReport()
     assertThat(util.project.resolve(util.testCoverageXmlPath)).exists()
 
     // Verify the corrupted file is gone from the device.

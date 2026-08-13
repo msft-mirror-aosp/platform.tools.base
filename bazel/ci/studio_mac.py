@@ -26,8 +26,11 @@ def studio_mac(build_env: bazel.BuildEnv) -> None:
   targets = test_targets + [
       '//tools/vendor/google/android:android-cli.zip',
       '//tools/base/profiler/native/trace_processor_daemon',
+      '//tools/base/profiler/native/sherlock/perfetto-cropper:sherlock-perfetto-cropper',
+      '//tools/base/profiler/native/sherlock/perfetto-gpu-counters:sherlock-perfetto-gpu-counters',
       '//tools/base/profiler/native/sherlock:sherlock_trace_processor',
       '//tools/vendor/google/lume/dist:lightbuild',
+      '//tools/vendor/google/lume/lightbuild-cli/dist:release_pkg',
   ]
   flags = build_flags(
       build_env,
@@ -44,11 +47,20 @@ def studio_mac(build_env: bazel.BuildEnv) -> None:
                   '',
               ),
               (
+                  'tools/base/profiler/native/sherlock/perfetto-cropper/sherlock-perfetto-cropper',
+                  '',
+              ),
+              (
+                  'tools/base/profiler/native/sherlock/perfetto-gpu-counters/sherlock-perfetto-gpu-counters',
+                  '',
+              ),
+              (
                   'tools/base/profiler/native/sherlock/sherlock_trace_processor',
                   '',
               ),
               ('tools/vendor/google/android/android-cli.zip', ''),
               ('tools/vendor/google/lume/dist/lightbuild.zip', ''),
+              ('tools/vendor/google/lume/lightbuild-cli/dist/lightbuild-cli.zip', ''),
           ],
       )
       studio.collect_logs(build_env, result.bes_path)
@@ -69,9 +81,12 @@ def studio_mac_arm(build_env: bazel.BuildEnv) -> None:
   targets = test_targets + [
       '//tools/vendor/google/android:android-cli.zip',
       '//tools/base/profiler/native/trace_processor_daemon',
+      '//tools/base/profiler/native/sherlock/perfetto-cropper:sherlock-perfetto-cropper',
+      '//tools/base/profiler/native/sherlock/perfetto-gpu-counters:sherlock-perfetto-gpu-counters',
       '//tools/base/profiler/native/sherlock:sherlock_trace_processor',
       '//tools/adt/idea/android/native/diagnostics/heap:libjni_object_tagger',
       '//tools/vendor/google/lume/dist:lightbuild',
+      '//tools/vendor/google/lume/lightbuild-cli/dist:release_pkg',
   ]
   flags = build_flags(build_env) + [
       '--discard_analysis_cache',
@@ -88,6 +103,14 @@ def studio_mac_arm(build_env: bazel.BuildEnv) -> None:
                   '',
               ),
               (
+                  'tools/base/profiler/native/sherlock/perfetto-cropper/sherlock-perfetto-cropper',
+                  '',
+              ),
+              (
+                  'tools/base/profiler/native/sherlock/perfetto-gpu-counters/sherlock-perfetto-gpu-counters',
+                  '',
+              ),
+              (
                   'tools/base/profiler/native/sherlock/sherlock_trace_processor',
                   '',
               ),
@@ -97,6 +120,7 @@ def studio_mac_arm(build_env: bazel.BuildEnv) -> None:
               ),
               ('tools/vendor/google/android/android-cli.zip', ''),
               ('tools/vendor/google/lume/dist/lightbuild.zip', ''),
+              ('tools/vendor/google/lume/lightbuild-cli/dist/lightbuild-cli.zip', ''),
           ],
       )
     if result.exit_code != bazel.EXITCODE_NO_TESTS_FOUND:

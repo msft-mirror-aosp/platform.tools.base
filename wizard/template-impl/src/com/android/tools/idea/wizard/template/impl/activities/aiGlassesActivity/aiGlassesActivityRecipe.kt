@@ -47,9 +47,9 @@ fun RecipeExecutor.aiGlassesActivityRecipe(moduleData: ModuleTemplateData, activ
 
   addDependency(mavenCoordinate = "androidx.lifecycle:lifecycle-runtime-compose")
 
-  addDependency(mavenCoordinate = "androidx.xr.glimmer:glimmer:1.0.0-alpha11")
-  addDependency(mavenCoordinate = "androidx.xr.glimmer:glimmer-google-fonts:1.0.0-alpha11")
-  addDependency(mavenCoordinate = "androidx.xr.projected:projected:1.0.0-alpha06")
+  addDependency(mavenCoordinate = "androidx.xr.glimmer:glimmer:1.0.0-alpha15")
+  addDependency(mavenCoordinate = "androidx.xr.glimmer:glimmer-google-fonts:1.0.0-alpha15")
+  addDependency(mavenCoordinate = "androidx.xr.projected:projected:1.0.0-alpha10")
 
   val glassesActivityClass = "Glasses$activityClass"
   generateManifest(

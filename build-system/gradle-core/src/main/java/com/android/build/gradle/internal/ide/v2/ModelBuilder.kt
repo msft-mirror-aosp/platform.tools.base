@@ -422,7 +422,7 @@ class ModelBuilder<ExtensionT : CommonExtension>(
   private fun HostJarTestSuiteSourceSet.toModel(isGenerated: Boolean) =
     HostJarTestSuiteSourceImpl(
       name = name,
-      defaultTopLevel = defaultTopLevelFolder,
+      defaultTopLevel = rootFolder,
       java = variantSourcesForModel(java, isGenerated),
       kotlin = variantSourcesForModel(kotlin, isGenerated),
       resources = variantSourcesForModel(resources, isGenerated),

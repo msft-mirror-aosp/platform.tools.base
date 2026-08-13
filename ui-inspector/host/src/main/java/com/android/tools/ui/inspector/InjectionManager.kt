@@ -32,6 +32,7 @@ import java.nio.file.StandardCopyOption
 import java.nio.file.attribute.PosixFilePermission
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.io.path.extension
 import kotlin.io.path.invariantSeparatorsPathString
 import kotlin.io.path.nameWithoutExtension
@@ -81,6 +82,16 @@ private const val DEVICE_TMP_SERVICE_JAR_PATH = "$DEVICE_TMP_DIR/$SERVICE_JAR_FI
 /** Default resolver that locates the agent binary in the Bazel runfiles directory. It uses the device ABI to find the correct binary. */
 private val DEFAULT_AGENT_PATH_RESOLVER: (String) -> Path = { abi -> Paths.get(HOST_AGENT_PATH, abi, AGENT_FILE_NAME) }
 
+/** The per-app setting that makes the platform expose attribute resolution stacks for a single package. */
+private const val DEBUG_VIEW_ATTRIBUTES_PACKAGE_SETTING = "debug_view_attributes_application_package"
+
+/** Marker separating the two `settings get` outputs when both settings are read in a single shell invocation. */
+private const val SETTINGS_OUTPUT_SEPARATOR = "__UI_INSPECTOR_SETTINGS_SEPARATOR__"
+
+/** Reads the global and per-app debug-view-attributes settings in one shell invocation. */
+private const val READ_DEBUG_VIEW_ATTRIBUTES_CMD =
+  "settings get global debug_view_attributes ; echo $SETTINGS_OUTPUT_SEPARATOR ; settings get global $DEBUG_VIEW_ATTRIBUTES_PACKAGE_SETTING"
+
 /**
  * Manages the lifecycle of injecting and attaching the native agent to a target application.
  *
@@ -95,6 +106,7 @@ class InjectionManager(
   private val agentPathResolver: (String) -> Path = DEFAULT_AGENT_PATH_RESOLVER,
   private val serviceJarPath: Path = Paths.get(HOST_SERVICE_JAR_PATH),
   private val payloadJarPath: Path = Paths.get(HOST_PAYLOAD_JAR_PATH),
+  private val viewInspectorJarPath: Path = InspectorRegistry.VIEW_INSPECTOR.localJarPath,
   internal val tempFileSuffixGenerator: () -> String = { "${UUID.randomUUID()}.tmp" },
 ) {
   init {
@@ -103,21 +115,26 @@ class InjectionManager(
   }
 
   private val deviceSelector = DeviceSelector.fromSerialNumber(serial)
+  private val uidResolver = UidResolver(adbSession, deviceSelector)
 
   /**
-   * The absolute path to the application's private data directory on the device, queried via `run-as`. This is queried at runtime to
-   * correctly support multi-user environments (e.g. /data/user/10/) where the standard /data/data/ prefix is not applicable.
+   * The absolute path to the application's private data directory for Android user 0, queried via `run-as`. Querying the path avoids
+   * assuming that the standard /data/data/ prefix is applicable.
    */
   @Volatile private var appDataDir: String? = null
+
+  /** The local TCP spec of the adb forward created by [injectAndAttach]. Cleared by [removeAdbForward]. */
+  private val forwardedPortSpec = AtomicReference<SocketSpec.Tcp?>(null)
 
   /**
    * Push the agent to the device and attach it to the specified app.
    *
-   * @param serial The device serial number.
-   * @param packageName The package name of the app to attach the agent to.
+   * @param needsDebugViewAttributes Whether the platform must expose attribute resolution stacks for the inspected app, i.e. whether the
+   *   `resolution-stack` facet was requested. When true, the per-app debug-view-attributes setting is enabled (see
+   *   [enableDebugViewAttributes]); when false, device settings are left untouched.
    * @return The forwarded TCP port number on the host. Connect to this port to communicate with the agent.
    */
-  suspend fun injectAndAttach(): String = coroutineScope {
+  suspend fun injectAndAttach(needsDebugViewAttributes: Boolean): String = coroutineScope {
     val (deviceAbi, sdkVersion) = retrieveDeviceMetadata(deviceSelector)
     if (sdkVersion < ProtocolConstants.MIN_SUPPORTED_API_LEVEL) {
       throw IllegalStateException(
@@ -125,19 +142,30 @@ class InjectionManager(
       )
     }
 
-    // Query app data dir and pid synchronously at the beginning to verify that the app is installed and running
+    val packageUid =
+      uidResolver.packageUid(packageName)
+        ?: throw IllegalStateException(
+          "Failed to access the application '$packageName'. Please make sure the app is installed, debuggable, and running under the current user."
+        )
+
+    // Query app data dir and pid synchronously at the beginning to verify that the app is accessible and running. The pid is deliberately
+    // captured before any debug-view-attributes flip: the flip only relaunches activities within the existing process, so the pid stays
+    // valid, and reading it first avoids mutating device settings when the target is not running.
     appDataDir = queryAppDataDir(deviceSelector, packageName)
-    val pid = getPid(deviceSelector, packageName)
+    val pid = getPid(deviceSelector, packageName, packageUid)
 
-    // Enable debug view attributes before attaching.
-    // This is needed for the platform to expose attribute resolution traces.
-    // We don't clean this up because changing this flag causes the activity to restart. We do it once so the activity doesn't need to
-    // restart each time.
-    val flagSet = async { adbSession.deviceServices.shellAsText(deviceSelector, "settings put global debug_view_attributes 1") }
-
+    // Resolve local paths before touching device settings, so a missing host artifact cannot restart the app's activities for nothing.
     val agentLocalPath = getAgentLocalPath(deviceAbi)
     val serviceJarLocalPath = getServiceJarLocalPath()
     val payloadJarLocalPath = getPayloadJarLocalPath()
+    val viewInspectorJarLocalPath = resolveLocalPathOrExtractFromClasspath(viewInspectorJarPath)
+
+    // Build digest based on artifacts pushed to the device. The digest is part of the server socket name on the device and allows the host
+    // to identify which version of the pushed artifacts it's connecting to.
+    val artifactDigest = shippedArtifactsDigest(agentLocalPath, serviceJarLocalPath, payloadJarLocalPath, viewInspectorJarLocalPath)
+    val serverToken = "${pid}_$artifactDigest"
+
+    val debugViewAttributesSetup = async { if (needsDebugViewAttributes) enableDebugViewAttributes() }
 
     val agentPush = async { pushFileToDevice(deviceSelector, agentLocalPath, DEVICE_TMP_AGENT_PATH) }
     val jarPush = async { pushFileToDevice(deviceSelector, serviceJarLocalPath, DEVICE_TMP_SERVICE_JAR_PATH) }
@@ -146,25 +174,70 @@ class InjectionManager(
     val agentRemoteTmpPath = agentPush.await()
     val serviceJarRemoteTmpPath = jarPush.await()
     val payloadRemoteTmpPath = payloadPush.await()
-    flagSet.await()
+    debugViewAttributesSetup.await()
 
     copyAndSetupFiles(deviceSelector, packageName, agentRemoteTmpPath, serviceJarRemoteTmpPath, payloadRemoteTmpPath)
 
     val deviceTime = queryDeviceTime(deviceSelector)
-    attachAgent(deviceSelector, packageName, pid)
+    attachAgent(deviceSelector, pid, serverToken)
 
-    val socketName = ProtocolConstants.getSocketName(pid)
+    val socketName = ProtocolConstants.getSocketName(serverToken)
     waitForAgentSocket(deviceSelector, socketName, pid, deviceTime)
 
     setupAdbForward(deviceSelector, socketName)
+  }
+
+  /**
+   * Makes the platform expose attribute resolution stacks for the inspected app by enabling the per-app
+   * [DEBUG_VIEW_ATTRIBUTES_PACKAGE_SETTING] setting.
+   *
+   * The setting is read before writing: if the global `debug_view_attributes` is already enabled (developer options, or residue from older
+   * builds of this tool that set it globally) or the per-app setting already names [packageName], no device mutation happens. When the
+   * setting is actually flipped it is left set. Changing it in either direction restarts the app's activities, so clearing it per run would
+   * pay two restarts. Set-and-leave confines the restart to the first resolution-stack request per app.
+   */
+  private suspend fun enableDebugViewAttributes() {
+    val output = runShellCommand(deviceSelector, READ_DEBUG_VIEW_ATTRIBUTES_CMD).stdout
+    val values = output.split(SETTINGS_OUTPUT_SEPARATOR)
+    if (values.size != 2) {
+      throw IllegalStateException("Unexpected output while reading debug-view-attributes settings: $output")
+    }
+    // `settings get` prints the literal "null" for an unset key; exact comparisons below treat it as any other non-matching value.
+    val global = values[0].trim()
+    val perApp = values[1].trim()
+    if (global == "1" || perApp == packageName) {
+      return
+    }
+    runShellCommand(deviceSelector, "settings put global $DEBUG_VIEW_ATTRIBUTES_PACKAGE_SETTING $packageName")
+    System.err.println(
+      "Enabled view-attribute debugging for $packageName: its activities will restart now, and the setting stays enabled for this app. " +
+        "Clear it with: adb shell settings delete global $DEBUG_VIEW_ATTRIBUTES_PACKAGE_SETTING"
+    )
   }
 
   /** Sets up adb port forwarding to the agent. */
   private suspend fun setupAdbForward(deviceSelector: DeviceSelector, socketName: String): String {
     val localSpec = SocketSpec.Tcp()
     val remoteSpec = SocketSpec.LocalAbstract(socketName)
-    val port = adbSession.hostServices.forward(deviceSelector, localSpec, remoteSpec)
-    return port ?: throw IllegalStateException("Failed to set up adb forward")
+    val port =
+      adbSession.hostServices.forward(deviceSelector, localSpec, remoteSpec) ?: throw IllegalStateException("Failed to set up adb forward")
+    forwardedPortSpec.set(SocketSpec.Tcp(port.toInt()))
+    return port
+  }
+
+  /**
+   * Removes the adb forward created by [injectAndAttach], if any. Forwards outlive the CLI process, so every run must remove its own on
+   * success, failure, and cancellation alike.
+   */
+  suspend fun removeAdbForward() {
+    val localSpec = forwardedPortSpec.getAndSet(null) ?: return
+    try {
+      adbSession.hostServices.killForward(deviceSelector, localSpec)
+    } catch (e: CancellationException) {
+      throw e
+    } catch (e: Exception) {
+      System.err.println("Warning: failed to remove adb forward ${localSpec.toQueryString()}: ${e.message}")
+    }
   }
 
   /**
@@ -233,17 +306,42 @@ class InjectionManager(
     }
   }
 
-  /** Queries the device for the PID of the specified package. */
-  private suspend fun getPid(deviceSelector: DeviceSelector, packageName: String): String {
-    val result = adbSession.deviceServices.shellAsText(deviceSelector, "pidof $packageName")
-    val stdout = result.stdout.trim()
-    if (result.exitCode != 0 || stdout.isEmpty()) {
+  /**
+   * Queries the device for the PID of the target application: the process owned by [packageUid], preferring the one hosting the top
+   * activity when the app has several. Under legacy sharedUserId, sibling packages own the same UID, so their processes are candidates too.
+   */
+  private suspend fun getPid(deviceSelector: DeviceSelector, packageName: String, packageUid: Int): String {
+    val candidatePids = uidResolver.pidsForUid(packageUid)
+    if (candidatePids.isEmpty()) {
       throw IllegalStateException("The application '$packageName' is not running on the device. Please start the app and try again.")
     }
-    // pidof can return multiple PIDs if there are multiple processes.
-    // We take the first one, which is usually the main process.
-    // TODO: Handle multi-process apps more robustly.
-    return stdout.split(" ")[0]
+    if (candidatePids.size == 1) {
+      // If packageName has only one pid associated to it, use that.
+      // This is going to be the case for most apps.
+      return candidatePids[0]
+    }
+
+    // For multi-process applications, check if any of the pids is the pid of the foreground activity
+    val topActivityPid = getTopActivityPid(deviceSelector, candidatePids)
+    if (topActivityPid != null) {
+      return topActivityPid
+    }
+
+    // Fall back to the first candidate PID
+    return candidatePids[0]
+  }
+
+  /** Queries `dumpsys activity processes` to identify the PID currently hosting the top (foreground) activity. */
+  private suspend fun getTopActivityPid(deviceSelector: DeviceSelector, candidatePids: List<String>): String? {
+    return try {
+      val output = adbSession.deviceServices.shellAsText(deviceSelector, TOP_ACTIVITY_SHELL_COMMAND).stdout
+      val candidateSet = candidatePids.toSet()
+      parseTopActivityProcesses(output).firstOrNull { it.pid in candidateSet }?.pid
+    } catch (e: CancellationException) {
+      throw e
+    } catch (_: Exception) {
+      null
+    }
   }
 
   /** Queries the device for the absolute path to the app's data directory. */
@@ -376,11 +474,11 @@ class InjectionManager(
     return remoteTmpPath
   }
 
-  private suspend fun attachAgent(deviceSelector: DeviceSelector, packageName: String, pid: String) {
+  private suspend fun attachAgent(deviceSelector: DeviceSelector, pid: String, serverToken: String) {
     val appPath = "$appDataDir/$AGENT_FILE_NAME"
     val appJarPath = "$appDataDir/$SERVICE_JAR_FILE_NAME"
     val appPayloadJarPath = "$appDataDir/$PAYLOAD_JAR_FILE_NAME"
-    val attachCmd = "cmd activity attach-agent $packageName \"$appPath=$appJarPath;$appPayloadJarPath;$pid\""
+    val attachCmd = "cmd activity attach-agent $pid \"$appPath=$appJarPath;$appPayloadJarPath;$serverToken\""
     runShellCommand(deviceSelector, attachCmd)
   }
 

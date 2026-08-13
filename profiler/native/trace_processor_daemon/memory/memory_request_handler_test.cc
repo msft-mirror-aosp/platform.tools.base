@@ -41,9 +41,17 @@ using ::perfetto::trace_processor::ReadTrace;
 using ::perfetto::trace_processor::TraceProcessor;
 using proto::NativeAllocationContext;
 
-const std::string TESTDATA_PATH(
+const std::string RAW_HEAPPROFD_PATH(
     "tools/base/profiler/native/trace_processor_daemon/testdata/"
     "unity.heapprofd");
+
+const std::string TAR_PATH(
+    "tools/base/profiler/native/trace_processor_daemon/testdata/"
+    "unity.tar");
+
+const std::string TAR_WITH_HEAPPROFD_EXT_PATH(
+    "tools/base/profiler/native/trace_processor_daemon/testdata/"
+    "deobfuscated.heapprofd");
 
 std::unique_ptr<TraceProcessor> LoadTrace(std::string trace_path) {
   Config config;
@@ -54,8 +62,10 @@ std::unique_ptr<TraceProcessor> LoadTrace(std::string trace_path) {
   return tp;
 }
 
-TEST(MemoryRequestHandlerTest, TestBase64Encoded) {
-  auto tp = LoadTrace(TESTDATA_PATH);
+// Validates that frame names and modules are correctly demangled and base64
+// encoded for raw heapprofd traces.
+TEST(MemoryRequestHandlerTest, TestBase64EncodedRawHeapprofd) {
+  auto tp = LoadTrace(RAW_HEAPPROFD_PATH);
   MemoryRequestHandler handler{tp.get()};
   NativeAllocationContext context;
   handler.PopulateEvents(&context);
@@ -72,8 +82,10 @@ TEST(MemoryRequestHandlerTest, TestBase64Encoded) {
   EXPECT_TRUE(absl::Base64Unescape(context.frames(0).module(), &dest));
 }
 
-TEST(MemoryRequestHandlerTest, TestMemoryDataPopulated) {
-  auto tp = LoadTrace(TESTDATA_PATH);
+// Validates that memory allocations, pointers, and frames are populated
+// correctly for raw heapprofd traces.
+TEST(MemoryRequestHandlerTest, TestMemoryDataPopulatedRawHeapprofd) {
+  auto tp = LoadTrace(RAW_HEAPPROFD_PATH);
   MemoryRequestHandler handler{tp.get()};
   NativeAllocationContext context;
   handler.PopulateEvents(&context);
@@ -90,6 +102,48 @@ TEST(MemoryRequestHandlerTest, TestMemoryDataPopulated) {
   EXPECT_LT(frame_id, context.frames_size());
   // Validate frame has a name
   EXPECT_STRNE(context.frames(frame_id).name().c_str(), "");
+}
+
+// Validates that memory allocations, pointers, and frames are populated
+// correctly from a TAR archive.
+TEST(MemoryRequestHandlerTest, TestMemoryDataPopulatedTar) {
+  auto tp = LoadTrace(TAR_PATH);
+  MemoryRequestHandler handler{tp.get()};
+  NativeAllocationContext context;
+  handler.PopulateEvents(&context);
+  EXPECT_EQ(context.allocations_size(), 473);
+  EXPECT_EQ(context.pointers_size(), 1484);
+  EXPECT_EQ(context.frames_size(), 599);
+
+  // Validate allocations point to a valid stack
+  long long stack_id = context.allocations(0).stack_id();
+  EXPECT_LT(stack_id, context.pointers_size());
+  // Validate stack points to a valid frame
+  long frame_id = context.pointers().at(stack_id).frame_id();
+  EXPECT_NE(frame_id, 0);
+  EXPECT_LT(frame_id, context.frames_size());
+  // Validate frame has a name
+  EXPECT_STRNE(context.frames(frame_id).name().c_str(), "");
+}
+
+// Validates that frames are correctly deobfuscated when parsing a TAR archive
+// with .heapprofd extension. The TAR archive contains mappings.pb file which is
+// used for deobfuscation.
+TEST(MemoryRequestHandlerTest, TestMemoryDataPopulatedTarWithHeapprofdExt) {
+  auto tp = LoadTrace(TAR_WITH_HEAPPROFD_EXT_PATH);
+  MemoryRequestHandler handler{tp.get()};
+  NativeAllocationContext context;
+  handler.PopulateEvents(&context);
+
+  EXPECT_EQ(context.allocations_size(), 2);
+  EXPECT_EQ(context.pointers_size(), 2);
+  EXPECT_EQ(context.frames_size(), 1);
+
+  // Validate the frame was deobfuscated using the mapping
+  std::string name;
+  EXPECT_TRUE(absl::Base64Unescape(context.frames(0).name(), &name));
+  EXPECT_NE(name, "a.f1");
+  EXPECT_EQ(name, "Bar.function1");
 }
 
 }  // namespace

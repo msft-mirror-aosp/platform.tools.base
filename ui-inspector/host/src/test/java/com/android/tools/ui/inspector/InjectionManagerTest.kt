@@ -23,7 +23,12 @@ import com.android.adblib.DeviceSelector
 import com.android.adblib.DeviceState
 import com.android.adblib.testing.FakeAdbSession
 import com.android.tools.ui.inspector.common.ProtocolConstants
+import com.android.tools.ui.inspector.printer.UiDumpPrinter
 import com.google.common.truth.Truth.assertThat
+import java.io.ByteArrayOutputStream
+import java.io.PrintStream
+import java.net.ServerSocket
+import java.nio.file.Files
 import java.nio.file.Path
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.runTest
@@ -45,10 +50,24 @@ class InjectionManagerTest {
   private lateinit var dummyAgent: Path
   private lateinit var dummyJar: Path
   private lateinit var dummyPayload: Path
+  private lateinit var dummyViewInspector: Path
   private lateinit var agentPathResolver: (String) -> Path
 
   private val deviceSerial = "123"
   private val packageName = "com.example"
+
+  /** The digest of the four dummy artifacts, all empty files: SHA-256 over four zero 64-bit lengths, truncated to 12 hex characters. */
+  private val artifactDigest = "66687aadf862"
+
+  private fun serverToken(pid: String) = "${pid}_$artifactDigest"
+
+  private fun socketName(pid: String) = "ui_inspector_${serverToken(pid)}"
+
+  private val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
+  private val settingsSeparator = "__UI_INSPECTOR_SETTINGS_SEPARATOR__"
+  private val readSettingsCmd =
+    "settings get global debug_view_attributes ; echo $settingsSeparator ; settings get global debug_view_attributes_application_package"
+  private val putSettingsCmd = "settings put global debug_view_attributes_application_package $packageName"
 
   @Before
   fun setUp() {
@@ -62,11 +81,11 @@ class InjectionManagerTest {
     dummyAgent = tempFolder.newFile("lib_ui_inspector_agent.so").toPath()
     dummyJar = tempFolder.newFile("lib_ui_inspector_service.jar").toPath()
     dummyPayload = tempFolder.newFile("lib_ui_inspector_payload.jar").toPath()
+    dummyViewInspector = tempFolder.newFile("view-inspector.jar").toPath()
 
     agentPathResolver = { abi -> dummyAgent }
 
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "settings put global debug_view_attributes 1", "")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "date +\"%m-%d %H:%M:%S.000\"", "06-24 15:44:32.000\n")
     listOf(
         "/data/local/tmp/lib_ui_inspector_agent.so",
@@ -90,13 +109,14 @@ class InjectionManagerTest {
         agentPathResolver,
         dummyJar,
         dummyPayload,
+        dummyViewInspector,
         tempFileSuffixGenerator = { "test.tmp" },
       )
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
     // Mock expected shell commands for the injection flow
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pidof $packageName", "1234\n")
+    configurePackageUidAndProcesses()
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
     val setupCmd =
       "run-as $packageName sh -c '" +
@@ -110,16 +130,16 @@ class InjectionManagerTest {
     fakeSession.deviceServices.configureShellCommand(deviceSelector, setupCmd, "")
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
-      "cmd activity attach-agent $packageName \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;1234\"",
+      "cmd activity attach-agent 1234 \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;${serverToken("1234")}\"",
       "",
     )
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
-      "cat /proc/net/unix | grep ui_inspector_1234 || true",
-      "ui_inspector_1234\n",
+      "cat /proc/net/unix | grep ${socketName("1234")} || true",
+      "${socketName("1234")}\n",
     )
 
-    val port = injectionManager.injectAndAttach()
+    val port = injectionManager.injectAndAttach(needsDebugViewAttributes = false)
     assertThat(port).isEqualTo("12345")
 
     // Verify that syncSend was called with correct parameters
@@ -134,6 +154,70 @@ class InjectionManagerTest {
   }
 
   @Test
+  fun testInjectAndAttach_staleSocketFromDifferentBuild_timesOut() = runTest {
+    val injectionManager = createInjectionManager()
+    // A resident server from different artifacts listens on a different name: only the exact digest-scoped socket satisfies the wait, a
+    // legacy pid-only socket does not.
+    configureSuccessfulInjection(socketGrepOutput = "ui_inspector_1234\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "logcat -d -t '06-24 15:44:32.000' --pid=1234 *:E", "")
+
+    try {
+      injectionManager.injectAndAttach(needsDebugViewAttributes = false)
+      fail("Expected timeout waiting for the digest-scoped socket")
+    } catch (e: IllegalStateException) {
+      assertThat(e.message).contains("Timed out waiting for agent socket ${socketName("1234")}")
+    }
+  }
+
+  @Test
+  fun testInjectAndAttach_serverTokenCoversShippedArtifactContents() = runTest {
+    Files.write(dummyAgent, byteArrayOf(1))
+    Files.write(dummyJar, byteArrayOf(2))
+    Files.write(dummyPayload, byteArrayOf(3))
+    Files.write(dummyViewInspector, byteArrayOf(4))
+    val token = "1234_" + shippedArtifactsDigest(dummyAgent, dummyJar, dummyPayload, dummyViewInspector)
+    assertThat(token).isNotEqualTo(serverToken("1234"))
+    val injectionManager = createInjectionManager()
+    configureSuccessfulInjection(token = token)
+
+    val port = injectionManager.injectAndAttach(needsDebugViewAttributes = false)
+
+    assertThat(port).isEqualTo("12345")
+    assertThat(fakeSession.deviceServices.shellV2Requests.map { it.command })
+      .contains("cat /proc/net/unix | grep ui_inspector_$token || true")
+  }
+
+  @Test
+  fun testInjectAndAttach_missingArtifactFailsBeforeDeviceMutation() = runTest {
+    val injectionManager =
+      InjectionManager(
+        testSession,
+        deviceSerial,
+        packageName,
+        agentPathResolver,
+        dummyJar,
+        dummyPayload,
+        tempFolder.root.toPath().resolve("absent-view-inspector.jar"),
+        tempFileSuffixGenerator = { "test.tmp" },
+      )
+    configureSuccessfulInjection()
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, readSettingsCmd, "null\n$settingsSeparator\nnull\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, putSettingsCmd, "")
+
+    try {
+      injectionManager.injectAndAttach(needsDebugViewAttributes = true)
+      fail("Expected IllegalStateException for a missing artifact")
+    } catch (e: IllegalStateException) {
+      assertThat(e.message).contains("File not found on filesystem")
+    }
+
+    assertThat(testDeviceServices.recordedSyncSends).isEmpty()
+    val commands = fakeSession.deviceServices.shellV2Requests.map { it.command }
+    assertThat(commands.filter { it.startsWith("settings put ") }).isEmpty()
+    assertThat(commands.filter { it.startsWith("cmd activity attach-agent") }).isEmpty()
+  }
+
+  @Test
   fun testInjectAndAttach_CommandFails() = runTest {
     val injectionManager =
       InjectionManager(
@@ -143,12 +227,13 @@ class InjectionManagerTest {
         agentPathResolver,
         dummyJar,
         dummyPayload,
+        dummyViewInspector,
         tempFileSuffixGenerator = { "test.tmp" },
       )
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pidof $packageName", "1234\n")
+    configurePackageUidAndProcesses()
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
 
     val setupCmd =
@@ -171,7 +256,7 @@ class InjectionManagerTest {
     )
 
     try {
-      injectionManager.injectAndAttach()
+      injectionManager.injectAndAttach(needsDebugViewAttributes = false)
       fail("Expected IllegalStateException was not thrown")
     } catch (e: IllegalStateException) {
       assertThat(e.message).isEqualTo("Command '$setupCmd' failed with exit code 1. Stderr: Package is not debuggable")
@@ -199,6 +284,7 @@ class InjectionManagerTest {
         agentPathResolver,
         dummyJar,
         dummyPayload,
+        dummyViewInspector,
         tempFileSuffixGenerator = { "test.tmp" },
       )
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
@@ -206,7 +292,7 @@ class InjectionManagerTest {
     // Mock expected shell commands for the injection flow
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pidof $packageName", "1234\n")
+    configurePackageUidAndProcesses()
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
 
     val setupCmd =
@@ -221,12 +307,12 @@ class InjectionManagerTest {
     fakeSession.deviceServices.configureShellCommand(deviceSelector, setupCmd, "")
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
-      "cmd activity attach-agent $packageName \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;1234\"",
+      "cmd activity attach-agent 1234 \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;${serverToken("1234")}\"",
       "",
     )
 
     // 1. Configure the socket check to fail (socket is not created by the agent)
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "cat /proc/net/unix | grep ui_inspector_1234 || true", "")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "cat /proc/net/unix | grep ${socketName("1234")} || true", "")
 
     // 2. Configure logcat command to return a mock agent crash log
     val logcatCmd = "logcat -d -t '06-24 15:44:32.000' --pid=1234 *:E"
@@ -236,7 +322,7 @@ class InjectionManagerTest {
     fakeSession.deviceServices.configureShellCommand(deviceSelector, logcatCmd, mockErrorLog)
 
     try {
-      injectionManager.injectAndAttach()
+      injectionManager.injectAndAttach(needsDebugViewAttributes = false)
       fail("Expected IllegalStateException due to agent bootstrap failure")
     } catch (e: IllegalStateException) {
       assertThat(e.message).contains("Failed to attach UI Inspector agent. Agent error in logcat:")
@@ -256,6 +342,7 @@ class InjectionManagerTest {
         agentPathResolver,
         dummyJar,
         dummyPayload,
+        dummyViewInspector,
         tempFileSuffixGenerator = { "test.tmp" },
       )
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
@@ -263,12 +350,12 @@ class InjectionManagerTest {
     // Mock injectAndAttach dependencies so we can initialize appDataDir
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pidof $packageName", "1234\n")
+    configurePackageUidAndProcesses()
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
-      "cat /proc/net/unix | grep ui_inspector_1234 || true",
-      "ui_inspector_1234\n",
+      "cat /proc/net/unix | grep ${socketName("1234")} || true",
+      "${socketName("1234")}\n",
     )
     val agentSetupCmd =
       "run-as $packageName sh -c '" +
@@ -281,11 +368,11 @@ class InjectionManagerTest {
         "chmod 444 lib_ui_inspector_payload.jar'"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, agentSetupCmd, "")
     val attachCmd =
-      "cmd activity attach-agent $packageName \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;1234\""
+      "cmd activity attach-agent 1234 \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;${serverToken("1234")}\""
     fakeSession.deviceServices.configureShellCommand(deviceSelector, attachCmd, "")
 
     // Initialize appDataDir
-    injectionManager.injectAndAttach()
+    injectionManager.injectAndAttach(needsDebugViewAttributes = false)
 
     val inspectorJar = tempFolder.newFile("my-inspector.jar").toPath()
     val inspector = InspectorMetadata(id = "my.inspector", localJarPath = inspectorJar)
@@ -301,12 +388,13 @@ class InjectionManagerTest {
   @Test
   fun testQueryAppDataDir_Fails() = runTest {
     val dummyPayload = tempFolder.root.toPath().resolve("lib_ui_inspector_payload.jar")
-    val injectionManager = InjectionManager(testSession, deviceSerial, packageName, agentPathResolver, dummyJar, dummyPayload)
+    val injectionManager =
+      InjectionManager(testSession, deviceSerial, packageName, agentPathResolver, dummyJar, dummyPayload, dummyViewInspector)
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
 
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pidof $packageName", "1234\n")
+    configurePackageUidAndProcesses()
 
     // Configure run-as pwd to fail
     fakeSession.deviceServices.configureShellCommand(
@@ -318,7 +406,7 @@ class InjectionManagerTest {
     )
 
     try {
-      injectionManager.injectAndAttach()
+      injectionManager.injectAndAttach(needsDebugViewAttributes = false)
       fail("Expected IllegalStateException for failing run-as pwd")
     } catch (e: IllegalStateException) {
       assertThat(e.message)
@@ -329,32 +417,148 @@ class InjectionManagerTest {
   }
 
   @Test
-  fun testGetPid_Fails() = runTest {
+  fun testInjectAndAttach_notRunningPreservesError() = runTest {
     val dummyPayload = tempFolder.root.toPath().resolve("lib_ui_inspector_payload.jar")
-    val injectionManager = InjectionManager(testSession, deviceSerial, packageName, agentPathResolver, dummyJar, dummyPayload)
+    val injectionManager =
+      InjectionManager(testSession, deviceSerial, packageName, agentPathResolver, dummyJar, dummyPayload, dummyViewInspector)
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
 
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
-
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      "pm list packages -U --user 0 $packageName",
+      "package:$packageName uid:10123\n",
+    )
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
-
-    // Configure pidof to fail
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pidof $packageName", stdout = "", stderr = "", exitCode = 1)
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "ps -A -o PID,UID,NAME", "PID UID NAME\n")
 
     try {
-      injectionManager.injectAndAttach()
-      fail("Expected IllegalStateException for failing pidof")
+      injectionManager.injectAndAttach(needsDebugViewAttributes = false)
+      fail("Expected IllegalStateException for an app with no running process")
     } catch (e: IllegalStateException) {
-      assertThat(e.message).contains("The application '$packageName' is not running on the device. Please start the app and try again.")
+      assertThat(e.message).isEqualTo("The application '$packageName' is not running on the device. Please start the app and try again.")
     }
+  }
+
+  @Test
+  fun testInjectAndAttach_psAdbExceptionPropagates() = runTest {
+    val dummyPayload = tempFolder.root.toPath().resolve("lib_ui_inspector_payload.jar")
+    val injectionManager =
+      InjectionManager(testSession, deviceSerial, packageName, agentPathResolver, dummyJar, dummyPayload, dummyViewInspector)
+    val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
+
+    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      "pm list packages -U --user 0 $packageName",
+      "package:$packageName uid:10123\n",
+    )
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
+
+    // The ps command is deliberately unconfigured so FakeAdbDeviceServices throws an exception simulating an ADB failure.
+
+    try {
+      injectionManager.injectAndAttach(needsDebugViewAttributes = false)
+      fail("Expected exception for unconfigured ps command")
+    } catch (e: Exception) {
+      assertThat(e.message).doesNotContain("The application '$packageName' is not running on the device")
+      assertThat(e.message).contains("Command not setup")
+    }
+  }
+
+  @Test
+  fun testInjectAndAttach_packageNotInstalledPreservesAccessError() = runTest {
+    val injectionManager = createInjectionManager()
+    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pm list packages -U --user 0 $packageName", "")
+
+    var exception: IllegalStateException? = null
+    try {
+      injectionManager.injectAndAttach(needsDebugViewAttributes = false)
+      fail("Expected package-not-installed failure")
+    } catch (e: IllegalStateException) {
+      exception = e
+    }
+
+    assertThat(exception!!.message)
+      .isEqualTo(
+        "Failed to access the application '$packageName'. Please make sure the app is installed, debuggable, and running under the current user."
+      )
+    val commands = fakeSession.deviceServices.shellV2Requests.map { it.command }
+    assertThat(commands).doesNotContain("run-as $packageName pwd")
+    assertThat(commands).doesNotContain("ps -A -o PID,UID,NAME")
+  }
+
+  @Test
+  fun testInjectAndAttach_pmAdbExceptionPropagates() = runTest {
+    val injectionManager = createInjectionManager()
+    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
+
+    try {
+      injectionManager.injectAndAttach(needsDebugViewAttributes = false)
+      fail("Expected exception for unconfigured pm command")
+    } catch (e: Exception) {
+      assertThat(e.message).doesNotContain("Failed to access the application")
+      assertThat(e.message).contains("Command not setup")
+    }
+  }
+
+  @Test
+  fun testInjectAndAttach_acceptsColonSuffixCandidate() = runTest {
+    val injectionManager = createInjectionManager()
+    configureSuccessfulInjection(processName = "$packageName:ui")
+
+    val port = injectionManager.injectAndAttach(needsDebugViewAttributes = false)
+
+    assertThat(port).isEqualTo("12345")
+  }
+
+  @Test
+  fun testResolveAndInject_fullyQualifiedProcessName() = runTest {
+    val targetPackage = "com.example.qaviews"
+    val processName = "com.example.uiprocess"
+    val pid = "4321"
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      TOP_ACTIVITY_SHELL_COMMAND,
+      "    APP  UID $pid:$processName/u0a123 (top-activity)\n",
+    )
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "ps -o UID= -p $pid", "10123\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pm list packages -U --user 0", "package:$targetPackage uid:10123\n")
+    configureSuccessfulInjection(targetPackage = targetPackage, pid = pid, processName = processName)
+
+    val resolvedPackage = resolveTargetPackage(testSession, deviceSerial, requested = null)
+    val injectionManager =
+      InjectionManager(
+        testSession,
+        deviceSerial,
+        resolvedPackage,
+        agentPathResolver,
+        dummyJar,
+        dummyPayload,
+        dummyViewInspector,
+        tempFileSuffixGenerator = { "test.tmp" },
+      )
+
+    val port = injectionManager.injectAndAttach(needsDebugViewAttributes = false)
+
+    assertThat(resolvedPackage).isEqualTo(targetPackage)
+    assertThat(port).isEqualTo("12345")
+    assertThat(fakeSession.deviceServices.shellV2Requests.map { it.command })
+      .contains(
+        "cmd activity attach-agent $pid \"/data/data/$targetPackage/lib_ui_inspector_agent.so=/data/data/$targetPackage/lib_ui_inspector_service.jar;/data/data/$targetPackage/lib_ui_inspector_payload.jar;${serverToken(pid)}\""
+      )
   }
 
   @Test
   fun testInvalidPackageName_Throws() {
     val exception =
       assertThrows(IllegalArgumentException::class.java) {
-        InjectionManager(testSession, deviceSerial, "com.example; id", agentPathResolver, dummyJar, dummyPayload)
+        InjectionManager(testSession, deviceSerial, "com.example; id", agentPathResolver, dummyJar, dummyPayload, dummyViewInspector)
       }
     assertThat(exception.message).contains("Invalid package name")
   }
@@ -364,7 +568,7 @@ class InjectionManagerTest {
     val longPackageName = "a".repeat(256)
     val exception =
       assertThrows(IllegalArgumentException::class.java) {
-        InjectionManager(testSession, deviceSerial, longPackageName, agentPathResolver, dummyJar, dummyPayload)
+        InjectionManager(testSession, deviceSerial, longPackageName, agentPathResolver, dummyJar, dummyPayload, dummyViewInspector)
       }
     assertThat(exception.message).contains("Invalid package name")
   }
@@ -373,21 +577,22 @@ class InjectionManagerTest {
   fun testInvalidSerial_Throws() {
     val exception =
       assertThrows(IllegalArgumentException::class.java) {
-        InjectionManager(testSession, "serial; rm -rf /", packageName, agentPathResolver, dummyJar, dummyPayload)
+        InjectionManager(testSession, "serial; rm -rf /", packageName, agentPathResolver, dummyJar, dummyPayload, dummyViewInspector)
       }
     assertThat(exception.message).contains("Invalid serial number")
   }
 
   @Test
   fun testUnsupportedApi_Throws() = runTest {
-    val injectionManager = InjectionManager(testSession, deviceSerial, packageName, agentPathResolver, dummyJar, dummyPayload)
+    val injectionManager =
+      InjectionManager(testSession, deviceSerial, packageName, agentPathResolver, dummyJar, dummyPayload, dummyViewInspector)
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
 
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n27\n")
 
     try {
-      injectionManager.injectAndAttach()
+      injectionManager.injectAndAttach(needsDebugViewAttributes = false)
       fail("Expected IllegalStateException for unsupported API level")
     } catch (e: IllegalStateException) {
       assertThat(e.message).contains("The UI Inspector only supports API level ${ProtocolConstants.MIN_SUPPORTED_API_LEVEL} and above")
@@ -397,14 +602,15 @@ class InjectionManagerTest {
 
   @Test
   fun testFailedToRetrieveSdkVersion_Throws() = runTest {
-    val injectionManager = InjectionManager(testSession, deviceSerial, packageName, agentPathResolver, dummyJar, dummyPayload)
+    val injectionManager =
+      InjectionManager(testSession, deviceSerial, packageName, agentPathResolver, dummyJar, dummyPayload, dummyViewInspector)
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
 
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\ninvalid_sdk\n")
 
     try {
-      injectionManager.injectAndAttach()
+      injectionManager.injectAndAttach(needsDebugViewAttributes = false)
       fail("Expected IllegalStateException for failed SDK version retrieval")
     } catch (e: IllegalStateException) {
       assertThat(e.message).contains("Failed to retrieve device SDK API level")
@@ -413,14 +619,15 @@ class InjectionManagerTest {
 
   @Test
   fun testFailedToRetrieveAbi_Throws() = runTest {
-    val injectionManager = InjectionManager(testSession, deviceSerial, packageName, agentPathResolver, dummyJar, dummyPayload)
+    val injectionManager =
+      InjectionManager(testSession, deviceSerial, packageName, agentPathResolver, dummyJar, dummyPayload, dummyViewInspector)
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
 
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "\n30\n")
 
     try {
-      injectionManager.injectAndAttach()
+      injectionManager.injectAndAttach(needsDebugViewAttributes = false)
       fail("Expected IllegalStateException for failed CPU ABI retrieval")
     } catch (e: IllegalStateException) {
       assertThat(e.message).contains("Failed to retrieve device CPU ABI")
@@ -438,6 +645,7 @@ class InjectionManagerTest {
         agentPathResolver,
         dummyJar,
         dummyPayload,
+        dummyViewInspector,
         tempFileSuffixGenerator = { "test.tmp" },
       )
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
@@ -445,12 +653,12 @@ class InjectionManagerTest {
     // Mock injectAndAttach dependencies so we can initialize appDataDir
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pidof $packageName", "1234\n")
+    configurePackageUidAndProcesses()
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
-      "cat /proc/net/unix | grep ui_inspector_1234 || true",
-      "ui_inspector_1234\n",
+      "cat /proc/net/unix | grep ${socketName("1234")} || true",
+      "${socketName("1234")}\n",
     )
 
     val agentSetupCmd =
@@ -463,10 +671,10 @@ class InjectionManagerTest {
         "chmod 444 lib_ui_inspector_payload.jar'"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, agentSetupCmd, "")
     val attachCmd =
-      "cmd activity attach-agent $packageName \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;1234\""
+      "cmd activity attach-agent 1234 \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;${serverToken("1234")}\""
     fakeSession.deviceServices.configureShellCommand(deviceSelector, attachCmd, "")
 
-    injectionManager.injectAndAttach()
+    injectionManager.injectAndAttach(needsDebugViewAttributes = false)
 
     val inspectorJar = tempFolder.newFile("my-inspector.jar").toPath()
     val inspector = InspectorMetadata(id = "my.inspector", localJarPath = inspectorJar)
@@ -487,5 +695,360 @@ class InjectionManagerTest {
     val rmRequests =
       fakeSession.deviceServices.shellV2Requests.filter { it.command == "rm -f '/data/local/tmp/ui-inspector/my-inspector.jar.test.tmp'" }
     assertThat(rmRequests).isNotEmpty()
+  }
+
+  @Test
+  fun testInjectAndAttach_multiProcess_topActivitySelection() = runTest {
+    val injectionManager =
+      InjectionManager(
+        testSession,
+        deviceSerial,
+        packageName,
+        agentPathResolver = agentPathResolver,
+        serviceJarPath = dummyJar,
+        payloadJarPath = dummyPayload,
+        viewInspectorJarPath = dummyViewInspector,
+        tempFileSuffixGenerator = { "test.tmp" },
+      )
+    val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
+    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
+    // ps returns two PIDs with the package UID: 5678 (secondary process) and 1234 (main UI process).
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      "pm list packages -U --user 0 $packageName",
+      "package:$packageName uid:10123\n",
+    )
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      "ps -A -o PID,UID,NAME",
+      "PID UID NAME\n5678 10123 $packageName:worker\n1234 10123 $packageName\n",
+    )
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      "dumpsys activity processes | grep top-activity",
+      "  Proc #0: adj=top /F/TOP TRM=0 1234:$packageName/u0a123 (top-activity)\n",
+    )
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
+    val setupCmd =
+      "run-as $packageName sh -c '" +
+        "rm -f lib_ui_inspector_agent.so lib_ui_inspector_service.jar lib_ui_inspector_payload.jar && " +
+        "cat /data/local/tmp/lib_ui_inspector_agent.so > lib_ui_inspector_agent.so && " +
+        "cat /data/local/tmp/lib_ui_inspector_service.jar > lib_ui_inspector_service.jar && " +
+        "cat /data/local/tmp/lib_ui_inspector_payload.jar > lib_ui_inspector_payload.jar && " +
+        "chmod 444 lib_ui_inspector_agent.so && " +
+        "chmod 444 lib_ui_inspector_service.jar && " +
+        "chmod 444 lib_ui_inspector_payload.jar'"
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, setupCmd, "")
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      "cmd activity attach-agent 1234 \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;${serverToken("1234")}\"",
+      "",
+    )
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      "cat /proc/net/unix | grep ${socketName("1234")} || true",
+      "${socketName("1234")}\n",
+    )
+
+    val port = injectionManager.injectAndAttach(needsDebugViewAttributes = false)
+    assertThat(port).isEqualTo("12345")
+  }
+
+  @Test
+  fun testInjectAndAttach_withoutResolutionStackDemand_leavesSettingsUntouched() = runTest {
+    val injectionManager = createInjectionManager()
+    configureSuccessfulInjection()
+
+    injectionManager.injectAndAttach(needsDebugViewAttributes = false)
+
+    val settingsCommands = fakeSession.deviceServices.shellV2Requests.map { it.command }.filter { it.startsWith("settings ") }
+    assertThat(settingsCommands).isEmpty()
+  }
+
+  @Test
+  fun testInjectAndAttach_globalDebugViewAttributesAlreadyEnabled_skipsWrite() = runTest {
+    val injectionManager = createInjectionManager()
+    configureSuccessfulInjection()
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, readSettingsCmd, "1\n$settingsSeparator\nnull\n")
+
+    injectionManager.injectAndAttach(needsDebugViewAttributes = true)
+
+    val settingsCommands = fakeSession.deviceServices.shellV2Requests.map { it.command }.filter { it.startsWith("settings ") }
+    assertThat(settingsCommands).containsExactly(readSettingsCmd)
+  }
+
+  @Test
+  fun testInjectAndAttach_perAppSettingAlreadyNamesPackage_skipsWrite() = runTest {
+    val injectionManager = createInjectionManager()
+    configureSuccessfulInjection()
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, readSettingsCmd, "null\n$settingsSeparator\n$packageName\n")
+
+    injectionManager.injectAndAttach(needsDebugViewAttributes = true)
+
+    val settingsCommands = fakeSession.deviceServices.shellV2Requests.map { it.command }.filter { it.startsWith("settings ") }
+    assertThat(settingsCommands).containsExactly(readSettingsCmd)
+  }
+
+  @Test
+  fun testInjectAndAttach_enablesPerAppDebugViewAttributes_andPrintsNotice() = runTest {
+    val injectionManager = createInjectionManager()
+    configureSuccessfulInjection()
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, readSettingsCmd, "null\n$settingsSeparator\nnull\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, putSettingsCmd, "")
+
+    val stderr = captureStderr { injectionManager.injectAndAttach(needsDebugViewAttributes = true) }
+
+    val commands = fakeSession.deviceServices.shellV2Requests.map { it.command }
+    assertThat(commands).contains(putSettingsCmd)
+    assertThat(stderr).contains("settings delete global debug_view_attributes_application_package")
+    // The pid is captured before the settings flip: the activity relaunch keeps the process alive, and reading the pid first avoids
+    // mutating settings when the target is not running.
+    val processLookupIndex = commands.indexOf("ps -A -o PID,UID,NAME")
+    val settingsReadIndex = commands.indexOf(readSettingsCmd)
+    assertThat(processLookupIndex).isAtLeast(0)
+    assertThat(processLookupIndex).isLessThan(settingsReadIndex)
+  }
+
+  @Test
+  fun testInjectAndAttach_settingsReadFails_failsWithoutWriting() = runTest {
+    val injectionManager = createInjectionManager()
+    configureSuccessfulInjection()
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, readSettingsCmd, stdout = "", stderr = "boom", exitCode = 1)
+
+    try {
+      injectionManager.injectAndAttach(needsDebugViewAttributes = true)
+      fail("Expected IllegalStateException for failing settings read")
+    } catch (e: IllegalStateException) {
+      assertThat(e.message).contains("failed with exit code 1")
+    }
+
+    val putCommands = fakeSession.deviceServices.shellV2Requests.map { it.command }.filter { it.startsWith("settings put ") }
+    assertThat(putCommands).isEmpty()
+  }
+
+  @Test
+  fun testInjectAndAttach_malformedSettingsReadOutput_failsWithoutWriting() = runTest {
+    val injectionManager = createInjectionManager()
+    configureSuccessfulInjection()
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, readSettingsCmd, "garbage without the separator\n")
+
+    try {
+      injectionManager.injectAndAttach(needsDebugViewAttributes = true)
+      fail("Expected IllegalStateException for malformed settings output")
+    } catch (e: IllegalStateException) {
+      assertThat(e.message).contains("Unexpected output while reading debug-view-attributes settings")
+    }
+
+    val putCommands = fakeSession.deviceServices.shellV2Requests.map { it.command }.filter { it.startsWith("settings put ") }
+    assertThat(putCommands).isEmpty()
+  }
+
+  @Test
+  fun testInjectAndAttach_settingsPutFails_throwsWithoutNotice() = runTest {
+    val injectionManager = createInjectionManager()
+    configureSuccessfulInjection()
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, readSettingsCmd, "null\n$settingsSeparator\nnull\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, putSettingsCmd, stdout = "", stderr = "denied", exitCode = 1)
+
+    val stderr = captureStderr {
+      try {
+        injectionManager.injectAndAttach(needsDebugViewAttributes = true)
+        fail("Expected IllegalStateException for failing settings put")
+      } catch (e: IllegalStateException) {
+        assertThat(e.message).contains("failed with exit code 1")
+      }
+    }
+
+    assertThat(stderr).doesNotContain("settings delete global")
+  }
+
+  @Test
+  fun testRemoveAdbForward_killsForwardOnce() = runTest {
+    val injectionManager = createInjectionManager()
+    configureSuccessfulInjection()
+    injectionManager.injectAndAttach(needsDebugViewAttributes = false)
+
+    injectionManager.removeAdbForward()
+    // A second call is a no-op: the forward was already removed.
+    injectionManager.removeAdbForward()
+
+    assertThat(testHostServices.recordedKillForwardCalls).hasSize(1)
+    val (device, localSpec) = testHostServices.recordedKillForwardCalls.single()
+    assertThat(device.toString()).contains(deviceSerial)
+    assertThat(localSpec.toQueryString()).isEqualTo("tcp:12345")
+  }
+
+  @Test
+  fun testRemoveAdbForward_noopWhenInjectionFailedBeforeForward() = runTest {
+    val injectionManager = createInjectionManager()
+    // Nothing configured: injectAndAttach fails at the first device query, before any forward is created.
+    try {
+      injectionManager.injectAndAttach(needsDebugViewAttributes = false)
+      fail("Expected injection to fail")
+    } catch (e: Exception) {}
+
+    injectionManager.removeAdbForward()
+
+    assertThat(testHostServices.recordedKillForwardCalls).isEmpty()
+  }
+
+  @Test
+  fun testDoDumpUi_removesForwardWhenConnectionFails() = runTest {
+    configureSuccessfulInjection()
+    // Forward to a port that is guaranteed closed, so the CLI's socket connection fails right after a successful
+    // injection: the cleanup in runWithConnectedInspectors must still remove the forward.
+    testHostServices.forwardedPort = findClosedPort().toString()
+
+    try {
+      doDumpUiWithNoopPrinter()
+      fail("Expected connection failure")
+    } catch (e: Exception) {}
+
+    assertThat(testHostServices.recordedKillForwardCalls).hasSize(1)
+    assertThat(testHostServices.recordedKillForwardCalls.single().second.toQueryString()).isEqualTo("tcp:${testHostServices.forwardedPort}")
+  }
+
+  @Test
+  fun testDoDumpUi_killForwardFailure_preservesPrimaryFailure() = runTest {
+    configureSuccessfulInjection()
+    testHostServices.forwardedPort = findClosedPort().toString()
+    testHostServices.throwOnKillForward = true
+
+    var thrown: Exception? = null
+    val stderr = captureStderr {
+      try {
+        doDumpUiWithNoopPrinter()
+        fail("Expected connection failure")
+      } catch (e: Exception) {
+        thrown = e
+      }
+    }
+
+    // The connection failure stays the primary error; the cleanup failure is only a warning.
+    assertThat(thrown!!.message).doesNotContain("Simulated killForward failure")
+    assertThat(stderr).contains("failed to remove adb forward")
+  }
+
+  /**
+   * Runs a plain [doDumpUi] with all facets off and a printer that discards output, routing [injectionManagerFactory] to this test's dummy
+   * artifact paths for the duration of the call.
+   */
+  private suspend fun doDumpUiWithNoopPrinter() {
+    val noopPrinter =
+      object : UiDumpPrinter {
+        override fun printDump(uiDump: UiDump) {}
+      }
+    doDumpUi(
+      adbSession = testSession,
+      serial = deviceSerial,
+      packageName = packageName,
+      includeAttributes = false,
+      includeResolutionStack = false,
+      includeSystemComposables = false,
+      includeSemantics = false,
+      composeInspectorJarPath = null,
+      printer = noopPrinter,
+      injectionManagerFactory = { session, serial, pkg ->
+        InjectionManager(
+          session,
+          serial,
+          pkg,
+          agentPathResolver,
+          dummyJar,
+          dummyPayload,
+          dummyViewInspector,
+          tempFileSuffixGenerator = { "test.tmp" },
+        )
+      },
+    )
+  }
+
+  /** Returns a local TCP port that nothing is listening on. */
+  private fun findClosedPort(): Int = ServerSocket(0).use { it.localPort }
+
+  @Test
+  fun testRemoveAdbForward_killFailure_warnsInsteadOfThrowing() = runTest {
+    val injectionManager = createInjectionManager()
+    configureSuccessfulInjection()
+    injectionManager.injectAndAttach(needsDebugViewAttributes = false)
+    testHostServices.throwOnKillForward = true
+
+    val stderr = captureStderr { injectionManager.removeAdbForward() }
+
+    assertThat(stderr).contains("failed to remove adb forward")
+    assertThat(testHostServices.recordedKillForwardCalls).isEmpty()
+  }
+
+  private fun createInjectionManager() =
+    InjectionManager(
+      testSession,
+      deviceSerial,
+      packageName,
+      agentPathResolver,
+      dummyJar,
+      dummyPayload,
+      dummyViewInspector,
+      tempFileSuffixGenerator = { "test.tmp" },
+    )
+
+  private fun configurePackageUidAndProcesses(
+    targetPackage: String = packageName,
+    packageUid: Int = 10123,
+    processOutput: String = "PID UID NAME\n1234 $packageUid $targetPackage\n",
+  ) {
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      "pm list packages -U --user 0 $targetPackage",
+      "package:$targetPackage uid:$packageUid\n",
+    )
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "ps -A -o PID,UID,NAME", processOutput)
+  }
+
+  /** Configures every shell command of the happy-path injection flow, except the debug-view-attributes settings commands. */
+  private fun configureSuccessfulInjection(
+    targetPackage: String = packageName,
+    pid: String = "1234",
+    processName: String = targetPackage,
+    token: String = serverToken(pid),
+    socketGrepOutput: String = "ui_inspector_$token\n",
+  ) {
+    val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
+    configurePackageUidAndProcesses(targetPackage, processOutput = "PID UID NAME\n$pid 10123 $processName\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $targetPackage pwd", "/data/data/$targetPackage\n")
+    val setupCmd =
+      "run-as $targetPackage sh -c '" +
+        "rm -f lib_ui_inspector_agent.so lib_ui_inspector_service.jar lib_ui_inspector_payload.jar && " +
+        "cat /data/local/tmp/lib_ui_inspector_agent.so > lib_ui_inspector_agent.so && " +
+        "cat /data/local/tmp/lib_ui_inspector_service.jar > lib_ui_inspector_service.jar && " +
+        "cat /data/local/tmp/lib_ui_inspector_payload.jar > lib_ui_inspector_payload.jar && " +
+        "chmod 444 lib_ui_inspector_agent.so && " +
+        "chmod 444 lib_ui_inspector_service.jar && " +
+        "chmod 444 lib_ui_inspector_payload.jar'"
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, setupCmd, "")
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      "cmd activity attach-agent $pid \"/data/data/$targetPackage/lib_ui_inspector_agent.so=/data/data/$targetPackage/lib_ui_inspector_service.jar;/data/data/$targetPackage/lib_ui_inspector_payload.jar;$token\"",
+      "",
+    )
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      "cat /proc/net/unix | grep ui_inspector_$token || true",
+      socketGrepOutput,
+    )
+  }
+
+  /** Runs [block] with [System.err] redirected and returns everything it printed. */
+  private inline fun captureStderr(block: () -> Unit): String {
+    val originalErr = System.err
+    val buffer = ByteArrayOutputStream()
+    System.setErr(PrintStream(buffer))
+    try {
+      block()
+    } finally {
+      System.setErr(originalErr)
+    }
+    return buffer.toString()
   }
 }

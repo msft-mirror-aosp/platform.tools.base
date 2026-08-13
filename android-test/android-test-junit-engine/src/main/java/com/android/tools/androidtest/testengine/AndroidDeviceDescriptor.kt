@@ -49,6 +49,29 @@ class AndroidDeviceDescriptor(
   val deviceDisplayName: String = deviceId,
   private val adbControllerFactory: (File) -> AdbController = { AdbController(it) },
   private val jvmtiCodeCoverageAgentPathProvider: () -> Pair<String, String>? = { null },
+  private val findGrpcInfoProvider: (String) -> EmulatorGrpcInfo = ::findGrpcInfo,
+  private val adbApkInstallerFactory:
+    (
+      adb: File, aapt2: File, deviceSerial: String, installTimeoutMs: Long, deviceApiLevelProvider: DeviceApiLevelProvider?,
+    ) -> AdbApkInstaller =
+    { adb, aapt2, serial, timeout, apiLevelProvider ->
+      AdbApkInstaller(adb, aapt2, serial, timeout, deviceApiLevelProvider = apiLevelProvider)
+    },
+  private val instrumentationRunnerFactory:
+    (
+      adb: File,
+      deviceSerial: String,
+      instrumentationRunnerClass: String,
+      testPackageId: String,
+      instrumentationTargetPackageId: String,
+      executionMode: String?,
+      instrumentationArgs: Map<String, String>,
+      listeners: Set<com.android.tools.androidtest.testengine.instrument.AmInstrumentationListener>,
+      agentFilesystemInfo: CoverageAgentFilesystemInfo,
+    ) -> AmInstrumentationRunner =
+    { adb, serial, runnerClass, pkgId, targetPkgId, execMode, args, listeners, agentInfo ->
+      AmInstrumentationRunner(adb, serial, runnerClass, pkgId, targetPkgId, execMode, args, listeners, agentInfo)
+    },
 ) : AbstractTestDescriptor(uniqueId, deviceDisplayName), Node<AndroidTestExecutionContext> {
 
   private val logger = Logger.getLogger(AndroidDeviceDescriptor::class.java.name)
@@ -66,7 +89,10 @@ class AndroidDeviceDescriptor(
   override fun execute(context: AndroidTestExecutionContext, dynamicTestExecutor: Node.DynamicTestExecutor): AndroidTestExecutionContext {
     val config = context.configuration
 
-    val adbApkInstaller = AdbApkInstaller(config.adb, config.aapt2, deviceSerial, config.installTimeoutMs)
+    val adbController = adbControllerFactory(config.adb)
+    val deviceApiLevelProvider = DeviceApiLevelProvider(adbController, deviceSerial)
+
+    val adbApkInstaller = adbApkInstallerFactory(config.adb, config.aapt2, deviceSerial, config.installTimeoutMs, deviceApiLevelProvider)
 
     val deviceSpecificResultsDir = config.getResultsDir(deviceSerial)
     val baseResultsDir = config.getResultsDir()
@@ -116,6 +142,7 @@ class AndroidDeviceDescriptor(
         testPackageId = config.testPackageId,
         useTestStorageService = config.useTestStorageService,
         runAsPackageName = config.instrumentationTargetPackageId,
+        deviceApiLevelProvider = deviceApiLevelProvider,
       )
 
     val isOrchestratorEnabled = config.executionMode?.uppercase() in listOf("ANDROIDX_TEST_ORCHESTRATOR", "ANDROID_TEST_ORCHESTRATOR")
@@ -163,6 +190,7 @@ class AndroidDeviceDescriptor(
         additionalTestOutputCollector = additionalTestOutputCollector,
         runAsPackageName = config.instrumentationTargetPackageId,
         agentFilesystemInfo = agentFilesystemInfo,
+        deviceApiLevelProvider = deviceApiLevelProvider,
       )
 
     val deviceInfoFile =
@@ -181,6 +209,11 @@ class AndroidDeviceDescriptor(
     val listener = Listener(context, reporter, logcatCollector, deviceInfoFile, additionalTestOutputCollector)
 
     val instrumentationArgs = config.instrumentationArgs.toMutableMap()
+    if (config.isEmulatorControlEnabled(deviceSerial)) {
+      val grpcInfo = findGrpcInfoProvider(deviceSerial)
+      instrumentationArgs["grpc.port"] = grpcInfo.port.toString()
+      grpcInfo.token?.let { instrumentationArgs["grpc.token"] = it }
+    }
     if (isCoverageActive) {
       instrumentationArgs["coverage"] = "true"
       if (isOrchestratorEnabled) {
@@ -197,7 +230,7 @@ class AndroidDeviceDescriptor(
     }
 
     val instrumentationRunner =
-      AmInstrumentationRunner(
+      instrumentationRunnerFactory(
         config.adb,
         deviceSerial,
         config.instrumentationRunnerClass,
@@ -206,7 +239,7 @@ class AndroidDeviceDescriptor(
         config.executionMode,
         instrumentationArgs,
         setOf(listener),
-        agentFilesystemInfo = agentFilesystemInfo,
+        agentFilesystemInfo,
       )
 
     val deviceSettingsController = DeviceSettingsController(config, deviceSerial, adbControllerFactory(config.adb))
@@ -338,10 +371,21 @@ class AndroidDeviceDescriptor(
       }
       reporter?.testEnded(ddmlibTestId, emptyMap())
 
-      additionalTestOutputCollector?.addBenchmarkOutput(testResult)
+      val benchmarkOutput = additionalTestOutputCollector?.addBenchmarkOutput(testResult)
+      val traceFiles = benchmarkOutput?.traceFiles ?: emptyList()
+      val messageFile = benchmarkOutput?.messageFile
 
       val testDescriptor = testDescriptors[testIdentifier]
       if (testDescriptor != null) {
+        if (traceFiles.isNotEmpty()) {
+          val paths = traceFiles.joinToString(",") { it.absolutePath }
+          val reportEntry = ReportEntry.from(AndroidTestReportKeys.BENCHMARK_TRACE_PATHS, paths)
+          context.request.engineExecutionListener.reportingEntryPublished(testDescriptor, reportEntry)
+        }
+        if (messageFile != null) {
+          val reportEntry = ReportEntry.from(AndroidTestReportKeys.BENCHMARK_MESSAGE_PATH, messageFile.absolutePath)
+          context.request.engineExecutionListener.reportingEntryPublished(testDescriptor, reportEntry)
+        }
         val testName = "$packageName.${testIdentifier.testClass}.${testIdentifier.testMethod}"
         val logcatPath = logcatCollector?.getLogcatPath(deviceId, testName)
         if (logcatPath != null) {

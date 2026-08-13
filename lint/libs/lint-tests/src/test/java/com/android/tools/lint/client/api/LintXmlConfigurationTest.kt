@@ -36,6 +36,7 @@ import com.android.tools.lint.checks.infrastructure.TestMode
 import com.android.tools.lint.checks.infrastructure.portablePath
 import com.android.tools.lint.detector.api.Context
 import com.android.tools.lint.detector.api.Detector
+import com.android.tools.lint.detector.api.Issue
 import com.android.tools.lint.detector.api.Location.Companion.create
 import com.android.tools.lint.detector.api.Project
 import com.android.tools.lint.detector.api.Severity
@@ -263,6 +264,8 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
       "/child/new-exceptions.xml",
       getPath(configuration.getOptionAsFile(InteroperabilityDetector.PLATFORM_NULLNESS, "exceptions")),
     )
+    assertEquals("api/list.xml", configuration.getOption(ApiDetector.UNSUPPORTED, "allowed", "default"))
+    assertEquals("default", configuration.getOption(ApiDetector.UNSUPPORTED, "unknown", "default"))
   }
 
   fun testClientFilters() {
@@ -1047,13 +1050,14 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
         assertNull(configuration.getDefinedSeverity(ApiDetector.UNSUPPORTED))
         val file = File(project.dir, "lint.xml")
         assertFalse(file.exists())
+        configuration.baselineFile = File(project.dir, "lint-baseline.xml")
         configuration.setSeverity(ApiDetector.UNSUPPORTED, Severity.FATAL)
         configuration.ignore(IconDetector.DUPLICATES_NAMES, File("name.xml"))
         assertSame(Severity.FATAL, configuration.getDefinedSeverity(ApiDetector.UNSUPPORTED))
         assertEquals(
           """
           <?xml version="1.0" encoding="UTF-8"?>
-          <lint>
+          <lint baseline="lint-baseline.xml">
               <issue id="IconDuplicates">
                   <ignore path="name.xml" />
               </issue>
@@ -1183,6 +1187,83 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
       .testModes(TestMode.DEFAULT)
       .run()
       .expect(expected)
+  }
+
+  fun testEnableIssueWithSuppressAnnotations() {
+    val myIssue =
+      Issue.create(
+        id = "MyCustomIssue",
+        briefDescription = "My custom issue",
+        explanation = "My custom issue explanation",
+        implementation = SdCardDetector.ISSUE.implementation,
+        severity = Severity.WARNING,
+        enabledByDefault = false,
+        suppressAnnotations = listOf("com.example.MySuppress"),
+      )
+
+    val configuration =
+      getConfiguration(
+        """
+        <lint>
+            <issue id="MyCustomIssue" severity="error" />
+        </lint>
+        """
+          .trimIndent()
+      )
+
+    assertEquals(Severity.ERROR, configuration.getSeverity(myIssue))
+  }
+
+  fun testDisableIssueWithSuppressAnnotations() {
+    val myIssue =
+      Issue.create(
+        id = "MyCustomIssue",
+        briefDescription = "My custom issue",
+        explanation = "My custom issue explanation",
+        implementation = SdCardDetector.ISSUE.implementation,
+        severity = Severity.WARNING,
+        enabledByDefault = true,
+        suppressAnnotations = listOf("com.example.MySuppress"),
+      )
+
+    val configuration =
+      getConfiguration(
+        """
+        <lint>
+            <issue id="MyCustomIssue" severity="ignore" />
+        </lint>
+        """
+          .trimIndent()
+      )
+
+    // Should not be allowed to suppress it, so it remains WARNING
+    assertEquals(Severity.WARNING, configuration.getSeverity(myIssue))
+  }
+
+  fun testDowngradeIssueWithSuppressAnnotations() {
+    val myIssue =
+      Issue.create(
+        id = "MyCustomIssue",
+        briefDescription = "My custom issue",
+        explanation = "My custom issue explanation",
+        implementation = SdCardDetector.ISSUE.implementation,
+        severity = Severity.ERROR,
+        enabledByDefault = true,
+        suppressAnnotations = listOf("com.example.MySuppress"),
+      )
+
+    val configuration =
+      getConfiguration(
+        """
+        <lint>
+            <issue id="MyCustomIssue" severity="warning" />
+        </lint>
+        """
+          .trimIndent()
+      )
+
+    // Should not be allowed to suppress it, so it remains ERROR
+    assertEquals(Severity.ERROR, configuration.getSeverity(myIssue))
   }
 
   private val mOnclick = xml("res/layout/onclick.xml", LAYOUT_XML)

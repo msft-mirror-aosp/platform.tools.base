@@ -193,7 +193,7 @@ class OptimisticApkInstaller {
         // Note that for Apply (Code) Changes with IWI, we don't need to terminate the app.
         // However, that overlay install path is handled by the OptimisticApkSwapper.
         if (terminator != null) {
-            terminator.terminate(adb.getDevice());
+            terminator.terminate(new DeployerDevice(adb.getSerial()));
         }
         return nextOverlayId;
     }

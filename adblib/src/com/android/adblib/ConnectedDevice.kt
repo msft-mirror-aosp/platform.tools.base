@@ -247,42 +247,6 @@ val ConnectedDevice.reverseForward: ReverseForwardManager
     return cache.getOrPut(ReverseForwardManagerKey) { ReverseForwardManager(this) }
   }
 
-/**
- * Restarts the device as "root"
- *
- * @see AdbDeviceServices.root
- */
-suspend fun ConnectedDevice.root(): RootResult {
-  return session.deviceServices.root(selector)
-}
-
-/**
- * Restarts the device as "unroot"
- *
- * @see AdbDeviceServices.unRoot
- */
-suspend fun ConnectedDevice.unRoot(): RootResult {
-  return session.deviceServices.unRoot(selector)
-}
-
-/**
- * Restarts the device as "root", waiting until it is restarted
- *
- * @see AdbDeviceServices.rootAndWait
- */
-suspend fun ConnectedDevice.rootAndWait(): RootResult {
-  return session.deviceServices.rootAndWait(selector)
-}
-
-/**
- * Restarts the device as "unroot", waiting until it is restarted
- *
- * @see AdbDeviceServices.unRootAndWait
- */
-suspend fun ConnectedDevice.unRootAndWait(): RootResult {
-  return session.deviceServices.unRootAndWait(selector)
-}
-
 /** Manages "reverse forward" connections of a given [ConnectedDevice] */
 class ReverseForwardManager(val device: ConnectedDevice) {
   /**
@@ -747,6 +711,15 @@ suspend fun ConnectedDevice.availableFeatures(): Set<String> {
  */
 suspend fun ConnectedDevice.hasAvailableFeature(feature: String): Boolean {
   return session.hostServices.hasAvailableFeature(selector, feature)
+}
+
+/**
+ * Returns `true` if the device supports running commands as root, i.e. if the `adbd` daemon on the device is running with root permissions.
+ */
+suspend fun ConnectedDevice.isRoot(): Boolean {
+  val result = session.deviceServices.shellAsText(selector, "echo \$USER_ID")
+  val userID = result.stdout.trim { it <= ' ' }
+  return userID == "0"
 }
 
 fun AdbLogger.withDevicePrefix(device: ConnectedDevice): AdbLogger {

@@ -107,6 +107,10 @@ internal constructor(
     return this
   }
 
+  fun interface ParameterMutator : Serializable {
+    operator fun invoke(parameter: ModelBuilderParameter)
+  }
+
   /**
    * Fetches the model for each project and return them as a [ModelContainerV2]
    *
@@ -115,14 +119,10 @@ internal constructor(
    */
   fun fetchModels(
     variantName: String? = null,
-    parameterMutator: (ModelBuilderParameter) -> Unit = { it.buildAllRuntimeClasspaths() },
+    parameterMutator: ParameterMutator = ParameterMutator { it.buildAllRuntimeClasspaths() },
     nativeParams: NativeModuleParams? = null,
   ): FetchResult<ModelContainerV2> {
-    // TODO(b/528235271): Enable back consistency check for problem API. 9.6.0. changed behaviour of problems API severity.
-    // See: https://github.com/gradle/gradle/issues/36515
-    // val container = checkSyncIssues(buildModelV2(GetAndroidModelV2Action(variantName, parameterMutator, nativeParams)))
-
-    val container = buildModelV2(GetAndroidModelV2Action(variantName, parameterMutator, nativeParams)).first
+    val container = checkSyncIssues(buildModelV2(GetAndroidModelV2Action(variantName, parameterMutator, nativeParams)))
 
     return FetchResult(container, normalizer = getFileNormalizer(container))
   }
@@ -245,7 +245,7 @@ internal constructor(
     val allProblemAggregations = problemEvents.filterIsInstance<ProblemAggregationEvent>()
     val allSyncIssues = syncIssues.flatMap { it.value.flatMap { it.value } }
 
-    val problemsAsIssues =
+    val problemsAsStrings =
       allSingleProblems
         .filter { it.definition.id.group.name == "agp-sync-issues" }
         .map {
@@ -285,8 +285,8 @@ ${it.multiLineMessage}
     // Gradle suppresses identical issues over some threshold (15 as of now).
     // Next occurrences are only aggregated as counters in ProblemSummariesEvent.
     val suppressedCount = problemEvents.filterIsInstance<ProblemSummariesEvent>().sumOf { it.problemSummaries.sumOf { it.count } }
-    Truth.assertThat(problemsAsIssues).hasSize(issuesAsStrings.size - suppressedCount)
-    Truth.assertThat(issuesAsStrings).containsAtLeastElementsIn(problemsAsIssues)
+    Truth.assertThat(problemsAsStrings).hasSize(issuesAsStrings.size - suppressedCount)
+    Truth.assertThat(issuesAsStrings).containsAtLeastElementsIn(problemsAsStrings)
   }
 
   private fun assertNoUnexpectedSyncIssues(container: ModelContainerV2) {

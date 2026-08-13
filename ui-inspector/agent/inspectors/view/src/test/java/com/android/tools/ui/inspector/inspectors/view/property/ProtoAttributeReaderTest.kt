@@ -17,6 +17,10 @@
 package com.android.tools.ui.inspector.inspectors.view.property
 
 import android.app.Activity
+import android.content.res.ColorStateList
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.GradientDrawable
 import android.view.View
 import com.android.tools.ui.inspector.inspectors.view.StringTable
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.ViewNode.Attribute
@@ -38,14 +42,15 @@ class ProtoAttributeReaderTest {
     val stringTable = StringTable()
     val resolved = mutableListOf<Attribute>()
 
-    val metadata = AttributeMetadata("clickable", 0, PropertyType.BOOLEAN)
-    val reader = ProtoAttributeReader(view, listOf(metadata), stringTable) { resolved.add(it) }
+    val metadata = AttributeMetadata("clickable", 0, PropertyType.BOOLEAN, null, null)
+    val reader = ProtoAttributeReader(view, listOf(metadata), stringTable, false) { resolved.add(it) }
 
     reader.readBoolean(0, true)
 
     assertThat(resolved).hasSize(1)
     assertThat(stringTable.getString(resolved[0].name)).isEqualTo("clickable")
-    assertThat(stringTable.getString(resolved[0].value)).isEqualTo("true")
+    assertThat(resolved[0].type).isEqualTo(Attribute.Type.BOOLEAN)
+    assertThat(resolved[0].int32Value).isEqualTo(1)
   }
 
   @Test
@@ -55,13 +60,14 @@ class ProtoAttributeReaderTest {
     val stringTable = StringTable()
     val resolved = mutableListOf<Attribute>()
 
-    val metadata = AttributeMetadata("width", 0, PropertyType.INT32)
-    val reader = ProtoAttributeReader(view, listOf(metadata), stringTable) { resolved.add(it) }
+    val metadata = AttributeMetadata("width", 0, PropertyType.INT32, null, null)
+    val reader = ProtoAttributeReader(view, listOf(metadata), stringTable, false) { resolved.add(it) }
 
     reader.readInt(0, 100)
 
     assertThat(resolved).hasSize(1)
-    assertThat(stringTable.getString(resolved[0].value)).isEqualTo("100")
+    assertThat(resolved[0].type).isEqualTo(Attribute.Type.INT32)
+    assertThat(resolved[0].int32Value).isEqualTo(100)
   }
 
   @Test
@@ -71,13 +77,69 @@ class ProtoAttributeReaderTest {
     val stringTable = StringTable()
     val resolved = mutableListOf<Attribute>()
 
-    val metadata = AttributeMetadata("textColor", 0, PropertyType.COLOR)
-    val reader = ProtoAttributeReader(view, listOf(metadata), stringTable) { resolved.add(it) }
+    val metadata = AttributeMetadata("textColor", 0, PropertyType.COLOR, null, null)
+    val reader = ProtoAttributeReader(view, listOf(metadata), stringTable, false) { resolved.add(it) }
 
     reader.readColor(0, 0xFFFF0000.toInt())
 
     assertThat(resolved).hasSize(1)
-    assertThat(stringTable.getString(resolved[0].value)).isEqualTo("#FFFF0000")
+    assertThat(resolved[0].type).isEqualTo(Attribute.Type.COLOR)
+    assertThat(resolved[0].int32Value).isEqualTo(0xFFFF0000.toInt())
+  }
+
+  @Test
+  fun testReadObject_colorDrawableOverridesObjectType() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val view = View(activity)
+    val stringTable = StringTable()
+    val resolved = mutableListOf<Attribute>()
+
+    val metadata = AttributeMetadata("background", 0, PropertyType.OBJECT, null, null)
+    val reader = ProtoAttributeReader(view, listOf(metadata), stringTable, false) { resolved.add(it) }
+
+    reader.readObject(0, ColorDrawable(Color.RED))
+
+    assertThat(resolved).hasSize(1)
+    assertThat(resolved[0].type).isEqualTo(Attribute.Type.COLOR)
+    assertThat(resolved[0].int32Value).isEqualTo(Color.RED)
+  }
+
+  @Test
+  fun testReadObject_colorStateListOverridesObjectTypeAndResolvesCurrentState() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val view = View(activity)
+    val stringTable = StringTable()
+    val resolved = mutableListOf<Attribute>()
+    val colors = ColorStateList(arrayOf(intArrayOf(android.R.attr.state_pressed), intArrayOf()), intArrayOf(Color.RED, Color.BLUE))
+    view.isPressed = true
+    view.refreshDrawableState()
+
+    val metadata = AttributeMetadata("textColor", 0, PropertyType.OBJECT, null, null)
+    val reader = ProtoAttributeReader(view, listOf(metadata), stringTable, false) { resolved.add(it) }
+
+    reader.readObject(0, colors)
+
+    assertThat(resolved).hasSize(1)
+    assertThat(resolved[0].type).isEqualTo(Attribute.Type.COLOR)
+    assertThat(resolved[0].int32Value).isEqualTo(Color.RED)
+  }
+
+  @Test
+  fun testReadObject_nonColorDrawableKeepsObjectType() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val view = View(activity)
+    val stringTable = StringTable()
+    val resolved = mutableListOf<Attribute>()
+    val drawable = GradientDrawable()
+
+    val metadata = AttributeMetadata("foreground", 0, PropertyType.OBJECT, null, null)
+    val reader = ProtoAttributeReader(view, listOf(metadata), stringTable, false) { resolved.add(it) }
+
+    reader.readObject(0, drawable)
+
+    assertThat(resolved).hasSize(1)
+    assertThat(resolved[0].type).isEqualTo(Attribute.Type.OBJECT)
+    assertThat(stringTable.getString(resolved[0].int32Value)).isEqualTo(drawable.toString())
   }
 
   @Test
@@ -87,14 +149,14 @@ class ProtoAttributeReaderTest {
     val stringTable = StringTable()
     val resolved = mutableListOf<Attribute>()
 
-    val metadata =
-      AttributeMetadata("visibility", 0, PropertyType.INT_ENUM, enumMapping = { value -> if (value == 0) "VISIBLE" else "INVISIBLE" })
-    val reader = ProtoAttributeReader(view, listOf(metadata), stringTable) { resolved.add(it) }
+    val metadata = AttributeMetadata("visibility", 0, PropertyType.INT_ENUM, { value -> if (value == 0) "VISIBLE" else "INVISIBLE" }, null)
+    val reader = ProtoAttributeReader(view, listOf(metadata), stringTable, false) { resolved.add(it) }
 
     reader.readIntEnum(0, 0)
 
     assertThat(resolved).hasSize(1)
-    assertThat(stringTable.getString(resolved[0].value)).isEqualTo("VISIBLE")
+    assertThat(resolved[0].type).isEqualTo(Attribute.Type.INT_ENUM)
+    assertThat(stringTable.getString(resolved[0].int32Value)).isEqualTo("VISIBLE")
   }
 
   @Test
@@ -105,13 +167,14 @@ class ProtoAttributeReaderTest {
     val resolved = mutableListOf<Attribute>()
 
     val metadata =
-      AttributeMetadata("flags", 0, PropertyType.INT_FLAG, flagMapping = { value -> if (value and 1 != 0) setOf("flag1") else emptySet() })
-    val reader = ProtoAttributeReader(view, listOf(metadata), stringTable) { resolved.add(it) }
+      AttributeMetadata("flags", 0, PropertyType.INT_FLAG, null, { value -> if (value and 1 != 0) setOf("flag1") else emptySet() })
+    val reader = ProtoAttributeReader(view, listOf(metadata), stringTable, false) { resolved.add(it) }
 
     reader.readIntFlag(0, 1)
 
     assertThat(resolved).hasSize(1)
-    assertThat(stringTable.getString(resolved[0].value)).isEqualTo("flag1")
+    assertThat(resolved[0].type).isEqualTo(Attribute.Type.INT_FLAG)
+    assertThat(stringTable.getString(resolved[0].int32Value)).isEqualTo("flag1")
   }
 
   @Test
@@ -121,11 +184,45 @@ class ProtoAttributeReaderTest {
     val stringTable = StringTable()
     val resolved = mutableListOf<Attribute>()
 
-    val metadata = AttributeMetadata("text", 0, PropertyType.STRING)
-    val reader = ProtoAttributeReader(view, listOf(metadata), stringTable) { resolved.add(it) }
+    val metadata = AttributeMetadata("text", 0, PropertyType.STRING, null, null)
+    val reader = ProtoAttributeReader(view, listOf(metadata), stringTable, false) { resolved.add(it) }
 
     reader.readObject(0, null)
 
     assertThat(resolved).isEmpty()
+  }
+
+  @Test
+  fun testReadColor_colorLong() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val view = View(activity)
+    val stringTable = StringTable()
+    val resolved = mutableListOf<Attribute>()
+
+    val metadata = AttributeMetadata("textColor", 0, PropertyType.COLOR, null, null)
+    val reader = ProtoAttributeReader(view, listOf(metadata), stringTable, false) { resolved.add(it) }
+
+    reader.readColor(0, Color.pack(0xFFFF0000.toInt()))
+
+    assertThat(resolved).hasSize(1)
+    assertThat(resolved[0].type).isEqualTo(Attribute.Type.COLOR)
+    assertThat(resolved[0].int32Value).isEqualTo(0xFFFF0000.toInt())
+  }
+
+  @Test
+  fun testReadColor_colorObject() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val view = View(activity)
+    val stringTable = StringTable()
+    val resolved = mutableListOf<Attribute>()
+
+    val metadata = AttributeMetadata("textColor", 0, PropertyType.COLOR, null, null)
+    val reader = ProtoAttributeReader(view, listOf(metadata), stringTable, false) { resolved.add(it) }
+
+    reader.readColor(0, Color.valueOf(0xFFFF0000.toInt()))
+
+    assertThat(resolved).hasSize(1)
+    assertThat(resolved[0].type).isEqualTo(Attribute.Type.COLOR)
+    assertThat(resolved[0].int32Value).isEqualTo(0xFFFF0000.toInt())
   }
 }

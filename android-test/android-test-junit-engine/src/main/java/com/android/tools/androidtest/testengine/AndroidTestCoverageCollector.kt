@@ -32,6 +32,7 @@ class AndroidTestCoverageCollector(
   private val runAsPackageName: String? = null,
   private val agentFilesystemInfo: CoverageAgentFilesystemInfo = CoverageAgentFilesystemInfo(),
   private val logger: Logger = Logger.getLogger(AndroidTestCoverageCollector::class.java.name),
+  private val deviceApiLevelProvider: DeviceApiLevelProvider? = null,
 ) {
 
   private var effectiveUseTestStorageService: Boolean = false
@@ -162,6 +163,8 @@ class AndroidTestCoverageCollector(
   }
 
   private fun getApiLevel(): Int {
-    return adbController.runAdbShellCommand(deviceSerial, listOf("getprop", "ro.build.version.sdk")).output.trim().toIntOrNull() ?: 0
+    return deviceApiLevelProvider?.deviceApiLevel
+      ?: adbController.runAdbShellCommand(deviceSerial, listOf("getprop", "ro.build.version.sdk")).output.trim().toIntOrNull()
+      ?: 0
   }
 }

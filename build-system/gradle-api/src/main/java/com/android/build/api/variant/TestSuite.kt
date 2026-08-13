@@ -21,6 +21,7 @@ import org.gradle.api.Incubating
 import org.gradle.api.Named
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.testing.Test
 
 /**
@@ -75,6 +76,32 @@ interface TestSuite : Named {
    */
   fun configureTestTasks(action: Test.(context: TestTaskContext) -> Unit)
 
+  /**
+   * Runs some action on the [TestSuite] test task's [TaskProvider].
+   *
+   * The action will only run if the [TestSuite] is enabled. In particular the corresponding [TestSuiteBuilder.enable] must be set to true
+   * (it is true by default).
+   *
+   * This is particularly useful to set manual tasks dependencies. However, you should avoid calling [TaskProvider.get] as it will
+   * automatically configure the task even if it is not scheduled to run, instead use the [configureTestTask] method.
+   *
+   * Example :
+   * ```(kotlin)
+   *  androidComponents {
+   *      onVariants { variant ->
+   *          variant.suites.forEach { suite ->
+   *            suite.withTestTaskProvider { testTaskProvider ->
+   *              someAnchorTask.dependsOn(testTaskProvider)
+   *          }
+   *        }
+   *      }
+   *  }
+   * ```
+   *
+   * @param action on the test task [TaskProvider].
+   */
+  @Incubating fun withTestTaskProviders(action: TaskProvider<out Test>.(context: TestTaskContext) -> Unit)
+
   /** Return the [JUnitEngineSpec] for this test suite. */
   @get:Incubating val junitEngineSpec: JUnitEngineSpec
 
@@ -87,6 +114,13 @@ interface TestSuite : Named {
    * Initialized from the corresponding [TestSuiteBuilder.codeCoverage]
    */
   @get:Incubating val codeCoverage: Property<Boolean>
+
+  /**
+   * Whether this test suite requires an extra update task.
+   *
+   * Initialized from the corresponding [com.android.build.api.dsl.AgpTestSuite.requiresUpdateTask]
+   */
+  @get:Incubating val requiresUpdateTask: Provider<Boolean>
 
   /**
    * The instrumentationRunner to use to run the tests.

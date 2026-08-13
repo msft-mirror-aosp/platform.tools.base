@@ -114,13 +114,13 @@ internal fun SigningConfigImpl.convert() =
   SigningConfig.newBuilder()
     .setIfNotNull(name, SigningConfig.Builder::setName)
     .setIfNotNull(storeFile.orNull?.convert(), SigningConfig.Builder::setStoreFile)
-    .setIfNotNull(storePassword.orNull, SigningConfig.Builder::setStorePassword)
     .setIfNotNull(keyAlias.orNull, SigningConfig.Builder::setKeyAlias)
-    .setIfNotNull(keyPassword.orNull, SigningConfig.Builder::setKeyPassword)
     .setEnableV1Signing(enableV1Signing.get())
     .setEnableV2Signing(enableV2Signing.get())
     .setEnableV3Signing(enableV3Signing.get())
     .setEnableV4Signing(enableV4Signing.get())
+    // isSigningReady (below) is the only thing the IDE needs; never ship the
+    // cleartext over the wire / into the proto bytes.
     .setIsSigningReady(isSigningReady())
 
 private fun LibraryType.convert() =

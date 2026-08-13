@@ -18,12 +18,14 @@ package com.android.tools.ui.inspector.payload;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 @RunWith(RobolectricTestRunner.class)
 public final class InspectorLauncherTest {
@@ -31,25 +33,29 @@ public final class InspectorLauncherTest {
   @Test
   public void testStart_doesNotStartNewServerIfAlreadyRunning() throws Exception {
     AtomicInteger callCount = new AtomicInteger(0);
+        AtomicReference<String> receivedToken = new AtomicReference<>();
     CountDownLatch latch = new CountDownLatch(1);
-    
-    Consumer<String> starter = pid -> {
-      callCount.incrementAndGet();
-      try {
-        latch.await();
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-      }
-    };
 
-    InspectorLauncher.start("1234", starter);
+        Consumer<String> starter =
+                serverToken -> {
+                    callCount.incrementAndGet();
+                    receivedToken.set(serverToken);
+                    try {
+                        latch.await();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                };
+
+        InspectorLauncher.start("1234_0123456789ab", starter);
 
     Thread.sleep(100);
 
-    InspectorLauncher.start("1234", starter);
+        InspectorLauncher.start("1234_0123456789ab", starter);
 
     latch.countDown();
 
     assertThat(callCount.get()).isEqualTo(1);
+        assertThat(receivedToken.get()).isEqualTo("1234_0123456789ab");
   }
 }

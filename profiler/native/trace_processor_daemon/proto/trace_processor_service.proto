@@ -87,6 +87,10 @@ message QueryParameters {
     AndroidFrameTimelineParameters android_frame_timeline_request = 109;
     PowerCounterTracksParameters power_counter_tracks_request = 110;
     ThreadStatesParameters thread_states_request = 111;
+    HeapDumpParameters heap_dump_request = 112;
+    GetPrimitiveFieldsParameters get_primitive_fields_request = 113;
+    HeapDumpInstancesParameters heap_dump_instances_request = 114;
+    GetReferencesParameters get_references_request = 115;
   }
 
   // Returns metadata information for a process of the provided id.
@@ -141,6 +145,68 @@ message QueryParameters {
   // See ThreadStatesResult for the data returned from this.
   message ThreadStatesParameters {
     int64 process_id = 1;
+  }
+
+  // Returns data for Heap Dumps.
+  // See HeapDumpResult for the data returned from this.
+  message HeapDumpParameters {}
+
+  // Request primitive fields for multiple instance IDs in bulk.
+  // See GetPrimitiveFieldsResult for the data returned from this.
+  message GetPrimitiveFieldsParameters {
+    // List of object instance IDs to query scalar and array fields for.
+    repeated int64 instance_ids = 1;
+  }
+
+  // Attribute to sort returned heap dump instances by.
+  enum SortAttribute {
+    // Default sort order (by retained heap size).
+    SORT_NONE = 0;
+    // Sort by class label or instance name.
+    SORT_LABEL = 1;
+    // Sort by shortest GC root depth.
+    SORT_DEPTH = 2;
+    // Sort by shallow heap size.
+    SORT_SHALLOW_SIZE = 3;
+    // Sort by native allocation size.
+    SORT_NATIVE_SIZE = 4;
+    // Sort by total retained heap size.
+    SORT_RETAINED_SIZE = 5;
+    // Sort by total retained native allocation size.
+    SORT_RETAINED_NATIVE_SIZE = 6;
+  }
+
+  // Request instances filtered by class name, heap name, or explicit instance IDs lazily.
+  //
+  // Contract: Requires that a general HeapDump query has been executed beforehand on the
+  // TraceProcessor session to initialize required Perfetto stdlib dominator tree modules.
+  // See HeapDumpInstancesResult for the data returned from this.
+  message HeapDumpInstancesParameters {
+    // Optional list of full class names to filter requested instances by.
+    repeated string class_names = 1;
+    // Optional name of the heap (e.g., "default", "app", "image") to restrict the query to.
+    string heap_name = 2;
+    // Optional explicit list of instance IDs to request directly.
+    repeated int64 instance_ids = 3;
+    // Maximum number of instances to return in this page.
+    int32 limit = 4;
+    // Zero-based index offset for pagination.
+    int32 offset = 5;
+    // Attribute to sort the returned instances by.
+    SortAttribute sort_attribute = 6;
+    // If true, sorts instances in descending order of sort_attribute.
+    bool sort_descending = 7;
+  }
+
+  // Request references for a set of instance IDs.
+  // See GetReferencesResult for the data returned from this.
+  message GetReferencesParameters {
+    // Whether to include forward references (outbound pointers from requested instances).
+    bool fetch_forward = 1;
+    // Whether to include reverse references (inbound pointers to requested instances).
+    bool fetch_reverse = 2;
+    // List of object instance IDs to fetch references for.
+    repeated int64 instance_ids = 3;
   }
 
   // Returns data from all CPU cores, e.g. frequency counters.
@@ -201,6 +267,10 @@ message QueryResult {
     AndroidFrameTimelineResult android_frame_timeline_result = 109;
     PowerCounterTracksResult power_counter_tracks_result = 110;
     ThreadStatesResult thread_states_result = 111;
+    HeapDumpResult heap_dump_result = 112;
+    GetPrimitiveFieldsResult get_primitive_fields_result = 113;
+    HeapDumpInstancesResult heap_dump_instances_result = 114;
+    GetReferencesResult get_references_result = 115;
   }
 
   enum QueryFailureReason {
@@ -471,3 +541,110 @@ message AndroidFrameTimelineResult {
     int32 layout_depth = 10;
   }
 }
+
+// Result containing aggregated class metrics across all heaps in the trace.
+message HeapDumpResult {
+  // List of aggregated class overview metrics per heap.
+  repeated ClassOverview class_overview = 1;
+
+  // Aggregated overview of all instances of a class within a specific heap.
+  message ClassOverview {
+    // Unique identifier for the class in Trace Processor.
+    int64 class_id = 1;
+    // Fully qualified class name.
+    string class_name = 2;
+    // Name of the heap this overview applies to (e.g., "default", "app", "image").
+    string heap_name = 3;
+    // Number of instances of this class in this heap.
+    int64 instance_count = 4;
+    // Total native memory allocation size associated with instances of this class (in bytes).
+    int64 native_size = 5;
+    // Total retained native memory size reachable from instances of this class (in bytes).
+    int64 retained_native_size = 6;
+    // Total retained heap memory size reachable from instances of this class (in bytes).
+    int64 retained_size = 7;
+    // Total shallow heap memory size of instances of this class (in bytes).
+    int64 shallow_size = 8;
+    // Unique identifier of the superclass for this class, or -1 if none.
+    int64 super_class_id = 9;
+  }
+}
+
+// Result containing a list of object instances matching a query.
+message HeapDumpInstancesResult {
+  // List of instance data objects.
+  repeated InstanceData instance = 1;
+
+  // Metadata and size summary for an individual object instance in the heap.
+  message InstanceData {
+    // Number of elements if this instance is an array, or 0 otherwise.
+    int64 array_length = 1;
+    // Shortest distance from a GC root to this instance in the heap reference graph (or dominator tree depth as fallback; set to INT_MAX if unreachable).
+    int64 depth = 2;
+    // Whether this instance has scalar primitive fields or primitive array data.
+    bool has_primitive_fields = 3;
+    // Whether this instance owns any forward (outbound) reference edges.
+    bool has_references = 4;
+    // Name of the heap where this instance resides.
+    string heap_name = 5;
+    // Unique object instance ID in Trace Processor.
+    int64 id = 6;
+    // Native memory allocation size directly associated with this instance (in bytes).
+    int64 native_size = 7;
+    // Total retained native memory reachable from this instance (in bytes).
+    int64 retained_native_size = 8;
+    // Total retained heap memory reachable from this instance (in bytes).
+    int64 retained_size = 9;
+    // Shallow heap memory size of this individual instance (in bytes).
+    int64 self_size = 10;
+    // UTF-8 byte representation of the string content if this instance is a java.lang.String.
+    bytes string_value = 11;
+    // Unique identifier of the class type for this instance.
+    int64 type_id = 12;
+  }
+}
+
+// Result containing primitive field values and array payloads for requested instances.
+message GetPrimitiveFieldsResult {
+  // Primitive field data per requested instance.
+  repeated InstancePrimitiveFields instances = 1;
+
+  // Primitive field and array payload data for a single instance ID.
+  message InstancePrimitiveFields {
+    // Binary blob containing raw array element data if this instance is a primitive array.
+    bytes array_blob = 1;
+    // Element type name if this instance is an array (e.g., "int[]", "byte[]", "char[]").
+    string array_type = 2;
+    // List of scalar primitive fields declared on this instance.
+    repeated PrimitiveField field = 3;
+    // Unique object instance ID that these fields belong to.
+    int64 instance_id = 4;
+  }
+
+  // A single scalar primitive field name, type, and string-encoded value.
+  message PrimitiveField {
+    // Name of the field (may be prefixed by declaring class name e.g., "android.graphics.Bitmap.mHeight").
+    string name = 1;
+    // Type name of the field (e.g., "int", "boolean", "long").
+    string type_name = 2;
+    // String-encoded primitive value.
+    string value = 3;
+  }
+}
+
+// Result containing forward and reverse reference edges for requested instances.
+message GetReferencesResult {
+  // List of reference relationship edges.
+  repeated ReferenceData reference = 1;
+
+  // Represents a directed reference edge from owner_id to owned_id.
+  message ReferenceData {
+    // Name of the field holding the reference on the owner object (or array index notation e.g., "[0]" for array elements).
+    string field_name = 1;
+    // Unique instance ID of the referenced (owned/target) object.
+    int64 owned_id = 2;
+    // Unique instance ID of the referencing (owner/source) object.
+    int64 owner_id = 3;
+  }
+}
+

@@ -25,8 +25,8 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Andro
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
-import com.android.tools.utp.plugins.host.device.info.proto.AndroidTestDeviceInfoProto.AndroidTestDeviceInfo
 import com.google.common.truth.Truth.assertThat
+import com.google.testing.platform.proto.api.core.AndroidTestDeviceInfoProto.AndroidTestDeviceInfo
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
 import java.io.File
 import java.nio.file.Path
@@ -52,6 +52,7 @@ class AndroidTestUtil(
   lateinit var testLogcatPath: String
   lateinit var testAdditionalOutputPath: String
   lateinit var moduleName: String
+  lateinit var deviceName: String
 
   val project: Path
     get() = rule.build.directory
@@ -67,39 +68,78 @@ class AndroidTestUtil(
     onSelectModule(moduleName, this)
   }
 
-  private fun resolvePath(relativePath: String): Path {
+  private fun sanitizePathSegment(segment: String): String {
+    val strictSafeRegex = Regex("[^a-zA-Z0-9._-]")
+    return strictSafeRegex.replace(segment, "_")
+  }
+
+  fun resolvePath(relativePath: String): Path {
     val path = project.resolve(relativePath)
-    if (runWithBuiltInPlatform && !path.exists()) {
-      // For built-in platform, the output might be in a different level of directory.
-      // Search for the file in the parent or siblings.
-      val fileName = path.fileName.toString()
-      // Search in the parent directory and its children.
-      val parent = path.parent
-      if (parent.exists()) {
-        val found = parent.toFile().walkTopDown().maxDepth(3).find { it.name == fileName }
-        if (found != null) {
-          return found.toPath()
+    if (path.exists()) {
+      return path
+    }
+    val fileName = path.fileName.toString()
+    var existingAncestor = path.parent
+    while (existingAncestor != null && !existingAncestor.exists()) {
+      existingAncestor = existingAncestor.parent
+    }
+    if (existingAncestor != null && existingAncestor.exists()) {
+      val segments = relativePath.split("/")
+      val deviceIndex = segments.indexOf(deviceName)
+      val suffixSegments =
+        if (deviceIndex != -1 && deviceIndex < segments.size - 1) {
+          segments.subList(deviceIndex + 1, segments.size)
+        } else {
+          listOf(fileName)
         }
-      }
-      // If not found, try searching from the parent of the parent (siblings of parent).
-      val grandParent = parent.parent
-      if (grandParent.exists()) {
-        val foundInGrandParent = grandParent.toFile().walkTopDown().maxDepth(3).find { it.name == fileName }
-        if (foundInGrandParent != null) {
-          return foundInGrandParent.toPath()
+      val sanitizedSuffix = suffixSegments.map { sanitizePathSegment(it) }.joinToString("/")
+      val unsanitizedSuffix = suffixSegments.joinToString("/")
+      val found =
+        existingAncestor.toFile().walkTopDown().maxDepth(5).find {
+          val normalizedPath = it.absolutePath.replace('\\', '/')
+          normalizedPath.endsWith(sanitizedSuffix) || normalizedPath.endsWith(unsanitizedSuffix)
         }
+      if (found != null) {
+        return found.toPath()
       }
     }
     return path
   }
 
-  private fun resolveTestResultPbPath(): Path {
+  fun resolveTestResultPbPath(): Path {
     val path = project.resolve(testResultPbPath)
-    if (runWithBuiltInPlatform && !path.exists()) {
-      // For built-in platform, the listener might have appended a device-specific subdirectory.
-      val pbFile = path.parent.toFile().walkTopDown().maxDepth(2).find { it.name == "test-result.pb" }
+    if (path.exists()) {
+      return path
+    }
+    // Try walking the parent (device dir) in case of subdirectories
+    val parentDir = path.parent?.toFile()
+    if (parentDir != null && parentDir.exists()) {
+      val pbFile = parentDir.walkTopDown().maxDepth(2).find { it.name == "test-result.pb" }
       if (pbFile != null) {
         return pbFile.toPath()
+      }
+    }
+    // Try walking the grandparent (results root dir, e.g. "debug") in case of different device name
+    val grandparentDir = path.parent?.parent?.toFile()
+    if (grandparentDir != null && grandparentDir.exists()) {
+      val pbFile = grandparentDir.walkTopDown().maxDepth(3).find { it.name == "test-result.pb" }
+      if (pbFile != null) {
+        return pbFile.toPath()
+      }
+    }
+    return path
+  }
+
+  fun resolveTestResultXmlPath(): Path {
+    val path = project.resolve(testResultXmlPath)
+    if (path.exists()) {
+      return path
+    }
+    val parentDir = path.parent?.toFile()
+    if (parentDir != null && parentDir.exists()) {
+      val xmlFile = parentDir.walkTopDown().maxDepth(1).find { it.name.startsWith("TEST-") && it.name.endsWith(".xml") }
+      if (xmlFile != null) {
+        return xmlFile.toPath()
       }
     }
     return path
@@ -155,7 +195,7 @@ class AndroidTestUtil(
 
     executor.run(testTaskName)
 
-    assertThat(project.resolve(testReportPath)).exists()
+    verifyReport()
     assertThat(resolveTestResultPbPath()).exists()
     assertThat(project.resolve(testCoverageXmlPath)).contains("""<method name="stubFuncForTestingCodeCoverage" desc="()V" line="9">""")
     assertThat(project.resolve(testCoverageXmlPath)).contains("""<counter type="INSTRUCTION" missed="3" covered="5"/>""")
@@ -224,7 +264,7 @@ class AndroidTestUtil(
 
     executor.expectFailure().run(testTaskName)
 
-    assertThat(project.resolve(testReportPath)).exists()
+    verifyReport()
     assertThat(resolveTestResultPbPath()).exists()
   }
 
@@ -260,6 +300,23 @@ class AndroidTestUtil(
     assertThat(testSuiteResult.testResultList.any { it.testCase.testMethod == "useAppContext" }).isTrue()
   }
 
+  fun androidTestFromLibraryModuleWithNewReportFormat() {
+    selectModule("lib")
+
+    rule.build.reconfigureGradleProperties { add(BooleanOption.REPORT_AGGREGATION_SUPPORT, true) }
+
+    executor.run(testTaskName)
+
+    verifyReport(enableReportAggregation = true)
+
+    val testResultPb = resolveTestResultPbPath()
+    assertThat(testResultPb).exists()
+
+    val testSuiteResult = testResultPb.toFile().inputStream().use { TestSuiteResult.parseFrom(it) }
+    assertThat(testSuiteResult.testResultCount).isAtLeast(1)
+    assertThat(testSuiteResult.testResultList.any { it.testCase.testMethod == "useAppContext" }).isTrue()
+  }
+
   fun androidTestWithOrchestrator() {
     selectModule("app")
 
@@ -267,7 +324,7 @@ class AndroidTestUtil(
 
     executor.run(testTaskName)
 
-    assertThat(project.resolve(testReportPath)).exists()
+    verifyReport()
     assertThat(resolveTestResultPbPath()).exists()
   }
 
@@ -281,7 +338,7 @@ class AndroidTestUtil(
 
     executor.run(testTaskName)
 
-    assertThat(project.resolve(testReportPath)).exists()
+    verifyReport()
     assertThat(resolveTestResultPbPath()).exists()
     assertThat(project.resolve(testCoverageXmlPath)).contains("""<method name="stubFuncForTestingCodeCoverage" desc="()V" line="9">""")
     assertThat(project.resolve(testCoverageXmlPath)).contains("""<counter type="INSTRUCTION" missed="3" covered="5"/>""")
@@ -304,7 +361,7 @@ class AndroidTestUtil(
 
     executor.run(testTaskName)
 
-    assertThat(project.resolve(testReportPath)).exists()
+    verifyReport()
     assertThat(resolveTestResultPbPath()).exists()
   }
 
@@ -627,8 +684,8 @@ class AndroidTestUtil(
 
     executor.run(testTaskName)
 
-    assertThat(project.resolve(testResultXmlPath)).exists()
-    assertThat(project.resolve(testReportPath)).exists()
+    assertThat(resolveTestResultXmlPath()).exists()
+    verifyReport()
 
     val testResultPb = resolveTestResultPbPath()
     assertThat(testResultPb).exists()
@@ -641,14 +698,14 @@ class AndroidTestUtil(
     // restored from the configuration cache. We expect no crashes.
     executor.run("clean")
 
-    assertThat(project.resolve(testResultXmlPath)).doesNotExist()
+    assertThat(resolveTestResultXmlPath()).doesNotExist()
     assertThat(project.resolve(testReportPath)).doesNotExist()
     assertThat(resolveTestResultPbPath()).doesNotExist()
 
     executor.run(testTaskName)
 
-    assertThat(project.resolve(testResultXmlPath)).exists()
-    assertThat(project.resolve(testReportPath)).exists()
+    assertThat(resolveTestResultXmlPath()).exists()
+    verifyReport()
     assertThat(resolveTestResultPbPath()).exists()
   }
 
@@ -660,7 +717,7 @@ class AndroidTestUtil(
 
     executor.run(testTaskName)
 
-    assertThat(project.resolve(testReportPath)).exists()
+    verifyReport()
     assertThat(resolveTestResultPbPath()).exists()
   }
 
@@ -740,7 +797,7 @@ class AndroidTestUtil(
 
     val result = executor.withEnableInfoLogging(true).run(testTaskName)
 
-    assertThat(project.resolve(testReportPath)).exists()
+    verifyReport()
     assertThat(resolveTestResultPbPath()).exists()
 
     result.assertOutputContains("Running force AOT compilation (speed) for com.example.android.kotlin")
@@ -762,7 +819,7 @@ class AndroidTestUtil(
 
     executor.run(testTaskName)
 
-    assertThat(project.resolve(testReportPath)).exists()
+    verifyReport()
     assertThat(resolveTestResultPbPath()).exists()
     assertThat(project.resolve(testCoverageXmlPath))
       .contains("""<method name="stubDynamicFeature1FuncForTestingCodeCoverage" desc="()V" line="8">""")
@@ -780,7 +837,7 @@ class AndroidTestUtil(
 
     executor.run(testTaskName)
 
-    assertThat(project.resolve(testReportPath)).exists()
+    verifyReport()
     assertThat(resolveTestResultPbPath()).exists()
     assertThat(project.resolve(testCoverageXmlPath))
       .contains("""<method name="stubDynamicFeature1FuncForTestingCodeCoverage" desc="()V" line="8">""")
@@ -822,7 +879,7 @@ class AndroidTestUtil(
     val reportDir = customReportDir ?: project.resolve(testReportPath).parent
     val reportFile = project.resolve(testReportPath)
 
-    if (enableReportAggregation) {
+    if (enableReportAggregation || runWithBuiltInPlatform) {
       assertThat(reportDir.resolve("index.html")).exists()
       assertThat(reportDir.resolve("script.js")).exists()
       assertThat(reportDir.resolve("styles.css")).exists()
@@ -836,6 +893,18 @@ class AndroidTestUtil(
     } else {
       assertThat(reportFile).exists()
       assertThat(reportDir.resolve("index.html")).exists()
+    }
+
+    if (testTaskName.contains("allDevices")) {
+      val mergedReportDir = reportDir.parent.resolve("allDevices")
+      if (enableReportAggregation) {
+        assertThat(mergedReportDir.resolve("index.html")).exists()
+        assertThat(mergedReportDir.resolve("script.js")).exists()
+        assertThat(mergedReportDir.resolve("styles.css")).exists()
+        assertThat(mergedReportDir.resolve("data.js")).exists()
+      } else if (mergedReportDir.exists()) {
+        assertThat(mergedReportDir.resolve("index.html")).exists()
+      }
     }
   }
 }

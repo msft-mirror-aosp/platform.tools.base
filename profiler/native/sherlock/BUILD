@@ -2,6 +2,8 @@ load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
 
 package(default_visibility = ["//visibility:public"])
 
+exports_files(glob(["testdata/**"]))
+
 cc_binary(
     name = "sherlock_trace_processor",
     srcs = [

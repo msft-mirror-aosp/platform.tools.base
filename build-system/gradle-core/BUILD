@@ -1,4 +1,6 @@
+load("@com_google_protobuf//bazel:cc_proto_library.bzl", "cc_proto_library")
 load("@rules_java//java:defs.bzl", "java_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
 load("//tools/base/bazel:kotlin.bzl", "kotlin_library", "kotlin_test")
 load("//tools/base/bazel:maven.bzl", "maven_repository")
 load("//tools/base/bazel:proto.bzl", "java_proto_library")
@@ -35,6 +37,18 @@ java_proto_library(
     visibility = ["//visibility:public"],
 )
 
+proto_library(
+    name = "coverage_metadata_proto",
+    srcs = ["src/main/proto/coverage_metadata.proto"],
+    visibility = ["//visibility:public"],
+)
+
+cc_proto_library(
+    name = "coverage_metadata_cc_proto",
+    visibility = ["//visibility:public"],
+    deps = [":coverage_metadata_proto"],
+)
+
 kotlin_library(
     name = "gradle-core",
     srcs = glob([
@@ -50,6 +64,8 @@ kotlin_library(
     lint_extra_args = [
         "--disable",
         "InternalGradleApiUsage",
+        "--disable",
+        "InternalAgpApiUsage",
     ],
     lint_timeout = "long",
     module_name = "gradle_core",

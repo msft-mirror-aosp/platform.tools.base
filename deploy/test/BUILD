@@ -137,6 +137,7 @@ kotlin_library(
         "data/kotlin/**/*.kt",
         "data/kotlin/**/*.java",
     ]),
+    kotlinc_opts = ["-Xlambdas=class"],
 )
 
 dex_library(
@@ -169,4 +170,5 @@ kotlin_library(
         "data/kotlin_swap/**/*.kt",
         "data/kotlin_swap/**/*.java",
     ]),
+    kotlinc_opts = ["-Xlambdas=class"],
 )

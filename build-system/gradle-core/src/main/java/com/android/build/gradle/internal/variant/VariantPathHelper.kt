@@ -266,7 +266,6 @@ open class VariantPathHelper(
    * @return the location for APKs
    */
   val apkLocation: File by lazy {
-    val override = projectOptionsLookup(StringOption.IDE_APK_LOCATION) as String?
     // it does not really matter if the build was invoked from the IDE or not, it only
     // matters if it is an 'optimized' build and in that case, we consider it a
     // custom build.
@@ -274,7 +273,6 @@ open class VariantPathHelper(
       projectOptionsLookup(StringOption.IDE_BUILD_TARGET_ABI) != null || projectOptionsLookup(IntegerOption.IDE_TARGET_DEVICE_API) != null
     val baseDirectory =
       when {
-        override != null -> fileCreator(override)
         customBuild -> deploymentApkLocation.get().asFile
         else -> defaultApkLocation.get().asFile
       }

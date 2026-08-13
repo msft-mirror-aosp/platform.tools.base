@@ -17,6 +17,8 @@ package com.android.build.api.component.analytics
 
 import com.android.build.api.variant.ApplicationVariantBuilder
 import com.android.build.api.variant.GeneratesApkBuilder
+import com.android.build.api.variant.LintBuilder
+import com.android.build.api.variant.LintReportsBuilder
 import com.android.tools.build.gradle.internal.profile.VariantMethodType
 import com.google.common.truth.Truth
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
@@ -27,6 +29,7 @@ import org.mockito.junit.MockitoRule
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import org.mockito.quality.Strictness
 
 class AnalyticsEnabledVariantBuilderTest {
@@ -81,5 +84,25 @@ class AnalyticsEnabledVariantBuilderTest {
     Truth.assertThat(stats.variantApiAccess.variantAccessCount).isEqualTo(1)
     Truth.assertThat(stats.variantApiAccess.variantAccessList.first().type).isEqualTo(VariantMethodType.ENABLE_LINT_VALUE)
     verify(delegate, times(1)).enableLint = false
+  }
+
+  @Test
+  fun testLintReports() {
+    val lintBuilder: LintBuilder = mock()
+    val lintReportsBuilder: LintReportsBuilder = mock()
+    whenever(delegate.lint).thenReturn(lintBuilder)
+    whenever(lintBuilder.reports).thenReturn(lintReportsBuilder)
+
+    proxy.lint.reports.enableReportWithDependencies = false
+    Truth.assertThat(stats.variantApiAccess.variantAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantAccessList.first().type)
+      .isEqualTo(VariantMethodType.LINT_REPORTS_ENABLE_REPORT_WITH_DEPENDENCIES_VALUE)
+    verify(delegate.lint.reports, times(1)).enableReportWithDependencies = false
+
+    proxy.lint.reports.enableReportWithoutDependencies = false
+    Truth.assertThat(stats.variantApiAccess.variantAccessCount).isEqualTo(2)
+    Truth.assertThat(stats.variantApiAccess.variantAccessList[1].type)
+      .isEqualTo(VariantMethodType.LINT_REPORTS_ENABLE_REPORT_WITHOUT_DEPENDENCIES_VALUE)
+    verify(delegate.lint.reports, times(1)).enableReportWithoutDependencies = false
   }
 }

@@ -326,7 +326,7 @@ class AmInstrumentationRunnerTest {
     assertThat(instrumentCmd).contains("listener")
     assertThat(instrumentCmd).contains("com.android.tools.coverage.CoverageAgentAttacher")
     assertThat(instrumentCmd).contains("coverage-agent-config")
-    assertThat(instrumentCmd?.joinToString(" ")).contains("$agentPath=$testPackage,com/example,$dataDir")
+    assertThat(instrumentCmd?.joinToString(" ")).contains("$agentPath=$testPackage,com/example/app,$dataDir")
   }
 
   @Test
@@ -389,8 +389,8 @@ class AmInstrumentationRunnerTest {
         it.invoke(runner) as List<String>
       }
 
-    // Verify prefix is "com/android" (first two segments of "com.android.sample.app")
-    assertThat(command.any { it.contains("com/android") }).isTrue()
-    assertThat(command.any { it.contains("$agentPath=$testPackage,com/android,$dataDir") }).isTrue()
+    // Verify prefix is "com/android/sample/app" (entire package of "com.android.sample.app")
+    assertThat(command.any { it.contains("com/android/sample/app") }).isTrue()
+    assertThat(command.any { it.contains("$agentPath=$testPackage,com/android/sample/app,$dataDir") }).isTrue()
   }
 }

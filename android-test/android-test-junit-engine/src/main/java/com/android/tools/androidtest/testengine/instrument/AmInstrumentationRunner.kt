@@ -101,9 +101,12 @@ class AmInstrumentationRunner(
       builder.addInstrumentationArg("coverage", "true")
 
       // The agent expects options in the format: "package_name,prefix,data_dir"
-      val targetPackage = instrumentationArgs["targetPackage"] ?: instrumentationTargetPackageId
-      val basePackage = targetPackage.split(".").take(2).joinToString(".")
-      val prefix = basePackage.replace(".", "/")
+      val prefix =
+        instrumentationArgs["com.android.tools.coverage.prefixes"]
+          ?: run {
+            val targetPackage = instrumentationArgs["targetPackage"] ?: instrumentationTargetPackageId
+            targetPackage.replace(".", "/")
+          }
 
       val options = "$testPackageId,$prefix,$dataDir"
       val config = "$agentPath=$options"

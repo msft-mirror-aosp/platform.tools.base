@@ -31,11 +31,13 @@ import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodTy
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import java.io.Serializable
 import javax.inject.Inject
+import org.gradle.api.Task
 import org.gradle.api.file.RegularFile
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
+import org.gradle.api.tasks.TaskProvider
 
 open class AnalyticsEnabledDeviceTest
 @Inject
@@ -154,4 +156,14 @@ constructor(override val delegate: DeviceTest, stats: GradleBuildVariant.Builder
 
   override val outputProviders: ApkOutputProviders
     get() = generatesApk.outputProviders
+
+  override fun configureTestTask(action: (Task) -> Unit) {
+    stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.CONFIGURE_TEST_TASK_VALUE
+    delegate.configureTestTask(action)
+  }
+
+  override fun withTestTaskProvider(action: (TaskProvider<out Task>) -> Unit) {
+    stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.WITH_TEST_TASK_PROVIDER_VALUE
+    delegate.withTestTaskProvider(action)
+  }
 }

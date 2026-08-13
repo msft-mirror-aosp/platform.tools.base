@@ -74,6 +74,8 @@ import org.w3c.dom.Element
  */
 object XMLTransformer {
 
+  private val fileLinesCache = java.util.concurrent.ConcurrentHashMap<File, List<String>>()
+
   /** A context object to hold metadata about the current report being parsed. */
   private data class ReportContext(val moduleName: String, val variantName: String, val testSuiteName: String)
 
@@ -270,11 +272,15 @@ object XMLTransformer {
       }
 
     sourceFileNode.getElementsByTagName(TAG_LINE).elements.forEach { lineNode ->
+      val lineNumber = lineNode.getAttribute(ATTR_LINE_NUMBER).toInt()
+      if (isNonExecutableLine(sourceFileObject, lineNumber)) {
+        return@forEach
+      }
+
       val coveredInstructions = lineNode.getAttribute(ATTR_COVERED_INSTRUCTIONS).toInt()
       val missedInstructions = lineNode.getAttribute(ATTR_MISSED_INSTRUCTIONS).toInt()
       val coveredBranches = lineNode.getAttribute(ATTR_COVERED_BRANCHES).toInt()
       val missedBranches = lineNode.getAttribute(ATTR_MISSED_BRANCHES).toInt()
-      val lineNumber = lineNode.getAttribute(ATTR_LINE_NUMBER).toInt()
 
       testSuiteBuilder.lineCoverageBuilders[lineNumber] =
         LineCoverageBuilder(
@@ -329,6 +335,25 @@ object XMLTransformer {
 
       val potentialFile = File(absoluteSourceRoot, packagePath + sourceFileName)
       if (potentialFile.isFile) potentialFile else null
+    }
+  }
+
+  private fun isNonExecutableLine(file: File, lineNumber: Int): Boolean {
+    try {
+      if (!file.isFile) return false
+      val lines = fileLinesCache.getOrPut(file) { file.readLines() }
+      if (lineNumber <= 0 || lineNumber > lines.size) return false
+      val lineText = lines[lineNumber - 1].trim()
+      return lineText.isEmpty() ||
+        lineText == "}" ||
+        lineText == "{" ||
+        lineText.startsWith("import ") ||
+        lineText.startsWith("package ") ||
+        lineText.startsWith("//") ||
+        lineText.startsWith("/*") ||
+        lineText.startsWith("*")
+    } catch (e: Exception) {
+      return false
     }
   }
 }

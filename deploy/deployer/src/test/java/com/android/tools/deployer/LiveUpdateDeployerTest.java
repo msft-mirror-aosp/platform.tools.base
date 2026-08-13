@@ -21,6 +21,7 @@ import com.android.ddmlib.IDevice;
 import com.android.tools.deploy.proto.Deploy;
 import com.android.tools.deployer.common.AdbClient;
 import com.android.tools.deployer.common.DeployMetric;
+import com.android.tools.deployer.common.DeviceHolder;
 import com.android.tools.deployer.common.Installer;
 import com.android.tools.deployer.devices.FakeDevice;
 import com.android.tools.deployer.rules.ApiLevel;
@@ -77,7 +78,7 @@ public class LiveUpdateDeployerTest {
         }
         IDevice iDevice = bridge.getDevices()[0];
 
-        AdbClient adb = new AdbClient(iDevice, logger);
+        AdbClient adb = new AdbClient(new DeviceHolder(iDevice, null), logger);
 
         Path installersPath = DeployerTestUtils.prepareInstaller().toPath();
         ArrayList<DeployMetric> metrics = new ArrayList<>();

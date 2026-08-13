@@ -27,12 +27,15 @@ def studio_win(build_env: bazel.BuildEnv):
   ]
   extra_targets = [
       '//tools/base/profiler/native/trace_processor_daemon',
+      '//tools/base/profiler/native/sherlock/perfetto-cropper:sherlock-perfetto-cropper',
+      '//tools/base/profiler/native/sherlock/perfetto-gpu-counters:sherlock-perfetto-gpu-counters',
       '//tools/base/profiler/native/sherlock:sherlock_trace_processor',
       '//tools/adt/idea/studio:android-studio.linux.zip',
       '//tools/adt/idea/studio:android-studio.mac.zip',
       '//tools/adt/idea/studio:android-studio.mac_arm.zip',
       '//tools/adt/idea/studio:android-studio.win.zip',
       '//tools/vendor/google/lume/dist:lightbuild',
+      '//tools/vendor/google/lume/lightbuild-cli/dist:release_pkg',
   ]
   test_tag_filters = '-noci:studio-win,-qa_smoke,-qa_fast,-qa_unreliable,-perfgate-release,-no_k2'
 
@@ -79,8 +82,11 @@ def studio_win(build_env: bazel.BuildEnv):
       [
           ('tools/vendor/google/android/android-cli.zip', ''),
           ('tools/base/profiler/native/trace_processor_daemon/trace_processor_daemon.exe', ''),
+          ('tools/base/profiler/native/sherlock/perfetto-cropper/sherlock-perfetto-cropper.exe', ''),
+          ('tools/base/profiler/native/sherlock/perfetto-gpu-counters/sherlock-perfetto-gpu-counters.exe', ''),
           ('tools/base/profiler/native/sherlock/sherlock_trace_processor.exe', ''),
           ('tools/vendor/google/lume/dist/lightbuild.zip', ''),
+          ('tools/vendor/google/lume/lightbuild-cli/dist/lightbuild-cli.zip', ''),
       ],
       missing_ok=(build_type == studio.BuildType.PRESUBMIT),
   )

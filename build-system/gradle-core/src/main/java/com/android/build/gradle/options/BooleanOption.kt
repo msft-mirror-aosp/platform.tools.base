@@ -331,17 +331,21 @@ enum class BooleanOption(
     FeatureStage.Experimental,
     FutureStage(Version.VERSION_9_0, true, FeatureStage.Enforced(Version.VERSION_9_0)),
   ),
+  R8_PLUGIN_SUPPORT("android.experimental.r8.plugin.support", false, FeatureStage.Experimental),
 
-  /** Switches Android Test execution from the Unified Test Platform (UTP) to the Android Test JUnit Engine. */
+  /** Switches Android Test execution from the Unified Test Platform (UTP) to the experimental direct-to-AGP implementation. */
   ANDROID_BUILTIN_TEST_PLATFORM(
     "android.experimental.androidTest.builtin_test_platform",
-    true,
+    false,
     FeatureStage.Experimental,
     futureStage = FutureStage(defaultValue = true, stage = FeatureStage.SoftlyEnforced(VERSION_10_0), version = Version.VERSION_9_0),
   ),
 
   /** When enabled, registers code coverage and test results aggregation tasks. */
   REPORT_AGGREGATION_SUPPORT("android.experimental.reportAggregationSupport", false, FeatureStage.Experimental),
+
+  /** When enabled, migrates test and coverage reports to the new format for individual suites. */
+  TEST_SUITE_NEW_REPORT_FORMAT("android.experimental.testSuite.newReportFormat", false, FeatureStage.Experimental),
 
   /** Temporary workaround to continue using R8 param of --main-dex-list */
   R8_MAIN_DEX_LIST_DISALLOWED(
@@ -352,7 +356,7 @@ enum class BooleanOption(
   ),
 
   /** Enables R8 gradual support */
-  R8_GRADUAL_API("android.r8.gradual.support", false, FeatureStage.Experimental),
+  R8_GRADUAL_API("android.r8.gradual.support", true, FeatureStage.Experimental),
 
   /** Whether to output the R8 Configuration Analyzer report from R8 builds. */
   R8_ENABLE_KEEP_RADIUS_REPORT(
@@ -375,6 +379,12 @@ enum class BooleanOption(
     defaultValue = true,
     stage = FeatureStage.Experimental,
     FutureStage(version = Version.VERSION_10_0, defaultValue = true, stage = FeatureStage.Enforced(enforcedVersion = Version.VERSION_10_0)),
+  ),
+  ENFORCE_DYNAMIC_FEATURE_VARIANT_MATCHING(
+    "android.enforceDynamicFeatureVariantMatching",
+    false,
+    FeatureStage.Experimental,
+    FutureStage(Version.VERSION_10_0, true, FeatureStage.Enforced(Version.VERSION_10_0)),
   ),
 
   /** When enabled, tasks for local and aggregated lint reports are registered. */

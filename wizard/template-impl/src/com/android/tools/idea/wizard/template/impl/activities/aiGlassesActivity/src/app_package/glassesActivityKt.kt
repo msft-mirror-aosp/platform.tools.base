@@ -36,7 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.xr.glimmer.Button
-import androidx.xr.glimmer.Card
+import androidx.xr.glimmer.ActionCard
 import androidx.xr.glimmer.GlimmerTheme
 import androidx.xr.glimmer.Text
 import androidx.xr.glimmer.googlefonts.createGoogleSansFlexTypography
@@ -85,7 +85,7 @@ fun HomeScreen(modifier: Modifier = Modifier, onClose: () -> Unit) {
             .fillMaxSize(),
         contentAlignment = Alignment.BottomCenter
     ) {
-        Card(
+        ActionCard(
             title = {
                 Text(stringResource(id = R.string.app_name))
             },

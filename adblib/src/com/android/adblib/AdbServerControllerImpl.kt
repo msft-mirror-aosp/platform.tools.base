@@ -265,7 +265,18 @@ internal class AdbServerControllerImpl(private val host: AdbSessionHost, configu
 
     private suspend fun runAdbProcess(path: Path, commandArgs: List<String>, envVars: Map<String, String>, failedLogMessage: String) {
       try {
-        processRunner.runProcess(path, commandArgs, envVars)
+        val processResult = processRunner.runProcess(path, commandArgs, envVars)
+        if (processResult.exitCode != 0) {
+          // Non-zero exit codes are logged as warnings because downstream connection attempts may still succeed.
+          // If `kill-server` fails, subsequent launch or connection attempts will catch any permanent issues.
+          // If `start-server` fails (e.g. port already bound or adb concurrently started by another process),
+          // we still try to connect to and use whatever is listening on the port, delegating connection/compatibility
+          // failures to the socket layer.
+          logger.warn(
+            "'$path ${commandArgs.joinToString(" ")}' exited with code ${processResult.exitCode}\n" +
+              "Stdout: ${processResult.stdout}\nStderr: ${processResult.stderr}"
+          )
+        }
       } catch (e: Throwable) {
         e.rethrowCancellation()
         logger.info(e) { "$failedLogMessage: `$path $commandArgs`" }

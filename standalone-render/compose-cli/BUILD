@@ -108,15 +108,34 @@ maven_repository(
         "@maven//:androidx.lifecycle.lifecycle-viewmodel-ktx_2.8.3",
         "@maven//:androidx.lifecycle.lifecycle-viewmodel-savedstate_2.8.3",
         "@maven//:androidx.lifecycle.lifecycle-viewmodel_2.8.3",
-        "@maven//:com.android.application.com.android.application.gradle.plugin_8.2.0",
-        "@maven//:com.android.tools.build.aapt2_8.2.0-10154469",
+        "@maven//:com.android.application.com.android.application.gradle.plugin_9.2.0",
+        "@maven//:com.android.tools.build.aapt2_9.2.0-15009934",
+        "@maven//:org.apache.commons.commons-parent_69",
+        "@maven//:org.apache.commons.commons-parent_72",
         "@maven//:org.jetbrains.kotlin.android.org.jetbrains.kotlin.android.gradle.plugin_1.9.0",
+        "@maven//:org.jetbrains.kotlin.android.org.jetbrains.kotlin.android.gradle.plugin_2.3.10",
+        "@maven//:org.jetbrains.kotlin.compose-compiler-gradle-plugin_2.3.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-build-tools-compat_2.3.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-build-tools-impl_2.3.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-compose-compiler-plugin-embeddable_2.3.10",
         "@maven//:org.jetbrains.kotlin.kotlin-gradle-plugin-api_1.9.0",
+        "@maven//:org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.3.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-gradle-plugin_2.3.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.3.10",
         "@maven//:org.jetbrains.kotlin.kotlin-reflect_1.6.10",  # This is for org.jetbrains.kotlin:kotlin-compiler-embeddable:1.9.0
         "@maven//:org.jetbrains.kotlin.kotlin-reflect_1.8.20",
+        "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.3.20",
         "@maven//:org.jetbrains.kotlin.kotlin-script-runtime_1.9.0",
+        "@maven//:org.jetbrains.kotlin.kotlin-script-runtime_2.3.20",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_2.3.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk7_2.3.20",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.8.20",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8_2.3.20",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib_1.8.20",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib_2.3.20",
+        "@maven//:org.jetbrains.kotlin.plugin.compose.org.jetbrains.kotlin.plugin.compose.gradle.plugin_2.3.10",
+        "@maven//:org.junit.junit-bom_5.10.2",
+        "@maven//:org.junit.junit-bom_5.11.0-M2",
     ],
 )
 
@@ -134,9 +153,9 @@ kotlin_test(
         ":compose_project_deps",
         "//prebuilts/studio/layoutlib:runtime",
         "//prebuilts/studio/layoutlib/data:framework_res.jar",
-        "//prebuilts/studio/sdk:build-tools/34.0.0",
+        "//prebuilts/studio/sdk:build-tools/36.0.0",
         "//prebuilts/studio/sdk:platforms/android-34",
-        "//tools/base/build-system:gradle-distrib-8.2",  # This is actually "tools/external/gradle",
+        "//tools/base/build-system:gradle-distrib-9.5.0",  # This is actually "tools/external/gradle",
         "//tools/base/standalone-render/compose-cli/testData",
     ],
     tags = [
@@ -166,9 +185,9 @@ kotlin_test(
         "//prebuilts/studio/jdk/jbr-next:jdk_runtime_files",
         "//prebuilts/studio/layoutlib:runtime",
         "//prebuilts/studio/layoutlib/data:framework_res.jar",
-        "//prebuilts/studio/sdk:build-tools/34.0.0",
+        "//prebuilts/studio/sdk:build-tools/36.0.0",
         "//prebuilts/studio/sdk:platforms/android-34",
-        "//tools/base/build-system:gradle-distrib-8.2",  # This is actually "tools/external/gradle",
+        "//tools/base/build-system:gradle-distrib-9.5.0",  # This is actually "tools/external/gradle",
         "//tools/base/standalone-render/compose-cli/testData",
     ],
     jvm_flags = ["-Dtest.suite.jar=compose-cli-render-tests.jar"],
@@ -185,12 +204,14 @@ kotlin_test(
     ],
 )
 
-java_binary(
-    name = "compose-preview-renderer-cli",
-    main_class = "com.android.tools.render.common.MainKt",
+java_library(
+    name = "compose-preview-renderer-cli-lib",
     visibility = ["//visibility:public"],
-    runtime_deps = [
+    exports = [
         ":tools.compose-preview-renderer",
+        "//tools/base/standalone-render/lib:tools.standalone-render.lib",
+    ],
+    runtime_deps = [
         "//prebuilts/tools/common/lint-psi/intellij-core",
         "//tools/adt/idea/compose-designer:ui-animation-tooling-internal",
         "//tools/adt/idea/layoutlib:tools.layoutlib",
@@ -212,7 +233,6 @@ java_binary(
         "//tools/base/resource-repository:tools.resource-repository",
         "//tools/base/sdk-common:tools.sdk-common",
         "//tools/base/sdklib:tools.sdklib",
-        "//tools/base/standalone-render/lib:tools.standalone-render.lib",
         "//tools/base/zipflinger",
         "@maven//:com.google.code.gson.gson",
         "@maven//:com.google.guava.guava",
@@ -222,5 +242,14 @@ java_binary(
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
         "@maven//:org.ow2.asm.asm",
         "@maven//:org.ow2.asm.asm-commons",
+    ],
+)
+
+java_binary(
+    name = "compose-preview-renderer-cli",
+    main_class = "com.android.tools.render.common.MainKt",
+    visibility = ["//visibility:public"],
+    runtime_deps = [
+        ":compose-preview-renderer-cli-lib",
     ],
 )

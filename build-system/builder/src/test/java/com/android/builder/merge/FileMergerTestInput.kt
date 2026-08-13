@@ -22,8 +22,7 @@ import java.io.InputStream
 import org.junit.Assert
 import org.mockito.Mockito.mock
 
-class FileMergerTestInput(private val name: String, private var paths: MutableSet<String> = mutableSetOf<String>()) :
-  FileMergerInputNonIncremental {
+class FileMergerTestInput(private val name: String, private var paths: MutableSet<String> = mutableSetOf<String>()) : FileMergerZipInput {
 
   private val pathData = mutableMapOf<String, ByteArray>()
   private var open = false

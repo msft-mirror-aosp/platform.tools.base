@@ -268,6 +268,9 @@ class LintBaselineTest {
     assertTrue(isSamePathSuffix("abc\\def\\foo", "..\\..\\abc\\def\\foo"))
     assertTrue(isSamePathSuffix("abc\\def\\foo", "def\\foo"))
     assertFalse(isSamePathSuffix("foo", "bar"))
+    assertFalse(isSamePathSuffix("/a/b/Bar.kt", "Car.kt"))
+    assertFalse(isSamePathSuffix("src/main/Foo.java", "Goo.java"))
+    assertFalse(isSamePathSuffix("a/b/xyz", "ayz"))
   }
 
   @Test

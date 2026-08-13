@@ -171,7 +171,7 @@ class AndroidTestTaskManager(project: Project, globalConfig: GlobalTaskCreationC
     createApkProcessResTask(androidTestProperties)
 
     // process java resources
-    createProcessJavaResTask(androidTestProperties)
+    createProcessJavaResTask(androidTestProperties, androidTestProperties.packaging)
     createAidlTask(androidTestProperties)
 
     // add tasks to merge jni libs.
@@ -294,6 +294,7 @@ class AndroidTestTaskManager(project: Project, globalConfig: GlobalTaskCreationC
       } else {
         taskFactory.register(DeviceProviderInstrumentTestTask.CreationAction(androidTestProperties, testData, connectedCheckSerials))
       }
+    androidTestProperties.runTestTaskConfigurationActions(connectedTask)
     project.gradle.taskGraph.whenReady { graph ->
       if (shouldIgnoreFailures(testResultsCollectionTasksMap[androidTestProperties.mainVariant.name], graph)) {
         connectedTask.configure { it.ignoreFailures = true }
@@ -321,6 +322,7 @@ class AndroidTestTaskManager(project: Project, globalConfig: GlobalTaskCreationC
         taskFactory.register(
           DeviceProviderInstrumentTestTask.CreationAction(androidTestProperties, deviceProvider, testData, connectedCheckSerials)
         )
+      androidTestProperties.runTestTaskConfigurationActions(providerTask)
       taskFactory.configure(DEVICE_ANDROID_TEST) { deviceAndroidTest: Task -> deviceAndroidTest.dependsOn(providerTask) }
     }
 

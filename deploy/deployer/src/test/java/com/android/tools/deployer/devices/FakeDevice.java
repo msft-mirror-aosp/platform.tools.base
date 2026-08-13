@@ -73,7 +73,6 @@ public class FakeDevice {
     private final List<AndroidProcess> processes;
     private final User rootUser;
     private final User shellUser;
-    private User currentUser;
 
     private final int zygotepid;
     private final File logcat;
@@ -119,7 +118,6 @@ public class FakeDevice {
         // Set up
         this.rootUser = addUser(0, "root");
         this.shellUser = addUser(2000, "shell");
-        this.currentUser = shellUser;
         this.storage = Files.createTempDirectory("storage").toFile();
         this.storage.deleteOnExit();
         this.zygotepid = runProcess(0, "zygote64");
@@ -130,6 +128,10 @@ public class FakeDevice {
         this.fakeApp = getFakeApp();
 
         setUp();
+    }
+
+    public String getSerial() {
+        return serial;
     }
 
     private void setUp() throws IOException {
@@ -202,8 +204,8 @@ public class FakeDevice {
         return deviceState;
     }
 
-    public boolean isDevice(DeviceState state) {
-        return deviceState == state;
+    public void setDeviceState(DeviceState state) {
+        this.deviceState = state;
     }
 
     public Map<String, String> getProps() {
@@ -550,12 +552,11 @@ public class FakeDevice {
         return rootUser;
     }
 
-    public void setCurrentUser(User user) {
-        currentUser = user;
-    }
-
     public User getCurrentUser() {
-        return currentUser;
+        if (deviceState != null && deviceState.isRoot()) {
+            return rootUser;
+        }
+        return shellUser;
     }
 
     public RunResult executeScript(String cmd, byte[] input) throws IOException {

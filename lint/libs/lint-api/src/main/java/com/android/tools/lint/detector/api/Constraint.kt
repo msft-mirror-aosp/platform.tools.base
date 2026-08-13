@@ -123,7 +123,7 @@ class TargetSdkLessThan internal constructor(val targetSdkVersion: Int) : Constr
  */
 class AllOfConstraint internal constructor(val left: Constraint, val right: Constraint) : Constraint() {
   override fun accept(context: Context, incident: Incident): Boolean {
-    return left.accept(context, incident) || right.accept(context, incident)
+    return left.accept(context, incident) && right.accept(context, incident)
   }
 }
 
@@ -134,7 +134,7 @@ class AllOfConstraint internal constructor(val left: Constraint, val right: Cons
  */
 class AnyOfConstraint internal constructor(val left: Constraint, val right: Constraint) : Constraint() {
   override fun accept(context: Context, incident: Incident): Boolean {
-    return left.accept(context, incident) && right.accept(context, incident)
+    return left.accept(context, incident) || right.accept(context, incident)
   }
 }
 

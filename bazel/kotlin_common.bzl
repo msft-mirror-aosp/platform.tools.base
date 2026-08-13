@@ -49,6 +49,8 @@ def default_kotlinc_opts(toolchain_info, jvm_target):
         return ["-jvm-target", "17"]
     elif jvm_target == "21":
         return ["-jvm-target", "21"]
+    elif jvm_target == "25":
+        return ["-jvm-target", "25"]
     else:
         fail("JVM target " + jvm_target + " is not supported")
 
@@ -71,6 +73,8 @@ def select_java_compile_toolchain(toolchain_info, jvm_target):
         return toolchain_info[KtJvmToolchainInfo].java_compile_toolchain_17
     elif jvm_target == "21":
         return toolchain_info[KtJvmToolchainInfo].java_compile_toolchain_21
+    elif jvm_target == "25":
+        return toolchain_info[KtJvmToolchainInfo].java_compile_toolchain_25
     else:
         fail("JVM target " + jvm_target + " is not supported")
 
@@ -93,6 +97,8 @@ def select_java_runtime(toolchain_info, jvm_target):
         return toolchain_info[KtJvmToolchainInfo].java_runtime_17
     elif jvm_target == "21":
         return toolchain_info[KtJvmToolchainInfo].java_runtime_21
+    elif jvm_target == "25":
+        return toolchain_info[KtJvmToolchainInfo].java_runtime_25
     else:
         fail("JVM target " + jvm_target + " is not supported")
 
@@ -103,10 +109,12 @@ KtJvmToolchainInfo = provider(
         "java_runtime_11",
         "java_runtime_17",
         "java_runtime_21",
+        "java_runtime_25",
         "java_compile_toolchain_8",
         "java_compile_toolchain_11",
         "java_compile_toolchain_17",
         "java_compile_toolchain_21",
+        "java_compile_toolchain_25",
     ],
 )
 
@@ -118,10 +126,12 @@ def _kt_java_toolchain_bundle_impl(ctx):
             java_runtime_11 = ctx.attr.kt_java_runtime_11[java_common.JavaRuntimeInfo],
             java_runtime_17 = ctx.attr.kt_java_runtime_17[java_common.JavaRuntimeInfo],
             java_runtime_21 = ctx.attr.kt_java_runtime_21[java_common.JavaRuntimeInfo],
+            java_runtime_25 = ctx.attr.kt_java_runtime_25[java_common.JavaRuntimeInfo],
             java_compile_toolchain_8 = ctx.attr.kt_java_compile_toolchain_8[java_common.JavaToolchainInfo],
             java_compile_toolchain_11 = ctx.attr.kt_java_compile_toolchain_11[java_common.JavaToolchainInfo],
             java_compile_toolchain_17 = ctx.attr.kt_java_compile_toolchain_17[java_common.JavaToolchainInfo],
             java_compile_toolchain_21 = ctx.attr.kt_java_compile_toolchain_21[java_common.JavaToolchainInfo],
+            java_compile_toolchain_25 = ctx.attr.kt_java_compile_toolchain_25[java_common.JavaToolchainInfo],
         ),
     ]
 
@@ -153,6 +163,10 @@ kt_java_toolchain_bundle = rule(
             default = Label("//prebuilts/studio/jdk/jbr-next:java_runtime"),
             providers = [java_common.JavaRuntimeInfo],
         ),
+        "kt_java_runtime_25": attr.label(
+            default = Label("//prebuilts/studio/jdk/jbr25:java_runtime"),
+            providers = [java_common.JavaRuntimeInfo],
+        ),
         "kt_java_compile_toolchain_8": attr.label(
             default = Label("//prebuilts/studio/jdk:java8_compile_toolchain"),
             providers = [java_common.JavaToolchainInfo],
@@ -167,6 +181,10 @@ kt_java_toolchain_bundle = rule(
         ),
         "kt_java_compile_toolchain_21": attr.label(
             default = Label("//prebuilts/studio/jdk:java21_compile_toolchain"),
+            providers = [java_common.JavaToolchainInfo],
+        ),
+        "kt_java_compile_toolchain_25": attr.label(
+            default = Label("//prebuilts/studio/jdk:java25_compile_toolchain"),
             providers = [java_common.JavaToolchainInfo],
         ),
     },

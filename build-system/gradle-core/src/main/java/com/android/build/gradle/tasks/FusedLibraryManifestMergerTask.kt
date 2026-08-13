@@ -40,12 +40,10 @@ import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.CacheableTask
+import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.OutputFile
-import org.gradle.api.tasks.PathSensitive
-import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskProvider
 
 /** Merges Manifests from libraries that will be included with in fused library. */
@@ -65,9 +63,11 @@ abstract class FusedLibraryManifestMergerTask : ManifestProcessorGlobalTask() {
 
   @get:Internal abstract val tmpDir: DirectoryProperty
 
-  /* For adding a dependency on the files used in identifierToManifestDependencyFile. */
-  @get:InputFiles
-  @get:PathSensitive(PathSensitivity.RELATIVE)
+  /**
+   * The library manifest files. Annotated with @Classpath to track manifest merging order sensitivity for caching correctness
+   * (b/514242899).
+   */
+  @get:Classpath
   val libraryManifestFiles: FileCollection
     get() = libraryManifests.get().artifactFiles
 

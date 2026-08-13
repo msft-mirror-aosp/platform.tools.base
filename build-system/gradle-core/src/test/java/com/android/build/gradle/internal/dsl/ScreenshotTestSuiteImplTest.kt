@@ -35,8 +35,9 @@ class ScreenshotTestSuiteImplTest {
     val suite =
       dslServices.newDecoratedInstance(ScreenshotAgpTestSuiteImpl::class.java, dslSuite, dslServices, dependencyHandler, providers)
 
-    // 1. Assert targets: default targets are created
+    // 1. Assert targets: default target is created
     assertThat(suite.targets.names).containsExactly("default")
+    assertThat(suite.requiresUpdateTask).isTrue()
 
     // 2. Assert JUnit engine defaults: "preview-screenshot-test-engine" is included
     assertThat(suite.useJunitEngine.includeEngines).containsExactly("preview-screenshot-test-engine")
@@ -121,5 +122,6 @@ class ScreenshotTestSuiteImplTest {
 
     // Instantiation should succeed even if configurations is unsupported
     assertThat(suite.targets.names).containsExactly("default")
+    assertThat(suite.requiresUpdateTask).isTrue()
   }
 }

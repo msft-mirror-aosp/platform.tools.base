@@ -22,17 +22,10 @@ import com.android.adblib.DeviceSelector;
 import com.android.adblib.tools.InstallerKt;
 import com.android.adblib.tools.JavaBridge;
 import com.android.annotations.NonNull;
-import com.android.ddmlib.AdbCommandRejectedException;
-import com.android.ddmlib.Client;
-import com.android.ddmlib.ClientData;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
-import com.android.ddmlib.InstallException;
-import com.android.ddmlib.InstallMetrics;
 import com.android.ddmlib.ShellCommandUnresponsiveException;
 import com.android.ddmlib.SimpleConnectedSocket;
-import com.android.ddmlib.SyncException;
-import com.android.ddmlib.TimeoutException;
 import com.android.sdklib.AndroidVersion;
 import com.android.tools.deploy.proto.Deploy;
 import com.android.tools.deployer.model.Apk;
@@ -40,7 +33,6 @@ import com.android.tools.deployer.model.DeploymentPlan;
 import com.android.tools.tracer.Trace;
 import com.android.utils.ILogger;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 
 import java.io.ByteArrayOutputStream;
@@ -69,19 +61,36 @@ public class AdbClient {
                     "x86_64", Deploy.Arch.ARCH_64_BIT,
                     "x86", Deploy.Arch.ARCH_32_BIT);
 
-    private final IDevice device;
+    private final DeviceHolder deviceHolder;
     private final ILogger logger;
 
     private final Optional<AdbSession> adbSession;
 
-    public AdbClient(IDevice device, ILogger logger) {
-        this(device, logger, null);
+    public AdbClient(DeviceHolder deviceHolder, ILogger logger) {
+        this(deviceHolder, logger, null);
     }
 
-    public AdbClient(IDevice device, ILogger logger, AdbSession adbSession) {
-        this.device = device;
+    public AdbClient(DeviceHolder deviceHolder, ILogger logger, AdbSession adbSession) {
+        this.deviceHolder = deviceHolder;
         this.logger = logger;
         this.adbSession = Optional.ofNullable(adbSession);
+    }
+
+    @Deprecated
+    public AdbClient(IDevice device, ILogger logger) {
+        this(new DeviceHolder(device, null), logger);
+    }
+
+    @Deprecated
+    public AdbClient(IDevice device, ILogger logger, AdbSession adbSession) {
+        this(
+                new DeviceHolder(
+                        device,
+                        null,
+                        adbSession != null
+                                && DeviceHolder.checkEnableUseConnectedDevice(adbSession)),
+                logger,
+                adbSession);
     }
 
     public static class InstallResult {
@@ -103,35 +112,24 @@ public class AdbClient {
     }
 
     public SimpleConnectedSocket rawExec(String executable, String[] parameters)
-            throws AdbCommandRejectedException, IOException, TimeoutException {
-        return device.rawExec2(executable, parameters);
+            throws IOException {
+        return deviceHolder.rawExec2(executable, parameters);
     }
 
-    /** Executes the given command with no stdin and returns stdout as a byte[] */
+    /** Executes the given command and returns stdout as a byte[] */
     public byte[] shell(String[] parameters, long timeOutmS) throws IOException {
-        return shell(parameters, null, timeOutmS);
+        return shell(parameters, timeOutmS, TimeUnit.MILLISECONDS);
     }
 
-    public byte[] shell(String[] parameters, InputStream input, long timeOutmS) throws IOException {
-        return shell(parameters, input, timeOutmS, TimeUnit.MILLISECONDS);
-    }
-
-    /**
-     * Executes the given command and sends {@code input} to stdin and returns stdout as a byte[]
-     */
-    public byte[] shell(
-            String[] parameters, InputStream input, long maxTimeOutMs, TimeUnit timeUnit)
+    /** Executes the given command and returns stdout as a byte[] */
+    public byte[] shell(String[] parameters, long maxTimeOutMs, TimeUnit timeUnit)
             throws IOException {
         ByteArrayOutputReceiver receiver;
         try (Trace ignored = Trace.begin("adb shell" + Arrays.toString(parameters))) {
             receiver = new ByteArrayOutputReceiver();
-            device.executeShellCommand(
-                    String.join(" ", parameters), receiver, maxTimeOutMs, timeUnit, input);
+            deviceHolder.executeShellCommand(
+                    String.join(" ", parameters), receiver, maxTimeOutMs, timeUnit);
             return receiver.toByteArray();
-        } catch (AdbCommandRejectedException
-                | ShellCommandUnresponsiveException
-                | TimeoutException e) {
-            throw new IOException(e);
         }
     }
 
@@ -144,12 +142,8 @@ public class AdbClient {
         ByteArrayOutputReceiver receiver;
         try (Trace ignored = Trace.begin("binder" + Arrays.toString(parameters))) {
             receiver = new ByteArrayOutputReceiver();
-            device.executeBinderCommand(parameters, receiver, 5, TimeUnit.MINUTES, input);
+            deviceHolder.executeBinderCommand(parameters, receiver, 5, TimeUnit.MINUTES, input);
             return receiver.toByteArray();
-        } catch (AdbCommandRejectedException
-                | ShellCommandUnresponsiveException
-                | TimeoutException e) {
-            throw new IOException(e);
         }
     }
 
@@ -161,7 +155,7 @@ public class AdbClient {
                         .map(apk -> Paths.get(apk.path))
                         .collect(Collectors.toList()));
 
-        List<Path> bps = plan.getApp().getBaselineProfile(device.getVersion().getApiLevel());
+        List<Path> bps = plan.getApp().getBaselineProfile(deviceHolder.getVersion().getApiLevel());
         paths.addAll(bps);
         logger.info("Installing:");
         for (Path p : paths) {
@@ -200,7 +194,7 @@ public class AdbClient {
     }
 
     private boolean baselineInstallationStatusSupported() {
-        return device.getVersion().getApiLevel() > 33;
+        return deviceHolder.getVersion().getApiLevel() > 33;
     }
 
     private InstallResult makeInstallResult(String code, String message, Throwable t) {
@@ -246,7 +240,7 @@ public class AdbClient {
     private InstallResult installWithAdbLib(
             @NonNull List<Path> paths, List<String> options, boolean reinstall) {
         try {
-            if (!device.getVersion().isAtLeast(AndroidVersion.VersionCodes.LOLLIPOP) && paths.size() > 1) {
+            if (!deviceHolder.getVersion().isAtLeast(AndroidVersion.VersionCodes.LOLLIPOP) && paths.size() > 1) {
                 return new InstallResult(
                         InstallStatus.MULTI_APKS_NO_SUPPORTED_BELOW21,
                         "Splits are not supported below API 21");
@@ -255,7 +249,7 @@ public class AdbClient {
                 options.add(0, "-r");
             }
             DeviceSelector deviceSelector =
-                    DeviceSelector.fromSerialNumber(device.getSerialNumber());
+                    DeviceSelector.fromSerialNumber(deviceHolder.getSerialNumber());
             Duration timeout = Duration.of(Timeouts.CMD_OINSTALL_MS, ChronoUnit.MILLIS);
             AdbDeviceServices deviceServices = adbSession.get().getDeviceServices();
             long startNanos = System.nanoTime();
@@ -296,15 +290,15 @@ public class AdbClient {
 
     public boolean uninstall(String packageName) {
         try {
-            device.uninstallPackage(packageName);
+            deviceHolder.uninstallPackage(packageName);
             return true;
-        } catch (InstallException e) {
+        } catch (IOException e) {
         }
         return false;
     }
 
     public List<String> getAbis() {
-        return device.getAbis();
+        return deviceHolder.getAbis();
     }
 
     /**
@@ -313,18 +307,13 @@ public class AdbClient {
      * @return a {@link List} of PIDs, or null if this isn't supported on the device.
      */
     public List<Integer> getPids(String packageName) {
-        if (!device.supportsFeature(IDevice.Feature.REAL_PKG_NAME)) {
+        if (!deviceHolder.isRealPkgNameSupported()) {
             throw new IllegalStateException(
                     String.format(
-                            "Device %s, do not support REAL_PKG_NAME", device.getSerialNumber()));
+                            "Device %s, does not support REAL_PKG_NAME",
+                            deviceHolder.getSerialNumber()));
         }
-        List<Integer> results = new ArrayList<>();
-        for (Client client : device.getClients()) {
-            if (packageName.equals(client.getClientData().getPackageName())) {
-                results.add(client.getClientData().getPid());
-            }
-        }
-        return results;
+        return deviceHolder.getPidsForPackageName(packageName);
     }
 
     public Deploy.Arch getArch(List<Integer> pids) {
@@ -377,53 +366,21 @@ public class AdbClient {
     }
 
     private Deploy.Arch getArch(int pid) {
-        for (Client client : device.getClients()) {
-            if (client.getClientData().getPid() != pid) {
-                continue;
-            } else {
-                return getArchFromDdmClient(client.getClientData());
-            }
-        }
-        return Deploy.Arch.ARCH_UNKNOWN;
-    }
-
-    @VisibleForTesting
-    static Deploy.Arch getArchFromDdmClient(ClientData clientData) {
-        String abi = clientData.getAbi();
-        if (abi == null) {
-            return Deploy.Arch.ARCH_UNKNOWN;
-        } else if (abi.startsWith("32-bit")) {
-            return Deploy.Arch.ARCH_32_BIT;
-        } else if (abi.startsWith("64-bit")) {
-            return Deploy.Arch.ARCH_64_BIT;
-        } else {
-            Deploy.Arch fromMapping = getArchForAbi(abi);
-            if (fromMapping == null) {
-                return Deploy.Arch.ARCH_UNKNOWN;
-            } else {
-                return fromMapping;
-            }
-        }
+        return deviceHolder.getArchForPid(pid);
     }
 
     public void push(String from, String to) throws IOException {
         try (Trace ignored = Trace.begin("adb push")) {
-            device.pushFile(from, to);
-        } catch (SyncException | TimeoutException | AdbCommandRejectedException e) {
-            throw new IOException(e);
+            deviceHolder.pushFile(from, to);
         }
     }
 
     public AndroidVersion getVersion() {
-        return device.getVersion();
-    }
-
-    public String getName() {
-        return device.getName();
+        return deviceHolder.getVersion();
     }
 
     public String getSerial() {
-        return device.getSerialNumber();
+        return deviceHolder.getSerialNumber();
     }
 
     // TODO: Replace this to void copying the full byte[] incurred when calling stream.toByteArray()
@@ -456,7 +413,9 @@ public class AdbClient {
     // AbortSessionResponse.
     public String abortSession(String sessionId) {
         String prefix =
-                device.getVersion().isAtLeast(AndroidVersion.VersionCodes.N) ? "cmd package" : "pm";
+                deviceHolder.getVersion().isAtLeast(AndroidVersion.VersionCodes.N)
+                        ? "cmd package"
+                        : "pm";
 
         String[] command = {prefix, "install-abandon", sessionId};
 
@@ -471,10 +430,11 @@ public class AdbClient {
     }
 
     public String getSkipVerificationOption(String packageName) {
-        return ApkVerifierTracker.getSkipVerificationInstallationFlag(device, packageName);
+        return ApkVerifierTracker.getSkipVerificationInstallationFlag(deviceHolder, packageName);
     }
 
-    public IDevice getDevice() {
-        return device;
+
+    public DeviceHolder getDeviceHolder() {
+        return deviceHolder;
     }
 }

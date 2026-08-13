@@ -47,7 +47,17 @@ class TestLocation(
 
   /** the location of the Gradle cache directory */
   val gradleCacheDir: File,
-)
+) {
+  fun withGradleUserHome(newGradleUserHome: Path): TestLocation {
+    return TestLocation(
+      buildDir,
+      testsDir,
+      androidSdkHome,
+      newGradleUserHome,
+      FileUtils.join(newGradleUserHome.toFile(), "caches", GradleVersion.current().version, "transforms"),
+    )
+  }
+}
 
 fun initializeTestLocation(): TestLocation {
   val buildDir =

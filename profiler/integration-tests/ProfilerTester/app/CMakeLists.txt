@@ -55,3 +55,7 @@ target_link_libraries(
         # Links the target library to the log library
         # included in the NDK.
         ${log-lib})
+
+# Ensure 16KB page size alignment for the native libraries
+target_link_options(native_cpu PRIVATE "-Wl,-z,max-page-size=16384")
+target_link_options(native_memory PRIVATE "-Wl,-z,max-page-size=16384")

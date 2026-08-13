@@ -147,4 +147,7 @@ interface TestOptions {
 
   /** Configures the specialized Screenshot TestSuite designed for Compose Preview Screenshot Testing. */
   @get:Incubating val screenshotTests: NamedDomainObjectContainer<ScreenshotTestSuite>
+
+  /** Whether to enable Private Compute Core on-device environment during instrumentation. */
+  @get:Incubating @set:Incubating var instrumentInPrivateComputeCore: Boolean
 }

@@ -19,70 +19,102 @@ package com.android.tools.ui.inspector
 import com.android.adblib.AdbHostServices
 import com.android.adblib.AdbSession
 import com.android.adblib.DeviceSelector
+import com.android.adblib.DeviceState
 import com.android.adblib.shellAsText
+import com.android.tools.ui.inspector.printer.UiDumpPrinter
 import java.io.File
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.seconds
-import kotlin.time.TimeSource
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
+import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol
 
 /**
- * Discovers and prints the serial number of all currently connected Android devices.
+ * Resolves the serial number of the device to target. A [requested] serial is returned unchanged; when omitted, the serial of the only
+ * online device is used.
  *
- * @param adbSession The [AdbSession] to communicate with the local ADB server.
+ * @throws IllegalStateException when no serial is requested and there is not exactly one online device.
  */
-suspend fun doListDevices(adbSession: AdbSession) {
+internal suspend fun resolveDeviceSerial(adbSession: AdbSession, requested: String?): String {
+  // A requested serial is deliberately not validated against the device list: the list is only a snapshot (a device
+  // can change state right after the check), and the adb server already rejects unusable serials authoritatively
+  // when the first command reaches it. This matches adb's own behavior with -s.
+  if (requested != null) return requested
   val devices = adbSession.hostServices.devices(AdbHostServices.DeviceInfoFormat.SHORT_FORMAT)
-  if (devices.isEmpty()) {
-    println("No devices connected.")
-  } else {
-    devices.forEach { println(it.serialNumber) }
+  val onlineDevices = devices.filter { it.deviceState == DeviceState.ONLINE }
+  return when {
+    onlineDevices.size == 1 -> onlineDevices.single().serialNumber
+    devices.isEmpty() -> throw IllegalStateException("No connected devices found. Connect a device or select one with --device.")
+    onlineDevices.isEmpty() -> {
+      val states = devices.sortedBy { it.serialNumber }.joinToString { "${it.serialNumber} (${it.deviceStateString})" }
+      throw IllegalStateException("No online devices found. Connected devices: $states.")
+    }
+    else -> {
+      val serials = onlineDevices.map { it.serialNumber }.sorted().joinToString()
+      throw IllegalStateException("Multiple online devices found: $serials. Select one with --device.")
+    }
   }
 }
 
 /**
- * Scans running processes on the device and prints the package names of all debuggable applications.
+ * Resolves the package name of the application to target. A [requested] package is returned unchanged; when omitted, the package of the app
+ * currently hosting the top (foreground) activity is used.
  *
- * @param adbSession The [AdbSession] to communicate with the local ADB server.
- * @param serial The serial number of the target device.
+ * @throws IllegalStateException when no package is requested and the foreground app cannot be determined unambiguously.
  */
-suspend fun doListPackages(adbSession: AdbSession, serial: String) {
+internal suspend fun resolveTargetPackage(adbSession: AdbSession, serial: String, requested: String?): String {
+  // A requested package is used as-is: whether it exists, is running, and is debuggable is established downstream
+  // during injection, which owns those checks for resolved packages as well.
+  if (requested != null) return requested
   val selector = DeviceSelector.fromSerialNumber(serial)
-  // List all active processes on the device. The last column contains the process/package name.
-  val psOutput = adbSession.deviceServices.shellAsText(selector, "ps -A").stdout.trim()
-  if (psOutput.isEmpty()) {
-    println("No processes found.")
-    return
+  val uidResolver = UidResolver(adbSession, selector)
+  val foregroundUids = queryForegroundUids(adbSession, selector, uidResolver)
+  if (foregroundUids.isEmpty()) {
+    // dumpsys reported no process hosting a top activity: nothing is in the foreground to resolve (locked or transitioning screen).
+    throw foregroundAppResolutionException()
   }
-
-  // Parse package names
-  val candidatePackages =
-    psOutput
-      .split("\n")
-      .drop(1)
-      .map { line -> line.split("\\s+".toRegex()).last() }
-      .filter { it.contains(".") && !it.startsWith("/") }
-      .distinct()
-
-  val debuggablePackages = mutableListOf<String>()
-  candidatePackages.forEach { pkg ->
-    try {
-      // An application is debuggable if run-as succeeds for its package name.
-      val runAsResult = adbSession.deviceServices.shellAsText(selector, "run-as $pkg id")
-      if (runAsResult.exitCode == 0) {
-        debuggablePackages.add(pkg)
-      }
-    } catch (ignored: Exception) {}
-  }
-
-  if (debuggablePackages.isEmpty()) {
-    println("No debuggable packages found.")
-  } else {
-    debuggablePackages.sorted().forEach { println(it) }
+  val packagesByUid = uidResolver.allPackageUids().groupBy { it.uid }
+  // Distinct UIDs always resolve to distinct packages: several foreground UIDs means several apps are in the foreground (split screen).
+  val packages = foregroundUids.map { uid -> singlePackageForUid(uid, packagesByUid) }
+  return when {
+    packages.size == 1 -> packages.single()
+    else -> throw IllegalStateException("Multiple foreground apps found: ${packages.sorted().joinToString()}. Select one with --package.")
   }
 }
+
+/** Returns the UID of each app currently hosting a top (foreground) activity: one normally, several in split screen. */
+private suspend fun queryForegroundUids(adbSession: AdbSession, selector: DeviceSelector, uidResolver: UidResolver): List<Int> {
+  val output = adbSession.deviceServices.shellAsText(selector, TOP_ACTIVITY_SHELL_COMMAND).stdout
+  return parseTopActivityProcesses(output)
+    .map { it.pid }
+    .distinct()
+    .map { pid ->
+      // A PID from the top-activity snapshot that no longer resolves to a live process means the foreground is mid-transition; resolving
+      // from the remaining processes could pick the wrong app.
+      uidResolver.processUid(pid) ?: throw foregroundAppResolutionException()
+    }
+    .distinct()
+}
+
+/**
+ * Returns the single package that owns [uid], looked up in [packagesByUid]. Throws when no package owns the UID, or when several share it
+ * (legacy sharedUserId): a UID alone cannot tell which of them is in the foreground.
+ */
+private fun singlePackageForUid(uid: Int, packagesByUid: Map<Int, List<PackageUid>>): String {
+  val candidates = packagesByUid[uid].orEmpty().map { it.packageName }.distinct().sorted()
+  return when {
+    candidates.isEmpty() -> throw foregroundAppResolutionException()
+    candidates.size > 1 ->
+      throw IllegalStateException(
+        "The foreground process UID matches multiple packages: ${candidates.joinToString()}. Select one with --package."
+      )
+    else -> candidates.single()
+  }
+}
+
+private fun foregroundAppResolutionException() =
+  IllegalStateException(
+    "Could not determine the foreground app. Unlock the device and bring the target app to the foreground, or select the app with --package."
+  )
 
 /**
  * Injects the UI Inspector agent into the target application, attaches to its layout inspector service, and dumps the unified View and
@@ -96,8 +128,9 @@ suspend fun doListPackages(adbSession: AdbSession, serial: String) {
  * @param includeSystemComposables If true, includes system/framework composable nodes.
  * @param includeSemantics If true, includes accessibility semantics in the Compose dump.
  * @param composeInspectorJarPath Optional path to a local Compose Inspector JAR file.
+ * @param injectionManagerFactory Creates the [InjectionManager].
  */
-suspend fun doDumpUi(
+internal suspend fun doDumpUi(
   adbSession: AdbSession,
   serial: String,
   packageName: String,
@@ -106,84 +139,21 @@ suspend fun doDumpUi(
   includeSystemComposables: Boolean,
   includeSemantics: Boolean,
   composeInspectorJarPath: String?,
+  printer: UiDumpPrinter,
+  injectionManagerFactory: (AdbSession, String, String) -> InjectionManager = ::InjectionManager,
 ) {
-  runWithConnectedInspectors(adbSession, serial, packageName, composeInspectorJarPath) { commandSender, composeInspectorConnected ->
+  runWithConnectedInspectors(adbSession, serial, packageName, includeResolutionStack, composeInspectorJarPath, injectionManagerFactory) {
+    commandSender,
+    composeInspectorConnected ->
     dumpUi(
       commandSender = commandSender,
       includeAttributes = includeAttributes,
       includeResolutionStack = includeResolutionStack,
       composeInspectorConnected = composeInspectorConnected,
-      skipSystemComposables = !includeSystemComposables,
+      includeSystemComposables = includeSystemComposables,
       includeSemantics = includeSemantics,
+      printer = printer,
     )
-  }
-}
-
-/**
- * Injects the UI Inspector agent into the target application, attaches to its layout inspector service, and samples the UI hierarchy
- * changes over time.
- *
- * @param adbSession The [AdbSession] to communicate with the local ADB server.
- * @param serial The serial number of the target device.
- * @param packageName The target application package name.
- * @param intervalMs The sampling interval in milliseconds.
- * @param durationSec The total duration of tracking in seconds.
- * @param includeAttributes If true, includes view attributes in the sampled dumps.
- * @param includeResolutionStack If true, includes attribute resolution stacks in the sampled dumps.
- * @param includeSystemComposables If true, includes system/framework composable nodes.
- * @param includeSemantics If true, includes accessibility semantics in the Compose sampled dumps.
- * @param composeInspectorJarPath Optional path to a local Compose Inspector JAR file.
- */
-suspend fun doTrackChanges(
-  adbSession: AdbSession,
-  serial: String,
-  packageName: String,
-  intervalMs: Long,
-  durationSec: Long,
-  includeAttributes: Boolean,
-  includeResolutionStack: Boolean,
-  includeSystemComposables: Boolean,
-  includeSemantics: Boolean,
-  composeInspectorJarPath: String?,
-) {
-  runWithConnectedInspectors(adbSession, serial, packageName, composeInspectorJarPath) { commandSender, composeInspectorConnected ->
-    System.err.println("Sampling UI hierarchy for ${durationSec}s every ${intervalMs}ms...")
-
-    val interval = intervalMs.milliseconds
-    val duration = durationSec.seconds
-    val timeSource = TimeSource.Monotonic
-    val startTime = timeSource.markNow()
-    val endTime = startTime + duration
-    // Stores each collected UI tree sample mapped to the elapsed duration since the start of tracking.
-    val samples = mutableListOf<TimedUiDump>()
-
-    var sampleCount = 0
-    while (timeSource.markNow() < endTime) {
-      val sampleStart = timeSource.markNow()
-
-      val uiDump =
-        fetchUiDump(
-          commandSender = commandSender,
-          includeAttributes = includeAttributes,
-          includeResolutionStack = includeResolutionStack,
-          composeInspectorConnected = composeInspectorConnected,
-          skipSystemComposables = !includeSystemComposables,
-          includeSemantics = includeSemantics,
-        )
-      val elapsedSinceStart = startTime.elapsedNow()
-      samples.add(TimedUiDump(elapsedSinceStart, uiDump))
-      sampleCount++
-
-      val elapsedForSample = sampleStart.elapsedNow()
-      // Adjust sleep time to compensate for the round-trip overhead of fetching the UI tree.
-      val remainingWait = interval - elapsedForSample
-      if (remainingWait > Duration.ZERO) {
-        delay(remainingWait)
-      }
-    }
-    System.err.println("Sampling complete. Collected $sampleCount samples. Analyzing...")
-
-    printTrackedChanges(samples, includeAttributes, includeSemantics)
   }
 }
 
@@ -192,12 +162,14 @@ private suspend fun runWithConnectedInspectors(
   adbSession: AdbSession,
   serial: String,
   packageName: String,
+  needsDebugViewAttributes: Boolean,
   composeInspectorJarPath: String?,
+  injectionManagerFactory: (AdbSession, String, String) -> InjectionManager,
   block: suspend (CommandSender, Boolean) -> Unit,
 ) = coroutineScope {
+  val injectionManager = injectionManagerFactory(adbSession, serial, packageName)
   try {
-    val injectionManager = InjectionManager(adbSession, serial, packageName)
-    val port = injectionManager.injectAndAttach()
+    val port = injectionManager.injectAndAttach(needsDebugViewAttributes)
     CommandSender.connect(host = "127.0.0.1", port = port.toInt(), scope = this).use { commandSender ->
       createViewInspector(commandSender, injectionManager)
 
@@ -225,6 +197,9 @@ private suspend fun runWithConnectedInspectors(
     throw Exception(
       "No active window roots found for package '$packageName'. Please make sure the app is in the foreground and has visible layout views."
     )
+  } finally {
+    // The forward outlives the CLI process, so every run removes its own — on success, failure, and cancellation alike.
+    withContext(NonCancellable) { injectionManager.removeAdbForward() }
   }
 }
 
@@ -234,83 +209,100 @@ internal suspend fun dumpUi(
   includeAttributes: Boolean,
   includeResolutionStack: Boolean,
   composeInspectorConnected: Boolean,
-  skipSystemComposables: Boolean,
+  includeSystemComposables: Boolean,
   includeSemantics: Boolean,
+  printer: UiDumpPrinter,
 ) {
-  val uiDump =
-    fetchUiDump(
-      commandSender,
-      includeAttributes,
-      includeResolutionStack,
-      composeInspectorConnected,
-      skipSystemComposables,
-      includeSemantics,
-    )
-  if (uiDump.roots.isEmpty()) {
+  val uiDump = fetchUiDump(commandSender, includeAttributes, includeResolutionStack, composeInspectorConnected, includeSemantics)
+  if (uiDump.windows.isEmpty()) {
     throw EmptyViewRootsException()
   }
 
-  // Print output
-  uiDump.appContext?.let { printAppContext(it, uiDump.stringTable) }
-  uiDump.configuration?.let { printDeviceConfiguration(it, uiDump.stringTable) }
-  uiDump.roots.forEach { printUiTree(it, 0, includeAttributes, includeSemantics) }
+  val outputDump = if (includeSystemComposables) uiDump else stripSystemComposables(uiDump)
+  printer.printDump(outputDump)
 }
 
-private suspend fun fetchUiDump(
+internal suspend fun fetchUiDump(
   commandSender: CommandSender,
   includeAttributes: Boolean,
   includeResolutionStack: Boolean,
   composeInspectorConnected: Boolean,
-  skipSystemComposables: Boolean,
   includeSemantics: Boolean,
 ): UiDump {
   val result = dumpViews(commandSender, includeAttributes, includeResolutionStack)
   if (composeInspectorConnected) {
-    fetchAndMergeComposeTrees(commandSender, result.roots, includeAttributes, skipSystemComposables, includeSemantics)
+    fetchAndMergeComposeTrees(commandSender, result.windows, includeAttributes, includeSemantics)
   }
   return result
 }
 
-/** Queries the Compose Layout Inspector on the device and merges its trees into [viewRoots] in-place. */
+/** Queries the Compose Layout Inspector on the device and merges its trees into [windows] in-place. */
 private suspend fun fetchAndMergeComposeTrees(
   commandSender: CommandSender,
-  viewRoots: List<UiNode.ViewNode>,
+  windows: List<UiWindow>,
   includeParameters: Boolean,
-  skipSystemComposables: Boolean,
   includeSemantics: Boolean,
 ) {
-  viewRoots.forEach { viewRoot ->
+  windows.forEach { window ->
+    val viewRoot = window.root
     // In the compose inspector, standard parameters and semantics (accessibility properties) are fetched together with a single command.
+    // Each facet is still an independent demand, so the conversion below only copies the requested ones into the tree.
     val fetchComposeDetails = includeParameters || includeSemantics
 
     val composeResult =
-      queryComposeTree(
-        commandSender = commandSender,
-        rootViewId = viewRoot.id,
-        includeParameters = fetchComposeDetails,
-        skipSystemComposables = skipSystemComposables,
-      )
+      queryComposeTree(commandSender = commandSender, rootViewId = viewRoot.id, extractAllParameters = fetchComposeDetails)
     if (composeResult != null) {
       val stringsMap = composeResult.stringsList.associate { it.id to it.str }
       val roots = composeResult.rootsList
 
       val composeParameters =
         if (fetchComposeDetails) {
-          queryComposeParameters(commandSender, viewRoot.id, skipSystemComposables)
+          // An explicit --include facet is a demand: if the details it needs cannot be fetched, fail loudly instead of
+          // silently emitting a dump that is missing exactly what was asked for.
+          queryComposeParameters(commandSender, viewRoot.id)
+            ?: throw IllegalStateException("The requested attributes/semantics facets could not be fetched from the Compose inspector.")
         } else {
           null
         }
 
-      roots.forEach { composeRoot ->
-        attachComposeTree(
-          viewNode = viewRoot,
-          targetViewId = composeRoot.viewId,
-          composeNodes = composeRoot.nodesList,
-          stringTable = stringsMap,
-          viewsToSkip = composeRoot.viewsToSkipList,
-          parameters = composeParameters,
-        )
-      }
+      mergeComposeRoots(
+        viewRoot = viewRoot,
+        composeRoots = roots,
+        stringTable = stringsMap,
+        parameters = composeParameters,
+        includeParameters = includeParameters,
+        includeSemantics = includeSemantics,
+      )
+    }
+  }
+}
+
+/** Grafts each Compose root under [viewRoot], warning on stderr when a root's target view is not present in the tree. */
+internal fun mergeComposeRoots(
+  viewRoot: UiNode.ViewNode,
+  composeRoots: List<LayoutInspectorComposeProtocol.ComposableRoot>,
+  stringTable: Map<Int, String>,
+  parameters: LayoutInspectorComposeProtocol.GetAllParametersResponse?,
+  includeParameters: Boolean,
+  includeSemantics: Boolean,
+) {
+  composeRoots.forEach { composeRoot ->
+    val attached =
+      attachComposeTree(
+        viewNode = viewRoot,
+        targetViewId = composeRoot.viewId,
+        composeNodes = composeRoot.nodesList,
+        stringTable = stringTable,
+        viewsToSkip = composeRoot.viewsToSkipList,
+        parameters = parameters,
+        includeParameters = includeParameters,
+        includeSemantics = includeSemantics,
+      )
+    if (!attached) {
+      System.err.println(
+        "Warning: could not attach a Compose tree (target view id ${composeRoot.viewId}) under view root ${viewRoot.id}; " +
+          "the dump may be incomplete."
+      )
     }
   }
 }

@@ -16,9 +16,9 @@
 package com.android.tools.deployer;
 
 import com.android.annotations.NonNull;
-import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
 import com.android.tools.deployer.common.DeployerException;
+import com.android.tools.deployer.common.DeviceHolder;
 import com.android.tools.deployer.model.Apk;
 import com.android.tools.deployer.model.App;
 import com.android.tools.deployer.model.ModelException;
@@ -29,6 +29,7 @@ import com.android.tools.deployer.modelv1.component.AppComponentV1;
 import com.android.tools.deployer.modelv1.component.ComplicationV1;
 import com.android.tools.deployer.modelv1.component.TileV1;
 import com.android.tools.deployer.modelv1.component.WatchFaceV1;
+import com.android.tools.deployer.modelv1.component.WearWidgetV1;
 import com.android.tools.manifest.parser.components.ManifestActivityInfo;
 import com.android.tools.manifest.parser.components.ManifestServiceInfo;
 import com.android.utils.ILogger;
@@ -50,7 +51,7 @@ public class Activator {
             @NonNull ComponentType type,
             @NonNull String componentName,
             @NonNull IShellOutputReceiver receiver,
-            @NonNull IDevice device)
+            @NonNull DeviceHolder device)
             throws DeployerException {
         activate(type, componentName, NO_FLAGS, AppComponent.Mode.RUN, receiver, device);
     }
@@ -60,7 +61,7 @@ public class Activator {
             @NonNull String componentName,
             @NonNull String extraFlags,
             @NonNull IShellOutputReceiver receiver,
-            @NonNull IDevice device)
+            @NonNull DeviceHolder device)
             throws DeployerException {
         activate(type, componentName, extraFlags, AppComponent.Mode.RUN, receiver, device);
     }
@@ -70,7 +71,7 @@ public class Activator {
             @NonNull String componentName,
             @NonNull AppComponent.Mode mode,
             @NonNull IShellOutputReceiver receiver,
-            @NonNull IDevice device)
+            @NonNull DeviceHolder device)
             throws DeployerException {
         activate(type, componentName, NO_FLAGS, mode, receiver, device);
     }
@@ -81,7 +82,7 @@ public class Activator {
             @NonNull String extraFlags,
             @NonNull AppComponent.Mode mode,
             @NonNull IShellOutputReceiver receiver,
-            @NonNull IDevice device)
+            @NonNull DeviceHolder device)
             throws DeployerException {
         String qualifiedName =
                 componentName.startsWith(".") ? app.getAppId() + componentName : componentName;
@@ -116,6 +117,12 @@ public class Activator {
                     component = new TileV1(optionalService.get(), app.getAppId(), logger);
                 }
                 break;
+            case WEAR_WIDGET:
+                optionalService = getService(qualifiedName);
+                if (optionalService.isPresent()) {
+                    component = new WearWidgetV1(optionalService.get(), app.getAppId(), logger);
+                }
+                break;
             case COMPLICATION:
                 optionalService = getService(qualifiedName);
                 if (optionalService.isPresent()) {
@@ -133,10 +140,6 @@ public class Activator {
                             type, qualifiedName, app.getAppId()));
         }
         return component;
-    }
-
-    public void forceStop(@NonNull IDevice device) {
-        device.forceStop(app.getAppId());
     }
 
     @NonNull

@@ -35,13 +35,6 @@ common --experimental_enable_android_migration_apis
 # Exposes artifacts to Sponge.
 common --legacy_important_outputs
 
-# TODO(b/270757509) remove after tests switched to flags from product-info.json (//tools/adt/idea/studio:default_user_jvm_args)
-build --jvmopt='-XX:CompileCommand=quiet -XX:CompileCommand=exclude,com/intellij/openapi/vfs/impl/FilePartNodeRoot,trieDescend'
-
-#  Workaround for C2 crashes b/377324522
-build  --jvmopt='-XX:CompileCommand=exclude,org.jetbrains.kotlin.serialization.deserialization.TypeDeserializer::simpleType'
-build  --jvmopt='-XX:CompileCommand=exclude,org.jetbrains.kotlin.serialization.deserialization.TypeDeserializer::toAttributes'
-
 # JetBrainsRuntime version to bundle into Android Studio
 # and java runtime for running tests
 build:jbr25 --//prebuilts/studio/jdk:jdk_bundle_version=25
@@ -51,6 +44,9 @@ build:jbr25 --java_runtime_version=jbr25
 build --jvmopt='-Didea.kotlin.plugin.use.k1=false'
 # Enable K2 UAST by default (b/448273436)
 build --jvmopt='-Dlint.use.fir.uast=true'
+
+# TODO(b/526687561): fix our usages of private platform modules.
+build --jvmopt='-Dintellij.platform.plugin.modules.check.visibility=warning'
 
 # Local runs require longer timeouts.
 build:local --test_timeout=120,600,1800,7200
@@ -88,7 +84,7 @@ build --define=grpc_no_ares=true
 # Bazel will find the matching java toolchain registered in bzlmod/toolchains.MODULE.bazel
 ## Java version for build tools
 build --tool_java_language_version=21
-build --tool_java_runtime_version=jbr-next
+build --tool_java_runtime_version=jbr25
 ## Java version for compiling source code (javac)
 build --java_language_version=21
 ## Java version for running tests and targets (java)
@@ -156,8 +152,6 @@ build:ants --bes_keywords=antswatcher:skip_tests_if_timeout
 build:ants --bes_keywords=antswatcher:use_dependent_jobs
 build:ants --bes_keywords=antswatcher:android_module_behavior
 build:ants --bes_keywords=antswatcher:enable_resultdb
-build:ants --bes_keywords=antswatcher:enable_ants_v4
-build:ants --bes_keywords=antswatcher:enable_ants_v4_writes
 
 ## Base config for using the remote cache.
 ## This avoids building things which were already built by CI.
@@ -272,9 +266,9 @@ build:without_vendor --//tools/base/bazel:without-vendor
 
 # Build arguments for IntelliJ Platform targets (@tools_idea//...).
 # These should be kept in sync with tools/idea/common.bazelrc.
-build --@tools_idea_rules_jvm//:default-javac-opts=@tools_idea//:default-javac-opts
-build --@tools_idea_rules_jvm//:default-kotlinc-opts=@tools_idea//:k21
-build --@tools_idea_rules_jvm//:koltin_inc_threshold=0 --@tools_idea_rules_jvm//:java_inc_threshold=0
+# TODO(b/537756990): build --@tools_idea_rules_jvm//:default-javac-opts=@tools_idea//:default-javac-opts
+# TODO(b/537756990): build --@tools_idea_rules_jvm//:default-kotlinc-opts=@tools_idea//:k21
+# TODO(b/537756990): build --@tools_idea_rules_jvm//:koltin_inc_threshold=0 --@tools_idea_rules_jvm//:java_inc_threshold=0
 # JetBrains' build rules support worker mode only. For details see:
 # https://github.com/JetBrains/intellij-community/blob/a08eb7806c/build/jvm-rules/worker-framework/WorkRequestHandler.kt#L93
-build --strategy=JvmCompile=worker
+# TODO(b/537756990): build --strategy=JvmCompile=worker

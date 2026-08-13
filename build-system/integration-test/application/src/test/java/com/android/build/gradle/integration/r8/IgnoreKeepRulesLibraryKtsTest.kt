@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.r8
 
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.MavenRepoGenerator
 import com.android.testutils.TestInputsGenerator.jarWithTextEntries
 import com.android.testutils.truth.PathSubject.assertThat
@@ -49,7 +48,7 @@ class IgnoreKeepRulesLibraryKtsTest {
 
   @Test
   fun testIgnoreAllKeepRulesOff() {
-    rule.build.executor.with(BooleanOption.R8_GRADUAL_API, true).run(":app:minifyDebugWithR8")
+    rule.build.executor.run(":app:minifyDebugWithR8")
     var configuration = rule.build.androidApplication().outputsDir.resolve("mapping/debug/configuration.txt")
     assertThat(configuration).contains(LIB_FOO_RULE)
     assertThat(configuration).contains(LIB_BAR_RULE)
@@ -63,7 +62,7 @@ class IgnoreKeepRulesLibraryKtsTest {
       }
     }
 
-    rule.build.executor.with(BooleanOption.R8_GRADUAL_API, true).run(":app:minifyDebugWithR8")
+    rule.build.executor.run(":app:minifyDebugWithR8")
     var configuration = rule.build.androidApplication().outputsDir.resolve("mapping/debug/configuration.txt")
     assertThat(configuration).doesNotContain(LIB_BAR_RULE)
     assertThat(configuration).doesNotContain(LIB_FOO_RULE)

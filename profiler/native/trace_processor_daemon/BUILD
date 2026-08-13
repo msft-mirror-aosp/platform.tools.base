@@ -1,6 +1,7 @@
-package(default_visibility = ["//visibility:public"])
-
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
 load("//tools/base/bazel:utils.bzl", "java_jarjar")
+
+package(default_visibility = ["//visibility:public"])
 
 cc_binary(
     name = "trace_processor_daemon",
@@ -20,6 +21,7 @@ cc_library(
     name = "trace_processor_service_impl",
     srcs = [
         "counters/counters_request_handler.cc",
+        "memory/heap_dump_request_handler.cc",
         "memory/memory_request_handler.cc",
         "process_metadata/process_metadata_request_handler.cc",
         "scheduling/scheduling_request_handler.cc",
@@ -33,6 +35,7 @@ cc_library(
     ],
     hdrs = [
         "counters/counters_request_handler.h",
+        "memory/heap_dump_request_handler.h",
         "memory/memory_request_handler.h",
         "process_metadata/process_metadata_request_handler.h",
         "scheduling/scheduling_request_handler.h",
@@ -60,6 +63,7 @@ cc_test(
     name = "trace_processor_service_impl_test",
     size = "medium",
     srcs = [
+        "memory/heap_dump_request_handler_test.cc",
         "memory/memory_request_handler_test.cc",
         "trace_processor_service_test.cc",
     ],
@@ -68,9 +72,12 @@ cc_test(
         "-Itools/base/profiler/native/trace_processor_daemon",
     ],
     data = [
+        "testdata/bitmap-duplicates.hprof",
+        "testdata/deobfuscated.heapprofd",
         "testdata/garbage.trace",
         "testdata/tank.trace",
         "testdata/unity.heapprofd",
+        "testdata/unity.tar",
     ],
     linkstatic = 1,
     deps = [

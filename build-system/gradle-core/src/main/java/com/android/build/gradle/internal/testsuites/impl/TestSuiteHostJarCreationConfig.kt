@@ -66,6 +66,10 @@ class TestSuiteHostJarCreationConfig(val testSuite: TestSuiteCreationConfig, val
     // No-op
   }
 
+  override fun withTestTaskProvider(action: (TaskProvider<out Test>) -> Unit) {
+    // No-op
+  }
+
   // TestComponent
   override val manifestPlaceholders: MapProperty<String, String> by lazy {
     services.mapProperty(String::class.java, String::class.java).also { it.set(emptyMap<String, String>()) }

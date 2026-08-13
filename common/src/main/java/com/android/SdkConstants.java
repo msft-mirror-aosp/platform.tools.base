@@ -79,7 +79,7 @@ public final class SdkConstants {
      * safely recommend during its development cycle.
      */
     public static final AndroidVersion MAX_SUPPORTED_ANDROID_PLATFORM_VERSION =
-            new AndroidVersion(37, 0);
+            new AndroidVersion(37, 2);
 
     /** Property in local.properties file that specifies the path of the Android NDK. */
     public static final String NDK_DIR_PROPERTY = "ndk.dir";
@@ -788,6 +788,9 @@ public final class SdkConstants {
             "androidx.wear.watchface.WatchFaceService";
 
     public static final String CLASS_TILE_SERVICE = "androidx.wear.tiles.TileService";
+
+    public static final String CLASS_GLANCE_WEAR_WIDGET_SERVICE =
+            "androidx.glance.wear.GlanceWearWidgetService";
 
     public static final String CLASS_COMPLICATION_SERVICE_ANDROIDX =
             "androidx.wear.watchface.complications.datasource.ComplicationDataSourceService";

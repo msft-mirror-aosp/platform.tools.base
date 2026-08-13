@@ -50,14 +50,25 @@ class HtmlReporterV2(client: LintCliClient, output: File, flags: LintCliFlags) :
   }
 
   private fun render(lintReport: LintReport, outputHtml: File) {
-    val json = GsonBuilder().create().toJson(lintReport)
-    val finalHtml = getIndexHtml("const lintReport = $json;", lintReport.name)
-    outputHtml.writeText(finalHtml)
+    outputHtml.bufferedWriter().use { writer ->
+      val template = getIndexHtml(PLACEHOLDER, lintReport.name)
+      val index = template.indexOf(DELIMITER)
+      require(index != -1) { "Template placeholder not found" }
+      writer.write(template, 0, index)
+      gson.toJson(lintReport, writer)
+      writer.write(template, index + DELIMITER.length, template.length - (index + DELIMITER.length))
+    }
   }
 
   override fun writeProjectList(stats: LintStats, projects: List<MultiProjectHtmlReporter.ProjectEntry>) {
     val output = this.output ?: return
     val finalHtml = getMultiProjectIndexHtml(reportTitle, stats, projects, client.getClientDisplayName(), client.getClientRevision())
     output.writeText(finalHtml)
+  }
+
+  companion object {
+    private val gson = GsonBuilder().create()
+    private const val DELIMITER = "/*LINT_REPORT_DATA*/"
+    private const val PLACEHOLDER = "const lintReport = $DELIMITER;"
   }
 }

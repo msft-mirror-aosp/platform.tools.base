@@ -43,10 +43,38 @@ number and app package, dumps the UI tree including views and
 composables.
 
 ```bash
-ui-inspector dump-ui --serial 123 --package com.my.app
+ui-inspector dump-ui --device 123 --package com.my.app
 ```
 
-> TODO: add json output example
+Both options are optional: `--device` defaults to the only online
+device and `--package` defaults to the app currently in the foreground.
+
+Example JSON output:
+
+```json
+{
+  "roots": [
+    {
+      "type": "ViewNode",
+      "id": 1,
+      "className": "android.widget.FrameLayout",
+      "bounds": { "x": 0, "y": 0, "width": 1080, "height": 2400 },
+      "children": [
+        {
+          "type": "ComposeNode",
+          "id": 2,
+          "className": "androidx.compose.material3.Text",
+          "bounds": { "x": 48, "y": 96, "width": 200, "height": 48 },
+          "sourceLocation": { "filename": "MainActivity.kt", "lineNumber": 18 },
+          "parameters": [
+            { "name": "text", "value": "Hello World" }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
 
 Developing an MVP first will enable us to establish the tool's core
 architecture and identify any unexpected challenges. Should this initial
@@ -63,13 +91,48 @@ host is running on the user’s machine and the agent on the device.
 ### Host-agent communication
 
 The agent acts as the server, when it launches it creates a socket bound
-to `localabstract:ui_inspector_<pid>`.
+to `localabstract:ui_inspector_<pid>_<digest>`, where `<digest>` is a
+12-hex-character SHA-256 fingerprint the host computes over the artifacts
+it ships (in order: the ABI-selected native agent, the service jar, the
+payload jar, the view inspector jar; each hashed as its 64-bit big-endian
+length followed by its bytes). The compose inspector jar is excluded: it
+is selected by the app's compose version, which cannot change within a
+process's lifetime. The digest identifies the host's intended artifact
+set, so a host only connects to a server started with the same intended
+artifacts: a resident server from the same build wins the bind race and
+is reused, while after a host rebuild the freshly attached agent binds
+its own name and the stale server expires through the inactivity
+timeout. The socket name minus the `ui_inspector_` prefix is the "server
+token": the host passes it as the third attach option, and the native,
+service, and payload layers treat it as an opaque string (the native
+library and service classes of a resident process cannot be reloaded, so
+they must accept tokens from hosts of any build).
+
+One thing the digest cannot do is refresh the two bottom layers of an
+agent already resident in the process — the platform pins them there:
+
+* The native library is loaded by path, and `dlopen` caches it: a
+  re-attach at the same path re-runs the *already loaded* library's
+  entry point, regardless of what bytes now sit on disk.
+* The service jar is appended to the bootstrap classloader's search path
+  on first attach, and a classloader never redefines a class it has
+  already loaded: later attaches keep resolving the original
+  `InspectorService`.
+
+So in a resident process the native and service layers stay at their
+first-attach build until the app process restarts. The payload is the
+exception: every attach loads it through a fresh `DexClassLoader`, so
+the server, the protocol, and the inspectors — everything the host
+actually talks to over the socket — always come from the build that
+attached last. A native or service change still flips the digest and
+yields a fresh server; only those two thin pass-through layers keep
+running their old code.
 
 The host runs the following command to map a local port on the user’s
 machine to the device’s socket:
 
 ```bash
-adb -s <device> forward tcp:<localHostPort> localabstract:ui_inspector_<pid>
+adb -s <device> forward tcp:<localHostPort> localabstract:ui_inspector_<pid>_<digest>
 ```
 
 Then connects to `<localHostPort>`.
@@ -127,7 +190,7 @@ It is responsible for:
 
 * Spawning a background coroutine/thread.
 * Creating a `LocalServerSocket` bound to
-  `localabstract:ui_inspector_<pid>`.
+  `localabstract:ui_inspector_<pid>_<digest>`.
 * Entering a loop to accept connections from the
   Host CLI.
 * Processing commands and interacting with the app's UI hierarchy.
@@ -154,9 +217,13 @@ It then starts the injection sequence:
 
 * Queries the app private data directory dynamically using `run-as <package> pwd`
   to support custom multi-user environments (e.g. `/data/user/10/`).
-* Automatically enables global view debugging by running
-  `settings put global debug_view_attributes 1` (allowing the platform to expose
-  attribute resolution stacks).
+* When the `resolution-stack` facet is requested, enables view debugging for the
+  inspected app via `settings put global debug_view_attributes_application_package
+  <package>` (allowing the platform to expose attribute resolution stacks). The
+  setting is read first and skipped if it already names the package or the global
+  `debug_view_attributes` is already enabled; when actually flipped it is left set
+  (changing it in either direction restarts the app's activities) and a stderr
+  notice explains how to clear it.
 * Runs `adb shell run-as <package> cp` to move files from
   `/data/local/tmp` to the app memory space.
 * Uses `run-as <package>` to `chmod` all binary and jar files to read-only (`444`),
@@ -165,7 +232,7 @@ It then starts the injection sequence:
 * Periodically polls `/proc/net/unix` on the device using a retry loop until the
   agent's abstract Unix socket appears, preventing host connection race conditions.
 * Creates the adb tunnel and triggers payload injection via
-  `adb shell cmd activity attach-agent <package> /data/data/<package>/lib_ui_inspector_agent.so=/data/data/<package>/lib_ui_inspector_service.jar;/data/data/<package>/lib_ui_inspector_payload.jar;<pid>`.
+  `adb shell cmd activity attach-agent <package> /data/data/<package>/lib_ui_inspector_agent.so=/data/data/<package>/lib_ui_inspector_service.jar;/data/data/<package>/lib_ui_inspector_payload.jar;<pid>_<digest>`.
 
 ## Compose Inspector
 
@@ -223,7 +290,7 @@ commands can just re-connect to it.
 Before running a command the host would:
 
 * Discover the PID of the app.
-* Run `adb forward tcp:<host_port> localabstract:ui_inspector_<PID>`.
+* Run `adb forward tcp:<host_port> localabstract:ui_inspector_<PID>_<digest>`.
 * Attempt connection to `tcp:<host_port>`.
 * Send `PING`.
 * If `PONG`: warm hit.
@@ -247,24 +314,26 @@ subsequent `attach-agent` calls gracefully (duplicate server threads exit cleanl
 
 ## Retrieving view attributes and composables parameters
 
-Attributes and parameters are fetched inline during the single-shot dump commands
-by passing command-line flags:
+The dump is lean by default. Additional data is selected with `--include`,
+taking one or more comma-separated facets (the option is also repeatable):
 
-* `--include-attributes`: Includes view attributes and parameters in the dump.
-* `--include-resolution-stack`: Exposes attribute style/theme resolution traces.
-* `--include-semantics`: Includes Compose accessibility and semantics properties.
+* `attributes`: view attributes and composable parameters.
+* `resolution-stack`: attribute style/theme resolution traces (implies `attributes`).
+* `semantics`: Compose accessibility and semantics properties.
+* `system-composables`: system/framework Composable nodes.
+* `all`: everything above.
 
 *Note: The separate `get-params` command proposed in early designs is not implemented.*
 
-## Periodic Sampling of UI Changes
+## Change detection
 
-In addition to `dump-ui`, the CLI supports a `track-changes` command. This command
-samples the UI tree structure periodically over a specified duration and interval,
-printing a diff representation of structural and attribute changes:
-
-```bash
-ui-inspector track-changes --serial 123 --package com.my.app --interval 100 --duration 5
-```
+The standalone CLI deliberately ships no change-detection mode. An
+earlier `dump-ui --record` sampling mode (bounded-window recording with
+per-frame diffs) was removed before the CLI-team pitch: the
+change-record schema was the least settled part of the interface, and
+`android layout` already has `--diff` semantics that any change
+detection should be designed against, together with the CLI team, at
+integration time.
 
 ## Retrieving recomposition counts and state reads
 
@@ -282,8 +351,7 @@ remain unimplemented in the current version.
   device. The obvious downside is that an extra round trip to the device
   would be necessary.
 * Where should the code for the agent package live? Moving it to
-  `androidx` has the advantage of having testing infrastructure. TODO:
-  verify what we can realistically test.
+  `androidx` has the advantage of having testing infrastructure.
 
 ## Future of Layout Inspector - integrating CLI code into Android Studio
 

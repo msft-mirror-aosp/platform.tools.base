@@ -46,7 +46,7 @@ class UnitTestTaskManager(project: Project, globalConfig: GlobalTaskCreationConf
     createDependencyStreams(hostTestCreationConfig)
 
     // process java resources
-    createProcessJavaResTask(hostTestCreationConfig)
+    createProcessJavaResTask(hostTestCreationConfig, hostTestCreationConfig.mainVariant.packaging)
 
     if (hostTestCreationConfig.androidResourcesIncluded) {
       setupAndroidRequiredTasks(testedVariant, hostTestCreationConfig)

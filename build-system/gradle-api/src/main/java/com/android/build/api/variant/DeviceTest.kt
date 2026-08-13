@@ -18,10 +18,13 @@ package com.android.build.api.variant
 
 import java.io.Serializable
 import org.gradle.api.Incubating
+import org.gradle.api.Task
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
+import org.gradle.api.tasks.TaskProvider
+import org.gradle.api.tasks.testing.Test
 
 /**
  * Model for Device Test components that contains build-time properties
@@ -62,4 +65,52 @@ interface DeviceTest : GeneratesTestApk, HasAndroidResources, TestComponent {
    * [AndroidComponentsExtension.beforeVariants] callback.
    */
   @get:Incubating val codeCoverageEnabled: Boolean
+
+  /**
+   * Runs some action to configure the Variant's device test task.
+   *
+   * The action will only run if the task is configured. In particular the
+   * [HasDeviceTestsBuilder.deviceTests].\[[DeviceTestBuilder.ANDROID_TEST_TYPE]\]?.enable] must be set to true (it is true by default).
+   *
+   * Example :
+   * ```(kotlin)
+   *  androidComponents {
+   *      onVariants { variant ->
+   *          variant.deviceTests[DeviceTestBuilder.ANDROID_TEST_TYPE]?.configureTestTask { testTask ->
+   *              testTask.beforeTest { descriptor ->
+   *                  println("Running test: " + descriptor)
+   *              }
+   *          }
+   *      }
+   *  }
+   * ```
+   *
+   * @param action to configure the test task. At this point, you should not assume the passed test Task is of [Test] type although this may
+   *   change in the future.
+   */
+  @Incubating fun configureTestTask(action: (Task) -> Unit)
+
+  /**
+   * Runs some action on the Variant's device test task's [TaskProvider].
+   *
+   * The action will only run if the [DeviceTest] is enabled. In particular the
+   * [HasDeviceTestsBuilder.deviceTests].\[[DeviceTestBuilder.ANDROID_TEST_TYPE]\]?.enable] must be set to true (it is true by default).
+   *
+   * This is particularly useful to set manual tasks dependencies. However, you should avoid calling [TaskProvider.get] as it will
+   * automatically configure the task even if it is not scheduled to run, instead use [configureTestTask]
+   *
+   * Example :
+   * ```(kotlin)
+   *  androidComponents {
+   *      onVariants { variant ->
+   *          variant.deviceTests[DeviceTestBuilder.ANDROID_TEST_TYPE]?.withTestTaskProvider { testTaskProvider ->
+   *              someAnchorTask.dependsOn(testTaskProvider)
+   *          }
+   *      }
+   *  }
+   * ```
+   *
+   * @param action on the test task [TaskProvider].
+   */
+  @Incubating fun withTestTaskProvider(action: (TaskProvider<out Task>) -> Unit)
 }

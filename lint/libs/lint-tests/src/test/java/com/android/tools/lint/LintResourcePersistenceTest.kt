@@ -16,7 +16,9 @@
 
 package com.android.tools.lint
 
+import com.android.ide.common.rendering.api.AttributeFormat
 import com.android.ide.common.rendering.api.ResourceNamespace
+import com.android.ide.common.rendering.api.StyleableResourceValue
 import com.android.resources.ResourceType
 import com.android.testutils.TestUtils
 import com.android.tools.lint.LintResourceRepository.Companion.get
@@ -25,18 +27,22 @@ import com.android.tools.lint.checks.infrastructure.TestLintClient
 import com.android.tools.lint.checks.infrastructure.TestLintTask.lint
 import com.android.tools.lint.client.api.LintClient
 import com.android.tools.lint.client.api.ResourceRepositoryScope
+import com.android.tools.lint.detector.api.Issue.IgnoredIdProvider
+import com.android.tools.lint.detector.api.Location.LocationAware
 import com.android.tools.lint.detector.api.Project
 import com.android.tools.lint.model.PathVariables
+import com.android.utils.Base128InputStream.StreamFormatException
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
-/** Persistence is also tested a bit in [LintResourcePersistenceTest] */
+/** Persistence is also tested a bit in [LintResourceRepositoryTest] */
 class LintResourcePersistenceTest {
   @get:Rule var temporaryFolder = TemporaryFolder()
 
@@ -51,19 +57,124 @@ class LintResourcePersistenceTest {
     return pathVariables
   }
 
+  private fun createRepository(vararg files: Pair<String, String>): LintResourceRepository {
+    val res = File(temporaryFolder.root, "app/res")
+    for ((path, contents) in files) {
+      val file = File(res, path)
+      file.parentFile?.mkdirs()
+      file.writeText(contents.trimIndent())
+    }
+    val client = LintCliClient(LintClient.CLIENT_UNIT_TESTS)
+    return LintResourceRepository.createFromFolder(client, sequenceOf(res), null, null, ResourceNamespace.TODO())
+  }
+
   @Test
-  fun testDeserialization() {
-    val expected =
-      "" +
-        "http://schemas.android.com/apk/res-auto;;app/res/values-b\\+sr\\+Latn/values.xml," +
-        "+styleable:ContentFrame,0,V42,50,;-content:reference:-contentId:reference:" +
-        "-windowSoftInputMode:flags:stateUnspecified:0,stateUnchanged:1," +
-        "-fastScrollOverlayPosition:enum:floating:0,atThumb:1,aboveThumb:2,;"
+  fun testRoundTrip() {
+    val repository =
+      createRepository(
+        "values-b+sr+Latn/values.xml" to
+          """
+          <resources xmlns:tools="http://schemas.android.com/tools">
+              <string name="string1" tools:ignore="Typos">Værdi 1</string>
+              <declare-styleable name="ContentFrame">
+                  <attr name="content" format="reference" />
+                  <attr name="contentId" format="reference" />
+                  <attr name="windowSoftInputMode">
+                      <flag name="stateUnspecified" value="0" />
+                      <flag name="stateUnchanged" value="1" />
+                  </attr>
+                  <attr name="fastScrollOverlayPosition">
+                      <enum name="floating" value="0" />
+                      <enum name="atThumb" value="1" />
+                      <enum name="aboveThumb" value="2" />
+                  </attr>
+              </declare-styleable>
+          </resources>
+          """
+      )
 
     val pathVariables = getPathVariables()
-    val deserialized = LintResourcePersistence.deserialize(expected.trim(), pathVariables, null, null)
-    val serialized = deserialized.serialize(pathVariables, null, sort = true)
-    assertEquals(expected, serialized.trim())
+    val serialized = repository.serialize(pathVariables, null, sort = true)
+    val deserialized = LintResourcePersistence.deserialize(serialized, pathVariables, null, null)
+
+    // Equivalent content
+    assertEquals(repository.prettyPrint(temporaryFolder.root), deserialized.prettyPrint(temporaryFolder.root))
+
+    // Spot check the lazily computed resource values in the deserialized repository
+    val styleable =
+      deserialized.getResources(ResourceNamespace.TODO(), ResourceType.STYLEABLE, "ContentFrame").single().resourceValue
+        as StyleableResourceValue
+    val attrs = styleable.allAttributes.associateBy { it.name }
+    assertEquals(setOf(AttributeFormat.REFERENCE), attrs["content"]?.formats)
+    assertEquals(mapOf("stateUnspecified" to 0, "stateUnchanged" to 1), attrs["windowSoftInputMode"]?.attributeValues)
+    assertEquals(mapOf("floating" to 0, "atThumb" to 1, "aboveThumb" to 2), attrs["fastScrollOverlayPosition"]?.attributeValues)
+
+    // The tools:ignore attribute is persisted
+    val string = deserialized.getResources(ResourceNamespace.TODO(), ResourceType.STRING, "string1").single()
+    assertEquals("Typos", (string as IgnoredIdProvider).getIgnoredIds())
+    assertEquals("Værdi 1", string.resourceValue?.value)
+
+    // Positions are persisted
+    val original = repository.getResources(ResourceNamespace.TODO(), ResourceType.STRING, "string1").single()
+    val originalLocation = (original as LocationAware).getLocation()
+    val deserializedLocation = (string as LocationAware).getLocation()
+    assertEquals(originalLocation.start?.offset, deserializedLocation.start?.offset)
+    assertEquals(originalLocation.start?.line, deserializedLocation.start?.line)
+    assertEquals(originalLocation.end?.offset, deserializedLocation.end?.offset)
+
+    // Serialization is deterministic and round-trip stable
+    val reserialized = (deserialized as LintResourceRepository).serialize(pathVariables, null, sort = true)
+    assertTrue("Serialization is not round-trip stable", serialized.contentEquals(reserialized))
+  }
+
+  @Test
+  fun testLargeFileOffsets() {
+    // Regression test for b/533056758: offsets above 64K used to be truncated to 16 bits
+    // by the previous (text-based) persistence format, leading to corrupt locations (and
+    // downstream crashes, e.g. in SarifReporter) when serializing large values files.
+    val padding = "x".repeat(70000)
+    val repository =
+      createRepository(
+        "values/values.xml" to
+          """
+          <resources>
+              <!-- $padding -->
+              <string name="big">Big</string>
+          </resources>
+          """
+      )
+
+    val original = repository.getResources(ResourceNamespace.TODO(), ResourceType.STRING, "big").single()
+    val originalStart = (original as LocationAware).getLocation().start!!
+    assertTrue("Test setup problem: expected offset above 64K, was ${originalStart.offset}", originalStart.offset > 0xFFFF)
+
+    val pathVariables = getPathVariables()
+    val serialized = repository.serialize(pathVariables, null, sort = true)
+    val deserialized = LintResourcePersistence.deserialize(serialized, pathVariables, null, null)
+
+    val restored = deserialized.getResources(ResourceNamespace.TODO(), ResourceType.STRING, "big").single()
+    val location = (restored as LocationAware).getLocation()
+    assertEquals(originalStart.offset, location.start!!.offset)
+    assertEquals(originalStart.line, location.start!!.line)
+    assertEquals((original as LocationAware).getLocation().end!!.offset, location.end!!.offset)
+  }
+
+  @Test
+  fun testInvalidContentRejected() {
+    // Files in the old text-based format (or otherwise corrupt files) should be rejected
+    // with an exception (which lint catches to gracefully recover by recreating the
+    // repository; see LintResourceRepositoryTest#testCheckRecovery)
+    val legacy =
+      "http://schemas.android.com/apk/res-auto;;app/res/values-b\\+sr\\+Latn/values.xml," +
+        "+styleable:ContentFrame,0,V42,50,;-content:reference:"
+    assertThrows(StreamFormatException::class.java) {
+      LintResourcePersistence.deserialize(legacy.toByteArray(), getPathVariables(), null, null)
+    }
+
+    // Empty content deserializes to the empty repository rather than throwing
+    assertTrue(
+      LintResourcePersistence.deserialize(ByteArray(0), getPathVariables(), null, null) === LintResourceRepository.Companion.EmptyRepository
+    )
   }
 
   @Test
@@ -95,7 +206,7 @@ class LintResourcePersistenceTest {
     // Test serialization too -- serialize and deserialize the repositories and
     // make sure they work the same
     val serialized = LintResourcePersistence.serialize(folderRepository as LintResourceRepository, client.pathVariables)
-    val deserialized = LintResourcePersistence.deserialize(serialized, getPathVariables())
+    val deserialized = LintResourcePersistence.deserialize(serialized, client.pathVariables)
 
     // If both methods returned empty string the above would equal, so also perform
     // some spot checks on the resource repositories.

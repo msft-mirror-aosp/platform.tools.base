@@ -98,4 +98,7 @@ object AndroidTestConfigurationKeys {
 
   /** Whether to disable window animations on the device. */
   const val ANIMATIONS_DISABLED = "android-test.animations-disabled"
+
+  /** Whether emulator control is enabled. */
+  const val EMULATOR_CONTROL_ENABLED = "android-test.emulator-control-enabled"
 }

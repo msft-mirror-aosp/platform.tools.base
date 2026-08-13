@@ -4,12 +4,12 @@
     <issue
         id="DefaultLocale"
         message="Implicitly using the default locale is a common source of bugs: Use `String.format(Locale, ...)` instead"
-        errorLine1="                                            String.format("
-        errorLine2="                                            ^">
+        errorLine1="                  String.format(&quot;%1\$s%2\$d_%3\$s.xml&quot;, className, tempIndex++, delimiter.replace(&quot;[^a-zA-Z0-9_-]&quot;.toRegex(), &quot;&quot;)),"
+        errorLine2="                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/test/java/com/android/manifmerger/ManifestMergerTestUtil.java"
-            line="268"
-            column="45"/>
+            file="src/test/java/com/android/manifmerger/ManifestMergerTestUtil.kt"
+            line="220"
+            column="19"/>
     </issue>
 
 </issues>

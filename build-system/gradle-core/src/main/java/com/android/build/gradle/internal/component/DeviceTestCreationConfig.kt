@@ -16,5 +16,11 @@
 
 package com.android.build.gradle.internal.component
 
+import com.android.build.api.variant.DeviceTest
+import org.gradle.api.Task
+import org.gradle.api.tasks.TaskProvider
+
 /** Internal interface for Android Test component */
-interface DeviceTestCreationConfig : TestComponentCreationConfig, InstrumentedTestCreationConfig
+interface DeviceTestCreationConfig : TestComponentCreationConfig, InstrumentedTestCreationConfig, DeviceTest {
+  fun runTestTaskConfigurationActions(testTask: TaskProvider<out Task>)
+}

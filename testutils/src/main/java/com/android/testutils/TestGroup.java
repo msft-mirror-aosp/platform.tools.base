@@ -19,12 +19,22 @@ import static com.google.common.base.MoreObjects.firstNonNull;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
+
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
+
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -41,11 +51,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
 
 /**
  * Defines how to extract tests from class path jars or any particular given jar. Once built, tests
@@ -130,37 +135,30 @@ public class TestGroup {
         return testClasses;
     }
 
-    private static void addManifestClassPath(String jarPath, Queue<String> existingPaths)
+    static void addManifestClassPath(String jarPath, Queue<String> existingPaths)
             throws IOException {
-        if (jarPath.endsWith(".jar")) {
-            File file = new File(jarPath);
-            try (ZipFile zipFile = new ZipFile(file)) {
-                ZipEntry entry = zipFile.getEntry("META-INF/MANIFEST.MF");
-                if (entry != null) {
-                    try (InputStream is = zipFile.getInputStream(entry)) {
-                        Manifest manifest = new Manifest(is);
-                        Attributes attributes = manifest.getMainAttributes();
-                        String cp = attributes.getValue("Class-Path");
-                        if (cp != null) {
-                            String[] paths = cp.split(" ");
-                            for (String path : paths) {
-                                File absoluteFile = new File(path);
-                                if (absoluteFile.exists()) {
-                                    existingPaths.add(path);
-                                } else {
-                                    File relFile = new File(file.getParentFile(), path);
-                                    if (relFile.exists()) {
-                                        existingPaths.add(relFile.getAbsolutePath());
-                                    } else {
-                                        System.err.println(
-                                                "Cannot find class-path jar: "
-                                                        + path
-                                                        + " referenced from "
-                                                        + file.getName());
-                                    }
-                                }
-                            }
-                        }
+        // https://docs.oracle.com/en/java/javase/25/docs/specs/jar/jar.html#class-path-attribute.
+        File file = new File(jarPath);
+        if (!file.isFile()) return;
+        try (ZipFile zipFile = new ZipFile(file)) {
+            ZipEntry entry = zipFile.getEntry("META-INF/MANIFEST.MF");
+            if (entry == null) return;
+            try (InputStream is = zipFile.getInputStream(entry)) {
+                Manifest manifest = new Manifest(is);
+                String cp = manifest.getMainAttributes().getValue("Class-Path");
+                if (cp == null) return;
+                URI baseUri = file.toURI();
+                for (String path : cp.split("\\s+")) {
+                    if (path.isEmpty()) continue;
+                    File resolvedFile = new File(baseUri.resolve(path));
+                    if (resolvedFile.isFile()) {
+                        existingPaths.add(resolvedFile.getAbsolutePath());
+                    } else {
+                        System.err.println(
+                                "Cannot find class-path jar: "
+                                + path
+                                + " referenced from "
+                                + file.getName());
                     }
                 }
             }

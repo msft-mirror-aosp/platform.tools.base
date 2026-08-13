@@ -42,7 +42,7 @@ import java.io.ObjectOutputStream
 import java.util.function.Predicate
 import org.gradle.api.logging.Logging
 
-internal class CompressedJavaResJar(val file: File, val priority: JavaResMergingPriority)
+internal class CompressedJavaResJar(val name: String, val file: File, val priority: JavaResMergingPriority)
 
 internal enum class JavaResMergingPriority(val value: Int) {
   HIGH(0),

@@ -23,6 +23,7 @@ import java.io.File
 import javax.inject.Inject
 import org.gradle.api.Action
 import org.gradle.api.model.ObjectFactory
+import org.gradle.jvm.toolchain.JavaToolchainSpec
 
 internal open class SettingsLintImpl @Inject constructor(private val objectFactory: ObjectFactory) : Lint {
 
@@ -175,4 +176,14 @@ internal open class SettingsLintImpl @Inject constructor(private val objectFacto
   override val warning: MutableSet<String> = mutableSetOf()
   override val error: MutableSet<String> = mutableSetOf()
   override val fatal: MutableSet<String> = mutableSetOf()
+
+  override val toolchain: JavaToolchainSpec = objectFactory.newInstance(JavaToolchainSpec::class.java)
+
+  override fun toolchain(action: JavaToolchainSpec.() -> Unit) {
+    action.invoke(toolchain)
+  }
+
+  fun toolchain(action: Action<JavaToolchainSpec>) {
+    action.execute(toolchain)
+  }
 }

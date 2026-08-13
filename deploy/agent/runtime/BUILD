@@ -1,4 +1,4 @@
-load("@rules_java//java:defs.bzl", "java_binary", "java_import")
+load("@rules_java//java:defs.bzl", "java_binary")
 load("//tools/base/bazel:android.bzl", "dex_library")
 load("//tools/base/bazel:coverage.bzl", "coverage_java_library", "coverage_java_test")
 load("//tools/base/bazel:kotlin.bzl", "kotlin_library")
@@ -67,6 +67,7 @@ kotlin_library(
     srcs = glob([
         "src/test/**/*.kt",
     ]),
+    kotlinc_opts = ["-Xlambdas=class"],
     visibility = ["//visibility:public"],
     deps = [
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",

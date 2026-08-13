@@ -36,7 +36,7 @@ import java.io.File
 import org.intellij.lang.annotations.Language
 
 class FlaggedApiDetectorTest : LintDetectorTest() {
-  override fun getIssues(): List<Issue> = listOf(FlaggedApiDetector.ISSUE)
+  override fun getIssues(): List<Issue> = listOf(FlaggedApiDetector.ISSUE, FlaggedApiDetector.FLAG_AS_RAW_STRING)
 
   override fun getDetector(): Detector {
     return FlaggedApiDetector()
@@ -917,7 +917,7 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
             import android.annotation.FlaggedApi;
 
             public class JavaTest {
-                @SuppressWarnings("FlaggedApi") // Don't warn about deprecation of raw strings here
+                @SuppressWarnings("FlagAsRawString") // Don't warn about deprecation of raw strings here
                 @FlaggedApi("flag.package.flag.name")
                 class Foo {
                     public void someMethod() { }
@@ -968,19 +968,19 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
       .run()
       .expect(
         """
+        src/test/pkg/JavaTest.java:6: Error: @FlaggedApi should specify an actual flag constant; raw strings are discouraged [FlagAsRawString]
+        @FlaggedApi("test.pkg.FLAG_MY_FLAG")
+                    ~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/JavaTest.java:13: Error: @RequiresFlag should specify an actual flag constant; raw strings are discouraged [FlagAsRawString]
+            @RequiresFlag("test.pkg.FLAG_MY_FLAG")
+                          ~~~~~~~~~~~~~~~~~~~~~~~
         src/test/pkg/JavaTest.java:8: Error: Invalid @FlaggedApi descriptor; should be package.name [FlaggedApi]
             @FlaggedApi("FLAG_MY_FLAG")
                         ~~~~~~~~~~~~~~
         src/test/pkg/JavaTest.java:15: Error: Invalid @RequiresFlag descriptor; should be package.name [FlaggedApi]
                 @RequiresFlag("FLAG_MY_FLAG")
                               ~~~~~~~~~~~~~~
-        src/test/pkg/JavaTest.java:6: Warning: @FlaggedApi should specify an actual flag constant; raw strings are discouraged (and more importantly, not enforced) [FlaggedApi]
-        @FlaggedApi("test.pkg.FLAG_MY_FLAG")
-                    ~~~~~~~~~~~~~~~~~~~~~~~
-        src/test/pkg/JavaTest.java:13: Warning: @RequiresFlag should specify an actual flag constant; raw strings are discouraged (and more importantly, not enforced) [FlaggedApi]
-            @RequiresFlag("test.pkg.FLAG_MY_FLAG")
-                          ~~~~~~~~~~~~~~~~~~~~~~~
-        2 errors, 2 warnings
+        4 errors
         """
           .trimIndent()
       )
@@ -1821,6 +1821,288 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
       )
       .run()
       .expectClean()
+  }
+
+  fun testClassLiteralInFlagCheck() {
+    val apiXml =
+      """
+      <api version="4">
+        <class name="java/lang/Object" since="2">
+          <method name="&lt;init>()V"/>
+        </class>
+        <class name="test/api/MyApi" since="10000">
+          <extends name="java/lang/Object"/>
+          <method name="&lt;init>()V"/>
+        </class>
+      </api>
+      """
+        .trimIndent()
+
+    ApiLookupTest.runLintWithCustomLookup(
+        apiXml,
+        false,
+        {
+          super.lint()
+            .files(
+              java(
+                  """
+                package test.api;
+                import android.annotation.RequiresFlag;
+                import com.example.foobar.Flags;
+
+                @RequiresFlag(Flags.FLAG_FOOBAR)
+                public class MyApi {
+                }
+                """
+                )
+                .indented(),
+              java(
+                  """
+                package test.pkg;
+                import test.api.MyApi;
+                import com.example.foobar.Flags;
+
+                public class Test {
+                  public void test() {
+                    if (Flags.foobar()) {
+                      Object o = MyApi.class; // OK
+                    }
+                  }
+                }
+                """
+                )
+                .indented(),
+              java(
+                  """
+                package com.example.foobar;
+
+                public class Flags {
+                    public static final String FLAG_FOOBAR = "com.example.foobar.foobar";
+                    public static boolean foobar() { return true; }
+                }
+                """
+                )
+                .indented(),
+              requiresFlagAnnotationStub,
+            )
+        },
+        FlaggedApiDetector.ISSUE,
+        ApiDetector.UNSUPPORTED,
+      )
+      .expectClean()
+  }
+
+  fun testVariableTypeAndCastInFlagCheck() {
+    val apiXml =
+      """
+      <api version="4">
+        <class name="java/lang/Object" since="1">
+          <method name="&lt;init>()V"/>
+        </class>
+        <class name="test/api/ContextHint" since="10000">
+          <extends name="java/lang/Object"/>
+          <method name="&lt;init>()V"/>
+        </class>
+        <class name="test/api/BundleHint" since="10000">
+          <extends name="test/api/ContextHint"/>
+          <method name="&lt;init>()V"/>
+        </class>
+      </api>
+      """
+        .trimIndent()
+
+    ApiLookupTest.runLintWithCustomLookup(
+        apiXml,
+        false,
+        {
+          super.lint()
+            .files(
+              java(
+                  """
+                package test.pkg;
+                import test.api.ContextHint;
+                import test.api.BundleHint;
+                import com.example.foobar.Flags;
+
+                public class JavaTest {
+                  public void test(ContextHint hint, ContextHint[] hints) {
+                    // Unflagged usages: should be reported as FlaggedApi
+                    BundleHint b1 = (BundleHint) hint; // ERROR 1 (Java cast)
+                    if (hint instanceof BundleHint) { // ERROR 2 (Java instanceof)
+                    }
+                    ContextHint first1 = hints[0];
+                    if (first1 instanceof BundleHint) { // ERROR 3 (Java array instanceof)
+                    }
+
+                    // Flagged usages: properly guarded by flag check
+                    if (Flags.foobar()) {
+                      BundleHint b2 = (BundleHint) hint; // OK 1 (cast)
+                      if (hint instanceof BundleHint) { // OK 2 (instanceof)
+                      }
+                      ContextHint first2 = hints[0];
+                      if (first2 instanceof BundleHint) { // OK 3 (array instanceof)
+                      }
+                    }
+                  }
+                }
+                """
+                )
+                .indented(),
+              kotlin(
+                  """
+                package test.pkg
+                import test.api.ContextHint
+                import test.api.BundleHint
+                import com.example.foobar.Flags
+
+                class Test {
+                  fun test(hint: ContextHint, hints: Array<ContextHint>) {
+                    // Unflagged usages: should be reported as FlaggedApi
+                    val b1 = hint as BundleHint // ERROR 4 (Kotlin cast)
+                    when (hint) {
+                      is BundleHint -> { // ERROR 5 (Kotlin smart cast)
+                      }
+                    }
+                    val first1 = hints[0]
+                    if (first1 is BundleHint) { // ERROR 6 (Kotlin array type check)
+                    }
+
+                    // Flagged usages: properly guarded by flag check
+                    if (Flags.foobar()) {
+                      val b2 = hint as BundleHint // OK 4 (cast)
+                      when (hint) {
+                        is BundleHint -> { // OK 5 (type check)
+                        }
+                      }
+                      val first2 = hints[0]
+                      if (first2 is BundleHint) { // OK 6 (array type check)
+                      }
+                    }
+                  }
+                }
+                """
+                )
+                .indented(),
+              java(
+                  """
+                package test.api;
+                import android.annotation.RequiresFlag;
+                import com.example.foobar.Flags;
+
+                @RequiresFlag(Flags.FLAG_FOOBAR)
+                public abstract class ContextHint {
+                }
+                """
+                )
+                .indented(),
+              java(
+                  """
+                package test.api;
+                import android.annotation.RequiresFlag;
+                import com.example.foobar.Flags;
+
+                @RequiresFlag(Flags.FLAG_FOOBAR)
+                public class BundleHint extends ContextHint {
+                }
+                """
+                )
+                .indented(),
+              java(
+                  """
+                package com.example.foobar;
+
+                public class Flags {
+                    public static final String FLAG_FOOBAR = "com.example.foobar.foobar";
+                    public static boolean foobar() { return true; }
+                }
+                """
+                )
+                .indented(),
+              requiresFlagAnnotationStub,
+            )
+        },
+        FlaggedApiDetector.ISSUE,
+        ApiDetector.UNSUPPORTED,
+      )
+      .expect(
+        """
+        src/test/pkg/JavaTest.java:9: Error: This is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+            BundleHint b1 = (BundleHint) hint; // ERROR 1 (Java cast)
+                             ~~~~~~~~~~
+        src/test/pkg/JavaTest.java:10: Error: This is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+            if (hint instanceof BundleHint) { // ERROR 2 (Java instanceof)
+                                ~~~~~~~~~~
+        src/test/pkg/JavaTest.java:13: Error: This is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+            if (first1 instanceof BundleHint) { // ERROR 3 (Java array instanceof)
+                                  ~~~~~~~~~~
+        src/test/pkg/Test.kt:9: Error: This is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+            val b1 = hint as BundleHint // ERROR 4 (Kotlin cast)
+                             ~~~~~~~~~~
+        src/test/pkg/Test.kt:11: Error: This is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+              is BundleHint -> { // ERROR 5 (Kotlin smart cast)
+                 ~~~~~~~~~~
+        src/test/pkg/Test.kt:15: Error: This is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+            if (first1 is BundleHint) { // ERROR 6 (Kotlin array type check)
+                          ~~~~~~~~~~
+        6 errors
+        """
+      )
+  }
+
+  fun testLogicalAndOrder() {
+    lint()
+      .files(
+        java(
+            """
+            package test.api;
+            import android.annotation.RequiresFlag;
+            import com.example.foobar.Flags;
+
+            public class MyApi {
+              @RequiresFlag(Flags.FLAG_FOOBAR)
+              public boolean apiMethod() { return true; }
+            }
+            """
+          )
+          .indented(),
+        java(
+            """
+            package test.pkg;
+            import test.api.MyApi;
+            import com.example.foobar.Flags;
+
+            public class Test {
+              public void test(MyApi api) {
+                if (api.apiMethod() && Flags.foobar()) { // ERROR
+                }
+                if (Flags.foobar() && api.apiMethod()) { // OK
+                }
+              }
+            }
+            """
+          )
+          .indented(),
+        requiresFlagAnnotationStub,
+        java(
+            """
+            package com.example.foobar;
+            public class Flags {
+                public static boolean foobar() { return true; }
+                public static final String FLAG_FOOBAR = "com.example.foobar.foobar";
+            }
+            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/Test.java:7: Error: Method apiMethod() is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @RequiresFlag(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+            if (api.apiMethod() && Flags.foobar()) { // ERROR
+                ~~~~~~~~~~~~~~~
+        1 errors, 0 warnings
+        """
+      )
   }
 }
 

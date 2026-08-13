@@ -16,7 +16,6 @@
 package com.android.tools.deployer.common;
 
 import com.android.annotations.NonNull;
-import com.android.ddmlib.IDevice;
 
 import com.google.common.annotations.VisibleForTesting;
 
@@ -39,7 +38,7 @@ public class ApkVerifierTracker {
      * @return the option string that should be used for skipping if available, or null otherwise
      */
     public static synchronized String getSkipVerificationInstallationFlag(
-            @NonNull IDevice device, @NonNull String packageName) {
+            @NonNull DeviceHolder device, @NonNull String packageName) {
         return getSkipVerificationInstallationFlag(device, packageName, System.currentTimeMillis());
     }
 
@@ -53,11 +52,11 @@ public class ApkVerifierTracker {
      */
     @VisibleForTesting
     public static String getSkipVerificationInstallationFlag(
-            @NonNull IDevice device, @NonNull String packageName, long currentTimeMs) {
+            @NonNull DeviceHolder device, @NonNull String packageName, long currentTimeMs) {
         // In R, ADB reports both real package name (instead of process name) and also allows
         // the user to skip app verification on install. We use the real package name flag
         // here to avoid creating another flag for a feature that's on the same Android version.
-        if (!device.supportsFeature(IDevice.Feature.SKIP_VERIFICATION)) {
+        if (!device.isSkipVerificationSupported()) {
             return null;
         }
 
@@ -83,7 +82,7 @@ public class ApkVerifierTracker {
 
     @NonNull
     private static String getVerifiedTimeMapKey(
-            @NonNull IDevice device, @NonNull String packageName) {
+            @NonNull DeviceHolder device, @NonNull String packageName) {
         return String.format("%s:%s", device.getSerialNumber(), packageName);
     }
 }

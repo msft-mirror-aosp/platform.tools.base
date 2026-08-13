@@ -290,6 +290,25 @@ constructor(
     dexing.finalizeAndLock()
   }
 
+  private val testTaskConfigActions = mutableListOf<(Task) -> Unit>()
+  private val taskProviderActions = mutableListOf<(TaskProvider<out Task>) -> Unit>()
+
+  @Synchronized
+  override fun configureTestTask(action: (Task) -> Unit) {
+    testTaskConfigActions.add(action)
+  }
+
+  @Synchronized
+  override fun withTestTaskProvider(action: (TaskProvider<out Task>) -> Unit) {
+    taskProviderActions.add(action)
+  }
+
+  @Synchronized
+  override fun runTestTaskConfigurationActions(testTask: TaskProvider<out Task>) {
+    taskProviderActions.forEach { action2 -> action2(testTask) }
+    testTaskConfigActions.forEach { action -> testTask.configure { task -> action(task) } }
+  }
+
   override val isForceAotCompilation: Boolean
     get() =
       mainVariant.experimentalProperties.map { ModulePropertyKey.BooleanWithDefault.FORCE_AOT_COMPILATION.getValue(it) }.getOrElse(false)

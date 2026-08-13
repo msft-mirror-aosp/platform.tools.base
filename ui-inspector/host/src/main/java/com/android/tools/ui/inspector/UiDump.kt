@@ -16,16 +16,14 @@
 
 package com.android.tools.ui.inspector
 
-import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol
-import kotlin.time.Duration
+/**
+ * A UI snapshot whose windows preserve the root tree and metadata captured from the same root context. Window order matches the agent
+ * response.
+ */
+internal data class UiDump(val windows: List<UiWindow>, val displays: List<DisplayInfo>)
 
-/** Represents a complete snapshot of the UI tree, including the root view nodes, device configuration, and string table. */
-internal data class UiDump(
-  val roots: List<UiNode.ViewNode>,
-  val configuration: ViewInspectorProtocol.Configuration?,
-  val stringTable: Map<Int, String>,
-  val appContext: ViewInspectorProtocol.AppContext?,
-)
+/** One app window. Configuration and theme are null when the agent could not provide them; the root is always present. */
+internal data class UiWindow(val root: UiNode.ViewNode, val configuration: DeviceConfiguration?, val theme: String?)
 
-/** Represents a captured UI hierarchy dump along with the elapsed time since tracking began. */
-internal data class TimedUiDump(val elapsedTime: Duration, val uiDump: UiDump)
+/** A physical display. [orientation] is the display rotation in degrees (0, 90, 180, or 270); null when unavailable. */
+data class DisplayInfo(val id: Int, val widthPx: Int, val heightPx: Int, val orientation: Int?)

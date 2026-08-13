@@ -26,13 +26,13 @@ import com.android.tools.ui.inspector.common.FramingProtocol
 import com.android.tools.ui.inspector.common.ProtocolConstants
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol
 import com.google.common.truth.Truth.assertThat
-import java.io.ByteArrayOutputStream
 import java.net.ServerSocket
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.Rule
@@ -50,6 +50,9 @@ class ComposeInspectorTest {
 
   private val deviceSerial = "123"
   private val packageName = "com.example"
+
+  /** The attach server token for pid 1234 with the four dummy artifacts, all empty files (see [ShippedArtifactsDigestTest]). */
+  private val serverToken = "1234_66687aadf862"
 
   @Test
   fun testGetComposeArtifactId_legacyAndKmpVersions() {
@@ -131,6 +134,7 @@ class ComposeInspectorTest {
     val dummyAgent = tempFolder.newFile("lib_ui_inspector_agent.so").toPath()
     val dummyJar = tempFolder.newFile("lib_ui_inspector_service.jar").toPath()
     val dummyPayload = tempFolder.newFile("lib_ui_inspector_payload.jar").toPath()
+    val dummyViewInspector = tempFolder.newFile("view-inspector.jar").toPath()
 
     val agentPathResolver = { abi: String -> dummyAgent }
     configureAtomicMoveCommands(fakeSession, deviceSelector)
@@ -142,12 +146,12 @@ class ComposeInspectorTest {
         agentPathResolver,
         dummyJar,
         dummyPayload,
+        dummyViewInspector,
         tempFileSuffixGenerator = { "test.tmp" },
       )
 
     // Trigger injectAndAttach so we populate the appDataDir internal states
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pidof $packageName", "1234\n")
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "settings put global debug_view_attributes 1", "")
+    configureUidCommands(fakeSession, deviceSelector, packageName)
 
     val baseAgentSetupCmd =
       "run-as $packageName sh -c '" +
@@ -161,15 +165,15 @@ class ComposeInspectorTest {
     fakeSession.deviceServices.configureShellCommand(deviceSelector, baseAgentSetupCmd, "")
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
-      "cmd activity attach-agent $packageName \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;1234\"",
+      "cmd activity attach-agent 1234 \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;$serverToken\"",
       "",
     )
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
-      "cat /proc/net/unix | grep ui_inspector_1234 || true",
-      "ui_inspector_1234\n",
+      "cat /proc/net/unix | grep ui_inspector_$serverToken || true",
+      "ui_inspector_$serverToken\n",
     )
-    injectionManager.injectAndAttach()
+    injectionManager.injectAndAttach(needsDebugViewAttributes = false)
 
     // 3. Execute E2E Orchestrator with dynamic lambda jar resolution mock
     CommandSender.connect("127.0.0.1", serverPort, this).use { commandSender ->
@@ -249,7 +253,8 @@ class ComposeInspectorTest {
         val cmd3 = UiInspectorProtocol.Command.parseFrom(cmdBytes3)
         dumpCmdReceived.complete(cmd3)
 
-        // Build a mock View tree: FrameLayout (ID 1000) -> AndroidComposeView (ID 2000)
+        // Build a mock View tree mirroring a real hosted-view capture:
+        // FrameLayout (1000) -> AndroidComposeView (2000) -> AndroidViewsHandler (2100) -> ViewFactoryHolder (2200) -> TextView (2300)
         val viewNode1 =
           com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.ViewNode.newBuilder()
             .setId(1000)
@@ -272,6 +277,21 @@ class ComposeInspectorTest {
                     .setWidth(1080)
                     .setHeight(1920)
                 )
+                .addChildren(
+                  com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.ViewNode.newBuilder()
+                    .setId(2100)
+                    .setClassName(3) // index for AndroidViewsHandler
+                    .addChildren(
+                      com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.ViewNode.newBuilder()
+                        .setId(2200)
+                        .setClassName(4) // index for ViewFactoryHolder
+                        .addChildren(
+                          com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.ViewNode.newBuilder()
+                            .setId(2300)
+                            .setClassName(5) // index for TextView
+                        )
+                    )
+                )
             )
             .build()
 
@@ -289,7 +309,24 @@ class ComposeInspectorTest {
                     .setId(2)
                     .setValue("androidx.compose.ui.platform.AndroidComposeView")
                 )
-                .addNodes(viewNode1)
+                .addStrings(
+                  com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.StringEntry.newBuilder()
+                    .setId(3)
+                    .setValue("androidx.compose.ui.platform.AndroidViewsHandler")
+                )
+                .addStrings(
+                  com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.StringEntry.newBuilder()
+                    .setId(4)
+                    .setValue("androidx.compose.ui.viewinterop.ViewFactoryHolder")
+                )
+                .addStrings(
+                  com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.StringEntry.newBuilder()
+                    .setId(5)
+                    .setValue("android.widget.TextView")
+                )
+                .addWindows(
+                  com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.WindowInfo.newBuilder().setRoot(viewNode1)
+                )
             )
             .build()
 
@@ -310,7 +347,7 @@ class ComposeInspectorTest {
         val cmd4 = UiInspectorProtocol.Command.parseFrom(cmdBytes4)
         composeCmdReceived.complete(cmd4)
 
-        // Build a mock Compose tree: Column (ID 3000) -> Text (ID 4000)
+        // Build a mock Compose tree: Column (ID 3000) -> [Text (ID 4000), AndroidView (ID 5000, hosting View 2200)]
         val composeRoot =
           layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.ComposableRoot.newBuilder()
             .setViewId(2000)
@@ -343,6 +380,12 @@ class ComposeInspectorTest {
                         )
                     )
                 )
+                .addChildren(
+                  layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.ComposableNode.newBuilder()
+                    .setId(5000)
+                    .setName(3) // index for AndroidView
+                    .setViewId(2200) // References the ViewFactoryHolder hosted under the AndroidViewsHandler
+                )
             )
             .build()
 
@@ -355,6 +398,9 @@ class ComposeInspectorTest {
                 )
                 .addStrings(
                   layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.StringEntry.newBuilder().setId(2).setStr("Text")
+                )
+                .addStrings(
+                  layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.StringEntry.newBuilder().setId(3).setStr("AndroidView")
                 )
                 .addRoots(composeRoot)
             )
@@ -385,12 +431,13 @@ class ComposeInspectorTest {
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pidof $packageName", "1234\n")
+    configureUidCommands(fakeSession, deviceSelector, packageName)
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
 
     val dummyAgent = tempFolder.newFile("lib_ui_inspector_agent.so").toPath()
     val dummyJar = tempFolder.newFile("lib_ui_inspector_service.jar").toPath()
     val dummyPayload = tempFolder.newFile("lib_ui_inspector_payload.jar").toPath()
+    val dummyViewInspector = tempFolder.newFile("view-inspector.jar").toPath()
 
     val agentPathResolver = { abi: String -> dummyAgent }
     configureAtomicMoveCommands(fakeSession, deviceSelector)
@@ -402,11 +449,11 @@ class ComposeInspectorTest {
         agentPathResolver,
         dummyJar,
         dummyPayload,
+        dummyViewInspector,
         tempFileSuffixGenerator = { "test.tmp" },
       )
 
     // Trigger injectAndAttach so we populate the appDataDir internal states
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "settings put global debug_view_attributes 1", "")
     val baseAgentSetupCmd =
       "run-as $packageName sh -c '" +
         "rm -f lib_ui_inspector_agent.so lib_ui_inspector_service.jar lib_ui_inspector_payload.jar && " +
@@ -419,22 +466,17 @@ class ComposeInspectorTest {
     fakeSession.deviceServices.configureShellCommand(deviceSelector, baseAgentSetupCmd, "")
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
-      "cmd activity attach-agent $packageName \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;1234\"",
+      "cmd activity attach-agent 1234 \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;$serverToken\"",
       "",
     )
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
-      "cat /proc/net/unix | grep ui_inspector_1234 || true",
-      "ui_inspector_1234\n",
+      "cat /proc/net/unix | grep ui_inspector_$serverToken || true",
+      "ui_inspector_$serverToken\n",
     )
-    injectionManager.injectAndAttach()
+    injectionManager.injectAndAttach(needsDebugViewAttributes = false)
 
-    // 3. Capture System.out to verify the printed merged tree!
-    val stdoutCapture = ByteArrayOutputStream()
-    val originalStdout = System.out
-    System.setOut(java.io.PrintStream(stdoutCapture))
-
-    try {
+    val uiDump =
       CommandSender.connect("127.0.0.1", serverPort, this).use { commandSender ->
         // Inject Compose Inspector with a mock resolveJar lambda returning a dummy file
         val composeInspectorConnected =
@@ -449,30 +491,41 @@ class ComposeInspectorTest {
           )
         assertThat(composeInspectorConnected).isTrue()
 
-        // Trigger dumpUi which will fetch both trees, merge them, and print them!
-        dumpUi(
+        fetchUiDump(
           commandSender = commandSender,
           includeAttributes = false,
           includeResolutionStack = false,
           composeInspectorConnected = composeInspectorConnected,
-          skipSystemComposables = true,
           includeSemantics = false,
         )
       }
-    } finally {
-      System.setOut(originalStdout)
-    }
 
     // 4. Assertions
-    val output = stdoutCapture.toString()
-    // Check that the View tree was printed correctly
-    assertThat(output).contains("[android.widget.FrameLayout]")
-    assertThat(output).contains("[androidx.compose.ui.platform.AndroidComposeView]")
+    // The device is never asked to filter: the facet is applied by stripping system composables on the host.
+    val sentComposeCmd =
+      layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.Command.parseFrom(
+        composeCmdReceived.await().inspectorMessage.payload
+      )
+    assertThat(sentComposeCmd.getComposablesCommand.skipSystemComposables).isFalse()
 
-    // Check that the Compose tree was merged and printed under AndroidComposeView with the [compose] tag!
-    assertThat(output).contains(" [androidx.compose.ui.platform.AndroidComposeView]")
-    assertThat(output).contains("  [Column] [compose]")
-    assertThat(output).contains("   [Text] [compose]")
+    assertThat(uiDump.windows).hasSize(1)
+    val viewRoot = uiDump.windows.single().root
+    assertThat(viewRoot.className).isEqualTo("android.widget.FrameLayout")
+    val composeView = viewRoot.children[0]
+    assertThat(composeView.className).isEqualTo("androidx.compose.ui.platform.AndroidComposeView")
+    // The emptied AndroidViewsHandler is dropped: the Compose root is the only remaining child.
+    assertThat(composeView.children).hasSize(1)
+    val column = composeView.children[0]
+    assertThat(column.className).isEqualTo("Column")
+    val text = column.children[0]
+    assertThat(text.className).isEqualTo("Text")
+    // The hosted subtree (holder + payload) is grafted under the AndroidView composable.
+    val androidView = column.children[1] as UiNode.ComposeNode
+    assertThat(androidView.className).isEqualTo("AndroidView")
+    val holder = androidView.children.single() as UiNode.ViewNode
+    assertThat(holder.className).isEqualTo("androidx.compose.ui.viewinterop.ViewFactoryHolder")
+    val payload = holder.children.single() as UiNode.ViewNode
+    assertThat(payload.className).isEqualTo("android.widget.TextView")
 
     // Cleanup
     testScope.cancel()
@@ -565,7 +618,9 @@ class ComposeInspectorTest {
                     .setId(2)
                     .setValue("androidx.compose.ui.platform.AndroidComposeView")
                 )
-                .addNodes(viewNode1)
+                .addWindows(
+                  com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.WindowInfo.newBuilder().setRoot(viewNode1)
+                )
             )
             .build()
 
@@ -704,12 +759,13 @@ class ComposeInspectorTest {
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pidof $packageName", "1234\n")
+    configureUidCommands(fakeSession, deviceSelector, packageName)
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
 
     val dummyAgent = tempFolder.newFile("lib_ui_inspector_agent.so").toPath()
     val dummyJar = tempFolder.newFile("lib_ui_inspector_service.jar").toPath()
     val dummyPayload = tempFolder.newFile("lib_ui_inspector_payload.jar").toPath()
+    val dummyViewInspector = tempFolder.newFile("view-inspector.jar").toPath()
 
     val agentPathResolver = { abi: String -> dummyAgent }
     configureAtomicMoveCommands(fakeSession, deviceSelector)
@@ -721,11 +777,11 @@ class ComposeInspectorTest {
         agentPathResolver,
         dummyJar,
         dummyPayload,
+        dummyViewInspector,
         tempFileSuffixGenerator = { "test.tmp" },
       )
 
     // Trigger injectAndAttach so we populate the appDataDir internal states
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "settings put global debug_view_attributes 1", "")
     val baseAgentSetupCmd =
       "run-as $packageName sh -c '" +
         "rm -f lib_ui_inspector_agent.so lib_ui_inspector_service.jar lib_ui_inspector_payload.jar && " +
@@ -738,22 +794,17 @@ class ComposeInspectorTest {
     fakeSession.deviceServices.configureShellCommand(deviceSelector, baseAgentSetupCmd, "")
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
-      "cmd activity attach-agent $packageName \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;1234\"",
+      "cmd activity attach-agent 1234 \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;$serverToken\"",
       "",
     )
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
-      "cat /proc/net/unix | grep ui_inspector_1234 || true",
-      "ui_inspector_1234\n",
+      "cat /proc/net/unix | grep ui_inspector_$serverToken || true",
+      "ui_inspector_$serverToken\n",
     )
-    injectionManager.injectAndAttach()
+    injectionManager.injectAndAttach(needsDebugViewAttributes = false)
 
-    // 3. Capture System.out to verify the printed merged tree!
-    val stdoutCapture = ByteArrayOutputStream()
-    val originalStdout = System.out
-    System.setOut(java.io.PrintStream(stdoutCapture))
-
-    try {
+    val uiDump =
       CommandSender.connect("127.0.0.1", serverPort, this).use { commandSender ->
         // Inject Compose Inspector with a mock resolveJar lambda returning a dummy file
         val composeInspectorConnected =
@@ -768,33 +819,30 @@ class ComposeInspectorTest {
           )
         assertThat(composeInspectorConnected).isTrue()
 
-        // Trigger dumpUi which will fetch both trees, merge them, and print them!
-        dumpUi(
+        fetchUiDump(
           commandSender = commandSender,
-          includeAttributes = true, // <-- Enable Attributes!
+          includeAttributes = true,
           includeResolutionStack = false,
           composeInspectorConnected = composeInspectorConnected,
-          skipSystemComposables = false,
           includeSemantics = false,
         )
       }
-    } finally {
-      System.setOut(originalStdout)
-    }
 
     // 4. Assertions
-    val output = stdoutCapture.toString()
-    // Check that the View tree was printed correctly
-    assertThat(output).contains("[android.widget.FrameLayout]")
-    assertThat(output).contains("[androidx.compose.ui.platform.AndroidComposeView]")
+    assertThat(uiDump.windows).hasSize(1)
+    val viewRoot = uiDump.windows.single().root
+    assertThat(viewRoot.className).isEqualTo("android.widget.FrameLayout")
+    val composeView = viewRoot.children[0]
+    assertThat(composeView.className).isEqualTo("androidx.compose.ui.platform.AndroidComposeView")
+    val column = composeView.children[0]
+    assertThat(column.className).isEqualTo("Column")
+    val textNode = column.children[0] as UiNode.ComposeNode
+    assertThat(textNode.className).isEqualTo("Text")
 
-    // Check that the Compose tree was merged and printed under AndroidComposeView with the [compose] tag!
-    assertThat(output).contains(" [androidx.compose.ui.platform.AndroidComposeView]")
-    assertThat(output).contains("  [Column] [compose]")
-    assertThat(output).contains("   [Text] [compose]")
-
-    // Verify that Composable parameters were parsed and printed successfully!
-    assertThat(output).contains("  param: text=Hello")
+    // Check parameters
+    val p = textNode.parameters[0] as UiNode.ComposeParameter.Single
+    assertThat(p.name).isEqualTo("text")
+    assertThat((p.value as UiNode.ComposeParameter.Value.StringVal).value).isEqualTo("Hello")
 
     // Cleanup
     testScope.cancel()
@@ -887,7 +935,9 @@ class ComposeInspectorTest {
                     .setId(2)
                     .setValue("androidx.compose.ui.platform.AndroidComposeView")
                 )
-                .addNodes(viewNode1)
+                .addWindows(
+                  com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.WindowInfo.newBuilder().setRoot(viewNode1)
+                )
             )
             .build()
 
@@ -1041,7 +1091,7 @@ class ComposeInspectorTest {
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pidof $packageName", "1234\n")
+    configureUidCommands(fakeSession, deviceSelector, packageName)
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
 
     val expectedSetupCmd =
@@ -1053,6 +1103,7 @@ class ComposeInspectorTest {
     val dummyAgent = tempFolder.newFile("lib_ui_inspector_agent.so").toPath()
     val dummyJar = tempFolder.newFile("lib_ui_inspector_service.jar").toPath()
     val dummyPayload = tempFolder.newFile("lib_ui_inspector_payload.jar").toPath()
+    val dummyViewInspector = tempFolder.newFile("view-inspector.jar").toPath()
 
     val agentPathResolver = { _: String -> dummyAgent }
     configureAtomicMoveCommands(fakeSession, deviceSelector)
@@ -1064,12 +1115,12 @@ class ComposeInspectorTest {
         agentPathResolver,
         dummyJar,
         dummyPayload,
+        dummyViewInspector,
         tempFileSuffixGenerator = { "test.tmp" },
       )
 
     // Trigger injectAndAttach so we populate the appDataDir internal states
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pidof $packageName", "1234\n")
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "settings put global debug_view_attributes 1", "")
+    configureUidCommands(fakeSession, deviceSelector, packageName)
 
     val baseAgentSetupCmd =
       "run-as $packageName sh -c '" +
@@ -1083,65 +1134,168 @@ class ComposeInspectorTest {
     fakeSession.deviceServices.configureShellCommand(deviceSelector, baseAgentSetupCmd, "")
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
-      "cmd activity attach-agent $packageName \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;1234\"",
+      "cmd activity attach-agent 1234 \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;$serverToken\"",
       "",
     )
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
-      "cat /proc/net/unix | grep ui_inspector_1234 || true",
-      "ui_inspector_1234\n",
+      "cat /proc/net/unix | grep ui_inspector_$serverToken || true",
+      "ui_inspector_$serverToken\n",
     )
-    injectionManager.injectAndAttach()
+    injectionManager.injectAndAttach(needsDebugViewAttributes = false)
 
     val originalFactory = sessionFactory
     sessionFactory = { testSession }
 
-    // 3. Capture System.out to verify the printed merged tree!
-    val stdoutCapture = ByteArrayOutputStream()
-    val originalStdout = System.out
-    System.setOut(java.io.PrintStream(stdoutCapture))
+    val uiDump =
+      try {
+        CommandSender.connect("127.0.0.1", serverPort, this).use { commandSender ->
+          val composeInspectorConnected =
+            createComposeInspector(
+              commandSender = commandSender,
+              injectionManager = injectionManager,
+              resolveJar = {
+                val fixedJar = tempFolder.newFile("compose-inspector.jar")
+                fixedJar.writeText("fake pre-compiled compose dex classes")
+                fixedJar
+              },
+            )
+          assertThat(composeInspectorConnected).isTrue()
 
-    try {
-      CommandSender.connect("127.0.0.1", serverPort, this).use { commandSender ->
-        val composeInspectorConnected =
-          createComposeInspector(
+          fetchUiDump(
             commandSender = commandSender,
-            injectionManager = injectionManager,
-            resolveJar = {
-              val fixedJar = tempFolder.newFile("compose-inspector.jar")
-              fixedJar.writeText("fake pre-compiled compose dex classes")
-              fixedJar
-            },
+            includeAttributes = true,
+            includeResolutionStack = false,
+            composeInspectorConnected = composeInspectorConnected,
+            includeSemantics = true,
           )
-        assertThat(composeInspectorConnected).isTrue()
-
-        dumpUi(
-          commandSender = commandSender,
-          includeAttributes = true,
-          includeResolutionStack = false,
-          composeInspectorConnected = composeInspectorConnected,
-          skipSystemComposables = false,
-          includeSemantics = true,
-        )
+        }
+      } finally {
+        sessionFactory = originalFactory
       }
-    } finally {
-      System.setOut(originalStdout)
-      sessionFactory = originalFactory
-    }
 
     // 4. Assertions
-    val output = stdoutCapture.toString()
-    assertThat(output).contains("[android.widget.FrameLayout]")
-    assertThat(output).contains("[androidx.compose.ui.platform.AndroidComposeView]")
+    assertThat(uiDump.windows).hasSize(1)
+    val viewRoot = uiDump.windows.single().root
+    assertThat(viewRoot.className).isEqualTo("android.widget.FrameLayout")
+    val composeView = viewRoot.children[0]
+    assertThat(composeView.className).isEqualTo("androidx.compose.ui.platform.AndroidComposeView")
+    val column = composeView.children[0]
+    assertThat(column.className).isEqualTo("Column")
+    val textNode = column.children[0] as UiNode.ComposeNode
+    assertThat(textNode.className).isEqualTo("Text")
 
-    // Verify semantics printing are successful!
-    assertThat(output).contains("   [Text] [compose]")
-    assertThat(output).contains("  param: text=Hello")
-    assertThat(output).contains("  semantics: contentDescription=My Button")
+    // Check parameters
+    val p = textNode.parameters[0] as UiNode.ComposeParameter.Single
+    assertThat(p.name).isEqualTo("text")
+    assertThat((p.value as UiNode.ComposeParameter.Value.StringVal).value).isEqualTo("Hello")
+
+    // Check semantics
+    val s = textNode.mergedSemantics[0] as UiNode.ComposeParameter.Single
+    assertThat(s.name).isEqualTo("contentDescription")
+    assertThat((s.value as UiNode.ComposeParameter.Value.StringVal).value).isEqualTo("My Button")
 
     // Cleanup
     testScope.cancel()
     serverSocket.close()
+  }
+
+  @Test
+  fun testQueryComposeTree_parsesResponseDeeperThanDefaultRecursionLimit(): Unit = runBlocking {
+    // A chain of 150 nested ComposableNodes: one proto nesting level per composable, well past protobuf's default recursion limit of 100.
+    val depth = 150
+    var chain = layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.ComposableNode.newBuilder().setId(depth.toLong())
+    for (id in depth - 1 downTo 1) {
+      chain =
+        layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.ComposableNode.newBuilder().setId(id.toLong()).addChildren(chain)
+    }
+    val composeResponse =
+      layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.Response.newBuilder()
+        .setGetComposablesResponse(
+          layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.GetComposablesResponse.newBuilder()
+            .addRoots(
+              layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.ComposableRoot.newBuilder().setViewId(2000).addNodes(chain)
+            )
+        )
+        .build()
+
+    val received =
+      respondingWithComposePayload(composeResponse.toByteArray()) { commandSender ->
+        queryComposeTree(commandSender, rootViewId = 2000, extractAllParameters = false)
+      }
+
+    var current = received!!.getRoots(0).getNodes(0)
+    var nodeCount = 1
+    while (current.childrenCount > 0) {
+      current = current.getChildren(0)
+      nodeCount++
+    }
+    assertThat(nodeCount).isEqualTo(depth)
+    assertThat(current.id).isEqualTo(depth.toLong())
+  }
+
+  @Test
+  fun testQueryComposeParameters_parsesResponseDeeperThanDefaultRecursionLimit(): Unit = runBlocking {
+    // A chain of 150 nested Parameter elements: one proto nesting level per element, well past protobuf's default recursion limit of 100.
+    val depth = 150
+    var chain = layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.Parameter.newBuilder().setName(1)
+    for (unused in 1 until depth) {
+      chain = layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.Parameter.newBuilder().setName(1).addElements(chain)
+    }
+    val paramsResponse =
+      layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.Response.newBuilder()
+        .setGetAllParametersResponse(
+          layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.GetAllParametersResponse.newBuilder()
+            .addParameterGroups(
+              layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.ParameterGroup.newBuilder()
+                .setComposableId(4000)
+                .addParameter(chain)
+            )
+        )
+        .build()
+
+    val received =
+      respondingWithComposePayload(paramsResponse.toByteArray()) { commandSender ->
+        queryComposeParameters(commandSender, rootViewId = 2000)
+      }
+
+    var current = received!!.getParameterGroups(0).getParameter(0)
+    var elementCount = 1
+    while (current.elementsCount > 0) {
+      current = current.getElements(0)
+      elementCount++
+    }
+    assertThat(elementCount).isEqualTo(depth)
+  }
+
+  /** Runs [block] against a loopback fake agent that answers the single expected inspector command with [payload]. */
+  private suspend fun <T> respondingWithComposePayload(payload: ByteArray, block: suspend (CommandSender) -> T): T {
+    val serverSocket = ServerSocket(0)
+    val testScope = CoroutineScope(Dispatchers.Default + Job())
+    testScope.launch {
+      serverSocket.accept().use { socket ->
+        val cmd = UiInspectorProtocol.Command.parseFrom(FramingProtocol.readMessage(socket.getInputStream()))
+        val response =
+          UiInspectorProtocol.Response.newBuilder()
+            .setCommandId(cmd.commandId)
+            .setStatus(UiInspectorProtocol.Response.Status.SUCCESS)
+            .setInspectorMessage(
+              UiInspectorProtocol.InspectorMessageResponse.newBuilder()
+                .setInspectorId(ProtocolConstants.COMPOSE_INSPECTOR_ID)
+                .setPayload(com.google.protobuf.ByteString.copyFrom(payload))
+            )
+            .build()
+        writeResponse(socket.getOutputStream(), response)
+      }
+    }
+    try {
+      return coroutineScope {
+        CommandSender.connect("127.0.0.1", serverSocket.localPort, this).use { commandSender -> block(commandSender) }
+      }
+    } finally {
+      testScope.cancel()
+      serverSocket.close()
+    }
   }
 
   private fun configureAtomicMoveCommands(fakeSession: FakeAdbSession, deviceSelector: DeviceSelector) {
@@ -1156,5 +1310,14 @@ class ComposeInspectorTest {
         fakeSession.deviceServices.configureShellCommand(deviceSelector, "mv -f '$target.test.tmp' '$target'", "")
         fakeSession.deviceServices.configureShellCommand(deviceSelector, "rm -f '$target.test.tmp'", "")
       }
+  }
+
+  private fun configureUidCommands(fakeSession: FakeAdbSession, deviceSelector: DeviceSelector, packageName: String) {
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      "pm list packages -U --user 0 $packageName",
+      "package:$packageName uid:10123\n",
+    )
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "ps -A -o PID,UID,NAME", "PID UID NAME\n1234 10123 $packageName\n")
   }
 }

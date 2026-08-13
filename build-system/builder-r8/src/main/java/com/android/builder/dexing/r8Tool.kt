@@ -513,38 +513,29 @@ private fun setupFeatureSplits(
       "  featureJavaResourceJars: $featureJavaResourceJars\n" +
       "  featureLinkedResourcesInputFiles: ${resourceShrinkingConfig?.featureLinkedResourcesInputFiles}"
   }
-  check(
-    featureDexOutputDir != null &&
-      featureJavaResourceOutputDir != null &&
-      (resourceShrinkingConfig == null ||
-        resourceShrinkingConfig.shrinkOutput?.featureShrunkResourcesOutputDir != null ||
-        resourceShrinkingConfig.shrinkOutput == null)
-  ) {
-    "Expected not null but received:\n" +
-      "  featureDexDir=$featureDexOutputDir\n" +
-      "  featureJavaResourceOutputDir=$featureJavaResourceOutputDir\n" +
-      "  featureShrunkResourcesOutputDir=${resourceShrinkingConfig?.shrinkOutput?.featureShrunkResourcesOutputDir}"
-  }
-
   featureFileNamesWithoutExtension.forEach { featureFileNameWithoutExtension ->
     val featureClassJar = featureClassJars.single { it.nameWithoutExtension == featureFileNameWithoutExtension }
     val featureJavaResourceJar = featureJavaResourceJars.single { it.nameWithoutExtension == featureFileNameWithoutExtension }
 
-    val featureDexOutputDirectory = Files.createDirectories(featureDexOutputDir.resolve(featureFileNameWithoutExtension))
-    val featureJavaResourceOutputDirectory = featureJavaResourceOutputDir.resolve("$featureFileNameWithoutExtension$DOT_JAR")
+    val javaResourcesConsumer =
+      featureJavaResourceOutputDir?.let { JavaResourcesConsumer(it.resolve("$featureFileNameWithoutExtension$DOT_JAR")) }
+    val programConsumer =
+      if (featureDexOutputDir != null) {
+        val featureDexOutputDirectory = Files.createDirectories(featureDexOutputDir.resolve(featureFileNameWithoutExtension))
+        object : DexIndexedConsumer.DirectoryConsumer(featureDexOutputDirectory) {
+          override fun getDataResourceConsumer(): DataResourceConsumer? {
+            return javaResourcesConsumer
+          }
+        }
+      } else {
+        DexIndexedConsumer.emptyConsumer()
+      }
 
     r8CommandBuilder.addFeatureSplit {
       it.addProgramResourceProvider(ArchiveProgramResourceProvider.fromArchive(featureClassJar))
       it.addProgramResourceProvider(ArchiveResourceProvider.fromArchive(featureJavaResourceJar, true))
 
-      val javaResourcesConsumer = JavaResourcesConsumer(featureJavaResourceOutputDirectory)
-      it.setProgramConsumer(
-        object : DexIndexedConsumer.DirectoryConsumer(featureDexOutputDirectory) {
-          override fun getDataResourceConsumer(): DataResourceConsumer {
-            return javaResourcesConsumer
-          }
-        }
-      )
+      it.setProgramConsumer(programConsumer)
 
       if (resourceShrinkingConfig != null) {
         val inputFile =
@@ -552,8 +543,9 @@ private fun setupFeatureSplits(
             file.nameWithoutExtension == featureFileNameWithoutExtension
           }
         it.setAndroidResourceProvider(ArchiveProtoAndroidResourceProvider(inputFile.toPath()))
-        if (resourceShrinkingConfig.shrinkOutput != null) {
-          val outputFile = resourceShrinkingConfig.shrinkOutput.featureShrunkResourcesOutputDir!!.resolve(inputFile.name)
+        val featureShrunkResourcesOutputDir = resourceShrinkingConfig.shrinkOutput?.featureShrunkResourcesOutputDir
+        if (featureShrunkResourcesOutputDir != null) {
+          val outputFile = featureShrunkResourcesOutputDir.resolve(inputFile.name)
           it.setAndroidResourceConsumer(ArchiveProtoAndroidResourceConsumer(outputFile.toPath()))
         }
       }

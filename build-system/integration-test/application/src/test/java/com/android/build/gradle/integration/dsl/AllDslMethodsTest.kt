@@ -55,6 +55,7 @@ import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.plugins.ExtensionContainer
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.MapProperty
+import org.gradle.api.provider.Property
 import org.gradle.api.provider.SetProperty
 import org.gradle.process.CommandLineArgumentProvider
 import org.junit.Before
@@ -360,6 +361,7 @@ private class DslScriptGenerator(private val buildTypeType: Class<*>? = null, pr
         CommandLineArgumentProvider::class.java,
         DirectoryProperty::class.java,
         RegularFileProperty::class.java,
+        Property::class.java,
       )
 
     private val methodsWithReturnValue =

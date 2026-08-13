@@ -152,7 +152,7 @@ class LibraryTaskManager(
 
     // process java resources only, the merge is setup after
     // the task to generate intermediate jars for project to project publishing.
-    createProcessJavaResTask(libraryVariant)
+    createProcessJavaResTask(libraryVariant, libraryVariant.packaging)
     createAidlTask(libraryVariant)
 
     // Add data binding tasks if enabled

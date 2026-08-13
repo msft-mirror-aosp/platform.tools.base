@@ -44,6 +44,7 @@ import com.android.testutils.truth.DexClassSubject
 import com.android.testutils.truth.DexSubject
 import com.android.tools.profgen.ArtProfile
 import com.android.tools.profgen.DexFile
+import com.android.tools.profgen.parseDexFiles
 import com.android.tools.smali.dexlib2.immutable.debug.ImmutableStartLocal
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth
@@ -694,7 +695,12 @@ class CoreLibraryDesugarTest {
     val apk = app.getApk(GradleTestProject.ApkType.RELEASE)
     val apkFile = apk.file.toFile()
     ZipFile(apkFile).use { apkZip ->
-      val apkDexFiles = apk.getDexPaths().map { DexFile(apkZip.getInputStream(apkZip.getEntry(it.pathString)), it.name) }
+      val apkDexFiles = mutableListOf<DexFile>()
+      apk.getDexPaths().forEach { dexPath ->
+        apkZip.getInputStream(apkZip.getEntry(dexPath.pathString)).use { stream ->
+          apkDexFiles.addAll(parseDexFiles(stream, apkDexFiles.size))
+        }
+      }
       val entry = apkZip.entries().asSequence().first { it.name == "assets/dexopt/baseline.prof" }
       val profile = ArtProfile(apkZip.getInputStream(entry))
       val profileData = profile!!.profileData
@@ -702,7 +708,7 @@ class CoreLibraryDesugarTest {
       // Regression test for b/346268213
       assertThat(apkDexFiles.size).isEqualTo(profileData.entries.size)
       apkDexFiles.zip(profileData.entries).forEach {
-        assertThat(it.first.name).isEqualTo(it.second.key.name)
+        assertThat(it.first.dexIndex).isEqualTo(it.second.key.dexIndex)
         assertThat(it.first.dexChecksum).isEqualTo(it.second.key.dexChecksum)
       }
     }
@@ -725,12 +731,16 @@ class CoreLibraryDesugarTest {
       val profile = ArtProfile(bundleZip.getInputStream(entry))
       val profileData = profile!!.profileData
 
-      val bundleDexFiles =
-        bundle.getDexPathsForModule("base").map { DexFile(bundleZip.getInputStream(bundleZip.getEntry(it.pathString)), it.name) }
+      val bundleDexFiles = mutableListOf<DexFile>()
+      bundle.getDexPathsForModule("base").forEach { dexPath ->
+        bundleZip.getInputStream(bundleZip.getEntry(dexPath.pathString)).use { stream ->
+          bundleDexFiles.addAll(parseDexFiles(stream, bundleDexFiles.size))
+        }
+      }
       // Regression test for b/346268213
       assertThat(bundleDexFiles.size).isEqualTo(profileData.entries.size)
       bundleDexFiles.zip(profileData.entries).forEach {
-        assertThat(it.first.name).isEqualTo(it.second.key.name)
+        assertThat(it.first.dexIndex).isEqualTo(it.second.key.dexIndex)
         assertThat(it.first.dexChecksum).isEqualTo(it.second.key.dexChecksum)
       }
     }

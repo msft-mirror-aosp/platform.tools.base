@@ -26,6 +26,7 @@ import com.android.adblib.shell
 import java.io.IOException
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeSource
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.any
@@ -66,11 +67,12 @@ class AiGlassesPairing(val session: AdbSession) {
   /**
    * Polls the current pairing state from the companion app.
    *
+   * @param glassesBluetoothAddress The Bluetooth address of the glasses.
    * @return The pairing state as a string, or null if the command fails or returns no state.
    * @throws IOException if a communication error occurs with the device.
    */
-  suspend fun ConnectedDevice.pollPairingState(): String? {
-    val command = "am broadcast -a $COMPANION_PKG.GET_PAIRING_STATE $COMPANION_PKG"
+  suspend fun ConnectedDevice.pollPairingState(glassesBluetoothAddress: String): String? {
+    val command = "am broadcast -a $COMPANION_PKG.GET_PAIRING_STATE --es address \"$glassesBluetoothAddress\" -p $COMPANION_PKG"
 
     logger.info { "Executing: $command" }
     return runCatchingIoException(command) {
@@ -285,9 +287,20 @@ class AiGlassesPairing(val session: AdbSession) {
     return output
   }
 
+  /**
+   * Sends an ASSISTED_PAIR broadcast to the companion app running on [device].
+   *
+   * Appends `--ez force true` (EXTRA_FORCE_PAIRING). On companion app builds with force-pairing support, this forces a fresh pairing flow.
+   * On older builds, the extra is safely ignored and degrades gracefully to standard pairing.
+   *
+   * @param glassesBluetoothAddress The Bluetooth address of the glasses.
+   * @param useCdm Whether to use the Companion Device Manager pairing flow.
+   * @throws ShellCommandException if the broadcast command fails (exit code != 0).
+   * @throws IOException if a communication error occurs with the device.
+   */
   private suspend fun ConnectedDevice.sendPairingCommand(glassesBluetoothAddress: String, useCdm: Boolean) {
     val command =
-      """am broadcast -a $COMPANION_PKG.ASSISTED_PAIR --es address "$glassesBluetoothAddress" --ez auto_cdm $useCdm -p $COMPANION_PKG"""
+      """am broadcast -a $COMPANION_PKG.ASSISTED_PAIR --es address "$glassesBluetoothAddress" --ez auto_cdm $useCdm --ez force true -p $COMPANION_PKG"""
     val output = executeBroadcastCommand(command)
 
     if (output.exitCode != 0) {
@@ -295,8 +308,15 @@ class AiGlassesPairing(val session: AdbSession) {
     }
   }
 
-  suspend fun ConnectedDevice.sendUnpairCommand() {
-    val command = "am broadcast -a $COMPANION_PKG.UNPAIR -p $COMPANION_PKG"
+  /**
+   * Sends a targeted UNPAIR broadcast to the companion app running on the device for the specified glasses Bluetooth address.
+   *
+   * @param glassesBluetoothAddress The Bluetooth address of the glasses to unpair.
+   * @throws ShellCommandException if the broadcast command fails (exit code != 0).
+   * @throws IOException if a communication error occurs with the device.
+   */
+  suspend fun ConnectedDevice.sendUnpairCommand(glassesBluetoothAddress: String) {
+    val command = """am broadcast -a $COMPANION_PKG.UNPAIR --es address "$glassesBluetoothAddress" -p $COMPANION_PKG"""
     val output = executeBroadcastCommand(command)
 
     if (output.exitCode != 0) {
@@ -323,15 +343,16 @@ class AiGlassesPairing(val session: AdbSession) {
   /**
    * Polls the pairing state until it returns a non-null value or the [POLLING_TIMEOUT] expires.
    *
+   * @param glassesBluetoothAddress The Bluetooth address of the glasses.
    * @return The pairing state, or null if the timeout expires. Possible states include: "IDLE", "WORKER_STARTED", "WORKER_BONDING",
    *   "UI_CDM_SCANNING", "UI_CDM_ASSOCIATING", "UI_CDM_ASSOCIATION_FAILED", "UI_WAITING_FOR_WORKER", "WORKER_CONNECTING",
    *   "WORKER_GLASSES_CORE_CONNECTION_FAILED", "WORKER_GLASSES_CORE_CONNECTED", "PAIRED", "WORKER_BOND_FAILED", "WORKER_CONNECTION_FAILED",
    *   "WORKER_CANCELLED", "ERROR".
    */
-  private suspend fun ConnectedDevice.waitForPairingState(): String? {
+  private suspend fun ConnectedDevice.waitForPairingState(glassesBluetoothAddress: String): String? {
     val start = TimeSource.Monotonic.markNow()
     while (start.elapsedNow() < POLLING_TIMEOUT) {
-      val state = pollPairingState()
+      val state = pollPairingState(glassesBluetoothAddress)
       if (state != null) {
         return state
       }
@@ -386,7 +407,7 @@ class AiGlassesPairing(val session: AdbSession) {
         var idleCount = 0
         var associatingCount = 0
         while (true) {
-          val state = waitForPairingState()
+          val state = waitForPairingState(glassesBluetoothAddress)
 
           if (state == null) {
             emit("POLLING_FAILED")
@@ -402,6 +423,15 @@ class AiGlassesPairing(val session: AdbSession) {
               if (apiLevel >= 37 && idleCount >= 2 && checkSetupActivityInForeground()) {
                 sendFocusNavigationTap()
                 idleCount = 0
+              }
+              // Wizard-only pre-cleanse: prune any stale prior companion bond for targetMac before ASSISTED_PAIR,
+              // awaiting PAIRING_COMMAND_DELAY so async Bluetooth bond teardown completes before pairing starts.
+              try {
+                sendUnpairCommand(glassesBluetoothAddress)
+                delay(PAIRING_COMMAND_DELAY)
+              } catch (e: Exception) {
+                e.throwIfCancellation()
+                logger.warn(e, "Failed to unpair pre-existing bond for $glassesBluetoothAddress; proceeding with pairing")
               }
               sendPairingCommand(glassesBluetoothAddress, useCdm)
               delay(PAIRING_COMMAND_DELAY)
@@ -489,3 +519,9 @@ class ShellCommandException(message: String) : Exception(message)
 
 class DeviceConnectionException(val serialNumber: String, val command: String, cause: Throwable) :
   IOException("Connection to $serialNumber lost while executing '$command'.", cause)
+
+private fun Throwable.throwIfCancellation() {
+  if (this is CancellationException) {
+    throw this
+  }
+}

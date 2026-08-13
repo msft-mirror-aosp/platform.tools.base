@@ -22,11 +22,10 @@ import com.android.tools.deployer.model.activate.ActivationCommands;
 import com.android.tools.manifest.parser.components.ManifestAppComponentInfo;
 import com.android.utils.ILogger;
 
-
 public abstract class AppComponent {
     @NonNull public final String appId;
 
-    @NonNull public final ManifestAppComponentInfo info;
+    @NonNull protected final ManifestAppComponentInfo info;
 
     @NonNull protected final ILogger logger;
 
@@ -60,7 +59,35 @@ public abstract class AppComponent {
         this.logger = logger;
     }
 
+    @NonNull
+    public String getQualifiedName() {
+        return info.getQualifiedName();
+    }
 
+    public boolean isAlias() {
+        return info.isAlias();
+    }
+
+    @NonNull
+    public String getTargetActivity() {
+        return info.getTargetActivity();
+    }
+
+    public boolean isEnabled() {
+        return info.isEnabled();
+    }
+
+    public boolean isExported() {
+        return info.isExported();
+    }
+
+    public boolean hasAction(@NonNull String action) {
+        return info.hasAction(action);
+    }
+
+    public boolean hasCategory(@NonNull String category) {
+        return info.hasCategory(category);
+    }
 
     @NonNull
     public static String getFQEscapedName(@NonNull String appId, @NonNull String componentFqName) {

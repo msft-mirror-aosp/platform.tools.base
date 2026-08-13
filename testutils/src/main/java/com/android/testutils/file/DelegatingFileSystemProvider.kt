@@ -28,6 +28,8 @@ import java.nio.file.OpenOption
 import java.nio.file.Path
 import java.nio.file.PathMatcher
 import java.nio.file.ProviderMismatchException
+import java.nio.file.WatchEvent
+import java.nio.file.WatchKey
 import java.nio.file.WatchService
 import java.nio.file.attribute.BasicFileAttributes
 import java.nio.file.attribute.FileAttribute
@@ -311,6 +313,14 @@ open class DelegatingFileSystemProvider(delegateFileSystem: FileSystem) : FileSy
 
     override fun iterator(): MutableIterator<Path> {
       return DelegatingPathIterator(delegate.iterator())
+    }
+
+    override fun register(watcher: WatchService, events: Array<out WatchEvent.Kind<*>>, vararg modifiers: WatchEvent.Modifier): WatchKey {
+      return delegate.register(watcher, events, *modifiers)
+    }
+
+    override fun register(watcher: WatchService, vararg events: WatchEvent.Kind<*>): WatchKey {
+      return delegate.register(watcher, *events)
     }
 
     override fun toString() = delegate.toString()

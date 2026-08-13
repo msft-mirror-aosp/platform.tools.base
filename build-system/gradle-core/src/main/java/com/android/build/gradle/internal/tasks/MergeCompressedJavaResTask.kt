@@ -17,8 +17,8 @@
 package com.android.build.gradle.internal.tasks
 
 import com.android.SdkConstants
+import com.android.build.api.artifact.ScopedArtifact
 import com.android.build.api.artifact.impl.InternalScopedArtifacts
-import com.android.build.api.artifact.impl.InternalScopedArtifacts.InternalScope
 import com.android.build.api.variant.Packaging
 import com.android.build.gradle.internal.LoggerWrapper
 import com.android.build.gradle.internal.TaskManager
@@ -29,6 +29,7 @@ import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifa
 import com.android.build.gradle.internal.profile.ProfileAwareWorkAction
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.InternalArtifactType
+import com.android.build.gradle.internal.tasks.MergeJavaResWorkAction.SourcedInput
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.utils.immutableListBuilder
@@ -37,7 +38,6 @@ import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.merge.DelegateFileMergerOutput
 import com.android.builder.merge.FileMerger
 import com.android.builder.merge.FileMergerInput
-import com.android.builder.merge.FileMergerInputNonIncremental
 import com.android.builder.merge.FileMergerOutputs
 import com.android.builder.merge.FilterFileMergerInput
 import com.android.builder.merge.JavaResZipSourceMerger
@@ -48,15 +48,20 @@ import com.android.builder.packaging.ParsedPackagingOptions
 import com.google.common.collect.ImmutableList
 import kotlin.sequences.map
 import kotlin.sequences.sortedBy
+import org.gradle.api.artifacts.ArtifactCollection
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+import org.gradle.api.artifacts.component.ProjectComponentIdentifier
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.invocation.Gradle
 import org.gradle.api.logging.Logging
 import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.Property
 import org.gradle.api.provider.SetProperty
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
@@ -75,11 +80,21 @@ import org.gradle.work.DisableCachingByDefault
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.JAVA_RESOURCES, secondaryTaskCategories = [TaskCategory.MERGING])
 abstract class MergeCompressedJavaResTask : NonIncrementalTask(), GlobalTask {
 
-  @get:InputFile @get:PathSensitive(PathSensitivity.NAME_ONLY) @get:Optional abstract val projectJavaResJar: RegularFileProperty
+  @get:InputFiles @get:PathSensitive(PathSensitivity.NAME_ONLY) @get:Optional abstract val projectJavaResJar: RegularFileProperty
 
-  @get:InputFiles @get:Classpath abstract val mergedDependenciesJavaRes: ConfigurableFileCollection
+  @get:Classpath abstract val mergedDependenciesJavaRes: ConfigurableFileCollection
 
-  @get:InputFiles @get:Optional @get:Classpath abstract val featureJavaRes: ConfigurableFileCollection
+  @get:Classpath @get:Optional abstract val featureJavaRes: ConfigurableFileCollection
+
+  @get:Classpath @get:Optional abstract val localDepsJavaRes: ConfigurableFileCollection
+
+  /* External library, subproject and feature dependencies are precompressed and locally merged in [JavaResCompressionTransform] and added
+   * as a task input as mergedDependenciesJavaRes. For ambiguous Java resource conflicts between packages, the task will use the
+   * artifact sources to determine the project or module to report in conflict error messages.
+   */
+  @get:Internal abstract val externalLibJavaRes: Property<ArtifactCollection>
+  @get:Internal abstract val subProjectJavaRes: Property<ArtifactCollection>
+  @get:Internal abstract val featureJavaResProvenance: Property<ArtifactCollection>
 
   @get:Input abstract val excludes: SetProperty<String>
 
@@ -89,19 +104,44 @@ abstract class MergeCompressedJavaResTask : NonIncrementalTask(), GlobalTask {
 
   @get:Input @get:Optional abstract val noCompress: ListProperty<String>
 
+  @get:Input abstract val hasIncludedBuilds: Property<Boolean>
+
   @get:OutputFile abstract val outputFile: RegularFileProperty
 
   override fun doTaskAction() {
     workerExecutor.noIsolation().submit(MergeJavaResOptimizedWorkAction::class.java) {
       it.initializeFromBaseTask(this)
-      it.projectJavaResJar.set(projectJavaResJar)
-      it.mergedDependenciesJavaRes.from(mergedDependenciesJavaRes)
-      it.featureJavaRes.from(featureJavaRes)
+      if (projectJavaResJar.isPresent && projectJavaResJar.get().asFile.exists()) {
+        it.projectJavaResJar.set(projectJavaResJar)
+      }
+      val displayBuildInfo = hasIncludedBuilds.get()
+      it.subProjectJavaRes.set(subProjectJavaRes.sourceFileToModuleId(displayBuildInfo))
+      it.externalLibJavaRes.set(externalLibJavaRes.sourceFileToModuleId(displayBuildInfo) + localDepsJavaRes.toSourcedInputs())
+      it.featureJavaRes.set(featureJavaResProvenance.sourceFileToModuleId(displayBuildInfo))
       it.outputFile.set(outputFile)
       it.noCompress.set(noCompress)
       it.excludes.set(excludes)
       it.pickFirsts.set(pickFirsts)
       it.merges.set(merges)
+    }
+  }
+
+  private fun Property<ArtifactCollection>.sourceFileToModuleId(displayBuildInfo: Boolean): List<SourcedInput> {
+    if (!isPresent) return emptyList()
+    return get().artifacts.map {
+      val name =
+        when (val id = it.id.componentIdentifier) {
+          is ModuleComponentIdentifier -> "${id.group}:${id.module}:${id.version}/${it.file.name}"
+          is ProjectComponentIdentifier -> {
+            if (displayBuildInfo) {
+              "project(\"${id.projectPath}\") - Build: ${id.build.buildPath}"
+            } else {
+              "project(\"${id.projectPath}\")"
+            }
+          }
+          else -> id.displayName + "/${it.file.name}"
+        }
+      SourcedInput(it.file, name)
     }
   }
 
@@ -139,43 +179,53 @@ abstract class MergeCompressedJavaResTask : NonIncrementalTask(), GlobalTask {
     override fun configure(task: MergeCompressedJavaResTask) {
       super.configure(task)
 
+      configureHasIncludedBuilds(task.project.gradle, task)
+
       task.projectJavaResJar.setDisallowChanges(creationConfig.artifacts.get(InternalArtifactType.JAVA_RES_COMPRESSED_JAR))
 
       if (mergeScopes.contains(InternalScopedArtifacts.InternalScope.SUB_PROJECTS)) {
-        task.mergedDependenciesJavaRes.from(
-          creationConfig.variantDependencies
-            .getArtifactCollection(
-              AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
-              AndroidArtifacts.ArtifactScope.PROJECT,
-              AndroidArtifacts.ArtifactType.JAVA_RES,
-            )
-            .artifactFiles
-        )
+        val artifacts =
+          creationConfig.variantDependencies.getArtifactCollection(
+            AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
+            AndroidArtifacts.ArtifactScope.PROJECT,
+            AndroidArtifacts.ArtifactType.JAVA_RES,
+          )
+        task.mergedDependenciesJavaRes.from(artifacts.artifactFiles)
+        task.subProjectJavaRes.set(artifacts)
       }
+      task.subProjectJavaRes.disallowChanges()
 
       if (mergeScopes.contains(InternalScopedArtifacts.InternalScope.EXTERNAL_LIBS)) {
-        task.mergedDependenciesJavaRes.from(
-          creationConfig.variantDependencies
-            .getArtifactCollection(
-              AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
-              AndroidArtifacts.ArtifactScope.EXTERNAL,
-              AndroidArtifacts.ArtifactType.JAVA_RES,
-            )
-            .artifactFiles
-        )
+        val artifacts =
+          creationConfig.variantDependencies.getArtifactCollection(
+            AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
+            AndroidArtifacts.ArtifactScope.EXTERNAL,
+            AndroidArtifacts.ArtifactType.JAVA_RES,
+          )
+        task.mergedDependenciesJavaRes.from(artifacts.artifactFiles)
+        task.externalLibJavaRes.set(artifacts)
       }
+      task.externalLibJavaRes.disallowChanges()
+
+      if (mergeScopes.contains(InternalScopedArtifacts.InternalScope.LOCAL_DEPS)) {
+        val artifacts =
+          creationConfig.artifacts.forScope(InternalScopedArtifacts.InternalScope.LOCAL_DEPS).getFinalArtifacts(ScopedArtifact.JAVA_RES)
+        task.mergedDependenciesJavaRes.from(artifacts)
+        task.localDepsJavaRes.from(artifacts)
+      }
+      task.localDepsJavaRes.disallowChanges()
 
       if (mergeScopes.contains(InternalScopedArtifacts.InternalScope.FEATURES)) {
-        task.featureJavaRes.from(
-          creationConfig.variantDependencies
-            .getArtifactCollection(
-              AndroidArtifacts.ConsumedConfigType.REVERSE_METADATA_VALUES,
-              AndroidArtifacts.ArtifactScope.PROJECT,
-              AndroidArtifacts.ArtifactType.REVERSE_METADATA_JAVA_RES,
-            )
-            .artifactFiles
-        )
+        val artifacts =
+          creationConfig.variantDependencies.getArtifactCollection(
+            AndroidArtifacts.ConsumedConfigType.REVERSE_METADATA_VALUES,
+            AndroidArtifacts.ArtifactScope.PROJECT,
+            AndroidArtifacts.ArtifactType.REVERSE_METADATA_JAVA_RES,
+          )
+        task.featureJavaRes.from(artifacts.artifactFiles)
+        task.featureJavaResProvenance.set(artifacts)
       }
+      task.featureJavaResProvenance.disallowChanges()
 
       task.excludes.setDisallowChanges(packaging.resources.excludes)
       task.pickFirsts.setDisallowChanges(packaging.resources.pickFirsts)
@@ -206,16 +256,23 @@ abstract class MergeCompressedJavaResTask : NonIncrementalTask(), GlobalTask {
     override fun configure(task: MergeCompressedJavaResTask) {
       super.configure(task)
 
+      configureHasIncludedBuilds(task.project.gradle, task)
+
       task.variantName = ""
       task.projectJavaResJar.disallowChanges()
 
-      task.mergedDependenciesJavaRes.from(
-        creationConfig.dependencies
-          .getArtifactCollection(AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH, AndroidArtifacts.ArtifactType.JAVA_RES)
-          .artifactFiles
-      )
+      val artifacts =
+        creationConfig.dependencies.getArtifactCollection(
+          AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
+          AndroidArtifacts.ArtifactType.JAVA_RES,
+        )
+      task.mergedDependenciesJavaRes.from(artifacts.artifactFiles)
+      task.subProjectJavaRes.set(artifacts)
 
+      task.externalLibJavaRes.disallowChanges()
+      task.localDepsJavaRes.disallowChanges()
       task.featureJavaRes.disallowChanges()
+      task.featureJavaResProvenance.disallowChanges()
 
       task.excludes.setDisallowChanges(creationConfig.packaging.resources.excludes)
       task.pickFirsts.setDisallowChanges(creationConfig.packaging.resources.pickFirsts)
@@ -228,20 +285,27 @@ abstract class MergeCompressedJavaResTask : NonIncrementalTask(), GlobalTask {
 abstract class MergeJavaResOptimizedWorkAction : ProfileAwareWorkAction<MergeJavaResOptimizedWorkAction.Params>() {
 
   override fun run() {
-    if (!parameters.featureJavaRes.isEmpty) {
-      error(
-        "Dynamic features contain Java Resources. " +
-          "This is not yet supported when android.experimental.enableJavaResourceOptimizations=true"
-      )
-    }
-
     val outputFile = parameters.outputFile.get().asFile
 
     val sources = immutableListBuilder {
       if (parameters.projectJavaResJar.isPresent) {
-        add(CompressedJavaResJar(parameters.projectJavaResJar.get().asFile, JavaResMergingPriority.HIGH))
+        add(
+          CompressedJavaResJar(
+            "project(\"${parameters.projectPath.get()}\") - This project",
+            parameters.projectJavaResJar.get().asFile,
+            JavaResMergingPriority.HIGH,
+          )
+        )
       }
-      parameters.mergedDependenciesJavaRes.forEach { add(CompressedJavaResJar(it, JavaResMergingPriority.LOW)) }
+      parameters.subProjectJavaRes.get().forEach {
+        add(CompressedJavaResJar(it.source, it.input, determinePriority(InternalScopedArtifacts.InternalScope.SUB_PROJECTS)))
+      }
+      parameters.externalLibJavaRes.get().forEach {
+        add(CompressedJavaResJar(it.source, it.input, determinePriority(InternalScopedArtifacts.InternalScope.EXTERNAL_LIBS)))
+      }
+      parameters.featureJavaRes.get().forEach {
+        add(CompressedJavaResJar(it.source, it.input, determinePriority(InternalScopedArtifacts.InternalScope.FEATURES)))
+      }
     }
 
     val packagingOptions = ParsedPackagingOptions(parameters.excludes.get(), parameters.pickFirsts.get(), parameters.merges.get())
@@ -258,7 +322,7 @@ abstract class MergeJavaResOptimizedWorkAction : ProfileAwareWorkAction<MergeJav
         .asSequence()
         .sortedBy(CompressedJavaResJar::priority)
         .map { jar ->
-          val input = LazyFileMergerInput(jar.file.name, jar.file)
+          val input = LazyFileMergerInput(jar.name, jar.file)
           val filteredInput = FilterFileMergerInput(input, inputFilter)
 
           if (jar.priority != JavaResMergingPriority.LOW) {
@@ -274,11 +338,11 @@ abstract class MergeJavaResOptimizedWorkAction : ProfileAwareWorkAction<MergeJav
 
     val output =
       object : DelegateFileMergerOutput(baseOutput) {
-        override fun create(path: String, inputs: List<FileMergerInputNonIncremental>, compress: Boolean) {
+        override fun create(path: String, inputs: List<FileMergerInput>, compress: Boolean) {
           super.create(path, filter(path, inputs), compress)
         }
 
-        private fun filter(path: String, inputs: List<FileMergerInputNonIncremental>): ImmutableList<FileMergerInputNonIncremental> {
+        private fun filter(path: String, inputs: List<FileMergerInput>): ImmutableList<FileMergerInput> {
           val packagingAction = packagingOptions.getAction(path)
           val shouldFilterInputs =
             packagingAction == ParsedPackagingOptions.JavaResPackagingFileAction.NONE && inputs.any { highPriorityInputs.contains(it) }
@@ -307,12 +371,20 @@ abstract class MergeJavaResOptimizedWorkAction : ProfileAwareWorkAction<MergeJav
 
   abstract class Params : Parameters() {
     abstract val projectJavaResJar: RegularFileProperty
-    abstract val mergedDependenciesJavaRes: ConfigurableFileCollection
-    abstract val featureJavaRes: ConfigurableFileCollection
+    abstract val subProjectJavaRes: ListProperty<SourcedInput>
+    abstract val externalLibJavaRes: ListProperty<SourcedInput>
+    abstract val featureJavaRes: ListProperty<SourcedInput>
     abstract val outputFile: RegularFileProperty
     abstract val noCompress: ListProperty<String>
     abstract val excludes: SetProperty<String>
     abstract val pickFirsts: SetProperty<String>
     abstract val merges: SetProperty<String>
   }
+}
+
+private fun ConfigurableFileCollection.toSourcedInputs(): List<SourcedInput> = map { SourcedInput(it, it.absolutePath) }
+
+private fun configureHasIncludedBuilds(gradle: Gradle, task: MergeCompressedJavaResTask) {
+  val rootGradle = gradle.parent ?: gradle
+  task.hasIncludedBuilds.setDisallowChanges(rootGradle.includedBuilds.isNotEmpty())
 }

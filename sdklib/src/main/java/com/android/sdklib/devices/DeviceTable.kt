@@ -130,7 +130,7 @@ class SystemImageDeviceTable(val log: ILogger, isSupportedDevice: (Device) -> Bo
         .loadLocalPackages(progress)
         .filter { it.typeDetails is DetailsTypes.SysImgDetailsType }
         .sortedBy { (it.typeDetails as DetailsTypes.SysImgDetailsType).androidVersion }
-        .mapNotNull { it.location.resolve(SdkConstants.FN_DEVICES_XML) }
+        .mapNotNull { it.location.resolve(SdkConstants.FN_DEVICES_XML).takeIf { Files.isReadable(it) } }
     return readInputsToTable(paths, DeviceParser::openInputStream)
   }
 

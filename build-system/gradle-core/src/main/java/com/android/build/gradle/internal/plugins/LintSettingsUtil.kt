@@ -52,4 +52,10 @@ internal fun Lint.applySettings(settingsLint: Lint) {
 
   settingsLint.targetSdk?.let { targetSdk = it }
   settingsLint.targetSdkPreview?.let { targetSdkPreview = it }
+
+  val settingsToolchain = settingsLint.toolchain
+  val thisToolchain = this.toolchain
+  thisToolchain.languageVersion.convention(settingsToolchain.languageVersion)
+  thisToolchain.vendor.convention(settingsToolchain.vendor)
+  thisToolchain.implementation.convention(settingsToolchain.implementation)
 }

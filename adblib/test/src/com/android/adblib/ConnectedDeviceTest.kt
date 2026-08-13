@@ -83,6 +83,24 @@ class ConnectedDeviceTest {
   }
 
   @Test
+  fun testIsRootWorks(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val connectedDevice = addFakeConnectedDevice(isRoot = true)
+
+    // Assert
+    Assert.assertTrue(connectedDevice.isRoot())
+  }
+
+  @Test
+  fun testIsNotRootWorks(): Unit = runBlockingWithTimeout {
+    // Prepare: `isRoot` is set to `false` by default
+    val connectedDevice = addFakeConnectedDevice()
+
+    // Assert
+    Assert.assertFalse(connectedDevice.isRoot())
+  }
+
+  @Test
   fun testScopeIsCacheScope(): Unit = runBlockingWithTimeout {
     // Prepare/Act
     val connectedDevice = addFakeConnectedDevice()
@@ -1134,77 +1152,6 @@ class ConnectedDeviceTest {
   }
 
   @Test
-  fun testRoot(): Unit = runBlockingWithTimeout {
-    // Prepare
-    val fakeDevice = addFakeConnectedDevice()
-
-    // Act
-    val status = fakeDevice.root()
-
-    // Assert
-    Assert.assertTrue(status.restarting)
-    Assert.assertTrue(status.status.startsWith("restarting"))
-    Assert.assertEquals(status.rawStatus, status.status + '\n')
-  }
-
-  @Test
-  fun testUnRoot(): Unit = runBlockingWithTimeout {
-    // Prepare
-    val fakeDevice = addFakeConnectedDevice()
-    fakeAdb.fakeAdbServer.restartDeviceAsync(fakeDevice.toDeviceState()) { it.copy(isRoot = true) }.await()
-
-    // Act
-    val status = fakeDevice.unRoot()
-
-    // Assert
-    Assert.assertTrue(status.restarting)
-    Assert.assertTrue(status.status.startsWith("restarting"))
-    Assert.assertEquals(status.rawStatus, status.status + '\n')
-  }
-
-  @Test
-  fun testUnRootIfAlreadyUnRoot(): Unit = runBlockingWithTimeout {
-    // Prepare
-    val fakeDevice = addFakeConnectedDevice()
-
-    // Act
-    val status = fakeDevice.unRoot()
-
-    // Assert
-    Assert.assertFalse(status.restarting)
-    Assert.assertEquals(status.rawStatus, status.status + '\n')
-  }
-
-  @Test
-  fun testRootAndWait(): Unit = runBlockingWithTimeout {
-    // Prepare
-    val fakeDevice = addFakeConnectedDevice()
-
-    // Act
-    val status = fakeDevice.rootAndWait()
-
-    // Assert
-    Assert.assertTrue(status.restarting)
-    Assert.assertTrue(status.status.startsWith("restarting"))
-    Assert.assertEquals(status.rawStatus, status.status + '\n')
-  }
-
-  @Test
-  fun testUnRootAndWait(): Unit = runBlockingWithTimeout {
-    // Prepare
-    val fakeDevice = addFakeConnectedDevice()
-    fakeAdb.fakeAdbServer.restartDeviceAsync(fakeDevice.toDeviceState()) { it.copy(isRoot = true) }.await()
-
-    // Act
-    val status = fakeDevice.unRootAndWait()
-
-    // Assert
-    Assert.assertTrue(status.restarting)
-    Assert.assertTrue(status.status.startsWith("restarting"))
-    Assert.assertEquals(status.rawStatus, status.status + '\n')
-  }
-
-  @Test
   fun testWithScopeContextCallsActionOnlyOnceIfNoRetry(): Unit = runBlockingWithTimeout {
     // Prepare
     val fakeDevice = addFakeConnectedDevice()
@@ -1651,7 +1598,7 @@ class ConnectedDeviceTest {
 
   class MyTestException(message: String) : IOException(message)
 
-  private suspend fun addFakeConnectedDevice(serialNumber: String = "1234", sdk: Int = 30): ConnectedDevice {
+  private suspend fun addFakeConnectedDevice(serialNumber: String = "1234", sdk: Int = 30, isRoot: Boolean = false): ConnectedDevice {
     val deviceState =
       fakeAdbRule.fakeAdb.connectDevice(
         serialNumber,
@@ -1660,6 +1607,7 @@ class ConnectedDeviceTest {
         "model",
         AndroidApiLevel(sdk),
         com.android.fakeadbserver.DeviceState.HostConnectionType.USB,
+        isRoot = isRoot,
       )
     deviceState.deviceStatus = com.android.fakeadbserver.DeviceState.DeviceStatus.ONLINE
     val connectedDevice = fakeAdbRule.adbSession.connectedDevicesTracker.waitForDevice(deviceState.deviceId)

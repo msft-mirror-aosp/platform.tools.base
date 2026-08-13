@@ -45,7 +45,6 @@ public abstract class RenderParams {
     private long mTimeout;
 
     private AssetRepository mAssetRepository;
-    private IImageFactory mImageFactory;
     private RenderSizeProvider mSizeProvider;
 
     private ResourceValue mAppIcon;
@@ -110,7 +109,6 @@ public abstract class RenderParams {
         mLog = params.mLog;
         mSetTransparentBackground = params.mSetTransparentBackground;
         mTimeout = params.mTimeout;
-        mImageFactory = params.mImageFactory;
         mSizeProvider = params.mSizeProvider;
         mAppIcon = params.mAppIcon;
         mAppLabel = params.mAppLabel;
@@ -133,10 +131,6 @@ public abstract class RenderParams {
 
     public void setTimeout(long timeout) {
         mTimeout = timeout;
-    }
-
-    public void setImageFactory(IImageFactory imageFactory) {
-        mImageFactory = imageFactory;
     }
 
     public void setSizeProvider(RenderSizeProvider sizeProvider) {
@@ -266,8 +260,9 @@ public abstract class RenderParams {
         return mTimeout;
     }
 
+    @Deprecated
     public IImageFactory getImageFactory() {
-        return mImageFactory;
+        return null;
     }
 
     public RenderSizeProvider getSizeProvider() {

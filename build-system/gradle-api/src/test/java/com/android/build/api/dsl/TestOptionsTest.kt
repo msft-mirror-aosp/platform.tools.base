@@ -21,6 +21,7 @@ import org.gradle.api.ExtensiblePolymorphicDomainObjectContainer
 import org.gradle.api.Project
 import org.gradle.api.artifacts.dsl.DependencyCollector
 import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.TaskProvider
 import org.gradle.declarative.dsl.model.annotations.HiddenInDefinition
 import org.gradle.testfixtures.ProjectBuilder
 import org.gradle.testing.base.TestSuite
@@ -48,6 +49,8 @@ class TestOptionsTest {
     override fun getName(): String = name
 
     override var codeCoverage: Boolean = false
+    override var requiresUpdateTask: Boolean = false
+
     override val targetVariants: MutableList<String>
       get() = throw RuntimeException("Unexpected call")
 
@@ -77,6 +80,10 @@ class TestOptionsTest {
     }
 
     override fun configureTestTasks(action: org.gradle.api.tasks.testing.Test.(TestTaskContext) -> Unit) {
+      throw RuntimeException("Unexpected call")
+    }
+
+    override fun withTestTaskProviders(action: TaskProvider<org.gradle.api.tasks.testing.Test>.(TestTaskContext) -> Unit) {
       throw RuntimeException("Unexpected call")
     }
   }

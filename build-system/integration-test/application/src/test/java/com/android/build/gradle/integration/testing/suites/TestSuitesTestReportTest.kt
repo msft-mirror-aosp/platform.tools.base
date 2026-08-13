@@ -143,6 +143,57 @@ class TestSuitesTestReportTest {
     assertThat(xmlFiles.size).isEqualTo(4)
   }
 
+  @Test
+  fun testUpdateTasksNotIncludedInTestReport() {
+    val build =
+      rule.build {
+        androidApplication {
+          android {
+            testOptions.suites.create("withUpdate", AgpTestSuite::class.java) {
+              it.useJunitEngine.apply {
+                inputs.add(AgpTestSuiteInputParameters.MERGED_MANIFEST)
+                includeEngines.add("[engine:custom-junit-engine-for-tests]")
+                enginesDependencies.add("com.android.tools.build:gradle-api:${Version.ANDROID_GRADLE_PLUGIN_VERSION}")
+                enginesDependencies.add("org.junit.platform:junit-platform-launcher")
+                enginesDependencies.add("com.test:custom-junit-engine:1.0")
+                enginesDependencies.add("org.junit.platform:junit-platform-engine:1.13.3")
+              }
+              it.requiresUpdateTask = true
+              it.assets {}
+              it.targetVariants.add("debug")
+              it.targets.create("t1") {}
+            }
+          }
+          files { add("src/withUpdate/test.txt", "dummy content") }
+        }
+      }
+
+    // Running createTestReport should only execute test tasks, excluding update tasks.
+    build.executor.run(":app:createTestReport")
+
+    val testResultsXmlFiles =
+      build
+        .androidApplication()
+        .intermediatesDir
+        .resolve("project_level_test_results/global/testResultsCollectionDebug")
+        .toFile()
+        .listFiles()
+        ?.filter { it.isFile && it.extension == "xml" } ?: emptyList()
+    // 2 from 'first' (t1, t2) + 1 from 'withUpdate' (t1) = 3 test results
+    assertThat(testResultsXmlFiles.size).isEqualTo(3)
+
+    // Update tasks should not be executed by createTestReport, so TEST_SUITE_UPDATE_RESULTS directory does not exist yet.
+    val updateResultsDir =
+      build.androidApplication().intermediatesDir.resolve("test_suite_update_results/debug/updateWithUpdateT1DebugTestSuite").toFile()
+    assertThat(updateResultsDir.exists()).isFalse()
+
+    // Now explicitly execute the update task and verify its results are published to TEST_SUITE_UPDATE_RESULTS
+    build.executor.run(":app:updateWithUpdateT1DebugTestSuite")
+    assertThat(updateResultsDir.exists()).isTrue()
+    val updateXmlFiles = updateResultsDir.listFiles()?.filter { it.isFile && it.extension == "xml" } ?: emptyList()
+    assertThat(updateXmlFiles.size).isEqualTo(1)
+  }
+
   class CustomEngineDescriptor(uniqueId: UniqueId) : AbstractTestDescriptor(uniqueId, "Custom Engine Root") {
     override fun getType(): TestDescriptor.Type = TestDescriptor.Type.CONTAINER
   }

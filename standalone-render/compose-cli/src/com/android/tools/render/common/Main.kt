@@ -22,6 +22,42 @@ import com.intellij.openapi.util.Disposer
 import java.io.File
 import kotlin.system.exitProcess
 
+class StandaloneComposeRenderer(
+  private val fontsPath: String?,
+  private val resourceApkPath: String,
+  private val namespace: String,
+  private val classPath: List<String>,
+  private val projectClassPath: List<String>,
+  private val layoutlibPath: String,
+) {
+
+  fun render(screenshots: List<PreviewScreenshot>, outputFolder: String): PreviewRenderingResult {
+    return try {
+      val bootstrapper =
+        RenderEnvironmentBootstrapper(
+          fontsPath = fontsPath,
+          resourceApkPath = resourceApkPath,
+          namespace = namespace,
+          classPath = classPath,
+          projectClassPath = projectClassPath,
+          layoutlibPath = layoutlibPath,
+        )
+      bootstrapper.bootstrap().use { renderer ->
+        val results = screenshots.flatMap { renderer.render(it, outputFolder) }.sortedBy { it.imagePath }
+        PreviewRenderingResult(globalError = null, results)
+      }
+    } catch (t: Throwable) {
+      PreviewRenderingResult(t.stackTraceToString(), emptyList())
+    }
+  }
+
+  companion object {
+    fun disposeFramework() {
+      Disposer.dispose(IJFramework)
+    }
+  }
+}
+
 fun main(args: Array<String>) {
   if (args.isEmpty() || args.contains("--help") || args.contains("-h")) {
     printUsage()
@@ -34,7 +70,7 @@ fun main(args: Array<String>) {
     System.err.println("Error: ${t.message}")
     exitCode = 1
   } finally {
-    Disposer.dispose(IJFramework)
+    StandaloneComposeRenderer.disposeFramework()
   }
   exitProcess(exitCode)
 }
@@ -88,25 +124,16 @@ private fun printUsage() {
 
 private fun renderPreview(previewRenderingJson: File) {
   val previewRendering = readPreviewRenderingJson(previewRenderingJson.reader())
-  val previewRenderingResult =
-    try {
-      val bootstrapper =
-        RenderEnvironmentBootstrapper(
-          previewRendering.fontsPath,
-          previewRendering.resourceApkPath,
-          previewRendering.namespace,
-          previewRendering.classPath,
-          previewRendering.projectClassPath,
-          previewRendering.layoutlibPath,
-        )
-      bootstrapper.bootstrap().use { renderer ->
-        val screenshotResults =
-          previewRendering.screenshots.flatMap { renderer.render(it, previewRendering.outputFolder) }.sortedBy { it.imagePath }
-        PreviewRenderingResult(globalError = null, screenshotResults)
-      }
-    } catch (t: Throwable) {
-      PreviewRenderingResult(t.stackTraceToString(), emptyList())
-    }
+  val renderer =
+    StandaloneComposeRenderer(
+      fontsPath = previewRendering.fontsPath,
+      resourceApkPath = previewRendering.resourceApkPath,
+      namespace = previewRendering.namespace,
+      classPath = previewRendering.classPath,
+      projectClassPath = previewRendering.projectClassPath,
+      layoutlibPath = previewRendering.layoutlibPath,
+    )
+  val previewRenderingResult = renderer.render(previewRendering.screenshots, previewRendering.outputFolder)
 
   writePreviewRenderingResult(File(previewRendering.resultsFilePath).writer(), previewRenderingResult)
 

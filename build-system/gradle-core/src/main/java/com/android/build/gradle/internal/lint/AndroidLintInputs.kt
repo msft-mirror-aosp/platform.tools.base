@@ -100,6 +100,7 @@ import com.google.common.annotations.VisibleForTesting
 import java.io.File
 import java.nio.file.Files
 import java.util.concurrent.Callable
+import org.gradle.api.GradleException
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -115,6 +116,7 @@ import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.RegularFile
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.logging.Logging
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.MapProperty
@@ -136,6 +138,9 @@ import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.jvm.tasks.Jar
+import org.gradle.jvm.toolchain.JavaLauncher
+import org.gradle.jvm.toolchain.JavaToolchainService
+import org.gradle.jvm.toolchain.JavaToolchainSpec
 import org.gradle.workers.WorkerExecutor
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion.Companion.DEFAULT
@@ -152,14 +157,17 @@ abstract class LintTool {
    *
    * Used both for the [lintCacheDirectory] and for the classloader cache in [AndroidLintWorkAction]
    *
-   * For published versions it will include the version of lint from maven e.g. `30.2.0-alpha05` and for -dev versions, also a hash of the
-   * jars: `30.2.0-dev_920ff9cabfbb40d0318735f9fe403b9/`
+   * For published versions it will include the version of lint from maven and hash calculated from classpath filenames e.g.
+   * `30.2.0-alpha05_920ff9cabfbb40d0318735f9fe403b9` For -dev versions it will include a hash of the jars:
+   * `30.2.0-dev_920ff9cabfbb40d0318735f9fe403b9/`
    */
   @get:Input abstract val versionKey: Property<String>
 
   @get:Input abstract val runInProcess: Property<Boolean>
 
   @get:Input @get:Optional abstract val workerHeapSize: Property<String>
+
+  @get:Internal abstract val javaExecutablePath: Property<String>
 
   /** The lint cache parent dir for artifacts recomputable by lint that save analysis time */
   @get:Internal abstract val lintCacheDirectory: DirectoryProperty
@@ -193,7 +201,13 @@ abstract class LintTool {
 
   @get:Internal abstract val lintClassLoaderBuildService: Property<LintClassLoaderBuildService>
 
-  fun initialize(taskCreationServices: TaskCreationServices, task: Task) {
+  @JvmOverloads
+  fun initialize(
+    taskCreationServices: TaskCreationServices,
+    task: Task,
+    lintOptions: Lint? = null,
+    projectTargetCompatibility: JavaVersion? = null,
+  ) {
     classpath.fromDisallowChanges(taskCreationServices.lintFromMaven.files)
     getBuildService<LintClassLoaderBuildService, BuildServiceParameters.None>(taskCreationServices.buildServiceRegistry).let {
       lintClassLoaderBuildService.setDisallowChanges(it)
@@ -201,11 +215,13 @@ abstract class LintTool {
     }
     versionKey.setDisallowChanges(deriveVersionKey(taskCreationServices, lintClassLoaderBuildService))
     val projectOptions = taskCreationServices.projectOptions
-    runInProcess.setDisallowChanges(projectOptions.getProvider(BooleanOption.RUN_LINT_IN_PROCESS))
+    runInProcess.setDisallowChanges(getLintRunInProcessProvider(projectOptions, lintOptions))
     workerHeapSize.setDisallowChanges(projectOptions.getProvider(StringOption.LINT_HEAP_SIZE))
     lintCacheDirectory.setDisallowChanges(
       taskCreationServices.projectInfo.buildDirectory.dir("${SdkConstants.FD_INTERMEDIATES}/lint-cache/${task.name}")
     )
+    val launcherProvider = getLintJavaLauncherProvider(task.project, lintOptions, projectTargetCompatibility, projectOptions)
+    javaExecutablePath.setDisallowChanges(launcherProvider.map { it.executablePath.asFile.absolutePath })
   }
 
   @VisibleForTesting
@@ -262,6 +278,10 @@ abstract class LintTool {
       } else {
         workerExecutor.processIsolation {
           it.classpath.from(classpath)
+          javaExecutablePath.orNull?.let { executable ->
+            logger.info("Android Lint is running out of process using toolchain launcher: $executable")
+            it.forkOptions.executable = executable
+          }
           // Default to using the main Gradle daemon heap size to smooth the transition
           // for build authors.
           it.forkOptions.maxHeapSize =
@@ -572,6 +592,102 @@ abstract class LintOptionsInput {
   }
 }
 
+private val logger = Logging.getLogger(LintTool::class.java)
+
+internal fun hasToolchainSpec(toolchainSpec: JavaToolchainSpec?): Boolean =
+  toolchainSpec?.let { it.languageVersion.isPresent || it.vendor.isPresent || it.implementation.isPresent } ?: false
+
+internal fun isLintRunInProcess(runInProcess: Boolean, hasToolchainSpec: Boolean = false): Boolean = !hasToolchainSpec && runInProcess
+
+internal fun getLintRunInProcessProvider(projectOptions: ProjectOptions, lintOptions: Lint? = null): Provider<Boolean> {
+  return projectOptions.getProvider(BooleanOption.RUN_LINT_IN_PROCESS).map { runInProcess ->
+    val hasToolchain = hasToolchainSpec(lintOptions?.toolchain)
+    isLintRunInProcess(runInProcess = runInProcess, hasToolchainSpec = hasToolchain)
+  }
+}
+
+/**
+ * Minimum JDK required by AGP to run Lint. Mirrors
+ * [com.android.build.gradle.internal.plugins.AndroidPluginBaseServices.minRequiredJavaVersion].
+ */
+private fun getMinRequiredJdk(projectOptions: ProjectOptions? = null): JavaVersion {
+  projectOptions?.simulatedAGPVersion?.let { simulatedAgpVersion ->
+    if (simulatedAgpVersion > AgpVersion.parse("10.0.0-alpha01")) return JavaVersion.VERSION_21
+  }
+  return JavaVersion.VERSION_17
+}
+
+internal fun getLintJavaLauncherProvider(
+  project: Project,
+  lintOptions: Lint? = null,
+  projectTargetCompatibility: JavaVersion? = null,
+  projectOptions: ProjectOptions? = null,
+): Provider<JavaLauncher> {
+  val providerFactory = project.providers
+  if (lintOptions == null) {
+    return providerFactory.provider { null }
+  }
+  val toolchainSpec = lintOptions.toolchain
+  val javaToolchainService = project.extensions.findByType(JavaToolchainService::class.java)
+
+  return providerFactory
+    .provider<JavaToolchainService> {
+      if (!hasToolchainSpec(toolchainSpec)) {
+        if (projectTargetCompatibility != null && JavaVersion.current() < projectTargetCompatibility) {
+          throw GradleException(
+            """
+            The Gradle daemon is running on Java ${JavaVersion.current()}, but the project is compiled for Java $projectTargetCompatibility.
+            Lint requires the JVM executing it to be at least the same version as the project's target compatibility.
+            Please run Gradle on a newer JVM or configure a toolchain for Lint (e.g. `android.lint.toolchain.languageVersion.set(JavaLanguageVersion.of(${projectTargetCompatibility.majorVersion}))`).
+            """
+              .trimIndent()
+          )
+        }
+        return@provider null
+      }
+
+      if (!toolchainSpec.languageVersion.isPresent) {
+        throw GradleException("Configured Lint toolchain must specify a 'languageVersion' when vendor or implementation is configured.")
+      }
+
+      val configuredVersion = toolchainSpec.languageVersion.get().asInt()
+
+      // 1. Baseline Check
+      val minRequiredJdk = getMinRequiredJdk(projectOptions)
+      if (configuredVersion < minRequiredJdk.majorVersion.toInt()) {
+        throw GradleException(
+          "Configured Lint toolchain JDK ($configuredVersion) is below AGP's minimum required JDK (${minRequiredJdk.majorVersion})."
+        )
+      }
+
+      // 2. Bytecode Check
+      if (projectTargetCompatibility != null && JavaVersion.toVersion(configuredVersion.toString()) < projectTargetCompatibility) {
+        throw GradleException(
+          "Configured Lint toolchain JDK ($configuredVersion) cannot analyze project code compiled for Java $projectTargetCompatibility."
+        )
+      }
+
+      javaToolchainService ?: throw GradleException("Configured Lint toolchain requires 'JavaToolchainService'.")
+    }
+    .flatMap { service: JavaToolchainService? ->
+      if (service == null) {
+        providerFactory.provider { null }
+      } else {
+        service.launcherFor { spec ->
+          if (toolchainSpec.languageVersion.isPresent) {
+            spec.languageVersion.set(toolchainSpec.languageVersion)
+          }
+          if (toolchainSpec.vendor.isPresent) {
+            spec.vendor.set(toolchainSpec.vendor)
+          }
+          if (toolchainSpec.implementation.isPresent) {
+            spec.implementation.set(toolchainSpec.implementation)
+          }
+        }
+      }
+    }
+}
+
 /** System properties which can affect lint's behavior. */
 abstract class SystemPropertyInputs {
 
@@ -600,7 +716,7 @@ abstract class SystemPropertyInputs {
 
   @get:Input @get:Optional abstract val userHome: Property<String>
 
-  fun initialize(providerFactory: ProviderFactory, lintMode: LintMode) {
+  fun initialize(providerFactory: ProviderFactory, lintMode: LintMode, javaLauncher: Provider<JavaLauncher>? = null) {
     if (lintMode == LintMode.ANALYSIS) {
       lintAutofix.disallowChanges()
       lintBaselinesContinue.disallowChanges()
@@ -613,10 +729,15 @@ abstract class SystemPropertyInputs {
       userHome.setDisallowChanges(providerFactory.systemProperty("user.home"))
     }
     androidLintLogJarProblems.setDisallowChanges(providerFactory.systemProperty("android.lint.log-jar-problems"))
-    javaHome.setDisallowChanges(providerFactory.systemProperty("java.home"))
+    val launcher = javaLauncher ?: providerFactory.provider<JavaLauncher> { null }
+    javaHome.setDisallowChanges(
+      launcher.map { it.metadata.installationPath.asFile.absolutePath }.orElse(providerFactory.systemProperty("java.home"))
+    )
     // Normalize the java.version to only capture the major version, because different JDK
     // vendors and minor versions can cause cache misses
-    javaVersion.setDisallowChanges(providerFactory.systemProperty("java.version").map { JavaVersion.toVersion(it).majorVersion })
+    javaVersion.setDisallowChanges(
+      launcher.map { it.metadata.languageVersion.asInt().toString() }.orElse(JavaVersion.current().majorVersion)
+    )
     lintApiDatabase.fileProvider(providerFactory.systemProperty("LINT_API_DATABASE").map { File(it) }.filter { it.isFile })
     lintApiDatabase.disallowChanges()
     lintConfigurationOverride.fileProvider(
@@ -2363,6 +2484,9 @@ enum class LintMode {
 }
 
 const val LINT_XML_CONFIG_FILE_NAME = "lint.xml"
+
+internal const val LINT_PRINT_STACKTRACE_ENVIRONMENT_VARIABLE = "LINT_PRINT_STACKTRACE"
+internal const val ANDROID_LINT_JARS_ENVIRONMENT_VARIABLE = "ANDROID_LINT_JARS"
 
 internal fun maybeCreateLintChecksClasspath(
   project: Project,

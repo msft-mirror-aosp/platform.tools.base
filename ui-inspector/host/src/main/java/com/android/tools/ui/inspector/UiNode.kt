@@ -23,9 +23,33 @@ sealed class UiNode {
   abstract val bounds: Bounds
   abstract val children: MutableList<UiNode>
 
+  /**
+   * Where the node appears on screen: the straight (non-tilted) rectangle enclosing the node as rendered, in screen coordinates. For a node
+   * without a visual transform this is simply its position and size.
+   */
   data class Bounds(val x: Int, val y: Int, val width: Int, val height: Int)
 
-  data class Attribute(val name: String, val value: String, val directSource: String? = null, val styleChain: List<String> = emptyList())
+  /** Represents a strongly-typed value for a [ViewNode] attribute. */
+  sealed class AttributeValue {
+    data class StringVal(val value: String) : AttributeValue()
+
+    data class BooleanVal(val value: Boolean) : AttributeValue()
+
+    data class NumberVal(val value: Number) : AttributeValue()
+
+    data class ColorVal(val colorInt: Int) : AttributeValue()
+
+    data class DimensionVal(val value: Float, val dp: Float? = null, val sp: Float? = null) : AttributeValue()
+
+    object NullVal : AttributeValue()
+  }
+
+  data class Attribute(
+    val name: String,
+    val value: AttributeValue,
+    val directSource: String? = null,
+    val styleChain: List<String> = emptyList(),
+  )
 
   /** Represents the location in the source code where a layout node is defined. */
   data class SourceLocation(val filename: String, val lineNumber: Int)
@@ -84,6 +108,8 @@ sealed class UiNode {
    * @param mergedSemantics Accessibility properties that aggregate all readable texts and actions from this node's entire subtree into one
    *   focusable block (which is what a screen reader like TalkBack speaks).
    * @param unmergedSemantics Accessibility properties declared directly on this Composable node.
+   * @param isSystemCreated True when this composable originates from framework code rather than the inspected app's own source, as
+   *   classified by the inspector.
    */
   data class ComposeNode(
     override val id: Long,
@@ -94,5 +120,6 @@ sealed class UiNode {
     val parameters: List<ComposeParameter>,
     val mergedSemantics: List<ComposeParameter>,
     val unmergedSemantics: List<ComposeParameter>,
+    val isSystemCreated: Boolean,
   ) : UiNode()
 }

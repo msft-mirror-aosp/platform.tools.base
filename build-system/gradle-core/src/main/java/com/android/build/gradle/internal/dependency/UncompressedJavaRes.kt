@@ -18,38 +18,61 @@ package com.android.build.gradle.internal.dependency
 
 import com.android.SdkConstants
 import com.android.build.gradle.internal.tasks.MergeJavaResourceTask
-import com.android.zipflinger.Entry
-import com.android.zipflinger.Sources
-import com.android.zipflinger.StableArchive
-import com.android.zipflinger.ZipArchive
-import com.android.zipflinger.ZipSource
+import com.android.builder.merge.FileMapInput
+import com.android.builder.merge.FileMerger
+import com.android.builder.merge.FileMergerInput
+import com.android.builder.merge.FileMergerOutputs
+import com.android.builder.merge.FilterFileMergerInput
+import com.android.builder.merge.InputStreamMerger
+import com.android.builder.merge.LazyFileMergerInput
+import com.android.builder.merge.MergeOutputWriters
+import com.android.builder.packaging.ParsedPackagingOptions
 import java.io.File
-import java.util.zip.Deflater
+import java.util.function.Predicate
 
 /** Provides utilities for compressing types representing Java Resources into Jar files for merging. */
-sealed interface UncompressedJavaRes {
+sealed class UncompressedJavaRes(protected val packagingOption: ParsedPackagingOptions) {
 
-  fun compressToJar(outputFile: File): File
+  protected abstract val fileInputs: List<FileMergerInput>
 
-  class FileTree(val fileTree: org.gradle.api.file.FileTree) : UncompressedJavaRes {
+  fun compressToJar(outputFile: File): File = mergeAndCompress(fileInputs, outputFile)
 
-    override fun compressToJar(outputFile: File): File {
-      outputFile.delete()
-      StableArchive(ZipArchive(outputFile.toPath())).use { compressedJavaResJar ->
-        fileTree.visit { details ->
-          if (!details.isDirectory) {
-            compressedJavaResJar.add(Sources.from(details.file, details.relativePath.pathString, Deflater.DEFAULT_COMPRESSION))
-          }
-        }
-      }
-      return outputFile
+  private val inputsFilter: Predicate<String> =
+    MergeJavaResourceTask.predicate.and { path ->
+      packagingOption.getAction(path) != ParsedPackagingOptions.JavaResPackagingFileAction.EXCLUDE
     }
+
+  private fun merge(inputs: List<FileMergerInput>, compress: Boolean, outputFile: File): File {
+    outputFile.delete()
+    val merger = InputStreamMerger(packagingOption)
+    val writer = MergeOutputWriters.toZipWithZipFlinger(outputFile)
+    val output = FileMergerOutputs.fromAlgorithmAndWriter(merger, writer)
+    val filteredInputs = inputs.map { FilterFileMergerInput(it, inputsFilter) }
+    FileMerger.merge(filteredInputs, output, noCompressPredicate = { !compress })
+    return outputFile
   }
 
-  class Jar(val jar: File) : UncompressedJavaRes {
+  protected fun mergeAndCompress(inputs: List<FileMergerInput>, outputFile: File) = merge(inputs, true, outputFile)
 
-    private val source = ZipSource(jar.toPath())
-    private val entries: Map<String, Entry> = source.entries()
+  class FileTree(
+    val fileTree: org.gradle.api.file.FileTree,
+    packagingOptions: ParsedPackagingOptions = ParsedPackagingOptions(emptyList(), emptyList(), emptyList()),
+  ) : UncompressedJavaRes(packagingOptions) {
+
+    override val fileInputs: List<FileMergerInput>
+      get() {
+        val pathsToFile = mutableMapOf<String, File>()
+        fileTree.visit { details ->
+          if (!details.isDirectory && MergeJavaResourceTask.predicate.test(details.relativePath.pathString)) {
+            pathsToFile[details.relativePath.pathString] = details.file
+          }
+        }
+        return listOf(FileMapInput("fileTree", pathsToFile))
+      }
+  }
+
+  class Jar(val jar: File, packagingOptions: ParsedPackagingOptions = ParsedPackagingOptions(emptyList(), emptyList(), emptyList())) :
+    UncompressedJavaRes(packagingOptions) {
 
     init {
       if (!jar.isFile || jar.extension != SdkConstants.EXT_JAR) {
@@ -57,38 +80,14 @@ sealed interface UncompressedJavaRes {
       }
     }
 
-    override fun compressToJar(outputFile: File): File {
-      outputFile.delete()
-      StableArchive(ZipArchive(outputFile.toPath())).use { compressedJavaResJar ->
-        entries.values.forEach { entry ->
-          if (!entry.isDirectory && MergeJavaResourceTask.Companion.predicate.test(entry.name)) {
-            source.select(entry.name, entry.name, Deflater.DEFAULT_COMPRESSION, 0L)
-          }
-        }
-        compressedJavaResJar.add(source)
-      }
-      return outputFile
-    }
+    override val fileInputs = listOf(LazyFileMergerInput(jar.name, jar))
   }
 
-  class MultipleJars(val jars: List<File>) : UncompressedJavaRes {
+  class MultipleJars(
+    val jars: List<File>,
+    packagingOptions: ParsedPackagingOptions = ParsedPackagingOptions(emptyList(), emptyList(), emptyList()),
+  ) : UncompressedJavaRes(packagingOptions) {
 
-    override fun compressToJar(outputFile: File): File {
-      outputFile.delete()
-      StableArchive(ZipArchive(outputFile.toPath())).use { compressedJavaResJar ->
-        val addedEntries = mutableSetOf<String>()
-        jars.forEach { jar ->
-          val source = ZipSource(jar.toPath())
-          source.entries().values.forEach { entry ->
-            if (!entry.isDirectory && MergeJavaResourceTask.Companion.predicate.test(entry.name) && !addedEntries.contains(entry.name)) {
-              source.select(entry.name, entry.name, Deflater.DEFAULT_COMPRESSION, 0L)
-              addedEntries.add(entry.name)
-            }
-          }
-          compressedJavaResJar.add(source)
-        }
-      }
-      return outputFile
-    }
+    override val fileInputs = jars.map { LazyFileMergerInput(it.name, it) }
   }
 }

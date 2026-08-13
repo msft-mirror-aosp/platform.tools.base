@@ -37,6 +37,8 @@ import com.android.build.gradle.internal.computeAvdName
 import com.android.build.gradle.internal.dsl.ManagedVirtualDevice
 import com.android.build.gradle.internal.initialize
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.CLASSES_JAR
+import com.android.build.gradle.internal.publishing.PublishingSpecs
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalMultipleArtifactType
 import com.android.build.gradle.internal.services.getBuildService
@@ -45,8 +47,6 @@ import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask.
 import com.android.build.gradle.internal.tasks.GlobalTask
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationAction
 import com.android.build.gradle.internal.tasks.getApkFiles
-import com.android.build.gradle.internal.test.report.ReportType
-import com.android.build.gradle.internal.test.report.TestReport
 import com.android.build.gradle.internal.test.report.XMLReportAggregator
 import com.android.build.gradle.internal.test.report.processTestReportAggregation
 import com.android.build.gradle.internal.testing.TestData
@@ -61,6 +61,7 @@ import com.android.builder.core.ComponentType
 import com.android.builder.testing.api.DeviceConfigProvider
 import com.android.builder.testing.api.DeviceConfigProviderImpl
 import com.android.builder.testing.api.DeviceException
+import com.android.utils.FileUtils
 import java.io.File
 import java.util.Locale
 import java.util.Properties
@@ -170,8 +171,6 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
   @get:Input @get:Optional abstract val shardCount: Property<Int>
 
   @get:Internal abstract val avdService: Property<AvdComponentsBuildService>
-
-  @get:Input @get:Optional abstract val reportAggregationSupport: Property<Boolean>
 
   @Input
   override fun getIgnoreFailures(): Boolean {
@@ -313,9 +312,9 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
     }
 
     if (animationsDisabled.isPresent) {
-      // TODO(b/525084361): Replace hardcoded string with AgpTestSuiteInputParameters.ANIMATIONS_DISABLED.propertyName once exposed in DSL
-      // API.
-      standardInputs.add(TestEngineInputProperty("com.android.agp.test.ANIMATIONS_DISABLED", animationsDisabled.get().toString()))
+      standardInputs.add(
+        TestEngineInputProperty(AgpTestSuiteInputParameters.ANIMATIONS_DISABLED.propertyName, animationsDisabled.get().toString())
+      )
     }
 
     if (!sourceFolders.isEmpty) {
@@ -414,22 +413,19 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
           """
           .trimIndent()
 
-      processTestReportAggregation(
-        testResultsDir,
-        xmlResultsDirectory,
-        this.modulePath.get(),
-        this.testedVariantName.get(),
-        this.testSuiteName.get(),
-        this.testSuiteTarget.get(),
-        logger,
-      )
+      if (xmlResultsDirectory.isPresent) {
+        processTestReportAggregation(
+          testResultsDir,
+          xmlResultsDirectory,
+          this.modulePath.get(),
+          this.testedVariantName.get(),
+          this.testSuiteName.get(),
+          this.testSuiteTarget.get(),
+          logger,
+        )
 
-      if (reportAggregationSupport.isPresent && reportAggregationSupport.get()) {
-        val aggregator = XMLReportAggregator(listOf(testResultsDir), this.modulePath.get())
+        val aggregator = XMLReportAggregator(listOf(xmlResultsDirectory.get().asFile), this.modulePath.get())
         aggregator.writeReport(htmlOutputDirFile)
-      } else {
-        val report = TestReport(ReportType.SINGLE_FLAVOR, testResultsDir, htmlOutputDirFile)
-        report.generateReport()
       }
 
       // Also write metadata to coverage directory so that the coverage collection task can identify the suite
@@ -444,11 +440,13 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
   class CreationAction(
     val creationConfig: TestSuiteCreationConfig,
     val testSuiteTarget: TestSuiteTargetCreationConfig,
+    val taskName: String,
     private val deviceSerials: Provider<List<String>>? = null,
+    private val isUpdate: Boolean = false,
   ) : GlobalTaskCreationAction<LegacyReportingTestSuiteTestTask>() {
 
     override val name: String
-      get() = testSuiteTarget.testTaskName
+      get() = taskName
 
     override val type: Class<LegacyReportingTestSuiteTestTask> = LegacyReportingTestSuiteTestTask::class.java
 
@@ -475,11 +473,13 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
         creationConfig.services.fileCollection().also { fileCollection ->
           if (hasHostJar) {
             fileCollection.from(classesDir)
-            fileCollection.from(
-              creationConfig.testedVariant.artifacts
-                .forScope(ScopedArtifacts.Scope.PROJECT)
-                .getFinalArtifacts(ScopedArtifact.POST_COMPILATION_CLASSES)
-            )
+            val testedVariant = creationConfig.testedVariant
+            val spec =
+              PublishingSpecs.getVariantPublishingSpec(testedVariant.componentType)
+                .getSpec(CLASSES_JAR, AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH.publishedTo)
+                ?: error("No CLASSES_JAR spec found for ${testedVariant.componentType}")
+            val mainComponentClassesJar = spec.outputType
+            fileCollection.from(testedVariant.artifacts.get(mainComponentClassesJar))
             creationConfig.sourceContainers
               .filter { it.source is TestSuiteSourceSet.HostJar }
               .forEach { sourceContainer ->
@@ -532,11 +532,11 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
         task.executionMode.setDisallowChanges(creationConfig.global.androidTestOptions.execution)
       }
 
-      // TODO(b/525084361): Wrap with creationConfig.junitEngineSpec.inputs.contains(AgpTestSuiteInputParameters.ANIMATIONS_DISABLED) once
-      // exposed in DSL API.
-      task.animationsDisabled.setDisallowChanges(
-        creationConfig.services.provider { creationConfig.global.androidTestOptions.animationsDisabled }
-      )
+      if (creationConfig.junitEngineSpec.inputs.contains(AgpTestSuiteInputParameters.ANIMATIONS_DISABLED)) {
+        task.animationsDisabled.setDisallowChanges(
+          creationConfig.services.provider { creationConfig.global.androidTestOptions.animationsDisabled }
+        )
+      }
 
       if (creationConfig.junitEngineSpec.inputs.contains(AgpTestSuiteInputParameters.TEST_UTIL_APKS)) {
         val androidTestUtil = task.project.configurations.findByName(SdkConstants.GRADLE_ANDROID_TEST_UTIL_CONFIGURATION)
@@ -695,16 +695,35 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
                     .artifacts
                     .artifactFiles
 
-                // We map the FileCollection to a provider of the single valid directory to avoid passing multiple paths
-                layoutlibDataDir.set(
+                val layoutlibResources =
+                  sc.suiteSourceClasspath.hostRuntimeClasspath.incoming
+                    .artifactView { config ->
+                      config.componentFilter { id ->
+                        id is org.gradle.api.artifacts.component.ModuleComponentIdentifier &&
+                          id.group == "com.android.tools.layoutlib" &&
+                          id.module == "layoutlib-resources"
+                      }
+                    }
+                    .artifacts
+                    .artifactFiles
+
+                val layoutlibDirProvider =
                   task.project.layout.dir(
-                    extractedLayoutlib.elements.map { elements ->
-                      val dir = elements.firstOrNull { it.asFile.isDirectory && it.asFile.resolve("data").exists() }?.asFile
-                      requireNotNull(dir) { "Could not find extracted layoutlib-runtime with data directory" }
-                      dir
+                    extractedLayoutlib.elements.zip(layoutlibResources.elements) { extElements, resElements ->
+                      val extDir = extElements.firstOrNull()?.asFile ?: return@zip null
+                      val resJar = resElements.firstOrNull()?.asFile
+                      if (resJar != null && resJar.exists()) {
+                        val targetResFile = extDir.resolve("data").resolve("framework_res.jar")
+                        if (!targetResFile.exists()) {
+                          targetResFile.parentFile.mkdirs()
+                          FileUtils.copyFile(resJar, targetResFile)
+                        }
+                      }
+                      extDir
                     }
                   )
-                )
+
+                layoutlibDataDir.set(layoutlibDirProvider)
               }
             }
             task.engineInputParameters.add(
@@ -717,7 +736,7 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
               task.project.objects.fileCollection().also { fc ->
                 creationConfig.sourceContainers.forEach { sc ->
                   if (sc.source is TestSuiteSourceSet.HostJar) {
-                    fc.from(sc.suiteSourceClasspath.hostRuntimeClasspath)
+                    fc.from(sc.suiteSourceClasspath.getHostRuntimeClasspathArtifacts(AndroidArtifacts.ArtifactType.CLASSES_JAR))
                   }
                 }
               }
@@ -754,7 +773,8 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
           }
 
           AgpTestSuiteInputParameters.TEST_UTIL_APKS,
-          AgpTestSuiteInputParameters.ANDROID_TEST_EXECUTION_MODE -> {
+          AgpTestSuiteInputParameters.ANDROID_TEST_EXECUTION_MODE,
+          AgpTestSuiteInputParameters.ANIMATIONS_DISABLED -> {
             // Handled via task properties and standardInputs in executeTests
           }
 
@@ -852,22 +872,24 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       task.legacyTestReportingRedirectionEnabled.setDisallowChanges(
         task.project.providers.gradleProperty(LegacyReportingTestSuiteTestTask.ENABLE_UTP_REPORTING_PROPERTY).orNull?.toBoolean() ?: false
       )
-
-      task.reportAggregationSupport.setDisallowChanges(creationConfig.services.projectOptions.get(BooleanOption.REPORT_AGGREGATION_SUPPORT))
     }
 
     override fun handleProvider(taskProvider: TaskProvider<LegacyReportingTestSuiteTestTask>) {
       super.handleProvider(taskProvider)
 
-      creationConfig.testedVariant.artifacts
-        .use(taskProvider)
-        .wiredWith(TestSuiteTestTask::xmlResultsDirectory)
-        .toAppendTo(InternalMultipleArtifactType.TEST_SUITE_RESULTS)
+      // Verification test tasks publish to TEST_SUITE_RESULTS (which is aggregated into createTestReport).
+      // Update/recording tasks publish to TEST_SUITE_UPDATE_RESULTS so that running aggregate reporting tasks
+      // (like createTestReport) does not schedule update tasks.
+      val (resultsArtifact, coverageArtifact) =
+        if (isUpdate) {
+          Pair(InternalMultipleArtifactType.TEST_SUITE_UPDATE_RESULTS, InternalMultipleArtifactType.TEST_SUITE_UPDATE_CODE_COVERAGE)
+        } else {
+          Pair(InternalMultipleArtifactType.TEST_SUITE_RESULTS, InternalMultipleArtifactType.TEST_SUITE_CODE_COVERAGE)
+        }
 
-      creationConfig.testedVariant.artifacts
-        .use(taskProvider)
-        .wiredWith(TestSuiteTestTask::coverageDir)
-        .toAppendTo(InternalMultipleArtifactType.TEST_SUITE_CODE_COVERAGE)
+      creationConfig.testedVariant.artifacts.use(taskProvider).wiredWith(TestSuiteTestTask::xmlResultsDirectory).toAppendTo(resultsArtifact)
+
+      creationConfig.testedVariant.artifacts.use(taskProvider).wiredWith(TestSuiteTestTask::coverageDir).toAppendTo(coverageArtifact)
     }
   }
 
@@ -965,8 +987,6 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
           creationConfig.services.projectInfo.getReportsDir().map { it.dir("${BuilderConstants.FD_ANDROID_TESTS}/$subFolder") }
         )
       }
-
-      task.reportAggregationSupport.setDisallowChanges(creationConfig.services.projectOptions.get(BooleanOption.REPORT_AGGREGATION_SUPPORT))
     }
 
     override fun handleProvider(taskProvider: TaskProvider<LegacyReportingTestSuiteTestTask>) {
@@ -986,6 +1006,11 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
           .toAppendTo(InternalMultipleArtifactType.TEST_SUITE_CODE_COVERAGE)
 
         creationConfig.mainVariant.artifacts
+          .use(taskProvider)
+          .wiredWith(TestSuiteTestTask::xmlResultsDirectory)
+          .toAppendTo(InternalMultipleArtifactType.TEST_SUITE_RESULTS)
+      } else {
+        creationConfig.artifacts
           .use(taskProvider)
           .wiredWith(TestSuiteTestTask::xmlResultsDirectory)
           .toAppendTo(InternalMultipleArtifactType.TEST_SUITE_RESULTS)
@@ -1070,6 +1095,18 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
           .atLocation(additionalTestOutputDir.absolutePath)
           .on(InternalArtifactType.MANAGED_DEVICE_ANDROID_TEST_ADDITIONAL_OUTPUT)
       }
+
+      if (creationConfig is DeviceTestCreationConfig) {
+        creationConfig.mainVariant.artifacts
+          .use(taskProvider)
+          .wiredWith(TestSuiteTestTask::xmlResultsDirectory)
+          .toAppendTo(InternalMultipleArtifactType.TEST_SUITE_RESULTS)
+      } else {
+        creationConfig.artifacts
+          .use(taskProvider)
+          .wiredWith(TestSuiteTestTask::xmlResultsDirectory)
+          .toAppendTo(InternalMultipleArtifactType.TEST_SUITE_RESULTS)
+      }
     }
 
     override fun configure(task: LegacyReportingTestSuiteTestTask) {
@@ -1083,7 +1120,7 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       task.description = "Installs and runs the tests for $variantName on managed device ${device.name}."
       task.outputs.upToDateWhen { false }
 
-      task.testSuiteName.setDisallowChanges("androidTest")
+      task.testSuiteName.setDisallowChanges(CONNECTED_TEST_TEST_SUITE_NAME)
       task.testSuiteTarget.setDisallowChanges(device.name)
       task.testedVariantName.setDisallowChanges(variantName)
       task.modulePath.setDisallowChanges(creationConfig.services.projectInfo.path)

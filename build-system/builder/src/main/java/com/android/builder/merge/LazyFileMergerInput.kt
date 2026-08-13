@@ -24,7 +24,7 @@ import java.io.IOException
 import java.io.InputStream
 import java.io.UncheckedIOException
 
-class LazyFileMergerInput(private val name: String, private val jarFile: File) : FileMergerInputNonIncremental {
+class LazyFileMergerInput(private val name: String, private val jarFile: File) : FileMergerZipInput {
 
   private var zipRepo: ZipRepo? = null
   private var zipMap: ZipMap? = null
