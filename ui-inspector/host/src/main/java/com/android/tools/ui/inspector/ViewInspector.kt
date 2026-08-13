@@ -21,7 +21,7 @@ import com.android.tools.ui.inspector.protocol.UiInspectorProtocol
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol
 
 /**
- * Sends a command to the agent to create the view inspector, loading it from the [dexPath] previously pushed to the device. A server that
+ * Sends a command to the agent to create the view inspector, loading it from the [dexPath] previously staged on the device. A server that
  * already hosts the view inspector rebinds it to this connection instead of loading the dex again.
  */
 internal suspend fun createViewInspector(commandSender: CommandSender, dexPath: String) {

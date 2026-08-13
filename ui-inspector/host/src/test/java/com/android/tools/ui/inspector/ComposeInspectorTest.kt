@@ -39,6 +39,32 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
+/** Content digest of an empty file: first 12 hex of its SHA-256. Every dummy base artifact these tests create is empty. */
+private const val EMPTY_FILE_DIGEST = "e3b0c44298fc"
+
+/** The device staging directory every artifact is pushed into under its digest-carrying name. */
+private const val STAGING_DIR = "/data/local/tmp/ui-inspector"
+
+private const val EMPTY_SERVICE_JAR_NAME = "lib_ui_inspector_service.$EMPTY_FILE_DIGEST.jar"
+private const val EMPTY_PAYLOAD_JAR_NAME = "lib_ui_inspector_payload.$EMPTY_FILE_DIGEST.jar"
+
+/** The exact install command the production flow issues when all three base artifacts are empty files. */
+private fun emptyArtifactsInstallCommand(packageName: String): String =
+  buildInstallCommand(
+    packageName = packageName,
+    agentStagePath = "$STAGING_DIR/lib_ui_inspector_agent.$EMPTY_FILE_DIGEST.so",
+    serviceJarStagePath = "$STAGING_DIR/$EMPTY_SERVICE_JAR_NAME",
+    payloadJarStagePath = "$STAGING_DIR/$EMPTY_PAYLOAD_JAR_NAME",
+    serviceJarName = EMPTY_SERVICE_JAR_NAME,
+    payloadJarName = EMPTY_PAYLOAD_JAR_NAME,
+    tempSuffix = "test.tmp",
+  )
+
+/** The exact attach command the production flow issues when all three base artifacts are empty files. */
+private fun emptyArtifactsAttachCommand(packageName: String, serverToken: String): String =
+  "cmd activity attach-agent 1234 \"/data/data/$packageName/lib_ui_inspector_agent.so=" +
+    "/data/data/$packageName/$EMPTY_SERVICE_JAR_NAME;/data/data/$packageName/$EMPTY_PAYLOAD_JAR_NAME;$serverToken\""
+
 class ComposeInspectorTest {
 
   @get:Rule val tempFolder = TemporaryFolder()
@@ -153,21 +179,8 @@ class ComposeInspectorTest {
     // Perform the full injection that precedes inspector creation in production
     configureUidCommands(fakeSession, deviceSelector, packageName)
 
-    val baseAgentSetupCmd =
-      "run-as $packageName sh -c '" +
-        "rm -f lib_ui_inspector_agent.so lib_ui_inspector_service.jar lib_ui_inspector_payload.jar && " +
-        "cat /data/local/tmp/lib_ui_inspector_agent.so > lib_ui_inspector_agent.so && " +
-        "cat /data/local/tmp/lib_ui_inspector_service.jar > lib_ui_inspector_service.jar && " +
-        "cat /data/local/tmp/lib_ui_inspector_payload.jar > lib_ui_inspector_payload.jar && " +
-        "chmod 444 lib_ui_inspector_agent.so && " +
-        "chmod 444 lib_ui_inspector_service.jar && " +
-        "chmod 444 lib_ui_inspector_payload.jar'"
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, baseAgentSetupCmd, "")
-    fakeSession.deviceServices.configureShellCommand(
-      deviceSelector,
-      "cmd activity attach-agent 1234 \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;$serverToken\"",
-      "",
-    )
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, emptyArtifactsInstallCommand(packageName), "")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, emptyArtifactsAttachCommand(packageName, serverToken), "")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "cat /proc/net/unix", "ui_inspector_$serverToken\n")
     injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
 
@@ -191,15 +204,93 @@ class ComposeInspectorTest {
 
     // B. Check inspector jar file was pushed to simulated device
     val remoteFilePushed =
-      testDeviceServices.recordedSyncSends.any { it.remoteFilePath == "/data/local/tmp/ui-inspector/compose-inspector.jar.test.tmp" }
+      testDeviceServices.recordedSyncSends.any { it.remoteFilePath == "$STAGING_DIR/compose-inspector.665e173983c8.jar.test.tmp" }
     assertThat(remoteFilePushed).isTrue()
 
     // C. Check CreateInspectorCommand parameters
     val cCmd = createCmdReceived.await()
     assertThat(cCmd.createInspector.inspectorId).isEqualTo(ProtocolConstants.COMPOSE_INSPECTOR_ID)
-    assertThat(cCmd.createInspector.dexPath).isEqualTo("/data/local/tmp/ui-inspector/compose-inspector.jar")
+    assertThat(cCmd.createInspector.dexPath).isEqualTo("$STAGING_DIR/compose-inspector.665e173983c8.jar")
 
     // Cleanup
+    testScope.cancel()
+    serverSocket.close()
+  }
+
+  @Test
+  fun testCreateComposeInspector_matchingStagedJar_skipsTransferButStillCreates() = runBlocking {
+    // Loopback agent answering version detection and inspector creation.
+    val serverSocket = ServerSocket(0)
+    val serverPort = serverSocket.localPort
+    val createCmdReceived = CompletableDeferred<UiInspectorProtocol.Command>()
+    val serverJob = Job()
+    val testScope = CoroutineScope(Dispatchers.Default + serverJob)
+    testScope.launch {
+      serverSocket.accept().use { socket ->
+        val input = socket.getInputStream()
+        val output = socket.getOutputStream()
+        val versionCmd = UiInspectorProtocol.Command.parseFrom(FramingProtocol.readMessage(input))
+        writeResponse(
+          output,
+          UiInspectorProtocol.Response.newBuilder()
+            .setCommandId(versionCmd.commandId)
+            .setStatus(UiInspectorProtocol.Response.Status.SUCCESS)
+            .setGetVersion(
+              UiInspectorProtocol.GetVersionResponse.newBuilder().putVersions(ProtocolConstants.COMPOSE_UI_LIBRARY_ID, "1.6.0")
+            )
+            .build(),
+        )
+        val createCmd = UiInspectorProtocol.Command.parseFrom(FramingProtocol.readMessage(input))
+        createCmdReceived.complete(createCmd)
+        writeResponse(
+          output,
+          UiInspectorProtocol.Response.newBuilder()
+            .setCommandId(createCmd.commandId)
+            .setStatus(UiInspectorProtocol.Response.Status.SUCCESS)
+            .setCreateInspector(UiInspectorProtocol.CreateInspectorResponse.getDefaultInstance())
+            .build(),
+        )
+      }
+    }
+
+    val fakeSession = FakeAdbSession()
+    val testDeviceServices = TestAdbDeviceServices(fakeSession.deviceServices)
+    val testHostServices = TestAdbHostServices(fakeSession.hostServices)
+    val testSession = TestAdbSession(fakeSession, testDeviceServices, testHostServices)
+    testDeviceServices.session = testSession
+    fakeSession.hostServices.devices = DeviceList(listOf(DeviceInfo(deviceSerial, DeviceState.ONLINE)), emptyList())
+    val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
+
+    // The staged copy of the resolved Compose jar already matches its content and has the exact staged mode.
+    val fixedJar = tempFolder.newFile("compose-inspector.jar")
+    fixedJar.writeText("fake pre-compiled compose dex classes")
+    val stagedJarPath = "$STAGING_DIR/${fileNameWithHash("compose-inspector.jar", computeContentDigest(fixedJar.toPath()))}"
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, statProbeCommand(stagedJarPath), "8124 $stagedJarPath\n")
+
+    val injectionManager =
+      InjectionManager(
+        testSession,
+        deviceSerial,
+        packageName,
+        { _: String -> tempFolder.newFile("unused-agent.so").toPath() },
+        tempFolder.newFile("unused-service.jar").toPath(),
+        tempFolder.newFile("unused-payload.jar").toPath(),
+        tempFolder.newFile("unused-view-inspector.jar").toPath(),
+        tempFileSuffixGenerator = { "test.tmp" },
+      )
+
+    val connected =
+      CommandSender.connect("127.0.0.1", serverPort, this).use { commandSender ->
+        createComposeInspector(commandSender = commandSender, injectionManager = injectionManager, resolveJar = { fixedJar })
+      }
+
+    assertThat(connected).isTrue()
+    // No transfer happened, yet the agent was still asked to create the inspector from the staged path.
+    assertThat(testDeviceServices.recordedSyncSends).isEmpty()
+    val createCmd = createCmdReceived.await()
+    assertThat(createCmd.createInspector.inspectorId).isEqualTo(ProtocolConstants.COMPOSE_INSPECTOR_ID)
+    assertThat(createCmd.createInspector.dexPath).isEqualTo(stagedJarPath)
+
     testScope.cancel()
     serverSocket.close()
   }
@@ -450,21 +541,8 @@ class ComposeInspectorTest {
       )
 
     // Perform the full injection that precedes inspector creation in production
-    val baseAgentSetupCmd =
-      "run-as $packageName sh -c '" +
-        "rm -f lib_ui_inspector_agent.so lib_ui_inspector_service.jar lib_ui_inspector_payload.jar && " +
-        "cat /data/local/tmp/lib_ui_inspector_agent.so > lib_ui_inspector_agent.so && " +
-        "cat /data/local/tmp/lib_ui_inspector_service.jar > lib_ui_inspector_service.jar && " +
-        "cat /data/local/tmp/lib_ui_inspector_payload.jar > lib_ui_inspector_payload.jar && " +
-        "chmod 444 lib_ui_inspector_agent.so && " +
-        "chmod 444 lib_ui_inspector_service.jar && " +
-        "chmod 444 lib_ui_inspector_payload.jar'"
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, baseAgentSetupCmd, "")
-    fakeSession.deviceServices.configureShellCommand(
-      deviceSelector,
-      "cmd activity attach-agent 1234 \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;$serverToken\"",
-      "",
-    )
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, emptyArtifactsInstallCommand(packageName), "")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, emptyArtifactsAttachCommand(packageName, serverToken), "")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "cat /proc/net/unix", "ui_inspector_$serverToken\n")
     injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
 
@@ -774,21 +852,8 @@ class ComposeInspectorTest {
       )
 
     // Perform the full injection that precedes inspector creation in production
-    val baseAgentSetupCmd =
-      "run-as $packageName sh -c '" +
-        "rm -f lib_ui_inspector_agent.so lib_ui_inspector_service.jar lib_ui_inspector_payload.jar && " +
-        "cat /data/local/tmp/lib_ui_inspector_agent.so > lib_ui_inspector_agent.so && " +
-        "cat /data/local/tmp/lib_ui_inspector_service.jar > lib_ui_inspector_service.jar && " +
-        "cat /data/local/tmp/lib_ui_inspector_payload.jar > lib_ui_inspector_payload.jar && " +
-        "chmod 444 lib_ui_inspector_agent.so && " +
-        "chmod 444 lib_ui_inspector_service.jar && " +
-        "chmod 444 lib_ui_inspector_payload.jar'"
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, baseAgentSetupCmd, "")
-    fakeSession.deviceServices.configureShellCommand(
-      deviceSelector,
-      "cmd activity attach-agent 1234 \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;$serverToken\"",
-      "",
-    )
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, emptyArtifactsInstallCommand(packageName), "")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, emptyArtifactsAttachCommand(packageName, serverToken), "")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "cat /proc/net/unix", "ui_inspector_$serverToken\n")
     injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
 
@@ -1082,12 +1147,6 @@ class ComposeInspectorTest {
     configureUidCommands(fakeSession, deviceSelector, packageName)
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
 
-    val expectedSetupCmd =
-      "run-as $packageName sh -c 'rm -f compose-inspector.jar && " +
-        "cat /data/local/tmp/compose-inspector.jar > compose-inspector.jar && " +
-        "chmod 444 compose-inspector.jar'"
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, expectedSetupCmd, "")
-
     val dummyAgent = tempFolder.newFile("lib_ui_inspector_agent.so").toPath()
     val dummyJar = tempFolder.newFile("lib_ui_inspector_service.jar").toPath()
     val dummyPayload = tempFolder.newFile("lib_ui_inspector_payload.jar").toPath()
@@ -1110,21 +1169,8 @@ class ComposeInspectorTest {
     // Perform the full injection that precedes inspector creation in production
     configureUidCommands(fakeSession, deviceSelector, packageName)
 
-    val baseAgentSetupCmd =
-      "run-as $packageName sh -c '" +
-        "rm -f lib_ui_inspector_agent.so lib_ui_inspector_service.jar lib_ui_inspector_payload.jar && " +
-        "cat /data/local/tmp/lib_ui_inspector_agent.so > lib_ui_inspector_agent.so && " +
-        "cat /data/local/tmp/lib_ui_inspector_service.jar > lib_ui_inspector_service.jar && " +
-        "cat /data/local/tmp/lib_ui_inspector_payload.jar > lib_ui_inspector_payload.jar && " +
-        "chmod 444 lib_ui_inspector_agent.so && " +
-        "chmod 444 lib_ui_inspector_service.jar && " +
-        "chmod 444 lib_ui_inspector_payload.jar'"
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, baseAgentSetupCmd, "")
-    fakeSession.deviceServices.configureShellCommand(
-      deviceSelector,
-      "cmd activity attach-agent 1234 \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;$serverToken\"",
-      "",
-    )
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, emptyArtifactsInstallCommand(packageName), "")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, emptyArtifactsAttachCommand(packageName, serverToken), "")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "cat /proc/net/unix", "ui_inspector_$serverToken\n")
     injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
 
@@ -1284,14 +1330,20 @@ class ComposeInspectorTest {
 
   private fun configureAtomicMoveCommands(fakeSession: FakeAdbSession, deviceSelector: DeviceSelector) {
     listOf(
-        "/data/local/tmp/lib_ui_inspector_agent.so",
-        "/data/local/tmp/lib_ui_inspector_service.jar",
-        "/data/local/tmp/lib_ui_inspector_payload.jar",
-        "/data/local/tmp/ui-inspector/compose-inspector.jar",
-        "/data/local/tmp/compose-inspector.jar",
+        "lib_ui_inspector_agent.so" to EMPTY_FILE_DIGEST,
+        "lib_ui_inspector_service.jar" to EMPTY_FILE_DIGEST,
+        "lib_ui_inspector_payload.jar" to EMPTY_FILE_DIGEST,
+        // The compose fixture jar's content is "fake pre-compiled compose dex classes".
+        "compose-inspector.jar" to "665e173983c8",
       )
-      .forEach { target ->
-        fakeSession.deviceServices.configureShellCommand(deviceSelector, "mv -f '$target.test.tmp' '$target'", "")
+      .forEach { (baseName, digest) ->
+        val target = "$STAGING_DIR/${fileNameWithHash(baseName, digest)}"
+        val staleVersionsPattern = "$STAGING_DIR/${fileNameWithHash(baseName, CONTENT_DIGEST_PATTERN)}"
+        fakeSession.deviceServices.configureShellCommand(
+          deviceSelector,
+          "rm -f $staleVersionsPattern && test ! -d '$target' && mv -f '$target.test.tmp' '$target'",
+          "",
+        )
         fakeSession.deviceServices.configureShellCommand(deviceSelector, "rm -f '$target.test.tmp'", "")
       }
   }

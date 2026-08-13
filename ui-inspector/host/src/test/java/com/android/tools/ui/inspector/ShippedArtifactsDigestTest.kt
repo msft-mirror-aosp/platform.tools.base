@@ -37,14 +37,17 @@ class ShippedArtifactsDigestTest {
     return path
   }
 
-  private fun digestOf(agent: String, service: String, payload: String, viewInspector: String): String {
-    return shippedArtifactsDigest(
+  private fun digestsOf(agent: String, service: String, payload: String, viewInspector: String): ShippedArtifactsDigests {
+    return computeArtifactDigests(
       agentBinary = file("agent-${counter++}", agent),
       serviceJar = file("service-${counter++}", service),
       payloadJar = file("payload-${counter++}", payload),
       viewInspectorJar = file("view-${counter++}", viewInspector),
     )
   }
+
+  private fun digestOf(agent: String, service: String, payload: String, viewInspector: String): String =
+    digestsOf(agent, service, payload, viewInspector).combined
 
   @Test
   fun digest_matchesKnownVector() {
@@ -81,12 +84,50 @@ class ShippedArtifactsDigestTest {
   fun digest_missingArtifactThrows() {
     val missing = tempFolder.root.toPath().resolve("does-not-exist")
     assertThrows(NoSuchFileException::class.java) {
-      shippedArtifactsDigest(
+      computeArtifactDigests(
         agentBinary = missing,
         serviceJar = file("service", ""),
         payloadJar = file("payload", ""),
         viewInspectorJar = file("view", ""),
       )
     }
+  }
+
+  @Test
+  fun perFileDigests_matchTruncatedSha256Vectors() {
+    // First 12 hex characters of the files' SHA-256: empty file and "abc".
+    val digests = digestsOf("", "abc", "", "abc")
+    assertThat(digests.agentBinary).isEqualTo("e3b0c44298fc")
+    assertThat(digests.serviceJar).isEqualTo("ba7816bf8f01")
+    assertThat(digests.payloadJar).isEqualTo("e3b0c44298fc")
+    assertThat(digests.viewInspectorJar).isEqualTo("ba7816bf8f01")
+  }
+
+  @Test
+  fun computeContentDigest_matchesKnownVectors() {
+    assertThat(computeContentDigest(file("empty", ""))).isEqualTo("e3b0c44298fc")
+    assertThat(computeContentDigest(file("abc", "abc"))).isEqualTo("ba7816bf8f01")
+  }
+
+  @Test
+  fun computeContentDigest_missingFileThrows() {
+    assertThrows(NoSuchFileException::class.java) { computeContentDigest(tempFolder.root.toPath().resolve("does-not-exist")) }
+  }
+
+  @Test
+  fun contentDigestPattern_staysAnchoredForDottedAndExtensionlessNames() {
+    // The sweep pattern substitutes a digest-shaped hex class for the digest, so it cannot match across artifact boundaries
+    // (foo.<pattern>.jar never matches versions of foo.bar.jar) nor a push's own .tmp-suffixed temporary file.
+    val hexSegment = "[0-9a-f]".repeat(12)
+    assertThat(fileNameWithHash("foo.bar.jar", CONTENT_DIGEST_PATTERN)).isEqualTo("foo.bar.$hexSegment.jar")
+    assertThat(fileNameWithHash("noextension", CONTENT_DIGEST_PATTERN)).isEqualTo("noextension.$hexSegment")
+  }
+
+  @Test
+  fun fileNameWithHash_insertsDigestBeforeExtension() {
+    assertThat(fileNameWithHash("lib_agent.so", "e3b0c44298fc")).isEqualTo("lib_agent.e3b0c44298fc.so")
+    assertThat(fileNameWithHash("ui-android-1.10.6-inspector.jar", "ba7816bf8f01"))
+      .isEqualTo("ui-android-1.10.6-inspector.ba7816bf8f01.jar")
+    assertThat(fileNameWithHash("noextension", "e3b0c44298fc")).isEqualTo("noextension.e3b0c44298fc")
   }
 }

@@ -19,17 +19,14 @@ package com.android.tools.ui.inspector
 import com.android.adblib.AdbSession
 import com.android.adblib.DevicePropertyNames
 import com.android.adblib.DeviceSelector
-import com.android.adblib.RemoteFileMode
 import com.android.adblib.ShellCommandOutput
 import com.android.adblib.SocketSpec
 import com.android.adblib.shellAsText
-import com.android.adblib.syncSend
 import com.android.tools.ui.inspector.common.ProtocolConstants
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
-import java.nio.file.attribute.PosixFilePermission
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReference
@@ -37,11 +34,9 @@ import kotlin.io.path.extension
 import kotlin.io.path.invariantSeparatorsPathString
 import kotlin.io.path.nameWithoutExtension
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.withContext
 
 /** The name of the agent binary file. */
 private const val AGENT_FILE_NAME = "lib_ui_inspector_agent.so"
@@ -49,35 +44,17 @@ private const val AGENT_FILE_NAME = "lib_ui_inspector_agent.so"
 /** The name of the service jar file. */
 private const val SERVICE_JAR_FILE_NAME = "lib_ui_inspector_service.jar"
 
-/**
- * A globally writable directory on the device used as a staging area for pushing agent binaries before they are moved to the app's private
- * directory.
- */
-private const val DEVICE_TMP_DIR = "/data/local/tmp"
-
-/** Subdirectory in the device temporary directory for dynamically pushed inspector jars. */
-private const val DEVICE_TMP_INSPECTORS_DIR = "$DEVICE_TMP_DIR/ui-inspector"
-
 /** The name of the payload jar file. */
 private const val PAYLOAD_JAR_FILE_NAME = "lib_ui_inspector_payload.jar"
 
 /** The relative path to the payload jar in the runfiles. */
 private const val HOST_PAYLOAD_JAR_PATH = "tools/base/ui-inspector/agent/payload/$PAYLOAD_JAR_FILE_NAME"
 
-/** The temporary path on the device where the payload jar is first pushed. */
-private const val DEVICE_TMP_PAYLOAD_JAR_PATH = "$DEVICE_TMP_DIR/$PAYLOAD_JAR_FILE_NAME"
-
 /** The relative path to the agent directory in the source tree or runfiles. */
 private const val HOST_AGENT_PATH = "tools/base/ui-inspector/agent/native/$AGENT_FILE_NAME"
 
 /** The relative path to the service jar in the runfiles. */
 private const val HOST_SERVICE_JAR_PATH = "tools/base/ui-inspector/agent/service/$SERVICE_JAR_FILE_NAME"
-
-/** The temporary path on the device where the agent is first pushed. */
-private const val DEVICE_TMP_AGENT_PATH = "$DEVICE_TMP_DIR/$AGENT_FILE_NAME"
-
-/** The temporary path on the device where the service jar is first pushed. */
-private const val DEVICE_TMP_SERVICE_JAR_PATH = "$DEVICE_TMP_DIR/$SERVICE_JAR_FILE_NAME"
 
 /** Default resolver that locates the agent binary in the Bazel runfiles directory. It uses the device ABI to find the correct binary. */
 private val DEFAULT_AGENT_PATH_RESOLVER: (String) -> Path = { abi -> Paths.get(HOST_AGENT_PATH, abi, AGENT_FILE_NAME) }
@@ -116,6 +93,7 @@ class InjectionManager(
 
   private val deviceSelector = DeviceSelector.fromSerialNumber(serial)
   private val uidResolver = UidResolver(adbSession, deviceSelector)
+  private val artifactStaging = ArtifactStaging(adbSession, deviceSelector, tempFileSuffixGenerator)
 
   /** The local TCP spec of the adb forward created by [injectAndAttach]. Cleared by [removeAdbForward]. */
   private val forwardedPortSpec = AtomicReference<SocketSpec.Tcp?>(null)
@@ -160,10 +138,10 @@ class InjectionManager(
     val payloadJarLocalPath = getPayloadJarLocalPath()
     val viewInspectorJarLocalPath = resolveLocalPathOrExtractFromClasspath(viewInspectorJarPath)
 
-    // Build digest based on artifacts pushed to the device. The digest is part of the server socket name on the device and allows the host
-    // to identify which version of the pushed artifacts it's connecting to.
-    val artifactDigest = shippedArtifactsDigest(agentLocalPath, serviceJarLocalPath, payloadJarLocalPath, viewInspectorJarLocalPath)
-    val serverToken = "${pid}_$artifactDigest"
+    // Build digests from the artifacts pushed to the device. The combined digest is part of the server socket name on the device and
+    // allows the host to identify which version of the pushed artifacts it's connecting to.
+    val digests = computeArtifactDigests(agentLocalPath, serviceJarLocalPath, payloadJarLocalPath, viewInspectorJarLocalPath)
+    val serverToken = "${pid}_${digests.combined}"
     val socketName = ProtocolConstants.getSocketName(serverToken)
 
     return when (mode) {
@@ -172,18 +150,27 @@ class InjectionManager(
           if (needsDebugViewAttributes) enableDebugViewAttributes()
           InjectionResult.Reconnected(setupAdbForward(deviceSelector, socketName))
         } else {
-          performFullInjection(needsDebugViewAttributes, pid, serverToken, agentLocalPath, serviceJarLocalPath, payloadJarLocalPath)
+          performFullInjection(
+            needsDebugViewAttributes,
+            pid,
+            serverToken,
+            digests,
+            agentLocalPath,
+            serviceJarLocalPath,
+            payloadJarLocalPath,
+          )
         }
       InjectionMode.FORCE_FULL_INJECTION ->
-        performFullInjection(needsDebugViewAttributes, pid, serverToken, agentLocalPath, serviceJarLocalPath, payloadJarLocalPath)
+        performFullInjection(needsDebugViewAttributes, pid, serverToken, digests, agentLocalPath, serviceJarLocalPath, payloadJarLocalPath)
     }
   }
 
-  /** Pushes the agent artifacts to the device, stages them via `run-as`, attaches the agent to [pid], and waits for its server socket. */
+  /** Stages the agent artifacts on the device, installs them via `run-as`, attaches the agent to [pid], and waits for its server socket. */
   private suspend fun performFullInjection(
     needsDebugViewAttributes: Boolean,
     pid: String,
     serverToken: String,
+    digests: ShippedArtifactsDigests,
     agentLocalPath: Path,
     serviceJarLocalPath: Path,
     payloadJarLocalPath: Path,
@@ -194,19 +181,22 @@ class InjectionManager(
 
     val debugViewAttributesSetup = async { if (needsDebugViewAttributes) enableDebugViewAttributes() }
 
-    val agentPush = async { pushFileToDevice(deviceSelector, agentLocalPath, DEVICE_TMP_AGENT_PATH) }
-    val jarPush = async { pushFileToDevice(deviceSelector, serviceJarLocalPath, DEVICE_TMP_SERVICE_JAR_PATH) }
-    val payloadPush = async { pushFileToDevice(deviceSelector, payloadJarLocalPath, DEVICE_TMP_PAYLOAD_JAR_PATH) }
-
-    val agentRemoteTmpPath = agentPush.await()
-    val serviceJarRemoteTmpPath = jarPush.await()
-    val payloadRemoteTmpPath = payloadPush.await()
+    val serviceJarName = fileNameWithHash(SERVICE_JAR_FILE_NAME, digests.serviceJar)
+    val payloadJarName = fileNameWithHash(PAYLOAD_JAR_FILE_NAME, digests.payloadJar)
+    val (agentStagePath, serviceJarStagePath, payloadJarStagePath) =
+      artifactStaging.stage(
+        listOf(
+          ArtifactToStage(agentLocalPath, AGENT_FILE_NAME, digests.agentBinary),
+          ArtifactToStage(serviceJarLocalPath, SERVICE_JAR_FILE_NAME, digests.serviceJar),
+          ArtifactToStage(payloadJarLocalPath, PAYLOAD_JAR_FILE_NAME, digests.payloadJar),
+        )
+      )
     debugViewAttributesSetup.await()
 
-    copyAndSetupFiles(deviceSelector, packageName, agentRemoteTmpPath, serviceJarRemoteTmpPath, payloadRemoteTmpPath)
+    installFiles(deviceSelector, packageName, agentStagePath, serviceJarStagePath, payloadJarStagePath, serviceJarName, payloadJarName)
 
     val deviceTime = queryDeviceTime(deviceSelector)
-    attachAgent(deviceSelector, pid, serverToken, appDataDir)
+    attachAgent(deviceSelector, pid, serverToken, appDataDir, serviceJarName, payloadJarName)
 
     val socketName = ProtocolConstants.getSocketName(serverToken)
     waitForAgentSocket(deviceSelector, socketName, pid, deviceTime)
@@ -444,91 +434,62 @@ class InjectionManager(
     }
   }
 
-  private suspend fun copyAndSetupFiles(
+  /** Copies the staged artifacts into the app's private data directory by running [buildInstallCommand]. */
+  private suspend fun installFiles(
     deviceSelector: DeviceSelector,
     packageName: String,
-    agentRemoteTmpPath: String,
-    serviceJarRemoteTmpPath: String,
-    payloadRemoteTmpPath: String,
+    agentStagePath: String,
+    serviceJarStagePath: String,
+    payloadJarStagePath: String,
+    serviceJarName: String,
+    payloadJarName: String,
   ) {
-    val setupCmd =
-      "run-as $packageName sh -c '" +
-        // Delete previous versions of the files
-        "rm -f $AGENT_FILE_NAME $SERVICE_JAR_FILE_NAME $PAYLOAD_JAR_FILE_NAME && " +
-        // Copy new versions from tmp
-        "cat $agentRemoteTmpPath > $AGENT_FILE_NAME && " +
-        "cat $serviceJarRemoteTmpPath > $SERVICE_JAR_FILE_NAME && " +
-        "cat $payloadRemoteTmpPath > $PAYLOAD_JAR_FILE_NAME && " +
-        // Set permissions to 444
-        "chmod 444 $AGENT_FILE_NAME && " +
-        "chmod 444 $SERVICE_JAR_FILE_NAME && " +
-        "chmod 444 $PAYLOAD_JAR_FILE_NAME'"
-    runShellCommand(deviceSelector, setupCmd)
-  }
-
-  /** Pushes a file to a temporary location on the device using an atomic rename to prevent concurrent read/write corruption. */
-  // TODO: Add a check to verify file hash on device before pushing to avoid redundant pushes if the file is already there.
-  private suspend fun pushFileToDevice(deviceSelector: DeviceSelector, localPath: Path, remoteTmpPath: String): String {
-    // App needs read permission to copy it from /data/local/tmp (run-as uses a different user).
-    // Setting read-only permissions (444) directly during syncSend also satisfies ART W^X read-only
-    // dex file requirements on API 34+ without needing an extra chmod shell round trip.
-    val permissions =
-      RemoteFileMode.fromPosixPermissions(PosixFilePermission.OWNER_READ, PosixFilePermission.GROUP_READ, PosixFilePermission.OTHERS_READ)
-    val tempRemotePath = "$remoteTmpPath.${tempFileSuffixGenerator()}"
-    var moveSuccessful = false
-    try {
-      adbSession.deviceServices.syncSend(deviceSelector, localPath, tempRemotePath, permissions)
-      // Moving a file within the same Linux filesystem is an atomic rename (rename() syscall).
-      // Pushing to unique temporary files prevents concurrent transfers from interleaved writing or
-      // exposing half-written data. When renamed, the last writer atomically wins without disrupting
-      // active readers of the old file inode.
-      runShellCommand(deviceSelector, "mv -f '$tempRemotePath' '$remoteTmpPath'")
-      moveSuccessful = true
-    } finally {
-      if (!moveSuccessful) {
-        withContext(NonCancellable) {
-          try {
-            adbSession.deviceServices.shellAsText(deviceSelector, "rm -f '$tempRemotePath'")
-          } catch (_: Exception) {}
-        }
-      }
-    }
-    return remoteTmpPath
+    val installCmd =
+      buildInstallCommand(
+        packageName = packageName,
+        agentStagePath = agentStagePath,
+        serviceJarStagePath = serviceJarStagePath,
+        payloadJarStagePath = payloadJarStagePath,
+        serviceJarName = serviceJarName,
+        payloadJarName = payloadJarName,
+        tempSuffix = tempFileSuffixGenerator(),
+      )
+    runShellCommand(deviceSelector, installCmd)
   }
 
   /**
-   * Pushes the view inspector jar to the device and returns its remote path. The pushed file is the same [viewInspectorJarPath] the
-   * artifact digest covers, so a server reached by digest match was built from a byte-identical jar.
+   * Makes the view inspector jar available at its device staging path and returns that path. The staged file is the same
+   * [viewInspectorJarPath] the artifact digest covers, so a server reached by digest match was built from a byte-identical jar.
    */
-  suspend fun pushViewInspectorPayload(): String =
-    pushInspectorPayload(InspectorMetadata(id = InspectorRegistry.VIEW_INSPECTOR.id, localJarPath = viewInspectorJarPath))
+  suspend fun stageViewInspectorPayload(): String =
+    stageInspectorPayload(InspectorMetadata(id = InspectorRegistry.VIEW_INSPECTOR.id, localJarPath = viewInspectorJarPath))
 
   /**
-   * Pushes an inspector payload jar to the device and sets it up in the app's data directory.
-   *
-   * @param inspector The metadata of the inspector to push.
-   * @return The full remote path to the pushed jar file on the device.
+   * Makes an inspector payload jar available at its device staging path, pushing it only when that path is not already correctly staged,
+   * and returns the path.
    */
-  suspend fun pushInspectorPayload(inspector: InspectorMetadata): String {
-    val remoteFileName = inspector.localJarPath.fileName.toString()
-    val remoteTmpPath = "$DEVICE_TMP_INSPECTORS_DIR/$remoteFileName"
-
+  suspend fun stageInspectorPayload(inspector: InspectorMetadata): String {
     val actualLocalPath = resolveLocalPathOrExtractFromClasspath(inspector.localJarPath)
-
-    // Push to tmp folder
-    pushFileToDevice(deviceSelector, actualLocalPath, remoteTmpPath)
-
-    return remoteTmpPath
+    val fileDigest = computeContentDigest(actualLocalPath)
+    val artifactToStage = ArtifactToStage(actualLocalPath, inspector.localJarPath.fileName.toString(), fileDigest)
+    return artifactStaging.stage(listOf(artifactToStage)).single()
   }
 
   /**
-   * Attaches the agent to the target process. [appDataDir] is the absolute path to the application's private data directory for Android
-   * user 0, queried via `run-as`; querying the path avoids assuming that the standard /data/data/ prefix is applicable.
+   * Attaches the agent to the target process. [appDataDir] is the absolute path to the application's private data directory as reported by
+   * `run-as <package> pwd`; querying the path avoids assuming that the standard /data/data/ prefix is applicable.
    */
-  private suspend fun attachAgent(deviceSelector: DeviceSelector, pid: String, serverToken: String, appDataDir: String) {
+  private suspend fun attachAgent(
+    deviceSelector: DeviceSelector,
+    pid: String,
+    serverToken: String,
+    appDataDir: String,
+    serviceJarName: String,
+    payloadJarName: String,
+  ) {
     val appPath = "$appDataDir/$AGENT_FILE_NAME"
-    val appJarPath = "$appDataDir/$SERVICE_JAR_FILE_NAME"
-    val appPayloadJarPath = "$appDataDir/$PAYLOAD_JAR_FILE_NAME"
+    val appJarPath = "$appDataDir/$serviceJarName"
+    val appPayloadJarPath = "$appDataDir/$payloadJarName"
     val attachCmd = "cmd activity attach-agent $pid \"$appPath=$appJarPath;$appPayloadJarPath;$serverToken\""
     runShellCommand(deviceSelector, attachCmd)
   }
@@ -560,6 +521,39 @@ class InjectionManager(
 }
 
 private data class DeviceMetadata(val abi: String, val sdkVersion: Int)
+
+/**
+ * Builds the `run-as` shell command that installs the staged artifacts into the app's data directory. Each file is written to a run-unique
+ * temporary name and renamed onto its final name once the install is complete.
+ */
+internal fun buildInstallCommand(
+  packageName: String,
+  agentStagePath: String,
+  serviceJarStagePath: String,
+  payloadJarStagePath: String,
+  serviceJarName: String,
+  payloadJarName: String,
+  tempSuffix: String,
+): String {
+  val agentTmp = "$AGENT_FILE_NAME.$tempSuffix"
+  val serviceTmp = "$serviceJarName.$tempSuffix"
+  val payloadTmp = "$payloadJarName.$tempSuffix"
+  val staleServiceJarsPattern = fileNameWithHash(SERVICE_JAR_FILE_NAME, CONTENT_DIGEST_PATTERN)
+  val stalePayloadJarsPattern = fileNameWithHash(PAYLOAD_JAR_FILE_NAME, CONTENT_DIGEST_PATTERN)
+  return "run-as $packageName sh -c '" +
+    // Use trap to delete temporary files at the end.
+    "trap \"rm -f $agentTmp $serviceTmp $payloadTmp\" 0 && " +
+    "test ! -d $AGENT_FILE_NAME && test ! -d $serviceJarName && test ! -d $payloadJarName && " +
+    // Sweep other installed versions of the jars first.
+    "rm -f $staleServiceJarsPattern $stalePayloadJarsPattern && " +
+    "cat $agentStagePath > $agentTmp && " +
+    "cat $serviceJarStagePath > $serviceTmp && " +
+    "cat $payloadJarStagePath > $payloadTmp && " +
+    "chmod 444 $agentTmp $serviceTmp $payloadTmp && " +
+    "mv -f $serviceTmp $serviceJarName && " +
+    "mv -f $payloadTmp $payloadJarName && " +
+    "mv -f $agentTmp $AGENT_FILE_NAME'"
+}
 
 /** Whether [InjectionManager.injectAndAttach] may reuse an already-running agent server. */
 enum class InjectionMode {

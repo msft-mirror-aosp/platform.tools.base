@@ -241,7 +241,7 @@ private suspend fun connectAndRunInspectors(
         throw e
       }
     commandSender.use {
-      val viewInspectorDexPath = injectionManager.pushViewInspectorPayload()
+      val viewInspectorDexPath = injectionManager.stageViewInspectorPayload()
       try {
         createViewInspector(commandSender, viewInspectorDexPath)
       } catch (e: InspectorCrashException) {

@@ -210,8 +210,36 @@ It runs `adb devices` and `adb shell getprop` to find the device and
 hardware characteristics of the device.
 
 Selects the appropriate `.so` and payload `.jar` files matching the
-target devices and pushes them directly to the Android staging directory
-on the device (`/data/local/tmp`).
+target devices and pushes them to the staging directory on the device
+(`/data/local/tmp/ui-inspector`). Every staged file — agent binary,
+service jar, payload jar, and inspector jars — is named by its own
+content hash (`<base>.<hash12>.<ext>`, 12 hex characters of the file's
+SHA-256), so a file's staging path is determined by its base name and
+content. Concurrent pushes of the same content race only on
+byte-identical files (harmless, pushes are atomic renames), and runs
+shipping different content write different paths, so a file's content
+is never overwritten in place — though a push's sweep (below) can
+delete another build's staged file.
+The hash covers the whole file but is shortened to 12 hex characters
+for the name, so a name collision between different contents is
+astronomically unlikely rather than impossible, and build artifacts
+are treated as immutable for the lifetime of a run. Before pushing, one
+`stat` probe checks each expected staging path: a path already holding
+a read-only regular file is byte-identical by construction of the name
+and is not re-transferred; the check is advisory, so anything the
+probe cannot positively confirm is simply pushed. Each push also
+sweeps the other staged versions of the same artifact (same base name,
+any other digest-shaped segment), so a push resets its artifact to a
+single staged version; residue from concurrent or interrupted runs
+persists only until that artifact's next push. The install step
+sweeps the app-side jar copies the same way. For the
+Compose inspector jar the base name embeds the maven version, so the
+sweep only ever removes a same-version rebuild (snapshots) while jars
+for different Compose versions coexist. Probe-hit runs stay read-only:
+sweeping happens only when an actual push occurs. A concurrent
+run of a different build can lose its staged file to the sweep between
+its probe and its use; that surfaces as a loud command failure there,
+and a retry re-stages.
 
 It then starts the injection sequence:
 
@@ -224,15 +252,23 @@ It then starts the injection sequence:
   `debug_view_attributes` is already enabled; when actually flipped it is left set
   (changing it in either direction restarts the app's activities) and a stderr
   notice explains how to clear it.
-* Runs `adb shell run-as <package> cp` to move files from
-  `/data/local/tmp` to the app memory space.
-* Uses `run-as <package>` to `chmod` all binary and jar files to read-only (`444`),
-  since the Dalvik classloader prevents loading dynamic dalvik bytecode `.dex`
-  extensions from a writable app-data location.
+* Copies the staged files into the app's data directory with `run-as <package>`:
+  each file is written to a run-unique temporary name, `chmod`-ed to read-only
+  (`444`, required because the Dalvik classloader refuses dynamic bytecode from
+  a writable app-data location), and renamed onto its final name. Renames are
+  atomic per file, not as a set: the content-hashed service and payload jars
+  rename first (an interrupted install leaves at worst unreferenced
+  content-named files), and the agent binary renames last under the fixed name
+  `lib_ui_inspector_agent.so` — its name is the only one shared across builds,
+  so ordering it last means a failed install never replaces it. The fixed
+  `.so` name itself exists because `dlopen` keys loaded libraries on their
+  path, and the fixed path guarantees a process only ever hosts one native
+  agent instance.
+* Triggers payload injection via
+  `adb shell cmd activity attach-agent <pid> <app-data-dir>/lib_ui_inspector_agent.so=<app-data-dir>/lib_ui_inspector_service.<hash12>.jar;<app-data-dir>/lib_ui_inspector_payload.<hash12>.jar;<pid>_<digest>`.
 * Periodically polls `/proc/net/unix` on the device using a retry loop until the
   agent's abstract Unix socket appears, preventing host connection race conditions.
-* Creates the adb tunnel and triggers payload injection via
-  `adb shell cmd activity attach-agent <package> /data/data/<package>/lib_ui_inspector_agent.so=/data/data/<package>/lib_ui_inspector_service.jar;/data/data/<package>/lib_ui_inspector_payload.jar;<pid>_<digest>`.
+* Creates the adb tunnel to the agent's socket.
 
 ## Compose Inspector
 

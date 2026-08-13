@@ -42,6 +42,12 @@ import java.time.Duration
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 
+/** The exact stat probe command the artifact-staging layer issues for [remotePaths]. */
+internal fun statProbeCommand(vararg remotePaths: String): String {
+  val quoted = remotePaths.joinToString(separator = " ") { "'$it'" }
+  return "stat -c '%f %n' $quoted 2>/dev/null"
+}
+
 /** A custom [AdbSession] for testing that allows overriding [deviceServices] and [hostServices]. */
 class TestAdbSession(
   val delegate: FakeAdbSession,
