@@ -34,12 +34,12 @@ import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.utils.immutableListBuilder
 import com.android.build.gradle.internal.utils.setDisallowChanges
+import com.android.build.gradle.internal.utils.toImmutableList
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.merge.DelegateFileMergerOutput
 import com.android.builder.merge.FileMerger
 import com.android.builder.merge.FileMergerInput
 import com.android.builder.merge.FileMergerOutputs
-import com.android.builder.merge.FilterFileMergerInput
 import com.android.builder.merge.JavaResZipSourceMerger
 import com.android.builder.merge.LazyFileMergerInput
 import com.android.builder.merge.MergeOutputWriters
@@ -314,7 +314,7 @@ abstract class MergeJavaResOptimizedWorkAction : ProfileAwareWorkAction<MergeJav
         packagingOptions.getAction(path) != ParsedPackagingOptions.JavaResPackagingFileAction.EXCLUDE
       }
 
-    val highPriorityInputs = mutableListOf<FileMergerInput>()
+    val highPriorityInputs = mutableSetOf<FileMergerInput>()
 
     // create final input list, sorted and filtered.
     val finalInputList =
@@ -322,14 +322,13 @@ abstract class MergeJavaResOptimizedWorkAction : ProfileAwareWorkAction<MergeJav
         .asSequence()
         .sortedBy(CompressedJavaResJar::priority)
         .map { jar ->
-          val input = LazyFileMergerInput(jar.name, jar.file)
-          val filteredInput = FilterFileMergerInput(input, inputFilter)
+          val input = LazyFileMergerInput(jar.name, jar.file, inputFilter)
 
           if (jar.priority != JavaResMergingPriority.LOW) {
-            highPriorityInputs.add(filteredInput)
+            highPriorityInputs.add(input)
           }
 
-          filteredInput
+          input
         }
         .toList()
 
@@ -345,9 +344,9 @@ abstract class MergeJavaResOptimizedWorkAction : ProfileAwareWorkAction<MergeJav
         private fun filter(path: String, inputs: List<FileMergerInput>): ImmutableList<FileMergerInput> {
           val packagingAction = packagingOptions.getAction(path)
           val shouldFilterInputs =
-            packagingAction == ParsedPackagingOptions.JavaResPackagingFileAction.NONE && inputs.any { highPriorityInputs.contains(it) }
+            packagingAction == ParsedPackagingOptions.JavaResPackagingFileAction.NONE && inputs.any { it in highPriorityInputs }
           return if (shouldFilterInputs) {
-            val filteredInputs = ImmutableList.copyOf(inputs.filter { highPriorityInputs.contains(it) })
+            val filteredInputs = inputs.filter { it in highPriorityInputs }
             if (filteredInputs.size < inputs.size) {
               val logger = LoggerWrapper(Logging.getLogger(MergeJavaResourcesDelegate::class.java))
               logger.warning(
@@ -359,9 +358,9 @@ abstract class MergeJavaResOptimizedWorkAction : ProfileAwareWorkAction<MergeJav
                   "case."
               )
             }
-            filteredInputs
+            filteredInputs.toImmutableList()
           } else {
-            ImmutableList.copyOf(inputs)
+            inputs.toImmutableList()
           }
         }
       }

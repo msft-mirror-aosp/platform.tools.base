@@ -22,7 +22,6 @@ import com.android.builder.merge.FileMapInput
 import com.android.builder.merge.FileMerger
 import com.android.builder.merge.FileMergerInput
 import com.android.builder.merge.FileMergerOutputs
-import com.android.builder.merge.FilterFileMergerInput
 import com.android.builder.merge.InputStreamMerger
 import com.android.builder.merge.LazyFileMergerInput
 import com.android.builder.merge.MergeOutputWriters
@@ -37,7 +36,7 @@ sealed class UncompressedJavaRes(protected val packagingOption: ParsedPackagingO
 
   fun compressToJar(outputFile: File): File = mergeAndCompress(fileInputs, outputFile)
 
-  private val inputsFilter: Predicate<String> =
+  protected val inputsFilter: Predicate<String> =
     MergeJavaResourceTask.predicate.and { path ->
       packagingOption.getAction(path) != ParsedPackagingOptions.JavaResPackagingFileAction.EXCLUDE
     }
@@ -47,8 +46,7 @@ sealed class UncompressedJavaRes(protected val packagingOption: ParsedPackagingO
     val merger = InputStreamMerger(packagingOption)
     val writer = MergeOutputWriters.toZipWithZipFlinger(outputFile)
     val output = FileMergerOutputs.fromAlgorithmAndWriter(merger, writer)
-    val filteredInputs = inputs.map { FilterFileMergerInput(it, inputsFilter) }
-    FileMerger.merge(filteredInputs, output, noCompressPredicate = { !compress })
+    FileMerger.merge(inputs, output, noCompressPredicate = { !compress })
     return outputFile
   }
 
@@ -67,7 +65,7 @@ sealed class UncompressedJavaRes(protected val packagingOption: ParsedPackagingO
             pathsToFile[details.relativePath.pathString] = details.file
           }
         }
-        return listOf(FileMapInput("fileTree", pathsToFile))
+        return listOf(FileMapInput("fileTree", pathsToFile, inputsFilter))
       }
   }
 
@@ -80,7 +78,8 @@ sealed class UncompressedJavaRes(protected val packagingOption: ParsedPackagingO
       }
     }
 
-    override val fileInputs = listOf(LazyFileMergerInput(jar.name, jar))
+    override val fileInputs
+      get() = listOf(LazyFileMergerInput(jar.name, jar, inputsFilter))
   }
 
   class MultipleJars(
@@ -88,6 +87,7 @@ sealed class UncompressedJavaRes(protected val packagingOption: ParsedPackagingO
     packagingOptions: ParsedPackagingOptions = ParsedPackagingOptions(emptyList(), emptyList(), emptyList()),
   ) : UncompressedJavaRes(packagingOptions) {
 
-    override val fileInputs = jars.map { LazyFileMergerInput(it.name, it) }
+    override val fileInputs
+      get() = jars.map { LazyFileMergerInput(it.name, it, inputsFilter) }
   }
 }
