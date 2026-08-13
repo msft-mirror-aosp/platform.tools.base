@@ -27,9 +27,22 @@ import com.android.tools.lint.checks.MotionLayoutDetector
 import com.android.tools.lint.checks.PxUsageDetector
 import com.android.tools.lint.checks.infrastructure.TestFiles.gradle
 import com.android.tools.lint.checks.infrastructure.TestFiles.java
+import com.android.tools.lint.checks.infrastructure.TestFiles.kotlin
 import com.android.tools.lint.checks.infrastructure.TestFiles.manifest
 import com.android.tools.lint.checks.infrastructure.TestFiles.xml
 import com.android.tools.lint.checks.infrastructure.TestLintTask
+import com.android.tools.lint.detector.api.Category
+import com.android.tools.lint.detector.api.Detector
+import com.android.tools.lint.detector.api.Implementation
+import com.android.tools.lint.detector.api.Incident
+import com.android.tools.lint.detector.api.Issue
+import com.android.tools.lint.detector.api.JavaContext
+import com.android.tools.lint.detector.api.Scope
+import com.android.tools.lint.detector.api.Severity
+import com.android.tools.lint.detector.api.SourceCodeScanner
+import com.android.tools.lint.detector.api.TextFormat
+import com.intellij.psi.PsiMethod
+import org.jetbrains.uast.UCallExpression
 import org.junit.Test
 
 class SarifReporterTest {
@@ -978,5 +991,189 @@ class SarifReporterTest {
 
   private fun lint(): TestLintTask {
     return TestLintTask.lint().sdkHome(TestUtils.getSdk().toFile())
+  }
+
+  @Test
+  fun testQuickfixAlternativesWithoutEdits() {
+    lint()
+      .files(
+        kotlin(
+            """
+            fun foo() = Unit
+            fun main(): Unit = foo()
+            """
+          )
+          .indented()
+      )
+      .issues(ReplaceMethodCallDetector.ISSUE)
+      .stripRoot(false)
+      .run()
+      .expectSarif(
+        """
+        {
+            "＄schema" : "https://docs.oasis-open.org/sarif/sarif/v2.1.0/errata01/os/schemas/sarif-schema-2.1.0.json",
+            "version" : "2.1.0",
+            "runs" : [
+                {
+                    "tool": {
+                        "driver": {
+                            "name": "Android Lint",
+                            "fullName": "Android Lint (in test)",
+                            "version": "1.0",
+                            "organization": "Google",
+                            "informationUri": "https://developer.android.com/studio/write/lint",
+                            "fullDescription": {
+                                "text": "Static analysis originally for Android source code but now performing general analysis"
+                            },
+                            "language": "en-US",
+                            "rules": [
+                                {
+                                    "id": "ReplaceMethodCall",
+                                    "shortDescription": {
+                                        "text": "The method foo() should not be called!"
+                                    },
+                                    "fullDescription": {
+                                        "text": "The method foo() should not be called!",
+                                        "markdown": "The method `foo()` should not be called!"
+                                    },
+                                    "defaultConfiguration": {
+                                        "level": "warning",
+                                        "rank": 60
+                                    },
+                                    "properties": {
+                                        "tags": [
+                                            "Correctness"
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "originalUriBaseIds": {
+                        "%SRCROOT%": {
+                            "uri": "file://TESTROOT/app"
+                        }
+                    },
+                    "results": [
+                        {
+                            "ruleId": "ReplaceMethodCall",
+                            "ruleIndex": 0,
+                            "message": {
+                                "text": "The method foo() should not be called!"
+                            },
+                            "locations": [
+                                {
+                                    "physicalLocation": {
+                                        "artifactLocation": {
+                                            "uriBaseId": "%SRCROOT%",
+                                            "uri": "src/test.kt"
+                                        },
+                                        "region": {
+                                            "startLine": 2,
+                                            "startColumn": 20,
+                                            "endLine": 2,
+                                            "endColumn": 25,
+                                            "charOffset": 36,
+                                            "charLength": 5,
+                                            "snippet": {
+                                                "text": "foo()"
+                                            }
+                                        },
+                                        "contextRegion": {
+                                            "startLine": 1,
+                                            "endLine": 2,
+                                            "snippet": {
+                                                "text": "fun foo() = Unit\nfun main(): Unit = foo()"
+                                            }
+                                        }
+                                    }
+                                }
+                            ],
+                            "fixes": [
+                                {
+                                    "description": {
+                                        "text": "Replace foo with Unit",
+                                        "markdown": "Replace `foo` with `Unit`"
+                                    },
+                                    "artifactChanges": [
+                                        {
+                                            "artifactLocation": {
+                                                "uriBaseId": "%SRCROOT%",
+                                                "uri": "src/test.kt"
+                                            },
+                                            "replacements": [
+                                                {
+                                                    "deletedRegion": {
+                                                        "startLine": 2,
+                                                        "startColumn": 20,
+                                                        "charOffset": 36,
+                                                        "endLine": 2,
+                                                        "endColumn": 25,
+                                                        "charLength": 5
+                                                    },
+                                                    "insertedContent": {
+                                                        "text": "Unit\n"
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ],
+                            "partialFingerprints": {
+                                "sourceContext/v1": "4d3299bc940b75b8"
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+        """
+      )
+      .expectFixDiffs(
+        """
+        Autofix for src/test.kt line 2: Replace `foo` with `Unit`:
+        @@ -2 +2 @@
+        -fun main(): Unit = foo()
+        +fun main(): Unit = Unit
+        Data for src/test.kt line 2:   key : value
+        """
+      )
+  }
+
+  class ReplaceMethodCallDetector : Detector(), SourceCodeScanner {
+    override fun getApplicableMethodNames(): List<String> = listOf("foo")
+
+    override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
+      context.report(
+        Incident(
+          issue = ISSUE,
+          scope = node,
+          location = context.getLocation(node),
+          message = ISSUE.getBriefDescription(TextFormat.RAW),
+          fix =
+            fix()
+              .alternatives(
+                // Primary fix
+                fix().name("Replace `foo` with `Unit`").replace().all().with("Unit").robot(true).independent(true).build(),
+                // Secondary fix (without file modification)
+                fix().data("key", "value"),
+              ),
+        )
+      )
+    }
+
+    companion object {
+      val ISSUE =
+        Issue.create(
+          id = "ReplaceMethodCall",
+          briefDescription = "The method foo() should not be called!",
+          explanation = "The method `foo()` should not be called!",
+          category = Category.CORRECTNESS,
+          priority = 5,
+          severity = Severity.WARNING,
+          implementation = Implementation(ReplaceMethodCallDetector::class.java, Scope.JAVA_FILE_SCOPE),
+        )
+    }
   }
 }
