@@ -695,7 +695,7 @@ internal class AdblibIDeviceWrapper(
   }
 
   override fun kill(applicationName: String?) {
-    logUsage(IDeviceUsageTracker.Method.KILL) { iDeviceSharedImpl.kill(applicationName) }
+    unsupportedMethod()
   }
 
   override fun isRoot(): Boolean =

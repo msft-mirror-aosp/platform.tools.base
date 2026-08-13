@@ -267,17 +267,6 @@ public class IDeviceSharedImpl {
         }
     }
 
-    public void kill(String applicationName) {
-        try {
-            // Kills the app, even in case it's in the crashed state.
-            iDevice.executeShellCommand("am kill " + applicationName, new NullOutputReceiver());
-        } catch (IOException
-                | TimeoutException
-                | AdbCommandRejectedException
-                | ShellCommandUnresponsiveException ignored) {
-        }
-    }
-
     private boolean hasBinary(String path) {
         CountDownLatch latch = new CountDownLatch(1);
         CollectingOutputReceiver receiver = new CollectingOutputReceiver(latch);
