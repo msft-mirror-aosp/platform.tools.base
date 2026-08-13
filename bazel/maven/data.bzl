@@ -1081,11 +1081,13 @@ _CLASS_JARS = [
     "com.google.protobuf:protobuf-java:3.24.4",
     "com.google.protobuf:protobuf-java:3.25.5",
     "com.google.protobuf:protobuf-java:4.27.2",
+    "com.google.protobuf:protobuf-java:4.28.3",
     "com.google.protobuf:protobuf-java:4.33.2",
     "com.google.protobuf:protobuf-java-util:3.19.3",
     "com.google.protobuf:protobuf-java-util:3.22.3",
     "com.google.protobuf:protobuf-java-util:3.24.4",
     "com.google.protobuf:protobuf-java-util:4.27.2",
+    "com.google.protobuf:protobuf-java-util:4.28.3",
     "com.google.protobuf:protobuf-java-util:4.33.2",
     "com.google.protobuf:protobuf-javalite:4.28.2",  # XR template
     "com.google.protobuf:protobuf-kotlin:3.24.4",
@@ -1095,6 +1097,7 @@ _CLASS_JARS = [
     "com.google.protobuf:protobuf-parent:pom:3.24.4",
     "com.google.protobuf:protobuf-parent:pom:3.25.5",
     "com.google.protobuf:protobuf-parent:pom:4.28.2",  # XR template
+    "com.google.protobuf:protobuf-parent:pom:4.28.3",
     "com.google.protobuf:protoc:exe:linux-x86_64:3.19.6",
     "com.google.protobuf:protoc:exe:linux-x86_64:3.22.3",
     "com.google.protobuf:protoc:exe:linux-x86_64:3.24.4",

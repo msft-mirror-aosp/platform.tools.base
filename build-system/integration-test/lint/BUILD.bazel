@@ -304,7 +304,7 @@ maven_repository(
         "@maven//:com.android.support.test.espresso.espresso-core_3.0.2",
         "@maven//:com.android.tools.desugar_jdk_libs_1.1.5",
         "@maven//:com.google.guava.guava_19.0",
-        "@maven//:com.google.protobuf.protobuf-java-util_3.25.5",
+        "@maven//:com.google.protobuf.protobuf-java-util_4.28.3",
         "@maven//:com.google.truth.truth_0.44",
         "@maven//:com.squareup.kotlinpoet_2.1.0",
         "@maven//:org.jetbrains.kotlin.kotlin-compiler-embeddable_1.7.10",

@@ -88299,6 +88299,17 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.protobuf.protobuf-parent_4.28.3",
+    pom = "repository/com/google/protobuf/protobuf-parent/4.28.3/protobuf-parent-4.28.3.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/protobuf/protobuf-parent/4.28.3",
+    deps = [
+        "com.google.protobuf.protobuf-bom_4.28.3",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.google.protobuf.protoc_3.19.6",
     pom = "repository/com/google/protobuf/protoc/3.19.6/protoc-3.19.6.pom",
     repo_root_path = "repository",
@@ -114439,13 +114450,6 @@ maven_artifact(
     pom = "repository/com/google/protobuf/protobuf-parent/4.27.2/protobuf-parent-4.27.2.pom",
     repo_root_path = "repository",
     repo_path = "com/google/protobuf/protobuf-parent/4.27.2",
-)
-
-maven_artifact(
-    name = "com.google.protobuf.protobuf-parent_4.28.3",
-    pom = "repository/com/google/protobuf/protobuf-parent/4.28.3/protobuf-parent-4.28.3.pom",
-    repo_root_path = "repository",
-    repo_path = "com/google/protobuf/protobuf-parent/4.28.3",
 )
 
 maven_artifact(
