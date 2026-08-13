@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-package com.android.tools.androidtest.testengine
-
-import com.android.tools.androidtest.testengine.config.AndroidTestConfiguration
-import org.junit.platform.engine.ExecutionRequest
-import org.junit.platform.engine.support.hierarchical.EngineExecutionContext
+package com.android.tools.androidtest.testengine.collector
 
 /**
- * Execution context for [AndroidTestEngine].
+ * A holder for the resolved sandbox paths of the on-the-fly coverage agent.
  *
- * @property request The JUnit platform execution request.
+ * These paths are resolved after APK installation but before test execution.
  */
-data class AndroidTestExecutionContext(val request: ExecutionRequest) : EngineExecutionContext {
-  val configuration = AndroidTestConfiguration(request)
+class CoverageAgentFilesystemInfo {
+  /** The absolute path to the .so binary in the app sandbox. */
+  var agentBinaryPathOnDevice: String? = null
+
+  /** The absolute path to the directory where artifacts are stored. */
+  var dataDirectoryOnDevice: String? = null
 }

@@ -1,0 +1,498 @@
+/*
+ * Copyright (C) 2026 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.android.tools.androidtest.testengine.descriptor
+
+import com.android.tools.androidtest.testengine.AndroidTestExecutionContext
+import com.android.tools.androidtest.testengine.adb.AdbApkInstaller
+import com.android.tools.androidtest.testengine.adb.AdbController
+import com.android.tools.androidtest.testengine.adb.AndroidTestRunner
+import com.android.tools.androidtest.testengine.adb.DeviceApiLevelProvider
+import com.android.tools.androidtest.testengine.adb.DeviceSettingsController
+import com.android.tools.androidtest.testengine.adb.EmulatorGrpcInfo
+import com.android.tools.androidtest.testengine.adb.findGrpcInfo
+import com.android.tools.androidtest.testengine.collector.AndroidAdditionalTestOutputCollector
+import com.android.tools.androidtest.testengine.collector.AndroidTestCoverageCollector
+import com.android.tools.androidtest.testengine.collector.AndroidTestDeviceInfoCollector
+import com.android.tools.androidtest.testengine.collector.CoverageAgentFilesystemInfo
+import com.android.tools.androidtest.testengine.collector.LogcatCollector
+import com.android.tools.androidtest.testengine.config.AndroidTestConfiguration
+import com.android.tools.androidtest.testengine.instrument.AmInstrumentationListener
+import com.android.tools.androidtest.testengine.instrument.AmInstrumentationParser
+import com.android.tools.androidtest.testengine.instrument.AmInstrumentationRunner
+import com.android.tools.androidtest.testengine.instrument.InstrumentationResult
+import com.android.tools.androidtest.testengine.instrument.TestIdentifier
+import com.android.tools.androidtest.testengine.instrument.TestResult
+import com.android.tools.androidtest.testengine.report.AndroidTestReportKeys
+import com.android.tools.androidtest.testengine.report.DdmlibTestIdentifier
+import com.android.tools.androidtest.testengine.report.XmlTestRunListener
+import java.io.File
+import java.util.concurrent.ConcurrentHashMap
+import java.util.logging.Level
+import java.util.logging.Logger
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.runBlocking
+import org.junit.platform.engine.TestDescriptor
+import org.junit.platform.engine.UniqueId
+import org.junit.platform.engine.reporting.ReportEntry
+import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor
+import org.junit.platform.engine.support.hierarchical.Node
+
+/**
+ * A test descriptor representing an Android device.
+ *
+ * This descriptor manages the test execution lifecycle on a specific device identified by its [deviceSerial]. It handles APK installation
+ * and launches the instrumentation process.
+ *
+ * @property deviceSerial The serial number of the target Android device.
+ */
+class AndroidDeviceDescriptor(
+  uniqueId: UniqueId,
+  val deviceSerial: String,
+  val deviceId: String = deviceSerial,
+  val deviceDisplayName: String = deviceId,
+  private val adbControllerFactory: (File) -> AdbController = { AdbController(it) },
+  private val jvmtiCodeCoverageAgentPathProvider: () -> Pair<String, String>? = { null },
+  private val findGrpcInfoProvider: (String) -> EmulatorGrpcInfo = ::findGrpcInfo,
+  private val adbApkInstallerFactory:
+    (
+      adb: File, aapt2: File, deviceSerial: String, installTimeoutMs: Long, deviceApiLevelProvider: DeviceApiLevelProvider?,
+    ) -> AdbApkInstaller =
+    { adb, aapt2, serial, timeout, apiLevelProvider ->
+      AdbApkInstaller(adb, aapt2, serial, timeout, deviceApiLevelProvider = apiLevelProvider)
+    },
+  private val instrumentationRunnerFactory:
+    (
+      adb: File,
+      deviceSerial: String,
+      instrumentationRunnerClass: String,
+      testPackageId: String,
+      instrumentationTargetPackageId: String,
+      executionMode: String?,
+      instrumentationArgs: Map<String, String>,
+      listeners: Set<com.android.tools.androidtest.testengine.instrument.AmInstrumentationListener>,
+      agentFilesystemInfo: CoverageAgentFilesystemInfo,
+      instrumentInPcc: Boolean,
+    ) -> AmInstrumentationRunner =
+    { adb, serial, runnerClass, pkgId, targetPkgId, execMode, args, listeners, agentInfo, instrumentInPcc ->
+      AmInstrumentationRunner(
+        adb,
+        serial,
+        runnerClass,
+        pkgId,
+        targetPkgId,
+        execMode,
+        args,
+        listeners,
+        agentInfo,
+        instrumentInPcc = instrumentInPcc,
+      )
+    },
+) : AbstractTestDescriptor(uniqueId, deviceDisplayName), Node<AndroidTestExecutionContext> {
+
+  private val logger = Logger.getLogger(AndroidDeviceDescriptor::class.java.name)
+
+  private sealed class TestEvent {
+    data class NewTest(val descriptor: AndroidDynamicTestDescriptor) : TestEvent()
+  }
+
+  private val tests = Channel<TestEvent>(Channel.UNLIMITED)
+
+  override fun getType(): TestDescriptor.Type = TestDescriptor.Type.CONTAINER
+
+  override fun mayRegisterTests(): Boolean = true
+
+  override fun execute(context: AndroidTestExecutionContext, dynamicTestExecutor: Node.DynamicTestExecutor): AndroidTestExecutionContext {
+    val config = context.configuration
+
+    val adbController = adbControllerFactory(config.adb)
+    val deviceApiLevelProvider = DeviceApiLevelProvider(adbController, deviceSerial)
+
+    val adbApkInstaller = adbApkInstallerFactory(config.adb, config.aapt2, deviceSerial, config.installTimeoutMs, deviceApiLevelProvider)
+
+    val deviceSpecificResultsDir = config.getResultsDir(deviceSerial)
+    val baseResultsDir = config.getResultsDir()
+    // If the resolved device-specific directory is non-null and different from the base directory
+    // (meaning it was explicitly configured for this device), use it directly.
+    // Otherwise, fall back to appending the device ID to the base directory to avoid conflicts.
+    val deviceResultsDir =
+      if (deviceSpecificResultsDir != null && deviceSpecificResultsDir != baseResultsDir) {
+        deviceSpecificResultsDir.also { it.mkdirs() }
+      } else {
+        baseResultsDir?.let { dir ->
+          val targetDir = if (dir.name == deviceId) dir else File(dir, deviceId)
+          targetDir.also { it.mkdirs() }
+        }
+      }
+
+    val reporter =
+      deviceSpecificResultsDir?.let { SimpleXmlResultReporter(it, deviceId) }
+        ?: baseResultsDir?.let { SimpleXmlResultReporter(it, deviceId) }
+    val logcatCollector = deviceResultsDir?.let { LogcatCollector(it, config.adb.absolutePath) }
+
+    val deviceSpecificAdditionalTestOutputDirOnHost = config.getAdditionalTestOutputDirOnHost(deviceSerial)
+    val baseAdditionalTestOutputDirOnHost = config.getAdditionalTestOutputDirOnHost()
+    // Similar to resultsDir, use the device-specific path if explicitly configured,
+    // otherwise append deviceId to the base path.
+    val additionalOutputDirectoryOnHost =
+      if (
+        deviceSpecificAdditionalTestOutputDirOnHost != null &&
+          deviceSpecificAdditionalTestOutputDirOnHost != baseAdditionalTestOutputDirOnHost
+      ) {
+        deviceSpecificAdditionalTestOutputDirOnHost
+      } else {
+        baseAdditionalTestOutputDirOnHost?.let { dir -> if (dir.name == deviceId) dir else File(dir, deviceId) }
+      }
+
+    logger.info(
+      "Configuring AndroidAdditionalTestOutputCollector: hostDir=$additionalOutputDirectoryOnHost, deviceDir=${config.additionalTestOutputDirOnDevice}, testedApplicationId=${config.testedApplicationId}, useTestStorage=${config.useTestStorageService}"
+    )
+    val additionalTestOutputCollector =
+      AndroidAdditionalTestOutputCollector(
+        adbController = AdbController(config.adb),
+        deviceSerial = deviceSerial,
+        additionalOutputDirectoryOnHost = additionalOutputDirectoryOnHost,
+        additionalOutputDirectoryOnDevice = config.additionalTestOutputDirOnDevice,
+        instrumentationTargetPackageId = config.instrumentationTargetPackageId,
+        testedApplicationId = config.testedApplicationId,
+        testPackageId = config.testPackageId,
+        useTestStorageService = config.useTestStorageService,
+        runAsPackageName = config.instrumentationTargetPackageId,
+        deviceApiLevelProvider = deviceApiLevelProvider,
+      )
+
+    val isOrchestratorEnabled = config.executionMode?.uppercase() in listOf("ANDROIDX_TEST_ORCHESTRATOR", "ANDROID_TEST_ORCHESTRATOR")
+
+    val isCoverageActive = config.isTestCoverageEnabled || config.coverageType == AndroidTestConfiguration.CoverageType.ON_THE_FLY
+
+    val effectiveCoverageFileOnDevice =
+      config.coverageFileOnDevice.takeIf { !it.isNullOrBlank() }
+        ?: if (config.isTestCoverageEnabled && !isOrchestratorEnabled) {
+          if (config.useTestStorageService) {
+            "coverage.ec"
+          } else {
+            "/data/data/${config.instrumentationTargetPackageId}/coverage.ec"
+          }
+        } else {
+          null
+        }
+
+    val effectiveCoverageDirOnDevice =
+      config.coverageDirOnDevice.takeIf { !it.isNullOrBlank() }
+        ?: if (config.isTestCoverageEnabled && isOrchestratorEnabled) {
+          if (config.useTestStorageService) {
+            "coverage_data/"
+          } else {
+            "/data/data/${config.instrumentationTargetPackageId}/coverage_data/"
+          }
+        } else {
+          null
+        }
+
+    val deviceSpecificCoverageDirOnHost = config.getCoverageDirOnHost(deviceSerial)
+    val baseCoverageDirOnHost = config.getCoverageDirOnHost()
+    val coverageDirOnHost = deviceSpecificCoverageDirOnHost ?: baseCoverageDirOnHost
+
+    val agentFilesystemInfo = CoverageAgentFilesystemInfo()
+
+    val coverageCollector =
+      AndroidTestCoverageCollector(
+        adbController = AdbController(config.adb),
+        deviceSerial = deviceSerial,
+        coverageDirOnHost = coverageDirOnHost,
+        coverageFileOnDevice = effectiveCoverageFileOnDevice,
+        coverageDirOnDevice = effectiveCoverageDirOnDevice,
+        useTestStorageService = config.useTestStorageService,
+        additionalTestOutputCollector = additionalTestOutputCollector,
+        runAsPackageName = config.instrumentationTargetPackageId,
+        agentFilesystemInfo = agentFilesystemInfo,
+        deviceApiLevelProvider = deviceApiLevelProvider,
+      )
+
+    val deviceInfoFile =
+      deviceResultsDir?.let { dir ->
+        val file = File(dir, "device-info.pb")
+        try {
+          val deviceInfo = AndroidTestDeviceInfoCollector(AdbController(config.adb), deviceSerial).collect()
+          file.outputStream().use { deviceInfo.writeTo(it) }
+          file
+        } catch (t: Throwable) {
+          logger.log(Level.SEVERE, "failed to collect device info for $deviceSerial", t)
+          null
+        }
+      }
+
+    val listener = Listener(context, reporter, logcatCollector, deviceInfoFile, additionalTestOutputCollector)
+
+    val instrumentationArgs = config.instrumentationArgs.toMutableMap()
+    if (config.isEmulatorControlEnabled(deviceSerial)) {
+      val grpcInfo = findGrpcInfoProvider(deviceSerial)
+      instrumentationArgs["grpc.port"] = grpcInfo.port.toString()
+      grpcInfo.token?.let { instrumentationArgs["grpc.token"] = it }
+    }
+    if (isCoverageActive) {
+      instrumentationArgs["coverage"] = "true"
+      if (isOrchestratorEnabled) {
+        effectiveCoverageDirOnDevice?.let { instrumentationArgs["coverageFilePath"] = it }
+      } else {
+        effectiveCoverageFileOnDevice?.let { instrumentationArgs["coverageFile"] = it }
+      }
+    }
+    if (additionalOutputDirectoryOnHost != null) {
+      val additionalTestOutputOnDeviceDir = additionalTestOutputCollector.getEffectiveAdditionalOutputDirectoryOnDevice()
+      if (!additionalTestOutputOnDeviceDir.isNullOrBlank()) {
+        instrumentationArgs["additionalTestOutputDir"] = additionalTestOutputOnDeviceDir
+      }
+    }
+    val isInstrumentInPcc = config.instrumentInPcc
+    val usePcc =
+      if (isInstrumentInPcc) {
+        val deviceApiLevel = deviceApiLevelProvider.deviceApiLevel
+        if (deviceApiLevel >= 37) {
+          true
+        } else {
+          logger.warning(
+            "Private Compute Core instrumentation is enabled but device $deviceSerial " +
+              "(API $deviceApiLevel) does not support it. Private Compute Core instrumentation requires API 37+."
+          )
+          false
+        }
+      } else {
+        false
+      }
+
+    val instrumentationRunner =
+      instrumentationRunnerFactory(
+        config.adb,
+        deviceSerial,
+        config.instrumentationRunnerClass,
+        config.testPackageId,
+        config.instrumentationTargetPackageId,
+        config.executionMode,
+        instrumentationArgs,
+        setOf(listener),
+        agentFilesystemInfo,
+        usePcc,
+      )
+
+    val deviceSettingsController = DeviceSettingsController(config, deviceSerial, adbControllerFactory(config.adb))
+
+    val runner =
+      AndroidTestRunner(
+        adbApkInstaller,
+        instrumentationRunner,
+        config.instrumentationTargetPackageId,
+        config.getTestedApks(deviceSerial),
+        config.getTestApks(deviceSerial),
+        config.apkInstallOptions,
+        config.getTestUtilApks(deviceSerial),
+        config.uninstallApksAfterTests,
+        config.forceAotCompilation,
+        deviceSettingsController = deviceSettingsController,
+        onBeforeInstrumentation = {
+          additionalTestOutputCollector.prepare()
+          coverageCollector.prepare()
+
+          jvmtiCodeCoverageAgentPathProvider()?.let { (agentBinaryPath, dataDir) ->
+            agentFilesystemInfo.agentBinaryPathOnDevice = agentBinaryPath
+            agentFilesystemInfo.dataDirectoryOnDevice = dataDir
+          }
+        },
+        onTestFinished = {
+          additionalTestOutputCollector.collect()
+          coverageCollector.collect()
+        },
+      )
+
+    // We run the instrumentation runner in a separate thread so that it can discover and send
+    // test cases to the 'tests' channel while the main thread (the current one) consumes and
+    // executes them concurrently. This is essential for JUnit dynamic test execution to start
+    // as soon as tests are discovered on the device.
+    val runnerThread =
+      Thread(
+        {
+          try {
+            logcatCollector?.startCapture(deviceId, deviceSerial)
+            runner.run()
+          } catch (t: Throwable) {
+            logger.log(Level.SEVERE, "AndroidTestRunner failed on $deviceSerial", t)
+          } finally {
+            logcatCollector?.cleanup()
+            listener.finish()
+            // Close the channel once the instrumentation process finishes to signal that no
+            // more tests will be discovered.
+            tests.close()
+          }
+        },
+        "AndroidTestRunner-$deviceSerial",
+      )
+    runnerThread.start()
+
+    // Consume and process test discovery events from the instrumentation runner.
+    runBlocking {
+      for (testEvent in tests) {
+        when (testEvent) {
+          // As new tests are discovered on the device, we dynamically register and execute
+          // them within the JUnit engine.
+          is TestEvent.NewTest -> dynamicTestExecutor.execute(testEvent.descriptor)
+        }
+      }
+    }
+
+    return context
+  }
+
+  /**
+   * Bridges Android instrumentation events to JUnit dynamic tests and optional XML reporting.
+   *
+   * This listener implementation translates low-level instrumentation events (like `testStarted` and `testEnded`) into high-level JUnit
+   * [TestDescriptor] operations and optionally reports them to a [SimpleXmlResultReporter].
+   */
+  inner class Listener(
+    private val context: AndroidTestExecutionContext,
+    private val reporter: SimpleXmlResultReporter?,
+    private val logcatCollector: LogcatCollector?,
+    private val deviceInfoFile: File?,
+    private val additionalTestOutputCollector: AndroidAdditionalTestOutputCollector?,
+  ) : AmInstrumentationListener {
+
+    private val testDescriptors = ConcurrentHashMap<TestIdentifier, AndroidDynamicTestDescriptor>()
+
+    override fun instrumentationStarted(testCount: Int) {
+      reporter?.testRunStarted("android-test", testCount)
+
+      // We publish a ReportEntry with the testCount so that it can be picked up by listeners.
+      val testCountEntry = ReportEntry.from(AndroidTestReportKeys.TEST_COUNT, testCount.toString())
+      context.request.engineExecutionListener.reportingEntryPublished(this@AndroidDeviceDescriptor, testCountEntry)
+
+      // We publish a ReportEntry with the deviceDisplayName so that it can be used to determine the
+      // result directory name.
+      val displayNameEntry = ReportEntry.from(AndroidTestReportKeys.DEVICE_DISPLAY_NAME, this@AndroidDeviceDescriptor.deviceDisplayName)
+      context.request.engineExecutionListener.reportingEntryPublished(this@AndroidDeviceDescriptor, displayNameEntry)
+
+      deviceInfoFile?.let {
+        val deviceInfoEntry = ReportEntry.from(AndroidTestReportKeys.DEVICE_INFO_PATH, it.absolutePath)
+        context.request.engineExecutionListener.reportingEntryPublished(this@AndroidDeviceDescriptor, deviceInfoEntry)
+      }
+    }
+
+    /** Called when a test case starts on the device. */
+    override fun testStarted(testIdentifier: TestIdentifier) {
+      val packageName = testIdentifier.testPackage
+      val fullClassName = if (packageName.isNotEmpty()) "$packageName.${testIdentifier.testClass}" else testIdentifier.testClass
+
+      val uniqueId = this@AndroidDeviceDescriptor.uniqueId.append("test", "$fullClassName.${testIdentifier.testMethod}")
+      val displayName = "$fullClassName.${testIdentifier.testMethod}"
+      val testDescriptor = AndroidDynamicTestDescriptor(uniqueId, displayName, fullClassName, testIdentifier.testMethod)
+
+      testDescriptor.setParent(this@AndroidDeviceDescriptor)
+      testDescriptors[testIdentifier] = testDescriptor
+      tests.trySend(TestEvent.NewTest(testDescriptor)).getOrThrow()
+
+      reporter?.testStarted(DdmlibTestIdentifier(fullClassName, testIdentifier.testMethod))
+    }
+
+    /** Completes the [AndroidDynamicTestDescriptor.resultDeferred] for the corresponding test. */
+    override fun testEnded(testResult: TestResult) {
+      val testIdentifier = testResult.testIdentifier
+      val packageName = testIdentifier.testPackage
+      val fullClassName = if (packageName.isNotEmpty()) "$packageName.${testIdentifier.testClass}" else testIdentifier.testClass
+      val ddmlibTestId = DdmlibTestIdentifier(fullClassName, testIdentifier.testMethod)
+
+      if (testResult.status != AmInstrumentationParser.STATUS_CODE_OK) {
+        reporter?.testFailed(ddmlibTestId, testResult.stackTrace ?: "")
+      }
+      reporter?.testEnded(ddmlibTestId, emptyMap())
+
+      val benchmarkOutput = additionalTestOutputCollector?.addBenchmarkOutput(testResult)
+      val traceFiles = benchmarkOutput?.traceFiles ?: emptyList()
+      val messageFile = benchmarkOutput?.messageFile
+
+      val testDescriptor = testDescriptors[testIdentifier]
+      if (testDescriptor != null) {
+        if (traceFiles.isNotEmpty()) {
+          val paths = traceFiles.joinToString(",") { it.absolutePath }
+          val reportEntry = ReportEntry.from(AndroidTestReportKeys.BENCHMARK_TRACE_PATHS, paths)
+          context.request.engineExecutionListener.reportingEntryPublished(testDescriptor, reportEntry)
+        }
+        if (messageFile != null) {
+          val reportEntry = ReportEntry.from(AndroidTestReportKeys.BENCHMARK_MESSAGE_PATH, messageFile.absolutePath)
+          context.request.engineExecutionListener.reportingEntryPublished(testDescriptor, reportEntry)
+        }
+        val testName = "$packageName.${testIdentifier.testClass}.${testIdentifier.testMethod}"
+        val logcatPath = logcatCollector?.getLogcatPath(deviceId, testName)
+        if (logcatPath != null) {
+          val reportEntry = ReportEntry.from(AndroidTestReportKeys.LOGCAT_PATH, logcatPath)
+          context.request.engineExecutionListener.reportingEntryPublished(testDescriptor, reportEntry)
+        }
+        testDescriptor.resultDeferred.complete(testResult)
+      }
+    }
+
+    /** Handles instrumentation failures by completing all pending test results exceptionally. */
+    override fun instrumentationFailed(errorMessage: String) {
+      reporter?.testRunFailed(errorMessage)
+      val exception = RuntimeException(errorMessage)
+      testDescriptors.values.forEach {
+        if (!it.resultDeferred.isCompleted) {
+          it.resultDeferred.completeExceptionally(exception)
+        }
+      }
+    }
+
+    /** Handles unexpected instrumentation termination by completing all pending test results exceptionally. */
+    override fun instrumentationEnded(instrumentationResult: InstrumentationResult) {
+      reporter?.testRunEnded(0, emptyMap())
+      // In case of unexpected termination, ensure all pending results are completed exceptionally.
+      val exception = RuntimeException("Instrumentation ended unexpectedly")
+      testDescriptors.values.forEach {
+        if (!it.resultDeferred.isCompleted) {
+          it.resultDeferred.completeExceptionally(exception)
+        }
+      }
+    }
+
+    /** Ensures all pending results are completed exceptionally and signals completion. */
+    fun finish() {
+      // In case of unexpected termination, ensure all pending results are completed exceptionally.
+      val exception = RuntimeException("Instrumentation ended unexpectedly")
+      testDescriptors.values.forEach {
+        if (!it.resultDeferred.isCompleted) {
+          it.resultDeferred.completeExceptionally(exception)
+        }
+      }
+    }
+  }
+
+  /** A simple XML result reporter that uses ddmlib's [XmlTestRunListener] to generate JUnit XML files. */
+  inner class SimpleXmlResultReporter(reportDir: File, private val deviceName: String) : XmlTestRunListener() {
+    init {
+      setReportDir(reportDir)
+    }
+
+    override fun getResultFile(reportDir: File): File {
+      return File(reportDir, "TEST-$deviceName.xml")
+    }
+
+    override fun getPropertiesAttributes(): Map<String, String> {
+      return mapOf("device" to deviceName)
+    }
+
+    override fun testRunEnded(elapsedTime: Long, runMetrics: Map<String, String>?) {
+      super.testRunEnded(elapsedTime, runMetrics)
+    }
+  }
+}

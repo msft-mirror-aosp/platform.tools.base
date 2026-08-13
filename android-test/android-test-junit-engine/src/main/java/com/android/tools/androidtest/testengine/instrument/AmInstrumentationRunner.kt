@@ -16,7 +16,7 @@
 
 package com.android.tools.androidtest.testengine.instrument
 
-import com.android.tools.androidtest.testengine.CoverageAgentFilesystemInfo
+import com.android.tools.androidtest.testengine.collector.CoverageAgentFilesystemInfo
 import java.io.File
 import java.util.logging.Logger
 

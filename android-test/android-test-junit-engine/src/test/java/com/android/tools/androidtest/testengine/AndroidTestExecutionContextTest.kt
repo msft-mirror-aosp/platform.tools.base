@@ -16,6 +16,8 @@
 
 package com.android.tools.androidtest.testengine
 
+import com.android.tools.androidtest.testengine.config.AndroidTestConfiguration
+import com.android.tools.androidtest.testengine.config.AndroidTestConfigurationKeys
 import com.google.common.truth.Truth.assertThat
 import java.io.File
 import java.util.Optional
