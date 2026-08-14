@@ -43,6 +43,9 @@ message BlockMetadata {
   // The number of possible execution branches originating from this block.
   // For example, a block ending in an 'if' will have 2 branches.
   uint32 branch_count = 3;
+
+  // Unique block IDs of successor basic blocks in the control flow graph.
+  repeated uint32 successor_block_ids = 4;
 }
 
 // Metadata for a single method.

@@ -100,14 +100,22 @@ class ReportAggregator {
           if (isHit) methodHit = true
           val blockBranches = blockMeta.branchCount.toInt()
 
-          // Branch counter logic:
+          // Exact branch coverage reconstruction using successor hits:
+          var coveredBranches = 0
           if (blockBranches > 1) {
-            if (isHit) {
-              method.branches.covered += 1
-              method.branches.missed += (blockBranches - 1)
-            } else {
-              method.branches.missed += blockBranches
+            coveredBranches = blockMeta.successorBlockIdsList.count { succId ->
+              data.hits.get(succId.toInt())
             }
+            if (coveredBranches > blockBranches) {
+              coveredBranches = blockBranches.toInt()
+            }
+            // An executed conditional line must show at least 1 covered branch.
+            if (isHit && coveredBranches == 0) {
+              coveredBranches = 1
+            }
+
+            method.branches.covered += coveredBranches
+            method.branches.missed += (blockBranches.toInt() - coveredBranches)
           }
 
           for (lineMeta in blockMeta.linesList) {
@@ -125,12 +133,8 @@ class ReportAggregator {
 
             // Line-level branch aggregation
             if (blockBranches > 1) {
-              if (isHit) {
-                lineStats.cb += 1
-                lineStats.mb += (blockBranches - 1)
-              } else {
-                lineStats.mb += blockBranches
-              }
+              lineStats.cb += coveredBranches
+              lineStats.mb += (blockBranches.toInt() - coveredBranches)
             }
           }
         }

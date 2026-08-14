@@ -385,7 +385,7 @@ bool Instrumenter::InstrumentMethod(
     instr_to_line[instr] = current_line;
   }
 
-  lir::ControlFlowGraph cfg(&code_ir, true);
+  lir::ControlFlowGraph cfg(&code_ir, false);
 
   // Use a local structure to hold block metadata until we are certain
   // instrumentation succeeded.
@@ -393,8 +393,11 @@ bool Instrumenter::InstrumentMethod(
     uint32_t id;
     std::vector<std::pair<int32_t, uint32_t>> line_counts;
     uint32_t branch_count;
+    std::vector<uint32_t> successor_block_ids;
+    const lir::BasicBlock* original_block;
   };
   std::vector<PendingBlock> pending_blocks;
+  std::unordered_map<lir::Instruction*, uint32_t> instr_to_block_id;
 
   bool injected = false;
   for (const auto& block : cfg.basic_blocks) {
@@ -518,8 +521,20 @@ bool Instrumenter::InstrumentMethod(
           branch_count = 1;  // Unconditional branch (e.g., GOTO)
         }
       } else if (flags & dex::kSwitch) {
-        // TODO: Parse the switch payload to get the exact target count.
-        branch_count = 2;
+        branch_count = 2;  // Safe fallback
+        if (last_bytecode->operands.size() >= 2) {
+          if (auto* code_loc = dynamic_cast<lir::CodeLocation*>(last_bytecode->operands[1])) {
+            if (auto* label = code_loc->label) {
+              if (auto* payload = label->next) {
+                if (auto* packed_payload = dynamic_cast<lir::PackedSwitchPayload*>(payload)) {
+                  branch_count = packed_payload->targets.size() + 1;
+                } else if (auto* sparse_payload = dynamic_cast<lir::SparseSwitchPayload*>(payload)) {
+                  branch_count = sparse_payload->switch_cases.size() + 1;
+                }
+              }
+            }
+          }
+        }
       } else if (flags & (dex::kReturn | dex::kThrow)) {
         branch_count = 0;  // Terminal block (no successors)
       }
@@ -555,11 +570,103 @@ bool Instrumenter::InstrumentMethod(
       pending.line_counts.push_back(entry);
     }
     pending.branch_count = branch_count;
+    pending.original_block = &block;
     pending_blocks.push_back(std::move(pending));
+
+    // Map each instruction in this block to its assigned block_id for Pass 2 resolution
+    for (auto* instr = block.region.first; instr != nullptr;
+         instr = (instr == block.region.last) ? nullptr : instr->next) {
+      instr_to_block_id[instr] = block_id;
+    }
   }
 
   if (!injected) {
     return false;
+  }
+
+  // Pass 2: Resolve successor block IDs for each pending block in the control flow graph
+  for (auto& pb : pending_blocks) {
+    const auto& block = *pb.original_block;
+    std::vector<uint32_t> successor_ids;
+
+    if (auto* last_bytecode = dynamic_cast<lir::Bytecode*>(block.region.last)) {
+      auto flags = dex::GetFlagsFromOpcode(last_bytecode->opcode);
+      if (flags & dex::kBranch) {
+        // Unconditional or conditional branches/jumps
+        for (auto* operand : last_bytecode->operands) {
+          if (auto* code_loc = dynamic_cast<lir::CodeLocation*>(operand)) {
+            if (auto* label = code_loc->label) {
+              auto it = instr_to_block_id.find(label);
+              if (it != instr_to_block_id.end()) {
+                successor_ids.push_back(it->second);
+              }
+            }
+          }
+        }
+        // Conditional branch also continues to next block sequentially
+        if (flags & dex::kContinue) {
+          if (auto* next_instr = last_bytecode->next) {
+            auto it = instr_to_block_id.find(next_instr);
+            if (it != instr_to_block_id.end()) {
+              successor_ids.push_back(it->second);
+            }
+          }
+        }
+      } else if (flags & dex::kSwitch) {
+        // Switch targets from switch table payload
+        if (last_bytecode->operands.size() >= 2) {
+          if (auto* code_loc = dynamic_cast<lir::CodeLocation*>(last_bytecode->operands[1])) {
+            if (auto* label = code_loc->label) {
+              if (auto* payload = label->next) {
+                if (auto* packed_payload = dynamic_cast<lir::PackedSwitchPayload*>(payload)) {
+                  for (auto* target : packed_payload->targets) {
+                    auto it = instr_to_block_id.find(target);
+                    if (it != instr_to_block_id.end()) {
+                      successor_ids.push_back(it->second);
+                    }
+                  }
+                } else if (auto* sparse_payload = dynamic_cast<lir::SparseSwitchPayload*>(payload)) {
+                  for (const auto& switch_case : sparse_payload->switch_cases) {
+                    auto it = instr_to_block_id.find(switch_case.target);
+                    if (it != instr_to_block_id.end()) {
+                      successor_ids.push_back(it->second);
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        // Switch also continues on default fallback
+        if (auto* next_instr = last_bytecode->next) {
+          auto it = instr_to_block_id.find(next_instr);
+          if (it != instr_to_block_id.end()) {
+            successor_ids.push_back(it->second);
+          }
+        }
+      } else if (!(flags & (dex::kReturn | dex::kThrow))) {
+        // Standard sequential flow
+        if (auto* next_instr = last_bytecode->next) {
+          auto it = instr_to_block_id.find(next_instr);
+          if (it != instr_to_block_id.end()) {
+            successor_ids.push_back(it->second);
+          }
+        }
+      }
+    } else {
+      // Non-bytecode sequential flow
+      if (auto* next_instr = block.region.last->next) {
+        auto it = instr_to_block_id.find(next_instr);
+        if (it != instr_to_block_id.end()) {
+          successor_ids.push_back(it->second);
+        }
+      }
+    }
+
+    // Deduplicate successor block IDs
+    std::sort(successor_ids.begin(), successor_ids.end());
+    successor_ids.erase(std::unique(successor_ids.begin(), successor_ids.end()), successor_ids.end());
+    pb.successor_block_ids = std::move(successor_ids);
   }
 
   // Instrumentation succeeded. Commit metadata to the collector.
@@ -569,7 +676,7 @@ bool Instrumenter::InstrumentMethod(
 
   for (const auto& pb : pending_blocks) {
     MetadataCollector::Instance().AddBlock(method_meta, pb.id, pb.line_counts,
-                                           pb.branch_count);
+                                           pb.branch_count, pb.successor_block_ids);
   }
 
   code_ir.Assemble();
