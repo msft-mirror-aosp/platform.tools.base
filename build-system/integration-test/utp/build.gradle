@@ -33,6 +33,5 @@ dependencies {
     implementation libs.kotlin_stdlib
     implementation gradleApi()
     implementation(project(':base:build-system:gradle-core'))
-    implementation libs.unified_test_platform
     implementation libs.android_test_result_proto
 }
