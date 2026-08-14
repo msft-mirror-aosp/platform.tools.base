@@ -26,17 +26,11 @@ import com.android.tools.ui.inspector.common.ProtocolConstants
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.nio.file.StandardCopyOption
 import java.util.UUID
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReference
-import kotlin.io.path.extension
-import kotlin.io.path.invariantSeparatorsPathString
-import kotlin.io.path.nameWithoutExtension
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
 
 /** The name of the agent binary file. */
 private const val AGENT_FILE_NAME = "lib_ui_inspector_agent.so"
@@ -58,16 +52,6 @@ private const val HOST_SERVICE_JAR_PATH = "tools/base/ui-inspector/agent/service
 
 /** Default resolver that locates the agent binary in the Bazel runfiles directory. It uses the device ABI to find the correct binary. */
 private val DEFAULT_AGENT_PATH_RESOLVER: (String) -> Path = { abi -> Paths.get(HOST_AGENT_PATH, abi, AGENT_FILE_NAME) }
-
-/** The per-app setting that makes the platform expose attribute resolution stacks for a single package. */
-private const val DEBUG_VIEW_ATTRIBUTES_PACKAGE_SETTING = "debug_view_attributes_application_package"
-
-/** Marker separating the two `settings get` outputs when both settings are read in a single shell invocation. */
-private const val SETTINGS_OUTPUT_SEPARATOR = "__UI_INSPECTOR_SETTINGS_SEPARATOR__"
-
-/** Reads the global and per-app debug-view-attributes settings in one shell invocation. */
-private const val READ_DEBUG_VIEW_ATTRIBUTES_CMD =
-  "settings get global debug_view_attributes ; echo $SETTINGS_OUTPUT_SEPARATOR ; settings get global $DEBUG_VIEW_ATTRIBUTES_PACKAGE_SETTING"
 
 /**
  * Manages the lifecycle of injecting and attaching the native agent to a target application.
@@ -98,6 +82,8 @@ class InjectionManager(
   private val deviceSelector = DeviceSelector.fromSerialNumber(serial)
   private val uidResolver = UidResolver(adbSession, deviceSelector)
   private val artifactStaging = ArtifactStaging(adbSession, deviceSelector, tempFileSuffixGenerator)
+  private val debugViewAttributes = DebugViewAttributes(adbSession, deviceSelector, packageName)
+  private val agentSocketChecker = AgentSocketChecker(adbSession, deviceSelector)
 
   /** The local TCP spec of the adb forward created by [injectAndAttach]. Cleared by [removeAdbForward]. */
   private val forwardedPortSpec = AtomicReference<SocketSpec.Tcp?>(null)
@@ -115,7 +101,7 @@ class InjectionManager(
    *
    * @param needsDebugViewAttributes Whether the platform must expose attribute resolution stacks for the inspected app, i.e. whether the
    *   `resolution-stack` facet was requested. When true, the per-app debug-view-attributes setting is enabled (see
-   *   [enableDebugViewAttributes]) on both the reconnect and full paths — the setting is independent of the server lifecycle; when false,
+   *   [DebugViewAttributes.enable]) on both the reconnect and full paths — the setting is independent of the server lifecycle; when false,
    *   device settings are left untouched.
    * @param mode Whether a running agent server may be reused; see [InjectionMode].
    * @return An [InjectionResult] carrying the forwarded TCP port and how the server was obtained.
@@ -161,8 +147,8 @@ class InjectionManager(
 
     return when (mode) {
       InjectionMode.RECONNECT_IF_AVAILABLE ->
-        if (isAgentSocketPresent(deviceSelector, socketName)) {
-          if (needsDebugViewAttributes) enableDebugViewAttributes()
+        if (agentSocketChecker.isPresent(socketName)) {
+          if (needsDebugViewAttributes) debugViewAttributes.enable()
           InjectionResult.Reconnected(setupAdbForward(deviceSelector, socketName))
         } else {
           performFullInjection(
@@ -200,7 +186,7 @@ class InjectionManager(
     // (installed, debuggable, and running under the current user).
     val appDataDir = queryAppDataDir(deviceSelector, packageName)
 
-    val debugViewAttributesSetup = async { if (needsDebugViewAttributes) enableDebugViewAttributes() }
+    val debugViewAttributesSetup = async { if (needsDebugViewAttributes) debugViewAttributes.enable() }
 
     val serviceJarName = fileNameWithHash(SERVICE_JAR_FILE_NAME, digests.serviceJar)
     val payloadJarName = fileNameWithHash(PAYLOAD_JAR_FILE_NAME, digests.payloadJar)
@@ -216,41 +202,13 @@ class InjectionManager(
 
     installFiles(deviceSelector, packageName, agentStagePath, serviceJarStagePath, payloadJarStagePath, serviceJarName, payloadJarName)
 
-    val deviceTime = queryDeviceTime(deviceSelector)
+    val attachStartTime = captureAttachStartTime()
     attachAgent(deviceSelector, pid, serverToken, appDataDir, serviceJarName, payloadJarName)
 
     val socketName = ProtocolConstants.getSocketName(serverToken)
-    waitForAgentSocket(deviceSelector, socketName, pid, deviceTime)
+    agentSocketChecker.waitUntilPresent(socketName, pid, attachStartTime)
 
     InjectionResult.Injected(setupAdbForward(deviceSelector, socketName))
-  }
-
-  /**
-   * Makes the platform expose attribute resolution stacks for the inspected app by enabling the per-app
-   * [DEBUG_VIEW_ATTRIBUTES_PACKAGE_SETTING] setting.
-   *
-   * The setting is read before writing: if the global `debug_view_attributes` is already enabled (developer options, or residue from older
-   * builds of this tool that set it globally) or the per-app setting already names [packageName], no device mutation happens. When the
-   * setting is actually flipped it is left set. Changing it in either direction restarts the app's activities, so clearing it per run would
-   * pay two restarts. Set-and-leave confines the restart to the first resolution-stack request per app.
-   */
-  private suspend fun enableDebugViewAttributes() {
-    val output = runShellCommand(deviceSelector, READ_DEBUG_VIEW_ATTRIBUTES_CMD).stdout
-    val values = output.split(SETTINGS_OUTPUT_SEPARATOR)
-    if (values.size != 2) {
-      throw IllegalStateException("Unexpected output while reading debug-view-attributes settings: $output")
-    }
-    // `settings get` prints the literal "null" for an unset key; exact comparisons below treat it as any other non-matching value.
-    val global = values[0].trim()
-    val perApp = values[1].trim()
-    if (global == "1" || perApp == packageName) {
-      return
-    }
-    runShellCommand(deviceSelector, "settings put global $DEBUG_VIEW_ATTRIBUTES_PACKAGE_SETTING $packageName")
-    System.err.println(
-      "Enabled view-attribute debugging for $packageName: its activities will restart now, and the setting stays enabled for this app. " +
-        "Clear it with: adb shell settings delete global $DEBUG_VIEW_ATTRIBUTES_PACKAGE_SETTING"
-    )
   }
 
   /** Sets up adb port forwarding to the agent. */
@@ -275,85 +233,6 @@ class InjectionManager(
       throw e
     } catch (e: Exception) {
       System.err.println("Warning: failed to remove adb forward ${localSpec.toQueryString()}: ${e.message}")
-    }
-  }
-
-  /**
-   * Returns whether an abstract socket named exactly [socketName] is currently bound on the device, by matching the path field of
-   * /proc/net/unix entries (abstract sockets are listed with a leading `@`). Exact matching prevents a socket whose name merely starts with
-   * [socketName] from counting as present.
-   */
-  private suspend fun isAgentSocketPresent(deviceSelector: DeviceSelector, socketName: String): Boolean {
-    // The whole file is read and matched host-side: a device-side filter would fold a failing read and a missing socket into the same
-    // empty output, and a read failure is not authoritative absence — runShellCommand throws on it instead.
-    val output = runShellCommand(deviceSelector, "cat /proc/net/unix").stdout
-    return output.lineSequence().any { line ->
-      val path = line.trim().split(WHITESPACE_REGEX).lastOrNull()
-      path == socketName || path == "@$socketName"
-    }
-  }
-
-  /**
-   * Waits for the abstract socket to appear in /proc/net/unix. Since the agent acts as the server, we must wait for it to create the socket
-   * before the host can connect to it.
-   */
-  private suspend fun waitForAgentSocket(deviceSelector: DeviceSelector, socketName: String, pid: String, deviceTime: String?) {
-    val maxAttempts = 10
-    var attempts = 0
-    var delayMs = 100L
-    while (attempts < maxAttempts) {
-      if (isAgentSocketPresent(deviceSelector, socketName)) {
-        return
-      }
-
-      if (attempts >= 2) {
-        // If the agent already logged a bootstrap error, throw it immediately, to avoid exponential backoff.
-        val agentError = readAgentErrorFromLogcat(deviceSelector, pid, deviceTime)
-        if (agentError != null) {
-          throw IllegalStateException("Failed to attach UI Inspector agent. Agent error in logcat:\n$agentError")
-        }
-      }
-
-      attempts++
-      delay(delayMs)
-      delayMs = (delayMs * 2).coerceAtMost(1000L)
-    }
-    throw IllegalStateException("Timed out waiting for agent socket $socketName")
-  }
-
-  /**
-   * Queries logcat for error logs produced by the UI Inspector agent. Filters logs by the target app's PID and the agent's known logging
-   * tags.
-   */
-  private suspend fun readAgentErrorFromLogcat(deviceSelector: DeviceSelector, pid: String, deviceTime: String?): String? {
-    try {
-      // Query error logs for this process ID, optionally filtering since the start of this injection attempt
-      val timeFilter = if (deviceTime != null) " -t '$deviceTime'" else ""
-      val cmd = "logcat -d$timeFilter --pid=$pid *:E"
-      val output = adbSession.deviceServices.shellAsText(deviceSelector, cmd).stdout.trim()
-      if (output.isEmpty()) return null
-
-      val uiInspectorLogs = output.lines().filter { line -> line.contains(ProtocolConstants.LOG_TAG_PREFIX) }
-
-      return if (uiInspectorLogs.isNotEmpty()) uiInspectorLogs.joinToString("\n") else null
-    } catch (e: CancellationException) {
-      throw e
-    } catch (e: Exception) {
-      return null
-    }
-  }
-
-  /** Queries the device for its current time in a logcat-compatible format. */
-  private suspend fun queryDeviceTime(deviceSelector: DeviceSelector): String? {
-    return try {
-      // Format matching logcat timestamp: "MM-DD HH:MM:SS.000"
-      val result = adbSession.deviceServices.shellAsText(deviceSelector, "date +\"%m-%d %H:%M:%S.000\"")
-      val stdout = result.stdout.trim()
-      if (result.exitCode == 0 && stdout.isNotEmpty()) stdout else null
-    } catch (e: CancellationException) {
-      throw e
-    } catch (e: Exception) {
-      null
     }
   }
 
@@ -391,6 +270,24 @@ class InjectionManager(
     } catch (e: CancellationException) {
       throw e
     } catch (_: Exception) {
+      null
+    }
+  }
+
+  /**
+   * Reads the device's current time in logcat format, marking the start of an attach attempt: captured just before `attach-agent` runs, so
+   * everything the agent logs during the attach can be found by the later diagnostics. Null when the device clock cannot be read; the
+   * logcat search then simply runs unbounded.
+   */
+  private suspend fun captureAttachStartTime(): String? {
+    return try {
+      // Format matching logcat timestamp: "MM-DD HH:MM:SS.000"
+      val result = adbSession.deviceServices.shellAsText(deviceSelector, "date +\"%m-%d %H:%M:%S.000\"")
+      val stdout = result.stdout.trim()
+      if (result.exitCode == 0 && stdout.isNotEmpty()) stdout else null
+    } catch (e: CancellationException) {
+      throw e
+    } catch (e: Exception) {
       null
     }
   }
@@ -434,25 +331,6 @@ class InjectionManager(
   /** Resolves the local path to the payload jar. */
   private fun getPayloadJarLocalPath(): Path {
     return resolveLocalPathOrExtractFromClasspath(payloadJarPath)
-  }
-
-  private fun resolveLocalPathOrExtractFromClasspath(path: Path): Path {
-    if (path.toFile().exists()) {
-      // Use direct filesystem path when running from local builds, Bazel runfiles, or tests.
-      return path
-    }
-    val resourcePath = "/" + path.invariantSeparatorsPathString
-    return extractedResourcesCache.computeIfAbsent(resourcePath) { pathStr ->
-      val stream =
-        javaClass.getResourceAsStream(pathStr)
-          ?: throw IllegalStateException("File not found on filesystem at $path nor in classpath resources at $pathStr")
-      val prefix = "ui_inspector_${path.nameWithoutExtension}_"
-      val suffix = if (path.extension.isNotEmpty()) ".${path.extension}" else ".tmp"
-      val tempFile = Files.createTempFile(prefix, suffix)
-      tempFile.toFile().deleteOnExit()
-      stream.use { input -> Files.copy(input, tempFile, StandardCopyOption.REPLACE_EXISTING) }
-      tempFile
-    }
   }
 
   /** Copies the staged artifacts into the app's private data directory by running [buildInstallCommand]. */
@@ -525,11 +403,8 @@ class InjectionManager(
   }
 
   companion object {
-    /** Cache of resources extracted to temporary disk files, ensuring each resource is only extracted once per JVM lifecycle. */
-    private val extractedResourcesCache = ConcurrentHashMap<String, Path>()
     private val PACKAGE_NAME_REGEX = Regex("^[a-zA-Z0-9._]+$")
     private val SERIAL_REGEX = Regex("^[a-zA-Z0-9.:_-]+$")
-    private val WHITESPACE_REGEX = Regex("\\s+")
 
     private fun validatePackageName(packageName: String) {
       require(packageName.length <= 255 && PACKAGE_NAME_REGEX.matches(packageName)) { "Invalid package name: $packageName" }
