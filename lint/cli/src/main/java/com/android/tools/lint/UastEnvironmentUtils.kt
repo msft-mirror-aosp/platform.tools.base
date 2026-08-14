@@ -47,7 +47,6 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.impl.CoreProgressManager
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.KeyedExtensionCollector
-import com.intellij.openapi.util.registry.Registry
 import com.intellij.openapi.vfs.StandardFileSystems
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.syntax.psi.CommonElementTypeConverterFactory
@@ -75,8 +74,8 @@ import org.jetbrains.kotlin.analysis.api.projectStructure.KaModule
 import org.jetbrains.kotlin.analysis.api.standalone.base.projectStructure.PluginStructureProvider
 import org.jetbrains.kotlin.analysis.api.standalone.base.projectStructure.StandaloneProjectFactory
 import org.jetbrains.kotlin.analysis.decompiler.konan.KlibMetaFileType
+import org.jetbrains.kotlin.analysis.project.structure.builder.KaModuleContainerBuilder
 import org.jetbrains.kotlin.analysis.project.structure.builder.KtModuleBuilder
-import org.jetbrains.kotlin.analysis.project.structure.builder.KtModuleProviderBuilder
 import org.jetbrains.kotlin.analysis.project.structure.builder.buildKtLibraryModule
 import org.jetbrains.kotlin.analysis.project.structure.builder.buildKtScriptModule
 import org.jetbrains.kotlin.analysis.project.structure.builder.buildKtSdkModule
@@ -91,19 +90,20 @@ import org.jetbrains.kotlin.config.JVMConfigurationKeys
 import org.jetbrains.kotlin.config.LanguageFeature
 import org.jetbrains.kotlin.config.LanguageVersionSettings
 import org.jetbrains.kotlin.config.LanguageVersionSettingsImpl
+import org.jetbrains.kotlin.config.MessageCollectorAccess
 import org.jetbrains.kotlin.library.components.KlibMetadataConstants.KLIB_METADATA_FILE_EXTENSION
 import org.jetbrains.kotlin.platform.CommonPlatforms
 import org.jetbrains.kotlin.platform.has
 import org.jetbrains.kotlin.platform.jvm.JvmPlatform
 import org.jetbrains.kotlin.platform.jvm.JvmPlatforms
 import org.jetbrains.kotlin.psi.KtFile
-import org.jetbrains.kotlin.resolve.diagnostics.DiagnosticSuppressor
 import org.jetbrains.uast.UastContext
 import org.jetbrains.uast.UastLanguagePlugin
 import org.jetbrains.uast.evaluation.UEvaluatorExtension
 import org.jetbrains.uast.java.JavaUastLanguagePlugin
 import org.jetbrains.uast.kotlin.evaluation.KotlinEvaluatorExtension
 
+@OptIn(MessageCollectorAccess::class)
 internal fun createCommonKotlinCompilerConfig(): CompilerConfiguration {
   val config = CompilerConfiguration.create()
 
@@ -172,7 +172,7 @@ internal fun configureProjectEnvironment(project: MockProject, config: UastEnvir
 }
 
 @OptIn(KaImplementationDetail::class, KaExperimentalApi::class)
-internal fun configureAnalysisApiProjectStructure(config: UastEnvironment.Configuration): KtModuleProviderBuilder.() -> Unit = {
+internal fun configureAnalysisApiProjectStructure(config: UastEnvironment.Configuration): KaModuleContainerBuilder.() -> Unit = {
   val isKMP = config.isKMP
   // The platform of the module provider, not individual modules
   platform = if (isKMP) CommonPlatforms.defaultCommonPlatform else JvmPlatforms.defaultJvmPlatform
@@ -383,9 +383,6 @@ internal fun configureApplicationEnvironment(appEnv: CoreApplicationEnvironment,
     Logger.setFactory(::IdeaLoggerForLint)
   }
 
-  // Mark the registry as loaded, otherwise there are warnings upon registry value lookup.
-  Registry.markAsLoaded()
-
   // The Kotlin compiler does not use UAST, so we must configure it ourselves.
   CoreApplicationEnvironment.registerApplicationExtensionPoint(UastLanguagePlugin.EP, UastLanguagePlugin::class.java)
   CoreApplicationEnvironment.registerApplicationExtensionPoint(UEvaluatorExtension.EXTENSION_POINT_NAME, UEvaluatorExtension::class.java)
@@ -411,6 +408,11 @@ internal fun configureApplicationEnvironment(appEnv: CoreApplicationEnvironment,
   // intellij/java/java-psi-impl/src/com/intellij/psi/impl/source/resolve/graphInference/constraints/PsiMethodReferenceCompatibilityConstraint.java
   System.setProperty("unsound.capture.conversion.java.spec.change", "false")
 
+  // Defined in: intellij/java/java-psi-impl/resources/intellij.java.psi.impl.xml
+  // Used by:
+  // intellij/java/java-psi-impl/src/com/intellij/psi/impl/compiled/StubBuildingVisitor.java
+  System.setProperty("java.dont.convert.digits.after.dollar.name", "true")
+
   appEnv.addExtension(UastLanguagePlugin.EP, JavaUastLanguagePlugin())
   appEnv.addExtension(UEvaluatorExtension.EXTENSION_POINT_NAME, KotlinEvaluatorExtension())
   appEnv.addExtension(UastLanguagePlugin.EP, DeclarativeUastLanguagePlugin())
@@ -421,7 +423,6 @@ internal fun configureApplicationEnvironment(appEnv: CoreApplicationEnvironment,
   // These extensions points seem to be needed too, probably because Lint
   // triggers different IntelliJ code paths than the Kotlin compiler does.
   CoreApplicationEnvironment.registerApplicationExtensionPoint(CustomExceptionHandler.KEY, CustomExceptionHandler::class.java)
-  CoreApplicationEnvironment.registerApplicationExtensionPoint(DiagnosticSuppressor.EP_NAME, DiagnosticSuppressor::class.java)
   CoreApplicationEnvironment.registerApplicationExtensionPoint(
     LanguageFeatureProvider.EXTENSION_POINT_NAME,
     LanguageFeatureProvider::class.java,
