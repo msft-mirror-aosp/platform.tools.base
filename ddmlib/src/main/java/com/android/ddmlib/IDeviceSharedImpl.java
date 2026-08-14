@@ -23,8 +23,10 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.AndroidVersionUtil;
+
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
@@ -34,6 +36,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 /**
  * This is a helper class that should be used only by `DeviceImpl` and `AdblibIDeviceWrapper` for
@@ -50,6 +53,8 @@ public class IDeviceSharedImpl {
 
     private static final long LS_TIMEOUT_SEC = 2;
     private static final char DEVICE_NAME_SEPARATOR = '-';
+
+    private static final Pattern PACKAGE_NAME_REGEX = Pattern.compile("[a-zA-Z0-9._]+");
 
     /** Path to the screen recorder binary on the device. */
     private static final String SCREEN_RECORDER_DEVICE_PATH = "/system/bin/screenrecord";
@@ -256,6 +261,11 @@ public class IDeviceSharedImpl {
     }
 
     public void forceStop(String applicationName) {
+        if (!isValidPackageName(applicationName)) {
+            Log.w(LOG_TAG, "forceStop: refusing invalid package name: " + applicationName);
+            return;
+        }
+
         try {
             // Force stop the app, even in case it's in the crashed state.
             iDevice.executeShellCommand(
@@ -268,6 +278,11 @@ public class IDeviceSharedImpl {
     }
 
     public void kill(String applicationName) {
+        if (!isValidPackageName(applicationName)) {
+            Log.w(LOG_TAG, "kill: refusing invalid package name: " + applicationName);
+            return;
+        }
+
         try {
             // Kills the app, even in case it's in the crashed state.
             iDevice.executeShellCommand("am kill " + applicationName, new NullOutputReceiver());
@@ -276,6 +291,10 @@ public class IDeviceSharedImpl {
                 | AdbCommandRejectedException
                 | ShellCommandUnresponsiveException ignored) {
         }
+    }
+
+    private static boolean isValidPackageName(String applicationName) {
+        return applicationName != null && PACKAGE_NAME_REGEX.matcher(applicationName).matches();
     }
 
     private boolean hasBinary(String path) {
