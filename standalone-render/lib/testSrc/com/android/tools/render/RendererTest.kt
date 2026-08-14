@@ -180,4 +180,34 @@ class RendererTest {
     assertEquals(1, messages.size)
     assertEquals("Couldn't resolve resource @string/hello", messages[0].html)
   }
+
+  @Test
+  fun testRenderComposeScreenshotWithEmptyPreviewParamsDiscoversAnnotations() {
+    val layoutlibPath = TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib")
+
+    val bootstrapper =
+      RenderEnvironmentBootstrapper(
+        fontsPath = null,
+        resourceApkPath = null,
+        namespace = "",
+        classPath = emptyList(),
+        projectClassPath = emptyList(),
+        layoutlibPath = layoutlibPath.absolutePathString(),
+      )
+    val outputDir = tmpFolder.newFolder("output_screenshots").absolutePath
+    val screenshot =
+      com.android.tools.render.compose.ComposeScreenshot(
+        previewId = "preview_auto_discover",
+        methodFQN = "${com.android.tools.render.discovery.SamplePreviewTarget::class.java.name}.sampleAnnotatedPreview",
+        previewParams = emptyMap(),
+        methodParams = emptyList(),
+      )
+
+    val results = bootstrapper.bootstrap().use { renderer -> renderer.render(screenshot, outputDir) }
+
+    assertEquals(1, results.size)
+    val result = results[0]
+    assertEquals("preview_auto_discover", result.previewId)
+    assertEquals("${com.android.tools.render.discovery.SamplePreviewTarget::class.java.name}.sampleAnnotatedPreview", result.methodFQN)
+  }
 }
