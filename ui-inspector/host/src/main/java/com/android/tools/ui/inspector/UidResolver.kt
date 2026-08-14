@@ -18,7 +18,6 @@ package com.android.tools.ui.inspector
 
 import com.android.adblib.AdbSession
 import com.android.adblib.DeviceSelector
-import com.android.adblib.ShellCommandOutput
 import com.android.adblib.shellAsText
 
 /** An installed package and the Android user 0 UID that owns it. */
@@ -42,12 +41,13 @@ internal class UidResolver(private val adbSession: AdbSession, private val devic
   /** Queries the device for the UID owning [packageName] under Android user 0; null when the package is not installed there. */
   suspend fun packageUid(packageName: String): Int? {
     // The pm positional filter matches substrings, so the exact package is selected from the parsed result below.
-    val output = runCommand("pm list packages -U --user 0 $packageName").stdout
+    val output = adbSession.deviceServices.shellAsTextOrThrow(deviceSelector, "pm list packages -U --user 0 $packageName").stdout
     return parsePackageUids(output).firstOrNull { it.packageName == packageName }?.uid
   }
 
   /** Queries the device for every package installed under Android user 0 and its owning UID. */
-  suspend fun allPackageUids(): List<PackageUid> = parsePackageUids(runCommand("pm list packages -U --user 0").stdout)
+  suspend fun allPackageUids(): List<PackageUid> =
+    parsePackageUids(adbSession.deviceServices.shellAsTextOrThrow(deviceSelector, "pm list packages -U --user 0").stdout)
 
   /** Queries the device for the UID owning the process with [pid]; null when the process no longer exists. */
   suspend fun processUid(pid: String): Int? {
@@ -57,16 +57,8 @@ internal class UidResolver(private val adbSession: AdbSession, private val devic
   }
 
   /** Queries the device for the IDs of all processes owned by [uid], preserving `ps` row order. */
-  suspend fun pidsForUid(uid: Int): List<String> = parsePidsForUid(runCommand("ps -A -o PID,UID,NAME").stdout, uid)
-
-  /** Runs [command] on the device, throwing on a nonzero exit: a failed command is a command failure, never absence. */
-  private suspend fun runCommand(command: String): ShellCommandOutput {
-    val result = adbSession.deviceServices.shellAsText(deviceSelector, command)
-    if (result.exitCode != 0) {
-      throw IllegalStateException("Command '$command' failed with exit code ${result.exitCode}. Stderr: ${result.stderr}")
-    }
-    return result
-  }
+  suspend fun pidsForUid(uid: Int): List<String> =
+    parsePidsForUid(adbSession.deviceServices.shellAsTextOrThrow(deviceSelector, "ps -A -o PID,UID,NAME").stdout, uid)
 }
 
 private val PACKAGE_UID_REGEX = Regex("package:(\\S+) uid:(\\d+)")

@@ -19,7 +19,6 @@ package com.android.tools.ui.inspector
 import com.android.adblib.AdbSession
 import com.android.adblib.DevicePropertyNames
 import com.android.adblib.DeviceSelector
-import com.android.adblib.ShellCommandOutput
 import com.android.adblib.SocketSpec
 import com.android.adblib.shellAsText
 import com.android.tools.ui.inspector.common.ProtocolConstants
@@ -307,7 +306,7 @@ class InjectionManager(
   /** Queries the device for its CPU ABI and SDK API level in a single shell invocation. */
   private suspend fun retrieveDeviceMetadata(deviceSelector: DeviceSelector): DeviceMetadata {
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
-    val output = runShellCommand(deviceSelector, metadataCmd).stdout
+    val output = adbSession.deviceServices.shellAsTextOrThrow(deviceSelector, metadataCmd).stdout
     val lines = output.lines()
     val abi = lines.getOrNull(0)?.trim()
     if (abi.isNullOrEmpty()) {
@@ -353,7 +352,7 @@ class InjectionManager(
         payloadJarName = payloadJarName,
         tempSuffix = tempFileSuffixGenerator(),
       )
-    runShellCommand(deviceSelector, installCmd)
+    adbSession.deviceServices.shellAsTextOrThrow(deviceSelector, installCmd)
   }
 
   /**
@@ -390,16 +389,7 @@ class InjectionManager(
     val appJarPath = "$appDataDir/$serviceJarName"
     val appPayloadJarPath = "$appDataDir/$payloadJarName"
     val attachCmd = "cmd activity attach-agent $pid \"$appPath=$appJarPath;$appPayloadJarPath;$serverToken\""
-    runShellCommand(deviceSelector, attachCmd)
-  }
-
-  /** Runs a shell command and throws an exception if it fails (exit code != 0). */
-  private suspend fun runShellCommand(deviceSelector: DeviceSelector, command: String): ShellCommandOutput {
-    val result = adbSession.deviceServices.shellAsText(deviceSelector, command)
-    if (result.exitCode != 0) {
-      throw IllegalStateException("Command '$command' failed with exit code ${result.exitCode}. Stderr: ${result.stderr}")
-    }
-    return result
+    adbSession.deviceServices.shellAsTextOrThrow(deviceSelector, attachCmd)
   }
 
   companion object {

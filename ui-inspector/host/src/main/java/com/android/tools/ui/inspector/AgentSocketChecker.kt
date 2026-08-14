@@ -18,7 +18,6 @@ package com.android.tools.ui.inspector
 
 import com.android.adblib.AdbSession
 import com.android.adblib.DeviceSelector
-import com.android.adblib.ShellCommandOutput
 import com.android.adblib.shellAsText
 import com.android.tools.ui.inspector.common.ProtocolConstants
 import kotlinx.coroutines.CancellationException
@@ -42,7 +41,7 @@ internal class AgentSocketChecker(private val adbSession: AdbSession, private va
   suspend fun isPresent(socketName: String): Boolean {
     // The whole file is read and matched host-side: a device-side filter would fold a failing read and a missing socket into the same
     // empty output, and a read failure is not authoritative absence — runShellCommand throws on it instead.
-    val output = runShellCommand("cat /proc/net/unix").stdout
+    val output = adbSession.deviceServices.shellAsTextOrThrow(deviceSelector, "cat /proc/net/unix").stdout
     return output.lineSequence().any { line ->
       val path = line.trim().split(WHITESPACE_REGEX).lastOrNull()
       path == socketName || path == "@$socketName"
@@ -98,14 +97,5 @@ internal class AgentSocketChecker(private val adbSession: AdbSession, private va
     } catch (e: Exception) {
       return null
     }
-  }
-
-  /** Runs a shell command and throws an exception if it fails (exit code != 0). */
-  private suspend fun runShellCommand(command: String): ShellCommandOutput {
-    val result = adbSession.deviceServices.shellAsText(deviceSelector, command)
-    if (result.exitCode != 0) {
-      throw IllegalStateException("Command '$command' failed with exit code ${result.exitCode}. Stderr: ${result.stderr}")
-    }
-    return result
   }
 }

@@ -18,8 +18,6 @@ package com.android.tools.ui.inspector
 
 import com.android.adblib.AdbSession
 import com.android.adblib.DeviceSelector
-import com.android.adblib.ShellCommandOutput
-import com.android.adblib.shellAsText
 
 /** The per-app setting that makes the platform expose attribute resolution stacks for a single package. */
 private const val DEBUG_VIEW_ATTRIBUTES_PACKAGE_SETTING = "debug_view_attributes_application_package"
@@ -47,7 +45,7 @@ internal class DebugViewAttributes(
    * pay two restarts. Set-and-leave confines the restart to the first resolution-stack request per app.
    */
   suspend fun enable() {
-    val output = runShellCommand(READ_DEBUG_VIEW_ATTRIBUTES_CMD).stdout
+    val output = adbSession.deviceServices.shellAsTextOrThrow(deviceSelector, READ_DEBUG_VIEW_ATTRIBUTES_CMD).stdout
     val values = output.split(SETTINGS_OUTPUT_SEPARATOR)
     if (values.size != 2) {
       throw IllegalStateException("Unexpected output while reading debug-view-attributes settings: $output")
@@ -58,19 +56,10 @@ internal class DebugViewAttributes(
     if (global == "1" || perApp == packageName) {
       return
     }
-    runShellCommand("settings put global $DEBUG_VIEW_ATTRIBUTES_PACKAGE_SETTING $packageName")
+    adbSession.deviceServices.shellAsTextOrThrow(deviceSelector, "settings put global $DEBUG_VIEW_ATTRIBUTES_PACKAGE_SETTING $packageName")
     System.err.println(
       "Enabled view-attribute debugging for $packageName: its activities will restart now, and the setting stays enabled for this app. " +
         "Clear it with: adb shell settings delete global $DEBUG_VIEW_ATTRIBUTES_PACKAGE_SETTING"
     )
-  }
-
-  /** Runs a shell command and throws an exception if it fails (exit code != 0). */
-  private suspend fun runShellCommand(command: String): ShellCommandOutput {
-    val result = adbSession.deviceServices.shellAsText(deviceSelector, command)
-    if (result.exitCode != 0) {
-      throw IllegalStateException("Command '$command' failed with exit code ${result.exitCode}. Stderr: ${result.stderr}")
-    }
-    return result
   }
 }

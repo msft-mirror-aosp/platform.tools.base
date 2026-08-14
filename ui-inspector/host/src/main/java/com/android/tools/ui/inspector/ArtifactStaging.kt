@@ -126,11 +126,10 @@ internal class ArtifactStaging(
     try {
       adbSession.deviceServices.syncSend(deviceSelector, artifact.localPath, tempRemotePath, permissions)
       // Push to unique temporary files and atomically move to the final file name to prevent concurrency conflicts.
-      val cmd = "rm -f $staleVersionsPattern && test ! -d '$remotePath' && mv -f '$tempRemotePath' '$remotePath'"
-      val result = adbSession.deviceServices.shellAsText(deviceSelector, cmd)
-      if (result.exitCode != 0) {
-        throw IllegalStateException("Command '$cmd' failed with exit code ${result.exitCode}. Stderr: ${result.stderr}")
-      }
+      adbSession.deviceServices.shellAsTextOrThrow(
+        deviceSelector,
+        "rm -f $staleVersionsPattern && test ! -d '$remotePath' && mv -f '$tempRemotePath' '$remotePath'",
+      )
       moveSuccessful = true
     } finally {
       if (!moveSuccessful) {
