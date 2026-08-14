@@ -28,6 +28,7 @@ import com.android.tools.render.common.RenderProblem
 import com.android.tools.render.common.ScreenshotError
 import com.android.tools.render.compose.ComposeScreenshot
 import com.android.tools.render.discovery.PreviewDiscoveryEngine
+import com.android.tools.render.validation.PreviewValidator
 import com.android.tools.rendering.RenderLogger
 import com.android.tools.rendering.RenderResult
 import com.android.tools.rendering.RenderService
@@ -69,7 +70,17 @@ class Renderer(
    *   any potential errors.
    */
   fun render(screenshot: PreviewScreenshot, outputFolderPath: String): List<PreviewScreenshotResult> {
-    val effectiveScreenshot = resolvePreviewParameters(screenshot)
+    val (effectiveScreenshot, validationError) = resolvePreviewParameters(screenshot)
+    val previewId = effectiveScreenshot.previewId
+    val methodFQN = effectiveScreenshot.methodFQN
+    val packagePath = methodFQN.substringBeforeLast(".").replace(".", File.separator)
+    val baseResultId = previewId.substringAfterLast(".")
+
+    if (validationError != null) {
+      val defaultRelativeImagePath = packagePath + File.separator + "${baseResultId}_0.png"
+      return listOf(PreviewScreenshotResult(previewId, methodFQN, defaultRelativeImagePath, validationError))
+    }
+
     val previewElement = effectiveScreenshot.toPreviewElement(module)
     val renderRequest =
       RenderRequest(configurationModifier = previewElement::applyTo, xmlLayoutsProvider = { previewElement.resolveXmlLayouts() })
@@ -78,11 +89,9 @@ class Renderer(
       .withIndex()
       .map { (index, value) ->
         val (config, renderResult) = value
-        val previewId = screenshot.previewId
-        val resultId = "${previewId.substringAfterLast(".")}_$index"
+        val resultId = "${baseResultId}_$index"
         val imageName = "$resultId.png"
-        val methodFQN = screenshot.methodFQN
-        val relativeImagePath = methodFQN.substringBeforeLast(".").replace(".", File.separator) + File.separator + imageName
+        val relativeImagePath = packagePath + File.separator + imageName
         val screenshotResult =
           try {
             val imageRendered = postProcessRenderedImage(config, renderResult)
@@ -111,25 +120,56 @@ class Renderer(
   }
 
   /**
-   * Resolves and populates preview parameters for the given [screenshot] if they were not explicitly provided.
+   * Resolves and populates preview parameters for the given [screenshot] if they were not explicitly provided, and validates the resulting
+   * configuration parameters.
    *
    * When callers (such as CLI tools) submit render requests specifying only the method FQN and preview ID, this method utilizes
    * [PreviewDiscoveryEngine] to inspect the compiled bytecode, discover the target `@Preview` annotation, and populate missing
    * configuration values before Layoutlib rendering.
    *
    * @param screenshot The input preview screenshot request.
-   * @return An updated [PreviewScreenshot] containing discovered parameters, or the original [screenshot] if parameters were already
-   *   specified or no bytecode annotations were found.
+   * @return A pair containing the updated [PreviewScreenshot] and an optional [ScreenshotError] if validation fails.
    */
-  private fun resolvePreviewParameters(screenshot: PreviewScreenshot): PreviewScreenshot {
-    if (screenshot !is ComposeScreenshot || screenshot.previewParams.isNotEmpty()) {
-      return screenshot
+  private fun resolvePreviewParameters(screenshot: PreviewScreenshot): Pair<PreviewScreenshot, ScreenshotError?> {
+    if (screenshot !is ComposeScreenshot) {
+      return screenshot to null
     }
 
-    val discoveryEngine = PreviewDiscoveryEngine(module)
-    val discovered = discoveryEngine.discover(screenshot.methodFQN, screenshot.previewId) ?: return screenshot
+    val effectiveScreenshot =
+      if (screenshot.previewParams.isEmpty()) {
+        val discoveryEngine = PreviewDiscoveryEngine(module)
+        val discovered = discoveryEngine.discover(screenshot.methodFQN, screenshot.previewId)
+        if (discovered != null) {
+          screenshot.copy(previewParams = discovered.previewParams)
+        } else {
+          screenshot
+        }
+      } else {
+        screenshot
+      }
 
-    return screenshot.copy(previewParams = discovered.previewParams)
+    if (effectiveScreenshot.previewParams.isNotEmpty()) {
+      val validationResult = PreviewValidator().validateParams(effectiveScreenshot.previewParams)
+      if (validationResult.hasErrors) {
+        val errorMessages = validationResult.errors.joinToString("; ") { it.message }
+        val screenshotError =
+          ScreenshotError(
+            status = "VALIDATION_ERROR",
+            message = errorMessages,
+            stackTrace = "",
+            problems = validationResult.errors.map { RenderProblem(it.message, null) },
+            brokenClasses = emptyList(),
+            missingClasses = emptyList(),
+          )
+        return effectiveScreenshot to screenshotError
+      }
+      if (validationResult.hasWarnings) {
+        val warningMessages = validationResult.warnings.joinToString("; ") { it.message }
+        logger.log(Level.WARNING, "Preview parameter validation warning for ${effectiveScreenshot.methodFQN}: $warningMessages")
+      }
+    }
+
+    return effectiveScreenshot to null
   }
 
   fun render(request: RenderRequest): Sequence<Pair<Configuration, RenderResult>> {

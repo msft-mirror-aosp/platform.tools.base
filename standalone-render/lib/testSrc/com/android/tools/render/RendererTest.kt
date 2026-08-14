@@ -210,4 +210,34 @@ class RendererTest {
     assertEquals("preview_auto_discover", result.previewId)
     assertEquals("${com.android.tools.render.discovery.SamplePreviewTarget::class.java.name}.sampleAnnotatedPreview", result.methodFQN)
   }
+
+  @Test
+  fun testRenderComposeScreenshotWithInvalidPreviewParamsReturnsValidationError() {
+    val layoutlibPath = TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib")
+
+    val bootstrapper =
+      RenderEnvironmentBootstrapper(
+        fontsPath = null,
+        resourceApkPath = null,
+        namespace = "",
+        classPath = emptyList(),
+        projectClassPath = emptyList(),
+        layoutlibPath = layoutlibPath.absolutePathString(),
+      )
+    val outputDir = tmpFolder.newFolder("output_screenshots_invalid").absolutePath
+    val screenshot =
+      com.android.tools.render.compose.ComposeScreenshot(
+        previewId = "preview_invalid",
+        methodFQN = "${com.android.tools.render.discovery.SamplePreviewTarget::class.java.name}.sampleAnnotatedPreview",
+        previewParams = mapOf("widthDp" to "-50"),
+        methodParams = emptyList(),
+      )
+
+    val results = bootstrapper.bootstrap().use { renderer -> renderer.render(screenshot, outputDir) }
+    assertEquals(1, results.size)
+    val result = results[0]
+    assertNotNull("ScreenshotError should be present for validation errors", result.error)
+    assertEquals("VALIDATION_ERROR", result.error?.status)
+    assertTrue(result.error?.message?.contains("widthDp") == true)
+  }
 }
