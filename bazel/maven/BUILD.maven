@@ -88326,15 +88326,6 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "com.google.protobuf.protoc_4.28.3",
-    pom = "repository/com/google/protobuf/protoc/4.28.3/protoc-4.28.3.pom",
-    repo_root_path = "repository",
-    repo_path = "com/google/protobuf/protoc/4.28.3",
-    parent = "com.google.google_5",
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
     name = "com.google.protobuf.protoc_4.33.2",
     pom = "repository/com/google/protobuf/protoc/4.33.2/protoc-4.33.2.pom",
     repo_root_path = "repository",
@@ -88412,22 +88403,6 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "com.google.testing.platform.android-driver-instrumentation_0.0.8-alpha07",
-    pom = "repository/com/google/testing/platform/android-driver-instrumentation/0.0.8-alpha07/android-driver-instrumentation-0.0.8-alpha07.pom",
-    repo_root_path = "repository",
-    repo_path = "com/google/testing/platform/android-driver-instrumentation/0.0.8-alpha07",
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "com.google.testing.platform.android-driver-instrumentation_0.0.8-alpha08",
-    pom = "repository/com/google/testing/platform/android-driver-instrumentation/0.0.8-alpha08/android-driver-instrumentation-0.0.8-alpha08.pom",
-    repo_root_path = "repository",
-    repo_path = "com/google/testing/platform/android-driver-instrumentation/0.0.8-alpha08",
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
     name = "com.google.testing.platform.android-driver-instrumentation_0.0.9-alpha03",
     pom = "repository/com/google/testing/platform/android-driver-instrumentation/0.0.9-alpha03/android-driver-instrumentation-0.0.9-alpha03.pom",
     repo_root_path = "repository",
@@ -88468,22 +88443,6 @@ maven_artifact(
         "org.jetbrains.kotlinx.atomicfu_0.22.0",
         "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.7.3",
     ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "com.google.testing.platform.android-test-plugin_0.0.8-alpha07",
-    pom = "repository/com/google/testing/platform/android-test-plugin/0.0.8-alpha07/android-test-plugin-0.0.8-alpha07.pom",
-    repo_root_path = "repository",
-    repo_path = "com/google/testing/platform/android-test-plugin/0.0.8-alpha07",
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "com.google.testing.platform.android-test-plugin_0.0.8-alpha08",
-    pom = "repository/com/google/testing/platform/android-test-plugin/0.0.8-alpha08/android-test-plugin-0.0.8-alpha08.pom",
-    repo_root_path = "repository",
-    repo_path = "com/google/testing/platform/android-test-plugin/0.0.8-alpha08",
     visibility = ["//visibility:public"],
 )
 
@@ -88584,22 +88543,6 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "com.google.testing.platform.core_0.0.8-alpha07",
-    pom = "repository/com/google/testing/platform/core/0.0.8-alpha07/core-0.0.8-alpha07.pom",
-    repo_root_path = "repository",
-    repo_path = "com/google/testing/platform/core/0.0.8-alpha07",
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "com.google.testing.platform.core_0.0.8-alpha08",
-    pom = "repository/com/google/testing/platform/core/0.0.8-alpha08/core-0.0.8-alpha08.pom",
-    repo_root_path = "repository",
-    repo_path = "com/google/testing/platform/core/0.0.8-alpha08",
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
     name = "com.google.testing.platform.core_0.0.9-alpha03",
     pom = "repository/com/google/testing/platform/core/0.0.9-alpha03/core-0.0.9-alpha03.pom",
     repo_root_path = "repository",
@@ -88650,22 +88593,6 @@ maven_artifact(
         "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.7.3",
         "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.7.3",
     ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "com.google.testing.platform.launcher_0.0.8-alpha07",
-    pom = "repository/com/google/testing/platform/launcher/0.0.8-alpha07/launcher-0.0.8-alpha07.pom",
-    repo_root_path = "repository",
-    repo_path = "com/google/testing/platform/launcher/0.0.8-alpha07",
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "com.google.testing.platform.launcher_0.0.8-alpha08",
-    pom = "repository/com/google/testing/platform/launcher/0.0.8-alpha08/launcher-0.0.8-alpha08.pom",
-    repo_root_path = "repository",
-    repo_path = "com/google/testing/platform/launcher/0.0.8-alpha08",
     visibility = ["//visibility:public"],
 )
 
