@@ -56841,12 +56841,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "com.agentclientprotocol.acp-jvm_0.24.0",
-    pom = "repository/com/agentclientprotocol/acp-jvm/0.24.0/acp-jvm-0.24.0.pom",
+    name = "com.agentclientprotocol.acp-jvm_0.30.1",
+    pom = "repository/com/agentclientprotocol/acp-jvm/0.30.1/acp-jvm-0.30.1.pom",
     repo_root_path = "repository",
-    repo_path = "com/agentclientprotocol/acp-jvm/0.24.0",
+    repo_path = "com/agentclientprotocol/acp-jvm/0.30.1",
     deps = [
-        "com.agentclientprotocol.acp-model-jvm_0.24.0",
+        "com.agentclientprotocol.acp-model-jvm_0.30.1",
         "org.jetbrains.kotlinx.kotlinx-serialization-json-jvm_1.7.3",
         "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.9.0",
         "org.jetbrains.kotlinx.kotlinx-io-core-jvm_0.5.4",
@@ -56859,10 +56859,10 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "com.agentclientprotocol.acp-model-jvm_0.24.0",
-    pom = "repository/com/agentclientprotocol/acp-model-jvm/0.24.0/acp-model-jvm-0.24.0.pom",
+    name = "com.agentclientprotocol.acp-model-jvm_0.30.1",
+    pom = "repository/com/agentclientprotocol/acp-model-jvm/0.30.1/acp-model-jvm-0.30.1.pom",
     repo_root_path = "repository",
-    repo_path = "com/agentclientprotocol/acp-model-jvm/0.24.0",
+    repo_path = "com/agentclientprotocol/acp-model-jvm/0.30.1",
     deps = [
         "org.jetbrains.kotlinx.kotlinx-serialization-json-jvm_1.7.3",
         "org.jetbrains.kotlinx.kotlinx-collections-immutable-jvm_0.3.8",

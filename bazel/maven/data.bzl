@@ -620,7 +620,7 @@ _CLASS_JARS = [
     "biz.aQute.bnd:biz.aQute.bndlib:6.4.0",
     "ch.randelshofer:fastdoubleparser:0.8.0",
     "com.adobe.marketing.mobile:core:1.5.1",  # Used by SdkIndexIssuesSyncListenerTest
-    "com.agentclientprotocol:acp-jvm:0.24.0",
+    "com.agentclientprotocol:acp-jvm:0.30.1",
     "com.android.application:com.android.application.gradle.plugin:pom:7.2.0",
     "com.android.application:com.android.application.gradle.plugin:pom:7.4.0",  # Dependency of architecture-samples
     "com.android.application:com.android.application.gradle.plugin:pom:7.4.1",
@@ -1782,8 +1782,8 @@ _SOURCE_JARS = [
     "androidx.lifecycle:lifecycle-runtime-desktop:jar:sources:2.8.7",
     "androidx.lifecycle:lifecycle-viewmodel-desktop:jar:sources:2.8.7",
     "androidx.sqlite:sqlite-bundled-jvm:jar:sources:2.7.0",  # Database Inspector
-    "com.agentclientprotocol:acp-jvm:jar:sources:0.24.0",
-    "com.agentclientprotocol:acp-model-jvm:jar:sources:0.24.0",
+    "com.agentclientprotocol:acp-jvm:jar:sources:0.30.1",
+    "com.agentclientprotocol:acp-model-jvm:jar:sources:0.30.1",
     "com.anthropic:anthropic-java-core:jar:sources:2.26.0",
     "com.openai:openai-java-core:jar:sources:4.32.0",
     "com.squareup.okhttp3:okhttp:jar:sources:4.12.0",
