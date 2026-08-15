@@ -113,7 +113,12 @@ class R8GradleConfigDetector : Detector(), GradleScanner {
           minificationEnabledCookie!!,
           context.getLocation(minificationEnabledCookie),
           message = "If enabling minification, also set $shrinkPropertyName = true",
-          fix().replace().pattern("true").with("true\n$indentPrefix$shrinkPropertyName = true").build(),
+          fix()
+            .replace()
+            .name("Set $shrinkPropertyName = true")
+            .pattern("true")
+            .with("true\n$indentPrefix$shrinkPropertyName = true")
+            .build(),
         )
       if (!LintClient.isStudio) {
         incident.overrideSeverity(Severity.WARNING)
