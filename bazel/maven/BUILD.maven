@@ -12706,6 +12706,27 @@ maven_import(
 )
 
 maven_artifact(
+    name = "net.sf.trove4j.trove4j_3.0.3",
+    pom = "repository/net/sf/trove4j/trove4j/3.0.3/trove4j-3.0.3.pom",
+    repo_root_path = "repository",
+    repo_path = "net/sf/trove4j/trove4j/3.0.3",
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "net.sf.trove4j.trove4j",
+    classifiers = [],
+    jars = [
+        "repository/net/sf/trove4j/trove4j/3.0.3/trove4j-3.0.3.jar"
+    ],
+    original_deps = [],
+    pom = "repository/net/sf/trove4j/trove4j/3.0.3/trove4j-3.0.3.pom",
+    repo_root_path = "repository",
+    repo_path = "net/sf/trove4j/trove4j/3.0.3",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "net.thauvin.erik.urlencoder.urlencoder-lib-jvm_1.5.0",
     pom = "repository/net/thauvin/erik/urlencoder/urlencoder-lib-jvm/1.5.0/urlencoder-lib-jvm-1.5.0.pom",
     repo_root_path = "repository",
@@ -14535,6 +14556,416 @@ maven_import(
 )
 
 maven_artifact(
+    name = "org.boofcv.boofcv-feature_1.4.0",
+    pom = "repository/org/boofcv/boofcv-feature/1.4.0/boofcv-feature-1.4.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/boofcv/boofcv-feature/1.4.0",
+    deps = [
+        "org.georegression.georegression_0.30.0",
+        "org.ddogleg.ddogleg_0.25.1",
+        "net.sf.trove4j.trove4j_3.0.3",
+        "org.boofcv.boofcv-ip_1.4.0",
+        "org.boofcv.boofcv-geo_1.4.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.boofcv.boofcv-feature",
+    classifiers = [],
+    jars = [
+        "repository/org/boofcv/boofcv-feature/1.4.0/boofcv-feature-1.4.0.jar"
+    ],
+    exports = [
+        "org.georegression.georegression",
+        "org.ddogleg.ddogleg",
+        "net.sf.trove4j.trove4j",
+        "org.boofcv.boofcv-ip",
+        "org.boofcv.boofcv-geo",
+    ],
+    original_deps = [
+        "org.georegression.georegression_0.30.0",
+        "org.ddogleg.ddogleg_0.25.1",
+        "net.sf.trove4j.trove4j_3.0.3",
+        "org.boofcv.boofcv-ip_1.4.0",
+        "org.boofcv.boofcv-geo_1.4.0",
+    ],
+    pom = "repository/org/boofcv/boofcv-feature/1.4.0/boofcv-feature-1.4.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/boofcv/boofcv-feature/1.4.0",
+    deps_with_exclusions = [
+        "org.georegression.georegression",
+     ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.boofcv.boofcv-geo_1.4.0",
+    pom = "repository/org/boofcv/boofcv-geo/1.4.0/boofcv-geo-1.4.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/boofcv/boofcv-geo/1.4.0",
+    deps = [
+        "org.georegression.georegression_0.30.0",
+        "org.ddogleg.ddogleg_0.25.1",
+        "net.sf.trove4j.trove4j_3.0.3",
+        "org.boofcv.boofcv-types_1.4.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.boofcv.boofcv-geo",
+    classifiers = [],
+    jars = [
+        "repository/org/boofcv/boofcv-geo/1.4.0/boofcv-geo-1.4.0.jar"
+    ],
+    exports = [
+        "org.georegression.georegression",
+        "org.ddogleg.ddogleg",
+        "net.sf.trove4j.trove4j",
+        "org.boofcv.boofcv-types",
+    ],
+    original_deps = [
+        "org.georegression.georegression_0.30.0",
+        "org.ddogleg.ddogleg_0.25.1",
+        "net.sf.trove4j.trove4j_3.0.3",
+        "org.boofcv.boofcv-types_1.4.0",
+    ],
+    pom = "repository/org/boofcv/boofcv-geo/1.4.0/boofcv-geo-1.4.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/boofcv/boofcv-geo/1.4.0",
+    deps_with_exclusions = [
+        "org.georegression.georegression",
+     ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.boofcv.boofcv-io_1.4.0",
+    pom = "repository/org/boofcv/boofcv-io/1.4.0/boofcv-io-1.4.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/boofcv/boofcv-io/1.4.0",
+    deps = [
+        "org.georegression.georegression_0.30.0",
+        "org.ddogleg.ddogleg_0.25.1",
+        "net.sf.trove4j.trove4j_3.0.3",
+        "org.boofcv.boofcv-ip_1.4.0",
+        "org.boofcv.boofcv-geo_1.4.0",
+        "org.boofcv.boofcv-sfm_1.4.0",
+        "org.boofcv.boofcv-recognition_1.4.0",
+        "org.boofcv.boofcv-reconstruction_1.4.0",
+        "org.yaml.snakeyaml_2.3",
+        "commons-io.commons-io_2.16.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.boofcv.boofcv-io",
+    classifiers = [],
+    jars = [
+        "repository/org/boofcv/boofcv-io/1.4.0/boofcv-io-1.4.0.jar"
+    ],
+    exports = [
+        "org.georegression.georegression",
+        "org.ddogleg.ddogleg",
+        "net.sf.trove4j.trove4j",
+        "org.boofcv.boofcv-ip",
+        "org.boofcv.boofcv-geo",
+        "org.boofcv.boofcv-sfm",
+        "org.boofcv.boofcv-recognition",
+        "org.boofcv.boofcv-reconstruction",
+    ],
+    deps = [
+        "org.yaml.snakeyaml",
+        "commons-io.commons-io",
+    ],
+    original_deps = [
+        "org.georegression.georegression_0.30.0",
+        "org.ddogleg.ddogleg_0.25.1",
+        "net.sf.trove4j.trove4j_3.0.3",
+        "org.boofcv.boofcv-ip_1.4.0",
+        "org.boofcv.boofcv-geo_1.4.0",
+        "org.boofcv.boofcv-sfm_1.4.0",
+        "org.boofcv.boofcv-recognition_1.4.0",
+        "org.boofcv.boofcv-reconstruction_1.4.0",
+        "org.yaml.snakeyaml_2.3",
+        "commons-io.commons-io_2.16.1",
+    ],
+    pom = "repository/org/boofcv/boofcv-io/1.4.0/boofcv-io-1.4.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/boofcv/boofcv-io/1.4.0",
+    deps_with_exclusions = [
+        "org.georegression.georegression",
+     ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.boofcv.boofcv-ip-multiview_1.4.0",
+    pom = "repository/org/boofcv/boofcv-ip-multiview/1.4.0/boofcv-ip-multiview-1.4.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/boofcv/boofcv-ip-multiview/1.4.0",
+    deps = [
+        "org.georegression.georegression_0.30.0",
+        "org.ddogleg.ddogleg_0.25.1",
+        "net.sf.trove4j.trove4j_3.0.3",
+        "org.boofcv.boofcv-geo_1.4.0",
+        "org.boofcv.boofcv-ip_1.4.0",
+        "org.boofcv.boofcv-feature_1.4.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.boofcv.boofcv-ip-multiview",
+    classifiers = [],
+    jars = [
+        "repository/org/boofcv/boofcv-ip-multiview/1.4.0/boofcv-ip-multiview-1.4.0.jar"
+    ],
+    exports = [
+        "org.georegression.georegression",
+        "org.ddogleg.ddogleg",
+        "net.sf.trove4j.trove4j",
+        "org.boofcv.boofcv-geo",
+        "org.boofcv.boofcv-ip",
+        "org.boofcv.boofcv-feature",
+    ],
+    original_deps = [
+        "org.georegression.georegression_0.30.0",
+        "org.ddogleg.ddogleg_0.25.1",
+        "net.sf.trove4j.trove4j_3.0.3",
+        "org.boofcv.boofcv-geo_1.4.0",
+        "org.boofcv.boofcv-ip_1.4.0",
+        "org.boofcv.boofcv-feature_1.4.0",
+    ],
+    pom = "repository/org/boofcv/boofcv-ip-multiview/1.4.0/boofcv-ip-multiview-1.4.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/boofcv/boofcv-ip-multiview/1.4.0",
+    deps_with_exclusions = [
+        "org.georegression.georegression",
+     ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.boofcv.boofcv-ip_1.4.0",
+    pom = "repository/org/boofcv/boofcv-ip/1.4.0/boofcv-ip-1.4.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/boofcv/boofcv-ip/1.4.0",
+    deps = [
+        "org.georegression.georegression_0.30.0",
+        "org.ddogleg.ddogleg_0.25.1",
+        "net.sf.trove4j.trove4j_3.0.3",
+        "org.boofcv.boofcv-types_1.4.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.boofcv.boofcv-ip",
+    classifiers = [],
+    jars = [
+        "repository/org/boofcv/boofcv-ip/1.4.0/boofcv-ip-1.4.0.jar"
+    ],
+    exports = [
+        "org.georegression.georegression",
+        "org.ddogleg.ddogleg",
+        "net.sf.trove4j.trove4j",
+        "org.boofcv.boofcv-types",
+    ],
+    original_deps = [
+        "org.georegression.georegression_0.30.0",
+        "org.ddogleg.ddogleg_0.25.1",
+        "net.sf.trove4j.trove4j_3.0.3",
+        "org.boofcv.boofcv-types_1.4.0",
+    ],
+    pom = "repository/org/boofcv/boofcv-ip/1.4.0/boofcv-ip-1.4.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/boofcv/boofcv-ip/1.4.0",
+    deps_with_exclusions = [
+        "org.georegression.georegression",
+     ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.boofcv.boofcv-recognition_1.4.0",
+    pom = "repository/org/boofcv/boofcv-recognition/1.4.0/boofcv-recognition-1.4.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/boofcv/boofcv-recognition/1.4.0",
+    deps = [
+        "org.georegression.georegression_0.30.0",
+        "org.ddogleg.ddogleg_0.25.1",
+        "net.sf.trove4j.trove4j_3.0.3",
+        "org.boofcv.boofcv-ip_1.4.0",
+        "org.boofcv.boofcv-feature_1.4.0",
+        "org.boofcv.boofcv-geo_1.4.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.boofcv.boofcv-recognition",
+    classifiers = [],
+    jars = [
+        "repository/org/boofcv/boofcv-recognition/1.4.0/boofcv-recognition-1.4.0.jar"
+    ],
+    exports = [
+        "org.georegression.georegression",
+        "org.ddogleg.ddogleg",
+        "net.sf.trove4j.trove4j",
+        "org.boofcv.boofcv-ip",
+        "org.boofcv.boofcv-feature",
+        "org.boofcv.boofcv-geo",
+    ],
+    original_deps = [
+        "org.georegression.georegression_0.30.0",
+        "org.ddogleg.ddogleg_0.25.1",
+        "net.sf.trove4j.trove4j_3.0.3",
+        "org.boofcv.boofcv-ip_1.4.0",
+        "org.boofcv.boofcv-feature_1.4.0",
+        "org.boofcv.boofcv-geo_1.4.0",
+    ],
+    pom = "repository/org/boofcv/boofcv-recognition/1.4.0/boofcv-recognition-1.4.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/boofcv/boofcv-recognition/1.4.0",
+    deps_with_exclusions = [
+        "org.georegression.georegression",
+     ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.boofcv.boofcv-reconstruction_1.4.0",
+    pom = "repository/org/boofcv/boofcv-reconstruction/1.4.0/boofcv-reconstruction-1.4.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/boofcv/boofcv-reconstruction/1.4.0",
+    deps = [
+        "org.georegression.georegression_0.30.0",
+        "org.ddogleg.ddogleg_0.25.1",
+        "net.sf.trove4j.trove4j_3.0.3",
+        "org.boofcv.boofcv-recognition_1.4.0",
+        "org.boofcv.boofcv-sfm_1.4.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.boofcv.boofcv-reconstruction",
+    classifiers = [],
+    jars = [
+        "repository/org/boofcv/boofcv-reconstruction/1.4.0/boofcv-reconstruction-1.4.0.jar"
+    ],
+    exports = [
+        "org.georegression.georegression",
+        "org.ddogleg.ddogleg",
+        "net.sf.trove4j.trove4j",
+        "org.boofcv.boofcv-recognition",
+        "org.boofcv.boofcv-sfm",
+    ],
+    original_deps = [
+        "org.georegression.georegression_0.30.0",
+        "org.ddogleg.ddogleg_0.25.1",
+        "net.sf.trove4j.trove4j_3.0.3",
+        "org.boofcv.boofcv-recognition_1.4.0",
+        "org.boofcv.boofcv-sfm_1.4.0",
+    ],
+    pom = "repository/org/boofcv/boofcv-reconstruction/1.4.0/boofcv-reconstruction-1.4.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/boofcv/boofcv-reconstruction/1.4.0",
+    deps_with_exclusions = [
+        "org.georegression.georegression",
+     ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.boofcv.boofcv-sfm_1.4.0",
+    pom = "repository/org/boofcv/boofcv-sfm/1.4.0/boofcv-sfm-1.4.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/boofcv/boofcv-sfm/1.4.0",
+    deps = [
+        "org.georegression.georegression_0.30.0",
+        "org.ddogleg.ddogleg_0.25.1",
+        "net.sf.trove4j.trove4j_3.0.3",
+        "org.boofcv.boofcv-ip-multiview_1.4.0",
+        "org.boofcv.boofcv-feature_1.4.0",
+        "org.boofcv.boofcv-geo_1.4.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.boofcv.boofcv-sfm",
+    classifiers = [],
+    jars = [
+        "repository/org/boofcv/boofcv-sfm/1.4.0/boofcv-sfm-1.4.0.jar"
+    ],
+    exports = [
+        "org.georegression.georegression",
+        "org.ddogleg.ddogleg",
+        "net.sf.trove4j.trove4j",
+        "org.boofcv.boofcv-ip-multiview",
+        "org.boofcv.boofcv-feature",
+        "org.boofcv.boofcv-geo",
+    ],
+    original_deps = [
+        "org.georegression.georegression_0.30.0",
+        "org.ddogleg.ddogleg_0.25.1",
+        "net.sf.trove4j.trove4j_3.0.3",
+        "org.boofcv.boofcv-ip-multiview_1.4.0",
+        "org.boofcv.boofcv-feature_1.4.0",
+        "org.boofcv.boofcv-geo_1.4.0",
+    ],
+    pom = "repository/org/boofcv/boofcv-sfm/1.4.0/boofcv-sfm-1.4.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/boofcv/boofcv-sfm/1.4.0",
+    deps_with_exclusions = [
+        "org.georegression.georegression",
+     ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.boofcv.boofcv-types_1.4.0",
+    pom = "repository/org/boofcv/boofcv-types/1.4.0/boofcv-types-1.4.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/boofcv/boofcv-types/1.4.0",
+    deps = [
+        "org.georegression.georegression_0.30.0",
+        "org.ddogleg.ddogleg_0.25.1",
+        "net.sf.trove4j.trove4j_3.0.3",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.boofcv.boofcv-types",
+    classifiers = [],
+    jars = [
+        "repository/org/boofcv/boofcv-types/1.4.0/boofcv-types-1.4.0.jar"
+    ],
+    exports = [
+        "org.georegression.georegression",
+        "org.ddogleg.ddogleg",
+        "net.sf.trove4j.trove4j",
+    ],
+    original_deps = [
+        "org.georegression.georegression_0.30.0",
+        "org.ddogleg.ddogleg_0.25.1",
+        "net.sf.trove4j.trove4j_3.0.3",
+    ],
+    pom = "repository/org/boofcv/boofcv-types/1.4.0/boofcv-types-1.4.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/boofcv/boofcv-types/1.4.0",
+    deps_with_exclusions = [
+        "org.georegression.georegression",
+     ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.bouncycastle.bcpkix-jdk18on_1.80.2",
     pom = "repository/org/bouncycastle/bcpkix-jdk18on/1.80.2/bcpkix-jdk18on-1.80.2.pom",
     repo_root_path = "repository",
@@ -14878,6 +15309,47 @@ maven_import(
     pom = "repository/org/conscrypt/conscrypt-openjdk-uber/2.5.2/conscrypt-openjdk-uber-2.5.2.pom",
     repo_root_path = "repository",
     repo_path = "org/conscrypt/conscrypt-openjdk-uber/2.5.2",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.ddogleg.ddogleg_0.25.1",
+    pom = "repository/org/ddogleg/ddogleg/0.25.1/ddogleg-0.25.1.pom",
+    repo_root_path = "repository",
+    repo_path = "org/ddogleg/ddogleg/0.25.1",
+    deps = [
+        "org.ejml.ejml-core_0.45.1",
+        "org.ejml.ejml-fdense_0.45.1",
+        "org.ejml.ejml-ddense_0.45.1",
+        "org.ejml.ejml-simple_0.45.1",
+        "org.ejml.ejml-dsparse_0.45.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.ddogleg.ddogleg",
+    classifiers = [],
+    jars = [
+        "repository/org/ddogleg/ddogleg/0.25.1/ddogleg-0.25.1.jar"
+    ],
+    exports = [
+        "org.ejml.ejml-core",
+        "org.ejml.ejml-fdense",
+        "org.ejml.ejml-ddense",
+        "org.ejml.ejml-simple",
+        "org.ejml.ejml-dsparse",
+    ],
+    original_deps = [
+        "org.ejml.ejml-core_0.45.1",
+        "org.ejml.ejml-fdense_0.45.1",
+        "org.ejml.ejml-ddense_0.45.1",
+        "org.ejml.ejml-simple_0.45.1",
+        "org.ejml.ejml-dsparse_0.45.1",
+    ],
+    pom = "repository/org/ddogleg/ddogleg/0.25.1/ddogleg-0.25.1.pom",
+    repo_root_path = "repository",
+    repo_path = "org/ddogleg/ddogleg/0.25.1",
     visibility = ["//visibility:public"],
 )
 
@@ -15353,6 +15825,254 @@ maven_import(
 )
 
 maven_artifact(
+    name = "org.ejml.ejml-cdense_0.45.1",
+    pom = "repository/org/ejml/ejml-cdense/0.45.1/ejml-cdense-0.45.1.pom",
+    repo_root_path = "repository",
+    repo_path = "org/ejml/ejml-cdense/0.45.1",
+    deps = [
+        "org.ejml.ejml-core_0.45.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.ejml.ejml-cdense",
+    classifiers = [],
+    jars = [
+        "repository/org/ejml/ejml-cdense/0.45.1/ejml-cdense-0.45.1.jar"
+    ],
+    exports = [
+        "org.ejml.ejml-core",
+    ],
+    original_deps = [
+        "org.ejml.ejml-core_0.45.1",
+    ],
+    pom = "repository/org/ejml/ejml-cdense/0.45.1/ejml-cdense-0.45.1.pom",
+    repo_root_path = "repository",
+    repo_path = "org/ejml/ejml-cdense/0.45.1",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.ejml.ejml-core_0.45.1",
+    pom = "repository/org/ejml/ejml-core/0.45.1/ejml-core-0.45.1.pom",
+    repo_root_path = "repository",
+    repo_path = "org/ejml/ejml-core/0.45.1",
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.ejml.ejml-core",
+    classifiers = [],
+    jars = [
+        "repository/org/ejml/ejml-core/0.45.1/ejml-core-0.45.1.jar"
+    ],
+    original_deps = [],
+    pom = "repository/org/ejml/ejml-core/0.45.1/ejml-core-0.45.1.pom",
+    repo_root_path = "repository",
+    repo_path = "org/ejml/ejml-core/0.45.1",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.ejml.ejml-ddense_0.45.1",
+    pom = "repository/org/ejml/ejml-ddense/0.45.1/ejml-ddense-0.45.1.pom",
+    repo_root_path = "repository",
+    repo_path = "org/ejml/ejml-ddense/0.45.1",
+    deps = [
+        "org.ejml.ejml-core_0.45.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.ejml.ejml-ddense",
+    classifiers = [],
+    jars = [
+        "repository/org/ejml/ejml-ddense/0.45.1/ejml-ddense-0.45.1.jar"
+    ],
+    exports = [
+        "org.ejml.ejml-core",
+    ],
+    original_deps = [
+        "org.ejml.ejml-core_0.45.1",
+    ],
+    pom = "repository/org/ejml/ejml-ddense/0.45.1/ejml-ddense-0.45.1.pom",
+    repo_root_path = "repository",
+    repo_path = "org/ejml/ejml-ddense/0.45.1",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.ejml.ejml-dsparse_0.45.1",
+    pom = "repository/org/ejml/ejml-dsparse/0.45.1/ejml-dsparse-0.45.1.pom",
+    repo_root_path = "repository",
+    repo_path = "org/ejml/ejml-dsparse/0.45.1",
+    deps = [
+        "org.ejml.ejml-core_0.45.1",
+        "org.ejml.ejml-ddense_0.45.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.ejml.ejml-dsparse",
+    classifiers = [],
+    jars = [
+        "repository/org/ejml/ejml-dsparse/0.45.1/ejml-dsparse-0.45.1.jar"
+    ],
+    exports = [
+        "org.ejml.ejml-core",
+        "org.ejml.ejml-ddense",
+    ],
+    original_deps = [
+        "org.ejml.ejml-core_0.45.1",
+        "org.ejml.ejml-ddense_0.45.1",
+    ],
+    pom = "repository/org/ejml/ejml-dsparse/0.45.1/ejml-dsparse-0.45.1.pom",
+    repo_root_path = "repository",
+    repo_path = "org/ejml/ejml-dsparse/0.45.1",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.ejml.ejml-fdense_0.45.1",
+    pom = "repository/org/ejml/ejml-fdense/0.45.1/ejml-fdense-0.45.1.pom",
+    repo_root_path = "repository",
+    repo_path = "org/ejml/ejml-fdense/0.45.1",
+    deps = [
+        "org.ejml.ejml-core_0.45.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.ejml.ejml-fdense",
+    classifiers = [],
+    jars = [
+        "repository/org/ejml/ejml-fdense/0.45.1/ejml-fdense-0.45.1.jar"
+    ],
+    exports = [
+        "org.ejml.ejml-core",
+    ],
+    original_deps = [
+        "org.ejml.ejml-core_0.45.1",
+    ],
+    pom = "repository/org/ejml/ejml-fdense/0.45.1/ejml-fdense-0.45.1.pom",
+    repo_root_path = "repository",
+    repo_path = "org/ejml/ejml-fdense/0.45.1",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.ejml.ejml-fsparse_0.45.1",
+    pom = "repository/org/ejml/ejml-fsparse/0.45.1/ejml-fsparse-0.45.1.pom",
+    repo_root_path = "repository",
+    repo_path = "org/ejml/ejml-fsparse/0.45.1",
+    deps = [
+        "org.ejml.ejml-core_0.45.1",
+        "org.ejml.ejml-fdense_0.45.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.ejml.ejml-fsparse",
+    classifiers = [],
+    jars = [
+        "repository/org/ejml/ejml-fsparse/0.45.1/ejml-fsparse-0.45.1.jar"
+    ],
+    exports = [
+        "org.ejml.ejml-core",
+        "org.ejml.ejml-fdense",
+    ],
+    original_deps = [
+        "org.ejml.ejml-core_0.45.1",
+        "org.ejml.ejml-fdense_0.45.1",
+    ],
+    pom = "repository/org/ejml/ejml-fsparse/0.45.1/ejml-fsparse-0.45.1.pom",
+    repo_root_path = "repository",
+    repo_path = "org/ejml/ejml-fsparse/0.45.1",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.ejml.ejml-simple_0.45.1",
+    pom = "repository/org/ejml/ejml-simple/0.45.1/ejml-simple-0.45.1.pom",
+    repo_root_path = "repository",
+    repo_path = "org/ejml/ejml-simple/0.45.1",
+    deps = [
+        "org.ejml.ejml-core_0.45.1",
+        "org.ejml.ejml-fdense_0.45.1",
+        "org.ejml.ejml-ddense_0.45.1",
+        "org.ejml.ejml-cdense_0.45.1",
+        "org.ejml.ejml-zdense_0.45.1",
+        "org.ejml.ejml-dsparse_0.45.1",
+        "org.ejml.ejml-fsparse_0.45.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.ejml.ejml-simple",
+    classifiers = [],
+    jars = [
+        "repository/org/ejml/ejml-simple/0.45.1/ejml-simple-0.45.1.jar"
+    ],
+    exports = [
+        "org.ejml.ejml-core",
+        "org.ejml.ejml-fdense",
+        "org.ejml.ejml-ddense",
+        "org.ejml.ejml-cdense",
+        "org.ejml.ejml-zdense",
+        "org.ejml.ejml-dsparse",
+        "org.ejml.ejml-fsparse",
+    ],
+    original_deps = [
+        "org.ejml.ejml-core_0.45.1",
+        "org.ejml.ejml-fdense_0.45.1",
+        "org.ejml.ejml-ddense_0.45.1",
+        "org.ejml.ejml-cdense_0.45.1",
+        "org.ejml.ejml-zdense_0.45.1",
+        "org.ejml.ejml-dsparse_0.45.1",
+        "org.ejml.ejml-fsparse_0.45.1",
+    ],
+    pom = "repository/org/ejml/ejml-simple/0.45.1/ejml-simple-0.45.1.pom",
+    repo_root_path = "repository",
+    repo_path = "org/ejml/ejml-simple/0.45.1",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.ejml.ejml-zdense_0.45.1",
+    pom = "repository/org/ejml/ejml-zdense/0.45.1/ejml-zdense-0.45.1.pom",
+    repo_root_path = "repository",
+    repo_path = "org/ejml/ejml-zdense/0.45.1",
+    deps = [
+        "org.ejml.ejml-core_0.45.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.ejml.ejml-zdense",
+    classifiers = [],
+    jars = [
+        "repository/org/ejml/ejml-zdense/0.45.1/ejml-zdense-0.45.1.jar"
+    ],
+    exports = [
+        "org.ejml.ejml-core",
+    ],
+    original_deps = [
+        "org.ejml.ejml-core_0.45.1",
+    ],
+    pom = "repository/org/ejml/ejml-zdense/0.45.1/ejml-zdense-0.45.1.pom",
+    repo_root_path = "repository",
+    repo_path = "org/ejml/ejml-zdense/0.45.1",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.fusesource.jansi.jansi_2.4.3",
     pom = "repository/org/fusesource/jansi/jansi/2.4.3/jansi-2.4.3.pom",
     repo_root_path = "repository",
@@ -15372,6 +16092,56 @@ maven_import(
     pom = "repository/org/fusesource/jansi/jansi/2.4.3/jansi-2.4.3.pom",
     repo_root_path = "repository",
     repo_path = "org/fusesource/jansi/jansi/2.4.3",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.georegression.georegression_0.30.0",
+    pom = "repository/org/georegression/georegression/0.30.0/georegression-0.30.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/georegression/georegression/0.30.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.georegression.georegression",
+    classifiers = [],
+    jars = [
+        "repository/org/georegression/georegression/0.30.0/georegression-0.30.0.jar"
+    ],
+    original_deps = [],
+    pom = "repository/org/georegression/georegression/0.30.0/georegression-0.30.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/georegression/georegression/0.30.0",
+    exclusions_for_parents = {
+        "org.boofcv.boofcv-sfm": [
+            "org.ddogleg.*",
+        ],
+        "org.boofcv.boofcv-io": [
+            "org.ddogleg.*",
+        ],
+        "org.boofcv.boofcv-feature": [
+            "org.ddogleg.*",
+        ],
+        "org.boofcv.boofcv-geo": [
+            "org.ddogleg.*",
+        ],
+        "org.boofcv.boofcv-recognition": [
+            "org.ddogleg.*",
+        ],
+        "org.boofcv.boofcv-ip-multiview": [
+            "org.ddogleg.*",
+        ],
+        "org.boofcv.boofcv-ip": [
+            "org.ddogleg.*",
+        ],
+        "org.boofcv.boofcv-types": [
+            "org.ddogleg.*",
+        ],
+        "org.boofcv.boofcv-reconstruction": [
+            "org.ddogleg.*",
+        ],
+    },
     visibility = ["//visibility:public"],
 )
 
