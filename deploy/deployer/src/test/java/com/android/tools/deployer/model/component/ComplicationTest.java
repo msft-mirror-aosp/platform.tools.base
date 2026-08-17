@@ -18,7 +18,6 @@ package com.android.tools.deployer.model.component;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 
-import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.NullOutputReceiver;
 import com.android.tools.deployer.common.DeviceHolder;
@@ -107,7 +106,7 @@ public class ComplicationTest {
 
     @Test
     public void testCommandSendToDevice() throws Exception {
-        IDevice device = mockDevice(request -> "Broadcast completed: result=1");
+        DeviceHolder deviceHolder = mockDevice(request -> "Broadcast completed: result=1");
         ManifestAppComponentInfo info =
                 new ManifestAppComponentInfo(new XmlNode(), "com.example.myApp") {
                     @Override
@@ -121,7 +120,7 @@ public class ComplicationTest {
                 "debug.app.watchface com.example.WatchFaces$InnerWatchFace 1 LONG_TEXT",
                 AppComponent.Mode.RUN,
                 new NullOutputReceiver(),
-                new DeviceHolder(device, null));
+                deviceHolder);
 
         String expectedCommand =
                 "am broadcast -a com.google.android.wearable.app.DEBUG_SURFACE --es operation"
@@ -129,7 +128,7 @@ public class ComplicationTest {
                     + " 'com.example.myApp/com.example.services.Complication' --ecn watchface"
                     + " 'debug.app.watchface/com.example.WatchFaces\\$InnerWatchFace' --ei slot 1"
                     + " --ei type 4";
-        Mockito.verify(device, Mockito.times(1))
+        Mockito.verify(deviceHolder, Mockito.times(1))
                 .executeShellCommand(
                         eq(expectedCommand),
                         any(IShellOutputReceiver.class),
@@ -139,8 +138,8 @@ public class ComplicationTest {
 
     @Test
     public void testCommandSendToDeviceDebug() throws Exception {
-        IDevice device = mockDevice(request -> "Broadcast completed: result=1");
-        InOrder inOrderDevice = Mockito.inOrder(device);
+        DeviceHolder deviceHolder = mockDevice(request -> "Broadcast completed: result=1");
+        InOrder inOrderDevice = Mockito.inOrder(deviceHolder);
 
         ManifestAppComponentInfo info =
                 new ManifestAppComponentInfo(new XmlNode(), "com.example.myApp") {
@@ -155,10 +154,10 @@ public class ComplicationTest {
                 "debug.app.watchface com.example.WatchFaces$InnerWatchFace 1 LONG_TEXT",
                 AppComponent.Mode.DEBUG,
                 new NullOutputReceiver(),
-                new DeviceHolder(device, null));
+                deviceHolder);
 
         inOrderDevice
-                .verify(device)
+                .verify(deviceHolder)
                 .executeShellCommand(
                         eq("am set-debug-app -w 'com.example.myApp'"),
                         any(IShellOutputReceiver.class),
@@ -173,7 +172,7 @@ public class ComplicationTest {
                     + " --ei type 4";
 
         inOrderDevice
-                .verify(device)
+                .verify(deviceHolder)
                 .executeShellCommand(
                         eq(expectedCommand),
                         any(IShellOutputReceiver.class),
@@ -181,9 +180,9 @@ public class ComplicationTest {
                         eq(TimeUnit.SECONDS));
     }
 
-    private static IDevice mockDevice(Function<String, String> shellCommandReplies)
+    private static DeviceHolder mockDevice(Function<String, String> shellCommandReplies)
             throws Exception {
-        IDevice device = Mockito.mock(IDevice.class);
+        DeviceHolder deviceHolder = Mockito.mock(DeviceHolder.class);
         Mockito.doAnswer(
                         invocation -> {
                             String request = invocation.getArgument(0) + "\n";
@@ -196,10 +195,10 @@ public class ComplicationTest {
                             receiver.flush();
                             return null;
                         })
-                .when(device)
+                .when(deviceHolder)
                 .executeShellCommand(
                         Mockito.anyString(), Mockito.any(), Mockito.anyLong(), Mockito.any());
 
-        return device;
+        return deviceHolder;
     }
 }

@@ -504,7 +504,7 @@ class DeviceHolderMigrationTest {
       val connectedDevice = session.connectedDevicesTracker.waitForDevice(iDevice.serialNumber)
       DeviceHolder(iDevice, Optional.of(connectedDevice), useConnectedDevice = true)
     } else {
-      DeviceHolder(iDevice, null, useConnectedDevice = false)
+      DeviceHolder(iDevice, Optional.empty(), useConnectedDevice = false)
     }
   }
 }

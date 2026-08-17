@@ -19,7 +19,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 
 import com.android.ddmlib.AdbCommandRejectedException;
-import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.NullOutputReceiver;
 import com.android.ddmlib.ShellCommandUnresponsiveException;
@@ -94,9 +93,8 @@ public class ActivityTest {
                     AdbCommandRejectedException,
                     IOException,
                     TimeoutException {
-        IDevice device = Mockito.mock(IDevice.class);
-        Mockito.when(device.getSerialNumber()).thenReturn("1234");
-        DeviceHolder deviceHolder = new DeviceHolder(device, null);
+        DeviceHolder deviceHolder = Mockito.mock(DeviceHolder.class);
+        Mockito.when(deviceHolder.getSerialNumber()).thenReturn("1234");
         ManifestActivityInfo info =
                 new ManifestActivityInfo(new XmlNode(), "com.example.myApp") {
                     @Override
@@ -113,7 +111,7 @@ public class ActivityTest {
                     + " android.intent.action.MAIN -c android.intent.category.LAUNCHER -D --user"
                     + " 123";
 
-        Mockito.verify(device, Mockito.times(1))
+        Mockito.verify(deviceHolder, Mockito.times(1))
                 .executeShellCommand(
                         eq(expectedCommand),
                         any(IShellOutputReceiver.class),
@@ -123,9 +121,8 @@ public class ActivityTest {
 
     @Test
     public void useCategoryFromManifest() throws Exception {
-        IDevice device = Mockito.mock(IDevice.class);
-        Mockito.when(device.getSerialNumber()).thenReturn("1234");
-        DeviceHolder deviceHolder = new DeviceHolder(device, null);
+        DeviceHolder deviceHolder = Mockito.mock(DeviceHolder.class);
+        Mockito.when(deviceHolder.getSerialNumber()).thenReturn("1234");
         URL url =
                 TestUtils.resolveWorkspacePath(
                                 "tools/base/deploy/deployer/src/test/resource/manifestWithCategory/AndroidManifest.bxml")
@@ -146,7 +143,7 @@ public class ActivityTest {
                             + " android.intent.action.MAIN -c"
                             + " android.intent.category.LEANBACK_LAUNCHER";
 
-            Mockito.verify(device, Mockito.times(1))
+            Mockito.verify(deviceHolder, Mockito.times(1))
                     .executeShellCommand(
                             eq(expectedCommand),
                             any(IShellOutputReceiver.class),

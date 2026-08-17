@@ -77,11 +77,6 @@ public class AdbClient {
     }
 
     @Deprecated
-    public AdbClient(IDevice device, ILogger logger) {
-        this(new DeviceHolder(device, null), logger);
-    }
-
-    @Deprecated
     public AdbClient(IDevice device, ILogger logger, AdbSession adbSession) {
         this(
                 new DeviceHolder(

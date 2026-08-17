@@ -380,6 +380,7 @@ kotlin_test(
         ":tools.deployer.common",
         ":tools.deployer.model",
         ":tools.deployer.modelv1",
+        "//tools/base/adblib",
         "//tools/base/annotations",
         "//tools/base/common:tools.common",
         "//tools/base/ddmlib:tools.ddmlib",
@@ -503,6 +504,7 @@ kotlin_test(
         "//tools/base/perf-logger:studio.perf-logger_testlib",
         "//tools/base/testutils:tools.testutils",
         "//tools/base/tracer:tools.tracer",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
         "@maven//:org.mockito.mockito-core",
     ],
 )
