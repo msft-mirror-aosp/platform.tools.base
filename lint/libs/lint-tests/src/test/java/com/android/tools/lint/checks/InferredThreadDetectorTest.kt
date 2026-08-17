@@ -1102,6 +1102,43 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
       )
   }
 
+  fun testDelegatedLocalVariable() {
+    lint()
+      .files(
+        kotlin(
+            """
+          import androidx.annotation.UiThread
+          import androidx.annotation.WorkerThread
+
+          interface Multi {
+              fun a()
+              fun b()
+          }
+
+          class Holder { var entry: Multi? = null }
+
+          @WorkerThread fun work() { }
+
+          @UiThread fun ui(holder: Holder) {
+              val entry: Multi? by holder::entry
+              work()
+          }
+          """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/Multi.kt:15: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            work()
+            ~~~~~~
+        1 error
+        """
+      )
+  }
+
   fun testWhenCondition() {
     lint()
       .files(

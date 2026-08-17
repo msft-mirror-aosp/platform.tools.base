@@ -1327,7 +1327,7 @@ internal open class Analysis<FX : Any>(
         else ->
           when (val parent = e.uastParent) {
             is UCallExpression -> typeOf(parent.getParameterForArgument(e)?.type)
-            is ULocalVariable -> typeOf((parent.javaPsi as PsiVariable).type)
+            is ULocalVariable -> if (e.isDelegateOf(parent)) null else typeOf((parent.javaPsi as PsiVariable).type)
             else -> null
           }
       }
@@ -1563,6 +1563,10 @@ internal open class Analysis<FX : Any>(
 
   private class UnresolvedReturnTargetException(val statement: UElement, val targets: List<ReturnRecord<*>>) : Exception()
 }
+
+/** Whether [this] expression is the delegate of [variable] (as in `val x by delegate`) */
+private fun UExpression.isDelegateOf(variable: UVariable): Boolean =
+  (variable.sourcePsi as? KtProperty)?.delegateExpression.let { it != null && it == sourcePsi }
 
 private val <T> Lattice<T>.emptyResult: Result<Type<Nothing>, T>
   get() = pure(Type.None)
