@@ -118,6 +118,11 @@ build --features=-proto_one_output_per_message
 common --android_platforms=@rules_android//:x86,@rules_android//:x86_64,@rules_android//:armeabi-v7a,@rules_android//:arm64-v8a
 # LINT.ThenChange(/bazel/android.bzl:android_platforms)
 
+# Auto load some rules that are no longer built-in with bazel 9
+# Migrate away before updating to bazel 10
+common --incompatible_autoload_externally=+@rules_cc,+@rules_java,+py_runtime,+py_library,+py_binary,+py_test,+sh_library,+sh_binary,+sh_test,+proto_library,+ProtoInfo,+java_proto_library,+cc_proto_library,+java_lite_proto_library
+common --noincompatible_disable_autoloads_in_main_repo
+
 ## Options to make bazel less memory/cpu intensive.
 ## Recommended to use with rcache config to avoid building outputs already
 ## present in the remote cache.

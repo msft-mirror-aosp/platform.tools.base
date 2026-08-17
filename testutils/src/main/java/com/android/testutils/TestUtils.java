@@ -463,11 +463,13 @@ public class TestUtils {
      */
     @NonNull
     public static Path getLocalMavenRepoFile(@NonNull String path) {
-        if (runningFromBazel()) {
-            return resolveWorkspacePath("../+_repo_rules2+maven/repository/" + path);
-        } else {
+        if (!runningFromBazel()) {
             return resolveWorkspacePath("prebuilts/tools/common/m2/repository/" + path);
         }
+        // The test utils library is shipped to gMaven. We have to hardcode the
+        // canonical name of maven repository instead of using the repo map so
+        // we don't add a repo map resource to the jar.
+        return resolveWorkspacePath("../+new_local_repository+maven/repository/" + path);
     }
 
     @NonNull

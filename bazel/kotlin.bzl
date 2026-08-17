@@ -2,6 +2,7 @@
 
 load("@bazel_skylib//lib:collections.bzl", "collections")
 load("@rules_cc//cc:defs.bzl", "CcInfo")
+load("@rules_java//java:defs.bzl", "JavaInfo", "JavaPluginInfo")
 load(":coverage.bzl", "coverage_baseline", "coverage_java_test")
 load(":functions.bzl", "create_option_file")
 load(":kotlin_common.bzl", "KtJvmToolchainInfo", "add_jvm_target_opts", "select_java_compile_toolchain", "select_java_runtime")

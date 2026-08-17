@@ -134,7 +134,7 @@ _gen_proto_rule = rule(
     attrs = {
         "srcs": attr.label_list(
             allow_files = [".proto"],
-            providers = [[ProtoPackageInfo], ["files"]],
+            providers = [[ProtoPackageInfo], [DefaultInfo]],
         ),
         "deps": attr.label_list(
             allow_files = False,

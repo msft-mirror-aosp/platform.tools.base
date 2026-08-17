@@ -15,6 +15,8 @@ See also JEP for `--release` https://openjdk.org/jeps/247
 See also discussion in https://youtrack.jetbrains.com/issue/KT-29974
 """
 
+load("@rules_java//java:defs.bzl", "java_common")
+
 LEGACY_JVM_TARGETS = ["8"]
 
 _PROHIBITED_JVM_TARGET_FLAGS = [

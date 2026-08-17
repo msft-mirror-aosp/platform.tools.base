@@ -182,7 +182,7 @@ single_version_override(
 bazel_dep(name = "aspect_bazel_lib", version = "2.22.5")
 bazel_dep(name = "aspect_rules_js", version = "2.0.0")
 bazel_dep(name = "aspect_rules_ts", version = "3.0.0")
-bazel_dep(name = "rules_nodejs", version = "6.2.0")
+bazel_dep(name = "rules_nodejs", version = "6.7.5")
 
 node = use_extension("@rules_nodejs//nodejs:extensions.bzl", "node", dev_dependency = True)
 node.toolchain(node_version = "20.14.0")
@@ -229,6 +229,13 @@ use_repo(rules_ts_ext, "npm_typescript")
 single_version_override(
     module_name = "rules_apple",
     version = "4.5.3",
+)
+
+# grpc (google_benchmark) depends on rules_foreign_cc, but the version it pulls
+# in (0.10.1) is too old to support bazel 9
+single_version_override(
+    module_name = "rules_foreign_cc",
+    version = "0.15.1",
 )
 
 bazel_dep(name = "re2")
@@ -348,6 +355,7 @@ archive_override(
         "//tools/base/bazel/bzlmod:perfetto-pr-6121.patch",
         # b/528480763: Replaces fork() with posix_spawnp() on macOS to prevent kernel panics
         # (EXC_BREAKPOINT) when symbolizing traces from multithreaded gRPC daemon processes.
+        # TODO[b/531691024] Remove the patch after migrating to traceconv.
         "//tools/base/bazel/bzlmod:perfetto-mac-fork-fix.patch",
     ],
     strip_prefix = "perfetto-56.0",

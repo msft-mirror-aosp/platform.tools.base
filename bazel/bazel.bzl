@@ -1,5 +1,7 @@
 """This module implements the iml_module rule."""
 
+load("@rules_cc//cc:defs.bzl", "CcInfo")
+load("@rules_java//java:defs.bzl", "JavaInfo")
 load("//tools/base/intellij-bazel:transitioned_java.bzl", "DEFAULT_INTELLIJ_PLATFORM", "transitioned_java")
 load(":coverage.bzl", "coverage_baseline", "coverage_java_test")
 load(":functions.bzl", "create_option_file", "label_workspace_path")

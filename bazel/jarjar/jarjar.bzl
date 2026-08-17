@@ -1,5 +1,6 @@
 """This module contains custom logic for jarjar operations in studio."""
 
+load("@rules_java//java:defs.bzl", "JavaInfo")
 load("//tools/base/bazel:merge_archives.bzl", "merge_jars")
 
 def jarjar(name, src_jars, manifest_lines = [], **kwargs):

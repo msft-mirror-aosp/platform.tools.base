@@ -1,9 +1,8 @@
 load("@bazel_skylib//lib:paths.bzl", "paths")
+load("@rules_java//java:defs.bzl", "java_common")
 load("//tools/base/bazel/jarjar:jarjar.bzl", "jarjar")
 
 def _fileset_impl(ctx):
-    srcs = depset(order = "postorder", transitive = [src.files for src in ctx.attr.srcs])
-
     remap = {}
     for a, b in ctx.attr.maps.items():
         remap[ctx.label.relative(a)] = b
@@ -61,10 +60,10 @@ def fileset(name, srcs = [], mappings = {}, tags = [], **kwargs):
             if src.startswith(prefix):
                 f = destination + src[len(prefix):]
                 maps[src] = f
-                outs += [f]
+                outs.append(f)
                 done = True
         if not done:
-            rem += [src]
+            rem.append(src)
 
     if outs:
         _fileset(
@@ -133,18 +132,18 @@ def _flat_archive_impl(ctx):
         if len(list) != 1:
             fail("Only one file per entry is allowed.")
         file = list[0]
-        files += [("%s/%s" % (target, file.basename), file)]
+        files.append(("%s/%s" % (target, file.basename), file))
     for dep, target in ctx.attr.files.items():
         list = dep.files.to_list()
         if len(list) != 1:
             fail("Only one file per entry is allowed.")
         file = list[0]
-        files += [(target, file)]
+        files.append((target, file))
 
     for path, file in files:
         name = "%s=%s" % (path, file.path)
         zipper_args.append(name)
-        inputs += [file]
+        inputs.append(file)
 
     ctx.actions.run(
         inputs = inputs,
@@ -162,7 +161,7 @@ flat_archive = rule(
         "ext": attr.string(default = "jar"),
         "_zipper": attr.label(
             default = Label("@bazel_tools//tools/zip:zipper"),
-            cfg = "host",
+            cfg = "exec",
             executable = True,
         ),
     },
@@ -223,12 +222,12 @@ dir_archive = rule(
         "compress": attr.bool(default = False),
         "_status_reader": attr.label(
             default = Label("//tools/base/bazel:status_reader"),
-            cfg = "host",
+            cfg = "exec",
             executable = True,
         ),
         "_zipper": attr.label(
             default = Label("@bazel_tools//tools/zip:zipper"),
-            cfg = "host",
+            cfg = "exec",
             executable = True,
         ),
     },

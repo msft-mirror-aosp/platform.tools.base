@@ -2,6 +2,7 @@ load(
     "@rules_android//android:rules.bzl",
     "android_local_test",
 )
+load("@rules_java//java:defs.bzl", "java_library", "java_test")
 
 def coverage_java_test(name, data = [], jvm_flags = [], visibility = None, test_excluded_packages = {}, **kwargs):
     jacoco_jvm_agent = "//prebuilts/tools/common/jacoco:agent"
@@ -14,7 +15,7 @@ def coverage_java_test(name, data = [], jvm_flags = [], visibility = None, test_
     elif "//visibility:public" not in visibility:
         visibility = visibility + ["@results//:__pkg__"]  # Avoiding mutation because the input list might be frozen.
 
-    native.java_test(
+    java_test(
         name = name,
         data = data + select({
             "//tools/base/bazel:agent_coverage": [jacoco_jvm_agent],
@@ -77,7 +78,7 @@ def coverage_baseline(name, srcs, jar = None, tags = None):
     )
 
 def coverage_java_library(name, srcs = [], tags = [], **kwargs):
-    native.java_library(
+    java_library(
         name = name,
         srcs = srcs,
         javacopts = kwargs.pop("javacopts", []) + ["--release", "8"],
@@ -106,7 +107,7 @@ def coverage_android_local_test(
     if visibility == None:
         visibility = ["@results//:__pkg__"]
     elif "//visibility:public" not in visibility:
-        visibility += ["@results//:__pkg__"]
+        visibility.append("@results//:__pkg__")
 
     android_local_test(
         name = name,
