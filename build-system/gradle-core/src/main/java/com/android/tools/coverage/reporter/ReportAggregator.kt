@@ -118,6 +118,9 @@ class ReportAggregator {
             method.branches.missed += (blockBranches.toInt() - coveredBranches)
           }
 
+          val firstLineMeta = blockMeta.linesList.firstOrNull()
+          val primaryLine = firstLineMeta?.let { smapResolver.resolve(it.lineNumber, sourceFilename).first }
+
           for (lineMeta in blockMeta.linesList) {
             val (trueLine, _) = smapResolver.resolve(lineMeta.lineNumber, sourceFilename)
             val instrs = lineMeta.instructionCount.toInt()
@@ -131,8 +134,8 @@ class ReportAggregator {
             val lineStats = srcFile.lineMap.getOrPut(trueLine) { LineStats() }
             if (isHit) lineStats.ci += instrs else lineStats.mi += instrs
 
-            // Line-level branch aggregation
-            if (blockBranches > 1) {
+            // Line-level branch aggregation - ONLY on the primary line of the block to prevent duplicate branches
+            if (blockBranches > 1 && trueLine == primaryLine) {
               lineStats.cb += coveredBranches
               lineStats.mb += (blockBranches.toInt() - coveredBranches)
             }

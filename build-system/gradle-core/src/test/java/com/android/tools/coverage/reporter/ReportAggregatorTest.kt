@@ -96,4 +96,60 @@ class ReportAggregatorTest {
 
     assertThat(report.packages).isEmpty()
   }
+
+  @Test
+  fun testSpanningBlockBranchParity() {
+    val metadata =
+      CoverageMetadata.newBuilder()
+        .addClasses(
+          ClassMetadata.newBuilder()
+            .setClassName("com/example/MyClass")
+            .setSourceFile("MyClass.kt")
+            .addMethods(
+              MethodMetadata.newBuilder()
+                .setName("method1")
+                .addBlocks(
+                  BlockMetadata.newBuilder()
+                    .setBlockId(0)
+                    .setBranchCount(2)
+                    .addSuccessorBlockIds(1)
+                    .addSuccessorBlockIds(2)
+                    .addLines(LineMetadata.newBuilder().setLineNumber(10).setInstructionCount(5))
+                    .addLines(LineMetadata.newBuilder().setLineNumber(11).setInstructionCount(5))
+                )
+                .addBlocks(BlockMetadata.newBuilder().setBlockId(1).setBranchCount(1))
+                .addBlocks(BlockMetadata.newBuilder().setBlockId(2).setBranchCount(1))
+            )
+        )
+        .build()
+
+    val hits = BitSet()
+    hits.set(0) // Block 0 hit
+    hits.set(1) // Successor 1 hit -> 1 covered branch, 1 missed
+    val data = CoverageData(metadata, hits)
+
+    val aggregator = ReportAggregator()
+    val report = aggregator.aggregate(data, "test")
+
+    val pkg = report.packages["com/example"]!!
+    val src = pkg.sourceFiles["MyClass.kt"]!!
+
+    // The spanning block spans lines 10 and 11.
+    // - Line 10 (the primary line) should have exactly 1 covered and 1 missed branch.
+    // - Line 11 (the spanned line) should have exactly 0 branches.
+    // - The overall source file / package / report branch totals should be exactly 1 covered and 1 missed.
+
+    val line10 = src.lineMap[10]!!
+    assertThat(line10.cb).isEqualTo(1)
+    assertThat(line10.mb).isEqualTo(1)
+
+    val line11 = src.lineMap[11]!!
+    assertThat(line11.cb).isEqualTo(0)
+    assertThat(line11.mb).isEqualTo(0)
+
+    assertThat(src.branches.covered).isEqualTo(1)
+    assertThat(src.branches.missed).isEqualTo(1)
+    assertThat(report.branches.covered).isEqualTo(1)
+    assertThat(report.branches.missed).isEqualTo(1)
+  }
 }
