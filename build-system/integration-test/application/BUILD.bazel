@@ -334,7 +334,6 @@ gradle_integration_test(
     data = TEST_DATA + [
         "//prebuilts/studio/jdk/jbr-next:jdk_runtime_files",
         "//prebuilts/studio/jdk/jdk11:jdk_runtime_files",
-        "//prebuilts/studio/jdk/jdk8:jdk_runtime_files",
     ],
     maven_repo_zips = [
         "//tools/base/build-system:android_gradle_plugin",
@@ -364,7 +363,6 @@ gradle_integration_test(
     ),
     data = TEST_DATA + [
         "//prebuilts/studio/jdk/jdk11:jdk_runtime_files",
-        "//prebuilts/studio/jdk/jdk8:jdk_runtime_files",
     ],
     jvm_flags = ["-Dgradle.java.version=17"],
     maven_repo_zips = [

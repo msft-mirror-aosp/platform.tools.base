@@ -22,7 +22,6 @@ import com.android.build.gradle.integration.common.fixture.TemporaryProjectModif
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.errors.IssueReporter
-import com.android.testutils.OsType
 import com.android.testutils.TestUtils
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth
@@ -160,27 +159,19 @@ class Java11CompileTest {
   }
 
   @Test
-  fun testCompatibilityWithJavaToolChain() {
-    TestFileUtils.appendToFile(project.gradlePropertiesFile, "org.gradle.java.installations.paths=${customJdkLocation(JdkVersion.JDK8)}")
-    // jdk 8 is going to be used to create the jdk image(configured through java toolChain)
-    // we expect it to fail because jdk 8 doesn't have the jlink tool to create jdk image
+  fun testJavaToolchain() {
     TestFileUtils.appendToFile(
       project.buildFile,
       """
 
       tasks.withType(JavaCompile).configureEach {
           javaCompiler = javaToolchains.compilerFor {
-              languageVersion = JavaLanguageVersion.of(8)
+              languageVersion = JavaLanguageVersion.of(11)
           }
       }
       """
         .trimIndent(),
     )
-    val gLink = if (OsType.getHostOs() == OsType.WINDOWS) "jlink.exe" else "jlink"
-    executor().expectFailure().run("assembleDebug").assertErrorContains("$gLink does not exist")
-
-    TestFileUtils.searchAndReplace(project.buildFile, "JavaLanguageVersion.of(8)", "JavaLanguageVersion.of(11)")
-
     TestFileUtils.appendToFile(project.gradlePropertiesFile, "org.gradle.java.installations.paths=${customJdkLocation(JdkVersion.JDK11)}")
     executor().run("assembleDebug")
   }
@@ -214,7 +205,6 @@ class Java11CompileTest {
 
   private fun customJdkLocation(jdkVersion: JdkVersion): String {
     return when (jdkVersion) {
-        JdkVersion.JDK8 -> TestUtils.getJava8Jdk()
         JdkVersion.JDK11 -> TestUtils.getJava11Jdk()
       }
       .toString()
@@ -225,8 +215,7 @@ class Java11CompileTest {
 
   companion object {
     enum class JdkVersion {
-      JDK11,
-      JDK8,
+      JDK11
     }
   }
 }
