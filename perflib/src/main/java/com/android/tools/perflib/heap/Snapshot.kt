@@ -195,19 +195,10 @@ class Snapshot @VisibleForTesting constructor(val buffer: DataBuffer) : Capture(
   }
 
   fun compactMemory() {
-    val cache = mutableMapOf<Set<Instance>, InstanceList>()
-    fun compactList(insts: InstanceList): InstanceList =
-      insts.onCases(InstanceList::of) {
-        when {
-          it.isEmpty() -> InstanceList.Empty
-          else ->
-            it.asSequence().filterNotNull().toHashSet().let { elems -> cache.getOrPut(elems) { InstanceList.of(elems.toTypedArray()) } }
-        }
-      }
     fun compact(inst: Instance) {
-      inst._hardFwdRefs = compactList(inst._hardFwdRefs)
-      inst._hardRevRefs = compactList(inst._hardRevRefs)
-      inst._softRevRefs = compactList(inst._softRevRefs)
+      inst._hardFwdRefs = inst._hardFwdRefs.compact()
+      inst._hardRevRefs = inst._hardRevRefs.compact()
+      inst._softRevRefs = inst._softRevRefs.compact()
     }
     for (heap in heaps) {
       heap.classes.forEach(::compact)
