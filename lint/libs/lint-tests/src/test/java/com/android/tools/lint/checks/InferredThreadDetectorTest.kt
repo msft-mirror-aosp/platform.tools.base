@@ -1139,6 +1139,73 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
       )
   }
 
+  fun testLabeledLambdaReturn() {
+    lint()
+      .files(
+        kotlin(
+            """
+          import androidx.annotation.UiThread
+          import androidx.annotation.WorkerThread
+
+          fun runIt(f: () -> Unit) { f() }
+          fun cond(): Boolean = true
+
+          @WorkerThread fun work() { }
+
+          @UiThread fun updateUi() {
+              runIt update@{
+                  if (cond()) return@update
+                  work()
+              }
+          }
+          """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test.kt:10: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            runIt update@{
+            ^
+        1 error
+        """
+      )
+  }
+
+  fun testLabeledLambdaReturnValue() {
+    lint()
+      .files(
+        kotlin(
+            """
+          import androidx.annotation.UiThread
+          import androidx.annotation.WorkerThread
+
+          fun pick(value: () -> Unit): () -> Unit {
+              val f = pick@{ return@pick value }
+              return f()
+          }
+
+          @UiThread fun ui() { }
+
+          @WorkerThread fun worker() { pick(::ui).invoke() }
+          """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test.kt:11: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
+        @WorkerThread fun worker() { pick(::ui).invoke() }
+                                                ~~~~~~~~
+        1 error
+        """
+      )
+  }
+
   fun testWhenCondition() {
     lint()
       .files(

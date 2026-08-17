@@ -723,7 +723,7 @@ internal open class Analysis<FX : Any>(
               else -> loop(returnExpr)
             }
           // Accumulate the returned value at the target
-          when (val jumpTarget = e.jumpTarget) {
+          when (val jumpTarget = e.jumpTarget?.unwrapLabels()) {
             null -> target.accumulate(t)
             else -> returns.find { it.target == jumpTarget }?.accumulate(t) ?: throw UnresolvedReturnTargetException(e, returns)
           }
@@ -1567,6 +1567,9 @@ internal open class Analysis<FX : Any>(
 /** Whether [this] expression is the delegate of [variable] (as in `val x by delegate`) */
 private fun UExpression.isDelegateOf(variable: UVariable): Boolean =
   (variable.sourcePsi as? KtProperty)?.delegateExpression.let { it != null && it == sourcePsi }
+
+/** Strip labels off `lbl@ (lbl2@ e)`, giving the expression `e` that the label(s) name */
+private tailrec fun UElement.unwrapLabels(): UElement = if (this is ULabeledExpression) expression.unwrapLabels() else this
 
 private val <T> Lattice<T>.emptyResult: Result<Type<Nothing>, T>
   get() = pure(Type.None)
