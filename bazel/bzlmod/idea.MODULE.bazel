@@ -43,14 +43,6 @@ multiple_version_override(
     ],
 )
 
-# TODO: Explain why this is needed
-# https://fusion2.corp.google.com/invocations/a49af733-ee2f-40ba-8f27-de2ca1487fa8
-single_version_override(
-    module_name = "rules_java",
-    version = "8.13.0",
-)
-
-# TODO: Explain why this is needed
 # Required to import @community//plugins/kotlin:kotlin_test_dependencies.bzl
 # https://fusion2.corp.google.com/invocations/b7cee79e-d32f-4eb0-a305-ad25107baa32
 kotlin_test_deps = use_repo_rule("@tools_idea//plugins/kotlin:kotlin_test_dependencies.bzl", "kotlin_test_deps")

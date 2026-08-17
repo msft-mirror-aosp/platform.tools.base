@@ -154,7 +154,7 @@ single_version_override(
 )
 
 bazel_dep(name = "rules_jvm_external", version = "6.8")
-bazel_dep(name = "rules_java", version = "8.13.0")
+bazel_dep(name = "rules_java", version = "9.8.0")
 bazel_dep(name = "rules_pkg", version = "1.0.1")
 
 compat = use_extension("@rules_java//java:rules_java_deps.bzl", "compatibility_proxy")
@@ -241,7 +241,7 @@ git_override(
 bazel_dep(name = "protoc-gen-validate", version = "1.0.4.bcr.2")
 bazel_dep(name = "abseil-py", version = "2.1.0", repo_name = "absl-py")
 bazel_dep(name = "abseil-cpp", version = "20250127.0", repo_name = "com_google_absl")
-bazel_dep(name = "rules_android", version = "0.6.5")
+bazel_dep(name = "rules_android", version = "0.7.3")
 single_version_override(
     module_name = "rules_android",
     patch_strip = 1,
@@ -259,20 +259,25 @@ single_version_override(
         # can prepend the \\?\ prefix for long paths.
         "//tools/base/bazel/bzlmod:rules_android_aapt2_absolute_paths.patch",
     ],
-    version = "0.6.5",
+    version = "0.7.3",
 )
 
 maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
 
 # rules_jvm_external 6.8 includes the following commit:
 # https://github.com/bazel-contrib/rules_jvm_external/commit/3574cebf1a163ed992f460cc7877a0355e86e35b
-# which causes rules_android_maven's protobuf version to no longer be overridden.
+# which causes android_ide_common_30_1_3's protobuf version to no longer be overridden.
 # This override is re-added to ensure the same protobuf version is used. Otherwise,
 # the version conflict causes PackageAndroidResources actions to fail.
 maven.override(
-    name = "rules_android_maven",
+    name = "android_ide_common_30_1_3",
     coordinates = "com.google.protobuf:protobuf-java",
     target = "@com_google_protobuf//:protobuf_java",
+)
+maven.override(
+    name = "rules_android_maven",
+    coordinates = "com.google.protobuf:protobuf-java-util",
+    target = "@com_google_protobuf//:protobuf_java_util",
 )
 maven.install(
     known_contributing_modules = [

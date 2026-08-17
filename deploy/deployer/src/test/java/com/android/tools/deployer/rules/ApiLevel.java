@@ -131,7 +131,7 @@ public class ApiLevel extends Suite {
                     continue;
                 }
                 try {
-                    field.getType().getConstructor(DeviceId.class);
+                    Constructor<?> unused = field.getType().getConstructor(DeviceId.class);
                 } catch (NoSuchMethodException ex) {
                     errors.add(
                             new Exception(

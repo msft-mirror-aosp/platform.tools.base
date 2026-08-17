@@ -34,7 +34,6 @@ import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -44,7 +43,6 @@ import java.util.Locale;
 import java.util.Queue;
 import java.util.Set;
 import java.util.function.Predicate;
-import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
@@ -127,7 +125,8 @@ public class TestGroup {
             String path = paths.remove();
             // Lower case in order to avoid issues on Windows/Mac.
             String pathLowerCase = path.toLowerCase(Locale.US);
-            if (pathLowerCase.endsWith(classpathJarSuffixLowerCase)) {
+            if (pathLowerCase.endsWith(classpathJarSuffixLowerCase)
+                    || pathLowerCase.endsWith(".test_deploy.jar")) {
                 testClasses.addAll(scanTestJar(path));
             }
             addManifestClassPath(path, paths);
@@ -170,21 +169,29 @@ public class TestGroup {
             throws ClassNotFoundException, IOException {
         List<Class<?>> testClasses = new ArrayList<>();
         File file = new File(jar);
-        if (file.exists()) {
-            try (ZipInputStream zis = new ZipInputStream(new FileInputStream(file))) {
-                ZipEntry ze;
-                while ((ze = zis.getNextEntry()) != null) {
-                    if (ze.getName().endsWith(".class")) {
-                        String className =
-                                ze.getName().replaceAll("/", ".").replaceAll(".class$", "");
-                        Class<?> aClass = loader.loadClass(className);
-                        testClasses.add(aClass);
-                    }
+        if (!file.exists()) {
+            return testClasses;
+        }
+        try (ZipInputStream zis = new ZipInputStream(new FileInputStream(file))) {
+            ZipEntry ze;
+            while ((ze = zis.getNextEntry()) != null) {
+                if (!ze.getName().endsWith(".class")
+                        || ze.getName().startsWith("junit/")
+                        || ze.getName().startsWith("java/")) {
+                    continue;
                 }
-            } catch (ZipException e) {
-                System.err.println(
-                        "Error while opening jar " + file.getName() + " : " + e.getMessage());
+                String className = ze.getName().replaceAll("/", ".").replaceAll(".class$", "");
+                Class<?> aClass;
+                try {
+                    aClass = loader.loadClass(className);
+                } catch (NoClassDefFoundError | ClassNotFoundException e) {
+                    continue;
+                }
+                testClasses.add(aClass);
             }
+        } catch (ZipException e) {
+            System.err.println(
+                    "Error while opening jar " + file.getName() + " : " + e.getMessage());
         }
         return testClasses;
     }
@@ -221,9 +228,13 @@ public class TestGroup {
 
     private static boolean seemsLikeJUnit4(Class<?> aClass) {
         Predicate<Method> hasTestAnnotation = method -> method.isAnnotationPresent(Test.class);
-        return (aClass.isAnnotationPresent(RunWith.class)
-                || Arrays.stream(aClass.getMethods()).anyMatch(hasTestAnnotation))
-                && !Modifier.isAbstract(aClass.getModifiers());
+        try {
+            return (aClass.isAnnotationPresent(RunWith.class)
+                            || Arrays.stream(aClass.getMethods()).anyMatch(hasTestAnnotation))
+                    && !Modifier.isAbstract(aClass.getModifiers());
+        } catch (NoClassDefFoundError e) {
+            return false;
+        }
     }
 
     /** A TestGroup builder. */
