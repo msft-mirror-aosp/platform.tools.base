@@ -1065,6 +1065,43 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
       )
   }
 
+  fun testAnonymousObjectLocalVariable() {
+    lint()
+      .files(
+        java(
+            """
+          package test.pkg;
+
+          import androidx.annotation.UiThread;
+          import androidx.annotation.WorkerThread;
+
+          class Test {
+              abstract static class Base { abstract void run(); }
+
+              @UiThread static void ui() { }
+
+              @WorkerThread static void worker() {
+                  var b = new Base() { @Override void run() { ui(); } };
+                  b.run();
+              }
+          }
+          """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .javaLanguageLevel("17")
+      .run()
+      .expect(
+        """
+        src/test/pkg/Test.java:13: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
+                b.run();
+                  ~~~~~
+        1 error
+        """
+      )
+  }
+
   fun testWhenCondition() {
     lint()
       .files(

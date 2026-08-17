@@ -75,7 +75,12 @@ internal object PsiTypeAdapter : TypeAdapter<PsiType> {
         PsiTypes.doubleType() -> Type.Double
         PsiTypes.voidType() -> Type.Unit
         PsiTypes.nullType() -> Type.None
-        is PsiClassType -> env(t.className) ?: Type.Application(ClassId.of(t), t.parameters.map(::loop))
+        is PsiClassType ->
+          when (val name = t.className) {
+            // Anonymous classes have no name. Identify them like object literals
+            null -> Type.Application(t.resolve()?.let { ClassId.of(it) } ?: ClassId.of(t), t.parameters.map(::loop))
+            else -> env(name) ?: Type.Application(ClassId.of(t), t.parameters.map(::loop))
+          }
         is PsiTypeParameter -> env(t.canonicalText)!!
         is PsiWildcardType -> Type.WildCard // TODO
         is PsiEllipsisType -> Type.Ellipsis(translate(env, t.componentType))
