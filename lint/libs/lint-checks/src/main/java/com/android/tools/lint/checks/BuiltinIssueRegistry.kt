@@ -238,6 +238,7 @@ open class BuiltinIssueRegistry : IssueRegistry() {
           IconDetector.WEBP_ELIGIBLE,
           IconDetector.WEBP_UNSUPPORTED,
           IgnoreWithoutReasonDetector.ISSUE,
+          ImmutableDetector.ISSUE,
           IncludeDetector.ISSUE,
           IndentationDetector.ISSUE,
           InefficientWeightDetector.BASELINE_WEIGHTS,
