@@ -251,6 +251,60 @@ class SdkManagerBatWrapperTest {
   }
 
   @Test
+  fun testVersionFlagWithSpacesInAndroidCliBinPath() {
+    val spaceDir = temporaryFolder.newFolder("CLI Path With Spaces")
+    val recorder = File(spaceDir, "version_recorder.bat")
+    recorder.writeText(
+      """
+      @echo off
+      if "%~1"=="--version" (
+        echo mock-cli-version-spaces-4.5.6
+      ) else (
+        echo unexpected-args: %*
+        exit /b 1
+      )
+      """
+        .trimIndent()
+    )
+
+    val res = runSdkManager("--version", env = mapOf("ANDROID_CLI_BIN" to recorder.absolutePath))
+    assertThat(res.returnCode).isEqualTo(0)
+    assertThat(res.stdout.trim()).isEqualTo("mock-cli-version-spaces-4.5.6 (Android CLI)")
+    assertThat(res.stderr).isEqualTo(deprecationWarning)
+  }
+
+  @Test
+  fun testVersionFlagWithSurroundingQuotesInAndroidCliBin() {
+    val recorder = temporaryFolder.newFile("quoted_env_version_recorder.bat")
+    recorder.writeText(
+      """
+      @echo off
+      if "%~1"=="--version" (
+        echo mock-cli-version-quoted-7.8.9
+      ) else (
+        echo unexpected-args: %*
+        exit /b 1
+      )
+      """
+        .trimIndent()
+    )
+
+    val res = runSdkManager("--version", env = mapOf("ANDROID_CLI_BIN" to "\"${recorder.absolutePath}\""))
+    assertThat(res.returnCode).isEqualTo(0)
+    assertThat(res.stdout.trim()).isEqualTo("mock-cli-version-quoted-7.8.9 (Android CLI)")
+    assertThat(res.stderr).isEqualTo(deprecationWarning)
+  }
+
+  @Test
+  fun testInstallCommandWithSurroundingQuotesInAndroidCliBin() {
+    val recorder = createRecorderScript()
+    val res =
+      runSdkManager("\"platforms;android-34\"", "--sdk_root=/fake/sdk", env = mapOf("ANDROID_CLI_BIN" to "\"${recorder.absolutePath}\""))
+    assertThat(res.returnCode).isEqualTo(0)
+    assertThat(res.stdout).isEqualTo("--sdk=\"/fake/sdk\" sdk install \"platforms/android-34\"")
+  }
+
+  @Test
   fun testVersionFlagReturnsUnknownWhenAndroidCliFails() {
     val failingAndroidBin = temporaryFolder.newFile("failing_android.bat")
     failingAndroidBin.writeText("@exit /b 1")
@@ -282,7 +336,7 @@ class SdkManagerBatWrapperTest {
     val recorder = createRecorderScript()
     val res = runSdkManager("\"platforms;android-34\"", "--sdk_root=/fake/sdk", env = mapOf("ANDROID_CLI_BIN" to recorder.absolutePath))
     assertThat(res.returnCode).isEqualTo(0)
-    assertThat(res.stdout).isEqualTo("--sdk=\"/fake/sdk\" sdk install platforms/android-34")
+    assertThat(res.stdout).isEqualTo("--sdk=\"/fake/sdk\" sdk install \"platforms/android-34\"")
   }
 
   @Test
@@ -296,7 +350,7 @@ class SdkManagerBatWrapperTest {
         env = mapOf("ANDROID_CLI_BIN" to recorder.absolutePath),
       )
     assertThat(res.returnCode).isEqualTo(0)
-    assertThat(res.stdout).isEqualTo("--sdk=\"/fake/sdk\" sdk remove platforms/android-34")
+    assertThat(res.stdout).isEqualTo("--sdk=\"/fake/sdk\" sdk remove \"platforms/android-34\"")
   }
 
   @Test
@@ -352,7 +406,7 @@ class SdkManagerBatWrapperTest {
         env = mapOf("ANDROID_CLI_BIN" to recorder.absolutePath),
       )
     assertThat(res.returnCode).isEqualTo(0)
-    assertThat(res.stdout).isEqualTo("--sdk=\"/custom/sdk/path\" sdk install platforms/android-34 build-tools/34.0.0")
+    assertThat(res.stdout).isEqualTo("--sdk=\"/custom/sdk/path\" sdk install \"platforms/android-34\" \"build-tools/34.0.0\"")
   }
 
   @Test
@@ -372,7 +426,8 @@ class SdkManagerBatWrapperTest {
         env = mapOf("ANDROID_CLI_BIN" to recorder.absolutePath),
       )
     assertThat(res.returnCode).isEqualTo(0)
-    assertThat(res.stdout).isEqualTo("--sdk=\"/fake/sdk\" sdk install platforms/android-33 platforms/android-34 build-tools/33.0.0")
+    assertThat(res.stdout)
+      .isEqualTo("--sdk=\"/fake/sdk\" sdk install \"platforms/android-33\" \"platforms/android-34\" \"build-tools/33.0.0\"")
   }
 
   @Test
@@ -428,7 +483,7 @@ class SdkManagerBatWrapperTest {
       )
     assertThat(res.returnCode).isEqualTo(0)
     assertThat(res.stderr).contains("Warning: Proxy options are no longer needed; using default system proxy configuration.")
-    assertThat(res.stdout).contains("--sdk=\"/fake/sdk\" sdk install platforms/android-34")
+    assertThat(res.stdout).contains("--sdk=\"/fake/sdk\" sdk install \"platforms/android-34\"")
   }
 
   @Test
@@ -445,7 +500,7 @@ class SdkManagerBatWrapperTest {
       )
     assertThat(res.returnCode).isEqualTo(0)
     assertThat(res.stderr).contains("Warning: Proxy options are no longer needed; using default system proxy configuration.")
-    assertThat(res.stdout).contains("--sdk=\"/fake/sdk\" sdk install platforms/android-34")
+    assertThat(res.stdout).contains("--sdk=\"/fake/sdk\" sdk install \"platforms/android-34\"")
   }
 
   @Test
@@ -460,7 +515,7 @@ class SdkManagerBatWrapperTest {
       )
     assertThat(res.returnCode).isEqualTo(0)
     assertThat(res.stderr).contains("Warning: Proxy options are no longer needed; using default system proxy configuration.")
-    assertThat(res.stdout).contains("--sdk=\"/fake/sdk\" sdk install platforms/android-34")
+    assertThat(res.stdout).contains("--sdk=\"/fake/sdk\" sdk install \"platforms/android-34\"")
   }
 
   @Test
@@ -475,7 +530,7 @@ class SdkManagerBatWrapperTest {
         env = mapOf("ANDROID_CLI_BIN" to recorder.absolutePath),
       )
     assertThat(res.returnCode).isEqualTo(0)
-    assertThat(res.stdout.trim()).isEqualTo("--sdk=\"/fake/sdk\" sdk remove platforms/android-34 build-tools/34.0.0")
+    assertThat(res.stdout.trim()).isEqualTo("--sdk=\"/fake/sdk\" sdk remove \"platforms/android-34\" \"build-tools/34.0.0\"")
   }
 
   @Test
@@ -512,7 +567,7 @@ class SdkManagerBatWrapperTest {
         env = mapOf("ANDROID_CLI_BIN" to recorder.absolutePath),
       )
     assertThat(res.returnCode).isEqualTo(0)
-    assertThat(res.stdout).isEqualTo("--sdk=\"C:\\fake;sdk\\path\" sdk install platforms/android-34")
+    assertThat(res.stdout).isEqualTo("--sdk=\"C:\\fake;sdk\\path\" sdk install \"platforms/android-34\"")
   }
 
   @Test
@@ -529,7 +584,7 @@ class SdkManagerBatWrapperTest {
       )
     assertThat(res.returnCode).isEqualTo(0)
     assertThat(res.stderr).contains("Warning: Proxy options are no longer needed; using default system proxy configuration.")
-    assertThat(res.stdout).contains("--sdk=\"/fake/sdk\" sdk install platforms/android-34")
+    assertThat(res.stdout).contains("--sdk=\"/fake/sdk\" sdk install \"platforms/android-34\"")
   }
 
   @Test
@@ -537,7 +592,7 @@ class SdkManagerBatWrapperTest {
     val recorder = createRecorderScript()
     val res = runSdkManager("--sdk_root=C:\\My SDK", "\"platforms;android-34\"", env = mapOf("ANDROID_CLI_BIN" to recorder.absolutePath))
     assertThat(res.returnCode).isEqualTo(0)
-    assertThat(res.stdout).isEqualTo("--sdk=\"C:\\My SDK\" sdk install platforms/android-34")
+    assertThat(res.stdout).isEqualTo("--sdk=\"C:\\My SDK\" sdk install \"platforms/android-34\"")
   }
 
   @Test
@@ -551,7 +606,7 @@ class SdkManagerBatWrapperTest {
         env = mapOf("ANDROID_CLI_BIN" to recorder.absolutePath),
       )
     assertThat(res.returnCode).isEqualTo(0)
-    assertThat(res.stdout).isEqualTo("--sdk=\"/fake/sdk\" sdk install \"C:\\My Local Packages\\platform-34\" build-tools/34.0.0")
+    assertThat(res.stdout).isEqualTo("--sdk=\"/fake/sdk\" sdk install \"C:\\My Local Packages\\platform-34\" \"build-tools/34.0.0\"")
   }
 
   @Test
@@ -566,7 +621,7 @@ class SdkManagerBatWrapperTest {
         env = mapOf("ANDROID_CLI_BIN" to recorder.absolutePath),
       )
     assertThat(res.returnCode).isEqualTo(0)
-    assertThat(res.stdout).contains("--sdk=\"/fake/sdk\" sdk remove \"C:\\My Local Packages\\platform-34\" build-tools/34.0.0")
+    assertThat(res.stdout).contains("--sdk=\"/fake/sdk\" sdk remove \"C:\\My Local Packages\\platform-34\" \"build-tools/34.0.0\"")
   }
 
   @Test
@@ -586,7 +641,7 @@ class SdkManagerBatWrapperTest {
         env = mapOf("ANDROID_CLI_BIN" to recorder.absolutePath, "REPO_OS_OVERRIDE" to "linux"),
       )
     assertThat(installRes.returnCode).isEqualTo(0)
-    assertThat(installRes.stdout).isEqualTo("--sdk=\"/fake/sdk\" sdk install --platform=linux_$hostArch platforms/android-34")
+    assertThat(installRes.stdout).isEqualTo("--sdk=\"/fake/sdk\" sdk install --platform=\"linux_$hostArch\" \"platforms/android-34\"")
 
     val updateRes =
       runSdkManager(
@@ -595,7 +650,7 @@ class SdkManagerBatWrapperTest {
         env = mapOf("ANDROID_CLI_BIN" to recorder.absolutePath, "REPO_OS_OVERRIDE" to "macosx"),
       )
     assertThat(updateRes.returnCode).isEqualTo(0)
-    assertThat(updateRes.stdout).isEqualTo("--sdk=\"/fake/sdk\" sdk update --platform=macosx_$hostArch")
+    assertThat(updateRes.stdout).isEqualTo("--sdk=\"/fake/sdk\" sdk update --platform=\"macosx_$hostArch\"")
 
     val updateMacShortRes =
       runSdkManager(
@@ -604,7 +659,7 @@ class SdkManagerBatWrapperTest {
         env = mapOf("ANDROID_CLI_BIN" to recorder.absolutePath, "REPO_OS_OVERRIDE" to "mac"),
       )
     assertThat(updateMacShortRes.returnCode).isEqualTo(0)
-    assertThat(updateMacShortRes.stdout).isEqualTo("--sdk=\"/fake/sdk\" sdk update --platform=mac_$hostArch")
+    assertThat(updateMacShortRes.stdout).isEqualTo("--sdk=\"/fake/sdk\" sdk update --platform=\"mac_$hostArch\"")
 
     val updateWinRes =
       runSdkManager(
@@ -613,7 +668,7 @@ class SdkManagerBatWrapperTest {
         env = mapOf("ANDROID_CLI_BIN" to recorder.absolutePath, "REPO_OS_OVERRIDE" to "windows"),
       )
     assertThat(updateWinRes.returnCode).isEqualTo(0)
-    assertThat(updateWinRes.stdout).isEqualTo("--sdk=\"/fake/sdk\" sdk update --platform=windows_$hostArch")
+    assertThat(updateWinRes.stdout).isEqualTo("--sdk=\"/fake/sdk\" sdk update --platform=\"windows_$hostArch\"")
 
     val explicitArchRes =
       runSdkManager(
@@ -622,7 +677,7 @@ class SdkManagerBatWrapperTest {
         env = mapOf("ANDROID_CLI_BIN" to recorder.absolutePath, "REPO_OS_OVERRIDE" to "macosx_arm64"),
       )
     assertThat(explicitArchRes.returnCode).isEqualTo(0)
-    assertThat(explicitArchRes.stdout).isEqualTo("--sdk=\"/fake/sdk\" sdk update --platform=macosx_arm64")
+    assertThat(explicitArchRes.stdout).isEqualTo("--sdk=\"/fake/sdk\" sdk update --platform=\"macosx_arm64\"")
 
     val listRes =
       runSdkManager(
@@ -641,6 +696,132 @@ class SdkManagerBatWrapperTest {
         env = mapOf("ANDROID_CLI_BIN" to recorder.absolutePath, "REPO_OS_OVERRIDE" to "linux"),
       )
     assertThat(uninstallRes.returnCode).isEqualTo(0)
-    assertThat(uninstallRes.stdout).isEqualTo("--sdk=\"/fake/sdk\" sdk remove platforms/android-34")
+    assertThat(uninstallRes.stdout).isEqualTo("--sdk=\"/fake/sdk\" sdk remove \"platforms/android-34\"")
+  }
+
+  @Test
+  fun testRepoOsOverrideWithSurroundingQuotes() {
+    val recorder = createRecorderScript()
+    val hostArch =
+      when (System.getProperty("os.arch")) {
+        "aarch64",
+        "arm64" -> "arm64"
+        else -> "x86_64"
+      }
+
+    val installRes =
+      runSdkManager(
+        "\"platforms;android-34\"",
+        "--sdk_root=/fake/sdk",
+        env = mapOf("ANDROID_CLI_BIN" to recorder.absolutePath, "REPO_OS_OVERRIDE" to "\"linux\""),
+      )
+    assertThat(installRes.returnCode).isEqualTo(0)
+    assertThat(installRes.stdout).isEqualTo("--sdk=\"/fake/sdk\" sdk install --platform=\"linux_$hostArch\" \"platforms/android-34\"")
+
+    val updateRes =
+      runSdkManager(
+        "--update",
+        "--sdk_root=/fake/sdk",
+        env = mapOf("ANDROID_CLI_BIN" to recorder.absolutePath, "REPO_OS_OVERRIDE" to "\"macosx_arm64\""),
+      )
+    assertThat(updateRes.returnCode).isEqualTo(0)
+    assertThat(updateRes.stdout).isEqualTo("--sdk=\"/fake/sdk\" sdk update --platform=\"macosx_arm64\"")
+  }
+
+  @Test
+  fun testRepoOsOverrideEmptyStringDoesNotAddPlatformFlag() {
+    val recorder = createRecorderScript()
+    val res =
+      runSdkManager(
+        "\"platforms;android-34\"",
+        "--sdk_root=/fake/sdk",
+        env = mapOf("ANDROID_CLI_BIN" to recorder.absolutePath, "REPO_OS_OVERRIDE" to "\"\""),
+      )
+    assertThat(res.returnCode).isEqualTo(0)
+    assertThat(res.stdout).isEqualTo("--sdk=\"/fake/sdk\" sdk install \"platforms/android-34\"")
+  }
+
+  @Test
+  fun testPackageFileWithMetacharactersDoesNotExecuteInjectedCommands() {
+    val recorder = createRecorderScript()
+    val markerFile = temporaryFolder.root.toPath().resolve("pwned_file.txt")
+    val pkgFile = temporaryFolder.newFile("malicious_packages.txt")
+    pkgFile.writeText("platforms;android-34 & echo pwned > \"${markerFile.toAbsolutePath()}\"\r\n")
+
+    runSdkManager("--package_file=${pkgFile.absolutePath}", "--sdk_root=/fake/sdk", env = mapOf("ANDROID_CLI_BIN" to recorder.absolutePath))
+
+    assertThat(Files.exists(markerFile)).isFalse()
+  }
+
+  @Test
+  fun testCommandLineArgumentWithMetacharactersDoesNotInjectCommands() {
+    val recorder = createRecorderScript()
+    val markerFile = temporaryFolder.root.toPath().resolve("pwned_arg.txt")
+
+    runSdkManager(
+      "\"platforms;android-34 & echo pwned > \\\"${markerFile.toAbsolutePath()}\\\"\"",
+      "--sdk_root=/fake/sdk",
+      env = mapOf("ANDROID_CLI_BIN" to recorder.absolutePath),
+    )
+
+    assertThat(Files.exists(markerFile)).isFalse()
+  }
+
+  @Test
+  fun testPackageFileWithQuotedPackageWithSpaces() {
+    val recorder = createRecorderScript()
+    val pkgFile = temporaryFolder.newFile("quoted_packages.txt")
+    pkgFile.writeText("\"C:\\My Local Packages\\platform-34\"\r\nbuild-tools;34.0.0\r\n")
+
+    val res =
+      runSdkManager(
+        "--package_file=${pkgFile.absolutePath}",
+        "--sdk_root=/fake/sdk",
+        env = mapOf("ANDROID_CLI_BIN" to recorder.absolutePath),
+      )
+
+    assertThat(res.returnCode).isEqualTo(0)
+    assertThat(res.stdout).isEqualTo("--sdk=\"/fake/sdk\" sdk install \"C:\\My Local Packages\\platform-34\" \"build-tools/34.0.0\"")
+  }
+
+  @Test
+  fun testPackageWithMetacharactersWithoutSpacesIsQuoted() {
+    val recorder = createRecorderScript()
+    val pkgFile = temporaryFolder.newFile("meta_packages.txt")
+    pkgFile.writeText("platforms;android-34&foo\r\n")
+
+    val res =
+      runSdkManager(
+        "--package_file=${pkgFile.absolutePath}",
+        "--sdk_root=/fake/sdk",
+        env = mapOf("ANDROID_CLI_BIN" to recorder.absolutePath),
+      )
+
+    assertThat(res.returnCode).isEqualTo(0)
+    assertThat(res.stdout).isEqualTo("--sdk=\"/fake/sdk\" sdk install \"platforms/android-34&foo\"")
+  }
+
+  @Test
+  fun testMissingPackageFilePrintsErrorAndExits1() {
+    val res = runSdkManager("--package_file=non_existent_packages.txt", "--sdk_root=/fake/sdk")
+    assertThat(res.returnCode).isEqualTo(1)
+    assertThat(res.stderr).contains("Error: Package file not found: 'non_existent_packages.txt'")
+  }
+
+  @Test
+  fun testPackageWithParenthesesCommasOrEqualsIsQuoted() {
+    val recorder = createRecorderScript()
+    val pkgFile = temporaryFolder.newFile("delim_packages.txt")
+    pkgFile.writeText("platforms;android-34(1)\r\npackage,1\r\npackage=2\r\n")
+
+    val res =
+      runSdkManager(
+        "--package_file=${pkgFile.absolutePath}",
+        "--sdk_root=/fake/sdk",
+        env = mapOf("ANDROID_CLI_BIN" to recorder.absolutePath),
+      )
+
+    assertThat(res.returnCode).isEqualTo(0)
+    assertThat(res.stdout).isEqualTo("--sdk=\"/fake/sdk\" sdk install \"platforms/android-34(1)\" \"package,1\" \"package=2\"")
   }
 }
