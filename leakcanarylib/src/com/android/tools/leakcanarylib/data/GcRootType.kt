@@ -24,12 +24,18 @@ enum class GcRootType(val description: String) {
   THREAD_BLOCK("Thread block"),
   MONITOR_USED("Monitor (anything that called the wait() or notify() methods, or that is synchronized.)"),
   THREAD_OBJECT("Thread object"),
-  JNI_MONITOR("Root JNI monitor");
+  JNI_MONITOR("Root JNI monitor"),
+  INTERNED_STRING("Interned string"),
+  FINALIZING("Object awaiting finalization"),
+  DEBUGGER("Debugger reference"),
+  REFERENCE_CLEANUP("Reference cleanup"),
+  VM_INTERNAL("VM internal reference"),
+  UNREACHABLE("Unreachable object"),
+  UNKNOWN("Unknown GC root type");
 
   companion object {
     fun fromDescription(description: String): GcRootType {
-      return entries.find { it.description == description }
-        ?: throw IllegalArgumentException("Invalid GC root type description: $description")
+      return entries.find { it.description == description } ?: UNKNOWN
     }
   }
 }

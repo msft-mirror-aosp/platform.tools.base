@@ -139,19 +139,20 @@ class LeakTraceTest {
     assertEquals(actual, convertedBack)
   }
 
-  @Test(expected = IllegalArgumentException::class)
-  fun `parseLeakTrace - invalid GC root type`() {
+  @Test
+  fun `parseLeakTrace - unknown GC root type`() {
     val leakTraceText =
       """
       ┬───
-      │ GC Root: InvalidType
+      │ GC Root: Some future GC root type
       │
       ╰→ com.example.LeakingActivity INSTANCE
-           Leaking: YES (Activity has leaked)
+      ​     Leaking: YES (Activity has leaked)
       """
         .trimIndent()
 
-    LeakTrace.fromString(leakTraceText)
+    val actual = LeakTrace.fromString(leakTraceText)
+    assertEquals(GcRootType.UNKNOWN, actual.gcRootType)
   }
 
   @Test
