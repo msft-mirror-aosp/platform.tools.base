@@ -215,10 +215,10 @@ rules_ts_ext.deps(
 use_repo(rules_ts_ext, "npm_typescript")
 
 # rules_apple is included by grpc, but override to a newer version to pick up
-# fixes for Bazel 8.
+# fixes for Bazel 9.
 single_version_override(
     module_name = "rules_apple",
-    version = "3.16.0",
+    version = "4.5.3",
 )
 
 bazel_dep(name = "re2")

@@ -34,15 +34,6 @@ archive_override(
     url = "https://github.com/JetBrains/rules_kotlin/archive/ffbc4307c3a55f61e05c12481b6dcb929d6e2b1f.zip",
 )
 
-# Permit the diamond dependency between rules_apple and rules_jvm.
-multiple_version_override(
-    module_name = "rules_swift",
-    versions = [
-        "2.1.1",
-        "3.4.1",
-    ],
-)
-
 # Required to import @community//plugins/kotlin:kotlin_test_dependencies.bzl
 # https://fusion2.corp.google.com/invocations/b7cee79e-d32f-4eb0-a305-ad25107baa32
 kotlin_test_deps = use_repo_rule("@tools_idea//plugins/kotlin:kotlin_test_dependencies.bzl", "kotlin_test_deps")
