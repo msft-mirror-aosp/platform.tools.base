@@ -132,7 +132,6 @@ class UastImplementationDetectorTest : AbstractCheckTest() {
           )
           .indented(),
         *getLintClassPath(),
-        KotlincFE10DetectorTest.kotlinUastResolveProviderServiceStub,
       )
       .skipTestModes(TestMode.IMPORT_ALIAS)
       .run()

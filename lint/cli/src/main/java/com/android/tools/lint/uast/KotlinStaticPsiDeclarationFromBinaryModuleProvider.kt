@@ -133,8 +133,6 @@ private class KotlinStaticPsiDeclarationFromBinaryModuleProvider(
               object : KtFile(KtClassFileViewProvider(psiManager, virtualFile), isCompiled = true) {
                 override fun getStub() = fileStub
 
-                override val greenStub = fileStub
-
                 override fun isPhysical() = false
               }
             fileStub.psi = fakeFile

@@ -82,6 +82,7 @@ import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.plus
 import kotlinx.collections.immutable.toPersistentSet
 import org.jetbrains.annotations.VisibleForTesting
+import org.jetbrains.kotlin.incremental.createDirectory
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.uast.UClass
 import org.jetbrains.uast.UElement
@@ -280,7 +281,7 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
       }
     return when {
       path.exists() -> path.toFile()
-      createIfAbsent -> path.toFile().apply { mkdirs() }
+      createIfAbsent -> path.toFile().apply { createDirectory() }
       else -> null
     }
   }

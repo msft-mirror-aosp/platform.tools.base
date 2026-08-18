@@ -85,7 +85,7 @@ internal class KlibLightFieldForEnumEntry(
   override fun isDeprecated(): Boolean =
     enumEntrySymbolPointer.withSymbol(ktModule) { enumEntrySymbol ->
       @Suppress("UnstableApiUsage")
-      enumEntrySymbol.deprecation != null
+      enumEntrySymbol.deprecationStatus != null
     }
 
   override fun getName(): String = enumEntrySymbolPointer.withSymbol(ktModule) { enumEntrySymbol -> enumEntrySymbol.name.asString() }

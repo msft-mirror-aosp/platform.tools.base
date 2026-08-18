@@ -25,9 +25,7 @@ import com.intellij.openapi.vfs.isFile
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import com.intellij.psi.search.AbstractFilesScope
-import com.intellij.psi.search.DelegatingGlobalSearchScope
 import java.nio.file.Paths
-import org.jetbrains.kotlin.K1Deprecation
 import org.jetbrains.kotlin.analysis.api.KaPlatformInterface
 import org.jetbrains.kotlin.analysis.api.KaSession
 import org.jetbrains.kotlin.analysis.api.fir.utils.firSymbol
@@ -164,7 +162,7 @@ internal fun VirtualFile.findFirst(maxDepth: Int = 2, condition: (VirtualFile) -
 }
 
 @Suppress("UnstableApiUsage")
-@OptIn(SymbolInternals::class, KaPlatformInterface::class, K1Deprecation::class)
+@OptIn(SymbolInternals::class, KaPlatformInterface::class)
 internal fun KaSession.getPsiFile(symbol: KaSymbol, psiManager: PsiManager): PsiFile? {
   // If we end up using PSI stubs, this hack shouldn't be needed.
   val containerSource =
@@ -173,18 +171,15 @@ internal fun KaSession.getPsiFile(symbol: KaSymbol, psiManager: PsiManager): Psi
   if (containerSource == null) {
     // This hack sort of works for the built-ins module.
     // We just need some file.
-    val scope =
-      symbol.containingModule.baseContentScope as? AbstractFilesScope
-        ?: (symbol.containingModule.baseContentScope as? DelegatingGlobalSearchScope)?.delegate as? AbstractFilesScope
-
-    scope
-      ?.filesIfCollection
-      ?.firstOrNull { it.isFile }
-      ?.let { virtualFile ->
-        psiManager.findFile(virtualFile)?.let {
-          return it
+    (symbol.containingModule.baseContentScope as? AbstractFilesScope?)?.let { scope ->
+      scope.filesIfCollection
+        ?.firstOrNull { it.isFile }
+        ?.let { virtualFile ->
+          psiManager.findFile(virtualFile)?.let {
+            return it
+          }
         }
-      }
+    }
     KlibLightElementProvider.log { "ERROR: Could not get container source from symbol" }
     return null
   }

@@ -52,6 +52,7 @@ import org.jetbrains.kotlin.analysis.api.resolution.singleFunctionCallOrNull
 import org.jetbrains.kotlin.analysis.api.resolution.symbol
 import org.jetbrains.kotlin.analysis.api.types.KaClassErrorType
 import org.jetbrains.kotlin.analysis.api.types.KaType
+import org.jetbrains.kotlin.asJava.elements.KotlinLightTypeParameterBuilder
 import org.jetbrains.kotlin.asJava.unwrapped
 import org.jetbrains.kotlin.config.LanguageVersionSettings
 import org.jetbrains.kotlin.lexer.KtModifierKeywordToken
@@ -1583,7 +1584,11 @@ class UastTest : TestCase() {
       // in the kotlin-compiler fork (i.e. KotlinLightTypeParameterBuilder).
 
       fun hasTypeParameterKeyword(element: PsiTypeParameter?, keyword: KtModifierKeywordToken): Boolean {
-        val ktOrigin = element?.unwrapped as? KtTypeParameter ?: return false
+        val ktOrigin =
+          when (element) {
+            is KotlinLightTypeParameterBuilder -> element.origin
+            else -> element?.unwrapped as? KtTypeParameter ?: return false
+          }
         return ktOrigin.hasModifier(keyword)
       }
 

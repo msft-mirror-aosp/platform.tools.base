@@ -28,8 +28,6 @@ import com.intellij.openapi.roots.LanguageLevelProjectExtension
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.registry.Registry
 import com.intellij.pom.java.LanguageLevel
-import com.intellij.psi.PackageDirectoryProvider
-import com.intellij.psi.impl.file.JavaPackageDirectoryProvider
 import java.io.File
 import kotlin.concurrent.withLock
 import org.jetbrains.kotlin.analysis.api.KaExperimentalApi
@@ -119,12 +117,8 @@ private fun createKotlinCompilerConfig(enableKotlinScripting: Boolean): Compiler
   return config
 }
 
-@Suppress("UnstableApiUsage")
 @OptIn(KaExperimentalApi::class)
 private fun createAnalysisSession(parentDisposable: Disposable, config: FirUastEnvironment.Configuration): StandaloneAnalysisAPISession {
-  // Mark the registry as loaded, otherwise there are warnings upon registry value lookup.
-  Registry.markAsLoaded()
-
   val analysisSession =
     buildStandaloneAnalysisAPISession(projectDisposable = parentDisposable, compilerConfiguration = config.kotlinCompilerConfig) {
       appLock.withLock {
@@ -136,19 +130,11 @@ private fun createAnalysisSession(parentDisposable: Disposable, config: FirUastE
         // Should register this before the project structure is built
         registerCommonElementTypeConverters(application as MockApplication)
       }
-
-      registerProjectExtensionPoint(KaResolveExtensionProvider.EP_NAME, KaResolveExtensionProvider::class.java)
-
       CoreApplicationEnvironment.registerExtensionPoint(
         project.extensionArea,
-        PackageDirectoryProvider.EP_NAME.name,
-        PackageDirectoryProvider::class.java,
+        KaResolveExtensionProvider.EP_NAME.name,
+        KaResolveExtensionProvider::class.java,
       )
-
-      project.extensionArea
-        .getExtensionPoint<PackageDirectoryProvider>(PackageDirectoryProvider.EP_NAME.name)
-        .registerExtension(JavaPackageDirectoryProvider(), parentDisposable)
-
       // Scripting support
       registerProjectService(ScriptDefinitionProvider::class.java, CliScriptDefinitionProvider())
       registerProjectService(ClsJavaStubByVirtualFileCache::class.java, ClsJavaStubByVirtualFileCache())
