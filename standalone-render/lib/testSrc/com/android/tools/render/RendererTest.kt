@@ -311,4 +311,35 @@ class RendererTest {
     assertEquals("VALIDATION_ERROR", invalidResult.error?.status)
     assertTrue(invalidResult.error?.message?.contains("widthDp") == true)
   }
+
+  @Test
+  fun testRenderCustomMultiPreviewClassAnnotationRendersAllPreviews() {
+    val layoutlibPath = TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib")
+
+    val bootstrapper =
+      RenderEnvironmentBootstrapper(
+        fontsPath = null,
+        resourceApkPath = null,
+        namespace = "",
+        classPath = emptyList(),
+        projectClassPath = emptyList(),
+        layoutlibPath = layoutlibPath.absolutePathString(),
+      )
+    val outputDir = tmpFolder.newFolder("output_screenshots_multipreview_class").absolutePath
+    val screenshot =
+      ComposeScreenshot(
+        previewId = "multipreview_class",
+        methodFQN = "${SamplePreviewTarget::class.java.name}.sampleMultiPreviewAnnotatedMethod",
+        previewParams = emptyMap(),
+        methodParams = emptyList(),
+      )
+
+    val results = bootstrapper.bootstrap().use { renderer -> renderer.render(screenshot, outputDir) }
+
+    assertEquals(2, results.size)
+    assertEquals("multipreview_class", results[0].previewId)
+    assertEquals("multipreview_class", results[1].previewId)
+    assertTrue(results[0].imagePath.endsWith("multipreview_class_0.png"))
+    assertTrue(results[1].imagePath.endsWith("multipreview_class_1.png"))
+  }
 }

@@ -39,11 +39,14 @@ class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
      * declared on the same method (e.g. `@Preview @Preview`).
      */
     private const val PREVIEW_CONTAINER_DESC = "Landroidx/compose/ui/tooling/preview/Preview\$Container;"
+
+    /** Maximum number of previews allowed to be discovered for a single method to prevent DAG exponential expansion. */
+    private const val MAX_DISCOVERED_PREVIEWS = 100
   }
 
   /**
    * Discovers all `@Preview` annotations declared on [methodFQN] from bytecode, extracting their parameters into [ComposeScreenshot]s.
-   * Supports single and repeatable multi-previews.
+   * Supports single previews, repeatable multi-previews, and custom MultiPreview class annotations.
    */
   fun discoverAllPreviews(methodFQN: String, previewId: String? = null): List<ComposeScreenshot> {
     val className = methodFQN.substringBeforeLast(".")
@@ -52,6 +55,7 @@ class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
     val classBytes = findClassBytes(className) ?: return emptyList()
 
     val discoveredList = mutableListOf<Map<String, String>>()
+    val traversalPath = mutableSetOf<String>()
 
     val classReader = ClassReader(classBytes)
     classReader.accept(
@@ -68,30 +72,7 @@ class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
 
           return object : MethodVisitor(Opcodes.ASM9) {
             override fun visitAnnotation(desc: String, visible: Boolean): AnnotationVisitor? {
-              when (desc) {
-                PREVIEW_DESC -> {
-                  val previewParams = mutableMapOf<String, String>()
-                  discoveredList.add(previewParams)
-                  return createPreviewAnnotationVisitor(previewParams)
-                }
-                PREVIEW_CONTAINER_DESC -> {
-                  return object : AnnotationVisitor(Opcodes.ASM9) {
-                    override fun visitArray(name: String?): AnnotationVisitor {
-                      return object : AnnotationVisitor(Opcodes.ASM9) {
-                        override fun visitAnnotation(name: String?, descriptor: String?): AnnotationVisitor? {
-                          if (descriptor == PREVIEW_DESC) {
-                            val previewParams = mutableMapOf<String, String>()
-                            discoveredList.add(previewParams)
-                            return createPreviewAnnotationVisitor(previewParams)
-                          }
-                          return null
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-              return null
+              return handleAnnotation(desc, traversalPath, discoveredList)
             }
           }
         }
@@ -103,6 +84,118 @@ class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
     return discoveredList.map { params ->
       ComposeScreenshot(methodFQN = methodFQN, methodParams = emptyList(), previewParams = params, previewId = resolvedPreviewId)
     }
+  }
+
+  /**
+   * Routes an annotation [desc] encountered during traversal:
+   * - Direct `@Preview`: Extracts its preview parameters.
+   * - Repeatable `@Preview$Container`: Traverses the container array of `@Preview` annotations.
+   * - Custom MultiPreview: Recursively inspects the annotation class bytecode if [isPotentialMultiPreview] matches.
+   */
+  private fun handleAnnotation(
+    desc: String,
+    traversalPath: MutableSet<String>,
+    discoveredList: MutableList<Map<String, String>>,
+  ): AnnotationVisitor? {
+    if (discoveredList.size >= MAX_DISCOVERED_PREVIEWS) {
+      return null
+    }
+
+    when (desc) {
+      PREVIEW_DESC -> {
+        val previewParams = mutableMapOf<String, String>()
+        discoveredList.add(previewParams)
+        return createPreviewAnnotationVisitor(previewParams)
+      }
+      PREVIEW_CONTAINER_DESC -> {
+        return createPreviewContainerVisitor(discoveredList)
+      }
+      else -> {
+        if (isPotentialMultiPreview(desc)) {
+          val annotationClassName = Type.getType(desc).className
+          discoverFromAnnotationClass(annotationClassName, traversalPath, discoveredList)
+        }
+        return null
+      }
+    }
+  }
+
+  /**
+   * Loads bytecode for [annotationClassName] and traverses its class-level annotations to discover nested `@Preview` or MultiPreview
+   * definitions. Tracks [traversalPath] on the active recursion call stack to safely prevent infinite recursion on circular references.
+   */
+  private fun discoverFromAnnotationClass(
+    annotationClassName: String,
+    traversalPath: MutableSet<String>,
+    discoveredList: MutableList<Map<String, String>>,
+  ) {
+    if (discoveredList.size >= MAX_DISCOVERED_PREVIEWS) {
+      return
+    }
+
+    if (traversalPath.contains(annotationClassName)) {
+      // Circular dependency detected on the active call stack (e.g. A -> B -> A)
+      return
+    }
+
+    val classBytes = findClassBytes(annotationClassName) ?: return
+
+    try {
+      traversalPath.add(annotationClassName)
+      val classReader = ClassReader(classBytes)
+      classReader.accept(
+        object : ClassVisitor(Opcodes.ASM9) {
+          override fun visitAnnotation(desc: String, visible: Boolean): AnnotationVisitor? {
+            return handleAnnotation(desc, traversalPath, discoveredList)
+          }
+        },
+        ClassReader.SKIP_CODE or ClassReader.SKIP_DEBUG or ClassReader.SKIP_FRAMES,
+      )
+    } finally {
+      traversalPath.remove(annotationClassName)
+    }
+  }
+
+  /**
+   * Creates an [AnnotationVisitor] to traverse the `value` array of a synthetic `@Preview$Container` annotation and extract all nested
+   * `@Preview` annotations into [discoveredList].
+   */
+  private fun createPreviewContainerVisitor(discoveredList: MutableList<Map<String, String>>): AnnotationVisitor {
+    return object : AnnotationVisitor(Opcodes.ASM9) {
+      override fun visitArray(name: String?): AnnotationVisitor {
+        return object : AnnotationVisitor(Opcodes.ASM9) {
+          override fun visitAnnotation(name: String?, descriptor: String?): AnnotationVisitor? {
+            if (discoveredList.size >= MAX_DISCOVERED_PREVIEWS) {
+              return null
+            }
+            if (descriptor == PREVIEW_DESC) {
+              val previewParams = mutableMapOf<String, String>()
+              discoveredList.add(previewParams)
+              return createPreviewAnnotationVisitor(previewParams)
+            }
+            return null
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Optimization to avoid loading and parsing bytecode for standard runtime, compiler, and framework annotations (e.g. `java.*`,
+   * `kotlin.*`, `androidx.compose.runtime.*`) that can never lead to a MultiPreview definition.
+   *
+   * Matches the MultiPreview traversal filtering used in Android Studio (`couldBeMultiPreviewAnnotation`).
+   */
+  private fun isPotentialMultiPreview(desc: String): Boolean {
+    return desc.startsWith("L") &&
+      !desc.startsWith("Ljava/") &&
+      !desc.startsWith("Ljavax/") &&
+      !desc.startsWith("Lkotlin/") &&
+      !desc.startsWith("Lkotlinx/") &&
+      !desc.startsWith("Landroidx/compose/runtime/") &&
+      !desc.startsWith("Landroidx/annotation/") &&
+      !desc.startsWith("Lorg/intellij/") &&
+      !desc.startsWith("Lorg/jetbrains/")
   }
 
   /**

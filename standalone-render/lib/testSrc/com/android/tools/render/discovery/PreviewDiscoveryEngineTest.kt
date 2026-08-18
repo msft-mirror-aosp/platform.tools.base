@@ -28,6 +28,34 @@ import org.junit.Test
 /** Custom non-Compose preview annotation to verify strict descriptor matching. */
 annotation class CustomNonComposePreview(val name: String = "")
 
+/** MultiPreview annotation class with two previews. */
+@Preview(name = "Phone Light", widthDp = 360, heightDp = 640)
+@Preview(name = "Phone Dark", widthDp = 360, heightDp = 640, uiMode = 32)
+annotation class DeviceThemePreviews
+
+/** Single preview MultiPreview annotation class. */
+@Preview(name = "Tablet Landscape", widthDp = 1280, heightDp = 800) annotation class TabletPreviews
+
+/** Nested MultiPreview annotation class combining DeviceThemePreviews and TabletPreviews. */
+@DeviceThemePreviews @TabletPreviews annotation class CombinedDevicePreviews
+
+/** MultiPreview classes with circular annotations to verify cycle termination. */
+@CyclicPreviewB annotation class CyclicPreviewA
+
+@CyclicPreviewA annotation class CyclicPreviewB
+
+/** Base preview for NestedMultiPreviewWithDuplicateDescendants testing. */
+@Preview(name = "Base Theme Preview", widthDp = 200, heightDp = 200) annotation class BaseThemePreview
+
+/** MultiPreview branch A referencing BaseThemePreview. */
+@BaseThemePreview @Preview(name = "Branch A Preview", widthDp = 300, heightDp = 300) annotation class BranchThemePreviewA
+
+/** MultiPreview branch B referencing BaseThemePreview. */
+@BaseThemePreview @Preview(name = "Branch B Preview", widthDp = 400, heightDp = 400) annotation class BranchThemePreviewB
+
+/** MultiPreview combining BranchThemePreviewA and BranchThemePreviewB (which both reference BaseThemePreview). */
+@BranchThemePreviewA @BranchThemePreviewB annotation class NestedMultiPreviewWithDuplicateDescendants
+
 /** Sample class containing composable preview methods for testing discovery. */
 class SamplePreviewTarget {
 
@@ -55,6 +83,18 @@ class SamplePreviewTarget {
   @Preview(name = "Valid Preview", widthDp = 300, heightDp = 600)
   @Preview(name = "Invalid Dimension Preview", widthDp = -50)
   fun sampleMixedMultiPreviewMethod() {}
+
+  @DeviceThemePreviews fun sampleMultiPreviewAnnotatedMethod() {}
+
+  @CombinedDevicePreviews fun sampleNestedMultiPreviewAnnotatedMethod() {}
+
+  @DeviceThemePreviews @Preview(name = "Direct Override", widthDp = 500) fun sampleMixedDirectAndMultiPreviewMethod() {}
+
+  @CyclicPreviewA fun sampleCyclicMultiPreviewMethod() {}
+
+  @NestedMultiPreviewWithDuplicateDescendants fun sampleNestedMultiPreviewWithDuplicateDescendants() {}
+
+  @BaseThemePreview @BranchThemePreviewA fun sampleDirectAndNestedSharedMultiPreviewMethod() {}
 
   fun sampleMethodWithoutAnnotation() {}
 
@@ -204,6 +244,100 @@ class PreviewDiscoveryEngineTest {
 
       val discovered = engine.discoverAllPreviews(methodFQN)
       assertTrue("Non-existent class should return empty list", discovered.isEmpty())
+    }
+  }
+
+  @Test
+  fun testDiscoverCustomMultiPreviewClassAnnotation() {
+    createDiscoveryEngine { engine ->
+      val methodFQN = "${SamplePreviewTarget::class.java.name}.sampleMultiPreviewAnnotatedMethod"
+
+      val discovered = engine.discoverAllPreviews(methodFQN)
+      assertEquals("Should discover 2 previews from @DeviceThemePreviews", 2, discovered.size)
+
+      val p0 = discovered[0]
+      assertEquals("Phone Light", p0.previewParams["name"])
+      assertEquals("360", p0.previewParams["widthDp"])
+      assertEquals("640", p0.previewParams["heightDp"])
+
+      val p1 = discovered[1]
+      assertEquals("Phone Dark", p1.previewParams["name"])
+      assertEquals("360", p1.previewParams["widthDp"])
+      assertEquals("640", p1.previewParams["heightDp"])
+      assertEquals("32", p1.previewParams["uiMode"])
+    }
+  }
+
+  @Test
+  fun testDiscoverNestedMultiPreviewClassAnnotation() {
+    createDiscoveryEngine { engine ->
+      val methodFQN = "${SamplePreviewTarget::class.java.name}.sampleNestedMultiPreviewAnnotatedMethod"
+
+      val discovered = engine.discoverAllPreviews(methodFQN)
+      assertEquals("Should discover 3 previews from nested @CombinedDevicePreviews", 3, discovered.size)
+
+      assertEquals("Phone Light", discovered[0].previewParams["name"])
+      assertEquals("Phone Dark", discovered[1].previewParams["name"])
+      assertEquals("Tablet Landscape", discovered[2].previewParams["name"])
+      assertEquals("1280", discovered[2].previewParams["widthDp"])
+    }
+  }
+
+  @Test
+  fun testDiscoverMixedDirectAndMultiPreview() {
+    createDiscoveryEngine { engine ->
+      val methodFQN = "${SamplePreviewTarget::class.java.name}.sampleMixedDirectAndMultiPreviewMethod"
+
+      val discovered = engine.discoverAllPreviews(methodFQN)
+      assertEquals("Should discover 3 previews (2 from MultiPreview + 1 direct @Preview)", 3, discovered.size)
+
+      assertEquals("Phone Light", discovered[0].previewParams["name"])
+      assertEquals("Phone Dark", discovered[1].previewParams["name"])
+      assertEquals("Direct Override", discovered[2].previewParams["name"])
+      assertEquals("500", discovered[2].previewParams["widthDp"])
+    }
+  }
+
+  @Test
+  fun testCyclicMultiPreviewTerminatesSafely() {
+    createDiscoveryEngine { engine ->
+      val methodFQN = "${SamplePreviewTarget::class.java.name}.sampleCyclicMultiPreviewMethod"
+
+      val discovered = engine.discoverAllPreviews(methodFQN)
+      assertTrue("Cyclic annotations without @Preview should return empty list without crashing", discovered.isEmpty())
+    }
+  }
+
+  @Test
+  fun testDiscoverNestedMultiPreviewWithDuplicateDescendants() {
+    createDiscoveryEngine { engine ->
+      val methodFQN = "${SamplePreviewTarget::class.java.name}.sampleNestedMultiPreviewWithDuplicateDescendants"
+
+      val discovered = engine.discoverAllPreviews(methodFQN)
+      // Branch A: Branch A Preview + Base Theme Preview (2)
+      // Branch B: Branch B Preview + Base Theme Preview (2)
+      // Total: 4
+      assertEquals("Should discover all 4 previews from nested MultiPreview with duplicate descendants", 4, discovered.size)
+
+      val names = discovered.map { it.previewParams["name"] }
+      assertTrue("Should contain Branch A Preview", names.contains("Branch A Preview"))
+      assertTrue("Should contain Branch B Preview", names.contains("Branch B Preview"))
+      assertTrue("Should contain Base Theme Preview", names.contains("Base Theme Preview"))
+    }
+  }
+
+  @Test
+  fun testDiscoverDirectAndNestedSharedMultiPreview() {
+    createDiscoveryEngine { engine ->
+      val methodFQN = "${SamplePreviewTarget::class.java.name}.sampleDirectAndNestedSharedMultiPreviewMethod"
+
+      val discovered = engine.discoverAllPreviews(methodFQN)
+      // Direct @BaseThemePreview (1) + @BranchThemePreviewA (Branch A Preview + Base Theme Preview) (2) = 3
+      assertEquals("Should discover 3 previews from direct and nested shared MultiPreview", 3, discovered.size)
+
+      val names = discovered.map { it.previewParams["name"] }
+      assertEquals(2, names.count { it == "Base Theme Preview" })
+      assertEquals(1, names.count { it == "Branch A Preview" })
     }
   }
 }
