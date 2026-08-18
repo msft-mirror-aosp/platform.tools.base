@@ -39,7 +39,7 @@ class SmapResolver(smapString: String) {
    * @return A pair containing the (original line number, source file name).
    */
   fun resolve(outputLine: Int, defaultSourceFile: String): Pair<Int, String> {
-    val mapping = lineMappings.find { outputLine >= it.outputStart && outputLine <= it.outputEnd }
+    val mapping = lineMappings.findLast { outputLine >= it.outputStart && outputLine <= it.outputEnd }
     if (mapping == null) {
       return Pair(outputLine, defaultSourceFile)
     }

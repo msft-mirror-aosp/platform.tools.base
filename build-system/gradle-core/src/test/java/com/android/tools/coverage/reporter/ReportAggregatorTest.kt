@@ -135,21 +135,185 @@ class ReportAggregatorTest {
     val src = pkg.sourceFiles["MyClass.kt"]!!
 
     // The spanning block spans lines 10 and 11.
-    // - Line 10 (the primary line) should have exactly 1 covered and 1 missed branch.
-    // - Line 11 (the spanned line) should have exactly 0 branches.
-    // - The overall source file / package / report branch totals should be exactly 1 covered and 1 missed.
+    // - Line 10 (the spanned line) should have exactly 0 branches.
+    // - Line 11 (the true branch line) should have exactly 1 covered and 1 missed branch.
+    // - The overall source file / package / report branch totals should be exactly 1 covered and 1 missed (NOT doubled!).
 
     val line10 = src.lineMap[10]!!
-    assertThat(line10.cb).isEqualTo(1)
-    assertThat(line10.mb).isEqualTo(1)
+    assertThat(line10.cb).isEqualTo(0)
+    assertThat(line10.mb).isEqualTo(0)
 
     val line11 = src.lineMap[11]!!
-    assertThat(line11.cb).isEqualTo(0)
-    assertThat(line11.mb).isEqualTo(0)
+    assertThat(line11.cb).isEqualTo(1)
+    assertThat(line11.mb).isEqualTo(1)
 
     assertThat(src.branches.covered).isEqualTo(1)
     assertThat(src.branches.missed).isEqualTo(1)
     assertThat(report.branches.covered).isEqualTo(1)
     assertThat(report.branches.missed).isEqualTo(1)
+  }
+
+  @Test
+  fun testInlineFilter() {
+    val smap =
+      """
+      SMAP
+      MyClass.kt
+      Kotlin
+      *S Kotlin
+      *F
+      + 1 MyClass.kt
+      com/example/MyClass
+      + 2 Column.kt
+      androidx/compose/foundation/layout/ColumnKt
+      *L
+      1#1,15:10
+      101#2,2:20,2
+      *E
+      """.trimIndent()
+
+    val metadata =
+      CoverageMetadata.newBuilder()
+        .addClasses(
+          ClassMetadata.newBuilder()
+            .setClassName("com/example/MyClass")
+            .setSourceFile("MyClass.kt")
+            .setSmap(smap)
+            .addMethods(
+              MethodMetadata.newBuilder()
+                .setName("method1")
+                // Block 0 represents local non-inlined branches (mapped to output line 10, which resolves to MyClass.kt)
+                .addBlocks(
+                  BlockMetadata.newBuilder()
+                    .setBlockId(0)
+                    .setBranchCount(2)
+                    .addSuccessorBlockIds(1)
+                    .addSuccessorBlockIds(2)
+                    .addLines(LineMetadata.newBuilder().setLineNumber(10).setInstructionCount(5))
+                )
+                // Block 3 represents inlined branches (mapped to output line 20, which resolves to Column.kt)
+                .addBlocks(
+                  BlockMetadata.newBuilder()
+                    .setBlockId(3)
+                    .setBranchCount(2)
+                    .addSuccessorBlockIds(4)
+                    .addSuccessorBlockIds(5)
+                    .addLines(LineMetadata.newBuilder().setLineNumber(20).setInstructionCount(5))
+                )
+                .addBlocks(BlockMetadata.newBuilder().setBlockId(1).setBranchCount(1))
+                .addBlocks(BlockMetadata.newBuilder().setBlockId(2).setBranchCount(1))
+                .addBlocks(BlockMetadata.newBuilder().setBlockId(4).setBranchCount(1))
+                .addBlocks(BlockMetadata.newBuilder().setBlockId(5).setBranchCount(1))
+            )
+        )
+        .build()
+
+    val hits = BitSet()
+    hits.set(0) // Block 0 hit (covered branch)
+    hits.set(1)
+    hits.set(3) // Block 3 (inline) hit
+    hits.set(4)
+    val data = CoverageData(metadata, hits)
+
+    val aggregator = ReportAggregator()
+    val report = aggregator.aggregate(data, "test")
+
+    val pkg = report.packages["com/example"]!!
+    val src = pkg.sourceFiles["MyClass.kt"]!!
+
+    // Local Block 0 branches must be kept
+    val line1 = src.lineMap[1]!!
+    assertThat(line1.cb).isEqualTo(1)
+    assertThat(line1.mb).isEqualTo(1)
+    assertThat(line1.ci).isEqualTo(5)
+
+    // Inlined Block 3 branches and instructions must be COMPLETELY ignored in the local class report
+    assertThat(src.lineMap[20]).isNull()
+    assertThat(src.lineMap[101]).isNull()
+
+    // Total branches and instructions for MyClass.kt should only count the local Block 0 (5 instructions, 1/2 branches)
+    assertThat(src.instructions.covered).isEqualTo(5)
+    assertThat(src.branches.covered).isEqualTo(1)
+    assertThat(src.branches.missed).isEqualTo(1)
+    assertThat(report.branches.covered).isEqualTo(1)
+    assertThat(report.branches.missed).isEqualTo(1)
+  }
+
+  @Test
+  fun testMixedBlockInlineFilter() {
+    val smap =
+      """
+      SMAP
+      MyClass.kt
+      Kotlin
+      *S Kotlin
+      *F
+      + 1 MyClass.kt
+      com/example/MyClass
+      + 2 Column.kt
+      androidx/compose/foundation/layout/ColumnKt
+      *L
+      1#1,15:10
+      101#2,2:20,2
+      *E
+      """.trimIndent()
+
+    val metadata =
+      CoverageMetadata.newBuilder()
+        .addClasses(
+          ClassMetadata.newBuilder()
+            .setClassName("com/example/MyClass")
+            .setSourceFile("MyClass.kt")
+            .setSmap(smap)
+            .addMethods(
+              MethodMetadata.newBuilder()
+                .setName("method1")
+                // Block 0 is a Mixed Block:
+                // - First instruction maps to line 20 (inlined Column.kt) with 5 instructions.
+                // - Last instruction maps to line 10 (local MyClass.kt) with 5 instructions, ending in a conditional branch.
+                .addBlocks(
+                  BlockMetadata.newBuilder()
+                    .setBlockId(0)
+                    .setBranchCount(2)
+                    .addSuccessorBlockIds(1)
+                    .addSuccessorBlockIds(2)
+                    .addLines(LineMetadata.newBuilder().setLineNumber(20).setInstructionCount(5)) // Inlined
+                    .addLines(LineMetadata.newBuilder().setLineNumber(10).setInstructionCount(5)) // Local
+                )
+                .addBlocks(BlockMetadata.newBuilder().setBlockId(1).setBranchCount(1))
+                .addBlocks(BlockMetadata.newBuilder().setBlockId(2).setBranchCount(1))
+            )
+        )
+        .build()
+
+    val hits = BitSet()
+    hits.set(0) // Block 0 hit (covered branch)
+    hits.set(1)
+    val data = CoverageData(metadata, hits)
+
+    val aggregator = ReportAggregator()
+    val report = aggregator.aggregate(data, "test")
+
+    val pkg = report.packages["com/example"]!!
+    val src = pkg.sourceFiles["MyClass.kt"]!!
+
+    // Inside our Mixed Block:
+    // - Inlined line 20 instructions must be skipped.
+    assertThat(src.lineMap[20]).isNull()
+    assertThat(src.lineMap[101]).isNull()
+
+    // - Local line 10 (resolved to line 1) instructions must be kept.
+    val line1 = src.lineMap[1]!!
+    assertThat(line1.ci).isEqualTo(5)
+
+    // - The branches belong to the local file (line 10 is the last line of the block).
+    // - The branches must be attached to the first local line (line 10 -> line 1).
+    assertThat(line1.cb).isEqualTo(1)
+    assertThat(line1.mb).isEqualTo(1)
+
+    // - The total aggregates must reflect only the local portion (5 instructions, 1/2 branches).
+    assertThat(src.instructions.covered).isEqualTo(5)
+    assertThat(src.branches.covered).isEqualTo(1)
+    assertThat(src.branches.missed).isEqualTo(1)
   }
 }

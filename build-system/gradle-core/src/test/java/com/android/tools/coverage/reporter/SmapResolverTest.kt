@@ -144,4 +144,29 @@ class SmapResolverTest {
     // Should NOT resolve line 500 (from KotlinDebug section)
     assertThat(resolver.resolve(500, "MyClass.kt")).isEqualTo(Pair(500, "MyClass.kt"))
   }
+
+  @Test
+  fun testResolveRegex() {
+    val smap =
+      """
+      SMAP
+      MyClass.kt
+      Kotlin
+      *S Kotlin
+      *F
+      + 1 MyClass.kt
+      com/example/MyClass
+      + 2 Column.kt
+      androidx/compose/foundation/layout/ColumnKt
+      *L
+      1#1,15:10
+      101#2,2:20,2
+      *E
+      """
+        .trimIndent()
+
+    val resolver = SmapResolver(smap)
+    assertThat(resolver.resolve(10, "MyClass.kt")).isEqualTo(Pair(1, "MyClass.kt"))
+    assertThat(resolver.resolve(20, "MyClass.kt")).isEqualTo(Pair(101, "Column.kt"))
+  }
 }

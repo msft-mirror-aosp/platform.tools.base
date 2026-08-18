@@ -98,7 +98,22 @@ class ReportAggregator {
         for (blockMeta in methodMeta.blocksList) {
           val isHit = data.hits.get(blockMeta.blockId.toInt())
           if (isHit) methodHit = true
-          val blockBranches = blockMeta.branchCount.toInt()
+
+          // 1. In DEX, the conditional branch is always the LAST instruction of the block.
+          val lastLineMeta = blockMeta.linesList.lastOrNull()
+          val branchFile = lastLineMeta?.let { smapResolver.resolve(it.lineNumber, sourceFilename).second } ?: sourceFilename
+
+          // Generic Inline Function Filter:
+          // If the branch belongs to an external inlined file, we strip it from our local report.
+          val blockBranches = if (branchFile != sourceFilename) 0 else blockMeta.branchCount.toInt()
+
+          // 2. The branch must be placed on the line of the branch instruction itself.
+          // Since the branch instruction is the last instruction of the block, we resolve lastLineMeta.
+          val trueBranchLine = if (branchFile == sourceFilename) {
+            lastLineMeta?.let { smapResolver.resolve(it.lineNumber, sourceFilename).first }
+          } else {
+            null
+          }
 
           // Exact branch coverage reconstruction using successor hits:
           var coveredBranches = 0
@@ -118,11 +133,15 @@ class ReportAggregator {
             method.branches.missed += (blockBranches.toInt() - coveredBranches)
           }
 
-          val firstLineMeta = blockMeta.linesList.firstOrNull()
-          val primaryLine = firstLineMeta?.let { smapResolver.resolve(it.lineNumber, sourceFilename).first }
-
           for (lineMeta in blockMeta.linesList) {
-            val (trueLine, _) = smapResolver.resolve(lineMeta.lineNumber, sourceFilename)
+            val (trueLine, resolvedFile) = smapResolver.resolve(lineMeta.lineNumber, sourceFilename)
+
+            // 3. Skip tracking instructions that belong to an external inline file.
+            // This prevents the caller's class from artificially ballooning in line count.
+            if (resolvedFile != sourceFilename) {
+              continue
+            }
+
             val instrs = lineMeta.instructionCount.toInt()
 
             methodLinesTouched.add(trueLine)
@@ -134,8 +153,8 @@ class ReportAggregator {
             val lineStats = srcFile.lineMap.getOrPut(trueLine) { LineStats() }
             if (isHit) lineStats.ci += instrs else lineStats.mi += instrs
 
-            // Line-level branch aggregation - ONLY on the primary line of the block to prevent duplicate branches
-            if (blockBranches > 1 && trueLine == primaryLine) {
+            // Line-level branch aggregation - ONLY on the true branch line of the block to prevent duplicate branches
+            if (blockBranches > 1 && trueLine == trueBranchLine) {
               lineStats.cb += coveredBranches
               lineStats.mb += (blockBranches.toInt() - coveredBranches)
             }
