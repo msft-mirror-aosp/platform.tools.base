@@ -23,7 +23,6 @@ import com.android.adblib.testingutils.FakeAdbServerProviderRule
 import com.android.adblib.waitForDevice
 import com.android.ddmlib.AndroidDebugBridge
 import com.android.ddmlib.IDevice
-import com.android.ddmlib.IShellOutputReceiver
 import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.shellcommandhandlers.ShellConstants
 import com.android.sdklib.AndroidApiLevel
@@ -454,7 +453,7 @@ class DeviceHolderMigrationTest {
     assertEquals(Deploy.Arch.ARCH_UNKNOWN, deviceHolderNew.getArchForPid(99999))
   }
 
-  private class CollectingShellOutputReceiver : IShellOutputReceiver {
+  private class CollectingShellOutputReceiver : DeployerIShellOutputReceiver {
     private val builder = StringBuilder()
     val output: String
       get() = builder.toString()

@@ -19,11 +19,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 
 import com.android.ddmlib.AdbCommandRejectedException;
-import com.android.ddmlib.IShellOutputReceiver;
-import com.android.ddmlib.NullOutputReceiver;
 import com.android.ddmlib.ShellCommandUnresponsiveException;
 import com.android.ddmlib.TimeoutException;
 import com.android.testutils.TestUtils;
+import com.android.tools.deployer.common.DeployerIShellOutputReceiver;
+import com.android.tools.deployer.common.DeployerNullOutputReceiver;
 import com.android.tools.deployer.common.DeviceHolder;
 import com.android.tools.deployer.model.ModelException;
 import com.android.tools.deployer.model.TestLogger;
@@ -104,7 +104,10 @@ public class ActivityTest {
                 };
         ActivityV1 activity = new ActivityV1(info, "com.example.myApp", new TestLogger());
         activity.activate(
-                " --user 123", AppComponent.Mode.DEBUG, new NullOutputReceiver(), deviceHolder);
+                " --user 123",
+                AppComponent.Mode.DEBUG,
+                new DeployerNullOutputReceiver(),
+                deviceHolder);
 
         String expectedCommand =
                 "am start -n com.example.myApp/com.example.myApp.MainActivity -a"
@@ -114,7 +117,7 @@ public class ActivityTest {
         Mockito.verify(deviceHolder, Mockito.times(1))
                 .executeShellCommand(
                         eq(expectedCommand),
-                        any(IShellOutputReceiver.class),
+                        any(DeployerIShellOutputReceiver.class),
                         eq(15L),
                         eq(TimeUnit.SECONDS));
     }
@@ -136,7 +139,8 @@ public class ActivityTest {
                             manifestInfo.activities().get(0),
                             "com.example.myApp",
                             new TestLogger());
-            activity.activate("", AppComponent.Mode.RUN, new NullOutputReceiver(), deviceHolder);
+            activity.activate(
+                    "", AppComponent.Mode.RUN, new DeployerNullOutputReceiver(), deviceHolder);
 
             String expectedCommand =
                     "am start -n com.example.myApp/com.example.tv_app.MainActivity -a"
@@ -146,7 +150,7 @@ public class ActivityTest {
             Mockito.verify(deviceHolder, Mockito.times(1))
                     .executeShellCommand(
                             eq(expectedCommand),
-                            any(IShellOutputReceiver.class),
+                            any(DeployerIShellOutputReceiver.class),
                             eq(15L),
                             eq(TimeUnit.SECONDS));
         }

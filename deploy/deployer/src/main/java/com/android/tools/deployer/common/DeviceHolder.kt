@@ -230,14 +230,19 @@ constructor(
   @Throws(IOException::class)
   fun executeShellCommand(
     command: String,
-    receiver: IShellOutputReceiver,
+    receiver: DeployerIShellOutputReceiver,
     maxTimeToOutputResponse: Long,
     maxTimeToOutputResponseUnit: TimeUnit,
   ) {
     runMigrated(
       onLegacy = {
         try {
-          iDevice.executeShellCommand(command, receiver, maxTimeToOutputResponse, maxTimeToOutputResponseUnit)
+          iDevice.executeShellCommand(
+            command,
+            DeployerToDdmlibReceiverAdapter(receiver),
+            maxTimeToOutputResponse,
+            maxTimeToOutputResponseUnit,
+          )
         } catch (e: Exception) {
           when (e) {
             is AdbCommandRejectedException,
@@ -274,7 +279,7 @@ constructor(
   @Throws(IOException::class)
   fun executeBinderCommand(
     parameters: Array<String>,
-    receiver: IShellOutputReceiver,
+    receiver: DeployerIShellOutputReceiver,
     maxTimeToOutputResponse: Long,
     maxTimeToOutputResponseUnit: TimeUnit,
     inputStream: InputStream?,
@@ -282,7 +287,13 @@ constructor(
     runMigrated(
       onLegacy = {
         try {
-          iDevice.executeBinderCommand(parameters, receiver, maxTimeToOutputResponse, maxTimeToOutputResponseUnit, inputStream)
+          iDevice.executeBinderCommand(
+            parameters,
+            DeployerToDdmlibReceiverAdapter(receiver),
+            maxTimeToOutputResponse,
+            maxTimeToOutputResponseUnit,
+            inputStream,
+          )
         } catch (e: Exception) {
           when (e) {
             is AdbCommandRejectedException,
@@ -520,14 +531,40 @@ constructor(
   }
 }
 
-private class IShellOutputReceiverCollector(private val receiver: IShellOutputReceiver) : ShellCollector<Unit> {
+/**
+ * Adapts a [DeployerIShellOutputReceiver] to a ddmlib [IShellOutputReceiver].
+ *
+ * This adapter is required for the legacy [IDevice] execution path in [DeviceHolder]. It can be removed once deployer is fully migrated
+ * away from ddmlib.
+ */
+private class DeployerToDdmlibReceiverAdapter(private val receiver: DeployerIShellOutputReceiver) : IShellOutputReceiver {
+  override fun addOutput(data: ByteArray, offset: Int, length: Int) {
+    receiver.addOutput(data, offset, length)
+  }
+
+  override fun flush() {
+    receiver.flush()
+  }
+
+  override fun isCancelled(): Boolean {
+    return receiver.isCancelled
+  }
+}
+
+/**
+ * Note that this is copied from
+ * adblib-ddmlibcompatibility/src/com/android/adblib/ddmlibcompatibility/debugging/ShellCollectorToIShellOutputReceiver.kt
+ */
+private class IShellOutputReceiverCollector(private val receiver: DeployerIShellOutputReceiver) : ShellCollector<Unit> {
   private val buf = ByteArrayFromByteBuffer()
 
-  override suspend fun start(collector: FlowCollector<Unit>) {}
+  override suspend fun start(collector: FlowCollector<Unit>) {
+    // Nothing to do
+  }
 
   override suspend fun collect(collector: FlowCollector<Unit>, stdout: ByteBuffer) {
     if (receiver.isCancelled) {
-      throw CancellationException("IShellOutputReceiver was cancelled during shell command execution")
+      throw CancellationException("DeployerIShellOutputReceiver was cancelled during shell command execution")
     }
     buf.convert(stdout)
     receiver.addOutput(buf.bytes, buf.offset, buf.count)

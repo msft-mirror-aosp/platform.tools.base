@@ -18,8 +18,8 @@ package com.android.tools.deployer.model.component;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 
-import com.android.ddmlib.IShellOutputReceiver;
-import com.android.ddmlib.NullOutputReceiver;
+import com.android.tools.deployer.common.DeployerIShellOutputReceiver;
+import com.android.tools.deployer.common.DeployerNullOutputReceiver;
 import com.android.tools.deployer.common.DeviceHolder;
 import com.android.tools.deployer.model.ModelException;
 import com.android.tools.deployer.model.TestLogger;
@@ -119,7 +119,7 @@ public class ComplicationTest {
         complication.activate(
                 "debug.app.watchface com.example.WatchFaces$InnerWatchFace 1 LONG_TEXT",
                 AppComponent.Mode.RUN,
-                new NullOutputReceiver(),
+                new DeployerNullOutputReceiver(),
                 deviceHolder);
 
         String expectedCommand =
@@ -131,7 +131,7 @@ public class ComplicationTest {
         Mockito.verify(deviceHolder, Mockito.times(1))
                 .executeShellCommand(
                         eq(expectedCommand),
-                        any(IShellOutputReceiver.class),
+                        any(DeployerIShellOutputReceiver.class),
                         eq(15L),
                         eq(TimeUnit.SECONDS));
     }
@@ -153,14 +153,14 @@ public class ComplicationTest {
         complication.activate(
                 "debug.app.watchface com.example.WatchFaces$InnerWatchFace 1 LONG_TEXT",
                 AppComponent.Mode.DEBUG,
-                new NullOutputReceiver(),
+                new DeployerNullOutputReceiver(),
                 deviceHolder);
 
         inOrderDevice
                 .verify(deviceHolder)
                 .executeShellCommand(
                         eq("am set-debug-app -w 'com.example.myApp'"),
-                        any(IShellOutputReceiver.class),
+                        any(DeployerIShellOutputReceiver.class),
                         eq(15L),
                         eq(TimeUnit.SECONDS));
 
@@ -175,7 +175,7 @@ public class ComplicationTest {
                 .verify(deviceHolder)
                 .executeShellCommand(
                         eq(expectedCommand),
-                        any(IShellOutputReceiver.class),
+                        any(DeployerIShellOutputReceiver.class),
                         eq(15L),
                         eq(TimeUnit.SECONDS));
     }
@@ -186,7 +186,7 @@ public class ComplicationTest {
         Mockito.doAnswer(
                         invocation -> {
                             String request = invocation.getArgument(0) + "\n";
-                            IShellOutputReceiver receiver = invocation.getArgument(1);
+                            DeployerIShellOutputReceiver receiver = invocation.getArgument(1);
                             byte[] bytes =
                                     shellCommandReplies
                                             .apply(request)

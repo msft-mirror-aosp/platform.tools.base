@@ -16,8 +16,8 @@
 package com.android.tools.deployer;
 
 import com.android.annotations.NonNull;
-import com.android.ddmlib.IShellOutputReceiver;
 import com.android.tools.deployer.common.DeployerException;
+import com.android.tools.deployer.common.DeployerIShellOutputReceiver;
 import com.android.tools.deployer.common.DeviceHolder;
 import com.android.tools.deployer.model.Apk;
 import com.android.tools.deployer.model.App;
@@ -50,7 +50,7 @@ public class Activator {
     public void activate(
             @NonNull ComponentType type,
             @NonNull String componentName,
-            @NonNull IShellOutputReceiver receiver,
+            @NonNull DeployerIShellOutputReceiver receiver,
             @NonNull DeviceHolder device)
             throws DeployerException {
         activate(type, componentName, NO_FLAGS, AppComponent.Mode.RUN, receiver, device);
@@ -60,7 +60,7 @@ public class Activator {
             @NonNull ComponentType type,
             @NonNull String componentName,
             @NonNull String extraFlags,
-            @NonNull IShellOutputReceiver receiver,
+            @NonNull DeployerIShellOutputReceiver receiver,
             @NonNull DeviceHolder device)
             throws DeployerException {
         activate(type, componentName, extraFlags, AppComponent.Mode.RUN, receiver, device);
@@ -70,7 +70,7 @@ public class Activator {
             @NonNull ComponentType type,
             @NonNull String componentName,
             @NonNull AppComponent.Mode mode,
-            @NonNull IShellOutputReceiver receiver,
+            @NonNull DeployerIShellOutputReceiver receiver,
             @NonNull DeviceHolder device)
             throws DeployerException {
         activate(type, componentName, NO_FLAGS, mode, receiver, device);
@@ -81,7 +81,7 @@ public class Activator {
             @NonNull String componentName,
             @NonNull String extraFlags,
             @NonNull AppComponent.Mode mode,
-            @NonNull IShellOutputReceiver receiver,
+            @NonNull DeployerIShellOutputReceiver receiver,
             @NonNull DeviceHolder device)
             throws DeployerException {
         String qualifiedName =

@@ -23,7 +23,6 @@ import com.android.adblib.tools.InstallerKt;
 import com.android.adblib.tools.JavaBridge;
 import com.android.annotations.NonNull;
 import com.android.ddmlib.IDevice;
-import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.ShellCommandUnresponsiveException;
 import com.android.ddmlib.SimpleConnectedSocket;
 import com.android.sdklib.AndroidVersion;
@@ -378,8 +377,9 @@ public class AdbClient {
         return deviceHolder.getSerialNumber();
     }
 
-    // TODO: Replace this to void copying the full byte[] incurred when calling stream.toByteArray()
-    private class ByteArrayOutputReceiver implements IShellOutputReceiver {
+    // TODO: Replace this to avoid copying the full byte[] incurred when calling
+    // stream.toByteArray()
+    private class ByteArrayOutputReceiver implements DeployerIShellOutputReceiver {
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
 

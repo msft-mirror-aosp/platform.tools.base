@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,26 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tools.deployer;
+package com.android.tools.deployer.common;
 
 import com.android.annotations.NonNull;
-import com.android.tools.deployer.common.DeployerMultiLineReceiver;
-import com.android.utils.ILogger;
 
-import java.util.Arrays;
-
-class LoggerReceiver extends DeployerMultiLineReceiver {
-
-    ILogger logger;
-
-    LoggerReceiver(ILogger logger) {
-        this.logger = logger;
-    }
+public class DeployerNullOutputReceiver implements DeployerIShellOutputReceiver {
+    @Override
+    public void addOutput(@NonNull byte[] data, int offset, int length) {}
 
     @Override
-    public void processNewLines(@NonNull String[] lines) {
-        Arrays.stream(lines).forEach(logger::info);
-    }
+    public void flush() {}
 
     @Override
     public boolean isCancelled() {
