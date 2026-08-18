@@ -1,7 +1,7 @@
 #buildifier: disable=module-docstring
 BASE_VERSION = "32.4.0-rc01"
 BUILD_VERSION = "9.4.0-rc01"
-COMMANDLINE_TOOLS_VERSION = "23.0-alpha01"
+COMMANDLINE_TOOLS_VERSION = "23.0"
 
 # This is used to define
 # - for Android Studio RC/Stable builds when IS_AGP_RELEASE_BRANCH
