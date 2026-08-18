@@ -1810,7 +1810,7 @@ public class Main {
                     // will match issue category "Usability:Icons" etc.
                     if (issue.getCategory().getName().startsWith(id)
                             || issue.getCategory().getFullName().startsWith(id)) {
-                        setSeverity(flags, id, targetSet, severity);
+                        setSeverity(flags, issue.getId(), targetSet, severity);
                     }
                 }
             } else {
