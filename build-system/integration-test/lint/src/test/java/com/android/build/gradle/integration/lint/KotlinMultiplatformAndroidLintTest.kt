@@ -242,6 +242,51 @@ class KotlinMultiplatformAndroidLintTest(private val lintAnalysisPerComponent: B
     PathSubject.assertThat(reportFile).contains("Found byte-order-mark in the middle of a file [ByteOrderMark]")
   }
 
+  /** Regression test for KMT-625: standalone lint must scan shared source sets, not just jvmMain. */
+  @Test
+  fun `test running lint on kmpJvmOnly commonMain sourceset`() {
+    Assume.assumeTrue(lintAnalysisPerComponent)
+    TestFileUtils.appendToFile(
+      project.getSubproject("kmpJvmOnly").ktsBuildFile,
+      """
+      lint {
+          enable += "ByteOrderMark"
+          textReport = true
+          abortOnError = false
+      }
+      """
+        .trimIndent(),
+    )
+
+    // Add ByteOrderMark to kmpJvmOnly commonMain code
+    TestFileUtils.addMethod(
+      FileUtils.join(
+        project.getSubproject("kmpJvmOnly").projectDir,
+        "src",
+        "commonMain",
+        "kotlin",
+        "com",
+        "example",
+        "kmpjvmonly",
+        "KmpCommonJvmOnlyLibClass.kt",
+      ),
+      // language=kotlin
+      """
+                fun getByteOrderMark(): String {
+                    return "$byteOrderMark"
+                }
+            """
+        .trimIndent(),
+    )
+
+    getExecutor().run(":kmpJvmOnly:clean", ":kmpJvmOnly:lint")
+
+    val reportFile = File(project.getSubproject("kmpJvmOnly").buildDir, "reports/lint-results.txt")
+
+    PathSubject.assertThat(reportFile).exists()
+    PathSubject.assertThat(reportFile).contains("Found byte-order-mark in the middle of a file [ByteOrderMark]")
+  }
+
   @Test
   fun `test running lint on kmpJvmOnly with java`() {
     Assume.assumeTrue(lintAnalysisPerComponent)
