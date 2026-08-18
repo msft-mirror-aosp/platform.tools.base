@@ -140,19 +140,7 @@ python.defaults(python_version = "3.11")
 python.toolchain(python_version = "3.11")
 
 bazel_dep(name = "rules_license", version = "1.0.0")
-bazel_dep(name = "protobuf", version = "29.2", repo_name = "com_google_protobuf")
-single_version_override(
-    module_name = "protobuf",
-    patch_strip = 1,
-    patches = [
-        # b/392548175 - failure in upb aspect when using '-c opt'.
-        "//tools/base/bazel/bzlmod:protobuf-upb-proto-disable.patch",
-        # Stop rules_jvm_external from calling coursier for maven resolution.
-        "//tools/base/bazel/bzlmod:protobuf_use_maven_install_lockfile.patch",
-    ],
-    version = "29.2",
-)
-
+bazel_dep(name = "protobuf", version = "35.1", repo_name = "com_google_protobuf")
 bazel_dep(name = "rules_jvm_external", version = "6.8")
 bazel_dep(name = "rules_java", version = "9.8.0")
 bazel_dep(name = "rules_pkg", version = "1.0.1")
@@ -163,15 +151,21 @@ use_repo(compat, "compatibility_proxy")
 bazel_dep(name = "rules_robolectric", version = "4.14.1.2")
 bazel_dep(name = "rules_shell", version = "0.4.0")
 bazel_dep(name = "with_cfg.bzl", version = "0.9.1")
-bazel_dep(name = "grpc", version = "1.69.0")
+bazel_dep(name = "grpc", version = "1.83.0")
 single_version_override(
     module_name = "grpc",
     patch_strip = 1,
     patches = [
         "//tools/base/bazel/bzlmod:grpc_use_android_platforms.patch",
-        "//tools/base/bazel/bzlmod:grpc_fix_windows_platforms.patch",
     ],
-    version = "1.69.0",
+    version = "1.83.0",
+)
+
+# grpc depends on an older version of envoy_api, which has compatiblility issues
+# with googleapis module.
+single_version_override(
+    module_name = "envoy_api",
+    version = "0.0.0-20260130-84e8436",
 )
 
 # rules for typescript + node support
@@ -282,8 +276,7 @@ maven.override(
 maven.install(
     known_contributing_modules = [
         "android_studio",
-        "grpc-java",
-        "bazel_worker_java",
+        "protobuf",
     ],
     lock_file = "//tools/base/bazel/bzlmod:maven_install.json",
 )

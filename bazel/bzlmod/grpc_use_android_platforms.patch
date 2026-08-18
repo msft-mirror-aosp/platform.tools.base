@@ -2,7 +2,7 @@ diff --git a/BUILD b/BUILD
 index 4745cc2dd5..42a1c94606 100644
 --- a/BUILD
 +++ b/BUILD
-@@ -76,9 +76,7 @@ config_setting(
+@@ -119,9 +119,7 @@ config_setting(
 
  config_setting(
      name = "android",

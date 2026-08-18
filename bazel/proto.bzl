@@ -1,4 +1,5 @@
-load(":android.bzl", "select_android")
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@rules_java//java:defs.bzl", "java_library")
 load(":functions.bzl", "label_workspace_path")
 load(":kotlin.bzl", "kotlin_library")
 load(":maven.bzl", "maven_library")
@@ -33,7 +34,6 @@ def _gen_proto_impl(ctx):
     args.use_param_file("@%s")
     args.set_param_file_format("multiline")
 
-    needs_label_path = False
     proto_paths = []
     for src_target in ctx.attr.srcs:
         prefix = []
@@ -226,8 +226,7 @@ def java_proto_library(
     grpc_extra_deps = ["@//prebuilts/tools/common/m2:javax.annotation.javax.annotation-api.1.3.2"]
     java_deps = list(java_deps) + (grpc_extra_deps if grpc_support else [])
     java_deps += proto_java_runtime_library
-
-    native.java_library(
+    java_library(
         name = name,
         srcs = outs,
         deps = java_deps,
@@ -335,10 +334,10 @@ def cc_grpc_proto_library(
         tags = tags,
         target_compatible_with = target_compatible_with,
     )
-    native.cc_library(
+    cc_library(
         name = name,
         srcs = outs + hdrs,
-        deps = deps + ["@grpc//:grpc++_unsecure", "@com_google_protobuf//:protobuf"],
+        deps = deps + ["@grpc//:grpc++", "@com_google_protobuf//:protobuf"],
         includes = includes,
         visibility = visibility,
         tags = tags,
@@ -395,7 +394,7 @@ def maven_proto_library(
             **kwargs
         )
     else:
-        native.java_library(
+        java_library(
             name = name,
             srcs = outs,
             deps = java_deps,
