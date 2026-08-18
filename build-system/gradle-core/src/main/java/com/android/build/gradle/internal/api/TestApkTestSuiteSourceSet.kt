@@ -33,6 +33,7 @@ class TestApkTestSuiteSourceSet(
   javaEnabled: Boolean,
   kotlinEnabled: Boolean,
   override val dependencies: AgpTestSuiteDependencies?,
+  subDirectory: String = "androidTest",
 ) :
   AbstractTestSuiteSourceSet(
     sourceSetName = sourceSetName,
@@ -40,6 +41,7 @@ class TestApkTestSuiteSourceSet(
     isMixed = isMixed,
     variantServices = variantServices,
     userAddedSourceSets = userAddedSourceSets,
+    subDirectory = subDirectory,
   ),
   TestSuiteSourceSet.TestApk {
 

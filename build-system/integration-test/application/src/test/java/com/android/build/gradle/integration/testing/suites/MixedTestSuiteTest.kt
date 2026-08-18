@@ -21,6 +21,8 @@ import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.options.BooleanOption
+import com.android.builder.model.v2.ide.SyncIssue
+import com.android.builder.model.v2.models.SourceType
 import com.android.testutils.TestUtils
 import com.android.tools.bazel.avd.Emulator
 import com.google.common.truth.Truth
@@ -73,6 +75,7 @@ class MixedTestSuiteTest {
               }
               it.hostJar {}
               it.testApk {}
+              it.assets {}
               it.targetVariants.add("debug")
               it.targets.apply { create("t1") {} }
             }
@@ -80,7 +83,7 @@ class MixedTestSuiteTest {
           dependencies { implementation("com.google.truth:truth:0.44") }
           files {
             add(
-              "src/mixed/mixedTest/java/com/example/app/HostTest.java",
+              "src/mixed/test/java/com/example/app/HostTest.java",
               """
               package com.example.app;
               public class HostTest {}
@@ -88,13 +91,14 @@ class MixedTestSuiteTest {
                 .trimIndent(),
             )
             add(
-              "src/mixed/mixedAndroidTest/java/com/example/app/DeviceTest.java",
+              "src/mixed/androidTest/java/com/example/app/DeviceTest.java",
               """
               package com.example.app;
               public class DeviceTest {}
               """
                 .trimIndent(),
             )
+            add("src/mixed/assetsTest/sample_asset.txt", "sample asset content")
           }
         }
       }
@@ -143,5 +147,30 @@ class MixedTestSuiteTest {
     val buildDir = project.subProject(":app").buildDir.toFile()
     val junitInputsFile = buildDir.resolve("intermediates/debug/updateMixedT1DebugTestSuite/junit_inputs.txt")
     Truth.assertThat(junitInputsFile.exists()).isTrue()
+  }
+
+  @Test
+  fun testMixedSuiteAssets() {
+    val project = rule.build
+    val result = project.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels()
+    Truth.assertThat(result).isNotNull()
+    val models = result.container.getProject(":app")
+
+    val testSuites = models.basicAndroidProject?.testSuites
+    Truth.assertThat(testSuites).isNotNull()
+    val mixedTestSuite = testSuites!!.first { it.name == "mixed" }
+
+    val assetsFolder = mixedTestSuite.assets.single()
+    Truth.assertThat(assetsFolder.type).isEqualTo(SourceType.ASSETS)
+    Truth.assertThat(assetsFolder.directories).containsExactly(project.subProject(":app").resolve("src/mixed/assetsTest").toFile())
+
+    val hostJarFolder = mixedTestSuite.hostJars.single()
+    Truth.assertThat(hostJarFolder.type).isEqualTo(SourceType.HOST_JAR)
+    Truth.assertThat(hostJarFolder.java).containsExactly(project.subProject(":app").resolve("src/mixed/test/java").toFile())
+
+    val testApkFolder = mixedTestSuite.testApks.single()
+    Truth.assertThat(testApkFolder.type).isEqualTo(SourceType.TEST_APK)
+    Truth.assertThat(testApkFolder.sourceProvider.javaDirectories)
+      .containsExactly(project.subProject(":app").resolve("src/mixed/androidTest/java").toFile())
   }
 }
