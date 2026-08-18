@@ -23,38 +23,36 @@ class CompileTimeConstantDetectorTest : AbstractCheckTest() {
 
   private val ctcAnnotationStub =
     java(
-        """
-        package com.google.errorprone.annotations;
-        import java.lang.annotation.ElementType;
-        import java.lang.annotation.Target;
+      """
+      package com.google.errorprone.annotations;
+      import java.lang.annotation.ElementType;
+      import java.lang.annotation.Target;
 
-        @Target({ElementType.PARAMETER, ElementType.FIELD})
-        public @interface CompileTimeConstant {}
-        """
-      )
-      .indented()
+      @Target({ElementType.PARAMETER, ElementType.FIELD})
+      public @interface CompileTimeConstant {}
+      """
+    ).indented()
 
   fun testDocumentationExample() {
     lint()
       .files(
         java(
-            """
-            package test.pkg;
+          """
+          package test.pkg;
 
-            import com.google.errorprone.annotations.CompileTimeConstant;
+          import com.google.errorprone.annotations.CompileTimeConstant;
 
-            public class Test {
-                public void check(@CompileTimeConstant String x) {}
+          public class Test {
+              public void check(@CompileTimeConstant String x) {}
 
-                public void test() {
-                    check("constant"); // OK
-                    String nonConstant = "non-" + System.currentTimeMillis();
-                    check(nonConstant); // ERROR
-                }
-            }
-            """
-          )
-          .indented(),
+              public void test() {
+                  check("constant"); // OK
+                  String nonConstant = "non-" + System.currentTimeMillis();
+                  check(nonConstant); // ERROR
+              }
+          }
+          """
+        ).indented(),
         ctcAnnotationStub,
       )
       .run()
@@ -72,20 +70,19 @@ class CompileTimeConstantDetectorTest : AbstractCheckTest() {
     lint()
       .files(
         kotlin(
-            """
-            package test.pkg
+          """
+          package test.pkg
 
-            import com.google.errorprone.annotations.CompileTimeConstant
+          import com.google.errorprone.annotations.CompileTimeConstant
 
-            fun check(@CompileTimeConstant x: String) {}
+          fun check(@CompileTimeConstant x: String) {}
 
-            fun test(nonConst: String) {
-                check("constant") // OK
-                check(nonConst) // ERROR
-            }
-            """
-          )
-          .indented(),
+          fun test(nonConst: String) {
+              check("constant") // OK
+              check(nonConst) // ERROR
+          }
+          """
+        ).indented(),
         ctcAnnotationStub,
       )
       .run()
@@ -103,17 +100,16 @@ class CompileTimeConstantDetectorTest : AbstractCheckTest() {
     lint()
       .files(
         java(
-            """
-            package test.pkg;
+          """
+          package test.pkg;
 
-            import com.google.errorprone.annotations.CompileTimeConstant;
+          import com.google.errorprone.annotations.CompileTimeConstant;
 
-            public class Test {
-                @CompileTimeConstant private String shouldBeFinal = "shouldBeFinal";
-            }
-            """
-          )
-          .indented(),
+          public class Test {
+              @CompileTimeConstant private String shouldBeFinal = "shouldBeFinal";
+          }
+          """
+        ).indented(),
         ctcAnnotationStub,
       )
       .run()
@@ -131,25 +127,24 @@ class CompileTimeConstantDetectorTest : AbstractCheckTest() {
     lint()
       .files(
         java(
-            """
-            package test.pkg;
+          """
+          package test.pkg;
 
-            import com.google.errorprone.annotations.CompileTimeConstant;
+          import com.google.errorprone.annotations.CompileTimeConstant;
 
-            public class Test {
-                interface Itf {
-                    void foo(String x);
-                }
+          public class Test {
+              interface Itf {
+                  void foo(String x);
+              }
 
-                static class HelperBase {
-                    public void foo(@CompileTimeConstant String x) {}
-                }
+              static class HelperBase {
+                  public void foo(@CompileTimeConstant String x) {}
+              }
 
-                static class Wrong extends HelperBase implements Itf {}
-            }
-            """
-          )
-          .indented(),
+              static class Wrong extends HelperBase implements Itf {}
+          }
+          """
+        ).indented(),
         ctcAnnotationStub,
       )
       .run()
@@ -169,33 +164,31 @@ class CompileTimeConstantDetectorTest : AbstractCheckTest() {
     lint()
       .files(
         java(
-            """
-            package test.pkg;
+          """
+          package test.pkg;
 
-            import com.google.common.collect.ImmutableList;
-            import com.google.errorprone.annotations.CompileTimeConstant;
+          import com.google.common.collect.ImmutableList;
+          import com.google.errorprone.annotations.CompileTimeConstant;
 
-            public class Test {
-                public void ctcList(@CompileTimeConstant ImmutableList<String> args) {}
+          public class Test {
+              public void ctcList(@CompileTimeConstant ImmutableList<String> args) {}
 
-                public void test(String s, @CompileTimeConstant String constStr) {
-                    ctcList(ImmutableList.of("foo", "bar", constStr)); // OK
-                    ctcList(ImmutableList.of("foo", s, "bar")); // ERROR
-                }
-            }
-            """
-          )
-          .indented(),
+              public void test(String s, @CompileTimeConstant String constStr) {
+                  ctcList(ImmutableList.of("foo", "bar", constStr)); // OK
+                  ctcList(ImmutableList.of("foo", s, "bar")); // ERROR
+              }
+          }
+          """
+        ).indented(),
         ctcAnnotationStub,
         java(
-            """
-            package com.google.common.collect;
-            public class ImmutableList<E> {
-                public static <E> ImmutableList<E> of(E... elements) { return null; }
-            }
-            """
-          )
-          .indented(),
+          """
+          package com.google.common.collect;
+          public class ImmutableList<E> {
+              public static <E> ImmutableList<E> of(E... elements) { return null; }
+          }
+          """
+        ).indented(),
       )
       .run()
       .expect(
@@ -212,18 +205,17 @@ class CompileTimeConstantDetectorTest : AbstractCheckTest() {
     lint()
       .files(
         kotlin(
-            """
-            package test.pkg
+          """
+          package test.pkg
 
-            import com.google.errorprone.annotations.CompileTimeConstant
+          import com.google.errorprone.annotations.CompileTimeConstant
 
-            class KtTest(@CompileTimeConstant @JvmField val jvmFieldProp: String = "default") {
-                @CompileTimeConstant @JvmField val validVal = "constant"
-                @field:CompileTimeConstant @JvmField var invalidVar = "mutable" // ERROR
-            }
-            """
-          )
-          .indented(),
+          class KtTest(@CompileTimeConstant @JvmField val jvmFieldProp: String = "default") {
+              @CompileTimeConstant @JvmField val validVal = "constant"
+              @field:CompileTimeConstant @JvmField var invalidVar = "mutable" // ERROR
+          }
+          """
+        ).indented(),
         ctcAnnotationStub,
       )
       .run()
@@ -241,28 +233,27 @@ class CompileTimeConstantDetectorTest : AbstractCheckTest() {
     lint()
       .files(
         java(
-            """
-            package test.pkg;
+          """
+          package test.pkg;
 
-            import com.google.errorprone.annotations.CompileTimeConstant;
+          import com.google.errorprone.annotations.CompileTimeConstant;
 
-            public class Test {
-                static final String JAVA_CONST = "Hello";
+          public class Test {
+              static final String JAVA_CONST = "Hello";
 
-                public void check(@CompileTimeConstant String s) {}
+              public void check(@CompileTimeConstant String s) {}
 
-                public void test(String x) {
-                    check(JAVA_CONST + " World!"); // OK
-                    check(1 + " World!"); // OK
-                    check("World! " + 1); // OK
-                    check('a' + "b"); // OK
-                    check(x + " World!"); // ERROR
-                    check("World! " + x); // ERROR
-                }
-            }
-            """
-          )
-          .indented(),
+              public void test(String x) {
+                  check(JAVA_CONST + " World!"); // OK
+                  check(1 + " World!"); // OK
+                  check("World! " + 1); // OK
+                  check('a' + "b"); // OK
+                  check(x + " World!"); // ERROR
+                  check("World! " + x); // ERROR
+              }
+          }
+          """
+        ).indented(),
         ctcAnnotationStub,
       )
       .run()
@@ -283,31 +274,30 @@ class CompileTimeConstantDetectorTest : AbstractCheckTest() {
     lint()
       .files(
         java(
-            """
-            package test.pkg;
+          """
+          package test.pkg;
 
-            import com.google.errorprone.annotations.CompileTimeConstant;
+          import com.google.errorprone.annotations.CompileTimeConstant;
 
-            public class Test {
-                public static void onlyCtc(@CompileTimeConstant String s) {}
-                public static void ctcVarargs(String s, @CompileTimeConstant String... args) {}
+          public class Test {
+              public static void onlyCtc(@CompileTimeConstant String s) {}
+              public static void ctcVarargs(String s, @CompileTimeConstant String... args) {}
 
-                Test(String s, @CompileTimeConstant String p) {
-                    onlyCtc(p); // OK
-                }
+              Test(String s, @CompileTimeConstant String p) {
+                  onlyCtc(p); // OK
+              }
 
-                Test(String s) {
-                    onlyCtc(s); // ERROR
-                }
+              Test(String s) {
+                  onlyCtc(s); // ERROR
+              }
 
-                public void testVarargs(String s) {
-                    ctcVarargs(s, "foo", "bar"); // OK
-                    ctcVarargs(s, "foo", s); // ERROR
-                }
-            }
-            """
-          )
-          .indented(),
+              public void testVarargs(String s) {
+                  ctcVarargs(s, "foo", "bar"); // OK
+                  ctcVarargs(s, "foo", s); // ERROR
+              }
+          }
+          """
+        ).indented(),
         ctcAnnotationStub,
       )
       .run()
@@ -328,29 +318,27 @@ class CompileTimeConstantDetectorTest : AbstractCheckTest() {
     lint()
       .files(
         java(
-            """
-            package test.pkg;
+          """
+          package test.pkg;
 
-            import com.google.errorprone.annotations.CompileTimeConstant;
+          import com.google.errorprone.annotations.CompileTimeConstant;
 
-            public class JavaClass {
-                public String getCtc() { return null; }
-                public void setCtc(@CompileTimeConstant String x) {}
-            }
-            """
-          )
-          .indented(),
+          public class JavaClass {
+              public String getCtc() { return null; }
+              public void setCtc(@CompileTimeConstant String x) {}
+          }
+          """
+        ).indented(),
         kotlin(
-            """
-            package test.pkg
+          """
+          package test.pkg
 
-            fun testPropertySyntax(javaObj: JavaClass, nonConst: String) {
-                javaObj.ctc = "constant" // OK
-                javaObj.ctc = nonConst // ERROR
-            }
-            """
-          )
-          .indented(),
+          fun testPropertySyntax(javaObj: JavaClass, nonConst: String) {
+              javaObj.ctc = "constant" // OK
+              javaObj.ctc = nonConst // ERROR
+          }
+          """
+        ).indented(),
         ctcAnnotationStub,
       )
       .run()
@@ -368,20 +356,19 @@ class CompileTimeConstantDetectorTest : AbstractCheckTest() {
     lint()
       .files(
         java(
-            """
-            package test.pkg;
+          """
+          package test.pkg;
 
-            import com.google.errorprone.annotations.CompileTimeConstant;
+          import com.google.errorprone.annotations.CompileTimeConstant;
 
-            public class Test {
-                public void test(String s) {
-                    @CompileTimeConstant String ctcVar = "constant"; // OK
-                    ctcVar = s; // ERROR
-                }
-            }
-            """
-          )
-          .indented(),
+          public class Test {
+              public void test(String s) {
+                  @CompileTimeConstant String ctcVar = "constant"; // OK
+                  ctcVar = s; // ERROR
+              }
+          }
+          """
+        ).indented(),
         ctcAnnotationStub,
       )
       .run()
@@ -399,23 +386,22 @@ class CompileTimeConstantDetectorTest : AbstractCheckTest() {
     lint()
       .files(
         java(
-            """
-            package test.pkg;
+          """
+          package test.pkg;
 
-            import com.google.errorprone.annotations.CompileTimeConstant;
+          import com.google.errorprone.annotations.CompileTimeConstant;
 
-            public class Test {
-                static class Base {
-                    public void foo(String s) {}
-                }
-                static class Sub extends Base {
-                    @Override
-                    public void foo(@CompileTimeConstant String s) {} // ERROR
-                }
-            }
-            """
-          )
-          .indented(),
+          public class Test {
+              static class Base {
+                  public void foo(String s) {}
+              }
+              static class Sub extends Base {
+                  @Override
+                  public void foo(@CompileTimeConstant String s) {} // ERROR
+              }
+          }
+          """
+        ).indented(),
         ctcAnnotationStub,
       )
       .run()
@@ -433,23 +419,22 @@ class CompileTimeConstantDetectorTest : AbstractCheckTest() {
     lint()
       .files(
         kotlin(
-            """
-            package test.pkg
+          """
+          package test.pkg
 
-            import com.google.errorprone.annotations.CompileTimeConstant
+          import com.google.errorprone.annotations.CompileTimeConstant
 
-            fun ctcList(@CompileTimeConstant args: List<String>) {}
-            fun ctcSet(@CompileTimeConstant args: Set<String>) {}
+          fun ctcList(@CompileTimeConstant args: List<String>) {}
+          fun ctcSet(@CompileTimeConstant args: Set<String>) {}
 
-            fun test(s: String, @CompileTimeConstant constStr: String) {
-                ctcList(listOf("foo", "bar", constStr)) // OK
-                ctcList(listOf("foo", s, "bar")) // ERROR
-                ctcSet(setOf("foo", "bar", constStr)) // OK
-                ctcSet(setOf("foo", s, "bar")) // ERROR
-            }
-            """
-          )
-          .indented(),
+          fun test(s: String, @CompileTimeConstant constStr: String) {
+              ctcList(listOf("foo", "bar", constStr)) // OK
+              ctcList(listOf("foo", s, "bar")) // ERROR
+              ctcSet(setOf("foo", "bar", constStr)) // OK
+              ctcSet(setOf("foo", s, "bar")) // ERROR
+          }
+          """
+        ).indented(),
         ctcAnnotationStub,
       )
       .run()
@@ -470,27 +455,26 @@ class CompileTimeConstantDetectorTest : AbstractCheckTest() {
     lint()
       .files(
         java(
-            """
-            package test.pkg;
+          """
+          package test.pkg;
 
-            import java.util.List;
-            import java.util.Set;
-            import com.google.errorprone.annotations.CompileTimeConstant;
+          import java.util.List;
+          import java.util.Set;
+          import com.google.errorprone.annotations.CompileTimeConstant;
 
-            public class Test {
-                public void ctcList(@CompileTimeConstant List<String> args) {}
-                public void ctcSet(@CompileTimeConstant Set<String> args) {}
+          public class Test {
+              public void ctcList(@CompileTimeConstant List<String> args) {}
+              public void ctcSet(@CompileTimeConstant Set<String> args) {}
 
-                public void test(String s, @CompileTimeConstant String constStr) {
-                    ctcList(List.of("foo", "bar", constStr)); // OK
-                    ctcList(List.of("foo", s, "bar")); // ERROR
-                    ctcSet(Set.of("foo", "bar", constStr)); // OK
-                    ctcSet(Set.of("foo", s, "bar")); // ERROR
-                }
-            }
-            """
-          )
-          .indented(),
+              public void test(String s, @CompileTimeConstant String constStr) {
+                  ctcList(List.of("foo", "bar", constStr)); // OK
+                  ctcList(List.of("foo", s, "bar")); // ERROR
+                  ctcSet(Set.of("foo", "bar", constStr)); // OK
+                  ctcSet(Set.of("foo", s, "bar")); // ERROR
+              }
+          }
+          """
+        ).indented(),
         ctcAnnotationStub,
       )
       .run()
@@ -511,18 +495,17 @@ class CompileTimeConstantDetectorTest : AbstractCheckTest() {
     lint()
       .files(
         kotlin(
-            """
-            package test.pkg
+          """
+          package test.pkg
 
-            import com.google.errorprone.annotations.CompileTimeConstant
+          import com.google.errorprone.annotations.CompileTimeConstant
 
-            class KtTest(
-                @CompileTimeConstant val validParamProp: String,
-                @field:CompileTimeConstant private val fieldProp: String,
-            )
-            """
+          class KtTest(
+              @CompileTimeConstant val validParamProp: String,
+              @field:CompileTimeConstant private val fieldProp: String,
           )
-          .indented(),
+          """
+        ).indented(),
         ctcAnnotationStub,
       )
       .run()
@@ -537,3 +520,5 @@ class CompileTimeConstantDetectorTest : AbstractCheckTest() {
       )
   }
 }
+
+
