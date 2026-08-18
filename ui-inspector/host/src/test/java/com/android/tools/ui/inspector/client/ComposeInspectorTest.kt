@@ -1367,11 +1367,7 @@ class ComposeInspectorTest {
   }
 
   private fun configureUidCommands(fakeSession: FakeAdbSession, deviceSelector: DeviceSelector, packageName: String) {
-    fakeSession.deviceServices.configureShellCommand(
-      deviceSelector,
-      "pm list packages -U --user 0 $packageName",
-      "package:$packageName uid:10123\n",
-    )
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pm list packages -U --user 0", "package:$packageName uid:10123\n")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "ps -A -o PID,UID,NAME", "PID UID NAME\n1234 10123 $packageName\n")
   }
 }

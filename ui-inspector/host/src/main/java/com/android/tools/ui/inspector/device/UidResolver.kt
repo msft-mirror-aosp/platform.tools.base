@@ -24,6 +24,14 @@ import com.android.adblib.shellAsText
 internal data class PackageUid(val packageName: String, val uid: Int)
 
 /**
+ * The UID of a package and every installed package that owns that same UID.
+ *
+ * For a normal app, [packageNames] has exactly one entry. It has more when the app uses legacy sharedUserId, which makes several packages
+ * own one UID.
+ */
+internal data class PackageUidGroup(val uid: Int, val packageNames: Set<String>)
+
+/**
  * Resolves identities between packages and processes through their Linux UID.
  *
  * Android assigns every installed app its own Linux user account (UIDs from 10000 up); every process the app spawns runs as that user, and
@@ -38,11 +46,15 @@ internal data class PackageUid(val packageName: String, val uid: Int)
  */
 internal class UidResolver(private val adbSession: AdbSession, private val deviceSelector: DeviceSelector) {
 
-  /** Queries the device for the UID owning [packageName] under Android user 0; null when the package is not installed there. */
-  suspend fun packageUid(packageName: String): Int? {
-    // The pm positional filter matches substrings, so the exact package is selected from the parsed result below.
-    val output = adbSession.deviceServices.shellAsTextOrThrow(deviceSelector, "pm list packages -U --user 0 $packageName").stdout
-    return parsePackageUids(output).firstOrNull { it.packageName == packageName }?.uid
+  /**
+   * Queries the device for the UID of [packageName] and for every package that owns that same UID. Returns null when the package is not
+   * installed under Android user 0. All entries come from a single package-manager snapshot.
+   */
+  suspend fun packageUidGroup(packageName: String): PackageUidGroup? {
+    val packageUids = allPackageUids()
+    val uid = packageUids.firstOrNull { it.packageName == packageName }?.uid ?: return null
+    val packageNames = packageUids.filter { it.uid == uid }.map { it.packageName }.toSet()
+    return PackageUidGroup(uid = uid, packageNames = packageNames)
   }
 
   /** Queries the device for every package installed under Android user 0 and its owning UID. */

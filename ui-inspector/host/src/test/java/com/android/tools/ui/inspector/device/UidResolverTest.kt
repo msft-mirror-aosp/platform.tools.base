@@ -97,14 +97,46 @@ class UidResolverTest {
   }
 
   @Test
-  fun testQueryPackageUid_requiresExactPackageMatch() = runTest {
+  fun testQueryPackageUidGroup_requiresExactPackageMatch() = runTest {
+    fakeSession.deviceServices.configureShellCommand(selector, "pm list packages -U --user 0", "package:com.example.other uid:10123\n")
+
+    assertThat(UidResolver(fakeSession, selector).packageUidGroup("com.example")).isNull()
+  }
+
+  @Test
+  fun testQueryPackageUidGroup_selectsExactTargetAmongSubstringSimilarPackages() = runTest {
     fakeSession.deviceServices.configureShellCommand(
       selector,
-      "pm list packages -U --user 0 com.example",
-      "package:com.example.other uid:10123\n",
+      "pm list packages -U --user 0",
+      "package:com.example.other uid:10456\npackage:com.example uid:10123\n",
     )
 
-    assertThat(UidResolver(fakeSession, selector).packageUid("com.example")).isNull()
+    assertThat(UidResolver(fakeSession, selector).packageUidGroup("com.example"))
+      .isEqualTo(PackageUidGroup(uid = 10123, packageNames = setOf("com.example")))
+  }
+
+  @Test
+  fun testQueryPackageUidGroup_exclusiveUidYieldsSingletonGroup() = runTest {
+    fakeSession.deviceServices.configureShellCommand(
+      selector,
+      "pm list packages -U --user 0",
+      "package:com.example uid:10123\npackage:com.other uid:10456\n",
+    )
+
+    assertThat(UidResolver(fakeSession, selector).packageUidGroup("com.example"))
+      .isEqualTo(PackageUidGroup(uid = 10123, packageNames = setOf("com.example")))
+  }
+
+  @Test
+  fun testQueryPackageUidGroup_sharedUidYieldsAllOwningPackages() = runTest {
+    fakeSession.deviceServices.configureShellCommand(
+      selector,
+      "pm list packages -U --user 0",
+      "package:com.example.uida uid:10212\npackage:com.unrelated uid:10456\npackage:com.example.uidb uid:10212\n",
+    )
+
+    assertThat(UidResolver(fakeSession, selector).packageUidGroup("com.example.uida"))
+      .isEqualTo(PackageUidGroup(uid = 10212, packageNames = setOf("com.example.uida", "com.example.uidb")))
   }
 
   @Test

@@ -29,6 +29,7 @@ import com.android.tools.ui.inspector.client.CommandSender
 import com.android.tools.ui.inspector.client.InspectorCrashException
 import com.android.tools.ui.inspector.common.FramingProtocol
 import com.android.tools.ui.inspector.common.ProtocolConstants
+import com.android.tools.ui.inspector.device.PROCESS_PACKAGES_SHELL_COMMAND
 import com.android.tools.ui.inspector.device.TOP_ACTIVITY_SHELL_COMMAND
 import com.android.tools.ui.inspector.doDumpUi
 import com.android.tools.ui.inspector.model.UiDump
@@ -722,11 +723,7 @@ class InjectionManagerTest {
 
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
-    fakeSession.deviceServices.configureShellCommand(
-      deviceSelector,
-      "pm list packages -U --user 0 $packageName",
-      "package:$packageName uid:10123\n",
-    )
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pm list packages -U --user 0", "package:$packageName uid:10123\n")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "ps -A -o PID,UID,NAME", "PID UID NAME\n")
 
@@ -739,6 +736,224 @@ class InjectionManagerTest {
   }
 
   @Test
+  fun testInjectAndAttach_sharedUid_onlySiblingRunning_failsWithoutAttach() = runTest {
+    val injectionManager = createInjectionManager()
+    configureSuccessfulInjection()
+    configureSharedUidPackages()
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "ps -A -o PID,UID,NAME", "PID UID NAME\n5678 10123 com.sibling\n")
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      PROCESS_PACKAGES_SHELL_COMMAND,
+      processRecordBlock("5678", "com.sibling"),
+    )
+
+    try {
+      injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
+      fail("Expected the sibling-only process state to fail")
+    } catch (e: IllegalStateException) {
+      assertThat(e.message).isEqualTo("The application '$packageName' is not running on the device. Please start the app and try again.")
+    }
+    val commands = fakeSession.deviceServices.shellV2Requests.map { it.command }
+    assertThat(commands.filter { it.startsWith("cmd activity attach-agent") }).isEmpty()
+  }
+
+  @Test
+  fun testInjectAndAttach_sharedUid_nothingRunning_failsWithoutProcessAttributionQuery() = runTest {
+    val injectionManager = createInjectionManager()
+    configureSuccessfulInjection()
+    configureSharedUidPackages()
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "ps -A -o PID,UID,NAME", "PID UID NAME\n")
+
+    try {
+      injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
+      fail("Expected the no-process state to fail")
+    } catch (e: IllegalStateException) {
+      assertThat(e.message).contains("The application '$packageName' is not running on the device.")
+    }
+    assertThat(fakeSession.deviceServices.shellV2Requests.map { it.command }).doesNotContain(PROCESS_PACKAGES_SHELL_COMMAND)
+  }
+
+  @Test
+  fun testInjectAndAttach_sharedUid_targetRunningAlongsideSibling_attachesToTargetPid() = runTest {
+    val injectionManager = createInjectionManager()
+    configureSuccessfulInjection(pid = "1234")
+    configureSharedUidPackages()
+    // The sibling's process comes first in ps order: only package attribution, not order, may pick the target.
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      "ps -A -o PID,UID,NAME",
+      "PID UID NAME\n5678 10123 com.sibling\n1234 10123 $packageName\n",
+    )
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      PROCESS_PACKAGES_SHELL_COMMAND,
+      processRecordBlock("5678", "com.sibling") + processRecordBlock("1234", packageName),
+    )
+
+    val port = injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION).forwardedPort
+
+    assertThat(port).isEqualTo("12345")
+  }
+
+  @Test
+  fun testInjectAndAttach_sharedUid_targetHostedInSharedProcess_isAccepted() = runTest {
+    val injectionManager = createInjectionManager()
+    configureSuccessfulInjection(pid = "1234")
+    configureSharedUidPackages()
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "ps -A -o PID,UID,NAME", "PID UID NAME\n1234 10123 com.shared\n")
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      PROCESS_PACKAGES_SHELL_COMMAND,
+      processRecordBlock("1234", "com.sibling, $packageName"),
+    )
+
+    val port = injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION).forwardedPort
+
+    assertThat(port).isEqualTo("12345")
+  }
+
+  @Test
+  fun testInjectAndAttach_sharedUid_topActivityPreferenceAppliesAmongTargetPids() = runTest {
+    val injectionManager = createInjectionManager()
+    configureSuccessfulInjection(pid = "4321")
+    configureSharedUidPackages()
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      "ps -A -o PID,UID,NAME",
+      "PID UID NAME\n1234 10123 $packageName\n4321 10123 $packageName:ui\n",
+    )
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      PROCESS_PACKAGES_SHELL_COMMAND,
+      processRecordBlock("1234", packageName) + processRecordBlock("4321", packageName),
+    )
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      TOP_ACTIVITY_SHELL_COMMAND,
+      "  Proc #0: adj=top /F/TOP TRM=0 4321:$packageName:ui/u0a123 (top-activity)\n",
+    )
+
+    val port = injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION).forwardedPort
+
+    assertThat(port).isEqualTo("12345")
+  }
+
+  @Test
+  fun testInjectAndAttach_sharedUid_siblingTopActivityDoesNotOverrideTarget() = runTest {
+    val injectionManager = createInjectionManager()
+    configureSuccessfulInjection(pid = "1234")
+    configureSharedUidPackages()
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      "ps -A -o PID,UID,NAME",
+      "PID UID NAME\n9999 10123 com.sibling\n1234 10123 $packageName\n4321 10123 $packageName:ui\n",
+    )
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      PROCESS_PACKAGES_SHELL_COMMAND,
+      processRecordBlock("9999", "com.sibling") + processRecordBlock("1234", packageName) + processRecordBlock("4321", packageName),
+    )
+    // The sibling hosts the top activity; the preference must not select it, so the first target-owned pid wins.
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      TOP_ACTIVITY_SHELL_COMMAND,
+      "  Proc #0: adj=top /F/TOP TRM=0 9999:com.sibling/u0a123 (top-activity)\n",
+    )
+
+    val port = injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION).forwardedPort
+
+    assertThat(port).isEqualTo("12345")
+  }
+
+  @Test
+  fun testInjectAndAttach_sharedUid_onlyTargetRunning_attachesToTargetPid() = runTest {
+    val injectionManager = createInjectionManager()
+    configureSuccessfulInjection(pid = "1234")
+    configureSharedUidPackages()
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "ps -A -o PID,UID,NAME", "PID UID NAME\n1234 10123 $packageName\n")
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      PROCESS_PACKAGES_SHELL_COMMAND,
+      processRecordBlock("1234", packageName),
+    )
+
+    val port = injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION).forwardedPort
+
+    assertThat(port).isEqualTo("12345")
+  }
+
+  @Test
+  fun testInjectAndAttach_sharedUid_partialAttributionWithoutTarget_failsClosed() = runTest {
+    val injectionManager = createInjectionManager()
+    configureSuccessfulInjection()
+    configureSharedUidPackages()
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      "ps -A -o PID,UID,NAME",
+      "PID UID NAME\n5678 10123 com.sibling\n9999 10123 com.mystery\n",
+    )
+    // One candidate is attributed to the sibling, the other not at all: with no positively verified target, the unattributed candidate
+    // could be the target, so resolution must refuse rather than report "not running".
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      PROCESS_PACKAGES_SHELL_COMMAND,
+      processRecordBlock("5678", "com.sibling"),
+    )
+
+    try {
+      injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
+      fail("Expected the partially attributed candidate set to fail resolution")
+    } catch (e: IllegalStateException) {
+      assertThat(e.message).contains("Cannot tell which running process belongs to '$packageName'")
+    }
+  }
+
+  @Test
+  fun testInjectAndAttach_sharedUid_unattributedCandidate_failsClosed() = runTest {
+    val injectionManager = createInjectionManager()
+    configureSuccessfulInjection()
+    configureSharedUidPackages()
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "ps -A -o PID,UID,NAME", "PID UID NAME\n5678 10123 com.mystery\n")
+    // The activity manager dump carries no attribution for the candidate: the tool must not guess.
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, PROCESS_PACKAGES_SHELL_COMMAND, "unexpected dump shape\n")
+
+    try {
+      injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
+      fail("Expected the unattributed candidate to fail resolution")
+    } catch (e: IllegalStateException) {
+      assertThat(e.message)
+        .isEqualTo("Cannot tell which running process belongs to '$packageName' because it shares its UID with other packages.")
+    }
+  }
+
+  @Test
+  fun testInjectAndAttach_sharedUid_processAttributionQueryFailure_failsClosed() = runTest {
+    val injectionManager = createInjectionManager()
+    configureSuccessfulInjection()
+    configureSharedUidPackages()
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "ps -A -o PID,UID,NAME", "PID UID NAME\n1234 10123 $packageName\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, PROCESS_PACKAGES_SHELL_COMMAND, "", exitCode = 1)
+
+    try {
+      injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
+      fail("Expected the failed attribution query to fail resolution")
+    } catch (e: IllegalStateException) {
+      assertThat(e.message).contains("Cannot tell which running process belongs to '$packageName'")
+      assertThat(e.cause).isNotNull()
+    }
+  }
+
+  @Test
+  fun testInjectAndAttach_exclusiveUid_doesNotQueryProcessAttribution() = runTest {
+    val injectionManager = createInjectionManager()
+    configureSuccessfulInjection()
+
+    injectionManager.injectAndAttach(needsDebugViewAttributes = false, mode = InjectionMode.FORCE_FULL_INJECTION)
+
+    assertThat(fakeSession.deviceServices.shellV2Requests.map { it.command }).doesNotContain(PROCESS_PACKAGES_SHELL_COMMAND)
+  }
+
+  @Test
   fun testInjectAndAttach_psAdbExceptionPropagates() = runTest {
     val dummyPayload = tempFolder.root.toPath().resolve("lib_ui_inspector_payload.jar")
     val injectionManager =
@@ -747,11 +962,7 @@ class InjectionManagerTest {
 
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
-    fakeSession.deviceServices.configureShellCommand(
-      deviceSelector,
-      "pm list packages -U --user 0 $packageName",
-      "package:$packageName uid:10123\n",
-    )
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pm list packages -U --user 0", "package:$packageName uid:10123\n")
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName pwd", "/data/data/$packageName\n")
 
     // The ps command is deliberately unconfigured so FakeAdbDeviceServices throws an exception simulating an ADB failure.
@@ -770,7 +981,7 @@ class InjectionManagerTest {
     val injectionManager = createInjectionManager()
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pm list packages -U --user 0 $packageName", "")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pm list packages -U --user 0", "")
 
     var exception: IllegalStateException? = null
     try {
@@ -991,11 +1202,7 @@ class InjectionManagerTest {
     val metadataCmd = "getprop ${DevicePropertyNames.RO_PRODUCT_CPU_ABI} && getprop ${DevicePropertyNames.RO_BUILD_VERSION_SDK}"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, metadataCmd, "arm64-v8a\n30\n")
     // ps returns two PIDs with the package UID: 5678 (secondary process) and 1234 (main UI process).
-    fakeSession.deviceServices.configureShellCommand(
-      deviceSelector,
-      "pm list packages -U --user 0 $packageName",
-      "package:$packageName uid:10123\n",
-    )
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pm list packages -U --user 0", "package:$packageName uid:10123\n")
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
       "ps -A -o PID,UID,NAME",
@@ -1789,11 +1996,24 @@ class InjectionManagerTest {
   ) {
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
-      "pm list packages -U --user 0 $targetPackage",
+      "pm list packages -U --user 0",
       "package:$targetPackage uid:$packageUid\n",
     )
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "ps -A -o PID,UID,NAME", processOutput)
   }
+
+  /** Reconfigures the package listing so [packageName] shares its UID with an installed sibling package. */
+  private fun configureSharedUidPackages() {
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      "pm list packages -U --user 0",
+      "package:$packageName uid:10123\npackage:com.sibling uid:10123\n",
+    )
+  }
+
+  /** One ProcessRecord block from `dumpsys activity processes`, stating that [pid] belongs to the packages in [packageList]. */
+  private fun processRecordBlock(pid: String, packageList: String) =
+    "  *APP* UID 10123 ProcessRecord{abc123 $pid:process.name/u0a123}\n    packageList={$packageList}\n"
 
   /** Configures every shell command of the happy-path injection flow, except the debug-view-attributes settings commands. */
   private fun configureSuccessfulInjection(

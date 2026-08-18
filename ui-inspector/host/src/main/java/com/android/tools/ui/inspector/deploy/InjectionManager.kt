@@ -24,8 +24,10 @@ import com.android.adblib.shellAsText
 import com.android.tools.ui.inspector.common.ProtocolConstants
 import com.android.tools.ui.inspector.device.AgentSocketChecker
 import com.android.tools.ui.inspector.device.DebugViewAttributes
+import com.android.tools.ui.inspector.device.PackageUidGroup
 import com.android.tools.ui.inspector.device.TOP_ACTIVITY_SHELL_COMMAND
 import com.android.tools.ui.inspector.device.UidResolver
+import com.android.tools.ui.inspector.device.getPackagesByPid
 import com.android.tools.ui.inspector.device.parseTopActivityProcesses
 import com.android.tools.ui.inspector.device.shellAsTextOrThrow
 import java.nio.file.Files
@@ -121,15 +123,15 @@ class InjectionManager(
       )
     }
 
-    val packageUid =
-      uidResolver.packageUid(packageName)
+    val packageUidGroup =
+      uidResolver.packageUidGroup(packageName)
         ?: throw IllegalStateException(
           "Failed to access the application '$packageName'. Please make sure the app is installed, debuggable, and running under the current user."
         )
 
     // The pid is deliberately captured before any debug-view-attributes flip: the flip only relaunches activities within the existing
     // process, so the pid stays valid, and reading it first avoids mutating device settings when the target is not running.
-    val pid = getPid(deviceSelector, packageName, packageUid)
+    val pid = getPid(deviceSelector, packageName, packageUidGroup)
 
     // Resolve local paths before touching device settings, so a missing host artifact cannot restart the app's activities for nothing.
     val agentLocalPath = getAgentLocalPath(deviceAbi)
@@ -242,28 +244,60 @@ class InjectionManager(
   }
 
   /**
-   * Queries the device for the PID of the target application: the process owned by [packageUid], preferring the one hosting the top
-   * activity when the app has several. Under legacy sharedUserId, sibling packages own the same UID, so their processes are candidates too.
+   * Queries the device for the PID of the target application. When the app has several processes, the one hosting the top activity wins.
+   *
+   * Candidate processes are found by UID. When several packages share that UID (legacy sharedUserId), a candidate process (pid) can belong
+   * to a sibling package, so the pids are first narrowed to the ones that belong to [packageName]; see [filterPidsOwnedByPackage].
    */
-  private suspend fun getPid(deviceSelector: DeviceSelector, packageName: String, packageUid: Int): String {
-    val candidatePids = uidResolver.pidsForUid(packageUid)
-    if (candidatePids.isEmpty()) {
+  private suspend fun getPid(deviceSelector: DeviceSelector, packageName: String, packageUidGroup: PackageUidGroup): String {
+    val candidatePids = uidResolver.pidsForUid(packageUidGroup.uid)
+    val targetPids = if (packageUidGroup.packageNames.size == 1) candidatePids else filterPidsOwnedByPackage(candidatePids, packageName)
+    if (targetPids.isEmpty()) {
       throw IllegalStateException("The application '$packageName' is not running on the device. Please start the app and try again.")
     }
-    if (candidatePids.size == 1) {
+    if (targetPids.size == 1) {
       // If packageName has only one pid associated to it, use that.
       // This is going to be the case for most apps.
-      return candidatePids[0]
+      return targetPids[0]
     }
 
     // For multi-process applications, check if any of the pids is the pid of the foreground activity
-    val topActivityPid = getTopActivityPid(deviceSelector, candidatePids)
+    val topActivityPid = getTopActivityPid(deviceSelector, targetPids)
     if (topActivityPid != null) {
       return topActivityPid
     }
 
     // Fall back to the first candidate PID
-    return candidatePids[0]
+    return targetPids[0]
+  }
+
+  /**
+   * Keeps only the pids that actually belong to [packageName], according to the activity manager.
+   *
+   * This matters when packages share the same UID: the processes of all sibling packages carry the same UID, so a pid with the right UID
+   * can still belong to the wrong package.
+   *
+   * If no candidate belongs to [packageName] and some candidate could not be checked, this fails instead of returning an empty list: the
+   * unchecked process might be the target, and guessing risks dumping another app's UI.
+   */
+  private suspend fun filterPidsOwnedByPackage(candidatePids: List<String>, packageName: String): List<String> {
+    if (candidatePids.isEmpty()) return candidatePids
+    val packagesByPid =
+      try {
+        adbSession.deviceServices.getPackagesByPid(deviceSelector).associateBy { it.pid }
+      } catch (e: CancellationException) {
+        throw e
+      } catch (e: Exception) {
+        throw UnverifiableProcessException(packageName, e)
+      }
+    val targetPids = candidatePids.filter { pid -> packageName in packagesByPid[pid]?.packageNames.orEmpty() }
+    val unknownPids = candidatePids.filter { pid -> pid !in packagesByPid }
+    if (targetPids.isEmpty() && unknownPids.isNotEmpty()) {
+      // One of the unknown pids might be the target; the dump just did not say. Reporting "not running" would be a guess, so fail
+      // instead.
+      throw UnverifiableProcessException(packageName, cause = null)
+    }
+    return targetPids
   }
 
   /** Queries `dumpsys activity processes` to identify the PID currently hosting the top (foreground) activity. */
@@ -413,6 +447,13 @@ class InjectionManager(
 }
 
 private data class DeviceMetadata(val abi: String, val sdkVersion: Int)
+
+/**
+ * Thrown when [packageName] shares its UID with other packages and the running processes with that UID cannot be matched to their owning
+ * packages. Attaching would then be a guess, and a wrong guess dumps another app's UI.
+ */
+private class UnverifiableProcessException(packageName: String, cause: Exception?) :
+  IllegalStateException("Cannot tell which running process belongs to '$packageName' because it shares its UID with other packages.", cause)
 
 /**
  * Builds the `run-as` shell command that installs the staged artifacts into the app's data directory. Each file is written to a run-unique
