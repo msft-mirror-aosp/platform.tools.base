@@ -22,7 +22,7 @@ import com.android.tools.render.RenderEnvironmentBootstrapper
 import kotlin.io.path.absolutePathString
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /** Custom non-Compose preview annotation to verify strict descriptor matching. */
@@ -45,6 +45,16 @@ class SamplePreviewTarget {
     uiMode = 32,
   )
   fun sampleAnnotatedPreview() {}
+
+  @Preview(name = "Light Mode", widthDp = 320, heightDp = 640)
+  @Preview(name = "Dark Mode", widthDp = 360, heightDp = 720, uiMode = 32)
+  fun sampleMultiPreviewMethod() {}
+
+  @Preview(name = "Invalid Preview", widthDp = -50) fun sampleInvalidPreviewMethod() {}
+
+  @Preview(name = "Valid Preview", widthDp = 300, heightDp = 600)
+  @Preview(name = "Invalid Dimension Preview", widthDp = -50)
+  fun sampleMixedMultiPreviewMethod() {}
 
   fun sampleMethodWithoutAnnotation() {}
 
@@ -83,12 +93,10 @@ class PreviewDiscoveryEngineTest {
   fun testDiscoverSinglePreviewAnnotation() {
     createDiscoveryEngine { engine ->
       val methodFQN = "${SamplePreviewTarget::class.java.name}.sampleAnnotatedPreview"
-      val previewId = "sample_preview_0"
 
-      val discovered = engine.discover(methodFQN, previewId)
+      val discovered = engine.discoverAllPreviews(methodFQN).firstOrNull()
       assertNotNull("Preview should be discovered on annotated method", discovered)
       assertEquals(methodFQN, discovered!!.methodFQN)
-      assertEquals(previewId, discovered.previewId)
 
       val params = discovered.previewParams
       assertEquals("Dark Mode Preview", params["name"])
@@ -109,12 +117,10 @@ class PreviewDiscoveryEngineTest {
   fun testDiscoverNestedClassPreview() {
     createDiscoveryEngine { engine ->
       val methodFQN = "${SamplePreviewTarget.NestedTarget::class.java.name}.nestedPreviewMethod"
-      val previewId = "nested_preview"
 
-      val discovered = engine.discover(methodFQN, previewId)
+      val discovered = engine.discoverAllPreviews(methodFQN).firstOrNull()
       assertNotNull("Preview should be discovered on nested class method", discovered)
       assertEquals(methodFQN, discovered!!.methodFQN)
-      assertEquals(previewId, discovered.previewId)
 
       val params = discovered.previewParams
       assertEquals("Nested Preview", params["name"])
@@ -127,12 +133,10 @@ class PreviewDiscoveryEngineTest {
   fun testDiscoverCompanionObjectPreview() {
     createDiscoveryEngine { engine ->
       val methodFQN = "${SamplePreviewTarget.Companion::class.java.name}.companionPreviewMethod"
-      val previewId = "companion_preview"
 
-      val discovered = engine.discover(methodFQN, previewId)
+      val discovered = engine.discoverAllPreviews(methodFQN).firstOrNull()
       assertNotNull("Preview should be discovered on companion object method", discovered)
       assertEquals(methodFQN, discovered!!.methodFQN)
-      assertEquals(previewId, discovered.previewId)
 
       val params = discovered.previewParams
       assertEquals("Companion Preview", params["name"])
@@ -141,46 +145,65 @@ class PreviewDiscoveryEngineTest {
   }
 
   @Test
-  fun testDiscoverMethodWithNonComposeAnnotationReturnsNull() {
+  fun testDiscoverMethodWithNonComposeAnnotationReturnsEmpty() {
     createDiscoveryEngine { engine ->
       val methodFQN = "${SamplePreviewTarget::class.java.name}.sampleMethodWithNonComposeAnnotation"
-      val previewId = "non_compose"
 
-      val discovered = engine.discover(methodFQN, previewId)
-      assertNull("Methods annotated with non-Compose annotations should return null", discovered)
+      val discovered = engine.discoverAllPreviews(methodFQN)
+      assertTrue("Methods annotated with non-Compose annotations should return empty list", discovered.isEmpty())
     }
   }
 
   @Test
-  fun testDiscoverMethodWithoutPreviewReturnsNull() {
+  fun testDiscoverMethodWithoutPreviewReturnsEmpty() {
     createDiscoveryEngine { engine ->
       val methodFQN = "${SamplePreviewTarget::class.java.name}.sampleMethodWithoutAnnotation"
-      val previewId = "unannotated"
 
-      val discovered = engine.discover(methodFQN, previewId)
-      assertNull("Methods without @Preview annotation should return null", discovered)
+      val discovered = engine.discoverAllPreviews(methodFQN)
+      assertTrue("Methods without @Preview annotation should return empty list", discovered.isEmpty())
     }
   }
 
   @Test
-  fun testDiscoverNonExistentMethodReturnsNull() {
+  fun testDiscoverNonExistentMethodReturnsEmpty() {
     createDiscoveryEngine { engine ->
       val methodFQN = "${SamplePreviewTarget::class.java.name}.nonExistentMethod"
-      val previewId = "missing"
 
-      val discovered = engine.discover(methodFQN, previewId)
-      assertNull("Non-existent method should return null", discovered)
+      val discovered = engine.discoverAllPreviews(methodFQN)
+      assertTrue("Non-existent method should return empty list", discovered.isEmpty())
     }
   }
 
   @Test
-  fun testDiscoverNonExistentClassReturnsNull() {
+  fun testDiscoverAllMultiPreviews() {
+    createDiscoveryEngine { engine ->
+      val methodFQN = "${SamplePreviewTarget::class.java.name}.sampleMultiPreviewMethod"
+
+      val allDiscovered = engine.discoverAllPreviews(methodFQN)
+      assertEquals("Should discover all 2 @Preview annotations on method", 2, allDiscovered.size)
+
+      val p0 = allDiscovered[0]
+      assertEquals(methodFQN, p0.methodFQN)
+      assertEquals("Light Mode", p0.previewParams["name"])
+      assertEquals("320", p0.previewParams["widthDp"])
+      assertEquals("640", p0.previewParams["heightDp"])
+
+      val p1 = allDiscovered[1]
+      assertEquals(methodFQN, p1.methodFQN)
+      assertEquals("Dark Mode", p1.previewParams["name"])
+      assertEquals("360", p1.previewParams["widthDp"])
+      assertEquals("720", p1.previewParams["heightDp"])
+      assertEquals("32", p1.previewParams["uiMode"])
+    }
+  }
+
+  @Test
+  fun testDiscoverNonExistentClassReturnsEmpty() {
     createDiscoveryEngine { engine ->
       val methodFQN = "com.android.tools.render.NonExistentClass.preview"
-      val previewId = "missing_class"
 
-      val discovered = engine.discover(methodFQN, previewId)
-      assertNull("Non-existent class should return null", discovered)
+      val discovered = engine.discoverAllPreviews(methodFQN)
+      assertTrue("Non-existent class should return empty list", discovered.isEmpty())
     }
   }
 }

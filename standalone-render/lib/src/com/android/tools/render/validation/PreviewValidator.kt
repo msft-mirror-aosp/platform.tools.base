@@ -20,7 +20,7 @@ import com.android.tools.preview.MAX_DIMENSION_DP
 import com.android.tools.preview.MAX_FONT_SCALE
 import com.android.tools.preview.UNDEFINED_API_LEVEL
 import com.android.tools.preview.UNDEFINED_DIMENSION
-import com.android.tools.render.model.DiscoveredPreview
+import com.android.tools.render.common.PreviewScreenshot
 
 /** Validation rules and limits for individual preview annotation parameters. */
 object ParameterValidators {
@@ -141,10 +141,10 @@ object ParameterValidators {
 }
 
 /** Main orchestrator for validating Compose preview. */
-class PreviewValidator : Validator<DiscoveredPreview> {
+class PreviewValidator : Validator<PreviewScreenshot> {
 
-  /** Validates a [DiscoveredPreview]. */
-  override fun validate(target: DiscoveredPreview): ValidationResult {
+  /** Validates a [PreviewScreenshot]. */
+  override fun validate(target: PreviewScreenshot): ValidationResult {
     return validateParams(target.previewParams)
   }
 

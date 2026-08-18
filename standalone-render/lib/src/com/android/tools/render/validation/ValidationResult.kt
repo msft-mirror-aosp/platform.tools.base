@@ -16,6 +16,9 @@
 
 package com.android.tools.render.validation
 
+import com.android.tools.render.common.RenderProblem
+import com.android.tools.render.common.ScreenshotError
+
 /** Severity levels for preview validation issues. */
 enum class ValidationSeverity {
   /** Unrecoverable error that prevents preview discovery or rendering. */
@@ -82,6 +85,17 @@ data class ValidationResult(val issues: List<ValidationIssue> = emptyList()) {
 
   /** Combines this validation result with [other]. */
   operator fun plus(other: ValidationResult): ValidationResult = ValidationResult(this.issues + other.issues)
+
+  /** Converts this validation result into a [ScreenshotError] with status `VALIDATION_ERROR`. */
+  fun toScreenshotError(): ScreenshotError =
+    ScreenshotError(
+      status = "VALIDATION_ERROR",
+      message = errors.joinToString("; ") { it.message },
+      stackTrace = "",
+      problems = errors.map { RenderProblem(it.message, null) },
+      brokenClasses = emptyList(),
+      missingClasses = emptyList(),
+    )
 
   companion object {
     val OK = ValidationResult(emptyList())

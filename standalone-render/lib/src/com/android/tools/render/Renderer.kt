@@ -57,12 +57,14 @@ class Renderer(
   private val moduleClassLoaderManager: StandaloneModuleClassLoaderManager,
 ) : Closeable {
   private val logger = Logger.getLogger(Renderer::class.java.name)
+  private val discoveryEngine by lazy { PreviewDiscoveryEngine(module) }
+  private val previewValidator = PreviewValidator()
 
   /**
    * Renders a given [PreviewScreenshot] and saves the output as PNG files.
    *
-   * For a single [PreviewScreenshot] that may have multiple configurations (e.g., different devices or themes), this function generates a
-   * corresponding rendered image for each one.
+   * Discovers all previews declared on the screenshot's method (including multi-previews), validates each preview's parameters, and renders
+   * them into PNG images.
    *
    * @param screenshot The metadata of the Jetpack Compose `@Preview` to render.
    * @param outputFolderPath The root directory where the resulting PNG images will be saved.
@@ -70,106 +72,81 @@ class Renderer(
    *   any potential errors.
    */
   fun render(screenshot: PreviewScreenshot, outputFolderPath: String): List<PreviewScreenshotResult> {
-    val (effectiveScreenshot, validationError) = resolvePreviewParameters(screenshot)
-    val previewId = effectiveScreenshot.previewId
-    val methodFQN = effectiveScreenshot.methodFQN
-    val packagePath = methodFQN.substringBeforeLast(".").replace(".", File.separator)
-    val baseResultId = previewId.substringAfterLast(".")
+    val targetScreenshots = resolveTargetScreenshots(screenshot)
+    val baseResultId = screenshot.previewId.substringAfterLast(".")
+    var imageCounter = 0
 
-    if (validationError != null) {
-      val defaultRelativeImagePath = packagePath + File.separator + "${baseResultId}_0.png"
-      return listOf(PreviewScreenshotResult(previewId, methodFQN, defaultRelativeImagePath, validationError))
+    return targetScreenshots.flatMap { currentScreenshot ->
+      val previewId = currentScreenshot.previewId
+      val methodFQN = currentScreenshot.methodFQN
+      val packagePath = methodFQN.substringBeforeLast(".").replace(".", File.separator)
+      val validationResult = previewValidator.validate(currentScreenshot)
+
+      if (validationResult.hasErrors) {
+        val defaultRelativeImagePath = packagePath + File.separator + "${baseResultId}_${imageCounter++}.png"
+        listOf(PreviewScreenshotResult(previewId, methodFQN, defaultRelativeImagePath, validationResult.toScreenshotError()))
+      } else {
+        if (validationResult.hasWarnings) {
+          val warningMessages = validationResult.warnings.joinToString("; ") { it.message }
+          logger.log(Level.WARNING, "Preview parameter validation warning for $methodFQN: $warningMessages")
+        }
+        renderScreenshotElement(currentScreenshot, outputFolderPath, packagePath, baseResultId) { imageCounter++ }
+      }
     }
+  }
 
-    val previewElement = effectiveScreenshot.toPreviewElement(module)
+  private fun resolveTargetScreenshots(screenshot: PreviewScreenshot): List<PreviewScreenshot> {
+    if (screenshot !is ComposeScreenshot) return listOf(screenshot)
+    if (screenshot.previewParams.isNotEmpty() || screenshot.methodParams.isNotEmpty()) {
+      return listOf(screenshot)
+    }
+    return discoveryEngine.discoverAllPreviews(screenshot.methodFQN, screenshot.previewId).ifEmpty { listOf(screenshot) }
+  }
+
+  private fun renderScreenshotElement(
+    screenshot: PreviewScreenshot,
+    outputFolderPath: String,
+    packagePath: String,
+    baseResultId: String,
+    nextImageIndex: () -> Int,
+  ): List<PreviewScreenshotResult> {
+    val previewElement = screenshot.toPreviewElement(module)
     val renderRequest =
       RenderRequest(configurationModifier = previewElement::applyTo, xmlLayoutsProvider = { previewElement.resolveXmlLayouts() })
 
     return render(renderRequest)
-      .withIndex()
-      .map { (index, value) ->
-        val (config, renderResult) = value
+      .map { (config, renderResult) ->
+        val index = nextImageIndex()
         val resultId = "${baseResultId}_$index"
         val imageName = "$resultId.png"
         val relativeImagePath = packagePath + File.separator + imageName
-        val screenshotResult =
-          try {
-            val imageRendered = postProcessRenderedImage(config, renderResult)
-            if (imageRendered != null) {
-              val imagePath = Paths.get(outputFolderPath, relativeImagePath)
-              try {
-                Files.createDirectories(imagePath.parent)
-                val imgFile = imagePath.toFile()
-                imgFile.createNewFile()
-                ImageIO.write(imageRendered, "png", imgFile)
-              } catch (e: IOException) {
-                logger.log(Level.SEVERE, "Failed to write image to $imagePath", e)
-              }
-            }
-
-            val screenshotError = extractError(renderResult, imageRendered)
-            PreviewScreenshotResult(previewId, methodFQN, relativeImagePath, screenshotError)
-          } catch (t: Throwable) {
-            PreviewScreenshotResult(previewId, methodFQN, relativeImagePath, ScreenshotError(t))
-          } finally {
-            Disposer.dispose(renderResult)
+        try {
+          val imageRendered = postProcessRenderedImage(config, renderResult)
+          if (imageRendered != null) {
+            saveImage(imageRendered, outputFolderPath, relativeImagePath)
           }
-        screenshotResult
+
+          val screenshotError = extractError(renderResult, imageRendered)
+          PreviewScreenshotResult(screenshot.previewId, screenshot.methodFQN, relativeImagePath, screenshotError)
+        } catch (t: Throwable) {
+          PreviewScreenshotResult(screenshot.previewId, screenshot.methodFQN, relativeImagePath, ScreenshotError(t))
+        } finally {
+          Disposer.dispose(renderResult)
+        }
       }
       .toList()
   }
 
-  /**
-   * Resolves and populates preview parameters for the given [screenshot] if they were not explicitly provided, and validates the resulting
-   * configuration parameters.
-   *
-   * When callers (such as CLI tools) submit render requests specifying only the method FQN and preview ID, this method utilizes
-   * [PreviewDiscoveryEngine] to inspect the compiled bytecode, discover the target `@Preview` annotation, and populate missing
-   * configuration values before Layoutlib rendering.
-   *
-   * @param screenshot The input preview screenshot request.
-   * @return A pair containing the updated [PreviewScreenshot] and an optional [ScreenshotError] if validation fails.
-   */
-  private fun resolvePreviewParameters(screenshot: PreviewScreenshot): Pair<PreviewScreenshot, ScreenshotError?> {
-    if (screenshot !is ComposeScreenshot) {
-      return screenshot to null
+  private fun saveImage(image: BufferedImage, outputFolderPath: String, relativeImagePath: String) {
+    val imagePath = Paths.get(outputFolderPath, relativeImagePath)
+    try {
+      Files.createDirectories(imagePath.parent)
+      val imgFile = imagePath.toFile()
+      imgFile.createNewFile()
+      ImageIO.write(image, "png", imgFile)
+    } catch (e: IOException) {
+      logger.log(Level.SEVERE, "Failed to write image to $imagePath", e)
     }
-
-    val effectiveScreenshot =
-      if (screenshot.previewParams.isEmpty()) {
-        val discoveryEngine = PreviewDiscoveryEngine(module)
-        val discovered = discoveryEngine.discover(screenshot.methodFQN, screenshot.previewId)
-        if (discovered != null) {
-          screenshot.copy(previewParams = discovered.previewParams)
-        } else {
-          screenshot
-        }
-      } else {
-        screenshot
-      }
-
-    if (effectiveScreenshot.previewParams.isNotEmpty()) {
-      val validationResult = PreviewValidator().validateParams(effectiveScreenshot.previewParams)
-      if (validationResult.hasErrors) {
-        val errorMessages = validationResult.errors.joinToString("; ") { it.message }
-        val screenshotError =
-          ScreenshotError(
-            status = "VALIDATION_ERROR",
-            message = errorMessages,
-            stackTrace = "",
-            problems = validationResult.errors.map { RenderProblem(it.message, null) },
-            brokenClasses = emptyList(),
-            missingClasses = emptyList(),
-          )
-        return effectiveScreenshot to screenshotError
-      }
-      if (validationResult.hasWarnings) {
-        val warningMessages = validationResult.warnings.joinToString("; ") { it.message }
-        logger.log(Level.WARNING, "Preview parameter validation warning for ${effectiveScreenshot.methodFQN}: $warningMessages")
-      }
-    }
-
-    return effectiveScreenshot to null
   }
 
   fun render(request: RenderRequest): Sequence<Pair<Configuration, RenderResult>> {

@@ -17,6 +17,7 @@
 package androidx.compose.ui.tooling.preview
 
 /** Mock Jetpack Compose @Preview annotation for testing PreviewDiscoveryEngine and Renderer bytecode discovery. */
+@Repeatable
 @Target(AnnotationTarget.FUNCTION, AnnotationTarget.ANNOTATION_CLASS)
 @Retention(AnnotationRetention.RUNTIME)
 annotation class Preview(

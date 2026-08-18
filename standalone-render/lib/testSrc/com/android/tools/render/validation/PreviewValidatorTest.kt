@@ -16,7 +16,7 @@
 
 package com.android.tools.render.validation
 
-import com.android.tools.render.model.DiscoveredPreview
+import com.android.tools.render.compose.ComposeScreenshot
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -29,10 +29,11 @@ class PreviewValidatorTest {
   @Test
   fun testValidPreviewParametersPassValidation() {
     val preview =
-      DiscoveredPreview(
+      ComposeScreenshot(
         methodFQN = "com.example.MyPreviewKt.Preview",
         previewId = "prev_1",
         previewParams = mapOf("widthDp" to "300", "heightDp" to "600", "fontScale" to "1.5", "apiLevel" to "33"),
+        methodParams = emptyList(),
       )
 
     val result = validator.validate(preview)
@@ -45,10 +46,11 @@ class PreviewValidatorTest {
   @Test
   fun testUndefinedParametersPassValidation() {
     val preview =
-      DiscoveredPreview(
+      ComposeScreenshot(
         methodFQN = "com.example.MyPreviewKt.Preview",
         previewId = "prev_1",
         previewParams = mapOf("widthDp" to "-1", "heightDp" to "-1", "apiLevel" to "-1"),
+        methodParams = emptyList(),
       )
 
     val result = validator.validate(preview)
