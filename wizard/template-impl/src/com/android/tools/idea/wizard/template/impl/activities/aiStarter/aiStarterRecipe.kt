@@ -21,7 +21,7 @@ import com.android.tools.idea.wizard.template.impl.activities.aiStarter.src.app_
 import com.android.tools.idea.wizard.template.impl.activities.common.addAllKotlinDependencies
 import com.android.tools.idea.wizard.template.impl.activities.common.addComposeDependencies
 import com.android.tools.idea.wizard.template.impl.activities.common.generateManifest
-import com.android.tools.idea.wizard.template.impl.activities.common.generateThemeStyles
+import com.android.tools.idea.wizard.template.impl.activities.composeActivityMaterial3.res.values.themesXml
 import com.android.tools.idea.wizard.template.impl.activities.composeActivityMaterial3.src.app_package.ui.colorKt
 import com.android.tools.idea.wizard.template.impl.activities.composeActivityMaterial3.src.app_package.ui.themeKt
 import com.android.tools.idea.wizard.template.impl.activities.composeActivityMaterial3.src.app_package.ui.typeKt
@@ -31,26 +31,30 @@ fun RecipeExecutor.aiStarterRecipe(moduleData: ModuleTemplateData, activityClass
   val (_, srcOut, resOut, _) = moduleData
   addAllKotlinDependencies(moduleData)
 
-  val lifecycleVersion = "2.8.7"
+  val lifecycleVersion = "2.10.0"
   addDependency("androidx.lifecycle:lifecycle-runtime-ktx:$lifecycleVersion")
   addDependency("androidx.lifecycle:lifecycle-viewmodel-compose:$lifecycleVersion")
   addDependency("androidx.lifecycle:lifecycle-runtime-compose:$lifecycleVersion")
 
-  val activityVersion = "1.10.1"
+  val activityVersion = "1.13.0"
   addDependency("androidx.activity:activity-compose:$activityVersion")
 
   // Add Compose dependencies, using the BOM to set versions
-  addComposeDependencies(moduleData)
+  addComposeDependencies(moduleData, composeBomVersion = "2026.05.01")
 
   // KSP is needed for Room
-  addPlugin("com.google.devtools.ksp", "com.google.devtools.ksp:symbol-processing-gradle-plugin", "2.3.5")
+  addPlugin("com.google.devtools.ksp", "com.google.devtools.ksp:symbol-processing-gradle-plugin", "2.3.8")
 
   // Navigation 3 relies on Kotlin Serialization.
-  addPlugin("org.jetbrains.kotlin.plugin.serialization", "org.jetbrains.kotlin:kotlin-gradle-plugin", "2.2.21")
-  addDependency("org.jetbrains.kotlinx:kotlinx-serialization-core:1.9.0")
+  addPlugin(
+    "org.jetbrains.kotlin.plugin.serialization",
+    "org.jetbrains.kotlin:kotlin-gradle-plugin",
+    moduleData.projectTemplateData.kotlinVersion,
+  )
+  addDependency("org.jetbrains.kotlinx:kotlinx-serialization-core:1.11.0")
 
   // Navigation 3 Core & Adaptive Stack
-  val navigation3Version = "1.0.1"
+  val navigation3Version = "1.1.2"
   addDependency("androidx.navigation3:navigation3-ui:$navigation3Version")
   addDependency("androidx.navigation3:navigation3-runtime:$navigation3Version")
 
@@ -63,16 +67,16 @@ fun RecipeExecutor.aiStarterRecipe(moduleData: ModuleTemplateData, activityClass
   val lifecycleNav3Version = "2.11.+"
   addDependency("androidx.lifecycle:lifecycle-viewmodel-navigation3:$lifecycleNav3Version")
 
-  val roomVersion = "2.7.0"
+  val roomVersion = "2.8.4"
   addDependency("androidx.room:room-runtime:$roomVersion")
   addDependency("androidx.room:room-ktx:$roomVersion")
   addDependency("androidx.room:room-compiler:$roomVersion", configuration = "ksp")
 
   addDependency("junit:junit:4.13.2", configuration = "testImplementation")
-  addDependency("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2", configuration = "testImplementation")
-  addDependency("androidx.test:core:1.6.1", configuration = "testImplementation")
+  addDependency("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0", configuration = "testImplementation")
+  addDependency("androidx.test:core:1.7.0", configuration = "testImplementation")
   addDependency("androidx.test.ext:junit:1.3.0", configuration = "testImplementation")
-  addDependency("androidx.test:runner:1.6.2", configuration = "androidTestImplementation")
+  addDependency("androidx.test:runner:1.7.0", configuration = "androidTestImplementation")
 
   addDependency(mavenCoordinate = "androidx.compose.material3:material3")
   addDependency(mavenCoordinate = "androidx.compose.material:material-icons-core")
@@ -83,12 +87,12 @@ fun RecipeExecutor.aiStarterRecipe(moduleData: ModuleTemplateData, activityClass
   addDependency("io.coil-kt:coil-compose:$coilVersion")
 
   // Retrofit
-  val retroFitVersion = "2.12.0"
+  val retroFitVersion = "3.0.0"
   addDependency("com.squareup.retrofit2:retrofit:$retroFitVersion")
   addDependency("com.squareup.retrofit2:converter-moshi:$retroFitVersion")
 
   // Coroutines
-  val coroutinesVersion = "1.10.2"
+  val coroutinesVersion = "1.11.0"
   addDependency("org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutinesVersion")
   addDependency("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
 
@@ -101,14 +105,14 @@ fun RecipeExecutor.aiStarterRecipe(moduleData: ModuleTemplateData, activityClass
   addDependency("com.google.android.gms:play-services-location:$playServicesLocationVersion")
 
   // CameraX
-  val cameraVersion = "1.5.0"
+  val cameraVersion = "1.6.1"
   addDependency("androidx.camera:camera-camera2:$cameraVersion")
   addDependency("androidx.camera:camera-lifecycle:$cameraVersion")
   addDependency("androidx.camera:camera-view:$cameraVersion")
   addDependency("androidx.camera:camera-core:$cameraVersion")
 
   // OkHttp
-  val okHttpVersion = "4.10.0"
+  val okHttpVersion = "5.3.2"
   addDependency("com.squareup.okhttp3:logging-interceptor:$okHttpVersion")
   addDependency("com.squareup.okhttp3:okhttp:$okHttpVersion")
 
@@ -118,14 +122,14 @@ fun RecipeExecutor.aiStarterRecipe(moduleData: ModuleTemplateData, activityClass
   addDependency("com.squareup.moshi:moshi-kotlin-codegen:$moshiVersion", configuration = "ksp")
 
   // DataStore
-  val dataStoreVersion = "1.1.7"
+  val dataStoreVersion = "1.2.1"
   addDependency("androidx.datastore:datastore-preferences:$dataStoreVersion")
 
   copy(File("arch-sample-activity").resolve("drawable"), resOut.resolve("drawable"))
 
   val themeName = "${moduleData.themesData.appName}Theme"
 
-  generateThemeStyles(moduleData.themesData.main, true, resOut)
+  mergeXml(themesXml(themeName = moduleData.themesData.main.name), resOut.resolve("values/themes.xml"))
 
   generateManifest(
     moduleData = moduleData,
