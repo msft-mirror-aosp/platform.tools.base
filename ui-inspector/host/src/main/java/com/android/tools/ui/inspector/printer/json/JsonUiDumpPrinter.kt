@@ -16,10 +16,10 @@
 
 package com.android.tools.ui.inspector.printer.json
 
-import com.android.tools.ui.inspector.DeviceConfiguration
-import com.android.tools.ui.inspector.DeviceLocale
-import com.android.tools.ui.inspector.UiDump
-import com.android.tools.ui.inspector.UiNode
+import com.android.tools.ui.inspector.model.DeviceConfiguration
+import com.android.tools.ui.inspector.model.DeviceLocale
+import com.android.tools.ui.inspector.model.UiDump
+import com.android.tools.ui.inspector.model.UiNode
 import com.android.tools.ui.inspector.printer.UiDumpPrinter
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder

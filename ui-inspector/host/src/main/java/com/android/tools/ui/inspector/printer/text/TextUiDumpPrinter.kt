@@ -16,7 +16,7 @@
 
 package com.android.tools.ui.inspector.printer.text
 
-import com.android.tools.ui.inspector.UiDump
+import com.android.tools.ui.inspector.model.UiDump
 import com.android.tools.ui.inspector.printer.SemanticsDisplayMode
 import com.android.tools.ui.inspector.printer.UiDumpPrinter
 import java.io.PrintStream

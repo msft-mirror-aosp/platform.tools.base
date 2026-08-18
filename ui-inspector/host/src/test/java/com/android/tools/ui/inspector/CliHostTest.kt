@@ -21,6 +21,7 @@ import com.android.adblib.DeviceList
 import com.android.adblib.DeviceSelector
 import com.android.adblib.DeviceState
 import com.android.adblib.testing.FakeAdbSession
+import com.android.tools.ui.inspector.device.TOP_ACTIVITY_SHELL_COMMAND
 import com.google.common.truth.Truth.assertThat
 import java.io.ByteArrayOutputStream
 import java.io.PrintWriter
