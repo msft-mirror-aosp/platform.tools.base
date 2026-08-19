@@ -19,12 +19,15 @@ package com.android.tools.render.discovery
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
+import androidx.compose.ui.tooling.preview.PreviewWrapper
+import androidx.compose.ui.tooling.preview.PreviewWrapperProvider
 import com.android.testutils.TestUtils
 import com.android.tools.render.RenderEnvironmentBootstrapper
 import kotlin.io.path.absolutePathString
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Test
 
 /** Custom non-Compose preview annotation to verify strict descriptor matching. */
@@ -45,6 +48,23 @@ annotation class DeviceThemePreviews
 @CyclicPreviewB annotation class CyclicPreviewA
 
 @CyclicPreviewA annotation class CyclicPreviewB
+
+/** Mock PreviewWrapperProvider for theme wrapping. */
+class SampleThemeWrapper : PreviewWrapperProvider
+
+/** Second mock PreviewWrapperProvider for multiple wrapper testing. */
+class AnotherThemeWrapper : PreviewWrapperProvider
+
+/** MultiPreview annotation class with @PreviewWrapper attached. */
+@PreviewWrapper(SampleThemeWrapper::class)
+@Preview(name = "Wrapped Phone Light", widthDp = 360, heightDp = 640)
+@Preview(name = "Wrapped Phone Dark", widthDp = 360, heightDp = 640, uiMode = 32)
+annotation class WrappedThemePreviews
+
+/** MultiPreview annotation class with AnotherThemeWrapper attached. */
+@PreviewWrapper(AnotherThemeWrapper::class)
+@Preview(name = "Another Wrapped Preview", widthDp = 400)
+annotation class AnotherWrappedThemePreviews
 
 /** Base preview for NestedMultiPreviewWithDuplicateDescendants testing. */
 @Preview(name = "Base Theme Preview", widthDp = 200, heightDp = 200) annotation class BaseThemePreview
@@ -108,6 +128,14 @@ class SamplePreviewTarget {
 
   @Preview(name = "Default Param Preview")
   fun sampleMethodWithDefaultPreviewParameter(@PreviewParameter(provider = SampleUserProvider::class) user: String) {}
+
+  @Preview(name = "Direct Wrapped Preview") @PreviewWrapper(SampleThemeWrapper::class) fun sampleDirectWrappedPreviewMethod() {}
+
+  @WrappedThemePreviews fun sampleMultiPreviewWithWrapperMethod() {}
+
+  @WrappedThemePreviews @AnotherWrappedThemePreviews fun sampleMethodWithMultipleWrappersViaMultiPreview() {}
+
+  @PreviewWrapper(SampleThemeWrapper::class) @WrappedThemePreviews fun sampleMethodWithDirectAndMultiPreviewWrapper() {}
 
   fun sampleMethodWithoutAnnotation() {}
 
@@ -403,6 +431,37 @@ class PreviewDiscoveryEngineTest {
       val discovered = engine.discoverAllPreviews(methodFQN)
       assertEquals(1, discovered.size)
       assertTrue("Method without @PreviewParameter should have empty methodParams", discovered[0].methodParams.isEmpty())
+      assertEquals(null, discovered[0].previewWrapperFqn)
+    }
+  }
+
+  @Test
+  fun testDiscoverDirectPreviewWrapper() {
+    createDiscoveryEngine { engine ->
+      val methodFQN = "${SamplePreviewTarget::class.java.name}.sampleDirectWrappedPreviewMethod"
+
+      val discovered = engine.discoverAllPreviews(methodFQN)
+      assertEquals(1, discovered.size)
+
+      val screenshot = discovered[0]
+      assertEquals("Direct Wrapped Preview", screenshot.previewParams["name"])
+      assertEquals(SampleThemeWrapper::class.java.name, screenshot.previewWrapperFqn)
+    }
+  }
+
+  @Test
+  fun testDiscoverMultiPreviewWithWrapper() {
+    createDiscoveryEngine { engine ->
+      val methodFQN = "${SamplePreviewTarget::class.java.name}.sampleMultiPreviewWithWrapperMethod"
+
+      val discovered = engine.discoverAllPreviews(methodFQN)
+      assertEquals(2, discovered.size)
+
+      assertEquals("Wrapped Phone Light", discovered[0].previewParams["name"])
+      assertEquals(SampleThemeWrapper::class.java.name, discovered[0].previewWrapperFqn)
+
+      assertEquals("Wrapped Phone Dark", discovered[1].previewParams["name"])
+      assertEquals(SampleThemeWrapper::class.java.name, discovered[1].previewWrapperFqn)
     }
   }
 
@@ -423,6 +482,32 @@ class PreviewDiscoveryEngineTest {
       assertEquals(SampleUserProvider::class.java.name, withParamPreview.methodParams[0]["provider"])
       assertEquals("2", withParamPreview.methodParams[0]["limit"])
       assertEquals("200", withParamPreview.previewParams["widthDp"])
+    }
+  }
+
+  @Test
+  fun testMultiplePreviewWrappersViaMultiPreviewThrowsIllegalStateException() {
+    createDiscoveryEngine { engine ->
+      val methodFQN = "${SamplePreviewTarget::class.java.name}.sampleMethodWithMultipleWrappersViaMultiPreview"
+      try {
+        engine.discoverAllPreviews(methodFQN)
+        fail("Expected IllegalStateException for multiple @PreviewWrapper annotations")
+      } catch (e: IllegalStateException) {
+        assertTrue(e.message?.contains("Multiple @PreviewWrapper annotations found") == true)
+      }
+    }
+  }
+
+  @Test
+  fun testDirectAndMultiPreviewWrapperThrowsIllegalStateException() {
+    createDiscoveryEngine { engine ->
+      val methodFQN = "${SamplePreviewTarget::class.java.name}.sampleMethodWithDirectAndMultiPreviewWrapper"
+      try {
+        engine.discoverAllPreviews(methodFQN)
+        fail("Expected IllegalStateException for multiple @PreviewWrapper annotations")
+      } catch (e: IllegalStateException) {
+        assertTrue(e.message?.contains("Multiple @PreviewWrapper annotations found") == true)
+      }
     }
   }
 }

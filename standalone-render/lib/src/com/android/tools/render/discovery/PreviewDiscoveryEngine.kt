@@ -45,12 +45,18 @@ class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
 
     /** Descriptor for Jetpack Compose's `@PreviewParameter` annotation. */
     private const val PREVIEW_PARAMETER_DESC = "Landroidx/compose/ui/tooling/preview/PreviewParameter;"
+
+    /** Descriptor for Jetpack Compose's `@PreviewWrapper` annotation. */
+    private const val PREVIEW_WRAPPER_DESC = "Landroidx/compose/ui/tooling/preview/PreviewWrapper;"
+
+    /** Name of the attribute referencing the `PreviewWrapperProvider` class in `@PreviewWrapper`. */
+    private const val PREVIEW_WRAPPER_ATTRIBUTE = "wrapper"
   }
 
   /**
    * Discovers all `@Preview` annotations declared on [methodFQN] from bytecode, extracting their parameters into [ComposeScreenshot]s.
    * Supports single previews, repeatable multi-previews, custom MultiPreview class annotations, and method parameter annotations such as
-   * `@PreviewParameter`.
+   * `@PreviewParameter` and `@PreviewWrapper`.
    */
   fun discoverAllPreviews(methodFQN: String, previewId: String? = null): List<ComposeScreenshot> {
     val className = methodFQN.substringBeforeLast(".")
@@ -77,10 +83,13 @@ class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
           val previewParamsList = mutableListOf<Map<String, String>>()
           val previewParameterAttributes = mutableMapOf<String, String>()
           val traversalPath = mutableSetOf<String>()
+          val discoveredWrappers = mutableListOf<String>()
+
+          val onWrapperFound: (String) -> Unit = { wrapper -> discoveredWrappers.add(wrapper) }
 
           return object : MethodVisitor(Opcodes.ASM9) {
             override fun visitAnnotation(desc: String, visible: Boolean): AnnotationVisitor? {
-              return handleAnnotation(desc, traversalPath, previewParamsList)
+              return handleAnnotation(desc, traversalPath, previewParamsList, onWrapperFound)
             }
 
             override fun visitParameterAnnotation(parameter: Int, desc: String, visible: Boolean): AnnotationVisitor? {
@@ -91,6 +100,12 @@ class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
             }
 
             override fun visitEnd() {
+              if (discoveredWrappers.size > 1) {
+                throw IllegalStateException(
+                  "Multiple @PreviewWrapper annotations found for method '$methodFQN': ${discoveredWrappers.joinToString(", ")}"
+                )
+              }
+              val previewWrapperFqn = discoveredWrappers.singleOrNull()
               val methodParams = if (previewParameterAttributes.isNotEmpty()) listOf(previewParameterAttributes) else emptyList()
               for (previewParams in previewParamsList) {
                 discoveredPreviews.add(
@@ -99,6 +114,7 @@ class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
                     methodParams = methodParams,
                     previewParams = previewParams,
                     previewId = resolvedPreviewId,
+                    previewWrapperFqn = previewWrapperFqn,
                   )
                 )
               }
@@ -116,12 +132,14 @@ class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
    * Routes an annotation [desc] encountered during traversal:
    * - Direct `@Preview`: Extracts its preview parameters.
    * - Repeatable `@Preview$Container`: Traverses the container array of `@Preview` annotations.
+   * - Direct `@PreviewWrapper`: Extracts wrapper provider FQN.
    * - Custom MultiPreview: Recursively inspects the annotation class bytecode if [isPotentialMultiPreview] matches.
    */
   private fun handleAnnotation(
     desc: String,
     traversalPath: MutableSet<String>,
     discoveredList: MutableList<Map<String, String>>,
+    onWrapperFound: (String) -> Unit,
   ): AnnotationVisitor? {
     if (discoveredList.size >= MAX_DISCOVERED_PREVIEWS) {
       return null
@@ -136,10 +154,13 @@ class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
       PREVIEW_CONTAINER_DESC -> {
         return createPreviewContainerVisitor(discoveredList)
       }
+      PREVIEW_WRAPPER_DESC -> {
+        return createPreviewWrapperVisitor(onWrapperFound)
+      }
       else -> {
         if (isPotentialMultiPreview(desc)) {
           val annotationClassName = Type.getType(desc).className
-          discoverFromAnnotationClass(annotationClassName, traversalPath, discoveredList)
+          discoverFromAnnotationClass(annotationClassName, traversalPath, discoveredList, onWrapperFound)
         }
         return null
       }
@@ -154,6 +175,7 @@ class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
     annotationClassName: String,
     traversalPath: MutableSet<String>,
     discoveredList: MutableList<Map<String, String>>,
+    onWrapperFound: (String) -> Unit,
   ) {
     if (discoveredList.size >= MAX_DISCOVERED_PREVIEWS) {
       return
@@ -172,7 +194,7 @@ class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
       classReader.accept(
         object : ClassVisitor(Opcodes.ASM9) {
           override fun visitAnnotation(desc: String, visible: Boolean): AnnotationVisitor? {
-            return handleAnnotation(desc, traversalPath, discoveredList)
+            return handleAnnotation(desc, traversalPath, discoveredList, onWrapperFound)
           }
         },
         ClassReader.SKIP_CODE or ClassReader.SKIP_DEBUG or ClassReader.SKIP_FRAMES,
@@ -230,20 +252,16 @@ class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
    */
   private fun createPreviewAnnotationVisitor(previewParams: MutableMap<String, String>): AnnotationVisitor {
     return object : AnnotationVisitor(Opcodes.ASM9) {
-      override fun visit(name: String?, value: Any?) {
-        if (name != null && value != null) {
-          previewParams[name] =
-            when (value) {
-              is Type -> value.className
-              else -> value.toString()
-            }
-        }
+      override fun visit(name: String, value: Any) {
+        previewParams[name] =
+          when (value) {
+            is Type -> value.className
+            else -> value.toString()
+          }
       }
 
-      override fun visitEnum(name: String?, descriptor: String?, value: String?) {
-        if (name != null && value != null) {
-          previewParams[name] = value
-        }
+      override fun visitEnum(name: String, descriptor: String?, value: String) {
+        previewParams[name] = value
       }
     }
   }
@@ -251,13 +269,23 @@ class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
   /** Creates an [AnnotationVisitor] that extracts attributes from a `@PreviewParameter` annotation. */
   private fun createPreviewParameterVisitor(paramMap: MutableMap<String, String>): AnnotationVisitor {
     return object : AnnotationVisitor(Opcodes.ASM9) {
-      override fun visit(name: String?, value: Any?) {
-        if (name == null || value == null) return
+      override fun visit(name: String, value: Any) {
         paramMap[name] =
           when (value) {
             is Type -> value.className
             else -> value.toString()
           }
+      }
+    }
+  }
+
+  /** Creates an [AnnotationVisitor] that extracts the wrapper provider class FQN from a `@PreviewWrapper` annotation. */
+  private fun createPreviewWrapperVisitor(onWrapperFound: (String) -> Unit): AnnotationVisitor {
+    return object : AnnotationVisitor(Opcodes.ASM9) {
+      override fun visit(name: String, value: Any) {
+        if (name == PREVIEW_WRAPPER_ATTRIBUTE && value is Type) {
+          onWrapperFound(value.className)
+        }
       }
     }
   }
