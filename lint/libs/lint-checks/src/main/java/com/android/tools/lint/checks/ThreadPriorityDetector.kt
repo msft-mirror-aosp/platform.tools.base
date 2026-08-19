@@ -62,7 +62,7 @@ class ThreadPriorityDetector : Detector(), SourceCodeScanner {
           """.trimIndent(),
         category = Category.CORRECTNESS,
         priority = 6,
-        severity = Severity.WARNING,
+        severity = Severity.ERROR,
         androidSpecific = true,
         implementation = IMPLEMENTATION
       )

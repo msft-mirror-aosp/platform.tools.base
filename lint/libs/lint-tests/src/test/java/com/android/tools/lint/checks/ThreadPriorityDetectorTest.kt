@@ -77,13 +77,13 @@ class ThreadPriorityDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        src/test/pkg/TestClass.java:6: Warning: Passing android.os.Process priority constants to Thread.setPriority() is invalid [ThreadPriorityConfusion]
+        src/test/pkg/TestClass.java:6: Error: Passing android.os.Process priority constants to Thread.setPriority() is invalid [ThreadPriorityConfusion]
                 Thread.currentThread().setPriority(Process.THREAD_PRIORITY_BACKGROUND); // ERROR
                                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        src/test/pkg/TestClass.java:7: Warning: Passing android.os.Process priority constants to Thread.setPriority() is invalid [ThreadPriorityConfusion]
+        src/test/pkg/TestClass.java:7: Error: Passing android.os.Process priority constants to Thread.setPriority() is invalid [ThreadPriorityConfusion]
                 Thread.currentThread().setPriority(Process.THREAD_PRIORITY_DEFAULT);    // ERROR
                                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        0 errors, 2 warnings
+        2 errors, 0 warnings
         """
       )
   }
@@ -111,16 +111,16 @@ class ThreadPriorityDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        src/test/pkg/TestClass.java:4: Warning: Thread priority must be between 1 (Thread.MIN_PRIORITY) and 10 (Thread.MAX_PRIORITY); was 0 [ThreadPriorityConfusion]
+        src/test/pkg/TestClass.java:4: Error: Thread priority must be between 1 (Thread.MIN_PRIORITY) and 10 (Thread.MAX_PRIORITY); was 0 [ThreadPriorityConfusion]
                 Thread.currentThread().setPriority(0);  // ERROR: too low
                                                    ~
-        src/test/pkg/TestClass.java:5: Warning: Thread priority must be between 1 (Thread.MIN_PRIORITY) and 10 (Thread.MAX_PRIORITY); was 11 [ThreadPriorityConfusion]
+        src/test/pkg/TestClass.java:5: Error: Thread priority must be between 1 (Thread.MIN_PRIORITY) and 10 (Thread.MAX_PRIORITY); was 11 [ThreadPriorityConfusion]
                 Thread.currentThread().setPriority(11); // ERROR: too high
                                                    ~~
-        src/test/pkg/TestClass.java:6: Warning: Thread priority must be between 1 (Thread.MIN_PRIORITY) and 10 (Thread.MAX_PRIORITY); was -1 [ThreadPriorityConfusion]
+        src/test/pkg/TestClass.java:6: Error: Thread priority must be between 1 (Thread.MIN_PRIORITY) and 10 (Thread.MAX_PRIORITY); was -1 [ThreadPriorityConfusion]
                 Thread.currentThread().setPriority(-1); // ERROR: negative
                                                    ~~
-        0 errors, 3 warnings
+        3 errors, 0 warnings
         """
       )
   }
@@ -150,13 +150,13 @@ class ThreadPriorityDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        src/test/pkg/TestClass.java:6: Warning: Passing java.lang.Thread priority constants to Process.setThreadPriority() is invalid [ThreadPriorityConfusion]
+        src/test/pkg/TestClass.java:6: Error: Passing java.lang.Thread priority constants to Process.setThreadPriority() is invalid [ThreadPriorityConfusion]
                 Process.setThreadPriority(Thread.MAX_PRIORITY); // ERROR
                                           ~~~~~~~~~~~~~~~~~~~
-        src/test/pkg/TestClass.java:7: Warning: Passing java.lang.Thread priority constants to Process.setThreadPriority() is invalid [ThreadPriorityConfusion]
+        src/test/pkg/TestClass.java:7: Error: Passing java.lang.Thread priority constants to Process.setThreadPriority() is invalid [ThreadPriorityConfusion]
                 Process.setThreadPriority(123, Thread.MIN_PRIORITY); // ERROR
                                                ~~~~~~~~~~~~~~~~~~~
-        0 errors, 2 warnings
+        2 errors, 0 warnings
         """
       )
   }
@@ -186,16 +186,16 @@ class ThreadPriorityDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        src/test/pkg/TestClass.java:5: Warning: Process thread priority must be between -20 (highest) and 19 (lowest); was -21 [ThreadPriorityConfusion]
+        src/test/pkg/TestClass.java:5: Error: Process thread priority must be between -20 (highest) and 19 (lowest); was -21 [ThreadPriorityConfusion]
                 Process.setThreadPriority(-21); // ERROR: too low
                                           ~~~
-        src/test/pkg/TestClass.java:6: Warning: Process thread priority must be between -20 (highest) and 19 (lowest); was 20 [ThreadPriorityConfusion]
+        src/test/pkg/TestClass.java:6: Error: Process thread priority must be between -20 (highest) and 19 (lowest); was 20 [ThreadPriorityConfusion]
                 Process.setThreadPriority(20);  // ERROR: too high
                                           ~~
-        src/test/pkg/TestClass.java:7: Warning: Process thread priority must be between -20 (highest) and 19 (lowest); was -25 [ThreadPriorityConfusion]
+        src/test/pkg/TestClass.java:7: Error: Process thread priority must be between -20 (highest) and 19 (lowest); was -25 [ThreadPriorityConfusion]
                 Process.setThreadPriority(123, -25); // ERROR: too low
                                                ~~~
-        0 errors, 3 warnings
+        3 errors, 0 warnings
         """
       )
   }
@@ -223,13 +223,13 @@ class ThreadPriorityDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        src/test/pkg/TestKotlin.kt:5: Warning: Passing android.os.Process priority constants to Thread.setPriority() is invalid [ThreadPriorityConfusion]
+        src/test/pkg/TestKotlin.kt:5: Error: Passing android.os.Process priority constants to Thread.setPriority() is invalid [ThreadPriorityConfusion]
                 Thread.currentThread().priority = Process.THREAD_PRIORITY_BACKGROUND // ERROR
                                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        src/test/pkg/TestKotlin.kt:6: Warning: Passing java.lang.Thread priority constants to Process.setThreadPriority() is invalid [ThreadPriorityConfusion]
+        src/test/pkg/TestKotlin.kt:6: Error: Passing java.lang.Thread priority constants to Process.setThreadPriority() is invalid [ThreadPriorityConfusion]
                 Process.setThreadPriority(Thread.MAX_PRIORITY) // ERROR
                                           ~~~~~~~~~~~~~~~~~~~
-        0 errors, 2 warnings
+        2 errors, 0 warnings
         """
       )
   }
@@ -257,13 +257,13 @@ class ThreadPriorityDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        src/test/pkg/TestKotlin.kt:6: Warning: Passing android.os.Process priority constants to Thread.setPriority() is invalid [ThreadPriorityConfusion]
+        src/test/pkg/TestKotlin.kt:6: Error: Passing android.os.Process priority constants to Thread.setPriority() is invalid [ThreadPriorityConfusion]
                 Thread.currentThread().priority = p // ERROR
                                                   ~
-        src/test/pkg/TestKotlin.kt:9: Warning: Passing java.lang.Thread priority constants to Process.setThreadPriority() is invalid [ThreadPriorityConfusion]
+        src/test/pkg/TestKotlin.kt:9: Error: Passing java.lang.Thread priority constants to Process.setThreadPriority() is invalid [ThreadPriorityConfusion]
                 Process.setThreadPriority(t) // ERROR
                                           ~
-        0 errors, 2 warnings
+        2 errors, 0 warnings
         """
       )
   }
@@ -294,13 +294,13 @@ class ThreadPriorityDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        src/test/pkg/TestKotlin.kt:6: Warning: Passing java.lang.Thread priority constants to Process.setThreadPriority() is invalid [ThreadPriorityConfusion]
+        src/test/pkg/TestKotlin.kt:6: Error: Passing java.lang.Thread priority constants to Process.setThreadPriority() is invalid [ThreadPriorityConfusion]
                 Process.setThreadPriority(priority = Thread.MAX_PRIORITY, tid = 123) // ERROR on priority
                                                      ~~~~~~~~~~~~~~~~~~~
-        src/test/pkg/TestKotlin.kt:9: Warning: Passing java.lang.Thread priority constants to Process.setThreadPriority() is invalid [ThreadPriorityConfusion]
+        src/test/pkg/TestKotlin.kt:9: Error: Passing java.lang.Thread priority constants to Process.setThreadPriority() is invalid [ThreadPriorityConfusion]
                 Process.setThreadPriority(tid = 123, priority = Thread.MAX_PRIORITY) // ERROR on priority
                                                                 ~~~~~~~~~~~~~~~~~~~
-        0 errors, 2 warnings
+        2 errors, 0 warnings
         """
       )
   }
@@ -328,13 +328,13 @@ class ThreadPriorityDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        src/test/pkg/TestClass.java:6: Warning: Passing android.os.Process priority constants to Thread.setPriority() is invalid [ThreadPriorityConfusion]
+        src/test/pkg/TestClass.java:6: Error: Passing android.os.Process priority constants to Thread.setPriority() is invalid [ThreadPriorityConfusion]
                 Thread.currentThread().setPriority((int) Process.THREAD_PRIORITY_BACKGROUND); // ERROR
                                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        src/test/pkg/TestClass.java:9: Warning: Passing java.lang.Thread priority constants to Process.setThreadPriority() is invalid [ThreadPriorityConfusion]
+        src/test/pkg/TestClass.java:9: Error: Passing java.lang.Thread priority constants to Process.setThreadPriority() is invalid [ThreadPriorityConfusion]
                 Process.setThreadPriority((int) Thread.MAX_PRIORITY); // ERROR
                                           ~~~~~~~~~~~~~~~~~~~~~~~~~
-        0 errors, 2 warnings
+        2 errors, 0 warnings
         """
       )
   }
@@ -364,10 +364,10 @@ class ThreadPriorityDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        src/test/pkg/TestClass.java:7: Warning: Passing java.lang.Thread priority constants to HandlerThread constructor is invalid [ThreadPriorityConfusion]
+        src/test/pkg/TestClass.java:7: Error: Passing java.lang.Thread priority constants to HandlerThread constructor is invalid [ThreadPriorityConfusion]
                 HandlerThread thread1 = new HandlerThread("name", Thread.MAX_PRIORITY); // ERROR
                                                                   ~~~~~~~~~~~~~~~~~~~
-        0 errors, 1 warnings
+        1 errors, 0 warnings
         """
       )
   }
@@ -397,10 +397,10 @@ class ThreadPriorityDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        src/test/pkg/TestKotlin.kt:7: Warning: Passing java.lang.Thread priority constants to HandlerThread constructor is invalid [ThreadPriorityConfusion]
+        src/test/pkg/TestKotlin.kt:7: Error: Passing java.lang.Thread priority constants to HandlerThread constructor is invalid [ThreadPriorityConfusion]
                 val thread1 = HandlerThread(priority = Thread.MAX_PRIORITY, name = "name") // ERROR
                                                        ~~~~~~~~~~~~~~~~~~~
-        0 errors, 1 warnings
+        1 errors, 0 warnings
         """
       )
   }
@@ -426,10 +426,10 @@ class ThreadPriorityDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        src/test/pkg/TestClass.java:7: Warning: Passing java.lang.Thread priority constants to Process.setThreadPriority() is invalid [ThreadPriorityConfusion]
+        src/test/pkg/TestClass.java:7: Error: Passing java.lang.Thread priority constants to Process.setThreadPriority() is invalid [ThreadPriorityConfusion]
                 Process.setThreadPriority(p); // ERROR: flagged because last assignment was Thread.MAX_PRIORITY
                                           ~
-        0 errors, 1 warnings
+        1 errors, 0 warnings
         """
       )
   }
