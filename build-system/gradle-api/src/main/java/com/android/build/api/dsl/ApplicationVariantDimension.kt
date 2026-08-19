@@ -43,7 +43,14 @@ interface ApplicationVariantDimension : VariantDimension {
    * Returns whether multi-dex is enabled.
    *
    * This can be null if the flag is not set, in which case the default value is used.
+   *
+   * @deprecated Legacy multidex (minSdk <= 19) is deprecated in AGP 9.4 and will be unsupported in AGP 11. Native multidex is always
+   *   supported for minSdk 21+.
    */
+  @Deprecated(
+    message =
+      "Legacy multidex (minSdk <= 19) is deprecated in AGP 9.4 and will be unsupported in AGP 11. Native multidex is always supported for minSdk 21+."
+  )
   var multiDexEnabled: Boolean?
 
   /** The associated signing config or null if none are set on the variant dimension. */

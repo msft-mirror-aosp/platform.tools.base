@@ -3,6 +3,18 @@ Deprecated Android Gradle Plugin API.
 ATTENTION REVIEWER: If this needs to be changed, please make sure changes
 are announced on go/as-release-notes.
 -------------------------------------------------------------------------
+Deprecated from AGP 9.5.0-alpha01
+  * com.android.build.api.dsl.ApplicationVariantDimension.getMultiDexEnabled: java.lang.Boolean ()
+  * com.android.build.api.dsl.ApplicationVariantDimension.setMultiDexEnabled: void (java.lang.Boolean)
+  * com.android.build.api.dsl.LibraryVariantDimension.getMultiDexEnabled: java.lang.Boolean ()
+  * com.android.build.api.dsl.LibraryVariantDimension.setMultiDexEnabled: void (java.lang.Boolean)
+  * com.android.build.api.dsl.TestVariantDimension.getMultiDexEnabled: java.lang.Boolean ()
+  * com.android.build.api.dsl.TestVariantDimension.setMultiDexEnabled: void (java.lang.Boolean)
+  * com.android.build.api.dsl.VariantDimension.getMultiDexKeepProguard: java.io.File ()
+  * com.android.build.api.dsl.VariantDimension.setMultiDexKeepProguard: void (java.io.File)
+  * com.android.build.api.variant.Dexing.getMultiDexKeepFile: org.gradle.api.file.RegularFileProperty ()
+  * com.android.build.api.variant.Dexing.getMultiDexKeepProguard: org.gradle.api.file.RegularFileProperty ()
+  * com.android.build.api.variant.Dexing.isMultiDexEnabled: boolean ()
 Deprecated from AGP 9.3.0
   * com.android.build.api.variant.SigningConfig.setConfig: void (com.android.build.api.dsl.SigningConfig)
 Deprecated from AGP 9.2.0

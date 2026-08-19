@@ -784,15 +784,15 @@ package com.android.build.api.dsl {
 
   public interface ApplicationVariantDimension extends com.android.build.api.dsl.VariantDimension {
     method @InaccessibleFromKotlin public String? getApplicationIdSuffix();
-    method @InaccessibleFromKotlin public Boolean? getMultiDexEnabled();
+    method @InaccessibleFromKotlin @Deprecated public Boolean? getMultiDexEnabled();
     method @InaccessibleFromKotlin public com.android.build.api.dsl.ApkSigningConfig? getSigningConfig();
     method @InaccessibleFromKotlin public String? getVersionNameSuffix();
     method @InaccessibleFromKotlin public void setApplicationIdSuffix(String?);
-    method @InaccessibleFromKotlin public void setMultiDexEnabled(Boolean?);
+    method @InaccessibleFromKotlin @Deprecated public void setMultiDexEnabled(Boolean?);
     method @InaccessibleFromKotlin public void setSigningConfig(com.android.build.api.dsl.ApkSigningConfig?);
     method @InaccessibleFromKotlin public void setVersionNameSuffix(String?);
     property public abstract String? applicationIdSuffix;
-    property public abstract Boolean? multiDexEnabled;
+    property @Deprecated public abstract Boolean? multiDexEnabled;
     property public abstract com.android.build.api.dsl.ApkSigningConfig? signingConfig;
     property public abstract String? versionNameSuffix;
   }
@@ -1948,13 +1948,13 @@ package com.android.build.api.dsl {
     method public Object consumerProguardFiles(java.lang.Object... proguardFiles);
     method @InaccessibleFromKotlin public com.android.build.api.dsl.AarMetadata getAarMetadata();
     method @InaccessibleFromKotlin public java.util.List<java.io.File> getConsumerProguardFiles();
-    method @InaccessibleFromKotlin public Boolean? getMultiDexEnabled();
+    method @InaccessibleFromKotlin @Deprecated public Boolean? getMultiDexEnabled();
     method @InaccessibleFromKotlin public com.android.build.api.dsl.ApkSigningConfig? getSigningConfig();
-    method @InaccessibleFromKotlin public void setMultiDexEnabled(Boolean?);
+    method @InaccessibleFromKotlin @Deprecated public void setMultiDexEnabled(Boolean?);
     method @InaccessibleFromKotlin public void setSigningConfig(com.android.build.api.dsl.ApkSigningConfig?);
     property public abstract com.android.build.api.dsl.AarMetadata aarMetadata;
     property public abstract java.util.List<java.io.File> consumerProguardFiles;
-    property public abstract Boolean? multiDexEnabled;
+    property @Deprecated public abstract Boolean? multiDexEnabled;
     property public abstract com.android.build.api.dsl.ApkSigningConfig? signingConfig;
   }
 
@@ -2531,11 +2531,11 @@ package com.android.build.api.dsl {
   }
 
   public interface TestVariantDimension extends com.android.build.api.dsl.VariantDimension {
-    method @InaccessibleFromKotlin public Boolean? getMultiDexEnabled();
+    method @InaccessibleFromKotlin @Deprecated public Boolean? getMultiDexEnabled();
     method @InaccessibleFromKotlin public com.android.build.api.dsl.ApkSigningConfig? getSigningConfig();
-    method @InaccessibleFromKotlin public void setMultiDexEnabled(Boolean?);
+    method @InaccessibleFromKotlin @Deprecated public void setMultiDexEnabled(Boolean?);
     method @InaccessibleFromKotlin public void setSigningConfig(com.android.build.api.dsl.ApkSigningConfig?);
-    property public abstract Boolean? multiDexEnabled;
+    property @Deprecated public abstract Boolean? multiDexEnabled;
     property public abstract com.android.build.api.dsl.ApkSigningConfig? signingConfig;
   }
 
@@ -2580,7 +2580,7 @@ package com.android.build.api.dsl {
     method @InaccessibleFromKotlin public com.android.build.api.dsl.JavaCompileOptions getJavaCompileOptions();
     method @InaccessibleFromKotlin public java.util.Map<java.lang.String,java.lang.Object> getManifestPlaceholders();
     method @InaccessibleFromKotlin @Deprecated public java.io.File? getMultiDexKeepFile();
-    method @InaccessibleFromKotlin public java.io.File? getMultiDexKeepProguard();
+    method @InaccessibleFromKotlin @Deprecated public java.io.File? getMultiDexKeepProguard();
     method @InaccessibleFromKotlin public com.android.build.api.dsl.Ndk getNdk();
     method @InaccessibleFromKotlin @Deprecated @org.gradle.api.Incubating public com.android.build.api.dsl.Optimization getOptimization();
     method @InaccessibleFromKotlin public java.util.List<java.io.File> getProguardFiles();
@@ -2594,7 +2594,7 @@ package com.android.build.api.dsl {
     method public void resValue(String type, String name, String value);
     method @Deprecated @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public Void? setManifestPlaceholders(java.util.Map<java.lang.String,?> manifestPlaceholders);
     method @InaccessibleFromKotlin @Deprecated public void setMultiDexKeepFile(java.io.File?);
-    method @InaccessibleFromKotlin public void setMultiDexKeepProguard(java.io.File?);
+    method @InaccessibleFromKotlin @Deprecated public void setMultiDexKeepProguard(java.io.File?);
     method public Object setProguardFiles(Iterable<? extends java.lang.Object?> proguardFileIterable);
     method public void shaders(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Shaders,kotlin.Unit> action);
     method public Object testProguardFile(Object proguardFile);
@@ -2603,7 +2603,7 @@ package com.android.build.api.dsl {
     property public abstract com.android.build.api.dsl.JavaCompileOptions javaCompileOptions;
     property public abstract java.util.Map<java.lang.String,java.lang.Object> manifestPlaceholders;
     property @Deprecated public abstract java.io.File? multiDexKeepFile;
-    property public abstract java.io.File? multiDexKeepProguard;
+    property @Deprecated public abstract java.io.File? multiDexKeepProguard;
     property public abstract com.android.build.api.dsl.Ndk ndk;
     property @Deprecated @org.gradle.api.Incubating public abstract com.android.build.api.dsl.Optimization optimization;
     property public abstract java.util.List<java.io.File> proguardFiles;
@@ -3239,12 +3239,12 @@ package com.android.build.api.variant {
   }
 
   @org.gradle.api.Incubating public interface Dexing {
-    method @InaccessibleFromKotlin public org.gradle.api.file.RegularFileProperty getMultiDexKeepFile();
-    method @InaccessibleFromKotlin public org.gradle.api.file.RegularFileProperty getMultiDexKeepProguard();
-    method @InaccessibleFromKotlin public boolean isMultiDexEnabled();
-    property public abstract boolean isMultiDexEnabled;
-    property public abstract org.gradle.api.file.RegularFileProperty multiDexKeepFile;
-    property public abstract org.gradle.api.file.RegularFileProperty multiDexKeepProguard;
+    method @InaccessibleFromKotlin @Deprecated public org.gradle.api.file.RegularFileProperty getMultiDexKeepFile();
+    method @InaccessibleFromKotlin @Deprecated public org.gradle.api.file.RegularFileProperty getMultiDexKeepProguard();
+    method @InaccessibleFromKotlin @Deprecated public boolean isMultiDexEnabled();
+    property @Deprecated public abstract boolean isMultiDexEnabled;
+    property @Deprecated public abstract org.gradle.api.file.RegularFileProperty multiDexKeepFile;
+    property @Deprecated public abstract org.gradle.api.file.RegularFileProperty multiDexKeepProguard;
   }
 
   public final class DslExtension {
