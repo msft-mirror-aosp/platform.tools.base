@@ -135,6 +135,7 @@ kotlin_library(
         "src/main/java/com/android/tools/deployer/common/PatchSetGenerator.java",
         "src/main/java/com/android/tools/deployer/common/Timeouts.java",
         "src/main/java/com/android/tools/deployer/common/UIService.java",
+        "src/main/java/com/android/tools/deployer/common/UnsupportedIDevice.kt",
     ],
     visibility = ["//visibility:public"],
     deps = [
@@ -518,6 +519,7 @@ kotlin_test(
     name = "deployer.kotlin_tests",
     srcs = [
         "src/test/java/com/android/tools/deployer/DeployStrategyReaderTest.kt",
+        "src/test/java/com/android/tools/deployer/DeployerRunnerUtilsTest.kt",
         "src/test/java/com/android/tools/deployer/TestLogger.java",
         "src/test/java/com/android/tools/deployer/apktestutils/BinaryXmlEncoderTest.kt",
         "src/test/java/com/android/tools/deployer/common/DeviceHolderMigrationTest.kt",
@@ -526,6 +528,7 @@ kotlin_test(
         "src/test/java/com/android/tools/deployer/model/component/DeclarativeWatchFaceTest.kt",
     ],
     data = glob(["src/test/resource/**"]),
+    friends = [":tools.deployer"],
     jvm_flags = ["-Dtest.suite.jar=deployer.kotlin_tests.jar"],
     test_class = "com.android.testutils.JarTestSuite",
     deps = [
