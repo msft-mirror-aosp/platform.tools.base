@@ -17,6 +17,8 @@
 package com.android.tools.render.discovery
 
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewParameter
+import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import com.android.testutils.TestUtils
 import com.android.tools.render.RenderEnvironmentBootstrapper
 import kotlin.io.path.absolutePathString
@@ -55,6 +57,11 @@ annotation class DeviceThemePreviews
 
 /** MultiPreview combining BranchThemePreviewA and BranchThemePreviewB (which both reference BaseThemePreview). */
 @BranchThemePreviewA @BranchThemePreviewB annotation class NestedMultiPreviewWithDuplicateDescendants
+
+/** Mock PreviewParameterProvider for user names. */
+class SampleUserProvider : PreviewParameterProvider<String> {
+  override val values = sequenceOf("Alice", "Bob")
+}
 
 /** Sample class containing composable preview methods for testing discovery. */
 class SamplePreviewTarget {
@@ -96,6 +103,12 @@ class SamplePreviewTarget {
 
   @BaseThemePreview @BranchThemePreviewA fun sampleDirectAndNestedSharedMultiPreviewMethod() {}
 
+  @Preview(name = "Single Param Preview")
+  fun sampleMethodWithPreviewParameter(@PreviewParameter(provider = SampleUserProvider::class, limit = 5) user: String) {}
+
+  @Preview(name = "Default Param Preview")
+  fun sampleMethodWithDefaultPreviewParameter(@PreviewParameter(provider = SampleUserProvider::class) user: String) {}
+
   fun sampleMethodWithoutAnnotation() {}
 
   @CustomNonComposePreview(name = "Non Compose Preview") fun sampleMethodWithNonComposeAnnotation() {}
@@ -107,6 +120,14 @@ class SamplePreviewTarget {
   companion object {
     @Preview(name = "Companion Preview", fontScale = 2.0f) fun companionPreviewMethod() {}
   }
+}
+
+/** Sample class containing overloaded methods (one with no parameters, one with @PreviewParameter). */
+class OverloadedPreviewParameterTarget {
+  @Preview(name = "Overload No Param", widthDp = 100) fun overloadedMethod() {}
+
+  @Preview(name = "Overload With PreviewParameter", widthDp = 200)
+  fun overloadedMethod(@PreviewParameter(provider = SampleUserProvider::class, limit = 2) user: String) {}
 }
 
 class PreviewDiscoveryEngineTest {
@@ -338,6 +359,70 @@ class PreviewDiscoveryEngineTest {
       val names = discovered.map { it.previewParams["name"] }
       assertEquals(2, names.count { it == "Base Theme Preview" })
       assertEquals(1, names.count { it == "Branch A Preview" })
+    }
+  }
+
+  @Test
+  fun testDiscoverPreviewParameterSingleArgument() {
+    createDiscoveryEngine { engine ->
+      val methodFQN = "${SamplePreviewTarget::class.java.name}.sampleMethodWithPreviewParameter"
+
+      val discovered = engine.discoverAllPreviews(methodFQN)
+      assertEquals(1, discovered.size)
+
+      val screenshot = discovered[0]
+      assertEquals(1, screenshot.methodParams.size)
+      val param0 = screenshot.methodParams[0]
+      assertEquals(SampleUserProvider::class.java.name, param0["provider"])
+      assertEquals("5", param0["limit"])
+    }
+  }
+
+  @Test
+  fun testDiscoverPreviewParameterWithDefaultLimit() {
+    createDiscoveryEngine { engine ->
+      val methodFQN = "${SamplePreviewTarget::class.java.name}.sampleMethodWithDefaultPreviewParameter"
+
+      val discovered = engine.discoverAllPreviews(methodFQN)
+      assertEquals(1, discovered.size)
+
+      val screenshot = discovered[0]
+      assertEquals(1, screenshot.methodParams.size)
+
+      val param0 = screenshot.methodParams[0]
+      assertEquals(SampleUserProvider::class.java.name, param0["provider"])
+      assertEquals(null, param0["limit"])
+    }
+  }
+
+  @Test
+  fun testDiscoverMethodWithoutPreviewParameterHasEmptyMethodParams() {
+    createDiscoveryEngine { engine ->
+      val methodFQN = "${SamplePreviewTarget::class.java.name}.sampleAnnotatedPreview"
+
+      val discovered = engine.discoverAllPreviews(methodFQN)
+      assertEquals(1, discovered.size)
+      assertTrue("Method without @PreviewParameter should have empty methodParams", discovered[0].methodParams.isEmpty())
+    }
+  }
+
+  @Test
+  fun testDiscoverOverloadedMethodsWithAndWithoutPreviewParameter() {
+    createDiscoveryEngine { engine ->
+      val methodFQN = "${OverloadedPreviewParameterTarget::class.java.name}.overloadedMethod"
+
+      val discovered = engine.discoverAllPreviews(methodFQN)
+      assertEquals("Should discover 2 previews across both overloads", 2, discovered.size)
+
+      val noParamPreview = discovered.first { it.previewParams["name"] == "Overload No Param" }
+      assertTrue("No-param overload should have empty methodParams", noParamPreview.methodParams.isEmpty())
+      assertEquals("100", noParamPreview.previewParams["widthDp"])
+
+      val withParamPreview = discovered.first { it.previewParams["name"] == "Overload With PreviewParameter" }
+      assertEquals("With-param overload should have 1 methodParam", 1, withParamPreview.methodParams.size)
+      assertEquals(SampleUserProvider::class.java.name, withParamPreview.methodParams[0]["provider"])
+      assertEquals("2", withParamPreview.methodParams[0]["limit"])
+      assertEquals("200", withParamPreview.previewParams["widthDp"])
     }
   }
 }

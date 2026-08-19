@@ -32,6 +32,9 @@ class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
     get() = module.environment.moduleClassLoaderManager.getShared(this::class.java.classLoader).classLoader
 
   companion object {
+    /** Maximum number of previews allowed to be discovered for a single method to prevent DAG exponential expansion. */
+    private const val MAX_DISCOVERED_PREVIEWS = 100
+
     private const val PREVIEW_DESC = "Landroidx/compose/ui/tooling/preview/Preview;"
 
     /**
@@ -40,13 +43,14 @@ class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
      */
     private const val PREVIEW_CONTAINER_DESC = "Landroidx/compose/ui/tooling/preview/Preview\$Container;"
 
-    /** Maximum number of previews allowed to be discovered for a single method to prevent DAG exponential expansion. */
-    private const val MAX_DISCOVERED_PREVIEWS = 100
+    /** Descriptor for Jetpack Compose's `@PreviewParameter` annotation. */
+    private const val PREVIEW_PARAMETER_DESC = "Landroidx/compose/ui/tooling/preview/PreviewParameter;"
   }
 
   /**
    * Discovers all `@Preview` annotations declared on [methodFQN] from bytecode, extracting their parameters into [ComposeScreenshot]s.
-   * Supports single previews, repeatable multi-previews, and custom MultiPreview class annotations.
+   * Supports single previews, repeatable multi-previews, custom MultiPreview class annotations, and method parameter annotations such as
+   * `@PreviewParameter`.
    */
   fun discoverAllPreviews(methodFQN: String, previewId: String? = null): List<ComposeScreenshot> {
     val className = methodFQN.substringBeforeLast(".")
@@ -54,8 +58,8 @@ class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
 
     val classBytes = findClassBytes(className) ?: return emptyList()
 
-    val discoveredList = mutableListOf<Map<String, String>>()
-    val traversalPath = mutableSetOf<String>()
+    val discoveredPreviews = mutableListOf<ComposeScreenshot>()
+    val resolvedPreviewId = previewId ?: methodName
 
     val classReader = ClassReader(classBytes)
     classReader.accept(
@@ -70,9 +74,34 @@ class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
           if (name != methodName) return null
           if ((access and Opcodes.ACC_SYNTHETIC) != 0) return null
 
+          val previewParamsList = mutableListOf<Map<String, String>>()
+          val previewParameterAttributes = mutableMapOf<String, String>()
+          val traversalPath = mutableSetOf<String>()
+
           return object : MethodVisitor(Opcodes.ASM9) {
             override fun visitAnnotation(desc: String, visible: Boolean): AnnotationVisitor? {
-              return handleAnnotation(desc, traversalPath, discoveredList)
+              return handleAnnotation(desc, traversalPath, previewParamsList)
+            }
+
+            override fun visitParameterAnnotation(parameter: Int, desc: String, visible: Boolean): AnnotationVisitor? {
+              if (desc == PREVIEW_PARAMETER_DESC) {
+                return createPreviewParameterVisitor(previewParameterAttributes)
+              }
+              return null
+            }
+
+            override fun visitEnd() {
+              val methodParams = if (previewParameterAttributes.isNotEmpty()) listOf(previewParameterAttributes) else emptyList()
+              for (previewParams in previewParamsList) {
+                discoveredPreviews.add(
+                  ComposeScreenshot(
+                    methodFQN = methodFQN,
+                    methodParams = methodParams,
+                    previewParams = previewParams,
+                    previewId = resolvedPreviewId,
+                  )
+                )
+              }
             }
           }
         }
@@ -80,10 +109,7 @@ class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
       ClassReader.SKIP_CODE or ClassReader.SKIP_DEBUG or ClassReader.SKIP_FRAMES,
     )
 
-    val resolvedPreviewId = previewId ?: methodName
-    return discoveredList.map { params ->
-      ComposeScreenshot(methodFQN = methodFQN, methodParams = emptyList(), previewParams = params, previewId = resolvedPreviewId)
-    }
+    return discoveredPreviews
   }
 
   /**
@@ -218,6 +244,20 @@ class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
         if (name != null && value != null) {
           previewParams[name] = value
         }
+      }
+    }
+  }
+
+  /** Creates an [AnnotationVisitor] that extracts attributes from a `@PreviewParameter` annotation. */
+  private fun createPreviewParameterVisitor(paramMap: MutableMap<String, String>): AnnotationVisitor {
+    return object : AnnotationVisitor(Opcodes.ASM9) {
+      override fun visit(name: String?, value: Any?) {
+        if (name == null || value == null) return
+        paramMap[name] =
+          when (value) {
+            is Type -> value.className
+            else -> value.toString()
+          }
       }
     }
   }
