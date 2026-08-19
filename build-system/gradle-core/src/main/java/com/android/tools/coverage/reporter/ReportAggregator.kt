@@ -103,24 +103,32 @@ class ReportAggregator {
           val lastLineMeta = blockMeta.linesList.lastOrNull()
           val branchFile = lastLineMeta?.let { smapResolver.resolve(it.lineNumber, sourceFilename).second } ?: sourceFilename
 
-          // Generic Inline Function Filter:
-          // If the branch belongs to an external inlined file, we strip it from our local report.
-          val blockBranches = if (branchFile != sourceFilename) 0 else blockMeta.branchCount.toInt()
-
           // 2. The branch must be placed on the line of the branch instruction itself.
           // Since the branch instruction is the last instruction of the block, we resolve lastLineMeta.
-          val trueBranchLine = if (branchFile == sourceFilename) {
-            lastLineMeta?.let { smapResolver.resolve(it.lineNumber, sourceFilename).first }
-          } else {
-            null
-          }
+          val trueBranchLine =
+            if (branchFile == sourceFilename) {
+              lastLineMeta?.let { smapResolver.resolve(it.lineNumber, sourceFilename).first }
+            } else {
+              null
+            }
+
+          // Generic Inline Function Filter:
+          // If the branch belongs to an external inlined file, we strip it from our local report.
+          // Also, strip compiler-generated coroutine state machine branches on the suspend method declaration line.
+          val isSuspendFunction = methodMeta.signature.endsWith("Lkotlin/coroutines/Continuation;)Ljava/lang/Object;")
+          val blockBranches =
+            if (branchFile != sourceFilename) {
+              0
+            } else if (isSuspendFunction && trueBranchLine == methodStartLine) {
+              0
+            } else {
+              blockMeta.branchCount.toInt()
+            }
 
           // Exact branch coverage reconstruction using successor hits:
           var coveredBranches = 0
           if (blockBranches > 1) {
-            coveredBranches = blockMeta.successorBlockIdsList.count { succId ->
-              data.hits.get(succId.toInt())
-            }
+            coveredBranches = blockMeta.successorBlockIdsList.count { succId -> data.hits.get(succId.toInt()) }
             if (coveredBranches > blockBranches) {
               coveredBranches = blockBranches.toInt()
             }

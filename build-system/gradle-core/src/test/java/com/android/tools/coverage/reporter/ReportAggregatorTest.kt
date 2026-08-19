@@ -170,7 +170,8 @@ class ReportAggregatorTest {
       1#1,15:10
       101#2,2:20,2
       *E
-      """.trimIndent()
+      """
+        .trimIndent()
 
     val metadata =
       CoverageMetadata.newBuilder()
@@ -256,7 +257,8 @@ class ReportAggregatorTest {
       1#1,15:10
       101#2,2:20,2
       *E
-      """.trimIndent()
+      """
+        .trimIndent()
 
     val metadata =
       CoverageMetadata.newBuilder()
@@ -313,6 +315,74 @@ class ReportAggregatorTest {
 
     // - The total aggregates must reflect only the local portion (5 instructions, 1/2 branches).
     assertThat(src.instructions.covered).isEqualTo(5)
+    assertThat(src.branches.covered).isEqualTo(1)
+    assertThat(src.branches.missed).isEqualTo(1)
+  }
+
+  @Test
+  fun testKotlinCoroutineFilter() {
+    val metadata =
+      CoverageMetadata.newBuilder()
+        .addClasses(
+          ClassMetadata.newBuilder()
+            .setClassName("com/example/MyClass")
+            .setSourceFile("MyClass.kt")
+            .addMethods(
+              MethodMetadata.newBuilder()
+                .setName("suspendMethod")
+                .setSignature("(Lkotlin/coroutines/Continuation;)Ljava/lang/Object;")
+                // Block 0 represents the state-machine setup branch mapped to the declaration line (line 10)
+                .addBlocks(
+                  BlockMetadata.newBuilder()
+                    .setBlockId(0)
+                    .setBranchCount(2)
+                    .addSuccessorBlockIds(1)
+                    .addSuccessorBlockIds(2)
+                    .addLines(LineMetadata.newBuilder().setLineNumber(10).setInstructionCount(5))
+                )
+                // Block 3 represents a real user conditional branch mapped to a body line (line 12)
+                .addBlocks(
+                  BlockMetadata.newBuilder()
+                    .setBlockId(3)
+                    .setBranchCount(2)
+                    .addSuccessorBlockIds(4)
+                    .addSuccessorBlockIds(5)
+                    .addLines(LineMetadata.newBuilder().setLineNumber(12).setInstructionCount(5))
+                )
+                .addBlocks(BlockMetadata.newBuilder().setBlockId(1).setBranchCount(1))
+                .addBlocks(BlockMetadata.newBuilder().setBlockId(2).setBranchCount(1))
+                .addBlocks(BlockMetadata.newBuilder().setBlockId(4).setBranchCount(1))
+                .addBlocks(BlockMetadata.newBuilder().setBlockId(5).setBranchCount(1))
+            )
+        )
+        .build()
+
+    val hits = BitSet()
+    hits.set(0) // State machine block hit
+    hits.set(1)
+    hits.set(3) // User branch block hit
+    hits.set(4)
+    val data = CoverageData(metadata, hits)
+
+    val aggregator = ReportAggregator()
+    val report = aggregator.aggregate(data, "test")
+
+    val pkg = report.packages["com/example"]!!
+    val src = pkg.sourceFiles["MyClass.kt"]!!
+
+    // State machine branch on declaration line 10 must be STRIPPED (0 branches)
+    val line10 = src.lineMap[10]!!
+    assertThat(line10.cb).isEqualTo(0)
+    assertThat(line10.mb).isEqualTo(0)
+    assertThat(line10.ci).isEqualTo(5)
+
+    // User branch on body line 12 must be PRESERVED (1 covered, 1 missed)
+    val line12 = src.lineMap[12]!!
+    assertThat(line12.cb).isEqualTo(1)
+    assertThat(line12.mb).isEqualTo(1)
+    assertThat(line12.ci).isEqualTo(5)
+
+    // Total branches must reflect ONLY the user body branch (1 covered, 1 missed)
     assertThat(src.branches.covered).isEqualTo(1)
     assertThat(src.branches.missed).isEqualTo(1)
   }
