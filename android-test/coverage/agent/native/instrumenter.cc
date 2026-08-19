@@ -15,6 +15,7 @@
  */
 
 #include "tools/base/android-test/coverage/agent/native/instrumenter.h"
+#include "tools/base/android-test/coverage/agent/native/synthetic_filter.h"
 #include <sys/types.h>
 #include <unistd.h>
 #include <algorithm>
@@ -517,6 +518,10 @@ bool Instrumenter::InstrumentMethod(
       if (flags & dex::kBranch) {
         if (flags & dex::kContinue) {
           branch_count = 2;  // Conditional branch (e.g., IF_*)
+
+          if (SyntheticFilter::IsSyntheticBranch(ir_method, block)) {
+            branch_count = 1; // Demote to sequential block flow (removes synthetic branch)
+          }
         } else {
           branch_count = 1;  // Unconditional branch (e.g., GOTO)
         }
