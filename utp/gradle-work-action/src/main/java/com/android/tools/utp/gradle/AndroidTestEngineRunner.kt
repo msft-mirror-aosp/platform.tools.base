@@ -17,7 +17,7 @@
 package com.android.tools.utp.gradle
 
 import com.android.tools.androidtest.listener.AndroidTestResultListener
-import com.android.tools.androidtest.testengine.PathSafety
+import com.android.tools.androidtest.testengine.util.PathSafety
 import com.android.tools.utp.gradle.api.RunUtpWorkParameters
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
 import java.io.File

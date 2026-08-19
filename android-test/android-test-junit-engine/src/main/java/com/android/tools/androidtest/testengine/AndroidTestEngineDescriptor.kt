@@ -16,6 +16,7 @@
 
 package com.android.tools.androidtest.testengine
 
+import com.android.tools.androidtest.testengine.util.PathSafety
 import org.junit.platform.engine.UniqueId
 import org.junit.platform.engine.support.descriptor.EngineDescriptor
 import org.junit.platform.engine.support.hierarchical.Node

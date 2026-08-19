@@ -17,6 +17,7 @@
 package com.android.tools.androidtest.testengine
 
 import com.android.tools.androidtest.testengine.instrument.TestResult
+import com.android.tools.androidtest.testengine.util.PathSafety
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.util.logging.Level
