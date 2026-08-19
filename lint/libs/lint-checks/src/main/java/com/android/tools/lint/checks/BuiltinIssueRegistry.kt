@@ -652,7 +652,7 @@ open class BuiltinIssueRegistry : IssueRegistry() {
         scope.contains(Scope.ALL_RESOURCE_FILES) -> initialSize += 12
       }
       when {
-        scope.contains(Scope.JAVA_FILE) -> initialSize += 255
+        scope.contains(Scope.JAVA_FILE) -> initialSize += 256
         scope.contains(Scope.CLASS_FILE) -> initialSize += 16
         scope.contains(Scope.MANIFEST) -> initialSize += 100
         scope.contains(Scope.GRADLE_FILE) -> initialSize += 40

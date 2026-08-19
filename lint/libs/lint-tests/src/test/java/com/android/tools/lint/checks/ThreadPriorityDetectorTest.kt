@@ -16,6 +16,7 @@
 
 package com.android.tools.lint.checks
 
+import com.android.tools.lint.checks.infrastructure.TestMode
 import com.android.tools.lint.detector.api.Detector
 
 class ThreadPriorityDetectorTest : AbstractCheckTest() {
@@ -45,7 +46,7 @@ class ThreadPriorityDetectorTest : AbstractCheckTest() {
     """
     // HIDE-FROM-DOCUMENTATION
     package android.os;
-    public class HandlerThread {
+    public class HandlerThread extends Thread {
         public HandlerThread(String name) {}
         public HandlerThread(String name, int priority) {}
     }
@@ -429,6 +430,246 @@ class ThreadPriorityDetectorTest : AbstractCheckTest() {
         src/test/pkg/TestClass.java:7: Error: Passing java.lang.Thread priority constants to Process.setThreadPriority() is invalid [ThreadPriorityConfusion]
                 Process.setThreadPriority(p); // ERROR: flagged because last assignment was Thread.MAX_PRIORITY
                                           ~
+        1 errors, 0 warnings
+        """
+      )
+  }
+
+  fun testHandlerThreadPriorityFieldAccessJava() {
+    lint()
+      .files(
+        processStub,
+        handlerThreadStub,
+        java(
+          """
+          package test.pkg;
+          import android.os.Process;
+          import android.os.HandlerThread;
+          public class TestClass {
+              public static void createAndStartNewLooperExecutor(String name, int priority) {}
+
+              public void test() {
+                  // Bad: referencing HandlerThread.MIN_PRIORITY / NORM_PRIORITY / MAX_PRIORITY
+                  createAndStartNewLooperExecutor("NoOpViewCapture", HandlerThread.MIN_PRIORITY); // ERROR
+                  HandlerThread t1 = new HandlerThread("name", HandlerThread.MIN_PRIORITY); // ERROR
+                  Process.setThreadPriority(HandlerThread.MIN_PRIORITY); // ERROR
+                  Thread.currentThread().setPriority(HandlerThread.MIN_PRIORITY); // ERROR
+                  int p = HandlerThread.MAX_PRIORITY; // ERROR
+                  int p2 = HandlerThread.NORM_PRIORITY; // ERROR
+
+                  // Good: using Process priorities for HandlerThread/Process and Thread priorities for Thread
+                  createAndStartNewLooperExecutor("NoOpViewCapture", Process.THREAD_PRIORITY_LOWEST); // OK
+                  HandlerThread t2 = new HandlerThread("name", Process.THREAD_PRIORITY_BACKGROUND); // OK
+                  Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND); // OK
+                  Thread.currentThread().setPriority(Thread.MIN_PRIORITY); // OK
+              }
+          }
+          """
+        ).indented()
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/TestClass.java:9: Error: Do not use HandlerThread.MIN_PRIORITY; HandlerThread uses android.os.Process thread priorities (such as Process.THREAD_PRIORITY_DEFAULT), but inherits MIN_PRIORITY (1) from java.lang.Thread [ThreadPriorityConfusion]
+                createAndStartNewLooperExecutor("NoOpViewCapture", HandlerThread.MIN_PRIORITY); // ERROR
+                                                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/TestClass.java:10: Error: Do not use HandlerThread.MIN_PRIORITY; HandlerThread uses android.os.Process thread priorities (such as Process.THREAD_PRIORITY_DEFAULT), but inherits MIN_PRIORITY (1) from java.lang.Thread [ThreadPriorityConfusion]
+                HandlerThread t1 = new HandlerThread("name", HandlerThread.MIN_PRIORITY); // ERROR
+                                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/TestClass.java:11: Error: Do not use HandlerThread.MIN_PRIORITY; HandlerThread uses android.os.Process thread priorities (such as Process.THREAD_PRIORITY_DEFAULT), but inherits MIN_PRIORITY (1) from java.lang.Thread [ThreadPriorityConfusion]
+                Process.setThreadPriority(HandlerThread.MIN_PRIORITY); // ERROR
+                                          ~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/TestClass.java:12: Error: Do not use HandlerThread.MIN_PRIORITY; HandlerThread uses android.os.Process thread priorities (such as Process.THREAD_PRIORITY_DEFAULT), but inherits MIN_PRIORITY (1) from java.lang.Thread [ThreadPriorityConfusion]
+                Thread.currentThread().setPriority(HandlerThread.MIN_PRIORITY); // ERROR
+                                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/TestClass.java:13: Error: Do not use HandlerThread.MAX_PRIORITY; HandlerThread uses android.os.Process thread priorities (such as Process.THREAD_PRIORITY_DEFAULT), but inherits MAX_PRIORITY (10) from java.lang.Thread [ThreadPriorityConfusion]
+                int p = HandlerThread.MAX_PRIORITY; // ERROR
+                        ~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/TestClass.java:14: Error: Do not use HandlerThread.NORM_PRIORITY; HandlerThread uses android.os.Process thread priorities (such as Process.THREAD_PRIORITY_DEFAULT), but inherits NORM_PRIORITY (5) from java.lang.Thread [ThreadPriorityConfusion]
+                int p2 = HandlerThread.NORM_PRIORITY; // ERROR
+                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        6 errors, 0 warnings
+        """
+      )
+  }
+
+  fun testHandlerThreadPriorityFieldAccessKotlin() {
+    lint()
+      .files(
+        processStub,
+        handlerThreadStub,
+        kotlin(
+          """
+          package test.pkg
+          import android.os.Process
+          import android.os.HandlerThread
+
+          class TestKotlin {
+              fun createAndStartNewLooperExecutor(name: String, priority: Int) {}
+
+              fun test() {
+                  // Bad: referencing HandlerThread.MIN_PRIORITY in helper method (SystemUI pattern)
+                  createAndStartNewLooperExecutor("NoOpViewCapture", HandlerThread.MIN_PRIORITY) // ERROR
+                  val thread1 = HandlerThread("name", HandlerThread.MIN_PRIORITY) // ERROR
+                  Thread.currentThread().priority = HandlerThread.MIN_PRIORITY // ERROR
+                  Process.setThreadPriority(HandlerThread.MAX_PRIORITY) // ERROR
+                  val p = HandlerThread.NORM_PRIORITY // ERROR
+
+                  // Good
+                  createAndStartNewLooperExecutor("NoOpViewCapture", Process.THREAD_PRIORITY_LOWEST) // OK
+                  val thread2 = HandlerThread("name", Process.THREAD_PRIORITY_BACKGROUND) // OK
+                  Thread.currentThread().priority = Thread.MIN_PRIORITY // OK
+                  Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND) // OK
+              }
+          }
+          """
+        ).indented()
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/TestKotlin.kt:10: Error: Do not use HandlerThread.MIN_PRIORITY; HandlerThread uses android.os.Process thread priorities (such as Process.THREAD_PRIORITY_DEFAULT), but inherits MIN_PRIORITY (1) from java.lang.Thread [ThreadPriorityConfusion]
+                createAndStartNewLooperExecutor("NoOpViewCapture", HandlerThread.MIN_PRIORITY) // ERROR
+                                                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/TestKotlin.kt:11: Error: Do not use HandlerThread.MIN_PRIORITY; HandlerThread uses android.os.Process thread priorities (such as Process.THREAD_PRIORITY_DEFAULT), but inherits MIN_PRIORITY (1) from java.lang.Thread [ThreadPriorityConfusion]
+                val thread1 = HandlerThread("name", HandlerThread.MIN_PRIORITY) // ERROR
+                                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/TestKotlin.kt:12: Error: Do not use HandlerThread.MIN_PRIORITY; HandlerThread uses android.os.Process thread priorities (such as Process.THREAD_PRIORITY_DEFAULT), but inherits MIN_PRIORITY (1) from java.lang.Thread [ThreadPriorityConfusion]
+                Thread.currentThread().priority = HandlerThread.MIN_PRIORITY // ERROR
+                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/TestKotlin.kt:13: Error: Do not use HandlerThread.MAX_PRIORITY; HandlerThread uses android.os.Process thread priorities (such as Process.THREAD_PRIORITY_DEFAULT), but inherits MAX_PRIORITY (10) from java.lang.Thread [ThreadPriorityConfusion]
+                Process.setThreadPriority(HandlerThread.MAX_PRIORITY) // ERROR
+                                          ~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/TestKotlin.kt:14: Error: Do not use HandlerThread.NORM_PRIORITY; HandlerThread uses android.os.Process thread priorities (such as Process.THREAD_PRIORITY_DEFAULT), but inherits NORM_PRIORITY (5) from java.lang.Thread [ThreadPriorityConfusion]
+                val p = HandlerThread.NORM_PRIORITY // ERROR
+                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        5 errors, 0 warnings
+        """
+      )
+  }
+
+  fun testHandlerThreadSubclass() {
+    lint()
+      .files(
+        processStub,
+        handlerThreadStub,
+        java(
+          """
+          package test.pkg;
+          import android.os.HandlerThread;
+          import android.os.Process;
+          public class TestClass {
+              public static class BluetoothScanThread extends HandlerThread {
+                  public BluetoothScanThread() {
+                      super("BluetoothScanThread", HandlerThread.MIN_PRIORITY); // ERROR
+                  }
+              }
+
+              public static class CustomThread extends HandlerThread {
+                  public CustomThread() {
+                      super("CustomThread", Thread.MIN_PRIORITY); // ERROR
+                  }
+
+                  public void test() {
+                      int p = CustomThread.MIN_PRIORITY; // ERROR
+                  }
+              }
+          }
+          """
+        ).indented()
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/TestClass.java:7: Error: Do not use HandlerThread.MIN_PRIORITY; HandlerThread uses android.os.Process thread priorities (such as Process.THREAD_PRIORITY_DEFAULT), but inherits MIN_PRIORITY (1) from java.lang.Thread [ThreadPriorityConfusion]
+                    super("BluetoothScanThread", HandlerThread.MIN_PRIORITY); // ERROR
+                                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/TestClass.java:13: Error: Passing java.lang.Thread priority constants to HandlerThread constructor is invalid [ThreadPriorityConfusion]
+                    super("CustomThread", Thread.MIN_PRIORITY); // ERROR
+                                          ~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/TestClass.java:17: Error: Do not use CustomThread.MIN_PRIORITY; HandlerThread uses android.os.Process thread priorities (such as Process.THREAD_PRIORITY_DEFAULT), but inherits MIN_PRIORITY (1) from java.lang.Thread [ThreadPriorityConfusion]
+                    int p = CustomThread.MIN_PRIORITY; // ERROR
+                            ~~~~~~~~~~~~~~~~~~~~~~~~~
+        3 errors, 0 warnings
+        """
+      )
+  }
+
+  fun testHandlerThreadSubclassMethodCalls() {
+    lint()
+      .files(
+        processStub,
+        handlerThreadStub,
+        java(
+          """
+          package test.pkg;
+          import static android.os.Process.THREAD_PRIORITY_BACKGROUND;
+          import android.os.HandlerThread;
+          import android.os.Process;
+
+          public class TestClass {
+              public static class CustomThread extends HandlerThread {
+                  public CustomThread() {
+                      super("CustomThread");
+                  }
+
+                  public void test() {
+                      setPriority(THREAD_PRIORITY_BACKGROUND); // ERROR
+                      int p = Process.THREAD_PRIORITY_BACKGROUND;
+                      setPriority(p); // ERROR
+                      int q = 50;
+                      setPriority(q); // ERROR
+                      int r = Thread.MAX_PRIORITY;
+                      Process.setThreadPriority(r); // ERROR
+                  }
+              }
+          }
+          """
+        ).indented()
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/TestClass.java:13: Error: Passing android.os.Process priority constants to Thread.setPriority() is invalid [ThreadPriorityConfusion]
+                    setPriority(THREAD_PRIORITY_BACKGROUND); // ERROR
+                                ~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/TestClass.java:15: Error: Passing android.os.Process priority constants to Thread.setPriority() is invalid [ThreadPriorityConfusion]
+                    setPriority(p); // ERROR
+                                ~
+        src/test/pkg/TestClass.java:17: Error: Thread priority must be between 1 (Thread.MIN_PRIORITY) and 10 (Thread.MAX_PRIORITY); was 50 [ThreadPriorityConfusion]
+                    setPriority(q); // ERROR
+                                ~
+        src/test/pkg/TestClass.java:19: Error: Passing java.lang.Thread priority constants to Process.setThreadPriority() is invalid [ThreadPriorityConfusion]
+                    Process.setThreadPriority(r); // ERROR
+                                              ~
+        4 errors, 0 warnings
+        """
+      )
+  }
+
+  fun testHandlerThreadStaticImport() {
+    lint()
+      .skipTestModes(TestMode.FULLY_QUALIFIED)
+      .files(
+        handlerThreadStub,
+        java(
+          """
+          package test.pkg;
+          import static android.os.HandlerThread.MIN_PRIORITY;
+          public class TestClass {
+              public void test() {
+                  int p = MIN_PRIORITY; // ERROR
+              }
+          }
+          """
+        ).indented()
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/TestClass.java:5: Error: Do not use HandlerThread.MIN_PRIORITY; HandlerThread uses android.os.Process thread priorities (such as Process.THREAD_PRIORITY_DEFAULT), but inherits MIN_PRIORITY (1) from java.lang.Thread [ThreadPriorityConfusion]
+                int p = MIN_PRIORITY; // ERROR
+                        ~~~~~~~~~~~~
         1 errors, 0 warnings
         """
       )
