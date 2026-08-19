@@ -383,10 +383,10 @@ class JacocoOnTheFlyConnectedTest(val runWithBuiltInPlatform: Boolean) {
     // Assert exact branch ratios are solved and recorded in the XML report:
     // a. loopControl:
     //    - Java: loop, continue, break. 5 covered, 1 missed (break true branch missed) -> missed="1" covered="5"
-    //    - Kotlin: extra compiler checks. 6 covered, 2 missed -> missed="2" covered="6"
+    //    - Kotlin: extra compiler checks. 7 covered, 1 missed -> missed="1" covered="7"
     assertThat(content).contains("<method name=\"loopControl\"")
     assertThat(content).contains("<counter type=\"BRANCH\" missed=\"1\" covered=\"5\"/>")
-    assertThat(content).contains("<counter type=\"BRANCH\" missed=\"2\" covered=\"6\"/>")
+    assertThat(content).contains("<counter type=\"BRANCH\" missed=\"1\" covered=\"7\"/>")
 
     // b. tryCatchFinally: normal try + finally hit, catch missed. 1 covered, 1 missed -> missed="1" covered="1"
     assertThat(content).contains("<method name=\"tryCatchFinally\"")
@@ -396,7 +396,8 @@ class JacocoOnTheFlyConnectedTest(val runWithBuiltInPlatform: Boolean) {
     assertThat(content).contains("<method name=\"complexLadder\"")
     assertThat(content).contains("<counter type=\"BRANCH\" missed=\"3\" covered=\"3\"/>")
 
-    // d. fallThroughSwitch: entry on case 1 covered, case 2 and default missed (but blocks hit by fall-through). 2 covered, 1 missed -> missed="1" covered="2"
+    // d. fallThroughSwitch: entry on case 1 covered, case 2 and default missed (but blocks hit by fall-through). 2 covered, 1 missed ->
+    // missed="1" covered="2"
     assertThat(content).contains("<method name=\"fallThroughSwitch\"")
     assertThat(content).contains("<counter type=\"BRANCH\" missed=\"1\" covered=\"2\"/>")
 
