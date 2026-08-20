@@ -280,6 +280,7 @@ _CLASS_JARS = [
     "androidx.core:core-splashscreen:1.2.0",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.customview:customview-poolingcontainer:1.0.0-beta01",
     "androidx.databinding:databinding-adapters:8.5.0",
+    "androidx.databinding:databinding-adapters:9.0.0",
     "androidx.databinding:databinding-common:8.5.0",
     "androidx.databinding:databinding-compiler:8.5.0",
     "androidx.databinding:databinding-compiler:8.7.0",
@@ -288,6 +289,7 @@ _CLASS_JARS = [
     "androidx.databinding:viewbinding:7.2.0",
     "androidx.databinding:viewbinding:7.4.1",
     "androidx.databinding:viewbinding:8.0.0-beta04",
+    "androidx.databinding:viewbinding:9.0.0",
     "androidx.datastore:datastore-core-android:1.1.0-alpha04",
     "androidx.datastore:datastore-core-okio-jvm:1.1.0-alpha04",
     "androidx.datastore:datastore-jvm:1.1.7",
@@ -578,6 +580,7 @@ _CLASS_JARS = [
     "com.android.application:com.android.application.gradle.plugin:pom:9.0.0",
     "com.android.application:com.android.application.gradle.plugin:pom:9.1.0",
     "com.android.application:com.android.application.gradle.plugin:pom:9.2.0",
+    "com.android.built-in-kotlin:com.android.built-in-kotlin.gradle.plugin:pom:9.0.0",
     "com.android.databinding:adapters:4.0.0",
     "com.android.databinding:adapters:4.1.0",
     "com.android.databinding:adapters:4.2.0",
