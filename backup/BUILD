@@ -68,17 +68,20 @@ maven_library(
     ]),
     bundled_deps = [
         "//tools/base/environment-services:tools.environment-services",
+        "//tools/base/backup/bmgr-parser",
     ],
     coordinates = "com.android.tools.backup:backup-restore",
     description = "Library to perform backup and restore operations",
     module_name = "backup-restore",
+    notice = "NOTICE",
     version = BASE_VERSION,
     visibility = [
         "//tools/base/backup-test:__subpackages__",
+        "//tools/base/backup-test-automated:__subpackages__",
+        "//tools/base/gmaven:__subpackages__",
     ],
     deps = [
         "//tools/base/adblib",
-        "//tools/base/backup/bmgr-parser",
         "//tools/base/common:tools.common",
         "//tools/base/sdk-common:tools.sdk-common",
         "//tools/base/sdklib:tools.sdklib",
