@@ -1104,6 +1104,7 @@ class ModelBuilder<ExtensionT : CommonExtension>(
 
           TestInfoImpl(
             animationsDisabled = testOptionsDsl.animationsDisabled,
+            instrumentInPrivateComputeCore = testOptionsDsl.instrumentInPrivateComputeCore,
             execution = testOptionsDsl.execution.convertToExecution(),
             additionalRuntimeApks = runtimeApks,
             instrumentedTestTaskName = testTaskName,

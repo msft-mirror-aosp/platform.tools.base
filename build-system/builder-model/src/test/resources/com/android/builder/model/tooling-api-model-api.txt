@@ -4,7 +4,7 @@ ATTENTION REVIEWER: If this needs to be changed, please make sure changes
 below are backwards compatible.
 -------------------------------------------------------------------------
 Sha256 of below classes:
-a89ad90c010ea6a1c278a896656ccb619e21fb8a9e76bc3cae46e147ac3c9fe7
+3638af2b55c933f310791c8f6ec0e7f3fa997119ebcf14a7f4a17ec58a677845
 -------------------------------------------------------------------------
 com.android.builder.model.AaptOptions
 com.android.builder.model.AaptOptions$Namespacing extends java.lang.Enum
@@ -348,6 +348,7 @@ com.android.builder.model.TestOptions$Execution.valueOf: com.android.builder.mod
 com.android.builder.model.TestOptions$Execution.values: com.android.builder.model.TestOptions$Execution[] ()
 com.android.builder.model.TestOptions.getAnimationsDisabled: boolean ()
 com.android.builder.model.TestOptions.getExecution: com.android.builder.model.TestOptions$Execution ()
+com.android.builder.model.TestOptions.getInstrumentInPrivateComputeCore: boolean ()
 com.android.builder.model.TestVariantBuildOutput implements com.android.builder.model.BaseBuildOutput
 com.android.builder.model.TestVariantBuildOutput$TestType extends java.lang.Enum
 com.android.builder.model.TestVariantBuildOutput$TestType.valueOf: com.android.builder.model.TestVariantBuildOutput$TestType (java.lang.String)
@@ -733,6 +734,7 @@ com.android.builder.model.v2.ide.TestInfo$Execution.values: com.android.builder.
 com.android.builder.model.v2.ide.TestInfo.getAdditionalRuntimeApks: java.util.Collection<java.io.File> ()
 com.android.builder.model.v2.ide.TestInfo.getAnimationsDisabled: boolean ()
 com.android.builder.model.v2.ide.TestInfo.getExecution: com.android.builder.model.v2.ide.TestInfo$Execution ()
+com.android.builder.model.v2.ide.TestInfo.getInstrumentInPrivateComputeCore: boolean ()
 com.android.builder.model.v2.ide.TestInfo.getInstrumentedTestTaskName: java.lang.String ()
 com.android.builder.model.v2.ide.TestSuite implements com.android.builder.model.v2.AndroidModel
 com.android.builder.model.v2.ide.TestSuite.getGeneratedAssets: java.util.Collection<com.android.builder.model.v2.models.AssetsTestSuiteSource> ()

@@ -199,7 +199,8 @@
         "animationsDisabled": false,
         "execution": "HOST",
         "additionalRuntimeApks": [],
-        "instrumentedTestTaskName": "connectedAndroidDeviceTest"
+        "instrumentedTestTaskName": "connectedAndroidDeviceTest",
+        "instrumentInPrivateComputeCore": false
       },
       "flags": {
         "booleanFlagValues": [

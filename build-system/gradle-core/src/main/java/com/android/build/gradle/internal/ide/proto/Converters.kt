@@ -54,6 +54,7 @@ internal fun com.android.builder.model.v2.ide.TestInfo.Execution.convert(): Test
 internal fun com.android.builder.model.v2.ide.TestInfo.convert() =
   TestInfo.newBuilder()
     .setAnimationsDisabled(animationsDisabled)
+    .setInstrumentInPrivateComputeCore(instrumentInPrivateComputeCore)
     .setIfNotNull(execution?.convert(), TestInfo.Builder::setExecution)
     .addAllAdditionalRuntimeApks(additionalRuntimeApks.map { it.convert() })
     .setInstrumentedTestTaskName(instrumentedTestTaskName)

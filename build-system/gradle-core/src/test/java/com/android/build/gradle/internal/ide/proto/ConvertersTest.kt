@@ -41,6 +41,7 @@ class ConvertersTest {
     val testInfo =
       TestInfoImpl(
         animationsDisabled = false,
+        instrumentInPrivateComputeCore = false,
         execution = TestInfo.Execution.ANDROIDX_TEST_ORCHESTRATOR,
         additionalRuntimeApks = listOf(nextFile(), nextFile()),
         instrumentedTestTaskName = nextString(),

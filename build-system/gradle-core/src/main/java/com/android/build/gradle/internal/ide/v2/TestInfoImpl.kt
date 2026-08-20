@@ -23,6 +23,7 @@ import java.io.Serializable
 /** Implementation of [TestInfo] for serialization via the Tooling API. */
 data class TestInfoImpl(
   override val animationsDisabled: Boolean,
+  override val instrumentInPrivateComputeCore: Boolean,
   override val execution: TestInfo.Execution?,
   override val additionalRuntimeApks: Collection<File>,
   override val instrumentedTestTaskName: String,

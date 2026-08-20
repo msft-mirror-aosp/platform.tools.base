@@ -29,5 +29,7 @@ public interface TestOptions {
 
     boolean getAnimationsDisabled();
 
+    boolean getInstrumentInPrivateComputeCore();
+
     Execution getExecution();
 }
