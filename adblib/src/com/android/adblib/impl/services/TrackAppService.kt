@@ -39,15 +39,14 @@ internal class TrackAppService(private val serviceRunner: AdbServiceRunner) {
 
   private val parser = AppProcessEntryListParser()
 
-  fun invoke(device: DeviceSelector, timeout: Long, unit: TimeUnit): Flow<List<AppProcessEntry>> =
-    flow {
-        val tracker = TimeoutTracker(host.timeProvider, timeout, unit)
-        val service = "track-app"
-        serviceRunner.runDaemonService(device, service, tracker) { channel, workBuffer ->
-          collectAdbResponses(channel, workBuffer, service, this)
-        }
-      }
-      .flowOn(host.ioDispatcher)
+  fun invoke(device: DeviceSelector, timeout: Long, unit: TimeUnit): Flow<List<AppProcessEntry>> = flow {
+    val tracker = TimeoutTracker(host.timeProvider, timeout, unit)
+    val service = "track-app"
+    serviceRunner.runDaemonService(device, service, tracker) { channel, workBuffer ->
+      collectAdbResponses(channel, workBuffer, service, this)
+    }
+  }
+    .flowOn(host.ioDispatcher)
 
   private suspend fun collectAdbResponses(
     channel: AdbChannel,

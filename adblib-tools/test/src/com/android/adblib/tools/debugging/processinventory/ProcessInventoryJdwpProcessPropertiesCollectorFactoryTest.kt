@@ -60,193 +60,188 @@ class ProcessInventoryJdwpProcessPropertiesCollectorFactoryTest {
   @JvmField @Rule val closeables = CloseablesRule()
 
   @Test
-  fun testFactoryCanBeEnabledAndDisabled(): Unit =
-    CoroutineTestUtils.runBlockingWithTimeout {
-      // Prepare
-      val session = fakeAdbRule.adbSession
-      val server = ProcessInventoryServerConnection.create(session, TestServerConfig())
-      val pid1 = 20
-      val fakeDevice = fakeAdbRule.fakeAdb.addSampleDevice(apiLevel = 30)
-      fakeDevice.addSampleJdwpProcess(pid1)
-      val device = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
-      val jdwpProcess =
-        device.jdwpProcessTracker.processesFlow.mapNotNull { processList -> processList.firstOrNull { it.pid == pid1 } }.first()
+  fun testFactoryCanBeEnabledAndDisabled(): Unit = CoroutineTestUtils.runBlockingWithTimeout {
+    // Prepare
+    val session = fakeAdbRule.adbSession
+    val server = ProcessInventoryServerConnection.create(session, TestServerConfig())
+    val pid1 = 20
+    val fakeDevice = fakeAdbRule.fakeAdb.addSampleDevice(apiLevel = 30)
+    fakeDevice.addSampleJdwpProcess(pid1)
+    val device = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
+    val jdwpProcess =
+      device.jdwpProcessTracker.processesFlow.mapNotNull { processList -> processList.firstOrNull { it.pid == pid1 } }.first()
 
-      var enabled = true
-      session.installProcessInventoryJdwpProcessPropertiesCollectorFactory(server, enabled = { enabled })
+    var enabled = true
+    session.installProcessInventoryJdwpProcessPropertiesCollectorFactory(server, enabled = { enabled })
 
-      // Act
-      enabled = true
-      val externalCollectorList1 = session.externalJdwpProcessPropertiesCollectorFactoryList.mapNotNull { it.create(jdwpProcess) }
+    // Act
+    enabled = true
+    val externalCollectorList1 = session.externalJdwpProcessPropertiesCollectorFactoryList.mapNotNull { it.create(jdwpProcess) }
 
-      enabled = false
-      val externalCollectorList2 = session.externalJdwpProcessPropertiesCollectorFactoryList.mapNotNull { it.create(jdwpProcess) }
+    enabled = false
+    val externalCollectorList2 = session.externalJdwpProcessPropertiesCollectorFactoryList.mapNotNull { it.create(jdwpProcess) }
 
-      // Assert
-      Assert.assertEquals(1, externalCollectorList1.size)
-      Assert.assertEquals(0, externalCollectorList2.size)
-    }
-
-  @Test
-  fun testJdwpPropertiesCollectionIsDistributed(): Unit =
-    CoroutineTestUtils.runBlockingWithTimeout {
-      fakeAdbRule.host.setPropertyValue(AdbLibToolsProcessInventoryServerProperties.LOCAL_PORT_V1, findFreeTcpPort())
-
-      // Prepare
-      // Create 2 adblib sessions for a single fake adb server, install a
-      // ProcessInventoryServer on both sessions, start collecting properties from both
-      // sessions with a long timeout for keeping JDWP sessions open (one of the 2 adblib
-      // sessions is stuck waiting for the other one when trying to collect properties),
-      // check that properties are available faster than the long delay on *both* sessions.
-      fakeAdbRule.host.setPropertyValue(AdbLibToolsProperties.PROCESS_PROPERTIES_READ_TIMEOUT, Duration.ofMinutes(10))
-      testWithMultipleSessions(
-        sequence {
-          val session1 = fakeAdbRule.adbSession
-          val session2 = createSessionClone(fakeAdbRule)
-          session1.installTestProcessInventoryServer()
-          session2.installTestProcessInventoryServer()
-          yield(session1)
-          yield(session2)
-        }
-      )
-    }
+    // Assert
+    Assert.assertEquals(1, externalCollectorList1.size)
+    Assert.assertEquals(0, externalCollectorList2.size)
+  }
 
   @Test
-  fun testJdwpPropertiesCollectionSupportsBothDistributedAndLocalOnly(): Unit =
-    CoroutineTestUtils.runBlockingWithTimeout {
-      fakeAdbRule.host.setPropertyValue(AdbLibToolsProcessInventoryServerProperties.LOCAL_PORT_V1, findFreeTcpPort())
-      fakeAdbRule.host.setPropertyValue(AdbLibToolsProperties.PROCESS_PROPERTIES_READ_TIMEOUT, Duration.ofSeconds(2))
-      testWithMultipleSessions(
-        sequence {
-          val session1 = fakeAdbRule.adbSession
-          val session2 = createSessionClone(fakeAdbRule)
-          val session3 = createSessionClone(fakeAdbRule)
-          session1.installTestProcessInventoryServer()
-          session2.installTestProcessInventoryServer()
-          yield(session1)
-          yield(session2)
-          yield(session3)
-        }
-      )
-    }
+  fun testJdwpPropertiesCollectionIsDistributed(): Unit = CoroutineTestUtils.runBlockingWithTimeout {
+    fakeAdbRule.host.setPropertyValue(AdbLibToolsProcessInventoryServerProperties.LOCAL_PORT_V1, findFreeTcpPort())
 
-  @Test
-  fun testDistributedJdwpPropertiesCollectionRecoversFromSessionClosing(): Unit =
-    CoroutineTestUtils.runBlockingWithTimeout {
-      // Prepare
-      // Create 3 adblib sessions for a single fake adb server, install a
-      // ProcessInventoryServer on all sessions, start collecting properties from both
-      // sessions with a long timeout for keeping JDWP sessions open (one of the 2 adblib
-      // sessions is stuck waiting for the other one when trying to collect properties),
-      // check that properties are available faster than the long delay on *both* sessions.
-      val fakeAdbServer = fakeAdbRule.fakeAdb
-      fakeAdbRule.host.setPropertyValue(AdbLibToolsProcessInventoryServerProperties.LOCAL_PORT_V1, findFreeTcpPort())
-      fakeAdbRule.host.setPropertyValue(AdbLibToolsProperties.PROCESS_PROPERTIES_READ_TIMEOUT, Duration.ofMinutes(10))
-      val session1 = fakeAdbRule.adbSession
-      val session2 = createSessionClone(fakeAdbRule)
-      val session3 = createSessionClone(fakeAdbRule)
-      val pid1 = 20
-      val fakeDevice = fakeAdbServer.addSampleDevice(apiLevel = 30)
-      val clientState1 = fakeDevice.addSampleJdwpProcess(pid1)
-      session1.installTestProcessInventoryServer()
-      val connectedDevice1 = session1.waitForOnlineConnectedDevice(fakeDevice.deviceId)
-      val defProps1Pid1 = fetchProcessPropertiesAsync(connectedDevice1, pid1)
-      val pid2 = 20
-      val clientState2 = fakeDevice.addSampleJdwpProcess(pid2)
-
-      // Act
-      val props1 = defProps1Pid1.await()
-      session1.closeAndJoin()
-      session2.installTestProcessInventoryServer()
-      session3.installTestProcessInventoryServer()
-      val connectedDevice2 = session2.waitForOnlineConnectedDevice(fakeDevice.deviceId)
-      val connectedDevice3 = session3.waitForOnlineConnectedDevice(fakeDevice.deviceId)
-
-      val defProps2Pid1 = fetchProcessPropertiesAsync(connectedDevice2, pid1)
-      val defProps2Pid2 = fetchProcessPropertiesAsync(connectedDevice2, pid2)
-
-      val defProps3Pid1 = fetchProcessPropertiesAsync(connectedDevice3, pid1)
-      val defProps3Pid2 = fetchProcessPropertiesAsync(connectedDevice3, pid2)
-
-      val props2pid1 = defProps2Pid1.await()
-      val props2pid2 = defProps2Pid2.await()
-
-      val props3pid1 = defProps3Pid1.await()
-      val props3pid2 = defProps3Pid2.await()
-
-      // Assert
-      Assert.assertEquals(pid1, props1.pid)
-      Assert.assertEquals(clientState1.processName, props1.processName.getOrNull())
-      Assert.assertEquals(clientState1.packageName, props1.packageName.getOrNull())
-      Assert.assertEquals(clientState1.userId, props1.userId.getOrNull())
-      Assert.assertEquals(clientState1.architecture, props1.instructionSet.getOrNull()?.text)
-      Assert.assertEquals(false, props1.isWaitingForDebugger.getOrDefault(false))
-      Assert.assertTrue(props1.features.getOrDefault(emptyList()).contains("feat1"))
-      Assert.assertTrue(props1.features.getOrDefault(emptyList()).contains("feat2"))
-      Assert.assertTrue(props1.features.getOrDefault(emptyList()).contains("feat3"))
-
-      with(props2pid1) { assertJdwpPropertiesAreEqual(props1) }
-
-      with(props3pid1) { assertJdwpPropertiesAreEqual(props1) }
-
-      Assert.assertEquals(pid2, props2pid2.pid)
-      Assert.assertEquals(clientState2.processName, props2pid2.processName.getOrNull())
-      Assert.assertEquals(clientState2.packageName, props2pid2.packageName.getOrNull())
-      Assert.assertEquals(clientState2.userId, props2pid2.userId.getOrNull())
-      Assert.assertEquals(clientState2.architecture, props2pid2.instructionSet.getOrNull()?.text)
-      Assert.assertEquals(false, props2pid2.isWaitingForDebugger.getOrDefault(false))
-      Assert.assertTrue(props2pid2.features.getOrDefault(emptyList()).contains("feat1"))
-      Assert.assertTrue(props2pid2.features.getOrDefault(emptyList()).contains("feat2"))
-      Assert.assertTrue(props2pid2.features.getOrDefault(emptyList()).contains("feat3"))
-
-      with(props2pid2) { assertJdwpPropertiesAreEqual(props3pid2) }
-    }
-
-  @Test
-  fun testExternalPropertiesCollectorNotStarted_whenAppInfoIsSupported(): Unit =
-    CoroutineTestUtils.runBlockingWithTimeout {
-      // Setup
-      fakeAdbRule.host.setPropertyValue(AdbLibToolsProcessInventoryServerProperties.LOCAL_PORT_V1, findFreeTcpPort())
-      val session = fakeAdbRule.adbSession
-      var externalPropertiesCollectorStarted = false
-
-      class TestExternalJdwpProcessPropertiesCollector(override val process: JdwpProcess) : ExternalJdwpProcessPropertiesCollector {
-
-        override fun trackProperties(): Flow<JdwpProcessProperties> {
-          externalPropertiesCollectorStarted = true
-          return flow {}
-        }
+    // Prepare
+    // Create 2 adblib sessions for a single fake adb server, install a
+    // ProcessInventoryServer on both sessions, start collecting properties from both
+    // sessions with a long timeout for keeping JDWP sessions open (one of the 2 adblib
+    // sessions is stuck waiting for the other one when trying to collect properties),
+    // check that properties are available faster than the long delay on *both* sessions.
+    fakeAdbRule.host.setPropertyValue(AdbLibToolsProperties.PROCESS_PROPERTIES_READ_TIMEOUT, Duration.ofMinutes(10))
+    testWithMultipleSessions(
+      sequence {
+        val session1 = fakeAdbRule.adbSession
+        val session2 = createSessionClone(fakeAdbRule)
+        session1.installTestProcessInventoryServer()
+        session2.installTestProcessInventoryServer()
+        yield(session1)
+        yield(session2)
       }
+    )
+  }
 
-      session.externalJdwpProcessPropertiesCollectorFactoryList.add(
-        object : ExternalJdwpProcessPropertiesCollectorFactory {
-          override suspend fun create(process: JdwpProcess): ExternalJdwpProcessPropertiesCollector? =
-            TestExternalJdwpProcessPropertiesCollector(process)
+  @Test
+  fun testJdwpPropertiesCollectionSupportsBothDistributedAndLocalOnly(): Unit = CoroutineTestUtils.runBlockingWithTimeout {
+    fakeAdbRule.host.setPropertyValue(AdbLibToolsProcessInventoryServerProperties.LOCAL_PORT_V1, findFreeTcpPort())
+    fakeAdbRule.host.setPropertyValue(AdbLibToolsProperties.PROCESS_PROPERTIES_READ_TIMEOUT, Duration.ofSeconds(2))
+    testWithMultipleSessions(
+      sequence {
+        val session1 = fakeAdbRule.adbSession
+        val session2 = createSessionClone(fakeAdbRule)
+        val session3 = createSessionClone(fakeAdbRule)
+        session1.installTestProcessInventoryServer()
+        session2.installTestProcessInventoryServer()
+        yield(session1)
+        yield(session2)
+        yield(session3)
+      }
+    )
+  }
 
-          override fun close() {}
-        }
-      )
+  @Test
+  fun testDistributedJdwpPropertiesCollectionRecoversFromSessionClosing(): Unit = CoroutineTestUtils.runBlockingWithTimeout {
+    // Prepare
+    // Create 3 adblib sessions for a single fake adb server, install a
+    // ProcessInventoryServer on all sessions, start collecting properties from both
+    // sessions with a long timeout for keeping JDWP sessions open (one of the 2 adblib
+    // sessions is stuck waiting for the other one when trying to collect properties),
+    // check that properties are available faster than the long delay on *both* sessions.
+    val fakeAdbServer = fakeAdbRule.fakeAdb
+    fakeAdbRule.host.setPropertyValue(AdbLibToolsProcessInventoryServerProperties.LOCAL_PORT_V1, findFreeTcpPort())
+    fakeAdbRule.host.setPropertyValue(AdbLibToolsProperties.PROCESS_PROPERTIES_READ_TIMEOUT, Duration.ofMinutes(10))
+    val session1 = fakeAdbRule.adbSession
+    val session2 = createSessionClone(fakeAdbRule)
+    val session3 = createSessionClone(fakeAdbRule)
+    val pid1 = 20
+    val fakeDevice = fakeAdbServer.addSampleDevice(apiLevel = 30)
+    val clientState1 = fakeDevice.addSampleJdwpProcess(pid1)
+    session1.installTestProcessInventoryServer()
+    val connectedDevice1 = session1.waitForOnlineConnectedDevice(fakeDevice.deviceId)
+    val defProps1Pid1 = fetchProcessPropertiesAsync(connectedDevice1, pid1)
+    val pid2 = 20
+    val clientState2 = fakeDevice.addSampleJdwpProcess(pid2)
 
-      val fakeAdbServer = fakeAdbRule.fakeAdb
-      val pid = 20
-      val fakeDevice = fakeAdbServer.addSampleDevice(apiLevel = 36)
-      val clientState = fakeDevice.addSampleJdwpProcess(pid)
-      val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
+    // Act
+    val props1 = defProps1Pid1.await()
+    session1.closeAndJoin()
+    session2.installTestProcessInventoryServer()
+    session3.installTestProcessInventoryServer()
+    val connectedDevice2 = session2.waitForOnlineConnectedDevice(fakeDevice.deviceId)
+    val connectedDevice3 = session3.waitForOnlineConnectedDevice(fakeDevice.deviceId)
 
-      // Act
-      val props = fetchProcessPropertiesAsync(connectedDevice, pid).await()
+    val defProps2Pid1 = fetchProcessPropertiesAsync(connectedDevice2, pid1)
+    val defProps2Pid2 = fetchProcessPropertiesAsync(connectedDevice2, pid2)
 
-      // Assert
-      Assert.assertFalse(externalPropertiesCollectorStarted)
+    val defProps3Pid1 = fetchProcessPropertiesAsync(connectedDevice3, pid1)
+    val defProps3Pid2 = fetchProcessPropertiesAsync(connectedDevice3, pid2)
 
-      Assert.assertEquals(pid, props.pid)
-      Assert.assertEquals(clientState.processName, props.processName.getOrNull())
-      Assert.assertEquals(clientState.packageName, props.packageName.getOrNull())
-      Assert.assertEquals(clientState.userId, props.userId.getOrNull())
-      Assert.assertEquals(clientState.architecture, props.instructionSet.getOrNull()?.text)
-      Assert.assertEquals(false, props.isWaitingForDebugger.getOrNull())
-      Assert.assertTrue(props.features.getOrDefault(emptyList()).contains("app_info"))
+    val props2pid1 = defProps2Pid1.await()
+    val props2pid2 = defProps2Pid2.await()
+
+    val props3pid1 = defProps3Pid1.await()
+    val props3pid2 = defProps3Pid2.await()
+
+    // Assert
+    Assert.assertEquals(pid1, props1.pid)
+    Assert.assertEquals(clientState1.processName, props1.processName.getOrNull())
+    Assert.assertEquals(clientState1.packageName, props1.packageName.getOrNull())
+    Assert.assertEquals(clientState1.userId, props1.userId.getOrNull())
+    Assert.assertEquals(clientState1.architecture, props1.instructionSet.getOrNull()?.text)
+    Assert.assertEquals(false, props1.isWaitingForDebugger.getOrDefault(false))
+    Assert.assertTrue(props1.features.getOrDefault(emptyList()).contains("feat1"))
+    Assert.assertTrue(props1.features.getOrDefault(emptyList()).contains("feat2"))
+    Assert.assertTrue(props1.features.getOrDefault(emptyList()).contains("feat3"))
+
+    with(props2pid1) { assertJdwpPropertiesAreEqual(props1) }
+
+    with(props3pid1) { assertJdwpPropertiesAreEqual(props1) }
+
+    Assert.assertEquals(pid2, props2pid2.pid)
+    Assert.assertEquals(clientState2.processName, props2pid2.processName.getOrNull())
+    Assert.assertEquals(clientState2.packageName, props2pid2.packageName.getOrNull())
+    Assert.assertEquals(clientState2.userId, props2pid2.userId.getOrNull())
+    Assert.assertEquals(clientState2.architecture, props2pid2.instructionSet.getOrNull()?.text)
+    Assert.assertEquals(false, props2pid2.isWaitingForDebugger.getOrDefault(false))
+    Assert.assertTrue(props2pid2.features.getOrDefault(emptyList()).contains("feat1"))
+    Assert.assertTrue(props2pid2.features.getOrDefault(emptyList()).contains("feat2"))
+    Assert.assertTrue(props2pid2.features.getOrDefault(emptyList()).contains("feat3"))
+
+    with(props2pid2) { assertJdwpPropertiesAreEqual(props3pid2) }
+  }
+
+  @Test
+  fun testExternalPropertiesCollectorNotStarted_whenAppInfoIsSupported(): Unit = CoroutineTestUtils.runBlockingWithTimeout {
+    // Setup
+    fakeAdbRule.host.setPropertyValue(AdbLibToolsProcessInventoryServerProperties.LOCAL_PORT_V1, findFreeTcpPort())
+    val session = fakeAdbRule.adbSession
+    var externalPropertiesCollectorStarted = false
+
+    class TestExternalJdwpProcessPropertiesCollector(override val process: JdwpProcess) : ExternalJdwpProcessPropertiesCollector {
+
+      override fun trackProperties(): Flow<JdwpProcessProperties> {
+        externalPropertiesCollectorStarted = true
+        return flow {}
+      }
     }
+
+    session.externalJdwpProcessPropertiesCollectorFactoryList.add(
+      object : ExternalJdwpProcessPropertiesCollectorFactory {
+        override suspend fun create(process: JdwpProcess): ExternalJdwpProcessPropertiesCollector? =
+          TestExternalJdwpProcessPropertiesCollector(process)
+
+        override fun close() {}
+      }
+    )
+
+    val fakeAdbServer = fakeAdbRule.fakeAdb
+    val pid = 20
+    val fakeDevice = fakeAdbServer.addSampleDevice(apiLevel = 36)
+    val clientState = fakeDevice.addSampleJdwpProcess(pid)
+    val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
+
+    // Act
+    val props = fetchProcessPropertiesAsync(connectedDevice, pid).await()
+
+    // Assert
+    Assert.assertFalse(externalPropertiesCollectorStarted)
+
+    Assert.assertEquals(pid, props.pid)
+    Assert.assertEquals(clientState.processName, props.processName.getOrNull())
+    Assert.assertEquals(clientState.packageName, props.packageName.getOrNull())
+    Assert.assertEquals(clientState.userId, props.userId.getOrNull())
+    Assert.assertEquals(clientState.architecture, props.instructionSet.getOrNull()?.text)
+    Assert.assertEquals(false, props.isWaitingForDebugger.getOrNull())
+    Assert.assertTrue(props.features.getOrDefault(emptyList()).contains("app_info"))
+  }
 
   private suspend fun testWithMultipleSessions(sequenceOf: Sequence<AdbSession>) {
     val fakeAdbServer = fakeAdbRule.fakeAdb

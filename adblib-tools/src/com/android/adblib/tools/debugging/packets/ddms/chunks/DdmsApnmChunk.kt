@@ -42,11 +42,10 @@ internal data class DdmsApnmChunk(
     internal suspend fun parse(chunk: DdmsChunkView, workBuffer: ResizableBuffer = ResizableBuffer()): DdmsApnmChunk {
       // Read payload into "buffer"
       workBuffer.clear()
-      val buffer =
-        chunk.withPayload { payload ->
-          payload.readNBytes(workBuffer, chunk.length)
-          workBuffer.afterChannelRead()
-        }
+      val buffer = chunk.withPayload { payload ->
+        payload.readNBytes(workBuffer, chunk.length)
+        workBuffer.afterChannelRead()
+      }
 
       buffer.order(DDMS_CHUNK_BYTE_ORDER)
       val processNameLength = readInt(buffer)

@@ -36,52 +36,48 @@ class TrackAppTest {
     get() = fakeAdbRule.adbSession.hostServices
 
   @Test
-  fun testIsAppInfoSupported_returnsTrue_onApi36() =
-    CoroutineTestUtils.runBlockingWithTimeout {
-      // Prepare
-      val deviceID = "1234"
-      val fakeDevice = fakeAdb.connectDevice(deviceID, "test1", "test2", "model", AndroidApiLevel(36), DeviceState.HostConnectionType.USB)
-      val connectedDevice = hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
+  fun testIsAppInfoSupported_returnsTrue_onApi36() = CoroutineTestUtils.runBlockingWithTimeout {
+    // Prepare
+    val deviceID = "1234"
+    val fakeDevice = fakeAdb.connectDevice(deviceID, "test1", "test2", "model", AndroidApiLevel(36), DeviceState.HostConnectionType.USB)
+    val connectedDevice = hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
 
-      // Act / Assert
-      assertTrue(connectedDevice.isAppInfoSupported())
-    }
-
-  @Test
-  fun testIsAppInfoSupported_returnsFalse_onApi36_whenNotSupportedByCapabilities() =
-    CoroutineTestUtils.runBlockingWithTimeout {
-      // Prepare
-      val deviceID = "1234"
-      val fakeDevice = fakeAdb.connectDevice(deviceID, "test1", "test2", "model", AndroidApiLevel(36), DeviceState.HostConnectionType.USB)
-      val defaultCapabilities = fakeDevice.deviceCapabilities
-      fakeDevice.deviceCapabilities = defaultCapabilities?.copy(vmCapabilities = defaultCapabilities.vmCapabilities - "app_info")
-      val connectedDevice = hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
-
-      // Act / Assert
-      assertFalse(connectedDevice.isAppInfoSupported())
-    }
+    // Act / Assert
+    assertTrue(connectedDevice.isAppInfoSupported())
+  }
 
   @Test
-  fun testIsAppInfoSupported_returnsFalse_onApi35() =
-    CoroutineTestUtils.runBlockingWithTimeout {
-      // Prepare
-      val deviceID = "1234"
-      val fakeDevice = fakeAdb.connectDevice(deviceID, "test1", "test2", "model", AndroidApiLevel(35), DeviceState.HostConnectionType.USB)
-      val connectedDevice = hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
+  fun testIsAppInfoSupported_returnsFalse_onApi36_whenNotSupportedByCapabilities() = CoroutineTestUtils.runBlockingWithTimeout {
+    // Prepare
+    val deviceID = "1234"
+    val fakeDevice = fakeAdb.connectDevice(deviceID, "test1", "test2", "model", AndroidApiLevel(36), DeviceState.HostConnectionType.USB)
+    val defaultCapabilities = fakeDevice.deviceCapabilities
+    fakeDevice.deviceCapabilities = defaultCapabilities?.copy(vmCapabilities = defaultCapabilities.vmCapabilities - "app_info")
+    val connectedDevice = hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
 
-      // Act / Assert: Not supported, because `app_info` is not supported
-      assertFalse(connectedDevice.isAppInfoSupported())
-    }
+    // Act / Assert
+    assertFalse(connectedDevice.isAppInfoSupported())
+  }
 
   @Test
-  fun testIsAppInfoSupported_returnsFalse_onApi30() =
-    CoroutineTestUtils.runBlockingWithTimeout {
-      // Prepare
-      val deviceID = "1234"
-      val fakeDevice = fakeAdb.connectDevice(deviceID, "test1", "test2", "model", AndroidApiLevel(30), DeviceState.HostConnectionType.USB)
-      val connectedDevice = hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
+  fun testIsAppInfoSupported_returnsFalse_onApi35() = CoroutineTestUtils.runBlockingWithTimeout {
+    // Prepare
+    val deviceID = "1234"
+    val fakeDevice = fakeAdb.connectDevice(deviceID, "test1", "test2", "model", AndroidApiLevel(35), DeviceState.HostConnectionType.USB)
+    val connectedDevice = hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
 
-      // Act / Assert: Not supported, because `track_app` is not supported
-      assertFalse(connectedDevice.isAppInfoSupported())
-    }
+    // Act / Assert: Not supported, because `app_info` is not supported
+    assertFalse(connectedDevice.isAppInfoSupported())
+  }
+
+  @Test
+  fun testIsAppInfoSupported_returnsFalse_onApi30() = CoroutineTestUtils.runBlockingWithTimeout {
+    // Prepare
+    val deviceID = "1234"
+    val fakeDevice = fakeAdb.connectDevice(deviceID, "test1", "test2", "model", AndroidApiLevel(30), DeviceState.HostConnectionType.USB)
+    val connectedDevice = hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
+
+    // Act / Assert: Not supported, because `track_app` is not supported
+    assertFalse(connectedDevice.isAppInfoSupported())
+  }
 }

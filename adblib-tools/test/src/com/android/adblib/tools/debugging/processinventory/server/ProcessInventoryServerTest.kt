@@ -37,258 +37,251 @@ class ProcessInventoryServerTest {
   @JvmField @Rule val closeables = CloseablesRule()
 
   @Test
-  fun testServerWorksWithInitialState(): Unit =
-    CoroutineTestUtils.runBlockingWithTimeout {
-      // Prepare
-      val session = createAdbSession()
-      val localServerSocket = startServer(session)
+  fun testServerWorksWithInitialState(): Unit = CoroutineTestUtils.runBlockingWithTimeout {
+    // Prepare
+    val session = createAdbSession()
+    val localServerSocket = startServer(session)
 
-      // Act
-      val protocol = connectToServer(session, localServerSocket)
-      val response = protocol.forClient("foo").trackDeviceRequests("123").first()
+    // Act
+    val protocol = connectToServer(session, localServerSocket)
+    val response = protocol.forClient("foo").trackDeviceRequests("123").first()
 
-      // Assert
+    // Assert
+    assertTrue(response.ok)
+    assertTrue(response.hasTrackDeviceResponsePayload())
+    assertTrue(response.trackDeviceResponsePayload.hasProcessUpdates())
+    assertEquals(0, response.trackDeviceResponsePayload.processUpdates.processUpdateCount)
+  }
+
+  @Test
+  fun testServerSendsUpdatesWhenProcessIsAdded(): Unit = CoroutineTestUtils.runBlockingWithTimeout {
+    // Prepare
+    val deviceSerial = "123"
+    val session = createAdbSession()
+    val localServerSocket = startServer(session)
+
+    // Act
+    val trackerResponses = mutableListOf<ProcessInventoryServerProto.Response>()
+    val deferred = async {
+      connectToServer(session, localServerSocket).forClient("foo").trackDeviceRequests(deviceSerial).collect { trackerResponses.add(it) }
+    }
+
+    yieldUntil { trackerResponses.size == 1 }
+
+    sendDeviceProcess(session, localServerSocket, deviceSerial, pid = 124)
+
+    yieldUntil { trackerResponses.size == 2 }
+    deferred.cancel("Test is finished")
+
+    // Assert
+    assertEquals(2, trackerResponses.size)
+    trackerResponses[1].also { response ->
       assertTrue(response.ok)
       assertTrue(response.hasTrackDeviceResponsePayload())
       assertTrue(response.trackDeviceResponsePayload.hasProcessUpdates())
-      assertEquals(0, response.trackDeviceResponsePayload.processUpdates.processUpdateCount)
+      assertEquals(1, response.trackDeviceResponsePayload.processUpdates.processUpdateCount)
+      assertTrue(response.trackDeviceResponsePayload.processUpdates.getProcessUpdate(0).hasProcessUpdated())
+      assertEquals(124, response.trackDeviceResponsePayload.processUpdates.getProcessUpdate(0).processUpdated.pid)
     }
+  }
 
   @Test
-  fun testServerSendsUpdatesWhenProcessIsAdded(): Unit =
-    CoroutineTestUtils.runBlockingWithTimeout {
-      // Prepare
-      val deviceSerial = "123"
-      val session = createAdbSession()
-      val localServerSocket = startServer(session)
+  fun testServerDoesNotSendUpdatesWhenNoChanges(): Unit = CoroutineTestUtils.runBlockingWithTimeout {
+    // Prepare
+    val deviceSerial = "123"
+    val session = createAdbSession()
+    val localServerSocket = startServer(session)
 
-      // Act
-      val trackerResponses = mutableListOf<ProcessInventoryServerProto.Response>()
-      val deferred = async {
-        connectToServer(session, localServerSocket).forClient("foo").trackDeviceRequests(deviceSerial).collect { trackerResponses.add(it) }
-      }
-
-      yieldUntil { trackerResponses.size == 1 }
-
-      sendDeviceProcess(session, localServerSocket, deviceSerial, pid = 124)
-
-      yieldUntil { trackerResponses.size == 2 }
-      deferred.cancel("Test is finished")
-
-      // Assert
-      assertEquals(2, trackerResponses.size)
-      trackerResponses[1].also { response ->
-        assertTrue(response.ok)
-        assertTrue(response.hasTrackDeviceResponsePayload())
-        assertTrue(response.trackDeviceResponsePayload.hasProcessUpdates())
-        assertEquals(1, response.trackDeviceResponsePayload.processUpdates.processUpdateCount)
-        assertTrue(response.trackDeviceResponsePayload.processUpdates.getProcessUpdate(0).hasProcessUpdated())
-        assertEquals(124, response.trackDeviceResponsePayload.processUpdates.getProcessUpdate(0).processUpdated.pid)
-      }
+    // Act
+    val trackerResponses = mutableListOf<ProcessInventoryServerProto.Response>()
+    val deferred = async {
+      connectToServer(session, localServerSocket).forClient("foo").trackDeviceRequests(deviceSerial).collect { trackerResponses.add(it) }
     }
+    yieldUntil { trackerResponses.size == 1 }
+
+    sendDeviceProcess(session, localServerSocket, deviceSerial, pid = 124)
+    yieldUntil { trackerResponses.size == 2 }
+
+    // Send the same update process info a 2nd time, and check the server
+    // does not send a new tracking event.
+    sendDeviceProcess(session, localServerSocket, deviceSerial, pid = 124)
+
+    delay(500)
+    deferred.cancel("Test is finished")
+
+    // Assert
+    assertEquals(2, trackerResponses.size)
+    trackerResponses[1].also { response ->
+      assertTrue(response.ok)
+      assertTrue(response.hasTrackDeviceResponsePayload())
+      assertTrue(response.trackDeviceResponsePayload.hasProcessUpdates())
+      assertEquals(1, response.trackDeviceResponsePayload.processUpdates.processUpdateCount)
+      assertTrue(response.trackDeviceResponsePayload.processUpdates.getProcessUpdate(0).hasProcessUpdated())
+      assertEquals(124, response.trackDeviceResponsePayload.processUpdates.getProcessUpdate(0).processUpdated.pid)
+    }
+  }
 
   @Test
-  fun testServerDoesNotSendUpdatesWhenNoChanges(): Unit =
-    CoroutineTestUtils.runBlockingWithTimeout {
-      // Prepare
-      val deviceSerial = "123"
-      val session = createAdbSession()
-      val localServerSocket = startServer(session)
+  fun testServerSendsUpdateWhenProcessInfoIsUpdated(): Unit = CoroutineTestUtils.runBlockingWithTimeout {
+    // Prepare
+    val deviceSerial = "123"
+    val session = createAdbSession()
+    val localServerSocket = startServer(session)
 
-      // Act
-      val trackerResponses = mutableListOf<ProcessInventoryServerProto.Response>()
-      val deferred = async {
-        connectToServer(session, localServerSocket).forClient("foo").trackDeviceRequests(deviceSerial).collect { trackerResponses.add(it) }
-      }
-      yieldUntil { trackerResponses.size == 1 }
-
-      sendDeviceProcess(session, localServerSocket, deviceSerial, pid = 124)
-      yieldUntil { trackerResponses.size == 2 }
-
-      // Send the same update process info a 2nd time, and check the server
-      // does not send a new tracking event.
-      sendDeviceProcess(session, localServerSocket, deviceSerial, pid = 124)
-
-      delay(500)
-      deferred.cancel("Test is finished")
-
-      // Assert
-      assertEquals(2, trackerResponses.size)
-      trackerResponses[1].also { response ->
-        assertTrue(response.ok)
-        assertTrue(response.hasTrackDeviceResponsePayload())
-        assertTrue(response.trackDeviceResponsePayload.hasProcessUpdates())
-        assertEquals(1, response.trackDeviceResponsePayload.processUpdates.processUpdateCount)
-        assertTrue(response.trackDeviceResponsePayload.processUpdates.getProcessUpdate(0).hasProcessUpdated())
-        assertEquals(124, response.trackDeviceResponsePayload.processUpdates.getProcessUpdate(0).processUpdated.pid)
-      }
+    // Act
+    val trackerResponses = mutableListOf<ProcessInventoryServerProto.Response>()
+    val deferred = async {
+      connectToServer(session, localServerSocket).forClient("foo").trackDeviceRequests(deviceSerial).collect { trackerResponses.add(it) }
     }
+    yieldUntil { trackerResponses.size == 1 }
+
+    sendDeviceProcess(session, localServerSocket, deviceSerial, pid = 124)
+    yieldUntil { trackerResponses.size == 2 }
+
+    sendDeviceProcess(session, localServerSocket, deviceSerial, pid = 124, processName = "foo", packageName = "bar")
+    yieldUntil { trackerResponses.size == 3 }
+
+    deferred.cancel("Test is finished")
+
+    // Assert
+    assertEquals(3, trackerResponses.size)
+    trackerResponses[1].also { response ->
+      assertTrue(response.ok)
+      assertTrue(response.hasTrackDeviceResponsePayload())
+      assertTrue(response.trackDeviceResponsePayload.hasProcessUpdates())
+      assertEquals(1, response.trackDeviceResponsePayload.processUpdates.processUpdateCount)
+      assertEquals(124, response.trackDeviceResponsePayload.processUpdates.getProcessUpdate(0).processUpdated.pid)
+    }
+    trackerResponses[2].also { response ->
+      assertTrue(response.ok)
+      assertTrue(response.hasTrackDeviceResponsePayload())
+      assertTrue(response.trackDeviceResponsePayload.hasProcessUpdates())
+      assertEquals(1, response.trackDeviceResponsePayload.processUpdates.processUpdateCount)
+      assertTrue(response.trackDeviceResponsePayload.processUpdates.getProcessUpdate(0).hasProcessUpdated())
+      assertEquals(124, response.trackDeviceResponsePayload.processUpdates.getProcessUpdate(0).processUpdated.pid)
+      assertEquals("foo", response.trackDeviceResponsePayload.processUpdates.getProcessUpdate(0).processUpdated.processName.stringValue)
+      assertEquals(
+        "bar",
+        response.trackDeviceResponsePayload.processUpdates.getProcessUpdate(0).processUpdated.packageNames.stringsValueList[0],
+      )
+    }
+  }
 
   @Test
-  fun testServerSendsUpdateWhenProcessInfoIsUpdated(): Unit =
-    CoroutineTestUtils.runBlockingWithTimeout {
-      // Prepare
-      val deviceSerial = "123"
-      val session = createAdbSession()
-      val localServerSocket = startServer(session)
+  fun testServerSendsUpdateWhenProcessIsTerminated(): Unit = CoroutineTestUtils.runBlockingWithTimeout {
+    // Prepare
+    val deviceSerial = "123"
+    val session = createAdbSession()
+    val localServerSocket = startServer(session)
 
-      // Act
-      val trackerResponses = mutableListOf<ProcessInventoryServerProto.Response>()
-      val deferred = async {
-        connectToServer(session, localServerSocket).forClient("foo").trackDeviceRequests(deviceSerial).collect { trackerResponses.add(it) }
-      }
-      yieldUntil { trackerResponses.size == 1 }
-
-      sendDeviceProcess(session, localServerSocket, deviceSerial, pid = 124)
-      yieldUntil { trackerResponses.size == 2 }
-
-      sendDeviceProcess(session, localServerSocket, deviceSerial, pid = 124, processName = "foo", packageName = "bar")
-      yieldUntil { trackerResponses.size == 3 }
-
-      deferred.cancel("Test is finished")
-
-      // Assert
-      assertEquals(3, trackerResponses.size)
-      trackerResponses[1].also { response ->
-        assertTrue(response.ok)
-        assertTrue(response.hasTrackDeviceResponsePayload())
-        assertTrue(response.trackDeviceResponsePayload.hasProcessUpdates())
-        assertEquals(1, response.trackDeviceResponsePayload.processUpdates.processUpdateCount)
-        assertEquals(124, response.trackDeviceResponsePayload.processUpdates.getProcessUpdate(0).processUpdated.pid)
-      }
-      trackerResponses[2].also { response ->
-        assertTrue(response.ok)
-        assertTrue(response.hasTrackDeviceResponsePayload())
-        assertTrue(response.trackDeviceResponsePayload.hasProcessUpdates())
-        assertEquals(1, response.trackDeviceResponsePayload.processUpdates.processUpdateCount)
-        assertTrue(response.trackDeviceResponsePayload.processUpdates.getProcessUpdate(0).hasProcessUpdated())
-        assertEquals(124, response.trackDeviceResponsePayload.processUpdates.getProcessUpdate(0).processUpdated.pid)
-        assertEquals("foo", response.trackDeviceResponsePayload.processUpdates.getProcessUpdate(0).processUpdated.processName.stringValue)
-        assertEquals(
-          "bar",
-          response.trackDeviceResponsePayload.processUpdates.getProcessUpdate(0).processUpdated.packageNames.stringsValueList[0],
-        )
-      }
+    // Act
+    val trackerResponses = mutableListOf<ProcessInventoryServerProto.Response>()
+    val deferred = async {
+      connectToServer(session, localServerSocket).forClient("foo").trackDeviceRequests(deviceSerial).collect { trackerResponses.add(it) }
     }
+    yieldUntil { trackerResponses.size == 1 }
+
+    sendDeviceProcess(session, localServerSocket, deviceSerial, pid = 124)
+    yieldUntil { trackerResponses.size == 2 }
+
+    sendDeviceProcessTermination(session, localServerSocket, deviceSerial, pid = 124)
+    yieldUntil { trackerResponses.size == 3 }
+
+    deferred.cancel("Test is finished")
+
+    // Assert
+    assertEquals(3, trackerResponses.size)
+    trackerResponses[1].also { response ->
+      assertTrue(response.ok)
+      assertTrue(response.hasTrackDeviceResponsePayload())
+      assertTrue(response.trackDeviceResponsePayload.hasProcessUpdates())
+      assertEquals(1, response.trackDeviceResponsePayload.processUpdates.processUpdateCount)
+      assertEquals(124, response.trackDeviceResponsePayload.processUpdates.getProcessUpdate(0).processUpdated.pid)
+    }
+    trackerResponses[2].also { response ->
+      assertTrue(response.ok)
+      assertTrue(response.hasTrackDeviceResponsePayload())
+      assertTrue(response.trackDeviceResponsePayload.hasProcessUpdates())
+      assertEquals(1, response.trackDeviceResponsePayload.processUpdates.processUpdateCount)
+      assertTrue(response.trackDeviceResponsePayload.processUpdates.getProcessUpdate(0).hasProcessTerminatedPid())
+      assertEquals(124, response.trackDeviceResponsePayload.processUpdates.getProcessUpdate(0).processTerminatedPid)
+    }
+  }
 
   @Test
-  fun testServerSendsUpdateWhenProcessIsTerminated(): Unit =
-    CoroutineTestUtils.runBlockingWithTimeout {
-      // Prepare
-      val deviceSerial = "123"
-      val session = createAdbSession()
-      val localServerSocket = startServer(session)
+  fun testServerCanTrackManyProcesses(): Unit = CoroutineTestUtils.runBlockingWithTimeout {
+    // Prepare
+    val deviceSerial = "123"
+    val session = createAdbSession()
+    val localServerSocket = startServer(session)
 
-      // Act
-      val trackerResponses = mutableListOf<ProcessInventoryServerProto.Response>()
-      val deferred = async {
-        connectToServer(session, localServerSocket).forClient("foo").trackDeviceRequests(deviceSerial).collect { trackerResponses.add(it) }
-      }
-      yieldUntil { trackerResponses.size == 1 }
-
-      sendDeviceProcess(session, localServerSocket, deviceSerial, pid = 124)
-      yieldUntil { trackerResponses.size == 2 }
-
-      sendDeviceProcessTermination(session, localServerSocket, deviceSerial, pid = 124)
-      yieldUntil { trackerResponses.size == 3 }
-
-      deferred.cancel("Test is finished")
-
-      // Assert
-      assertEquals(3, trackerResponses.size)
-      trackerResponses[1].also { response ->
-        assertTrue(response.ok)
-        assertTrue(response.hasTrackDeviceResponsePayload())
-        assertTrue(response.trackDeviceResponsePayload.hasProcessUpdates())
-        assertEquals(1, response.trackDeviceResponsePayload.processUpdates.processUpdateCount)
-        assertEquals(124, response.trackDeviceResponsePayload.processUpdates.getProcessUpdate(0).processUpdated.pid)
-      }
-      trackerResponses[2].also { response ->
-        assertTrue(response.ok)
-        assertTrue(response.hasTrackDeviceResponsePayload())
-        assertTrue(response.trackDeviceResponsePayload.hasProcessUpdates())
-        assertEquals(1, response.trackDeviceResponsePayload.processUpdates.processUpdateCount)
-        assertTrue(response.trackDeviceResponsePayload.processUpdates.getProcessUpdate(0).hasProcessTerminatedPid())
-        assertEquals(124, response.trackDeviceResponsePayload.processUpdates.getProcessUpdate(0).processTerminatedPid)
-      }
+    // Act
+    val trackerResponses = CopyOnWriteArrayList<ProcessInventoryServerProto.Response>()
+    val deferred = async {
+      connectToServer(session, localServerSocket).forClient("foo").trackDeviceRequests(deviceSerial).collect { trackerResponses.add(it) }
     }
+    var expectedSize = 1
+    yieldUntil { trackerResponses.size == expectedSize }
+
+    sendDeviceProcess(session, localServerSocket, deviceSerial, pid = 124)
+    expectedSize++
+    yieldUntil { trackerResponses.size == expectedSize }
+
+    sendDeviceProcess(session, localServerSocket, deviceSerial, pid = 125, processName = "p1")
+    expectedSize++
+    yieldUntil { trackerResponses.size == expectedSize }
+
+    sendDeviceProcess(session, localServerSocket, deviceSerial, pid = 126, packageName = "pn2")
+    expectedSize++
+    yieldUntil { trackerResponses.size == expectedSize }
+
+    sendDeviceProcess(session, localServerSocket, deviceSerial, pid = 127, processName = "foo", packageName = "bar")
+    expectedSize++
+    yieldUntil { trackerResponses.size == expectedSize }
+
+    sendDeviceProcess(session, localServerSocket, deviceSerial, pid = 128)
+    expectedSize++
+    yieldUntil { trackerResponses.size == expectedSize }
+
+    deferred.cancel("Test is finished")
+
+    // Assert
+    trackerResponses.last().also { response ->
+      assertTrue(response.ok)
+      assertTrue(response.hasTrackDeviceResponsePayload())
+      assertTrue(response.trackDeviceResponsePayload.hasProcessUpdates())
+      assertEquals(1, response.trackDeviceResponsePayload.processUpdates.processUpdateCount)
+    }
+  }
 
   @Test
-  fun testServerCanTrackManyProcesses(): Unit =
-    CoroutineTestUtils.runBlockingWithTimeout {
-      // Prepare
-      val deviceSerial = "123"
-      val session = createAdbSession()
-      val localServerSocket = startServer(session)
+  fun testServerInitialListIsPopulated(): Unit = CoroutineTestUtils.runBlockingWithTimeout {
+    // Prepare
+    val deviceSerial = "123"
+    val session = createAdbSession()
+    val localServerSocket = startServer(session)
 
-      // Act
-      val trackerResponses = CopyOnWriteArrayList<ProcessInventoryServerProto.Response>()
-      val deferred = async {
-        connectToServer(session, localServerSocket).forClient("foo").trackDeviceRequests(deviceSerial).collect { trackerResponses.add(it) }
-      }
-      var expectedSize = 1
-      yieldUntil { trackerResponses.size == expectedSize }
+    // Act
+    sendDeviceProcess(session, localServerSocket, deviceSerial, pid = 124)
+    sendDeviceProcess(session, localServerSocket, deviceSerial, pid = 125, processName = "p1")
+    sendDeviceProcess(session, localServerSocket, deviceSerial, pid = 126, packageName = "pn2")
+    sendDeviceProcess(session, localServerSocket, deviceSerial, pid = 127, processName = "foo", packageName = "bar")
 
-      sendDeviceProcess(session, localServerSocket, deviceSerial, pid = 124)
-      expectedSize++
-      yieldUntil { trackerResponses.size == expectedSize }
-
-      sendDeviceProcess(session, localServerSocket, deviceSerial, pid = 125, processName = "p1")
-      expectedSize++
-      yieldUntil { trackerResponses.size == expectedSize }
-
-      sendDeviceProcess(session, localServerSocket, deviceSerial, pid = 126, packageName = "pn2")
-      expectedSize++
-      yieldUntil { trackerResponses.size == expectedSize }
-
-      sendDeviceProcess(session, localServerSocket, deviceSerial, pid = 127, processName = "foo", packageName = "bar")
-      expectedSize++
-      yieldUntil { trackerResponses.size == expectedSize }
-
-      sendDeviceProcess(session, localServerSocket, deviceSerial, pid = 128)
-      expectedSize++
-      yieldUntil { trackerResponses.size == expectedSize }
-
-      deferred.cancel("Test is finished")
-
-      // Assert
-      trackerResponses.last().also { response ->
-        assertTrue(response.ok)
-        assertTrue(response.hasTrackDeviceResponsePayload())
-        assertTrue(response.trackDeviceResponsePayload.hasProcessUpdates())
-        assertEquals(1, response.trackDeviceResponsePayload.processUpdates.processUpdateCount)
-      }
+    val trackerResponses = CopyOnWriteArrayList<ProcessInventoryServerProto.Response>()
+    val deferred = async {
+      connectToServer(session, localServerSocket).forClient("foo").trackDeviceRequests(deviceSerial).collect { trackerResponses.add(it) }
     }
+    yieldUntil { trackerResponses.size == 1 }
+    deferred.cancel("Test is finished")
 
-  @Test
-  fun testServerInitialListIsPopulated(): Unit =
-    CoroutineTestUtils.runBlockingWithTimeout {
-      // Prepare
-      val deviceSerial = "123"
-      val session = createAdbSession()
-      val localServerSocket = startServer(session)
-
-      // Act
-      sendDeviceProcess(session, localServerSocket, deviceSerial, pid = 124)
-      sendDeviceProcess(session, localServerSocket, deviceSerial, pid = 125, processName = "p1")
-      sendDeviceProcess(session, localServerSocket, deviceSerial, pid = 126, packageName = "pn2")
-      sendDeviceProcess(session, localServerSocket, deviceSerial, pid = 127, processName = "foo", packageName = "bar")
-
-      val trackerResponses = CopyOnWriteArrayList<ProcessInventoryServerProto.Response>()
-      val deferred = async {
-        connectToServer(session, localServerSocket).forClient("foo").trackDeviceRequests(deviceSerial).collect { trackerResponses.add(it) }
-      }
-      yieldUntil { trackerResponses.size == 1 }
-      deferred.cancel("Test is finished")
-
-      // Assert
-      trackerResponses.last().also { response ->
-        assertTrue(response.ok)
-        assertTrue(response.hasTrackDeviceResponsePayload())
-        assertTrue(response.trackDeviceResponsePayload.hasProcessUpdates())
-        assertEquals(4, response.trackDeviceResponsePayload.processUpdates.processUpdateCount)
-      }
+    // Assert
+    trackerResponses.last().also { response ->
+      assertTrue(response.ok)
+      assertTrue(response.hasTrackDeviceResponsePayload())
+      assertTrue(response.trackDeviceResponsePayload.hasProcessUpdates())
+      assertEquals(4, response.trackDeviceResponsePayload.processUpdates.processUpdateCount)
     }
+  }
 
   private fun createAdbSession(): FakeAdbSession {
     return FakeAdbSession().also {

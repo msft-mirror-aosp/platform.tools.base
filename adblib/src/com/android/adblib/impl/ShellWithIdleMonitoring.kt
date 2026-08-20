@@ -68,33 +68,32 @@ internal abstract class ShellWithIdleMonitoring<T, TShellCollector, Command>(pri
   private val host: AdbSessionHost
     get() = deviceServices.session.host
 
-  fun createFlow(): Flow<T> =
-    flow {
-        // To detect a command that does not produce any output for the given timeout:
-        // 1) we intercept the original ShellCollector, forwarding all messages and
-        //    recording "heartbeats" every time we see output coming in
-        // 2) at the same time, we run a concurrent coroutine, the "heartbeat detector" that
-        //    checks incoming "heartbeats" from the shell command . If there is no "heartbeat"
-        //    for longer than the timeout, the coroutine throws an `TimeoutException`, which
-        //    cancels the whole flow with a `TimeoutException`.
-        val heartbeat = HeartbeatRecorder(host.timeProvider)
-        val forwardingCollector = createForwardingCollector(host, heartbeat, parameters.shellCollector)
-        val heartbeatDetector = HeartbeatDetector(host, heartbeat, parameters.commandOutputTimeout, parameters.command)
-        coroutineScope {
-          // Launch our command (in)activity detector
-          launch { heartbeatDetector.run() }
+  fun createFlow(): Flow<T> = flow {
+    // To detect a command that does not produce any output for the given timeout:
+    // 1) we intercept the original ShellCollector, forwarding all messages and
+    //    recording "heartbeats" every time we see output coming in
+    // 2) at the same time, we run a concurrent coroutine, the "heartbeat detector" that
+    //    checks incoming "heartbeats" from the shell command . If there is no "heartbeat"
+    //    for longer than the timeout, the coroutine throws an `TimeoutException`, which
+    //    cancels the whole flow with a `TimeoutException`.
+    val heartbeat = HeartbeatRecorder(host.timeProvider)
+    val forwardingCollector = createForwardingCollector(host, heartbeat, parameters.shellCollector)
+    val heartbeatDetector = HeartbeatDetector(host, heartbeat, parameters.commandOutputTimeout, parameters.command)
+    coroutineScope {
+      // Launch our command (in)activity detector
+      launch { heartbeatDetector.run() }
 
-          // Start our regular shell command execution
-          val shellFlow = execute(parameters, forwardingCollector)
+      // Start our regular shell command execution
+      val shellFlow = execute(parameters, forwardingCollector)
 
-          // Forward from the regular shell flow to the returned flow
-          shellFlow.collect { emit(it) }
+      // Forward from the regular shell flow to the returned flow
+      shellFlow.collect { emit(it) }
 
-          // Ensure the idle detector exits its loop
-          heartbeat.close()
-        }
-      }
-      .flowOn(host.ioDispatcher)
+      // Ensure the idle detector exits its loop
+      heartbeat.close()
+    }
+  }
+    .flowOn(host.ioDispatcher)
 
   abstract fun createForwardingCollector(host: AdbSessionHost, heartbeat: HeartbeatRecorder, delegate: TShellCollector): TShellCollector
 

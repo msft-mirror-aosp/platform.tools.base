@@ -318,23 +318,23 @@ internal class AdblibIDeviceWrapper(
     val job =
       connectedDevice.scope.launch(start = CoroutineStart.LAZY) {
         runCatching {
-            connectedDevice.waitUntilOnline()
-            val props = connectedDevice.deviceProperties().all().associate { it.name to it.value }
-            propertiesMapRef.set(props)
+          connectedDevice.waitUntilOnline()
+          val props = connectedDevice.deviceProperties().all().associate { it.name to it.value }
+          propertiesMapRef.set(props)
 
-            // Resolve all pending futures and clear the map
-            val snapshot =
-              synchronized(pendingPropertyFutures) {
-                val copy = HashMap(pendingPropertyFutures)
-                pendingPropertyFutures.clear()
-                copy
-              }
-
-            snapshot.forEach { (propName, futures) ->
-              val value = props[propName]
-              futures.forEach { it.set(value) }
+          // Resolve all pending futures and clear the map
+          val snapshot =
+            synchronized(pendingPropertyFutures) {
+              val copy = HashMap(pendingPropertyFutures)
+              pendingPropertyFutures.clear()
+              copy
             }
+
+          snapshot.forEach { (propName, futures) ->
+            val value = props[propName]
+            futures.forEach { it.set(value) }
           }
+        }
           .onFailure { t ->
             val snapshot =
               synchronized(pendingPropertyFutures) {

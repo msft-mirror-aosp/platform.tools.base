@@ -376,97 +376,96 @@ class AiGlassesPairing(val session: AdbSession) {
    * @throws IOException if a communication error occurs with the device.
    * @throws ShellCommandException if a shell command fails (exit code != 0).
    */
-  fun ConnectedDevice.pairToGlasses(glassesBluetoothAddress: String, useCdm: Boolean): Flow<String> =
-    flow {
-        grantPermission(COMPANION_PKG, "android.permission.NEARBY_WIFI_DEVICES")
-        grantPermission(COMPANION_PKG, "android.permission.BLUETOOTH_CONNECT")
-        grantPermission(CORE_PKG, "android.permission.ACCESS_FINE_LOCATION")
+  fun ConnectedDevice.pairToGlasses(glassesBluetoothAddress: String, useCdm: Boolean): Flow<String> = flow {
+    grantPermission(COMPANION_PKG, "android.permission.NEARBY_WIFI_DEVICES")
+    grantPermission(COMPANION_PKG, "android.permission.BLUETOOTH_CONNECT")
+    grantPermission(CORE_PKG, "android.permission.ACCESS_FINE_LOCATION")
 
-        // Ensure location services are enabled on the phone emulator
-        runCatchingIoException(CMD_ENABLE_LOCATION) { shell.executeAsText(it) }
+    // Ensure location services are enabled on the phone emulator
+    runCatchingIoException(CMD_ENABLE_LOCATION) { shell.executeAsText(it) }
 
-        if (!isBluetoothEnabled()) {
-          logger.info { "Bluetooth is disabled, enabling it..." }
-          runCatchingIoException(CMD_ENABLE_BLUETOOTH) { shell.executeAsText(it) }
-        }
+    if (!isBluetoothEnabled()) {
+      logger.info { "Bluetooth is disabled, enabling it..." }
+      runCatchingIoException(CMD_ENABLE_BLUETOOTH) { shell.executeAsText(it) }
+    }
 
-        launchCompanionApp()
+    launchCompanionApp()
 
-        // Wait for the app to appear in the foreground
-        emit(AWAITING_FOREGROUND)
-        if (!waitForCompanionAppInForeground()) {
-          emit("POLLING_FAILED")
-          return@flow
-        }
+    // Wait for the app to appear in the foreground
+    emit(AWAITING_FOREGROUND)
+    if (!waitForCompanionAppInForeground()) {
+      emit("POLLING_FAILED")
+      return@flow
+    }
 
-        // Wait 3 seconds once it is in the foreground
-        delay(foregroundDelay)
+    // Wait 3 seconds once it is in the foreground
+    delay(foregroundDelay)
 
-        // Wizard-only pre-cleanse: prune any stale prior companion bond for targetMac before ASSISTED_PAIR,
-        // awaiting PAIRING_COMMAND_DELAY so async Bluetooth bond teardown completes before pairing starts.
-        try {
-          sendUnpairCommand(glassesBluetoothAddress)
-          delay(pairingCommandDelay)
-        } catch (e: Exception) {
-          e.throwIfCancellation()
-          logger.warn(e, "Failed to unpair pre-existing bond for $glassesBluetoothAddress; proceeding with pairing")
-        }
-        sendPairingCommand(glassesBluetoothAddress, useCdm)
-        delay(pairingCommandDelay)
+    // Wizard-only pre-cleanse: prune any stale prior companion bond for targetMac before ASSISTED_PAIR,
+    // awaiting PAIRING_COMMAND_DELAY so async Bluetooth bond teardown completes before pairing starts.
+    try {
+      sendUnpairCommand(glassesBluetoothAddress)
+      delay(pairingCommandDelay)
+    } catch (e: Exception) {
+      e.throwIfCancellation()
+      logger.warn(e, "Failed to unpair pre-existing bond for $glassesBluetoothAddress; proceeding with pairing")
+    }
+    sendPairingCommand(glassesBluetoothAddress, useCdm)
+    delay(pairingCommandDelay)
 
-        emit("POLLING")
-        var idleCount = 0
-        var associatingCount = 0
-        while (true) {
-          val state = waitForPairingState()
+    emit("POLLING")
+    var idleCount = 0
+    var associatingCount = 0
+    while (true) {
+      val state = waitForPairingState()
 
-          if (state == null) {
+      if (state == null) {
+        emit("POLLING_FAILED")
+        return@flow
+      }
+
+      emit(state)
+      when (state) {
+        "IDLE" -> {
+          idleCount++
+          associatingCount = 0
+          // TODO: Remove this fallback once http://b/505111138 is fixed
+          if (idleCount >= 2 && idleCount % 2 == 0 && checkSetupActivityInForeground()) {
+            sendFocusNavigationTap()
+          }
+          if (idleCount >= MAX_IDLE_POLLS) {
+            logger.warn("Exceeded max IDLE polls ($MAX_IDLE_POLLS) awaiting pairing start")
             emit("POLLING_FAILED")
             return@flow
           }
-
-          emit(state)
-          when (state) {
-            "IDLE" -> {
-              idleCount++
-              associatingCount = 0
-              // TODO: Remove this fallback once http://b/505111138 is fixed
-              if (idleCount >= 2 && idleCount % 2 == 0 && checkSetupActivityInForeground()) {
-                sendFocusNavigationTap()
-              }
-              if (idleCount >= MAX_IDLE_POLLS) {
-                logger.warn("Exceeded max IDLE polls ($MAX_IDLE_POLLS) awaiting pairing start")
-                emit("POLLING_FAILED")
-                return@flow
-              }
-              delay(pollingInterval)
-            }
-            "UI_CDM_ASSOCIATING" -> {
-              associatingCount++
-              idleCount = 0
-              // TODO: Remove this fallback once http://b/505111138 is fixed
-              if (associatingCount >= 2 && checkSetupActivityInForeground()) {
-                sendFocusNavigationTap()
-                associatingCount = 0
-              }
-              delay(pollingInterval)
-            }
-            in TERMINAL_STATES -> return@flow
-            else -> {
-              idleCount = 0 // reset if we see any other state
-              associatingCount = 0
-              delay(pollingInterval)
-            }
+          delay(pollingInterval)
+        }
+        "UI_CDM_ASSOCIATING" -> {
+          associatingCount++
+          idleCount = 0
+          // TODO: Remove this fallback once http://b/505111138 is fixed
+          if (associatingCount >= 2 && checkSetupActivityInForeground()) {
+            sendFocusNavigationTap()
+            associatingCount = 0
           }
+          delay(pollingInterval)
+        }
+        in TERMINAL_STATES -> return@flow
+        else -> {
+          idleCount = 0 // reset if we see any other state
+          associatingCount = 0
+          delay(pollingInterval)
         }
       }
-      .retry(1) { cause -> cause is IOException || cause is ShellCommandException }
-      .catch { cause ->
-        if (cause is IOException && cause !is DeviceConnectionException) {
-          throw DeviceConnectionException(serialNumber, "pairToGlasses flow", cause)
-        }
-        throw cause
+    }
+  }
+    .retry(1) { cause -> cause is IOException || cause is ShellCommandException }
+    .catch { cause ->
+      if (cause is IOException && cause !is DeviceConnectionException) {
+        throw DeviceConnectionException(serialNumber, "pairToGlasses flow", cause)
       }
+      throw cause
+    }
 
   private suspend fun ConnectedDevice.sendFocusNavigationTap() {
     runCatchingIoException(CMD_INPUT_TAB) { shell.executeAsText(it) }

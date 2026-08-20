@@ -111,16 +111,15 @@ class ProcessInventoryJdwpProcessCommandDispatcherTest {
         }
 
         // Create and start all registered command dispatchers
-        val dispatchers =
-          jdwpProcessList.map { jdwpProcess ->
-            jdwpProcess
-              .externalJdwpProcessCommandDispatcherList()
-              .map {
-                it.start()
-                it
-              }
-              .first()
-          }
+        val dispatchers = jdwpProcessList.map { jdwpProcess ->
+          jdwpProcess
+            .externalJdwpProcessCommandDispatcherList()
+            .map {
+              it.start()
+              it
+            }
+            .first()
+        }
 
         // Send a "resume process" command to one of the dispatchers
         dispatchers.first().also { dispatcher ->
@@ -152,10 +151,9 @@ class ProcessInventoryJdwpProcessCommandDispatcherTest {
     val connectedDevices = sessions.map { it.waitForOnlineConnectedDevice(fakeDevice.deviceId) }
 
     // Find the `JdwpProcess` in each session
-    val jdwpProcesses =
-      connectedDevices.map { device ->
-        device.jdwpProcessTracker.processesFlow.mapNotNull { processList -> processList.firstOrNull { it.pid == pid } }.first()
-      }
+    val jdwpProcesses = connectedDevices.map { device ->
+      device.jdwpProcessTracker.processesFlow.mapNotNull { processList -> processList.firstOrNull { it.pid == pid } }.first()
+    }
 
     // Act
     return commandRunner(jdwpProcesses)

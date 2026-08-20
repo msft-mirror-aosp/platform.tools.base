@@ -34,27 +34,26 @@ class BackupFileHelper(private val temporaryFolder: TemporaryFolder) {
     withAuth: Boolean = true,
     permissions: List<String> = emptyList(),
   ): Path {
-    val files =
-      buildList {
-          add(FileInfo("pm_backup", ""))
-          add(FileInfo("app_backup", ""))
-          add(FileInfo("restore_token_file", token))
-          add(
-            FileInfo(
-              "metadata.txt",
-              """
+    val files = buildList {
+      add(FileInfo("pm_backup", ""))
+      add(FileInfo("app_backup", ""))
+      add(FileInfo("restore_token_file", token))
+      add(
+        FileInfo(
+          "metadata.txt",
+          """
                 application-id=$applicationId
                 backup-type=${backupType.name}
               """
-                .trimIndent(),
-            )
-          )
-          if (withAuth) {
-            add(FileInfo("auth_backup", ""))
-          }
-          add(FileInfo("permissions", permissions.joinToString("\n") { it }))
-        }
-        .toTypedArray()
+            .trimIndent(),
+        )
+      )
+      if (withAuth) {
+        add(FileInfo("auth_backup", ""))
+      }
+      add(FileInfo("permissions", permissions.joinToString("\n") { it }))
+    }
+      .toTypedArray()
     return createZipFile(*files)
   }
 

@@ -290,11 +290,10 @@ internal class ConnectionHandler(private val mServer: FakeAdbServer, socket: Soc
         }
 
         else -> {
-          mTargetDeviceSelector =
-            DeviceStateSelector.forError {
-              val err = String.format(Locale.US, "Unsupported request '%s'", request.original())
-              mSmartSocket.sendFailWithReason(err)
-            }
+          mTargetDeviceSelector = DeviceStateSelector.forError {
+            val err = String.format(Locale.US, "Unsupported request '%s'", request.original())
+            mSmartSocket.sendFailWithReason(err)
+          }
         }
       }
     }

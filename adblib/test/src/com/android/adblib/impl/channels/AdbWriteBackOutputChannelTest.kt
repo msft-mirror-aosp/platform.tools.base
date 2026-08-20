@@ -463,11 +463,11 @@ class AdbWriteBackOutputChannelTest {
       object : TestAdbBufferedOutputChannel() {
         override suspend fun writeBuffer(buffer: ByteBuffer, timeout: Long, unit: TimeUnit) {
           runCatching {
-              testOutputChannelWriteStarted.complete(Unit)
-              super.writeBuffer(buffer, timeout, unit)
-              // Simulate slow write
-              delay(100_000)
-            }
+            testOutputChannelWriteStarted.complete(Unit)
+            super.writeBuffer(buffer, timeout, unit)
+            // Simulate slow write
+            delay(100_000)
+          }
             .onFailure { throwable ->
               // Capture the cancellation
               testOutputChannelWriteCancellation.complete(throwable)

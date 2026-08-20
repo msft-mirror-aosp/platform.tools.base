@@ -161,22 +161,21 @@ class FakeAdbServer private constructor(var features: Set<String> = DEFAULT_FEAT
     mServerSocket.setOption(StandardSocketOptions.SO_REUSEADDR, true)
     mServerSocketLocalAddress = mServerSocket.localAddress as InetSocketAddress
     mServerKeepAccepting = true
-    mConnectionHandlerTask =
-      mThreadPoolExecutor.submit {
-        while (mServerKeepAccepting) {
-          try { // Socket can not be closed in finally block, because a separate
-            // thread will
-            // read from the socket. Closing the socket leads to a race
-            // condition.
-            val socket = mServerSocket.accept()
-            val handler = ConnectionHandler(this, socket)
-            mThreadPoolExecutor.execute(handler)
-          } catch (ignored: IOException) { // close() is called in a separate thread, and will cause
-            // accept() to throw an
-            // exception if closed here.
-          }
+    mConnectionHandlerTask = mThreadPoolExecutor.submit {
+      while (mServerKeepAccepting) {
+        try { // Socket can not be closed in finally block, because a separate
+          // thread will
+          // read from the socket. Closing the socket leads to a race
+          // condition.
+          val socket = mServerSocket.accept()
+          val handler = ConnectionHandler(this, socket)
+          mThreadPoolExecutor.execute(handler)
+        } catch (ignored: IOException) { // close() is called in a separate thread, and will cause
+          // accept() to throw an
+          // exception if closed here.
         }
       }
+    }
   }
 
   val inetAddress: InetAddress
@@ -201,33 +200,32 @@ class FakeAdbServer private constructor(var features: Set<String> = DEFAULT_FEAT
   @Synchronized
   fun stop(): Future<*>? {
     if (mStopRequestTask == null) {
-      mStopRequestTask =
-        mMainServerThreadExecutor.submit {
-          if (!mServerKeepAccepting) {
-            return@submit
-          }
-          mServerKeepAccepting = false
-          deviceChangeHub.stop()
-          mdnsChangeHub.stop()
-          emulatorConsoles.values.forEach { it.close() }
-          emulatorConsoles.clear()
-          mDevices.forEach { (id: String?, device: DeviceState) -> device.stop() }
-          mConnectionHandlerTask!!.cancel(true)
-          try {
-            mServerSocket.close()
-          } catch (ignored: IOException) {}
-
-          // Note: Use "shutdownNow()" to ensure threads of long-running tasks
-          // are interrupted, as opposed
-          // to merely waiting for the tasks to finish. This is because
-          // mThreadPoolExecutor is used to
-          // run CommandHandler implementations, and some of them (e.g.
-          // TrackJdwpCommandHandler) wait
-          // indefinitely on queues and expect to be interrupted as a signal
-          // to terminate.
-          mThreadPoolExecutor.shutdownNow()
-          mMainServerThreadExecutor.shutdown()
+      mStopRequestTask = mMainServerThreadExecutor.submit {
+        if (!mServerKeepAccepting) {
+          return@submit
         }
+        mServerKeepAccepting = false
+        deviceChangeHub.stop()
+        mdnsChangeHub.stop()
+        emulatorConsoles.values.forEach { it.close() }
+        emulatorConsoles.clear()
+        mDevices.forEach { (id: String?, device: DeviceState) -> device.stop() }
+        mConnectionHandlerTask!!.cancel(true)
+        try {
+          mServerSocket.close()
+        } catch (ignored: IOException) {}
+
+        // Note: Use "shutdownNow()" to ensure threads of long-running tasks
+        // are interrupted, as opposed
+        // to merely waiting for the tasks to finish. This is because
+        // mThreadPoolExecutor is used to
+        // run CommandHandler implementations, and some of them (e.g.
+        // TrackJdwpCommandHandler) wait
+        // indefinitely on queues and expect to be interrupted as a signal
+        // to terminate.
+        mThreadPoolExecutor.shutdownNow()
+        mMainServerThreadExecutor.shutdown()
+      }
     }
     return mStopRequestTask
   }

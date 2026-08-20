@@ -44,11 +44,11 @@ internal class ProcessInventoryJdwpProcessPropertiesCollector(
     process.scope
       .launch {
         runCatching {
-            process.propertiesFlow.collect { properties ->
-              logger.debug { "Process properties changed to $properties" }
-              serverConnection.withConnectionForDevice(process.device) { sendProcessProperties(properties) }
-            }
+          process.propertiesFlow.collect { properties ->
+            logger.debug { "Process properties changed to $properties" }
+            serverConnection.withConnectionForDevice(process.device) { sendProcessProperties(properties) }
           }
+        }
           .onFailure { throwable -> logger.logIOCompletionErrors(throwable) }
       }
       .invokeOnCompletion {

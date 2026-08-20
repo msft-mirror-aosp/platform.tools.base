@@ -419,99 +419,90 @@ class InterceptionRuleTest {
 
   @Test
   fun interceptionCriteriaMatchesConnections_methodGet() {
-    val matched =
-      METHODS.filter {
-        InterceptionCriteria(InterceptCriteria.newBuilder().setMethod(Method.METHOD_GET).build())
-          .appliesTo(NetworkConnection("https://www.google.com", it))
-      }
+    val matched = METHODS.filter {
+      InterceptionCriteria(InterceptCriteria.newBuilder().setMethod(Method.METHOD_GET).build())
+        .appliesTo(NetworkConnection("https://www.google.com", it))
+    }
 
     assertThat(matched).containsExactly("GET")
   }
 
   @Test
   fun interceptionCriteriaMatchesConnections_methodPost() {
-    val matched =
-      METHODS.filter {
-        InterceptionCriteria(InterceptCriteria.newBuilder().setMethod(Method.METHOD_POST).build())
-          .appliesTo(NetworkConnection("https://www.google.com", it))
-      }
+    val matched = METHODS.filter {
+      InterceptionCriteria(InterceptCriteria.newBuilder().setMethod(Method.METHOD_POST).build())
+        .appliesTo(NetworkConnection("https://www.google.com", it))
+    }
 
     assertThat(matched).containsExactly("POST")
   }
 
   @Test
   fun interceptionCriteriaMatchesConnections_methodHead() {
-    val matched =
-      METHODS.filter {
-        InterceptionCriteria(InterceptCriteria.newBuilder().setMethod(Method.METHOD_HEAD).build())
-          .appliesTo(NetworkConnection("https://www.google.com", it))
-      }
+    val matched = METHODS.filter {
+      InterceptionCriteria(InterceptCriteria.newBuilder().setMethod(Method.METHOD_HEAD).build())
+        .appliesTo(NetworkConnection("https://www.google.com", it))
+    }
 
     assertThat(matched).containsExactly("HEAD")
   }
 
   @Test
   fun interceptionCriteriaMatchesConnections_methodPut() {
-    val matched =
-      METHODS.filter {
-        InterceptionCriteria(InterceptCriteria.newBuilder().setMethod(Method.METHOD_PUT).build())
-          .appliesTo(NetworkConnection("https://www.google.com", it))
-      }
+    val matched = METHODS.filter {
+      InterceptionCriteria(InterceptCriteria.newBuilder().setMethod(Method.METHOD_PUT).build())
+        .appliesTo(NetworkConnection("https://www.google.com", it))
+    }
 
     assertThat(matched).containsExactly("PUT")
   }
 
   @Test
   fun interceptionCriteriaMatchesConnections_methodDelete() {
-    val matched =
-      METHODS.filter {
-        InterceptionCriteria(InterceptCriteria.newBuilder().setMethod(Method.METHOD_DELETE).build())
-          .appliesTo(NetworkConnection("https://www.google.com", it))
-      }
+    val matched = METHODS.filter {
+      InterceptionCriteria(InterceptCriteria.newBuilder().setMethod(Method.METHOD_DELETE).build())
+        .appliesTo(NetworkConnection("https://www.google.com", it))
+    }
 
     assertThat(matched).containsExactly("DELETE")
   }
 
   @Test
   fun interceptionCriteriaMatchesConnections_methodTrace() {
-    val matched =
-      METHODS.filter {
-        InterceptionCriteria(InterceptCriteria.newBuilder().setMethod(Method.METHOD_TRACE).build())
-          .appliesTo(NetworkConnection("https://www.google.com", it))
-      }
+    val matched = METHODS.filter {
+      InterceptionCriteria(InterceptCriteria.newBuilder().setMethod(Method.METHOD_TRACE).build())
+        .appliesTo(NetworkConnection("https://www.google.com", it))
+    }
 
     assertThat(matched).containsExactly("TRACE")
   }
 
   @Test
   fun interceptionCriteriaMatchesConnections_methodConnect() {
-    val matched =
-      METHODS.filter {
-        InterceptionCriteria(InterceptCriteria.newBuilder().setMethod(Method.METHOD_CONNECT).build())
-          .appliesTo(NetworkConnection("https://www.google.com", it))
-      }
+    val matched = METHODS.filter {
+      InterceptionCriteria(InterceptCriteria.newBuilder().setMethod(Method.METHOD_CONNECT).build())
+        .appliesTo(NetworkConnection("https://www.google.com", it))
+    }
 
     assertThat(matched).containsExactly("CONNECT")
   }
 
   @Test
   fun interceptionCriteriaMatchesConnections_methodPatch() {
-    val matched =
-      METHODS.filter {
-        InterceptionCriteria(InterceptCriteria.newBuilder().setMethod(Method.METHOD_PATCH).build())
-          .appliesTo(NetworkConnection("https://www.google.com", it))
-      }
+    val matched = METHODS.filter {
+      InterceptionCriteria(InterceptCriteria.newBuilder().setMethod(Method.METHOD_PATCH).build())
+        .appliesTo(NetworkConnection("https://www.google.com", it))
+    }
 
     assertThat(matched).containsExactly("PATCH")
   }
 
   @Test
   fun interceptionCriteriaMatchesConnections_methodOptions() {
-    val matched =
-      METHODS.filter {
-        InterceptionCriteria(InterceptCriteria.newBuilder().setMethod(Method.METHOD_OPTIONS).build())
-          .appliesTo(NetworkConnection("https://www.google.com", it))
-      }
+    val matched = METHODS.filter {
+      InterceptionCriteria(InterceptCriteria.newBuilder().setMethod(Method.METHOD_OPTIONS).build())
+        .appliesTo(NetworkConnection("https://www.google.com", it))
+    }
 
     assertThat(matched).containsExactly("OPTIONS")
   }

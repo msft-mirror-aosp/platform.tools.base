@@ -38,60 +38,57 @@ class UsageTrackingMapTest {
   @JvmField @Rule val closeables = CloseablesRule()
 
   @Test
-  fun testValueIsReused(): Unit =
-    CoroutineTestUtils.runBlockingWithTimeout {
-      // Prepare
-      val fakeClock = FakeClock()
-      val removalDelay = Duration.ofMillis(10)
-      val map = createMap(removalDelay, fakeClock)
+  fun testValueIsReused(): Unit = CoroutineTestUtils.runBlockingWithTimeout {
+    // Prepare
+    val fakeClock = FakeClock()
+    val removalDelay = Duration.ofMillis(10)
+    val map = createMap(removalDelay, fakeClock)
 
-      // Act
-      val value1 = map.withValue(10) { it }
-      val value2 = map.withValue(10) { it }
+    // Act
+    val value1 = map.withValue(10) { it }
+    val value2 = map.withValue(10) { it }
 
-      // Assert
-      Assert.assertSame(value1, value2)
-    }
-
-  @Test
-  fun testValueIsRemoved(): Unit =
-    CoroutineTestUtils.runBlockingWithTimeout {
-      // Prepare
-      val fakeClock = FakeClock()
-      val removalDelay = Duration.ofMillis(10)
-      val map = createMap(removalDelay, fakeClock)
-
-      // Act
-      val value1 = map.withValue(10) { it }
-      fakeClock.nowValue = fakeClock.nowValue.plus(removalDelay.multipliedBy(2))
-      delay(removalDelay.multipliedBy(5).toKotlinDuration())
-      val value2 = map.withValue(10) { it }
-
-      // Assert
-      Assert.assertNotSame(value1, value2)
-    }
+    // Assert
+    Assert.assertSame(value1, value2)
+  }
 
   @Test
-  fun testValueIsKeptAfterReuse(): Unit =
-    CoroutineTestUtils.runBlockingWithTimeout {
-      // Prepare
-      val fakeClock = FakeClock()
-      val removalDelay = Duration.ofMillis(10)
-      val map = createMap(removalDelay, fakeClock)
+  fun testValueIsRemoved(): Unit = CoroutineTestUtils.runBlockingWithTimeout {
+    // Prepare
+    val fakeClock = FakeClock()
+    val removalDelay = Duration.ofMillis(10)
+    val map = createMap(removalDelay, fakeClock)
 
-      // Act
-      val value1 = map.withValue(10) { it }
-      fakeClock.nowValue = fakeClock.nowValue.plus(removalDelay.dividedBy(2))
-      map.removeAllUnused()
-      val value2 = map.withValue(10) { it }
-      fakeClock.nowValue = fakeClock.nowValue.plus(removalDelay)
-      delay(removalDelay.multipliedBy(5).toKotlinDuration())
-      val value3 = map.withValue(10) { it }
+    // Act
+    val value1 = map.withValue(10) { it }
+    fakeClock.nowValue = fakeClock.nowValue.plus(removalDelay.multipliedBy(2))
+    delay(removalDelay.multipliedBy(5).toKotlinDuration())
+    val value2 = map.withValue(10) { it }
 
-      // Assert
-      Assert.assertSame(value1, value2)
-      Assert.assertNotSame(value2, value3)
-    }
+    // Assert
+    Assert.assertNotSame(value1, value2)
+  }
+
+  @Test
+  fun testValueIsKeptAfterReuse(): Unit = CoroutineTestUtils.runBlockingWithTimeout {
+    // Prepare
+    val fakeClock = FakeClock()
+    val removalDelay = Duration.ofMillis(10)
+    val map = createMap(removalDelay, fakeClock)
+
+    // Act
+    val value1 = map.withValue(10) { it }
+    fakeClock.nowValue = fakeClock.nowValue.plus(removalDelay.dividedBy(2))
+    map.removeAllUnused()
+    val value2 = map.withValue(10) { it }
+    fakeClock.nowValue = fakeClock.nowValue.plus(removalDelay)
+    delay(removalDelay.multipliedBy(5).toKotlinDuration())
+    val value3 = map.withValue(10) { it }
+
+    // Assert
+    Assert.assertSame(value1, value2)
+    Assert.assertNotSame(value2, value3)
+  }
 
   private fun createMap(removalDelay: Duration, fakeClock: FakeClock): UsageTrackingMap<Int, MyValue> {
     val logger = FakeAdbLoggerFactory().also { it.minLevel = AdbLogger.Level.INFO }

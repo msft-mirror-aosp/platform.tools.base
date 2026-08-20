@@ -40,15 +40,14 @@ internal class TrackJdwpService(private val serviceRunner: AdbServiceRunner) {
   private val host
     get() = serviceRunner.host
 
-  fun invoke(device: DeviceSelector, timeout: Long, unit: TimeUnit): Flow<ProcessIdList> =
-    flow {
-        val tracker = TimeoutTracker(host.timeProvider, timeout, unit)
-        val service = "track-jdwp"
-        serviceRunner.runDaemonService(device, service, tracker) { channel, workBuffer ->
-          collectAdbResponses(channel, workBuffer, service, this)
-        }
-      }
-      .flowOn(host.ioDispatcher)
+  fun invoke(device: DeviceSelector, timeout: Long, unit: TimeUnit): Flow<ProcessIdList> = flow {
+    val tracker = TimeoutTracker(host.timeProvider, timeout, unit)
+    val service = "track-jdwp"
+    serviceRunner.runDaemonService(device, service, tracker) { channel, workBuffer ->
+      collectAdbResponses(channel, workBuffer, service, this)
+    }
+  }
+    .flowOn(host.ioDispatcher)
 
   private suspend fun collectAdbResponses(
     channel: AdbChannel,

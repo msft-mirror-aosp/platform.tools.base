@@ -99,18 +99,16 @@ class SerializedSharedFlowTest : AdbLibToolsTestBase() {
         emit(6)
         emit(7)
       }
-    val nestedFlow =
-      flow.onSubscription {
-        emit(8)
-        emit(9)
-        emit(10)
-      }
-    val nestedFlow2 =
-      flow.onSubscription {
-        emit(11)
-        emit(12)
-        emit(13)
-      }
+    val nestedFlow = flow.onSubscription {
+      emit(8)
+      emit(9)
+      emit(10)
+    }
+    val nestedFlow2 = flow.onSubscription {
+      emit(11)
+      emit(12)
+      emit(13)
+    }
 
     // Act
     val values = mutableListOf<Int>() // 5,6,7

@@ -132,10 +132,10 @@ internal class PMDriver(private val service: AdbDeviceServices, private val devi
       }
     } catch (t: Throwable) {
       runCatching {
-          logger.info { "  abandoning session: 'sessionID=$sessionID' " }
-          val flow = pm.abandon(device, sessionID)
-          flow.first()
-        }
+        logger.info { "  abandoning session: 'sessionID=$sessionID' " }
+        val flow = pm.abandon(device, sessionID)
+        flow.first()
+      }
         .onFailure { t.addSuppressed(it) }
       throw t
     }

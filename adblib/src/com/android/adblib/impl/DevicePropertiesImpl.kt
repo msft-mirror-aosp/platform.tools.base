@@ -45,14 +45,15 @@ class DevicePropertiesImpl(val deviceServices: AdbDeviceServices, val device: De
     get() = deviceServices.session
 
   override suspend fun all(): List<DeviceProperty> {
-    val shellV2Supported =
-      runCatching { session.hostServices.availableFeatures(device).contains(AdbFeatures.SHELL_V2) }
-        .getOrElse {
-          it.rethrowCancellation()
-          // Very old devices (and ADB servers) don't support the "features" service
-          logger.info { "Error obtaining device features: $it" }
-          false
-        }
+    val shellV2Supported = runCatching {
+      session.hostServices.availableFeatures(device).contains(AdbFeatures.SHELL_V2)
+    }
+      .getOrElse {
+        it.rethrowCancellation()
+        // Very old devices (and ADB servers) don't support the "features" service
+        logger.info { "Error obtaining device features: $it" }
+        false
+      }
 
     return if (shellV2Supported) {
       // Use "shell,v2" if available

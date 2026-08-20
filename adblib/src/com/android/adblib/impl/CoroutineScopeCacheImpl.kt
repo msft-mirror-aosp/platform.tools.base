@@ -208,19 +208,18 @@ internal class CoroutineScopeCacheImpl(parentScope: CoroutineScope, val descript
         }
 
       if (valueWasStored) {
-        computing.job =
-          scope.launch {
-            val result = runCatching { defaultValue() }
+        computing.job = scope.launch {
+          val result = runCatching { defaultValue() }
 
-            // Replace in the cache only if we were the computing call
-            map.replace(key, computing, result).also { wasReplaced ->
-              // Note: If the cache have been closed, the key may not be present anymore,
-              //       so we need to also check the scope is active
-              assert(wasReplaced || !scope.isActive) {
-                "The 'computing' coroutine should always be the one storing " + "the computed value in the cache."
-              }
+          // Replace in the cache only if we were the computing call
+          map.replace(key, computing, result).also { wasReplaced ->
+            // Note: If the cache have been closed, the key may not be present anymore,
+            //       so we need to also check the scope is active
+            assert(wasReplaced || !scope.isActive) {
+              "The 'computing' coroutine should always be the one storing " + "the computed value in the cache."
             }
           }
+        }
       }
     }
 

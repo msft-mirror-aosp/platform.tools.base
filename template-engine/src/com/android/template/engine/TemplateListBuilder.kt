@@ -56,8 +56,9 @@ internal class TemplateListBuilderImpl(
   override fun loadFromZipFile(zipFile: Path): TemplateListBuilder {
     val storage = ZipFileTemplateStorage(zipFile)
     // Enumerate all template definition, but don't load file content in memory
-    val fileContentsByRelativePath =
-      storage.withZipInputStream { zipInputStream -> createTemplateFilesMapFromZipInputStream(zipInputStream, loadFileContent = false) }
+    val fileContentsByRelativePath = storage.withZipInputStream { zipInputStream ->
+      createTemplateFilesMapFromZipInputStream(zipInputStream, loadFileContent = false)
+    }
 
     // Copy all template definition with a "ZipFile" loader to load file content
     // from the zip file "on demand"

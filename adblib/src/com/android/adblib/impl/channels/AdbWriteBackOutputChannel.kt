@@ -289,12 +289,11 @@ internal class AdbWriteBackOutputChannel(
       get() = outerImpl.bytesWrittenFromPipeToDestinationChannel
 
     /** The [Job] where [writeBackLoop] is launched. */
-    private val writeBackAsync =
-      parentScope.async {
-        // Note: [writeBack] may throw an exception if it fails to write to the
-        // destination channel, or if the parent `AdbWriteBackOutputChannel` is closed.
-        writeBackLoop(bufferSize)
-      }
+    private val writeBackAsync = parentScope.async {
+      // Note: [writeBack] may throw an exception if it fails to write to the
+      // destination channel, or if the parent `AdbWriteBackOutputChannel` is closed.
+      writeBackLoop(bufferSize)
+    }
 
     suspend fun await() {
       writeBackAsync.await()

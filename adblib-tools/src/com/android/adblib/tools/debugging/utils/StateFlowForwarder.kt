@@ -71,13 +71,13 @@ internal class StateFlowForwarder<T>(
     return parentScope
       .launch {
         runCatching {
-            sourceFlow = sourceStateFlowProvider()
-            logger.debug { "Acquired source flow, start forwarding values to destination flow" }
-            sourceFlow.collect { newValue ->
-              logger.verbose { "Forwarding new source flow value: $newValue" }
-              destinationMutableStateFlow.update { newValue }
-            }
+          sourceFlow = sourceStateFlowProvider()
+          logger.debug { "Acquired source flow, start forwarding values to destination flow" }
+          sourceFlow.collect { newValue ->
+            logger.verbose { "Forwarding new source flow value: $newValue" }
+            destinationMutableStateFlow.update { newValue }
           }
+        }
           .onFailure { throwable -> logger.logIOCompletionErrors(throwable) }
       }
       .also {

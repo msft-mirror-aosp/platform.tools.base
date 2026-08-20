@@ -137,19 +137,19 @@ internal class ProcessInventoryJdwpProcessCommandDispatcher(
         .collect { processCommand ->
           logger.debug { "Process ${processCommand.pid} command received: ${TextFormat.shortDebugString(processCommand)}" }
           runCatching {
-              when (processCommand.commandCase) {
-                ProcessInventoryServerProto.ProcessCommand.CommandCase.RESUME_JDWP_PROCESS -> {
-                  // We want to execute the command only if this process instances is
-                  // holding on the JDWP session *and* the process is waiting
-                  process.resumeProcessImpl.resumeProcessIfJdwpSessionHolder()
-                }
+            when (processCommand.commandCase) {
+              ProcessInventoryServerProto.ProcessCommand.CommandCase.RESUME_JDWP_PROCESS -> {
+                // We want to execute the command only if this process instances is
+                // holding on the JDWP session *and* the process is waiting
+                process.resumeProcessImpl.resumeProcessIfJdwpSessionHolder()
+              }
 
-                else -> {
-                  logger.info { "Unsupported process command: $processCommand" }
-                  false // not handled
-                }
+              else -> {
+                logger.info { "Unsupported process command: $processCommand" }
+                false // not handled
               }
             }
+          }
             .onFailure { t ->
               logger.logIOCompletionErrors(t)
               connectionForDevice.sendErrorCommandReply(processCommand, t)
