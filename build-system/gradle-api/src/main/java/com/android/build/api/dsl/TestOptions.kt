@@ -153,4 +153,7 @@ interface TestOptions {
 
   /** Whether to enable Private Compute Core on-device environment during instrumentation. */
   @get:Incubating @set:Incubating var instrumentInPrivateComputeCore: Boolean
+
+  /** Configures the specialized Backup TestSuite designed for Automated Backup & Restore Testing. */
+  @get:Incubating val backupTests: NamedDomainObjectContainer<BackupTestSuite>
 }

@@ -810,6 +810,14 @@ https://issuetracker.google.com/518472902
   * com.android.build.api.dsl.ScreenshotTestSuite.getTargetVariants: java.util.List<java.lang.String> ()
   * com.android.build.api.dsl.ScreenshotTestSuite.setEngineVersion: void (java.lang.String)
   * com.android.build.api.dsl.TestOptions.getScreenshotTests: org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.ScreenshotTestSuite> ()
+https://issuetracker.google.com/519009084
+  * com.android.build.api.dsl.BackupTestSuite
+  * com.android.build.api.dsl.BackupTestSuite.getBackupTestLibraryVersion: java.lang.String ()
+  * com.android.build.api.dsl.BackupTestSuite.getTargetVariants: java.util.List<java.lang.String> ()
+  * com.android.build.api.dsl.BackupTestSuite.hostJar: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TestSuiteHostJarSpec, kotlin.Unit>)
+  * com.android.build.api.dsl.BackupTestSuite.setBackupTestLibraryVersion: void (java.lang.String)
+  * com.android.build.api.dsl.BackupTestSuite.testApk: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TestSuiteTestApkSpec, kotlin.Unit>)
+  * com.android.build.api.dsl.TestOptions.getBackupTests: org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.BackupTestSuite> ()
   * com.android.build.api.variant.ScreenshotTestSuite implements com.android.build.api.variant.TestSuite
   * com.android.build.api.variant.ScreenshotTestSuite.getEngineVersion: org.gradle.api.provider.Provider<java.lang.String> ()
   * com.android.build.api.variant.ScreenshotTestSuite.getImageDifferenceThreshold: org.gradle.api.provider.Provider<java.lang.Float> ()

@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.dsl
 
 import com.android.build.api.dsl.AgpTestSuite
+import com.android.build.api.dsl.BackupTestSuite
 import com.android.build.api.dsl.ScreenshotTestSuite
 import com.android.build.api.dsl.TargetSdkSpec
 import com.android.build.api.dsl.TargetSdkVersion
@@ -54,6 +55,12 @@ abstract class TestOptions @Inject constructor(private val dslServices: DslServi
     dslServices.domainObjectContainer(ScreenshotTestSuite::class.java) { name ->
       checkScreenshotTestEnabled()
       dslServices.newDecoratedInstance(ScreenshotTestSuiteImpl::class.java, name, dslServices)
+    }
+
+  // (Implementing interface for kotlin)
+  override val backupTests: NamedDomainObjectContainer<BackupTestSuite> =
+    dslServices.domainObjectContainer(BackupTestSuite::class.java) { name ->
+      dslServices.newDecoratedInstance(BackupTestSuiteImpl::class.java, name, dslServices)
     }
 
   // (Implementing interface for kotlin)
@@ -197,6 +204,10 @@ abstract class TestOptions @Inject constructor(private val dslServices: DslServi
             dslServices.newInstance(com.android.build.gradle.internal.dsl.ScreenshotAgpTestSuiteImpl::class.java, suite, dslServices)
           )
         }
+      }
+
+      backupTests.configureEach { suite ->
+        this.add(dslServices.newInstance(com.android.build.gradle.internal.dsl.BackupAgpTestSuiteImpl::class.java, suite, dslServices))
       }
     }
 

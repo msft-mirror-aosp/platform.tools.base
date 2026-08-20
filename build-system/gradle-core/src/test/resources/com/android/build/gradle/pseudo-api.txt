@@ -1972,6 +1972,7 @@ com.android.build.gradle.internal.dsl.TestOptions.access$getDslServices$p: com.a
 com.android.build.gradle.internal.dsl.TestOptions.emulatorControl: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.EmulatorControl, kotlin.Unit>)
 com.android.build.gradle.internal.dsl.TestOptions.emulatorControl: void (org.gradle.api.Action<com.android.build.api.dsl.EmulatorControl>)
 com.android.build.gradle.internal.dsl.TestOptions.getAnimationsDisabled: boolean ()
+com.android.build.gradle.internal.dsl.TestOptions.getBackupTests: org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.BackupTestSuite> ()
 com.android.build.gradle.internal.dsl.TestOptions.getCustomSuites: org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.AgpTestSuite> ()
 com.android.build.gradle.internal.dsl.TestOptions.getEmulatorControl: com.android.build.api.dsl.EmulatorControl ()
 com.android.build.gradle.internal.dsl.TestOptions.getExecution: java.lang.String ()
