@@ -127,6 +127,11 @@ class AndroidManagedDeviceTest(val runWithBuiltInPlatform: Boolean) {
   }
 
   @Test
+  fun connectedAndroidTestWithLogcatOutputsNoExceptions() {
+    util.connectedAndroidTestWithLogcatOutputsNoExceptions()
+  }
+
+  @Test
   fun connectedAndroidTestFromTestOnlyModule() {
     util.connectedAndroidTestFromTestOnlyModule()
   }

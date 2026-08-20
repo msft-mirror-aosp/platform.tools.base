@@ -564,7 +564,12 @@ open class LintCliClient : LintClient {
       driver.computeDetectors(project)
       xmlReader(project, XmlFileType.CONDITIONAL_INCIDENTS)?.let { provisionalMap[project] = it.getIncidents() }
 
-      xmlReader(project, XmlFileType.INCIDENTS)?.let { definiteMap[project] = it.getIncidents() }
+      // Definite incidents of a dependency have already been reported by that module's own
+      // report step when skipDefiniteIncidentsFromDependencies is set; only the roots' own
+      // definite incidents belong in this report.
+      if (!flags.skipDefiniteIncidentsFromDependencies || project in roots) {
+        xmlReader(project, XmlFileType.INCIDENTS)?.let { definiteMap[project] = it.getIncidents() }
+      }
 
       xmlReader(project, XmlFileType.PARTIAL_RESULTS)?.let {
         for ((issue, list) in it.getPartialResults()) {

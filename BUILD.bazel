@@ -155,6 +155,7 @@ AGP_TEST_ARTIFACTS = [
     "//tools/data-binding:tools.compiler",  # TODO(b/143864616): Only used for data binding runtime & tests
     "//tools/base/fakeadbserver:tools.fakeadbserver",  # TODO(b/143864616): Only used for tests
     "//tools/base/testutils:tools.testutils",  # TODO(b/143864616): Only used for tests
+    "//tools/base/utp/gradle-work-action",  # For android test with legacy utp gradle work action
     "//tools/base/ddmlib:tools.ddmlib.test",  # TODO(b/143864616): Only used for tests
 ]
 

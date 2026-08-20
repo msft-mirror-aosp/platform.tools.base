@@ -77,6 +77,80 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
       )
   }
 
+  fun testDefaultParameters() {
+    lint()
+      .files(
+        kotlin(
+            """
+            package test.pkg
+            import androidx.annotation.UiThread
+            import androidx.annotation.WorkerThread
+
+            @WorkerThread fun loadId(): Int = 0
+
+            @UiThread fun render(id: Int = loadId()) {}
+
+            @UiThread fun a() = render()
+
+            @UiThread fun b() = render()
+
+            @UiThread fun uncalledRender(id: Int = loadId()) {}
+            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/test.kt:7: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+        @UiThread fun render(id: Int = loadId()) {}
+                                       ~~~~~~~~
+        src/test/pkg/test.kt:13: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+        @UiThread fun uncalledRender(id: Int = loadId()) {}
+                                               ~~~~~~~~
+        2 errors
+        """
+          .trimIndent()
+      )
+  }
+
+  fun testInferenceFromDefaultParameters() {
+    lint()
+      .files(
+        kotlin(
+            """
+            package test.pkg
+            import androidx.annotation.UiThread
+            import androidx.annotation.WorkerThread
+
+            @WorkerThread fun loadId(): Int = 0
+
+            fun middle(id: Int = loadId()): Int = id // conservatively inferred to always include `loadId`'s effects. TODO
+
+            @UiThread fun ui() = middle()
+
+            @UiThread fun uiExplicit() = middle(5)
+            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/test.kt:9: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+        @UiThread fun ui() = middle()
+                             ~~~~~~~~
+        src/test/pkg/test.kt:11: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+        @UiThread fun uiExplicit() = middle(5)
+                                     ~~~~~~~~~
+        2 errors
+        """
+          .trimIndent()
+      )
+  }
+
   fun testBaseAssumption_forEach() {
     lint()
       .files(
@@ -986,6 +1060,147 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
         src/test.kt:8: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
                 work()
                 ~~~~~~
+        1 error
+        """
+      )
+  }
+
+  fun testAnonymousObjectLocalVariable() {
+    lint()
+      .files(
+        java(
+            """
+          package test.pkg;
+
+          import androidx.annotation.UiThread;
+          import androidx.annotation.WorkerThread;
+
+          class Test {
+              abstract static class Base { abstract void run(); }
+
+              @UiThread static void ui() { }
+
+              @WorkerThread static void worker() {
+                  var b = new Base() { @Override void run() { ui(); } };
+                  b.run();
+              }
+          }
+          """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .javaLanguageLevel("17")
+      .run()
+      .expect(
+        """
+        src/test/pkg/Test.java:13: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
+                b.run();
+                  ~~~~~
+        1 error
+        """
+      )
+  }
+
+  fun testDelegatedLocalVariable() {
+    lint()
+      .files(
+        kotlin(
+            """
+          import androidx.annotation.UiThread
+          import androidx.annotation.WorkerThread
+
+          interface Multi {
+              fun a()
+              fun b()
+          }
+
+          class Holder { var entry: Multi? = null }
+
+          @WorkerThread fun work() { }
+
+          @UiThread fun ui(holder: Holder) {
+              val entry: Multi? by holder::entry
+              work()
+          }
+          """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/Multi.kt:15: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            work()
+            ~~~~~~
+        1 error
+        """
+      )
+  }
+
+  fun testLabeledLambdaReturn() {
+    lint()
+      .files(
+        kotlin(
+            """
+          import androidx.annotation.UiThread
+          import androidx.annotation.WorkerThread
+
+          fun runIt(f: () -> Unit) { f() }
+          fun cond(): Boolean = true
+
+          @WorkerThread fun work() { }
+
+          @UiThread fun updateUi() {
+              runIt update@{
+                  if (cond()) return@update
+                  work()
+              }
+          }
+          """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test.kt:10: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            runIt update@{
+            ^
+        1 error
+        """
+      )
+  }
+
+  fun testLabeledLambdaReturnValue() {
+    lint()
+      .files(
+        kotlin(
+            """
+          import androidx.annotation.UiThread
+          import androidx.annotation.WorkerThread
+
+          fun pick(value: () -> Unit): () -> Unit {
+              val f = pick@{ return@pick value }
+              return f()
+          }
+
+          @UiThread fun ui() { }
+
+          @WorkerThread fun worker() { pick(::ui).invoke() }
+          """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test.kt:11: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
+        @WorkerThread fun worker() { pick(::ui).invoke() }
+                                                ~~~~~~~~
         1 error
         """
       )
@@ -4189,6 +4404,106 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
       .expectClean()
   }
 
+  fun testExplicitAnnotationAcrossFiles() {
+    // Sanity check for the batch mode counterpart of
+    // [testExplicitAnnotationAcrossFiles_isolated], where all files are indexed
+    lint()
+      .files(CROSS_FILE_CALLER, CROSS_FILE_CALLEE, SUPPORT_ANNOTATIONS_JAR)
+      .run()
+      .expect(
+        """
+        src/test/pkg/Caller.kt:6: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            w.doWork()
+              ~~~~~~~~
+        1 error
+        """
+          .trimIndent()
+      )
+  }
+
+  fun testExplicitAnnotationAcrossFiles_isolated() {
+    // Emulates the IDE's on-the-fly mode, where only the current file is analyzed:
+    // calls to explicitly annotated methods declared in a *different* file must still be
+    // checked (like `ThreadDetector` does), even though only the current file is indexed.
+    lint()
+      .files(CROSS_FILE_CALLER, CROSS_FILE_CALLEE, SUPPORT_ANNOTATIONS_JAR)
+      .isolated("src/test/pkg/Caller.kt")
+      .run()
+      .expect(
+        """
+        src/test/pkg/Caller.kt:6: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            w.doWork()
+              ~~~~~~~~
+        1 error
+        """
+          .trimIndent()
+      )
+  }
+
+  fun testExplicitAnnotationAcrossFiles_isolated_classAndInherited() {
+    // Like [testExplicitAnnotationAcrossFiles_isolated], but with the callee's constraint
+    // coming from a class-level annotation and from an annotated super method, respectively
+    lint()
+      .files(
+        kotlin(
+            """
+            package test.pkg
+            import androidx.annotation.UiThread
+
+            class Caller2 {
+              @UiThread fun callFromUi(s: Store, w: WorkerImpl) {
+                s.query()
+                w.doWork()
+              }
+            }
+            """
+          )
+          .indented(),
+        kotlin(
+            """
+            package test.pkg
+            import androidx.annotation.WorkerThread
+
+            @WorkerThread
+            class Store {
+              fun query() { }
+            }
+            """
+          )
+          .indented(),
+        kotlin(
+            """
+            package test.pkg
+            import androidx.annotation.WorkerThread
+
+            abstract class WorkerBase {
+              @WorkerThread abstract fun doWork()
+            }
+
+            class WorkerImpl : WorkerBase() {
+              override fun doWork() { }
+            }
+            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .isolated("src/test/pkg/Caller2.kt")
+      .run()
+      .expect(
+        """
+        src/test/pkg/Caller2.kt:6: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            s.query()
+              ~~~~~~~
+        src/test/pkg/Caller2.kt:7: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            w.doWork()
+              ~~~~~~~~
+        2 errors
+        """
+          .trimIndent()
+      )
+  }
+
   fun testLambdas() {
     lint()
       .files(
@@ -4575,3 +4890,31 @@ class AndroidThreadConstraintLatticeTest : ThreadConstraintLatticeTest<Thread>(t
     val threadLattice = ThreadConstraintDetector.ThreadConstraintLattice(Thread::class.java)
   }
 }
+
+private val CROSS_FILE_CALLER =
+  LintDetectorTest.kotlin(
+      """
+      package test.pkg
+      import androidx.annotation.UiThread
+
+      class Caller {
+        @UiThread fun callFromUi(w: Worker) {
+          w.doWork()
+        }
+      }
+      """
+    )
+    .indented()
+
+private val CROSS_FILE_CALLEE =
+  LintDetectorTest.kotlin(
+      """
+      package test.pkg
+      import androidx.annotation.WorkerThread
+
+      class Worker {
+        @WorkerThread fun doWork() { }
+      }
+      """
+    )
+    .indented()

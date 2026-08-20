@@ -20,10 +20,10 @@ import com.android.adblib.ConnectedDevice
 import com.android.adblib.ShellCommandOutput
 import com.android.adblib.ShellCommandOutputElement
 import com.android.adblib.adbLogger
-import com.android.adblib.deviceProperties
 import com.android.adblib.serialNumber
 import com.android.adblib.shell
 import java.io.IOException
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeSource
 import kotlinx.coroutines.CancellationException
@@ -36,6 +36,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.retry
+import org.jetbrains.annotations.TestOnly
 
 /** A set of functions to facilitate pairing AI glasses to a phone. */
 class AiGlassesPairing(val session: AdbSession) {
@@ -67,12 +68,13 @@ class AiGlassesPairing(val session: AdbSession) {
   /**
    * Polls the current pairing state from the companion app.
    *
-   * @param glassesBluetoothAddress The Bluetooth address of the glasses.
    * @return The pairing state as a string, or null if the command fails or returns no state.
    * @throws IOException if a communication error occurs with the device.
    */
-  suspend fun ConnectedDevice.pollPairingState(glassesBluetoothAddress: String): String? {
-    val command = "am broadcast -a $COMPANION_PKG.GET_PAIRING_STATE --es address \"$glassesBluetoothAddress\" -p $COMPANION_PKG"
+  suspend fun ConnectedDevice.pollPairingState(): String? {
+    // Query without address extra to prevent older companion app builds from falsely returning IDLE
+    // when their internal deviceAddress is null during early setup stages.
+    val command = "am broadcast -a $COMPANION_PKG.GET_PAIRING_STATE -p $COMPANION_PKG"
 
     logger.info { "Executing: $command" }
     return runCatchingIoException(command) {
@@ -325,38 +327,37 @@ class AiGlassesPairing(val session: AdbSession) {
   }
 
   /**
-   * Polls until the companion app is in the foreground or the [POLLING_TIMEOUT] expires.
+   * Polls until the companion app is in the foreground or the [pollingTimeout] expires.
    *
    * @return true if the companion app is in the foreground, false if the timeout expires.
    */
   private suspend fun ConnectedDevice.waitForCompanionAppInForeground(): Boolean {
     val start = TimeSource.Monotonic.markNow()
-    while (start.elapsedNow() < POLLING_TIMEOUT) {
+    while (start.elapsedNow() < pollingTimeout) {
       if (checkCompanionAppInForeground()) {
         return true
       }
-      delay(POLLING_INTERVAL)
+      delay(pollingInterval)
     }
     return false
   }
 
   /**
-   * Polls the pairing state until it returns a non-null value or the [POLLING_TIMEOUT] expires.
+   * Polls the pairing state until it returns a non-null value or the [pollingTimeout] expires.
    *
-   * @param glassesBluetoothAddress The Bluetooth address of the glasses.
    * @return The pairing state, or null if the timeout expires. Possible states include: "IDLE", "WORKER_STARTED", "WORKER_BONDING",
    *   "UI_CDM_SCANNING", "UI_CDM_ASSOCIATING", "UI_CDM_ASSOCIATION_FAILED", "UI_WAITING_FOR_WORKER", "WORKER_CONNECTING",
    *   "WORKER_GLASSES_CORE_CONNECTION_FAILED", "WORKER_GLASSES_CORE_CONNECTED", "PAIRED", "WORKER_BOND_FAILED", "WORKER_CONNECTION_FAILED",
    *   "WORKER_CANCELLED", "ERROR".
    */
-  private suspend fun ConnectedDevice.waitForPairingState(glassesBluetoothAddress: String): String? {
+  private suspend fun ConnectedDevice.waitForPairingState(): String? {
     val start = TimeSource.Monotonic.markNow()
-    while (start.elapsedNow() < POLLING_TIMEOUT) {
-      val state = pollPairingState(glassesBluetoothAddress)
+    while (start.elapsedNow() < pollingTimeout) {
+      val state = pollPairingState()
       if (state != null) {
         return state
       }
-      delay(POLLING_INTERVAL)
+      delay(pollingInterval)
     }
     return null
   }
@@ -399,15 +400,25 @@ class AiGlassesPairing(val session: AdbSession) {
         }
 
         // Wait 3 seconds once it is in the foreground
-        delay(3.seconds)
+        delay(foregroundDelay)
 
-        val apiLevel = deviceProperties().api()
+        // Wizard-only pre-cleanse: prune any stale prior companion bond for targetMac before ASSISTED_PAIR,
+        // awaiting PAIRING_COMMAND_DELAY so async Bluetooth bond teardown completes before pairing starts.
+        try {
+          sendUnpairCommand(glassesBluetoothAddress)
+          delay(pairingCommandDelay)
+        } catch (e: Exception) {
+          e.throwIfCancellation()
+          logger.warn(e, "Failed to unpair pre-existing bond for $glassesBluetoothAddress; proceeding with pairing")
+        }
+        sendPairingCommand(glassesBluetoothAddress, useCdm)
+        delay(pairingCommandDelay)
 
         emit("POLLING")
         var idleCount = 0
         var associatingCount = 0
         while (true) {
-          val state = waitForPairingState(glassesBluetoothAddress)
+          val state = waitForPairingState()
 
           if (state == null) {
             emit("POLLING_FAILED")
@@ -420,37 +431,31 @@ class AiGlassesPairing(val session: AdbSession) {
               idleCount++
               associatingCount = 0
               // TODO: Remove this fallback once http://b/505111138 is fixed
-              if (apiLevel >= 37 && idleCount >= 2 && checkSetupActivityInForeground()) {
+              if (idleCount >= 2 && idleCount % 2 == 0 && checkSetupActivityInForeground()) {
                 sendFocusNavigationTap()
-                idleCount = 0
               }
-              // Wizard-only pre-cleanse: prune any stale prior companion bond for targetMac before ASSISTED_PAIR,
-              // awaiting PAIRING_COMMAND_DELAY so async Bluetooth bond teardown completes before pairing starts.
-              try {
-                sendUnpairCommand(glassesBluetoothAddress)
-                delay(PAIRING_COMMAND_DELAY)
-              } catch (e: Exception) {
-                e.throwIfCancellation()
-                logger.warn(e, "Failed to unpair pre-existing bond for $glassesBluetoothAddress; proceeding with pairing")
+              if (idleCount >= MAX_IDLE_POLLS) {
+                logger.warn("Exceeded max IDLE polls ($MAX_IDLE_POLLS) awaiting pairing start")
+                emit("POLLING_FAILED")
+                return@flow
               }
-              sendPairingCommand(glassesBluetoothAddress, useCdm)
-              delay(PAIRING_COMMAND_DELAY)
+              delay(pollingInterval)
             }
             "UI_CDM_ASSOCIATING" -> {
               associatingCount++
               idleCount = 0
               // TODO: Remove this fallback once http://b/505111138 is fixed
-              if (apiLevel >= 37 && associatingCount >= 2 && checkSetupActivityInForeground()) {
+              if (associatingCount >= 2 && checkSetupActivityInForeground()) {
                 sendFocusNavigationTap()
                 associatingCount = 0
               }
-              delay(POLLING_INTERVAL)
+              delay(pollingInterval)
             }
             in TERMINAL_STATES -> return@flow
             else -> {
               idleCount = 0 // reset if we see any other state
               associatingCount = 0
-              delay(POLLING_INTERVAL)
+              delay(pollingInterval)
             }
           }
         }
@@ -489,14 +494,51 @@ class AiGlassesPairing(val session: AdbSession) {
     private const val CMD_INPUT_CENTER = "input keyevent KEYCODE_DPAD_CENTER"
     private const val SETUP_ACTIVITY_NAME = ".setup.ui.SetupActivity"
 
+    // Time to wait once companion app is in foreground
+    private var foregroundDelay = 3.seconds
+
     // Time to wait for the pairing state to change after sending the pairing command
-    private val PAIRING_COMMAND_DELAY = 4.seconds
+    private var pairingCommandDelay = 4.seconds
 
     // Time to wait between polling attempts
-    private val POLLING_INTERVAL = 2.seconds
+    private var pollingInterval = 2.seconds
+    private const val MAX_IDLE_POLLS = 15
 
     // Max time to retry polling if it fails (returns null) continuously
-    internal var POLLING_TIMEOUT = 30.seconds
+    private var pollingTimeout = 30.seconds
+
+    @TestOnly
+    fun setForegroundDelayForTest(delay: Duration) {
+      foregroundDelay = delay
+    }
+
+    @TestOnly
+    fun setPairingCommandDelayForTest(delay: Duration) {
+      pairingCommandDelay = delay
+    }
+
+    @TestOnly
+    fun setPollingIntervalForTest(interval: Duration) {
+      pollingInterval = interval
+    }
+
+    @TestOnly
+    fun setPollingTimeoutForTest(timeout: Duration) {
+      pollingTimeout = timeout
+    }
+
+    @TestOnly
+    fun setDelaysForTest(
+      foregroundDelay: Duration = 3.seconds,
+      pairingCommandDelay: Duration = 4.seconds,
+      pollingInterval: Duration = 2.seconds,
+      pollingTimeout: Duration = 30.seconds,
+    ) {
+      setForegroundDelayForTest(foregroundDelay)
+      setPairingCommandDelayForTest(pairingCommandDelay)
+      setPollingIntervalForTest(pollingInterval)
+      setPollingTimeoutForTest(pollingTimeout)
+    }
 
     // All possible terminal states for the pairing process
     val TERMINAL_STATES =

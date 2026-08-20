@@ -334,7 +334,6 @@ gradle_integration_test(
     data = TEST_DATA + [
         "//prebuilts/studio/jdk/jbr-next:jdk_runtime_files",
         "//prebuilts/studio/jdk/jdk11:jdk_runtime_files",
-        "//prebuilts/studio/jdk/jdk8:jdk_runtime_files",
     ],
     maven_repo_zips = [
         "//tools/base/build-system:android_gradle_plugin",
@@ -364,7 +363,6 @@ gradle_integration_test(
     ),
     data = TEST_DATA + [
         "//prebuilts/studio/jdk/jdk11:jdk_runtime_files",
-        "//prebuilts/studio/jdk/jdk8:jdk_runtime_files",
     ],
     jvm_flags = ["-Dgradle.java.version=17"],
     maven_repo_zips = [
@@ -1250,8 +1248,8 @@ maven_repository(
         "@maven//:com.google.gms.google-services.com.google.gms.google-services.gradle.plugin_4.4.4",
         "@maven//:com.google.guava.guava_20.0",
         "@maven//:com.google.guava.listenablefuture_1.0",
-        "@maven//:com.google.protobuf.protobuf-java-util_3.25.5",
-        "@maven//:com.google.protobuf.protobuf-java_3.25.5",
+        "@maven//:com.google.protobuf.protobuf-java-util_4.28.3",
+        "@maven//:com.google.protobuf.protobuf-java_4.28.3",
         "@maven//:com.google.testing.platform.core-proto_0.0.9-alpha02",
         "@maven//:com.google.truth.truth_0.44",
         "@maven//:com.googlecode.jarjar.jarjar_1.3",

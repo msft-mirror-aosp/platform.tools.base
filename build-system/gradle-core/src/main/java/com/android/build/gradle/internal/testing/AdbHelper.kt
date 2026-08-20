@@ -229,7 +229,12 @@ class AdbHelper(
     runAdbShell(emulatorSerial, listOf("getprop", propertyName), logger, stdoutTextProcessor)
   }
 
-  private fun runAdbShell(emulatorSerial: String, shellCommandArgs: List<String>, logger: ILogger, stdoutTextProcessor: (String) -> Unit) {
+  private fun runAdbShell(
+    emulatorSerial: String,
+    shellCommandArgs: List<String>,
+    logger: ILogger,
+    stdoutTextProcessor: (String) -> Unit = {},
+  ) {
     val command = listOf(adbExecutable.absolutePath, "-s", emulatorSerial, "shell") + shellCommandArgs
 
     val adbShellCommandProcess = processFactory(command).start()

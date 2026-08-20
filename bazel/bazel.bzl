@@ -465,6 +465,7 @@ def iml_module(
         test_main_class = None,
         lint_baseline = None,
         lint_enabled = True,
+        lint_partial_analysis = False,
         lint_timeout = None,
         exec_properties = {},
         kotlin_use_compose = False,
@@ -532,10 +533,14 @@ def iml_module(
         test_main_class: See See https://bazel.build/reference/be/java#java_test_args.
         lint_baseline: See impl.
         lint_enabled: enable or disable Lint checks
+        lint_partial_analysis: See lint_test; runs lint in two-phase partial analysis mode.
         lint_timeout: See impl.
         exec_properties: See https://bazel.build/reference/be/common-definitions#common.exec_properties
         kotlin_use_compose: See impl.
         kotlin_use_serialization: See impl.
+        test_deps: Additional test dependencies.
+        compatible_intellij_platforms: Platforms this target is compatible with.
+        generate_coverage_baseline: Whether to generate coverage baseline.
     """
     srcs = split_srcs(srcs, resources, exclude)
     split_test_srcs = split_srcs(test_srcs, test_resources, exclude)
@@ -615,6 +620,9 @@ def iml_module(
             custom_rules = ["//tools/base/lint:studio-checks.lint-rules.jar", "//tools/base/lint/studio-checks/compose-desktop-checks"],
             external_annotations = ["//tools/base/external-annotations:annotations.zip"],
             tags = lint_tags,
+            # Unset when partial analysis is off, so the aspect does not run at all; it
+            # reaches the module dependencies through the iml_module target itself.
+            partial_module = (":" + name) if lint_partial_analysis else None,
             timeout = lint_timeout if lint_timeout else None,
             target_compatible_with = target_compatible_with,
         )
@@ -929,6 +937,7 @@ def _gen_tests(
         test_data: optional list of data to include for test targets.
         jvm_flags: Extra flags passed to java_test().
         visibility: Target visibility.
+        intellij_platform: The target intellij platform.
         **kwargs: Additional arguments passed to java_test().
     """
 

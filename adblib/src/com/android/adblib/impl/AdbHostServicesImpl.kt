@@ -191,6 +191,7 @@ internal class AdbHostServicesImpl(
         DevicesProto.AdbServerStatus.UsbBackend.NATIVE -> ServerStatus.UsbBackend.NATIVE
         DevicesProto.AdbServerStatus.UsbBackend.LIBUSB -> ServerStatus.UsbBackend.LIBUSB
         DevicesProto.AdbServerStatus.UsbBackend.USB_DISABLED -> ServerStatus.UsbBackend.USB_DISABLED
+        DevicesProto.AdbServerStatus.UsbBackend.LIBADBUSB -> ServerStatus.UsbBackend.LIBADBUSB
         null,
         DevicesProto.AdbServerStatus.UsbBackend.UNRECOGNIZED,
         DevicesProto.AdbServerStatus.UsbBackend.UNKNOWN_USB -> ServerStatus.UsbBackend.UNKNOWN

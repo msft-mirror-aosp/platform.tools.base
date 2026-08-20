@@ -474,6 +474,7 @@ open class BuiltinIssueRegistry : IssueRegistry() {
           TextViewDetector.ISSUE,
           TextViewDetector.SELECTABLE,
           ThreadDetector.THREAD,
+          ThreadPriorityDetector.ISSUE,
           TileProviderDetector.TILE_PROVIDER_PERMISSIONS,
           TileProviderDetector.SQUARE_AND_ROUND_TILE_PREVIEWS,
           TileServiceActivityDetector.START_ACTIVITY_AND_COLLAPSE_DEPRECATED,
@@ -651,7 +652,7 @@ open class BuiltinIssueRegistry : IssueRegistry() {
         scope.contains(Scope.ALL_RESOURCE_FILES) -> initialSize += 12
       }
       when {
-        scope.contains(Scope.JAVA_FILE) -> initialSize += 250
+        scope.contains(Scope.JAVA_FILE) -> initialSize += 255
         scope.contains(Scope.CLASS_FILE) -> initialSize += 16
         scope.contains(Scope.MANIFEST) -> initialSize += 100
         scope.contains(Scope.GRADLE_FILE) -> initialSize += 40

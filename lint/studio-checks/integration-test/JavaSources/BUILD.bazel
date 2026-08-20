@@ -1,0 +1,41 @@
+# Copyright (C) 2026 The Android Open Source Project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load("@rules_java//java:defs.bzl", "java_library")
+load("//tools/base/bazel:kotlin.bzl", "kotlin_library")
+
+licenses(["notice"])
+
+# Java sources: a native java_library dependency is analyzed by the aspect like any other
+# module, and a lint test's own module can mix Java and Kotlin sources.
+
+java_library(
+    name = "lib",
+    srcs = ["lib/test/javasrc/lib/JavaLib.java"],
+    deps = ["//tools/base/annotations"],
+)
+
+kotlin_library(
+    name = "consumer",
+    srcs = [
+        "consumer/test/javasrc/consumer/JavaConsumer.java",
+        "consumer/test/javasrc/consumer/KotlinConsumer.kt",
+    ],
+    lint_baseline = "consumer/ConsumerBaseline.xml",
+    lint_partial_analysis = True,
+    deps = [
+        ":lib",
+        "//tools/base/annotations",
+    ],
+)

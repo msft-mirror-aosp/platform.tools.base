@@ -948,6 +948,8 @@ class VariantManager<
             getLazyManifestParser(file, false)
           }
 
+        testSuiteSources.forEach { it.initializeCreationConfig(testSuite) }
+
         variant.addTestSuite(testSuiteBuilder.name, testSuite)
         testSuites.add(testSuite)
       }

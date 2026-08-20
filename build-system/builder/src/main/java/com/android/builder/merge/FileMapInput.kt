@@ -18,13 +18,22 @@ package com.android.builder.merge
 
 import java.io.File
 import java.io.InputStream
+import java.util.function.Predicate
 import kotlin.io.inputStream
 
-class FileMapInput(private val name: String, private val fileMap: Map<String, File>) : FileMergerInput {
+class FileMapInput
+@JvmOverloads
+constructor(
+  private val name: String,
+  private val fileMap: Map<String, File>,
+  private val pathPredicate: Predicate<String> = Predicate { true },
+) : FileMergerInput {
 
   val streamMap = mutableMapOf<String, InputStream>()
 
-  override fun getAllPaths(): Set<String> = fileMap.keys
+  private val filteredPaths: Set<String> by lazy { fileMap.keys.filter { pathPredicate.test(it) }.toSet() }
+
+  override fun getAllPaths(): Set<String> = filteredPaths
 
   override fun getName(): String = name
 

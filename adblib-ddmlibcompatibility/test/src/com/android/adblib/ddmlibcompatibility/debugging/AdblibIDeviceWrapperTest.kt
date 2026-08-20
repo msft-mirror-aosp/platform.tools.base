@@ -1192,6 +1192,32 @@ class AdblibIDeviceWrapperTest {
     assertEquals(value, removedValue)
   }
 
+  @Test
+  fun testForceStopValidPackageName() = runBlockingWithTimeout {
+    // Prepare
+    val (connectedDevice, fakeDevice) = createConnectedDevice("device1")
+    val adblibIDeviceWrapper = createAdblibIDeviceWrapper(connectedDevice, bridge)
+
+    // Act
+    adblibIDeviceWrapper.forceStop("com.example.app_2")
+
+    // Assert
+    assertEquals(listOf("force-stop com.example.app_2"), fakeDevice.amLogs)
+  }
+
+  @Test
+  fun testForceStopInvalidPackageName() = runBlockingWithTimeout {
+    // Prepare
+    val (connectedDevice, fakeDevice) = createConnectedDevice("device1")
+    val adblibIDeviceWrapper = createAdblibIDeviceWrapper(connectedDevice, bridge)
+
+    // Act
+    adblibIDeviceWrapper.forceStop("com.example.app; echo test")
+
+    // Assert
+    assertEquals(emptyList<String>(), fakeDevice.amLogs)
+  }
+
   private suspend fun createConnectedDevice(
     serialNumber: String,
     deviceStatus: DeviceState.DeviceStatus = DeviceState.DeviceStatus.ONLINE,

@@ -356,6 +356,27 @@ class AndroidTestUtil(
     assertThat(logcatText).contains("TestRunner: finished: useAppContext(com.example.android.kotlin.ExampleInstrumentedTest)")
   }
 
+  fun connectedAndroidTestWithLogcatOutputsNoExceptions() {
+    selectModule("app")
+
+    val result = executor.run(testTaskName)
+
+    val logcatPath = resolvePath(testLogcatPath)
+    assertThat(logcatPath).exists()
+    result.assertOutputDoesNotContain("PreconditionViolationException")
+    result.assertErrorDoesNotContain("PreconditionViolationException")
+
+    val testResultPb = resolveTestResultPbPath()
+    assertThat(testResultPb).exists()
+
+    val testSuiteResult = testResultPb.toFile().inputStream().use { TestSuiteResult.parseFrom(it) }
+    val testResult = testSuiteResult.testResultList.find { it.testCase.testMethod == "useAppContext" }
+    assertThat(testResult).isNotNull()
+    val logcatArtifact = testResult?.outputArtifactList?.find { it.label.label == "logcat" && it.label.namespace == "android" }
+    assertThat(logcatArtifact).isNotNull()
+    assertThat(logcatArtifact?.sourcePath?.path).isEqualTo(logcatPath.toFile().absolutePath)
+  }
+
   fun connectedAndroidTestFromTestOnlyModule() {
     selectModule("test")
 

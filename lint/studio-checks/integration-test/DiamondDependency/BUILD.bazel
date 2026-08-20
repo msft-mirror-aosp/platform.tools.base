@@ -1,0 +1,50 @@
+# Copyright (C) 2026 The Android Open Source Project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load("//tools/base/bazel:kotlin.bzl", "kotlin_library")
+
+licenses(["notice"])
+
+kotlin_library(
+    name = "base",
+    srcs = ["base/test/diamond/base/Base.kt"],
+    deps = ["//tools/base/annotations"],
+)
+
+kotlin_library(
+    name = "left",
+    srcs = ["left/test/diamond/left/Left.kt"],
+    deps = [":base"],
+)
+
+kotlin_library(
+    name = "right",
+    srcs = ["right/test/diamond/right/Right.kt"],
+    deps = [":base"],
+)
+
+# Diamond dependency: top depends on left and right, both of which depend on base.
+# Verifies partial analysis aspect traversal and BazelLintWrapper descriptor handling
+# on diamond dependency graphs.
+kotlin_library(
+    name = "top",
+    srcs = ["top/test/diamond/top/Top.kt"],
+    lint_baseline = "top/TopBaseline.xml",
+    lint_partial_analysis = True,
+    deps = [
+        ":left",
+        ":right",
+        "//tools/base/annotations",
+    ],
+)

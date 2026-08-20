@@ -20,6 +20,7 @@ import com.android.tools.lint.checks.fx.analysis.Ans
 import com.android.tools.lint.checks.fx.analysis.EffectResult
 import com.android.tools.lint.checks.fx.analysis.LocalFun
 import com.android.tools.lint.checks.fx.analysis.Module
+import com.android.tools.lint.checks.fx.analysis.Module.AnnotationParser.Companion.nearestBaseAnns
 import com.android.tools.lint.checks.fx.result.AssumptionTable
 import com.android.tools.lint.checks.fx.result.ClassId
 import com.android.tools.lint.checks.fx.result.Constraint
@@ -86,7 +87,9 @@ import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.uast.UClass
 import org.jetbrains.uast.UElement
 import org.jetbrains.uast.ULambdaExpression
+import org.jetbrains.uast.UMethod
 import org.jetbrains.uast.UVariable
+import org.jetbrains.uast.toUElement
 
 /**
  * Generic detector for effect with only one way of combining by joining up a [Lattice] regardless of whether sequentially or from different
@@ -168,7 +171,7 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
           }
         }
 
-        val summaries = Analysis(program, effects, knownResults).leastFixPoint(entries)
+        val summaries = Analysis(program, effects, knownResults, externalAnnotationFinder(context)).leastFixPoint(entries)
 
         buildMap {
           for ((k, v) in summaries) {
@@ -208,6 +211,33 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
    * is [Lattice.top].
    */
   protected abstract fun report(context: Context, error: Error<FX>)
+
+  /** Best-effort lookup of the explicit effect annotation on a method not in the current scope or the assumption table */
+  private fun externalAnnotationFinder(context: Context): (Type.MethodRef) -> FX? {
+    val evaluator = context.client.getUastParser(context.project).evaluator
+    fun find(ref: Type.MethodRef): FX? {
+      val psiClass = ref.klass.fqn?.let(evaluator::findClass) ?: return null
+      val psiMethod =
+        psiClass.findMethodsByName(ref.method.name, true).find { MethodId(it) == ref.method }
+          ?: psiClass.constructors.find { MethodId(it) == ref.method }
+          ?: return null
+      val uMethod = psiMethod.toUElement() as? UMethod ?: return null
+      return parseMethodImmediateAnnotations(evaluator, uMethod)
+        ?: nearestBaseAnns(evaluator, psiMethod.findSuperMethods()).map { it.annotated }.reduceOrNull(effects::meetOf)
+    }
+
+    return memoizeNullable(::find)
+  }
+
+  private fun <X, Y : Any> memoizeNullable(compute: (X) -> Y?): (X) -> Y? {
+    val cache = hashMapOf<X, Y?>()
+    return fun(key) =
+      // TODO `getOrPutIfMissing` when available in 2.4
+      when {
+        key in cache -> cache[key]
+        else -> compute(key).also { cache[key] = it }
+      }
+  }
 
   private fun maybeSavePartialResults(context: Context, program: Module<FX>) {
     if (context.isGlobalAnalysis()) return

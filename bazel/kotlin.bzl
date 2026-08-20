@@ -221,6 +221,7 @@ def kotlin_library(
         lint_custom_rules = [],
         lint_extra_args = [],
         lint_is_test_sources = False,
+        lint_partial_analysis = False,
         lint_timeout = None,
         compress_resources = False,
         testonly = False,
@@ -246,6 +247,7 @@ def kotlin_library(
         lint_custom_rules: See impl.
         lint_extra_args: See impl.
         lint_is_test_sources: See impl.
+        lint_partial_analysis: See impl.
         lint_timeout: See impl.
         compress_resources: Whether to compress resources.
         testonly: See impl.
@@ -303,6 +305,11 @@ def kotlin_library(
             tags = ["noci:studio-win"],
             is_test_sources = lint_is_test_sources,
             extra_args = ["--java-language-level", jvm_target] + lint_extra_args,
+            # Unset when partial analysis is off, so the aspect does not run at all. The
+            # aspect reaches deps and exports through the library target itself; only
+            # lint_classpath extras need to be analyzed separately.
+            partial_module = (":" + name) if lint_partial_analysis else None,
+            partial_deps = (lint_classpath or []) if lint_partial_analysis else [],
             timeout = lint_timeout if lint_timeout else None,
         )
 

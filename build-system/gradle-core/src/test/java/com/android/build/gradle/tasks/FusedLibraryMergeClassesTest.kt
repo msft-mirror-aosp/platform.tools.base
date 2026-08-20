@@ -38,8 +38,8 @@ internal class FusedLibraryMergeClassesTest {
   @Test
   fun testNoConflict() {
     testWithTask { jar1: File, jar2: File, task: FusedLibraryMergeClasses ->
-      createJar(jar1, "source1.class")
-      createJar(jar2, "source2.class")
+      createJarWithDefaultContent(jar1, "source1.class")
+      createJarWithDefaultContent(jar2, "source2.class")
 
       task.taskAction()
     }
@@ -51,8 +51,8 @@ internal class FusedLibraryMergeClassesTest {
   @Test
   fun testPermittedConflicts() {
     testWithTask { jar1: File, jar2: File, task: FusedLibraryMergeClasses ->
-      createJar(jar1, "source1.class", "meta-inf/somedir/module-info.class")
-      createJar(jar2, "source2.class", "meta-inf/somedir/module-info.class")
+      createJarWithDefaultContent(jar1, "source1.class", "meta-inf/somedir/module-info.class")
+      createJarWithDefaultContent(jar2, "source2.class", "meta-inf/somedir/module-info.class")
 
       task.taskAction()
     }
@@ -62,8 +62,28 @@ internal class FusedLibraryMergeClassesTest {
   @Test(expected = DuplicateFileCopyingException::class)
   fun testConflicts() {
     testWithTask { jar1: File, jar2: File, task: FusedLibraryMergeClasses ->
-      createJar(jar1, "source1.class")
-      createJar(jar2, "source1.class")
+      createJarWithSingleEntry(jar1, "source1.class", "content 1")
+      createJarWithSingleEntry(jar2, "source1.class", "content 2")
+
+      task.taskAction()
+    }
+  }
+
+  @Test
+  fun testExactDuplicate() {
+    testWithTask { jar1: File, jar2: File, task: FusedLibraryMergeClasses ->
+      createJarWithDefaultContent(jar1, "source1.class")
+      createJarWithDefaultContent(jar2, "source1.class")
+
+      task.taskAction()
+    }
+    Truth.assertThat(File(build, "source1.class").exists()).isTrue()
+  }
+
+  @Test(expected = org.gradle.api.InvalidUserDataException::class)
+  fun testPathTraversal() {
+    testWithTask { jar1: File, jar2: File, task: FusedLibraryMergeClasses ->
+      createJarWithDefaultContent(jar1, "../traversal.class")
 
       task.taskAction()
     }
@@ -83,13 +103,21 @@ internal class FusedLibraryMergeClassesTest {
     action(jar1, jar2, task)
   }
 
-  private fun createJar(file: File, vararg content: String) {
-    JarOutputStream(FileOutputStream(file)).use {
-      content.forEach { entryName ->
-        it.putNextEntry(JarEntry(entryName))
-        it.writer().write("jvm bytecodes")
-        it.closeEntry()
+  private fun createJarWithDefaultContent(file: File, vararg entries: String) {
+    JarOutputStream(FileOutputStream(file)).use { jos ->
+      entries.forEach { entryName ->
+        jos.putNextEntry(JarEntry(entryName))
+        jos.write("content".toByteArray())
+        jos.closeEntry()
       }
+    }
+  }
+
+  private fun createJarWithSingleEntry(file: File, entryName: String, content: String) {
+    JarOutputStream(FileOutputStream(file)).use { jos ->
+      jos.putNextEntry(JarEntry(entryName))
+      jos.write(content.toByteArray())
+      jos.closeEntry()
     }
   }
 }

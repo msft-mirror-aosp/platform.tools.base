@@ -136,7 +136,7 @@ private suspend fun getComposeVersion(commandSender: CommandSender): String? {
 /** Deploys the Compose Inspector JAR to the device sandbox and requests the agent to load it dynamically. */
 private suspend fun launchComposeInspector(commandSender: CommandSender, injectionManager: InjectionManager, jarFile: File) {
   val inspectorMetadata = InspectorMetadata(id = ProtocolConstants.COMPOSE_INSPECTOR_ID, localJarPath = jarFile.toPath())
-  val dexPath = injectionManager.pushInspectorPayload(inspectorMetadata)
+  val dexPath = injectionManager.stageInspectorPayload(inspectorMetadata)
 
   val createCommand =
     UiInspectorProtocol.Command.newBuilder()

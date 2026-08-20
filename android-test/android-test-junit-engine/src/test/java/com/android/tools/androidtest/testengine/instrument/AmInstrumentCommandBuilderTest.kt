@@ -164,4 +164,19 @@ class AmInstrumentCommandBuilderTest {
   fun build_throwsIfRunnerMissing() {
     AmInstrumentCommandBuilder().setAdbPath("a").setDeviceSerial("s").build()
   }
+
+  @Test
+  fun build_withInstrumentInPcc() {
+    val command =
+      AmInstrumentCommandBuilder()
+        .setAdbPath("adb")
+        .setDeviceSerial("serial")
+        .setInstrumentationRunner("pkg", "runner")
+        .setInstrumentInPcc(true)
+        .build()
+
+    assertThat(command)
+      .containsExactly("adb", "-s", "serial", "shell", "am", "instrument", "-r", "-w", "--instrument-in-pcc", "pkg/runner")
+      .inOrder()
+  }
 }

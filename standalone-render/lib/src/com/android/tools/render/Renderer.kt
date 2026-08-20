@@ -26,6 +26,8 @@ import com.android.tools.render.common.PreviewScreenshot
 import com.android.tools.render.common.PreviewScreenshotResult
 import com.android.tools.render.common.RenderProblem
 import com.android.tools.render.common.ScreenshotError
+import com.android.tools.render.compose.ComposeScreenshot
+import com.android.tools.render.discovery.PreviewDiscoveryEngine
 import com.android.tools.rendering.RenderLogger
 import com.android.tools.rendering.RenderResult
 import com.android.tools.rendering.RenderService
@@ -67,7 +69,8 @@ class Renderer(
    *   any potential errors.
    */
   fun render(screenshot: PreviewScreenshot, outputFolderPath: String): List<PreviewScreenshotResult> {
-    val previewElement = screenshot.toPreviewElement(module)
+    val effectiveScreenshot = resolvePreviewParameters(screenshot)
+    val previewElement = effectiveScreenshot.toPreviewElement(module)
     val renderRequest =
       RenderRequest(configurationModifier = previewElement::applyTo, xmlLayoutsProvider = { previewElement.resolveXmlLayouts() })
 
@@ -105,6 +108,28 @@ class Renderer(
         screenshotResult
       }
       .toList()
+  }
+
+  /**
+   * Resolves and populates preview parameters for the given [screenshot] if they were not explicitly provided.
+   *
+   * When callers (such as CLI tools) submit render requests specifying only the method FQN and preview ID, this method utilizes
+   * [PreviewDiscoveryEngine] to inspect the compiled bytecode, discover the target `@Preview` annotation, and populate missing
+   * configuration values before Layoutlib rendering.
+   *
+   * @param screenshot The input preview screenshot request.
+   * @return An updated [PreviewScreenshot] containing discovered parameters, or the original [screenshot] if parameters were already
+   *   specified or no bytecode annotations were found.
+   */
+  private fun resolvePreviewParameters(screenshot: PreviewScreenshot): PreviewScreenshot {
+    if (screenshot !is ComposeScreenshot || screenshot.previewParams.isNotEmpty()) {
+      return screenshot
+    }
+
+    val discoveryEngine = PreviewDiscoveryEngine(module)
+    val discovered = discoveryEngine.discover(screenshot.methodFQN, screenshot.previewId) ?: return screenshot
+
+    return screenshot.copy(previewParams = discovered.previewParams)
   }
 
   fun render(request: RenderRequest): Sequence<Pair<Configuration, RenderResult>> {

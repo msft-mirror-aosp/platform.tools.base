@@ -30,6 +30,7 @@ internal class AssetsTestSuiteSourceSet(
   private val isMixed: Boolean = false,
   variantServices: VariantServices,
   override val dependencies: AgpTestSuiteDependencies?,
+  private val subDirectory: String = "assetsTest",
 ) : TestSuiteSourceSet.Assets {
 
   override fun getName(): String = sourceSetName
@@ -37,7 +38,7 @@ internal class AssetsTestSuiteSourceSet(
   /** The root-level directory for this test suite source set. */
   private val rootFolder =
     if (isMixed) {
-      File(variantServices.projectInfo.projectDirectory.asFile, "src/$testSuiteName/$sourceSetName")
+      File(variantServices.projectInfo.projectDirectory.asFile, "src/$testSuiteName/$subDirectory")
     } else {
       File(variantServices.projectInfo.projectDirectory.asFile, "src/$testSuiteName")
     }

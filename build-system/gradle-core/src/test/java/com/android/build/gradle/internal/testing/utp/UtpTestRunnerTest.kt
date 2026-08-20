@@ -100,6 +100,7 @@ class UtpTestRunnerTest {
         null,
         false,
         false,
+        privateComputeCoreInstrumentation = false,
         mock(),
       )
 

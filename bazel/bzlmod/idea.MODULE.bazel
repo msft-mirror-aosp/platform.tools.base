@@ -17,6 +17,23 @@ local_path_override(
     path = "tools/idea/lib",
 )
 
+# Required because tools/idea/MODULE.bazel declares a bazel_dep on jps_to_bazel without a version.
+# Sub-module path overrides are ignored by Bzlmod, so the root module must specify the path override.
+bazel_dep(name = "jps_to_bazel", repo_name = "tools_idea_jps_to_bazel")
+local_path_override(
+    module_name = "jps_to_bazel",
+    path = "tools/idea/platform/build-scripts/bazel",
+)
+
+# Overrides rules_kotlin to match the JetBrains fork version defined in tools/idea/MODULE.bazel.
+# Bzlmod ignores archive_overrides in sub-modules, so it must be specified at the root level.
+archive_override(
+    module_name = "rules_kotlin",
+    sha256 = "5c9b4664b3f926624a405f1d39ce74bcfc0a46b319df4f20d2ee63bdfed9c43e",
+    strip_prefix = "rules_kotlin-ffbc4307c3a55f61e05c12481b6dcb929d6e2b1f",
+    url = "https://github.com/JetBrains/rules_kotlin/archive/ffbc4307c3a55f61e05c12481b6dcb929d6e2b1f.zip",
+)
+
 # Permit the diamond dependency between rules_apple and rules_jvm.
 multiple_version_override(
     module_name = "rules_swift",
@@ -34,25 +51,20 @@ single_version_override(
 )
 
 # TODO: Explain why this is needed
-# https://fusion2.corp.google.com/invocations/0f18f827-c04f-4872-a402-e512e7a271df
-cc_compat = use_extension("@rules_cc//cc:extensions.bzl", "compatibility_proxy")
-use_repo(cc_compat, "cc_compatibility_proxy")
-
-# TODO: Explain why this is needed
 # Required to import @community//plugins/kotlin:kotlin_test_dependencies.bzl
 # https://fusion2.corp.google.com/invocations/b7cee79e-d32f-4eb0-a305-ad25107baa32
 kotlin_test_deps = use_repo_rule("@tools_idea//plugins/kotlin:kotlin_test_dependencies.bzl", "kotlin_test_deps")
 
 kotlin_test_deps(name = "kotlin_test_deps")
 
-# TODO: Explain why this is needed
-# Required for dep @debugger_test_deps_debugger_agent//file:debugger-agent.jar
-# https://fusion2.corp.google.com/invocations/900ec83f-dcf4-468c-a7c8-a4b1314421ce
+# Copied from tools/idea/debugger_test_deps.MODULE.bazel
+# This file is originally included in tools/idea/MODULE.bazel but that breaks the build
+# because the include is not allowed from a sub module.
 http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
 
 http_file(
     name = "debugger_test_deps_debugger_agent",
     downloaded_file_path = "debugger-agent.jar",
-    sha256 = "e048fb4bf2e9e883681e3070996fe4baf317287b175e09bab31dac799d0f6466",
-    url = "https://cache-redirector.jetbrains.com/packages.jetbrains.team/maven/p/ij/intellij-dependencies/org/jetbrains/intellij/deps/debugger-agent/1.136/debugger-agent-1.136.jar",
+    sha256 = "37f0ebd285fad3e02b9f3000cf7088c96b3141121dadd6a205c78307f48073ca",
+    url = "https://cache-redirector.jetbrains.com/packages.jetbrains.team/maven/p/ij/intellij-dependencies/org/jetbrains/intellij/deps/debugger-agent/1.191/debugger-agent-1.191.jar",
 )

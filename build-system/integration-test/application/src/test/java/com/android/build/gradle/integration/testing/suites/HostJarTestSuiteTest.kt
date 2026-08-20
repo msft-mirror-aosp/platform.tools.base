@@ -151,6 +151,20 @@ class HostJarTestSuiteJavaResProcessingTest {
     }
   }
 
+  @Test
+  fun testAssembleTask() {
+    val project: GradleBuild = rule.build
+    val result: GradleBuildResult = project.executor.run(":app:assembleFirstHostJarRedDebug")
+
+    Truth.assertThat(result.didWorkTasks).contains(":app:compileFirstHostJarRedDebugJavaWithJavac")
+    Truth.assertThat(result.didWorkTasks).contains(":app:processFirstHostJarRedDebugJavaRes")
+    Truth.assertThat(result.getTask(":app:assembleFirstHostJarRedDebug")).isNotNull()
+
+    val javaRes = getJavaRes(project)
+    PathSubject.assertThat(javaRes).exists()
+    PathSubject.assertThat(javaRes.resolve("some/random/file.txt")).contains("some random text")
+  }
+
   private fun getJavaRes(project: GradleBuild) =
     project
       .subProject(":app")

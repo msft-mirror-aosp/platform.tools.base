@@ -576,7 +576,14 @@ constructor(client: LintCliClient, output: File) : Reporter(client, output) {
 
     var indent = indent
     writer.indent(indent++).write("\"fixes\": [\n")
-    edits.forEachIndexed { index, (fix, files) -> writeQuickFix(performer, incident, fix, files, index == fixes.size - 1, indent) }
+    // Only write fixes that have corresponding edits, since there are quickfixes
+    // in lint that just communicate data to the IDE to act on or for example to
+    // perform a navigation/selection to take you to the right place but cannot
+    // actually figure out what to change
+    val fixableEdits = edits.filter { (_, files) -> files.isNotEmpty() && files.any { it.edits.isNotEmpty() } }
+    fixableEdits.forEachIndexed { index, (fix, files) ->
+      writeQuickFix(performer, incident, fix, files, index == fixableEdits.size - 1, indent)
+    }
     writer.indent(--indent).write("],\n")
   }
 
@@ -588,26 +595,20 @@ constructor(client: LintCliClient, output: File) : Reporter(client, output) {
     last: Boolean,
     indent: Int,
   ) {
-    // Only write fixes that have corresponding edits, since there are quickfixes
-    // in lint that just communicate data to the IDE to act on or for example to
-    // perform a navigation/selection to take you to the right place but cannot
-    // actually figure out what to change
-    if (files.isNotEmpty() && files.any { it.edits.isNotEmpty() }) {
-      var indent = indent
-      val description = fix.getDisplayName() ?: "Fix"
-      writer.indent(indent++).write("{\n")
-      writer.writeDescription(indent, "description", description, comma = true)
-      writer.indent(indent++).write("\"artifactChanges\": [\n")
+    var indent = indent
+    val description = fix.getDisplayName() ?: "Fix"
+    writer.indent(indent++).write("{\n")
+    writer.writeDescription(indent, "description", description, comma = true)
+    writer.indent(indent++).write("\"artifactChanges\": [\n")
 
-      files.forEachIndexed { index, file ->
-        if (file.edits.isNotEmpty()) {
-          writeArtifactChange(performer, incident, file, index == files.size - 1, indent)
-        }
+    files.forEachIndexed { index, file ->
+      if (file.edits.isNotEmpty()) {
+        writeArtifactChange(performer, incident, file, index == files.size - 1, indent)
       }
-
-      writer.indent(--indent).write("]\n")
-      writer.indent(--indent).write("}${if (last) "\n" else ",\n"}")
     }
+
+    writer.indent(--indent).write("]\n")
+    writer.indent(--indent).write("}${if (last) "\n" else ",\n"}")
   }
 
   /** Returns a (by default 1-based line number, or 0-based if you pass 0 into [startLineNumber]) line number. */

@@ -41,7 +41,7 @@ fun configureAndroidTestEngine(
   val globalConfig = creationConfig.global
   val testedConfig = (creationConfig as? DeviceTestCreationConfig)?.mainVariant
 
-  val androidTestEngineVersion = if (Version.IS_AGP_RELEASE_BRANCH) "0.1.0-alpha03" else "0.1.0-dev"
+  val androidTestEngineVersion = Version.ANDROID_TEST_ENGINE_VERSION
 
   task.classpath =
     creationConfig.services.fileCollection().also {
@@ -111,6 +111,7 @@ fun configureAndroidTestEngine(
     testData.instrumentationRunnerArguments.map { it.getOrDefault("useTestStorageService", "false") },
   )
   task.engineInputProperties.put("android-test.is-test-coverage-enabled", testData.testCoverageEnabled.map { it.toString() })
+  task.engineInputProperties.put("android-test.instrument-in-pcc", testData.privateComputeCoreInstrumentation.map { it.toString() })
   task.engineInputProperties.put(
     "android-test.coverage-file-on-device",
     testData.instrumentationRunnerArguments.map { it.getOrDefault("coverageFile", "") },

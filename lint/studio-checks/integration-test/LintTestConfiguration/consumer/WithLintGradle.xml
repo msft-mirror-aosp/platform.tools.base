@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<issues format="6" by="lint 9.5.0-dev" type="baseline" client="" dependencies="true" name="" variant="all" version="9.5.0-dev">
+
+    <issue
+        id="EagerGradleConfiguration"
+        message="Use register instead of create"
+        errorLine1="  project.tasks.create(&quot;eager&quot;)"
+        errorLine2="                ~~~~~~">
+        <location
+            file="tools/base/lint/studio-checks/integration-test/LintTestConfiguration/consumer/test/config/gradle/Eager.kt"
+            line="23"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="VisibleForTests"
+        message="This method should only be accessed from tests or within package private scope"
+        errorLine1="  helper()"
+        errorLine2="  ~~~~~~">
+        <location
+            file="tools/base/lint/studio-checks/integration-test/LintTestConfiguration/consumer/test/config/consumer/Consumer.kt"
+            line="29"
+            column="3"/>
+    </issue>
+
+    <issue
+        id="WrongThread"
+        message="Call must be from `@UiThread`, but context is allowing `@AnyThread`"
+        errorLine1="  doStuff()"
+        errorLine2="  ~~~~~~~~~">
+        <location
+            file="tools/base/lint/studio-checks/integration-test/LintTestConfiguration/consumer/test/config/consumer/Consumer.kt"
+            line="25"
+            column="3"/>
+    </issue>
+
+</issues>

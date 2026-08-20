@@ -168,6 +168,7 @@ internal open class Analysis<FX : Any>(
   private val module: Module<FX>,
   private val concreteEffect: Lattice<FX>,
   private val assumptions: ResultTable<FX> = ResultTable.of(persistentMapOf()),
+  private val externalAnnotation: (Type.MethodRef) -> FX? = { null },
   private val log: (() -> String) -> Unit = { /* ignore */ },
 ) : DependentMonotone<Point<FX>, Ans<FX>> {
 
@@ -284,17 +285,45 @@ internal open class Analysis<FX : Any>(
         fun <R : EffectResult.Eval<FX>> Mode<FX, R>.eval(body: UExpression): Result<Type<FX>, R> =
           eval(rec, method.initEnvironment, body, persistentListOf(ReturnRecord(body.uastParent!!)))
 
+        // Analyze the default argument computation as part of the method's code, not at every call site!
+        fun <R : EffectResult.Eval<FX>> Mode<FX, R>.defaultParameterEffects(): R {
+          val params =
+            when (val source = method.source) {
+              is UMethod -> source.uastParameters
+              is ULambdaExpression -> source.valueParameters
+              else -> emptyList()
+            }
+          return params
+            .asSequence()
+            .mapNotNull { it.uastInitializer }
+            .fold(bottom) { acc, initExpr ->
+              acc join eval(rec, method.initEnvironment /* TODO previous args */, initExpr, persistentListOf(ReturnRecord(initExpr))).effect
+            }
+        }
+
         when (val status = method.status) {
           is MethodBody.Status.Abstract -> Result(method.returnTypeAnnotation, Inapplicable)
-          is MethodBody.Status.BasicConstructor -> unboundedInferenceMode.pure(method.returnTypeAnnotation)
+          is MethodBody.Status.BasicConstructor ->
+            with(unboundedInferenceMode) {
+              Result(method.returnTypeAnnotation, fxInferenceLattice.catchError { defaultParameterEffects() })
+            }
           is MethodBody.Status.ForChecking ->
             with(checkingMode(status.upperBound)) {
+              val defaultParamFx = fxCheckingLattice.catchError { defaultParameterEffects() }
               when (val body = status.body) {
-                null -> pure(method.returnTypeAnnotation)
-                else -> checkingLattice.catchError { eval(body) }
+                null -> Result(method.returnTypeAnnotation, defaultParamFx)
+                else -> {
+                  val (t, bodyFx) = checkingLattice.catchError { eval(body) }
+                  Result(t, defaultParamFx join bodyFx)
+                }
               }
             }
-          is MethodBody.Status.ForInference -> inferenceLattice.catchError { inferenceMode(status.base).eval(status.body) }
+          is MethodBody.Status.ForInference ->
+            with(inferenceMode(status.base)) {
+              val defaultParamFx = fxInferenceLattice.catchError { defaultParameterEffects() }
+              val (t, fx) = inferenceLattice.catchError { eval(status.body) }
+              Result(t, defaultParamFx join fx)
+            }
         }
       }
       is Point.Instantiation -> instantiationLattice.catchError { point.subst.instType(rec, point.type) }
@@ -694,7 +723,7 @@ internal open class Analysis<FX : Any>(
               else -> loop(returnExpr)
             }
           // Accumulate the returned value at the target
-          when (val jumpTarget = e.jumpTarget) {
+          when (val jumpTarget = e.jumpTarget?.unwrapLabels()) {
             null -> target.accumulate(t)
             else -> returns.find { it.target == jumpTarget }?.accumulate(t) ?: throw UnresolvedReturnTargetException(e, returns)
           }
@@ -1026,7 +1055,13 @@ internal open class Analysis<FX : Any>(
         when (val assumption = assumptions[method]) {
           null ->
             when (val methodDefn = module[method]) {
-              null -> instantiationLattice.bottom // If method not found, we ASSUME it's from a spurious call
+              // The method isn't indexed (e.g. defined in a file outside the analysis scope, or spurious).
+              // If it's explicitly annotated, honor the annotation.
+              null ->
+                when (val fx = externalAnnotation(method)) {
+                  null -> instantiationLattice.bottom
+                  else -> Result(typeLattice.unsure, Instantiation(Effect(fx)))
+                }
               else -> {
                 val (t, methodEffectResult) = rec[method]
                 val methodFx: Effect<FX> =
@@ -1292,7 +1327,7 @@ internal open class Analysis<FX : Any>(
         else ->
           when (val parent = e.uastParent) {
             is UCallExpression -> typeOf(parent.getParameterForArgument(e)?.type)
-            is ULocalVariable -> typeOf((parent.javaPsi as PsiVariable).type)
+            is ULocalVariable -> if (e.isDelegateOf(parent)) null else typeOf((parent.javaPsi as PsiVariable).type)
             else -> null
           }
       }
@@ -1343,9 +1378,8 @@ internal open class Analysis<FX : Any>(
           val paramName = paramPsi.name
           val arg =
             call.getArgumentForParameter(i)
-              ?: param.uastInitializer // TODO wrong. Make it lexically, not dynamically scoped!
               ?: OpaqueConstant(PsiTypeAdapter.translate(typeParams, paramPsi.type)).also {
-                log { "WARNING: Can't retrieve default argument for $paramName, supplying $it" }
+                if (param.uastInitializer == null) log { "WARNING: Can't retrieve default argument for $paramName, supplying $it" }
               }
           // TODO (b/406877361)
           when {
@@ -1529,6 +1563,13 @@ internal open class Analysis<FX : Any>(
 
   private class UnresolvedReturnTargetException(val statement: UElement, val targets: List<ReturnRecord<*>>) : Exception()
 }
+
+/** Whether [this] expression is the delegate of [variable] (as in `val x by delegate`) */
+private fun UExpression.isDelegateOf(variable: UVariable): Boolean =
+  (variable.sourcePsi as? KtProperty)?.delegateExpression.let { it != null && it == sourcePsi }
+
+/** Strip labels off `lbl@ (lbl2@ e)`, giving the expression `e` that the label(s) name */
+private tailrec fun UElement.unwrapLabels(): UElement = if (this is ULabeledExpression) expression.unwrapLabels() else this
 
 private val <T> Lattice<T>.emptyResult: Result<Type<Nothing>, T>
   get() = pure(Type.None)

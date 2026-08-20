@@ -23,8 +23,12 @@ import java.io.File
 import java.io.IOException
 import java.io.InputStream
 import java.io.UncheckedIOException
+import java.util.function.Predicate
 
-class LazyFileMergerInput(private val name: String, private val jarFile: File) : FileMergerZipInput {
+class LazyFileMergerInput
+@JvmOverloads
+constructor(private val name: String, private val jarFile: File, private val pathPredicate: Predicate<String> = Predicate { true }) :
+  FileMergerZipInput {
 
   private var zipRepo: ZipRepo? = null
   private var zipMap: ZipMap? = null
@@ -33,7 +37,9 @@ class LazyFileMergerInput(private val name: String, private val jarFile: File) :
     if (!jarFile.exists()) {
       emptySet()
     } else {
-      ZipRepo(jarFile.toPath()).use { repo -> repo.entries.values.filter { !it.isDirectory }.map { it.name }.toSet() }
+      ZipRepo(jarFile.toPath()).use { repo ->
+        repo.entries.values.filter { !it.isDirectory && pathPredicate.test(it.name) }.map { it.name }.toSet()
+      }
     }
   }
 

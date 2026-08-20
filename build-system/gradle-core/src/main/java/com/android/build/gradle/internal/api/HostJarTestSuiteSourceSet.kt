@@ -35,6 +35,7 @@ internal class HostJarTestSuiteSourceSet(
   kotlinEnabled: Boolean,
   includeAndroidResources: Provider<Boolean>,
   override val dependencies: AgpTestSuiteDependencies?,
+  subDirectory: String = "test",
 ) :
   AbstractTestSuiteSourceSet(
     sourceSetName = sourceSetName,
@@ -42,6 +43,7 @@ internal class HostJarTestSuiteSourceSet(
     isMixed = isMixed,
     variantServices = variantServices,
     userAddedSourceSets = userAddedSourceSets,
+    subDirectory = subDirectory,
   ),
   TestSuiteSourceSet.HostJar {
 

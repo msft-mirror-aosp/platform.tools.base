@@ -40,14 +40,14 @@ class JavaCompileWithToolChainTest {
     rule.build {
       gradleProperties {
         add("org.gradle.java.installations.auto-detect", "false")
-        add("org.gradle.java.installations.paths", jdk8LocationInGradleFile)
-        add("toolchainVersion", "8")
+        add("org.gradle.java.installations.paths", jdk11LocationInGradleFile)
+        add("toolchainVersion", "11")
       }
     }
 
     var result = rule.build.executor.withArgument("--info").run("assembleDebug")
 
-    ScannerSubject.assertThat(result.stdout).contains("Compiling with toolchain '${jdk8LocationFromStdout}'")
+    ScannerSubject.assertThat(result.stdout).contains("Compiling with toolchain '${jdk11LocationFromStdout}'")
 
     rule.build.reconfigureGradleProperties {
       add("org.gradle.java.installations.paths", latestJdkLocationInGradleFile)
@@ -250,19 +250,19 @@ class JavaCompileWithToolChainTest {
   }
 
   companion object {
-    private val jdk8Location = TestUtils.getJava8Jdk().toString()
+    private val jdk11Location = TestUtils.getJava11Jdk().toString()
 
     private val jdkVersion = "21"
     private val jdk21Location = TestUtils.getJava21Jdk().toString()
 
-    val jdk8LocationInGradleFile = jdk8Location.replace("\\", "/")
+    val jdk11LocationInGradleFile = jdk11Location.replace("\\", "/")
     val latestJdkLocationInGradleFile = jdk21Location.replace("\\", "/")
 
-    val jdk8LocationFromStdout =
+    val jdk11LocationFromStdout =
       if (OsType.getHostOs() == OsType.WINDOWS) {
-        jdk8Location.replace("/", "\\")
+        jdk11Location.replace("/", "\\")
       } else {
-        jdk8Location
+        jdk11Location
       }
 
     val latestJdkLocationFromStdout =

@@ -138,13 +138,11 @@ class HostJarTestSuiteSourceSetTest {
         includeAndroidResources = includeAndroidResources,
         dependencies = dependencies,
       )
-    Truth.assertThat(sourceSet.kotlin?.all?.get())
-      .containsExactly(project.layout.projectDirectory.dir("src/backupTest/backupTestTest/kotlin"))
-    Truth.assertThat(sourceSet.java?.all?.get()).containsExactly(project.layout.projectDirectory.dir("src/backupTest/backupTestTest/java"))
-    Truth.assertThat(sourceSet.resources.all.get())
-      .containsExactly(project.layout.projectDirectory.dir("src/backupTest/backupTestTest/resources"))
+    Truth.assertThat(sourceSet.kotlin?.all?.get()).containsExactly(project.layout.projectDirectory.dir("src/backupTest/test/kotlin"))
+    Truth.assertThat(sourceSet.java?.all?.get()).containsExactly(project.layout.projectDirectory.dir("src/backupTest/test/java"))
+    Truth.assertThat(sourceSet.resources.all.get()).containsExactly(project.layout.projectDirectory.dir("src/backupTest/test/resources"))
     Truth.assertThat(sourceSet.manifestFileCandidate)
-      .isEqualTo(project.layout.projectDirectory.file("src/backupTest/backupTestTest/AndroidManifest.xml").asFile)
+      .isEqualTo(project.layout.projectDirectory.file("src/backupTest/test/AndroidManifest.xml").asFile)
   }
 
   @Test

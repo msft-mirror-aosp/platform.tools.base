@@ -128,14 +128,12 @@ class TestApkTestSuiteSourceSetTest {
         kotlinEnabled = true,
         dependencies = dependencies,
       )
-    Truth.assertThat(sourceSet.kotlin?.all?.get())
-      .containsExactly(project.layout.projectDirectory.dir("src/backupTest/backupTestAndroidTest/kotlin"))
-    Truth.assertThat(sourceSet.java?.all?.get())
-      .containsExactly(project.layout.projectDirectory.dir("src/backupTest/backupTestAndroidTest/java"))
+    Truth.assertThat(sourceSet.kotlin?.all?.get()).containsExactly(project.layout.projectDirectory.dir("src/backupTest/androidTest/kotlin"))
+    Truth.assertThat(sourceSet.java?.all?.get()).containsExactly(project.layout.projectDirectory.dir("src/backupTest/androidTest/java"))
     Truth.assertThat(sourceSet.resources.all.get())
-      .containsExactly(project.layout.projectDirectory.dir("src/backupTest/backupTestAndroidTest/resources"))
+      .containsExactly(project.layout.projectDirectory.dir("src/backupTest/androidTest/resources"))
     Truth.assertThat(sourceSet.manifestFile)
-      .isEqualTo(project.layout.projectDirectory.file("src/backupTest/backupTestAndroidTest/AndroidManifest.xml").asFile)
+      .isEqualTo(project.layout.projectDirectory.file("src/backupTest/androidTest/AndroidManifest.xml").asFile)
   }
 
   @Test

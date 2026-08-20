@@ -35,6 +35,11 @@ common --experimental_enable_android_migration_apis
 # Exposes artifacts to Sponge.
 common --legacy_important_outputs
 
+# TypeScript support: aspect_rules_ts requires every workspace to explicitly declare
+# its skipLibCheck strategy in .bazelrc. "honor_tsconfig" means respecting whatever
+# skipLibCheck setting is configured inside each package's local tsconfig.json file.
+common --@aspect_rules_ts//ts:skipLibCheck=honor_tsconfig
+
 # JetBrainsRuntime version to bundle into Android Studio
 # and java runtime for running tests
 build:jbr25 --//prebuilts/studio/jdk:jdk_bundle_version=25
@@ -265,10 +270,4 @@ common:without_vendor --lockfile_mode=off
 build:without_vendor --//tools/base/bazel:without-vendor
 
 # Build arguments for IntelliJ Platform targets (@tools_idea//...).
-# These should be kept in sync with tools/idea/common.bazelrc.
-# TODO(b/537756990): build --@tools_idea_rules_jvm//:default-javac-opts=@tools_idea//:default-javac-opts
-# TODO(b/537756990): build --@tools_idea_rules_jvm//:default-kotlinc-opts=@tools_idea//:k21
-# TODO(b/537756990): build --@tools_idea_rules_jvm//:koltin_inc_threshold=0 --@tools_idea_rules_jvm//:java_inc_threshold=0
-# JetBrains' build rules support worker mode only. For details see:
-# https://github.com/JetBrains/intellij-community/blob/a08eb7806c/build/jvm-rules/worker-framework/WorkRequestHandler.kt#L93
-# TODO(b/537756990): build --strategy=JvmCompile=worker
+build --@tools_idea_rules_jvm//:default-kotlinc-opts=@tools_idea//:k25

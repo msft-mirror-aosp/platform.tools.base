@@ -50,8 +50,12 @@ _CLASS_JARS = [
     "androidx.appcompat:appcompat:1.6.1",
     "androidx.appcompat:appcompat:1.7.0",
     "androidx.arch.core:core-testing:2.1.0",  # Dependency of architecture-samples
+    "androidx.baselineprofile:androidx.baselineprofile.gradle.plugin:pom:1.5.0-beta01",
     "androidx.benchmark:benchmark-baseline-profile-gradle-plugin:1.2.4",
+    "androidx.benchmark:benchmark-baseline-profile-gradle-plugin:1.5.0-beta01",
     "androidx.benchmark:benchmark-gradle-plugin:1.2.4",
+    "androidx.benchmark:benchmark-macro-junit4:1.5.0-beta01",
+    "androidx.benchmark:benchmark-traceprocessor-android:1.5.0-beta01",
     "androidx.car.app:app:1.4.0",
     "androidx.cardview:cardview:1.0.0",
     "androidx.collection:collection:1.4.0",
@@ -516,7 +520,7 @@ _CLASS_JARS = [
     "androidx.test:runner:1.5.2",
     "androidx.test:runner:1.7.0",
     "androidx.test.services:test-services:1.5.0-alpha02",
-    "androidx.tracing:tracing-desktop:2.0.0-alpha09",
+    "androidx.tracing:tracing-desktop:2.0.0",
     "androidx.tracing:tracing-perfetto-handshake:1.0.0-beta02",
     "androidx.tv:tv-foundation:1.0.0-alpha07",
     "androidx.tv:tv-material:1.0.0-alpha07",
@@ -864,6 +868,7 @@ _CLASS_JARS = [
     "com.android.tools:r8:8.5.35",
     "com.android.tools.utp:android-device-provider-ddmlib:30.2.0",
     "com.android.tools.utp:android-device-provider-ddmlib:31.1.0",
+    "com.android.tools.utp:android-device-provider-ddmlib:32.0.0",
     "com.android.tools.utp:android-device-provider-ddmlib:32.2.0",
     "com.android.tools.utp:android-device-provider-ddmlib:jar:30.2.0",
     "com.android.tools.utp:android-device-provider-ddmlib:jar:31.1.0",
@@ -873,21 +878,25 @@ _CLASS_JARS = [
     "com.android.tools.utp:android-device-provider-gradle:jar:31.1.0",
     "com.android.tools.utp:android-test-plugin-host-additional-test-output:30.2.0",
     "com.android.tools.utp:android-test-plugin-host-additional-test-output:31.1.0",
+    "com.android.tools.utp:android-test-plugin-host-additional-test-output:32.0.0",
     "com.android.tools.utp:android-test-plugin-host-additional-test-output:32.2.0",
     "com.android.tools.utp:android-test-plugin-host-additional-test-output:jar:30.2.0",
     "com.android.tools.utp:android-test-plugin-host-additional-test-output:jar:31.1.0",
     "com.android.tools.utp:android-test-plugin-host-additional-test-output:jar:32.2.0",
     "com.android.tools.utp:android-test-plugin-host-apk-installer:31.1.0",
+    "com.android.tools.utp:android-test-plugin-host-apk-installer:32.0.0",
     "com.android.tools.utp:android-test-plugin-host-apk-installer:32.2.0",
     "com.android.tools.utp:android-test-plugin-host-apk-installer:jar:31.1.0",
     "com.android.tools.utp:android-test-plugin-host-coverage:30.2.0",
     "com.android.tools.utp:android-test-plugin-host-coverage:31.1.0",
+    "com.android.tools.utp:android-test-plugin-host-coverage:32.0.0",
     "com.android.tools.utp:android-test-plugin-host-coverage:32.2.0",
     "com.android.tools.utp:android-test-plugin-host-coverage:jar:30.2.0",
     "com.android.tools.utp:android-test-plugin-host-coverage:jar:31.1.0",
     "com.android.tools.utp:android-test-plugin-host-coverage:jar:32.2.0",
     "com.android.tools.utp:android-test-plugin-host-device-info:30.2.0",
     "com.android.tools.utp:android-test-plugin-host-device-info:31.1.0",
+    "com.android.tools.utp:android-test-plugin-host-device-info:32.0.0",
     "com.android.tools.utp:android-test-plugin-host-device-info:32.2.0",
     "com.android.tools.utp:android-test-plugin-host-device-info:jar:30.2.0",
     "com.android.tools.utp:android-test-plugin-host-device-info:jar:31.1.0",
@@ -898,11 +907,13 @@ _CLASS_JARS = [
     "com.android.tools.utp:android-test-plugin-host-device-info-proto:jar:30.2.0",
     "com.android.tools.utp:android-test-plugin-host-device-info-proto:jar:31.1.0",
     "com.android.tools.utp:android-test-plugin-host-emulator-control:31.1.0",
+    "com.android.tools.utp:android-test-plugin-host-emulator-control:32.0.0",
     "com.android.tools.utp:android-test-plugin-host-emulator-control:32.2.0",
     "com.android.tools.utp:android-test-plugin-host-emulator-control:jar:31.1.0",
     "com.android.tools.utp:android-test-plugin-host-emulator-control:jar:32.2.0",
     "com.android.tools.utp:android-test-plugin-host-logcat:30.2.0",
     "com.android.tools.utp:android-test-plugin-host-logcat:31.1.0",
+    "com.android.tools.utp:android-test-plugin-host-logcat:32.0.0",
     "com.android.tools.utp:android-test-plugin-host-logcat:32.2.0",
     "com.android.tools.utp:android-test-plugin-host-logcat:jar:30.2.0",
     "com.android.tools.utp:android-test-plugin-host-logcat:jar:31.1.0",
@@ -912,9 +923,11 @@ _CLASS_JARS = [
     "com.android.tools.utp:android-test-plugin-host-retention:jar:31.1.0",
     "com.android.tools.utp:android-test-plugin-result-listener-gradle:30.2.0",
     "com.android.tools.utp:android-test-plugin-result-listener-gradle:31.1.0",
+    "com.android.tools.utp:android-test-plugin-result-listener-gradle:32.0.0",
     "com.android.tools.utp:android-test-plugin-result-listener-gradle:32.2.0",
     "com.android.tools.utp:android-test-plugin-result-listener-gradle:jar:30.2.0",
     "com.android.tools.utp:android-test-plugin-result-listener-gradle:jar:31.1.0",
+    "com.android.tools.utp:gradle-work-action:32.0.0",
     "com.android.tools.utp:gradle-work-action:32.2.0",
     "com.android:zipflinger:8.7.0",
     "com.anthropic:anthropic-java:2.26.0",
@@ -989,13 +1002,13 @@ _CLASS_JARS = [
     "com.google.code.gson:gson:2.10.1",
     "com.google.code.gson:gson:2.2.4",
     "com.google.code.gson:gson:2.6.2",
-    "com.google.crypto.tink:tink:1.18.0",  # Dependency for UTP.
     "com.google.crypto.tink:tink:1.3.0-rc2",
     "com.google.dagger:dagger-compiler:2.28.3",
     "com.google.dagger:dagger-compiler:2.52",
     "com.google.dagger:dagger-compiler:2.56.1",  # Dependency for projects using KGP 2.1.20+
     "com.google.dagger:dagger-compiler:2.6",
     "com.google.dagger.hilt.android:com.google.dagger.hilt.android.gradle.plugin:pom:2.44.2",  # Dependency of architecture-samples
+    "com.google.dagger.hilt.android:com.google.dagger.hilt.android.gradle.plugin:pom:2.59",
     "com.google.dagger:hilt-android:2.40.1",
     "com.google.dagger:hilt-android:2.59",
     "com.google.dagger:hilt-android-compiler:2.40.1",
@@ -1003,6 +1016,7 @@ _CLASS_JARS = [
     "com.google.dagger:hilt-android-gradle-plugin:2.40.1",
     "com.google.dagger:hilt-android-gradle-plugin:2.59",
     "com.google.dagger:hilt-android-testing:2.44.2",  # Dependency of architecture-samples
+    "com.google.dagger:hilt-android-testing:2.59",
     "com.google.dagger:hilt-compiler:2.40.1",
     "com.google.dagger:hilt-compiler:2.59",
     "com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin:pom:1.7.10-1.0.6",
@@ -1060,71 +1074,58 @@ _CLASS_JARS = [
     "com.google.protobuf:protobuf-bom:pom:3.24.4",
     "com.google.protobuf:protobuf-bom:pom:3.25.5",
     "com.google.protobuf:protobuf-bom:pom:4.27.2",
-    "com.google.protobuf:protobuf-bom:pom:4.28.3",  # Dependency for UTP.
+    "com.google.protobuf:protobuf-bom:pom:4.28.3",  # Used by Lightbuild (AGP 9.2.0) integration tests
     "com.google.protobuf:protobuf-bom:pom:4.33.2",
     "com.google.protobuf:protobuf-java:3.19.3",
     "com.google.protobuf:protobuf-java:3.22.3",
     "com.google.protobuf:protobuf-java:3.24.4",
     "com.google.protobuf:protobuf-java:3.25.5",
     "com.google.protobuf:protobuf-java:4.27.2",
+    "com.google.protobuf:protobuf-java:4.28.3",
     "com.google.protobuf:protobuf-java:4.33.2",
     "com.google.protobuf:protobuf-java-util:3.19.3",
     "com.google.protobuf:protobuf-java-util:3.22.3",
     "com.google.protobuf:protobuf-java-util:3.24.4",
     "com.google.protobuf:protobuf-java-util:4.27.2",
+    "com.google.protobuf:protobuf-java-util:4.28.3",
     "com.google.protobuf:protobuf-java-util:4.33.2",
     "com.google.protobuf:protobuf-javalite:4.28.2",  # XR template
     "com.google.protobuf:protobuf-kotlin:3.24.4",
-    "com.google.protobuf:protobuf-kotlin:4.28.3",  # Dependency for UTP.
     "com.google.protobuf:protobuf-kotlin-lite:4.28.2",
     "com.google.protobuf:protobuf-parent:pom:3.19.3",
     "com.google.protobuf:protobuf-parent:pom:3.22.3",
     "com.google.protobuf:protobuf-parent:pom:3.24.4",
     "com.google.protobuf:protobuf-parent:pom:3.25.5",
     "com.google.protobuf:protobuf-parent:pom:4.28.2",  # XR template
+    "com.google.protobuf:protobuf-parent:pom:4.28.3",
     "com.google.protobuf:protoc:exe:linux-x86_64:3.19.6",
     "com.google.protobuf:protoc:exe:linux-x86_64:3.22.3",
     "com.google.protobuf:protoc:exe:linux-x86_64:3.24.4",
     "com.google.protobuf:protoc:exe:linux-x86_64:3.25.3",
-    "com.google.protobuf:protoc:exe:linux-x86_64:4.28.3",  # Dependency for UTP.
     "com.google.protobuf:protoc:exe:linux-x86_64:4.33.2",  # Dependency for ASwB logs.
     "com.google.protobuf:protoc:exe:osx-aarch_64:3.19.6",
     "com.google.protobuf:protoc:exe:osx-aarch_64:3.22.3",
     "com.google.protobuf:protoc:exe:osx-aarch_64:3.24.4",
     "com.google.protobuf:protoc:exe:osx-aarch_64:3.25.3",
-    "com.google.protobuf:protoc:exe:osx-aarch_64:4.28.3",  # Dependency for UTP.
     "com.google.protobuf:protoc:exe:osx-aarch_64:4.33.2",  # Dependency for ASwB logs.
     "com.google.protobuf:protoc:exe:osx-x86_64:3.19.6",
     "com.google.protobuf:protoc:exe:osx-x86_64:3.22.3",
     "com.google.protobuf:protoc:exe:osx-x86_64:3.24.4",
     "com.google.protobuf:protoc:exe:osx-x86_64:3.25.3",
-    "com.google.protobuf:protoc:exe:osx-x86_64:4.28.3",  # Dependency for UTP.
     "com.google.protobuf:protoc:exe:osx-x86_64:4.33.2",  # Dependency for ASwB logs.
     "com.google.protobuf:protoc:exe:windows-x86_64:3.19.6",
     "com.google.protobuf:protoc:exe:windows-x86_64:3.22.3",
     "com.google.protobuf:protoc:exe:windows-x86_64:3.24.4",
     "com.google.protobuf:protoc:exe:windows-x86_64:3.25.3",
-    "com.google.protobuf:protoc:exe:windows-x86_64:4.28.3",  # Dependency for UTP.
     "com.google.protobuf:protoc:exe:windows-x86_64:4.33.2",  # Dependency for ASwB logs.
-    "com.google.testing.platform:android-device-provider-local:0.0.8-alpha07",
-    "com.google.testing.platform:android-device-provider-local:0.0.8-alpha08",
-    "com.google.testing.platform:android-device-provider-local:0.0.9-alpha04",
-    "com.google.testing.platform:android-driver-instrumentation:0.0.8-alpha07",
-    "com.google.testing.platform:android-driver-instrumentation:0.0.8-alpha08",
-    "com.google.testing.platform:android-driver-instrumentation:0.0.9-alpha03",
-    "com.google.testing.platform:android-driver-instrumentation:0.0.9-alpha04",
-    "com.google.testing.platform:android-test-plugin:0.0.8-alpha07",
-    "com.google.testing.platform:android-test-plugin:0.0.8-alpha08",
-    "com.google.testing.platform:android-test-plugin:0.0.9-alpha03",
-    "com.google.testing.platform:android-test-plugin:0.0.9-alpha04",
-    "com.google.testing.platform:core:0.0.8-alpha07",
-    "com.google.testing.platform:core:0.0.8-alpha08",
-    "com.google.testing.platform:core:0.0.9-alpha03",
-    "com.google.testing.platform:core:0.0.9-alpha04",
-    "com.google.testing.platform:core-proto:0.0.9-alpha04",
-    "com.google.testing.platform:launcher:0.0.8-alpha07",
-    "com.google.testing.platform:launcher:0.0.8-alpha08",
-    "com.google.testing.platform:launcher:0.0.9-alpha04",
+    "com.google.testing.platform:android-device-provider-local:0.0.9-alpha03",  # Used by Studio integration test (BuildAndRunInstrumentedTest)
+    "com.google.testing.platform:android-driver-instrumentation:0.0.9-alpha03",  # Used by Studio integration test (BuildAndRunInstrumentedTest)
+    "com.google.testing.platform:android-test-plugin:0.0.9-alpha03",  # Used by Studio integration test (BuildAndRunInstrumentedTest)
+    "com.google.testing.platform:android-test-plugin:0.0.9-alpha04",  # Used by Lightbuild (AGP 9.2.0) integration tests
+    "com.google.testing.platform:core:0.0.9-alpha03",  # Used by Studio integration test (BuildAndRunInstrumentedTest)
+    "com.google.testing.platform:core:0.0.9-alpha04",  # Used by Lightbuild (AGP 9.2.0) integration tests
+    "com.google.testing.platform:core-proto:0.0.9-alpha03",  # Used by Studio integration test (BuildAndRunInstrumentedTest)
+    "com.google.testing.platform:launcher:0.0.9-alpha03",  # Used by Studio integration test (BuildAndRunInstrumentedTest)
     "com.google.truth:truth:0.42",
     "com.google.truth:truth:0.44",
     "com.google.truth:truth:1.1.2",
@@ -1307,12 +1308,12 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:2.3.10",
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:2.3.20",
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:2.3.21",
-    "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:2.4.20-Beta2",  # Used by AGP tests
+    "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:2.4.20-RC",  # Used by AGP tests
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:2.5.0-dev-3375",
     "org.jetbrains.kotlin:compose-compiler-gradle-plugin:2.2.10",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "org.jetbrains.kotlin:compose-compiler-gradle-plugin:2.3.10",
     "org.jetbrains.kotlin:compose-compiler-gradle-plugin:2.3.20",
-    "org.jetbrains.kotlin:compose-compiler-gradle-plugin:2.4.20-Beta2",  # Used by AGP tests
+    "org.jetbrains.kotlin:compose-compiler-gradle-plugin:2.4.20-RC",  # Used by AGP tests
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:1.6.10",
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:1.6.21",
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:1.7.10",
@@ -1328,7 +1329,7 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.3.10",
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.3.20",
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.3.21",
-    "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.4.20-Beta2",  # Used by AGP tests
+    "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.4.20-RC",  # Used by AGP tests
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.5.0-dev-3375",
     "org.jetbrains.kotlin:jvm-abi-gen:2.3.20",  # Studio build
     "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:1.8.10",  # Dependency of architecture-samples
@@ -1338,7 +1339,7 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:2.3.10",
     "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:2.3.20",
     "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:2.3.21",
-    "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:2.4.20-Beta2",  # Used by AGP tests
+    "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:2.4.20-RC",  # Used by AGP tests
     "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:2.5.0-dev-3375",
     "org.jetbrains.kotlin:kotlin-android-extensions-runtime:1.3.41",
     "org.jetbrains.kotlin:kotlin-android-extensions-runtime:1.3.72",
@@ -1365,14 +1366,14 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin:kotlin-annotation-processing-gradle:2.3.10",
     "org.jetbrains.kotlin:kotlin-annotation-processing-gradle:2.3.20",
     "org.jetbrains.kotlin:kotlin-annotation-processing-gradle:2.3.21",
-    "org.jetbrains.kotlin:kotlin-annotation-processing-gradle:2.4.20-Beta2",  # Used by AGP tests
-    "org.jetbrains.kotlin:kotlin-assignment-compiler-plugin-embeddable:2.4.20-Beta2",  # Used by AGP tests
+    "org.jetbrains.kotlin:kotlin-annotation-processing-gradle:2.4.20-RC",  # Used by AGP tests
+    "org.jetbrains.kotlin:kotlin-assignment-compiler-plugin-embeddable:2.4.20-RC",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-bom:pom:1.8.0",
     "org.jetbrains.kotlin:kotlin-bom:pom:1.8.22",
     "org.jetbrains.kotlin:kotlin-build-tools-compat:2.3.10",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-build-tools-compat:2.3.20",
     "org.jetbrains.kotlin:kotlin-build-tools-compat:2.3.21",
-    "org.jetbrains.kotlin:kotlin-build-tools-compat:2.4.20-Beta2",  # Used by AGP tests
+    "org.jetbrains.kotlin:kotlin-build-tools-compat:2.4.20-RC",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-build-tools-compat:2.5.0-dev-3375",
     "org.jetbrains.kotlin:kotlin-build-tools-impl:2.0.21",  # Kotlin templates
     "org.jetbrains.kotlin:kotlin-build-tools-impl:2.1.0",
@@ -1381,7 +1382,7 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin:kotlin-build-tools-impl:2.3.10",
     "org.jetbrains.kotlin:kotlin-build-tools-impl:2.3.20",
     "org.jetbrains.kotlin:kotlin-build-tools-impl:2.3.21",
-    "org.jetbrains.kotlin:kotlin-build-tools-impl:2.4.20-Beta2",  # Used by AGP tests
+    "org.jetbrains.kotlin:kotlin-build-tools-impl:2.4.20-RC",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-build-tools-impl:2.5.0-dev-3375",
     "org.jetbrains.kotlin:kotlin-compiler:1.7.20",
     "org.jetbrains.kotlin:kotlin-compiler:1.8.10",
@@ -1393,7 +1394,7 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin:kotlin-compiler:2.3.10",
     "org.jetbrains.kotlin:kotlin-compiler:2.3.20",  # Studio build
     "org.jetbrains.kotlin:kotlin-compiler:2.3.21",
-    "org.jetbrains.kotlin:kotlin-compiler:2.4.20-Beta2",  # Used by AGP tests
+    "org.jetbrains.kotlin:kotlin-compiler:2.4.20-RC",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-compiler-embeddable:1.7.20",
     "org.jetbrains.kotlin:kotlin-compiler-embeddable:1.8.10",
     "org.jetbrains.kotlin:kotlin-compiler-embeddable:1.9.22",
@@ -1409,8 +1410,8 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable:2.3.10",  # Used by AGP Compose tests
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable:2.3.20",
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable:2.3.21",
-    "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable:2.4.20-Beta2",  # Used by AGP tests
-    "org.jetbrains.kotlin:kotlin-dom-api-compat:2.4.20-Beta2",
+    "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable:2.4.20-RC",  # Used by AGP tests
+    "org.jetbrains.kotlin:kotlin-dom-api-compat:2.4.20-RC",
     "org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.41",
     "org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.72",
     "org.jetbrains.kotlin:kotlin-gradle-plugin:1.4.32",
@@ -1428,7 +1429,7 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.20",
     "org.jetbrains.kotlin:kotlin-gradle-plugin:2.3.10",
     "org.jetbrains.kotlin:kotlin-gradle-plugin:2.3.20",
-    "org.jetbrains.kotlin:kotlin-gradle-plugin:2.4.20-Beta2",  # Used by AGP tests
+    "org.jetbrains.kotlin:kotlin-gradle-plugin:2.4.20-RC",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-gradle-plugin:2.5.0-dev-3375",
     "org.jetbrains.kotlin:kotlin-gradle-plugin:jar:gradle70:1.7.10",
     "org.jetbrains.kotlin:kotlin-gradle-plugin:jar:gradle70:1.7.20",
@@ -1446,7 +1447,7 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin:kotlin-gradle-plugin-api:2.1.20",
     "org.jetbrains.kotlin:kotlin-gradle-plugin-api:2.3.10",
     "org.jetbrains.kotlin:kotlin-gradle-plugin-api:2.3.20",
-    "org.jetbrains.kotlin:kotlin-gradle-plugin-api:2.4.20-Beta2",  # Used by AGP tests
+    "org.jetbrains.kotlin:kotlin-gradle-plugin-api:2.4.20-RC",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-gradle-plugin-api:jar:gradle70:1.7.10",
     "org.jetbrains.kotlin:kotlin-gradle-plugin-api:jar:gradle70:1.7.20",
     "org.jetbrains.kotlin:kotlin-gradle-plugin-api:jar:gradle71:1.7.20",
@@ -1454,15 +1455,18 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin:kotlin-gradle-plugin-api:jar:gradle76:1.8.10",
     "org.jetbrains.kotlin:kotlin-klib-commonizer-embeddable:1.8.21",
     "org.jetbrains.kotlin:kotlin-klib-commonizer-embeddable:2.0.21",
-    "org.jetbrains.kotlin:kotlin-klib-commonizer-embeddable:2.4.20-Beta2",  # Used by AGP tests
-    "org.jetbrains.kotlin:kotlin-native-prebuilt:tar.gz:linux-x86_64:2.4.20-Beta2",  # Used by AGP tests
-    "org.jetbrains.kotlin:kotlin-native-prebuilt:tar.gz:macos-aarch64:2.4.20-Beta2",  # Used by AGP tests
-    "org.jetbrains.kotlin:kotlin-native-prebuilt:tar.gz:macos-x86_64:2.4.20-Beta2",  # Used by AGP tests
-    "org.jetbrains.kotlin:kotlin-native-prebuilt:zip:windows-x86_64:2.4.20-Beta2",  # Used by AGP tests
+    "org.jetbrains.kotlin:kotlin-klib-commonizer-embeddable:2.2.10",
+    "org.jetbrains.kotlin:kotlin-klib-commonizer-embeddable:2.4.20-RC",  # Used by AGP tests
+    "org.jetbrains.kotlin:kotlin-native-prebuilt:tar.gz:linux-x86_64:2.4.20-RC",  # Used by AGP tests
+    "org.jetbrains.kotlin:kotlin-native-prebuilt:tar.gz:macos-aarch64:2.4.20-RC",  # Used by AGP tests
+    "org.jetbrains.kotlin:kotlin-native-prebuilt:tar.gz:macos-x86_64:2.4.20-RC",  # Used by AGP tests
+    "org.jetbrains.kotlin:kotlin-native-prebuilt:zip:windows-x86_64:2.4.20-RC",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-parcelize-compiler:1.7.20",
-    "org.jetbrains.kotlin:kotlin-parcelize-compiler:2.4.20-Beta2",
+    "org.jetbrains.kotlin:kotlin-parcelize-compiler:2.2.10",
+    "org.jetbrains.kotlin:kotlin-parcelize-compiler:2.4.20-RC",
     "org.jetbrains.kotlin:kotlin-parcelize-runtime:1.7.20",
-    "org.jetbrains.kotlin:kotlin-parcelize-runtime:2.4.20-Beta2",
+    "org.jetbrains.kotlin:kotlin-parcelize-runtime:2.2.10",
+    "org.jetbrains.kotlin:kotlin-parcelize-runtime:2.4.20-RC",
     "org.jetbrains.kotlin:kotlin-reflect:1.4.31",
     "org.jetbrains.kotlin:kotlin-reflect:1.5.21",
     "org.jetbrains.kotlin:kotlin-reflect:1.6.10",
@@ -1487,8 +1491,8 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin:kotlin-reflect:2.3.10",
     "org.jetbrains.kotlin:kotlin-reflect:2.3.20",  # Studio build
     "org.jetbrains.kotlin:kotlin-reflect:2.3.21",
-    "org.jetbrains.kotlin:kotlin-reflect:2.4.20-Beta2",  # Used by AGP tests
-    "org.jetbrains.kotlin:kotlin-sam-with-receiver-compiler-plugin-embeddable:2.4.20-Beta2",  # Used by AGP tests
+    "org.jetbrains.kotlin:kotlin-reflect:2.4.20-RC",  # Used by AGP tests
+    "org.jetbrains.kotlin:kotlin-sam-with-receiver-compiler-plugin-embeddable:2.4.20-RC",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-script-runtime:1.5.21",
     "org.jetbrains.kotlin:kotlin-script-runtime:1.6.10",
     "org.jetbrains.kotlin:kotlin-script-runtime:1.6.21",
@@ -1505,16 +1509,17 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin:kotlin-script-runtime:2.3.10",
     "org.jetbrains.kotlin:kotlin-script-runtime:2.3.20",
     "org.jetbrains.kotlin:kotlin-script-runtime:2.3.21",
-    "org.jetbrains.kotlin:kotlin-script-runtime:2.4.20-Beta2",  # Used by AGP tests
+    "org.jetbrains.kotlin:kotlin-script-runtime:2.4.20-RC",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable:2.3.10",
     "org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable:2.3.20",
     "org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable:2.3.21",
-    "org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable:2.4.20-Beta2",  # Used by AGP tests
-    "org.jetbrains.kotlin:kotlin-serialization:2.4.20-Beta2",
+    "org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable:2.4.20-RC",  # Used by AGP tests
+    "org.jetbrains.kotlin:kotlin-serialization:2.4.20-RC",
     "org.jetbrains.kotlin:kotlin-serialization-compiler-plugin:2.3.20",  # Studio build
     "org.jetbrains.kotlin:kotlin-serialization-compiler-plugin-embeddable:2.1.0",
+    "org.jetbrains.kotlin:kotlin-serialization-compiler-plugin-embeddable:2.2.10",
     "org.jetbrains.kotlin:kotlin-serialization-compiler-plugin-embeddable:2.3.20",
-    "org.jetbrains.kotlin:kotlin-serialization-compiler-plugin-embeddable:2.4.20-Beta2",  # Used by AGP tests
+    "org.jetbrains.kotlin:kotlin-serialization-compiler-plugin-embeddable:2.4.20-RC",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-stdlib:2.0.21",
     "org.jetbrains.kotlin:kotlin-stdlib:2.1.0",
     "org.jetbrains.kotlin:kotlin-stdlib:2.1.20",
@@ -1523,7 +1528,7 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin:kotlin-stdlib:2.3.10",
     "org.jetbrains.kotlin:kotlin-stdlib:2.3.20",
     "org.jetbrains.kotlin:kotlin-stdlib:2.3.21",
-    "org.jetbrains.kotlin:kotlin-stdlib:2.4.20-Beta2",  # Used by AGP tests
+    "org.jetbrains.kotlin:kotlin-stdlib:2.4.20-RC",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-stdlib:2.5.0-dev-3375",
     "org.jetbrains.kotlin:kotlin-stdlib-common:1.9.20",
     "org.jetbrains.kotlin:kotlin-stdlib-common:1.9.22",
@@ -1539,7 +1544,7 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.3.10",
     "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.3.20",
     "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.3.21",
-    "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.4.20-Beta2",  # Used by AGP tests
+    "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.4.20-RC",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.5.0-dev-3375",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.4.32",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.20",
@@ -1566,9 +1571,9 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.3.10",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.3.20",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.3.21",
-    "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.4.20-Beta2",  # Used by AGP tests
+    "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.4.20-RC",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.5.0-dev-3375",
-    "org.jetbrains.kotlin:kotlin-stdlib-js:2.4.20-Beta2",
+    "org.jetbrains.kotlin:kotlin-stdlib-js:2.4.20-RC",
     "org.jetbrains.kotlin:kotlin-test:1.9.24",
     "org.jetbrains.kotlin:kotlin-test:2.0.21",
     "org.jetbrains.kotlin:kotlin-test:2.1.0",
@@ -1583,7 +1588,7 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin:kotlin-test-junit:2.3.10",
     "org.jetbrains.kotlin:kotlin-test-junit:2.3.20",
     "org.jetbrains.kotlin:kotlin-test-junit:2.3.21",
-    "org.jetbrains.kotlin:kotlin-test-junit:2.4.20-Beta2",  # Used by AGP tests
+    "org.jetbrains.kotlin:kotlin-test-junit:2.4.20-RC",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-test-junit5:2.1.0",
     "org.jetbrains.kotlin.multiplatform:org.jetbrains.kotlin.multiplatform.gradle.plugin:pom:1.8.21",
     "org.jetbrains.kotlin.multiplatform:org.jetbrains.kotlin.multiplatform.gradle.plugin:pom:1.9.23",
@@ -1592,17 +1597,18 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin.multiplatform:org.jetbrains.kotlin.multiplatform.gradle.plugin:pom:2.3.10",
     "org.jetbrains.kotlin.multiplatform:org.jetbrains.kotlin.multiplatform.gradle.plugin:pom:2.3.20",
     "org.jetbrains.kotlin.multiplatform:org.jetbrains.kotlin.multiplatform.gradle.plugin:pom:2.3.21",
-    "org.jetbrains.kotlin.multiplatform:org.jetbrains.kotlin.multiplatform.gradle.plugin:pom:2.4.20-Beta2",  # Used by AGP tests
+    "org.jetbrains.kotlin.multiplatform:org.jetbrains.kotlin.multiplatform.gradle.plugin:pom:2.4.20-RC",  # Used by AGP tests
     "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:pom:2.0.21",
     "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:pom:2.2.10",  # Used by AGP Compose tests
     "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:pom:2.3.10",  # Used by AGP Compose tests
     "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:pom:2.3.20",
     "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:pom:2.3.21",
-    "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:pom:2.4.20-Beta2",  # Used by AGP tests
+    "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:pom:2.4.20-RC",  # Used by AGP tests
     "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:pom:2.5.0-dev-3375",
-    "org.jetbrains.kotlin.plugin.parcelize:org.jetbrains.kotlin.plugin.parcelize.gradle.plugin:pom:2.4.20-Beta2",  # Used by com.android.tools.idea.benchmarks.tests.JetNewsBenchmarkTest
+    "org.jetbrains.kotlin.plugin.parcelize:org.jetbrains.kotlin.plugin.parcelize.gradle.plugin:pom:2.4.20-RC",  # Used by com.android.tools.idea.benchmarks.tests.JetNewsBenchmarkTest
+    "org.jetbrains.kotlin.plugin.serialization:org.jetbrains.kotlin.plugin.serialization.gradle.plugin:pom:2.2.10",
     "org.jetbrains.kotlin.plugin.serialization:org.jetbrains.kotlin.plugin.serialization.gradle.plugin:pom:2.3.20",
-    "org.jetbrains.kotlin.plugin.serialization:org.jetbrains.kotlin.plugin.serialization.gradle.plugin:pom:2.4.20-Beta2",
+    "org.jetbrains.kotlin.plugin.serialization:org.jetbrains.kotlin.plugin.serialization.gradle.plugin:pom:2.4.20-RC",
     "org.jetbrains.kotlinx:atomicfu:0.17.3",
     "org.jetbrains.kotlinx:atomicfu:0.21.0",
     "org.jetbrains.kotlinx:atomicfu:0.23.1",

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Baseline entries match on path suffix: the generated source lives under the
+     configuration-specific bazel-out/<config>/bin/, so its entry starts at bin/. -->
+<issues format="6" by="lint 9.5.0-dev" type="baseline" client="" dependencies="true" name="" variant="all" version="9.5.0-dev">
+
+    <issue
+        id="WrongThread"
+        message="Call must be from `@UiThread`, but context is allowing `@AnyThread`"
+        errorLine1="  generatedDoStuff()"
+        errorLine2="  ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="tools/base/lint/studio-checks/integration-test/GeneratedSources/consumer/test/gen/consumer/Consumer.kt"
+            line="24"
+            column="3"/>
+    </issue>
+
+    <issue
+        id="WrongThread"
+        message="Call must be from `@UiThread`, but context is allowing `@AnyThread`"
+        errorLine1="  generatedDoStuff()"
+        errorLine2="  ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="bin/tools/base/lint/studio-checks/integration-test/GeneratedSources/consumer/test/gen/consumer/GeneratedConsumer.kt"
+            line="25"
+            column="3"/>
+    </issue>
+
+</issues>

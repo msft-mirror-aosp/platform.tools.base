@@ -107,6 +107,8 @@ class AndroidConnectedTest(val runWithBuiltInPlatform: Boolean) {
 
   @Test fun connectedAndroidTestWithLogcat() = util.connectedAndroidTestWithLogcat()
 
+  @Test fun connectedAndroidTestWithLogcatOutputsNoExceptions() = util.connectedAndroidTestWithLogcatOutputsNoExceptions()
+
   @Test fun connectedAndroidTestFromTestOnlyModule() = util.connectedAndroidTestFromTestOnlyModule()
 
   @Test fun connectedAndroidTestFromTestOnlyModuleWithNewReportFormat() = util.connectedAndroidTestFromTestOnlyModuleWithNewReportFormat()

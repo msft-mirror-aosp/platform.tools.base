@@ -143,6 +143,7 @@ class ManagedDeviceTestRunner(
             uninstallApksAfterTest = false,
             reinstallIncompatibleApksBeforeTest = true,
             shardConfig,
+            false,
           )
         }
 

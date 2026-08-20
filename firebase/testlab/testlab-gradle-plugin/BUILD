@@ -33,6 +33,7 @@ filegroup(
 FTL_GRADLE_PLUGIN_SOURCE_FILES = [
     ":agp_gradle_build_files",
     "//tools:agp_gradle_build_files",
+    "//tools/base/android-test:agp_gradle_build_files",
     "//tools/base/build-system/builder-model:agp_gradle_build_files",
     "//tools/base/build-system/builder-test-api:agp_gradle_build_files",
     "//tools/base/build-system/gradle-api:agp_gradle_build_files",

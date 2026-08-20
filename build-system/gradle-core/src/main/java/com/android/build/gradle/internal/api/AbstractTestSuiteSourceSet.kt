@@ -30,6 +30,7 @@ abstract class AbstractTestSuiteSourceSet(
   protected val isMixed: Boolean = false,
   variantServices: VariantServices,
   val userAddedSourceSets: Collection<Directory>,
+  subDirectory: String,
 ) {
   abstract val java: FlatSourceDirectoriesImpl?
   abstract val kotlin: FlatSourceDirectoriesImpl?
@@ -39,7 +40,7 @@ abstract class AbstractTestSuiteSourceSet(
   /** The root-level directory for this test suite source set. */
   val rootFolder =
     if (isMixed) {
-      File(variantServices.projectInfo.projectDirectory.asFile, "src/$testSuiteName/$sourceSetName")
+      File(variantServices.projectInfo.projectDirectory.asFile, "src/$testSuiteName/$subDirectory")
     } else {
       File(variantServices.projectInfo.projectDirectory.asFile, "src/$testSuiteName")
     }

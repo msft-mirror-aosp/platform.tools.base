@@ -2370,6 +2370,262 @@ class ProjectInitializerTest {
   }
 
   @Test
+  fun testPartialAnalysisSkipDefiniteIncidentsFromDeps() {
+    // Variant of testIsolatedPartialAnalysisWithSingleProjectRoot for build systems whose
+    // per-module analysis outputs are immutable (e.g. Bazel action outputs): instead of
+    // deleting lint-definite.xml from a dependency's partial results once that module's own
+    // report step has run, the partial results are left untouched and dependents pass
+    // --XskipDefiniteIncidentsFromDeps to their --report-only invocation. Definite incidents
+    // are still reported exactly once, by the module's own report step, while provisional
+    // incidents keep propagating to dependents.
+    //
+    // Depends-on: `a` <- `b`
+
+    val tempDir = temp.newFolder().canonicalFile.absoluteFile
+    val root = File(tempDir, "buildRoot")
+
+    fun createFile(path: String, content: String): File {
+      val trimmedContent = content.trimIndent()
+      val file = File(root, path)
+      file.parentFile?.mkdirs()
+      Files.asCharSink(file, Charsets.UTF_8).write(trimmedContent)
+      return file
+    }
+
+    fun createXmlFile(path: String, @Language("XML") content: String): File = createFile(path, content)
+
+    fun createJavaFile(path: String, @Language("JAVA") content: String): File = createFile(path, content)
+
+    val configFile =
+      createXmlFile(
+        "configs/config.xml",
+        """
+            <lint>
+                <issue id="all" severity="ignore" />
+                <issue id="LongLogTag" severity="error" />
+                <issue id="MissingSuperCall" severity="error" />
+            </lint>""",
+      )
+
+    // Each project has one definite incident (MissingSuperCall) and one provisional
+    // incident (LongLogTag, conditional on minSdkVersion).
+    fun createModule(name: String): File {
+      createJavaFile(
+        "java/com/google/$name/Activity.java",
+        """
+            package com.google.$name;
+
+            import android.util.Log;
+
+            public class Activity extends android.app.Activity {
+
+                private static final String TAG = "SuperSuperLongLogTagThatExceedsMax";
+
+                @Override
+                protected void onStart() {
+                    // Missing super call.
+                    Log.d(TAG, "message");
+                }
+            }""",
+      )
+      createXmlFile(
+        "java/com/google/$name/AndroidManifest.xml",
+        """
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                package="com.google.$name">
+
+                <uses-sdk
+                    android:minSdkVersion="14"
+                    android:targetSdkVersion="28" />
+
+            </manifest>""",
+      )
+      return File(root, "out/java/com/google/$name/lint_partial_results").also { it.mkdirs() }
+    }
+
+    createModule("a")
+    val projectA =
+      createXmlFile(
+        "out/java/com/google/a/project.xml",
+        """
+            <project>
+            <root dir="$root" />
+            <module
+                android="true"
+                library="true"
+                name="//java/com/google/a:a"
+                partial-results-dir="out/java/com/google/a/lint_partial_results"
+                desugar="full">
+            <manifest file="java/com/google/a/AndroidManifest.xml" />
+            <merged-manifest file="java/com/google/a/AndroidManifest.xml" />
+            <src file="java/com/google/a/Activity.java" />
+            </module>
+            </project>
+            """,
+      )
+
+    createModule("b")
+    val projectB =
+      createXmlFile(
+        "out/java/com/google/b/project.xml",
+        """
+            <project>
+            <root dir="$root" />
+            <module
+                android="true"
+                library="false"
+                name="//java/com/google/b:b"
+                partial-results-dir="out/java/com/google/b/lint_partial_results"
+                desugar="full">
+            <manifest file="java/com/google/b/AndroidManifest.xml" />
+            <merged-manifest file="java/com/google/b/AndroidManifest.xml" />
+            <src file="java/com/google/b/Activity.java" />
+            <dep module="//java/com/google/a:a" />
+            </module>
+            <module android="true"
+                library="true"
+                name="//java/com/google/a:a"
+                desugar="full"
+                partial-results-dir="out/java/com/google/a/lint_partial_results" />
+            </project>
+            """,
+      )
+
+    // Analyze and report project a; its definite incident is reported here, and its partial
+    // results (including lint-definite.xml) are deliberately left untouched.
+    MainTest.checkDriver(
+      "",
+      "",
+      // Expected exit code
+      ERRNO_SUCCESS,
+      // Args
+      arrayOf(
+        "--config",
+        configFile.toString(),
+        "--project",
+        projectA.toString(),
+        "--analyze-only",
+        "--sdk-home",
+        TestUtils.getSdk().toString(),
+      ),
+      null,
+      null,
+    )
+    MainTest.checkDriver(
+      """
+                java/com/google/a/Activity.java:10: Error: Overriding method should call super.onStart [MissingSuperCall]
+                    protected void onStart() {
+                                   ~~~~~~~
+                java/com/google/a/Activity.java:12: Error: The logging tag can be at most 23 characters, was 34 (SuperSuperLongLogTagThatExceedsMax) [LongLogTag]
+                        Log.d(TAG, "message");
+                              ~~~
+                2 errors""",
+      "",
+      // Expected exit code
+      ERRNO_SUCCESS,
+      // Args
+      arrayOf(
+        "--config",
+        configFile.toString(),
+        "--project",
+        projectA.toString(),
+        "--report-only",
+        "--sdk-home",
+        TestUtils.getSdk().toString(),
+      ),
+      null,
+      null,
+    )
+    assertTrue(File(root, "out/java/com/google/a/lint_partial_results/lint-definite.xml").isFile)
+
+    // Analyze project b.
+    MainTest.checkDriver(
+      "",
+      "",
+      // Expected exit code
+      ERRNO_SUCCESS,
+      // Args
+      arrayOf(
+        "--config",
+        configFile.toString(),
+        "--project",
+        projectB.toString(),
+        "--analyze-only",
+        "--sdk-home",
+        TestUtils.getSdk().toString(),
+      ),
+      null,
+      null,
+    )
+
+    // Without the flag, a's definite incident is re-reported from b (which is what the
+    // deletion step in testIsolatedPartialAnalysisWithSingleProjectRoot prevents).
+    MainTest.checkDriver(
+      """
+                java/com/google/a/Activity.java:10: Error: Overriding method should call super.onStart [MissingSuperCall]
+                    protected void onStart() {
+                                   ~~~~~~~
+                java/com/google/b/Activity.java:10: Error: Overriding method should call super.onStart [MissingSuperCall]
+                    protected void onStart() {
+                                   ~~~~~~~
+                java/com/google/a/Activity.java:12: Error: The logging tag can be at most 23 characters, was 34 (SuperSuperLongLogTagThatExceedsMax) [LongLogTag]
+                        Log.d(TAG, "message");
+                              ~~~
+                java/com/google/b/Activity.java:12: Error: The logging tag can be at most 23 characters, was 34 (SuperSuperLongLogTagThatExceedsMax) [LongLogTag]
+                        Log.d(TAG, "message");
+                              ~~~
+                4 errors""",
+      "",
+      // Expected exit code
+      ERRNO_SUCCESS,
+      // Args
+      arrayOf(
+        "--config",
+        configFile.toString(),
+        "--project",
+        projectB.toString(),
+        "--report-only",
+        "--sdk-home",
+        TestUtils.getSdk().toString(),
+      ),
+      null,
+      null,
+    )
+
+    // With the flag, only b's own definite incidents are reported, while provisional
+    // incidents from a still propagate.
+    MainTest.checkDriver(
+      """
+                java/com/google/b/Activity.java:10: Error: Overriding method should call super.onStart [MissingSuperCall]
+                    protected void onStart() {
+                                   ~~~~~~~
+                java/com/google/a/Activity.java:12: Error: The logging tag can be at most 23 characters, was 34 (SuperSuperLongLogTagThatExceedsMax) [LongLogTag]
+                        Log.d(TAG, "message");
+                              ~~~
+                java/com/google/b/Activity.java:12: Error: The logging tag can be at most 23 characters, was 34 (SuperSuperLongLogTagThatExceedsMax) [LongLogTag]
+                        Log.d(TAG, "message");
+                              ~~~
+                3 errors""",
+      "",
+      // Expected exit code
+      ERRNO_SUCCESS,
+      // Args
+      arrayOf(
+        "--config",
+        configFile.toString(),
+        "--project",
+        projectB.toString(),
+        "--report-only",
+        "--XskipDefiniteIncidentsFromDeps",
+        "--sdk-home",
+        TestUtils.getSdk().toString(),
+      ),
+      null,
+      null,
+    )
+  }
+
+  @Test
   fun testOverlappingInferred() {
     // Regression test for b/248054901
     val root = temp.newFolder().canonicalFile.absoluteFile
