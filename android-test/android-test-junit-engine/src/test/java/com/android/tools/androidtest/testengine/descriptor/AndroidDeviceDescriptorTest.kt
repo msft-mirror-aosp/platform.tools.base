@@ -107,6 +107,20 @@ class AndroidDeviceDescriptorTest {
     assertThat(deviceInfoEntry?.keyValuePairs?.get(AndroidTestReportKeys.DEVICE_INFO_PATH)).isEqualTo(deviceInfoFile.absolutePath)
   }
 
+  @Test
+  fun `testStarted calls dynamicTestRegistered`() {
+    val uniqueId = UniqueId.forEngine("android-test-engine").append("device", deviceSerial)
+    val descriptor = AndroidDeviceDescriptor(uniqueId, deviceSerial)
+    val context = AndroidTestExecutionContext(executionRequest)
+
+    val testIdentifier = TestIdentifier("pkg", "Cls", "meth")
+    val listener = descriptor.Listener(context, null, null, null, null)
+
+    listener.testStarted(testIdentifier)
+
+    verify(engineExecutionListener).dynamicTestRegistered(any())
+  }
+
   @Mock private lateinit var mockDynamicTestExecutor: Node.DynamicTestExecutor
   @Mock private lateinit var mockAdbApkInstaller: AdbApkInstaller
   @Mock private lateinit var mockAmInstrumentationRunner: AmInstrumentationRunner

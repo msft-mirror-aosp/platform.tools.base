@@ -400,6 +400,7 @@ class AndroidDeviceDescriptor(
 
       testDescriptor.setParent(this@AndroidDeviceDescriptor)
       testDescriptors[testIdentifier] = testDescriptor
+      context.request.engineExecutionListener.dynamicTestRegistered(testDescriptor)
       tests.trySend(TestEvent.NewTest(testDescriptor)).getOrThrow()
 
       reporter?.testStarted(DdmlibTestIdentifier(fullClassName, testIdentifier.testMethod))
