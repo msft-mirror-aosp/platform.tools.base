@@ -1,3 +1,6 @@
+load("@rules_java//java:defs.bzl", "java_library")
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//tools/base/bazel:coverage.bzl", "coverage_java_test")
 load("//tools/base/bazel:maven.bzl", "maven_repository")
 load("//tools/base/bazel:utils.bzl", "merged_zip")
@@ -41,6 +44,7 @@ maven_repository(
         "//tools/base/adblib:adblib",
         "//tools/base/adblib-ddmlibcompatibility:adblib.ddmlibcompatibility",
         "//tools/base/adblib-tools:adblib.tools",
+        "//tools/base/backup:backup-restore",
         "//tools/base/deploy/deployer:deployer.runner.maven",
     ],
     include_transitive_deps = False,
