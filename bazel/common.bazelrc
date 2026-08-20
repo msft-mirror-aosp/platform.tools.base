@@ -268,3 +268,5 @@ build:without_vendor --//tools/base/bazel:without-vendor
 
 # Build arguments for IntelliJ Platform targets (@tools_idea//...).
 build --@tools_idea_rules_jvm//:default-kotlinc-opts=@tools_idea//:k25
+build --strategy=JvmCompile=worker
+build --strategy=HavenCli=worker
