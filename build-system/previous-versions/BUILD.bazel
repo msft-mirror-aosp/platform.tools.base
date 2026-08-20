@@ -59,7 +59,10 @@ maven_repository(
     name = "9.0.0",
     #keep sorted
     artifacts = [
+        "@maven//:androidx.databinding.databinding-adapters_9.0.0",
+        "@maven//:androidx.databinding.viewbinding_9.0.0",
         "@maven//:com.android.application.com.android.application.gradle.plugin_9.0.0",
+        "@maven//:com.android.built-in-kotlin.com.android.built-in-kotlin.gradle.plugin_9.0.0",
         "@maven//:com.android.databinding.adapters_9.0.0",
         "@maven//:com.android.databinding.viewbinding_9.0.0",
         "@maven//:com.android.fused-library.com.android.fused-library.gradle.plugin_9.0.0",
@@ -68,6 +71,7 @@ maven_repository(
         "@maven//:com.android.tools.build.aapt2_9.0.0-14304508",
         "@maven//:com.android.tools.build.gradle_9.0.0",
         "@maven//:com.android.tools.lint.lint-gradle_32.0.0",
+        "@maven//:org.jetbrains.kotlin.kotlin-build-tools-impl_2.2.10",
         "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.2.10",
         "@maven//:org.jetbrains.kotlin.kotlin-script-runtime_2.2.10",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_2.2.10",
