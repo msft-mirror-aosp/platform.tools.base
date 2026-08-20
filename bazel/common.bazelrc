@@ -50,9 +50,6 @@ build --jvmopt='-Didea.kotlin.plugin.use.k1=false'
 # Enable K2 UAST by default (b/448273436)
 build --jvmopt='-Dlint.use.fir.uast=true'
 
-# TODO(b/526687561): fix our usages of private platform modules.
-build --jvmopt='-Dintellij.platform.plugin.modules.check.visibility=warning'
-
 # Local runs require longer timeouts.
 build:local --test_timeout=120,600,1800,7200
 
