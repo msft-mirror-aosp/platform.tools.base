@@ -98,16 +98,16 @@ private class SerializableApplicationMultiOutputHandler(applicationOutputHandler
   override val mainVersionName: String?
     get() = mainSplit.versionName
 
-  override fun getOutputs(configFilter: (VariantOutputConfiguration) -> Boolean) =
-    variantOutputs.filter { configFilter.invoke(it.variantOutputConfiguration) }
+  override fun getOutputs(configFilter: (VariantOutputConfiguration) -> Boolean) = variantOutputs.filter {
+    configFilter.invoke(it.variantOutputConfiguration)
+  }
 
   override fun extractArtifactForSplit(artifacts: BuiltArtifactsImpl, config: VariantOutputConfiguration) =
     artifacts.getBuiltArtifact(config)
 
-  override fun getOutput(config: VariantOutputConfiguration) =
-    variantOutputs.firstOrNull {
-      config.outputType == it.variantOutputConfiguration.outputType && config.filters == it.variantOutputConfiguration.filters
-    }
+  override fun getOutput(config: VariantOutputConfiguration) = variantOutputs.firstOrNull {
+    config.outputType == it.variantOutputConfiguration.outputType && config.filters == it.variantOutputConfiguration.filters
+  }
 
   override fun getOutputNameForSplit(
     prefix: String,

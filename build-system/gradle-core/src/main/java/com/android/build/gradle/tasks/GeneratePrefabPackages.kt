@@ -158,14 +158,13 @@ sealed class PrefabCliInput {
 }
 
 private fun getPrefabCliInputs(abiName: String, cliStagedInput: File, realPackages: List<File>): List<PrefabCliInput> {
-  val modulePublications =
-    realPackages.map { realPackage ->
-      // When purely building from the command-line then only 'Configuration' will be available.
-      // When purely syncing from Android Studio then only 'HeaderOnly' will be available.
-      // When both are available, use 'Configuration'. It is the same as 'HeaderOnly' but it
-      // also has library information (paths to .so files).
-      Configuration.readPublicationFileOrNull(realPackage) ?: HeaderOnly.readPublicationFileOrNull(realPackage)
-    }
+  val modulePublications = realPackages.map { realPackage ->
+    // When purely building from the command-line then only 'Configuration' will be available.
+    // When purely syncing from Android Studio then only 'HeaderOnly' will be available.
+    // When both are available, use 'Configuration'. It is the same as 'HeaderOnly' but it
+    // also has library information (paths to .so files).
+    Configuration.readPublicationFileOrNull(realPackage) ?: HeaderOnly.readPublicationFileOrNull(realPackage)
+  }
 
   return realPackages.indices.map { i ->
     val realPackage = realPackages[i]

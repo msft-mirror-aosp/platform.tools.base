@@ -104,37 +104,36 @@ class ManagedDeviceExtensionTest {
   }
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      simpleProject()
-      rootProject {
-        buildscript {
-          classpath(
-            localJar("myCustomGmdClasses") {
-              addClasses(
-                MyCustomDevice::class.java,
-                MyCustomDeviceImpl::class.java,
-                ManagedDeviceExtensionTest::class.java,
-                SetupConfigAction::class.java,
-                SetupInput::class.java,
-                SetupTaskAction::class.java,
-                TestRunConfigAction::class.java,
-                TestRunInput::class.java,
-                TestRunTaskAction::class.java,
-              )
-            }
-          )
-        }
-      }
-      androidApplication {
-        android.testOptions.managedDevices { allDevices.create("myCustomDevice", MyCustomDevice::class.java) {} }
-        pluginCallbacks += AddCustomGMDCallback::class.java
-      }
-      androidApplication(":emptyAppProject") {
-        android.testOptions.managedDevices { allDevices.create("myCustomDevice", MyCustomDevice::class.java) {} }
-        pluginCallbacks += AddCustomGMDCallback::class.java
+  val rule = GradleRule.from {
+    simpleProject()
+    rootProject {
+      buildscript {
+        classpath(
+          localJar("myCustomGmdClasses") {
+            addClasses(
+              MyCustomDevice::class.java,
+              MyCustomDeviceImpl::class.java,
+              ManagedDeviceExtensionTest::class.java,
+              SetupConfigAction::class.java,
+              SetupInput::class.java,
+              SetupTaskAction::class.java,
+              TestRunConfigAction::class.java,
+              TestRunInput::class.java,
+              TestRunTaskAction::class.java,
+            )
+          }
+        )
       }
     }
+    androidApplication {
+      android.testOptions.managedDevices { allDevices.create("myCustomDevice", MyCustomDevice::class.java) {} }
+      pluginCallbacks += AddCustomGMDCallback::class.java
+    }
+    androidApplication(":emptyAppProject") {
+      android.testOptions.managedDevices { allDevices.create("myCustomDevice", MyCustomDevice::class.java) {} }
+      pluginCallbacks += AddCustomGMDCallback::class.java
+    }
+  }
 
   class AddCustomGMDCallback : ApplicationComponentCallback {
     override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {

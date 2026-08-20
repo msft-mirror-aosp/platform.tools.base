@@ -117,7 +117,8 @@ fun findNdkPathImpl(
       if (revision != revisionFromNdkVersion && ndkVersionFromDsl != null) {
         errorln(
           NDK_VERSION_IS_UNMATCHED,
-          "NDK from ndk.dir at $ndkDirFolder had version [$revision] " + "which disagrees with android.ndkVersion [$revisionFromNdkVersion]",
+          "NDK from ndk.dir at $ndkDirFolder had version [$revision] " +
+            "which disagrees with android.ndkVersion [$revisionFromNdkVersion]",
         )
         return null
       }

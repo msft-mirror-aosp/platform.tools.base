@@ -66,122 +66,121 @@ class BaselineProfileConnectedTest(val runWithBuiltInPlatform: Boolean) {
       ) {}
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      gradleProperties { add(BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM, runWithBuiltInPlatform) }
-      androidApplication(":app", createMinimumProject = false) {
-        applyPlugin(baselineProfilePlugin) {
-          saveInSrc = true
-          mergeIntoMain = true
-          automaticGenerationDuringBuild = false
-        }
-        android {
-          namespace = "com.example.repro"
-          compileSdk = GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION
-          defaultConfig {
-            applicationId = "com.example.repro"
-            minSdk = 29
-            targetSdk = GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION
-          }
-        }
-        dependencies {
-          add("baselineProfile", project(":baselineprofile"))
-          implementation("androidx.profileinstaller:profileinstaller:1.4.1")
-        }
-        files {
-          add(
-            "src/main/AndroidManifest.xml",
-            """
-            <?xml version="1.0" encoding="utf-8"?>
-            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                <application
-                    android:label="bprepro"
-                    android:allowBackup="false">
-                    <activity
-                        android:name=".MainActivity"
-                        android:exported="true">
-                        <intent-filter>
-                            <action android:name="android.intent.action.MAIN" />
-                            <category android:name="android.intent.category.LAUNCHER" />
-                        </intent-filter>
-                    </activity>
-                </application>
-            </manifest>
-            """
-              .trimIndent(),
-          )
-          add(
-            "src/main/java/com/example/repro/MainActivity.java",
-            """
-            package com.example.repro;
-
-            import android.app.Activity;
-            import android.os.Bundle;
-            import android.widget.TextView;
-
-            public class MainActivity extends Activity {
-                @Override
-                protected void onCreate(Bundle savedInstanceState) {
-                    super.onCreate(savedInstanceState);
-                    TextView text = new TextView(this);
-                    text.setText("bprepro");
-                    setContentView(text);
-                }
-            }
-            """
-              .trimIndent(),
-          )
+  val rule = GradleRule.from {
+    gradleProperties { add(BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM, runWithBuiltInPlatform) }
+    androidApplication(":app", createMinimumProject = false) {
+      applyPlugin(baselineProfilePlugin) {
+        saveInSrc = true
+        mergeIntoMain = true
+        automaticGenerationDuringBuild = false
+      }
+      android {
+        namespace = "com.example.repro"
+        compileSdk = GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION
+        defaultConfig {
+          applicationId = "com.example.repro"
+          minSdk = 29
+          targetSdk = GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION
         }
       }
-      androidTest(":baselineprofile") {
-        applyPlugin(baselineProfilePlugin) { useConnectedDevices = true }
-        android {
-          namespace = "com.example.repro.bp"
-          compileSdk = GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION
-          defaultConfig {
-            minSdk = 29
-            targetSdk = GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION
-            testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+      dependencies {
+        add("baselineProfile", project(":baselineprofile"))
+        implementation("androidx.profileinstaller:profileinstaller:1.4.1")
+      }
+      files {
+        add(
+          "src/main/AndroidManifest.xml",
+          """
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <application
+                  android:label="bprepro"
+                  android:allowBackup="false">
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          """
+            .trimIndent(),
+        )
+        add(
+          "src/main/java/com/example/repro/MainActivity.java",
+          """
+          package com.example.repro;
+
+          import android.app.Activity;
+          import android.os.Bundle;
+          import android.widget.TextView;
+
+          public class MainActivity extends Activity {
+              @Override
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  TextView text = new TextView(this);
+                  text.setText("bprepro");
+                  setContentView(text);
+              }
           }
-          targetProjectPath = ":app"
-        }
-        dependencies {
-          implementation("androidx.benchmark:benchmark-macro-junit4:1.5.0-beta01")
-          implementation("androidx.test.ext:junit:1.3.0")
-          implementation("androidx.test.uiautomator:uiautomator:2.4.0")
-        }
-        files {
-          add(
-            "src/main/kotlin/com/example/repro/bp/StartupGenerator.kt",
-            """
-            package com.example.repro.bp
-
-            import androidx.benchmark.macro.junit4.BaselineProfileRule
-            import androidx.test.ext.junit.runners.AndroidJUnit4
-            import org.junit.Rule
-            import org.junit.Test
-            import org.junit.runner.RunWith
-
-            @RunWith(AndroidJUnit4::class)
-            class StartupGenerator {
-                @get:Rule
-                val rule = BaselineProfileRule()
-
-                @Test
-                fun startup() = rule.collect(
-                    packageName = "com.example.repro",
-                    includeInStartupProfile = true,
-                ) {
-                    pressHome()
-                    startActivityAndWait()
-                }
-            }
-            """
-              .trimIndent(),
-          )
-        }
+          """
+            .trimIndent(),
+        )
       }
     }
+    androidTest(":baselineprofile") {
+      applyPlugin(baselineProfilePlugin) { useConnectedDevices = true }
+      android {
+        namespace = "com.example.repro.bp"
+        compileSdk = GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION
+        defaultConfig {
+          minSdk = 29
+          targetSdk = GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION
+          testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        }
+        targetProjectPath = ":app"
+      }
+      dependencies {
+        implementation("androidx.benchmark:benchmark-macro-junit4:1.5.0-beta01")
+        implementation("androidx.test.ext:junit:1.3.0")
+        implementation("androidx.test.uiautomator:uiautomator:2.4.0")
+      }
+      files {
+        add(
+          "src/main/kotlin/com/example/repro/bp/StartupGenerator.kt",
+          """
+          package com.example.repro.bp
+
+          import androidx.benchmark.macro.junit4.BaselineProfileRule
+          import androidx.test.ext.junit.runners.AndroidJUnit4
+          import org.junit.Rule
+          import org.junit.Test
+          import org.junit.runner.RunWith
+
+          @RunWith(AndroidJUnit4::class)
+          class StartupGenerator {
+              @get:Rule
+              val rule = BaselineProfileRule()
+
+              @Test
+              fun startup() = rule.collect(
+                  packageName = "com.example.repro",
+                  includeInStartupProfile = true,
+              ) {
+                  pressHome()
+                  startActivityAndWait()
+              }
+          }
+          """
+            .trimIndent(),
+        )
+      }
+    }
+  }
 
   @Test
   fun generateBaselineProfile() {

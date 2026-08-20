@@ -252,8 +252,9 @@ internal fun DefaultAndroidSourceSet.convert(sources: InternalSources) =
 private fun variantSourcesForModel(sourceDirectories: SourceDirectoriesImpl?) =
   sourceDirectories?.variantSourcesForModel { it.shouldBeAddedToIdeModel && !it.isGenerated } ?: emptyList()
 
-private fun variantSourcesForList(sourceDirectoriesList: List<SourceDirectoriesImpl>) =
-  sourceDirectoriesList.flatMap { sourceDir -> sourceDir.variantSourcesForModel { it.shouldBeAddedToIdeModel && !it.isGenerated } }
+private fun variantSourcesForList(sourceDirectoriesList: List<SourceDirectoriesImpl>) = sourceDirectoriesList.flatMap { sourceDir ->
+  sourceDir.variantSourcesForModel { it.shouldBeAddedToIdeModel && !it.isGenerated }
+}
 
 internal fun AndroidResources.convert(): AaptOptions {
   var namespaced = DISABLED

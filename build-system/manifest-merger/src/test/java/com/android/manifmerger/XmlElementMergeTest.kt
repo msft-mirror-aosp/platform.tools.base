@@ -35,19 +35,17 @@ class XmlElementMergeTest {
 
   @Test
   fun testUnMatchedKeys() {
-    val lowPriorityNode =
-      rootElement {
-          key = "lowPriorityNode"
-          childElement { key = "lpChild1" }
-          childElement { key = "lpChild2" }
-        }
-        .toElement()
-    val highPriorityNode =
-      rootElement {
-          key = "highPriorityNode"
-          childElement { key = "hpChild1" }
-        }
-        .toElement()
+    val lowPriorityNode = rootElement {
+      key = "lowPriorityNode"
+      childElement { key = "lpChild1" }
+      childElement { key = "lpChild2" }
+    }
+      .toElement()
+    val highPriorityNode = rootElement {
+      key = "highPriorityNode"
+      childElement { key = "hpChild1" }
+    }
+      .toElement()
     val pairs = mapMergingElements(lowPriorityNode, highPriorityNode, processCancellationChecker, mergingReport)
     assertThat(pairs)
       .containsExactly(
@@ -58,20 +56,18 @@ class XmlElementMergeTest {
 
   @Test
   fun testAbsentKeyNoMatchingChild() {
-    val lowPriorityNode =
-      rootElement {
-          key = "lowPriorityNode"
-          // Two child elements with null key.
-          childElement {}
-          childElement {}
-        }
-        .toElement()
-    val highPriorityNode =
-      rootElement {
-          key = "highPriorityNode"
-          childElement { key = "hpChild1" }
-        }
-        .toElement()
+    val lowPriorityNode = rootElement {
+      key = "lowPriorityNode"
+      // Two child elements with null key.
+      childElement {}
+      childElement {}
+    }
+      .toElement()
+    val highPriorityNode = rootElement {
+      key = "highPriorityNode"
+      childElement { key = "hpChild1" }
+    }
+      .toElement()
     val firstNodeByType = highPriorityNode.mergeableElements[0]
     whenever(highPriorityNode.getFirstNodeByType(any())).thenReturn(Optional.of(firstNodeByType))
     val pairs = mapMergingElements(lowPriorityNode, highPriorityNode, processCancellationChecker, mergingReport)
@@ -84,33 +80,31 @@ class XmlElementMergeTest {
 
   @Test
   fun testMultipleDeclarationAllowed() {
-    val lowPriorityNode =
-      rootElement {
-          key = "lowPriorityNode"
-          childElement {
-            key = "child1"
-            multipleDeclarationAllowed = true
-          }
-          childElement {
-            key = "child1"
-            multipleDeclarationAllowed = true
-          }
-          childElement {
-            key = "child1"
-            featureFlag = "featureFlag1"
-            multipleDeclarationAllowed = true
-          }
-        }
-        .toElement()
-    val highPriorityNode =
-      rootElement {
-          key = "highPriorityNode"
-          childElement {
-            key = "child1"
-            multipleDeclarationAllowed = true
-          }
-        }
-        .toElement()
+    val lowPriorityNode = rootElement {
+      key = "lowPriorityNode"
+      childElement {
+        key = "child1"
+        multipleDeclarationAllowed = true
+      }
+      childElement {
+        key = "child1"
+        multipleDeclarationAllowed = true
+      }
+      childElement {
+        key = "child1"
+        featureFlag = "featureFlag1"
+        multipleDeclarationAllowed = true
+      }
+    }
+      .toElement()
+    val highPriorityNode = rootElement {
+      key = "highPriorityNode"
+      childElement {
+        key = "child1"
+        multipleDeclarationAllowed = true
+      }
+    }
+      .toElement()
     val pairs = mapMergingElements(lowPriorityNode, highPriorityNode, processCancellationChecker, mergingReport)
     assertThat(pairs)
       .containsExactly(
@@ -122,40 +116,38 @@ class XmlElementMergeTest {
 
   @Test
   fun testLowPriorityWithFeatureFlagHighPriorityNodeWithFeatureFlag() {
-    val lowPriorityNode =
-      rootElement {
-          key = "lowPriorityNode"
-          childElement {
-            key = "child1"
-            featureFlag = "featureFlag1"
-          }
-          childElement {
-            key = "child1"
-            featureFlag = "featureFlag1"
-          }
-          childElement {
-            key = "child1"
-            featureFlag = "featureFlag1"
-          }
-        }
-        .toElement()
-    val highPriorityNode =
-      rootElement {
-          key = "highPriorityNode"
-          childElement {
-            key = "child1"
-            featureFlag = "!featureFlag1"
-          }
-          childElement {
-            key = "child1"
-            featureFlag = "featureFlag1"
-          }
-          childElement {
-            key = "child1"
-            featureFlag = "featureFlag2"
-          }
-        }
-        .toElement()
+    val lowPriorityNode = rootElement {
+      key = "lowPriorityNode"
+      childElement {
+        key = "child1"
+        featureFlag = "featureFlag1"
+      }
+      childElement {
+        key = "child1"
+        featureFlag = "featureFlag1"
+      }
+      childElement {
+        key = "child1"
+        featureFlag = "featureFlag1"
+      }
+    }
+      .toElement()
+    val highPriorityNode = rootElement {
+      key = "highPriorityNode"
+      childElement {
+        key = "child1"
+        featureFlag = "!featureFlag1"
+      }
+      childElement {
+        key = "child1"
+        featureFlag = "featureFlag1"
+      }
+      childElement {
+        key = "child1"
+        featureFlag = "featureFlag2"
+      }
+    }
+      .toElement()
     val pairs = mapMergingElements(lowPriorityNode, highPriorityNode, processCancellationChecker, mergingReport)
     assertThat(pairs)
       .containsExactly(
@@ -167,33 +159,31 @@ class XmlElementMergeTest {
 
   @Test
   fun testLowPriorityWithFeatureFlagHighPriorityNodeWithAndWithoutFeatureFlag() {
-    val lowPriorityNode =
-      rootElement {
-          key = "lowPriorityNode"
-          childElement {
-            key = "child1"
-            featureFlag = "featureFlag1"
-          }
-          childElement {
-            key = "child1"
-            featureFlag = "featureFlag1"
-          }
-          childElement {
-            key = "child1"
-            featureFlag = "featureFlag1"
-          }
-        }
-        .toElement()
-    val highPriorityNode =
-      rootElement {
-          key = "highPriorityNode"
-          childElement {
-            key = "child1"
-            featureFlag = "featureFlag1"
-          }
-          childElement { key = "child1" }
-        }
-        .toElement()
+    val lowPriorityNode = rootElement {
+      key = "lowPriorityNode"
+      childElement {
+        key = "child1"
+        featureFlag = "featureFlag1"
+      }
+      childElement {
+        key = "child1"
+        featureFlag = "featureFlag1"
+      }
+      childElement {
+        key = "child1"
+        featureFlag = "featureFlag1"
+      }
+    }
+      .toElement()
+    val highPriorityNode = rootElement {
+      key = "highPriorityNode"
+      childElement {
+        key = "child1"
+        featureFlag = "featureFlag1"
+      }
+      childElement { key = "child1" }
+    }
+      .toElement()
     val pairs = mapMergingElements(lowPriorityNode, highPriorityNode, processCancellationChecker, mergingReport)
     assertThat(pairs)
       .containsExactly(
@@ -205,29 +195,27 @@ class XmlElementMergeTest {
 
   @Test
   fun testLowPriorityWithFeatureFlagHighPriorityNodeWithoutFeatureFlag() {
-    val lowPriorityNode =
-      rootElement {
-          key = "lowPriorityNode"
-          childElement {
-            key = "child1"
-            featureFlag = "featureFlag1"
-          }
-          childElement {
-            key = "child1"
-            featureFlag = "featureFlag1"
-          }
-          childElement {
-            key = "child1"
-            featureFlag = "featureFlag1"
-          }
-        }
-        .toElement()
-    val highPriorityNode =
-      rootElement {
-          key = "highPriorityNode"
-          childElement { key = "child1" }
-        }
-        .toElement()
+    val lowPriorityNode = rootElement {
+      key = "lowPriorityNode"
+      childElement {
+        key = "child1"
+        featureFlag = "featureFlag1"
+      }
+      childElement {
+        key = "child1"
+        featureFlag = "featureFlag1"
+      }
+      childElement {
+        key = "child1"
+        featureFlag = "featureFlag1"
+      }
+    }
+      .toElement()
+    val highPriorityNode = rootElement {
+      key = "highPriorityNode"
+      childElement { key = "child1" }
+    }
+      .toElement()
     val pairs = mapMergingElements(lowPriorityNode, highPriorityNode, processCancellationChecker, mergingReport)
     val addMessageFirstArgumentCaptor = argumentCaptor<XmlElement>()
     assertThat(pairs).isEmpty()
@@ -242,28 +230,26 @@ class XmlElementMergeTest {
 
   @Test
   fun testLowPriorityWithoutFeatureFlagHighPriorityNodeWithoutFeatureFlag() {
-    val lowPriorityNode =
-      rootElement {
-          key = "lowPriorityNode"
-          childElement { key = "child1" }
-          childElement { key = "child2" }
-        }
-        .toElement()
-    val highPriorityNode =
-      rootElement {
-          key = "highPriorityNode"
-          childElement { key = "child1" }
-          childElement { key = "child2" }
-          childElement {
-            key = "child1"
-            featureFlag = "experiment1"
-          }
-          childElement {
-            key = "child1"
-            featureFlag = "experiment2"
-          }
-        }
-        .toElement()
+    val lowPriorityNode = rootElement {
+      key = "lowPriorityNode"
+      childElement { key = "child1" }
+      childElement { key = "child2" }
+    }
+      .toElement()
+    val highPriorityNode = rootElement {
+      key = "highPriorityNode"
+      childElement { key = "child1" }
+      childElement { key = "child2" }
+      childElement {
+        key = "child1"
+        featureFlag = "experiment1"
+      }
+      childElement {
+        key = "child1"
+        featureFlag = "experiment2"
+      }
+    }
+      .toElement()
     val pairs = mapMergingElements(lowPriorityNode, highPriorityNode, processCancellationChecker, mergingReport)
     assertThat(pairs)
       .containsExactly(
@@ -274,34 +260,32 @@ class XmlElementMergeTest {
 
   @Test
   fun testLowPriorityWithoutFeatureFlagHighPriorityNodeWithFeatureFlag() {
-    val lowPriorityNode =
-      rootElement {
-          key = "lowPriorityNode"
-          childElement { key = "child1" }
-          childElement { key = "child2" }
-        }
-        .toElement()
-    val highPriorityNode =
-      rootElement {
-          key = "highPriorityNode"
-          childElement {
-            key = "child1"
-            featureFlag = "experiment1"
-          }
-          childElement {
-            key = "child1"
-            featureFlag = "!experiment1"
-          }
-          childElement {
-            key = "child2"
-            featureFlag = "experiment1"
-          }
-          childElement {
-            key = "child2"
-            featureFlag = "experiment2"
-          }
-        }
-        .toElement()
+    val lowPriorityNode = rootElement {
+      key = "lowPriorityNode"
+      childElement { key = "child1" }
+      childElement { key = "child2" }
+    }
+      .toElement()
+    val highPriorityNode = rootElement {
+      key = "highPriorityNode"
+      childElement {
+        key = "child1"
+        featureFlag = "experiment1"
+      }
+      childElement {
+        key = "child1"
+        featureFlag = "!experiment1"
+      }
+      childElement {
+        key = "child2"
+        featureFlag = "experiment1"
+      }
+      childElement {
+        key = "child2"
+        featureFlag = "experiment2"
+      }
+    }
+      .toElement()
     val clonedLowPriorityNodes: List<XmlElement> = listOf(mock(), mock(), mock(), mock())
     var index = 0
     for (i in 0..1) {

@@ -82,19 +82,18 @@ constructor(
         )
       )
 
-      val versionProvider =
-        providers.provider {
-          val version = screenshotSuite.engineVersion
-          if (version.isNullOrBlank()) {
-            dslServices.issueReporter.reportError(
-              com.android.builder.errors.IssueReporter.Type.GENERIC,
-              "Screenshot test engine version must be specified. e.g. engineVersion = \"0.0.1-alpha01\"",
-            )
-            "unspecified"
-          } else {
-            version!!
-          }
+      val versionProvider = providers.provider {
+        val version = screenshotSuite.engineVersion
+        if (version.isNullOrBlank()) {
+          dslServices.issueReporter.reportError(
+            com.android.builder.errors.IssueReporter.Type.GENERIC,
+            "Screenshot test engine version must be specified. e.g. engineVersion = \"0.0.1-alpha01\"",
+          )
+          "unspecified"
+        } else {
+          version!!
         }
+      }
 
       enginesDependencies.add(
         versionProvider.map { version ->

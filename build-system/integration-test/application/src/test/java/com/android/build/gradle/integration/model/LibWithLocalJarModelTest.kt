@@ -29,17 +29,16 @@ import org.junit.Test
 
 class LibWithLocalJarModelTest : ModelComparator() {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        android { enableKotlin = false }
-        dependencies { implementation(project(DEFAULT_LIB_PATH)) }
-      }
-      androidLibrary {
-        android { enableKotlin = false }
-        dependencies { implementation(localJar("foo.jar") { addEmptyClasses("com/example/MainClass") }) }
-      }
+  val rule = GradleRule.from {
+    androidApplication {
+      android { enableKotlin = false }
+      dependencies { implementation(project(DEFAULT_LIB_PATH)) }
     }
+    androidLibrary {
+      android { enableKotlin = false }
+      dependencies { implementation(localJar("foo.jar") { addEmptyClasses("com/example/MainClass") }) }
+    }
+  }
 
   private lateinit var result: ModelBuilderV2.FetchResult<ModelContainerV2>
 

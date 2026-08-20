@@ -25,11 +25,10 @@ import org.junit.Test
 class GStringMatchingFallbackTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication(":app") {}
-      androidLibrary(":library") {}
-    }
+  val rule = GradleRule.from {
+    androidApplication(":app") {}
+    androidLibrary(":library") {}
+  }
 
   @Test
   fun testGStringInMatchingFallbacks() {

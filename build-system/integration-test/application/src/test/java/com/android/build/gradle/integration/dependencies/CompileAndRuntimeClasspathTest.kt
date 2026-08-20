@@ -42,16 +42,15 @@ class CompileAndRuntimeClasspathTest(private val enableAlignment: Boolean) {
 
   @Test
   fun `Higher Compile than Runtime causes failure`() {
-    val project =
-      rule.build {
-        androidApplication {
-          android { enableKotlin = false }
-          dependencies {
-            compileOnly("com.google.guava:guava:20.0")
-            runtimeOnly("com.google.guava:guava:19.0")
-          }
+    val project = rule.build {
+      androidApplication {
+        android { enableKotlin = false }
+        dependencies {
+          compileOnly("com.google.guava:guava:20.0")
+          runtimeOnly("com.google.guava:guava:19.0")
         }
       }
+    }
 
     if (enableAlignment) {
       val result = project.executor.expectFailure().run("assembleDebug")
@@ -79,16 +78,15 @@ class CompileAndRuntimeClasspathTest(private val enableAlignment: Boolean) {
 
   @Test
   fun `Lower Compile than Runtime leads to promoted version`() {
-    val project =
-      rule.build {
-        androidApplication {
-          android { enableKotlin = false }
-          dependencies {
-            compileOnly("com.google.guava:guava:19.0")
-            runtimeOnly("com.google.guava:guava:20.0")
-          }
+    val project = rule.build {
+      androidApplication {
+        android { enableKotlin = false }
+        dependencies {
+          compileOnly("com.google.guava:guava:19.0")
+          runtimeOnly("com.google.guava:guava:20.0")
         }
       }
+    }
 
     val result = project.executor.run(":app:dependencies")
     if (enableAlignment) {

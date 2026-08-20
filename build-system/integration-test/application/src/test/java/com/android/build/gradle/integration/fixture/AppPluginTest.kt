@@ -46,15 +46,14 @@ class AppPluginTest(private val currentBuildFileType: BuildFileType) {
   }
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      buildFileType = currentBuildFileType
-      androidApplication {
-        pluginCallbacks += AppCallback::class.java
+  val rule = GradleRule.from {
+    buildFileType = currentBuildFileType
+    androidApplication {
+      pluginCallbacks += AppCallback::class.java
 
-        files { add("src/main/assets/FileToTransform.txt", "initial content") }
-      }
+      files { add("src/main/assets/FileToTransform.txt", "initial content") }
     }
+  }
 
   @Test
   fun testReleaseVariantIsDisabled() {

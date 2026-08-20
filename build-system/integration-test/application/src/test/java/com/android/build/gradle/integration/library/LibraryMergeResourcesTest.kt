@@ -55,39 +55,38 @@ class LibraryMergeResourcesTest {
 
   @Test
   fun `test trailing text in xml`() {
-    val build =
-      project.build {
-        androidLibrary {
-          files {
-            add(
-              "src/main/res/layout/trailing_content_layout.xml",
-              """<?xml version="1.0" encoding="utf-8"?>
+    val build = project.build {
+      androidLibrary {
+        files {
+          add(
+            "src/main/res/layout/trailing_content_layout.xml",
+            """<?xml version="1.0" encoding="utf-8"?>
             <FrameLayout>content</FrameLayout> trailing content
             """,
-            )
-            add(
-              "src/main/res/layout/trailing_crlf_layout.xml",
-              """
-              <?xml version="1.0" encoding="utf-8"?>
-                          <FrameLayout>content</FrameLayout>
-              """
-                .trimIndent() + "\r\n",
-            )
-            // Check valid XML layout does not trigger warning (regression test for b/453573619)
-            add(
-              "src/main/res/values/layout/valid_layout.xml",
-              """
-              <?xml version="1.0" encoding="utf-8"?>
-                              <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                                  android:orientation="vertical"
-                                  android:layout_width="match_parent"
-                                  android:layout_height="match_parent"/>
-              """
-                .trimIndent(),
-            )
-          }
+          )
+          add(
+            "src/main/res/layout/trailing_crlf_layout.xml",
+            """
+            <?xml version="1.0" encoding="utf-8"?>
+                        <FrameLayout>content</FrameLayout>
+            """
+              .trimIndent() + "\r\n",
+          )
+          // Check valid XML layout does not trigger warning (regression test for b/453573619)
+          add(
+            "src/main/res/values/layout/valid_layout.xml",
+            """
+            <?xml version="1.0" encoding="utf-8"?>
+                            <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                                android:orientation="vertical"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"/>
+            """
+              .trimIndent(),
+          )
         }
       }
+    }
 
     build.executor.run("clean", ":lib:parseDebugLocalResources").also {
       // trailing_content_layout.xml

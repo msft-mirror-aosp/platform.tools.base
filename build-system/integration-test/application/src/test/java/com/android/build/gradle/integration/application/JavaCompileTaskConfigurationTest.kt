@@ -28,34 +28,32 @@ import org.junit.Test
 
 class JavaCompileTaskConfigurationTest {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        android {
-          namespace = "com.example.api.use"
-          defaultConfig.applicationId = "com.example.api.use"
-        }
-        pluginCallbacks += VariantApiCallback::class.java
-        pluginCallbacks += JavaComplierArgsCallback::class.java
+  val rule = GradleRule.from {
+    androidApplication {
+      android {
+        namespace = "com.example.api.use"
+        defaultConfig.applicationId = "com.example.api.use"
       }
+      pluginCallbacks += VariantApiCallback::class.java
+      pluginCallbacks += JavaComplierArgsCallback::class.java
     }
+  }
 
   @Test
   fun `test setting java compiler options via Variant API`() {
-    val build =
-      rule.build {
-        androidApplication {
-          files.add(
-            "src/debug/java/Foo.java",
-            // language=kotlin
-            """
-            package com.example.api.use;
-            class Foo {}
-            """
-              .trimIndent(),
-          )
-        }
+    val build = rule.build {
+      androidApplication {
+        files.add(
+          "src/debug/java/Foo.java",
+          // language=kotlin
+          """
+          package com.example.api.use;
+          class Foo {}
+          """
+            .trimIndent(),
+        )
       }
+    }
     val result = build.executor.run(":app:assembleDebug")
     ScannerSubject.assertThat(result.stdout).contains("compilerArgs=[-XDstringConcat=inline, -Werror]")
   }

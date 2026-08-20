@@ -28,20 +28,19 @@ import org.junit.Test
 
 class FlavoredAppModelTest : ModelComparator() {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        android {
-          enableKotlin = false
-          flavorDimensions += listOf("model")
-          productFlavors {
-            create("basic") { it.dimension = "model" }
-            create("pro") { it.dimension = "model" }
-          }
+  val rule = GradleRule.from {
+    androidApplication {
+      android {
+        enableKotlin = false
+        flavorDimensions += listOf("model")
+        productFlavors {
+          create("basic") { it.dimension = "model" }
+          create("pro") { it.dimension = "model" }
         }
-        pluginCallbacks += DisableSomeVariantCallback::class.java
       }
+      pluginCallbacks += DisableSomeVariantCallback::class.java
     }
+  }
 
   class DisableSomeVariantCallback : ApplicationComponentCallback {
     override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
@@ -65,22 +64,21 @@ class FlavoredAppModelTest : ModelComparator() {
 
 class MultiFlavoredAppModelTest : ModelComparator() {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        android {
-          enableKotlin = false
-          flavorDimensions += listOf("model", "market")
-          productFlavors {
-            create("basic") { it.dimension = "model" }
-            create("pro") { it.dimension = "model" }
-            create("play") { it.dimension = "market" }
-            create("other") { it.dimension = "market" }
-          }
+  val rule = GradleRule.from {
+    androidApplication {
+      android {
+        enableKotlin = false
+        flavorDimensions += listOf("model", "market")
+        productFlavors {
+          create("basic") { it.dimension = "model" }
+          create("pro") { it.dimension = "model" }
+          create("play") { it.dimension = "market" }
+          create("other") { it.dimension = "market" }
         }
-        pluginCallbacks += DisableBunchOfVariantCallback::class.java
       }
+      pluginCallbacks += DisableBunchOfVariantCallback::class.java
     }
+  }
 
   class DisableBunchOfVariantCallback : ApplicationComponentCallback {
     override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {

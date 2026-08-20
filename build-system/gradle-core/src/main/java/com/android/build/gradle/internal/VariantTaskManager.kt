@@ -299,8 +299,9 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
       maybeUseInlineScopesNumbers(kotlinCompile, creationConfig, logger)
     }
 
-    val composeIsEnabled =
-      allPropertiesList.any { componentProperties: ComponentCreationConfig -> componentProperties.buildFeatures.compose }
+    val composeIsEnabled = allPropertiesList.any { componentProperties: ComponentCreationConfig ->
+      componentProperties.buildFeatures.compose
+    }
     recordKgpPropertiesForAnalytics(project, allPropertiesList)
     if (!composeIsEnabled) {
       return

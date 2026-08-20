@@ -26,45 +26,44 @@ import org.junit.Test
 class FlavouredDependencyModelTest : ModelComparator() {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidLibrary(":lib1") {
-        android {
-          enableKotlin = false
-          flavorDimensions += listOf("model", "market")
-          productFlavors {
-            create("basic") { it.dimension = "model" }
-            create("pro") { it.dimension = "model" }
-            create("play") { it.dimension = "market" }
-            create("other") { it.dimension = "market" }
-          }
+  val rule = GradleRule.from {
+    androidLibrary(":lib1") {
+      android {
+        enableKotlin = false
+        flavorDimensions += listOf("model", "market")
+        productFlavors {
+          create("basic") { it.dimension = "model" }
+          create("pro") { it.dimension = "model" }
+          create("play") { it.dimension = "market" }
+          create("other") { it.dimension = "market" }
         }
-        dependencies { implementation(project(":lib2")) }
       }
-      androidLibrary(":lib2") {
-        android {
-          enableKotlin = false
-          flavorDimensions += listOf("model", "market")
-          productFlavors {
-            create("basic") { it.dimension = "model" }
-            create("pro") { it.dimension = "model" }
-            create("play") { it.dimension = "market" }
-            create("other") { it.dimension = "market" }
-          }
+      dependencies { implementation(project(":lib2")) }
+    }
+    androidLibrary(":lib2") {
+      android {
+        enableKotlin = false
+        flavorDimensions += listOf("model", "market")
+        productFlavors {
+          create("basic") { it.dimension = "model" }
+          create("pro") { it.dimension = "model" }
+          create("play") { it.dimension = "market" }
+          create("other") { it.dimension = "market" }
         }
-        dependencies { implementation(project(":lib3")) }
       }
-      androidLibrary(":lib3") {
-        android {
-          enableKotlin = false
-          flavorDimensions += listOf("market")
-          productFlavors {
-            create("play") { it.dimension = "market" }
-            create("other") { it.dimension = "market" }
-          }
+      dependencies { implementation(project(":lib3")) }
+    }
+    androidLibrary(":lib3") {
+      android {
+        enableKotlin = false
+        flavorDimensions += listOf("market")
+        productFlavors {
+          create("play") { it.dimension = "market" }
+          create("other") { it.dimension = "market" }
         }
       }
     }
+  }
 
   @Test
   fun `test models`() {

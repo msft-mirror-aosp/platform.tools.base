@@ -63,15 +63,14 @@ open class HostTestBuilderImpl(
     fun create(
       dslDefinedHostTestsDefinitions: List<ComponentDslInfo.DslDefinedHostTest>,
       experimentalProperties: Map<String, Any>,
-    ): Map<String, HostTestBuilder> =
-      dslDefinedHostTestsDefinitions.associate {
-        it.type to
-          when (it.type) {
-            HostTestBuilder.UNIT_TEST_TYPE -> forUnitTest(it.codeCoverageEnabled, it.isIncludeAndroidResources)
+    ): Map<String, HostTestBuilder> = dslDefinedHostTestsDefinitions.associate {
+      it.type to
+        when (it.type) {
+          HostTestBuilder.UNIT_TEST_TYPE -> forUnitTest(it.codeCoverageEnabled, it.isIncludeAndroidResources)
 
-            HostTestBuilder.SCREENSHOT_TEST_TYPE -> forScreenshotTest(experimentalProperties, it.codeCoverageEnabled)
-            else -> throw RuntimeException("Unknown host test type : ${it.type}")
-          }
-      }
+          HostTestBuilder.SCREENSHOT_TEST_TYPE -> forScreenshotTest(experimentalProperties, it.codeCoverageEnabled)
+          else -> throw RuntimeException("Unknown host test type : ${it.type}")
+        }
+    }
   }
 }

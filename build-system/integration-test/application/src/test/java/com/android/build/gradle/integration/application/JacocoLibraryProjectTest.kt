@@ -29,57 +29,56 @@ import org.junit.Test
 class JacocoLibraryProjectTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidLibrary(":lib") {
-        android {
-          namespace = "com.example.helloworld"
+  val rule = GradleRule.from {
+    androidLibrary(":lib") {
+      android {
+        namespace = "com.example.helloworld"
 
-          compileSdk { version = release(GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION) }
+        compileSdk { version = release(GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION) }
 
-          defaultConfig { minSdk { version = release(24) } }
+        defaultConfig { minSdk { version = release(24) } }
 
-          dependencies { testImplementation("junit:junit:4.13.2") }
+        dependencies { testImplementation("junit:junit:4.13.2") }
 
-          files {
-            add(
-              "src/main/java/com/example/helloworld/HelloWorld.java",
-              // language=java
-              """
-              package com.example.helloworld;
+        files {
+          add(
+            "src/main/java/com/example/helloworld/HelloWorld.java",
+            // language=java
+            """
+            package com.example.helloworld;
 
-              import android.app.Activity;
-              import android.os.Bundle;
+            import android.app.Activity;
+            import android.os.Bundle;
 
-              public class HelloWorld extends Activity {
-                  @Override
-                  public void onCreate(Bundle savedInstanceState) {
-                      super.onCreate(savedInstanceState);
-                  }
-              }
-              """
-                .trimIndent(),
-            )
-            add(
-              "src/test/java/example/MyTest.java",
-              // language=java
-              """
-              package example;
-              import org.junit.Test;
+            public class HelloWorld extends Activity {
+                @Override
+                public void onCreate(Bundle savedInstanceState) {
+                    super.onCreate(savedInstanceState);
+                }
+            }
+            """
+              .trimIndent(),
+          )
+          add(
+            "src/test/java/example/MyTest.java",
+            // language=java
+            """
+            package example;
+            import org.junit.Test;
 
-              public class MyTest {
-                  @Test
-                  public void foo() {
-                      System.out.println(com.example.helloworld.HelloWorld.class);
-                  }
-              }
-              """
-                .trimIndent(),
-            )
-          }
+            public class MyTest {
+                @Test
+                public void foo() {
+                    System.out.println(com.example.helloworld.HelloWorld.class);
+                }
+            }
+            """
+              .trimIndent(),
+          )
         }
       }
     }
+  }
 
   class EnableCodeCoverageCallback : LibraryComponentCallback {
     override fun handleExtension(project: Project, androidComponents: LibraryAndroidComponentsExtension) {

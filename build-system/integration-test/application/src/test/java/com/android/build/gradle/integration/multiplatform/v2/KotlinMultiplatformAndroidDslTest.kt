@@ -28,28 +28,26 @@ import org.junit.Test
 class KotlinMultiplatformAndroidDslTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidKotlinMultiplatformLibrary(":library", createMinimumProject = false) { android { namespace = "com.mylibrary.foo" } }
-    }
+  val rule = GradleRule.from {
+    androidKotlinMultiplatformLibrary(":library", createMinimumProject = false) { android { namespace = "com.mylibrary.foo" } }
+  }
 
   @Test
   fun testCompileSdkVersionRelease() {
-    val build =
-      rule.build {
-        androidKotlinMultiplatformLibrary(":library") {
-          android {
-            compileSdk {
-              version =
-                release(36) {
-                  minorApiLevel = 0
-                  sdkExtension = 4
-                }
-            }
+    val build = rule.build {
+      androidKotlinMultiplatformLibrary(":library") {
+        android {
+          compileSdk {
+            version =
+              release(36) {
+                minorApiLevel = 0
+                sdkExtension = 4
+              }
           }
-          pluginCallbacks += SdkReleaseCallback::class.java
         }
+        pluginCallbacks += SdkReleaseCallback::class.java
       }
+    }
 
     build.executor
       .withFailOnWarning(false) // b/455891987
@@ -67,15 +65,14 @@ class KotlinMultiplatformAndroidDslTest {
 
   @Test
   fun testMinSdkVersionRelease() {
-    val build =
-      rule.build {
-        androidKotlinMultiplatformLibrary(":library") {
-          android {
-            compileSdk = DEFAULT_COMPILE_SDK_VERSION
-            minSdk { version = release(36) }
-          }
+    val build = rule.build {
+      androidKotlinMultiplatformLibrary(":library") {
+        android {
+          compileSdk = DEFAULT_COMPILE_SDK_VERSION
+          minSdk { version = release(36) }
         }
       }
+    }
 
     build.executor
       .withFailOnWarning(false) // b/455891987
@@ -88,15 +85,14 @@ class KotlinMultiplatformAndroidDslTest {
 
   @Test
   fun testMinSdkVersionPreview() {
-    val build =
-      rule.build {
-        androidKotlinMultiplatformLibrary(":library") {
-          android {
-            compileSdk = DEFAULT_COMPILE_SDK_VERSION
-            minSdk { version = preview("S") }
-          }
+    val build = rule.build {
+      androidKotlinMultiplatformLibrary(":library") {
+        android {
+          compileSdk = DEFAULT_COMPILE_SDK_VERSION
+          minSdk { version = preview("S") }
         }
       }
+    }
 
     build.executor
       .withFailOnWarning(false) // b/455891987

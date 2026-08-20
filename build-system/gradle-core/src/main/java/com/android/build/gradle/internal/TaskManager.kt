@@ -1003,12 +1003,11 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
       project.addMavenDependency(pluginConfigurationName, subplugin.getPluginArtifact())
 
       val subpluginOptionsProvider: Provider<List<SubpluginOption>> = subplugin.applyToCompilation(kotlinCompilation)
-      val compilerOptions =
-        subpluginOptionsProvider.map { subpluginOptions ->
-          val options = CompilerPluginOptions()
-          subpluginOptions.forEach { opt -> options.addPluginArgument(subpluginId, opt) }
-          options
-        }
+      val compilerOptions = subpluginOptionsProvider.map { subpluginOptions ->
+        val options = CompilerPluginOptions()
+        subpluginOptions.forEach { opt -> options.addPluginArgument(subpluginId, opt) }
+        options
+      }
 
       val configureKotlinTask: (KotlinCompilationTask<*>) -> Unit = {
         when (it) {

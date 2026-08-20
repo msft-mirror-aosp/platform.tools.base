@@ -81,11 +81,10 @@ class CoreLibraryDesugarGeneralizationTest {
     DexSubject.assertThat(desugarDex).doesNotContainClasses(programClass)
   }
 
-  private fun getDexWithSpecificClass(className: String, dexes: Collection<Dex>): Dex? =
-    dexes.find {
-      AndroidArchive.checkValidClassName(className)
-      it.classes.keys.contains(className)
-    }
+  private fun getDexWithSpecificClass(className: String, dexes: Collection<Dex>): Dex? = dexes.find {
+    AndroidArchive.checkValidClassName(className)
+    it.classes.keys.contains(className)
+  }
 
   private val desugarClass = "Lfoo$/A;"
   private val programClass = "Lcom/example/helloworld/HelloWorld;"

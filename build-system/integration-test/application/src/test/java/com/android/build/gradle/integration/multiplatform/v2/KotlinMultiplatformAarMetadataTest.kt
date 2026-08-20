@@ -71,16 +71,15 @@ class KotlinMultiplatformAarMetadataTest {
 
   @Test
   fun testDsl() {
-    val build =
-      rule.build {
-        androidKotlinMultiplatformLibrary(":shared") {
-          android {
-            aarMetadata.minCompileSdk = 27
-            aarMetadata.minAgpVersion = "3.0.0"
-            aarMetadata.minCompileSdkExtension = 2
-          }
+    val build = rule.build {
+      androidKotlinMultiplatformLibrary(":shared") {
+        android {
+          aarMetadata.minCompileSdk = 27
+          aarMetadata.minAgpVersion = "3.0.0"
+          aarMetadata.minCompileSdkExtension = 2
         }
       }
+    }
 
     build.executor
       .withFailOnWarning(false) // b/455891987
@@ -115,17 +114,16 @@ class KotlinMultiplatformAarMetadataTest {
 
   @Test
   fun testVariantApi() {
-    val build =
-      rule.build {
-        androidKotlinMultiplatformLibrary(":shared") {
-          android {
-            aarMetadata.minCompileSdk = 26
-            aarMetadata.minAgpVersion = "2.0.0"
-            aarMetadata.minCompileSdkExtension = 1
-          }
-          pluginCallbacks += Callback::class.java
+    val build = rule.build {
+      androidKotlinMultiplatformLibrary(":shared") {
+        android {
+          aarMetadata.minCompileSdk = 26
+          aarMetadata.minAgpVersion = "2.0.0"
+          aarMetadata.minCompileSdkExtension = 1
         }
+        pluginCallbacks += Callback::class.java
       }
+    }
 
     build.executor
       .withFailOnWarning(false) // b/455891987

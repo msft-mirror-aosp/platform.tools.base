@@ -29,42 +29,41 @@ class ExtractApksTaskTest {
   @get:Rule val temporaryFolder = TemporaryFolder()
 
   @get:Rule
-  val project =
-    GradleRule.from {
-      androidApplication {
-        android {
-          namespace = "com.example.multideployment"
-          defaultConfig {
-            versionCode = 1
-            versionName = "1.0"
-          }
-          files {
-            add(
-              "src/main/res/values-hdpi/strings.xml",
-              // language=xml
-              """
-              <resources>
-                  <string name="density">I have a high density</string>
-              </resources>
+  val project = GradleRule.from {
+    androidApplication {
+      android {
+        namespace = "com.example.multideployment"
+        defaultConfig {
+          versionCode = 1
+          versionName = "1.0"
+        }
+        files {
+          add(
+            "src/main/res/values-hdpi/strings.xml",
+            // language=xml
+            """
+            <resources>
+                <string name="density">I have a high density</string>
+            </resources>
 
-              """
-                .trimIndent(),
-            )
-            add(
-              "src/main/res/values-ldpi/strings.xml",
-              // language=xml
-              """
-              <resources>
-                  <string name="density">Im a low density device</string>
-              </resources>
+            """
+              .trimIndent(),
+          )
+          add(
+            "src/main/res/values-ldpi/strings.xml",
+            // language=xml
+            """
+            <resources>
+                <string name="density">Im a low density device</string>
+            </resources>
 
-              """
-                .trimIndent(),
-            )
-          }
+            """
+              .trimIndent(),
+          )
         }
       }
     }
+  }
 
   @Test
   fun extractApkNoConfig() {

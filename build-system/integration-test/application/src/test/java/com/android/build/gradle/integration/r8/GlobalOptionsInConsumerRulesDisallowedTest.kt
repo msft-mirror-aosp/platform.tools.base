@@ -46,26 +46,25 @@ class GlobalOptionsInConsumerRulesDisallowedTest(val globalOptionsInConsumerRule
   }
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      gradleProperties { add(BooleanOption.R8_GLOBAL_OPTIONS_IN_CONSUMER_RULES_DISALLOWED, globalOptionsInConsumerRulesDisallowed) }
-      androidLibrary { android { defaultConfig.minSdk = 30 } }
-      androidJavaApplication {
-        android {
-          android { defaultConfig.minSdk = 30 }
-          defaultConfig { applicationId = "com.example.test" }
-          dynamicFeatures.add(DEFAULT_FEATURE_PATH)
+  val rule = GradleRule.from {
+    gradleProperties { add(BooleanOption.R8_GLOBAL_OPTIONS_IN_CONSUMER_RULES_DISALLOWED, globalOptionsInConsumerRulesDisallowed) }
+    androidLibrary { android { defaultConfig.minSdk = 30 } }
+    androidJavaApplication {
+      android {
+        android { defaultConfig.minSdk = 30 }
+        defaultConfig { applicationId = "com.example.test" }
+        dynamicFeatures.add(DEFAULT_FEATURE_PATH)
 
-          buildTypes { named("debug") { it.isMinifyEnabled = true } }
-          dependencies { implementation(project(DEFAULT_LIB_PATH)) }
-        }
-      }
-      androidFeature {
-        android { namespace = "com.example.test.feature" }
-
-        dependencies { implementation(project(DEFAULT_APP_PATH)) }
+        buildTypes { named("debug") { it.isMinifyEnabled = true } }
+        dependencies { implementation(project(DEFAULT_LIB_PATH)) }
       }
     }
+    androidFeature {
+      android { namespace = "com.example.test.feature" }
+
+      dependencies { implementation(project(DEFAULT_APP_PATH)) }
+    }
+  }
 
   @Test
   fun `library allowed consumer content`() {

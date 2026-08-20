@@ -30,18 +30,17 @@ import org.junit.Test
 
 class JavaPlatformDependencyTest : ModelComparator() {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        android { enableKotlin = false }
-        dependencies { implementation(platform(project(":lib"))) }
-      }
-      genericProject(":lib") {
-        applyPlugin(PluginType.JAVA_PLATFORM)
-        pluginCallbacks += PlatformCallback::class.java
-        dependencies { api(MavenRepoGenerator.Library("com.bar:foo:1.0")) }
-      }
+  val rule = GradleRule.from {
+    androidApplication {
+      android { enableKotlin = false }
+      dependencies { implementation(platform(project(":lib"))) }
     }
+    genericProject(":lib") {
+      applyPlugin(PluginType.JAVA_PLATFORM)
+      pluginCallbacks += PlatformCallback::class.java
+      dependencies { api(MavenRepoGenerator.Library("com.bar:foo:1.0")) }
+    }
+  }
 
   class PlatformCallback : GenericCallback {
     override fun handleProject(project: Project) {

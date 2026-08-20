@@ -897,42 +897,41 @@ class VariantManager<
         val hasTestApk = sources.any { it is TestSuiteTestApkSpec }
         val isMixed = hasHostJar && hasTestApk
 
-        val testSuiteSources =
-          sources.map { testSuiteSource: TestSuiteSourceCreationConfig ->
-            // create the variant specific dependency that will be additive to the
-            // DSL One.
-            val variantSpecificDependencies = project.objects.newInstance(AgpTestSuiteDependencies::class.java)
+        val testSuiteSources = sources.map { testSuiteSource: TestSuiteSourceCreationConfig ->
+          // create the variant specific dependency that will be additive to the
+          // DSL One.
+          val variantSpecificDependencies = project.objects.newInstance(AgpTestSuiteDependencies::class.java)
 
-            val source =
-              testSuiteSource.createTestSuiteSourceSet(
-                variantServices,
-                true, // so far, java is always enabled.
-                variantInfo.variant.builtInKotlinSupportMode is BuiltInKotlinSupportMode.Supported,
-                isMixed,
-              )
-
-            TestSuiteSourceContainer(
-              project = project,
-              targetVariantName = variantBuilder.name,
-              testSuiteName = testSuiteSource.name,
-              source = source,
-              dependencies = variantSpecificDependencies,
-              suiteSourceClasspath =
-                TestSuiteDependenciesBuilder(
-                    project,
-                    dslServices.projectOptions,
-                    projectServices.issueReporter,
-                    testSuiteBuilder,
-                    testSuiteSource.dependencies,
-                    variantSpecificDependencies,
-                    variantInfo.variant,
-                    getFlavorSelection(variantInfo.variantDslInfo),
-                    variantInfo.variantDslInfo as MultiVariantComponentDslInfo,
-                    source.type,
-                  )
-                  .build(),
+          val source =
+            testSuiteSource.createTestSuiteSourceSet(
+              variantServices,
+              true, // so far, java is always enabled.
+              variantInfo.variant.builtInKotlinSupportMode is BuiltInKotlinSupportMode.Supported,
+              isMixed,
             )
-          }
+
+          TestSuiteSourceContainer(
+            project = project,
+            targetVariantName = variantBuilder.name,
+            testSuiteName = testSuiteSource.name,
+            source = source,
+            dependencies = variantSpecificDependencies,
+            suiteSourceClasspath =
+              TestSuiteDependenciesBuilder(
+                  project,
+                  dslServices.projectOptions,
+                  projectServices.issueReporter,
+                  testSuiteBuilder,
+                  testSuiteSource.dependencies,
+                  variantSpecificDependencies,
+                  variantInfo.variant,
+                  getFlavorSelection(variantInfo.variantDslInfo),
+                  variantInfo.variantDslInfo as MultiVariantComponentDslInfo,
+                  source.type,
+                )
+                .build(),
+          )
+        }
 
         val testSuite =
           TestSuiteImpl(
@@ -979,8 +978,9 @@ class VariantManager<
 
         override fun <T : Any> buildTypeExtension(extensionType: Class<T>): T = buildTypeData.buildType.extensions.getByType(extensionType)
 
-        override fun <T : Any> productFlavorsExtensions(extensionType: Class<T>): List<T> =
-          productFlavorDataList.map { productFlavorData -> productFlavorData.productFlavor.extensions.getByType(extensionType) }
+        override fun <T : Any> productFlavorsExtensions(extensionType: Class<T>): List<T> = productFlavorDataList.map { productFlavorData ->
+          productFlavorData.productFlavor.extensions.getByType(extensionType)
+        }
       }
 
     variantApiOperationsRegistrar.dslExtensions.forEach { registeredExtension ->

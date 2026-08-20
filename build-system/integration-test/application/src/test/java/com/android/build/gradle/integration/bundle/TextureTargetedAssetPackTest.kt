@@ -31,31 +31,30 @@ import org.junit.Test
 class TextureTargetedAssetPackTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidJavaApplication {
-        android {
-          assetPacks += listOf(":level1")
-          bundle {
-            texture {
-              enableSplit = true
-              defaultFormat = "etc2"
-            }
+  val rule = GradleRule.from {
+    androidJavaApplication {
+      android {
+        assetPacks += listOf(":level1")
+        bundle {
+          texture {
+            enableSplit = true
+            defaultFormat = "etc2"
           }
         }
       }
-      assetPack(":level1") {
-        assetPack {
-          packName.set("level1")
-          dynamicDelivery { deliveryType.set("install-time") }
-        }
-        files {
-          add("src/main/assets/commonFile.txt", """This is an asset file for level 1.""")
-          add("src/main/assets/textures#tcf_astc/astc.txt", """ASTC texture""")
-          add("src/main/assets/textures#tcf_etc2/etc2.txt", """ETC2 texture""")
-        }
+    }
+    assetPack(":level1") {
+      assetPack {
+        packName.set("level1")
+        dynamicDelivery { deliveryType.set("install-time") }
+      }
+      files {
+        add("src/main/assets/commonFile.txt", """This is an asset file for level 1.""")
+        add("src/main/assets/textures#tcf_astc/astc.txt", """ASTC texture""")
+        add("src/main/assets/textures#tcf_etc2/etc2.txt", """ETC2 texture""")
       }
     }
+  }
 
   @Test
   fun buildDebugApksForRecentAstcDevice() {

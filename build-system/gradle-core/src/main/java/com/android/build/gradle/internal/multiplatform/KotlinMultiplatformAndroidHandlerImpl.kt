@@ -118,48 +118,46 @@ internal class KotlinMultiplatformAndroidHandlerImpl(
           KotlinPlatformType.androidJvm
         }
 
-      androidTarget =
-        kotlinExtension.createExternalKotlinTarget {
-          targetName = KotlinMultiplatformAndroidPlugin.ANDROID_TARGET_NAME
-          platformType = kotlinPlatformType
-          configureAttributes(
-            apiElements,
-            runtimeElements,
-            sourcesElements,
-            apiElementsPublished,
-            runtimeElementsPublished,
-            sourcesElementsPublished,
+      androidTarget = kotlinExtension.createExternalKotlinTarget {
+        targetName = KotlinMultiplatformAndroidPlugin.ANDROID_TARGET_NAME
+        platformType = kotlinPlatformType
+        configureAttributes(
+          apiElements,
+          runtimeElements,
+          sourcesElements,
+          apiElementsPublished,
+          runtimeElementsPublished,
+          sourcesElementsPublished,
+        )
+        targetFactory = ExternalKotlinTargetDescriptor.TargetFactory { delegate ->
+          dslServices.newInstance(
+            KotlinMultiplatformAndroidLibraryTargetImpl::class.java,
+            dslServices,
+            delegate,
+            kotlinExtension,
+            androidExtension,
           )
-          targetFactory =
-            ExternalKotlinTargetDescriptor.TargetFactory { delegate ->
-              dslServices.newInstance(
-                KotlinMultiplatformAndroidLibraryTargetImpl::class.java,
-                dslServices,
-                delegate,
-                kotlinExtension,
-                androidExtension,
-              )
-            }
-          configureIdeImport {
-            KotlinIdeImportConfigurator.configure(
-              project,
-              lazy { androidTarget },
-              androidExtension,
-              this,
-              sourceSetToCreationConfigMap =
-                lazy {
-                  addSourceSetsThatShouldBeResolvedAsAndroid()
-                  sourceSetToCreationConfigMap
-                },
-              extraSourceSetsToIncludeInResolution =
-                lazy {
-                  addSourceSetsThatShouldBeResolvedAsAndroid()
-                  extraSourceSetsToIncludeInResolution
-                },
-              dslServices.projectOptions[BooleanOption.DISABLE_KMP_RUNTIME_CLASSPATH],
-            )
-          }
         }
+        configureIdeImport {
+          KotlinIdeImportConfigurator.configure(
+            project,
+            lazy { androidTarget },
+            androidExtension,
+            this,
+            sourceSetToCreationConfigMap =
+              lazy {
+                addSourceSetsThatShouldBeResolvedAsAndroid()
+                sourceSetToCreationConfigMap
+              },
+            extraSourceSetsToIncludeInResolution =
+              lazy {
+                addSourceSetsThatShouldBeResolvedAsAndroid()
+                extraSourceSetsToIncludeInResolution
+              },
+            dslServices.projectOptions[BooleanOption.DISABLE_KMP_RUNTIME_CLASSPATH],
+          )
+        }
+      }
 
       registerAndroidTargetExtension(androidTarget)
 

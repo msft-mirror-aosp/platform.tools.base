@@ -31,28 +31,27 @@ import org.junit.Test
 class ComposePluginOptionsTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
-        applyPlugin(PluginType.COMPOSE_COMPILER_PLUGIN)
-        android {
-          defaultConfig { minSdk = 24 }
-          buildFeatures { compose = true }
-        }
-        kotlin { compilerOptions { jvmTarget.set(JvmTarget.JVM_11) } }
-        dependencies { implementation("androidx.compose.runtime:runtime:+") }
-        files.add(
-          "src/main/java/com/example/KotlinClass.kt",
-          // language=kotlin
-          """
-          class KotlinClass
-          """
-            .trimIndent(),
-        )
-        pluginCallbacks += PrintKotlinCompileInfoCallback::class.java
+  val rule = GradleRule.from {
+    androidApplication {
+      applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
+      applyPlugin(PluginType.COMPOSE_COMPILER_PLUGIN)
+      android {
+        defaultConfig { minSdk = 24 }
+        buildFeatures { compose = true }
       }
+      kotlin { compilerOptions { jvmTarget.set(JvmTarget.JVM_11) } }
+      dependencies { implementation("androidx.compose.runtime:runtime:+") }
+      files.add(
+        "src/main/java/com/example/KotlinClass.kt",
+        // language=kotlin
+        """
+        class KotlinClass
+        """
+          .trimIndent(),
+      )
+      pluginCallbacks += PrintKotlinCompileInfoCallback::class.java
     }
+  }
 
   class PrintKotlinCompileInfoCallback : GenericCallback {
     override fun handleProject(project: Project) {
@@ -76,14 +75,13 @@ class ComposePluginOptionsTest {
   /** Regression test for b/318384658. */
   @Test
   fun `test build fails when the user sets sourceInformation`() {
-    val build =
-      rule.build {
-        androidApplication {
-          kotlin {
-            compilerOptions { freeCompilerArgs.addAll("-P", "plugin:androidx.compose.compiler.plugins.kotlin:sourceInformation=false") }
-          }
+    val build = rule.build {
+      androidApplication {
+        kotlin {
+          compilerOptions { freeCompilerArgs.addAll("-P", "plugin:androidx.compose.compiler.plugins.kotlin:sourceInformation=false") }
         }
       }
+    }
 
     val result = build.executor.expectFailure().run(":app:compileDebugKotlin")
 

@@ -76,20 +76,19 @@ class KmpAndroidTestDslInfoImpl(
 
   override val signingConfigResolver: SigningConfigResolver? by lazy {
     val dslSigningConfig = testOnDeviceConfig.signing
-    val overrideConfig =
-      signingConfigOverride?.let {
-        // use enableV1 and enableV2 from the DSL if the override values are null
-        if (it.enableV1Signing == null) {
-          it.enableV1Signing = dslSigningConfig.enableV1Signing
-        }
-        if (it.enableV2Signing == null) {
-          it.enableV2Signing = dslSigningConfig.enableV2Signing
-        }
-        // use enableV3 and enableV4 from the DSL because they're not injectable
-        it.enableV3Signing = dslSigningConfig.enableV3Signing
-        it.enableV4Signing = dslSigningConfig.enableV4Signing
-        it
+    val overrideConfig = signingConfigOverride?.let {
+      // use enableV1 and enableV2 from the DSL if the override values are null
+      if (it.enableV1Signing == null) {
+        it.enableV1Signing = dslSigningConfig.enableV1Signing
       }
+      if (it.enableV2Signing == null) {
+        it.enableV2Signing = dslSigningConfig.enableV2Signing
+      }
+      // use enableV3 and enableV4 from the DSL because they're not injectable
+      it.enableV3Signing = dslSigningConfig.enableV3Signing
+      it.enableV4Signing = dslSigningConfig.enableV4Signing
+      it
+    }
 
     SigningConfigResolver(dslSigningConfig, overrideConfig, null, services)
   }

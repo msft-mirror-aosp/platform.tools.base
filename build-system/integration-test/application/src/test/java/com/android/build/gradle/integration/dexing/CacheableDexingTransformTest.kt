@@ -54,22 +54,20 @@ class CacheableDexingTransformTest {
 
   @Test
   fun `Bug 266599585 - test incremental build after cache hit`() {
-    val build1 =
-      rule1.build {
-        // this must be done here, otherwise the temporary folder has not been prepared
-        settings { enableLocalCache(buildCacheDir.root.toPath()) }
-      }
+    val build1 = rule1.build {
+      // this must be done here, otherwise the temporary folder has not been prepared
+      settings { enableLocalCache(buildCacheDir.root.toPath()) }
+    }
     build1.executor.withArgument("--build-cache").run(":app:mergeLibDexDebug").apply {
       assertTask(":app:mergeLibDexDebug").didWork()
       assertOutputContains("Running dexing transform non-incrementally")
     }
 
     // Building the same project from a different location should get a cache hit
-    val build2 =
-      rule2.build {
-        // this must be done here, otherwise the temporary folder has not been prepared
-        settings { enableLocalCache(buildCacheDir.root.toPath()) }
-      }
+    val build2 = rule2.build {
+      // this must be done here, otherwise the temporary folder has not been prepared
+      settings { enableLocalCache(buildCacheDir.root.toPath()) }
+    }
     val result2 =
       build2.executor.withArgument("--build-cache").run(":app:mergeLibDexDebug").apply {
         assertTask(":app:mergeLibDexDebug").wasFromCache()

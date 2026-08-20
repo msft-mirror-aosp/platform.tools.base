@@ -214,7 +214,8 @@ abstract class VariantImpl<DslInfoT : VariantDslInfo>(
       ?: warnAboutAccessingVariantApiValueForDisabledFeature(
         featureName = FeatureNames.RES_VALUES,
         apiName = "resValues",
-        value = internalServices.mapPropertyOf(ResValue.Key::class.java, ResValue::class.java, dslInfo.androidResourcesDsl!!.getResValues()),
+        value =
+          internalServices.mapPropertyOf(ResValue.Key::class.java, ResValue::class.java, dslInfo.androidResourcesDsl!!.getResValues()),
       )
   }
 

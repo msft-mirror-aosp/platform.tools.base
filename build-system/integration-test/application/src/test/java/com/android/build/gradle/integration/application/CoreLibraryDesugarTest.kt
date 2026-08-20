@@ -887,11 +887,10 @@ class CoreLibraryDesugarTest {
     return stringBuilder.toString()
   }
 
-  private fun getDexWithSpecificClass(className: String, dexes: Collection<Dex>): Dex? =
-    dexes.find {
-      AndroidArchive.checkValidClassName(className)
-      it.classes.keys.contains(className)
-    }
+  private fun getDexWithSpecificClass(className: String, dexes: Collection<Dex>): Dex? = dexes.find {
+    AndroidArchive.checkValidClassName(className)
+    it.classes.keys.contains(className)
+  }
 
   private fun addSourceWithDesugarApiToLibraryModule() {
     val source =

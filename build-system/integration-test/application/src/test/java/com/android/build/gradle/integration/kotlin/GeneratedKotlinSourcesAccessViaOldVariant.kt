@@ -45,38 +45,37 @@ import org.junit.Test
  */
 class GeneratedKotlinSourcesAccessViaOldVariant {
   @get:Rule
-  val project =
-    GradleRule.from {
-      gradleProperties {
-        add(BooleanOption.USE_NEW_DSL, false)
-        add(BooleanOption.BUILT_IN_KOTLIN, false)
-      }
-
-      androidApplication {
-        android {
-          applyPlugin(PluginType.KOTLIN_ANDROID)
-          kotlin { compilerOptions.jvmTarget.set(JvmTarget.JVM_11) }
-        }
-        files {
-          add(
-            "src/main/kotlin/com/foo/bar/app/MyClass.kt",
-            """
-            package com.foo.bar.app
-
-            import com.kotlingen.MyKotlinClass
-
-            class MyClass {
-                fun someFunctionUsingGeneratedAPIs() {
-                    MyKotlinClass().someFunctionUsingGeneratedAPIs()
-                }
-            }
-            """
-              .trimIndent(),
-          )
-        }
-        pluginCallbacks += MyAppCallback::class.java
-      }
+  val project = GradleRule.from {
+    gradleProperties {
+      add(BooleanOption.USE_NEW_DSL, false)
+      add(BooleanOption.BUILT_IN_KOTLIN, false)
     }
+
+    androidApplication {
+      android {
+        applyPlugin(PluginType.KOTLIN_ANDROID)
+        kotlin { compilerOptions.jvmTarget.set(JvmTarget.JVM_11) }
+      }
+      files {
+        add(
+          "src/main/kotlin/com/foo/bar/app/MyClass.kt",
+          """
+          package com.foo.bar.app
+
+          import com.kotlingen.MyKotlinClass
+
+          class MyClass {
+              fun someFunctionUsingGeneratedAPIs() {
+                  MyKotlinClass().someFunctionUsingGeneratedAPIs()
+              }
+          }
+          """
+            .trimIndent(),
+        )
+      }
+      pluginCallbacks += MyAppCallback::class.java
+    }
+  }
 
   @Test
   fun testGeneratedFilesExist() {

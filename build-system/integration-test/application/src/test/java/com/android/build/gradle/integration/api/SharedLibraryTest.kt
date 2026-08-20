@@ -105,11 +105,10 @@ class SharedLibraryTest {
 
   @Test
   fun `token string resource reference is resolved`() {
-    val build =
-      consumerRule.build {
-        androidApplication { addSharedDependency() }
-        gradleProperties { add(BooleanOption.SUPPORT_OEM_TOKEN_LIBRARIES, true) }
-      }
+    val build = consumerRule.build {
+      androidApplication { addSharedDependency() }
+      gradleProperties { add(BooleanOption.SUPPORT_OEM_TOKEN_LIBRARIES, true) }
+    }
 
     val result = build.executor.run("assembleDebug")
     assertNull(result.exception)
@@ -117,13 +116,12 @@ class SharedLibraryTest {
 
   @Test
   fun `token resolution fails when shared library support not enabled`() {
-    val build =
-      consumerRule.build {
-        androidApplication {
-          addSharedDependency()
-          android { buildFeatures { resValues = true } }
-        }
+    val build = consumerRule.build {
+      androidApplication {
+        addSharedDependency()
+        android { buildFeatures { resValues = true } }
       }
+    }
     val result = build.executor.expectFailure().run("assembleDebug")
     result.assertExceptionCause(
       Aapt2Exception::class,
@@ -138,11 +136,10 @@ class SharedLibraryTest {
 
   @Test
   fun `token resolution fails when dependency not included`() {
-    val build =
-      consumerRule.build {
-        androidApplication { android { buildFeatures { resValues = true } } }
-        gradleProperties { add(BooleanOption.SUPPORT_OEM_TOKEN_LIBRARIES, true) }
-      }
+    val build = consumerRule.build {
+      androidApplication { android { buildFeatures { resValues = true } } }
+      gradleProperties { add(BooleanOption.SUPPORT_OEM_TOKEN_LIBRARIES, true) }
+    }
     val result = build.executor.expectFailure().run("assembleDebug")
     result.assertExceptionCause(
       Aapt2Exception::class,

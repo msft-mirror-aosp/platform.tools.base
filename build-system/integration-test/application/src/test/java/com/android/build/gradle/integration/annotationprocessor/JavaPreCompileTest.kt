@@ -36,25 +36,24 @@ class JavaPreCompileTest(private val useKapt: Boolean) {
   }
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      if (useKapt) {
-        androidKotlinApplication {
-          applyPlugin(PluginType.ANDROID_BUILT_IN_KAPT)
-          dependencies {
-            compileOnly("com.google.auto.service:auto-service:1.0-rc2")
-            add("kapt", "com.google.auto.service:auto-service:1.0-rc2")
-          }
+  val rule = GradleRule.from {
+    if (useKapt) {
+      androidKotlinApplication {
+        applyPlugin(PluginType.ANDROID_BUILT_IN_KAPT)
+        dependencies {
+          compileOnly("com.google.auto.service:auto-service:1.0-rc2")
+          add("kapt", "com.google.auto.service:auto-service:1.0-rc2")
         }
-      } else {
-        androidJavaApplication {
-          dependencies {
-            compileOnly("com.google.auto.service:auto-service:1.0-rc2")
-            add("annotationProcessor", "com.google.auto.service:auto-service:1.0-rc2")
-          }
+      }
+    } else {
+      androidJavaApplication {
+        dependencies {
+          compileOnly("com.google.auto.service:auto-service:1.0-rc2")
+          add("annotationProcessor", "com.google.auto.service:auto-service:1.0-rc2")
         }
       }
     }
+  }
 
   @Test
   fun `check output`() {

@@ -39,35 +39,34 @@ class ResPackagingTest {
   @get:Rule val timeout = Timeout.builder().withTimeout(180, TimeUnit.SECONDS).withLookingForStuckThread(true).build()
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication(":app") {
-        dependencies { api(project(":library")) }
-        files {
-          // put some default files in the 4 projects, to check non incremental packaging as well,
-          // and to provide files to change to test incremental support.
-          createOriginalResFile("main", "file.txt", "app:abcd")
-          createOriginalResFile("androidTest", "filetest.txt", "appTest:abcd")
-        }
-      }
-      androidLibrary(":library") {
-        dependencies { api(project(":library2")) }
-        files {
-          createOriginalResFile("main", "filelib.txt", "library:abcd")
-          createOriginalResFile("androidTest", "filelibtest.txt", "libraryTest:abcd")
-        }
-      }
-      androidLibrary(":library2") {
-        files {
-          createOriginalResFile("main", "filelib2.txt", "library2:abcd")
-          createOriginalResFile("androidTest", "filelib2test.txt", "library2Test:abcd")
-        }
-      }
-      androidTest(":test") {
-        android { targetProjectPath = ":app" }
-        files.createOriginalResFile("main", "file.txt", "test:abcd")
+  val rule = GradleRule.from {
+    androidApplication(":app") {
+      dependencies { api(project(":library")) }
+      files {
+        // put some default files in the 4 projects, to check non incremental packaging as well,
+        // and to provide files to change to test incremental support.
+        createOriginalResFile("main", "file.txt", "app:abcd")
+        createOriginalResFile("androidTest", "filetest.txt", "appTest:abcd")
       }
     }
+    androidLibrary(":library") {
+      dependencies { api(project(":library2")) }
+      files {
+        createOriginalResFile("main", "filelib.txt", "library:abcd")
+        createOriginalResFile("androidTest", "filelibtest.txt", "libraryTest:abcd")
+      }
+    }
+    androidLibrary(":library2") {
+      files {
+        createOriginalResFile("main", "filelib2.txt", "library2:abcd")
+        createOriginalResFile("androidTest", "filelib2test.txt", "library2Test:abcd")
+      }
+    }
+    androidTest(":test") {
+      android { targetProjectPath = ":app" }
+      files.createOriginalResFile("main", "file.txt", "test:abcd")
+    }
+  }
 
   private fun execute(vararg tasks: String): GradleBuild {
     val build = rule.build
@@ -394,22 +393,21 @@ class ResPackagingTest {
 
   @Test
   fun testAppProjectWithMultipleFlavors() {
-    val build =
-      rule.build {
-        androidApplication(":app") {
-          android {
-            flavorDimensions += "color"
-            productFlavors {
-              create("red") { it.dimension = "color" }
-              create("blue") { it.dimension = "color" }
-            }
-          }
-          files {
-            add("src/red/res/raw/red.txt", "Red Text")
-            add("src/blue/res/raw/blue.txt", "Blue Text")
+    val build = rule.build {
+      androidApplication(":app") {
+        android {
+          flavorDimensions += "color"
+          productFlavors {
+            create("red") { it.dimension = "color" }
+            create("blue") { it.dimension = "color" }
           }
         }
+        files {
+          add("src/red/res/raw/red.txt", "Red Text")
+          add("src/blue/res/raw/blue.txt", "Blue Text")
+        }
       }
+    }
 
     build.executor.run("app:assembleDebug")
 
@@ -641,14 +639,13 @@ class ResPackagingTest {
           isEmpty()
         } else {
           val itemsWithContent = itemList.mapNotNull { it as? StringWithContent }
-          val itemNames =
-            itemList.map {
-              when (it) {
-                is StringWithContent -> it.name
-                is String -> it
-                else -> throw RuntimeException("Unexpected type in itemList: ${it.javaClass}")
-              }
+          val itemNames = itemList.map {
+            when (it) {
+              is StringWithContent -> it.name
+              is String -> it
+              else -> throw RuntimeException("Unexpected type in itemList: ${it.javaClass}")
             }
+          }
 
           // check the list
           containsExactly(itemNames)

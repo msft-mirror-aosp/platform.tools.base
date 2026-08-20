@@ -39,16 +39,15 @@ class ScreenshotEdgeCaseTest {
 
   @Test
   fun runPreviewScreenshotTestWithNoSourceFiles() {
-    val build =
-      rule.build {
-        androidApplication {
-          files {
-            remove("src/screenshotTest/java/com/ExampleTest.kt")
-            remove("src/screenshotTest/java/com/TopLevelPreviewTest.kt")
-            remove("src/screenshotTest/java/com/AnotherPreviewParameterProvider.kt")
-          }
+    val build = rule.build {
+      androidApplication {
+        files {
+          remove("src/screenshotTest/java/com/ExampleTest.kt")
+          remove("src/screenshotTest/java/com/TopLevelPreviewTest.kt")
+          remove("src/screenshotTest/java/com/AnotherPreviewParameterProvider.kt")
         }
       }
+    }
     val appProject = build.androidApplication()
 
     val result = build.sstExecutor().run(":app:validateDebugScreenshotTest")
@@ -60,29 +59,28 @@ class ScreenshotEdgeCaseTest {
 
   @Test
   fun runPreviewScreenshotTestWithSourceFilesAndNoPreviewsToTest() {
-    val build =
-      rule.build {
-        androidApplication {
-          files {
-            update("src/screenshotTest/java/com/ExampleTest.kt").transform {
-              """
+    val build = rule.build {
+      androidApplication {
+        files {
+          update("src/screenshotTest/java/com/ExampleTest.kt").transform {
+            """
                             /*
                             $it
                             */
                         """
-                .trimIndent()
-            }
-            update("src/screenshotTest/java/com/TopLevelPreviewTest.kt").transform {
-              """
+              .trimIndent()
+          }
+          update("src/screenshotTest/java/com/TopLevelPreviewTest.kt").transform {
+            """
                             /*
                             $it
                             */
                         """
-                .trimIndent()
-            }
+              .trimIndent()
           }
         }
       }
+    }
     val appProject = build.androidApplication()
 
     build.sstExecutor().expectFailure().run(":app:validateDebugScreenshotTest")
@@ -93,25 +91,24 @@ class ScreenshotEdgeCaseTest {
 
   @Test
   fun runPreviewScreenshotTestWithNoPreviewAnnotation() {
-    val build =
-      rule.build {
-        androidApplication {
-          files {
-            add(
-              "src/screenshotTest/java/com/PreviewTestWithoutPreview.kt",
-              """
-              package pkg.name
+    val build = rule.build {
+      androidApplication {
+        files {
+          add(
+            "src/screenshotTest/java/com/PreviewTestWithoutPreview.kt",
+            """
+            package pkg.name
 
-              import com.android.tools.screenshot.PreviewTest
+            import com.android.tools.screenshot.PreviewTest
 
-              @PreviewTest
-              fun previewTestWithoutPreview() {}
-              """
-                .trimIndent(),
-            )
-          }
+            @PreviewTest
+            fun previewTestWithoutPreview() {}
+            """
+              .trimIndent(),
+          )
         }
       }
+    }
     val appProject = build.androidApplication()
 
     build.sstExecutor().expectFailure().run(":app:validateDebugScreenshotTest")
@@ -127,15 +124,14 @@ class ScreenshotEdgeCaseTest {
   @Test
   fun runPreviewScreenshotTestsWithMissingUiToolingDep() {
     val uiToolingDep = "androidx.compose.ui:ui-tooling:${TaskManager.COMPOSE_UI_VERSION}"
-    val build =
-      rule.build {
-        androidApplication {
-          dependencies {
-            remove("implementation", uiToolingDep)
-            screenshotTestImplementation(uiToolingDep)
-          }
+    val build = rule.build {
+      androidApplication {
+        dependencies {
+          remove("implementation", uiToolingDep)
+          screenshotTestImplementation(uiToolingDep)
         }
       }
+    }
 
     build.updateReferenceImage()
 
@@ -156,23 +152,23 @@ class ScreenshotEdgeCaseTest {
 
   @Test
   fun runScreenshotTestWithEmptyPreview() {
-    val build =
-      rule.build {
-        gradleProperties {
-          add("org.gradle.java.installations.auto-detect", "false")
-          add(
-            "org.gradle.java.installations.paths",
-            listOf(
+    val build = rule.build {
+      gradleProperties {
+        add("org.gradle.java.installations.auto-detect", "false")
+        add(
+          "org.gradle.java.installations.paths",
+          listOf(
               TestUtils.getJava17Jdk().toString().replace("\\", "/"),
-              TestUtils.getJava25Jdk().toString().replace("\\", "/")
-            ).joinToString(",")
-          )
-        }
-        androidApplication {
-          files.update("src/screenshotTest/java/com/TopLevelPreviewTest.kt").searchAndReplace("SimpleComposable()", "")
-          kotlin { jvmToolchain(25) }
-        }
+              TestUtils.getJava25Jdk().toString().replace("\\", "/"),
+            )
+            .joinToString(","),
+        )
       }
+      androidApplication {
+        files.update("src/screenshotTest/java/com/TopLevelPreviewTest.kt").searchAndReplace("SimpleComposable()", "")
+        kotlin { jvmToolchain(25) }
+      }
+    }
     build.updateReferenceImage()
     val result = build.sstExecutor().run(":app:validateDebugScreenshotTest")
 
@@ -184,44 +180,43 @@ class ScreenshotEdgeCaseTest {
 
   @Test
   fun runScreenshotTestWithRenderingException() {
-    val build =
-      rule.build {
-        androidApplication {
-          files {
-            add(
-              "src/screenshotTest/java/com/FailingRenderTest.kt",
-              """
-              package pkg.name
+    val build = rule.build {
+      androidApplication {
+        files {
+          add(
+            "src/screenshotTest/java/com/FailingRenderTest.kt",
+            """
+            package pkg.name
 
-              import androidx.compose.foundation.layout.Box
-              import androidx.compose.foundation.layout.size
-              import androidx.compose.ui.Modifier
-              import androidx.compose.ui.draw.drawBehind
-              import androidx.compose.ui.unit.dp
-              import androidx.compose.ui.tooling.preview.Preview
-              import androidx.compose.runtime.Composable
-              import com.android.tools.screenshot.PreviewTest
+            import androidx.compose.foundation.layout.Box
+            import androidx.compose.foundation.layout.size
+            import androidx.compose.ui.Modifier
+            import androidx.compose.ui.draw.drawBehind
+            import androidx.compose.ui.unit.dp
+            import androidx.compose.ui.tooling.preview.Preview
+            import androidx.compose.runtime.Composable
+            import com.android.tools.screenshot.PreviewTest
 
-              class FailingRenderTest {
-                  @PreviewTest
-                  @Preview(name = "failingRender")
-                  @Composable
-                  fun failingRenderTest() {
-                      Box(
-                          modifier = Modifier
-                              .size(100.dp)
-                              .drawBehind {
-                                  throw RuntimeException("Simulated draw-time RenderProblem")
-                              }
-                      )
-                  }
-              }
-              """
-                .trimIndent(),
-            )
-          }
+            class FailingRenderTest {
+                @PreviewTest
+                @Preview(name = "failingRender")
+                @Composable
+                fun failingRenderTest() {
+                    Box(
+                        modifier = Modifier
+                            .size(100.dp)
+                            .drawBehind {
+                                throw RuntimeException("Simulated draw-time RenderProblem")
+                            }
+                    )
+                }
+            }
+            """
+              .trimIndent(),
+          )
         }
       }
+    }
     val appProject = build.androidApplication()
     val result = build.sstExecutor().expectFailure().run(":app:updateDebugScreenshotTest")
 

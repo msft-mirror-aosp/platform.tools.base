@@ -29,103 +29,102 @@ import org.junit.Test
 
 internal class FusedLibraryClassesRewriteTaskTest {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidLibrary(":androidLib1") {
-        android { namespace = "com.example.androidLib1" }
-        files {
-          add(
-            "src/main/res/values/strings.xml",
-            // language=xml
-            """
-            <resources>
-                <string name="androidlib1_str">A string from androidLib1</string>
-            </resources>
-            """
-              .trimIndent(),
-          )
-          add("src/main/layout/main_activity.xml", "<root></root>")
-        }
-      }
-      androidLibrary(":androidLib2") {
-        android { namespace = "com.example.androidLib2" }
-        files {
-          add(
-            "src/main/res/values/strings.xml",
-            // language=xml
-            """
-            <resources>
-                <string name="androidlib2_str">A string from androidLib2</string>
-            </resources>
-            """
-              .trimIndent(),
-          )
-          add(
-            "src/main/java/com/example/androidLib2/MyClass.java",
-            // language=JAVA
-            """
-            package com.example.androidLib2;
-            public class MyClass {
-                public static void methodUsingNamespacedResource() {
-                    // The below resource references have definitions that will be
-                    // included in the fused library, so they're R class references
-                    // will be rewriten to the fused library R class.
-                    int string1 = com.example.androidLib1.R.string.androidlib1_str;
-                    int string2 = com.example.androidLib2.R.string.androidlib2_str;
-
-                    // The below resource references have definitions that will
-                    // not be included in the fused library, so their R class reference
-                    // will be untouched.
-                    int string3 = com.example.dependencyLib3.R.string.dependencyLib3_str;
-                    int styleable = com.example.dependencyLib3.R.styleable.ActionBarLayout_android_layout_gravity;
-                    int editTextStyleAttrFromdependencyLib3 = com.example.dependencyLib3.R.attr.editTextStyle;
-                }
-            }
-            """
-              .trimIndent(),
-          )
-        }
-        dependencies {
-          implementation(project(":androidLib1"))
-          implementation(project(":dependencyLib3"))
-        }
-      }
-      androidLibrary(":dependencyLib3") {
-        android { namespace = "com.example.dependencyLib3" }
-        files {
-          add(
-            "src/main/res/values/values.xml",
-            """
-            <?xml version="1.0" encoding="utf-8"?>
-            <resources>
-                <declare-styleable name="ActionBarLayout">
-                    <attr name="android:layout_gravity"/>
-                </declare-styleable>
-                <attr format="reference" name="editTextStyle"/>
-            </resources>
-            """
-              .trimIndent(),
-          )
-          add(
-            "src/main/res/values/strings.xml",
-            """
-            <?xml version="1.0" encoding="utf-8"?>
-            <resources>
-                <string name="dependencyLib3_str">A string from dependencyLib3</string>
-            </resources>
-            """
-              .trimIndent(),
-          )
-        }
-      }
-      fusedLibrary(":fusedLib1") {
-        androidFusedLibrary { namespace = "com.example.fusedLib1" }
-        dependencies {
-          include(project(":androidLib1"))
-          include(project(":androidLib2"))
-        }
+  val rule = GradleRule.from {
+    androidLibrary(":androidLib1") {
+      android { namespace = "com.example.androidLib1" }
+      files {
+        add(
+          "src/main/res/values/strings.xml",
+          // language=xml
+          """
+          <resources>
+              <string name="androidlib1_str">A string from androidLib1</string>
+          </resources>
+          """
+            .trimIndent(),
+        )
+        add("src/main/layout/main_activity.xml", "<root></root>")
       }
     }
+    androidLibrary(":androidLib2") {
+      android { namespace = "com.example.androidLib2" }
+      files {
+        add(
+          "src/main/res/values/strings.xml",
+          // language=xml
+          """
+          <resources>
+              <string name="androidlib2_str">A string from androidLib2</string>
+          </resources>
+          """
+            .trimIndent(),
+        )
+        add(
+          "src/main/java/com/example/androidLib2/MyClass.java",
+          // language=JAVA
+          """
+          package com.example.androidLib2;
+          public class MyClass {
+              public static void methodUsingNamespacedResource() {
+                  // The below resource references have definitions that will be
+                  // included in the fused library, so they're R class references
+                  // will be rewriten to the fused library R class.
+                  int string1 = com.example.androidLib1.R.string.androidlib1_str;
+                  int string2 = com.example.androidLib2.R.string.androidlib2_str;
+
+                  // The below resource references have definitions that will
+                  // not be included in the fused library, so their R class reference
+                  // will be untouched.
+                  int string3 = com.example.dependencyLib3.R.string.dependencyLib3_str;
+                  int styleable = com.example.dependencyLib3.R.styleable.ActionBarLayout_android_layout_gravity;
+                  int editTextStyleAttrFromdependencyLib3 = com.example.dependencyLib3.R.attr.editTextStyle;
+              }
+          }
+          """
+            .trimIndent(),
+        )
+      }
+      dependencies {
+        implementation(project(":androidLib1"))
+        implementation(project(":dependencyLib3"))
+      }
+    }
+    androidLibrary(":dependencyLib3") {
+      android { namespace = "com.example.dependencyLib3" }
+      files {
+        add(
+          "src/main/res/values/values.xml",
+          """
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <declare-styleable name="ActionBarLayout">
+                  <attr name="android:layout_gravity"/>
+              </declare-styleable>
+              <attr format="reference" name="editTextStyle"/>
+          </resources>
+          """
+            .trimIndent(),
+        )
+        add(
+          "src/main/res/values/strings.xml",
+          """
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <string name="dependencyLib3_str">A string from dependencyLib3</string>
+          </resources>
+          """
+            .trimIndent(),
+        )
+      }
+    }
+    fusedLibrary(":fusedLib1") {
+      androidFusedLibrary { namespace = "com.example.fusedLib1" }
+      dependencies {
+        include(project(":androidLib1"))
+        include(project(":androidLib2"))
+      }
+    }
+  }
 
   @Test
   fun rewritesUnderFusedRClass() {

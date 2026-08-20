@@ -125,7 +125,13 @@ abstract class LintModelWriterTask : NonIncrementalTask() {
   ) {
     this.variantName = ""
     this.analyticsService.setDisallowChanges(getBuildService(taskCreationServices.buildServiceRegistry))
-    this.projectInputs.initializeForStandalone(project, taskCreationServices.projectOptions, javaExtension, lintOptions, LintMode.MODEL_WRITING)
+    this.projectInputs.initializeForStandalone(
+      project,
+      taskCreationServices.projectOptions,
+      javaExtension,
+      lintOptions,
+      LintMode.MODEL_WRITING,
+    )
     this.variantInputs.initializeForStandalone(
       project,
       this,

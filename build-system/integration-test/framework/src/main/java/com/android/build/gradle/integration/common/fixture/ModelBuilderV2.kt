@@ -268,9 +268,8 @@ ${it.details?.details?.lines()}
                 """
             .trimIndent()
         }
-    val issuesAsStrings =
-      allSyncIssues.map {
-        """
+    val issuesAsStrings = allSyncIssues.map {
+      """
 severity: ${it.severity}
 type: ${it.type}
 data: ${it.data}
@@ -279,8 +278,8 @@ ${it.message.normalizeMessage()}
 multiLineMessage:
 ${it.multiLineMessage}
             """
-          .trimIndent()
-      }
+        .trimIndent()
+    }
 
     // Gradle suppresses identical issues over some threshold (15 as of now).
     // Next occurrences are only aggregated as counters in ProblemSummariesEvent.

@@ -71,20 +71,19 @@ fun launchProcessing(dexWorkActionParams: DexWorkActionParams, receiver: Message
 
 private fun processIncrementally(dexArchiveBuilder: DexArchiveBuilder, dexWorkActionParams: DexWorkActionParams) {
   with(dexWorkActionParams.dexSpec.get()) {
-    val desugarGraph =
-      desugarGraphFile?.let {
-        try {
-          readDesugarGraph(desugarGraphFile)
-        } catch (e: Exception) {
-          loggerWrapper.warning(
-            "Failed to read desugaring graph." +
-              " Cause: ${e.javaClass.simpleName}, message: ${e.message}.\n" +
-              "Fall back to non-incremental mode."
-          )
-          processNonIncrementally(dexArchiveBuilder, dexWorkActionParams)
-          return@processIncrementally
-        }
+    val desugarGraph = desugarGraphFile?.let {
+      try {
+        readDesugarGraph(desugarGraphFile)
+      } catch (e: Exception) {
+        loggerWrapper.warning(
+          "Failed to read desugaring graph." +
+            " Cause: ${e.javaClass.simpleName}, message: ${e.message}.\n" +
+            "Fall back to non-incremental mode."
+        )
+        processNonIncrementally(dexArchiveBuilder, dexWorkActionParams)
+        return@processIncrementally
       }
+    }
 
     // Compute impacted files based on the changed files and the desugaring graph (if
     // desugaring is enabled)

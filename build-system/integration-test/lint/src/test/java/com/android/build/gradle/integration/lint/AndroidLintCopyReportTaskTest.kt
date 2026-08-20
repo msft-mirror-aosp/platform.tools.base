@@ -20,9 +20,9 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.internal.lint.AndroidLintCopyReportTask
 import com.android.testutils.truth.PathSubject.assertThat
+import java.io.File
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 
 /** Integration test for [AndroidLintCopyReportTask] */
 class AndroidLintCopyReportTaskTest {

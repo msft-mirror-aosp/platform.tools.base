@@ -228,9 +228,11 @@ class IncrementalDexingWithDesugaringTest(private val scenario: Scenario, privat
         APP,
         ANDROID_LIB,
         ANDROID_LIB_WITH_POST_JAVAC_CLASSES -> { classFullName ->
-            JAVAC.getOutputDir(subproject.buildDir).resolve("debug/compileDebugJavaWithJavac/classes/$classFullName.class")
-          }
-        JAVA_LIB -> { classFullName -> subproject.buildDir.resolve("classes/java/main/$classFullName.class") }
+          JAVAC.getOutputDir(subproject.buildDir).resolve("debug/compileDebugJavaWithJavac/classes/$classFullName.class")
+        }
+        JAVA_LIB -> { classFullName ->
+          subproject.buildDir.resolve("classes/java/main/$classFullName.class")
+        }
       }
     interfaceWithDefaultMethodClassFile = classFile(interfaceWithDefaultMethodFullName)
     classUsingInterfaceWithDefaultMethodClassFile = classFile(classUsingInterfaceWithDefaultMethodFullName)
@@ -239,22 +241,26 @@ class IncrementalDexingWithDesugaringTest(private val scenario: Scenario, privat
     // Published class files (from libraries), `null` for app
     val publishedClassFile: (classFullName: String) -> File? =
       when (scenario) {
-        APP -> { _ -> null }
+        APP -> { _ ->
+          null
+        }
         ANDROID_LIB -> { classFullName ->
-            if (withMinSdk24Plus) {
-              RUNTIME_LIBRARY_CLASSES_DIR.getOutputDir(subproject.buildDir).resolve("debug/bundleLibRuntimeToDirDebug/$classFullName.class")
-            } else {
-              RUNTIME_LIBRARY_CLASSES_JAR.getOutputDir(subproject.buildDir).resolve("debug/bundleLibRuntimeToJarDebug/classes.jar")
-            }
+          if (withMinSdk24Plus) {
+            RUNTIME_LIBRARY_CLASSES_DIR.getOutputDir(subproject.buildDir).resolve("debug/bundleLibRuntimeToDirDebug/$classFullName.class")
+          } else {
+            RUNTIME_LIBRARY_CLASSES_JAR.getOutputDir(subproject.buildDir).resolve("debug/bundleLibRuntimeToJarDebug/classes.jar")
           }
+        }
         ANDROID_LIB_WITH_POST_JAVAC_CLASSES -> { _ ->
-            if (withMinSdk24Plus) {
-              RUNTIME_LIBRARY_CLASSES_DIR.getOutputDir(subproject.buildDir).resolve("debug/bundleLibRuntimeToDirDebug/classes.jar")
-            } else {
-              RUNTIME_LIBRARY_CLASSES_JAR.getOutputDir(subproject.buildDir).resolve("debug/bundleLibRuntimeToJarDebug/classes.jar")
-            }
+          if (withMinSdk24Plus) {
+            RUNTIME_LIBRARY_CLASSES_DIR.getOutputDir(subproject.buildDir).resolve("debug/bundleLibRuntimeToDirDebug/classes.jar")
+          } else {
+            RUNTIME_LIBRARY_CLASSES_JAR.getOutputDir(subproject.buildDir).resolve("debug/bundleLibRuntimeToJarDebug/classes.jar")
           }
-        JAVA_LIB -> { classFullName -> subproject.buildDir.resolve("classes/java/main/$classFullName.class") }
+        }
+        JAVA_LIB -> { classFullName ->
+          subproject.buildDir.resolve("classes/java/main/$classFullName.class")
+        }
       }
     interfaceWithDefaultMethodPublishedClassFile = publishedClassFile(interfaceWithDefaultMethodFullName)
     classUsingInterfaceWithDefaultMethodPublishedClassFile = publishedClassFile(classUsingInterfaceWithDefaultMethodFullName)
@@ -306,22 +312,26 @@ class IncrementalDexingWithDesugaringTest(private val scenario: Scenario, privat
 
     val dexFile: (classFullName: String) -> File =
       when (scenario) {
-        APP -> { classFullName -> PROJECT_DEX_ARCHIVE.getOutputDir(app.buildDir).resolve("debug/dexBuilderDebug/out/$classFullName.dex") }
+        APP -> { classFullName ->
+          PROJECT_DEX_ARCHIVE.getOutputDir(app.buildDir).resolve("debug/dexBuilderDebug/out/$classFullName.dex")
+        }
         ANDROID_LIB -> { classFullName ->
-            if (withMinSdk24Plus) {
-              findDexTransformDir(androidLib).resolve("transformed/bundleLibRuntimeToDirDebug/$classFullName.dex")
-            } else {
-              findDexTransformDir(androidLib).resolve("transformed/classes/classes.dex")
-            }
+          if (withMinSdk24Plus) {
+            findDexTransformDir(androidLib).resolve("transformed/bundleLibRuntimeToDirDebug/$classFullName.dex")
+          } else {
+            findDexTransformDir(androidLib).resolve("transformed/classes/classes.dex")
           }
-        ANDROID_LIB_WITH_POST_JAVAC_CLASSES -> { _ -> findDexTransformDir(androidLib).resolve("transformed/classes/classes.dex") }
+        }
+        ANDROID_LIB_WITH_POST_JAVAC_CLASSES -> { _ ->
+          findDexTransformDir(androidLib).resolve("transformed/classes/classes.dex")
+        }
         JAVA_LIB -> { classFullName ->
-            if (withMinSdk24Plus) {
-              findDexTransformDir(javaLib).resolve("transformed/main/$classFullName.dex")
-            } else {
-              findDexTransformDir(javaLib).resolve("transformed/jetified-javalib/classes.dex")
-            }
+          if (withMinSdk24Plus) {
+            findDexTransformDir(javaLib).resolve("transformed/main/$classFullName.dex")
+          } else {
+            findDexTransformDir(javaLib).resolve("transformed/jetified-javalib/classes.dex")
           }
+        }
       }
     interfaceWithDefaultMethodDexFile = dexFile(interfaceWithDefaultMethodFullName)
     classUsingInterfaceWithDefaultMethodDexFile = dexFile(classUsingInterfaceWithDefaultMethodFullName)

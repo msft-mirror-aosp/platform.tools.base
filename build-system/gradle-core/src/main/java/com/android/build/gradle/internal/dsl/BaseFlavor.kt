@@ -40,7 +40,6 @@ import com.android.builder.internal.ClassFieldImpl
 import com.android.builder.model.ApiVersion
 import com.android.builder.model.BaseConfig
 import com.android.builder.model.ProductFlavor
-import com.google.common.collect.Iterables
 import java.io.File
 import org.gradle.api.Action
 import org.gradle.api.provider.Provider
@@ -207,15 +206,14 @@ abstract class BaseFlavor(name: String, private val dslServices: DslServices) :
 
   override fun setTargetSdkVersion(targetSdkVersion: String?) {
     targetSdk {
-      version =
-        targetSdkVersion?.let { targetSdkVersion ->
-          val apiLevel = targetSdkVersion.apiVersionToInt()
-          if (apiLevel != null) {
-            release(apiLevel)
-          } else {
-            preview(targetSdkVersion)
-          }
+      version = targetSdkVersion?.let { targetSdkVersion ->
+        val apiLevel = targetSdkVersion.apiVersionToInt()
+        if (apiLevel != null) {
+          release(apiLevel)
+        } else {
+          preview(targetSdkVersion)
         }
+      }
     }
   }
 

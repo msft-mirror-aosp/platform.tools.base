@@ -25,14 +25,13 @@ import org.junit.Test
 class LintMissingBuildFileTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      settings { applyPlugin(PluginType.ANDROID_SETTINGS) }
-      androidApplication(createMinimumProject = false) {
-        android.namespace = "com.example.app"
-        files.setupMinimumManifest()
-      }
+  val rule = GradleRule.from {
+    settings { applyPlugin(PluginType.ANDROID_SETTINGS) }
+    androidApplication(createMinimumProject = false) {
+      android.namespace = "com.example.app"
+      files.setupMinimumManifest()
     }
+  }
 
   @Test
   fun lintRunsWithoutBuildFile() {

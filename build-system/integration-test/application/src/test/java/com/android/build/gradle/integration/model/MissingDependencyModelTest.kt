@@ -44,14 +44,13 @@ class MissingDependencyModelTest {
 
 class UnresolvedVariantDependencyModelTest {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        android { buildTypes { create("staging") {} } }
-        dependencies { implementation(project(DEFAULT_LIB_PATH)) }
-      }
-      androidLibrary {}
+  val rule = GradleRule.from {
+    androidApplication {
+      android { buildTypes { create("staging") {} } }
+      dependencies { implementation(project(DEFAULT_LIB_PATH)) }
     }
+    androidLibrary {}
+  }
 
   @Test
   fun `test models`() {

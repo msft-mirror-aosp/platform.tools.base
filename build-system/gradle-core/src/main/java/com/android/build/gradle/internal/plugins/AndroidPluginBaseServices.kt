@@ -188,12 +188,11 @@ abstract class AndroidPluginBaseServices(
 
   private fun checkPluginsCompatibility(project: Project) {
     val currentPlugin = MUTUALLY_EXCLUSIVE_ANDROID_GRADLE_PLUGINS[this::class.java]
-    val incompatiblePlugin =
-      currentPlugin?.let {
-        MUTUALLY_EXCLUSIVE_ANDROID_GRADLE_PLUGINS.entries.firstOrNull {
-          it.value != currentPlugin && project.pluginManager.hasPlugin(it.value)
-        }
+    val incompatiblePlugin = currentPlugin?.let {
+      MUTUALLY_EXCLUSIVE_ANDROID_GRADLE_PLUGINS.entries.firstOrNull {
+        it.value != currentPlugin && project.pluginManager.hasPlugin(it.value)
       }
+    }
 
     if (incompatiblePlugin != null) {
       error("'$currentPlugin' and '${incompatiblePlugin.value}' plugins cannot be applied in the same project.")

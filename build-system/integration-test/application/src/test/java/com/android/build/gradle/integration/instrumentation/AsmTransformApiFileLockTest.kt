@@ -26,31 +26,30 @@ import org.junit.Test
 class AsmTransformApiFileLockTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication(":app") {
-        android { namespace = "com.example.myapplication" }
-        dependencies { implementation(project(":lib")) }
-        files {
-          add(
-            "src/main/java/com/example/myapplication/MainActivity.java",
-            """
-            package com.example.myapplication;
-            import com.example.lib.SomeClass;
-            public class MainActivity {
-                SomeClass someClass = new SomeClass();
-            }
-            """
-              .trimIndent(),
-          )
-        }
-      }
-
-      androidLibrary(":lib") {
-        android { namespace = "com.example.lib" }
-        files { add("src/main/java/com/example/lib/SomeClass.java", "package com.example.lib; public class SomeClass {}") }
+  val rule = GradleRule.from {
+    androidApplication(":app") {
+      android { namespace = "com.example.myapplication" }
+      dependencies { implementation(project(":lib")) }
+      files {
+        add(
+          "src/main/java/com/example/myapplication/MainActivity.java",
+          """
+          package com.example.myapplication;
+          import com.example.lib.SomeClass;
+          public class MainActivity {
+              SomeClass someClass = new SomeClass();
+          }
+          """
+            .trimIndent(),
+        )
       }
     }
+
+    androidLibrary(":lib") {
+      android { namespace = "com.example.lib" }
+      files { add("src/main/java/com/example/lib/SomeClass.java", "package com.example.lib; public class SomeClass {}") }
+    }
+  }
 
   @Test
   fun testCleanAfterAssembleWithInstrumentation() {

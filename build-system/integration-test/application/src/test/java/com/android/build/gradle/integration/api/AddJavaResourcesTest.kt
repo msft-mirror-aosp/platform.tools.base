@@ -42,13 +42,12 @@ class AddJavaResourcesTest(private val useNewDsl: Boolean, private val disallowP
   }
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        pluginCallbacks += if (useNewDsl) AddJavaResourcesCallback::class.java else AddJavaResourceLegacyCallback::class.java
-      }
-      gradleProperties { add(BooleanOption.USE_NEW_DSL, useNewDsl) }
+  val rule = GradleRule.from {
+    androidApplication {
+      pluginCallbacks += if (useNewDsl) AddJavaResourcesCallback::class.java else AddJavaResourceLegacyCallback::class.java
     }
+    gradleProperties { add(BooleanOption.USE_NEW_DSL, useNewDsl) }
+  }
 
   /** Regression test for http://b/263469991. */
   @Test

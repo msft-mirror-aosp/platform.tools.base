@@ -24,20 +24,19 @@ import org.junit.Test
 class LocalJarTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        dependencies {
-          implementation(
-            localJar("libfoo.jar") {
-              addClasses(Foo::class.java)
-              addEmptyClasses("com/example/Bar")
-              addTextFile("com/example/foo.txt", "content")
-            }
-          )
-        }
+  val rule = GradleRule.from {
+    androidApplication {
+      dependencies {
+        implementation(
+          localJar("libfoo.jar") {
+            addClasses(Foo::class.java)
+            addEmptyClasses("com/example/Bar")
+            addTextFile("com/example/foo.txt", "content")
+          }
+        )
       }
     }
+  }
 
   @Test
   fun testLocalJar() {

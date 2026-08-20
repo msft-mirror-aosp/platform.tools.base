@@ -33,39 +33,38 @@ import org.junit.Test
 class KeepRulesSourceSetVariantApiTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        android {
-          defaultConfig.minSdk = 24
-          buildTypes { named("release") { it.isMinifyEnabled = true } }
-        }
-        files {
-          add(
-            "src/main/java/com/example/app/ClassToKeep.kt",
-            // language=kotlin
-            """
-            package com.example.app
-            class ClassToKeep {
-                fun method() {}
-            }
-            """
-              .trimIndent(),
-          )
-          add(
-            "src/main/java/com/example/app/ClassToShrink.kt",
-            // language=kotlin
-            """
-            package com.example.app
-            class ClassToShrink {
-                fun method() {}
-            }
-            """
-              .trimIndent(),
-          )
-        }
+  val rule = GradleRule.from {
+    androidApplication {
+      android {
+        defaultConfig.minSdk = 24
+        buildTypes { named("release") { it.isMinifyEnabled = true } }
+      }
+      files {
+        add(
+          "src/main/java/com/example/app/ClassToKeep.kt",
+          // language=kotlin
+          """
+          package com.example.app
+          class ClassToKeep {
+              fun method() {}
+          }
+          """
+            .trimIndent(),
+        )
+        add(
+          "src/main/java/com/example/app/ClassToShrink.kt",
+          // language=kotlin
+          """
+          package com.example.app
+          class ClassToShrink {
+              fun method() {}
+          }
+          """
+            .trimIndent(),
+        )
       }
     }
+  }
 
   @Test
   fun `test static keepRules files are included`() {

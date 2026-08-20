@@ -89,85 +89,84 @@ class ExtractNativeLibsPackagingTest(
     }
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication(createMinimumProject = false) {
-        android {
-          namespace = "com.example"
-          this.compileSdk = compileSdk
-          defaultConfig { minSdk = this@ExtractNativeLibsPackagingTest.minSdk }
-          packaging {
-            jniLibs {
-              // if the value is null we want to use AGP's default.
-              this@ExtractNativeLibsPackagingTest.useLegacyPackaging?.let { useLegacyPackaging = it }
-            }
-          }
-          if (customJavaVersion != null) {
-            compileOptions {
-              sourceCompatibility = customJavaVersion
-              targetCompatibility = customJavaVersion
-            }
+  val rule = GradleRule.from {
+    androidApplication(createMinimumProject = false) {
+      android {
+        namespace = "com.example"
+        this.compileSdk = compileSdk
+        defaultConfig { minSdk = this@ExtractNativeLibsPackagingTest.minSdk }
+        packaging {
+          jniLibs {
+            // if the value is null we want to use AGP's default.
+            this@ExtractNativeLibsPackagingTest.useLegacyPackaging?.let { useLegacyPackaging = it }
           }
         }
-        files {
-          add(
-            "src/main/AndroidManifest.xml",
-            // language=XML
-            """
-                        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                            <application $extractNativeLibsAttribute/>
-                        </manifest>"""
-              .trimIndent(),
-          )
-          add(
-            "src/androidTest/AndroidManifest.xml",
-            // language=XML
-            """
-                        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                            <application $extractNativeLibsAttribute/>
-                        </manifest>"""
-              .trimIndent(),
-          )
-          add("src/main/jniLibs/x86/fake.so", "foo".repeat(100))
-          add("src/androidTest/jniLibs/x86/fake.so", "foo".repeat(100))
+        if (customJavaVersion != null) {
+          compileOptions {
+            sourceCompatibility = customJavaVersion
+            targetCompatibility = customJavaVersion
+          }
         }
       }
-      androidTest(createMinimumProject = false) {
-        android {
-          namespace = "com.example"
-          this.compileSdk = compileSdk
-          defaultConfig { minSdk = this@ExtractNativeLibsPackagingTest.minSdk }
-
-          targetProjectPath = ":app"
-
-          packaging {
-            jniLibs {
-              // if the value is null we want to use AGP's default.
-              this@ExtractNativeLibsPackagingTest.useLegacyPackaging?.let { useLegacyPackaging = it }
-            }
-          }
-
-          if (customJavaVersion != null) {
-            compileOptions {
-              sourceCompatibility = customJavaVersion
-              targetCompatibility = customJavaVersion
-            }
-          }
-        }
-        files {
-          add(
-            "src/main/AndroidManifest.xml",
-            // language=XML
-            """
+      files {
+        add(
+          "src/main/AndroidManifest.xml",
+          // language=XML
+          """
                         <manifest xmlns:android="http://schemas.android.com/apk/res/android">
                             <application $extractNativeLibsAttribute/>
                         </manifest>"""
-              .trimIndent(),
-          )
-          add("src/main/jniLibs/x86/fake.so", "foo".repeat(100))
-        }
+            .trimIndent(),
+        )
+        add(
+          "src/androidTest/AndroidManifest.xml",
+          // language=XML
+          """
+                        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                            <application $extractNativeLibsAttribute/>
+                        </manifest>"""
+            .trimIndent(),
+        )
+        add("src/main/jniLibs/x86/fake.so", "foo".repeat(100))
+        add("src/androidTest/jniLibs/x86/fake.so", "foo".repeat(100))
       }
     }
+    androidTest(createMinimumProject = false) {
+      android {
+        namespace = "com.example"
+        this.compileSdk = compileSdk
+        defaultConfig { minSdk = this@ExtractNativeLibsPackagingTest.minSdk }
+
+        targetProjectPath = ":app"
+
+        packaging {
+          jniLibs {
+            // if the value is null we want to use AGP's default.
+            this@ExtractNativeLibsPackagingTest.useLegacyPackaging?.let { useLegacyPackaging = it }
+          }
+        }
+
+        if (customJavaVersion != null) {
+          compileOptions {
+            sourceCompatibility = customJavaVersion
+            targetCompatibility = customJavaVersion
+          }
+        }
+      }
+      files {
+        add(
+          "src/main/AndroidManifest.xml",
+          // language=XML
+          """
+                        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                            <application $extractNativeLibsAttribute/>
+                        </manifest>"""
+            .trimIndent(),
+        )
+        add("src/main/jniLibs/x86/fake.so", "foo".repeat(100))
+      }
+    }
+  }
 
   @Test
   fun testNativeLibPackagedCorrectly_app() {

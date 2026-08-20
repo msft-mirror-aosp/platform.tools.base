@@ -34,11 +34,10 @@ import org.junit.Test
 class SigningConfigValueSourceTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      buildFileType = BuildFileType.KTS
-      androidApplication {}
-    }
+  val rule = GradleRule.from {
+    buildFileType = BuildFileType.KTS
+    androidApplication {}
+  }
 
   @Before
   fun setUp() {

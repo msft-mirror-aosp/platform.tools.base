@@ -103,41 +103,40 @@ class LibraryAndroidTestWithViewTest {
   }
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidLibrary(createMinimumProject = false) {
-        applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
-        dependencies {
-          implementation(externalLibrary("androidx.core:core-ktx:1.1.0"))
-          implementation(externalLibrary("androidx.appcompat:appcompat:1.3.+"))
-          testImplementation(externalLibrary("junit:junit:4.12"))
-          androidTestImplementation(externalLibrary("androidx.core:core-ktx:1.1.0"))
-          androidTestImplementation(externalLibrary("androidx.test.ext:junit:1.1.3-alpha02"))
-          androidTestImplementation(externalLibrary("androidx.test:runner:1.4.0-alpha06"))
-          androidTestImplementation(externalLibrary("androidx.test:rules:1.4.0-alpha06"))
-          androidTestImplementation(externalLibrary("com.google.guava:guava:19.0"))
-          androidTestImplementation(
-            externalLibrary("com.android.support.constraint:constraint-layout:$SUPPORT_LIB_CONSTRAINT_LAYOUT_VERSION")
-          )
-        }
-        android {
-          namespace = Companion.testNamespace
-          compileSdk = DEFAULT_COMPILE_SDK_VERSION
-          defaultConfig {
-            minSdk = DEFAULT_MIN_SDK_VERSION
-            testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-          }
-          buildFeatures { viewBinding = true }
-          installation { timeOutInMs = Duration.ofSeconds(30).toMillis().toInt() }
-        }
-        files.add("src/main/java/${srcPackage}/TestView.kt", testViewSrc)
-        files.add("src/androidTest/AndroidManifest.xml", testManifest)
-        files.add("src/androidTest/res/layout/test_view_layout.xml", testLayout)
-        files.add("src/androidTest/java/${srcPackage}/TestActivity.kt", testActivitySrc)
-        files.add("src/androidTest/java/${srcPackage}/TestTestView.kt", testTestViewSrc)
+  val rule = GradleRule.from {
+    androidLibrary(createMinimumProject = false) {
+      applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
+      dependencies {
+        implementation(externalLibrary("androidx.core:core-ktx:1.1.0"))
+        implementation(externalLibrary("androidx.appcompat:appcompat:1.3.+"))
+        testImplementation(externalLibrary("junit:junit:4.12"))
+        androidTestImplementation(externalLibrary("androidx.core:core-ktx:1.1.0"))
+        androidTestImplementation(externalLibrary("androidx.test.ext:junit:1.1.3-alpha02"))
+        androidTestImplementation(externalLibrary("androidx.test:runner:1.4.0-alpha06"))
+        androidTestImplementation(externalLibrary("androidx.test:rules:1.4.0-alpha06"))
+        androidTestImplementation(externalLibrary("com.google.guava:guava:19.0"))
+        androidTestImplementation(
+          externalLibrary("com.android.support.constraint:constraint-layout:$SUPPORT_LIB_CONSTRAINT_LAYOUT_VERSION")
+        )
       }
-      gradleProperties { add(BooleanOption.DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET, false) }
+      android {
+        namespace = Companion.testNamespace
+        compileSdk = DEFAULT_COMPILE_SDK_VERSION
+        defaultConfig {
+          minSdk = DEFAULT_MIN_SDK_VERSION
+          testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        }
+        buildFeatures { viewBinding = true }
+        installation { timeOutInMs = Duration.ofSeconds(30).toMillis().toInt() }
+      }
+      files.add("src/main/java/${srcPackage}/TestView.kt", testViewSrc)
+      files.add("src/androidTest/AndroidManifest.xml", testManifest)
+      files.add("src/androidTest/res/layout/test_view_layout.xml", testLayout)
+      files.add("src/androidTest/java/${srcPackage}/TestActivity.kt", testActivitySrc)
+      files.add("src/androidTest/java/${srcPackage}/TestTestView.kt", testTestViewSrc)
     }
+    gradleProperties { add(BooleanOption.DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET, false) }
+  }
 
   @Test
   fun connectedCheck() {

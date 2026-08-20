@@ -27,95 +27,94 @@ import org.junit.Test
 class JacocoIncrementalTransformTest {
 
   @get:Rule
-  val project =
-    GradleRule.from {
-      androidApplication {
-        applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
+  val project = GradleRule.from {
+    androidApplication {
+      applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
 
-        android {
-          namespace = "com.agpTest.appWithCoverage"
-          defaultConfig {
-            testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-            minSdk = 24
-          }
-          buildTypes { named("debug") { it.enableAndroidTestCoverage = true } }
-          files {
-            // The presence of an androidTest causes the JacocoTransform to select
-            // AndroidArtifacts.ArtifactType.CLASSES (allowing for the transform to run
-            // incrementally) rather than consuming AndroidArtifacts.ArtifactType.CLASSES_JAR.
-            add(
-              "src/androidTest/java/com/agpTest/agpWithCoverage/ExampleInstrumentedTest.kt",
-              """
-              package com.agpTest.appWithCoverage
-
-              import androidx.test.platform.app.InstrumentationRegistry
-              import androidx.test.ext.junit.runners.AndroidJUnit4
-
-              import org.junit.Test
-              import org.junit.runner.RunWith
-
-              import org.junit.Assert.*
-
-              @RunWith(AndroidJUnit4::class)
-              class ExampleInstrumentedTest {
-                  @Test
-                  fun useAppContext() {
-                      // Context of the app under test.
-                      val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-                      assertEquals("com.agpTest.appWithCoverage", appContext.packageName)
-                  }
-              }
-              """
-                .trimIndent(),
-            )
-          }
-          dependencies {
-            implementation(project(AndroidProjectDefinition.DEFAULT_LIB_PATH))
-            androidTestImplementation("com.android.support.test:runner:1.0.1")
-            androidTestImplementation("com.android.support.test.espresso:espresso-core:3.0.1")
-          }
+      android {
+        namespace = "com.agpTest.appWithCoverage"
+        defaultConfig {
+          testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+          minSdk = 24
         }
-      }
-      androidLibrary {
-        applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
-        android {
-          namespace = "com.agpTest.libWithClasses"
-          buildTypes { named("debug") { it.enableAndroidTestCoverage = true } }
-        }
+        buildTypes { named("debug") { it.enableAndroidTestCoverage = true } }
         files {
+          // The presence of an androidTest causes the JacocoTransform to select
+          // AndroidArtifacts.ArtifactType.CLASSES (allowing for the transform to run
+          // incrementally) rather than consuming AndroidArtifacts.ArtifactType.CLASSES_JAR.
           add(
-            "src/main/java/com/agpTest/libWithClasses/A.kt",
-            // language=kotlin
+            "src/androidTest/java/com/agpTest/agpWithCoverage/ExampleInstrumentedTest.kt",
             """
-            package com.agpTest.libWithClasses
+            package com.agpTest.appWithCoverage
 
-            class A {}
+            import androidx.test.platform.app.InstrumentationRegistry
+            import androidx.test.ext.junit.runners.AndroidJUnit4
+
+            import org.junit.Test
+            import org.junit.runner.RunWith
+
+            import org.junit.Assert.*
+
+            @RunWith(AndroidJUnit4::class)
+            class ExampleInstrumentedTest {
+                @Test
+                fun useAppContext() {
+                    // Context of the app under test.
+                    val appContext = InstrumentationRegistry.getInstrumentation().targetContext
+                    assertEquals("com.agpTest.appWithCoverage", appContext.packageName)
+                }
+            }
             """
               .trimIndent(),
           )
-          add(
-            "src/main/java/com/agpTest/libWithClasses/B.kt",
-            // language=kotlin
-            """
-            package com.agpTest.libWithClasses
-
-            class B {}
-            """
-              .trimIndent(),
-          )
-          add(
-            "src/main/java/com/agpTest/libWithClasses/C.kt",
-            // language=kotlin
-            """
-            package com.agpTest.libWithClasses
-
-            class C {}
-            """
-              .trimIndent(),
-          )
+        }
+        dependencies {
+          implementation(project(AndroidProjectDefinition.DEFAULT_LIB_PATH))
+          androidTestImplementation("com.android.support.test:runner:1.0.1")
+          androidTestImplementation("com.android.support.test.espresso:espresso-core:3.0.1")
         }
       }
     }
+    androidLibrary {
+      applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
+      android {
+        namespace = "com.agpTest.libWithClasses"
+        buildTypes { named("debug") { it.enableAndroidTestCoverage = true } }
+      }
+      files {
+        add(
+          "src/main/java/com/agpTest/libWithClasses/A.kt",
+          // language=kotlin
+          """
+          package com.agpTest.libWithClasses
+
+          class A {}
+          """
+            .trimIndent(),
+        )
+        add(
+          "src/main/java/com/agpTest/libWithClasses/B.kt",
+          // language=kotlin
+          """
+          package com.agpTest.libWithClasses
+
+          class B {}
+          """
+            .trimIndent(),
+        )
+        add(
+          "src/main/java/com/agpTest/libWithClasses/C.kt",
+          // language=kotlin
+          """
+          package com.agpTest.libWithClasses
+
+          class C {}
+          """
+            .trimIndent(),
+        )
+      }
+    }
+  }
 
   @Test
   fun testAddingClassIncrementally() {

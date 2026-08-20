@@ -34,35 +34,33 @@ import org.junit.Test
 class SettingsSdkTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      settings { applyPlugin(PluginType.ANDROID_SETTINGS) }
-      // do not create minimum, otherwise the sdk version will be "overridden"
-      androidLibrary(createMinimumProject = false) { android.namespace = "com.example.lib" }
-      androidApplication(createMinimumProject = false) {
-        android.namespace = "com.example.app"
-        files.setupMinimumManifest()
-      }
-      androidKotlinMultiplatformLibrary(":library", createMinimumProject = false) { android { namespace = "com.mylibrary.foo" } }
+  val rule = GradleRule.from {
+    settings { applyPlugin(PluginType.ANDROID_SETTINGS) }
+    // do not create minimum, otherwise the sdk version will be "overridden"
+    androidLibrary(createMinimumProject = false) { android.namespace = "com.example.lib" }
+    androidApplication(createMinimumProject = false) {
+      android.namespace = "com.example.app"
+      files.setupMinimumManifest()
     }
+    androidKotlinMultiplatformLibrary(":library", createMinimumProject = false) { android { namespace = "com.mylibrary.foo" } }
+  }
 
   @Test
   fun checkNewSdkDsl() {
-    val build =
-      rule.build {
-        settings {
-          android {
-            compileSdk { version = release(COMPILE_SDK_VERSION) { minorApiLevel = COMPILE_SDK_MINOR_VERSION } }
-            targetSdk { version = release(TARGET_SDK_VERSION) }
-            minSdk { version = release(MIN_SDK_VERSION) }
-          }
+    val build = rule.build {
+      settings {
+        android {
+          compileSdk { version = release(COMPILE_SDK_VERSION) { minorApiLevel = COMPILE_SDK_MINOR_VERSION } }
+          targetSdk { version = release(TARGET_SDK_VERSION) }
+          minSdk { version = release(MIN_SDK_VERSION) }
         }
-        androidLibrary {
-          pluginCallbacks += LibSharedCheck::class.java
-          pluginCallbacks += LibMinorVersionCheck::class.java
-        }
-        androidKotlinMultiplatformLibrary(":library") { pluginCallbacks += KmpLibVersionCheck::class.java }
       }
+      androidLibrary {
+        pluginCallbacks += LibSharedCheck::class.java
+        pluginCallbacks += LibMinorVersionCheck::class.java
+      }
+      androidKotlinMultiplatformLibrary(":library") { pluginCallbacks += KmpLibVersionCheck::class.java }
+    }
     build.executor
       .withFailOnWarning(false) // b/455891987
       .run(":help")
@@ -71,17 +69,16 @@ class SettingsSdkTest {
 
   @Test
   fun checkOldSdkDsl() {
-    val build =
-      rule.build {
-        settings {
-          android {
-            this.compileSdk = COMPILE_SDK_VERSION
-            this.minSdk = MIN_SDK_VERSION
-            this.targetSdk = TARGET_SDK_VERSION
-          }
+    val build = rule.build {
+      settings {
+        android {
+          this.compileSdk = COMPILE_SDK_VERSION
+          this.minSdk = MIN_SDK_VERSION
+          this.targetSdk = TARGET_SDK_VERSION
         }
-        androidLibrary { pluginCallbacks += LibSharedCheck::class.java }
       }
+      androidLibrary { pluginCallbacks += LibSharedCheck::class.java }
+    }
     checkDslSetUpInModel(build, COMPILE_SDK_VERSION.toString())
   }
 

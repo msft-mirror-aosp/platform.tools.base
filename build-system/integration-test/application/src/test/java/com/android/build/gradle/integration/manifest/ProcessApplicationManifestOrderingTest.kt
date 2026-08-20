@@ -30,37 +30,36 @@ import org.junit.Test
 class ProcessApplicationManifestOrderingTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        dependencies {
-          implementation(project(":libbluetooth"))
-          implementation(project(":libwifi"))
-        }
-      }
-      androidLibrary(":libbluetooth") {
-        files.add(
-          "src/main/AndroidManifest.xml",
-          """
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-              <uses-permission android:name="android.permission.BLUETOOTH"/>
-          </manifest>
-          """
-            .trimIndent(),
-        )
-      }
-      androidLibrary(":libwifi") {
-        files.add(
-          "src/main/AndroidManifest.xml",
-          """
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-              <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
-          </manifest>
-          """
-            .trimIndent(),
-        )
+  val rule = GradleRule.from {
+    androidApplication {
+      dependencies {
+        implementation(project(":libbluetooth"))
+        implementation(project(":libwifi"))
       }
     }
+    androidLibrary(":libbluetooth") {
+      files.add(
+        "src/main/AndroidManifest.xml",
+        """
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+            <uses-permission android:name="android.permission.BLUETOOTH"/>
+        </manifest>
+        """
+          .trimIndent(),
+      )
+    }
+    androidLibrary(":libwifi") {
+      files.add(
+        "src/main/AndroidManifest.xml",
+        """
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+            <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
+        </manifest>
+        """
+          .trimIndent(),
+      )
+    }
+  }
 
   @Test
   fun testManifestMergingOrderCorrectnessAndCaching() {

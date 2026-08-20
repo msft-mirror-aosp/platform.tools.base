@@ -31,60 +31,59 @@ import org.junit.Test
 class GlobalSyntheticsAvoidanceAndDuplicationTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication(":app") {
-        HelloWorldAndroid.setupJava(files)
-        android {
-          defaultConfig.minSdk = 21
-          compileOptions {
-            sourceCompatibility = org.gradle.api.JavaVersion.VERSION_1_8
-            targetCompatibility = org.gradle.api.JavaVersion.VERSION_1_8
-          }
-          dynamicFeatures += listOf(":feature")
+  val rule = GradleRule.from {
+    androidApplication(":app") {
+      HelloWorldAndroid.setupJava(files)
+      android {
+        defaultConfig.minSdk = 21
+        compileOptions {
+          sourceCompatibility = org.gradle.api.JavaVersion.VERSION_1_8
+          targetCompatibility = org.gradle.api.JavaVersion.VERSION_1_8
         }
-        dependencies { implementation(project(":lib")) }
+        dynamicFeatures += listOf(":feature")
       }
-
-      androidLibrary(":lib") {
-        HelloWorldAndroid.setupJava(files)
-        android { defaultConfig.minSdk = 21 }
-        files.add(
-          "src/main/java/com/example/lib/VibrationEffectUsage.java",
-          """
-          package com.example.lib;
-
-          public class VibrationEffectUsage {
-              public void run() {
-                  try {
-                      android.os.VibrationEffect effect = android.os.VibrationEffect.createOneShot(100, 255);
-                  } catch (Throwable e) {}
-              }
-          }
-          """
-            .trimIndent(),
-        )
-      }
-
-      androidFeature(":feature") {
-        HelloWorldAndroid.setupJava(files)
-        android { defaultConfig.minSdk = 21 }
-        dependencies { implementation(project(":app")) }
-        files.add(
-          "src/main/java/com/example/feature/FeatureClass.java",
-          """
-          package com.example.feature;
-
-          public class FeatureClass {
-              public void run() {
-                  System.out.println("Feature Module");
-              }
-          }
-          """
-            .trimIndent(),
-        )
-      }
+      dependencies { implementation(project(":lib")) }
     }
+
+    androidLibrary(":lib") {
+      HelloWorldAndroid.setupJava(files)
+      android { defaultConfig.minSdk = 21 }
+      files.add(
+        "src/main/java/com/example/lib/VibrationEffectUsage.java",
+        """
+        package com.example.lib;
+
+        public class VibrationEffectUsage {
+            public void run() {
+                try {
+                    android.os.VibrationEffect effect = android.os.VibrationEffect.createOneShot(100, 255);
+                } catch (Throwable e) {}
+            }
+        }
+        """
+          .trimIndent(),
+      )
+    }
+
+    androidFeature(":feature") {
+      HelloWorldAndroid.setupJava(files)
+      android { defaultConfig.minSdk = 21 }
+      dependencies { implementation(project(":app")) }
+      files.add(
+        "src/main/java/com/example/feature/FeatureClass.java",
+        """
+        package com.example.feature;
+
+        public class FeatureClass {
+            public void run() {
+                System.out.println("Feature Module");
+            }
+        }
+        """
+          .trimIndent(),
+      )
+    }
+  }
 
   @Test
   fun testDuplicationAvoidance() {

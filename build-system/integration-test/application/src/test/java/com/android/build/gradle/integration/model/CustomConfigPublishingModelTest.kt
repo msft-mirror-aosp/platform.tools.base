@@ -31,14 +31,13 @@ import org.junit.Test
 
 class CustomConfigPublishingModelTest : ModelComparator() {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        android { enableKotlin = false }
-        dependencies { implementation(project(DEFAULT_LIB_PATH, configuration = "custom")) }
-      }
-      androidLibrary { pluginCallbacks += LibCallback::class.java }
+  val rule = GradleRule.from {
+    androidApplication {
+      android { enableKotlin = false }
+      dependencies { implementation(project(DEFAULT_LIB_PATH, configuration = "custom")) }
     }
+    androidLibrary { pluginCallbacks += LibCallback::class.java }
+  }
 
   class LibCallback : LibraryComponentCallback {
     override fun handleExtension(project: Project, androidComponents: LibraryAndroidComponentsExtension) {

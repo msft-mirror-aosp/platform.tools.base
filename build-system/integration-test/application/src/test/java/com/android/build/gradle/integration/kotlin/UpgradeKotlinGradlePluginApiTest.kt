@@ -26,21 +26,20 @@ import org.junit.Test
 class UpgradeKotlinGradlePluginApiTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
-        files.add(
-          "src/main/java/AppFoo.kt",
-          // language=kotlin
-          """
-          package com.foo.application
-          class AppFoo
-          """
-            .trimIndent(),
-        )
-      }
+  val rule = GradleRule.from {
+    androidApplication {
+      applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
+      files.add(
+        "src/main/java/AppFoo.kt",
+        // language=kotlin
+        """
+        package com.foo.application
+        class AppFoo
+        """
+          .trimIndent(),
+      )
     }
+  }
 
   /** Test that users can upgrade the version of kotlin artifacts by adding KGP to their buildscript classpath with the desired version. */
   @Test

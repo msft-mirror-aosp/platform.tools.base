@@ -26,17 +26,16 @@ import org.junit.Test
 
 class CustomConsumerProguardFilesInDslTest {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      kotlinMultiplatformLibrary(":lib") {
-        applyPlugin(PluginType.ANDROID_KMP_LIBRARY)
-        android {
-          namespace = "com.test.library"
-          compileSdk = 36
-          optimization.consumerKeepRules.files(File("proguard-rules.pro"))
-        }
+  val rule = GradleRule.from {
+    kotlinMultiplatformLibrary(":lib") {
+      applyPlugin(PluginType.ANDROID_KMP_LIBRARY)
+      android {
+        namespace = "com.test.library"
+        compileSdk = 36
+        optimization.consumerKeepRules.files(File("proguard-rules.pro"))
       }
     }
+  }
 
   @Test
   fun testRelativePath() {

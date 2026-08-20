@@ -113,71 +113,70 @@ class AddPostCompileCodeGeneratorTest(private val jacocoSupport: Boolean, privat
   }
 
   @get:Rule
-  val project =
-    GradleRule.from {
-      androidApplication {
-        android {
-          buildTypes {
-            named("debug") {
-              if (minifyEnabled) {
-                it.isMinifyEnabled = true
-                it.proguardFile("proguard-rules.pro")
-              }
-              if (jacocoSupport) {
-                it.enableAndroidTestCoverage = true
-              }
+  val project = GradleRule.from {
+    androidApplication {
+      android {
+        buildTypes {
+          named("debug") {
+            if (minifyEnabled) {
+              it.isMinifyEnabled = true
+              it.proguardFile("proguard-rules.pro")
+            }
+            if (jacocoSupport) {
+              it.enableAndroidTestCoverage = true
             }
           }
         }
-        dependencies {
-          api(project(":lib"))
-          testImplementation("junit:junit:4.12")
-          androidTestImplementation("junit:junit:4.12")
-        }
-        files {
-          // add a few tests in both kotlin and java that will eventually get
-          // wired up using the generated code.
-          add("src/test/kotlin/com/foo/bar/MyKotlinTestClass.kt", generateKotlinClass("MyKotlinTestClass"))
-          add("src/test/java/com/foo/bar/MyJavaTestClass.java", generateJavaClass("MyJavaTestClass"))
-
-          // sane for android test.
-          add("src/androidTest/kotlin/com/foo/bar/MyAndroidTestClass.kt", generateKotlinClass("MyAndroidTestClass"))
-          add("src/androidTest/java/com/foo/bar/MyAndroidJavaTestClass.kt", generateKotlinClass("MyAndroidJavaTestClass"))
-          if (minifyEnabled) {
-            add(
-              "proguard-rules.pro",
-              """
-              -keep class com.android.test.** { *; }
-              -keep class com.android.tools.test.** { *; }
-              """
-                .trimIndent(),
-            )
-          }
-        }
-        pluginCallbacks += AddPostCompilationCallback::class.java
       }
-      androidLibrary {
-        files {
-          // add an interface that will be used by the bytecode generated class
-          add(
-            "src/main/kotlin/${AddPostCompilationCodeGeneratorTask.CLIENT_INTERFACE_INTERNAL_NAME}.kt",
-            """
-            package com.android.tools.test
+      dependencies {
+        api(project(":lib"))
+        testImplementation("junit:junit:4.12")
+        androidTestImplementation("junit:junit:4.12")
+      }
+      files {
+        // add a few tests in both kotlin and java that will eventually get
+        // wired up using the generated code.
+        add("src/test/kotlin/com/foo/bar/MyKotlinTestClass.kt", generateKotlinClass("MyKotlinTestClass"))
+        add("src/test/java/com/foo/bar/MyJavaTestClass.java", generateJavaClass("MyJavaTestClass"))
 
-            interface ClientInterface {
-                fun someFunction()
-            }
+        // sane for android test.
+        add("src/androidTest/kotlin/com/foo/bar/MyAndroidTestClass.kt", generateKotlinClass("MyAndroidTestClass"))
+        add("src/androidTest/java/com/foo/bar/MyAndroidJavaTestClass.kt", generateKotlinClass("MyAndroidJavaTestClass"))
+        if (minifyEnabled) {
+          add(
+            "proguard-rules.pro",
+            """
+            -keep class com.android.test.** { *; }
+            -keep class com.android.tools.test.** { *; }
             """
               .trimIndent(),
           )
-
-          add("src/test/kotlin/com/foo/bar/MyKotlinTestClass.kt", generateKotlinClass("MyKotlinTestClass", "com.android.test.lib.utils"))
-          add("src/test/java/com/foo/bar/MyJavaTestClass.java", generateJavaClass("MyJavaTestClass", "com.android.test.lib.utils"))
         }
-        dependencies { testImplementation("junit:junit:4.12") }
-        pluginCallbacks += AddPostCompilationCallback::class.java
       }
+      pluginCallbacks += AddPostCompilationCallback::class.java
     }
+    androidLibrary {
+      files {
+        // add an interface that will be used by the bytecode generated class
+        add(
+          "src/main/kotlin/${AddPostCompilationCodeGeneratorTask.CLIENT_INTERFACE_INTERNAL_NAME}.kt",
+          """
+          package com.android.tools.test
+
+          interface ClientInterface {
+              fun someFunction()
+          }
+          """
+            .trimIndent(),
+        )
+
+        add("src/test/kotlin/com/foo/bar/MyKotlinTestClass.kt", generateKotlinClass("MyKotlinTestClass", "com.android.test.lib.utils"))
+        add("src/test/java/com/foo/bar/MyJavaTestClass.java", generateJavaClass("MyJavaTestClass", "com.android.test.lib.utils"))
+      }
+      dependencies { testImplementation("junit:junit:4.12") }
+      pluginCallbacks += AddPostCompilationCallback::class.java
+    }
+  }
 
   open class AddPostCompilationCallback : GenericCallback {
 

@@ -20,5 +20,6 @@ package com.android.build.gradle.internal.cxx.settings
 data class Settings(val environments: List<SettingsEnvironment> = listOf(), val configurations: List<SettingsConfiguration> = listOf())
 
 /** Get a named [SettingsConfiguration] if present. */
-fun Settings.getConfiguration(configurationName: String): SettingsConfiguration? =
-  configurations.firstOrNull { it.name == configurationName }
+fun Settings.getConfiguration(configurationName: String): SettingsConfiguration? = configurations.firstOrNull {
+  it.name == configurationName
+}

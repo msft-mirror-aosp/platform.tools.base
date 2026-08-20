@@ -101,12 +101,12 @@ class TaskMethodModifiersAndAnnotationsTest {
   @Test
   fun `check for TaskAction use in tasks that extend tasks that already define it`() {
     val baseTaskClasses = listOf(NonIncrementalGlobalTask::class.java, NonIncrementalTask::class.java, NewIncrementalTask::class.java)
-    val extendsAgpBaseTaskClasses =
-      tasks.filter { !baseTaskClasses.contains(it) && baseTaskClasses.any { baseClass -> baseClass.isAssignableFrom(it) } }
-    val taskActionMethods =
-      extendsAgpBaseTaskClasses.associateWith {
-        it.declaredMethods.filter { method -> method.getAnnotation(TaskAction::class.java) != null }
-      }
+    val extendsAgpBaseTaskClasses = tasks.filter {
+      !baseTaskClasses.contains(it) && baseTaskClasses.any { baseClass -> baseClass.isAssignableFrom(it) }
+    }
+    val taskActionMethods = extendsAgpBaseTaskClasses.associateWith {
+      it.declaredMethods.filter { method -> method.getAnnotation(TaskAction::class.java) != null }
+    }
     val methodsThatUseTaskAction =
       taskActionMethods
         .filter { it.value.isNotEmpty() }
@@ -291,11 +291,10 @@ class TaskMethodModifiersAndAnnotationsTest {
     assertThat(publicSettersAsStrings).named("Task public setters").containsExactlyElementsIn(currentPublicSetters)
 
     // Check for getters and setters that have different types than can upset gradle's instansiator.
-    val mismatchingGetters =
-      publicSetters.filter { setter ->
-        val matchingGetter = getMatchingGetter(setter)
-        matchingGetter != null && setter.parameters.size == 1 && setter.parameters[0].type != matchingGetter.returnType
-      }
+    val mismatchingGetters = publicSetters.filter { setter ->
+      val matchingGetter = getMatchingGetter(setter)
+      matchingGetter != null && setter.parameters.size == 1 && setter.parameters[0].type != matchingGetter.returnType
+    }
     assertWithMessage("Getters and setter types don't match").that(mismatchingGetters.map { "${getMatchingGetter(it)}  -  $it" }).isEmpty()
   }
 

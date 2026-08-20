@@ -21,8 +21,7 @@ import org.gradle.api.Incubating
 /**
  * A test suite to run Compose screenshot tests.
  *
- * A [ScreenshotTestSuite] configures the execution environment and inputs required
- * to render Compose previews and execute screenshot tests.
+ * A [ScreenshotTestSuite] configures the execution environment and inputs required to render Compose previews and execute screenshot tests.
  *
  * Example usage:
  * ```
@@ -65,4 +64,4 @@ interface ScreenshotTestSuite {
    * helpers and preview providers during rendering.
    */
   @Incubating fun dependencies(action: AgpTestSuiteDependencies.() -> Unit)
-  }
+}

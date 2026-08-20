@@ -27,24 +27,23 @@ import org.junit.Test
 
 class LocalAarModelTest : ModelComparator() {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        android { enableKotlin = false }
-        dependencies { implementation(project(":lib")) }
-      }
-      genericProject(":lib") {
-        wrap(
-          generateAarWithContent(
-            packageName = "com.example.aar",
-            mainJar = TestInputsGenerator.jarWithEmptyClasses(ImmutableList.of("com/example/aar/AarClass")),
-            resources =
-              mapOf("values/strings.xml" to """<resources><string name="aar_string">Aar String</string></resources>""".toByteArray()),
-          ),
-          "lib.aar",
-        )
-      }
+  val rule = GradleRule.from {
+    androidApplication {
+      android { enableKotlin = false }
+      dependencies { implementation(project(":lib")) }
     }
+    genericProject(":lib") {
+      wrap(
+        generateAarWithContent(
+          packageName = "com.example.aar",
+          mainJar = TestInputsGenerator.jarWithEmptyClasses(ImmutableList.of("com/example/aar/AarClass")),
+          resources =
+            mapOf("values/strings.xml" to """<resources><string name="aar_string">Aar String</string></resources>""".toByteArray()),
+        ),
+        "lib.aar",
+      )
+    }
+  }
 
   @Test
   fun `test models`() {

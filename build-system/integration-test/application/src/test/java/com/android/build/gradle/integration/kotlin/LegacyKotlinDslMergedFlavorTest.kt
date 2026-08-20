@@ -29,11 +29,10 @@ import org.junit.Test
 class LegacyKotlinDslMergedFlavorTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication { pluginCallbacks += MergedFlavorCallback::class.java }
-      gradleProperties { add(com.android.build.gradle.options.BooleanOption.USE_NEW_DSL, false) }
-    }
+  val rule = GradleRule.from {
+    androidApplication { pluginCallbacks += MergedFlavorCallback::class.java }
+    gradleProperties { add(com.android.build.gradle.options.BooleanOption.USE_NEW_DSL, false) }
+  }
 
   @Test
   fun `mergedFlavor source compatibility`() {

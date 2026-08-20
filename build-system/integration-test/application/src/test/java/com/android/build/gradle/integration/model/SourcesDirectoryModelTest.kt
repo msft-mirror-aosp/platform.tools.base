@@ -35,15 +35,14 @@ import org.junit.Test
 
 class SourcesDirectoryModelTest : ModelComparator() {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        android {
-          enableKotlin = true
-          defaultConfig.minSdk = 14
-        }
+  val rule = GradleRule.from {
+    androidApplication {
+      android {
+        enableKotlin = true
+        defaultConfig.minSdk = 14
       }
     }
+  }
 
   @Test
   fun `test adding source directories to IDE model with addGeneratedSourceDirectory and addStaticSourceDirectory`() {
@@ -86,14 +85,13 @@ class SourcesDirectoryModelTest : ModelComparator() {
 
   @Test
   fun `test adding generated source directory to IDE model with registerJavaGeneratingTask old API`() {
-    val build =
-      rule.build {
-        androidApplication {
-          android { enableKotlin = false }
-          pluginCallbacks += LegacyAppCallback::class.java
-        }
-        gradleProperties { add(BooleanOption.USE_NEW_DSL, false) }
+    val build = rule.build {
+      androidApplication {
+        android { enableKotlin = false }
+        pluginCallbacks += LegacyAppCallback::class.java
       }
+      gradleProperties { add(BooleanOption.USE_NEW_DSL, false) }
+    }
 
     val result = build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels()
 

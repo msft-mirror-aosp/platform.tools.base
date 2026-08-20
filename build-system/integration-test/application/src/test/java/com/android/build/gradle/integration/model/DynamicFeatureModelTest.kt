@@ -31,19 +31,18 @@ import org.junit.Test
 
 class HelloWorldDynamicFeatureModelTest : ModelComparator() {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        android {
-          enableKotlin = false
-          dynamicFeatures += listOf(DEFAULT_FEATURE_PATH)
-        }
-      }
-      androidFeature {
-        android { enableKotlin = false }
-        dependencies { implementation(project(DEFAULT_APP_PATH)) }
+  val rule = GradleRule.from {
+    androidApplication {
+      android {
+        enableKotlin = false
+        dynamicFeatures += listOf(DEFAULT_FEATURE_PATH)
       }
     }
+    androidFeature {
+      android { enableKotlin = false }
+      dependencies { implementation(project(DEFAULT_APP_PATH)) }
+    }
+  }
 
   @Test
   fun `test models`() {
@@ -64,21 +63,20 @@ class HelloWorldDynamicFeatureModelTest : ModelComparator() {
 /** Similar to [HelloWorldDynamicFeatureModelTest], but with an app -> lib dependency */
 class HelloWorldWithLibDynamicFeatureModelTest : ModelComparator() {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        android {
-          enableKotlin = false
-          dynamicFeatures += listOf(DEFAULT_FEATURE_PATH)
-        }
-        dependencies { implementation(project(DEFAULT_LIB_PATH)) }
+  val rule = GradleRule.from {
+    androidApplication {
+      android {
+        enableKotlin = false
+        dynamicFeatures += listOf(DEFAULT_FEATURE_PATH)
       }
-      androidFeature {
-        android { enableKotlin = false }
-        dependencies { implementation(project(DEFAULT_APP_PATH)) }
-      }
-      androidLibrary { android { enableKotlin = false } }
+      dependencies { implementation(project(DEFAULT_LIB_PATH)) }
     }
+    androidFeature {
+      android { enableKotlin = false }
+      dependencies { implementation(project(DEFAULT_APP_PATH)) }
+    }
+    androidLibrary { android { enableKotlin = false } }
+  }
 
   @Test
   fun `test models`() {
@@ -96,17 +94,16 @@ class HelloWorldWithLibDynamicFeatureModelTest : ModelComparator() {
 
 class CompileSdkViaSettingsInDynamicFeatureModelTest {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      settings {
-        applyPlugin(PluginType.ANDROID_SETTINGS)
-        android { compileSdk = DEFAULT_COMPILE_SDK_VERSION }
-      }
-      androidFeature(createMinimumProject = false) {
-        android { namespace = "com.example.feature" }
-        files.setupMinimumManifest()
-      }
+  val rule = GradleRule.from {
+    settings {
+      applyPlugin(PluginType.ANDROID_SETTINGS)
+      android { compileSdk = DEFAULT_COMPILE_SDK_VERSION }
     }
+    androidFeature(createMinimumProject = false) {
+      android { namespace = "com.example.feature" }
+      files.setupMinimumManifest()
+    }
+  }
 
   @Test
   fun `test compileTarget`() {
@@ -119,14 +116,13 @@ class CompileSdkViaSettingsInDynamicFeatureModelTest {
 
 class MinSdkViaSettingsInDynamicFeatureModelTest {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      settings {
-        applyPlugin(PluginType.ANDROID_SETTINGS)
-        android { minSdk = 23 }
-      }
-      androidFeature {}
+  val rule = GradleRule.from {
+    settings {
+      applyPlugin(PluginType.ANDROID_SETTINGS)
+      android { minSdk = 23 }
     }
+    androidFeature {}
+  }
 
   @Test
   fun `test minSdkVersion`() {

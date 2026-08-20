@@ -148,18 +148,17 @@ internal class MergeJavaResourcesDelegate(
      * algorithm to delegate to depending on the packaging option of the path. By default it
      * requires just one file (no merging).
      */
-    val mergeTransformAlgorithm =
-      StreamMergeAlgorithms.select { path ->
-        val packagingAction = packagingOptions.getAction(path)
-        when (packagingAction) {
-          JavaResPackagingFileAction.EXCLUDE ->
-            // Should have been excluded from the input.
-            throw AssertionError()
-          JavaResPackagingFileAction.PICK_FIRST -> return@select StreamMergeAlgorithms.pickFirst()
-          JavaResPackagingFileAction.MERGE -> return@select StreamMergeAlgorithms.concat()
-          JavaResPackagingFileAction.NONE -> return@select StreamMergeAlgorithms.acceptOnlyOne()
-        }
+    val mergeTransformAlgorithm = StreamMergeAlgorithms.select { path ->
+      val packagingAction = packagingOptions.getAction(path)
+      when (packagingAction) {
+        JavaResPackagingFileAction.EXCLUDE ->
+          // Should have been excluded from the input.
+          throw AssertionError()
+        JavaResPackagingFileAction.PICK_FIRST -> return@select StreamMergeAlgorithms.pickFirst()
+        JavaResPackagingFileAction.MERGE -> return@select StreamMergeAlgorithms.concat()
+        JavaResPackagingFileAction.NONE -> return@select StreamMergeAlgorithms.acceptOnlyOne()
       }
+    }
 
     /*
      * Create an output that uses the algorithm. This is not the final output because,

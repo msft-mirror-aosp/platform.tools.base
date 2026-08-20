@@ -144,10 +144,9 @@ private abstract class ShrinkAppBundleResourcesAction @Inject constructor() : Wo
           }
           .filterNotNull()
 
-      val graphBuilders =
-        allModules.map {
-          ProtoResourcesGraphBuilder(resourceRoot = fs.getPath(it.key, "res"), resourceTable = fs.getPath(it.key, "resources.pb"))
-        }
+      val graphBuilders = allModules.map {
+        ProtoResourcesGraphBuilder(resourceRoot = fs.getPath(it.key, "res"), resourceTable = fs.getPath(it.key, "resources.pb"))
+      }
 
       ResourceShrinkerImpl(
           resourcesGatherers,

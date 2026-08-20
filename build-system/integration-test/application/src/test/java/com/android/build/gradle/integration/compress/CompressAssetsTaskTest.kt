@@ -32,18 +32,17 @@ import org.junit.Test
 class CompressAssetsTaskTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      buildFileType = BuildFileType.KTS
-      androidApplication {
-        android {
-          compileSdk = GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION
-          namespace = "com.example"
-        }
-        pluginCallbacks += MyAppCallback::class.java
+  val rule = GradleRule.from {
+    buildFileType = BuildFileType.KTS
+    androidApplication {
+      android {
+        compileSdk = GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION
+        namespace = "com.example"
       }
-      gradleProperties { add("org.gradle.jvmargs", "-Xmx1G -XX:MaxMetaspaceSize=1G") }
+      pluginCallbacks += MyAppCallback::class.java
     }
+    gradleProperties { add("org.gradle.jvmargs", "-Xmx1G -XX:MaxMetaspaceSize=1G") }
+  }
 
   class MyAppCallback : ApplicationComponentCallback {
 

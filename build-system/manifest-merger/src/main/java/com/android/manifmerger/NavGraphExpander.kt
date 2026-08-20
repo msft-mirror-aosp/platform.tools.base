@@ -131,7 +131,9 @@ object NavGraphExpander {
           is DeepLink.DeepLinkException,
           is NavigationXmlDocument.NavigationXmlDocumentException -> {
             mergingReportBuilder.addMessage(
-              sourceFilePosition, MergingReport.Record.Severity.ERROR, e.message ?: "Error finding deep links."
+              sourceFilePosition,
+              MergingReport.Record.Severity.ERROR,
+              e.message ?: "Error finding deep links.",
             )
             return
           }
@@ -183,9 +185,7 @@ object NavGraphExpander {
     }
   }
 
-  /**
-   * Find [DeepLink]s from referenced [NavigationXmlDocument]s and return a List of them.
-   */
+  /** Find [DeepLink]s from referenced [NavigationXmlDocument]s and return a List of them. */
   fun findDeepLinks(
     navigationXmlId: String,
     loadedNavigationMap: Map<String, NavigationXmlDocument>,
@@ -203,9 +203,7 @@ object NavGraphExpander {
    */
   private data class DeepLinkComparisonObject(private val uri: String, private val action: String, private val mimeType: String?)
 
-  /**
-   * Find [DeepLink]s from referenced [NavigationXmlDocument]s and add them to the deepLinkList.
-   */
+  /** Find [DeepLink]s from referenced [NavigationXmlDocument]s and add them to the deepLinkList. */
   private fun findDeepLinks(
     navigationXmlId: String,
     loadedNavigationMap: Map<String, NavigationXmlDocument>,
@@ -224,7 +222,7 @@ object NavGraphExpander {
         "Illegal circular reference among navigation files when traversing navigation " +
           "file references: " +
           navigationFileAncestors.joinToString(separator = " > ") +
-          " > $navigationXmlId."
+          " > $navigationXmlId.",
       )
       return
     }
@@ -246,7 +244,7 @@ object NavGraphExpander {
       mergingReportBuilder.addMessage(
         sourceFilePosition,
         MergingReport.Record.Severity.ERROR,
-        "Referenced navigation file with navigationXmlId = $navigationXmlId not found"
+        "Referenced navigation file with navigationXmlId = $navigationXmlId not found",
       )
       navigationFileAncestors.remove(navigationXmlId)
       return
@@ -265,7 +263,7 @@ object NavGraphExpander {
           mergingReportBuilder.addMessage(
             sourceFilePosition,
             MergingReport.Record.Severity.ERROR,
-            "Multiple destinations found with a deep link containing $comparisonString."
+            "Multiple destinations found with a deep link containing $comparisonString.",
           )
         }
         deepLinkComparisonObjects.add(deepLinkComparisonObject)

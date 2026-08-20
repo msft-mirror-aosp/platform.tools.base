@@ -25,22 +25,21 @@ import org.junit.Test
 /** Integration test for the [com.android.build.gradle.internal.tasks.R8AnalysisTask] task. */
 class R8AnalysisTaskTest {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidJavaApplication {
-        android {
-          enableKotlin = false
-          buildTypes {
-            named("release") {
-              it.isMinifyEnabled = true
-              it.isShrinkResources = true
-              it.proguardFiles += listOf(File("proguard-rules.pro"), getDefaultProguardFile("proguard-android-optimize.txt"))
-            }
+  val rule = GradleRule.from {
+    androidJavaApplication {
+      android {
+        enableKotlin = false
+        buildTypes {
+          named("release") {
+            it.isMinifyEnabled = true
+            it.isShrinkResources = true
+            it.proguardFiles += listOf(File("proguard-rules.pro"), getDefaultProguardFile("proguard-android-optimize.txt"))
           }
         }
-        files.add("proguard-rules.pro", "-keep class pkg.name.app.HelloWorld { *; }")
       }
+      files.add("proguard-rules.pro", "-keep class pkg.name.app.HelloWorld { *; }")
     }
+  }
 
   @Test
   fun testR8AnalysisTaskRunsSuccessfully() {
@@ -58,13 +57,12 @@ class R8AnalysisTaskTest {
 
   @Test
   fun testMissingKeepRules() {
-    val build =
-      rule.build {
-        androidApplication {
-          dependencies { implementation(localJar("lib.jar") { addClassWithEmptyMethods("test/A", "foo()Ltest/B;", "bar()Ltest/C;") }) }
-          files.update("proguard-rules.pro").replaceWith("-keep class test.A { *; }")
-        }
+    val build = rule.build {
+      androidApplication {
+        dependencies { implementation(localJar("lib.jar") { addClassWithEmptyMethods("test/A", "foo()Ltest/B;", "bar()Ltest/C;") }) }
+        files.update("proguard-rules.pro").replaceWith("-keep class test.A { *; }")
       }
+    }
 
     val result = build.executor.expectFailure().run(":app:analyzeReleaseR8Config")
     result.assertErrorContains(
@@ -89,24 +87,23 @@ class R8AnalysisTaskTest {
 
   @Test
   fun testR8AnalysisTaskWithDynamicFeatures() {
-    val build =
-      rule.build {
-        androidApplication {
-          android {
-            dynamicFeatures += setOf(":feature")
-            buildTypes {
-              named("release") {
-                it.isMinifyEnabled = true
-                it.isShrinkResources = true
-              }
+    val build = rule.build {
+      androidApplication {
+        android {
+          dynamicFeatures += setOf(":feature")
+          buildTypes {
+            named("release") {
+              it.isMinifyEnabled = true
+              it.isShrinkResources = true
             }
           }
         }
-        androidFeature {
-          android { namespace = "com.example.feature" }
-          dependencies { implementation(project(":app")) }
-        }
       }
+      androidFeature {
+        android { namespace = "com.example.feature" }
+        dependencies { implementation(project(":app")) }
+      }
+    }
     val app = build.androidApplication()
 
     build.executor.run(":app:analyzeReleaseR8Config").apply { assertTask(":app:analyzeReleaseR8Config").didWork() }

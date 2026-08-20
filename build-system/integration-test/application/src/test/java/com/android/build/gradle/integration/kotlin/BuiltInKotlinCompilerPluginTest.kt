@@ -45,20 +45,19 @@ class BuiltInKotlinCompilerPluginTest(private val builtInKotlin: Boolean, privat
   }
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      buildFileType = BuildFileType.KTS
-      androidApplication {
-        @Suppress("DEPRECATION") if (!builtInKotlin) applyPlugin(PluginType.KOTLIN_ANDROID)
-        android.experimentalProperties[BooleanWithDefault.SCREENSHOT_TEST.key] = true
-      }
-      gradleProperties {
-        add(BooleanOption.BUILT_IN_KOTLIN, builtInKotlin)
-        if (!builtInKotlin) add(BooleanOption.USE_NEW_DSL, false)
-        add(BooleanOption.DISALLOW_KOTLIN_SOURCE_SETS, disallowKotlinSourceSets)
-        add(BooleanOption.ENABLE_SCREENSHOT_TEST, true)
-      }
+  val rule = GradleRule.from {
+    buildFileType = BuildFileType.KTS
+    androidApplication {
+      @Suppress("DEPRECATION") if (!builtInKotlin) applyPlugin(PluginType.KOTLIN_ANDROID)
+      android.experimentalProperties[BooleanWithDefault.SCREENSHOT_TEST.key] = true
     }
+    gradleProperties {
+      add(BooleanOption.BUILT_IN_KOTLIN, builtInKotlin)
+      if (!builtInKotlin) add(BooleanOption.USE_NEW_DSL, false)
+      add(BooleanOption.DISALLOW_KOTLIN_SOURCE_SETS, disallowKotlinSourceSets)
+      add(BooleanOption.ENABLE_SCREENSHOT_TEST, true)
+    }
+  }
 
   @Test
   fun `test Kotlin compiler Gradle plugin is invoked`() {

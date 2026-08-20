@@ -57,15 +57,14 @@ class MergeJavaResourceTaskTest(val enableOptimizations: Boolean) {
 
   @Test
   fun ensureHelpfulErrorMessageOnConflict() {
-    val build =
-      rule.build {
-        androidApplication {
-          dependencies {
-            implementation("com.example:lib1:0.1")
-            implementation("com.example:lib2:0.1")
-          }
+    val build = rule.build {
+      androidApplication {
+        dependencies {
+          implementation("com.example:lib1:0.1")
+          implementation("com.example:lib2:0.1")
         }
       }
+    }
     val failure = build.executor.expectFailure().run("assembleDebug")
     // Ensure that the inputs are included in the stderr output.
     failure.assertFailureMessage().contains("2 files found with path 'conflict_res' from inputs:\n - ")
@@ -79,8 +78,9 @@ class MergeJavaResourceTaskTest(val enableOptimizations: Boolean) {
 
   @Test
   fun ensureJavacDependencyIfAnnotationProcessor() {
-    val build =
-      rule.build { androidApplication { dependencies { add("annotationProcessor", localJar("empty.jar") { jarWithTextEntries() }) } } }
+    val build = rule.build {
+      androidApplication { dependencies { add("annotationProcessor", localJar("empty.jar") { jarWithTextEntries() }) } }
+    }
     build.executor.run("clean", "app:mergeDebugJavaResource").also {
       if (build.androidApplication().resolve(InternalArtifactType.COMPILE_BUILD_CONFIG_JAR).exists()) {
         assertThat(it.didWorkTasks).doesNotContain(":app:compileDebugJavaWithJavac")
@@ -115,26 +115,25 @@ class MergeJavaResourceTaskTest(val enableOptimizations: Boolean) {
 
   @Test
   fun ensureJavaResIsNotRunningWhenOnlyClassesChange() {
-    val build =
-      rule.build {
-        androidApplication {
-          files {
-            add(
-              "src/main/com/android/tests/basic/NewSourceFile.java",
-              """
-              package com.android.tests.basic;
+    val build = rule.build {
+      androidApplication {
+        files {
+          add(
+            "src/main/com/android/tests/basic/NewSourceFile.java",
+            """
+            package com.android.tests.basic;
 
-              class NewSourceFile {
-                  public static int foo() {
-                      return 154;
-                  }
-              }
-              """
-                .trimIndent(),
-            )
-          }
+            class NewSourceFile {
+                public static int foo() {
+                    return 154;
+                }
+            }
+            """
+              .trimIndent(),
+          )
         }
       }
+    }
     build.executor.run("assembleDebug")
 
     build
@@ -228,8 +227,9 @@ class MergeJavaResourceTaskTest(val enableOptimizations: Boolean) {
   // Regression test for b/377366954
   @Test
   fun javaResIncrementalBuildWithAdditionalArtifact() {
-    val build =
-      rule.build { androidApplication { android { dependencies { implementation("com.example:libWithAdditionalArtifact:0.1") } } } }
+    val build = rule.build {
+      androidApplication { android { dependencies { implementation("com.example:libWithAdditionalArtifact:0.1") } } }
+    }
     build.executor.run("clean", "app:mergeDebugJavaResource")
     val newResourceFile = build.androidApplication().resolve("src/main/resources/file.txt")
     assertThat(newResourceFile.exists()).isFalse()
@@ -239,24 +239,23 @@ class MergeJavaResourceTaskTest(val enableOptimizations: Boolean) {
 
   @Test
   fun testNoCompressDecompression() {
-    val build =
-      rule.build {
-        androidApplication {
-          android { androidResources { noCompress += "no_compress.txt" } }
-          files {
-            add(
-              "src/main/resources/no_compress.txt",
-              "The compressor leaves very small entries uncompressed if their uncompressed size is less than their " +
-                "compressed size, so content must be large enough to use the compressed data.",
-            )
-            add(
-              "src/main/resources/compress.txt",
-              "The compressor leaves very small entries uncompressed if their " +
-                "uncompressed size is less than their compressed size, so content must be large enough to use the compressed data.",
-            )
-          }
+    val build = rule.build {
+      androidApplication {
+        android { androidResources { noCompress += "no_compress.txt" } }
+        files {
+          add(
+            "src/main/resources/no_compress.txt",
+            "The compressor leaves very small entries uncompressed if their uncompressed size is less than their " +
+              "compressed size, so content must be large enough to use the compressed data.",
+          )
+          add(
+            "src/main/resources/compress.txt",
+            "The compressor leaves very small entries uncompressed if their " +
+              "uncompressed size is less than their compressed size, so content must be large enough to use the compressed data.",
+          )
         }
       }
+    }
 
     build.executor.run(":app:mergeDebugJavaResource")
 

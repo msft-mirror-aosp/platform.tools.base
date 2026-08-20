@@ -33,11 +33,10 @@ class PropertyOverridingTest {
 
   @Test
   fun testKotlinPropertyOverriding() {
-    val build =
-      rule.build {
-        androidApplication { pluginCallbacks += KotlinPropertyCheckCallback::class.java }
-        gradleProperties { add(PROPERTY_OVERRIDE_NAME, "false") }
-      }
+    val build = rule.build {
+      androidApplication { pluginCallbacks += KotlinPropertyCheckCallback::class.java }
+      gradleProperties { add(PROPERTY_OVERRIDE_NAME, "false") }
+    }
     build.executor
       .withArgument("-P$PROPERTY_OVERRIDE_NAME=true")
       .run("tasks")
@@ -46,11 +45,10 @@ class PropertyOverridingTest {
 
   @Test
   fun testAndroidPropertyOverriding() {
-    val build =
-      rule.build {
-        androidApplication { pluginCallbacks += AndroidPropertyCheckCallback::class.java }
-        gradleProperties { add(ENABLE_APP_COMPILE_TIME_R_CLASS, false) }
-      }
+    val build = rule.build {
+      androidApplication { pluginCallbacks += AndroidPropertyCheckCallback::class.java }
+      gradleProperties { add(ENABLE_APP_COMPILE_TIME_R_CLASS, false) }
+    }
     build.executor
       .with(ENABLE_APP_COMPILE_TIME_R_CLASS, true)
       .run("tasks")

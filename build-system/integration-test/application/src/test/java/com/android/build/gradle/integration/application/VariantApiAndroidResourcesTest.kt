@@ -35,27 +35,26 @@ import org.junit.Test
 
 class VariantApiAndroidResourcesTest {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidKotlinMultiplatformLibrary(":kmplibrary", createMinimumProject = false) {
-        android {
-          namespace = "com.kmplib.foo"
-          compileSdk = DEFAULT_COMPILE_SDK_VERSION
-          androidResources.enable = true
-        }
-
-        pluginCallbacks += KmpCallback::class.java
+  val rule = GradleRule.from {
+    androidKotlinMultiplatformLibrary(":kmplibrary", createMinimumProject = false) {
+      android {
+        namespace = "com.kmplib.foo"
+        compileSdk = DEFAULT_COMPILE_SDK_VERSION
+        androidResources.enable = true
       }
 
-      androidLibrary(":androidlibrary", createMinimumProject = false) {
-        android {
-          namespace = "com.androidlib.foo"
-          compileSdk = DEFAULT_COMPILE_SDK_VERSION
-          androidResources.enable = true
-        }
-        pluginCallbacks += LibraryCallback::class.java
-      }
+      pluginCallbacks += KmpCallback::class.java
     }
+
+    androidLibrary(":androidlibrary", createMinimumProject = false) {
+      android {
+        namespace = "com.androidlib.foo"
+        compileSdk = DEFAULT_COMPILE_SDK_VERSION
+        androidResources.enable = true
+      }
+      pluginCallbacks += LibraryCallback::class.java
+    }
+  }
 
   class KmpCallback : AndroidKotlinMultiplatformLibraryComponentCallback {
     override fun handleExtension(project: Project, extension: KotlinMultiplatformAndroidComponentsExtension) {

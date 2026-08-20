@@ -171,8 +171,9 @@ constructor(private val objectFactory: ObjectFactory, private val providerFactor
       }
     }
 
-    val sdkSetupCorrectly: Provider<Boolean> =
-      providerFactory.provider { sdkLoadStrategy.getAndroidJar() != null && sdkLoadStrategy.getBuildToolsInfo() != null }
+    val sdkSetupCorrectly: Provider<Boolean> = providerFactory.provider {
+      sdkLoadStrategy.getAndroidJar() != null && sdkLoadStrategy.getBuildToolsInfo() != null
+    }
 
     val targetBootClasspathProvider: Provider<List<File>> = providerFactory.provider { sdkLoadStrategy.getTargetBootClasspath() }
 
@@ -252,20 +253,20 @@ constructor(private val objectFactory: ObjectFactory, private val providerFactor
     val ndkDirectoryProvider: Provider<Directory> =
       objectFactory.directoryProperty().fileProvider(providerFactory.provider { ndkPlatform.getOrThrow().ndkDirectory })
 
-    val objcopyExecutableMapProvider: Provider<Map<String, File>> =
-      providerFactory.provider {
-        if (!ndkPlatform.isConfigured) {
-          return@provider mapOf<String, File>()
-        }
-        val objcopyExecutables = mutableMapOf<String, File>()
-        for (abi in ndkPlatform.getOrThrow().supportedAbis) {
-          objcopyExecutables[abi] = ndkPlatform.getOrThrow().ndkInfo.getObjcopyExecutable(abi)
-        }
-        return@provider objcopyExecutables
+    val objcopyExecutableMapProvider: Provider<Map<String, File>> = providerFactory.provider {
+      if (!ndkPlatform.isConfigured) {
+        return@provider mapOf<String, File>()
       }
+      val objcopyExecutables = mutableMapOf<String, File>()
+      for (abi in ndkPlatform.getOrThrow().supportedAbis) {
+        objcopyExecutables[abi] = ndkPlatform.getOrThrow().ndkInfo.getObjcopyExecutable(abi)
+      }
+      return@provider objcopyExecutables
+    }
 
-    val stripExecutableFinderProvider: Provider<SymbolStripExecutableFinder> =
-      providerFactory.provider { createSymbolStripExecutableFinder(this) }
+    val stripExecutableFinderProvider: Provider<SymbolStripExecutableFinder> = providerFactory.provider {
+      createSymbolStripExecutableFinder(this)
+    }
   }
 
   private fun ndkLoader(ndkVersion: String?, ndkPathFromDsl: String?, ndkPathFromProperties: String?) =
@@ -370,8 +371,9 @@ abstract class AndroidJarInput : UsesSdkComponentsBuildService {
 
   @get:Internal abstract val buildToolsRevision: Property<Revision>
 
-  private fun sdkLoader(): Provider<SdkComponentsBuildService.VersionedSdkLoader> =
-    sdkComponentsBuildService.map { it.sdkLoader(compileSdkVersion, buildToolsRevision) }
+  private fun sdkLoader(): Provider<SdkComponentsBuildService.VersionedSdkLoader> = sdkComponentsBuildService.map {
+    it.sdkLoader(compileSdkVersion, buildToolsRevision)
+  }
 
   @PathSensitive(PathSensitivity.NONE) @InputFile fun getAndroidJar(): Provider<File> = sdkLoader().flatMap { it.androidJarProvider }
 }
@@ -390,8 +392,9 @@ abstract class BuildToolsExecutableInput : UsesSdkComponentsBuildService {
 
   @get:Input abstract val buildToolsRevision: Property<Revision>
 
-  private fun sdkLoader(): Provider<SdkComponentsBuildService.VersionedSdkLoader> =
-    sdkComponentsBuildService.map { it.sdkLoader(compileSdkVersion, buildToolsRevision) }
+  private fun sdkLoader(): Provider<SdkComponentsBuildService.VersionedSdkLoader> = sdkComponentsBuildService.map {
+    it.sdkLoader(compileSdkVersion, buildToolsRevision)
+  }
 
   fun adbExecutable(): Provider<RegularFile> = sdkLoader().flatMap { it.adbExecutableProvider }
 

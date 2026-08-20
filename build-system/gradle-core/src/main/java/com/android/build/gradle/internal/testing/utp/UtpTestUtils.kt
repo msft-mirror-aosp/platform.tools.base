@@ -75,96 +75,95 @@ fun runUtpTestSuiteAndWait(
 
   val serials = runnerConfigs.map { it.deviceSerialNumber.get() }
 
-  val workQueue =
-    workerExecutor.processIsolation { spec ->
-      spec.classpath.fromDisallowChanges(utpDependencies.gradleWorkAction)
-      spec.forkOptions { fork ->
-        if (enableUtpTestReportingForAndroidStudio) {
-          fork.systemProperty("android-test.listener.stream-base64-encoded-result", "true")
-        }
-
-        fork.systemProperty("android-test.adb-path", adbPath)
-        fork.systemProperty("android-test.aapt2-path", aapt2Path)
-        fork.systemProperty("android-test.device-serials", serials.joinToString(","))
-
-        // Common configurations (using first config as representative, assuming they are mostly same)
-        val firstConfig = runnerConfigs.first()
-        fork.systemProperty("android-test.instrumentation-runner-class", firstConfig.testData.get().instrumentationRunner)
-        fork.systemProperty("android-test.test-package-id", firstConfig.testData.get().applicationId)
-        fork.systemProperty("android-test.instrumentation-target-package-id", firstConfig.testData.get().instrumentationTargetPackageId)
-        firstConfig.testData.get().testedApplicationId?.let { fork.systemProperty("com.android.junit.engine.tested.application.id", it) }
-        val instArgs = firstConfig.testData.get().instrumentationRunnerArguments
-        if (instArgs.isNotEmpty()) {
-          fork.systemProperty("android-test.instrumentation-args", instArgs.map { "${it.key}=${it.value}" }.joinToString(","))
-        }
-        val useTestStorageService = instArgs["useTestStorageService"]?.toBoolean() ?: false
-        fork.systemProperty("android-test.use-test-storage-service", useTestStorageService.toString())
-        fork.systemProperty("android-test.is-test-coverage-enabled", firstConfig.testData.get().isTestCoverageEnabled.toString())
-        if (firstConfig.testData.get().isTestCoverageEnabled) {
-          val coverageType = if (isOnTheFlyCoverageEnabled) "ON_THE_FLY" else "NONE"
-          fork.systemProperty("android-test.coverage-type", coverageType)
-        }
-        fork.systemProperty("android-test.force-aot-compilation", firstConfig.forceCompilation.get().toString())
-        fork.systemProperty("android-test.uninstall-after-tests", firstConfig.uninstallApksAfterTest.get().toString())
-        if (firstConfig.testData.get().isTestCoverageEnabled) {
-          val useOrchestrator = firstConfig.useOrchestrator.get()
-          val customCoveragePath = instArgs["coverageFilePath"] ?: instArgs["coverageFile"]
-          if (customCoveragePath != null) {
-            if (useOrchestrator) {
-              fork.systemProperty("android-test.coverage-dir-on-device", customCoveragePath)
-            } else {
-              fork.systemProperty("android-test.coverage-file-on-device", customCoveragePath)
-            }
-          }
-        }
-        fork.systemProperty("com.android.junit.engine.results.dir", resultsDir.absolutePath)
-        if (firstConfig.useOrchestrator.get()) {
-          fork.systemProperty("android-test.execution-mode", "ANDROIDX_TEST_ORCHESTRATOR")
-        }
-        fork.systemProperty("android-test.animations-disabled", firstConfig.testData.get().animationsDisabled.toString())
-        fork.systemProperty("android-test.instrument-in-pcc", firstConfig.privateComputeCoreInstrumentationEnabled)
-        if (firstConfig.additionalTestOutputOnDeviceDir.isPresent) {
-          fork.systemProperty("android-test.additional-test-output-dir-on-device", firstConfig.additionalTestOutputOnDeviceDir.get())
-        }
-
-        // Device-specific configurations
-        runnerConfigs.forEach { config ->
-          val serial = config.deviceSerialNumber.get()
-          fork.systemProperty("android-test.device-id[$serial]", config.deviceId.get())
-          fork.systemProperty("android-test.results-dir[$serial]", config.outputDir.get().asFile.absolutePath)
-          fork.systemProperty("android-test.coverage-dir-on-host[$serial]", config.coverageOutputDir.get().asFile.absolutePath)
-          if (config.additionalTestOutputDir.isPresent) {
-            fork.systemProperty(
-              "android-test.additional-test-output-dir-on-host[$serial]",
-              config.additionalTestOutputDir.get().asFile.absolutePath,
-            )
-          }
-
-          val appApks = config.targetApkConfigBundle.get().appApks
-          if (appApks.isNotEmpty()) {
-            fork.systemProperty("android-test.tested-apks[$serial]", appApks.joinToString(",") { it.absolutePath })
-          }
-          fork.systemProperty("android-test.test-apks[$serial]", config.testData.get().testApk.absolutePath)
-
-          val helperApks = config.helperApks.files
-          if (helperApks.isNotEmpty()) {
-            fork.systemProperty("android-test.test-util-apks[$serial]", helperApks.joinToString(",") { it.absolutePath })
-          }
-
-          val installOptions = config.additionalInstallOptions.get()
-          if (installOptions.isNotEmpty()) {
-            fork.systemProperty("android-test.apk-install-options[$serial]", installOptions.joinToString(","))
-          }
-
-          fork.systemProperty("android-test.install-timeout-ms[$serial]", ((config.installApkTimeout.orNull ?: 0) * 1000).toString())
-        }
-
-        // Propagate HOME environment variable to ensure:
-        // 1. Bazel sandbox compatibility (reusing the writable HOME directory set by Bazel).
-        // 2. ADB/Emulator configurations (e.g. adbkey authentication) can be resolved.
-        System.getenv("HOME")?.let { fork.environment("HOME", it) }
+  val workQueue = workerExecutor.processIsolation { spec ->
+    spec.classpath.fromDisallowChanges(utpDependencies.gradleWorkAction)
+    spec.forkOptions { fork ->
+      if (enableUtpTestReportingForAndroidStudio) {
+        fork.systemProperty("android-test.listener.stream-base64-encoded-result", "true")
       }
+
+      fork.systemProperty("android-test.adb-path", adbPath)
+      fork.systemProperty("android-test.aapt2-path", aapt2Path)
+      fork.systemProperty("android-test.device-serials", serials.joinToString(","))
+
+      // Common configurations (using first config as representative, assuming they are mostly same)
+      val firstConfig = runnerConfigs.first()
+      fork.systemProperty("android-test.instrumentation-runner-class", firstConfig.testData.get().instrumentationRunner)
+      fork.systemProperty("android-test.test-package-id", firstConfig.testData.get().applicationId)
+      fork.systemProperty("android-test.instrumentation-target-package-id", firstConfig.testData.get().instrumentationTargetPackageId)
+      firstConfig.testData.get().testedApplicationId?.let { fork.systemProperty("com.android.junit.engine.tested.application.id", it) }
+      val instArgs = firstConfig.testData.get().instrumentationRunnerArguments
+      if (instArgs.isNotEmpty()) {
+        fork.systemProperty("android-test.instrumentation-args", instArgs.map { "${it.key}=${it.value}" }.joinToString(","))
+      }
+      val useTestStorageService = instArgs["useTestStorageService"]?.toBoolean() ?: false
+      fork.systemProperty("android-test.use-test-storage-service", useTestStorageService.toString())
+      fork.systemProperty("android-test.is-test-coverage-enabled", firstConfig.testData.get().isTestCoverageEnabled.toString())
+      if (firstConfig.testData.get().isTestCoverageEnabled) {
+        val coverageType = if (isOnTheFlyCoverageEnabled) "ON_THE_FLY" else "NONE"
+        fork.systemProperty("android-test.coverage-type", coverageType)
+      }
+      fork.systemProperty("android-test.force-aot-compilation", firstConfig.forceCompilation.get().toString())
+      fork.systemProperty("android-test.uninstall-after-tests", firstConfig.uninstallApksAfterTest.get().toString())
+      if (firstConfig.testData.get().isTestCoverageEnabled) {
+        val useOrchestrator = firstConfig.useOrchestrator.get()
+        val customCoveragePath = instArgs["coverageFilePath"] ?: instArgs["coverageFile"]
+        if (customCoveragePath != null) {
+          if (useOrchestrator) {
+            fork.systemProperty("android-test.coverage-dir-on-device", customCoveragePath)
+          } else {
+            fork.systemProperty("android-test.coverage-file-on-device", customCoveragePath)
+          }
+        }
+      }
+      fork.systemProperty("com.android.junit.engine.results.dir", resultsDir.absolutePath)
+      if (firstConfig.useOrchestrator.get()) {
+        fork.systemProperty("android-test.execution-mode", "ANDROIDX_TEST_ORCHESTRATOR")
+      }
+      fork.systemProperty("android-test.animations-disabled", firstConfig.testData.get().animationsDisabled.toString())
+      fork.systemProperty("android-test.instrument-in-pcc", firstConfig.privateComputeCoreInstrumentationEnabled)
+      if (firstConfig.additionalTestOutputOnDeviceDir.isPresent) {
+        fork.systemProperty("android-test.additional-test-output-dir-on-device", firstConfig.additionalTestOutputOnDeviceDir.get())
+      }
+
+      // Device-specific configurations
+      runnerConfigs.forEach { config ->
+        val serial = config.deviceSerialNumber.get()
+        fork.systemProperty("android-test.device-id[$serial]", config.deviceId.get())
+        fork.systemProperty("android-test.results-dir[$serial]", config.outputDir.get().asFile.absolutePath)
+        fork.systemProperty("android-test.coverage-dir-on-host[$serial]", config.coverageOutputDir.get().asFile.absolutePath)
+        if (config.additionalTestOutputDir.isPresent) {
+          fork.systemProperty(
+            "android-test.additional-test-output-dir-on-host[$serial]",
+            config.additionalTestOutputDir.get().asFile.absolutePath,
+          )
+        }
+
+        val appApks = config.targetApkConfigBundle.get().appApks
+        if (appApks.isNotEmpty()) {
+          fork.systemProperty("android-test.tested-apks[$serial]", appApks.joinToString(",") { it.absolutePath })
+        }
+        fork.systemProperty("android-test.test-apks[$serial]", config.testData.get().testApk.absolutePath)
+
+        val helperApks = config.helperApks.files
+        if (helperApks.isNotEmpty()) {
+          fork.systemProperty("android-test.test-util-apks[$serial]", helperApks.joinToString(",") { it.absolutePath })
+        }
+
+        val installOptions = config.additionalInstallOptions.get()
+        if (installOptions.isNotEmpty()) {
+          fork.systemProperty("android-test.apk-install-options[$serial]", installOptions.joinToString(","))
+        }
+
+        fork.systemProperty("android-test.install-timeout-ms[$serial]", ((config.installApkTimeout.orNull ?: 0) * 1000).toString())
+      }
+
+      // Propagate HOME environment variable to ensure:
+      // 1. Bazel sandbox compatibility (reusing the writable HOME directory set by Bazel).
+      // 2. ADB/Emulator configurations (e.g. adbkey authentication) can be resolved.
+      System.getenv("HOME")?.let { fork.environment("HOME", it) }
     }
+  }
 
   workQueue.submit(RunUtpWorkAction::class.java) { params ->
     params.utpRunConfigs.setDisallowChanges(runnerConfigs)

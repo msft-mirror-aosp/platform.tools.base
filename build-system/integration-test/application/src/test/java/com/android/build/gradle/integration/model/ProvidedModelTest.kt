@@ -29,19 +29,18 @@ import org.junit.Test
 /** This compares the list of provided libraries returned by v1 and v2. */
 class ProvidedModelTest {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        dependencies {
-          api("com.android.support:appcompat-v7:+")
-          api("com.google.guava:guava:19.0")
-          api("com.android.support.constraint:constraint-layout:1.0.2")
-          testImplementation("junit:junit:4.12")
-          androidTestImplementation("com.android.support.test:runner:+")
-          androidTestImplementation("com.android.support.test.espresso:espresso-core:+")
-        }
+  val rule = GradleRule.from {
+    androidApplication {
+      dependencies {
+        api("com.android.support:appcompat-v7:+")
+        api("com.google.guava:guava:19.0")
+        api("com.android.support.constraint:constraint-layout:1.0.2")
+        testImplementation("junit:junit:4.12")
+        androidTestImplementation("com.android.support.test:runner:+")
+        androidTestImplementation("com.android.support.test.espresso:espresso-core:+")
       }
     }
+  }
 
   companion object {
     private val providedAndroidLibraries =

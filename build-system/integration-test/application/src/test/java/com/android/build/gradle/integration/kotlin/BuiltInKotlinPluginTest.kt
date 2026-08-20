@@ -38,19 +38,18 @@ class BuiltInKotlinPluginTest(private val useLatestKgpVersion: Boolean) {
   }
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        @Suppress("DEPRECATION") applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
+  val rule = GradleRule.from {
+    androidApplication {
+      @Suppress("DEPRECATION") applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
 
-        HelloWorldAndroid.setupKotlin(files)
-      }
-      gradleProperties {
-        add(BooleanOption.BUILT_IN_KOTLIN, false)
-        add(BooleanOption.USE_NEW_DSL, false)
-      }
-      useLatestKgpVersion = this@BuiltInKotlinPluginTest.useLatestKgpVersion
+      HelloWorldAndroid.setupKotlin(files)
     }
+    gradleProperties {
+      add(BooleanOption.BUILT_IN_KOTLIN, false)
+      add(BooleanOption.USE_NEW_DSL, false)
+    }
+    useLatestKgpVersion = this@BuiltInKotlinPluginTest.useLatestKgpVersion
+  }
 
   @Test
   fun `test compile Kotlin sources`() {
@@ -84,39 +83,38 @@ class BuiltInKotlinPluginTest(private val useLatestKgpVersion: Boolean) {
 
   @Test
   fun testBuiltInKotlinSupportAndKagpUsedInDifferentModules() {
-    val build =
-      rule.build {
-        androidLibrary {
-          @Suppress("DEPRECATION") applyPlugin(PluginType.KOTLIN_ANDROID)
-          kotlin { compilerOptions.jvmTarget.set(JvmTarget.JVM_11) }
-          files.add(
-            "src/main/java/LibFoo.kt",
-            // language=kotlin
-            """
-            package com.foo.library
-            class LibFoo
-            """
-              .trimIndent(),
-          )
-        }
-        androidApplication {
-          dependencies { api(project(DEFAULT_LIB_PATH)) }
-
-          files.add(
-            "src/main/kotlin/AppFoo.kt",
-            // language=kotlin
-            """
-            package com.foo.application
-            val l = com.foo.library.LibFoo()
-            """
-              .trimIndent(),
-          )
-        }
-        gradleProperties {
-          add(BooleanOption.BUILT_IN_KOTLIN, false)
-          add(BooleanOption.USE_NEW_DSL, false)
-        }
+    val build = rule.build {
+      androidLibrary {
+        @Suppress("DEPRECATION") applyPlugin(PluginType.KOTLIN_ANDROID)
+        kotlin { compilerOptions.jvmTarget.set(JvmTarget.JVM_11) }
+        files.add(
+          "src/main/java/LibFoo.kt",
+          // language=kotlin
+          """
+          package com.foo.library
+          class LibFoo
+          """
+            .trimIndent(),
+        )
       }
+      androidApplication {
+        dependencies { api(project(DEFAULT_LIB_PATH)) }
+
+        files.add(
+          "src/main/kotlin/AppFoo.kt",
+          // language=kotlin
+          """
+          package com.foo.application
+          val l = com.foo.library.LibFoo()
+          """
+            .trimIndent(),
+        )
+      }
+      gradleProperties {
+        add(BooleanOption.BUILT_IN_KOTLIN, false)
+        add(BooleanOption.USE_NEW_DSL, false)
+      }
+    }
 
     build.executor.run(":app:assembleDebug")
     build.androidApplication().assertApk(ApkSelector.DEBUG) {

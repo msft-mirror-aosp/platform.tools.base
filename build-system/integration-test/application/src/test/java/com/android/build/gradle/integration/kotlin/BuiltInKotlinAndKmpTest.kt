@@ -27,13 +27,12 @@ class BuiltInKotlinAndKmpTest() {
 
   @Test
   fun `fail when built-in Kotlin plugin is applied before kotlin-multiplatform plugin`() {
-    val build =
-      rule.build {
-        androidLibrary {
-          applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
-          applyPlugin(PluginType.KOTLIN_MPP)
-        }
+    val build = rule.build {
+      androidLibrary {
+        applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
+        applyPlugin(PluginType.KOTLIN_MPP)
       }
+    }
 
     val result = build.executor.expectFailure().run(":app:assembleDebug")
 
@@ -43,13 +42,12 @@ class BuiltInKotlinAndKmpTest() {
 
   @Test
   fun `fail when built-in Kotlin plugin is applied after kotlin-multiplatform plugin`() {
-    val build =
-      rule.build {
-        androidLibrary {
-          applyPlugin(PluginType.KOTLIN_MPP, applyFirst = true)
-          applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
-        }
+    val build = rule.build {
+      androidLibrary {
+        applyPlugin(PluginType.KOTLIN_MPP, applyFirst = true)
+        applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
       }
+    }
 
     val result = build.executor.expectFailure().run(":app:assembleDebug")
 

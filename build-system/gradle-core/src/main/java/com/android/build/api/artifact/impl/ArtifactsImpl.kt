@@ -85,10 +85,9 @@ class ArtifactsImpl(
     // instance.
     val lookupProjectScopedArtifactsContainer = { publicScopedArtifacts[ScopedArtifacts.Scope.PROJECT] }
     val scopeValues = ScopedArtifacts.Scope.values().toSet().map { mappingScopePolicy(it) }
-    publicScopedArtifacts =
-      scopeValues.associateWith {
-        ScopedArtifactsImpl(it.name, identifier, project.layout, project::files, lookupProjectScopedArtifactsContainer, this)
-      }
+    publicScopedArtifacts = scopeValues.associateWith {
+      ScopedArtifactsImpl(it.name, identifier, project.layout, project::files, lookupProjectScopedArtifactsContainer, this)
+    }
 
     internalScopedArtifacts =
       InternalScopedArtifacts.InternalScope.values().associateWith {

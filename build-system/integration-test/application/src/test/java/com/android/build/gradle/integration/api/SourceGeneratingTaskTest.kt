@@ -49,14 +49,13 @@ class SourceGeneratingTaskTest {
   }
 
   @get:Rule
-  val project =
-    GradleRule.from {
-      androidApplication {
-        applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
-        files { add("src/main/kotlin/com/foo/bar/app/MyClass.kt", generateKotlinFunction("com.first")) }
-        pluginCallbacks += MyAppCallback::class.java
-      }
+  val project = GradleRule.from {
+    androidApplication {
+      applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
+      files { add("src/main/kotlin/com/foo/bar/app/MyClass.kt", generateKotlinFunction("com.first")) }
+      pluginCallbacks += MyAppCallback::class.java
     }
+  }
 
   class MyAppCallback : ApplicationComponentCallback {
     override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {

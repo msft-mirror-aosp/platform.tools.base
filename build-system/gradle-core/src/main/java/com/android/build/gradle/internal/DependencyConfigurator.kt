@@ -164,7 +164,7 @@ class DependencyConfigurator(private val project: Project, private val projectSe
     registerTransform(
       LayoutlibExtractor::class.java,
       ArtifactTypeDefinition.JAR_TYPE,
-      AndroidArtifacts.ArtifactType.EXTRACTED_LAYOUTLIB.type
+      AndroidArtifacts.ArtifactType.EXTRACTED_LAYOUTLIB.type,
     )
     dependencies.registerTransform(MockableJarTransform::class.java) { spec: TransformSpec<MockableJarTransform.Parameters> ->
       // Query for JAR instead of PROCESSED_JAR as android.jar doesn't need processing

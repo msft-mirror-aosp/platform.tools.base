@@ -23,12 +23,11 @@ import org.junit.Test
 class KotlinMultiplatformResourceParsingTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidKotlinMultiplatformLibrary(":shared") {
-        android { experimentalProperties["android.experimental.kmp.enableAndroidResources"] = true }
-      }
+  val rule = GradleRule.from {
+    androidKotlinMultiplatformLibrary(":shared") {
+      android { experimentalProperties["android.experimental.kmp.enableAndroidResources"] = true }
     }
+  }
 
   @Test
   fun testResourceParsingWithoutDeviceTestEnabled() {

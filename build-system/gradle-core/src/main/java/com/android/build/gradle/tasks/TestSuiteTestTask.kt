@@ -515,14 +515,13 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       //    we fall back to the ANDROID_SERIAL environment variable provider.
       // 2. If the serials provider itself is null, we directly use the ANDROID_SERIAL env var.
       if (deviceSerials != null) {
-        val finalSerials =
-          deviceSerials.flatMap { list ->
-            if (list.isEmpty()) {
-              task.project.providers.environmentVariable("ANDROID_SERIAL")
-            } else {
-              task.project.providers.provider { list.joinToString(",") }
-            }
+        val finalSerials = deviceSerials.flatMap { list ->
+          if (list.isEmpty()) {
+            task.project.providers.environmentVariable("ANDROID_SERIAL")
+          } else {
+            task.project.providers.provider { list.joinToString(",") }
           }
+        }
         task.androidDeviceSerials.setDisallowChanges(finalSerials)
       } else {
         task.androidDeviceSerials.setDisallowChanges(task.project.providers.environmentVariable("ANDROID_SERIAL"))

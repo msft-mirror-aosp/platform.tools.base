@@ -28,24 +28,23 @@ import org.junit.Test
 class DynamicFeatureAttributeMismatchTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication(DEFAULT_APP_PATH) {
-        android {
-          defaultConfig { applicationId = "com.example.test" }
-          dynamicFeatures.add(DEFAULT_FEATURE_PATH)
-          dynamicFeatures.add(":feature2")
-        }
-      }
-      androidFeature(DEFAULT_FEATURE_PATH) {
-        android { namespace = "com.example.test.feature" }
-        dependencies { implementation(project(DEFAULT_APP_PATH)) }
-      }
-      androidFeature(":feature2") {
-        android { namespace = "com.example.test.feature2" }
-        dependencies { implementation(project(DEFAULT_APP_PATH)) }
+  val rule = GradleRule.from {
+    androidApplication(DEFAULT_APP_PATH) {
+      android {
+        defaultConfig { applicationId = "com.example.test" }
+        dynamicFeatures.add(DEFAULT_FEATURE_PATH)
+        dynamicFeatures.add(":feature2")
       }
     }
+    androidFeature(DEFAULT_FEATURE_PATH) {
+      android { namespace = "com.example.test.feature" }
+      dependencies { implementation(project(DEFAULT_APP_PATH)) }
+    }
+    androidFeature(":feature2") {
+      android { namespace = "com.example.test.feature2" }
+      dependencies { implementation(project(DEFAULT_APP_PATH)) }
+    }
+  }
 
   /**
    * Configures a single mismatching feature scenario where app defines 'free' (falling back to 'pro') and 'pro', while :feature only

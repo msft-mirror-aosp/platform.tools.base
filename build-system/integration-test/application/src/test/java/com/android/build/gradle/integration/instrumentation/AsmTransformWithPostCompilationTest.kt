@@ -62,72 +62,71 @@ class AsmTransformWithPostCompilationTest(val instrumentationScope: Instrumentat
   }
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        dependencies { implementation(project(":lib")) }
-        files {
-          add(
-            "src/main/kotlin/com/android/test/SomeAppClass.kt",
-            """
-            package com.android.test
-            import com.android.lib.SomeLibClass
-            class SomeAppClass {
-                fun f1(p: SomeLibClass) {
-                }
-            }
-            """
-              .trimIndent(),
-          )
-        }
-        // register the right callback depending on the tested scope.
-        pluginCallbacks +=
-          if (instrumentationScope == InstrumentationScope.ALL) {
-            AllScopeInstrumentationCallback::class.java
-          } else {
-            ProjectScopeInstrumentationCallback::class.java
+  val rule = GradleRule.from {
+    androidApplication {
+      dependencies { implementation(project(":lib")) }
+      files {
+        add(
+          "src/main/kotlin/com/android/test/SomeAppClass.kt",
+          """
+          package com.android.test
+          import com.android.lib.SomeLibClass
+          class SomeAppClass {
+              fun f1(p: SomeLibClass) {
+              }
           }
+          """
+            .trimIndent(),
+        )
       }
-      androidLibrary {
-        android {}
-        files {
-          // This interface will be used by the post-compilation tasks to generate a new
-          // class : GeneratorUtils
-          add(
-            "src/main/kotlin/com/android/tools/test/ClientInterface.kt",
-            """
-            package com.android.tools.test
-            interface ClientInterface {
-            }
-            """
-              .trimIndent(),
-          )
-          // This interface will be used by the ASM instrumentation to add. It will get
-          // added to both SomeAppClass and SomeLibClass types.
-          add(
-            "src/main/kotlin/com/android/tools/test/InstrumentedInterface.kt",
-            """
-            package com.android.tools.test
-            interface InstrumentedInterface {
-            }
-            """
-              .trimIndent(),
-          )
-          // A class that will get instrumented.
-          add(
-            "src/main/kotlin/com/android/lib/SomeLibClass.kt",
-            """
-            package com.android.lib
-            class SomeLibClass {
-                fun f2() {
-                }
-            }
-            """
-              .trimIndent(),
-          )
+      // register the right callback depending on the tested scope.
+      pluginCallbacks +=
+        if (instrumentationScope == InstrumentationScope.ALL) {
+          AllScopeInstrumentationCallback::class.java
+        } else {
+          ProjectScopeInstrumentationCallback::class.java
         }
+    }
+    androidLibrary {
+      android {}
+      files {
+        // This interface will be used by the post-compilation tasks to generate a new
+        // class : GeneratorUtils
+        add(
+          "src/main/kotlin/com/android/tools/test/ClientInterface.kt",
+          """
+          package com.android.tools.test
+          interface ClientInterface {
+          }
+          """
+            .trimIndent(),
+        )
+        // This interface will be used by the ASM instrumentation to add. It will get
+        // added to both SomeAppClass and SomeLibClass types.
+        add(
+          "src/main/kotlin/com/android/tools/test/InstrumentedInterface.kt",
+          """
+          package com.android.tools.test
+          interface InstrumentedInterface {
+          }
+          """
+            .trimIndent(),
+        )
+        // A class that will get instrumented.
+        add(
+          "src/main/kotlin/com/android/lib/SomeLibClass.kt",
+          """
+          package com.android.lib
+          class SomeLibClass {
+              fun f2() {
+              }
+          }
+          """
+            .trimIndent(),
+        )
       }
     }
+  }
 
   open class AddPostCompilationCallback(val instrumentationScope: InstrumentationScope) : GenericCallback {
 

@@ -54,8 +54,9 @@ class IncubatingApiTest {
 
     val (incubatingClasses, stableClasses) = classes.partition { it.isIncubating }.let { Pair(it.first.toSet(), it.second.toSet()) }
 
-    val nonIncubatingMembersOfIncubatingClasses =
-      incubatingClasses.flatMap { clazz -> clazz.declaredMethods.filter { !it.isIncubating }.map { "${clazz.name}#${it.name}" } }
+    val nonIncubatingMembersOfIncubatingClasses = incubatingClasses.flatMap { clazz ->
+      clazz.declaredMethods.filter { !it.isIncubating }.map { "${clazz.name}#${it.name}" }
+    }
     expect
       .that(nonIncubatingMembersOfIncubatingClasses)
       .named("non-Incubating members of Incubating classes")

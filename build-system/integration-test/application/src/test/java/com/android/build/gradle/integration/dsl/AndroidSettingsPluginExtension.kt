@@ -32,19 +32,18 @@ import org.junit.Test
 class AndroidSettingsPluginExtension {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      settings {
-        applyPlugin(PluginType.ANDROID_SETTINGS)
-        android {
-          compileSdk = DEFAULT_COMPILE_SDK_VERSION
-          minSdk = 23
-          execution {}
-        }
+  val rule = GradleRule.from {
+    settings {
+      applyPlugin(PluginType.ANDROID_SETTINGS)
+      android {
+        compileSdk = DEFAULT_COMPILE_SDK_VERSION
+        minSdk = 23
+        execution {}
       }
-
-      buildFileType = BuildFileType.KTS
     }
+
+    buildFileType = BuildFileType.KTS
+  }
 
   @Test
   fun testConfigures() {

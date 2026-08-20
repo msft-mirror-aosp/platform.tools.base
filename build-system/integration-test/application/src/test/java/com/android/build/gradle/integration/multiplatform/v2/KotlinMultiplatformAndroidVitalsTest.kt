@@ -30,36 +30,35 @@ class KotlinMultiplatformAndroidVitalsTest {
 
   @Test
   fun testComponentsNotEnabledWarning() {
-    val build =
-      rule.build {
-        androidKotlinMultiplatformLibrary(":shared") {
-          files {
-            add(
-              "src/androidHostTest/kotlin/pkg/name/shared/HostTest.kt",
-              """
+    val build = rule.build {
+      androidKotlinMultiplatformLibrary(":shared") {
+        files {
+          add(
+            "src/androidHostTest/kotlin/pkg/name/shared/HostTest.kt",
+            """
             package pkg.name.shared
             class HostTest { }
             """,
-            )
+          )
 
-            add(
-              "src/androidDeviceTest/kotlin/pkg/name/shared/DeviceTest.kt",
-              """
+          add(
+            "src/androidDeviceTest/kotlin/pkg/name/shared/DeviceTest.kt",
+            """
             package pkg.name.shared
             class DeviceTest { }
             """,
-            )
+          )
 
-            add(
-              "src/commonTest/kotlin/pkg/name/shared/CommonTest.kt",
-              """
+          add(
+            "src/commonTest/kotlin/pkg/name/shared/CommonTest.kt",
+            """
             package pkg.name.shared
             class CommonTest { }
             """,
-            )
-          }
+          )
         }
       }
+    }
 
     val result = build.executor.run("help")
     result.assertOutputContains(
@@ -80,36 +79,35 @@ class KotlinMultiplatformAndroidVitalsTest {
 
   @Test
   fun testJavaCompilationNotEnabledWarning() {
-    val build =
-      rule.build {
-        androidKotlinMultiplatformLibrary(":shared") {
-          files {
-            add(
-              "src/androidHostTest/java/pkg/name/shared/HostTest.java",
-              """
+    val build = rule.build {
+      androidKotlinMultiplatformLibrary(":shared") {
+        files {
+          add(
+            "src/androidHostTest/java/pkg/name/shared/HostTest.java",
+            """
             package pkg.name.shared;
             public class HostTest { }
             """,
-            )
+          )
 
-            add(
-              "src/androidDeviceTest/java/pkg/name/shared/DeviceTest.java",
-              """
+          add(
+            "src/androidDeviceTest/java/pkg/name/shared/DeviceTest.java",
+            """
             package pkg.name.shared;
             public class DeviceTest { }
             """,
-            )
+          )
 
-            add(
-              "src/androidMain/java/pkg/name/shared/Main.java",
-              """
+          add(
+            "src/androidMain/java/pkg/name/shared/Main.java",
+            """
             package pkg.name.shared;
             public class Main { }
             """,
-            )
-          }
+          )
         }
       }
+    }
 
     val result = build.executor.run("help")
     result.assertOutputContains(
@@ -181,13 +179,12 @@ class KotlinMultiplatformAndroidVitalsTest {
 
   @Test
   fun creatingTwoUnitTestCompilationsShouldFail() {
-    val build =
-      rule.build {
-        androidKotlinMultiplatformLibrary(":kmpModule") {
-          android { withHostTest {} }
-          android { withHostTest {} }
-        }
+    val build = rule.build {
+      androidKotlinMultiplatformLibrary(":kmpModule") {
+        android { withHostTest {} }
+        android { withHostTest {} }
       }
+    }
 
     val result = build.executor.expectFailure().run(":kmpModule:assembleAndroidMain")
     result.assertErrorContains(
@@ -197,8 +194,9 @@ class KotlinMultiplatformAndroidVitalsTest {
 
   @Test
   fun creatingArbitraryCompilationShouldFail() {
-    val build =
-      rule.build { androidKotlinMultiplatformLibrary(":kmpModule") { android { compilations.create("randomCompilationName") {} } } }
+    val build = rule.build {
+      androidKotlinMultiplatformLibrary(":kmpModule") { android { compilations.create("randomCompilationName") {} } }
+    }
 
     val result = build.executor.expectFailure().run(":kmpModule:assembleAndroidMain")
     result.assertErrorContains("Kotlin multiplatform android plugin doesn't support creating arbitrary compilations.")

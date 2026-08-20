@@ -47,25 +47,23 @@ class BuiltInKotlinSourceSetTest(private val builtInKotlin: Boolean, private val
   }
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication { @Suppress("DEPRECATION") if (!builtInKotlin) applyPlugin(PluginType.KOTLIN_ANDROID) }
-      gradleProperties {
-        add(BooleanOption.BUILT_IN_KOTLIN, builtInKotlin)
-        if (!builtInKotlin) add(BooleanOption.USE_NEW_DSL, false)
-        add(BooleanOption.DISALLOW_KOTLIN_SOURCE_SETS, disallowKotlinSourceSets)
-      }
+  val rule = GradleRule.from {
+    androidApplication { @Suppress("DEPRECATION") if (!builtInKotlin) applyPlugin(PluginType.KOTLIN_ANDROID) }
+    gradleProperties {
+      add(BooleanOption.BUILT_IN_KOTLIN, builtInKotlin)
+      if (!builtInKotlin) add(BooleanOption.USE_NEW_DSL, false)
+      add(BooleanOption.DISALLOW_KOTLIN_SOURCE_SETS, disallowKotlinSourceSets)
     }
+  }
 
   @Test
   fun `test source sets are added using android { sourceSets } DSL`() {
-    val build =
-      rule.build {
-        androidApplication {
-          pluginCallbacks += AddAndroidSourceSetCallback::class.java
-          pluginCallbacks += PrintSourceSetsCallback::class.java
-        }
+    val build = rule.build {
+      androidApplication {
+        pluginCallbacks += AddAndroidSourceSetCallback::class.java
+        pluginCallbacks += PrintSourceSetsCallback::class.java
       }
+    }
 
     val result = build.executor.run(":app:help")
 
@@ -94,13 +92,12 @@ class BuiltInKotlinSourceSetTest(private val builtInKotlin: Boolean, private val
 
   @Test
   fun `test source sets are added using kotlin { sourceSets } DSL`() {
-    val build =
-      rule.build {
-        androidApplication {
-          pluginCallbacks += AddKotlinSourceSetCallback::class.java
-          pluginCallbacks += PrintSourceSetsCallback::class.java
-        }
+    val build = rule.build {
+      androidApplication {
+        pluginCallbacks += AddKotlinSourceSetCallback::class.java
+        pluginCallbacks += PrintSourceSetsCallback::class.java
       }
+    }
 
     if (builtInKotlin) {
       if (disallowKotlinSourceSets) {

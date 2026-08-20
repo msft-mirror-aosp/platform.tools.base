@@ -217,8 +217,9 @@ internal class MultiZipView(private val zips: List<Zip>, name: String) : Zip(nam
 
   private val allEntries: List<String> by lazy(LazyThreadSafetyMode.NONE) { zips.flatMap { it.getEntries() } }
 
-  private fun <T> findInZips(path: String, action: Zip.(String) -> T?): T? =
-    zips.firstNotNullOfOrNull { if (it.getEntries().contains(path)) it.action(path) else null }
+  private fun <T> findInZips(path: String, action: Zip.(String) -> T?): T? = zips.firstNotNullOfOrNull {
+    if (it.getEntries().contains(path)) it.action(path) else null
+  }
 }
 
 /**

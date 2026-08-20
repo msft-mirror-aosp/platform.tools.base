@@ -30,64 +30,63 @@ import org.junit.Test
 class JacocoWithKotlinTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        android {
-          namespace = "com.example.helloworld"
-          compileSdk = GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION
+  val rule = GradleRule.from {
+    androidApplication {
+      android {
+        namespace = "com.example.helloworld"
+        compileSdk = GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION
 
-          buildTypes { named("debug") { it.enableAndroidTestCoverage = true } }
+        buildTypes { named("debug") { it.enableAndroidTestCoverage = true } }
 
-          sourceSets.named("main") { it.kotlin.directories += "src/main/kotlin" }
+        sourceSets.named("main") { it.kotlin.directories += "src/main/kotlin" }
 
-          files.add(
-            "src/main/kotlin/com/example/helloworld/HelloWorld.kt",
-            // language=kotlin
-            """
-            package com.example.helloworld
+        files.add(
+          "src/main/kotlin/com/example/helloworld/HelloWorld.kt",
+          // language=kotlin
+          """
+          package com.example.helloworld
 
-            import android.app.Activity
-            import android.os.Bundle
+          import android.app.Activity
+          import android.os.Bundle
 
-            class HelloWorld : Activity() {
-                override fun onCreate(savedInstanceState: Bundle?) {
-                    super.onCreate(savedInstanceState)
-                    setContentView(R.layout.main)
-                }
-            }
-            """
-              .trimIndent(),
-          )
+          class HelloWorld : Activity() {
+              override fun onCreate(savedInstanceState: Bundle?) {
+                  super.onCreate(savedInstanceState)
+                  setContentView(R.layout.main)
+              }
+          }
+          """
+            .trimIndent(),
+        )
 
-          files.add(
-            "src/main/res/layout/main.xml",
-            // language=xml
-            """
-            <?xml version="1.0" encoding="utf-8"?>
-            <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                android:orientation="vertical"
-                android:layout_width="fill_parent"
-                android:layout_height="fill_parent">
-            </LinearLayout>
-            """
-              .trimIndent(),
-          )
+        files.add(
+          "src/main/res/layout/main.xml",
+          // language=xml
+          """
+          <?xml version="1.0" encoding="utf-8"?>
+          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="vertical"
+              android:layout_width="fill_parent"
+              android:layout_height="fill_parent">
+          </LinearLayout>
+          """
+            .trimIndent(),
+        )
 
-          files.add(
-            "src/main/res/values/strings.xml",
-            // language=xml
-            """
-            <?xml version="1.0" encoding="utf-8"?>
-            <resources>
-                <string name="app_name">HelloWorld</string>
-            </resources>
-            """
-              .trimIndent(),
-          )
-        }
+        files.add(
+          "src/main/res/values/strings.xml",
+          // language=xml
+          """
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <string name="app_name">HelloWorld</string>
+          </resources>
+          """
+            .trimIndent(),
+        )
       }
     }
+  }
 
   @Test
   fun build() {
