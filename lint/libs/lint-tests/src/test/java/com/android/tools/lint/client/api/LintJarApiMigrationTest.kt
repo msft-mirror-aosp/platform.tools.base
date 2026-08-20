@@ -1919,22 +1919,20 @@ class LintJarApiMigrationTest {
           chunks.add(diff.substring(offset, index))
           offset = index
         }
-        val relevant =
-          chunks.filter { s ->
-            val lines = s.lines()
-            val irrelevant =
-              lines.all {
-                val content = it.substringAfter("+ ").substringAfter("- ").trimStart()
-                it.isBlank() ||
-                  it.startsWith("@@ ") ||
-                  content.startsWith("L") && content[1].isDigit() ||
-                  content.startsWith("LINENUMBER") ||
-                  content.startsWith("LOCALVARIABLE ") ||
-                  content.startsWith("MAXSTACK ") ||
-                  content.startsWith("FRAME ")
-              }
-            !irrelevant
+        val relevant = chunks.filter { s ->
+          val lines = s.lines()
+          val irrelevant = lines.all {
+            val content = it.substringAfter("+ ").substringAfter("- ").trimStart()
+            it.isBlank() ||
+              it.startsWith("@@ ") ||
+              content.startsWith("L") && content[1].isDigit() ||
+              content.startsWith("LINENUMBER") ||
+              content.startsWith("LOCALVARIABLE ") ||
+              content.startsWith("MAXSTACK ") ||
+              content.startsWith("FRAME ")
           }
+          !irrelevant
+        }
         relevant.joinToString("").escapeDollar().trim()
       } else {
         after.escapeDollar().trim()

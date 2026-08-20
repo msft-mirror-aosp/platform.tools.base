@@ -53,8 +53,9 @@ class SplashScreenDetector : Detector(), SourceCodeScanner {
       }
     }
 
-  private fun isActivityOrFragment(context: JavaContext, cls: UClass) =
-    PROHIBITED_SUPERCLASSES.any { context.evaluator.extendsClass(cls.javaPsi, it) }
+  private fun isActivityOrFragment(context: JavaContext, cls: UClass) = PROHIBITED_SUPERCLASSES.any {
+    context.evaluator.extendsClass(cls.javaPsi, it)
+  }
 
   companion object {
     private val SPLASH_SCREEN_KEYWORDS = listOf("SplashScreen", "SplashActivity", "LaunchActivity", "LaunchScreen")

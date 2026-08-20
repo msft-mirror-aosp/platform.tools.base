@@ -3448,11 +3448,10 @@ class LintIssueDocGenerator(
         if (artifacts.size <= 1) {
           continue
         }
-        val pairs: List<Pair<String, DocIssueRegistry>> =
-          artifacts.mapNotNull {
-            val registry = artifactToRegistry[it]
-            if (registry is DocIssueRegistry && registry.issues.isNotEmpty()) it to registry else null
-          }
+        val pairs: List<Pair<String, DocIssueRegistry>> = artifacts.mapNotNull {
+          val registry = artifactToRegistry[it]
+          if (registry is DocIssueRegistry && registry.issues.isNotEmpty()) it to registry else null
+        }
         val fileToId = pairs.associate { it.second.jarFile to it.first }
         val grouped = mutableMapOf<String, MutableList<File>>()
         for (file in fileToId.keys.toList()) {
@@ -3510,20 +3509,19 @@ class LintIssueDocGenerator(
         }
       }
 
-      val sorted =
-        ids.sortedWith { o1, o2 ->
-          val delta = rank(o1) - rank(o2)
-          if (delta != 0) {
-            delta
+      val sorted = ids.sortedWith { o1, o2 ->
+        val delta = rank(o1) - rank(o2)
+        if (delta != 0) {
+          delta
+        } else {
+          val lengthDelta = o1.length - o2.length
+          if (lengthDelta != 0) {
+            lengthDelta
           } else {
-            val lengthDelta = o1.length - o2.length
-            if (lengthDelta != 0) {
-              lengthDelta
-            } else {
-              o1.compareTo(o2)
-            }
+            o1.compareTo(o2)
           }
         }
+      }
 
       return sorted[0]
     }

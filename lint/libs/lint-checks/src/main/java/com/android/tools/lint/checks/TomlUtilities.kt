@@ -139,13 +139,12 @@ fun createMoveToTomlFix(
   var artifactVersion: Version? = null
 
   val version = dependency.version
-  val richVersionIdentifier =
-    version?.let {
-      val identifier = it.toIdentifier()
-      if (identifier.isNullOrBlank()) {
-        return null // return null only if version is invalid
-      } else identifier
-    }
+  val richVersionIdentifier = version?.let {
+    val identifier = it.toIdentifier()
+    if (identifier.isNullOrBlank()) {
+      return null // return null only if version is invalid
+    } else identifier
+  }
   for ((key, library) in librariesMap.getMappedValues()) {
     val (coordinate, versionNode) = getLibraryFromTomlEntry(versionsMap, library) ?: continue
     val c = Dependency.parse(coordinate)
@@ -322,16 +321,15 @@ private fun findExistingVariable(
 }
 
 /** Creates fix which changes the version variable in [versionNode] to [version] */
-private fun createChangeVersionFix(version: String?, versionNode: LintTomlValue): LintFix? =
-  version?.let {
-    LintFix.create()
-      .name("Change ${versionNode.getKey()} to $version")
-      .replace()
-      .range(versionNode.getLocation())
-      .all()
-      .with("\"$version\"")
-      .build()
-  }
+private fun createChangeVersionFix(version: String?, versionNode: LintTomlValue): LintFix? = version?.let {
+  LintFix.create()
+    .name("Change ${versionNode.getKey()} to $version")
+    .replace()
+    .range(versionNode.getLocation())
+    .all()
+    .with("\"$version\"")
+    .build()
+}
 
 /** Creates fix which creates a new version catalog entry (library and version name) for the given [dependency] library */
 private fun createAddNewCatalogLibrary(

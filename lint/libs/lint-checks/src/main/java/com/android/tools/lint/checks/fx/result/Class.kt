@@ -183,19 +183,18 @@ sealed interface ClassId : Scope {
 
     val Array: ClassId = Common.Array
 
-    fun encoder(guardEncoder: Encoder<Any>, methodIdEncoder: Encoder<MethodId>): Encoder<ClassId> =
-      Encoder.fix { self ->
-        val int = Encoder.int
-        val str = Encoder.internedString
-        Encoder.sum(
-          case<_, Named>(str.adapt(Named::fqn, ::Named)),
-          case<_, Anon.Precise>(Encoder.product(Anon::Precise, str, int, int, int)),
-          case<_, Anon.Imprecise>(Encoder.product(Anon::Imprecise, str, int)),
-          case<_, Common>(Encoder.enum()),
-          case<_, Guarded>(Encoder.product(ClassId::Guarded, guardEncoder, self)),
-          case<_, Local>(Encoder.product(ClassId::Local, self, methodIdEncoder.zeroOrMore())),
-        )
-      }
+    fun encoder(guardEncoder: Encoder<Any>, methodIdEncoder: Encoder<MethodId>): Encoder<ClassId> = Encoder.fix { self ->
+      val int = Encoder.int
+      val str = Encoder.internedString
+      Encoder.sum(
+        case<_, Named>(str.adapt(Named::fqn, ::Named)),
+        case<_, Anon.Precise>(Encoder.product(Anon::Precise, str, int, int, int)),
+        case<_, Anon.Imprecise>(Encoder.product(Anon::Imprecise, str, int)),
+        case<_, Common>(Encoder.enum()),
+        case<_, Guarded>(Encoder.product(ClassId::Guarded, guardEncoder, self)),
+        case<_, Local>(Encoder.product(ClassId::Local, self, methodIdEncoder.zeroOrMore())),
+      )
+    }
   }
 }
 
@@ -206,7 +205,6 @@ sealed interface ClassId : Scope {
  * accumulates all from that class's lexical scope.
  *
  * In the following example:
- *
  *  ```
  *  class A<X> {
  *    val a: X

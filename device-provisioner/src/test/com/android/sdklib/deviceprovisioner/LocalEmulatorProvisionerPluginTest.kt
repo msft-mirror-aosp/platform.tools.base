@@ -107,12 +107,11 @@ class LocalEmulatorProvisionerPluginTest {
   @Test
   fun genericPropertiesUpdate() {
     val avdProps = buildProperties(avdManager.makeAvdInfo(1, AndroidVersion(29), hasPlayStore = true))
-    val baseProps =
-      DeviceProperties.build {
-        populateDeviceInfoProto("Test", null, emptyMap(), "1")
-        model = "Phone 6"
-        icon = EmptyIcon.DEFAULT
-      }
+    val baseProps = DeviceProperties.build {
+      populateDeviceInfoProto("Test", null, emptyMap(), "1")
+      model = "Phone 6"
+      icon = EmptyIcon.DEFAULT
+    }
     val props = listOf(avdProps, baseProps)
 
     val updatedProps = props.map { it.toBuilder().apply { manufacturer = "XYZ" }.build() }

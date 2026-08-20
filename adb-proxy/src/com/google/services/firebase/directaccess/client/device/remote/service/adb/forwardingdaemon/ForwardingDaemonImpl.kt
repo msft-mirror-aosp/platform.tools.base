@@ -99,42 +99,41 @@ internal class ForwardingDaemonImpl(
   override val deviceState = _deviceState.asStateFlow()
 
   @OptIn(ExperimentalCoroutinesApi::class)
-  override val roundTripLatencyMsFlow: Flow<Long> =
-    flow {
-        // Wait for the connected device to be online so that it can respond to pings below
-        adbSession.connectedDevicesTracker.connectedDevices
-          .mapNotNull { it.firstOrNull { entry -> entry.serialNumber == serialNumber } }
-          .flatMapLatest { device -> flow { device.deviceInfoFlow.collect { emit(device) } } }
-          .takeWhile { !it.isOnline }
-          .collect()
+  override val roundTripLatencyMsFlow: Flow<Long> = flow {
+    // Wait for the connected device to be online so that it can respond to pings below
+    adbSession.connectedDevicesTracker.connectedDevices
+      .mapNotNull { it.firstOrNull { entry -> entry.serialNumber == serialNumber } }
+      .flatMapLatest { device -> flow { device.deviceInfoFlow.collect { emit(device) } } }
+      .takeWhile { !it.isOnline }
+      .collect()
 
-        val device = DeviceSelector.fromSerialNumber(serialNumber)
-        val stdinInputChannel = adbSession.channelFactory.createPipedChannel()
-        val byteArray = "Foo".toByteArray()
-        try {
-          adbSession.deviceServices
-            .shellCommand(device, "cat")
-            .withInputChannelCollector()
-            .withStdin(stdinInputChannel)
-            .executeAsSingleOutput { result ->
-              val input = result.stdout
-              val output = stdinInputChannel.pipeSource
-              while (true) {
-                try {
-                  emit(pingDevice(byteArray, input, output))
-                } catch (e: Exception) {
-                  emit(ROUND_TRIP_LATENCY_LIMIT.toMillis())
-                  continue
-                }
-                delay(LATENCY_COLLECTION_INTERVAL.toMillis())
-              }
+    val device = DeviceSelector.fromSerialNumber(serialNumber)
+    val stdinInputChannel = adbSession.channelFactory.createPipedChannel()
+    val byteArray = "Foo".toByteArray()
+    try {
+      adbSession.deviceServices
+        .shellCommand(device, "cat")
+        .withInputChannelCollector()
+        .withStdin(stdinInputChannel)
+        .executeAsSingleOutput { result ->
+          val input = result.stdout
+          val output = stdinInputChannel.pipeSource
+          while (true) {
+            try {
+              emit(pingDevice(byteArray, input, output))
+            } catch (e: Exception) {
+              emit(ROUND_TRIP_LATENCY_LIMIT.toMillis())
+              continue
             }
-        } catch (e: IOException) {
-          logger.log(Level.INFO, "Latency collector stopped", e)
+            delay(LATENCY_COLLECTION_INTERVAL.toMillis())
+          }
         }
-      }
-      .flowOn(Dispatchers.IO)
-      .shareIn(scope, SharingStarted.WhileSubscribed(), 1)
+    } catch (e: IOException) {
+      logger.log(Level.INFO, "Latency collector stopped", e)
+    }
+  }
+    .flowOn(Dispatchers.IO)
+    .shareIn(scope, SharingStarted.WhileSubscribed(), 1)
 
   private suspend fun pingDevice(byteArray: ByteArray, input: AdbInputChannel, output: AdbOutputChannel): Long {
     val buffer = ByteBuffer.wrap(byteArray)

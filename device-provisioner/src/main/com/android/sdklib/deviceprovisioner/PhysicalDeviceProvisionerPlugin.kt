@@ -56,26 +56,25 @@ class PhysicalDeviceProvisionerPlugin(val scope: CoroutineScope, private val dev
   override suspend fun claim(device: ConnectedDevice): DeviceHandle? {
     val properties = device.deviceProperties().all().asMap()
 
-    val deviceProperties =
-      DeviceProperties.build {
-        readAdbSerialNumber(device.serialNumber)
-        disambiguator = wearPairingId
-        readCommonProperties(properties)
-        readDeviceType(device, properties)
-        populateDeviceInfoProto(PLUGIN_ID, device.serialNumber, properties, randomConnectionId())
-        if (connectionType != ConnectionType.WIFI) {
-          connectionType = ConnectionType.USB
-        }
-        resolution = Resolution.readFromDevice(device)
-        icon =
-          when (deviceType) {
-            DeviceType.HANDHELD -> deviceIcons.handheld
-            DeviceType.WEAR -> deviceIcons.wear
-            DeviceType.TV -> deviceIcons.tv
-            DeviceType.AUTOMOTIVE -> deviceIcons.automotive
-            else -> deviceIcons.handheld
-          }
+    val deviceProperties = DeviceProperties.build {
+      readAdbSerialNumber(device.serialNumber)
+      disambiguator = wearPairingId
+      readCommonProperties(properties)
+      readDeviceType(device, properties)
+      populateDeviceInfoProto(PLUGIN_ID, device.serialNumber, properties, randomConnectionId())
+      if (connectionType != ConnectionType.WIFI) {
+        connectionType = ConnectionType.USB
       }
+      resolution = Resolution.readFromDevice(device)
+      icon =
+        when (deviceType) {
+          DeviceType.HANDHELD -> deviceIcons.handheld
+          DeviceType.WEAR -> deviceIcons.wear
+          DeviceType.TV -> deviceIcons.tv
+          DeviceType.AUTOMOTIVE -> deviceIcons.automotive
+          else -> deviceIcons.handheld
+        }
+    }
 
     val serialNumber = checkNotNull(properties["ro.serialno"]) { "Missing [ro.serialno] property" }
 
@@ -90,22 +89,21 @@ class PhysicalDeviceProvisionerPlugin(val scope: CoroutineScope, private val dev
     }
 
     val newState = Connected(deviceProperties, device)
-    val handle =
-      devicesMutex.withLock {
-        checkNotNull(
-            devicesBySerial.compute(serialNumber) { _, handle ->
-              when (handle) {
-                null -> PhysicalDeviceHandle(serialNumber, scope.createChildScope(isSupervisor = true), newState)
-                else ->
-                  // The device is already connected by either USB or Wi-Fi, and we got a
-                  // new
-                  // connection via the other interface
-                  handle.apply { updateState(device, newState) }
-              }
+    val handle = devicesMutex.withLock {
+      checkNotNull(
+          devicesBySerial.compute(serialNumber) { _, handle ->
+            when (handle) {
+              null -> PhysicalDeviceHandle(serialNumber, scope.createChildScope(isSupervisor = true), newState)
+              else ->
+                // The device is already connected by either USB or Wi-Fi, and we got a
+                // new
+                // connection via the other interface
+                handle.apply { updateState(device, newState) }
             }
-          )
-          .also { updateDevices() }
-      }
+          }
+        )
+        .also { updateDevices() }
+    }
 
     scope.launch {
       // Update device state on termination.

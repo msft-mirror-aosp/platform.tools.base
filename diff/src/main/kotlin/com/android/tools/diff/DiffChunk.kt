@@ -61,14 +61,13 @@ data class DiffChunk(val oldStart: Int, val oldLength: Int, val newStart: Int, v
 
   /** Returns a new chunk that reverses the changes in this chunk. */
   fun invert(): DiffChunk {
-    val invertedLines =
-      lines.map { line ->
-        when (line.type) {
-          LineType.ADDED -> DiffLine(LineType.REMOVED, line.text, line.separator)
-          LineType.REMOVED -> DiffLine(LineType.ADDED, line.text, line.separator)
-          LineType.CONTEXT -> line
-        }
+    val invertedLines = lines.map { line ->
+      when (line.type) {
+        LineType.ADDED -> DiffLine(LineType.REMOVED, line.text, line.separator)
+        LineType.REMOVED -> DiffLine(LineType.ADDED, line.text, line.separator)
+        LineType.CONTEXT -> line
       }
+    }
     return DiffChunk(oldStart = newStart, oldLength = newLength, newStart = oldStart, newLength = oldLength, lines = invertedLines)
   }
 

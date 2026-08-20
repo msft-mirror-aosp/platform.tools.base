@@ -192,11 +192,9 @@ class NativeBuildOutputClassifier(val send: (Message) -> Unit) : LineOutputStrea
       // current error
       classification.mayBeMainDiagnostic
       // Record raw line speculatively if it looks like it could precede an error
-      ||
-        classification.mayPrecedeMainDiagnostic
+      || classification.mayPrecedeMainDiagnostic
         // If we're definitely in an error then record unmatched (NONE) lines as well
-        ||
-        (state == IN_ERROR_OR_WARNING && classification == NONE)
+        || (state == IN_ERROR_OR_WARNING && classification == NONE)
     ) {
       diagnosticLines.add(makePathRelativeToWorkingDirectory(line, match))
     }

@@ -222,8 +222,9 @@ class ThreadDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     }
 
   /** returns if all caller's thread annotations are accommodated by some from callee's */
-  private fun isCompatibleThread(callers: List<String>, callees: List<String>): Boolean =
-    callers.all { caller -> callees.any { callee -> isCompatibleThread(caller, callee) } }
+  private fun isCompatibleThread(callers: List<String>, callees: List<String>): Boolean = callers.all { caller ->
+    callees.any { callee -> isCompatibleThread(caller, callee) }
+  }
 
   /** returns if callee's thread annotation accommodates caller's */
   private fun isCompatibleThread(caller: String, callee: String): Boolean {

@@ -476,13 +476,12 @@ class TypographyDetector : ResourceXmlDetector() {
       return "ga_trackingId" == name
     }
 
-    private fun isRtl(string: String) =
-      string.any { char ->
-        val directionality = char.directionality
-        directionality == RIGHT_TO_LEFT ||
-          directionality == RIGHT_TO_LEFT_ARABIC ||
-          directionality == RIGHT_TO_LEFT_EMBEDDING ||
-          directionality == RIGHT_TO_LEFT_OVERRIDE
-      }
+    private fun isRtl(string: String) = string.any { char ->
+      val directionality = char.directionality
+      directionality == RIGHT_TO_LEFT ||
+        directionality == RIGHT_TO_LEFT_ARABIC ||
+        directionality == RIGHT_TO_LEFT_EMBEDDING ||
+        directionality == RIGHT_TO_LEFT_OVERRIDE
+    }
   }
 }

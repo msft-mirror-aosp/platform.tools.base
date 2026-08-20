@@ -129,7 +129,9 @@ internal constructor(
   private val inProgressInstalls = mutableMapOf<RepoPackage, PackageOperation>()
 
   override fun getSources(downloader: Downloader?, progress: ProgressIndicator, forceRefresh: Boolean): List<RepositorySource> =
-    sourceProviders.flatMap { it.getSources(downloader, progress, forceRefresh) }
+    sourceProviders.flatMap {
+      it.getSources(downloader, progress, forceRefresh)
+    }
 
   override fun markInvalid() {
     lastRemoteRefreshMs = 0

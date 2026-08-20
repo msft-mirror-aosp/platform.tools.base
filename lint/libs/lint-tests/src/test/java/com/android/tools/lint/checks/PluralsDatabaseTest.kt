@@ -565,16 +565,15 @@ class PluralsDatabaseTest : TestCase() {
           }
           val example = setsWithExamples[set]!!.replace("…", "\\u2026")
           appendLine("            // $set")
-          val relevantLanguages =
-            languages.mapNotNull { language ->
-              val setName = db.getSetName(language)
-              if (set == setName) {
-                val languageIndex = languageIndices[language]!!
-                languageIndex to language
-              } else {
-                null
-              }
+          val relevantLanguages = languages.mapNotNull { language ->
+            val setName = db.getSetName(language)
+            if (set == setName) {
+              val languageIndex = languageIndices[language]!!
+              languageIndex to language
+            } else {
+              null
             }
+          }
           appendLine(
             """
             |            ${relevantLanguages.joinToString { (i, _) -> i.toString()}} ->

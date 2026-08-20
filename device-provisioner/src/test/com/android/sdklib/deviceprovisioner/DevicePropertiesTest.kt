@@ -143,13 +143,12 @@ class DevicePropertiesTest {
     assertThat(props.deviceType).isEqualTo(DeviceType.AI_GLASSES)
   }
 
-  private fun props(vararg pairs: Pair<String, String>) =
-    DeviceProperties.buildForTest {
-      val map = mapOf(*pairs)
-      readCommonProperties(map)
-      deviceType = DeviceType.fromProperties(map)
-      icon = EmptyIcon.DEFAULT
-    }
+  private fun props(vararg pairs: Pair<String, String>) = DeviceProperties.buildForTest {
+    val map = mapOf(*pairs)
+    readCommonProperties(map)
+    deviceType = DeviceType.fromProperties(map)
+    icon = EmptyIcon.DEFAULT
+  }
 }
 
 private val pixel8Props =

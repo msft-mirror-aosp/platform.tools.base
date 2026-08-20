@@ -1211,8 +1211,8 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
     }
 
     /**
-     * Returns true if the given API is in development, and is flagged (`@FlaggedApi`), and the
-     * [FlaggedApiDetector] is active. If so, we'll let that detector enforce usage.
+     * Returns true if the given API is in development, and is flagged (`@FlaggedApi`), and the [FlaggedApiDetector] is active. If so, we'll
+     * let that detector enforce usage.
      */
     private fun isHandledByFlaggedApiDetector(
       requires: ApiConstraint,

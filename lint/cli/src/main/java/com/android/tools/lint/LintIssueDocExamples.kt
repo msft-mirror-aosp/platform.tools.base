@@ -95,79 +95,78 @@ private fun appendExample(
   val shiftedLineNumbers = mutableMapOf<ReportedIncident, ReportedIncident>()
 
   // Strip comments
-  val filesWithoutComments =
-    files.map { pathAndSource ->
-      val path = pathAndSource.first
-      val original = pathAndSource.second
-      val extension = ".${path.substringAfterLast(".")}"
+  val filesWithoutComments = files.map { pathAndSource ->
+    val path = pathAndSource.first
+    val original = pathAndSource.second
+    val extension = ".${path.substringAfterLast(".")}"
 
-      // Remove comments, and if comments are removed, also go and adjust
-      // all the line numbers in the incidents list correspondingly
-      val source = stripComments(original, extension).stripRepeatedBlankLines()
-      if (source.length < original.length) {
-        for (incident in incidents) {
-          val sourceLine = incident.sourceLine1 ?: ""
-          if (incident.path == path && sourceLine.isNotBlank()) {
-            val strippedSourceLine = stripComments(sourceLine, extension).trim()
-            if (strippedSourceLine.isEmpty()) {
-              // The error line seems to be on a comment; for these cases
-              // we cannot remove the comments -- give up and use originals
-              appendExample(file, className, methodName, incidents, files, primaryIssue, issueData)
-              return
-            }
+    // Remove comments, and if comments are removed, also go and adjust
+    // all the line numbers in the incidents list correspondingly
+    val source = stripComments(original, extension).stripRepeatedBlankLines()
+    if (source.length < original.length) {
+      for (incident in incidents) {
+        val sourceLine = incident.sourceLine1 ?: ""
+        if (incident.path == path && sourceLine.isNotBlank()) {
+          val strippedSourceLine = stripComments(sourceLine, extension).trim()
+          if (strippedSourceLine.isEmpty()) {
+            // The error line seems to be on a comment; for these cases
+            // we cannot remove the comments -- give up and use originals
+            appendExample(file, className, methodName, incidents, files, primaryIssue, issueData)
+            return
+          }
 
-            val targetLineNumber = incident.lineNumber
-            // Count how many occurrences until we find this line in the original source
-            var count = 0
-            var offset = 0
-            var line = 1
+          val targetLineNumber = incident.lineNumber
+          // Count how many occurrences until we find this line in the original source
+          var count = 0
+          var offset = 0
+          var line = 1
 
-            while (true) {
-              val start = offset
-              offset = original.indexOf(strippedSourceLine, offset)
-              if (offset == -1) {
-                break
-              } else {
-                count++
-                offset += strippedSourceLine.length
-                for (c in start until offset) {
-                  if (original[c] == '\n') {
-                    line++
-                  }
-                }
-                if (line >= targetLineNumber) {
-                  break
+          while (true) {
+            val start = offset
+            offset = original.indexOf(strippedSourceLine, offset)
+            if (offset == -1) {
+              break
+            } else {
+              count++
+              offset += strippedSourceLine.length
+              for (c in start until offset) {
+                if (original[c] == '\n') {
+                  line++
                 }
               }
-            }
-
-            // Now find the same line the same number of times in the stripped file
-            offset = 0
-            while (true) {
-              offset = source.indexOf(strippedSourceLine, offset)
-              if (offset == -1) {
+              if (line >= targetLineNumber) {
                 break
-              } else {
-                count--
-                if (count == 0) {
-                  val lineNumber = source.getLineNumber(offset)
-                  if (lineNumber != incident.lineNumber) {
-                    val copy = incident.copy(lineNumber = lineNumber)
-                    shiftedLineNumbers[incident] = copy
-                  }
-                  break
-                }
-                offset += strippedSourceLine.length
               }
             }
           }
-        }
 
-        Pair(path, source)
-      } else {
-        pathAndSource
+          // Now find the same line the same number of times in the stripped file
+          offset = 0
+          while (true) {
+            offset = source.indexOf(strippedSourceLine, offset)
+            if (offset == -1) {
+              break
+            } else {
+              count--
+              if (count == 0) {
+                val lineNumber = source.getLineNumber(offset)
+                if (lineNumber != incident.lineNumber) {
+                  val copy = incident.copy(lineNumber = lineNumber)
+                  shiftedLineNumbers[incident] = copy
+                }
+                break
+              }
+              offset += strippedSourceLine.length
+            }
+          }
+        }
       }
+
+      Pair(path, source)
+    } else {
+      pathAndSource
     }
+  }
 
   val incidentsWithShiftedLineNumbers = incidents.map { shiftedLineNumbers[it] ?: it }
 

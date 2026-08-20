@@ -1166,12 +1166,11 @@ internal open class Analysis<FX : Any>(
   /** Interpret list of types [ts] under [this] environment */
   private fun Subst<FX>.instTypes(rec: (Point<FX>) -> Ans<FX>, ts: List<Type<FX>>): Result<List<Type<FX>>, Instantiation<FX>> {
     var fx = fxInstantiationLattice.bottom
-    val ts1 =
-      ts.map { t ->
-        val (t1, fx1) = instType(rec, t)
-        fx = fxInstantiationLattice.joinOf(fx, fx1)
-        t1
-      }
+    val ts1 = ts.map { t ->
+      val (t1, fx1) = instType(rec, t)
+      fx = fxInstantiationLattice.joinOf(fx, fx1)
+      t1
+    }
     return Result(ts1, fx)
   }
 

@@ -72,15 +72,14 @@ class ComponentTest {
     for (i in 0..numbers.length) {
       for (j in i..numbers.length) {
         for (k in j..numbers.length) {
-          val id =
-            numbers.run {
-              "${substring(0, i)}:${substring(i, j)}:${
+          val id = numbers.run {
+            "${substring(0, i)}:${substring(i, j)}:${
                                 substring(
                                     j,
                                     k,
                                 )
                             }:${substring(k)}"
-            }
+          }
           val component = Component.tryParse(id)
           assertThat(component).isNotNull()
           assertThat(Component.parse(id)).isEqualTo(component)

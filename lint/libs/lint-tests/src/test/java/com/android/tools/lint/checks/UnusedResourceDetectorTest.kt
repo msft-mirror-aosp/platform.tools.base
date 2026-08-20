@@ -3628,7 +3628,8 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
       """
         .trimIndent()
 
-    private val gradleClientFactory =
-      TestLintTask.ClientFactory { com.android.tools.lint.checks.infrastructure.TestLintClient(LintClient.Companion.CLIENT_GRADLE) }
+    private val gradleClientFactory = TestLintTask.ClientFactory {
+      com.android.tools.lint.checks.infrastructure.TestLintClient(LintClient.Companion.CLIENT_GRADLE)
+    }
   }
 }

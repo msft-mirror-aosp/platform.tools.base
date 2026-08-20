@@ -24,8 +24,9 @@ class ThreadPriorityDetectorTest : AbstractCheckTest() {
   override fun getDetector(): Detector = ThreadPriorityDetector()
 
   // Stub for android.os.Process to make tests independent of SDK stubs
-  private val processStub = java(
-    """
+  private val processStub =
+    java(
+        """
     // HIDE-FROM-DOCUMENTATION
     package android.os;
     public class Process {
@@ -39,11 +40,13 @@ class ThreadPriorityDetectorTest : AbstractCheckTest() {
         public static final void setThreadPriority(int tid, int priority) {}
     }
     """
-  ).indented()
+      )
+      .indented()
 
   // Stub for android.os.HandlerThread
-  private val handlerThreadStub = java(
-    """
+  private val handlerThreadStub =
+    java(
+        """
     // HIDE-FROM-DOCUMENTATION
     package android.os;
     public class HandlerThread extends Thread {
@@ -51,14 +54,15 @@ class ThreadPriorityDetectorTest : AbstractCheckTest() {
         public HandlerThread(String name, int priority) {}
     }
     """
-  ).indented()
+      )
+      .indented()
 
   fun testDocumentationExample() {
     lint()
       .files(
         processStub,
         java(
-          """
+            """
           package test.pkg;
           import android.os.Process;
           public class TestClass {
@@ -73,7 +77,8 @@ class ThreadPriorityDetectorTest : AbstractCheckTest() {
               }
           }
           """
-        ).indented()
+          )
+          .indented(),
       )
       .run()
       .expect(
@@ -93,7 +98,7 @@ class ThreadPriorityDetectorTest : AbstractCheckTest() {
     lint()
       .files(
         java(
-          """
+            """
           package test.pkg;
           public class TestClass {
               public void test() {
@@ -107,7 +112,8 @@ class ThreadPriorityDetectorTest : AbstractCheckTest() {
               }
           }
           """
-        ).indented()
+          )
+          .indented()
       )
       .run()
       .expect(
@@ -131,7 +137,7 @@ class ThreadPriorityDetectorTest : AbstractCheckTest() {
       .files(
         processStub,
         java(
-          """
+            """
           package test.pkg;
           import android.os.Process;
           public class TestClass {
@@ -146,7 +152,8 @@ class ThreadPriorityDetectorTest : AbstractCheckTest() {
               }
           }
           """
-        ).indented()
+          )
+          .indented(),
       )
       .run()
       .expect(
@@ -167,7 +174,7 @@ class ThreadPriorityDetectorTest : AbstractCheckTest() {
       .files(
         processStub,
         java(
-          """
+            """
           package test.pkg;
           import android.os.Process;
           public class TestClass {
@@ -182,7 +189,8 @@ class ThreadPriorityDetectorTest : AbstractCheckTest() {
               }
           }
           """
-        ).indented()
+          )
+          .indented(),
       )
       .run()
       .expect(
@@ -206,7 +214,7 @@ class ThreadPriorityDetectorTest : AbstractCheckTest() {
       .files(
         processStub,
         kotlin(
-          """
+            """
           package test.pkg
           import android.os.Process
           class TestKotlin {
@@ -219,7 +227,8 @@ class ThreadPriorityDetectorTest : AbstractCheckTest() {
               }
           }
           """
-        ).indented()
+          )
+          .indented(),
       )
       .run()
       .expect(
@@ -240,7 +249,7 @@ class ThreadPriorityDetectorTest : AbstractCheckTest() {
       .files(
         processStub,
         kotlin(
-          """
+            """
           package test.pkg
           import android.os.Process
           class TestKotlin {
@@ -253,7 +262,8 @@ class ThreadPriorityDetectorTest : AbstractCheckTest() {
               }
           }
           """
-        ).indented()
+          )
+          .indented(),
       )
       .run()
       .expect(
@@ -274,7 +284,7 @@ class ThreadPriorityDetectorTest : AbstractCheckTest() {
       .files(
         processStub,
         kotlin(
-          """
+            """
           package test.pkg
           import android.os.Process
           class TestKotlin {
@@ -290,7 +300,8 @@ class ThreadPriorityDetectorTest : AbstractCheckTest() {
               }
           }
           """
-        ).indented()
+          )
+          .indented(),
       )
       .run()
       .expect(
@@ -311,7 +322,7 @@ class ThreadPriorityDetectorTest : AbstractCheckTest() {
       .files(
         processStub,
         java(
-          """
+            """
           package test.pkg;
           import android.os.Process;
           public class TestClass {
@@ -324,7 +335,8 @@ class ThreadPriorityDetectorTest : AbstractCheckTest() {
               }
           }
           """
-        ).indented()
+          )
+          .indented(),
       )
       .run()
       .expect(
@@ -346,7 +358,7 @@ class ThreadPriorityDetectorTest : AbstractCheckTest() {
         processStub,
         handlerThreadStub,
         java(
-          """
+            """
           package test.pkg;
           import android.os.Process;
           import android.os.HandlerThread;
@@ -360,7 +372,8 @@ class ThreadPriorityDetectorTest : AbstractCheckTest() {
               }
           }
           """
-        ).indented()
+          )
+          .indented(),
       )
       .run()
       .expect(
@@ -379,7 +392,7 @@ class ThreadPriorityDetectorTest : AbstractCheckTest() {
         processStub,
         handlerThreadStub,
         kotlin(
-          """
+            """
           package test.pkg
           import android.os.Process
           import android.os.HandlerThread
@@ -393,7 +406,8 @@ class ThreadPriorityDetectorTest : AbstractCheckTest() {
               }
           }
           """
-        ).indented()
+          )
+          .indented(),
       )
       .run()
       .expect(
@@ -411,7 +425,7 @@ class ThreadPriorityDetectorTest : AbstractCheckTest() {
       .files(
         processStub,
         java(
-          """
+            """
           package test.pkg;
           import android.os.Process;
           public class TestClass {
@@ -422,7 +436,8 @@ class ThreadPriorityDetectorTest : AbstractCheckTest() {
               }
           }
           """
-        ).indented()
+          )
+          .indented(),
       )
       .run()
       .expect(
@@ -441,7 +456,7 @@ class ThreadPriorityDetectorTest : AbstractCheckTest() {
         processStub,
         handlerThreadStub,
         java(
-          """
+            """
           package test.pkg;
           import android.os.Process;
           import android.os.HandlerThread;
@@ -465,7 +480,8 @@ class ThreadPriorityDetectorTest : AbstractCheckTest() {
               }
           }
           """
-        ).indented()
+          )
+          .indented(),
       )
       .run()
       .expect(
@@ -499,7 +515,7 @@ class ThreadPriorityDetectorTest : AbstractCheckTest() {
         processStub,
         handlerThreadStub,
         kotlin(
-          """
+            """
           package test.pkg
           import android.os.Process
           import android.os.HandlerThread
@@ -523,7 +539,8 @@ class ThreadPriorityDetectorTest : AbstractCheckTest() {
               }
           }
           """
-        ).indented()
+          )
+          .indented(),
       )
       .run()
       .expect(
@@ -554,7 +571,7 @@ class ThreadPriorityDetectorTest : AbstractCheckTest() {
         processStub,
         handlerThreadStub,
         java(
-          """
+            """
           package test.pkg;
           import android.os.HandlerThread;
           import android.os.Process;
@@ -576,7 +593,8 @@ class ThreadPriorityDetectorTest : AbstractCheckTest() {
               }
           }
           """
-        ).indented()
+          )
+          .indented(),
       )
       .run()
       .expect(
@@ -601,7 +619,7 @@ class ThreadPriorityDetectorTest : AbstractCheckTest() {
         processStub,
         handlerThreadStub,
         java(
-          """
+            """
           package test.pkg;
           import static android.os.Process.THREAD_PRIORITY_BACKGROUND;
           import android.os.HandlerThread;
@@ -625,7 +643,8 @@ class ThreadPriorityDetectorTest : AbstractCheckTest() {
               }
           }
           """
-        ).indented()
+          )
+          .indented(),
       )
       .run()
       .expect(
@@ -653,7 +672,7 @@ class ThreadPriorityDetectorTest : AbstractCheckTest() {
       .files(
         handlerThreadStub,
         java(
-          """
+            """
           package test.pkg;
           import static android.os.HandlerThread.MIN_PRIORITY;
           public class TestClass {
@@ -662,7 +681,8 @@ class ThreadPriorityDetectorTest : AbstractCheckTest() {
               }
           }
           """
-        ).indented()
+          )
+          .indented(),
       )
       .run()
       .expect(

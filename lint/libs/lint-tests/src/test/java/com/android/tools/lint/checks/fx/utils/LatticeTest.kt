@@ -152,17 +152,15 @@ open class SingletonLattice<X>(val value: X) : Lattice<X> {
   final override val bottom = value
   final override val top = value
 
-  final override fun meetOf(first: X, second: X) =
-    value.also {
-      require(first == value)
-      require(second == value)
-    }
+  final override fun meetOf(first: X, second: X) = value.also {
+    require(first == value)
+    require(second == value)
+  }
 
-  final override fun joinOf(first: X, second: X) =
-    value.also {
-      require(first == value)
-      require(second == value)
-    }
+  final override fun joinOf(first: X, second: X) = value.also {
+    require(first == value)
+    require(second == value)
+  }
 
   final override fun precede(first: X, second: X) =
     true.also {

@@ -69,13 +69,13 @@ internal constructor(
     }
     scope.launch {
       runCatching {
-          deviceTracker.trackDevices().collect {
-            when (it) {
-              is DeviceOnline -> addDevice(it.device)
-              is DeviceDisconnected -> removeDevice(it.serialNumber)
-            }
+        deviceTracker.trackDevices().collect {
+          when (it) {
+            is DeviceOnline -> addDevice(it.device)
+            is DeviceDisconnected -> removeDevice(it.serialNumber)
           }
         }
+      }
         .onFailure { throwable -> logger.logIOCompletionErrors(throwable) }
     }
   }

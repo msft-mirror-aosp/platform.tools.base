@@ -460,28 +460,27 @@ data class Resolution(val width: Int, val height: Int) {
     private fun parseWmSizeOutput(output: String): Resolution? =
       REGEX.matchEntire(output)?.let { result -> Resolution(result.groupValues[1].toInt(), result.groupValues[2].toInt()) }
 
-    suspend fun readFromDevice(device: ConnectedDevice): Resolution? =
-      runCatching {
-          val shellOutput =
-            device.session.deviceServices.shellAsLines(device.selector, "wm size", commandTimeout = Duration.ofSeconds(5)).first()
-          when (shellOutput) {
-            is ShellCommandOutputElement.StdoutLine -> parseWmSizeOutput(shellOutput.contents)
-            else -> {
-              adbLogger(device.session).warn("Failed to read device resolution successfully: $shellOutput")
-              null
-            }
-          }
+    suspend fun readFromDevice(device: ConnectedDevice): Resolution? = runCatching {
+      val shellOutput =
+        device.session.deviceServices.shellAsLines(device.selector, "wm size", commandTimeout = Duration.ofSeconds(5)).first()
+      when (shellOutput) {
+        is ShellCommandOutputElement.StdoutLine -> parseWmSizeOutput(shellOutput.contents)
+        else -> {
+          adbLogger(device.session).warn("Failed to read device resolution successfully: $shellOutput")
+          null
         }
-        .onFailure { e ->
-          when (e) {
-            is CancellationException -> throw e
-            is AdbFailResponseException -> adbLogger(device.session).warn(e, "Failed to read device resolution")
-            is TimeoutException,
-            is InterruptedByTimeoutException -> adbLogger(device.session).warn(e, "Timeout reading device resolution")
-            else -> adbLogger(device.session).error(e, "Reading device resolution")
-          }
+      }
+    }
+      .onFailure { e ->
+        when (e) {
+          is CancellationException -> throw e
+          is AdbFailResponseException -> adbLogger(device.session).warn(e, "Failed to read device resolution")
+          is TimeoutException,
+          is InterruptedByTimeoutException -> adbLogger(device.session).warn(e, "Timeout reading device resolution")
+          else -> adbLogger(device.session).error(e, "Reading device resolution")
         }
-        .getOrNull()
+      }
+      .getOrNull()
   }
 }
 

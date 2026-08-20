@@ -118,13 +118,12 @@ fun com.android.adblib.DeviceState.displayString() =
     else -> state.substring(0, 1).uppercase() + state.substring(1)
   }
 
-inline fun <R> DeviceState.ifOnline(block: (ConnectedDevice) -> R): R? =
-  connectedDevice?.let { connectedDevice ->
-    when (connectedDevice.deviceInfo.deviceState) {
-      com.android.adblib.DeviceState.ONLINE -> block(connectedDevice)
-      else -> null
-    }
+inline fun <R> DeviceState.ifOnline(block: (ConnectedDevice) -> R): R? = connectedDevice?.let { connectedDevice ->
+  when (connectedDevice.deviceInfo.deviceState) {
+    com.android.adblib.DeviceState.ONLINE -> block(connectedDevice)
+    else -> null
   }
+}
 
 suspend fun DeviceHandle.awaitReady(): DeviceState.Connected =
   stateFlow.first { it is DeviceState.Connected && it.isReady } as DeviceState.Connected
