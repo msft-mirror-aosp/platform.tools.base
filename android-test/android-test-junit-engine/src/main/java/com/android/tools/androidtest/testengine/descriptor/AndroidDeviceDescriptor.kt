@@ -69,7 +69,11 @@ class AndroidDeviceDescriptor(
   private val findGrpcInfoProvider: (String) -> EmulatorGrpcInfo = ::findGrpcInfo,
   private val adbApkInstallerFactory:
     (
-      adb: File, aapt2: File, deviceSerial: String, installTimeoutMs: Long, deviceApiLevelProvider: DeviceApiLevelProvider?,
+      adb: File,
+      aapt2: File,
+      deviceSerial: String,
+      installTimeoutMs: Long,
+      deviceApiLevelProvider: DeviceApiLevelProvider?,
     ) -> AdbApkInstaller =
     { adb, aapt2, serial, timeout, apiLevelProvider ->
       AdbApkInstaller(adb, aapt2, serial, timeout, deviceApiLevelProvider = apiLevelProvider)
@@ -222,18 +226,17 @@ class AndroidDeviceDescriptor(
         deviceApiLevelProvider = deviceApiLevelProvider,
       )
 
-    val deviceInfoFile =
-      deviceResultsDir?.let { dir ->
-        val file = File(dir, "device-info.pb")
-        try {
-          val deviceInfo = AndroidTestDeviceInfoCollector(AdbController(config.adb), deviceSerial).collect()
-          file.outputStream().use { deviceInfo.writeTo(it) }
-          file
-        } catch (t: Throwable) {
-          logger.log(Level.SEVERE, "failed to collect device info for $deviceSerial", t)
-          null
-        }
+    val deviceInfoFile = deviceResultsDir?.let { dir ->
+      val file = File(dir, "device-info.pb")
+      try {
+        val deviceInfo = AndroidTestDeviceInfoCollector(AdbController(config.adb), deviceSerial).collect()
+        file.outputStream().use { deviceInfo.writeTo(it) }
+        file
+      } catch (t: Throwable) {
+        logger.log(Level.SEVERE, "failed to collect device info for $deviceSerial", t)
+        null
       }
+    }
 
     val listener = Listener(context, reporter, logcatCollector, deviceInfoFile, additionalTestOutputCollector)
 

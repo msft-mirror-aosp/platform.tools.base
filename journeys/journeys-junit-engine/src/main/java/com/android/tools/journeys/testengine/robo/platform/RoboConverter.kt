@@ -110,17 +110,16 @@ object RoboConverter {
       throw IllegalStateException("No actions found in the journey.")
     }
 
-    val actions =
-      actionsElement.map { element ->
-        if (element.tagName != "action") {
-          throw IllegalStateException("Unknown tag: ${element.tagName}")
-        }
-        if (element.textContent.isBlank()) {
-          throw IllegalStateException("Action text cannot be empty.")
-        }
-        val text = element.textContent.trim().replace(Regex("\\s+"), " ").toJsonStringLiteral()
-        actionEntry(text)
+    val actions = actionsElement.map { element ->
+      if (element.tagName != "action") {
+        throw IllegalStateException("Unknown tag: ${element.tagName}")
       }
+      if (element.textContent.isBlank()) {
+        throw IllegalStateException("Action text cannot be empty.")
+      }
+      val text = element.textContent.trim().replace(Regex("\\s+"), " ").toJsonStringLiteral()
+      actionEntry(text)
+    }
     writer.write(actions.joinToString(separator = ","))
 
     writer.write(jsonFooter)

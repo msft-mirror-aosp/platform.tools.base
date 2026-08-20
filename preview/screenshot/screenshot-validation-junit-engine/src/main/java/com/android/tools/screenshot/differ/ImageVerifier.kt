@@ -16,13 +16,11 @@
 
 package com.android.tools.screenshot.differ
 
-import java.io.File
-import java.io.FileNotFoundException
-import java.io.IOException
-import javax.imageio.ImageIO
 import com.android.tools.screenshot.ImageComparisonAssertionError
-import com.android.tools.screenshot.ScreenshotImageNotFoundException
 import com.android.tools.screenshot.ScreenshotImageInvalidException
+import com.android.tools.screenshot.ScreenshotImageNotFoundException
+import java.io.File
+import javax.imageio.ImageIO
 
 data class VerificationResult(val diffResult: ImageDiffer.DiffResult, val diffPercent: Double?)
 

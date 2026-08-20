@@ -528,12 +528,11 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
           .map { identifier -> identifier.group to identifier.module }
           .toSet()
 
-      val missingToolingDependencies =
-        PREVIEW_DEPENDENCIES.filter { previewDependency ->
-          val isPreviewPresent = allDependencies.contains(previewDependency.group to previewDependency.previewModule)
-          val isToolingPresent = allDependencies.contains(previewDependency.group to previewDependency.toolingModule)
-          isPreviewPresent && !isToolingPresent
-        }
+      val missingToolingDependencies = PREVIEW_DEPENDENCIES.filter { previewDependency ->
+        val isPreviewPresent = allDependencies.contains(previewDependency.group to previewDependency.previewModule)
+        val isToolingPresent = allDependencies.contains(previewDependency.group to previewDependency.toolingModule)
+        isPreviewPresent && !isToolingPresent
+      }
 
       if (missingToolingDependencies.isNotEmpty()) {
         screenshotTestComponent.runtimeConfiguration.incoming.afterResolve { resolvedScreenshotTestComponent ->
