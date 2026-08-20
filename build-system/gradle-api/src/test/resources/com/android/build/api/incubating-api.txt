@@ -647,7 +647,6 @@ https://issuetracker.google.com/443174826
   * com.android.build.api.variant.JUnitEngineSpec.getInputs: java.util.List<com.android.build.api.dsl.AgpTestSuiteInputParameters> ()
   * com.android.build.api.variant.JUnitEngineSpecBuilder implements com.android.build.api.variant.JUnitEngineSpec
   * com.android.build.api.variant.JUnitEngineSpecBuilder.getInputs: java.util.List<com.android.build.api.dsl.AgpTestSuiteInputParameters> ()
-  * com.android.build.api.variant.TestSuite.getCodeCoverage: org.gradle.api.provider.Property<java.lang.Boolean> ()
   * com.android.build.api.variant.TestSuite.getJunitEngineSpec: com.android.build.api.variant.JUnitEngineSpec ()
   * com.android.build.api.variant.TestSuiteTarget implements org.gradle.api.Named
   * com.android.build.api.variant.TestSuiteTarget.getEnabled: boolean ()
@@ -847,5 +846,8 @@ https://issuetracker.google.com/543456675
   * com.android.build.api.variant.DeviceTest.withTestTaskProvider: void (kotlin.jvm.functions.Function1<? super org.gradle.api.tasks.TaskProvider<? extends org.gradle.api.Task>, kotlin.Unit>)
   * com.android.build.api.variant.HostTest.withTestTaskProvider: void (kotlin.jvm.functions.Function1<? super org.gradle.api.tasks.TaskProvider<? extends org.gradle.api.tasks.testing.Test>, kotlin.Unit>)
   * com.android.build.api.variant.TestSuite.withTestTaskProviders: void (kotlin.jvm.functions.Function2<? super org.gradle.api.tasks.TaskProvider<? extends org.gradle.api.tasks.testing.Test>, ? super com.android.build.api.dsl.TestTaskContext, kotlin.Unit>)
+https://issuetracker.google.com/549564936
+  * com.android.build.api.variant.TestSuite.getCodeCoverageEnabled: boolean ()
+  * com.android.build.api.variant.TestSuiteBuilder.setEnabledCodeCoverage: void (boolean)
 https://issuetracker.google.com/552337242
   * com.android.build.api.dsl.TestOptions.getInstrumentInPrivateComputeCore: boolean ()

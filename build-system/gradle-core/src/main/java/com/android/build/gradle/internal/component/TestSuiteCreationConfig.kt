@@ -31,6 +31,9 @@ import org.gradle.api.tasks.testing.Test
 
 interface TestSuiteCreationConfig : TestSuite {
 
+  /** Returns whether the code coverage support is enabled for this test suite. */
+  override val codeCoverageEnabled: Boolean
+
   val global: GlobalTaskCreationConfig
 
   /** Runs all the registered config actions on the test tasks for this suite. */

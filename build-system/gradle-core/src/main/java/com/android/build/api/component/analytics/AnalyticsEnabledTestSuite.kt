@@ -24,7 +24,6 @@ import com.android.build.api.variant.TestSuiteSourceType
 import com.android.build.api.variant.TestSuiteTarget
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import org.gradle.api.model.ObjectFactory
-import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.testing.Test
@@ -71,10 +70,10 @@ open class AnalyticsEnabledTestSuite(
       return delegate.targets.mapValues { target -> AnalyticsEnabledTestSuiteTarget(target.value, stats) }
     }
 
-  override val codeCoverage: Property<Boolean>
+  override val codeCoverageEnabled: Boolean
     get() {
       stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.TEST_SUITE_CODE_COVERAGE_VALUE
-      return delegate.codeCoverage
+      return delegate.codeCoverageEnabled
     }
 
   override val requiresUpdateTask: Provider<Boolean>

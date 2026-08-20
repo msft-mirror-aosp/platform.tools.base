@@ -42,7 +42,6 @@ import com.android.build.gradle.internal.testsuites.impl.TestSuiteBuilderImpl
 import com.android.build.gradle.internal.variant.VariantComponentInfo
 import com.android.builder.dexing.DexingType
 import java.io.File
-import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.testing.Test
@@ -103,7 +102,7 @@ internal constructor(
     testTaskProviderConfigActions.add(action)
   }
 
-  override val codeCoverage: Property<Boolean> = variantServices.propertyOf(Boolean::class.java, testSuiteBuilder.codeCoverage)
+  override val codeCoverageEnabled: Boolean = testSuiteBuilder._enableCodeCoverage
 
   override val androidResourcesIncluded: Boolean = testSuiteBuilder.testSuite.androidResourcesIncluded
 

@@ -56,7 +56,7 @@ class TestSuiteHostJarCreationConfig(val testSuite: TestSuiteCreationConfig, val
   }
 
   override val codeCoverageEnabled: Boolean
-    get() = false
+    get() = testSuite.codeCoverageEnabled
 
   // HostTest
   override val androidResourcesIncluded: Boolean

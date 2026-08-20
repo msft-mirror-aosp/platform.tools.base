@@ -31,7 +31,7 @@ interface DeviceTestBuilder : GeneratesTestApkBuilder {
   @get:Incubating @set:Incubating var enable: Boolean
 
   /**
-   * Specifies host test code coverage data collection by configuring the JacocoPlugin.
+   * Specifies device test code coverage data collection by configuring the JacocoPlugin.
    *
    * When enabled, the Jacoco plugin is applied and coverage data is collected by the Jacoco plugin. This can avoid unwanted build time
    * instrumentation required to collect coverage data from other test types such as unit tests.
@@ -40,7 +40,7 @@ interface DeviceTestBuilder : GeneratesTestApkBuilder {
    */
   @get:Incubating
   @get:Deprecated(
-    message = "Other plugins can change this value, it is not safe to read it at this stage, " + "use [HostTest.enableCodeCoverage]",
+    message = "Other plugins can change this value, it is not safe to read it at this stage, " + "use [DeviceTest.codeCoverageEnabled]",
     level = DeprecationLevel.ERROR,
   )
   @set:Incubating

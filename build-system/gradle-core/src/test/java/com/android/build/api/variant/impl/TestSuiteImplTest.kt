@@ -175,4 +175,43 @@ class TestSuiteImplTest {
     val runnerProvider = testSuiteImpl.instrumentationRunner(testApkSource)
     assertThat(runnerProvider.get()).isEqualTo("androidx.test.runner.AndroidJUnitRunner")
   }
+
+  @Test
+  fun testCodeCoverageEnabled() {
+    val testSuiteBuilder = mock(TestSuiteBuilderImpl::class.java)
+    val agpTestSuite = mock(AgpTestSuiteImpl::class.java)
+    val junitEngineSpec = mock(JUnitEngineSpecForVariantBuilder::class.java)
+    `when`(testSuiteBuilder.testSuite).thenReturn(agpTestSuite)
+    `when`(agpTestSuite.requiresUpdateTask).thenReturn(false)
+    `when`(testSuiteBuilder.junitEngineSpec).thenReturn(junitEngineSpec)
+    `when`(testSuiteBuilder._enableCodeCoverage).thenReturn(true)
+
+    val testedVariantComponent =
+      mock(VariantComponentInfo::class.java) as VariantComponentInfo<VariantBuilder, VariantDslInfo, VariantCreationConfig>
+    val global = mock(GlobalTaskCreationConfig::class.java)
+    val variantServices = mock(VariantServices::class.java)
+    val mapProperty = mock(MapProperty::class.java) as MapProperty<String, String>
+    `when`(variantServices.mapPropertyOf(String::class.java, String::class.java, mapOf())).thenReturn(mapProperty)
+    val booleanProvider = mock(Provider::class.java) as Provider<Boolean>
+    `when`(booleanProvider.get()).thenReturn(false)
+    `when`(variantServices.provider<Boolean>(any())).thenReturn(booleanProvider)
+    val services = mock(TaskCreationServices::class.java)
+    val artifacts = mock(ArtifactsImpl::class.java)
+    val defaultConfig = mock(DefaultConfig::class.java)
+
+    val testSuiteImpl =
+      TestSuiteImpl(
+        testSuiteBuilder = testSuiteBuilder,
+        sourceContainers = emptyList(),
+        testedVariantComponent = testedVariantComponent,
+        global = global,
+        variantServices = variantServices,
+        services = services,
+        artifacts = artifacts,
+        defaultConfig = defaultConfig,
+        manifestDataProviderBuilder = { mock(ManifestDataProvider::class.java) },
+      )
+
+    assertEquals(true, testSuiteImpl.codeCoverageEnabled)
+  }
 }
