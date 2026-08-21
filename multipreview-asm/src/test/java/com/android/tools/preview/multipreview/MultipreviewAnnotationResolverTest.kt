@@ -67,7 +67,9 @@ class MultipreviewAnnotationResolverTest {
       fun findInJar(jar: File): org.objectweb.asm.ClassReader? {
         if (!jar.exists() || !jar.isFile || !jar.name.endsWith(".jar", ignoreCase = true)) return null
         return java.util.zip.ZipFile(jar).use { zipFile ->
-          zipFile.getEntry(relativeFilePath)?.let { zipFile.getInputStream(it).use { stream -> org.objectweb.asm.ClassReader(stream.readAllBytes()) } }
+          zipFile.getEntry(relativeFilePath)?.let {
+            zipFile.getInputStream(it).use { stream -> org.objectweb.asm.ClassReader(stream.readAllBytes()) }
+          }
         }
       }
 
@@ -81,7 +83,7 @@ class MultipreviewAnnotationResolverTest {
     MultipreviewAnnotationResolver(
       COMPOSE_PREVIEW_ANNOTATION,
       COMPOSE_PREVIEW_ANNOTATION_CONTAINER,
-      ::resolveClassReader
+      ::resolveClassReader,
     )
   }
 

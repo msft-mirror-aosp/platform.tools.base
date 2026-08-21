@@ -99,25 +99,23 @@ class FoldObserverImpl(private val sendFoldStateEvent: Any) : FoldObserver {
   private var currentFoldFeature: Any? = null
 
   override val foldState: LayoutInspectorViewProtocol.FoldEvent.FoldState?
-    get() =
-      currentFoldFeature?.let { feature ->
-        when (foldingFeatureClass?.getMethod("getState")?.invoke(feature)?.toString()) {
-          "HALF_OPENED" -> LayoutInspectorViewProtocol.FoldEvent.FoldState.HALF_OPEN
-          "FLAT" -> LayoutInspectorViewProtocol.FoldEvent.FoldState.FLAT
-          null -> null
-          else -> LayoutInspectorViewProtocol.FoldEvent.FoldState.UNKNOWN_FOLD_STATE
-        }
+    get() = currentFoldFeature?.let { feature ->
+      when (foldingFeatureClass?.getMethod("getState")?.invoke(feature)?.toString()) {
+        "HALF_OPENED" -> LayoutInspectorViewProtocol.FoldEvent.FoldState.HALF_OPEN
+        "FLAT" -> LayoutInspectorViewProtocol.FoldEvent.FoldState.FLAT
+        null -> null
+        else -> LayoutInspectorViewProtocol.FoldEvent.FoldState.UNKNOWN_FOLD_STATE
       }
+    }
 
   override val orientation: LayoutInspectorViewProtocol.FoldEvent.FoldOrientation?
-    get() =
-      currentFoldFeature?.let { feature ->
-        when (foldingFeatureClass?.getMethod("getOrientation")?.invoke(feature)?.toString()) {
-          "HORIZONTAL" -> LayoutInspectorViewProtocol.FoldEvent.FoldOrientation.HORIZONTAL
-          "VERTICAL" -> LayoutInspectorViewProtocol.FoldEvent.FoldOrientation.VERTICAL
-          else -> LayoutInspectorViewProtocol.FoldEvent.FoldOrientation.UNKNOWN_FOLD_ORIENTATION
-        }
+    get() = currentFoldFeature?.let { feature ->
+      when (foldingFeatureClass?.getMethod("getOrientation")?.invoke(feature)?.toString()) {
+        "HORIZONTAL" -> LayoutInspectorViewProtocol.FoldEvent.FoldOrientation.HORIZONTAL
+        "VERTICAL" -> LayoutInspectorViewProtocol.FoldEvent.FoldOrientation.VERTICAL
+        else -> LayoutInspectorViewProtocol.FoldEvent.FoldOrientation.UNKNOWN_FOLD_ORIENTATION
       }
+    }
 
   private tailrec fun Context.getActivity(): Activity? {
     return this as? Activity ?: (this as? ContextWrapper)?.baseContext?.getActivity()
@@ -127,23 +125,23 @@ class FoldObserverImpl(private val sendFoldStateEvent: Any) : FoldObserver {
     listeners.computeIfAbsent(rootView) { view ->
       val windowInfo =
         runOnMainThread {
-            // The DecorView doesn't have the Activity as context, so we need to get a different
-            // view.
-            val viewGroup = view as? ViewGroup ?: return@runOnMainThread null
-            val activity = viewGroup.getChildAt(0)?.context?.getActivity()
-            if (viewGroup.childCount > 0) {
-              if (activity != null) {
-                val windowInfoRepo = windowRepositoryGetter.invoke(windowRepositoryCompanion, activity)
-                if (windowLayoutInfoGetter.parameterCount == 1) {
-                  // beta04 and later
-                  windowLayoutInfoGetter.invoke(windowInfoRepo, activity) as Flow<*>
-                } else {
-                  // pre-beta04
-                  windowLayoutInfoGetter.invoke(windowInfoRepo) as Flow<*>
-                }
-              } else null
+          // The DecorView doesn't have the Activity as context, so we need to get a different
+          // view.
+          val viewGroup = view as? ViewGroup ?: return@runOnMainThread null
+          val activity = viewGroup.getChildAt(0)?.context?.getActivity()
+          if (viewGroup.childCount > 0) {
+            if (activity != null) {
+              val windowInfoRepo = windowRepositoryGetter.invoke(windowRepositoryCompanion, activity)
+              if (windowLayoutInfoGetter.parameterCount == 1) {
+                // beta04 and later
+                windowLayoutInfoGetter.invoke(windowInfoRepo, activity) as Flow<*>
+              } else {
+                // pre-beta04
+                windowLayoutInfoGetter.invoke(windowInfoRepo) as Flow<*>
+              }
             } else null
-          }
+          } else null
+        }
           .get() ?: return@computeIfAbsent null
 
       scope.launch {

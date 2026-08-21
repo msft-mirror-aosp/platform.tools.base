@@ -41,28 +41,27 @@ internal fun UiNode.resolveDimensions(configuration: DeviceConfiguration?): UiNo
   val fontScale = configuration?.fontScale
   return when (this) {
     is UiNode.ViewNode -> {
-      val resolvedAttributes =
-        attributes.map { attr ->
-          if (attr.value is UiNode.AttributeValue.DimensionVal) {
-            val px = attr.value.value
-            var dp: Float? = null
-            var sp: Float? = null
-            if (densityDpi != null && densityDpi > 0) {
-              val densityScale = densityDpi.toFloat() / 160.0f
-              if (attr.name in DIMENSION_SP_ATTRIBUTES) {
-                if (fontScale != null && fontScale > 0.0f) {
-                  val scale = densityScale * fontScale
-                  sp = px / scale
-                }
-              } else {
-                dp = px / densityScale
+      val resolvedAttributes = attributes.map { attr ->
+        if (attr.value is UiNode.AttributeValue.DimensionVal) {
+          val px = attr.value.value
+          var dp: Float? = null
+          var sp: Float? = null
+          if (densityDpi != null && densityDpi > 0) {
+            val densityScale = densityDpi.toFloat() / 160.0f
+            if (attr.name in DIMENSION_SP_ATTRIBUTES) {
+              if (fontScale != null && fontScale > 0.0f) {
+                val scale = densityScale * fontScale
+                sp = px / scale
               }
+            } else {
+              dp = px / densityScale
             }
-            attr.copy(value = UiNode.AttributeValue.DimensionVal(px, dp, sp))
-          } else {
-            attr
           }
+          attr.copy(value = UiNode.AttributeValue.DimensionVal(px, dp, sp))
+        } else {
+          attr
         }
+      }
       val resolvedChildren = children.map { it.resolveDimensions(configuration) }.toMutableList()
       this.copy(attributes = resolvedAttributes, children = resolvedChildren)
     }

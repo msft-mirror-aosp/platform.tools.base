@@ -420,19 +420,18 @@ class CommandSenderTest {
       val childScope = CoroutineScope(coroutineContext + childJob)
 
       val senderReady = CompletableDeferred<CommandSender>()
-      val sendJob =
-        childScope.async {
-          try {
-            CommandSender.connect("127.0.0.1", port, this).use { sender ->
-              senderReady.complete(sender)
-              val cmd = Command.newBuilder().setShutdown(ShutdownCommand.getDefaultInstance()).build()
-              sender.sendMessage(cmd)
-            }
-          } catch (e: Throwable) {
-            senderReady.completeExceptionally(e)
-            throw e
+      val sendJob = childScope.async {
+        try {
+          CommandSender.connect("127.0.0.1", port, this).use { sender ->
+            senderReady.complete(sender)
+            val cmd = Command.newBuilder().setShutdown(ShutdownCommand.getDefaultInstance()).build()
+            sender.sendMessage(cmd)
           }
+        } catch (e: Throwable) {
+          senderReady.completeExceptionally(e)
+          throw e
         }
+      }
 
       connectionAccepted.await()
       val sender = senderReady.await()
