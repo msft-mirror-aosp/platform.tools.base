@@ -40,6 +40,9 @@ common --legacy_important_outputs
 # skipLibCheck setting is configured inside each package's local tsconfig.json file.
 common --@aspect_rules_ts//ts:skipLibCheck=honor_tsconfig
 
+# Configure PIE linkmode for compatibility with clang toolchain.
+common --@rules_go//go/config:linkmode=pie
+
 # JetBrainsRuntime version to bundle into Android Studio
 # and java runtime for running tests
 build:jbr25 --//prebuilts/studio/jdk:jdk_bundle_version=25
