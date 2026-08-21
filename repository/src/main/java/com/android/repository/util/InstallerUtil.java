@@ -100,6 +100,7 @@ public class InstallerUtil {
         if (!CancellableFileIo.exists(out) || !CancellableFileIo.isDirectory(out)) {
             throw new IllegalArgumentException("out must exist and be a directory.");
         }
+        out = out.normalize();
 
         progress.setText("Unzipping...");
         ZipFile zipFile = new ZipFile(Files.newByteChannel(in));
@@ -109,13 +110,31 @@ public class InstallerUtil {
             indeterminate = true;
         }
         try {
+            Set<Path> createdSymlinks = Sets.newHashSet();
             Enumeration<ZipArchiveEntry> entries = zipFile.getEntries();
             progress.setFraction(0);
             double progressMax = 0;
             while (entries.hasMoreElements()) {
                 ZipArchiveEntry entry = entries.nextElement();
                 String name = entry.getName();
-                Path entryFile = out.resolve(name);
+                if (!isValidZipEntryName(name)) {
+                    continue;
+                }
+                Path entryFileUnnormalized = out.resolve(name);
+                Path entryFile = entryFileUnnormalized.normalize();
+                if (!entryFile.equals(entryFileUnnormalized) || !entryFile.startsWith(out)) {
+                    // No reason to allow ".." in zip entries
+                    throw new ZipSlipException(name);
+                }
+                if (!createdSymlinks.isEmpty()) {
+                    Path parentCheck = entryFile.getParent();
+                    while (parentCheck != null && !parentCheck.equals(out)) {
+                        if (createdSymlinks.contains(parentCheck)) {
+                            throw new ZipSlipException(name);
+                        }
+                        parentCheck = parentCheck.getParent();
+                    }
+                }
                 progress.setSecondaryText(name);
                 if (entry.isUnixSymlink()) {
                     ByteArrayOutputStream targetByteStream = new ByteArrayOutputStream();
@@ -129,10 +148,17 @@ public class InstallerUtil {
                         progress.setFraction(progressMax);
                     }
                     Path linkTarget = out.getFileSystem().getPath(targetByteStream.toString());
+                    Path resolvedTarget = entryFile.getParent().resolve(linkTarget).normalize();
+                    if (linkTarget.isAbsolute()
+                            || !linkTarget.equals(linkTarget.normalize())
+                            || !resolvedTarget.startsWith(out)) {
+                        throw new ZipSlipException(name);
+                    }
                     if (!Files.isDirectory(entryFile.getParent())) {
                         Files.createDirectories(entryFile.getParent());
                     }
                     Files.createSymbolicLink(entryFile, linkTarget);
+                    createdSymlinks.add(entryFile);
                 } else if (entry.isDirectory()) {
                     Files.createDirectories(entryFile);
                 } else {
@@ -178,6 +204,11 @@ public class InstallerUtil {
             progress.setFraction(1);
             ZipFile.closeQuietly(zipFile);
         }
+    }
+
+    /** Some zip files include meaningless directory entries like this. */
+    private static boolean isValidZipEntryName(String name) {
+        return !name.equals(".") && !name.equals("./") && !name.equals("/") && !name.isEmpty();
     }
 
     private static boolean readZipEntry(
@@ -524,5 +555,11 @@ public class InstallerUtil {
             }
         }
         return true;
+    }
+}
+
+class ZipSlipException extends IOException {
+    public ZipSlipException(String name) {
+        super("Zip entry '" + name + "' would escape the output directory");
     }
 }
