@@ -803,7 +803,6 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
 
       task.useJUnitPlatform { testFramework: JUnitPlatformOptions ->
         testFramework.includeEngines(*creationConfig.junitEngineSpec.includeEngines.toTypedArray())
-        testFramework.excludeEngines("junit-jupiter")
       }
       creationConfig.sourceContainers.forEach { sourceContainer: TestSuiteSourceContainer ->
         when (val sourceSet = sourceContainer.source) {
