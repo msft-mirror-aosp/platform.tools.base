@@ -730,14 +730,10 @@ enum class ArtProfileSerializer(
         val hotMethodRegionSize: Int = getHotMethodRegionSize(dexFileData)
         val lineHeaderSize =
           (UINT_16_SIZE // classes set size
-          +
-            UINT_16_SIZE // dex location size
-            +
-            UINT_32_SIZE // method map size
-            +
-            UINT_32_SIZE // checksum
-            +
-            UINT_32_SIZE) // number of method ids
+          + UINT_16_SIZE // dex location size
+            + UINT_32_SIZE // method map size
+            + UINT_32_SIZE // checksum
+            + UINT_32_SIZE) // number of method ids
         requiredCapacity +=
           (lineHeaderSize +
             profileKey(dexFile, apkName, "!").utf8Length +
@@ -890,14 +886,10 @@ enum class ArtProfileSerializer(
         val hotMethodRegionSize: Int = getHotMethodRegionSize(dexFileData)
         val lineHeaderSize =
           (UINT_16_SIZE // classes set size
-          +
-            UINT_16_SIZE // dex location size
-            +
-            UINT_32_SIZE // method map size
-            +
-            UINT_32_SIZE // checksum
-            +
-            UINT_32_SIZE) // number of method ids
+          + UINT_16_SIZE // dex location size
+            + UINT_32_SIZE // method map size
+            + UINT_32_SIZE // checksum
+            + UINT_32_SIZE) // number of method ids
         requiredCapacity +=
           (lineHeaderSize +
             profileKey(dexFile, apkName, "!").utf8Length +
