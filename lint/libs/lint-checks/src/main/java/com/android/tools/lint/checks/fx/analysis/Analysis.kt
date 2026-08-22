@@ -651,6 +651,9 @@ internal open class Analysis<FX : Any>(
                 is Type.Lambda -> Result(getType(e.receiver), onInvocationEffect(e, Instantiation(t.body.effect)))
                 else -> giveUp(e) { "Handle ${e.renderAbbrev()} of `${e::class.java.simpleName}`" }
               }
+            // Kotlin property access to a Java getter (`resources.configuration`): apply the getter as a call,
+            // mirroring the `KtLightMethod` accessor branch above
+            target is PsiMethod && !target.isStatic() && target.parameterList.isEmpty -> callMethod(e.receiver, target, listOf())
             else -> giveUp(e) { "Handle ${e.renderAbbrev()} of `${e::class.java.simpleName}`" }
           }
         }
@@ -1365,17 +1368,24 @@ internal open class Analysis<FX : Any>(
     val allParams = method.params()
     val firstParam = allParams.firstOrNull()
     return when {
-      // discarding extension receiver
+      // Discard the extension receiver: it is not among the value arguments. `getArgumentForParameter` indexes the
+      // physical parameter list, receiver included, so lookups for the remaining parameters must shift past it
+      // (except in the `ArrayAccessAsCallExpression` encoding, which has no receiver parameter).
       firstParam != null && (firstParam.nameFromSource?.startsWith("$") != false) -> {
         val offset = if (call.isArrayAccess()) /* TODO hack against ArrayAccessAsCall */ 0 else 1
         val paramsSansReceiver = allParams.subList(1, allParams.size)
-        completeArguments(typeParams, call, paramsSansReceiver)
+        completeArguments(typeParams, call, paramsSansReceiver, offset)
       }
       else -> completeArguments(typeParams, call, method.params())
     }
   }
 
-  private fun completeArguments(typeParams: Map<String, Type.Sym.Param>, call: UCallExpression, params: List<UParameter>) =
+  private fun completeArguments(
+    typeParams: Map<String, Type.Sym.Param>,
+    call: UCallExpression,
+    params: List<UParameter>,
+    argOffset: Int = 0,
+  ) =
     when {
       // Common case: don't resort to `getArgumentForParameter` args already match!
       params.size == call.valueArguments.size && params.none { it.isVararg() } && !call.hasComplexArgList() -> call.valueArguments
@@ -1384,7 +1394,7 @@ internal open class Analysis<FX : Any>(
           val paramPsi = param.javaPsi as PsiParameter
           val paramName = paramPsi.name
           val arg =
-            call.getArgumentForParameter(i)
+            call.getArgumentForParameter(i + argOffset)
               ?: OpaqueConstant(PsiTypeAdapter.translate(typeParams, paramPsi.type)).also {
                 if (param.uastInitializer == null) log { "WARNING: Can't retrieve default argument for $paramName, supplying $it" }
               }
