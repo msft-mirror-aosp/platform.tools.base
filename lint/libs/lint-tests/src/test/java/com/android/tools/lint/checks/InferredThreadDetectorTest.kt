@@ -162,8 +162,18 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
 
             @WorkerThread fun worker() { }
 
-            @UiThread fun ui(l : List<*>) {
+            @UiThread fun updateUi() { }
+
+            @WorkerThread fun consumeEntry(e: Map.Entry<String, Int>) { }
+
+            @UiThread fun ui(l : List<*>, m: Map<String, Int>) {
                 l.forEach { worker() }
+                l.onEachIndexed { _, _ -> worker() } // error
+                l.onEachIndexed { _, _ -> updateUi() }.forEach { worker() } // error on chained call
+                l.onEachIndexed { _, _ -> updateUi() }.forEach { updateUi() } // ok
+                m.forEach { (k, v) -> worker() } // error
+                m.forEach(::consumeEntry) // error
+                m.forEach { (k, v) -> updateUi() } // ok
             }
             """
               .trimIndent()
@@ -174,10 +184,22 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        src/test/pkg/test.kt:8: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+        src/test/pkg/test.kt:12: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
             l.forEach { worker() }
               ~~~~~~~~~~~~~~~~~~~~
-        1 error
+        src/test/pkg/test.kt:13: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            l.onEachIndexed { _, _ -> worker() } // error
+              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:14: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            l.onEachIndexed { _, _ -> updateUi() }.forEach { worker() } // error on chained call
+                                                   ~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:16: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            m.forEach { (k, v) -> worker() } // error
+              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:17: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            m.forEach(::consumeEntry) // error
+              ~~~~~~~~~~~~~~~~~~~~~~~
+        5 errors
         """
           .trimIndent()
       )

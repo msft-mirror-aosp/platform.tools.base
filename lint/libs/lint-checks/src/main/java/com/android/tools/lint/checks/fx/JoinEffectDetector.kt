@@ -554,7 +554,7 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
           forAll { t ->
             forAll(Iterable::class(t)) { self ->
               forAll(Function2::class(Type.Int, t, Type.Unit)) { action ->
-                given(Iterable::class(t), action) {
+                given(self, action) {
                   range = self
                   symbolicInvocations += action[MethodId.Invoke[2], Type.Int, t]
                 }
@@ -784,7 +784,7 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
           forAll { k ->
             forAll { v ->
               forAll(Function1::class(Map.Entry::class(k, v), Type.Unit)) { action ->
-                given(Map::class(k, v), action) { symbolicInvocations += action[MethodId.Invoke[1], Map::class(k, v)] }
+                given(Map::class(k, v), action) { symbolicInvocations += action[MethodId.Invoke[1], Map.Entry::class(k, v)] }
               }
             }
           }
