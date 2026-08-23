@@ -185,6 +185,11 @@ npm.npm_translate_lock(
     bins = {
         "vsce": ["vsce=vsce"],
     },
+    data = [
+        "//tools/base/bazel:package.json",
+        "//tools/base/bazel:pnpm-lock.yaml",
+        "//tools/base/bazel:pnpm-workspace.yaml",
+    ],
     npmrc = "//tools/base/bazel:.npmrc",
     pnpm_lock = "//tools/base/bazel:pnpm-lock.yaml",
 )

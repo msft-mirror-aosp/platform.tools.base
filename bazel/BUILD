@@ -13,7 +13,13 @@ load("//tools/base/bazel:owners.bzl", "owners_zip")
 load("//tools/base/bazel:proto.bzl", "PROTOC_VERSION", "java_proto_library")
 load("//tools/base/bazel:utils.bzl", "java_jarjar")
 
-exports_files(["jarjar_rules.txt"])
+exports_files([
+    "jarjar_rules.txt",
+    ".npmrc",
+    "package.json",
+    "pnpm-lock.yaml",
+    "pnpm-workspace.yaml",
+])
 
 # Creates the virtual npm package store (.aspect_rules_js/node_modules) in this workspace
 # root package from pnpm-lock.yaml. Member packages (such as //tools/vendor/google/android-vsix)

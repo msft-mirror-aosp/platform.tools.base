@@ -29,6 +29,15 @@ importers:
         specifier: 1.103.1
         version: 1.103.1
 
+  ../../vendor/google/cli/android-device-hub/electron:
+    devDependencies:
+      '@types/node':
+        specifier: ^18.16.0
+        version: 18.19.130
+      typescript:
+        specifier: 5.0.4
+        version: 5.0.4
+
 packages:
 
   '@bazel/bazelisk@1.28.1':

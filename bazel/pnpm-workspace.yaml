@@ -1,2 +1,3 @@
 packages:
   - '../../vendor/google/android-vsix'
+  - '../../vendor/google/cli/android-device-hub/electron'
