@@ -41,7 +41,12 @@ class ImageVerifierTest {
     val diffImage = File(diffDir, "diff.png")
     val error =
       assertThrows(ScreenshotImageNotFoundException::class.java) {
-        imageVerifier.verify(File(tempDir.root, "newImagePath"), File(createImageFile("circle", refDir)), diffImage, tempDir.root)
+        imageVerifier.verify(
+          File(tempDir.root, "newImagePath"),
+          File(createImageFile("circle", refDir)),
+          diffImage,
+          tempDir.root,
+        )
       }
     assertThat(error).hasMessageThat().contains("Preview image file does not exist (newImagePath)")
     assertThat(diffImage.exists()).isFalse()
@@ -54,7 +59,12 @@ class ImageVerifierTest {
     val newImagePath = createImageFile("circle", newDir)
     val error =
       assertThrows(ScreenshotImageNotFoundException::class.java) {
-        imageVerifier.verify(File(newImagePath), File(tempDir.root, "referenceImagePath"), diffImage, tempDir.root)
+        imageVerifier.verify(
+          File(newImagePath),
+          File(tempDir.root, "referenceImagePath"),
+          diffImage,
+          tempDir.root,
+        )
       }
     assertThat(error).hasMessageThat().contains("Reference image file does not exist (referenceImagePath)")
     assertThat(diffImage.exists()).isFalse()
@@ -65,7 +75,12 @@ class ImageVerifierTest {
     val imageVerifier = ImageVerifier(PixelPerfect())
     val diffImage = File(diffDir, "diff.png")
     val result =
-      imageVerifier.verify(File(createImageFile("circle", newDir)), File(createImageFile("circle", refDir)), diffImage, tempDir.root)
+      imageVerifier.verify(
+        File(createImageFile("circle", newDir)),
+        File(createImageFile("circle", refDir)),
+        diffImage,
+        tempDir.root,
+      )
 
     assertThat(result.diffResult).isInstanceOf(ImageDiffer.DiffResult.Similar::class.java)
     assertThat(result.diffPercent).isEqualTo(0.0)
@@ -78,7 +93,12 @@ class ImageVerifierTest {
     val imageVerifier = ImageVerifier(PixelPerfect(imageDiffThreshold = 0.28f))
     val diffImage = File(diffDir, "diff.png")
     val result =
-      imageVerifier.verify(File(createImageFile("circle", newDir)), File(createImageFile("star", refDir)), diffImage, tempDir.root)
+      imageVerifier.verify(
+        File(createImageFile("circle", newDir)),
+        File(createImageFile("star", refDir)),
+        diffImage,
+        tempDir.root,
+      )
 
     assertThat(result.diffResult).isInstanceOf(ImageDiffer.DiffResult.Similar::class.java)
     assertThat(result.diffPercent).isNotEqualTo(0.0)
@@ -157,7 +177,9 @@ class ImageVerifierTest {
     val refFile = File(createImageFile("circle", refDir))
 
     val error =
-      assertThrows(ScreenshotImageInvalidException::class.java) { imageVerifier.verify(emptyFile, refFile, diffImage, tempDir.root) }
+      assertThrows(ScreenshotImageInvalidException::class.java) {
+        imageVerifier.verify(emptyFile, refFile, diffImage, tempDir.root)
+      }
     assertThat(error).hasMessageThat().contains("Cannot read preview image file")
   }
 
@@ -169,7 +191,9 @@ class ImageVerifierTest {
     val emptyFile = File(refDir, "empty.png").apply { createNewFile() }
 
     val error =
-      assertThrows(ScreenshotImageInvalidException::class.java) { imageVerifier.verify(newFile, emptyFile, diffImage, tempDir.root) }
+      assertThrows(ScreenshotImageInvalidException::class.java) {
+        imageVerifier.verify(newFile, emptyFile, diffImage, tempDir.root)
+      }
     assertThat(error).hasMessageThat().contains("Cannot read reference image file")
   }
 

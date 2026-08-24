@@ -26,7 +26,12 @@ data class VerificationResult(val diffResult: ImageDiffer.DiffResult, val diffPe
 
 class ImageVerifier(private val imageDiffer: ImageDiffer) {
 
-  fun verify(newImageFile: File, referenceImageFile: File, diffOutputFile: File, projectRoot: File): VerificationResult {
+  fun verify(
+    newImageFile: File,
+    referenceImageFile: File,
+    diffOutputFile: File,
+    projectRoot: File,
+  ): VerificationResult {
     if (diffOutputFile.exists()) {
       diffOutputFile.delete()
     }
