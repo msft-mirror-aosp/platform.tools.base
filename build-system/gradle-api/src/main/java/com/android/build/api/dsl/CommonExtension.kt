@@ -317,18 +317,27 @@ interface CommonExtension : ExtensionAware {
   val flavorDimensions: MutableList<String>
 
   /**
-   * Specifies this project's resource prefix to Android Studio for editor features, such as Lint checks. This property is useful only when
-   * using Android Studio.
+   * Specifies a resource name prefix required for all resources defined in this module.
    *
-   * Including unique prefixes for project resources helps avoid naming collisions with resources from other projects.
+   * This setting is used by Android Studio editor features and Android Lint checks (the `ResourceName` detector) to ensure that all
+   * resources in this module adhere to the prefix convention.
    *
-   * For example, when creating a library with String resources, you may want to name each resource with a unique prefix, such as "`mylib_`"
-   * to avoid naming collisions with similar resources that the consumer defines.
+   * This property does not automatically prepend the prefix to resources at build time; rather, it validates and enforces that
+   * developer-defined resource names begin with the prefix, flagging violations during IDE editing and command-line `./gradlew lint` runs.
    *
-   * You can then specify this prefix, as shown below, so that Android Studio expects this prefix when you name project resources:
+   * Including unique prefixes for module resources helps avoid naming collisions when resources from multiple libraries are merged into a
+   * single application namespace.
+   *
+   * When specifying a prefix:
+   * - It is recommended to include a trailing underscore (e.g. `"mylib_"`).
+   * - XML and file resource names must start with the snake_case prefix (e.g., `mylib_header_icon.xml`, `@string/mylib_button_label`).
+   * - Styleables and attributes can use the camelCase equivalent (e.g., `<declare-styleable name="MyLibView">` or `myLibAttribute`).
+   *
+   * You can specify this prefix as shown below:
    * ```
-   * // This property is useful only when developing your project in Android Studio.
-   * resourcePrefix 'mylib_'
+   * android {
+   *     resourcePrefix = "mylib_"
+   * }
    * ```
    */
   var resourcePrefix: String?
