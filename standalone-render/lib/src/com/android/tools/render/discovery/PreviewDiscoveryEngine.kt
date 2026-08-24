@@ -18,6 +18,7 @@ package com.android.tools.render.discovery
 
 import com.android.tools.render.StandaloneRenderModelModule
 import com.android.tools.render.compose.ComposeScreenshot
+import com.android.tools.render.validation.MethodLevelValidator
 import org.objectweb.asm.AnnotationVisitor
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassVisitor
@@ -28,12 +29,17 @@ import org.objectweb.asm.Type
 /** Discovers Compose preview annotation parameters for a method from compiled bytecode. */
 class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
 
+  private val methodLevelValidator = MethodLevelValidator()
+
   private val classLoader: ClassLoader
     get() = module.environment.moduleClassLoaderManager.getShared(this::class.java.classLoader).classLoader
 
   companion object {
     /** Maximum number of previews allowed to be discovered for a single method to prevent DAG exponential expansion. */
     private const val MAX_DISCOVERED_PREVIEWS = 100
+
+    /** Descriptor for Jetpack Compose's `@Composable` annotation. */
+    private const val COMPOSABLE_DESC = "Landroidx/compose/runtime/Composable;"
 
     private const val PREVIEW_DESC = "Landroidx/compose/ui/tooling/preview/Preview;"
 
@@ -54,17 +60,22 @@ class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
   }
 
   /**
-   * Discovers all `@Preview` annotations declared on [methodFQN] from bytecode, extracting their parameters into [ComposeScreenshot]s.
-   * Supports single previews, repeatable multi-previews, custom MultiPreview class annotations, and method parameter annotations such as
+   * Discovers all `@Preview` annotations declared on [methodFQN] from compiled bytecode.
+   *
+   * Evaluates each preview-annotated method overload independently (e.g. `MyPreview()` and
+   * `MyPreview(@PreviewParameter(UserProvider::class) user: User)`), returning a separate [DiscoveredMethodPreviews] per overload.
+   * Non-preview overloads are skipped.
+   *
+   * Supports single previews, repeatable multi-previews, custom MultiPreview class annotations, and parameter annotations such as
    * `@PreviewParameter` and `@PreviewWrapper`.
    */
-  fun discoverAllPreviews(methodFQN: String, previewId: String? = null): List<ComposeScreenshot> {
+  fun discoverAllPreviews(methodFQN: String, previewId: String? = null): List<DiscoveredMethodPreviews> {
     val className = methodFQN.substringBeforeLast(".")
     val methodName = methodFQN.substringAfterLast(".")
 
     val classBytes = findClassBytes(className) ?: return emptyList()
 
-    val discoveredPreviews = mutableListOf<ComposeScreenshot>()
+    val discoveryResults = mutableListOf<DiscoveredMethodPreviews>()
     val resolvedPreviewId = previewId ?: methodName
 
     val classReader = ClassReader(classBytes)
@@ -80,6 +91,7 @@ class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
           if (name != methodName) return null
           if ((access and Opcodes.ACC_SYNTHETIC) != 0) return null
 
+          var isComposable = false
           val previewParamsList = mutableListOf<Map<String, String>>()
           val previewParameterAttributes = mutableMapOf<String, String>()
           val traversalPath = mutableSetOf<String>()
@@ -89,6 +101,10 @@ class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
 
           return object : MethodVisitor(Opcodes.ASM9) {
             override fun visitAnnotation(desc: String, visible: Boolean): AnnotationVisitor? {
+              if (desc == COMPOSABLE_DESC) {
+                isComposable = true
+                return null
+              }
               return handleAnnotation(desc, traversalPath, previewParamsList, onWrapperFound)
             }
 
@@ -100,6 +116,18 @@ class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
             }
 
             override fun visitEnd() {
+              if (previewParamsList.isEmpty() && discoveredWrappers.isEmpty()) {
+                return // Skip non-preview methods.
+              }
+
+              val validationResult =
+                methodLevelValidator.validate(methodFQN = methodFQN, isComposable = isComposable, previewParamsList = previewParamsList)
+
+              if (validationResult.hasErrors) {
+                discoveryResults.add(DiscoveredMethodPreviews(previews = emptyList(), methodValidationResult = validationResult))
+                return
+              }
+
               if (discoveredWrappers.size > 1) {
                 throw IllegalStateException(
                   "Multiple @PreviewWrapper annotations found for method '$methodFQN': ${discoveredWrappers.joinToString(", ")}"
@@ -107,8 +135,9 @@ class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
               }
               val previewWrapperFqn = discoveredWrappers.singleOrNull()
               val methodParams = if (previewParameterAttributes.isNotEmpty()) listOf(previewParameterAttributes) else emptyList()
+              val methodPreviews = mutableListOf<ComposeScreenshot>()
               for (previewParams in previewParamsList) {
-                discoveredPreviews.add(
+                methodPreviews.add(
                   ComposeScreenshot(
                     methodFQN = methodFQN,
                     methodParams = methodParams,
@@ -118,6 +147,7 @@ class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
                   )
                 )
               }
+              discoveryResults.add(DiscoveredMethodPreviews(previews = methodPreviews, methodValidationResult = validationResult))
             }
           }
         }
@@ -125,7 +155,7 @@ class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
       ClassReader.SKIP_CODE or ClassReader.SKIP_DEBUG or ClassReader.SKIP_FRAMES,
     )
 
-    return discoveredPreviews
+    return discoveryResults
   }
 
   /**

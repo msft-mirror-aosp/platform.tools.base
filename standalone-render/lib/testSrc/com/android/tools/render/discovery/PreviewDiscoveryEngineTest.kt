@@ -16,6 +16,7 @@
 
 package com.android.tools.render.discovery
 
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
@@ -86,6 +87,7 @@ class SampleUserProvider : PreviewParameterProvider<String> {
 /** Sample class containing composable preview methods for testing discovery. */
 class SamplePreviewTarget {
 
+  @Composable
   @Preview(
     name = "Dark Mode Preview",
     group = "Sample Group",
@@ -99,63 +101,77 @@ class SamplePreviewTarget {
     device = "spec:width=411dp,height=891dp",
     uiMode = 32,
   )
-  fun sampleAnnotatedPreview() {}
+  fun SampleAnnotatedPreview() {}
 
+  @Composable
   @Preview(name = "Light Mode", widthDp = 320, heightDp = 640)
   @Preview(name = "Dark Mode", widthDp = 360, heightDp = 720, uiMode = 32)
-  fun sampleMultiPreviewMethod() {}
+  fun SampleMultiPreviewMethod() {}
 
-  @Preview(name = "Invalid Preview", widthDp = -50) fun sampleInvalidPreviewMethod() {}
+  @Composable @Preview(name = "Invalid Preview", widthDp = -50) fun SampleInvalidPreviewMethod() {}
 
+  @Composable
   @Preview(name = "Valid Preview", widthDp = 300, heightDp = 600)
   @Preview(name = "Invalid Dimension Preview", widthDp = -50)
-  fun sampleMixedMultiPreviewMethod() {}
+  fun SampleMixedMultiPreviewMethod() {}
 
-  @DeviceThemePreviews fun sampleMultiPreviewAnnotatedMethod() {}
+  @Composable @DeviceThemePreviews fun SampleMultiPreviewAnnotatedMethod() {}
 
-  @CombinedDevicePreviews fun sampleNestedMultiPreviewAnnotatedMethod() {}
+  @Composable @CombinedDevicePreviews fun SampleNestedMultiPreviewAnnotatedMethod() {}
 
-  @DeviceThemePreviews @Preview(name = "Direct Override", widthDp = 500) fun sampleMixedDirectAndMultiPreviewMethod() {}
+  @Composable @DeviceThemePreviews @Preview(name = "Direct Override", widthDp = 500) fun SampleMixedDirectAndMultiPreviewMethod() {}
 
-  @CyclicPreviewA fun sampleCyclicMultiPreviewMethod() {}
+  @Composable @CyclicPreviewA fun SampleCyclicMultiPreviewMethod() {}
 
-  @NestedMultiPreviewWithDuplicateDescendants fun sampleNestedMultiPreviewWithDuplicateDescendants() {}
+  @Composable @NestedMultiPreviewWithDuplicateDescendants fun SampleNestedMultiPreviewWithDuplicateDescendants() {}
 
-  @BaseThemePreview @BranchThemePreviewA fun sampleDirectAndNestedSharedMultiPreviewMethod() {}
+  @Composable @BaseThemePreview @BranchThemePreviewA fun SampleDirectAndNestedSharedMultiPreviewMethod() {}
 
+  @Composable
   @Preview(name = "Single Param Preview")
-  fun sampleMethodWithPreviewParameter(@PreviewParameter(provider = SampleUserProvider::class, limit = 5) user: String) {}
+  fun SampleMethodWithPreviewParameter(@PreviewParameter(provider = SampleUserProvider::class, limit = 5) user: String) {}
 
+  @Composable
   @Preview(name = "Default Param Preview")
-  fun sampleMethodWithDefaultPreviewParameter(@PreviewParameter(provider = SampleUserProvider::class) user: String) {}
+  fun SampleMethodWithDefaultPreviewParameter(@PreviewParameter(provider = SampleUserProvider::class) user: String) {}
 
-  @Preview(name = "Direct Wrapped Preview") @PreviewWrapper(SampleThemeWrapper::class) fun sampleDirectWrappedPreviewMethod() {}
+  @Composable @Preview(name = "Direct Wrapped Preview") @PreviewWrapper(SampleThemeWrapper::class) fun SampleDirectWrappedPreviewMethod() {}
 
-  @WrappedThemePreviews fun sampleMultiPreviewWithWrapperMethod() {}
+  @Composable @WrappedThemePreviews fun SampleMultiPreviewWithWrapperMethod() {}
 
-  @WrappedThemePreviews @AnotherWrappedThemePreviews fun sampleMethodWithMultipleWrappersViaMultiPreview() {}
+  @Composable @WrappedThemePreviews @AnotherWrappedThemePreviews fun SampleMethodWithMultipleWrappersViaMultiPreview() {}
 
-  @PreviewWrapper(SampleThemeWrapper::class) @WrappedThemePreviews fun sampleMethodWithDirectAndMultiPreviewWrapper() {}
+  @Composable @PreviewWrapper(SampleThemeWrapper::class) @WrappedThemePreviews fun SampleMethodWithDirectAndMultiPreviewWrapper() {}
+
+  @Preview(name = "Non-Composable Preview") fun sampleNonComposablePreviewMethod() {}
 
   fun sampleMethodWithoutAnnotation() {}
 
   @CustomNonComposePreview(name = "Non Compose Preview") fun sampleMethodWithNonComposeAnnotation() {}
 
   class NestedTarget {
-    @Preview(name = "Nested Preview", widthDp = 150, heightDp = 300) fun nestedPreviewMethod() {}
+    @Composable @Preview(name = "Nested Preview", widthDp = 150, heightDp = 300) fun NestedPreviewMethod() {}
   }
 
   companion object {
-    @Preview(name = "Companion Preview", fontScale = 2.0f) fun companionPreviewMethod() {}
+    @Composable @Preview(name = "Companion Preview", fontScale = 2.0f) fun CompanionPreviewMethod() {}
   }
 }
 
 /** Sample class containing overloaded methods (one with no parameters, one with @PreviewParameter). */
 class OverloadedPreviewParameterTarget {
-  @Preview(name = "Overload No Param", widthDp = 100) fun overloadedMethod() {}
+  @Composable @Preview(name = "Overload No Param", widthDp = 100) fun OverloadedMethod() {}
 
+  @Composable
   @Preview(name = "Overload With PreviewParameter", widthDp = 200)
-  fun overloadedMethod(@PreviewParameter(provider = SampleUserProvider::class, limit = 2) user: String) {}
+  fun OverloadedMethod(@PreviewParameter(provider = SampleUserProvider::class, limit = 2) user: String) {}
+}
+
+/** Sample class containing overloaded methods where one is a valid @Composable preview and the other lacks @Composable. */
+class OverloadedMixedValidityTarget {
+  @Composable @Preview(name = "Valid Composable Overload", widthDp = 100) fun OverloadedPreview() {}
+
+  @Preview(name = "Invalid Non-Composable Overload", widthDp = 200) fun OverloadedPreview(count: Int) {}
 }
 
 class PreviewDiscoveryEngineTest {
@@ -179,11 +195,13 @@ class PreviewDiscoveryEngineTest {
   }
 
   @Test
-  fun testDiscoverSinglePreviewAnnotation() {
+  fun testDiscoverSingleDirectPreview() {
     createDiscoveryEngine { engine ->
-      val methodFQN = "${SamplePreviewTarget::class.java.name}.sampleAnnotatedPreview"
+      val methodFQN = "${SamplePreviewTarget::class.java.name}.SampleAnnotatedPreview"
 
-      val discovered = engine.discoverAllPreviews(methodFQN).firstOrNull()
+      val result = engine.discoverAllPreviews(methodFQN).single()
+      assertTrue("Validation result should be valid", result.methodValidationResult.isValid)
+      val discovered = result.previews.firstOrNull()
       assertNotNull("Preview should be discovered on annotated method", discovered)
       assertEquals(methodFQN, discovered!!.methodFQN)
 
@@ -205,9 +223,11 @@ class PreviewDiscoveryEngineTest {
   @Test
   fun testDiscoverNestedClassPreview() {
     createDiscoveryEngine { engine ->
-      val methodFQN = "${SamplePreviewTarget.NestedTarget::class.java.name}.nestedPreviewMethod"
+      val methodFQN = "${SamplePreviewTarget.NestedTarget::class.java.name}.NestedPreviewMethod"
 
-      val discovered = engine.discoverAllPreviews(methodFQN).firstOrNull()
+      val result = engine.discoverAllPreviews(methodFQN).single()
+      assertTrue("Validation result should be valid", result.methodValidationResult.isValid)
+      val discovered = result.previews.firstOrNull()
       assertNotNull("Preview should be discovered on nested class method", discovered)
       assertEquals(methodFQN, discovered!!.methodFQN)
 
@@ -221,9 +241,11 @@ class PreviewDiscoveryEngineTest {
   @Test
   fun testDiscoverCompanionObjectPreview() {
     createDiscoveryEngine { engine ->
-      val methodFQN = "${SamplePreviewTarget.Companion::class.java.name}.companionPreviewMethod"
+      val methodFQN = "${SamplePreviewTarget.Companion::class.java.name}.CompanionPreviewMethod"
 
-      val discovered = engine.discoverAllPreviews(methodFQN).firstOrNull()
+      val result = engine.discoverAllPreviews(methodFQN).single()
+      assertTrue("Validation result should be valid", result.methodValidationResult.isValid)
+      val discovered = result.previews.firstOrNull()
       assertNotNull("Preview should be discovered on companion object method", discovered)
       assertEquals(methodFQN, discovered!!.methodFQN)
 
@@ -238,8 +260,8 @@ class PreviewDiscoveryEngineTest {
     createDiscoveryEngine { engine ->
       val methodFQN = "${SamplePreviewTarget::class.java.name}.sampleMethodWithNonComposeAnnotation"
 
-      val discovered = engine.discoverAllPreviews(methodFQN)
-      assertTrue("Methods annotated with non-Compose annotations should return empty list", discovered.isEmpty())
+      val results = engine.discoverAllPreviews(methodFQN)
+      assertTrue("Methods annotated with non-Compose annotations should return empty list", results.isEmpty())
     }
   }
 
@@ -248,8 +270,8 @@ class PreviewDiscoveryEngineTest {
     createDiscoveryEngine { engine ->
       val methodFQN = "${SamplePreviewTarget::class.java.name}.sampleMethodWithoutAnnotation"
 
-      val discovered = engine.discoverAllPreviews(methodFQN)
-      assertTrue("Methods without @Preview annotation should return empty list", discovered.isEmpty())
+      val results = engine.discoverAllPreviews(methodFQN)
+      assertTrue("Methods without @Preview annotation should return empty list", results.isEmpty())
     }
   }
 
@@ -258,17 +280,18 @@ class PreviewDiscoveryEngineTest {
     createDiscoveryEngine { engine ->
       val methodFQN = "${SamplePreviewTarget::class.java.name}.nonExistentMethod"
 
-      val discovered = engine.discoverAllPreviews(methodFQN)
-      assertTrue("Non-existent method should return empty list", discovered.isEmpty())
+      val results = engine.discoverAllPreviews(methodFQN)
+      assertTrue("Non-existent method should return empty list", results.isEmpty())
     }
   }
 
   @Test
   fun testDiscoverAllMultiPreviews() {
     createDiscoveryEngine { engine ->
-      val methodFQN = "${SamplePreviewTarget::class.java.name}.sampleMultiPreviewMethod"
+      val methodFQN = "${SamplePreviewTarget::class.java.name}.SampleMultiPreviewMethod"
 
-      val allDiscovered = engine.discoverAllPreviews(methodFQN)
+      val result = engine.discoverAllPreviews(methodFQN).single()
+      val allDiscovered = result.previews
       assertEquals("Should discover all 2 @Preview annotations on method", 2, allDiscovered.size)
 
       val p0 = allDiscovered[0]
@@ -291,17 +314,18 @@ class PreviewDiscoveryEngineTest {
     createDiscoveryEngine { engine ->
       val methodFQN = "com.android.tools.render.NonExistentClass.preview"
 
-      val discovered = engine.discoverAllPreviews(methodFQN)
-      assertTrue("Non-existent class should return empty list", discovered.isEmpty())
+      val results = engine.discoverAllPreviews(methodFQN)
+      assertTrue("Non-existent class should return empty list", results.isEmpty())
     }
   }
 
   @Test
   fun testDiscoverCustomMultiPreviewClassAnnotation() {
     createDiscoveryEngine { engine ->
-      val methodFQN = "${SamplePreviewTarget::class.java.name}.sampleMultiPreviewAnnotatedMethod"
+      val methodFQN = "${SamplePreviewTarget::class.java.name}.SampleMultiPreviewAnnotatedMethod"
 
-      val discovered = engine.discoverAllPreviews(methodFQN)
+      val result = engine.discoverAllPreviews(methodFQN).single()
+      val discovered = result.previews
       assertEquals("Should discover 2 previews from @DeviceThemePreviews", 2, discovered.size)
 
       val p0 = discovered[0]
@@ -320,9 +344,10 @@ class PreviewDiscoveryEngineTest {
   @Test
   fun testDiscoverNestedMultiPreviewClassAnnotation() {
     createDiscoveryEngine { engine ->
-      val methodFQN = "${SamplePreviewTarget::class.java.name}.sampleNestedMultiPreviewAnnotatedMethod"
+      val methodFQN = "${SamplePreviewTarget::class.java.name}.SampleNestedMultiPreviewAnnotatedMethod"
 
-      val discovered = engine.discoverAllPreviews(methodFQN)
+      val result = engine.discoverAllPreviews(methodFQN).single()
+      val discovered = result.previews
       assertEquals("Should discover 3 previews from nested @CombinedDevicePreviews", 3, discovered.size)
 
       assertEquals("Phone Light", discovered[0].previewParams["name"])
@@ -335,9 +360,10 @@ class PreviewDiscoveryEngineTest {
   @Test
   fun testDiscoverMixedDirectAndMultiPreview() {
     createDiscoveryEngine { engine ->
-      val methodFQN = "${SamplePreviewTarget::class.java.name}.sampleMixedDirectAndMultiPreviewMethod"
+      val methodFQN = "${SamplePreviewTarget::class.java.name}.SampleMixedDirectAndMultiPreviewMethod"
 
-      val discovered = engine.discoverAllPreviews(methodFQN)
+      val result = engine.discoverAllPreviews(methodFQN).single()
+      val discovered = result.previews
       assertEquals("Should discover 3 previews (2 from MultiPreview + 1 direct @Preview)", 3, discovered.size)
 
       assertEquals("Phone Light", discovered[0].previewParams["name"])
@@ -350,22 +376,20 @@ class PreviewDiscoveryEngineTest {
   @Test
   fun testCyclicMultiPreviewTerminatesSafely() {
     createDiscoveryEngine { engine ->
-      val methodFQN = "${SamplePreviewTarget::class.java.name}.sampleCyclicMultiPreviewMethod"
+      val methodFQN = "${SamplePreviewTarget::class.java.name}.SampleCyclicMultiPreviewMethod"
 
-      val discovered = engine.discoverAllPreviews(methodFQN)
-      assertTrue("Cyclic annotations without @Preview should return empty list without crashing", discovered.isEmpty())
+      val results = engine.discoverAllPreviews(methodFQN)
+      assertTrue("Cyclic annotations without @Preview should return empty list without crashing", results.isEmpty())
     }
   }
 
   @Test
   fun testDiscoverNestedMultiPreviewWithDuplicateDescendants() {
     createDiscoveryEngine { engine ->
-      val methodFQN = "${SamplePreviewTarget::class.java.name}.sampleNestedMultiPreviewWithDuplicateDescendants"
+      val methodFQN = "${SamplePreviewTarget::class.java.name}.SampleNestedMultiPreviewWithDuplicateDescendants"
 
-      val discovered = engine.discoverAllPreviews(methodFQN)
-      // Branch A: Branch A Preview + Base Theme Preview (2)
-      // Branch B: Branch B Preview + Base Theme Preview (2)
-      // Total: 4
+      val result = engine.discoverAllPreviews(methodFQN).single()
+      val discovered = result.previews
       assertEquals("Should discover all 4 previews from nested MultiPreview with duplicate descendants", 4, discovered.size)
 
       val names = discovered.map { it.previewParams["name"] }
@@ -378,10 +402,10 @@ class PreviewDiscoveryEngineTest {
   @Test
   fun testDiscoverDirectAndNestedSharedMultiPreview() {
     createDiscoveryEngine { engine ->
-      val methodFQN = "${SamplePreviewTarget::class.java.name}.sampleDirectAndNestedSharedMultiPreviewMethod"
+      val methodFQN = "${SamplePreviewTarget::class.java.name}.SampleDirectAndNestedSharedMultiPreviewMethod"
 
-      val discovered = engine.discoverAllPreviews(methodFQN)
-      // Direct @BaseThemePreview (1) + @BranchThemePreviewA (Branch A Preview + Base Theme Preview) (2) = 3
+      val result = engine.discoverAllPreviews(methodFQN).single()
+      val discovered = result.previews
       assertEquals("Should discover 3 previews from direct and nested shared MultiPreview", 3, discovered.size)
 
       val names = discovered.map { it.previewParams["name"] }
@@ -393,9 +417,10 @@ class PreviewDiscoveryEngineTest {
   @Test
   fun testDiscoverPreviewParameterSingleArgument() {
     createDiscoveryEngine { engine ->
-      val methodFQN = "${SamplePreviewTarget::class.java.name}.sampleMethodWithPreviewParameter"
+      val methodFQN = "${SamplePreviewTarget::class.java.name}.SampleMethodWithPreviewParameter"
 
-      val discovered = engine.discoverAllPreviews(methodFQN)
+      val result = engine.discoverAllPreviews(methodFQN).single()
+      val discovered = result.previews
       assertEquals(1, discovered.size)
 
       val screenshot = discovered[0]
@@ -409,9 +434,10 @@ class PreviewDiscoveryEngineTest {
   @Test
   fun testDiscoverPreviewParameterWithDefaultLimit() {
     createDiscoveryEngine { engine ->
-      val methodFQN = "${SamplePreviewTarget::class.java.name}.sampleMethodWithDefaultPreviewParameter"
+      val methodFQN = "${SamplePreviewTarget::class.java.name}.SampleMethodWithDefaultPreviewParameter"
 
-      val discovered = engine.discoverAllPreviews(methodFQN)
+      val result = engine.discoverAllPreviews(methodFQN).single()
+      val discovered = result.previews
       assertEquals(1, discovered.size)
 
       val screenshot = discovered[0]
@@ -426,9 +452,10 @@ class PreviewDiscoveryEngineTest {
   @Test
   fun testDiscoverMethodWithoutPreviewParameterHasEmptyMethodParams() {
     createDiscoveryEngine { engine ->
-      val methodFQN = "${SamplePreviewTarget::class.java.name}.sampleAnnotatedPreview"
+      val methodFQN = "${SamplePreviewTarget::class.java.name}.SampleAnnotatedPreview"
 
-      val discovered = engine.discoverAllPreviews(methodFQN)
+      val result = engine.discoverAllPreviews(methodFQN).single()
+      val discovered = result.previews
       assertEquals(1, discovered.size)
       assertTrue("Method without @PreviewParameter should have empty methodParams", discovered[0].methodParams.isEmpty())
       assertEquals(null, discovered[0].previewWrapperFqn)
@@ -438,9 +465,10 @@ class PreviewDiscoveryEngineTest {
   @Test
   fun testDiscoverDirectPreviewWrapper() {
     createDiscoveryEngine { engine ->
-      val methodFQN = "${SamplePreviewTarget::class.java.name}.sampleDirectWrappedPreviewMethod"
+      val methodFQN = "${SamplePreviewTarget::class.java.name}.SampleDirectWrappedPreviewMethod"
 
-      val discovered = engine.discoverAllPreviews(methodFQN)
+      val result = engine.discoverAllPreviews(methodFQN).single()
+      val discovered = result.previews
       assertEquals(1, discovered.size)
 
       val screenshot = discovered[0]
@@ -452,9 +480,10 @@ class PreviewDiscoveryEngineTest {
   @Test
   fun testDiscoverMultiPreviewWithWrapper() {
     createDiscoveryEngine { engine ->
-      val methodFQN = "${SamplePreviewTarget::class.java.name}.sampleMultiPreviewWithWrapperMethod"
+      val methodFQN = "${SamplePreviewTarget::class.java.name}.SampleMultiPreviewWithWrapperMethod"
 
-      val discovered = engine.discoverAllPreviews(methodFQN)
+      val result = engine.discoverAllPreviews(methodFQN).single()
+      val discovered = result.previews
       assertEquals(2, discovered.size)
 
       assertEquals("Wrapped Phone Light", discovered[0].previewParams["name"])
@@ -468,16 +497,22 @@ class PreviewDiscoveryEngineTest {
   @Test
   fun testDiscoverOverloadedMethodsWithAndWithoutPreviewParameter() {
     createDiscoveryEngine { engine ->
-      val methodFQN = "${OverloadedPreviewParameterTarget::class.java.name}.overloadedMethod"
+      val methodFQN = "${OverloadedPreviewParameterTarget::class.java.name}.OverloadedMethod"
 
-      val discovered = engine.discoverAllPreviews(methodFQN)
-      assertEquals("Should discover 2 previews across both overloads", 2, discovered.size)
+      val results = engine.discoverAllPreviews(methodFQN)
+      assertEquals("Should discover 2 method overloads", 2, results.size)
 
-      val noParamPreview = discovered.first { it.previewParams["name"] == "Overload No Param" }
+      val noParamResult = results[0]
+      assertEquals(1, noParamResult.previews.size)
+      val noParamPreview = noParamResult.previews[0]
+      assertEquals("Overload No Param", noParamPreview.previewParams["name"])
       assertTrue("No-param overload should have empty methodParams", noParamPreview.methodParams.isEmpty())
       assertEquals("100", noParamPreview.previewParams["widthDp"])
 
-      val withParamPreview = discovered.first { it.previewParams["name"] == "Overload With PreviewParameter" }
+      val withParamResult = results[1]
+      assertEquals(1, withParamResult.previews.size)
+      val withParamPreview = withParamResult.previews[0]
+      assertEquals("Overload With PreviewParameter", withParamPreview.previewParams["name"])
       assertEquals("With-param overload should have 1 methodParam", 1, withParamPreview.methodParams.size)
       assertEquals(SampleUserProvider::class.java.name, withParamPreview.methodParams[0]["provider"])
       assertEquals("2", withParamPreview.methodParams[0]["limit"])
@@ -488,7 +523,7 @@ class PreviewDiscoveryEngineTest {
   @Test
   fun testMultiplePreviewWrappersViaMultiPreviewThrowsIllegalStateException() {
     createDiscoveryEngine { engine ->
-      val methodFQN = "${SamplePreviewTarget::class.java.name}.sampleMethodWithMultipleWrappersViaMultiPreview"
+      val methodFQN = "${SamplePreviewTarget::class.java.name}.SampleMethodWithMultipleWrappersViaMultiPreview"
       try {
         engine.discoverAllPreviews(methodFQN)
         fail("Expected IllegalStateException for multiple @PreviewWrapper annotations")
@@ -501,13 +536,55 @@ class PreviewDiscoveryEngineTest {
   @Test
   fun testDirectAndMultiPreviewWrapperThrowsIllegalStateException() {
     createDiscoveryEngine { engine ->
-      val methodFQN = "${SamplePreviewTarget::class.java.name}.sampleMethodWithDirectAndMultiPreviewWrapper"
+      val methodFQN = "${SamplePreviewTarget::class.java.name}.SampleMethodWithDirectAndMultiPreviewWrapper"
       try {
         engine.discoverAllPreviews(methodFQN)
         fail("Expected IllegalStateException for multiple @PreviewWrapper annotations")
       } catch (e: IllegalStateException) {
         assertTrue(e.message?.contains("Multiple @PreviewWrapper annotations found") == true)
       }
+    }
+  }
+
+  @Test
+  fun testDiscoverPreviewWithoutComposableProducesValidationError() {
+    createDiscoveryEngine { engine ->
+      val methodFQN = "${SamplePreviewTarget::class.java.name}.sampleNonComposablePreviewMethod"
+
+      val results = engine.discoverAllPreviews(methodFQN)
+      assertEquals(1, results.size)
+      val result = results[0]
+      assertTrue("Discovered previews should be empty for non-composable preview", result.previews.isEmpty())
+      assertTrue("Validation result should have errors", result.methodValidationResult.hasErrors)
+
+      val error = result.methodValidationResult.errors.first()
+      assertEquals("Method '$methodFQN' annotated with @Preview must be annotated with @Composable", error.message)
+    }
+  }
+
+  @Test
+  fun testDiscoverOverloadedMethodsWithMixedValidity() {
+    createDiscoveryEngine { engine ->
+      val methodFQN = "${OverloadedMixedValidityTarget::class.java.name}.OverloadedPreview"
+
+      val results = engine.discoverAllPreviews(methodFQN)
+      assertEquals("Should return 2 PreviewDiscoveryResults for the two overloads", 2, results.size)
+
+      // First overload is valid
+      val validResult = results[0]
+      assertEquals("Should discover the valid preview from valid overload", 1, validResult.previews.size)
+      assertEquals("Valid Composable Overload", validResult.previews[0].previewParams["name"])
+      assertTrue("Valid overload should have no validation errors", validResult.methodValidationResult.isValid)
+
+      // Second overload is invalid (missing @Composable)
+      val invalidResult = results[1]
+      assertTrue("Invalid overload should have empty previews", invalidResult.previews.isEmpty())
+      assertTrue("Invalid overload should record validation errors", invalidResult.methodValidationResult.hasErrors)
+      assertEquals(1, invalidResult.methodValidationResult.errors.size)
+      assertEquals(
+        "Method '$methodFQN' annotated with @Preview must be annotated with @Composable",
+        invalidResult.methodValidationResult.errors[0].message,
+      )
     }
   }
 }

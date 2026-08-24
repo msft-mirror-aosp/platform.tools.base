@@ -72,35 +72,74 @@ class Renderer(
    *   any potential errors.
    */
   fun render(screenshot: PreviewScreenshot, outputFolderPath: String): List<PreviewScreenshotResult> {
-    val targetScreenshots = resolveTargetScreenshots(screenshot)
+    // If the screenshot is non-Compose or its preview and method parameters have already been resolved/specified,
+    // bypass bytecode preview discovery and render it directly.
+    if (screenshot !is ComposeScreenshot || screenshot.previewParams.isNotEmpty() || screenshot.methodParams.isNotEmpty()) {
+      return renderResolvedScreenshot(screenshot, outputFolderPath)
+    }
+
+    val packagePath = screenshot.methodFQN.substringBeforeLast(".").replace(".", File.separator)
     val baseResultId = screenshot.previewId.substringAfterLast(".")
     var imageCounter = 0
 
-    return targetScreenshots.flatMap { currentScreenshot ->
-      val previewId = currentScreenshot.previewId
-      val methodFQN = currentScreenshot.methodFQN
-      val packagePath = methodFQN.substringBeforeLast(".").replace(".", File.separator)
-      val validationResult = previewValidator.validate(currentScreenshot)
-
-      if (validationResult.hasErrors) {
+    return discoveryEngine.discoverAllPreviews(screenshot.methodFQN, screenshot.previewId).flatMap { method ->
+      if (method.methodValidationResult.hasErrors) {
         val defaultRelativeImagePath = packagePath + File.separator + "${baseResultId}_${imageCounter++}.png"
-        listOf(PreviewScreenshotResult(previewId, methodFQN, defaultRelativeImagePath, validationResult.toScreenshotError()))
+        listOf(
+          PreviewScreenshotResult(
+            screenshot.previewId,
+            screenshot.methodFQN,
+            defaultRelativeImagePath,
+            method.methodValidationResult.toScreenshotError(),
+          )
+        )
       } else {
-        if (validationResult.hasWarnings) {
-          val warningMessages = validationResult.warnings.joinToString("; ") { it.message }
-          logger.log(Level.WARNING, "Preview parameter validation warning for $methodFQN: $warningMessages")
+        method.previews.flatMap { currentScreenshot ->
+          val validationResult = previewValidator.validate(currentScreenshot)
+          if (validationResult.hasErrors) {
+            val defaultRelativeImagePath = packagePath + File.separator + "${baseResultId}_${imageCounter++}.png"
+            listOf(
+              PreviewScreenshotResult(
+                currentScreenshot.previewId,
+                currentScreenshot.methodFQN,
+                defaultRelativeImagePath,
+                validationResult.toScreenshotError(),
+              )
+            )
+          } else {
+            if (validationResult.hasWarnings) {
+              val warningMessages = validationResult.warnings.joinToString("; ") { it.message }
+              logger.log(Level.WARNING, "Preview parameter validation warning for ${currentScreenshot.methodFQN}: $warningMessages")
+            }
+            renderScreenshotElement(currentScreenshot, outputFolderPath, packagePath, baseResultId) { imageCounter++ }
+          }
         }
-        renderScreenshotElement(currentScreenshot, outputFolderPath, packagePath, baseResultId) { imageCounter++ }
       }
     }
   }
 
-  private fun resolveTargetScreenshots(screenshot: PreviewScreenshot): List<PreviewScreenshot> {
-    if (screenshot !is ComposeScreenshot) return listOf(screenshot)
-    if (screenshot.previewParams.isNotEmpty() || screenshot.methodParams.isNotEmpty()) {
-      return listOf(screenshot)
+  /**
+   * Directly renders a pre-configured or non-Compose [PreviewScreenshot] without performing bytecode preview discovery.
+   *
+   * Validates the screenshot configuration and outputs the rendered PNG file(s) or records validation errors if parameters are invalid.
+   */
+  private fun renderResolvedScreenshot(screenshot: PreviewScreenshot, outputFolderPath: String): List<PreviewScreenshotResult> {
+    val packagePath = screenshot.methodFQN.substringBeforeLast(".").replace(".", File.separator)
+    val baseResultId = screenshot.previewId.substringAfterLast(".")
+    val validationResult = previewValidator.validate(screenshot)
+    return if (validationResult.hasErrors) {
+      val defaultRelativeImagePath = packagePath + File.separator + "${baseResultId}_0.png"
+      listOf(
+        PreviewScreenshotResult(screenshot.previewId, screenshot.methodFQN, defaultRelativeImagePath, validationResult.toScreenshotError())
+      )
+    } else {
+      if (validationResult.hasWarnings) {
+        val warningMessages = validationResult.warnings.joinToString("; ") { it.message }
+        logger.log(Level.WARNING, "Preview parameter validation warning for ${screenshot.methodFQN}: $warningMessages")
+      }
+      var imageCounter = 0
+      renderScreenshotElement(screenshot, outputFolderPath, packagePath, baseResultId) { imageCounter++ }
     }
-    return discoveryEngine.discoverAllPreviews(screenshot.methodFQN, screenshot.previewId).ifEmpty { listOf(screenshot) }
   }
 
   private fun renderScreenshotElement(

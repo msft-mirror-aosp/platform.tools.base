@@ -201,7 +201,7 @@ class RendererTest {
     val screenshot =
       ComposeScreenshot(
         previewId = "preview_auto_discover",
-        methodFQN = "${SamplePreviewTarget::class.java.name}.sampleAnnotatedPreview",
+        methodFQN = "${SamplePreviewTarget::class.java.name}.SampleAnnotatedPreview",
         previewParams = emptyMap(),
         methodParams = emptyList(),
       )
@@ -211,7 +211,7 @@ class RendererTest {
     assertEquals(1, results.size)
     val result = results[0]
     assertEquals("preview_auto_discover", result.previewId)
-    assertEquals("${SamplePreviewTarget::class.java.name}.sampleAnnotatedPreview", result.methodFQN)
+    assertEquals("${SamplePreviewTarget::class.java.name}.SampleAnnotatedPreview", result.methodFQN)
   }
 
   @Test
@@ -231,7 +231,7 @@ class RendererTest {
     val screenshot =
       ComposeScreenshot(
         previewId = "preview_invalid",
-        methodFQN = "${SamplePreviewTarget::class.java.name}.sampleInvalidPreviewMethod",
+        methodFQN = "${SamplePreviewTarget::class.java.name}.SampleInvalidPreviewMethod",
         previewParams = emptyMap(),
         methodParams = emptyList(),
       )
@@ -261,7 +261,7 @@ class RendererTest {
     val screenshot =
       ComposeScreenshot(
         previewId = "multi_preview",
-        methodFQN = "${SamplePreviewTarget::class.java.name}.sampleMultiPreviewMethod",
+        methodFQN = "${SamplePreviewTarget::class.java.name}.SampleMultiPreviewMethod",
         previewParams = emptyMap(),
         methodParams = emptyList(),
       )
@@ -290,7 +290,7 @@ class RendererTest {
     val screenshot =
       ComposeScreenshot(
         previewId = "mixed_preview",
-        methodFQN = "${SamplePreviewTarget::class.java.name}.sampleMixedMultiPreviewMethod",
+        methodFQN = "${SamplePreviewTarget::class.java.name}.SampleMixedMultiPreviewMethod",
         previewParams = emptyMap(),
         methodParams = emptyList(),
       )
@@ -329,7 +329,7 @@ class RendererTest {
     val screenshot =
       ComposeScreenshot(
         previewId = "multipreview_class",
-        methodFQN = "${SamplePreviewTarget::class.java.name}.sampleMultiPreviewAnnotatedMethod",
+        methodFQN = "${SamplePreviewTarget::class.java.name}.SampleMultiPreviewAnnotatedMethod",
         previewParams = emptyMap(),
         methodParams = emptyList(),
       )
@@ -341,5 +341,36 @@ class RendererTest {
     assertEquals("multipreview_class", results[1].previewId)
     assertTrue(results[0].imagePath.endsWith("multipreview_class_0.png"))
     assertTrue(results[1].imagePath.endsWith("multipreview_class_1.png"))
+  }
+
+  @Test
+  fun testRenderNonComposablePreviewProducesValidationError() {
+    val layoutlibPath = TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib")
+
+    val bootstrapper =
+      RenderEnvironmentBootstrapper(
+        fontsPath = null,
+        resourceApkPath = null,
+        namespace = "",
+        classPath = emptyList(),
+        projectClassPath = emptyList(),
+        layoutlibPath = layoutlibPath.absolutePathString(),
+      )
+    val outputDir = tmpFolder.newFolder("output_screenshots_non_composable").absolutePath
+    val screenshot =
+      ComposeScreenshot(
+        previewId = "non_composable_preview",
+        methodFQN = "${SamplePreviewTarget::class.java.name}.sampleNonComposablePreviewMethod",
+        previewParams = emptyMap(),
+        methodParams = emptyList(),
+      )
+
+    val results = bootstrapper.bootstrap().use { renderer -> renderer.render(screenshot, outputDir) }
+
+    assertEquals(1, results.size)
+    val result = results[0]
+    assertEquals("non_composable_preview", result.previewId)
+    assertEquals("VALIDATION_ERROR", result.error?.status)
+    assertTrue(result.error?.message?.contains("must be annotated with @Composable") == true)
   }
 }
