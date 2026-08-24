@@ -28,10 +28,28 @@ class MethodLevelValidator {
    * @param discoveredWrappers List of discovered `@PreviewWrapper` class names for this method overload.
    * @return A [ValidationResult] containing any errors or warnings found.
    */
-  fun validate(methodFQN: String, isComposable: Boolean, previewParamsList: List<Map<String, String>> = emptyList()): ValidationResult {
+  fun validate(
+    methodFQN: String,
+    isComposable: Boolean,
+    previewParamsList: List<Map<String, String>> = emptyList(),
+    discoveredWrappers: List<String> = emptyList(),
+  ): ValidationResult {
     val issues = mutableListOf<ValidationIssue>()
 
+    issues.addAll(validateComposablePresence(methodFQN, isComposable, previewParamsList))
+    issues.addAll(validatePreviewWrapper(methodFQN, isComposable, previewParamsList, discoveredWrappers))
+
+    return ValidationResult(issues)
+  }
+
+  private fun validateComposablePresence(
+    methodFQN: String,
+    isComposable: Boolean,
+    previewParamsList: List<Map<String, String>>,
+  ): List<ValidationIssue> {
+    val issues = mutableListOf<ValidationIssue>()
     val hasPreviewAnnotations = previewParamsList.isNotEmpty()
+
     if (hasPreviewAnnotations && !isComposable) {
       issues.add(
         ValidationIssue(
@@ -42,7 +60,47 @@ class MethodLevelValidator {
         )
       )
     }
+    return issues
+  }
 
-    return ValidationResult(issues)
+  private fun validatePreviewWrapper(
+    methodFQN: String,
+    isComposable: Boolean,
+    previewParamsList: List<Map<String, String>>,
+    discoveredWrappers: List<String>,
+  ): List<ValidationIssue> {
+    if (discoveredWrappers.isEmpty()) return emptyList()
+
+    val issues = mutableListOf<ValidationIssue>()
+    val hasPreviewAnnotations = previewParamsList.isNotEmpty()
+
+    if (!hasPreviewAnnotations) {
+      val message =
+        if (!isComposable) {
+          "Method '$methodFQN' annotated with @PreviewWrapper must be annotated with @Preview and @Composable"
+        } else {
+          "Method '$methodFQN' annotated with @PreviewWrapper must also be annotated with @Preview"
+        }
+      issues.add(
+        ValidationIssue(
+          message = message,
+          severity = ValidationSeverity.ERROR,
+          category = ValidationCategory.METHOD,
+          target = methodFQN,
+        )
+      )
+    }
+
+    if (discoveredWrappers.size > 1) {
+      issues.add(
+        ValidationIssue(
+          message = "Multiple @PreviewWrapper annotations found for method '$methodFQN': ${discoveredWrappers.joinToString(", ")}",
+          severity = ValidationSeverity.ERROR,
+          category = ValidationCategory.METHOD,
+          target = methodFQN,
+        )
+      )
+    }
+    return issues
   }
 }

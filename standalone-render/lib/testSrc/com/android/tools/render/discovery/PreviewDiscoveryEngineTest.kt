@@ -28,7 +28,6 @@ import kotlin.io.path.absolutePathString
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
-import org.junit.Assert.fail
 import org.junit.Test
 
 /** Custom non-Compose preview annotation to verify strict descriptor matching. */
@@ -143,7 +142,9 @@ class SamplePreviewTarget {
 
   @Composable @PreviewWrapper(SampleThemeWrapper::class) @WrappedThemePreviews fun SampleMethodWithDirectAndMultiPreviewWrapper() {}
 
-  @Preview(name = "Non-Composable Preview") fun sampleNonComposablePreviewMethod() {}
+  @Composable @PreviewWrapper(SampleThemeWrapper::class) fun SampleComposableWrapperWithoutPreviewMethod() {}
+
+  @Preview(name = "Non-Composable Preview") fun SampleNonComposablePreviewMethod() {}
 
   fun sampleMethodWithoutAnnotation() {}
 
@@ -521,35 +522,51 @@ class PreviewDiscoveryEngineTest {
   }
 
   @Test
-  fun testMultiplePreviewWrappersViaMultiPreviewThrowsIllegalStateException() {
+  fun testMultiplePreviewWrappersViaMultiPreviewProducesValidationError() {
     createDiscoveryEngine { engine ->
       val methodFQN = "${SamplePreviewTarget::class.java.name}.SampleMethodWithMultipleWrappersViaMultiPreview"
-      try {
-        engine.discoverAllPreviews(methodFQN)
-        fail("Expected IllegalStateException for multiple @PreviewWrapper annotations")
-      } catch (e: IllegalStateException) {
-        assertTrue(e.message?.contains("Multiple @PreviewWrapper annotations found") == true)
-      }
+      val results = engine.discoverAllPreviews(methodFQN)
+      assertEquals(1, results.size)
+      val result = results.first()
+      assertTrue("Method with multiple wrappers should have validation errors", result.methodValidationResult.hasErrors)
+      assertTrue("Discovered previews should be empty for method with multiple wrappers", result.previews.isEmpty())
+      val error = result.methodValidationResult.errors.first()
+      assertTrue("Error should mention multiple wrappers", error.message.contains("Multiple @PreviewWrapper annotations found"))
     }
   }
 
   @Test
-  fun testDirectAndMultiPreviewWrapperThrowsIllegalStateException() {
+  fun testDirectAndMultiPreviewWrapperProducesValidationError() {
     createDiscoveryEngine { engine ->
       val methodFQN = "${SamplePreviewTarget::class.java.name}.SampleMethodWithDirectAndMultiPreviewWrapper"
-      try {
-        engine.discoverAllPreviews(methodFQN)
-        fail("Expected IllegalStateException for multiple @PreviewWrapper annotations")
-      } catch (e: IllegalStateException) {
-        assertTrue(e.message?.contains("Multiple @PreviewWrapper annotations found") == true)
-      }
+      val results = engine.discoverAllPreviews(methodFQN)
+      assertEquals(1, results.size)
+      val result = results.first()
+      assertTrue("Method with direct and multi-preview wrappers should have validation errors", result.methodValidationResult.hasErrors)
+      assertTrue("Discovered previews should be empty", result.previews.isEmpty())
+      val error = result.methodValidationResult.errors.first()
+      assertTrue("Error should mention multiple wrappers", error.message.contains("Multiple @PreviewWrapper annotations found"))
+    }
+  }
+
+  @Test
+  fun testPreviewWrapperWithoutPreviewProducesValidationError() {
+    createDiscoveryEngine { engine ->
+      val methodFQN = "${SamplePreviewTarget::class.java.name}.SampleComposableWrapperWithoutPreviewMethod"
+      val results = engine.discoverAllPreviews(methodFQN)
+      assertEquals(1, results.size)
+      val result = results.first()
+      assertTrue("Method with wrapper but without preview should have validation errors", result.methodValidationResult.hasErrors)
+      assertTrue("Discovered previews should be empty", result.previews.isEmpty())
+      val error = result.methodValidationResult.errors.first()
+      assertEquals("Method '$methodFQN' annotated with @PreviewWrapper must also be annotated with @Preview", error.message)
     }
   }
 
   @Test
   fun testDiscoverPreviewWithoutComposableProducesValidationError() {
     createDiscoveryEngine { engine ->
-      val methodFQN = "${SamplePreviewTarget::class.java.name}.sampleNonComposablePreviewMethod"
+      val methodFQN = "${SamplePreviewTarget::class.java.name}.SampleNonComposablePreviewMethod"
 
       val results = engine.discoverAllPreviews(methodFQN)
       assertEquals(1, results.size)

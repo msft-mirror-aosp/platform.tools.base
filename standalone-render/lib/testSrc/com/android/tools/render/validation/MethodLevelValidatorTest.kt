@@ -40,7 +40,12 @@ class MethodLevelValidatorTest {
   @Test
   fun testNonComposablePreviewMethodProducesError() {
     val methodFQN = "com.example.MyScreenKt.MyPreview"
-    val result = validator.validate(methodFQN = methodFQN, isComposable = false, previewParamsList = listOf(mapOf("name" to "Light Mode")))
+    val result =
+      validator.validate(
+        methodFQN = methodFQN,
+        isComposable = false,
+        previewParamsList = listOf(mapOf("name" to "Light Mode")),
+      )
     assertTrue("Non-composable preview method should have errors", result.hasErrors)
     assertEquals(1, result.errors.size)
     val error = result.errors.first()
@@ -51,9 +56,99 @@ class MethodLevelValidatorTest {
   }
 
   @Test
+  fun testPreviewWrapperWithPreviewAndComposableIsValid() {
+    val result =
+      validator.validate(
+        methodFQN = "com.example.MyScreenKt.MyPreview",
+        isComposable = true,
+        previewParamsList = listOf(mapOf("name" to "Preview")),
+        discoveredWrappers = listOf("com.example.MyWrapper"),
+      )
+    assertTrue("Preview with wrapper and @Composable should be valid", result.isValid)
+    assertFalse("Valid wrapped preview should not have errors", result.hasErrors)
+  }
+
+  @Test
+  fun testMultiplePreviewWrappersProducesError() {
+    val methodFQN = "com.example.MyScreenKt.MyPreview"
+    val result =
+      validator.validate(
+        methodFQN = methodFQN,
+        isComposable = true,
+        previewParamsList = listOf(mapOf("name" to "Preview")),
+        discoveredWrappers = listOf("com.example.Wrapper1", "com.example.Wrapper2"),
+      )
+    assertTrue("Multiple preview wrappers should produce errors", result.hasErrors)
+    assertEquals(1, result.errors.size)
+    assertEquals(
+      "Multiple @PreviewWrapper annotations found for method '$methodFQN': com.example.Wrapper1, com.example.Wrapper2",
+      result.errors.first().message,
+    )
+  }
+
+  @Test
+  fun testPreviewWrapperWithoutPreviewProducesError() {
+    val methodFQN = "com.example.MyScreenKt.MyPreview"
+    val result =
+      validator.validate(
+        methodFQN = methodFQN,
+        isComposable = true,
+        previewParamsList = emptyList(),
+        discoveredWrappers = listOf("com.example.MyWrapper"),
+      )
+    assertTrue("PreviewWrapper without @Preview should produce error", result.hasErrors)
+    assertEquals(1, result.errors.size)
+    assertEquals(
+      "Method '$methodFQN' annotated with @PreviewWrapper must also be annotated with @Preview",
+      result.errors.first().message,
+    )
+  }
+
+  @Test
+  fun testPreviewWrapperWithoutComposableProducesError() {
+    val methodFQN = "com.example.MyScreenKt.MyPreview"
+    val result =
+      validator.validate(
+        methodFQN = methodFQN,
+        isComposable = false,
+        previewParamsList = listOf(mapOf("name" to "Preview")),
+        discoveredWrappers = listOf("com.example.MyWrapper"),
+      )
+    assertTrue("PreviewWrapper with @Preview but without @Composable should produce error", result.hasErrors)
+    assertEquals(1, result.errors.size)
+    assertEquals(
+      "Method '$methodFQN' annotated with @Preview must be annotated with @Composable",
+      result.errors.first().message,
+    )
+  }
+
+  @Test
+  fun testPreviewWrapperWithoutPreviewAndWithoutComposableProducesCombinedError() {
+    val methodFQN = "com.example.MyScreenKt.MyPreview"
+    val result =
+      validator.validate(
+        methodFQN = methodFQN,
+        isComposable = false,
+        previewParamsList = emptyList(),
+        discoveredWrappers = listOf("com.example.MyWrapper"),
+      )
+    assertTrue("PreviewWrapper without @Preview and @Composable should produce error", result.hasErrors)
+    assertEquals(1, result.errors.size)
+    assertEquals(
+      "Method '$methodFQN' annotated with @PreviewWrapper must be annotated with @Preview and @Composable",
+      result.errors.first().message,
+    )
+  }
+
+  @Test
   fun testNonPreviewMethodDoesNotProduceErrorsEvenIfNotComposable() {
     val result =
-      validator.validate(methodFQN = "com.example.MyScreenKt.helperFunction", isComposable = false, previewParamsList = emptyList())
+      validator.validate(
+        methodFQN = "com.example.MyScreenKt.helperFunction",
+        isComposable = false,
+        previewParamsList = emptyList(),
+        discoveredWrappers = emptyList(),
+      )
     assertTrue("Method without preview annotations should not produce errors", result.isValid)
   }
 }

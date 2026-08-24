@@ -121,18 +121,18 @@ class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
               }
 
               val validationResult =
-                methodLevelValidator.validate(methodFQN = methodFQN, isComposable = isComposable, previewParamsList = previewParamsList)
+                methodLevelValidator.validate(
+                  methodFQN = methodFQN,
+                  isComposable = isComposable,
+                  previewParamsList = previewParamsList,
+                  discoveredWrappers = discoveredWrappers,
+                )
 
               if (validationResult.hasErrors) {
                 discoveryResults.add(DiscoveredMethodPreviews(previews = emptyList(), methodValidationResult = validationResult))
                 return
               }
 
-              if (discoveredWrappers.size > 1) {
-                throw IllegalStateException(
-                  "Multiple @PreviewWrapper annotations found for method '$methodFQN': ${discoveredWrappers.joinToString(", ")}"
-                )
-              }
               val previewWrapperFqn = discoveredWrappers.singleOrNull()
               val methodParams = if (previewParameterAttributes.isNotEmpty()) listOf(previewParameterAttributes) else emptyList()
               val methodPreviews = mutableListOf<ComposeScreenshot>()

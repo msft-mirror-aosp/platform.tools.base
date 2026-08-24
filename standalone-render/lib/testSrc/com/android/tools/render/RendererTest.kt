@@ -360,7 +360,7 @@ class RendererTest {
     val screenshot =
       ComposeScreenshot(
         previewId = "non_composable_preview",
-        methodFQN = "${SamplePreviewTarget::class.java.name}.sampleNonComposablePreviewMethod",
+        methodFQN = "${SamplePreviewTarget::class.java.name}.SampleNonComposablePreviewMethod",
         previewParams = emptyMap(),
         methodParams = emptyList(),
       )
