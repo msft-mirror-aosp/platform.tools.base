@@ -76,7 +76,7 @@ class $activityClass : ComponentActivity() {
                     }
                 } else {
                     My2DContent {
-                        session?.scene?.requestHomeSpace()
+                        session?.scene?.requestFullSpace()
                     }
                 }
             }
