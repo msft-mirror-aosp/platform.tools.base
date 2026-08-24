@@ -151,4 +151,46 @@ class MethodLevelValidatorTest {
       )
     assertTrue("Method without preview annotations should not produce errors", result.isValid)
   }
+
+  @Test
+  fun testValidateMissingClassNotFound() {
+    val result =
+      validator.validateMissingMethodOrPreview(
+        methodFQN = "com.example.MissingClass.myMethod",
+        className = "com.example.MissingClass",
+        methodName = "myMethod",
+        classFound = false,
+        methodFound = false,
+      )
+    assertTrue(result.hasErrors)
+    assertEquals("Class 'com.example.MissingClass' could not be found on the classpath", result.errors.first().message)
+  }
+
+  @Test
+  fun testValidateMissingMethodNotFound() {
+    val result =
+      validator.validateMissingMethodOrPreview(
+        methodFQN = "com.example.MyClass.missingMethod",
+        className = "com.example.MyClass",
+        methodName = "missingMethod",
+        classFound = true,
+        methodFound = false,
+      )
+    assertTrue(result.hasErrors)
+    assertEquals("Method 'missingMethod' not found in class 'com.example.MyClass'", result.errors.first().message)
+  }
+
+  @Test
+  fun testValidateMissingNoPreviewsFound() {
+    val result =
+      validator.validateMissingMethodOrPreview(
+        methodFQN = "com.example.MyClass.nonPreviewMethod",
+        className = "com.example.MyClass",
+        methodName = "nonPreviewMethod",
+        classFound = true,
+        methodFound = true,
+      )
+    assertTrue(result.hasErrors)
+    assertEquals("No @Preview annotations found on method 'com.example.MyClass.nonPreviewMethod'", result.errors.first().message)
+  }
 }

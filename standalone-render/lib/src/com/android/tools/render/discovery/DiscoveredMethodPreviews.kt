@@ -32,4 +32,10 @@ import com.android.tools.render.validation.ValidationResult
 data class DiscoveredMethodPreviews(
   val previews: List<ComposeScreenshot> = emptyList(),
   val methodValidationResult: ValidationResult = ValidationResult.OK,
-)
+) {
+  companion object {
+    /** Creates a [DiscoveredMethodPreviews] instance containing no previews and the specified [validationResult]. */
+    fun error(validationResult: ValidationResult): DiscoveredMethodPreviews =
+      DiscoveredMethodPreviews(previews = emptyList(), methodValidationResult = validationResult)
+  }
+}

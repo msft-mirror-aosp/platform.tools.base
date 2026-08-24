@@ -42,6 +42,40 @@ class MethodLevelValidator {
     return ValidationResult(issues)
   }
 
+  /**
+   * Generates a [ValidationResult] with an error when a requested class, method, or `@Preview` annotation is missing.
+   *
+   * @param methodFQN Fully-qualified name of the target method.
+   * @param className The class name part of the target method.
+   * @param methodName The method name part of the target method.
+   * @param classFound Whether the bytecode for [className] was found on the classpath.
+   * @param methodFound Whether any method matching [methodName] was found in the class bytecode.
+   */
+  fun validateMissingMethodOrPreview(
+    methodFQN: String,
+    className: String,
+    methodName: String,
+    classFound: Boolean,
+    methodFound: Boolean,
+  ): ValidationResult {
+    val message =
+      when {
+        !classFound -> "Class '$className' could not be found on the classpath"
+        !methodFound -> "Method '$methodName' not found in class '$className'"
+        else -> "No @Preview annotations found on method '$methodFQN'"
+      }
+    return ValidationResult(
+      listOf(
+        ValidationIssue(
+          message = message,
+          severity = ValidationSeverity.ERROR,
+          category = ValidationCategory.METHOD,
+          target = methodFQN,
+        )
+      )
+    )
+  }
+
   private fun validateComposablePresence(
     methodFQN: String,
     isComposable: Boolean,

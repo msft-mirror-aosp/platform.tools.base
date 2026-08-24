@@ -73,10 +73,24 @@ class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
     val className = methodFQN.substringBeforeLast(".")
     val methodName = methodFQN.substringAfterLast(".")
 
-    val classBytes = findClassBytes(className) ?: return emptyList()
+    val classBytes = findClassBytes(className)
+    if (classBytes == null) {
+      return listOf(
+        DiscoveredMethodPreviews.error(
+          methodLevelValidator.validateMissingMethodOrPreview(
+            methodFQN = methodFQN,
+            className = className,
+            methodName = methodName,
+            classFound = false,
+            methodFound = false,
+          )
+        )
+      )
+    }
 
     val discoveryResults = mutableListOf<DiscoveredMethodPreviews>()
     val resolvedPreviewId = previewId ?: methodName
+    var methodFound = false
 
     val classReader = ClassReader(classBytes)
     classReader.accept(
@@ -91,6 +105,7 @@ class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
           if (name != methodName) return null
           if ((access and Opcodes.ACC_SYNTHETIC) != 0) return null
 
+          methodFound = true
           var isComposable = false
           val previewParamsList = mutableListOf<Map<String, String>>()
           val previewParameterAttributes = mutableMapOf<String, String>()
@@ -129,7 +144,7 @@ class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
                 )
 
               if (validationResult.hasErrors) {
-                discoveryResults.add(DiscoveredMethodPreviews(previews = emptyList(), methodValidationResult = validationResult))
+                discoveryResults.add(DiscoveredMethodPreviews.error(validationResult))
                 return
               }
 
@@ -154,6 +169,20 @@ class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
       },
       ClassReader.SKIP_CODE or ClassReader.SKIP_DEBUG or ClassReader.SKIP_FRAMES,
     )
+
+    if (discoveryResults.isEmpty()) {
+      return listOf(
+        DiscoveredMethodPreviews.error(
+          methodLevelValidator.validateMissingMethodOrPreview(
+            methodFQN = methodFQN,
+            className = className,
+            methodName = methodName,
+            classFound = true,
+            methodFound = methodFound,
+          )
+        )
+      )
+    }
 
     return discoveryResults
   }

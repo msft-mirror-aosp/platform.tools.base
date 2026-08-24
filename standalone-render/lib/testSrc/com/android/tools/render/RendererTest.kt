@@ -373,4 +373,35 @@ class RendererTest {
     assertEquals("VALIDATION_ERROR", result.error?.status)
     assertTrue(result.error?.message?.contains("must be annotated with @Composable") == true)
   }
+
+  @Test
+  fun testRenderMethodWithoutPreviewProducesValidationError() {
+    val layoutlibPath = TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib")
+
+    val bootstrapper =
+      RenderEnvironmentBootstrapper(
+        fontsPath = null,
+        resourceApkPath = null,
+        namespace = "",
+        classPath = emptyList(),
+        projectClassPath = emptyList(),
+        layoutlibPath = layoutlibPath.absolutePathString(),
+      )
+    val outputDir = tmpFolder.newFolder("output_screenshots_no_preview").absolutePath
+    val screenshot =
+      ComposeScreenshot(
+        previewId = "no_preview_method",
+        methodFQN = "${SamplePreviewTarget::class.java.name}.sampleMethodWithoutAnnotation",
+        previewParams = emptyMap(),
+        methodParams = emptyList(),
+      )
+
+    val results = bootstrapper.bootstrap().use { renderer -> renderer.render(screenshot, outputDir) }
+
+    assertEquals(1, results.size)
+    val result = results[0]
+    assertEquals("no_preview_method", result.previewId)
+    assertEquals("VALIDATION_ERROR", result.error?.status)
+    assertTrue(result.error?.message?.contains("No @Preview annotations found") == true)
+  }
 }
