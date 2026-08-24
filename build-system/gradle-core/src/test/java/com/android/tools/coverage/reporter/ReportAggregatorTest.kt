@@ -386,4 +386,50 @@ class ReportAggregatorTest {
     assertThat(src.branches.covered).isEqualTo(1)
     assertThat(src.branches.missed).isEqualTo(1)
   }
+
+  @Test
+  fun testBoilerplateMethodsHaveZeroBranches() {
+    val metadata =
+      CoverageMetadata.newBuilder()
+        .addClasses(
+          ClassMetadata.newBuilder()
+            .setClassName("com/example/MyClass")
+            .setSourceFile("MyClass.kt")
+            .addMethods(
+              MethodMetadata.newBuilder()
+                .setName("equals")
+                .setSignature("(Ljava/lang/Object;)Z")
+                .addBlocks(
+                  BlockMetadata.newBuilder()
+                    .setBlockId(0)
+                    .setBranchCount(2)
+                    .addSuccessorBlockIds(1)
+                    .addSuccessorBlockIds(2)
+                    .addLines(LineMetadata.newBuilder().setLineNumber(10).setInstructionCount(5))
+                )
+                .addBlocks(BlockMetadata.newBuilder().setBlockId(1).setBranchCount(1))
+                .addBlocks(BlockMetadata.newBuilder().setBlockId(2).setBranchCount(1))
+            )
+        )
+        .build()
+
+    val hits = BitSet()
+    hits.set(0)
+    hits.set(1)
+    val data = CoverageData(metadata, hits)
+
+    val aggregator = ReportAggregator()
+    val report = aggregator.aggregate(data, "test")
+
+    val pkg = report.packages["com/example"]!!
+    val src = pkg.sourceFiles["MyClass.kt"]!!
+
+    // Equals branches must be stripped to 0/0
+    assertThat(src.branches.covered).isEqualTo(0)
+    assertThat(src.branches.missed).isEqualTo(0)
+
+    // Instructions must still be fully counted (5 covered instructions on line 10)
+    val line10 = src.lineMap[10]!!
+    assertThat(line10.ci).isEqualTo(5)
+  }
 }

@@ -121,8 +121,17 @@ class ReportAggregator {
               methodMeta.signature == "(Ljava/lang/Object;)Ljava/lang/Object;" &&
               classMeta.className.contains("$")
 
+          val isBoilerplateMethod =
+            (methodMeta.name == "equals" && methodMeta.signature == "(Ljava/lang/Object;)Z") ||
+              (methodMeta.name == "hashCode" && methodMeta.signature == "()I") ||
+              (methodMeta.name == "toString" && methodMeta.signature == "()Ljava/lang/String;") ||
+              methodMeta.name.contains("\$default") ||
+              methodMeta.name.contains("\$copy")
+
           val blockBranches =
             if (branchFile != sourceFilename) {
+              0
+            } else if (isBoilerplateMethod) {
               0
             } else if ((isSuspendFunction || isSuspendLambda) && trueBranchLine == methodStartLine) {
               0
