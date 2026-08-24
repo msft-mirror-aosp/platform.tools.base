@@ -110,6 +110,67 @@ TEST(SyntheticFilterTest, CoroutineSuspensionCheckIsSynthetic) {
   lir::Method method_operand(&ir_method, 0);
   first_bytecode.operands.push_back(&method_operand);
 
+  lir::Bytecode move_bytecode;
+  move_bytecode.opcode = dex::OP_MOVE_RESULT_OBJECT;
+  lir::VReg dest_vreg(0);
+  move_bytecode.operands.push_back(&dest_vreg);
+
+  lir::Bytecode last_bytecode;
+  last_bytecode.opcode = dex::OP_IF_NEZ;
+  lir::VReg cmp_vreg(0);
+  last_bytecode.operands.push_back(&cmp_vreg);
+
+  // Link them
+  first_bytecode.next = &move_bytecode;
+  first_bytecode.prev = nullptr;
+
+  move_bytecode.prev = &first_bytecode;
+  move_bytecode.next = &last_bytecode;
+
+  last_bytecode.prev = &move_bytecode;
+  last_bytecode.next = nullptr;
+
+  block.region.first = &first_bytecode;
+  block.region.last = &last_bytecode;
+
+  auto result = SyntheticFilter::IsSyntheticBranch(&method, block);
+  EXPECT_TRUE(result);
+}
+
+TEST(SyntheticFilterTest, CoroutineLaunchLambdaSetupIsSynthetic) {
+  ir::EncodedMethod method;
+  ir::Code code;
+  method.code = &code;
+
+  ir::MethodDecl method_decl;
+  ir::Type parent_type;
+  ir::String parent_descriptor;
+  parent_descriptor.data = slicer::MemView("\x23Lcom/example/MyClass$invokeSuspend$1;", sizeof("\x23Lcom/example/MyClass$invokeSuspend$1;") - 1); // 35 chars
+  parent_type.descriptor = &parent_descriptor;
+  method_decl.parent = &parent_type;
+
+  ir::String method_name;
+  method_name.data = slicer::MemView("\x0d\x69nvokeSuspend", sizeof("\x0d\x69nvokeSuspend") - 1); // 13 chars
+  method_decl.name = &method_name;
+  method.decl = &method_decl;
+
+  lir::BasicBlock block;
+  lir::Bytecode first_bytecode;
+  first_bytecode.opcode = dex::OP_IGET;
+
+  ir::FieldDecl field_decl;
+  ir::Type field_type;
+  ir::String field_type_descriptor;
+  field_type_descriptor.data = slicer::MemView("\x01I", 1);
+  field_type.descriptor = &field_type_descriptor;
+  field_decl.type = &field_type;
+
+  ir::String field_name;
+  field_name.data = slicer::MemView("\x05label", sizeof("\x05label") - 1); // 5 chars
+  field_decl.name = &field_name;
+  lir::Field field_operand(&field_decl, 0);
+  first_bytecode.operands.push_back(&field_operand);
+
   lir::Bytecode last_bytecode;
   last_bytecode.opcode = dex::OP_IF_NEZ;
 

@@ -116,10 +116,15 @@ class ReportAggregator {
           // If the branch belongs to an external inlined file, we strip it from our local report.
           // Also, strip compiler-generated coroutine state machine branches on the suspend method declaration line.
           val isSuspendFunction = methodMeta.signature.endsWith("Lkotlin/coroutines/Continuation;)Ljava/lang/Object;")
+          val isSuspendLambda =
+            methodMeta.name == "invokeSuspend" &&
+              methodMeta.signature == "(Ljava/lang/Object;)Ljava/lang/Object;" &&
+              classMeta.className.contains("$")
+
           val blockBranches =
             if (branchFile != sourceFilename) {
               0
-            } else if (isSuspendFunction && trueBranchLine == methodStartLine) {
+            } else if ((isSuspendFunction || isSuspendLambda) && trueBranchLine == methodStartLine) {
               0
             } else {
               blockMeta.branchCount.toInt()

@@ -515,13 +515,11 @@ bool Instrumenter::InstrumentMethod(
     if (auto* last_bytecode =
             dynamic_cast<lir::Bytecode*>(block.region.last)) {
       auto flags = dex::GetFlagsFromOpcode(last_bytecode->opcode);
-      if (flags & dex::kBranch) {
+      if (SyntheticFilter::IsSyntheticBranch(ir_method, block)) {
+        branch_count = 1; // Demote to sequential block flow (removes synthetic branch)
+      } else if (flags & dex::kBranch) {
         if (flags & dex::kContinue) {
           branch_count = 2;  // Conditional branch (e.g., IF_*)
-
-          if (SyntheticFilter::IsSyntheticBranch(ir_method, block)) {
-            branch_count = 1; // Demote to sequential block flow (removes synthetic branch)
-          }
         } else {
           branch_count = 1;  // Unconditional branch (e.g., GOTO)
         }
