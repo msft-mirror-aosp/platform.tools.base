@@ -432,7 +432,12 @@ internal open class Analysis<FX : Any>(
       fun UExpression.staticContext(): Scope =
         Scope.Generated(textRange?.startOffset ?: /* slow case for synthetic UAST */ asSourceString().hashCode())
 
-      fun callMethod(receiver: UExpression?, method: PsiMethod, args: List<UExpression>): Result<Type<FX>, R> {
+      fun callMethod(
+        receiver: UExpression?,
+        method: PsiMethod,
+        args: List<UExpression>,
+        extReceiver: UExpression? = receiver,
+      ): Result<Type<FX>, R> {
         fun implicitThis() = e.getContainingUClass()?.javaPsi?.let { PsiClassAdapter.translate(typeParams, it) }!!
 
         val virRecvAns: Result<Type<FX>, R>? =
@@ -446,7 +451,7 @@ internal open class Analysis<FX : Any>(
         val extRecvAns: Result<Type<FX>, R>? =
           when {
             !method.isExtension() -> null
-            receiver != null -> loopCached(receiver) // TODO nope. See above
+            extReceiver != null -> loopCached(extReceiver) // TODO nope. See above
             else -> pure(env.innermostExtensionReceiver() ?: implicitThis())
           }
 
@@ -556,8 +561,11 @@ internal open class Analysis<FX : Any>(
         return when {
           // constructor call, with constructor definition missing or explicitly "default"
           call.isConstructorCall() && (method?.javaPsi as? PsiMethod)?.isDefaultConstructor != false -> pure(getType(call))
-          method is UMethod ->
-            callMethod(call.callReceiver(), method.javaPsi, completeArguments(typeParams, call, method, UMethod::uastParameters))
+          method is UMethod -> {
+            val psiMethod = method.javaPsi
+            val extReceiver = if (psiMethod.isExtension() && isJava(call.lang)) call.valueArguments.firstOrNull() else call.callReceiver()
+            callMethod(call.callReceiver(), psiMethod, completeArguments(typeParams, call, method, UMethod::uastParameters), extReceiver)
+          }
           method is ULambdaExpression ->
             callLambda(call.callReceiver(), method, completeArguments(typeParams, call, method, ULambdaExpression::valueParameters))
           else -> {

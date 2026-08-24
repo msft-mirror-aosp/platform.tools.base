@@ -4883,6 +4883,63 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
           .trimIndent()
       )
   }
+
+  fun testJavaCallOfKotlinExtension() {
+    lint()
+      .files(
+        kotlin(
+            """
+            @file:JvmName("RepositoryUtil")
+            package test.pkg
+
+            fun Repository.locales(): Set<String> = emptySet()
+            """
+          )
+          .indented(),
+        java(
+            """
+            package test.pkg;
+            import androidx.annotation.WorkerThread;
+
+            public interface Repository {
+              @WorkerThread Repository getProjectResources();
+            }
+            """
+          )
+          .indented(),
+        java(
+            """
+            package test.pkg;
+            import androidx.annotation.UiThread;
+            import static test.pkg.RepositoryUtil.locales;
+
+            public class Menu {
+              @UiThread public void update(Repository manager) {
+                RepositoryUtil.locales(manager.getProjectResources());
+              }
+              @UiThread public void updateStaticImport(Repository manager) {
+                locales(manager.getProjectResources());
+              }
+            }
+            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/Menu.java:7: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            RepositoryUtil.locales(manager.getProjectResources());
+                                           ~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/Menu.java:10: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            locales(manager.getProjectResources());
+                            ~~~~~~~~~~~~~~~~~~~~~
+        2 errors
+        """
+          .trimIndent()
+      )
+  }
 }
 
 class AndroidThreadConstraintLatticeTest : ThreadConstraintLatticeTest<Thread>(threadLattice) {
