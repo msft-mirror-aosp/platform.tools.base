@@ -54,5 +54,8 @@ class TabsRenderer<T> : ReportRenderer<T, SimpleHtmlWriter>() {
     htmlWriterWriter.endElement()
   }
 
-  private inner class TabDefinition(val title: String, val renderer: ReportRenderer<T, SimpleHtmlWriter>)
+  private inner class TabDefinition(
+    val title: String,
+    val renderer: ReportRenderer<T, SimpleHtmlWriter>,
+  )
 }

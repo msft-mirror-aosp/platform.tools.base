@@ -113,7 +113,11 @@ class ScreenshotTestReportTest {
 
     val classFileContentExcludingFooter = javaClass.getResourceAsStream("classError.txt")!!.readBytes().toString(Charsets.UTF_8)
     val expected =
-      String.format(classFileContentExcludingFooter, getBase64SrcFromPath(reference.absolutePath), reference.absolutePath)
+      String.format(
+          classFileContentExcludingFooter,
+          getBase64SrcFromPath(reference.absolutePath),
+          reference.absolutePath,
+        )
         .lines()
         .joinToString(System.lineSeparator())
     val classHtml = File(reportOutDir, "com.example.myapplication.ExampleInstrumentedTest.html")

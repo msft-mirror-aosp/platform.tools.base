@@ -127,7 +127,12 @@ class TestReport(private val resultDir: File, private val reportDir: File) {
                 ImagePathOrMessage.ErrorMessage(diff)
               }
 
-            ssImages = ScreenshotTestImages(referenceImagePathOrMessage, actualImagePathOrMessage, diffImagePathOrMessage)
+            ssImages =
+              ScreenshotTestImages(
+                referenceImagePathOrMessage,
+                actualImagePathOrMessage,
+                diffImagePathOrMessage,
+              )
           }
         }
         if (ssImages == null || ssImages.isEmpty()) {
@@ -150,10 +155,23 @@ class TestReport(private val resultDir: File, private val reportDir: File) {
               )
           }
         }
-        val testResult: TestResult = model.addTest(className, testName, duration.toLong(), projectName!!, flavorName!!, ssImages)
+        val testResult: TestResult =
+          model.addTest(
+            className,
+            testName,
+            duration.toLong(),
+            projectName!!,
+            flavorName!!,
+            ssImages,
+          )
         for (j in 0 until failures.length) {
           val failure = failures.item(j) as Element
-          testResult.addFailure(failure.getAttribute("message"), failure.textContent, projectName, flavorName)
+          testResult.addFailure(
+            failure.getAttribute("message"),
+            failure.textContent,
+            projectName,
+            flavorName,
+          )
         }
         for (j in 0 until errors.length) {
           val error = errors.item(j) as Element
@@ -189,9 +207,17 @@ class TestReport(private val resultDir: File, private val reportDir: File) {
     try {
       generatePage(model, OverviewPageRenderer(), File(reportDir, "index.html"))
       for (packageResults in model.getPackages()) {
-        generatePage(packageResults, PackagePageRenderer(), File(reportDir, packageResults.getFilename() + ".html"))
+        generatePage(
+          packageResults,
+          PackagePageRenderer(),
+          File(reportDir, packageResults.getFilename() + ".html"),
+        )
         for (classResults in packageResults.getClasses()) {
-          generatePage(classResults!!, ScreenshotClassPageRenderer(), File(reportDir, classResults.getFilename() + ".html"))
+          generatePage(
+            classResults!!,
+            ScreenshotClassPageRenderer(),
+            File(reportDir, classResults.getFilename() + ".html"),
+          )
         }
       }
     } catch (e: Exception) {
@@ -200,7 +226,11 @@ class TestReport(private val resultDir: File, private val reportDir: File) {
   }
 
   @Throws(Exception::class)
-  private fun <T : CompositeTestResults> generatePage(model: T, renderer: PageRenderer<T>, outputFile: File) {
+  private fun <T : CompositeTestResults> generatePage(
+    model: T,
+    renderer: PageRenderer<T>,
+    outputFile: File,
+  ) {
     htmlRenderer.renderer(renderer).writeTo(model, outputFile)
   }
 

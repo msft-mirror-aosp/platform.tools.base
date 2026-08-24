@@ -16,7 +16,11 @@
 
 package com.android.compose.screenshot.report
 
-data class ScreenshotTestImages(val reference: ImagePathOrMessage, val actual: ImagePathOrMessage, val diff: ImagePathOrMessage) {
+data class ScreenshotTestImages(
+  val reference: ImagePathOrMessage,
+  val actual: ImagePathOrMessage,
+  val diff: ImagePathOrMessage,
+) {
   fun isEmpty(): Boolean {
     val isRefEmpty = reference is ImagePathOrMessage.ErrorMessage && reference.message.isBlank()
     val isActualEmpty = actual is ImagePathOrMessage.ErrorMessage && actual.message.isBlank()

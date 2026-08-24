@@ -43,7 +43,10 @@ abstract class PreviewScreenshotUpdateTask : Test() {
           testEngineInput.mainRuntimeJars,
         )
       }
-    testClassesDirs = objectFactory.fileCollection().apply { from(testEngineInput.testProjectJars, testEngineInput.testProjectClassDirs) }
+    testClassesDirs =
+      objectFactory.fileCollection().apply {
+        from(testEngineInput.testProjectJars, testEngineInput.testProjectClassDirs)
+      }
     testEngineInput.recordingModeEnabled.set(true)
   }
 
