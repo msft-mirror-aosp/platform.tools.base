@@ -184,6 +184,7 @@ npm.npm_translate_lock(
     name = "npm_android_vsix",
     bins = {
         "vsce": ["vsce=vsce"],
+        "esbuild": ["esbuild=esbuild"],
     },
     data = [
         "//tools/base/bazel:package.json",
