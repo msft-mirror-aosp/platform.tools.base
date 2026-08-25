@@ -23,6 +23,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
 import org.apache.maven.model.Dependency;
+import org.apache.maven.model.DependencyManagement;
 import org.apache.maven.model.Exclusion;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
@@ -267,26 +268,42 @@ public class PomGenerator {
             model.setName(name);
         }
         List<Dependency> deps = new LinkedList<>();
+        List<Dependency> managedDeps = new LinkedList<>();
         if (pomExports != null) {
             for (File pom : pomExports) {
-                addDependencyTo(pom, "compile", deps);
+                addDependencyTo(pom, "compile", deps, managedDeps);
             }
         }
         if (pomDependencies != null) {
             for (File pom : pomDependencies) {
-                addDependencyTo(pom, "runtime", deps);
+                addDependencyTo(pom, "runtime", deps, managedDeps);
             }
         }
         if (pomDepsCompileOnly != null) {
             for (File pom : pomDepsCompileOnly) {
-                addDependencyTo(pom, "provided", deps);
+                addDependencyTo(pom, "provided", deps, managedDeps);
             }
         }
         model.setDependencies(deps);
+        if (!managedDeps.isEmpty()) {
+            DependencyManagement dm = model.getDependencyManagement();
+            if (dm == null) {
+                dm = new DependencyManagement();
+                model.setDependencyManagement(dm);
+            }
+            List<Dependency> existing = dm.getDependencies();
+            if (existing == null) {
+                existing = new LinkedList<>();
+                dm.setDependencies(existing);
+            }
+            existing.addAll(managedDeps);
+        }
         modelToPom(model, out);
     }
 
-    private void addDependencyTo(File pom, String scope, List<Dependency> deps) throws Exception {
+    private void addDependencyTo(
+            File pom, String scope, List<Dependency> deps, List<Dependency> managedDeps)
+            throws Exception {
         Dependency dependency = new Dependency();
         MavenCoordinates coordinates;
         Model dependent = pomToModel(pom.getAbsolutePath());
@@ -295,6 +312,13 @@ public class PomGenerator {
         dependency.setGroupId(coordinates.groupId);
         dependency.setArtifactId(coordinates.artifactId);
         dependency.setVersion(coordinates.version);
+        if (isBom(dependent)) {
+            dependency.setType("pom");
+            dependency.setScope("import");
+            managedDeps.add(dependency);
+            return;
+        }
+
         dependency.setScope(scope);
 
         Collection<String> exclusionStrings =
@@ -310,5 +334,18 @@ public class PomGenerator {
         }
 
         deps.add(dependency);
+    }
+
+    private static boolean isBom(Model model) {
+        if (!"pom".equalsIgnoreCase(model.getPackaging())) {
+            return false;
+        }
+        boolean hasDependencyManagement =
+                model.getDependencyManagement() != null
+                        && model.getDependencyManagement().getDependencies() != null
+                        && !model.getDependencyManagement().getDependencies().isEmpty();
+        boolean hasDependencies =
+                model.getDependencies() != null && !model.getDependencies().isEmpty();
+        return hasDependencyManagement && !hasDependencies;
     }
 }

@@ -14966,6 +14966,24 @@ maven_import(
 )
 
 maven_artifact(
+    name = "org.bouncycastle.bc-jdk18on-bom_1.80.2",
+    pom = "repository/org/bouncycastle/bc-jdk18on-bom/1.80.2/bc-jdk18on-bom-1.80.2.pom",
+    repo_root_path = "repository",
+    repo_path = "org/bouncycastle/bc-jdk18on-bom/1.80.2",
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.bouncycastle.bc-jdk18on-bom",
+    classifiers = [],
+    original_deps = [],
+    pom = "repository/org/bouncycastle/bc-jdk18on-bom/1.80.2/bc-jdk18on-bom-1.80.2.pom",
+    repo_root_path = "repository",
+    repo_path = "org/bouncycastle/bc-jdk18on-bom/1.80.2",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.bouncycastle.bcpkix-jdk18on_1.80.2",
     pom = "repository/org/bouncycastle/bcpkix-jdk18on/1.80.2/bcpkix-jdk18on-1.80.2.pom",
     repo_root_path = "repository",

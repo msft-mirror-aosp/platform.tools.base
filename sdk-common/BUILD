@@ -99,6 +99,7 @@ maven_library(
         "@maven//:javax.inject.javax.inject",
         "@maven//:net.sf.kxml.kxml2",
         "@maven//:org.apache.commons.commons-compress",
+        "@maven//:org.bouncycastle.bc-jdk18on-bom",
         "@maven//:org.bouncycastle.bcpkix-jdk18on",
         "@maven//:org.bouncycastle.bcprov-jdk18on",
         "@maven//:org.glassfish.jaxb.jaxb-runtime",

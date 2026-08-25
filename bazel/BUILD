@@ -236,6 +236,7 @@ coverage_java_test(
         ":maven",
         ":pom_generator",
         "@maven//:junit.junit",
+        "@maven//:org.apache.maven.maven-aether-provider",
     ],
 )
 

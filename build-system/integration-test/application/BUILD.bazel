@@ -1261,6 +1261,7 @@ maven_repository(
         "@maven//:javax.annotation.jsr250-api_1.0",
         "@maven//:org.apache.commons.commons-lang3_3.13.0",
         "@maven//:org.bouncycastle.bcprov-jdk16_1.46",
+        "@maven//:org.bouncycastle.bcutil-jdk18on",
         "@maven//:org.codehaus.mojo.animal-sniffer-annotations_1.19",
         "@maven//:org.jacoco.org.jacoco.agent_0.7.4.201502262128",
         "@maven//:org.jacoco.org.jacoco.agent_0.8.12",
