@@ -426,9 +426,9 @@ class VersionChecks(private val client: LintClient, private val evaluator: JavaE
       var prev = element
       var current: UExpression? = prev.parentExpression()
       while (current != null) {
-        val visitor = check.VersionCheckWithExitFinder(prev, api)
+        val visitor = check.VersionCheckWithExitFinderForApi(prev, api)
         current.accept(visitor)
-        if (visitor.found()) {
+        if (visitor.found) {
           return true
         }
         prev = current
@@ -437,6 +437,47 @@ class VersionChecks(private val client: LintClient, private val evaluator: JavaE
         // TODO: what about lambdas?
       }
       return false
+    }
+
+    /**
+     * Finds all `if` or `switch` expressions that unconditionally return under some [ApiConstraint] before [element]. Returns an
+     * [ApiConstraint] represents the API levels at which it is possible for the program to reach [element].
+     */
+    @JvmStatic
+    fun findPrecedingVersionCheckExitConstraints(
+      context: JavaContext,
+      element: UElement,
+    ): ApiConstraint {
+      val client = context.client
+      val evaluator = context.evaluator
+      val project = context.project
+      return findPrecedingVersionCheckExitConstraints(client, evaluator, element, project)
+    }
+
+    /**
+     * Finds all `if` or `switch` expressions that unconditionally return under some [ApiConstraint] before [element]. Returns an
+     * [ApiConstraint] represents the API levels at which it is possible for the program to reach [element].
+     */
+    @JvmStatic
+    fun findPrecedingVersionCheckExitConstraints(
+      client: LintClient,
+      evaluator: JavaEvaluator,
+      element: UElement,
+      project: Project? = null,
+    ): ApiConstraint {
+      // Search all preceding expressions for version check exits, and build up constraint.
+      val check = VersionChecks(client, evaluator, project)
+      var prev = element
+      var current: UExpression? = prev.parentExpression()
+      var constraint: ApiConstraint? = null
+      while (current != null) {
+        val visitor = check.VersionCheckWithExitFinderForAllConstraints(prev)
+        current.accept(visitor)
+        constraint = constraint?.and(visitor.foundConstraint) ?: visitor.foundConstraint
+        prev = current
+        current = current.parentExpression()
+      }
+      return constraint ?: ApiConstraint.ALL
     }
 
     /**
@@ -1376,51 +1417,61 @@ class VersionChecks(private val client: LintClient, private val evaluator: JavaE
     return null
   }
 
-  private inner class VersionCheckWithExitFinder constructor(private val endElement: UElement, private val api: ApiConstraint) :
-    AbstractUastVisitor() {
-    private var found = false
-    private var done = false
+  /** Visitor which searches for `if` or `switch` expressions that unconditionally return under some [ApiConstraint] before [endElement]. */
+  private abstract inner class VersionCheckWithExitFinder(private val endElement: UElement) : AbstractUastVisitor() {
+    private var reachedEndElement: Boolean = false
+
+    /** Whether to stop checking elements, even if [reachedEndElement] has not been reached. */
+    protected abstract fun exitEarly(): Boolean
+
+    /** Whether to continue checking elements. */
+    private fun done(): Boolean {
+      return reachedEndElement || exitEarly()
+    }
 
     override fun visitElement(node: UElement): Boolean {
-      if (done) {
+      if (done()) {
         return true
       }
       if (node === endElement) {
-        done = true
+        reachedEndElement = true
       }
-      return done
+      return reachedEndElement
     }
+
+    /**
+     * Called when an unconditional return is found associated with [constraint]. The return happens when [constraint] is *not* true.
+     *
+     * For instance, for the following `if`, the constraint would be `ApiConstraint.atLeast(25)`.
+     *
+     * ```
+     * if (Build.VERSION.SDK_INT < 25) return
+     * ```
+     */
+    protected abstract fun checkConstraint(constraint: ApiConstraint)
 
     override fun visitIfExpression(node: UIfExpression): Boolean {
       val exit = super.visitIfExpression(node)
-      if (done) {
+      if (done()) {
         return true
       }
       if (endElement.isUastChildOf(node, true)) {
         // Even if there is an unconditional exit, endElement will occur before it!
-        done = true
+        reachedEndElement = true
         return true
       }
       val thenBranch = node.thenExpression
       val elseBranch = node.elseExpression
       val constraint = getVersionCheckConstraint(element = node.condition, depth = 0)
-      if (thenBranch != null) {
+      if (constraint != null) {
         // Check whether the constraint is negatable. If it isn't, the SDK version meeting the
         // constraint doesn't guarantee that the thenBranch runs.
-        if (constraint?.negatable() == true && constraint?.not()?.isAtLeast(api) == true) {
-          // See if the body does an immediate return
-          if (thenBranch.isUnconditionalReturn()) {
-            found = true
-            done = true
-          }
+        // If the constraint is negatable, see if the body does an immediate return
+        if (constraint.negatable() && thenBranch?.isUnconditionalReturn() == true) {
+          checkConstraint(constraint.not())
         }
-      }
-      if (elseBranch != null) {
-        if (constraint?.isAtLeast(api) == true) {
-          if (elseBranch.isUnconditionalReturn()) {
-            found = true
-            done = true
-          }
+        if (elseBranch?.isUnconditionalReturn() == true) {
+          checkConstraint(constraint)
         }
       }
       return exit
@@ -1428,12 +1479,12 @@ class VersionChecks(private val client: LintClient, private val evaluator: JavaE
 
     override fun visitSwitchExpression(node: USwitchExpression): Boolean {
       super.visitSwitchExpression(node)
-      if (done) {
+      if (done()) {
         return true
       }
       if (endElement.isUastChildOf(node, true)) {
         // Even if there is an unconditional exit, endElement will occur before it!
-        done = true
+        reachedEndElement = true
         return true
       }
 
@@ -1444,7 +1495,7 @@ class VersionChecks(private val client: LintClient, private val evaluator: JavaE
         // you could do a range-based SDK_INT check (when (SDK_INT) 1...21 -> ... etc) but that
         // would need to be handled differently.
         if (getSdkVersionLookup(subject) == -1) {
-          return done
+          return done()
         }
       }
 
@@ -1497,23 +1548,58 @@ class VersionChecks(private val client: LintClient, private val evaluator: JavaE
           }
         }
       }
-      val constraint = fallthroughConstraint ?: return done
-      if (constraint.isAtLeast(api)) {
-        // We've had earlier clauses which checked the API level.
-        // No, this isn't right; we need to lower the level
-        found = true
-        done = true
-      }
-
-      return done
+      val constraint = fallthroughConstraint ?: return done()
+      checkConstraint(constraint)
+      return done()
     }
 
     private fun fallsThrough(body: UExpression): Boolean {
       return !body.isUnconditionalReturn()
     }
+  }
 
-    fun found(): Boolean {
+  /**
+   * Checks if there is an `if` or `switch` expression before the [endElement] which unconditionally returns for an [ApiConstraint] at least
+   * as high as [api].
+   *
+   * If [found] is true after this visitor runs, then when the API level is at least [api], the program will have returned before
+   * [endElement].
+   */
+  private inner class VersionCheckWithExitFinderForApi(
+    endElement: UElement,
+    private val api: ApiConstraint,
+  ) : VersionCheckWithExitFinder(endElement) {
+    /** Whether the visitor has found a constraint that is at least [api] with an unconditional return. */
+    var found = false
+      private set
+
+    override fun exitEarly(): Boolean {
+      // Don't continue if a valid constraint has been found.
       return found
+    }
+
+    override fun checkConstraint(constraint: ApiConstraint) {
+      found = found || constraint.isAtLeast(api)
+    }
+  }
+
+  /**
+   * Finds all `if` or `switch` expressions that unconditionally return under some [ApiConstraint] before [endElement].
+   *
+   * After the visitor runs, [foundConstraint] represents the API levels at which it is possible for the program to reach [endElement].
+   */
+  private inner class VersionCheckWithExitFinderForAllConstraints(endElement: UElement) : VersionCheckWithExitFinder(endElement) {
+    /** [ApiConstraint] representing the possible API levels when [endElement] is reached. */
+    var foundConstraint: ApiConstraint? = null
+      private set
+
+    override fun exitEarly(): Boolean {
+      // Continue searching for constraints unless there are no more possible API levels.
+      return foundConstraint?.isEmpty() == true
+    }
+
+    override fun checkConstraint(constraint: ApiConstraint) {
+      foundConstraint = foundConstraint?.and(constraint) ?: constraint
     }
   }
 
