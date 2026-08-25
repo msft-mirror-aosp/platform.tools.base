@@ -152,6 +152,7 @@ TEST(SyntheticFilterTest, CoroutineLaunchLambdaSetupIsSynthetic) {
   ir::String method_name;
   method_name.data = slicer::MemView("\x0d\x69nvokeSuspend", sizeof("\x0d\x69nvokeSuspend") - 1); // 13 chars
   method_decl.name = &method_name;
+  method_decl.prototype = nullptr;
   method.decl = &method_decl;
 
   lir::BasicBlock block;
@@ -178,6 +179,214 @@ TEST(SyntheticFilterTest, CoroutineLaunchLambdaSetupIsSynthetic) {
   first_bytecode.next = &last_bytecode;
   first_bytecode.prev = nullptr;
   last_bytecode.prev = &first_bytecode;
+  last_bytecode.next = nullptr;
+
+  block.region.first = &first_bytecode;
+  block.region.last = &last_bytecode;
+
+  auto result = SyntheticFilter::IsSyntheticBranch(&method, block);
+  EXPECT_TRUE(result);
+}
+
+TEST(SyntheticFilterTest, ComposeRecompositionSkippingBranchIsSynthetic) {
+  ir::EncodedMethod method;
+  ir::Code code;
+  // 4 registers, 2 parameters (ins_count = 2)
+  // Parameter p0 is index 2, p1 is index 3
+  code.registers = 4;
+  code.ins_count = 2;
+  method.code = &code;
+  method.access_flags = dex::kAccStatic; // Static method
+
+  ir::MethodDecl method_decl;
+  method_decl.name = nullptr;
+  method_decl.parent = nullptr;
+  ir::Proto prototype;
+  ir::TypeList param_types;
+
+  ir::Type composer_type;
+  ir::String composer_descriptor;
+  composer_descriptor.data = slicer::MemView("\x23Landroidx/compose/runtime/Composer;", sizeof("\x23Landroidx/compose/runtime/Composer;") - 1);
+  composer_type.descriptor = &composer_descriptor;
+
+  ir::Type changed_type;
+  ir::String changed_descriptor;
+  changed_descriptor.data = slicer::MemView("\x01I", 1);
+  changed_type.descriptor = &changed_descriptor;
+
+  param_types.types.push_back(&composer_type);
+  param_types.types.push_back(&changed_type);
+  prototype.param_types = &param_types;
+  method_decl.prototype = &prototype;
+  method.decl = &method_decl;
+
+  lir::BasicBlock block;
+  lir::Bytecode first_bytecode;
+  first_bytecode.opcode = dex::OP_AND_INT_LIT8;
+  lir::VReg dest_vreg(0);
+  lir::VReg src_vreg(3); // p1 ($changed) is index 3
+  first_bytecode.operands.push_back(&dest_vreg);
+  first_bytecode.operands.push_back(&src_vreg);
+
+  lir::Bytecode last_bytecode;
+  last_bytecode.opcode = dex::OP_IF_NE;
+  lir::VReg cmp_vreg(0);
+  last_bytecode.operands.push_back(&cmp_vreg);
+
+  // Link them
+  first_bytecode.next = &last_bytecode;
+  first_bytecode.prev = nullptr;
+  last_bytecode.prev = &first_bytecode;
+  last_bytecode.next = nullptr;
+
+  block.region.first = &first_bytecode;
+  block.region.last = &last_bytecode;
+
+  auto result = SyntheticFilter::IsSyntheticBranch(&method, block);
+  EXPECT_TRUE(result);
+}
+
+TEST(SyntheticFilterTest, ComposeComposerGetSkippingBranchIsSynthetic) {
+  ir::EncodedMethod method;
+  ir::Code code;
+  code.registers = 4;
+  code.ins_count = 2;
+  method.code = &code;
+  method.access_flags = dex::kAccStatic;
+
+  ir::MethodDecl method_decl;
+  method_decl.name = nullptr;
+  method_decl.parent = nullptr;
+  ir::Proto prototype;
+  ir::TypeList param_types;
+
+  ir::Type composer_type;
+  ir::String composer_descriptor;
+  composer_descriptor.data = slicer::MemView("\x23Landroidx/compose/runtime/Composer;", sizeof("\x23Landroidx/compose/runtime/Composer;") - 1);
+  composer_type.descriptor = &composer_descriptor;
+
+  ir::Type changed_type;
+  ir::String changed_descriptor;
+  changed_descriptor.data = slicer::MemView("\x01I", 1);
+  changed_type.descriptor = &changed_descriptor;
+
+  param_types.types.push_back(&composer_type);
+  param_types.types.push_back(&changed_type);
+  prototype.param_types = &param_types;
+  method_decl.prototype = &prototype;
+  method.decl = &method_decl;
+
+  lir::BasicBlock block;
+  lir::Bytecode first_bytecode;
+  first_bytecode.opcode = dex::OP_INVOKE_INTERFACE;
+
+  // Let's mock the getSkipping method operand
+  ir::MethodDecl get_skipping_decl;
+  ir::Type parent_type;
+  parent_type.descriptor = &composer_descriptor;
+  get_skipping_decl.parent = &parent_type;
+  ir::String get_skipping_name;
+  get_skipping_name.data = slicer::MemView("\x0bgetSkipping", sizeof("\x0bgetSkipping") - 1);
+  get_skipping_decl.name = &get_skipping_name;
+
+  lir::Method method_operand(&get_skipping_decl, 0);
+  lir::VReg caller_vreg(2); // Composer (p0) is register index 2
+  first_bytecode.operands.push_back(&caller_vreg);
+  first_bytecode.operands.push_back(&method_operand);
+
+  lir::Bytecode move_bytecode;
+  move_bytecode.opcode = dex::OP_MOVE_RESULT;
+  lir::VReg dest_vreg(0);
+  move_bytecode.operands.push_back(&dest_vreg);
+
+  lir::Bytecode last_bytecode;
+  last_bytecode.opcode = dex::OP_IF_EQZ;
+  lir::VReg cmp_vreg(0);
+  last_bytecode.operands.push_back(&cmp_vreg);
+
+  // Link them
+  first_bytecode.next = &move_bytecode;
+  first_bytecode.prev = nullptr;
+
+  move_bytecode.prev = &first_bytecode;
+  move_bytecode.next = &last_bytecode;
+
+  last_bytecode.prev = &move_bytecode;
+  last_bytecode.next = nullptr;
+
+  block.region.first = &first_bytecode;
+  block.region.last = &last_bytecode;
+
+  auto result = SyntheticFilter::IsSyntheticBranch(&method, block);
+  EXPECT_TRUE(result);
+}
+
+TEST(SyntheticFilterTest, ComposeComposerEndRestartGroupBranchIsSynthetic) {
+  ir::EncodedMethod method;
+  ir::Code code;
+  code.registers = 4;
+  code.ins_count = 2;
+  method.code = &code;
+  method.access_flags = dex::kAccStatic;
+
+  ir::MethodDecl method_decl;
+  method_decl.name = nullptr;
+  method_decl.parent = nullptr;
+  ir::Proto prototype;
+  ir::TypeList param_types;
+
+  ir::Type composer_type;
+  ir::String composer_descriptor;
+  composer_descriptor.data = slicer::MemView("\x23Landroidx/compose/runtime/Composer;", sizeof("\x23Landroidx/compose/runtime/Composer;") - 1);
+  composer_type.descriptor = &composer_descriptor;
+
+  ir::Type changed_type;
+  ir::String changed_descriptor;
+  changed_descriptor.data = slicer::MemView("\x01I", 1);
+  changed_type.descriptor = &changed_descriptor;
+
+  param_types.types.push_back(&composer_type);
+  param_types.types.push_back(&changed_type);
+  prototype.param_types = &param_types;
+  method_decl.prototype = &prototype;
+  method.decl = &method_decl;
+
+  lir::BasicBlock block;
+  lir::Bytecode first_bytecode;
+  first_bytecode.opcode = dex::OP_INVOKE_INTERFACE;
+
+  // Mock the endRestartGroup method
+  ir::MethodDecl end_restart_group_decl;
+  ir::Type parent_type;
+  parent_type.descriptor = &composer_descriptor;
+  end_restart_group_decl.parent = &parent_type;
+  ir::String end_restart_group_name;
+  end_restart_group_name.data = slicer::MemView("\x0f\x65ndRestartGroup", sizeof("\x0f\x65ndRestartGroup") - 1); // 15 chars: endRestartGroup
+  end_restart_group_decl.name = &end_restart_group_name;
+
+  lir::Method method_operand(&end_restart_group_decl, 0);
+  lir::VReg caller_vreg(2); // Composer (p0) is register index 2
+  first_bytecode.operands.push_back(&caller_vreg);
+  first_bytecode.operands.push_back(&method_operand);
+
+  lir::Bytecode move_bytecode;
+  move_bytecode.opcode = dex::OP_MOVE_RESULT_OBJECT;
+  lir::VReg dest_vreg(0);
+  move_bytecode.operands.push_back(&dest_vreg);
+
+  lir::Bytecode last_bytecode;
+  last_bytecode.opcode = dex::OP_IF_EQZ;
+  lir::VReg cmp_vreg(0);
+  last_bytecode.operands.push_back(&cmp_vreg);
+
+  // Link them
+  first_bytecode.next = &move_bytecode;
+  first_bytecode.prev = nullptr;
+
+  move_bytecode.prev = &first_bytecode;
+  move_bytecode.next = &last_bytecode;
+
+  last_bytecode.prev = &move_bytecode;
   last_bytecode.next = nullptr;
 
   block.region.first = &first_bytecode;
