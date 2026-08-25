@@ -17,11 +17,15 @@
 package com.android.build.gradle.integration.testing.suites
 
 import com.android.Version
+import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import com.android.build.gradle.options.BooleanOption
+import com.google.gson.Gson
+import com.google.gson.annotations.SerializedName
+import java.io.File
 import org.junit.Rule
 import org.junit.Test
 import org.junit.platform.engine.EngineDiscoveryRequest
@@ -93,6 +97,9 @@ class TestSuitesTestReportTest {
         .filter { it.isFile && it.extension == "xml" }
         .toList()
     assertThat(xmlFiles.size).isEqualTo(2)
+
+    val coverageReportDir = build.androidApplication().buildDir.resolve("reports/coverage/first")
+    assertThat(coverageReportDir.toFile().exists()).isFalse()
   }
 
   @Test
@@ -139,6 +146,12 @@ class TestSuitesTestReportTest {
         .filter { it.isFile && it.extension == "xml" }
         .toList()
     assertThat(xmlFiles.size).isEqualTo(4)
+
+    val appCoverageReportDir = build.androidApplication().buildDir.resolve("reports/coverage/first")
+    assertThat(appCoverageReportDir.toFile().exists()).isFalse()
+
+    val libCoverageReportDir = build.androidLibrary().buildDir.resolve("reports/coverage/second")
+    assertThat(libCoverageReportDir.toFile().exists()).isFalse()
   }
 
   @Test
@@ -189,7 +202,128 @@ class TestSuitesTestReportTest {
     assertThat(updateResultsDir.exists()).isTrue()
     val updateXmlFiles = updateResultsDir.listFiles()?.filter { it.isFile && it.extension == "xml" } ?: emptyList()
     assertThat(updateXmlFiles.size).isEqualTo(1)
+
+    val firstCoverageReportDir = build.androidApplication().buildDir.resolve("reports/coverage/first")
+    assertThat(firstCoverageReportDir.toFile().exists()).isFalse()
+
+    val withUpdateCoverageReportDir = build.androidApplication().buildDir.resolve("reports/coverage/withUpdate")
+    assertThat(withUpdateCoverageReportDir.toFile().exists()).isFalse()
   }
+
+  @Test
+  fun testTestSuiteCodeCoverageEnabled() {
+    val build = rule.build {
+      androidApplication {
+        android {
+          testOptions.suites.create("coverageSuite", AgpTestSuite::class.java) {
+            it.codeCoverage = true
+            it.useJunitEngine.apply {
+              inputs.add(AgpTestSuiteInputParameters.MERGED_MANIFEST)
+              includeEngines.add("[engine:custom-junit-engine-for-tests]")
+              enginesDependencies.add("com.android.tools.build:gradle-api:${Version.ANDROID_GRADLE_PLUGIN_VERSION}")
+              enginesDependencies.add("org.junit.platform:junit-platform-launcher")
+              enginesDependencies.add("com.test:custom-junit-engine:1.0")
+              enginesDependencies.add("org.junit.platform:junit-platform-engine:1.13.3")
+            }
+            it.hostJar {}
+            it.targetVariants.add("debug")
+            it.targets.create("t1") {}
+          }
+        }
+        files {
+          add("src/main/java/com/example/dummy/Dummy.java", "package com.example.dummy; public class Dummy {}")
+          add("src/coverageSuite/java/DummyTest.java", "package com.example.dummy; public class DummyTest {}")
+        }
+      }
+    }
+
+    build.executor.run(":app:testCoverageSuiteT1DebugTestSuite")
+
+    val coverageReportDir = build.androidApplication().buildDir.resolve("reports/coverage/coverageSuite")
+    val htmlReportIndex = coverageReportDir.resolve("index.html").toFile()
+    val xmlReport = coverageReportDir.resolve("report.xml").toFile()
+
+    assertThat(htmlReportIndex.exists()).isTrue()
+    assertThat(xmlReport.exists()).isTrue()
+
+    val reportDataFile = coverageReportDir.resolve("data/report-data.js").toFile()
+    assertThat(reportDataFile.exists()).isTrue()
+
+    val report = parseReportJs<TestCoverageReport>(reportDataFile)
+    assertThat(report.name).isNotEmpty()
+    assertThat(report.modules).hasSize(1)
+
+    val appModule = report.modules.find { it.name == ":app" }
+    assertThat(appModule).isNotNull()
+
+    val appPackage = appModule!!.packages.find { it.name == "com.example.dummy" }
+    assertThat(appPackage).isNotNull()
+    val dummyClass = appPackage!!.classes.find { it.name == "Dummy" }
+    assertThat(dummyClass).isNotNull()
+  }
+
+  @Test
+  fun testTestSuiteCodeCoverageDisabled() {
+    val build = rule.build {
+      androidApplication {
+        android {
+          testOptions.suites.create("noCoverageSuite", AgpTestSuite::class.java) {
+            it.codeCoverage = false
+            it.useJunitEngine.apply {
+              inputs.add(AgpTestSuiteInputParameters.MERGED_MANIFEST)
+              includeEngines.add("[engine:custom-junit-engine-for-tests]")
+              enginesDependencies.add("com.android.tools.build:gradle-api:${Version.ANDROID_GRADLE_PLUGIN_VERSION}")
+              enginesDependencies.add("org.junit.platform:junit-platform-launcher")
+              enginesDependencies.add("com.test:custom-junit-engine:1.0")
+              enginesDependencies.add("org.junit.platform:junit-platform-engine:1.13.3")
+            }
+            it.hostJar {}
+            it.targetVariants.add("debug")
+            it.targets.create("t1") {}
+          }
+        }
+        files { add("src/noCoverageSuite/java/Dummy.java", "package com.example.dummy; public class Dummy {}") }
+      }
+    }
+
+    build.executor.run(":app:testNoCoverageSuiteT1DebugTestSuite")
+
+    val coverageReportDir = build.androidApplication().buildDir.resolve("reports/coverage/noCoverageSuite")
+    assertThat(coverageReportDir.toFile().exists()).isFalse()
+  }
+
+  private val gson = Gson()
+
+  private inline fun <reified T> parseReportJs(file: File): T {
+    val content = file.readText().removePrefix("const fullReport = ").removeSuffix(";")
+    return gson.fromJson(content, T::class.java)
+  }
+
+  // --- Data classes for parsing JSON from report files ---
+
+  data class TestCoverageReport(
+    val name: String,
+    val modules: List<TestModuleReport>,
+    @SerializedName("numberOfTestsSuites") val numberOfTestsSuites: Int,
+  )
+
+  data class TestModuleReport(
+    val name: String,
+    val testSuiteCoverages: List<TestTestSuiteReportCoverage>,
+    val packages: List<TestPackageReport>,
+  )
+
+  data class TestTestSuiteReportCoverage(val name: String, val variantCoverages: List<TestVariantCoverage>)
+
+  data class TestPackageReport(val name: String, val classes: List<TestClassReport>)
+
+  data class TestClassReport(val name: String, val sourceFileName: String, val variantSourceFilePaths: List<TestVariantSourceFilePath>)
+
+  data class TestVariantSourceFilePath(val variantName: String, val path: String)
+
+  data class TestVariantCoverage(val name: String, val instruction: TestCoverageInfo, val branch: TestCoverageInfo)
+
+  data class TestCoverageInfo(val percent: Int, val covered: Int, val total: Int)
 
   class CustomEngineDescriptor(uniqueId: UniqueId) : AbstractTestDescriptor(uniqueId, "Custom Engine Root") {
     override fun getType(): TestDescriptor.Type = TestDescriptor.Type.CONTAINER

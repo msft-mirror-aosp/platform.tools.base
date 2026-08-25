@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.coverage.tasks
 
+import com.android.build.gradle.internal.coverage.injectMetadataInXmlReport
 import com.android.build.gradle.internal.coverage.tasks.CodeCoverageCollectionTask.CodeCoverageCollectionWorkerAction
 import com.android.build.gradle.internal.coverage.tasks.CodeCoverageCollectionTask.CodeCoverageCollectionWorkerAction.Companion.getTestSuiteCoverageFiles
 import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_METADATA_FILE
@@ -97,7 +98,7 @@ class CodeCoverageCollectionTaskTest {
       )
     val sourceFolders = listOf("src/main/java", "src/main/kotlin")
 
-    CodeCoverageCollectionWorkerAction.injectMetadataInXmlReport(xmlFile, properties, sourceFolders)
+    injectMetadataInXmlReport(xmlFile, properties, sourceFolders)
 
     assertThat(xmlFile).exists()
 

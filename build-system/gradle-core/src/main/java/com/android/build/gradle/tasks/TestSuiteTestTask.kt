@@ -32,8 +32,12 @@ import com.android.build.gradle.internal.component.DeviceTestCreationConfig
 import com.android.build.gradle.internal.component.InstrumentedTestCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteTargetCreationConfig
+import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.computeAbiFromArchitecture
 import com.android.build.gradle.internal.computeAvdName
+import com.android.build.gradle.internal.coverage.JacocoConfigurations
+import com.android.build.gradle.internal.coverage.TestSuiteCoverageWorkAction
+import com.android.build.gradle.internal.coverage.getTestSuiteJacocoVersion
 import com.android.build.gradle.internal.dsl.ManagedVirtualDevice
 import com.android.build.gradle.internal.initialize
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
@@ -41,10 +45,12 @@ import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactTyp
 import com.android.build.gradle.internal.publishing.PublishingSpecs
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalMultipleArtifactType
+import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
 import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask.DeviceProviderFactory
 import com.android.build.gradle.internal.tasks.GlobalTask
+import com.android.build.gradle.internal.tasks.JacocoTask
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationAction
 import com.android.build.gradle.internal.tasks.getApkFiles
 import com.android.build.gradle.internal.test.report.XMLReportAggregator
@@ -65,6 +71,7 @@ import com.android.utils.FileUtils
 import java.io.File
 import java.util.Locale
 import java.util.Properties
+import javax.inject.Inject
 import kotlin.collections.asIterable
 import kotlin.collections.joinToString
 import kotlin.collections.plus
@@ -73,12 +80,14 @@ import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.FileSystemLocation
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.logging.Logging
 import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.CacheableTask
+import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
@@ -92,6 +101,8 @@ import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.testing.Test
 import org.gradle.api.tasks.testing.junitplatform.JUnitPlatformOptions
+import org.gradle.testing.jacoco.plugins.JacocoTaskExtension
+import org.gradle.workers.WorkerExecutor
 import shadow.bundletool.com.android.utils.PathUtils
 
 @CacheableTask
@@ -153,6 +164,10 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
 
   @get:Internal abstract val testSuiteTarget: Property<String>
 
+  @get:Internal abstract val rootProjectName: Property<String>
+
+  @get:Internal abstract val rootProjectDir: DirectoryProperty
+
   /**
    * Specifies the target devices for test execution using a comma-separated list of serial numbers.
    *
@@ -176,6 +191,26 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
   override fun getIgnoreFailures(): Boolean {
     return super.getIgnoreFailures()
   }
+
+  @get:Inject abstract val workerExecutor: WorkerExecutor
+
+  @get:Classpath @get:Optional abstract val jacocoAntClasspath: ConfigurableFileCollection
+
+  @get:InputFiles
+  @get:Optional
+  @get:PathSensitive(PathSensitivity.RELATIVE)
+  abstract val coverageSourceDirectories: ConfigurableFileCollection
+
+  @get:InputFiles
+  @get:Optional
+  @get:PathSensitive(PathSensitivity.RELATIVE)
+  abstract val coverageClassDirectories: ConfigurableFileCollection
+
+  @get:Input @get:Optional abstract val coverageEnabled: Property<Boolean>
+
+  @get:OutputDirectory @get:Optional abstract val coverageReportDir: DirectoryProperty
+
+  @get:Internal abstract val jacocoHostDestinationFile: RegularFileProperty
 
   @TaskAction
   override fun executeTests() {
@@ -432,6 +467,54 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       val coverageMetadataDir = this.coverageDir.get().asFile.also { it.mkdirs() }
       val coverageMetadataFile = File(coverageMetadataDir, TEST_SUITE_METADATA_FILE)
       coverageMetadataFile.writeText(metadataContent)
+
+      if (coverageEnabled.getOrElse(false)) {
+        if (jacocoAntClasspath.isEmpty) {
+          val logger = Logging.getLogger(TestSuiteTestTask::class.java)
+          logger.warn(
+            "Test suite '${testSuiteName.get()}' resolves to different JaCoCo versions on host and device. " +
+              "Please ensure a single Jacoco version is configured."
+          )
+        } else {
+          try {
+            val coverageFiles = mutableListOf<File>()
+
+            // Device coverage files
+            coverageFiles.addAll(
+              this.coverageDir.get().asFile.walk().filter { it.isFile && (it.extension == "ec" || it.extension == "exec") }.toList()
+            )
+
+            // Host coverage files
+            if (jacocoHostDestinationFile.isPresent) {
+              val destinationFile = jacocoHostDestinationFile.get().asFile
+              if (destinationFile.exists()) {
+                coverageFiles.add(destinationFile)
+              }
+            }
+
+            if (coverageFiles.isNotEmpty() && coverageReportDir.isPresent) {
+              // Execute using Worker API to isolate Jacoco classpath
+              workerExecutor
+                .classLoaderIsolation { classpath -> classpath.classpath.from(jacocoAntClasspath.files) }
+                .submit(TestSuiteCoverageWorkAction::class.java) {
+                  it.coverageFiles.setFrom(coverageFiles)
+                  it.reportDir.set(coverageReportDir)
+                  it.classFolders.setFrom(coverageClassDirectories)
+                  it.sourceFolders.setFrom(coverageSourceDirectories)
+                  it.reportName.set(testedVariantName.get())
+                  it.projectName.set(modulePath.get())
+                  it.variantName.set(testedVariantName.get())
+                  it.testSuiteName.set(testSuiteName.get())
+                  it.rootProjectName.set(rootProjectName.get())
+                  it.rootProjectDir.set(rootProjectDir)
+                }
+            }
+          } catch (e: Exception) {
+            val logger = Logging.getLogger(TestSuiteTestTask::class.java)
+            logger.warn("Failed to generate code coverage report: ${e.message}", e)
+          }
+        }
+      }
     }
   }
 
@@ -455,8 +538,25 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       task.group = JavaBasePlugin.VERIFICATION_GROUP
       task.outputs.upToDateWhen { false }
 
-      val classesDir = task.project.layout.buildDirectory.file(task.name)
       val hasHostJar = creationConfig.sourceContainers.any { it.source is TestSuiteSourceSet.HostJar }
+      val testedVariant = creationConfig.testedVariant
+      val testSuiteName = creationConfig.name
+      val targetName = testSuiteTarget.name
+      val variantName = testedVariant.name
+
+      configureCoverageAndMetadata(
+        task = task,
+        services = creationConfig.services,
+        codeCoverageEnabled = creationConfig.codeCoverageEnabled,
+        jacocoVersion = if (creationConfig.codeCoverageEnabled) getTestSuiteJacocoVersion(task.project, creationConfig) else null,
+        testedVariant = testedVariant,
+        testSuiteName = testSuiteName,
+        testSuiteTarget = targetName,
+        variantName = variantName,
+        hasHostJar = hasHostJar,
+      )
+
+      val classesDir = task.project.layout.buildDirectory.file(task.name)
 
       task.testClassesDirs =
         creationConfig.services.fileCollection().also { fileCollection ->
@@ -548,9 +648,9 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       testSuiteTarget.targetDevices.forEach { task.managedDevices.add(localDevices.getByName(it) as ManagedVirtualDevice) }
       task.managedDevices.disallowChanges()
 
-      val testedVariant = creationConfig.testedVariant
       val junitEngineSpec = (creationConfig.junitEngineSpec as JUnitEngineSpecImplForVariant)
-      junitEngineSpec.inputs.forEach { inputParameter: AgpTestSuiteInputParameters ->
+      val resolvedInputs = junitEngineSpec.inputs
+      resolvedInputs.forEach { inputParameter: AgpTestSuiteInputParameters ->
         when (inputParameter) {
           AgpTestSuiteInputParameters.MERGED_MANIFEST -> {
             task.engineInputParameters.add(
@@ -859,11 +959,6 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       val htmlReport = testTaskReports.html
       htmlReport.outputLocation.fileProvider(creationConfig.services.projectInfo.getTestReportFolder().map { it.dir(task.name).asFile })
 
-      task.modulePath.setDisallowChanges(creationConfig.services.projectInfo.path)
-      task.testedVariantName.setDisallowChanges(creationConfig.testedVariant.name)
-      task.testSuiteName.setDisallowChanges(creationConfig.name)
-      task.testSuiteTarget.setDisallowChanges(testSuiteTarget.name)
-
       // This Gradle property key is hard coded in Android Studio.
       // We will remove it once Android Studio can consume test report using
       // the tooling api.
@@ -925,10 +1020,17 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       task.description = "Installs and runs the tests for $variantName on connected devices."
       task.outputs.upToDateWhen { false }
 
-      task.testSuiteName.setDisallowChanges(CONNECTED_TEST_TEST_SUITE_NAME)
-      task.testSuiteTarget.setDisallowChanges(CONNECTED_TEST_TEST_SUITE_TARGET_NAME)
-      task.testedVariantName.setDisallowChanges(variantName)
-      task.modulePath.setDisallowChanges(creationConfig.services.projectInfo.path)
+      configureCoverageAndMetadata(
+        task = task,
+        services = creationConfig.services,
+        codeCoverageEnabled = creationConfig.codeCoverageEnabled,
+        jacocoVersion =
+          if (creationConfig.codeCoverageEnabled) JacocoTask.getAndroidTestJacocoVersion(checkNotNull(testedConfig)) else null,
+        testedVariant = testedConfig,
+        testSuiteName = CONNECTED_TEST_TEST_SUITE_NAME,
+        testSuiteTarget = CONNECTED_TEST_TEST_SUITE_TARGET_NAME,
+        variantName = variantName,
+      )
 
       task.deviceProviderFactory.timeOutInMs.setDisallowChanges(globalConfig.installationOptions.timeOutInMs)
 
@@ -940,7 +1042,7 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
 
       val androidTestUtil = task.project.configurations.findByName(SdkConstants.GRADLE_ANDROID_TEST_UTIL_CONFIGURATION)
       if (androidTestUtil != null) {
-        task.testUtilApks.from(androidTestUtil)
+        task.testUtilApks.from(task.project.files(androidTestUtil))
       }
 
       // Gradle's Test task requires a non-empty testDefinitionDirs to avoid being skipped
@@ -1118,10 +1220,17 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       task.description = "Installs and runs the tests for $variantName on managed device ${device.name}."
       task.outputs.upToDateWhen { false }
 
-      task.testSuiteName.setDisallowChanges(CONNECTED_TEST_TEST_SUITE_NAME)
-      task.testSuiteTarget.setDisallowChanges(device.name)
-      task.testedVariantName.setDisallowChanges(variantName)
-      task.modulePath.setDisallowChanges(creationConfig.services.projectInfo.path)
+      configureCoverageAndMetadata(
+        task = task,
+        services = creationConfig.services,
+        codeCoverageEnabled = creationConfig.codeCoverageEnabled,
+        jacocoVersion =
+          if (creationConfig.codeCoverageEnabled) JacocoTask.getAndroidTestJacocoVersion(checkNotNull(testedConfig)) else null,
+        testedVariant = testedConfig,
+        testSuiteName = CONNECTED_TEST_TEST_SUITE_NAME,
+        testSuiteTarget = device.name,
+        variantName = variantName,
+      )
 
       task.deviceProviderFactory.timeOutInMs.setDisallowChanges(globalConfig.installationOptions.timeOutInMs)
 
@@ -1137,7 +1246,7 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
 
       val androidTestUtil = task.project.configurations.findByName(SdkConstants.GRADLE_ANDROID_TEST_UTIL_CONFIGURATION)
       if (androidTestUtil != null) {
-        task.testUtilApks.from(androidTestUtil)
+        task.testUtilApks.from(task.project.files(androidTestUtil))
       }
 
       task.testDefinitionDirs.from(
@@ -1228,6 +1337,56 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
         TEST_SUITE_METADATA_SUITE_KEY to (metadata[TEST_SUITE_METADATA_SUITE_KEY] ?: "unknown_suite"),
         TEST_SUITE_METADATA_TARGET_KEY to (metadata[TEST_SUITE_METADATA_TARGET_KEY] ?: "unknown_target"),
       )
+    }
+
+    fun configureCoverageAndMetadata(
+      task: TestSuiteTestTask,
+      services: TaskCreationServices,
+      codeCoverageEnabled: Boolean,
+      jacocoVersion: String?,
+      testedVariant: VariantCreationConfig?,
+      testSuiteName: String,
+      testSuiteTarget: String,
+      variantName: String,
+      hasHostJar: Boolean = false,
+    ) {
+      if (codeCoverageEnabled) {
+        task.coverageEnabled.setDisallowChanges(true)
+        if (jacocoVersion != null) {
+          val jacocoAntConfiguration = JacocoConfigurations.getJacocoAntTaskConfiguration(task.project, jacocoVersion)
+          task.jacocoAntClasspath.from(task.project.files(jacocoAntConfiguration))
+
+          val realTestedVariant =
+            checkNotNull(testedVariant) {
+              "Tested variant must be non-null when code coverage is enabled."
+            }
+          val mainClasses =
+            task.project.objects
+              .fileCollection()
+              .from(realTestedVariant.artifacts.forScope(ScopedArtifacts.Scope.PROJECT).getFinalArtifacts(ScopedArtifact.CLASSES))
+          task.coverageClassDirectories.from(mainClasses)
+
+          realTestedVariant.sources.java { javaSources -> task.coverageSourceDirectories.from(javaSources.getAsFileTrees()) }
+          realTestedVariant.sources.kotlin { kotlinSources ->
+            task.coverageSourceDirectories.from(kotlinSources.getAsFileTrees())
+          }
+          task.coverageReportDir.set(task.project.layout.buildDirectory.dir(task.testSuiteName.map { "reports/coverage/$it" }))
+
+          if (hasHostJar) {
+            val jacocoExtension = task.extensions.findByType(JacocoTaskExtension::class.java)
+            jacocoExtension?.let { task.jacocoHostDestinationFile.set(it.destinationFile) }
+          }
+        }
+      } else {
+        task.coverageEnabled.setDisallowChanges(false)
+      }
+
+      task.testSuiteName.setDisallowChanges(testSuiteName)
+      task.testSuiteTarget.setDisallowChanges(testSuiteTarget)
+      task.testedVariantName.setDisallowChanges(variantName)
+      task.modulePath.setDisallowChanges(services.projectInfo.path)
+      task.rootProjectName.set(services.projectInfo.rootProjectName)
+      task.rootProjectDir.set(services.projectInfo.rootDir)
     }
   }
 }
