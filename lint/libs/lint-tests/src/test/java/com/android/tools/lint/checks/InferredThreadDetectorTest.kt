@@ -3739,6 +3739,132 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
       .expectClean()
   }
 
+  fun `test View's assumptions working for EditText`() {
+    lint()
+      .files(
+        kotlin(
+            """
+            package test.pkg
+            import android.widget.EditText
+            import androidx.annotation.UiThread
+            import androidx.annotation.WorkerThread
+
+            @UiThread fun ui() { }
+
+            @WorkerThread fun worker() { }
+
+            @WorkerThread
+            fun schedule(editText: EditText) {
+                editText.post { ui() } // OK: safe from any thread, and the runnable runs on the UI thread
+                editText.post { worker() } // ERROR: the runnable runs on the UI thread
+                editText.postDelayed({ worker() }, 100) // ERROR: the runnable runs on the UI thread
+                editText.post(::worker) // ERROR: same, with the runnable's effect known only when applying `View.post`'s assumption
+            }
+            """
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/test.kt:13: Error: Call must be from @WorkerThread, but the work passed to post is expected to run from @{Main,Ui}Thread [ThreadConstraint]
+            editText.post { worker() } // ERROR: the runnable runs on the UI thread
+                            ~~~~~~~~
+        src/test/pkg/test.kt:14: Error: Call must be from @WorkerThread, but the work passed to postDelayed is expected to run from @{Main,Ui}Thread [ThreadConstraint]
+            editText.postDelayed({ worker() }, 100) // ERROR: the runnable runs on the UI thread
+                                   ~~~~~~~~
+        src/test/pkg/test.kt:15: Error: Argument must allow calling run() from @{Main,Ui}Thread, but that call is requiring @WorkerThread [ThreadConstraint]
+            editText.post(::worker) // ERROR: same, with the runnable's effect known only when applying `View.post`'s assumption
+                          ~~~~~~~~
+        3 errors
+        """
+          .trimIndent()
+      )
+  }
+
+  fun `test View's assumptions working for subclass in scope without overriding`() {
+    lint()
+      .files(
+        kotlin(
+            """
+            package test.pkg
+            import android.content.Context
+            import android.view.View
+            import androidx.annotation.WorkerThread
+
+            @WorkerThread fun worker() { }
+
+            class MyView(context: Context) : View(context)
+
+            @WorkerThread
+            fun schedule(view: MyView) {
+                view.post { worker() } // ERROR: `MyView` is indexed but doesn't declare `post`, which `View` does
+            }
+            """
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/MyView.kt:12: Error: Call must be from @WorkerThread, but the work passed to post is expected to run from @{Main,Ui}Thread [ThreadConstraint]
+            view.post { worker() } // ERROR: `MyView` is indexed but doesn't declare `post`, which `View` does
+                        ~~~~~~~~
+        1 error
+        """
+          .trimIndent()
+      )
+  }
+
+  fun `test assumptions working through chain of overriding declarations`() {
+    lint()
+      .files(
+        java(
+            """
+            package test.pkg;
+
+            import androidx.annotation.UiThread;
+            import androidx.annotation.WorkerThread;
+            import java.util.HashMap;
+            import java.util.LinkedHashMap;
+
+            class Test {
+                @WorkerThread static void worker() { }
+
+                @UiThread static void updateUi() { }
+
+                @UiThread
+                static void ui(HashMap<String, Integer> h, LinkedHashMap<String, Integer> lh) {
+                    h.forEach((k, v) -> worker()); // ERROR: `HashMap.forEach` overrides `Map.forEach`
+                    lh.forEach((k, v) -> worker()); // ERROR: `LinkedHashMap.forEach` overrides `HashMap.forEach`, which overrides `Map.forEach`
+                    lh.forEach((k, v) -> updateUi()); // OK
+                }
+            }
+            """
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/Test.java:15: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+                h.forEach((k, v) -> worker()); // ERROR: `HashMap.forEach` overrides `Map.forEach`
+                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/Test.java:16: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+                lh.forEach((k, v) -> worker()); // ERROR: `LinkedHashMap.forEach` overrides `HashMap.forEach`, which overrides `Map.forEach`
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        2 errors
+        """
+          .trimIndent()
+      )
+  }
+
   fun testRunOnUiThread() {
     lint()
       .files(

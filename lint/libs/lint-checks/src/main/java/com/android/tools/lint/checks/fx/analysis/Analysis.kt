@@ -39,6 +39,7 @@ import com.android.tools.lint.checks.fx.result.PsiClassAdapter
 import com.android.tools.lint.checks.fx.result.PsiTypeAdapter
 import com.android.tools.lint.checks.fx.result.Result
 import com.android.tools.lint.checks.fx.result.ResultTable
+import com.android.tools.lint.checks.fx.result.ResultTemplate
 import com.android.tools.lint.checks.fx.result.Scope
 import com.android.tools.lint.checks.fx.result.Subst
 import com.android.tools.lint.checks.fx.result.Type
@@ -172,6 +173,7 @@ internal open class Analysis<FX : Any>(
   private val concreteEffect: Lattice<FX>,
   private val assumptions: ResultTable<FX> = ResultTable.of(persistentMapOf()),
   private val externalAnnotation: (Type.MethodRef) -> FX? = { null },
+  private val inheritedMethodRefs: (Type.MethodRef) -> List<Type.MethodRef> = { listOf() },
   private val log: (() -> String) -> Unit = { /* ignore */ },
 ) : DependentMonotone<Point<FX>, Ans<FX>> {
 
@@ -1071,7 +1073,7 @@ internal open class Analysis<FX : Any>(
     staticTarget: Type.MethodRef? = null,
   ): InstAns<FX> {
     val (receiver, rSubst) = receiver
-    if ((receiver == Type.None || receiver == Type.WildCard) && staticTarget != null && assumptions[staticTarget] != null) {
+    if ((receiver == Type.None || receiver == Type.WildCard) && staticTarget != null && assumedSummary(staticTarget) != null) {
       val (argTypes, aSubst) = args
       return substLattice.joinOf(rSubst, aSubst)!!.apply(rec, staticTarget, listOf(receiver) + argTypes)
     }
@@ -1109,10 +1111,20 @@ internal open class Analysis<FX : Any>(
       is Type.Ellipsis -> throw IllegalArgumentException("Unexpected invocation $receiver.$methodName($args)")
     }
 
+  /** The most specific declaration of [ref], itself or inherited, with a summary or assumption; [ref] itself if there's none */
+  private fun knownMethodRef(ref: Type.MethodRef): Type.MethodRef {
+    fun isKnown(ref: Type.MethodRef): Boolean = assumptions[ref] != null || module[ref] != null
+    return if (isKnown(ref)) ref else inheritedMethodRefs(ref).firstOrNull(::isKnown) ?: ref
+  }
+
+  /** Use this method instead of looking up [assumptions] directly to also account for assumptions from super methods */
+  private fun assumedSummary(ref: Type.MethodRef): ResultTemplate<FX>? = assumptions[knownMethodRef(ref)]
+
   /** Instantiate [method]'s summaries at [args] */
   private fun Subst<FX>.apply(rec: (Point<FX>) -> Ans<FX>, method: Instantiable<FX>, args: List<Type<FX>>): InstAns<FX> =
     when (method) {
-      is Type.MethodRef ->
+      is Type.MethodRef -> {
+        val method = knownMethodRef(method)
         when (val assumption = assumptions[method]) {
           null ->
             when (val methodDefn = module[method]) {
@@ -1145,6 +1157,7 @@ internal open class Analysis<FX : Any>(
               .joinOf(this, assumption.subst)!!
               .apply(rec, assumption.typeBounds, assumption.domains, assumption.range, assumption.effect, args)
         }
+      }
       is Type.Lambda -> {
         val (xs, body, intf) = method // TODO make sure applying the right message
         val (t, fx) = body
@@ -1451,7 +1464,7 @@ internal open class Analysis<FX : Any>(
 
   private fun assumedMethodGuards(site: ArgumentSite?, samMethod: MethodId? = site?.samMethod): List<EffectAnnotation.Explicit<FX>> {
     val calleeRef = site?.calleeRef ?: return listOf()
-    val assumption = assumptions[calleeRef] ?: return listOf()
+    val assumption = assumedSummary(calleeRef) ?: return listOf()
     val domainIndex = site.domainIndex ?: return listOf()
     val domain = assumption.domains.getOrNull(domainIndex) as? Type.Sym ?: return listOf()
     val bounds = assumption.effect.constraint.concreteUpperbounds ?: return listOf()

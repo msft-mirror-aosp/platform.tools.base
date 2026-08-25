@@ -53,6 +53,7 @@ import com.android.tools.lint.checks.fx.utils.decodeFromDir
 import com.android.tools.lint.checks.fx.utils.encodeToDir
 import com.android.tools.lint.checks.fx.utils.leastFixPoint
 import com.android.tools.lint.checks.fx.utils.unionedWith
+import com.android.tools.lint.client.api.JavaEvaluator
 import com.android.tools.lint.client.api.LintBaseline.Companion.stringsEquivalent
 import com.android.tools.lint.client.api.LintClient
 import com.android.tools.lint.client.api.UElementHandler
@@ -64,6 +65,7 @@ import com.android.tools.lint.detector.api.PartialResult
 import com.android.tools.lint.detector.api.Project
 import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.intellij.openapi.application.runReadAction
+import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiTypeParameter
 import java.io.Closeable
 import java.io.File
@@ -173,7 +175,17 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
           }
         }
 
-        val summaries = Analysis(program, effects, knownResults, externalAnnotationFinder(context)).leastFixPoint(entries)
+        val evaluator = context.client.getUastParser(context.project).evaluator
+        val findPsiMethod = memoizeNullable<Type.MethodRef, PsiMethod> { evaluator.findPsiMethod(it) }
+        val summaries =
+          Analysis(
+              program,
+              effects,
+              knownResults,
+              externalAnnotationFinder(evaluator, findPsiMethod),
+              inheritedMethodRefFinder(findPsiMethod),
+            )
+            .leastFixPoint(entries)
 
         buildMap {
           for ((k, v) in summaries) {
@@ -221,9 +233,9 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
   protected fun argumentOfAssumedDomain(call: UExpression, invocation: Type.Sym<FX>): UExpression? {
     val callExpr = call as? UCallExpression ?: return null
     val callee = callExpr.resolve() ?: return null
-    if (callee.containingClass == null) return null
-    val calleeRef = Type.MethodRef(callee)
-    val assumption = knownResults[calleeRef] ?: return null
+    // The callee may inherit or override the assumed declaration
+    val (calleeRef, assumption) =
+      callee.selfAndOverriddenMethodRefs().firstNotNullOfOrNull { ref -> knownResults[ref]?.let { ref to it } } ?: return null
     tailrec fun rootOf(sym: Type.Sym<FX>): Type.Sym<FX> =
       when (sym) {
         is Type.Sym.Invoke -> rootOf(sym.receiver)
@@ -245,20 +257,46 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
     old.split(LEGACY_ARGUMENT_SENTENCE_BOUNDARY).any { stringsEquivalent(it.replace(LEGACY_ARGUMENT_PARAM, "$1"), new) }
 
   /** Best-effort lookup of the explicit effect annotation on a method not in the current scope or the assumption table */
-  private fun externalAnnotationFinder(context: Context): (Type.MethodRef) -> FX? {
-    val evaluator = context.client.getUastParser(context.project).evaluator
+  private fun externalAnnotationFinder(evaluator: JavaEvaluator, findPsiMethod: (Type.MethodRef) -> PsiMethod?): (Type.MethodRef) -> FX? {
     fun find(ref: Type.MethodRef): FX? {
-      val psiClass = ref.klass.fqn?.let(evaluator::findClass) ?: return null
-      val psiMethod =
-        psiClass.findMethodsByName(ref.method.name, true).find { MethodId(it) == ref.method }
-          ?: psiClass.constructors.find { MethodId(it) == ref.method }
-          ?: return null
+      val psiMethod = findPsiMethod(ref) ?: return null
       val uMethod = psiMethod.toUElement() as? UMethod ?: return null
       return parseMethodImmediateAnnotations(evaluator, uMethod)
         ?: nearestBaseAnns(evaluator, psiMethod.findSuperMethods()).map { it.annotated }.reduceOrNull(effects::meetOf)
     }
 
     return memoizeNullable(::find)
+  }
+
+  /** Best-effort lookup of the declarations a method inherits or overrides, transitively */
+  private fun inheritedMethodRefFinder(findPsiMethod: (Type.MethodRef) -> PsiMethod?): (Type.MethodRef) -> List<Type.MethodRef> {
+    val cache = hashMapOf<Type.MethodRef, List<Type.MethodRef>>()
+    return { ref ->
+      when {
+        !ref.method.isVirtual -> listOf() // Statics and constructors are always keyed by their declaring class
+        else -> cache.getOrPut(ref) { findPsiMethod(ref)?.selfAndOverriddenMethodRefs()?.minus(ref) ?: listOf() }
+      }
+    }
+  }
+
+  /** The keys of [this] method and, transitively, of the declarations it overrides, each listed before the ones it overrides */
+  private fun PsiMethod.selfAndOverriddenMethodRefs(): List<Type.MethodRef> {
+    val visited = hashSetOf<Type.MethodRef>()
+    val postOrder = mutableListOf<Type.MethodRef>()
+    fun visit(method: PsiMethod) {
+      val ref = method.containingClass?.let { Type.MethodRef(method) }
+      if (ref != null && !visited.add(ref)) return
+      for (base in method.findSuperMethods().asList().asReversed()) visit(base)
+      if (ref != null) postOrder += ref
+    }
+    visit(this)
+    return postOrder.asReversed()
+  }
+
+  private fun JavaEvaluator.findPsiMethod(ref: Type.MethodRef): PsiMethod? {
+    val psiClass = ref.klass.fqn?.let(::findClass) ?: return null
+    return psiClass.findMethodsByName(ref.method.name, true).find { MethodId(it) == ref.method }
+      ?: psiClass.constructors.find { MethodId(it) == ref.method }
   }
 
   private fun <X, Y : Any> memoizeNullable(compute: (X) -> Y?): (X) -> Y? {
