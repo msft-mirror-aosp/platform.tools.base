@@ -41,6 +41,9 @@ class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
     /** Descriptor for Jetpack Compose's `@Composable` annotation. */
     private const val COMPOSABLE_DESC = "Landroidx/compose/runtime/Composable;"
 
+    /** Descriptor for Jetpack Compose's `Composer` parameter. */
+    private const val COMPOSER_DESC = "Landroidx/compose/runtime/Composer;"
+
     private const val PREVIEW_DESC = "Landroidx/compose/ui/tooling/preview/Preview;"
 
     /**
@@ -106,41 +109,36 @@ class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
           if ((access and Opcodes.ACC_SYNTHETIC) != 0) return null
 
           methodFound = true
-          var isComposable = false
-          val previewParamsList = mutableListOf<Map<String, String>>()
-          val previewParameterAttributes = mutableMapOf<String, String>()
+          val discoveryContext = MethodDiscoveryContext()
           val traversalPath = mutableSetOf<String>()
-          val discoveredWrappers = mutableListOf<String>()
-
-          val onWrapperFound: (String) -> Unit = { wrapper -> discoveredWrappers.add(wrapper) }
 
           return object : MethodVisitor(Opcodes.ASM9) {
             override fun visitAnnotation(desc: String, visible: Boolean): AnnotationVisitor? {
               if (desc == COMPOSABLE_DESC) {
-                isComposable = true
+                discoveryContext.isComposable = true
                 return null
               }
-              return handleAnnotation(desc, traversalPath, previewParamsList, onWrapperFound)
+              return handleAnnotation(desc, traversalPath, discoveryContext.previewConfigurations, discoveryContext.previewWrapperFqns::add)
             }
 
             override fun visitParameterAnnotation(parameter: Int, desc: String, visible: Boolean): AnnotationVisitor? {
               if (desc == PREVIEW_PARAMETER_DESC) {
-                return createPreviewParameterVisitor(previewParameterAttributes)
+                val paramMap = mutableMapOf<String, String>()
+                discoveryContext.previewParameterConfigs.add(paramMap)
+                return createPreviewParameterVisitor(paramMap)
               }
               return null
             }
 
             override fun visitEnd() {
-              if (previewParamsList.isEmpty() && discoveredWrappers.isEmpty()) {
+              if (discoveryContext.previewConfigurations.isEmpty() && discoveryContext.previewWrapperFqns.isEmpty()) {
                 return // Skip non-preview methods.
               }
 
               val validationResult =
                 methodLevelValidator.validate(
                   methodFQN = methodFQN,
-                  isComposable = isComposable,
-                  previewParamsList = previewParamsList,
-                  discoveredWrappers = discoveredWrappers,
+                  discoveryContext = discoveryContext,
                 )
 
               if (validationResult.hasErrors) {
@@ -148,26 +146,26 @@ class PreviewDiscoveryEngine(private val module: StandaloneRenderModelModule) {
                 return
               }
 
-              val previewWrapperFqn = discoveredWrappers.singleOrNull()
-              val methodParams = if (previewParameterAttributes.isNotEmpty()) listOf(previewParameterAttributes) else emptyList()
-              val methodPreviews = mutableListOf<ComposeScreenshot>()
-              for (previewParams in previewParamsList) {
-                methodPreviews.add(
+              val methodParams = discoveryContext.previewParameterConfigs
+              val wrapperFqn = discoveryContext.previewWrapperFqns.singleOrNull()
+
+              val methodPreviews =
+                discoveryContext.previewConfigurations.map { previewParams ->
                   ComposeScreenshot(
                     methodFQN = methodFQN,
                     methodParams = methodParams,
                     previewParams = previewParams,
                     previewId = resolvedPreviewId,
-                    previewWrapperFqn = previewWrapperFqn,
+                    previewWrapperFqn = wrapperFqn,
                   )
-                )
-              }
+                }
+
               discoveryResults.add(DiscoveredMethodPreviews(previews = methodPreviews, methodValidationResult = validationResult))
             }
           }
         }
       },
-      ClassReader.SKIP_CODE or ClassReader.SKIP_DEBUG or ClassReader.SKIP_FRAMES,
+      ClassReader.SKIP_CODE or ClassReader.SKIP_FRAMES,
     )
 
     if (discoveryResults.isEmpty()) {

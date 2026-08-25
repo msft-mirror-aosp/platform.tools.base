@@ -16,6 +16,7 @@
 
 package com.android.tools.render.validation
 
+import com.android.tools.render.discovery.MethodDiscoveryContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -30,8 +31,8 @@ class MethodLevelValidatorTest {
     val result =
       validator.validate(
         methodFQN = "com.example.MyScreenKt.MyPreview",
-        isComposable = true,
-        previewParamsList = listOf(mapOf("name" to "Light Mode")),
+        discoveryContext =
+          MethodDiscoveryContext(isComposable = true, previewConfigurations = mutableListOf(mapOf("name" to "Light Mode"))),
       )
     assertTrue("Composable preview method should be valid", result.isValid)
     assertFalse("Valid preview method should not have errors", result.hasErrors)
@@ -43,8 +44,8 @@ class MethodLevelValidatorTest {
     val result =
       validator.validate(
         methodFQN = methodFQN,
-        isComposable = false,
-        previewParamsList = listOf(mapOf("name" to "Light Mode")),
+        discoveryContext =
+          MethodDiscoveryContext(isComposable = false, previewConfigurations = mutableListOf(mapOf("name" to "Light Mode"))),
       )
     assertTrue("Non-composable preview method should have errors", result.hasErrors)
     assertEquals(1, result.errors.size)
@@ -60,9 +61,12 @@ class MethodLevelValidatorTest {
     val result =
       validator.validate(
         methodFQN = "com.example.MyScreenKt.MyPreview",
-        isComposable = true,
-        previewParamsList = listOf(mapOf("name" to "Preview")),
-        discoveredWrappers = listOf("com.example.MyWrapper"),
+        discoveryContext =
+          MethodDiscoveryContext(
+            isComposable = true,
+            previewConfigurations = mutableListOf(mapOf("name" to "Preview")),
+            previewWrapperFqns = mutableListOf("com.example.MyWrapper"),
+          ),
       )
     assertTrue("Preview with wrapper and @Composable should be valid", result.isValid)
     assertFalse("Valid wrapped preview should not have errors", result.hasErrors)
@@ -74,9 +78,12 @@ class MethodLevelValidatorTest {
     val result =
       validator.validate(
         methodFQN = methodFQN,
-        isComposable = true,
-        previewParamsList = listOf(mapOf("name" to "Preview")),
-        discoveredWrappers = listOf("com.example.Wrapper1", "com.example.Wrapper2"),
+        discoveryContext =
+          MethodDiscoveryContext(
+            isComposable = true,
+            previewConfigurations = mutableListOf(mapOf("name" to "Preview")),
+            previewWrapperFqns = mutableListOf("com.example.Wrapper1", "com.example.Wrapper2"),
+          ),
       )
     assertTrue("Multiple preview wrappers should produce errors", result.hasErrors)
     assertEquals(1, result.errors.size)
@@ -92,9 +99,12 @@ class MethodLevelValidatorTest {
     val result =
       validator.validate(
         methodFQN = methodFQN,
-        isComposable = true,
-        previewParamsList = emptyList(),
-        discoveredWrappers = listOf("com.example.MyWrapper"),
+        discoveryContext =
+          MethodDiscoveryContext(
+            isComposable = true,
+            previewConfigurations = mutableListOf(),
+            previewWrapperFqns = mutableListOf("com.example.MyWrapper"),
+          ),
       )
     assertTrue("PreviewWrapper without @Preview should produce error", result.hasErrors)
     assertEquals(1, result.errors.size)
@@ -110,9 +120,12 @@ class MethodLevelValidatorTest {
     val result =
       validator.validate(
         methodFQN = methodFQN,
-        isComposable = false,
-        previewParamsList = listOf(mapOf("name" to "Preview")),
-        discoveredWrappers = listOf("com.example.MyWrapper"),
+        discoveryContext =
+          MethodDiscoveryContext(
+            isComposable = false,
+            previewConfigurations = mutableListOf(mapOf("name" to "Preview")),
+            previewWrapperFqns = mutableListOf("com.example.MyWrapper"),
+          ),
       )
     assertTrue("PreviewWrapper with @Preview but without @Composable should produce error", result.hasErrors)
     assertEquals(1, result.errors.size)
@@ -128,9 +141,12 @@ class MethodLevelValidatorTest {
     val result =
       validator.validate(
         methodFQN = methodFQN,
-        isComposable = false,
-        previewParamsList = emptyList(),
-        discoveredWrappers = listOf("com.example.MyWrapper"),
+        discoveryContext =
+          MethodDiscoveryContext(
+            isComposable = false,
+            previewConfigurations = mutableListOf(),
+            previewWrapperFqns = mutableListOf("com.example.MyWrapper"),
+          ),
       )
     assertTrue("PreviewWrapper without @Preview and @Composable should produce error", result.hasErrors)
     assertEquals(1, result.errors.size)
@@ -145,9 +161,7 @@ class MethodLevelValidatorTest {
     val result =
       validator.validate(
         methodFQN = "com.example.MyScreenKt.helperFunction",
-        isComposable = false,
-        previewParamsList = emptyList(),
-        discoveredWrappers = emptyList(),
+        discoveryContext = MethodDiscoveryContext(isComposable = false),
       )
     assertTrue("Method without preview annotations should not produce errors", result.isValid)
   }
@@ -178,6 +192,78 @@ class MethodLevelValidatorTest {
       )
     assertTrue(result.hasErrors)
     assertEquals("Method 'missingMethod' not found in class 'com.example.MyClass'", result.errors.first().message)
+  }
+
+  @Test
+  fun testComposablePreviewWithoutPreviewParameterPassesValidation() {
+    val result =
+      validator.validate(
+        methodFQN = "com.example.MyScreenKt.MyPreview",
+        discoveryContext =
+          MethodDiscoveryContext(
+            isComposable = true,
+            previewConfigurations = mutableListOf(mapOf("name" to "Preview")),
+            previewParameterConfigs = mutableListOf(),
+          ),
+      )
+    assertTrue("Method without @PreviewParameter should be valid", result.isValid)
+    assertFalse(result.hasErrors)
+  }
+
+  @Test
+  fun testSinglePreviewParameterPassesValidation() {
+    val result =
+      validator.validate(
+        methodFQN = "com.example.MyScreenKt.MyPreview",
+        discoveryContext =
+          MethodDiscoveryContext(
+            isComposable = true,
+            previewConfigurations = mutableListOf(mapOf("name" to "Preview")),
+            previewParameterConfigs = mutableListOf(mapOf("provider" to "com.example.MyStringProvider", "limit" to "5")),
+          ),
+      )
+    assertTrue("Single valid @PreviewParameter should be valid", result.isValid)
+    assertFalse(result.hasErrors)
+  }
+
+  @Test
+  fun testMultiplePreviewParametersProducesError() {
+    val methodFQN = "com.example.MyScreenKt.MyPreview"
+    val result =
+      validator.validate(
+        methodFQN = methodFQN,
+        discoveryContext =
+          MethodDiscoveryContext(
+            isComposable = true,
+            previewConfigurations = mutableListOf(mapOf("name" to "Preview")),
+            previewParameterConfigs =
+              mutableListOf(
+                mapOf("provider" to "com.example.Provider1"),
+                mapOf("provider" to "com.example.Provider2"),
+              ),
+          ),
+      )
+    assertTrue("Multiple @PreviewParameter annotations should produce error", result.hasErrors)
+    assertEquals(1, result.errors.size)
+    assertEquals("Composable preview functions can have at most one @PreviewParameter", result.errors.first().message)
+  }
+
+  @Test
+  fun testInvalidPreviewParameterLimitProducesError() {
+    val methodFQN = "com.example.MyScreenKt.MyPreview"
+    val result =
+      validator.validate(
+        methodFQN = methodFQN,
+        discoveryContext =
+          MethodDiscoveryContext(
+            isComposable = true,
+            previewConfigurations = mutableListOf(mapOf("name" to "Preview")),
+            previewParameterConfigs = mutableListOf(mapOf("provider" to "com.example.MyStringProvider", "limit" to "-5")),
+          ),
+      )
+    assertTrue("Invalid limit in @PreviewParameter should produce error", result.hasErrors)
+    assertEquals(1, result.errors.size)
+    assertEquals("Parameter 'limit' on @PreviewParameter must be a positive integer, got: '-5'", result.errors.first().message)
   }
 
   @Test

@@ -16,6 +16,8 @@
 
 package com.android.tools.render.validation
 
+import com.android.tools.render.discovery.MethodDiscoveryContext
+
 /** Validates method-level constraints and annotations for Jetpack Compose preview functions. */
 class MethodLevelValidator {
 
@@ -23,21 +25,32 @@ class MethodLevelValidator {
    * Validates that the discovered preview method overload complies with Compose preview rules.
    *
    * @param methodFQN Fully-qualified name of the method being validated.
-   * @param isComposable Whether the method is annotated with `@Composable`.
-   * @param previewParamsList List of discovered preview parameters for this method overload.
-   * @param discoveredWrappers List of discovered `@PreviewWrapper` class names for this method overload.
+   * @param discoveryContext Discovered preview annotations, parameters, and wrapper metadata for this overload.
    * @return A [ValidationResult] containing any errors or warnings found.
    */
   fun validate(
     methodFQN: String,
-    isComposable: Boolean,
-    previewParamsList: List<Map<String, String>> = emptyList(),
-    discoveredWrappers: List<String> = emptyList(),
+    discoveryContext: MethodDiscoveryContext = MethodDiscoveryContext(),
   ): ValidationResult {
     val issues = mutableListOf<ValidationIssue>()
 
-    issues.addAll(validateComposablePresence(methodFQN, isComposable, previewParamsList))
-    issues.addAll(validatePreviewWrapper(methodFQN, isComposable, previewParamsList, discoveredWrappers))
+    issues.addAll(validateComposablePresence(methodFQN, discoveryContext.isComposable, discoveryContext.previewConfigurations))
+    issues.addAll(
+      validatePreviewWrapper(
+        methodFQN,
+        discoveryContext.isComposable,
+        discoveryContext.previewConfigurations,
+        discoveryContext.previewWrapperFqns,
+      )
+    )
+    if (discoveryContext.isComposable) {
+      issues.addAll(
+        validatePreviewParameters(
+          methodFQN = methodFQN,
+          previewParameterConfigs = discoveryContext.previewParameterConfigs,
+        )
+      )
+    }
 
     return ValidationResult(issues)
   }
@@ -79,10 +92,10 @@ class MethodLevelValidator {
   private fun validateComposablePresence(
     methodFQN: String,
     isComposable: Boolean,
-    previewParamsList: List<Map<String, String>>,
+    previewConfigurations: List<Map<String, String>>,
   ): List<ValidationIssue> {
     val issues = mutableListOf<ValidationIssue>()
-    val hasPreviewAnnotations = previewParamsList.isNotEmpty()
+    val hasPreviewAnnotations = previewConfigurations.isNotEmpty()
 
     if (hasPreviewAnnotations && !isComposable) {
       issues.add(
@@ -100,13 +113,13 @@ class MethodLevelValidator {
   private fun validatePreviewWrapper(
     methodFQN: String,
     isComposable: Boolean,
-    previewParamsList: List<Map<String, String>>,
-    discoveredWrappers: List<String>,
+    previewConfigurations: List<Map<String, String>>,
+    previewWrapperFqns: List<String>,
   ): List<ValidationIssue> {
-    if (discoveredWrappers.isEmpty()) return emptyList()
+    if (previewWrapperFqns.isEmpty()) return emptyList()
 
     val issues = mutableListOf<ValidationIssue>()
-    val hasPreviewAnnotations = previewParamsList.isNotEmpty()
+    val hasPreviewAnnotations = previewConfigurations.isNotEmpty()
 
     if (!hasPreviewAnnotations) {
       val message =
@@ -125,10 +138,10 @@ class MethodLevelValidator {
       )
     }
 
-    if (discoveredWrappers.size > 1) {
+    if (previewWrapperFqns.size > 1) {
       issues.add(
         ValidationIssue(
-          message = "Multiple @PreviewWrapper annotations found for method '$methodFQN': ${discoveredWrappers.joinToString(", ")}",
+          message = "Multiple @PreviewWrapper annotations found for method '$methodFQN': ${previewWrapperFqns.joinToString(", ")}",
           severity = ValidationSeverity.ERROR,
           category = ValidationCategory.METHOD,
           target = methodFQN,
@@ -136,5 +149,25 @@ class MethodLevelValidator {
       )
     }
     return issues
+  }
+
+  private fun validatePreviewParameters(
+    methodFQN: String,
+    previewParameterConfigs: List<Map<String, String>>,
+  ): List<ValidationIssue> {
+    if (previewParameterConfigs.isEmpty()) return emptyList()
+
+    if (previewParameterConfigs.size > 1) {
+      return listOf(
+        ValidationIssue(
+          message = "Composable preview functions can have at most one @PreviewParameter",
+          severity = ValidationSeverity.ERROR,
+          category = ValidationCategory.METHOD,
+          target = methodFQN,
+        )
+      )
+    }
+
+    return PreviewParameterValidator.validate(previewParameterConfigs.first())
   }
 }
