@@ -308,11 +308,15 @@ internal constructor(
 
     private val result = CompletableDeferred<List<T>>()
 
+    val isCompleted: Boolean
+      get() = result.isCompleted
+
     override suspend fun load(indicator: ProgressIndicator): List<T> {
       try {
         val wasIndeterminate = indicator.isIndeterminate()
         indicator.setIndeterminate(false)
         val result = runCatching { doLoad(indicator) }
+        cleanUp()
         this.result.completeWith(result)
         indicator.setIndeterminate(wasIndeterminate)
         return result.getOrThrow()
@@ -347,7 +351,7 @@ internal constructor(
   }
 
   private fun <T : AbstractLoadTask<*>> T.takeIfNotTimedOut(): T? = takeIf {
-    Clock.systemUTC().instant() < it.taskCreateTime + TASK_TIMEOUT
+    !it.isCompleted && Clock.systemUTC().instant() < it.taskCreateTime + TASK_TIMEOUT
   }
 
   /** Produces a ProgressRunnable that invokes this LoadTask and then performs the given callbacks when finished. */
@@ -390,7 +394,11 @@ internal constructor(
     }
 
     override fun cleanUp() {
-      synchronized(taskLock) { task = null }
+      synchronized(taskLock) {
+        if (task === this) {
+          task = null
+        }
+      }
     }
   }
 
@@ -435,7 +443,12 @@ internal constructor(
     }
 
     override fun cleanUp() {
-      synchronized(taskLock) { remoteTasks.remove(RemoteLoadTaskKey(downloader, settings)) }
+      synchronized(taskLock) {
+        val key = RemoteLoadTaskKey(downloader, settings)
+        if (remoteTasks[key] === this) {
+          remoteTasks.remove(key)
+        }
+      }
     }
   }
 
