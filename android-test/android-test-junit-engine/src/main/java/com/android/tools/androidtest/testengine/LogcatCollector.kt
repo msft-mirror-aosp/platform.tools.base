@@ -16,6 +16,7 @@
 
 package com.android.tools.androidtest.testengine
 
+import com.android.tools.androidtest.testengine.util.PathSafety
 import java.io.BufferedWriter
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap

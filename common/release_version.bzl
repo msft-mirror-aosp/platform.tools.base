@@ -1,7 +1,7 @@
 #buildifier: disable=module-docstring
-BASE_VERSION = "32.4.0-rc01"
-BUILD_VERSION = "9.4.0-rc01"
-COMMANDLINE_TOOLS_VERSION = "23.0-alpha01"
+BASE_VERSION = "32.4.0-rc02"
+BUILD_VERSION = "9.4.0-rc02"
+COMMANDLINE_TOOLS_VERSION = "23.0"
 
 # This is used to define
 # - for Android Studio RC/Stable builds when IS_AGP_RELEASE_BRANCH
@@ -11,7 +11,7 @@ COMMANDLINE_TOOLS_VERSION = "23.0-alpha01"
 #   the New Project Wizard.
 # See `AgpVersions` and `AgpReleaseBranchProvider` for implementation
 # details.
-LAST_STABLE_BUILD_VERSION = "9.3.1"
+LAST_STABLE_BUILD_VERSION = "9.3.2"
 
 # This is to discriminate between release cycles with or without AGP.
 # Should be "true" on studio-main, and "false" on stabilization

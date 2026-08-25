@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.tools.androidtest.testengine
+package com.android.tools.androidtest.testengine.util
 
 import java.io.File
 
