@@ -143,6 +143,40 @@ class DevicePropertiesTest {
     assertThat(props.deviceType).isEqualTo(DeviceType.AI_GLASSES)
   }
 
+  @Test
+  fun title() {
+    val propsBoth = DeviceProperties.buildForTest {
+      manufacturer = "Google"
+      model = "Pixel 8"
+      icon = EmptyIcon.DEFAULT
+    }
+    assertThat(propsBoth.title).isEqualTo("Google Pixel 8")
+
+    val propsNoModel = DeviceProperties.buildForTest {
+      manufacturer = "Google"
+      icon = EmptyIcon.DEFAULT
+    }
+    assertThat(propsNoModel.title).isEqualTo("Google Device")
+
+    val propsNoManufacturer = DeviceProperties.buildForTest {
+      model = "Pixel 8"
+      icon = EmptyIcon.DEFAULT
+    }
+    assertThat(propsNoManufacturer.title).isEqualTo("Pixel 8")
+
+    val propsUnknown = DeviceProperties.buildForTest {
+      icon = EmptyIcon.DEFAULT
+    }
+    assertThat(propsUnknown.title).isEqualTo("Unknown")
+
+    val propsSanitized = DeviceProperties.buildForTest {
+      manufacturer = "Google <tag>"
+      model = "Pixel 8 >"
+      icon = EmptyIcon.DEFAULT
+    }
+    assertThat(propsSanitized.title).isEqualTo("Google ‹tag› Pixel 8 ›")
+  }
+
   private fun props(vararg pairs: Pair<String, String>) = DeviceProperties.buildForTest {
     val map = mapOf(*pairs)
     readCommonProperties(map)
