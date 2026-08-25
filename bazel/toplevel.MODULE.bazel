@@ -185,6 +185,7 @@ npm.npm_translate_lock(
     bins = {
         "vsce": ["vsce=vsce"],
         "esbuild": ["esbuild=esbuild"],
+        "@tailwindcss/cli": ["tailwindcss=tailwindcss"],
     },
     data = [
         "//tools/base/bazel:package.json",
