@@ -432,4 +432,94 @@ class ReportAggregatorTest {
     val line10 = src.lineMap[10]!!
     assertThat(line10.ci).isEqualTo(5)
   }
+
+  @Test
+  fun testComposableSingletonsWrapperHasZeroBranchesButKeepsInstructions() {
+    val metadata =
+      CoverageMetadata.newBuilder()
+        .addClasses(
+          ClassMetadata.newBuilder()
+            .setClassName("com/example/ComposableSingletons\$MainActivityKt")
+            .setSourceFile("MainActivity.kt")
+            .addMethods(
+              MethodMetadata.newBuilder()
+                .setName("getLambda-1\$app_debug")
+                .addBlocks(
+                  BlockMetadata.newBuilder()
+                    .setBlockId(0)
+                    .setBranchCount(2)
+                    .addSuccessorBlockIds(1)
+                    .addSuccessorBlockIds(2)
+                    .addLines(LineMetadata.newBuilder().setLineNumber(10).setInstructionCount(5))
+                )
+                .addBlocks(BlockMetadata.newBuilder().setBlockId(1).setBranchCount(1))
+                .addBlocks(BlockMetadata.newBuilder().setBlockId(2).setBranchCount(1))
+            )
+        )
+        .build()
+
+    val hits = BitSet()
+    hits.set(0)
+    hits.set(1)
+    val data = CoverageData(metadata, hits)
+
+    val aggregator = ReportAggregator()
+    val report = aggregator.aggregate(data, "test")
+
+    val pkg = report.packages["com/example"]!!
+    val src = pkg.sourceFiles["MainActivity.kt"]!!
+
+    // ComposableSingletons wrapper branches must be stripped to 0/0
+    assertThat(src.branches.covered).isEqualTo(0)
+    assertThat(src.branches.missed).isEqualTo(0)
+
+    // Instructions must still be fully counted (5 covered instructions on line 10)
+    val line10 = src.lineMap[10]!!
+    assertThat(line10.ci).isEqualTo(5)
+  }
+
+  @Test
+  fun testComposableSingletonsLambdaPreservesBranches() {
+    val metadata =
+      CoverageMetadata.newBuilder()
+        .addClasses(
+          ClassMetadata.newBuilder()
+            .setClassName("com/example/ComposableSingletons\$MainActivityKt\$lambda-1\$1")
+            .setSourceFile("MainActivity.kt")
+            .addMethods(
+              MethodMetadata.newBuilder()
+                .setName("invoke")
+                .addBlocks(
+                  BlockMetadata.newBuilder()
+                    .setBlockId(0)
+                    .setBranchCount(2)
+                    .addSuccessorBlockIds(1)
+                    .addSuccessorBlockIds(2)
+                    .addLines(LineMetadata.newBuilder().setLineNumber(10).setInstructionCount(5))
+                )
+                .addBlocks(BlockMetadata.newBuilder().setBlockId(1).setBranchCount(1))
+                .addBlocks(BlockMetadata.newBuilder().setBlockId(2).setBranchCount(1))
+            )
+        )
+        .build()
+
+    val hits = BitSet()
+    hits.set(0)
+    hits.set(1)
+    val data = CoverageData(metadata, hits)
+
+    val aggregator = ReportAggregator()
+    val report = aggregator.aggregate(data, "test")
+
+    val pkg = report.packages["com/example"]!!
+    val src = pkg.sourceFiles["MainActivity.kt"]!!
+
+    // User lambda branches must be preserved (1 covered, 1 missed)
+    assertThat(src.branches.covered).isEqualTo(1)
+    assertThat(src.branches.missed).isEqualTo(1)
+
+    // Instructions must be fully counted (5 covered instructions on line 10)
+    val line10 = src.lineMap[10]!!
+    assertThat(line10.ci).isEqualTo(5)
+  }
 }
