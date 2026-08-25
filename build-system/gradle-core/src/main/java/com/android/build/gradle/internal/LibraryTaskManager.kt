@@ -26,9 +26,6 @@ import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.LibraryCreationConfig
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import com.android.build.gradle.internal.component.TestFixturesCreationConfig
-import com.android.build.gradle.internal.coverage.tasks.CodeCoverageCollectionTask
-import com.android.build.gradle.internal.coverage.tasks.CodeCoverageReportCreationConfigImpl
-import com.android.build.gradle.internal.coverage.tasks.CodeCoverageReportTask
 import com.android.build.gradle.internal.dependency.ConfigurationVariantMapping
 import com.android.build.gradle.internal.dsl.ModulePropertyKey
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.PublishedConfigType
@@ -253,20 +250,12 @@ class LibraryTaskManager(
       testResultsCollectionTasks.add(
         taskFactory.register(TestResultsCollectionTask.AggregatedTestResultsCollectionCreationAction(variantInfo.variant))
       )
-
-      taskFactory.register(
-        CodeCoverageCollectionTask.AggregatedCoverageCollectionCreationAction(
-          CodeCoverageCollectionTask.getJacocoAntTaskConfiguration(project, variantInfo.variant),
-          CodeCoverageReportCreationConfigImpl(variantInfo.variant, testComponents),
-        )
-      )
     }
   }
 
   override fun registerTestAndCodeCoverageReportTasks() {
     super.registerTestAndCodeCoverageReportTasks()
     if (isReportAggregationEnabled && variants.any { it.variant.publishInfo?.components?.isNotEmpty() ?: false }) {
-      taskFactory.register(CodeCoverageReportTask.AggregatedCoverageReportCreationAction(globalConfig))
       taskFactory.register(TestReportTask.AggregatedTestReportCreationAction(globalConfig))
     }
   }

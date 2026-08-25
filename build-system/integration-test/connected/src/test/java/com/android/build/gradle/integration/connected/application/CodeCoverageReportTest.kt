@@ -30,6 +30,7 @@ import com.google.gson.annotations.SerializedName
 import java.io.File
 import org.gradle.api.JavaVersion
 import org.junit.ClassRule
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExternalResource
@@ -44,6 +45,7 @@ import org.junit.runners.Parameterized
  * accuracy of the aggregated coverage metrics.
  */
 @RunWith(Parameterized::class)
+@Ignore("b/552341004 Stopped registering anchor code coverage report tasks, this test will be moved to test report tests, then removed.")
 class CodeCoverageReportTest(val runWithBuiltInPlatform: Boolean) {
 
   companion object {

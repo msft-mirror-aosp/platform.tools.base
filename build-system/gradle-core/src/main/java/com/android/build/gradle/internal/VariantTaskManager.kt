@@ -31,9 +31,6 @@ import com.android.build.gradle.internal.component.NestedComponentCreationConfig
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import com.android.build.gradle.internal.component.TestFixturesCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
-import com.android.build.gradle.internal.coverage.tasks.CodeCoverageCollectionTask
-import com.android.build.gradle.internal.coverage.tasks.CodeCoverageReportCreationConfigImpl
-import com.android.build.gradle.internal.coverage.tasks.CodeCoverageReportTask
 import com.android.build.gradle.internal.cxx.configure.createCxxTasks
 import com.android.build.gradle.internal.dsl.DataBindingOptions
 import com.android.build.gradle.internal.lint.LintTaskManager
@@ -648,7 +645,6 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
   /** Register report tasks for test results and code coverage reporting */
   protected open fun registerTestAndCodeCoverageReportTasks() {
     if (isReportAggregationEnabled) {
-      taskFactory.register(CodeCoverageReportTask.CoverageReportCreationAction(globalConfig))
       taskFactory.register(TestReportTask.TestReportCreationAction(globalConfig))
     }
   }
@@ -661,12 +657,6 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
     if (isReportAggregationEnabled) {
       testResultsCollectionTasks.add(
         taskFactory.register(TestResultsCollectionTask.TestResultsCollectionCreationAction(variantInfo.variant))
-      )
-      taskFactory.register(
-        CodeCoverageCollectionTask.CoverageCollectionCreationAction(
-          CodeCoverageCollectionTask.getJacocoAntTaskConfiguration(project, variantInfo.variant),
-          CodeCoverageReportCreationConfigImpl(variantInfo.variant, testComponents),
-        )
       )
     }
   }

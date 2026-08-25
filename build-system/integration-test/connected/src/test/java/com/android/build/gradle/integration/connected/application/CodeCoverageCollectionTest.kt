@@ -33,6 +33,7 @@ import kotlin.jvm.java
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.junit.ClassRule
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.platform.engine.EngineDiscoveryRequest
@@ -46,6 +47,7 @@ import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor
 import org.junit.rules.ExternalResource
 
 /** Integration test for [com.android.build.gradle.internal.coverage.tasks.CodeCoverageCollectionTask]. */
+@Ignore("b/552341004 Stopped registering anchor code coverage report tasks, this test will be moved to test report tests, then removed.")
 class CodeCoverageCollectionTest {
 
   companion object {
