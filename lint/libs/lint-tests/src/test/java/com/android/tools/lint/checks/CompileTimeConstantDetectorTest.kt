@@ -536,4 +536,46 @@ class CompileTimeConstantDetectorTest : AbstractCheckTest() {
         """
       )
   }
+
+  fun testSubclassMethodWithoutAnnotation() {
+    lint()
+      .files(
+        java(
+            """
+            package test.pkg;
+
+            import com.google.errorprone.annotations.CompileTimeConstant;
+
+            public class Test {
+                public abstract static class BaseBuilder {
+                    public abstract BaseBuilder setName(@CompileTimeConstant String name);
+                }
+
+                public static class SubBuilder extends BaseBuilder {
+                    @Override
+                    public SubBuilder setName(String name) {
+                        return this;
+                    }
+                }
+
+                public void test(BaseBuilder base, SubBuilder sub, String nonConstant) {
+                    sub.setName(nonConstant); // OK - SubBuilder does not annotate parameter
+                    base.setName(nonConstant); // ERROR - BaseBuilder parameter is annotated
+                }
+            }
+            """
+          )
+          .indented(),
+        ctcAnnotationStub,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/Test.java:19: Error: Non-compile-time constant expression passed to parameter with @CompileTimeConstant annotation [CompileTimeConstant]
+                base.setName(nonConstant); // ERROR - BaseBuilder parameter is annotated
+                             ~~~~~~~~~~~
+        1 errors, 0 warnings
+        """
+      )
+  }
 }
