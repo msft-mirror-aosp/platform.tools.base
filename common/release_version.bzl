@@ -1,6 +1,6 @@
 #buildifier: disable=module-docstring
-BASE_VERSION = "32.4.0-rc02"
-BUILD_VERSION = "9.4.0-rc02"
+BASE_VERSION = "32.4.0"
+BUILD_VERSION = "9.4.0"
 COMMANDLINE_TOOLS_VERSION = "23.0"
 
 # This is used to define
