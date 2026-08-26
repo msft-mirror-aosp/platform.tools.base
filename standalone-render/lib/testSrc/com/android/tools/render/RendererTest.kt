@@ -404,4 +404,38 @@ class RendererTest {
     assertEquals("VALIDATION_ERROR", result.error?.status)
     assertTrue(result.error?.message?.contains("No @Preview annotations found") == true)
   }
+
+  @Test
+  fun testRenderComposeScreenshotWithMultiPreviewAndBrokenParameterFailsEarlyWithSingleError() {
+    val layoutlibPath = TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib")
+
+    val bootstrapper =
+      RenderEnvironmentBootstrapper(
+        fontsPath = null,
+        resourceApkPath = null,
+        namespace = "",
+        classPath = emptyList(),
+        projectClassPath = emptyList(),
+        layoutlibPath = layoutlibPath.absolutePathString(),
+      )
+    val outputDir = tmpFolder.newFolder("output_screenshots_multi_broken_param").absolutePath
+    val screenshot =
+      ComposeScreenshot(
+        previewId = "multi_preview_broken_param",
+        methodFQN = "${SamplePreviewTarget::class.java.name}.SampleMultiPreviewWithBrokenPreviewParameter",
+        previewParams = emptyMap(),
+        methodParams = emptyList(),
+      )
+
+    val results = bootstrapper.bootstrap().use { renderer -> renderer.render(screenshot, outputDir) }
+
+    // Even though the method has multiple @Preview annotations (which normally expand to 4 preview images),
+    // because @PreviewParameter is validated at the method level, discovery fails fast and only 1 error result is emitted.
+    assertEquals("Should emit exactly 1 error result instead of duplicating across previews", 1, results.size)
+    val result = results[0]
+    assertEquals("multi_preview_broken_param", result.previewId)
+    assertNotNull("ScreenshotError should be present for broken @PreviewParameter", result.error)
+    assertEquals("VALIDATION_ERROR", result.error?.status)
+    assertTrue(result.error?.message?.contains("limit") == true)
+  }
 }

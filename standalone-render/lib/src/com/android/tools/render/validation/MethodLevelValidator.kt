@@ -45,7 +45,7 @@ class MethodLevelValidator {
     )
     if (discoveryContext.isComposable) {
       issues.addAll(
-        validatePreviewParameters(
+        validateMethodPreviewParameter(
           methodFQN = methodFQN,
           previewParameterConfigs = discoveryContext.previewParameterConfigs,
         )
@@ -151,7 +151,7 @@ class MethodLevelValidator {
     return issues
   }
 
-  private fun validatePreviewParameters(
+  private fun validateMethodPreviewParameter(
     methodFQN: String,
     previewParameterConfigs: List<Map<String, String>>,
   ): List<ValidationIssue> {
