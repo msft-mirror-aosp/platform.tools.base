@@ -48,6 +48,8 @@ import com.android.testutils.file.InMemoryFileSystems;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;
+import com.google.common.jimfs.Configuration;
+import com.google.common.jimfs.Jimfs;
 
 import junit.framework.TestCase;
 
@@ -56,6 +58,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
@@ -649,6 +652,103 @@ public class BasicInstallerTest extends TestCase {
         Path forgedPath =
                 installedPackageDir.resolve(InstallerUtil.INSTALLER_DIR_FN).resolve("forged");
         assertFalse(Files.exists(forgedPath));
+    }
+
+    public void testWindowsPathTraversalInArchiveUrl() throws Exception {
+        FileSystem fs = Jimfs.newFileSystem(Configuration.windows());
+        Path root = Files.createDirectories(fs.getPath("C:\\repo"));
+        Path[] downloadedPath = new Path[1];
+        FakeDownloader downloader =
+                new FakeDownloader(root.getRoot().resolve("tmp")) {
+                    @Override
+                    public void downloadFully(
+                            @NonNull URL url,
+                            @NonNull Path target,
+                            @Nullable Checksum checksum,
+                            @NonNull ProgressIndicator indicator)
+                            throws IOException {
+                        downloadedPath[0] = target;
+                        super.downloadFully(url, target, checksum, indicator);
+                    }
+                };
+        URL repoUrl = new URL("http://example.com/myrepo.xml");
+
+        URL archiveUrl = new URL("http", "example.com", "/foo\\..\\..\\arch1");
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(1000);
+        ZipOutputStream zos = new ZipOutputStream(baos);
+        zos.putNextEntry(new ZipEntry("top-level/a"));
+        zos.write("contents1".getBytes());
+        zos.closeEntry();
+        zos.close();
+        byte[] zipBytes = baos.toByteArray();
+        ByteArrayInputStream is = new ByteArrayInputStream(zipBytes);
+        downloader.registerUrl(archiveUrl, is);
+
+        String repo =
+                "<repo:repository\n"
+                        + "        xmlns:repo=\"http://schemas.android.com/repository/android/generic/02\"\n"
+                        + "        xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n"
+                        + "    <remotePackage path=\"mypackage;bar\">\n"
+                        + "        <type-details xsi:type=\"repo:genericDetailsType\"/>\n"
+                        + "        <revision>\n"
+                        + "            <major>4</major>\n"
+                        + "            <minor>5</minor>\n"
+                        + "            <micro>6</micro>\n"
+                        + "        </revision>\n"
+                        + "        <display-name>Test package 2</display-name>\n"
+                        + "        <archives>\n"
+                        + "            <archive>\n"
+                        + "                <complete>\n"
+                        + "                    <size>"
+                        + zipBytes.length
+                        + "</size>\n"
+                        + "                    <checksum type='sha-256'>"
+                        + Downloader.hash(
+                                new ByteArrayInputStream(zipBytes),
+                                zipBytes.length,
+                                "sha-256",
+                                new FakeProgressIndicator())
+                        + "</checksum>\n"
+                        + "                    <url>http://example.com/foo\\..\\..\\arch1</url>\n"
+                        + "                </complete>\n"
+                        + "            </archive>\n"
+                        + "        </archives>\n"
+                        + "    </remotePackage>\n"
+                        + "</repo:repository>";
+
+        downloader.registerUrl(repoUrl, repo.getBytes());
+
+        RepoManager mgr = createRepoManager(root, repoUrl);
+        FakeProgressRunner runner = new FakeProgressRunner();
+
+        mgr.loadSynchronously(
+                RepoManager.DEFAULT_EXPIRATION_PERIOD_MS,
+                null,
+                null,
+                null,
+                runner,
+                downloader,
+                new FakeSettingsController(false));
+
+        RepositoryPackages pkgs = mgr.getPackages();
+        FakeProgressIndicator progress = new FakeProgressIndicator(true);
+        RemotePackage p = pkgs.getRemotePackages().get("mypackage;bar");
+        Installer basicInstaller = new BasicInstallerFactory().createInstaller(p, mgr, downloader);
+        Path repoTempDir = mgr.getLocalPath().resolve(AbstractPackageOperation.REPO_TEMP_DIR_FN);
+        Path packageOperationDir =
+                repoTempDir.resolve(AbstractPackageOperation.TEMP_DIR_PREFIX + "01");
+        assertTrue(basicInstaller.prepare(progress.createSubProgress(0.5)));
+        assertNotNull(downloadedPath[0]);
+        assertEquals(packageOperationDir.normalize(), downloadedPath[0].normalize().getParent());
+        assertTrue(
+                "Expected download target to be inside packageOperationDir but was: "
+                        + downloadedPath[0].normalize(),
+                downloadedPath[0].normalize().startsWith(packageOperationDir.normalize()));
+        assertTrue(basicInstaller.complete(progress.createSubProgress(1)));
+        progress.assertNoErrorsOrWarnings();
+
+        Path installedPackageDir = root.resolve("mypackage/bar");
+        assertTrue(Files.exists(installedPackageDir.resolve("a")));
     }
 
     /**
