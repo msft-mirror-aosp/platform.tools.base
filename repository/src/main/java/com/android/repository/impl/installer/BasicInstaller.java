@@ -28,7 +28,9 @@ import com.android.repository.impl.meta.Archive;
 import com.android.repository.io.FileOpUtils;
 import com.android.repository.util.InstallerUtil;
 import com.android.utils.PathUtils;
+
 import com.google.common.base.Strings;
+
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -165,6 +167,15 @@ class BasicInstaller extends AbstractInstaller {
                     String.format(
                             "Installing %1$s in %2$s",
                             getPackage().getDisplayName(), getLocation(progress)));
+
+            // packageRoot is wholly remote-supplied. safeRecursiveOverwrite() is about
+            // to replace <installDir> (including the framework's own .installer/ resume
+            // state) with it; do not let the archive smuggle a forged .installer/ in.
+            try {
+                PathUtils.deleteRecursivelyIfExists(
+                        packageRoot.resolve(InstallerUtil.INSTALLER_DIR_FN));
+            } catch (IOException ignore) {
+            }
 
             // Move the final unzipped archive into place.
             FileOpUtils.safeRecursiveOverwrite(packageRoot, getLocation(progress), progress);
