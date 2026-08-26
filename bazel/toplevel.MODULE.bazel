@@ -241,6 +241,9 @@ single_version_override(
         # Configure toolchain_android_only to use current_java_runtime for executing javac,
         # to keep it in sync with the JDK used to generate the system bootclasspath.
         "//tools/base/bazel/bzlmod:rules_android_toolchain_java_runtime.patch",
+        # Pass absolute paths to aapt2 compile on Windows so libbase UTF8PathToWindowsLongPath
+        # can prepend the \\?\ prefix for long paths.
+        "//tools/base/bazel/bzlmod:rules_android_aapt2_absolute_paths.patch",
     ],
     version = "0.6.5",
 )
