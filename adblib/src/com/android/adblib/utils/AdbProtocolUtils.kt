@@ -2,7 +2,6 @@ package com.android.adblib.utils
 
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
-import java.nio.charset.CharsetDecoder
 import java.nio.charset.StandardCharsets
 import java.nio.file.attribute.FileTime
 import kotlin.math.min
@@ -105,34 +104,6 @@ object AdbProtocolUtils {
     }
     val overflow = if (status.remaining() > maxCount) " [truncated]" else ""
     return "$sb1 ${sb2.toString().replace(printableCharactersRegex, ".")}$overflow"
-  }
-
-  fun createDecoder(): CharsetDecoder {
-    return ADB_CHARSET.newDecoder()
-  }
-
-  /**
-   * Copy as many bytes as possible from [srcBuffer] to [dstBuffer]
-   *
-   * Returns the number of bytes copied, may be zero if [dstBuffer].[ByteBuffer.remaining] or [srcBuffer].[ByteBuffer.remaining] is zero.
-   */
-  fun copyBufferContents(srcBuffer: ByteBuffer, dstBuffer: ByteBuffer): Int {
-    return if (dstBuffer.remaining() > srcBuffer.remaining()) {
-      // If dstBuffer has enough room, we can use a single operation
-      val count = srcBuffer.remaining()
-      dstBuffer.put(srcBuffer)
-      count
-    } else {
-      // If dstBuffer is too small, we have to limit srcBuffer
-      val count = dstBuffer.remaining()
-      if (count > 0) {
-        val savedLimit = srcBuffer.limit()
-        srcBuffer.limit(srcBuffer.position() + count)
-        dstBuffer.put(srcBuffer)
-        srcBuffer.limit(savedLimit)
-      }
-      count
-    }
   }
 
   fun convertFileTimeToEpochSeconds(fileTime: FileTime): Int {
