@@ -57,8 +57,8 @@ class DetailsTypePathsTest {
       .isEqualTo("system-images;android-36;id;abi")
     assertThat(DetailsTypes.getSysImgPath(null, AndroidVersion(36, 1), IdDisplay.create("id", "display"), "abi"))
       .isEqualTo("system-images;android-36.1;id;abi")
-    assertThat(DetailsTypes.getSysImgPath(null, AndroidVersion(36, 1, "Baklava.2", null, true), IdDisplay.create("id", "display"), "abi"))
-      .isEqualTo("system-images;android-Baklava.2;id;abi")
+    assertThat(DetailsTypes.getSysImgPath(null, AndroidVersion(36, 1, "Baklava", null, true), IdDisplay.create("id", "display"), "abi"))
+      .isEqualTo("system-images;android-Baklava;id;abi")
     assertThat(DetailsTypes.getSysImgPath(null, AndroidVersion(37, 0), IdDisplay.create("id", "display"), "abi"))
       .isEqualTo("system-images;android-37.0;id;abi")
   }

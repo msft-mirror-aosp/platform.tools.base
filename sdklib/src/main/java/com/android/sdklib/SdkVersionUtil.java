@@ -73,6 +73,10 @@ public class SdkVersionUtil {
         }
 
         // Must be a future SDK platform
-        return new AndroidVersion(SdkVersionInfo.HIGHEST_KNOWN_API, apiOrPreviewName);
+        try {
+            return new AndroidVersion(SdkVersionInfo.HIGHEST_KNOWN_API, apiOrPreviewName);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 }

@@ -25,6 +25,7 @@ public class SdkVersionUtilTest extends TestCase {
     public void testGetAndroidVersion() {
         assertNull(getVersion("", null));
         assertNull(getVersion("4H", null));
+        assertNull(getVersion("invalid codename", null));
         assertEquals(4, getVersion("4", null).getApiLevel());
         assertNull(getVersion("4", null).getCodename());
         assertEquals("4", getVersion("4", null).getApiString());

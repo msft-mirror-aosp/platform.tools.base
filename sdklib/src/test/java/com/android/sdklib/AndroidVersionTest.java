@@ -81,8 +81,8 @@ public class AndroidVersionTest {
         assertTrue(v.isAtLeast(14));
         assertFalse(v.isAtLeast(31));
 
-        assertThat(v).isGreaterThan(new AndroidVersion(29, "codename"));
-        assertThat(v).isLessThan(new AndroidVersion(30, "codename"));
+        assertThat(v).isGreaterThan(new AndroidVersion(29, "Codename"));
+        assertThat(v).isLessThan(new AndroidVersion(30, "Codename"));
         assertEquals("API 30, extension level 4", v.toString());
 
         assertNotEquals(
@@ -205,9 +205,6 @@ public class AndroidVersionTest {
         assertEquals(
                 "36.0-ext41",
                 new AndroidVersion(36, 0, null, 41, false).getApiStringWithExtension());
-        assertEquals(
-                "Baklava.1",
-                new AndroidVersion(36, 0, "Baklava.1", 41, false).getApiStringWithExtension());
         assertEquals("Tiramisu", new AndroidVersion(32, "Tiramisu").getApiStringWithExtension());
         assertEquals(
                 "VanillaIceCream",
@@ -226,8 +223,8 @@ public class AndroidVersionTest {
         assertEquals(
                 "36.0", new AndroidVersion(36, 0, null, 41, false).getApiStringWithoutExtension());
         assertEquals(
-                "Baklava.1",
-                new AndroidVersion(36, 0, "Baklava.1", 41, false).getApiStringWithoutExtension());
+                "Baklava",
+                new AndroidVersion(36, 0, "Baklava", 41, false).getApiStringWithoutExtension());
         assertEquals("Tiramisu", new AndroidVersion(32, "Tiramisu").getApiStringWithoutExtension());
         assertEquals(
                 "VanillaIceCream",
@@ -297,11 +294,13 @@ public class AndroidVersionTest {
                 "android-Baklava",
                 new AndroidVersion(35, 0, "Baklava", null, true).getPlatformHashString());
         assertEquals(
-                "android-Baklava.1",
-                new AndroidVersion(36, 0, "Baklava.1", null, true).getPlatformHashString());
+                "android-canary-20260101",
+                new AndroidVersion(36, 0, "DEV", null, true)
+                        .withCanaryNumber(20260101)
+                        .getPlatformHashString());
         assertEquals(
-                "android-Baklava.2",
-                new AndroidVersion(36, 1, "Baklava.2", null, true).getPlatformHashString());
+                "android-37.1-beta2",
+                new AndroidVersion(37, 1).withBetaNumber(2).getPlatformHashString());
         assertEquals(
                 "android-DEV",
                 new AndroidVersion(37, 0, "DEV", null, true).getPlatformHashString());
@@ -342,8 +341,8 @@ public class AndroidVersionTest {
         assertEquals(5, new AndroidVersion(5, null).getApiLevel());
         assertEquals(5, new AndroidVersion(5, null).getFeatureLevel());
 
-        assertEquals(5, new AndroidVersion(5, "codename").getApiLevel());
-        assertEquals(6, new AndroidVersion(5, "codename").getFeatureLevel());
+        assertEquals(5, new AndroidVersion(5, "Codename").getApiLevel());
+        assertEquals(6, new AndroidVersion(5, "Codename").getFeatureLevel());
 
         assertEquals(37, new AndroidVersion(37).withBetaNumber(1).getFeatureLevel());
         assertEquals(38, new AndroidVersion(37).withCanaryNumber(20251201).getFeatureLevel());
@@ -399,7 +398,8 @@ public class AndroidVersionTest {
     public void testToString() {
         assertEquals("API 37.0, beta 1", new AndroidVersion(37).withBetaNumber(1).toString());
         assertEquals(
-                "API 37.0, canary 20251201", new AndroidVersion(37).withCanaryNumber(20251201).toString());
+                "API 37.0, canary 20251201",
+                new AndroidVersion(37).withCanaryNumber(20251201).toString());
         assertEquals(
                 "API 30, extension level 4", new AndroidVersion(30, null, 4, false).toString());
     }
