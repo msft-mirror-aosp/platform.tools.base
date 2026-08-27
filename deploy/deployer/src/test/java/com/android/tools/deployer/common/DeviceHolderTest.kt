@@ -75,9 +75,11 @@ class DeviceHolderTest {
   @Test
   fun testIDeviceRawExec2Success() {
     val socket = mock(SimpleConnectedSocket::class.java)
+    `when`(socket.isOpen).thenReturn(true)
     `when`(iDevice.rawExec2(eq("exe"), any())).thenReturn(socket)
 
-    Assert.assertEquals(socket, deviceHolder.rawExec2("exe", arrayOf("param")))
+    val channel = deviceHolder.rawExec2("exe", arrayOf("param"))
+    Assert.assertTrue(channel.isOpen)
     Mockito.verifyNoInteractions(connectedDevice)
   }
 

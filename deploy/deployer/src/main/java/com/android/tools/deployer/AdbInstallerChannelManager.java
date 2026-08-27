@@ -15,8 +15,8 @@
  */
 package com.android.tools.deployer;
 
-import com.android.ddmlib.SimpleConnectedSocket;
 import com.android.tools.deployer.common.AdbClient;
+import com.android.tools.deployer.common.DeployerConnectedSocket;
 import com.android.utils.ILogger;
 
 import java.io.IOException;
@@ -56,7 +56,7 @@ public class AdbInstallerChannelManager {
     private static AdbInstallerChannel createChannel(
             AdbClient client, String version, ILogger logger, AdbInstaller.Mode mode)
             throws IOException {
-        SimpleConnectedSocket channel = null;
+        DeployerConnectedSocket channel = null;
         List<String> parameters = new ArrayList<>();
         parameters.add("-version=" + version);
         if (mode == AdbInstaller.Mode.DAEMON) {

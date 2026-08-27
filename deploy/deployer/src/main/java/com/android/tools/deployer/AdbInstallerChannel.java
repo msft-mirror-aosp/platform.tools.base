@@ -15,8 +15,8 @@
  */
 package com.android.tools.deployer;
 
-import com.android.ddmlib.SimpleConnectedSocket;
 import com.android.tools.deploy.proto.Deploy;
+import com.android.tools.deployer.common.DeployerConnectedSocket;
 import com.android.tools.idea.protobuf.CodedInputStream;
 import com.android.tools.idea.protobuf.CodedOutputStream;
 import com.android.utils.ILogger;
@@ -46,7 +46,7 @@ class AdbInstallerChannel implements AutoCloseable {
         (byte) 0xA5
     };
 
-    private final SimpleConnectedSocket channel;
+    private final DeployerConnectedSocket channel;
 
     private final ILogger logger;
 
@@ -57,7 +57,7 @@ class AdbInstallerChannel implements AutoCloseable {
     // Is is set so that it can only fails if the other party stops processing data.
     private static final long PER_WRITE_TIME_OUT = TimeUnit.SECONDS.toMillis(5);
 
-    AdbInstallerChannel(SimpleConnectedSocket c, ILogger logger) {
+    AdbInstallerChannel(DeployerConnectedSocket c, ILogger logger) {
         channel = c;
 
         this.logger = logger;
@@ -172,7 +172,7 @@ class AdbInstallerChannel implements AutoCloseable {
                 // before the MAGIC_NUMBER reply. Without completely redesigning the protocol,
                 // we can try to skip over some known warnings so we don't have to assume
                 // installer always fails. So far, we have only observe this in Android 7.0
-                // (API 24). 
+                // (API 24).
                 String garbage = new String(bufferMarker.array(), Charsets.UTF_8);
                 String installerLoc = Sites.installerPath();
                 String linkerWarning =

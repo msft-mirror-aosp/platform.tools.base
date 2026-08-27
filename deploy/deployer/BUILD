@@ -114,6 +114,7 @@ kotlin_library(
         "src/main/java/com/android/tools/deployer/common/Canceller.java",
         "src/main/java/com/android/tools/deployer/common/ChangeType.java",
         "src/main/java/com/android/tools/deployer/common/DeployMetric.java",
+        "src/main/java/com/android/tools/deployer/common/DeployerConnectedSocket.java",
         "src/main/java/com/android/tools/deployer/common/DeployerException.java",
         "src/main/java/com/android/tools/deployer/common/DeployerIShellOutputReceiver.java",
         "src/main/java/com/android/tools/deployer/common/DeployerMultiLineReceiver.java",
