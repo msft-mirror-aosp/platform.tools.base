@@ -25,6 +25,7 @@ import com.android.build.gradle.internal.dependency.ShrinkerVersion
 import com.android.build.gradle.internal.errors.MessageReceiverImpl
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalMultipleArtifactType
+import com.android.build.gradle.internal.services.R8ClassloaderBuildService
 import com.android.build.gradle.internal.services.R8D8ThreadPoolBuildService
 import com.android.build.gradle.internal.services.doClose
 import com.android.build.gradle.internal.utils.setDisallowChanges
@@ -38,7 +39,6 @@ import com.android.builder.dexing.ProguardOutputReports
 import com.android.builder.dexing.R8OutputType
 import com.android.builder.dexing.ResourceShrinkingConfig
 import com.android.builder.dexing.ToolConfig
-import com.android.builder.dexing.runR8
 import com.android.utils.FileUtils
 import com.android.zipflinger.ZipArchive
 import java.io.File
@@ -310,11 +310,13 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : BaseR8
       it.toolConfig.set(toolParameters.toToolConfig())
       it.resourceShrinkingConfig.set(resourceShrinkingParams.toConfig())
       it.partialShrinkingIncludes.set(aggregatePartialShrinkingConfig())
+      it.r8Classpath.from(r8Classpath)
       // Note: Build service can only be passed in Gradle worker non-isolation mode
       if (executionOptions.get().runInSeparateProcess) {
         it.r8ThreadPoolSizeIfIsolationMode.set(r8ThreadPoolSize)
       } else {
         it.r8D8ThreadPoolBuildServiceIfNonIsolationMode.set(r8D8ThreadPoolBuildService)
+        it.r8ClassloaderBuildServiceIfNonIsolationMode.set(r8ClassloaderBuildService)
       }
     }
     if (executionOptions.get().runInSeparateProcess) {
@@ -372,6 +374,7 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : BaseR8
       resourceShrinkingConfig: ResourceShrinkingConfig?,
       partialShrinkingIncludes: PartialShrinking?,
       r8ThreadPool: ExecutorService,
+      r8ClassLoader: ClassLoader? = null,
     ) {
       val logger = LoggerWrapper.getLogger(R8Task::class.java)
 
@@ -433,9 +436,8 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : BaseR8
           com.android.builder.dexing.MainDexListConfig()
         }
 
-      // When invoking R8 we filter out missing files. E.g. javac output may not exist if
-      // there are no Java sources. See b/151605314 for details.
-      runR8(
+      invokeRunR8(
+        r8ClassLoader,
         filterMissingFiles(classes, logger),
         output.toPath(),
         resourcesJar.toPath(),
@@ -509,9 +511,11 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : BaseR8
       abstract val toolConfig: Property<ToolConfig>
       abstract val resourceShrinkingConfig: Property<ResourceShrinkingConfig>
       abstract val partialShrinkingIncludes: Property<PartialShrinking>
+      abstract val r8Classpath: ConfigurableFileCollection
       abstract val r8ThreadPoolSizeIfIsolationMode: Property<Int> // Set iff in Gradle worker isolation mode
       abstract val r8D8ThreadPoolBuildServiceIfNonIsolationMode:
         Property<R8D8ThreadPoolBuildService> // Set iff in Gradle worker non-isolation mode
+      abstract val r8ClassloaderBuildServiceIfNonIsolationMode: Property<R8ClassloaderBuildService>
     }
 
     override fun execute() {
@@ -524,6 +528,7 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : BaseR8
         } else {
           parameters.r8D8ThreadPoolBuildServiceIfNonIsolationMode.get().threadPool
         }
+      val r8ClassLoader = getR8ClassLoader(parameters.r8Classpath, parameters.r8ClassloaderBuildServiceIfNonIsolationMode)
       try {
         shrink(
           parameters.bootClasspath.files.toList(),
@@ -561,12 +566,13 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : BaseR8
           parameters.resourceShrinkingConfig.orNull,
           parameters.partialShrinkingIncludes.orNull,
           r8ThreadPool,
+          r8ClassLoader,
         )
       } finally {
-        // In isolation mode, we use a separate thread pool, so we need to close it now.
-        // In non-isolation mode, we use a shared thread pool, and we will close it in the
-        // build service.
+        // In isolation mode, we use a separate thread pool and classloader, so we need to close them now.
+        // In non-isolation mode, we use a shared thread pool and cached classloaders managed by build services.
         if (isolationMode) {
+          (r8ClassLoader as? AutoCloseable)?.close()
           r8ThreadPool.doClose()
         }
       }

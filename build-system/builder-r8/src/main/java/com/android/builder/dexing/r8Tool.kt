@@ -168,6 +168,7 @@ fun runR8(
   partialShrinking: PartialShrinking? = null,
   r8ExecutorService: ExecutorService? = null, // null only if called by tests
 ) {
+
   val logger: Logger = Logger.getLogger("R8")
   if (logger.isLoggable(Level.FINE)) {
     logger.fine("*** Using R8 to process code ***")
@@ -218,7 +219,11 @@ fun runR8(
   }
 
   if (r8Metadata != null) {
-    r8CommandBuilder.setBuildMetadataConsumer { metadata -> r8Metadata.writeText(metadata.toJson()) }
+    try {
+      r8CommandBuilder.setBuildMetadataConsumer { metadata -> r8Metadata.writeText(metadata.toJson()) }
+    } catch (e: NoSuchMethodError) {
+      // Build metadata consumer may not be supported by older R8 versions.
+    }
   }
 
   if (output != null) {
@@ -252,16 +257,20 @@ fun runR8(
 
   for (configurationFile in proguardConfig.keepRuleWithOrigins) {
     if (!configurationFile.file.isRegularFile()) continue
-    when (configurationFile) {
-      is KeepRuleFile.MavenOrigin -> r8CommandBuilder.addProguardConfigurationFile(configurationFile.file, MavenOrigin(configurationFile))
-      is KeepRuleFile.AgpInternalOrigin ->
-        r8CommandBuilder.addProguardConfigurationFile(configurationFile.file, AgpOrigin(configurationFile))
-      is KeepRuleFile.LocalProjectOrigin ->
-        r8CommandBuilder.addProguardConfigurationFile(configurationFile.file, LocalProjectOrigin(configurationFile))
-      is KeepRuleFile.GeneratedOrigin ->
-        r8CommandBuilder.addProguardConfigurationFile(configurationFile.file, GeneratedKeepRuleOrigin(configurationFile))
-      is KeepRuleFile.WithoutOrigin ->
-        r8CommandBuilder.addProguardConfigurationFile(configurationFile.file, PathOrigin(configurationFile.file))
+    try {
+      when (configurationFile) {
+        is KeepRuleFile.MavenOrigin -> r8CommandBuilder.addProguardConfigurationFile(configurationFile.file, MavenOrigin(configurationFile))
+        is KeepRuleFile.AgpInternalOrigin ->
+          r8CommandBuilder.addProguardConfigurationFile(configurationFile.file, AgpOrigin(configurationFile))
+        is KeepRuleFile.LocalProjectOrigin ->
+          r8CommandBuilder.addProguardConfigurationFile(configurationFile.file, LocalProjectOrigin(configurationFile))
+        is KeepRuleFile.GeneratedOrigin ->
+          r8CommandBuilder.addProguardConfigurationFile(configurationFile.file, GeneratedKeepRuleOrigin(configurationFile))
+        is KeepRuleFile.WithoutOrigin ->
+          r8CommandBuilder.addProguardConfigurationFile(configurationFile.file, PathOrigin(configurationFile.file))
+      }
+    } catch (e: NoSuchMethodError) {
+      r8CommandBuilder.addProguardConfigurationFiles(configurationFile.file)
     }
   }
 
@@ -283,7 +292,11 @@ fun runR8(
     Files.createDirectories(proguardOutputFiles.proguardMapOutput.parent)
 
     r8CommandBuilder.setProguardMapOutputPath(proguardOutputFiles.proguardMapOutput)
-    r8CommandBuilder.setPartitionMapOutputPath(proguardOutputFiles.proguardPartitionMapOutput)
+    try {
+      r8CommandBuilder.setPartitionMapOutputPath(proguardOutputFiles.proguardPartitionMapOutput)
+    } catch (e: NoSuchMethodError) {
+      // Partition map output path may not be supported by older R8 versions.
+    }
     r8CommandBuilder.setProguardSeedsConsumer(StringConsumer.FileConsumer(proguardOutputFiles.proguardSeedsOutput))
     r8CommandBuilder.setProguardUsageConsumer(StringConsumer.FileConsumer(proguardOutputFiles.proguardUsageOutput))
     r8CommandBuilder.setProguardConfigurationConsumer(StringConsumer.FileConsumer(proguardOutputFiles.proguardConfigurationOutput))
@@ -291,11 +304,15 @@ fun runR8(
 
   val proguardOutputReports = proguardConfig.proguardOutputReports
   if (proguardOutputReports != null) {
-    proguardOutputReports.r8ConfigurationAnalyzerDataOutput.let {
-      r8CommandBuilder.setConfigurationAnalysisDataConsumer(ByteArrayConsumer.FileConsumer(it))
-    }
-    proguardOutputReports.r8ConfigurationAnalyzerReportOutput.let {
-      r8CommandBuilder.setConfigurationAnalysisHtmlReportConsumer(StringConsumer.FileConsumer(it))
+    try {
+      proguardOutputReports.r8ConfigurationAnalyzerDataOutput.let {
+        r8CommandBuilder.setConfigurationAnalysisDataConsumer(ByteArrayConsumer.FileConsumer(it))
+      }
+      proguardOutputReports.r8ConfigurationAnalyzerReportOutput.let {
+        r8CommandBuilder.setConfigurationAnalysisHtmlReportConsumer(StringConsumer.FileConsumer(it))
+      }
+    } catch (e: NoSuchMethodError) {
+      // Configuration analysis reports may not be supported by older R8 versions.
     }
   }
 
@@ -335,10 +352,23 @@ fun runR8(
     .setDisableTreeShaking(toolConfig.disableTreeShaking)
     .setDisableMinification(toolConfig.disableMinification)
     .setDisableDesugaring(toolConfig.disableDesugaring)
-    .setEnableVerboseSyntheticNames(true)
     .setProguardCompatibility(!toolConfig.fullMode)
-    .enableLegacyFullModeForKeepRules(!toolConfig.strictFullModeForKeepRules)
-    .apply { toolConfig.isolatedSplits?.let { setEnableIsolatedSplits(it) } }
+
+  try {
+    r8CommandBuilder.setEnableVerboseSyntheticNames(true)
+  } catch (e: NoSuchMethodError) {
+    // Verbose synthetic names may not be supported by older R8 versions.
+  }
+  try {
+    r8CommandBuilder.enableLegacyFullModeForKeepRules(!toolConfig.strictFullModeForKeepRules)
+  } catch (e: NoSuchMethodError) {
+    // Legacy full mode for keep rules may not be supported by older R8 versions.
+  }
+  try {
+    toolConfig.isolatedSplits?.let { r8CommandBuilder.setEnableIsolatedSplits(it) }
+  } catch (e: NoSuchMethodError) {
+    // Isolated splits may not be supported by older R8 versions.
+  }
 
   // Use this to control all resources provided to R8
   for (path in inputClasses) {

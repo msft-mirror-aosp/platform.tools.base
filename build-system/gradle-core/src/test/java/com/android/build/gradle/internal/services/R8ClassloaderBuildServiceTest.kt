@@ -49,7 +49,7 @@ class R8ClassloaderBuildServiceTest {
     val service = TestR8ClassloaderBuildService()
     val classLoader = service.getClassLoader(setOf(jar1))
 
-    assertThat(classLoader.parent).isEqualTo(ClassLoader.getPlatformClassLoader())
+    assertThat(classLoader.parent).isEqualTo(R8ClassloaderBuildService::class.java.classLoader)
   }
 
   @Test
@@ -88,7 +88,7 @@ class R8ClassloaderBuildServiceTest {
   @Test
   fun testCreateClassLoaderCompanion() {
     val classLoader = R8ClassloaderBuildService.createClassLoader(setOf(jar1))
-    assertThat(classLoader.parent).isEqualTo(ClassLoader.getPlatformClassLoader())
+    assertThat(classLoader.parent).isEqualTo(R8ClassloaderBuildService::class.java.classLoader)
     classLoader.close()
   }
 

@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.services
 
 import com.google.common.annotations.VisibleForTesting
 import java.io.File
+import java.net.URL
 import java.net.URLClassLoader
 import java.util.concurrent.ConcurrentHashMap
 import javax.annotation.concurrent.ThreadSafe
@@ -28,8 +29,8 @@ import org.gradle.api.services.BuildServiceParameters
 /**
  * Build service used to instantiate and cache isolated [URLClassLoader] instances for the R8 compiler.
  *
- * To ensure isolation from AGP and Gradle runtime classes, all created ClassLoaders use [ClassLoader.getPlatformClassLoader] as their
- * parent.
+ * To ensure isolation from AGP runtime R8 classes while retaining access to shared build service and JDK classes, the created ClassLoader
+ * loads R8 and builder-r8 classes child-first.
  */
 @ThreadSafe
 abstract class R8ClassloaderBuildService : BuildService<BuildServiceParameters.None>, AutoCloseable {
@@ -58,8 +59,38 @@ abstract class R8ClassloaderBuildService : BuildService<BuildServiceParameters.N
   companion object {
     /** Creates a new isolated [URLClassLoader] for the provided [files]. */
     fun createClassLoader(files: Collection<File>): URLClassLoader {
-      val urls = files.map { it.canonicalFile.toURI().toURL() }.toTypedArray()
-      return URLClassLoader(urls, ClassLoader.getPlatformClassLoader())
+      val builderR8Url =
+        try {
+          Class.forName("com.android.builder.dexing.R8Tool").protectionDomain?.codeSource?.location
+        } catch (_: Throwable) {
+          null
+        }
+      val urls = (files.map { it.canonicalFile.toURI().toURL() } + listOfNotNull(builderR8Url)).toTypedArray()
+      return R8ClassLoader(urls, R8ClassloaderBuildService::class.java.classLoader)
+    }
+  }
+
+  private class R8ClassLoader(urls: Array<URL>, parent: ClassLoader) : URLClassLoader(urls, parent) {
+    override fun loadClass(name: String, resolve: Boolean): Class<*> {
+      synchronized(getClassLoadingLock(name)) {
+        var c = findLoadedClass(name)
+        if (c == null) {
+          if (name.startsWith("com.android.tools.r8.") || name.startsWith("com.android.builder.dexing.")) {
+            try {
+              c = findClass(name)
+            } catch (_: ClassNotFoundException) {
+              // Fall back to parent
+            }
+          }
+          if (c == null) {
+            c = super.loadClass(name, resolve)
+          }
+        }
+        if (resolve) {
+          resolveClass(c)
+        }
+        return c
+      }
     }
   }
 

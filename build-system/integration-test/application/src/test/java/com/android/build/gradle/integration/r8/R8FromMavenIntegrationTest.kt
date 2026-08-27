@@ -99,4 +99,31 @@ class R8FromMavenIntegrationTest {
 
     result.assertErrorContains("Could not find com.android.tools:r8:999.999.0-nonexistent")
   }
+
+  @Test
+  fun testR8OptimizationWithVersionOverride() {
+    val build = rule.build
+    val overrideVersion = "8.2.47"
+
+    build.androidApplication().files.update("build.gradle.kts") {
+      append(
+        """
+
+        android {
+            buildTypes {
+                release {
+                    isMinifyEnabled = true
+                    proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
+                }
+            }
+        }
+        """
+          .trimIndent()
+      )
+    }
+
+    val result = build.executor.with(StringOption.R8_VERSION_OVERRIDE, overrideVersion).run(":app:minifyReleaseWithR8")
+
+    assertThat(result.didWorkTasks).contains(":app:minifyReleaseWithR8")
+  }
 }
