@@ -37,14 +37,13 @@ import org.junit.Test
 class VariantApiAssetsTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidLibrary(":lib") { files.add("src/main/assets/lib_asset.txt", "I am from the library") }
-      androidApplication(":app") {
-        pluginCallbacks += AddAssetTransformCallback::class.java
-        dependencies { implementation(project(":lib")) }
-      }
+  val rule = GradleRule.from {
+    androidLibrary(":lib") { files.add("src/main/assets/lib_asset.txt", "I am from the library") }
+    androidApplication(":app") {
+      pluginCallbacks += AddAssetTransformCallback::class.java
+      dependencies { implementation(project(":lib")) }
     }
+  }
 
   /**
    * Verifies that [SingleArtifact.ASSETS] can be transformed.

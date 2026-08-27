@@ -28,13 +28,12 @@ import org.junit.Test
 class NewDslImplementationSmokeTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {}
-      androidLibrary {}
-      androidFeature {}
-      androidTest { android { targetProjectPath = ":app" } }
-    }
+  val rule = GradleRule.from {
+    androidApplication {}
+    androidLibrary {}
+    androidFeature {}
+    androidTest { android { targetProjectPath = ":app" } }
+  }
 
   @Test
   fun smokeTest() {

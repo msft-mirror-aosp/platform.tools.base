@@ -47,21 +47,20 @@ class LintConfigurationCacheTest(private val mode: Mode) {
   }
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      if (mode == Mode.OLD_DSL) {
-        gradleProperties { add(BooleanOption.USE_NEW_DSL, false) }
-      }
-      androidLibrary {
-        android { namespace = "com.example.lib" }
-        pluginCallbacks +=
-          if (mode == Mode.NEW_DSL) {
-            MyCallback::class.java
-          } else {
-            MyOldDslCallback::class.java
-          }
-      }
+  val rule = GradleRule.from {
+    if (mode == Mode.OLD_DSL) {
+      gradleProperties { add(BooleanOption.USE_NEW_DSL, false) }
     }
+    androidLibrary {
+      android { namespace = "com.example.lib" }
+      pluginCallbacks +=
+        if (mode == Mode.NEW_DSL) {
+          MyCallback::class.java
+        } else {
+          MyOldDslCallback::class.java
+        }
+    }
+  }
 
   /** Regression test for b/285320724. */
   @Test

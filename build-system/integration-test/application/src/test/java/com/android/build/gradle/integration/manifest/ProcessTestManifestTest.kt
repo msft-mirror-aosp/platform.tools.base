@@ -33,31 +33,29 @@ import org.junit.Test
 class ProcessTestManifestTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidLibrary {
-        android { namespace = "com.example.helloworld" }
-        HelloWorldAndroid.setupJava(files)
-      }
+  val rule = GradleRule.from {
+    androidLibrary {
+      android { namespace = "com.example.helloworld" }
+      HelloWorldAndroid.setupJava(files)
     }
+  }
 
   @Test
   fun testInstrumentationApkTargetSdk() {
-    val build =
-      rule.build {
-        androidLibrary {
-          android {
-            flavorDimensions.add("targetSdk")
+    val build = rule.build {
+      androidLibrary {
+        android {
+          flavorDimensions.add("targetSdk")
 
-            productFlavors {
-              create("sdk30") { it.dimension = "targetSdk" }
+          productFlavors {
+            create("sdk30") { it.dimension = "targetSdk" }
 
-              create("sdk32") { it.dimension = "targetSdk" }
-            }
+            create("sdk32") { it.dimension = "targetSdk" }
           }
-          pluginCallbacks += InstrumentationTargetSdkCallback::class.java
         }
+        pluginCallbacks += InstrumentationTargetSdkCallback::class.java
       }
+    }
     val lib = build.androidLibrary()
 
     build.executor.run(":lib:assembleAndroidTest")
@@ -106,13 +104,12 @@ class ProcessTestManifestTest {
 
   @Test
   fun build() {
-    val build =
-      rule.build {
-        androidLibrary {
-          android { packaging { jniLibs { useLegacyPackaging = false } } }
-          pluginCallbacks += BuildInstrumentationCallback::class.java
-        }
+    val build = rule.build {
+      androidLibrary {
+        android { packaging { jniLibs { useLegacyPackaging = false } } }
+        pluginCallbacks += BuildInstrumentationCallback::class.java
       }
+    }
     val lib = build.androidLibrary()
 
     lib.files.add(
@@ -238,13 +235,12 @@ class ProcessTestManifestTest {
 
   @Test
   fun testDebuggingFlagCanBeSet() {
-    val build =
-      rule.build {
-        androidLibrary {
-          android { testBuildType = "release" }
-          pluginCallbacks += DebuggingFlagCallback::class.java
-        }
+    val build = rule.build {
+      androidLibrary {
+        android { testBuildType = "release" }
+        pluginCallbacks += DebuggingFlagCallback::class.java
       }
+    }
     val lib = build.androidLibrary()
     build.executor.run(":lib:assembleReleaseAndroidTest")
 
@@ -423,16 +419,15 @@ class ProcessTestManifestTest {
 
   @Test
   fun testUnitTestManifestPlaceholdersFromVariantApi() {
-    val build =
-      rule.build {
-        androidLibrary {
-          android {
-            testBuildType = "release"
-            testOptions { unitTests { isIncludeAndroidResources = true } }
-          }
-          pluginCallbacks += UnitTestManifestPlaceholdersCallback::class.java
+    val build = rule.build {
+      androidLibrary {
+        android {
+          testBuildType = "release"
+          testOptions { unitTests { isIncludeAndroidResources = true } }
         }
+        pluginCallbacks += UnitTestManifestPlaceholdersCallback::class.java
       }
+    }
     val lib = build.androidLibrary()
     lib.files.remove("src/main/AndroidManifest.xml")
     lib.files.add(
@@ -475,16 +470,15 @@ class ProcessTestManifestTest {
 
   @Test
   fun testUnitTestManifestContainsTargetSdkVersion() {
-    val build =
-      rule.build {
-        androidLibrary {
-          android {
-            testBuildType = "release"
-            testOptions { unitTests { isIncludeAndroidResources = true } }
-          }
-          pluginCallbacks += UnitTestManifestTargetSdkCallback::class.java
+    val build = rule.build {
+      androidLibrary {
+        android {
+          testBuildType = "release"
+          testOptions { unitTests { isIncludeAndroidResources = true } }
         }
+        pluginCallbacks += UnitTestManifestTargetSdkCallback::class.java
       }
+    }
     val lib = build.androidLibrary()
     val result = build.executor.run(":lib:processReleaseUnitTestManifest")
     assertTrue { result.failedTasks.isEmpty() }
@@ -654,58 +648,57 @@ class ProcessTestManifestTest {
 
   @Test
   fun testUnitTestManifestRespectsAppToolsReplaceWithConflict() {
-    val build =
-      rule.build {
-        androidLibrary(":libA") {
-          android { namespace = "com.example.libA" }
-          files
-            .update("src/main/AndroidManifest.xml")
-            .replaceWith(
-              """
-              <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                  <application android:label="LibA" />
-              </manifest>
-              """
-                .trimIndent()
-            )
-        }
-        androidLibrary(":libB") {
-          android { namespace = "com.example.libB" }
-          files
-            .update("src/main/AndroidManifest.xml")
-            .replaceWith(
-              """
-              <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                  <application android:label="LibB" />
-              </manifest>
-              """
-                .trimIndent()
-            )
-        }
-        androidApplication(":app") {
-          android {
-            namespace = "com.example.app"
-            testOptions { unitTests { isIncludeAndroidResources = true } }
-          }
-          dependencies {
-            implementation(project(":libA"))
-            implementation(project(":libB"))
-          }
-          files
-            .update("src/main/AndroidManifest.xml")
-            .replaceWith(
-              """
-              <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                          xmlns:tools="http://schemas.android.com/tools">
-                  <application
-                      android:label="App"
-                      tools:replace="android:label" />
-              </manifest>
-              """
-                .trimIndent()
-            )
-        }
+    val build = rule.build {
+      androidLibrary(":libA") {
+        android { namespace = "com.example.libA" }
+        files
+          .update("src/main/AndroidManifest.xml")
+          .replaceWith(
+            """
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                <application android:label="LibA" />
+            </manifest>
+            """
+              .trimIndent()
+          )
       }
+      androidLibrary(":libB") {
+        android { namespace = "com.example.libB" }
+        files
+          .update("src/main/AndroidManifest.xml")
+          .replaceWith(
+            """
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                <application android:label="LibB" />
+            </manifest>
+            """
+              .trimIndent()
+          )
+      }
+      androidApplication(":app") {
+        android {
+          namespace = "com.example.app"
+          testOptions { unitTests { isIncludeAndroidResources = true } }
+        }
+        dependencies {
+          implementation(project(":libA"))
+          implementation(project(":libB"))
+        }
+        files
+          .update("src/main/AndroidManifest.xml")
+          .replaceWith(
+            """
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                        xmlns:tools="http://schemas.android.com/tools">
+                <application
+                    android:label="App"
+                    tools:replace="android:label" />
+            </manifest>
+            """
+              .trimIndent()
+          )
+      }
+    }
 
     val result = build.executor.run(":app:processDebugUnitTestManifest")
     assertTrue { result.failedTasks.isEmpty() }
@@ -714,42 +707,41 @@ class ProcessTestManifestTest {
   /** Regression test for b/496616822 */
   @Test
   fun testUnitTestManifestWithNavGraph() {
-    val build =
-      rule.build {
-        androidApplication(":app") {
-          android {
-            namespace = "com.example.app"
-            testOptions { unitTests { isIncludeAndroidResources = true } }
-          }
-          files
-            .update("src/main/AndroidManifest.xml")
-            .replaceWith(
-              """
-              <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                  <application>
-                      <activity android:name=".MainActivity" android:exported="true">
-                          <nav-graph android:value="@navigation/nav_graph" />
-                      </activity>
-                  </application>
-              </manifest>
-              """
-                .trimIndent()
-            )
-          files.add(
-            "src/main/res/navigation/nav_graph.xml",
-            """
-            <navigation xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:app="http://schemas.android.com/apk/res-auto"
-                android:id="@+id/nav_graph">
-                <fragment android:id="@+id/fragment1">
-                    <deepLink app:uri="www.example.com" />
-                </fragment>
-            </navigation>
-            """
-              .trimIndent(),
-          )
+    val build = rule.build {
+      androidApplication(":app") {
+        android {
+          namespace = "com.example.app"
+          testOptions { unitTests { isIncludeAndroidResources = true } }
         }
+        files
+          .update("src/main/AndroidManifest.xml")
+          .replaceWith(
+            """
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                <application>
+                    <activity android:name=".MainActivity" android:exported="true">
+                        <nav-graph android:value="@navigation/nav_graph" />
+                    </activity>
+                </application>
+            </manifest>
+            """
+              .trimIndent()
+          )
+        files.add(
+          "src/main/res/navigation/nav_graph.xml",
+          """
+          <navigation xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:app="http://schemas.android.com/apk/res-auto"
+              android:id="@+id/nav_graph">
+              <fragment android:id="@+id/fragment1">
+                  <deepLink app:uri="www.example.com" />
+              </fragment>
+          </navigation>
+          """
+            .trimIndent(),
+        )
       }
+    }
 
     build.executor.run(":app:processDebugUnitTestManifest")
   }
@@ -760,17 +752,16 @@ class ProcessTestManifestTest {
    */
   @Test
   fun testTestManifestMergingOrderCorrectnessAndCaching() {
-    val build =
-      rule.build {
-        androidLibrary {
-          dependencies {
-            androidTestImplementation(project(":libbluetooth"))
-            androidTestImplementation(project(":libwifi"))
-          }
+    val build = rule.build {
+      androidLibrary {
+        dependencies {
+          androidTestImplementation(project(":libbluetooth"))
+          androidTestImplementation(project(":libwifi"))
         }
-        androidLibrary(":libbluetooth") {}
-        androidLibrary(":libwifi") {}
       }
+      androidLibrary(":libbluetooth") {}
+      androidLibrary(":libwifi") {}
+    }
     val libProject = build.androidLibrary()
     val libBluetooth = build.androidLibrary(":libbluetooth")
     val libWifi = build.androidLibrary(":libwifi")

@@ -286,34 +286,33 @@ class RenderScriptProcessor(
 
     val workContext = RenderScriptWorkContext(processExecutor, processOutputHandler, env, buildToolInfo, optimizationLevel, rsLib)
 
-    val abisToBuild =
-      abis.filter { abi ->
-        if (abiFilters.isNotEmpty() && !abiFilters.contains(abi.device)) return@filter false
+    val abisToBuild = abis.filter { abi ->
+      if (abiFilters.isNotEmpty() && !abiFilters.contains(abi.device)) return@filter false
 
-        val libClCorePath = libClCore[abi.device]
-        if (libClCorePath == null) {
-          // warn the user to update Build-Tools if the desired ABI is not found.
-          logger.warning(
-            """|Skipped RenderScript support mode compilation for ${abi.device} : required components not found in Build-Tools ${buildToolInfo.revision}
+      val libClCorePath = libClCore[abi.device]
+      if (libClCorePath == null) {
+        // warn the user to update Build-Tools if the desired ABI is not found.
+        logger.warning(
+          """|Skipped RenderScript support mode compilation for ${abi.device} : required components not found in Build-Tools ${buildToolInfo.revision}
                          |Please check and update your BuildTools."""
-              .trimMargin("|")
-          )
-          return@filter false
-        }
-
-        // make sure the dest folders exist once per ABI
-        val objAbiFolder = File(objOutputDir, abi.device)
-        if (!objAbiFolder.isDirectory && !objAbiFolder.mkdirs()) {
-          throw IOException("Unable to create dir ${objAbiFolder.absolutePath}")
-        }
-
-        val libAbiFolder = File(libOutputDir, abi.device)
-        if (!libAbiFolder.isDirectory && !libAbiFolder.mkdirs()) {
-          throw IOException("Unable to create dir ${libAbiFolder.absolutePath}")
-        }
-
-        true
+            .trimMargin("|")
+        )
+        return@filter false
       }
+
+      // make sure the dest folders exist once per ABI
+      val objAbiFolder = File(objOutputDir, abi.device)
+      if (!objAbiFolder.isDirectory && !objAbiFolder.mkdirs()) {
+        throw IOException("Unable to create dir ${objAbiFolder.absolutePath}")
+      }
+
+      val libAbiFolder = File(libOutputDir, abi.device)
+      if (!libAbiFolder.isDirectory && !libAbiFolder.mkdirs()) {
+        throw IOException("Unable to create dir ${libAbiFolder.absolutePath}")
+      }
+
+      true
+    }
 
     for (bcFile in files) {
       for (abi in abisToBuild) {

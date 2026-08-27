@@ -18,15 +18,25 @@ package com.android.build.api.variant.impl
 
 import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.api.dsl.DefaultConfig
+import com.android.build.api.variant.TestSuiteSourceSet
 import com.android.build.api.variant.VariantBuilder
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.core.dsl.VariantDslInfo
 import com.android.build.gradle.internal.dsl.AgpTestSuiteImpl
+import com.android.build.gradle.internal.manifest.ManifestData
+import com.android.build.gradle.internal.manifest.ManifestDataProvider
 import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.services.VariantServices
+import com.android.build.gradle.internal.services.createVariantPropertiesApiServices
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
+import com.android.build.gradle.internal.testsuites.impl.JUnitEngineSpecForVariantBuilder
 import com.android.build.gradle.internal.testsuites.impl.TestSuiteBuilderImpl
 import com.android.build.gradle.internal.variant.VariantComponentInfo
+import com.google.common.truth.Truth.assertThat
+import java.io.File
+import org.gradle.api.provider.MapProperty
+import org.gradle.api.provider.Property
+import org.gradle.api.provider.Provider
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.mockito.Mockito.mock
@@ -39,7 +49,7 @@ class TestSuiteImplTest {
   fun testAndroidResourcesIncluded() {
     val testSuiteBuilder = mock(TestSuiteBuilderImpl::class.java)
     val agpTestSuite = mock(AgpTestSuiteImpl::class.java)
-    val junitEngineSpec = mock(com.android.build.gradle.internal.testsuites.impl.JUnitEngineSpecForVariantBuilder::class.java)
+    val junitEngineSpec = mock(JUnitEngineSpecForVariantBuilder::class.java)
     `when`(testSuiteBuilder.testSuite).thenReturn(agpTestSuite)
     `when`(agpTestSuite.requiresUpdateTask).thenReturn(false)
     `when`(testSuiteBuilder.junitEngineSpec).thenReturn(junitEngineSpec)
@@ -49,13 +59,13 @@ class TestSuiteImplTest {
       mock(VariantComponentInfo::class.java) as VariantComponentInfo<VariantBuilder, VariantDslInfo, VariantCreationConfig>
     val global = mock(GlobalTaskCreationConfig::class.java)
     val variantServices = mock(VariantServices::class.java)
-    val mapProperty = mock(org.gradle.api.provider.MapProperty::class.java) as org.gradle.api.provider.MapProperty<String, String>
+    val mapProperty = mock(MapProperty::class.java) as MapProperty<String, String>
     `when`(variantServices.mapPropertyOf(String::class.java, String::class.java, mapOf())).thenReturn(mapProperty)
-    val booleanProperty = mock(org.gradle.api.provider.Property::class.java) as org.gradle.api.provider.Property<Boolean>
+    val booleanProperty = mock(Property::class.java) as Property<Boolean>
     `when`(booleanProperty.get()).thenReturn(true)
     `when`(variantServices.propertyOf(Boolean::class.java, false)).thenReturn(booleanProperty)
     `when`(variantServices.propertyOf(Boolean::class.java, true)).thenReturn(booleanProperty)
-    val booleanProvider = mock(org.gradle.api.provider.Provider::class.java) as org.gradle.api.provider.Provider<Boolean>
+    val booleanProvider = mock(Provider::class.java) as Provider<Boolean>
     `when`(booleanProvider.get()).thenReturn(false)
     `when`(variantServices.provider<Boolean>(any())).thenReturn(booleanProvider)
     val services = mock(TaskCreationServices::class.java)
@@ -72,9 +82,97 @@ class TestSuiteImplTest {
         services = services,
         artifacts = artifacts,
         defaultConfig = defaultConfig,
-        manifestDataProviderBuilder = { mock(com.android.build.gradle.internal.manifest.ManifestDataProvider::class.java) },
+        manifestDataProviderBuilder = { mock(ManifestDataProvider::class.java) },
       )
 
     assertEquals(true, testSuiteImpl.androidResourcesIncluded)
+  }
+
+  @Test
+  fun testInstrumentationRunnerFromManifest() {
+    val testSuiteBuilder = mock(TestSuiteBuilderImpl::class.java)
+    val agpTestSuite = mock(AgpTestSuiteImpl::class.java)
+    val junitEngineSpec = mock(JUnitEngineSpecForVariantBuilder::class.java)
+    `when`(testSuiteBuilder.testSuite).thenReturn(agpTestSuite)
+    `when`(agpTestSuite.requiresUpdateTask).thenReturn(false)
+    `when`(testSuiteBuilder.junitEngineSpec).thenReturn(junitEngineSpec)
+
+    val variantServices = createVariantPropertiesApiServices()
+    val mapProp = variantServices.mapPropertyOf(String::class.java, String::class.java, emptyMap())
+    `when`(junitEngineSpec.inputProperties).thenReturn(mapProp)
+
+    val testedVariantComponent =
+      mock(VariantComponentInfo::class.java) as VariantComponentInfo<VariantBuilder, VariantDslInfo, VariantCreationConfig>
+    val global = mock(GlobalTaskCreationConfig::class.java)
+    val services = mock(TaskCreationServices::class.java)
+    val artifacts = mock(ArtifactsImpl::class.java)
+    val defaultConfig = mock(DefaultConfig::class.java)
+
+    val manifestData = ManifestData(instrumentationRunner = "com.example.custom.CustomRunner")
+    val manifestDataProvider = mock(ManifestDataProvider::class.java)
+    `when`(manifestDataProvider.manifestData).thenReturn(variantServices.provider { manifestData })
+
+    val testSuiteImpl =
+      TestSuiteImpl(
+        testSuiteBuilder = testSuiteBuilder,
+        sourceContainers = emptyList(),
+        testedVariantComponent = testedVariantComponent,
+        global = global,
+        variantServices = variantServices,
+        services = services,
+        artifacts = artifacts,
+        defaultConfig = defaultConfig,
+        manifestDataProviderBuilder = { manifestDataProvider },
+      )
+
+    val testApkSource = mock(TestSuiteSourceSet.TestApk::class.java)
+    `when`(testApkSource.manifestFile).thenReturn(File("fake/path/AndroidManifest.xml"))
+
+    val runnerProvider = testSuiteImpl.instrumentationRunner(testApkSource)
+    assertThat(runnerProvider.get()).isEqualTo("com.example.custom.CustomRunner")
+  }
+
+  @Test
+  fun testInstrumentationRunnerFallbackWhenManifestEmpty() {
+    val testSuiteBuilder = mock(TestSuiteBuilderImpl::class.java)
+    val agpTestSuite = mock(AgpTestSuiteImpl::class.java)
+    val junitEngineSpec = mock(JUnitEngineSpecForVariantBuilder::class.java)
+    `when`(testSuiteBuilder.testSuite).thenReturn(agpTestSuite)
+    `when`(agpTestSuite.requiresUpdateTask).thenReturn(false)
+    `when`(testSuiteBuilder.junitEngineSpec).thenReturn(junitEngineSpec)
+
+    val variantServices = createVariantPropertiesApiServices()
+    val mapProp = variantServices.mapPropertyOf(String::class.java, String::class.java, emptyMap())
+    `when`(junitEngineSpec.inputProperties).thenReturn(mapProp)
+
+    val testedVariantComponent =
+      mock(VariantComponentInfo::class.java) as VariantComponentInfo<VariantBuilder, VariantDslInfo, VariantCreationConfig>
+    val global = mock(GlobalTaskCreationConfig::class.java)
+    val services = mock(TaskCreationServices::class.java)
+    val artifacts = mock(ArtifactsImpl::class.java)
+    val defaultConfig = mock(DefaultConfig::class.java)
+
+    val manifestData = ManifestData(instrumentationRunner = null)
+    val manifestDataProvider = mock(ManifestDataProvider::class.java)
+    `when`(manifestDataProvider.manifestData).thenReturn(variantServices.provider { manifestData })
+
+    val testSuiteImpl =
+      TestSuiteImpl(
+        testSuiteBuilder = testSuiteBuilder,
+        sourceContainers = emptyList(),
+        testedVariantComponent = testedVariantComponent,
+        global = global,
+        variantServices = variantServices,
+        services = services,
+        artifacts = artifacts,
+        defaultConfig = defaultConfig,
+        manifestDataProviderBuilder = { manifestDataProvider },
+      )
+
+    val testApkSource = mock(TestSuiteSourceSet.TestApk::class.java)
+    `when`(testApkSource.manifestFile).thenReturn(File("fake/path/AndroidManifest.xml"))
+
+    val runnerProvider = testSuiteImpl.instrumentationRunner(testApkSource)
+    assertThat(runnerProvider.get()).isEqualTo("androidx.test.runner.AndroidJUnitRunner")
   }
 }

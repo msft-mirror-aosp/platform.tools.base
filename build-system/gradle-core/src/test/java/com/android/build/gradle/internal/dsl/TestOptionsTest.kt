@@ -117,4 +117,21 @@ class TestOptionsTest {
     val suite = wrapper.testOptions.screenshotTests.getByName("screenshotTest") as ScreenshotTestSuite
     assertThat(suite.engineVersion).isEqualTo("1.0")
   }
+
+  @Test
+  fun testBackupTestEnabledByDefault() {
+    val wrapper = dslServices.newDecoratedInstance(TestOptionsWrapper::class.java, dslServices)
+    wrapper.testOptions {
+      backupTests.create("myBackupTest") {
+        it.backupTestLibraryVersion = "0.0.1-dev"
+        it.targetVariants.add("debug")
+      }
+    }
+
+    val reporter = dslServices.issueReporter as FakeSyncIssueReporter
+    assertThat(reporter.errors).isEmpty()
+    val suite = wrapper.testOptions.backupTests.getByName("myBackupTest")
+    assertThat(suite.backupTestLibraryVersion).isEqualTo("0.0.1-dev")
+    assertThat(suite.targetVariants).containsExactly("debug")
+  }
 }

@@ -85,7 +85,6 @@ kotlin_test(
     deps = [
         ":builder",
         ":fixtures",
-        "//prebuilts/r8",
         "//tools/apkzlib",
         "//tools/base/annotations",
         "//tools/base/build-system:tools.apksig",
@@ -104,6 +103,7 @@ kotlin_test(
         "//tools/base/zipflinger",
         "@maven//:com.android.tools.desugar_jdk_libs",
         "@maven//:com.android.tools.desugar_jdk_libs_configuration",
+        "@maven//:com.android.tools.r8",
         "@maven//:com.google.code.gson.gson",
         "@maven//:com.google.jimfs.jimfs",
         "@maven//:com.google.truth.truth",
@@ -236,7 +236,6 @@ filegroup(
     ]) + [
         "NOTICE",
         "build.gradle",
-        "//prebuilts/r8",
     ],
     visibility = ["//tools/base/build-system:__pkg__"],
 )

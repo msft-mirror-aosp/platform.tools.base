@@ -24,14 +24,13 @@ import org.junit.Test
 class AppToAppDependencyTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication(":appA") {
-        android { namespace = "com.example.appa" }
-        dependencies { implementation(project(":appB")) }
-      }
-      androidApplication(":appB") {}
+  val rule = GradleRule.from {
+    androidApplication(":appA") {
+      android { namespace = "com.example.appa" }
+      dependencies { implementation(project(":appB")) }
     }
+    androidApplication(":appB") {}
+  }
 
   @Test
   fun build() {

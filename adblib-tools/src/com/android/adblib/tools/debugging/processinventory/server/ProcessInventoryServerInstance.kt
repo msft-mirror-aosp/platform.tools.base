@@ -63,20 +63,20 @@ internal class ProcessInventoryServerInstance(
     parentScope
       .launch {
         runCatching {
-            logger.info { "Starting server at server socket '$serverSocket'" }
-            while (true) {
-              // Accept one connection and handle it asynchronously, ensuring socket is closed
-              // in all cases (cancellation, errors and success)
-              serverSocket.accept().closeOnException { socketChannel ->
-                logger.debug { "Accepted new socket connection: $socketChannel" }
-                launch { RequestHandler(session, logger, serverInstanceDescription, activeDevicesMap, socketChannel).handleRequest() }
-                  .invokeOnCompletion {
-                    logger.debug(it) { "Closing socket channel for request" }
-                    socketChannel.close()
-                  }
-              }
+          logger.info { "Starting server at server socket '$serverSocket'" }
+          while (true) {
+            // Accept one connection and handle it asynchronously, ensuring socket is closed
+            // in all cases (cancellation, errors and success)
+            serverSocket.accept().closeOnException { socketChannel ->
+              logger.debug { "Accepted new socket connection: $socketChannel" }
+              launch { RequestHandler(session, logger, serverInstanceDescription, activeDevicesMap, socketChannel).handleRequest() }
+                .invokeOnCompletion {
+                  logger.debug(it) { "Closing socket channel for request" }
+                  socketChannel.close()
+                }
             }
           }
+        }
           .onFailure { throwable ->
             currentCoroutineContext().ensureActive()
             // Log exception (nothing else we can do)
@@ -106,9 +106,9 @@ internal class ProcessInventoryServerInstance(
      */
     suspend fun handleRequest() {
       runCatching {
-          logger.verbose { "Processing one request on client socket '$socketChannel'" }
-          processOneRequest()
-        }
+        logger.verbose { "Processing one request on client socket '$socketChannel'" }
+        processOneRequest()
+      }
         .onFailure { throwable ->
           currentCoroutineContext().ensureActive()
 

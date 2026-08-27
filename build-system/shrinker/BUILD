@@ -13,11 +13,11 @@ kotlin_library(
     resource_strip_prefix = "tools/base/build-system/shrinker",
     visibility = ["//visibility:public"],
     deps = [
-        "//prebuilts/r8",
         "//tools/base/build-system/aapt2-proto",
         "//tools/base/common:tools.common",
         "//tools/base/layoutlib-api:tools.layoutlib-api",
         "//tools/base/sdk-common:tools.sdk-common",
+        "@maven//:com.android.tools.r8",
         "@maven//:com.google.guava.guava",
         "@maven//:com.google.protobuf.protobuf-java",
     ],

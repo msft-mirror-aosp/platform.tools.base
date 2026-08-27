@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.testing.suites
 
-import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.api.variant.HasTestSuites
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
@@ -39,7 +38,7 @@ class TestTaskCustomConfigurationBlock {
             create("red") { it.dimension = "color" }
             create("blue") { it.dimension = "color" }
           }
-          testOptions.suites.create("first", AgpTestSuite::class.java) {
+          testOptions.customSuites.create("first") {
             it.useJunitEngine.apply { includeEngines.add("[engine:toy-junit-engine-for-tests]") }
             it.assets {}
             it.targetVariants.add("redDebug")
@@ -70,7 +69,7 @@ class TestTaskCustomConfigurationBlockAppCallback : ApplicationComponentCallback
   override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
     // Register a configuration block at the DSL level.
     androidComponents.finalizeDsl { android ->
-      android.testOptions.suites.getByName("first").configureTestTasks { context -> println("Task $name configured with $context") }
+      android.testOptions.customSuites.getByName("first").configureTestTasks { context -> println("Task $name configured with $context") }
     }
 
     // Register another configuration block at the variant level

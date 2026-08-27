@@ -51,14 +51,13 @@ class BuiltInKotlinAutomaticStdlibTest {
   /** Regression test for b/452246814 */
   @Test
   fun `test kotlin-stdlib automatically added and appears in Gradle module metadata`() {
-    val build =
-      rule.build {
-        androidLibrary {
-          pluginCallbacks += MavenPublishPluginCallback::class.java
-          applyPlugin(PluginType.MAVEN_PUBLISH)
-          android { publishing { singleVariant("release") } }
-        }
+    val build = rule.build {
+      androidLibrary {
+        pluginCallbacks += MavenPublishPluginCallback::class.java
+        applyPlugin(PluginType.MAVEN_PUBLISH)
+        android { publishing { singleVariant("release") } }
       }
+    }
 
     build.executor.run(":lib:generateMetadataFileForMavenPublication")
 
@@ -87,16 +86,15 @@ class BuiltInKotlinAutomaticStdlibTest {
   /** Regression test for b/443037365 and b/471410336. */
   @Test
   fun `test kotlin_stdlib_default_dependency=false and user adds kotlin-stdlib or kotlin-test-junit without version`() {
-    val build =
-      rule.build {
-        androidApplication {
-          dependencies {
-            implementation("org.jetbrains.kotlin:kotlin-stdlib")
-            implementation("org.jetbrains.kotlin:kotlin-test-junit")
-          }
+    val build = rule.build {
+      androidApplication {
+        dependencies {
+          implementation("org.jetbrains.kotlin:kotlin-stdlib")
+          implementation("org.jetbrains.kotlin:kotlin-test-junit")
         }
-        gradleProperties { add("kotlin.stdlib.default.dependency", "false") }
       }
+      gradleProperties { add("kotlin.stdlib.default.dependency", "false") }
+    }
     val result = build.executor.run(":app:dependencies", "--configuration", "debugCompileClasspath")
     result.assertOutputContains("+--- org.jetbrains.kotlin:kotlin-stdlib -> $BUILT_IN_KOTLIN_VERSION")
     result.assertOutputContains("+--- org.jetbrains.kotlin:kotlin-test-junit -> $BUILT_IN_KOTLIN_VERSION")
@@ -105,16 +103,15 @@ class BuiltInKotlinAutomaticStdlibTest {
   /** Regression test for b/450851465. */
   @Test
   fun `test kotlin_stdlib_default_dependency=false and user adds kotlin-stdlib without version, check no warnings when published`() {
-    val build =
-      rule.build {
-        androidLibrary {
-          pluginCallbacks += MavenPublishPluginCallback::class.java
-          applyPlugin(PluginType.MAVEN_PUBLISH)
-          android { publishing { singleVariant("release") } }
-          dependencies { implementation("org.jetbrains.kotlin:kotlin-stdlib") }
-        }
-        gradleProperties { add("kotlin.stdlib.default.dependency", "false") }
+    val build = rule.build {
+      androidLibrary {
+        pluginCallbacks += MavenPublishPluginCallback::class.java
+        applyPlugin(PluginType.MAVEN_PUBLISH)
+        android { publishing { singleVariant("release") } }
+        dependencies { implementation("org.jetbrains.kotlin:kotlin-stdlib") }
       }
+      gradleProperties { add("kotlin.stdlib.default.dependency", "false") }
+    }
 
     val result = build.executor.run(":lib:generatePomFileForMavenPublication")
     result.assertOutputDoesNotContain("suppressPomMetadataWarningsFor")

@@ -89,40 +89,39 @@ internal class AdbServerControllerImpl(private val host: AdbSessionHost, configu
   }
 
   private suspend inline fun transitionCurrentState(transition: State.(TransitionStatus) -> State) {
-    val transitionJob =
-      stateLock.withLock {
-        // Throw if [closed] was called
-        currentState.scope.ensureActive()
+    val transitionJob = stateLock.withLock {
+      // Throw if [closed] was called
+      currentState.scope.ensureActive()
 
-        val newState = currentState.transition(currentJobTransitionStatus)
+      val newState = currentState.transition(currentJobTransitionStatus)
 
-        // Await on the same job if we are transitioning to the same state
-        if (currentState == newState) {
-          return@withLock currentJob
-        }
-
-        currentJob?.cancelAndJoin()
-
-        val newTransitionJob =
-          currentState.scope
-            .async {
-              when (newState) {
-                is InitialState -> Unit // should not happen
-                is StartingState -> newState.performStart()
-                is StoppingState -> newState.performStop()
-                is RestartingState -> newState.performRestart()
-              }
-            }
-            .also { currentJobTransitionStatus = TransitionStatus.IN_PROGRESS }
-
-        newTransitionJob.invokeOnCompletion { e ->
-          currentJobTransitionStatus = if (e == null) TransitionStatus.COMPLETED_OK else TransitionStatus.COMPLETED_FAILURE
-        }
-
-        currentState = newState
-        currentJob = newTransitionJob
-        newTransitionJob
+      // Await on the same job if we are transitioning to the same state
+      if (currentState == newState) {
+        return@withLock currentJob
       }
+
+      currentJob?.cancelAndJoin()
+
+      val newTransitionJob =
+        currentState.scope
+          .async {
+            when (newState) {
+              is InitialState -> Unit // should not happen
+              is StartingState -> newState.performStart()
+              is StoppingState -> newState.performStop()
+              is RestartingState -> newState.performRestart()
+            }
+          }
+          .also { currentJobTransitionStatus = TransitionStatus.IN_PROGRESS }
+
+      newTransitionJob.invokeOnCompletion { e ->
+        currentJobTransitionStatus = if (e == null) TransitionStatus.COMPLETED_OK else TransitionStatus.COMPLETED_FAILURE
+      }
+
+      currentState = newState
+      currentJob = newTransitionJob
+      newTransitionJob
+    }
 
     try {
       transitionJob?.awaitOrThrow()

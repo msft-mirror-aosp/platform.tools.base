@@ -97,7 +97,9 @@ internal class CompileSdkDelegate(
           val expected = if (value.startsWith("android-")) value.substring(8) else "S"
           issueReporter.reportError(
             IssueReporter.Type.COMPILE_SDK_PREVIEW_INVALID,
-            RuntimeException("Invalid value for compileSdkPreview (\"$value\"). Value must be a platform preview name (e.g. \"$expected\")"),
+            RuntimeException(
+              "Invalid value for compileSdkPreview (\"$value\"). Value must be a platform preview name (e.g. \"$expected\")"
+            ),
           )
         }
       }
@@ -300,15 +302,14 @@ class MinSdkDelegate(
 
   override fun setMinSdkVersion(minSdkVersion: String?) {
     minSdk {
-      version =
-        minSdkVersion?.let { minSdkVersion ->
-          val apiLevel = minSdkVersion.apiVersionToInt()
-          if (apiLevel != null) {
-            release(apiLevel)
-          } else {
-            preview(minSdkVersion)
-          }
+      version = minSdkVersion?.let { minSdkVersion ->
+        val apiLevel = minSdkVersion.apiVersionToInt()
+        if (apiLevel != null) {
+          release(apiLevel)
+        } else {
+          preview(minSdkVersion)
         }
+      }
     }
   }
 

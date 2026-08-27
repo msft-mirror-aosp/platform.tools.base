@@ -55,25 +55,24 @@ import org.objectweb.asm.Opcodes
 class PreAndPostCompilationCodeVisibilityTest {
 
   @get:Rule
-  val project =
-    GradleRule.from {
-      androidApplication {
-        android {}
-        dependencies {
-          api(project(":lib"))
-          testImplementation("junit:junit:4.12")
-          androidTestImplementation("junit:junit:4.12")
-        }
-        pluginCallbacks += LegacyCallback::class.java
-        pluginCallbacks += AddPostCompilationCallback::class.java
+  val project = GradleRule.from {
+    androidApplication {
+      android {}
+      dependencies {
+        api(project(":lib"))
+        testImplementation("junit:junit:4.12")
+        androidTestImplementation("junit:junit:4.12")
       }
-      androidLibrary { pluginCallbacks += AddPostCompilationCallback::class.java }
-      androidTest(":test") {
-        android { targetProjectPath = ":app" }
-        pluginCallbacks += CheckVisibilityCallback::class.java
-      }
-      gradleProperties { add(BooleanOption.USE_NEW_DSL, false) }
+      pluginCallbacks += LegacyCallback::class.java
+      pluginCallbacks += AddPostCompilationCallback::class.java
     }
+    androidLibrary { pluginCallbacks += AddPostCompilationCallback::class.java }
+    androidTest(":test") {
+      android { targetProjectPath = ":app" }
+      pluginCallbacks += CheckVisibilityCallback::class.java
+    }
+    gradleProperties { add(BooleanOption.USE_NEW_DSL, false) }
+  }
 
   open class LegacyCallback : LegacyApplicationCallback {
 
@@ -225,8 +224,9 @@ abstract class CheckVisibilityTask : DefaultTask() {
     if (appClasses == null) {
       throw RuntimeException("Application code not present on test module classpath")
     }
-    val libClasses =
-      compileClasspath.firstOrNull { it.absolutePath.contains(InternalArtifactType.COMPILE_LIBRARY_CLASSES_JAR.getFolderName()) }
+    val libClasses = compileClasspath.firstOrNull {
+      it.absolutePath.contains(InternalArtifactType.COMPILE_LIBRARY_CLASSES_JAR.getFolderName())
+    }
     if (libClasses == null) {
       throw RuntimeException("Library code not present on test module classpath")
     }

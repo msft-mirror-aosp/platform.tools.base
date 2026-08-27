@@ -27,23 +27,22 @@ import org.junit.Test
 class MisplacedMissingDimensionStrategyTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication { dependencies { implementation(project(DEFAULT_LIB_PATH)) } }
-      androidLibrary {
-        android {
-          defaultConfig {
-            missingDimensionStrategy("libdim", "foo")
-            flavorDimensions += "libdim"
+  val rule = GradleRule.from {
+    androidApplication { dependencies { implementation(project(DEFAULT_LIB_PATH)) } }
+    androidLibrary {
+      android {
+        defaultConfig {
+          missingDimensionStrategy("libdim", "foo")
+          flavorDimensions += "libdim"
 
-            productFlavors {
-              create("foo") { it.dimension = "libdim" }
-              create("bar") { it.dimension = "libdim" }
-            }
+          productFlavors {
+            create("foo") { it.dimension = "libdim" }
+            create("bar") { it.dimension = "libdim" }
           }
         }
       }
     }
+  }
 
   @Test
   fun checkCorrectError() {
@@ -62,38 +61,37 @@ class MisplacedMissingDimensionStrategyTest {
 class MisplacedMissingDimensionStrategyWrongBehaviorTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        android {
-          flavorDimensions += "color"
+  val rule = GradleRule.from {
+    androidApplication {
+      android {
+        flavorDimensions += "color"
 
-          productFlavors {
-            create("foo") {
-              it.dimension = "color"
-              it.isDefault = true
-              // This here will fail build (as expected). Because the
-              // missingDimensionStrategy doesn't list any of the flavors that exist
-              // in the library, the build should fail as there is an
-              // ambiguous match of variant in the dependency on the library.
-              it.missingDimensionStrategy("colorLib", "wrong")
-            }
-            create("loo") {}
+        productFlavors {
+          create("foo") {
+            it.dimension = "color"
+            it.isDefault = true
+            // This here will fail build (as expected). Because the
+            // missingDimensionStrategy doesn't list any of the flavors that exist
+            // in the library, the build should fail as there is an
+            // ambiguous match of variant in the dependency on the library.
+            it.missingDimensionStrategy("colorLib", "wrong")
           }
+          create("loo") {}
         }
-        dependencies { implementation(project(DEFAULT_LIB_PATH)) }
       }
-      androidLibrary {
-        android {
-          flavorDimensions += "colorLib"
+      dependencies { implementation(project(DEFAULT_LIB_PATH)) }
+    }
+    androidLibrary {
+      android {
+        flavorDimensions += "colorLib"
 
-          productFlavors {
-            create("foo") { it.isDefault = true }
-            create("loo") { it.dimension = "colorLib" }
-          }
+        productFlavors {
+          create("foo") { it.isDefault = true }
+          create("loo") { it.dimension = "colorLib" }
         }
       }
     }
+  }
 
   @Test
   fun checkCorrectError() {

@@ -360,27 +360,26 @@ class ModelBuilder<ExtensionT : CommonExtension>(
     val testSuiteBuilders = gatherTestSuites(variantModel.testSuites)
 
     // gather test suites
-    val testSuites: List<BasicTestSuiteImpl> =
-      testSuiteBuilders.map { testSuiteBuilder ->
-        val testSuiteSourcesModel = getTestSuiteSources(sourceSets = testSuiteBuilder.suite.sources, isGenerated = false)
+    val testSuites: List<BasicTestSuiteImpl> = testSuiteBuilders.map { testSuiteBuilder ->
+      val testSuiteSourcesModel = getTestSuiteSources(sourceSets = testSuiteBuilder.suite.sources, isGenerated = false)
 
-        BasicTestSuiteImpl(
-          name = testSuiteBuilder.suite.name,
-          assets = testSuiteSourcesModel.assets,
-          hostJars = testSuiteSourcesModel.hostJar,
-          testApks = testSuiteSourcesModel.testApk,
-          targetsByVariant =
-            testSuiteBuilder.variantsTargets.map { testSuiteVariantBuilder ->
-              TestSuiteVariantTargetImpl(
-                testSuiteVariantBuilder.targetedVariant,
-                testSuiteVariantBuilder.targets.map { mapEntry ->
-                  val variantSpecificTarget = mapEntry.value
-                  TestSuiteTargetImpl(variantSpecificTarget.name, variantSpecificTarget.testTaskName, variantSpecificTarget.targetDevices)
-                },
-              )
-            },
-        )
-      }
+      BasicTestSuiteImpl(
+        name = testSuiteBuilder.suite.name,
+        assets = testSuiteSourcesModel.assets,
+        hostJars = testSuiteSourcesModel.hostJar,
+        testApks = testSuiteSourcesModel.testApk,
+        targetsByVariant =
+          testSuiteBuilder.variantsTargets.map { testSuiteVariantBuilder ->
+            TestSuiteVariantTargetImpl(
+              testSuiteVariantBuilder.targetedVariant,
+              testSuiteVariantBuilder.targets.map { mapEntry ->
+                val variantSpecificTarget = mapEntry.value
+                TestSuiteTargetImpl(variantSpecificTarget.name, variantSpecificTarget.testTaskName, variantSpecificTarget.targetDevices)
+              },
+            )
+          },
+      )
+    }
 
     // gather variants
     val variantList = variants.map { createBasicVariant(it, buildFeatures) }
@@ -659,36 +658,34 @@ class ModelBuilder<ExtensionT : CommonExtension>(
     var namespace: String? = null
     var androidTestNamespace: String? = null
     var testFixturesNamespace: String? = null
-    val variantList =
-      variants.map {
-        namespace = it.namespace.get()
-        if (androidTestNamespace == null && it is HasDeviceTestsCreationConfig) {
-          it.defaultDeviceTest?.let { androidTest -> androidTestNamespace = androidTest.namespace.get() }
-        }
-        if (testFixturesNamespace == null && it is HasTestFixtures) {
-          testFixturesNamespace = it.testFixtures?.namespace?.get()
-        }
-
-        checkProguardFiles(it)
-
-        createVariant(it, instantAppResultMap)
+    val variantList = variants.map {
+      namespace = it.namespace.get()
+      if (androidTestNamespace == null && it is HasDeviceTestsCreationConfig) {
+        it.defaultDeviceTest?.let { androidTest -> androidTestNamespace = androidTest.namespace.get() }
       }
+      if (testFixturesNamespace == null && it is HasTestFixtures) {
+        testFixturesNamespace = it.testFixtures?.namespace?.get()
+      }
+
+      checkProguardFiles(it)
+
+      createVariant(it, instantAppResultMap)
+    }
 
     val desugarLibConfig = if (extension.compileOptions.isCoreLibraryDesugaringEnabled) getDesugarLibConfigFile(project) else listOf()
 
     val testSuiteBuilders: Collection<TestSuiteModelBuilder> = gatherTestSuites(variantModel.testSuites)
 
-    val suites =
-      testSuiteBuilders.map { testSuiteBuilder ->
-        val testSuiteSourcesModel = getTestSuiteSources(sourceSets = testSuiteBuilder.suite.sources, isGenerated = true)
-        TestSuiteImpl(
-          name = testSuiteBuilder.suite.name,
-          junitEngineInfo = JUnitEngineInfoImpl(testSuiteBuilder.suite.junitEngineSpec.includeEngines),
-          generatedAssets = testSuiteSourcesModel.assets,
-          generatedHostJars = testSuiteSourcesModel.hostJar,
-          generatedTestApks = testSuiteSourcesModel.testApk,
-        )
-      }
+    val suites = testSuiteBuilders.map { testSuiteBuilder ->
+      val testSuiteSourcesModel = getTestSuiteSources(sourceSets = testSuiteBuilder.suite.sources, isGenerated = true)
+      TestSuiteImpl(
+        name = testSuiteBuilder.suite.name,
+        junitEngineInfo = JUnitEngineInfoImpl(testSuiteBuilder.suite.junitEngineSpec.includeEngines),
+        generatedAssets = testSuiteSourcesModel.assets,
+        generatedHostJars = testSuiteSourcesModel.hostJar,
+        generatedTestApks = testSuiteSourcesModel.testApk,
+      )
+    }
     //        val suites = variantModel.testSuites.map { testSuite ->
     //            val testSuiteSourcesModel = getTestSuiteSources(
     //                sourceSets = testSuite.sources,
@@ -827,36 +824,33 @@ class ModelBuilder<ExtensionT : CommonExtension>(
           listOf(RUNTIME_CLASSPATH)
         }
 
-    val results =
-      components.associateWith { component ->
-        val failures = mutableListOf<Throwable>()
-        val graphs =
-          configTypes.associateWith { configType ->
-            fun getAdditionalArtifacts(type: AdditionalArtifactType) =
-              if (parameter.additionalArtifactsInModel)
-                variant.variantDependencies.getAdditionalArtifacts(configType, type).artifactFiles.files
-              else null
+    val results = components.associateWith { component ->
+      val failures = mutableListOf<Throwable>()
+      val graphs = configTypes.associateWith { configType ->
+        fun getAdditionalArtifacts(type: AdditionalArtifactType) =
+          if (parameter.additionalArtifactsInModel) variant.variantDependencies.getAdditionalArtifacts(configType, type).artifactFiles.files
+          else null
 
-            val artifacts = getArtifactsForModelBuilder(component, configType) { failures.addAll(it) }
+        val artifacts = getArtifactsForModelBuilder(component, configType) { failures.addAll(it) }
 
-            artifacts.map {
-              val javadoc = getAdditionalArtifacts(AdditionalArtifactType.JAVADOC)?.single()
-              val source = getAdditionalArtifacts(AdditionalArtifactType.SOURCE)?.toList() ?: listOf()
-              val additionalArtifacts = AdditionalArtifacts(javadoc, source)
-              libraryService.getLibrary(it, additionalArtifacts).key
-            }
-          }
-
-        ArtifactDependenciesFlatListImpl(
-          graphs[COMPILE_CLASSPATH]!!,
-          graphs[RUNTIME_CLASSPATH],
-          failures.map {
-            // Try and extract the failed component. Unfortunately this is not provided
-            // by gradle when requesting artifacts.
-            UnresolvedDependencyImpl((it as? ModuleVersionResolveException)?.selector?.toString() ?: "", it.message)
-          },
-        )
+        artifacts.map {
+          val javadoc = getAdditionalArtifacts(AdditionalArtifactType.JAVADOC)?.single()
+          val source = getAdditionalArtifacts(AdditionalArtifactType.SOURCE)?.toList() ?: listOf()
+          val additionalArtifacts = AdditionalArtifacts(javadoc, source)
+          libraryService.getLibrary(it, additionalArtifacts).key
+        }
       }
+
+      ArtifactDependenciesFlatListImpl(
+        graphs[COMPILE_CLASSPATH]!!,
+        graphs[RUNTIME_CLASSPATH],
+        failures.map {
+          // Try and extract the failed component. Unfortunately this is not provided
+          // by gradle when requesting artifacts.
+          UnresolvedDependencyImpl((it as? ModuleVersionResolveException)?.selector?.toString() ?: "", it.message)
+        },
+      )
+    }
 
     return VariantDependenciesFlatListImpl(
       name = variantName,

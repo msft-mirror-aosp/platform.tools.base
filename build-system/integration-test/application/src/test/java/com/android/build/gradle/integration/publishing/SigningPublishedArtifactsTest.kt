@@ -32,30 +32,29 @@ import org.junit.Test
 class SigningPublishedArtifactsTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidLibrary {
-        applyPlugin(PluginType.MAVEN_PUBLISH)
+  val rule = GradleRule.from {
+    androidLibrary {
+      applyPlugin(PluginType.MAVEN_PUBLISH)
 
-        android {
-          publishing {
-            multipleVariants {
-              allVariants()
-              withSourcesJar()
-              withJavadocJar()
-            }
+      android {
+        publishing {
+          multipleVariants {
+            allVariants()
+            withSourcesJar()
+            withJavadocJar()
           }
         }
+      }
 
-        pluginCallbacks += SigningCallback::class.java
-      }
-      settings { addRepository("repo") }
-      gradleProperties {
-        add("signing.keyId", "70E99D38")
-        add("signing.password", "Testing123")
-        add("signing.secretKeyRingFile", "secring.gpg")
-      }
+      pluginCallbacks += SigningCallback::class.java
     }
+    settings { addRepository("repo") }
+    gradleProperties {
+      add("signing.keyId", "70E99D38")
+      add("signing.password", "Testing123")
+      add("signing.secretKeyRingFile", "secring.gpg")
+    }
+  }
 
   class SigningCallback : GenericCallback {
     override fun handleProject(project: Project) {

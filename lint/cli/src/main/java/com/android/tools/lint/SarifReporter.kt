@@ -668,7 +668,7 @@ constructor(client: LintCliClient, output: File) : Reporter(client, output) {
 
         writer.indent(--indent).write("},\n")
         writer.indent(indent++).write("\"insertedContent\": {\n")
-        writer.indent(indent).write("\"text\": \"${replacement.escapeJson()}\\n\"\n")
+        writer.indent(indent).write("\"text\": \"${replacement.escapeJson()}\"\n")
         writer.indent(--indent).write("}\n")
         writer.indent(--indent).write("}${if (index < edits.size - 1) "," else ""}\n")
       }

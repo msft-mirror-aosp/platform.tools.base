@@ -34,13 +34,12 @@ import org.junit.Test
 class ModelSyncFilesTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        android { namespace = "com.example.hello_world" }
-        pluginCallbacks += ModelSyncFilesTestCallback::class.java
-      }
+  val rule = GradleRule.from {
+    androidApplication {
+      android { namespace = "com.example.hello_world" }
+      pluginCallbacks += ModelSyncFilesTestCallback::class.java
     }
+  }
 
   @Test
   fun testApplicationIdNotSetByTask() {

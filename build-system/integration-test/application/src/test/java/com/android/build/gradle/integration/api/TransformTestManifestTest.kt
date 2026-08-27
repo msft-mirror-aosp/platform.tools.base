@@ -34,13 +34,12 @@ import org.junit.Test
 class TransformTestManifestTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidLibrary {
-        android { testOptions { unitTests { androidResources { isIncludeAndroidResources = true } } } }
-        pluginCallbacks += TransformTestManifestCallback::class.java
-      }
+  val rule = GradleRule.from {
+    androidLibrary {
+      android { testOptions { unitTests { androidResources { isIncludeAndroidResources = true } } } }
+      pluginCallbacks += TransformTestManifestCallback::class.java
     }
+  }
 
   @Test
   fun testTransformMergedManifestForAndroidTest() {

@@ -41,20 +41,12 @@ class DependencyConstraintsIntegrationTest {
   @JvmField
   @Rule
   val app: GradleTestProject =
-    GradleTestProject.builder()
-      .withName("app")
-      .fromTestApp(MinimalSubProject.app())
-      .withAdditionalMavenRepo(mavenRepoGenerator)
-      .create()
+    GradleTestProject.builder().withName("app").fromTestApp(MinimalSubProject.app()).withAdditionalMavenRepo(mavenRepoGenerator).create()
 
   @JvmField
   @Rule
   val lib: GradleTestProject =
-    GradleTestProject.builder()
-      .withName("lib")
-      .fromTestApp(MinimalSubProject.lib())
-      .withAdditionalMavenRepo(mavenRepoGenerator)
-      .create()
+    GradleTestProject.builder().withName("lib").fromTestApp(MinimalSubProject.lib()).withAdditionalMavenRepo(mavenRepoGenerator).create()
 
   @Before
   fun setUpDependencies() {

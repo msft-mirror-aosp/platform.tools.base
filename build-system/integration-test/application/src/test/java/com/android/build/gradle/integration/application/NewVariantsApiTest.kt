@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.application
 
+import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.api.variant.LibraryAndroidComponentsExtension
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
@@ -27,110 +28,107 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
-import com.android.build.api.artifact.SingleArtifact
-
 /** Modern GradleRule-based test for the new Variants API, assuring no coverage drop. Semantic copy of [VariantsApiTest]. */
 @RunWith(Parameterized::class)
 class NewVariantsApiTest(val plugin: String) {
 
-    companion object {
-        @Parameterized.Parameters(name = "plugin_{0}")
-        @JvmStatic
-        fun data(): Collection<Array<Any>> {
-            return listOf(
-                arrayOf("com.android.application"),
-                arrayOf("com.android.library")
-            )
-        }
+  companion object {
+    @Parameterized.Parameters(name = "plugin_{0}")
+    @JvmStatic
+    fun data(): Collection<Array<Any>> {
+      return listOf(
+        arrayOf("com.android.application"),
+        arrayOf("com.android.library"),
+      )
     }
+  }
 
-    class AppCallback : ApplicationComponentCallback {
-        override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
-            androidComponents.beforeVariants { variantBuilder ->
-                variantBuilder.hostTests[com.android.build.api.variant.HostTestBuilder.UNIT_TEST_TYPE]?.enable = true
-            }
-            androidComponents.onVariants { variant ->
-                checkNotNull(variant.name)
-                checkNotNull(variant.flavorName)
-                checkNotNull(variant.buildType)
+  class AppCallback : ApplicationComponentCallback {
+    override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
+      androidComponents.beforeVariants { variantBuilder ->
+        variantBuilder.hostTests[com.android.build.api.variant.HostTestBuilder.UNIT_TEST_TYPE]?.enable = true
+      }
+      androidComponents.onVariants { variant ->
+        checkNotNull(variant.name)
+        checkNotNull(variant.flavorName)
+        checkNotNull(variant.buildType)
 
-                // Assert new API replacements for assemble/processManifest/processResources
-                checkNotNull(variant.artifacts.get(SingleArtifact.APK))
-                checkNotNull(variant.artifacts.get(SingleArtifact.MERGED_MANIFEST))
-                checkNotNull(variant.sources.res?.all)
+        // Assert new API replacements for assemble/processManifest/processResources
+        checkNotNull(variant.artifacts.get(SingleArtifact.APK))
+        checkNotNull(variant.artifacts.get(SingleArtifact.MERGED_MANIFEST))
+        checkNotNull(variant.sources.res?.all)
 
-                if (variant.buildType == "debug") {
-                    val androidTest = checkNotNull(variant.androidTest)
-                    checkNotNull(androidTest.name)
-                    checkNotNull(androidTest.artifacts.get(SingleArtifact.APK))
-                    checkNotNull(androidTest.artifacts.get(SingleArtifact.MERGED_MANIFEST))
-                    checkNotNull(androidTest.sources.res?.all)
-                } else {
-                    check(variant.androidTest == null)
-                }
-
-                check(variant.hostTests.size == 1) { "hostTests size is ${variant.hostTests.size}! keys are: ${variant.hostTests.keys}" }
-                variant.hostTests.values.forEach { hostTest ->
-                    checkNotNull(hostTest.name)
-                    checkNotNull(hostTest.sources.java?.all)
-                }
-            }
-        }
-    }
-
-    class LibCallback : LibraryComponentCallback {
-        override fun handleExtension(project: Project, androidComponents: LibraryAndroidComponentsExtension) {
-            androidComponents.beforeVariants { variantBuilder ->
-                variantBuilder.hostTests[com.android.build.api.variant.HostTestBuilder.UNIT_TEST_TYPE]?.enable = true
-            }
-            androidComponents.onVariants { variant ->
-                checkNotNull(variant.name)
-                checkNotNull(variant.flavorName)
-                checkNotNull(variant.buildType)
-
-                // Assert new API replacements for assemble/processManifest/processResources
-                checkNotNull(variant.artifacts.get(SingleArtifact.AAR))
-                checkNotNull(variant.artifacts.get(SingleArtifact.MERGED_MANIFEST))
-                checkNotNull(variant.sources.res?.all)
-
-                if (variant.buildType == "debug") {
-                    val androidTest = checkNotNull(variant.androidTest)
-                    checkNotNull(androidTest.name)
-                    checkNotNull(androidTest.artifacts.get(SingleArtifact.APK))
-                    checkNotNull(androidTest.artifacts.get(SingleArtifact.MERGED_MANIFEST))
-                    checkNotNull(androidTest.sources.res?.all)
-                } else {
-                    check(variant.androidTest == null)
-                }
-
-                check(variant.hostTests.size == 1) { "hostTests size is ${variant.hostTests.size}! keys are: ${variant.hostTests.keys}" }
-                variant.hostTests.values.forEach { hostTest ->
-                    checkNotNull(hostTest.name)
-                    checkNotNull(hostTest.sources.java?.all)
-                }
-            }
-        }
-    }
-
-    private fun createGradleRule() =
-        GradleRule.configure().from {
-            if (plugin == "com.android.application") {
-                androidApplication {
-                    pluginCallbacks += AppCallback::class.java
-                }
-            } else {
-                androidLibrary {
-                    pluginCallbacks += LibCallback::class.java
-                }
-            }
+        if (variant.buildType == "debug") {
+          val androidTest = checkNotNull(variant.androidTest)
+          checkNotNull(androidTest.name)
+          checkNotNull(androidTest.artifacts.get(SingleArtifact.APK))
+          checkNotNull(androidTest.artifacts.get(SingleArtifact.MERGED_MANIFEST))
+          checkNotNull(androidTest.sources.res?.all)
+        } else {
+          check(variant.androidTest == null)
         }
 
-    @get:Rule
-    val rule = createGradleRule()
-
-    @Test
-    fun buildScriptRuns() {
-        val build = rule.build {}
-        build.executor.run("clean")
+        check(variant.hostTests.size == 1) { "hostTests size is ${variant.hostTests.size}! keys are: ${variant.hostTests.keys}" }
+        variant.hostTests.values.forEach { hostTest ->
+          checkNotNull(hostTest.name)
+          checkNotNull(hostTest.sources.java?.all)
+        }
+      }
     }
+  }
+
+  class LibCallback : LibraryComponentCallback {
+    override fun handleExtension(project: Project, androidComponents: LibraryAndroidComponentsExtension) {
+      androidComponents.beforeVariants { variantBuilder ->
+        variantBuilder.hostTests[com.android.build.api.variant.HostTestBuilder.UNIT_TEST_TYPE]?.enable = true
+      }
+      androidComponents.onVariants { variant ->
+        checkNotNull(variant.name)
+        checkNotNull(variant.flavorName)
+        checkNotNull(variant.buildType)
+
+        // Assert new API replacements for assemble/processManifest/processResources
+        checkNotNull(variant.artifacts.get(SingleArtifact.AAR))
+        checkNotNull(variant.artifacts.get(SingleArtifact.MERGED_MANIFEST))
+        checkNotNull(variant.sources.res?.all)
+
+        if (variant.buildType == "debug") {
+          val androidTest = checkNotNull(variant.androidTest)
+          checkNotNull(androidTest.name)
+          checkNotNull(androidTest.artifacts.get(SingleArtifact.APK))
+          checkNotNull(androidTest.artifacts.get(SingleArtifact.MERGED_MANIFEST))
+          checkNotNull(androidTest.sources.res?.all)
+        } else {
+          check(variant.androidTest == null)
+        }
+
+        check(variant.hostTests.size == 1) { "hostTests size is ${variant.hostTests.size}! keys are: ${variant.hostTests.keys}" }
+        variant.hostTests.values.forEach { hostTest ->
+          checkNotNull(hostTest.name)
+          checkNotNull(hostTest.sources.java?.all)
+        }
+      }
+    }
+  }
+
+  private fun createGradleRule() =
+    GradleRule.configure().from {
+      if (plugin == "com.android.application") {
+        androidApplication {
+          pluginCallbacks += AppCallback::class.java
+        }
+      } else {
+        androidLibrary {
+          pluginCallbacks += LibCallback::class.java
+        }
+      }
+    }
+
+  @get:Rule val rule = createGradleRule()
+
+  @Test
+  fun buildScriptRuns() {
+    val build = rule.build {}
+    build.executor.run("clean")
+  }
 }

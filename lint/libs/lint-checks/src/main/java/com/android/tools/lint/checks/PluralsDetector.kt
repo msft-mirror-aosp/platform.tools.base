@@ -121,15 +121,14 @@ class PluralsDetector : ResourceXmlDetector() {
     missing.removeAll(defined)
     if (!missing.isEmpty()) {
       val examplesLookup = PluralExamplesLookup.getInstance()
-      val withExamples =
-        missing.map { form ->
-          val example = examplesLookup.findExample(language, form.name)?.formattedWithNumber()
-          if (example != null) {
-            "`${form.name}` (e.g. \"$example\")"
-          } else {
-            "`${form.name}`"
-          }
+      val withExamples = missing.map { form ->
+        val example = examplesLookup.findExample(language, form.name)?.formattedWithNumber()
+        if (example != null) {
+          "`${form.name}` (e.g. \"$example\")"
+        } else {
+          "`${form.name}`"
         }
+      }
       val languageDescription = getLanguageDescription(language)
       val message =
         if (withExamples.size == 1) {

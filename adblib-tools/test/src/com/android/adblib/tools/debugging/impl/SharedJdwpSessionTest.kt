@@ -199,25 +199,23 @@ class SharedJdwpSessionTest : AdbLibToolsTestBase() {
         .receiveFirst { onlineReplyPacket ->
           if (onlineReplyPacket.id == commandPacket.id) {
             isThreadSafeAndImmutable = onlineReplyPacket.isThreadSafeAndImmutable
-            onlineReceivePayload =
-              onlineReplyPacket.withPayload {
-                // First 8 bytes should be DDMS packet header
-                // Next 4 bytes is the length of the `REAL` packet reply payload
-                val bytes = it.toByteArray(onlineReplyPacket.payloadLength)
-                bytes.copyOfRange(12, bytes.size)
-              }
+            onlineReceivePayload = onlineReplyPacket.withPayload {
+              // First 8 bytes should be DDMS packet header
+              // Next 4 bytes is the length of the `REAL` packet reply payload
+              val bytes = it.toByteArray(onlineReplyPacket.payloadLength)
+              bytes.copyOfRange(12, bytes.size)
+            }
             true
           } else {
             false
           }
         }
-    val offlineReceivePayload =
-      offlineReplyPacket.withPayload {
-        // First 8 bytes should be DDMS packet header
-        // Next 4 bytes is the length of the `REAL` packet reply payload
-        val bytes = it.toByteArray(offlineReplyPacket.payloadLength)
-        bytes.copyOfRange(12, bytes.size)
-      }
+    val offlineReceivePayload = offlineReplyPacket.withPayload {
+      // First 8 bytes should be DDMS packet header
+      // Next 4 bytes is the length of the `REAL` packet reply payload
+      val bytes = it.toByteArray(offlineReplyPacket.payloadLength)
+      bytes.copyOfRange(12, bytes.size)
+    }
 
     // Assert
     assertNotNull(onlineReceivePayload)

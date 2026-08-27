@@ -119,11 +119,11 @@ class Adb(private val adbPath: String, private val executor: ProcessExecutor) {
    */
   fun forward(deviceId: String, hostPort: Int, devicePort: Int): String {
     return execCmdSync(
-      deviceId = deviceId,
-      adbCmd = "forward tcp:$hostPort tcp:$devicePort",
-      hasFailed = { exitValue != 0 || (hostPort != 0 && !fullOut.contains("$hostPort")) },
-    )
-    .stdout
+        deviceId = deviceId,
+        adbCmd = "forward tcp:$hostPort tcp:$devicePort",
+        hasFailed = { exitValue != 0 || (hostPort != 0 && !fullOut.contains("$hostPort")) },
+      )
+      .stdout
   }
 
   /**

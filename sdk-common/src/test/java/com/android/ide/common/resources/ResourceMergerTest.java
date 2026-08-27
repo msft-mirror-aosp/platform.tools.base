@@ -71,7 +71,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -179,6 +178,231 @@ public class ResourceMergerTest extends BaseTestCase {
                 "Output colors should contain androidprv:privateAttr usage. Content:\n"
                         + outputColorsContent,
                 outputColorsContent.contains("androidprv:privateAttr=\"someValue\""));
+    }
+
+    @Test
+    public void testNamespaceInContentKept() throws Exception {
+        // Create a temporary directory structure for the resource set
+        File root = mTemporaryFolder.newFolder("res");
+        File valuesDir = new File(root, "values");
+        valuesDir.mkdirs();
+
+        // Create a colors file that uses the androidprv namespace in text content
+        String colorsContent =
+                "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                        + "<resources"
+                        + " xmlns:androidprv=\"http://schemas.android.com/apk/prv/res/android\">\n"
+                        + "    <color"
+                        + " name=\"test_color\">@androidprv:color/system_brand_a_light</color>\n"
+                        + "</resources>";
+        File colorsFile = new File(valuesDir, "colors.xml");
+        Files.asCharSink(colorsFile, StandardCharsets.UTF_8).write(colorsContent);
+
+        // Create a ResourceSet and add the source
+        ResourceSet resourceSet = createResourceSet("main");
+        resourceSet.setDontNormalizeQualifiers(true);
+        resourceSet.addSource(root);
+        RecordingLogger logger = new RecordingLogger();
+        resourceSet.loadFromFiles(logger);
+        checkLogger(logger);
+
+        // Create a ResourceMerger and add the data set
+        ResourceMerger resourceMerger = new ResourceMerger(0);
+        resourceMerger.addDataSet(resourceSet);
+
+        // Merge the resources to a temporary output folder
+        File outputFolder = mTemporaryFolder.newFolder("out");
+        MergedResourceWriter writer = getConsumer(outputFolder);
+        resourceMerger.mergeData(writer, false /*doCleanUp*/);
+
+        // Verify colors output
+        File outputColorsFile = new File(outputFolder, "values" + File.separator + "values.xml");
+        assertTrue("Output values file should exist", outputColorsFile.exists());
+
+        String outputColorsContent =
+                Files.asCharSource(outputColorsFile, StandardCharsets.UTF_8).read();
+
+        // Check if the namespace declaration is preserved in colors
+        assertTrue(
+                "Output values should contain xmlns:androidprv definition. Content:\n"
+                        + outputColorsContent,
+                outputColorsContent.contains(
+                        "xmlns:androidprv=\"http://schemas.android.com/apk/prv/res/android\""));
+
+        // Check if the reference is preserved
+        assertTrue(
+                "Output values should contain @androidprv:color/system_brand_a_light reference."
+                        + " Content:\n"
+                        + outputColorsContent,
+                outputColorsContent.contains("@androidprv:color/system_brand_a_light"));
+    }
+
+    @Test
+    public void testMultipleNamespacePrefixesForSameUriPreserved() throws Exception {
+        // Create a temporary directory structure for the resource set
+        File root = mTemporaryFolder.newFolder("res_multiple_ns");
+        File valuesDir = new File(root, "values");
+        valuesDir.mkdirs();
+
+        // Create two resource files defining different prefixes (xmlns:prv and xmlns:androidprv)
+        // for the same URI
+        String colorsContent1 =
+                "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                        + "<resources"
+                        + " xmlns:prv=\"http://schemas.android.com/apk/prv/res/android\">\n"
+                        + "    <color"
+                        + " name=\"color1\">@prv:color/system_brand_a_light</color>\n"
+                        + "</resources>";
+        File colorsFile1 = new File(valuesDir, "colors1.xml");
+        Files.asCharSink(colorsFile1, StandardCharsets.UTF_8).write(colorsContent1);
+
+        String colorsContent2 =
+                "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                        + "<resources"
+                        + " xmlns:androidprv=\"http://schemas.android.com/apk/prv/res/android\">\n"
+                        + "    <color"
+                        + " name=\"color2\">@androidprv:color/system_brand_b_light</color>\n"
+                        + "</resources>";
+        File colorsFile2 = new File(valuesDir, "colors2.xml");
+        Files.asCharSink(colorsFile2, StandardCharsets.UTF_8).write(colorsContent2);
+
+        // Create a ResourceSet and add the source
+        ResourceSet resourceSet = createResourceSet("main");
+        resourceSet.setDontNormalizeQualifiers(true);
+        resourceSet.addSource(root);
+        RecordingLogger logger = new RecordingLogger();
+        resourceSet.loadFromFiles(logger);
+        checkLogger(logger);
+
+        // Create a ResourceMerger and add the data set
+        ResourceMerger resourceMerger = new ResourceMerger(0);
+        resourceMerger.addDataSet(resourceSet);
+
+        // Merge the resources to a temporary output folder
+        File outputFolder = mTemporaryFolder.newFolder("out_multiple_ns");
+        MergedResourceWriter writer = getConsumer(outputFolder);
+        resourceMerger.mergeData(writer, false /*doCleanUp*/);
+
+        // Verify colors output
+        File outputColorsFile = new File(outputFolder, "values" + File.separator + "values.xml");
+        assertTrue("Output values file should exist", outputColorsFile.exists());
+
+        String outputColorsContent =
+                Files.asCharSource(outputColorsFile, StandardCharsets.UTF_8).read();
+
+        // Check if both namespace declarations are preserved in the merged file
+        assertTrue(
+                "Output values should contain xmlns:prv definition. Content:\n"
+                        + outputColorsContent,
+                outputColorsContent.contains(
+                        "xmlns:prv=\"http://schemas.android.com/apk/prv/res/android\""));
+
+        assertTrue(
+                "Output values should contain xmlns:androidprv definition. Content:\n"
+                        + outputColorsContent,
+                outputColorsContent.contains(
+                        "xmlns:androidprv=\"http://schemas.android.com/apk/prv/res/android\""));
+    }
+
+    @Test
+    public void testChildNodeNamespaceDeclarationPreserved() throws Exception {
+        File root = mTemporaryFolder.newFolder("res_child_ns");
+        File valuesDir = new File(root, "values");
+        valuesDir.mkdirs();
+
+        String stylesContent =
+                "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                        + "<resources>\n"
+                        + "    <style name=\"test_style\">\n"
+                        + "        <item name=\"color_attr\""
+                        + " xmlns:androidprv=\"http://schemas.android.com/apk/prv/res/android\">"
+                        + "@androidprv:color/system_brand_a_light</item>\n"
+                        + "    </style>\n"
+                        + "</resources>";
+        File stylesFile = new File(valuesDir, "styles.xml");
+        Files.asCharSink(stylesFile, StandardCharsets.UTF_8).write(stylesContent);
+
+        ResourceSet resourceSet = createResourceSet("main");
+        resourceSet.setDontNormalizeQualifiers(true);
+        resourceSet.addSource(root);
+        RecordingLogger logger = new RecordingLogger();
+        resourceSet.loadFromFiles(logger);
+        checkLogger(logger);
+
+        ResourceMerger resourceMerger = new ResourceMerger(0);
+        resourceMerger.addDataSet(resourceSet);
+
+        File outputFolder = mTemporaryFolder.newFolder("out_child_ns");
+        MergedResourceWriter writer = getConsumer(outputFolder);
+        resourceMerger.mergeData(writer, false /*doCleanUp*/);
+
+        File outputValuesFile = new File(outputFolder, "values" + File.separator + "values.xml");
+        assertTrue("Output values file should exist", outputValuesFile.exists());
+
+        String outputValuesContent =
+                Files.asCharSource(outputValuesFile, StandardCharsets.UTF_8).read();
+
+        assertTrue(
+                "Output values should contain xmlns:androidprv definition from child node."
+                        + " Content:\n"
+                        + outputValuesContent,
+                outputValuesContent.contains(
+                        "xmlns:androidprv=\"http://schemas.android.com/apk/prv/res/android\""));
+    }
+
+    @Test
+    public void testSamePrefixDifferentUriCollisionHandled() throws Exception {
+        File root = mTemporaryFolder.newFolder("res_prefix_collision");
+        File valuesDir = new File(root, "values");
+        valuesDir.mkdirs();
+
+        String content1 =
+                "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                        + "<resources"
+                        + " xmlns:custom=\"http://schemas.android.com/apk/res/custom1\">\n"
+                        + "    <color name=\"color1\">@custom:color/c1</color>\n"
+                        + "</resources>";
+        File file1 = new File(valuesDir, "file1.xml");
+        Files.asCharSink(file1, StandardCharsets.UTF_8).write(content1);
+
+        String content2 =
+                "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                        + "<resources"
+                        + " xmlns:custom=\"http://schemas.android.com/apk/res/custom2\">\n"
+                        + "    <color name=\"color2\">@custom:color/c2</color>\n"
+                        + "</resources>";
+        File file2 = new File(valuesDir, "file2.xml");
+        Files.asCharSink(file2, StandardCharsets.UTF_8).write(content2);
+
+        ResourceSet resourceSet = createResourceSet("main");
+        resourceSet.setDontNormalizeQualifiers(true);
+        resourceSet.addSource(root);
+        RecordingLogger logger = new RecordingLogger();
+        resourceSet.loadFromFiles(logger);
+        checkLogger(logger);
+
+        ResourceMerger resourceMerger = new ResourceMerger(0);
+        resourceMerger.addDataSet(resourceSet);
+
+        File outputFolder = mTemporaryFolder.newFolder("out_prefix_collision");
+        MergedResourceWriter writer = getConsumer(outputFolder);
+        resourceMerger.mergeData(writer, false /*doCleanUp*/);
+
+        File outputValuesFile = new File(outputFolder, "values" + File.separator + "values.xml");
+        assertTrue("Output values file should exist", outputValuesFile.exists());
+
+        String outputValuesContent =
+                Files.asCharSource(outputValuesFile, StandardCharsets.UTF_8).read();
+
+        assertTrue(
+                "Output values should contain custom1 URI definition. Content:\n"
+                        + outputValuesContent,
+                outputValuesContent.contains("http://schemas.android.com/apk/res/custom1"));
+
+        assertTrue(
+                "Output values should contain custom2 URI definition. Content:\n"
+                        + outputValuesContent,
+                outputValuesContent.contains("http://schemas.android.com/apk/res/custom2"));
     }
 
     @Test
@@ -1288,7 +1512,8 @@ public class ResourceMergerTest extends BaseTestCase {
         assertFalse(replacedByAlias.isTouched());
         assertTrue(replacedByAlias.isRemoved());
         assertNull(replacedByAlias.getValue());
-        assertEquals("file_replaced_by_alias.xml", replacedByAlias.getSourceFile().getFile().getName());
+        assertEquals(
+                "file_replaced_by_alias.xml", replacedByAlias.getSourceFile().getFile().getName());
         // 2nd version is the new one
         replacedByAlias = layoutReplacedByAlias.get(1);
         assertFalse(replacedByAlias.isWritten());
@@ -1314,7 +1539,8 @@ public class ResourceMergerTest extends BaseTestCase {
         assertTrue(replacedByFile.isTouched());
         assertFalse(replacedByFile.isRemoved());
         assertNull(replacedByFile.getValue());
-        assertEquals("alias_replaced_by_file.xml", replacedByFile.getSourceFile().getFile().getName());
+        assertEquals(
+                "alias_replaced_by_file.xml", replacedByFile.getSourceFile().getFile().getName());
 
         // write and check the result of writeResourceFolder
         // copy the current resOut which serves as pre incremental update state.

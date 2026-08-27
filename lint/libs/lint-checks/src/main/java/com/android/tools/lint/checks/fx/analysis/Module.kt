@@ -603,14 +603,13 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
       internal fun <FX : Any> AnnotationParser<FX>.nearestBaseAnns(
         evaluator: JavaEvaluator,
         baseMethods: Array<PsiMethod>,
-      ): List<EffectAnnotation.Explicit<FX>> =
-        baseMethods.flatMap { base ->
-          val baseMethod = base.toUElement() as UMethod
-          when (val baseAnn = parseMethodImmediateAnnotations(evaluator, baseMethod)) {
-            null -> nearestBaseAnns(evaluator, base.findSuperMethods())
-            else -> listOf(EffectAnnotation.Explicit(baseAnn, baseMethod))
-          }
+      ): List<EffectAnnotation.Explicit<FX>> = baseMethods.flatMap { base ->
+        val baseMethod = base.toUElement() as UMethod
+        when (val baseAnn = parseMethodImmediateAnnotations(evaluator, baseMethod)) {
+          null -> nearestBaseAnns(evaluator, base.findSuperMethods())
+          else -> listOf(EffectAnnotation.Explicit(baseAnn, baseMethod))
         }
+      }
     }
   }
 }

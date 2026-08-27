@@ -147,8 +147,9 @@ fun configureKotlinCompileTasks(
   // Map tasks' name prefixes to their corresponding variants (e.g., `compileDebugKotlin` to
   // `debug`). Note that the keys are name prefixes because KMP projects have task names such as
   // `compileDebugKotlinAndroid` instead of `compileDebugKotlin`.
-  val taskNamePrefixToVariant: Map<String, ComponentCreationConfig> =
-    creationConfigs.associateBy { it.computeTaskNameInternal("compile", "Kotlin") }
+  val taskNamePrefixToVariant: Map<String, ComponentCreationConfig> = creationConfigs.associateBy {
+    it.computeTaskNameInternal("compile", "Kotlin")
+  }
 
   project.tasks.withType(KotlinCompile::class.java).configureEach { kotlinCompile ->
     // Note: We won't run `action` if we can't find a matching variant for the task (e.g.,
@@ -374,8 +375,9 @@ internal fun maybeAddKotlinStdlibDependency(
   androidSourceSets: NamedDomainObjectContainer<out AndroidSourceSet>,
 ) {
 
-  fun Configuration.hasKotlinStdlib(): Boolean =
-    dependencies.any { it is ExternalDependency && it.group == KOTLIN_GROUP && it.name == KOTLIN_STDLIB }
+  fun Configuration.hasKotlinStdlib(): Boolean = dependencies.any {
+    it is ExternalDependency && it.group == KOTLIN_GROUP && it.name == KOTLIN_STDLIB
+  }
 
   fun kotlinStdlibDefaultDependencyProperty(): Boolean? =
     project.providers.gradleProperty("kotlin.stdlib.default.dependency").orNull?.lowercase(Locale.US)?.toBooleanStrictOrNull()

@@ -30,43 +30,42 @@ class AiPackTest {
   private val packageName = "com.example.aipacktestapp"
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidJavaApplication {
-        android {
-          namespace = packageName
-          assetPacks += listOf(":customModelInstallTime", ":customModelFastFollow", ":modelAdaptationOnDemand")
-        }
-      }
-
-      aiPack(":customModelInstallTime") {
-        aiPack {
-          packName.set("customModelInstallTime")
-          dynamicDelivery { deliveryType.set("install-time") }
-        }
-        files { add("src/main/assets/customModel.tflite", """This is a custom model delivered at install time.""") }
-      }
-
-      aiPack(":customModelFastFollow") {
-        aiPack {
-          packName.set("customModelFastFollow")
-          dynamicDelivery { deliveryType.set("fast-follow") }
-        }
-        files { add("src/main/assets/customModel.jax", """This is a custom model delivered after install time.""") }
-      }
-
-      aiPack(":modelAdaptationOnDemand") {
-        aiPack {
-          packName.set("modelAdaptationOnDemand")
-          dynamicDelivery { deliveryType.set("on-demand") }
-          modelDependency {
-            aiModelPackageName.set("com.foundation.app")
-            aiModelName.set("com.foundation.llm")
-          }
-        }
-        files { add("src/main/assets/adaptation.lora", """This is an adaptation file delivered on-demand.""") }
+  val rule = GradleRule.from {
+    androidJavaApplication {
+      android {
+        namespace = packageName
+        assetPacks += listOf(":customModelInstallTime", ":customModelFastFollow", ":modelAdaptationOnDemand")
       }
     }
+
+    aiPack(":customModelInstallTime") {
+      aiPack {
+        packName.set("customModelInstallTime")
+        dynamicDelivery { deliveryType.set("install-time") }
+      }
+      files { add("src/main/assets/customModel.tflite", """This is a custom model delivered at install time.""") }
+    }
+
+    aiPack(":customModelFastFollow") {
+      aiPack {
+        packName.set("customModelFastFollow")
+        dynamicDelivery { deliveryType.set("fast-follow") }
+      }
+      files { add("src/main/assets/customModel.jax", """This is a custom model delivered after install time.""") }
+    }
+
+    aiPack(":modelAdaptationOnDemand") {
+      aiPack {
+        packName.set("modelAdaptationOnDemand")
+        dynamicDelivery { deliveryType.set("on-demand") }
+        modelDependency {
+          aiModelPackageName.set("com.foundation.app")
+          aiModelName.set("com.foundation.llm")
+        }
+      }
+      files { add("src/main/assets/adaptation.lora", """This is an adaptation file delivered on-demand.""") }
+    }
+  }
 
   @Test
   fun buildDebugBundle() {

@@ -28,6 +28,7 @@ import com.android.tools.render.common.RenderProblem
 import com.android.tools.render.common.ScreenshotError
 import com.android.tools.render.compose.ComposeScreenshot
 import com.android.tools.render.discovery.PreviewDiscoveryEngine
+import com.android.tools.render.validation.PreviewValidator
 import com.android.tools.rendering.RenderLogger
 import com.android.tools.rendering.RenderResult
 import com.android.tools.rendering.RenderService
@@ -56,12 +57,14 @@ class Renderer(
   private val moduleClassLoaderManager: StandaloneModuleClassLoaderManager,
 ) : Closeable {
   private val logger = Logger.getLogger(Renderer::class.java.name)
+  private val discoveryEngine by lazy { PreviewDiscoveryEngine(module) }
+  private val previewValidator = PreviewValidator()
 
   /**
    * Renders a given [PreviewScreenshot] and saves the output as PNG files.
    *
-   * For a single [PreviewScreenshot] that may have multiple configurations (e.g., different devices or themes), this function generates a
-   * corresponding rendered image for each one.
+   * Discovers all previews declared on the screenshot's method (including multi-previews), validates each preview's parameters, and renders
+   * them into PNG images.
    *
    * @param screenshot The metadata of the Jetpack Compose `@Preview` to render.
    * @param outputFolderPath The root directory where the resulting PNG images will be saved.
@@ -69,67 +72,120 @@ class Renderer(
    *   any potential errors.
    */
   fun render(screenshot: PreviewScreenshot, outputFolderPath: String): List<PreviewScreenshotResult> {
-    val effectiveScreenshot = resolvePreviewParameters(screenshot)
-    val previewElement = effectiveScreenshot.toPreviewElement(module)
+    // If the screenshot is non-Compose or its preview and method parameters have already been resolved/specified,
+    // bypass bytecode preview discovery and render it directly.
+    if (screenshot !is ComposeScreenshot || screenshot.previewParams.isNotEmpty() || screenshot.methodParams.isNotEmpty()) {
+      return renderResolvedScreenshot(screenshot, outputFolderPath)
+    }
+
+    val packagePath = screenshot.methodFQN.substringBeforeLast(".").replace(".", File.separator)
+    val baseResultId = screenshot.previewId.substringAfterLast(".")
+    var imageCounter = 0
+
+    return discoveryEngine.discoverAllPreviews(screenshot.methodFQN, screenshot.previewId).flatMap { method ->
+      if (method.methodValidationResult.hasErrors) {
+        val defaultRelativeImagePath = packagePath + File.separator + "${baseResultId}_${imageCounter++}.png"
+        listOf(
+          PreviewScreenshotResult(
+            screenshot.previewId,
+            screenshot.methodFQN,
+            defaultRelativeImagePath,
+            method.methodValidationResult.toScreenshotError(),
+          )
+        )
+      } else {
+        method.previews.flatMap { currentScreenshot ->
+          val validationResult = previewValidator.validate(currentScreenshot)
+          if (validationResult.hasErrors) {
+            val defaultRelativeImagePath = packagePath + File.separator + "${baseResultId}_${imageCounter++}.png"
+            listOf(
+              PreviewScreenshotResult(
+                currentScreenshot.previewId,
+                currentScreenshot.methodFQN,
+                defaultRelativeImagePath,
+                validationResult.toScreenshotError(),
+              )
+            )
+          } else {
+            if (validationResult.hasWarnings) {
+              val warningMessages = validationResult.warnings.joinToString("; ") { it.message }
+              logger.log(Level.WARNING, "Preview parameter validation warning for ${currentScreenshot.methodFQN}: $warningMessages")
+            }
+            renderScreenshotElement(currentScreenshot, outputFolderPath, packagePath, baseResultId) { imageCounter++ }
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Directly renders a pre-configured or non-Compose [PreviewScreenshot] without performing bytecode preview discovery.
+   *
+   * Validates the screenshot configuration and outputs the rendered PNG file(s) or records validation errors if parameters are invalid.
+   */
+  private fun renderResolvedScreenshot(screenshot: PreviewScreenshot, outputFolderPath: String): List<PreviewScreenshotResult> {
+    val packagePath = screenshot.methodFQN.substringBeforeLast(".").replace(".", File.separator)
+    val baseResultId = screenshot.previewId.substringAfterLast(".")
+    val validationResult = previewValidator.validate(screenshot)
+    return if (validationResult.hasErrors) {
+      val defaultRelativeImagePath = packagePath + File.separator + "${baseResultId}_0.png"
+      listOf(
+        PreviewScreenshotResult(screenshot.previewId, screenshot.methodFQN, defaultRelativeImagePath, validationResult.toScreenshotError())
+      )
+    } else {
+      if (validationResult.hasWarnings) {
+        val warningMessages = validationResult.warnings.joinToString("; ") { it.message }
+        logger.log(Level.WARNING, "Preview parameter validation warning for ${screenshot.methodFQN}: $warningMessages")
+      }
+      var imageCounter = 0
+      renderScreenshotElement(screenshot, outputFolderPath, packagePath, baseResultId) { imageCounter++ }
+    }
+  }
+
+  private fun renderScreenshotElement(
+    screenshot: PreviewScreenshot,
+    outputFolderPath: String,
+    packagePath: String,
+    baseResultId: String,
+    nextImageIndex: () -> Int,
+  ): List<PreviewScreenshotResult> {
+    val previewElement = screenshot.toPreviewElement(module)
     val renderRequest =
       RenderRequest(configurationModifier = previewElement::applyTo, xmlLayoutsProvider = { previewElement.resolveXmlLayouts() })
 
     return render(renderRequest)
-      .withIndex()
-      .map { (index, value) ->
-        val (config, renderResult) = value
-        val previewId = screenshot.previewId
-        val resultId = "${previewId.substringAfterLast(".")}_$index"
+      .map { (config, renderResult) ->
+        val index = nextImageIndex()
+        val resultId = "${baseResultId}_$index"
         val imageName = "$resultId.png"
-        val methodFQN = screenshot.methodFQN
-        val relativeImagePath = methodFQN.substringBeforeLast(".").replace(".", File.separator) + File.separator + imageName
-        val screenshotResult =
-          try {
-            val imageRendered = postProcessRenderedImage(config, renderResult)
-            if (imageRendered != null) {
-              val imagePath = Paths.get(outputFolderPath, relativeImagePath)
-              try {
-                Files.createDirectories(imagePath.parent)
-                val imgFile = imagePath.toFile()
-                imgFile.createNewFile()
-                ImageIO.write(imageRendered, "png", imgFile)
-              } catch (e: IOException) {
-                logger.log(Level.SEVERE, "Failed to write image to $imagePath", e)
-              }
-            }
-
-            val screenshotError = extractError(renderResult, imageRendered)
-            PreviewScreenshotResult(previewId, methodFQN, relativeImagePath, screenshotError)
-          } catch (t: Throwable) {
-            PreviewScreenshotResult(previewId, methodFQN, relativeImagePath, ScreenshotError(t))
-          } finally {
-            Disposer.dispose(renderResult)
+        val relativeImagePath = packagePath + File.separator + imageName
+        try {
+          val imageRendered = postProcessRenderedImage(config, renderResult)
+          if (imageRendered != null) {
+            saveImage(imageRendered, outputFolderPath, relativeImagePath)
           }
-        screenshotResult
+
+          val screenshotError = extractError(renderResult, imageRendered)
+          PreviewScreenshotResult(screenshot.previewId, screenshot.methodFQN, relativeImagePath, screenshotError)
+        } catch (t: Throwable) {
+          PreviewScreenshotResult(screenshot.previewId, screenshot.methodFQN, relativeImagePath, ScreenshotError(t))
+        } finally {
+          Disposer.dispose(renderResult)
+        }
       }
       .toList()
   }
 
-  /**
-   * Resolves and populates preview parameters for the given [screenshot] if they were not explicitly provided.
-   *
-   * When callers (such as CLI tools) submit render requests specifying only the method FQN and preview ID, this method utilizes
-   * [PreviewDiscoveryEngine] to inspect the compiled bytecode, discover the target `@Preview` annotation, and populate missing
-   * configuration values before Layoutlib rendering.
-   *
-   * @param screenshot The input preview screenshot request.
-   * @return An updated [PreviewScreenshot] containing discovered parameters, or the original [screenshot] if parameters were already
-   *   specified or no bytecode annotations were found.
-   */
-  private fun resolvePreviewParameters(screenshot: PreviewScreenshot): PreviewScreenshot {
-    if (screenshot !is ComposeScreenshot || screenshot.previewParams.isNotEmpty()) {
-      return screenshot
+  private fun saveImage(image: BufferedImage, outputFolderPath: String, relativeImagePath: String) {
+    val imagePath = Paths.get(outputFolderPath, relativeImagePath)
+    try {
+      Files.createDirectories(imagePath.parent)
+      val imgFile = imagePath.toFile()
+      imgFile.createNewFile()
+      ImageIO.write(image, "png", imgFile)
+    } catch (e: IOException) {
+      logger.log(Level.SEVERE, "Failed to write image to $imagePath", e)
     }
-
-    val discoveryEngine = PreviewDiscoveryEngine(module)
-    val discovered = discoveryEngine.discover(screenshot.methodFQN, screenshot.previewId) ?: return screenshot
-
-    return screenshot.copy(previewParams = discovered.previewParams)
   }
 
   fun render(request: RenderRequest): Sequence<Pair<Configuration, RenderResult>> {

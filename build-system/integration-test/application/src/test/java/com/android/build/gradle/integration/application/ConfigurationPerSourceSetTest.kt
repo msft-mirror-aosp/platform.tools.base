@@ -92,13 +92,12 @@ class ConfigurationPerSourceSetTest {
 
   @Test
   fun testBasicUsageKmp() {
-    val build =
-      kmpRule.build {
-        androidKotlinMultiplatformLibrary(":library") {
-          pluginCallbacks += BasicUsageCallbackKMP::class.java
-          dependencies { add("androidMainFoo", "com.example:main:1.0.0") }
-        }
+    val build = kmpRule.build {
+      androidKotlinMultiplatformLibrary(":library") {
+        pluginCallbacks += BasicUsageCallbackKMP::class.java
+        dependencies { add("androidMainFoo", "com.example:main:1.0.0") }
       }
+    }
 
     val result =
       build.executor
@@ -129,26 +128,25 @@ class ConfigurationPerSourceSetTest {
 
   @Test
   fun testBasicUsage() {
-    val build =
-      rule.build {
-        androidApplication {
-          pluginCallbacks += BasicUsageCallback::class.java
-          dependencies {
-            add("foo", "com.example:main:1.0.0")
-            add("debugFoo", "com.example:debug:1.0.0")
-            add("releaseFoo", "com.example:release:1.0.0")
-            add("basicFoo", "com.example:basic:1.0.0")
-            add("proFoo", "com.example:pro:1.0.0")
-            add("playFoo", "com.example:play:1.0.0")
-            add("otherFoo", "com.example:other:1.0.0")
-            add("testFoo", "com.example:test:1.0.0")
-            add("androidTestFoo", "com.example:android-test:1.0.0")
-            add("androidTestDebugFoo", "com.example:android-test-debug:1.0.0")
-            add("androidTestProFoo", "com.example:android-test-pro:1.0.0")
-            add("testFixturesFoo", "com.example:test-fixtures:1.0.0")
-          }
+    val build = rule.build {
+      androidApplication {
+        pluginCallbacks += BasicUsageCallback::class.java
+        dependencies {
+          add("foo", "com.example:main:1.0.0")
+          add("debugFoo", "com.example:debug:1.0.0")
+          add("releaseFoo", "com.example:release:1.0.0")
+          add("basicFoo", "com.example:basic:1.0.0")
+          add("proFoo", "com.example:pro:1.0.0")
+          add("playFoo", "com.example:play:1.0.0")
+          add("otherFoo", "com.example:other:1.0.0")
+          add("testFoo", "com.example:test:1.0.0")
+          add("androidTestFoo", "com.example:android-test:1.0.0")
+          add("androidTestDebugFoo", "com.example:android-test-debug:1.0.0")
+          add("androidTestProFoo", "com.example:android-test-pro:1.0.0")
+          add("testFixturesFoo", "com.example:test-fixtures:1.0.0")
         }
       }
+    }
     // Add .with(BooleanOption.ENABLE_PROFILE_JSON, true) as regression test for b/393189008
     val result = build.executor.with(BooleanOption.ENABLE_PROFILE_JSON, true).run("printFooInputs")
     ScannerSubject.assertThat(result.stdout)
@@ -196,26 +194,25 @@ class ConfigurationPerSourceSetTest {
 
   @Test
   fun testLegacyUsage() {
-    val build =
-      rule.build {
-        androidApplication {
-          pluginCallbacks += LegacyUsageCallback::class.java
-          dependencies {
-            add("ksp", "com.example:main:1.0.0")
-            add("kspDebug", "com.example:debug:1.0.0")
-            add("kspRelease", "com.example:release:1.0.0")
-            add("kspBasic", "com.example:basic:1.0.0")
-            add("kspPro", "com.example:pro:1.0.0")
-            add("kspPlay", "com.example:play:1.0.0")
-            add("kspOther", "com.example:other:1.0.0")
-            add("kspTest", "com.example:test:1.0.0")
-            add("kspAndroidTest", "com.example:android-test:1.0.0")
-            add("kspAndroidTestDebug", "com.example:android-test-debug:1.0.0")
-            add("kspAndroidTestPro", "com.example:android-test-pro:1.0.0")
-            add("kspTestFixtures", "com.example:test-fixtures:1.0.0")
-          }
+    val build = rule.build {
+      androidApplication {
+        pluginCallbacks += LegacyUsageCallback::class.java
+        dependencies {
+          add("ksp", "com.example:main:1.0.0")
+          add("kspDebug", "com.example:debug:1.0.0")
+          add("kspRelease", "com.example:release:1.0.0")
+          add("kspBasic", "com.example:basic:1.0.0")
+          add("kspPro", "com.example:pro:1.0.0")
+          add("kspPlay", "com.example:play:1.0.0")
+          add("kspOther", "com.example:other:1.0.0")
+          add("kspTest", "com.example:test:1.0.0")
+          add("kspAndroidTest", "com.example:android-test:1.0.0")
+          add("kspAndroidTestDebug", "com.example:android-test-debug:1.0.0")
+          add("kspAndroidTestPro", "com.example:android-test-pro:1.0.0")
+          add("kspTestFixtures", "com.example:test-fixtures:1.0.0")
         }
       }
+    }
     val result = build.executor.run("printKspInputs")
     ScannerSubject.assertThat(result.stdout)
       .contains(

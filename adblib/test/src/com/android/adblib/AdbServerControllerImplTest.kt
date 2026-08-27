@@ -657,21 +657,21 @@ class AdbServerControllerImplTest {
     val startStopJobs =
       List(totalOperations) {
         launch {
-            try {
-              if (index == totalOperations - 1) {
-                // This is the last operation. Make it run quickly.
-                processRunner.delayByMs = 10
-              }
-              if (index++ % 2 == 0) {
-                controller.start()
-              } else {
-                controller.stop()
-              }
-            } catch (_: IOException) {
-              // Expected
-              ++failingTransitions
+          try {
+            if (index == totalOperations - 1) {
+              // This is the last operation. Make it run quickly.
+              processRunner.delayByMs = 10
             }
+            if (index++ % 2 == 0) {
+              controller.start()
+            } else {
+              controller.stop()
+            }
+          } catch (_: IOException) {
+            // Expected
+            ++failingTransitions
           }
+        }
           .also { delay(25) }
       }
 

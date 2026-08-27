@@ -61,10 +61,9 @@ class CoverageReportBuilder(private val name: String, private val timeStamp: Str
    */
   fun build(): CoverageReport {
     val builtModules = moduleReportBuilders.values.map { it.build() }
-    val builtTestSuiteCoverages =
-      testSuiteCoverages.map { (testSuiteName, variantMap) ->
-        TestSuiteReportCoverage(name = testSuiteName, variantCoverages = variantMap.values.toList())
-      }
+    val builtTestSuiteCoverages = testSuiteCoverages.map { (testSuiteName, variantMap) ->
+      TestSuiteReportCoverage(name = testSuiteName, variantCoverages = variantMap.values.toList())
+    }
     return CoverageReport(
       name = name,
       timeStamp = timeStamp,

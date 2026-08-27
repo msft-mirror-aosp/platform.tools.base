@@ -54,6 +54,7 @@ import com.android.build.gradle.internal.services.LintClassLoaderBuildService
 import com.android.build.gradle.internal.services.LintParallelBuildService
 import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.services.getBuildService
+import com.android.build.gradle.internal.utils.KOTLIN_MPP_PLUGIN_ID
 import com.android.build.gradle.internal.utils.createTargetSdkVersion
 import com.android.build.gradle.internal.utils.fromDisallowChanges
 import com.android.build.gradle.internal.utils.getDesugaredMethods
@@ -145,6 +146,7 @@ import org.gradle.workers.WorkerExecutor
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion.Companion.DEFAULT
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 abstract class LintTool {
@@ -1021,6 +1023,7 @@ abstract class VariantInputs : UsesLibraryDependencyCacheBuildService {
             variantCreationConfig.sources,
             lintMode,
             projectDir = variantCreationConfig.services.provider { variantCreationConfig.services.projectInfo.projectDirectory },
+            additionalKotlinSourceDirectories = getKmpAndroidCommonSourceDirectories(task, variantCreationConfig),
           )
       )
 
@@ -1045,6 +1048,7 @@ abstract class VariantInputs : UsesLibraryDependencyCacheBuildService {
             lintMode,
             projectDir = variantCreationConfig.services.provider { variantCreationConfig.services.projectInfo.projectDirectory },
             unitTestOnly = true,
+            additionalKotlinSourceDirectories = getKmpAndroidCommonSourceDirectories(task, it),
           )
       )
     }
@@ -1058,6 +1062,7 @@ abstract class VariantInputs : UsesLibraryDependencyCacheBuildService {
             lintMode,
             projectDir = variantCreationConfig.services.provider { variantCreationConfig.services.projectInfo.projectDirectory },
             instrumentationTestOnly = true,
+            additionalKotlinSourceDirectories = getKmpAndroidCommonSourceDirectories(task, it),
           )
       )
     }
@@ -1071,6 +1076,7 @@ abstract class VariantInputs : UsesLibraryDependencyCacheBuildService {
             lintMode,
             projectDir = variantCreationConfig.services.provider { variantCreationConfig.services.projectInfo.projectDirectory },
             testFixtureOnly = true,
+            additionalKotlinSourceDirectories = getKmpAndroidCommonSourceDirectories(task, it),
           )
       )
     }
@@ -1085,6 +1091,32 @@ abstract class VariantInputs : UsesLibraryDependencyCacheBuildService {
     buildFeatures.initialize(variantCreationConfig)
     initializeLibraryDependencyCacheBuildService(task)
     mavenCoordinatesCache.setDisallowChanges(getBuildService(variantCreationConfig.services.buildServiceRegistry))
+  }
+
+  /**
+   * Returns the common (and intermediate) Kotlin source directories for a KMP project that applies an Android target via the Kotlin
+   * Multiplatform plugin together with a standard AGP plugin (e.g. `com.android.application`/`com.android.library` + `kotlin {
+   * androidTarget() }`). For such projects AGP's sources model only contains the Android source set of the given component (`androidMain`
+   * for the main component, `androidUnitTest`/`androidInstrumentedTest` for the test components), so without this lint would ignore
+   * `commonMain`/`commonTest` (and any intermediate source sets). The component's Kotlin compilation is looked up by [creationConfig] name,
+   * and its default source set (the Android one) is excluded because it is already part of the AGP sources model. The newer
+   * `com.android.kotlin.multiplatform.library` plugin ([KmpComponentCreationConfig]) already wires common sources into the AGP sources
+   * model and is skipped here. Returns null when the Kotlin Multiplatform plugin is not applied or the component has no matching Kotlin
+   * compilation.
+   */
+  private fun getKmpAndroidCommonSourceDirectories(task: Task, creationConfig: ComponentCreationConfig): FileCollection? {
+    val project = task.project
+    // The new KMP Android library plugin already includes common sources in the AGP sources model.
+    if (creationConfig is KmpComponentCreationConfig) return null
+    if (!project.pluginManager.hasPlugin(KOTLIN_MPP_PLUGIN_ID)) return null
+    val kotlinExtension = project.extensions.findByName("kotlin") as? KotlinMultiplatformExtension ?: return null
+    val androidTarget = kotlinExtension.targets.firstOrNull { it.platformType == KotlinPlatformType.androidJvm } ?: return null
+    val compilation = androidTarget.compilations.findByName(creationConfig.name) ?: return null
+    val result = project.files()
+    (compilation.allKotlinSourceSets - compilation.defaultSourceSet).forEach { sourceSet ->
+      result.from(sourceSet.kotlin.sourceDirectories)
+    }
+    return result
   }
 
   internal fun initializeForStandalone(
@@ -1250,7 +1282,7 @@ abstract class VariantInputs : UsesLibraryDependencyCacheBuildService {
       )
       val sourceDirectories =
         project.files().also { fileCollection ->
-          jvmMainCompilation.kotlinSourceSets.forEach { fileCollection.from(it.kotlin.sourceDirectories) }
+          jvmMainCompilation.allKotlinSourceSets.forEach { fileCollection.from(it.kotlin.sourceDirectories) }
         }
       mainSourceProvider.set(
         project.objects
@@ -1279,7 +1311,7 @@ abstract class VariantInputs : UsesLibraryDependencyCacheBuildService {
       )
       val sourceDirectories =
         project.files().also { fileCollection ->
-          jvmTestCompilation.kotlinSourceSets.forEach { fileCollection.from(it.kotlin.sourceDirectories) }
+          jvmTestCompilation.allKotlinSourceSets.forEach { fileCollection.from(it.kotlin.sourceDirectories) }
         }
       hostTestSourceProvider.set(
         project.objects
@@ -1430,6 +1462,7 @@ abstract class SourceProviderInput {
     unitTestOnly: Boolean = false,
     instrumentationTestOnly: Boolean = false,
     testFixtureOnly: Boolean = false,
+    additionalKotlinSourceDirectories: FileCollection? = null,
   ): SourceProviderInput {
     this.manifestFilePath.set(sources.manifestFile)
     this.manifestFilePath.disallowChanges()
@@ -1447,6 +1480,9 @@ abstract class SourceProviderInput {
 
     sources.java?.getFilteredSourceProviders(javaDirectories)
     sources.kotlin?.getFilteredSourceProviders(javaDirectories)
+    // For KMP projects using an Android target (com.android.application/library + kotlin { androidTarget() }), the AGP sources model above
+    // only contains the androidMain source set. Add the common (and intermediate) Kotlin source sets so lint also analyzes commonMain.
+    additionalKotlinSourceDirectories?.let { javaDirectories.from(it) }
     javaDirectories.disallowChanges()
 
     sources.res?.getFilteredSourceProviders(this.resDirectories)

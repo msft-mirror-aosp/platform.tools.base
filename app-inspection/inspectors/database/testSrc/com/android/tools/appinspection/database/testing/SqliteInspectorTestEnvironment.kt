@@ -170,12 +170,11 @@ class SqliteInspectorTestEnvironment(
   suspend fun inspectDatabases(databases: List<SQLiteDatabase>): List<Int> {
     registerAlreadyOpenDatabases(databases)
     sendCommand(MessageFactory.createTrackDatabasesCommand())
-    val ids =
-      databases.map {
-        val event = receiveEvent()
-        assertThat(event.oneOfCase).isEqualTo(DATABASE_OPENED)
-        event.databaseOpened.databaseId
-      }
+    val ids = databases.map {
+      val event = receiveEvent()
+      assertThat(event.oneOfCase).isEqualTo(DATABASE_OPENED)
+      event.databaseOpened.databaseId
+    }
     return ids
   }
 

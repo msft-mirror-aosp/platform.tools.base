@@ -455,8 +455,9 @@ private fun Iterable<ResolvedArtifactResult>.asMultiMap(): ImmutableMultimap<Var
     .build()
 }
 
-private fun <T> ArtifactCollection.asMap(action: (ResolvedArtifactResult) -> T): Map<VariantKey, T> =
-  artifacts.associate { it.variant.toKey() to action(it) }
+private fun <T> ArtifactCollection.asMap(action: (ResolvedArtifactResult) -> T): Map<VariantKey, T> = artifacts.associate {
+  it.variant.toKey() to action(it)
+}
 
 private fun List<ResolvedArtifactResult>.asMap(): Map<VariantKey, File> = associate { it.variant.toKey() to it.file }
 

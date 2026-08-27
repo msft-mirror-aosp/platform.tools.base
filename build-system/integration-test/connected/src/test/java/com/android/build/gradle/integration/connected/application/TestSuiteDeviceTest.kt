@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.connected.application
 
 import com.android.Version
-import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.testsuites.TestEngineInputProperty
 import com.android.build.api.testsuites.TestSuiteExecutionClient
@@ -133,7 +132,7 @@ class TestSuiteDeviceTest {
             )
           }
           android {
-            testOptions.suites.create("myTestSuite", AgpTestSuite::class.java) {
+            testOptions.customSuites.create("myTestSuite") {
               it.useJunitEngine.apply {
                 inputs.add(AgpTestSuiteInputParameters.TESTED_APKS)
                 inputs.add(AgpTestSuiteInputParameters.ADB_EXECUTABLE)
@@ -148,7 +147,7 @@ class TestSuiteDeviceTest {
               it.targetVariants.add("debug")
               it.targets.create("t1") {}
             }
-            testOptions.suites.create("myTestSuiteApk", AgpTestSuite::class.java) {
+            testOptions.customSuites.create("myTestSuiteApk") {
               it.useJunitEngine.apply {
                 inputs.add(AgpTestSuiteInputParameters.TESTED_APKS)
                 inputs.add(AgpTestSuiteInputParameters.ADB_EXECUTABLE)
@@ -164,7 +163,7 @@ class TestSuiteDeviceTest {
               it.targets.create("t1") {}
               it.testApk { dependencies { implementation.add("junit:junit:4.13.2") } }
             }
-            testOptions.suites.create("myEmptyTestSuiteApk", AgpTestSuite::class.java) {
+            testOptions.customSuites.create("myEmptyTestSuiteApk") {
               it.useJunitEngine.apply {
                 inputs.add(AgpTestSuiteInputParameters.TESTED_APKS)
                 inputs.add(AgpTestSuiteInputParameters.ADB_EXECUTABLE)
@@ -180,7 +179,7 @@ class TestSuiteDeviceTest {
               it.targets.create("t1") {}
               it.testApk {}
             }
-            testOptions.suites.create("myPureEmptyTestSuite", AgpTestSuite::class.java) {
+            testOptions.customSuites.create("myPureEmptyTestSuite") {
               it.useJunitEngine.apply {
                 inputs.add(AgpTestSuiteInputParameters.TESTED_APKS)
                 inputs.add(AgpTestSuiteInputParameters.ADB_EXECUTABLE)

@@ -69,7 +69,12 @@ abstract class AnalyticsService : BuildService<Params> {
           val toBuilderMethod = eventClass.getMethod("toBuilder")
           val eventBuilderClass = service.javaClass.classLoader.loadClass(ANDROID_STUDIO_EVENT_BUILDER_CLASS_NAME)
           val recordEventMethod = analyticsServiceClass.getMethod("recordEvent", eventBuilderClass)
-          return@lazy { event -> recordEventMethod(service, toBuilderMethod(parseFromMethod(null, event.build().toByteArray()))) }
+          return@lazy { event ->
+            recordEventMethod(
+              service,
+              toBuilderMethod(parseFromMethod(null, event.build().toByteArray())),
+            )
+          }
         }
       }
     }
@@ -89,9 +94,18 @@ abstract class AnalyticsService : BuildService<Params> {
           val parseFromMethod = profileSpanClass.getMethod("parseFrom", ByteArray::class.java)
           val toBuilderMethod = profileSpanClass.getMethod("toBuilder")
           val profileSpanBuilderClass = service.javaClass.classLoader.loadClass(GRADLE_BUILD_PROFILE_SPAN_BUILDER_CLASS_NAME)
-          val registerSpanMethod = analyticsServiceClass.getMethod("registerSpan", String::class.java, profileSpanBuilderClass)
+          val registerSpanMethod =
+            analyticsServiceClass.getMethod(
+              "registerSpan",
+              String::class.java,
+              profileSpanBuilderClass,
+            )
           return@lazy { taskPath, span ->
-            registerSpanMethod(service, taskPath, toBuilderMethod(parseFromMethod(null, span.build().toByteArray())))
+            registerSpanMethod(
+              service,
+              taskPath,
+              toBuilderMethod(parseFromMethod(null, span.build().toByteArray())),
+            )
           }
         }
       }

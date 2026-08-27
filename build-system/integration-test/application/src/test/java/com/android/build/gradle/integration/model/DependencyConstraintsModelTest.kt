@@ -23,13 +23,12 @@ import org.junit.Test
 
 class DependencyConstraintsModelTest : ModelComparator() {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        android { enableKotlin = false }
-        dependencies { implementation("androidx.lifecycle:lifecycle-common-java8:2.4.0") }
-      }
+  val rule = GradleRule.from {
+    androidApplication {
+      android { enableKotlin = false }
+      dependencies { implementation("androidx.lifecycle:lifecycle-common-java8:2.4.0") }
     }
+  }
 
   @Test
   fun `test VariantDependencies`() {

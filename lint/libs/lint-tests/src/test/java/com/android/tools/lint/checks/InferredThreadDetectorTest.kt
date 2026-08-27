@@ -4883,6 +4883,141 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
           .trimIndent()
       )
   }
+
+  fun testExtensionWithDefaultedParameterAndTrailingLambda() {
+    lint()
+      .files(
+        kotlin(
+            """
+            package test.pkg
+            import androidx.annotation.UiThread
+            import androidx.annotation.WorkerThread
+
+            @WorkerThread fun load(): Int = 0
+
+            fun String.withRetries(retries: Int = 3, block: () -> Unit) = block()
+
+            @UiThread fun render() {
+              "x".withRetries { load() }
+              "x".withRetries(retries = 5) { load() }
+              "x".withRetries(block = { load() })
+            }
+            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/test.kt:10: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+          "x".withRetries { load() }
+              ~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:11: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+          "x".withRetries(retries = 5) { load() }
+              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:12: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+          "x".withRetries(block = { load() })
+              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        3 errors
+        """
+          .trimIndent()
+      )
+  }
+
+  fun testJavaGetterAsKotlinProperty() {
+    lint()
+      .files(
+        java(
+            """
+            package test.pkg;
+            import androidx.annotation.WorkerThread;
+
+            public class Store {
+              @WorkerThread public String getLabel() { return ""; }
+            }
+            """
+          )
+          .indented(),
+        kotlin(
+            """
+            package test.pkg
+            import androidx.annotation.UiThread
+
+            @UiThread fun render(store: Store): String = store.label
+            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/test.kt:4: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+        @UiThread fun render(store: Store): String = store.label
+                                                     ~~~~~~~~~~~
+        1 errors, 0 warnings
+        """
+          .trimIndent()
+      )
+  }
+
+  fun testJavaCallOfKotlinExtension() {
+    lint()
+      .files(
+        kotlin(
+            """
+            @file:JvmName("RepositoryUtil")
+            package test.pkg
+
+            fun Repository.locales(): Set<String> = emptySet()
+            """
+          )
+          .indented(),
+        java(
+            """
+            package test.pkg;
+            import androidx.annotation.WorkerThread;
+
+            public interface Repository {
+              @WorkerThread Repository getProjectResources();
+            }
+            """
+          )
+          .indented(),
+        java(
+            """
+            package test.pkg;
+            import androidx.annotation.UiThread;
+            import static test.pkg.RepositoryUtil.locales;
+
+            public class Menu {
+              @UiThread public void update(Repository manager) {
+                RepositoryUtil.locales(manager.getProjectResources());
+              }
+              @UiThread public void updateStaticImport(Repository manager) {
+                locales(manager.getProjectResources());
+              }
+            }
+            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/Menu.java:7: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            RepositoryUtil.locales(manager.getProjectResources());
+                                           ~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/Menu.java:10: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            locales(manager.getProjectResources());
+                            ~~~~~~~~~~~~~~~~~~~~~
+        2 errors
+        """
+          .trimIndent()
+      )
+  }
 }
 
 class AndroidThreadConstraintLatticeTest : ThreadConstraintLatticeTest<Thread>(threadLattice) {

@@ -34,28 +34,26 @@ class MultiDexWarningTest {
 
   @Test
   fun `test warning is present for unnecessary multidex`() {
-    val build =
-      rule.build {
-        androidApplication {
-          android.defaultConfig.minSdk = 21
+    val build = rule.build {
+      androidApplication {
+        android.defaultConfig.minSdk = 21
 
-          dependencies { implementation("androidx.multidex:multidex:2.0.1") }
-        }
+        dependencies { implementation("androidx.multidex:multidex:2.0.1") }
       }
+    }
 
     build.executor.run(":app:assembleDebug").assertOutputContains(warning)
   }
 
   @Test
   fun `test warning is not present for legacy minSdk `() {
-    val build =
-      rule.build {
-        androidApplication {
-          android.defaultConfig.minSdk = 20
+    val build = rule.build {
+      androidApplication {
+        android.defaultConfig.minSdk = 20
 
-          dependencies { implementation("androidx.multidex:multidex:2.0.1") }
-        }
+        dependencies { implementation("androidx.multidex:multidex:2.0.1") }
       }
+    }
 
     build.executor.run(":app:assembleDebug").assertOutputDoesNotContain(warning)
   }

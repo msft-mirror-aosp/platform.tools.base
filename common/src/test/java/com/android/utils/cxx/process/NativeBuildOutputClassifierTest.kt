@@ -642,12 +642,12 @@ class NativeBuildOutputClassifierTest {
     val lines = input.split("\n")
     var result = ""
     NativeBuildOutputClassifier { message ->
-        if (result.isNotEmpty()) {
-          result += "\n----------------\n"
-        }
-        result += "[${message.classification}]\n"
-        result += message.lines.joinToString("\n")
+      if (result.isNotEmpty()) {
+        result += "\n----------------\n"
       }
+      result += "[${message.classification}]\n"
+      result += message.lines.joinToString("\n")
+    }
       .use { classify -> lines.forEach(classify::consume) }
     result = result.trim('\n').replace("\\", "/")
     println(result)

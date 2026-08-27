@@ -28,19 +28,18 @@ import org.junit.Test
 
 class ProjectSubstitutionDependenciesTest : ModelComparator() {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        android { enableKotlin = false }
-        dependencies {
-          runtimeOnly(MavenRepoGenerator.Library("com.example:lib:1.0"))
-          implementation(MavenRepoGenerator.Library("com.example:lib2:1.0"))
-        }
-        pluginCallbacks += AppCallback::class.java
+  val rule = GradleRule.from {
+    androidApplication {
+      android { enableKotlin = false }
+      dependencies {
+        runtimeOnly(MavenRepoGenerator.Library("com.example:lib:1.0"))
+        implementation(MavenRepoGenerator.Library("com.example:lib2:1.0"))
       }
-      androidLibrary(":lib") { android { enableKotlin = false } }
-      androidLibrary(":lib2") { android { enableKotlin = false } }
+      pluginCallbacks += AppCallback::class.java
     }
+    androidLibrary(":lib") { android { enableKotlin = false } }
+    androidLibrary(":lib2") { android { enableKotlin = false } }
+  }
 
   class AppCallback : ApplicationComponentCallback {
     override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {

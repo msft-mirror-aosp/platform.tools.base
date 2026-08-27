@@ -33,17 +33,16 @@ import org.junit.Test
 
 class KotlinMultiplatformGeneratedKotlinSourcesTest {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidKotlinMultiplatformLibrary(":kmpLib", createMinimumProject = false) {
-        android {
-          namespace = "com.mylibrary.foo"
-          compileSdk = DEFAULT_COMPILE_SDK_VERSION
-        }
-
-        pluginCallbacks += Callback::class.java
+  val rule = GradleRule.from {
+    androidKotlinMultiplatformLibrary(":kmpLib", createMinimumProject = false) {
+      android {
+        namespace = "com.mylibrary.foo"
+        compileSdk = DEFAULT_COMPILE_SDK_VERSION
       }
+
+      pluginCallbacks += Callback::class.java
     }
+  }
 
   class Callback : AndroidKotlinMultiplatformLibraryComponentCallback {
     override fun handleExtension(project: Project, extension: KotlinMultiplatformAndroidComponentsExtension) {

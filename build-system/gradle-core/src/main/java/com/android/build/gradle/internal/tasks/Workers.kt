@@ -138,12 +138,11 @@ object Workers {
       val key = "$owner${action::class.java.name}${action.hashCode()}"
       workerSubmission(key)
 
-      val submission =
-        executor.submit {
-          analyticsService.workerStarted(owner, key)
-          action.run()
-          analyticsService.workerFinished(owner, key)
-        }
+      val submission = executor.submit {
+        analyticsService.workerStarted(owner, key)
+        action.run()
+        analyticsService.workerFinished(owner, key)
+      }
       synchronized(this) { futures.add(submission) }
     }
   }

@@ -42,8 +42,9 @@ class TaskProviderBasedDirectoryEntryImpl(
   /** Filters cannot be set on task provided source folders, tasks should just not create extra sources that would require filtering. */
   override val filter: PatternFilterable? = null
 
-  override fun asFileTree(fileTreeCreator: () -> ConfigurableFileTree): Provider<List<ConfigurableFileTree>> =
-    directoryProvider.map { listOf(fileTreeCreator().setDir(directoryProvider).builtBy(directoryProvider)) }
+  override fun asFileTree(fileTreeCreator: () -> ConfigurableFileTree): Provider<List<ConfigurableFileTree>> = directoryProvider.map {
+    listOf(fileTreeCreator().setDir(directoryProvider).builtBy(directoryProvider))
+  }
 
   override fun asFileTreeWithoutTaskDependency(fileTreeCreator: () -> ConfigurableFileTree): List<ConfigurableFileTree> =
     listOf(fileTreeCreator().setDir(directoryProvider).builtBy(directoryProvider))

@@ -90,13 +90,12 @@ class ArtifactsWithQualifiersTest {
 
   @Test
   fun testMissingAttributesError() {
-    val build =
-      rule.build {
-        androidApplication(":app") {
-          pluginCallbacks -= ArtifactsWithAttributesTestCallback::class.java
-          pluginCallbacks += MissingAttributesCallback::class.java
-        }
+    val build = rule.build {
+      androidApplication(":app") {
+        pluginCallbacks -= ArtifactsWithAttributesTestCallback::class.java
+        pluginCallbacks += MissingAttributesCallback::class.java
       }
+    }
     build.executor
       .expectFailure()
       .run(":app:debugConsumer")
@@ -105,13 +104,12 @@ class ArtifactsWithQualifiersTest {
 
   @Test
   fun testUniquenessError() {
-    val build =
-      rule.build {
-        androidApplication(":app") {
-          pluginCallbacks -= ArtifactsWithAttributesTestCallback::class.java
-          pluginCallbacks += DuplicateAttributesCallback::class.java
-        }
+    val build = rule.build {
+      androidApplication(":app") {
+        pluginCallbacks -= ArtifactsWithAttributesTestCallback::class.java
+        pluginCallbacks += DuplicateAttributesCallback::class.java
       }
+    }
     build.executor
       .expectFailure()
       .run("help")
@@ -122,13 +120,12 @@ class ArtifactsWithQualifiersTest {
 
   @Test
   fun testCorrectnessError() {
-    val build =
-      rule.build {
-        androidApplication(":app") {
-          pluginCallbacks -= ArtifactsWithAttributesTestCallback::class.java
-          pluginCallbacks += UndeclaredAttributesCallback::class.java
-        }
+    val build = rule.build {
+      androidApplication(":app") {
+        pluginCallbacks -= ArtifactsWithAttributesTestCallback::class.java
+        pluginCallbacks += UndeclaredAttributesCallback::class.java
       }
+    }
     val result = build.executor.expectFailure().run("help")
     result.assertErrorContains(
       "An artifact with qualifiers <SUITE_ID=suite1, UNDECLARED=target1> is using undeclared qualifier key(s) <UNDECLARED>,"

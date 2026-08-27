@@ -124,7 +124,6 @@ fun ConnectedDevice.deviceProperties(): DeviceProperties =
  *   [withRetry][WithDeviceScopeContext.withRetry] and [withFinally][WithDeviceScopeContext.withFinally] lamdbas.
  *
  * Example:
- *
  *  ```
  *      device.withScopeContext {
  *          device.trackJdwp().collect {

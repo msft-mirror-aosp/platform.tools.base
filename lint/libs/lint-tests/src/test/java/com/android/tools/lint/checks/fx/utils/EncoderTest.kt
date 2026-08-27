@@ -33,13 +33,12 @@ class EncoderTest {
     data class Node(val data: Int, val branches: List<Tree> = listOf()) : Tree
   }
 
-  private val treeEncoder: Encoder<Tree> =
-    Encoder.fix { treeEncoder ->
-      Encoder.sum<Tree>(
-        Encoder.case<_, Tree.Leaf>(Encoder.const(Tree.Leaf)),
-        Encoder.case<_, Tree.Node>(Encoder.product(Tree::Node, Encoder.int, treeEncoder.zeroOrMore())),
-      )
-    }
+  private val treeEncoder: Encoder<Tree> = Encoder.fix { treeEncoder ->
+    Encoder.sum<Tree>(
+      Encoder.case<_, Tree.Leaf>(Encoder.const(Tree.Leaf)),
+      Encoder.case<_, Tree.Node>(Encoder.product(Tree::Node, Encoder.int, treeEncoder.zeroOrMore())),
+    )
+  }
 
   private enum class Suit {
     Heart,

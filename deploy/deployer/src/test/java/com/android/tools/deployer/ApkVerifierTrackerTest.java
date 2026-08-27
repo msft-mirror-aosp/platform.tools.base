@@ -24,6 +24,11 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
+import com.android.adblib.AdbSession;
+import com.android.adblib.AdbSessionKt;
+import com.android.adblib.ConnectedDevice;
+import com.android.adblib.ConnectedDevicesTracker;
+import com.android.adblib.ConnectedDevicesTrackerKt;
 import com.android.adblib.ddmlibcompatibility.testutils.UseAdbLibAndroidDebugBridgeRule;
 import com.android.adblib.testingutils.FakeAdbServerProviderRule;
 import com.android.annotations.NonNull;
@@ -41,6 +46,10 @@ import com.android.tools.deployer.devices.shell.GetProp;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
+import kotlin.coroutines.EmptyCoroutineContext;
+
+import kotlinx.coroutines.BuildersKt;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -52,6 +61,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
@@ -116,6 +126,7 @@ public class ApkVerifierTrackerTest {
 
         Map<FakeDevice, DeviceHolder> devicesMap = new HashMap<>();
 
+        AdbSession session = fakeAdbRule.getAdbSession();
         // Map FakeDevices to their corresponding IDevices.
         for (FakeDevice device : fakeDevices) {
             IDevice iDevice =
@@ -124,7 +135,15 @@ public class ApkVerifierTrackerTest {
                             .findFirst()
                             .orElse(null);
             assertNotNull(iDevice);
-            devicesMap.put(device, new DeviceHolder(iDevice, null));
+            ConnectedDevicesTracker tracker = AdbSessionKt.getConnectedDevicesTracker(session);
+            ConnectedDevice connectedDevice =
+                    BuildersKt.runBlocking(
+                            EmptyCoroutineContext.INSTANCE,
+                            (scope, continuation) ->
+                                    ConnectedDevicesTrackerKt.waitForDevice(
+                                            tracker, iDevice.getSerialNumber(), continuation));
+            devicesMap.put(
+                    device, new DeviceHolder(iDevice, Optional.ofNullable(connectedDevice), false));
         }
 
         disabledDevices = Sets.newHashSet(devicesMap.get(oDevice), devicesMap.get(rDeviceDp1));

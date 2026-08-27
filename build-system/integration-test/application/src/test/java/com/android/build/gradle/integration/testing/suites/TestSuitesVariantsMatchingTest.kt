@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.testing.suites
 
-import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.model.v2.ide.BasicTestSuiteArtifact
@@ -42,7 +41,7 @@ class TestSuitesVariantsMatchingTest {
             create("red") { it.dimension = "color" }
             create("blue") { it.dimension = "color" }
           }
-          testOptions.suites.create("first", AgpTestSuite::class.java) {
+          testOptions.customSuites.create("first") {
             it.useJunitEngine.apply { includeEngines.add("[engine:toy-junit-engine-for-tests]") }
             it.assets {}
             it.targetVariants.add("redDebug")
@@ -50,7 +49,7 @@ class TestSuitesVariantsMatchingTest {
             it.targets.apply { create("t1") {} }
             it.targets.apply { create("t2") {} }
           }
-          testOptions.suites.create("second", AgpTestSuite::class.java) {
+          testOptions.customSuites.create("second") {
             it.useJunitEngine.apply { includeEngines.add("[engine:toy-junit-engine-for-tests]") }
             it.hostJar {}
             it.targetVariants.add("redDebug")

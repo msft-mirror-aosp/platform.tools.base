@@ -33,25 +33,24 @@ import org.junit.Test
 /** Regression test for http://b/229298359. */
 class DependencyWithoutFileWithDependenciesTest : ModelComparator() {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        android { enableKotlin = false }
-        dependencies { testImplementation("com.foo:bar:1.0") { requireCapability("com.foo:bar-custom:1.0") } }
-      }
-
-      genericProject(":bar") {
-        applyPlugin(PluginType.JAVA_LIBRARY)
-        applyPlugin(PluginType.MAVEN_PUBLISH)
-
-        group = "com.foo"
-        version = "1.0"
-
-        pluginCallbacks += TestCallback::class.java
-      }
-
-      settings { addRepository("repo") }
+  val rule = GradleRule.from {
+    androidApplication {
+      android { enableKotlin = false }
+      dependencies { testImplementation("com.foo:bar:1.0") { requireCapability("com.foo:bar-custom:1.0") } }
     }
+
+    genericProject(":bar") {
+      applyPlugin(PluginType.JAVA_LIBRARY)
+      applyPlugin(PluginType.MAVEN_PUBLISH)
+
+      group = "com.foo"
+      version = "1.0"
+
+      pluginCallbacks += TestCallback::class.java
+    }
+
+    settings { addRepository("repo") }
+  }
 
   class TestCallback : GenericCallback {
     override fun handleProject(project: Project) {

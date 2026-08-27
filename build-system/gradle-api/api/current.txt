@@ -784,15 +784,15 @@ package com.android.build.api.dsl {
 
   public interface ApplicationVariantDimension extends com.android.build.api.dsl.VariantDimension {
     method @InaccessibleFromKotlin public String? getApplicationIdSuffix();
-    method @InaccessibleFromKotlin public Boolean? getMultiDexEnabled();
+    method @InaccessibleFromKotlin @Deprecated public Boolean? getMultiDexEnabled();
     method @InaccessibleFromKotlin public com.android.build.api.dsl.ApkSigningConfig? getSigningConfig();
     method @InaccessibleFromKotlin public String? getVersionNameSuffix();
     method @InaccessibleFromKotlin public void setApplicationIdSuffix(String?);
-    method @InaccessibleFromKotlin public void setMultiDexEnabled(Boolean?);
+    method @InaccessibleFromKotlin @Deprecated public void setMultiDexEnabled(Boolean?);
     method @InaccessibleFromKotlin public void setSigningConfig(com.android.build.api.dsl.ApkSigningConfig?);
     method @InaccessibleFromKotlin public void setVersionNameSuffix(String?);
     property public abstract String? applicationIdSuffix;
-    property public abstract Boolean? multiDexEnabled;
+    property @Deprecated public abstract Boolean? multiDexEnabled;
     property public abstract com.android.build.api.dsl.ApkSigningConfig? signingConfig;
     property public abstract String? versionNameSuffix;
   }
@@ -834,6 +834,16 @@ package com.android.build.api.dsl {
     method @InaccessibleFromKotlin public org.gradle.api.provider.Property<java.lang.String> getPackName();
     property public abstract com.android.build.api.dsl.DynamicDelivery dynamicDelivery;
     property public abstract org.gradle.api.provider.Property<java.lang.String> packName;
+  }
+
+  @org.gradle.api.Incubating public interface BackupTestSuite {
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public String? getBackupTestLibraryVersion();
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public java.util.List<java.lang.String> getTargetVariants();
+    method @org.gradle.api.Incubating public void hostJar(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TestSuiteHostJarSpec,kotlin.Unit> action);
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public void setBackupTestLibraryVersion(String?);
+    method @org.gradle.api.Incubating public void testApk(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TestSuiteTestApkSpec,kotlin.Unit> action);
+    property @org.gradle.api.Incubating public abstract String? backupTestLibraryVersion;
+    property @org.gradle.api.Incubating public abstract java.util.List<java.lang.String> targetVariants;
   }
 
   public interface BaseFlavor extends com.android.build.api.dsl.VariantDimension {
@@ -1948,13 +1958,13 @@ package com.android.build.api.dsl {
     method public Object consumerProguardFiles(java.lang.Object... proguardFiles);
     method @InaccessibleFromKotlin public com.android.build.api.dsl.AarMetadata getAarMetadata();
     method @InaccessibleFromKotlin public java.util.List<java.io.File> getConsumerProguardFiles();
-    method @InaccessibleFromKotlin public Boolean? getMultiDexEnabled();
+    method @InaccessibleFromKotlin @Deprecated public Boolean? getMultiDexEnabled();
     method @InaccessibleFromKotlin public com.android.build.api.dsl.ApkSigningConfig? getSigningConfig();
-    method @InaccessibleFromKotlin public void setMultiDexEnabled(Boolean?);
+    method @InaccessibleFromKotlin @Deprecated public void setMultiDexEnabled(Boolean?);
     method @InaccessibleFromKotlin public void setSigningConfig(com.android.build.api.dsl.ApkSigningConfig?);
     property public abstract com.android.build.api.dsl.AarMetadata aarMetadata;
     property public abstract java.util.List<java.io.File> consumerProguardFiles;
-    property public abstract Boolean? multiDexEnabled;
+    property @Deprecated public abstract Boolean? multiDexEnabled;
     property public abstract com.android.build.api.dsl.ApkSigningConfig? signingConfig;
   }
 
@@ -2273,9 +2283,12 @@ package com.android.build.api.dsl {
   @org.gradle.api.Incubating public interface ScreenshotTestSuite {
     method @org.gradle.api.Incubating public void dependencies(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AgpTestSuiteDependencies,kotlin.Unit> action);
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public String? getEngineVersion();
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public Float? getImageDifferenceThreshold();
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public java.util.List<java.lang.String> getTargetVariants();
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public void setEngineVersion(String?);
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public void setImageDifferenceThreshold(Float?);
     property @org.gradle.api.Incubating public abstract String? engineVersion;
+    property @org.gradle.api.Incubating public abstract Float? imageDifferenceThreshold;
     property @org.gradle.api.Incubating public abstract java.util.List<java.lang.String> targetVariants;
   }
 
@@ -2461,6 +2474,8 @@ package com.android.build.api.dsl {
   public interface TestOptions {
     method @org.gradle.api.Incubating public void emulatorControl(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.EmulatorControl,kotlin.Unit> action);
     method @InaccessibleFromKotlin public boolean getAnimationsDisabled();
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.BackupTestSuite> getBackupTests();
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.AgpTestSuite> getCustomSuites();
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public com.android.build.api.dsl.EmulatorControl getEmulatorControl();
     method @InaccessibleFromKotlin public String getExecution();
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public boolean getInstrumentInPrivateComputeCore();
@@ -2468,7 +2483,7 @@ package com.android.build.api.dsl {
     method @InaccessibleFromKotlin public String? getReportDir();
     method @InaccessibleFromKotlin public String? getResultsDir();
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.ScreenshotTestSuite> getScreenshotTests();
-    method @InaccessibleFromKotlin @org.gradle.api.Incubating @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public org.gradle.api.ExtensiblePolymorphicDomainObjectContainer<com.android.build.api.dsl.AgpTestSuite> getSuites();
+    method @InaccessibleFromKotlin @Deprecated @org.gradle.api.Incubating @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public org.gradle.api.PolymorphicDomainObjectContainer<com.android.build.api.dsl.AgpTestSuite> getSuites();
     method @InaccessibleFromKotlin public Integer? getTargetSdk();
     method @InaccessibleFromKotlin public String? getTargetSdkPreview();
     method @InaccessibleFromKotlin public com.android.build.api.dsl.UnitTestOptions getUnitTests();
@@ -2483,6 +2498,8 @@ package com.android.build.api.dsl {
     method public void targetSdk(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TargetSdkSpec,kotlin.Unit> action);
     method public void unitTests(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.UnitTestOptions,kotlin.Unit> action);
     property public abstract boolean animationsDisabled;
+    property @org.gradle.api.Incubating public abstract org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.BackupTestSuite> backupTests;
+    property @org.gradle.api.Incubating @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public abstract org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.AgpTestSuite> customSuites;
     property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.EmulatorControl emulatorControl;
     property public abstract String execution;
     property @org.gradle.api.Incubating public abstract boolean instrumentInPrivateComputeCore;
@@ -2490,7 +2507,7 @@ package com.android.build.api.dsl {
     property public abstract String? reportDir;
     property public abstract String? resultsDir;
     property @org.gradle.api.Incubating public abstract org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.ScreenshotTestSuite> screenshotTests;
-    property @org.gradle.api.Incubating @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public abstract org.gradle.api.ExtensiblePolymorphicDomainObjectContainer<com.android.build.api.dsl.AgpTestSuite> suites;
+    property @Deprecated @org.gradle.api.Incubating @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public abstract org.gradle.api.PolymorphicDomainObjectContainer<com.android.build.api.dsl.AgpTestSuite> suites;
     property public abstract Integer? targetSdk;
     property public abstract String? targetSdkPreview;
     property public abstract com.android.build.api.dsl.UnitTestOptions unitTests;
@@ -2531,11 +2548,11 @@ package com.android.build.api.dsl {
   }
 
   public interface TestVariantDimension extends com.android.build.api.dsl.VariantDimension {
-    method @InaccessibleFromKotlin public Boolean? getMultiDexEnabled();
+    method @InaccessibleFromKotlin @Deprecated public Boolean? getMultiDexEnabled();
     method @InaccessibleFromKotlin public com.android.build.api.dsl.ApkSigningConfig? getSigningConfig();
-    method @InaccessibleFromKotlin public void setMultiDexEnabled(Boolean?);
+    method @InaccessibleFromKotlin @Deprecated public void setMultiDexEnabled(Boolean?);
     method @InaccessibleFromKotlin public void setSigningConfig(com.android.build.api.dsl.ApkSigningConfig?);
-    property public abstract Boolean? multiDexEnabled;
+    property @Deprecated public abstract Boolean? multiDexEnabled;
     property public abstract com.android.build.api.dsl.ApkSigningConfig? signingConfig;
   }
 
@@ -2580,7 +2597,7 @@ package com.android.build.api.dsl {
     method @InaccessibleFromKotlin public com.android.build.api.dsl.JavaCompileOptions getJavaCompileOptions();
     method @InaccessibleFromKotlin public java.util.Map<java.lang.String,java.lang.Object> getManifestPlaceholders();
     method @InaccessibleFromKotlin @Deprecated public java.io.File? getMultiDexKeepFile();
-    method @InaccessibleFromKotlin public java.io.File? getMultiDexKeepProguard();
+    method @InaccessibleFromKotlin @Deprecated public java.io.File? getMultiDexKeepProguard();
     method @InaccessibleFromKotlin public com.android.build.api.dsl.Ndk getNdk();
     method @InaccessibleFromKotlin @Deprecated @org.gradle.api.Incubating public com.android.build.api.dsl.Optimization getOptimization();
     method @InaccessibleFromKotlin public java.util.List<java.io.File> getProguardFiles();
@@ -2594,7 +2611,7 @@ package com.android.build.api.dsl {
     method public void resValue(String type, String name, String value);
     method @Deprecated @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public Void? setManifestPlaceholders(java.util.Map<java.lang.String,?> manifestPlaceholders);
     method @InaccessibleFromKotlin @Deprecated public void setMultiDexKeepFile(java.io.File?);
-    method @InaccessibleFromKotlin public void setMultiDexKeepProguard(java.io.File?);
+    method @InaccessibleFromKotlin @Deprecated public void setMultiDexKeepProguard(java.io.File?);
     method public Object setProguardFiles(Iterable<? extends java.lang.Object?> proguardFileIterable);
     method public void shaders(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Shaders,kotlin.Unit> action);
     method public Object testProguardFile(Object proguardFile);
@@ -2603,7 +2620,7 @@ package com.android.build.api.dsl {
     property public abstract com.android.build.api.dsl.JavaCompileOptions javaCompileOptions;
     property public abstract java.util.Map<java.lang.String,java.lang.Object> manifestPlaceholders;
     property @Deprecated public abstract java.io.File? multiDexKeepFile;
-    property public abstract java.io.File? multiDexKeepProguard;
+    property @Deprecated public abstract java.io.File? multiDexKeepProguard;
     property public abstract com.android.build.api.dsl.Ndk ndk;
     property @Deprecated @org.gradle.api.Incubating public abstract com.android.build.api.dsl.Optimization optimization;
     property public abstract java.util.List<java.io.File> proguardFiles;
@@ -3239,12 +3256,12 @@ package com.android.build.api.variant {
   }
 
   @org.gradle.api.Incubating public interface Dexing {
-    method @InaccessibleFromKotlin public org.gradle.api.file.RegularFileProperty getMultiDexKeepFile();
-    method @InaccessibleFromKotlin public org.gradle.api.file.RegularFileProperty getMultiDexKeepProguard();
-    method @InaccessibleFromKotlin public boolean isMultiDexEnabled();
-    property public abstract boolean isMultiDexEnabled;
-    property public abstract org.gradle.api.file.RegularFileProperty multiDexKeepFile;
-    property public abstract org.gradle.api.file.RegularFileProperty multiDexKeepProguard;
+    method @InaccessibleFromKotlin @Deprecated public org.gradle.api.file.RegularFileProperty getMultiDexKeepFile();
+    method @InaccessibleFromKotlin @Deprecated public org.gradle.api.file.RegularFileProperty getMultiDexKeepProguard();
+    method @InaccessibleFromKotlin @Deprecated public boolean isMultiDexEnabled();
+    property @Deprecated public abstract boolean isMultiDexEnabled;
+    property @Deprecated public abstract org.gradle.api.file.RegularFileProperty multiDexKeepFile;
+    property @Deprecated public abstract org.gradle.api.file.RegularFileProperty multiDexKeepProguard;
   }
 
   public final class DslExtension {
@@ -3648,6 +3665,13 @@ package com.android.build.api.variant {
     method public void toGet(com.android.build.api.artifact.ScopedArtifact type, kotlin.jvm.functions.Function1<? super T,? extends org.gradle.api.provider.ListProperty<org.gradle.api.file.RegularFile>> inputJars, kotlin.jvm.functions.Function1<? super T,? extends org.gradle.api.provider.ListProperty<org.gradle.api.file.Directory>> inputDirectories);
     method public <ArtifactT extends com.android.build.api.artifact.ScopedArtifact & com.android.build.api.artifact.Artifact.Replaceable> void toReplace(ArtifactT type, kotlin.jvm.functions.Function1<? super T,? extends org.gradle.api.file.RegularFileProperty> into);
     method public <ArtifactT extends com.android.build.api.artifact.ScopedArtifact & com.android.build.api.artifact.Artifact.Transformable> void toTransform(ArtifactT type, kotlin.jvm.functions.Function1<? super T,? extends org.gradle.api.provider.ListProperty<org.gradle.api.file.RegularFile>> inputJars, kotlin.jvm.functions.Function1<? super T,? extends org.gradle.api.provider.ListProperty<org.gradle.api.file.Directory>> inputDirectories, kotlin.jvm.functions.Function1<? super T,? extends org.gradle.api.file.RegularFileProperty> into);
+  }
+
+  @org.gradle.api.Incubating public interface ScreenshotTestSuite extends com.android.build.api.variant.TestSuite {
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public org.gradle.api.provider.Provider<java.lang.String> getEngineVersion();
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public org.gradle.api.provider.Provider<java.lang.Float> getImageDifferenceThreshold();
+    property @org.gradle.api.Incubating public abstract org.gradle.api.provider.Provider<java.lang.String> engineVersion;
+    property @org.gradle.api.Incubating public abstract org.gradle.api.provider.Provider<java.lang.Float> imageDifferenceThreshold;
   }
 
   public interface SigningConfig {

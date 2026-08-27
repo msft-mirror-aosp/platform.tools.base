@@ -38,6 +38,7 @@
   com/android/tools/apkdeployer:apkdeployer
   com/android/tools/apkparser:apkanalyzer
   com/android/tools/apkparser:binary-resources
+  com/android/tools/backup:backup-restore
   com/android/tools/build:aapt2
   com/android/tools/build:aapt2-proto
   com/android/tools/build:aaptcompiler

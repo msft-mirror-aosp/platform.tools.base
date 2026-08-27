@@ -31,12 +31,11 @@ import org.junit.Test
 class BasicConfigurationCacheTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {}
-      androidLibrary {}
-      androidTest { android { targetProjectPath = ":app" } }
-    }
+  val rule = GradleRule.from {
+    androidApplication {}
+    androidLibrary {}
+    androidTest { android { targetProjectPath = ":app" } }
+  }
 
   @Before
   fun setUp() {

@@ -513,30 +513,29 @@ class XMLReportAggregator(private val files: List<File>, projectName: String) {
         .groupBy { it.testSuiteName }
         .map { (suiteName, suiteExecs) ->
           val variants = suiteExecs.map { it.variantName }.distinct().sorted()
-          val variantSummaries =
-            variants.map { variant ->
-              val variantExecs = suiteExecs.filter { it.variantName == variant }
+          val variantSummaries = variants.map { variant ->
+            val variantExecs = suiteExecs.filter { it.variantName == variant }
 
-              // Deduplicate within the suite for the summary, prioritizing failures
-              var finalStatus = STATUS_SKIPPED
-              variantExecs.forEach { exec ->
-                if (exec.status == STATUS_FAIL) finalStatus = STATUS_FAIL
-                else if (exec.status == STATUS_PASS && finalStatus != STATUS_FAIL) finalStatus = STATUS_PASS
-              }
-
-              var vPassed = 0
-              var vFailed = 0
-              var vSkipped = 0
-              when (finalStatus) {
-                STATUS_PASS -> vPassed++
-                STATUS_FAIL -> vFailed++
-                STATUS_SKIPPED -> vSkipped++
-              }
-
-              val vRelevant = vPassed + vFailed
-              val vRate = if (vRelevant > 0) (vPassed.toDouble() / vRelevant) * 100.0 else 0.0
-              VariantSummary(variant, vPassed, vFailed, vSkipped, 1, vRate)
+            // Deduplicate within the suite for the summary, prioritizing failures
+            var finalStatus = STATUS_SKIPPED
+            variantExecs.forEach { exec ->
+              if (exec.status == STATUS_FAIL) finalStatus = STATUS_FAIL
+              else if (exec.status == STATUS_PASS && finalStatus != STATUS_FAIL) finalStatus = STATUS_PASS
             }
+
+            var vPassed = 0
+            var vFailed = 0
+            var vSkipped = 0
+            when (finalStatus) {
+              STATUS_PASS -> vPassed++
+              STATUS_FAIL -> vFailed++
+              STATUS_SKIPPED -> vSkipped++
+            }
+
+            val vRelevant = vPassed + vFailed
+            val vRate = if (vRelevant > 0) (vPassed.toDouble() / vRelevant) * 100.0 else 0.0
+            VariantSummary(variant, vPassed, vFailed, vSkipped, 1, vRate)
+          }
           TestSuiteSummary(suiteName, variantSummaries)
         }
         .sortedBy { it.name }
@@ -625,28 +624,27 @@ class XMLReportAggregator(private val files: List<File>, projectName: String) {
       return executionsBySuite
         .map { (suiteName, executions) ->
           val variants = executions.map { it.variantName }.distinct().sorted()
-          val variantSummaries =
-            variants.map { variant ->
-              var vPassed = 0
-              var vFailed = 0
-              var vSkipped = 0
-              var vTotal = 0
+          val variantSummaries = variants.map { variant ->
+            var vPassed = 0
+            var vFailed = 0
+            var vSkipped = 0
+            var vTotal = 0
 
-              executions
-                .filter { it.variantName == variant }
-                .forEach { exec ->
-                  when (exec.status) {
-                    STATUS_PASS -> vPassed++
-                    STATUS_FAIL -> vFailed++
-                    STATUS_SKIPPED -> vSkipped++
-                  }
-                  vTotal++
+            executions
+              .filter { it.variantName == variant }
+              .forEach { exec ->
+                when (exec.status) {
+                  STATUS_PASS -> vPassed++
+                  STATUS_FAIL -> vFailed++
+                  STATUS_SKIPPED -> vSkipped++
                 }
+                vTotal++
+              }
 
-              val vRelevant = vPassed + vFailed
-              val vRate = if (vRelevant > 0) (vPassed.toDouble() / vRelevant) * 100.0 else if (vTotal > 0) 0.0 else 100.0
-              VariantSummary(variant, vPassed, vFailed, vSkipped, vTotal, vRate)
-            }
+            val vRelevant = vPassed + vFailed
+            val vRate = if (vRelevant > 0) (vPassed.toDouble() / vRelevant) * 100.0 else if (vTotal > 0) 0.0 else 100.0
+            VariantSummary(variant, vPassed, vFailed, vSkipped, vTotal, vRate)
+          }
 
           TestSuiteSummary(suiteName, variantSummaries)
         }

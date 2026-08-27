@@ -28,94 +28,93 @@ import org.junit.Test
 class R8KeepRulesSourceSetTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-          android {
-            defaultConfig.minSdk = 24
-            buildTypes { named("release") { it.optimization { enable = true } } }
-          }
-          kotlin { compilerOptions { jvmTarget.set(JvmTarget.JVM_11) } }
-          dependencies {
-            implementation(project(":androidLib"))
-            implementation(project(":javaLib"))
-          }
-        }
-        .files {
-          add(
-            "src/main/java/com/example/app/ClassInAndroidApp.kt",
-            // language=kotlin
-            """
-            package com.example.app
-            class ClassInAndroidApp {
-                fun method(){}
-            }
-            """
-              .trimIndent(),
-          )
-          add(
-            "src/main/java/com/example/app/ClassInAndroidApp2.kt",
-            // language=kotlin
-            """
-            package com.example.app
-            class ClassInAndroidApp2 {
-                fun method(){}
-            }
-            """
-              .trimIndent(),
-          )
-        }
-      androidLibrary(":androidLib") {
-        applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
-        android { defaultConfig { minSdk = 24 } }
-        kotlin { compilerOptions { jvmTarget.set(JvmTarget.JVM_11) } }
-        files {
-          add(
-            "src/main/java/com/example/androidlib/ClassInAndroidLib.kt",
-            // language=kotlin
-            """
-            package com.example.androidlib
-            class ClassInAndroidLib {
-                fun methodToKeep() {}
-                fun methodToRemove() {}
-            }
-            """
-              .trimIndent(),
-          )
-          add(
-            "src/main/java/com/example/androidlib/ClassInAndroidLib2.kt",
-            // language=kotlin
-            """
-            package com.example.androidlib
-            class ClassInAndroidLib2 {
-                fun methodToKeep() {}
-                fun methodToRemove() {}
-            }
-            """
-              .trimIndent(),
-          )
-        }
+  val rule = GradleRule.from {
+    androidApplication {
+      android {
+        defaultConfig.minSdk = 24
+        buildTypes { named("release") { it.optimization { enable = true } } }
       }
-      genericProject(":javaLib") {
-        applyPlugin(PluginType.JAVA_LIBRARY)
-        applyPlugin(PluginType.KOTLIN_JVM)
-        files {
-          add(
-            "src/main/java/com/example/javalib/ClassInJavaLib.kt",
-            // language=kotlin
-            """
-            package com.example.javalib
-            class ClassInJavaLib {
-                fun methodToKeep() {}
-                fun methodToRemove() {}
-            }
-            """
-              .trimIndent(),
-          )
-          add("src/main/resources/META-INF/com.android.tools/proguard/proguard.ext", "# Proguard rules")
-        }
+      kotlin { compilerOptions { jvmTarget.set(JvmTarget.JVM_11) } }
+      dependencies {
+        implementation(project(":androidLib"))
+        implementation(project(":javaLib"))
       }
     }
+      .files {
+        add(
+          "src/main/java/com/example/app/ClassInAndroidApp.kt",
+          // language=kotlin
+          """
+          package com.example.app
+          class ClassInAndroidApp {
+              fun method(){}
+          }
+          """
+            .trimIndent(),
+        )
+        add(
+          "src/main/java/com/example/app/ClassInAndroidApp2.kt",
+          // language=kotlin
+          """
+          package com.example.app
+          class ClassInAndroidApp2 {
+              fun method(){}
+          }
+          """
+            .trimIndent(),
+        )
+      }
+    androidLibrary(":androidLib") {
+      applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
+      android { defaultConfig { minSdk = 24 } }
+      kotlin { compilerOptions { jvmTarget.set(JvmTarget.JVM_11) } }
+      files {
+        add(
+          "src/main/java/com/example/androidlib/ClassInAndroidLib.kt",
+          // language=kotlin
+          """
+          package com.example.androidlib
+          class ClassInAndroidLib {
+              fun methodToKeep() {}
+              fun methodToRemove() {}
+          }
+          """
+            .trimIndent(),
+        )
+        add(
+          "src/main/java/com/example/androidlib/ClassInAndroidLib2.kt",
+          // language=kotlin
+          """
+          package com.example.androidlib
+          class ClassInAndroidLib2 {
+              fun methodToKeep() {}
+              fun methodToRemove() {}
+          }
+          """
+            .trimIndent(),
+        )
+      }
+    }
+    genericProject(":javaLib") {
+      applyPlugin(PluginType.JAVA_LIBRARY)
+      applyPlugin(PluginType.KOTLIN_JVM)
+      files {
+        add(
+          "src/main/java/com/example/javalib/ClassInJavaLib.kt",
+          // language=kotlin
+          """
+          package com.example.javalib
+          class ClassInJavaLib {
+              fun methodToKeep() {}
+              fun methodToRemove() {}
+          }
+          """
+            .trimIndent(),
+        )
+        add("src/main/resources/META-INF/com.android.tools/proguard/proguard.ext", "# Proguard rules")
+      }
+    }
+  }
 
   @Test
   fun `test app r8 optimization everything by default`() {
@@ -130,10 +129,9 @@ class R8KeepRulesSourceSetTest {
 
   @Test
   fun `test app r8 optimization with app keepRules sourceSet`() {
-    val build =
-      rule.build {
-        androidApplication {}.files { add("src/main/keepRules/my.keep", "-keep class com.example.app.ClassInAndroidApp { *; }") }
-      }
+    val build = rule.build {
+      androidApplication {}.files { add("src/main/keepRules/my.keep", "-keep class com.example.app.ClassInAndroidApp { *; }") }
+    }
     build.executor.run(":app:assembleRelease")
     build.androidApplication().assertApk(ApkSelector.RELEASE) {
       classes().subPackage("com/example/app").containsExactly("ClassInAndroidApp")
@@ -142,11 +140,9 @@ class R8KeepRulesSourceSetTest {
 
   @Test
   fun `test app r8 optimization with app keepRules sourceSet with folder tree`() {
-    val build =
-      rule.build {
-        androidApplication {}
-          .files { add("src/main/keepRules/some/folder/my.keep", "-keep class com.example.app.ClassInAndroidApp { *; }") }
-      }
+    val build = rule.build {
+      androidApplication {}.files { add("src/main/keepRules/some/folder/my.keep", "-keep class com.example.app.ClassInAndroidApp { *; }") }
+    }
     build.executor.run(":app:assembleRelease")
     build.androidApplication().assertApk(ApkSelector.RELEASE) {
       classes().subPackage("com/example/app").containsExactly("ClassInAndroidApp")
@@ -155,11 +151,10 @@ class R8KeepRulesSourceSetTest {
 
   @Test
   fun `test lib r8 optimization with app keepRules sourceSet`() {
-    val build =
-      rule.build {
-        androidLibrary(":androidLib") {}
-          .files { add("src/main/keepRules/my.keep", "-keep class com.example.androidlib.ClassInAndroidLib { *; }") }
-      }
+    val build = rule.build {
+      androidLibrary(":androidLib") {}
+        .files { add("src/main/keepRules/my.keep", "-keep class com.example.androidlib.ClassInAndroidLib { *; }") }
+    }
     build.executor.run(":app:assembleRelease")
     build.androidApplication().assertApk(ApkSelector.RELEASE) {
       classes().subPackage("com/example/androidlib").containsExactly("ClassInAndroidLib")
@@ -168,11 +163,10 @@ class R8KeepRulesSourceSetTest {
 
   @Test
   fun `test lib r8 put keep files in AAR`() {
-    val build =
-      rule.build {
-        androidLibrary(":androidLib") {}
-          .files { add("src/main/keepRules/my.keep", "-keep class com.example.androidlib.ClassInAndroidLib { *; }") }
-      }
+    val build = rule.build {
+      androidLibrary(":androidLib") {}
+        .files { add("src/main/keepRules/my.keep", "-keep class com.example.androidlib.ClassInAndroidLib { *; }") }
+    }
     build.executor.run(":androidLib:assembleRelease")
     build.androidLibrary(":androidLib").assertAar(AarSelector.RELEASE) {
       this.textFile("proguard.txt").contains("-keep class com.example.androidlib.ClassInAndroidLib { *; }")
@@ -181,10 +175,9 @@ class R8KeepRulesSourceSetTest {
 
   @Test
   fun `test r8 optimization skip java lib with app keepRules in sourceSet`() {
-    val build =
-      rule.build {
-        androidApplication {}.files { add("src/main/keepRules/my.keep", "-keep class com.example.javalib.ClassInJavaLib { *; }") }
-      }
+    val build = rule.build {
+      androidApplication {}.files { add("src/main/keepRules/my.keep", "-keep class com.example.javalib.ClassInJavaLib { *; }") }
+    }
     build.executor.run(":app:assembleRelease")
     build.androidApplication().assertApk(ApkSelector.RELEASE) {
       classes().subPackage("com/example/javalib").containsExactly("ClassInJavaLib")
@@ -195,14 +188,13 @@ class R8KeepRulesSourceSetTest {
 
   @Test
   fun `test r8 full optimization with keep rules and sourceSet`() {
-    val build =
-      rule.build {
-        androidApplication { android { buildTypes { named("release") { it.optimization { keepRules { files.add(File("keep.pro")) } } } } } }
-          .files {
-            add("keep.pro", "-keep class com.example.androidlib.ClassInAndroidLib { *; }")
-            add("src/main/keepRules/my.keep", "-keep class com.example.androidlib.ClassInAndroidLib2 { *; }")
-          }
-      }
+    val build = rule.build {
+      androidApplication { android { buildTypes { named("release") { it.optimization { keepRules { files.add(File("keep.pro")) } } } } } }
+        .files {
+          add("keep.pro", "-keep class com.example.androidlib.ClassInAndroidLib { *; }")
+          add("src/main/keepRules/my.keep", "-keep class com.example.androidlib.ClassInAndroidLib2 { *; }")
+        }
+    }
     build.executor.run(":app:assembleRelease")
     build.androidApplication().assertApk(ApkSelector.RELEASE) {
       // keep these classes

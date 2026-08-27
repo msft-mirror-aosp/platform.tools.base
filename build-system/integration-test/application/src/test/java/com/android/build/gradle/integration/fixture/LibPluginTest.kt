@@ -28,17 +28,16 @@ import org.junit.Test
 class LibPluginTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidLibrary(":lib") {
-        pluginCallbacks += LibCallback::class.java
+  val rule = GradleRule.from {
+    androidLibrary(":lib") {
+      pluginCallbacks += LibCallback::class.java
 
-        files {
-          HelloWorldAndroid.setupJava(this)
-          add("src/main/assets/FileToTransform.txt", "initial content")
-        }
+      files {
+        HelloWorldAndroid.setupJava(this)
+        add("src/main/assets/FileToTransform.txt", "initial content")
       }
     }
+  }
 
   @Test
   fun testReleaseVariantIsDisabled() {

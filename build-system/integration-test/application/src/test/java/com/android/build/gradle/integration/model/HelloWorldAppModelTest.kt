@@ -24,15 +24,14 @@ import org.junit.Test
 
 class HelloWorldAppModelTest : ModelComparator() {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        android {
-          defaultConfig.minSdk = 14
-          enableKotlin = false
-        }
+  val rule = GradleRule.from {
+    androidApplication {
+      android {
+        defaultConfig.minSdk = 14
+        enableKotlin = false
       }
     }
+  }
 
   @Test
   fun `test models`() {

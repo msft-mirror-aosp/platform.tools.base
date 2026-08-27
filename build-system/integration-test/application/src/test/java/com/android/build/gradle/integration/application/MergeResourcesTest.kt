@@ -39,107 +39,105 @@ import org.junit.Test
 class MergeResourcesTest {
 
   @get:Rule
-  val project =
-    GradleRule.from {
-      androidApplication {
-        applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
+  val project = GradleRule.from {
+    androidApplication {
+      applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
 
-        android {
-          namespace = "com.example.android.multiproject.app"
-          defaultConfig {
-            testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-            minSdk = 19
-          }
-          compileOptions {
-            sourceCompatibility = JavaVersion.VERSION_1_8
-            targetCompatibility = JavaVersion.VERSION_1_8
-          }
+      android {
+        namespace = "com.example.android.multiproject.app"
+        defaultConfig {
+          testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+          minSdk = 19
         }
-        kotlin { compilerOptions { jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8) } }
-        files {
-          add(
-            "src/main/java/com/example/android/multiproject/app/MainActivity.java",
-            // language=java
-            """
-            package com.example.android.multiproject.app;
-
-            import android.app.Activity;
-            import android.content.Intent;
-            import android.os.Bundle;
-            import android.view.View;
-
-            class MainActivity extends Activity {
-                @Override
-                public void onCreate(Bundle savedInstanceState) {
-                    super.onCreate(savedInstanceState);
-                    setContentView(R.layout.main);
-                }
-            }
-            """
-              .trimIndent(),
-          )
-          add(
-            "src/main/res/values/strings.xml",
-            // language=xml
-            """
-            <?xml version="1.0" encoding="utf-8"?>
-            <resources>
-                <string name="app_name">Composite App</string>
-                <string name="button_send">Go</string>
-            </resources>
-
-            """
-              .trimIndent(),
-          )
-          add(
-            "src/main/res/layout/main.xml",
-            // language=xml
-            """
-            <?xml version="1.0" encoding="utf-8"?>
-            <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                android:id="@+id/main"
-                android:orientation="horizontal"
-                android:layout_width="fill_parent"
-                android:layout_height="fill_parent"
-                >
-                <Button
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/button_send"
-                        android:id="@+id/foo" />
-            </LinearLayout>
-            """
-              .trimIndent(),
-          )
+        compileOptions {
+          sourceCompatibility = JavaVersion.VERSION_1_8
+          targetCompatibility = JavaVersion.VERSION_1_8
         }
       }
-      androidLibrary {
-        android { namespace = "com.example.android.multiproject.library" }
-        files.add(
+      kotlin { compilerOptions { jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8) } }
+      files {
+        add(
+          "src/main/java/com/example/android/multiproject/app/MainActivity.java",
+          // language=java
+          """
+          package com.example.android.multiproject.app;
+
+          import android.app.Activity;
+          import android.content.Intent;
+          import android.os.Bundle;
+          import android.view.View;
+
+          class MainActivity extends Activity {
+              @Override
+              public void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  setContentView(R.layout.main);
+              }
+          }
+          """
+            .trimIndent(),
+        )
+        add(
           "src/main/res/values/strings.xml",
           // language=xml
           """
+          <?xml version="1.0" encoding="utf-8"?>
           <resources>
-              <string name="string_from_android_lib_1">androidLib1</string>
-              <string name="string_overridden">androidLib1</string>
+              <string name="app_name">Composite App</string>
+              <string name="button_send">Go</string>
           </resources>
+
+          """
+            .trimIndent(),
+        )
+        add(
+          "src/main/res/layout/main.xml",
+          // language=xml
+          """
+          <?xml version="1.0" encoding="utf-8"?>
+          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:id="@+id/main"
+              android:orientation="horizontal"
+              android:layout_width="fill_parent"
+              android:layout_height="fill_parent"
+              >
+              <Button
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:text="@string/button_send"
+                      android:id="@+id/foo" />
+          </LinearLayout>
           """
             .trimIndent(),
         )
       }
     }
+    androidLibrary {
+      android { namespace = "com.example.android.multiproject.library" }
+      files.add(
+        "src/main/res/values/strings.xml",
+        // language=xml
+        """
+        <resources>
+            <string name="string_from_android_lib_1">androidLib1</string>
+            <string name="string_overridden">androidLib1</string>
+        </resources>
+        """
+          .trimIndent(),
+      )
+    }
+  }
 
   @Test
   fun mergesRawWithLibraryWithOverride() {
-    val build =
-      project.build {
-        androidApplication() {
-          /*
-           * Set app to depend on library.
-           */
-          dependencies { api(project(DEFAULT_LIB_PATH)) }
-        }
+    val build = project.build {
+      androidApplication() {
+        /*
+         * Set app to depend on library.
+         */
+        dependencies { api(project(DEFAULT_LIB_PATH)) }
       }
+    }
     val lib = build.androidLibrary()
     val app = build.androidApplication()
 
@@ -206,15 +204,14 @@ class MergeResourcesTest {
 
   @Test
   fun removeResourceFile() {
-    val build =
-      project.build {
-        androidApplication {
-          /*
-           * Add a resource file to the project and build it.
-           */
-          files.add("src/main/res/raw/me.raw", byteArrayOf(0, 1, 2))
-        }
+    val build = project.build {
+      androidApplication {
+        /*
+         * Add a resource file to the project and build it.
+         */
+        files.add("src/main/res/raw/me.raw", byteArrayOf(0, 1, 2))
       }
+    }
 
     build.executor.run(":app:assembleDebug")
 
@@ -249,15 +246,14 @@ class MergeResourcesTest {
   fun updateResourceFile() {
     val rawRelativePath = "src/main/res/raw/me.raw"
 
-    val build =
-      project.build {
-        androidApplication {
-          /*
-           * Add a resource file to the project and build it.
-           */
-          files.add(rawRelativePath, byteArrayOf(0, 1, 2))
-        }
+    val build = project.build {
+      androidApplication {
+        /*
+         * Add a resource file to the project and build it.
+         */
+        files.add(rawRelativePath, byteArrayOf(0, 1, 2))
       }
+    }
     val app = build.androidApplication()
 
     build.executor.run(":app:assembleDebug")
@@ -293,20 +289,19 @@ class MergeResourcesTest {
   // Regression test for b/448768899
   @Test
   fun pickupNavigationXmlForIncremental() {
-    val build =
-      project.build {
-        androidApplication {
-          files.add(
-            "src/main/res/navigation/nav_graph.xml",
-            // language=xml
-            """
-            <navigation xmlns:android="http://schemas.android.com/apk/res/android">
-            </navigation>
-            """
-              .trimIndent(),
-          )
-        }
+    val build = project.build {
+      androidApplication {
+        files.add(
+          "src/main/res/navigation/nav_graph.xml",
+          // language=xml
+          """
+          <navigation xmlns:android="http://schemas.android.com/apk/res/android">
+          </navigation>
+          """
+            .trimIndent(),
+        )
       }
+    }
     val app = build.androidApplication()
 
     build.executor.withArgument("--build-cache").run("clean", ":app:parseDebugLocalResources")
@@ -345,25 +340,24 @@ class MergeResourcesTest {
   // Regression test for b/209574833
   @Test
   fun addResourceBetweenBuildsWithProductFlavor() {
-    val build =
-      project.build {
-        androidApplication(":app") {
-          android {
-            flavorDimensions += listOf("foo")
-            productFlavors { create("flavor1") { it.dimension = "foo" } }
-          }
-          files {
-            add(
-              "src/flavor1/res/values/strings.xml",
-              // language=xml
-              """<resources>
+    val build = project.build {
+      androidApplication(":app") {
+        android {
+          flavorDimensions += listOf("foo")
+          productFlavors { create("flavor1") { it.dimension = "foo" } }
+        }
+        files {
+          add(
+            "src/flavor1/res/values/strings.xml",
+            // language=xml
+            """<resources>
                                     <string name="foo_string">flavor1</string>
                                    </resources>
                                    """,
-            )
-          }
+          )
         }
       }
+    }
     val app = build.androidApplication()
 
     build.executor.run("clean", ":app:assembleDebug")
@@ -389,15 +383,14 @@ class MergeResourcesTest {
 
   @Test
   fun replaceResourceFileWithDifferentExtension() {
-    val build =
-      project.build {
-        androidApplication {
-          /*
-           * Add a resource file to the project and build it.
-           */
-          files.add("src/main/res/raw/me.raw", byteArrayOf(0, 1, 2))
-        }
+    val build = project.build {
+      androidApplication {
+        /*
+         * Add a resource file to the project and build it.
+         */
+        files.add("src/main/res/raw/me.raw", byteArrayOf(0, 1, 2))
       }
+    }
     val app = build.androidApplication()
 
     build.executor.run(":app:assembleDebug")
@@ -432,47 +425,45 @@ class MergeResourcesTest {
 
   @Test
   fun injectedMinSdk() {
-    val build =
-      project.build {
-        androidApplication {
-          files {
-            add(
-              "src/main/res/layout-v23/main.xml",
-              // language=xml
-              """
-              <?xml version="1.0" encoding="utf-8"?>
-                                      <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                                          android:orientation="horizontal"
-                                          android:layout_width="fill_parent"
-                                          android:layout_height="fill_parent">
-                                      </LinearLayout>
-              """
-                .trimIndent(),
-            )
-            update("src/main/java/com/example/android/multiproject/app/MainActivity.java")
-              .appendMethod("public int useFoo() { return R.id.foo; }")
-          }
+    val build = project.build {
+      androidApplication {
+        files {
+          add(
+            "src/main/res/layout-v23/main.xml",
+            // language=xml
+            """
+            <?xml version="1.0" encoding="utf-8"?>
+                                    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                                        android:orientation="horizontal"
+                                        android:layout_width="fill_parent"
+                                        android:layout_height="fill_parent">
+                                    </LinearLayout>
+            """
+              .trimIndent(),
+          )
+          update("src/main/java/com/example/android/multiproject/app/MainActivity.java")
+            .appendMethod("public int useFoo() { return R.id.foo; }")
         }
       }
+    }
     build.executor.with(IntegerOption.IDE_TARGET_DEVICE_API, 23).run(":app:assembleDebug")
   }
 
   @Test
   fun mergeResourceOmitsNavigationXml() {
-    val build =
-      project.build {
-        androidApplication {
-          files.add(
-            "src/main/res/navigation/nav_graph.xml",
-            // language=xml
-            """
-            <navigation xmlns:app="http://schemas.android.com/apk/res-auto">
-            </navigation>
-            """
-              .trimIndent(),
-          )
-        }
+    val build = project.build {
+      androidApplication {
+        files.add(
+          "src/main/res/navigation/nav_graph.xml",
+          // language=xml
+          """
+          <navigation xmlns:app="http://schemas.android.com/apk/res-auto">
+          </navigation>
+          """
+            .trimIndent(),
+        )
       }
+    }
 
     val app = build.androidApplication()
 
@@ -486,20 +477,19 @@ class MergeResourcesTest {
   // Regression test for http://issuetracker.google.com/65829618
   @Test
   fun testIncrementalBuildWithShrinkResources() {
-    val build =
-      project.build {
-        androidApplication {
-          android {
-            buildTypes {
-              named("debug") {
-                it.isMinifyEnabled = true
-                it.isShrinkResources = true
-              }
+    val build = project.build {
+      androidApplication {
+        android {
+          buildTypes {
+            named("debug") {
+              it.isMinifyEnabled = true
+              it.isShrinkResources = true
             }
           }
-          dependencies { implementation("androidx.appcompat:appcompat:1.6.1") }
         }
+        dependencies { implementation("androidx.appcompat:appcompat:1.6.1") }
       }
+    }
     val app = build.androidApplication()
 
     // Run a full build with shrinkResources enabled
@@ -523,15 +513,14 @@ class MergeResourcesTest {
 
   @Test
   fun checkSmallMergeInApp() {
-    val build =
-      project.build {
-        androidApplication { dependencies { api(project(DEFAULT_LIB_PATH)) } }
-        androidLibrary {
-          files {
-            add("src/main/res/values/lib_values.xml", "<resources><string name=\"my_library_string\">lib string</string></resources>")
-          }
+    val build = project.build {
+      androidApplication { dependencies { api(project(DEFAULT_LIB_PATH)) } }
+      androidLibrary {
+        files {
+          add("src/main/res/values/lib_values.xml", "<resources><string name=\"my_library_string\">lib string</string></resources>")
         }
       }
+    }
     val app = build.androidApplication()
 
     build.executor.run("clean", ":app:assembleDebug")
@@ -554,17 +543,16 @@ class MergeResourcesTest {
 
   @Test
   fun testVectorDrawablesWithVersionQualifiersRenderCorrectly() {
-    val build =
-      project.build {
-        androidApplication {
-          android { defaultConfig { minSdk = 19 } }
-          files {
-            add("src/main/res/drawable/icon.xml", "<vector>a</vector>")
-            add("src/main/res/drawable-v24/icon.xml", "<vector>b</vector>")
-            add("src/main/res/drawable-v28/icon.xml", "<vector>c</vector>")
-          }
+    val build = project.build {
+      androidApplication {
+        android { defaultConfig { minSdk = 19 } }
+        files {
+          add("src/main/res/drawable/icon.xml", "<vector>a</vector>")
+          add("src/main/res/drawable-v24/icon.xml", "<vector>b</vector>")
+          add("src/main/res/drawable-v28/icon.xml", "<vector>c</vector>")
         }
       }
+    }
 
     val generatedPngs = build.androidApplication().generatedDir.resolve("res/pngs/debug")
 
@@ -581,20 +569,19 @@ class MergeResourcesTest {
   @Test
   fun testIncrementalResourceChangeOfMergedNotCompiledResource() {
     // Resource shrinker is required to generate the mergedNotCompiled resource directory.
-    val build =
-      project.build {
-        androidApplication {
-          android {
-            buildTypes {
-              named("release") {
-                it.isMinifyEnabled = true
-                it.isShrinkResources = true
-              }
+    val build = project.build {
+      androidApplication {
+        android {
+          buildTypes {
+            named("release") {
+              it.isMinifyEnabled = true
+              it.isShrinkResources = true
             }
           }
-          files { add("src/main/res/layout/no_compile.xml", "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" + "<merge/>") }
         }
+        files { add("src/main/res/layout/no_compile.xml", "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" + "<merge/>") }
       }
+    }
 
     build.executor.run(":app:mergeReleaseResources")
 
@@ -606,28 +593,27 @@ class MergeResourcesTest {
   // Regression test b/387371071
   @Test
   fun testSameNamedStringAndIdAppearInRClass() {
-    val build =
-      project.build {
-        androidApplication {
-          android { namespace = "com.example.android.multiproject" }
-          dependencies { api(project(DEFAULT_LIB_PATH)) }
-          files
-            .update("src/main/java/com/example/android/multiproject/app/MainActivity.java")
-            .searchAndReplace("package com.example.android.multiproject.app;", "package com.example.android.multiproject;")
-            .moveTo("src/main/java/com/example/android/multiproject/MainActivity.java")
-        }
-        androidLibrary {
-          android { namespace = "com.example.android.multiproject" }
-          // A string resource called `app_name` is already present in the project.
-          files.add(
-            "src/main/res/values/ids.xml",
-            "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
-              "<resources>\n" +
-              "    <item name=\"app_name\" type=\"id\" />\n" +
-              "</resources>",
-          )
-        }
+    val build = project.build {
+      androidApplication {
+        android { namespace = "com.example.android.multiproject" }
+        dependencies { api(project(DEFAULT_LIB_PATH)) }
+        files
+          .update("src/main/java/com/example/android/multiproject/app/MainActivity.java")
+          .searchAndReplace("package com.example.android.multiproject.app;", "package com.example.android.multiproject;")
+          .moveTo("src/main/java/com/example/android/multiproject/MainActivity.java")
       }
+      androidLibrary {
+        android { namespace = "com.example.android.multiproject" }
+        // A string resource called `app_name` is already present in the project.
+        files.add(
+          "src/main/res/values/ids.xml",
+          "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+            "<resources>\n" +
+            "    <item name=\"app_name\" type=\"id\" />\n" +
+            "</resources>",
+        )
+      }
+    }
 
     build.executor.expectFailure().run(":app:processDebugMainManifest").apply {
       assertErrorContains(

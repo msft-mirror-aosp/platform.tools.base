@@ -28,15 +28,14 @@ import org.junit.Test
 
 class HelloWorldLibModelTest : ModelComparator() {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidLibrary {
-        android {
-          defaultConfig.minSdk = 14
-          enableKotlin = false
-        }
+  val rule = GradleRule.from {
+    androidLibrary {
+      android {
+        defaultConfig.minSdk = 14
+        enableKotlin = false
       }
     }
+  }
 
   @Test
   fun `test models`() {
@@ -115,17 +114,16 @@ class EnabledTestFixturesInLibModelTest :
 
 class CompileSdkViaSettingsInLibModelTest {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      settings {
-        applyPlugin(PluginType.ANDROID_SETTINGS)
-        android { compileSdk = DEFAULT_COMPILE_SDK_VERSION }
-      }
-      androidLibrary(createMinimumProject = false) {
-        android { namespace = "com.example.library" }
-        files.setupMinimumManifest()
-      }
+  val rule = GradleRule.from {
+    settings {
+      applyPlugin(PluginType.ANDROID_SETTINGS)
+      android { compileSdk = DEFAULT_COMPILE_SDK_VERSION }
     }
+    androidLibrary(createMinimumProject = false) {
+      android { namespace = "com.example.library" }
+      files.setupMinimumManifest()
+    }
+  }
 
   @Test
   fun `test compileTarget`() {
@@ -139,20 +137,19 @@ class CompileSdkViaSettingsInLibModelTest {
 
 class MinSdkViaSettingsInLibModelTest {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      settings {
-        applyPlugin(PluginType.ANDROID_SETTINGS)
-        android { minSdk = 23 }
-      }
-      androidLibrary(createMinimumProject = false) {
-        android {
-          compileSdk = DEFAULT_COMPILE_SDK_VERSION
-          namespace = "com.example.library"
-        }
-        files.setupMinimumManifest()
-      }
+  val rule = GradleRule.from {
+    settings {
+      applyPlugin(PluginType.ANDROID_SETTINGS)
+      android { minSdk = 23 }
     }
+    androidLibrary(createMinimumProject = false) {
+      android {
+        compileSdk = DEFAULT_COMPILE_SDK_VERSION
+        namespace = "com.example.library"
+      }
+      files.setupMinimumManifest()
+    }
+  }
 
   @Test
   fun `test minSdkVersion`() {

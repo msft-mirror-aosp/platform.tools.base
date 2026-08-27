@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.testing.suites
 
 import com.android.Version
-import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.apk.Zip
@@ -56,7 +55,7 @@ class HostJarTestSuiteAndroidResourcesTest {
             testOptions.unitTests.isIncludeAndroidResources = true
 
             // Android Resources Suite
-            testOptions.suites.create("androidResSuite", AgpTestSuite::class.java) {
+            testOptions.customSuites.create("androidResSuite") {
               it.useJunitEngine.apply {
                 inputs.add(com.android.build.api.dsl.AgpTestSuiteInputParameters.RESOURCES_AP_ARCHIVE)
                 includeEngines.add("verifying-junit-engine")
@@ -106,7 +105,7 @@ class HostJarTestSuiteAndroidResourcesTest {
             testOptions.unitTests.isIncludeAndroidResources = true
 
             // Android Resources Suite for Library
-            testOptions.suites.create("libAndroidResSuite", AgpTestSuite::class.java) {
+            testOptions.customSuites.create("libAndroidResSuite") {
               it.useJunitEngine.apply {
                 inputs.add(com.android.build.api.dsl.AgpTestSuiteInputParameters.RESOURCES_AP_ARCHIVE)
                 includeEngines.add("verifying-junit-engine")

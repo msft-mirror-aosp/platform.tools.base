@@ -83,10 +83,8 @@ private constructor(
             artifactId.length +
             version.length +
             2 // the 2 ':'
-            +
-            (if (classifier != null) classifier.length + 1 else 0) // +1 for the ':'
-            +
-            packaging.length +
+            + (if (classifier != null) classifier.length + 1 else 0) // +1 for the ':'
+            + packaging.length +
             1 // +1 for the '@'
         )
       sb.append(groupId).append(':').append(artifactId).append(':').append(version)

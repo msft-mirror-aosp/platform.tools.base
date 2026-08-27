@@ -35,18 +35,17 @@ class R8PluginTest(val pluginApplied: Boolean) {
   }
 
   @get:Rule
-  val project =
-    GradleRule.from {
-      if (pluginApplied) {
-        gradleProperties { add(BooleanOption.R8_PLUGIN_SUPPORT, true) }
-      }
-      androidApplication {
-        if (pluginApplied) {
-          applyPlugin(PluginType.R8)
-        }
-        pluginCallbacks += MyAppCallback::class.java
-      }
+  val project = GradleRule.from {
+    if (pluginApplied) {
+      gradleProperties { add(BooleanOption.R8_PLUGIN_SUPPORT, true) }
     }
+    androidApplication {
+      if (pluginApplied) {
+        applyPlugin(PluginType.R8)
+      }
+      pluginCallbacks += MyAppCallback::class.java
+    }
+  }
 
   class MyAppCallback : ApplicationComponentCallback {
     override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {

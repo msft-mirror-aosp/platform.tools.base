@@ -360,9 +360,9 @@ internal class SharedJdwpSessionImpl(
      */
     private fun CoroutineScope.launchActivationJob(receiveLogger: AdbLogger, parentScope: CoroutineScope) {
       launch {
-          receiveLogger.verbose { "calling 'activation' callback" }
-          this@JdwpPacketReceiverImpl.activation()
-        }
+        receiveLogger.verbose { "calling 'activation' callback" }
+        this@JdwpPacketReceiverImpl.activation()
+      }
         .also {
           it.invokeOnCompletion { throwable ->
             when (throwable) {

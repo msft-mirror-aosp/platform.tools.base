@@ -42,16 +42,15 @@ internal class TrackMdnsService(private val serviceRunner: AdbServiceRunner) {
   private val host
     get() = serviceRunner.host
 
-  fun invoke(timeout: Long, unit: TimeUnit): Flow<MdnsServices> =
-    flow {
-        val tracker = TimeoutTracker(host.timeProvider, timeout, unit)
-        val workBuffer = ResizableBuffer()
-        val service = "host:track-mdns-services"
-        serviceRunner.startHostQuery(workBuffer, service, tracker).use { channel ->
-          collectAdbResponses(channel, workBuffer, service, this)
-        }
-      }
-      .flowOn(host.ioDispatcher)
+  fun invoke(timeout: Long, unit: TimeUnit): Flow<MdnsServices> = flow {
+    val tracker = TimeoutTracker(host.timeProvider, timeout, unit)
+    val workBuffer = ResizableBuffer()
+    val service = "host:track-mdns-services"
+    serviceRunner.startHostQuery(workBuffer, service, tracker).use { channel ->
+      collectAdbResponses(channel, workBuffer, service, this)
+    }
+  }
+    .flowOn(host.ioDispatcher)
 
   private suspend fun collectAdbResponses(
     channel: AdbChannel,

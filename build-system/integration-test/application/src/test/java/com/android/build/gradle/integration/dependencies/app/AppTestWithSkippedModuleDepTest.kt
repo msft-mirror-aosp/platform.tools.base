@@ -28,41 +28,40 @@ import org.junit.Test
 class AppTestWithSkippedModuleDepTest : ModelComparator() {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        android { enableKotlin = false }
-        dependencies {
-          api(project(":jar"))
-          androidTestImplementation(project(":jar"))
-        }
-      }
-      genericProject(":jar") {
-        applyPlugin(PluginType.JAVA_LIBRARY)
-        files {
-          add(
-            "src/main/java/com/example/android/multiproject/person/People.java",
-            // language=java
-            """
-            package com.example.android.multiproject.person;
-
-            public class People {}
-            """
-              .trimIndent(),
-          )
-          add(
-            "src/main/java/com/example/android/multiproject/person/Person.java",
-            // language=java
-            """
-            package com.example.android.multiproject.person;
-
-            public class Person {}
-            """
-              .trimIndent(),
-          )
-        }
+  val rule = GradleRule.from {
+    androidApplication {
+      android { enableKotlin = false }
+      dependencies {
+        api(project(":jar"))
+        androidTestImplementation(project(":jar"))
       }
     }
+    genericProject(":jar") {
+      applyPlugin(PluginType.JAVA_LIBRARY)
+      files {
+        add(
+          "src/main/java/com/example/android/multiproject/person/People.java",
+          // language=java
+          """
+          package com.example.android.multiproject.person;
+
+          public class People {}
+          """
+            .trimIndent(),
+        )
+        add(
+          "src/main/java/com/example/android/multiproject/person/Person.java",
+          // language=java
+          """
+          package com.example.android.multiproject.person;
+
+          public class Person {}
+          """
+            .trimIndent(),
+        )
+      }
+    }
+  }
 
   @Test
   fun `test VariantDependencies model`() {

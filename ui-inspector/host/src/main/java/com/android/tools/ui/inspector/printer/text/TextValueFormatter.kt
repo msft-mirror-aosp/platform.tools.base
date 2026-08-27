@@ -16,7 +16,7 @@
 
 package com.android.tools.ui.inspector.printer.text
 
-import com.android.tools.ui.inspector.UiNode
+import com.android.tools.ui.inspector.model.UiNode
 import java.util.Locale
 
 /** Formats a node's header details (class name, resource/source locations, and bounds) consistently for text printing. */

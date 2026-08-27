@@ -39,14 +39,13 @@ import org.junit.Test
 class L8CircularDependencyReproTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        android { namespace = "com.example.app" }
-        files {
-          update("build.gradle")
-            .replaceWith(
-              """
+  val rule = GradleRule.from {
+    androidApplication {
+      android { namespace = "com.example.app" }
+      files {
+        update("build.gradle")
+          .replaceWith(
+            """
                     apply plugin: 'com.android.application'
                     android {
                         namespace = "com.example.app"
@@ -80,12 +79,12 @@ class L8CircularDependencyReproTest {
                         }
                     }
                 """
-                .trimIndent()
-            )
-          add("src/main/java/com/example/helloworld/HelloWorld.java", "package com.example.helloworld; public class HelloWorld {}")
-        }
+              .trimIndent()
+          )
+        add("src/main/java/com/example/helloworld/HelloWorld.java", "package com.example.helloworld; public class HelloWorld {}")
       }
     }
+  }
 
   @Test
   fun testCircularDependency() {

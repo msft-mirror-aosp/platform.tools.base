@@ -39,11 +39,10 @@ internal class DatabaseLockRegistry(private val databaseRegistry: DatabaseRegist
   // A dedicated thread required as database transactions are tied to a thread. In order to
   // release a lock, we need to use the same thread as the one we used to establish the lock.
   // Thread names need to start with 'Studio:' as per some framework limitations.
-  private val executor =
-    Executors.newSingleThreadExecutor { r ->
-      // limit = 15 characters
-      Thread(r, "Studio:Sql:Lock").apply { isDaemon = true }
-    }
+  private val executor = Executors.newSingleThreadExecutor { r ->
+    // limit = 15 characters
+    Thread(r, "Studio:Sql:Lock").apply { isDaemon = true }
+  }
 
   /**
    * Locks a database identified by the provided database id. If a lock on the database is already in place, an existing lock will be
@@ -120,11 +119,10 @@ internal class DatabaseLockRegistry(private val databaseRegistry: DatabaseRegist
       keepOpenReferenceAcquired = true
 
       // Submitting a Runnable, so we can set a timeout.
-      future =
-        executor.submit {
-          // starts a transaction
-          database.execSql("BEGIN IMMEDIATE;", cancellationSignal = cancellationSignal)
-        }
+      future = executor.submit {
+        // starts a transaction
+        database.execSql("BEGIN IMMEDIATE;", cancellationSignal = cancellationSignal)
+      }
       future.get(TIMEOUT_MS, MILLISECONDS)
     } catch (e: Exception) {
       if (keepOpenReferenceAcquired) database.releaseReference()

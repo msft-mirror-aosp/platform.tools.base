@@ -17,6 +17,7 @@
 #include "tools/base/android-test/coverage/agent/native/constructor_analyzer.h"
 #include "tools/base/android-test/coverage/agent/native/parameter_shifter.h"
 #include "tools/base/android-test/coverage/agent/native/register_scanner.h"
+#include "tools/base/android-test/coverage/agent/native/synthetic_filter.h"
 
 #include <gtest/gtest.h>
 #include "slicer/code_ir.h"
@@ -82,6 +83,46 @@ TEST(ParameterShifterTest, ZeroInsCountReturnsTrue) {
   bool result = ParameterShifter::ShiftParameters(
       &dummy_method, *reinterpret_cast<lir::CodeIr*>(dummy_code_ir),
       dummy_position);
+  EXPECT_TRUE(result);
+}
+
+TEST(SyntheticFilterTest, CoroutineSuspensionCheckIsSynthetic) {
+  ir::EncodedMethod method;
+  ir::Code code;
+  method.code = &code;
+
+  lir::BasicBlock block;
+  lir::Bytecode first_bytecode;
+  first_bytecode.opcode = dex::OP_INVOKE_STATIC;
+
+  ir::MethodDecl ir_method;
+  ir::Type parent_type;
+  ir::String parent_descriptor;
+  parent_descriptor.data = slicer::MemView("\x2bLkotlin/coroutines/intrinsics/IntrinsicsKt;", sizeof("\x2bLkotlin/coroutines/intrinsics/IntrinsicsKt;") - 1);
+  parent_type.descriptor = &parent_descriptor;
+  ir_method.parent = &parent_type;
+
+  ir::String method_name;
+  method_name.data = slicer::MemView("\x16getCOROUTINE_SUSPENDED", sizeof("\x16getCOROUTINE_SUSPENDED") - 1);
+  ir_method.name = &method_name;
+  ir_method.prototype = nullptr;
+
+  lir::Method method_operand(&ir_method, 0);
+  first_bytecode.operands.push_back(&method_operand);
+
+  lir::Bytecode last_bytecode;
+  last_bytecode.opcode = dex::OP_IF_NEZ;
+
+  // Link them
+  first_bytecode.next = &last_bytecode;
+  first_bytecode.prev = nullptr;
+  last_bytecode.prev = &first_bytecode;
+  last_bytecode.next = nullptr;
+
+  block.region.first = &first_bytecode;
+  block.region.last = &last_bytecode;
+
+  auto result = SyntheticFilter::IsSyntheticBranch(&method, block);
   EXPECT_TRUE(result);
 }
 

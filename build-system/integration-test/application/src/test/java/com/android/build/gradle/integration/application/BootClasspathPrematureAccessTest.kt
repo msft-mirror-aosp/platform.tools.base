@@ -24,11 +24,10 @@ import org.junit.Test
 class BootClasspathPrematureAccessTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      buildFileType = BuildFileType.KTS
-      androidApplication {}
-    }
+  val rule = GradleRule.from {
+    buildFileType = BuildFileType.KTS
+    androidApplication {}
+  }
 
   @Test
   fun `test bootClasspath access before finalization`() {

@@ -40,11 +40,10 @@ class PhysicalDeviceProvisionerPluginTest : DeviceProvisionerTestFixture() {
       setDevices(SerialNumbers.PHYSICAL1_USB, SerialNumbers.PHYSICAL2_WIFI)
 
       // The plugin adds the devices one at a time, so there are two events here
-      val handles =
-        channel.receiveUntilPassing { handles ->
-          assertThat(handles).hasSize(2)
-          handles
-        }
+      val handles = channel.receiveUntilPassing { handles ->
+        assertThat(handles).hasSize(2)
+        handles
+      }
 
       val handlesByType = handles.associateBy { it.state.properties.connectionType }
 
@@ -86,11 +85,10 @@ class PhysicalDeviceProvisionerPluginTest : DeviceProvisionerTestFixture() {
 
     CoroutineTestUtils.runBlockingWithTimeout {
       setDevices(SerialNumbers.PHYSICAL2_USB)
-      val handle1 =
-        channel.receiveUntilPassing { handles ->
-          assertThat(handles).hasSize(1)
-          handles[0]
-        }
+      val handle1 = channel.receiveUntilPassing { handles ->
+        assertThat(handles).hasSize(1)
+        handles[0]
+      }
       // We also want to update whenever the state changes.
       fakeSession.scope.launch { handle1.stateFlow.collect { channel.send(provisioner.devices.value) } }
       channel.drainFor(100.milliseconds)
@@ -120,34 +118,31 @@ class PhysicalDeviceProvisionerPluginTest : DeviceProvisionerTestFixture() {
 
       // Disconnect USB.
       setDevices(SerialNumbers.PHYSICAL2_WIFI)
-      val handle2 =
-        channel.receiveUntilPassing { handles ->
-          assertThat(handles).hasSize(1)
-          assertThat(handles[0].state.properties.connectionType).isEqualTo(ConnectionType.WIFI)
-          handles[0]
-        }
+      val handle2 = channel.receiveUntilPassing { handles ->
+        assertThat(handles).hasSize(1)
+        assertThat(handles[0].state.properties.connectionType).isEqualTo(ConnectionType.WIFI)
+        handles[0]
+      }
       assertThat(handle2).isEqualTo(handle1)
       assertThat(provisioner.devices.value).containsExactly(handle1)
 
       // Reconnect USB.
       setDevices(SerialNumbers.PHYSICAL2_WIFI, SerialNumbers.PHYSICAL2_USB)
-      val handle3 =
-        channel.receiveUntilPassing { handles ->
-          assertThat(handles).hasSize(1)
-          assertThat(handles[0].state.properties.connectionType).isEqualTo(ConnectionType.USB)
-          handles[0]
-        }
+      val handle3 = channel.receiveUntilPassing { handles ->
+        assertThat(handles).hasSize(1)
+        assertThat(handles[0].state.properties.connectionType).isEqualTo(ConnectionType.USB)
+        handles[0]
+      }
       assertThat(handle3).isEqualTo(handle1)
       assertThat(provisioner.devices.value).containsExactly(handle1)
 
       // Disconnect USB.
       setDevices(SerialNumbers.PHYSICAL2_WIFI)
-      val handle4 =
-        channel.receiveUntilPassing { handles ->
-          assertThat(handles).hasSize(1)
-          assertThat(handles[0].state.properties.connectionType).isEqualTo(ConnectionType.WIFI)
-          handles[0]
-        }
+      val handle4 = channel.receiveUntilPassing { handles ->
+        assertThat(handles).hasSize(1)
+        assertThat(handles[0].state.properties.connectionType).isEqualTo(ConnectionType.WIFI)
+        handles[0]
+      }
       assertThat(handle4).isEqualTo(handle1)
       assertThat(provisioner.devices.value).containsExactly(handle1)
 
@@ -166,15 +161,14 @@ class PhysicalDeviceProvisionerPluginTest : DeviceProvisionerTestFixture() {
     CoroutineTestUtils.runBlockingWithTimeout {
       setDevices(SerialNumbers.PHYSICAL1_USB)
 
-      val originalHandle =
-        channel.receiveUntilPassing { handles ->
-          assertThat(handles).hasSize(1)
+      val originalHandle = channel.receiveUntilPassing { handles ->
+        assertThat(handles).hasSize(1)
 
-          val handle = handles[0]
-          assertThat(handle.state).isInstanceOf(DeviceState.Connected::class.java)
+        val handle = handles[0]
+        assertThat(handle.state).isInstanceOf(DeviceState.Connected::class.java)
 
-          handle
-        }
+        handle
+      }
 
       // We also want to update whenever the state changes
       fakeSession.scope.launch { originalHandle.stateFlow.collect { channel.send(provisioner.devices.value) } }

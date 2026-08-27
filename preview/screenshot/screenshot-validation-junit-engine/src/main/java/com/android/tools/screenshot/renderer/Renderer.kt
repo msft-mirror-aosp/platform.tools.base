@@ -60,7 +60,10 @@ class Renderer : Closeable {
     val platformClassLoader = ClassLoader.getPlatformClassLoader()
 
     isolatedClassLoaderForRendering =
-      ResourceEnhancedClassLoader(layoutLibClassPath.map { it.toURI().toURL() }.toTypedArray(), platformClassLoader)
+      ResourceEnhancedClassLoader(
+        layoutLibClassPath.map { it.toURI().toURL() }.toTypedArray(),
+        platformClassLoader,
+      )
 
     val bootstrapperClass =
       isolatedClassLoaderForRendering.loadClass(com.android.tools.render.RenderEnvironmentBootstrapper::class.java.name)
@@ -104,7 +107,10 @@ class Renderer : Closeable {
    * @param outputFolderPath The path to the directory where the rendered image will be saved.
    * @return A list of [PreviewScreenshotResult] objects, each detailing the outcome for a rendered preview.
    */
-  fun render(screenshot: PreviewScreenshot, outputFolderPath: String): List<PreviewScreenshotResult> {
+  fun render(
+    screenshot: PreviewScreenshot,
+    outputFolderPath: String,
+  ): List<PreviewScreenshotResult> {
     // 1. Copy the PreviewScreenshot object to the isolated class loader's context.
     // This is necessary because the rendererInstance exists within that isolated class loader,
     // and it expects types defined within its own context, not the application's class loader.

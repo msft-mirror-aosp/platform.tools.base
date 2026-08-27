@@ -22,23 +22,22 @@ import org.junit.Test
 
 class KotlinMultiplatformDexingTest {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidKotlinMultiplatformLibrary(":library") {
-        android { withDeviceTestBuilder {} }
-        files {
-          add(
-            "src/androidDeviceTest/java/AndroidDeviceTest.kt",
-            """
-            package foo.bar
+  val rule = GradleRule.from {
+    androidKotlinMultiplatformLibrary(":library") {
+      android { withDeviceTestBuilder {} }
+      files {
+        add(
+          "src/androidDeviceTest/java/AndroidDeviceTest.kt",
+          """
+          package foo.bar
 
-            class AndroidDeviceTest {}
-            """
-              .trimIndent(),
-          )
-        }
+          class AndroidDeviceTest {}
+          """
+            .trimIndent(),
+        )
       }
     }
+  }
 
   // regression test for b/460470375
   @Test

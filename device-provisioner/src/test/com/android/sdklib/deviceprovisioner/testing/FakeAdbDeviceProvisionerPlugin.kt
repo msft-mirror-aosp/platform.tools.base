@@ -119,14 +119,13 @@ class FakeAdbDeviceProvisionerPlugin(
   fun nextSerial(): String = "fake-device-${serialNumber++}"
 
   companion object {
-    val DEFAULT_PROPERTIES =
-      DeviceProperties.buildForTest {
-        manufacturer = "Google"
-        model = "Pixel 6"
-        androidVersion = AndroidVersion(31)
-        androidRelease = "11"
-        icon = EmptyIcon.DEFAULT
-      }
+    val DEFAULT_PROPERTIES = DeviceProperties.buildForTest {
+      manufacturer = "Google"
+      model = "Pixel 6"
+      androidVersion = AndroidVersion(31)
+      androidRelease = "11"
+      icon = EmptyIcon.DEFAULT
+    }
   }
 
   inner class FakeDeviceHandle(override val scope: CoroutineScope, initialState: DeviceState, val serialNumber: String, id: DeviceId?) :

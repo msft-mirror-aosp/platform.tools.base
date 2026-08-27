@@ -44,16 +44,15 @@ class SetSourceGeneratingLocationTest(callbackType: Class<out PluginCallback>) {
   }
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        android {
-          namespace = "com.example.api.java_res"
-          defaultConfig.applicationId = "com.example.api.java_res"
-        }
-        pluginCallbacks += callbackType
+  val rule = GradleRule.from {
+    androidApplication {
+      android {
+        namespace = "com.example.api.java_res"
+        defaultConfig.applicationId = "com.example.api.java_res"
       }
+      pluginCallbacks += callbackType
     }
+  }
 
   @Test
   fun ensureGeneratedJavaResTasksAreRunning() {

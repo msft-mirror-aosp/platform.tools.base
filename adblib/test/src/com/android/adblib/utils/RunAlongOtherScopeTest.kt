@@ -155,17 +155,16 @@ class RunAlongOtherScopeTest {
     // Act
     val started = CompletableDeferred<Unit>()
     var exception: Throwable? = null
-    val job =
-      parentScope.async {
-        runAlongOtherScope(otherScope) {
-          try {
-            started.complete(Unit)
-            delay(1_000_000)
-          } catch (t: Throwable) {
-            exception = t
-          }
+    val job = parentScope.async {
+      runAlongOtherScope(otherScope) {
+        try {
+          started.complete(Unit)
+          delay(1_000_000)
+        } catch (t: Throwable) {
+          exception = t
         }
       }
+    }
 
     started.await()
     job.cancel("foo")
@@ -194,17 +193,16 @@ class RunAlongOtherScopeTest {
     // Act
     val started = CompletableDeferred<Unit>()
     var exception: Throwable? = null
-    val job =
-      parentScope.async {
-        runAlongOtherScope(otherScope) {
-          try {
-            started.complete(Unit)
-            delay(1_000_000)
-          } catch (t: Throwable) {
-            exception = t
-          }
+    val job = parentScope.async {
+      runAlongOtherScope(otherScope) {
+        try {
+          started.complete(Unit)
+          delay(1_000_000)
+        } catch (t: Throwable) {
+          exception = t
         }
       }
+    }
 
     started.await()
     parentScope.cancel("foo")

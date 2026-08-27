@@ -65,7 +65,14 @@ class MSSIMMatcher(private var imageDiffThreshold: Float = 0f) : ImageDiffer {
     return calculateSSIM(ideal, given, 0, width, width, height)
   }
 
-  private fun calculateSSIM(ideal: IntArray, given: IntArray, offset: Int, stride: Int, width: Int, height: Int): Double {
+  private fun calculateSSIM(
+    ideal: IntArray,
+    given: IntArray,
+    offset: Int,
+    stride: Int,
+    width: Int,
+    height: Int,
+  ): Double {
     var SSIMTotal = 0.0
     var windows = 0
     var currentWindowY = 0
@@ -110,7 +117,13 @@ class MSSIMMatcher(private var imageDiffThreshold: Float = 0f) : ImageDiffer {
     }
   }
 
-  private fun isWindowWhite(colors: IntArray, start: Int, stride: Int, windowWidth: Int, windowHeight: Int): Boolean {
+  private fun isWindowWhite(
+    colors: IntArray,
+    start: Int,
+    stride: Int,
+    windowWidth: Int,
+    windowHeight: Int,
+  ): Boolean {
     for (y in 0 until windowHeight) {
       for (x in 0 until windowWidth) {
         if (colors[indexFromXAndY(x, y, stride, start)] != WHITE) {
@@ -137,7 +150,14 @@ class MSSIMMatcher(private var imageDiffThreshold: Float = 0f) : ImageDiffer {
    * This method will find the mean of a window in both sets of pixels. The return is an array where the first double is the mean of the
    * first set and the second double is the mean of the second set.
    */
-  private fun getMeans(pixels0: IntArray, pixels1: IntArray, start: Int, stride: Int, windowWidth: Int, windowHeight: Int): DoubleArray {
+  private fun getMeans(
+    pixels0: IntArray,
+    pixels1: IntArray,
+    start: Int,
+    stride: Int,
+    windowWidth: Int,
+    windowHeight: Int,
+  ): DoubleArray {
     var avg0 = 0.0
     var avg1 = 0.0
     for (y in 0 until windowHeight) {

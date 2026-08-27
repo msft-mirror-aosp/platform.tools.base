@@ -69,8 +69,7 @@ abstract class AssetPackManifestGenerationRunnable : WorkAction<AssetPackManifes
       ("<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\" " +
         "xmlns:dist=\"http://schemas.android.com/apk/distribution\" " +
         "package=\"basePackage\" " // Currently filled in by a different task.
-        +
-        "split=\"${parameters.packName.get()}\">\n" +
+        + "split=\"${parameters.packName.get()}\">\n" +
         "  <dist:module dist:type=\"${getDistributionType()}\">\n" +
         "    <dist:fusing dist:include=\"true\" />" +
         "    <dist:delivery>\n" +

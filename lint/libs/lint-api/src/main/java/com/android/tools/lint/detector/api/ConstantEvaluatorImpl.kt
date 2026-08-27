@@ -482,10 +482,9 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
       else -> null
     }
 
-  private fun PsiVariable.getAllowedInitializer() =
-    initializer?.takeIf {
-      evaluator.allowFieldInitializers || (hasModifierProperty(PsiModifier.STATIC) && hasModifierProperty(PsiModifier.FINAL))
-    }
+  private fun PsiVariable.getAllowedInitializer() = initializer?.takeIf {
+    evaluator.allowFieldInitializers || (hasModifierProperty(PsiModifier.STATIC) && hasModifierProperty(PsiModifier.FINAL))
+  }
 
   private data class PrimArrayType(val constructorName: String, val varargConstructorName: String, val type: PsiPrimitiveType)
 

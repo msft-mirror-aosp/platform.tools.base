@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.testing.suites
 
 import com.android.Version
-import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.options.BooleanOption
@@ -54,7 +53,7 @@ class HostJarTestSuiteComposeCompilationTest {
             defaultConfig { minSdk = 21 }
             buildFeatures { compose = true }
 
-            testOptions.suites.create("composeSuite", AgpTestSuite::class.java) {
+            testOptions.customSuites.create("composeSuite") {
               it.useJunitEngine.apply {
                 includeEngines.add("verifying-junit-engine")
                 enginesDependencies.add("com.android.tools.build:gradle-api:${Version.ANDROID_GRADLE_PLUGIN_VERSION}")

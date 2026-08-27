@@ -47,10 +47,10 @@ internal class DdmlibEventQueue(logger: AdbLogger, name: String) {
       event.scope
         .launch {
           runCatching {
-              logger.verbose { "Invoking ddmlib listener '${event.name}'" }
-              event.handler()
-              logger.verbose { "Invoking ddmlib listener '${event.name}' - done" }
-            }
+            logger.verbose { "Invoking ddmlib listener '${event.name}'" }
+            event.handler()
+            logger.verbose { "Invoking ddmlib listener '${event.name}' - done" }
+          }
             .onFailure { throwable -> logger.warn(throwable, "Invoking ddmlib listener '${event.name}' threw an exception: $throwable") }
         }
         .join()

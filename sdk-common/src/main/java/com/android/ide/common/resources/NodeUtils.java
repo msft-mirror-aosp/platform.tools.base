@@ -25,6 +25,7 @@ import com.google.common.collect.Lists;
 
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -47,6 +48,7 @@ class NodeUtils {
      * @return the adopted node.
      */
     static Node adoptNode(Document document, Node node) {
+        preserveNamespaces(node, document);
         Node newNode = document.adoptNode(node);
 
         updateNamespace(newNode, document);
@@ -62,6 +64,7 @@ class NodeUtils {
      * @return the new node
      */
     static Node duplicateAndAdoptNode(Document document, Node node) {
+        preserveNamespaces(node, document);
         Node newNode = duplicateNode(document, node);
         updateNamespace(newNode, document);
         return newNode;
@@ -202,6 +205,9 @@ class NodeUtils {
                 return false;
             }
             NamedNodeMap docAttributes = getDocumentNamespaceAttributes(document);
+            if (docAttributes == null) {
+                return true;
+            }
 
             String prefix = getPrefixForNs(docAttributes, ns);
             if (prefix == null) {
@@ -224,11 +230,13 @@ class NodeUtils {
      * Gets the attribute map where xmlns:prefix=uri attributes will be stored by updateNamespace.
      */
     @VisibleForTesting
-    @NonNull
+    @Nullable
     static NamedNodeMap getDocumentNamespaceAttributes(Document document) {
-        NamedNodeMap attributes = document.getChildNodes().item(0).getAttributes();
-        assert attributes != null;
-        return attributes;
+        Element root = document.getDocumentElement();
+        if (root == null) {
+            return null;
+        }
+        return root.getAttributes();
     }
 
     /**
@@ -267,6 +275,91 @@ class NodeUtils {
             String name = String.format("xmlns:ns%d", i++);
             if (attributes.getNamedItem(name) == null) {
                 return name;
+            }
+        }
+    }
+
+    /**
+     * Checks the node, its ancestors, and its descendants to ensure all declared namespaces are
+     * preserved in the destination document.
+     */
+    private static void preserveNamespaces(@NonNull Node node, @NonNull Document document) {
+        NamedNodeMap docAttributes = getDocumentNamespaceAttributes(document);
+        if (docAttributes == null) {
+            return;
+        }
+
+        Node current = node;
+        boolean reachedDocumentElement = false;
+        Document ownerDoc = (node instanceof Document) ? (Document) node : node.getOwnerDocument();
+        Element rootElement = ownerDoc != null ? ownerDoc.getDocumentElement() : null;
+
+        while (current != null) {
+            if (current.getNodeType() == Node.ELEMENT_NODE) {
+                if (current == rootElement) {
+                    reachedDocumentElement = true;
+                }
+                copyNamespaceDeclarations(current, document, docAttributes);
+            }
+            current = current.getParentNode();
+        }
+        if (!reachedDocumentElement && rootElement != null) {
+            copyNamespaceDeclarations(rootElement, document, docAttributes);
+        }
+        if (node.getNodeType() == Node.ELEMENT_NODE) {
+            preserveDescendantNamespaces(node, document, docAttributes);
+        }
+    }
+
+    private static void preserveDescendantNamespaces(
+            @NonNull Node node, @NonNull Document document, @NonNull NamedNodeMap docAttributes) {
+        NodeList children = node.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            Node child = children.item(i);
+            if (child.getNodeType() == Node.ELEMENT_NODE) {
+                copyNamespaceDeclarations(child, document, docAttributes);
+                preserveDescendantNamespaces(child, document, docAttributes);
+            }
+        }
+    }
+
+    private static void copyNamespaceDeclarations(
+            @NonNull Node node, @NonNull Document document, @NonNull NamedNodeMap docAttributes) {
+        NamedNodeMap attributes = node.getAttributes();
+        if (attributes == null) {
+            return;
+        }
+
+        for (int i = 0; i < attributes.getLength(); i++) {
+            Node attr = attributes.item(i);
+            if (SdkConstants.XMLNS_URI.equals(attr.getNamespaceURI())
+                    || (attr.getNodeName() != null
+                            && attr.getNodeName().startsWith(SdkConstants.XMLNS_PREFIX))) {
+                String prefix = attr.getLocalName();
+                if (prefix == null
+                        && attr.getNodeName() != null
+                        && attr.getNodeName().startsWith(SdkConstants.XMLNS_PREFIX)) {
+                    prefix = attr.getNodeName().substring(SdkConstants.XMLNS_PREFIX.length());
+                }
+                String uri = attr.getNodeValue();
+
+                if (!"xmlns".equals(prefix) && prefix != null && !prefix.isEmpty() && uri != null) {
+                    String nsAttrName = SdkConstants.XMLNS_PREFIX + prefix;
+                    Node existingAttr = docAttributes.getNamedItem(nsAttrName);
+                    if (existingAttr == null) {
+                        Attr nsAttr = document.createAttribute(nsAttrName);
+                        nsAttr.setValue(uri);
+                        docAttributes.setNamedItem(nsAttr);
+                    } else if (!uri.equals(existingAttr.getNodeValue())) {
+                        String existingPrefix = getPrefixForNs(docAttributes, uri);
+                        if (existingPrefix == null) {
+                            String uniqueNsAttr = getUniqueNsAttribute(docAttributes, prefix);
+                            Attr nsAttr = document.createAttribute(uniqueNsAttr);
+                            nsAttr.setValue(uri);
+                            docAttributes.setNamedItem(nsAttr);
+                        }
+                    }
+                }
             }
         }
     }

@@ -26,28 +26,27 @@ import org.junit.Test
 /** Tests related to the incremental behavior of [MergeJavaResourceTask]. */
 class MergeJavaResourceIncrementalTest {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidLibrary(":foo:lib") {
-        applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
-        kotlin { compilerOptions { jvmTarget.set(JvmTarget.JVM_1_8) } }
-        files.add("src/main/resources/res1.txt", "res 1 from foo")
-      }
-      androidLibrary(":bar:lib") {
-        applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
-        kotlin { compilerOptions { jvmTarget.set(JvmTarget.JVM_1_8) } }
-        files.add("src/main/resources/res1.txt", "res 1 from bar")
-      }
-      androidApplication {
-        applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
-        android { packaging { resources { pickFirsts += "res1.txt" } } }
-        kotlin { compilerOptions { jvmTarget.set(JvmTarget.JVM_1_8) } }
-        dependencies {
-          implementation(project(":foo:lib"))
-          implementation(project(":bar:lib"))
-        }
+  val rule = GradleRule.from {
+    androidLibrary(":foo:lib") {
+      applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
+      kotlin { compilerOptions { jvmTarget.set(JvmTarget.JVM_1_8) } }
+      files.add("src/main/resources/res1.txt", "res 1 from foo")
+    }
+    androidLibrary(":bar:lib") {
+      applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
+      kotlin { compilerOptions { jvmTarget.set(JvmTarget.JVM_1_8) } }
+      files.add("src/main/resources/res1.txt", "res 1 from bar")
+    }
+    androidApplication {
+      applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
+      android { packaging { resources { pickFirsts += "res1.txt" } } }
+      kotlin { compilerOptions { jvmTarget.set(JvmTarget.JVM_1_8) } }
+      dependencies {
+        implementation(project(":foo:lib"))
+        implementation(project(":bar:lib"))
       }
     }
+  }
 
   /**
    * Checks that the java resource merger can handle changes to multiple files with the same normalized path (and therefore result in

@@ -27,5 +27,10 @@ import java.lang.annotation.Target;
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
+@Target({
+    ElementType.METHOD,
+    ElementType.CONSTRUCTOR,
+    ElementType.TYPE,
+    ElementType.PARAMETER,
+})
 public @interface Slow {}

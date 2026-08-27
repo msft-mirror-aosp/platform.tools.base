@@ -108,10 +108,22 @@ fun PreviewScreenshotTestEngineInput.saveToPropertiesFile(outputFile: File) {
   }
 
   addProp("projectRoot", projectRoot.get())
-  addProp("screenshotTestDirectory", testProjectClassDirs.get().joinToString(File.pathSeparator) { it.asFile.absolutePath })
-  addProp("screenshotTestJars", testProjectJars.get().joinToString(File.pathSeparator) { it.asFile.absolutePath })
-  addProp("mainDirectory", mainProjectClassDirs.get().joinToString(File.pathSeparator) { it.asFile.absolutePath })
-  addProp("mainJars", mainProjectJars.get().joinToString(File.pathSeparator) { it.asFile.absolutePath })
+  addProp(
+    "screenshotTestDirectory",
+    testProjectClassDirs.get().joinToString(File.pathSeparator) { it.asFile.absolutePath },
+  )
+  addProp(
+    "screenshotTestJars",
+    testProjectJars.get().joinToString(File.pathSeparator) { it.asFile.absolutePath },
+  )
+  addProp(
+    "mainDirectory",
+    mainProjectClassDirs.get().joinToString(File.pathSeparator) { it.asFile.absolutePath },
+  )
+  addProp(
+    "mainJars",
+    mainProjectJars.get().joinToString(File.pathSeparator) { it.asFile.absolutePath },
+  )
 
   val testProjectJarSet = setOf(*testProjectJars.get().map { it.asFile.absolutePath }.toTypedArray())
   val allTestRuntimeJars = testRuntimeJars.get().map { it.asFile } + testRuntimeDependencies.files
@@ -128,26 +140,42 @@ fun PreviewScreenshotTestEngineInput.saveToPropertiesFile(outputFile: File) {
   addProp("Renderer.namespace", namespace.get())
   addProp(
     "Renderer.mainAllClassPath",
-    (mainRuntimeClassDirs.get() + mainRuntimeJars.get()).joinToString(File.pathSeparator) { it.asFile.absolutePath },
+    (mainRuntimeClassDirs.get() + mainRuntimeJars.get()).joinToString(File.pathSeparator) {
+      it.asFile.absolutePath
+    },
   )
   addProp(
     "Renderer.mainProjectClassPath",
-    (mainProjectClassDirs.get() + mainProjectJars.get()).joinToString(File.pathSeparator) { it.asFile.absolutePath },
+    (mainProjectClassDirs.get() + mainProjectJars.get()).joinToString(File.pathSeparator) {
+      it.asFile.absolutePath
+    },
   )
   addProp(
     "Renderer.screenshotAllClassPath",
-    (testRuntimeClassDirs.get().map { it.asFile } + allTestRuntimeJars).joinToString(File.pathSeparator) { it.absolutePath },
+    (testRuntimeClassDirs.get().map { it.asFile } + allTestRuntimeJars).joinToString(File.pathSeparator) {
+      it.absolutePath
+    },
   )
   addProp(
     "Renderer.screenshotProjectClassPath",
-    (testProjectClassDirs.get() + testProjectJars.get()).joinToString(File.pathSeparator) { it.asFile.absolutePath },
+    (testProjectClassDirs.get() + testProjectJars.get()).joinToString(File.pathSeparator) {
+      it.asFile.absolutePath
+    },
   )
   addProp("Renderer.layoutlibDataDir", layoutlibDataDir.singleFile.absolutePath)
-  addProp("Renderer.layoutlibClassPath", layoutlibClassPath.files.joinToString(File.pathSeparator) { it.absolutePath })
-  addProp("Renderer.testRuntimeResourceDirs", testRuntimeResourceDirs.files.joinToString(File.pathSeparator) { it.absolutePath })
+  addProp(
+    "Renderer.layoutlibClassPath",
+    layoutlibClassPath.files.joinToString(File.pathSeparator) { it.absolutePath },
+  )
+  addProp(
+    "Renderer.testRuntimeResourceDirs",
+    testRuntimeResourceDirs.files.joinToString(File.pathSeparator) { it.absolutePath },
+  )
   addProp(
     "Renderer.testRuntimeRClassJars",
-    testRuntimeRClassJars.files.joinToString(File.pathSeparator) { file: File -> file.absolutePath },
+    testRuntimeRClassJars.files.joinToString(File.pathSeparator) { file: File ->
+      file.absolutePath
+    },
   )
   addProp("TestOption.recordingModeEnabled", recordingModeEnabled.get().toString())
 

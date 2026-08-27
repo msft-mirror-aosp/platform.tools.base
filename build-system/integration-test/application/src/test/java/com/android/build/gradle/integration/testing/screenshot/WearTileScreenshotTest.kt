@@ -340,15 +340,14 @@ class WearTileScreenshotTest {
   @Test
   fun runPreviewScreenshotTestsWithMissingTilesToolingDep() {
     val tilesToolingDep = "androidx.wear.tiles:tiles-tooling:$TILES_VERSION"
-    val build =
-      rule.build {
-        androidApplication {
-          dependencies {
-            // Verify that exception is thrown when tiles-tooling dep is missing
-            remove("implementation", tilesToolingDep)
-          }
+    val build = rule.build {
+      androidApplication {
+        dependencies {
+          // Verify that exception is thrown when tiles-tooling dep is missing
+          remove("implementation", tilesToolingDep)
         }
       }
+    }
 
     val result = build.sstExecutor().expectFailure().run(":app:validateDebugScreenshotTest")
     result.assertErrorContains(

@@ -34,19 +34,18 @@ import org.junit.Test
 class UniversalGlobalSyntheticsTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        HelloWorldAndroid.setupJava(files)
-        android {
-          defaultConfig.minSdk = 21
-          compileOptions {
-            sourceCompatibility = org.gradle.api.JavaVersion.VERSION_1_8
-            targetCompatibility = org.gradle.api.JavaVersion.VERSION_1_8
-          }
+  val rule = GradleRule.from {
+    androidApplication {
+      HelloWorldAndroid.setupJava(files)
+      android {
+        defaultConfig.minSdk = 21
+        compileOptions {
+          sourceCompatibility = org.gradle.api.JavaVersion.VERSION_1_8
+          targetCompatibility = org.gradle.api.JavaVersion.VERSION_1_8
         }
       }
     }
+  }
 
   @Test
   fun testUniversalSyntheticsPresent_Java8_Default() {

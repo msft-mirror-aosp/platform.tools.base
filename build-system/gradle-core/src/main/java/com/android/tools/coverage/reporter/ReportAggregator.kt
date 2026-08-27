@@ -98,20 +98,58 @@ class ReportAggregator {
         for (blockMeta in methodMeta.blocksList) {
           val isHit = data.hits.get(blockMeta.blockId.toInt())
           if (isHit) methodHit = true
-          val blockBranches = blockMeta.branchCount.toInt()
 
-          // Branch counter logic:
-          if (blockBranches > 1) {
-            if (isHit) {
-              method.branches.covered += 1
-              method.branches.missed += (blockBranches - 1)
+          // 1. In DEX, the conditional branch is always the LAST instruction of the block.
+          val lastLineMeta = blockMeta.linesList.lastOrNull()
+          val branchFile = lastLineMeta?.let { smapResolver.resolve(it.lineNumber, sourceFilename).second } ?: sourceFilename
+
+          // 2. The branch must be placed on the line of the branch instruction itself.
+          // Since the branch instruction is the last instruction of the block, we resolve lastLineMeta.
+          val trueBranchLine =
+            if (branchFile == sourceFilename) {
+              lastLineMeta?.let { smapResolver.resolve(it.lineNumber, sourceFilename).first }
             } else {
-              method.branches.missed += blockBranches
+              null
             }
+
+          // Generic Inline Function Filter:
+          // If the branch belongs to an external inlined file, we strip it from our local report.
+          // Also, strip compiler-generated coroutine state machine branches on the suspend method declaration line.
+          val isSuspendFunction = methodMeta.signature.endsWith("Lkotlin/coroutines/Continuation;)Ljava/lang/Object;")
+          val blockBranches =
+            if (branchFile != sourceFilename) {
+              0
+            } else if (isSuspendFunction && trueBranchLine == methodStartLine) {
+              0
+            } else {
+              blockMeta.branchCount.toInt()
+            }
+
+          // Exact branch coverage reconstruction using successor hits:
+          var coveredBranches = 0
+          if (blockBranches > 1) {
+            coveredBranches = blockMeta.successorBlockIdsList.count { succId -> data.hits.get(succId.toInt()) }
+            if (coveredBranches > blockBranches) {
+              coveredBranches = blockBranches.toInt()
+            }
+            // An executed conditional line must show at least 1 covered branch.
+            if (isHit && coveredBranches == 0) {
+              coveredBranches = 1
+            }
+
+            method.branches.covered += coveredBranches
+            method.branches.missed += (blockBranches.toInt() - coveredBranches)
           }
 
           for (lineMeta in blockMeta.linesList) {
-            val (trueLine, _) = smapResolver.resolve(lineMeta.lineNumber, sourceFilename)
+            val (trueLine, resolvedFile) = smapResolver.resolve(lineMeta.lineNumber, sourceFilename)
+
+            // 3. Skip tracking instructions that belong to an external inline file.
+            // This prevents the caller's class from artificially ballooning in line count.
+            if (resolvedFile != sourceFilename) {
+              continue
+            }
+
             val instrs = lineMeta.instructionCount.toInt()
 
             methodLinesTouched.add(trueLine)
@@ -123,14 +161,10 @@ class ReportAggregator {
             val lineStats = srcFile.lineMap.getOrPut(trueLine) { LineStats() }
             if (isHit) lineStats.ci += instrs else lineStats.mi += instrs
 
-            // Line-level branch aggregation
-            if (blockBranches > 1) {
-              if (isHit) {
-                lineStats.cb += 1
-                lineStats.mb += (blockBranches - 1)
-              } else {
-                lineStats.mb += blockBranches
-              }
+            // Line-level branch aggregation - ONLY on the true branch line of the block to prevent duplicate branches
+            if (blockBranches > 1 && trueLine == trueBranchLine) {
+              lineStats.cb += coveredBranches
+              lineStats.mb += (blockBranches.toInt() - coveredBranches)
             }
           }
         }

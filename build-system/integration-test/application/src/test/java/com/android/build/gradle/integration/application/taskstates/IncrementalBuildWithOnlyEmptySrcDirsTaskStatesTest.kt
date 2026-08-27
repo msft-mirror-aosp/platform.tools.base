@@ -122,14 +122,14 @@ class IncrementalBuildWithOnlyEmptySrcDirsTaskStatesTest {
         SKIPPED to
           setOf(
             ":app:compileDebugKotlin",
+            ":app:compressDebugJavaRes",
             ":app:mergeDebugNativeDebugMetadata",
             ":app:mergeDebugNativeLibs",
-            ":app:processDebugJavaRes",
             ":app:stripDebugDebugSymbols",
             ":lib:compileDebugJavaWithJavac",
             ":lib:compileDebugKotlin",
+            ":lib:compressDebugJavaRes",
             ":lib:mergeDebugNativeLibs",
-            ":lib:processDebugJavaRes",
             ":lib:stripDebugDebugSymbols",
           ),
       )

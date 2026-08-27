@@ -252,6 +252,70 @@ class RepoManagerImplTest {
       assertThat(loaderInvocationCount.get()).isEqualTo(2)
     }
 
+  @Test
+  fun testPiggybackFallbackWhenTaskCompletedBeforeCleanup() =
+    runBlocking(Dispatchers.Default) {
+      val firstInvocationStarted = CountDownLatch(1)
+      val canCancelFirst = CountDownLatch(1)
+      val canFinishFirst = CountDownLatch(1)
+      val loaderInvocationCount = AtomicInteger(0)
+
+      val fakePackage = FakeLocalPackage("foo")
+      val fakeLoader =
+        object : FakeLoader<LocalPackage>() {
+          override fun run(): Map<String, LocalPackage> {
+            val count = loaderInvocationCount.incrementAndGet()
+            if (count == 1) {
+              firstInvocationStarted.countDown()
+              canCancelFirst.await()
+              throw CancellationException()
+            }
+            return mapOf("foo" to fakePackage)
+          }
+        }
+
+      val repoRoot = createInMemoryFileSystemAndFolder("repo")
+      val mgr = RepoManagerImpl(repoRoot, fakeLoader, FakeLoader<RemotePackage>())
+
+      var shouldBlock = false
+      val firstProgress =
+        object : FakeProgressIndicator() {
+          override fun setIndeterminate(indeterminate: Boolean) {
+            super.setIndeterminate(indeterminate)
+            if (indeterminate && shouldBlock) {
+              canFinishFirst.await(5, TimeUnit.SECONDS)
+            }
+          }
+        }
+      firstProgress.isIndeterminate = true
+      shouldBlock = true
+
+      launch {
+        try {
+          mgr.loadLocalPackages(firstProgress, 1.seconds)
+        } catch (_: CancellationException) {}
+      }
+
+      assertTrue(firstInvocationStarted.await(5, TimeUnit.SECONDS))
+
+      // Piggyback caller started while first caller is in progress
+      val secondCaller = async {
+        mgr.loadLocalPackages(FakeProgressIndicator(), 2.seconds)
+      }
+
+      // Unblock first loader so it throws CancellationException and completes `result`
+      canCancelFirst.countDown()
+
+      try {
+        val result = secondCaller.await()
+        assertThat(result).hasSize(1)
+        assertThat(result.first().path).isEqualTo("foo")
+        assertThat(loaderInvocationCount.get()).isEqualTo(2)
+      } finally {
+        canFinishFirst.countDown()
+      }
+    }
+
   // test multiple loads at same time only kick off one load, and callbacks are invoked
   @Test
   fun testMultiLoad() {

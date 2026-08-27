@@ -43,68 +43,67 @@ import org.junit.Test
 class ExtendingDslIntegrationTest {
 
   @get:Rule
-  val project =
-    GradleRule.from {
-      androidLibrary {
-        pluginCallbacks += ExtendingCallback::class.java
-        android {
-          viaExtension("custom", ProjectDslExtension::class) { projectExt = "libProjectExt" }
-          buildTypes { named("debug") { it.viaExtension("custom", BuildTypeDslExtension::class) { buildTypeExt = "libBuildTypeExt" } } }
-          flavorDimensions += "color"
-          productFlavors {
-            create("blue") { it.viaExtension("custom", ProductFlavorDslExtension::class) { productFlavorExt = "libProductFlavorExt" } }
-            create("red") {}
-          }
-        }
-      }
-
-      androidApplication {
-        pluginCallbacks += ExtendingCallback::class.java
-        android {
-          viaExtension("custom", ProjectDslExtension::class) { projectExt = "appProjectExt" }
-          buildTypes { named("debug") { it.viaExtension("custom", BuildTypeDslExtension::class) { buildTypeExt = "appBuildTypeExt" } } }
-          flavorDimensions += "color"
-          productFlavors {
-            create("blue") { it.viaExtension("custom", ProductFlavorDslExtension::class) { productFlavorExt = "appProductFlavorExt" } }
-            create("red") {}
-          }
-        }
-      }
-
-      androidFeature {
-        pluginCallbacks += ExtendingCallback::class.java
-        android {
-          viaExtension("custom", ProjectDslExtension::class) { projectExt = "dynamicFeatureProjectExt" }
-          buildTypes {
-            named("debug") { it.viaExtension("custom", BuildTypeDslExtension::class) { buildTypeExt = "dynamicFeatureBuildTypeExt" } }
-          }
-          flavorDimensions += "color"
-          productFlavors {
-            create("blue") {
-              it.viaExtension("custom", ProductFlavorDslExtension::class) { productFlavorExt = "dynamicFeatureProductFlavorExt" }
-            }
-
-            create("red") {}
-          }
-        }
-      }
-
-      androidTest {
-        android { targetProjectPath = ":app" }
-        pluginCallbacks += ExtendingCallback::class.java
-        android {
-          viaExtension("custom", ProjectDslExtension::class) { projectExt = "testOnlyProjectExt" }
-          buildTypes {
-            named("debug") { it.viaExtension("custom", BuildTypeDslExtension::class) { buildTypeExt = "testOnlyBuildTypeExt" } }
-          }
-          flavorDimensions += "color"
-          productFlavors {
-            create("blue") { it.viaExtension("custom", ProductFlavorDslExtension::class) { productFlavorExt = "testOnlyProductFlavorExt" } }
-            create("red") {}
-          }
+  val project = GradleRule.from {
+    androidLibrary {
+      pluginCallbacks += ExtendingCallback::class.java
+      android {
+        viaExtension("custom", ProjectDslExtension::class) { projectExt = "libProjectExt" }
+        buildTypes { named("debug") { it.viaExtension("custom", BuildTypeDslExtension::class) { buildTypeExt = "libBuildTypeExt" } } }
+        flavorDimensions += "color"
+        productFlavors {
+          create("blue") { it.viaExtension("custom", ProductFlavorDslExtension::class) { productFlavorExt = "libProductFlavorExt" } }
+          create("red") {}
         }
       }
     }
+
+    androidApplication {
+      pluginCallbacks += ExtendingCallback::class.java
+      android {
+        viaExtension("custom", ProjectDslExtension::class) { projectExt = "appProjectExt" }
+        buildTypes { named("debug") { it.viaExtension("custom", BuildTypeDslExtension::class) { buildTypeExt = "appBuildTypeExt" } } }
+        flavorDimensions += "color"
+        productFlavors {
+          create("blue") { it.viaExtension("custom", ProductFlavorDslExtension::class) { productFlavorExt = "appProductFlavorExt" } }
+          create("red") {}
+        }
+      }
+    }
+
+    androidFeature {
+      pluginCallbacks += ExtendingCallback::class.java
+      android {
+        viaExtension("custom", ProjectDslExtension::class) { projectExt = "dynamicFeatureProjectExt" }
+        buildTypes {
+          named("debug") { it.viaExtension("custom", BuildTypeDslExtension::class) { buildTypeExt = "dynamicFeatureBuildTypeExt" } }
+        }
+        flavorDimensions += "color"
+        productFlavors {
+          create("blue") {
+            it.viaExtension("custom", ProductFlavorDslExtension::class) { productFlavorExt = "dynamicFeatureProductFlavorExt" }
+          }
+
+          create("red") {}
+        }
+      }
+    }
+
+    androidTest {
+      android { targetProjectPath = ":app" }
+      pluginCallbacks += ExtendingCallback::class.java
+      android {
+        viaExtension("custom", ProjectDslExtension::class) { projectExt = "testOnlyProjectExt" }
+        buildTypes {
+          named("debug") { it.viaExtension("custom", BuildTypeDslExtension::class) { buildTypeExt = "testOnlyBuildTypeExt" } }
+        }
+        flavorDimensions += "color"
+        productFlavors {
+          create("blue") { it.viaExtension("custom", ProductFlavorDslExtension::class) { productFlavorExt = "testOnlyProductFlavorExt" } }
+          create("red") {}
+        }
+      }
+    }
+  }
 
   val expectedOutputs =
     mapOf(
@@ -158,15 +157,14 @@ class ExtendingDslIntegrationTest {
   }
 
   private fun validate(fileType: BuildFileType, oldDsl: Boolean) {
-    val build =
-      project.build {
-        buildFileType = fileType
-        gradleProperties {
-          if (oldDsl) {
-            add(BooleanOption.USE_NEW_DSL, false)
-          }
+    val build = project.build {
+      buildFileType = fileType
+      gradleProperties {
+        if (oldDsl) {
+          add(BooleanOption.USE_NEW_DSL, false)
         }
       }
+    }
 
     // run tasks to validate that the values read are the right ones
     // This is more reliable than println

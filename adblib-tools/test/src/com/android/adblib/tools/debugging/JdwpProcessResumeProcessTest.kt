@@ -56,10 +56,9 @@ class JdwpProcessResumeProcessTest : AdbLibToolsJdwpTestBase() {
         // We know there will be one at some point because 1) only one has a value of "1"
         // consistently, and 2) the other ones retry only every 5 seconds, so there is plenty
         // of time to find a value of "0" for those.
-        val processWithActivationCountFlow =
-          jdwpProcessList.map { jdwpProcess ->
-            (jdwpProcess as AbstractJdwpProcess).jdwpSessionActivationCount.map { Pair(jdwpProcess, it) }
-          }
+        val processWithActivationCountFlow = jdwpProcessList.map { jdwpProcess ->
+          (jdwpProcess as AbstractJdwpProcess).jdwpSessionActivationCount.map { Pair(jdwpProcess, it) }
+        }
         val processWithNoJdwpConnectionOpen =
           combine(processWithActivationCountFlow) { it.toList() }
             .mapNotNull { it.firstOrNull { (_, activationCount) -> activationCount == 0 } }
@@ -80,10 +79,9 @@ class JdwpProcessResumeProcessTest : AdbLibToolsJdwpTestBase() {
     runBlockingWithTimeout {
       val processPicker: suspend (List<JdwpProcess>) -> JdwpProcess = { jdwpProcessList ->
         // Find the first process that has an `activationCount == 1`.
-        val processWithActivationCountFlow =
-          jdwpProcessList.map { jdwpProcess ->
-            (jdwpProcess as AbstractJdwpProcess).jdwpSessionActivationCount.map { Pair(jdwpProcess, it) }
-          }
+        val processWithActivationCountFlow = jdwpProcessList.map { jdwpProcess ->
+          (jdwpProcess as AbstractJdwpProcess).jdwpSessionActivationCount.map { Pair(jdwpProcess, it) }
+        }
         val processWithJdwpConnectionOpen =
           combine(processWithActivationCountFlow) { it.toList() }
             .mapNotNull { it -> it.firstOrNull { (_, activationCount) -> activationCount > 0 } }

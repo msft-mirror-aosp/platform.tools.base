@@ -62,11 +62,10 @@ class ValidateTaskPropertiesTest {
     // 250 parts. As a workaround, we remove the class path parts that are irrelevant.
     // For instance, if the same artifact is in the classpath twice, once from prebuilts
     // and once from @maven repo, then we remove the one from prebuilts.
-    val filteredPaths =
-      paths.filterNot {
-        it.contains("/prebuilts/tools/common/m2/repository/") &&
-          paths.contains(it.replace("/prebuilts/tools/common/m2/repository/", "/../+_repo_rules2+maven/repo/"))
-      }
+    val filteredPaths = paths.filterNot {
+      it.contains("/prebuilts/tools/common/m2/repository/") &&
+        paths.contains(it.replace("/prebuilts/tools/common/m2/repository/", "/../+_repo_rules2+maven/repo/"))
+    }
 
     val classpathLists =
       filteredPaths

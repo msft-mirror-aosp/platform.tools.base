@@ -321,11 +321,10 @@ class L8DexDesugarTest {
     )
   }
 
-  private fun getDexWithDesugarClass(desugarClass: String, dexes: Collection<Dex>): Dex? =
-    dexes.find {
-      checkValidClassName(desugarClass)
-      it.classes.keys.contains(desugarClass)
-    }
+  private fun getDexWithDesugarClass(desugarClass: String, dexes: Collection<Dex>): Dex? = dexes.find {
+    checkValidClassName(desugarClass)
+    it.classes.keys.contains(desugarClass)
+  }
 
   companion object {
     private const val DESUGAR_DEPENDENCY = "com.android.tools:desugar_jdk_libs:$DESUGAR_DEPENDENCY_VERSION"

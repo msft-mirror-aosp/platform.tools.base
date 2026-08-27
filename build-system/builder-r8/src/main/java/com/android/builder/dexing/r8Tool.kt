@@ -517,8 +517,9 @@ private fun setupFeatureSplits(
     val featureClassJar = featureClassJars.single { it.nameWithoutExtension == featureFileNameWithoutExtension }
     val featureJavaResourceJar = featureJavaResourceJars.single { it.nameWithoutExtension == featureFileNameWithoutExtension }
 
-    val javaResourcesConsumer =
-      featureJavaResourceOutputDir?.let { JavaResourcesConsumer(it.resolve("$featureFileNameWithoutExtension$DOT_JAR")) }
+    val javaResourcesConsumer = featureJavaResourceOutputDir?.let {
+      JavaResourcesConsumer(it.resolve("$featureFileNameWithoutExtension$DOT_JAR"))
+    }
     val programConsumer =
       if (featureDexOutputDir != null) {
         val featureDexOutputDirectory = Files.createDirectories(featureDexOutputDir.resolve(featureFileNameWithoutExtension))

@@ -34,19 +34,41 @@ import org.gradle.api.file.RegularFileProperty
 @Incubating
 interface Dexing {
 
+  /**
+   * @deprecated Legacy multidex (minSdk <= 19) is deprecated in AGP 9.4 and will be unsupported in AGP 11. Native multidex is always
+   *   supported for minSdk 21+.
+   */
+  @Deprecated(
+    message =
+      "Legacy multidex (minSdk <= 19) is deprecated in AGP 9.4 and will be unsupported in AGP 11. Native multidex is always supported for minSdk 21+."
+  )
   val isMultiDexEnabled: Boolean
 
   /**
    * If set, will point to the multiDex proguard file
    *
    * Note that the [GeneratesApkBuilder.enableMultiDex] must be set to true for this property to be used.
+   *
+   * @deprecated Legacy multidex (minSdk <= 19) is deprecated in AGP 9.4 and will be unsupported in AGP 11. Native multidex is always
+   *   supported for minSdk 21+ and does not require main dex class configuration.
    */
+  @Deprecated(
+    message =
+      "Legacy multidex (minSdk <= 19) is deprecated in AGP 9.4 and will be unsupported in AGP 11. Native multidex is always supported for minSdk 21+ and does not require main dex class configuration."
+  )
   val multiDexKeepProguard: RegularFileProperty
 
   /**
    * If set, will point to a text file that specifies additional classes that will be compiled into the main dex file.
    *
    * Note that the [GeneratesApkBuilder.enableMultiDex] must be set to true for this property to be used.
+   *
+   * @deprecated Legacy multidex (minSdk <= 19) is deprecated in AGP 9.4 and will be unsupported in AGP 11. Native multidex is always
+   *   supported for minSdk 21+ and does not require main dex class configuration.
    */
+  @Deprecated(
+    message =
+      "Legacy multidex (minSdk <= 19) is deprecated in AGP 9.4 and will be unsupported in AGP 11. Native multidex is always supported for minSdk 21+ and does not require main dex class configuration."
+  )
   val multiDexKeepFile: RegularFileProperty
 }

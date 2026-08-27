@@ -126,15 +126,14 @@ object CharacterDataEscaper {
   private fun String.stripUnescapedQuotes(): String = filterIndexed { i, c -> c != '"' || containsEscapedCharAt(i) }
 
   /** Unescapes the [String] character by character as required. */
-  private fun String.unescapeChars(): String =
-    mapIndexedNotNull { i, c ->
-        when {
-          i < length - 1 && shouldUnescapeCharAt(i + 1) -> null // Elide escape char
-          shouldUnescapeCharAt(i) -> c.getReplacement()
-          else -> c
-        }
-      }
-      .joinToString("")
+  private fun String.unescapeChars(): String = mapIndexedNotNull { i, c ->
+    when {
+      i < length - 1 && shouldUnescapeCharAt(i + 1) -> null // Elide escape char
+      shouldUnescapeCharAt(i) -> c.getReplacement()
+      else -> c
+    }
+  }
+    .joinToString("")
 
   private fun String.startsOrEndsWithSpace(): Boolean = startsWith(" ") || endsWith(" ")
 

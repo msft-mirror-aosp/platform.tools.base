@@ -27,34 +27,33 @@ import org.junit.Test
 class InstantAppValidationTest {
 
   @get:Rule
-  val project =
-    GradleRule.from {
-      androidApplication {
-        applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
+  val project = GradleRule.from {
+    androidApplication {
+      applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
 
-        android {
-          namespace = "com.example.baseModule"
-          dynamicFeatures += listOf(DEFAULT_FEATURE_PATH)
-          defaultConfig {
-            testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-            minSdk = 19
-          }
+      android {
+        namespace = "com.example.baseModule"
+        dynamicFeatures += listOf(DEFAULT_FEATURE_PATH)
+        defaultConfig {
+          testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+          minSdk = 19
         }
       }
-      androidFeature(DEFAULT_FEATURE_PATH) { dependencies { implementation(project(":app")) } }
-        .files
-        .update("src/main/AndroidManifest.xml")
-        .replaceWith(
-          // language=xml
-          """
-          <?xml version="1.0" encoding="utf-8"?>
-          <manifest xmlns:dist="http://schemas.android.com/apk/distribution">
-               <dist:module dist:instant="true" />
-          </manifest>
-          """
-            .trimIndent()
-        )
     }
+    androidFeature(DEFAULT_FEATURE_PATH) { dependencies { implementation(project(":app")) } }
+      .files
+      .update("src/main/AndroidManifest.xml")
+      .replaceWith(
+        // language=xml
+        """
+        <?xml version="1.0" encoding="utf-8"?>
+        <manifest xmlns:dist="http://schemas.android.com/apk/distribution">
+             <dist:module dist:instant="true" />
+        </manifest>
+        """
+          .trimIndent()
+      )
+  }
 
   @Test
   fun testInstantAppWarning() {

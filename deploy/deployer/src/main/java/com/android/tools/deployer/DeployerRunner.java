@@ -530,7 +530,7 @@ public class DeployerRunner {
             @NonNull Map<String, IDevice> devices) {
         Map<String, DeviceHolder> deviceHolders = new HashMap<>(devices.size());
         for (Map.Entry<String, IDevice> entry : devices.entrySet()) {
-            deviceHolders.put(entry.getKey(), new DeviceHolder(entry.getValue(), null));
+            deviceHolders.put(entry.getKey(), new DeviceHolder(entry.getValue(), Optional.empty()));
         }
         return deviceHolders;
     }

@@ -324,11 +324,10 @@ interface Encoder<T> {
   }
 
   class EncodingState<S : OutputStream>(interning: List<Pair<Encoder<*>, S>>) {
-    private val records =
-      interning.map { (encoder, stream) ->
-        require(encoder is Interned) { "Encoder $encoder is not interned" }
-        Record(encoder.base, mutableMapOf(), mutableListOf(), stream)
-      }
+    private val records = interning.map { (encoder, stream) ->
+      require(encoder is Interned) { "Encoder $encoder is not interned" }
+      Record(encoder.base, mutableMapOf(), mutableListOf(), stream)
+    }
 
     /**
      * The index of the last intern stream flushed at the end. If flushing one stream results in growing an already flushed intern stream,
@@ -383,11 +382,10 @@ interface Encoder<T> {
   }
 
   class DecodingState<S : InputStream>(interning: List<Pair<Encoder<*>, S>>) {
-    private val records =
-      interning.map { (encoder, stream) ->
-        require(encoder is Interned) { "Encoder $encoder is not interned" }
-        Record(encoder.base, mutableListOf())
-      }
+    private val records = interning.map { (encoder, stream) ->
+      require(encoder is Interned) { "Encoder $encoder is not interned" }
+      Record(encoder.base, mutableListOf())
+    }
     private var lastLoaded: Int = interning.size
 
     init {

@@ -128,21 +128,20 @@ class InstallProfilesPerDeviceApiConnectedTest {
 
   @Test
   fun `install baseline profile with splits`() {
-    val build =
-      rule.build {
-        androidApplication(":app") {
-          android {
-            splits {
-              abi {
-                isEnable = true
-                reset()
-                include("x86", "x86_64")
-                isUniversalApk = false
-              }
+    val build = rule.build {
+      androidApplication(":app") {
+        android {
+          splits {
+            abi {
+              isEnable = true
+              reset()
+              include("x86", "x86_64")
+              isUniversalApk = false
             }
           }
         }
       }
+    }
     val app = build.androidApplication(":app")
 
     val result = build.executor.run("assembleRelease", "installRelease")
@@ -188,19 +187,18 @@ class InstallProfilesPerDeviceApiConnectedTest {
 
   @Test
   fun validateOptOut() {
-    val build =
-      rule.build {
-        androidApplication(":app") {
-          files.add(
-            "src/main/baseline-prof.txt",
-            """
-            HSPLcom/google/Foo;->mainMethod(II)I
-            HSPLcom/google/Foo;->mainMethod-name-with-hyphens(II)I
-            """
-              .trimIndent(),
-          )
-        }
+    val build = rule.build {
+      androidApplication(":app") {
+        files.add(
+          "src/main/baseline-prof.txt",
+          """
+          HSPLcom/google/Foo;->mainMethod(II)I
+          HSPLcom/google/Foo;->mainMethod-name-with-hyphens(II)I
+          """
+            .trimIndent(),
+        )
       }
+    }
     val app = build.androidApplication(":app")
 
     val result = build.executor.run("assembleRelease")
@@ -248,14 +246,13 @@ class InstallProfilesPerDeviceApiConnectedTest {
   // Regression test for b/330593433
   @Test
   fun apkZipPackagingTest() {
-    val build =
-      rule.build {
-        androidApplication(":app") {
-          applyPlugin(PluginType.MAVEN_PUBLISH)
-          android { publishing { singleVariant("release") { publishApk() } } }
-          pluginCallbacks += MavenPublishPluginCallback::class.java
-        }
+    val build = rule.build {
+      androidApplication(":app") {
+        applyPlugin(PluginType.MAVEN_PUBLISH)
+        android { publishing { singleVariant("release") { publishApk() } } }
+        pluginCallbacks += MavenPublishPluginCallback::class.java
       }
+    }
     val app = build.androidApplication(":app")
 
     build.executor.run("publishAppPublicationToMavenRepository")
@@ -284,19 +281,18 @@ class InstallProfilesPerDeviceApiConnectedTest {
   // This test is disabled and should only be run locally with an API level lower than 28
   // @Test
   fun apiLevelNotSupportedForBaselineProfile() {
-    val build =
-      rule.build {
-        androidApplication(":app") {
-          files.add(
-            "src/main/baseline-prof.txt",
-            """
-            HSPLcom/google/Foo;->mainMethod(II)I
-            HSPLcom/google/Foo;->mainMethod-name-with-hyphens(II)I
-            """
-              .trimIndent(),
-          )
-        }
+    val build = rule.build {
+      androidApplication(":app") {
+        files.add(
+          "src/main/baseline-prof.txt",
+          """
+          HSPLcom/google/Foo;->mainMethod(II)I
+          HSPLcom/google/Foo;->mainMethod-name-with-hyphens(II)I
+          """
+            .trimIndent(),
+        )
       }
+    }
 
     val result = build.executor.run("assembleRelease", "installRelease")
 

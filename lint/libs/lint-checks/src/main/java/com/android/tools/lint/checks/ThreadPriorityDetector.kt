@@ -26,6 +26,8 @@ import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.android.tools.lint.detector.api.UastLintUtils
+import com.intellij.psi.PsiClass
+import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiField
 import com.intellij.psi.PsiLocalVariable
 import com.intellij.psi.PsiMethod
@@ -34,17 +36,21 @@ import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UExpression
 import org.jetbrains.uast.UNamedExpression
 import org.jetbrains.uast.UParenthesizedExpression
+import org.jetbrains.uast.UQualifiedReferenceExpression
+import org.jetbrains.uast.UReferenceExpression
+import org.jetbrains.uast.getContainingUClass
 import org.jetbrains.uast.tryResolve
 
 /**
- * Detector that flags integer confusion between java.lang.Thread and android.os.Process
- * thread priority APIs.
+ * Detector that flags integer confusion between java.lang.Thread and android.os.Process thread priority APIs, as well as misleading
+ * references to Thread priority constants on HandlerThread.
  */
 class ThreadPriorityDetector : Detector(), SourceCodeScanner {
 
   companion object Issues {
-    private val IMPLEMENTATION =
-      Implementation(ThreadPriorityDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(ThreadPriorityDetector::class.java, Scope.JAVA_FILE_SCOPE)
+
+    private val PRIORITY_FIELD_NAMES = listOf("MIN_PRIORITY", "NORM_PRIORITY", "MAX_PRIORITY")
 
     @JvmField
     val ISSUE =
@@ -53,23 +59,69 @@ class ThreadPriorityDetector : Detector(), SourceCodeScanner {
         briefDescription = "Thread Priority Integer Confusion",
         explanation =
           """
-            Different thread priority APIs use different integer scales.
+          Different thread priority APIs use different integer scales.
 
-            * `java.lang.Thread.setPriority(int)` expects values between 1 (MIN_PRIORITY) and 10 (MAX_PRIORITY). Higher values represent higher priority.
-            * `android.os.Process.setThreadPriority(int)` expects Linux priorities between -20 (highest) and 19 (lowest). Lower values represent higher priority.
+          * `java.lang.Thread.setPriority(int)` expects values between 1 (MIN_PRIORITY) and 10 (MAX_PRIORITY). Higher values represent higher priority.
+          * `android.os.Process.setThreadPriority(int)` expects Linux priorities between -20 (highest) and 19 (lowest). Lower values represent higher priority.
 
-            Confusing these scales can lead to bugs. For example, passing `Thread.MAX_PRIORITY` (10) to `Process.setThreadPriority` sets the priority to `THREAD_PRIORITY_BACKGROUND` (slow), which is the opposite of intended. Passing `Process.THREAD_PRIORITY_BACKGROUND` (10) to `Thread.setPriority` sets it to MAX priority. Passing negative values to `Thread.setPriority` causes a runtime exception.
-          """.trimIndent(),
+          Confusing these scales can lead to bugs. For example, passing `Thread.MAX_PRIORITY` (10) to `Process.setThreadPriority` sets the priority to `THREAD_PRIORITY_BACKGROUND` (slow), which is the opposite of intended. Passing `Process.THREAD_PRIORITY_BACKGROUND` (10) to `Thread.setPriority` sets it to MAX priority. Passing negative values to `Thread.setPriority` causes a runtime exception.
+
+          Similarly, `android.os.HandlerThread` inherits from `java.lang.Thread`, but its constructor and internal priority expect `android.os.Process` priorities (such as `Process.THREAD_PRIORITY_DEFAULT` or `Process.THREAD_PRIORITY_BACKGROUND`). Referencing inherited `Thread` priority constants via `HandlerThread` (such as `HandlerThread.MIN_PRIORITY`, `HandlerThread.NORM_PRIORITY`, or `HandlerThread.MAX_PRIORITY`) is misleading and causes incorrect thread priorities (e.g. `HandlerThread.MIN_PRIORITY` is `1`, which corresponds to Linux nice +1 instead of `Process.THREAD_PRIORITY_LOWEST` (19)).
+          """
+            .trimIndent(),
         category = Category.CORRECTNESS,
         priority = 6,
         severity = Severity.ERROR,
         androidSpecific = true,
-        implementation = IMPLEMENTATION
+        implementation = IMPLEMENTATION,
       )
   }
 
-  override fun getApplicableMethodNames(): List<String> =
-    listOf("setPriority", "setThreadPriority")
+  private val reportedElements = mutableSetOf<PsiElement>()
+
+  override fun beforeCheckFile(context: com.android.tools.lint.detector.api.Context) {
+    reportedElements.clear()
+  }
+
+  override fun getApplicableReferenceNames(): List<String> = PRIORITY_FIELD_NAMES
+
+  override fun visitReference(
+    context: JavaContext,
+    reference: UReferenceExpression,
+    referenced: PsiElement,
+  ) {
+    if (referenced is PsiField && context.evaluator.isMemberInClass(referenced, "java.lang.Thread")) {
+      val (qualifierClass, qualifierName) = getQualifierClassAndName(context, reference) ?: return
+      if (
+        qualifierClass.qualifiedName == "android.os.HandlerThread" ||
+          context.evaluator.inheritsFrom(qualifierClass, "android.os.HandlerThread", false)
+      ) {
+        val targetNode = getQualifiedReferenceNode(reference) ?: reference
+        val sourcePsi = targetNode.sourcePsi ?: targetNode.javaPsi
+        if (sourcePsi != null && !reportedElements.add(sourcePsi)) {
+          return
+        }
+
+        val fieldName = referenced.name
+        val intValue =
+          when (fieldName) {
+            "MIN_PRIORITY" -> 1
+            "NORM_PRIORITY" -> 5
+            "MAX_PRIORITY" -> 10
+            else -> null
+          }
+        val valueStr = if (intValue != null) " ($intValue)" else ""
+        context.report(
+          ISSUE,
+          targetNode,
+          context.getLocation(targetNode),
+          "Do not use `$qualifierName.$fieldName`; `HandlerThread` uses `android.os.Process` thread priorities (such as `Process.THREAD_PRIORITY_DEFAULT`), but inherits `$fieldName`$valueStr from `java.lang.Thread`",
+        )
+      }
+    }
+  }
+
+  override fun getApplicableMethodNames(): List<String> = listOf("setPriority", "setThreadPriority")
 
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
     val evaluator = context.evaluator
@@ -97,13 +149,12 @@ class ThreadPriorityDetector : Detector(), SourceCodeScanner {
     }
   }
 
-  override fun getApplicableConstructorTypes(): List<String> =
-    listOf("android.os.HandlerThread")
+  override fun getApplicableConstructorTypes(): List<String> = listOf("android.os.HandlerThread")
 
   override fun visitConstructor(
     context: JavaContext,
     node: UCallExpression,
-    constructor: PsiMethod
+    constructor: PsiMethod,
   ) {
     if (context.evaluator.isMemberInClass(constructor, "android.os.HandlerThread")) {
       if (node.valueArgumentCount == 2) {
@@ -113,6 +164,90 @@ class ThreadPriorityDetector : Detector(), SourceCodeScanner {
         }
       }
     }
+  }
+
+  private fun getQualifiedReferenceNode(reference: UReferenceExpression): UQualifiedReferenceExpression? {
+    if (reference is UQualifiedReferenceExpression) {
+      return reference
+    }
+    val parent = reference.uastParent
+    if (parent is UQualifiedReferenceExpression && parent.selector == reference) {
+      return parent
+    }
+    return null
+  }
+
+  private fun getQualifierClassAndName(
+    context: JavaContext,
+    reference: UReferenceExpression,
+  ): Pair<PsiClass, String>? {
+    val qualified = getQualifiedReferenceNode(reference)
+    if (qualified != null) {
+      val receiver = qualified.receiver
+      val resolved = receiver.tryResolve()
+      if (resolved is PsiClass) {
+        val name = resolved.name ?: "HandlerThread"
+        return Pair(resolved, name)
+      }
+      val receiverType = receiver.getExpressionType()
+      val psiClass = context.evaluator.getTypeClass(receiverType)
+      if (psiClass != null) {
+        val name = psiClass.name ?: "HandlerThread"
+        return Pair(psiClass, name)
+      }
+    } else {
+      // Unqualified reference (e.g. inside a subclass of HandlerThread or static/member import)
+      val containingClass = reference.getContainingUClass()?.javaPsi
+      if (containingClass != null && context.evaluator.inheritsFrom(containingClass, "android.os.HandlerThread", false)) {
+        return Pair(containingClass, containingClass.name ?: "HandlerThread")
+      }
+      val imports = context.uastFile?.imports ?: emptyList()
+      for (importStatement in imports) {
+        val importText = importStatement.importReference?.asSourceString() ?: importStatement.sourcePsi?.text ?: continue
+        val cleanText = importText.removePrefix("import ").removePrefix("static ").trim().removeSuffix(";")
+        val isAllUnder = importStatement.isOnDemand || cleanText.endsWith(".*")
+        if (isAllUnder) {
+          val classFqName = cleanText.removeSuffix(".*").removeSuffix(".")
+          if (classFqName.isNotEmpty()) {
+            val targetClass = context.evaluator.findClass(classFqName)
+            if (
+              targetClass != null &&
+                (targetClass.qualifiedName == "android.os.HandlerThread" ||
+                  context.evaluator.inheritsFrom(targetClass, "android.os.HandlerThread", false))
+            ) {
+              val name = targetClass.name ?: "HandlerThread"
+              return Pair(targetClass, name)
+            }
+          }
+        } else {
+          val memberName = cleanText.substringAfterLast('.')
+          if (memberName == reference.asSourceString()) {
+            val classFqName = cleanText.substringBeforeLast('.', "")
+            if (classFqName.isNotEmpty()) {
+              val targetClass = context.evaluator.findClass(classFqName)
+              if (
+                targetClass != null &&
+                  (targetClass.qualifiedName == "android.os.HandlerThread" ||
+                    context.evaluator.inheritsFrom(targetClass, "android.os.HandlerThread", false))
+              ) {
+                val name = targetClass.name ?: "HandlerThread"
+                return Pair(targetClass, name)
+              }
+            }
+          }
+        }
+      }
+    }
+    return null
+  }
+
+  private fun isHandlerThreadPriorityReference(context: JavaContext, expression: UExpression): Boolean {
+    val clean = skipContainers(expression) as? UReferenceExpression ?: return false
+    val field = clean.tryResolve() as? PsiField ?: return false
+    if (field.name !in PRIORITY_FIELD_NAMES || !context.evaluator.isMemberInClass(field, "java.lang.Thread")) return false
+    val (qualifierClass, _) = getQualifierClassAndName(context, clean) ?: return false
+    return qualifierClass.qualifiedName == "android.os.HandlerThread" ||
+      context.evaluator.inheritsFrom(qualifierClass, "android.os.HandlerThread", false)
   }
 
   private fun skipContainers(expression: UExpression): UExpression {
@@ -151,6 +286,10 @@ class ThreadPriorityDetector : Detector(), SourceCodeScanner {
   }
 
   private fun checkThreadSetPriority(context: JavaContext, argument: UExpression) {
+    if (isHandlerThreadPriorityReference(context, argument)) {
+      return
+    }
+
     val field = resolveToSourceField(argument)
     if (field != null) {
       val qualifiedName = field.containingClass?.qualifiedName
@@ -159,7 +298,7 @@ class ThreadPriorityDetector : Detector(), SourceCodeScanner {
           ISSUE,
           argument,
           context.getLocation(argument),
-          "Passing `android.os.Process` priority constants to `Thread.setPriority()` is invalid"
+          "Passing `android.os.Process` priority constants to `Thread.setPriority()` is invalid",
         )
         return
       }
@@ -173,7 +312,7 @@ class ThreadPriorityDetector : Detector(), SourceCodeScanner {
           ISSUE,
           argument,
           context.getLocation(argument),
-          "Thread priority must be between 1 (`Thread.MIN_PRIORITY`) and 10 (`Thread.MAX_PRIORITY`); was $value"
+          "Thread priority must be between 1 (`Thread.MIN_PRIORITY`) and 10 (`Thread.MAX_PRIORITY`); was $value",
         )
       }
     }
@@ -182,8 +321,12 @@ class ThreadPriorityDetector : Detector(), SourceCodeScanner {
   private fun checkProcessSetThreadPriority(
     context: JavaContext,
     argument: UExpression,
-    targetDescription: String = "`Process.setThreadPriority()`"
+    targetDescription: String = "`Process.setThreadPriority()`",
   ) {
+    if (isHandlerThreadPriorityReference(context, argument)) {
+      return
+    }
+
     val field = resolveToSourceField(argument)
     if (field != null) {
       val qualifiedName = field.containingClass?.qualifiedName
@@ -192,7 +335,7 @@ class ThreadPriorityDetector : Detector(), SourceCodeScanner {
           ISSUE,
           argument,
           context.getLocation(argument),
-          "Passing `java.lang.Thread` priority constants to $targetDescription is invalid"
+          "Passing `java.lang.Thread` priority constants to $targetDescription is invalid",
         )
         return
       }
@@ -206,7 +349,7 @@ class ThreadPriorityDetector : Detector(), SourceCodeScanner {
           ISSUE,
           argument,
           context.getLocation(argument),
-          "Process thread priority must be between -20 (highest) and 19 (lowest); was $value"
+          "Process thread priority must be between -20 (highest) and 19 (lowest); was $value",
         )
       }
     }

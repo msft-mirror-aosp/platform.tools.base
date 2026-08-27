@@ -38,30 +38,29 @@ import org.junit.Test
 class LintGeneratedResourcesTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        android {
-          namespace = "com.example.app"
-          lint {
-            abortOnError = false
-            textOutput = projectDotFile("lint-results.txt")
-            checkGeneratedSources = true
-          }
+  val rule = GradleRule.from {
+    androidApplication {
+      android {
+        namespace = "com.example.app"
+        lint {
+          abortOnError = false
+          textOutput = projectDotFile("lint-results.txt")
+          checkGeneratedSources = true
         }
-        files {
-          add(
-            "res-template.xml",
-            """<resources>
+      }
+      files {
+        add(
+          "res-template.xml",
+          """<resources>
     <!-- xml comment -->
     <string
         name="foo">Foo</string>
 </resources>""",
-          )
-        }
-        pluginCallbacks += ConfigureGeneratedRes::class.java
+        )
       }
+      pluginCallbacks += ConfigureGeneratedRes::class.java
     }
+  }
 
   /** Test that changes to generated resources cause the lint tasks to re-run as expected. */
   @Test

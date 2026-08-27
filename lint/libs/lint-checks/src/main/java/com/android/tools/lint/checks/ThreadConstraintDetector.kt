@@ -151,13 +151,12 @@ abstract class ThreadConstraintDetector<T : Enum<T>>(
           null -> context.report(violationIssue, context.locationOf(call), "Call fails thread requirements on arguments")
           else -> {
             assert(constraints.isNotEmpty())
-            val concreteReasons =
-              constraints.mapNotNull { failure ->
-                when (val arg = paramToArg[failure.invocation.chain.first]) {
-                  null -> null
-                  else -> arg to failure
-                }
+            val concreteReasons = constraints.mapNotNull { failure ->
+              when (val arg = paramToArg[failure.invocation.chain.first]) {
+                null -> null
+                else -> arg to failure
               }
+            }
             when {
               concreteReasons.isEmpty() -> {
                 val message =
@@ -248,13 +247,12 @@ abstract class ThreadConstraintDetector<T : Enum<T>>(
     context: JavaContext,
     targetAnn: Explicit<ThreadConstraint<T>>,
     baseAnns: List<Explicit<ThreadConstraint<T>>>,
-  ): Explicit<ThreadConstraint<T>> =
-    targetAnn.also {
-      val conflicts = baseAnns.filter { !(lattice.precede(targetAnn.annotated, it.annotated)) }
-      if (conflicts.isNotEmpty()) {
-        report(context, Error.ConflictingAnnotations(targetAnn, conflicts))
-      }
+  ): Explicit<ThreadConstraint<T>> = targetAnn.also {
+    val conflicts = baseAnns.filter { !(lattice.precede(targetAnn.annotated, it.annotated)) }
+    if (conflicts.isNotEmpty()) {
+      report(context, Error.ConflictingAnnotations(targetAnn, conflicts))
     }
+  }
 
   override fun inheritAnnotations(
     evaluator: JavaEvaluator,

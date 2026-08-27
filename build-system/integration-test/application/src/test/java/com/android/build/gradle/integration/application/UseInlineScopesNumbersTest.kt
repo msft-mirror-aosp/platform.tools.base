@@ -28,15 +28,14 @@ import org.junit.Test
 class UseInlineScopesNumbersTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication { applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN) }
-      androidLibrary { applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN) }
-      androidTest {
-        applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
-        android { targetProjectPath = DEFAULT_APP_PATH }
-      }
+  val rule = GradleRule.from {
+    androidApplication { applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN) }
+    androidLibrary { applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN) }
+    androidTest {
+      applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
+      android { targetProjectPath = DEFAULT_APP_PATH }
     }
+  }
 
   @Test
   fun testFlagAddedForDebuggableApks() {

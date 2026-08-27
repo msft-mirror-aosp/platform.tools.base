@@ -177,7 +177,7 @@ class DynamicFeaturesCacheabilityTest {
             ":app:lintReportDebug", // intentionally not cacheable
             ":app:mapDebugSourceSetPaths", // intentionally not cacheable
             ":app:mergeDebugAssets",
-            ":app:mergeDebugJavaResource", /* Bug 181142260 */
+            ":app:mergeDebugJavaResource",
             ":app:mergeDebugJniLibFolders",
             ":app:packageDebug", /* Bug 74595859 */
             ":app:signingConfigWriterDebug",
@@ -226,19 +226,19 @@ class DynamicFeaturesCacheabilityTest {
           setOf(
             ":app:assembleDebug",
             ":app:compileDebugKotlin",
+            ":app:compressDebugJavaRes",
             ":app:mergeDebugNativeDebugMetadata",
             ":app:mergeDebugNativeLibs",
-            ":app:processDebugJavaRes",
             ":app:stripDebugDebugSymbols",
             ":feature1:assembleDebug",
             ":feature1:compileDebugKotlin",
+            ":feature1:compressDebugJavaRes",
             ":feature1:mergeDebugNativeLibs",
-            ":feature1:processDebugJavaRes",
             ":feature1:stripDebugDebugSymbols",
             ":feature2:assembleDebug",
             ":feature2:compileDebugKotlin",
+            ":feature2:compressDebugJavaRes",
             ":feature2:mergeDebugNativeLibs",
-            ":feature2:processDebugJavaRes",
             ":feature2:stripDebugDebugSymbols",
           ),
         FAILED to setOf(),

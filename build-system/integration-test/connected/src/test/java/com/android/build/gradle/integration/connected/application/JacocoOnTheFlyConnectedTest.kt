@@ -147,6 +147,134 @@ class JacocoOnTheFlyConnectedTest(val runWithBuiltInPlatform: Boolean) {
             .trimIndent(),
         )
         files.add(
+          "src/main/java/com/example/helloworld/ComplexBranchingKotlin.kt",
+          """
+          package com.example.helloworld
+
+          import java.io.IOException
+
+          class ComplexBranchingKotlin {
+              fun whenBlock(key: Int): String {
+                  return when (key) {
+                      1 -> "one"
+                      2 -> "two"
+                      100 -> "hundred"
+                      else -> "other"
+                  }
+              }
+
+              fun complexLadder(score: Int, extraCredit: Boolean): String {
+                  return if (score >= 90) {
+                      if (extraCredit) "A+" else "A"
+                  } else if (score >= 80) {
+                      "B"
+                  } else {
+                      "F"
+                  }
+              }
+
+              fun loopControl(limit: Int): Int {
+                  var sum = 0
+                  for (i in 1..limit) {
+                      if (i % 2 == 0) {
+                          continue
+                      }
+                      if (sum > 20) {
+                          break
+                      }
+                      sum += i
+                  }
+                  return sum
+              }
+
+              fun tryCatchFinally(input: String): Int {
+                  var result = 0
+                  try {
+                      if (input == "error") {
+                          throw IOException("triggered")
+                      }
+                      result = input.length
+                  } catch (e: IOException) {
+                      result = -1
+                  } finally {
+                      result += 10
+                  }
+                  return result
+              }
+          }
+          """
+            .trimIndent(),
+        )
+        files.add(
+          "src/main/java/com/example/helloworld/ComplexBranchingJava.java",
+          """
+          package com.example.helloworld;
+
+          import java.io.IOException;
+
+          public class ComplexBranchingJava {
+              public String switchStatement(int key) {
+                  switch (key) {
+                      case 1: return "one";
+                      case 2: return "two";
+                      case 100: return "hundred";
+                      default: return "other";
+                  }
+              }
+
+              public String fallThroughSwitch(int key) {
+                  String result = "";
+                  switch (key) {
+                      case 1: result += "one";
+                      case 2: result += "two";
+                      default: result += "default";
+                  }
+                  return result;
+              }
+
+              public String complexLadder(int score, boolean extraCredit) {
+                  if (score >= 90) {
+                      return extraCredit ? "A+" : "A";
+                  } else if (score >= 80) {
+                      return "B";
+                  } else {
+                      return "F";
+                  }
+              }
+
+              public int loopControl(int limit) {
+                  int sum = 0;
+                  for (int i = 1; i <= limit; i++) {
+                      if (i % 2 == 0) {
+                          continue;
+                      }
+                      if (sum > 20) {
+                          break;
+                      }
+                      sum += i;
+                  }
+                  return sum;
+              }
+
+              public int tryCatchFinally(String input) {
+                  int result = 0;
+                  try {
+                      if ("error".equals(input)) {
+                          throw new IOException("triggered");
+                      }
+                      result = input.length();
+                  } catch (IOException e) {
+                      result = -1;
+                  } finally {
+                      result += 10;
+                  }
+                  return result;
+              }
+          }
+          """
+            .trimIndent(),
+        )
+        files.add(
           "src/androidTest/java/com/example/helloworld/HelloWorldTest.java",
           """
           package com.example.helloworld;
@@ -172,6 +300,32 @@ class JacocoOnTheFlyConnectedTest(val runWithBuiltInPlatform: Boolean) {
                   ConstructorTestClass c2 = new ConstructorTestClass(42, "custom");
                   assertEquals(42, c2.getId());
                   assertEquals("custom", c2.getName());
+
+                  ComplexBranchingKotlin k = new ComplexBranchingKotlin();
+                  ComplexBranchingJava j = new ComplexBranchingJava();
+
+                  // 1. Switch & When
+                  assertEquals("one", k.whenBlock(1));
+                  assertEquals("two", k.whenBlock(2));
+                  assertEquals("one", j.switchStatement(1));
+                  assertEquals("two", j.switchStatement(2));
+
+                  // 1a. Java Fall-Through Switch (runs all 3 case blocks due to no break)
+                  assertEquals("onetwodefault", j.fallThroughSwitch(1));
+
+                  // 2. Complex if-else-if nested ladder
+                  assertEquals("F", k.complexLadder(50, false));
+                  assertEquals("B", k.complexLadder(85, false));
+                  assertEquals("F", j.complexLadder(50, false));
+                  assertEquals("B", j.complexLadder(85, false));
+
+                  // 3. Loops with continue & break
+                  assertTrue(k.loopControl(5) > 0);
+                  assertTrue(j.loopControl(5) > 0);
+
+                  // 4. Try-catch-finally exceptional paths
+                  assertEquals(15, k.tryCatchFinally("hello"));
+                  assertEquals(15, j.tryCatchFinally("hello"));
               }
           }
           """
@@ -215,6 +369,37 @@ class JacocoOnTheFlyConnectedTest(val runWithBuiltInPlatform: Boolean) {
     assertThat(content).contains("<class name=\"com/example/helloworld/AppHelper\"")
     assertThat(content).contains("<class name=\"com/example/helloworld/ComplexParamClass\"")
     assertThat(content).contains("<class name=\"com/example/helloworld/ConstructorTestClass\"")
+    assertThat(content).contains("<class name=\"com/example/helloworld/ComplexBranchingKotlin\"")
+    assertThat(content).contains("<class name=\"com/example/helloworld/ComplexBranchingJava\"")
+
+    // Verify presence of our stress-test method names
+    assertThat(content).contains("<method name=\"whenBlock\"")
+    assertThat(content).contains("<method name=\"switchStatement\"")
+    assertThat(content).contains("<method name=\"fallThroughSwitch\"")
+    assertThat(content).contains("<method name=\"complexLadder\"")
+    assertThat(content).contains("<method name=\"loopControl\"")
+    assertThat(content).contains("<method name=\"tryCatchFinally\"")
+
+    // Assert exact branch ratios are solved and recorded in the XML report:
+    // a. loopControl:
+    //    - Java: loop, continue, break. 5 covered, 1 missed (break true branch missed) -> missed="1" covered="5"
+    //    - Kotlin: extra compiler checks. 6 covered, 2 missed -> missed="2" covered="6"
+    assertThat(content).contains("<method name=\"loopControl\"")
+    assertThat(content).contains("<counter type=\"BRANCH\" missed=\"1\" covered=\"5\"/>")
+    assertThat(content).contains("<counter type=\"BRANCH\" missed=\"2\" covered=\"6\"/>")
+
+    // b. tryCatchFinally: normal try + finally hit, catch missed. 1 covered, 1 missed -> missed="1" covered="1"
+    assertThat(content).contains("<method name=\"tryCatchFinally\"")
+    assertThat(content).contains("<counter type=\"BRANCH\" missed=\"1\" covered=\"1\"/>")
+
+    // c. complexLadder: nested ladder paths. 3 covered, 3 missed -> missed="3" covered="3"
+    assertThat(content).contains("<method name=\"complexLadder\"")
+    assertThat(content).contains("<counter type=\"BRANCH\" missed=\"3\" covered=\"3\"/>")
+
+    // d. fallThroughSwitch: entry on case 1 covered, case 2 and default missed (but blocks hit by fall-through). 2 covered, 1 missed -> missed="1" covered="2"
+    assertThat(content).contains("<method name=\"fallThroughSwitch\"")
+    assertThat(content).contains("<counter type=\"BRANCH\" missed=\"1\" covered=\"2\"/>")
+
     assertThat(content).doesNotContain("<package name=\"com/example/libmodule\">")
   }
 }

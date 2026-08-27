@@ -31,7 +31,14 @@ interface VariantDimension {
    * Text file with additional ProGuard rules to be used to determine which classes are compiled into the main dex file.
    *
    * If set, rules from this file are used in combination with the default rules used by the build system.
+   *
+   * @deprecated Legacy multidex (minSdk <= 19) is deprecated in AGP 9.4 and will be unsupported in AGP 11. Native multidex is always
+   *   supported for minSdk 21+ and does not require main dex class configuration.
    */
+  @Deprecated(
+    message =
+      "Legacy multidex (minSdk <= 19) is deprecated in AGP 9.4 and will be unsupported in AGP 11. Native multidex is always supported for minSdk 21+ and does not require main dex class configuration."
+  )
   var multiDexKeepProguard: File?
 
   /**
@@ -40,8 +47,15 @@ interface VariantDimension {
    * Classes specified in the file are appended to the main dex classes computed using `aapt`.
    *
    * If set, the file should contain one class per line, in the following format: `com/example/MyClass.class`
+   *
+   * @deprecated Legacy multidex (minSdk <= 19) is deprecated in AGP 9.4 and will be unsupported in AGP 11. Native multidex is always
+   *   supported for minSdk 21+ and does not require main dex class configuration.
    */
-  @Deprecated("This property is deprecated. Migrate to multiDexKeepProguard.") var multiDexKeepFile: File?
+  @Deprecated(
+    message =
+      "Legacy multidex (minSdk <= 19) is deprecated in AGP 9.4 and will be unsupported in AGP 11. Native multidex is always supported for minSdk 21+ and does not require main dex class configuration."
+  )
+  var multiDexKeepFile: File?
 
   /** Encapsulates per-variant configurations for the NDK, such as ABI filters. */
   val ndk: Ndk

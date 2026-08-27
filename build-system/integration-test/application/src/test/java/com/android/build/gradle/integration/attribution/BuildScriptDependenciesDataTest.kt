@@ -31,14 +31,13 @@ import org.junit.rules.TemporaryFolder
 class BuildScriptDependenciesDataTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication { HelloWorldAndroid.setupKotlin(files) }
-      // Setting useLatestKgpVersion = true will add
-      // org.jetbrains.kotlin:kotlin-gradle-plugin:<KOTLIN_VERSION_FOR_TESTS>
-      // to the build script classpath
-      useLatestKgpVersion = true
-    }
+  val rule = GradleRule.from {
+    androidApplication { HelloWorldAndroid.setupKotlin(files) }
+    // Setting useLatestKgpVersion = true will add
+    // org.jetbrains.kotlin:kotlin-gradle-plugin:<KOTLIN_VERSION_FOR_TESTS>
+    // to the build script classpath
+    useLatestKgpVersion = true
+  }
 
   @get:Rule val temporaryFolder = TemporaryFolder()
 

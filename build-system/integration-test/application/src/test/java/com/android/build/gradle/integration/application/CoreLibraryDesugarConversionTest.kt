@@ -182,11 +182,10 @@ class CoreLibraryDesugarConversionTest(val minSdkVersion: Int) {
       .hasMethodThatInvokesMethod("onGetDirectActions", "convert", listOf("Ljava/util/function/Consumer;"), "Lj$/util/function/Consumer;")
   }
 
-  private fun getDexWithSpecificClass(className: String, dexes: Collection<Dex>): Dex? =
-    dexes.find {
-      AndroidArchive.checkValidClassName(className)
-      it.classes.keys.contains(className)
-    }
+  private fun getDexWithSpecificClass(className: String, dexes: Collection<Dex>): Dex? = dexes.find {
+    AndroidArchive.checkValidClassName(className)
+    it.classes.keys.contains(className)
+  }
 
   private fun findMethodThatInvokes(
     dex: Dex,

@@ -42,7 +42,10 @@ class PreviewScreenshotDescriptorTest {
     object : EngineExecutionListener {
       override fun executionStarted(testDescriptor: TestDescriptor?) {}
 
-      override fun executionFinished(testDescriptor: TestDescriptor?, testExecutionResult: TestExecutionResult?) {}
+      override fun executionFinished(
+        testDescriptor: TestDescriptor?,
+        testExecutionResult: TestExecutionResult?,
+      ) {}
 
       override fun executionSkipped(testDescriptor: TestDescriptor?, reason: String?) {}
 
@@ -53,7 +56,10 @@ class PreviewScreenshotDescriptorTest {
 
   private val dummyDynamicTestExecutor =
     object : Node.DynamicTestExecutor {
-      override fun execute(testDescriptor: TestDescriptor?, executionListener: EngineExecutionListener?): java.util.concurrent.Future<*>? {
+      override fun execute(
+        testDescriptor: TestDescriptor?,
+        executionListener: EngineExecutionListener?,
+      ): java.util.concurrent.Future<*>? {
         return null
       }
 
@@ -103,7 +109,10 @@ class PreviewScreenshotDescriptorTest {
         projectRoot = tempDir.root,
       )
 
-    val exception = assertThrows(ScreenshotRenderException::class.java) { descriptor.execute(context, dummyDynamicTestExecutor) }
+    val exception =
+      assertThrows(ScreenshotRenderException::class.java) {
+        descriptor.execute(context, dummyDynamicTestExecutor)
+      }
 
     val msg = exception.message ?: ""
     assertThat(msg).contains("Screenshot rendering failed: Simulated rendering exception in Layoutlib")
@@ -152,7 +161,10 @@ class PreviewScreenshotDescriptorTest {
         projectRoot = tempDir.root,
       )
 
-    val exception = assertThrows(ScreenshotRenderException::class.java) { descriptor.execute(context, dummyDynamicTestExecutor) }
+    val exception =
+      assertThrows(ScreenshotRenderException::class.java) {
+        descriptor.execute(context, dummyDynamicTestExecutor)
+      }
 
     val msg = exception.message ?: ""
     assertThat(msg).contains("Screenshot rendering failed: Class initialization failed")

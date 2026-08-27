@@ -66,38 +66,36 @@ internal class KotlinMultiplatformAndroidCompilationFactory(
     return target.createCompilation<KotlinMultiplatformAndroidCompilationImpl> {
       compilationName = name
       defaultSourceSet = kotlinExtension.sourceSets.getByName(compilationBuilder.defaultSourceSetName)
-      compilationFactory =
-        ExternalKotlinCompilationDescriptor.CompilationFactory { delegate ->
-          when (compilationType) {
-            KmpAndroidCompilationType.MAIN -> KotlinMultiplatformAndroidCompilationImpl(delegate)
+      compilationFactory = ExternalKotlinCompilationDescriptor.CompilationFactory { delegate ->
+        when (compilationType) {
+          KmpAndroidCompilationType.MAIN -> KotlinMultiplatformAndroidCompilationImpl(delegate)
 
-            KmpAndroidCompilationType.HOST_TEST ->
-              KotlinMultiplatformAndroidHostTestCompilationImpl(androidExtension.androidTestOnJvmOptions!!, delegate)
+          KmpAndroidCompilationType.HOST_TEST ->
+            KotlinMultiplatformAndroidHostTestCompilationImpl(androidExtension.androidTestOnJvmOptions!!, delegate)
 
-            KmpAndroidCompilationType.DEVICE_TEST ->
-              KotlinMultiplatformAndroidDeviceTestCompilationImpl(androidExtension.androidTestOnDeviceOptions!!, delegate)
-          }
+          KmpAndroidCompilationType.DEVICE_TEST ->
+            KotlinMultiplatformAndroidDeviceTestCompilationImpl(androidExtension.androidTestOnDeviceOptions!!, delegate)
         }
+      }
       compileTaskName = "compile".appendCapitalized(target.targetName.appendCapitalized(name))
 
       if (isTestComponent) {
-        compilationAssociator =
-          ExternalKotlinCompilationDescriptor.CompilationAssociator { auxiliary, main ->
-            // When associating a test compilation with a main compilation, we add a
-            // dependency from the configurations of the test components on the main project
-            // later. But we still need to add implementation and compileOnly dependencies
-            // from the main compilation to the test compilation to be consistent with the
-            // behaviour of the other kotlin targets.
-            if (main.compilationName == KmpAndroidCompilationType.MAIN.defaultCompilationName) {
-              auxiliary.compileDependencyConfigurationName.addAllDependenciesFromOtherConfigurations(
-                project,
-                main.implementationConfigurationName,
-                main.compileOnlyConfigurationName,
-              )
-            } else {
-              ExternalKotlinCompilationDescriptor.CompilationAssociator.default.associate(auxiliary, main)
-            }
+        compilationAssociator = ExternalKotlinCompilationDescriptor.CompilationAssociator { auxiliary, main ->
+          // When associating a test compilation with a main compilation, we add a
+          // dependency from the configurations of the test components on the main project
+          // later. But we still need to add implementation and compileOnly dependencies
+          // from the main compilation to the test compilation to be consistent with the
+          // behaviour of the other kotlin targets.
+          if (main.compilationName == KmpAndroidCompilationType.MAIN.defaultCompilationName) {
+            auxiliary.compileDependencyConfigurationName.addAllDependenciesFromOtherConfigurations(
+              project,
+              main.implementationConfigurationName,
+              main.compileOnlyConfigurationName,
+            )
+          } else {
+            ExternalKotlinCompilationDescriptor.CompilationAssociator.default.associate(auxiliary, main)
           }
+        }
       }
       sourceSetTreeClassifierV2 = compilationBuilder.getSourceSetTreeClassifier()
     }

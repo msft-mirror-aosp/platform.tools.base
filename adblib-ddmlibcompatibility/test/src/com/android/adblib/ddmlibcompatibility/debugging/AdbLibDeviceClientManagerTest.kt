@@ -404,8 +404,9 @@ class AdbLibDeviceClientManagerTest {
       listener.filterEvents { events -> events.any { it.kind == TestDeviceClientManagerListener.EventKind.PROCESS_NAME_UPDATED } },
     )
 
-    val event =
-      listener.filterEvents { events -> events.last { it.kind == TestDeviceClientManagerListener.EventKind.PROCESS_NAME_UPDATED } }
+    val event = listener.filterEvents { events ->
+      events.last { it.kind == TestDeviceClientManagerListener.EventKind.PROCESS_NAME_UPDATED }
+    }
     Assert.assertSame(event.deviceClientManager, deviceClientManager)
     Assert.assertNotNull(event.client)
     Assert.assertEquals("FakeVM", event.client!!.clientData.vmIdentifier)

@@ -29,46 +29,44 @@ import org.junit.Test
 
 class IncludeDefaultRulesTest {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        android {
-          defaultConfig.minSdk = 24
-          buildTypes { named("release") { it.isMinifyEnabled = true } }
-        }
-        files {
-          add(
-            "src/main/java/com/example/app/ClassToOptimize.kt",
-            // language=kotlin
-            """
-            class ClassToOptimize
-            """
-              .trimIndent(),
-          )
-        }
+  val rule = GradleRule.from {
+    androidApplication {
+      android {
+        defaultConfig.minSdk = 24
+        buildTypes { named("release") { it.isMinifyEnabled = true } }
+      }
+      files {
+        add(
+          "src/main/java/com/example/app/ClassToOptimize.kt",
+          // language=kotlin
+          """
+          class ClassToOptimize
+          """
+            .trimIndent(),
+        )
       }
     }
+  }
 
   val pathPrefix =
     "The proguard configuration file for the following section is Android Gradle plugin ${com.android.Version.ANDROID_GRADLE_PLUGIN_VERSION} (extracted file: "
 
   @Test
   fun `test includeDefault Rules positive case`() {
-    val build =
-      rule.build {
-        androidApplication {
-          android {
-            buildTypes {
-              named("release") {
-                it.optimization {
-                  enable = true
-                  keepRules { includeDefault = true }
-                }
+    val build = rule.build {
+      androidApplication {
+        android {
+          buildTypes {
+            named("release") {
+              it.optimization {
+                enable = true
+                keepRules { includeDefault = true }
               }
             }
           }
         }
       }
+    }
     build.executor.run(":app:assembleRelease")
     val globalFile = getGlobalProguardPath(build)
     val configTxt = build.getReleaseConfigurationTxtFile()
@@ -95,19 +93,18 @@ class IncludeDefaultRulesTest {
 
   @Test
   fun `test includeDefaultRules false`() {
-    val build =
-      rule.build {
-        androidApplication {
-          android {
-            buildTypes {
-              named("release") {
-                it.optimization.enable = true
-                it.optimization.keepRules { includeDefault = false }
-              }
+    val build = rule.build {
+      androidApplication {
+        android {
+          buildTypes {
+            named("release") {
+              it.optimization.enable = true
+              it.optimization.keepRules { includeDefault = false }
             }
           }
         }
       }
+    }
     build.executor.run(":app:assembleRelease")
     val configTxt = build.getReleaseConfigurationTxtFile()
     val globalFile = getGlobalProguardPath(build)
@@ -116,10 +113,9 @@ class IncludeDefaultRulesTest {
 
   @Test
   fun `test includeDefaultRules true but no optimization enable`() {
-    val build =
-      rule.build {
-        androidApplication { android { buildTypes { named("release") { it.optimization.keepRules { includeDefault = true } } } } }
-      }
+    val build = rule.build {
+      androidApplication { android { buildTypes { named("release") { it.optimization.keepRules { includeDefault = true } } } } }
+    }
     build.executor.run(":app:assembleRelease")
     val configTxt = build.getReleaseConfigurationTxtFile()
     val globalFile = getGlobalProguardPath(build)

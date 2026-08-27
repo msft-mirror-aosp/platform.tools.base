@@ -238,12 +238,11 @@ class ManagedDeviceImageSuggestionGenerator(
         "google_apis" -> listOf("google-atd", "aosp", "aosp-atd")
         else -> listOf("aosp-atd", "aosp", "google-atd", "google")
       }
-    val validSources =
-      allRelevantSources.filter {
-        val newHash = computeHash(otherImageSource = it)
+    val validSources = allRelevantSources.filter {
+      val newHash = computeHash(otherImageSource = it)
 
-        allImages.contains(newHash)
-      }
+      allImages.contains(newHash)
+    }
 
     return if (validSources.isNotEmpty()) {
       "The image does not exist from $systemImageSource for this architecture on the given " +

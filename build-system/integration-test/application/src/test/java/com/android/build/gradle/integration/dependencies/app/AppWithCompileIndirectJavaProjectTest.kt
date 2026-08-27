@@ -29,42 +29,41 @@ import org.junit.Test
 class AppWithCompileIndirectJavaProjectTest : ModelComparator() {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        android { enableKotlin = false }
-        dependencies {
-          implementation(project(DEFAULT_LIB_PATH))
-          runtimeOnly("com.google.guava:guava:19.0")
-        }
-      }
-      androidLibrary {
-        android { enableKotlin = false }
-        dependencies { api(project(":jar")) }
-        files.add(
-          "src/main/java/com/example/android/multiproject/library/PersonView.java",
-          // language=java
-          """
-          package com.example.android.multiproject.library;
-          public class PersonView {}
-          """
-            .trimIndent(),
-        )
-      }
-      genericProject(":jar") {
-        applyPlugin(PluginType.JAVA_LIBRARY)
-        dependencies { api("com.google.guava:guava:19.0") }
-        files.add(
-          "src/main/java/com/example/android/multiproject/person/People.java",
-          // language=java
-          """
-          package com.example.android.multiproject.person;
-          public class People {}
-          """
-            .trimIndent(),
-        )
+  val rule = GradleRule.from {
+    androidApplication {
+      android { enableKotlin = false }
+      dependencies {
+        implementation(project(DEFAULT_LIB_PATH))
+        runtimeOnly("com.google.guava:guava:19.0")
       }
     }
+    androidLibrary {
+      android { enableKotlin = false }
+      dependencies { api(project(":jar")) }
+      files.add(
+        "src/main/java/com/example/android/multiproject/library/PersonView.java",
+        // language=java
+        """
+        package com.example.android.multiproject.library;
+        public class PersonView {}
+        """
+          .trimIndent(),
+      )
+    }
+    genericProject(":jar") {
+      applyPlugin(PluginType.JAVA_LIBRARY)
+      dependencies { api("com.google.guava:guava:19.0") }
+      files.add(
+        "src/main/java/com/example/android/multiproject/person/People.java",
+        // language=java
+        """
+        package com.example.android.multiproject.person;
+        public class People {}
+        """
+          .trimIndent(),
+      )
+    }
+  }
 
   @Test
   fun `test VariantDependencies model`() {

@@ -346,11 +346,10 @@ class ServiceCastDataGenerator(private val viewDetectorFile: File, contextSource
               serviceClass = value
               if (!value.contains(".")) {
                 val suffix = ".$serviceClass"
-                val imported =
-                  imports.firstOrNull {
-                    val imp = it.importReference
-                    imp?.sourcePsi?.text?.endsWith(suffix) == true
-                  }
+                val imported = imports.firstOrNull {
+                  val imp = it.importReference
+                  imp?.sourcePsi?.text?.endsWith(suffix) == true
+                }
                 if (imported != null) {
                   serviceClass = imported.importReference?.sourcePsi?.text ?: error("Unexpectedly couldn't get fully qualified name")
                 } else {

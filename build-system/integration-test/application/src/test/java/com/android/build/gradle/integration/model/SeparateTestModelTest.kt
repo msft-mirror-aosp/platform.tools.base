@@ -32,17 +32,16 @@ import org.junit.runners.Parameterized
 @RunWith(Parameterized::class)
 class SeparateTestModelTest(val runWithBuiltInPlatform: Boolean) : ModelComparator() {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication { android { enableKotlin = false } }
-      androidTest {
-        android {
-          targetProjectPath = DEFAULT_APP_PATH
-          enableKotlin = false
-        }
+  val rule = GradleRule.from {
+    androidApplication { android { enableKotlin = false } }
+    androidTest {
+      android {
+        targetProjectPath = DEFAULT_APP_PATH
+        enableKotlin = false
       }
-      gradleProperties { add(BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM, runWithBuiltInPlatform) }
     }
+    gradleProperties { add(BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM, runWithBuiltInPlatform) }
+  }
 
   private lateinit var result: ModelBuilderV2.FetchResult<ModelContainerV2>
 

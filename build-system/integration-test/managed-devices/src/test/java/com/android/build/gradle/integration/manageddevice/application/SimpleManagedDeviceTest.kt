@@ -30,12 +30,11 @@ class SimpleManagedDeviceTest(val runWithBuiltInPlatform: Boolean) {
   val ruleBuilder = GradleRule.configure().withCustomSdkDir(customAndroidSdkRule)
 
   @get:Rule
-  val rule =
-    ruleBuilder.from {
-      simpleGMDProject()
-      gradleProperties { add(BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM, runWithBuiltInPlatform) }
-      androidApplication { pluginCallbacks += ConfigureTestTaskCallback::class.java }
-    }
+  val rule = ruleBuilder.from {
+    simpleGMDProject()
+    gradleProperties { add(BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM, runWithBuiltInPlatform) }
+    androidApplication { pluginCallbacks += ConfigureTestTaskCallback::class.java }
+  }
 
   private val executor: GradleTaskExecutor
     get() = rule.build.executor.withCustomAndroidSdk(customAndroidSdkRule).withEnableInfoLogging(false)
@@ -146,13 +145,12 @@ class SimpleManagedDeviceTest(val runWithBuiltInPlatform: Boolean) {
       xmlDir.walkTopDown().filter { file -> file.isFile && file.name.startsWith("TEST-device1") && file.name.endsWith(".xml") }.toList()
     Truth.assertThat(xmlFiles).isNotEmpty()
 
-    val testPassed =
-      xmlFiles.any { file ->
-        val content = file.readText()
-        content.contains("""<testcase name="useAppContext" classname="com.example.android.kotlin.ExampleInstrumentedTest"""") &&
-          content.contains("""failures="0"""") &&
-          content.contains("""errors="0"""")
-      }
+    val testPassed = xmlFiles.any { file ->
+      val content = file.readText()
+      content.contains("""<testcase name="useAppContext" classname="com.example.android.kotlin.ExampleInstrumentedTest"""") &&
+        content.contains("""failures="0"""") &&
+        content.contains("""errors="0"""")
+    }
     Truth.assertWithMessage("useAppContext test case not found or failed in XML reports").that(testPassed).isTrue()
   }
 

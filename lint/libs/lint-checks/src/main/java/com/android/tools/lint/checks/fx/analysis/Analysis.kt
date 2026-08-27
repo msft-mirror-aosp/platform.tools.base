@@ -432,7 +432,12 @@ internal open class Analysis<FX : Any>(
       fun UExpression.staticContext(): Scope =
         Scope.Generated(textRange?.startOffset ?: /* slow case for synthetic UAST */ asSourceString().hashCode())
 
-      fun callMethod(receiver: UExpression?, method: PsiMethod, args: List<UExpression>): Result<Type<FX>, R> {
+      fun callMethod(
+        receiver: UExpression?,
+        method: PsiMethod,
+        args: List<UExpression>,
+        extReceiver: UExpression? = receiver,
+      ): Result<Type<FX>, R> {
         fun implicitThis() = e.getContainingUClass()?.javaPsi?.let { PsiClassAdapter.translate(typeParams, it) }!!
 
         val virRecvAns: Result<Type<FX>, R>? =
@@ -446,7 +451,7 @@ internal open class Analysis<FX : Any>(
         val extRecvAns: Result<Type<FX>, R>? =
           when {
             !method.isExtension() -> null
-            receiver != null -> loopCached(receiver) // TODO nope. See above
+            extReceiver != null -> loopCached(extReceiver) // TODO nope. See above
             else -> pure(env.innermostExtensionReceiver() ?: implicitThis())
           }
 
@@ -556,8 +561,11 @@ internal open class Analysis<FX : Any>(
         return when {
           // constructor call, with constructor definition missing or explicitly "default"
           call.isConstructorCall() && (method?.javaPsi as? PsiMethod)?.isDefaultConstructor != false -> pure(getType(call))
-          method is UMethod ->
-            callMethod(call.callReceiver(), method.javaPsi, completeArguments(typeParams, call, method, UMethod::uastParameters))
+          method is UMethod -> {
+            val psiMethod = method.javaPsi
+            val extReceiver = if (psiMethod.isExtension() && isJava(call.lang)) call.valueArguments.firstOrNull() else call.callReceiver()
+            callMethod(call.callReceiver(), psiMethod, completeArguments(typeParams, call, method, UMethod::uastParameters), extReceiver)
+          }
           method is ULambdaExpression ->
             callLambda(call.callReceiver(), method, completeArguments(typeParams, call, method, ULambdaExpression::valueParameters))
           else -> {
@@ -643,6 +651,9 @@ internal open class Analysis<FX : Any>(
                 is Type.Lambda -> Result(getType(e.receiver), onInvocationEffect(e, Instantiation(t.body.effect)))
                 else -> giveUp(e) { "Handle ${e.renderAbbrev()} of `${e::class.java.simpleName}`" }
               }
+            // Kotlin property access to a Java getter (`resources.configuration`): apply the getter as a call,
+            // mirroring the `KtLightMethod` accessor branch above
+            target is PsiMethod && !target.isStatic() && target.parameterList.isEmpty -> callMethod(e.receiver, target, listOf())
             else -> giveUp(e) { "Handle ${e.renderAbbrev()} of `${e::class.java.simpleName}`" }
           }
         }
@@ -1166,12 +1177,11 @@ internal open class Analysis<FX : Any>(
   /** Interpret list of types [ts] under [this] environment */
   private fun Subst<FX>.instTypes(rec: (Point<FX>) -> Ans<FX>, ts: List<Type<FX>>): Result<List<Type<FX>>, Instantiation<FX>> {
     var fx = fxInstantiationLattice.bottom
-    val ts1 =
-      ts.map { t ->
-        val (t1, fx1) = instType(rec, t)
-        fx = fxInstantiationLattice.joinOf(fx, fx1)
-        t1
-      }
+    val ts1 = ts.map { t ->
+      val (t1, fx1) = instType(rec, t)
+      fx = fxInstantiationLattice.joinOf(fx, fx1)
+      t1
+    }
     return Result(ts1, fx)
   }
 
@@ -1358,17 +1368,24 @@ internal open class Analysis<FX : Any>(
     val allParams = method.params()
     val firstParam = allParams.firstOrNull()
     return when {
-      // discarding extension receiver
+      // Discard the extension receiver: it is not among the value arguments. `getArgumentForParameter` indexes the
+      // physical parameter list, receiver included, so lookups for the remaining parameters must shift past it
+      // (except in the `ArrayAccessAsCallExpression` encoding, which has no receiver parameter).
       firstParam != null && (firstParam.nameFromSource?.startsWith("$") != false) -> {
         val offset = if (call.isArrayAccess()) /* TODO hack against ArrayAccessAsCall */ 0 else 1
         val paramsSansReceiver = allParams.subList(1, allParams.size)
-        completeArguments(typeParams, call, paramsSansReceiver)
+        completeArguments(typeParams, call, paramsSansReceiver, offset)
       }
       else -> completeArguments(typeParams, call, method.params())
     }
   }
 
-  private fun completeArguments(typeParams: Map<String, Type.Sym.Param>, call: UCallExpression, params: List<UParameter>) =
+  private fun completeArguments(
+    typeParams: Map<String, Type.Sym.Param>,
+    call: UCallExpression,
+    params: List<UParameter>,
+    argOffset: Int = 0,
+  ) =
     when {
       // Common case: don't resort to `getArgumentForParameter` args already match!
       params.size == call.valueArguments.size && params.none { it.isVararg() } && !call.hasComplexArgList() -> call.valueArguments
@@ -1377,7 +1394,7 @@ internal open class Analysis<FX : Any>(
           val paramPsi = param.javaPsi as PsiParameter
           val paramName = paramPsi.name
           val arg =
-            call.getArgumentForParameter(i)
+            call.getArgumentForParameter(i + argOffset)
               ?: OpaqueConstant(PsiTypeAdapter.translate(typeParams, paramPsi.type)).also {
                 if (param.uastInitializer == null) log { "WARNING: Can't retrieve default argument for $paramName, supplying $it" }
               }

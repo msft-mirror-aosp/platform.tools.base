@@ -70,13 +70,11 @@ fun Artifact<*>.getIntermediateOutputPath(
   )
 
 /** Converts a [FileCollection] to a [Provider] of a [List] of [RegularFile], filtering other types like [Directory] */
-fun FileCollection.getRegularFiles(projectDirectory: Directory): Provider<List<RegularFile>> =
-  elements.map {
-    it.filter { file -> file.asFile.isFile }.map { fileSystemLocation -> projectDirectory.file(fileSystemLocation.asFile.absolutePath) }
-  }
+fun FileCollection.getRegularFiles(projectDirectory: Directory): Provider<List<RegularFile>> = elements.map {
+  it.filter { file -> file.asFile.isFile }.map { fileSystemLocation -> projectDirectory.file(fileSystemLocation.asFile.absolutePath) }
+}
 
 /** Converts a [FileCollection] to a [Provider] of a [List] of [Directory], ignoring other types like [RegularFile] */
-fun FileCollection.getDirectories(projectDirectory: Directory): Provider<List<Directory>> =
-  elements.map {
-    it.filter { file -> file.asFile.isDirectory }.map { fileSystemLocation -> projectDirectory.dir(fileSystemLocation.asFile.absolutePath) }
-  }
+fun FileCollection.getDirectories(projectDirectory: Directory): Provider<List<Directory>> = elements.map {
+  it.filter { file -> file.asFile.isDirectory }.map { fileSystemLocation -> projectDirectory.dir(fileSystemLocation.asFile.absolutePath) }
+}

@@ -35,22 +35,21 @@ import org.junit.Test
 /** Integration test for the R8 task. */
 class R8TaskTest {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidJavaApplication {
-        android {
-          enableKotlin = false
-          buildTypes {
-            named("release") {
-              it.isMinifyEnabled = true
-              it.proguardFiles += listOf(File("proguard-rules.pro"), getDefaultProguardFile("proguard-android-optimize.txt"))
-            }
+  val rule = GradleRule.from {
+    androidJavaApplication {
+      android {
+        enableKotlin = false
+        buildTypes {
+          named("release") {
+            it.isMinifyEnabled = true
+            it.proguardFiles += listOf(File("proguard-rules.pro"), getDefaultProguardFile("proguard-android-optimize.txt"))
           }
-          testBuildType = "release"
         }
-        files.add("proguard-rules.pro", "")
+        testBuildType = "release"
       }
+      files.add("proguard-rules.pro", "")
     }
+  }
 
   @Test
   fun testCheckDuplicateClassesTaskDidWork() {
@@ -72,13 +71,12 @@ class R8TaskTest {
 
   @Test
   fun testMissingKeepRules() {
-    val build =
-      rule.build {
-        androidApplication {
-          dependencies { implementation(localJar("lib.jar") { addClassWithEmptyMethods("test/A", "foo()Ltest/B;", "bar()Ltest/C;") }) }
-          files.update("proguard-rules.pro").replaceWith("-keep class test.A { *; }")
-        }
+    val build = rule.build {
+      androidApplication {
+        dependencies { implementation(localJar("lib.jar") { addClassWithEmptyMethods("test/A", "foo()Ltest/B;", "bar()Ltest/C;") }) }
+        files.update("proguard-rules.pro").replaceWith("-keep class test.A { *; }")
       }
+    }
     val app = build.androidApplication()
 
     build.executor.expectFailure().run(":app:assembleRelease")
@@ -112,15 +110,14 @@ class R8TaskTest {
   /** b/181858113 */
   @Test
   fun testMultiDexKeepFileDeprecationStillAllowed() {
-    val build =
-      rule.build {
-        androidApplication {
-          enableMultiDex()
-          android.buildTypes { named("release") { it.multiDexKeepFile = File("multidex-keep-file.txt") } }
-          files.add("multidex-keep-file.txt", "")
-        }
-        gradleProperties { add(BooleanOption.R8_MAIN_DEX_LIST_DISALLOWED, false) }
+    val build = rule.build {
+      androidApplication {
+        enableMultiDex()
+        android.buildTypes { named("release") { it.multiDexKeepFile = File("multidex-keep-file.txt") } }
+        files.add("multidex-keep-file.txt", "")
       }
+      gradleProperties { add(BooleanOption.R8_MAIN_DEX_LIST_DISALLOWED, false) }
+    }
 
     val result = build.executor.run(":app:assembleRelease")
     result.assertOutputContains(
@@ -131,15 +128,14 @@ class R8TaskTest {
 
   @Test
   fun testMultiDexKeepFileDeprecation() {
-    val build =
-      rule.build {
-        androidApplication {
-          enableMultiDex()
-          android.buildTypes { named("release") { it.multiDexKeepFile = File("multidex-keep-file.txt") } }
-          files.add("multidex-keep-file.txt", "")
-        }
-        gradleProperties { add(BooleanOption.R8_MAIN_DEX_LIST_DISALLOWED, true) }
+    val build = rule.build {
+      androidApplication {
+        enableMultiDex()
+        android.buildTypes { named("release") { it.multiDexKeepFile = File("multidex-keep-file.txt") } }
+        files.add("multidex-keep-file.txt", "")
       }
+      gradleProperties { add(BooleanOption.R8_MAIN_DEX_LIST_DISALLOWED, true) }
+    }
 
     val result = build.executor.expectFailure().run(":app:assembleRelease")
     assertThat(result.exception).isNotNull()
@@ -147,47 +143,46 @@ class R8TaskTest {
 
   @Test
   fun testInjectedDeviceApi() {
-    val build =
-      rule.build {
-        androidApplication {
-          android { defaultConfig.minSdk = 21 }
-          files.add(
-            "src/main/java/example/MyInterface.java",
-            // language=java
-            """
-            package example;
+    val build = rule.build {
+      androidApplication {
+        android { defaultConfig.minSdk = 21 }
+        files.add(
+          "src/main/java/example/MyInterface.java",
+          // language=java
+          """
+          package example;
 
-            interface MyInterface {
-                static void printContent() { System.out.println("hello"); }
-            }
-            """
-              .trimIndent(),
-          )
-          files.add(
-            "src/main/java/example/MyInterfaceUser.java",
-            // language=java
-            """
-            package example;
+          interface MyInterface {
+              static void printContent() { System.out.println("hello"); }
+          }
+          """
+            .trimIndent(),
+        )
+        files.add(
+          "src/main/java/example/MyInterfaceUser.java",
+          // language=java
+          """
+          package example;
 
-            class MyInterfaceUser {
-                static void printContent() { MyInterface.printContent(); }
-            }
+          class MyInterfaceUser {
+              static void printContent() { MyInterface.printContent(); }
+          }
+          """
+            .trimIndent(),
+        )
+        files
+          .update("proguard-rules.pro")
+          .replaceWith(
             """
-              .trimIndent(),
+            -keep class example.MyInterface { static void printContent(); }
+            -keep class example.MyInterfaceUser { static void printContent(); }
+            -dontobfuscate
+            -dontoptimize
+            """
+              .trimIndent()
           )
-          files
-            .update("proguard-rules.pro")
-            .replaceWith(
-              """
-              -keep class example.MyInterface { static void printContent(); }
-              -keep class example.MyInterfaceUser { static void printContent(); }
-              -dontobfuscate
-              -dontoptimize
-              """
-                .trimIndent()
-            )
-        }
       }
+    }
     val app = build.androidApplication()
 
     build.executor.with(IntegerOption.IDE_TARGET_DEVICE_API, 24).run(":app:assembleRelease")
@@ -234,16 +229,15 @@ class R8TaskTest {
   /** Regression test for b/380110863. */
   @Test
   fun `test system properties are passed to forked process`() {
-    val build =
-      rule.build {
-        settings {
-          applyPlugin(PluginType.ANDROID_SETTINGS)
-          android.execution {
-            profiles { create("runInSeparateProcess") { it.r8.runInSeparateProcess = true } }
-            defaultProfile = "runInSeparateProcess"
-          }
+    val build = rule.build {
+      settings {
+        applyPlugin(PluginType.ANDROID_SETTINGS)
+        android.execution {
+          profiles { create("runInSeparateProcess") { it.r8.runInSeparateProcess = true } }
+          defaultProfile = "runInSeparateProcess"
         }
       }
+    }
 
     val result =
       build.executor

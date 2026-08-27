@@ -245,9 +245,9 @@ enum class BooleanOption(
   ENABLE_PROGUARD_RULES_EXTRACTION("android.proguard.enableRulesExtraction", true, FeatureStage.Experimental),
   ENABLE_JAVA_RESOURCE_OPTIMIZATIONS(
     "android.experimental.enableJavaResourceOptimizations",
-    false,
+    true,
     FeatureStage.Experimental,
-    FutureStage(Version.VERSION_10_0, false, FeatureStage.SoftlyEnforced(VERSION_10_0)),
+    FutureStage(Version.VERSION_10_0, true, FeatureStage.Removed(Version.VERSION_10_0)),
   ),
   /**
    * Disables all constraints overriding all the other related flags.

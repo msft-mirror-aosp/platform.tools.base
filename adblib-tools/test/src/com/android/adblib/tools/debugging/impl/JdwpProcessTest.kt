@@ -96,17 +96,16 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
     val (_, _, process) = createJdwpProcess()
 
     // Act
-    val reply =
-      process.withJdwpSession {
-        val versionCommand =
-          MutableJdwpPacket.createCommandPacket(
-            nextPacketId(),
-            JdwpCommands.CmdSet.SET_VM.value,
-            JdwpCommands.VmCmd.CMD_VM_VERSION.value,
-            ByteBuffer.allocate(0),
-          )
-        newPacketReceiver().withActivation { sendPacket(versionCommand) }.flow().first { reply -> reply.id == versionCommand.id }
-      }
+    val reply = process.withJdwpSession {
+      val versionCommand =
+        MutableJdwpPacket.createCommandPacket(
+          nextPacketId(),
+          JdwpCommands.CmdSet.SET_VM.value,
+          JdwpCommands.VmCmd.CMD_VM_VERSION.value,
+          ByteBuffer.allocate(0),
+        )
+      newPacketReceiver().withActivation { sendPacket(versionCommand) }.flow().first { reply -> reply.id == versionCommand.id }
+    }
 
     // Assert
     assertEquals(true, reply.isReply)
@@ -311,12 +310,11 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
 
     // Act: start property collector for both processes
     val maxActivationCount = IntArray(processImplList.size)
-    val jobs =
-      processImplList.mapIndexed { index, jdwpProcessImpl ->
-        async {
-          jdwpProcessImpl.jdwpSessionActivationCount.collect { count -> maxActivationCount[index] = max(maxActivationCount[index], count) }
-        }
+    val jobs = processImplList.mapIndexed { index, jdwpProcessImpl ->
+      async {
+        jdwpProcessImpl.jdwpSessionActivationCount.collect { count -> maxActivationCount[index] = max(maxActivationCount[index], count) }
       }
+    }
     // Only one of the process should be able to get all its properties
     yieldUntil { processImplList.any { it.properties.areAllPropertiesExceptWaitingForDebuggerInitialized() } }
 

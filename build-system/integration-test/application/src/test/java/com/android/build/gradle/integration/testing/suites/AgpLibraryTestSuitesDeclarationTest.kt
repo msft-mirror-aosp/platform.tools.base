@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.testing.suites
 
-import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.variant.LibraryAndroidComponentsExtension
 import com.android.build.api.variant.LibraryVariant
@@ -39,7 +38,7 @@ class AgpLibraryTestSuitesDeclarationTest {
         androidLibrary {
           pluginCallbacks += MyLibraryCallback::class.java
           android {
-            testOptions.suites.create("first", AgpTestSuite::class.java) {
+            testOptions.customSuites.create("first") {
               it.useJunitEngine.inputs += AgpTestSuiteInputParameters.MERGED_MANIFEST
               it.targetVariants.add("debug")
               it.targets.apply { create("t1") {} }
@@ -58,7 +57,7 @@ class AgpLibraryTestSuitesDeclarationTest {
 class MyLibraryCallback : LibraryComponentCallback {
   override fun handleExtension(project: Project, androidComponents: LibraryAndroidComponentsExtension) {
     androidComponents.finalizeDsl { libraryExtension ->
-      Truth.assertThat(libraryExtension.testOptions.suites.getByName("first").useJunitEngine.inputs)
+      Truth.assertThat(libraryExtension.testOptions.customSuites.getByName("first").useJunitEngine.inputs)
         .containsExactly(AgpTestSuiteInputParameters.MERGED_MANIFEST)
     }
 

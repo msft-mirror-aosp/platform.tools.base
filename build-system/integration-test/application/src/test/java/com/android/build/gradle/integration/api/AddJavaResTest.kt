@@ -24,7 +24,7 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
 import com.android.build.gradle.integration.common.fixture.project.plugins.PluginCallback
 import com.google.common.truth.Truth
-import java.util.zip.Deflater
+import java.util.zip.ZipEntry
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.file.DirectoryProperty
@@ -52,16 +52,15 @@ class AddJavaResTest(private val callbackType: Class<out PluginCallback>) {
   }
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        android {
-          namespace = "com.example.api.java_res"
-          defaultConfig.applicationId = "com.example.api.java_res"
-        }
-        pluginCallbacks += callbackType
+  val rule = GradleRule.from {
+    androidApplication {
+      android {
+        namespace = "com.example.api.java_res"
+        defaultConfig.applicationId = "com.example.api.java_res"
       }
+      pluginCallbacks += callbackType
     }
+  }
 
   @Test
   fun ensureGeneratedJavaResTasksAreRunning() {
@@ -74,8 +73,8 @@ class AddJavaResTest(private val callbackType: Class<out PluginCallback>) {
       Truth.assertThat(result.didWorkTasks).contains(":app:writeDebugJavaResourcesWithArtifacts")
       builtProject.executor.run(":app:assembleDebug")
       builtProject.androidApplication(":app").assertApk(ApkSelector.DEBUG) {
-        zipEntry("foo.txt").hasCompressionMethod(Deflater.NO_COMPRESSION)
-        zipEntry("bar.txt").hasCompressionMethod(Deflater.NO_COMPRESSION)
+        zipEntry("foo.txt").hasCompressionMethod(ZipEntry.DEFLATED)
+        zipEntry("bar.txt").hasCompressionMethod(ZipEntry.DEFLATED)
       }
     }
   }

@@ -49,74 +49,73 @@ class GeneratedManifestInAndroidTestTest(private val generateManifest: Boolean, 
   }
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        android {
-          namespace = "com.android.tests.basic"
-          defaultConfig {
-            versionCode = 12
-            versionName = "2.0"
-            minSdk = 16
-            targetSdk = 16
-            testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-          }
+  val rule = GradleRule.from {
+    androidApplication {
+      android {
+        namespace = "com.android.tests.basic"
+        defaultConfig {
+          versionCode = 12
+          versionName = "2.0"
+          minSdk = 16
+          targetSdk = 16
+          testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         }
-        files {
-          update("src/main/AndroidManifest.xml")
-            .replaceWith(
-              """
-              <?xml version="1.0" encoding="utf-8"?>
-              <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                <application android:label="@string/app_name">
-                </application>
-              </manifest>
-              """
-                .trimIndent()
-            )
-
-          add(
-            "src/androidTest/AndroidManifest.xml",
+      }
+      files {
+        update("src/main/AndroidManifest.xml")
+          .replaceWith(
             """
             <?xml version="1.0" encoding="utf-8"?>
             <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                <instrumentation android:name="${"$"}{instrumentationRunner}">
-                    <meta-data android:name="listener"
-                               android:value="androidx.test.internal.runner.listener.ManifestListener"/>
-                </instrumentation>
+              <application android:label="@string/app_name">
+              </application>
             </manifest>
             """
-              .trimIndent(),
+              .trimIndent()
           )
 
-          add(
-            "src/main/res/values/strings.xml",
-            """
-            <resources>
-                <string name="app_name">ManifestInTest</string>
-            </resources>
-            """
-              .trimIndent(),
-          )
+        add(
+          "src/androidTest/AndroidManifest.xml",
+          """
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <instrumentation android:name="${"$"}{instrumentationRunner}">
+                  <meta-data android:name="listener"
+                             android:value="androidx.test.internal.runner.listener.ManifestListener"/>
+              </instrumentation>
+          </manifest>
+          """
+            .trimIndent(),
+        )
 
-          add(
-            "src/androidTest/res/values/strings.xml",
-            """
-            <?xml version="1.0" encoding="utf-8"?>
-            <resources>
-                <string name="app_name">_Test-Basic</string>
-            </resources>
-            """
-              .trimIndent(),
-          )
-        }
-        if (generateManifest) {
-          pluginCallbacks += GenerateManifestInAndroidTestCallback::class.java
-        }
+        add(
+          "src/main/res/values/strings.xml",
+          """
+          <resources>
+              <string name="app_name">ManifestInTest</string>
+          </resources>
+          """
+            .trimIndent(),
+        )
+
+        add(
+          "src/androidTest/res/values/strings.xml",
+          """
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <string name="app_name">_Test-Basic</string>
+          </resources>
+          """
+            .trimIndent(),
+        )
       }
-      // Pass inAndroidTest to the build via gradle properties for the callback
-      gradleProperties { add("test.inAndroidTest", inAndroidTest.toString()) }
+      if (generateManifest) {
+        pluginCallbacks += GenerateManifestInAndroidTestCallback::class.java
+      }
     }
+    // Pass inAndroidTest to the build via gradle properties for the callback
+    gradleProperties { add("test.inAndroidTest", inAndroidTest.toString()) }
+  }
 
   @Test
   fun testGeneratedManifestIsUsed() {

@@ -23,6 +23,7 @@ import com.android.build.api.dsl.AndroidTest
 import com.android.build.api.dsl.AnnotationProcessorOptions
 import com.android.build.api.dsl.ApplicationPublishing
 import com.android.build.api.dsl.AssetPackBundleExtension
+import com.android.build.api.dsl.BackupTestSuite
 import com.android.build.api.dsl.BaselineProfile
 import com.android.build.api.dsl.Bundle
 import com.android.build.api.dsl.BundleAbi
@@ -81,6 +82,7 @@ import com.android.build.gradle.internal.dsl.AndroidTestImpl
 import com.android.build.gradle.internal.dsl.AnnotationProcessorOptions as AnnotationProcessorOptionsImpl
 import com.android.build.gradle.internal.dsl.ApplicationPublishingImpl
 import com.android.build.gradle.internal.dsl.AssetPackBundleExtensionImpl
+import com.android.build.gradle.internal.dsl.BackupTestSuiteImpl
 import com.android.build.gradle.internal.dsl.BundleOptions
 import com.android.build.gradle.internal.dsl.BundleOptionsAbi
 import com.android.build.gradle.internal.dsl.BundleOptionsAiModelVersion
@@ -184,6 +186,7 @@ val AGP_SUPPORTED_PROPERTY_TYPES: List<SupportedPropertyType> =
     SupportedPropertyType.Block(VcsInfo::class.java, VcsInfoImpl::class.java),
     SupportedPropertyType.Block(AgpTestSuite::class.java, com.android.build.gradle.internal.dsl.AgpTestSuiteImpl::class.java),
     SupportedPropertyType.Block(ScreenshotTestSuite::class.java, ScreenshotTestSuiteImpl::class.java),
+    SupportedPropertyType.Block(BackupTestSuite::class.java, BackupTestSuiteImpl::class.java),
     SupportedPropertyType.Block(JUnitEngineSpec::class.java, com.android.build.gradle.internal.dsl.JUnitEngineSpecImpl::class.java),
     SupportedPropertyType.Block(CompileSdkSpec::class.java, com.android.build.gradle.internal.dsl.CompileSdkSpecImpl::class.java),
     SupportedPropertyType.Block(CompileSdkBetaSpec::class.java, CompileSdkBetaSpecImpl::class.java),

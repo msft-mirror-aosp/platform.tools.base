@@ -36,7 +36,10 @@ class PreviewScreenshotTestEngine : HierarchicalTestEngine<PreviewScreenshotExec
     return "preview-screenshot-test-engine"
   }
 
-  override fun discover(discoveryRequest: EngineDiscoveryRequest, uniqueId: UniqueId): TestDescriptor {
+  override fun discover(
+    discoveryRequest: EngineDiscoveryRequest,
+    uniqueId: UniqueId,
+  ): TestDescriptor {
     val engineDescriptor = PreviewScreenshotTestEngineDescriptor(uniqueId, "Preview Screenshot Test Engine")
 
     EngineDiscoveryRequestResolver.builder<EngineDescriptor>()
@@ -56,7 +59,9 @@ class PreviewScreenshotTestEngine : HierarchicalTestEngine<PreviewScreenshotExec
         object : EngineExecutionListener by executionRequest.engineExecutionListener {
           override fun reportingEntryPublished(testDescriptor: TestDescriptor, entry: ReportEntry) {
             executionRequest.engineExecutionListener.reportingEntryPublished(testDescriptor, entry)
-            entry.keyValuePairs.forEach { key, value -> println("[additionalTestArtifacts]$key=$value") }
+            entry.keyValuePairs.forEach { key, value ->
+              println("[additionalTestArtifacts]$key=$value")
+            }
           }
         }
       } else {

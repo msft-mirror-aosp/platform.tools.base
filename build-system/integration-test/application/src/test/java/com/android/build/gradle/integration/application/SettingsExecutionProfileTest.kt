@@ -30,15 +30,14 @@ import org.junit.Test
 class SettingsExecutionProfileTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      settings { applyPlugin(PluginType.ANDROID_SETTINGS) }
-      androidLibrary(createMinimumProject = false) { android.namespace = "com.example.lib" }
-      androidApplication(createMinimumProject = false) {
-        android.namespace = "com.example.app"
-        files.setupMinimumManifest()
-      }
+  val rule = GradleRule.from {
+    settings { applyPlugin(PluginType.ANDROID_SETTINGS) }
+    androidLibrary(createMinimumProject = false) { android.namespace = "com.example.lib" }
+    androidApplication(createMinimumProject = false) {
+      android.namespace = "com.example.app"
+      files.setupMinimumManifest()
     }
+  }
 
   data class Profile(val name: String, val r8JvmOptions: List<String>, val r8RunInSeparateProcess: Boolean)
 
@@ -82,11 +81,10 @@ class SettingsExecutionProfileTest {
 
   @Test
   fun testInvalidProfile() {
-    val build =
-      rule.build {
-        settings { addSettingsBlock(execProfile = "invalid") }
-        androidApplication { android.withShrinker() }
-      }
+    val build = rule.build {
+      settings { addSettingsBlock(execProfile = "invalid") }
+      androidApplication { android.withShrinker() }
+    }
 
     val result = build.executor.expectFailure().run("assembleDebug")
 
@@ -95,14 +93,13 @@ class SettingsExecutionProfileTest {
 
   @Test
   fun testProfileOverride() {
-    val build =
-      rule.build {
-        settings {
-          // First try to build with invalid profile
-          addSettingsBlock(execProfile = "invalid")
-        }
-        androidApplication { android.withShrinker() }
+    val build = rule.build {
+      settings {
+        // First try to build with invalid profile
+        addSettingsBlock(execProfile = "invalid")
       }
+      androidApplication { android.withShrinker() }
+    }
 
     var result = build.executor.expectFailure().run("assembleDebug")
 
@@ -116,14 +113,13 @@ class SettingsExecutionProfileTest {
 
   @Test
   fun testProfileAutoSelection() {
-    val build =
-      rule.build {
-        settings {
-          // Building with no profiles and no selection should go to default
-          addSettingsBlock(execProfile = null, profileList = listOf())
-        }
-        androidApplication { android.withShrinker() }
+    val build = rule.build {
+      settings {
+        // Building with no profiles and no selection should go to default
+        addSettingsBlock(execProfile = null, profileList = listOf())
       }
+      androidApplication { android.withShrinker() }
+    }
 
     build.executor.run("assembleDebug")
 
@@ -152,11 +148,10 @@ class SettingsExecutionProfileTest {
   // regression test for b/258704137
   @Test
   fun testJvmOptionsAreUsed() {
-    val build =
-      rule.build {
-        settings { addSettingsBlock(execProfile = "mid", profileList = listOf(Profile("mid", listOf(":pizza/foo"), true))) }
-        androidApplication { android.withShrinker() }
-      }
+    val build = rule.build {
+      settings { addSettingsBlock(execProfile = "mid", profileList = listOf(Profile("mid", listOf(":pizza/foo"), true))) }
+      androidApplication { android.withShrinker() }
+    }
 
     val result = build.executor.expectFailure().run("clean", "minifyDebugWithR8")
 

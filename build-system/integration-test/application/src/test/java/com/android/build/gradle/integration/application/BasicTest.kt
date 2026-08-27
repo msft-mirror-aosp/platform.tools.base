@@ -94,11 +94,10 @@ class BasicTest {
 
   @Test
   fun testLegacyOutputs() {
-    val build =
-      rule.build {
-        androidApplication(":app") { pluginCallbacks += BasicTestCallback::class.java }
-        gradleProperties { add(BooleanOption.USE_NEW_DSL, false) }
-      }
+    val build = rule.build {
+      androidApplication(":app") { pluginCallbacks += BasicTestCallback::class.java }
+      gradleProperties { add(BooleanOption.USE_NEW_DSL, false) }
+    }
 
     val result = build.executor.run(":app:assembleRelease")
 

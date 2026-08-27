@@ -15,6 +15,11 @@
  */
 package com.android.tools.deployer;
 
+import com.android.adblib.AdbSession;
+import com.android.adblib.AdbSessionKt;
+import com.android.adblib.ConnectedDevice;
+import com.android.adblib.ConnectedDevicesTracker;
+import com.android.adblib.ConnectedDevicesTrackerKt;
 import com.android.ddmlib.AdbInitOptions;
 import com.android.ddmlib.AndroidDebugBridge;
 import com.android.ddmlib.IDevice;
@@ -29,6 +34,10 @@ import com.android.tools.deployer.rules.ApiLevel;
 import com.android.tools.deployer.rules.FakeDeviceConnection;
 import com.android.utils.ILogger;
 
+import kotlin.coroutines.EmptyCoroutineContext;
+
+import kotlinx.coroutines.BuildersKt;
+
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -41,6 +50,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @RunWith(ApiLevel.class)
 public class AdbInstallerChannelManagerTest {
@@ -77,11 +87,20 @@ public class AdbInstallerChannelManagerTest {
         }
 
         List<DeployMetric> noop = new ArrayList<>();
+        IDevice iDevice = getDevice(bridge);
+        AdbSession session = connection.getAdbSession();
+        ConnectedDevicesTracker tracker = AdbSessionKt.getConnectedDevicesTracker(session);
+        ConnectedDevice connectedDevice =
+                BuildersKt.runBlocking(
+                        EmptyCoroutineContext.INSTANCE,
+                        (scope, continuation) ->
+                                ConnectedDevicesTrackerKt.waitForDevice(
+                                        tracker, iDevice.getSerialNumber(), continuation));
+        DeviceHolder deviceHolder =
+                new DeviceHolder(iDevice, Optional.ofNullable(connectedDevice), false);
         LocalHostInstallerAdbClient client =
                 new LocalHostInstallerAdbClient(
-                        new DeviceHolder(getDevice(bridge), null),
-                        logger,
-                        installersPath + "/x86/installer");
+                        deviceHolder, logger, installersPath + "/x86/installer");
 
         String executable = installersPath.getAbsolutePath();
         AdbInstaller installer =
@@ -117,15 +136,25 @@ public class AdbInstallerChannelManagerTest {
             Thread.sleep(100);
         }
 
-        IDevice device = getDevice(bridge);
-        AdbClient client = new AdbClient(new DeviceHolder(device, null), logger);
+        IDevice iDevice = getDevice(bridge);
+        AdbSession session = connection.getAdbSession();
+        ConnectedDevicesTracker tracker = AdbSessionKt.getConnectedDevicesTracker(session);
+        ConnectedDevice connectedDevice =
+                BuildersKt.runBlocking(
+                        EmptyCoroutineContext.INSTANCE,
+                        (scope, continuation) ->
+                                ConnectedDevicesTrackerKt.waitForDevice(
+                                        tracker, iDevice.getSerialNumber(), continuation));
+        DeviceHolder deviceHolder =
+                new DeviceHolder(iDevice, Optional.ofNullable(connectedDevice), false);
+        AdbClient client = new AdbClient(deviceHolder, logger);
 
         AdbInstallerChannel c1 =
                 AdbInstallerChannelManager.getChannel(
-                        client, device.getSerialNumber(), logger, AdbInstaller.Mode.DAEMON);
+                        client, iDevice.getSerialNumber(), logger, AdbInstaller.Mode.DAEMON);
         AdbInstallerChannel c2 =
                 AdbInstallerChannelManager.getChannel(
-                        client, device.getSerialNumber(), logger, AdbInstaller.Mode.DAEMON);
+                        client, iDevice.getSerialNumber(), logger, AdbInstaller.Mode.DAEMON);
         Assert.assertTrue("Channel was not cached", c1 == c2);
     }
 

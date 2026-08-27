@@ -45,11 +45,10 @@ class JavaResPackagingConflictTest(private val enableOptimizations: Boolean) {
   }
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      baseProject()
-      gradleProperties { add(BooleanOption.ENABLE_JAVA_RESOURCE_OPTIMIZATIONS, enableOptimizations) }
-    }
+  val rule = GradleRule.from {
+    baseProject()
+    gradleProperties { add(BooleanOption.ENABLE_JAVA_RESOURCE_OPTIMIZATIONS, enableOptimizations) }
+  }
 
   @Test
   fun testConflictBetweenLibraries() {
@@ -87,19 +86,18 @@ class JavaResPackagingConflictWithIncludedBuildTest(private val enableOptimizati
   }
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      baseProject()
-      configureProperties()
-      androidApplication { dependencies { implementation("included.build:anotherLib:1.0") } }
-      includedBuild("includedBuild") {
-        androidLibrary(":anotherLib") {
-          group = "included.build"
-          version = "1.0"
-        }
-        configureProperties()
+  val rule = GradleRule.from {
+    baseProject()
+    configureProperties()
+    androidApplication { dependencies { implementation("included.build:anotherLib:1.0") } }
+    includedBuild("includedBuild") {
+      androidLibrary(":anotherLib") {
+        group = "included.build"
+        version = "1.0"
       }
+      configureProperties()
     }
+  }
 
   private fun GradleBuildDefinition.configureProperties() {
     gradleProperties { add(BooleanOption.ENABLE_JAVA_RESOURCE_OPTIMIZATIONS, enableOptimizations) }

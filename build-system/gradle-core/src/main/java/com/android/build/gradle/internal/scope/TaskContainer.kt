@@ -48,7 +48,7 @@ interface TaskContainer {
   val renderscriptCompileTask: TaskProvider<out RenderscriptCompile>?
   val mergeResourcesTask: TaskProvider<out MergeResources>
   val mergeAssetsTask: TaskProvider<out MergeSourceSetFolders>
-  val processJavaResourcesTask: TaskProvider<out Sync>
+  val processJavaResourcesTask: TaskProvider<out Sync>?
   val generateBuildConfigTask: TaskProvider<out GenerateBuildConfig>?
   val processAndroidResTask: TaskProvider<out ProcessAndroidResources>?
   val processManifestTask: TaskProvider<out ManifestProcessorTask>?

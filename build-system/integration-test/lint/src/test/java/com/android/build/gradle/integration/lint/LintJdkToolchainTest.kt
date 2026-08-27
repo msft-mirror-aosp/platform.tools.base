@@ -49,18 +49,17 @@ class LintJdkToolchainTest {
   }
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      settings { applyPlugin(PluginType.ANDROID_SETTINGS) }
-      androidApplication(":app") {
-        // Configured via DSL in individual tests
-      }
-      javaLibrary(":standaloneLib") {
-        applyPlugin(PluginType.KOTLIN_JVM)
-        applyPlugin(PluginType.LINT)
-      }
-      gradleProperties { add(BooleanOption.RUN_LINT_IN_PROCESS, false) }
+  val rule = GradleRule.from {
+    settings { applyPlugin(PluginType.ANDROID_SETTINGS) }
+    androidApplication(":app") {
+      // Configured via DSL in individual tests
     }
+    javaLibrary(":standaloneLib") {
+      applyPlugin(PluginType.KOTLIN_JVM)
+      applyPlugin(PluginType.LINT)
+    }
+    gradleProperties { add(BooleanOption.RUN_LINT_IN_PROCESS, false) }
+  }
 
   @Test
   fun testLintWithToolchainDsl() {

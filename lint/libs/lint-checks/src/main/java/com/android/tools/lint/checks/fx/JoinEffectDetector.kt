@@ -382,16 +382,15 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
 
   private val summaryEncoder = Encoder.product(::Pair, classIdListEncoder, classSummaryEncoder.zeroOrMore())
 
-  private val methodIdEncoder: Encoder<MethodId> =
-    Encoder {
-        Encoder.product(
-          ::MethodId,
-          Encoder.boolean withDefault true,
-          Encoder.internedString withDefault "invoke",
-          classIdEncoder.orNull().zeroOrMore() withDefault listOf(),
-        )
-      }
-      .interned()
+  private val methodIdEncoder: Encoder<MethodId> = Encoder {
+    Encoder.product(
+      ::MethodId,
+      Encoder.boolean withDefault true,
+      Encoder.internedString withDefault "invoke",
+      classIdEncoder.orNull().zeroOrMore() withDefault listOf(),
+    )
+  }
+    .interned()
 
   private val methodRefEncoder: Encoder<Type.MethodRef> = Encoder.product(Type<FX>::MethodRef, classIdEncoder, methodIdEncoder)
 

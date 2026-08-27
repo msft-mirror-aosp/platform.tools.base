@@ -41,7 +41,11 @@ class LayoutlibDataFromMaven(val layoutlibDataDirectory: FileCollection) {
 
     /** Extract layoutlib data from maven for this project. */
     @JvmStatic
-    fun create(project: Project, version: String, frameworkResJar: FileCollection): LayoutlibDataFromMaven {
+    fun create(
+      project: Project,
+      version: String,
+      frameworkResJar: FileCollection,
+    ): LayoutlibDataFromMaven {
       // Use single-string notation to avoid a Gradle deprecation that will be an error in Gradle
       // 10.
       val configuration = project.configurations.detachedConfiguration(project.dependencies.create("$MAVEN_GROUP:$MAVEN_ARTIFACT:$version"))
@@ -56,7 +60,11 @@ class LayoutlibDataFromMaven(val layoutlibDataDirectory: FileCollection) {
 
       val layoutlibDataDirectory =
         configuration.incoming
-          .artifactView { config -> config.attributes { it.attribute(ARTIFACT_TYPE_ATTRIBUTE, TYPE_EXTRACTED_LAYOUTLIB_DATA) } }
+          .artifactView { config ->
+            config.attributes {
+              it.attribute(ARTIFACT_TYPE_ATTRIBUTE, TYPE_EXTRACTED_LAYOUTLIB_DATA)
+            }
+          }
           .artifacts
           .artifactFiles
       return LayoutlibDataFromMaven(layoutlibDataDirectory)
@@ -84,7 +92,9 @@ class LayoutlibDataFromMaven(val layoutlibDataDirectory: FileCollection) {
             continue
           }
           Files.createDirectories(destinationFile.parent)
-          Files.newOutputStream(destinationFile).buffered().use { output -> ByteStreams.copy(zipInputStream, output) }
+          Files.newOutputStream(destinationFile).buffered().use { output ->
+            ByteStreams.copy(zipInputStream, output)
+          }
         }
       }
       val resJar = outDir.resolve("data").resolve("framework_res.jar").toFile()

@@ -27,32 +27,31 @@ import org.junit.Test
 class BuiltInKotlinForLibTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidLibrary {
-        applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
-        files {
-          add(
-            "src/main/java/LibFoo.kt",
-            // language=kotlin
-            """
-            package com.foo.library
-            class LibFoo
-            """
-              .trimIndent(),
-          )
-          add(
-            "src/main/kotlin/KotlinLibFoo.kt",
-            // language=kotlin
-            """
-            package com.foo.library
-            class KotlinLibFoo
-            """
-              .trimIndent(),
-          )
-        }
+  val rule = GradleRule.from {
+    androidLibrary {
+      applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
+      files {
+        add(
+          "src/main/java/LibFoo.kt",
+          // language=kotlin
+          """
+          package com.foo.library
+          class LibFoo
+          """
+            .trimIndent(),
+        )
+        add(
+          "src/main/kotlin/KotlinLibFoo.kt",
+          // language=kotlin
+          """
+          package com.foo.library
+          class KotlinLibFoo
+          """
+            .trimIndent(),
+        )
       }
     }
+  }
 
   @Test
   fun testKotlinClassesInAar() {
@@ -69,31 +68,30 @@ class BuiltInKotlinForLibTest {
 
   @Test
   fun testKotlinClassesInTestApk() {
-    val build =
-      rule.build {
-        androidLibrary {
-          files {
-            add(
-              "src/androidTest/java/LibFooTest.kt",
-              // language=kotlin
-              """
-              package com.foo.library
-              class LibFooTest
-              """
-                .trimIndent(),
-            )
-            add(
-              "src/androidTest/kotlin/KotlinLibFooTest.kt",
-              // language=kotlin
-              """
-              package com.foo.library
-              class KotlinLibFooTest
-              """
-                .trimIndent(),
-            )
-          }
+    val build = rule.build {
+      androidLibrary {
+        files {
+          add(
+            "src/androidTest/java/LibFooTest.kt",
+            // language=kotlin
+            """
+            package com.foo.library
+            class LibFooTest
+            """
+              .trimIndent(),
+          )
+          add(
+            "src/androidTest/kotlin/KotlinLibFooTest.kt",
+            // language=kotlin
+            """
+            package com.foo.library
+            class KotlinLibFooTest
+            """
+              .trimIndent(),
+          )
         }
       }
+    }
 
     build.executor.run(":lib:assembleDebugAndroidTest")
     build.androidLibrary().assertApk(ApkSelector.ANDROIDTEST_DEBUG) {
@@ -119,24 +117,23 @@ class BuiltInKotlinForLibTest {
    */
   @Test
   fun testTestFixtures() {
-    val build =
-      rule.build {
-        androidLibrary {
-          android { testFixtures { enable = true } }
-          files {
-            add(
-              "src/testFixtures/kotlin/LibFooTestFixture.kt",
-              // language=kotlin
-              """
-              package com.foo.library
-              import com.foo.library.LibFoo
-              class LibFooTestFixture
-              """
-                .trimIndent(),
-            )
-          }
+    val build = rule.build {
+      androidLibrary {
+        android { testFixtures { enable = true } }
+        files {
+          add(
+            "src/testFixtures/kotlin/LibFooTestFixture.kt",
+            // language=kotlin
+            """
+            package com.foo.library
+            import com.foo.library.LibFoo
+            class LibFooTestFixture
+            """
+              .trimIndent(),
+          )
         }
       }
+    }
 
     build.executor.run(":lib:assembleDebugTestFixtures")
 

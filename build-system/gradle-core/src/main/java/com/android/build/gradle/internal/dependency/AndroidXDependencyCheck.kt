@@ -49,8 +49,9 @@ object AndroidXDependencyCheck {
       }
 
       val result = resolvableDependencies.resolutionResult
-      val androidXDependencies =
-        result.getModuleComponents { AndroidXDependencySubstitution.isAndroidXDependency("${it.group}:${it.module}:${it.version}") }
+      val androidXDependencies = result.getModuleComponents {
+        AndroidXDependencySubstitution.isAndroidXDependency("${it.group}:${it.module}:${it.version}")
+      }
       val configurationDisplayPath = project.getConfigurationDisplayPath(configurationName)
       val pathsToAndroidXDependencies =
         androidXDependencies

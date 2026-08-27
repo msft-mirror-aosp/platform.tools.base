@@ -25,11 +25,10 @@ import org.junit.Test
 class Aapt2SdkComponentsTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      buildFileType = BuildFileType.KTS
-      androidApplication {}
-    }
+  val rule = GradleRule.from {
+    buildFileType = BuildFileType.KTS
+    androidApplication {}
+  }
 
   @Test
   fun testAapt2Tools() {

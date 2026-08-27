@@ -54,7 +54,8 @@ class PrefabTest(private val buildSystem: NativeBuildSystem, val cmakeVersion: S
     @Parameterized.Parameters(name = "build system = {0}, cmake = {1}")
     @JvmStatic
     fun data() =
-      CMakeVersion.FOR_TESTING.map { arrayOf<Any>(NativeBuildSystem.CMAKE, it.version) } + listOf(arrayOf<Any>(NativeBuildSystem.NDK_BUILD, "N/A"))
+      CMakeVersion.FOR_TESTING.map { arrayOf<Any>(NativeBuildSystem.CMAKE, it.version) } +
+        listOf(arrayOf<Any>(NativeBuildSystem.NDK_BUILD, "N/A"))
   }
 
   fun setupProject(project: GradleTestProject) {

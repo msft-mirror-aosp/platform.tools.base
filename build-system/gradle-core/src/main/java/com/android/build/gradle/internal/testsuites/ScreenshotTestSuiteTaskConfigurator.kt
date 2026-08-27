@@ -22,6 +22,7 @@ import java.io.File
 import org.gradle.api.provider.Provider
 import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.testing.Test
 import org.gradle.process.CommandLineArgumentProvider
@@ -36,12 +37,16 @@ import org.gradle.process.CommandLineArgumentProvider
 internal class ScreenshotArgumentProvider(
   @get:Input val referenceImageDir: Provider<String>,
   @get:Input val projectRoot: Provider<String>,
+  @get:Input @get:Optional val threshold: Float?,
 ) : CommandLineArgumentProvider {
   override fun asArguments(): Iterable<String> {
-    return listOf(
-      "-DPreviewScreenshotTestEngineInput.referenceImageDir=${referenceImageDir.get()}",
-      "-DPreviewScreenshotTestEngineInput.projectRoot=${projectRoot.get()}",
-    )
+    return buildList {
+      add("-DPreviewScreenshotTestEngineInput.referenceImageDir=${referenceImageDir.get()}")
+      add("-DPreviewScreenshotTestEngineInput.projectRoot=${projectRoot.get()}")
+      if (threshold != null) {
+        add("-DPreviewScreenshotTestEngineInput.ImageDiffer.threshold=$threshold")
+      }
+    }
   }
 }
 
@@ -53,7 +58,7 @@ internal class ScreenshotArgumentProvider(
  */
 internal class ScreenshotTestSuiteTaskConfigurator(private val suiteName: String) {
 
-  fun configureTask(task: Test, context: TestTaskContext, dslServices: DslServices, providers: ProviderFactory) {
+  fun configureTask(task: Test, context: TestTaskContext, dslServices: DslServices, providers: ProviderFactory, threshold: Float?) {
     val isRecordingMode = context.isUpdateTask
     task.systemProperty("PreviewScreenshotTestEngineInput.TestOption.recordingModeEnabled", isRecordingMode.toString())
 
@@ -68,16 +73,18 @@ internal class ScreenshotTestSuiteTaskConfigurator(private val suiteName: String
 
     // Resolve the reference directory: src/[suiteName][Target][Variant]/reference
     // (e.g., src/screenshotTestDefaultDebug/reference)
-    val referenceImageDirProvider: Provider<File> =
-      providers.provider { srcDir.resolve("${suiteName}${capitalizedTargetName}${capitalizedVariantName}").resolve("reference") }
+    val referenceImageDirProvider: Provider<File> = providers.provider {
+      srcDir.resolve("${suiteName}${capitalizedTargetName}${capitalizedVariantName}").resolve("reference")
+    }
 
     // Pass the relative path to the system property to preserve build cache relocatability.
-    val relativeReferencePathProvider =
-      referenceImageDirProvider.map { referenceDir -> projectDirectory.asFile.toPath().relativize(referenceDir.toPath()).toString() }
+    val relativeReferencePathProvider = referenceImageDirProvider.map { referenceDir ->
+      projectDirectory.asFile.toPath().relativize(referenceDir.toPath()).toString()
+    }
 
     val rootDirProvider = providers.provider { task.project.rootDir.absolutePath }
 
-    task.jvmArgumentProviders.add(ScreenshotArgumentProvider(relativeReferencePathProvider, rootDirProvider))
+    task.jvmArgumentProviders.add(ScreenshotArgumentProvider(relativeReferencePathProvider, rootDirProvider, threshold))
 
     // Register the directory as input or output using the Provider API
     if (isRecordingMode) {

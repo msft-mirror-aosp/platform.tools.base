@@ -60,11 +60,10 @@ internal data class DdmsHeloChunk(
     internal suspend fun parse(chunk: DdmsChunkView, workBuffer: ResizableBuffer = ResizableBuffer()): DdmsHeloChunk {
       // Read payload into "buffer"
       workBuffer.clear()
-      val buffer =
-        chunk.withPayload { payload ->
-          payload.readNBytes(workBuffer, chunk.length)
-          workBuffer.afterChannelRead()
-        }
+      val buffer = chunk.withPayload { payload ->
+        payload.readNBytes(workBuffer, chunk.length)
+        workBuffer.afterChannelRead()
+      }
 
       // Version, pid, vm identifier and process name are always present
       buffer.order(DDMS_CHUNK_BYTE_ORDER)

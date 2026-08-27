@@ -101,10 +101,9 @@ internal object KotlinIdeImportConfigurator {
     // resolvers.
     val resolutionPriority = IdeMultiplatformImport.Priority.veryHigh
 
-    val androidSourceSetFilter =
-      IdeMultiplatformImport.SourceSetConstraint { sourceSet ->
-        sourceSet.android != null || extraSourceSetsToIncludeInResolution.value.contains(sourceSet)
-      }
+    val androidSourceSetFilter = IdeMultiplatformImport.SourceSetConstraint { sourceSet ->
+      sourceSet.android != null || extraSourceSetsToIncludeInResolution.value.contains(sourceSet)
+    }
 
     // Use the kotlin class IdeBinaryDependencyResolver to resolve dependencies on binary
     // artifacts, we resolve the compile classpath configuration to the classes jar artifact

@@ -35,7 +35,13 @@ class ClassTestResults(override val name: String, private val packageResults: Pa
     return packageResults
   }
 
-  fun addTest(testName: String, duration: Long, project: String, flavor: String, ssImages: ScreenshotTestImages?): TestResult {
+  fun addTest(
+    testName: String,
+    duration: Long,
+    project: String,
+    flavor: String,
+    ssImages: ScreenshotTestImages?,
+  ): TestResult {
     val test = TestResult(testName, duration, project, flavor, ssImages, this)
     results.add(test)
     addVariant(project, flavor, test)

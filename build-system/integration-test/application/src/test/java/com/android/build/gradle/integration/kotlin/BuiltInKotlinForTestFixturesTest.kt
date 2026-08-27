@@ -40,65 +40,63 @@ class BuiltInKotlinForTestFixturesTest(private val builtInKotlin: Boolean) {
   }
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidLibrary {
-        if (!builtInKotlin) {
-          @Suppress("DEPRECATION") applyPlugin(PluginType.KOTLIN_ANDROID)
-        }
-
-        android { defaultConfig.minSdk = 21 }
-        kotlin { jvmToolchain(17) }
-      }
+  val rule = GradleRule.from {
+    androidLibrary {
       if (!builtInKotlin) {
-        gradleProperties {
-          add(BooleanOption.USE_NEW_DSL, false)
-          add(BooleanOption.BUILT_IN_KOTLIN, false)
-        }
+        @Suppress("DEPRECATION") applyPlugin(PluginType.KOTLIN_ANDROID)
+      }
+
+      android { defaultConfig.minSdk = 21 }
+      kotlin { jvmToolchain(17) }
+    }
+    if (!builtInKotlin) {
+      gradleProperties {
+        add(BooleanOption.USE_NEW_DSL, false)
+        add(BooleanOption.BUILT_IN_KOTLIN, false)
       }
     }
+  }
 
   /** Include dependency on "androidx.compose.ui:ui-tooling-preview:1.6.5" as a regression test for b/338512598 */
   @Test
   fun testModuleAndExternalDependencies() {
-    val build =
-      rule.build {
-        enableTestFixturesKotlinSupport()
-        androidLibrary {
-          dependencies {
-            testFixturesImplementation("androidx.compose.ui:ui-tooling-preview:1.6.5")
-            testFixturesImplementation(project(":lib2"))
-          }
-          files.add(
-            "src/testFixtures/kotlin/LibTestFixtureFoo.kt",
-            // language=kotlin
-            """
-            package com.foo.library
-
-            import com.foo.library.two.LibTwoClass
-            import androidx.compose.ui.tooling.preview.Preview
-
-            class LibTestFixtureFoo
-            """
-              .trimIndent(),
-          )
+    val build = rule.build {
+      enableTestFixturesKotlinSupport()
+      androidLibrary {
+        dependencies {
+          testFixturesImplementation("androidx.compose.ui:ui-tooling-preview:1.6.5")
+          testFixturesImplementation(project(":lib2"))
         }
-        androidLibrary(":lib2") {
-          if (!builtInKotlin) {
-            @Suppress("DEPRECATION") applyPlugin(PluginType.KOTLIN_ANDROID)
-          }
-          kotlin { jvmToolchain(17) }
-          files.add(
-            "src/main/kotlin/LibTwoClass.kt",
-            // language=kotlin
-            """
-            package com.foo.library.two
-            class LibTwoClass
-            """
-              .trimIndent(),
-          )
-        }
+        files.add(
+          "src/testFixtures/kotlin/LibTestFixtureFoo.kt",
+          // language=kotlin
+          """
+          package com.foo.library
+
+          import com.foo.library.two.LibTwoClass
+          import androidx.compose.ui.tooling.preview.Preview
+
+          class LibTestFixtureFoo
+          """
+            .trimIndent(),
+        )
       }
+      androidLibrary(":lib2") {
+        if (!builtInKotlin) {
+          @Suppress("DEPRECATION") applyPlugin(PluginType.KOTLIN_ANDROID)
+        }
+        kotlin { jvmToolchain(17) }
+        files.add(
+          "src/main/kotlin/LibTwoClass.kt",
+          // language=kotlin
+          """
+          package com.foo.library.two
+          class LibTwoClass
+          """
+            .trimIndent(),
+        )
+      }
+    }
 
     build.executor.run(":lib:assembleDebugTestFixtures")
 
@@ -109,36 +107,35 @@ class BuiltInKotlinForTestFixturesTest(private val builtInKotlin: Boolean) {
 
   @Test
   fun `test internal methods in main component are accessible from test fixtures`() {
-    val build =
-      rule.build {
-        enableTestFixturesKotlinSupport()
-        androidLibrary {
-          files {
-            add(
-              "src/testFixtures/kotlin/LibTestFixtureFoo.kt",
-              // language=kotlin
-              """
-              package com.foo.library
-              class LibTestFixtureFoo {
-                  init { LibFoo().bar() }
-              }
-              """
-                .trimIndent(),
-            )
-            add(
-              "src/main/java/LibFoo.kt",
-              // language=kotlin
-              """
-              package com.foo.library
-              class LibFoo {
-                  internal fun bar() {}
-              }
-              """
-                .trimIndent(),
-            )
-          }
+    val build = rule.build {
+      enableTestFixturesKotlinSupport()
+      androidLibrary {
+        files {
+          add(
+            "src/testFixtures/kotlin/LibTestFixtureFoo.kt",
+            // language=kotlin
+            """
+            package com.foo.library
+            class LibTestFixtureFoo {
+                init { LibFoo().bar() }
+            }
+            """
+              .trimIndent(),
+          )
+          add(
+            "src/main/java/LibFoo.kt",
+            // language=kotlin
+            """
+            package com.foo.library
+            class LibFoo {
+                internal fun bar() {}
+            }
+            """
+              .trimIndent(),
+          )
         }
       }
+    }
 
     build.executor.run(":lib:assembleDebugTestFixtures")
   }
@@ -146,36 +143,35 @@ class BuiltInKotlinForTestFixturesTest(private val builtInKotlin: Boolean) {
   /** Regression test for b/450568272. */
   @Test
   fun `test internal methods in test fixtures are accessible from tests`() {
-    val build =
-      rule.build {
-        enableTestFixturesKotlinSupport()
-        androidLibrary {
-          files {
-            add(
-              "src/testFixtures/kotlin/ExampleTestFixtureClass.kt",
-              """
-              package com.example.lib
-              class ExampleTestFixtureClass {
-                  internal fun internalMethodInTestFixture() {}
-              }
-              """
-                .trimIndent(),
-            )
-            add(
-              "src/test/kotlin/ExampleUnitTest.kt",
-              """
-              package com.example.lib
-              class ExampleUnitTest {
-                  fun test() {
-                      ExampleTestFixtureClass().internalMethodInTestFixture()
-                  }
-              }
-              """
-                .trimIndent(),
-            )
-          }
+    val build = rule.build {
+      enableTestFixturesKotlinSupport()
+      androidLibrary {
+        files {
+          add(
+            "src/testFixtures/kotlin/ExampleTestFixtureClass.kt",
+            """
+            package com.example.lib
+            class ExampleTestFixtureClass {
+                internal fun internalMethodInTestFixture() {}
+            }
+            """
+              .trimIndent(),
+          )
+          add(
+            "src/test/kotlin/ExampleUnitTest.kt",
+            """
+            package com.example.lib
+            class ExampleUnitTest {
+                fun test() {
+                    ExampleTestFixtureClass().internalMethodInTestFixture()
+                }
+            }
+            """
+              .trimIndent(),
+          )
         }
       }
+    }
 
     build.executor.run(":lib:compileDebugUnitTestKotlin")
   }
@@ -183,28 +179,27 @@ class BuiltInKotlinForTestFixturesTest(private val builtInKotlin: Boolean) {
   // Regression test for b/364331837
   @Test
   fun testJvmTarget() {
-    val build =
-      rule.build {
-        enableTestFixturesKotlinSupport()
-        androidLibrary {
-          // remove the jvmtoolchain setting
-          resetKotlinDsl()
-          kotlin { compilerOptions.jvmTarget.set(JvmTarget.JVM_11) }
+    val build = rule.build {
+      enableTestFixturesKotlinSupport()
+      androidLibrary {
+        // remove the jvmtoolchain setting
+        resetKotlinDsl()
+        kotlin { compilerOptions.jvmTarget.set(JvmTarget.JVM_11) }
 
-          // Add a simple kotlin source file so that kotlin compilation task does work.
-          files.add(
-            "src/testFixtures/kotlin/LibTestFixtureFoo.kt",
-            // language=kotlin
-            """
-            package com.foo.library
-            class LibTestFixtureFoo {}
-            """
-              .trimIndent(),
-          )
+        // Add a simple kotlin source file so that kotlin compilation task does work.
+        files.add(
+          "src/testFixtures/kotlin/LibTestFixtureFoo.kt",
+          // language=kotlin
+          """
+          package com.foo.library
+          class LibTestFixtureFoo {}
+          """
+            .trimIndent(),
+        )
 
-          pluginCallbacks += JvmTargetCallback::class.java
-        }
+        pluginCallbacks += JvmTargetCallback::class.java
       }
+    }
 
     ScannerSubject.assertThat(build.executor.run(":lib:compileDebugTestFixturesKotlin").stdout).contains("My jvmTarget: 11")
 

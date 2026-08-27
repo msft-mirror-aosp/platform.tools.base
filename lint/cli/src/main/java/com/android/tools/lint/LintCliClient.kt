@@ -1277,8 +1277,9 @@ open class LintCliClient : LintClient {
         bootClassPaths.size == 1 &&
         bootClassPaths.first().path.endsWith(FN_FRAMEWORK_LIBRARY)
     val jdkHome: File? = if (isAndroid) null else getJdkHomeUnlessJre()
-    val allModules =
-      allProjects.map { UastEnvironment.Module(it, jdkHome, !flags.isIgnoreTestSources, !flags.isIgnoreTestFixturesSources, isUnitTest) }
+    val allModules = allProjects.map {
+      UastEnvironment.Module(it, jdkHome, !flags.isIgnoreTestSources, !flags.isIgnoreTestFixturesSources, isUnitTest)
+    }
     val maxLevel = knownProjects.asSequence().map(Project::getJavaLanguageLevel).fold(LanguageLevel.JDK_1_7, LanguageLevel::coerceAtLeast)
 
     for (module in allModules.asSequence()) {

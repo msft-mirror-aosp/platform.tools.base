@@ -38,6 +38,7 @@ class ScreenshotTestSuiteImplTest {
     // 1. Assert targets: default target is created
     assertThat(suite.targets.names).containsExactly("default")
     assertThat(suite.requiresUpdateTask).isTrue()
+    assertThat(dslSuite.imageDifferenceThreshold).isNull()
 
     // 2. Assert JUnit engine defaults: "preview-screenshot-test-engine" is included
     assertThat(suite.useJunitEngine.includeEngines).containsExactly("preview-screenshot-test-engine")
@@ -123,5 +124,13 @@ class ScreenshotTestSuiteImplTest {
     // Instantiation should succeed even if configurations is unsupported
     assertThat(suite.targets.names).containsExactly("default")
     assertThat(suite.requiresUpdateTask).isTrue()
+  }
+
+  @Test
+  fun testImageDifferenceThreshold() {
+    val dslSuite = dslServices.newDecoratedInstance(ScreenshotTestSuiteImpl::class.java, "screenshotTest", dslServices)
+    assertThat(dslSuite.imageDifferenceThreshold).isNull()
+    dslSuite.imageDifferenceThreshold = 0.0001f
+    assertThat(dslSuite.imageDifferenceThreshold).isEqualTo(0.0001f)
   }
 }

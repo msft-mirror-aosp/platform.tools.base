@@ -382,11 +382,10 @@ class ViewInspectorTest {
     var caught: Throwable? = null
     var crashThread: Thread? = null
     val previousHandler = Thread.currentThread().uncaughtExceptionHandler
-    Thread.currentThread().uncaughtExceptionHandler =
-      Thread.UncaughtExceptionHandler { thread, throwable ->
-        crashThread = thread
-        caught = throwable
-      }
+    Thread.currentThread().uncaughtExceptionHandler = Thread.UncaughtExceptionHandler { thread, throwable ->
+      crashThread = thread
+      caught = throwable
+    }
     try {
       inspector.onReceiveCommand(command.toByteArray(), callback)
       shadowOf(Looper.getMainLooper()).idle()

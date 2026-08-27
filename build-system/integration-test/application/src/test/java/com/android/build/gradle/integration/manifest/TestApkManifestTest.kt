@@ -26,17 +26,16 @@ import org.junit.Test
 class TestApkManifestTest {
 
   @get:Rule
-  val project =
-    GradleRule.from {
-      androidApplication(":app") {
-        android {
-          defaultConfig {
-            applicationId = "com.example.app"
-            minSdk = 24
-          }
+  val project = GradleRule.from {
+    androidApplication(":app") {
+      android {
+        defaultConfig {
+          applicationId = "com.example.app"
+          minSdk = 24
         }
       }
     }
+  }
 
   @Test
   fun `android manifest matches expected`() {

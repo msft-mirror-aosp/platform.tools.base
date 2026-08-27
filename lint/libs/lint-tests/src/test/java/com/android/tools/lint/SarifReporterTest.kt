@@ -281,7 +281,7 @@ class SarifReporterTest {
                                                                 "charLength": 8
                                                             },
                                                             "insertedContent": {
-                                                                "text": "\n"
+                                                                "text": ""
                                                             }
                                                         }
                                                     ]
@@ -351,7 +351,7 @@ class SarifReporterTest {
                                                                 "charLength": 8
                                                             },
                                                             "insertedContent": {
-                                                                "text": "\n"
+                                                                "text": ""
                                                             }
                                                         }
                                                     ]
@@ -719,7 +719,7 @@ class SarifReporterTest {
                                                             "charLength": 2
                                                         },
                                                         "insertedContent": {
-                                                            "text": "sp\n"
+                                                            "text": "sp"
                                                         }
                                                     }
                                                 ]
@@ -785,7 +785,7 @@ class SarifReporterTest {
                                                             "charOffset": 387
                                                         },
                                                         "insertedContent": {
-                                                            "text": "android:autofillHints=\"\" \n"
+                                                            "text": "android:autofillHints=\"\" "
                                                         }
                                                     }
                                                 ]
@@ -810,7 +810,7 @@ class SarifReporterTest {
                                                             "charOffset": 419
                                                         },
                                                         "insertedContent": {
-                                                            "text": "android:importantForAutofill=\"no\" \n"
+                                                            "text": "android:importantForAutofill=\"no\" "
                                                         }
                                                     }
                                                 ]
@@ -959,7 +959,7 @@ class SarifReporterTest {
                                                             "charLength": 25
                                                         },
                                                         "insertedContent": {
-                                                            "text": "\n"
+                                                            "text": ""
                                                         }
                                                     },
                                                     {
@@ -969,7 +969,7 @@ class SarifReporterTest {
                                                             "charOffset": 174
                                                         },
                                                         "insertedContent": {
-                                                            "text": "android:showAsAction=\"never\" \n"
+                                                            "text": "android:showAsAction=\"never\" "
                                                         }
                                                     }
                                                 ]
@@ -1112,7 +1112,7 @@ class SarifReporterTest {
                                                         "charLength": 5
                                                     },
                                                     "insertedContent": {
-                                                        "text": "Unit\n"
+                                                        "text": "Unit"
                                                     }
                                                 }
                                             ]

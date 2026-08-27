@@ -66,7 +66,8 @@ proto::MethodMetadata* MetadataCollector::AddMethod(
 void MetadataCollector::AddBlock(
     proto::MethodMetadata* method_meta, uint32_t block_id,
     const std::vector<std::pair<int32_t, uint32_t>>& lines,
-    uint32_t branch_count) {
+    uint32_t branch_count,
+    const std::vector<uint32_t>& successor_block_ids) {
   std::lock_guard<std::mutex> lock(mutex_);
   auto* block_meta = method_meta->add_blocks();
   block_meta->set_block_id(block_id);
@@ -76,6 +77,10 @@ void MetadataCollector::AddBlock(
     auto* line_meta = block_meta->add_lines();
     line_meta->set_line_number(line_info.first);
     line_meta->set_instruction_count(line_info.second);
+  }
+
+  for (uint32_t succ_id : successor_block_ids) {
+    block_meta->add_successor_block_ids(succ_id);
   }
 }
 

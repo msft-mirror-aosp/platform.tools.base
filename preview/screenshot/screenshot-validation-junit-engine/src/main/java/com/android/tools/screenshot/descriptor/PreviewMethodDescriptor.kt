@@ -25,8 +25,11 @@ import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor
 import org.junit.platform.engine.support.descriptor.MethodSource
 import org.junit.platform.engine.support.hierarchical.Node
 
-class PreviewMethodDescriptor(parentId: UniqueId, private val className: String, private val methodName: String) :
-  AbstractTestDescriptor(parentId.append(SEGMENT_TYPE, methodName), methodName), Node<PreviewScreenshotExecutionContext> {
+class PreviewMethodDescriptor(
+  parentId: UniqueId,
+  private val className: String,
+  private val methodName: String,
+) : AbstractTestDescriptor(parentId.append(SEGMENT_TYPE, methodName), methodName), Node<PreviewScreenshotExecutionContext> {
   companion object {
     const val SEGMENT_TYPE: String = "method"
   }
@@ -44,7 +47,9 @@ class PreviewMethodDescriptor(parentId: UniqueId, private val className: String,
     dynamicTestExecutor: Node.DynamicTestExecutor,
   ): PreviewScreenshotExecutionContext {
     val preview =
-      requireNotNull(context.methodNameToPreview["${className}.${methodName}"]) { "@Preview annotation is required for @PreviewTest" }
+      requireNotNull(context.methodNameToPreview["${className}.${methodName}"]) {
+        "@Preview annotation is required for @PreviewTest"
+      }
     preview.previewAnnotations.forEach { previewAnnotation ->
       val childNode =
         PreviewAnnotationDescriptor(

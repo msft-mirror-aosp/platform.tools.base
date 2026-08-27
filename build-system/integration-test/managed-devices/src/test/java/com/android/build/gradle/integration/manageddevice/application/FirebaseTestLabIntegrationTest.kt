@@ -73,39 +73,38 @@ import org.junit.Test
 class FirebaseTestLabIntegrationTest {
 
   @get:Rule
-  val rule: GradleRule =
-    GradleRule.from {
-      simpleProject()
-      androidApplication {
-        applyPlugin(FirebaseTestLabPlugin) {
-          serviceAccountCredentials.set(File("credentialFile.json"))
-          managedDevices.create("myFtlDevice1") {
-            it.device = "testFtlDeviceId1"
-            it.apiLevel = 32
-          }
-          managedDevices.create("myFtlDevice2") {
-            it.device = "invalidDeviceId"
-            it.apiLevel = 30
-          }
+  val rule: GradleRule = GradleRule.from {
+    simpleProject()
+    androidApplication {
+      applyPlugin(FirebaseTestLabPlugin) {
+        serviceAccountCredentials.set(File("credentialFile.json"))
+        managedDevices.create("myFtlDevice1") {
+          it.device = "testFtlDeviceId1"
+          it.apiLevel = 32
         }
-        files {
-          add(
-            "credentialFile.json",
-            """
-            {
-                "client_id": "test_client_id",
-                "client_secret": "test_client_secret",
-                "quota_project_id": "test_quota_project_id",
-                "refresh_token": "test_refresh_token",
-                "type": "authorized_user"
-            }
-            """
-              .trimIndent(),
-          )
+        managedDevices.create("myFtlDevice2") {
+          it.device = "invalidDeviceId"
+          it.apiLevel = 30
         }
-        pluginCallbacks += RegisterFakeHttpHandlerCallback::class.java
       }
+      files {
+        add(
+          "credentialFile.json",
+          """
+          {
+              "client_id": "test_client_id",
+              "client_secret": "test_client_secret",
+              "quota_project_id": "test_quota_project_id",
+              "refresh_token": "test_refresh_token",
+              "type": "authorized_user"
+          }
+          """
+            .trimIndent(),
+        )
+      }
+      pluginCallbacks += RegisterFakeHttpHandlerCallback::class.java
     }
+  }
 
   private val executor: GradleTaskExecutor
     get() = rule.build.executor.withEnableInfoLogging(false)

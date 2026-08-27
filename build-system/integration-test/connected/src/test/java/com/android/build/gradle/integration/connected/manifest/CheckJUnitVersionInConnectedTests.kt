@@ -30,15 +30,15 @@ class CheckJUnitVersionInConnectedTests {
   val project =
     GradleRule.Companion.from {
       androidApplication {
-          android {
-            dependencies {
-              androidTestImplementation("androidx.test.ext:junit:1.1.5")
-              androidTestImplementation("junit:junit:4.13.2")
-              androidTestImplementation("androidx.test:core:1.5.0")
-              androidTestImplementation("androidx.test:runner:1.5.0")
-            }
+        android {
+          dependencies {
+            androidTestImplementation("androidx.test.ext:junit:1.1.5")
+            androidTestImplementation("junit:junit:4.13.2")
+            androidTestImplementation("androidx.test:core:1.5.0")
+            androidTestImplementation("androidx.test:runner:1.5.0")
           }
         }
+      }
         .files {
           add(
             "src/androidTest/java/com/example/JUnitVersionTest.kt",

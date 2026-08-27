@@ -231,6 +231,11 @@ java_import(
 )
 
 platform_filegroup(
+    name = "platforms/android-37",
+    visibility = ["//visibility:public"],
+)
+
+platform_filegroup(
     name = "platforms/android-36.1",
     visibility = ["//visibility:public"],
 )

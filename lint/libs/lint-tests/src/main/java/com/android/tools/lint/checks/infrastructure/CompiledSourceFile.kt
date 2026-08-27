@@ -254,13 +254,13 @@ internal class CompiledSourceFile(
     val javac: String =
       System.getenv("LINT_TEST_JAVAC")
         ?: run {
-            val javaHome = System.getenv("JAVA_HOME")
-            if (javaHome != null) {
-              "$javaHome/bin/javac"
-            } else {
-              error("Couldn't find javac to update test file $target " + "with. Point to it with \$LINT_TEST_JAVAC")
-            }
+          val javaHome = System.getenv("JAVA_HOME")
+          if (javaHome != null) {
+            "$javaHome/bin/javac"
+          } else {
+            error("Couldn't find javac to update test file $target " + "with. Point to it with \$LINT_TEST_JAVAC")
           }
+        }
           .let {
             if (isWindows && !it.endsWith(".bat")) {
               "$it.bat"

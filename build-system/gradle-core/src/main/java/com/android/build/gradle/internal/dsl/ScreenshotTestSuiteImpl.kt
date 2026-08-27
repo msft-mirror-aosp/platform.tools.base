@@ -30,6 +30,7 @@ import org.gradle.api.provider.ProviderFactory
 abstract class ScreenshotTestSuiteImpl @Inject constructor(val name: String, dslServices: DslServices) : ScreenshotTestSuite {
 
   abstract override var engineVersion: String?
+  abstract override var imageDifferenceThreshold: Float?
 
   internal val dependenciesActions = mutableListOf<AgpTestSuiteDependencies.() -> Unit>()
   internal var dependenciesHandler: ((AgpTestSuiteDependencies.() -> Unit) -> Unit)? = null
@@ -82,19 +83,18 @@ constructor(
         )
       )
 
-      val versionProvider =
-        providers.provider {
-          val version = screenshotSuite.engineVersion
-          if (version.isNullOrBlank()) {
-            dslServices.issueReporter.reportError(
-              com.android.builder.errors.IssueReporter.Type.GENERIC,
-              "Screenshot test engine version must be specified. e.g. engineVersion = \"0.0.1-alpha01\"",
-            )
-            "unspecified"
-          } else {
-            version!!
-          }
+      val versionProvider = providers.provider {
+        val version = screenshotSuite.engineVersion
+        if (version.isNullOrBlank()) {
+          dslServices.issueReporter.reportError(
+            com.android.builder.errors.IssueReporter.Type.GENERIC,
+            "Screenshot test engine version must be specified. e.g. engineVersion = \"0.0.1-alpha01\"",
+          )
+          "unspecified"
+        } else {
+          version!!
         }
+      }
 
       enginesDependencies.add(
         versionProvider.map { version ->
@@ -109,7 +109,9 @@ constructor(
       screenshotSuite.dependenciesActions.clear()
     }
 
-    configureTestTasks { context -> screenshotTaskConfigurator.configureTask(this, context, dslServices, providers) }
+    configureTestTasks { context ->
+      screenshotTaskConfigurator.configureTask(this, context, dslServices, providers, screenshotSuite.imageDifferenceThreshold)
+    }
   }
 
   private val screenshotTaskConfigurator = ScreenshotTestSuiteTaskConfigurator(name)

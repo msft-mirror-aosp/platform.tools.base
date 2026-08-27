@@ -90,13 +90,12 @@ class ManagedVirtualDeviceLockManagerTest {
       assertThat(lockManager.devicesInProcess).isEqualTo(1)
 
       // Run two locks concurrently.
-      val thread =
-        executorService.submit {
-          lockManager.lockAndExecute {
-            assertThat(trackedFile).contains("MDLockCount 2")
-            assertThat(lockManager.devicesInProcess).isEqualTo(2)
-          }
+      val thread = executorService.submit {
+        lockManager.lockAndExecute {
+          assertThat(trackedFile).contains("MDLockCount 2")
+          assertThat(lockManager.devicesInProcess).isEqualTo(2)
         }
+      }
 
       // This should not take long or be expensive. So we shouldn't have a long timeout
       thread.get(200, TimeUnit.MILLISECONDS)
@@ -127,15 +126,14 @@ class ManagedVirtualDeviceLockManagerTest {
       assertThat(lockManager.devicesInProcess).isEqualTo(1)
 
       // Attempt to run the second lock
-      thread =
-        executorService.submit {
-          lockManager.lockAndExecute {
+      thread = executorService.submit {
+        lockManager.lockAndExecute {
 
-            // When it eventually runs the lock count should only be 1
-            assertThat(trackedFile).contains("MDLockCount 1")
-            assertThat(lockManager.devicesInProcess).isEqualTo(1)
-          }
+          // When it eventually runs the lock count should only be 1
+          assertThat(trackedFile).contains("MDLockCount 1")
+          assertThat(lockManager.devicesInProcess).isEqualTo(1)
         }
+      }
 
       // Timeout doesn't matter, since the underlying thread won't complete
       assertThrows(TimeoutException::class.java) { thread.get(200, TimeUnit.MILLISECONDS) }
@@ -219,16 +217,15 @@ class ManagedVirtualDeviceLockManagerTest {
       assertThat(lockManager2.devicesInProcess).isEqualTo(0)
 
       // Attempt to run the second lock
-      thread =
-        executorService.submit {
-          lockManager2.lockAndExecute { lock2 ->
-            assertThat(lock2.lockCount).isEqualTo(1)
+      thread = executorService.submit {
+        lockManager2.lockAndExecute { lock2 ->
+          assertThat(lock2.lockCount).isEqualTo(1)
 
-            assertThat(trackedFile).contains("MDLockCount 2")
-            assertThat(lockManager1.devicesInProcess).isEqualTo(1)
-            assertThat(lockManager2.devicesInProcess).isEqualTo(1)
-          }
+          assertThat(trackedFile).contains("MDLockCount 2")
+          assertThat(lockManager1.devicesInProcess).isEqualTo(1)
+          assertThat(lockManager2.devicesInProcess).isEqualTo(1)
         }
+      }
 
       // This should not take long or be expensive. So we shouldn't have a long timeout
       thread.get(200, TimeUnit.MILLISECONDS)
@@ -299,16 +296,15 @@ class ManagedVirtualDeviceLockManagerTest {
 
       // Attempt to grab 3 locks from the first, it will only allocate 1, as the maximum
       // for the first manager is 6, and only 1 is left available.
-      thread =
-        executorService.submit {
-          lockManager1.lockAndExecute(3) { lock1 ->
-            assertThat(lock1.lockCount).isEqualTo(1)
+      thread = executorService.submit {
+        lockManager1.lockAndExecute(3) { lock1 ->
+          assertThat(lock1.lockCount).isEqualTo(1)
 
-            assertThat(trackedFile).contains("MDLockCount 6")
-            assertThat(lockManager1.devicesInProcess).isEqualTo(1)
-            assertThat(lockManager2.devicesInProcess).isEqualTo(5)
-          }
+          assertThat(trackedFile).contains("MDLockCount 6")
+          assertThat(lockManager1.devicesInProcess).isEqualTo(1)
+          assertThat(lockManager2.devicesInProcess).isEqualTo(5)
         }
+      }
 
       // This should not take long or be expensive. So we shouldn't have a long timeout
       thread.get(200, TimeUnit.MILLISECONDS)
@@ -341,17 +337,16 @@ class ManagedVirtualDeviceLockManagerTest {
 
       // Attempt to grab a lock for manager 1. Since 4 are already allocated and manager 1
       // has a max of 2, this will wait to execute.
-      thread =
-        executorService.submit {
-          lockManager1.lockAndExecute {
+      thread = executorService.submit {
+        lockManager1.lockAndExecute {
 
-            // When it eventually runs the lock count should only be 1
-            // the locks for the second manager should already be freed.
-            assertThat(trackedFile).contains("MDLockCount 1")
-            assertThat(lockManager1.devicesInProcess).isEqualTo(1)
-            assertThat(lockManager2.devicesInProcess).isEqualTo(0)
-          }
+          // When it eventually runs the lock count should only be 1
+          // the locks for the second manager should already be freed.
+          assertThat(trackedFile).contains("MDLockCount 1")
+          assertThat(lockManager1.devicesInProcess).isEqualTo(1)
+          assertThat(lockManager2.devicesInProcess).isEqualTo(0)
         }
+      }
 
       // Timeout doesn't matter, since the underlying thread won't complete
       assertThrows(TimeoutException::class.java) { thread.get(200, TimeUnit.MILLISECONDS) }

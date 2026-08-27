@@ -16,10 +16,10 @@
 
 package com.android.tools.ui.inspector.printer.text
 
-import com.android.tools.ui.inspector.DeviceConfiguration
-import com.android.tools.ui.inspector.DeviceLocale
-import com.android.tools.ui.inspector.Dimension
-import com.android.tools.ui.inspector.DisplayInfo
+import com.android.tools.ui.inspector.model.DeviceConfiguration
+import com.android.tools.ui.inspector.model.DeviceLocale
+import com.android.tools.ui.inspector.model.Dimension
+import com.android.tools.ui.inspector.model.DisplayInfo
 import java.io.PrintStream
 import java.lang.reflect.Modifier
 

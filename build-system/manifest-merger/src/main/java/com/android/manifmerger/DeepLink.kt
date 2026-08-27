@@ -198,16 +198,15 @@ data class DeepLink(
             ?.replace(dollarSignEncoder, DOLLAR_SIGN)
             ?.replace(openBracketEncoder, OPEN_BRACKET)
             ?.replace(closeBracketEncoder, CLOSE_BRACKET)
-        val host =
-          decodedHost?.let {
-            if (it.startsWith(wildcardEncoder)) {
-              HOST_WILDCARD + it.substring(wildcardEncoder.length)
-            } else if (it.startsWith(hostWildcardEncoder)) {
-              HOST_WILDCARD + it.substring(hostWildcardEncoder.length)
-            } else {
-              it
-            }
+        val host = decodedHost?.let {
+          if (it.startsWith(wildcardEncoder)) {
+            HOST_WILDCARD + it.substring(wildcardEncoder.length)
+          } else if (it.startsWith(hostWildcardEncoder)) {
+            HOST_WILDCARD + it.substring(hostWildcardEncoder.length)
+          } else {
+            it
           }
+        }
         // throw exception if host contains an illegal wildcard encoder
         if (host != null && (PATH_WILDCARD.containsMatchIn(host) || host.contains(wildcardEncoder))) {
           throw DeepLinkException("Improper use of wildcards and/or placeholders in deeplink URI host")

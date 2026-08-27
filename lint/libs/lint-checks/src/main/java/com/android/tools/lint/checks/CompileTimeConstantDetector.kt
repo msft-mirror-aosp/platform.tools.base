@@ -43,10 +43,9 @@ import com.intellij.psi.PsiVariable
 import com.intellij.psi.util.InheritanceUtil.isInheritorOrSelf
 import com.intellij.psi.util.PsiTypesUtil.classNameEquals
 import com.intellij.psi.util.PsiUtil
-import java.util.EnumSet
-import org.jetbrains.kotlin.name.JvmStandardClassIds
 import kotlin.reflect.KClass
 import org.jetbrains.kotlin.analysis.api.analyze
+import org.jetbrains.kotlin.name.JvmStandardClassIds
 import org.jetbrains.kotlin.psi.KtParameter
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtPropertyAccessor
@@ -58,7 +57,6 @@ import org.jetbrains.uast.UBinaryExpression
 import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UCallableReferenceExpression
 import org.jetbrains.uast.UClass
-import org.jetbrains.uast.UDeclaration
 import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UExpression
 import org.jetbrains.uast.UField
@@ -104,7 +102,7 @@ class CompileTimeConstantDetector : Detector(), SourceCodeScanner {
         ISSUE,
         element,
         context.getLocation(element),
-        "Non-compile-time constant expression passed to parameter with `@CompileTimeConstant` annotation"
+        "Non-compile-time constant expression passed to parameter with `@CompileTimeConstant` annotation",
       )
     }
   }
@@ -130,8 +128,7 @@ class CompileTimeConstantDetector : Detector(), SourceCodeScanner {
           if (isAssignment) {
             // Multi resolution support for compound assignment:
             // E.g., += is now resolved to getter and setter.
-            (node as? UMultiResolvable)?.multiResolve()?.mapNotNull { it.element as? PsiMethod }
-              ?: emptyList()
+            (node as? UMultiResolvable)?.multiResolve()?.mapNotNull { it.element as? PsiMethod } ?: emptyList()
           } else {
             listOfNotNull(node.resolveOperator())
           }
@@ -167,25 +164,18 @@ class CompileTimeConstantDetector : Detector(), SourceCodeScanner {
         // CTC is used for regular assignments. Note we do something similar for ++/-- elsewhere.
         when (val assignee = node.leftOperand.tryResolveHarder()) {
           is PsiVariable ->
-            if (
-              assignee.isAnnotatedCtc() &&
-                (node.operator != UastBinaryOperator.ASSIGN ||
-                  !node.rightOperand.isConstant(context))
-            ) {
+            if (assignee.isAnnotatedCtc() && (node.operator != UastBinaryOperator.ASSIGN || !node.rightOperand.isConstant(context))) {
               context.report(
                 ISSUE,
                 node,
                 context.getLocation(node),
-                "Non-compile-time constant expression assigned to variable annotated with `@CompileTimeConstant`"
+                "Non-compile-time constant expression assigned to variable annotated with `@CompileTimeConstant`",
               )
             }
           is PsiMethod -> // this is implicitly calling a Java setter using property syntax
             // For simple assignment (=), checkAnnotation() already reports on the parameter argument.
             // Only report here for compound assignments (+= etc.).
-            if (
-              assignee.parameterList.parameters.any { it.isAnnotatedCtc() } &&
-                node.operator != UastBinaryOperator.ASSIGN
-            ) {
+            if (assignee.parameterList.parameters.any { it.isAnnotatedCtc() } && node.operator != UastBinaryOperator.ASSIGN) {
               context.report(
                 ISSUE,
                 node,
@@ -218,8 +208,7 @@ class CompileTimeConstantDetector : Detector(), SourceCodeScanner {
       /**
        * Looks for inherited methods that may have conflicting annotations in interfaces.
        *
-       * [visitMethod] checks this for overridden methods; here we do the same for inherited ones
-       * for completeness.
+       * [visitMethod] checks this for overridden methods; here we do the same for inherited ones for completeness.
        */
       override fun visitClass(node: UClass) {
         if (node.isInterface) return
@@ -286,11 +275,7 @@ class CompileTimeConstantDetector : Detector(), SourceCodeScanner {
             // (since they're method calls, and UAST (correctly) doesn't expose the @Ctc
             // annotation).
             // Ruling out getter calls is also consistent with how @Ctc is handled in Java.
-            if (
-              !sourcePsi.isPrivate() &&
-                isAnnotatedDirectly &&
-                node.sourceAnnotations.none { it.qualifiedName == JVM_FIELD_ANNOTATION }
-            ) {
+            if (!sourcePsi.isPrivate() && isAnnotatedDirectly && node.sourceAnnotations.none { it.qualifiedName == JVM_FIELD_ANNOTATION }) {
               context.report(
                 ISSUE,
                 node,
@@ -317,10 +302,7 @@ class CompileTimeConstantDetector : Detector(), SourceCodeScanner {
                     .trimMargin(),
                 )
               }
-              if (
-                !sourcePsi.isPrivate() &&
-                  node.sourceAnnotations.none { it.qualifiedName == JVM_FIELD_ANNOTATION }
-              ) {
+              if (!sourcePsi.isPrivate() && node.sourceAnnotations.none { it.qualifiedName == JVM_FIELD_ANNOTATION }) {
                 context.report(
                   ISSUE,
                   node,
@@ -406,17 +388,15 @@ class CompileTimeConstantDetector : Detector(), SourceCodeScanner {
         val isIncOrDec = node.isIncOrDec()
         val resolvedDeclarations =
           if (isIncOrDec) {
-            (node as? UMultiResolvable)?.multiResolve()?.mapNotNull { it.element as? PsiMethod }
-              ?: emptyList()
+            (node as? UMultiResolvable)?.multiResolve()?.mapNotNull { it.element as? PsiMethod } ?: emptyList()
           } else {
             listOfNotNull(node.resolveOperator())
           }
         // get; operator (e.g., ++); then set. Therefore, it's no longer constant.
         // If any of resolved callee has an annotated parameter, report.
-        val violated =
-          resolvedDeclarations.any { callee ->
-            callee.parameterList.parameters.any { it.isAnnotatedCtc() }
-          }
+        val violated = resolvedDeclarations.any { callee ->
+          callee.parameterList.parameters.any { it.isAnnotatedCtc() }
+        }
         if (violated) {
           context.report(
             ISSUE,
@@ -440,7 +420,7 @@ class CompileTimeConstantDetector : Detector(), SourceCodeScanner {
             ISSUE,
             node,
             context.getLocation(node),
-            "Cannot apply increment or decrement operators to variable annotated with `@CompileTimeConstant`"
+            "Cannot apply increment or decrement operators to variable annotated with `@CompileTimeConstant`",
           )
         }
       }
@@ -477,7 +457,10 @@ class CompileTimeConstantDetector : Detector(), SourceCodeScanner {
       val className = method.containingClass?.qualifiedName ?: return false
       return when (name) {
         "of" -> className in CONSTANT_OF_CLASSES
-        "listOf", "setOf", "emptyList", "emptySet" -> className.startsWith("kotlin.collections.")
+        "listOf",
+        "setOf",
+        "emptyList",
+        "emptySet" -> className.startsWith("kotlin.collections.")
         else -> false
       }
     }
@@ -485,8 +468,8 @@ class CompileTimeConstantDetector : Detector(), SourceCodeScanner {
     /**
      * Returns true if the receiver is a (boxed) primitive or [String].
      *
-     * In particular returns `false` for enum constants, which UAST typically treats as constant,
-     * but `@CompileTimeConstant` isn't meant to cover them.
+     * In particular returns `false` for enum constants, which UAST typically treats as constant, but `@CompileTimeConstant` isn't meant to
+     * cover them.
      */
     private fun Any.isConsideredCtc(): Boolean = this::class in CONSTANT_CLASSES
 
@@ -494,15 +477,12 @@ class CompileTimeConstantDetector : Detector(), SourceCodeScanner {
       when (this) {
         is UParenthesizedExpression -> expression.isConstant(context)
         // TODO(b/384706320): Add support for switch + when expressions.
-        is UIfExpression ->
-          (thenExpression?.isConstant(context) == true) &&
-            (elseExpression?.isConstant(context) == true)
+        is UIfExpression -> (thenExpression?.isConstant(context) == true) && (elseExpression?.isConstant(context) == true)
         // note: includes null literal as desired
         // note: string literal handled below in else branch
         is ULiteralExpression -> true
         is UCallExpression -> {
-          isConstantMethodReturn(resolve()) &&
-            this.valueArguments.all { it.isConstant(context) }
+          isConstantMethodReturn(resolve()) && this.valueArguments.all { it.isConstant(context) }
         }
         is UQualifiedReferenceExpression -> this.selector.isConstant(context)
         is UReferenceExpression -> {
@@ -520,8 +500,7 @@ class CompileTimeConstantDetector : Detector(), SourceCodeScanner {
             // For Kotlin locals, computeConstantValue() doesn't work, but <expr>.evaluate() does.
             // evaluate() seems to return null for non-final locals, but also check that
             // just-in-case.
-            is PsiLocalVariable ->
-              resolved.isDeclaredFinal(context) && evaluate()?.isConsideredCtc() == true
+            is PsiLocalVariable -> resolved.isDeclaredFinal(context) && evaluate()?.isConsideredCtc() == true
             else -> false
           }
         }
@@ -560,26 +539,25 @@ class CompileTimeConstantDetector : Detector(), SourceCodeScanner {
     }
 
     private fun UAnnotated.findCtcAnnotation(): UAnnotation? {
-      return uAnnotations.find { it.qualifiedName?.endsWith(".$COMPILE_TIME_CONSTANT_SHORT_NAME") == true || it.qualifiedName == COMPILE_TIME_CONSTANT_SHORT_NAME }
+      return uAnnotations.find {
+        it.qualifiedName?.endsWith(".$COMPILE_TIME_CONSTANT_SHORT_NAME") == true || it.qualifiedName == COMPILE_TIME_CONSTANT_SHORT_NAME
+      }
     }
 
     private fun UAnnotated.hasCtcAnnotation(): Boolean = findCtcAnnotation() != null
 
-    private fun UField.isAnnotatedCtc(): Boolean =
-      hasCtcAnnotation() || (javaPsi as? PsiVariable)?.isAnnotatedCtc() == true
+    private fun UField.isAnnotatedCtc(): Boolean = hasCtcAnnotation() || (javaPsi as? PsiVariable)?.isAnnotatedCtc() == true
 
     private fun UField.isFieldTargetedCtc(): Boolean {
       val ktParam = sourcePsi as? KtParameter ?: return findCtcAnnotation() != null
       return ktParam.annotationEntries.any { entry ->
-        entry.useSiteTarget?.text == "field" &&
-          entry.shortName?.asString() == COMPILE_TIME_CONSTANT_SHORT_NAME
+        entry.useSiteTarget?.text == "field" && entry.shortName?.asString() == COMPILE_TIME_CONSTANT_SHORT_NAME
       }
     }
 
     private fun PsiLocalVariable.isDeclaredFinal(context: JavaContext): Boolean {
       // isFinal returns false for Kotlin "val" locals, so check for them separately
-      return context.evaluator.isFinal(this) ||
-        (toUElement()?.sourcePsi as? KtProperty)?.isVar == false
+      return context.evaluator.isFinal(this) || (toUElement()?.sourcePsi as? KtProperty)?.isVar == false
     }
 
     private fun UExpression.tryResolveHarder(): PsiElement? =
@@ -594,8 +572,7 @@ class CompileTimeConstantDetector : Detector(), SourceCodeScanner {
         else -> false
       }
 
-    private val IMPLEMENTATION =
-      Implementation(CompileTimeConstantDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(CompileTimeConstantDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     @JvmField
     @Suppress("LintImplUnexpectedDomain")

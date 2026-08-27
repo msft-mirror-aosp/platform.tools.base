@@ -458,6 +458,16 @@ com.android.tools.apkparser:binary-resources
   dependencies:
     com.google.guava:guava (runtime)
 
+com.android.tools.backup:backup-restore
+  pomName=com.android.tools.backup.backup-restore
+  description=Library to perform backup and restore operations
+  dependencies:
+    com.android.tools.adblib:adblib (runtime)
+    com.android.tools:common (runtime)
+    com.android.tools:sdk-common (runtime)
+    com.android.tools:sdklib (runtime)
+    org.jetbrains.kotlinx:kotlinx-coroutines-core (runtime)
+
 com.android.tools.build:aapt2
   pomName=com.android.tools.build.aapt2
   description=Android resource compiler

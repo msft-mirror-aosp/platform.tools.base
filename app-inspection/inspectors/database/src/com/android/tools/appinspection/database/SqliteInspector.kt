@@ -625,8 +625,11 @@ internal class SqliteInspector(
         val sql = args.firstOrNull() as? String ?: return@registerHook statement
         val lambda =
           when (shouldInvalidate(sql)) {
-            true -> { -> throttler.submitRequest() }
-            false -> { -> }
+            true -> { ->
+              throttler.submitRequest()
+            }
+            false -> { ->
+            }
           }
         SQLiteStatementWrapper(connection, statement, lambda)
       },

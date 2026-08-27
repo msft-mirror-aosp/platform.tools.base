@@ -29,7 +29,9 @@ fun interface ImageDiffer {
   /** A name to be used in logs for this differ, defaulting to the class's simple name. */
   val name
     get() =
-      requireNotNull(this::class.simpleName) { "Could not determine ImageDiffer.name reflectively. Please override ImageDiffer.name." }
+      requireNotNull(this::class.simpleName) {
+        "Could not determine ImageDiffer.name reflectively. Please override ImageDiffer.name."
+      }
 
   /**
    * Result ADT returned from [diff].

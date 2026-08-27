@@ -99,18 +99,19 @@ class StandaloneRenderModelModule(
             return@forEach
           }
 
-        val innerClasses = com.android.resources.ResourceType.values().mapNotNull { resType ->
-          val classFilePath = "${pkg.replace('.', '/')}/R$${resType.getName()}.class"
-          if (classLoader.getResource(classFilePath) != null) {
-            try {
-              classLoader.loadClass("$pkg.R$${resType.getName()}")
-            } catch (e: ClassNotFoundException) {
+        val innerClasses =
+          com.android.resources.ResourceType.values().mapNotNull { resType ->
+            val classFilePath = "${pkg.replace('.', '/')}/R$${resType.getName()}.class"
+            if (classLoader.getResource(classFilePath) != null) {
+              try {
+                classLoader.loadClass("$pkg.R$${resType.getName()}")
+              } catch (e: ClassNotFoundException) {
+                null
+              }
+            } else {
               null
             }
-          } else {
-            null
           }
-        }
 
         for (innerClass in innerClasses) {
           val typeName = innerClass.simpleName

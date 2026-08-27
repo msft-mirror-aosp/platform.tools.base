@@ -32,39 +32,38 @@ import org.junit.runners.Parameterized
 @RunWith(Parameterized::class)
 class ProcessApplicationManifestWithSplitsTest(private val abi: String, private val expectedVersion: Int) {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        android {
-          defaultConfig {
-            minSdk = 33
-            versionCode = 1
-          }
-          splits {
-            // Configures multiple APKs based on ABI.
-            abi {
-              // Enables building multiple APKs per ABI.
-              isEnable = true
+  val rule = GradleRule.from {
+    androidApplication {
+      android {
+        defaultConfig {
+          minSdk = 33
+          versionCode = 1
+        }
+        splits {
+          // Configures multiple APKs based on ABI.
+          abi {
+            // Enables building multiple APKs per ABI.
+            isEnable = true
 
-              // By default all ABIs are included, so use reset() and include to specify that you
-              // only
-              // want APKs for x86 and x86_64.
+            // By default all ABIs are included, so use reset() and include to specify that you
+            // only
+            // want APKs for x86 and x86_64.
 
-              // Resets the list of ABIs for Gradle to create APKs for to none.
-              reset()
+            // Resets the list of ABIs for Gradle to create APKs for to none.
+            reset()
 
-              // Specifies a list of ABIs for Gradle to create APKs for.
-              include("x86_64", "x86", "arm64-v8a", "armeabi-v7a")
+            // Specifies a list of ABIs for Gradle to create APKs for.
+            include("x86_64", "x86", "arm64-v8a", "armeabi-v7a")
 
-              // Specifies that you don't want to also generate a universal APK that includes all
-              // ABIs.
-              isUniversalApk = false
-            }
+            // Specifies that you don't want to also generate a universal APK that includes all
+            // ABIs.
+            isUniversalApk = false
           }
         }
-        pluginCallbacks += MyAppCallback::class.java
       }
+      pluginCallbacks += MyAppCallback::class.java
     }
+  }
 
   class MyAppCallback : ApplicationComponentCallback {
     override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {

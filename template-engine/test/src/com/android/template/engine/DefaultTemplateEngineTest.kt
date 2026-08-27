@@ -82,8 +82,9 @@ class DefaultTemplateEngineTest(private val fileSystemId: FileSystemId) {
     val metadata = builder.parseTemplateMetadata("template.json", jsonFile)
     assertThat(metadata).isNotNull()
 
-    val templateFileLoader =
-      TemplateFileLoader.forFunction { entry: TemplateFileEntry -> files.first { it.relativePath == entry.relativePath } }
+    val templateFileLoader = TemplateFileLoader.forFunction { entry: TemplateFileEntry ->
+      files.first { it.relativePath == entry.relativePath }
+    }
     val template =
       TemplateDefinition(
         metadata = metadata!!,
@@ -165,8 +166,9 @@ class DefaultTemplateEngineTest(private val fileSystemId: FileSystemId) {
     val metadata = builder.parseTemplateMetadata("template.json", jsonFile)
     assertThat(metadata).isNotNull()
 
-    val templateFileLoader =
-      TemplateFileLoader.forFunction { entry: TemplateFileEntry -> files.first { it.relativePath == entry.relativePath } }
+    val templateFileLoader = TemplateFileLoader.forFunction { entry: TemplateFileEntry ->
+      files.first { it.relativePath == entry.relativePath }
+    }
     val template =
       TemplateDefinition(
         metadata = metadata!!,
@@ -219,8 +221,9 @@ class DefaultTemplateEngineTest(private val fileSystemId: FileSystemId) {
     val metadata = builder.parseTemplateMetadata("template.json", jsonFile)
     assertThat(metadata).isNotNull()
 
-    val templateFileLoader =
-      TemplateFileLoader.forFunction { entry: TemplateFileEntry -> files.first { it.relativePath == entry.relativePath } }
+    val templateFileLoader = TemplateFileLoader.forFunction { entry: TemplateFileEntry ->
+      files.first { it.relativePath == entry.relativePath }
+    }
     val template =
       TemplateDefinition(
         metadata = metadata!!,
@@ -289,8 +292,9 @@ class DefaultTemplateEngineTest(private val fileSystemId: FileSystemId) {
     val metadata = builder.parseTemplateMetadata("template.json", jsonFile)
     assertThat(metadata).isNotNull()
 
-    val templateFileLoader =
-      TemplateFileLoader.forFunction { entry: TemplateFileEntry -> files.first { it.relativePath == entry.relativePath } }
+    val templateFileLoader = TemplateFileLoader.forFunction { entry: TemplateFileEntry ->
+      files.first { it.relativePath == entry.relativePath }
+    }
     val template =
       TemplateDefinition(
         metadata = metadata!!,

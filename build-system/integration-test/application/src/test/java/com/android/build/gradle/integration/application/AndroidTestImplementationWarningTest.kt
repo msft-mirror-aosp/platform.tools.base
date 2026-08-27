@@ -30,13 +30,12 @@ import org.junit.Test
 class AndroidTestImplementationWarningTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        pluginCallbacks += DisableAndroidTestCallback::class.java
-        dependencies { androidTestImplementation("com.google.guava:guava:19.0") }
-      }
+  val rule = GradleRule.from {
+    androidApplication {
+      pluginCallbacks += DisableAndroidTestCallback::class.java
+      dependencies { androidTestImplementation("com.google.guava:guava:19.0") }
     }
+  }
 
   class DisableAndroidTestCallback : ApplicationComponentCallback {
 

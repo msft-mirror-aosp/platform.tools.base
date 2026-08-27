@@ -25,18 +25,17 @@ import org.junit.Test
 
 class DesugaredMethodsModelTest : ModelComparator() {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        android {
-          defaultConfig.minSdk = 24
-          compileOptions { isCoreLibraryDesugaringEnabled = true }
+  val rule = GradleRule.from {
+    androidApplication {
+      android {
+        defaultConfig.minSdk = 24
+        compileOptions { isCoreLibraryDesugaringEnabled = true }
 
-          enableKotlin = false
-        }
-        dependencies { coreLibraryDesugaring(DESUGAR_DEPENDENCY) }
+        enableKotlin = false
       }
+      dependencies { coreLibraryDesugaring(DESUGAR_DEPENDENCY) }
     }
+  }
 
   @Test
   fun `test models`() {

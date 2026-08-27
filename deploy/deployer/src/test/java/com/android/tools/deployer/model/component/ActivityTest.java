@@ -19,12 +19,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 
 import com.android.ddmlib.AdbCommandRejectedException;
-import com.android.ddmlib.IDevice;
-import com.android.ddmlib.IShellOutputReceiver;
-import com.android.ddmlib.NullOutputReceiver;
 import com.android.ddmlib.ShellCommandUnresponsiveException;
 import com.android.ddmlib.TimeoutException;
 import com.android.testutils.TestUtils;
+import com.android.tools.deployer.common.DeployerIShellOutputReceiver;
+import com.android.tools.deployer.common.DeployerNullOutputReceiver;
 import com.android.tools.deployer.common.DeviceHolder;
 import com.android.tools.deployer.model.ModelException;
 import com.android.tools.deployer.model.TestLogger;
@@ -94,9 +93,8 @@ public class ActivityTest {
                     AdbCommandRejectedException,
                     IOException,
                     TimeoutException {
-        IDevice device = Mockito.mock(IDevice.class);
-        Mockito.when(device.getSerialNumber()).thenReturn("1234");
-        DeviceHolder deviceHolder = new DeviceHolder(device, null);
+        DeviceHolder deviceHolder = Mockito.mock(DeviceHolder.class);
+        Mockito.when(deviceHolder.getSerialNumber()).thenReturn("1234");
         ManifestActivityInfo info =
                 new ManifestActivityInfo(new XmlNode(), "com.example.myApp") {
                     @Override
@@ -106,26 +104,28 @@ public class ActivityTest {
                 };
         ActivityV1 activity = new ActivityV1(info, "com.example.myApp", new TestLogger());
         activity.activate(
-                " --user 123", AppComponent.Mode.DEBUG, new NullOutputReceiver(), deviceHolder);
+                " --user 123",
+                AppComponent.Mode.DEBUG,
+                new DeployerNullOutputReceiver(),
+                deviceHolder);
 
         String expectedCommand =
                 "am start -n com.example.myApp/com.example.myApp.MainActivity -a"
                     + " android.intent.action.MAIN -c android.intent.category.LAUNCHER -D --user"
                     + " 123";
 
-        Mockito.verify(device, Mockito.times(1))
+        Mockito.verify(deviceHolder, Mockito.times(1))
                 .executeShellCommand(
                         eq(expectedCommand),
-                        any(IShellOutputReceiver.class),
+                        any(DeployerIShellOutputReceiver.class),
                         eq(15L),
                         eq(TimeUnit.SECONDS));
     }
 
     @Test
     public void useCategoryFromManifest() throws Exception {
-        IDevice device = Mockito.mock(IDevice.class);
-        Mockito.when(device.getSerialNumber()).thenReturn("1234");
-        DeviceHolder deviceHolder = new DeviceHolder(device, null);
+        DeviceHolder deviceHolder = Mockito.mock(DeviceHolder.class);
+        Mockito.when(deviceHolder.getSerialNumber()).thenReturn("1234");
         URL url =
                 TestUtils.resolveWorkspacePath(
                                 "tools/base/deploy/deployer/src/test/resource/manifestWithCategory/AndroidManifest.bxml")
@@ -139,17 +139,18 @@ public class ActivityTest {
                             manifestInfo.activities().get(0),
                             "com.example.myApp",
                             new TestLogger());
-            activity.activate("", AppComponent.Mode.RUN, new NullOutputReceiver(), deviceHolder);
+            activity.activate(
+                    "", AppComponent.Mode.RUN, new DeployerNullOutputReceiver(), deviceHolder);
 
             String expectedCommand =
                     "am start -n com.example.myApp/com.example.tv_app.MainActivity -a"
                             + " android.intent.action.MAIN -c"
                             + " android.intent.category.LEANBACK_LAUNCHER";
 
-            Mockito.verify(device, Mockito.times(1))
+            Mockito.verify(deviceHolder, Mockito.times(1))
                     .executeShellCommand(
                             eq(expectedCommand),
-                            any(IShellOutputReceiver.class),
+                            any(DeployerIShellOutputReceiver.class),
                             eq(15L),
                             eq(TimeUnit.SECONDS));
         }

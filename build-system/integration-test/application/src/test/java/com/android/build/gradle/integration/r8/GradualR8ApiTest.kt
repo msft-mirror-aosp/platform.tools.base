@@ -32,121 +32,120 @@ import org.junit.Test
 class GradualR8ApiTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        android {
-          defaultConfig.minSdk = 24
-          buildTypes { named("release") { it.optimization { enable = true } } }
-        }
-        kotlin { compilerOptions { jvmTarget.set(JvmTarget.JVM_11) } }
-        dependencies {
-          implementation(project(":androidLib"))
-          implementation(project(":androidLib2")) // no-op
-          implementation(project(":javaLib"))
-        }
+  val rule = GradleRule.from {
+    androidApplication {
+      android {
+        defaultConfig.minSdk = 24
+        buildTypes { named("release") { it.optimization { enable = true } } }
       }
-      androidLibrary(":androidLib") {
-        android {
-          defaultConfig {
-            minSdk = 24
-            consumerProguardFiles("consumer-rules.pro")
-          }
-        }
-        kotlin { compilerOptions { jvmTarget.set(JvmTarget.JVM_11) } }
-        files {
-          add(
-            "src/main/java/com/example/androidlib/ClassInAndroidLib.kt",
-            // language=kotlin
-            """
-            package com.example.androidlib
-            class ClassInAndroidLib {
-                fun methodToKeep() {}
-                fun methodToRemove() {}
-            }
-            """
-              .trimIndent(),
-          )
-          add(
-            "src/main/java/com/example/androidlib/internal/ClassInAndroidLib2.kt",
-            // language=kotlin
-            """
-            package com.example.androidlib.internal
-            class ClassInAndroidLib2 {
-                fun methodToKeep() {}
-                fun methodToRemove() {}
-            }
-            """
-              .trimIndent(),
-          )
-          add("consumer-rules.pro", "")
-        }
-      }
-      androidLibrary(":androidLib2") { // no consumer proguard file present, added to validate no-op
-        android { defaultConfig { minSdk = 24 } }
-        kotlin { compilerOptions { jvmTarget.set(JvmTarget.JVM_11) } }
-        files {
-          add(
-            "src/main/java/com/example/androidlib2/ClassInAndroidLib2.kt",
-            // language=kotlin
-            """
-            package com.example.androidlib2
-            class ClassInAndroidLib2 {
-                fun methodToKeep() {}
-                fun methodToRemove() {}
-            }
-            """
-              .trimIndent(),
-          )
-          add(
-            "src/main/java/com/example/androidlib2/ClassInAndroidLib4.kt",
-            // language=kotlin
-            """
-            package com.example.androidlib2
-            class ClassInAndroidLib4 {
-                fun methodToKeep() {}
-                fun methodToRemove() {}
-            }
-            """
-              .trimIndent(),
-          )
-        }
-      }
-      genericProject(":javaLib") {
-        applyPlugin(PluginType.JAVA_LIBRARY)
-        applyPlugin(PluginType.KOTLIN_JVM)
-        files {
-          add(
-            "src/main/java/com/example/javalib/ClassInJavaLib.kt",
-            // language=kotlin
-            """
-            package com.example.javalib
-            class ClassInJavaLib {
-                fun methodToKeep() {}
-                fun methodToRemove() {}
-            }
-            """
-              .trimIndent(),
-          )
-          add("src/main/resources/META-INF/com.android.tools/proguard/proguard.ext", "# Proguard rules")
-        }
+      kotlin { compilerOptions { jvmTarget.set(JvmTarget.JVM_11) } }
+      dependencies {
+        implementation(project(":androidLib"))
+        implementation(project(":androidLib2")) // no-op
+        implementation(project(":javaLib"))
       }
     }
+    androidLibrary(":androidLib") {
+      android {
+        defaultConfig {
+          minSdk = 24
+          consumerProguardFiles("consumer-rules.pro")
+        }
+      }
+      kotlin { compilerOptions { jvmTarget.set(JvmTarget.JVM_11) } }
+      files {
+        add(
+          "src/main/java/com/example/androidlib/ClassInAndroidLib.kt",
+          // language=kotlin
+          """
+          package com.example.androidlib
+          class ClassInAndroidLib {
+              fun methodToKeep() {}
+              fun methodToRemove() {}
+          }
+          """
+            .trimIndent(),
+        )
+        add(
+          "src/main/java/com/example/androidlib/internal/ClassInAndroidLib2.kt",
+          // language=kotlin
+          """
+          package com.example.androidlib.internal
+          class ClassInAndroidLib2 {
+              fun methodToKeep() {}
+              fun methodToRemove() {}
+          }
+          """
+            .trimIndent(),
+        )
+        add("consumer-rules.pro", "")
+      }
+    }
+    androidLibrary(":androidLib2") { // no consumer proguard file present, added to validate no-op
+      android { defaultConfig { minSdk = 24 } }
+      kotlin { compilerOptions { jvmTarget.set(JvmTarget.JVM_11) } }
+      files {
+        add(
+          "src/main/java/com/example/androidlib2/ClassInAndroidLib2.kt",
+          // language=kotlin
+          """
+          package com.example.androidlib2
+          class ClassInAndroidLib2 {
+              fun methodToKeep() {}
+              fun methodToRemove() {}
+          }
+          """
+            .trimIndent(),
+        )
+        add(
+          "src/main/java/com/example/androidlib2/ClassInAndroidLib4.kt",
+          // language=kotlin
+          """
+          package com.example.androidlib2
+          class ClassInAndroidLib4 {
+              fun methodToKeep() {}
+              fun methodToRemove() {}
+          }
+          """
+            .trimIndent(),
+        )
+      }
+    }
+    genericProject(":javaLib") {
+      applyPlugin(PluginType.JAVA_LIBRARY)
+      applyPlugin(PluginType.KOTLIN_JVM)
+      files {
+        add(
+          "src/main/java/com/example/javalib/ClassInJavaLib.kt",
+          // language=kotlin
+          """
+          package com.example.javalib
+          class ClassInJavaLib {
+              fun methodToKeep() {}
+              fun methodToRemove() {}
+          }
+          """
+            .trimIndent(),
+        )
+        add("src/main/resources/META-INF/com.android.tools/proguard/proguard.ext", "# Proguard rules")
+      }
+    }
+  }
 
   @Test
   fun `test gradual r8 no optimization`() {
-    val build =
-      rule.build { androidApplication { android { buildTypes { named("release") { it.optimization { packageScope.set(listOf()) } } } } } }
+    val build = rule.build {
+      androidApplication { android { buildTypes { named("release") { it.optimization { packageScope.set(listOf()) } } } } }
+    }
     val result = build.executor.expectFailure().run(":app:assembleRelease")
     result.assertErrorContains("Wrong configuration. optimization.packageScope is an empty set, at least one package must be specified.")
   }
 
   @Test
   fun `test gradual r8 partial optimization for package + subpackages`() {
-    val build =
-      rule.build {
-        androidApplication { android { buildTypes { named("release") { it.optimization.packageScope.add("com.example.androidlib.**") } } } }
-      }
+    val build = rule.build {
+      androidApplication { android { buildTypes { named("release") { it.optimization.packageScope.add("com.example.androidlib.**") } } } }
+    }
     build.executor.run(":app:assembleRelease")
     build.androidApplication().assertApk(ApkSelector.RELEASE) {
       classes().subPackage("com/example/androidlib").isEmpty()
@@ -156,10 +155,9 @@ class GradualR8ApiTest {
 
   @Test
   fun `test gradual r8 partial optimization for package only`() {
-    val build =
-      rule.build {
-        androidApplication { android { buildTypes { named("release") { it.optimization.packageScope.add("com.example.androidlib.*") } } } }
-      }
+    val build = rule.build {
+      androidApplication { android { buildTypes { named("release") { it.optimization.packageScope.add("com.example.androidlib.*") } } } }
+    }
     build.executor.run(":app:assembleRelease")
     build.androidApplication().assertApk(ApkSelector.RELEASE) {
       classes().subPackage("com/example/androidlib").containsExactly("internal/ClassInAndroidLib2")
@@ -168,12 +166,11 @@ class GradualR8ApiTest {
 
   @Test
   fun `test gradual r8 partial optimization for class`() {
-    val build =
-      rule.build {
-        androidApplication {
-          android { buildTypes { named("release") { it.optimization.packageScope.add("com.example.androidlib2.ClassInAndroidLib2") } } }
-        }
+    val build = rule.build {
+      androidApplication {
+        android { buildTypes { named("release") { it.optimization.packageScope.add("com.example.androidlib2.ClassInAndroidLib2") } } }
       }
+    }
     build.executor.run(":app:assembleRelease")
     build.androidApplication().assertApk(ApkSelector.RELEASE) {
       classes().subPackage("com/example/androidlib2").containsExactly("ClassInAndroidLib4")
@@ -194,22 +191,21 @@ class GradualR8ApiTest {
 
   @Test
   fun `test gradual r8 full optimization with keep rules`() {
-    val build =
-      rule.build {
-        androidApplication {
-            android {
-              buildTypes {
-                named("release") {
-                  it.optimization {
-                    packageScope.add("**")
-                    keepRules { files.add(java.io.File("keep.pro")) }
-                  }
-                }
+    val build = rule.build {
+      androidApplication {
+        android {
+          buildTypes {
+            named("release") {
+              it.optimization {
+                packageScope.add("**")
+                keepRules { files.add(java.io.File("keep.pro")) }
               }
             }
           }
-          .files { add("keep.pro", "-keep class com.example.androidlib2.ClassInAndroidLib2 { *; }") }
+        }
       }
+        .files { add("keep.pro", "-keep class com.example.androidlib2.ClassInAndroidLib2 { *; }") }
+    }
     build.executor.run(":app:assembleRelease")
     build.androidApplication().assertApk(ApkSelector.RELEASE) {
       // keep this class
@@ -223,11 +219,10 @@ class GradualR8ApiTest {
 
   @Test
   fun `test gradual r8 full optimization with keepRules source set`() {
-    val build =
-      rule.build {
-        androidApplication { android { buildTypes { named("release") { it.optimization { packageScope.add("**") } } } } }
-          .files { add("src/main/keepRules/keep.keep", "-keep class com.example.androidlib2.ClassInAndroidLib2 { *; }") }
-      }
+    val build = rule.build {
+      androidApplication { android { buildTypes { named("release") { it.optimization { packageScope.add("**") } } } } }
+        .files { add("src/main/keepRules/keep.keep", "-keep class com.example.androidlib2.ClassInAndroidLib2 { *; }") }
+    }
     build.executor.run(":app:assembleRelease")
     build.androidApplication().assertApk(ApkSelector.RELEASE) {
       // keep this class
@@ -241,11 +236,10 @@ class GradualR8ApiTest {
 
   @Test
   fun `test gradual r8 full optimization does not work for libraries`() {
-    val build =
-      rule.build {
-        androidLibrary(":androidLib") { android { buildTypes { named("release") { it.optimization { packageScope.add("**") } } } } }
-          .files { add("src/main/aarKeepRules/rules.keep", "-keep class com.example.androidlib.ClassInAndroidLib { *; }") }
-      }
+    val build = rule.build {
+      androidLibrary(":androidLib") { android { buildTypes { named("release") { it.optimization { packageScope.add("**") } } } } }
+        .files { add("src/main/aarKeepRules/rules.keep", "-keep class com.example.androidlib.ClassInAndroidLib { *; }") }
+    }
     build.executor.run(":androidLib:assembleRelease")
     build.androidLibrary(":androidLib").assertAar(AarSelector.RELEASE) {
       // keep this class
@@ -274,13 +268,12 @@ class GradualR8ApiTest {
 
   @Test
   fun `test gradual r8 requires flag`() {
-    val build =
-      rule.build {
-        gradleProperties { add(BooleanOption.R8_GRADUAL_API, false) }
-        androidApplication {
-          android { buildTypes { named("release") { it.optimization { packageScope.add("com.example.androidlib.*") } } } }
-        }
+    val build = rule.build {
+      gradleProperties { add(BooleanOption.R8_GRADUAL_API, false) }
+      androidApplication {
+        android { buildTypes { named("release") { it.optimization { packageScope.add("com.example.androidlib.*") } } } }
       }
+    }
 
     val result = build.executor.expectFailure().run(":app:assembleRelease")
     result.assertErrorContains("Cannot use optimization.packageScope without setting android.r8.gradual.support flag.")

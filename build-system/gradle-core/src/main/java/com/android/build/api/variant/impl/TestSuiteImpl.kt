@@ -110,17 +110,22 @@ internal constructor(
   override fun instrumentationRunner(source: TestSuiteSourceSet.TestApk): Provider<String> {
     val dslInfo = testedVariantComponent.variantDslInfo
     val variant = testedVariantComponent.variant
-    return if (dslInfo is ApplicationVariantDslInfo && variant is ApplicationCreationConfig) {
-      getInstrumentationRunner(
-        dslInfo.productFlavorList,
-        defaultConfig,
-        manifestDataProviderBuilder(source.manifestFile),
-        DexingImpl(variant, true, dslInfo.dexingDslInfo.multiDexKeepProguard, dslInfo.dexingDslInfo.multiDexKeepFile, variantServices)
-          .dexingType,
-        variantServices,
-      )
-    } else {
-      getDefaultInstrumentationTestRunner(variantServices, DexingType.MONO_DEX)
+    val manifestDataProv = manifestDataProviderBuilder(source.manifestFile)
+    return manifestDataProv.manifestData.flatMap { manifestData ->
+      if (!manifestData.instrumentationRunner.isNullOrBlank()) {
+        variantServices.provider { manifestData.instrumentationRunner!! }
+      } else if (dslInfo is ApplicationVariantDslInfo && variant is ApplicationCreationConfig) {
+        getInstrumentationRunner(
+          dslInfo.productFlavorList,
+          defaultConfig,
+          manifestDataProv,
+          DexingImpl(variant, true, dslInfo.dexingDslInfo.multiDexKeepProguard, dslInfo.dexingDslInfo.multiDexKeepFile, variantServices)
+            .dexingType,
+          variantServices,
+        )
+      } else {
+        getDefaultInstrumentationTestRunner(variantServices, DexingType.MONO_DEX)
+      }
     }
   }
 

@@ -527,13 +527,12 @@ class ViewLayoutInspector(connection: Connection, private val environment: Inspe
     var changed: Boolean
     synchronized(state.lock) {
       val oldSettings = state.screenshotSettings
-      val newSettings =
-        updateScreenshotTypeCommand.let {
-          ScreenshotSettings(
-            it.type.takeIf { type -> type != Screenshot.Type.UNKNOWN } ?: oldSettings.type,
-            it.scale.takeIf { scale -> scale > 0f } ?: oldSettings.scale,
-          )
-        }
+      val newSettings = updateScreenshotTypeCommand.let {
+        ScreenshotSettings(
+          it.type.takeIf { type -> type != Screenshot.Type.UNKNOWN } ?: oldSettings.type,
+          it.scale.takeIf { scale -> scale > 0f } ?: oldSettings.scale,
+        )
+      }
       changed = (oldSettings != newSettings)
       state.screenshotSettings = newSettings
     }
@@ -602,12 +601,11 @@ class ViewLayoutInspector(connection: Connection, private val environment: Inspe
 
     scope.launch {
       val roots = ThreadUtils.runOnMainThreadAsync { getRootViews(xrHelper) }.await()
-      val windowSnapshotRequests =
-        roots.map { root ->
-          val snapshotRequest = SnapshotRequest(captureSnapshotCommand.screenshotType)
-          state.snapshotRequests[root.view.uniqueDrawingId] = snapshotRequest
-          snapshotRequest.result
-        }
+      val windowSnapshotRequests = roots.map { root ->
+        val snapshotRequest = SnapshotRequest(captureSnapshotCommand.screenshotType)
+        state.snapshotRequests[root.view.uniqueDrawingId] = snapshotRequest
+        snapshotRequest.result
+      }
 
       // Update screenshot settings according to snapshot request
       val previousScreenshotSettings = state.screenshotSettings

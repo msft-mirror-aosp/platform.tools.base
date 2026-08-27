@@ -139,8 +139,9 @@ constructor(
 
   fun getBuiltArtifact(outputType: VariantOutputConfiguration.OutputType) = elements.firstOrNull { it.outputType == outputType }
 
-  fun getBuiltArtifact(variantOutputConfiguration: VariantOutputConfiguration): BuiltArtifactImpl? =
-    elements.firstOrNull { it.outputType == variantOutputConfiguration.outputType && it.filters == variantOutputConfiguration.filters }
+  fun getBuiltArtifact(variantOutputConfiguration: VariantOutputConfiguration): BuiltArtifactImpl? = elements.firstOrNull {
+    it.outputType == variantOutputConfiguration.outputType && it.filters == variantOutputConfiguration.filters
+  }
 
   fun saveToDirectory(folder: File) = saveToFile(File(folder, METADATA_FILE_NAME))
 

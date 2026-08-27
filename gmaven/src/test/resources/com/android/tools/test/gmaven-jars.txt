@@ -304,6 +304,23 @@ com/android/tools/apkparser/binary-resources
   org/checkerframework/checker/nullness/
   org/checkerframework/checker/nullness/compatqual/
 
+com/android/tools/backup/backup-restore
+  META-INF/
+  META-INF/MANIFEST.MF
+  META-INF/backup-restore.kotlin_module
+  META-INF/services/com.android.tools.environment.Logger$LoggerProvider
+  META-INF/unnamed.kotlin_module
+  NOTICE
+  com/
+  com/android/
+  com/android/backup/
+  com/android/commands/
+  com/android/commands/bmgr/
+  com/android/commands/bmgr/outputparser/
+  com/android/tools/
+  com/android/tools/environment/
+  com/android/tools/environment/log/
+
 com/android/tools/build/aapt2-proto
   Configuration.proto
   META-INF/

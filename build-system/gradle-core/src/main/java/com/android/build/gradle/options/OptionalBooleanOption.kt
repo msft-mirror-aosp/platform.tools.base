@@ -70,7 +70,6 @@ enum class OptionalBooleanOption(override val propertyName: String, val stage: S
     "android.lint.useK2Uast",
     ApiStage.Removed(VERSION_9_3, "Lint K2 is always enabled in AGP 9.3 and above"),
   ),
-
   @Suppress("unused")
   SERIAL_AAPT2(
     "android.injected.aapt2.serial",

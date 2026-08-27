@@ -16,12 +16,12 @@
 
 package com.android.tools.ui.inspector.printer.text
 
-import com.android.tools.ui.inspector.DeviceConfiguration
-import com.android.tools.ui.inspector.Dimension
-import com.android.tools.ui.inspector.DisplayInfo
-import com.android.tools.ui.inspector.UiDump
-import com.android.tools.ui.inspector.UiNode
-import com.android.tools.ui.inspector.UiWindow
+import com.android.tools.ui.inspector.model.DeviceConfiguration
+import com.android.tools.ui.inspector.model.Dimension
+import com.android.tools.ui.inspector.model.DisplayInfo
+import com.android.tools.ui.inspector.model.UiDump
+import com.android.tools.ui.inspector.model.UiNode
+import com.android.tools.ui.inspector.model.UiWindow
 import com.google.common.truth.Truth.assertThat
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream

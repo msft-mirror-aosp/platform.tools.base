@@ -150,7 +150,7 @@ internal constructor(
    */
   override val dslDefinedTestSuites: List<AgpTestSuiteDslInfo>
     get() =
-      extension.testOptions.suites
+      extension.testOptions.customSuites
         .filterIsInstance<AgpTestSuiteImpl>()
         .filter { it.targetVariants.contains(componentIdentity.name) }
         .map { AgpTestSuiteDslInfo(it, it.targets.filterIsInstance<AgpTestSuiteTargetImpl>()) }

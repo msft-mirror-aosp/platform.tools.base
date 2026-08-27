@@ -15,14 +15,14 @@
  */
 package com.android.tools.deployer.modelv1.component;
 
-import com.android.ddmlib.MultiLineReceiver;
+import com.android.tools.deployer.common.DeployerMultiLineReceiver;
 
 import org.jetbrains.annotations.NotNull;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public final class CommandResultReceiverV1 extends MultiLineReceiver {
+public final class CommandResultReceiverV1 extends DeployerMultiLineReceiver {
     public static final int SUCCESS_CODE = 1;
     public static final int INVALID_ARGUMENT_CODE = 3;
 

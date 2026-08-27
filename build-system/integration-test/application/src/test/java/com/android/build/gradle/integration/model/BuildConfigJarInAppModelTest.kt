@@ -27,11 +27,10 @@ import org.junit.Test
 
 class BuildConfigJarInAppModelTest {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication { android { buildFeatures { buildConfig = true } } }
-      gradleProperties { add(BooleanOption.ENABLE_BUILD_CONFIG_AS_BYTECODE, true) }
-    }
+  val rule = GradleRule.from {
+    androidApplication { android { buildFeatures { buildConfig = true } } }
+    gradleProperties { add(BooleanOption.ENABLE_BUILD_CONFIG_AS_BYTECODE, true) }
+  }
 
   @Test
   fun `test BuildConfig jar is in model`() {

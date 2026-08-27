@@ -39,10 +39,9 @@ fun App.resolveDefaultComponent(type: ComponentType = ComponentType.ACTIVITY): C
     return ComponentResolution.NoValidCandidates(allComponents)
   }
 
-  val launcherActivities =
-    allComponents.filter {
-      it.isEnabled && it.isExported && it.hasAction("android.intent.action.MAIN") && it.hasCategory("android.intent.category.LAUNCHER")
-    }
+  val launcherActivities = allComponents.filter {
+    it.isEnabled && it.isExported && it.hasAction("android.intent.action.MAIN") && it.hasCategory("android.intent.category.LAUNCHER")
+  }
 
   if (launcherActivities.size == 1) {
     return ComponentResolution.Resolved(launcherActivities[0], "single launcher activity")
@@ -76,12 +75,11 @@ fun App.resolveSpecificComponent(type: ComponentType = ComponentType.ACTIVITY, a
 
   // 3. Suffix / subpackage / simple class name match
   val cleanName = activityName.removePrefix(".")
-  val matching =
-    allComponents.filter {
-      it.qualifiedName.substringAfterLast('.') == cleanName ||
-        it.qualifiedName.endsWith(".$cleanName") ||
-        it.qualifiedName == "$appId.$cleanName"
-    }
+  val matching = allComponents.filter {
+    it.qualifiedName.substringAfterLast('.') == cleanName ||
+      it.qualifiedName.endsWith(".$cleanName") ||
+      it.qualifiedName == "$appId.$cleanName"
+  }
 
   if (matching.size == 1) {
     val reason = if (matching[0].qualifiedName.substringAfterLast('.') == cleanName) "simple name match" else "subpackage match"
