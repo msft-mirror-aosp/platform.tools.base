@@ -159,6 +159,7 @@ kotlin_library(
     srcs = [
         "src/main/java/com/android/tools/deployer/install/ApkInstaller.java",
         "src/main/java/com/android/tools/deployer/install/InstallMode.java",
+        "src/main/java/com/android/tools/deployer/install/InstallOutputParser.java",
     ],
     visibility = ["//visibility:public"],
     deps = [
@@ -411,6 +412,7 @@ coverage_java_test(
             "src/test/java/com/android/tools/deployer/devices/*.java",
             "src/test/java/com/android/tools/deployer/devices/shell/*.java",
             "src/test/java/com/android/tools/deployer/devices/shell/interpreter/*.java",
+            "src/test/java/com/android/tools/deployer/install/*.java",
             "src/test/java/com/android/tools/deployer/rules/*.java",
             "src/test/java/com/android/tools/deployer/tasks/*.java",
         ],

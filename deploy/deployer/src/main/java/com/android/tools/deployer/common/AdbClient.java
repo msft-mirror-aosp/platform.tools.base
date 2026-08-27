@@ -208,10 +208,6 @@ public class AdbClient {
         return new InstallResult(InstallStatus.UNKNOWN_ERROR, "Unknown Error");
     }
 
-    public static InstallResult toInstallerResult(com.android.ddmlib.InstallReceiver r) {
-        return toInstallerResult(r.getErrorCode(), r.getErrorMessage());
-    }
-
     public static InstallResult toInstallerResult(String errorCode, String reason) {
         try {
             return new InstallResult(InstallStatus.valueOf(errorCode), reason);
