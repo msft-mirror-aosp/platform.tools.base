@@ -225,6 +225,13 @@ internal fun DefaultAndroidSourceSet.convert(
       } else null,
     mlModelsDirectories = if (features.mlModelBinding) mlModelsDirectories else null,
     customDirectories = customDirectories,
+    apiConfigurationName = apiConfigurationName,
+    compileOnlyConfigurationName = compileOnlyConfigurationName,
+    compileOnlyApiConfigurationName = compileOnlyApiConfigurationName,
+    implementationConfigurationName = implementationConfigurationName,
+    runtimeOnlyConfigurationName = runtimeOnlyConfigurationName,
+    annotationProcessorConfigurationName = annotationProcessorConfigurationName,
+    kaptConfigurationName = kaptConfigurationName,
   )
 }
 
@@ -246,6 +253,13 @@ internal fun DefaultAndroidSourceSet.convert(sources: InternalSources) =
     shadersDirectories = variantSourcesForModel(sources.shaders),
     mlModelsDirectories = variantSourcesForModel(sources.mlModels),
     customDirectories = customDirectories,
+    apiConfigurationName = apiConfigurationName,
+    compileOnlyConfigurationName = compileOnlyConfigurationName,
+    compileOnlyApiConfigurationName = compileOnlyApiConfigurationName,
+    implementationConfigurationName = implementationConfigurationName,
+    runtimeOnlyConfigurationName = runtimeOnlyConfigurationName,
+    annotationProcessorConfigurationName = annotationProcessorConfigurationName,
+    kaptConfigurationName = kaptConfigurationName,
   )
 
 /**

@@ -4,7 +4,7 @@ ATTENTION REVIEWER: If this needs to be changed, please make sure changes
 below are backwards compatible.
 -------------------------------------------------------------------------
 Sha256 of below classes:
-3638af2b55c933f310791c8f6ec0e7f3fa997119ebcf14a7f4a17ec58a677845
+f1a35de05488a04f9fe261c7338bbff97cdd09d2a6af6f7f5c08526fab97553c
 -------------------------------------------------------------------------
 com.android.builder.model.AaptOptions
 com.android.builder.model.AaptOptions$Namespacing extends java.lang.Enum
@@ -695,11 +695,17 @@ com.android.builder.model.v2.ide.ProjectType.values: com.android.builder.model.v
 com.android.builder.model.v2.ide.SourceProvider implements com.android.builder.model.v2.AndroidModel
 com.android.builder.model.v2.ide.SourceProvider.getAarKeepRulesDirectories: java.util.Collection<java.io.File> ()
 com.android.builder.model.v2.ide.SourceProvider.getAidlDirectories: java.util.Collection<java.io.File> ()
+com.android.builder.model.v2.ide.SourceProvider.getAnnotationProcessorConfigurationName: java.lang.String ()
+com.android.builder.model.v2.ide.SourceProvider.getApiConfigurationName: java.lang.String ()
 com.android.builder.model.v2.ide.SourceProvider.getAssetsDirectories: java.util.Collection<java.io.File> ()
 com.android.builder.model.v2.ide.SourceProvider.getBaselineProfileDirectories: java.util.Collection<java.io.File> ()
+com.android.builder.model.v2.ide.SourceProvider.getCompileOnlyApiConfigurationName: java.lang.String ()
+com.android.builder.model.v2.ide.SourceProvider.getCompileOnlyConfigurationName: java.lang.String ()
 com.android.builder.model.v2.ide.SourceProvider.getCustomDirectories: java.util.Collection<com.android.builder.model.v2.CustomSourceDirectory> ()
+com.android.builder.model.v2.ide.SourceProvider.getImplementationConfigurationName: java.lang.String ()
 com.android.builder.model.v2.ide.SourceProvider.getJavaDirectories: java.util.Collection<java.io.File> ()
 com.android.builder.model.v2.ide.SourceProvider.getJniLibsDirectories: java.util.Collection<java.io.File> ()
+com.android.builder.model.v2.ide.SourceProvider.getKaptConfigurationName: java.lang.String ()
 com.android.builder.model.v2.ide.SourceProvider.getKeepRulesDirectories: java.util.Collection<java.io.File> ()
 com.android.builder.model.v2.ide.SourceProvider.getKotlinDirectories: java.util.Collection<java.io.File> ()
 com.android.builder.model.v2.ide.SourceProvider.getManifestFile: java.io.File ()
@@ -708,6 +714,7 @@ com.android.builder.model.v2.ide.SourceProvider.getName: java.lang.String ()
 com.android.builder.model.v2.ide.SourceProvider.getRenderscriptDirectories: java.util.Collection<java.io.File> ()
 com.android.builder.model.v2.ide.SourceProvider.getResDirectories: java.util.Collection<java.io.File> ()
 com.android.builder.model.v2.ide.SourceProvider.getResourcesDirectories: java.util.Collection<java.io.File> ()
+com.android.builder.model.v2.ide.SourceProvider.getRuntimeOnlyConfigurationName: java.lang.String ()
 com.android.builder.model.v2.ide.SourceProvider.getShadersDirectories: java.util.Collection<java.io.File> ()
 com.android.builder.model.v2.ide.SourceSetContainer implements com.android.builder.model.v2.AndroidModel
 com.android.builder.model.v2.ide.SourceSetContainer$DefaultImpls
