@@ -3461,18 +3461,18 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
     val baseline = LintBaseline(ToolsBaseTestLintClient(), File(""))
     val issue = InferredThreadDetector.THREAD
     val pinpointed = "Call must be from @WorkerThread, but the work passed to `runOnUiThread` is expected to run from @{Main,Ui}Thread"
+    val legacy = "Argument at `x₀` must allow calling `run()` from @{Main,Ui}Thread, but that call is requiring @WorkerThread."
+    // Several failing arguments used to be joined into one message
+    val legacyJoined =
+      "Argument at `x₀` must run from @WorkerThread, but is requiring @{Main,Ui}Thread. " +
+        "Argument at `x₁` must allow calling `run()` from @{Main,Ui}Thread, but that call is requiring @WorkerThread."
 
-    // Both legacy forms, on the call and on the argument, with or without backticks
-    assertTrue(
-      baseline.sameMessage(
-        issue,
-        pinpointed,
-        "Argument at `x₀` must allow calling `run()` from @{Main,Ui}Thread, but that call is requiring @WorkerThread.",
-      )
-    )
-    assertTrue(baseline.sameMessage(issue, pinpointed, "Argument must run from @{Main,Ui}Thread, but is requiring @WorkerThread"))
+    // The legacy whole-call report, with or without backticks
+    assertTrue(baseline.sameMessage(issue, pinpointed, legacy))
+    assertTrue(baseline.sameMessage(issue, pinpointed, "Argument at x₀ must run from @{Main,Ui}Thread, but is requiring @WorkerThread."))
+    assertTrue(baseline.sameMessage(issue, pinpointed, legacyJoined))
     // The legacy requirement was the whole callback's; the pinpointed one is a single statement's, so only the expectation is compared
-    assertTrue(baseline.sameMessage(issue, pinpointed, "Argument must run from @{Main,Ui}Thread, but is requiring `@NoThread`"))
+    assertTrue(baseline.sameMessage(issue, pinpointed, "Argument at `x₀` must run from @{Main,Ui}Thread, but is requiring `@NoThread`."))
     assertTrue(
       baseline.sameMessage(
         issue,
@@ -3480,17 +3480,8 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
         "Argument at `x₀` must run from @{Main,Ui}Thread, but is requiring @WorkerThread.",
       )
     )
-    // Several failing arguments used to be joined into one message
-    assertTrue(
-      baseline.sameMessage(
-        issue,
-        pinpointed,
-        "Argument at `x₀` must run from @WorkerThread, but is requiring @{Main,Ui}Thread. " +
-          "Argument at `x₁` must allow calling `run()` from @{Main,Ui}Thread, but that call is requiring @WorkerThread.",
-      )
-    )
 
-    // Different expected thread
+    // Different expected thread, in every sentence, compared whole
     assertFalse(
       baseline.sameMessage(
         issue,
@@ -3498,6 +3489,60 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
         "Argument at `x₀` must allow calling `run()` from @WorkerThread, but that call is requiring @{Main,Ui}Thread.",
       )
     )
+    assertFalse(
+      baseline.sameMessage(
+        issue,
+        "Call must be from @WorkerThread, but the work passed to `runOnUiThread` is expected to run from @BinderThread",
+        legacyJoined,
+      )
+    )
+    assertFalse(baseline.sameMessage(issue, pinpointed, "Argument at `x₀` must run from @{Main,Ui}, but is requiring @WorkerThread."))
+
+    // Reports on the argument itself are still made, and don't stand for the pinpointed one
+    assertFalse(baseline.sameMessage(issue, pinpointed, "Argument must run from @{Main,Ui}Thread, but is requiring @WorkerThread"))
+    assertFalse(
+      baseline.sameMessage(
+        issue,
+        pinpointed,
+        "Argument must allow calling `run()` from @{Main,Ui}Thread, but that call is requiring @WorkerThread",
+      )
+    )
+
+    // Pinpointed reports are matched exactly
+    assertFalse(
+      baseline.sameMessage(
+        issue,
+        pinpointed,
+        "Call must be from @BinderThread, but the work passed to `runOnUiThread` is expected to run from @{Main,Ui}Thread",
+      )
+    )
+    assertFalse(
+      baseline.sameMessage(
+        issue,
+        pinpointed,
+        "Call must be from @WorkerThread, but the work passed to `runOnUiThreadLater` is expected to run from @{Main,Ui}Thread",
+      )
+    )
+    assertFalse(
+      baseline.sameMessage(
+        issue,
+        pinpointed,
+        "Call must be from @WorkerThread, but the work passed to `runOnUiThread` is expected to run from @UiThread",
+      )
+    )
+
+    // The report on a method reference used to be on the whole call as well
+    val onArgument = "Argument must allow calling `run()` from @{Main,Ui}Thread, but that call is requiring @WorkerThread"
+    assertTrue(baseline.sameMessage(issue, onArgument, legacy))
+    assertTrue(baseline.sameMessage(issue, onArgument, legacyJoined))
+    assertFalse(
+      baseline.sameMessage(
+        issue,
+        onArgument,
+        "Argument at `x₀` must allow calling `run()` from @{Main,Ui}Thread, but that call is requiring @BinderThread.",
+      )
+    )
+    assertFalse(baseline.sameMessage(issue, onArgument, "Argument at `x₀` must run from @{Main,Ui}Thread, but is requiring @WorkerThread."))
 
     // An unsatisfiable requirement used to be spelled as requiring `@NoThread`, on the argument and on the whole call alike
     assertTrue(
@@ -3514,6 +3559,13 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
         "Argument at `x₀` must allow calling `run()` from @{Main,Ui}Thread, but that call is requiring `@NoThread`.",
       )
     )
+    assertTrue(
+      baseline.sameMessage(
+        issue,
+        "Argument must allow calling `run()` from @{Main,Ui}Thread, but that call has an unsatisfiable thread requirement",
+        "Argument at `x₀` must allow calling `run()` from @{Main,Ui}Thread, but that call is requiring `@NoThread`.",
+      )
+    )
     assertFalse(
       baseline.sameMessage(
         issue,
@@ -3522,15 +3574,12 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
       )
     )
 
-    // Unrelated messages
-    assertFalse(baseline.sameMessage(issue, pinpointed, "Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread"))
+    // Other conflicts with a base annotation
     assertFalse(
-      baseline.sameMessage(
-        issue,
-        "Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread",
-        "Argument at `x₀` must allow calling `run()` from @{Main,Ui}Thread, but that call is requiring @WorkerThread.",
-      )
+      baseline.sameMessage(issue, "Call must be from @WorkerThread, but super method `Base.run(…)` is allowing @{Main,Ui}Thread", legacy)
     )
+    assertFalse(baseline.sameMessage(issue, "Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread", legacy))
+    assertFalse(baseline.sameMessage(issue, pinpointed, "Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread"))
   }
 
   fun testBaseAssumption_concurrencyUtils() {

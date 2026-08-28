@@ -53,6 +53,7 @@ import com.android.tools.lint.checks.fx.utils.decodeFromDir
 import com.android.tools.lint.checks.fx.utils.encodeToDir
 import com.android.tools.lint.checks.fx.utils.leastFixPoint
 import com.android.tools.lint.checks.fx.utils.unionedWith
+import com.android.tools.lint.client.api.LintBaseline.Companion.stringsEquivalent
 import com.android.tools.lint.client.api.LintClient
 import com.android.tools.lint.client.api.UElementHandler
 import com.android.tools.lint.detector.api.Context
@@ -83,8 +84,10 @@ import kotlinx.collections.immutable.plus
 import kotlinx.collections.immutable.toPersistentSet
 import org.jetbrains.annotations.VisibleForTesting
 import org.jetbrains.kotlin.psi.KtNamedFunction
+import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UClass
 import org.jetbrains.uast.UElement
+import org.jetbrains.uast.UExpression
 import org.jetbrains.uast.ULambdaExpression
 import org.jetbrains.uast.UMethod
 import org.jetbrains.uast.UVariable
@@ -210,6 +213,36 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
    * is [Lattice.top].
    */
   protected abstract fun report(context: Context, error: Error<FX>)
+
+  /**
+   * The argument of [call] standing for the base of [invocation]'s receiver chain in the callee's assumed summary, if any. For example,
+   * with `invoke` assumed as `(this, x₀) -> x₀.run()`, `argumentOfAssumedDomain(app.invoke(r), x₀.run())` = `r`
+   */
+  protected fun argumentOfAssumedDomain(call: UExpression, invocation: Type.Sym<FX>): UExpression? {
+    val callExpr = call as? UCallExpression ?: return null
+    val callee = callExpr.resolve() ?: return null
+    if (callee.containingClass == null) return null
+    val calleeRef = Type.MethodRef(callee)
+    val assumption = knownResults[calleeRef] ?: return null
+    tailrec fun rootOf(sym: Type.Sym<FX>): Type.Sym<FX> =
+      when (sym) {
+        is Type.Sym.Invoke -> rootOf(sym.receiver)
+        else -> sym
+      }
+    // Like the analysis, resolve a symbol standing for a domain through one step of the template's substitution
+    val root =
+      when (val r = rootOf(invocation)) {
+        is Type.Sym.Name -> (assumption.subst[r] as? Type.Sym) ?: r
+        else -> r
+      }
+    val index = assumption.domains.indexOfFirst { it == root }
+    if (index < 0) return null
+    val receiverCount = if (calleeRef.method.isVirtual) 1 else 0
+    return if (index < receiverCount) callExpr.receiver else callExpr.getArgumentForParameter(index - receiverCount)
+  }
+
+  protected fun sameArgumentMessage(new: String, old: String): Boolean =
+    old.split(LEGACY_ARGUMENT_SENTENCE_BOUNDARY).any { stringsEquivalent(it.replace(LEGACY_ARGUMENT_PARAM, "$1"), new) }
 
   /** Best-effort lookup of the explicit effect annotation on a method not in the current scope or the assumption table */
   private fun externalAnnotationFinder(context: Context): (Type.MethodRef) -> FX? {
@@ -463,6 +496,9 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
   }
 
   companion object {
+    private val LEGACY_ARGUMENT_PARAM = Regex("""(Argument) at `[^`]+` ?""")
+    private val LEGACY_ARGUMENT_SENTENCE_BOUNDARY = Regex("""(?<=\.) (?=Argument at )""")
+
     /** Adds assumptions on common Java and Kotlin utils */
     fun <FX> AssumptionTableBuilder<FX>.assumeCommonJavaAndKotlinSignatures() {
       // Iterable
