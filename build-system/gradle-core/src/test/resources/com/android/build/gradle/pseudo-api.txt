@@ -1967,6 +1967,7 @@ com.android.build.gradle.internal.dsl.TestOptions$UnitTestOptions.isReturnDefaul
 com.android.build.gradle.internal.dsl.TestOptions$UnitTestOptions.setIncludeAndroidResources: void (boolean)
 com.android.build.gradle.internal.dsl.TestOptions$UnitTestOptions.setReturnDefaultValues: void (boolean)
 com.android.build.gradle.internal.dsl.TestOptions.<init>: com.android.build.gradle.internal.dsl.TestOptions (com.android.build.gradle.internal.services.DslServices)
+com.android.build.gradle.internal.dsl.TestOptions.access$checkBackupTestEnabled: void (com.android.build.gradle.internal.dsl.TestOptions)
 com.android.build.gradle.internal.dsl.TestOptions.access$checkScreenshotTestEnabled: void (com.android.build.gradle.internal.dsl.TestOptions)
 com.android.build.gradle.internal.dsl.TestOptions.access$getDslServices$p: com.android.build.gradle.internal.services.DslServices (com.android.build.gradle.internal.dsl.TestOptions)
 com.android.build.gradle.internal.dsl.TestOptions.emulatorControl: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.EmulatorControl, kotlin.Unit>)

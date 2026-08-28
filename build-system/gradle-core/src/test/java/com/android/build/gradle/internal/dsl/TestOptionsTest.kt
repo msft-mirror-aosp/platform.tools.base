@@ -119,8 +119,36 @@ class TestOptionsTest {
   }
 
   @Test
-  fun testBackupTestEnabledByDefault() {
+  fun testBackupTestDisabledByFlag() {
     val wrapper = dslServices.newDecoratedInstance(TestOptionsWrapper::class.java, dslServices)
+    wrapper.testOptions {
+      backupTests.create("myBackupTest") {
+        // This should fail because accessing the container reports an error
+      }
+    }
+    val reporter = dslServices.issueReporter as FakeSyncIssueReporter
+    assertThat(reporter.errors).hasSize(1)
+    assertThat(reporter.errors.first()).contains("Automated Backup and Restore Testing is an experimental feature")
+  }
+
+  @Test
+  fun testBackupTestGetterAllowedWhenFlagDisabled() {
+    val wrapper = dslServices.newDecoratedInstance(TestOptionsWrapper::class.java, dslServices)
+    wrapper.testOptions {
+      val test = backupTests // Safe read for reflective model traversers and internal task managers
+    }
+    val reporter = dslServices.issueReporter as FakeSyncIssueReporter
+    assertThat(reporter.errors).isEmpty()
+  }
+
+  @Test
+  fun testBackupTestEnabledByFlag() {
+    val providerFactory = FakeProviderFactory(FakeProviderFactory.factory, ImmutableMap.of("android.experimental.enableBackupTest", "true"))
+    val projectOptions = ProjectOptions(providerFactory)
+    val projectServices = createProjectServices(projectOptions = projectOptions)
+    val customDslServices = createDslServices(projectServices = projectServices)
+
+    val wrapper = customDslServices.newDecoratedInstance(TestOptionsWrapper::class.java, customDslServices)
     wrapper.testOptions {
       backupTests.create("myBackupTest") {
         it.backupTestLibraryVersion = "0.0.1-dev"
@@ -128,7 +156,7 @@ class TestOptionsTest {
       }
     }
 
-    val reporter = dslServices.issueReporter as FakeSyncIssueReporter
+    val reporter = customDslServices.issueReporter as FakeSyncIssueReporter
     assertThat(reporter.errors).isEmpty()
     val suite = wrapper.testOptions.backupTests.getByName("myBackupTest")
     assertThat(suite.backupTestLibraryVersion).isEqualTo("0.0.1-dev")

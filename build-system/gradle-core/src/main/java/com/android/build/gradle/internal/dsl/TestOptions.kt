@@ -60,6 +60,7 @@ abstract class TestOptions @Inject constructor(private val dslServices: DslServi
   // (Implementing interface for kotlin)
   override val backupTests: NamedDomainObjectContainer<BackupTestSuite> =
     dslServices.domainObjectContainer(BackupTestSuite::class.java) { name ->
+      checkBackupTestEnabled()
       dslServices.newDecoratedInstance(BackupTestSuiteImpl::class.java, name, dslServices)
     }
 
@@ -206,8 +207,10 @@ abstract class TestOptions @Inject constructor(private val dslServices: DslServi
         }
       }
 
-      backupTests.configureEach { suite ->
-        this.add(dslServices.newInstance(com.android.build.gradle.internal.dsl.BackupAgpTestSuiteImpl::class.java, suite, dslServices))
+      if (dslServices.projectOptions.get(com.android.build.gradle.options.BooleanOption.ENABLE_BACKUP_TEST)) {
+        backupTests.configureEach { suite ->
+          this.add(dslServices.newInstance(com.android.build.gradle.internal.dsl.BackupAgpTestSuiteImpl::class.java, suite, dslServices))
+        }
       }
     }
 
@@ -219,6 +222,16 @@ abstract class TestOptions @Inject constructor(private val dslServices: DslServi
         com.android.builder.errors.IssueReporter.Type.GENERIC,
         "Compose Preview Screenshot Testing is an experimental feature. " +
           "To enable it, add 'android.experimental.enableScreenshotTest=true' to your gradle.properties file.",
+      )
+    }
+  }
+
+  private fun checkBackupTestEnabled() {
+    if (!dslServices.projectOptions.get(com.android.build.gradle.options.BooleanOption.ENABLE_BACKUP_TEST)) {
+      dslServices.issueReporter.reportError(
+        com.android.builder.errors.IssueReporter.Type.GENERIC,
+        "Automated Backup and Restore Testing is an experimental feature. " +
+          "To enable it, add 'android.experimental.enableBackupTest=true' to your gradle.properties file.",
       )
     }
   }
