@@ -151,9 +151,12 @@ com/android/tools/analytics-library/protos
   META-INF/MANIFEST.MF
   NOTICE
   analytics_enums.proto
+  analytics_settings.proto
   com/
   com/android/
   com/android/tools/
+  com/android/tools/analytics/
+  com/android/tools/analytics/proto/
   com/android/tools/build/
   com/android/tools/build/gradle/
   com/android/tools/build/gradle/internal/
