@@ -70,6 +70,7 @@ import com.android.tools.lint.detector.api.UastLintUtils.Companion.tryResolveUDe
 import com.android.tools.lint.detector.api.asCall
 import com.android.tools.lint.detector.api.isImmutable
 import com.android.tools.lint.detector.api.nameFromSource
+import com.intellij.openapi.progress.ProgressManager
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiClassType
 import com.intellij.psi.PsiEllipsisType
@@ -622,6 +623,7 @@ internal open class Analysis<FX : Any>(
         }
       }
 
+      ProgressManager.checkCanceled()
       return when (e) {
         is OpaqueConstant -> pure(e.type)
         is ULiteralExpression -> pure(Type.ofLiteral(e.value))
