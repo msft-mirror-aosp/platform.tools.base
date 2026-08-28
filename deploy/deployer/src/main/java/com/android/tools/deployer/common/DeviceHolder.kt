@@ -58,14 +58,10 @@ import java.time.Duration
 import java.util.Optional
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
-import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.single
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
-
-private val DEVICE_PROPERTIES_TIMEOUT = 2000.milliseconds
 
 class DeviceHolder
 @JvmOverloads
@@ -105,11 +101,7 @@ constructor(
           // Retrieve using ConnectedDevice
           val properties =
             try {
-              runBlocking {
-                // `version` is build from device properties and this call may take 2 seconds for
-                // the properties to load
-                withTimeout(DEVICE_PROPERTIES_TIMEOUT) { connectedDevice.deviceProperties().allReadonly() }
-              }
+              runBlocking { connectedDevice.deviceProperties().allReadonly() }
             } catch (_: Exception) {
               // Do not throw exceptions to match the iDevice.version behavior
               null
@@ -138,7 +130,7 @@ constructor(
         onMigrated = { connectedDevice ->
           val properties =
             try {
-              runBlocking { withTimeout(DEVICE_PROPERTIES_TIMEOUT) { connectedDevice.deviceProperties().allReadonly() } }
+              runBlocking { connectedDevice.deviceProperties().allReadonly() }
             } catch (_: Exception) {
               null
             }

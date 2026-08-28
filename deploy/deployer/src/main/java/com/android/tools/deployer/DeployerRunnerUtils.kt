@@ -23,6 +23,7 @@ import com.android.adblib.AdbSessionHost
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.connectedDevicesTracker
 import com.android.adblib.serialNumber
+import com.android.adblib.waitUntilOnline
 import com.android.utils.ILogger
 import com.android.utils.StdLogger
 import java.io.File
@@ -154,8 +155,9 @@ fun getAdbServerPort(logger: ILogger): Int {
  * Returns matching connected devices from [AdbSession], or an empty list if the device tracker fails to get a list of connected devices
  * within [timeoutMs].
  *
- * If [deviceSerials] is empty, waits for at least one device to be connected and returns the first connected device. If [deviceSerials] is
- * non-empty, waits until all specified device serials are present in the connected devices list and returns only the matching devices.
+ * If [deviceSerials] is empty, waits for at least one device to be connected and returns the first connected device once it is online. If
+ * [deviceSerials] is non-empty, waits until all specified device serials are present in the connected devices list and online, and returns
+ * only the matching devices.
  */
 internal suspend fun waitForConnectedDevices(
   session: AdbSession,
@@ -163,20 +165,20 @@ internal suspend fun waitForConnectedDevices(
   timeoutMs: Long,
 ): @JvmSuppressWildcards List<ConnectedDevice> {
   return withTimeoutOrNull(timeoutMs.milliseconds) {
-    val connectedDevicesList =
-      session.connectedDevicesTracker.connectedDevices.first { devices ->
-        if (deviceSerials.isEmpty()) {
-          devices.isNotEmpty()
-        } else {
-          val connectedSerials = devices.map { it.serialNumber }.toSet()
-          deviceSerials.all { it in connectedSerials }
-        }
+    val targetDevices =
+      if (deviceSerials.isEmpty()) {
+        listOf(session.connectedDevicesTracker.connectedDevices.first { it.isNotEmpty() }.first())
+      } else {
+        val connectedDevicesList =
+          session.connectedDevicesTracker.connectedDevices.first { devices ->
+            val connectedSerials = devices.map { it.serialNumber }.toSet()
+            deviceSerials.all { it in connectedSerials }
+          }
+        connectedDevicesList.filter { it.serialNumber in deviceSerials }
       }
-    if (deviceSerials.isEmpty()) {
-      // When no serials are specified, match legacy DDMLIB behavior (waitForIDevices) by returning only the first connected device.
-      connectedDevicesList.take(1)
-    } else {
-      connectedDevicesList.filter { it.serialNumber in deviceSerials }
+    for (device in targetDevices) {
+      device.waitUntilOnline()
     }
+    targetDevices
   } ?: emptyList()
 }

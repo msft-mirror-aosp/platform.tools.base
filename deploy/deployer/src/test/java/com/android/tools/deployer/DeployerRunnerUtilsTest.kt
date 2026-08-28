@@ -16,12 +16,16 @@
 package com.android.tools.deployer
 
 import com.android.adblib.AdbServerConfiguration
+import com.android.adblib.isOnline
 import com.android.adblib.serialNumber
 import com.android.adblib.testingutils.FakeAdbServerProviderRule
 import com.android.fakeadbserver.DeviceState
 import com.android.sdklib.AndroidApiLevel
 import com.android.utils.StdLogger
 import java.nio.file.Paths
+import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -33,7 +37,10 @@ class DeployerRunnerUtilsTest {
 
   @get:Rule val fakeAdbRule = FakeAdbServerProviderRule()
 
-  private fun connectDevice(serialNumber: String): DeviceState {
+  private fun connectDevice(
+    serialNumber: String,
+    deviceStatus: DeviceState.DeviceStatus = DeviceState.DeviceStatus.ONLINE,
+  ): DeviceState {
     val deviceState =
       fakeAdbRule.fakeAdb.fakeAdbServer
         .connectDevice(
@@ -49,7 +56,7 @@ class DeployerRunnerUtilsTest {
           negotiatedSpeedMbps = 0,
         )
         .get()
-    deviceState.deviceStatus = DeviceState.DeviceStatus.ONLINE
+    deviceState.deviceStatus = deviceStatus
     return deviceState
   }
 
@@ -110,6 +117,38 @@ class DeployerRunnerUtilsTest {
     connectDevice("device_1")
 
     val devices = waitForConnectedDevices(session, listOf("device_1", "device_2"), 100)
+    assertTrue(devices.isEmpty())
+  }
+
+  @Test
+  fun testWaitForConnectedDevices_deviceInitiallyOffline_waitsUntilOnline() = runBlocking {
+    // Prepare
+    val session = fakeAdbRule.adbSession
+
+    val deviceState = connectDevice("device_1", DeviceState.DeviceStatus.UNAUTHORIZED)
+
+    launch {
+      delay(50.milliseconds)
+      deviceState.deviceStatus = DeviceState.DeviceStatus.ONLINE
+    }
+
+    val devices = waitForConnectedDevices(session, emptyList(), 5000)
+    assertEquals(1, devices.size)
+    assertEquals("device_1", devices.first().serialNumber)
+    assertTrue(devices.first().isOnline)
+  }
+
+  @Test
+  fun testWaitForConnectedDevices_deviceStaysOffline_timesOut() = runBlocking {
+    // Prepare
+    val session = fakeAdbRule.adbSession
+
+    connectDevice("device_1", DeviceState.DeviceStatus.UNAUTHORIZED)
+
+    // Act
+    val devices = waitForConnectedDevices(session, emptyList(), 100)
+
+    // Assert
     assertTrue(devices.isEmpty())
   }
 
