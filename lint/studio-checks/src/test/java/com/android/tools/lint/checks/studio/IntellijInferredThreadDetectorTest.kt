@@ -529,6 +529,94 @@ src/test/pkg/Test.java:118: Error: Call must be from @{Slow,WorkerThread}, but a
     )
 
   @Test
+  fun testAssumedVirtualOnUnknownReceiver() {
+    studioLint()
+      .setUp()
+      .files(
+        java(
+            """
+                    package test.pkg;
+                    import com.intellij.openapi.application.Application;
+                    import com.intellij.openapi.application.ApplicationManager;
+                    import com.android.annotations.concurrency.Slow;
+
+                    public class Test {
+                        @Slow
+                        public boolean slowMethod() { return true; }
+
+                        private void indirect() { slowMethod(); }
+
+                        public void methodRef() {
+                            ApplicationManager.getApplication().invokeLater(this::indirect); // ERROR
+                        }
+
+                        public void lambdaViaVariable() {
+                            Runnable r = () -> indirect();
+                            ApplicationManager.getApplication().invokeLater(r); // ERROR ideally: variable-passed callbacks aren't checked
+                        }
+
+                        public void lambda() {
+                            ApplicationManager.getApplication().invokeLater(() -> indirect()); // ERROR inside, exactly once
+                        }
+                    }
+                """
+          )
+          .indented(),
+        java(
+            """
+                    // Stub until test infrastructure passes the right class path for non-Android
+                    // modules.
+                    package com.intellij.openapi.application;
+                    import org.jetbrains.annotations.NotNull;
+
+                    @SuppressWarnings("ALL")
+                    public class Application {
+                        public void invokeLater(@NotNull Runnable run) { run.run(); }
+                    }
+                """
+          )
+          .indented(),
+        java(
+            """
+                    // The receiver comes out of a stub whose value the analysis knows nothing about,
+                    // like production's binary `ApplicationManager`.
+                    package com.intellij.openapi.application;
+
+                    public class ApplicationManager {
+                        public static Application getApplication() { return null; }
+                    }
+                """
+          )
+          .indented(),
+        java(
+            """
+                    package org.jetbrains.annotations;
+
+                    @Documented
+                    @Retention(RetentionPolicy.CLASS)
+                    @Target({ElementType.METHOD, ElementType.FIELD, ElementType.PARAMETER, ElementType.LOCAL_VARIABLE})
+                    public @interface NotNull {}
+                """
+          )
+          .indented(),
+        *annotationDefinitions,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/Test.java:13: Error: Argument must allow calling run() from @UiThread, but that call is requiring @{Slow,WorkerThread} [WrongThread]
+                ApplicationManager.getApplication().invokeLater(this::indirect); // ERROR
+                                                                ~~~~~~~~~~~~~~
+        src/test/pkg/Test.java:22: Error: Call must be from @{Slow,WorkerThread}, but the work passed to invokeLater is expected to run from @UiThread [WrongThread]
+                ApplicationManager.getApplication().invokeLater(() -> indirect()); // ERROR inside, exactly once
+                                                                      ~~~~~~~~~~
+        2 errors
+        """
+          .trimIndent()
+      )
+  }
+
+  @Test
   fun testEdtAndReadActionAssumptions() {
     studioLint()
       .setUp()

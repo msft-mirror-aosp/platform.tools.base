@@ -480,6 +480,7 @@ internal open class Analysis<FX : Any>(
                     MethodId(method),
                     (listOf(extRecvType) + restTypes) to (substLattice.joinOf(extRecvFx.subst, restFx.subst)!!),
                     Type.Sym.Param("virt*", e.staticContext()),
+                    method.containingClass?.let { Type.MethodRef(method) },
                   )
               }
             Result(appType, virRecvFx join extRecvFx join restFx join onInvocationEffect(e, appFx))
@@ -498,6 +499,7 @@ internal open class Analysis<FX : Any>(
                     MethodId(method),
                     restTypes to restFx.subst!!,
                     Type.Sym.Param("virt", e.staticContext()),
+                    method.containingClass?.let { Type.MethodRef(method) },
                   )
               }
             Result(appType, virRecvFx join restFx join onInvocationEffect(e, appFx))
@@ -1034,8 +1036,14 @@ internal open class Analysis<FX : Any>(
     method: MethodId,
     args: Pair<List<Type<FX>>, Subst<FX>>,
     name: Type.Sym.Name?,
+    // Avoid silently dropping the call when the analysis knows nothing about the receiver.
+    staticTarget: Type.MethodRef? = null,
   ): InstAns<FX> {
     val (receiver, rSubst) = receiver
+    if ((receiver == Type.None || receiver == Type.WildCard) && staticTarget != null && assumptions[staticTarget] != null) {
+      val (argTypes, aSubst) = args
+      return substLattice.joinOf(rSubst, aSubst)!!.apply(rec, staticTarget, listOf(receiver) + argTypes)
+    }
     fun go(receiver: Type<FX>): InstAns<FX> =
       when (receiver) {
         is Type.Sym -> applyType(rec, receiver to rSubst, method, args, name)
