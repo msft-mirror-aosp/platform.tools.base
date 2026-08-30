@@ -65,6 +65,7 @@ import com.android.tools.lint.checks.fx.utils.mapM
 import com.android.tools.lint.checks.fx.utils.possibilityLattice
 import com.android.tools.lint.checks.fx.utils.pure
 import com.android.tools.lint.checks.fx.utils.unionedWith
+import com.android.tools.lint.checks.isEffectivelyFinal
 import com.android.tools.lint.client.api.LintClient
 import com.android.tools.lint.detector.api.UastLintUtils.Companion.tryResolveUDeclaration
 import com.android.tools.lint.detector.api.asCall
@@ -797,12 +798,10 @@ internal open class Analysis<FX : Any>(
                   val delegate = if (delegeteExpr != null) loop(delegeteExpr) else null
                   val rhsType =
                     // For immutable local bindings, we bypass even the user-declared type to
-                    // use
-                    // the inferred more precise type.
-                    when {
-                      rhs != null && (rhs.value is Type.Lambda || rhs.value is Type.Sym.Name) && dec.isImmutable() -> rhs.value
-                      else -> translate(decPsi.type)
-                    }
+                    // use the inferred more precise type.
+                    (rhs?.value as? Type.Lambda ?: (rhs?.value as? Type.Sym.Name)?.let { rhs.effect.subst?.get(it) as? Type.Lambda })
+                      ?.takeIf { dec.isImmutable() || dec.sourcePsi is PsiLocalVariable && decPsi.isEffectivelyFinal() }
+                      ?: translate(decPsi.type)
                   // We update the local environment imperatively instead of accumulating it
                   // functionally, because later declarations need to see updates by earlier
                   // declarations.
