@@ -1405,7 +1405,9 @@ class VersionChecks(private val client: LintClient, private val evaluator: JavaE
       val elseBranch = node.elseExpression
       val constraint = getVersionCheckConstraint(element = node.condition, depth = 0)
       if (thenBranch != null) {
-        if (constraint?.not()?.isAtLeast(api) == true) {
+        // Check whether the constraint is negatable. If it isn't, the SDK version meeting the
+        // constraint doesn't guarantee that the thenBranch runs.
+        if (constraint?.negatable() == true && constraint?.not()?.isAtLeast(api) == true) {
           // See if the body does an immediate return
           if (thenBranch.isUnconditionalReturn()) {
             found = true
