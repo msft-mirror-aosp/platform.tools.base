@@ -17,11 +17,15 @@ package com.android.sdklib.internal.avd
 
 import com.android.io.CancellableFileIo
 import com.android.prefs.AbstractAndroidLocations
+import com.android.repository.impl.meta.TypeDetails
+import com.android.repository.testframework.FakePackage
 import com.android.sdklib.AndroidVersion
 import com.android.sdklib.PathFileWrapper
+import com.android.sdklib.RemoteSystemImage
 import com.android.sdklib.devices.DeviceManager
 import com.android.sdklib.internal.avd.ConfigKey.ENCODING
 import com.android.sdklib.repository.AndroidSdkHandler
+import com.android.sdklib.repository.IdDisplay
 import com.android.sdklib.repository.targets.SystemImage
 import com.android.sdklib.testing.TestSystemImages
 import com.android.testutils.MockLog
@@ -941,6 +945,78 @@ class AvdManagerTest {
     val avdInfo = avdManager.parseAvdInfo(avdIniFile)
     assertEquals(expectedDisplayName, avdInfo.displayName)
     assertEquals(expectedDisplayName, avdInfo.getProperty(ConfigKey.DISPLAY_NAME))
+  }
+
+  @Test
+  fun createAvdWithRemoteSystemImage() {
+    val remotePackage = FakePackage.FakeRemotePackage("system-images;android-34;google_apis;x86_64")
+    val factory = AndroidSdkHandler.sysImgModule.createLatestFactory()
+    val details = factory.createSysImgDetailsType()
+    details.tags.add(IdDisplay.create("google_apis", "Google APIs"))
+    details.abis.add("x86_64")
+    details.apiLevel = 34
+    remotePackage.typeDetails = details as TypeDetails
+    val remoteImage = RemoteSystemImage(remotePackage)
+
+    val avdInfo =
+      avdManager.createAvd(
+        avdFolder = avdFolder,
+        avdName = name.methodName,
+        systemImage = remoteImage,
+      )
+
+    assertThat(avdInfo.status).isEqualTo(AvdInfo.AvdStatus.ERROR_IMAGE_MISSING)
+    assertThat(avdInfo.systemImage).isNull()
+    val separator = androidSdkHandler.location!!.fileSystem.separator
+    assertThat(avdInfo.properties[ConfigKey.IMAGES_1])
+      .isEqualTo("system-images${separator}android-34${separator}google_apis${separator}x86_64${separator}")
+    assertThat(avdInfo.properties[ConfigKey.ABI_TYPE]).isEqualTo("x86_64")
+    assertThat(avdInfo.properties[ConfigKey.TAG_ID]).isEqualTo("google_apis")
+    assertThat(avdInfo.properties[ConfigKey.TARGET]).isEqualTo("android-34")
+
+    // The config.ini and metadata ini are written to disk
+    assertThat(avdFolder.resolve(AvdManager.CONFIG_INI)).exists()
+    assertThat(avdInfo.iniFile).exists()
+
+    // It is in allAvds, but not in validAvds
+    assertThat(avdManager.allAvds).contains(avdInfo)
+    assertThat(avdManager.validAvds).doesNotContain(avdInfo)
+    assertThat(avdManager.getAvd(name.methodName, validAvdOnly = false)).isEqualTo(avdInfo)
+    assertThat(avdManager.getAvd(name.methodName, validAvdOnly = true)).isNull()
+
+    // Parsing it from disk before download completes gives ERROR_IMAGE_MISSING
+    val parsedInfo = avdManager.parseAvdInfo(avdInfo.iniFile)
+    assertThat(parsedInfo.status).isEqualTo(AvdInfo.AvdStatus.ERROR_IMAGE_MISSING)
+    assertThat(parsedInfo.systemImage).isNull()
+    assertThat(parsedInfo.properties[ConfigKey.IMAGES_1]).isEqualTo(avdInfo.properties[ConfigKey.IMAGES_1])
+  }
+
+  @Test
+  fun createAvdFromBuilderWithRemoteSystemImage() {
+    val remotePackage = FakePackage.FakeRemotePackage("system-images;android-34;google_apis;x86_64")
+    val factory = AndroidSdkHandler.sysImgModule.createLatestFactory()
+    val details = factory.createSysImgDetailsType()
+    details.tags.add(IdDisplay.create("google_apis", "Google APIs"))
+    details.abis.add("x86_64")
+    details.apiLevel = 34
+    remotePackage.typeDetails = details as TypeDetails
+    val remoteImage = RemoteSystemImage(remotePackage)
+
+    val deviceManager = DeviceManager.createInstance(androidSdkHandler, NullLogger.getLogger())
+    val device = deviceManager.getDevice("medium_phone", "Generic")!!
+    val builder =
+      avdManager.createAvdBuilder(device).apply {
+        systemImage = remoteImage
+        avdFolder = this@AvdManagerTest.avdFolder
+        avdName = name.methodName
+      }
+
+    val avdInfo = avdManager.createAvd(builder)
+
+    assertThat(avdInfo.status).isEqualTo(AvdInfo.AvdStatus.ERROR_IMAGE_MISSING)
+    assertThat(avdInfo.systemImage).isNull()
+    assertThat(avdManager.allAvds).contains(avdInfo)
+    assertThat(avdManager.validAvds).doesNotContain(avdInfo)
   }
 
   private fun removeKeyFromIniFile(path: Path, key: String) {
