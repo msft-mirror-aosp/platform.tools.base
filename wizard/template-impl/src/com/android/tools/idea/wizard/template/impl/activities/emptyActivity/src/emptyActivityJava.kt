@@ -15,7 +15,6 @@
  */
 package com.android.tools.idea.wizard.template.impl.activities.emptyActivity.src
 
-import com.android.tools.idea.wizard.template.getMaterialComponentName
 import com.android.tools.idea.wizard.template.renderIf
 
 fun emptyActivityJava(
@@ -31,10 +30,10 @@ package ${packageName};
 
 import android.os.Bundle;
 
-import androidx.activity.EdgeToEdge;
-import ${getMaterialComponentName("android.support.v7.app.AppCompatActivity", useAndroidX)};
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 ${renderIf(namespace != packageName) { "import ${namespace}.R;" }}
 
@@ -44,7 +43,7 @@ public class ${activityClass} extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         ${renderIf(generateLayout) {
-        """EdgeToEdge.enable(this);
+        """WindowCompat.enableEdgeToEdge(getWindow());
         setContentView(R.layout.$layoutName);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
