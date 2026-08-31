@@ -31,6 +31,7 @@ import com.android.build.gradle.internal.component.NestedComponentCreationConfig
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import com.android.build.gradle.internal.component.TestFixturesCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
+import com.android.build.gradle.internal.coverage.tasks.TestReportCreationConfigImpl
 import com.android.build.gradle.internal.cxx.configure.createCxxTasks
 import com.android.build.gradle.internal.dsl.DataBindingOptions
 import com.android.build.gradle.internal.lint.LintTaskManager
@@ -75,7 +76,7 @@ import org.gradle.api.tasks.TaskProvider
 abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : VariantCreationConfig>(
   project: Project,
   private val variants: Collection<ComponentInfo<VariantBuilderT, VariantT>>,
-  private val testComponents: Collection<TestComponentCreationConfig>,
+  protected val testComponents: Collection<TestComponentCreationConfig>,
   private val testFixturesComponents: Collection<TestFixturesCreationConfig>,
   globalConfig: GlobalTaskCreationConfig,
   @JvmField protected val localConfig: TaskManagerConfig,
@@ -655,8 +656,9 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
     testResultsCollectionTasks: MutableList<TaskProvider<TestResultsCollectionTask>> = mutableListOf(),
   ) {
     if (isReportAggregationEnabled) {
+      val testReportCreationConfig = TestReportCreationConfigImpl(variantInfo.variant, testComponents)
       testResultsCollectionTasks.add(
-        taskFactory.register(TestResultsCollectionTask.TestResultsCollectionCreationAction(variantInfo.variant))
+        taskFactory.register(TestResultsCollectionTask.TestResultsCollectionCreationAction(testReportCreationConfig))
       )
     }
   }

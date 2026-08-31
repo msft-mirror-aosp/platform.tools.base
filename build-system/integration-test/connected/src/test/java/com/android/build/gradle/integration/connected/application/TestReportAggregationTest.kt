@@ -59,6 +59,12 @@ class TestReportAggregationTest(val runWithBuiltInPlatform: Boolean) {
           compileSdk { version = release(GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION) }
           installation { timeOutInMs = 30000 }
           defaultConfig { testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner" }
+          buildTypes {
+            named("debug") {
+              it.enableUnitTestCoverage = true
+              it.enableAndroidTestCoverage = true
+            }
+          }
         }
         dependencies {
           implementation(project(":lib"))
@@ -93,6 +99,12 @@ class TestReportAggregationTest(val runWithBuiltInPlatform: Boolean) {
           compileSdk { version = release(GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION) }
           installation { timeOutInMs = 30000 }
           defaultConfig { testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner" }
+          buildTypes {
+            named("debug") {
+              it.enableUnitTestCoverage = true
+              it.enableAndroidTestCoverage = true
+            }
+          }
         }
         dependencies {
           implementation(project(":lib2"))
@@ -116,6 +128,12 @@ class TestReportAggregationTest(val runWithBuiltInPlatform: Boolean) {
           installation { timeOutInMs = 30000 }
           defaultConfig { testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner" }
           publishing { singleVariant("debug") }
+          buildTypes {
+            named("debug") {
+              it.enableUnitTestCoverage = true
+              it.enableAndroidTestCoverage = true
+            }
+          }
         }
         dependencies {
           testImplementation("junit:junit:4.13.2")
@@ -353,6 +371,134 @@ class TestReportAggregationTest(val runWithBuiltInPlatform: Boolean) {
     assertThat(actual.total).named("$suiteName total").isEqualTo(expected.total)
     assertThat(actual.passed).named("$suiteName passed").isEqualTo(expected.passed)
     assertThat(actual.failed).named("$suiteName failed").isEqualTo(expected.failed)
+  }
+
+  @Test
+  fun testCollectDebugCoverage() {
+    val build = rule.build
+    build.executor.run(":app:createTestReport")
+
+    val appBuildDir = build.androidApplication(":app").buildDir.toFile()
+
+    val taskOutputDir = FileUtils.join(appBuildDir, "intermediates", "code_coverage_data")
+    assertThat(taskOutputDir).exists()
+    assertThat(taskOutputDir).isDirectory()
+
+    val xmlReports = taskOutputDir.walkTopDown().filter { it.name.endsWith("XmlReport.xml") }.toList()
+    assertThat(xmlReports.size).isEqualTo(3)
+
+    val xmlReport1 = xmlReports.filter { it.name == "debugAppAggregatedXmlReport.xml" }
+    assertThat(xmlReport1.size).isEqualTo(1)
+    verifyReportName(xmlReport1.first(), "debugAppAggregated")
+    val aggregatedCoverageReportXml = xmlReport1.first().readLines().joinToString("\n").replace(Regex("[\\n\\t\\r]"), "")
+    verifyCoverageData(
+      xmlReportString = aggregatedCoverageReportXml,
+      instructionCovered = 28, // 23 (unit test) + 5 (android test)
+      instructionMissed = 14, // 42 (total) - 28
+      branchCovered = 1, // 1 (unit test) + 0 (android test)
+      branchMissed = 3, // 4 (total) - 1
+    )
+    verifyProperties(aggregatedCoverageReportXml, ":app", "Aggregated", "debug")
+    verifySources(aggregatedCoverageReportXml, "app")
+
+    val xmlReport2 = xmlReports.filter { it.name == "debugAppUnitTestXmlReport.xml" }
+    assertThat(xmlReport2.size).isEqualTo(1)
+    val unitTestCoverageReportXml = xmlReport2.first().readLines().joinToString("\n").replace(Regex("[\\n\\t\\r]"), "")
+    verifyReportName(xmlReport2.first(), "debugAppUnitTest")
+    verifyCoverageData(
+      xmlReportString = unitTestCoverageReportXml,
+      instructionCovered = 23,
+      instructionMissed = 19,
+      branchCovered = 1,
+      branchMissed = 3,
+    )
+    verifyProperties(unitTestCoverageReportXml, ":app", "UnitTest", "debug")
+    verifySources(unitTestCoverageReportXml, "app")
+
+    val xmlReport3 = xmlReports.filter { it.name == "debugAppAndroidTestXmlReport.xml" }
+    assertThat(xmlReport3.size).isEqualTo(1)
+    val androidTestCoverageReportXml = xmlReport3.first().readLines().joinToString("\n").replace(Regex("[\\n\\t\\r]"), "")
+    verifyReportName(xmlReport3.first(), "debugAppAndroidTest")
+    verifyCoverageData(
+      xmlReportString = androidTestCoverageReportXml,
+      instructionCovered = 5,
+      instructionMissed = 37,
+      branchCovered = 0,
+      branchMissed = 4,
+    )
+    verifyProperties(androidTestCoverageReportXml, ":app", CONNECTED_TEST_TEST_SUITE_NAME, "debug")
+    verifySources(androidTestCoverageReportXml, "app")
+  }
+
+  @Test
+  fun testCollectDebugAggregatedCoverage() {
+    val build = rule.build
+    build.executor.run(":app:createAggregatedTestReport")
+
+    val appBuildDir = build.androidApplication(":app").buildDir.toFile()
+
+    val taskOutputDir = FileUtils.join(appBuildDir, "intermediates", "aggregated_code_coverage_data")
+    assertThat(taskOutputDir).exists()
+
+    val xmlReports = taskOutputDir.walkTopDown().filter { it.name.endsWith("XmlReport.xml") }.toList()
+    assertThat(xmlReports.size).isEqualTo(9)
+
+    val xmlReport1 = xmlReports.filter { it.name == "debugAppAggregatedXmlReport.xml" }
+    assertThat(xmlReport1.size).isEqualTo(1)
+    val aggregatedCoverageReportXml = xmlReport1.first().readLines().joinToString("\n").replace(Regex("[\\n\\t\\r]"), "")
+    verifyReportName(xmlReport1.first(), "debugAppAggregated")
+    verifyCoverageData(
+      xmlReportString = aggregatedCoverageReportXml,
+      instructionCovered = 28, // 23 (unit test) + 5 (android test)
+      instructionMissed = 14, // 42 (total) - 28
+      branchCovered = 1, // 1 (unit test) + 0 (android test)
+      branchMissed = 3, // 4 (total) - 1
+    )
+    verifyProperties(aggregatedCoverageReportXml, ":app", "Aggregated", "debug")
+    verifySources(aggregatedCoverageReportXml, "app")
+  }
+
+  private fun verifyReportName(xmlReport: File, expectedReportName: String) {
+    val xmlReportString = xmlReport.readLines().joinToString("\n").replace(Regex("[\\n\\t\\r]"), "")
+    val xmlReportName = Regex("<report name=\"(.*?)\">").find(xmlReportString)!!.groups[1]!!.value
+    assertThat(xmlReportName).isEqualTo(expectedReportName)
+  }
+
+  private fun verifyCoverageData(
+    xmlReportString: String,
+    instructionCovered: Int,
+    instructionMissed: Int,
+    branchCovered: Int,
+    branchMissed: Int,
+  ) {
+    val expectedCounters =
+      "<counter covered=\"${instructionCovered}\" missed=\"${instructionMissed}\" type=\"INSTRUCTION\"/>" +
+        "<counter covered=\"${branchCovered}\" missed=\"${branchMissed}\" type=\"BRANCH\"/>"
+
+    assertThat(xmlReportString.contains(expectedCounters)).isTrue()
+  }
+
+  private fun verifyProperties(xmlReportString: String, moduleName: String, testSuiteName: String, testedVariantName: String) {
+    val expectedProperties =
+      "<properties>" +
+        "<property name=\"modulePath\" value=\"${moduleName}\"/>" +
+        "<property name=\"testSuiteName\" value=\"${testSuiteName}\"/>" +
+        "<property name=\"testedVariantName\" value=\"${testedVariantName}\"/>" +
+        "</properties>"
+
+    assertThat(xmlReportString.contains(expectedProperties)).isTrue()
+  }
+
+  private fun verifySources(xmlReportString: String, moduleName: String) {
+    val expectedSources =
+      "<sources>" +
+        "<file path=\"$moduleName/src/main/java\"/>" +
+        "<file path=\"$moduleName/src/debug/java\"/>" +
+        "<file path=\"$moduleName/src/main/kotlin\"/>" +
+        "<file path=\"$moduleName/src/debug/kotlin\"/>" +
+        "</sources>"
+
+    assertThat(xmlReportString.contains(expectedSources)).isTrue()
   }
 
   private inline fun <reified T> parseReportJs(file: File): T {

@@ -99,7 +99,7 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
   @get:InputFiles
   @get:Optional
   @get:PathSensitive(PathSensitivity.RELATIVE)
-  abstract val dependentModuleCoverageData: ConfigurableFileCollection
+  abstract val dependantModulesReports: ConfigurableFileCollection
 
   @get:Classpath @get:Optional abstract val jacocoClasspath: ConfigurableFileCollection
 
@@ -125,7 +125,7 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
         it.testSuiteCoverageData.setFrom(testSuiteCoverageData)
         it.classFolders.setFrom(classFileCollection)
         it.sourceFolders.setFrom(sourceFolders)
-        it.dependentModuleCoverageData.setFrom(dependentModuleCoverageData)
+        it.dependantModulesReports.setFrom(dependantModulesReports)
         it.variantName.set(variantName)
         it.projectName.set(projectPath.get())
         it.projectRoot.set(projectRoot)
@@ -134,8 +134,8 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
 
   abstract class BaseCoverageCollectionCreationAction(
     val jacocoAntConfiguration: Configuration? = null,
-    creationConfig: CodeCoverageReportCreationConfig,
-  ) : VariantTaskCreationAction<CodeCoverageCollectionTask, CodeCoverageReportCreationConfig>(creationConfig) {
+    creationConfig: TestReportCreationConfig,
+  ) : VariantTaskCreationAction<CodeCoverageCollectionTask, TestReportCreationConfig>(creationConfig) {
 
     override val type: Class<CodeCoverageCollectionTask>
       get() = CodeCoverageCollectionTask::class.java
@@ -166,7 +166,7 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
     }
   }
 
-  class CoverageCollectionCreationAction(jacocoAntConfiguration: Configuration? = null, creationConfig: CodeCoverageReportCreationConfig) :
+  class CoverageCollectionCreationAction(jacocoAntConfiguration: Configuration? = null, creationConfig: TestReportCreationConfig) :
     BaseCoverageCollectionCreationAction(jacocoAntConfiguration, creationConfig) {
 
     override val name: String
@@ -188,7 +188,7 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
 
   class AggregatedCoverageCollectionCreationAction(
     jacocoAntConfiguration: Configuration? = null,
-    creationConfig: CodeCoverageReportCreationConfig,
+    creationConfig: TestReportCreationConfig,
   ) : BaseCoverageCollectionCreationAction(jacocoAntConfiguration, creationConfig) {
 
     override val name: String
@@ -197,7 +197,7 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
     override fun configure(task: CodeCoverageCollectionTask) {
       super.configure(task)
 
-      task.dependentModuleCoverageData.from(creationConfig.dependantModulesReports)
+      task.dependantModulesReports.from(creationConfig.dependantModulesReports)
     }
 
     override fun handleProvider(taskProvider: TaskProvider<CodeCoverageCollectionTask>) {
@@ -217,7 +217,7 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
     val testSuiteCoverageData: ConfigurableFileCollection
     val classFolders: ConfigurableFileCollection
     val sourceFolders: ConfigurableFileCollection
-    val dependentModuleCoverageData: ConfigurableFileCollection
+    val dependantModulesReports: ConfigurableFileCollection
     val variantName: Property<String>
     val projectName: Property<String>
     val projectRoot: DirectoryProperty
@@ -289,7 +289,7 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
         val mergedCoverageFiles = connectedTestCoverageFile + unitTestCoverageFile + testSuiteCoverageFiles
         generateXmlReport(mergedCoverageFiles, "Aggregated")
 
-        parameters.dependentModuleCoverageData.asFileTree.forEach { xmlFile ->
+        parameters.dependantModulesReports.asFileTree.forEach { xmlFile ->
           val targetFile = parameters.reportOutputDir.asFile.get().resolve(xmlFile.name)
           xmlFile.copyTo(targetFile, overwrite = true)
         }

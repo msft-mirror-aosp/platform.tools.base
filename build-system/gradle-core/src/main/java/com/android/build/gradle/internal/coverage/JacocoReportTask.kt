@@ -75,6 +75,17 @@ abstract class JacocoReportTask : NonIncrementalTask() {
 
   @get:Classpath abstract val jacocoClasspath: ConfigurableFileCollection
 
+  /**
+   * The source directories to be used for matching with coverage files when generating reports.
+   *
+   * We use [ListProperty] of [Provider] of [List] of [ConfigurableFileTree] because:
+   * 1. [ListProperty] allows lazy collection of multiple independent source sets (e.g., separate registrations for Java and Kotlin source
+   *    directories) without evaluating them during configuration.
+   * 2. [Provider] and [List] handle the lazy resolution of directories that might not exist or are not fully configured yet.
+   * 3. [ConfigurableFileTree] preserves the root directory (via [ConfigurableFileTree.getDir]) of each source tree. This is critical for
+   *    Jacoco report generation to correctly resolve package structures and locate source files, which would be lost if using a flat
+   *    [FileCollection].
+   */
   @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val sources: ListProperty<Provider<List<ConfigurableFileTree>>>
 
   @get:Internal abstract val tabWidth: Property<Int>

@@ -18,6 +18,7 @@ package com.android.build.gradle.internal
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.variant.TestVariantBuilder
 import com.android.build.gradle.internal.component.*
+import com.android.build.gradle.internal.coverage.tasks.TestReportCreationConfigImpl
 import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask
 import com.android.build.gradle.internal.tasks.DeviceSerialTestTask
 import com.android.build.gradle.internal.tasks.SigningConfigVersionsWriterTask
@@ -142,8 +143,9 @@ class TestApplicationTaskManager(
     testResultsCollectionTasks: MutableList<TaskProvider<TestResultsCollectionTask>>,
   ) {
     if (isReportAggregationEnabled) {
+      val testReportCreationConfig = TestReportCreationConfigImpl(variantInfo.variant, emptyList())
       testResultsCollectionTasks.add(
-        taskFactory.register(TestResultsCollectionTask.TestResultsCollectionCreationAction(variantInfo.variant))
+        taskFactory.register(TestResultsCollectionTask.TestResultsCollectionCreationAction(testReportCreationConfig))
       )
     }
   }

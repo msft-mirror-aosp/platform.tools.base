@@ -33,7 +33,6 @@ import kotlin.jvm.java
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.junit.ClassRule
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.platform.engine.EngineDiscoveryRequest
@@ -47,7 +46,6 @@ import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor
 import org.junit.rules.ExternalResource
 
 /** Integration test for [com.android.build.gradle.internal.coverage.tasks.CodeCoverageCollectionTask]. */
-@Ignore("b/552341004 Stopped registering anchor code coverage report tasks, this test will be moved to test report tests, then removed.")
 class CodeCoverageCollectionTest {
 
   companion object {
@@ -259,11 +257,11 @@ class CodeCoverageCollectionTest {
   @Test
   fun testCollectDebugCoverage() {
     val build = rule.build
-    build.executor.run(":app:collectDebugCoverage")
+    build.executor.run(":app:testResultsCollectionDebug")
 
     val appBuildDir = build.androidApplication(":app").buildDir.toFile()
 
-    val taskOutputDir = FileUtils.join(appBuildDir, "intermediates", "code_coverage_data", "global", "collectDebugCoverage")
+    val taskOutputDir = FileUtils.join(appBuildDir, "intermediates", "code_coverage_data", "global", "testResultsCollectionDebug")
 
     PathSubject.assertThat(taskOutputDir).exists()
     PathSubject.assertThat(taskOutputDir).isDirectory()
@@ -318,11 +316,11 @@ class CodeCoverageCollectionTest {
   @Test
   fun testCollectDebugCoverageForLibraryModule() {
     val build = rule.build
-    build.executor.run(":lib:collectDebugCoverage")
+    build.executor.run(":lib:testResultsCollectionDebug")
 
     val appBuildDir = build.androidLibrary(":lib").buildDir.toFile()
 
-    val taskOutputDir = FileUtils.join(appBuildDir, "intermediates", "code_coverage_data", "global", "collectDebugCoverage")
+    val taskOutputDir = FileUtils.join(appBuildDir, "intermediates", "code_coverage_data", "global", "testResultsCollectionDebug")
 
     PathSubject.assertThat(taskOutputDir).exists()
     PathSubject.assertThat(taskOutputDir).isDirectory()
@@ -335,18 +333,18 @@ class CodeCoverageCollectionTest {
   @Test
   fun testCollectDebugAggregatedCoverage() {
     val build = rule.build
-    build.executor.run(":app:collectDebugAggregatedCoverage")
+    build.executor.run(":app:aggregatedTestResultsCollectionDebug")
 
     val appBuildDir = build.androidApplication(":app").buildDir.toFile()
 
     val taskOutputDir =
-      FileUtils.join(appBuildDir, "intermediates", "aggregated_code_coverage_data", "global", "collectDebugAggregatedCoverage")
+      FileUtils.join(appBuildDir, "intermediates", "aggregated_code_coverage_data", "global", "aggregatedTestResultsCollectionDebug")
 
     // Check data is collected for app and lib modules.
     PathSubject.assertThat(taskOutputDir).exists()
     PathSubject.assertThat(taskOutputDir).isDirectory()
 
-    val xmlReports = taskOutputDir.listFiles()
+    val xmlReports = taskOutputDir.walkTopDown().filter { it.isFile }.toList()
 
     Truth.assertThat(xmlReports.size).isEqualTo(9)
 
@@ -438,13 +436,13 @@ class CodeCoverageCollectionTest {
 
     val libBuildDir = build.androidLibrary(":lib").buildDir.toFile()
 
-    val dependantTaskOutputDir = FileUtils.join(libBuildDir, "intermediates", "code_coverage_data", "global", "collectDebugCoverage")
+    val dependantTaskOutputDir = FileUtils.join(libBuildDir, "intermediates", "code_coverage_data", "global", "testResultsCollectionDebug")
 
     // Check collect task is executed for dependant module and correct xml reports are generated
     PathSubject.assertThat(dependantTaskOutputDir).exists()
     PathSubject.assertThat(dependantTaskOutputDir).isDirectory()
 
-    val libModuleXmlReports = dependantTaskOutputDir.listFiles()
+    val libModuleXmlReports = dependantTaskOutputDir.listFiles().toList()
     Truth.assertThat(libModuleXmlReports.size).isEqualTo(3)
 
     val xmlReport7 = xmlReports.filter { it.name == "debugLibAggregatedXmlReport.xml" }
@@ -495,27 +493,27 @@ class CodeCoverageCollectionTest {
     val build = rule.build
 
     // Expect the build to fail
-    val result = build.executor.expectFailure().run(":lib:collectDebugAggregatedCoverage")
+    val result = build.executor.expectFailure().run(":lib:aggregatedTestResultsCollectionDebug")
 
     // Assert that the failure reason is because the task was not found
-    result.assertFailureMessage().contains("task 'collectDebugAggregatedCoverage' not found in project ':lib'")
+    result.assertFailureMessage().contains("task 'aggregatedTestResultsCollectionDebug' not found in project ':lib'")
   }
 
   @Test
   fun testCollectDebugAggregatedCoverageForLibraryModuleWithPublicationEnabled() {
     val build = rule.build
-    build.executor.run(":lib2:collectDebugAggregatedCoverage")
+    build.executor.run(":lib2:aggregatedTestResultsCollectionDebug")
 
     val appBuildDir = build.androidLibrary(":lib2").buildDir.toFile()
 
     val taskOutputDir =
-      FileUtils.join(appBuildDir, "intermediates", "aggregated_code_coverage_data", "global", "collectDebugAggregatedCoverage")
+      FileUtils.join(appBuildDir, "intermediates", "aggregated_code_coverage_data", "global", "aggregatedTestResultsCollectionDebug")
 
     // Check data is collected for app and lib modules.
     PathSubject.assertThat(taskOutputDir).exists()
     PathSubject.assertThat(taskOutputDir).isDirectory()
 
-    val xmlReports = taskOutputDir.listFiles().toList()
+    val xmlReports = taskOutputDir.walkTopDown().filter { it.isFile }.toList()
 
     Truth.assertThat(xmlReports.size).isEqualTo(3)
   }
@@ -524,27 +522,27 @@ class CodeCoverageCollectionTest {
   fun testCollectDebugCoverageWithCorruptedFile() {
     val build = rule.build { androidApplication(":app") { pluginCallbacks += CodeCoverageCollectionTaskCallback::class.java } }
 
-    val result = build.executor.expectFailure().run(":app:collectDebugCoverage")
+    val result = build.executor.run(":app:testResultsCollectionDebug")
 
-    result.assertErrorContains("Unable to generate Jacoco XML report")
-    result.assertTask(":app:collectDebugCoverage").failed()
+    result.assertOutputContains("Unable to generate Jacoco XML report")
+    result.assertTask(":app:testResultsCollectionDebug").didWork()
   }
 
   @Test
-  fun testCollectDebugCoverageFailsWhenJacocoVersionMismatch() {
+  fun testCollectDebugCoverageWarnsWhenJacocoVersionMismatch() {
     val build = rule.build { gradleProperties { add(StringOption.JACOCO_TOOL_VERSION, "0.8.12") } }
 
-    val result = build.executor.expectFailure().run(":app:collectDebugCoverage")
+    val result = build.executor.run(":app:testResultsCollectionDebug")
 
-    result.assertErrorContains("Cannot generate report. Please ensure a single Jacoco version is configured.")
-    result.assertTask(":app:collectDebugCoverage").failed()
+    result.assertOutputContains("Cannot generate report. Please ensure a single Jacoco version is configured.")
+    result.assertTask(":app:testResultsCollectionDebug").didWork()
   }
 
   @Test
   fun testCollectDebugCoverageWithTestSuites() {
     val build = rule.build
 
-    val result = build.executor.run(":app:collectDebugCoverage")
+    val result = build.executor.run(":app:testResultsCollectionDebug")
 
     Truth.assertThat(result.didWorkTasks).contains(":app:testFirstT1DebugTestSuite")
     Truth.assertThat(result.didWorkTasks).contains(":app:testFirstT2DebugTestSuite")
