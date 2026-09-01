@@ -29,6 +29,7 @@ import com.android.build.api.variant.impl.TestSuiteSourceContainer
 import com.android.build.gradle.internal.AvdComponentsBuildService
 import com.android.build.gradle.internal.BuildToolsExecutableInput
 import com.android.build.gradle.internal.component.DeviceTestCreationConfig
+import com.android.build.gradle.internal.component.HostTestCreationConfig
 import com.android.build.gradle.internal.component.InstrumentedTestCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteTargetCreationConfig
@@ -42,6 +43,7 @@ import com.android.build.gradle.internal.dsl.ManagedVirtualDevice
 import com.android.build.gradle.internal.initialize
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.CLASSES_JAR
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.R_CLASS_JAR
 import com.android.build.gradle.internal.publishing.PublishingSpecs
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalMultipleArtifactType
@@ -67,7 +69,6 @@ import com.android.builder.core.ComponentType
 import com.android.builder.testing.api.DeviceConfigProvider
 import com.android.builder.testing.api.DeviceConfigProviderImpl
 import com.android.builder.testing.api.DeviceException
-import com.android.utils.FileUtils
 import java.io.File
 import java.util.Locale
 import java.util.Properties
@@ -130,6 +131,12 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
 
   /** Comma-separated list of paths to utility APKs to be installed before testing. */
   @get:InputFiles @get:Optional @get:PathSensitive(PathSensitivity.RELATIVE) abstract val testUtilApks: ConfigurableFileCollection
+
+  /**
+   * The directory containing the extracted layoutlib runtime distribution, populated when the engine requests
+   * [AgpTestSuiteInputParameters.LAYOUTLIB_DATA_DIR]. Marked [Internal] because it is already fingerprinted via [engineInputParameters].
+   */
+  @get:Internal abstract val layoutlibDataDir: ConfigurableFileCollection
 
   /** The module name within the bundle that contains the tests. */
   @get:Input @get:Optional abstract val bundleModuleName: Property<String>
@@ -250,7 +257,7 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
 
     val engineInputParameters: List<TestEngineInputProperty> =
       engineInputParameters.get().map { inputProperty ->
-        val resolvedPath = inputProperty.fileCollection.files.joinToString(java.io.File.pathSeparator) { it.absolutePath }
+        val resolvedPath = inputProperty.fileCollection.files.joinToString(File.pathSeparator) { it.absolutePath }
         TestEngineInputProperty(inputProperty.type.propertyName, resolvedPath)
       }
 
@@ -750,17 +757,21 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
           AgpTestSuiteInputParameters.R_CLASS_JARS -> {
             val testRClassJars =
               task.project.objects.fileCollection().also { fc ->
+                if (!testedVariant.componentType.isAar) {
+                  testedVariant.androidResourcesCreationConfig?.compiledRClassArtifact?.let { fc.from(it) }
+                } else if (creationConfig.androidResourcesIncluded) {
+                  // The R class of the tested variant of a library only holds placeholder ids. The one with the final ids is linked by the
+                  // test suite itself, see HostJarTestSuiteTaskManager.setupAndroidResourceTasks.
+                  creationConfig.sourceContainers.forEach { sc ->
+                    (sc.creationConfig as? HostTestCreationConfig)?.let {
+                      fc.from(it.artifacts.get(InternalArtifactType.COMPILE_AND_RUNTIME_R_CLASS_JAR))
+                    }
+                  }
+                }
+                // Only the compile classpath: R class jars of dependencies are published as api artifacts (see
+                // AndroidArtifacts.PublishedConfigSpec of R_CLASS_JAR), the runtime classpath never carries any.
                 creationConfig.sourceContainers.forEach { sc ->
-                  fc.from(
-                    sc.suiteSourceClasspath.getRuntimeClasspathArtifacts(
-                      com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.R_CLASS_JAR
-                    )
-                  )
-                  fc.from(
-                    sc.suiteSourceClasspath.getCompileClasspathArtifacts(
-                      com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.R_CLASS_JAR
-                    )
-                  )
+                  fc.from(sc.suiteSourceClasspath.getCompileClasspathArtifacts(R_CLASS_JAR))
                 }
               }
             task.engineInputParameters.add(AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.R_CLASS_JARS, testRClassJars))
@@ -792,61 +803,15 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
           }
 
           AgpTestSuiteInputParameters.LAYOUTLIB_DATA_DIR -> {
-            val layoutlibDataDir = task.project.objects.directoryProperty()
-
             creationConfig.sourceContainers.forEach { sc ->
               if (sc.source is TestSuiteSourceSet.HostJar) {
-                val extractedLayoutlib =
-                  sc.suiteSourceClasspath.hostRuntimeClasspath.incoming
-                    .artifactView { config ->
-                      config.attributes { attr ->
-                        attr.attribute(
-                          com.android.build.gradle.internal.publishing.AndroidArtifacts.ARTIFACT_TYPE,
-                          com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.EXTRACTED_LAYOUTLIB.type,
-                        )
-                      }
-                      config.componentFilter { id ->
-                        id is org.gradle.api.artifacts.component.ModuleComponentIdentifier &&
-                          id.group == "com.android.tools.layoutlib" &&
-                          id.module == "layoutlib-runtime"
-                      }
-                    }
-                    .artifacts
-                    .artifactFiles
-
-                val layoutlibResources =
-                  sc.suiteSourceClasspath.hostRuntimeClasspath.incoming
-                    .artifactView { config ->
-                      config.componentFilter { id ->
-                        id is org.gradle.api.artifacts.component.ModuleComponentIdentifier &&
-                          id.group == "com.android.tools.layoutlib" &&
-                          id.module == "layoutlib-resources"
-                      }
-                    }
-                    .artifacts
-                    .artifactFiles
-
-                val layoutlibDirProvider =
-                  task.project.layout.dir(
-                    extractedLayoutlib.elements.zip(layoutlibResources.elements) { extElements, resElements ->
-                      val extDir = extElements.firstOrNull()?.asFile ?: return@zip null
-                      val resJar = resElements.firstOrNull()?.asFile
-                      if (resJar != null && resJar.exists()) {
-                        val targetResFile = extDir.resolve("data").resolve("framework_res.jar")
-                        if (!targetResFile.exists()) {
-                          targetResFile.parentFile.mkdirs()
-                          FileUtils.copyFile(resJar, targetResFile)
-                        }
-                      }
-                      extDir
-                    }
-                  )
-
-                layoutlibDataDir.set(layoutlibDirProvider)
+                // setFrom, not from: the rendering engine reads LAYOUTLIB_DATA_DIR as a single directory, so these must not accumulate
+                // across source containers.
+                task.layoutlibDataDir.setFrom(sc.suiteSourceClasspath.getExtractedLayoutlibDataDir())
               }
             }
             task.engineInputParameters.add(
-              AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.LAYOUTLIB_DATA_DIR, task.project.files(layoutlibDataDir))
+              AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.LAYOUTLIB_DATA_DIR, task.layoutlibDataDir)
             )
           }
 
@@ -855,7 +820,7 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
               task.project.objects.fileCollection().also { fc ->
                 creationConfig.sourceContainers.forEach { sc ->
                   if (sc.source is TestSuiteSourceSet.HostJar) {
-                    fc.from(sc.suiteSourceClasspath.getHostRuntimeClasspathArtifacts(AndroidArtifacts.ArtifactType.CLASSES_JAR))
+                    fc.from(sc.suiteSourceClasspath.getEnginesClasspathArtifacts(AndroidArtifacts.ArtifactType.CLASSES_JAR))
                   }
                 }
               }
