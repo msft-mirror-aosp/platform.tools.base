@@ -21,4 +21,7 @@ IGNORE_PATHS = [
     "tools/base/dynamic-layout-inspector/agent/appinspection/fake-android",
     "tools/adt/idea/designer/testFramework",
     "tools/adt/idea/wear-dwf/gen",
+    "tools/adt/idea/android-lang/gen",
+    "tools/adt/idea/android-lang-databinding/gen",
+    "tools/vendor/google/ml/aiplugin/editor/evals",
 ]
