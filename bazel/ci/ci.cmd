@@ -10,6 +10,7 @@ set ANDROID_HOME=$WORKSPACE_ROOT\prebuilts\studio\sdk\windows
 if defined BUILD_NUMBER (
   echo common --credential_helper=*.pkg.dev=%%workspace%%/build/bazel/tools/ci_credhelper.cmd > ci.bazelrc
   echo common --credential_helper=*.googleapis.com=%%workspace%%/build/bazel/tools/ci_credhelper.cmd >> ci.bazelrc
+  echo common --credential_helper_timeout=60s >> ci.bazelrc
 )
 
 %BAZEL% --max_idle_secs=60 run --config=ci --config=remote-exec //tools/base/bazel/ci -- %1
