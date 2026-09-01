@@ -292,6 +292,51 @@ class TestSuitesTestReportTest {
     assertThat(coverageReportDir.toFile().exists()).isFalse()
   }
 
+  @Test
+  fun testUpdateSuiteCodeCoverage() {
+    val build = rule.build {
+      androidApplication {
+        android {
+          testOptions.suites.create("updateCoverageSuite", AgpTestSuite::class.java) {
+            it.codeCoverage = true
+            it.requiresUpdateTask = true
+            it.useJunitEngine.apply {
+              inputs.add(AgpTestSuiteInputParameters.MERGED_MANIFEST)
+              includeEngines.add("[engine:custom-junit-engine-for-tests]")
+              enginesDependencies.add("com.android.tools.build:gradle-api:${Version.ANDROID_GRADLE_PLUGIN_VERSION}")
+              enginesDependencies.add("org.junit.platform:junit-platform-launcher")
+              enginesDependencies.add("com.test:custom-junit-engine:1.0")
+              enginesDependencies.add("org.junit.platform:junit-platform-engine:1.13.3")
+            }
+            it.hostJar {}
+            it.targetVariants.add("debug")
+            it.targets.create("t1") {}
+          }
+        }
+        files {
+          add("src/main/java/com/example/dummy/Dummy.java", "package com.example.dummy; public class Dummy {}")
+          add("src/updateCoverageSuite/java/DummyTest.java", "package com.example.dummy; public class DummyTest {}")
+        }
+      }
+    }
+
+    build.executor.run(":app:testUpdateCoverageSuiteT1DebugTestSuite")
+
+    val coverageReportDir = build.androidApplication().buildDir.resolve("reports/coverage/updateCoverageSuite")
+    val htmlReportIndex = coverageReportDir.resolve("index.html").toFile()
+    val xmlReport = coverageReportDir.resolve("report.xml").toFile()
+
+    assertThat(htmlReportIndex.exists()).isTrue()
+    assertThat(xmlReport.exists()).isTrue()
+
+    coverageReportDir.toFile().deleteRecursively()
+    assertThat(coverageReportDir.toFile().exists()).isFalse()
+
+    build.executor.run(":app:updateUpdateCoverageSuiteT1DebugTestSuite")
+
+    assertThat(coverageReportDir.toFile().exists()).isFalse()
+  }
+
   private val gson = Gson()
 
   private inline fun <reified T> parseReportJs(file: File): T {

@@ -547,8 +547,9 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       configureCoverageAndMetadata(
         task = task,
         services = creationConfig.services,
-        codeCoverageEnabled = creationConfig.codeCoverageEnabled,
-        jacocoVersion = if (creationConfig.codeCoverageEnabled) getTestSuiteJacocoVersion(task.project, creationConfig) else null,
+        codeCoverageEnabled = creationConfig.codeCoverageEnabled && !isUpdate,
+        jacocoVersion =
+          if (creationConfig.codeCoverageEnabled && !isUpdate) getTestSuiteJacocoVersion(task.project, creationConfig) else null,
         testedVariant = testedVariant,
         testSuiteName = testSuiteName,
         testSuiteTarget = targetName,
