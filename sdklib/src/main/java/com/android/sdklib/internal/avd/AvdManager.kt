@@ -69,6 +69,7 @@ import java.util.regex.Matcher
 import java.util.regex.Pattern
 import java.util.stream.Collectors.toList
 import kotlin.io.path.deleteIfExists
+import kotlin.io.path.name
 
 /**
  * Android Virtual Device Manager to manage AVDs.
@@ -301,6 +302,8 @@ private constructor(
     require(avdInfo.name != builder.avdName) { "Old and new name are the same" }
     require(avdInfo.dataFolderPath != builder.avdFolder) { "Old and new path are the same" }
     checkNotNull(builder.systemImage) { "systemImage is required" }
+
+    builder.userSettings.keys.removeAll { it.startsWith("paired.glasses") || it.startsWith("paired.phone") }
 
     duplicateAvd(avdInfo.dataFolderPath, builder.avdFolder, builder.avdName, builder.systemImage!!)
 
@@ -571,14 +574,20 @@ private constructor(
         avdFolder,
         destAvdFolder,
         false,
-        { path -> !path.fileName.endsWith(".lock") }, // Do not copy *.lock files
+        { path ->
+          !path.name.endsWith(".lock", ignoreCase = true) && !path.name.equals(NETSIM_INI, ignoreCase = true)
+        },
         progInd,
       )
 
       // Modify the ID and display name in the new config.ini
       val configIni: Path = destAvdFolder.resolve(CONFIG_INI)
       var configVals = parseIniFile(PathFileWrapper(configIni), log) ?: mutableMapOf()
-      val userSettingsVals = parseUserSettingsFile(destAvdFolder, log)
+      val userSettingsVals = parseUserSettingsFile(destAvdFolder, log).toMutableMap()
+      if (userSettingsVals.keys.any { it.startsWith("paired.glasses") || it.startsWith("paired.phone") }) {
+        userSettingsVals.keys.removeAll { it.startsWith("paired.glasses") || it.startsWith("paired.phone") }
+        writeIniFile(destAvdFolder.resolve(USER_SETTINGS_INI), userSettingsVals, true)
+      }
       configVals[ConfigKey.AVD_ID] = newAvdName
       configVals[ConfigKey.DISPLAY_NAME] = newAvdName
       writeIniFile(configIni, configVals, true)
@@ -1397,6 +1406,7 @@ private constructor(
     const val USERDATA_QEMU_IMG: String = "userdata-qemu.img"
     const val SNAPSHOTS_DIRECTORY: String = "snapshots"
     const val USER_SETTINGS_INI: String = "user-settings.ini" // $NON-NLS-1$
+    const val NETSIM_INI: String = "netsim.ini"
 
     private const val BOOT_PROP = "boot.prop"
     const val ENVIRONMENTS_DIR = "environments"

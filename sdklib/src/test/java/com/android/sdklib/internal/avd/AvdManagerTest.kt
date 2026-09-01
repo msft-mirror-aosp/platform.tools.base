@@ -609,6 +609,128 @@ class AvdManagerTest {
   }
 
   @Test
+  fun duplicateAvd_excludesLockFilesAndNetsimIni() {
+    val log = MockLog()
+    val deviceManager = DeviceManager.createInstance(androidSdkHandler, log)
+    val device = deviceManager.getDevice("medium_phone", "Generic")!!
+    val builder = avdManager.createAvdBuilder(device)
+    builder.avdName = name.methodName
+    builder.avdFolder = avdFolder
+    builder.systemImage = systemImages.api33ext4.image
+    val initialAvdInfo = avdManager.createAvd(builder)
+    assertNotNull("Could not create AVD", initialAvdInfo)
+
+    // Add lock files, a directory ending in .lock, and netsim.ini to original AVD
+    Files.createFile(avdFolder.resolve("hardware-qemu.ini.lock"))
+    Files.createFile(avdFolder.resolve("multiinstance.lock"))
+    val lockDir = avdFolder.resolve("test_snapshot.lock")
+    Files.createDirectories(lockDir)
+    Files.createFile(lockDir.resolve("snapshot.data"))
+
+    val netsimIni = avdFolder.resolve("netsim.ini")
+    netsimIni.recordExistingFile("bluetooth.address = BB:BB:BB:00:00:01\n")
+
+    val newBuilder = AvdBuilder.createForExistingDevice(device, initialAvdInfo)
+    newBuilder.displayName = "Copy of ${initialAvdInfo.displayName}"
+    newBuilder.avdName = "Copy_of_${name.methodName}"
+    newBuilder.avdFolder = initialAvdInfo.dataFolderPath.resolveSibling("Copy_of_${name.methodName}.avd")
+    val duplicatedAvd = avdManager.duplicateAvd(initialAvdInfo, newBuilder)
+
+    assertNotNull("Could not duplicate AVD", duplicatedAvd)
+    val newFolder = newBuilder.avdFolder
+
+    // Assert lock files and lock directories are excluded from duplicate
+    assertFalse(Files.exists(newFolder.resolve("hardware-qemu.ini.lock")))
+    assertFalse(Files.exists(newFolder.resolve("multiinstance.lock")))
+    assertFalse(Files.exists(newFolder.resolve("test_snapshot.lock")))
+    assertFalse(Files.exists(newFolder.resolve("netsim.ini")))
+
+    // Assert original files remain intact
+    assertTrue(Files.exists(avdFolder.resolve("hardware-qemu.ini.lock")))
+    assertTrue(Files.exists(avdFolder.resolve("multiinstance.lock")))
+    assertTrue(Files.exists(avdFolder.resolve("test_snapshot.lock")))
+    assertTrue(Files.exists(avdFolder.resolve("netsim.ini")))
+  }
+
+  @Test
+  fun duplicateAvd_stripsPairingPropertiesFromUserSettings() {
+    val log = MockLog()
+    val deviceManager = DeviceManager.createInstance(androidSdkHandler, log)
+    val device = deviceManager.getDevice("medium_phone", "Generic")!!
+    val builder = avdManager.createAvdBuilder(device)
+    builder.avdName = name.methodName
+    builder.avdFolder = avdFolder
+    builder.systemImage = systemImages.api33ext4.image
+    builder.userSettings["custom.setting"] = "keepMe"
+    builder.userSettings["paired.glasses.avd"] = "glasses_1"
+    builder.userSettings["paired.glasses.avd.id.1"] = "glasses_id_1"
+    builder.userSettings["paired.glasses.avd.mac.1"] = "00:11:22:33:44:55"
+    builder.userSettings["paired.phone.avd.id.1"] = "phone_id_1"
+    val initialAvdInfo = avdManager.createAvd(builder)
+    assertNotNull("Could not create AVD", initialAvdInfo)
+
+    // Verify initial AVD has pairing properties
+    assertThat(initialAvdInfo.userSettings["paired.glasses.avd"]).isEqualTo("glasses_1")
+    assertThat(initialAvdInfo.userSettings["custom.setting"]).isEqualTo("keepMe")
+
+    val newBuilder = AvdBuilder.createForExistingDevice(device, initialAvdInfo)
+    newBuilder.displayName = "Copy of ${initialAvdInfo.displayName}"
+    newBuilder.avdName = "Copy_of_${name.methodName}"
+    newBuilder.avdFolder = initialAvdInfo.dataFolderPath.resolveSibling("Copy_of_${name.methodName}.avd")
+    val duplicatedAvd = avdManager.duplicateAvd(initialAvdInfo, newBuilder)
+
+    assertNotNull("Could not duplicate AVD", duplicatedAvd)
+    val newFolder = newBuilder.avdFolder
+
+    // Duplicated AvdInfo userSettings must not have pairing keys, but keep custom.setting
+    assertThat(duplicatedAvd.userSettings["custom.setting"]).isEqualTo("keepMe")
+    assertThat(duplicatedAvd.userSettings.keys.none { it.startsWith("paired.glasses") || it.startsWith("paired.phone") }).isTrue()
+
+    // Duplicated user-settings.ini on disk must not have pairing keys
+    val diskSettings = AvdInfo.parseUserSettingsFile(newFolder, log)
+    assertThat(diskSettings["custom.setting"]).isEqualTo("keepMe")
+    assertThat(diskSettings.keys.none { it.startsWith("paired.glasses") || it.startsWith("paired.phone") }).isTrue()
+
+    // Original AVD user-settings.ini on disk must still have pairing keys
+    val origDiskSettings = AvdInfo.parseUserSettingsFile(avdFolder, log)
+    assertThat(origDiskSettings["paired.glasses.avd"]).isEqualTo("glasses_1")
+    assertThat(origDiskSettings["paired.glasses.avd.id.1"]).isEqualTo("glasses_id_1")
+  }
+
+  @Test
+  fun editAvd_preservesPairingProperties() {
+    val log = MockLog()
+    val deviceManager = DeviceManager.createInstance(androidSdkHandler, log)
+    val device = deviceManager.getDevice("medium_phone", "Generic")!!
+    val builder = avdManager.createAvdBuilder(device)
+    builder.avdName = name.methodName
+    builder.avdFolder = avdFolder
+    builder.systemImage = systemImages.api33ext4.image
+    builder.userSettings["paired.glasses.avd"] = "glasses_1"
+    builder.userSettings["paired.glasses.avd.id.1"] = "glasses_id_1"
+    builder.userSettings["paired.glasses.avd.mac.1"] = "00:11:22:33:44:55"
+    val initialAvdInfo = avdManager.createAvd(builder)
+    assertNotNull("Could not create AVD", initialAvdInfo)
+
+    val netsimIni = avdFolder.resolve("netsim.ini")
+    netsimIni.recordExistingFile("bluetooth.address = BB:BB:BB:00:00:01\n")
+
+    val editBuilder = AvdBuilder.createForExistingDevice(device, initialAvdInfo)
+    editBuilder.displayName = "Edited ${initialAvdInfo.displayName}"
+    val editedAvd = avdManager.editAvd(initialAvdInfo, editBuilder)
+
+    assertNotNull("Could not edit AVD", editedAvd)
+    assertThat(editedAvd.userSettings["paired.glasses.avd"]).isEqualTo("glasses_1")
+    assertThat(editedAvd.userSettings["paired.glasses.avd.id.1"]).isEqualTo("glasses_id_1")
+    assertThat(editedAvd.userSettings["paired.glasses.avd.mac.1"]).isEqualTo("00:11:22:33:44:55")
+
+    val diskSettings = AvdInfo.parseUserSettingsFile(avdFolder, log)
+    assertThat(diskSettings["paired.glasses.avd"]).isEqualTo("glasses_1")
+    assertThat(diskSettings["paired.glasses.avd.id.1"]).isEqualTo("glasses_id_1")
+    assertTrue(Files.exists(netsimIni))
+  }
+
+  @Test
   fun reloadAvds() {
     // Create an AVD.
     var avd = avdManager.createAvd(avdFolder = avdFolder, avdName = name.methodName, systemImage = systemImages.api23.image)
