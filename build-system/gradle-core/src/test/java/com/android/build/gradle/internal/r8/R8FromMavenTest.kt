@@ -87,6 +87,107 @@ class R8FromMavenTest {
   }
 
   @Test
+  fun testR8VersionOverrideViaExplicitProvider() {
+    val dslVersion = "10.1.0-dsl"
+    val r8FromMaven = R8FromMaven.create(project, { null }, { dslVersion })
+
+    assertThat(r8FromMaven.version).isEqualTo(dslVersion)
+    val configuration = r8FromMaven.r8Classpath as Configuration
+    val dependency = configuration.dependencies.first()
+    assertThat(dependency.group).isEqualTo("com.android.tools")
+    assertThat(dependency.name).isEqualTo("r8")
+    assertThat(dependency.version).isEqualTo(dslVersion)
+  }
+
+  @Test
+  fun testExplicitProviderTakesPrecedenceOverStringOption() {
+    val dslVersion = "10.2.0-dsl-priority"
+    val optionVersion = "9.9.9-option"
+    val r8FromMaven =
+      R8FromMaven.create(
+        project,
+        { option -> if (option == StringOption.R8_VERSION_OVERRIDE) optionVersion else null },
+        { dslVersion },
+      )
+
+    assertThat(r8FromMaven.version).isEqualTo(dslVersion)
+    val configuration = r8FromMaven.r8Classpath as Configuration
+    val dependency = configuration.dependencies.first()
+    assertThat(dependency.group).isEqualTo("com.android.tools")
+    assertThat(dependency.name).isEqualTo("r8")
+    assertThat(dependency.version).isEqualTo(dslVersion)
+  }
+
+  @Test
+  fun testR8VersionOverrideViaProjectOptionsWithExplicitProvider() {
+    val projectOptionVersion = "9.9.9-option"
+    val explicitVersion = "10.5.0-explicit"
+    val providerFactory =
+      FakeProviderFactory(FakeProviderFactory.factory, mapOf(StringOption.R8_VERSION_OVERRIDE.propertyName to projectOptionVersion))
+    val projectOptions = ProjectOptions(providerFactory)
+
+    val r8FromMaven = R8FromMaven.create(project, projectOptions) { explicitVersion }
+    assertThat(r8FromMaven.version).isEqualTo(explicitVersion)
+    val configuration = r8FromMaven.r8Classpath as Configuration
+    val dependency = configuration.dependencies.first()
+    assertThat(dependency.group).isEqualTo("com.android.tools")
+    assertThat(dependency.name).isEqualTo("r8")
+    assertThat(dependency.version).isEqualTo(explicitVersion)
+  }
+
+  @Test
+  fun testProjectOptionsWithNullProviderFallsBackToProjectOptions() {
+    val projectOptionVersion = "9.9.9-option"
+    val providerFactory =
+      FakeProviderFactory(FakeProviderFactory.factory, mapOf(StringOption.R8_VERSION_OVERRIDE.propertyName to projectOptionVersion))
+    val projectOptions = ProjectOptions(providerFactory)
+
+    val r8FromMaven = R8FromMaven.create(project, projectOptions, null)
+    assertThat(r8FromMaven.version).isEqualTo(projectOptionVersion)
+    val configuration = r8FromMaven.r8Classpath as Configuration
+    val dependency = configuration.dependencies.first()
+    assertThat(dependency.group).isEqualTo("com.android.tools")
+    assertThat(dependency.name).isEqualTo("r8")
+    assertThat(dependency.version).isEqualTo(projectOptionVersion)
+  }
+
+  @Test
+  fun testStringOptionWithNullProviderFallsBackToStringOption() {
+    val customVersion = "9.9.9-custom-test"
+    val r8FromMaven =
+      R8FromMaven.create(
+        project,
+        { option -> if (option == StringOption.R8_VERSION_OVERRIDE) customVersion else null },
+        null,
+      )
+
+    assertThat(r8FromMaven.version).isEqualTo(customVersion)
+    val configuration = r8FromMaven.r8Classpath as Configuration
+    val dependency = configuration.dependencies.first()
+    assertThat(dependency.group).isEqualTo("com.android.tools")
+    assertThat(dependency.name).isEqualTo("r8")
+    assertThat(dependency.version).isEqualTo(customVersion)
+  }
+
+  @Test
+  fun testProviderReturningNullFallsBackToStringOption() {
+    val optionVersion = "9.9.9-option"
+    val r8FromMaven =
+      R8FromMaven.create(
+        project,
+        { option -> if (option == StringOption.R8_VERSION_OVERRIDE) optionVersion else null },
+        { null },
+      )
+
+    assertThat(r8FromMaven.version).isEqualTo(optionVersion)
+    val configuration = r8FromMaven.r8Classpath as Configuration
+    val dependency = configuration.dependencies.first()
+    assertThat(dependency.group).isEqualTo("com.android.tools")
+    assertThat(dependency.name).isEqualTo("r8")
+    assertThat(dependency.version).isEqualTo(optionVersion)
+  }
+
+  @Test
   fun testConfigurationIsDetached() {
     val r8FromMaven = R8FromMaven.create(project) { null }
     val configuration = r8FromMaven.r8Classpath as Configuration

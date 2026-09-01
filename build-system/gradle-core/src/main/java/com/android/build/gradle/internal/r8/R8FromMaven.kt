@@ -34,12 +34,36 @@ class R8FromMaven(val r8Classpath: FileCollection, val version: String) {
 
     @JvmStatic
     fun create(project: Project, projectOptions: ProjectOptions): R8FromMaven {
-      return create(project, projectOptions::get)
+      return create(project, projectOptions::get, null)
+    }
+
+    @JvmStatic
+    fun create(
+      project: Project,
+      projectOptions: ProjectOptions,
+      versionOverrideProvider: (() -> String?)?,
+    ): R8FromMaven {
+      return create(project, projectOptions::get, versionOverrideProvider)
     }
 
     @JvmStatic
     fun create(project: Project, stringOption: (option: StringOption) -> String?): R8FromMaven {
-      val versionOverride = stringOption(StringOption.R8_VERSION_OVERRIDE)?.trim()
+      return create(project, stringOption, null)
+    }
+
+    /**
+     * Resolves the R8 compiler JARs, prioritizing an explicit [versionOverrideProvider] (e.g., from module experimental properties) over
+     * [StringOption.R8_VERSION_OVERRIDE], falling back to [R8Version.VERSION_AGP_WAS_SHIPPED_WITH].
+     */
+    @JvmStatic
+    fun create(
+      project: Project,
+      stringOption: (option: StringOption) -> String?,
+      versionOverrideProvider: (() -> String?)?,
+    ): R8FromMaven {
+      val explicitOverride = versionOverrideProvider?.invoke()?.trim()
+      val optionOverride = stringOption(StringOption.R8_VERSION_OVERRIDE)?.trim()
+      val versionOverride = if (!explicitOverride.isNullOrEmpty()) explicitOverride else optionOverride
       val version =
         if (!versionOverride.isNullOrEmpty()) {
           versionOverride
