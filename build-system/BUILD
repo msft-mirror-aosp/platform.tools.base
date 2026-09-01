@@ -63,6 +63,12 @@ maven_repository(
 )
 
 filegroup(
+    name = "gradle-distrib-9.6.0",
+    srcs = ["//tools/external/gradle:gradle-distrib-9.6.0"],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
     name = "gradle-distrib-9.5.0",
     srcs = ["//tools/external/gradle:gradle-distrib-9.5.0"],
     visibility = ["//visibility:public"],
