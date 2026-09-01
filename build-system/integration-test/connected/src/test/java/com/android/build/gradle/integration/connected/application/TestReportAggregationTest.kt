@@ -188,13 +188,13 @@ class TestReportAggregationTest(val runWithBuiltInPlatform: Boolean) {
     }
 
   @Test
-  fun testCreateTestReportWithFailingTest() {
+  fun testTestAllSuitesWithFailingTest() {
     // unit test is expected to fail if run separately
     rule.build.executor.expectFailure().run(":lib2:testDebugUnitTest")
     // connected test is expected to fail if run separately
     rule.build.executor.expectFailure().run(":lib2:connectedDebugAndroidTest")
     // check failing test case won't fail the build when running the test report task
-    val result = rule.build.executor.run(":lib2:createTestReport")
+    val result = rule.build.executor.run(":lib2:testAllSuites")
     val libBuildDir = rule.build.androidLibrary(":lib2").buildDir.toFile()
     val outputDir = FileUtils.join(libBuildDir, "reports", "tests", "test-report")
 
@@ -210,8 +210,8 @@ class TestReportAggregationTest(val runWithBuiltInPlatform: Boolean) {
   }
 
   @Test
-  fun testCreateTestReportIncludingAllVariants() {
-    val result = rule.build.executor.run(":app:createTestReport")
+  fun testTestAllSuitesIncludingAllVariants() {
+    val result = rule.build.executor.run(":app:testAllSuites")
     val appBuildDir = rule.build.androidApplication(":app").buildDir.toFile()
     val outputDir = FileUtils.join(appBuildDir, "reports", "tests", "test-report")
 
@@ -230,8 +230,8 @@ class TestReportAggregationTest(val runWithBuiltInPlatform: Boolean) {
   }
 
   @Test
-  fun testCreateAggregatedTestReport() {
-    val result = rule.build.executor.run(":app:createAggregatedTestReport")
+  fun testTestAllSuitesWithDependencies() {
+    val result = rule.build.executor.run(":app:testAllSuitesWithDependencies")
     val appBuildDir = rule.build.androidApplication(":app").buildDir.toFile()
     val outputDir = FileUtils.join(appBuildDir, "reports", "tests", "aggregated-test-report")
 
@@ -254,8 +254,8 @@ class TestReportAggregationTest(val runWithBuiltInPlatform: Boolean) {
   }
 
   @Test
-  fun testCreateTestReportLib() {
-    val result = rule.build.executor.run(":lib:createTestReport")
+  fun testTestAllSuitesLib() {
+    val result = rule.build.executor.run(":lib:testAllSuites")
     val libBuildDir = rule.build.androidLibrary(":lib").buildDir.toFile()
     assertThat(result.tasks.contains(":lib:testDebugUnitTest")).isTrue()
     assertThat(result.tasks.contains(":lib:connectedDebugAndroidTest")).isTrue()
@@ -273,8 +273,8 @@ class TestReportAggregationTest(val runWithBuiltInPlatform: Boolean) {
   }
 
   @Test
-  fun testCreateAggregatedTestReportLib() {
-    val result = rule.build.executor.run(":lib2:createAggregatedTestReport")
+  fun testTestAllSuitesWithDependenciesLib() {
+    val result = rule.build.executor.run(":lib2:testAllSuitesWithDependencies")
     val libBuildDir = rule.build.androidLibrary(":lib2").buildDir.toFile()
     val outputDir = FileUtils.join(libBuildDir, "reports", "tests", "aggregated-test-report")
 
@@ -290,10 +290,10 @@ class TestReportAggregationTest(val runWithBuiltInPlatform: Boolean) {
   }
 
   @Test
-  fun testAggregatedTestReportingForNonPublishedLibModule() {
+  fun testTestAllSuitesWithDependenciesForNonPublishedLibModule() {
     val build = rule.build
-    val aggregatedReportLibResult = build.executor.expectFailure().run(":lib:createAggregatedTestReport")
-    aggregatedReportLibResult.assertFailureMessage().contains("task 'createAggregatedTestReport' not found in project ':lib'")
+    val aggregatedReportLibResult = build.executor.expectFailure().run(":lib:testAllSuitesWithDependencies")
+    aggregatedReportLibResult.assertFailureMessage().contains("task 'testAllSuitesWithDependencies' not found in project ':lib'")
   }
 
   private val gson = Gson()
@@ -388,7 +388,7 @@ class TestReportAggregationTest(val runWithBuiltInPlatform: Boolean) {
   @Test
   fun testCollectDebugCoverage() {
     val build = rule.build
-    build.executor.run(":app:createTestReport")
+    build.executor.run(":app:testAllSuites")
 
     val appBuildDir = build.androidApplication(":app").buildDir.toFile()
 
@@ -445,7 +445,7 @@ class TestReportAggregationTest(val runWithBuiltInPlatform: Boolean) {
   @Test
   fun testCollectDebugAggregatedCoverage() {
     val build = rule.build
-    build.executor.run(":app:createAggregatedTestReport")
+    build.executor.run(":app:testAllSuitesWithDependencies")
 
     val appBuildDir = build.androidApplication(":app").buildDir.toFile()
 

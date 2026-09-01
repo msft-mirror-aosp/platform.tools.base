@@ -97,7 +97,7 @@ abstract class TestReportTask : NonIncrementalGlobalTask() {
   }
 
   class AggregatedTestReportCreationAction(creationConfig: GlobalTaskCreationConfig) : BaseCreationAction(creationConfig) {
-    override val name = "createAggregatedTestReport"
+    override val name = "testAllSuitesWithDependencies"
     override val artifactType = InternalMultipleArtifactType.ALL_PROJECT_TEST_RESULTS
     override val coverageArtifactType = InternalMultipleArtifactType.AGGREGATED_CODE_COVERAGE_DATA
 
@@ -118,7 +118,7 @@ abstract class TestReportTask : NonIncrementalGlobalTask() {
   }
 
   class TestReportCreationAction(creationConfig: GlobalTaskCreationConfig) : BaseCreationAction(creationConfig) {
-    override val name = "createTestReport"
+    override val name = "testAllSuites"
     override val artifactType = InternalMultipleArtifactType.PROJECT_LEVEL_TEST_RESULTS
     override val coverageArtifactType = InternalMultipleArtifactType.CODE_COVERAGE_DATA
 

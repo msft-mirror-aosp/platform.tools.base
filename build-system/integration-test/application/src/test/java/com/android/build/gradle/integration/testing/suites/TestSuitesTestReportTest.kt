@@ -82,7 +82,7 @@ class TestSuitesTestReportTest {
   @Test
   fun testSingleModuleReporting() {
     val build = rule.build
-    build.executor.run(":app:createTestReport")
+    build.executor.run(":app:testAllSuites")
     val xmlFiles =
       build
         .androidApplication()
@@ -98,8 +98,8 @@ class TestSuitesTestReportTest {
   @Test
   fun testReportingDisabled() {
     val build = rule.build { gradleProperties { add(BooleanOption.REPORT_AGGREGATION_SUPPORT, false) } }
-    val result = build.executor.expectFailure().run(":app:createTestReport")
-    result.assertFailureMessage().contains("task 'createTestReport' not found in project ':app'")
+    val result = build.executor.expectFailure().run(":app:testAllSuites")
+    result.assertFailureMessage().contains("task 'testAllSuites' not found in project ':app'")
   }
 
   @Test
@@ -127,7 +127,7 @@ class TestSuitesTestReportTest {
       androidApplication { dependencies { implementation(project(DEFAULT_LIB_PATH)) } }
     }
 
-    build.executor.run(":app:createAggregatedTestReport")
+    build.executor.run(":app:testAllSuitesWithDependencies")
 
     val xmlFiles =
       build
@@ -165,8 +165,8 @@ class TestSuitesTestReportTest {
       }
     }
 
-    // Running createTestReport should only execute test tasks, excluding update tasks.
-    build.executor.run(":app:createTestReport")
+    // Running testAllSuites should only execute test tasks, excluding update tasks.
+    build.executor.run(":app:testAllSuites")
 
     val testResultsXmlFiles =
       build
@@ -179,7 +179,7 @@ class TestSuitesTestReportTest {
     // 2 from 'first' (t1, t2) + 1 from 'withUpdate' (t1) = 3 test results
     assertThat(testResultsXmlFiles.size).isEqualTo(3)
 
-    // Update tasks should not be executed by createTestReport, so TEST_SUITE_UPDATE_RESULTS directory does not exist yet.
+    // Update tasks should not be executed by testAllSuites, so TEST_SUITE_UPDATE_RESULTS directory does not exist yet.
     val updateResultsDir =
       build.androidApplication().intermediatesDir.resolve("test_suite_update_results/debug/updateWithUpdateT1DebugTestSuite").toFile()
     assertThat(updateResultsDir.exists()).isFalse()

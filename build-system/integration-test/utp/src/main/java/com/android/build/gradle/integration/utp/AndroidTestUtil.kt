@@ -423,12 +423,12 @@ class AndroidTestUtil(
     assertThat(testSuiteResult.testResultList.any { it.testCase.testMethod == "useAppContext" }).isTrue()
   }
 
-  fun connectedAndroidTestFromTestOnlyModuleWithCreateTestReportTask() {
+  fun connectedAndroidTestFromTestOnlyModuleWithTestAllSuitesTask() {
     selectModule("test")
 
     rule.build.reconfigureGradleProperties { add(BooleanOption.REPORT_AGGREGATION_SUPPORT, true) }
 
-    executor.run(testTaskName, ":test:createTestReport")
+    executor.run(testTaskName, ":test:testAllSuites")
 
     val reportDir = project.resolve("test/build/reports/tests/test-report")
     val expectedContents =

@@ -875,9 +875,9 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
     override fun handleProvider(taskProvider: TaskProvider<LegacyReportingTestSuiteTestTask>) {
       super.handleProvider(taskProvider)
 
-      // Verification test tasks publish to TEST_SUITE_RESULTS (which is aggregated into createTestReport).
+      // Verification test tasks publish to TEST_SUITE_RESULTS (which is aggregated into testAllSuites).
       // Update/recording tasks publish to TEST_SUITE_UPDATE_RESULTS so that running aggregate reporting tasks
-      // (like createTestReport) does not schedule update tasks.
+      // (like testAllSuites) does not schedule update tasks.
       val (resultsArtifact, coverageArtifact) =
         if (isUpdate) {
           Pair(InternalMultipleArtifactType.TEST_SUITE_UPDATE_RESULTS, InternalMultipleArtifactType.TEST_SUITE_UPDATE_CODE_COVERAGE)
