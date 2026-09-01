@@ -149,30 +149,7 @@ message Configuration {
     int32 grammatical_gender = 19;
 }
 
-// Event set when the angle, orientation, or posture of a foldable device changes.
-message FoldEvent {
-    enum FoldOrientation {
-        UNKNOWN_FOLD_ORIENTATION = 0;
-        NONE = 1;
-        VERTICAL = 2;
-        HORIZONTAL = 3;
-    }
-    FoldOrientation orientation = 1;
 
-    enum SpecialAngles {
-        ZERO = 0;
-        NO_FOLD_ANGLE = 9000;
-    }
-    int32 angle = 2;
-
-    // Should match with the states in FoldingFeature.State
-    enum FoldState {
-        UNKNOWN_FOLD_STATE = 0;
-        FLAT = 1;
-        HALF_OPEN = 2;
-    }
-    FoldState fold_state = 3;
-}
 
 // Various data about the current app, which can be used to resolve resource references for the
 // device's Configuration.
@@ -506,7 +483,6 @@ message Event {
         LayoutEvent layout_event = 3;
         PropertiesEvent properties_event = 4;
         ProgressEvent progress_event = 5;
-        FoldEvent fold_event = 6;
-        UserInputEvent user_input_event = 7;
+        UserInputEvent user_input_event = 6;
     }
 }

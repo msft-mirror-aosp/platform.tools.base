@@ -111,11 +111,6 @@ class ViewLayoutInspector(connection: Connection, private val environment: Inspe
 
   @GuardedBy("state.lock") private val state = InspectorState()
 
-  private val foldSupport = createFoldSupport(connection, { state.fetchContinuously })
-    get() = foldSupportOverrideForTests ?: field
-
-  @property:VisibleForTesting var foldSupportOverrideForTests: FoldSupport? = null
-
   private val xrHelper = XrHelper(environment)
   private val rootsDetector = RootsDetector(xrHelper, connection, ::onRootsChanged) { checkpoint = it }
 
@@ -152,7 +147,6 @@ class ViewLayoutInspector(connection: Connection, private val environment: Inspe
     runBlocking {
       onDeviceRenderingViewModel.dispose()
       forceStopAllCaptures()
-      foldSupport?.shutdown()
       SynchronousPixelCopy.stopHandler()
       scope.cancel("ViewLayoutInspector has been disposed")
     }
@@ -219,8 +213,6 @@ class ViewLayoutInspector(connection: Connection, private val environment: Inspe
       for (toRemove in removed) {
         state.captureContextMap.remove(toRemove)?.shutdown()
       }
-      added.mapNotNull { roots[it] }.forEach { foldSupport?.start(it.view) }
-      removed.mapNotNull { roots[it] }.forEach { foldSupport?.stop(it.view) }
 
       scope.launch { onDeviceRenderingViewModel.setRoots(roots) }
 
@@ -281,7 +273,6 @@ class ViewLayoutInspector(connection: Connection, private val environment: Inspe
         root.view,
         root.isXr,
         rootsDetector,
-        foldSupport,
         updateState = { checkpoint = it },
         connection,
       )
@@ -496,7 +487,6 @@ class ViewLayoutInspector(connection: Connection, private val environment: Inspe
                 for (root in rootViews) {
                   startCapturing(root)
                 }
-                foldSupport?.initialize(rootViews.first().view.context)
                 true
               }
             }
