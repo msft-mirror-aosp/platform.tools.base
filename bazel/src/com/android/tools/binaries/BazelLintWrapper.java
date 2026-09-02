@@ -109,8 +109,6 @@ public class BazelLintWrapper {
         }
         // Keep the lint config and cache inside the action's scratch space.
         Path tempDir = Files.createTempDirectory("lint_analyze");
-        System.setProperty("ANDROID_USER_HOME", tempDir.resolve("android-user-home").toString());
-        System.setProperty("user.home", tempDir.resolve("home").toString());
         Path lintConfig = tempDir.resolve("lint.xml");
         writeLintConfig(lintConfig);
         List<String> lintArgs =

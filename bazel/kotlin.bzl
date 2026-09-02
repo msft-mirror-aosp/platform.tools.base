@@ -221,7 +221,7 @@ def kotlin_library(
         lint_custom_rules = [],
         lint_extra_args = [],
         lint_is_test_sources = False,
-        lint_partial_analysis = True,
+        lint_partial_analysis = False,
         lint_timeout = None,
         compress_resources = False,
         testonly = False,

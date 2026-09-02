@@ -122,4 +122,15 @@
             column="17"/>
     </issue>
 
+    <issue
+        id="MissingVendor"
+        message="An `IssueRegistry` should override the `vendor` property"
+        errorLine1="    public class CustomIssueRegistry extends IssueRegistry {"
+        errorLine2="                 ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/android/tools/lint/checks/infrastructure/LintDetectorTest.java"
+            line="170"
+            column="18"/>
+    </issue>
+
 </issues>
