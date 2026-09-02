@@ -947,7 +947,12 @@ class VariantManager<
             getLazyManifestParser(file, false)
           }
 
-        testSuiteSources.forEach { it.initializeCreationConfig(testSuite) }
+        testSuiteSources.forEach {
+          it.initializeCreationConfig(testSuite)
+          (it.creationConfig as? NestedComponentCreationConfig)?.let { nested ->
+            nestedComponents.add(nested)
+          }
+        }
 
         variant.addTestSuite(testSuiteBuilder.name, testSuite)
         testSuites.add(testSuite)

@@ -36,6 +36,7 @@ import com.android.build.gradle.internal.component.TargetSdkAwareConfig
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.component.features.DexingCreationConfig
+import com.android.build.gradle.internal.component.features.InstrumentationCreationConfig
 import com.android.build.gradle.internal.dependency.VariantDependencies
 import com.android.build.gradle.internal.scope.MutableTaskContainer
 import com.android.build.gradle.internal.variant.VariantPathHelper
@@ -72,6 +73,12 @@ class TestSuiteApkCreationConfig(val testSuite: TestSuiteCreationConfig, val sou
 
   override val testOnlyApk: Boolean
     get() = true
+
+  override val requiresJacocoTransformation: Boolean
+    get() = false
+
+  override val instrumentationCreationConfig: InstrumentationCreationConfig?
+    get() = null
 
   override val shouldPackageProfilerDependencies: Boolean
     get() = false
@@ -180,6 +187,12 @@ class TestSuiteApkCreationConfig(val testSuite: TestSuiteCreationConfig, val sou
 }
 
 class TestSuiteSources(val delegate: InternalSources, val sourceContainer: TestSuiteSourceContainer) : InternalSources by delegate {
+  override val java: FlatSourceDirectoriesImpl?
+    get() = (sourceContainer.source as? TestApkTestSuiteSourceSet)?.java
+
+  override val kotlin: FlatSourceDirectoriesImpl?
+    get() = (sourceContainer.source as? TestApkTestSuiteSourceSet)?.kotlin
+
   override val assets: LayeredSourceDirectoriesImpl?
     get() = null
 
@@ -191,6 +204,30 @@ class TestSuiteSources(val delegate: InternalSources, val sourceContainer: TestS
 
   override val resources: FlatSourceDirectoriesImpl?
     get() = (sourceContainer.source as? TestApkTestSuiteSourceSet)?.resources
+
+  override fun java(action: (FlatSourceDirectoriesImpl) -> Unit) {
+    java?.let(action)
+  }
+
+  override fun kotlin(action: (FlatSourceDirectoriesImpl) -> Unit) {
+    kotlin?.let(action)
+  }
+
+  override fun res(action: (LayeredSourceDirectoriesImpl) -> Unit) {
+    res?.let(action)
+  }
+
+  override fun assets(action: (LayeredSourceDirectoriesImpl) -> Unit) {
+    assets?.let(action)
+  }
+
+  override fun jniLibs(action: (LayeredSourceDirectoriesImpl) -> Unit) {
+    jniLibs?.let(action)
+  }
+
+  override fun resources(action: (FlatSourceDirectoriesImpl) -> Unit) {
+    resources?.let(action)
+  }
 }
 
 class TestSuitePathHelper(
