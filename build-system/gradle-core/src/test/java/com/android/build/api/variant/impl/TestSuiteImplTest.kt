@@ -27,6 +27,7 @@ import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.core.dsl.VariantDslInfo
 import com.android.build.gradle.internal.dsl.AgpTestSuiteImpl
+import com.android.build.gradle.internal.dsl.BackupAgpTestSuiteImpl
 import com.android.build.gradle.internal.manifest.ManifestData
 import com.android.build.gradle.internal.manifest.ManifestDataProvider
 import com.android.build.gradle.internal.services.TaskCreationServices
@@ -181,6 +182,50 @@ class TestSuiteImplTest {
 
     val runnerProvider = testSuiteImpl.instrumentationRunner(testApkSource)
     assertThat(runnerProvider.get()).isEqualTo("androidx.test.runner.AndroidJUnitRunner")
+  }
+
+  @Test
+  fun testInstrumentationRunnerForBackupTestSuite() {
+    val testSuiteBuilder = mock(TestSuiteBuilderImpl::class.java)
+    val backupAgpTestSuite = mock(BackupAgpTestSuiteImpl::class.java)
+    val junitEngineSpec = mock(JUnitEngineSpecForVariantBuilder::class.java)
+    `when`(testSuiteBuilder.testSuite).thenReturn(backupAgpTestSuite)
+    `when`(backupAgpTestSuite.requiresUpdateTask).thenReturn(false)
+    `when`(testSuiteBuilder.junitEngineSpec).thenReturn(junitEngineSpec)
+
+    val variantServices = createVariantPropertiesApiServices()
+    val mapProp = variantServices.mapPropertyOf(String::class.java, String::class.java, emptyMap())
+    `when`(junitEngineSpec.inputProperties).thenReturn(mapProp)
+
+    val testedVariantComponent =
+      mock(VariantComponentInfo::class.java) as VariantComponentInfo<VariantBuilder, VariantDslInfo, VariantCreationConfig>
+    val global = mock(GlobalTaskCreationConfig::class.java)
+    val services = mock(TaskCreationServices::class.java)
+    val artifacts = mock(ArtifactsImpl::class.java)
+    val defaultConfig = mock(DefaultConfig::class.java)
+
+    val manifestData = ManifestData(instrumentationRunner = null)
+    val manifestDataProvider = mock(ManifestDataProvider::class.java)
+    `when`(manifestDataProvider.manifestData).thenReturn(variantServices.provider { manifestData })
+
+    val testSuiteImpl =
+      TestSuiteImpl(
+        testSuiteBuilder = testSuiteBuilder,
+        sourceContainers = emptyList(),
+        testedVariantComponent = testedVariantComponent,
+        global = global,
+        variantServices = variantServices,
+        services = services,
+        artifacts = artifacts,
+        defaultConfig = defaultConfig,
+        manifestDataProviderBuilder = { manifestDataProvider },
+      )
+
+    val testApkSource = mock(TestSuiteSourceSet.TestApk::class.java)
+    `when`(testApkSource.manifestFile).thenReturn(File("fake/path/AndroidManifest.xml"))
+
+    val runnerProvider = testSuiteImpl.instrumentationRunner(testApkSource)
+    assertThat(runnerProvider.get()).isEqualTo("androidx.test.backup.BackupRestoreTestRunner")
   }
 
   @Test

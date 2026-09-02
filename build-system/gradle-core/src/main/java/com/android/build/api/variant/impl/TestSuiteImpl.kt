@@ -33,6 +33,7 @@ import com.android.build.gradle.internal.core.dsl.ApplicationVariantDslInfo
 import com.android.build.gradle.internal.core.dsl.VariantDslInfo
 import com.android.build.gradle.internal.core.dsl.impl.getDefaultInstrumentationTestRunner
 import com.android.build.gradle.internal.core.dsl.impl.getInstrumentationRunner
+import com.android.build.gradle.internal.dsl.BackupAgpTestSuiteImpl
 import com.android.build.gradle.internal.manifest.ManifestDataProvider
 import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.services.VariantServices
@@ -61,6 +62,7 @@ internal constructor(
 ) : TestSuite, TestSuiteCreationConfig {
 
   private val _name = testSuiteBuilder.name
+  private val _testSuite = testSuiteBuilder.testSuite
 
   //
   // Public APIs
@@ -107,6 +109,12 @@ internal constructor(
   override val androidResourcesIncluded: Boolean = testSuiteBuilder.testSuite.androidResourcesIncluded
 
   override fun instrumentationRunner(source: TestSuiteSourceSet.TestApk): Provider<String> {
+    // Backup tests require BackupRestoreTestRunner (which survives app process
+    // death across backup/restore cycles) so ProcessTestManifest generates
+    // the matching <instrumentation> declaration in the Test APK manifest.
+    if (_testSuite is BackupAgpTestSuiteImpl) {
+      return variantServices.provider { "androidx.test.backup.BackupRestoreTestRunner" }
+    }
     val dslInfo = testedVariantComponent.variantDslInfo
     val variant = testedVariantComponent.variant
     val manifestDataProv = manifestDataProviderBuilder(source.manifestFile)
