@@ -18,7 +18,6 @@ package com.android.build.gradle.integration.kotlin
 
 import com.android.build.api.dsl.CommonExtension
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.options.BooleanOption
 import java.io.File
@@ -31,27 +30,17 @@ import org.junit.runners.Parameterized
 
 /** Tests that built-in Kotlin works correctly with custom source sets. */
 @RunWith(Parameterized::class)
-class BuiltInKotlinSourceSetTest(private val builtInKotlin: Boolean, private val disallowKotlinSourceSets: Boolean) {
+class BuiltInKotlinSourceSetTest(private val disallowKotlinSourceSets: Boolean) {
 
   companion object {
 
-    @Parameterized.Parameters(name = "builtInKotlin={0},disallowKotlinSourceSets={1}")
-    @JvmStatic
-    fun parameters() =
-      listOf(
-        // disallowKotlinSourceSets takes effect only when builtInKotlin=true
-        arrayOf(false, BooleanOption.DISALLOW_KOTLIN_SOURCE_SETS.defaultValue),
-        arrayOf(true, false),
-        arrayOf(true, true),
-      )
+    @Parameterized.Parameters(name = "disallowKotlinSourceSets={0}") @JvmStatic fun parameters() = listOf(false, true)
   }
 
   @get:Rule
   val rule = GradleRule.from {
-    androidApplication { @Suppress("DEPRECATION") if (!builtInKotlin) applyPlugin(PluginType.KOTLIN_ANDROID) }
+    androidApplication {}
     gradleProperties {
-      add(BooleanOption.BUILT_IN_KOTLIN, builtInKotlin)
-      if (!builtInKotlin) add(BooleanOption.USE_NEW_DSL, false)
       add(BooleanOption.DISALLOW_KOTLIN_SOURCE_SETS, disallowKotlinSourceSets)
     }
   }
@@ -67,27 +56,15 @@ class BuiltInKotlinSourceSetTest(private val builtInKotlin: Boolean, private val
 
     val result = build.executor.run(":app:help")
 
-    if (builtInKotlin) {
-      result.assertOutputContains(
-        """
-        Contents of Android and Kotlin 'main' source set:
-        androidMainSourceSet.java.directories = [src/main/java, src/extraAndroidSourceSet/java]
-        androidMainSourceSet.kotlin.directories = [src/main/java, src/main/kotlin, src/extraAndroidSourceSet/kotlin]
-        kotlinMainSourceSet.kotlin.srcDirs = null
-        """
-          .trimIndent()
-      )
-    } else {
-      result.assertOutputContains(
-        """
-        Contents of Android and Kotlin 'main' source set:
-        androidMainSourceSet.java.directories = [src/main/java, src/extraAndroidSourceSet/java]
-        androidMainSourceSet.kotlin.directories = [src/main/kotlin, src/main/java, src/extraAndroidSourceSet/java, src/extraAndroidSourceSet/kotlin]
-        kotlinMainSourceSet.kotlin.srcDirs = [src/main/kotlin, src/main/java, src/extraAndroidSourceSet/java, src/extraAndroidSourceSet/kotlin]
-        """
-          .trimIndent()
-      )
-    }
+    result.assertOutputContains(
+      """
+      Contents of Android and Kotlin 'main' source set:
+      androidMainSourceSet.java.directories = [src/main/java, src/extraAndroidSourceSet/java]
+      androidMainSourceSet.kotlin.directories = [src/main/java, src/main/kotlin, src/extraAndroidSourceSet/kotlin]
+      kotlinMainSourceSet.kotlin.srcDirs = null
+      """
+        .trimIndent()
+    )
   }
 
   @Test
@@ -99,30 +76,17 @@ class BuiltInKotlinSourceSetTest(private val builtInKotlin: Boolean, private val
       }
     }
 
-    if (builtInKotlin) {
-      if (disallowKotlinSourceSets) {
-        val result = build.executor.expectFailure().run(":app:help")
-        result.assertErrorContains("Using kotlin.sourceSets DSL to add Kotlin sources is not allowed with built-in Kotlin.")
-      } else {
-        val result = build.executor.run(":app:help")
-        result.assertOutputContains(
-          """
-          Contents of Android and Kotlin 'main' source set:
-          androidMainSourceSet.java.directories = [src/main/java]
-          androidMainSourceSet.kotlin.directories = [src/main/java, src/main/kotlin]
-          kotlinMainSourceSet.kotlin.srcDirs = [src/main/kotlin, src/extraKotlinSourceSet/kotlin]
-          """
-            .trimIndent()
-        )
-      }
+    if (disallowKotlinSourceSets) {
+      val result = build.executor.expectFailure().run(":app:help")
+      result.assertErrorContains("Using kotlin.sourceSets DSL to add Kotlin sources is not allowed with built-in Kotlin.")
     } else {
       val result = build.executor.run(":app:help")
       result.assertOutputContains(
         """
         Contents of Android and Kotlin 'main' source set:
         androidMainSourceSet.java.directories = [src/main/java]
-        androidMainSourceSet.kotlin.directories = [src/main/kotlin, src/main/java, src/extraKotlinSourceSet/kotlin]
-        kotlinMainSourceSet.kotlin.srcDirs = [src/main/kotlin, src/main/java, src/extraKotlinSourceSet/kotlin]
+        androidMainSourceSet.kotlin.directories = [src/main/java, src/main/kotlin]
+        kotlinMainSourceSet.kotlin.srcDirs = [src/main/kotlin, src/extraKotlinSourceSet/kotlin]
         """
           .trimIndent()
       )

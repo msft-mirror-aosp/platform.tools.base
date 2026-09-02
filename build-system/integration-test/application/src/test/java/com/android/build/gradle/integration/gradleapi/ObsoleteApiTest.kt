@@ -18,15 +18,11 @@ package com.android.build.gradle.integration.gradleapi
 
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
-import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyApplicationCallback
 import com.android.build.gradle.integration.common.runner.FilterableParameterized
 import com.android.build.gradle.integration.common.truth.ScannerSubject
-import com.android.build.gradle.internal.dsl.BaseAppModuleExtension
-import com.android.build.gradle.internal.errors.DeprecationReporter
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.model.v2.ide.SyncIssue
 import com.google.common.truth.Truth
-import org.gradle.api.Project
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -42,27 +38,11 @@ class ObsoleteApiTest(private val provider: TestProjectProvider) {
       listOf(
         TestProjectProvider("Kotlin") {
           androidKotlinApplication {}
-          gradleProperties { add(BooleanOption.BUILT_IN_KOTLIN, false) }
         },
         TestProjectProvider("Java") {
-          androidJavaApplication { pluginCallbacks += LegacyCallback::class.java }
-          gradleProperties {
-            add(BooleanOption.BUILT_IN_KOTLIN, false)
-            add(BooleanOption.USE_NEW_DSL, false)
-          }
+          androidJavaApplication {}
         },
       )
-  }
-
-  /**
-   * Callback designed to trigger multiple obsolete API warnings during evaluation:
-   * 1. Accessing [BaseAppModuleExtension.applicationVariants] (Legacy Variant API)
-   * 2. Accessing [ApplicationVariant.javaCompile] (Legacy task access)
-   */
-  class LegacyCallback : LegacyApplicationCallback {
-    override fun handleExtension(project: Project, extension: BaseAppModuleExtension) {
-      extension.applicationVariants.all { variant -> println(variant.javaCompile.name) }
-    }
   }
 
   @get:Rule val rule = GradleRule.configure().disableBrokenBuiltInKotlinOptOutChecks().from(configAction = provider.configAction)
@@ -76,38 +56,12 @@ class ObsoleteApiTest(private val provider: TestProjectProvider) {
         .withFailOnWarning(false)
         .with(BooleanOption.DEBUG_OBSOLETE_API, true)
         .suppressOptionWarning(BooleanOption.BUILT_IN_KOTLIN)
-        .suppressOptionWarning(BooleanOption.USE_NEW_DSL)
         .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
         .fetchModels()
     val issueModel = model.container.singleProjectInfo.issues ?: throw RuntimeException("failed to get issue model")
     val syncIssues = issueModel.syncIssues
 
-    when (provider.name) {
-      "Kotlin" -> {
-        Truth.assertThat(syncIssues).hasSize(0)
-      }
-      "Java" -> {
-        Truth.assertThat(syncIssues).hasSize(2)
-
-        val messages = syncIssues.map { it.message }
-
-        val variantApiWarning = messages.find { it.contains("API 'applicationVariants' is obsolete") }
-        Truth.assertThat(variantApiWarning).isNotNull()
-        Truth.assertThat(variantApiWarning).contains("AndroidComponentsExtension")
-
-        val taskAccessWarning = messages.find { it.contains("API 'variant.getJavaCompile()' is obsolete") }
-        Truth.assertThat(taskAccessWarning).isNotNull()
-        Truth.assertThat(taskAccessWarning)
-          .contains(
-            "API 'variant.getJavaCompile()' is obsolete and has been replaced with 'variant.getJavaCompileProvider()'.\n" +
-              "${DeprecationReporter.DeprecationTarget.TASK_ACCESS_VIA_VARIANT.getDeprecationTargetMessage()}\n" +
-              "For more information, see https://d.android.com/r/tools/task-configuration-avoidance.\n" +
-              "\n" +
-              "REASON: It is currently called from the following trace:"
-          )
-      }
-      else -> throw RuntimeException("Unsupported type")
-    }
+    Truth.assertThat(syncIssues).hasSize(0)
   }
 
   @Test
@@ -121,24 +75,8 @@ class ObsoleteApiTest(private val provider: TestProjectProvider) {
         .run("help")
 
     result.stdout.use {
-      when (provider.name) {
-        "Kotlin" -> {
-          ScannerSubject.assertThat(it).doesNotContain("API 'variant.getJavaCompile()' is obsolete")
-        }
-        "Java" -> {
-          ScannerSubject.assertThat(it).contains("API 'applicationVariants' is obsolete")
-
-          ScannerSubject.assertThat(it)
-            .contains(
-              "API 'variant.getJavaCompile()' is obsolete and has been replaced with 'variant.getJavaCompileProvider()'.\n" +
-                "${DeprecationReporter.DeprecationTarget.TASK_ACCESS_VIA_VARIANT.getDeprecationTargetMessage()}\n" +
-                "For more information, see https://d.android.com/r/tools/task-configuration-avoidance.\n" +
-                "\n" +
-                "REASON: It is currently called from the following trace:"
-            )
-        }
-        else -> throw RuntimeException("Unsupported type")
-      }
+      ScannerSubject.assertThat(it).doesNotContain("API 'variant.getJavaCompile()' is obsolete")
+      ScannerSubject.assertThat(it).doesNotContain("API 'applicationVariants' is obsolete")
     }
   }
 }

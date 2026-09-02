@@ -20,9 +20,7 @@ import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
-import com.android.build.gradle.options.BooleanOption
 import com.google.common.truth.Truth
 import java.io.File
 import org.gradle.api.DefaultTask
@@ -46,14 +44,8 @@ import org.junit.Test
 class GeneratedKotlinSourcesAccessViaOldVariant {
   @get:Rule
   val project = GradleRule.from {
-    gradleProperties {
-      add(BooleanOption.USE_NEW_DSL, false)
-      add(BooleanOption.BUILT_IN_KOTLIN, false)
-    }
-
     androidApplication {
       android {
-        applyPlugin(PluginType.KOTLIN_ANDROID)
         kotlin { compilerOptions.jvmTarget.set(JvmTarget.JVM_11) }
       }
       files {

@@ -23,7 +23,6 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Plugi
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.common.fixture.project.plugins.KotlinMultiplatformCallback
 import com.android.build.gradle.integration.common.truth.ScannerSubject
-import com.android.build.gradle.options.BooleanOption
 import java.nio.file.Path
 import kotlin.io.path.exists
 import kotlin.io.path.readText
@@ -137,56 +136,6 @@ class KotlinMultiplatformPublishingTest {
           ":modernKmpConsumer:dependencyInsight",
           "--configuration",
           "androidCompileClasspath",
-          "--dependency",
-          "com.example.producer:producer:1.0",
-        )
-    ScannerSubject.assertThat(buildResult.stdout).contains("Variant androidApiElements-published")
-  }
-
-  // To be removed when we drop the support(e.g. AGP 10.0)
-  @Test
-  fun `test kmp and com_android_library consumer`() {
-    val build =
-      rule.configure().disableBrokenBuiltInKotlinOptOutChecks().disableBrokenNewDslOptOutChecks().build {
-        androidLibrary(":oldKmpConsumer") {
-          applyPlugin(PluginType.KOTLIN_MPP)
-
-          android {
-            namespace = "com.example.oldKmpConsumer"
-            compileSdk = DEFAULT_COMPILE_SDK_VERSION
-            defaultConfig.minSdk = 24
-          }
-          pluginCallbacks += AndroidDependencyCallback::class.java
-          pluginCallbacks += EnableAndroidTargetCallback::class.java
-        }
-        gradleProperties {
-          add(BooleanOption.BUILT_IN_KOTLIN, false)
-          add(BooleanOption.USE_NEW_DSL, false)
-        }
-      }
-    build.executor
-      .withFailOnWarning(false) // b/455891987
-      .run(":producer:publish")
-    var buildResult =
-      build.executor
-        .withFailOnWarning(false) // b/455891987
-        .run(
-          ":oldKmpConsumer:dependencyInsight",
-          "--configuration",
-          "debugCompileClasspath",
-          "--dependency",
-          "com.example.producer:producer:1.0",
-        )
-    ScannerSubject.assertThat(buildResult.stdout).contains("Variant androidApiElements-published")
-
-    simulateDifferentProducerArtifact(build)
-    buildResult =
-      build.executor
-        .withFailOnWarning(false) // b/455891987
-        .run(
-          ":oldKmpConsumer:dependencyInsight",
-          "--configuration",
-          "debugCompileClasspath",
           "--dependency",
           "com.example.producer:producer:1.0",
         )

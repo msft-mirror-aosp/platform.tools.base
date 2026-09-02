@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
@@ -130,11 +129,8 @@ class JavaCompileWithToolChainTest {
         add("org.gradle.java.installations.auto-detect", "false")
         add("org.gradle.java.installations.paths", latestJdkLocationInGradleFile)
         add("toolchainVersion", jdkVersion)
-        add(BooleanOption.BUILT_IN_KOTLIN, false)
-        add(BooleanOption.USE_NEW_DSL, false)
       }
       androidApplication {
-        applyPlugin(PluginType.KOTLIN_ANDROID)
         kotlin { compilerOptions { allWarningsAsErrors.set(true) } }
       }
     }
@@ -180,16 +176,9 @@ class JavaCompileWithToolChainTest {
       )
 
     // Compiling should not throw an error (regression test for bug 260059413)
-    rule.build.executor.disableBuiltInKotlin().with(BooleanOption.USE_NEW_DSL, false).run("compileDebugJavaWithJavac")
+    rule.build.executor.run("compileDebugJavaWithJavac")
 
-    val androidProject =
-      rule.build.modelBuilder
-        .disableBuiltInKotlin()
-        .with(BooleanOption.USE_NEW_DSL, false)
-        .fetchModels(variantName = "debug")
-        .container
-        .getProject(":app")
-        .androidProject!!
+    val androidProject = rule.build.modelBuilder.fetchModels(variantName = "debug").container.getProject(":app").androidProject!!
     assertThat(androidProject.javaCompileOptions).isNotNull()
     androidProject.javaCompileOptions?.let {
       assertThat(it.sourceCompatibility).isEqualTo(jdkVersion)

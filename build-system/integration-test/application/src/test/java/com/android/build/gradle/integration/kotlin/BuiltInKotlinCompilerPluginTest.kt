@@ -19,7 +19,6 @@ package com.android.build.gradle.integration.kotlin
 import com.android.build.gradle.integration.common.fixture.project.GradleBuild
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildFileType
-import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.internal.dsl.ModulePropertyKey.BooleanWithDefault
 import com.android.build.gradle.options.BooleanOption
 import org.junit.Rule
@@ -37,8 +36,6 @@ class BuiltInKotlinCompilerPluginTest(private val builtInKotlin: Boolean, privat
     @JvmStatic
     fun parameters() =
       listOf(
-        // disallowKotlinSourceSets takes effect only when builtInKotlin=true
-        arrayOf(false, BooleanOption.DISALLOW_KOTLIN_SOURCE_SETS.defaultValue),
         arrayOf(true, false),
         arrayOf(true, true),
       )
@@ -48,12 +45,9 @@ class BuiltInKotlinCompilerPluginTest(private val builtInKotlin: Boolean, privat
   val rule = GradleRule.from {
     buildFileType = BuildFileType.KTS
     androidApplication {
-      @Suppress("DEPRECATION") if (!builtInKotlin) applyPlugin(PluginType.KOTLIN_ANDROID)
       android.experimentalProperties[BooleanWithDefault.SCREENSHOT_TEST.key] = true
     }
     gradleProperties {
-      add(BooleanOption.BUILT_IN_KOTLIN, builtInKotlin)
-      if (!builtInKotlin) add(BooleanOption.USE_NEW_DSL, false)
       add(BooleanOption.DISALLOW_KOTLIN_SOURCE_SETS, disallowKotlinSourceSets)
       add(BooleanOption.ENABLE_SCREENSHOT_TEST, true)
     }

@@ -79,7 +79,6 @@ LONG_RUNNING_TESTS = [
 
 KOTLIN_MULTIPLATFORM_TESTS = [
     "src/test/java/com/android/build/gradle/integration/lint/KotlinMultiplatformAndroidLintTest.kt",
-    "src/test/java/com/android/build/gradle/integration/lint/KotlinMultiplatformLegacyAndroidTargetLintTest.kt",
 ]
 
 LINT_DYNAMIC_FEATURE_TEST = [
@@ -166,7 +165,7 @@ gradle_integration_test(
     data = DATA,
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = MAVEN_REPOS,
-    shard_count = 3,
+    shard_count = 2,
     deps = DEPS,
 )
 

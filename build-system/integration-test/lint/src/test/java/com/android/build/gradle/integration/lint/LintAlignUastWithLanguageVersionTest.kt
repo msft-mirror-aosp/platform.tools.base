@@ -25,7 +25,6 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Plugi
 import com.android.build.gradle.integration.common.fixture.project.builder.kotlin.KotlinExtension
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.internal.lint.AndroidLintAnalysisTask
-import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.TestUtils
 import java.io.File
 import org.gradle.api.Project
@@ -42,7 +41,7 @@ import org.junit.runners.Parameterized
 class LintAlignUastWithLanguageVersionTest(private val useBuiltInKotlinSupport: Boolean) {
 
   companion object {
-    @JvmStatic @Parameterized.Parameters(name = "useBuiltInKotlinSupport_{0}") fun parameters() = listOf(true, false)
+    @JvmStatic @Parameterized.Parameters(name = "useBuiltInKotlinSupport_{0}") fun parameters() = listOf(true)
   }
 
   @get:Rule val rule = createGradleRule()
@@ -217,11 +216,6 @@ class LintAlignUastWithLanguageVersionTest(private val useBuiltInKotlinSupport: 
         applyPlugin(PluginType.LINT)
 
         kotlin { jvm() }
-      }
-
-      gradleProperties {
-        add(BooleanOption.BUILT_IN_KOTLIN, useBuiltInKotlinSupport)
-        add(BooleanOption.USE_NEW_DSL, useBuiltInKotlinSupport)
       }
     }
 
