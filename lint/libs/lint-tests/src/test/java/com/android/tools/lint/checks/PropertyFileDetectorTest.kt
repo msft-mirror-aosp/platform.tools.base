@@ -258,4 +258,57 @@ class PropertyFileDetectorTest : AbstractCheckTest() {
       .run()
       .expectClean()
   }
+
+  fun testNewerR8Version() {
+    val task = lint()
+    task.issues(GradleDetector.DEPENDENCY, PropertyFileDetector.HTTP)
+    task.networkData(
+      "https://maven.google.com/master-index.xml",
+      "" + "<metadata>\n" + "  <com.android.tools/>\n" + "</metadata>",
+    )
+    task.networkData(
+      "https://maven.google.com/com/android/tools/group-index.xml",
+      "" + "<com.android.tools>\n" + "  <r8 versions=\"8.0.0,8.2.47,8.5.0,8.6.0-alpha01\"/>\n" + "</com.android.tools>",
+    )
+    task
+      .files(
+        source(
+          "gradle.properties",
+          "" +
+            "android.r8.versionOverride=8.2.47\n" +
+            // Extra whitespace
+            "android.r8.versionOverride = 8.2.47\n" +
+            // Too high, no suggestion
+            "android.r8.versionOverride=100.0.0\n" +
+            // Suppressed
+            "#noinspection GradleDependency\n" +
+            "android.r8.versionOverride=8.0.0\n" +
+            "",
+        )
+      )
+      .run()
+      .expect(
+        """
+            gradle.properties:1: Warning: Newer version of R8 available: 8.6.0-alpha01 [GradleDependency]
+            android.r8.versionOverride=8.2.47
+                                       ~~~~~~
+            gradle.properties:2: Warning: Newer version of R8 available: 8.6.0-alpha01 [GradleDependency]
+            android.r8.versionOverride = 8.2.47
+                                         ~~~~~~
+            0 errors, 2 warnings
+            """
+      )
+      .expectFixDiffs(
+        """
+            Fix for gradle.properties line 1: Update R8 to 8.6.0-alpha01:
+            @@ -1 +1 @@
+            -android.r8.versionOverride=8.2.47
+            +android.r8.versionOverride=8.6.0-alpha01
+            Fix for gradle.properties line 2: Update R8 to 8.6.0-alpha01:
+            @@ -2 +2 @@
+            -android.r8.versionOverride = 8.2.47
+            +android.r8.versionOverride = 8.6.0-alpha01
+            """
+      )
+  }
 }

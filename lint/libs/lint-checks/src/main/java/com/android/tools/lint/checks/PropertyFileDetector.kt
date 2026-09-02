@@ -91,38 +91,51 @@ class PropertyFileDetector : Detector() {
     } else if (line.indexOf('\\') != -1 || line.indexOf(':') != -1) {
       checkEscapes(context, contents, line, offset, valueStart)
     } else if (line.startsWith(LINT_VERSION_KEY)) {
-      checkNewerVersion(context, contents, line)
+      checkNewerVersion(context, contents, line, offset, valueStart, LINT_VERSION_KEY, "com.android.tools.build:gradle", "lint")
+    } else if (line.startsWith(R8_VERSION_KEY)) {
+      checkNewerVersion(context, contents, line, offset, valueStart, R8_VERSION_KEY, "com.android.tools:r8", "R8")
     }
   }
 
-  private fun checkNewerVersion(context: Context, contents: CharSequence, line: String) {
-    val index = line.indexOf('=')
-    if (index == -1 || line.substring(0, index).trim() != LINT_VERSION_KEY) {
+  /**
+   * Checks whether an outdated version is configured for [propertyKey] in a `.properties` file and reports a [DEPENDENCY] warning with
+   * quick-fixes to upgrade to the latest available release from Google Maven.
+   *
+   * @param lineStartOffset 0-based character offset of the start of [line] within the entire file [contents].
+   * @param valueStartInLine 0-based character offset where the property value begins in [line] (immediately after '=').
+   */
+  private fun checkNewerVersion(
+    context: Context,
+    contents: CharSequence,
+    line: String,
+    lineStartOffset: Int,
+    valueStartInLine: Int,
+    propertyKey: String,
+    coordinate: String,
+    toolDisplayName: String,
+  ) {
+    val key = line.substring(0, valueStartInLine - 1).trim()
+    if (key != propertyKey) {
       return
     }
-    val versionString = line.substring(index + 1).trim()
+    val versionString = line.substring(valueStartInLine).trim()
     if (versionString.isEmpty()) {
       return
     }
     val version = Version.parse(versionString) ?: return
     val repository = GradleDetector().getGoogleMavenRepository(context.client)
-    // Lint uses the same version as AGP
-    // Alternatives:
-    // - Dependency.parse("com.android.tools.build:gradle:[$versionString,)")
-    // -
-    val dependency = Dependency.parse("com.android.tools.build:gradle:$versionString")
-    // We're assuming that users who use this facility want to use the very latest version,
-    // even if they're currently on stable. Alternatively we could use
-    // val allowPreview = version.isPreview || version.isSnapshot
+    val dependency = Dependency.parse("$coordinate:$versionString")
     val allowPreview = true
     val newerVersion = repository.findVersion(dependency, null, allowPreview) ?: return
     if (newerVersion > version) {
-      val startOffset = contents.indexOf(versionString)
+      val versionOffsetInLine = line.indexOf(versionString, valueStartInLine)
+      val startOffset = lineStartOffset + if (versionOffsetInLine != -1) versionOffsetInLine else valueStartInLine
       val endOffset = startOffset + versionString.length
       val newerVersionString = newerVersion.toString()
-      val fix = fix().name("Update lint to $newerVersionString").replace().all().with(newerVersionString).build()
+      val fix = fix().name("Update $toolDisplayName to $newerVersionString").replace().all().with(newerVersionString).build()
       val location = Location.create(context.file, contents, startOffset, endOffset)
-      val incident = Incident(context, DEPENDENCY).location(location).message("Newer version of lint available: $newerVersion").fix(fix)
+      val incident =
+        Incident(context, DEPENDENCY).location(location).message("Newer version of $toolDisplayName available: $newerVersion").fix(fix)
       report(incident, contents, startOffset)
     }
   }
@@ -208,6 +221,7 @@ class PropertyFileDetector : Detector() {
 
   companion object {
     private const val LINT_VERSION_KEY = "android.experimental.lint.version"
+    private const val R8_VERSION_KEY = "android.r8.versionOverride"
 
     /** Property file not escaped. */
     @JvmField

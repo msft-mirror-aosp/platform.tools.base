@@ -20,19 +20,38 @@ import com.android.build.gradle.internal.dependency.ShrinkerVersion
 import com.android.builder.dexing.R8Version
 import com.android.builder.errors.IssueReporter
 
-fun checkIfR8VersionMatches(issueReporter: IssueReporter) {
+/**
+ * Emits an [IssueReporter.Type.R8_VERSION_MISMATCH] sync warning if the configured or classpath R8 version is older than
+ * [R8Version.VERSION_AGP_WAS_SHIPPED_WITH].
+ */
+fun checkIfR8VersionMatches(issueReporter: IssueReporter, currentR8Version: String? = null) {
+  // Compiler inlines constants, so this retrieves R8 version at compile time (from AGP).
+  // This may differ from the R8 version available at runtime.
+  val versionAgpWasShippedWith = ShrinkerVersion.tryParse(R8Version.VERSION_AGP_WAS_SHIPPED_WITH) ?: return
+
+  // Check dynamically configured R8 version from r8FromMaven (if provided and older)
+  if (currentR8Version != null) {
+    val configuredVersion = ShrinkerVersion.tryParse(currentR8Version)
+    if (configuredVersion != null && configuredVersion < versionAgpWasShippedWith) {
+      issueReporter.reportWarning(
+        IssueReporter.Type.R8_VERSION_MISMATCH,
+        R8VersionCheckException(versionAgpWasShippedWith, configuredVersion),
+      )
+      return
+    }
+  }
+
+  // Check R8 version present on the buildscript / runtime classpath
   try {
     val versionInClasspath = ShrinkerVersion.tryParse(R8Version.getVersionString()) ?: return
-    // Compiler inlines constants, so this retrieves R8 version at compile time (from AGP).
-    // This may differ from the R8 version available at runtime.
-    val versionAgpWasShippedWith = ShrinkerVersion.tryParse(R8Version.VERSION_AGP_WAS_SHIPPED_WITH) ?: return
     if (versionInClasspath < versionAgpWasShippedWith) {
-      throw R8VersionCheckException(versionAgpWasShippedWith, versionInClasspath)
+      issueReporter.reportWarning(
+        IssueReporter.Type.R8_VERSION_MISMATCH,
+        R8VersionCheckException(versionAgpWasShippedWith, versionInClasspath),
+      )
     }
   } catch (e: NoSuchMethodError) {
-    throw R8VersionCheckException()
-  } catch (e: R8VersionCheckException) {
-    issueReporter.reportWarning(IssueReporter.Type.R8_VERSION_MISMATCH, e)
+    issueReporter.reportWarning(IssueReporter.Type.R8_VERSION_MISMATCH, R8VersionCheckException())
   }
 }
 
