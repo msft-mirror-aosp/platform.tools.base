@@ -767,8 +767,7 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
         override val sources: FlatSourceDirectoriesImpl?
           get() = creationConfig.sources.resources
 
-        override val packaging: Packaging
-          get() = packaging
+        override val packaging: Packaging = packaging
 
         override fun setJavaResTask(task: TaskProvider<out Sync>) {
           creationConfig.taskContainer.processJavaResourcesTask = task
