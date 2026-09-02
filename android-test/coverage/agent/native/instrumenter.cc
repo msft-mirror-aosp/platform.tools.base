@@ -15,7 +15,6 @@
  */
 
 #include "tools/base/android-test/coverage/agent/native/instrumenter.h"
-#include "tools/base/android-test/coverage/agent/native/synthetic_filter.h"
 #include <sys/types.h>
 #include <unistd.h>
 #include <algorithm>
@@ -40,6 +39,8 @@
 #include "tools/base/android-test/coverage/agent/native/metadata_collector.h"
 #include "tools/base/android-test/coverage/agent/native/parameter_shifter.h"
 #include "tools/base/android-test/coverage/agent/native/register_scanner.h"
+#include "tools/base/android-test/coverage/agent/native/synthetic_filter.h"
+#include "tools/base/android-test/coverage/agent/native/tagging_manager.h"
 #include "tools/base/android-test/coverage/common/log.h"
 
 namespace coverage {
@@ -220,11 +221,14 @@ void JNICALL Instrumenter::OnClassFileLoadHook(
     *new_class_data_len = static_cast<jint>(new_image_size);
     *new_class_data = reinterpret_cast<unsigned char*>(new_image);
 
-    // After successful instrumentation, tag the class (if it exists)
-    // to avoid future redundant instrumentation.
-    // TODO: Handle tagging for classes instrumented during their initial load.
+    // After successful instrumentation, tag the class to avoid future redundant
+    // instrumentation.
     if (class_being_redefined != nullptr) {
       jvmti->SetTag(class_being_redefined, kInstrumentedTag);
+    } else {
+      // On initial load, the class_being_redefined is null. We track it so we
+      // can tag it in ClassPrepare.
+      TaggingManager::Instance().TrackClass(descriptor);
     }
   } else {
     Log::E("Slicer failed to produce new DEX image for %s", name);
