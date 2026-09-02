@@ -186,6 +186,7 @@ npm.npm_translate_lock(
         "vsce": ["vsce=vsce"],
         "esbuild": ["esbuild=esbuild"],
         "@tailwindcss/cli": ["tailwindcss=tailwindcss"],
+        "vitest": ["vitest=vitest"],
     },
     data = [
         "//tools/base/bazel:package.json",
