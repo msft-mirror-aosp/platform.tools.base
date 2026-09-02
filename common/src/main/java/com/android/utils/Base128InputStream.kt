@@ -215,13 +215,13 @@ class Base128InputStream(stream: InputStream) : BufferedInputStream(stream) {
   fun readBoolean(): Boolean {
     val c = readInt()
     if ((c and 0x1.inv()) != 0) {
-      throw StreamFormatException.Companion.invalidFormat()
+      throw StreamFormatException.invalidFormat()
     }
     return c != 0
   }
 
   /**
-   * Reads an enum value represented by its ordinal number from the stream.
+   * Reads and returns the enum value represented by its ordinal number from the stream.
    *
    * @return the value read from the stream
    * @throws IOException if an I/O error occurs
@@ -235,6 +235,18 @@ class Base128InputStream(stream: InputStream) : BufferedInputStream(stream) {
     } catch (_: IndexOutOfBoundsException) {
       throw StreamFormatException("Invalid ordinal value $ordinal of enum ${T::class.simpleName}")
     }
+  }
+
+  /**
+   * Reads and returns the enum value represented by its ordinal number from the stream.
+   *
+   * @return the value read from the stream, or [default] if the ordinal number read from the stream is out of the enum range
+   * @throws IOException if an I/O error occurs
+   */
+  @Throws(IOException::class)
+  inline fun <reified T : Enum<T>> readEnum(default: T): T {
+    val ordinal = readInt()
+    return if (ordinal in enumValues<T>().indices) enumValues<T>()[ordinal] else default
   }
 
   /** @throws UnsupportedOperationException when called. */
