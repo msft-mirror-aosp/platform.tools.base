@@ -94,7 +94,6 @@ const val KOTLIN_DSL_LINK = "https://d.android.com/build/migrate-to-kotlin-dsl"
 
 enum class BuildConfigurationLanguageForNewProject(val description: String, val useKts: Boolean) {
   KTS("Kotlin DSL (build.gradle.kts) [Recommended]", true),
-  Groovy("Groovy DSL (build.gradle)", false),
   DCL("Declarative DSL (build.gradle.dcl)", false);
 
   override fun toString() = description
@@ -102,7 +101,6 @@ enum class BuildConfigurationLanguageForNewProject(val description: String, val 
 
 enum class BuildConfigurationLanguageForNewModule(val description: String) {
   KTS("Kotlin DSL (build.gradle.kts) [Recommended]"),
-  Groovy("Groovy DSL (build.gradle)"),
   DCL("Declarative DSL (build.gradle.dcl)");
 
   override fun toString() = description
