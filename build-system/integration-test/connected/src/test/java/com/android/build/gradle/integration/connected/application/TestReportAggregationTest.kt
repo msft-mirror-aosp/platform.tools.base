@@ -322,6 +322,18 @@ class TestReportAggregationTest(val runWithBuiltInPlatform: Boolean) {
     assertThat(File(outputDir, "styles.css")).exists()
     assertThat(File(outputDir, "data.js")).exists()
 
+    val coverageOutputDir =
+      if (outputDir.name == "aggregated-test-report") {
+        outputDir.parentFile.parentFile.resolve("coverage/aggregated-coverage-report")
+      } else {
+        outputDir.parentFile.parentFile.resolve("coverage/coverage-report")
+      }
+
+    if (coverageOutputDir.exists()) {
+      assertThat(coverageOutputDir).isDirectory()
+      assertThat(File(coverageOutputDir, "index.html")).exists()
+    }
+
     val report = parseReportJs<TestReport>(File(outputDir, "data.js"))
 
     assertThat(report.projectName).isEqualTo(expectedProjectName)
@@ -443,19 +455,95 @@ class TestReportAggregationTest(val runWithBuiltInPlatform: Boolean) {
     val xmlReports = taskOutputDir.walkTopDown().filter { it.name.endsWith("XmlReport.xml") }.toList()
     assertThat(xmlReports.size).isEqualTo(9)
 
-    val xmlReport1 = xmlReports.filter { it.name == "debugAppAggregatedXmlReport.xml" }
-    assertThat(xmlReport1.size).isEqualTo(1)
-    val aggregatedCoverageReportXml = xmlReport1.first().readLines().joinToString("\n").replace(Regex("[\\n\\t\\r]"), "")
-    verifyReportName(xmlReport1.first(), "debugAppAggregated")
+    // Verify debugAppAggregatedXmlReport.xml
+    val xmlReportAppAggregated = xmlReports.filter { it.name == "debugAppAggregatedXmlReport.xml" }
+    assertThat(xmlReportAppAggregated.size).isEqualTo(1)
+    val appAggregatedCoverageXml = xmlReportAppAggregated.first().readLines().joinToString("\n").replace(Regex("[\\n\\t\\r]"), "")
+    verifyReportName(xmlReportAppAggregated.first(), "debugAppAggregated")
     verifyCoverageData(
-      xmlReportString = aggregatedCoverageReportXml,
+      xmlReportString = appAggregatedCoverageXml,
       instructionCovered = 28, // 23 (unit test) + 5 (android test)
       instructionMissed = 14, // 42 (total) - 28
       branchCovered = 1, // 1 (unit test) + 0 (android test)
       branchMissed = 3, // 4 (total) - 1
     )
-    verifyProperties(aggregatedCoverageReportXml, ":app", "Aggregated", "debug")
-    verifySources(aggregatedCoverageReportXml, "app")
+    verifyProperties(appAggregatedCoverageXml, ":app", "Aggregated", "debug")
+    verifySources(appAggregatedCoverageXml, "app")
+
+    // Verify debugLibAggregatedXmlReport.xml
+    val xmlReportLibAggregated = xmlReports.filter { it.name == "debugLibAggregatedXmlReport.xml" }
+    assertThat(xmlReportLibAggregated.size).isEqualTo(1)
+    val libAggregatedCoverageXml = xmlReportLibAggregated.first().readLines().joinToString("\n").replace(Regex("[\\n\\t\\r]"), "")
+    verifyReportName(xmlReportLibAggregated.first(), "debugLibAggregated")
+    verifyCoverageData(
+      xmlReportString = libAggregatedCoverageXml,
+      instructionCovered = 37, // 32 (unit test) + 5 (android test)
+      instructionMissed = 5, // 42 (total) - 37
+      branchCovered = 3, // 3 (unit test) + 0 (android test)
+      branchMissed = 1, // 4 (total) - 3
+    )
+    verifyProperties(libAggregatedCoverageXml, ":lib", "Aggregated", "debug")
+    verifySources(libAggregatedCoverageXml, "lib")
+
+    // Verify debugAppUnitTestXmlReport.xml
+    val xmlReportAppUnitTest = xmlReports.filter { it.name == "debugAppUnitTestXmlReport.xml" }
+    assertThat(xmlReportAppUnitTest.size).isEqualTo(1)
+    val appUnitTestCoverageXml = xmlReportAppUnitTest.first().readLines().joinToString("\n").replace(Regex("[\\n\\t\\r]"), "")
+    verifyReportName(xmlReportAppUnitTest.first(), "debugAppUnitTest")
+    verifyCoverageData(
+      xmlReportString = appUnitTestCoverageXml,
+      instructionCovered = 23,
+      instructionMissed = 19,
+      branchCovered = 1,
+      branchMissed = 3,
+    )
+    verifyProperties(appUnitTestCoverageXml, ":app", "UnitTest", "debug")
+    verifySources(appUnitTestCoverageXml, "app")
+
+    // Verify debugAppAndroidTestXmlReport.xml
+    val xmlReportAppAndroidTest = xmlReports.filter { it.name == "debugAppAndroidTestXmlReport.xml" }
+    assertThat(xmlReportAppAndroidTest.size).isEqualTo(1)
+    val appAndroidTestCoverageXml = xmlReportAppAndroidTest.first().readLines().joinToString("\n").replace(Regex("[\\n\\t\\r]"), "")
+    verifyReportName(xmlReportAppAndroidTest.first(), "debugAppAndroidTest")
+    verifyCoverageData(
+      xmlReportString = appAndroidTestCoverageXml,
+      instructionCovered = 5,
+      instructionMissed = 37,
+      branchCovered = 0,
+      branchMissed = 4,
+    )
+    verifyProperties(appAndroidTestCoverageXml, ":app", CONNECTED_TEST_TEST_SUITE_NAME, "debug")
+    verifySources(appAndroidTestCoverageXml, "app")
+
+    // Verify debugLibUnitTestXmlReport.xml
+    val xmlReportLibUnitTest = xmlReports.filter { it.name == "debugLibUnitTestXmlReport.xml" }
+    assertThat(xmlReportLibUnitTest.size).isEqualTo(1)
+    val libUnitTestCoverageXml = xmlReportLibUnitTest.first().readLines().joinToString("\n").replace(Regex("[\\n\\t\\r]"), "")
+    verifyReportName(xmlReportLibUnitTest.first(), "debugLibUnitTest")
+    verifyCoverageData(
+      xmlReportString = libUnitTestCoverageXml,
+      instructionCovered = 32,
+      instructionMissed = 10,
+      branchCovered = 3,
+      branchMissed = 1,
+    )
+    verifyProperties(libUnitTestCoverageXml, ":lib", "UnitTest", "debug")
+    verifySources(libUnitTestCoverageXml, "lib")
+
+    // Verify debugLibAndroidTestXmlReport.xml
+    val xmlReportLibAndroidTest = xmlReports.filter { it.name == "debugLibAndroidTestXmlReport.xml" }
+    assertThat(xmlReportLibAndroidTest.size).isEqualTo(1)
+    val libAndroidTestCoverageXml = xmlReportLibAndroidTest.first().readLines().joinToString("\n").replace(Regex("[\\n\\t\\r]"), "")
+    verifyReportName(xmlReportLibAndroidTest.first(), "debugLibAndroidTest")
+    verifyCoverageData(
+      xmlReportString = libAndroidTestCoverageXml,
+      instructionCovered = 5,
+      instructionMissed = 37,
+      branchCovered = 0,
+      branchMissed = 4,
+    )
+    verifyProperties(libAndroidTestCoverageXml, ":lib", CONNECTED_TEST_TEST_SUITE_NAME, "debug")
+    verifySources(libAndroidTestCoverageXml, "lib")
   }
 
   private fun verifyReportName(xmlReport: File, expectedReportName: String) {
