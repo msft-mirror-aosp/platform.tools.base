@@ -677,4 +677,22 @@ class SdkManagerWrapperTest {
     assertThat(uninstallRes.returnCode).isEqualTo(0)
     assertThat(uninstallRes.stdout).isEqualTo("--sdk=/fake/sdk sdk remove platforms/android-34")
   }
+
+  @Test
+  fun testLegacySdkmanagerEnvVarIsSet() {
+    val recorder = temporaryFolder.newFile("env_recorder.sh")
+    recorder.writeText(
+      """
+      #!/bin/sh
+      echo "LEGACY_SDKMANAGER=${'$'}LEGACY_SDKMANAGER"
+      echo "$@"
+      """
+        .trimIndent()
+    )
+    recorder.setExecutable(true)
+
+    val res = runSdkManager("--list", "--sdk_root=/fake/sdk", env = mapOf("ANDROID_CLI_BIN" to recorder.absolutePath))
+    assertThat(res.returnCode).isEqualTo(0)
+    assertThat(res.stdout).contains("LEGACY_SDKMANAGER=1")
+  }
 }
