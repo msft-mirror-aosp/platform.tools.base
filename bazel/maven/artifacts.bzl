@@ -72,6 +72,7 @@ ARTIFACTS = [
     "com.google.flatbuffers:flatbuffers-java:1.12.0",
     "com.google.flogger:flogger:0.8",
     "com.google.flogger:flogger-system-backend:0.8",
+    "com.google.flogger:google-extensions:0.8",
     "com.google.guava:guava:33.4.0-jre",
     "com.google.guava:guava-testlib:33.4.0-jre",
     "com.google.http-client:google-http-client:1.43.3",
