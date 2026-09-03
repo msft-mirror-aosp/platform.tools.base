@@ -271,8 +271,12 @@ public class DeployerRunner {
         if (useConnectedDevices != null) {
             return useConnectedDevices;
         }
-        String propName = DeployerProperties.INSTANCE.getUSE_CONNECTED_DEVICE().getName();
-        return Boolean.getBoolean(propName);
+
+        String value = System.getProperty(DeployerProperties.USE_CONNECTED_DEVICE_PROPERTY_NAME);
+        if (value != null) {
+            return Boolean.parseBoolean(value);
+        }
+        return DeployerProperties.USE_CONNECTED_DEVICE_DEFAULT_VALUE;
     }
 
     private int executeDeployment(
