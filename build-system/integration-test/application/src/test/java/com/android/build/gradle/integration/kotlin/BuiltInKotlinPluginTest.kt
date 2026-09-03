@@ -21,6 +21,7 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
+import com.android.build.gradle.options.BooleanOption
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.junit.Rule
 import org.junit.Test
@@ -43,6 +44,10 @@ class BuiltInKotlinPluginTest(private val useLatestKgpVersion: Boolean) {
 
       HelloWorldAndroid.setupKotlin(files)
     }
+    gradleProperties {
+      add(BooleanOption.BUILT_IN_KOTLIN, false)
+      add(BooleanOption.USE_NEW_DSL, false)
+    }
     useLatestKgpVersion = this@BuiltInKotlinPluginTest.useLatestKgpVersion
   }
 
@@ -53,9 +58,34 @@ class BuiltInKotlinPluginTest(private val useLatestKgpVersion: Boolean) {
   }
 
   @Test
+  fun `fail when built-in Kotlin plugin is applied before kotlin-android plugin`() {
+    val build = rule.build { androidApplication { @Suppress("DEPRECATION") applyPlugin(PluginType.KOTLIN_ANDROID) } }
+
+    val result = build.executor.expectFailure().run(":app:compileDebugKotlin")
+
+    result.assertErrorContains("The 'org.jetbrains.kotlin.android' plugin is no longer required for Kotlin support since AGP 9.0.")
+  }
+
+  @Test
+  fun `fail when built-in Kotlin plugin is applied after kotlin-android plugin`() {
+    val build = rule.build { androidApplication { @Suppress("DEPRECATION") applyPlugin(PluginType.KOTLIN_ANDROID, applyFirst = true) } }
+
+    val result = build.executor.expectFailure().run(":app:compileDebugKotlin")
+
+    if (useLatestKgpVersion) {
+      result.assertErrorContains(
+        "The 'org.jetbrains.kotlin.android' plugin in project ':app' is no longer required for Kotlin support since AGP 9.0."
+      )
+    } else {
+      result.assertErrorContains("The 'org.jetbrains.kotlin.android' plugin is no longer required for Kotlin support since AGP 9.0.")
+    }
+  }
+
+  @Test
   fun testBuiltInKotlinSupportAndKagpUsedInDifferentModules() {
     val build = rule.build {
       androidLibrary {
+        @Suppress("DEPRECATION") applyPlugin(PluginType.KOTLIN_ANDROID)
         kotlin { compilerOptions.jvmTarget.set(JvmTarget.JVM_11) }
         files.add(
           "src/main/java/LibFoo.kt",
@@ -79,6 +109,10 @@ class BuiltInKotlinPluginTest(private val useLatestKgpVersion: Boolean) {
           """
             .trimIndent(),
         )
+      }
+      gradleProperties {
+        add(BooleanOption.BUILT_IN_KOTLIN, false)
+        add(BooleanOption.USE_NEW_DSL, false)
       }
     }
 

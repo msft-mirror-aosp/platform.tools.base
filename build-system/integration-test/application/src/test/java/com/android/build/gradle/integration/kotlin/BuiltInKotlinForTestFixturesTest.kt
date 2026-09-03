@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.kotlin
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
+import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.options.BooleanOption
@@ -35,14 +36,24 @@ class BuiltInKotlinForTestFixturesTest(private val builtInKotlin: Boolean) {
 
   companion object {
 
-    @Parameterized.Parameters(name = "builtInKotlin_{0}") @JvmStatic fun parameters() = listOf(true)
+    @Parameterized.Parameters(name = "builtInKotlin_{0}") @JvmStatic fun parameters() = listOf(true, false)
   }
 
   @get:Rule
   val rule = GradleRule.from {
     androidLibrary {
+      if (!builtInKotlin) {
+        @Suppress("DEPRECATION") applyPlugin(PluginType.KOTLIN_ANDROID)
+      }
+
       android { defaultConfig.minSdk = 21 }
       kotlin { jvmToolchain(17) }
+    }
+    if (!builtInKotlin) {
+      gradleProperties {
+        add(BooleanOption.USE_NEW_DSL, false)
+        add(BooleanOption.BUILT_IN_KOTLIN, false)
+      }
     }
   }
 
@@ -71,6 +82,9 @@ class BuiltInKotlinForTestFixturesTest(private val builtInKotlin: Boolean) {
         )
       }
       androidLibrary(":lib2") {
+        if (!builtInKotlin) {
+          @Suppress("DEPRECATION") applyPlugin(PluginType.KOTLIN_ANDROID)
+        }
         kotlin { jvmToolchain(17) }
         files.add(
           "src/main/kotlin/LibTwoClass.kt",

@@ -22,6 +22,7 @@ import com.android.build.gradle.internal.fixture.TestProjects
 import com.android.build.gradle.internal.packaging.defaultExcludes
 import com.android.build.gradle.internal.packaging.defaultMerges
 import com.android.build.gradle.internal.utils.importOfflineMavenRepo
+import com.android.build.gradle.options.BooleanOption
 import com.google.common.collect.ImmutableList
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
@@ -46,7 +47,11 @@ class KotlinDslCompatibilityTest {
 
   @Before
   fun setUp() {
-    project = TestProjects.builder(projectDirectory.newFolder("project").toPath()).withPlugin(TestProjects.Plugin.APP).build()
+    project =
+      TestProjects.builder(projectDirectory.newFolder("project").toPath())
+        .withPlugin(TestProjects.Plugin.APP)
+        .withProperty(BooleanOption.USE_NEW_DSL, false)
+        .build()
 
     initFieldsFromProject()
   }

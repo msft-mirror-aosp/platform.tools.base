@@ -17,19 +17,33 @@
 package com.android.build.gradle.integration.kotlin
 
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.internal.dsl.ModulePropertyKey.BooleanWithDefault.SCREENSHOT_TEST
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
-class BuiltInKotlinForScreenshotTestTest {
+@RunWith(Parameterized::class)
+class BuiltInKotlinForScreenshotTestTest(private val builtInKotlin: Boolean) {
+
+  companion object {
+
+    @Parameterized.Parameters(name = "builtInKotlin={0}") @JvmStatic fun parameters() = listOf(false, true)
+  }
 
   @get:Rule
   val rule = GradleRule.from {
     androidLibrary {
+      @Suppress("DEPRECATION") if (!builtInKotlin) applyPlugin(PluginType.KOTLIN_ANDROID)
       android { defaultConfig.minSdk = 21 }
       kotlin { jvmToolchain(17) }
+    }
+    gradleProperties {
+      add(BooleanOption.BUILT_IN_KOTLIN, builtInKotlin)
+      if (!builtInKotlin) add(BooleanOption.USE_NEW_DSL, false)
     }
   }
 
@@ -59,6 +73,7 @@ class BuiltInKotlinForScreenshotTestTest {
         )
       }
       androidLibrary(":lib2") {
+        if (!builtInKotlin) applyPlugin(PluginType.KOTLIN_ANDROID)
         kotlin { jvmToolchain(17) }
         files.add(
           "src/main/kotlin/LibTwoClass.kt",

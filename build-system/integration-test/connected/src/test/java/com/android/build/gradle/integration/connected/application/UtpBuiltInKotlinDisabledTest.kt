@@ -17,7 +17,9 @@
 package com.android.build.gradle.integration.connected.application
 
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.connected.utils.getEmulator
+import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
 import org.junit.ClassRule
 import org.junit.Rule
@@ -35,6 +37,9 @@ class UtpBuiltInKotlinDisabledTest {
   val rule =
     GradleRule.configure().from {
       androidApplication {
+        // Intentionally applying the legacy Kotlin plugin to verify compatibility
+        // when built-in Kotlin is disabled.
+        applyPlugin(PluginType.KOTLIN_ANDROID)
         android {
           namespace = "com.example.android.kotlin"
           defaultConfig {
@@ -71,6 +76,11 @@ class UtpBuiltInKotlinDisabledTest {
               .trimIndent(),
           )
         }
+      }
+      gradleProperties {
+        // Intentionally opting out of AGP 9.0 default behavior to test legacy Kotlin support.
+        add(BooleanOption.BUILT_IN_KOTLIN, false)
+        add(BooleanOption.USE_NEW_DSL, false)
       }
     }
 
