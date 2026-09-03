@@ -520,28 +520,6 @@
 
     <issue
         id="EagerGradleConfiguration"
-        message="Passing Configuration to ConfigurableFileCollection.from results in eager resolution of this configuration. Instead use project.files(configuration) or configuration.incoming.artifactView {}.files to wrap the configuration making it lazy."
-        errorLine1="        task.testUtilApks.from(androidTestUtil)"
-        errorLine2="                          ~~~~">
-        <location
-            file="src/main/java/com/android/build/gradle/tasks/TestSuiteTestTask.kt"
-            line="936"
-            column="27"/>
-    </issue>
-
-    <issue
-        id="EagerGradleConfiguration"
-        message="Passing Configuration to ConfigurableFileCollection.from results in eager resolution of this configuration. Instead use project.files(configuration) or configuration.incoming.artifactView {}.files to wrap the configuration making it lazy."
-        errorLine1="        task.testUtilApks.from(androidTestUtil)"
-        errorLine2="                          ~~~~">
-        <location
-            file="src/main/java/com/android/build/gradle/tasks/TestSuiteTestTask.kt"
-            line="1133"
-            column="27"/>
-    </issue>
-
-    <issue
-        id="EagerGradleConfiguration"
         message="Use register instead of maybeCreate"
         errorLine1="        Configuration testedApks = project.getConfigurations().maybeCreate(CONFIG_NAME_TESTED_APKS);"
         errorLine2="                                                               ~~~~~~~~~~~">

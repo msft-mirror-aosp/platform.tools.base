@@ -517,8 +517,23 @@ class CompileTimeConstantDetectorTest : AbstractCheckTest() {
             import com.google.errorprone.annotations.CompileTimeConstant
 
             class KtTest(
-                @CompileTimeConstant val validParamProp: String,
-                @field:CompileTimeConstant private val fieldProp: String,
+                @CompileTimeConstant val publicParam1: String,
+                @all:CompileTimeConstant val publicParam2: String,
+                @param:CompileTimeConstant val publicParam3: String,
+                @field:CompileTimeConstant val publicParam4: String,
+                @field:CompileTimeConstant @param:CompileTimeConstant val publicParam5: String,
+
+                @CompileTimeConstant @JvmField val jvmFieldParam1: String,
+                @all:CompileTimeConstant @JvmField val jvmFieldParam2: String,
+                @param:CompileTimeConstant @JvmField val jvmFieldParam3: String,
+                @field:CompileTimeConstant @JvmField val jvmFieldParam4: String,
+                @field:CompileTimeConstant @param:CompileTimeConstant @JvmField val jvmFieldParam5: String,
+
+                @CompileTimeConstant private val privateParam1: String,
+                @all:CompileTimeConstant private val privateParam2: String,
+                @param:CompileTimeConstant private val privateParam3: String,
+                @field:CompileTimeConstant private val privateParam4: String,
+                @field:CompileTimeConstant @param:CompileTimeConstant private val privateParam5: String,
             )
             """
           )
@@ -528,10 +543,84 @@ class CompileTimeConstantDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        src/test/pkg/KtTest.kt:7: Error: Annotating backing field of constructor property with @field:CompileTimeConstant
+        src/test/pkg/KtTest.kt:6: Error: Property must be declared private or use @JvmField to allow @CompileTimeConstant [CompileTimeConstant]
+            @CompileTimeConstant val publicParam1: String,
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/KtTest.kt:7: Error: Property must be declared private or use @JvmField to allow @CompileTimeConstant [CompileTimeConstant]
+            @all:CompileTimeConstant val publicParam2: String,
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/KtTest.kt:9: Error: Annotating backing field of constructor property with @field:CompileTimeConstant
         is unsafe and unnecessary. Annotate as @CompileTimeConstant only. [CompileTimeConstant]
-            @field:CompileTimeConstant private val fieldProp: String,
-            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            @field:CompileTimeConstant val publicParam4: String,
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/KtTest.kt:9: Error: Property must be declared private or use @JvmField to allow @CompileTimeConstant [CompileTimeConstant]
+            @field:CompileTimeConstant val publicParam4: String,
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/KtTest.kt:10: Error: Annotating backing field of constructor property with @field:CompileTimeConstant
+        is unsafe and unnecessary. Annotate as @CompileTimeConstant only. [CompileTimeConstant]
+            @field:CompileTimeConstant @param:CompileTimeConstant val publicParam5: String,
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/KtTest.kt:10: Error: Property must be declared private or use @JvmField to allow @CompileTimeConstant [CompileTimeConstant]
+            @field:CompileTimeConstant @param:CompileTimeConstant val publicParam5: String,
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/KtTest.kt:15: Error: Annotating backing field of constructor property with @field:CompileTimeConstant
+        is unsafe and unnecessary. Annotate as @CompileTimeConstant only. [CompileTimeConstant]
+            @field:CompileTimeConstant @JvmField val jvmFieldParam4: String,
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/KtTest.kt:16: Error: Annotating backing field of constructor property with @field:CompileTimeConstant
+        is unsafe and unnecessary. Annotate as @CompileTimeConstant only. [CompileTimeConstant]
+            @field:CompileTimeConstant @param:CompileTimeConstant @JvmField val jvmFieldParam5: String,
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/KtTest.kt:21: Error: Annotating backing field of constructor property with @field:CompileTimeConstant
+        is unsafe and unnecessary. Annotate as @CompileTimeConstant only. [CompileTimeConstant]
+            @field:CompileTimeConstant private val privateParam4: String,
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/KtTest.kt:22: Error: Annotating backing field of constructor property with @field:CompileTimeConstant
+        is unsafe and unnecessary. Annotate as @CompileTimeConstant only. [CompileTimeConstant]
+            @field:CompileTimeConstant @param:CompileTimeConstant private val privateParam5: String,
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        10 errors
+        """
+      )
+  }
+
+  fun testSubclassMethodWithoutAnnotation() {
+    lint()
+      .files(
+        java(
+            """
+            package test.pkg;
+
+            import com.google.errorprone.annotations.CompileTimeConstant;
+
+            public class Test {
+                public abstract static class BaseBuilder {
+                    public abstract BaseBuilder setName(@CompileTimeConstant String name);
+                }
+
+                public static class SubBuilder extends BaseBuilder {
+                    @Override
+                    public SubBuilder setName(String name) {
+                        return this;
+                    }
+                }
+
+                public void test(BaseBuilder base, SubBuilder sub, String nonConstant) {
+                    sub.setName(nonConstant); // OK - SubBuilder does not annotate parameter
+                    base.setName(nonConstant); // ERROR - BaseBuilder parameter is annotated
+                }
+            }
+            """
+          )
+          .indented(),
+        ctcAnnotationStub,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/Test.java:19: Error: Non-compile-time constant expression passed to parameter with @CompileTimeConstant annotation [CompileTimeConstant]
+                base.setName(nonConstant); // ERROR - BaseBuilder parameter is annotated
+                             ~~~~~~~~~~~
         1 errors, 0 warnings
         """
       )

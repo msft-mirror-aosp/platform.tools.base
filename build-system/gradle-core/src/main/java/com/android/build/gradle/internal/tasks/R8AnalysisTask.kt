@@ -20,6 +20,7 @@ import com.android.build.gradle.internal.LoggerWrapper
 import com.android.build.gradle.internal.component.ConsumableCreationConfig
 import com.android.build.gradle.internal.errors.MessageReceiverImpl
 import com.android.build.gradle.internal.scope.InternalArtifactType
+import com.android.build.gradle.internal.services.R8ClassloaderBuildService
 import com.android.build.gradle.internal.services.R8D8ThreadPoolBuildService
 import com.android.build.gradle.internal.services.doClose
 import com.android.build.gradle.options.SyncOptions
@@ -27,10 +28,11 @@ import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.core.BuilderConstants.FD_R8_REPORTS
 import com.android.builder.dexing.KeepRuleFile
 import com.android.builder.dexing.MainDexListConfig
+import com.android.builder.dexing.PartialShrinking
 import com.android.builder.dexing.ProguardConfig
 import com.android.builder.dexing.ProguardOutputReports
+import com.android.builder.dexing.ResourceShrinkingConfig
 import com.android.builder.dexing.ToolConfig
-import com.android.builder.dexing.runR8
 import java.io.File
 import java.nio.file.Path
 import javax.inject.Inject
@@ -124,10 +126,12 @@ abstract class R8AnalysisTask @Inject constructor(projectLayout: ProjectLayout) 
       it.toolConfig.set(toolParameters.toToolConfig())
       it.resourceShrinkingConfig.set(resourceShrinkingParams.toConfig())
       it.partialShrinkingIncludes.set(aggregatePartialShrinkingConfig())
+      it.r8Classpath.from(r8Classpath)
       if (executionOptions.get().runInSeparateProcess) {
         it.r8ThreadPoolSizeIfIsolationMode.set(r8ThreadPoolSize)
       } else {
         it.r8D8ThreadPoolBuildServiceIfNonIsolationMode.set(r8D8ThreadPoolBuildService)
+        it.r8ClassloaderBuildServiceIfNonIsolationMode.set(r8ClassloaderBuildService)
       }
     }
     if (executionOptions.get().runInSeparateProcess) {
@@ -167,10 +171,12 @@ abstract class R8AnalysisTask @Inject constructor(projectLayout: ProjectLayout) 
       abstract val inputArtProfile: RegularFileProperty
       abstract val inputProfileForDexStartupOptimization: RegularFileProperty
       abstract val toolConfig: Property<ToolConfig>
-      abstract val resourceShrinkingConfig: Property<com.android.builder.dexing.ResourceShrinkingConfig>
-      abstract val partialShrinkingIncludes: Property<com.android.builder.dexing.PartialShrinking>
+      abstract val resourceShrinkingConfig: Property<ResourceShrinkingConfig>
+      abstract val partialShrinkingIncludes: Property<PartialShrinking>
+      abstract val r8Classpath: ConfigurableFileCollection
       abstract val r8ThreadPoolSizeIfIsolationMode: Property<Int>
       abstract val r8D8ThreadPoolBuildServiceIfNonIsolationMode: Property<R8D8ThreadPoolBuildService>
+      abstract val r8ClassloaderBuildServiceIfNonIsolationMode: Property<R8ClassloaderBuildService>
     }
 
     private fun filterMissingFiles(files: List<File>, logger: LoggerWrapper): List<Path> {
@@ -191,6 +197,7 @@ abstract class R8AnalysisTask @Inject constructor(projectLayout: ProjectLayout) 
         } else {
           parameters.r8D8ThreadPoolBuildServiceIfNonIsolationMode.get().threadPool
         }
+      val r8ClassLoader = getR8ClassLoader(parameters.r8Classpath, parameters.r8ClassloaderBuildServiceIfNonIsolationMode)
       try {
         val proguardOutputReports =
           ProguardOutputReports(
@@ -218,7 +225,8 @@ abstract class R8AnalysisTask @Inject constructor(projectLayout: ProjectLayout) 
           }
 
         val logger = LoggerWrapper.getLogger(R8AnalysisTask::class.java)
-        runR8(
+        invokeRunR8(
+          r8ClassLoader,
           filterMissingFiles(parameters.classes.files.toList(), logger),
           null,
           parameters.resourcesJar.asFile.get().toPath(),
@@ -246,6 +254,7 @@ abstract class R8AnalysisTask @Inject constructor(projectLayout: ProjectLayout) 
         logger.lifecycle("R8 Keep Rules analysis report generated: ${parameters.reportRelativePath.get()}")
       } finally {
         if (isolationMode) {
+          (r8ClassLoader as? AutoCloseable)?.close()
           r8ThreadPool.doClose()
         }
       }

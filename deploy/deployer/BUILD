@@ -114,6 +114,7 @@ kotlin_library(
         "src/main/java/com/android/tools/deployer/common/Canceller.java",
         "src/main/java/com/android/tools/deployer/common/ChangeType.java",
         "src/main/java/com/android/tools/deployer/common/DeployMetric.java",
+        "src/main/java/com/android/tools/deployer/common/DeployerConnectedSocket.java",
         "src/main/java/com/android/tools/deployer/common/DeployerException.java",
         "src/main/java/com/android/tools/deployer/common/DeployerIShellOutputReceiver.java",
         "src/main/java/com/android/tools/deployer/common/DeployerMultiLineReceiver.java",
@@ -134,6 +135,7 @@ kotlin_library(
         "src/main/java/com/android/tools/deployer/common/PatchSetGenerator.java",
         "src/main/java/com/android/tools/deployer/common/Timeouts.java",
         "src/main/java/com/android/tools/deployer/common/UIService.java",
+        "src/main/java/com/android/tools/deployer/common/UnsupportedIDevice.kt",
     ],
     visibility = ["//visibility:public"],
     deps = [
@@ -157,6 +159,7 @@ kotlin_library(
     srcs = [
         "src/main/java/com/android/tools/deployer/install/ApkInstaller.java",
         "src/main/java/com/android/tools/deployer/install/InstallMode.java",
+        "src/main/java/com/android/tools/deployer/install/InstallOutputParser.java",
     ],
     visibility = ["//visibility:public"],
     deps = [
@@ -409,6 +412,7 @@ coverage_java_test(
             "src/test/java/com/android/tools/deployer/devices/*.java",
             "src/test/java/com/android/tools/deployer/devices/shell/*.java",
             "src/test/java/com/android/tools/deployer/devices/shell/interpreter/*.java",
+            "src/test/java/com/android/tools/deployer/install/*.java",
             "src/test/java/com/android/tools/deployer/rules/*.java",
             "src/test/java/com/android/tools/deployer/tasks/*.java",
         ],
@@ -517,6 +521,7 @@ kotlin_test(
     name = "deployer.kotlin_tests",
     srcs = [
         "src/test/java/com/android/tools/deployer/DeployStrategyReaderTest.kt",
+        "src/test/java/com/android/tools/deployer/DeployerRunnerUtilsTest.kt",
         "src/test/java/com/android/tools/deployer/TestLogger.java",
         "src/test/java/com/android/tools/deployer/apktestutils/BinaryXmlEncoderTest.kt",
         "src/test/java/com/android/tools/deployer/common/DeviceHolderMigrationTest.kt",
@@ -525,6 +530,7 @@ kotlin_test(
         "src/test/java/com/android/tools/deployer/model/component/DeclarativeWatchFaceTest.kt",
     ],
     data = glob(["src/test/resource/**"]),
+    friends = [":tools.deployer"],
     jvm_flags = ["-Dtest.suite.jar=deployer.kotlin_tests.jar"],
     test_class = "com.android.testutils.JarTestSuite",
     deps = [

@@ -86,6 +86,8 @@ class CompileTimeConstantDetector : Detector(), SourceCodeScanner {
   // any other annotation with the same simple name to avoid strict package dependencies.
   override fun applicableAnnotations(): List<String> = listOf(COMPILE_TIME_CONSTANT_SHORT_NAME)
 
+  override fun inheritAnnotation(annotation: String): Boolean = false
+
   override fun isApplicableAnnotationUsage(type: AnnotationUsageType): Boolean =
     // Assignment includes field/property initializers and method parameter default values.
     // On the other hand it misses field assignments, which we handle in visitBinary instead.

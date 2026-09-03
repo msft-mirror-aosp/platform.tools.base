@@ -247,7 +247,7 @@
             </d:camera>
             <d:keyboard>qwerty</d:keyboard>
             <d:nav>nonav</d:nav>
-            <d:ram unit="GiB">4</d:ram>
+            <d:ram unit="GiB">6</d:ram>
             <d:buttons>soft</d:buttons>
             <d:internal-storage unit="GiB">64</d:internal-storage>
             <d:removable-storage unit="MiB">0</d:removable-storage>

@@ -58,14 +58,10 @@ import java.time.Duration
 import java.util.Optional
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
-import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.single
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
-
-private val DEVICE_PROPERTIES_TIMEOUT = 2000.milliseconds
 
 class DeviceHolder
 @JvmOverloads
@@ -105,11 +101,7 @@ constructor(
           // Retrieve using ConnectedDevice
           val properties =
             try {
-              runBlocking {
-                // `version` is build from device properties and this call may take 2 seconds for
-                // the properties to load
-                withTimeout(DEVICE_PROPERTIES_TIMEOUT) { connectedDevice.deviceProperties().allReadonly() }
-              }
+              runBlocking { connectedDevice.deviceProperties().allReadonly() }
             } catch (_: Exception) {
               // Do not throw exceptions to match the iDevice.version behavior
               null
@@ -138,7 +130,7 @@ constructor(
         onMigrated = { connectedDevice ->
           val properties =
             try {
-              runBlocking { withTimeout(DEVICE_PROPERTIES_TIMEOUT) { connectedDevice.deviceProperties().allReadonly() } }
+              runBlocking { connectedDevice.deviceProperties().allReadonly() }
             } catch (_: Exception) {
               null
             }
@@ -200,11 +192,11 @@ constructor(
     get() = runMigrated(onLegacy = { iDevice.isRoot }, onMigrated = { connectedDevice -> runBlocking { connectedDevice.isRoot() } })
 
   @Throws(IOException::class)
-  fun rawExec2(executable: String, parameters: Array<String>): SimpleConnectedSocket {
+  fun rawExec2(executable: String, parameters: Array<String>): DeployerConnectedSocket {
     return runMigrated(
       onLegacy = {
         try {
-          iDevice.rawExec2(executable, parameters)
+          DdmlibSocketAdapter(iDevice.rawExec2(executable, parameters))
         } catch (e: Exception) {
           when (e) {
             is AdbCommandRejectedException,
@@ -597,7 +589,7 @@ private class IShellOutputReceiverCollector(private val receiver: DeployerIShell
   }
 }
 
-private class AdblibChannelSocket(private val channel: AdbChannel) : SimpleConnectedSocket {
+private class AdblibChannelSocket(private val channel: AdbChannel) : DeployerConnectedSocket {
   private var closed = false
 
   override fun read(dst: ByteBuffer, timeoutMs: Long): Int = runBlocking {
@@ -622,4 +614,20 @@ private class AdblibChannelSocket(private val channel: AdbChannel) : SimpleConne
     closed = true
     channel.close()
   }
+}
+
+/**
+ * Adapts a ddmlib [SimpleConnectedSocket] to a [DeployerConnectedSocket].
+ *
+ * This adapter is required for the legacy [IDevice] execution path in [DeviceHolder]. It can be removed once deployer is fully migrated
+ * away from ddmlib.
+ */
+private class DdmlibSocketAdapter(private val socket: SimpleConnectedSocket) : DeployerConnectedSocket {
+  override fun read(dst: ByteBuffer, timeoutMs: Long): Int = socket.read(dst, timeoutMs)
+
+  override fun write(dst: ByteBuffer, timeoutMs: Long): Int = socket.write(dst, timeoutMs)
+
+  override fun isOpen(): Boolean = socket.isOpen
+
+  override fun close() = socket.close()
 }

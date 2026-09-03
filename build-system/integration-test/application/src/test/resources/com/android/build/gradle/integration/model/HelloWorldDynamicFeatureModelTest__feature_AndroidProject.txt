@@ -60,10 +60,11 @@
             - abiFilters                    = []
             - assembleTaskOutputListingFile = {PROJECT}/feature/build/intermediates/apk_ide_redirect_file/debugAndroidTest/createDebugAndroidTestApkListingFileRedirect/redirect.txt{!}
             - testInfo:
-               - animationsDisabled       = false
-               - execution                = HOST
-               - additionalRuntimeApks    = []
-               - instrumentedTestTaskName = "connectedDebugAndroidTest"
+               - animationsDisabled             = false
+               - instrumentInPrivateComputeCore = false
+               - execution                      = HOST
+               - additionalRuntimeApks          = []
+               - instrumentedTestTaskName       = "connectedDebugAndroidTest"
             - bundleInfo                    = (null)
             - codeShrinker                  = (null)
          < androidTestArtifact

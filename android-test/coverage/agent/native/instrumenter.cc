@@ -386,7 +386,7 @@ bool Instrumenter::InstrumentMethod(
     instr_to_line[instr] = current_line;
   }
 
-  lir::ControlFlowGraph cfg(&code_ir, false);
+  lir::ControlFlowGraph cfg(&code_ir, /*prune_exception_edges=*/false);
 
   // Use a local structure to hold block metadata until we are certain
   // instrumentation succeeded.
@@ -515,18 +515,22 @@ bool Instrumenter::InstrumentMethod(
     if (auto* last_bytecode =
             dynamic_cast<lir::Bytecode*>(block.region.last)) {
       auto flags = dex::GetFlagsFromOpcode(last_bytecode->opcode);
-      if (flags & dex::kBranch) {
+      if (SyntheticFilter::IsSyntheticBranch(ir_method, block)) {
+        branch_count = 1; // Demote to sequential block flow (removes synthetic branch)
+      } else if (flags & dex::kBranch) {
         if (flags & dex::kContinue) {
           branch_count = 2;  // Conditional branch (e.g., IF_*)
-
-          if (SyntheticFilter::IsSyntheticBranch(ir_method, block)) {
-            branch_count = 1; // Demote to sequential block flow (removes synthetic branch)
-          }
         } else {
           branch_count = 1;  // Unconditional branch (e.g., GOTO)
         }
       } else if (flags & dex::kSwitch) {
-        branch_count = 2;  // Safe fallback
+        // Safe Fallback: A switch statement must have at least 2 branches (the
+        // first case block and the default/fallthrough target), making '2' the
+        // mathematically smallest valid branch count for any non-trivial
+        // switch. If Slicer payload parsing fails to resolve targets, falling
+        // back to '2' guarantees we still track and report the switch block's
+        // binary coverage status.
+        branch_count = 2;
         if (last_bytecode->operands.size() >= 2) {
           if (auto* code_loc = dynamic_cast<lir::CodeLocation*>(last_bytecode->operands[1])) {
             if (auto* label = code_loc->label) {
@@ -590,9 +594,17 @@ bool Instrumenter::InstrumentMethod(
   }
 
   // Pass 2: Resolve successor block IDs for each pending block in the control flow graph
-  for (auto& pb : pending_blocks) {
+  for (size_t i = 0; i < pending_blocks.size(); ++i) {
+    auto& pb = pending_blocks[i];
     const auto& block = *pb.original_block;
     std::vector<uint32_t> successor_ids;
+
+    // Helper lambda to push the next sequential block ID as a successor
+    auto push_sequential_successor = [&]() {
+      if (i + 1 < pending_blocks.size()) {
+        successor_ids.push_back(pending_blocks[i + 1].id);
+      }
+    };
 
     if (auto* last_bytecode = dynamic_cast<lir::Bytecode*>(block.region.last)) {
       auto flags = dex::GetFlagsFromOpcode(last_bytecode->opcode);
@@ -610,12 +622,7 @@ bool Instrumenter::InstrumentMethod(
         }
         // Conditional branch also continues to next block sequentially
         if (flags & dex::kContinue) {
-          if (auto* next_instr = last_bytecode->next) {
-            auto it = instr_to_block_id.find(next_instr);
-            if (it != instr_to_block_id.end()) {
-              successor_ids.push_back(it->second);
-            }
-          }
+          push_sequential_successor();
         }
       } else if (flags & dex::kSwitch) {
         // Switch targets from switch table payload
@@ -643,29 +650,14 @@ bool Instrumenter::InstrumentMethod(
           }
         }
         // Switch also continues on default fallback
-        if (auto* next_instr = last_bytecode->next) {
-          auto it = instr_to_block_id.find(next_instr);
-          if (it != instr_to_block_id.end()) {
-            successor_ids.push_back(it->second);
-          }
-        }
+        push_sequential_successor();
       } else if (!(flags & (dex::kReturn | dex::kThrow))) {
         // Standard sequential flow
-        if (auto* next_instr = last_bytecode->next) {
-          auto it = instr_to_block_id.find(next_instr);
-          if (it != instr_to_block_id.end()) {
-            successor_ids.push_back(it->second);
-          }
-        }
+        push_sequential_successor();
       }
     } else {
       // Non-bytecode sequential flow
-      if (auto* next_instr = block.region.last->next) {
-        auto it = instr_to_block_id.find(next_instr);
-        if (it != instr_to_block_id.end()) {
-          successor_ids.push_back(it->second);
-        }
-      }
+      push_sequential_successor();
     }
 
     // Deduplicate successor block IDs

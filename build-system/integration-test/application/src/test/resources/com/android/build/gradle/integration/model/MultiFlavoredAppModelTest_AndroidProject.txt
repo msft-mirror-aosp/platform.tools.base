@@ -64,10 +64,11 @@
             - abiFilters                    = ["arm64-v8a", "armeabi-v7a", "x86", "x86_64"]
             - assembleTaskOutputListingFile = {PROJECT}/app/build/intermediates/apk_ide_redirect_file/proPlayDebugAndroidTest/createProPlayDebugAndroidTestApkListingFileRedirect/redirect.txt{!}
             - testInfo:
-               - animationsDisabled       = false
-               - execution                = HOST
-               - additionalRuntimeApks    = []
-               - instrumentedTestTaskName = "connectedProPlayDebugAndroidTest"
+               - animationsDisabled             = false
+               - instrumentInPrivateComputeCore = false
+               - execution                      = HOST
+               - additionalRuntimeApks          = []
+               - instrumentedTestTaskName       = "connectedProPlayDebugAndroidTest"
             - bundleInfo                    = (null)
             - codeShrinker                  = (null)
          < androidTestArtifact

@@ -15,6 +15,7 @@
  */
 package com.android.tools.lint.checks.fx.utils
 
+import com.intellij.openapi.progress.ProgressManager
 import kotlinx.collections.immutable.PersistentMap
 import kotlinx.collections.immutable.persistentMapOf
 
@@ -84,6 +85,7 @@ private fun <K : Any, V> DependentMonotone<K, V>.step(domain: Collection<K>, boo
     override fun invoke(point: K): V =
       when (val deps = cacheDependents[point]) {
         null -> {
+          ProgressManager.checkCanceled()
           cacheDependents[point] = if (caller != null) mutableSetOf(caller) else mutableSetOf()
           val lattice = latticeAt(point)
           val knownAnswer = if (point in bootstrap) bootstrap[point] as V else lattice.bottom

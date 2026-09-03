@@ -180,6 +180,7 @@ ARTIFACTS = [
     "org.boofcv:boofcv-io:1.4.0",
     "org.boofcv:boofcv-ip:1.4.0",
     "org.boofcv:boofcv-types:1.4.0",
+    "org.bouncycastle:bc-jdk18on-bom:pom:1.80.2",
     "org.bouncycastle:bcpkix-jdk18on:1.80.2",
     "org.bouncycastle:bcprov-jdk18on:1.80.2",
     "org.bytedeco:ffmpeg:7.1.1-1.5.12",

@@ -24,7 +24,6 @@ import com.android.adblib.tools.JavaBridge;
 import com.android.annotations.NonNull;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.ShellCommandUnresponsiveException;
-import com.android.ddmlib.SimpleConnectedSocket;
 import com.android.sdklib.AndroidVersion;
 import com.android.tools.deploy.proto.Deploy;
 import com.android.tools.deployer.model.Apk;
@@ -105,7 +104,7 @@ public class AdbClient {
         }
     }
 
-    public SimpleConnectedSocket rawExec(String executable, String[] parameters)
+    public DeployerConnectedSocket rawExec(String executable, String[] parameters)
             throws IOException {
         return deviceHolder.rawExec2(executable, parameters);
     }
@@ -207,10 +206,6 @@ public class AdbClient {
             }
         }
         return new InstallResult(InstallStatus.UNKNOWN_ERROR, "Unknown Error");
-    }
-
-    public static InstallResult toInstallerResult(com.android.ddmlib.InstallReceiver r) {
-        return toInstallerResult(r.getErrorCode(), r.getErrorMessage());
     }
 
     public static InstallResult toInstallerResult(String errorCode, String reason) {

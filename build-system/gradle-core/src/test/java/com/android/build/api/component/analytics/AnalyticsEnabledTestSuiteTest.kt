@@ -65,11 +65,11 @@ class AnalyticsEnabledTestSuiteTest {
 
   @Test
   fun codeCoverage() {
-    proxy.codeCoverage
+    proxy.codeCoverageEnabled
 
     Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
       .isEqualTo(VariantPropertiesMethodType.TEST_SUITE_CODE_COVERAGE_VALUE)
-    verify(delegate).codeCoverage
+    verify(delegate).codeCoverageEnabled
   }
 
   @Test

@@ -19,7 +19,6 @@ package com.android.build.api.variant
 import com.android.build.api.dsl.TestTaskContext
 import org.gradle.api.Incubating
 import org.gradle.api.Named
-import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.testing.Test
@@ -109,11 +108,14 @@ interface TestSuite : Named {
   val targets: Map<String, TestSuiteTarget>
 
   /**
-   * Turns on or off the code coverage support.
+   * Whether test coverage is enabled for this test suite.
    *
-   * Initialized from the corresponding [TestSuiteBuilder.codeCoverage]
+   * If enabled, this uses Jacoco to capture coverage and creates a report in the build directory.
+   *
+   * You cannot change the value any longer, to change it, please use [TestSuiteBuilder.setEnabledCodeCoverage] in the
+   * [AndroidComponentsExtension.beforeVariants] callback.
    */
-  @get:Incubating val codeCoverage: Property<Boolean>
+  @get:Incubating val codeCoverageEnabled: Boolean
 
   /**
    * Whether this test suite requires an extra update task.

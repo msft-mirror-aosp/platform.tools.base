@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.services
 
 import com.android.build.gradle.internal.lint.LintFromMaven
+import com.android.build.gradle.internal.r8.R8FromMaven
 import java.io.File
 import org.gradle.api.Action
 import org.gradle.api.Named
@@ -82,6 +83,9 @@ class TaskCreationServicesImpl(projectServices: ProjectServices) : BaseServicesI
 
   override val lintFromMaven: LintFromMaven
     get() = projectServices.lintFromMaven
+
+  override val r8FromMaven: R8FromMaven?
+    get() = projectServices.r8FromMaven
 
   override val configurations: ConfigurationContainer
     get() = projectServices.configurationContainer

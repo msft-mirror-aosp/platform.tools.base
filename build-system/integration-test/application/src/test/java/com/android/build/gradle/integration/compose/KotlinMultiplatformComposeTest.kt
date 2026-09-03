@@ -30,7 +30,7 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.junit.Rule
 import org.junit.Test
 
-class KotlinMultiplatformComposeTestNewIntegration {
+class KotlinMultiplatformComposeTest {
 
   @get:Rule
   val rule =

@@ -14,6 +14,10 @@ iml_module(
         "//tools/base/testutils:studio.android.sdktools.testutils",
     ],
     test_srcs = ["test/src"],
+    visibility = [
+        "//tools/adt/idea/android-npw:__subpackages__",
+        "//tools/adt/idea/studio:__subpackages__",
+    ],
     # do not sort: must match IML order
     deps = ["@intellij//:intellij-sdk"],
 )

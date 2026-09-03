@@ -46,7 +46,10 @@ class BackupTestSuiteDeclarationTest {
       }
       .from {
         rootProject { buildscript { classpath("com.google.truth:truth:0.44") } }
-        gradleProperties { add(BooleanOption.TEST_SUITE_SUPPORT, true) }
+        gradleProperties {
+          add(BooleanOption.TEST_SUITE_SUPPORT, true)
+          add(BooleanOption.ENABLE_BACKUP_TEST, true)
+        }
         androidApplication {
           pluginCallbacks += BackupSuiteCallback::class.java
           android {

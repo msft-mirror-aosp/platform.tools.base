@@ -1323,7 +1323,7 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
     if (creationConfig.componentType.isDynamicFeature) {
       taskFactory.register(FeatureDexMergeTask.CreationAction(creationConfig))
     }
-    checkIfR8VersionMatches(creationConfig.services.issueReporter)
+    checkIfR8VersionMatches(creationConfig.services.issueReporter, creationConfig.services.r8FromMaven?.version)
     createDexTasks(creationConfig, creationConfig.dexing.dexingType)
   }
 

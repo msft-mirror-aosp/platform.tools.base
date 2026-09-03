@@ -147,7 +147,7 @@ interface DeviceProperties {
         manufacturer.isNullOrBlank() -> model ?: "Unknown"
         model.isNullOrBlank() -> "$manufacturer Device"
         else -> "$manufacturer $model"
-      }
+      }.sanitizeForUi()
     }
 
   /** A DeviceInfo proto for use in AndroidStudioEvent to describe the device in metrics. */
@@ -165,6 +165,9 @@ interface DeviceProperties {
 
     /** Builds a basic DeviceProperties instance for testing; some validation is skipped. */
     @VisibleForTesting inline fun buildForTest(block: Builder.() -> Unit): DeviceProperties = Builder().apply(block).buildBaseForTest()
+
+    /** Replace angle brackets to avoid triggering HTML parsing in Swing. */
+    fun String.sanitizeForUi() = replace('<', '‹').replace('>', '›')
   }
 
   open class Builder {

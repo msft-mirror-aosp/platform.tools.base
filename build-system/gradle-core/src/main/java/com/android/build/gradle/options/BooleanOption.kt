@@ -301,6 +301,7 @@ enum class BooleanOption(
   LINT_BASELINE_OMIT_LINE_NUMBERS("android.lint.baselineOmitLineNumbers", false, FeatureStage.Experimental),
   ENABLE_NEW_TEST_DSL("android.experimental.enableNewTestDsl", false, FeatureStage.Experimental),
   @Suppress("unused") ENABLE_SCREENSHOT_TEST("android.experimental.enableScreenshotTest", false, FeatureStage.Experimental),
+  @Suppress("unused") ENABLE_BACKUP_TEST("android.experimental.enableBackupTest", false, FeatureStage.Experimental),
 
   /** Whether to enable kotlin compilation for test fixtures */
   ENABLE_TEST_FIXTURES_KOTLIN_SUPPORT("android.experimental.enableTestFixturesKotlinSupport", false, FeatureStage.Experimental),

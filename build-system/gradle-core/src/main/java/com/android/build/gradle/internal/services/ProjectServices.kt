@@ -19,6 +19,7 @@ package com.android.build.gradle.internal.services
 import com.android.build.gradle.internal.errors.DeprecationReporter
 import com.android.build.gradle.internal.errors.SyncIssueReporter
 import com.android.build.gradle.internal.lint.LintFromMaven
+import com.android.build.gradle.internal.r8.R8FromMaven
 import com.android.build.gradle.internal.res.Aapt2FromMaven
 import com.android.build.gradle.internal.scope.ProjectInfo
 import com.android.build.gradle.internal.services.BuiltInKotlinServices.AvailabilityReason
@@ -67,6 +68,7 @@ constructor(
   val extraProperties: ExtraPropertiesExtension,
   val emptyTaskCreator: (String) -> TaskProvider<*>,
   val plugins: PluginManager,
+  val r8FromMaven: R8FromMaven? = null,
 ) {
   fun initializeAapt2Input(
     aapt2Input: Aapt2Input,

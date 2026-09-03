@@ -87,6 +87,21 @@ class DeviceHolderMigrationTest {
   }
 
   @Test
+  fun testVersionCachesValue() = runBlocking {
+    val iDevice = connectAndGetDevice()
+    val deviceHolder = createDeviceHolder(iDevice, useConnectedDevice = true)
+
+    // Populate properties cache on first access
+    assertEquals(deviceId?.api(), deviceHolder.version.apiLevel)
+
+    // Disconnect the device so any new I/O fetch would fail
+    fakeAdbRule.fakeAdb.disconnectDevice(iDevice.serialNumber)
+
+    // Verify subsequent calls return the cached version rather than failing
+    assertEquals(deviceId?.api(), deviceHolder.version.apiLevel)
+  }
+
+  @Test
   fun testSupportsRealPkgNameConsistency() = runBlocking {
     val iDevice = connectAndGetDevice()
     val deviceHolderLegacy = createDeviceHolder(iDevice, useConnectedDevice = false)

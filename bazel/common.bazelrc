@@ -85,10 +85,10 @@ build --define=grpc_no_ares=true
 
 # Bazel will find the matching java toolchain registered in bzlmod/toolchains.MODULE.bazel
 ## Java version for build tools
-build --tool_java_language_version=21
+build --tool_java_language_version=25
 build --tool_java_runtime_version=jbr25
 ## Java version for compiling source code (javac)
-build --java_language_version=21
+build --java_language_version=25
 ## Java version for running tests and targets (java)
 build --java_runtime_version=jbr25
 ## JetBrainsRuntime version to bundle into Android Studio

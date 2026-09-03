@@ -36,7 +36,9 @@ import org.gradle.api.file.FileCollection
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
 
-interface CodeCoverageReportCreationConfig : TaskCreationConfig {
+interface TestReportCreationConfig : TaskCreationConfig {
+
+  val variantCreationConfig: VariantCreationConfig
 
   /** Kotlin source folders. */
   val kotlin: FlatSourceDirectoriesImpl?
@@ -63,10 +65,28 @@ interface CodeCoverageReportCreationConfig : TaskCreationConfig {
   val connectedTestCoverageDirectory: Provider<Directory>?
 }
 
-class CodeCoverageReportCreationConfigImpl(
-  private val variantCreationConfig: VariantCreationConfig,
+class TestReportCreationConfigImpl(
+  override val variantCreationConfig: VariantCreationConfig,
   private val testComponents: Collection<TestComponentCreationConfig>,
-) : CodeCoverageReportCreationConfig {
+) : TestReportCreationConfig {
+
+  override val name: String
+    get() = variantCreationConfig.name
+
+  override val services: TaskCreationServices
+    get() = variantCreationConfig.services
+
+  override val taskContainer: MutableTaskContainer
+    get() = variantCreationConfig.taskContainer
+
+  override val artifacts: ArtifactsImpl
+    get() = variantCreationConfig.artifacts
+
+  override val global: GlobalTaskCreationConfig
+    get() = variantCreationConfig.global
+
+  override val lifecycleTasks: LifecycleTasksImpl
+    get() = variantCreationConfig.lifecycleTasks
 
   override val kotlin: FlatSourceDirectoriesImpl?
     get() = variantCreationConfig.sources.kotlin
@@ -93,18 +113,6 @@ class CodeCoverageReportCreationConfigImpl(
         AndroidArtifacts.ArtifactType.CODE_COVERAGE_DATA,
       )
 
-  override val name: String
-    get() = variantCreationConfig.name
-
-  override val services: TaskCreationServices
-    get() = variantCreationConfig.services
-
-  override val taskContainer: MutableTaskContainer
-    get() = variantCreationConfig.taskContainer
-
-  override val artifacts: ArtifactsImpl
-    get() = variantCreationConfig.artifacts
-
   override val unitTestCoverageFile: Provider<RegularFile>?
     get() =
       testComponents
@@ -123,10 +131,4 @@ class CodeCoverageReportCreationConfigImpl(
         .firstOrNull { it.mainVariant.name == name && it is DeviceTestCreationConfig && it.codeCoverageEnabled && it.componentType.isApk }
         ?.artifacts
         ?.get(InternalArtifactType.CODE_COVERAGE)
-
-  override val global: GlobalTaskCreationConfig
-    get() = variantCreationConfig.global
-
-  override val lifecycleTasks: LifecycleTasksImpl
-    get() = variantCreationConfig.lifecycleTasks
 }

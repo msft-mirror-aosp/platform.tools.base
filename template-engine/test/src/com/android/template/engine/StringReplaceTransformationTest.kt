@@ -504,4 +504,28 @@ class StringReplaceTransformationTest {
           .trimMargin()
       )
   }
+
+  @Test
+  fun `test parseJson returns null when string-replace is not an object`() {
+    val json =
+      """
+      {
+        "string-replace": "not-an-object"
+      }
+      """
+        .trimIndent()
+    val root = JsonSourceParser.parseString(json).asJsonObject!!
+    val messageSink = DefaultTemplateMessageSink(TemplateMessageSink.Severity.Error)
+    val parser = TemplateDefinitionParser(messageSink, "template.json")
+    val transformation = StringReplaceTransformation()
+
+    val result = transformation.parseJson(parser, root)
+
+    assertThat(result).isNull()
+    assertThat(messageSink.messages).hasSize(1)
+    assertThat(messageSink.messages[0].severity).isEqualTo(TemplateMessageSink.Severity.Error)
+    assertThat(messageSink.messages[0].message)
+      .contains("template.json:0: Json object does not contain member named 'string-replace'")
+  }
 }
+

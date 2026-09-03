@@ -219,11 +219,11 @@ src/test/pkg/Test.java:43: Error: Call must be from @UiThread, but context is al
                                 uiMethod(); // WARN5
                                 workerMethod(); // OK
                             });
-                            new Application().invokeLater(new Runnable() { // WARN6 current
+                            new Application().invokeLater(new Runnable() {
                                 @Override
                                 public void run() {
                                     fastMethod(); // OK
-                                    slowMethod(); // WARN6 ideally, but above instead
+                                    slowMethod(); // WARN6
                                     uiMethod(); // OK
                                     workerMethod(); // WARN7
                                 }
@@ -311,6 +311,8 @@ src/test/pkg/Test.java:43: Error: Call must be from @UiThread, but context is al
 
                     @SuppressWarnings("ALL")
                     public class Application {
+                        public void invokeLater(@NotNull Runnable run) { run.run(); }
+
                         public void runOnPooledThread(@NotNull @WorkerThread Runnable run) { run.run(); }
 
                         public void externallyAnnotated(@NotNull Runnable run) { run.run(); }
@@ -370,30 +372,33 @@ src/test/pkg/Test.java:43: Error: Call must be from @UiThread, but context is al
       .run()
       .expect(
         """
-        src/test/pkg/Test.java:35: Warning: Statement must run from @UiThread, incompatible with earlier code that must run from @{Slow,WorkerThread} [UnsatisfiableThreadConstraint]
-            uiMethod(); // OK
-            ~~~~~~~~~~
-src/test/pkg/Test.java:48: Warning: Statement must run from @UiThread, incompatible with earlier code that must run from @{Slow,WorkerThread} [UnsatisfiableThreadConstraint]
-                uiMethod(); // OK
-                ~~~~~~~~~~
-src/test/pkg/Test.java:56: Warning: Statement must run from @UiThread, incompatible with earlier code that must run from @{Slow,WorkerThread} [UnsatisfiableThreadConstraint]
+        src/test/pkg/Test.java:56: Warning: Statement must run from @UiThread, incompatible with earlier code that must run from @{Slow,WorkerThread} [UnsatisfiableThreadConstraint]
                 uiMethod(); // WARN8 ideally, but above instead
                 ~~~~~~~~~~
 src/test/pkg/Test.java:65: Warning: Statement must run from @UiThread, incompatible with earlier code that must run from @{Slow,WorkerThread} [UnsatisfiableThreadConstraint]
                 uiMethod(); // OK
                 ~~~~~~~~~~
-src/test/pkg/Test.java:80: Warning: Statement must run from @UiThread, incompatible with earlier code that must run from @{Slow,WorkerThread} [UnsatisfiableThreadConstraint]
-            uiMethod(); // OK
-            ~~~~~~~~~~
 src/test/pkg/Test.java:27: Error: Call must be from @{Slow,WorkerThread}, but context is allowing @UiThread [WrongThread]
                 slowMethod(); // WARN1
                 ~~~~~~~~~~~~
 src/test/pkg/Test.java:29: Error: Call must be from @{Slow,WorkerThread}, but context is allowing @UiThread [WrongThread]
                 workerMethod(); // WARN2
                 ~~~~~~~~~~~~~~
+src/test/pkg/Test.java:34: Error: Call must be from @{Slow,WorkerThread}, but the work passed to invokeLater is expected to run from @UiThread [WrongThread]
+            slowMethod(); // WARN3
+            ~~~~~~~~~~~~
+src/test/pkg/Test.java:36: Error: Call must be from @{Slow,WorkerThread}, but the work passed to invokeLater is expected to run from @UiThread [WrongThread]
+            workerMethod(); // WARN4
+            ~~~~~~~~~~~~~~
 src/test/pkg/Test.java:40: Error: Call must be from @UiThread, but a super method is allowing @{Slow,WorkerThread} [WrongThread]
             uiMethod(); // WARN5
             ~~~~~~~~~~
+src/test/pkg/Test.java:47: Error: Call must be from @{Slow,WorkerThread}, but the work passed to invokeLater is expected to run from @UiThread [WrongThread]
+                slowMethod(); // WARN6
+                ~~~~~~~~~~~~
+src/test/pkg/Test.java:49: Error: Call must be from @{Slow,WorkerThread}, but the work passed to invokeLater is expected to run from @UiThread [WrongThread]
+                workerMethod(); // WARN7
+                ~~~~~~~~~~~~~~
 src/test/pkg/Test.java:52: Error: Call has an unsatisfiable thread requirement, but a super method is allowing @{Slow,WorkerThread} [WrongThread]
         new Application().runOnPooledThread(new Runnable() { // WARN8 current
                                             ^
@@ -403,6 +408,15 @@ src/test/pkg/Test.java:60: Error: Call has an unsatisfiable thread requirement, 
 src/test/pkg/Test.java:75: Error: Call must be from @UiThread, but context is allowing @{Slow,WorkerThread} [WrongThread]
         uiMethod(); // WARN12
         ~~~~~~~~~~
+src/test/pkg/Test.java:79: Error: Call must be from @{Slow,WorkerThread}, but the work passed to invokeLater is expected to run from @UiThread [WrongThread]
+            slowMethod(); // WARN13
+            ~~~~~~~~~~~~
+src/test/pkg/Test.java:81: Error: Call must be from @{Slow,WorkerThread}, but the work passed to invokeLater is expected to run from @UiThread [WrongThread]
+            workerMethod(); // WARN14
+            ~~~~~~~~~~~~~~
+src/test/pkg/Test.java:86: Error: Argument at x₀ must allow calling run() from @UiThread, but that call is requiring @{Slow,WorkerThread}. [WrongThread]
+        new Application().invokeLater(this::slowMethod); // WARN15
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 src/test/pkg/Test.java:88: Error: Call must be from @UiThread, but a super method is allowing @{Slow,WorkerThread} [WrongThread]
         new Application().runOnPooledThread(this::uiMethod); // WARN16
                                             ~~~~~~~~~~~~~~
@@ -433,7 +447,7 @@ src/test/pkg/Test.java:117: Error: Call must be from @{Slow,WorkerThread}, but a
 src/test/pkg/Test.java:118: Error: Call must be from @{Slow,WorkerThread}, but a super method is allowing @UiThread [WrongThread]
         new Application().runWriteAction(this::workerMethod); // WARN25
                                          ~~~~~~~~~~~~~~~~~~
-16 errors, 5 warnings
+23 errors, 2 warnings
                 """
       )
   }
@@ -642,21 +656,21 @@ src/test/pkg/Test.java:118: Error: Call must be from @{Slow,WorkerThread}, but a
       .run()
       .expect(
         """
-        src/test/pkg/test.kt:18: Error: Argument at x₀ must allow calling run() from @UiThread, but that call is requiring @{Slow,WorkerThread}. [WrongThread]
+        src/test/pkg/test.kt:18: Error: Call must be from @{Slow,WorkerThread}, but the work passed to invokeAndWait is expected to run from @UiThread [WrongThread]
             app.invokeAndWait { slow() } // ERROR
-                ~~~~~~~~~~~~~~~~~~~~~~~~
-        src/test/pkg/test.kt:19: Error: Argument at x₀ must allow calling run() from @UiThread, but that call is requiring @{Slow,WorkerThread}. [WrongThread]
+                                ~~~~~~
+        src/test/pkg/test.kt:19: Error: Call must be from @{Slow,WorkerThread}, but the work passed to invokeLater is expected to run from @UiThread [WrongThread]
             SwingUtilities.invokeLater { slow() } // ERROR
-                           ~~~~~~~~~~~~~~~~~~~~~~
-        src/test/pkg/test.kt:20: Error: Argument at x₀ must allow calling run() from @UiThread, but that call is requiring @{Slow,WorkerThread}. [WrongThread]
+                                         ~~~~~~
+        src/test/pkg/test.kt:20: Error: Call must be from @{Slow,WorkerThread}, but the work passed to invokeLaterIfNeeded is expected to run from @UiThread [WrongThread]
             UIUtil.invokeLaterIfNeeded { slow() } // ERROR
-                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        src/test/pkg/test.kt:21: Error: Argument at x₀ must allow calling run() from @UiThread, but that call is requiring @{Slow,WorkerThread}. [WrongThread]
+                                         ~~~~~~
+        src/test/pkg/test.kt:21: Error: Call must be from @{Slow,WorkerThread}, but the work passed to smartInvokeLater is expected to run from @UiThread [WrongThread]
             dumb.smartInvokeLater { slow() } // ERROR
-                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        src/test/pkg/test.kt:22: Error: Argument at x₀ must allow calling run() from @UiThread, but that call is requiring @{Slow,WorkerThread}. [WrongThread]
+                                    ~~~~~~
+        src/test/pkg/test.kt:22: Error: Call must be from @{Slow,WorkerThread}, but the work passed to runAndWait is expected to run from @UiThread [WrongThread]
             WriteAction.runAndWait<RuntimeException> { slow() } // ERROR
-                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                                                       ~~~~~~
         src/test/pkg/test.kt:28: Error: Call must be from @{Slow,WorkerThread}, but context is allowing @UiThread [WrongThread]
             app.runReadAction { slow() } // ERROR: runs synchronously on the UI thread
                 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -704,12 +718,12 @@ src/test/pkg/Test.java:118: Error: Call must be from @{Slow,WorkerThread}, but a
       .run()
       .expect(
         """
-        src/test/pkg/test.kt:14: Error: Argument at x₀ must run from @{Slow,WorkerThread}, but is requiring @UiThread. [WrongThread]
+        src/test/pkg/test.kt:14: Error: Call must be from @UiThread, but the work passed to thread is expected to run from @{Slow,WorkerThread} [WrongThread]
             thread { ui() } // ERROR
-            ~~~~~~~~~~~~~~~
-        src/test/pkg/test.kt:16: Error: Argument at x₀ must allow calling run() from @{Slow,WorkerThread}, but that call is requiring @UiThread. [WrongThread]
+                     ~~~~
+        src/test/pkg/test.kt:16: Error: Call must be from @UiThread, but the work passed to runAsync is expected to run from @{Slow,WorkerThread} [WrongThread]
             CompletableFuture.runAsync { ui() } // ERROR
-                              ~~~~~~~~~~~~~~~~~
+                                         ~~~~
         2 errors
         """
           .trimIndent()
@@ -783,9 +797,9 @@ src/test/pkg/Test.java:118: Error: Call must be from @{Slow,WorkerThread}, but a
       .run()
       .expect(
         """
-        src/test/pkg/Test.java:12: Error: Argument at x₀ must allow calling run() from @UiThread, but that call is requiring @{Slow,WorkerThread}. [WrongThread]
+        src/test/pkg/Test.java:12: Error: Call must be from @{Slow,WorkerThread}, but the work passed to invokeLater is expected to run from @UiThread [WrongThread]
                 app.invokeLater(() -> slow());
-                    ~~~~~~~~~~~~~~~~~~~~~~~~~
+                                      ~~~~~~
         src/test/pkg/Test.java:17: Error: Call must be from @{Slow,WorkerThread}, but context is allowing @UiThread [WrongThread]
                 s.forEach((x) -> slow());
                   ~~~~~~~~~~~~~~~~~~~~~~
@@ -793,5 +807,175 @@ src/test/pkg/Test.java:118: Error: Call must be from @{Slow,WorkerThread}, but a
         """
           .trimIndent()
       )
+  }
+
+  @Test
+  fun `test assumed higher-order function`() {
+    studioLint()
+      .setUp()
+      .files(
+        java(
+            """
+                    package test.pkg;
+                    import com.android.annotations.concurrency.Slow;
+                    import com.android.annotations.concurrency.UiThread;
+                    import com.intellij.openapi.application.Application;
+
+                    public class Test {
+                        @Slow static void slow() { }
+                        @UiThread static void ui() { }
+
+                        static void mixedBody(Application app) {
+                            app.invokeLater(() -> {
+                                slow(); // WARN: pinpointed against the lambda's @UiThread requirement
+                                ui(); // OK
+                            });
+                        }
+
+                        static void satisfiableBody(Application app) {
+                            app.invokeLater(() -> ui()); // OK
+                        }
+
+                        static void nonLambdaArguments(Application app) {
+                            app.invokeLater(Test::slow); // WARN: whole-argument report
+                            app.invokeLater(new Runnable() {
+                                @Override
+                                public void run() {
+                                    slow(); // WARN: pinpointed like in a lambda body
+                                }
+                            });
+                        }
+
+                        static void pooled(Application app) {
+                            app.executeOnPooledThread(() -> ui()); // WARN: pinpointed
+                            app.executeOnPooledThread(() -> slow()); // OK
+                        }
+                    }
+                """
+          )
+          .indented(),
+        java(
+            """
+            package com.intellij.openapi.application;
+
+            public class Application {
+                public void invokeLater(Runnable run) { }
+                public void executeOnPooledThread(Runnable run) { }
+            }
+          """
+          )
+          .indented(),
+        *annotationDefinitions,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/Test.java:12: Error: Call must be from @{Slow,WorkerThread}, but the work passed to invokeLater is expected to run from @UiThread [WrongThread]
+                    slow(); // WARN: pinpointed against the lambda's @UiThread requirement
+                    ~~~~~~
+        src/test/pkg/Test.java:22: Error: Argument at x₀ must allow calling run() from @UiThread, but that call is requiring @{Slow,WorkerThread}. [WrongThread]
+                app.invokeLater(Test::slow); // WARN: whole-argument report
+                    ~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/Test.java:26: Error: Call must be from @{Slow,WorkerThread}, but the work passed to invokeLater is expected to run from @UiThread [WrongThread]
+                        slow(); // WARN: pinpointed like in a lambda body
+                        ~~~~~~
+        src/test/pkg/Test.java:32: Error: Call must be from @UiThread, but the work passed to executeOnPooledThread is expected to run from @{Slow,WorkerThread} [WrongThread]
+                app.executeOnPooledThread(() -> ui()); // WARN: pinpointed
+                                                ~~~~
+        4 errors
+        """
+          .trimIndent()
+      )
+  }
+
+  @Test
+  fun `test assumed higher-order function matches legacy baseline`() {
+    // Before the pinpointed reports above, these were reported on the whole call with an `Argument …`
+    // message; a baseline recorded back then still silences them.
+    studioLint()
+      .setUp()
+      .files(
+        java(
+            """
+                    package test.pkg;
+                    import com.android.annotations.concurrency.Slow;
+                    import com.android.annotations.concurrency.UiThread;
+                    import com.intellij.openapi.application.Application;
+
+                    public class Test {
+                        @Slow static void slow() { }
+                        @UiThread static void ui() { }
+
+                        static void lambda(Application app) {
+                            app.invokeLater(() -> slow()); // WARN: baselined on the whole call
+                        }
+
+                        static void objectLiteral(Application app) {
+                            app.invokeLater(new Runnable() { // WARN: baselined on the whole call
+                                @Override
+                                public void run() {
+                                    slow();
+                                }
+                            });
+                        }
+
+                        static void pooled(Application app) {
+                            app.executeOnPooledThread(() -> ui()); // WARN: baselined on the whole call
+                        }
+                    }
+                """
+          )
+          .indented(),
+        java(
+            """
+            package com.intellij.openapi.application;
+
+            public class Application {
+                public void invokeLater(Runnable run) { }
+                public void executeOnPooledThread(Runnable run) { }
+            }
+          """
+          )
+          .indented(),
+        *annotationDefinitions,
+      )
+      .baseline(
+        xml(
+          "lint-baseline.xml",
+          """
+          <issues format="5">
+              <issue
+                  id="WrongThread"
+                  message="Argument at `x₀` must allow calling `run()` from @UiThread, but that call is requiring @{Slow,WorkerThread}."
+                  errorLine1="        app.invokeLater(() -> slow()); // WARN: baselined on the whole call"
+                  errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~">
+                  <location
+                      file="src/test/pkg/Test.java"
+                      line="11"/>
+              </issue>
+              <issue
+                  id="WrongThread"
+                  message="Argument at `x₀` must allow calling `run()` from @UiThread, but that call is requiring @{Slow,WorkerThread}."
+                  errorLine1="        app.invokeLater(new Runnable() { // WARN: baselined on the whole call"
+                  errorLine2="            ^">
+                  <location
+                      file="src/test/pkg/Test.java"
+                      line="15"/>
+              </issue>
+              <issue
+                  id="WrongThread"
+                  message="Argument at `x₀` must allow calling `run()` from @{Slow,WorkerThread}, but that call is requiring @UiThread."
+                  errorLine1="        app.executeOnPooledThread(() -> ui()); // WARN: baselined on the whole call"
+                  errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+                  <location
+                      file="src/test/pkg/Test.java"
+                      line="24"/>
+              </issue>
+          </issues>
+          """,
+        )
+      )
+      .run()
+      .expectClean()
   }
 }

@@ -15,10 +15,9 @@
  */
 package com.android.sdklib
 
+import com.android.testutils.assertThrows
 import com.google.common.truth.StringSubject
-import com.google.common.truth.Truth
 import com.google.common.truth.Truth.assertThat
-import kotlin.test.fail
 import org.junit.Test
 
 class AndroidVersionTest {
@@ -29,19 +28,27 @@ class AndroidVersionTest {
     val codenames = listOf("Tiramisu", "O_MR1", "S")
     codenames.forEach {
       val androidVersion = AndroidVersion.fromString(it)
-      Truth.assertThat(androidVersion.codename).isEqualTo(it)
+      assertThat(androidVersion.codename).isEqualTo(it)
+    }
+    val constructorAllowed = listOf("tiramisu", "honeycomb", "s", "O-MR1")
+    constructorAllowed.forEach {
+      val version = AndroidVersion(37, it)
+      assertThat(version.codename).isEqualTo(it)
     }
   }
 
   @Test
   fun testDisallowedCodenames() {
-    val codenames = listOf("tiramisu", "1S", "s")
-    codenames.forEach {
-      try {
+    val fromStringDisallowed = listOf("tiramisu", "1S", "s")
+    fromStringDisallowed.forEach {
+      assertThrows<IllegalArgumentException> {
         AndroidVersion.fromString(it)
-        fail("expecting exception")
-      } catch (expectedException: IllegalArgumentException) {
-        // do nothing
+      }
+    }
+    val constructorDisallowed = listOf("1S", "@dimen/minSdkVersion", "foo bar", "a.b")
+    constructorDisallowed.forEach {
+      assertThrows<IllegalArgumentException> {
+        AndroidVersion(37, it)
       }
     }
   }

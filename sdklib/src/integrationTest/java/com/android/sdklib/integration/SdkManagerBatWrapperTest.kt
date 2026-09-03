@@ -824,4 +824,21 @@ class SdkManagerBatWrapperTest {
     assertThat(res.returnCode).isEqualTo(0)
     assertThat(res.stdout).isEqualTo("--sdk=\"/fake/sdk\" sdk install \"platforms/android-34(1)\" \"package,1\" \"package=2\"")
   }
+
+  @Test
+  fun testLegacySdkmanagerEnvVarIsSet() {
+    val recorder = temporaryFolder.newFile("env_recorder.bat")
+    recorder.writeText(
+      """
+      @echo off
+      echo LEGACY_SDKMANAGER=%LEGACY_SDKMANAGER%
+      echo %*
+      """
+        .trimIndent()
+    )
+
+    val res = runSdkManager("--list", "--sdk_root=/fake/sdk", env = mapOf("ANDROID_CLI_BIN" to recorder.absolutePath))
+    assertThat(res.returnCode).isEqualTo(0)
+    assertThat(res.stdout).contains("LEGACY_SDKMANAGER=1")
+  }
 }

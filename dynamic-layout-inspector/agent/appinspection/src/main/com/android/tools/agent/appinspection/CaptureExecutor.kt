@@ -44,7 +44,6 @@ class CaptureExecutor(
   private val root: View,
   private val isXr: Boolean,
   private val rootsDetector: RootsDetector,
-  private val foldSupport: FoldSupport?,
   private val updateState: (ProgressCheckpoint) -> Unit,
   private val connection: Connection,
 ) : Executor {
@@ -144,9 +143,6 @@ class CaptureExecutor(
     }
     if (snapshotResponse != null || context.isLastCapture) {
       sendAllPropertiesEvent(rootView, snapshotResponse)
-
-      // Send the updated fold state, in case we haven't been sending it continuously.
-      foldSupport?.sendFoldStateEventNow()
     }
     snapshotResponse?.let { snapshotRequest?.result?.complete(it.build()) }
     return

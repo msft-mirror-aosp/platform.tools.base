@@ -21,9 +21,6 @@ import android.content.res.Resources
 import android.graphics.Picture
 import android.graphics.Point
 import android.graphics.Rect
-import android.hardware.Sensor
-import android.hardware.SensorEvent
-import android.hardware.SensorEventListener
 import android.hardware.display.DisplayManager
 import android.os.Build
 import android.os.Looper
@@ -39,7 +36,6 @@ import android.view.WindowMetrics
 import android.webkit.WebView
 import android.widget.TextView
 import androidx.appcompat.widget.AppCompatButton
-import checkNextEventMatching
 import com.android.testutils.PropertySetterRule
 import com.android.tools.agent.appinspection.proto.StringTable
 import com.android.tools.agent.appinspection.proto.createResource
@@ -53,12 +49,10 @@ import com.android.tools.agent.appinspection.testutils.property.companions.ViewG
 import com.android.tools.agent.appinspection.testutils.property.companions.ViewInspectionCompanion
 import com.android.tools.agent.appinspection.util.ThreadUtils
 import com.android.tools.agent.appinspection.util.decompress
-import com.android.tools.agent.shared.FoldObserver
 import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol
 import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol.Command
 import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol.ErrorCode
 import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol.Event
-import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol.FoldEvent.FoldState
 import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol.LayoutEvent
 import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol.ProgressEvent.ProgressCheckpoint
 import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol.Response
@@ -231,102 +225,6 @@ abstract class ViewLayoutInspectorTestBase {
     // get a response here.
     root.forcePictureCapture(Picture(byteArrayOf(1)))
     checkNonProgressEvent(eventQueue) { event -> assertThat(event.specializedCase).isEqualTo(Event.SpecializedCase.ROOTS_EVENT) }
-  }
-
-  @Test
-  fun foldEventsSent() = createViewInspector { viewInspector ->
-    val myObserver =
-      object : FoldObserver {
-        override var foldState: FoldState? = FoldState.HALF_OPEN
-        override val orientation: LayoutInspectorViewProtocol.FoldEvent.FoldOrientation =
-          LayoutInspectorViewProtocol.FoldEvent.FoldOrientation.HORIZONTAL
-
-        override fun startObservingFoldState(rootView: View) {}
-
-        override fun stopObservingFoldState(rootView: View) {}
-
-        override fun shutdown() {}
-      }
-    var fetchContinuously = true
-    viewInspector.foldSupportOverrideForTests = FoldSupport(inspectorRule.connection, { fetchContinuously }, myObserver)
-
-    val eventQueue = ArrayBlockingQueue<ByteArray>(15)
-    inspectorRule.connection.eventListeners.add { bytes -> eventQueue.add(bytes) }
-
-    val packageName = "view.inspector.test"
-    val resources = createResources(packageName)
-    val context = Context(packageName, resources)
-    val tree1 = View(context).apply { setAttachInfo(View.AttachInfo()) }
-    WindowManagerGlobal.getInstance().rootViews.add(tree1)
-
-    val updateScreenshotTypeCommand =
-      Command.newBuilder().apply { updateScreenshotTypeCommandBuilder.apply { type = Screenshot.Type.SKP } }.build()
-    viewInspector.onReceiveCommand(updateScreenshotTypeCommand.toByteArray(), inspectorRule.commandCallback)
-
-    val angleSensor =
-      object : Sensor() {
-        override fun addListener(listener: SensorEventListener?) {
-          super.addListener(listener)
-          fire(SensorEvent().apply { values = floatArrayOf(150f) })
-        }
-      }
-    context.sensorManager.addSensor(Sensor.TYPE_HINGE_ANGLE, angleSensor)
-    val root = View(context).apply { setAttachInfo(View.AttachInfo()) }
-    val fakePicture = Picture(byteArrayOf(1, 2, 3))
-    WindowManagerGlobal.getInstance().rootViews.addAll(listOf(root))
-
-    val startFetchCommand = Command.newBuilder().apply { startFetchCommandBuilder.apply { continuous = true } }.build()
-    viewInspector.onReceiveCommand(startFetchCommand.toByteArray(), inspectorRule.commandCallback)
-    ThreadUtils.runOnMainThread {}.get()
-
-    root.forcePictureCapture(fakePicture)
-
-    checkNextEventMatching(eventQueue, { it.specializedCase == Event.SpecializedCase.FOLD_EVENT }) { event ->
-      assertThat(event.foldEvent.angle).isEqualTo(150)
-    }
-
-    angleSensor.fire(SensorEvent().apply { values = floatArrayOf(100f) })
-
-    checkNextEventMatching(eventQueue, { it.specializedCase == Event.SpecializedCase.FOLD_EVENT }) { event ->
-      assertThat(event.foldEvent.angle).isEqualTo(100)
-    }
-
-    // Set the state to null. We should get one empty event and then no more.
-    myObserver.foldState = null
-    angleSensor.fire(SensorEvent().apply { values = floatArrayOf(0f) })
-
-    checkNextEventMatching(eventQueue, { it.specializedCase == Event.SpecializedCase.FOLD_EVENT }) { event ->
-      assertThat(event.foldEvent.foldState).isEqualTo(FoldState.UNKNOWN_FOLD_STATE)
-    }
-    angleSensor.fire(SensorEvent().apply { values = floatArrayOf(1f) })
-    angleSensor.fire(SensorEvent().apply { values = floatArrayOf(2f) })
-
-    // Set the state back to something, and we should start getting events again.
-    myObserver.foldState = FoldState.HALF_OPEN
-    angleSensor.fire(SensorEvent().apply { values = floatArrayOf(30f) })
-    checkNextEventMatching(eventQueue, { it.specializedCase == Event.SpecializedCase.FOLD_EVENT }) { event ->
-      assertThat(event.foldEvent.angle).isEqualTo(30)
-    }
-
-    // Turn off live updates. We should stop getting events.
-    fetchContinuously = false
-    val stopFetchCommand = Command.newBuilder().apply { stopFetchCommand = StopFetchCommand.getDefaultInstance() }.build()
-    viewInspector.onReceiveCommand(stopFetchCommand.toByteArray(), inspectorRule.commandCallback)
-
-    // Fire several sensor events, but there shouldn't be FoldEvents generated.
-    angleSensor.fire(SensorEvent().apply { values = floatArrayOf(80f) })
-    angleSensor.fire(SensorEvent().apply { values = floatArrayOf(70f) })
-    angleSensor.fire(SensorEvent().apply { values = floatArrayOf(60f) })
-
-    // Now refresh the view: we should only get the latest fold event.
-    val refreshCommand = Command.newBuilder().apply { startFetchCommandBuilder.apply { continuous = false } }.build()
-    viewInspector.onReceiveCommand(refreshCommand.toByteArray(), inspectorRule.commandCallback)
-    ThreadUtils.runOnMainThread {}.get()
-    tree1.forcePictureCapture(fakePicture)
-
-    checkNextEventMatching(eventQueue, { it.specializedCase == Event.SpecializedCase.FOLD_EVENT }) { event ->
-      assertThat(event.foldEvent.angle).isEqualTo(60)
-    }
   }
 
   @Test

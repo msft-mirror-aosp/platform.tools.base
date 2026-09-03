@@ -21,11 +21,9 @@ import com.android.resources.ResourceFolderType
 import com.android.sdklib.devices.screenShape
 import com.android.tools.configurations.Configuration
 import com.android.tools.preview.applyTo
-import com.android.tools.render.common.BrokenClass
 import com.android.tools.render.common.PreviewScreenshot
 import com.android.tools.render.common.PreviewScreenshotResult
-import com.android.tools.render.common.RenderProblem
-import com.android.tools.render.common.ScreenshotError
+import com.android.tools.render.common.toScreenshotError
 import com.android.tools.render.compose.ComposeScreenshot
 import com.android.tools.render.discovery.PreviewDiscoveryEngine
 import com.android.tools.render.validation.PreviewValidator
@@ -165,10 +163,10 @@ class Renderer(
             saveImage(imageRendered, outputFolderPath, relativeImagePath)
           }
 
-          val screenshotError = extractError(renderResult, imageRendered)
+          val screenshotError = renderResult.toScreenshotError(imageRendered)
           PreviewScreenshotResult(screenshot.previewId, screenshot.methodFQN, relativeImagePath, screenshotError)
         } catch (t: Throwable) {
-          PreviewScreenshotResult(screenshot.previewId, screenshot.methodFQN, relativeImagePath, ScreenshotError(t))
+          PreviewScreenshotResult(screenshot.previewId, screenshot.methodFQN, relativeImagePath, t.toScreenshotError())
         } finally {
           Disposer.dispose(renderResult)
         }
@@ -250,30 +248,6 @@ class Renderer(
       g.dispose()
     }
     return newImage
-  }
-
-  private fun extractError(renderResult: RenderResult, imageRendered: BufferedImage?): ScreenshotError? {
-    if (
-      renderResult.renderResult.status == com.android.ide.common.rendering.api.Result.Status.SUCCESS &&
-        !renderResult.logger.hasErrors() &&
-        imageRendered != null
-    ) {
-      return null
-    }
-    val errorMessage =
-      when {
-        imageRendered == null && renderResult.renderResult.status == Result.Status.SUCCESS ->
-          "Nothing to render in Preview. Cannot generate image"
-        else -> renderResult.renderResult.errorMessage ?: ""
-      }
-    return ScreenshotError(
-      renderResult.renderResult.status.name,
-      errorMessage,
-      renderResult.renderResult.exception?.stackTraceToString() ?: "",
-      renderResult.logger.messages.map { RenderProblem(it.html, it.throwable?.stackTraceToString()) },
-      renderResult.logger.brokenClasses.map { BrokenClass(it.key, it.value.stackTraceToString()) },
-      renderResult.logger.missingClasses.toList(),
-    )
   }
 
   override fun close() {

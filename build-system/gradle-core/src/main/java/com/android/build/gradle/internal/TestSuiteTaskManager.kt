@@ -19,6 +19,7 @@ package com.android.build.gradle.internal
 import com.android.build.api.artifact.impl.InternalScopedArtifacts
 import com.android.build.api.component.impl.computeTaskName
 import com.android.build.api.dsl.TestTaskContext
+import com.android.build.api.variant.TestSuiteSourceSet
 import com.android.build.api.variant.impl.TestSuiteSourceContainer
 import com.android.build.api.variant.impl.capitalizeFirstChar
 import com.android.build.gradle.internal.component.ApkCreationConfig
@@ -45,6 +46,7 @@ import org.gradle.api.Task
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.compile.JavaCompile
+import org.gradle.testing.jacoco.plugins.JacocoPlugin
 
 class TestSuiteTaskManager(project: Project, globalConfig: GlobalTaskCreationConfig) : TaskManager(project, globalConfig) {
 
@@ -140,6 +142,11 @@ class TestSuiteTaskManager(project: Project, globalConfig: GlobalTaskCreationCon
     get() = setOf()
 
   fun createTasks(creationConfig: TestSuiteCreationConfig) {
+    val isHostSuite = creationConfig.sourceContainers.any { it.source is TestSuiteSourceSet.HostJar }
+    if (isHostSuite && creationConfig.codeCoverageEnabled) {
+      project.pluginManager.apply(JacocoPlugin::class.java)
+    }
+
     // first create all tasks related to processing the source folders.
     val allSourcesProcessingTasks =
       creationConfig.sourceContainers.mapNotNull { testSuiteSourceContainer ->

@@ -21,7 +21,6 @@ import com.android.tools.preview.MAX_FONT_SCALE
 import com.android.tools.preview.UNDEFINED_API_LEVEL
 import com.android.tools.preview.UNDEFINED_DIMENSION
 import com.android.tools.render.common.PreviewScreenshot
-import com.android.tools.render.compose.ComposeScreenshot
 
 /** Validation rules and limits for individual preview annotation parameters. */
 object ParameterValidators {
@@ -146,10 +145,7 @@ class PreviewValidator : Validator<PreviewScreenshot> {
 
   /** Validates a [PreviewScreenshot]. */
   override fun validate(target: PreviewScreenshot): ValidationResult {
-    val previewIssues = validateParams(target.previewParams).issues
-    val methodIssues = (target as? ComposeScreenshot)?.methodParams?.flatMap(PreviewParameterValidator::validate).orEmpty()
-
-    return ValidationResult(previewIssues + methodIssues)
+    return validateParams(target.previewParams)
   }
 
   /** Validates raw preview parameters map. */

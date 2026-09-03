@@ -16,7 +16,7 @@
 package com.android.tools.deployer;
 
 import com.android.annotations.NonNull;
-import com.android.ddmlib.SimpleConnectedSocket;
+import com.android.tools.deployer.common.DeployerConnectedSocket;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -26,7 +26,7 @@ import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 
 /** Wrapper for a {@link SocketChannel} that supports read/write with timeouts */
-public class SocketChannelWithTimeouts implements SimpleConnectedSocket {
+public class SocketChannelWithTimeouts implements DeployerConnectedSocket {
 
     private final SocketChannel channel;
     private Selector readSelector;

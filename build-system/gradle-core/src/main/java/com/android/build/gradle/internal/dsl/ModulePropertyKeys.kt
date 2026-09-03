@@ -38,6 +38,7 @@ sealed interface ModulePropertyKey<OutputT> {
   enum class OptionalString(override val key: String) : ModulePropertyKey<String?> {
     R8_EXPERIMENTAL_PARTIAL_SHRINKING_INCLUDE_PATTERNS("com.android.tools.r8.experimentalPartialShrinkingIncludePatterns"),
     R8_EXPERIMENTAL_PARTIAL_SHRINKING_EXCLUDE_PATTERNS("com.android.tools.r8.experimentalPartialShrinkingExcludePatterns"),
+    R8_VERSION_OVERRIDE("android.experimental.r8.version"),
 
     /**
      * The page size used for alignment when writing uncompressed native libraries to the APK. Supported values are "4k", "16k", and "64k".

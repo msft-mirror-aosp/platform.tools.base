@@ -72,7 +72,8 @@
       "testInfo": {
         "animationsDisabled": false,
         "additionalRuntimeApks": [],
-        "instrumentedTestTaskName": ""
+        "instrumentedTestTaskName": "",
+        "instrumentInPrivateComputeCore": false
       },
       "flags": {
         "booleanFlagValues": [

@@ -103,7 +103,7 @@ class UnitTestTaskTest {
   fun testUnitTestCachingWithReportAggregation() {
     val build = rule.build
 
-    var result = build.executor.run(":app:createTestReport")
+    var result = build.executor.run(":app:testAllSuites")
 
     assertThat(result.didWorkTasks).contains(":app:testDebugUnitTest")
 

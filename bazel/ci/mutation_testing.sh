@@ -110,6 +110,9 @@ fi
  --output="${impacted_targets_filepath}" \
  --targetType=Rule
 
+# b/555799577 , filter out targets with the suffix _tests__all
+sed -E '/_tests__all[[:space:]]*$/d' "${impacted_targets_filepath}" > "${impacted_targets_filepath}.tmp" && mv "${impacted_targets_filepath}.tmp" "${impacted_targets_filepath}"
+
 # -- Check if Impacted Target File is non-empty ---
 if [[ ! -s "${impacted_targets_filepath}" ]]; then
   echo "Mutation did not impact any test targets. Adding noop_test target to impacted targets file."

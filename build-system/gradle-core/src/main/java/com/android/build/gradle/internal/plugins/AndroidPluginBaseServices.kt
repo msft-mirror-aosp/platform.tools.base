@@ -36,6 +36,7 @@ import com.android.build.gradle.internal.profile.AnalyticsUtil
 import com.android.build.gradle.internal.profile.NoOpAnalyticsConfiguratorService
 import com.android.build.gradle.internal.profile.NoOpAnalyticsService
 import com.android.build.gradle.internal.projectIsolationActive
+import com.android.build.gradle.internal.r8.R8FromMaven
 import com.android.build.gradle.internal.registerDependencyCheck
 import com.android.build.gradle.internal.res.Aapt2FromMaven.Companion.create
 import com.android.build.gradle.internal.scope.ProjectInfo
@@ -112,6 +113,7 @@ abstract class AndroidPluginBaseServices(
         project.extensions.extraProperties,
         { name: String -> project.tasks.register(name) },
         project.pluginManager,
+        r8FromMaven = R8FromMaven.create(project, projectOptions::get),
       )
     }
   }

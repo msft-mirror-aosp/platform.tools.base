@@ -134,6 +134,16 @@ class SamplePreviewTarget {
   @Preview(name = "Default Param Preview")
   fun SampleMethodWithDefaultPreviewParameter(@PreviewParameter(provider = SampleUserProvider::class) user: String) {}
 
+  @Composable
+  @Preview(name = "Invalid Limit Param Preview")
+  fun SampleMethodWithInvalidPreviewParameterLimit(@PreviewParameter(provider = SampleUserProvider::class, limit = -1) user: String) {}
+
+  @Composable
+  @Preview(name = "Multi Param Preview 1")
+  @Preview(name = "Multi Param Preview 2")
+  @DeviceThemePreviews
+  fun SampleMultiPreviewWithBrokenPreviewParameter(@PreviewParameter(provider = SampleUserProvider::class, limit = -1) user: String) {}
+
   @Composable @Preview(name = "Direct Wrapped Preview") @PreviewWrapper(SampleThemeWrapper::class) fun SampleDirectWrappedPreviewMethod() {}
 
   @Composable @WrappedThemePreviews fun SampleMultiPreviewWithWrapperMethod() {}
@@ -257,32 +267,64 @@ class PreviewDiscoveryEngineTest {
   }
 
   @Test
-  fun testDiscoverMethodWithNonComposeAnnotationReturnsEmpty() {
+  fun testDiscoverMethodWithNonComposeAnnotationProducesValidationError() {
     createDiscoveryEngine { engine ->
       val methodFQN = "${SamplePreviewTarget::class.java.name}.sampleMethodWithNonComposeAnnotation"
 
       val results = engine.discoverAllPreviews(methodFQN)
-      assertTrue("Methods annotated with non-Compose annotations should return empty list", results.isEmpty())
+      assertEquals(1, results.size)
+      val result = results.first()
+      assertTrue("Methods annotated with non-Compose annotations should produce empty previews", result.previews.isEmpty())
+      assertTrue(result.methodValidationResult.hasErrors)
+      assertEquals("No @Preview annotations found on method '$methodFQN'", result.methodValidationResult.errors.first().message)
     }
   }
 
   @Test
-  fun testDiscoverMethodWithoutPreviewReturnsEmpty() {
+  fun testDiscoverMethodWithoutPreviewProducesValidationError() {
     createDiscoveryEngine { engine ->
       val methodFQN = "${SamplePreviewTarget::class.java.name}.sampleMethodWithoutAnnotation"
 
       val results = engine.discoverAllPreviews(methodFQN)
-      assertTrue("Methods without @Preview annotation should return empty list", results.isEmpty())
+      assertEquals(1, results.size)
+      val result = results.first()
+      assertTrue("Methods without @Preview annotation should produce empty previews", result.previews.isEmpty())
+      assertTrue(result.methodValidationResult.hasErrors)
+      assertEquals("No @Preview annotations found on method '$methodFQN'", result.methodValidationResult.errors.first().message)
     }
   }
 
   @Test
-  fun testDiscoverNonExistentMethodReturnsEmpty() {
+  fun testDiscoverNonExistentMethodProducesValidationError() {
     createDiscoveryEngine { engine ->
       val methodFQN = "${SamplePreviewTarget::class.java.name}.nonExistentMethod"
 
       val results = engine.discoverAllPreviews(methodFQN)
-      assertTrue("Non-existent method should return empty list", results.isEmpty())
+      assertEquals(1, results.size)
+      val result = results.first()
+      assertTrue("Non-existent method should produce empty previews", result.previews.isEmpty())
+      assertTrue(result.methodValidationResult.hasErrors)
+      assertEquals(
+        "Method 'nonExistentMethod' not found in class '${SamplePreviewTarget::class.java.name}'",
+        result.methodValidationResult.errors.first().message,
+      )
+    }
+  }
+
+  @Test
+  fun testDiscoverNonExistentClassProducesValidationError() {
+    createDiscoveryEngine { engine ->
+      val methodFQN = "com.example.NonExistentClass.someMethod"
+
+      val results = engine.discoverAllPreviews(methodFQN)
+      assertEquals(1, results.size)
+      val result = results.first()
+      assertTrue("Non-existent class should produce empty previews", result.previews.isEmpty())
+      assertTrue(result.methodValidationResult.hasErrors)
+      assertEquals(
+        "Class 'com.example.NonExistentClass' could not be found on the classpath",
+        result.methodValidationResult.errors.first().message,
+      )
     }
   }
 
@@ -307,16 +349,6 @@ class PreviewDiscoveryEngineTest {
       assertEquals("360", p1.previewParams["widthDp"])
       assertEquals("720", p1.previewParams["heightDp"])
       assertEquals("32", p1.previewParams["uiMode"])
-    }
-  }
-
-  @Test
-  fun testDiscoverNonExistentClassReturnsEmpty() {
-    createDiscoveryEngine { engine ->
-      val methodFQN = "com.android.tools.render.NonExistentClass.preview"
-
-      val results = engine.discoverAllPreviews(methodFQN)
-      assertTrue("Non-existent class should return empty list", results.isEmpty())
     }
   }
 
@@ -380,7 +412,11 @@ class PreviewDiscoveryEngineTest {
       val methodFQN = "${SamplePreviewTarget::class.java.name}.SampleCyclicMultiPreviewMethod"
 
       val results = engine.discoverAllPreviews(methodFQN)
-      assertTrue("Cyclic annotations without @Preview should return empty list without crashing", results.isEmpty())
+      assertEquals(1, results.size)
+      val result = results.first()
+      assertTrue("Cyclic annotations without @Preview should return empty previews", result.previews.isEmpty())
+      assertTrue(result.methodValidationResult.hasErrors)
+      assertEquals("No @Preview annotations found on method '$methodFQN'", result.methodValidationResult.errors.first().message)
     }
   }
 
@@ -602,6 +638,39 @@ class PreviewDiscoveryEngineTest {
         "Method '$methodFQN' annotated with @Preview must be annotated with @Composable",
         invalidResult.methodValidationResult.errors[0].message,
       )
+    }
+  }
+
+  @Test
+  fun testDiscoverMethodWithInvalidPreviewParameterLimitProducesValidationError() {
+    createDiscoveryEngine { engine ->
+      val methodFQN = "${SamplePreviewTarget::class.java.name}.SampleMethodWithInvalidPreviewParameterLimit"
+
+      val results = engine.discoverAllPreviews(methodFQN)
+      assertEquals(1, results.size)
+      val result = results.first()
+      assertTrue("Broken preview parameter should produce empty previews", result.previews.isEmpty())
+      assertTrue("Method validation result should have errors", result.methodValidationResult.hasErrors)
+      val error = result.methodValidationResult.errors.first()
+      assertEquals("limit", error.target)
+      assertTrue(error.message.contains("positive integer"))
+    }
+  }
+
+  @Test
+  fun testDiscoverMultiPreviewMethodWithInvalidPreviewParameterFailsEarlyWithSingleError() {
+    createDiscoveryEngine { engine ->
+      val methodFQN = "${SamplePreviewTarget::class.java.name}.SampleMultiPreviewWithBrokenPreviewParameter"
+
+      val results = engine.discoverAllPreviews(methodFQN)
+      // Even though there are multiple @Preview and MultiPreview annotations declared on the method,
+      // discovery fails fast at the method level, returning exactly 1 DiscoveredMethodPreviews with errors and 0 expanded previews.
+      assertEquals("Should return exactly 1 result for the method overload", 1, results.size)
+      val result = results.first()
+      assertTrue("Discovered previews must be empty so multiple previews are not expanded", result.previews.isEmpty())
+      assertTrue("Method validation result should have errors", result.methodValidationResult.hasErrors)
+      assertEquals(1, result.methodValidationResult.errors.size)
+      assertEquals("limit", result.methodValidationResult.errors.first().target)
     }
   }
 }

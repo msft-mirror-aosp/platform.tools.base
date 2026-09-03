@@ -23,10 +23,10 @@ import com.android.adblib.ConnectedDevicesTrackerKt;
 import com.android.ddmlib.AdbInitOptions;
 import com.android.ddmlib.AndroidDebugBridge;
 import com.android.ddmlib.IDevice;
-import com.android.ddmlib.SimpleConnectedSocket;
 import com.android.testutils.AssumeUtil;
 import com.android.tools.deployer.common.AdbClient;
 import com.android.tools.deployer.common.DeployMetric;
+import com.android.tools.deployer.common.DeployerConnectedSocket;
 import com.android.tools.deployer.common.DeviceHolder;
 import com.android.tools.deployer.common.Timeouts;
 import com.android.tools.deployer.devices.FakeDevice;
@@ -183,7 +183,7 @@ public class AdbInstallerChannelManagerTest {
         }
 
         @Override
-        public SimpleConnectedSocket rawExec(String executable, String[] parameters) {
+        public DeployerConnectedSocket rawExec(String executable, String[] parameters) {
             if (executable.equals(AdbInstaller.INSTALLER_PATH)) {
                 try {
                     return SocketChannelWithTimeouts.wrap(
