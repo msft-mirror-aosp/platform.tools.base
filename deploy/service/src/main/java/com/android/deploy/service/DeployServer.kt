@@ -15,6 +15,8 @@
  */
 package com.android.deploy.service
 
+import com.android.adblib.AdbSession
+import com.android.adblib.AdbSessionHost
 import com.android.ddmlib.AndroidDebugBridge
 import com.android.ddmlib.Client
 import com.android.ddmlib.ClientData.DebuggerStatus
@@ -36,6 +38,7 @@ import com.android.tools.deployer.AdbInstaller
 import com.android.tools.deployer.DeployerRunner
 import com.android.tools.deployer.common.AdbClient
 import com.android.tools.deployer.common.DeployMetric
+import com.android.tools.deployer.common.DeviceHolder
 import com.android.tools.deployer.common.Installer
 import com.android.tools.idea.io.grpc.Server
 import com.android.tools.idea.io.grpc.netty.NettyServerBuilder
@@ -52,6 +55,7 @@ import kotlinx.coroutines.runBlocking
 class DeployServer : DeployServiceImplBase {
 
   private lateinit var myActiveBridge: AndroidDebugBridge
+  private lateinit var mySession: AdbSession
   private lateinit var myServer: Server
   private val myDeployRunner: DeployerRunner?
   private val myDeployerInteraction = DeployerInteraction()
@@ -68,7 +72,7 @@ class DeployServer : DeployServiceImplBase {
    * @param adbPath full path to adb.exe required by [AndroidDebugBridge].
    */
   fun start(port: Int, adbPath: String) {
-    AdbHelper.initAndroidDebugBridge()
+    mySession = AdbHelper.initAndroidDebugBridge()
     myActiveBridge = AndroidDebugBridge.createBridge(adbPath, false)!!
     val serverBuilder = NettyServerBuilder.forPort(port)
     serverBuilder.addService(this)
@@ -78,9 +82,14 @@ class DeployServer : DeployServiceImplBase {
   }
 
   @VisibleForTesting
-  constructor(bridge: AndroidDebugBridge, deployerRunner: DeployerRunner?) {
+  constructor(
+    bridge: AndroidDebugBridge,
+    deployerRunner: DeployerRunner?,
+    session: AdbSession = AdbSession.create(AdbSessionHost()),
+  ) {
     myActiveBridge = bridge
     myDeployRunner = deployerRunner
+    mySession = session
   }
 
   override fun getDevices(request: DeviceRequest, responseObserver: StreamObserver<DeviceResponse>) {
@@ -149,7 +158,7 @@ class DeployServer : DeployServiceImplBase {
     val response = ResumeProcessResponse.newBuilder()
     runBlocking {
       try {
-        AdbHelper.resumeProcess(request.deviceId, request.pid)
+        AdbHelper.resumeProcess(mySession, request.deviceId, request.pid)
         responseObserver.onNext(response.build())
         responseObserver.onCompleted()
       } catch (e: Exception) {
@@ -159,8 +168,11 @@ class DeployServer : DeployServiceImplBase {
   }
 
   override fun installApk(request: InstallApkRequest, responseObserver: StreamObserver<InstallApkResponse>) {
-    val device = getDeviceBySerial(request.deviceId)
-    if (device == null) {
+    val iDevice = getDeviceBySerial(request.deviceId)
+    val connectedDevice = iDevice?.let {
+      runBlocking { AdbHelper.getConnectedDevice(mySession, request.deviceId) }
+    }
+    if (iDevice == null || connectedDevice == null) {
       responseObserver.onNext(
         InstallApkResponse.newBuilder()
           .setExitStatus(-1)
@@ -179,7 +191,8 @@ class DeployServer : DeployServiceImplBase {
     //   install <packageName> <baseApk> [additionalApks]...
     // For instance:
     // install com.example.myApp c:\Temp\myapp.apk
-    val exitCode = myDeployRunner!!.run(device, arguments.toTypedArray<String>(), logger)
+    val deviceHolder = DeviceHolder(iDevice, connectedDevice, mySession)
+    val exitCode = myDeployRunner!!.run(deviceHolder, mySession, arguments.toTypedArray<String>(), logger)
     responseObserver.onNext(
       InstallApkResponse.newBuilder()
         .setExitStatus(exitCode)
@@ -193,9 +206,22 @@ class DeployServer : DeployServiceImplBase {
   }
 
   override fun runNetworkTest(request: Service.NetworkTestRequest, responseObserver: StreamObserver<Service.NetworkTestResponse>) {
-    val device = getDeviceBySerial(request.deviceId)
+    val iDevice = getDeviceBySerial(request.deviceId)
+    val connectedDevice = iDevice?.let {
+      runBlocking { AdbHelper.getConnectedDevice(mySession, request.deviceId) }
+    }
+    if (iDevice == null || connectedDevice == null) {
+      responseObserver.onNext(
+        Service.NetworkTestResponse.newBuilder()
+          .setError("Cannot find device with the given device id: ${request.deviceId}")
+          .build()
+      )
+      responseObserver.onCompleted()
+      return
+    }
+    val deviceHolder = DeviceHolder(iDevice, connectedDevice, mySession)
     val logger = DeployLogger(DeployLogger.Level.ERROR)
-    val adb = AdbClient(device, logger, AdbHelper.session)
+    val adb = AdbClient(deviceHolder, logger, mySession)
     val metrics = mutableListOf<DeployMetric>()
     val installer: Installer = AdbInstaller(null, adb, metrics, logger, AdbInstaller.Mode.DAEMON)
     var response = Service.NetworkTestResponse.newBuilder()

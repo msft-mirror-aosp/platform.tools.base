@@ -61,6 +61,8 @@ kotlin_test(
     deps = [
         ":deploy.service-lib",
         ":deploy-service-proto",
+        "//tools/base/adblib",
+        "//tools/base/adblib:adblib.test.fixtures",
         "//tools/base/annotations",
         "//tools/base/bazel:studio-grpc",
         "//tools/base/bazel:studio-proto",
@@ -69,6 +71,7 @@ kotlin_test(
         "//tools/base/deploy/deployer:tools.deployer",
         "//tools/base/deploy/deployer:tools.deployer.common",
         "//tools/base/deploy/proto:deploy_java_proto",
+        "//tools/base/fakeadbserver:tools.fakeadbserver",
         "//tools/base/testutils:studio.android.sdktools.testutils_testlib",
         "@maven//:com.google.truth.truth",
         "@maven//:junit.junit",
