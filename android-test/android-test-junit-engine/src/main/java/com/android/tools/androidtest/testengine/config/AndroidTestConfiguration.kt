@@ -27,6 +27,7 @@ import com.android.tools.androidtest.testengine.config.AndroidTestConfigurationK
 import com.android.tools.androidtest.testengine.config.AndroidTestConfigurationKeys.INSTRUMENTATION_RUNNER_CLASS
 import com.android.tools.androidtest.testengine.config.AndroidTestConfigurationKeys.INSTRUMENTATION_TARGET_PACKAGE_ID
 import com.android.tools.androidtest.testengine.config.AndroidTestConfigurationKeys.INSTRUMENT_IN_PCC
+import com.android.tools.androidtest.testengine.config.AndroidTestConfigurationKeys.PARALLEL_TEST_RESULT_REPORTING
 import com.android.tools.androidtest.testengine.config.AndroidTestConfigurationKeys.RESULTS_DIR
 import com.android.tools.androidtest.testengine.config.AndroidTestConfigurationKeys.TESTED_APKS
 import com.android.tools.androidtest.testengine.config.AndroidTestConfigurationKeys.TESTED_APPLICATION_ID
@@ -94,6 +95,7 @@ class AndroidTestConfiguration(request: ExecutionRequest) {
   val executionMode: String? = get(ANDROID_TEST_EXECUTION_MODE, AgpTestSuiteInput.ANDROID_TEST_EXECUTION_MODE)
   val animationsDisabled: Boolean = get(ANIMATIONS_DISABLED, AgpTestSuiteInput.ANIMATIONS_DISABLED)?.toBoolean() ?: false
   val instrumentInPcc: Boolean = get(INSTRUMENT_IN_PCC)?.toBoolean() ?: false
+  val parallelTestResultReporting: Boolean = get(PARALLEL_TEST_RESULT_REPORTING)?.toBoolean() ?: false
 
   val instrumentationRunnerClass: String =
     get(INSTRUMENTATION_RUNNER_CLASS) ?: throw RuntimeException("$INSTRUMENTATION_RUNNER_CLASS configuration is required")

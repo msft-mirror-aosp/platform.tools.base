@@ -91,10 +91,18 @@ class AndroidTestEngineDescriptor(
     // 1. Start test execution on all devices in parallel background threads.
     deviceDescriptors.forEach { it.startRunner(context) }
 
-    // 2. Report device results sequentially to JUnit Platform / Gradle to avoid concurrent container issues.
-    deviceDescriptors.forEach { deviceDescriptor ->
-      dynamicTestExecutor.execute(deviceDescriptor)
+    // 2. Report device results. If parallel reporting is enabled, execute devices concurrently;
+    // otherwise, report sequentially to JUnit Platform / Gradle to avoid concurrent container issues.
+    if (config.parallelTestResultReporting) {
+      deviceDescriptors.forEach { deviceDescriptor ->
+        dynamicTestExecutor.execute(deviceDescriptor)
+      }
       dynamicTestExecutor.awaitFinished()
+    } else {
+      deviceDescriptors.forEach { deviceDescriptor ->
+        dynamicTestExecutor.execute(deviceDescriptor)
+        dynamicTestExecutor.awaitFinished()
+      }
     }
 
     return context

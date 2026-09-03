@@ -24,6 +24,7 @@ import org.junit.Test
 import org.junit.platform.engine.UniqueId
 import org.junit.platform.engine.support.hierarchical.Node
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
@@ -161,7 +162,7 @@ class AndroidTestEngineDescriptorTest {
   }
 
   @Test
-  fun `execute starts runners in parallel and executes descriptors sequentially`() {
+  fun `execute starts runners in parallel and executes descriptors sequentially by default`() {
     val uniqueId = UniqueId.forEngine("android-test-engine")
     val mockDevice1 = mock<AndroidDeviceDescriptor>()
     val mockDevice2 = mock<AndroidDeviceDescriptor>()
@@ -186,8 +187,43 @@ class AndroidTestEngineDescriptorTest {
     verify(mockDevice1).startRunner(context)
     verify(mockDevice2).startRunner(context)
 
-    verify(dynamicTestExecutor).execute(mockDevice1)
-    verify(dynamicTestExecutor).execute(mockDevice2)
-    verify(dynamicTestExecutor, times(2)).awaitFinished()
+    val inOrder = inOrder(dynamicTestExecutor)
+    inOrder.verify(dynamicTestExecutor).execute(mockDevice1)
+    inOrder.verify(dynamicTestExecutor).awaitFinished()
+    inOrder.verify(dynamicTestExecutor).execute(mockDevice2)
+    inOrder.verify(dynamicTestExecutor).awaitFinished()
+  }
+
+  @Test
+  fun `execute with parallel test result reporting starts runners and executes descriptors concurrently`() {
+    val uniqueId = UniqueId.forEngine("android-test-engine")
+    val mockDevice1 = mock<AndroidDeviceDescriptor>()
+    val mockDevice2 = mock<AndroidDeviceDescriptor>()
+    whenever(mockDevice1.deviceSerial).thenReturn("serial1")
+    whenever(mockDevice2.deviceSerial).thenReturn("serial2")
+
+    val descriptor =
+      AndroidTestEngineDescriptor(uniqueId) { _, serial, _, _, _ ->
+        if (serial == "serial1") mockDevice1 else mockDevice2
+      }
+
+    val context = mock<AndroidTestExecutionContext>()
+    val configuration = mock<AndroidTestConfiguration>()
+    whenever(context.configuration).thenReturn(configuration)
+    whenever(configuration.deviceSerials).thenReturn(listOf("serial1", "serial2"))
+    whenever(configuration.adb).thenReturn(File("adb"))
+    whenever(configuration.parallelTestResultReporting).thenReturn(true)
+
+    val dynamicTestExecutor = mock<Node.DynamicTestExecutor>()
+
+    descriptor.execute(context, dynamicTestExecutor)
+
+    verify(mockDevice1).startRunner(context)
+    verify(mockDevice2).startRunner(context)
+
+    val inOrder = inOrder(dynamicTestExecutor)
+    inOrder.verify(dynamicTestExecutor).execute(mockDevice1)
+    inOrder.verify(dynamicTestExecutor).execute(mockDevice2)
+    inOrder.verify(dynamicTestExecutor).awaitFinished()
   }
 }

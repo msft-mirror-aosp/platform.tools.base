@@ -202,4 +202,39 @@ class AndroidTestExecutionContextTest {
     val context = AndroidTestExecutionContext(request)
     assertThat(context.configuration.coverageType).isEqualTo(AndroidTestConfiguration.CoverageType.ON_THE_FLY)
   }
+
+  @Test
+  fun `AndroidTestConfiguration parses parallelTestResultReporting default false`() {
+    val configParams = mock<ConfigurationParameters>()
+    whenever(configParams.get(AndroidTestConfigurationKeys.ADB_PATH)).thenReturn(Optional.of("/path/to/adb"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.AAPT2_PATH)).thenReturn(Optional.of("/path/to/aapt2"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.DEVICE_SERIALS)).thenReturn(Optional.of("serial1"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.INSTRUMENTATION_RUNNER_CLASS)).thenReturn(Optional.of("com.example.Runner"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.INSTRUMENTATION_TARGET_PACKAGE_ID)).thenReturn(Optional.of("com.example.app"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.TEST_PACKAGE_ID)).thenReturn(Optional.of("com.example.app.test"))
+
+    val request = mock<ExecutionRequest>()
+    whenever(request.configurationParameters).thenReturn(configParams)
+
+    val context = AndroidTestExecutionContext(request)
+    assertThat(context.configuration.parallelTestResultReporting).isFalse()
+  }
+
+  @Test
+  fun `AndroidTestConfiguration parses parallelTestResultReporting enabled`() {
+    val configParams = mock<ConfigurationParameters>()
+    whenever(configParams.get(AndroidTestConfigurationKeys.ADB_PATH)).thenReturn(Optional.of("/path/to/adb"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.AAPT2_PATH)).thenReturn(Optional.of("/path/to/aapt2"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.DEVICE_SERIALS)).thenReturn(Optional.of("serial1"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.INSTRUMENTATION_RUNNER_CLASS)).thenReturn(Optional.of("com.example.Runner"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.INSTRUMENTATION_TARGET_PACKAGE_ID)).thenReturn(Optional.of("com.example.app"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.TEST_PACKAGE_ID)).thenReturn(Optional.of("com.example.app.test"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.PARALLEL_TEST_RESULT_REPORTING)).thenReturn(Optional.of("true"))
+
+    val request = mock<ExecutionRequest>()
+    whenever(request.configurationParameters).thenReturn(configParams)
+
+    val context = AndroidTestExecutionContext(request)
+    assertThat(context.configuration.parallelTestResultReporting).isTrue()
+  }
 }
