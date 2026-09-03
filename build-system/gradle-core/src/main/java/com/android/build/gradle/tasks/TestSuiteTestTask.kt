@@ -76,6 +76,7 @@ import kotlin.collections.asIterable
 import kotlin.collections.joinToString
 import kotlin.collections.plus
 import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.ConfigurableFileTree
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.FileSystemLocation
@@ -196,10 +197,21 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
 
   @get:Classpath @get:Optional abstract val jacocoAntClasspath: ConfigurableFileCollection
 
+  /**
+   * The source directories to be used for matching with coverage files when generating reports.
+   *
+   * We use [ListProperty] of [Provider] of [List] of [ConfigurableFileTree] because:
+   * 1. [ListProperty] allows lazy collection of multiple independent source sets (e.g., separate registrations for Java and Kotlin source
+   *    directories) without evaluating them during configuration.
+   * 2. [Provider] and [List] handle the lazy resolution of directories that might not exist or are not fully configured yet.
+   * 3. [ConfigurableFileTree] preserves the root directory (via [ConfigurableFileTree.getDir]) of each source tree. This is critical for
+   *    Jacoco report generation to correctly resolve package structures and locate source files, which would be lost if using a flat
+   *    [FileCollection].
+   */
   @get:InputFiles
   @get:Optional
   @get:PathSensitive(PathSensitivity.RELATIVE)
-  abstract val coverageSourceDirectories: ConfigurableFileCollection
+  abstract val coverageSourceDirectories: ListProperty<Provider<List<ConfigurableFileTree>>>
 
   @get:InputFiles
   @get:Optional
@@ -492,6 +504,13 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
               }
             }
 
+            val sourceFolders: List<File> =
+              coverageSourceDirectories
+                .getOrElse(emptyList())
+                .map { it.get().map(ConfigurableFileTree::getDir) }
+                .flatten()
+                .distinctBy { it.absolutePath }
+
             if (coverageFiles.isNotEmpty() && coverageReportDir.isPresent) {
               // Execute using Worker API to isolate Jacoco classpath
               workerExecutor
@@ -500,7 +519,7 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
                   it.coverageFiles.setFrom(coverageFiles)
                   it.reportDir.set(coverageReportDir)
                   it.classFolders.setFrom(coverageClassDirectories)
-                  it.sourceFolders.setFrom(coverageSourceDirectories)
+                  it.sourceFolders.setFrom(sourceFolders)
                   it.reportName.set(testedVariantName.get())
                   it.projectName.set(modulePath.get())
                   it.variantName.set(testedVariantName.get())
@@ -1367,10 +1386,11 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
               .from(realTestedVariant.artifacts.forScope(ScopedArtifacts.Scope.PROJECT).getFinalArtifacts(ScopedArtifact.CLASSES))
           task.coverageClassDirectories.from(mainClasses)
 
-          realTestedVariant.sources.java { javaSources -> task.coverageSourceDirectories.from(javaSources.getAsFileTrees()) }
+          realTestedVariant.sources.java { javaSources -> task.coverageSourceDirectories.addAll(javaSources.getAsFileTrees()) }
           realTestedVariant.sources.kotlin { kotlinSources ->
-            task.coverageSourceDirectories.from(kotlinSources.getAsFileTrees())
+            task.coverageSourceDirectories.addAll(kotlinSources.getAsFileTrees())
           }
+          task.coverageSourceDirectories.disallowChanges()
           task.coverageReportDir.set(task.project.layout.buildDirectory.dir(task.testSuiteName.map { "reports/coverage/$it" }))
 
           if (hasHostJar) {

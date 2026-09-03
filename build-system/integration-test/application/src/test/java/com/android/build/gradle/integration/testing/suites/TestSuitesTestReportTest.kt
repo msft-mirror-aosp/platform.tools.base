@@ -260,6 +260,11 @@ class TestSuitesTestReportTest {
     assertThat(appPackage).isNotNull()
     val dummyClass = appPackage!!.classes.find { it.name == "Dummy" }
     assertThat(dummyClass).isNotNull()
+
+    assertThat(dummyClass!!.variantSourceFilePaths).isNotEmpty()
+    val variantSourcePath = dummyClass.variantSourceFilePaths.first()
+    assertThat(variantSourcePath.variantName).isEqualTo("debug")
+    assertThat(variantSourcePath.path).isEqualTo("app/src/main/java/com.example.dummy/Dummy.java")
   }
 
   @Test
