@@ -215,6 +215,7 @@ open class BuiltinIssueRegistry : IssueRegistry() {
           GradleDetector.SWITCH_TO_TOML,
           GradleDetector.TARGET_NEWER,
           GridLayoutDetector.ISSUE,
+          GuardedByDetector.ISSUE,
           HandlerDetector.ISSUE,
           HardcodedDebugModeDetector.ISSUE,
           HardcodedValuesDetector.ISSUE,
