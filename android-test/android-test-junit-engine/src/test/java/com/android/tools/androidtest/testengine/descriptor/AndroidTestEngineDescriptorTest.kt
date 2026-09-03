@@ -31,10 +31,25 @@ import org.mockito.kotlin.whenever
 
 class AndroidTestEngineDescriptorTest {
 
+  private fun createDescriptor(uniqueId: UniqueId): AndroidTestEngineDescriptor {
+    lateinit var engineDescriptor: AndroidTestEngineDescriptor
+    engineDescriptor =
+      AndroidTestEngineDescriptor(uniqueId) { uid, serial, id, displayName, _ ->
+        mock<AndroidDeviceDescriptor>().also {
+          whenever(it.uniqueId).thenReturn(uid)
+          whenever(it.deviceSerial).thenReturn(serial)
+          whenever(it.deviceId).thenReturn(id)
+          whenever(it.deviceDisplayName).thenReturn(displayName)
+          whenever(it.parent).thenReturn(java.util.Optional.of(engineDescriptor))
+        }
+      }
+    return engineDescriptor
+  }
+
   @Test
   fun `execute executes AndroidDeviceDescriptor for each serial`() {
     val uniqueId = UniqueId.forEngine("android-test-engine")
-    val descriptor = AndroidTestEngineDescriptor(uniqueId)
+    val descriptor = createDescriptor(uniqueId)
 
     val context = mock<AndroidTestExecutionContext>()
     val configuration = mock<AndroidTestConfiguration>()
@@ -64,7 +79,7 @@ class AndroidTestEngineDescriptorTest {
   @Test
   fun `execute sanitizes device serials and versions with unsafe characters`() {
     val uniqueId = UniqueId.forEngine("android-test-engine")
-    val descriptor = AndroidTestEngineDescriptor(uniqueId)
+    val descriptor = createDescriptor(uniqueId)
 
     val context = mock<AndroidTestExecutionContext>()
     val configuration = mock<AndroidTestConfiguration>()
@@ -88,7 +103,7 @@ class AndroidTestEngineDescriptorTest {
   @Test
   fun `execute sanitizes device serials and versions when empty or all dots`() {
     val uniqueId = UniqueId.forEngine("android-test-engine")
-    val descriptor = AndroidTestEngineDescriptor(uniqueId)
+    val descriptor = createDescriptor(uniqueId)
 
     // Test Case A: All dots ("..") -> should sanitize to underscores ("__") to prevent collision
     val contextA = mock<AndroidTestExecutionContext>()
@@ -123,7 +138,7 @@ class AndroidTestEngineDescriptorTest {
   @Test
   fun `execute sanitizes custom deviceIds retrieved from configuration`() {
     val uniqueId = UniqueId.forEngine("android-test-engine")
-    val descriptor = AndroidTestEngineDescriptor(uniqueId)
+    val descriptor = createDescriptor(uniqueId)
 
     val context = mock<AndroidTestExecutionContext>()
     val configuration = mock<AndroidTestConfiguration>()
@@ -143,5 +158,36 @@ class AndroidTestEngineDescriptorTest {
     assertThat(deviceDescriptor.deviceSerial).isEqualTo("serial1")
     assertThat(deviceDescriptor.deviceId).isEqualTo(".._.._evil_custom_id")
     assertThat(deviceDescriptor.deviceDisplayName).isEqualTo(".._.._evil_custom_id (serial1)")
+  }
+
+  @Test
+  fun `execute starts runners in parallel and executes descriptors sequentially`() {
+    val uniqueId = UniqueId.forEngine("android-test-engine")
+    val mockDevice1 = mock<AndroidDeviceDescriptor>()
+    val mockDevice2 = mock<AndroidDeviceDescriptor>()
+    whenever(mockDevice1.deviceSerial).thenReturn("serial1")
+    whenever(mockDevice2.deviceSerial).thenReturn("serial2")
+
+    val descriptor =
+      AndroidTestEngineDescriptor(uniqueId) { _, serial, _, _, _ ->
+        if (serial == "serial1") mockDevice1 else mockDevice2
+      }
+
+    val context = mock<AndroidTestExecutionContext>()
+    val configuration = mock<AndroidTestConfiguration>()
+    whenever(context.configuration).thenReturn(configuration)
+    whenever(configuration.deviceSerials).thenReturn(listOf("serial1", "serial2"))
+    whenever(configuration.adb).thenReturn(File("adb"))
+
+    val dynamicTestExecutor = mock<Node.DynamicTestExecutor>()
+
+    descriptor.execute(context, dynamicTestExecutor)
+
+    verify(mockDevice1).startRunner(context)
+    verify(mockDevice2).startRunner(context)
+
+    verify(dynamicTestExecutor).execute(mockDevice1)
+    verify(dynamicTestExecutor).execute(mockDevice2)
+    verify(dynamicTestExecutor, times(2)).awaitFinished()
   }
 }

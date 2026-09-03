@@ -109,7 +109,21 @@ class AndroidDeviceDescriptor(
 
   private val logger = Logger.getLogger(AndroidDeviceDescriptor::class.java.name)
 
+  /**
+   * Events sent from the background runner thread to the JUnit test execution thread via [tests].
+   *
+   * Sequencing events through this channel ensures all interactions with JUnit Platform's
+   * [org.junit.platform.engine.EngineExecutionListener] occur on the test execution thread while this device container is actively
+   * executing, preventing interleaved container events across parallel devices.
+   */
   private sealed class TestEvent {
+    /**
+     * Device-level report entries (e.g., test count, display name, device info) emitted upon instrumentation startup. These are queued and
+     * published when [execute] runs.
+     */
+    data class DeviceReportEntries(val entries: List<ReportEntry>) : TestEvent()
+
+    /** A dynamically discovered test case emitted when a test starts on the device. */
     data class NewTest(val descriptor: AndroidDynamicTestDescriptor) : TestEvent()
   }
 
@@ -119,7 +133,13 @@ class AndroidDeviceDescriptor(
 
   override fun mayRegisterTests(): Boolean = true
 
-  override fun execute(context: AndroidTestExecutionContext, dynamicTestExecutor: Node.DynamicTestExecutor): AndroidTestExecutionContext {
+  /**
+   * Starts the background runner process for this device.
+   *
+   * This allows launching APK installation and instrumentation on all devices concurrently, while JUnit Platform / Gradle can report
+   * container results sequentially.
+   */
+  internal fun startRunner(context: AndroidTestExecutionContext) {
     val config = context.configuration
 
     val adbController = adbControllerFactory(config.adb)
@@ -238,7 +258,7 @@ class AndroidDeviceDescriptor(
       }
     }
 
-    val listener = Listener(context, reporter, logcatCollector, deviceInfoFile, additionalTestOutputCollector)
+    val listener = Listener(reporter, logcatCollector, deviceInfoFile, additionalTestOutputCollector)
 
     val instrumentationArgs = config.instrumentationArgs.toMutableMap()
     if (config.isEmulatorControlEnabled(deviceSerial)) {
@@ -324,8 +344,7 @@ class AndroidDeviceDescriptor(
     // test cases to the 'tests' channel while the main thread (the current one) consumes and
     // executes them concurrently. This is essential for JUnit dynamic test execution to start
     // as soon as tests are discovered on the device.
-    val runnerThread =
-      Thread(
+    Thread(
         {
           try {
             logcatCollector?.startCapture(deviceId, deviceSerial)
@@ -333,24 +352,38 @@ class AndroidDeviceDescriptor(
           } catch (t: Throwable) {
             logger.log(Level.SEVERE, "AndroidTestRunner failed on $deviceSerial", t)
           } finally {
-            logcatCollector?.cleanup()
-            listener.finish()
-            // Close the channel once the instrumentation process finishes to signal that no
-            // more tests will be discovered.
-            tests.close()
+            try {
+              logcatCollector?.cleanup()
+            } catch (t: Throwable) {
+              logger.log(Level.WARNING, "logcat cleanup failed on $deviceSerial", t)
+            } finally {
+              // Note: listener.finish() calls tests.close() to signal that no more tests or report
+              // entries will be discovered, allowing execute() to complete.
+              listener.finish()
+            }
           }
         },
         "AndroidTestRunner-$deviceSerial",
       )
-    runnerThread.start()
+      .start()
+  }
 
-    // Consume and process test discovery events from the instrumentation runner.
+  override fun execute(context: AndroidTestExecutionContext, dynamicTestExecutor: Node.DynamicTestExecutor): AndroidTestExecutionContext {
+    // Consume and process test discovery and report events from the instrumentation runner.
     runBlocking {
       for (testEvent in tests) {
         when (testEvent) {
+          is TestEvent.DeviceReportEntries -> {
+            for (entry in testEvent.entries) {
+              context.request.engineExecutionListener.reportingEntryPublished(this@AndroidDeviceDescriptor, entry)
+            }
+          }
           // As new tests are discovered on the device, we dynamically register and execute
           // them within the JUnit engine.
-          is TestEvent.NewTest -> dynamicTestExecutor.execute(testEvent.descriptor)
+          is TestEvent.NewTest -> {
+            context.request.engineExecutionListener.dynamicTestRegistered(testEvent.descriptor)
+            dynamicTestExecutor.execute(testEvent.descriptor)
+          }
         }
       }
     }
@@ -365,11 +398,10 @@ class AndroidDeviceDescriptor(
    * [TestDescriptor] operations and optionally reports them to a [SimpleXmlResultReporter].
    */
   inner class Listener(
-    private val context: AndroidTestExecutionContext,
-    private val reporter: SimpleXmlResultReporter?,
-    private val logcatCollector: LogcatCollector?,
-    private val deviceInfoFile: File?,
-    private val additionalTestOutputCollector: AndroidAdditionalTestOutputCollector?,
+    private val reporter: SimpleXmlResultReporter? = null,
+    private val logcatCollector: LogcatCollector? = null,
+    private val deviceInfoFile: File? = null,
+    private val additionalTestOutputCollector: AndroidAdditionalTestOutputCollector? = null,
   ) : AmInstrumentationListener {
 
     private val testDescriptors = ConcurrentHashMap<TestIdentifier, AndroidDynamicTestDescriptor>()
@@ -377,19 +409,15 @@ class AndroidDeviceDescriptor(
     override fun instrumentationStarted(testCount: Int) {
       reporter?.testRunStarted("android-test", testCount)
 
-      // We publish a ReportEntry with the testCount so that it can be picked up by listeners.
-      val testCountEntry = ReportEntry.from(AndroidTestReportKeys.TEST_COUNT, testCount.toString())
-      context.request.engineExecutionListener.reportingEntryPublished(this@AndroidDeviceDescriptor, testCountEntry)
-
-      // We publish a ReportEntry with the deviceDisplayName so that it can be used to determine the
-      // result directory name.
-      val displayNameEntry = ReportEntry.from(AndroidTestReportKeys.DEVICE_DISPLAY_NAME, this@AndroidDeviceDescriptor.deviceDisplayName)
-      context.request.engineExecutionListener.reportingEntryPublished(this@AndroidDeviceDescriptor, displayNameEntry)
-
-      deviceInfoFile?.let {
-        val deviceInfoEntry = ReportEntry.from(AndroidTestReportKeys.DEVICE_INFO_PATH, it.absolutePath)
-        context.request.engineExecutionListener.reportingEntryPublished(this@AndroidDeviceDescriptor, deviceInfoEntry)
-      }
+      // We publish a ReportEntry with the testCount, deviceDisplayName, and optional deviceInfoPath
+      // so that it can be picked up by listeners.
+      val entries =
+        listOfNotNull(
+          ReportEntry.from(AndroidTestReportKeys.TEST_COUNT, testCount.toString()),
+          ReportEntry.from(AndroidTestReportKeys.DEVICE_DISPLAY_NAME, this@AndroidDeviceDescriptor.deviceDisplayName),
+          deviceInfoFile?.let { ReportEntry.from(AndroidTestReportKeys.DEVICE_INFO_PATH, it.absolutePath) },
+        )
+      tests.trySend(TestEvent.DeviceReportEntries(entries)).getOrThrow()
     }
 
     /** Called when a test case starts on the device. */
@@ -403,7 +431,6 @@ class AndroidDeviceDescriptor(
 
       testDescriptor.setParent(this@AndroidDeviceDescriptor)
       testDescriptors[testIdentifier] = testDescriptor
-      context.request.engineExecutionListener.dynamicTestRegistered(testDescriptor)
       tests.trySend(TestEvent.NewTest(testDescriptor)).getOrThrow()
 
       reporter?.testStarted(DdmlibTestIdentifier(fullClassName, testIdentifier.testMethod))
@@ -430,17 +457,17 @@ class AndroidDeviceDescriptor(
         if (traceFiles.isNotEmpty()) {
           val paths = traceFiles.joinToString(",") { it.absolutePath }
           val reportEntry = ReportEntry.from(AndroidTestReportKeys.BENCHMARK_TRACE_PATHS, paths)
-          context.request.engineExecutionListener.reportingEntryPublished(testDescriptor, reportEntry)
+          testDescriptor.reportEntries.add(reportEntry)
         }
         if (messageFile != null) {
           val reportEntry = ReportEntry.from(AndroidTestReportKeys.BENCHMARK_MESSAGE_PATH, messageFile.absolutePath)
-          context.request.engineExecutionListener.reportingEntryPublished(testDescriptor, reportEntry)
+          testDescriptor.reportEntries.add(reportEntry)
         }
         val testName = "$packageName.${testIdentifier.testClass}.${testIdentifier.testMethod}"
         val logcatPath = logcatCollector?.getLogcatPath(deviceId, testName)
         if (logcatPath != null) {
           val reportEntry = ReportEntry.from(AndroidTestReportKeys.LOGCAT_PATH, logcatPath)
-          context.request.engineExecutionListener.reportingEntryPublished(testDescriptor, reportEntry)
+          testDescriptor.reportEntries.add(reportEntry)
         }
         testDescriptor.resultDeferred.complete(testResult)
       }
@@ -469,14 +496,20 @@ class AndroidDeviceDescriptor(
       }
     }
 
-    /** Ensures all pending results are completed exceptionally and signals completion. */
+    /** Ensures all pending results are completed exceptionally and signals completion by closing [tests]. */
     fun finish() {
-      // In case of unexpected termination, ensure all pending results are completed exceptionally.
-      val exception = RuntimeException("Instrumentation ended unexpectedly")
-      testDescriptors.values.forEach {
-        if (!it.resultDeferred.isCompleted) {
-          it.resultDeferred.completeExceptionally(exception)
+      try {
+        // In case of unexpected termination, ensure all pending results are completed exceptionally.
+        val exception = RuntimeException("Instrumentation ended unexpectedly")
+        testDescriptors.values.forEach {
+          if (!it.resultDeferred.isCompleted) {
+            it.resultDeferred.completeExceptionally(exception)
+          }
         }
+      } finally {
+        // Close the channel once the instrumentation process finishes (or is terminated) to signal
+        // that no more tests or report entries will be discovered.
+        tests.close()
       }
     }
   }

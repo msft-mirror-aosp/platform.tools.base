@@ -19,10 +19,12 @@ package com.android.tools.androidtest.testengine.descriptor
 import com.android.tools.androidtest.testengine.AndroidTestExecutionContext
 import com.android.tools.androidtest.testengine.instrument.AmInstrumentationParser
 import com.android.tools.androidtest.testengine.instrument.TestResult
+import java.util.concurrent.CopyOnWriteArrayList
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
 import org.junit.platform.engine.TestDescriptor
 import org.junit.platform.engine.UniqueId
+import org.junit.platform.engine.reporting.ReportEntry
 import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor
 import org.junit.platform.engine.support.descriptor.MethodSource
 import org.junit.platform.engine.support.hierarchical.Node
@@ -42,6 +44,9 @@ class AndroidDynamicTestDescriptor(uniqueId: UniqueId, displayName: String, clas
    */
   val resultDeferred = CompletableDeferred<TestResult>()
 
+  /** Report entries to be published while this test descriptor is actively executing. */
+  val reportEntries = CopyOnWriteArrayList<ReportEntry>()
+
   override fun getType(): TestDescriptor.Type = TestDescriptor.Type.TEST
 
   /**
@@ -52,6 +57,10 @@ class AndroidDynamicTestDescriptor(uniqueId: UniqueId, displayName: String, clas
    */
   override fun execute(context: AndroidTestExecutionContext, dynamicTestExecutor: Node.DynamicTestExecutor): AndroidTestExecutionContext {
     val result = runBlocking { resultDeferred.await() } // Suspends until testEnded is called in the listener
+    for (entry in reportEntries) {
+      context.request.engineExecutionListener.reportingEntryPublished(this, entry)
+    }
+    reportEntries.clear()
     when (result.status) {
       AmInstrumentationParser.STATUS_CODE_OK -> {
         // Success

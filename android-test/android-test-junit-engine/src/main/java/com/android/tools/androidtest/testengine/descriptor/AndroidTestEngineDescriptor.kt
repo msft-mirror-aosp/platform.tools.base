@@ -32,8 +32,20 @@ import org.junit.platform.engine.support.hierarchical.Node
  * installation, and launches the instrumentation process. It uses a [AndroidDeviceDescriptor.Listener] to dynamically populate the test
  * hierarchy as events are reported from the device.
  */
-class AndroidTestEngineDescriptor(uniqueId: UniqueId) :
-  EngineDescriptor(uniqueId, "Android Test Engine"), Node<AndroidTestExecutionContext> {
+class AndroidTestEngineDescriptor(
+  uniqueId: UniqueId,
+  private val deviceDescriptorFactory:
+    (
+      uniqueId: UniqueId,
+      deviceSerial: String,
+      deviceId: String,
+      deviceDisplayName: String,
+      jvmtiCodeCoverageAgentPathProvider: () -> Pair<String, String>?,
+    ) -> AndroidDeviceDescriptor =
+    { uid, serial, id, displayName, jvmtiProvider ->
+      AndroidDeviceDescriptor(uid, serial, id, displayName, jvmtiCodeCoverageAgentPathProvider = jvmtiProvider)
+    },
+) : EngineDescriptor(uniqueId, "Android Test Engine"), Node<AndroidTestExecutionContext> {
 
   override fun mayRegisterTests(): Boolean = true
 
@@ -46,34 +58,43 @@ class AndroidTestEngineDescriptor(uniqueId: UniqueId) :
     val config = context.configuration
     val adbController = AdbController(config.adb)
 
-    config.deviceSerials.forEach { deviceSerial ->
-      val androidVersion = getAndroidVersion(adbController, deviceSerial)
-      val rawDefaultDisplayName = if (androidVersion.isNotEmpty()) "$deviceSerial - $androidVersion" else deviceSerial
-      val defaultDisplayName = PathSafety.sanitizeDisplayName(rawDefaultDisplayName)
-      val rawDeviceId = config.getDeviceId(deviceSerial)
-      val deviceId = if (rawDeviceId != null) PathSafety.sanitizeDisplayName(rawDeviceId) else defaultDisplayName
-      // Android Studio expects the device serial in the UniqueId to match results
-      // with its internal device model.
-      val deviceUniqueId = uniqueId.append("device", deviceSerial)
-      val deviceDisplayName = if (deviceId != defaultDisplayName) "$deviceId ($defaultDisplayName)" else defaultDisplayName
+    val deviceDescriptors =
+      config.deviceSerials.map { deviceSerial ->
+        val androidVersion = getAndroidVersion(adbController, deviceSerial)
+        val rawDefaultDisplayName = if (androidVersion.isNotEmpty()) "$deviceSerial - $androidVersion" else deviceSerial
+        val defaultDisplayName = PathSafety.sanitizeDisplayName(rawDefaultDisplayName)
+        val rawDeviceId = config.getDeviceId(deviceSerial)
+        val deviceId = if (rawDeviceId != null) PathSafety.sanitizeDisplayName(rawDeviceId) else defaultDisplayName
+        // Android Studio expects the device serial in the UniqueId to match results
+        // with its internal device model.
+        val deviceUniqueId = uniqueId.append("device", deviceSerial)
+        val deviceDisplayName = if (deviceId != defaultDisplayName) "$deviceId ($defaultDisplayName)" else defaultDisplayName
 
-      val extractor = CoverageAgentExtractor(adbController, deviceSerial)
-      val deviceDescriptor =
-        AndroidDeviceDescriptor(
-          uniqueId = deviceUniqueId,
-          deviceSerial = deviceSerial,
-          deviceId = deviceId,
-          deviceDisplayName = deviceDisplayName,
-          jvmtiCodeCoverageAgentPathProvider = {
+        val extractor = CoverageAgentExtractor(adbController, deviceSerial)
+        val deviceDescriptor =
+          deviceDescriptorFactory(
+            deviceUniqueId,
+            deviceSerial,
+            deviceId,
+            deviceDisplayName,
+          ) {
             if (config.coverageType == AndroidTestConfiguration.CoverageType.ON_THE_FLY) {
               extractor.extractAgentIfNeeded(config.testPackageId, config.instrumentationTargetPackageId)
             } else {
               null
             }
-          },
-        )
-      deviceDescriptor.setParent(this)
+          }
+        deviceDescriptor.setParent(this)
+        deviceDescriptor
+      }
+
+    // 1. Start test execution on all devices in parallel background threads.
+    deviceDescriptors.forEach { it.startRunner(context) }
+
+    // 2. Report device results sequentially to JUnit Platform / Gradle to avoid concurrent container issues.
+    deviceDescriptors.forEach { deviceDescriptor ->
       dynamicTestExecutor.execute(deviceDescriptor)
+      dynamicTestExecutor.awaitFinished()
     }
 
     return context
