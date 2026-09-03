@@ -187,6 +187,7 @@ npm.npm_translate_lock(
         "esbuild": ["esbuild=esbuild"],
         "@tailwindcss/cli": ["tailwindcss=tailwindcss"],
         "vitest": ["vitest=vitest"],
+        "@playwright/test": ["playwright=playwright"],
     },
     data = [
         "//tools/base/bazel:package.json",
