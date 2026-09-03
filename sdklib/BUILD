@@ -281,19 +281,19 @@ sdk_package(
     platform_others = {
         "linux": {
             "@android_cli_linux//file": "cmdline-tools/bin/android",
-            "//tools/vendor/google/android:sdkmanager_sh_executable": "cmdline-tools/bin/sdkmanager",
+            "//tools/vendor/google/android/legacy:sdkmanager_sh_executable": "cmdline-tools/bin/sdkmanager",
         },
         "mac_x86_64": {
             "@android_cli_mac_x86_64//file": "cmdline-tools/bin/android",
-            "//tools/vendor/google/android:sdkmanager_sh_executable": "cmdline-tools/bin/sdkmanager",
+            "//tools/vendor/google/android/legacy:sdkmanager_sh_executable": "cmdline-tools/bin/sdkmanager",
         },
         "mac_arm64": {
             "@android_cli_mac_arm64//file": "cmdline-tools/bin/android",
-            "//tools/vendor/google/android:sdkmanager_sh_executable": "cmdline-tools/bin/sdkmanager",
+            "//tools/vendor/google/android/legacy:sdkmanager_sh_executable": "cmdline-tools/bin/sdkmanager",
         },
         "win": {
             "@android_cli_win//file": "cmdline-tools/bin/android.exe",
-            "//tools/vendor/google/android:legacy/sdkmanager.bat": "cmdline-tools/bin/sdkmanager.bat",
+            "//tools/vendor/google/android/legacy:sdkmanager.bat": "cmdline-tools/bin/sdkmanager.bat",
         },
     },
     sourceprops = ":source.properties",
