@@ -41,6 +41,13 @@ internal class FusedLibraryMergeArtifactsTest {
         aar("com.remoteaar", "contains-global-proguard-rule").withProguardRules("-ignorewarnings")
       }
       .from {
+        androidLibrary(":androidLibWithGlobalRule") {
+          android {
+            namespace = "com.example.androidLibWithGlobalRule"
+            buildTypes { named("release") { it.consumerProguardFiles("proguard-rules.pro") } }
+          }
+          files.add("proguard-rules.pro", "-ignorewarnings")
+        }
         // Library dependency at depth 1 with no dependencies.
         androidLibrary(":androidLib1") {
           android {
@@ -509,11 +516,37 @@ internal class FusedLibraryMergeArtifactsTest {
   }
 
   @Test
-  fun checkConsumerProguardRulesValidationFailure() {
-    val build = rule.build { fusedLibrary(":fusedLib1") { dependencies { include("com.remoteaar:contains-global-proguard-rule:1.0") } } }
-    build.executor.expectFailure().run("fusedLib1:assemble").apply {
-      assertTask(":fusedLib1:mergingArtifactUNFILTERED_PROGUARD_RULES").failed()
+  fun checkConsumerProguardRulesProjectDependency_projectDepFailure() {
+    val build = rule.build { fusedLibrary(":fusedLib1") { dependencies { include(project(":androidLibWithGlobalRule")) } } }
+    build.executor.expectFailure().run(":fusedLib1:assemble").apply {
       assertFailureMessage().contains("Global keep option -ignorewarnings was specified as a consumerProguardFile")
+    }
+  }
+
+  @Test
+  fun checkConsumerProguardRulesMavenDependency_mavenStripped() {
+    val build = rule.build {
+      fusedLibrary(":fusedLib1") {
+        dependencies {
+          include("com.remoteaar:contains-global-proguard-rule:1.0")
+        }
+      }
+    }
+    build.executor.run(":fusedLib1:assemble")
+    build.fusedLibrary(":fusedLib1").assertAar(AarSelector.NO_BUILD_TYPE) {
+      contains(FN_PROGUARD_TXT)
+      textFile(FN_PROGUARD_TXT)
+        .isEqualTo(
+          """
+          # Merged by Fused Library.
+          # androidLib2
+          -keep class com.example.androidlib2.UnusedClass { *; }
+          # androidLib1
+          -dontwarn some.clazz.that.doesnt.Exist
+          # REMOVED CONSUMER RULE: -ignorewarnings
+          """
+            .trimIndent()
+        )
     }
   }
 }
