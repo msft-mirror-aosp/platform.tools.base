@@ -469,6 +469,7 @@ abstract class AndroidLintAnalysisTask : NonIncrementalTask() {
       javaPluginExtension,
       lintOptions,
       LintMode.ANALYSIS,
+      isKmp = kotlinExtensionWrapper != null,
     )
     this.variantInputs.initializeForStandalone(
       project,

@@ -250,11 +250,127 @@ class AndroidLintInputsTest {
     )
   }
 
+  @Test
+  fun `test target baseline convention disabled when useBaselineConvention is false`() {
+    checkBaselineConvention(
+      setup = { projectDir, _ ->
+        val targetBaseline = File(projectDir, LINT_BASELINE_ANDROID_FILE_NAME)
+        targetBaseline.createNewFile()
+        val legacyBaseline = File(projectDir, LINT_BASELINE_FILE_NAME)
+        legacyBaseline.createNewFile()
+        null
+      },
+      useBaselineConvention = false,
+      defaultBaselineFileName = LINT_BASELINE_ANDROID_FILE_NAME,
+      expectedDefaultBaseline = false,
+    )
+  }
+
+  @Test
+  fun `test target baseline convention with target file exists`() {
+    checkBaselineConvention(
+      setup = { projectDir, _ ->
+        val targetBaseline = File(projectDir, LINT_BASELINE_ANDROID_FILE_NAME)
+        targetBaseline.createNewFile()
+        targetBaseline
+      },
+      useBaselineConvention = true,
+      defaultBaselineFileName = LINT_BASELINE_ANDROID_FILE_NAME,
+      expectedDefaultBaseline = true,
+    )
+  }
+
+  @Test
+  fun `test target baseline convention with target file missing, legacy exists, reporting mode`() {
+    checkBaselineConvention(
+      setup = { projectDir, _ ->
+        val legacyBaseline = File(projectDir, LINT_BASELINE_FILE_NAME)
+        legacyBaseline.createNewFile()
+        legacyBaseline
+      },
+      mode = LintMode.REPORTING,
+      useBaselineConvention = true,
+      defaultBaselineFileName = LINT_BASELINE_ANDROID_FILE_NAME,
+      expectedDefaultBaseline = true,
+    )
+  }
+
+  @Test
+  fun `test target baseline convention with target file missing, legacy exists, updating mode`() {
+    checkBaselineConvention(
+      setup = { projectDir, _ ->
+        val legacyBaseline = File(projectDir, LINT_BASELINE_FILE_NAME)
+        legacyBaseline.createNewFile()
+        File(projectDir, LINT_BASELINE_ANDROID_FILE_NAME)
+      },
+      mode = LintMode.UPDATE_BASELINE,
+      useBaselineConvention = true,
+      defaultBaselineFileName = LINT_BASELINE_ANDROID_FILE_NAME,
+      expectedDefaultBaseline = true,
+    )
+  }
+
+  @Test
+  fun `test target baseline convention with both target and legacy files exist, reporting mode`() {
+    checkBaselineConvention(
+      setup = { projectDir, _ ->
+        val legacyBaseline = File(projectDir, LINT_BASELINE_FILE_NAME)
+        legacyBaseline.createNewFile()
+        val targetBaseline = File(projectDir, LINT_BASELINE_JVM_FILE_NAME)
+        targetBaseline.createNewFile()
+        targetBaseline
+      },
+      mode = LintMode.REPORTING,
+      useBaselineConvention = true,
+      defaultBaselineFileName = LINT_BASELINE_JVM_FILE_NAME,
+      expectedDefaultBaseline = true,
+    )
+  }
+
+  @Test
+  fun `test target baseline convention with target file missing, other target exists, legacy exists`() {
+    checkBaselineConvention(
+      setup = { projectDir, _ ->
+        val legacyBaseline = File(projectDir, LINT_BASELINE_FILE_NAME)
+        legacyBaseline.createNewFile()
+        val otherTargetBaseline = File(projectDir, LINT_BASELINE_JVM_FILE_NAME)
+        otherTargetBaseline.createNewFile()
+        File(projectDir, LINT_BASELINE_ANDROID_FILE_NAME)
+      },
+      mode = LintMode.REPORTING,
+      useBaselineConvention = true,
+      defaultBaselineFileName = LINT_BASELINE_ANDROID_FILE_NAME,
+      expectedDefaultBaseline = true,
+    )
+  }
+
+  @Test
+  fun `test explicit baseline in DSL overrides target baseline convention`() {
+    checkBaselineConvention(
+      setup = { projectDir, lintOptions ->
+        val explicitBaseline = File(projectDir, "custom-baseline.xml")
+        explicitBaseline.createNewFile()
+        lintOptions.baseline = explicitBaseline
+        explicitBaseline
+      },
+      useBaselineConvention = true,
+      defaultBaselineFileName = LINT_BASELINE_ANDROID_FILE_NAME,
+      expectedDefaultBaseline = false,
+    )
+  }
+
+  @Test
+  fun `test getResolvedBaseline does not throw when lintMode is uninitialized`() {
+    val lintOptionsInput = project.objects.newInstance(LintOptionsInput::class.java)
+    assertThat(lintOptionsInput.getResolvedBaseline()).isNull()
+  }
+
   private fun checkBaselineConvention(
     setup: (File, LintImpl) -> File?,
     mode: LintMode = LintMode.REPORTING,
     useBaselineConvention: Boolean,
     expectedDefaultBaseline: Boolean,
+    defaultBaselineFileName: String = LINT_BASELINE_FILE_NAME,
   ) {
     val projectDir = temporaryFolder.newFolder()
     val projectDirectory = project.layout.projectDirectory.dir(projectDir.absolutePath)
@@ -264,10 +380,32 @@ class AndroidLintInputsTest {
 
     val expectedBaselineFile = setup(projectDir, lintOptions)
 
-    lintOptionsInput.initialize(lintOptions, mode, projectDirectory, useBaselineConvention)
+    lintOptionsInput.initialize(
+      lintOptions,
+      mode,
+      projectDirectory,
+      useBaselineConvention,
+      defaultBaselineFileName = defaultBaselineFileName,
+    )
 
     assertThat(lintOptionsInput.toLintModel().baselineFile?.absolutePath).isEqualTo(expectedBaselineFile?.absolutePath)
     assertThat(lintOptionsInput.defaultBaseline.get()).isEqualTo(expectedDefaultBaseline)
+    val expectedLegacyBaselineFile =
+      if (
+        mode != LintMode.UPDATE_BASELINE &&
+          useBaselineConvention &&
+          defaultBaselineFileName != LINT_BASELINE_FILE_NAME &&
+          lintOptions.baseline == null
+      ) {
+        File(projectDir, LINT_BASELINE_FILE_NAME)
+      } else {
+        null
+      }
+    if (expectedLegacyBaselineFile != null) {
+      assertThat(lintOptionsInput.legacyBaseline.orNull?.asFile).isEqualTo(expectedLegacyBaselineFile)
+    } else {
+      assertThat(lintOptionsInput.legacyBaseline.orNull).isNull()
+    }
   }
 
   private fun createMavenArtifact(repoDir: File, group: String, artifact: String, version: String) {

@@ -131,6 +131,7 @@ abstract class LintModelWriterTask : NonIncrementalTask() {
       javaExtension,
       lintOptions,
       LintMode.MODEL_WRITING,
+      isKmp = kotlinExtensionWrapper != null,
     )
     this.variantInputs.initializeForStandalone(
       project,

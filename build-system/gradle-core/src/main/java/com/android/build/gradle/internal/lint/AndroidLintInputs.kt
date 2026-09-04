@@ -370,12 +370,22 @@ abstract class ProjectInputs {
     initializeFromProject(creationConfig.services.projectInfo, lintMode)
     projectType.setDisallowChanges(creationConfig.componentType.toLintModelModuleType())
 
+    // Target-specific baseline for Android targets in KMP projects, or the legacy non-target-specific
+    // baseline (lint-baseline.xml) for non-KMP projects or backward compatibility fallback.
+    val defaultBaselineFileName =
+      if (creationConfig is KmpComponentCreationConfig) {
+        LINT_BASELINE_ANDROID_FILE_NAME
+      } else {
+        LINT_BASELINE_FILE_NAME
+      }
+
     lintOptions.initialize(
       globalConfig.lintOptions,
       lintMode,
       creationConfig.services.projectInfo.projectDirectory,
       creationConfig.services.projectOptions[BooleanOption.LINT_DEFAULT_BASELINE_CONVENTION],
       checkDependenciesOverride,
+      defaultBaselineFileName,
     )
 
     resourcePrefix.setDisallowChanges(globalConfig.resourcePrefix)
@@ -396,15 +406,25 @@ abstract class ProjectInputs {
     dslLintOptions: Lint,
     lintMode: LintMode,
     checkDependenciesOverride: Boolean? = null,
+    isKmp: Boolean = false,
   ) {
     initializeFromProject(ProjectInfo(project), lintMode)
     projectType.setDisallowChanges(LintModelModuleType.JAVA_LIBRARY)
+    // Target-specific baseline for JVM targets in KMP projects, or the legacy non-target-specific
+    // baseline (lint-baseline.xml) for non-KMP projects or backward compatibility fallback.
+    val defaultBaselineFileName =
+      if (isKmp) {
+        LINT_BASELINE_JVM_FILE_NAME
+      } else {
+        LINT_BASELINE_FILE_NAME
+      }
     lintOptions.initialize(
       dslLintOptions,
       lintMode,
       project.layout.projectDirectory,
       projectOptions[BooleanOption.LINT_DEFAULT_BASELINE_CONVENTION],
       checkDependenciesOverride,
+      defaultBaselineFileName,
     )
 
     resourcePrefix.setDisallowChanges("")
@@ -510,10 +530,22 @@ abstract class LintOptionsInput {
   @get:Input abstract val checkDependencies: Property<Boolean>
   @get:Optional @get:InputFiles @get:PathSensitive(PathSensitivity.NONE) abstract val lintConfig: RegularFileProperty
   @get:Optional @get:InputFiles @get:PathSensitive(PathSensitivity.NONE) abstract val baseline: RegularFileProperty
+  @get:Optional @get:InputFiles @get:PathSensitive(PathSensitivity.NONE) abstract val legacyBaseline: RegularFileProperty
   @get:Input abstract val severityOverrides: MapProperty<String, LintModelSeverity>
   @get:Input abstract val ignoreTestSources: Property<Boolean>
   @get:Input abstract val ignoreTestFixturesSources: Property<Boolean>
   @get:Input @get:Optional abstract val defaultBaseline: Property<Boolean>
+  @get:Internal abstract val lintMode: Property<LintMode>
+
+  @Internal
+  fun getResolvedBaseline(): File? {
+    val target = baseline.orNull?.asFile ?: return null
+    val legacy = legacyBaseline.orNull?.asFile
+    if (lintMode.orNull == LintMode.UPDATE_BASELINE) {
+      return target
+    }
+    return resolveBaselineFile(target, legacy)
+  }
 
   fun initialize(
     lintOptions: Lint,
@@ -521,6 +553,7 @@ abstract class LintOptionsInput {
     projectDirectory: Directory,
     useBaselineConvention: Boolean = false,
     checkDependenciesOverrideForAggregateReporting: Boolean? = null,
+    defaultBaselineFileName: String = LINT_BASELINE_FILE_NAME,
   ) {
     disable.setDisallowChanges(lintOptions.disable)
     enable.setDisallowChanges(lintOptions.enable)
@@ -539,6 +572,7 @@ abstract class LintOptionsInput {
     checkDependencies.setDisallowChanges(checkDependenciesOverrideForAggregateReporting ?: lintOptions.checkDependencies)
     lintOptions.lintConfig?.let { lintConfig.set(it) }
     lintConfig.disallowChanges()
+    this.lintMode.setDisallowChanges(lintMode)
     // The baseline file does not affect analysis, but otherwise it is an input.
     if (lintMode != LintMode.ANALYSIS) {
       val dslBaseline = lintOptions.baseline
@@ -546,13 +580,18 @@ abstract class LintOptionsInput {
         baseline.set(dslBaseline)
         defaultBaseline.setDisallowChanges(false)
       } else if (useBaselineConvention) {
-        baseline.set(projectDirectory.file("lint-baseline.xml"))
+        val targetBaselineFile = projectDirectory.file(defaultBaselineFileName)
+        baseline.set(targetBaselineFile)
+        if (lintMode != LintMode.UPDATE_BASELINE && defaultBaselineFileName != LINT_BASELINE_FILE_NAME) {
+          legacyBaseline.set(projectDirectory.file(LINT_BASELINE_FILE_NAME))
+        }
         defaultBaseline.setDisallowChanges(true)
       } else {
         defaultBaseline.setDisallowChanges(false)
       }
     }
     baseline.disallowChanges()
+    legacyBaseline.disallowChanges()
     severityOverrides.setDisallowChanges((lintOptions as LintImpl).severityOverridesMap)
     ignoreTestSources.setDisallowChanges(lintOptions.ignoreTestSources)
     ignoreTestFixturesSources.setDisallowChanges(lintOptions.ignoreTestFixturesSources)
@@ -588,7 +627,7 @@ abstract class LintOptionsInput {
       sarifOutput = null,
       checkReleaseBuilds = true, // Handled in LintTaskManager & LintPlugin
       checkDependencies = checkDependencies.get(),
-      baselineFile = baseline.orNull?.asFile,
+      baselineFile = getResolvedBaseline(),
       severityOverrides = severityOverrides.get(),
     )
   }

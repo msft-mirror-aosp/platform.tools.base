@@ -77,7 +77,9 @@ fun syncTo(project: LintModelModule, flags: LintCliFlags) {
   flags.isShowEverything = options.showAll
   flags.lintConfig = options.lintConfig
   flags.isExplainIssues = options.explainIssues
-  flags.baselineFile = options.baselineFile
+  if (flags.baselineFile == null) {
+    flags.baselineFile = options.baselineFile
+  }
   val severityOverrides = options.severityOverrides
   if (severityOverrides != null) {
     flags.severityOverrides = severityOverrides

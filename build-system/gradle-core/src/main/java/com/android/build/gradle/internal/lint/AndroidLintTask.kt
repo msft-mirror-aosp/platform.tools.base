@@ -180,7 +180,7 @@ abstract class AndroidLintTask : NonIncrementalTask() {
           "Plugin. Please try running the lintFix task instead."
       )
     }
-    val baselineFile = projectInputs.lintOptions.baseline.orNull?.asFile
+    val baselineFile = projectInputs.lintOptions.getResolvedBaseline()
     var originalBaselineFileText: String? = null
     var originalBaselineFileLines: List<String>? = null
     if (lintMode.get() == LintMode.UPDATE_BASELINE) {
@@ -195,6 +195,16 @@ abstract class AndroidLintTask : NonIncrementalTask() {
       }
       // Delete existing baseline file if running the updateLintBaseline task.
       FileUtils.deleteIfExists(baselineFile)
+      if (projectInputs.lintOptions.defaultBaseline.get() && baselineFile.name != LINT_BASELINE_FILE_NAME) {
+        val legacyBaselineFile = baselineFile.parentFile?.resolve(LINT_BASELINE_FILE_NAME)
+        if (legacyBaselineFile != null && legacyBaselineFile.exists()) {
+          logger.warn(
+            "A legacy baseline file (${legacyBaselineFile.absolutePath}) was found. " +
+              "Target-specific baselines are now used for Kotlin Multiplatform projects. " +
+              "Please delete ${legacyBaselineFile.name} to avoid unintended fallback."
+          )
+        }
+      }
     }
     workerExecutor.noIsolation().submit(AndroidLintLauncherWorkAction::class.java) { parameters ->
       parameters.arguments.set(generateCommandLineArguments())
@@ -361,7 +371,7 @@ abstract class AndroidLintTask : NonIncrementalTask() {
     if (printStackTrace.get()) {
       arguments += "--stacktrace"
     }
-    val baselineFile = projectInputs.lintOptions.baseline.orNull?.asFile
+    val baselineFile = projectInputs.lintOptions.getResolvedBaseline()
     if (baselineFile != null) {
       val isUpdating = lintMode.get() == LintMode.UPDATE_BASELINE
       val treatAsEmptyIfMissing = missingBaselineIsEmptyBaseline.get() || (projectInputs.lintOptions.defaultBaseline.get() && !isUpdating)
@@ -667,7 +677,7 @@ abstract class AndroidLintTask : NonIncrementalTask() {
         // Workaround for b/193244776
         // Ensure the task runs if inputBaselineFile is set and the file doesn't exist,
         // unless missingBaselineIsEmptyBaseline is true or the default baseline convention is used.
-        task.projectInputs.lintOptions.baseline.orNull?.asFile?.exists() ?: true ||
+        task.projectInputs.lintOptions.getResolvedBaseline()?.exists() ?: true ||
           task.missingBaselineIsEmptyBaseline.get() ||
           task.projectInputs.lintOptions.defaultBaseline.get()
       }
@@ -998,6 +1008,7 @@ abstract class AndroidLintTask : NonIncrementalTask() {
     uastReferenceKotlinCompileTaskName: String,
     fatalOnly: Boolean = false,
     autoFix: Boolean = false,
+    isKmp: Boolean = false,
   ) {
     this.initializeOutputTypesConvention()
     initializeGlobalInputs(taskCreationServices, isAndroid = false, lintMode, lintOptions, javaPluginExtension.targetCompatibility)
@@ -1012,11 +1023,18 @@ abstract class AndroidLintTask : NonIncrementalTask() {
     this.lintFixBuildService.disallowChanges()
     this.checkOnly.setDisallowChanges(lintOptions.checkOnly)
     this.lintTool.initialize(taskCreationServices, this, lintOptions, javaPluginExtension.targetCompatibility)
-    this.projectInputs.initializeForStandalone(project, taskCreationServices.projectOptions, javaPluginExtension, lintOptions, lintMode)
+    this.projectInputs.initializeForStandalone(
+      project,
+      taskCreationServices.projectOptions,
+      javaPluginExtension,
+      lintOptions,
+      lintMode,
+      isKmp = isKmp,
+    )
     // Workaround for b/193244776 - Ensure the task runs if a baseline file is set and the file
     // doesn't exist, unless missingBaselineIsEmptyBaseline is true or the default baseline convention is used.
     this.outputs.upToDateWhen {
-      this.projectInputs.lintOptions.baseline.orNull?.asFile?.exists() ?: true ||
+      this.projectInputs.lintOptions.getResolvedBaseline()?.exists() ?: true ||
         this.missingBaselineIsEmptyBaseline.get() ||
         this.projectInputs.lintOptions.defaultBaseline.get()
     }

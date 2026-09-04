@@ -32,6 +32,8 @@ import com.android.build.gradle.internal.dsl.BuildType as DslBuildType
 import com.android.build.gradle.internal.dsl.DefaultConfig as DslDefaultConfig
 import com.android.build.gradle.internal.dsl.ProductFlavor as DslProductFlavor
 import com.android.build.gradle.internal.dsl.VectorDrawablesOptions as DslVectorDrawablesOptions
+import com.android.build.gradle.internal.lint.LINT_BASELINE_FILE_NAME
+import com.android.build.gradle.internal.lint.resolveBaselineFile
 import com.android.build.gradle.internal.scope.BuildFeatureValues
 import com.android.build.gradle.internal.utils.toImmutableList
 import com.android.build.gradle.internal.utils.toImmutableMap
@@ -274,7 +276,18 @@ internal fun AndroidResources.convert(): AaptOptions {
 
 internal fun Installation.convert() = InstallationImpl(timeOutInMs = timeOutInMs, installOptions = installOptions.toImmutableList())
 
-internal fun Lint.convert(projectDirectory: File? = null, useBaselineConvention: Boolean = false) =
+/**
+ * Converts a [Lint] DSL model to [LintOptionsImpl].
+ *
+ * @param defaultBaselineFileName The default baseline file name to use when the baseline convention is enabled. Defaults to
+ *   [LINT_BASELINE_FILE_NAME], which is the standard baseline file name for non-KMP projects, or the legacy non-target-specific baseline
+ *   for backward compatibility in Kotlin Multiplatform projects.
+ */
+internal fun Lint.convert(
+  projectDirectory: File? = null,
+  useBaselineConvention: Boolean = false,
+  defaultBaselineFileName: String = LINT_BASELINE_FILE_NAME,
+) =
   LintOptionsImpl(
     disable = disable.toSet(),
     enable = enable.toSet(),
@@ -307,7 +320,18 @@ internal fun Lint.convert(projectDirectory: File? = null, useBaselineConvention:
     ignoreTestFixturesSources = ignoreTestFixturesSources,
     checkGeneratedSources = checkGeneratedSources,
     checkDependencies = checkDependencies,
-    baseline = baseline ?: if (useBaselineConvention) projectDirectory?.resolve("lint-baseline.xml") else null,
+    baseline =
+      baseline
+        ?: if (useBaselineConvention && projectDirectory != null) {
+          val targetBaseline = projectDirectory.resolve(defaultBaselineFileName)
+          val legacyBaseline =
+            if (defaultBaselineFileName != LINT_BASELINE_FILE_NAME) {
+              projectDirectory.resolve(LINT_BASELINE_FILE_NAME)
+            } else {
+              null
+            }
+          resolveBaselineFile(targetBaseline, legacyBaseline)
+        } else null,
     targetSdk = targetSdk?.let { DefaultApiVersion(it).convert() } ?: targetSdkPreview?.let { DefaultApiVersion(it).convert() },
   )
 

@@ -396,7 +396,10 @@ enum class BooleanOption(
     futureStage = FutureStage(Version.VERSION_10_0, true, FeatureStage.Experimental),
   ),
 
-  /** When enabled, lint will use the default baseline file (lint-baseline.xml) if a baseline file is not specified in the DSL. */
+  /**
+   * When enabled, lint will use the default baseline file (lint-baseline.xml, or target-specific in KMP projects) if a baseline file is not
+   * specified in the DSL.
+   */
   LINT_DEFAULT_BASELINE_CONVENTION(
     "android.experimental.lint.defaultBaselineConvention",
     false,

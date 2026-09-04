@@ -21,6 +21,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuil
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
 import com.android.build.gradle.integration.common.truth.forEachLine
 import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.BooleanOption.LINT_ANALYSIS_PER_COMPONENT
 import com.android.build.gradle.options.StringOption.LINT_RESERVED_MEMORY_PER_TASK
 import com.android.testutils.truth.PathSubject
@@ -439,6 +440,255 @@ class KotlinMultiplatformAndroidLintTest(private val lintAnalysisPerComponent: B
     PathSubject.assertThat(jvmBaselineFile).doesNotContain("NewApi")
     PathSubject.assertThat(androidBaselineFile).contains("NewApi")
     PathSubject.assertThat(androidBaselineFile).doesNotContain("ByteOrderMark")
+  }
+
+  @Test
+  fun `test default lint baselines convention on project with jvm and android targets`() {
+    Assume.assumeTrue(lintAnalysisPerComponent)
+    TestFileUtils.appendToFile(
+      project.getSubproject("kmpFirstLib").ktsBuildFile,
+      """
+      kotlin {
+          jvm()
+          android {
+              lint {
+              }
+          }
+      }
+      lint {
+          enable += "ByteOrderMark"
+          textReport = true
+          abortOnError = false
+      }
+      """
+        .trimIndent(),
+    )
+
+    addNewApiIssuesToKmpFirstLib(addAndroidMainIssues = true)
+
+    val jvmClassFile =
+      FileUtils.join(project.getSubproject("kmpFirstLib").projectDir, "src", "jvmMain", "kotlin", "com", "example", "Foo.kt")
+    jvmClassFile.parentFile.mkdirs()
+    TestFileUtils.appendToFile(
+      jvmClassFile,
+      // language=kotlin
+      """
+                package com.example
+
+                fun getByteOrderMark(): String {
+                    return "$byteOrderMark"
+                }
+            """
+        .trimIndent(),
+    )
+
+    val jvmBaselineFile = File(project.getSubproject("kmpFirstLib").projectDir, "lint-baseline-jvm.xml")
+    val androidBaselineFile = File(project.getSubproject("kmpFirstLib").projectDir, "lint-baseline-android.xml")
+    val defaultBaselineFile = File(project.getSubproject("kmpFirstLib").projectDir, "lint-baseline.xml")
+    PathSubject.assertThat(jvmBaselineFile).doesNotExist()
+    PathSubject.assertThat(androidBaselineFile).doesNotExist()
+    PathSubject.assertThat(defaultBaselineFile).doesNotExist()
+
+    getExecutor().with(BooleanOption.LINT_DEFAULT_BASELINE_CONVENTION, true).run(":kmpFirstLib:clean", ":kmpFirstLib:updateLintBaseline")
+
+    PathSubject.assertThat(jvmBaselineFile).exists()
+    PathSubject.assertThat(androidBaselineFile).exists()
+    PathSubject.assertThat(defaultBaselineFile).doesNotExist()
+
+    PathSubject.assertThat(jvmBaselineFile).contains("ByteOrderMark")
+    PathSubject.assertThat(jvmBaselineFile).doesNotContain("NewApi")
+    PathSubject.assertThat(androidBaselineFile).contains("NewApi")
+    PathSubject.assertThat(androidBaselineFile).doesNotContain("ByteOrderMark")
+
+    getExecutor().with(BooleanOption.LINT_DEFAULT_BASELINE_CONVENTION, true).run(":kmpFirstLib:lint")
+    val androidReportFile = File(project.getSubproject("kmpFirstLib").buildDir, "reports/lint-results-androidMain.txt")
+    PathSubject.assertThat(androidReportFile).exists()
+    PathSubject.assertThat(androidReportFile).doesNotContain("Error: Call requires API level 26")
+    val jvmReportFile = File(project.getSubproject("kmpFirstLib").buildDir, "reports/lint-results.txt")
+    PathSubject.assertThat(jvmReportFile).exists()
+    PathSubject.assertThat(jvmReportFile).doesNotContain("Found byte-order-mark in the middle of a file")
+  }
+
+  @Test
+  fun `test legacy lint baseline fallback on KMP project in reporting mode`() {
+    Assume.assumeTrue(lintAnalysisPerComponent)
+    TestFileUtils.appendToFile(
+      project.getSubproject("kmpFirstLib").ktsBuildFile,
+      """
+      kotlin {
+          jvm()
+          android {
+              lint {
+              }
+          }
+      }
+      lint {
+          enable += "ByteOrderMark"
+          textReport = true
+          abortOnError = false
+      }
+      """
+        .trimIndent(),
+    )
+
+    addNewApiIssuesToKmpFirstLib(addAndroidMainIssues = true)
+
+    val jvmClassFile =
+      FileUtils.join(project.getSubproject("kmpFirstLib").projectDir, "src", "jvmMain", "kotlin", "com", "example", "Foo.kt")
+    jvmClassFile.parentFile.mkdirs()
+    TestFileUtils.appendToFile(
+      jvmClassFile,
+      // language=kotlin
+      """
+                package com.example
+
+                fun getByteOrderMark(): String {
+                    return "$byteOrderMark"
+                }
+            """
+        .trimIndent(),
+    )
+
+    val legacyBaselineFile = File(project.getSubproject("kmpFirstLib").projectDir, "lint-baseline.xml")
+    val jvmBaselineFile = File(project.getSubproject("kmpFirstLib").projectDir, "lint-baseline-jvm.xml")
+    val androidBaselineFile = File(project.getSubproject("kmpFirstLib").projectDir, "lint-baseline-android.xml")
+
+    TestFileUtils.appendToFile(
+      legacyBaselineFile,
+      """
+      <issues format="6" by="lint">
+          <issue
+              id="ByteOrderMark"
+              message="Found byte-order-mark in the middle of a file"
+              errorLine1="    return &quot;$byteOrderMark&quot;"
+              errorLine2="            ~">
+              <location
+                  file="src/jvmMain/kotlin/com/example/Foo.kt"
+                  line="4"
+                  column="13"/>
+          </issue>
+          <issue
+              id="NewApi"
+              message="Call requires API level 26, or core library desugaring (current min is 22): `java.time.LocalDate#getMonth`"
+              errorLine1="    val date = LocalDate.now().month.name"
+              errorLine2="                               ~~~~~">
+              <location
+                  file="src/androidMain/kotlin/com/example/kmpfirstlib/KmpAndroidFirstLibClass.kt"
+                  line="34"
+                  column="32"/>
+          </issue>
+          <issue
+              id="NewApi"
+              message="Call requires API level 26, or core library desugaring (current min is 22): `java.time.LocalDate#now`"
+              errorLine1="    val date = LocalDate.now().month.name"
+              errorLine2="                         ~~~">
+              <location
+                  file="src/androidMain/kotlin/com/example/kmpfirstlib/KmpAndroidFirstLibClass.kt"
+                  line="34"
+                  column="26"/>
+          </issue>
+      </issues>
+      """
+        .trimIndent(),
+    )
+
+    PathSubject.assertThat(jvmBaselineFile).doesNotExist()
+    PathSubject.assertThat(androidBaselineFile).doesNotExist()
+    PathSubject.assertThat(legacyBaselineFile).exists()
+
+    getExecutor().with(BooleanOption.LINT_DEFAULT_BASELINE_CONVENTION, true).run(":kmpFirstLib:clean", ":kmpFirstLib:lint")
+
+    val jvmReportFile = File(project.getSubproject("kmpFirstLib").buildDir, "reports/lint-results.txt")
+    PathSubject.assertThat(jvmReportFile).exists()
+    PathSubject.assertThat(jvmReportFile).doesNotContain("Found byte-order-mark in the middle of a file")
+
+    val androidReportFile = File(project.getSubproject("kmpFirstLib").buildDir, "reports/lint-results-androidMain.txt")
+    PathSubject.assertThat(androidReportFile).exists()
+    PathSubject.assertThat(androidReportFile).doesNotContain("Error: Call requires API level 26")
+  }
+
+  @Test
+  fun `test legacy lint baseline is not used after migration to target baselines`() {
+    Assume.assumeTrue(lintAnalysisPerComponent)
+    TestFileUtils.appendToFile(
+      project.getSubproject("kmpFirstLib").ktsBuildFile,
+      """
+      kotlin {
+          jvm()
+          android {
+              lint {
+              }
+          }
+      }
+      lint {
+          enable += "ByteOrderMark"
+          textReport = true
+          abortOnError = false
+      }
+      """
+        .trimIndent(),
+    )
+
+    addNewApiIssuesToKmpFirstLib(addAndroidMainIssues = true)
+
+    val jvmClassFile =
+      FileUtils.join(project.getSubproject("kmpFirstLib").projectDir, "src", "jvmMain", "kotlin", "com", "example", "Foo.kt")
+    jvmClassFile.parentFile.mkdirs()
+    TestFileUtils.appendToFile(
+      jvmClassFile,
+      // language=kotlin
+      """
+                package com.example
+
+                fun getByteOrderMark(): String {
+                    return "$byteOrderMark"
+                }
+            """
+        .trimIndent(),
+    )
+
+    val legacyBaselineFile = File(project.getSubproject("kmpFirstLib").projectDir, "lint-baseline.xml")
+    val jvmBaselineFile = File(project.getSubproject("kmpFirstLib").projectDir, "lint-baseline-jvm.xml")
+    val androidBaselineFile = File(project.getSubproject("kmpFirstLib").projectDir, "lint-baseline-android.xml")
+
+    // Legacy baseline initially exists
+    TestFileUtils.appendToFile(
+      legacyBaselineFile,
+      """
+      <issues format="6" by="lint">
+          <issue
+              id="ByteOrderMark"
+              message="Found byte-order-mark in the middle of a file"
+              errorLine1="    return &quot;$byteOrderMark&quot;"
+              errorLine2="            ~">
+              <location
+                  file="src/jvmMain/kotlin/com/example/Foo.kt"
+                  line="4"
+                  column="13"/>
+          </issue>
+      </issues>
+      """
+        .trimIndent(),
+    )
+
+    // Running updateLintBaseline creates target-specific baselines
+    getExecutor().with(BooleanOption.LINT_DEFAULT_BASELINE_CONVENTION, true).run(":kmpFirstLib:updateLintBaseline")
+    PathSubject.assertThat(jvmBaselineFile).exists()
+    PathSubject.assertThat(androidBaselineFile).exists()
+
+    // If JVM baseline is deleted (e.g. all JVM issues were fixed), running lint should not fall back
+    // to the stale legacy baseline because the project has already migrated to target-specific baselines
+    jvmBaselineFile.delete()
+
+    getExecutor().with(BooleanOption.LINT_DEFAULT_BASELINE_CONVENTION, true).run(":kmpFirstLib:clean", ":kmpFirstLib:lint")
+
+    val jvmReportFile = File(project.getSubproject("kmpFirstLib").buildDir, "reports/lint-results.txt")
+    PathSubject.assertThat(jvmReportFile).exists()
+    PathSubject.assertThat(jvmReportFile).contains("Found byte-order-mark in the middle of a file")
+
+    val androidReportFile = File(project.getSubproject("kmpFirstLib").buildDir, "reports/lint-results-androidMain.txt")
+    PathSubject.assertThat(androidReportFile).exists()
+    PathSubject.assertThat(androidReportFile).doesNotContain("Error: Call requires API level 26")
   }
 
   @Test
