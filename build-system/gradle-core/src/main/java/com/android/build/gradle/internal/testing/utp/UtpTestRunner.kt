@@ -119,7 +119,7 @@ class UtpTestRunner(
             uninstallApksAfterTest,
             reinstallIncompatibleApksBeforeTest = false,
             shardConfig = null,
-            privateComputeCoreInstrumentation,
+            usePcc,
           )
         }
         .toList()

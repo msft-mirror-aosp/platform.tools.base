@@ -187,4 +187,118 @@ class UtpTestRunnerTest {
     verify(mockUtpRunConfig.additionalTestOutputDir).fileValue(additionalTestOutputDirCaptor.capture())
     assertThat(additionalTestOutputDirCaptor.firstValue.name).isEqualTo(".._unsafe_device_.._name")
   }
+
+  @Test
+  fun runUtpWithPrivateComputeCoreInstrumentationOnSupportedDevice() {
+    whenever(mockDevice.apiLevel).thenReturn(37)
+
+    val mockUtpRunConfig: RunUtpWorkParameters.UtpRunConfig = mock(defaultAnswer = RETURNS_DEEP_STUBS)
+    doReturn(mockUtpRunConfig).whenever(mockObjectFactory).newInstance(eq(RunUtpWorkParameters.UtpRunConfig::class.java))
+
+    val runner =
+      UtpTestRunner(
+        mock(),
+        mockWorkerExecutor,
+        mockObjectFactory,
+        mock(),
+        mock(),
+        mockVersionedSdkLoader,
+        mock(),
+        useOrchestrator = false,
+        forceCompilation = false,
+        uninstallIncompatibleApks = false,
+        null,
+        false,
+        false,
+        privateComputeCoreInstrumentation = true,
+        mock(),
+      )
+
+    resultsDirectory = temporaryFolderRule.newFolder("results_${System.currentTimeMillis()}")
+
+    mockStatic(::runUtpTestSuiteAndWait.javaMethod!!.declaringClass, Answers.CALLS_REAL_METHODS).use { mockedStatic ->
+      mockedStatic
+        .whenever<Boolean> { runUtpTestSuiteAndWait(runnerConfigsCaptor.capture(), any(), any(), any(), any(), any(), any(), any()) }
+        .thenReturn(true)
+
+      runner.runTests(
+        "projectName",
+        "variantName",
+        mockTestData,
+        setOf(mock()),
+        listOf(mockDevice),
+        0,
+        setOf(),
+        resultsDirectory,
+        false,
+        null,
+        temporaryFolderRule.newFolder("coverageDir_${System.currentTimeMillis()}"),
+        mock(),
+      )
+    }
+
+    val capturedConfigs = runnerConfigsCaptor.firstValue
+    assertThat(capturedConfigs).hasSize(1)
+
+    val pccEnabledCaptor = argumentCaptor<Boolean>()
+    verify(mockUtpRunConfig.privateComputeCoreInstrumentationEnabled).set(pccEnabledCaptor.capture())
+    assertThat(pccEnabledCaptor.firstValue).isTrue()
+  }
+
+  @Test
+  fun runUtpWithPrivateComputeCoreInstrumentationOnUnsupportedDevice() {
+    whenever(mockDevice.apiLevel).thenReturn(36)
+
+    val mockUtpRunConfig: RunUtpWorkParameters.UtpRunConfig = mock(defaultAnswer = RETURNS_DEEP_STUBS)
+    doReturn(mockUtpRunConfig).whenever(mockObjectFactory).newInstance(eq(RunUtpWorkParameters.UtpRunConfig::class.java))
+
+    val runner =
+      UtpTestRunner(
+        mock(),
+        mockWorkerExecutor,
+        mockObjectFactory,
+        mock(),
+        mock(),
+        mockVersionedSdkLoader,
+        mock(),
+        useOrchestrator = false,
+        forceCompilation = false,
+        uninstallIncompatibleApks = false,
+        null,
+        false,
+        false,
+        privateComputeCoreInstrumentation = true,
+        mock(),
+      )
+
+    resultsDirectory = temporaryFolderRule.newFolder("results_${System.currentTimeMillis()}")
+
+    mockStatic(::runUtpTestSuiteAndWait.javaMethod!!.declaringClass, Answers.CALLS_REAL_METHODS).use { mockedStatic ->
+      mockedStatic
+        .whenever<Boolean> { runUtpTestSuiteAndWait(runnerConfigsCaptor.capture(), any(), any(), any(), any(), any(), any(), any()) }
+        .thenReturn(true)
+
+      runner.runTests(
+        "projectName",
+        "variantName",
+        mockTestData,
+        setOf(mock()),
+        listOf(mockDevice),
+        0,
+        setOf(),
+        resultsDirectory,
+        false,
+        null,
+        temporaryFolderRule.newFolder("coverageDir_${System.currentTimeMillis()}"),
+        mock(),
+      )
+    }
+
+    val capturedConfigs = runnerConfigsCaptor.firstValue
+    assertThat(capturedConfigs).hasSize(1)
+
+    val pccEnabledCaptor = argumentCaptor<Boolean>()
+    verify(mockUtpRunConfig.privateComputeCoreInstrumentationEnabled).set(pccEnabledCaptor.capture())
+    assertThat(pccEnabledCaptor.firstValue).isFalse()
+  }
 }
