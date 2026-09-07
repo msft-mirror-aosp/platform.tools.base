@@ -48,3 +48,13 @@ dex_library(
     tags = ["testonly"],
     visibility = ["//visibility:public"],
 )
+
+java_test(
+    name = "coverage_tracker_test",
+    srcs = ["src/test/java/com/android/tools/coverage/CoverageTrackerTest.java"],
+    test_class = "com.android.tools.coverage.CoverageTrackerTest",
+    deps = [
+        ":coverage_tracker_internal",
+        "@maven//:junit.junit",
+    ],
+)
