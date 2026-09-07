@@ -1135,6 +1135,12 @@ thead th.sticky-name {
   max-width: var(--col-width-path, 300px);
 }
 
+.col-target {
+  width: var(--col-width-target, 150px);
+  min-width: var(--col-width-target, 150px);
+  max-width: var(--col-width-target, 150px);
+}
+
 .col-module {
   width: var(--col-width-module, 200px);
   min-width: var(--col-width-module, 200px);
