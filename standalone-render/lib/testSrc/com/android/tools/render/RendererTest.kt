@@ -18,10 +18,13 @@ package com.android.tools.render
 
 import com.android.ide.common.rendering.api.Result
 import com.android.testutils.TestUtils
+import com.android.tools.configurations.Wallpaper
 import com.android.tools.render.compose.ComposeScreenshot
 import com.android.tools.render.discovery.SamplePreviewTarget
+import com.android.tools.res.FrameworkOverlay
 import com.intellij.util.concurrency.AppExecutorUtil
 import java.awt.image.BufferedImage
+import java.io.File
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
 import javax.imageio.ImageIO
@@ -437,5 +440,70 @@ class RendererTest {
     assertNotNull("ScreenshotError should be present for broken @PreviewParameter", result.error)
     assertEquals("VALIDATION_ERROR", result.error?.status)
     assertTrue(result.error?.message?.contains("limit") == true)
+  }
+
+  @Test
+  fun testBaseConfigurationDefaults_withoutMaterial3InResources_fallsBackToPlatformTheme() {
+    val layoutlibPath = TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib")
+    val bootstrapper =
+      RenderEnvironmentBootstrapper(
+        fontsPath = null,
+        resourceApkPath = null,
+        namespace = "",
+        classPath = emptyList(),
+        projectClassPath = emptyList(),
+        layoutlibPath = layoutlibPath.absolutePathString(),
+      )
+
+    bootstrapper.bootstrap().use { renderer ->
+      val config = renderer.baseConfiguration
+      // Without Material 3 styles in resources, defaults safely to the built-in platform framework theme.
+      assertEquals("@android:style/Theme.Material.Light.NoActionBar", config.theme)
+      assertEquals(Wallpaper.GREEN.resourcePath, config.wallpaperPath)
+      assertTrue(config.isGestureNav)
+      assertTrue(config.isEdgeToEdge)
+      assertEquals(FrameworkOverlay.CUTOUT_NONE, config.cutoutOverlay)
+      assertEquals(1.0f, config.fontScale, 0.001f)
+      assertEquals("medium_phone", config.device?.id)
+    }
+  }
+
+  @Test
+  fun testBaseConfigurationDefaults_withMaterial3InResources_usesMaterial3Theme() {
+    val resFolder = tmpFolder.newFolder("res")
+    val valuesFolder = File(resFolder, "values").apply { mkdirs() }
+    File(valuesFolder, "styles.xml")
+      .writeText(
+        """
+        <?xml version="1.0" encoding="utf-8"?>
+        <resources>
+            <style name="Theme.Material3.DayNight.NoActionBar" parent="" />
+        </resources>
+        """
+          .trimIndent()
+      )
+
+    val layoutlibPath = TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib")
+    val bootstrapper =
+      RenderEnvironmentBootstrapper(
+        fontsPath = null,
+        resourceApkPath = null,
+        resourceDirs = listOf(resFolder.absolutePath),
+        namespace = "com.example.test",
+        classPath = emptyList(),
+        projectClassPath = emptyList(),
+        layoutlibPath = layoutlibPath.absolutePathString(),
+      )
+
+    bootstrapper.bootstrap().use { renderer ->
+      val config = renderer.baseConfiguration
+      assertEquals("@style/Theme.Material3.DayNight.NoActionBar", config.theme)
+      assertEquals(Wallpaper.GREEN.resourcePath, config.wallpaperPath)
+      assertTrue(config.isGestureNav)
+      assertTrue(config.isEdgeToEdge)
+      assertEquals(FrameworkOverlay.CUTOUT_NONE, config.cutoutOverlay)
+      assertEquals(1.0f, config.fontScale, 0.001f)
+      assertEquals("medium_phone", config.device?.id)
+    }
   }
 }
