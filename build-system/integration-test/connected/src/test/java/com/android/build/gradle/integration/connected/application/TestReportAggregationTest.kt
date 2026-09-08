@@ -147,36 +147,6 @@ class TestReportAggregationTest(val runWithBuiltInPlatform: Boolean) {
           androidTestImplementation("androidx.test:rules:1.4.0-alpha06")
           androidTestImplementation("androidx.test:runner:1.4.0-alpha06")
         }
-        files.add(
-          "src/androidTest/java/com/example/lib2/FailingAndroidTest.kt",
-          """
-          package com.example.lib2
-          import org.junit.Test
-          import org.junit.Assert.fail
-          class FailingAndroidTest {
-              @Test
-              fun testFailure() {
-                  fail("This test is supposed to fail")
-              }
-          }
-          """
-            .trimIndent(),
-        )
-        files.add(
-          "src/test/java/com/example/lib2/FailingUnitTest.kt",
-          """
-          package com.example.lib2
-          import org.junit.Test
-          import org.junit.Assert.fail
-          class FailingUnitTest {
-              @Test
-              fun testFailure() {
-                  fail("This test is supposed to fail")
-              }
-          }
-          """
-            .trimIndent(),
-        )
       }
       gradleProperties {
         add(BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM, runWithBuiltInPlatform)
@@ -187,26 +157,61 @@ class TestReportAggregationTest(val runWithBuiltInPlatform: Boolean) {
       }
     }
 
+  /**
+   * Adds a failing unit test and a failing instrumentation test to `:lib2`.
+   *
+   * These are only added by the tests that verify the behavior on test failures: since failures are never ignored, they fail the build and
+   * prevent the test report tasks (which consume the test task outputs) from running.
+   */
+  private fun addFailingTestsToLib2() {
+    val lib2 = rule.build.androidLibrary(":lib2")
+    lib2.files.add(
+      "src/androidTest/java/com/example/lib2/FailingAndroidTest.kt",
+      """
+      package com.example.lib2
+      import org.junit.Test
+      import org.junit.Assert.fail
+      class FailingAndroidTest {
+          @Test
+          fun testFailure() {
+              fail("This test is supposed to fail")
+          }
+      }
+      """
+        .trimIndent(),
+    )
+    lib2.files.add(
+      "src/test/java/com/example/lib2/FailingUnitTest.kt",
+      """
+      package com.example.lib2
+      import org.junit.Test
+      import org.junit.Assert.fail
+      class FailingUnitTest {
+          @Test
+          fun testFailure() {
+              fail("This test is supposed to fail")
+          }
+      }
+      """
+        .trimIndent(),
+    )
+  }
+
   @Test
   fun testTestAllSuitesWithFailingTest() {
+    addFailingTestsToLib2()
+
     // unit test is expected to fail if run separately
     rule.build.executor.expectFailure().run(":lib2:testDebugUnitTest")
     // connected test is expected to fail if run separately
     rule.build.executor.expectFailure().run(":lib2:connectedDebugAndroidTest")
-    // check failing test case won't fail the build when running the test report task
-    val result = rule.build.executor.run(":lib2:testAllSuites")
+    // failing test cases also fail the build when the test report task is in the task graph, so no report is generated
+    val result = rule.build.executor.expectFailure().run(":lib2:testAllSuites")
+    assertThat(result.failedTasks).contains(":lib2:testDebugUnitTest")
+
     val libBuildDir = rule.build.androidLibrary(":lib2").buildDir.toFile()
     val outputDir = FileUtils.join(libBuildDir, "reports", "tests", "test-report")
-
-    verifyHtmlReport(
-      outputDir = outputDir,
-      taskResult = result,
-      expectedModuleCount = 1,
-      expectedTotalTests = 18,
-      expectedFailedTests = 3,
-      expectedUnitTestSummary = TestSummary(total = 16, passed = 14, failed = 2, skipped = 0),
-      expectedAndroidTestSummary = TestSummary(total = 2, passed = 1, failed = 1, skipped = 0),
-    )
+    assertThat(outputDir).doesNotExist()
   }
 
   @Test
@@ -246,10 +251,10 @@ class TestReportAggregationTest(val runWithBuiltInPlatform: Boolean) {
       outputDir = outputDir,
       taskResult = result,
       expectedModuleCount = 3,
-      expectedTotalTests = 49,
-      expectedFailedTests = 3,
-      expectedUnitTestSummary = TestSummary(total = 45, passed = 43, failed = 2, skipped = 0),
-      expectedAndroidTestSummary = TestSummary(total = 4, passed = 3, failed = 1, skipped = 0),
+      expectedTotalTests = 46,
+      expectedFailedTests = 0,
+      expectedUnitTestSummary = TestSummary(total = 43, passed = 43, failed = 0, skipped = 0),
+      expectedAndroidTestSummary = TestSummary(total = 3, passed = 3, failed = 0, skipped = 0),
     )
   }
 
@@ -282,10 +287,10 @@ class TestReportAggregationTest(val runWithBuiltInPlatform: Boolean) {
       outputDir = outputDir,
       taskResult = result,
       expectedModuleCount = 1,
-      expectedTotalTests = 10,
-      expectedFailedTests = 2,
-      expectedUnitTestSummary = TestSummary(total = 8, passed = 7, failed = 1, skipped = 0),
-      expectedAndroidTestSummary = TestSummary(total = 2, passed = 1, failed = 1, skipped = 0),
+      expectedTotalTests = 8,
+      expectedFailedTests = 0,
+      expectedUnitTestSummary = TestSummary(total = 7, passed = 7, failed = 0, skipped = 0),
+      expectedAndroidTestSummary = TestSummary(total = 1, passed = 1, failed = 0, skipped = 0),
     )
   }
 

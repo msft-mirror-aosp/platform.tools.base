@@ -138,15 +138,10 @@ class TestApplicationTaskManager(
     }
   }
 
-  override fun registerTestAndCodeCoverageCollectionTasks(
-    variantInfo: ComponentInfo<TestVariantBuilder, TestVariantCreationConfig>,
-    testResultsCollectionTasks: MutableList<TaskProvider<TestResultsCollectionTask>>,
-  ) {
+  override fun registerTestAndCodeCoverageCollectionTasks(variantInfo: ComponentInfo<TestVariantBuilder, TestVariantCreationConfig>) {
     if (isReportAggregationEnabled) {
       val testReportCreationConfig = TestReportCreationConfigImpl(variantInfo.variant, emptyList())
-      testResultsCollectionTasks.add(
-        taskFactory.register(TestResultsCollectionTask.TestResultsCollectionCreationAction(testReportCreationConfig))
-      )
+      taskFactory.register(TestResultsCollectionTask.TestResultsCollectionCreationAction(testReportCreationConfig))
     }
   }
 }

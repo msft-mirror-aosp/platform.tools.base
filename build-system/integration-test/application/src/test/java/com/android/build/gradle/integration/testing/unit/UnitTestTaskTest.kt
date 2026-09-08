@@ -103,10 +103,12 @@ class UnitTestTaskTest {
   fun testUnitTestCachingWithReportAggregation() {
     val build = rule.build
 
-    var result = build.executor.run(":app:testAllSuites")
+    // A failing unit test fails the build, even when the test report tasks are in the task graph.
+    var result = build.executor.expectFailure().run(":app:testAllSuites")
 
-    assertThat(result.didWorkTasks).contains(":app:testDebugUnitTest")
+    assertThat(result.failedTasks).contains(":app:testDebugUnitTest")
 
+    // The failure is not cached: running the test task again re-executes and fails again.
     result = build.executor.expectFailure().run(":app:testDebugUnitTest")
 
     assertThat(result.failedTasks).contains(":app:testDebugUnitTest")

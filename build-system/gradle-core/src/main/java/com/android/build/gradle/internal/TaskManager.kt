@@ -149,7 +149,6 @@ import com.android.build.gradle.internal.tasks.featuresplit.getFeatureName
 import com.android.build.gradle.internal.tasks.mlkit.GenerateMlModelClass
 import com.android.build.gradle.internal.tasks.runResourceShrinking
 import com.android.build.gradle.internal.test.AbstractTestDataImpl
-import com.android.build.gradle.internal.test.tasks.TestResultsCollectionTask
 import com.android.build.gradle.internal.transforms.ShrinkAppBundleResourcesTask
 import com.android.build.gradle.internal.transforms.ShrinkResourcesNewShrinkerTask
 import com.android.build.gradle.internal.utils.COMPOSE_COMPILER_PLUGIN_ID
@@ -208,7 +207,6 @@ import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.ResolutionStrategy
-import org.gradle.api.execution.TaskExecutionGraph
 import org.gradle.api.file.Directory
 import org.gradle.api.file.FileCollection
 import org.gradle.api.logging.Logger
@@ -1228,26 +1226,6 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
         deviceGroupTask.dependsOn(variantDeviceGroupTask)
       }
     }
-  }
-
-  /**
-   * Determines if failures should be ignored based on the presence of specific tasks in the execution graph.
-   *
-   * Returns `true` if any task in the provided [tasks] list is included in the [graph]. This allows the build to proceed even if the
-   * current task fails, enabling downstream tasks (such as test result aggregators) to execute and report on the failures.
-   *
-   * @param tasks A list of [TaskProvider]s for tasks that, if present in the graph, indicate failures should be ignored.
-   * @param graph The [TaskExecutionGraph] for the current build.
-   * @return `true` if any of the [tasks] are scheduled to run, `false` otherwise.
-   */
-  protected fun shouldIgnoreFailures(tasks: List<TaskProvider<TestResultsCollectionTask>>?, graph: TaskExecutionGraph): Boolean {
-    if (tasks.isNullOrEmpty()) return false
-    tasks.forEach {
-      if (graph.hasTask(getTaskPath(project, it.name))) {
-        return true
-      }
-    }
-    return false
   }
 
   /**

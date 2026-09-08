@@ -242,16 +242,11 @@ class LibraryTaskManager(
     createBundleTask(libraryVariant)
   }
 
-  override fun registerTestAndCodeCoverageCollectionTasks(
-    variantInfo: ComponentInfo<LibraryVariantBuilder, LibraryCreationConfig>,
-    testResultsCollectionTasks: MutableList<TaskProvider<TestResultsCollectionTask>>,
-  ) {
-    super.registerTestAndCodeCoverageCollectionTasks(variantInfo, testResultsCollectionTasks)
+  override fun registerTestAndCodeCoverageCollectionTasks(variantInfo: ComponentInfo<LibraryVariantBuilder, LibraryCreationConfig>) {
+    super.registerTestAndCodeCoverageCollectionTasks(variantInfo)
     if (isReportAggregationEnabled && (variantInfo.variant.publishInfo?.components?.isNotEmpty() ?: false)) {
       val testReportCreationConfig = TestReportCreationConfigImpl(variantInfo.variant, testComponents)
-      testResultsCollectionTasks.add(
-        taskFactory.register(TestResultsCollectionTask.AggregatedTestResultsCollectionCreationAction(testReportCreationConfig))
-      )
+      taskFactory.register(TestResultsCollectionTask.AggregatedTestResultsCollectionCreationAction(testReportCreationConfig))
     }
   }
 
