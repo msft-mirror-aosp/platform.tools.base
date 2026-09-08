@@ -260,14 +260,22 @@ bool Instrumenter::InstrumentMethod(
 
   lir::CodeIr code_ir(ir_method, dex_ir);
 
-  lir::Instruction* super_call_instr = nullptr;
+  std::vector<lir::Instruction*> super_calls;
+  lir::Instruction* last_super_call = nullptr;
   if (is_constructor) {
-    super_call_instr =
-        ConstructorAnalyzer::FindSuperCallInstruction(code_ir, name);
-    if (super_call_instr == nullptr) {
-      Log::I("Constructor %s has complex/missing super delegation. Skipping.",
+    super_calls = ConstructorAnalyzer::FindSuperCallInstructions(code_ir, name);
+    if (super_calls.empty()) {
+      Log::I("Constructor %s has missing super delegation. Skipping.",
              ir_method->decl->name->c_str());
       return false;
+    }
+    // Find the topologically last super call in the instructions list
+    for (auto* instr : code_ir.instructions) {
+      for (auto* super_call : super_calls) {
+        if (instr == super_call) {
+          last_super_call = super_call;
+        }
+      }
     }
   }
 
@@ -275,7 +283,7 @@ bool Instrumenter::InstrumentMethod(
   // align probes safely after Slicer's prologue.
   lir::Instruction* orig_first_instr = nullptr;
   if (is_constructor) {
-    orig_first_instr = super_call_instr->next;
+    orig_first_instr = last_super_call->next;
   } else {
     for (auto* instr : code_ir.instructions) {
       if (dynamic_cast<lir::Bytecode*>(instr) != nullptr) {
@@ -327,15 +335,14 @@ bool Instrumenter::InstrumentMethod(
     // slot. We delegate the parameter-shifting relocation (prologue moves) to
     // our modular ParameterShifter class to keep code clean, readable, and
     // highly maintainable.
-    if (!ParameterShifter::ShiftParameters(ir_method, code_ir,
-                                           orig_first_instr)) {
+    if (!ParameterShifter::ShiftParameters(ir_method, code_ir, super_calls)) {
       return false;
     }
 
     // If we are inside a constructor and we expanded the register frame, any
     // instructions executing before our copy-back moves (such as the super()
     // delegation call itself) must be adjusted to reference the shifted
-    // parameter indices. Stop adjusting after super_call_instr.
+    // parameter indices. Stop adjusting after last_super_call.
     if (is_constructor && ins_count > 0) {
       dex::u4 old_param_base = ir_method->code->registers - 1 - ins_count;
       for (auto* instr : code_ir.instructions) {
@@ -362,7 +369,7 @@ bool Instrumenter::InstrumentMethod(
             }
           }
         }
-        if (instr == super_call_instr) {
+        if (instr == last_super_call) {
           break;
         }
       }
@@ -485,7 +492,7 @@ bool Instrumenter::InstrumentMethod(
           is_before_or_at_super = true;
           break;
         }
-        if (instr == super_call_instr) {
+        if (instr == last_super_call) {
           break;
         }
       }

@@ -19,18 +19,33 @@
 
 namespace coverage {
 
-bool ParameterShifter::ShiftParameters(ir::EncodedMethod* ir_method,
-                                       lir::CodeIr& code_ir,
-                                       lir::Instruction* position) {
+bool ParameterShifter::ShiftParameters(
+    ir::EncodedMethod* ir_method, lir::CodeIr& code_ir,
+    const std::vector<lir::Instruction*>& super_calls) {
   const dex::u4 ins_count = ir_method->code->ins_count;
-  if (ins_count == 0 || position == nullptr) {
+  if (ins_count == 0 || code_ir.instructions.empty()) {
     return true;
+  }
+
+  // Find the insertion point for normal parameter copy-backs:
+  // It is the very first instruction in the method list, ensuring they are
+  // placed topologically before any TryBlockBegin instructions, preventing
+  // static type-merging VerifyErrors in catch handlers.
+  lir::Instruction* first_instr = *code_ir.instructions.begin();
+
+  // Track insertion positions for each separate super_call branch in
+  // constructors. This must be maintained across parameter iterations to
+  // prevent register overwrites.
+  std::vector<lir::Instruction*> insert_positions;
+  for (auto* super_call : super_calls) {
+    insert_positions.push_back(super_call->next);
   }
 
   std::vector<ir::Type*> param_types;
 
   // If the method is non-static, Parameter 0 is the implicit 'this' receiver
   // reference.
+  const bool is_constructor = !super_calls.empty();
   if ((ir_method->access_flags & dex::kAccStatic) == 0) {
     param_types.push_back(ir_method->decl->parent);
   }
@@ -44,7 +59,8 @@ bool ParameterShifter::ShiftParameters(ir::EncodedMethod* ir_method,
   // copying back.
   dex::u4 reg = ir_method->code->registers - ins_count;
 
-  for (const auto& type : param_types) {
+  for (size_t i = 0; i < param_types.size(); ++i) {
+    const auto& type = param_types[i];
     auto move = code_ir.Alloc<lir::Bytecode>();
     switch (type->GetCategory()) {
       case ir::Type::Category::Reference:
@@ -72,7 +88,31 @@ bool ParameterShifter::ShiftParameters(ir::EncodedMethod* ir_method,
         Log::E("void parameter type in %s", ir_method->decl->name->c_str());
         return false;
     }
-    code_ir.instructions.InsertBefore(position, move);
+
+    if (is_constructor) {
+      // For constructors, all parameter copy-back moves must be executed
+      // immediately after EVERY super() or this() direct delegation call, after
+      // 'this' is officially initialized, completely preventing any register
+      // overwrites or uninitialized 'this' VerifyErrors. We must allocate
+      // brand-new, unique operand instances for each super_move to avoid
+      // pointer-sharing corruption!
+      for (size_t s = 0; s < super_calls.size(); ++s) {
+        auto super_move = code_ir.Alloc<lir::Bytecode>();
+        super_move->opcode = move->opcode;
+        if (type->GetCategory() == ir::Type::Category::WideScalar) {
+          super_move->operands.push_back(
+              code_ir.Alloc<lir::VRegPair>(reg - 2 - 1));
+          super_move->operands.push_back(code_ir.Alloc<lir::VRegPair>(reg - 2));
+        } else {
+          super_move->operands.push_back(code_ir.Alloc<lir::VReg>(reg - 1 - 1));
+          super_move->operands.push_back(code_ir.Alloc<lir::VReg>(reg - 1));
+        }
+        code_ir.instructions.InsertBefore(insert_positions[s], super_move);
+      }
+    } else {
+      // Normal parameter copy-back: insert at the very beginning of the method.
+      code_ir.instructions.InsertBefore(first_instr, move);
+    }
   }
 
   return true;
