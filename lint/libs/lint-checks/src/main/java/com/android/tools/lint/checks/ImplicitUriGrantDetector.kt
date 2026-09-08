@@ -16,6 +16,9 @@
 
 package com.android.tools.lint.checks
 
+import com.android.SdkConstants.CLASS_CONTEXT
+import com.android.SdkConstants.CLASS_INTENT
+import com.android.tools.lint.client.api.TYPE_STRING
 import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.ConstantEvaluator
 import com.android.tools.lint.detector.api.Detector
@@ -27,550 +30,319 @@ import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.android.tools.lint.detector.api.isKotlin
-import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
-import com.intellij.psi.PsiVariable
-import org.jetbrains.uast.UBinaryExpression
 import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UExpression
 import org.jetbrains.uast.UMethod
-import org.jetbrains.uast.UQualifiedReferenceExpression
-import org.jetbrains.uast.UReferenceExpression
-import org.jetbrains.uast.UVariable
 import org.jetbrains.uast.getParentOfType
-import org.jetbrains.uast.skipParenthesizedExprDown
-import org.jetbrains.uast.toUElementOfType
-import org.jetbrains.uast.visitor.AbstractUastVisitor
+import org.jetbrains.uast.getQualifiedName
+import org.jetbrains.uast.util.isConstructorCall
 
 /**
- * Detector that warns when intents carrying URI payloads (e.g. ACTION_SEND, ACTION_IMAGE_CAPTURE) are dispatched to external apps without
- * explicit URI grant flags (FLAG_GRANT_READ_URI_PERMISSION / FLAG_GRANT_WRITE_URI_PERMISSION).
+ * Reports `Intent` constructors if the following conditions hold:
+ *
+ * - The intent is constructed without a `packageContext: Context` argument.
+ * - We do not see `setClass[Name]`, `setPackage`, nor `setComponent`.
+ * - We see a send action (`ACTION_SEND`, `ACTION_SEND_MULTIPLE`) or media capture action (`ACTION_IMAGE_CAPTURE`,
+ *   `ACTION_IMAGE_CAPTURE_SECURE`, ...) flow into the intent via the constructor, or `setAction`.
+ * - A URI payload is attached to the intent via `putExtra` (`Intent.EXTRA_STREAM` for a send action; `MediaStore.EXTRA_OUTPUT` for a media
+ *   capture action).
+ * - We see the intent being passed into a method that launches the intent (`startActivity`, `launch`, ...), or into `createChooser`.
+ * - We do not see `FLAG_GRANT_READ_URI_PERMISSION` (for send actions)
+ * - We do not see `FLAG_GRANT_READ_URI_PERMISSION` or `FLAG_GRANT_WRITE_URI_PERMISSION` (for capture actions).
+ * - The intent does not escape.
+ *
+ * Why: Starting from Android 18 onwards, the system will no longer implicitly grant URI read/write permissions for send or media capture
+ * actions. Sender applications must explicitly set `FLAG_GRANT_READ_URI_PERMISSION` or `FLAG_GRANT_WRITE_URI_PERMISSION` on the intent.
+ *
+ * We do not check `setData` or `setClipData` because these did not trigger an implicit permission grant.
+ *
+ * Note: for calls to `Intent.createChooser(intent)`, the app must add the flags to the passed intent, not to the returned intent.
+ *
+ * False-negative: If we see any evidence of a package (application ID) being set, then we give up. The problem might still remain, but
+ * skipping these cases avoids possible false-positives where the permission flag(s) are not needed. E.g. if the intent is targeting the
+ * current app. E.g. if the app has explicitly granted another app permission via `Context.grantUriPermission()` or in its manifest.
+ *
+ * False-positive: We don't check if the launch methods (`startActivity`, `launch`, etc.) are on any particular class. This is common in our
+ * other Intent detectors. This could lead to a false-positive because it could be some custom method that sets flags before _actually_
+ * launching the intent. We assume the risk of this is low, and it means we are likely to handle various utility/compat versions of these
+ * methods.
  */
 class ImplicitUriGrantDetector : Detector(), SourceCodeScanner {
 
-  override fun getApplicableMethodNames(): List<String> = DISPATCH_METHODS
+  // TODO: Track ShareCompat.IntentBuilder(context) ... .intent ->
 
-  override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
-    if (!isDispatchMethod(context, method)) {
-      return
+  // TODO: Handle setClipData? ClipData never triggered an implicit permission grant, so apps that work on Android 17 should
+  //  work on Android 18. However, forgetting to set the permission flag is still possible, so we could warn about it.
+  //  But we may also introduce false-positives, as ClipData in an Intent can technically contain other content, not just URIs
+  //  (although this is perhaps quite rare). If we see setClipData, we could run another DataFlowAnalyzer for ClipData, but that is
+  //  a lot of effort for just this one scenario.
+
+  override fun getApplicableConstructorTypes(): List<String> = listOf(CLASS_INTENT)
+
+  override fun visitConstructor(context: JavaContext, node: UCallExpression, constructor: PsiMethod) {
+    for (parameter in constructor.parameterList.parameters) {
+      when (parameter.type.canonicalText) {
+        CLASS_INTENT -> {
+          // Intent being passed another intent.
+          // Skip this, as we can track from the original intent.
+          return
+        }
+        CLASS_CONTEXT -> {
+          // `packageContext: Context` argument.
+          // We give up if the package (application id) is being set.
+          return
+        }
+      }
     }
 
-    val rawIntentArg = findIntentArgument(context, node) ?: return
-    val unwrappedIntent = unwrapIntent(rawIntentArg)
-    val surroundingMethod = node.getParentOfType<UMethod>() ?: node.getParentOfType<UElement>() ?: return
-    val targetVariable = (unwrappedIntent.skipParenthesizedExprDown() as? UReferenceExpression)?.resolve() as? PsiVariable
+    val parentMethod = node.getParentOfType<UMethod>() ?: return
+    val analyzer = IntentDataFlowAnalyzer(context, node)
+    parentMethod.accept(analyzer)
+    analyzer.reportIncident()
+  }
 
-    // 1. Intra-App Filter: Skip if explicitly targeting an internal class or own package
-    if (isIntraAppExplicitIntent(context, surroundingMethod, rawIntentArg, targetVariable)) {
-      return
+  private class IntentDataFlowAnalyzer(
+    val context: JavaContext,
+    val startNode: UCallExpression,
+  ) : EscapeCheckingDataFlowAnalyzer(setOf(startNode)) {
+
+    // Note: we use "escaped" as our "give up" property.
+    var seenSendAction = false
+    var seenCaptureAction = false
+    var seenSendPayload = false
+    var seenCapturePayload = false
+    var seenReadFlag = false
+    var seenWriteFlag = false
+    var seenLaunchCall = false
+
+    /**
+     * If we see a call to `setFlag`, then we do not try to provide a quick-fix that adds `addFlag`, since the flags probably get
+     * overwritten.
+     */
+    var seenSetFlag = false
+
+    init {
+      inspectConstructor(startNode)
     }
 
-    // 2. Action Filter: Verify action is SEND, SEND_MULTIPLE, or Media capture
-    val action = resolveIntentAction(surroundingMethod, rawIntentArg, targetVariable) ?: return
-    if (action !in IMPACTED_ACTIONS) {
-      return
+    override fun visitElement(node: UElement): Boolean {
+      // Minor optimization: stop visiting if the Intent has escaped.
+      return escaped
     }
 
-    // 3. Payload Filter: Verify if URI payload (e.g. EXTRA_STREAM, EXTRA_OUTPUT) is attached
-    if (!hasUriPayloadAttached(surroundingMethod, rawIntentArg, targetVariable)) {
-      return
-    }
+    fun reportIncident() {
+      if (escaped) return
 
-    // 4. Flags Check: Verify whether required grant flags are present
-    val isCaptureAction = action in CAPTURE_ACTIONS
-    val isMissingReadGrant = !hasGrantFlag(surroundingMethod, rawIntentArg, targetVariable, FLAG_GRANT_READ_URI_PERMISSION)
-    val isMissingWriteGrant =
-      isCaptureAction && !hasGrantFlag(surroundingMethod, rawIntentArg, targetVariable, FLAG_GRANT_WRITE_URI_PERMISSION)
+      // If we failed to resolve something then we may have missed a call that sets the flags.
+      if (failedResolve) return
 
-    if (isMissingReadGrant || isMissingWriteGrant) {
-      val fix = createAddFlagsQuickFix(context, node, unwrappedIntent, isMissingReadGrant, isMissingWriteGrant)
+      if (!seenLaunchCall) return
+
+      if (!(seenSendAction && seenSendPayload) && !(seenCaptureAction && seenCapturePayload)) return
+
+      val missingRead = !seenReadFlag
+      val missingWrite = !seenWriteFlag && (seenCaptureAction && seenCapturePayload)
+
+      if (!missingRead && !missingWrite) return
+
+      val fix =
+        when {
+          seenSetFlag -> null
+          else -> createAddFlagsQuickFix(startNode, missingRead, missingWrite)
+        }
+
       context.report(
         ISSUE,
-        node,
-        context.getLocation(node),
-        "Implicit URI grants for this action are discontinued from Android 18 onwards. " +
-          "Please set the grant explicitly on the intent. " +
-          "See https://goo.gle/implicit-uri-grants for more info.",
+        startNode,
+        context.getLocation(startNode),
+        getMessage(missingRead, missingWrite),
         fix,
       )
     }
-  }
 
-  private fun isDispatchMethod(context: JavaContext, method: PsiMethod): Boolean {
-    val containingClass = method.containingClass ?: return true
-    val evaluator = context.evaluator
-    return DISPATCH_RECEIVER_CLASSES.any { evaluator.extendsClass(containingClass, it, false) }
-  }
-
-  private fun findIntentArgument(context: JavaContext, node: UCallExpression): UExpression? =
-    node.valueArguments.firstOrNull { isIntentType(context, it) }
-
-  private fun isIntentType(context: JavaContext, expression: UExpression): Boolean {
-    val unwrapped = unwrapIntent(expression)
-    val type = unwrapped.skipParenthesizedExprDown()?.getExpressionType()
-    val canonical = type?.canonicalText
-
-    when {
-      canonical == "android.app.PendingIntent" || canonical?.endsWith(".PendingIntent") == true -> return false
-      canonical == "android.content.Intent" || canonical?.endsWith(".Intent") == true -> return true
-      type != null -> {
-        val psiClass = context.evaluator.getTypeClass(type)
-        if (psiClass != null && context.evaluator.extendsClass(psiClass, "android.content.Intent", false)) {
-          return true
+    private fun getMessage(missingRead: Boolean, missingWrite: Boolean): String {
+      val flags =
+        when {
+          missingRead && missingWrite -> "`FLAG_GRANT_READ_URI_PERMISSION` and `FLAG_GRANT_WRITE_URI_PERMISSION`"
+          missingWrite -> "`FLAG_GRANT_WRITE_URI_PERMISSION`"
+          else -> "`FLAG_GRANT_READ_URI_PERMISSION`"
         }
-      }
+      return "This intent attaches a URI but is missing $flags; the receiving app will not be granted access to the URI on " +
+        "Android 18 and higher"
     }
 
-    val source = unwrapped.asSourceString()
-    return when {
-      source.contains("PendingIntent") -> false
-      source.contains("Intent") -> true
-      else -> type == null
-    }
-  }
+    private fun createAddFlagsQuickFix(
+      node: UElement,
+      missingRead: Boolean,
+      missingWrite: Boolean,
+    ): LintFix {
 
-  private fun unwrapIntent(expression: UExpression): UExpression {
-    var current = expression.skipParenthesizedExprDown() ?: expression
-    while (true) {
-      val unwrapped = current.skipParenthesizedExprDown() ?: current
-      val call =
-        when (unwrapped) {
-          is UCallExpression -> unwrapped
-          is UQualifiedReferenceExpression -> unwrapped.selector.skipParenthesizedExprDown() as? UCallExpression
-          else -> null
+      val bitwiseOr =
+        when {
+          isKotlin(node.lang) -> " or "
+          else -> " | "
         }
-      if (call != null) {
-        when (call.methodName) {
-          "createChooser" -> {
-            current = call.valueArguments.firstOrNull()?.skipParenthesizedExprDown() ?: break
-            continue
-          }
-          "apply",
-          "also" -> {
-            current = (unwrapped as? UQualifiedReferenceExpression)?.receiver?.skipParenthesizedExprDown() ?: break
-            continue
-          }
+
+      val (name, flagString) =
+        when {
+          missingRead && missingWrite ->
+            "Add FLAG_GRANT_READ_URI_PERMISSION and FLAG_GRANT_WRITE_URI_PERMISSION" to
+              "android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION${bitwiseOr}android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION"
+          missingWrite -> "Add FLAG_GRANT_WRITE_URI_PERMISSION" to "android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION"
+          else -> "Add FLAG_GRANT_READ_URI_PERMISSION" to "android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION"
         }
-      }
-      break
-    }
-    return current.skipParenthesizedExprDown() ?: current
-  }
 
-  private fun isTargetIntentCall(call: UCallExpression, intentExpression: UExpression, targetVariable: PsiElement?): Boolean {
-    if (targetVariable != null) {
-      val receiver = call.receiver?.skipParenthesizedExprDown()
-      if (receiver is UReferenceExpression && receiver.resolve() == targetVariable) {
-        return true
-      }
-      val varDecl = targetVariable.toUElementOfType<UVariable>()
-      return varDecl?.uastInitializer != null && isAncestor(varDecl.uastInitializer!!, call)
+      return LintFix.create().name(name).replace().end().with(".addFlags($flagString)").shortenNames().reformat(true).build()
     }
-    return isAncestor(intentExpression, call)
-  }
 
-  private fun isTargetIntentProperty(expr: UBinaryExpression, intentExpression: UExpression, targetVariable: PsiElement?): Boolean {
-    if (targetVariable != null) {
-      val left = expr.leftOperand.skipParenthesizedExprDown()
-      if (left is UQualifiedReferenceExpression) {
-        val receiver = left.receiver.skipParenthesizedExprDown()
-        if (receiver is UReferenceExpression && receiver.resolve() == targetVariable) {
-          return true
-        }
-      }
-      val varDecl = targetVariable.toUElementOfType<UVariable>()
-      return varDecl?.uastInitializer != null && isAncestor(varDecl.uastInitializer!!, expr)
-    }
-    return isAncestor(intentExpression, expr)
-  }
-
-  private fun isAncestor(ancestor: UElement, node: UElement): Boolean {
-    if (ancestor == node) {
-      return true
-    }
-    var uastCurr: UElement? = node
-    while (uastCurr != null) {
-      if (uastCurr == ancestor) {
-        return true
-      }
-      uastCurr = uastCurr.uastParent
-    }
-    val ancestorPsi = ancestor.sourcePsi ?: return false
-    val nodePsi = node.sourcePsi ?: return false
-    val ancestorRange = ancestorPsi.textRange
-    val nodeRange = nodePsi.textRange
-    if (ancestorRange != null && nodeRange != null && ancestorRange.contains(nodeRange)) {
-      return true
-    }
-    var currentPsi: PsiElement? = nodePsi
-    while (currentPsi != null) {
-      if (currentPsi == ancestorPsi) {
-        return true
-      }
-      currentPsi = currentPsi.parent
-    }
-    return false
-  }
-
-  private fun isIntraAppExplicitIntent(
-    context: JavaContext,
-    scope: UElement,
-    intentExpression: UExpression,
-    targetVariable: PsiElement?,
-  ): Boolean {
-    var isIntraApp = false
-
-    scope.accept(
-      object : AbstractUastVisitor() {
-        override fun visitCallExpression(node: UCallExpression): Boolean {
-          if (!isTargetIntentCall(node, intentExpression, targetVariable)) {
-            return super.visitCallExpression(node)
-          }
-          // Check constructor: new Intent(context, LocalActivity.class)
-          if (node.classReference != null || node.methodName == null) {
-            val targetClass = node.valueArguments.getOrNull(1)?.getExpressionType()?.canonicalText
-            if (targetClass?.startsWith("java.lang.Class") == true) {
-              isIntraApp = true
-            }
+    private fun inspectConstructor(call: UCallExpression) {
+      val constructor =
+        call.resolve()
+          ?: run {
+            escaped = true
+            return
           }
 
-          when (node.methodName) {
-            "setClass" -> isIntraApp = true
-            "setPackage",
-            "setClassName" -> {
-              val firstArg = node.valueArguments.firstOrNull()
-              if (firstArg != null && isLocalPackageOrContext(context, firstArg)) {
-                isIntraApp = true
+      // First arg can be action String.
+      val type = constructor.parameterList.parameters.firstOrNull()?.type?.canonicalText ?: return
+      if (type != TYPE_STRING) return
+      val arg = call.getArgumentForParameter(0) ?: return
+      checkActionString(arg)
+    }
+
+    private fun checkActionString(expression: UExpression) {
+      val actionString = ConstantEvaluator.evaluateString(context, expression, false) ?: return
+      if (actionString.isEmpty()) return
+
+      when (actionString) {
+        // Value of: Intent.ACTION_SEND, Intent.ACTION_SEND_MULTIPLE
+        "android.intent.action.SEND",
+        "android.intent.action.SEND_MULTIPLE" -> seenSendAction = true
+
+        // Value of: MediaStore.ACTION_IMAGE_CAPTURE, MediaStore...., etc.
+        "android.media.action.IMAGE_CAPTURE",
+        "android.media.action.IMAGE_CAPTURE_SECURE",
+        "android.media.action.VIDEO_CAPTURE",
+        "android.media.action.MOTION_PHOTO_CAPTURE",
+        "android.media.action.MOTION_PHOTO_CAPTURE_SECURE" -> seenCaptureAction = true
+      }
+    }
+
+    private fun checkPayloadKey(expression: UExpression) {
+      val key = ConstantEvaluator.evaluateString(context, expression, false) ?: return
+      if (key.isEmpty()) return
+
+      when (key) {
+        // Value of: Intent.EXTRA_STREAM
+        "android.intent.extra.STREAM" -> seenSendPayload = true
+        // Value of: MediaStore.EXTRA_OUTPUT
+        "output" -> seenCapturePayload = true
+      }
+    }
+
+    private fun checkFlag(expression: UExpression) {
+      // Note: we aggressively give up if we cannot evaluate a flag argument.
+      // TODO: Could try to handle final private fields/properties.
+      val flag =
+        (ConstantEvaluator.evaluate(context, expression) as? Number)?.toInt()
+          ?: run {
+            escaped = true
+            return
+          }
+
+      if (flag and FLAG_GRANT_READ_URI_PERMISSION != 0) {
+        seenReadFlag = true
+      }
+
+      if (flag and FLAG_GRANT_WRITE_URI_PERMISSION != 0) {
+        seenWriteFlag = true
+      }
+
+      // Minor optimization: if we have seen both flags already then we can give up.
+      if (seenReadFlag && seenWriteFlag) {
+        escaped = true
+      }
+    }
+
+    override fun receiver(call: UCallExpression) {
+      when (call.methodName) {
+        "setClass",
+        "setClassName",
+        "setPackage",
+        "setComponent" -> {
+          // We give up if the package (application id) is being set.
+          escaped = true
+        }
+        "setAction" -> {
+          call.valueArguments.firstOrNull()?.let { action ->
+            checkActionString(action)
+          }
+        }
+        "putExtra",
+        "putParcelableArrayListExtra" -> {
+          call.valueArguments.firstOrNull()?.let { key ->
+            checkPayloadKey(key)
+          }
+        }
+        "addFlags" -> {
+          // Note: we aggressively give up if we cannot evaluate a flag argument.
+          val flagExpression =
+            call.valueArguments.firstOrNull()
+              ?: run {
+                escaped = true
+                return
               }
-            }
-            "setComponent" -> {
-              val firstArg = node.valueArguments.firstOrNull()
-              if (firstArg != null && isLocalComponentName(context, firstArg)) {
-                isIntraApp = true
+          checkFlag(flagExpression)
+        }
+        "setFlags" -> {
+          // We track seeing setFlags to skip providing a quick-fix.
+          seenSetFlag = true
+          // Note: we treat setFlags like addFlags, even though setFlags _replaces_ the flags. So we
+          // could see `addFlags(FLAG_GRANT_READ_URI_PERMISSION)` followed by
+          // `setFlags(0)`, and we won't report (false-negative).
+          // Note: we aggressively give up if we cannot evaluate a flag argument.
+          val flagExpression =
+            call.valueArguments.firstOrNull()
+              ?: run {
+                escaped = true
+                return
               }
-            }
-          }
-          return super.visitCallExpression(node)
+          checkFlag(flagExpression)
         }
-
-        override fun visitBinaryExpression(node: UBinaryExpression): Boolean {
-          if (!isTargetIntentProperty(node, intentExpression, targetVariable)) {
-            return super.visitBinaryExpression(node)
-          }
-          val leftOperandString = node.leftOperand.asSourceString().replace("`", "").replace("(", "").replace(")", "").trim()
-          when {
-            leftOperandString == "package" ||
-              leftOperandString.endsWith(".package") ||
-              leftOperandString == "className" ||
-              leftOperandString.endsWith(".className") -> {
-              if (isLocalPackageOrContext(context, node.rightOperand)) {
-                isIntraApp = true
-              }
-            }
-            leftOperandString == "component" || leftOperandString.endsWith(".component") -> {
-              if (isLocalComponentName(context, node.rightOperand)) {
-                isIntraApp = true
-              }
-            }
-          }
-          return super.visitBinaryExpression(node)
-        }
-      }
-    )
-
-    return isIntraApp
-  }
-
-  private fun isLocalPackageOrContext(context: JavaContext, expression: UExpression): Boolean {
-    // 1. Android Context instance (this, context, requireContext(), etc.)
-    val type = expression.getExpressionType()?.canonicalText
-    if (type?.contains("Context") == true) {
-      return true
-    }
-
-    // 2. Direct call to getPackageName()
-    if ((expression as? UCallExpression)?.methodName == "getPackageName") {
-      return true
-    }
-
-    // 3. String constant matching project's package name
-    val constantValue = ConstantEvaluator.evaluateString(null, expression, false)
-    val projectPackage = context.project.getPackage()
-    if (constantValue != null && projectPackage != null && constantValue == projectPackage) {
-      return true
-    }
-
-    // 4. Resolve reference expression
-    val resolved = (expression as? UReferenceExpression)?.resolve()
-    return when (resolved) {
-      is PsiMethod -> resolved.name == "getPackageName"
-      is PsiVariable -> {
-        val initializer = resolved.toUElementOfType<UVariable>()?.uastInitializer
-        initializer != null && isLocalPackageOrContext(context, initializer)
-      }
-      else -> false
-    }
-  }
-
-  private fun isLocalComponentName(context: JavaContext, expression: UExpression): Boolean {
-    var isLocal = false
-    expression.accept(
-      object : AbstractUastVisitor() {
-        override fun visitCallExpression(node: UCallExpression): Boolean {
-          val firstArg = node.valueArguments.firstOrNull()
-          if (firstArg != null && isLocalPackageOrContext(context, firstArg)) {
-            isLocal = true
-          }
-          return super.visitCallExpression(node)
-        }
-      }
-    )
-    if (isLocal) {
-      return true
-    }
-
-    val resolved = (expression as? UReferenceExpression)?.resolve()
-    if (resolved != null) {
-      val uVar = resolved.toUElementOfType<UVariable>()
-      val initializer = uVar?.uastInitializer
-      if (initializer != null && isLocalComponentName(context, initializer)) {
-        return true
+        else -> super.receiver(call)
       }
     }
 
-    return false
-  }
-
-  private fun resolveIntentAction(scope: UElement, intentExpression: UExpression, targetVariable: PsiElement?): String? {
-    var resolvedAction: String? = null
-    scope.accept(
-      object : AbstractUastVisitor() {
-        override fun visitCallExpression(node: UCallExpression): Boolean {
-          if (!isTargetIntentCall(node, intentExpression, targetVariable)) {
-            return super.visitCallExpression(node)
-          }
-          node.valueArguments.mapNotNull { evaluateActionString(it) }.firstOrNull { it in IMPACTED_ACTIONS }?.let { resolvedAction = it }
-          return super.visitCallExpression(node)
+    override fun argument(call: UCallExpression, reference: UElement) {
+      when (call.methodName) {
+        "startActivity",
+        "startActivityForResult",
+        "startActivityIfNeeded",
+        "startActivityFromFragment",
+        // PendingIntent.getActivity
+        "getActivity",
+        "launch",
+        "createChooser" -> {
+          seenLaunchCall = true
+          return
         }
       }
-    )
-    return resolvedAction
-  }
-
-  private fun evaluateActionString(expression: UExpression): String? {
-    ConstantEvaluator.evaluateString(null, expression, false)?.let {
-      return it
-    }
-    val source = expression.asSourceString()
-    return when {
-      source.endsWith("ACTION_SEND") -> "android.intent.action.SEND"
-      source.endsWith("ACTION_SEND_MULTIPLE") -> "android.intent.action.SEND_MULTIPLE"
-      source.endsWith("ACTION_IMAGE_CAPTURE") -> "android.media.action.IMAGE_CAPTURE"
-      source.endsWith("ACTION_IMAGE_CAPTURE_SECURE") -> "android.media.action.IMAGE_CAPTURE_SECURE"
-      source.endsWith("ACTION_VIDEO_CAPTURE") -> "android.media.action.VIDEO_CAPTURE"
-      source.endsWith("ACTION_MOTION_PHOTO_CAPTURE") -> "android.media.action.MOTION_PHOTO_CAPTURE"
-      source.endsWith("ACTION_MOTION_PHOTO_CAPTURE_SECURE") -> "android.media.action.MOTION_PHOTO_CAPTURE_SECURE"
-      else -> null
-    }
-  }
-
-  private fun hasUriPayloadAttached(scope: UElement, intentExpression: UExpression, targetVariable: PsiElement?): Boolean {
-    var foundPayload = false
-
-    scope.accept(
-      object : AbstractUastVisitor() {
-        override fun visitCallExpression(node: UCallExpression): Boolean {
-          if (!isTargetIntentCall(node, intentExpression, targetVariable)) {
-            return super.visitCallExpression(node)
-          }
-          when (node.methodName) {
-            "setData",
-            "setClipData" -> foundPayload = true
-            "putExtra",
-            "putParcelableArrayListExtra" -> {
-              val hasPayload = node.valueArguments.any { evaluatePayloadKey(it) in URI_PAYLOAD_KEYS }
-              if (hasPayload) {
-                foundPayload = true
-              }
-            }
-          }
-          return super.visitCallExpression(node)
-        }
-
-        override fun visitBinaryExpression(node: UBinaryExpression): Boolean {
-          if (!isTargetIntentProperty(node, intentExpression, targetVariable)) {
-            return super.visitBinaryExpression(node)
-          }
-          val leftOperandString = node.leftOperand.asSourceString().replace("`", "").replace("(", "").replace(")", "").trim()
-          if (
-            leftOperandString == "data" ||
-              leftOperandString.endsWith(".data") ||
-              leftOperandString == "clipData" ||
-              leftOperandString.endsWith(".clipData")
-          ) {
-            foundPayload = true
-          }
-          return super.visitBinaryExpression(node)
-        }
+      // If an Intent is being constructed from this Intent, we track it.
+      if (call.isConstructorCall() && call.classReference.getQualifiedName() == CLASS_INTENT) {
+        track(call, reference)
+        return
       }
-    )
-    return foundPayload
-  }
-
-  private fun evaluatePayloadKey(expression: UExpression): String? {
-    ConstantEvaluator.evaluateString(null, expression, false)?.let {
-      return it
+      // The Intent is passed somewhere that we cannot follow; it might have the flags set there, so
+      // we must give up.
+      super.argument(call, reference)
     }
-    val source = expression.asSourceString()
-    return when {
-      source.endsWith("EXTRA_STREAM") -> "android.intent.extra.STREAM"
-      source.endsWith("EXTRA_OUTPUT") -> "output"
-      else -> null
-    }
-  }
-
-  private fun hasGrantFlag(
-    scope: UElement,
-    intentExpression: UExpression,
-    targetVariable: PsiElement?,
-    flagMask: Int,
-  ): Boolean {
-    var hasFlag = false
-
-    scope.accept(
-      object : AbstractUastVisitor() {
-        override fun visitCallExpression(node: UCallExpression): Boolean {
-          if (!isTargetIntentCall(node, intentExpression, targetVariable)) {
-            return super.visitCallExpression(node)
-          }
-          when (node.methodName) {
-            "addFlags",
-            "setFlags" -> {
-              val containsFlag =
-                node.valueArguments.any { argument ->
-                  val flagValue = evaluateFlagValue(argument)
-                  flagValue != null && (flagValue and flagMask) == flagMask
-                }
-              if (containsFlag) {
-                hasFlag = true
-              }
-            }
-          }
-          return super.visitCallExpression(node)
-        }
-
-        override fun visitBinaryExpression(node: UBinaryExpression): Boolean {
-          if (!isTargetIntentProperty(node, intentExpression, targetVariable)) {
-            return super.visitBinaryExpression(node)
-          }
-          val leftOperandString = node.leftOperand.asSourceString().replace("`", "").replace("(", "").replace(")", "").trim()
-          if (leftOperandString == "flags" || leftOperandString.endsWith(".flags")) {
-            val flagValue = evaluateFlagValue(node.rightOperand)
-            if (flagValue != null && (flagValue and flagMask) == flagMask) {
-              hasFlag = true
-            }
-          }
-          return super.visitBinaryExpression(node)
-        }
-      }
-    )
-    return hasFlag
-  }
-
-  private fun evaluateFlagValue(expression: UExpression): Int? {
-    (ConstantEvaluator.evaluate(null, expression) as? Number)?.toInt()?.let {
-      return it
-    }
-    val source = expression.asSourceString()
-    var flag = 0
-    if (source.contains("FLAG_GRANT_READ_URI_PERMISSION")) {
-      flag = flag or FLAG_GRANT_READ_URI_PERMISSION
-    }
-    if (source.contains("FLAG_GRANT_WRITE_URI_PERMISSION")) {
-      flag = flag or FLAG_GRANT_WRITE_URI_PERMISSION
-    }
-    return if (flag != 0) flag else null
-  }
-
-  private fun createAddFlagsQuickFix(
-    context: JavaContext,
-    node: UElement,
-    intentExpression: UExpression,
-    isMissingReadGrant: Boolean,
-    isMissingWriteGrant: Boolean,
-  ): LintFix? {
-    val refExpr = intentExpression.skipParenthesizedExprDown() as? UReferenceExpression ?: return null
-    if (refExpr.resolve() !is PsiVariable) {
-      return null
-    }
-    val intentVariableName = refExpr.resolvedName ?: return null
-
-    val isKotlin = isKotlin(node.lang)
-    val bitwiseOr = if (isKotlin) " or " else " | "
-    val terminator = if (isKotlin) "" else ";"
-
-    val flagString =
-      when {
-        isMissingReadGrant && isMissingWriteGrant ->
-          "Intent.FLAG_GRANT_READ_URI_PERMISSION${bitwiseOr}Intent.FLAG_GRANT_WRITE_URI_PERMISSION"
-        isMissingWriteGrant -> "Intent.FLAG_GRANT_WRITE_URI_PERMISSION"
-        else -> "Intent.FLAG_GRANT_READ_URI_PERMISSION"
-      }
-
-    val indent = getLineIndent(context, node)
-    return fix()
-      .name("Add explicit URI grant flags")
-      .replace()
-      .pattern("(.*)")
-      .with("$intentVariableName.addFlags($flagString)$terminator\n$indent\\k<1>")
-      .reformat(true)
-      .build()
-  }
-
-  private fun getLineIndent(context: JavaContext, node: UElement): String {
-    val contents = context.getContents() ?: return ""
-    val offset = context.getLocation(node).start?.offset ?: return ""
-    var lineStart = offset - 1
-    while (lineStart >= 0 && contents[lineStart] != '\n') {
-      lineStart--
-    }
-    lineStart++
-    var indentEnd = lineStart
-    while (indentEnd < offset && (contents[indentEnd] == ' ' || contents[indentEnd] == '\t')) {
-      indentEnd++
-    }
-    return contents.substring(lineStart, indentEnd)
   }
 
   companion object {
     private const val FLAG_GRANT_READ_URI_PERMISSION = 0x00000001
     private const val FLAG_GRANT_WRITE_URI_PERMISSION = 0x00000002
-
-    private val DISPATCH_METHODS = listOf("startActivity", "startActivityForResult", "startActivities", "launch")
-
-    private val DISPATCH_RECEIVER_CLASSES =
-      listOf(
-        "android.content.Context",
-        "android.app.Fragment",
-        "androidx.fragment.app.Fragment",
-        "androidx.activity.result.ActivityResultLauncher",
-      )
-
-    private val URI_PAYLOAD_KEYS = setOf("android.intent.extra.STREAM", "output")
-
-    private val SEND_ACTIONS = setOf("android.intent.action.SEND", "android.intent.action.SEND_MULTIPLE")
-
-    private val CAPTURE_ACTIONS =
-      setOf(
-        "android.media.action.IMAGE_CAPTURE",
-        "android.media.action.IMAGE_CAPTURE_SECURE",
-        "android.media.action.VIDEO_CAPTURE",
-        "android.media.action.MOTION_PHOTO_CAPTURE",
-        "android.media.action.MOTION_PHOTO_CAPTURE_SECURE",
-      )
-
-    private val IMPACTED_ACTIONS = SEND_ACTIONS + CAPTURE_ACTIONS
 
     @JvmField
     val ISSUE: Issue =
@@ -580,13 +352,11 @@ class ImplicitUriGrantDetector : Detector(), SourceCodeScanner {
         explanation =
           """
           Starting from Android 18 onwards, the system will no longer automatically \
-          grant URI read/write permissions when delivering intents with URI payloads \
-          (such as ACTION_SEND or ACTION_IMAGE_CAPTURE) to external apps. Sender \
-          applications must explicitly set FLAG_GRANT_READ_URI_PERMISSION or \
-          FLAG_GRANT_WRITE_URI_PERMISSION on the intent. \
-          See https://goo.gle/implicit-uri-grants for more info.
+          grant URI read/write permissions for send or media capture intents (such as `ACTION_SEND` or `ACTION_IMAGE_CAPTURE`) \
+          with URI payloads. Sender applications must explicitly set `FLAG_GRANT_READ_URI_PERMISSION` or \
+          `FLAG_GRANT_WRITE_URI_PERMISSION` on the intent.
           """,
-        category = Category.SECURITY,
+        category = Category.CORRECTNESS,
         priority = 6,
         severity = Severity.WARNING,
         moreInfo = "https://goo.gle/implicit-uri-grants",
