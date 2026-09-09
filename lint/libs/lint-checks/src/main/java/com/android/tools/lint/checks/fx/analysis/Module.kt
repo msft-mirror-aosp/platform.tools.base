@@ -38,7 +38,6 @@ import com.android.tools.lint.checks.fx.result.paramNames
 import com.android.tools.lint.checks.fx.result.returnType
 import com.android.tools.lint.checks.fx.result.showBound
 import com.android.tools.lint.checks.fx.result.translate
-import com.android.tools.lint.checks.fx.utils.assoc
 import com.android.tools.lint.checks.fx.utils.plus
 import com.android.tools.lint.client.api.JavaEvaluator
 import com.android.tools.lint.detector.api.JavaContext
@@ -52,9 +51,11 @@ import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
 import com.intellij.psi.PsiTypeParameterListOwner
 import com.intellij.psi.impl.source.PsiClassReferenceType
+import com.intellij.util.containers.with
 import java.util.IdentityHashMap
 import kotlin.time.Duration
 import kotlin.time.measureTime
+import kotlinx.collections.immutable.PersistentMap
 import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.plus
@@ -69,6 +70,7 @@ import org.jetbrains.uast.UClass
 import org.jetbrains.uast.UElement
 import org.jetbrains.uast.ULambdaExpression
 import org.jetbrains.uast.UMethod
+import org.jetbrains.uast.UParameter
 import org.jetbrains.uast.getContainingUClass
 import org.jetbrains.uast.getContainingUMethod
 import org.jetbrains.uast.toUElement
@@ -211,7 +213,7 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
       classes.put(containingClassId, extendedContainingClass)
 
       val placeholderClass = classes[classId] ?: ClassBody.empty
-      classes[classId] = placeholderClass.copy(methods = placeholderClass.methods.put(fnId, fnDefn))
+      classes[classId] = placeholderClass.copy(methods = placeholderClass.methods.withMethod(fnId, fnDefn, localFun.uast.valueParameters))
     }
 
     private fun buildClass(id: ClassId, context: JavaContext, klass: UClass): ClassBody<FX> {
@@ -283,10 +285,10 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
       return ClassBody<FX>(
         supers = klass.javaPsi.supers.map(ClassId::of),
         methods =
-          klass.methods.asList().assoc { method ->
+          klass.methods.fold(persistentMapOf()) { methods, method ->
             val env = if (method.javaPsi.isStatic()) Env.empty else env
             val id = MethodId(method.javaPsi)
-            id to buildMethod(id, context, method, env, classAdapter)
+            methods.withMethod(id, buildMethod(id, context, method, env, classAdapter), method.uastParameters)
           },
         initEnvironment = env,
       )
@@ -374,6 +376,31 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
           },
         source = fnUast,
       )
+    }
+
+    /** Accumulates an entry for the method, as well as a synthetic one for each of its default argument */
+    private fun PersistentMap<MethodId, MethodBody<FX>>.withMethod(
+      id: MethodId,
+      body: MethodBody<FX>,
+      params: List<UParameter>,
+    ): PersistentMap<MethodId, MethodBody<FX>> {
+      var acc = putting(id, body)
+      for (param in params) {
+        val init = param.uastInitializer ?: continue
+        val paramPsi = param.javaPsi as PsiParameter
+        val status =
+          when (val s = body.status) {
+            is MethodBody.Status.ForInference -> s.copy(body = init)
+            is MethodBody.Status.ForChecking -> s.copy(body = init)
+            // Kotlin forbids default values on overrides, so there are no inherited annotations to honor
+            is MethodBody.Status.Abstract,
+            is MethodBody.Status.BasicConstructor -> MethodBody.Status.ForInference(init, EffectAnnotation.None)
+          }
+        val returnType = PsiTypeAdapter.translate(body.initEnvironment.boundParamNames, paramPsi.type)
+        acc =
+          acc.putting(id.defaultArgumentOf(paramPsi.name), body.copy(returnTypeAnnotation = returnType, status = status, source = param))
+      }
+      return acc
     }
 
     private fun generateDomain(
@@ -622,6 +649,12 @@ internal fun UMethod.isKtProperty() =
   }
 
 internal data class LocalFun(val uast: ULambdaExpression, val sourcePsi: KtNamedFunction)
+
+/** The reference under which [addLocalFunction] indexed the local function [fnUast] */
+internal fun localFunctionRef(fnUast: ULambdaExpression): Type.MethodRef? {
+  val (classId, fnId) = containerChain(fnUast) ?: return null
+  return Type.MethodRef(classId, fnId)
+}
 
 internal fun containerChain(fnUast: ULambdaExpression): Pair<ClassId.Local, MethodId>? {
   val methods =

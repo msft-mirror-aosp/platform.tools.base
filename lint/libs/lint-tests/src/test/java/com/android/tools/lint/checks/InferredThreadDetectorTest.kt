@@ -128,7 +128,7 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
 
             @WorkerThread fun loadId(): Int = 0
 
-            fun middle(id: Int = loadId()): Int = id // conservatively inferred to always include `loadId`'s effects. TODO
+            fun middle(id: Int = loadId()): Int = id // `loadId`'s effects are incurred only by the calls omitting `id`
 
             @UiThread fun ui() = middle()
 
@@ -144,9 +144,106 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
         src/test/pkg/test.kt:9: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
         @UiThread fun ui() = middle()
                              ~~~~~~~~
-        src/test/pkg/test.kt:11: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
-        @UiThread fun uiExplicit() = middle(5)
-                                     ~~~~~~~~~
+        1 error
+        """
+          .trimIndent()
+      )
+  }
+
+  fun testDefaultArgumentsInstantiatedWithCall() {
+    lint()
+      .files(
+        kotlin(
+            """
+            package test.pkg
+            import androidx.annotation.UiThread
+            import androidx.annotation.WorkerThread
+
+            @WorkerThread fun worker() { }
+
+            @UiThread fun updateUi() { }
+
+            class Loader {
+                fun load(): Int { worker(); return 0 }
+                fun render(id: Int = load()) { }
+            }
+
+            fun finish(action: () -> Unit): Boolean { action(); return true }
+
+            fun runThen(action: () -> Unit, done: Boolean = finish(action)) { }
+
+            fun runOrDefault(action: () -> Unit = { worker() }) = action()
+
+            @UiThread fun ui() {
+                Loader().render() // error: the default argument calls `worker` through `load` on the receiver
+                Loader().render(0)
+                runThen({ worker() }) // error: the default argument runs the supplied `action`
+                runThen({ worker() }, false)
+                runThen({ updateUi() })
+                runOrDefault() // error: the default `action` calls `worker`
+                runOrDefault { updateUi() }
+            }
+            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/Loader.kt:21: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            Loader().render() // error: the default argument calls `worker` through `load` on the receiver
+                     ~~~~~~~~
+        src/test/pkg/Loader.kt:23: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            runThen({ worker() }) // error: the default argument runs the supplied `action`
+            ~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/Loader.kt:26: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            runOrDefault() // error: the default `action` calls `worker`
+            ~~~~~~~~~~~~~~
+        3 errors
+        """
+          .trimIndent()
+      )
+  }
+
+  fun testDefaultArgumentsOfConstructorsAndAbstractMethods() {
+    lint()
+      .files(
+        kotlin(
+            """
+            package test.pkg
+            import androidx.annotation.UiThread
+            import androidx.annotation.WorkerThread
+
+            @WorkerThread fun loadId(): Int = 0
+
+            // A trivial constructor is `@AnyThread`, which its default argument is checked against, once, here
+            class Holder(val id: Int = loadId())
+
+            interface Repo {
+                fun fetch(id: Int = loadId())
+            }
+
+            @UiThread fun ui(repo: Repo) {
+                Holder()
+                Holder(1)
+                repo.fetch() // error: the abstract method's default argument
+                repo.fetch(1)
+            }
+            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/Holder.kt:8: Error: Call must be from @WorkerThread, but context is allowing @AnyThread [ThreadConstraint]
+        class Holder(val id: Int = loadId())
+                                   ~~~~~~~~
+        src/test/pkg/Holder.kt:17: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            repo.fetch() // error: the abstract method's default argument
+                 ~~~~~~~
         2 errors
         """
           .trimIndent()
