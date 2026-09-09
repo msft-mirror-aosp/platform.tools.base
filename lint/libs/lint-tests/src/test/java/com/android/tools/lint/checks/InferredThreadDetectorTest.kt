@@ -217,7 +217,7 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
 
             @WorkerThread fun loadId(): Int = 0
 
-            // A trivial constructor is `@AnyThread`, which its default argument is checked against, once, here
+            // A bodyless constructor with a default argument isn't trivial (`@AnyThread`): its effects are inferred
             class Holder(val id: Int = loadId())
 
             interface Repo {
@@ -225,7 +225,7 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
             }
 
             @UiThread fun ui(repo: Repo) {
-                Holder()
+                Holder() // error: the constructor's default argument
                 Holder(1)
                 repo.fetch() // error: the abstract method's default argument
                 repo.fetch(1)
@@ -238,9 +238,9 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        src/test/pkg/Holder.kt:8: Error: Call must be from @WorkerThread, but context is allowing @AnyThread [ThreadConstraint]
-        class Holder(val id: Int = loadId())
-                                   ~~~~~~~~
+        src/test/pkg/Holder.kt:15: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            Holder() // error: the constructor's default argument
+            ~~~~~~~~
         src/test/pkg/Holder.kt:17: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
             repo.fetch() // error: the abstract method's default argument
                  ~~~~~~~

@@ -302,7 +302,9 @@ abstract class ThreadConstraintDetector<T : Enum<T>>(
       when {
         // Constructors don't inherit from class annotations.
         // If it's trivial, it's `@AnyThread`. Otherwise, it's inferred.
-        method.isConstructor -> if (method.uastBody == null) lattice.AnyThread else null
+        // It's trivial only if nothing runs as part of it: no body, and no default argument (run by the calls omitting it).
+        method.isConstructor ->
+          if (method.uastBody == null && method.uastParameters.none { it.uastInitializer != null }) lattice.AnyThread else null
         // Properties only inherit from class annotation if they're open.
         // Otherwise, trivial properties are `@AnyThread`, and user-written {g,s}etters are
         // inferred.
