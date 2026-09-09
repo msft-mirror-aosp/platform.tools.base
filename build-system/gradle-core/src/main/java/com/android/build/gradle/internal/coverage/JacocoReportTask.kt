@@ -327,7 +327,9 @@ abstract class JacocoReportTask : NonIncrementalTask() {
             relativeSourcePaths,
           )
         } else {
-          if (jacocoFiles.isNotEmpty()) {
+          if (parameters.onTheFlyCoverageEnabled.get()) {
+            throw IOException("On-the-fly coverage requires 'android.experimental.reportAggregationSupport' to be enabled.")
+          } else if (jacocoFiles.isNotEmpty()) {
             generateReport(
               jacocoFiles,
               parameters.reportDir.asFile.get(),
@@ -337,8 +339,6 @@ abstract class JacocoReportTask : NonIncrementalTask() {
               parameters.reportName.get(),
               logger,
             )
-          } else if (parameters.onTheFlyCoverageEnabled.get()) {
-            throw IOException("On-the-fly coverage requires 'android.experimental.reportAggregationSupport' to be enabled.")
           } else {
             throw IOException(
               "Test coverage report requested, but no tests were run. " +

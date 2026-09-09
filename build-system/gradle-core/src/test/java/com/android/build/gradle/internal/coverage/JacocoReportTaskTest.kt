@@ -165,4 +165,28 @@ class JacocoReportTaskTest {
       assertThat(e.cause?.message).contains("Task 'testTask' failed because no coverage data was found.")
     }
   }
+
+  @Test
+  fun testWorkerThrowsIfOnTheFlyEnabledButReportAggregationDisabled() {
+    val params = mock(JacocoReportTask.JacocoWorkParameters::class.java)
+    val coverageFiles = project.files(temporaryFolder.newFolder("empty_otf_no_agg"))
+    val reportDir = project.objects.directoryProperty().fileValue(temporaryFolder.newFolder("report"))
+
+    `when`(params.coverageFiles).thenReturn(coverageFiles)
+    `when`(params.reportDir).thenReturn(reportDir)
+    `when`(params.reportAggregation).thenReturn(project.objects.property(Boolean::class.java).value(false))
+    `when`(params.onTheFlyCoverageEnabled).thenReturn(project.objects.property(Boolean::class.java).value(true))
+    `when`(params.taskName).thenReturn(project.objects.property(String::class.java).value("testTask"))
+
+    val worker =
+      object : JacocoReportTask.JacocoReportWorkerAction() {
+        override fun getParameters(): JacocoReportTask.JacocoWorkParameters = params
+      }
+
+    try {
+      worker.execute()
+    } catch (e: Exception) {
+      assertThat(e.cause?.message).contains("On-the-fly coverage requires 'android.experimental.reportAggregationSupport' to be enabled.")
+    }
+  }
 }
