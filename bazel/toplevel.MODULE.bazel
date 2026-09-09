@@ -243,9 +243,6 @@ single_version_override(
         # Disables ImportDepsChecker for //prebuilts/tools/common/m2:androidx-monitor
         # See https://github.com/bazelbuild/rules_android/issues/332
         "//tools/base/bazel/bzlmod:rules_android_aar_import_fallback.patch",
-        # Lock maven_install so rules_android does not call out to coursier for
-        # maven resolution.
-        "//tools/base/bazel/bzlmod:rules_android_lock_maven_install.patch",
         # Configure toolchain_android_only to use current_java_runtime for executing javac,
         # to keep it in sync with the JDK used to generate the system bootclasspath.
         "//tools/base/bazel/bzlmod:rules_android_toolchain_java_runtime.patch",
@@ -280,10 +277,43 @@ maven.install(
     ],
     lock_file = "//tools/base/bazel/bzlmod:maven_install.json",
 )
-
-# Rename the default rules_jvm_external maven repository to maven2 to avoid a
-# naming conflict with the custom maven repository.
-use_repo(maven, maven2 = "maven")
+maven.install(
+    name = "android_ide_common_30_1_3",
+    known_contributing_modules = ["rules_android"],
+    # Rerun REPIN=1 bazel run @android_ide_common_30_1_3//:pin to update
+    # the lock_file after upgrading rules_android.
+    lock_file = "//tools/base/bazel/bzlmod:android_ide_maven_install.json",
+    repositories = [
+        "https://maven.google.com",
+        "https://repo1.maven.org/maven2",
+    ],
+)
+maven.install(
+    name = "rules_android_maven",
+    artifacts = [
+        # Explicitly request tensorflow-lite-metadata:0.2.0. The version
+        # tensorflow-lite-metadata:0.1.0-rc2 used by com.google.tools.build:gradle
+        # does not pass airlock verification.
+        "org.tensorflow:tensorflow-lite-metadata:0.2.0",
+    ],
+    known_contributing_modules = ["rules_android"],
+    # Rerun REPIN=1 bazel run @rules_android_maven//:pin to update
+    # the lock_file after upgrading rules_android.
+    lock_file = "//tools/base/bazel/bzlmod:android_maven_install.json",
+    repositories = [
+        "https://maven.google.com",
+        "https://repo1.maven.org/maven2",
+    ],
+)
+use_repo(
+    maven,
+    # These are pulled in from rules_android to run the pin commands.
+    "android_ide_common_30_1_3",
+    "rules_android_maven",
+    # Rename the default rules_jvm_external maven repository to maven2 to avoid
+    # a naming conflict with the custom maven repository.
+    maven2 = "maven",
+)
 
 android_sdk_repository_extension = use_extension(
     "@rules_android//rules/android_sdk_repository:rule.bzl",
