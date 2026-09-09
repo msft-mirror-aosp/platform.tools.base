@@ -19,6 +19,7 @@ import com.android.tools.lint.checks.ThreadConstraintDetector.ThreadConstraint
 import com.android.tools.lint.checks.fx.AssumptionTableBuilder
 import com.android.tools.lint.checks.fx.JoinEffectDetector
 import com.android.tools.lint.checks.fx.analysis.canonicalOverload
+import com.android.tools.lint.checks.fx.analysis.fieldInitializers
 import com.android.tools.lint.checks.fx.analysis.isKtProperty
 import com.android.tools.lint.checks.fx.get
 import com.android.tools.lint.checks.fx.invoke
@@ -41,12 +42,14 @@ import com.android.tools.lint.client.api.LintBaseline.Companion.stringsEquivalen
 import com.android.tools.lint.detector.api.Context
 import com.android.tools.lint.detector.api.Issue
 import com.android.tools.lint.detector.api.JavaContext
+import com.android.tools.lint.detector.api.Location
 import com.android.tools.lint.detector.api.UastLintUtils.Companion.tryResolveUDeclaration
 import com.intellij.psi.PsiParameter
 import java.util.Date
 import java.util.TimerTask
 import java.util.function.Supplier
 import kotlinx.collections.immutable.persistentMapOf
+import org.jetbrains.kotlin.psi.KtDeclarationWithBody
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtPropertyAccessor
 import org.jetbrains.uast.UAnnotation
@@ -57,6 +60,7 @@ import org.jetbrains.uast.UExpressionList
 import org.jetbrains.uast.UIfExpression
 import org.jetbrains.uast.UMethod
 import org.jetbrains.uast.USwitchExpression
+import org.jetbrains.uast.UVariable
 import org.jetbrains.uast.getContainingUClass
 import org.jetbrains.uast.resolveToUElement
 import org.jetbrains.uast.util.isConstructorCall
@@ -124,6 +128,8 @@ abstract class ThreadConstraintDetector<T : Enum<T>>(
                 parentSite.expression -> "Condition must run from $t1, while branches must run from $t2"
                 else -> "Branch must run from $t2, incompatible with the another that must run from $t1"
               }
+            is UVariable -> "Initializer must run from $t2, incompatible with an earlier initializer that must run from $t1"
+            is UMethod -> "Constructor body must run from $t2, incompatible with initializers that must run from $t1"
             else -> "Expression results in an unsatisfiable thread requirement ($t2, after inferred $t1)"
           }
         context.report(unsatisfiableConstraintIssue, context.locationOf(site), message)
@@ -264,7 +270,16 @@ abstract class ThreadConstraintDetector<T : Enum<T>>(
       }
     }
 
-  private fun Context.locationOf(site: UElement) = client.getUastParser(project).createLocation(site)
+  private fun Context.locationOf(site: UElement): Location {
+    val parser = client.getUastParser(project)
+    if (site.sourcePsi == null) {
+      // Kotlin's synthesized constructor body has no source of its own; point at the declared body rather than the whole constructor
+      ((site.uastParent as? UMethod)?.sourcePsi as? KtDeclarationWithBody)?.bodyExpression?.let {
+        return parser.createLocation(it)
+      }
+    }
+    return parser.createLocation(site)
+  }
 
   override fun sameMessage(issue: Issue, new: String, old: String): Boolean {
     // Keep matching baselines from before improvements addressing b/459895811
@@ -303,10 +318,15 @@ abstract class ThreadConstraintDetector<T : Enum<T>>(
       when {
         // Constructors don't inherit from class annotations.
         // If it's trivial, it's `@AnyThread`. Otherwise, it's inferred.
-        // It's trivial only if nothing runs as part of it: no body, no default argument (run by the calls omitting it), and not a
-        // generated overload, which runs the canonical constructor's defaults.
+        // It's trivial only if nothing runs as part of it: no body, no default argument (run by the calls omitting it), no field
+        // initializer, and not a generated overload, which runs the canonical constructor's defaults.
         method.isConstructor ->
-          if (method.uastBody == null && method.uastParameters.none { it.uastInitializer != null } && method.canonicalOverload() == null)
+          if (
+            method.uastBody == null &&
+              method.uastParameters.none { it.uastInitializer != null } &&
+              method.fieldInitializers().isEmpty() &&
+              method.canonicalOverload() == null
+          )
             lattice.AnyThread
           else null
         // Properties only inherit from class annotation if they're open.

@@ -400,6 +400,163 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
       )
   }
 
+  fun `test property init as part of constructor inference`() {
+    lint()
+      .files(
+        kotlin(
+            """
+            package test.pkg
+            import androidx.annotation.UiThread
+            import androidx.annotation.WorkerThread
+
+            @WorkerThread fun loadId(): Int = 0
+
+            // The "bodyless" constructor still runs the property initializer
+            class Holder {
+                val id = loadId()
+            }
+
+            class Pure {
+                val id = 5
+            }
+
+            @UiThread fun show() {
+                Holder() // error
+                Pure() // ok
+            }
+
+            @WorkerThread fun load() {
+                Holder() // ok
+                Pure() // ok
+            }
+            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/Holder.kt:17: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            Holder() // error
+            ~~~~~~~~
+        1 error
+        """
+          .trimIndent()
+      )
+  }
+
+  fun `test property init checked against constructor's annotation`() {
+    lint()
+      .files(
+        kotlin(
+            """
+            package test.pkg
+            import androidx.annotation.UiThread
+            import androidx.annotation.WorkerThread
+
+            @WorkerThread fun loadId(): Int = 0
+
+            // Neither the default argument's own method nor the synthetic no-arg constructor (delegating to this one) reports it again
+            class Widget @UiThread constructor(x: Int = 0) {
+                val id = loadId() // error
+            }
+
+            // A delegating constructor doesn't run the initializers itself: its delegation call is reported instead
+            class Delegating @WorkerThread constructor(x: Int) {
+                val id = loadId()
+                @UiThread constructor(s: String) : this(s.length) // error
+            }
+            """
+          )
+          .indented(),
+        java(
+            """
+            package test.pkg;
+
+            import androidx.annotation.UiThread;
+            import androidx.annotation.WorkerThread;
+
+            public class JavaWidget {
+                private final int id = loadId(); // error
+
+                @UiThread
+                public JavaWidget() {}
+
+                @WorkerThread
+                private static int loadId() {
+                    return 0;
+                }
+            }
+            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/JavaWidget.java:7: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            private final int id = loadId(); // error
+                                   ~~~~~~~~
+        src/test/pkg/Widget.kt:9: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            val id = loadId() // error
+                     ~~~~~~~~
+        src/test/pkg/Widget.kt:15: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            @UiThread constructor(s: String) : this(s.length) // error
+                                               ~~~~~~~~~~~~~~
+        3 errors
+        """
+          .trimIndent()
+      )
+  }
+
+  fun `test conflicting property inits`() {
+    lint()
+      .files(
+        kotlin(
+            """
+            package test.pkg
+            import androidx.annotation.UiThread
+            import androidx.annotation.WorkerThread
+
+            @WorkerThread fun loadId(): Int = 0
+            @UiThread fun makeView(): Any = Any()
+
+            class Mixed {
+                val id = loadId()
+                val view = makeView() // error
+            }
+
+            class MixedBody {
+                val id = loadId()
+                constructor() { makeView() } // error
+            }
+
+            fun main() {
+                Mixed() // no redundant warning
+                MixedBody() // no redundant warning
+            }
+            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/Mixed.kt:10: Error: Initializer must run from @{Main,Ui}Thread, incompatible with an earlier initializer that must run from @WorkerThread [ThreadConstraint]
+            val view = makeView() // error
+                       ~~~~~~~~~~
+        src/test/pkg/Mixed.kt:15: Error: Constructor body must run from @{Main,Ui}Thread, incompatible with initializers that must run from @WorkerThread [ThreadConstraint]
+            constructor() { makeView() } // error
+                          ~~~~~~~~~~~~~~
+        2 errors
+        """
+          .trimIndent()
+      )
+  }
+
   fun testBaseAssumption_forEach() {
     lint()
       .files(

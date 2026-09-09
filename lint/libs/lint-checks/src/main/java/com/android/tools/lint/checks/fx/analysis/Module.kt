@@ -49,6 +49,7 @@ import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
 import com.intellij.psi.PsiTypeParameterListOwner
 import com.intellij.psi.impl.source.PsiClassReferenceType
+import com.intellij.util.JavaPsiConstructorUtil
 import kotlin.time.Duration
 import kotlin.time.measureTime
 import kotlinx.collections.immutable.PersistentMap
@@ -58,12 +59,15 @@ import kotlinx.collections.immutable.plus
 import org.jetbrains.kotlin.asJava.elements.KtLightMethod
 import org.jetbrains.kotlin.psi.KtFunction
 import org.jetbrains.kotlin.psi.KtNamedFunction
+import org.jetbrains.kotlin.psi.KtParameter
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtPropertyAccessor
+import org.jetbrains.kotlin.psi.KtSecondaryConstructor
 import org.jetbrains.kotlin.psi.KtTypeParameterListOwner
 import org.jetbrains.uast.UAnnotation
 import org.jetbrains.uast.UClass
 import org.jetbrains.uast.UElement
+import org.jetbrains.uast.UExpression
 import org.jetbrains.uast.ULambdaExpression
 import org.jetbrains.uast.UMethod
 import org.jetbrains.uast.UParameter
@@ -628,6 +632,20 @@ internal fun UMethod.isKtProperty() =
   }
 
 internal data class LocalFun(val uast: ULambdaExpression, val sourcePsi: KtNamedFunction)
+
+/** The instance field initializers run directly by this constructor: none if it delegates to another */
+internal fun UMethod.fieldInitializers(): List<UExpression> {
+  if (!isConstructor) return emptyList()
+  val delegates =
+    canonicalOverload() != null ||
+      when (val ctor = sourcePsi) {
+        is KtSecondaryConstructor -> ctor.getDelegationCall().isCallToThis
+        is PsiMethod -> JavaPsiConstructorUtil.isChainedConstructorCall(JavaPsiConstructorUtil.findThisOrSuperCallInConstructor(ctor))
+        else -> false
+      }
+  if (delegates) return emptyList()
+  return getContainingUClass()?.fields.orEmpty().filter { !it.isStatic && it.sourcePsi !is KtParameter }.mapNotNull { it.uastInitializer }
+}
 
 /** The reference under which [addLocalFunction] indexed the local function [fnUast] */
 internal fun localFunctionRef(fnUast: ULambdaExpression): Type.MethodRef? {

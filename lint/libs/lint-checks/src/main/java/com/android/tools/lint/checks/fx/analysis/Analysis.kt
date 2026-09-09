@@ -288,21 +288,35 @@ internal open class Analysis<FX : Any>(
         fun <R : EffectResult.Eval<FX>> Mode<FX, R>.eval(body: UExpression): Result<Type<FX>, R> =
           eval(rec, method.initEnvironment, body, persistentListOf(ReturnRecord(body.uastParent!!)))
 
+        fun <R : EffectResult.Eval<FX>> Mode<FX, R>.fieldInitializerEffects(): R =
+          forM(::eval, (method.source as? UMethod)?.fieldInitializers().orEmpty())
+
         when (val status = method.status) {
           is MethodBody.Status.Abstract -> Result(method.returnTypeAnnotation, Inapplicable)
-          is MethodBody.Status.BasicConstructor -> unboundedInferenceMode.pure(method.returnTypeAnnotation)
+          is MethodBody.Status.BasicConstructor ->
+            with(unboundedInferenceMode) { inferenceLattice.catchError { Result(method.returnTypeAnnotation, fieldInitializerEffects()) } }
           is MethodBody.Status.ForChecking ->
             with(checkingMode(status.upperBound)) {
-              when (val body = status.body) {
-                null -> pure(method.returnTypeAnnotation)
-                else -> checkingLattice.catchError { eval(body) }
+              checkingLattice.catchError {
+                when (val body = status.body) {
+                  null -> Result(method.returnTypeAnnotation, fieldInitializerEffects())
+                  else -> {
+                    val (t, fx) = eval(body)
+                    Result(t, merge(body, fieldInitializerEffects(), fx))
+                  }
+                }
               }
             }
           is MethodBody.Status.ForInference -> {
             // Guards first: inference blames the first conflicting base, and the guards' call-anchored message should win
             val guards = assumedObjectLiteralGuards(method)
             val base = if (guards.isEmpty()) status.base else EffectAnnotation.Implicit(guards + status.base.nearestBaseAnnotations)
-            with(inferenceMode(base)) { inferenceLattice.catchError { eval(status.body) } }
+            with(inferenceMode(base)) {
+              inferenceLattice.catchError {
+                val (t, fx) = eval(status.body)
+                Result(t, merge(status.body, fieldInitializerEffects(), fx))
+              }
+            }
           }
         }
       }
