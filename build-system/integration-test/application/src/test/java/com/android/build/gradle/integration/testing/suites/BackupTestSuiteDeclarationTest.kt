@@ -16,33 +16,42 @@
 
 package com.android.build.gradle.integration.testing.suites
 
+import com.android.Version
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.dsl.BackupTestSuite
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.api.variant.HasTestSuites
 import com.android.build.api.variant.TestSuite
+import com.android.build.gradle.integration.common.fixture.ProfileCapturer
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
 import com.android.build.gradle.options.BooleanOption
 import com.google.common.truth.Truth
+import com.google.wireless.android.sdk.stats.AndroidStudioEvent
+import com.google.wireless.android.sdk.stats.TestRun
 import org.gradle.api.Project
 import org.junit.Rule
 import org.junit.Test
 
 /**
- * Integration test verifying the registration, DSL configuration, and input parameter wiring of the specialized [BackupTestSuite] under an
- * application module.
+ * Integration test verifying the registration, DSL configuration, execution, and analytics tracking of the specialized [BackupTestSuite]
+ * under an application module.
  */
 class BackupTestSuiteDeclarationTest {
   @get:Rule
   val rule =
     GradleRule.configure()
+      .withProfileOutput()
       .withMavenRepository {
         jar("com.google.truth:truth:0.44")
         jar("androidx.test.backup:backup-host:1.0.0-alpha01")
         jar("androidx.test.backup:backup:1.0.0-alpha01")
-        jar("org.junit.jupiter:junit-jupiter-engine:5.10.0")
-        jar("org.junit.platform:junit-platform-launcher:1.10.0")
+        jar("org.junit.platform:junit-platform-engine:1.13.3")
+        jar("org.junit.platform:junit-platform-launcher:1.13.3")
+        jar("org.jetbrains.kotlin:kotlin-stdlib:2.1.20")
+        jar("com.test:toy-junit-engine:1.0")
+          .addClasses(ToyJunitEngineForTesting::class.java, ToyTestDescriptor::class.java, TestEngineLogger::class.java)
+          .addTextFile("META-INF/services/org.junit.platform.engine.TestEngine", ToyJunitEngineForTesting::class.java.name)
       }
       .from {
         rootProject { buildscript { classpath("com.google.truth:truth:0.44") } }
@@ -58,6 +67,9 @@ class BackupTestSuiteDeclarationTest {
               it.targetVariants.add("debug")
             }
           }
+          files {
+            add("src/myBackup/test/java/com/example/MyBackupTest.java", "package com.example;\npublic class MyBackupTest {}")
+          }
           dependencies {
             implementation("com.google.truth:truth:0.44")
           }
@@ -67,6 +79,27 @@ class BackupTestSuiteDeclarationTest {
   @Test
   fun testBackupTestSuiteConfiguration() {
     rule.build.executor.run(":app:tasks")
+  }
+
+  @Test
+  fun testBackupTestSuiteExecutionAndAnalytics() {
+    val build = rule.build
+    val capturer = ProfileCapturer(build.profileDirectory!!, ".trk")
+    val events = capturer.captureAndroidEvent {
+      build.executor.run(":app:testDebugMyBackupDefaultTestSuite")
+    }
+
+    val backupEvents = events.filter {
+      it.category == AndroidStudioEvent.EventCategory.TESTS &&
+        it.kind == AndroidStudioEvent.EventKind.TEST_RUN &&
+        it.testRun.testKind == TestRun.TestKind.BACKUP_TEST
+    }
+    Truth.assertThat(backupEvents).hasSize(1)
+    val testRun = backupEvents.single().testRun
+    Truth.assertThat(testRun.numberOfTestsExecuted).isEqualTo(1)
+    Truth.assertThat(testRun.backupTestRun.passedTestCount).isEqualTo(1)
+    Truth.assertThat(testRun.backupTestRun.failedTestCount).isEqualTo(0)
+    Truth.assertThat(testRun.backupTestRun.backupTestLibraryVersion).isEqualTo("1.0.0-alpha01")
   }
 }
 
@@ -98,6 +131,19 @@ class BackupSuiteCallback : ApplicationComponentCallback {
           AgpTestSuiteInputParameters.TEST_APKS,
           AgpTestSuiteInputParameters.TESTED_APKS,
         )
+
+      // Remove APK inputs so the test task can execute purely on host without requiring a physical or emulated Android device.
+      inputs.remove(AgpTestSuiteInputParameters.TEST_APKS)
+      inputs.remove(AgpTestSuiteInputParameters.TESTED_APKS)
+
+      // Add the test fixture engine to execute a dummy test on the host and trigger test listeners
+      testSuiteBuilder.junitEngineSpec.includeEngines.add("[engine:toy-junit-engine-for-tests]")
+      testSuiteBuilder.junitEngineSpec.enginesDependencies.add(
+        "com.android.tools.build:gradle-api:${Version.ANDROID_GRADLE_PLUGIN_VERSION}"
+      )
+      testSuiteBuilder.junitEngineSpec.enginesDependencies.add("org.junit.platform:junit-platform-launcher")
+      testSuiteBuilder.junitEngineSpec.enginesDependencies.add("com.test:toy-junit-engine:1.0")
+      testSuiteBuilder.junitEngineSpec.enginesDependencies.add("org.junit.platform:junit-platform-engine:1.13.3")
     }
 
     androidComponents.onVariants(androidComponents.selector().withBuildType("debug")) { variant ->

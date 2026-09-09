@@ -20,10 +20,18 @@ import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.dsl.BackupTestSuite
 import com.android.build.api.dsl.TestSuiteHostJarSpec
 import com.android.build.api.dsl.TestSuiteTestApkSpec
+import com.android.build.api.dsl.TestTaskContext
+import com.android.build.gradle.internal.profile.AnalyticsService
 import com.android.build.gradle.internal.services.DslServices
+import com.android.build.gradle.internal.services.getBuildService
+import com.android.build.gradle.internal.test.recordBackupTestRun
 import javax.inject.Inject
 import org.gradle.api.Action
 import org.gradle.api.artifacts.dsl.DependencyHandler
+import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.testing.TestDescriptor
+import org.gradle.api.tasks.testing.TestListener
+import org.gradle.api.tasks.testing.TestResult
 
 /**
  * Concrete implementation of [BackupTestSuite] representing Automated Backup and Restore test suites.
@@ -184,6 +192,54 @@ constructor(
       backupSuite.testApkActions.forEach { it(this) }
       backupSuite.testApkActions.clear()
     }
+
+    val resolvedVersion = backupSuite.backupTestLibraryVersion ?: DEFAULT_BACKUP_VERSION
+    val analyticsServiceProvider =
+      try {
+        getBuildService(dslServices.buildServiceRegistry, AnalyticsService::class.java)
+      } catch (_: Exception) {
+        null
+      }
+
+    configureTestTasks { context: TestTaskContext ->
+      val task = this
+      analyticsServiceProvider?.let { task.usesService(it) }
+      task.addTestListener(
+        BackupTestListener(
+          analyticsServiceProvider = analyticsServiceProvider,
+          backupTestLibraryVersion = resolvedVersion,
+        )
+      )
+    }
+  }
+
+  internal class BackupTestListener(
+    private val analyticsServiceProvider: Provider<AnalyticsService>?,
+    private val backupTestLibraryVersion: String,
+  ) : TestListener {
+    override fun beforeSuite(suite: TestDescriptor) {}
+
+    override fun afterSuite(suite: TestDescriptor, result: TestResult) {
+      if (suite.parent == null) {
+        val service = analyticsServiceProvider?.orNull
+        if (service != null) {
+          val totalDuration = if (result.endTime >= result.startTime) result.endTime - result.startTime else null
+          recordBackupTestRun(
+            testCount = result.testCount.toInt(),
+            passedTestCount = result.successfulTestCount.toInt(),
+            failedTestCount = result.failedTestCount.toInt(),
+            analyticsService = service,
+            backupTestLibraryVersion = backupTestLibraryVersion,
+            totalRunTimeMs = totalDuration,
+            infrastructureCrashed = (result.resultType == TestResult.ResultType.FAILURE && result.testCount == 0L),
+          )
+        }
+      }
+    }
+
+    override fun beforeTest(testDescriptor: TestDescriptor) {}
+
+    override fun afterTest(testDescriptor: TestDescriptor, result: TestResult) {}
   }
 
   companion object {

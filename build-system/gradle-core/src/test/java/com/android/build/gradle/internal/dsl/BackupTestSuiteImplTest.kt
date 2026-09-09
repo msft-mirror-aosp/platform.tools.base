@@ -17,13 +17,25 @@
 package com.android.build.gradle.internal.dsl
 
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
+import com.android.build.api.dsl.TestTaskContext
 import com.android.build.gradle.internal.fixtures.FakeSyncIssueReporter
 import com.android.build.gradle.internal.fixtures.ProjectFactory
+import com.android.build.gradle.internal.profile.AnalyticsService
 import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.services.createDslServices
+import com.android.build.gradle.internal.test.recordBackupTestRun
 import com.google.common.truth.Truth.assertThat
+import com.google.wireless.android.sdk.stats.AndroidStudioEvent
+import com.google.wireless.android.sdk.stats.TestRun
 import org.gradle.api.artifacts.ConfigurationContainer
+import org.gradle.api.tasks.testing.TestDescriptor
+import org.gradle.api.tasks.testing.TestListener
+import org.gradle.api.tasks.testing.TestResult
 import org.junit.Test
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 
 class BackupTestSuiteImplTest {
 
@@ -131,5 +143,88 @@ class BackupTestSuiteImplTest {
 
     // Instantiation should succeed even if configurations is unsupported
     assertThat(suite.targets.names).containsExactly("default")
+  }
+
+  @Test
+  fun testRecordBackupTestRunAnalytics() {
+    val mockAnalyticsService = mock<AnalyticsService>()
+    val eventCaptor = argumentCaptor<AndroidStudioEvent.Builder>()
+
+    recordBackupTestRun(
+      testCount = 5,
+      passedTestCount = 4,
+      failedTestCount = 1,
+      analyticsService = mockAnalyticsService,
+      backupTestLibraryVersion = "1.0.0-alpha01",
+      totalRunTimeMs = 3200L,
+      infrastructureCrashed = false,
+    )
+
+    verify(mockAnalyticsService).recordEvent(eventCaptor.capture())
+    val event = eventCaptor.firstValue.build()
+
+    assertThat(event.category).isEqualTo(AndroidStudioEvent.EventCategory.TESTS)
+    assertThat(event.kind).isEqualTo(AndroidStudioEvent.EventKind.TEST_RUN)
+    assertThat(event.testRun.testKind).isEqualTo(TestRun.TestKind.BACKUP_TEST)
+    assertThat(event.testRun.numberOfTestsExecuted).isEqualTo(5)
+    assertThat(event.testRun.backupTestRun.passedTestCount).isEqualTo(4)
+    assertThat(event.testRun.backupTestRun.failedTestCount).isEqualTo(1)
+    assertThat(event.testRun.backupTestRun.backupTestLibraryVersion).isEqualTo("1.0.0-alpha01")
+    assertThat(event.testRun.backupTestRun.hasIsCi()).isFalse()
+    assertThat(event.testRun.backupTestRun.totalRunTimeMs).isEqualTo(3200L)
+  }
+
+  @Test
+  fun testBackupTestListenerConfiguration() {
+    val dslSuite = dslServices.newDecoratedInstance(BackupTestSuiteImpl::class.java, "backupTest", dslServices)
+    val suite = dslServices.newDecoratedInstance(BackupAgpTestSuiteImpl::class.java, dslSuite, dslServices, dependencyHandler)
+
+    assertThat(suite.testTaskConfigActions).isNotEmpty()
+
+    val mockTestTask = mock<org.gradle.api.tasks.testing.Test>()
+    val mockContext = mock<TestTaskContext>()
+    suite.testTaskConfigActions.first().invoke(mockTestTask, mockContext)
+
+    val listenerCaptor = argumentCaptor<TestListener>()
+    verify(mockTestTask).addTestListener(listenerCaptor.capture())
+    assertThat(listenerCaptor.firstValue).isInstanceOf(BackupAgpTestSuiteImpl.BackupTestListener::class.java)
+  }
+
+  @Test
+  fun testBackupTestListenerAfterSuite() {
+    val mockAnalyticsService = mock<AnalyticsService>()
+    val provider = project.provider { mockAnalyticsService }
+    val listener =
+      BackupAgpTestSuiteImpl.BackupTestListener(
+        analyticsServiceProvider = provider,
+        backupTestLibraryVersion = "1.0.0-alpha01",
+      )
+
+    val rootSuiteDescriptor = mock<TestDescriptor>()
+    whenever(rootSuiteDescriptor.parent).thenReturn(null)
+
+    val testResult = mock<TestResult>()
+    whenever(testResult.testCount).thenReturn(3L)
+    whenever(testResult.successfulTestCount).thenReturn(2L)
+    whenever(testResult.failedTestCount).thenReturn(1L)
+    whenever(testResult.startTime).thenReturn(1000L)
+    whenever(testResult.endTime).thenReturn(2500L)
+    whenever(testResult.resultType).thenReturn(TestResult.ResultType.FAILURE)
+
+    listener.afterSuite(rootSuiteDescriptor, testResult)
+
+    val eventCaptor = argumentCaptor<AndroidStudioEvent.Builder>()
+    verify(mockAnalyticsService).recordEvent(eventCaptor.capture())
+    val event = eventCaptor.firstValue.build()
+
+    assertThat(event.category).isEqualTo(AndroidStudioEvent.EventCategory.TESTS)
+    assertThat(event.kind).isEqualTo(AndroidStudioEvent.EventKind.TEST_RUN)
+    assertThat(event.testRun.testKind).isEqualTo(TestRun.TestKind.BACKUP_TEST)
+    assertThat(event.testRun.numberOfTestsExecuted).isEqualTo(3)
+    assertThat(event.testRun.backupTestRun.passedTestCount).isEqualTo(2)
+    assertThat(event.testRun.backupTestRun.failedTestCount).isEqualTo(1)
+    assertThat(event.testRun.backupTestRun.totalRunTimeMs).isEqualTo(1500L)
+    assertThat(event.testRun.backupTestRun.backupTestLibraryVersion).isEqualTo("1.0.0-alpha01")
+    assertThat(event.testRun.backupTestRun.hasIsCi()).isFalse()
   }
 }

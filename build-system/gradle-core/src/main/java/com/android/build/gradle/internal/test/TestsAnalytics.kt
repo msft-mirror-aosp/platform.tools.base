@@ -119,6 +119,52 @@ fun recordCrashedUnitTestRun(
   )
 }
 
+fun recordBackupTestRun(
+  testCount: Int,
+  passedTestCount: Int,
+  failedTestCount: Int,
+  analyticsService: AnalyticsService,
+  backupTestLibraryVersion: String? = null,
+  totalRunTimeMs: Long? = null,
+  infrastructureCrashed: Boolean = false,
+  invocationType: TestRun.TestInvocationType = TestRun.TestInvocationType.GRADLE_TEST,
+) {
+  val backupRun =
+    TestRun.BackupTestRun.newBuilder()
+      .apply {
+        this.passedTestCount = passedTestCount
+        this.failedTestCount = failedTestCount
+        backupTestLibraryVersion?.let { this.backupTestLibraryVersion = it }
+        if (totalRunTimeMs != null) {
+          this.totalRunTimeMs = totalRunTimeMs
+        }
+      }
+      .build()
+
+  val run =
+    TestRun.newBuilder()
+      .apply {
+        this.testInvocationType = invocationType
+        this.numberOfTestsExecuted = testCount
+        this.testKind = TestRun.TestKind.BACKUP_TEST
+        this.crashed = infrastructureCrashed
+        this.gradleVersion = Version.ANDROID_GRADLE_PLUGIN_VERSION
+        this.backupTestRun = backupRun
+      }
+      .build()
+
+  analyticsService.recordEvent(
+    AndroidStudioEvent.newBuilder().apply {
+      category = AndroidStudioEvent.EventCategory.TESTS
+      kind = AndroidStudioEvent.EventKind.TEST_RUN
+      testRun = run
+      javaProcessStats = CommonMetricsData.javaProcessStats
+      jvmDetails = CommonMetricsData.jvmDetails
+      productDetails = AnalyticsUtil.getProductDetails()
+    }
+  )
+}
+
 private fun recordTestRun(
   testLibraries: TestLibraries,
   execution: TestOptions.Execution?,
