@@ -712,6 +712,7 @@ _CLASS_JARS = [
     "com.android.kotlin.multiplatform.library:com.android.kotlin.multiplatform.library.gradle.plugin:pom:9.0.0",
     "com.android.kotlin.multiplatform.library:com.android.kotlin.multiplatform.library.gradle.plugin:pom:9.1.0",
     "com.android.kotlin.multiplatform.library:com.android.kotlin.multiplatform.library.gradle.plugin:pom:9.2.0",
+    "com.android.kotlin.multiplatform.library:com.android.kotlin.multiplatform.library.gradle.plugin:pom:9.4.0",
     "com.android.library:com.android.library.gradle.plugin:pom:7.2.0",
     "com.android.library:com.android.library.gradle.plugin:pom:7.4.0",  # Dependency of architecture-samples
     "com.android.library:com.android.library.gradle.plugin:pom:7.4.1",
@@ -945,6 +946,7 @@ _CLASS_JARS = [
     "com.android.tools.lint:lint-gradle:32.0.0",
     "com.android.tools.lint:lint-gradle:32.1.0",
     "com.android.tools.lint:lint-gradle:32.2.0",
+    "com.android.tools.lint:lint-gradle:32.4.0",
     "com.android.tools.metalava:metalava:1.0.0-alpha14",
     "com.android.tools:r8:8.5.35",
     "com.android.tools:r8:9.1.31",
@@ -1011,6 +1013,7 @@ _CLASS_JARS = [
     "com.android.tools.utp:android-test-plugin-result-listener-gradle:jar:31.1.0",
     "com.android.tools.utp:gradle-work-action:32.0.0",
     "com.android.tools.utp:gradle-work-action:32.2.0",
+    "com.android.tools.utp:gradle-work-action:32.4.0",
     "com.android:zipflinger:8.7.0",
     "com.anthropic:anthropic-java:2.26.0",
     "com.beust:jcommander:1.82",
