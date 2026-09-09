@@ -98,6 +98,51 @@ class ReportAggregatorTest {
   }
 
   @Test
+  fun testR8LambdaFiltering() {
+    val metadata =
+      CoverageMetadata.newBuilder()
+        .addClasses(
+          ClassMetadata.newBuilder()
+            .setClassName("com/example/MyClass")
+            .setSourceFile("MyClass.kt")
+            .addMethods(
+              MethodMetadata.newBuilder()
+                .setName("method1")
+                .addBlocks(
+                  BlockMetadata.newBuilder().setBlockId(0).addLines(LineMetadata.newBuilder().setLineNumber(10).setInstructionCount(5))
+                )
+            )
+            .addMethods(
+              MethodMetadata.newBuilder()
+                .setName("\$r8\$lambda\$wUriQ8Z2fketdTxO")
+                .addBlocks(
+                  BlockMetadata.newBuilder().setBlockId(1).addLines(LineMetadata.newBuilder().setLineNumber(11).setInstructionCount(10))
+                )
+            )
+        )
+        .build()
+
+    val hits = BitSet()
+    hits.set(0) // Hit method1
+    hits.set(1) // Hit r8 lambda
+    val data = CoverageData(metadata, hits)
+
+    val aggregator = ReportAggregator()
+    val report = aggregator.aggregate(data, "test")
+
+    val pkg = report.packages["com/example"]!!
+    val cls = pkg.classes["com/example/MyClass"]!!
+
+    // The methods list should ONLY contain method1 (NOT the r8 lambda)
+    assertThat(cls.methods.size).isEqualTo(1)
+    assertThat(cls.methods[0].name).isEqualTo("method1")
+    assertThat(cls.methodsCounter.covered).isEqualTo(1) // Only 1 user-declared method covered
+
+    // BUT the instructions coverage of the class must contain BOTH methods (5 + 10 = 15 instructions covered)
+    assertThat(cls.instructions.covered).isEqualTo(15)
+  }
+
+  @Test
   fun testSpanningBlockBranchParity() {
     val metadata =
       CoverageMetadata.newBuilder()

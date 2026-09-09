@@ -90,7 +90,6 @@ class ReportAggregator {
           methodMeta.blocksList.flatMap { it.linesList }.map { smapResolver.resolve(it.lineNumber, sourceFilename).first }.minOrNull() ?: 0
 
         val method = MethodModel(methodMeta.name, methodMeta.signature, methodStartLine)
-        cls.methods.add(method)
 
         val methodLinesTouched = mutableSetOf<Int>()
         var methodHit = false
@@ -203,10 +202,16 @@ class ReportAggregator {
         method.methodsCounter.covered = if (methodHit) 1 else 0
         method.methodsCounter.missed = if (methodHit) 0 else 1
 
+        // TODO(b/556724270): Filter other compiler-generated methods.
+        val isR8Lambda = methodMeta.name.contains("\$r8\$lambda\$")
+        if (!isR8Lambda) {
+          cls.methods.add(method)
+          cls.methodsCounter.add(method.methodsCounter)
+        }
+
         cls.instructions.add(method.instructions)
         cls.branches.add(method.branches)
         cls.lines.add(method.lines)
-        cls.methodsCounter.add(method.methodsCounter)
       }
       cls.classesCounter.covered = if (cls.instructions.covered > 0) 1 else 0
       cls.classesCounter.missed = if (cls.instructions.covered == 0) 1 else 0
