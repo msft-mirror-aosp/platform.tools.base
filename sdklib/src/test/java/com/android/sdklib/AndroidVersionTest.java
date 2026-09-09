@@ -55,6 +55,11 @@ public class AndroidVersionTest {
                 .isEqualTo(3);
         assertThat(new AndroidVersion(36, 1).withBaseExtensionLevel())
                 .isEqualTo(new AndroidVersion(36, 1, null, null, true));
+        AndroidVersion api362ext44 = new AndroidVersion(36, 2).withExtensionLevel(44);
+        assertThat(api362ext44.withBetaNumber(4).withBaseExtensionLevel())
+                .isEqualTo(new AndroidVersion(36, 2).withBetaNumber(4));
+        assertThat(api362ext44.withCanaryNumber(2000).withBaseExtensionLevel())
+                .isEqualTo(new AndroidVersion(36, 2).withCanaryNumber(2000));
     }
 
     @Test
@@ -67,6 +72,18 @@ public class AndroidVersionTest {
                 .isEqualTo(new AndroidVersion(33, null, 4, false));
         assertThat(new AndroidVersion(36, 1).withExtensionLevel(99))
                 .isEqualTo(new AndroidVersion(36, 1, null, 99, false));
+
+        AndroidVersion beta4ext99 =
+                new AndroidVersion(36, 1).withBetaNumber(4).withExtensionLevel(99);
+        assertThat(beta4ext99)
+                .isEqualTo(new AndroidVersion(36, 1, null, 99, false).withBetaNumber(4));
+        assertThat(beta4ext99.getBetaNumber()).isEqualTo(4);
+
+        AndroidVersion canary2000ext99 =
+                new AndroidVersion(36, 1).withCanaryNumber(2000).withExtensionLevel(99);
+        assertThat(canary2000ext99)
+                .isEqualTo(new AndroidVersion(36, 1, null, 99, false).withCanaryNumber(2000));
+        assertThat(canary2000ext99.getCanaryNumber()).isEqualTo(2000);
     }
 
     @Test

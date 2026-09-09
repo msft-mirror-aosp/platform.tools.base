@@ -299,10 +299,10 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
     }
 
     /**
-     * Returns an AndroidVersion with the same API level and codename, and a base extension level,
-     * e.g. "33-ext4" would become "33". This will set the extensionLevel property based on the API
-     * level if known (although, since it is the base extension level, it will not be rendered in
-     * getApiStringWithExtension()).
+     * Returns this AndroidVersion with a base extension level, e.g. "33-ext4" would become "33".
+     * This will set the extensionLevel property based on the API level if known (although, since it
+     * is the base extension level, it will not be rendered in getApiStringWithExtension()); other
+     * properties are preserved.
      */
     public AndroidVersion withBaseExtensionLevel() {
         int baseExtensionLevel = getBaseExtensionLevel(mAndroidApiLevel);
@@ -310,20 +310,25 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
                 mAndroidApiLevel,
                 mCodename,
                 baseExtensionLevel <= 0 ? null : baseExtensionLevel,
-                true);
+                true,
+                mBetaNumber,
+                mCanaryNumber);
     }
 
     /**
-     * Returns this AndroidVersion with the same API level and codename and the specified extension
-     * level, e.g. new AndroidVersion(33).withExtensionLevel(4).getApiStringWithExtension() would be
-     * "33-ext4".
+     * Returns this AndroidVersion with the specified extension level, e.g. new
+     * AndroidVersion(33).withExtensionLevel(4).getApiStringWithExtension() would be "33-ext4".
+     * isBaseExtension will be set if we know that the specified extension is the base for the API
+     * level; other properties will be preserved.
      */
     public AndroidVersion withExtensionLevel(int extensionLevel) {
         return new AndroidVersion(
                 mAndroidApiLevel,
                 mCodename,
                 extensionLevel,
-                extensionLevel == getBaseExtensionLevel(mAndroidApiLevel));
+                extensionLevel == getBaseExtensionLevel(mAndroidApiLevel),
+                mBetaNumber,
+                mCanaryNumber);
     }
 
     /**
