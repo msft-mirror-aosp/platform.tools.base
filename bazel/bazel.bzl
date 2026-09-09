@@ -4,7 +4,7 @@ load("//tools/base/intellij-bazel:transitioned_java.bzl", "DEFAULT_INTELLIJ_PLAT
 load(":coverage.bzl", "coverage_baseline", "coverage_java_test")
 load(":functions.bzl", "create_option_file", "label_workspace_path")
 load(":kotlin.bzl", "kotlin_compile")
-load(":kotlin_common.bzl", "KtJvmToolchainInfo", "default_javac_opts", "default_kotlinc_opts", "select_java_compile_toolchain", "select_java_runtime")
+load(":kotlin_common.bzl", "KtJvmToolchainInfo", "add_jvm_target_opts", "select_java_compile_toolchain", "select_java_runtime")
 load(":lint.bzl", "lint_test")
 load(":merge_archives.bzl", "run_singlejar")
 
@@ -124,8 +124,13 @@ def _iml_module_jar_impl(
     # Compiler args and JVM target.
     java_compile_toolchain = select_java_compile_toolchain(ctx.attr._java_toolchains, ctx.attr.jvm_target)
     java_runtime = select_java_runtime(ctx.attr._java_toolchains, ctx.attr.jvm_target)
-    javac_opts = default_javac_opts(ctx.attr._java_toolchains, ctx.attr.jvm_target) + ctx.attr.javacopts
-    kotlinc_opts = default_kotlinc_opts(ctx.attr._java_toolchains, ctx.attr.jvm_target) + ctx.attr.kotlinc_opts
+    javac_opts, kotlinc_opts = add_jvm_target_opts(
+        ctx.attr._java_toolchains,
+        ctx.attr.jvm_target,
+        ctx.attr.javacopts,
+        ctx.attr.kotlinc_opts,
+        label = ctx.label,
+    )
 
     # Kotlin
     kotlin_providers = []

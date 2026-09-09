@@ -12,6 +12,7 @@ load("//tools/base/bazel:maven/remote_repos.bzl", "REMOTE_REPOS")
 load("//tools/base/bazel:owners.bzl", "owners_zip")
 load("//tools/base/bazel:proto.bzl", "PROTOC_VERSION", "java_proto_library")
 load("//tools/base/bazel:utils.bzl", "java_jarjar")
+load(":kotlin_common_test.bzl", "kotlin_common_test")
 
 exports_files([
     "jarjar_rules.txt",
@@ -651,4 +652,8 @@ py_binary(
 owners_zip(
     name = "owners_zip",
     out = "owners.zip",
+)
+
+kotlin_common_test(
+    name = "kotlin_common_test",
 )

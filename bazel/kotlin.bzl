@@ -4,7 +4,7 @@ load("@bazel_skylib//lib:collections.bzl", "collections")
 load("@rules_cc//cc:defs.bzl", "CcInfo")
 load(":coverage.bzl", "coverage_baseline", "coverage_java_test")
 load(":functions.bzl", "create_option_file")
-load(":kotlin_common.bzl", "KtJvmToolchainInfo", "default_javac_opts", "default_kotlinc_opts", "select_java_compile_toolchain", "select_java_runtime")
+load(":kotlin_common.bzl", "KtJvmToolchainInfo", "add_jvm_target_opts", "select_java_compile_toolchain", "select_java_runtime")
 load(":lint.bzl", "lint_test")
 load(":merge_archives.bzl", "run_singlejar")
 
@@ -122,6 +122,9 @@ def kotlin_compile(ctx, name, srcs, deps, friend_jars, out, out_ijar, java_runti
 
     return JavaInfo(output_jar = out, compile_jar = out_ijar or out)
 
+# The default value corresponds to the minimum JDK across AGP, google3, etc.
+DEFAULT_JVM_TARGET = "17"
+
 def kotlin_test(
         name,
         srcs,
@@ -134,6 +137,7 @@ def kotlin_test(
         lint_classpath = [],
         lint_enabled = True,
         javacopts = [],
+        jvm_target = DEFAULT_JVM_TARGET,
         **kwargs):
     target_compatible_with = kwargs.get("target_compatible_with", None)
     kotlin_library(
@@ -151,6 +155,7 @@ def kotlin_test(
         friends = friends,
         kotlinc_opts = kotlinc_opts,
         javacopts = javacopts,
+        jvm_target = jvm_target,
         target_compatible_with = target_compatible_with,
     )
 
@@ -214,7 +219,7 @@ def kotlin_library(
         exports = None,
         javacopts = [],
         kotlin_version = "2.2",  # The default value corresponds to the minimum kotlin-stdlib across AGP, google3, etc.
-        jvm_target = "17",  # The default value corresponds to the minimum JDK across AGP, google3, etc.
+        jvm_target = DEFAULT_JVM_TARGET,
         kotlinc_opts = [],
         lint_enabled = True,
         lint_baseline = None,
@@ -261,7 +266,7 @@ def kotlin_library(
 
     # Note: -Xsam-conversions=class is needed in AGP because Gradle relies on lambda classes for
     # up-to-date checks, and SAM-converted lambdas are quite common when using Gradle APIs (b/382592220).
-    kotlinc_opts = ["-jvm-target", jvm_target, "-Xsam-conversions=class"] + kotlinc_opts
+    kotlinc_opts = ["-Xsam-conversions=class"] + kotlinc_opts
 
     # Include non-test kotlin libraries in coverage
     cb_jar = name + "_coverage.baseline.classes.jar"  # a jar for coverage baseline classfiles
@@ -357,8 +362,14 @@ def _kotlin_library_impl(ctx):
     java_compile_toolchain = select_java_compile_toolchain(ctx.attr._java_toolchains, ctx.attr.jvm_target)
     java_runtime = select_java_runtime(ctx.attr._java_toolchains, ctx.attr.jvm_target)
     warn = ctx.attr.warn
-    javac_opts = default_javac_opts(ctx.attr._java_toolchains, ctx.attr.jvm_target) + ctx.attr.javacopts + (["-Werror"] if warn == "error" else [])
-    kotlinc_opts = default_kotlinc_opts(ctx.attr._java_toolchains, ctx.attr.jvm_target) + ctx.attr.kotlinc_opts
+    javac_opts = ctx.attr.javacopts + (["-Werror"] if warn == "error" else [])
+    javac_opts, kotlinc_opts = add_jvm_target_opts(
+        ctx.attr._java_toolchains,
+        ctx.attr.jvm_target,
+        javac_opts,
+        ctx.attr.kotlinc_opts,
+        label = ctx.label,
+    )
 
     if kotlin_srcs:
         if ctx.attr.stdlib:

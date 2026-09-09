@@ -29,9 +29,5 @@ kotlin_library(
     name = "diff",
     srcs = glob(["src/main/kotlin/**/*.kt"]),
     jvm_target = "8",
-    kotlinc_opts = [
-        "-jvm-target",
-        "1.8",
-    ],
     visibility = ["//visibility:public"],
 )

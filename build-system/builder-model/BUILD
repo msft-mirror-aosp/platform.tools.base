@@ -15,10 +15,6 @@ iml_module(
     name = "studio.android.sdktools.builder-model",
     srcs = ["src/main/java"],
     iml_files = ["android.sdktools.builder-model.iml"],
-    javacopts = [
-        "-source 8",
-        "-target 8",
-    ],
     jvm_target = "8",
     lint_baseline = "lint_baseline.xml",
     visibility = ["//visibility:public"],
@@ -37,10 +33,7 @@ maven_library(
         "src/main/java/**/*.java",
     ]),
     coordinates = "com.android.tools.build:builder-model",
-    javacopts = [
-        "-source 8",
-        "-target 8",
-    ],
+    jvm_target = "8",
     notice = "NOTICE",
     resource_strip_prefix = "tools/base/build-system/builder-model",
     resources = [":version.properties"],

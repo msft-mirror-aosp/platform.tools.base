@@ -4,7 +4,7 @@ load("@rules_java//java:defs.bzl", "JavaInfo", "java_common")
 load("@rules_license//rules:license.bzl", "license")
 load(":functions.bzl", "create_option_file")
 load(":jvm_import.bzl", "jvm_import")
-load(":kotlin.bzl", "kotlin_library")
+load(":kotlin.bzl", "DEFAULT_JVM_TARGET", "kotlin_library")
 load(":merge_archives.bzl", "run_singlejar")
 load(":utils.bzl", "is_release")
 
@@ -648,6 +648,7 @@ def maven_library(
         srcs,
         javacopts = [],
         kotlinc_opts = [],
+        jvm_target = DEFAULT_JVM_TARGET,
         resources = [],
         resource_strip_prefix = None,
         data = [],
@@ -681,6 +682,7 @@ def maven_library(
         srcs: The sources of the library.
         javacopts: Additional javac options.
         kotlinc_opts: Additional Kotlinc options.
+        jvm_target: The target JVM version.
         resources: Resources to add to the jar.
         resources_strip_prefix: The prefix to strip from the resources path.
         data: Additional runtime data files/runfiles for Bazel execution (omitted from the generated POM file).
@@ -709,6 +711,7 @@ def maven_library(
         srcs = srcs,
         javacopts = javacopts,
         kotlinc_opts = kotlinc_opts,
+        jvm_target = jvm_target,
         compress_resources = is_release(),
         data = data + data_deps,
         deps = deps + deps_compile_only + bundled_deps + neverlink_deps,

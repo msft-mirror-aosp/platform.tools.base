@@ -24,7 +24,6 @@ kotlin_test(
         "src/test/java/**/*.java",
     ]),
     friends = ["//tools/base/multipreview-asm:tools.compose-preview-detector"],
-    javacopts = ["-source 17"],
     jvm_flags = ["-Dtest.suite.jar=tools.compose-preview-detector.tests.jar"],
     resource_strip_prefix = "tools/base/multipreview-asm/src/test/resources",
     resources = glob(["src/test/resources/**"]),

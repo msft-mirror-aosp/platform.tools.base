@@ -322,6 +322,7 @@ android_sdk_repository_extension = use_extension(
 use_repo(android_sdk_repository_extension, "androidsdk")
 
 register_toolchains("@androidsdk//:sdk-toolchain", "@androidsdk//:all")
+register_toolchains("@bazel_skylib//toolchains/unittest:cmd_toolchain", "@bazel_skylib//toolchains/unittest:bash_toolchain")
 
 bazel_dep(name = "rules_android_ndk", version = "0.1.5")
 bazel_dep(name = "perfetto", version = "56.0")

@@ -27,7 +27,7 @@ maven_library(
     ],
     coordinates = "com.android.tools.apkparser:binary-resources",
     description = "Library for parsing the resources.arsc file",
-    javacopts = ["--release 14"],
+    jvm_target = "17",
     notice = "binary-resources/NOTICE",
     pom_name = "Binary Resources parser",
     resource_strip_prefix = "tools/base/apkparser/binary-resources",
