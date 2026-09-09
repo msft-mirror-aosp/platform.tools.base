@@ -2539,8 +2539,9 @@ class LintDriver(
       ) {
         val filtered = baseline.findAndMark(incident)
         if (filtered) {
-          if (!allowBaselineSuppress && !allowSuppress && issue.suppressNames != null && !issue.suppressNames.contains(issue.id)) {
-            flagInvalidSuppress(context, issue, Location.create(baseline.file), null, issue.suppressNames)
+          val suppressNames = getSuppressNames(issue, context)
+          if (!allowBaselineSuppress && suppressNames != null && !suppressNames.contains(issue.id)) {
+            flagInvalidSuppress(context, issue, Location.create(baseline.file), null, suppressNames)
           } else {
             return true
           }
@@ -2923,8 +2924,16 @@ class LintDriver(
    * an issue category.
    */
   private fun requiresExactMatch(issue: Issue?): Boolean {
-    val customSuppressNames = if (!allowSuppress) issue?.suppressNames else null
-    return customSuppressNames != null
+    return issue != null && getSuppressNames(issue) != null
+  }
+
+  /** Returns [Configuration.getSuppressNames] for the given [context] (or the current project), unless [allowSuppress] is set. */
+  private fun getSuppressNames(issue: Issue, context: Context? = null): Collection<String>? {
+    if (allowSuppress) {
+      return null
+    }
+    val configuration = context?.configuration ?: currentProject?.getConfiguration(this) ?: return issue.suppressNames
+    return configuration.getSuppressNames(issue)
   }
 
   // Unfortunately, ASMs nodes do not extend a common DOM node type with parent
@@ -3107,12 +3116,7 @@ class LintDriver(
       return isSuppressed(context, issue, scope.sourcePsi)
     }
 
-    val customSuppressNames =
-      if (!allowSuppress) {
-        issue.suppressNames?.toSet()
-      } else {
-        null
-      }
+    val customSuppressNames = getSuppressNames(issue, context)?.toSet()
 
     if (scope?.sourcePsi is PsiCompiledElement) {
       return false
@@ -3125,7 +3129,7 @@ class LintDriver(
       if (currentScope is UAnnotated) {
         if (isSuppressed(issue, currentScope, requireExactMatch)) {
           if (customSuppressNames != null && context != null && !customSuppressNames.contains(issue.id)) {
-            flagInvalidSuppress(context, issue, context.getLocation(currentScope), currentScope, issue.suppressNames)
+            flagInvalidSuppress(context, issue, context.getLocation(currentScope), currentScope, customSuppressNames)
             return false
           }
           return true
@@ -3138,7 +3142,7 @@ class LintDriver(
 
       if (checkComments && context != null && context.isSuppressedWithComment(currentScope, issue)) {
         if (customSuppressNames != null && !customSuppressNames.contains(issue.id)) {
-          flagInvalidSuppress(context, issue, context.getLocation(currentScope), currentScope, issue.suppressNames)
+          flagInvalidSuppress(context, issue, context.getLocation(currentScope), currentScope, customSuppressNames)
           return false
         }
         return true
@@ -3207,12 +3211,7 @@ class LintDriver(
   fun isSuppressed(context: JavaContext?, issue: Issue, scope: PsiElement?): Boolean {
     scope ?: return false
 
-    val customSuppressNames =
-      if (!allowSuppress) {
-        issue.suppressNames?.toSet()
-      } else {
-        null
-      }
+    val customSuppressNames = getSuppressNames(issue, context)?.toSet()
     val requireExactMatch = customSuppressNames != null
 
     if (scope is PsiCompiledElement) {
@@ -3226,7 +3225,7 @@ class LintDriver(
       if (currentScope is PsiModifierListOwner) {
         if (isAnnotatedWithSuppress(context, issue, currentScope, requireExactMatch)) {
           if (customSuppressNames != null && context != null && !customSuppressNames.contains(issue.id)) {
-            flagInvalidSuppress(context, issue, context.getLocation(currentScope), currentScope, issue.suppressNames)
+            flagInvalidSuppress(context, issue, context.getLocation(currentScope), currentScope, customSuppressNames)
             return false
           }
           return true
@@ -3242,7 +3241,7 @@ class LintDriver(
         val annotations = currentScope.annotationEntries
         if (isSuppressedKt(issue, annotations, requireExactMatch = requireExactMatch)) {
           if (customSuppressNames != null && context != null && !customSuppressNames.contains(issue.id)) {
-            flagInvalidSuppress(context, issue, context.getLocation(currentScope), currentScope, issue.suppressNames)
+            flagInvalidSuppress(context, issue, context.getLocation(currentScope), currentScope, customSuppressNames)
             return false
           }
           return true
@@ -3255,7 +3254,7 @@ class LintDriver(
 
       if (checkComments && context!!.isSuppressedWithComment(currentScope, issue)) {
         if (customSuppressNames != null && !customSuppressNames.contains(issue.id)) {
-          flagInvalidSuppress(context, issue, context.getLocation(currentScope), currentScope, issue.suppressNames)
+          flagInvalidSuppress(context, issue, context.getLocation(currentScope), currentScope, customSuppressNames)
           return false
         }
         return true
@@ -3343,12 +3342,7 @@ class LintDriver(
       }
     }
 
-    val customSuppressNames =
-      if (!allowSuppress) {
-        issue.suppressNames?.toSet()
-      } else {
-        null
-      }
+    val customSuppressNames = getSuppressNames(issue, context)?.toSet()
 
     val requireExactMatch = customSuppressNames != null
     var currentNode = node
@@ -3369,7 +3363,7 @@ class LintDriver(
           val ignore = element.getAttributeNS(TOOLS_URI, ATTR_IGNORE)
           if (isSuppressed(issue, ignore, requireExactMatch)) {
             if (customSuppressNames != null && context != null && !customSuppressNames.contains(issue.id)) {
-              flagInvalidSuppress(context, issue, context.getLocation(currentNode), currentNode, issue.suppressNames)
+              flagInvalidSuppress(context, issue, context.getLocation(currentNode), currentNode, customSuppressNames)
               return false
             }
             return true
@@ -3381,7 +3375,7 @@ class LintDriver(
 
         if (checkComments && context != null && context.isSuppressedWithComment(currentNode, issue)) {
           if (customSuppressNames != null && !customSuppressNames.contains(issue.id)) {
-            flagInvalidSuppress(context, issue, context.getLocation(currentNode), currentNode, issue.suppressNames)
+            flagInvalidSuppress(context, issue, context.getLocation(currentNode), currentNode, customSuppressNames)
             return false
           }
 

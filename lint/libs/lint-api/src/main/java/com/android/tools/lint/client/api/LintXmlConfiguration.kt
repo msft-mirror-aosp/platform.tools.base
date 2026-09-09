@@ -159,18 +159,21 @@ protected constructor(
     var options: MutableMap<String, String>? = null,
     /** Whether this issue should always be analyzed, even if in test sources (where [LintDriver.checkTestSources] is false, the default) */
     var appliesToTests: Boolean = false,
+    /** Fully qualified names of the annotations which are the only way to suppress this issue; see [Issue.suppressNames]. */
+    var suppressNames: MutableList<String>? = null,
   ) {
     /** Returns true if there is no significant configuration for this issue (so can be skipped in serialization) */
     fun isEmpty(): Boolean {
       return severity == null &&
         (paths == null || paths!!.isEmpty()) &&
         (patterns == null || patterns!!.isEmpty()) &&
-        (options == null || options!!.isEmpty())
+        (options == null || options!!.isEmpty()) &&
+        (suppressNames == null || suppressNames!!.isEmpty())
     }
 
     // For debugging only
     override fun toString(): String {
-      return "IssueData(severity=$severity, paths=$paths, patterns=$patterns, options=$options, tests=$appliesToTests)"
+      return "IssueData(severity=$severity, paths=$paths, patterns=$patterns, options=$options, tests=$appliesToTests, suppressNames=$suppressNames)"
     }
 
     operator fun plusAssign(other: IssueData) {
@@ -186,6 +189,10 @@ protected constructor(
       other.options?.let {
         val options = this.options
         if (options == null) this.options = other.options else options.putAll(it)
+      }
+      other.suppressNames?.let {
+        val suppressNames = this.suppressNames
+        if (suppressNames == null) this.suppressNames = other.suppressNames else suppressNames.addAll(it)
       }
     }
   }
@@ -618,7 +625,7 @@ protected constructor(
       severity = parent?.getDefinedSeverity(issue, source, visibleDefault) ?: super.getDefinedSeverity(issue, source, visibleDefault)
     }
 
-    if (issue.suppressNames != null && !issue.suppressNames.contains(issue.id)) {
+    if (source.getSuppressNames(issue)?.contains(issue.id) == false) {
       // Not allowed to suppress this issue via lint.xml.
       // Consider reporting this as well (not easy here since we don't have
       // a context.)
@@ -635,6 +642,15 @@ protected constructor(
     }
 
     return severity
+  }
+
+  override fun getDefinedSuppressNames(issue: Issue): Collection<String>? {
+    for (issueMap in getIssueMaps()) {
+      issueMap[issue.id]?.suppressNames?.let {
+        return it
+      }
+    }
+    return super.getDefinedSuppressNames(issue)
   }
 
   private fun ensureInitialized() {
@@ -923,9 +939,29 @@ protected constructor(
                 }
               }
             }
+            TAG_SUPPRESS_WITH -> {
+              if (parser.depth < 3) {
+                reportError("`<$TAG_SUPPRESS_WITH>` tag should be nested within `<$TAG_ISSUE>`", parser)
+              } else {
+                var annotation = ""
+                for (i in 0 until parser.attributeCount) {
+                  val name = parser.getAttributeName(i)
+                  val value = parser.getAttributeValue(i)
+                  when (name) {
+                    ATTR_ANNOTATION -> annotation = value
+                    else -> reportError("Unexpected attribute `$name`, expected `$ATTR_ANNOTATION`", parser)
+                  }
+                }
+                if (annotation.isEmpty()) {
+                  reportError("Missing required attribute `$ATTR_ANNOTATION` in <$TAG_SUPPRESS_WITH>", parser)
+                } else {
+                  addSuppressWith(idList, annotation, fileClients, issueClients)
+                }
+              }
+            }
             else ->
               reportError(
-                "Unsupported tag <`${parser.name}`>, expected one of `$TAG_LINT`, `$TAG_ISSUE`, `$TAG_IGNORE` or `$TAG_OPTION`",
+                "Unsupported tag <`${parser.name}`>, expected one of `$TAG_LINT`, `$TAG_ISSUE`, `$TAG_IGNORE`, `$TAG_OPTION` or `$TAG_SUPPRESS_WITH`",
                 parser,
               )
           }
@@ -1065,6 +1101,15 @@ protected constructor(
           // LinkedHashMap: preserve lint.xml order
           ?: LinkedHashMap<String, String>().also { data.options = it }
       options[key] = value
+    }
+  }
+
+  private fun addSuppressWith(ids: Iterable<String>, annotation: String, fileClients: String?, issueClients: String?) {
+    val issueMap = getOrCreateIssueMap(issueClients ?: fileClients)
+    for (id in ids) {
+      val data = issueMap[id] ?: IssueData().also { issueMap[id] = it }
+      val suppressNames = data.suppressNames ?: ArrayList<String>().also { data.suppressNames = it }
+      suppressNames.add(annotation)
     }
   }
 
@@ -1215,7 +1260,13 @@ protected constructor(
           val regexps = data.patterns
           val paths = data.paths
           val options = data.options
-          if (paths != null && paths.isNotEmpty() || regexps != null && regexps.isNotEmpty() || options != null && options.isNotEmpty()) {
+          val suppressNames = data.suppressNames
+          if (
+            paths != null && paths.isNotEmpty() ||
+              regexps != null && regexps.isNotEmpty() ||
+              options != null && options.isNotEmpty() ||
+              suppressNames != null && suppressNames.isNotEmpty()
+          ) {
             writer.write(">\n")
             if (options != null) {
               // The options are kept in file order by LinkedHashMap
@@ -1243,6 +1294,14 @@ protected constructor(
                 writer.write("        <")
                 writer.write(TAG_IGNORE)
                 writeAttribute(writer, ATTR_REGEXP, regexp.pattern())
+                writer.write(" />\n")
+              }
+            }
+            if (suppressNames != null) {
+              for (annotation in suppressNames) {
+                writer.write("        <")
+                writer.write(TAG_SUPPRESS_WITH)
+                writeAttribute(writer, ATTR_ANNOTATION, annotation)
                 writer.write(" />\n")
               }
             }
@@ -1429,6 +1488,7 @@ protected constructor(
     private const val TAG_ISSUE = "issue"
     private const val TAG_IGNORE = "ignore"
     private const val TAG_OPTION = "option"
+    private const val TAG_SUPPRESS_WITH = "suppress-with"
     private const val ATTR_ID = "id"
     private const val ATTR_IN = "in"
     private const val ATTR_SEVERITY = "severity"
@@ -1437,6 +1497,7 @@ protected constructor(
     private const val ATTR_NAME = "name"
     private const val ATTR_VALUE = "value"
     private const val ATTR_TESTS = "tests"
+    private const val ATTR_ANNOTATION = "annotation"
     const val VALUE_ALL = "all"
     private const val ATTR_BASELINE = "baseline"
     private val RES_PATH_START = "res" + File.separatorChar

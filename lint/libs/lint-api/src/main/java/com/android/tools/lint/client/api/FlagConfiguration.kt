@@ -63,7 +63,7 @@ open class FlagConfiguration(configurations: ConfigurationHierarchy) : Configura
 
   override fun getDefinedSeverity(issue: Issue, source: Configuration, visibleDefault: Severity): Severity? {
     var severity = computeSeverity(issue, source, visibleDefault)
-    if (issue.suppressNames != null && !issue.suppressNames.contains(issue.id)) {
+    if (source.getSuppressNames(issue)?.contains(issue.id) == false) {
       return Severity.max(severity ?: Severity.IGNORE, getDefaultSeverity(issue, visibleDefault))
     }
     if (fatalOnly()) {
@@ -349,7 +349,7 @@ open class FlagConfiguration(configurations: ConfigurationHierarchy) : Configura
     val exactCategories = exactCategories()
 
     for (issue in registry.issues) {
-      if (issue.suppressNames != null && !issue.suppressNames.contains(issue.id) && !allowSuppress()) {
+      if (getSuppressNames(issue)?.contains(issue.id) == false && !allowSuppress()) {
         continue
       }
 

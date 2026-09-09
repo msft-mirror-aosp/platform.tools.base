@@ -56,6 +56,12 @@ In addition, the <issue> element can specify one or more children:
   the error and the error message itself.
 - `<option name="..." value="...">`: Specifies an option value. This can
   be used to configure some lint checks with options.
+- `<suppress-with annotation="...">`: Specifies the fully qualified
+  name of an annotation which is the only way to suppress the issue;
+  repeat the element to allow several. A restriction built into the
+  check can only be replaced from an override configuration. Once
+  configured, the issue can no longer be disabled, and suppressing it
+  any other way is reported as an error.
 
 Finally, on the root <lint> element you can specify a number of
 attributes, such as `lintJars` (a list of jar files containing custom

@@ -902,6 +902,10 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
                     <issue id="NonexistentId" severity="fatal" other="other" />
                     <issue id="Correctness" severity="warning" />
                     <issue id="NewApi" tests="true" />
+                    <suppress-with annotation="com.example.MySuppress" />
+                    <issue id="SdCardPath">
+                        <suppress-with />
+                    </issue>
                 </lint>
                 """,
           )
@@ -909,7 +913,9 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
         // Trigger src/main/java source sets
         gradle(""),
       )
-      .skipTestModes(TestMode.PARTIAL)
+      // The lint.xml warnings themselves can't be suppressed, and the suppress
+      // attributes inserted into the lint.xml files add more of them
+      .skipTestModes(TestMode.PARTIAL, TestMode.SUPPRESSIBLE)
       .allowCompilationErrors()
       .run()
       .expect(
@@ -929,7 +935,7 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
             src/main/kotlin/test/pkg1/lint.xml:5: Warning: Unexpected attribute enabled, expected path or regexp [LintWarning]
                     <ignore enabled='false' />
                     ^
-            src/main/kotlin/test/pkg1/lint.xml:6: Warning: Unsupported tag <unsupported>, expected one of lint, issue, ignore or option [LintWarning]
+            src/main/kotlin/test/pkg1/lint.xml:6: Warning: Unsupported tag <unsupported>, expected one of lint, issue, ignore, option or suppress-with [LintWarning]
                     <unsupported />
                     ^
             src/main/kotlin/test/pkg1/lint.xml:7: Warning: Must specify both name and value in <option> [LintWarning]
@@ -953,10 +959,16 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
             src/main/kotlin/test/pkg1/lint.xml:15: Warning: The tests attribute can only be specified for lint.xml files at the module level or higher [LintWarning]
                 <issue id="NewApi" tests="true" />
                 ^
+            src/main/kotlin/test/pkg1/lint.xml:16: Warning: <suppress-with> tag should be nested within <issue> [LintWarning]
+                <suppress-with annotation="com.example.MySuppress" />
+                ^
+            src/main/kotlin/test/pkg1/lint.xml:18: Warning: Missing required attribute annotation in <suppress-with> [LintWarning]
+                    <suppress-with />
+                    ^
             src/main/kotlin/test/pkg1/subpkg1/MyTest.kt:4: Warning: Do not hardcode "/sdcard/"; use Environment.getExternalStorageDirectory().getPath() instead [SdCardPath]
                 val s: String = "/sdcard/mydir"
                                  ~~~~~~~~~~~~~
-            0 errors, 14 warnings
+            0 errors, 16 warnings
             """
       )
   }
@@ -1187,6 +1199,191 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
       .testModes(TestMode.DEFAULT)
       .run()
       .expect(expected)
+  }
+
+  fun testCustomSuppression() {
+    val configuration =
+      getConfiguration(
+        """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <lint>
+            <issue id="SdCardPath">
+                <suppress-with annotation="com.example.MySuppress" />
+                <suppress-with annotation="com.example.MyOtherSuppress" />
+            </issue>
+        </lint>
+        """
+          .trimIndent()
+      )
+
+    assertEquals(listOf("com.example.MySuppress", "com.example.MyOtherSuppress"), configuration.getSuppressNames(SdCardDetector.ISSUE))
+    assertNull(configuration.getSuppressNames(TypoDetector.ISSUE))
+
+    // The setting is preserved when the configuration is written back, and does not
+    // prevent the severity from being raised
+    configuration.setSeverity(SdCardDetector.ISSUE, Severity.ERROR)
+    assertEquals(Severity.ERROR, configuration.getSeverity(SdCardDetector.ISSUE))
+    assertEquals(
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <lint>
+          <issue id="SdCardPath" severity="error">
+              <suppress-with annotation="com.example.MySuppress" />
+              <suppress-with annotation="com.example.MyOtherSuppress" />
+          </issue>
+      </lint>
+      """
+        .trimIndent(),
+      configuration.configFile.readText(),
+    )
+  }
+
+  fun testCustomSuppressionHierarchy() {
+    // The setting is inherited like any other, with the override configuration taking
+    // precedence over the project configuration, which takes precedence over --config
+    val client = createClient()
+    val configurations = client.configurations
+    val fallback =
+      File(temporaryFolder.root, "lint.xml").also {
+        it.writeText(
+          """
+          <lint>
+              <issue id="SdCardPath">
+                  <suppress-with annotation="com.example.AllowSdCard" />
+              </issue>
+              <issue id="Typos">
+                  <suppress-with annotation="com.example.AllowTypos" />
+              </issue>
+          </lint>
+          """
+            .trimIndent()
+        )
+      }
+    val override =
+      File(temporaryFolder.root, "lint-override.xml").also {
+        it.writeText(
+          """
+          <lint>
+              <issue id="SdCardPath">
+                  <suppress-with annotation="com.example.AllowSdCardOverride" />
+              </issue>
+              <issue id="RestrictedOverride">
+                  <suppress-with annotation="com.example.AllowRestrictedOverride" />
+              </issue>
+          </lint>
+          """
+            .trimIndent()
+        )
+      }
+    configurations.addGlobalConfigurations(
+      LintXmlConfiguration.create(configurations, fallback),
+      LintXmlConfiguration.create(configurations, override),
+    )
+    val projectDir = File(temporaryFolder.root, "project").also { it.mkdirs() }
+    val project =
+      File(projectDir, "lint.xml").also {
+        it.writeText(
+          """
+          <lint>
+              <issue id="SdCardPath" severity="ignore" />
+              <issue id="Typos">
+                  <suppress-with annotation="com.example.AllowProjectTypos" />
+              </issue>
+              <issue id="Restricted" severity="ignore">
+                  <suppress-with annotation="Restricted" />
+              </issue>
+          </lint>
+          """
+            .trimIndent()
+        )
+      }
+    val configuration = configurations.getConfigurationForFile(project)
+
+    assertEquals(listOf("com.example.AllowSdCardOverride"), configuration.getSuppressNames(SdCardDetector.ISSUE))
+    assertEquals(listOf("com.example.AllowProjectTypos"), configuration.getSuppressNames(TypoDetector.ISSUE))
+    assertEquals(listOf("com.example.AllowTypos"), configurations.fallback!!.getSuppressNames(TypoDetector.ISSUE))
+    assertNull(configuration.getSuppressNames(UnusedResourceDetector.ISSUE))
+
+    // Once configured, the issue can no longer be disabled
+    assertEquals(Severity.WARNING, configuration.getSeverity(SdCardDetector.ISSUE))
+
+    // A restriction built into the check can only be replaced by the override configuration
+    fun restricted(id: String) =
+      Issue.create(
+        id = id,
+        briefDescription = "Restricted",
+        explanation = "Restricted",
+        implementation = SdCardDetector.ISSUE.implementation,
+        suppressAnnotations = listOf("com.example.Builtin"),
+      )
+    assertEquals(listOf("com.example.Builtin"), configuration.getSuppressNames(restricted("Restricted")))
+    assertEquals(Severity.WARNING, configuration.getSeverity(restricted("Restricted")))
+    assertEquals(listOf("com.example.AllowRestrictedOverride"), configuration.getSuppressNames(restricted("RestrictedOverride")))
+  }
+
+  fun testCustomSuppressionAnalysis() {
+    // The configured annotation is the only way to suppress the issue during analysis,
+    // whether the configuration is passed via --override-config or found in the project
+    checkCustomSuppressionAnalysis(inProject = false)
+    checkCustomSuppressionAnalysis(inProject = true)
+  }
+
+  private fun checkCustomSuppressionAnalysis(inProject: Boolean) {
+    val source =
+      kotlin(
+          "src/test/pkg/MyTest.kt",
+          """
+          package test.pkg
+
+          annotation class AllowSdCard
+
+          class MyTest {
+              @AllowSdCard
+              val allowed: String = "/sdcard/allowed"
+
+              @Suppress("SdCardPath")
+              val rejected: String = "/sdcard/rejected"
+
+              val plain: String = "/sdcard/plain"
+          }
+          """,
+        )
+        .indented()
+    val lintXml =
+      xml(
+          "lint.xml",
+          """
+          <lint>
+              <issue id="SdCardPath">
+                  <suppress-with annotation="test.pkg.AllowSdCard" />
+              </issue>
+          </lint>
+          """,
+        )
+        .indented()
+
+    val task = if (inProject) lint().files(source, lintXml) else lint().files(source).overrideConfig(lintXml)
+    task
+      .useTestConfiguration(false)
+      .issues(SdCardDetector.ISSUE)
+      .skipTestModes(TestMode.SUPPRESSIBLE)
+      .run()
+      .expect(
+        """
+          src/test/pkg/MyTest.kt:9: Error: Issue SdCardPath is not allowed to be suppressed (but can be with @test.pkg.AllowSdCard) [LintError]
+              @Suppress("SdCardPath")
+              ^
+          src/test/pkg/MyTest.kt:10: Warning: Do not hardcode "/sdcard/"; use Environment.getExternalStorageDirectory().getPath() instead [SdCardPath]
+              val rejected: String = "/sdcard/rejected"
+                                      ~~~~~~~~~~~~~~~~
+          src/test/pkg/MyTest.kt:12: Warning: Do not hardcode "/sdcard/"; use Environment.getExternalStorageDirectory().getPath() instead [SdCardPath]
+              val plain: String = "/sdcard/plain"
+                                   ~~~~~~~~~~~~~
+          1 errors, 2 warnings
+          """
+      )
+    // The issue itself is never modified
+    assertNull(SdCardDetector.ISSUE.suppressNames)
   }
 
   fun testEnableIssueWithSuppressAnnotations() {
