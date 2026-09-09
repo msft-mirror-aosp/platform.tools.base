@@ -36,7 +36,10 @@ import org.gradle.api.provider.Property
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.platform.engine.TestExecutionResult
+import org.junit.platform.engine.UniqueId
 import org.junit.platform.launcher.LauncherDiscoveryRequest
+import org.junit.platform.launcher.TestIdentifier
 import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
@@ -425,5 +428,32 @@ class AndroidTestEngineRunnerTest {
     assertThat(capturedRequest).isNotNull()
     assertThat(capturedRequest!!.configurationParameters.get(AndroidTestConfigurationKeys.PARALLEL_TEST_RESULT_REPORTING).orElse(null))
       .isEqualTo("true")
+  }
+
+  @Test
+  fun deviceTrackingListener_deviceSerialWithColon_tracksPassedStatus() {
+    val listener = DeviceTrackingListener()
+    val serial = "192.168.0.7:5555"
+    val deviceUniqueId = UniqueId.forEngine("android-test-engine").append("device", serial)
+    val testUniqueId = deviceUniqueId.append("test", "com.example.MyTest.testMethod")
+
+    val containerId = mock<TestIdentifier>()
+    whenever(containerId.isContainer).thenReturn(true)
+    whenever(containerId.isTest).thenReturn(false)
+    whenever(containerId.uniqueId).thenReturn(deviceUniqueId.toString())
+    whenever(containerId.uniqueIdObject).thenReturn(deviceUniqueId)
+
+    val testId = mock<TestIdentifier>()
+    whenever(testId.isContainer).thenReturn(false)
+    whenever(testId.isTest).thenReturn(true)
+    whenever(testId.uniqueId).thenReturn(testUniqueId.toString())
+    whenever(testId.uniqueIdObject).thenReturn(testUniqueId)
+
+    listener.executionStarted(containerId)
+    listener.executionStarted(testId)
+    listener.executionFinished(testId, TestExecutionResult.successful())
+    listener.executionFinished(containerId, TestExecutionResult.successful())
+
+    assertThat(listener.perDeviceAllTestsPassed[serial]).isTrue()
   }
 }

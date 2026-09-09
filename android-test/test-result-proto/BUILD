@@ -15,6 +15,7 @@ maven_proto_library(
     visibility = [
         "//tools/base:__pkg__",
         "//tools/base/android-test:__subpackages__",
+        "//tools/base/build-system/integration-test/connected:__pkg__",
         "//tools/base/build-system/integration-test/utp:__pkg__",
         "//tools/base/firebase/testlab/testlab-gradle-plugin:__pkg__",
         "//tools/base/utp:__subpackages__",

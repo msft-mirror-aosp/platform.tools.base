@@ -179,6 +179,18 @@ gradle_connected_test(
 )
 
 gradle_connected_test(
+    name = "TcpConnectedTest",
+    srcs = "src/test/java/com/android/build/gradle/integration/connected/application/",
+    avd = "//tools/base/bazel/avd:avd_32",
+    data = TEST_DATA + ["//tools/base/build-system/integration-test:test-projects/basic"],
+    maven_repo_zips = MAVEN_REPO_ZIPS,
+    maven_repos = TEST_MAVEN_REPOS,
+    deps = [
+        "//tools/base/android-test/test-result-proto",
+    ] + TEST_DEPS,
+)
+
+gradle_connected_test(
     name = "BaselineProfileConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/application/",
     avd = "//tools/base/bazel/avd:avd_32",

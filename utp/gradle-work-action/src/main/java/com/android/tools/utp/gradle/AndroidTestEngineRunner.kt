@@ -17,6 +17,7 @@
 package com.android.tools.utp.gradle
 
 import com.android.tools.androidtest.listener.AndroidTestResultListener
+import com.android.tools.androidtest.listener.getDeviceId
 import com.android.tools.androidtest.testengine.config.AndroidTestConfigurationKeys
 import com.android.tools.androidtest.testengine.util.PathSafety
 import com.android.tools.utp.gradle.api.RunUtpWorkParameters
@@ -175,7 +176,7 @@ class AndroidTestEngineRunner(
   }
 }
 
-private class DeviceTrackingListener : TestExecutionListener {
+class DeviceTrackingListener : TestExecutionListener {
   val perDeviceAllTestsPassed = ConcurrentHashMap<String, Boolean>()
 
   override fun executionStarted(testIdentifier: TestIdentifier) {
@@ -191,15 +192,6 @@ private class DeviceTrackingListener : TestExecutionListener {
       if (testExecutionResult.status == TestExecutionResult.Status.FAILED) {
         perDeviceAllTestsPassed[deviceId] = false
       }
-    }
-  }
-
-  private fun TestIdentifier.getDeviceId(): String? {
-    val devicePart = uniqueId.substringAfterLast("[device:", "")
-    return if (devicePart.isNotEmpty()) {
-      devicePart.substringBefore("]")
-    } else {
-      null
     }
   }
 }

@@ -487,4 +487,20 @@ class AndroidTestResultListenerTest {
     assertThat(artifact3.label.namespace).isEqualTo("android")
     assertThat(artifact3.sourcePath.path).isEqualTo(messagePath)
   }
+
+  @Test
+  fun testSuiteStarted_deviceSerialWithColon() {
+    val listener = AndroidTestResultListener()
+    val serial = "192.168.0.7:5555"
+    val deviceUniqueId = org.junit.platform.engine.UniqueId.forEngine("mock").append("device", serial)
+    val testIdentifier = mockTestIdentifier(isTest = false, uniqueIdStr = deviceUniqueId.toString())
+    whenever(testIdentifier.isContainer).thenReturn(true)
+
+    val reportEntry = mock<ReportEntry>()
+    whenever(reportEntry.keyValuePairs).thenReturn(mapOf(AndroidTestReportKeys.TEST_COUNT to "1"))
+    listener.reportingEntryPublished(testIdentifier, reportEntry)
+
+    val event = decodeEvent(outputStream.toString())
+    assertThat(event.deviceId).isEqualTo(serial)
+  }
 }

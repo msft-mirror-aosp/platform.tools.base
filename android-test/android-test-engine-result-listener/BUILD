@@ -33,6 +33,7 @@ maven_library(
         "//tools/base/android-test/test-result-proto",
         "@maven//:com.google.protobuf.protobuf-java",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
+        "@maven//:org.junit.platform.junit-platform-engine",
         "@maven//:org.junit.platform.junit-platform-launcher",
     ],
 )
