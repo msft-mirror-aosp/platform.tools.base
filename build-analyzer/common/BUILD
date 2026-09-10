@@ -6,7 +6,7 @@ iml_module(
     name = "studio.android.build-analyzer.common",
     srcs = ["src/main/kotlin"],
     iml_files = ["android.build-analyzer.common.iml"],
-    jvm_target = "8",
+    jvm_target = "11",
     lint_baseline = "lint_baseline.xml",
     # do not sort: must match IML order
     test_deps = [

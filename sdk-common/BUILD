@@ -13,7 +13,7 @@ iml_module(
     iml_files = ["android.sdktools.sdk-common.iml"],
     # b/477303448 - Fix BoxedPrimitiveEquality error
     javacopts = ["-Xep:BoxedPrimitiveEquality:OFF"],
-    jvm_target = "8",
+    jvm_target = "11",
     lint_baseline = "lint_baseline.xml",
     resources = ["src/main/resources"],
     # do not sort: must match IML order
