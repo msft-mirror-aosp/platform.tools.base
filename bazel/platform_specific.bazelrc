@@ -5,6 +5,7 @@ common:linux --repo_env=ANDROID_NDK_HOME=$WORKSPACE_ROOT/prebuilts/studio/sdk/li
 common:linux --credential_helper=chrome-infra-packages.appspot.com=%workspace%/build/bazel/tools/credhelper
 common:linux --credential_helper=storage.googleapis.com=%workspace%/build/bazel/tools/credhelper
 common:linux --credential_helper=*.pkg.dev=%workspace%/build/bazel/tools/credhelper
+common:linux --credential_helper_timeout=60s
 build:linux --bes_keywords=linux
 build:linux --host_platform=//tools/base/bazel/platforms:linux
 build:linux --platforms=//tools/base/bazel/platforms:linux
@@ -20,6 +21,7 @@ common:windows --repo_env=ANDROID_NDK_HOME=$WORKSPACE_ROOT/prebuilts/studio/sdk/
 common:windows --credential_helper=chrome-infra-packages.appspot.com=%workspace%/build/bazel/tools/credhelper.cmd
 common:windows --credential_helper=storage.googleapis.com=%workspace%/build/bazel/tools/credhelper.cmd
 common:windows --credential_helper=*.pkg.dev=%workspace%/build/bazel/tools/credhelper.cmd
+common:windows --credential_helper_timeout=60s
 
 build:windows --bes_keywords=windows
 build:windows --host_platform=//tools/base/bazel/platforms:windows
@@ -44,6 +46,7 @@ common:macos --repo_env=ANDROID_NDK_HOME=$WORKSPACE_ROOT/prebuilts/studio/sdk/da
 common:macos --credential_helper=chrome-infra-packages.appspot.com=%workspace%/build/bazel/tools/credhelper
 common:macos --credential_helper=storage.googleapis.com=%workspace%/build/bazel/tools/credhelper
 common:macos --credential_helper=*.pkg.dev=%workspace%/build/bazel/tools/credhelper
+common:macos --credential_helper_timeout=60s
 
 # supports_dynamic_linker cannot be used on MacOS, or will cause thread-local
 # failures in protobuf. Other libraries (grpc) have encountered this issue,

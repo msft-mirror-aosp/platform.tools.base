@@ -46,6 +46,7 @@ fi
   --config=ci --config=remote-exec \
   --credential_helper="*.pkg.dev=%workspace%/build/bazel/tools/ci_credhelper.py" \
   --credential_helper="*.googleapis.com=%workspace%/build/bazel/tools/ci_credhelper.py" \
+  --credential_helper_timeout=60s \
   --build_tag_filters="coverage-sources" \
   --build_metadata=ab_build_id="${build_number}" \
   --build_metadata=ab_target=studio-coverage \
@@ -60,6 +61,7 @@ fi
   --config=ci --config=remote-exec \
   --credential_helper="*.pkg.dev=%workspace%/build/bazel/tools/ci_credhelper.py" \
   --credential_helper="*.googleapis.com=%workspace%/build/bazel/tools/ci_credhelper.py" \
+  --credential_helper_timeout=60s \
   --invocation_id=${invocation_id} \
   --tool_tag="studio_coverage.sh" \
   --build_event_binary_file="${dist_dir:-/tmp}/bazel-${build_number}.bes" \
@@ -94,6 +96,7 @@ fi
   --config=ci --config=remote-exec \
   --credential_helper="*.pkg.dev=%workspace%/build/bazel/tools/ci_credhelper.py" \
   --credential_helper="*.googleapis.com=%workspace%/build/bazel/tools/ci_credhelper.py" \
+  --credential_helper_timeout=60s \
   --invocation_id=${report_invocation_id} \
   --jobs=HOST_CPUS*.5 \
   --build_metadata=ab_build_id="${build_number}" \
