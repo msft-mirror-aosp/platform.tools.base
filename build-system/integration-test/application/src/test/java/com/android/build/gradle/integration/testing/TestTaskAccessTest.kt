@@ -91,7 +91,7 @@ class TestTaskAccessTest {
       project.tasks.register("verifyDeviceTestTaskConfig") { verify ->
         verify.dependsOn("connectedDebugAndroidTest")
         verify.dependsOn("testDebugUnitTest")
-        verify.dependsOn("testFirstT1DebugTestSuite")
+        verify.dependsOn("testDebugFirstT1TestSuite")
       }
 
       project.gradle.taskGraph.whenReady {
@@ -103,7 +103,7 @@ class TestTaskAccessTest {
         println("UNIT_TEST_DESCRIPTION: " + unitTestTask.description)
         println("UNIT_TEST_GROUP: " + unitTestTask.group)
 
-        val suiteTask = project.tasks.getByName("testFirstT1DebugTestSuite")
+        val suiteTask = project.tasks.getByName("testDebugFirstT1TestSuite")
         println("SUITE_TEST_DESCRIPTION: " + suiteTask.description)
         println("SUITE_TEST_GROUP: " + suiteTask.group)
       }

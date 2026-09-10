@@ -105,18 +105,18 @@ class MixedTestSuiteTest {
   @Test
   fun testMixedSuiteExecution() {
     val project = rule.build
-    val result = project.executor.run(":app:testMixedT1DebugTestSuite")
+    val result = project.executor.run(":app:testDebugMixedT1TestSuite")
 
     // Verify compilation tasks ran
-    Truth.assertThat(result.didWorkTasks).contains(":app:compileMixedHostJarDebugJavaWithJavac")
-    Truth.assertThat(result.didWorkTasks).contains(":app:compileMixedTestApkDebugJavaWithJavac")
+    Truth.assertThat(result.didWorkTasks).contains(":app:compileDebugMixedTestJavaWithJavac")
+    Truth.assertThat(result.didWorkTasks).contains(":app:compileDebugMixedAndroidTestJavaWithJavac")
 
     // Verify packaging task ran
-    Truth.assertThat(result.didWorkTasks).contains(":app:packageMixedTestApkDebug")
+    Truth.assertThat(result.didWorkTasks).contains(":app:packageDebugMixedAndroidTest")
 
     // Verify junit_inputs.txt exists and has the APK
     val buildDir = project.subProject(":app").buildDir.toFile()
-    val junitInputsFile = buildDir.resolve("intermediates/debug/testMixedT1DebugTestSuite/junit_inputs.txt")
+    val junitInputsFile = buildDir.resolve("intermediates/debug/testDebugMixedT1TestSuite/junit_inputs.txt")
     Truth.assertThat(junitInputsFile.exists()).isTrue()
 
     val properties = java.util.Properties().also { props -> junitInputsFile.reader().use { props.load(it) } }
@@ -126,25 +126,25 @@ class MixedTestSuiteTest {
     Truth.assertThat(apkPath).isNotEmpty()
     val apkDir = File(apkPath)
     Truth.assertThat(apkDir.exists()).isTrue()
-    Truth.assertThat(apkPath).endsWith("mixedTestApkDebug")
-    Truth.assertThat(File(apkDir, "app-mixedTestApkDebug.apk").exists()).isTrue()
+    Truth.assertThat(apkPath).endsWith("debugMixedAndroidTest")
+    Truth.assertThat(File(apkDir, "app-debugMixedAndroidTest.apk").exists()).isTrue()
   }
 
   @Test
   fun testMixedSuiteUpdateExecution() {
     val project = rule.build
-    val result = project.executor.run(":app:updateMixedT1DebugTestSuite")
+    val result = project.executor.run(":app:updateDebugMixedT1TestSuite")
 
     // Verify compilation tasks ran (should be the same as test task)
-    Truth.assertThat(result.didWorkTasks).contains(":app:compileMixedHostJarDebugJavaWithJavac")
-    Truth.assertThat(result.didWorkTasks).contains(":app:compileMixedTestApkDebugJavaWithJavac")
+    Truth.assertThat(result.didWorkTasks).contains(":app:compileDebugMixedTestJavaWithJavac")
+    Truth.assertThat(result.didWorkTasks).contains(":app:compileDebugMixedAndroidTestJavaWithJavac")
 
     // Verify packaging task ran
-    Truth.assertThat(result.didWorkTasks).contains(":app:packageMixedTestApkDebug")
+    Truth.assertThat(result.didWorkTasks).contains(":app:packageDebugMixedAndroidTest")
 
     // Verify junit_inputs.txt exists and has the APK
     val buildDir = project.subProject(":app").buildDir.toFile()
-    val junitInputsFile = buildDir.resolve("intermediates/debug/updateMixedT1DebugTestSuite/junit_inputs.txt")
+    val junitInputsFile = buildDir.resolve("intermediates/debug/updateDebugMixedT1TestSuite/junit_inputs.txt")
     Truth.assertThat(junitInputsFile.exists()).isTrue()
   }
 

@@ -544,8 +544,8 @@ class CodeCoverageCollectionTest {
 
     val result = build.executor.run(":app:testResultsCollectionDebug")
 
-    Truth.assertThat(result.didWorkTasks).contains(":app:testFirstT1DebugTestSuite")
-    Truth.assertThat(result.didWorkTasks).contains(":app:testFirstT2DebugTestSuite")
+    Truth.assertThat(result.didWorkTasks).contains(":app:testDebugFirstT1TestSuite")
+    Truth.assertThat(result.didWorkTasks).contains(":app:testDebugFirstT2TestSuite")
   }
 
   class CodeCoverageCollectionTaskCallback : GenericCallback {

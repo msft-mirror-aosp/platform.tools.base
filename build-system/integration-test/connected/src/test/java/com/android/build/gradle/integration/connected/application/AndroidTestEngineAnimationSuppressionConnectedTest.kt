@@ -140,7 +140,7 @@ class AndroidTestEngineAnimationSuppressionConnectedTest {
 
   @Test
   fun testDeviceAnimationSuppression() {
-    val result = executor.run(":app:testMyAndroidTestSuiteT1DebugTestSuite")
+    val result = executor.run(":app:testDebugMyAndroidTestSuiteT1TestSuite")
 
     result.assertOutputContains("emulator-5554 - 13 > com.example.android.AnimationSuppressionTest.verifyAnimationsDisabledOnDevice PASSED")
   }

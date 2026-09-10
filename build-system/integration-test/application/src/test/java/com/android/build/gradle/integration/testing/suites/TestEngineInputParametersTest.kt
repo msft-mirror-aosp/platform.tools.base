@@ -89,13 +89,13 @@ class TestEngineInputParametersTest {
   @Test
   fun testSystemProperties() {
     val project = rule.build
-    var result = project.executor.run("testFirstT1DebugTestSuite")
-    Truth.assertThat(result.didWorkTasks).contains(":app:testFirstT1DebugTestSuite")
+    var result = project.executor.run("testDebugFirstT1TestSuite")
+    Truth.assertThat(result.didWorkTasks).contains(":app:testDebugFirstT1TestSuite")
 
     // execute it again and make sure it runs as it should never be up to date.
-    result = project.executor.run("testFirstT1DebugTestSuite")
-    Truth.assertThat(result.didWorkTasks).contains(":app:testFirstT1DebugTestSuite")
-    Truth.assertThat(result.upToDateTasks).doesNotContain(":app:testFirstT1DebugTestSuite")
+    result = project.executor.run("testDebugFirstT1TestSuite")
+    Truth.assertThat(result.didWorkTasks).contains(":app:testDebugFirstT1TestSuite")
+    Truth.assertThat(result.upToDateTasks).doesNotContain(":app:testDebugFirstT1TestSuite")
   }
 }
 
@@ -104,7 +104,7 @@ class TestingInputProperties : ApplicationComponentCallback {
     androidComponents.finalizeDsl { applicationExtension ->
       println("executing callback")
       project.tasks.whenTaskAdded { task ->
-        if (task.name == "testFirstT1DebugTestSuite") {
+        if (task.name == "testDebugFirstT1TestSuite") {
           println("Found test task !")
           task.outputs.upToDateWhen { false }
         }

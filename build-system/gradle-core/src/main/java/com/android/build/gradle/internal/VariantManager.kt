@@ -889,7 +889,7 @@ class VariantManager<
         }
 
         // Create the TestSuite instance, its sources and various classpath configurations
-        val componentName = "${testSuiteBuilder.name}${variantInfo.variant.name.capitalizeFirstChar()}"
+        val componentName = "${variantInfo.variant.name}${testSuiteBuilder.name.capitalizeFirstChar()}"
 
         testSuiteBuilder as TestSuiteBuilderImpl
         val sources = testSuiteBuilder.getSources()
@@ -928,6 +928,7 @@ class VariantManager<
                   getFlavorSelection(variantInfo.variantDslInfo),
                   variantInfo.variantDslInfo as MultiVariantComponentDslInfo,
                   source.type,
+                  source.name,
                 )
                 .build(),
           )

@@ -101,6 +101,6 @@ class VerifyingHostJarTestSuiteKotlinCompilationTest {
 
   @Test
   fun testWiring() {
-    rule.build.executor.run(":app:testFirstT1DebugTestSuite")
+    rule.build.executor.run(":app:testDebugFirstT1TestSuite")
   }
 }

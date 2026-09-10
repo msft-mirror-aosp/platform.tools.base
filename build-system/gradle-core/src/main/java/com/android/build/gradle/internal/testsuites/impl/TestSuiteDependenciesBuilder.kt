@@ -22,7 +22,6 @@ import com.android.build.api.attributes.BuildTypeAttr
 import com.android.build.api.attributes.ProductFlavorAttr
 import com.android.build.api.dsl.AgpTestSuiteDependencies
 import com.android.build.api.variant.TestSuiteSourceType
-import com.android.build.api.variant.impl.toCamelCase
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.core.dsl.MultiVariantComponentDslInfo
 import com.android.build.gradle.internal.dependency.TestSuiteSourceClasspath
@@ -56,6 +55,7 @@ internal constructor(
   private val flavorSelection: Map<Attribute<ProductFlavorAttr>, ProductFlavorAttr>,
   private val dslInfo: MultiVariantComponentDslInfo,
   private val sourceType: TestSuiteSourceType,
+  private val sourceSetName: String = testSuiteBuilder.name,
 ) {
 
   private val jvmEnvironment = project.objects.named(TargetJvmEnvironment::class.java, TargetJvmEnvironment.ANDROID)
@@ -78,7 +78,7 @@ internal constructor(
     val configurations = project.configurations
     val testedVariantName = testedVariant.name
 
-    val identifier = "$testSuiteName${sourceType.toCamelCase()}${testedVariantName.capitalized()}"
+    val identifier = "${testedVariantName}${sourceSetName.capitalized()}"
 
     // ----------- COMPILE CLASSPATH
     val compileClasspathName: String = identifier + "CompileClasspath"

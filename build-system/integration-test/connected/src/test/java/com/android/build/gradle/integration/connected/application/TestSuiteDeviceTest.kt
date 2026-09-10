@@ -230,19 +230,19 @@ class TestSuiteDeviceTest {
 
   @Test
   fun allOnlineDeviceShouldBePassedByDefault() {
-    executor.run(":app:testMyTestSuiteT1DebugTestSuite").assertOutputContains("Serial IDs = emulator-5554,emulator-5556")
+    executor.run(":app:testDebugMyTestSuiteT1TestSuite").assertOutputContains("Serial IDs = emulator-5554,emulator-5556")
   }
 
   @Test
   fun testApkSuiteShouldRun() {
-    executor.run(":app:testMyTestSuiteApkT1DebugTestSuite").assertOutputContains("Serial IDs = emulator-5554,emulator-5556")
+    executor.run(":app:testDebugMyTestSuiteApkT1TestSuite").assertOutputContains("Serial IDs = emulator-5554,emulator-5556")
   }
 
   @Test
   fun selectDeviceByEnvVariable() {
     executor
       .withEnvironmentVariables(mapOf("ANDROID_SERIAL" to "emulator-5554"))
-      .run(":app:testMyTestSuiteT1DebugTestSuite")
+      .run(":app:testDebugMyTestSuiteT1TestSuite")
       .assertOutputContains("Serial IDs = emulator-5554")
   }
 
@@ -250,20 +250,20 @@ class TestSuiteDeviceTest {
   fun selectDeviceByProjectProperty() {
     executor
       .withArguments(listOf("-PcustomSerials=emulator-5554"))
-      .run(":app:testMyTestSuiteT1DebugTestSuite")
+      .run(":app:testDebugMyTestSuiteT1TestSuite")
       .assertOutputContains("Serial IDs = emulator-5554")
   }
 
   @Test
   fun testApkSuiteShouldFailWhenNoTests() {
-    executor.expectFailure().run(":app:testMyEmptyTestSuiteApkT1DebugTestSuite")
+    executor.expectFailure().run(":app:testDebugMyEmptyTestSuiteApkT1TestSuite")
   }
 
   @Test
   fun pureEmptySuiteShouldBeSkipped() {
-    val result = executor.run(":app:testMyPureEmptyTestSuiteT1DebugTestSuite")
+    val result = executor.run(":app:testDebugMyPureEmptyTestSuiteT1TestSuite")
     result.assertOutputDoesNotContain("Serial IDs =")
-    assertThat(result.findTask(":app:testMyPureEmptyTestSuiteT1DebugTestSuite")?.wasSkipped()).isTrue()
+    assertThat(result.findTask(":app:testDebugMyPureEmptyTestSuiteT1TestSuite")?.wasSkipped()).isTrue()
   }
 }
 

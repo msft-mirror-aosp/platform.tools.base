@@ -194,11 +194,11 @@ class TestSuitesTestReportTest {
 
     // Update tasks should not be executed by testAllSuites, so TEST_SUITE_UPDATE_RESULTS directory does not exist yet.
     val updateResultsDir =
-      build.androidApplication().intermediatesDir.resolve("test_suite_update_results/debug/updateWithUpdateT1DebugTestSuite").toFile()
+      build.androidApplication().intermediatesDir.resolve("test_suite_update_results/debug/updateDebugWithUpdateT1TestSuite").toFile()
     assertThat(updateResultsDir.exists()).isFalse()
 
     // Now explicitly execute the update task and verify its results are published to TEST_SUITE_UPDATE_RESULTS
-    build.executor.run(":app:updateWithUpdateT1DebugTestSuite")
+    build.executor.run(":app:updateDebugWithUpdateT1TestSuite")
     assertThat(updateResultsDir.exists()).isTrue()
     val updateXmlFiles = updateResultsDir.listFiles()?.filter { it.isFile && it.extension == "xml" } ?: emptyList()
     assertThat(updateXmlFiles.size).isEqualTo(1)
@@ -237,7 +237,7 @@ class TestSuitesTestReportTest {
       }
     }
 
-    build.executor.run(":app:testCoverageSuiteT1DebugTestSuite")
+    build.executor.run(":app:testDebugCoverageSuiteT1TestSuite")
 
     val coverageReportDir = build.androidApplication().buildDir.resolve("reports/coverage/coverageSuite")
     val htmlReportIndex = coverageReportDir.resolve("index.html").toFile()
@@ -291,7 +291,7 @@ class TestSuitesTestReportTest {
       }
     }
 
-    build.executor.run(":app:testNoCoverageSuiteT1DebugTestSuite")
+    build.executor.run(":app:testDebugNoCoverageSuiteT1TestSuite")
 
     val coverageReportDir = build.androidApplication().buildDir.resolve("reports/coverage/noCoverageSuite")
     assertThat(coverageReportDir.toFile().exists()).isFalse()
@@ -325,7 +325,7 @@ class TestSuitesTestReportTest {
       }
     }
 
-    build.executor.run(":app:testUpdateCoverageSuiteT1DebugTestSuite")
+    build.executor.run(":app:testDebugUpdateCoverageSuiteT1TestSuite")
 
     val coverageReportDir = build.androidApplication().buildDir.resolve("reports/coverage/updateCoverageSuite")
     val htmlReportIndex = coverageReportDir.resolve("index.html").toFile()
@@ -337,7 +337,7 @@ class TestSuitesTestReportTest {
     coverageReportDir.toFile().deleteRecursively()
     assertThat(coverageReportDir.toFile().exists()).isFalse()
 
-    build.executor.run(":app:updateUpdateCoverageSuiteT1DebugTestSuite")
+    build.executor.run(":app:updateDebugUpdateCoverageSuiteT1TestSuite")
 
     assertThat(coverageReportDir.toFile().exists()).isFalse()
   }

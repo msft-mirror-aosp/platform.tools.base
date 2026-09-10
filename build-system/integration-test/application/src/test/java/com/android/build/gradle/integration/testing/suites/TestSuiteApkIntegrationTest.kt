@@ -134,12 +134,12 @@ class TestSuiteApkIntegrationTest {
   fun testTestApkSourcesManifestAndDependencyIsolation() {
     // Packaging the test APK triggers compilation, manifest processing, and packaging
     // for the custom test suite.
-    val result = rule.build.executor.run(":app:packageCustomTestTestApkDebug")
+    val result = rule.build.executor.run(":app:packageDebugCustomTest")
 
     // Verify expected tasks executed
-    assertThat(result.didWorkTasks).contains(":app:compileCustomTestTestApkDebugJavaWithJavac")
-    assertThat(result.didWorkTasks).contains(":app:processCustomTestTestApkDebugManifest")
-    assertThat(result.didWorkTasks).contains(":app:packageCustomTestTestApkDebug")
+    assertThat(result.didWorkTasks).contains(":app:compileDebugCustomTestJavaWithJavac")
+    assertThat(result.didWorkTasks).contains(":app:processDebugCustomTestManifest")
+    assertThat(result.didWorkTasks).contains(":app:packageDebugCustomTest")
 
     val buildDir = rule.build.androidApplication(":app").buildDir.toFile()
     val testApk = buildDir.walkTopDown().firstOrNull { it.name.endsWith(".apk") && it.name.contains("customTest", ignoreCase = true) }

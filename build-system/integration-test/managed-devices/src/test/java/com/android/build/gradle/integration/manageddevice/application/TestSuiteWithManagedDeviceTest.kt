@@ -145,6 +145,6 @@ class TestSuiteWithManagedDeviceTest {
 
   @Test
   fun testSuiteWithManagedDevice() {
-    executor.run(":app:testMyTestSuiteGMDMyGMDDebugTestSuite")
+    executor.run(":app:testDebugMyTestSuiteGMDMyGMDTestSuite")
   }
 }

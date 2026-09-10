@@ -83,8 +83,8 @@ internal constructor(
         entry.value,
         computeTaskName(
           testedVariant.name,
-          "test${_name.capitalizeFirstChar()}${entry.value.uniqueName().capitalizeFirstChar()}",
-          "TestSuite",
+          "test",
+          "${_name.capitalizeFirstChar()}${entry.value.uniqueName().capitalizeFirstChar()}TestSuite",
         ),
       )
     }

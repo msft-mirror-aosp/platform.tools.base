@@ -66,10 +66,10 @@ class TestSuiteConfigurationCacheTest {
     val executor = rule.build.executor.withConfigurationCaching(ConfigurationCaching.ON)
 
     // First run to populate the configuration cache
-    executor.run(":app:testFirstT1DebugTestSuite")
+    executor.run(":app:testDebugFirstT1TestSuite")
 
     // Second run to use the configuration cache
-    val result = executor.run(":app:testFirstT1DebugTestSuite")
+    val result = executor.run(":app:testDebugFirstT1TestSuite")
 
     result.assertOutputContains("Reusing configuration cache.")
   }

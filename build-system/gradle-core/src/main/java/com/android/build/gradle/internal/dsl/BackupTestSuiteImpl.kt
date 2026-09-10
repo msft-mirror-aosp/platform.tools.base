@@ -146,14 +146,14 @@ constructor(
     // directly on the standard Gradle configurations generated for the custom test suite!
     try {
       dslServices.configurations.configureEach { config ->
-        if (config.name.startsWith(name, ignoreCase = true)) {
+        if (config.name.contains(name, ignoreCase = true)) {
           config.withDependencies { deps ->
             val resolvedVersion = backupSuite.backupTestLibraryVersion ?: DEFAULT_BACKUP_VERSION
 
-            if (config.name.contains("TestApk", ignoreCase = true)) {
+            if (config.name.contains("AndroidTest", ignoreCase = true) || config.name.contains("TestApk", ignoreCase = true)) {
               // Contains on-device test helper actions (e.g. PutStorageAction, VerifyStorageAction) and BackupRestoreTestRunner.
               deps.add(dependencyHandler.create("androidx.test.backup:backup:$resolvedVersion"))
-            } else if (config.name.contains("HostJar", ignoreCase = true)) {
+            } else if (config.name.contains("Test", ignoreCase = true) || config.name.contains("HostJar", ignoreCase = true)) {
               // Hosts the JUnit 5 test extension and BackupRestoreDevice orchestration control loops.
               // Transitively pulls adblib, adblib-tools, and common published on GMaven via backup-host's POM.
               deps.add(dependencyHandler.create("androidx.test.backup:backup-host:$resolvedVersion"))

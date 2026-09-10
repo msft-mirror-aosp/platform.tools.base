@@ -151,7 +151,7 @@ class HostJarTestSuiteAndroidResourcesTest {
 
   @Test
   fun testAndroidResourcesCompilationAndPackaging() {
-    rule.build.executor.run(":app:testAndroidResSuiteT1DebugTestSuite")
+    rule.build.executor.run(":app:testDebugAndroidResSuiteT1TestSuite")
 
     val intermediatesDir = rule.build.androidApplication(":app").intermediatesDir
 
@@ -165,7 +165,7 @@ class HostJarTestSuiteAndroidResourcesTest {
 
   @Test
   fun testLibraryAndroidResourcesCompilationAndPackaging() {
-    rule.build.executor.run(":lib:testLibAndroidResSuiteT1DebugTestSuite")
+    rule.build.executor.run(":lib:testDebugLibAndroidResSuiteT1TestSuite")
 
     val intermediatesDir = rule.build.androidLibrary(":lib").intermediatesDir
 
@@ -179,11 +179,11 @@ class HostJarTestSuiteAndroidResourcesTest {
 
   @Test
   fun testAssembleWithAndroidResources() {
-    val result = rule.build.executor.run(":app:assembleAndroidResSuiteHostJarDebug")
+    val result = rule.build.executor.run(":app:assembleDebugAndroidResSuite")
 
     assertThat(result.didWorkTasks).contains(":app:packageDebugForAndroidResSuite")
-    assertThat(result.didWorkTasks).contains(":app:compileAndroidResSuiteHostJarDebugJavaWithJavac")
-    assertThat(result.getTask(":app:assembleAndroidResSuiteHostJarDebug")).isNotNull()
+    assertThat(result.didWorkTasks).contains(":app:compileDebugAndroidResSuiteJavaWithJavac")
+    assertThat(result.getTask(":app:assembleDebugAndroidResSuite")).isNotNull()
 
     val intermediatesDir = rule.build.androidApplication(":app").intermediatesDir
     val apkForLocalTest =

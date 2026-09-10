@@ -53,10 +53,10 @@ class TestSuiteSourceContainer(
   internal val suiteSourceClasspath: TestSuiteSourceClasspath,
 ) : TestSuiteSourceSet {
 
-  override fun getName(): String = testSuiteName
+  override fun getName(): String = source.getName()
 
   /** Returns a unique name for this source container within the test suite. */
-  val identifier = "$testSuiteName${source.type.toCamelCase()}${targetVariantName.capitalizeFirstChar()}"
+  val identifier = "${targetVariantName}${source.getName().capitalizeFirstChar()}"
 
   override val type: TestSuiteSourceType
     get() = source.type

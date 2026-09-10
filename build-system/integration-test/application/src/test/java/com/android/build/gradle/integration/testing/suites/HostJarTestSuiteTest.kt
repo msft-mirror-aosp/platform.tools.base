@@ -78,24 +78,24 @@ class HostJarTestSuiteJavaResProcessingTest {
   @Test
   fun upToDateCheck() {
     val project = rule.build
-    var result: GradleBuildResult = project.executor.run("testFirstT1RedDebugTestSuite")
+    var result: GradleBuildResult = project.executor.run("testRedDebugFirstT1TestSuite")
 
-    Truth.assertThat(result.didWorkTasks).contains(":app:processFirstHostJarRedDebugJavaRes")
+    Truth.assertThat(result.didWorkTasks).contains(":app:processRedDebugFirstJavaRes")
     val javaRes = getJavaRes(project)
     PathSubject.assertThat(javaRes).exists()
     PathSubject.assertThat(javaRes.resolve("some/random/file.txt")).contains("some random text")
 
     // Run it again to check that we are up to date.
-    result = project.executor.run("testFirstT1RedDebugTestSuite")
-    Truth.assertThat(result.upToDateTasks).contains(":app:processFirstHostJarRedDebugJavaRes")
+    result = project.executor.run("testRedDebugFirstT1TestSuite")
+    Truth.assertThat(result.upToDateTasks).contains(":app:processRedDebugFirstJavaRes")
   }
 
   @Test
   fun fileRemovedCheck() {
     val project = rule.build
-    var result: GradleBuildResult = project.executor.run("testFirstT1RedDebugTestSuite")
+    var result: GradleBuildResult = project.executor.run("testRedDebugFirstT1TestSuite")
 
-    Truth.assertThat(result.didWorkTasks).contains(":app:processFirstHostJarRedDebugJavaRes")
+    Truth.assertThat(result.didWorkTasks).contains(":app:processRedDebugFirstJavaRes")
     val javaRes = getJavaRes(project).resolve("some${File.separatorChar}random")
 
     PathSubject.assertThat(javaRes).exists()
@@ -105,8 +105,8 @@ class HostJarTestSuiteJavaResProcessingTest {
       build.subProject(":app").files.run { remove("src/first/resources/some/random/res.txt") }
 
       // Run it again to check that we are not up to date.
-      result = build.executor.run("testFirstT1RedDebugTestSuite")
-      Truth.assertThat(result.didWorkTasks).contains(":app:processFirstHostJarRedDebugJavaRes")
+      result = build.executor.run("testRedDebugFirstT1TestSuite")
+      Truth.assertThat(result.didWorkTasks).contains(":app:processRedDebugFirstJavaRes")
       Truth.assertThat(javaRes.listFiles().map { it.name }).containsExactly("file.txt")
     }
   }
@@ -114,9 +114,9 @@ class HostJarTestSuiteJavaResProcessingTest {
   @Test
   fun fileAddedCheck() {
     val project = rule.build
-    var result: GradleBuildResult = project.executor.run("testFirstT1RedDebugTestSuite")
+    var result: GradleBuildResult = project.executor.run("testRedDebugFirstT1TestSuite")
 
-    Truth.assertThat(result.didWorkTasks).contains(":app:processFirstHostJarRedDebugJavaRes")
+    Truth.assertThat(result.didWorkTasks).contains(":app:processRedDebugFirstJavaRes")
     val javaRes = getJavaRes(project).resolve("some${File.separatorChar}random")
     PathSubject.assertThat(javaRes).exists()
     Truth.assertThat(javaRes.listFiles().map { it.name }).containsExactly("file.txt", "res.txt")
@@ -125,8 +125,8 @@ class HostJarTestSuiteJavaResProcessingTest {
       build.subProject(":app").files.run { add("src/first/resources/some/random/third.txt", "yet another one") }
 
       // Run it again to check that we are not up to date.
-      result = build.executor.run("testFirstT1RedDebugTestSuite")
-      Truth.assertThat(result.didWorkTasks).contains(":app:processFirstHostJarRedDebugJavaRes")
+      result = build.executor.run("testRedDebugFirstT1TestSuite")
+      Truth.assertThat(result.didWorkTasks).contains(":app:processRedDebugFirstJavaRes")
       Truth.assertThat(javaRes.listFiles().map { it.name }).containsExactly("file.txt", "res.txt", "third.txt")
     }
   }
@@ -134,9 +134,9 @@ class HostJarTestSuiteJavaResProcessingTest {
   @Test
   fun fileChangedCheck() {
     val project: GradleBuild = rule.build
-    var result: GradleBuildResult = project.executor.run("testFirstT1RedDebugTestSuite")
+    var result: GradleBuildResult = project.executor.run("testRedDebugFirstT1TestSuite")
 
-    Truth.assertThat(result.didWorkTasks).contains(":app:processFirstHostJarRedDebugJavaRes")
+    Truth.assertThat(result.didWorkTasks).contains(":app:processRedDebugFirstJavaRes")
     val javaRes = getJavaRes(project)
     PathSubject.assertThat(javaRes).exists()
 
@@ -144,8 +144,8 @@ class HostJarTestSuiteJavaResProcessingTest {
       build.subProject(":app").files.update("src/first/resources/some/random/file.txt") { replaceWith("some update") }
 
       // Run it again to check that we are not up to date.
-      result = build.executor.run("testFirstT1RedDebugTestSuite")
-      Truth.assertThat(result.didWorkTasks).contains(":app:processFirstHostJarRedDebugJavaRes")
+      result = build.executor.run("testRedDebugFirstT1TestSuite")
+      Truth.assertThat(result.didWorkTasks).contains(":app:processRedDebugFirstJavaRes")
       PathSubject.assertThat(javaRes.resolve("some/random/file.txt")).contains("some update")
     }
   }
@@ -153,11 +153,11 @@ class HostJarTestSuiteJavaResProcessingTest {
   @Test
   fun testAssembleTask() {
     val project: GradleBuild = rule.build
-    val result: GradleBuildResult = project.executor.run(":app:assembleFirstHostJarRedDebug")
+    val result: GradleBuildResult = project.executor.run(":app:assembleRedDebugFirst")
 
-    Truth.assertThat(result.didWorkTasks).contains(":app:compileFirstHostJarRedDebugJavaWithJavac")
-    Truth.assertThat(result.didWorkTasks).contains(":app:processFirstHostJarRedDebugJavaRes")
-    Truth.assertThat(result.getTask(":app:assembleFirstHostJarRedDebug")).isNotNull()
+    Truth.assertThat(result.didWorkTasks).contains(":app:compileRedDebugFirstJavaWithJavac")
+    Truth.assertThat(result.didWorkTasks).contains(":app:processRedDebugFirstJavaRes")
+    Truth.assertThat(result.getTask(":app:assembleRedDebugFirst")).isNotNull()
 
     val javaRes = getJavaRes(project)
     PathSubject.assertThat(javaRes).exists()
@@ -168,8 +168,8 @@ class HostJarTestSuiteJavaResProcessingTest {
     project
       .subProject(":app")
       .resolve(InternalArtifactType.JAVA_RES)
-      .resolve("firstHostJarRedDebug")
-      .resolve("processFirstHostJarRedDebugJavaRes")
+      .resolve("redDebugFirst")
+      .resolve("processRedDebugFirstJavaRes")
       .resolve("out")
       .toFile()
 }

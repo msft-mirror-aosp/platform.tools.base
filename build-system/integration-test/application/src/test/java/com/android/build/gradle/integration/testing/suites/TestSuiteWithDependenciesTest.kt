@@ -180,7 +180,7 @@ class TestSuiteWithDependenciesTest {
 
   @Test
   fun testConfigurationBlockExecutes() {
-    rule.build.executor.run("app:testFirstT1DebugTestSuite")
+    rule.build.executor.run("app:testDebugFirstT1TestSuite")
   }
 
   @Test
@@ -197,7 +197,7 @@ class TestSuiteWithDependenciesTest {
     //
     // This test simulates that by using a project dependency that explicitly provides
     // a 'directory' artifact, ensuring that the resolution remains lenient.
-    rule.build.executor.run(":appWithDir:testFirstT1DebugTestSuite")
+    rule.build.executor.run(":appWithDir:testDebugFirstT1TestSuite")
   }
 }
 

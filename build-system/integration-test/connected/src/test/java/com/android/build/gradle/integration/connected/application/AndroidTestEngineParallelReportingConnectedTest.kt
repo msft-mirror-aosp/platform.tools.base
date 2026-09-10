@@ -192,7 +192,7 @@ class AndroidTestEngineParallelReportingConnectedTest {
       junitConsoleConfig.dependencies.add(engineDep)
 
       project.afterEvaluate {
-        val testSuiteTask = project.tasks.named("testMyAndroidTestSuiteT1DebugTestSuite", TestSuiteTestTask::class.java)
+        val testSuiteTask = project.tasks.named("testDebugMyAndroidTestSuiteT1TestSuite", TestSuiteTestTask::class.java)
 
         val testedApks = project.objects.fileCollection()
         val testApks = project.objects.fileCollection()

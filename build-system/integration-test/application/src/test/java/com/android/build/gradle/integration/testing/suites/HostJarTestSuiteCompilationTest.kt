@@ -142,16 +142,16 @@ class HostJarTestSuiteCompilationTest {
 
   @Test
   fun testJavaCompilation() {
-    rule.build.executor.run(":app:testJavaSuiteT1DebugTestSuite")
+    rule.build.executor.run(":app:testDebugJavaSuiteT1TestSuite")
   }
 
   @Test
   fun testKotlinCompilation() {
-    rule.build.executor.run(":app:testKotlinSuiteT1DebugTestSuite")
+    rule.build.executor.run(":app:testDebugKotlinSuiteT1TestSuite")
   }
 
   @Test
   fun testMixedCompilation() {
-    rule.build.executor.run(":app:testMixedSuiteT1DebugTestSuite")
+    rule.build.executor.run(":app:testDebugMixedSuiteT1TestSuite")
   }
 }

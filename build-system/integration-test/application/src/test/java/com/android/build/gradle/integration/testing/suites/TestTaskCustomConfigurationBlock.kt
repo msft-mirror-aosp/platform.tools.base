@@ -56,12 +56,12 @@ class TestTaskCustomConfigurationBlock {
   fun testConfigurationBlockExecutes() {
     // no need to run the task, we just want to check which ones are configured and which ones
     // are not.
-    val result = rule.build.executor.withArgument("--dry-run").run("app:testFirstT1BlueDebugTestSuite")
-    result.assertOutputContains("Task testFirstT1BlueDebugTestSuite configured with")
-    result.assertOutputContains("Task testFirstT1BlueDebugTestSuite configured from variant block")
-    result.assertOutputDoesNotContain("Task testFirstT1RedDebugTestSuite configured with")
-    result.assertOutputDoesNotContain("Task testFirstT2BlueDebugTestSuite configured with")
-    result.assertOutputDoesNotContain("Task testFirstT2RedDebugTestSuite configured with")
+    val result = rule.build.executor.withArgument("--dry-run").run("app:testBlueDebugFirstT1TestSuite")
+    result.assertOutputContains("Task testBlueDebugFirstT1TestSuite configured with")
+    result.assertOutputContains("Task testBlueDebugFirstT1TestSuite configured from variant block")
+    result.assertOutputDoesNotContain("Task testRedDebugFirstT1TestSuite configured with")
+    result.assertOutputDoesNotContain("Task testBlueDebugFirstT2TestSuite configured with")
+    result.assertOutputDoesNotContain("Task testRedDebugFirstT2TestSuite configured with")
   }
 }
 

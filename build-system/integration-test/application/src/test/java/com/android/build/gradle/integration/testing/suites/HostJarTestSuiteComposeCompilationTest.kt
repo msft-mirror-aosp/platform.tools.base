@@ -130,6 +130,6 @@ class HostJarTestSuiteComposeCompilationTest {
 
   @Test
   fun testComposeTestSuiteCompilation() {
-    rule.build.executor.run(":app:testComposeSuiteT1DebugTestSuite")
+    rule.build.executor.run(":app:testDebugComposeSuiteT1TestSuite")
   }
 }

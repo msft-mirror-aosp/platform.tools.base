@@ -172,8 +172,8 @@ class TestSuiteTaskManager(project: Project, globalConfig: GlobalTaskCreationCon
           val taskName =
             computeTaskName(
               creationConfig.testedVariant.name,
-              "${verb}${creationConfig.name.capitalizeFirstChar()}${target.uniqueName.capitalizeFirstChar()}",
-              "TestSuite",
+              verb,
+              "${creationConfig.name.capitalizeFirstChar()}${target.uniqueName.capitalizeFirstChar()}TestSuite",
             )
           val testSuiteTestTask =
             taskFactory.register(
