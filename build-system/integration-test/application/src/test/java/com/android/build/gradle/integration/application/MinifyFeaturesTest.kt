@@ -831,6 +831,37 @@ class MinifyFeaturesTest {
     }
   }
 
+  @Test
+  fun testOptimizationEnableVariantApi() {
+    project
+      .getSubproject(":baseModule")
+      .buildFile
+      .appendText(
+        """
+android {
+    buildTypes {
+        release {
+            optimization {
+                enable = true
+            }
+        }
+    }
+}
+androidComponents {
+    beforeVariants(selector().withBuildType("release"), { variant ->
+        println("beforeVariants.releaseMinified=" + variant.isMinifyEnabled())
+    })
+    onVariants(selector().withBuildType("release"), { variant ->
+        println("onVariants.releaseMinified=" + variant.isMinifyEnabled())
+    })
+}
+      """
+      )
+    val output = executor().run("tasks")
+    output.assertOutputContains("beforeVariants.releaseMinified=true")
+    output.assertOutputContains("onVariants.releaseMinified=true")
+  }
+
   // Tests new shrinker rules filtering done by FilterShrinkerRulesTransform to select only rules
   // targeted to specific R8 versions.
   @Test

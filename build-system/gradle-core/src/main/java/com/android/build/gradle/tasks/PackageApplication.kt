@@ -87,9 +87,7 @@ abstract class PackageApplication : PackageAndroidArtifact() {
         !creationConfig.debuggable &&
           !creationConfig.componentType.isForTesting &&
           creationConfig.services.projectOptions[BooleanOption.ENABLE_RESOURCE_OPTIMIZATIONS]
-      val useResourcesShrinker =
-        creationConfig.androidResourcesCreationConfig?.useResourceShrinker == true ||
-          creationConfig.optimizationCreationConfig.applicationOptimizationEnabled
+      val useResourcesShrinker = creationConfig.androidResourcesCreationConfig?.useResourceShrinker == true
       val operationRequest =
         creationConfig.artifacts
           .use(taskProvider)

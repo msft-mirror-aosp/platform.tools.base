@@ -52,9 +52,6 @@ interface OptimizationCreationConfig {
   val minifiedEnabled: Boolean
   val resourcesShrink: Boolean
 
-  /** Returns true if R8 optimization is on and only for application module */
-  val applicationOptimizationEnabled: Boolean
-
   /** True if packageScope filtering is enabled */
   val packageScopeEnabled: Boolean
 
