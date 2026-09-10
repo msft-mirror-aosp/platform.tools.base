@@ -30,6 +30,7 @@ cc_library(
         "parameter_shifter.cc",
         "register_scanner.cc",
         "synthetic_filter.cc",
+        "tagging_manager.cc",
     ],
     hdrs = [
         "constructor_analyzer.h",
@@ -39,6 +40,7 @@ cc_library(
         "parameter_shifter.h",
         "register_scanner.h",
         "synthetic_filter.h",
+        "tagging_manager.h",
     ],
     copts = ANDROID_COPTS,
     tags = ["testonly"],

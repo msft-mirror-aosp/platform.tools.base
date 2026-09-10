@@ -6,7 +6,7 @@ from tools.base.bazel.ci import studio
 
 def studio_journeys(build_env: bazel.BuildEnv):
   """Runs studio journey tests"""
-  query = [f'attr(tags, "studio-journey-test", "//tools/...")']
+  query = [f'attr(tags, "e2e-journey-test", "//tools/...")']
   target_tests = build_env.bazel_query(*query).stdout.decode('utf-8').splitlines()
   flags = [
     '--test_timeout=3600',

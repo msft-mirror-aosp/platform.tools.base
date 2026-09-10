@@ -159,7 +159,7 @@ abstract class ThreadConstraintDetector<T : Enum<T>>(
                 else -> "is requiring $inferredLower"
               }
             val concreteReasons = constraints.mapNotNull { failure ->
-              when (val arg = paramToArg[failure.invocation.chain.first]) {
+              when (val arg = paramToArg[failure.invocation.chain.first] ?: argumentOfAssumedDomain(call, failure.invocation)) {
                 null -> null
                 else -> arg to failure
               }
@@ -270,9 +270,9 @@ abstract class ThreadConstraintDetector<T : Enum<T>>(
     if (issue.id != violationIssue.id) return super.sameMessage(issue, new, old)
     // An unsatisfiable requirement used to be spelled as requiring `@NoThread`
     val reworded = old.replace(LEGACY_NO_THREAD_REQUIREMENT, UNSATISFIABLE_REQUIREMENT)
-    if (stringsEquivalent(reworded, new)) return true
+    if (stringsEquivalent(reworded, new) || sameArgumentMessage(new, reworded)) return true
     val newExpected = CALLBACK_BODY_MESSAGE.find(new)?.groupValues?.get(1) ?: return false
-    return LEGACY_ARGUMENT_MESSAGE.findAll(old).any { stringsEquivalent(it.groupValues[1], newExpected) }
+    return LEGACY_ARGUMENT_MESSAGE.findAll(old).any { sameThread(it.groupValues[1], newExpected) }
   }
 
   override fun resolveAnnotations(
@@ -413,8 +413,10 @@ abstract class ThreadConstraintDetector<T : Enum<T>>(
     /** How [UNSATISFIABLE_REQUIREMENT] read before improvements to b/459895811 */
     private const val LEGACY_NO_THREAD_REQUIREMENT = "is requiring `@NoThread`"
 
-    /** Whole-argument report before improvements to b/459895811. Group 1 is the expected thread. */
-    private val LEGACY_ARGUMENT_MESSAGE = Regex("""Argument (?:at \S+ )?must (?:run|allow calling \S+) from (.+?), but """)
+    /** Whole-call report before improvements to b/459895811, naming a generated argument. Group 1 is the expected thread. */
+    private val LEGACY_ARGUMENT_MESSAGE = Regex("""Argument at \S+ must (?:run|allow calling \S+) from (.+?), but """)
+
+    private fun sameThread(t1: String, t2: String) = t1.replace("`", "") == t2.replace("`", "")
 
     /** Report on statement inside callback passed to an assumed callee. Group 1 is the expected thread. */
     private val CALLBACK_BODY_MESSAGE =

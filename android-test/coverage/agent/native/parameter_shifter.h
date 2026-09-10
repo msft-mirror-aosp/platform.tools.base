@@ -17,6 +17,7 @@
 #ifndef COVERAGE_PARAMETER_SHIFTER_H_
 #define COVERAGE_PARAMETER_SHIFTER_H_
 
+#include <vector>
 #include "slicer/code_ir.h"
 #include "slicer/dex_ir.h"
 #include "tools/base/android-test/coverage/common/log.h"
@@ -45,8 +46,9 @@ class ParameterShifter {
   // shifted slots (reg) back to their expected slots (reg - 1) before the main
   // method body starts, leaving the entire rest of the method's instructions
   // completely pristine.
-  static bool ShiftParameters(ir::EncodedMethod* ir_method,
-                              lir::CodeIr& code_ir, lir::Instruction* position);
+  static bool ShiftParameters(
+      ir::EncodedMethod* ir_method, lir::CodeIr& code_ir,
+      const std::vector<lir::Instruction*>& super_calls);
 };
 
 }  // namespace coverage

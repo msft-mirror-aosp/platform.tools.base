@@ -19,18 +19,19 @@
 
 namespace coverage {
 
-lir::Instruction* ConstructorAnalyzer::FindSuperCallInstruction(
+std::vector<lir::Instruction*> ConstructorAnalyzer::FindSuperCallInstructions(
     lir::CodeIr& code_ir, std::string_view method_name) {
+  std::vector<lir::Instruction*> super_calls;
   // 1. Constrain evaluation strictly to constructors.
   // In Dalvik bytecode, all constructors are compiled under the special method
   // name "<init>".
   if (method_name != "<init>") {
-    return nullptr;
+    return super_calls;
   }
 
   const auto ir_method = code_ir.ir_method;
   if (ir_method->code == nullptr || ir_method->code->ins_count == 0) {
-    return nullptr;
+    return super_calls;
   }
 
   // 2. Identify the uninitialized 'this' reference.
@@ -39,9 +40,6 @@ lir::Instruction* ConstructorAnalyzer::FindSuperCallInstruction(
   // ('this') of any non-static method is mapped to the register index:
   // registers - ins_count.
   dex::u4 this_reg = ir_method->code->registers - ir_method->code->ins_count;
-
-  lir::Instruction* super_call_instr = nullptr;
-  int super_call_count = 0;
 
   // 3. Scan the method body for the parent constructor delegation call.
   // Before an object can be safely initialized, it must call super() or this()
@@ -79,8 +77,7 @@ lir::Instruction* ConstructorAnalyzer::FindSuperCallInstruction(
             }
 
             if (is_super_or_this_call) {
-              super_call_instr = instr;
-              super_call_count++;
+              super_calls.push_back(instr);
             }
           }
         }
@@ -88,19 +85,7 @@ lir::Instruction* ConstructorAnalyzer::FindSuperCallInstruction(
     }
   }
 
-  // 4. Safety Guard for complex/branching constructors.
-  // TODO: Look into possibilities of safely supporting complex, multi-branching
-  // constructors by parsing control flow graphs, or mapping try-catch exception
-  // ranges to avoid VerifyErrors when multiple parent constructor delegations
-  // are present. If the constructor contains multiple parent delegations (due
-  // to complex inline structures, try-catch blocks, or compiler branch
-  // optimizations), it is considered complex and unsafe. We return nullptr so
-  // the instrumenter skips it entirely to avoid potential VerifyErrors.
-  if (super_call_count > 1) {
-    return nullptr;
-  }
-
-  return super_call_instr;
+  return super_calls;
 }
 
 }  // namespace coverage

@@ -116,9 +116,11 @@ internal constructor(
     } else {
       // If the tested variant is an application, we cannot use 'extendsFrom' because that
       // would inherit the 'category=library' attribute and cause a resolution failure.
-      // Instead, we manually carry over the dependencies.
+      // Instead, we manually carry over the compile dependencies, and the runtime dependencies for non-test APKs.
       compileClasspath.dependencies.addAll(testedVariant.variantDependencies.compileClasspath.allDependencies)
-      runtimeClasspath.dependencies.addAll(testedVariant.variantDependencies.runtimeClasspath.allDependencies)
+      if (sourceType != TestSuiteSourceType.TEST_APK) {
+        runtimeClasspath.dependencies.addAll(testedVariant.variantDependencies.runtimeClasspath.allDependencies)
+      }
     }
 
     return TestSuiteSourceClasspath(

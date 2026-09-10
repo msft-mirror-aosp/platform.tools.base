@@ -18,16 +18,17 @@
 #define COVERAGE_CONSTRUCTOR_ANALYZER_H_
 
 #include <string_view>
+#include <vector>
 #include "slicer/code_ir.h"
 
 namespace coverage {
 
 class ConstructorAnalyzer {
  public:
-  // Analyzes the method to locate the super() or this() constructor call
-  // instruction. Returns nullptr if not found or if the method is not a
-  // constructor.
-  static lir::Instruction* FindSuperCallInstruction(
+  // Analyzes the method to locate all super() or this() constructor call
+  // instructions. Returns an empty vector if not found or if the method is not
+  // a constructor.
+  static std::vector<lir::Instruction*> FindSuperCallInstructions(
       lir::CodeIr& code_ir, std::string_view method_name);
 };
 

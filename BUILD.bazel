@@ -150,6 +150,7 @@ AGP_TEST_ARTIFACTS = [
     "//tools/base/lint/cli",  # TODO(b/143864616): Only used for tests
     "//tools/base/lint:tools.lint-api",  # TODO(b/143864616): Only used for tests
     "//tools/base/lint:tools.lint-checks",  # TODO(b/143864616): Only used for tests
+    "//tools/base/preview/screenshot/screenshot-validation-junit-engine",  # Used for preview screenshot testing
     "//tools/base/standalone-render/compose-cli:compose-preview-renderer",  # Used for preview screenshot testing
     "//prebuilts/tools/common/lint-psi/intellij-core",  # TODO(b/143864616): Only used for tests
     "//prebuilts/tools/common/lint-psi/kotlin-compiler",  # TODO(b/143864616): Only used for tests

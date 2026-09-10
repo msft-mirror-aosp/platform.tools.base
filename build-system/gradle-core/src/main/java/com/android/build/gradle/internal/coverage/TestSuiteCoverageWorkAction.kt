@@ -19,7 +19,6 @@ package com.android.build.gradle.internal.coverage
 import com.android.build.gradle.internal.coverage.renderer.CodeCoverageReportOrchestrator
 import com.android.build.gradle.internal.coverage.report.ReportType
 import java.io.File
-import org.gradle.api.GradleException
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.logging.Logging
@@ -43,8 +42,8 @@ interface TestSuiteCoverageWorkParameters : WorkParameters {
 
 abstract class TestSuiteCoverageWorkAction : WorkAction<TestSuiteCoverageWorkParameters> {
   override fun execute() {
+    val logger = Logging.getLogger(TestSuiteCoverageWorkAction::class.java)
     try {
-      val logger = Logging.getLogger(TestSuiteCoverageWorkAction::class.java)
       val jacocoFiles = parameters.coverageFiles.files
       if (jacocoFiles.isNotEmpty()) {
         val xmlReportFileName = "report"
@@ -83,7 +82,7 @@ abstract class TestSuiteCoverageWorkAction : WorkAction<TestSuiteCoverageWorkPar
         }
       }
     } catch (e: Exception) {
-      throw GradleException("Unable to generate coverage report", e)
+      logger.warn("Unable to generate coverage report", e)
     }
   }
 }

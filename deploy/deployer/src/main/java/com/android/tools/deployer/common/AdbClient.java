@@ -22,7 +22,6 @@ import com.android.adblib.DeviceSelector;
 import com.android.adblib.tools.InstallerKt;
 import com.android.adblib.tools.JavaBridge;
 import com.android.annotations.NonNull;
-import com.android.ddmlib.IDevice;
 import com.android.ddmlib.ShellCommandUnresponsiveException;
 import com.android.sdklib.AndroidVersion;
 import com.android.tools.deploy.proto.Deploy;
@@ -72,18 +71,6 @@ public class AdbClient {
         this.deviceHolder = deviceHolder;
         this.logger = logger;
         this.adbSession = Optional.ofNullable(adbSession);
-    }
-
-    @Deprecated
-    public AdbClient(IDevice device, ILogger logger, AdbSession adbSession) {
-        this(
-                new DeviceHolder(
-                        device,
-                        null,
-                        adbSession != null
-                                && DeviceHolder.checkEnableUseConnectedDevice(adbSession)),
-                logger,
-                adbSession);
     }
 
     public static class InstallResult {

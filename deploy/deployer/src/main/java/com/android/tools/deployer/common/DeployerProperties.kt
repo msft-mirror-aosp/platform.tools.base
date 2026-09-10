@@ -15,8 +15,21 @@
  */
 package com.android.tools.deployer.common
 
+import com.android.adblib.AdbSession
 import com.android.adblib.AdbSessionHost
 
 object DeployerProperties {
-  val USE_CONNECTED_DEVICE = AdbSessionHost.BooleanProperty("com.android.tools.deployer.use.connected.device", false)
+  const val USE_CONNECTED_DEVICE_PROPERTY_NAME = "com.android.tools.deployer.use.connected.device"
+  const val USE_CONNECTED_DEVICE_DEFAULT_VALUE = false
+
+  /**
+   * Property controlling whether deployment uses the adblib `ConnectedDevice` abstraction instead of legacy ddmlib `IDevice`.
+   *
+   * Callers should always prefer reading this property via `AdbSession.property(DeployerProperties.USE_CONNECTED_DEVICE)`) or
+   * [AdbSessionHost.getPropertyValue], as the host environment may delegate or override this value (such as via Studio flags).
+   *
+   * [USE_CONNECTED_DEVICE_PROPERTY_NAME] should only be read directly via [System.getProperty] during early runner bootstrapping before an
+   * [AdbSession] or host has been created.
+   */
+  val USE_CONNECTED_DEVICE = AdbSessionHost.BooleanProperty(USE_CONNECTED_DEVICE_PROPERTY_NAME, USE_CONNECTED_DEVICE_DEFAULT_VALUE)
 }

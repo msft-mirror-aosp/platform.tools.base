@@ -6,6 +6,7 @@
 
 namespace coverage {
 
+// TODO(b/556724270): Refactor SyntheticFilter into modular, interface-driven filter sub-classes.
 class SyntheticFilter {
  public:
   // Checks if the given basic block represents a compiler-generated coroutine suspension return check.

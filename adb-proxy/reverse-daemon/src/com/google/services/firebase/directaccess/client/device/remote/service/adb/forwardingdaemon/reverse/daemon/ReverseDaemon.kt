@@ -23,6 +23,7 @@ import android.system.OsConstants
 import android.util.Log
 import com.google.services.firebase.directaccess.client.device.remote.service.adb.forwardingdaemon.reverse.MessageType
 import com.google.services.firebase.directaccess.client.device.remote.service.adb.forwardingdaemon.reverse.StreamDataHeader
+import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 import java.net.ServerSocket
@@ -53,7 +54,7 @@ object ReverseDaemon {
 
   // The ReverseDaemon is designed to write stream data to stdout which is read by the
   // ReverseForwardStream that created it. Writing to stdout is how data leaves the device.
-  private val output = System.out
+  internal var output: OutputStream = System.out
 
   @JvmStatic
   fun main(args: Array<String>) {
@@ -95,6 +96,7 @@ object ReverseDaemon {
     } catch (t: Throwable) {
       Log.e(TAG, "Error running reverse daemon", t)
     }
+    Log.d(TAG, "ReverseDaemon exited")
   }
 
   private class StdinReader(private val acceptor: SocketAcceptor) : Runnable {
@@ -138,7 +140,7 @@ object ReverseDaemon {
     }
   }
 
-  private class SocketReader(
+  internal class SocketReader(
     private val streamId: Int,
     private val input: InputStream,
     val socketOutput: OutputStream,
@@ -155,7 +157,12 @@ object ReverseDaemon {
 
     override fun run() {
       while (true) {
-        val bytesRead = input.read(buffer)
+        val bytesRead =
+          try {
+            input.read(buffer)
+          } catch (e: IOException) {
+            break
+          }
         if (bytesRead == -1) break
 
         synchronized(writeLock) {
@@ -165,6 +172,11 @@ object ReverseDaemon {
       }
 
       synchronized(writeLock) { output.write(StreamDataHeader(MessageType.CLSE, streamId, 0).toByteBuffer().array()) }
+      try {
+        close()
+      } catch (t: Throwable) {
+        Log.w(TAG, "Error closing socket $streamId", t)
+      }
     }
   }
 

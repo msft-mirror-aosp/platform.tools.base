@@ -113,7 +113,7 @@ constructor(
   private val backupSuite: BackupTestSuiteImpl,
   dslServices: DslServices,
   private val dependencyHandler: DependencyHandler,
-) : AgpTestSuiteImpl(backupSuite.name, dslServices, true) {
+) : AgpTestSuiteImpl(backupSuite.name, dslServices, false) {
 
   override val targetVariants: MutableList<String>
     get() = backupSuite.targetVariants
@@ -166,12 +166,20 @@ constructor(
     }
 
     hostJar {
+      val resolvedVersion = backupSuite.backupTestLibraryVersion ?: DEFAULT_BACKUP_VERSION
+      dependencies {
+        implementation.add("androidx.test.backup:backup-host:$resolvedVersion")
+      }
       backupSuite.hostJarHandler = { action -> action(this) }
       backupSuite.hostJarActions.forEach { it(this) }
       backupSuite.hostJarActions.clear()
     }
 
     testApk {
+      val resolvedVersion = backupSuite.backupTestLibraryVersion ?: DEFAULT_BACKUP_VERSION
+      dependencies {
+        implementation.add("androidx.test.backup:backup:$resolvedVersion")
+      }
       backupSuite.testApkHandler = { action -> action(this) }
       backupSuite.testApkActions.forEach { it(this) }
       backupSuite.testApkActions.clear()

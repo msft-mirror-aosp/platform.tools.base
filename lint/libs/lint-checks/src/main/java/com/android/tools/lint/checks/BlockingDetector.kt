@@ -44,6 +44,8 @@ import org.jetbrains.uast.resolveToUElement
 class BlockingDetector : JoinEffectDetector<BlockingDetector.Status>(statusLattice, assumptions) {
   override val mainIssue = ISSUE
 
+  override fun sameMessage(issue: Issue, new: String, old: String): Boolean = sameArgumentMessage(new, old)
+
   override val effectEncoder = Encoder.enum<Status>()
 
   override fun report(context: Context, error: Error<Status>) =
@@ -78,7 +80,7 @@ class BlockingDetector : JoinEffectDetector<BlockingDetector.Status>(statusLatti
           else -> {
             assert(constraints.isNotEmpty())
             val concreteReasons = constraints.mapNotNull { failure ->
-              when (val arg = paramToArg[failure.invocation.chain.first]) {
+              when (val arg = paramToArg[failure.invocation.chain.first] ?: argumentOfAssumedDomain(call, failure.invocation)) {
                 null -> null
                 else -> arg to failure
               }

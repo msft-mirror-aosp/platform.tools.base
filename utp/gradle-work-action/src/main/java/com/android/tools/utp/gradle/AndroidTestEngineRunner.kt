@@ -17,6 +17,7 @@
 package com.android.tools.utp.gradle
 
 import com.android.tools.androidtest.listener.AndroidTestResultListener
+import com.android.tools.androidtest.testengine.config.AndroidTestConfigurationKeys
 import com.android.tools.androidtest.testengine.util.PathSafety
 import com.android.tools.utp.gradle.api.RunUtpWorkParameters
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
@@ -73,7 +74,12 @@ class AndroidTestEngineRunner(
 
     // Run launcher once for all devices
     try {
-      val requestBuilder = LauncherDiscoveryRequestBuilder.request().filters(EngineFilter.includeEngines("android-test-engine"))
+      val requestBuilder =
+        LauncherDiscoveryRequestBuilder.request()
+          .filters(EngineFilter.includeEngines("android-test-engine"))
+          // Enable parallel test reporting so that Android Studio receives test results from multiple
+          // devices concurrently in real time, rather than waiting for each device to finish sequentially.
+          .configurationParameter(AndroidTestConfigurationKeys.PARALLEL_TEST_RESULT_REPORTING, "true")
       for (config in utpRunConfigs) {
         val serial = config.deviceSerialNumber.get()
         val emulatorControlConfig = config.emulatorControlConfig.orNull

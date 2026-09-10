@@ -365,11 +365,12 @@ const TestReportApp = {
     currentView: 'report',
     currentTestCase: null,
     currentStackTraceContext: {},
-    filters: { variants: [], search: '', status: ['passed', 'failed', 'skipped'], testSuite: 'all', modules: [], packages: [], classes: [], testCases: [] },
+    filters: { variants: [], search: '', status: ['passed', 'failed', 'skipped'], testSuite: 'all', modules: [], packages: [], classes: [], testCases: [], targets: [] },
     sort: { by: 'name', order: 'asc' },
     isResizing: false,
     columnWidths: {},
     variants: [],
+    targets: [],
     processedData: null
   },
   elements: {},
@@ -549,6 +550,7 @@ const TestReportApp = {
       pkgChipContainer: document.getElementById('pkg-chip-container'),
       clsChipContainer: document.getElementById('cls-chip-container'),
       tcChipContainer: document.getElementById('tc-chip-container'),
+      tgtChipContainer: document.getElementById('tgt-chip-container'),
 
       moduleFilterBtn: document.getElementById('mod-filter-btn'),
       moduleFilterText: document.getElementById('mod-filter-text'),
@@ -570,6 +572,11 @@ const TestReportApp = {
       tcFilterDropdown: document.getElementById('tc-dropdown'),
       tcFilterList: document.getElementById('tc-filter-list'),
 
+      targetFilterBtn: document.getElementById('tgt-filter-btn'),
+      targetFilterText: document.getElementById('tgt-filter-text'),
+      targetFilterDropdown: document.getElementById('tgt-dropdown'),
+      targetFilterList: document.getElementById('tgt-filter-list'),
+
       addFilterBtn: document.getElementById('add-filter-btn'),
       addFilterDropdown: document.getElementById('add-filter-dropdown'),
       addFilterList: document.getElementById('add-filter-list'),
@@ -590,6 +597,7 @@ const TestReportApp = {
   setupTestResults(rootReport) {
     this.state.variants = rootReport.variants;
     this.state.testSuites = rootReport.testSuites;
+    this.state.targets = rootReport.targets || [];
     this.state.filters.variants = [...rootReport.variants];
 
     // Populate header
@@ -827,6 +835,7 @@ const TestReportApp = {
     if (this.elements.packageFilterBtn) this.elements.packageFilterBtn.addEventListener('click', () => this.toggleDropdown(this.elements.packageFilterDropdown, this.elements.packageFilterBtn));
     if (this.elements.classFilterBtn) this.elements.classFilterBtn.addEventListener('click', () => this.toggleDropdown(this.elements.classFilterDropdown, this.elements.classFilterBtn));
     if (this.elements.tcFilterBtn) this.elements.tcFilterBtn.addEventListener('click', () => this.toggleDropdown(this.elements.tcFilterDropdown, this.elements.tcFilterBtn));
+    if (this.elements.targetFilterBtn) this.elements.targetFilterBtn.addEventListener('click', () => this.toggleDropdown(this.elements.targetFilterDropdown, this.elements.targetFilterBtn));
 
     // Add Filter Logic
     if (this.elements.addFilterBtn) {
@@ -841,7 +850,8 @@ const TestReportApp = {
       'module': { container: this.elements.modChipContainer, dropdown: this.elements.moduleFilterDropdown, btn: this.elements.moduleFilterBtn, stateKey: 'modules' },
       'package': { container: this.elements.pkgChipContainer, dropdown: this.elements.packageFilterDropdown, btn: this.elements.packageFilterBtn, stateKey: 'packages' },
       'class': { container: this.elements.clsChipContainer, dropdown: this.elements.classFilterDropdown, btn: this.elements.classFilterBtn, stateKey: 'classes' },
-      'testCase': { container: this.elements.tcChipContainer, dropdown: this.elements.tcFilterDropdown, btn: this.elements.tcFilterBtn, stateKey: 'testCases' }
+      'testCase': { container: this.elements.tcChipContainer, dropdown: this.elements.tcFilterDropdown, btn: this.elements.tcFilterBtn, stateKey: 'testCases' },
+      'target': { container: this.elements.tgtChipContainer, dropdown: this.elements.targetFilterDropdown, btn: this.elements.targetFilterBtn, stateKey: 'targets' }
     };
 
     if (this.elements.addFilterList) {
@@ -1102,11 +1112,13 @@ const TestReportApp = {
     const totalPackages = this.processedData.modules ? [...new Set(this.processedData.modules.flatMap(m => (m.packages || []).map(p => p.name)))].length : 0;
     const totalClasses = this.processedData.modules ? [...new Set(this.processedData.modules.flatMap(m => (m.packages || []).flatMap(p => (p.classes || []).map(c => c.name))))].length : 0;
     const totalTestCases = this.processedData.modules ? [...new Set(this.processedData.modules.flatMap(m => (m.packages || []).flatMap(p => (p.classes || []).flatMap(c => (c.testCases || []).map(tc => tc.name)))))].length : 0;
+    const totalTargets = this.processedData.targets ? this.processedData.targets.length : 0;
 
     updateChip('module', filters.modules, totalModules, this.elements.moduleFilterText, this.elements.modChipContainer);
     updateChip('package', filters.packages, totalPackages, this.elements.packageFilterText, this.elements.pkgChipContainer);
     updateChip('class', filters.classes, totalClasses, this.elements.classFilterText, this.elements.clsChipContainer);
     updateChip('testCase', filters.testCases, totalTestCases, this.elements.tcFilterText, this.elements.tcChipContainer);
+    updateChip('target', filters.targets, totalTargets, this.elements.targetFilterText, this.elements.tgtChipContainer);
 
     const isStatusVisible = !this.elements.statusChipContainer.classList.contains('hidden');
     if (isStatusVisible) {
@@ -1117,7 +1129,7 @@ const TestReportApp = {
     }
 
     if (this.elements.addFilterBtn) {
-      if (activeChipsCount === 5) { // module, package, class, testCase, status
+      if (activeChipsCount === 6) { // module, package, class, testCase, target, status
         this.elements.addFilterBtn.closest('#add-filter-container').classList.add('hidden');
       } else {
         this.elements.addFilterBtn.closest('#add-filter-container').classList.remove('hidden');
@@ -1158,6 +1170,7 @@ const TestReportApp = {
       { btn: this.elements.packageFilterBtn, dropdown: this.elements.packageFilterDropdown },
       { btn: this.elements.classFilterBtn, dropdown: this.elements.classFilterDropdown },
       { btn: this.elements.tcFilterBtn, dropdown: this.elements.tcFilterDropdown },
+      { btn: this.elements.targetFilterBtn, dropdown: this.elements.targetFilterDropdown },
       { btn: this.elements.addFilterBtn, dropdown: this.elements.addFilterDropdown },
       { btn: this.elements.groupByBtn, dropdown: this.elements.groupByDropdown }
     ];
@@ -1247,19 +1260,20 @@ const TestReportApp = {
     if (this.state.viewMode !== 'flat') return;
 
     if (explicitType) {
-      const viewMap = { 'module': 'modules', 'package': 'packages', 'class': 'classes', 'testCase': 'testCases' };
+      const viewMap = { 'module': 'modules', 'package': 'packages', 'class': 'classes', 'testCase': 'testCases', 'target': 'testCases' };
       if (viewMap[explicitType]) {
         this.state.currentFlatView = viewMap[explicitType];
       }
     } else {
-      const { classes, packages, modules, testCases } = this.state.filters;
+      const { classes, packages, modules, testCases, targets } = this.state.filters;
       const activeChips = [];
+      if (!this.elements.tgtChipContainer.classList.contains('hidden')) activeChips.push('target');
       if (!this.elements.tcChipContainer.classList.contains('hidden')) activeChips.push('testCase');
       if (!this.elements.clsChipContainer.classList.contains('hidden')) activeChips.push('class');
       if (!this.elements.pkgChipContainer.classList.contains('hidden')) activeChips.push('package');
       if (!this.elements.modChipContainer.classList.contains('hidden')) activeChips.push('module');
 
-      if (testCases.length > 0 || activeChips.includes('testCase')) {
+      if (targets.length > 0 || activeChips.includes('target') || testCases.length > 0 || activeChips.includes('testCase')) {
         this.state.currentFlatView = 'testCases';
       } else if (classes.length > 0 || activeChips.includes('class')) {
         this.state.currentFlatView = 'classes';
@@ -1348,7 +1362,8 @@ const TestReportApp = {
       const hasDropdownFilters = this.state.filters.modules.length > 0 ||
         this.state.filters.packages.length > 0 ||
         this.state.filters.classes.length > 0 ||
-        this.state.filters.testCases.length > 0;
+        this.state.filters.testCases.length > 0 ||
+        (this.state.filters.targets && this.state.filters.targets.length > 0);
       const ALL_STATUSES = ['passed', 'failed', 'skipped'];
       const hasStatusFilters = this.state.filters.status.length < ALL_STATUSES.length;
       const hasTestSuiteFilter = this.state.filters.testSuite !== 'all';
@@ -1360,6 +1375,7 @@ const TestReportApp = {
         if (type === 'package' && this.state.filters.packages.length > 0 && !this.state.filters.packages.includes(node.name)) return false;
         if (type === 'class' && this.state.filters.classes.length > 0 && !this.state.filters.classes.includes(node.name)) return false;
         if (type === 'testCase' && this.state.filters.testCases.length > 0 && !this.state.filters.testCases.includes(node.name)) return false;
+        if (type === 'target' && this.state.filters.targets && this.state.filters.targets.length > 0 && !this.state.filters.targets.includes(node.name)) return false;
 
         // Drill-down selection filters (Flat view only)
         if (this.state.viewMode === 'flat') {
@@ -1390,7 +1406,7 @@ const TestReportApp = {
         }
 
         // Test Suite Filter
-        if (hasTestSuiteFilter && type !== 'testCase') {
+        if (hasTestSuiteFilter && type !== 'testCase' && type !== 'target') {
           if (node.testSuiteSummaries) {
             const suiteMatch = node.testSuiteSummaries.find(ts => ts.name === this.state.filters.testSuite);
             if (!suiteMatch) return false;
@@ -1502,11 +1518,13 @@ const TestReportApp = {
     const packageOptions = [...new Set(basePackages.map(p => p.name))].sort().map(name => ({ name, value: name }));
     const classOptions = [...new Set(filteredPackages.flatMap(p => p.classes || []).map(c => c.name))].sort().map(name => ({ name, value: name }));
     const testCaseOptions = [...new Set(filteredClasses.flatMap(c => c.testCases || []).map(tc => tc.name))].sort().map(name => ({ name, value: name }));
+    const targetOptions = (this.processedData.targets || []).map(t => ({ name: t, value: t }));
 
     UIUtils.buildActionDropdown(this.elements.moduleFilterDropdown, moduleOptions, filters.modules, (newArr) => {
       filters.packages = [];
       filters.classes = [];
       filters.testCases = [];
+      filters.targets = [];
       filters.modules = newArr;
       this.handleHeaderFilterChange('module');
       this.updateFilterButtons();
@@ -1517,6 +1535,7 @@ const TestReportApp = {
     UIUtils.buildActionDropdown(this.elements.packageFilterDropdown, packageOptions, filters.packages, (newArr) => {
       filters.classes = [];
       filters.testCases = [];
+      filters.targets = [];
       filters.packages = newArr;
       this.handleHeaderFilterChange('package');
       this.updateFilterButtons();
@@ -1526,6 +1545,7 @@ const TestReportApp = {
 
     UIUtils.buildActionDropdown(this.elements.classFilterDropdown, classOptions, filters.classes, (newArr) => {
       filters.testCases = [];
+      filters.targets = [];
       filters.classes = newArr;
       this.handleHeaderFilterChange('class');
       this.updateFilterButtons();
@@ -1534,8 +1554,17 @@ const TestReportApp = {
     });
 
     UIUtils.buildActionDropdown(this.elements.tcFilterDropdown, testCaseOptions, filters.testCases, (newArr) => {
+      filters.targets = [];
       filters.testCases = newArr;
       this.handleHeaderFilterChange('testCase');
+      this.updateFilterButtons();
+      this.render();
+      Navigation.push();
+    });
+
+    UIUtils.buildActionDropdown(this.elements.targetFilterDropdown, targetOptions, filters.targets, (newArr) => {
+      filters.targets = newArr;
+      this.handleHeaderFilterChange('target');
       this.updateFilterButtons();
       this.render();
       Navigation.push();
@@ -1583,7 +1612,7 @@ const TestReportApp = {
     const variantsToShow = this.state.filters.variants;
     const sortIndicator = (key) => this.state.sort.by === key ? (this.state.sort.order === 'asc' ? '▲' : '▼') : '';
     const getAriaSort = (key) => this.state.sort.by === key ? (this.state.sort.order === 'asc' ? 'ascending' : 'descending') : 'none';
-    let nameHeader = this.state.viewMode === 'tree' ? 'Name' : this.state.currentFlatView.charAt(0).toUpperCase() + this.state.currentFlatView.slice(1);
+    let nameHeader = this.state.viewMode === 'tree' ? 'Name' : (this.state.currentFlatView === 'testCases' ? 'Test Case' : this.state.currentFlatView.charAt(0).toUpperCase() + this.state.currentFlatView.slice(1));
 
     let pathHeader = '';
     let pathSubHeader = '';
@@ -1599,15 +1628,25 @@ const TestReportApp = {
       }
     }
 
+    let targetHeader = '';
+    let targetSubHeader = '';
+    if (this.state.viewMode === 'flat' && this.state.currentFlatView === 'testCases' && !this.hasOnlyDefaultTarget()) {
+      const targetWidth = Math.round(this.state.columnWidths['target'] || 150);
+      targetHeader = `<th scope="col" class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30 col-target">Target<div class="resizer" data-resizer-id="target" tabindex="0" role="separator" aria-label="Resize column" aria-orientation="vertical" aria-valuemin="50" aria-valuemax="1000" aria-valuenow="${targetWidth}"></div></th>`;
+      targetSubHeader = `<th scope="col" class="py-2 px-6 bg-gray-50 z-30 col-target"></th>`;
+    }
+
     const nameWidth = Math.round(this.state.columnWidths['name'] || 400);
     this.elements.tableHeaders.innerHTML = `
             <tr class="border-b border-gray-200">
                 <th scope="col" class="py-4 px-6 text-left font-semibold text-gray-700 sticky-name bg-gray-50 z-30 cursor-pointer" data-sort-by="name" tabindex="0" aria-sort="${getAriaSort('name')}">${nameHeader} ${sortIndicator('name')}<div class="resizer" data-resizer-id="name" tabindex="0" role="separator" aria-label="Resize column" aria-orientation="vertical" aria-valuemin="50" aria-valuemax="1000" aria-valuenow="${nameWidth}"></div></th>
+                ${targetHeader}
                 ${pathHeader}
                 ${variantsToShow.map(v => `<th scope="col" class="py-4 px-4 text-center font-semibold text-gray-700 border-l border-gray-200" colspan="4">${UIUtils.escapeHTML(v)}</th>`).join('')}
             </tr>
             <tr class="border-b border-gray-200">
                 <th scope="col" class="py-2 px-6 sticky-name bg-gray-50 z-30"></th>
+                ${targetSubHeader}
                 ${pathSubHeader}
                 ${variantsToShow.map(v => `<th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600 border-l border-gray-200">Pass</th><th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600">Fail</th><th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600">Skip</th><th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600">Pass Rate</th>`).join('')}
             </tr>`;
@@ -1665,6 +1704,7 @@ const TestReportApp = {
       if (type === 'module') currentContext.moduleName = node.name;
       if (type === 'package') currentContext.packageName = node.name;
       if (type === 'class') currentContext.className = node.name;
+      if (type === 'testCase') currentContext.testCaseName = node.name;
 
       const childType = this.getChildType(type);
       const childKey = this.pluralize(childType);
@@ -1675,8 +1715,14 @@ const TestReportApp = {
       let nameContent = `<span class="font-medium">${UIUtils.escapeHTML(node.name)}</span>`;
       if (type === 'class') {
         nameContent += this.getClassSuiteBadges(node);
-      } else if (type === 'testCase' && this.isTestCaseClickable(node)) {
-        nameContent = `<span class="font-medium text-blue-700 hover-underline cursor-pointer stack-trace-trigger" data-module="${UIUtils.escapeHTML(currentContext.moduleName || '')}" data-package="${UIUtils.escapeHTML(currentContext.packageName || '')}" data-class="${UIUtils.escapeHTML(currentContext.className || '')}" data-test-case="${UIUtils.escapeHTML(node.name || '')}" tabindex="0" role="button" aria-label="View details for ${UIUtils.escapeHTML(node.name)}">${UIUtils.escapeHTML(node.name)}</span>`;
+      } else if (type === 'testCase') {
+        if (this.hasOnlyDefaultTarget() && this.isTestCaseClickable(node)) {
+          nameContent = `<span class="font-medium text-blue-700 hover-underline cursor-pointer stack-trace-trigger" data-module="${UIUtils.escapeHTML(currentContext.moduleName || '')}" data-package="${UIUtils.escapeHTML(currentContext.packageName || '')}" data-class="${UIUtils.escapeHTML(currentContext.className || '')}" data-test-case="${UIUtils.escapeHTML(node.name || '')}" tabindex="0" role="button" aria-label="View details for ${UIUtils.escapeHTML(node.name)}">${UIUtils.escapeHTML(node.name)}</span>`;
+        } else {
+          nameContent = `<span class="font-medium text-gray-800">${UIUtils.escapeHTML(node.name)}</span>`;
+        }
+      } else if (type === 'target' && this.isTestCaseClickable(node)) {
+        nameContent = `<span class="font-medium text-blue-700 hover-underline cursor-pointer stack-trace-trigger" data-module="${UIUtils.escapeHTML(currentContext.moduleName || '')}" data-package="${UIUtils.escapeHTML(currentContext.packageName || '')}" data-class="${UIUtils.escapeHTML(currentContext.className || '')}" data-test-case="${UIUtils.escapeHTML(currentContext.testCaseName || '')}" data-target="${UIUtils.escapeHTML(node.name || '')}" tabindex="0" role="button" aria-label="View details for ${UIUtils.escapeHTML(node.name)}">${UIUtils.escapeHTML(node.name)}</span>`;
       }
 
       const chevron = `<svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="collapsible-arrow ${!hasChildren ? 'invisible' : ''}"><path d="m9 18 6-6-6-6"></path></svg>`;
@@ -1712,7 +1758,36 @@ const TestReportApp = {
       if (view === 'modules') items = data.modules.map(i => ({ ...i, type: 'module' }));
       else if (view === 'packages') items = data.modules.flatMap(m => m.packages.map(i => ({ ...i, parent: m.name, moduleName: m.name, type: 'package' })));
       else if (view === 'classes') items = data.modules.flatMap(m => m.packages.flatMap(p => p.classes.map(i => ({ ...i, parent: p.name, moduleName: m.name, packageName: p.name, type: 'class' }))));
-      else if (view === 'testCases') items = data.modules.flatMap(m => m.packages.flatMap(p => p.classes.flatMap(c => c.testCases.map(i => ({ ...i, parent: c.name, moduleName: m.name, packageName: p.name, className: c.name, type: 'testCase' })))));
+      else if (view === 'testCases') {
+        items = data.modules.flatMap(m =>
+          m.packages.flatMap(p =>
+            p.classes.flatMap(c =>
+              c.testCases.flatMap(tc => {
+                if (tc.targets && tc.targets.length > 0 && !this.hasOnlyDefaultTarget()) {
+                  return tc.targets.map(tgt => ({
+                    ...tc,
+                    parent: c.name,
+                    moduleName: m.name,
+                    packageName: p.name,
+                    className: c.name,
+                    type: 'testCase',
+                    target: tgt
+                  }));
+                } else {
+                  return [{
+                    ...tc,
+                    parent: c.name,
+                    moduleName: m.name,
+                    packageName: p.name,
+                    className: c.name,
+                    type: 'testCase'
+                  }];
+                }
+              })
+            )
+          )
+        );
+      }
     }
 
     this.elements.resultsData.innerHTML = items.map(item => {
@@ -1721,9 +1796,16 @@ const TestReportApp = {
         const suiteBadges = (item.type === 'class') ? this.getClassSuiteBadges(item) : '';
         nameTd = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover-underline cursor-pointer" tabindex="0" role="link" title="${UIUtils.escapeHTML(item.name)}" data-name="${UIUtils.escapeHTML(item.name)}" data-type="${item.type}" data-module-name="${UIUtils.escapeHTML(item.moduleName || '')}" data-package-name="${UIUtils.escapeHTML(item.packageName || '')}" data-interactive="flat">${UIUtils.escapeHTML(item.name)}${suiteBadges}</td>`;
       } else if (this.isTestCaseClickable(item)) {
-        nameTd = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover-underline cursor-pointer stack-trace-trigger" data-module="${UIUtils.escapeHTML(item.moduleName || '')}" data-package="${UIUtils.escapeHTML(item.packageName || '')}" data-class="${UIUtils.escapeHTML(item.className || '')}" data-test-case="${UIUtils.escapeHTML(item.name || '')}" tabindex="0" role="button" aria-label="View details for ${UIUtils.escapeHTML(item.name)}">${UIUtils.escapeHTML(item.name)}</td>`;
+        const targetAttr = item.target ? `data-target="${UIUtils.escapeHTML(item.target.name)}"` : '';
+        nameTd = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover-underline cursor-pointer stack-trace-trigger" data-module="${UIUtils.escapeHTML(item.moduleName || '')}" data-package="${UIUtils.escapeHTML(item.packageName || '')}" data-class="${UIUtils.escapeHTML(item.className || '')}" data-test-case="${UIUtils.escapeHTML(item.name || '')}" ${targetAttr} tabindex="0" role="button" aria-label="View details for ${UIUtils.escapeHTML(item.name)}">${UIUtils.escapeHTML(item.name)}</td>`;
       } else {
         nameTd = `<td class="py-3 px-6 sticky-name font-medium text-gray-800" title="${UIUtils.escapeHTML(item.name)}">${UIUtils.escapeHTML(item.name)}</td>`;
+      }
+
+      let targetCell = '';
+      if (this.state.viewMode === 'flat' && view === 'testCases' && !this.hasOnlyDefaultTarget()) {
+        const targetName = item.target ? item.target.name : '-';
+        targetCell = `<td class="py-3 px-6 text-gray-500 text-sm truncate col-target" title="${UIUtils.escapeHTML(targetName)}">${UIUtils.escapeHTML(targetName)}</td>`;
       }
 
       let pathCell = '';
@@ -1750,11 +1832,13 @@ const TestReportApp = {
       const context = {
         moduleName: item.moduleName,
         packageName: item.packageName,
-        className: item.className
+        className: item.className,
+        targetName: item.target ? item.target.name : undefined
       };
 
       return `<tr class="table-row">
             ${nameTd}
+            ${targetCell}
             ${pathCell}
             ${this._renderStatusCell(item, context)}
         </tr>`;
@@ -1795,9 +1879,9 @@ const TestReportApp = {
   // --- HELPERS ---
 
   getVariantResultForTestCase(testCase, suiteName, variantName) {
-    // For now, use the first target's properties. This works for all non-GMD current use cases out of the box.
-    // Device-specific UI and naming will be added in a subsequent phase (bug b/525671605).
-    const testSuiteResults = (testCase.targets && testCase.targets[0]) ? testCase.targets[0].testSuiteResults : testCase.testSuiteResults;
+    const testSuiteResults = (testCase.target ? testCase.target.testSuiteResults : null) ||
+                            ((testCase.targets && testCase.targets[0]) ? testCase.targets[0].testSuiteResults : null) ||
+                            testCase.testSuiteResults;
     if (!testSuiteResults) return null;
     let suitesToSearch = [];
     if (suiteName === 'all') {
@@ -1821,13 +1905,13 @@ const TestReportApp = {
   },
 
   hasVisibleFailures(node) {
-    if (!node || node.type !== 'testCase') return false;
+    if (!node) return false;
     const activeSuite = this.state.filters.testSuite;
     const activeVariants = this.state.filters.variants;
 
-    // For now, use the first target's properties. This works for all non-GMD current use cases out of the box.
-    // Device-specific UI and naming will be added in a subsequent phase (see bug b/525671605).
-    const commonStackTraces = (node.targets && node.targets[0]) ? node.targets[0].commonStackTraces : node.commonStackTraces;
+    const targetNode = node.type === 'target' ? node : (node.target ? node.target : ((node.targets && node.targets[0]) ? node.targets[0] : null));
+    const commonStackTraces = targetNode ? targetNode.commonStackTraces : (node.commonStackTraces || []);
+
     return (commonStackTraces || []).some(group => {
       for (const [suite, variants] of Object.entries(group.occurrences)) {
         if (activeSuite !== 'all' && suite !== activeSuite) continue;
@@ -1848,7 +1932,7 @@ const TestReportApp = {
     if (!node) return '';
     if (node._suiteBadges !== undefined) return node._suiteBadges;
 
-    const summaries = (node.targets && node.targets[0]) ? node.targets[0].testSuiteSummaries : node.testSuiteSummaries;
+    const summaries = node.target ? node.target.testSuiteSummaries : ((node.targets && node.targets[0]) ? node.targets[0].testSuiteSummaries : node.testSuiteSummaries);
     if (!summaries || summaries.length === 0) {
       node._suiteBadges = '';
       return '';
@@ -1878,9 +1962,7 @@ const TestReportApp = {
 
     const suiteFilter = this.state.filters.testSuite;
 
-    // For now, use the first target's properties. This works for all non-GMD current use cases out of the box.
-    // Device-specific UI and naming will be added in a subsequent phase (see bug b/525671605).
-    const testSuiteSummaries = (node.targets && node.targets[0]) ? node.targets[0].testSuiteSummaries : node.testSuiteSummaries;
+    const testSuiteSummaries = node.target ? node.target.testSuiteSummaries : ((node.targets && node.targets[0]) ? node.targets[0].testSuiteSummaries : node.testSuiteSummaries);
 
     return `${variantsToShow.map(v => {
       let variantSummary = null;
@@ -1921,7 +2003,7 @@ const TestReportApp = {
   },
 
   openStackTrace(element) {
-    const { module, package: pkg, class: clz, testCase: tcName } = element.dataset;
+    const { module, package: pkg, class: clz, testCase: tcName, target: tgtName } = element.dataset;
     if (!tcName) return;
 
     let res = null;
@@ -1960,13 +2042,18 @@ const TestReportApp = {
 
     if (res) {
       this.activeTrigger = element;
+      const testCaseClone = { ...res.testCase };
+      if (tgtName && testCaseClone.targets) {
+        testCaseClone.target = testCaseClone.targets.find(t => t.name === tgtName);
+      }
       const context = {
         moduleName: module || res.moduleName,
         packageName: pkg || res.packageName,
         className: clz || res.className,
-        testCaseName: tcName
+        testCaseName: tcName,
+        targetName: tgtName
       };
-      this.showStackTraceView(res.testCase, context);
+      this.showStackTraceView(testCaseClone, context);
       Navigation.push();
     }
   },
@@ -2007,7 +2094,7 @@ const TestReportApp = {
 
     // For now, use the first target's properties. This works for all non-GMD current use cases out of the box.
     // Device-specific UI and naming will be added in a subsequent phase (see bug b/525671605).
-    const commonStackTraces = (testCase.targets && testCase.targets[0]) ? testCase.targets[0].commonStackTraces : testCase.commonStackTraces;
+    const commonStackTraces = testCase.target ? testCase.target.commonStackTraces : (((testCase.targets && testCase.targets[0]) ? testCase.targets[0].commonStackTraces : testCase.commonStackTraces));
 
     // Filter groups and their internal occurrences based on active filters
     const filteredGroups = (commonStackTraces || []).map(group => {
@@ -2096,7 +2183,7 @@ const TestReportApp = {
 
   getScreenshotData(testCase) {
     const items = [];
-    const targets = testCase.targets || [testCase];
+    const targets = testCase.target ? [testCase.target] : (testCase.targets || [testCase]);
 
     targets.forEach(target => {
       const results = target.testSuiteResults || [];
@@ -2239,7 +2326,7 @@ const TestReportApp = {
 
   getTestCaseOverallStatus(testCase) {
     if (!testCase) return 'pass';
-    const targets = testCase.targets || [testCase];
+    const targets = testCase.target ? [testCase.target] : (testCase.targets || [testCase]);
     let hasFail = false;
     let hasPass = false;
 
@@ -2828,22 +2915,38 @@ const TestReportApp = {
             <a href="#" class="breadcrumb-link" data-action="${BREADCRUMB_ACTIONS.GO_TO_TEST_CASES}" data-module-name="${UIUtils.escapeHTML(moduleName)}" data-package-name="${UIUtils.escapeHTML(packageName)}" data-class-name="${UIUtils.escapeHTML(className)}" aria-label="Go back to class: ${UIUtils.escapeHTML(className)}">${UIUtils.escapeHTML(className)}</a>`;
     }
     if (testCaseName) {
-      html += `
+      if (context.targetName) {
+        html += `
+            <span class="breadcrumb-separator" aria-hidden="true">/</span>
+            <span class="text-gray-600">${UIUtils.escapeHTML(testCaseName)}</span>
+            <span class="breadcrumb-separator" aria-hidden="true">/</span>
+            <span class="font-semibold text-gray-800">${UIUtils.escapeHTML(context.targetName)}</span>`;
+      } else {
+        html += `
             <span class="breadcrumb-separator" aria-hidden="true">/</span>
             <span class="font-semibold text-gray-800">${UIUtils.escapeHTML(testCaseName)}</span>`;
+      }
     }
     html += `</div>`;
 
     this.elements.stackTraceBreadcrumbs.innerHTML = html;
   },
 
+  hasOnlyDefaultTarget() {
+    const targets = this.state.targets || [];
+    return targets.length === 0 || (targets.length === 1 && (targets[0] === 'unknown_target' || targets[0] === 'default' || targets[0] === ''));
+  },
+
   getChildType(parentType) {
-    const hierarchy = { 'root': 'module', 'module': 'package', 'package': 'class', 'class': 'testCase', 'testCase': null };
+    if (parentType === 'testCase' && this.hasOnlyDefaultTarget()) {
+      return null;
+    }
+    const hierarchy = { 'root': 'module', 'module': 'package', 'package': 'class', 'class': 'testCase', 'testCase': 'target', 'target': null };
     return hierarchy[parentType];
   },
 
   pluralize(type) {
-    const pluralMap = { 'module': 'modules', 'package': 'packages', 'class': 'classes', 'testCase': 'testCases' };
+    const pluralMap = { 'module': 'modules', 'package': 'packages', 'class': 'classes', 'testCase': 'testCases', 'target': 'targets' };
     return pluralMap[type];
   }
 };
@@ -2880,7 +2983,8 @@ const Navigation = {
       module: !TestReportApp.elements.modChipContainer.classList.contains('hidden'),
       package: !TestReportApp.elements.pkgChipContainer.classList.contains('hidden'),
       class: !TestReportApp.elements.clsChipContainer.classList.contains('hidden'),
-      testCase: !TestReportApp.elements.tcChipContainer.classList.contains('hidden')
+      testCase: !TestReportApp.elements.tcChipContainer.classList.contains('hidden'),
+      target: !TestReportApp.elements.tgtChipContainer.classList.contains('hidden')
     };
 
     return state;
@@ -2967,6 +3071,9 @@ const Navigation = {
       TestReportApp.elements.pkgChipContainer.classList.toggle('hidden', !state.chipVisibility.package);
       TestReportApp.elements.clsChipContainer.classList.toggle('hidden', !state.chipVisibility.class);
       TestReportApp.elements.tcChipContainer.classList.toggle('hidden', !state.chipVisibility.testCase);
+      if (TestReportApp.elements.tgtChipContainer) {
+        TestReportApp.elements.tgtChipContainer.classList.toggle('hidden', !state.chipVisibility.target);
+      }
     }
 
     // Rebuild static dropdowns to reflect restored state (test suite, variants, status)

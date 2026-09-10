@@ -20,6 +20,8 @@ import com.android.tools.lint.checks.infrastructure.TestFiles.java
 import com.android.tools.lint.checks.infrastructure.TestFiles.kt
 import com.android.tools.lint.checks.infrastructure.TestFiles.xml
 import com.android.tools.lint.checks.infrastructure.TestLintTask
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Ignore
 import org.junit.Test
 
@@ -414,9 +416,9 @@ src/test/pkg/Test.java:79: Error: Call must be from @{Slow,WorkerThread}, but th
 src/test/pkg/Test.java:81: Error: Call must be from @{Slow,WorkerThread}, but the work passed to invokeLater is expected to run from @UiThread [WrongThread]
             workerMethod(); // WARN14
             ~~~~~~~~~~~~~~
-src/test/pkg/Test.java:86: Error: Argument at x₀ must allow calling run() from @UiThread, but that call is requiring @{Slow,WorkerThread}. [WrongThread]
+src/test/pkg/Test.java:86: Error: Argument must allow calling run() from @UiThread, but that call is requiring @{Slow,WorkerThread} [WrongThread]
         new Application().invokeLater(this::slowMethod); // WARN15
-                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                                      ~~~~~~~~~~~~~~~~
 src/test/pkg/Test.java:88: Error: Call must be from @UiThread, but a super method is allowing @{Slow,WorkerThread} [WrongThread]
         new Application().runOnPooledThread(this::uiMethod); // WARN16
                                             ~~~~~~~~~~~~~~
@@ -873,9 +875,9 @@ src/test/pkg/Test.java:118: Error: Call must be from @{Slow,WorkerThread}, but a
         src/test/pkg/Test.java:12: Error: Call must be from @{Slow,WorkerThread}, but the work passed to invokeLater is expected to run from @UiThread [WrongThread]
                     slow(); // WARN: pinpointed against the lambda's @UiThread requirement
                     ~~~~~~
-        src/test/pkg/Test.java:22: Error: Argument at x₀ must allow calling run() from @UiThread, but that call is requiring @{Slow,WorkerThread}. [WrongThread]
+        src/test/pkg/Test.java:22: Error: Argument must allow calling run() from @UiThread, but that call is requiring @{Slow,WorkerThread} [WrongThread]
                 app.invokeLater(Test::slow); // WARN: whole-argument report
-                    ~~~~~~~~~~~~~~~~~~~~~~~
+                                ~~~~~~~~~~
         src/test/pkg/Test.java:26: Error: Call must be from @{Slow,WorkerThread}, but the work passed to invokeLater is expected to run from @UiThread [WrongThread]
                         slow(); // WARN: pinpointed like in a lambda body
                         ~~~~~~
@@ -886,6 +888,15 @@ src/test/pkg/Test.java:118: Error: Call must be from @{Slow,WorkerThread}, but a
         """
           .trimIndent()
       )
+  }
+
+  @Test
+  fun `test legacy baseline matching is limited to the violation issue`() {
+    val detector = IntellijInferredThreadDetector()
+    val pinpointed = "Call must be from `@{Slow,WorkerThread}`, but the work passed to `invokeLater` is expected to run from `@UiThread`"
+    val legacy = "Argument at `x₀` must allow calling `run()` from `@UiThread`, but that call is requiring `@{Slow,WorkerThread}`."
+    assertTrue(detector.sameMessage(IntellijInferredThreadDetector.THREAD, pinpointed, legacy))
+    assertFalse(detector.sameMessage(IntellijInferredThreadDetector.UNSATISFIABLE_CONSTRAINT, pinpointed, legacy))
   }
 
   @Test
@@ -921,6 +932,10 @@ src/test/pkg/Test.java:118: Error: Call must be from @{Slow,WorkerThread}, but a
 
                         static void pooled(Application app) {
                             app.executeOnPooledThread(() -> ui()); // WARN: baselined on the whole call
+                        }
+
+                        static void methodReference(Application app) {
+                            app.invokeLater(Test::slow); // WARN: baselined on the whole call
                         }
                     }
                 """
@@ -970,6 +985,15 @@ src/test/pkg/Test.java:118: Error: Call must be from @{Slow,WorkerThread}, but a
                   <location
                       file="src/test/pkg/Test.java"
                       line="24"/>
+              </issue>
+              <issue
+                  id="WrongThread"
+                  message="Argument at `x₀` must allow calling `run()` from @UiThread, but that call is requiring @{Slow,WorkerThread}."
+                  errorLine1="        app.invokeLater(Test::slow); // WARN: baselined on the whole call"
+                  errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~">
+                  <location
+                      file="src/test/pkg/Test.java"
+                      line="28"/>
               </issue>
           </issues>
           """,

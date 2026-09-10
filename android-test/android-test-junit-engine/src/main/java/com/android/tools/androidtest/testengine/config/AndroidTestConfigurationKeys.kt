@@ -104,4 +104,7 @@ object AndroidTestConfigurationKeys {
 
   /** Whether emulator control is enabled. */
   const val EMULATOR_CONTROL_ENABLED = "android-test.emulator-control-enabled"
+
+  /** Whether parallel test result reporting is enabled. */
+  const val PARALLEL_TEST_RESULT_REPORTING = "android-test.parallel-test-result-reporting"
 }

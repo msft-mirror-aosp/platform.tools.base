@@ -51,7 +51,7 @@ class Renderer(
   val project: Project,
   val module: StandaloneRenderModelModule,
   private val renderService: RenderService,
-  private val baseConfiguration: Configuration,
+  val baseConfiguration: Configuration,
   private val moduleClassLoaderManager: StandaloneModuleClassLoaderManager,
 ) : Closeable {
   private val logger = Logger.getLogger(Renderer::class.java.name)

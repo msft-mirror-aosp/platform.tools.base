@@ -143,7 +143,7 @@ public final class RemoteSystemImage implements ISystemImage {
     public String toString() {
         Archive archive = remotePackage.getArchive();
 
-        if (archive == null) {
+        if (archive == null || archive.getComplete() == null) {
             return remotePackage.getDisplayName();
         }
 

@@ -46,6 +46,7 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
@@ -89,15 +90,19 @@ class AndroidDeviceDescriptorTest {
   }
 
   @Test
-  fun `instrumentationStarted reports device info path`() {
+  fun `instrumentationStarted reports device info path when executing`() {
     val uniqueId = UniqueId.forEngine("android-test-engine").append("device", deviceSerial)
     val descriptor = AndroidDeviceDescriptor(uniqueId, deviceSerial)
     val context = AndroidTestExecutionContext(executionRequest)
     val deviceInfoFile = File(resultsDir, "device-info.pb")
 
-    val listener = descriptor.Listener(context, null, null, deviceInfoFile, null)
+    val listener = descriptor.Listener(deviceInfoFile = deviceInfoFile)
 
     listener.instrumentationStarted(1)
+    listener.finish()
+
+    val dynamicTestExecutor = mock<Node.DynamicTestExecutor>()
+    descriptor.execute(context, dynamicTestExecutor)
 
     val reportEntryCaptor = argumentCaptor<ReportEntry>()
     verify(engineExecutionListener, atLeastOnce()).reportingEntryPublished(eq(descriptor), reportEntryCaptor.capture())
@@ -108,17 +113,49 @@ class AndroidDeviceDescriptorTest {
   }
 
   @Test
-  fun `testStarted calls dynamicTestRegistered`() {
+  fun `instrumentationStarted queues report entries without calling reportingEntryPublished immediately`() {
+    val uniqueId = UniqueId.forEngine("android-test-engine").append("device", deviceSerial)
+    val descriptor = AndroidDeviceDescriptor(uniqueId, deviceSerial)
+    val context = AndroidTestExecutionContext(executionRequest)
+
+    val listener = descriptor.Listener()
+
+    listener.instrumentationStarted(1)
+
+    verify(engineExecutionListener, never()).reportingEntryPublished(any(), any())
+  }
+
+  @Test
+  fun `testStarted queues test without calling dynamicTestRegistered immediately`() {
     val uniqueId = UniqueId.forEngine("android-test-engine").append("device", deviceSerial)
     val descriptor = AndroidDeviceDescriptor(uniqueId, deviceSerial)
     val context = AndroidTestExecutionContext(executionRequest)
 
     val testIdentifier = TestIdentifier("pkg", "Cls", "meth")
-    val listener = descriptor.Listener(context, null, null, null, null)
+    val listener = descriptor.Listener()
 
     listener.testStarted(testIdentifier)
 
+    verify(engineExecutionListener, never()).dynamicTestRegistered(any())
+  }
+
+  @Test
+  fun `execute registers dynamic tests from queue`() {
+    val uniqueId = UniqueId.forEngine("android-test-engine").append("device", deviceSerial)
+    val descriptor = AndroidDeviceDescriptor(uniqueId, deviceSerial)
+    val context = AndroidTestExecutionContext(executionRequest)
+
+    val testIdentifier = TestIdentifier("pkg", "Cls", "meth")
+    val listener = descriptor.Listener()
+
+    listener.testStarted(testIdentifier)
+    listener.finish()
+
+    val dynamicTestExecutor = mock<Node.DynamicTestExecutor>()
+    descriptor.execute(context, dynamicTestExecutor)
+
     verify(engineExecutionListener).dynamicTestRegistered(any())
+    verify(dynamicTestExecutor).execute(any())
   }
 
   @Mock private lateinit var mockDynamicTestExecutor: Node.DynamicTestExecutor
@@ -126,7 +163,7 @@ class AndroidDeviceDescriptorTest {
   @Mock private lateinit var mockAmInstrumentationRunner: AmInstrumentationRunner
 
   @Test
-  fun execute_withEmulatorControlEnabled_injectsGrpcPortAndToken() {
+  fun startRunner_withEmulatorControlEnabled_injectsGrpcPortAndToken() {
     val uniqueId = UniqueId.forEngine("android-test-engine").append("device", deviceSerial)
 
     whenever(configurationParameters.get("android-test.emulator-control-enabled[$deviceSerial]")).thenReturn(java.util.Optional.of("true"))
@@ -152,11 +189,11 @@ class AndroidDeviceDescriptorTest {
       )
 
     val context = AndroidTestExecutionContext(executionRequest)
-    descriptor.execute(context, mockDynamicTestExecutor)
+    descriptor.startRunner(context)
   }
 
   @Test
-  fun execute_withEmulatorControlDisabled_doesNotInjectGrpcPortAndToken() {
+  fun startRunner_withEmulatorControlDisabled_doesNotInjectGrpcPortAndToken() {
     val uniqueId = UniqueId.forEngine("android-test-engine").append("device", deviceSerial)
 
     whenever(configurationParameters.get("android-test.emulator-control-enabled[$deviceSerial]")).thenReturn(java.util.Optional.of("false"))
@@ -175,11 +212,11 @@ class AndroidDeviceDescriptorTest {
       )
 
     val context = AndroidTestExecutionContext(executionRequest)
-    descriptor.execute(context, mockDynamicTestExecutor)
+    descriptor.startRunner(context)
   }
 
   @Test
-  fun `testEnded reports benchmark trace paths and message path`() {
+  fun `testEnded buffers report entries which are published during test execution`() {
     val uniqueId = UniqueId.forEngine("android-test-engine").append("device", deviceSerial)
     val descriptor = AndroidDeviceDescriptor(uniqueId, deviceSerial)
     val context = AndroidTestExecutionContext(executionRequest)
@@ -193,13 +230,18 @@ class AndroidDeviceDescriptorTest {
     val messageFile = File("/path/to/message.txt")
     whenever(additionalTestOutputCollector.addBenchmarkOutput(mockTestResult)).thenReturn(BenchmarkOutput(traceFiles, messageFile))
 
-    val listener = descriptor.Listener(context, null, null, null, additionalTestOutputCollector)
+    val listener = descriptor.Listener(additionalTestOutputCollector = additionalTestOutputCollector)
 
-    // We need to call testStarted to register the test descriptor,
-    // so that testEnded can find it and publish the report entry.
     listener.testStarted(testIdentifier)
-
     listener.testEnded(mockTestResult)
+    listener.finish()
+
+    val dynamicTestExecutor = mock<Node.DynamicTestExecutor>()
+    descriptor.execute(context, dynamicTestExecutor)
+
+    val captor = argumentCaptor<AndroidDynamicTestDescriptor>()
+    verify(dynamicTestExecutor).execute(captor.capture())
+    captor.firstValue.execute(context, dynamicTestExecutor)
 
     val reportEntryCaptor = argumentCaptor<ReportEntry>()
     verify(engineExecutionListener, atLeastOnce()).reportingEntryPublished(any(), reportEntryCaptor.capture())

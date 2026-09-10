@@ -121,7 +121,7 @@ fun runUtpTestSuiteAndWait(
         fork.systemProperty("android-test.execution-mode", "ANDROIDX_TEST_ORCHESTRATOR")
       }
       fork.systemProperty("android-test.animations-disabled", firstConfig.testData.get().animationsDisabled.toString())
-      fork.systemProperty("android-test.instrument-in-pcc", firstConfig.privateComputeCoreInstrumentationEnabled)
+      fork.systemProperty("android-test.instrument-in-pcc", firstConfig.privateComputeCoreInstrumentationEnabled.get().toString())
       if (firstConfig.additionalTestOutputOnDeviceDir.isPresent) {
         fork.systemProperty("android-test.additional-test-output-dir-on-device", firstConfig.additionalTestOutputOnDeviceDir.get())
       }

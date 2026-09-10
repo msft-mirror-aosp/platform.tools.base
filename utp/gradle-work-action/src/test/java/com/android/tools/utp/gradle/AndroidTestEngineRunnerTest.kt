@@ -16,6 +16,7 @@
 
 package com.android.tools.utp.gradle
 
+import com.android.tools.androidtest.testengine.config.AndroidTestConfigurationKeys
 import com.android.tools.utp.gradle.api.EmulatorControlConfig
 import com.android.tools.utp.gradle.api.RunUtpWorkParameters
 import com.android.tools.utp.gradle.api.RunUtpWorkParameters.UtpRunConfig
@@ -35,6 +36,7 @@ import org.gradle.api.provider.Property
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.platform.launcher.LauncherDiscoveryRequest
 import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
@@ -385,5 +387,43 @@ class AndroidTestEngineRunnerTest {
     assertThat(mergedResultFile.exists()).isTrue()
     assertThat(targetResultFile.exists()).isTrue()
     assertThat(localUtpResultFile.exists()).isFalse()
+  }
+
+  @Test
+  fun execute_enablesParallelTestResultReporting() {
+    val parameters = mock<RunUtpWorkParameters>()
+    val config = mock<UtpRunConfig>()
+    val xmlReportDir = temporaryFolder.newFolder("xml-report")
+    val outputDir = temporaryFolder.newFolder("output")
+
+    val deviceDir = File(xmlReportDir, "device1").also { it.mkdirs() }
+    val localUtpResultFile = File(deviceDir, "test-result.pb")
+    val dummyResult = TestSuiteResult.newBuilder().build()
+    localUtpResultFile.outputStream().use { dummyResult.writeTo(it) }
+
+    val targetResultFile = File(outputDir, "test-result.pb")
+    configureMockConfig(config, "device1", "serial1", outputDir, targetResultFile)
+
+    val xmlReportDirProp = mockDirectoryProperty(xmlReportDir)
+    val adbProp = mockRegularFileProperty(File("adb"))
+    val aaptProp = mockRegularFileProperty(File("aapt2"))
+    val runConfigsProp = mockListProperty(listOf(config))
+
+    whenever(parameters.adbExecutable).thenReturn(adbProp)
+    whenever(parameters.aaptExecutable).thenReturn(aaptProp)
+    whenever(parameters.utpRunConfigs).thenReturn(runConfigsProp)
+    whenever(parameters.xmlTestReportOutputDirectory).thenReturn(xmlReportDirProp)
+
+    var capturedRequest: LauncherDiscoveryRequest? = null
+    val runner = AndroidTestEngineRunner { request, _ ->
+      capturedRequest = request
+      mapOf("serial1" to true)
+    }
+
+    runner.execute(parameters, emptyList(), mergedResultFile, exitCodeFile)
+
+    assertThat(capturedRequest).isNotNull()
+    assertThat(capturedRequest!!.configurationParameters.get(AndroidTestConfigurationKeys.PARALLEL_TEST_RESULT_REPORTING).orElse(null))
+      .isEqualTo("true")
   }
 }

@@ -24,10 +24,12 @@ import com.android.io.StreamException
 import com.android.prefs.AndroidLocationsException
 import com.android.repository.api.ConsoleProgressIndicator
 import com.android.repository.api.ProgressIndicator
+import com.android.repository.api.RepoPackage
 import com.android.repository.io.FileOpUtils
 import com.android.sdklib.AndroidVersion
 import com.android.sdklib.ISystemImage
 import com.android.sdklib.PathFileWrapper
+import com.android.sdklib.RemoteSystemImage
 import com.android.sdklib.SystemImageTags
 import com.android.sdklib.devices.Abi
 import com.android.sdklib.devices.Device
@@ -69,6 +71,7 @@ import java.util.regex.Matcher
 import java.util.regex.Pattern
 import java.util.stream.Collectors.toList
 import kotlin.io.path.deleteIfExists
+import kotlin.io.path.name
 
 /**
  * Android Virtual Device Manager to manage AVDs.
@@ -301,6 +304,8 @@ private constructor(
     require(avdInfo.name != builder.avdName) { "Old and new name are the same" }
     require(avdInfo.dataFolderPath != builder.avdFolder) { "Old and new path are the same" }
     checkNotNull(builder.systemImage) { "systemImage is required" }
+
+    builder.userSettings.keys.removeAll { it.startsWith("paired.glasses") || it.startsWith("paired.phone") }
 
     duplicateAvd(avdInfo.dataFolderPath, builder.avdFolder, builder.avdName, builder.systemImage!!)
 
@@ -571,14 +576,20 @@ private constructor(
         avdFolder,
         destAvdFolder,
         false,
-        { path -> !path.fileName.endsWith(".lock") }, // Do not copy *.lock files
+        { path ->
+          !path.name.endsWith(".lock", ignoreCase = true) && !path.name.equals(NETSIM_INI, ignoreCase = true)
+        },
         progInd,
       )
 
       // Modify the ID and display name in the new config.ini
       val configIni: Path = destAvdFolder.resolve(CONFIG_INI)
       var configVals = parseIniFile(PathFileWrapper(configIni), log) ?: mutableMapOf()
-      val userSettingsVals = parseUserSettingsFile(destAvdFolder, log)
+      val userSettingsVals = parseUserSettingsFile(destAvdFolder, log).toMutableMap()
+      if (userSettingsVals.keys.any { it.startsWith("paired.glasses") || it.startsWith("paired.phone") }) {
+        userSettingsVals.keys.removeAll { it.startsWith("paired.glasses") || it.startsWith("paired.phone") }
+        writeIniFile(destAvdFolder.resolve(USER_SETTINGS_INI), userSettingsVals, true)
+      }
       configVals[ConfigKey.AVD_ID] = newAvdName
       configVals[ConfigKey.DISPLAY_NAME] = newAvdName
       writeIniFile(configIni, configVals, true)
@@ -650,6 +661,15 @@ private constructor(
    */
   @Throws(AvdManagerException::class)
   private fun getImageRelativePath(systemImage: ISystemImage): String {
+    if (systemImage is RemoteSystemImage) {
+      val separator = this.sdkLocation.fileSystem.separator
+      var relPath = systemImage.`package`.path.replace(RepoPackage.PATH_SEPARATOR.toString(), separator)
+      if (!relPath.endsWith(separator)) {
+        relPath += separator
+      }
+      return relPath
+    }
+
     val folder = systemImage.location
     var imageFullPath = folder.toAbsolutePath().toString()
 
@@ -1189,6 +1209,9 @@ private constructor(
    */
   @Throws(IOException::class, AvdManagerException::class)
   private fun createAvdUserdata(systemImage: ISystemImage, avdFolder: Path) {
+    if (systemImage is RemoteSystemImage) {
+      return
+    }
     // Copy userdata.img from system-images to the *.avd directory
     val imageFolder = systemImage.location
     val userdataSrc: Path = imageFolder.resolve(USERDATA_IMG)
@@ -1335,6 +1358,9 @@ private constructor(
    * @param values mutable Map to add the values to
    */
   private fun addSystemImageHardwareConfig(systemImage: ISystemImage, values: MutableMap<String, String>) {
+    if (systemImage is RemoteSystemImage) {
+      return
+    }
     val sysImgHardwareFile = PathFileWrapper(systemImage.location.resolve(HARDWARE_INI))
     if (sysImgHardwareFile.exists()) {
       ProjectProperties.parsePropertyFile(sysImgHardwareFile, log)?.let { values.putAll(it) }
@@ -1364,14 +1390,15 @@ private constructor(
   ): AvdInfo {
     // create the AvdInfo object, and add it to the list
 
+    val isRemote = systemImage is RemoteSystemImage
     val theAvdInfo =
       AvdInfo(
         iniFile = metadataIniFile,
         dataFolderPath = avdFolder,
-        systemImage = systemImage,
+        systemImage = if (isRemote) null else systemImage,
         properties = values,
         userSettings = userSettings,
-        status = AvdStatus.OK,
+        status = if (isRemote) AvdStatus.ERROR_IMAGE_MISSING else AvdStatus.OK,
       )
 
     synchronized(allAvdList) {
@@ -1397,6 +1424,7 @@ private constructor(
     const val USERDATA_QEMU_IMG: String = "userdata-qemu.img"
     const val SNAPSHOTS_DIRECTORY: String = "snapshots"
     const val USER_SETTINGS_INI: String = "user-settings.ini" // $NON-NLS-1$
+    const val NETSIM_INI: String = "netsim.ini"
 
     private const val BOOT_PROP = "boot.prop"
     const val ENVIRONMENTS_DIR = "environments"

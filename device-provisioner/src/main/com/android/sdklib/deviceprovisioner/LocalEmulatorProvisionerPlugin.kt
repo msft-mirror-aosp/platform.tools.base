@@ -383,7 +383,7 @@ class LocalEmulatorDeviceHandle(
                 LocalEmulatorProperties.build(activeAvdInfo) {
                   readCommonProperties(newProperties)
                   populateDeviceInfoProto(PLUGIN_ID, connectedDevice.serialNumber, newProperties, randomConnectionId())
-                  deviceType = activeAvdInfo.toDeviceType()
+                  deviceType = activeAvdInfo.deviceType()
                   density = newProperties[DevicePropertyNames.QEMU_SF_LCD_DENSITY]?.toIntOrNull()
                   resolution = message.resolution
                   disambiguator = emulatorConsolePort.toString()
@@ -709,7 +709,7 @@ data class LocalEmulatorProperties(
       avdName = avdInfo.name
       avdPath = avdInfo.dataFolderPath
       displayName = avdInfo.displayName
-      deviceType = avdInfo.toDeviceType()
+      deviceType = avdInfo.deviceType()
       hasPlayStore = avdInfo.hasPlayStore()
       wearPairingId = avdInfo.id.takeIf { isPairable() }
       pairedPhoneId = avdInfo.userSettings["${UserSettingsKey.PAIRED_PHONE_AVD_ID_PREFIX}1"]?.let { DeviceId.fromString(it) }
@@ -834,7 +834,7 @@ internal fun AvdInfo.updateInsignificantProperties(newInfo: AvdInfo): AvdInfo {
   return this
 }
 
-private fun AvdInfo.toDeviceType(): DeviceType {
+fun AvdInfo.deviceType(): DeviceType {
   val tags = tags
   return when {
     SystemImageTags.isTvImage(tags) -> DeviceType.TV

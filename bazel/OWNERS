@@ -1,9 +1,9 @@
 # Bug component: 1507221
+include tools/vendor/adt_infra_internal:/OWNERS
+
 estebandlc@google.com
 gharrma@google.com
-ruiqimao@google.com
 vsiva@google.com
-zachyu@google.com
 cmw@google.com # (London timezone)
 emrekultursay@google.com  # for maven
 xav@google.com # for maven

@@ -59,6 +59,7 @@ kotlin_test(
     deps = [
         ":gradle-work-action",
         "//tools/base/android-test/android-test-engine-result-listener",
+        "//tools/base/android-test/android-test-junit-engine:android-test-engine",
         "//tools/base/android-test/test-result-proto",
         "//tools/base/build-system:gradle-api",
         "//tools/base/build-system/builder",

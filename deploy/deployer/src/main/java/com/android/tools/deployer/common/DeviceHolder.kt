@@ -68,14 +68,11 @@ class DeviceHolder
 constructor(
   private val iDevice: IDevice,
   /**
-   * The resolved [ConnectedDevice] from the [AdbSession] when adblib migration is enabled.
+   * The resolved [ConnectedDevice] from the [AdbSession] corresponding to the IDevice.
    *
-   * The nullability of this [Optional] reflects the lookup outcome:
-   * - `null`: Lookup was not attempted (legacy execution path or tests).
-   * - `Optional.empty()`: Lookup was attempted, but no matching [ConnectedDevice] was found, e.g. because the device got disconnected.
-   * - `Optional.of(device)`: Lookup was attempted and a matching [ConnectedDevice] was successfully resolved.
+   * Can be set to an empty Optional value if no matching [ConnectedDevice] was found, e.g. because the device got disconnected.
    */
-  private val connectedDevice: Optional<ConnectedDevice>?,
+  private val connectedDevice: Optional<ConnectedDevice>,
   /** Whether the adblib migration is enabled. */
   private val useConnectedDevice: Boolean = false,
 ) {
@@ -481,10 +478,7 @@ constructor(
     crossinline onMigrated: (ConnectedDevice) -> T,
     crossinline onMigratedWhenDeviceNotFound: () -> T = { throw IOException("Connected device is not present") },
   ): T {
-    // TODO: Once we add code that looks up `connectedDevice` using AdbSession.connectedDeviceTracker
-    //  and feed it to DeviceHolder across the codebase we could remove the check for
-    //  `connectedDevice != null`.
-    return if (useConnectedDevice && connectedDevice != null) {
+    return if (useConnectedDevice) {
       if (connectedDevice.isPresent) {
         onMigrated(connectedDevice.get())
       } else {
@@ -497,7 +491,7 @@ constructor(
 
   companion object {
     @JvmStatic
-    fun checkEnableUseConnectedDevice(session: AdbSession): Boolean {
+    internal fun checkEnableUseConnectedDevice(session: AdbSession): Boolean {
       return session.property(DeployerProperties.USE_CONNECTED_DEVICE)
     }
 

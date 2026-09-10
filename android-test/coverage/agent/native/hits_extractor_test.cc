@@ -16,6 +16,7 @@
 
 #include "tools/base/android-test/coverage/agent/native/hits_extractor.h"
 #include "tools/base/android-test/coverage/agent/native/instrumenter.h"
+#include "tools/base/android-test/coverage/agent/native/tagging_manager.h"
 
 #include <gtest/gtest.h>
 
@@ -130,6 +131,28 @@ TEST(InstrumenterTest, IsSyntheticOrCompilerGenerated) {
       "com/example/MyClass$inlined$0"));
   EXPECT_TRUE(Instrumenter::IsSyntheticOrCompilerGenerated(
       "com/example/MyClass$inlined$MyHelper$1"));
+}
+
+TEST(TaggingManagerTest, TaggingManagerStateMachine) {
+  TaggingManager& manager = TaggingManager::Instance();
+
+  // 1. Verify initially untracked
+  EXPECT_FALSE(manager.IsClassTrackedForTesting("Lcom/example/MyClass;"));
+  EXPECT_FALSE(manager.IsClassTrackedForTesting("Lcom/example/OtherClass;"));
+
+  // 2. Track class and verify tracking state
+  manager.TrackClass("Lcom/example/MyClass;");
+  EXPECT_TRUE(manager.IsClassTrackedForTesting("Lcom/example/MyClass;"));
+  EXPECT_FALSE(manager.IsClassTrackedForTesting("Lcom/example/OtherClass;"));
+
+  // 3. Track multiple classes and verify independent states
+  manager.TrackClass("Lcom/example/OtherClass;");
+  EXPECT_TRUE(manager.IsClassTrackedForTesting("Lcom/example/MyClass;"));
+  EXPECT_TRUE(manager.IsClassTrackedForTesting("Lcom/example/OtherClass;"));
+
+  // 4. Test safe mock cleanup on null JVMTI environment (fallback safe-path)
+  manager.TagClassIfTracked(nullptr, nullptr, nullptr);
+  EXPECT_TRUE(manager.IsClassTrackedForTesting("Lcom/example/MyClass;"));
 }
 
 }  // namespace coverage

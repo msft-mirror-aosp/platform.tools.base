@@ -271,8 +271,12 @@ public class DeployerRunner {
         if (useConnectedDevices != null) {
             return useConnectedDevices;
         }
-        String propName = DeployerProperties.INSTANCE.getUSE_CONNECTED_DEVICE().getName();
-        return Boolean.getBoolean(propName);
+
+        String value = System.getProperty(DeployerProperties.USE_CONNECTED_DEVICE_PROPERTY_NAME);
+        if (value != null) {
+            return Boolean.parseBoolean(value);
+        }
+        return DeployerProperties.USE_CONNECTED_DEVICE_DEFAULT_VALUE;
     }
 
     private int executeDeployment(
@@ -301,25 +305,9 @@ public class DeployerRunner {
     }
 
     // Left in to support how DeployService calls us.
-    public int run(IDevice device, String[] args, ILogger logger) {
+    public int run(DeviceHolder device, AdbSession session, String[] args, ILogger logger) {
         DeployRunnerParameters parameters = DeployRunnerParameters.parse(args);
-        // Use an adblib connection. This is piggybacking on the adb server guaranteed to be
-        // spawned by DDMLIB.
-        AdbSession session =
-                AdbLibSessionFactoryKt.createSocketConnectSession(
-                        AndroidDebugBridge::getSocketAddress,
-                        new DeployerRunnerLoggerFactory(parameters.getLogLevel()));
-        // TODO: We need to lookup ConnectedDevice here or in DeployService to fully migrate.
-        DeviceHolder deviceHolder = new DeviceHolder(device, null);
-        try {
-            return run(deviceHolder, session, parameters, logger);
-        } finally {
-            try {
-                session.close();
-            } catch (Exception e) {
-                logger.warning("Failed to close AdbSession: " + e.getMessage());
-            }
-        }
+        return run(device, session, parameters, logger);
     }
 
     private int run(

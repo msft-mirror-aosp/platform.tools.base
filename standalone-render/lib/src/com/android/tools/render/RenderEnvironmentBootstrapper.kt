@@ -16,9 +16,12 @@
 
 package com.android.tools.render
 
+import com.android.ide.common.rendering.api.ResourceNamespace
 import com.android.ide.common.resources.configuration.FolderConfiguration
+import com.android.resources.ResourceType
 import com.android.sdklib.AndroidVersion
 import com.android.tools.configurations.Configuration
+import com.android.tools.configurations.Wallpaper
 import com.android.tools.module.ModuleKey
 import com.android.tools.render.configuration.StandaloneConfigurationModelModule
 import com.android.tools.render.configuration.StandaloneConfigurationSettings
@@ -26,6 +29,7 @@ import com.android.tools.render.environment.StandaloneEnvironmentContext
 import com.android.tools.render.framework.IJFramework
 import com.android.tools.rendering.RenderService
 import com.android.tools.rendering.classloading.ModuleClassLoaderManager
+import com.android.tools.res.FrameworkOverlay
 import com.android.tools.res.LocalResourceRepository
 import com.android.tools.res.SingleRepoResourceRepositoryManager
 import com.android.tools.res.apk.ApkResourceRepository
@@ -150,8 +154,28 @@ class RenderEnvironmentBootstrapper(
       )
 
     val configurationSettings = StandaloneConfigurationSettings(configModule, androidTarget)
+    val defaultTheme =
+      if (resourcesRepo.hasResources(ResourceNamespace.RES_AUTO, ResourceType.STYLE, "Theme.Material3.DayNight.NoActionBar")) {
+        "@style/Theme.Material3.DayNight.NoActionBar"
+      } else {
+        "@android:style/Theme.Material.Light.NoActionBar" // Fallback if app does not depend on Material 3
+      }
 
-    val baseConfiguration = Configuration.create(configurationSettings, FolderConfiguration())
+    // Standalone rendering runs headlessly without the IDE ConfigurationManager.
+    // Providing these defaults matches Android Studio and PreviewConfiguration.applyTo,
+    // ensuring proper resolution of Material 3 themes, dynamic color tokens, and system UI settings.
+    val baseConfiguration =
+      Configuration.create(configurationSettings, FolderConfiguration()).apply {
+        setTheme(defaultTheme)
+        setWallpaper(Wallpaper.GREEN) // Default dynamic color palette (Wallpaper.kt)
+        // Defaults in SystemUiPreferences.kt
+        setGestureNav(true)
+        setEdgeToEdge(true)
+        setCutoutOverlay(FrameworkOverlay.CUTOUT_NONE)
+        setFontScale(1.0f)
+        // Default device ("medium_phone") without frame.
+        configurationSettings.defaultDevice?.let { setDevice(it, false) }
+      }
 
     val module =
       StandaloneRenderModelModule(

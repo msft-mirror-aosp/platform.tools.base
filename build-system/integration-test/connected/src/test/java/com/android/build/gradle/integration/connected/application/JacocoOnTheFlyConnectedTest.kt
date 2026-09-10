@@ -114,6 +114,21 @@ class JacocoOnTheFlyConnectedTest(val runWithBuiltInPlatform: Boolean) {
                       }
                       return result
                   }
+
+                  @JvmStatic
+                  fun massiveTryCatchMethod(): Int {
+                      var result = 0
+                      try {
+                          val a0 = 0; val a1 = 1; val a2 = 2; val a3 = 3
+                          val a4 = 4; val a5 = 5; val a6 = 6; val a7 = 7
+                          val a8 = 8; val a9 = 9; val a10 = 10; val a11 = 11
+                          val a12 = 12; val a13 = 13; val a14 = 14; val a15 = 15
+                          result = a0 + a1 + a2 + a3 + a4 + a5 + a6 + a7 + a8 + a9 + a10 + a11 + a12 + a13 + a14 + a15
+                      } catch (e: Exception) {
+                          result = -1
+                      }
+                      return result
+                  }
               }
 
               @Composable
@@ -141,6 +156,51 @@ class JacocoOnTheFlyConnectedTest(val runWithBuiltInPlatform: Boolean) {
               constructor(id: Int, name: String) {
                   this.id = id
                   this.name = name
+              }
+          }
+
+          class ComplexConstructorClass {
+              var result: Int = 0
+              var tag: String = ""
+
+              constructor(a: Int, b: String) {
+                  try {
+                      val len = b.length
+                      when (a) {
+                          in 1..10 -> {
+                              if (len > 5) {
+                                  this.result = len * 2
+                              } else {
+                                  this.result = len
+                              }
+                          }
+                          20, 30 -> {
+                              this.result = a + len
+                          }
+                          else -> {
+                              var sum = 0
+                              for (i in 1..a) {
+                                  sum += i
+                              }
+                              this.result = sum
+                          }
+                      }
+                      this.tag = "InitBranch"
+                  } catch (e: Exception) {
+                      this.result = -1
+                      this.tag = "Error"
+                  }
+              }
+
+              constructor(x: Any) : this(
+                  try {
+                      x as Int
+                  } catch (e: Exception) {
+                      99
+                  },
+                  x.toString()
+              ) {
+                  this.tag = "DelegatedDelegate"
               }
           }
           """
@@ -301,6 +361,24 @@ class JacocoOnTheFlyConnectedTest(val runWithBuiltInPlatform: Boolean) {
                   assertEquals(42, c2.getId());
                   assertEquals("custom", c2.getName());
 
+                  assertEquals(120, ComplexParamClass.massiveTryCatchMethod());
+
+                  ComplexConstructorClass c3 = new ComplexConstructorClass(20, "test");
+                  assertEquals(24, c3.getResult());
+                  assertEquals("InitBranch", c3.getTag());
+
+                  ComplexConstructorClass c4 = new ComplexConstructorClass(5, "testing");
+                  assertEquals(14, c4.getResult());
+                  assertEquals("InitBranch", c4.getTag());
+
+                  ComplexConstructorClass c5 = new ComplexConstructorClass(15);
+                  assertEquals(120, c5.getResult());
+                  assertEquals("DelegatedDelegate", c5.getTag());
+
+                  ComplexConstructorClass c6 = new ComplexConstructorClass("not_an_int");
+                  assertEquals(4950, c6.getResult());
+                  assertEquals("DelegatedDelegate", c6.getTag());
+
                   ComplexBranchingKotlin k = new ComplexBranchingKotlin();
                   ComplexBranchingJava j = new ComplexBranchingJava();
 
@@ -369,11 +447,13 @@ class JacocoOnTheFlyConnectedTest(val runWithBuiltInPlatform: Boolean) {
     assertThat(content).contains("<class name=\"com/example/helloworld/AppHelper\"")
     assertThat(content).contains("<class name=\"com/example/helloworld/ComplexParamClass\"")
     assertThat(content).contains("<class name=\"com/example/helloworld/ConstructorTestClass\"")
+    assertThat(content).contains("<class name=\"com/example/helloworld/ComplexConstructorClass\"")
     assertThat(content).contains("<class name=\"com/example/helloworld/ComplexBranchingKotlin\"")
     assertThat(content).contains("<class name=\"com/example/helloworld/ComplexBranchingJava\"")
 
     // Verify presence of our stress-test method names
     assertThat(content).contains("<method name=\"whenBlock\"")
+    assertThat(content).contains("<method name=\"massiveTryCatchMethod\"")
     assertThat(content).contains("<method name=\"switchStatement\"")
     assertThat(content).contains("<method name=\"fallThroughSwitch\"")
     assertThat(content).contains("<method name=\"complexLadder\"")
@@ -400,6 +480,15 @@ class JacocoOnTheFlyConnectedTest(val runWithBuiltInPlatform: Boolean) {
     // missed="1" covered="2"
     assertThat(content).contains("<method name=\"fallThroughSwitch\"")
     assertThat(content).contains("<counter type=\"BRANCH\" missed=\"1\" covered=\"2\"/>")
+
+    // e. ComplexConstructorClass:
+    //    - Primary constructor (ILjava/lang/String;)V: 13 covered, 3 missed branches
+    //    - Secondary constructor (Ljava/lang/Object;)V: 13 covered, 0 missed instructions (completely covered)
+    assertThat(content).contains("<class name=\"com/example/helloworld/ComplexConstructorClass\"")
+    assertThat(content).contains("<method name=\"&lt;init&gt;\" desc=\"(ILjava/lang/String;)V\"")
+    assertThat(content).contains("<counter type=\"BRANCH\" missed=\"3\" covered=\"13\"/>")
+    assertThat(content).contains("<method name=\"&lt;init&gt;\" desc=\"(Ljava/lang/Object;)V\"")
+    assertThat(content).contains("<counter type=\"INSTRUCTION\" missed=\"0\" covered=\"13\"/>")
 
     assertThat(content).doesNotContain("<package name=\"com/example/libmodule\">")
   }
