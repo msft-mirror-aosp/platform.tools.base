@@ -19,10 +19,10 @@ package com.android.tools.deployer.common;
 import com.android.adblib.AdbDeviceServices;
 import com.android.adblib.AdbSession;
 import com.android.adblib.DeviceSelector;
+import com.android.adblib.tools.InstallException;
 import com.android.adblib.tools.InstallerKt;
 import com.android.adblib.tools.JavaBridge;
 import com.android.annotations.NonNull;
-import com.android.ddmlib.ShellCommandUnresponsiveException;
 import com.android.sdklib.AndroidVersion;
 import com.android.tools.deploy.proto.Deploy;
 import com.android.tools.deployer.model.Apk;
@@ -48,6 +48,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 public class AdbClient {
@@ -185,7 +186,7 @@ public class AdbClient {
                 logger.warning("Unrecognized Installation Failure: %s\n%s\n", code, message);
             }
         } else {
-            if (t instanceof ShellCommandUnresponsiveException) {
+            if (t instanceof TimeoutException) {
                 return new InstallResult(InstallStatus.SHELL_UNRESPONSIVE, message);
             } else {
                 logger.warning("Installation Failure: %s\n", message);
@@ -257,10 +258,12 @@ public class AdbClient {
                     new InstallMetrics(
                             pushStartTimeNs, pushEndTimeNs, installStartTimeNs, installEndTimeNs);
             return new InstallResult(InstallStatus.OK, null, ddmMetrics);
-        } catch (com.android.adblib.tools.InstallException e) {
+        } catch (InstallException e) {
             String code = e.getErrorCode();
             String message = e.getMessage();
             return makeInstallResult(code, message, e);
+        } catch (Exception e) {
+            return makeInstallResult(null, e.getMessage(), e);
         }
     }
 
