@@ -11,6 +11,17 @@ rbe = use_extension("//tools/base/bazel/rbe:extensions.bzl", "rbe")
 macos_sdk_repository(
     name = "macos_sdk",
     build_file = "//build/bazel/toolchains/cc/mac_clang:sdk.BUILD",
+    sdk_versions = [
+        "26.6",
+        "26.5",
+        "26.4",
+        "26.3",
+        "26.2",
+        "26.1",
+        "26.0",
+        "26",
+        "",
+    ],
 )
 
 msvc_tools_repository(
