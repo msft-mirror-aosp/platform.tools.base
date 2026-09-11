@@ -76,7 +76,6 @@ public class DeployerRunner {
 
     // These values are > 1000 in order to prevent collision with the DeployerException.Error
     // ordinal that is returned if a DeployerException is thrown during deployment.
-    private static final int ERR_SPECIFIED_DEVICE_NOT_FOUND = 1002;
     private static final int ERR_NO_MATCHING_DEVICE = 1003;
     private static final int ERR_BAD_ARGS = 1004;
 
@@ -284,13 +283,6 @@ public class DeployerRunner {
         if (devicesResult.devices.isEmpty()) {
             logger.error(null, "No device connected");
             return ERR_NO_MATCHING_DEVICE;
-        }
-
-        for (String expectedDevice : parameters.getTargetDevices()) {
-            if (!devicesResult.devices.containsKey(expectedDevice)) {
-                logger.error(null, "Could not find specified device: %s", expectedDevice);
-                return ERR_SPECIFIED_DEVICE_NOT_FOUND;
-            }
         }
 
         for (DeviceHolder device : devicesResult.devices.values()) {
