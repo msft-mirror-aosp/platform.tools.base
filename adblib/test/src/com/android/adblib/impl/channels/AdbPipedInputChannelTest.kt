@@ -453,6 +453,19 @@ class AdbPipedInputChannelTest {
     Assert.fail("Should not reach")
   }
 
+  @Test
+  fun toStringWorks(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val channelFactory = createChannelFactory()
+    val pipedChannel = channelFactory.createPipedChannel(15)
+
+    // Act / Assert
+    Assert.assertEquals(
+      "AdbPipedInputChannel(id=${pipedChannel.hashCode()}, state=State(receivedBytes=0, freeBytes=15, closed=false, pipeSourceClosed=false, pipeSourceError=null))",
+      pipedChannel.toString(),
+    )
+  }
+
   private fun createChannelFactory(): AdbChannelFactoryImpl {
     val session = registerCloseable(TestingAdbSession())
     val channelFactory = AdbChannelFactoryImpl(session)
