@@ -35,6 +35,8 @@ class SdkCommandLineToolsSmokeTest {
     WARNING: The SDK Manager CLI tool (sdkmanager) is deprecated. Android CLI will be used instead.
     The 'android' binary can also be found in the cmdline-tools directory, and 'android sdk' is the replacement for 'sdkmanager'.
     To learn more about the Android CLI and how to use it, see the documentation (https://d.android.com/tools/agents/android-cli)
+
+    Tip: For the best experience using Android CLI with agents, we strongly recommend running android init to install the necessary skills and resources.
     """
       .trimIndent()
 
