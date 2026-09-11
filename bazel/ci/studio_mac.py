@@ -24,7 +24,7 @@ def studio_mac(build_env: bazel.BuildEnv) -> None:
       build_env.bazel_query(*query).stdout.decode('utf-8').splitlines()
   )
   targets = test_targets + [
-      '//tools/vendor/google/android:android-cli.zip',
+      '//tools/vendor/google/android-cli:android-cli.zip',
       '//tools/base/profiler/native/traceconv',
       '//tools/base/profiler/native/trace_processor_daemon',
       '//tools/base/profiler/native/sherlock/perfetto-cropper:sherlock-perfetto-cropper',
@@ -63,7 +63,7 @@ def studio_mac(build_env: bazel.BuildEnv) -> None:
                   'tools/base/profiler/native/sherlock/sherlock_trace_processor',
                   '',
               ),
-              ('tools/vendor/google/android/android-cli.zip', ''),
+              ('tools/vendor/google/android-cli/android-cli.zip', ''),
               ('tools/vendor/google/lume/dist/lightbuild.zip', ''),
               ('tools/vendor/google/lume/lightbuild-cli/dist/lightbuild-cli.zip', ''),
           ],
@@ -84,7 +84,7 @@ def studio_mac_arm(build_env: bazel.BuildEnv) -> None:
       build_env.bazel_query(*query).stdout.decode('utf-8').splitlines()
   )
   targets = test_targets + [
-      '//tools/vendor/google/android:android-cli.zip',
+      '//tools/vendor/google/android-cli:android-cli.zip',
       '//tools/base/profiler/native/traceconv',
       '//tools/base/profiler/native/trace_processor_daemon',
       '//tools/base/profiler/native/sherlock/perfetto-cropper:sherlock-perfetto-cropper',
@@ -128,7 +128,7 @@ def studio_mac_arm(build_env: bazel.BuildEnv) -> None:
                   'tools/adt/idea/android/native/diagnostics/heap/libjni_object_tagger.dylib',
                   '',
               ),
-              ('tools/vendor/google/android/android-cli.zip', ''),
+              ('tools/vendor/google/android-cli/android-cli.zip', ''),
               ('tools/vendor/google/lume/dist/lightbuild.zip', ''),
               ('tools/vendor/google/lume/lightbuild-cli/dist/lightbuild-cli.zip', ''),
           ],

@@ -23,7 +23,7 @@ class GradleRequiresCpu4OrMoreTest(absltest.TestCase):
       env.bazel_query.return_value = subprocess.CompletedProcess(
           args=[],
           returncode=0,
-          stdout=b'//tools/vendor/google/android/integration:android_test\n',
+          stdout=b'//tools/vendor/google/android-cli/integration:android_test\n',
           stderr=b'',
       )
       env.bazel_cquery.return_value = subprocess.CompletedProcess(

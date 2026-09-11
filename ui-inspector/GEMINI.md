@@ -1,5 +1,5 @@
 # UI Inspector CLI - Agent Guide
-* Ref: `tools/vendor/google/android/` (`run`/`interact` for ADB, `cli` for I/O).
+* Ref: `tools/vendor/google/android-cli/` (`run`/`interact` for ADB, `cli` for I/O).
 * Style: Use imports instead of full class names.
 
 ## Running Bazel
