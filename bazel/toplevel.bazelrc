@@ -1,5 +1,6 @@
 import %workspace%/tools/base/bazel/common.bazelrc
 import %workspace%/tools/base/bazel/platform_specific.bazelrc
+try-import %workspace%/tools/vendor/google/bazel/non_aosp.bazelrc
 
 # User-specific .bazelrc
 try-import %workspace%/user.bazelrc

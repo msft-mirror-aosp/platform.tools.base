@@ -1,7 +1,6 @@
 #
 # Linux
 #
-common:linux --repo_env=ANDROID_NDK_HOME=$WORKSPACE_ROOT/prebuilts/studio/sdk/linux/ndk/28.2.13676358
 common:linux --credential_helper=chrome-infra-packages.appspot.com=%workspace%/build/bazel/tools/credhelper
 common:linux --credential_helper=storage.googleapis.com=%workspace%/build/bazel/tools/credhelper
 common:linux --credential_helper=*.pkg.dev=%workspace%/build/bazel/tools/credhelper
@@ -17,7 +16,6 @@ build:linux --workspace_status_command="prebuilts/python/linux-x86/bin/python3 t
 #
 # Windows
 #
-common:windows --repo_env=ANDROID_NDK_HOME=$WORKSPACE_ROOT/prebuilts/studio/sdk/windows/ndk/28.2.13676358
 common:windows --credential_helper=chrome-infra-packages.appspot.com=%workspace%/build/bazel/tools/credhelper.cmd
 common:windows --credential_helper=storage.googleapis.com=%workspace%/build/bazel/tools/credhelper.cmd
 common:windows --credential_helper=*.pkg.dev=%workspace%/build/bazel/tools/credhelper.cmd
@@ -42,7 +40,6 @@ build:windows --workspace_status_command="tools/base/bazel/workspace.cmd"
 #
 # Mac
 #
-common:macos --repo_env=ANDROID_NDK_HOME=$WORKSPACE_ROOT/prebuilts/studio/sdk/darwin/ndk/28.2.13676358
 common:macos --credential_helper=chrome-infra-packages.appspot.com=%workspace%/build/bazel/tools/credhelper
 common:macos --credential_helper=storage.googleapis.com=%workspace%/build/bazel/tools/credhelper
 common:macos --credential_helper=*.pkg.dev=%workspace%/build/bazel/tools/credhelper
