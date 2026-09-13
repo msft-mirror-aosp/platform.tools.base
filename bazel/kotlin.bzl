@@ -1,6 +1,7 @@
 """This module implements kotlin rules."""
 
 load("@bazel_skylib//lib:collections.bzl", "collections")
+load("@rules_cc//cc:defs.bzl", "CcInfo")
 load(":coverage.bzl", "coverage_baseline", "coverage_java_test")
 load(":functions.bzl", "create_option_file")
 load(":kotlin_common.bzl", "KtJvmToolchainInfo", "default_javac_opts", "default_kotlinc_opts", "select_java_compile_toolchain", "select_java_runtime")
@@ -343,8 +344,8 @@ def _kotlin_library_impl(ctx):
     kotlin_ijar = ctx.actions.declare_file(name + ".kotlin-ijar.jar") if kotlin_srcs else None
     full_ijar = ctx.actions.declare_file(name + ".merged-ijar-kotlin-lib.jar")
 
-    deps = [dep[JavaInfo] for dep in ctx.attr.deps + ctx.attr.exports]
-    java_info_deps = [dep[JavaInfo] for dep in ctx.attr.deps]
+    deps = [dep[JavaInfo] for dep in ctx.attr.deps + ctx.attr.exports if JavaInfo in dep]
+    java_info_deps = [dep[JavaInfo] for dep in ctx.attr.deps if JavaInfo in dep]
 
     # Kotlin
     cjars = []  # classfiles
@@ -442,6 +443,7 @@ def _kotlin_library_impl(ctx):
         deps = java_info_deps,
         exports = [dep[JavaInfo] for dep in ctx.attr.exports],
         runtime_deps = java_info_deps,
+        native_libraries = [dep[CcInfo] for dep in ctx.attr.deps + ctx.attr.runtime_deps if CcInfo in dep],
     )
 
     transitive_runfiles = [
@@ -467,10 +469,10 @@ _kotlin_library = rule(
         "jar": attr.output(mandatory = True),
         "kotlin_version": attr.string(mandatory = True),
         "jvm_target": attr.string(mandatory = True),
-        "deps": attr.label_list(providers = [JavaInfo]),
+        "deps": attr.label_list(providers = [[JavaInfo], [CcInfo]]),
         "exports": attr.label_list(providers = [JavaInfo]),
         "runtime_deps": attr.label_list(
-            providers = [JavaInfo],
+            providers = [[JavaInfo], [CcInfo]],
         ),
         "module_name": attr.string(
             default = "unnamed",
