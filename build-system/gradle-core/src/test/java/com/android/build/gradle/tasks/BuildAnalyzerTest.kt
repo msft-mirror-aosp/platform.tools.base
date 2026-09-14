@@ -56,6 +56,7 @@ class BuildAnalyzerTest {
       TestPreBuildTask::class.java,
       PackageAndroidArtifact::class.java,
       BaseRedirectIdeOutputsTask::class.java,
+      GenerateComposePreviewRunfilesTask::class.java,
     )
 
   @Test

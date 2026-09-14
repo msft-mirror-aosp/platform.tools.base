@@ -268,6 +268,7 @@ class TaskMethodModifiersAndAnnotationsTest {
         "com.android.build.gradle.tasks.BundleAar::setVariantName",
         "com.android.build.gradle.tasks.ExtractAnnotations::setBootClasspath",
         "com.android.build.gradle.tasks.ExtractAnnotations::setEncoding",
+        "com.android.build.gradle.tasks.GenerateComposePreviewRunfilesTask::setComposePreviewManifestFileOption",
         "com.android.build.gradle.tasks.PackageAndroidArtifact::setJniDebugBuild",
         "com.android.build.gradle.tasks.RenderscriptCompile::setImportDirs",
         "com.android.build.gradle.tasks.RenderscriptCompile::setObjOutputDir",

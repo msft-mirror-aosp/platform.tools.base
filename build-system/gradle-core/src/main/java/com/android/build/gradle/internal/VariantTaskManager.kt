@@ -57,6 +57,7 @@ import com.android.build.gradle.internal.variant.ComponentInfo
 import com.android.build.gradle.internal.variant.VariantModel
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.tasks.AnalyzeDependenciesTask
+import com.android.build.gradle.tasks.GenerateComposePreviewRunfilesTask
 import com.android.build.gradle.tasks.registerDataBindingOutputs
 import com.android.builder.core.ComponentType
 import com.android.builder.core.ComponentTypeImpl
@@ -189,6 +190,10 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
     createAssembleTask(variant)
 
     doCreateTasksForVariant(componentInfo)
+
+    if (variant.buildFeatures.compose) {
+      taskFactory.register(GenerateComposePreviewRunfilesTask.CreationAction(variant))
+    }
 
     // now that the onVariants callback has run and tasks have been created,
     // register all the listeners so we can ensure there is a Task providing the artifact
