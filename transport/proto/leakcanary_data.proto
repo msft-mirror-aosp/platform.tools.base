@@ -22,6 +22,115 @@ option java_outer_classname = "LeakCanary";
 /** LeakCanary analysis information */
 message LeakCanaryAnalysisData {
   string data = 1;
+
+  oneof structured_result {
+    LeakCanaryAnalysisSuccess success = 2;
+    LeakCanaryAnalysisFailure failure = 3;
+  }
+
+  int64 created_at_time_millis = 4;
+  int64 dump_duration_millis = 5;
+  int64 analysis_duration_millis = 6;
+}
+
+/** Structured representation of a successful LeakCanary heap analysis. */
+message LeakCanaryAnalysisSuccess {
+  map<string, string> metadata = 1;
+  repeated Leak leaks = 2;
+}
+
+/** Structured representation of a failed LeakCanary heap analysis. */
+message LeakCanaryAnalysisFailure {
+  string exception_message = 1;
+  string exception_stack_trace = 2;
+}
+
+/** Represents a group of memory leaks sharing the same leak signature. */
+message Leak {
+  enum LeakType {
+    LEAK_TYPE_UNSPECIFIED = 0;
+    LEAK_TYPE_APPLICATION_LEAK = 1;
+    LEAK_TYPE_LIBRARY_LEAK = 2;
+  }
+
+  LeakType type = 1;
+  optional int64 retained_byte_size = 2;
+  string signature = 3;
+  // Total number of leak traces matching this signature. Kept separate from
+  // leak_traces.size() to match leakcanarylib Leak.leakTraceCount.
+  int32 leak_trace_count = 4;
+  // Native array of leak trace occurrences for this signature.
+  repeated LeakTrace leak_traces = 5;
+}
+
+/** Represents a single occurrence path from a GC root to the leaking object. */
+message LeakTrace {
+  enum GcRootType {
+    GC_ROOT_TYPE_UNSPECIFIED = 0;
+    GC_ROOT_TYPE_JNI_GLOBAL = 1;
+    GC_ROOT_TYPE_JNI_LOCAL = 2;
+    GC_ROOT_TYPE_JAVA_FRAME = 3;
+    GC_ROOT_TYPE_NATIVE_STACK = 4;
+    GC_ROOT_TYPE_STICKY_CLASS = 5;
+    GC_ROOT_TYPE_THREAD_BLOCK = 6;
+    GC_ROOT_TYPE_MONITOR_USED = 7;
+    GC_ROOT_TYPE_THREAD_OBJECT = 8;
+    GC_ROOT_TYPE_JNI_MONITOR = 9;
+    GC_ROOT_TYPE_INTERNED_STRING = 10;
+    GC_ROOT_TYPE_FINALIZING = 11;
+    GC_ROOT_TYPE_DEBUGGER = 12;
+    GC_ROOT_TYPE_REFERENCE_CLEANUP = 13;
+    GC_ROOT_TYPE_VM_INTERNAL = 14;
+    GC_ROOT_TYPE_UNREACHABLE = 15;
+    GC_ROOT_TYPE_UNKNOWN = 16;
+  }
+
+  GcRootType gc_root_type = 1;
+  repeated LeakTraceNode nodes = 2;
+}
+
+/** Represents an individual object/class/array node along a LeakTrace path. */
+message LeakTraceNode {
+  enum NodeType {
+    NODE_TYPE_UNSPECIFIED = 0;
+    NODE_TYPE_INSTANCE = 1;
+    NODE_TYPE_CLASS = 2;
+    NODE_TYPE_ARRAY = 3;
+  }
+
+  enum LeakingStatus {
+    LEAKING_STATUS_UNSPECIFIED = 0;
+    LEAKING_STATUS_NO = 1;
+    LEAKING_STATUS_YES = 2;
+    LEAKING_STATUS_UNKNOWN = 3;
+  }
+
+  NodeType node_type = 1;
+  string class_name = 2;
+  LeakingStatus leaking_status = 3;
+  string leaking_status_reason = 4;
+  ReferencingField referencing_field = 5;
+  repeated string notes = 6;
+  // Pre-formatted size string with units (e.g., "1.2 kB", "400 B") matching
+  // leakcanarylib Node.retainedHeapSize and Shark's humanReadableByteCount.
+  optional string retained_heap_size = 7;
+  optional int32 retained_object_count = 8;
+}
+
+/** Represents the field or reference connecting a node to the next node in the trace. */
+message ReferencingField {
+  enum ReferencingFieldType {
+    REFERENCING_FIELD_TYPE_UNSPECIFIED = 0;
+    REFERENCING_FIELD_TYPE_INSTANCE_FIELD = 1;
+    REFERENCING_FIELD_TYPE_STATIC_FIELD = 2;
+    REFERENCING_FIELD_TYPE_LOCAL = 3;
+    REFERENCING_FIELD_TYPE_ARRAY_ENTRY = 4;
+  }
+
+  string class_name = 1;
+  string reference_name = 2;
+  ReferencingFieldType type = 3;
+  bool is_likely_cause = 4;
 }
 
 /** LeakCanary event information */

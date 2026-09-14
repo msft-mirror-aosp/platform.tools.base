@@ -23,6 +23,7 @@ import "app_inspection.proto";
 import "common.proto";
 import "cpu_data.proto";
 import "echo.proto";
+import "leakcanary_data.proto";
 import "memory_data.proto";
 import "trace.proto";
 
@@ -124,7 +125,7 @@ message Command {
     // LeakCanary Prefix = 800
     StartLeakCanaryTaskData start_leakcanary_task = 801;
     SignalHeapDumpCompleteData signal_heap_dump_complete = 804;
-    SendLeakCanaryAnalysisData send_leakcanary_analysis = 805;
+    LeakCanaryAnalysisData send_leakcanary_analysis = 805;
     StudioLeakCanaryModeData set_studio_leakcanary_mode = 806;
 
     // Energy Profiler Prefix = 500
@@ -187,10 +188,6 @@ message SignalHeapDumpCompleteData {
     int64 heap_dump_timestamp = 1;
 }
 
-message SendLeakCanaryAnalysisData {
-    // The string representation of the LeakCanary analysis result.
-    string data = 1;
-}
 
 message StartLeakCanaryTaskData {
   enum LeakCanaryMode {

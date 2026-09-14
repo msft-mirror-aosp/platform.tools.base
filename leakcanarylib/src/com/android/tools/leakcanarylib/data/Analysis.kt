@@ -54,7 +54,7 @@ sealed class Analysis {
  * @property leaks A list of leaks detected in the heap dump.
  */
 data class AnalysisSuccess(
-  val heapDumpFile: File,
+  val heapDumpFile: File = File(""),
   val createdAtTimeMillis: Long,
   val dumpDurationMillis: Long,
   val analysisDurationMillis: Long,
@@ -123,7 +123,7 @@ Heap dump duration: ${if (dumpDurationMillis != Analysis.DUMP_DURATION_UNKNOWN) 
  * @property exception The exception that caused the analysis to fail.
  */
 data class AnalysisFailure(
-  val heapDumpFile: File,
+  val heapDumpFile: File = File(""),
   val createdAtTimeMillis: Long,
   val dumpDurationMillis: Long,
   val analysisDurationMillis: Long,
