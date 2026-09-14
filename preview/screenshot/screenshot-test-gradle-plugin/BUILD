@@ -85,6 +85,7 @@ gradle_build(
 
 gradle_test(
     name = "screenshot-test-gradle-plugin_test",
+    timeout = "long",
     build_file = "//tools:agp_gradle_build_root_build_file",
     data = [
         ":agp_gradle_test_files",
