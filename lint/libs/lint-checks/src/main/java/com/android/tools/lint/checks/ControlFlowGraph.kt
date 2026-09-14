@@ -96,6 +96,7 @@ import org.jetbrains.uast.getParentOfType
 import org.jetbrains.uast.internal.acceptList
 import org.jetbrains.uast.isFalseLiteral
 import org.jetbrains.uast.isTrueLiteral
+import org.jetbrains.uast.skipParenthesizedExprDown
 import org.jetbrains.uast.tryResolve
 import org.jetbrains.uast.visitor.AbstractUastVisitor
 import org.objectweb.asm.Opcodes
@@ -1074,7 +1075,7 @@ open class ControlFlowGraph<T : Any> private constructor() {
           }
 
           override fun visitVariable(node: UVariable): Boolean {
-            val uastInitializer = node.uastInitializer
+            val uastInitializer = node.uastInitializer?.skipParenthesizedExprDown()
             if (uastInitializer is ULambdaExpression) {
               // Includes Kotlin local functions
               registerLambdaElement(uastInitializer.javaPsi, node)
@@ -1369,12 +1370,9 @@ open class ControlFlowGraph<T : Any> private constructor() {
             val psiElement = resolved ?: node.receiver?.tryResolve()?.let { functions?.get(it) }?.sourcePsi ?: return
 
             val localFunc = findInvokedLambda(psiElement, node, resolved)
-            if (
-              localFunc != null &&
-                localFunc is UVariable &&
-                (localFunc.uastInitializer is ULambdaExpression || localFunc.uastInitializer is UObjectLiteralExpression)
-            ) {
-              graph.addSuccessor(node, localFunc.uastInitializer)
+            val initializer = (localFunc as? UVariable)?.uastInitializer?.skipParenthesizedExprDown()
+            if (initializer is ULambdaExpression || initializer is UObjectLiteralExpression) {
+              graph.addSuccessor(node, initializer)
               lambdaExits?.get(localFunc)?.let {
                 pending.clear()
                 pending.addAll(it)
@@ -1402,25 +1400,25 @@ open class ControlFlowGraph<T : Any> private constructor() {
               addExceptions(node, node, resolved)
             }
 
+            val lastLambda = node.valueArguments.lastOrNull()?.asLambda()
             if (
-              (node.valueArguments.size == 1 || node.valueArguments.size == 2) &&
-                node.valueArguments.last() is ULambdaExpression &&
+              lastLambda != null &&
+                (node.valueArguments.size == 1 || node.valueArguments.size == 2) &&
                 (resolved != null && isScopingFunction(resolved) || resolved == null && isScopingFunction(node))
             ) {
               // The scoping functions are special: we will *always* flow directly into
               // the lambda and directly back out to the call successor, so draw these
               // edges directly
               for (argument in node.valueArguments) {
-                if (argument is ULambdaExpression) {
-                  handleLambdaExpression(argument)
+                val lambda = argument.asLambda()
+                if (lambda != null) {
+                  handleLambdaExpression(lambda)
                 } else {
                   argument.accept(this)
                 }
               }
               return true
-            } else if (
-              node.valueArguments.lastOrNull() is ULambdaExpression && isComposeFunction(resolved) && node.sourcePsi is KtCallExpression
-            ) {
+            } else if (lastLambda != null && isComposeFunction(resolved) && node.sourcePsi is KtCallExpression) {
               val last = (node.sourcePsi as KtCallExpression).valueArguments.lastOrNull()
               if (last != null && !last.isNamed()) {
                 // Visit the other arguments and handle lambdas according to build configuration
@@ -1431,12 +1429,12 @@ open class ControlFlowGraph<T : Any> private constructor() {
                   visitCallArguments(node, others)
                 }
                 // Unconditionally include the last lambda
-                handleLambdaExpression(node.valueArguments.last() as ULambdaExpression)
+                handleLambdaExpression(lastLambda)
                 return true
               }
               visitCallArguments(node)
               return true
-            } else if (node.valueArguments.any { it is ULambdaExpression }) {
+            } else if (node.valueArguments.any { it.asLambda() != null }) {
               // For any other lambdas, don't include the lambdas -- unless the builder
               // is configured to include lambda edges.
               assert(pending.size == 1 && pending[0] == node)
@@ -1446,6 +1444,9 @@ open class ControlFlowGraph<T : Any> private constructor() {
               return super.visitCallExpression(node)
             }
           }
+
+          /** Returns this expression as a lambda, looking through any parentheses, e.g. `foo(action = ({ ... }))`. */
+          private fun UExpression.asLambda(): ULambdaExpression? = skipParenthesizedExprDown() as? ULambdaExpression
 
           private fun isComposeFunction(method: PsiMethod?): Boolean {
             method ?: return false
@@ -1457,10 +1458,11 @@ open class ControlFlowGraph<T : Any> private constructor() {
               // For all the lambda arguments, flow from the method into the lambda, and
               // then out of the lambda back into the call:
               for (argument in arguments) {
-                if (argument is ULambdaExpression) {
+                val lambda = argument.asLambda()
+                if (lambda != null) {
                   pending.clear()
                   pending.add(node)
-                  handleLambdaExpression(argument)
+                  handleLambdaExpression(lambda)
                   for (exit in pending) {
                     if (exit != node) {
                       graph.addSuccessor(exit, node)

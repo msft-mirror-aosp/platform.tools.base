@@ -2860,6 +2860,88 @@ class ControlFlowGraphTest {
   }
 
   @Test
+  fun checkKotlinParenthesizedLambdas() {
+    checkAstGraph(
+      kotlin(
+          """
+          fun target() {
+            repeat(action = { slot() }, times = 2)
+          }
+          fun slot() {}
+          """
+        )
+        .indented(),
+      """
+                Block:       ╭─ { repeat(actio…}, times = 2) }
+             FuncCall: ╭→╭─╭─╰→ repeat(action …) }, times = 2)
+               Lambda: │ │ ╰→╭─ { slot() }
+                 Body: │ │ ╭─╰→ slot()
+      Implicit Return: ╰─│ │ ╭→ return slot()
+             FuncCall:   │ ╰→╰─ slot()
+                         ╰→     *exit*
+      """,
+      callLambdaParameters = true,
+      canThrow = { _, _ -> false },
+    )
+
+    // Same graph, but with the lambda wrapped in parentheses
+    checkAstGraph(
+      kotlin(
+          """
+          fun target() {
+            repeat(action = ({ slot() }), times = 2)
+          }
+          fun slot() {}
+          """
+        )
+        .indented(),
+      """
+                Block:       ╭─ { repeat(actio…), times = 2) }
+             FuncCall: ╭→╭─╭─╰→ repeat(action … }), times = 2)
+               Lambda: │ │ ╰→╭─ { slot() }
+                 Body: │ │ ╭─╰→ slot()
+      Implicit Return: ╰─│ │ ╭→ return slot()
+             FuncCall:   │ ╰→╰─ slot()
+        Parenthesized:   ╰→  ╭─ ({ slot() })
+                             ╰→ *exit*
+      """,
+      callLambdaParameters = true,
+      canThrow = { _, _ -> false },
+    )
+
+    // Parenthesized lambda assigned to a local variable and invoked
+    checkAstGraph(
+      kotlin(
+          """
+          fun target() {
+            val f = ({ slot() })
+            f()
+            next()
+          }
+          fun slot() {}
+          fun next() {}
+          """
+        )
+        .indented(),
+      """
+                Block:       ╭─ { val f = ({ s…}) f() next() }
+        Parenthesized:     ╭─╰→ ({ slot() })
+        LocalVariable:     ╰→╭─ val f = ({ slot() })
+         Declarations:     ╭─╰→ val f = ({ slot() })
+               Lambda: ╭→  │ ╭─ { slot() }
+                 Body: │ ╭─│ ╰→ slot()
+             FuncCall: │ ╰→│ ╭─ slot()
+      Implicit Return: │ ╭─│ ╰→ return slot()
+             FuncCall: ╰─│ ╰→   f()
+             FuncCall:   ╰→  ╭─ next()
+                             ╰→ *exit*
+      """,
+      callLambdaParameters = true,
+      canThrow = { _, _ -> false },
+    )
+  }
+
+  @Test
   fun checkKotlinLambdasLabeledReturns() {
     checkAstGraph(
       kotlin(
