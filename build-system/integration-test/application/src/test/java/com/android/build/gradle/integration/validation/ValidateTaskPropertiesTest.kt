@@ -22,6 +22,7 @@ import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.testutils.TestInputsGenerator
 import com.google.common.reflect.ClassPath
 import java.io.File
+import java.util.Properties
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -62,9 +63,19 @@ class ValidateTaskPropertiesTest {
     // 250 parts. As a workaround, we remove the class path parts that are irrelevant.
     // For instance, if the same artifact is in the classpath twice, once from prebuilts
     // and once from @maven repo, then we remove the one from prebuilts.
+    val mavenRepoName =
+      Properties()
+        .apply {
+          val stream =
+            checkNotNull(ValidateTaskPropertiesTest::class.java.getResourceAsStream("/repo_map.properties")) {
+              "repo_map.properties not found on classpath (ensure :repo_map is included in test resources)"
+            }
+          stream.use { load(it) }
+        }
+        .getProperty("maven")
     val filteredPaths = paths.filterNot {
       it.contains("/prebuilts/tools/common/m2/repository/") &&
-        paths.contains(it.replace("/prebuilts/tools/common/m2/repository/", "/../+_repo_rules2+maven/repo/"))
+        paths.contains(it.replace("/prebuilts/tools/common/m2/repository/", "/../${mavenRepoName}/repo/"))
     }
 
     val classpathLists =

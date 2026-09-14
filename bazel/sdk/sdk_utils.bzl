@@ -103,12 +103,14 @@ def calculate_jar_name_for_sdk_package(path):
             return sdk_jar_prefix_to_zip_location[prefix] + path[len(prefix):]
     fail("Unknown path mapping for jar " + path)
 
+maven_repo_name = Label("@maven").repo_name
+
 # buildifier: disable=external-path
 sdk_jar_prefix_to_zip_location = {
     "prebuilts/r8/": "",
     "prebuilts/tools/common/m2/repository/": "external/",
     "../maven/repo/": "external/",
-    "../+_repo_rules2+maven/repository/": "external/",
+    "../" + maven_repo_name + "/repository/": "external/",
     "prebuilts/tools/common/": "external/",
     "tools/external/": "external/",
     "tools/base/": "",
