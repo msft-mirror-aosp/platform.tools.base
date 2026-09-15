@@ -2571,7 +2571,6 @@ internal fun maybeCreateLintChecksClasspath(
 ): Configuration {
   val lintChecksClasspathName = variantName + "LintChecksClasspath"
   val lintChecksClasspath = project.configurations.maybeCreate(lintChecksClasspathName)
-  lintChecksClasspath.isVisible = false
   lintChecksClasspath.description = "Resolved configuration for lint check compilation for variant: $variantName"
   lintChecksClasspath.extendsFrom(compileClasspath, runtimeClasspath)
   lintChecksClasspath.isCanBeConsumed = false

@@ -359,7 +359,6 @@ abstract class BasePlugin<
   companion object {
     fun createAndroidJdkImageConfiguration(project: Project, versionedSdkLoaderService: VersionedSdkLoaderService) {
       project.configurations.register(CONFIG_NAME_ANDROID_JDK_IMAGE) { config ->
-        config.isVisible = false
         config.isCanBeConsumed = false
         config.description = "Configuration providing JDK image for compiling Java 9+ sources"
       }
@@ -372,7 +371,6 @@ abstract class BasePlugin<
 
     fun createCustomLintChecksConfig(project: Project): Configuration {
       val lintChecks = project.configurations.maybeCreate(VariantDependencies.CONFIG_NAME_LINTCHECKS)
-      lintChecks.isVisible = false
       lintChecks.description = "Configuration to apply external lint check jar"
       lintChecks.isCanBeConsumed = false
       return lintChecks
@@ -380,7 +378,6 @@ abstract class BasePlugin<
 
     private fun createCustomLintPublishConfig(project: Project): Configuration {
       val lintChecks = project.configurations.maybeCreate(VariantDependencies.CONFIG_NAME_LINTPUBLISH)
-      lintChecks.isVisible = false
       lintChecks.description = "Configuration to publish external lint check jar"
       lintChecks.isCanBeConsumed = false
       return lintChecks
@@ -401,7 +398,6 @@ abstract class BasePlugin<
     internal fun createAndroidTestUtilConfiguration(project: Project) {
       project.logger.debug("Creating configuration " + SdkConstants.GRADLE_ANDROID_TEST_UTIL_CONFIGURATION)
       val configuration = project.configurations.maybeCreate(SdkConstants.GRADLE_ANDROID_TEST_UTIL_CONFIGURATION)
-      configuration.isVisible = false
       configuration.description = "Additional APKs used during instrumentation testing."
       configuration.isCanBeConsumed = false
       configuration.isCanBeResolved = true

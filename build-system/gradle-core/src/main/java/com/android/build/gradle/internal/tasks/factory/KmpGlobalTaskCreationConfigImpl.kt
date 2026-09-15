@@ -142,7 +142,6 @@ internal class KmpGlobalTaskCreationConfigImpl(
 
   private fun createCustomLintChecksConfig(project: Project): Configuration {
     val lintChecks = project.configurations.maybeCreate(VariantDependencies.CONFIG_NAME_LINTCHECKS)
-    lintChecks.isVisible = false
     lintChecks.description = "Configuration to apply external lint check jar"
     lintChecks.isCanBeConsumed = false
     return lintChecks
@@ -150,7 +149,6 @@ internal class KmpGlobalTaskCreationConfigImpl(
 
   private fun createCustomLintPublishConfig(project: Project): Configuration {
     val lintChecks = project.configurations.maybeCreate(VariantDependencies.CONFIG_NAME_LINTPUBLISH)
-    lintChecks.isVisible = false
     lintChecks.description = "Configuration to publish external lint check jar"
     lintChecks.isCanBeConsumed = false
     return lintChecks

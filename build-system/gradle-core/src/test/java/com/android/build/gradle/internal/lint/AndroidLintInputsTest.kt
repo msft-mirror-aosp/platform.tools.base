@@ -17,8 +17,10 @@
 package com.android.build.gradle.internal.lint
 
 import com.android.build.api.dsl.Lint
+import com.android.build.gradle.internal.dependency.VariantDependencies
 import com.android.build.gradle.internal.dsl.LintImpl
 import com.android.build.gradle.internal.fixtures.FakeSyncIssueReporter
+import com.android.build.gradle.internal.plugins.BasePlugin
 import com.android.build.gradle.internal.services.createDslServices
 import com.android.build.gradle.options.ProjectOptions
 import com.google.common.truth.Truth.assertThat
@@ -189,6 +191,27 @@ class AndroidLintInputsTest {
     assertThat(resolved.first().moduleGroup).isEqualTo("org.ow2.asm")
     assertThat(resolved.first().moduleName).isEqualTo("asm")
     assertThat(resolved.first().moduleVersion).isEqualTo("9.1")
+  }
+
+  @Test
+  fun `check custom lint checks configurations`() {
+    val lintChecks = BasePlugin.createCustomLintChecksConfig(project)
+    assertThat(lintChecks.name).isEqualTo(VariantDependencies.CONFIG_NAME_LINTCHECKS)
+    assertThat(lintChecks.isCanBeConsumed).isFalse()
+    assertThat(lintChecks.description).isEqualTo("Configuration to apply external lint check jar")
+
+    val compileClasspath = project.configurations.create("compileClasspath")
+    val runtimeClasspath = project.configurations.create("runtimeClasspath")
+    val lintChecksClasspath =
+      maybeCreateLintChecksClasspath(
+        project,
+        "debug",
+        compileClasspath,
+        runtimeClasspath,
+      )
+    assertThat(lintChecksClasspath.name).isEqualTo("debugLintChecksClasspath")
+    assertThat(lintChecksClasspath.isCanBeConsumed).isFalse()
+    assertThat(lintChecksClasspath.description).isEqualTo("Resolved configuration for lint check compilation for variant: debug")
   }
 
   @Test
