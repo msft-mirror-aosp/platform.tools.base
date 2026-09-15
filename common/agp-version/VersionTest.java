@@ -32,6 +32,11 @@ public class VersionTest {
     @Test
     public void testAndroidTestEngineVersion() {
         Assert.assertNotNull(Version.ANDROID_TEST_ENGINE_VERSION);
+        if (!Version.IS_AGP_RELEASE_BRANCH) {
+            Assert.assertTrue(
+                    "Non-release branch must have -dev suffix in androidTestEngineVersion",
+                    Version.ANDROID_TEST_ENGINE_VERSION.endsWith("-dev"));
+        }
     }
 
     @Test
