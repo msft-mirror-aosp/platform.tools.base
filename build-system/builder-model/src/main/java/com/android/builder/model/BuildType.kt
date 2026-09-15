@@ -22,9 +22,6 @@ package com.android.builder.model
  *
  * This is an interface for the gradle tooling api, and should only be used from Android Studio. It is not part of the DSL & API interfaces
  * of the Android Gradle Plugin.
- *
- * @see BuildTypeContainer
- * @see AndroidArtifact.getDependencies
  */
 interface BuildType : BaseConfig {
   /** The name of the build type. */

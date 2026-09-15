@@ -16,8 +16,6 @@
 
 package com.android.builder.model;
 
-import com.android.annotations.NonNull;
-
 /**
  * Meta Data for an Artifact.
  */
@@ -26,10 +24,4 @@ public interface ArtifactMetaData {
     int TYPE_ANDROID = 1;
     int TYPE_JAVA = 2;
 
-    @NonNull
-    String getName();
-
-    boolean isTest();
-
-    int getType();
 }

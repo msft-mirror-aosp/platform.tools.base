@@ -22,9 +22,6 @@ package com.android.builder.model
  * of the Android Gradle Plugin.
  *
  * It does not include the sources or the dependencies. Those are available on the container or in the artifact info.
- *
- * @see ProductFlavorContainer
- * @see BaseArtifact.getDependencies
  */
 interface ProductFlavor : BaseConfig, DimensionAware {
   /** The name of the flavor. */
@@ -32,7 +29,7 @@ interface ProductFlavor : BaseConfig, DimensionAware {
 
   /**
    * The name of the product flavor. This is only the value set on this product flavor. To get the final application id name, use
-   * [AndroidArtifact.getApplicationId].
+   * AndroidArtifact.getApplicationId.
    */
   val applicationId: String?
 
@@ -43,7 +40,7 @@ interface ProductFlavor : BaseConfig, DimensionAware {
   val versionCode: Int?
 
   /**
-   * The version name. This is only the value set on this product flavor. To get the final value, use [Variant.getMergedFlavor] with
+   * The version name. This is only the value set on this product flavor. To get the final value, use Variant.getMergedFlavor with
    * [.getVersionNameSuffix] and [BuildType.getVersionNameSuffix].
    */
   val versionName: String?
@@ -86,7 +83,7 @@ interface ProductFlavor : BaseConfig, DimensionAware {
 
   /**
    * The test application id. This is only the value set on this product flavor. To get the final value, use
-   * [Variant.getExtraAndroidArtifacts] with [AndroidProject.ARTIFACT_ANDROID_TEST] and then [AndroidArtifact.getApplicationId]
+   * Variant.getExtraAndroidArtifacts with [AndroidProject.ARTIFACT_ANDROID_TEST] and then AndroidArtifact.getApplicationId
    */
   val testApplicationId: String?
 
