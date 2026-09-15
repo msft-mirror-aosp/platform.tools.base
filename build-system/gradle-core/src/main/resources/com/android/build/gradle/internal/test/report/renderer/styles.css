@@ -575,28 +575,6 @@ header {
   color: var(--text-gray-500);
 }
 
-/* Tooltip */
-[data-tooltip] {
-  position: relative;
-}
-
-[data-tooltip]:hover::after,
-[data-tooltip]:focus-visible::after {
-  content: attr(data-tooltip);
-  position: absolute;
-  bottom: 110%;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: var(--bg-tooltip);
-  color: var(--text-inverse);
-  padding: 0.375rem 0.625rem;
-  border-radius: 0.25rem;
-  font-size: 0.75rem;
-  white-space: nowrap;
-  z-index: 1000;
-  box-shadow: var(--shadow-md);
-}
-
 /* --- Custom Tooltip --- */
 #a11y-tooltip {
   position: fixed;

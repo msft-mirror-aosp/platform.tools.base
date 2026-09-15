@@ -358,7 +358,7 @@ const TestReportApp = {
   state: {
     viewMode: 'flat',
     density: 'comfy',
-    currentFlatView: 'modules',
+    currentFlatView: 'testCases',
     selectedModule: null,
     selectedPackage: null,
     selectedClass: null,
@@ -380,10 +380,10 @@ const TestReportApp = {
     this.cacheDOMElements();
     Tooltip.init();
 
-    // Default to Flat Modules View on initial page open unless hash/history specifies otherwise
+    // Default to Flat Test Cases View on initial page open unless hash/history specifies otherwise
     if (!window.location.hash || window.location.hash === '#report-view' || window.location.hash === '#') {
       this.state.viewMode = 'flat';
-      this.state.currentFlatView = 'modules';
+      this.state.currentFlatView = 'testCases';
       this.state.selectedModule = null;
       this.state.selectedPackage = null;
       this.state.selectedClass = null;
@@ -1279,9 +1279,11 @@ const TestReportApp = {
         this.state.currentFlatView = 'classes';
       } else if (packages.length > 0 || activeChips.includes('package')) {
         this.state.currentFlatView = 'packages';
-      } else {
-        // Always fallback to modules if deeper hierarchies aren't active
+      } else if (modules.length > 0 || activeChips.includes('module')) {
         this.state.currentFlatView = 'modules';
+      } else {
+        // Fallback to testCases if no hierarchy filters are active
+        this.state.currentFlatView = 'testCases';
       }
     }
 
@@ -1579,7 +1581,7 @@ const TestReportApp = {
       'classes': 'Classes',
       'testCases': 'Test Cases'
     };
-    this.elements.groupByText.textContent = viewMap[this.state.currentFlatView] || 'Modules';
+    this.elements.groupByText.textContent = viewMap[this.state.currentFlatView] || 'Test Cases';
 
     if (this.elements.groupByDropdown) {
       this.elements.groupByDropdown.querySelectorAll('.dropdown-item').forEach(item => {
