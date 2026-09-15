@@ -185,7 +185,8 @@ const App = {
                     const context = {
                         moduleName: moduleName,
                         packageName: packageName,
-                        testSuiteName: CoverageReportApp.state.filters.testSuite
+                        testSuiteName: CoverageReportApp.state.filters.testSuite,
+                        variants: [...CoverageReportApp.state.filters.variants]
                     };
                     this.showSourceView(classObj, context);
                     Navigation.push();
@@ -228,6 +229,9 @@ const App = {
         document.getElementById('report-view').classList.remove('hidden-view');
         document.getElementById('source-view-controls').classList.add('hidden');
         document.getElementById('report-view-controls').classList.remove('hidden');
+
+        CoverageReportApp.updateVariantButtonText();
+        CoverageReportApp.updateVariantDropdown();
 
         if (App.activeTrigger) {
             App.activeTrigger.focus();
