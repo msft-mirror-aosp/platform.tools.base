@@ -98,6 +98,30 @@ class ModelInstantAppCompatibleTest {
       .contains(File(project.getSubproject(":app").mainSrcDir.parent, "/AndroidManifest.xml").toString())
   }
 
+  /**
+   * A manifest declaring an external DTD must never have that DTD dereferenced.
+   *
+   * The declared host is unroutable, so a regression that re-enabled DTD processing would fail or hang on the fetch. The sync issue
+   * asserted below is *not* caused by the hardening: `nextTag()` rejects the DTD event itself, and did so identically before DTD processing
+   * was disabled. The parser detail is asserted to guard the diagnostics needed for ordinary malformed manifests.
+   */
+  @Test
+  fun testBuildModelForInstantAppWithDoctypeDecl() {
+    val manifest = File(project.getSubproject(":app").mainSrcDir.parent, "AndroidManifest.xml")
+    TestFileUtils.searchAndReplace(
+      manifest,
+      "<manifest",
+      "<!DOCTYPE manifest SYSTEM \"http://invalid.invalid/does-not-exist.dtd\">\n<manifest",
+    )
+
+    val issues = project.modelV2().ignoreSyncIssues().fetchModels().container.getProject(":app").issues?.syncIssues!!
+
+    Truth.assertThat(issues).hasSize(1)
+    val message = issues.single().message
+    Truth.assertThat(message).startsWith("Failed to parse XML in $manifest")
+    Truth.assertThat(message).contains("expected start or end tag")
+  }
+
   @Test
   fun testBuildModelForInstantAppWithCommentsOutsideManifest() {
     TestFileUtils.searchAndReplace(

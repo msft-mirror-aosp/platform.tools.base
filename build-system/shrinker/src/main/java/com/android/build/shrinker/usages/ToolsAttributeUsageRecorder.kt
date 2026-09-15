@@ -23,7 +23,7 @@ import com.google.common.collect.ImmutableMap.copyOf
 import java.io.Reader
 import java.nio.file.Files
 import java.nio.file.Path
-import javax.xml.stream.XMLInputFactory
+import javax.xml.stream.XMLStreamException
 
 /**
  * Records usages of tools:keep, tools:discard and tools:shrinkMode in resources.
@@ -59,24 +59,32 @@ class ToolsAttributeUsageRecorder(val rawResourcesPath: Path) : ResourceUsageRec
 
   private fun processResourceToolsAttributes(path: Path): Map<String, String> {
     val toolsAttributes = mutableMapOf<String, String>()
-    XmlUtils.getUtfReader(path).use { reader: Reader ->
-      val factory = XMLInputFactory.newInstance()
-      val xmlStreamReader = factory.createXMLStreamReader(reader)
+    try {
+      XmlUtils.getUtfReader(path).use { reader: Reader ->
+        val factory = XmlUtils.createXmlInputFactory()
+        val xmlStreamReader = factory.createXMLStreamReader(reader)
 
-      var rootElementProcessed = false
-      while (!rootElementProcessed && xmlStreamReader.hasNext()) {
-        xmlStreamReader.next()
-        if (xmlStreamReader.isStartElement) {
-          if (xmlStreamReader.localName == "resources") {
-            for (i in 0 until xmlStreamReader.attributeCount) {
-              if (xmlStreamReader.getAttributeNamespace(i) == TOOLS_NAMESPACE) {
-                toolsAttributes.put(xmlStreamReader.getAttributeLocalName(i), xmlStreamReader.getAttributeValue(i))
+        var rootElementProcessed = false
+        while (!rootElementProcessed && xmlStreamReader.hasNext()) {
+          xmlStreamReader.next()
+          if (xmlStreamReader.isStartElement) {
+            if (xmlStreamReader.localName == "resources") {
+              for (i in 0 until xmlStreamReader.attributeCount) {
+                if (xmlStreamReader.getAttributeNamespace(i) == TOOLS_NAMESPACE) {
+                  toolsAttributes.put(xmlStreamReader.getAttributeLocalName(i), xmlStreamReader.getAttributeValue(i))
+                }
               }
             }
+            rootElementProcessed = true
           }
-          rootElementProcessed = true
         }
       }
+    } catch (e: XMLStreamException) {
+      // Deliberately fail rather than skipping the file: this parse determines tools:keep and
+      // tools:discard, so ignoring an unreadable resource could silently strip resources the
+      // project expects to survive shrinking. Note a <!DOCTYPE> declaration is ignored rather than
+      // rejected; what reaches here is a reference to an entity that can no longer be resolved.
+      throw IllegalStateException("Failed to parse resource XML in $path: ${e.message}", e)
     }
     return copyOf(toolsAttributes)
   }

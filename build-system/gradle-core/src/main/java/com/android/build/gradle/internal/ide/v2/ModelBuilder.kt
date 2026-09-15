@@ -128,6 +128,7 @@ import com.android.builder.model.v2.models.VariantDependencies
 import com.android.builder.model.v2.models.VariantDependenciesAdjacencyList
 import com.android.builder.model.v2.models.VariantDependenciesFlatList
 import com.android.builder.model.v2.models.Versions
+import com.android.utils.XmlUtils
 import com.android.utils.associateNotNull
 import com.google.common.collect.ImmutableList
 import com.google.common.collect.ImmutableMap
@@ -137,7 +138,6 @@ import java.io.FileInputStream
 import java.io.IOException
 import java.io.Serializable
 import javax.xml.namespace.QName
-import javax.xml.stream.XMLInputFactory
 import javax.xml.stream.XMLStreamException
 import javax.xml.stream.events.EndElement
 import kotlin.collections.map
@@ -1378,7 +1378,7 @@ class ModelBuilder<ExtensionT : CommonExtension>(
 
       try {
         FileInputStream(manifest).use { inputStream ->
-          val factory = XMLInputFactory.newInstance()
+          val factory = XmlUtils.createXmlInputFactory()
           val eventReader = factory.createXMLEventReader(inputStream)
           while (eventReader.hasNext() && !eventReader.peek().isEndDocument) {
             val event = eventReader.nextTag()
@@ -1400,30 +1400,36 @@ class ModelBuilder<ExtensionT : CommonExtension>(
           }
           eventReader.close()
         }
-      } catch (e: XMLStreamException) {
-        variantModel.syncIssueReporter.reportError(
-          IssueReporter.Type.MANIFEST_PARSE_FAILED,
-          """
-                        Failed to parse XML in ${manifest.path}
-                        ${e.message}
-                        """
-            .trimIndent(),
-        )
-      } catch (e: IOException) {
-        variantModel.syncIssueReporter.reportError(
-          IssueReporter.Type.MANIFEST_PARSE_FAILED,
-          """
-                        Failed to parse XML in ${manifest.path}
-                        ${e.message}
-                        """
-            .trimIndent(),
-        )
+      } catch (e: Exception) {
+        when (e) {
+          is XMLStreamException,
+          is IOException -> reportManifestParseFailure(manifest, e)
+          else -> throw e
+        }
       } finally {
         // check that we have not yet put a true in there
         instantAppResultMap.putIfAbsent(manifest, false)
       }
     }
     return false
+  }
+
+  /**
+   * Reports a manifest parse failure as a sync issue.
+   *
+   * The exception detail is included deliberately: it carries the line/column and reason that make an ordinary malformed manifest
+   * diagnosable. It cannot leak host files, because the parser is built by [XmlUtils.createXmlInputFactory], which disables DTD processing
+   * and external entity resolution -- so no `file:`/`http:` URI can be dereferenced and the message can only describe content already
+   * present in the project's own manifest.
+   */
+  private fun reportManifestParseFailure(manifest: File, e: Exception) {
+    // Plain concatenation rather than a trimIndent() raw string: e.message is frequently
+    // multi-line, and interpolating it defeats trimIndent's common-indent calculation, which
+    // leaves the first lines ragged.
+    variantModel.syncIssueReporter.reportError(
+      IssueReporter.Type.MANIFEST_PARSE_FAILED,
+      "Failed to parse XML in ${manifest.path}\n${e.message}",
+    )
   }
 
   private fun getTestTargetVariant(component: ComponentCreationConfig): TestedTargetVariant? {

@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.test.report
 
 import com.android.build.gradle.internal.LoggerWrapper
+import com.android.utils.XmlUtils
 import com.google.common.annotations.VisibleForTesting
 import com.google.gson.GsonBuilder
 import java.io.File
@@ -129,15 +130,8 @@ class XMLReportAggregator(private val files: List<File>, projectName: String) {
    */
   private fun processXmlStream(inputStream: InputStream, streamName: String? = null) {
     var variantName: String? = null
-    val factory = XMLInputFactory.newInstance()
+    val factory = XmlUtils.createXmlInputFactory()
     factory.setProperty(XMLInputFactory.IS_COALESCING, true)
-    // Security: Disable DTDs and external entities to prevent XXE attacks
-    try {
-      factory.setProperty(XMLInputFactory.SUPPORT_DTD, false)
-      factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false)
-    } catch (e: IllegalArgumentException) {
-      logger.error(e, "Could not set some security properties on XMLInputFactory: ${e.message}")
-    }
 
     try {
       inputStream.use { stream ->

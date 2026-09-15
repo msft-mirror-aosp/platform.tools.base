@@ -42,6 +42,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
+import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.Locale;
@@ -49,6 +50,9 @@ import java.util.Map;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 
 @SuppressWarnings("javadoc")
 public class XmlUtilsTest extends TestCase {
@@ -187,8 +191,9 @@ public class XmlUtilsTest extends TestCase {
 
         String xml = XmlUtils.toXml(doc);
         assertEquals(
-                "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
-                        "<myroot baz=\"baz\" foo=\"bar\"><mychild/><hasComment><!--This is my comment--></hasComment><hasText>  This is my text  </hasText></myroot>",
+                "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                        + "<myroot baz=\"baz\" foo=\"bar\"><mychild/><hasComment><!--This is my"
+                        + " comment--></hasComment><hasText>  This is my text  </hasText></myroot>",
                 xml);
     }
 
@@ -601,5 +606,73 @@ public class XmlUtilsTest extends TestCase {
         assertThat(XmlUtils.isProtoXml(new ByteArrayInputStream(proto))).isTrue();
         assertThat(XmlUtils.isProtoXml(new ByteArrayInputStream(text))).isFalse();
         assertThat(XmlUtils.isProtoXml(new ByteArrayInputStream(textWithBom))).isFalse();
+    }
+
+    public void testCreateXmlInputFactoryDisablesDtdAndExternalEntities() throws Exception {
+        XMLInputFactory factory = XmlUtils.createXmlInputFactory();
+
+        assertThat(factory.getProperty(XMLInputFactory.SUPPORT_DTD)).isEqualTo(Boolean.FALSE);
+        assertThat(factory.getProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES))
+                .isEqualTo(Boolean.FALSE);
+    }
+
+    /** Callers that construct their own factory must get the same hardening. */
+    public void testHardenDisablesDtdAndExternalEntities() throws Exception {
+        XMLInputFactory factory = XmlUtils.harden(XMLInputFactory.newFactory());
+
+        assertThat(factory.getProperty(XMLInputFactory.SUPPORT_DTD)).isEqualTo(Boolean.FALSE);
+        assertThat(factory.getProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES))
+                .isEqualTo(Boolean.FALSE);
+    }
+
+    /**
+     * An external DTD must never be dereferenced. With DTD support disabled the declaration is
+     * ignored rather than rejected, so the document parses normally and no network access occurs.
+     *
+     * <p>The host is intentionally unroutable: were the DTD fetched, this would fail or hang
+     * instead of passing.
+     */
+    public void testCreateXmlInputFactoryIgnoresExternalDtd() throws Exception {
+        XMLInputFactory factory = XmlUtils.createXmlInputFactory();
+
+        String xml =
+                "<?xml version=\"1.0\"?>\n"
+                        + "<!DOCTYPE root SYSTEM \"http://invalid.invalid/does-not-exist.dtd\">\n"
+                        + "<root/>";
+
+        XMLStreamReader reader = factory.createXMLStreamReader(new StringReader(xml));
+        while (reader.hasNext()) {
+            reader.next();
+        }
+    }
+
+    /**
+     * An entity declared in the internal subset must not be resolved. Because the declaration is
+     * ignored, referencing the entity is an error -- which is the observable proof that no
+     * resolution (and therefore no file or network read) took place.
+     *
+     * <p>The wording is deliberately not asserted: {@code newFactory()} resolves via {@code
+     * ServiceLoader}, and the JDK and Aalto parsers word this differently. What matters is that the
+     * reference fails rather than expanding.
+     */
+    public void testCreateXmlInputFactoryDoesNotResolveDeclaredEntities() throws Exception {
+        XMLInputFactory factory = XmlUtils.createXmlInputFactory();
+
+        String xml =
+                "<?xml version=\"1.0\"?>\n"
+                        + "<!DOCTYPE root [\n"
+                        + "  <!ENTITY e SYSTEM \"http://invalid.invalid/does-not-exist.txt\">\n"
+                        + "]>\n"
+                        + "<root>&e;</root>";
+
+        try {
+            XMLStreamReader reader = factory.createXMLStreamReader(new StringReader(xml));
+            while (reader.hasNext()) {
+                reader.next();
+            }
+            fail("Expected XMLStreamException: the entity must not be resolved");
+        } catch (XMLStreamException expected) {
+            // Expected: the entity declaration was ignored, so the reference cannot be satisfied.
+        }
     }
 }

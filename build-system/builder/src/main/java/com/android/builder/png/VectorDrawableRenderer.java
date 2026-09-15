@@ -18,6 +18,7 @@ package com.android.builder.png;
 import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.TAG_VECTOR;
 import static com.android.io.Images.writeImage;
+
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
@@ -34,7 +35,10 @@ import com.android.resources.Density;
 import com.android.resources.ResourceFolderType;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
+import com.android.utils.XmlUtils;
+
 import com.google.common.io.Files;
+
 import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -47,6 +51,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.function.Supplier;
+
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
@@ -202,7 +207,7 @@ public class VectorDrawableRenderer implements ResourcePreprocessor {
         if (mMinSdk >= PreprocessingReason.GRADIENT_SUPPORT.getSdkThreshold()) return null;
         if (!isXml(resourceFile) || !isInDrawable(resourceFile)) return null;
         try (InputStream stream = new BufferedInputStream(new FileInputStream(resourceFile))) {
-            XMLInputFactory factory = XMLInputFactory.newFactory();
+            XMLInputFactory factory = XmlUtils.createXmlInputFactory();
             XMLStreamReader xmlReader = factory.createXMLStreamReader(stream);
 
             boolean beforeFirstTag = true;
@@ -320,13 +325,16 @@ public class VectorDrawableRenderer implements ResourcePreprocessor {
     private enum PreprocessingReason {
         VECTOR_SUPPORT(
                 21,
-                "File was preprocessed as vector drawable support was added in Android 5.0 (API level 21)"),
+                "File was preprocessed as vector drawable support was added in Android 5.0 (API"
+                        + " level 21)"),
         GRADIENT_SUPPORT(
                 24,
-                "File was preprocessed as vector drawable gradient support was added in Android 7.0 (API level 24)"),
+                "File was preprocessed as vector drawable gradient support was added in Android 7.0"
+                        + " (API level 24)"),
         FILLTYPE_SUPPORT(
                 24,
-                "File was preprocessed as vector drawable android:filltype support was added in Android 7.0 (API level 24)");
+                "File was preprocessed as vector drawable android:filltype support was added in"
+                        + " Android 7.0 (API level 24)");
 
         private final int mSdkThreshold;
         private final String explanation;
