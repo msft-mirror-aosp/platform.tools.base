@@ -179,4 +179,136 @@ class AmInstrumentCommandBuilderTest {
       .containsExactly("adb", "-s", "serial", "shell", "am", "instrument", "-r", "-w", "--instrument-in-pcc", "pkg/runner")
       .inOrder()
   }
+
+  @Test
+  fun build_shellEscapesRegexMetacharactersInArgValue() {
+    // `adb shell` does not forward argv verbatim: it joins the arguments with spaces and the
+    // device's `/system/bin/sh` then performs word splitting and quote removal. Unless the value is
+    // quoted, the shell strips the backslashes from this `tests_regex` filter and the runner ends up
+    // matching nothing.
+    val testsRegex = """com.example.FooTestSuite.bar\[.*\]"""
+
+    val command =
+      AmInstrumentCommandBuilder()
+        .setAdbPath("adb")
+        .setDeviceSerial("serial")
+        .setInstrumentationRunner("pkg", "runner")
+        .addInstrumentationArg("tests_regex", testsRegex)
+        .build()
+
+    assertThat(deviceArgvFor(command))
+      .containsExactly("am", "instrument", "-r", "-w", "-e", "tests_regex", testsRegex, "pkg/runner")
+      .inOrder()
+  }
+
+  @Test
+  fun build_shellEscapesSpacesInArgValue() {
+    val value = "two words"
+
+    val command =
+      AmInstrumentCommandBuilder()
+        .setAdbPath("adb")
+        .setDeviceSerial("serial")
+        .setInstrumentationRunner("pkg", "runner")
+        .addInstrumentationArg("key", value)
+        .build()
+
+    assertThat(deviceArgvFor(command)).containsExactly("am", "instrument", "-r", "-w", "-e", "key", value, "pkg/runner").inOrder()
+  }
+
+  @Test
+  fun build_shellEscapesCommandSubstitutionInArgValue() {
+    val value = "\$(echo substituted)"
+
+    val command =
+      AmInstrumentCommandBuilder()
+        .setAdbPath("adb")
+        .setDeviceSerial("serial")
+        .setInstrumentationRunner("pkg", "runner")
+        .addInstrumentationArg("key", value)
+        .build()
+
+    assertThat(deviceArgvFor(command)).containsExactly("am", "instrument", "-r", "-w", "-e", "key", value, "pkg/runner").inOrder()
+  }
+
+  @Test
+  fun build_plainArgValuesAreUnaffectedByEscaping() {
+    // Must arrive unchanged whether or not the builder chooses to quote it.
+    val command =
+      AmInstrumentCommandBuilder()
+        .setAdbPath("adb")
+        .setDeviceSerial("serial")
+        .setInstrumentationRunner("pkg", "runner")
+        .addInstrumentationArg("class", "com.example.FooTest")
+        .build()
+
+    assertThat(deviceArgvFor(command))
+      .containsExactly("am", "instrument", "-r", "-w", "-e", "class", "com.example.FooTest", "pkg/runner")
+      .inOrder()
+  }
+
+  /** Returns the argv that `am instrument` receives on the device for the given built [command]. */
+  private fun deviceArgvFor(command: List<String>): List<String> =
+    simulateDeviceShell(command.subList(command.indexOf("shell") + 1, command.size))
+
+  /**
+   * Simulates the device side of `adb shell`: the arguments are joined with spaces and parsed by `/system/bin/sh`, which performs word
+   * splitting and quote removal.
+   *
+   * Only quoting is modelled, since that is what the builder is responsible for; expansions such as `$(...)` are not evaluated. Valid for
+   * the non-orchestrator command only: the orchestrator's `CLASSPATH=$(pm path ...)` prefix relies on shell evaluation and must stay
+   * unquoted, which [build_withAndroidxOrchestrator] covers.
+   */
+  private fun simulateDeviceShell(shellArgs: List<String>): List<String> {
+    val line = shellArgs.joinToString(" ")
+    val words = mutableListOf<String>()
+    val current = StringBuilder()
+    var inWord = false
+    var i = 0
+    while (i < line.length) {
+      when (val c = line[i]) {
+        ' ' ->
+          if (inWord) {
+            words.add(current.toString())
+            current.setLength(0)
+            inWord = false
+          }
+        '\'' -> {
+          inWord = true
+          i++
+          while (i < line.length && line[i] != '\'') {
+            current.append(line[i])
+            i++
+          }
+        }
+        '"' -> {
+          inWord = true
+          i++
+          while (i < line.length && line[i] != '"') {
+            if (line[i] == '\\' && i + 1 < line.length && line[i + 1] in "\"\\$`") {
+              i++
+            }
+            current.append(line[i])
+            i++
+          }
+        }
+        '\\' -> {
+          inWord = true
+          if (i + 1 < line.length) {
+            i++
+            current.append(line[i])
+          }
+        }
+        else -> {
+          inWord = true
+          current.append(c)
+        }
+      }
+      i++
+    }
+    if (inWord) {
+      words.add(current.toString())
+    }
+    return words
+  }
 }

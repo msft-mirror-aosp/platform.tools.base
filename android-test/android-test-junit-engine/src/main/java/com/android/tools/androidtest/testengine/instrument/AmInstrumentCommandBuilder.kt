@@ -101,7 +101,7 @@ class AmInstrumentCommandBuilder {
       instrumentationArgs.forEach { (key, value) ->
         add("-e")
         add(key)
-        add(value)
+        add(shellQuote(value))
       }
 
       if (isOrchestrator) {
@@ -118,5 +118,23 @@ class AmInstrumentCommandBuilder {
         add("$pkg/$runner")
       }
     }
+  }
+
+  /**
+   * Quotes [value] so that the device shell passes it to `am instrument` unchanged.
+   *
+   * `adb shell` joins its arguments with spaces and the device's `/system/bin/sh` performs word splitting and quote removal, so any value
+   * containing shell metacharacters must be quoted.
+   */
+  private fun shellQuote(value: String): String =
+    if (value.isNotEmpty() && value.all { it.isLetterOrDigit() || it in SHELL_SAFE_CHARS }) {
+      value
+    } else {
+      "'" + value.replace("'", "'\\''") + "'"
+    }
+
+  private companion object {
+    /** Characters that are safe to leave unquoted in a shell word. */
+    private const val SHELL_SAFE_CHARS = "._-/:=@+,"
   }
 }
