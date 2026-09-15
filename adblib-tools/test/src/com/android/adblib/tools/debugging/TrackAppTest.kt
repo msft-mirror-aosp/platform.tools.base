@@ -15,11 +15,14 @@
  */
 package com.android.adblib.tools.debugging
 
+import com.android.adblib.AdbUsageTracker
 import com.android.adblib.testingutils.CoroutineTestUtils
 import com.android.adblib.testingutils.FakeAdbServerProviderRule
+import com.android.adblib.testingutils.TestingAdbUsageTracker
 import com.android.adblib.tools.testutils.waitForOnlineConnectedDevice
 import com.android.fakeadbserver.DeviceState
 import com.android.sdklib.AndroidApiLevel
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -35,6 +38,9 @@ class TrackAppTest {
   private val hostServices
     get() = fakeAdbRule.adbSession.hostServices
 
+  private val usageTracker
+    get() = fakeAdbRule.adbSession.host.usageTracker as TestingAdbUsageTracker
+
   @Test
   fun testIsAppInfoSupported_returnsTrue_onApi36() = CoroutineTestUtils.runBlockingWithTimeout {
     // Prepare
@@ -44,6 +50,10 @@ class TrackAppTest {
 
     // Act / Assert
     assertTrue(connectedDevice.isAppInfoSupported())
+    assertEquals(
+      AdbUsageTracker.AppInfoSupportReason.SUPPORTED,
+      usageTracker.loggedEvents.last().appInfoSupport?.reason,
+    )
   }
 
   @Test
@@ -57,6 +67,10 @@ class TrackAppTest {
 
     // Act / Assert
     assertFalse(connectedDevice.isAppInfoSupported())
+    assertEquals(
+      AdbUsageTracker.AppInfoSupportReason.VM_CAPABILITIES_NOT_SUPPORTED,
+      usageTracker.loggedEvents.last().appInfoSupport?.reason,
+    )
   }
 
   @Test
@@ -68,6 +82,10 @@ class TrackAppTest {
 
     // Act / Assert: Not supported, because `app_info` is not supported
     assertFalse(connectedDevice.isAppInfoSupported())
+    assertEquals(
+      AdbUsageTracker.AppInfoSupportReason.APP_INFO_NOT_SUPPORTED,
+      usageTracker.loggedEvents.last().appInfoSupport?.reason,
+    )
   }
 
   @Test
@@ -79,5 +97,9 @@ class TrackAppTest {
 
     // Act / Assert: Not supported, because `track_app` is not supported
     assertFalse(connectedDevice.isAppInfoSupported())
+    assertEquals(
+      AdbUsageTracker.AppInfoSupportReason.TRACK_APP_NOT_SUPPORTED,
+      usageTracker.loggedEvents.last().appInfoSupport?.reason,
+    )
   }
 }

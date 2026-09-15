@@ -17,12 +17,14 @@ package com.android.adblib.tools.debugging
 
 import com.android.adblib.AdbDeviceServices
 import com.android.adblib.AdbFeatures
+import com.android.adblib.AdbUsageTracker
 import com.android.adblib.AppProcessEntry
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.CoroutineScopeCache
 import com.android.adblib.ListWithStateFlowStatus
 import com.android.adblib.StateFlowStatus
 import com.android.adblib.activityManager
+import com.android.adblib.deviceProperties
 import com.android.adblib.getOrPutSynchronized
 import com.android.adblib.hasAvailableFeature
 import com.android.adblib.isCapabilitiesSupported
@@ -82,21 +84,52 @@ suspend fun ConnectedDevice.isAppInfoSupported(): Boolean {
   // Note: In theory, `app_info` implies `track_app`, but we check anyway.
   // `track_app` was introduced around API 31, whereas `app_info` was introduced
   // around API 36.
-  return if (!isTrackAppSupported()) {
-    false
+  if (!isTrackAppSupported()) {
+    logAppInfoSupport(AdbUsageTracker.AppInfoSupportReason.TRACK_APP_NOT_SUPPORTED)
+    return false
   }
   // ADB server and the ADB daemon ("adbd") on the device needs to support `app_info`...
-  else if (!hasAvailableFeature(AdbFeatures.APP_INFO)) {
-    false
-  } else {
-    if (!activityManager.isCapabilitiesSupported()) {
-      return false
-    }
-    val capabilitiesResult = activityManager.capabilities()
-
-    // ...as well as the Android VM...
-    // ...and the Android Framework
-    capabilitiesResult.vmCapabilities.contains(AdbFeatures.APP_INFO) &&
-      capabilitiesResult.frameworkCapabilities.contains(AdbFeatures.APP_INFO)
+  if (!hasAvailableFeature(AdbFeatures.APP_INFO)) {
+    logAppInfoSupport(AdbUsageTracker.AppInfoSupportReason.APP_INFO_NOT_SUPPORTED)
+    return false
   }
+
+  if (deviceProperties().api() == 1) {
+    // isCapabilitiesSupported check below is based on the api version.
+    // This helps us distinguish between failure to get api and low api.
+    logAppInfoSupport(AdbUsageTracker.AppInfoSupportReason.API_LEVEL_IS_DEFAULT)
+    return false
+  }
+
+  if (!activityManager.isCapabilitiesSupported()) {
+    logAppInfoSupport(AdbUsageTracker.AppInfoSupportReason.ACTIVITY_MANAGER_CAPABILITIES_NOT_SUPPORTED)
+    return false
+  }
+
+  val capabilitiesResult = activityManager.capabilities()
+
+  // ...as well as the Android VM...
+  if (!capabilitiesResult.vmCapabilities.contains(AdbFeatures.APP_INFO)) {
+    logAppInfoSupport(AdbUsageTracker.AppInfoSupportReason.VM_CAPABILITIES_NOT_SUPPORTED)
+    return false
+  }
+
+  // ...and the Android Framework
+  if (!capabilitiesResult.frameworkCapabilities.contains(AdbFeatures.APP_INFO)) {
+    logAppInfoSupport(AdbUsageTracker.AppInfoSupportReason.FRAMEWORK_CAPABILITIES_NOT_SUPPORTED)
+    return false
+  }
+
+  logAppInfoSupport(AdbUsageTracker.AppInfoSupportReason.SUPPORTED)
+  return true
+}
+
+internal suspend fun ConnectedDevice.logAppInfoSupport(reason: AdbUsageTracker.AppInfoSupportReason) {
+  val deviceInfo = AdbUsageTracker.DeviceInfo.createFrom(this)
+  session.host.usageTracker.logUsage(
+    AdbUsageTracker.Event(
+      deviceInfo = deviceInfo,
+      appInfoSupport = AdbUsageTracker.AppInfoSupportEvent(reason = reason),
+    )
+  )
 }

@@ -18,6 +18,7 @@ package com.android.adblib.tools.debugging.impl
 import com.android.adblib.AdbSession
 import com.android.adblib.AdbUsageTracker
 import com.android.adblib.AdbUsageTracker.AppInfoProcessPropertiesCollectorEventType
+import com.android.adblib.AdbUsageTracker.AppInfoSupportReason
 import com.android.adblib.AdbUsageTracker.JdwpProcessPropertiesCollectorEvent
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.CoroutineScopeCache
@@ -177,14 +178,19 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
     // Delay a little to ensure AndroidStudio stats events get logged
     delay(10)
     val loggedEvents = (session.host.usageTracker as TestingAdbUsageTracker).loggedEvents
-    assertEquals(2, loggedEvents.size)
-    assertEquals(device.serialNumber, loggedEvents[0].deviceInfo?.serialNumber)
-    assertEquals(device.serialNumber, loggedEvents[1].deviceInfo?.serialNumber)
+    assertEquals(3, loggedEvents.size)
+    loggedEvents.forEach {
+      assertEquals(device.serialNumber, it.deviceInfo?.serialNumber)
+    }
 
-    val loggedEventTypes = loggedEvents.map { it.appInfoProcessPropertiesCollector?.eventType }.toList()
-    assertEquals(2, loggedEventTypes.size)
-    assertTrue(loggedEventTypes.contains(AppInfoProcessPropertiesCollectorEventType.TRACK_APP_VALUE_COLLECTED))
-    assertTrue(loggedEventTypes.contains(AppInfoProcessPropertiesCollectorEventType.VM_INFO_VALUE_COLLECTED))
+    val loggedAppInfoCollectionEventTypes = loggedEvents.mapNotNull { it.appInfoProcessPropertiesCollector?.eventType }.toList()
+    assertEquals(2, loggedAppInfoCollectionEventTypes.size)
+    assertTrue(loggedAppInfoCollectionEventTypes.contains(AppInfoProcessPropertiesCollectorEventType.TRACK_APP_VALUE_COLLECTED))
+    assertTrue(loggedAppInfoCollectionEventTypes.contains(AppInfoProcessPropertiesCollectorEventType.VM_INFO_VALUE_COLLECTED))
+
+    val loggedAppInfoSupportEventTypes = loggedEvents.mapNotNull { it.appInfoSupport?.reason }.toList()
+    assertEquals(1, loggedAppInfoSupportEventTypes.size)
+    assertEquals(AppInfoSupportReason.SUPPORTED, loggedAppInfoSupportEventTypes[0])
 
     // Test that adding another process is not going to log events for the unaffected process
     // Prepare / Act
@@ -451,7 +457,9 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
     // session to collect properties. This will time out and retry because there
     // is another process collecting properties
     process.propertiesFlow.first()
-    yieldUntil { ((session.host.usageTracker as? TestingAdbUsageTracker)?.loggedEvents?.size ?: 0) > 0 }
+    yieldUntil {
+      ((session.host.usageTracker as TestingAdbUsageTracker).loggedEvents.mapNotNull { it.jdwpProcessPropertiesCollector }.size) > 0
+    }
 
     // Close the other process so that it frees up the JDWP session
     launch { firstProcess.close() }
@@ -464,8 +472,9 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
 
     // Assert: We should have logged 2 adb usage events from the `process`. Note that
     // we have closed `firstProcess` before it could have logged any adb usage events.
-    val loggedEvents = (session.host.usageTracker as? TestingAdbUsageTracker)?.loggedEvents
-    assertEquals(2, loggedEvents?.size)
+    val loggedJdwpProcessPropertiesCollectorEvents =
+      (session.host.usageTracker as TestingAdbUsageTracker).loggedEvents.mapNotNull { it.jdwpProcessPropertiesCollector }
+    assertEquals(2, loggedJdwpProcessPropertiesCollectorEvents.size)
     assertEquals(
       JdwpProcessPropertiesCollectorEvent(
         isSuccess = false,
@@ -473,9 +482,8 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
         previouslyFailedCount = 0,
         previousFailureType = null,
       ),
-      loggedEvents!![0].jdwpProcessPropertiesCollector,
+      loggedJdwpProcessPropertiesCollectorEvents[0],
     )
-    assertEquals(device.serialNumber, loggedEvents[0].deviceInfo?.serialNumber)
     assertEquals(
       JdwpProcessPropertiesCollectorEvent(
         isSuccess = true,
@@ -483,9 +491,11 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
         previouslyFailedCount = 1,
         previousFailureType = AdbUsageTracker.JdwpProcessPropertiesCollectorFailureType.NO_RESPONSE,
       ),
-      loggedEvents[1].jdwpProcessPropertiesCollector,
+      loggedJdwpProcessPropertiesCollectorEvents[1],
     )
-    assertEquals(device.serialNumber, loggedEvents[1].deviceInfo?.serialNumber)
+    (session.host.usageTracker as TestingAdbUsageTracker).loggedEvents.forEach {
+      assertEquals(device.serialNumber, it.deviceInfo?.serialNumber)
+    }
   }
 
   @Test
