@@ -6,10 +6,10 @@
 
 namespace coverage {
 
-// TODO(b/556724270): Refactor SyntheticFilter into modular, interface-driven filter sub-classes.
 class SyntheticFilter {
  public:
-  // Checks if the given basic block represents a compiler-generated coroutine suspension return check.
+  // Checks if the given basic block represents a compiler-generated/synthetic
+  // branch to suppress.
   static bool IsSyntheticBranch(ir::EncodedMethod* ir_method,
                                const lir::BasicBlock& block);
 };
