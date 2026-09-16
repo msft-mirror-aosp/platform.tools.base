@@ -32,6 +32,7 @@ import com.android.adblib.withInputChannelCollector
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.time.Duration
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicBoolean
@@ -71,10 +72,12 @@ internal class ForwardingDaemonImpl(
   private val streamOpener: StreamOpener,
   private val scope: CoroutineScope,
   private val adbSession: AdbSession,
+  roundTripLatencyMsFlowForTesting: Flow<Long>? = null,
   private val serverSocketProvider: suspend () -> AdbServerSocket = { adbSession.channelFactory.createServerSocket() },
 ) : ForwardingDaemon {
 
   private val streams = mutableMapOf<Int, Stream>()
+  private val pingStreamIds = ConcurrentHashMap.newKeySet<Int>()
   private val startedLatch = Mutex(locked = true)
   private val started = AtomicBoolean(false)
   private val stopped = AtomicBoolean(false)
@@ -96,10 +99,14 @@ internal class ForwardingDaemonImpl(
   private lateinit var adbCommandHandler: Job
   private var roundTripLatencyCollector: Job? = null
   private var consecutiveConnectionLostCount = 0
+  // Tracks whether commands were received from the remote device. Any command is proof that the connection is still delivering data.
+  private val receivedRemoteCommand = AtomicBoolean()
   override val deviceState = _deviceState.asStateFlow()
 
+  override val roundTripLatencyMsFlow: Flow<Long> = roundTripLatencyMsFlowForTesting ?: createRoundTripLatencyMsFlow()
+
   @OptIn(ExperimentalCoroutinesApi::class)
-  override val roundTripLatencyMsFlow: Flow<Long> = flow {
+  private fun createRoundTripLatencyMsFlow(): Flow<Long> = flow {
     // Wait for the connected device to be online so that it can respond to pings below
     adbSession.connectedDevicesTracker.connectedDevices
       .mapNotNull { it.firstOrNull { entry -> entry.serialNumber == serialNumber } }
@@ -218,8 +225,12 @@ internal class ForwardingDaemonImpl(
   }
 
   private fun CoroutineScope.launchRoundTripLatencyCollector() = launch {
-    roundTripLatencyMsFlow.collect {
-      if (it < ROUND_TRIP_LATENCY_LIMIT.toMillis()) {
+    roundTripLatencyMsFlow.collect { latencyMs ->
+      // Commands coming from the device prove that the connection is still delivering data, so latency measured while it is busy (for
+      // example during an `adb install` of a large app) is congestion rather than a lost connection. See b/504772520.
+      val isConnectionAlive = receivedRemoteCommand.getAndSet(false) || latencyMs < ROUND_TRIP_LATENCY_LIMIT.toMillis()
+
+      if (isConnectionAlive) {
         consecutiveConnectionLostCount = 0
       } else {
         // Close connection if latency exceed ROUND_TRIP_LATENCY_LIMIT for more than 3 times.
@@ -246,6 +257,7 @@ internal class ForwardingDaemonImpl(
           }
         }
         streams.clear()
+        pingStreamIds.clear()
 
         if (consecutiveConnectionLostCount >= 3) {
           onStateChanged(DeviceState.LATENCY_DISCONNECT)
@@ -288,6 +300,9 @@ internal class ForwardingDaemonImpl(
     if (header.service.startsWith("reverse:")) {
       reverseService!!.handleReverse(header.service, header.localId)
     } else {
+      if (header.service.endsWith(":cat") || header.service == "cat") {
+        pingStreamIds.add(header.localId)
+      }
       streams[header.localId] = streamOpener.open(header.service, header.localId, localAdbChannel)
 
       OkayCommand(header.localId, header.localId).writeTo(localAdbChannel, needsCrc32)
@@ -305,6 +320,7 @@ internal class ForwardingDaemonImpl(
   }
 
   private suspend fun handleClose(command: CloseCommand) {
+    pingStreamIds.remove(command.remoteId)
     streams[command.remoteId]?.sendClose()
 
     streams.remove(command.remoteId)
@@ -312,6 +328,9 @@ internal class ForwardingDaemonImpl(
 
   /** Receive a command from the remote ADB server. */
   override suspend fun receiveRemoteCommand(command: StreamCommand) {
+    if (command.remoteId !in pingStreamIds) {
+      receivedRemoteCommand.set(true)
+    }
     streams[command.remoteId]?.receiveCommand(command)
   }
 

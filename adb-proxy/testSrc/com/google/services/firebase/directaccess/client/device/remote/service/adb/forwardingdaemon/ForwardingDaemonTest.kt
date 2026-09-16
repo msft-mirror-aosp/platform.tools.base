@@ -39,6 +39,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.job
@@ -304,6 +305,53 @@ class ForwardingDaemonTest {
     forwardingDaemon.start()
 
     yieldUntil { forwardingDaemon.deviceState.value == DeviceState.LATENCY_DISCONNECT }
+  }
+
+  @Test
+  fun testCommandsFromDevicePreventLatencyDisconnect() = runBlockingWithTimeout {
+    val latencyMsFlow = MutableSharedFlow<Long>()
+    val childScope = fakeAdbSession.scope.createChildScope(context = exceptionHandler)
+    forwardingDaemon = ForwardingDaemonImpl(fakeStreamOpener, childScope, fakeAdbSession, latencyMsFlow) { testSocket }
+    forwardingDaemon.start()
+    yieldUntil { latencyMsFlow.subscriptionCount.value > 0 }
+
+    // A device that keeps sending data is reachable, so the connection is kept no matter how long the latency stays above the limit.
+    repeat(10) {
+      forwardingDaemon.receiveRemoteCommand(WriteCommand(1, 1, "test".toByteArray()))
+      latencyMsFlow.emit(ROUND_TRIP_LATENCY_LIMIT.toMillis())
+    }
+    assertThat(forwardingDaemon.deviceState.value).isNotEqualTo(DeviceState.LATENCY_DISCONNECT)
+
+    // Once the device stops sending data, high latency means the connection is lost.
+    repeat(3) { latencyMsFlow.emit(ROUND_TRIP_LATENCY_LIMIT.toMillis()) }
+
+    yieldUntil { forwardingDaemon.deviceState.value == DeviceState.LATENCY_DISCONNECT }
+  }
+
+  @Test
+  fun testPingResponsesDoNotPreventLatencyDisconnect() = runBlockingWithTimeout {
+    val latencyMsFlow = MutableSharedFlow<Long>()
+    val childScope = fakeAdbSession.scope.createChildScope(context = exceptionHandler)
+    forwardingDaemon = ForwardingDaemonImpl(fakeStreamOpener, childScope, fakeAdbSession, latencyMsFlow) { testSocket }
+    forwardingDaemon.start()
+    yieldUntil { isAdbDeviceConnected() }
+    yieldUntil { latencyMsFlow.subscriptionCount.value > 0 }
+
+    fakeAdbSession.channelFactory.connectSocket(testSocket.localAddress()!!).use { channel ->
+      channel.writeExactly(createByteBuffer(CNXN))
+      channel.assertCommand(CNXN)
+      val service = "shell:cat"
+      channel.writeExactly(createByteBuffer(OPEN, 2, 0, service.length, service))
+      channel.assertCommand(OKAY, 2, 2)
+
+      // Responses on the ping stream do not count as proof of active user traffic, so high latency still disconnects.
+      repeat(3) {
+        forwardingDaemon.receiveRemoteCommand(WriteCommand(2, 2, "Foo".toByteArray()))
+        latencyMsFlow.emit(ROUND_TRIP_LATENCY_LIMIT.toMillis())
+      }
+
+      yieldUntil { forwardingDaemon.deviceState.value == DeviceState.LATENCY_DISCONNECT }
+    }
   }
 
   private fun isAdbDeviceConnected() =
