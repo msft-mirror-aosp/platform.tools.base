@@ -1,7 +1,7 @@
 <variant
     name="debug"
     package="com.example.android.lint.kotlin"
-    minSdkVersion="15"
+    minSdkVersion="19"
     targetSdkVersion="${androidHighestKnownStableApi}"
     debuggable="true"
     mergedManifest="build/intermediates/merged_manifest/debug/processDebugMainManifest/AndroidManifest.xml"

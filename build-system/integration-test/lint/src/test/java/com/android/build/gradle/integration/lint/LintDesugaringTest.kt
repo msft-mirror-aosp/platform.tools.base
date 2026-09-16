@@ -85,6 +85,7 @@ class LintDesugaringTest {
 
         dependencies {
           api("androidx.appcompat:appcompat:1.6.1")
+          api("androidx.activity:activity:1.9.3")
           coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:$DESUGAR_DEPENDENCY_VERSION")
         }
       }

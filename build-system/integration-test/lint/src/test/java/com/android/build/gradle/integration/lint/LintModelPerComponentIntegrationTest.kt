@@ -152,7 +152,7 @@ class LintModelPerComponentIntegrationTest {
             """
         .trimIndent(),
     )
-    TestFileUtils.searchAndReplace(project.getSubproject("library").buildFile, "minSdkVersion 15", "minSdkVersion 24")
+    TestFileUtils.searchAndReplace(project.getSubproject("library").buildFile, "minSdkVersion 19", "minSdkVersion 24")
 
     // Check lint runs correctly before asserting about the model.
     executor().run("clean", ":library:lintDebug")

@@ -6,7 +6,7 @@ android {
     buildToolsVersion = libs.versions.buildToolsVersion.get()
     defaultConfig {
         applicationId "com.android.test.lint.libmodel.app"
-        minSdkVersion 15
+        minSdkVersion 19
         //noinspection ExpiringTargetSdkVersion,ExpiredTargetSdkVersion
         targetSdkVersion 24
     }
@@ -31,6 +31,9 @@ dependencies {
     api('androidx.appcompat:appcompat:1.6.1', {
         exclude group: 'com.google.guava', module: 'listenablefuture'
     })
+    api 'androidx.activity:activity:1.9.3', {
+        exclude group: 'com.google.guava', module: 'listenablefuture'
+    }
     testImplementation 'junit:junit:4.12'
     api project(':javalib')
     api project(':mylibrary')

@@ -23,7 +23,7 @@ android {
     buildToolsVersion = libs.versions.buildToolsVersion.get()
 
     defaultConfig {
-        minSdkVersion 15
+        minSdkVersion 19
         //noinspection ExpiringTargetSdkVersion,ExpiredTargetSdkVersion
         targetSdkVersion libs.versions.latestCompileSdk.get()
 
