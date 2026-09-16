@@ -469,6 +469,7 @@ open class BuiltinIssueRegistry : IssueRegistry() {
           StringFormatDetector.INVALID,
           StringFormatDetector.POTENTIAL_PLURAL,
           StringFormatDetector.TRIVIAL,
+          SynchronizeOnValueBasedClassDetector.ISSUE,
           SyntheticAccessorDetector.ISSUE,
           SystemPermissionsDetector.ISSUE,
           TextConcatDetector.ISSUE,
