@@ -19,21 +19,10 @@ package com.android.tools.bazel;
 import com.android.tools.bazel.ir.IrLibrary;
 import com.android.tools.bazel.ir.IrModule;
 import com.android.tools.bazel.ir.IrProject;
+
 import com.google.common.io.Files;
 import com.intellij.util.execution.ParametersListUtil;
-import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.Field;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
+
 import org.jetbrains.jps.model.JpsCompositeElement;
 import org.jetbrains.jps.model.JpsElementFactory;
 import org.jetbrains.jps.model.JpsElementReference;
@@ -62,6 +51,20 @@ import org.jetbrains.jps.model.module.JpsSdkDependency;
 import org.jetbrains.jps.model.module.JpsTestModuleProperties;
 import org.jetbrains.jps.model.serialization.JpsModelSerializationDataService;
 import org.jetbrains.jps.model.serialization.JpsProjectLoader;
+
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Converts a jps project to an internal representation (IrProject).
@@ -221,10 +224,9 @@ public class ImlToIr {
                                             + "is not allowed, please use prebuilts instead.");
                         }
                         irLibrary = new IrLibrary(library.getName(), owner);
-                        List<File> files = library.getFiles(JpsOrderRootType.COMPILED);
                         // Newer versions of jps sort the files correctly, for now using legacy
                         // sorting if not strict
-                        for (File file : files) {
+                        for (File file : library.getFiles(JpsOrderRootType.COMPILED)) {
                             if (file.getPath().contains("$SDK_PLATFORM$")) {
                                 // Libraries containing these files cannot be resolved and will
                                 // point to unmanaged rules.
@@ -260,6 +262,18 @@ public class ImlToIr {
                                 continue;
                             }
                             irLibrary.addFile(file);
+                        }
+                        for (File file : library.getFiles(JpsOrderRootType.SOURCES)) {
+                            if (file.getPath().contains("$SDK_PLATFORM$")) {
+                                continue;
+                            }
+                            if (!file.exists()) {
+                                continue;
+                            }
+                            if (!Files.getFileExtension(file.getName()).equals("jar")) {
+                                continue;
+                            }
+                            irLibrary.addSourceFile(file);
                         }
                         libraryToIr.put(library, irLibrary);
                     }

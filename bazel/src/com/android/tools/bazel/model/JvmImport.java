@@ -18,13 +18,16 @@ package com.android.tools.bazel.model;
 
 import com.android.tools.bazel.parser.ast.CallExpression;
 import com.android.tools.bazel.parser.ast.CallStatement;
+
 import com.google.common.collect.ImmutableList;
+
 import java.io.IOException;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
 public class JvmImport extends BazelRule {
     private Set<String> jars = new LinkedHashSet<>();
+    private String srcjar = "";
 
     public JvmImport(Package pkg, String name) {
         super(pkg, name);
@@ -40,6 +43,7 @@ public class JvmImport extends BazelRule {
 
         call.setArgument("jars", jars);
         call.setDoNotSort("jars", "must match IML order");
+        call.setArgument("srcjar", srcjar);
         if (!statement.isFromFile()) {
             call.setArgument("visibility", ImmutableList.of("//visibility:public"));
         }
@@ -48,6 +52,10 @@ public class JvmImport extends BazelRule {
 
     public void addJar(String jar) {
         jars.add(jar);
+    }
+
+    public void setSrcjar(String srcjar) {
+        this.srcjar = srcjar;
     }
 
     @Override
