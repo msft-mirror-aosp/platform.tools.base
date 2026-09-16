@@ -1,5 +1,6 @@
 #include "kotlin_coroutine_filter.h"
 #include <cstring>
+#include "filter_interface.h"
 #include "slicer/dex_bytecode.h"
 
 namespace coverage {
@@ -173,5 +174,7 @@ bool KotlinCoroutineFilter::FilterBranch(ir::EncodedMethod* ir_method,
 
   return false;
 }
+
+REGISTER_FILTER(KotlinCoroutineFilter)
 
 }  // namespace coverage

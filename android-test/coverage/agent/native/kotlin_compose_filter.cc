@@ -1,6 +1,7 @@
 #include "kotlin_compose_filter.h"
 #include <cstring>
 #include <vector>
+#include "filter_interface.h"
 #include "slicer/dex_bytecode.h"
 
 namespace coverage {
@@ -422,5 +423,7 @@ bool KotlinComposeFilter::FilterBranch(ir::EncodedMethod* ir_method,
 
   return false;
 }
+
+REGISTER_FILTER(KotlinComposeFilter)
 
 }  // namespace coverage

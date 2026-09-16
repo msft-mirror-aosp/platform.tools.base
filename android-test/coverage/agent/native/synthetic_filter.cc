@@ -2,22 +2,17 @@
 #include <memory>
 #include <vector>
 #include "filter_interface.h"
-#include "kotlin_compose_filter.h"
-#include "kotlin_coroutine_filter.h"
-#include "kotlin_generated_filter.h"
 
 namespace coverage {
 
 namespace {
 
-// TODO(b/556724270): Migrate to a static self-registration registry pattern to
-// eliminate manual vector additions.
+// Resolves all statically registered IFilter implementations from our central
+// FilterRegistry. This completely decouples this orchestrator from individual
+// filter files, eliminating any manual vector additions and preventing
+// registration errors.
 std::vector<std::unique_ptr<IFilter>> CreateActiveFilters() {
-  std::vector<std::unique_ptr<IFilter>> filters;
-  filters.push_back(std::make_unique<KotlinComposeFilter>());
-  filters.push_back(std::make_unique<KotlinCoroutineFilter>());
-  filters.push_back(std::make_unique<KotlinGeneratedFilter>());
-  return filters;
+  return FilterRegistry::Instance().CreateFilters();
 }
 
 } // namespace

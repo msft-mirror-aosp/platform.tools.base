@@ -57,6 +57,7 @@ cc_library(
         "//tools/base/build-system/gradle-core:coverage_metadata_cc_proto",
         "@slicer",
     ],
+    alwayslink = 1,
 )
 
 cc_binary(
