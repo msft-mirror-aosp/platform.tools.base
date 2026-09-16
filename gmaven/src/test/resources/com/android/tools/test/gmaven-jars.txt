@@ -458,6 +458,9 @@ com/android/tools/build/builder
   r8-version.properties
   resources/
   resources/api_database.ser
+  resources/hidden.api.txt
+  resources/hidden.jar.txt
+  resources/missing.api.txt
 
 com/android/tools/build/builder-model
   META-INF/
