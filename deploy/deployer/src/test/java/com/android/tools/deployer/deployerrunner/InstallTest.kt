@@ -23,7 +23,6 @@ import com.android.testutils.AssumeUtil
 import com.android.testutils.TestUtils
 import com.android.tools.deploy.proto.Deploy.DumpResponse
 import com.android.tools.deployer.AdbInstaller
-import com.android.tools.deployer.DeployerRunner
 import com.android.tools.deployer.DeployerTestUtils
 import com.android.tools.deployer.Sites
 import com.android.tools.deployer.TestLogger
@@ -51,7 +50,7 @@ class InstallTestTest : DeployRunnerTestBase() {
   @Throws(Exception::class)
   fun testFullInstallSuccessful() {
     Assert.assertTrue(device.apps.isEmpty())
-    val runner = DeployerRunner(cacheDb, dexDB, service)
+    val runner = createDeployerRunner()
     val file = TestUtils.resolveWorkspacePath(BASE + "sample.apk")
     val installersPath = DeployerTestUtils.prepareInstaller().toPath()
     val args = arrayOf("install", "com.example.helloworld", file.toString(), "--force-full-install", "--installers-path=$installersPath")
@@ -67,7 +66,7 @@ class InstallTestTest : DeployRunnerTestBase() {
   @Throws(Exception::class)
   fun testSkipPostInstallTasks() {
     Assert.assertTrue(device.apps.isEmpty())
-    val runner = DeployerRunner(cacheDb, dexDB, service)
+    val runner = createDeployerRunner()
     val file = TestUtils.resolveWorkspacePath(BASE + "sample.apk")
     val installersPath = DeployerTestUtils.prepareInstaller().toPath()
     val args =
@@ -95,7 +94,7 @@ class InstallTestTest : DeployRunnerTestBase() {
     AssumeUtil.assumeNotWindows() // This test runs the installer on the host
 
     Assert.assertTrue(device.apps.isEmpty())
-    val runner = DeployerRunner(cacheDb, dexDB, service)
+    val runner = createDeployerRunner()
     val file = TestUtils.resolveWorkspacePath(BASE + "sample.apk")
     val installersPath = DeployerTestUtils.prepareInstaller().toPath()
     val args = arrayOf("install", "com.example.helloworld", file.toString(), "--installers-path=$installersPath")
@@ -114,7 +113,7 @@ class InstallTestTest : DeployRunnerTestBase() {
     AssumeUtil.assumeNotWindows() // This test runs the installer on the host
 
     Assert.assertTrue(device.apps.isEmpty())
-    val runner = DeployerRunner(cacheDb, dexDB, service)
+    val runner = createDeployerRunner()
     val file = TestUtils.resolveWorkspacePath(BASE + "sample.apk")
     val installersPath = DeployerTestUtils.prepareInstaller().toPath()
     val args = arrayOf("install", "com.example.helloworld", file.toString(), "--installers-path=$installersPath")
@@ -219,7 +218,7 @@ class InstallTestTest : DeployRunnerTestBase() {
     AssumeUtil.assumeNotWindows() // This test runs the installer on the host
 
     Assert.assertTrue(device.apps.isEmpty())
-    val runner = DeployerRunner(cacheDb, dexDB, service)
+    val runner = createDeployerRunner()
     val file = TestUtils.resolveWorkspacePath(BASE + "apks/simple.apk")
     val installersPath = DeployerTestUtils.prepareInstaller().toPath()
 
@@ -286,7 +285,7 @@ class InstallTestTest : DeployRunnerTestBase() {
     AssumeUtil.assumeNotWindows() // This test runs the installer on the host
 
     Assert.assertTrue(device.apps.isEmpty())
-    val runner = DeployerRunner(cacheDb, dexDB, service)
+    val runner = createDeployerRunner()
     var file = TestUtils.resolveWorkspacePath(BASE + "apks/simple.apk")
     val installersPath = DeployerTestUtils.prepareInstaller().toPath()
 
@@ -383,7 +382,7 @@ class InstallTestTest : DeployRunnerTestBase() {
     AssumeUtil.assumeNotWindows() // This test runs the installer on the host
 
     Assert.assertTrue(device.apps.isEmpty())
-    val runner = DeployerRunner(cacheDb, dexDB, service)
+    val runner = createDeployerRunner()
     val v2 = TestUtils.resolveWorkspacePath(BASE + "apks/simple+ver.apk")
     val installersPath = DeployerTestUtils.prepareInstaller().toPath()
 
@@ -481,7 +480,7 @@ class InstallTestTest : DeployRunnerTestBase() {
     AssumeUtil.assumeNotWindows() // This test runs the installer on the host
 
     Assert.assertTrue(device.apps.isEmpty())
-    val runner = DeployerRunner(cacheDb, dexDB, service)
+    val runner = createDeployerRunner()
     val base = TestUtils.resolveWorkspacePath(BASE + "apks/simple.apk")
     val split = TestUtils.resolveWorkspacePath(BASE + "apks/split.apk")
 
@@ -503,7 +502,7 @@ class InstallTestTest : DeployRunnerTestBase() {
     AssumeUtil.assumeNotWindows() // This test runs the installer on the host
 
     Assert.assertTrue(device.apps.isEmpty())
-    val runner = DeployerRunner(cacheDb, dexDB, service)
+    val runner = createDeployerRunner()
     val base = TestUtils.resolveWorkspacePath(BASE + "apks/simple.apk")
     val split = TestUtils.resolveWorkspacePath(BASE + "apks/split+ver.apk")
 
@@ -525,7 +524,7 @@ class InstallTestTest : DeployRunnerTestBase() {
     AssumeUtil.assumeNotWindows() // This test runs the installer on the host
 
     Assert.assertTrue(device.apps.isEmpty())
-    val runner = DeployerRunner(cacheDb, dexDB, service)
+    val runner = createDeployerRunner()
     var file = TestUtils.resolveWorkspacePath(BASE + "apks/simple.apk")
     val installersPath = DeployerTestUtils.prepareInstaller().toPath()
 
@@ -600,7 +599,7 @@ class InstallTestTest : DeployRunnerTestBase() {
     AssumeUtil.assumeNotWindows() // This test runs the installer on the host
 
     Assert.assertTrue(device.apps.isEmpty())
-    val runner = DeployerRunner(cacheDb, dexDB, service)
+    val runner = createDeployerRunner()
     val base = TestUtils.resolveWorkspacePath(BASE + "apks/simple.apk")
     val split = TestUtils.resolveWorkspacePath(BASE + "apks/split.apk")
     val installersPath = DeployerTestUtils.prepareInstaller().toPath()
@@ -715,7 +714,7 @@ class InstallTestTest : DeployRunnerTestBase() {
     AssumeUtil.assumeNotWindows() // This test runs the installer on the host
 
     Assert.assertTrue(device.apps.isEmpty())
-    val runner = DeployerRunner(cacheDb, dexDB, service)
+    val runner = createDeployerRunner()
     val base = TestUtils.resolveWorkspacePath(BASE + "apks/simple.apk")
     val split = TestUtils.resolveWorkspacePath(BASE + "apks/split.apk")
     val installersPath = DeployerTestUtils.prepareInstaller().toPath()
@@ -843,7 +842,7 @@ class InstallTestTest : DeployRunnerTestBase() {
     AssumeUtil.assumeNotWindows() // This test runs the installer on the host
 
     Assert.assertTrue(device.apps.isEmpty())
-    val runner = DeployerRunner(cacheDb, dexDB, service)
+    val runner = createDeployerRunner()
     val base = TestUtils.resolveWorkspacePath(BASE + "apks/simple.apk")
     val split = TestUtils.resolveWorkspacePath(BASE + "apks/split.apk")
     val installersPath = DeployerTestUtils.prepareInstaller().toPath()
@@ -976,7 +975,7 @@ class InstallTestTest : DeployRunnerTestBase() {
     AssumeUtil.assumeNotWindows() // This test runs the installer on the host
 
     Assert.assertTrue(device.apps.isEmpty())
-    val runner = DeployerRunner(cacheDb, dexDB, service)
+    val runner = createDeployerRunner()
     val base = TestUtils.resolveWorkspacePath(BASE + "apks/simple.apk")
     val split1 = TestUtils.resolveWorkspacePath(BASE + "apks/split.apk")
     val split2 = TestUtils.resolveWorkspacePath(BASE + "apks/split2.apk")
@@ -1105,7 +1104,7 @@ class InstallTestTest : DeployRunnerTestBase() {
     AssumeUtil.assumeNotWindows() // This test runs the installer on the host
 
     Assert.assertTrue(device.apps.isEmpty())
-    val runner = DeployerRunner(cacheDb, dexDB, service)
+    val runner = createDeployerRunner()
     var file = TestUtils.resolveWorkspacePath(BASE + "apks/simple.apk")
     val installersPath = DeployerTestUtils.prepareInstaller().toPath()
 
@@ -1202,7 +1201,7 @@ class InstallTestTest : DeployRunnerTestBase() {
     AssumeUtil.assumeNotWindows() // This test runs the installer on the host
 
     Assert.assertTrue(device.apps.isEmpty())
-    val runner = DeployerRunner(cacheDb, dexDB, service)
+    val runner = createDeployerRunner()
     val base = TestUtils.resolveWorkspacePath(BASE + "apks/simple.apk")
     val split = TestUtils.resolveWorkspacePath(BASE + "apks/split.apk")
     val installersPath = DeployerTestUtils.prepareInstaller().toPath()
@@ -1332,7 +1331,7 @@ class InstallTestTest : DeployRunnerTestBase() {
     val installersPath = DeployerTestUtils.prepareInstaller().toPath()
 
     // Install the base apk:
-    val runner = DeployerRunner(cacheDb, dexDB, service)
+    val runner = createDeployerRunner()
     val file = TestUtils.resolveWorkspacePath(BASE + "apks/simple.apk")
     val args = arrayOf("install", "com.example.simpleapp", file.toString(), "--installers-path=$installersPath")
     val retcode = runner.run(args)
@@ -1375,7 +1374,7 @@ class InstallTestTest : DeployRunnerTestBase() {
     val packageName = "com.example.simpleapp"
     Assert.assertTrue(device.apps.isEmpty())
     val installersPath = DeployerTestUtils.prepareInstaller().toPath()
-    val runner = DeployerRunner(cacheDb, dexDB, service)
+    val runner = createDeployerRunner()
 
     AndroidDebugBridge.init(AdbInitOptions.DEFAULT)
     val bridge = AndroidDebugBridge.createBridge()
@@ -1435,7 +1434,7 @@ class InstallTestTest : DeployRunnerTestBase() {
     val newApk = TestUtils.resolveWorkspacePath(BASE + "apks/simple+code.apk")
 
     Assert.assertTrue(device.apps.isEmpty())
-    val runner = DeployerRunner(cacheDb, dexDB, service)
+    val runner = createDeployerRunner()
 
     val installersPath = DeployerTestUtils.prepareInstaller().toPath()
 
@@ -1464,7 +1463,7 @@ class InstallTestTest : DeployRunnerTestBase() {
   @Throws(Exception::class)
   fun testCustomUserFlags() {
     Assert.assertTrue(device.apps.isEmpty())
-    val runner = DeployerRunner(cacheDb, dexDB, service)
+    val runner = createDeployerRunner()
     val file = TestUtils.resolveWorkspacePath(BASE + "sample.apk")
     val installersPath = DeployerTestUtils.prepareInstaller().toPath()
     val args =

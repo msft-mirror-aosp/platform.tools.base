@@ -17,7 +17,6 @@ package com.android.tools.deployer.deployerrunner
 
 import com.android.testutils.AssumeUtil
 import com.android.testutils.TestUtils
-import com.android.tools.deployer.DeployerRunner
 import com.android.tools.deployer.DeployerTestUtils
 import com.android.tools.deployer.rules.ApiLevel
 import org.junit.Assert
@@ -32,7 +31,7 @@ class DeployStrategyTest : DeployRunnerTestBase() {
     AssumeUtil.assumeNotWindows() // This test runs the installer on the host
 
     Assert.assertTrue(device.apps.isEmpty())
-    val runner = DeployerRunner(cacheDb, dexDB, service)
+    val runner = createDeployerRunner()
     val json = TestUtils.resolveWorkspacePath(BASE + "apks/arch_filter.json")
     val installersPath = DeployerTestUtils.prepareInstaller().toPath()
     val args = arrayOf("install", "--strategy=$json", "--force-full-install", "--installers-path=$installersPath")
@@ -53,7 +52,7 @@ class DeployStrategyTest : DeployRunnerTestBase() {
     AssumeUtil.assumeNotWindows() // This test runs the installer on the host
 
     Assert.assertTrue(device.apps.isEmpty())
-    val runner = DeployerRunner(cacheDb, dexDB, service)
+    val runner = createDeployerRunner()
     val json = TestUtils.resolveWorkspacePath(BASE + "apks/arch_filter.json")
     val installersPath = DeployerTestUtils.prepareInstaller().toPath()
     var args = arrayOf("install", "--strategy=$json", "--force-full-install", "--installers-path=$installersPath")

@@ -16,6 +16,7 @@
 package com.android.tools.deployer.deployerrunner
 
 import com.android.tools.deployer.AdbInstaller
+import com.android.tools.deployer.DeployerRunner
 import com.android.tools.deployer.SqlApkFileDatabase
 import com.android.tools.deployer.Version
 import com.android.tools.deployer.common.DeployMetric
@@ -105,6 +106,12 @@ abstract class DeployRunnerTestBase {
   private var startTime: Long = 0
 
   protected fun getInstallerInvocation() = INSTALLER_INVOCATION
+
+  protected fun createDeployerRunner(): DeployerRunner {
+    return DeployerRunner(cacheDb, dexDB, service).apply {
+      setServerPort(connection!!.server.port)
+    }
+  }
 
   @Before
   @Throws(java.lang.Exception::class)
