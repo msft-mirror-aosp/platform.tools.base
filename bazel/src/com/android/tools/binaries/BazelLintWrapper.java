@@ -20,9 +20,16 @@ import static com.google.common.io.Files.getNameWithoutExtension;
 
 import com.android.tools.lint.LintCliFlags;
 import com.android.tools.lint.Main;
+
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Table;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileWriter;
@@ -37,6 +44,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -46,10 +54,6 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
 
 /**
  * Wrapper around Lint's CLI that is aware of the Bazel test environment. Locates the input files,
@@ -98,9 +102,9 @@ public class BazelLintWrapper {
     }
 
     /**
-     * Runs lint with --analyze-only on the project XML, writing partial analysis results into
-     * the module's partial-results-dir. Lint findings do not fail analysis (they are reported by
-     * the lint tests merging these results); only lint failing to run does.
+     * Runs lint with --analyze-only on the project XML, writing partial analysis results into the
+     * module's partial-results-dir. Lint findings do not fail analysis (they are reported by the
+     * lint tests merging these results); only lint failing to run does.
      */
     private static void analyze(Path projectXml, List<String> extraArgs) throws IOException {
         if (!Files.exists(projectXml)) {
@@ -309,20 +313,17 @@ public class BazelLintWrapper {
     }
 
     private static final String BASELINE_MESSAGE =
-            "The baseline file contains issues which have "
-                    + "been fixed in the project. Please remove the fixed lint issues from the "
-                    + "lint_baseline.xml file in your module or regenerate it. Add the edited or "
-                    + "regenerated file to your CL and try again. See "
-                    + "tools/base/lint/studio-checks/README.md for more information.\n\n"
-                    + ""
-                    + "Do not add anything new to the baseline file; suppress new issues with "
-                    + "@SuppressWarnings in Java or @Suppress in Kotlin.\n\n"
-                    + ""
-                    + "If you want to regenerate the file, run\n"
-                    + "  bazel run --test_env=UPDATE_LINT_BASELINE=1 \\\n"
-                    + "    %1$s\n"
-                    + "You can also find the regenerated file in your presubmit results for the %1$s target, "
-                    + "under the Artifacts tab, in Archives/undeclared_outputs.zip";
+            "The baseline file contains issues which have been fixed in the project. Please remove"
+                + " the fixed lint issues from the lint_baseline.xml file in your module or"
+                + " regenerate it. Add the edited or regenerated file to your CL and try again. See"
+                + " tools/base/lint/studio-checks/README.md for more information.\n\n"
+                + "Do not add anything new to the baseline file; suppress new issues with"
+                + " @SuppressWarnings in Java or @Suppress in Kotlin.\n\n"
+                + "If you want to regenerate the file, run\n"
+                + "  bazel run --test_env=UPDATE_LINT_BASELINE=1 \\\n"
+                + "    %1$s\n"
+                + "You can also find the regenerated file in your presubmit results for the %1$s"
+                + " target, under the Artifacts tab, in Archives/undeclared_outputs.zip";
 
     /**
      * Creates content of the JUnit-like XML report used by Bazel and return a boolean value
