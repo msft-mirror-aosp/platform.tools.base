@@ -130,6 +130,42 @@ class DevicePropertiesTest {
   }
 
   @Test
+  fun readAdbSerialNumber_hardwareSerial() {
+    val builder = DeviceProperties.Builder().apply { readAdbSerialNumber("435DT06WH") }
+    assertThat(builder.connectionType).isNull()
+    assertThat(builder.wearPairingId).isEqualTo("435DT06WH")
+    assertThat(builder.deviceInfoProto.mdnsConnectionType).isEqualTo(DeviceInfo.MdnsConnectionType.MDNS_NONE)
+  }
+
+  @Test
+  fun readAdbSerialNumber_mdnsWifi() {
+    val builder = DeviceProperties.Builder().apply { readAdbSerialNumber("adb-435DT06WH-vWgJpq._adb-tls-connect._tcp.") }
+    assertThat(builder.connectionType).isEqualTo(ConnectionType.WIFI)
+    assertThat(builder.wearPairingId).isEqualTo("435DT06WH")
+    assertThat(builder.deviceInfoProto.mdnsConnectionType).isEqualTo(DeviceInfo.MdnsConnectionType.MDNS_AUTO_CONNECT_TLS)
+  }
+
+  @Test
+  fun readAdbSerialNumber_networkIpv4() {
+    val builder = DeviceProperties.Builder().apply { readAdbSerialNumber("192.168.1.50:5555") }
+    assertThat(builder.connectionType).isEqualTo(ConnectionType.NETWORK)
+    assertThat(builder.wearPairingId).isEqualTo("192.168.1.50:5555")
+    assertThat(builder.deviceInfoProto.mdnsConnectionType).isEqualTo(DeviceInfo.MdnsConnectionType.MDNS_NONE)
+  }
+
+  @Test
+  fun readAdbSerialNumber_networkHostnameAndIpv6() {
+    val localhost = DeviceProperties.Builder().apply { readAdbSerialNumber("localhost:5555") }
+    assertThat(localhost.connectionType).isEqualTo(ConnectionType.NETWORK)
+
+    val ipv6 = DeviceProperties.Builder().apply { readAdbSerialNumber("[::1]:5555") }
+    assertThat(ipv6.connectionType).isEqualTo(ConnectionType.NETWORK)
+
+    val nonCtsShort = DeviceProperties.Builder().apply { readAdbSerialNumber("1234") }
+    assertThat(nonCtsShort.connectionType).isEqualTo(ConnectionType.NETWORK)
+  }
+
+  @Test
   fun buildInvalid() {
     try {
       DeviceProperties.build { icon = EmptyIcon.DEFAULT }

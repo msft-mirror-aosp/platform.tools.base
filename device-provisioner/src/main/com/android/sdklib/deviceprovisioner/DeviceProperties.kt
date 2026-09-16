@@ -168,6 +168,9 @@ interface DeviceProperties {
 
     /** Replace angle brackets to avoid triggering HTML parsing in Swing. */
     fun String.sanitizeForUi() = replace('<', '‹').replace('>', '›')
+
+    /** Real devices must have serial numbers matching this pattern (enforced by CTS). */
+    private val serialNumberRegex: Regex = "[0-9A-Za-z]{6,20}".toRegex()
   }
 
   open class Builder {
@@ -222,9 +225,11 @@ interface DeviceProperties {
       SerialNumberAndMdnsConnectionType.fromAdbSerialNumber(adbSerialNumber).let {
         wearPairingId = it.serialNumber
         deviceInfoProto.mdnsConnectionType = it.mdnsConnectionType
-        when (it.mdnsConnectionType) {
-          DeviceInfo.MdnsConnectionType.MDNS_AUTO_CONNECT_UNENCRYPTED,
-          DeviceInfo.MdnsConnectionType.MDNS_AUTO_CONNECT_TLS -> connectionType = ConnectionType.WIFI
+        when {
+          it.mdnsConnectionType in
+            listOf(DeviceInfo.MdnsConnectionType.MDNS_AUTO_CONNECT_UNENCRYPTED, DeviceInfo.MdnsConnectionType.MDNS_AUTO_CONNECT_TLS) ->
+            connectionType = ConnectionType.WIFI
+          !serialNumberRegex.matches(adbSerialNumber) -> connectionType = ConnectionType.NETWORK
           else -> {}
         }
       }
@@ -242,6 +247,13 @@ interface DeviceProperties {
 
       androidRelease = properties[RO_BUILD_VERSION_RELEASE]
 
+      isDebuggable = properties[RO_BUILD_TYPE] in setOf("userdebug", "eng")
+      density = properties[RO_SF_LCD_DENSITY]?.toIntOrNull()
+
+      readEmulatorProperties(properties)
+    }
+
+    private fun readEmulatorProperties(properties: Map<String, String>) {
       val hardware = properties["ro.hardware"] ?: ""
       val board = properties["ro.product.board"] ?: ""
       val device = properties["ro.product.device"] ?: ""
@@ -253,9 +265,6 @@ interface DeviceProperties {
           else -> null
         }
       isVirtual = properties[RO_KERNEL_QEMU] == "1" || emulatorType != null
-
-      isDebuggable = properties[RO_BUILD_TYPE] in setOf("userdebug", "eng")
-      density = properties[RO_SF_LCD_DENSITY]?.toIntOrNull()
     }
 
     suspend fun readDeviceType(device: ConnectedDevice, properties: Map<String, String>) {

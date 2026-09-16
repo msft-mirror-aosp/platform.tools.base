@@ -33,9 +33,15 @@ abstract class DeviceProvisionerTestFixture {
     const val PHYSICAL1_USB = "X1058A"
     const val PHYSICAL2_USB = "X1BQ704RX2B"
     const val PHYSICAL2_WIFI = "adb-X1BQ704RX2B-VQ4ADB._adb-tls-connect._tcp."
+    /** The same device as [PHYSICAL2_USB], reached over a plain network connection rather than mDNS. */
+    const val PHYSICAL2_NETWORK = "localhost:5555"
+    /** The same device as [PHYSICAL2_USB], reached over a different network address. */
+    const val PHYSICAL2_NETWORK2 = "192.168.86.99:5555"
     const val EMULATOR = "emulator-5554"
+    /** A virtual Cuttlefish device connected over network IP:port. */
+    const val NETWORK_CUTTLEFISH = "192.168.86.100:6520"
 
-    val ALL = listOf(PHYSICAL1_USB, PHYSICAL2_USB, PHYSICAL2_WIFI, EMULATOR)
+    val ALL = listOf(PHYSICAL1_USB, PHYSICAL2_USB, PHYSICAL2_WIFI, PHYSICAL2_NETWORK, PHYSICAL2_NETWORK2, EMULATOR, NETWORK_CUTTLEFISH)
   }
 
   val baseProperties =
@@ -51,8 +57,22 @@ abstract class DeviceProvisionerTestFixture {
       SerialNumbers.PHYSICAL1_USB to baseProperties + mapOf("ro.serialno" to SerialNumbers.PHYSICAL1_USB),
       SerialNumbers.PHYSICAL2_USB to baseProperties + mapOf("ro.serialno" to SerialNumbers.PHYSICAL2_USB),
       SerialNumbers.PHYSICAL2_WIFI to baseProperties + mapOf("ro.serialno" to SerialNumbers.PHYSICAL2_USB),
+      SerialNumbers.PHYSICAL2_NETWORK to baseProperties + mapOf("ro.serialno" to SerialNumbers.PHYSICAL2_USB),
+      SerialNumbers.PHYSICAL2_NETWORK2 to baseProperties + mapOf("ro.serialno" to SerialNumbers.PHYSICAL2_USB),
       SerialNumbers.EMULATOR to
-        baseProperties + mapOf("ro.serialno" to "EMULATOR31X3X7X0", DevicePropertyNames.RO_PRODUCT_MODEL to "sdk_goog3_x86_64"),
+        baseProperties +
+          mapOf(
+            "ro.serialno" to "EMULATOR31X3X7X0",
+            DevicePropertyNames.RO_PRODUCT_MODEL to "sdk_goog3_x86_64",
+            DevicePropertyNames.RO_KERNEL_QEMU to "1",
+          ),
+      SerialNumbers.NETWORK_CUTTLEFISH to
+        baseProperties +
+          mapOf(
+            "ro.serialno" to "CUTTLEFISH_SERIAL_1",
+            "ro.product.board" to "gce_x86_phone",
+            "ro.product.device" to "vsoc_x86_64",
+          ),
     )
 
   init {

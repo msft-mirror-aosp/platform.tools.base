@@ -154,6 +154,57 @@ class PhysicalDeviceProvisionerPluginTest : DeviceProvisionerTestFixture() {
   }
 
   @Test
+  fun threeConnectionsToTheSameDevice() {
+    val channel = Channel<List<DeviceHandle>>(1)
+    fakeSession.scope.launch { provisioner.devices.collect { channel.send(it) } }
+
+    CoroutineTestUtils.runBlockingWithTimeout {
+      // Connect over a plain network transport only.
+      setDevices(SerialNumbers.PHYSICAL2_NETWORK)
+      val handle = channel.receiveUntilPassing { handles ->
+        assertThat(handles).hasSize(1)
+        handles[0]
+      }
+      fakeSession.scope.launch { handle.stateFlow.collect { channel.send(provisioner.devices.value) } }
+
+      channel.receiveUntilPassing { assertThat(handle.state.properties.connectionType).isEqualTo(ConnectionType.NETWORK) }
+
+      // Adding Wi-Fi takes precedence over the network connection.
+      setDevices(SerialNumbers.PHYSICAL2_NETWORK, SerialNumbers.PHYSICAL2_WIFI)
+      channel.receiveUntilPassing { handles ->
+        assertThat(handles).containsExactly(handle)
+        assertThat(handle.state.properties.connectionType).isEqualTo(ConnectionType.WIFI)
+      }
+
+      // Adding USB takes precedence over both.
+      setDevices(SerialNumbers.PHYSICAL2_NETWORK, SerialNumbers.PHYSICAL2_WIFI, SerialNumbers.PHYSICAL2_USB)
+      channel.receiveUntilPassing { handles ->
+        assertThat(handles).containsExactly(handle)
+        assertThat(handle.state.properties.connectionType).isEqualTo(ConnectionType.USB)
+      }
+
+      // Dropping USB falls back to Wi-Fi, not to the network connection.
+      setDevices(SerialNumbers.PHYSICAL2_NETWORK, SerialNumbers.PHYSICAL2_WIFI)
+      channel.receiveUntilPassing { handles ->
+        assertThat(handles).containsExactly(handle)
+        assertThat(handle.state.properties.connectionType).isEqualTo(ConnectionType.WIFI)
+      }
+
+      // Dropping Wi-Fi falls back to the network connection, which is still connected.
+      setDevices(SerialNumbers.PHYSICAL2_NETWORK)
+      channel.receiveUntilPassing { handles ->
+        assertThat(handles).containsExactly(handle)
+        assertThat(handle.state).isInstanceOf(DeviceState.Connected::class.java)
+        assertThat(handle.state.properties.connectionType).isEqualTo(ConnectionType.NETWORK)
+      }
+
+      setDevices()
+      channel.receiveUntilPassing { handles -> assertThat(handles).isEmpty() }
+      assertThat(handle.state.properties.connectionType).isNull()
+    }
+  }
+
+  @Test
   fun physicalDeviceMaintainsIdentityOnReconnection() {
     val channel = Channel<List<DeviceHandle>>(1)
     fakeSession.scope.launch { provisioner.devices.collect { channel.send(it) } }
@@ -226,6 +277,128 @@ class PhysicalDeviceProvisionerPluginTest : DeviceProvisionerTestFixture() {
         val handle = handles[0]
         assertThat(handle.state).isInstanceOf(DeviceState.Connected::class.java)
         assertThat(handle.state.properties.connectionType).isEqualTo(ConnectionType.USB)
+      }
+    }
+  }
+
+  @Test
+  fun physicalNetworkProperties() {
+    val channel = Channel<List<DeviceHandle>>(1)
+    fakeSession.scope.launch { provisioner.devices.collect { channel.send(it) } }
+
+    CoroutineTestUtils.runBlockingWithTimeout {
+      setDevices(SerialNumbers.PHYSICAL2_NETWORK)
+
+      val handles = channel.receiveUntilPassing { handles ->
+        assertThat(handles).hasSize(1)
+        handles
+      }
+
+      val networkHandle = handles[0]
+      assertThat(networkHandle.state.connectedDevice?.serialNumber).isEqualTo(SerialNumbers.PHYSICAL2_NETWORK)
+      assertThat(networkHandle.state.properties.connectionType).isEqualTo(ConnectionType.NETWORK)
+      networkHandle.state.properties.apply {
+        assertThat(disambiguator).isEqualTo(SerialNumbers.PHYSICAL2_USB)
+        assertThat(deviceInfoProto.mdnsConnectionType).isEqualTo(DeviceInfo.MdnsConnectionType.MDNS_NONE)
+        checkPhysicalDeviceProperties()
+      }
+      networkHandle.id.apply {
+        assertThat(pluginId).isEqualTo(PhysicalDeviceProvisionerPlugin.PLUGIN_ID)
+        assertThat(isTemplate).isFalse()
+        assertThat(identifier).isEqualTo("serial=${SerialNumbers.PHYSICAL2_USB}")
+      }
+    }
+  }
+
+  @Test
+  fun virtualDeviceOverNetworkNotClaimed() {
+    val channel = Channel<List<DeviceHandle>>(1)
+    val unclaimedDevices = Channel<List<ConnectedDevice>>(1)
+    fakeSession.scope.launch { provisioner.devices.collect { channel.send(it) } }
+    fakeSession.scope.launch { provisioner.unclaimedDevices.collect { unclaimedDevices.send(it) } }
+
+    CoroutineTestUtils.runBlockingWithTimeout {
+      setDevices(SerialNumbers.NETWORK_CUTTLEFISH)
+
+      // PhysicalDeviceProvisionerPlugin rejects virtual devices because isVirtual == true,
+      // so no handles are produced and the device remains unclaimed.
+      unclaimedDevices.receiveUntilPassing { devices ->
+        assertThat(devices).hasSize(1)
+        assertThat(devices[0].serialNumber).isEqualTo(SerialNumbers.NETWORK_CUTTLEFISH)
+      }
+      assertThat(provisioner.devices.value).isEmpty()
+    }
+  }
+
+  @Test
+  fun physicalDeviceMaintainsIdentityOnReconnectionOverDifferentNetworkAddress() {
+    val channel = Channel<List<DeviceHandle>>(1)
+    fakeSession.scope.launch { provisioner.devices.collect { channel.send(it) } }
+
+    CoroutineTestUtils.runBlockingWithTimeout {
+      setDevices(SerialNumbers.PHYSICAL2_NETWORK)
+
+      val originalHandle = channel.receiveUntilPassing { handles ->
+        assertThat(handles).hasSize(1)
+        val handle = handles[0]
+        assertThat(handle.state).isInstanceOf(DeviceState.Connected::class.java)
+        handle
+      }
+
+      fakeSession.scope.launch { originalHandle.stateFlow.collect { channel.send(provisioner.devices.value) } }
+
+      setDevices()
+
+      channel.receiveUntilPassing { handles ->
+        assertThat(originalHandle.state.connectedDevice).isNull()
+        assertThat(handles).isEmpty()
+      }
+
+      // Reconnect the same physical device, but via a different network address
+      setDevices(SerialNumbers.PHYSICAL2_NETWORK2)
+
+      channel.receiveUntilPassing { handles ->
+        assertThat(handles).hasSize(1)
+        val handle = handles[0]
+        assertThat(handle.id).isEqualTo(originalHandle.id)
+        assertThat(handle).isNotSameAs(originalHandle)
+        assertThat(handle.state).isInstanceOf(DeviceState.Connected::class.java)
+        assertThat(handle.state.properties.connectionType).isEqualTo(ConnectionType.NETWORK)
+      }
+    }
+  }
+
+  @Test
+  fun unauthorizedNetworkPhysicalDevice() {
+    val handles = Channel<List<DeviceHandle>>(1)
+    val unclaimedDevices = Channel<List<ConnectedDevice>>(1)
+    fakeSession.scope.launch { provisioner.devices.collect { handles.send(it) } }
+    fakeSession.scope.launch { provisioner.unclaimedDevices.collect { unclaimedDevices.send(it) } }
+
+    CoroutineTestUtils.runBlockingWithTimeout {
+      // Show the network device as unauthorized
+      fakeSession.hostServices.devices =
+        DeviceList(
+          listOf(com.android.adblib.DeviceInfo(SerialNumbers.PHYSICAL2_NETWORK, com.android.adblib.DeviceState.UNAUTHORIZED)),
+          emptyList(),
+        )
+
+      unclaimedDevices.receiveUntilPassing { devices ->
+        assertThat(devices).hasSize(1)
+        val device = devices[0]
+        assertThat(device.deviceInfo.deviceState).isEqualTo(com.android.adblib.DeviceState.UNAUTHORIZED)
+      }
+
+      // Now show the device as online
+      setDevices(SerialNumbers.PHYSICAL2_NETWORK)
+
+      unclaimedDevices.receiveUntilPassing { devices -> assertThat(devices).isEmpty() }
+
+      handles.receiveUntilPassing { handles ->
+        assertThat(handles).hasSize(1)
+        val handle = handles[0]
+        assertThat(handle.state).isInstanceOf(DeviceState.Connected::class.java)
+        assertThat(handle.state.properties.connectionType).isEqualTo(ConnectionType.NETWORK)
       }
     }
   }
