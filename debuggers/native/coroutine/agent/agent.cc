@@ -46,6 +46,8 @@ const std::string kStdlib_debugProbesKt =
 const std::string kMeta_inf_version_path =
     "META-INF/kotlinx_coroutines_core.version";
 
+const std::string kInstall_method_name = "install$kotlinx_coroutines_core";
+
 const SemanticVersion kCoroutines_min_supported_version = {
     .major = 1, .minor = 6, .patch = 0};
 
@@ -126,10 +128,18 @@ bool installDebugProbes(JNIEnv* jni, std::string* error_msg) {
   }
 
   // get install method id
-  jmethodID install = jni->GetMethodID(klass.get(), "install", "()V");
+  jmethodID install =
+      jni->GetMethodID(klass.get(), "install$kotlinx_coroutines_core", "()V");
   if (install == nullptr) {
-    *error_msg =
-        "Method " + debug_probes_impl_class_name + "#install()V not found";
+    profiler::Log::W(profiler::Log::Tag::COROUTINE_DEBUGGER,
+                     "Method 'install$kotlinx_coroutines_core' not found. "
+                     "Reverting to old method name: 'install'");
+    jni->ExceptionClear();
+    install = jni->GetMethodID(klass.get(), "install", "()V");
+  }
+  if (install == nullptr) {
+    *error_msg = "Method " + debug_probes_impl_class_name + "#" +
+                 kInstall_method_name + "()V not found";
     return false;
   }
 
