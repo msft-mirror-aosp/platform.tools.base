@@ -529,6 +529,20 @@ public abstract class AbstractPackageOperation implements PackageOperation {
         return mInstallStatus;
     }
 
+    @Override
+    public void abandon(@NonNull ProgressIndicator progress) {
+        synchronized (mStateChangeLock) {
+            if (mInstallStatus == InstallStatus.COMPLETE
+                    || mInstallStatus == InstallStatus.FAILED) {
+                return;
+            }
+        }
+        progress.logInfo(String.format("\"%1$s\" abandoned.", getName()));
+        // The prepared files are deliberately left in place, so that a new operation on this package can continue from here.
+        updateStatus(InstallStatus.FAILED, progress);
+        getRepoManager().installEnded(getPackage());
+    }
+
     /**
      * Sets our status to {@code status} and notifies our listeners. If any listener throws an
      * exception we will stop processing listeners and update our status to {@code

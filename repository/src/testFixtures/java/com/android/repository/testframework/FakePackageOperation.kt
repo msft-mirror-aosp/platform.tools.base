@@ -63,6 +63,11 @@ constructor(
 
   override fun getInstallStatus(): PackageOperation.InstallStatus = status
 
+  override fun abandon(progress: ProgressIndicator) {
+    setInstallStatus(PackageOperation.InstallStatus.FAILED, progress)
+    repoManager.installEnded(repoPackage)
+  }
+
   override fun getName(): String = "Fake operation on ${repoPackage.path}"
 
   /** Sets the status of this operation and notifies its listeners, as a real operation does as it progresses. */
