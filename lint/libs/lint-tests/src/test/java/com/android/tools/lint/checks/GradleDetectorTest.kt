@@ -9741,11 +9741,11 @@ class GradleDetectorTest : AbstractCheckTest() {
     )
   }
 
-  // TODO(b/463283604)
-  fun disabled_testIncludedFiles_outsideApp() {
+  fun testIncludedFiles_outsideApp() {
     // Make sure we handle including files -- from kts to groovy and back.
     lint()
       .files(
+        kotlin("src/main/kotlin/test/pkg/Foo.kt", "package test.pkg\nclass Foo").indented(),
         gradle(
             "../common.gradle",
             """
@@ -9830,6 +9830,104 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expect(
         """
           test.gradle.kts:2: Warning: A newer version of compileSdk than 31 is available: ${GradleDetector.HIGHEST_KNOWN_STABLE_ANDROID_API} [GradleDependency]
+              compileSdk = 31 // ERROR
+              ~~~~~~~~~~~~~~~
+          0 errors, 1 warning
+        """
+      )
+  }
+
+  fun testIncludedFiles_withinApp_withKotlinSources() {
+    // b/561317331: like testIncludedFiles_withinApp, but the module also has real
+    // Kotlin sources, so `javaSourceFolders` is non-empty and the project directory
+    // is not used as a source root fallback.
+    lint()
+      .files(
+        kotlin("src/main/kotlin/test/pkg/Foo.kt", "package test.pkg\nclass Foo").indented(),
+        kts(
+            "test.gradle.kts",
+            """
+            android {
+                compileSdk = 31 // ERROR
+            }
+          """,
+          )
+          .indented(),
+        kts(
+            "build.gradle.kts",
+            """
+            apply(from = "test.gradle.kts")
+          """,
+          )
+          .indented(),
+      )
+      .issues(DEPENDENCY)
+      .run()
+      .expect(
+        """
+          test.gradle.kts:2: Warning: A newer version of compileSdk than 31 is available: ${GradleDetector.HIGHEST_KNOWN_STABLE_ANDROID_API} [GradleDependency]
+              compileSdk = 31 // ERROR
+              ~~~~~~~~~~~~~~~
+          0 errors, 1 warning
+        """
+      )
+  }
+
+  fun testPlainKts_withKotlinSources() {
+    // b/561317331 control case: no apply(from = ...); the module's own build.gradle.kts
+    // should be registered as a script module even when the module has real sources.
+    lint()
+      .files(
+        kotlin("src/main/kotlin/test/pkg/Foo.kt", "package test.pkg\nclass Foo").indented(),
+        kts(
+            "build.gradle.kts",
+            """
+            android {
+                compileSdk = 31 // ERROR
+            }
+          """,
+          )
+          .indented(),
+      )
+      .issues(DEPENDENCY)
+      .run()
+      .expect(
+        """
+          build.gradle.kts:2: Warning: A newer version of compileSdk than 31 is available: ${GradleDetector.HIGHEST_KNOWN_STABLE_ANDROID_API} [GradleDependency]
+              compileSdk = 31 // ERROR
+              ~~~~~~~~~~~~~~~
+          0 errors, 1 warning
+        """
+      )
+  }
+
+  fun testIncludedFiles_subDir_withKotlinSources() {
+    // b/561317331: included script lives in a sub directory of the module.
+    lint()
+      .files(
+        kotlin("src/main/kotlin/test/pkg/Foo.kt", "package test.pkg\nclass Foo").indented(),
+        kts(
+            "gradle/extra.gradle.kts",
+            """
+            android {
+                compileSdk = 31 // ERROR
+            }
+          """,
+          )
+          .indented(),
+        kts(
+            "build.gradle.kts",
+            """
+            apply(from = "gradle/extra.gradle.kts")
+          """,
+          )
+          .indented(),
+      )
+      .issues(DEPENDENCY)
+      .run()
+      .expect(
+        """
+          gradle/extra.gradle.kts:2: Warning: A newer version of compileSdk than 31 is available: ${GradleDetector.HIGHEST_KNOWN_STABLE_ANDROID_API} [GradleDependency]
               compileSdk = 31 // ERROR
               ~~~~~~~~~~~~~~~
           0 errors, 1 warning
