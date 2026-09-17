@@ -30,6 +30,7 @@ import com.android.build.api.dsl.TargetSdkSpec
 import com.android.build.api.dsl.TargetSdkVersion
 import com.android.build.api.dsl.TestBaseFlavor
 import com.android.build.api.variant.impl.ResValueKeyImpl
+import com.android.build.gradle.internal.errors.DeprecationReporter
 import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.utils.updateIfChanged
 import com.android.build.gradle.options.BooleanOption
@@ -482,6 +483,7 @@ abstract class BaseFlavor(name: String, private val dslServices: DslServices) :
    * To learn more, see [Remove unused alternative resources](https://d.android.com/studio/build/shrink-code.html#unused-alt-resources).
    */
   override fun resConfig(config: String) {
+    reportResConfigsDeprecation("resConfig")
     addResourceConfiguration(config)
   }
 
@@ -514,6 +516,7 @@ abstract class BaseFlavor(name: String, private val dslServices: DslServices) :
    * To learn more, see [Remove unused alternative resources](https://d.android.com/studio/build/shrink-code.html#unused-alt-resources).
    */
   override fun resConfigs(vararg config: String) {
+    reportResConfigsDeprecation("resConfigs")
     addResourceConfigurations(*config)
   }
 
@@ -546,7 +549,22 @@ abstract class BaseFlavor(name: String, private val dslServices: DslServices) :
    * To learn more, see [Remove unused alternative resources](https://d.android.com/studio/build/shrink-code.html#unused-alt-resources).
    */
   override fun resConfigs(config: Collection<String>) {
+    reportResConfigsDeprecation("resConfigs")
     addResourceConfigurations(config)
+  }
+
+  /**
+   * Reports that resource configuration filtering is deprecated.
+   *
+   * Note that this only covers the `resConfig`/`resConfigs` method forms. Mutating the [resourceConfigurations] set directly is not
+   * intercepted, so that usage is only flagged by the Kotlin `@Deprecated` annotation on the API interface.
+   */
+  private fun reportResConfigsDeprecation(methodName: String) {
+    dslServices.deprecationReporter.reportDeprecatedUsage(
+      newDslElement = "androidResources.localeFilters or androidResources.additionalParameters",
+      oldDslElement = methodName,
+      deprecationTarget = DeprecationReporter.DeprecationTarget.RES_CONFIGS,
+    )
   }
 
   abstract override val javaCompileOptions: JavaCompileOptions

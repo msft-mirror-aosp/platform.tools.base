@@ -68,9 +68,6 @@ class BasicSpec : LocalTestProjectSpec {
 
           resValue("string", "foo", "foo")
 
-          resConfig("en")
-          resConfigs("hdpi")
-
           manifestPlaceholders += "someKey" to 12
         }
 
@@ -93,6 +90,9 @@ class BasicSpec : LocalTestProjectSpec {
         androidResources {
           noCompress += "txt"
           ignoreAssetsPattern = "!.svn:!.git:!.ds_store:!*.scc:.*:<dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"
+          // Replacements for the deprecated defaultConfig.resConfig("en") / resConfigs("hdpi").
+          localeFilters += "en"
+          additionalParameters += listOf("--preferred-density", "hdpi")
         }
 
         installation { installOptions += listOf("-d", "-t") }

@@ -104,6 +104,13 @@ interface DeprecationReporter {
     EXCLUDE_LIBRARIES_FROM_CONSTRAINTS(
       Version.VERSION_10_0,
       "Following can be set instead to achieve a similar behaviour.\n" + "    android.dependency.useConstraints=false",
+    ),
+    RES_CONFIGS(
+      Version.VERSION_10_0,
+      "In applications, use androidResources.localeFilters to keep specific locales. To package resources for a single screen " +
+        "density, pass AAPT2's --preferred-density flag instead:\n" +
+        "    androidResources.additionalParameters += [\"--preferred-density\", \"hdpi\"]\n" +
+        "Check the androidResources.additionalParameters documentation for more details.",
     );
 
     fun getDeprecationTargetMessage(): String {
