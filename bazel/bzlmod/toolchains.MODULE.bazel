@@ -52,7 +52,6 @@ register_toolchains(
     "//prebuilts/studio/jdk/jbr25:runtime_toolchain_definition",
 
     # Java runtime used to execute the Java compiler ('javac')
-    "//prebuilts/studio/jdk:java8_compile_toolchain_definition",
     "//prebuilts/studio/jdk:java11_compile_toolchain_definition",
     "//prebuilts/studio/jdk:java17_compile_toolchain_definition",
     "//prebuilts/studio/jdk:java21_compile_toolchain_definition",
