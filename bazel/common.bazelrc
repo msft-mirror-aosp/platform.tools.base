@@ -32,6 +32,11 @@ build --zip_undeclared_test_outputs
 common --experimental_google_legacy_api
 common --experimental_enable_android_migration_apis
 
+# Needed by rules_python.
+# This flag will become the default soon; we set it now to avoid warnings during the build.
+# See https://github.com/bazel-contrib/rules_python/issues/2945 for details.
+common --incompatible_default_to_explicit_init_py
+
 # Exposes artifacts to Sponge.
 common --legacy_important_outputs
 
