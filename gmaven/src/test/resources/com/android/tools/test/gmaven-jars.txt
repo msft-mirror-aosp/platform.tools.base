@@ -167,6 +167,7 @@ com/android/tools/analytics-library/protos
   com/google/wireless/android/sdk/
   com/google/wireless/android/sdk/stats/
   google_logs_publishing.proto
+  model_registry.proto
   studio_stats.proto
 
 com/android/tools/analytics-library/publisher
