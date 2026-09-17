@@ -14,6 +14,10 @@ iml_module(
         "//tools/base/testutils:studio.android.sdktools.testutils",
     ],
     test_srcs = ["test/src"],
+    visibility = [
+        "//tools/adt/idea/android-npw:__subpackages__",
+        "//tools/adt/idea/studio:__subpackages__",
+    ],
     # do not sort: must match IML order
     deps = ["@intellij//:intellij-sdk"],
 )
@@ -22,7 +26,7 @@ kotlin_library(
     name = "tools.template-engine",
     srcs = glob(["src/**/*.kt"]),
     visibility = [
-        "//tools/vendor/google/android:__subpackages__",
+        "//tools/vendor/google/android-cli:__subpackages__",
     ],
     deps = [
         "@maven//:com.google.code.gson.gson",
@@ -40,7 +44,7 @@ kotlin_test(
     jvm_flags = ["-Dtest.suite.jar=tools.template-engine-test.jar"],
     test_class = "com.android.testutils.JarTestSuite",
     visibility = [
-        "//tools/vendor/google/android:__subpackages__",
+        "//tools/vendor/google/android-cli:__subpackages__",
     ],
     deps = [
         ":tools.template-engine",

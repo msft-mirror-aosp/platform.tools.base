@@ -37,4 +37,10 @@ interface VariantCreationConfig : ConsumableCreationConfig {
    * By default (`enableLint`=`true`), lint runs on all variants.
    */
   val enableLint: Boolean
+
+  /** Whether the lint report task that includes dependencies should be enabled for this variant. */
+  val enableReportWithDependencies: Boolean
+
+  /** Whether the local lint report task (which excludes dependencies) should be enabled for this variant. */
+  val enableReportWithoutDependencies: Boolean
 }

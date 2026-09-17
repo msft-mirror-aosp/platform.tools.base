@@ -34,19 +34,18 @@ class EvictingExecutor(private val delegateExecutor: ExecutorService, maxQueuein
   private val evictingQueueLock = ReentrantLock()
   private val evictingQueue: Queue<Runnable> = EvictingQueue.create<Runnable>(maxQueueingTasks)
 
-  private fun queueProcessor() =
-    delegateExecutor.execute inner@{
-      // For each offer call we always queue a remove so it will always be true that
-      // (number of removes) >= (number of elements)
-      val runnable =
-        try {
-          evictingQueueLock.withLock { evictingQueue.remove() }
-        } catch (e: NoSuchElementException) {
-          return@inner
-        }
+  private fun queueProcessor() = delegateExecutor.execute inner@{
+    // For each offer call we always queue a remove so it will always be true that
+    // (number of removes) >= (number of elements)
+    val runnable =
+      try {
+        evictingQueueLock.withLock { evictingQueue.remove() }
+      } catch (e: NoSuchElementException) {
+        return@inner
+      }
 
-      runnable.run()
-    }
+    runnable.run()
+  }
 
   override fun isTerminated(): Boolean = delegateExecutor.isTerminated
 

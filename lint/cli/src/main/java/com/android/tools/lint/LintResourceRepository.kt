@@ -102,7 +102,7 @@ open class LintResourceRepository(
     return listOf(this)
   }
 
-  fun serialize(pathVariables: PathVariables, root: File? = null, sort: Boolean = false): String {
+  fun serialize(pathVariables: PathVariables, root: File? = null, sort: Boolean = false): ByteArray {
     return LintResourcePersistence.serialize(this, pathVariables, root, sort)
   }
 
@@ -488,7 +488,7 @@ open class LintResourceRepository(
 
       // Deserialize existing resource repository.
       if ((isFrameworkOrAar || readPartialResults) && serializedFile.isFile) {
-        val serialized = serializedFile.readText()
+        val serialized = serializedFile.readBytes()
         try {
           return LintResourcePersistence.deserialize(
             serialized,
@@ -514,7 +514,7 @@ open class LintResourceRepository(
             )
 
             sb.append("The serialized content was:\n")
-            sb.append(serialized)
+            sb.append(serialized.decodeToString().let { if (it.length > 500) it.take(500) + "..." else it })
             sb.append("\nStack: `")
             sb.append(e.toString())
             sb.append("`:")
@@ -545,7 +545,7 @@ open class LintResourceRepository(
       if (isFrameworkOrAar || writePartialResults) {
         serializedFile.parentFile?.mkdirs()
         val serialized = LintResourcePersistence.serialize(repository, client.pathVariables, project?.dir)
-        serializedFile.writeText(serialized)
+        serializedFile.writeBytes(serialized)
       }
       return repository
     }
@@ -560,15 +560,17 @@ open class LintResourceRepository(
     }
 
     private fun getLibraryResourceCacheFile(client: LintCliClient, library: LintModelAndroidLibrary): File {
+      // v2: binary persistence format (older lint versions read the text format from the -v1 directory)
       return File(
-        client.getCacheDir("library-resources-v1", true),
+        client.getCacheDir("library-resources-v2", true),
         // avoid ":" in filenames for Windows
         library.identifier.replace(':', '_'),
       )
     }
 
     private fun getFrameworkResourceCacheFile(client: LintCliClient, hash: String): File {
-      return File(client.getCacheDir("framework-resources-v1", true), hash)
+      // v2: binary persistence format (older lint versions read the text format from the -v1 directory)
+      return File(client.getCacheDir("framework-resources-v2", true), hash)
     }
 
     /** Returns a repository for a library consumed by the given project. */

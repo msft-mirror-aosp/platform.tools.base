@@ -26,6 +26,7 @@ class AmInstrumentCommandBuilder {
   private val instrumentationArgs = mutableMapOf<String, String>()
   private var isRaw: Boolean = true
   private var isWait: Boolean = true
+  private var isInstrumentInPcc: Boolean = false
 
   /** Sets the path to the ADB executable. */
   fun setAdbPath(adbPath: String) = apply { this.adbPath = adbPath }
@@ -53,6 +54,9 @@ class AmInstrumentCommandBuilder {
 
   /** Sets whether to wait for instrumentation to terminate (-w). Defaults to true. */
   fun setWait(wait: Boolean) = apply { this.isWait = wait }
+
+  /** Sets whether to run the instrumentation with a Private Compute Core environment. */
+  fun setInstrumentInPcc(instrumentInPcc: Boolean) = apply { this.isInstrumentInPcc = instrumentInPcc }
 
   /**
    * Builds the command as a list of strings.
@@ -92,11 +96,12 @@ class AmInstrumentCommandBuilder {
       add("instrument")
       if (isRaw) add("-r")
       if (isWait) add("-w")
+      if (isInstrumentInPcc) add("--instrument-in-pcc")
 
       instrumentationArgs.forEach { (key, value) ->
         add("-e")
         add(key)
-        add(value)
+        add(shellQuote(value))
       }
 
       if (isOrchestrator) {
@@ -113,5 +118,23 @@ class AmInstrumentCommandBuilder {
         add("$pkg/$runner")
       }
     }
+  }
+
+  /**
+   * Quotes [value] so that the device shell passes it to `am instrument` unchanged.
+   *
+   * `adb shell` joins its arguments with spaces and the device's `/system/bin/sh` performs word splitting and quote removal, so any value
+   * containing shell metacharacters must be quoted.
+   */
+  private fun shellQuote(value: String): String =
+    if (value.isNotEmpty() && value.all { it.isLetterOrDigit() || it in SHELL_SAFE_CHARS }) {
+      value
+    } else {
+      "'" + value.replace("'", "'\\''") + "'"
+    }
+
+  private companion object {
+    /** Characters that are safe to leave unquoted in a shell word. */
+    private const val SHELL_SAFE_CHARS = "._-/:=@+,"
   }
 }

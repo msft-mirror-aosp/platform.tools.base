@@ -42,53 +42,52 @@ private val deviceGroupConfig = "This is a device group config."
 
 class AssetPackBundleTest {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      assetPackBundle(":assetPackBundle") {
-        bundle {
-          applicationId = APP_ID
-          compileSdk = DEFAULT_COMPILE_SDK_VERSION
+  val rule = GradleRule.from {
+    assetPackBundle(":assetPackBundle") {
+      bundle {
+        applicationId = APP_ID
+        compileSdk = DEFAULT_COMPILE_SDK_VERSION
 
-          versionTag = VERSION_TAG
-          versionCodes += VERSION_CODES
-          assetPacks += listOf(":assetPackOne", ":assetPackTwo", ":onDemandAiPack")
+        versionTag = VERSION_TAG
+        versionCodes += VERSION_CODES
+        assetPacks += listOf(":assetPackOne", ":assetPackTwo", ":onDemandAiPack")
 
-          deviceTier {
-            enableSplit = true
-            defaultTier = "medium"
-          }
+        deviceTier {
+          enableSplit = true
+          defaultTier = "medium"
+        }
 
-          countrySet {
-            enableSplit = true
-            defaultSet = "latam"
-          }
+        countrySet {
+          enableSplit = true
+          defaultSet = "latam"
         }
-      }
-      assetPack(":assetPackOne") {
-        assetPack {
-          packName.set("assetPackOne")
-          dynamicDelivery {
-            deliveryType.set("on-demand")
-            instantDeliveryType.set("on-demand")
-          }
-        }
-        files.add("src/main/assets/assetFileOne.txt", assetFileOneContent)
-      }
-      assetPack(":assetPackTwo") {
-        assetPack {
-          packName.set("assetPackTwo")
-          dynamicDelivery { deliveryType.set("fast-follow") }
-        }
-        files.add("src/main/assets/assetFileTwo.txt", assetFileTwoContent)
-      }
-      aiPack(":onDemandAiPack") {
-        aiPack {
-          packName.set("onDemandAiPack")
-          dynamicDelivery { deliveryType.set("on-demand") }
-        }
-        files.add("src/main/assets/customModel.tflite", onDemandAiPackContent)
       }
     }
+    assetPack(":assetPackOne") {
+      assetPack {
+        packName.set("assetPackOne")
+        dynamicDelivery {
+          deliveryType.set("on-demand")
+          instantDeliveryType.set("on-demand")
+        }
+      }
+      files.add("src/main/assets/assetFileOne.txt", assetFileOneContent)
+    }
+    assetPack(":assetPackTwo") {
+      assetPack {
+        packName.set("assetPackTwo")
+        dynamicDelivery { deliveryType.set("fast-follow") }
+      }
+      files.add("src/main/assets/assetFileTwo.txt", assetFileTwoContent)
+    }
+    aiPack(":onDemandAiPack") {
+      aiPack {
+        packName.set("onDemandAiPack")
+        dynamicDelivery { deliveryType.set("on-demand") }
+      }
+      files.add("src/main/assets/customModel.tflite", onDemandAiPackContent)
+    }
+  }
 
   @get:Rule val tmpFile = TemporaryFolder()
 
@@ -162,19 +161,18 @@ class AssetPackBundleTest {
     val keyStoreFile = tmpFile.root.resolve("keystore")
     KeystoreHelper.createNewStore("jks", keyStoreFile, storePassword, keyPassword, keyAlias, "CN=Bundle signing test", 100)
 
-    val build =
-      rule.build {
-        assetPackBundle(":assetPackBundle") {
-          bundle {
-            signingConfig {
-              storeFile = keyStoreFile
-              this.storePassword = storePassword
-              this.keyAlias = keyAlias
-              this.keyPassword = keyPassword
-            }
+    val build = rule.build {
+      assetPackBundle(":assetPackBundle") {
+        bundle {
+          signingConfig {
+            storeFile = keyStoreFile
+            this.storePassword = storePassword
+            this.keyAlias = keyAlias
+            this.keyPassword = keyPassword
           }
         }
       }
+    }
 
     build.executor.run(":assetPackBundle:bundle")
 
@@ -191,17 +189,16 @@ class AssetPackBundleTest {
 
   @Test
   fun `should fail if asset pack bundle is misconfigured`() {
-    val build =
-      rule.build {
-        assetPackBundle(":assetPackBundle") {
-          bundle {
-            applicationId = ""
-            versionTag = ""
-            versionCodes.clear()
-            assetPacks.clear()
-          }
+    val build = rule.build {
+      assetPackBundle(":assetPackBundle") {
+        bundle {
+          applicationId = ""
+          versionTag = ""
+          versionCodes.clear()
+          assetPacks.clear()
         }
       }
+    }
 
     val failure = build.executor.expectFailure().run(":assetPackBundle:bundle")
     failure.stdout.use {

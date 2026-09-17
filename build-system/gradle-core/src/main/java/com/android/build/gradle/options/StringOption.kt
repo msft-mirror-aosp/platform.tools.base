@@ -117,6 +117,9 @@ enum class StringOption(override val propertyName: String, stage: ApiStage) : Op
   // 30.0.0-beta02
   LINT_VERSION_OVERRIDE("android.experimental.lint.version", ApiStage.Experimental),
 
+  // R8: Allow override of the compiler version.
+  R8_VERSION_OVERRIDE("android.r8.versionOverride", ApiStage.Experimental),
+
   // User-specified flag to override the emulator gpu mode for Gradle Managed Devices,
   // If the flag is not set, the emulator gpu mode will default to auto-no-window.
   // Supported values are "auto", "auto-no-window", "host", "swiftshader_indirect",
@@ -161,6 +164,9 @@ enum class StringOption(override val propertyName: String, stage: ApiStage) : Op
    * is enabled globally.
    */
   NEW_DSL_OPT_OUT("android.newDsl.optOut", ApiStage.Experimental),
+
+  /** To identify tool (e.g. Lightbuild) that the project is created by */
+  PROJECT_CREATOR_TOOL("android.project.createdBy", ApiStage.Experimental),
 
   /* ---------------
    * DEPRECATED APIs

@@ -16,19 +16,30 @@
 
 package com.android.build.gradle.internal.lint
 
+import com.android.build.api.dsl.Lint
+import com.android.build.gradle.internal.dependency.VariantDependencies
 import com.android.build.gradle.internal.dsl.LintImpl
 import com.android.build.gradle.internal.fixtures.FakeSyncIssueReporter
+import com.android.build.gradle.internal.plugins.BasePlugin
 import com.android.build.gradle.internal.services.createDslServices
 import com.android.build.gradle.options.ProjectOptions
-import com.android.testutils.SystemPropertyOverrides
 import com.google.common.truth.Truth.assertThat
 import java.io.File
+import org.gradle.api.GradleException
+import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
+import org.gradle.jvm.toolchain.JavaLanguageVersion
+import org.gradle.jvm.toolchain.JavaToolchainSpec
+import org.gradle.jvm.toolchain.JvmVendorSpec
 import org.gradle.testfixtures.ProjectBuilder
+import org.junit.Assert.assertThrows
+import org.junit.Assume
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 
 class AndroidLintInputsTest {
 
@@ -113,21 +124,38 @@ class AndroidLintInputsTest {
   }
 
   @Test
-  fun `check java version normalization`() {
-    SystemPropertyOverrides().use { systemPropertyOverrides ->
-      fun check(javaVersion: String, expectedMajorVersion: String) {
-        val systemPropertyInputs = project.objects.newInstance(SystemPropertyInputs::class.java)
-        systemPropertyOverrides.setProperty("java.version", javaVersion)
-        systemPropertyInputs.initialize(project.providers, LintMode.ANALYSIS)
-        assertThat(systemPropertyInputs.javaVersion.get()).isEqualTo(expectedMajorVersion)
-      }
+  fun `check java version initialization`() {
+    val systemPropertyInputs = project.objects.newInstance(SystemPropertyInputs::class.java)
+    systemPropertyInputs.initialize(project.providers, LintMode.ANALYSIS)
 
-      check("1.8.0_292", "8")
-      check("11.0.1", "11")
-      check("17", "17")
-      check("17.0.17+10-LTS", "17")
-      check("17+35-LTS-2724", "17")
+    // Verify that the lint input gets populated with the current JVM's major version
+    assertThat(systemPropertyInputs.javaVersion.get()).isEqualTo(JavaVersion.current().majorVersion)
+  }
+
+  @Test
+  fun `check java version normalization expectations`() {
+    // Since we now rely on Gradle's JavaVersion to parse the system property,
+    // we verify that Gradle correctly normalizes these expected version strings.
+    fun check(javaVersion: String, expectedMajorVersion: String) {
+      assertThat(JavaVersion.toVersion(javaVersion).majorVersion).isEqualTo(expectedMajorVersion)
     }
+
+    check("1.8.0_292", "8")
+    check("11.0.1", "11")
+    check("17", "17")
+    check("17.0.17+10-LTS", "17")
+    check("17+35-LTS-2724", "17")
+  }
+
+  @Test
+  fun `check isLintRunInProcess logic`() {
+    // When no toolchain spec is provided, runInProcess respects its parameter
+    assertThat(isLintRunInProcess(runInProcess = true)).isTrue()
+    assertThat(isLintRunInProcess(runInProcess = false)).isFalse()
+
+    // When toolchain spec is present, runInProcess is always forced to false
+    assertThat(isLintRunInProcess(runInProcess = true, hasToolchainSpec = true)).isFalse()
+    assertThat(isLintRunInProcess(runInProcess = false, hasToolchainSpec = true)).isFalse()
   }
 
   @Test
@@ -163,6 +191,27 @@ class AndroidLintInputsTest {
     assertThat(resolved.first().moduleGroup).isEqualTo("org.ow2.asm")
     assertThat(resolved.first().moduleName).isEqualTo("asm")
     assertThat(resolved.first().moduleVersion).isEqualTo("9.1")
+  }
+
+  @Test
+  fun `check custom lint checks configurations`() {
+    val lintChecks = BasePlugin.createCustomLintChecksConfig(project)
+    assertThat(lintChecks.name).isEqualTo(VariantDependencies.CONFIG_NAME_LINTCHECKS)
+    assertThat(lintChecks.isCanBeConsumed).isFalse()
+    assertThat(lintChecks.description).isEqualTo("Configuration to apply external lint check jar")
+
+    val compileClasspath = project.configurations.create("compileClasspath")
+    val runtimeClasspath = project.configurations.create("runtimeClasspath")
+    val lintChecksClasspath =
+      maybeCreateLintChecksClasspath(
+        project,
+        "debug",
+        compileClasspath,
+        runtimeClasspath,
+      )
+    assertThat(lintChecksClasspath.name).isEqualTo("debugLintChecksClasspath")
+    assertThat(lintChecksClasspath.isCanBeConsumed).isFalse()
+    assertThat(lintChecksClasspath.description).isEqualTo("Resolved configuration for lint check compilation for variant: debug")
   }
 
   @Test
@@ -224,11 +273,127 @@ class AndroidLintInputsTest {
     )
   }
 
+  @Test
+  fun `test target baseline convention disabled when useBaselineConvention is false`() {
+    checkBaselineConvention(
+      setup = { projectDir, _ ->
+        val targetBaseline = File(projectDir, LINT_BASELINE_ANDROID_FILE_NAME)
+        targetBaseline.createNewFile()
+        val legacyBaseline = File(projectDir, LINT_BASELINE_FILE_NAME)
+        legacyBaseline.createNewFile()
+        null
+      },
+      useBaselineConvention = false,
+      defaultBaselineFileName = LINT_BASELINE_ANDROID_FILE_NAME,
+      expectedDefaultBaseline = false,
+    )
+  }
+
+  @Test
+  fun `test target baseline convention with target file exists`() {
+    checkBaselineConvention(
+      setup = { projectDir, _ ->
+        val targetBaseline = File(projectDir, LINT_BASELINE_ANDROID_FILE_NAME)
+        targetBaseline.createNewFile()
+        targetBaseline
+      },
+      useBaselineConvention = true,
+      defaultBaselineFileName = LINT_BASELINE_ANDROID_FILE_NAME,
+      expectedDefaultBaseline = true,
+    )
+  }
+
+  @Test
+  fun `test target baseline convention with target file missing, legacy exists, reporting mode`() {
+    checkBaselineConvention(
+      setup = { projectDir, _ ->
+        val legacyBaseline = File(projectDir, LINT_BASELINE_FILE_NAME)
+        legacyBaseline.createNewFile()
+        legacyBaseline
+      },
+      mode = LintMode.REPORTING,
+      useBaselineConvention = true,
+      defaultBaselineFileName = LINT_BASELINE_ANDROID_FILE_NAME,
+      expectedDefaultBaseline = true,
+    )
+  }
+
+  @Test
+  fun `test target baseline convention with target file missing, legacy exists, updating mode`() {
+    checkBaselineConvention(
+      setup = { projectDir, _ ->
+        val legacyBaseline = File(projectDir, LINT_BASELINE_FILE_NAME)
+        legacyBaseline.createNewFile()
+        File(projectDir, LINT_BASELINE_ANDROID_FILE_NAME)
+      },
+      mode = LintMode.UPDATE_BASELINE,
+      useBaselineConvention = true,
+      defaultBaselineFileName = LINT_BASELINE_ANDROID_FILE_NAME,
+      expectedDefaultBaseline = true,
+    )
+  }
+
+  @Test
+  fun `test target baseline convention with both target and legacy files exist, reporting mode`() {
+    checkBaselineConvention(
+      setup = { projectDir, _ ->
+        val legacyBaseline = File(projectDir, LINT_BASELINE_FILE_NAME)
+        legacyBaseline.createNewFile()
+        val targetBaseline = File(projectDir, LINT_BASELINE_JVM_FILE_NAME)
+        targetBaseline.createNewFile()
+        targetBaseline
+      },
+      mode = LintMode.REPORTING,
+      useBaselineConvention = true,
+      defaultBaselineFileName = LINT_BASELINE_JVM_FILE_NAME,
+      expectedDefaultBaseline = true,
+    )
+  }
+
+  @Test
+  fun `test target baseline convention with target file missing, other target exists, legacy exists`() {
+    checkBaselineConvention(
+      setup = { projectDir, _ ->
+        val legacyBaseline = File(projectDir, LINT_BASELINE_FILE_NAME)
+        legacyBaseline.createNewFile()
+        val otherTargetBaseline = File(projectDir, LINT_BASELINE_JVM_FILE_NAME)
+        otherTargetBaseline.createNewFile()
+        File(projectDir, LINT_BASELINE_ANDROID_FILE_NAME)
+      },
+      mode = LintMode.REPORTING,
+      useBaselineConvention = true,
+      defaultBaselineFileName = LINT_BASELINE_ANDROID_FILE_NAME,
+      expectedDefaultBaseline = true,
+    )
+  }
+
+  @Test
+  fun `test explicit baseline in DSL overrides target baseline convention`() {
+    checkBaselineConvention(
+      setup = { projectDir, lintOptions ->
+        val explicitBaseline = File(projectDir, "custom-baseline.xml")
+        explicitBaseline.createNewFile()
+        lintOptions.baseline = explicitBaseline
+        explicitBaseline
+      },
+      useBaselineConvention = true,
+      defaultBaselineFileName = LINT_BASELINE_ANDROID_FILE_NAME,
+      expectedDefaultBaseline = false,
+    )
+  }
+
+  @Test
+  fun `test getResolvedBaseline does not throw when lintMode is uninitialized`() {
+    val lintOptionsInput = project.objects.newInstance(LintOptionsInput::class.java)
+    assertThat(lintOptionsInput.getResolvedBaseline()).isNull()
+  }
+
   private fun checkBaselineConvention(
     setup: (File, LintImpl) -> File?,
     mode: LintMode = LintMode.REPORTING,
     useBaselineConvention: Boolean,
     expectedDefaultBaseline: Boolean,
+    defaultBaselineFileName: String = LINT_BASELINE_FILE_NAME,
   ) {
     val projectDir = temporaryFolder.newFolder()
     val projectDirectory = project.layout.projectDirectory.dir(projectDir.absolutePath)
@@ -238,10 +403,32 @@ class AndroidLintInputsTest {
 
     val expectedBaselineFile = setup(projectDir, lintOptions)
 
-    lintOptionsInput.initialize(lintOptions, mode, projectDirectory, useBaselineConvention)
+    lintOptionsInput.initialize(
+      lintOptions,
+      mode,
+      projectDirectory,
+      useBaselineConvention,
+      defaultBaselineFileName = defaultBaselineFileName,
+    )
 
     assertThat(lintOptionsInput.toLintModel().baselineFile?.absolutePath).isEqualTo(expectedBaselineFile?.absolutePath)
     assertThat(lintOptionsInput.defaultBaseline.get()).isEqualTo(expectedDefaultBaseline)
+    val expectedLegacyBaselineFile =
+      if (
+        mode != LintMode.UPDATE_BASELINE &&
+          useBaselineConvention &&
+          defaultBaselineFileName != LINT_BASELINE_FILE_NAME &&
+          lintOptions.baseline == null
+      ) {
+        File(projectDir, LINT_BASELINE_FILE_NAME)
+      } else {
+        null
+      }
+    if (expectedLegacyBaselineFile != null) {
+      assertThat(lintOptionsInput.legacyBaseline.orNull?.asFile).isEqualTo(expectedLegacyBaselineFile)
+    } else {
+      assertThat(lintOptionsInput.legacyBaseline.orNull).isNull()
+    }
   }
 
   private fun createMavenArtifact(repoDir: File, group: String, artifact: String, version: String) {
@@ -252,5 +439,127 @@ class AndroidLintInputsTest {
         "<project><modelVersion>4.0.0</modelVersion><groupId>$group</groupId><artifactId>$artifact</artifactId><version>$version</version></project>"
       )
     File(dir, "$artifact-$version.jar").writeText("foo-bar")
+  }
+
+  @Test
+  fun `check getLintJavaLauncherProvider with valid toolchain spec`() {
+    project.pluginManager.apply("jvm-toolchains")
+    val dslServices = createDslServices()
+    val lintOptions = dslServices.newDecoratedInstance(LintImpl::class.java, dslServices)
+    val currentJavaVersion = JavaVersion.current().majorVersion.toInt()
+    lintOptions.toolchain { languageVersion.set(JavaLanguageVersion.of(currentJavaVersion)) }
+
+    val launcherProvider = getLintJavaLauncherProvider(project, lintOptions, JavaVersion.VERSION_17)
+    assertThat(launcherProvider.isPresent).isTrue()
+  }
+
+  @Test
+  fun `check getLintJavaLauncherProvider below baseline throws GradleException`() {
+    project.pluginManager.apply("jvm-toolchains")
+    val dslServices = createDslServices()
+    val lintOptions = dslServices.newDecoratedInstance(LintImpl::class.java, dslServices)
+    lintOptions.toolchain { languageVersion.set(JavaLanguageVersion.of(11)) }
+
+    val exception =
+      assertThrows(GradleException::class.java) { getLintJavaLauncherProvider(project, lintOptions, JavaVersion.VERSION_11).get() }
+    assertThat(exception.message).contains("below AGP's minimum required JDK (17)")
+  }
+
+  @Test
+  fun `check getLintJavaLauncherProvider below bytecode compatibility throws GradleException`() {
+    project.pluginManager.apply("jvm-toolchains")
+    val dslServices = createDslServices()
+    val lintOptions = dslServices.newDecoratedInstance(LintImpl::class.java, dslServices)
+    lintOptions.toolchain { languageVersion.set(JavaLanguageVersion.of(17)) }
+
+    val exception =
+      assertThrows(GradleException::class.java) { getLintJavaLauncherProvider(project, lintOptions, JavaVersion.VERSION_21).get() }
+    assertThat(exception.message).contains("cannot analyze project code compiled for Java 21")
+  }
+
+  @Test
+  fun `check getLintRunInProcessProvider with toolchain spec forces out of process`() {
+    val dslServices = createDslServices()
+    val lintOptions = dslServices.newDecoratedInstance(LintImpl::class.java, dslServices)
+    lintOptions.toolchain { languageVersion.set(JavaLanguageVersion.of(21)) }
+
+    val runInProcess = getLintRunInProcessProvider(ProjectOptions(project.providers), lintOptions).get()
+    assertThat(runInProcess).isFalse()
+  }
+
+  @Test
+  fun `check getLintJavaLauncherProvider without toolchain below bytecode compatibility throws GradleException`() {
+    val dslServices = createDslServices()
+    val lintOptions = dslServices.newDecoratedInstance(LintImpl::class.java, dslServices)
+    // No toolchain specified
+
+    val currentJava = JavaVersion.current()
+    val availableVersions = JavaVersion.values()
+
+    // Skip the test if we are already on the highest known Java version
+    Assume.assumeTrue("Test requires a higher known Java version to be available", currentJava < availableVersions.last())
+
+    val higherJavaVersion = availableVersions.first { it > currentJava }
+
+    val exception = assertThrows(GradleException::class.java) { getLintJavaLauncherProvider(project, lintOptions, higherJavaVersion).get() }
+    assertThat(exception.message).contains("The Gradle daemon is running on Java")
+    assertThat(exception.message).contains("but the project is compiled for Java")
+    assertThat(exception.message).contains("Please run Gradle on a newer JVM or configure a toolchain for Lint")
+  }
+
+  @Test
+  fun `check getLintJavaLauncherProvider and getLintRunInProcessProvider evaluate toolchain spec lazily`() {
+    project.pluginManager.apply("jvm-toolchains")
+    val dslServices = createDslServices()
+    val lintOptions = dslServices.newDecoratedInstance(LintImpl::class.java, dslServices)
+
+    // Obtain providers BEFORE configuring toolchain
+    val runInProcessProvider = getLintRunInProcessProvider(ProjectOptions(project.providers), lintOptions)
+    val launcherProvider = getLintJavaLauncherProvider(project, lintOptions, JavaVersion.VERSION_17)
+
+    // Initially toolchain is empty, so runInProcess is true and launcher is null
+    assertThat(runInProcessProvider.get()).isTrue()
+    assertThat(launcherProvider.orNull).isNull()
+
+    // Configure toolchain AFTER provider creation
+    val currentJavaVersion = JavaVersion.current().majorVersion.toInt()
+    lintOptions.toolchain { languageVersion.set(JavaLanguageVersion.of(currentJavaVersion)) }
+
+    // After configuring, providers lazily reflect the new toolchain configuration
+    assertThat(runInProcessProvider.get()).isFalse()
+    assertThat(launcherProvider.orNull).isNotNull()
+  }
+
+  @Test
+  fun `check custom Lint implementation toolchainSpec support`() {
+    project.pluginManager.apply("jvm-toolchains")
+    val dslServices = createDslServices()
+    val currentJavaVersion = JavaVersion.current().majorVersion.toInt()
+    val toolchainSpec = dslServices.newInstance(JavaToolchainSpec::class.java)
+    toolchainSpec.languageVersion.set(JavaLanguageVersion.of(currentJavaVersion))
+
+    val customLint = mock<Lint>()
+    whenever(customLint.toolchain).thenReturn(toolchainSpec)
+
+    val runInProcess = getLintRunInProcessProvider(ProjectOptions(project.providers), customLint).get()
+    assertThat(runInProcess).isFalse()
+
+    val launcherProvider = getLintJavaLauncherProvider(project, customLint, JavaVersion.VERSION_17)
+    assertThat(launcherProvider.isPresent).isTrue()
+  }
+
+  @Test
+  fun `check getLintJavaLauncherProvider with vendor specified without languageVersion`() {
+    project.pluginManager.apply("jvm-toolchains")
+    val dslServices = createDslServices()
+    val lintOptions = dslServices.newDecoratedInstance(LintImpl::class.java, dslServices)
+    lintOptions.toolchain { vendor.set(JvmVendorSpec.ADOPTIUM) }
+
+    val runInProcess = getLintRunInProcessProvider(ProjectOptions(project.providers), lintOptions).get()
+    assertThat(runInProcess).isFalse()
+
+    val launcherProvider = getLintJavaLauncherProvider(project, lintOptions, JavaVersion.VERSION_17)
+    val exception = assertThrows(GradleException::class.java) { launcherProvider.get() }
+    assertThat(exception.message).contains("must specify a 'languageVersion'")
   }
 }

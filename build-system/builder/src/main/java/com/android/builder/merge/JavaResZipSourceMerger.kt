@@ -22,12 +22,12 @@ import java.io.InputStream
 class JavaResZipSourceMerger(
   private val packagingOption: ParsedPackagingOptions,
   private val inputStreamMerger: InputMerger<MergeInput, InputStream> = InputStreamMerger(packagingOption),
-) : InputMerger<FileMergerInputNonIncremental, MergedSourceResult> {
+) : InputMerger<FileMergerInput, MergedSourceResult> {
 
   override fun merge(
     path: String,
     compress: Boolean,
-    from: () -> List<FileMergerInputNonIncremental>,
+    from: () -> List<FileMergerInput>,
     action: (mergedSource: MergedSourceResult) -> Unit,
   ) {
     val inputs = from()
@@ -44,7 +44,10 @@ class JavaResZipSourceMerger(
             inputs.first()
           }
         input.open()
-        if (!compress) {
+        // Prefer returning as a ZipSource when possible unless compression is false for the input.
+        // ZipSource allows for copy in place when merging zips and maintains compression level.
+        // InputStream should be utilized only for entries that will be modified e.g. decompressed.
+        if (!compress || input !is FileMergerZipInput) {
           action(MergedSourceResult.InputStream(input.openPath(path)))
         } else {
           action(MergedSourceResult.ZipSource(input.openAsZipSource(path)))

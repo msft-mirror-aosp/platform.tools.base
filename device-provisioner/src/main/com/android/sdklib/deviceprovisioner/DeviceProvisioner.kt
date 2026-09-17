@@ -128,32 +128,31 @@ private constructor(
    * to see if it becomes unclaimed, then offer it again.
    */
   private fun offerWhileConnected(scope: CoroutineScope, device: ConnectedDevice) {
-    val job =
-      scope.launch {
-        logger.debug { "Offering ${device.serialNumber}" }
-        while (device.scope.isActive) {
-          // Wait until the device becomes online, then offer it to a plugin.
-          val handle =
-            device.deviceInfoFlow
-              .map { it.deviceState == DeviceState.ONLINE }
-              .transformLatest { isOnline ->
-                if (isOnline) {
-                  when (val handle = offer(device)) {
-                    null -> logger.warn("Device ${device.serialNumber} not claimed by any provisioner")
-                    else -> emit(handle)
-                  }
-                } else {
-                  logger.debug { "Device ${device.serialNumber} is offline" }
+    val job = scope.launch {
+      logger.debug { "Offering ${device.serialNumber}" }
+      while (device.scope.isActive) {
+        // Wait until the device becomes online, then offer it to a plugin.
+        val handle =
+          device.deviceInfoFlow
+            .map { it.deviceState == DeviceState.ONLINE }
+            .transformLatest { isOnline ->
+              if (isOnline) {
+                when (val handle = offer(device)) {
+                  null -> logger.warn("Device ${device.serialNumber} not claimed by any provisioner")
+                  else -> emit(handle)
                 }
+              } else {
+                logger.debug { "Device ${device.serialNumber} is offline" }
               }
-              .first()
+            }
+            .first()
 
-          // Once it is claimed, it's the plugin's responsibility; we wait until the plugin no
-          // longer holds the device before re-offering it.
-          handle.awaitRelease(device)
-          logger.debug { "Re-offering ${device.serialNumber}" }
-        }
+        // Once it is claimed, it's the plugin's responsibility; we wait until the plugin no
+        // longer holds the device before re-offering it.
+        handle.awaitRelease(device)
+        logger.debug { "Re-offering ${device.serialNumber}" }
       }
+    }
     // When the device terminates, cancel the above job, which may be stuck collecting a StateFlow
     // if we don't do this.
     device.scope.coroutineContext.job.invokeOnCompletion { job.cancel() }
@@ -166,19 +165,18 @@ private constructor(
    * To simplify plugin implementation, we only offer one device to one plugin at a time; we may want to relax this in the future to support
    * identifying devices in parallel.
    */
-  private suspend fun offer(device: ConnectedDevice): DeviceHandle? =
-    offerMutex.withLock {
-      provisioners.firstNotNullOfOrNull {
-        try {
-          it.claim(device)
-        } catch (e: CancellationException) {
-          throw e
-        } catch (t: Throwable) {
-          logger.warn(t, "Offering ${device.serialNumber}")
-          null
-        }
+  private suspend fun offer(device: ConnectedDevice): DeviceHandle? = offerMutex.withLock {
+    provisioners.firstNotNullOfOrNull {
+      try {
+        it.claim(device)
+      } catch (e: CancellationException) {
+        throw e
+      } catch (t: Throwable) {
+        logger.warn(t, "Offering ${device.serialNumber}")
+        null
       }
     }
+  }
 
   /** A composite list of the [CreateDeviceAction]s from all plugins that support device creation. */
   fun createDeviceActions(): List<CreateDeviceAction> = provisioners.mapNotNull { it.createDeviceAction }

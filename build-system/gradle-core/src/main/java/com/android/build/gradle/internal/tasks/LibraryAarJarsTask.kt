@@ -153,8 +153,8 @@ abstract class LibraryAarJarsTask : NonIncrementalTask() {
       val dirInputs = inputs.filter { !it.name.endsWith(SdkConstants.DOT_JAR) }
 
       for (jar in jarInputs) {
-        // we need to copy the jars but only take the class files as the resources have
-        // been merged into the main jar.
+        // we need to copy the jars. we used to take only the class files as the resources
+        // were supposed to be merged into the main jar
         JarFlinger(File(localJarsLocation, jar.name).toPath(), JarFlinger.CLASSES_ONLY).use { jarCreator ->
           compressionLevel?.let { jarCreator.setCompressionLevel(it) }
           jarCreator.addJar(jar.toPath())

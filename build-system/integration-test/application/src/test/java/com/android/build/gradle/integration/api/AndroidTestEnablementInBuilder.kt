@@ -30,18 +30,17 @@ import org.junit.Test
 class AndroidTestEnablementInBuilder {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        android {
-          buildTypes {
-            create("stagingWithTest") {}
-            create("stagingWithoutTest") {}
-          }
+  val rule = GradleRule.from {
+    androidApplication {
+      android {
+        buildTypes {
+          create("stagingWithTest") {}
+          create("stagingWithoutTest") {}
         }
-        pluginCallbacks += MyAppCallback::class.java
       }
+      pluginCallbacks += MyAppCallback::class.java
     }
+  }
 
   // enable or disable the device tests depending on the build type.
   class MyAppCallback : ApplicationComponentCallback {

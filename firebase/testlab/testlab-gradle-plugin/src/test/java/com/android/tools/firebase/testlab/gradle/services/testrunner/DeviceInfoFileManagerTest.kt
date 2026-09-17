@@ -16,8 +16,8 @@
 
 package com.android.tools.firebase.testlab.gradle.services.testrunner
 
-import com.android.tools.utp.plugins.host.device.info.proto.AndroidTestDeviceInfoProto.AndroidTestDeviceInfo
 import com.google.common.truth.Truth.assertThat
+import com.google.testing.platform.proto.api.core.AndroidTestDeviceInfoProto.AndroidTestDeviceInfo
 import java.io.File
 import org.junit.Before
 import org.junit.Rule

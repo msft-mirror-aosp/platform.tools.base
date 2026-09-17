@@ -24,12 +24,16 @@ import com.google.testing.platform.proto.api.core.TestResultProto
 import com.google.testing.platform.proto.api.core.TestStatusProto
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto
 import java.io.File
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
 import java.util.Base64
 import java.util.Properties
 import java.util.concurrent.ConcurrentHashMap
 import java.util.logging.Level
 import java.util.logging.Logger
+import org.junit.platform.commons.JUnitException
 import org.junit.platform.engine.TestExecutionResult
+import org.junit.platform.engine.UniqueId
 import org.junit.platform.engine.reporting.ReportEntry
 import org.junit.platform.launcher.TestExecutionListener
 import org.junit.platform.launcher.TestIdentifier
@@ -70,6 +74,12 @@ class AndroidTestResultListener : TestExecutionListener {
    * Paths are published via [reportingEntryPublished] and consumed in [executionFinished].
    */
   private val testLogcatFiles = ConcurrentHashMap<String, String>()
+
+  /** Tracks benchmark trace file paths for each test. UniqueId -> List of TracePaths. */
+  private val testBenchmarkTraces = ConcurrentHashMap<String, List<String>>()
+
+  /** Tracks benchmark message file paths for each test. UniqueId -> MessagePath. */
+  private val testBenchmarkMessages = ConcurrentHashMap<String, String>()
 
   /** Properties loaded from the file specified by AGP environment variable. */
   private val configurationProperties: Properties by lazy {
@@ -150,6 +160,16 @@ class AndroidTestResultListener : TestExecutionListener {
     val logcatPath = entry.keyValuePairs[AndroidTestReportKeys.LOGCAT_PATH]
     if (logcatPath != null) {
       testLogcatFiles[testIdentifier.uniqueId] = logcatPath
+    }
+
+    val benchmarkTraces = entry.keyValuePairs[AndroidTestReportKeys.BENCHMARK_TRACE_PATHS]
+    if (benchmarkTraces != null) {
+      testBenchmarkTraces[testIdentifier.uniqueId] = benchmarkTraces.split(",")
+    }
+
+    val benchmarkMessage = entry.keyValuePairs[AndroidTestReportKeys.BENCHMARK_MESSAGE_PATH]
+    if (benchmarkMessage != null) {
+      testBenchmarkMessages[testIdentifier.uniqueId] = benchmarkMessage
     }
   }
 
@@ -253,6 +273,24 @@ class AndroidTestResultListener : TestExecutionListener {
                 sourcePathBuilder.path = logcatPath
               }
             }
+            // Attach benchmark trace artifacts if they were published.
+            val traces = testBenchmarkTraces.remove(testIdentifier.uniqueId)
+            traces?.forEach { path ->
+              addOutputArtifactBuilder().apply {
+                labelBuilder.label = "additionaltestoutput.benchmark.trace"
+                labelBuilder.namespace = "android"
+                sourcePathBuilder.path = path
+              }
+            }
+            // Attach benchmark message artifact if it was published.
+            val messagePath = testBenchmarkMessages.remove(testIdentifier.uniqueId)
+            if (messagePath != null) {
+              addOutputArtifactBuilder().apply {
+                labelBuilder.label = "additionaltestoutput.benchmark.message"
+                labelBuilder.namespace = "android"
+                sourcePathBuilder.path = messagePath
+              }
+            }
           }
           .build()
 
@@ -343,18 +381,32 @@ class AndroidTestResultListener : TestExecutionListener {
       else -> TestStatusProto.TestStatus.TEST_STATUS_UNSPECIFIED
     }
   }
+}
 
-  /**
-   * Extracts the device ID from the [TestIdentifier.uniqueId] string.
-   *
-   * Android Studio expects this to be the device serial ID.
-   */
-  private fun TestIdentifier.getDeviceId(): String? {
-    val devicePart = uniqueId.substringAfterLast("[device:", "")
-    return if (devicePart.isNotEmpty()) {
-      devicePart.substringBefore("]")
-    } else {
-      null
-    }
+/**
+ * Extracts the device ID from the [TestIdentifier].
+ *
+ * Android Studio and AGP expect this to be the unencoded device serial ID. JUnit Platform percent-encodes special characters (such as
+ * colons in IP:port serials) when formatting [UniqueId] to a string. This method retrieves the unencoded segment value directly from the
+ * [UniqueId] object or decodes it if parsing from a formatted string.
+ */
+fun TestIdentifier.getDeviceId(): String? {
+  val id =
+    uniqueIdObject
+      ?: try {
+        UniqueId.parse(uniqueId)
+      } catch (_: JUnitException) {
+        null
+      }
+  if (id != null) {
+    return id.segments.lastOrNull { it.type == "device" }?.value
+  }
+
+  val devicePart = uniqueId.substringAfterLast("[device:", "").takeIf { it.isNotEmpty() } ?: return null
+  val raw = devicePart.substringBefore("]")
+  return try {
+    URLDecoder.decode(raw, StandardCharsets.UTF_8.name())
+  } catch (_: IllegalArgumentException) {
+    raw
   }
 }

@@ -18,19 +18,26 @@ package com.android.build.gradle.internal.tasks.featuresplit;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.component.VariantCreationConfig;
+import com.android.build.gradle.internal.core.ProductFlavor;
 import com.android.build.gradle.internal.scope.InternalArtifactType;
 import com.android.build.gradle.internal.tasks.BuildAnalyzer;
 import com.android.build.gradle.internal.tasks.NonIncrementalTask;
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction;
 import com.android.buildanalyzer.common.TaskCategory;
+
 import com.google.common.annotations.VisibleForTesting;
-import java.io.IOException;
+
 import org.gradle.api.file.DirectoryProperty;
+import org.gradle.api.provider.MapProperty;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskProvider;
 import org.gradle.work.DisableCachingByDefault;
+
+import java.io.IOException;
+import java.util.stream.Collectors;
 
 /**
  * Task that writes the FeatureSplitDeclaration file and publish it for other modules to consume.
@@ -49,13 +56,24 @@ public abstract class FeatureSplitDeclarationWriterTask extends NonIncrementalTa
     @Input
     public abstract Property<String> getNamespace();
 
+    @Input
+    @Optional
+    public abstract Property<String> getBuildType();
+
+    @Input
+    public abstract MapProperty<String, String> getProductFlavors();
+
     @OutputDirectory
     public abstract DirectoryProperty getOutputDirectory();
 
     @Override
     protected void doTaskAction() throws IOException {
         FeatureSplitDeclaration declaration =
-                new FeatureSplitDeclaration(uniqueIdentifier, getNamespace().get());
+                new FeatureSplitDeclaration(
+                        uniqueIdentifier,
+                        getNamespace().get(),
+                        getBuildType().getOrNull(),
+                        getProductFlavors().get());
         declaration.save(getOutputDirectory().get().getAsFile());
     }
 
@@ -100,6 +118,16 @@ public abstract class FeatureSplitDeclarationWriterTask extends NonIncrementalTa
             task.uniqueIdentifier = task.getProject().getPath();
             task.getNamespace().set(creationConfig.getNamespace());
             task.getNamespace().disallowChanges();
+            task.getBuildType().set(creationConfig.getBuildType());
+            task.getBuildType().disallowChanges();
+            task.getProductFlavors()
+                    .set(
+                            creationConfig.getProductFlavorList().stream()
+                                    .collect(
+                                            Collectors.toMap(
+                                                    ProductFlavor::getDimension,
+                                                    ProductFlavor::getName)));
+            task.getProductFlavors().disallowChanges();
         }
     }
 }

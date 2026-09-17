@@ -58,6 +58,9 @@ class Instrumenter {
   // retransformation for those that match the inclusion filter.
   void RetransformLoadedClasses(JNIEnv* jni);
 
+  // Returns true if the class is a compiler-generated synthetic class.
+  static bool IsSyntheticOrCompilerGenerated(std::string_view class_name);
+
  private:
   // Helper to determine if a class should be instrumented.
   bool ShouldInstrument(jobject loader, const char* name, jclass klass) const;

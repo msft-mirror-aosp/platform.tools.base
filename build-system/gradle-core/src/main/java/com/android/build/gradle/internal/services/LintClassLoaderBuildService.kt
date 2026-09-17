@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.services
 
 import com.android.build.gradle.internal.lint.AndroidLintWorkAction
+import com.google.common.annotations.VisibleForTesting
 import com.google.common.hash.HashCode
 import com.google.common.hash.Hashing
 import com.google.common.io.Files
@@ -43,7 +44,6 @@ abstract class LintClassLoaderBuildService : BuildService<BuildServiceParameters
    * This is cleared at the end of each build
    */
   @GuardedBy("this") private val jarsToHashCode: MutableMap<List<URI>, HashCode> = mutableMapOf()
-  @GuardedBy("this") private val classpathToHashCode: MutableMap<List<URI>, HashCode> = mutableMapOf()
 
   // ** Hash the contents of the given file collection */
   @Synchronized
@@ -54,8 +54,13 @@ abstract class LintClassLoaderBuildService : BuildService<BuildServiceParameters
     return hashCode.toString()
   }
 
-  override fun close() {
+  @VisibleForTesting
+  fun clearCache() {
     jarsToHashCode.clear()
+  }
+
+  override fun close() {
+    clearCache()
     if (shouldDispose) {
       AndroidLintWorkAction.dispose()
     }
@@ -66,7 +71,7 @@ abstract class LintClassLoaderBuildService : BuildService<BuildServiceParameters
     val uris = classpath.map { it.asFile.toURI() }
     val hashCode =
       jarsToHashCode.getOrPut(uris) {
-        Hashing.combineOrdered(classpath.map { Hashing.murmur3_128().hashString(it.asFile.canonicalPath, Charsets.UTF_8) })
+        Hashing.combineOrdered(classpath.map { Hashing.murmur3_128().hashString(it.asFile.name, Charsets.UTF_8) })
       }
     return hashCode.toString()
   }

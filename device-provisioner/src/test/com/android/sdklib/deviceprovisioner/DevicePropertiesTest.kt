@@ -130,6 +130,42 @@ class DevicePropertiesTest {
   }
 
   @Test
+  fun readAdbSerialNumber_hardwareSerial() {
+    val builder = DeviceProperties.Builder().apply { readAdbSerialNumber("435DT06WH") }
+    assertThat(builder.connectionType).isNull()
+    assertThat(builder.wearPairingId).isEqualTo("435DT06WH")
+    assertThat(builder.deviceInfoProto.mdnsConnectionType).isEqualTo(DeviceInfo.MdnsConnectionType.MDNS_NONE)
+  }
+
+  @Test
+  fun readAdbSerialNumber_mdnsWifi() {
+    val builder = DeviceProperties.Builder().apply { readAdbSerialNumber("adb-435DT06WH-vWgJpq._adb-tls-connect._tcp.") }
+    assertThat(builder.connectionType).isEqualTo(ConnectionType.WIFI)
+    assertThat(builder.wearPairingId).isEqualTo("435DT06WH")
+    assertThat(builder.deviceInfoProto.mdnsConnectionType).isEqualTo(DeviceInfo.MdnsConnectionType.MDNS_AUTO_CONNECT_TLS)
+  }
+
+  @Test
+  fun readAdbSerialNumber_networkIpv4() {
+    val builder = DeviceProperties.Builder().apply { readAdbSerialNumber("192.168.1.50:5555") }
+    assertThat(builder.connectionType).isEqualTo(ConnectionType.NETWORK)
+    assertThat(builder.wearPairingId).isEqualTo("192.168.1.50:5555")
+    assertThat(builder.deviceInfoProto.mdnsConnectionType).isEqualTo(DeviceInfo.MdnsConnectionType.MDNS_NONE)
+  }
+
+  @Test
+  fun readAdbSerialNumber_networkHostnameAndIpv6() {
+    val localhost = DeviceProperties.Builder().apply { readAdbSerialNumber("localhost:5555") }
+    assertThat(localhost.connectionType).isEqualTo(ConnectionType.NETWORK)
+
+    val ipv6 = DeviceProperties.Builder().apply { readAdbSerialNumber("[::1]:5555") }
+    assertThat(ipv6.connectionType).isEqualTo(ConnectionType.NETWORK)
+
+    val nonCtsShort = DeviceProperties.Builder().apply { readAdbSerialNumber("1234") }
+    assertThat(nonCtsShort.connectionType).isEqualTo(ConnectionType.NETWORK)
+  }
+
+  @Test
   fun buildInvalid() {
     try {
       DeviceProperties.build { icon = EmptyIcon.DEFAULT }
@@ -143,13 +179,46 @@ class DevicePropertiesTest {
     assertThat(props.deviceType).isEqualTo(DeviceType.AI_GLASSES)
   }
 
-  private fun props(vararg pairs: Pair<String, String>) =
-    DeviceProperties.buildForTest {
-      val map = mapOf(*pairs)
-      readCommonProperties(map)
-      deviceType = DeviceType.fromProperties(map)
+  @Test
+  fun title() {
+    val propsBoth = DeviceProperties.buildForTest {
+      manufacturer = "Google"
+      model = "Pixel 8"
       icon = EmptyIcon.DEFAULT
     }
+    assertThat(propsBoth.title).isEqualTo("Google Pixel 8")
+
+    val propsNoModel = DeviceProperties.buildForTest {
+      manufacturer = "Google"
+      icon = EmptyIcon.DEFAULT
+    }
+    assertThat(propsNoModel.title).isEqualTo("Google Device")
+
+    val propsNoManufacturer = DeviceProperties.buildForTest {
+      model = "Pixel 8"
+      icon = EmptyIcon.DEFAULT
+    }
+    assertThat(propsNoManufacturer.title).isEqualTo("Pixel 8")
+
+    val propsUnknown = DeviceProperties.buildForTest {
+      icon = EmptyIcon.DEFAULT
+    }
+    assertThat(propsUnknown.title).isEqualTo("Unknown")
+
+    val propsSanitized = DeviceProperties.buildForTest {
+      manufacturer = "Google <tag>"
+      model = "Pixel 8 >"
+      icon = EmptyIcon.DEFAULT
+    }
+    assertThat(propsSanitized.title).isEqualTo("Google ‹tag› Pixel 8 ›")
+  }
+
+  private fun props(vararg pairs: Pair<String, String>) = DeviceProperties.buildForTest {
+    val map = mapOf(*pairs)
+    readCommonProperties(map)
+    deviceType = DeviceType.fromProperties(map)
+    icon = EmptyIcon.DEFAULT
+  }
 }
 
 private val pixel8Props =

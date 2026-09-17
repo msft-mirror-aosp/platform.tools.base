@@ -16,7 +16,7 @@
 
 package com.android.tools.androidtest.testengine.instrument
 
-import com.android.tools.androidtest.testengine.CoverageAgentFilesystemInfo
+import com.android.tools.androidtest.testengine.collector.CoverageAgentFilesystemInfo
 import com.google.common.truth.Truth.assertThat
 import java.io.File
 import java.util.logging.Logger
@@ -326,7 +326,7 @@ class AmInstrumentationRunnerTest {
     assertThat(instrumentCmd).contains("listener")
     assertThat(instrumentCmd).contains("com.android.tools.coverage.CoverageAgentAttacher")
     assertThat(instrumentCmd).contains("coverage-agent-config")
-    assertThat(instrumentCmd?.joinToString(" ")).contains("$agentPath=$testPackage,com/example,$dataDir")
+    assertThat(instrumentCmd?.joinToString(" ")).contains("$agentPath=$testPackage,com/example/app,$dataDir")
   }
 
   @Test
@@ -389,8 +389,53 @@ class AmInstrumentationRunnerTest {
         it.invoke(runner) as List<String>
       }
 
-    // Verify prefix is "com/android" (first two segments of "com.android.sample.app")
-    assertThat(command.any { it.contains("com/android") }).isTrue()
-    assertThat(command.any { it.contains("$agentPath=$testPackage,com/android,$dataDir") }).isTrue()
+    // Verify prefix is "com/android/sample/app" (entire package of "com.android.sample.app")
+    assertThat(command.any { it.contains("com/android/sample/app") }).isTrue()
+    assertThat(command.any { it.contains("$agentPath=$testPackage,com/android/sample/app,$dataDir") }).isTrue()
+  }
+
+  @Test
+  fun runAmInstrumentCommand_withInstrumentInPcc() {
+    val deviceSerial = "test-device-123"
+    val runnerClass = "com.example.TestRunner"
+    val targetPackage = "com.example.app"
+
+    whenever(mockProcess.inputStream).thenReturn("INSTRUMENTATION_CODE: -1".byteInputStream())
+    whenever(mockProcess.errorStream).thenReturn("".byteInputStream())
+    whenever(mockProcessBuilder.start()).thenReturn(mockProcess)
+
+    var capturedCommand: List<String>? = null
+    val runner =
+      AmInstrumentationRunner(
+        adb = fakeAdb,
+        deviceSerial = deviceSerial,
+        instrumentationRunnerClass = runnerClass,
+        testPackageId = targetPackage,
+        instrumentationTargetPackageId = targetPackage,
+        instrumentInPcc = true,
+        logger = mockLogger,
+        processBuilder = { command ->
+          capturedCommand = command
+          mockProcessBuilder
+        },
+      )
+
+    runner.runAmInstrumentCommand()
+
+    assertThat(capturedCommand).isNotNull()
+    assertThat(capturedCommand)
+      .containsExactly(
+        fakeAdb.absolutePath,
+        "-s",
+        deviceSerial,
+        "shell",
+        "am",
+        "instrument",
+        "-r",
+        "-w",
+        "--instrument-in-pcc",
+        "$targetPackage/$runnerClass",
+      )
+      .inOrder()
   }
 }

@@ -32,6 +32,8 @@ import com.android.build.gradle.internal.dsl.BuildType as DslBuildType
 import com.android.build.gradle.internal.dsl.DefaultConfig as DslDefaultConfig
 import com.android.build.gradle.internal.dsl.ProductFlavor as DslProductFlavor
 import com.android.build.gradle.internal.dsl.VectorDrawablesOptions as DslVectorDrawablesOptions
+import com.android.build.gradle.internal.lint.LINT_BASELINE_FILE_NAME
+import com.android.build.gradle.internal.lint.resolveBaselineFile
 import com.android.build.gradle.internal.scope.BuildFeatureValues
 import com.android.build.gradle.internal.utils.toImmutableList
 import com.android.build.gradle.internal.utils.toImmutableMap
@@ -164,13 +166,16 @@ internal fun DslSigningConfig.convert() =
   SigningConfigImpl(
     name = name,
     storeFile = storeFile,
-    storePassword = storePassword,
+    // Do NOT ship keystore secrets over the Tooling API. Consumers that
+    // need to know whether the variant is signable use isSigningReady.
+    storePassword = null,
     keyAlias = keyAlias,
-    keyPassword = keyPassword,
+    keyPassword = null,
     enableV1Signing = enableV1Signing,
     enableV2Signing = enableV2Signing,
     enableV3Signing = enableV3Signing,
     enableV4Signing = enableV4Signing,
+    isSigningReady = storeFile != null && storePassword != null && keyAlias != null && keyPassword != null,
   )
 
 private fun Map<String, DslClassField>.convertBuildConfig(features: BuildFeatureValues): Map<String, ClassField>? =
@@ -249,8 +254,9 @@ internal fun DefaultAndroidSourceSet.convert(sources: InternalSources) =
 private fun variantSourcesForModel(sourceDirectories: SourceDirectoriesImpl?) =
   sourceDirectories?.variantSourcesForModel { it.shouldBeAddedToIdeModel && !it.isGenerated } ?: emptyList()
 
-private fun variantSourcesForList(sourceDirectoriesList: List<SourceDirectoriesImpl>) =
-  sourceDirectoriesList.flatMap { sourceDir -> sourceDir.variantSourcesForModel { it.shouldBeAddedToIdeModel && !it.isGenerated } }
+private fun variantSourcesForList(sourceDirectoriesList: List<SourceDirectoriesImpl>) = sourceDirectoriesList.flatMap { sourceDir ->
+  sourceDir.variantSourcesForModel { it.shouldBeAddedToIdeModel && !it.isGenerated }
+}
 
 internal fun AndroidResources.convert(): AaptOptions {
   var namespaced = DISABLED
@@ -270,7 +276,18 @@ internal fun AndroidResources.convert(): AaptOptions {
 
 internal fun Installation.convert() = InstallationImpl(timeOutInMs = timeOutInMs, installOptions = installOptions.toImmutableList())
 
-internal fun Lint.convert(projectDirectory: File? = null, useBaselineConvention: Boolean = false) =
+/**
+ * Converts a [Lint] DSL model to [LintOptionsImpl].
+ *
+ * @param defaultBaselineFileName The default baseline file name to use when the baseline convention is enabled. Defaults to
+ *   [LINT_BASELINE_FILE_NAME], which is the standard baseline file name for non-KMP projects, or the legacy non-target-specific baseline
+ *   for backward compatibility in Kotlin Multiplatform projects.
+ */
+internal fun Lint.convert(
+  projectDirectory: File? = null,
+  useBaselineConvention: Boolean = false,
+  defaultBaselineFileName: String = LINT_BASELINE_FILE_NAME,
+) =
   LintOptionsImpl(
     disable = disable.toSet(),
     enable = enable.toSet(),
@@ -303,7 +320,18 @@ internal fun Lint.convert(projectDirectory: File? = null, useBaselineConvention:
     ignoreTestFixturesSources = ignoreTestFixturesSources,
     checkGeneratedSources = checkGeneratedSources,
     checkDependencies = checkDependencies,
-    baseline = baseline ?: if (useBaselineConvention) projectDirectory?.resolve("lint-baseline.xml") else null,
+    baseline =
+      baseline
+        ?: if (useBaselineConvention && projectDirectory != null) {
+          val targetBaseline = projectDirectory.resolve(defaultBaselineFileName)
+          val legacyBaseline =
+            if (defaultBaselineFileName != LINT_BASELINE_FILE_NAME) {
+              projectDirectory.resolve(LINT_BASELINE_FILE_NAME)
+            } else {
+              null
+            }
+          resolveBaselineFile(targetBaseline, legacyBaseline)
+        } else null,
     targetSdk = targetSdk?.let { DefaultApiVersion(it).convert() } ?: targetSdkPreview?.let { DefaultApiVersion(it).convert() },
   )
 

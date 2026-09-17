@@ -17,19 +17,18 @@ class OptimizeResourcesTaskTest {
 
   @Test
   fun `test OptimizeResourcesTask works with resource shrinker`() {
-    val build =
-      rule.build {
-        androidApplication {
-          android {
-            buildTypes {
-              named("release") {
-                it.isShrinkResources = true
-                it.isMinifyEnabled = true
-              }
+    val build = rule.build {
+      androidApplication {
+        android {
+          buildTypes {
+            named("release") {
+              it.isShrinkResources = true
+              it.isMinifyEnabled = true
             }
           }
         }
       }
+    }
 
     build.executor.run(":app:assembleRelease")
 

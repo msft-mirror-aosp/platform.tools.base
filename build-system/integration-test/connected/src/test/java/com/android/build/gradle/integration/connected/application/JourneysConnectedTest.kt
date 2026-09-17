@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.connected.application
 
-import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
@@ -83,7 +82,7 @@ class JourneysConnectedTest {
   private fun AndroidProjectDefinition<ApplicationExtension>.setupProject() {
     android {
       defaultConfig { minSdk = 24 }
-      testOptions.suites.create("journeysTest", AgpTestSuite::class.java) {
+      testOptions.customSuites.create("journeysTest") {
         it.useJunitEngine.apply {
           inputs.add(AgpTestSuiteInputParameters.TESTED_APKS)
           includeEngines.add("journeys-test-engine")
@@ -105,7 +104,7 @@ class JourneysConnectedTest {
 
     override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
       androidComponents.finalizeDsl { android ->
-        android.testOptions.suites.getByName("journeysTest") {
+        android.testOptions.customSuites.getByName("journeysTest") {
           it.useJunitEngine.apply { enginesDependencies.add("com.android.tools.journeys:journeys-junit-engine-test-support:+") }
         }
       }
@@ -122,7 +121,7 @@ class JourneysConnectedTest {
 
     override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
       androidComponents.finalizeDsl { android ->
-        android.testOptions.suites.getByName("journeysTest") {
+        android.testOptions.customSuites.getByName("journeysTest") {
           it.useJunitEngine.apply { enginesDependencies.add("com.android.tools.journeys:journeys-junit-engine:+") }
         }
       }
@@ -164,9 +163,9 @@ class JourneysConnectedTest {
       executor
         .expectFailure()
         .withEnvironmentVariables(mapOf("GEMINI_ACCESS_TOKEN_PATH" to "fake_token_path"))
-        .run(":app:testJourneysTestT1DebugTestSuite")
+        .run(":app:testDebugJourneysTestT1TestSuite")
 
-    val outputDir = appProject.buildDir.resolve("intermediates/debug/testJourneysTestT1DebugTestSuite/results/$DEVICE_SERIAL/simple")
+    val outputDir = appProject.buildDir.resolve("intermediates/debug/testDebugJourneysTestT1TestSuite/results/$DEVICE_SERIAL/simple")
     assertThat(outputDir.resolve("journey_results.pb")).exists()
 
     assertJourneyEvents(
@@ -237,10 +236,10 @@ class JourneysConnectedTest {
       executor
         .withArgument("-DroboResultsPath=$roboResultsPath")
         .withEnvironmentVariables(mapOf("JOURNEYS_FILTER" to "journey1.journey.xml, journey2.journey.xml"))
-        .run(":app:testJourneysTestT1DebugTestSuite")
+        .run(":app:testDebugJourneysTestT1TestSuite")
 
     val journey1OutputDir =
-      appProject.buildDir.resolve("intermediates/debug/testJourneysTestT1DebugTestSuite/results/$DEVICE_SERIAL/journey1")
+      appProject.buildDir.resolve("intermediates/debug/testDebugJourneysTestT1TestSuite/results/$DEVICE_SERIAL/journey1")
     assertThat(journey1OutputDir.resolve("robo_results.pb")).exists()
     assertThat(journey1OutputDir.resolve("journey_results.pb")).exists()
     for (i in 0 until 4) {
@@ -248,7 +247,7 @@ class JourneysConnectedTest {
     }
 
     val journey2OutputDir =
-      appProject.buildDir.resolve("intermediates/debug/testJourneysTestT1DebugTestSuite/results/$DEVICE_SERIAL/journey2")
+      appProject.buildDir.resolve("intermediates/debug/testDebugJourneysTestT1TestSuite/results/$DEVICE_SERIAL/journey2")
     assertThat(journey2OutputDir.resolve("robo_results.pb")).exists()
     assertThat(journey2OutputDir.resolve("journey_results.pb")).exists()
     for (i in 0 until 4) {
@@ -256,7 +255,7 @@ class JourneysConnectedTest {
     }
 
     val journey3OutputDir =
-      appProject.buildDir.resolve("intermediates/debug/testJourneysTestT1DebugTestSuite/results/$DEVICE_SERIAL/journey3")
+      appProject.buildDir.resolve("intermediates/debug/testDebugJourneysTestT1TestSuite/results/$DEVICE_SERIAL/journey3")
     assertThat(journey3OutputDir).doesNotExist()
 
     result.assertOutputDoesNotContain("journey3")
@@ -340,7 +339,7 @@ class JourneysConnectedTest {
             "JOURNEYS_FILTER" to "auth/**,file with spaces & special characters \\{\\}\\[\\]!@+().journey.xml,login.journey.xml,profile"
           )
         )
-        .run(":app:testJourneysTestT1DebugTestSuite")
+        .run(":app:testDebugJourneysTestT1TestSuite")
 
     result.assertOutputContains("$DEVICE_SERIAL > file with spaces & special characters {}[]!@+().journey.xml")
     result.assertOutputContains("$DEVICE_SERIAL > auth/login.journey.xml")
@@ -350,7 +349,7 @@ class JourneysConnectedTest {
     result.assertOutputDoesNotContain("$DEVICE_SERIAL > shopping/checkout.journey.xml")
     result.assertOutputDoesNotContain("$DEVICE_SERIAL > shopping/signup.journey.xml")
 
-    val baseOutputDir = appProject.buildDir.resolve("intermediates/debug/testJourneysTestT1DebugTestSuite/results/$DEVICE_SERIAL")
+    val baseOutputDir = appProject.buildDir.resolve("intermediates/debug/testDebugJourneysTestT1TestSuite/results/$DEVICE_SERIAL")
     assertThat(baseOutputDir.resolve("file with spaces & special characters {}[]!@+()")).exists()
     assertThat(baseOutputDir.resolve("auth/login")).exists()
     assertThat(baseOutputDir.resolve("auth/newUsers/signup")).exists()
@@ -382,10 +381,10 @@ class JourneysConnectedTest {
       executor
         .withArgument("-DroboResultsPath=$roboResultsPath")
         .withEnvironmentVariables(mapOf("JOURNEYS_ENABLE_STDOUT_REPORT" to "false"))
-        .run(":app:testJourneysTestT1DebugTestSuite")
+        .run(":app:testDebugJourneysTestT1TestSuite")
 
     val journey1OutputDir =
-      appProject.buildDir.resolve("intermediates/debug/testJourneysTestT1DebugTestSuite/results/$DEVICE_SERIAL/journey1")
+      appProject.buildDir.resolve("intermediates/debug/testDebugJourneysTestT1TestSuite/results/$DEVICE_SERIAL/journey1")
     assertThat(journey1OutputDir.resolve("robo_results.pb")).exists()
     assertThat(journey1OutputDir.resolve("journey_results.pb")).exists()
     for (i in 0 until 4) {
@@ -430,7 +429,7 @@ class JourneysConnectedTest {
       executor
         .expectFailure()
         .withEnvironmentVariables(mapOf("JOURNEYS_FILTER" to "journey2.xml, journey3.journey.xml"))
-        .run(":app:testJourneysTestT1DebugTestSuite")
+        .run(":app:testDebugJourneysTestT1TestSuite")
 
     result.assertOutputDoesNotContain("$DEVICE_SERIAL > journey1.journey.xml")
     result.assertOutputDoesNotContain("$DEVICE_SERIAL > journey2.xml")
@@ -448,9 +447,9 @@ class JourneysConnectedTest {
       """
         .trimIndent(),
     )
-    val result = executor.expectFailure().run(":app:testJourneysTestT1DebugTestSuite")
+    val result = executor.expectFailure().run(":app:testDebugJourneysTestT1TestSuite")
 
-    val outputDir = appProject.buildDir.resolve("intermediates/debug/testJourneysTestT1DebugTestSuite/results/$DEVICE_SERIAL/malformed")
+    val outputDir = appProject.buildDir.resolve("intermediates/debug/testDebugJourneysTestT1TestSuite/results/$DEVICE_SERIAL/malformed")
     assertThat(outputDir.resolve("journey_results.pb")).exists()
 
     assertJourneyEvents(
@@ -480,9 +479,9 @@ class JourneysConnectedTest {
       """
         .trimIndent(),
     )
-    val result = executor.expectFailure().withArgument("-DshouldInduceServerError=true").run(":app:testJourneysTestT1DebugTestSuite")
+    val result = executor.expectFailure().withArgument("-DshouldInduceServerError=true").run(":app:testDebugJourneysTestT1TestSuite")
 
-    val outputDir = appProject.buildDir.resolve("intermediates/debug/testJourneysTestT1DebugTestSuite/results/$DEVICE_SERIAL/simple")
+    val outputDir = appProject.buildDir.resolve("intermediates/debug/testDebugJourneysTestT1TestSuite/results/$DEVICE_SERIAL/simple")
     assertThat(outputDir.resolve("journey_results.pb")).exists()
 
     assertLogFileContains(appProject, "Intentionally throwing an error.")
@@ -522,9 +521,9 @@ class JourneysConnectedTest {
     )
     val roboResultsPath = appProject.resolve("robo_results.textproto")
     createRoboResults("journeys/robo_results_successful.textproto", roboResultsPath)
-    val result = executor.withArgument("-DroboResultsPath=$roboResultsPath").run(":app:testJourneysTestT1DebugTestSuite")
+    val result = executor.withArgument("-DroboResultsPath=$roboResultsPath").run(":app:testDebugJourneysTestT1TestSuite")
 
-    val outputDir = appProject.buildDir.resolve("intermediates/debug/testJourneysTestT1DebugTestSuite/results/$DEVICE_SERIAL/simple")
+    val outputDir = appProject.buildDir.resolve("intermediates/debug/testDebugJourneysTestT1TestSuite/results/$DEVICE_SERIAL/simple")
     assertThat(outputDir.resolve("robo_results.pb")).exists()
     assertThat(outputDir.resolve("journey_results.pb")).exists()
     for (i in 0 until 9) {
@@ -563,7 +562,12 @@ class JourneysConnectedTest {
           listOf(
             buildInteraction(CommandType.ADB_COMMAND, "ADB command: input tap 603 247", "$outputDir/displayState2.png", Status.SUCCEEDED),
             buildInteraction(CommandType.ADB_COMMAND, "ADB command: input text Compose", "$outputDir/displayState3.png", Status.SUCCEEDED),
-            buildInteraction(CommandType.ADB_COMMAND, "ADB command: input keyevent ENTER", "$outputDir/displayState4.png", Status.SUCCEEDED),
+            buildInteraction(
+              CommandType.ADB_COMMAND,
+              "ADB command: input keyevent ENTER",
+              "$outputDir/displayState4.png",
+              Status.SUCCEEDED,
+            ),
           ),
         ),
         buildTurnAddedEvent(
@@ -659,9 +663,9 @@ class JourneysConnectedTest {
     )
     val roboResultsPath = appProject.resolve("robo_results.textproto")
     createRoboResults("journeys/robo_results_failed.textproto", roboResultsPath)
-    val result = executor.expectFailure().withArgument("-DroboResultsPath=$roboResultsPath").run(":app:testJourneysTestT1DebugTestSuite")
+    val result = executor.expectFailure().withArgument("-DroboResultsPath=$roboResultsPath").run(":app:testDebugJourneysTestT1TestSuite")
 
-    val outputDir = appProject.buildDir.resolve("intermediates/debug/testJourneysTestT1DebugTestSuite/results/$DEVICE_SERIAL/simple")
+    val outputDir = appProject.buildDir.resolve("intermediates/debug/testDebugJourneysTestT1TestSuite/results/$DEVICE_SERIAL/simple")
     assertThat(outputDir.resolve("robo_results.pb")).exists()
     assertThat(outputDir.resolve("journey_results.pb")).exists()
     for (i in 0 until 8) {
@@ -696,7 +700,12 @@ class JourneysConnectedTest {
           "$outputDir/displayState2.png",
           listOf(
             buildInteraction(CommandType.ENTER_TEXT, "ENTER_TEXT on element with ID 2", "$outputDir/displayState2.png", Status.SUCCEEDED),
-            buildInteraction(CommandType.ADB_COMMAND, "ADB command: input keyevent ENTER", "$outputDir/displayState3.png", Status.SUCCEEDED),
+            buildInteraction(
+              CommandType.ADB_COMMAND,
+              "ADB command: input keyevent ENTER",
+              "$outputDir/displayState3.png",
+              Status.SUCCEEDED,
+            ),
           ),
         ),
         buildTurnAddedEvent(
@@ -768,9 +777,9 @@ class JourneysConnectedTest {
     )
     val roboResultsPath = appProject.resolve("robo_results.textproto")
     createRoboResults("journeys/robo_results_agent_resource_exhausted_error.textproto", roboResultsPath)
-    val result = executor.expectFailure().withArgument("-DroboResultsPath=$roboResultsPath").run(":app:testJourneysTestT1DebugTestSuite")
+    val result = executor.expectFailure().withArgument("-DroboResultsPath=$roboResultsPath").run(":app:testDebugJourneysTestT1TestSuite")
 
-    val outputDir = appProject.buildDir.resolve("intermediates/debug/testJourneysTestT1DebugTestSuite/results/$DEVICE_SERIAL/simple")
+    val outputDir = appProject.buildDir.resolve("intermediates/debug/testDebugJourneysTestT1TestSuite/results/$DEVICE_SERIAL/simple")
     assertThat(outputDir.resolve("robo_results.pb")).exists()
     assertThat(outputDir.resolve("journey_results.pb")).exists()
     for (i in 0 until 2) {
@@ -823,9 +832,9 @@ class JourneysConnectedTest {
     )
     val roboResultsPath = appProject.resolve("robo_results.textproto")
     createRoboResults("journeys/robo_results_app_launch_error.textproto", roboResultsPath)
-    val result = executor.expectFailure().withArgument("-DroboResultsPath=$roboResultsPath").run(":app:testJourneysTestT1DebugTestSuite")
+    val result = executor.expectFailure().withArgument("-DroboResultsPath=$roboResultsPath").run(":app:testDebugJourneysTestT1TestSuite")
 
-    val outputDir = appProject.buildDir.resolve("intermediates/debug/testJourneysTestT1DebugTestSuite/results/$DEVICE_SERIAL/simple")
+    val outputDir = appProject.buildDir.resolve("intermediates/debug/testDebugJourneysTestT1TestSuite/results/$DEVICE_SERIAL/simple")
     assertThat(outputDir.resolve("robo_results.pb")).exists()
     assertThat(outputDir.resolve("journey_results.pb")).exists()
     assertThat(outputDir.resolve("displayState0.png")).exists()
@@ -938,10 +947,9 @@ class JourneysConnectedTest {
   ) {
     val artifactLines = extractJourneyArtifactsBetween(result, startLinePrefix, endLinePrefix)
 
-    val actualEvents =
-      artifactLines.map { (description, encodedProto) ->
-        Pair(description, JourneyRunEvent.parseFrom(Base64.getDecoder().decode(encodedProto)))
-      }
+    val actualEvents = artifactLines.map { (description, encodedProto) ->
+      Pair(description, JourneyRunEvent.parseFrom(Base64.getDecoder().decode(encodedProto)))
+    }
 
     assertEquals(
       expectedEvents.size,
@@ -1056,7 +1064,7 @@ class JourneysConnectedTest {
   }
 
   private fun assertLogFileContains(appProject: AndroidApplicationProject, expected: String) {
-    val logFile = appProject.buildDir.resolve("intermediates/debug/testJourneysTestT1DebugTestSuite/junit_engines_logging.txt")
+    val logFile = appProject.buildDir.resolve("intermediates/debug/testDebugJourneysTestT1TestSuite/junit_engines_logging.txt")
 
     assertThat(logFile).exists()
     assertTrue(logFile.readText().contains(expected), "Log file ${logFile.toAbsolutePath()} does not contain expected string: '$expected'")

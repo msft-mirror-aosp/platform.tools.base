@@ -20,7 +20,9 @@ import com.android.tools.lint.checks.fx.result.Type
 import com.android.tools.lint.checks.fx.result.Type.MethodRef.Companion.static
 import com.android.tools.lint.checks.infrastructure.TestLintTask
 import com.android.tools.lint.checks.infrastructure.TestMode
+import com.android.tools.lint.client.api.LintBaseline
 import com.google.common.truth.Truth
+import java.io.File
 
 @Suppress("LintDocExample")
 class BlockingDetectorTest : AbstractCheckTest() {
@@ -183,5 +185,33 @@ class BlockingDetectorTest : AbstractCheckTest() {
         """
           .trimIndent()
       )
+  }
+
+  fun testLegacyArgumentMessagesInBaselines() {
+    val baseline = LintBaseline(ToolsBaseTestLintClient(), File(""))
+    val issue = BlockingDetector.ISSUE
+    assertTrue(baseline.sameMessage(issue, "Argument must not block, but does", "Argument at `x₀` must not block, but does."))
+    assertTrue(
+      baseline.sameMessage(
+        issue,
+        "Argument's calling `run()` must not block, but does",
+        "Argument at `x₀`'s calling `run()` must not block, but does.",
+      )
+    )
+    assertTrue(
+      baseline.sameMessage(
+        issue,
+        "Argument's calling `run()` must not block, but does",
+        "Argument at `x₀` must not block, but does. Argument at `x₁`'s calling `run()` must not block, but does.",
+      )
+    )
+    assertFalse(
+      baseline.sameMessage(
+        issue,
+        "Argument's calling `run()` must not block, but does",
+        "Argument at `x₀`'s calling `call()` must not block, but does.",
+      )
+    )
+    assertFalse(baseline.sameMessage(issue, "Argument must not block, but does", "Call fails non-blocking requirements on arguments"))
   }
 }

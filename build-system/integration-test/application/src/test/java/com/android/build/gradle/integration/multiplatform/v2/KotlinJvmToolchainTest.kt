@@ -35,41 +35,40 @@ import org.junit.Test
 
 class KotlinJvmToolchainTest {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidKotlinMultiplatformLibrary(":library", createMinimumProject = false) {
-        android {
-          withJava()
-          namespace = "com.mylibrary.foo"
-          compileSdk = DEFAULT_COMPILE_SDK_VERSION
+  val rule = GradleRule.from {
+    androidKotlinMultiplatformLibrary(":library", createMinimumProject = false) {
+      android {
+        withJava()
+        namespace = "com.mylibrary.foo"
+        compileSdk = DEFAULT_COMPILE_SDK_VERSION
 
-          withHostTest {}
-          withDeviceTest {}
-        }
-
-        // Add a simple kotlin source file so that kotlin compilation task does work.
-        files.add(
-          "src/androidMain/kotlin/LibFoo.kt",
-          // language=kotlin
-          """
-          package com.mylibrary.foo
-          class LibFoo {}
-          """
-            .trimIndent(),
-        )
-        files.add(
-          "src/androidMain/java/JavaLibFoo.java",
-          // language=kotlin
-          """
-          package com.mylibrary.foo;
-          class JavaLibFoo {}
-          """
-            .trimIndent(),
-        )
-
-        pluginCallbacks += JvmTargetCallback::class.java
+        withHostTest {}
+        withDeviceTest {}
       }
+
+      // Add a simple kotlin source file so that kotlin compilation task does work.
+      files.add(
+        "src/androidMain/kotlin/LibFoo.kt",
+        // language=kotlin
+        """
+        package com.mylibrary.foo
+        class LibFoo {}
+        """
+          .trimIndent(),
+      )
+      files.add(
+        "src/androidMain/java/JavaLibFoo.java",
+        // language=kotlin
+        """
+        package com.mylibrary.foo;
+        class JavaLibFoo {}
+        """
+          .trimIndent(),
+      )
+
+      pluginCallbacks += JvmTargetCallback::class.java
     }
+  }
 
   @Test
   fun testJvmToolchain() {
@@ -84,13 +83,12 @@ class KotlinJvmToolchainTest {
 
   @Test
   fun testJvmTargetOverrideJvmToolchain() {
-    val build =
-      rule.build {
-        androidKotlinMultiplatformLibrary(":library") {
-          kotlin { jvmToolchain(25) }
-          android { compilerOptions.jvmTarget.set(JvmTarget.JVM_11) }
-        }
+    val build = rule.build {
+      androidKotlinMultiplatformLibrary(":library") {
+        kotlin { jvmToolchain(25) }
+        android { compilerOptions.jvmTarget.set(JvmTarget.JVM_11) }
       }
+    }
     val result =
       build.executor
         .withFailOnWarning(false) // b/455891987
@@ -101,13 +99,12 @@ class KotlinJvmToolchainTest {
 
   @Test
   fun testCompilationLevelJvmTargetOverrideTargetLevelJvmTarget() {
-    val build =
-      rule.build {
-        androidKotlinMultiplatformLibrary(":library") {
-          android { compilerOptions.jvmTarget.set(JvmTarget.JVM_17) }
-          pluginCallbacks += SetCompilationCompilerOptionsCallback::class.java
-        }
+    val build = rule.build {
+      androidKotlinMultiplatformLibrary(":library") {
+        android { compilerOptions.jvmTarget.set(JvmTarget.JVM_17) }
+        pluginCallbacks += SetCompilationCompilerOptionsCallback::class.java
       }
+    }
     val result =
       build.executor
         .withFailOnWarning(false) // b/455891987
@@ -118,14 +115,13 @@ class KotlinJvmToolchainTest {
 
   @Test
   fun testSettingJavaCompileTargetUsingVariantApi() {
-    val build =
-      rule.build {
-        androidKotlinMultiplatformLibrary(":library") {
-          kotlin { jvmToolchain(25) }
-          android { compilerOptions.jvmTarget.set(JvmTarget.JVM_11) }
-          pluginCallbacks += KmpVariantApiCallback::class.java
-        }
+    val build = rule.build {
+      androidKotlinMultiplatformLibrary(":library") {
+        kotlin { jvmToolchain(25) }
+        android { compilerOptions.jvmTarget.set(JvmTarget.JVM_11) }
+        pluginCallbacks += KmpVariantApiCallback::class.java
       }
+    }
     val result =
       build.executor
         .withFailOnWarning(false) // b/455891987

@@ -9,11 +9,14 @@ import android.com.java.profilertester.taskcategory.CpuTaskCategory;
 import android.com.java.profilertester.taskcategory.EventTaskCategory;
 import android.com.java.profilertester.taskcategory.FeedbackTaskCategory;
 import android.com.java.profilertester.taskcategory.LocationTaskCategory;
+import android.com.java.profilertester.taskcategory.MemoryLeakTaskCategory;
 import android.com.java.profilertester.taskcategory.MemoryTaskCategory;
 import android.com.java.profilertester.taskcategory.NetworkTaskCategory;
 import android.com.java.profilertester.taskcategory.ScreenBrightnessTaskCategory;
 import android.com.java.profilertester.taskcategory.TaskCategory;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -30,10 +33,12 @@ import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
+
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -52,9 +57,13 @@ public class MainActivityFragment extends Fragment {
     private View mFragmentView;
     private MainLooperThread mMainLooperThread;
 
-    private Spinner mCategorySpinner, mTaskSpinner;
+    private Spinner mCategorySpinner, mTaskSpinner, mCountSpinner;
+    private View mCountContainer;
     private TaskCategory[] mTaskCategories;
     private List<ArrayAdapter<? extends TaskCategory.Task>> mTaskAdapters;
+
+    // Default repeat count for tasks
+    private int mTaskRepeatCount = 1;
 
     private final List<TaskCategory.Task.SelectionListener> mSelectionListeners = new ArrayList<>();
     /**
@@ -64,6 +73,11 @@ public class MainActivityFragment extends Fragment {
     private final List<PendingPermissionTask> mPendingPermissionTasks = new ArrayList<>();
 
     private static final int PERF_MODE_RUNS_PER_TASK = 5;
+    private static final String PREFS_NAME = "ProfilerTesterPrefs";
+    private static final String PREF_CATEGORY = "selected_category";
+    private static final String PREF_TASK = "selected_task";
+    private static final String PREF_COUNT = "selected_count";
+    private SharedPreferences mPrefs;
     private boolean mIsInPerfMode = false;
     private LinearLayout mPerfModeGroup;
     private TextView mPerfLogView;
@@ -82,14 +96,62 @@ public class MainActivityFragment extends Fragment {
     public View onCreateView(
             LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         mFragmentView = inflater.inflate(R.layout.fragment_main, container, false);
+        mPrefs = requireActivity().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
 
         mCategorySpinner = (Spinner) mFragmentView.findViewById(R.id.category_spinner);
+        mCountSpinner = (Spinner) mFragmentView.findViewById(R.id.count_spinner);
+        mCountContainer = mFragmentView.findViewById(R.id.count_container);
+
+        // Setup Count Spinner (1 to 5)
+        Integer[] counts = new Integer[] {1, 2, 3, 4, 5};
+        ArrayAdapter<Integer> countAdapter =
+                new ArrayAdapter<>(
+                        mFragmentView.getContext(), android.R.layout.simple_spinner_item, counts);
+        countAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        mCountSpinner.setAdapter(countAdapter);
+        // Default to 5
+        mCountSpinner.setSelection(4);
+        mCountSpinner.setOnItemSelectedListener(
+                new AdapterView.OnItemSelectedListener() {
+                    @Override
+                    public void onItemSelected(
+                            AdapterView<?> parent, View view, int position, long id) {
+                        mTaskRepeatCount = (Integer) parent.getItemAtPosition(position);
+                        mPrefs.edit().putInt(PREF_COUNT, mTaskRepeatCount).apply();
+
+                        int category = mCategorySpinner.getSelectedItemPosition();
+                        if (mTaskCategories != null
+                                && category >= 0
+                                && category < mTaskCategories.length
+                                && mTaskCategories[category] instanceof MemoryLeakTaskCategory) {
+                            ((MemoryLeakTaskCategory) mTaskCategories[category])
+                                    .setRepeatCount(mTaskRepeatCount);
+                        }
+                    }
+
+                    @Override
+                    public void onNothingSelected(AdapterView<?> parent) {
+                        mTaskRepeatCount = 5;
+                        mPrefs.edit().putInt(PREF_COUNT, mTaskRepeatCount).apply();
+
+                        int category = mCategorySpinner.getSelectedItemPosition();
+                        if (mTaskCategories != null
+                                && category >= 0
+                                && category < mTaskCategories.length
+                                && mTaskCategories[category] instanceof MemoryLeakTaskCategory) {
+                            ((MemoryLeakTaskCategory) mTaskCategories[category])
+                                    .setRepeatCount(mTaskRepeatCount);
+                        }
+                    }
+                });
+
         final Activity host = getActivity();
         final SleepControl sleepControl = new SleepControl();
         mTaskCategories =
                 new TaskCategory[] {
                     new CpuTaskCategory(host.getFilesDir(), sleepControl),
                     new MemoryTaskCategory(sleepControl),
+                    new MemoryLeakTaskCategory(host),
                     new NetworkTaskCategory(host),
                     new EventTaskCategory(
                             new Callable<Activity>() {
@@ -105,7 +167,8 @@ public class MainActivityFragment extends Fragment {
                     new CameraTaskCategory(host),
                     new AudioTaskCategory(host),
                     new FeedbackTaskCategory(host),
-                    new BackgroundTaskCategory(host)
+                    new BackgroundTaskCategory(
+                            host, (EditText) mFragmentView.findViewById(R.id.section_editor))
                 };
         ArrayAdapter<TaskCategory> categoryAdapters =
                 new ArrayAdapter<>(
@@ -127,35 +190,82 @@ public class MainActivityFragment extends Fragment {
             mSelectionListeners.addAll(taskCategory.getTaskSelectionListeners());
         }
 
-        mCategorySpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
-                if (mTaskSpinner.getAdapter() != mTaskAdapters.get(position)) {
-                    mTaskSpinner.setAdapter(mTaskAdapters.get(position));
+        mCategorySpinner.setOnItemSelectedListener(
+                new AdapterView.OnItemSelectedListener() {
+                    @Override
+                    public void onItemSelected(
+                            AdapterView<?> parentView,
+                            View selectedItemView,
+                            int position,
+                            long id) {
+                        mPrefs.edit().putInt(PREF_CATEGORY, position).apply();
+                        if (mTaskSpinner.getAdapter() != mTaskAdapters.get(position)) {
+                            mTaskSpinner.setAdapter(mTaskAdapters.get(position));
 
-                    Object selectedTaskItem = mTaskSpinner.getSelectedItem();
-                    notifySelection(selectedTaskItem);
-                }
-            }
+                            Object selectedTaskItem = mTaskSpinner.getSelectedItem();
+                            notifySelection(selectedTaskItem);
+                        }
 
-            @Override
-            public void onNothingSelected(AdapterView<?> parentView) {
-                Log.i(TAG, "mCategorySpinner: nothing selected");
-            }
-        });
+                        // Show count container only for Memory Leaks
+                        if (mTaskCategories[position] instanceof MemoryLeakTaskCategory) {
+                            mCountContainer.setVisibility(View.VISIBLE);
+                            // Ensure the new category's repeat count matches the currently selected
+                            // UI value
+                            ((MemoryLeakTaskCategory) mTaskCategories[position])
+                                    .setRepeatCount(mTaskRepeatCount);
+                        } else {
+                            mCountContainer.setVisibility(View.GONE);
+                        }
+                    }
 
-        mTaskSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
-                Object selectedTaskItem = parentView.getItemAtPosition(position);
-                notifySelection(selectedTaskItem);
-            }
+                    @Override
+                    public void onNothingSelected(AdapterView<?> parentView) {
+                        Log.i(TAG, "mCategorySpinner: nothing selected");
+                    }
+                });
 
-            @Override
-            public void onNothingSelected(AdapterView<?> parentView) {
-                Log.i(TAG, "mTaskSpinner: nothing selected");
-            }
-        });
+        mTaskSpinner.setOnItemSelectedListener(
+                new AdapterView.OnItemSelectedListener() {
+                    @Override
+                    public void onItemSelected(
+                            AdapterView<?> parentView,
+                            View selectedItemView,
+                            int position,
+                            long id) {
+                        mPrefs.edit().putInt(PREF_TASK, position).apply();
+                        Object selectedTaskItem = parentView.getItemAtPosition(position);
+                        notifySelection(selectedTaskItem);
+                    }
+
+                    @Override
+                    public void onNothingSelected(AdapterView<?> parentView) {
+                        Log.i(TAG, "mTaskSpinner: nothing selected");
+                    }
+                });
+
+        // Restore selections from SharedPreferences
+        int savedCategory = mPrefs.getInt(PREF_CATEGORY, 0);
+        int savedTask = mPrefs.getInt(PREF_TASK, 0);
+        int savedCount = mPrefs.getInt(PREF_COUNT, 5);
+
+        if (savedCategory >= 0 && savedCategory < categoryAdapters.getCount()) {
+            mCategorySpinner.setSelection(savedCategory);
+        }
+
+        mTaskSpinner.post(
+                () -> {
+                    if (mTaskSpinner.getAdapter() != null
+                            && savedTask >= 0
+                            && savedTask < mTaskSpinner.getAdapter().getCount()) {
+                        mTaskSpinner.setSelection(savedTask);
+                    }
+                });
+
+        // The count spinner values are 1..5, so index is value - 1
+        int countIndex = savedCount - 1;
+        if (countIndex >= 0 && countIndex < countAdapter.getCount()) {
+            mCountSpinner.setSelection(countIndex);
+        }
 
         mPerfModeGroup = (LinearLayout) mFragmentView.findViewById(R.id.perf_mode_group);
         mPerfLogView = (TextView) mFragmentView.findViewById(R.id.perf_log_text);

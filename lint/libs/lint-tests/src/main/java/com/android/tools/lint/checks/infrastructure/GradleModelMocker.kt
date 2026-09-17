@@ -541,12 +541,12 @@ constructor(
 
     fun <T : LintModelLibrary> Collection<T>.resolveConflicts(): Collection<T> {
       return groupBy {
-          when (it) {
-            is LintModelExternalLibrary -> it.resolvedCoordinates.groupId to it.resolvedCoordinates.artifactId
-            is LintModelModuleLibrary -> "artifacts" to it.projectPath
-            else -> throw RuntimeException("Not supported library type")
-          }
+        when (it) {
+          is LintModelExternalLibrary -> it.resolvedCoordinates.groupId to it.resolvedCoordinates.artifactId
+          is LintModelModuleLibrary -> "artifacts" to it.projectPath
+          else -> throw RuntimeException("Not supported library type")
         }
+      }
         .mapValues { (_, libs) ->
           libs.maxByOrNull {
             when (it) {

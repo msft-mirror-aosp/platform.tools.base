@@ -20,6 +20,7 @@ import com.android.build.api.dsl.AgpTestSuiteDependencies
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.dsl.ScreenshotTestSuite
 import com.android.build.gradle.internal.services.DslServices
+import com.android.build.gradle.internal.testsuites.ScreenshotTestSuiteTaskConfigurator
 import javax.inject.Inject
 import org.gradle.api.Action
 import org.gradle.api.artifacts.dsl.DependencyHandler
@@ -29,6 +30,7 @@ import org.gradle.api.provider.ProviderFactory
 abstract class ScreenshotTestSuiteImpl @Inject constructor(val name: String, dslServices: DslServices) : ScreenshotTestSuite {
 
   abstract override var engineVersion: String?
+  abstract override var imageDifferenceThreshold: Float?
 
   internal val dependenciesActions = mutableListOf<AgpTestSuiteDependencies.() -> Unit>()
   internal var dependenciesHandler: ((AgpTestSuiteDependencies.() -> Unit) -> Unit)? = null
@@ -61,7 +63,8 @@ constructor(
 
   init {
     // Automatically populate default targets, engines and inputs
-    targets.create("default")
+    targets.register("default")
+    requiresUpdateTask = true
 
     useJunitEngine {
       includeEngines.add(SCREENSHOT_TEST_ENGINE_ID)
@@ -80,19 +83,18 @@ constructor(
         )
       )
 
-      val versionProvider =
-        providers.provider {
-          val version = screenshotSuite.engineVersion
-          if (version.isNullOrBlank()) {
-            dslServices.issueReporter.reportError(
-              com.android.builder.errors.IssueReporter.Type.GENERIC,
-              "Screenshot test engine version must be specified. e.g. engineVersion = \"0.0.1-alpha01\"",
-            )
-            "unspecified"
-          } else {
-            version!!
-          }
+      val versionProvider = providers.provider {
+        val version = screenshotSuite.engineVersion
+        if (version.isNullOrBlank()) {
+          dslServices.issueReporter.reportError(
+            com.android.builder.errors.IssueReporter.Type.GENERIC,
+            "Screenshot test engine version must be specified. e.g. engineVersion = \"0.0.1-alpha01\"",
+          )
+          "unspecified"
+        } else {
+          version!!
         }
+      }
 
       enginesDependencies.add(
         versionProvider.map { version ->
@@ -106,7 +108,13 @@ constructor(
       screenshotSuite.dependenciesActions.forEach { this.dependencies(it) }
       screenshotSuite.dependenciesActions.clear()
     }
+
+    configureTestTasks { context ->
+      screenshotTaskConfigurator.configureTask(this, context, dslServices, providers, screenshotSuite.imageDifferenceThreshold)
+    }
   }
+
+  private val screenshotTaskConfigurator = ScreenshotTestSuiteTaskConfigurator(name)
 
   companion object {
     const val SCREENSHOT_TEST_ENGINE_ID = "preview-screenshot-test-engine"

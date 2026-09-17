@@ -52,7 +52,6 @@ import com.android.build.gradle.internal.tasks.featuresplit.getFeatureName
 import com.android.build.gradle.internal.test.AbstractTestDataImpl
 import com.android.build.gradle.internal.test.BundleTestDataImpl
 import com.android.build.gradle.internal.test.TestDataImpl
-import com.android.build.gradle.internal.test.tasks.TestResultsCollectionTask
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.BooleanOption.LINT_ANALYSIS_PER_COMPONENT
 import com.android.build.gradle.tasks.CompileNavigationXmlTask
@@ -131,10 +130,7 @@ class AndroidTestTaskManager(project: Project, globalConfig: GlobalTaskCreationC
   }
 
   /** Creates the tasks to build android tests. */
-  fun createTasks(
-    androidTestProperties: DeviceTestCreationConfig,
-    testResultsCollectionTasksMap: Map<String, MutableList<TaskProvider<TestResultsCollectionTask>>> = emptyMap(),
-  ) {
+  fun createTasks(androidTestProperties: DeviceTestCreationConfig) {
     createAnchorTasks(androidTestProperties)
 
     // Create all current streams (dependencies mostly at this point)
@@ -171,7 +167,7 @@ class AndroidTestTaskManager(project: Project, globalConfig: GlobalTaskCreationC
     createApkProcessResTask(androidTestProperties)
 
     // process java resources
-    createProcessJavaResTask(androidTestProperties)
+    createProcessJavaResTask(androidTestProperties, androidTestProperties.packaging)
     createAidlTask(androidTestProperties)
 
     // add tasks to merge jni libs.
@@ -222,7 +218,7 @@ class AndroidTestTaskManager(project: Project, globalConfig: GlobalTaskCreationC
       )
     }
 
-    createConnectedTestForVariant(androidTestProperties, testResultsCollectionTasksMap)
+    createConnectedTestForVariant(androidTestProperties)
   }
 
   private fun createNavigationProcessingTasks(creationConfig: ComponentCreationConfig) {
@@ -244,10 +240,7 @@ class AndroidTestTaskManager(project: Project, globalConfig: GlobalTaskCreationC
     return compileRClassFlag && componentType.isForTesting && componentType.isApk
   }
 
-  private fun createConnectedTestForVariant(
-    androidTestProperties: DeviceTestCreationConfig,
-    testResultsCollectionTasksMap: Map<String, MutableList<TaskProvider<TestResultsCollectionTask>>>,
-  ) {
+  private fun createConnectedTestForVariant(androidTestProperties: DeviceTestCreationConfig) {
     val testedVariant = androidTestProperties.mainVariant
     val isLibrary = testedVariant.componentType.isAar
 
@@ -294,11 +287,7 @@ class AndroidTestTaskManager(project: Project, globalConfig: GlobalTaskCreationC
       } else {
         taskFactory.register(DeviceProviderInstrumentTestTask.CreationAction(androidTestProperties, testData, connectedCheckSerials))
       }
-    project.gradle.taskGraph.whenReady { graph ->
-      if (shouldIgnoreFailures(testResultsCollectionTasksMap[androidTestProperties.mainVariant.name], graph)) {
-        connectedTask.configure { it.ignoreFailures = true }
-      }
-    }
+    androidTestProperties.runTestTaskConfigurationActions(connectedTask)
     taskFactory.configure(CONNECTED_ANDROID_TEST) { connectedAndroidTest: Task -> connectedAndroidTest.dependsOn(connectedTask) }
     if (androidTestProperties.codeCoverageEnabled) {
       val jacocoAntConfiguration =
@@ -321,6 +310,7 @@ class AndroidTestTaskManager(project: Project, globalConfig: GlobalTaskCreationC
         taskFactory.register(
           DeviceProviderInstrumentTestTask.CreationAction(androidTestProperties, deviceProvider, testData, connectedCheckSerials)
         )
+      androidTestProperties.runTestTaskConfigurationActions(providerTask)
       taskFactory.configure(DEVICE_ANDROID_TEST) { deviceAndroidTest: Task -> deviceAndroidTest.dependsOn(providerTask) }
     }
 

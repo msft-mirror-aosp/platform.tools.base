@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.testing.suites
 
 import com.android.Version
-import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.apk.Zip
@@ -56,7 +55,7 @@ class HostJarTestSuiteAndroidResourcesTest {
             testOptions.unitTests.isIncludeAndroidResources = true
 
             // Android Resources Suite
-            testOptions.suites.create("androidResSuite", AgpTestSuite::class.java) {
+            testOptions.customSuites.create("androidResSuite") {
               it.useJunitEngine.apply {
                 inputs.add(com.android.build.api.dsl.AgpTestSuiteInputParameters.RESOURCES_AP_ARCHIVE)
                 includeEngines.add("verifying-junit-engine")
@@ -106,7 +105,7 @@ class HostJarTestSuiteAndroidResourcesTest {
             testOptions.unitTests.isIncludeAndroidResources = true
 
             // Android Resources Suite for Library
-            testOptions.suites.create("libAndroidResSuite", AgpTestSuite::class.java) {
+            testOptions.customSuites.create("libAndroidResSuite") {
               it.useJunitEngine.apply {
                 inputs.add(com.android.build.api.dsl.AgpTestSuiteInputParameters.RESOURCES_AP_ARCHIVE)
                 includeEngines.add("verifying-junit-engine")
@@ -152,7 +151,7 @@ class HostJarTestSuiteAndroidResourcesTest {
 
   @Test
   fun testAndroidResourcesCompilationAndPackaging() {
-    rule.build.executor.run(":app:testAndroidResSuiteT1DebugTestSuite")
+    rule.build.executor.run(":app:testDebugAndroidResSuiteT1TestSuite")
 
     val intermediatesDir = rule.build.androidApplication(":app").intermediatesDir
 
@@ -166,7 +165,7 @@ class HostJarTestSuiteAndroidResourcesTest {
 
   @Test
   fun testLibraryAndroidResourcesCompilationAndPackaging() {
-    rule.build.executor.run(":lib:testLibAndroidResSuiteT1DebugTestSuite")
+    rule.build.executor.run(":lib:testDebugLibAndroidResSuiteT1TestSuite")
 
     val intermediatesDir = rule.build.androidLibrary(":lib").intermediatesDir
 
@@ -176,5 +175,19 @@ class HostJarTestSuiteAndroidResourcesTest {
     assertThat(apkForLocalTest).isNotNull()
 
     Zip(apkForLocalTest!!).use { zip -> assertThat(zip.entries.map { it.toString() }).contains("/resources.arsc") }
+  }
+
+  @Test
+  fun testAssembleWithAndroidResources() {
+    val result = rule.build.executor.run(":app:assembleDebugAndroidResSuite")
+
+    assertThat(result.didWorkTasks).contains(":app:packageDebugForAndroidResSuite")
+    assertThat(result.didWorkTasks).contains(":app:compileDebugAndroidResSuiteJavaWithJavac")
+    assertThat(result.getTask(":app:assembleDebugAndroidResSuite")).isNotNull()
+
+    val intermediatesDir = rule.build.androidApplication(":app").intermediatesDir
+    val apkForLocalTest =
+      intermediatesDir.resolve("apk_for_local_test").toFile().walkTopDown().firstOrNull { it.name == "apk-for-local-test.ap_" }
+    assertThat(apkForLocalTest).isNotNull()
   }
 }

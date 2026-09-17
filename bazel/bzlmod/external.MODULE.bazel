@@ -6,6 +6,8 @@ local_archive = use_repo_rule("//tools/base/bazel:repositories.bzl", "local_arch
 
 http_jar = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_jar")
 
+http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
+
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 # TODO(b/340640065): Replace with bazel_dep.
@@ -127,3 +129,75 @@ new_local_repository(
     build_file = "//tools/base/bazel:external/android_system_logging.BUILD",
     path = "external/android/system/logging",
 )
+
+# Electron 43.4.1 TypeScript declarations and prebuilt desktop binaries.
+#
+# Note: The `electron` npm package does not contain the native binaries; its
+# postinstall lifecycle script (install.js) attempts to download the binary zip
+# from GitHub via Node.js. In Bazel CI, build actions execute in network-
+# isolated sandboxes, which breaks npm lifecycle hooks.
+#
+# Instead, we download the official GitHub release artifacts directly via
+# Bazel repository rules (http_file / http_archive). This ensures hermeticity,
+# validates SHA-256 integrity during the repository fetch phase, and automatically
+# routes through the GCS build-deps mirror in CI per
+# tools/base/bazel/ci/data/downloader.cfg (see go/studio-ci#gcs-mirror).
+http_file(
+    name = "electron_types",
+    downloaded_file_path = "electron.d.ts",
+    sha256 = "e70d34f8d5d246bca8e39b3897b47e005c0f629673315b6f97ccae0f2405e7b8",
+    urls = ["https://github.com/electron/electron/releases/download/v43.4.1/electron.d.ts"],
+)
+
+http_archive(
+    name = "electron_linux_x64",
+    build_file_content = """
+package(default_visibility = ["//visibility:public"])
+filegroup(
+    name = "all_files",
+    srcs = glob(["**/*"]),
+)
+""",
+    sha256 = "79d4efd69f0ccf1fc11891ea5075329c7b3faddad79a08d9fb395bbd63169acf",
+    urls = ["https://github.com/electron/electron/releases/download/v43.4.1/electron-v43.4.1-linux-x64.zip"],
+)
+
+http_archive(
+    name = "electron_darwin_x64",
+    build_file_content = """
+package(default_visibility = ["//visibility:public"])
+filegroup(
+    name = "all_files",
+    srcs = glob(["**/*"]),
+)
+""",
+    sha256 = "4fd0f1826660a94216a0633600a3c3e2cd87ee9e4bc6f0e1edf717ad8e30c10b",
+    urls = ["https://github.com/electron/electron/releases/download/v43.4.1/electron-v43.4.1-darwin-x64.zip"],
+)
+
+http_archive(
+    name = "electron_darwin_arm64",
+    build_file_content = """
+package(default_visibility = ["//visibility:public"])
+filegroup(
+    name = "all_files",
+    srcs = glob(["**/*"]),
+)
+""",
+    sha256 = "fe3cac8cbfd9ba1739fac6c69166cf30848741f93cbe251d800ae6ef7cebb64b",
+    urls = ["https://github.com/electron/electron/releases/download/v43.4.1/electron-v43.4.1-darwin-arm64.zip"],
+)
+
+http_archive(
+    name = "electron_win32_x64",
+    build_file_content = """
+package(default_visibility = ["//visibility:public"])
+filegroup(
+    name = "all_files",
+    srcs = glob(["**/*"]),
+)
+""",
+    sha256 = "c2ef9a5f65472c34d14bd3e67b7d14e66b0c01f124aba45263d6a4232160e13a",
+    urls = ["https://github.com/electron/electron/releases/download/v43.4.1/electron-v43.4.1-win32-x64.zip"],
+)
+

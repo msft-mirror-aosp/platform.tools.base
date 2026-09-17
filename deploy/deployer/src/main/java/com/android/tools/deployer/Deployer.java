@@ -189,7 +189,7 @@ public class Deployer {
             InstallInfo info;
 
             // The first ABI is always the most preferable on the device.
-            AppState appState = new AppState(adb.getDevice().getAbis().get(0));
+            AppState appState = new AppState(adb.getAbis().get(0));
             if (deployOptions.useRootPushInstall) {
                 info =
                         rootPushInstall(

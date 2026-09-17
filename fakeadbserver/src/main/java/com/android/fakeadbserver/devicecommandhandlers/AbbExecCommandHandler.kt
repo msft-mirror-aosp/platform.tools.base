@@ -18,21 +18,37 @@ package com.android.fakeadbserver.devicecommandhandlers
 import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.FakeAdbServer
 import com.android.fakeadbserver.services.ExecOutput
+import com.android.fakeadbserver.services.ShellCommandOutput
+import com.android.fakeadbserver.services.StatusWriter
 import java.net.Socket
 import kotlinx.coroutines.CoroutineScope
 
 class AbbExecCommandHandler : DeviceCommandHandler("abb_exec") {
 
-  override fun invoke(server: FakeAdbServer, socketScope: CoroutineScope, socket: Socket, device: DeviceState, args: String) {
-
+  override fun accept(
+    server: FakeAdbServer,
+    socketScope: CoroutineScope,
+    socket: Socket,
+    device: DeviceState,
+    command: String,
+    args: String,
+    statusWriter: StatusWriter,
+    shellCommandOutputProvider: (() -> ShellCommandOutput)?,
+  ): Boolean {
+    if (this.command != command) {
+      return false
+    }
     // Acknowledge only if "abb_exec" is supported
     // TODO: Even though it is equivalent to use API level to check for abb_exec the answer
     //       should come from the list of features contained in [deviceState].
     if (device.buildVersionSdk.majorVersion < 30) {
-      writeFail(socket.getOutputStream())
-      return
+      return false
     }
+    invoke(server, socketScope, socket, device, args)
+    return true
+  }
 
+  override fun invoke(server: FakeAdbServer, socketScope: CoroutineScope, socket: Socket, device: DeviceState, args: String) {
     writeOkay(socket.getOutputStream())
 
     // Save command to logs so tests can consult them.

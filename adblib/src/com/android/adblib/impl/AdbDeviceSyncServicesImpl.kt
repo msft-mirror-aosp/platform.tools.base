@@ -112,23 +112,21 @@ internal class AdbDeviceSyncServicesImpl private constructor(private val syncCon
     }
   }
 
-  override fun list(remoteFilePath: String, options: ListOptions): Flow<DirectoryEntry> =
-    flow {
-        checkNotClosed()
-        emitAll(listHandler.list(remoteFilePath, options))
-      }
-      .flowOn(syncConnection.session.ioDispatcher)
+  override fun list(remoteFilePath: String, options: ListOptions): Flow<DirectoryEntry> = flow {
+    checkNotClosed()
+    emitAll(listHandler.list(remoteFilePath, options))
+  }
+    .flowOn(syncConnection.session.ioDispatcher)
 
-  override fun listV2(remoteFilePath: String, options: ListV2Options): Flow<DirectoryEntryV2> =
-    flow {
-        checkNotClosed()
-        if (options.fallbackToListV1 && !syncConnection.canUseListV2()) {
-          emitAll(listHandler.list(remoteFilePath, options.toListOptions()).map { entry -> entry.toDirectoryEntryV2() })
-        } else {
-          emitAll(listV2Handler.listV2(remoteFilePath, options))
-        }
-      }
-      .flowOn(syncConnection.session.ioDispatcher)
+  override fun listV2(remoteFilePath: String, options: ListV2Options): Flow<DirectoryEntryV2> = flow {
+    checkNotClosed()
+    if (options.fallbackToListV1 && !syncConnection.canUseListV2()) {
+      emitAll(listHandler.list(remoteFilePath, options.toListOptions()).map { entry -> entry.toDirectoryEntryV2() })
+    } else {
+      emitAll(listV2Handler.listV2(remoteFilePath, options))
+    }
+  }
+    .flowOn(syncConnection.session.ioDispatcher)
 
   private fun ListV2Options.toListOptions(): ListOptions {
     return ListOptions(skipDotEntries = this.skipDotEntries)

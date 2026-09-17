@@ -22,6 +22,7 @@ import com.android.build.gradle.internal.fixtures.FakeObjectFactory
 import com.android.build.gradle.internal.packaging.defaultExcludes
 import com.android.build.gradle.internal.packaging.defaultMerges
 import com.android.build.gradle.internal.profile.AnalyticsService
+import com.android.build.gradle.internal.tasks.MergeJavaResWorkAction.SourcedInput
 import com.android.builder.packaging.JarFlinger
 import com.android.testutils.truth.ZipFileSubject.assertThat
 import com.google.common.truth.Truth.assertThat
@@ -63,8 +64,10 @@ class MergeJavaResOptimizedWorkActionTest {
         override fun getParameters(): Params {
           return object : Params() {
             override val projectJavaResJar = FakeObjectFactory.factory.fileProperty().also { it.set(projectJar) }
-            override val mergedDependenciesJavaRes = FakeObjectFactory.factory.fileCollection().from(dependencyJar)
-            override val featureJavaRes = FakeObjectFactory.factory.fileCollection()
+            override val subProjectJavaRes =
+              FakeObjectFactory.factory.listProperty(SourcedInput::class.java).also { it.add(SourcedInput(dependencyJar, "dependencyJar")) }
+            override val externalLibJavaRes = FakeObjectFactory.factory.listProperty(SourcedInput::class.java)
+            override val featureJavaRes = FakeObjectFactory.factory.listProperty(SourcedInput::class.java)
             override val outputFile = FakeObjectFactory.factory.fileProperty().also { it.set(outputFile) }
             override val noCompress = FakeObjectFactory.factory.listProperty(String::class.java)
             override val excludes = FakeObjectFactory.factory.setProperty(String::class.java).also { it.set(defaultExcludes) }
@@ -100,8 +103,10 @@ class MergeJavaResOptimizedWorkActionTest {
         override fun getParameters(): Params {
           return object : Params() {
             override val projectJavaResJar = FakeObjectFactory.factory.fileProperty().also { it.set(projectJar) }
-            override val mergedDependenciesJavaRes = FakeObjectFactory.factory.fileCollection().from(dependencyJar)
-            override val featureJavaRes = FakeObjectFactory.factory.fileCollection()
+            override val subProjectJavaRes =
+              FakeObjectFactory.factory.listProperty(SourcedInput::class.java).also { it.add(SourcedInput(dependencyJar, "dependencyJar")) }
+            override val externalLibJavaRes = FakeObjectFactory.factory.listProperty(SourcedInput::class.java)
+            override val featureJavaRes = FakeObjectFactory.factory.listProperty(SourcedInput::class.java)
             override val outputFile = FakeObjectFactory.factory.fileProperty().also { it.set(outputFile) }
             override val noCompress = FakeObjectFactory.factory.listProperty(String::class.java)
             override val excludes = FakeObjectFactory.factory.setProperty(String::class.java).also { it.set(defaultExcludes) }
@@ -137,8 +142,10 @@ class MergeJavaResOptimizedWorkActionTest {
         override fun getParameters(): Params {
           return object : Params() {
             override val projectJavaResJar = FakeObjectFactory.factory.fileProperty().also { it.set(projectJar) }
-            override val mergedDependenciesJavaRes = FakeObjectFactory.factory.fileCollection().from(dependencyJar)
-            override val featureJavaRes = FakeObjectFactory.factory.fileCollection()
+            override val subProjectJavaRes =
+              FakeObjectFactory.factory.listProperty(SourcedInput::class.java).also { it.add(SourcedInput(dependencyJar, "dependencyJar")) }
+            override val externalLibJavaRes = FakeObjectFactory.factory.listProperty(SourcedInput::class.java)
+            override val featureJavaRes = FakeObjectFactory.factory.listProperty(SourcedInput::class.java)
             override val outputFile = FakeObjectFactory.factory.fileProperty().also { it.set(outputFile) }
             override val noCompress = FakeObjectFactory.factory.listProperty(String::class.java)
             override val excludes = FakeObjectFactory.factory.setProperty(String::class.java).also { it.set(defaultExcludes) }
@@ -177,8 +184,9 @@ class MergeJavaResOptimizedWorkActionTest {
         override fun getParameters(): Params {
           return object : Params() {
             override val projectJavaResJar = FakeObjectFactory.factory.fileProperty().also { it.set(projectJar) }
-            override val mergedDependenciesJavaRes = FakeObjectFactory.factory.fileCollection()
-            override val featureJavaRes = FakeObjectFactory.factory.fileCollection()
+            override val subProjectJavaRes = FakeObjectFactory.factory.listProperty(SourcedInput::class.java)
+            override val externalLibJavaRes = FakeObjectFactory.factory.listProperty(SourcedInput::class.java)
+            override val featureJavaRes = FakeObjectFactory.factory.listProperty(SourcedInput::class.java)
             override val outputFile = FakeObjectFactory.factory.fileProperty().also { it.set(outputFile) }
             override val noCompress = FakeObjectFactory.factory.listProperty(String::class.java).also { it.set(listOf("uncompressedFile")) }
             override val excludes = FakeObjectFactory.factory.setProperty(String::class.java).also { it.set(defaultExcludes) }
@@ -221,8 +229,10 @@ class MergeJavaResOptimizedWorkActionTest {
         override fun getParameters(): Params {
           return object : Params() {
             override val projectJavaResJar = FakeObjectFactory.factory.fileProperty().also { it.set(projectJar) }
-            override val mergedDependenciesJavaRes = FakeObjectFactory.factory.fileCollection().from(dependencyJar, dependencyJar)
-            override val featureJavaRes = FakeObjectFactory.factory.fileCollection()
+            override val subProjectJavaRes =
+              FakeObjectFactory.factory.listProperty(SourcedInput::class.java).also { it.add(SourcedInput(dependencyJar, "dependencyJar")) }
+            override val externalLibJavaRes = FakeObjectFactory.factory.listProperty(SourcedInput::class.java)
+            override val featureJavaRes = FakeObjectFactory.factory.listProperty(SourcedInput::class.java)
             override val outputFile = FakeObjectFactory.factory.fileProperty().also { it.set(outputFile) }
             override val noCompress = FakeObjectFactory.factory.listProperty(String::class.java)
             override val excludes = FakeObjectFactory.factory.setProperty(String::class.java).also { it.set(defaultExcludes) }
@@ -265,8 +275,13 @@ class MergeJavaResOptimizedWorkActionTest {
         override fun getParameters(): Params {
           return object : Params() {
             override val projectJavaResJar = FakeObjectFactory.factory.fileProperty()
-            override val mergedDependenciesJavaRes = FakeObjectFactory.factory.fileCollection().from(dependencyJar1, dependencyJar2)
-            override val featureJavaRes = FakeObjectFactory.factory.fileCollection()
+            override val subProjectJavaRes =
+              FakeObjectFactory.factory.listProperty(SourcedInput::class.java).also {
+                it.add(SourcedInput(dependencyJar1, "dependencyJar1"))
+                it.add(SourcedInput(dependencyJar2, "dependencyJar2"))
+              }
+            override val externalLibJavaRes = FakeObjectFactory.factory.listProperty(SourcedInput::class.java)
+            override val featureJavaRes = FakeObjectFactory.factory.listProperty(SourcedInput::class.java)
             override val outputFile = FakeObjectFactory.factory.fileProperty().also { it.set(outputFile) }
             override val noCompress = FakeObjectFactory.factory.listProperty(String::class.java)
             override val excludes = FakeObjectFactory.factory.setProperty(String::class.java).also { it.set(defaultExcludes) }

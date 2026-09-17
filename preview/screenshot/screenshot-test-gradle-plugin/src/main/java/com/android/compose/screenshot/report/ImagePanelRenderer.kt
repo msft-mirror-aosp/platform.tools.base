@@ -40,7 +40,10 @@ class ImagePanelRenderer : ReportRenderer<ScreenshotTestImages, SimpleHtmlWriter
     htmlWriter
       .startElement("tbody")
       .attribute("class", "grid")
-      .attribute("style", "width: 100%") // this class will render a grid like background to better show the diff between png
+      .attribute(
+        "style",
+        "width: 100%",
+      ) // this class will render a grid like background to better show the diff between png
       // images with and without background
       .startElement("tr")
     val texts = getTexts(ssImages)
@@ -54,7 +57,11 @@ class ImagePanelRenderer : ReportRenderer<ScreenshotTestImages, SimpleHtmlWriter
     htmlWriter.startElement("th").attribute("style", "width: 33.33%").characters(columnName).endElement()
   }
 
-  private fun renderImage(htmlWriter: SimpleHtmlWriter, imagePath: ImagePathOrMessage?, text: String) {
+  private fun renderImage(
+    htmlWriter: SimpleHtmlWriter,
+    imagePath: ImagePathOrMessage?,
+    text: String,
+  ) {
     if (imagePath is ImagePathOrMessage.ImagePath && File(imagePath.path).exists()) {
       val base64String = Base64.getEncoder().encodeToString(File(imagePath.path).readBytes())
       htmlWriter

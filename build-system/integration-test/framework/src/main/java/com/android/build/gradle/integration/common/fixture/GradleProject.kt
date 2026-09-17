@@ -27,14 +27,13 @@ abstract class GradleProject(
 ) : TestProject {
 
   /** Logical path to this project (e.g., ":app"). If it is provided and doesn't start with ':', it will be normalized to start with ':'. */
-  val path: String? =
-    path?.let {
-      if (path.startsWith(':')) {
-        path
-      } else {
-        ":$path"
-      }
+  val path: String? = path?.let {
+    if (path.startsWith(':')) {
+      path
+    } else {
+      ":$path"
     }
+  }
 
   /** Map from a relative path to the corresponding [TestSourceFile] instance. */
   protected val sourceFiles: MutableMap<String, TestSourceFile> = mutableMapOf()

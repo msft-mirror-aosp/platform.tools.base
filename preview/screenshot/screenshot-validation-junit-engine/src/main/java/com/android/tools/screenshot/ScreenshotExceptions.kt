@@ -19,30 +19,22 @@ package com.android.tools.screenshot
 import java.io.FileNotFoundException
 import java.io.IOException
 
-/**
- * Thrown when Layoutlib rendering fails during preview execution.
- */
+/** Thrown when Layoutlib rendering fails during preview execution. */
 class ScreenshotRenderException(message: String) : RuntimeException(message) {
   override fun fillInStackTrace(): Throwable = this
 }
 
-/**
- * Thrown when the expected or actual screenshot image file cannot be found.
- */
+/** Thrown when the expected or actual screenshot image file cannot be found. */
 class ScreenshotImageNotFoundException(message: String) : FileNotFoundException(message) {
   override fun fillInStackTrace(): Throwable = this
 }
 
-/**
- * Thrown when a screenshot image file is corrupted or invalid and cannot be read.
- */
+/** Thrown when a screenshot image file is corrupted or invalid and cannot be read. */
 class ScreenshotImageInvalidException(message: String) : IOException(message) {
   override fun fillInStackTrace(): Throwable = this
 }
 
-/**
- * Thrown when the actual rendered image differs from the reference image.
- */
+/** Thrown when the actual rendered image differs from the reference image. */
 class ImageComparisonAssertionError(
   val expectedImagePath: String,
   val actualImagePath: String,

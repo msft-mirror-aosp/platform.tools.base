@@ -40,7 +40,13 @@ constructor(objects: ObjectFactory, override val name: String, projectDirectory:
     isMixed: Boolean,
   ): TestSuiteSourceSet {
     val sourceSetName = if (isMixed) "${name}Assets" else name
-    return AssetsTestSuiteSourceSet(sourceSetName = sourceSetName, variantServices = variantServices, dependencies = dependencies)
+    return AssetsTestSuiteSourceSet(
+      sourceSetName = sourceSetName,
+      testSuiteName = name,
+      isMixed = isMixed,
+      variantServices = variantServices,
+      dependencies = dependencies,
+    )
   }
 
   override val dependencies: AgpTestSuiteDependencies = objects.newInstance(AgpTestSuiteDependencies::class.java)

@@ -214,15 +214,11 @@ suspend fun <R> SharedJdwpSession.handleDdmsDumpViewHierarchy(
   val chunkBuf =
     allocateDdmsPayload(
       4 // opcode
-      +
-        4 +
+      + 4 +
         viewRoot.length * 2 // view root (length + unicode string)
-        +
-        4 // skip children
-        +
-        4 // include view properties
-        +
-        4 // use Version 2
+        + 4 // skip children
+        + 4 // include view properties
+        + 4 // use Version 2
     )
 
   // Op code

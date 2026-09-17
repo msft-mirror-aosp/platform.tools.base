@@ -43,6 +43,5 @@ import java.lang.annotation.Target;
     ElementType.CONSTRUCTOR,
     ElementType.TYPE,
     ElementType.PARAMETER,
-    ElementType.TYPE_USE
 })
 public @interface WorkerThread {}

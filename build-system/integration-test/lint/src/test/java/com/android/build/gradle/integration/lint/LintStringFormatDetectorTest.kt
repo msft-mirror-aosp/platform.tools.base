@@ -25,14 +25,13 @@ import org.junit.Test
 class LintStringFormatDetectorTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication(":app") {
-        files {
-          add(
-            "src/main/java/com/example/app/MainActivity.java",
-            // language=java
-            """package com.example.app;
+  val rule = GradleRule.from {
+    androidApplication(":app") {
+      files {
+        add(
+          "src/main/java/com/example/app/MainActivity.java",
+          // language=java
+          """package com.example.app;
 
                 import android.app.Activity;
 
@@ -41,31 +40,31 @@ class LintStringFormatDetectorTest {
                         String.format(getString(com.example.lib.R.string.hello), 5);
                     }
                 }""",
-          )
-        }
-        android {
-          lint {
-            abortOnError = false
-            textOutput = projectDotFile("lint-results.txt")
-          }
-          namespace = "com.example.app"
-        }
-        dependencies { implementation(project(":lib")) }
+        )
       }
-      androidLibrary(":lib") {
-        files {
-          add(
-            "src/main/res/values/strings.xml",
-            // language=XML
-            """<?xml version="1.0" encoding="utf-8"?>
+      android {
+        lint {
+          abortOnError = false
+          textOutput = projectDotFile("lint-results.txt")
+        }
+        namespace = "com.example.app"
+      }
+      dependencies { implementation(project(":lib")) }
+    }
+    androidLibrary(":lib") {
+      files {
+        add(
+          "src/main/res/values/strings.xml",
+          // language=XML
+          """<?xml version="1.0" encoding="utf-8"?>
                 <resources>
                     <string name="hello">hello %s</string>
                 </resources>""",
-          )
-        }
-        android { namespace = "com.example.lib" }
+        )
       }
+      android { namespace = "com.example.lib" }
     }
+  }
 
   /**
    * Regression test for b/303215439.

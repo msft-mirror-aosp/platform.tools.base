@@ -257,6 +257,7 @@ def setup_intellij_platforms(specs):
             "test-framework": "-test-framework",
             "vm-options": "-vm-options",
             "updater": "-updater",
+            "nio-fs": "-nio-fs",
         }
 
         for alias, suffix in api.items():

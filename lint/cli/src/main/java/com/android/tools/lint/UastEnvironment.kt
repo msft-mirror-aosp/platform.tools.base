@@ -249,7 +249,16 @@ interface UastEnvironment {
         // dependencies that could have the same dependencies (e.g. lib1 and lib2 both
         // referencing guava.jar)
         setFrom(
-          javaSourceFolders.takeIf { it.isNotEmpty() } ?: listOfNotNull(project.dir.takeIf { it.isDirectory }),
+          // The project directory fallback exists so that modules whose only sources are
+          // Gradle build scripts (see 4d26c1afa9a) still get a content root. A module with a
+          // partial-results directory but no source folders and no build scripts is a stub
+          // for an already-analyzed dependency: its sources are deliberately absent, and
+          // falling back to the project directory (often a build-system root containing
+          // other modules' sources) would let the stub claim files belonging to the modules
+          // actually being analyzed.
+          javaSourceFolders.takeIf { it.isNotEmpty() }
+            ?: if (project.partialResultsDir != null && gradleBuildScripts.isEmpty()) emptyList()
+            else listOfNotNull(project.dir.takeIf { it.isDirectory }),
           unitTestSourceFolders.takeIf { includeTests },
           instrumentationTestSourceFolders.takeIf { includeTests },
           testSourceFolders.takeIf { includeTests },

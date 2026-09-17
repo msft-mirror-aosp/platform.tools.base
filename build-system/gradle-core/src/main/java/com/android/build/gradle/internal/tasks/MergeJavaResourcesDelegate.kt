@@ -42,7 +42,7 @@ import java.io.ObjectOutputStream
 import java.util.function.Predicate
 import org.gradle.api.logging.Logging
 
-internal class CompressedJavaResJar(val file: File, val priority: JavaResMergingPriority)
+internal class CompressedJavaResJar(val name: String, val file: File, val priority: JavaResMergingPriority)
 
 internal enum class JavaResMergingPriority(val value: Int) {
   HIGH(0),
@@ -148,18 +148,17 @@ internal class MergeJavaResourcesDelegate(
      * algorithm to delegate to depending on the packaging option of the path. By default it
      * requires just one file (no merging).
      */
-    val mergeTransformAlgorithm =
-      StreamMergeAlgorithms.select { path ->
-        val packagingAction = packagingOptions.getAction(path)
-        when (packagingAction) {
-          JavaResPackagingFileAction.EXCLUDE ->
-            // Should have been excluded from the input.
-            throw AssertionError()
-          JavaResPackagingFileAction.PICK_FIRST -> return@select StreamMergeAlgorithms.pickFirst()
-          JavaResPackagingFileAction.MERGE -> return@select StreamMergeAlgorithms.concat()
-          JavaResPackagingFileAction.NONE -> return@select StreamMergeAlgorithms.acceptOnlyOne()
-        }
+    val mergeTransformAlgorithm = StreamMergeAlgorithms.select { path ->
+      val packagingAction = packagingOptions.getAction(path)
+      when (packagingAction) {
+        JavaResPackagingFileAction.EXCLUDE ->
+          // Should have been excluded from the input.
+          throw AssertionError()
+        JavaResPackagingFileAction.PICK_FIRST -> return@select StreamMergeAlgorithms.pickFirst()
+        JavaResPackagingFileAction.MERGE -> return@select StreamMergeAlgorithms.concat()
+        JavaResPackagingFileAction.NONE -> return@select StreamMergeAlgorithms.acceptOnlyOne()
       }
+    }
 
     /*
      * Create an output that uses the algorithm. This is not the final output because,

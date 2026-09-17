@@ -96,6 +96,7 @@ import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.Property;
 import org.gradle.api.provider.Provider;
+import org.gradle.api.provider.ProviderFactory;
 import org.gradle.api.tasks.Classpath;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFiles;
@@ -126,9 +127,15 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-/** Run instrumentation tests for a given variant */
+/**
+ * Run instrumentation tests for a given variant
+ *
+ * @deprecated Will be replaced with {@link com.android.build.gradle.tasks.TestSuiteTestTask}. Will
+ *     be removed in AGP 10.0. See b/516536626
+ */
 @DisableCachingByDefault
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.TEST)
+@Deprecated // b/516536626
 public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTask
         implements AndroidTestTask {
 
@@ -158,6 +165,9 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
         @Input
         public abstract Property<Boolean> getTargetIsSplitApk();
 
+        @Input
+        public abstract Property<Boolean> getPccInstrumentationEnabled();
+
         /**
          * Property for the serials passed into the connectedCheck task. This is used to filter the
          * device serials if and only if the --serial command line argument is not set on this task.
@@ -184,6 +194,11 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
 
         @Inject
         public ExecOperations getExecOperations() {
+            throw new UnsupportedOperationException("Injected by Gradle.");
+        }
+
+        @Inject
+        public ProviderFactory getProviders() {
             throw new UnsupportedOperationException("Injected by Gradle.");
         }
 
@@ -235,7 +250,9 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                     getUninstallIncompatibleApks().get(),
                     getInstallApkTimeout().getOrNull(),
                     getTargetIsSplitApk().getOrElse(false),
-                    !getKeepInstalledApks().get());
+                    !getKeepInstalledApks().get(),
+                    getPccInstrumentationEnabled().getOrElse(false),
+                    getProviders());
         }
     }
 
@@ -290,6 +307,7 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                 getTestRunnerFactory(),
                 getReportsDir().getAsFile().get(),
                 getCodeCoverageEnabled().get(),
+                getOnTheFlyCoverageEnabled().get(),
                 getTestReportAggregationEnabled().get(),
                 getAnalyticsService().get(),
                 getIgnoreFailures(),
@@ -316,6 +334,7 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
             TestRunnerFactory testRunnerFactory,
             File reportDir,
             Boolean enableCoverage,
+            Boolean onTheFlyCoverageEnabled,
             Boolean enableTestReportAggregation,
             AnalyticsService analyticsService,
             boolean ignoreFailures,
@@ -365,8 +384,12 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
         if (!testsFound) {
             logger.info("No tests found, nothing to do.");
             // If we don't create the coverage file, createXxxCoverageReport task will fail.
-            File emptyCoverageFile = new File(coverageDir, "coverage.ec");
-            emptyCoverageFile.createNewFile();
+            if (onTheFlyCoverageEnabled) {
+                new File(coverageDir, "coverage_metadata.pb").createNewFile();
+                new File(coverageDir, "coverage_hits.pb").createNewFile();
+            } else {
+                new File(coverageDir, "coverage.ec").createNewFile();
+            }
             success = true;
         } else {
             TestRunner testRunner =
@@ -588,6 +611,9 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
 
     @Input
     public abstract Property<Boolean> getCodeCoverageEnabled();
+
+    @Input
+    public abstract Property<Boolean> getOnTheFlyCoverageEnabled();
 
     @Input
     public abstract Property<Boolean> getTestReportAggregationEnabled();
@@ -932,6 +958,11 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                             createEmulatorControlConfig(
                                     projectOptions,
                                     (EmulatorControl) testOptions.getEmulatorControl()));
+
+            task.getTestRunnerFactory()
+                    .getPccInstrumentationEnabled()
+                    .set(testOptions.getInstrumentInPrivateComputeCore());
+
             task.getTestRunnerFactory()
                     .getInstallApkTimeout()
                     .set(projectOptions.getProvider(IntegerOption.INSTALL_APK_TIMEOUT));
@@ -946,6 +977,8 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                     .getTargetIsSplitApk()
                     .set(componentType != null && componentType.isDynamicFeature());
             task.getCodeCoverageEnabled().set(creationConfig.getCodeCoverageEnabled());
+            task.getOnTheFlyCoverageEnabled()
+                    .set(projectOptions.get(BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE));
             boolean useJacocoTransformOutputs = creationConfig.getCodeCoverageEnabled();
             task.getTestReportAggregationEnabled()
                     .set(projectOptions.get(BooleanOption.REPORT_AGGREGATION_SUPPORT));

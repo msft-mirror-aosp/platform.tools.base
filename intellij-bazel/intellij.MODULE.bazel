@@ -18,34 +18,6 @@ intellij.local_platform(
     spec = "@//prebuilts/studio/intellij-sdk:IC/spec.bzl",
     target = "@//prebuilts/studio/intellij-sdk:sherlock-sdk",
 )
-intellij.remote_platform(
-    name = "intellij_ce_2025_1",
-    sha256 = "e5abd978ec976bde4171dc380f9008c581db81b77a6e6420ce3e7cf35e9573ef",
-    top_level_dir = "idea-IC-251.25410.109",
-    url = "https://download.jetbrains.com/idea/ideaIC-2025.1.1.tar.gz",
-)
-intellij.remote_platform(
-    name = "intellij_ce_2025_2",
-    plugins = [
-        "intellij.libraries.ktor.client.cio",
-        "intellij.libraries.ktor.client",
-    ],
-    sha256 = "3c152de654fa948e12e5fba4c04ed0200e472556a8081ddc2d4c22e5831d6020",
-    top_level_dir = "idea-IC-252.27397.103",
-    url = "https://download.jetbrains.com/idea/ideaIC-2025.2.4.tar.gz",
-)
-intellij.remote_platform(
-    name = "intellij_2025_3",
-    sha256 = "13f4174ba16c1cef04871cb261433536d002586c269a809392c20ee3f94959f5",
-    top_level_dir = "idea-IU-253.28294.334",
-    url = "https://download.jetbrains.com/idea/idea-2025.3.tar.gz",
-)
-intellij.remote_platform(
-    name = "intellij_2026_1",
-    sha256 = "c00d8318492e718c3893cf51fe783f3585214adf48e2c2da2bde47829d70a90e",
-    top_level_dir = "idea-IU-261.23567.28",
-    url = "https://download.jetbrains.com/idea/idea-261.23567.28.tar.gz",
-)
 
 # IMPORTANT: This list of repos should always be kept up to date with the platforms defined above.
-use_repo(intellij, "intellij", "intellij_2025_3", "intellij_2026_1", "intellij_ce_2025_1", "intellij_ce_2025_2")
+use_repo(intellij, "intellij")

@@ -39,56 +39,54 @@ class LegacyTestReportingRedirectionWatcher(private val streamingFile: File, pri
   fun start() {
     watcherThread =
       Thread {
-          // WatchService allows the OS to notify us when a file is modified, which is
-          // more efficient than a manual sleep-based polling loop.
-          val watchService = FileSystems.getDefault().newWatchService()
-          val streamingPath = streamingFile.toPath()
+        // WatchService allows the OS to notify us when a file is modified, which is
+        // more efficient than a manual sleep-based polling loop.
+        val watchService = FileSystems.getDefault().newWatchService()
+        val streamingPath = streamingFile.toPath()
 
-          // WatchService monitors directories, so we register the parent directory
-          // to listen for modifications to any file within it (including our streaming file).
-          val parentDir = streamingPath.parent
-          parentDir.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY)
+        // WatchService monitors directories, so we register the parent directory
+        // to listen for modifications to any file within it (including our streaming file).
+        val parentDir = streamingPath.parent
+        parentDir.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY)
 
-          try {
-            streamingFile.bufferedReader().use { reader ->
-              while (!shouldStopWatcher.get()) {
-                val line = reader.readLine()
-                if (line != null) {
-                  // We only redirect lines that are explicitly tagged as UTP test result events.
-                  if (
-                    line.startsWith("<UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>") && line.endsWith("</UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>")
-                  ) {
-                    printStream.println(line)
-                  }
-                } else {
-                  // reader.readLine() returns null immediately when reaching the current end of a file.
-                  // We use watchService.poll() to block this thread until the OS confirms the file
-                  // was modified by the test engine process.
-                  //
-                  // We timeout every 100ms to check the 'shouldStopWatcher' flag. This prevents a
-                  // worst-case scenario where the test engine finishes without a final write
-                  // (which would leave this thread waiting indefinitely for an OS event). It also
-                  // ensures the thread terminates with at most 100ms of latency after the test.
-                  val key: WatchKey? = watchService.poll(100, TimeUnit.MILLISECONDS)
-
-                  // After receiving an event, we must clear it and reset the key to continue
-                  // receiving future notifications.
-                  key?.pollEvents()
-                  key?.reset()
-                }
-              }
-              // Final drain to ensure all lines are processed after the test engine process finishes.
-              reader.forEachLine { line ->
+        try {
+          streamingFile.bufferedReader().use { reader ->
+            while (!shouldStopWatcher.get()) {
+              val line = reader.readLine()
+              if (line != null) {
+                // We only redirect lines that are explicitly tagged as UTP test result events.
                 if (line.startsWith("<UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>") && line.endsWith("</UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>")) {
                   printStream.println(line)
                 }
+              } else {
+                // reader.readLine() returns null immediately when reaching the current end of a file.
+                // We use watchService.poll() to block this thread until the OS confirms the file
+                // was modified by the test engine process.
+                //
+                // We timeout every 100ms to check the 'shouldStopWatcher' flag. This prevents a
+                // worst-case scenario where the test engine finishes without a final write
+                // (which would leave this thread waiting indefinitely for an OS event). It also
+                // ensures the thread terminates with at most 100ms of latency after the test.
+                val key: WatchKey? = watchService.poll(100, TimeUnit.MILLISECONDS)
+
+                // After receiving an event, we must clear it and reset the key to continue
+                // receiving future notifications.
+                key?.pollEvents()
+                key?.reset()
               }
             }
-          } finally {
-            // Always close the service to release OS resources.
-            watchService.close()
+            // Final drain to ensure all lines are processed after the test engine process finishes.
+            reader.forEachLine { line ->
+              if (line.startsWith("<UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>") && line.endsWith("</UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>")) {
+                printStream.println(line)
+              }
+            }
           }
+        } finally {
+          // Always close the service to release OS resources.
+          watchService.close()
         }
+      }
         .apply { start() }
   }
 

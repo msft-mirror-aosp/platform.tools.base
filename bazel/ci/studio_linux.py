@@ -33,7 +33,10 @@ _EXTRA_TARGETS = [
     '//tools/adt/idea/studio:android-studio.canary_update_message.html',
     '//tools/adt/idea/studio:updater_deploy.jar',
     '//tools/adt/idea/native/installer:android-studio-bundle-data',
+    '//tools/base/profiler/native/traceconv',
     '//tools/base/profiler/native/trace_processor_daemon',
+    '//tools/base/profiler/native/sherlock/perfetto-cropper:sherlock-perfetto-cropper',
+    '//tools/base/profiler/native/sherlock/perfetto-gpu-counters:sherlock-perfetto-gpu-counters',
     '//tools/base/profiler/native/sherlock:sherlock_trace_processor',
     '//tools/base/deploy/deployer:deployer.runner_deploy.jar',
     '//tools/base/journeys:journeys_maven_repo.zip',
@@ -62,6 +65,7 @@ _EXTRA_TARGETS = [
 #    '//tools/adt/idea/aswb/aswb:aswb_bazel_zip',
     '//tools/base/bazel:owners.zip',
     '//tools/vendor/google/lume/dist:lightbuild',
+    '//tools/vendor/google/lume/lightbuild-cli/dist:release_pkg',
 ]
 
 
@@ -98,10 +102,6 @@ _ARTIFACTS = [
     ('tools/vendor/google/aswb/android-studio-with-blaze-stable.deb', 'artifacts'),
     ('tools/vendor/google/aswb/android-studio-with-blaze-stable.mac.zip', 'artifacts'),
     ('tools/vendor/google/aswb/android-studio-with-blaze-stable.mac_arm.zip', 'artifacts'),
-    ('tools/vendor/google/aswb/android-studio-with-blaze-qa.deb', 'artifacts'),
-    ('tools/vendor/google/aswb/android-studio-with-blaze-qa.mac.zip', 'artifacts'),
-    ('tools/vendor/google/aswb/android-studio-with-blaze-qa.mac_arm.zip', 'artifacts'),
-
 
     ('tools/base/sdklib/commandlinetools_*.zip', 'artifacts'),
     ('tools/base/ddmlib/tools.ddmlib.jar', 'artifacts/ddmlib.jar'),
@@ -111,7 +111,10 @@ _ARTIFACTS = [
     ('tools/base/ddmlib/libincfs.jar', 'artifacts'),
     ('tools/base/lint/libs/lint-tests/lint-tests.jar', 'artifacts'),
     ('tools/base/deploy/deployer/deployer.runner_deploy.jar', 'artifacts/deployer.jar'),
+    ('external/perfetto*/traceconv', 'artifacts'),
     ('tools/base/profiler/native/trace_processor_daemon/trace_processor_daemon', 'artifacts'),
+    ('tools/base/profiler/native/sherlock/perfetto-cropper/sherlock-perfetto-cropper', 'artifacts'),
+    ('tools/base/profiler/native/sherlock/perfetto-gpu-counters/sherlock-perfetto-gpu-counters', 'artifacts'),
     ('tools/base/profiler/native/sherlock/sherlock_trace_processor', 'artifacts'),
     ('tools/vendor/google/game-tools/packaging/game-tools-linux.tar.gz', 'artifacts'),
     ('tools/vendor/google/game-tools/packaging/game-tools-win.zip', 'artifacts'),
@@ -129,11 +132,13 @@ _ARTIFACTS = [
     ('tools/base/apkparser/tools.binary-resources.jar', 'artifacts'),
     ('tools/base/apkparser/analyzer/libtools.analyzer.jar', 'artifacts'),
     ('prebuilts/studio/layoutlib/layoutlib-repository.zip', 'artifacts'),
-    ('tools/vendor/google/android/android-cli.zip', 'artifacts'),
-    ('tools/vendor/google/android/create/dist/templates-sdk-package.zip', 'artifacts'),
-    ('tools/vendor/google/android/dist/deb/android-cli.deb.zip', 'artifacts'),
-    ('tools/vendor/google/android/dist/deb/android-cli.deb', 'artifacts'),
+    ('tools/vendor/google/android-cli/android-cli.zip', 'artifacts'),
+    ('tools/vendor/google/android-cli/android-cli-docs.zip', 'artifacts'),
+    ('tools/vendor/google/android-cli/create/dist/templates-sdk-package.zip', 'artifacts'),
+    ('tools/vendor/google/android-cli/dist/deb/android-cli.deb.zip', 'artifacts'),
+    ('tools/vendor/google/android-cli/dist/deb/android-cli.deb', 'artifacts'),
     ('tools/vendor/google/lume/dist/lightbuild.zip', 'artifacts'),
+    ('tools/vendor/google/lume/lightbuild-cli/dist/lightbuild-cli.zip', 'artifacts'),
 
     ('tools/base/bazel/owners.zip', 'owners.zip'),
 ]

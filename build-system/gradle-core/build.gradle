@@ -43,7 +43,7 @@ File baseInstrumentedClasses = new File(classesDir, "baseInstrumented")
 sourceSets {
     main {
         java.srcDirs += 'src/fromGradle/java'
-        resources.srcDirs = ['src/main/resources', 'src/fromGradle/resources', tasks.findByName("writeVersionProperties").getOutputDirectory()]
+        resources.srcDirs += ['src/fromGradle/resources', tasks.findByName("writeVersionProperties").getOutputDirectory()]
         compileClasspath += configurations.provided
     }
 
@@ -129,6 +129,12 @@ gradlePlugin {
         comAndroidKotlinMultiplatform {
             id = "com.android.kotlin.multiplatform.library"
             implementationClass = "com.android.build.gradle.api.KotlinMultiplatformAndroidPlugin"
+        }
+        // Even through the plugin extension is @Incubating, we still want to publish this,
+        // so our tests in CI can test the plugin end to end.
+        comAndroidR8 {
+            id = "com.android.r8"
+            implementationClass = "com.android.build.gradle.R8Plugin"
         }
     }
 }
@@ -317,6 +323,7 @@ tasks.processResources {
     from(rootProject.file("../prebuilts/tools/common/aapt/aapt2_version.properties")) {
         into "com/android/build/gradle/internal/res/"
     }
+    dependsOn('processProtoResources')
 }
 
 // Incremental update test support

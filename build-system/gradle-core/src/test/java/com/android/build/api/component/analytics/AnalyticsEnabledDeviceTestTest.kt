@@ -21,7 +21,9 @@ import com.android.build.gradle.internal.fixtures.FakeGradleProperty
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.common.truth.Truth
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
+import org.gradle.api.Task
 import org.gradle.api.model.ObjectFactory
+import org.gradle.api.tasks.TaskProvider
 import org.junit.Rule
 import org.junit.Test
 import org.mockito.junit.MockitoJUnit
@@ -74,5 +76,27 @@ class AnalyticsEnabledDeviceTestTest {
     Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
       .isEqualTo(VariantPropertiesMethodType.DEVICE_TEST_CODE_COVERAGE_ENABLED_VALUE)
     verify(delegate, times(1)).codeCoverageEnabled
+  }
+
+  @Test
+  fun configureTestTask() {
+    val action: (Task) -> Unit = {}
+    proxy.configureTestTask(action)
+
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.CONFIGURE_TEST_TASK_VALUE)
+    verify(delegate, times(1)).configureTestTask(action)
+  }
+
+  @Test
+  fun withTestTaskProvider() {
+    val action: (TaskProvider<out Task>) -> Unit = {}
+    proxy.withTestTaskProvider(action)
+
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.WITH_TEST_TASK_PROVIDER_VALUE)
+    verify(delegate, times(1)).withTestTaskProvider(action)
   }
 }

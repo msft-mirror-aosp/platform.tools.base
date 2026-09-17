@@ -575,9 +575,8 @@ public class TestLintClient extends LintCliClient {
             if (serializationFile.exists()) {
                 String xml = FilesKt.readText(serializationFile, Charsets.UTF_8);
                 if (type != XmlFileType.RESOURCE_REPOSITORY) {
-                    // Skipping RESOURCE_REPOSITORY because these are not real
-                    // XML files, but we're going to replace these soon so not
-                    // worth going to the trouble of changing the file format
+                    // Skipping RESOURCE_REPOSITORY because these are not XML
+                    // files; they use a binary format (see LintResourcePersistence)
                     Document document = XmlUtils.parseDocumentSilently(xml, false);
                     assertNotNull("Not valid XML", document);
                 }

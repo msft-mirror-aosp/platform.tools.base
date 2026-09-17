@@ -282,9 +282,9 @@ class FakeAdbServices(
 
   private fun handleDumpsysPackages(): AdbOutput {
     return buildString {
-        debuggableApps.forEach {
-          append(
-            """
+      debuggableApps.forEach {
+        append(
+          """
       Packages:
         Package [$it] (a4101a8):
           pkgFlags=[ DEBUGGABLE HAS_CODE ALLOW_CLEAR_USER_DATA TEST_ONLY ALLOW_BACKUP ]
@@ -293,10 +293,10 @@ class FakeAdbServices(
             runtime permissions:
               permission1: granted=true, true=[ USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED]
     """
-              .trimIndent()
-          )
-        }
+            .trimIndent()
+        )
       }
+    }
       .asStdout()
   }
 

@@ -17,10 +17,11 @@
 package com.android.build.gradle.integration.testing.suites
 
 import com.android.Version
-import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.options.BooleanOption
+import com.android.builder.model.v2.ide.SyncIssue
+import com.android.builder.model.v2.models.SourceType
 import com.android.testutils.TestUtils
 import com.android.tools.bazel.avd.Emulator
 import com.google.common.truth.Truth
@@ -61,7 +62,8 @@ class MixedTestSuiteTest {
         androidApplication {
           android {
             namespace = "com.example.app"
-            testOptions.suites.create("mixed", AgpTestSuite::class.java) {
+            testOptions.customSuites.create("mixed") {
+              it.requiresUpdateTask = true
               it.useJunitEngine.apply {
                 includeEngines.add("[engine:toy-junit-engine-for-tests]")
                 enginesDependencies.add("com.android.tools.build:gradle-api:${Version.ANDROID_GRADLE_PLUGIN_VERSION}")
@@ -72,6 +74,7 @@ class MixedTestSuiteTest {
               }
               it.hostJar {}
               it.testApk {}
+              it.assets {}
               it.targetVariants.add("debug")
               it.targets.apply { create("t1") {} }
             }
@@ -79,7 +82,7 @@ class MixedTestSuiteTest {
           dependencies { implementation("com.google.truth:truth:0.44") }
           files {
             add(
-              "src/mixedTest/java/com/example/app/HostTest.java",
+              "src/mixed/test/java/com/example/app/HostTest.java",
               """
               package com.example.app;
               public class HostTest {}
@@ -87,13 +90,14 @@ class MixedTestSuiteTest {
                 .trimIndent(),
             )
             add(
-              "src/mixedAndroidTest/java/com/example/app/DeviceTest.java",
+              "src/mixed/androidTest/java/com/example/app/DeviceTest.java",
               """
               package com.example.app;
               public class DeviceTest {}
               """
                 .trimIndent(),
             )
+            add("src/mixed/assetsTest/sample_asset.txt", "sample asset content")
           }
         }
       }
@@ -101,18 +105,18 @@ class MixedTestSuiteTest {
   @Test
   fun testMixedSuiteExecution() {
     val project = rule.build
-    val result = project.executor.run(":app:testMixedT1DebugTestSuite")
+    val result = project.executor.run(":app:testDebugMixedT1TestSuite")
 
     // Verify compilation tasks ran
-    Truth.assertThat(result.didWorkTasks).contains(":app:compileMixedHostJarDebugJavaWithJavac")
-    Truth.assertThat(result.didWorkTasks).contains(":app:compileMixedTestApkDebugJavaWithJavac")
+    Truth.assertThat(result.didWorkTasks).contains(":app:compileDebugMixedTestJavaWithJavac")
+    Truth.assertThat(result.didWorkTasks).contains(":app:compileDebugMixedAndroidTestJavaWithJavac")
 
     // Verify packaging task ran
-    Truth.assertThat(result.didWorkTasks).contains(":app:packageMixedTestApkDebug")
+    Truth.assertThat(result.didWorkTasks).contains(":app:packageDebugMixedAndroidTest")
 
     // Verify junit_inputs.txt exists and has the APK
     val buildDir = project.subProject(":app").buildDir.toFile()
-    val junitInputsFile = buildDir.resolve("intermediates/debug/testMixedT1DebugTestSuite/junit_inputs.txt")
+    val junitInputsFile = buildDir.resolve("intermediates/debug/testDebugMixedT1TestSuite/junit_inputs.txt")
     Truth.assertThat(junitInputsFile.exists()).isTrue()
 
     val properties = java.util.Properties().also { props -> junitInputsFile.reader().use { props.load(it) } }
@@ -122,7 +126,50 @@ class MixedTestSuiteTest {
     Truth.assertThat(apkPath).isNotEmpty()
     val apkDir = File(apkPath)
     Truth.assertThat(apkDir.exists()).isTrue()
-    Truth.assertThat(apkPath).endsWith("mixedTestApkDebug")
-    Truth.assertThat(File(apkDir, "app-mixedTestApkDebug.apk").exists()).isTrue()
+    Truth.assertThat(apkPath).endsWith("debugMixedAndroidTest")
+    Truth.assertThat(File(apkDir, "app-debugMixedAndroidTest.apk").exists()).isTrue()
+  }
+
+  @Test
+  fun testMixedSuiteUpdateExecution() {
+    val project = rule.build
+    val result = project.executor.run(":app:updateDebugMixedT1TestSuite")
+
+    // Verify compilation tasks ran (should be the same as test task)
+    Truth.assertThat(result.didWorkTasks).contains(":app:compileDebugMixedTestJavaWithJavac")
+    Truth.assertThat(result.didWorkTasks).contains(":app:compileDebugMixedAndroidTestJavaWithJavac")
+
+    // Verify packaging task ran
+    Truth.assertThat(result.didWorkTasks).contains(":app:packageDebugMixedAndroidTest")
+
+    // Verify junit_inputs.txt exists and has the APK
+    val buildDir = project.subProject(":app").buildDir.toFile()
+    val junitInputsFile = buildDir.resolve("intermediates/debug/updateDebugMixedT1TestSuite/junit_inputs.txt")
+    Truth.assertThat(junitInputsFile.exists()).isTrue()
+  }
+
+  @Test
+  fun testMixedSuiteAssets() {
+    val project = rule.build
+    val result = project.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels()
+    Truth.assertThat(result).isNotNull()
+    val models = result.container.getProject(":app")
+
+    val testSuites = models.basicAndroidProject?.testSuites
+    Truth.assertThat(testSuites).isNotNull()
+    val mixedTestSuite = testSuites!!.first { it.name == "mixed" }
+
+    val assetsFolder = mixedTestSuite.assets.single()
+    Truth.assertThat(assetsFolder.type).isEqualTo(SourceType.ASSETS)
+    Truth.assertThat(assetsFolder.directories).containsExactly(project.subProject(":app").resolve("src/mixed/assetsTest").toFile())
+
+    val hostJarFolder = mixedTestSuite.hostJars.single()
+    Truth.assertThat(hostJarFolder.type).isEqualTo(SourceType.HOST_JAR)
+    Truth.assertThat(hostJarFolder.java).containsExactly(project.subProject(":app").resolve("src/mixed/test/java").toFile())
+
+    val testApkFolder = mixedTestSuite.testApks.single()
+    Truth.assertThat(testApkFolder.type).isEqualTo(SourceType.TEST_APK)
+    Truth.assertThat(testApkFolder.sourceProvider.javaDirectories)
+      .containsExactly(project.subProject(":app").resolve("src/mixed/androidTest/java").toFile())
   }
 }

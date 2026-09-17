@@ -229,22 +229,21 @@ class PurposeDeclarationDetector : Detector(), XmlScanner {
 
   /** Calculates the union of all valid SDK ranges from the declared purpose elements. */
   private fun getValidCoverageRanges(purposeElements: List<Element>, validPurposesMap: Map<String, SdkRange>): List<SdkRange> {
-    val effectiveRanges =
-      purposeElements.mapNotNull { purposeElement ->
-        val declaredPurposeName = purposeElement.getAttributeNS(ANDROID_URI, ATTR_NAME).takeIf { it.isNotEmpty() } ?: return@mapNotNull null
-        val platformRange = validPurposesMap[declaredPurposeName] ?: return@mapNotNull null
+    val effectiveRanges = purposeElements.mapNotNull { purposeElement ->
+      val declaredPurposeName = purposeElement.getAttributeNS(ANDROID_URI, ATTR_NAME).takeIf { it.isNotEmpty() } ?: return@mapNotNull null
+      val platformRange = validPurposesMap[declaredPurposeName] ?: return@mapNotNull null
 
-        // The purpose's own min/max SDK attributes need to be considered.
-        val purposeMinSdk = purposeElement.getAttributeNS(ANDROID_URI, ATTR_MIN_SDK_VERSION).toIntOrNull() ?: MIN_SDK_VERSION_DEFAULT
-        val purposeMaxSdk = purposeElement.getAttributeNS(ANDROID_URI, ATTR_MAX_SDK_VERSION).toIntOrNull() ?: MAX_SDK_VERSION_DEFAULT
+      // The purpose's own min/max SDK attributes need to be considered.
+      val purposeMinSdk = purposeElement.getAttributeNS(ANDROID_URI, ATTR_MIN_SDK_VERSION).toIntOrNull() ?: MIN_SDK_VERSION_DEFAULT
+      val purposeMaxSdk = purposeElement.getAttributeNS(ANDROID_URI, ATTR_MAX_SDK_VERSION).toIntOrNull() ?: MAX_SDK_VERSION_DEFAULT
 
-        // The effective range for this single purpose is the intersection of its
-        // platform-defined validity and its element-defined validity.
-        val effectiveMin = maxOf(platformRange.min, purposeMinSdk)
-        val effectiveMax = minOf(platformRange.max, purposeMaxSdk)
+      // The effective range for this single purpose is the intersection of its
+      // platform-defined validity and its element-defined validity.
+      val effectiveMin = maxOf(platformRange.min, purposeMinSdk)
+      val effectiveMax = minOf(platformRange.max, purposeMaxSdk)
 
-        if (effectiveMin <= effectiveMax) SdkRange(effectiveMin, effectiveMax) else null
-      }
+      if (effectiveMin <= effectiveMax) SdkRange(effectiveMin, effectiveMax) else null
+    }
 
     return mergeRanges(effectiveRanges)
   }

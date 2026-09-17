@@ -547,6 +547,28 @@ class CoroutineScopeCacheTest {
   }
 
   @Test
+  fun test_GetOrPutSuspending_Supports_AutoCloseable(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val scope = CoroutineScope(SupervisorJob())
+    val cache = registerCloseable(CoroutineScopeCacheImpl(scope, "scope-description"))
+    class MyValue : AutoCloseable {
+      var closed = false
+
+      override fun close() {
+        closed = true
+      }
+    }
+    val key = CoroutineScopeCache.Key<MyValue>("myValue")
+
+    // Act
+    val value = cache.getOrPutSuspending(key) { MyValue() }
+    cache.close()
+
+    // Assert
+    Assert.assertTrue(value.closed)
+  }
+
+  @Test
   fun test_usingClosedCache_getOrPut() = runBlockingWithTimeout {
     // Prepare
     val scope = CoroutineScope(SupervisorJob())

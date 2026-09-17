@@ -164,6 +164,24 @@ abstract class Configuration(val configurations: ConfigurationHierarchy) {
     return getDefinedSeverity(issue) ?: getDefaultSeverity(issue)
   }
 
+  /**
+   * Returns the names which are the only way to suppress the given [issue] according to this configuration or any configurations it
+   * inherits from, or null if this configuration does not restrict how the issue can be suppressed. See [Issue.suppressNames] for the forms
+   * these names can take.
+   */
+  open fun getDefinedSuppressNames(issue: Issue): Collection<String>? {
+    return parent?.getDefinedSuppressNames(issue)
+  }
+
+  /**
+   * Returns the names which are the only way to suppress the given [issue], or null if the issue can be suppressed normally. The overriding
+   * configuration takes precedence over [Issue.suppressNames], which takes precedence over this configuration and the configurations it
+   * inherits from; see [getDefinedSuppressNames].
+   */
+  fun getSuppressNames(issue: Issue): Collection<String>? {
+    return overrides?.getDefinedSuppressNames(issue) ?: issue.suppressNames ?: getDefinedSuppressNames(issue)
+  }
+
   /** Returns the value for the given option, or the default value (normally null) if it has not been specified. */
   open fun getOption(issue: Issue, name: String, default: String? = null): String? {
     // Using null as the default here: if not defined in the override

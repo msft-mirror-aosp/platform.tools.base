@@ -11,6 +11,7 @@ _FLAGS = [
     '--config=remote-exec',
     '--test_env=SECRET_MANAGER_KEY=DEFAULT_GEMINI_KEY',
     '--bes_keywords=cinder',
+    '--bes_upload_mode=wait_for_upload_complete',
     '--build_metadata=cinder_pipelines=studio-evals',
     '--jobs=5',  # avoid having too many jobs in parallel to prevent quota issues
 ]

@@ -605,7 +605,6 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
      * ```
      *
      * the `create(database)` call needs to be changed to `create(this)` in the replacement:
-     *
      *  ```
      *  database.transaction() {
      *      create(this)

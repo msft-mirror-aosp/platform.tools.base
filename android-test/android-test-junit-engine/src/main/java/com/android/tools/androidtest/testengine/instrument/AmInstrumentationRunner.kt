@@ -16,7 +16,7 @@
 
 package com.android.tools.androidtest.testengine.instrument
 
-import com.android.tools.androidtest.testengine.CoverageAgentFilesystemInfo
+import com.android.tools.androidtest.testengine.collector.CoverageAgentFilesystemInfo
 import java.io.File
 import java.util.logging.Logger
 
@@ -46,6 +46,7 @@ class AmInstrumentationRunner(
   private val listeners: Set<AmInstrumentationListener> = emptySet(),
   private val agentFilesystemInfo: CoverageAgentFilesystemInfo = CoverageAgentFilesystemInfo(),
   private val logger: Logger = Logger.getLogger(AmInstrumentationRunner::class.java.name),
+  private val instrumentInPcc: Boolean = false,
   private val processBuilder: (command: List<String>) -> ProcessBuilder = { ProcessBuilder(it) },
 ) {
 
@@ -93,6 +94,7 @@ class AmInstrumentationRunner(
         .setInstrumentationRunner(testPackageId, instrumentationRunnerClass)
         .setExecutionMode(executionMode)
         .addInstrumentationArgs(instrumentationArgs)
+        .setInstrumentInPcc(instrumentInPcc)
 
     val agentPath = agentFilesystemInfo.agentBinaryPathOnDevice
     val dataDir = agentFilesystemInfo.dataDirectoryOnDevice
@@ -101,9 +103,12 @@ class AmInstrumentationRunner(
       builder.addInstrumentationArg("coverage", "true")
 
       // The agent expects options in the format: "package_name,prefix,data_dir"
-      val targetPackage = instrumentationArgs["targetPackage"] ?: instrumentationTargetPackageId
-      val basePackage = targetPackage.split(".").take(2).joinToString(".")
-      val prefix = basePackage.replace(".", "/")
+      val prefix =
+        instrumentationArgs["com.android.tools.coverage.prefixes"]
+          ?: run {
+            val targetPackage = instrumentationArgs["targetPackage"] ?: instrumentationTargetPackageId
+            targetPackage.replace(".", "/")
+          }
 
       val options = "$testPackageId,$prefix,$dataDir"
       val config = "$agentPath=$options"

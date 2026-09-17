@@ -208,7 +208,7 @@ class CodeCoverageReportTest(val runWithBuiltInPlatform: Boolean) {
 
   @Test
   fun testCreateCoverageReport() {
-    val result = rule.build.executor.run(":app:createCoverageReport")
+    val result = rule.build.executor.run(":app:testAllSuites")
 
     val appBuildDir = rule.build.androidApplication(":app").buildDir.toFile()
     val outputDir = FileUtils.join(appBuildDir, "reports", "code_coverage_html_report", "global")
@@ -228,7 +228,7 @@ class CodeCoverageReportTest(val runWithBuiltInPlatform: Boolean) {
   @Test
   fun testCreateCoverageReportTaskForLibraryModule() {
     val build = rule.build
-    build.executor.run(":lib:createCoverageReport")
+    build.executor.run(":lib:testAllSuites")
 
     val appBuildDir = build.androidLibrary(":lib").buildDir.toFile()
 
@@ -239,7 +239,7 @@ class CodeCoverageReportTest(val runWithBuiltInPlatform: Boolean) {
 
   @Test
   fun testCreateAggregatedCoverageReport() {
-    val result = rule.build.executor.run(":app:createAggregatedCoverageReport")
+    val result = rule.build.executor.run(":app:testAllSuitesWithDependencies")
 
     val appBuildDir = rule.build.androidApplication(":app").buildDir.toFile()
     val outputDir = FileUtils.join(appBuildDir, "reports", "aggregated_code_coverage_html_report", "global")
@@ -258,16 +258,16 @@ class CodeCoverageReportTest(val runWithBuiltInPlatform: Boolean) {
     val build = rule.build
 
     // Expect the build to fail
-    val aggregatedReportLibResult = build.executor.expectFailure().run(":lib:createAggregatedCoverageReport")
+    val aggregatedReportLibResult = build.executor.expectFailure().run(":lib:testAllSuitesWithDependencies")
 
     // Assert that the failure reason is because the task was not found
-    aggregatedReportLibResult.assertFailureMessage().contains("task 'createAggregatedCoverageReport' not found in project ':lib'")
+    aggregatedReportLibResult.assertFailureMessage().contains("task 'testAllSuitesWithDependencies' not found in project ':lib'")
   }
 
   @Test
   fun testCreateAggregatedCoverageReportTaskForLibraryModuleWithPublicationEnabled() {
     val build = rule.build
-    build.executor.run(":lib2:createAggregatedCoverageReport")
+    build.executor.run(":lib2:testAllSuitesWithDependencies")
 
     val libBuildDir = build.androidLibrary(":lib2").buildDir.toFile()
 
@@ -289,19 +289,23 @@ class CodeCoverageReportTest(val runWithBuiltInPlatform: Boolean) {
       }
     }
 
-    val result = rule.build.executor.run(":app:createCoverageReport")
+    val result = rule.build.executor.run("clean", ":app:testAllSuites")
 
-    result.assertOutputContains("No code coverage data found.")
-    result.assertOutputDoesNotContain("View coverage report at")
+    val appBuildDir = rule.build.androidApplication(":app").buildDir.toFile()
+    val testReportDir = FileUtils.join(appBuildDir, "reports", "tests", "test-report")
+    val coverageReportDir = FileUtils.join(appBuildDir, "reports", "code_coverage_html_report", "global")
+
+    verifyIndexFileExists(testReportDir)
+    assertThat(File(coverageReportDir, "index.html")).doesNotExist()
   }
 
   @Test
   fun testCreateCoverageReportWithFeatureDisabled() {
     val build = rule.build { gradleProperties { add(BooleanOption.REPORT_AGGREGATION_SUPPORT, false) } }
 
-    val result = build.executor.expectFailure().run(":app:createCoverageReport")
+    val result = build.executor.expectFailure().run(":app:testAllSuites")
 
-    result.assertFailureMessage().contains("task 'createCoverageReport' is ambiguous in project ':app'")
+    result.assertFailureMessage().contains("task 'testAllSuites' not found in project ':app'")
   }
 
   private fun verifyIndexFileExists(taskOutputDir: File) {

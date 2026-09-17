@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.dsl
 
 import com.android.build.api.dsl.AgpTestSuite
+import com.android.build.api.dsl.BackupTestSuite
 import com.android.build.api.dsl.ScreenshotTestSuite
 import com.android.build.api.dsl.TargetSdkSpec
 import com.android.build.api.dsl.TargetSdkVersion
@@ -30,9 +31,9 @@ import com.google.common.base.Preconditions
 import com.google.common.base.Verify
 import javax.inject.Inject
 import org.gradle.api.Action
-import org.gradle.api.ExtensiblePolymorphicDomainObjectContainer
 import org.gradle.api.Incubating
 import org.gradle.api.NamedDomainObjectContainer
+import org.gradle.api.PolymorphicDomainObjectContainer
 import org.gradle.api.tasks.testing.Test
 
 abstract class TestOptions @Inject constructor(private val dslServices: DslServices) : com.android.build.api.dsl.TestOptions {
@@ -57,6 +58,13 @@ abstract class TestOptions @Inject constructor(private val dslServices: DslServi
     }
 
   // (Implementing interface for kotlin)
+  override val backupTests: NamedDomainObjectContainer<BackupTestSuite> =
+    dslServices.domainObjectContainer(BackupTestSuite::class.java) { name ->
+      checkBackupTestEnabled()
+      dslServices.newDecoratedInstance(BackupTestSuiteImpl::class.java, name, dslServices)
+    }
+
+  // (Implementing interface for kotlin)
   override fun managedDevices(action: com.android.build.api.dsl.ManagedDevices.() -> Unit) {
     action.invoke(managedDevices)
   }
@@ -76,6 +84,8 @@ abstract class TestOptions @Inject constructor(private val dslServices: DslServi
   @Incubating
   override val emulatorControl: com.android.build.api.dsl.EmulatorControl =
     dslServices.newDecoratedInstance(EmulatorControl::class.java, dslServices)
+
+  @Incubating override var instrumentInPrivateComputeCore: Boolean = false
 
   override fun unitTests(action: com.android.build.api.dsl.UnitTestOptions.() -> Unit) {
     action.invoke(unitTests)
@@ -182,7 +192,8 @@ abstract class TestOptions @Inject constructor(private val dslServices: DslServi
     }
   }
 
-  override val suites: ExtensiblePolymorphicDomainObjectContainer<AgpTestSuite> =
+  @get:Deprecated("use customSuites")
+  override val suites: PolymorphicDomainObjectContainer<AgpTestSuite> =
     dslServices.polymorphicDomainObjectContainer(AgpTestSuite::class.java).apply {
       registerFactory(AgpTestSuite::class.java) { name ->
         dslServices.newInstance(AgpTestSuiteImpl::class.java, name, dslServices, unitTests.isIncludeAndroidResources)
@@ -195,7 +206,15 @@ abstract class TestOptions @Inject constructor(private val dslServices: DslServi
           )
         }
       }
+
+      if (dslServices.projectOptions.get(com.android.build.gradle.options.BooleanOption.ENABLE_BACKUP_TEST)) {
+        backupTests.configureEach { suite ->
+          this.add(dslServices.newInstance(com.android.build.gradle.internal.dsl.BackupAgpTestSuiteImpl::class.java, suite, dslServices))
+        }
+      }
     }
+
+  @Suppress("DEPRECATION") override val customSuites: NamedDomainObjectContainer<AgpTestSuite> = suites
 
   private fun checkScreenshotTestEnabled() {
     if (!dslServices.projectOptions.get(com.android.build.gradle.options.BooleanOption.ENABLE_SCREENSHOT_TEST)) {
@@ -203,6 +222,16 @@ abstract class TestOptions @Inject constructor(private val dslServices: DslServi
         com.android.builder.errors.IssueReporter.Type.GENERIC,
         "Compose Preview Screenshot Testing is an experimental feature. " +
           "To enable it, add 'android.experimental.enableScreenshotTest=true' to your gradle.properties file.",
+      )
+    }
+  }
+
+  private fun checkBackupTestEnabled() {
+    if (!dslServices.projectOptions.get(com.android.build.gradle.options.BooleanOption.ENABLE_BACKUP_TEST)) {
+      dslServices.issueReporter.reportError(
+        com.android.builder.errors.IssueReporter.Type.GENERIC,
+        "Automated Backup and Restore Testing is an experimental feature. " +
+          "To enable it, add 'android.experimental.enableBackupTest=true' to your gradle.properties file.",
       )
     }
   }

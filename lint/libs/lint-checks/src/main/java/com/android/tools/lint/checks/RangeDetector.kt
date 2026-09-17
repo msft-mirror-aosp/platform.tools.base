@@ -422,9 +422,9 @@ class RangeDetector : AbstractAnnotationDetector(), SourceCodeScanner {
           return null
         }
         return when (operator) {
-          UastBinaryOperator.GREATER -> IntRangeConstraint.atLeast(number)
+          UastBinaryOperator.GREATER -> IntRangeConstraint.atLeast(number + 1)
           UastBinaryOperator.GREATER_OR_EQUALS -> IntRangeConstraint.atLeast(number)
-          UastBinaryOperator.LESS -> IntRangeConstraint.atMost(number)
+          UastBinaryOperator.LESS -> IntRangeConstraint.atMost(number - 1)
           UastBinaryOperator.LESS_OR_EQUALS -> IntRangeConstraint.atMost(number)
           UastBinaryOperator.EQUALS,
           UastBinaryOperator.IDENTITY_EQUALS -> IntRangeConstraint.range(number, number)

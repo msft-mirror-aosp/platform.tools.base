@@ -382,6 +382,10 @@ constructor(
   val location: ProjectLocation
     get() = mutableProjectLocation ?: error("Project location has not been initialized yet")
 
+  fun setGradleUserHome(gradleUserHome: File) {
+    mutableProjectLocation = location.withGradleUserHome(gradleUserHome.toPath())
+  }
+
   val buildFile: File
     get() = File(location.projectDir, "build.gradle")
 

@@ -90,7 +90,7 @@ void testHeapDumpManagerForDevice(int32_t deviceVersion) {
     EXPECT_TRUE(dump_result);
     latch2.CountDown();
   });
-  EXPECT_TRUE(result);
+  ASSERT_TRUE(result);
   latch2.Await();
 }
 

@@ -262,11 +262,10 @@ class TemplateListBuilderTest(private val fileSystemId: FileSystemId) {
     val extraFileEntry = TemplateFileEntry(".template/icon.png")
 
     var loadCount = 0
-    val innerLoader =
-      TemplateFileLoader.forFunction { entry ->
-        loadCount++
-        TemplateFile(entry.relativePath, "content of ${entry.relativePath}".toByteArray(Charsets.UTF_8))
-      }
+    val innerLoader = TemplateFileLoader.forFunction { entry ->
+      loadCount++
+      TemplateFile(entry.relativePath, "content of ${entry.relativePath}".toByteArray(Charsets.UTF_8))
+    }
 
     val template =
       TemplateDefinition(metadata = metadata, files = listOf(templateFileEntry), extraFiles = listOf(extraFileEntry), loader = innerLoader)

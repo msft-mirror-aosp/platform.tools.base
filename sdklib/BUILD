@@ -19,7 +19,7 @@ iml_module(
     name = "studio.android.sdktools.sdklib",
     srcs = ["src/main/java"],
     iml_files = ["android.sdktools.sdklib.iml"],
-    jvm_target = "8",
+    jvm_target = "11",
     lint_baseline = "lint_baseline.xml",
     resources = ["src/main/resources"],
     test_data = ["//prebuilts/studio/sdk:platforms/latest"],
@@ -236,19 +236,19 @@ sdk_java_binary(
 sdk_java_binary(
     name = "d8",
     main_class = "com.android.tools.r8.D8",
-    runtime_deps = ["//prebuilts/r8"],
+    runtime_deps = ["@maven//:com.android.tools.r8"],
 )
 
 sdk_java_binary(
     name = "r8",
     main_class = "com.android.tools.r8.R8",
-    runtime_deps = ["//prebuilts/r8"],
+    runtime_deps = ["@maven//:com.android.tools.r8"],
 )
 
 sdk_java_binary(
     name = "retrace",
     main_class = "com.android.tools.r8.retrace.Retrace",
-    runtime_deps = ["//prebuilts/r8"],
+    runtime_deps = ["@maven//:com.android.tools.r8"],
 )
 
 expand_template(
@@ -269,7 +269,6 @@ sdk_package(
     name = "commandlinetools",
     binaries = [
         ":avdmanager",
-        ":sdkmanager",
         ":d8",
         ":r8",
         ":retrace",
@@ -282,15 +281,19 @@ sdk_package(
     platform_others = {
         "linux": {
             "@android_cli_linux//file": "cmdline-tools/bin/android",
+            "//tools/vendor/google/android-cli/legacy:sdkmanager_sh_executable": "cmdline-tools/bin/sdkmanager",
         },
         "mac_x86_64": {
             "@android_cli_mac_x86_64//file": "cmdline-tools/bin/android",
+            "//tools/vendor/google/android-cli/legacy:sdkmanager_sh_executable": "cmdline-tools/bin/sdkmanager",
         },
         "mac_arm64": {
             "@android_cli_mac_arm64//file": "cmdline-tools/bin/android",
+            "//tools/vendor/google/android-cli/legacy:sdkmanager_sh_executable": "cmdline-tools/bin/sdkmanager",
         },
         "win": {
             "@android_cli_win//file": "cmdline-tools/bin/android.exe",
+            "//tools/vendor/google/android-cli/legacy:sdkmanager.bat": "cmdline-tools/bin/sdkmanager.bat",
         },
     },
     sourceprops = ":source.properties",

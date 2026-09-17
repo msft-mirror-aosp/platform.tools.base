@@ -24,6 +24,11 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
+import com.android.adblib.AdbSession;
+import com.android.adblib.AdbSessionKt;
+import com.android.adblib.ConnectedDevice;
+import com.android.adblib.ConnectedDevicesTracker;
+import com.android.adblib.ConnectedDevicesTrackerKt;
 import com.android.adblib.ddmlibcompatibility.testutils.UseAdbLibAndroidDebugBridgeRule;
 import com.android.adblib.testingutils.FakeAdbServerProviderRule;
 import com.android.annotations.NonNull;
@@ -33,12 +38,17 @@ import com.android.ddmlib.IDevice;
 import com.android.fakeadbserver.DeviceState;
 import com.android.fakeadbserver.FakeAdbServer;
 import com.android.tools.deployer.common.ApkVerifierTracker;
+import com.android.tools.deployer.common.DeviceHolder;
 import com.android.tools.deployer.devices.FakeDevice;
 import com.android.tools.deployer.devices.FakeDeviceHandler;
 import com.android.tools.deployer.devices.shell.GetProp;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+
+import kotlin.coroutines.EmptyCoroutineContext;
+
+import kotlinx.coroutines.BuildersKt;
 
 import org.junit.After;
 import org.junit.Before;
@@ -51,6 +61,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
@@ -76,8 +87,8 @@ public class ApkVerifierTrackerTest {
     private FakeAdbServer fakeAdbServer;
     private AndroidDebugBridge bridge;
 
-    private Set<IDevice> disabledDevices;
-    private final List<IDevice> devices = new ArrayList<>();
+    private Set<DeviceHolder> disabledDevices;
+    private final List<DeviceHolder> devices = new ArrayList<>();
 
     @Before
     public void before() throws Exception {
@@ -109,25 +120,30 @@ public class ApkVerifierTrackerTest {
         // Wait for ADB.
         waitFor(() -> bridge.isConnected());
 
-        List<DeviceState> deviceStates = new ArrayList<>();
         for (FakeDevice fakeDevice : fakeDevices) {
-            deviceStates.add(connectAndWaitForDevice(fakeDevice));
+            connectAndWaitForDevice(fakeDevice);
         }
 
-        Map<FakeDevice, IDevice> devicesMap = new HashMap<>();
+        Map<FakeDevice, DeviceHolder> devicesMap = new HashMap<>();
 
+        AdbSession session = fakeAdbRule.getAdbSession();
         // Map FakeDevices to their corresponding IDevices.
         for (FakeDevice device : fakeDevices) {
-            DeviceState state =
-                    deviceStates.stream().filter(device::isDevice).findFirst().orElse(null);
-            assertNotNull(state);
             IDevice iDevice =
                     Arrays.stream(AndroidDebugBridge.getBridge().getDevices())
-                            .filter(d -> state.getDeviceId().equals(d.getSerialNumber()))
+                            .filter(d -> device.getSerial().equals(d.getSerialNumber()))
                             .findFirst()
                             .orElse(null);
             assertNotNull(iDevice);
-            devicesMap.put(device, iDevice);
+            ConnectedDevicesTracker tracker = AdbSessionKt.getConnectedDevicesTracker(session);
+            ConnectedDevice connectedDevice =
+                    BuildersKt.runBlocking(
+                            EmptyCoroutineContext.INSTANCE,
+                            (scope, continuation) ->
+                                    ConnectedDevicesTrackerKt.waitForDevice(
+                                            tracker, iDevice.getSerialNumber(), continuation));
+            devicesMap.put(
+                    device, new DeviceHolder(iDevice, Optional.ofNullable(connectedDevice), false));
         }
 
         disabledDevices = Sets.newHashSet(devicesMap.get(oDevice), devicesMap.get(rDeviceDp1));
@@ -144,7 +160,7 @@ public class ApkVerifierTrackerTest {
 
     @Test
     public void verifyOnFirstInstall() {
-        for (IDevice device : devices) {
+        for (DeviceHolder device : devices) {
             assertNull(getSkipVerificationInstallationFlag(device, FIRST_PACKAGE));
             assertNull(getSkipVerificationInstallationFlag(device, SECOND_PACKAGE));
         }
@@ -152,7 +168,7 @@ public class ApkVerifierTrackerTest {
 
     @Test
     public void skipVerifyOnSecondInstall() {
-        for (IDevice device : devices) {
+        for (DeviceHolder device : devices) {
             assertNull(getSkipVerificationInstallationFlag(device, FIRST_PACKAGE, 0));
 
             // Ensure that a fast followup install does not incur verification.
@@ -171,7 +187,7 @@ public class ApkVerifierTrackerTest {
 
     @Test
     public void reverifiesAfterAnHourThenNoVerification() {
-        for (IDevice device : devices) {
+        for (DeviceHolder device : devices) {
             assertNull(getSkipVerificationInstallationFlag(device, FIRST_PACKAGE, 0));
 
             long hour = TimeUnit.HOURS.toMillis(1);

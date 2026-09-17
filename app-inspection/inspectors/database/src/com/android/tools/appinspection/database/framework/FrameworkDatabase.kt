@@ -45,18 +45,17 @@ internal class FrameworkDatabase(database: SQLiteDatabase) : AbstractDatabase<SQ
   }
 
   override fun rawQuery(sql: String, selectionArgs: Array<String?>, cancellationSignal: CancellationSignal?): Cursor {
-    val cursorFactory =
-      SQLiteDatabase.CursorFactory { _, driver, editTable, query ->
-        selectionArgs.forEachIndexed { i, value ->
-          val index = i + 1
-          if (value == null) {
-            query.bindNull(index)
-          } else {
-            query.bindString(index, value)
-          }
+    val cursorFactory = SQLiteDatabase.CursorFactory { _, driver, editTable, query ->
+      selectionArgs.forEachIndexed { i, value ->
+        val index = i + 1
+        if (value == null) {
+          query.bindNull(index)
+        } else {
+          query.bindString(index, value)
         }
-        SQLiteCursor(driver, editTable, query)
       }
+      SQLiteCursor(driver, editTable, query)
+    }
     return FrameworkCursor(delegate.rawQueryWithFactory(cursorFactory, sql, null, null, cancellationSignal))
   }
 }

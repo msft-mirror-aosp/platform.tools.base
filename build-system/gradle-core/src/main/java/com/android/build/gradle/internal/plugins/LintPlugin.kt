@@ -196,8 +196,8 @@ abstract class LintPlugin : Plugin<Project> {
           task.configureForStandalone(taskCreationServices, artifacts, lintOptions!!)
         }
       lintTask.dependsOn(lintTextOutputTask)
-      val isPerComponentLintAnalysis =
-        kotlinExtensionWrapper != null || taskCreationServices.projectOptions.get(LINT_ANALYSIS_PER_COMPONENT)
+      val isKmp = kotlinExtensionWrapper != null
+      val isPerComponentLintAnalysis = isKmp || taskCreationServices.projectOptions.get(LINT_ANALYSIS_PER_COMPONENT)
       val kmpJvmTargetNames: List<String>? =
         kotlinExtensionWrapper
           ?.kotlinExtension
@@ -239,6 +239,7 @@ abstract class LintPlugin : Plugin<Project> {
             },
             LintMode.UPDATE_BASELINE,
             uastReferenceKotlinCompileTaskName,
+            isKmp = isKmp,
           )
         }
       updateLintBaselineTask.dependsOn(updateLintBaselineJvmTask)
@@ -265,6 +266,7 @@ abstract class LintPlugin : Plugin<Project> {
             },
             LintMode.REPORTING,
             uastReferenceKotlinCompileTaskName,
+            isKmp = isKmp,
           )
           task.mustRunAfter(updateLintBaselineJvmTask)
         }
@@ -308,6 +310,7 @@ abstract class LintPlugin : Plugin<Project> {
             LintMode.REPORTING,
             uastReferenceKotlinCompileTaskName,
             fatalOnly = true,
+            isKmp = isKmp,
           )
           task.mustRunAfter(updateLintBaselineTask)
         }
@@ -344,6 +347,7 @@ abstract class LintPlugin : Plugin<Project> {
             LintMode.REPORTING,
             uastReferenceKotlinCompileTaskName,
             autoFix = true,
+            isKmp = isKmp,
           )
           task.mustRunAfter(updateLintBaselineJvmTask)
         }

@@ -28,16 +28,15 @@ import org.junit.Test
 class CompileSdkSetThroughDSLFinalizeBlock {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication(createMinimumProject = false) {
-        // only set up namespace and manifest, but not the compileSdk as it'll come via the
-        // plugin.
-        android { namespace = "com.example.app" }
-        files.setupMinimumManifest()
-        pluginCallbacks += MyCallback::class.java
-      }
+  val rule = GradleRule.from {
+    androidApplication(createMinimumProject = false) {
+      // only set up namespace and manifest, but not the compileSdk as it'll come via the
+      // plugin.
+      android { namespace = "com.example.app" }
+      files.setupMinimumManifest()
+      pluginCallbacks += MyCallback::class.java
     }
+  }
 
   class MyCallback : ApplicationComponentCallback {
     override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {

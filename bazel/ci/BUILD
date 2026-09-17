@@ -203,6 +203,16 @@ py_test(
 )
 
 py_test(
+    name = "query_checks_test",
+    srcs = ["query_checks_test.py"],
+    deps = [
+        ":fake_build_env",
+        ":query_checks",
+        "@absl-py//absl/testing:absltest",
+    ],
+)
+
+py_test(
     name = "gce_test",
     srcs = ["gce_test.py"],
     deps = [

@@ -29,6 +29,7 @@ import com.android.sdklib.AndroidApiLevel
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.takeWhile
@@ -37,6 +38,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
@@ -50,9 +52,19 @@ class AiGlassesPairingTest {
   private val broadcastResponses = ConcurrentHashMap<String, String>()
   private val dumpsysResponses = ConcurrentHashMap<String, String>()
 
+  @Before
+  fun setUp() {
+    AiGlassesPairing.setDelaysForTest(
+      foregroundDelay = Duration.ZERO,
+      pairingCommandDelay = Duration.ZERO,
+      pollingInterval = Duration.ZERO,
+      pollingTimeout = 5.seconds,
+    )
+  }
+
   @After
   fun tearDown() {
-    AiGlassesPairing.POLLING_TIMEOUT = 30.seconds
+    AiGlassesPairing.setDelaysForTest()
   }
 
   @Test
@@ -220,16 +232,19 @@ class AiGlassesPairingTest {
 
     // Commands emitted by pairToGlasses
     registerBroadcastResponse(
-      "am broadcast -a com.google.android.glasses.companion.GET_PAIRING_STATE com.google.android.glasses.companion",
+      "am broadcast -a com.google.android.glasses.companion.GET_PAIRING_STATE -p com.google.android.glasses.companion",
       "state=IDLE\n",
     )
     registerBroadcastResponse(
-      "am broadcast -a com.google.android.glasses.companion.ASSISTED_PAIR --es address \"$glassesAddress\" --ez auto_cdm true -p com.google.android.glasses.companion",
+      "am broadcast -a com.google.android.glasses.companion.UNPAIR --es address \"$glassesAddress\" -p com.google.android.glasses.companion",
+      "Broadcast completed: result=-1\n",
+    )
+    registerBroadcastResponse(
+      "am broadcast -a com.google.android.glasses.companion.ASSISTED_PAIR --es address \"$glassesAddress\" --ez auto_cdm true --ez force true -p com.google.android.glasses.companion",
       "Broadcast completed: result=-1, data=\"Successfully sent pairing broadcast\"\n",
     )
 
     val pairing = AiGlassesPairing(fakeAdbRule.adbSession)
-    AiGlassesPairing.POLLING_TIMEOUT = 5.seconds
 
     registerDumpsysResponse(
       "dumpsys window displays",
@@ -301,11 +316,15 @@ class AiGlassesPairingTest {
 
     // Setup to simulate stuck in IDLE
     registerBroadcastResponse(
-      "am broadcast -a com.google.android.glasses.companion.GET_PAIRING_STATE com.google.android.glasses.companion",
+      "am broadcast -a com.google.android.glasses.companion.GET_PAIRING_STATE -p com.google.android.glasses.companion",
       "state=IDLE\n",
     )
     registerBroadcastResponse(
-      "am broadcast -a com.google.android.glasses.companion.ASSISTED_PAIR --es address \"$glassesAddress\" --ez auto_cdm true -p com.google.android.glasses.companion",
+      "am broadcast -a com.google.android.glasses.companion.UNPAIR --es address \"$glassesAddress\" -p com.google.android.glasses.companion",
+      "Broadcast completed: result=-1\n",
+    )
+    registerBroadcastResponse(
+      "am broadcast -a com.google.android.glasses.companion.ASSISTED_PAIR --es address \"$glassesAddress\" --ez auto_cdm true --ez force true -p com.google.android.glasses.companion",
       "Broadcast completed: result=-1, data=\"Successfully sent pairing broadcast\"\n",
     )
 
@@ -317,7 +336,6 @@ class AiGlassesPairingTest {
     registerBroadcastResponse("input keyevent KEYCODE_DPAD_CENTER", "")
 
     val pairing = AiGlassesPairing(fakeAdbRule.adbSession)
-    AiGlassesPairing.POLLING_TIMEOUT = 5.seconds
 
     // Mock foreground check to succeed immediately
     registerDumpsysResponse(
@@ -352,8 +370,16 @@ class AiGlassesPairingTest {
 
     // Setup to simulate stuck in UI_CDM_ASSOCIATING
     registerBroadcastResponse(
-      "am broadcast -a com.google.android.glasses.companion.GET_PAIRING_STATE com.google.android.glasses.companion",
+      "am broadcast -a com.google.android.glasses.companion.GET_PAIRING_STATE -p com.google.android.glasses.companion",
       "state=UI_CDM_ASSOCIATING\n",
+    )
+    registerBroadcastResponse(
+      "am broadcast -a com.google.android.glasses.companion.UNPAIR --es address \"$glassesAddress\" -p com.google.android.glasses.companion",
+      "Broadcast completed: result=-1\n",
+    )
+    registerBroadcastResponse(
+      "am broadcast -a com.google.android.glasses.companion.ASSISTED_PAIR --es address \"$glassesAddress\" --ez auto_cdm true --ez force true -p com.google.android.glasses.companion",
+      "Broadcast completed: result=-1, data=\"Successfully sent pairing broadcast\"\n",
     )
 
     // Mock location hardening
@@ -364,7 +390,6 @@ class AiGlassesPairingTest {
     registerBroadcastResponse("input keyevent KEYCODE_DPAD_CENTER", "")
 
     val pairing = AiGlassesPairing(fakeAdbRule.adbSession)
-    AiGlassesPairing.POLLING_TIMEOUT = 5.seconds
 
     // Mock foreground check to succeed immediately
     registerDumpsysResponse(
@@ -393,23 +418,30 @@ class AiGlassesPairingTest {
 
   // TODO: Remove this test once http://b/505111138 is fixed
   @Test
-  fun pairToGlasses_doesNotTapButtonWhenOnApi36() = runBlockingWithTimeout {
-    val device = createConnectedDevice(api = 36)
+  fun pairToGlasses_idleStateThrottlesFocusNavigationTaps() = runBlockingWithTimeout {
+    val device = createConnectedDevice()
     val glassesAddress = "AA:BB:CC:DD:EE:FF"
 
     registerBroadcastResponse(
-      "am broadcast -a com.google.android.glasses.companion.GET_PAIRING_STATE com.google.android.glasses.companion",
+      "am broadcast -a com.google.android.glasses.companion.GET_PAIRING_STATE -p com.google.android.glasses.companion",
       "state=IDLE\n",
     )
     registerBroadcastResponse(
-      "am broadcast -a com.google.android.glasses.companion.ASSISTED_PAIR --es address \"$glassesAddress\" --ez auto_cdm true -p com.google.android.glasses.companion",
+      "am broadcast -a com.google.android.glasses.companion.UNPAIR --es address \"$glassesAddress\" -p com.google.android.glasses.companion",
+      "Broadcast completed: result=-1\n",
+    )
+    registerBroadcastResponse(
+      "am broadcast -a com.google.android.glasses.companion.ASSISTED_PAIR --es address \"$glassesAddress\" --ez auto_cdm true --ez force true -p com.google.android.glasses.companion",
       "Broadcast completed: result=-1, data=\"Successfully sent pairing broadcast\"\n",
     )
 
     setupDeviceMocks()
 
+    // Mock focus-driven UI bypass
+    registerBroadcastResponse("input keyevent KEYCODE_TAB", "")
+    registerBroadcastResponse("input keyevent KEYCODE_DPAD_CENTER", "")
+
     val pairing = AiGlassesPairing(fakeAdbRule.adbSession)
-    AiGlassesPairing.POLLING_TIMEOUT = 5.seconds
 
     registerDumpsysResponse(
       "dumpsys window displays",
@@ -426,13 +458,15 @@ class AiGlassesPairingTest {
         if (it == "IDLE") {
           idleCount++
         }
-        idleCount < 4
+        idleCount < 5
       }
       .collect()
 
-    // Verify that focus navigation was NOT executed
-    assertFalse(executedCommands.contains("input keyevent KEYCODE_TAB"))
-    assertFalse(executedCommands.contains("input keyevent KEYCODE_DPAD_CENTER"))
+    // Key events should be sent at idleCount == 2 and idleCount == 4 (total 2 times for 5 idle polls)
+    val tabCount = executedCommands.count { it == "input keyevent KEYCODE_TAB" }
+    val dpadCenterCount = executedCommands.count { it == "input keyevent KEYCODE_DPAD_CENTER" }
+    assertEquals(2, tabCount)
+    assertEquals(2, dpadCenterCount)
   }
 
   // TODO: Remove this test once http://b/505111138 is fixed
@@ -442,18 +476,21 @@ class AiGlassesPairingTest {
     val glassesAddress = "AA:BB:CC:DD:EE:FF"
 
     registerBroadcastResponse(
-      "am broadcast -a com.google.android.glasses.companion.GET_PAIRING_STATE com.google.android.glasses.companion",
+      "am broadcast -a com.google.android.glasses.companion.GET_PAIRING_STATE -p com.google.android.glasses.companion",
       "state=IDLE\n",
     )
     registerBroadcastResponse(
-      "am broadcast -a com.google.android.glasses.companion.ASSISTED_PAIR --es address \"$glassesAddress\" --ez auto_cdm true -p com.google.android.glasses.companion",
+      "am broadcast -a com.google.android.glasses.companion.UNPAIR --es address \"$glassesAddress\" -p com.google.android.glasses.companion",
+      "Broadcast completed: result=-1\n",
+    )
+    registerBroadcastResponse(
+      "am broadcast -a com.google.android.glasses.companion.ASSISTED_PAIR --es address \"$glassesAddress\" --ez auto_cdm true --ez force true -p com.google.android.glasses.companion",
       "Broadcast completed: result=-1, data=\"Successfully sent pairing broadcast\"\n",
     )
 
     setupDeviceMocks()
 
     val pairing = AiGlassesPairing(fakeAdbRule.adbSession)
-    AiGlassesPairing.POLLING_TIMEOUT = 5.seconds
 
     registerDumpsysResponse(
       "dumpsys window displays",
@@ -491,11 +528,15 @@ class AiGlassesPairingTest {
     registerDumpsysResponse("dumpsys window displays", "  mCurrentFocus=Window{12345 u0 com.another.app/MainActivity}\n")
     registerDumpsysResponse("dumpsys activity activities", "  ResumedActivity: ActivityRecord{... com.another.app/MainActivity}\n")
     registerBroadcastResponse(
-      "am broadcast -a com.google.android.glasses.companion.GET_PAIRING_STATE com.google.android.glasses.companion",
+      "am broadcast -a com.google.android.glasses.companion.GET_PAIRING_STATE -p com.google.android.glasses.companion",
       "state=IDLE\n",
     )
     registerBroadcastResponse(
-      "am broadcast -a com.google.android.glasses.companion.ASSISTED_PAIR --es address \"$glassesAddress\" --ez auto_cdm true -p com.google.android.glasses.companion",
+      "am broadcast -a com.google.android.glasses.companion.UNPAIR --es address \"$glassesAddress\" -p com.google.android.glasses.companion",
+      "Broadcast completed: result=-1\n",
+    )
+    registerBroadcastResponse(
+      "am broadcast -a com.google.android.glasses.companion.ASSISTED_PAIR --es address \"$glassesAddress\" --ez auto_cdm true --ez force true -p com.google.android.glasses.companion",
       "Broadcast completed: result=-1, data=\"Successfully sent pairing broadcast\"\n",
     )
 
@@ -504,7 +545,6 @@ class AiGlassesPairingTest {
     registerBroadcastResponse("settings get global bluetooth_on", "0")
 
     val pairing = AiGlassesPairing(fakeAdbRule.adbSession)
-    AiGlassesPairing.POLLING_TIMEOUT = 5.seconds
 
     registerDumpsysResponse(
       "dumpsys window displays",
@@ -535,18 +575,21 @@ class AiGlassesPairingTest {
     registerDumpsysResponse("dumpsys window displays", "  mCurrentFocus=Window{12345 u0 com.another.app/MainActivity}\n")
     registerDumpsysResponse("dumpsys activity activities", "  ResumedActivity: ActivityRecord{... com.another.app/MainActivity}\n")
     registerBroadcastResponse(
-      "am broadcast -a com.google.android.glasses.companion.GET_PAIRING_STATE com.google.android.glasses.companion",
+      "am broadcast -a com.google.android.glasses.companion.GET_PAIRING_STATE -p com.google.android.glasses.companion",
       "state=IDLE\n",
     )
     registerBroadcastResponse(
-      "am broadcast -a com.google.android.glasses.companion.ASSISTED_PAIR --es address \"$glassesAddress\" --ez auto_cdm true -p com.google.android.glasses.companion",
+      "am broadcast -a com.google.android.glasses.companion.UNPAIR --es address \"$glassesAddress\" -p com.google.android.glasses.companion",
+      "Broadcast completed: result=-1\n",
+    )
+    registerBroadcastResponse(
+      "am broadcast -a com.google.android.glasses.companion.ASSISTED_PAIR --es address \"$glassesAddress\" --ez auto_cdm true --ez force true -p com.google.android.glasses.companion",
       "Broadcast completed: result=-1, data=\"Successfully sent pairing broadcast\"\n",
     )
 
     setupDeviceMocks() // This also sets it to "1"
 
     val pairing = AiGlassesPairing(fakeAdbRule.adbSession)
-    AiGlassesPairing.POLLING_TIMEOUT = 5.seconds
 
     registerDumpsysResponse(
       "dumpsys window displays",
@@ -568,6 +611,177 @@ class AiGlassesPairingTest {
     assertTrue(executedCommands.contains("settings get global bluetooth_on"))
   }
 
+  @Test
+  fun sendUnpairCommand_sendsCorrectCommand() = runBlockingWithTimeout {
+    val device = createConnectedDevice()
+    val glassesAddress = "AA:BB:CC:DD:EE:FF"
+    registerBroadcastResponse(
+      "am broadcast -a com.google.android.glasses.companion.UNPAIR --es address \"$glassesAddress\" -p com.google.android.glasses.companion",
+      "Broadcast completed: result=-1\n",
+    )
+
+    AiGlassesPairing(fakeAdbRule.adbSession).run { device.sendUnpairCommand(glassesAddress) }
+
+    assertEquals(
+      listOf(
+        "am broadcast -a com.google.android.glasses.companion.UNPAIR --es address \"$glassesAddress\" -p com.google.android.glasses.companion"
+      ),
+      executedCommands,
+    )
+  }
+
+  @Test
+  fun pairToGlasses_warnsAndContinuesWhenPreCleanseUnpairFails() = runBlockingWithTimeout {
+    val device = createConnectedDevice()
+    val glassesAddress = "AA:BB:CC:DD:EE:FF"
+
+    registerDumpsysResponse("dumpsys window displays", "  mCurrentFocus=Window{12345 u0 com.another.app/MainActivity}\n")
+    registerDumpsysResponse("dumpsys activity activities", "  ResumedActivity: ActivityRecord{... com.another.app/MainActivity}\n")
+    registerBroadcastResponse(
+      "am broadcast -a com.google.android.glasses.companion.GET_PAIRING_STATE -p com.google.android.glasses.companion",
+      "state=IDLE\n",
+    )
+    // Simulate unpair command failure (e.g. broadcast failure / non-zero exit)
+    registerBroadcastResponse(
+      "am broadcast -a com.google.android.glasses.companion.UNPAIR --es address \"$glassesAddress\" -p com.google.android.glasses.companion",
+      "Error: Broadcast failed\n",
+    )
+    registerBroadcastResponse(
+      "am broadcast -a com.google.android.glasses.companion.ASSISTED_PAIR --es address \"$glassesAddress\" --ez auto_cdm true --ez force true -p com.google.android.glasses.companion",
+      "Broadcast completed: result=-1, data=\"Successfully sent pairing broadcast\"\n",
+    )
+
+    setupDeviceMocks()
+    val pairing = AiGlassesPairing(fakeAdbRule.adbSession)
+
+    registerDumpsysResponse(
+      "dumpsys window displays",
+      "  mCurrentFocus=Window{12345 u0 com.google.android.glasses.companion/MainActivity}\n",
+    )
+
+    val states = mutableListOf<String>()
+    val flow = pairing.run { device.pairToGlasses(glassesAddress, true) }
+    var idleCount = 0
+    flow
+      .takeWhile {
+        states.add(it)
+        if (it == "IDLE") {
+          idleCount++
+        }
+        idleCount < 2
+      }
+      .collect()
+
+    // Verify pairing command was still executed despite unpair error
+    assertTrue(
+      executedCommands.contains(
+        "am broadcast -a com.google.android.glasses.companion.ASSISTED_PAIR --es address \"$glassesAddress\" --ez auto_cdm true --ez force true -p com.google.android.glasses.companion"
+      )
+    )
+  }
+
+  @Test
+  fun pollPairingState_sendsBroadcastWithoutAddressFilter() = runBlockingWithTimeout {
+    val device = createConnectedDevice()
+    registerBroadcastResponse(
+      "am broadcast -a com.google.android.glasses.companion.GET_PAIRING_STATE -p com.google.android.glasses.companion",
+      "state=IDLE\n",
+    )
+
+    val state = AiGlassesPairing(fakeAdbRule.adbSession).run { device.pollPairingState() }
+
+    assertEquals("IDLE", state)
+    assertEquals(
+      listOf("am broadcast -a com.google.android.glasses.companion.GET_PAIRING_STATE -p com.google.android.glasses.companion"),
+      executedCommands,
+    )
+  }
+
+  @Test
+  fun pairToGlasses_idleStatePollingDoesNotReissuePairingCommand() = runBlockingWithTimeout {
+    val device = createConnectedDevice()
+    val glassesAddress = "AA:BB:CC:DD:EE:FF"
+
+    registerDumpsysResponse("dumpsys window displays", "  mCurrentFocus=Window{12345 u0 com.another.app/MainActivity}\n")
+    registerDumpsysResponse("dumpsys activity activities", "  ResumedActivity: ActivityRecord{... com.another.app/MainActivity}\n")
+    registerBroadcastResponse(
+      "am broadcast -a com.google.android.glasses.companion.GET_PAIRING_STATE -p com.google.android.glasses.companion",
+      "state=IDLE\n",
+    )
+    registerBroadcastResponse(
+      "am broadcast -a com.google.android.glasses.companion.UNPAIR --es address \"$glassesAddress\" -p com.google.android.glasses.companion",
+      "Broadcast completed: result=-1\n",
+    )
+    registerBroadcastResponse(
+      "am broadcast -a com.google.android.glasses.companion.ASSISTED_PAIR --es address \"$glassesAddress\" --ez auto_cdm true --ez force true -p com.google.android.glasses.companion",
+      "Broadcast completed: result=-1, data=\"Successfully sent pairing broadcast\"\n",
+    )
+
+    setupDeviceMocks()
+    val pairing = AiGlassesPairing(fakeAdbRule.adbSession)
+
+    registerDumpsysResponse(
+      "dumpsys window displays",
+      "  mCurrentFocus=Window{12345 u0 com.google.android.glasses.companion/MainActivity}\n",
+    )
+
+    val states = mutableListOf<String>()
+    val flow = pairing.run { device.pairToGlasses(glassesAddress, true) }
+    var idleCount = 0
+    flow
+      .takeWhile {
+        states.add(it)
+        if (it == "IDLE") {
+          idleCount++
+        }
+        idleCount < 4
+      }
+      .collect()
+
+    // UNPAIR and ASSISTED_PAIR should each only be executed ONCE during setup, not re-triggered in the polling loop
+    val unpairCount = executedCommands.count { it.contains("UNPAIR") }
+    val assistedPairCount = executedCommands.count { it.contains("ASSISTED_PAIR") }
+    assertEquals(1, unpairCount)
+    assertEquals(1, assistedPairCount)
+  }
+
+  @Test
+  fun pairToGlasses_exceedingMaxIdlePollsEmitsPollingFailed() =
+    runBlockingWithTimeout(java.time.Duration.ofSeconds(60)) {
+      val device = createConnectedDevice()
+      val glassesAddress = "AA:BB:CC:DD:EE:FF"
+
+      registerDumpsysResponse("dumpsys window displays", "  mCurrentFocus=Window{12345 u0 com.another.app/MainActivity}\n")
+      registerDumpsysResponse("dumpsys activity activities", "  ResumedActivity: ActivityRecord{... com.another.app/MainActivity}\n")
+      registerBroadcastResponse(
+        "am broadcast -a com.google.android.glasses.companion.GET_PAIRING_STATE -p com.google.android.glasses.companion",
+        "state=IDLE\n",
+      )
+      registerBroadcastResponse(
+        "am broadcast -a com.google.android.glasses.companion.UNPAIR --es address \"$glassesAddress\" -p com.google.android.glasses.companion",
+        "Broadcast completed: result=-1\n",
+      )
+      registerBroadcastResponse(
+        "am broadcast -a com.google.android.glasses.companion.ASSISTED_PAIR --es address \"$glassesAddress\" --ez auto_cdm true --ez force true -p com.google.android.glasses.companion",
+        "Broadcast completed: result=-1, data=\"Successfully sent pairing broadcast\"\n",
+      )
+
+      setupDeviceMocks()
+      val pairing = AiGlassesPairing(fakeAdbRule.adbSession)
+
+      registerDumpsysResponse(
+        "dumpsys window displays",
+        "  mCurrentFocus=Window{12345 u0 com.google.android.glasses.companion/MainActivity}\n",
+      )
+
+      val states = mutableListOf<String>()
+      val flow = pairing.run { device.pairToGlasses(glassesAddress, true) }
+      flow.collect { states.add(it) }
+
+      val expectedStates = listOf(AiGlassesPairing.AWAITING_FOREGROUND, "POLLING") + List(15) { "IDLE" } + listOf("POLLING_FAILED")
+      assertEquals(expectedStates, states)
+    }
+
   private fun setupDeviceMocks() {
     registerBroadcastResponse("settings get global bluetooth_on", "1")
     registerBroadcastResponse("cmd location set-location-enabled true", "")
@@ -580,7 +794,7 @@ class AiGlassesPairingTest {
   private val executedCommands = CopyOnWriteArrayList<String>()
   private val executedDumpsysCommands = CopyOnWriteArrayList<String>()
 
-  private suspend fun createConnectedDevice(api: Int = 36): ConnectedDevice {
+  private suspend fun createConnectedDevice(api: Int = 37): ConnectedDevice {
     val fakeDevice =
       fakeAdbRule.fakeAdb.connectDevice("device1", "test1", "test2", "model", AndroidApiLevel(api), DeviceState.HostConnectionType.USB)
     fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE

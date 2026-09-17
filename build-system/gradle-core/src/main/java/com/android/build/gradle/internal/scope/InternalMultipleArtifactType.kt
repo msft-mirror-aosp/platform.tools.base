@@ -93,6 +93,15 @@ sealed class InternalMultipleArtifactType<T : FileSystemLocation>(kind: Artifact
       listOf(TEST_SUITE_METADATA_MODULE_KEY, TEST_SUITE_METADATA_VARIANT_KEY, TEST_SUITE_METADATA_SUITE_KEY, TEST_SUITE_METADATA_TARGET_KEY)
   }
 
+  // Test result data from all test suite update/recording tasks of a single variant.
+  object TEST_SUITE_UPDATE_RESULTS : InternalMultipleArtifactType<Directory>(DIRECTORY)
+
+  // Code coverage data from all test suite update/recording tasks of a single variant.
+  object TEST_SUITE_UPDATE_CODE_COVERAGE : InternalMultipleArtifactType<Directory>(DIRECTORY), Artifact.WithQualifiers {
+    override val qualifierKeys: List<String> =
+      listOf(TEST_SUITE_METADATA_MODULE_KEY, TEST_SUITE_METADATA_VARIANT_KEY, TEST_SUITE_METADATA_SUITE_KEY, TEST_SUITE_METADATA_TARGET_KEY)
+  }
+
   // Test result data collected from all variants of the current module.
   object PROJECT_LEVEL_TEST_RESULTS : InternalMultipleArtifactType<Directory>(DIRECTORY)
 

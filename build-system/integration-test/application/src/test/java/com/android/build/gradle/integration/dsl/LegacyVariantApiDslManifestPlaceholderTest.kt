@@ -52,29 +52,28 @@ class LegacyVariantApiDslManifestPlaceholderTest {
   // app depends on lib2. We use legacy variant API to specify substitutions for lib2's placeholder
   // for app's application variant in app's build file.
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        android { defaultConfig.minSdk = 14 }
-        pluginCallbacks += AppCallback::class.java
-        dependencies { implementation(project(":lib2")) }
-      }
-      androidLibrary(":lib1") {
-        android {
-          defaultConfig {
-            minSdk = 14
-            testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-          }
-          dependencies {
-            androidTestImplementation(project(":lib2"))
-            testImplementation(project(":lib2"))
-          }
-        }
-        pluginCallbacks += LibCallback::class.java
-      }
-      androidLibrary(":lib2") { files.update("src/main/AndroidManifest.xml").replaceWith(libraryManifest) }
-      gradleProperties { add(BooleanOption.USE_NEW_DSL, false) }
+  val rule = GradleRule.from {
+    androidApplication {
+      android { defaultConfig.minSdk = 14 }
+      pluginCallbacks += AppCallback::class.java
+      dependencies { implementation(project(":lib2")) }
     }
+    androidLibrary(":lib1") {
+      android {
+        defaultConfig {
+          minSdk = 14
+          testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        }
+        dependencies {
+          androidTestImplementation(project(":lib2"))
+          testImplementation(project(":lib2"))
+        }
+      }
+      pluginCallbacks += LibCallback::class.java
+    }
+    androidLibrary(":lib2") { files.update("src/main/AndroidManifest.xml").replaceWith(libraryManifest) }
+    gradleProperties { add(BooleanOption.USE_NEW_DSL, false) }
+  }
 
   class AppCallback : LegacyApplicationCallback {
     override fun handleExtension(project: Project, extension: BaseAppModuleExtension) {

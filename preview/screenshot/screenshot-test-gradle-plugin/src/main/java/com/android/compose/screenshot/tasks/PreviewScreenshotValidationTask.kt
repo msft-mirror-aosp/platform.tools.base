@@ -48,7 +48,10 @@ abstract class PreviewScreenshotValidationTask : Test() {
           testEngineInput.mainRuntimeJars,
         )
       }
-    testClassesDirs = objectFactory.fileCollection().apply { from(testEngineInput.testProjectJars, testEngineInput.testProjectClassDirs) }
+    testClassesDirs =
+      objectFactory.fileCollection().apply {
+        from(testEngineInput.testProjectJars, testEngineInput.testProjectClassDirs)
+      }
     testEngineInput.recordingModeEnabled.set(false)
   }
 
@@ -102,7 +105,11 @@ abstract class PreviewScreenshotValidationTask : Test() {
 
         // Delete html files which Gradle's Test task generates.
         FileUtils.cleanOutputDir(reports.html.outputLocation.get().asFile)
-        TestReport(reports.junitXml.outputLocation.get().asFile, reports.html.outputLocation.get().asFile).generateScreenshotTestReport()
+        TestReport(
+            reports.junitXml.outputLocation.get().asFile,
+            reports.html.outputLocation.get().asFile,
+          )
+          .generateScreenshotTestReport()
       }
     }
   }

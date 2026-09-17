@@ -105,7 +105,9 @@ open class SimpleMarkupWriter(private val output: Writer, private val indent: St
   @Throws(IOException::class)
   fun startElement(name: String): SimpleMarkupWriter {
     require(isValidXmlName(name)) { String.format("Invalid element name: '%s'", name) }
-    check(context != Context.CData) { "Cannot start element, as current CDATA node has not been closed." }
+    check(context != Context.CData) {
+      "Cannot start element, as current CDATA node has not been closed."
+    }
     maybeFinishStartTag()
     if (indent != null) {
       writeRaw(LINE_SEPARATOR)
@@ -123,7 +125,9 @@ open class SimpleMarkupWriter(private val output: Writer, private val indent: St
   @Throws(IOException::class)
   fun endElement(): SimpleMarkupWriter {
     check(context != Context.Outside) { "Cannot end element, as there are no started elements." }
-    check(context != Context.CData) { "Cannot end element, as current CDATA node has not been closed." }
+    check(context != Context.CData) {
+      "Cannot end element, as current CDATA node has not been closed."
+    }
     if (context == Context.StartTag) {
       writeRaw("/>")
       elements.removeLast()
@@ -214,7 +218,9 @@ open class SimpleMarkupWriter(private val output: Writer, private val indent: St
   @Throws(IOException::class)
   fun attribute(name: String, value: String): SimpleMarkupWriter {
     require(isValidXmlName(name)) { String.format("Invalid attribute name: '%s'", name) }
-    check(context == Context.StartTag) { "Cannot write attribute [$name:$value]. You should write start element first." }
+    check(context == Context.StartTag) {
+      "Cannot write attribute [$name:$value]. You should write start element first."
+    }
     writeRaw(" ")
     writeRaw(name)
     writeRaw("=\"")

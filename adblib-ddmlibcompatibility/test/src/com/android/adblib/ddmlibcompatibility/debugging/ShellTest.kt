@@ -107,6 +107,30 @@ class ShellTest {
   }
 
   @Test
+  fun executeAbbCommandWithNullDelimiterShouldWork() = runBlockingWithTimeout {
+    // Prepare
+    val device = createConnectedDevice("42", sdk = AndroidApiLevel(30))
+    val receiver = ListReceiver()
+
+    // Act
+    executeAbbCommand(
+      AdbHelper.AdbService.ABB_EXEC,
+      device,
+      "package\u0000path\u0000com.foo.bar.appp",
+      receiver,
+      0,
+      0,
+      TimeUnit.MILLISECONDS,
+      null,
+      true,
+    )
+
+    // Assert
+    val expected = "/data/app/com.foo.bar.appp/base.apk"
+    assertEquals(expected, receiver.lines.joinToString())
+  }
+
+  @Test
   @Throws(Exception::class)
   fun executeAbbCommandOnUnsupportedDeviceShouldThrow() = runBlockingWithTimeout {
     // Prepare

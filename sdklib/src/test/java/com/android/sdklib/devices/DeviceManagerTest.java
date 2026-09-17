@@ -193,6 +193,7 @@ public class DeviceManagerTest {
                         "Pixel 10 Pro XL",
                         "Pixel 10 Pro Fold",
                         "Pixel 10a",
+                        "Pixel 11 Pro Fold",
                         "XR Glasses",
                         "XR Headset");
 
@@ -292,6 +293,7 @@ public class DeviceManagerTest {
                         "Pixel 10 Pro XL",
                         "Pixel 10 Pro Fold",
                         "Pixel 10a",
+                        "Pixel 11 Pro Fold",
                         "XR Headset",
                         "XR Glasses",
                         "Display Glasses",
@@ -443,6 +445,7 @@ public class DeviceManagerTest {
                         "Pixel 10 Pro XL",
                         "Pixel 10 Pro Fold",
                         "Pixel 10a",
+                        "Pixel 11 Pro Fold",
                         "XR Glasses",
                         "XR Headset");
 
@@ -541,6 +544,7 @@ public class DeviceManagerTest {
                         "Pixel 10 Pro XL",
                         "Pixel 10 Pro Fold",
                         "Pixel 10a",
+                        "Pixel 11 Pro Fold",
                         "XR Headset",
                         "XR Glasses",
                         "Display Glasses",
@@ -686,6 +690,7 @@ public class DeviceManagerTest {
                         "Pixel 10 Pro XL",
                         "Pixel 10 Pro Fold",
                         "Pixel 10a",
+                        "Pixel 11 Pro Fold",
                         "XR Glasses",
                         "XR Headset");
 
@@ -784,6 +789,7 @@ public class DeviceManagerTest {
                         "Pixel 10 Pro XL",
                         "Pixel 10 Pro Fold",
                         "Pixel 10a",
+                        "Pixel 11 Pro Fold",
                         "XR Headset",
                         "XR Glasses",
                         "Display Glasses",
@@ -954,7 +960,8 @@ public class DeviceManagerTest {
                         log,
                         (device) ->
                                 device.getId().startsWith("pixel_9")
-                                        || device.getId().startsWith("pixel_10"));
+                                        || device.getId().startsWith("pixel_10")
+                                        || device.getId().startsWith("pixel_11"));
 
         assertThat(listDisplayNames(deviceManagerWithFilter.getDevices()))
                 .containsExactly(
@@ -992,7 +999,8 @@ public class DeviceManagerTest {
                         "Pixel 10 Pro",
                         "Pixel 10 Pro XL",
                         "Pixel 10 Pro Fold",
-                        "Pixel 10a");
+                        "Pixel 10a",
+                        "Pixel 11 Pro Fold");
         assertThat(errorLog.toString())
                 .isEqualTo(
                         "Warning: Unsupported device Nexus One\n"

@@ -111,13 +111,18 @@ const SourceViewApp = {
      * Entry point to load specific source files for a class and then render.
      */
     async loadAndRender(classData, context = {}) {
-        // Reset selected variants if we are loading a new class (check name and package)
-        // Unless we are restoring state from history.
-        const isNewClass = !this.classData || this.classData.packageName !== classData.packageName || this.classData.name !== classData.name;
+        // Preserve variant context from report view or context unless restoring state from history
         const isPopping = typeof Navigation !== 'undefined' && Navigation.isPopping;
 
-        if (isNewClass && !isPopping) {
-            this.state.selectedVariants = [];
+        if (!isPopping) {
+            const activeVariants = context.variants || (typeof CoverageReportApp !== 'undefined' ? CoverageReportApp.state.filters.variants : null);
+            const availableVariants = [...new Set((classData?.variantSourceFilePaths || []).map(v => v.variantName))];
+            if (activeVariants && activeVariants.length > 0) {
+                const matched = availableVariants.filter(v => activeVariants.includes(v));
+                this.state.selectedVariants = matched.length > 0 ? [...matched] : [...availableVariants];
+            } else {
+                this.state.selectedVariants = [...availableVariants];
+            }
         }
 
         this.classData = classData;
@@ -182,7 +187,13 @@ const SourceViewApp = {
     render() {
         const availableVariants = [...new Set((this.classData?.variantSourceFilePaths || []).map(v => v.variantName))];
         if (this.state.selectedVariants.length === 0) {
-            this.state.selectedVariants = [...availableVariants];
+            const activeVariants = this.context.variants || (typeof CoverageReportApp !== 'undefined' ? CoverageReportApp.state.filters.variants : null);
+            if (activeVariants && activeVariants.length > 0) {
+                const matched = availableVariants.filter(v => activeVariants.includes(v));
+                this.state.selectedVariants = matched.length > 0 ? [...matched] : [...availableVariants];
+            } else {
+                this.state.selectedVariants = [...availableVariants];
+            }
         }
 
         this.renderBreadcrumbs();
@@ -351,6 +362,12 @@ const SourceViewApp = {
         e.preventDefault();
         const { action, moduleName, packageName } = link.dataset;
 
+        if (typeof CoverageReportApp !== 'undefined' && this.state.selectedVariants && this.state.selectedVariants.length > 0) {
+            CoverageReportApp.state.filters.variants = [...this.state.selectedVariants];
+            CoverageReportApp.updateVariantButtonText();
+            CoverageReportApp.updateVariantDropdown();
+        }
+
         switch (action) {
             case 'go-to-modules':
                 CoverageReportApp.resetSelection();
@@ -456,12 +473,21 @@ const SourceViewApp = {
         const availableVariants = [...new Set((this.classData?.variantSourceFilePaths || []).map(v => v.variantName))];
         const allVariantsCount = availableVariants.length;
 
+        let label = 'Filter by Variant';
         if (selectedCount === allVariantsCount && allVariantsCount > 0) {
             this.elements.sourceVariantFilterText.textContent = 'All';
+            label = 'Filter by Variant: All';
         } else if (selectedCount === 1) {
             this.elements.sourceVariantFilterText.textContent = this.state.selectedVariants[0];
+            label = `Filter by Variant: ${this.state.selectedVariants[0]}`;
         } else {
             this.elements.sourceVariantFilterText.textContent = `${selectedCount} Variants`;
+            label = `Filter by Variant: ${selectedCount} Selected`;
+        }
+
+        if (this.elements.variantFilterBtn) {
+            this.elements.variantFilterBtn.setAttribute('data-tooltip', label);
+            this.elements.variantFilterBtn.setAttribute('aria-label', label);
         }
     },
 
@@ -540,7 +566,15 @@ const SourceViewApp = {
     renderFilters(availableVariants) {
         const variantOptions = availableVariants.map(v => ({name: v, value: v}));
 
-        UIUtils.buildActionDropdown(this.elements.variantFiltersDropdown, variantOptions, this.state.selectedVariants, () => {
+        UIUtils.buildActionDropdown(this.elements.variantFiltersDropdown, variantOptions, this.state.selectedVariants, (newArr) => {
+            if (newArr) {
+                this.state.selectedVariants = newArr;
+            }
+            if (typeof CoverageReportApp !== 'undefined' && newArr && newArr.length > 0) {
+                CoverageReportApp.state.filters.variants = [...newArr];
+                CoverageReportApp.updateVariantButtonText();
+                CoverageReportApp.updateVariantDropdown();
+            }
             this.renderAllVariantViews();
             this.updateVariantButtonText();
             if (typeof Navigation !== 'undefined') {

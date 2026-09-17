@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.testing.suites
 
 import com.android.Version
-import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.api.variant.TestSuiteSourceSet
 import com.android.build.gradle.integration.common.fixture.GradleBuildResult
@@ -60,7 +59,7 @@ class TestSuiteWithAddedSourcesViaVariantAPITest {
         androidApplication {
           android {
             namespace = "com.example.test"
-            testOptions.suites.create("first", AgpTestSuite::class.java) {
+            testOptions.customSuites.create("first") {
               it.useJunitEngine.apply {
                 includeEngines.add("[engine:toy-junit-engine-for-tests]")
                 enginesDependencies.add("com.android.tools.build:gradle-api:${Version.ANDROID_GRADLE_PLUGIN_VERSION}")
@@ -73,7 +72,7 @@ class TestSuiteWithAddedSourcesViaVariantAPITest {
               it.targetVariants.add("release")
               it.targets.apply { create("t1") {} }
             }
-            testOptions.suites.create("second", AgpTestSuite::class.java) {
+            testOptions.customSuites.create("second") {
               it.useJunitEngine.apply {
                 includeEngines.add("[engine:toy-junit-engine-for-tests]")
                 enginesDependencies.add("com.android.tools.build:gradle-api:${Version.ANDROID_GRADLE_PLUGIN_VERSION}")
@@ -102,25 +101,25 @@ class TestSuiteWithAddedSourcesViaVariantAPITest {
   fun upToDateCheck() {
 
     val project = rule.build
-    var result: GradleBuildResult = project.executor.run("testFirstT1DebugTestSuite")
+    var result: GradleBuildResult = project.executor.run("testDebugFirstT1TestSuite")
 
-    Truth.assertThat(result.didWorkTasks).contains(":app:processFirstHostJarDebugJavaRes")
+    Truth.assertThat(result.didWorkTasks).contains(":app:processDebugFirstJavaRes")
     val javaRes = getJavaRes(project)
     Truth.assertThat(javaRes.exists()).isTrue()
     Truth.assertThat(javaRes.listFiles().map { it.name }).containsExactly("shared_file.txt", "random_text_0.txt")
 
     // Run it again to check that we are up to date.
-    result = project.executor.run("testFirstT1DebugTestSuite")
-    Truth.assertThat(result.upToDateTasks).contains(":app:processFirstHostJarDebugJavaRes")
+    result = project.executor.run("testDebugFirstT1TestSuite")
+    Truth.assertThat(result.upToDateTasks).contains(":app:processDebugFirstJavaRes")
   }
 
   @Test
   fun fileAddedCheck() {
 
     val project = rule.build
-    var result: GradleBuildResult = project.executor.run("testFirstT1DebugTestSuite")
+    var result: GradleBuildResult = project.executor.run("testDebugFirstT1TestSuite")
 
-    Truth.assertThat(result.didWorkTasks).contains(":app:processFirstHostJarDebugJavaRes")
+    Truth.assertThat(result.didWorkTasks).contains(":app:processDebugFirstJavaRes")
     val javaRes = getJavaRes(project)
     Truth.assertThat(javaRes.exists()).isTrue()
     Truth.assertThat(javaRes.listFiles().map { it.name }).containsExactly("shared_file.txt", "random_text_0.txt")
@@ -128,8 +127,8 @@ class TestSuiteWithAddedSourcesViaVariantAPITest {
     project.subProject(":app").files.run { update("src/configuration") { replaceWith("2") } }
 
     // Run it again to check that we are not up to date.
-    result = project.executor.run("testFirstT1DebugTestSuite")
-    Truth.assertThat(result.didWorkTasks).contains(":app:processFirstHostJarDebugJavaRes")
+    result = project.executor.run("testDebugFirstT1TestSuite")
+    Truth.assertThat(result.didWorkTasks).contains(":app:processDebugFirstJavaRes")
     Truth.assertThat(javaRes.listFiles().map { it.name }).containsExactly("shared_file.txt", "random_text_0.txt", "random_text_1.txt")
   }
 
@@ -138,9 +137,9 @@ class TestSuiteWithAddedSourcesViaVariantAPITest {
   @Test
   fun testAddedFoldersAreImpactingAllTargetedVariants() {
     val project = rule.build
-    var result: GradleBuildResult = project.executor.run("testFirstT1ReleaseTestSuite")
+    var result: GradleBuildResult = project.executor.run("testReleaseFirstT1TestSuite")
 
-    Truth.assertThat(result.didWorkTasks).contains(":app:processFirstHostJarReleaseJavaRes")
+    Truth.assertThat(result.didWorkTasks).contains(":app:processReleaseFirstJavaRes")
     val javaRes = getJavaRes(project, "Release")
     Truth.assertThat(javaRes.exists()).isTrue()
     Truth.assertThat(javaRes.listFiles().map { it.name }).containsExactly("shared_file.txt", "random_text_0.txt")
@@ -202,8 +201,8 @@ class TestSuiteWithAddedSourcesViaVariantAPITest {
 
   private fun getJavaRes(project: GradleBuild, capitalizedVariantName: String = "Debug") =
     InternalArtifactType.JAVA_RES.getIntermediateOutputDir(project.subProject(":app").buildDir.toFile())
-      .resolve("firstHostJar${capitalizedVariantName}")
-      .resolve("processFirstHostJar${capitalizedVariantName}JavaRes")
+      .resolve("${capitalizedVariantName.lowercase()}First")
+      .resolve("process${capitalizedVariantName}FirstJavaRes")
       .resolve("out")
 }
 

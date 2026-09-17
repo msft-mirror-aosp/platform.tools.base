@@ -36,6 +36,10 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
+fun interface ShellScriptTestCallback : Serializable {
+  operator fun invoke(args: Array<String>)
+}
+
 class ExecuteProcessTest {
   @Rule @JvmField val tempFolder = TemporaryFolder()
 
@@ -246,7 +250,7 @@ class ExecuteProcessTest {
    * written to disk. This file is the first parameter that 'ShellScriptCallback' will receive. "$1" "$2" "$3" and %1 %2 %3 -- are the
    * additional parameters passed to ShellScriptCallback for Windows and Posix respectively.
    */
-  private fun WorkingContext.createCallbackShellScripts(posixScriptBase: String, callback: (args: Array<String>) -> Unit): File {
+  private fun WorkingContext.createCallbackShellScripts(posixScriptBase: String, callback: ShellScriptTestCallback): File {
     // Replace some chars that we know are unsupported. This is so that we can write tests
     // with unsupported chars and check the exceptions from shipping code rather than this
     // test code.
@@ -295,7 +299,7 @@ class ShellScriptCallback {
     @JvmStatic
     fun main(args: Array<String>) {
       ObjectInputStream(FileInputStream(File(args[0]))).use { objects ->
-        val callback = objects.readObject() as (args: Array<String>) -> Unit
+        val callback = objects.readObject() as ShellScriptTestCallback
         callback(args.drop(1).toTypedArray())
       }
     }

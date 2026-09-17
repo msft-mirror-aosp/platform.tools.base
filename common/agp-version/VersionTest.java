@@ -16,19 +16,27 @@
 
 package com.android;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Properties;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class VersionTest {
 
     @Test
     public void testVersion() {
         Assert.assertNotNull(Version.ANDROID_GRADLE_PLUGIN_VERSION);
+    }
+
+    @Test
+    public void testAndroidTestEngineVersion() {
+        Assert.assertNotNull(Version.ANDROID_TEST_ENGINE_VERSION);
+        if (!Version.IS_AGP_RELEASE_BRANCH) {
+            Assert.assertTrue(
+                    "Non-release branch must have -dev suffix in androidTestEngineVersion",
+                    Version.ANDROID_TEST_ENGINE_VERSION.endsWith("-dev"));
+        }
     }
 
     @Test

@@ -13,7 +13,7 @@ iml_module(
     iml_files = ["android.sdktools.sdk-common.iml"],
     # b/477303448 - Fix BoxedPrimitiveEquality error
     javacopts = ["-Xep:BoxedPrimitiveEquality:OFF"],
-    jvm_target = "8",
+    jvm_target = "11",
     lint_baseline = "lint_baseline.xml",
     resources = ["src/main/resources"],
     # do not sort: must match IML order
@@ -99,6 +99,7 @@ maven_library(
         "@maven//:javax.inject.javax.inject",
         "@maven//:net.sf.kxml.kxml2",
         "@maven//:org.apache.commons.commons-compress",
+        "@maven//:org.bouncycastle.bc-jdk18on-bom",
         "@maven//:org.bouncycastle.bcpkix-jdk18on",
         "@maven//:org.bouncycastle.bcprov-jdk18on",
         "@maven//:org.glassfish.jaxb.jaxb-runtime",

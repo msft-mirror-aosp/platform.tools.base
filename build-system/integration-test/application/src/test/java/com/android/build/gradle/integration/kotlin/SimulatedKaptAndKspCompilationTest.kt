@@ -52,63 +52,62 @@ import org.junit.Test
 class SimulatedKaptAndKspCompilationTest {
 
   @get:Rule
-  val project =
-    GradleRule.from {
-      androidApplication {
-        applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
-        files {
-          // generate some user code that will access all the generated code both in
-          // java and kotlin, and KAPT and KSP.
-          add(
-            "src/main/kotlin/com/foo/bar/app/MyClass.kt",
-            """
-            package com.foo.bar.app
+  val project = GradleRule.from {
+    androidApplication {
+      applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
+      files {
+        // generate some user code that will access all the generated code both in
+        // java and kotlin, and KAPT and KSP.
+        add(
+          "src/main/kotlin/com/foo/bar/app/MyClass.kt",
+          """
+          package com.foo.bar.app
 
-            import com.kapt.MyKaptClass
-            import com.ksp.MyJavaKspClass
-            import com.ksp.MyKotlinKspClass
-            import com.kotlingen.MyKotlinClass
-            import com.javagen.MyJavaClass
+          import com.kapt.MyKaptClass
+          import com.ksp.MyJavaKspClass
+          import com.ksp.MyKotlinKspClass
+          import com.kotlingen.MyKotlinClass
+          import com.javagen.MyJavaClass
 
-            class MyClass {
-                fun someFunctionUsingGeneratedAPIs() {
-                    MyJavaKspClass.someFunctionUsingGeneratedAPIs()
-                    MyKotlinKspClass().someFunctionUsingGeneratedAPIs()
-                    MyKotlinClass().someFunctionUsingGeneratedAPIs()
-                    MyJavaClass.someFunctionUsingGeneratedAPIs()
-                    MyKaptClass.someFunctionUsingGeneratedAPIs()
-                    SomeUtil().someFunctionUsingGeneratedAPIs()
-                }
-            }
-            """
-              .trimIndent(),
-          )
-          // generate some user code that will have access to all the generated java code.
-          add(
-            "src/main/java/com/foo/bar/app/SomeUtil.java",
-            """
-            package com.foo.bar.app;
+          class MyClass {
+              fun someFunctionUsingGeneratedAPIs() {
+                  MyJavaKspClass.someFunctionUsingGeneratedAPIs()
+                  MyKotlinKspClass().someFunctionUsingGeneratedAPIs()
+                  MyKotlinClass().someFunctionUsingGeneratedAPIs()
+                  MyJavaClass.someFunctionUsingGeneratedAPIs()
+                  MyKaptClass.someFunctionUsingGeneratedAPIs()
+                  SomeUtil().someFunctionUsingGeneratedAPIs()
+              }
+          }
+          """
+            .trimIndent(),
+        )
+        // generate some user code that will have access to all the generated java code.
+        add(
+          "src/main/java/com/foo/bar/app/SomeUtil.java",
+          """
+          package com.foo.bar.app;
 
-            import com.kapt.MyKaptClass;
-            import com.ksp.MyJavaKspClass;
-            import com.javagen.MyJavaClass;
+          import com.kapt.MyKaptClass;
+          import com.ksp.MyJavaKspClass;
+          import com.javagen.MyJavaClass;
 
-            class SomeUtil {
-                public void someFunctionUsingGeneratedAPIs() {
-                    MyKaptClass.someFunctionUsingGeneratedAPIs();
-                    MyJavaKspClass.someFunctionUsingGeneratedAPIs();
-                    MyJavaClass.someFunctionUsingGeneratedAPIs();
-                }
-            }
-            """
-              .trimIndent(),
-          )
-        }
-        pluginCallbacks += MyAppCallback::class.java
-        pluginCallbacks += MyAppLegacyCallBack::class.java
+          class SomeUtil {
+              public void someFunctionUsingGeneratedAPIs() {
+                  MyKaptClass.someFunctionUsingGeneratedAPIs();
+                  MyJavaKspClass.someFunctionUsingGeneratedAPIs();
+                  MyJavaClass.someFunctionUsingGeneratedAPIs();
+              }
+          }
+          """
+            .trimIndent(),
+        )
       }
-      gradleProperties { add(BooleanOption.USE_NEW_DSL, false) }
+      pluginCallbacks += MyAppCallback::class.java
+      pluginCallbacks += MyAppLegacyCallBack::class.java
     }
+    gradleProperties { add(BooleanOption.USE_NEW_DSL, false) }
+  }
 
   // Old variant API usage, this is mimicking the exact code the Jetbrains' KAPT plugin does
   // to plugin into AGP.

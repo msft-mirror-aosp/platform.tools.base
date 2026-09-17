@@ -47,7 +47,10 @@ class PreviewScreenshotDescriptor(
   private val previewScreenshotResult: PreviewScreenshotResult,
 ) :
   AbstractTestDescriptor(
-    parentId.append(SEGMENT_TYPE, previewScreenshotResult.previewId + "_${previewScreenshotResultIndex}"),
+    parentId.append(
+      SEGMENT_TYPE,
+      previewScreenshotResult.previewId + "_${previewScreenshotResultIndex}",
+    ),
     methodName + previewName,
   ),
   Node<PreviewScreenshotExecutionContext> {
@@ -110,30 +113,62 @@ class PreviewScreenshotDescriptor(
     try {
       if (PreviewScreenshotTestEngineInput.TestOption.recordingModeEnabled) {
         ImageUpdater(PixelPerfect(ImageDifferInput.threshold))
-          .updateIfDifferent(newImageFile.absoluteFile, refImageFile.absoluteFile, absoluteProjectRoot)
+          .updateIfDifferent(
+            newImageFile.absoluteFile,
+            refImageFile.absoluteFile,
+            absoluteProjectRoot,
+          )
       } else {
         verificationResult =
-          imageVerifier.verify(newImageFile.absoluteFile, refImageFile.absoluteFile, diffImageFile.absoluteFile, absoluteProjectRoot)
+          imageVerifier.verify(
+            newImageFile.absoluteFile,
+            refImageFile.absoluteFile,
+            diffImageFile.absoluteFile,
+            absoluteProjectRoot,
+          )
 
         if (verificationResult.diffResult is ImageDiffer.DiffResult.Different) {
-          throw ImageComparisonAssertionError(relativeRefPath, relativeNewPath, verificationResult.diffPercent, relativeDiffPath)
+          throw ImageComparisonAssertionError(
+            relativeRefPath,
+            relativeNewPath,
+            verificationResult.diffPercent,
+            relativeDiffPath,
+          )
         }
       }
     } finally {
       // Always report diffPercentValue from the verification result
       verificationResult?.diffPercent?.let {
-        context.executionListener.reportingEntryPublished(this, ReportEntry.from("PreviewScreenshot.diffPercent", it.toString()))
+        context.executionListener.reportingEntryPublished(
+          this,
+          ReportEntry.from("PreviewScreenshot.diffPercent", it.toString()),
+        )
       }
-      context.executionListener.reportingEntryPublished(this, ReportEntry.from("PreviewScreenshot.previewName", previewDisplayName))
-      context.executionListener.reportingEntryPublished(this, ReportEntry.from("PreviewScreenshot.methodName", methodName))
+      context.executionListener.reportingEntryPublished(
+        this,
+        ReportEntry.from("PreviewScreenshot.previewName", previewDisplayName),
+      )
+      context.executionListener.reportingEntryPublished(
+        this,
+        ReportEntry.from("PreviewScreenshot.methodName", methodName),
+      )
       // Always publish refImagePath, this is required in IDE
-      context.executionListener.reportingEntryPublished(this, ReportEntry.from("PreviewScreenshot.refImagePath", relativeRefPath))
+      context.executionListener.reportingEntryPublished(
+        this,
+        ReportEntry.from("PreviewScreenshot.refImagePath", relativeRefPath),
+      )
 
       if (newImageFile.exists()) {
-        context.executionListener.reportingEntryPublished(this, ReportEntry.from("PreviewScreenshot.newImagePath", relativeNewPath))
+        context.executionListener.reportingEntryPublished(
+          this,
+          ReportEntry.from("PreviewScreenshot.newImagePath", relativeNewPath),
+        )
       }
       if (diffImageFile.exists()) {
-        context.executionListener.reportingEntryPublished(this, ReportEntry.from("PreviewScreenshot.diffImagePath", relativeDiffPath))
+        context.executionListener.reportingEntryPublished(
+          this,
+          ReportEntry.from("PreviewScreenshot.diffImagePath", relativeDiffPath),
+        )
       }
     }
 

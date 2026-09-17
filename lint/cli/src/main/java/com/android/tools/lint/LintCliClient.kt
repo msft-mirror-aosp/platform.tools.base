@@ -564,7 +564,12 @@ open class LintCliClient : LintClient {
       driver.computeDetectors(project)
       xmlReader(project, XmlFileType.CONDITIONAL_INCIDENTS)?.let { provisionalMap[project] = it.getIncidents() }
 
-      xmlReader(project, XmlFileType.INCIDENTS)?.let { definiteMap[project] = it.getIncidents() }
+      // Definite incidents of a dependency have already been reported by that module's own
+      // report step when skipDefiniteIncidentsFromDependencies is set; only the roots' own
+      // definite incidents belong in this report.
+      if (!flags.skipDefiniteIncidentsFromDependencies || project in roots) {
+        xmlReader(project, XmlFileType.INCIDENTS)?.let { definiteMap[project] = it.getIncidents() }
+      }
 
       xmlReader(project, XmlFileType.PARTIAL_RESULTS)?.let {
         for ((issue, list) in it.getPartialResults()) {
@@ -1272,8 +1277,9 @@ open class LintCliClient : LintClient {
         bootClassPaths.size == 1 &&
         bootClassPaths.first().path.endsWith(FN_FRAMEWORK_LIBRARY)
     val jdkHome: File? = if (isAndroid) null else getJdkHomeUnlessJre()
-    val allModules =
-      allProjects.map { UastEnvironment.Module(it, jdkHome, !flags.isIgnoreTestSources, !flags.isIgnoreTestFixturesSources, isUnitTest) }
+    val allModules = allProjects.map {
+      UastEnvironment.Module(it, jdkHome, !flags.isIgnoreTestSources, !flags.isIgnoreTestFixturesSources, isUnitTest)
+    }
     val maxLevel = knownProjects.asSequence().map(Project::getJavaLanguageLevel).fold(LanguageLevel.JDK_1_7, LanguageLevel::coerceAtLeast)
 
     for (module in allModules.asSequence()) {

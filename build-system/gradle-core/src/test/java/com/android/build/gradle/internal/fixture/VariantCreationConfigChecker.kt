@@ -24,6 +24,7 @@ import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.plugins.AppPlugin
 import com.android.build.gradle.internal.plugins.BasePlugin
 import com.android.build.gradle.internal.plugins.LibraryPlugin
+import com.android.build.gradle.options.BooleanOption
 import com.google.common.collect.Lists
 import com.google.common.truth.Truth
 import com.google.common.truth.Truth.assertThat
@@ -86,7 +87,9 @@ class CommonVariantCreationConfigChecker(val plugin: BasePlugin<*, *, *, *, *, *
       assertThat(aidlCompileTask).isNotNull()
       assertThat(mergeResourcesTask).isNotNull()
       assertThat(javacTask).isNotNull()
-      assertThat(processJavaResourcesTask).isNotNull()
+      if (BooleanOption.ENABLE_JAVA_RESOURCE_OPTIMIZATIONS.defaultValue) {
+        assertThat(processJavaResourcesTask).isNull()
+      }
       if (variant !is TestComponentCreationConfig) {
         assertThat(assembleTask).isNotNull()
       }

@@ -51,11 +51,10 @@ class ApkOutputFileChangeTest {
   // https://issuetracker.google.com/issues/64703619)
   @Test
   fun testOutputFileNameChangeOldApi() {
-    val build =
-      rule.build {
-        gradleProperties { add(BooleanOption.USE_NEW_DSL, false) }
-        androidApplication { pluginCallbacks += MyAppCallback::class.java }
-      }
+    val build = rule.build {
+      gradleProperties { add(BooleanOption.USE_NEW_DSL, false) }
+      androidApplication { pluginCallbacks += MyAppCallback::class.java }
+    }
 
     val result = build.executor.run("assembleDebug")
     result.assertTask(":app:packageDebug").didWork()

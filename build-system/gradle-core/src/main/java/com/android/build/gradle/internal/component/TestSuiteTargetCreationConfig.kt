@@ -22,4 +22,6 @@ interface TestSuiteTargetCreationConfig : TestSuiteTarget {
 
   /** Test task name, within the current project scope. */
   val testTaskName: String
+
+  val uniqueName: String
 }

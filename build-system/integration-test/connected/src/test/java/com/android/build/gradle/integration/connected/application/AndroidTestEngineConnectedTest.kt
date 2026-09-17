@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.connected.application
 
-import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
@@ -59,7 +58,7 @@ class AndroidTestEngineConnectedTest {
       gradleProperties { add(BooleanOption.TEST_SUITE_SUPPORT, true) }
       androidApplication {
         android {
-          testOptions.suites.create("myAndroidTestSuite", AgpTestSuite::class.java) {
+          testOptions.customSuites.create("myAndroidTestSuite") {
             it.testApk {
               dependencies {
                 implementation.add("org.jetbrains.kotlin:kotlin-stdlib:1.8.20")
@@ -148,7 +147,7 @@ class AndroidTestEngineConnectedTest {
 
   @Test
   fun runBasicAndroidTestUsingJUnitTestEngine() {
-    val result = executor.run(":app:testMyAndroidTestSuiteT1DebugTestSuite")
+    val result = executor.run(":app:testDebugMyAndroidTestSuiteT1TestSuite")
 
     result.assertOutputContains("emulator-5554 - 13 > com.example.android.ExampleInstrumentedTest.exampleTestCase1 PASSED")
     result.assertOutputContains("emulator-5554 - 13 > com.example.android.ExampleInstrumentedTest.exampleTestCase2 PASSED")
@@ -161,7 +160,7 @@ class AndroidTestEngineConnectedTest {
     val result =
       executor
         .withArgument("-Pcom.android.tools.utp.GradleAndroidProjectResolverExtension.enable=true")
-        .run(":app:testMyAndroidTestSuiteT1DebugTestSuite")
+        .run(":app:testDebugMyAndroidTestSuiteT1TestSuite")
 
     result.assertOutputContains("<UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>")
     result.assertOutputContains("</UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>")
@@ -178,7 +177,7 @@ class AndroidTestEngineConnectedTest {
         .withArgument("-Dandroid-test.device-serials=emulator-5554")
         .with(BooleanOption.ENABLE_ON_THE_FLY_CODE_COVERAGE, true)
         .withEnableInfoLogging(true)
-        .run(":app:testMyAndroidTestSuiteT1DebugTestSuite")
+        .run(":app:testDebugMyAndroidTestSuiteT1TestSuite")
 
     result.assertOutputContains("Agent extraction VERIFIED")
     result.assertOutputContains("-e coverage true")

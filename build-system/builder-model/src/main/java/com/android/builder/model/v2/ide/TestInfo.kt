@@ -40,6 +40,7 @@ interface TestInfo : AndroidModel {
   }
 
   val animationsDisabled: Boolean
+  val instrumentInPrivateComputeCore: Boolean
   val execution: Execution?
 
   /**

@@ -27,42 +27,41 @@ import org.junit.Test
 class CompositeBuildTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        android { buildTypes { named("debug") { it.isTestCoverageEnabled = true } } }
-        dependencies {
-          api("com.example:lib:1.0")
-          api("com.example:androidLib1:1.0")
-          api("com.example:androidLib2:1.0")
-        }
-      }
-      includedBuild("lib") {
-        rootProject {
-          group = "com.example"
-          version = "1.0"
-          applyPlugin(PluginType.JAVA_LIBRARY)
-          files.add(
-            "gradle.properties",
-            """
-                        org.gradle.java.installations.paths=${TestUtils.getJava17Jdk().toString().replace("\\", "/")}
-                    """
-              .trimIndent(),
-          )
-        }
-      }
-      includedBuild("androidLib") {
-        androidLibrary(":androidLib1") {
-          group = "com.example"
-          version = "1.0"
-        }
-
-        androidLibrary(":androidLib2") {
-          group = "com.example"
-          version = "1.0"
-        }
+  val rule = GradleRule.from {
+    androidApplication {
+      android { buildTypes { named("debug") { it.isTestCoverageEnabled = true } } }
+      dependencies {
+        api("com.example:lib:1.0")
+        api("com.example:androidLib1:1.0")
+        api("com.example:androidLib2:1.0")
       }
     }
+    includedBuild("lib") {
+      rootProject {
+        group = "com.example"
+        version = "1.0"
+        applyPlugin(PluginType.JAVA_LIBRARY)
+        files.add(
+          "gradle.properties",
+          """
+                        org.gradle.java.installations.paths=${TestUtils.getJava17Jdk().toString().replace("\\", "/")}
+                    """
+            .trimIndent(),
+        )
+      }
+    }
+    includedBuild("androidLib") {
+      androidLibrary(":androidLib1") {
+        group = "com.example"
+        version = "1.0"
+      }
+
+      androidLibrary(":androidLib2") {
+        group = "com.example"
+        version = "1.0"
+      }
+    }
+  }
 
   @Before fun setUp() {}
 

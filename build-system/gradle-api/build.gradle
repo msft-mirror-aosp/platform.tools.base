@@ -48,6 +48,13 @@ dependencies {
     testImplementation libs.mockito_core
     testImplementation libs.equalsverifier
     testImplementation libs.truth
+    // Allow gradle-api to exist without aapt2-proto.
+    if (file('../aapt2-proto/build.gradle').isFile()) {
+        // Dependency to aapt2-proto so Gradle can substitute the maven
+        // dependency via sdk-common (built with bazel) with the Gradle
+        // project for aapt2-proto when running from Gradle (not bazel)
+        testRuntimeOnly project(':base:build-system:aapt2-proto')
+    }
 }
 
 javadoc {

@@ -260,15 +260,14 @@ class FusedLibraryClassesVerificationTest(private val publicationOnlyMode: Boole
 
   @Test
   fun testClassesFromDirectDependenciesAreIncludedInAar() {
-    val build =
-      rule.build {
-        fusedLibrary(":$FUSED_LIBRARY_PROJECT_NAME") {
-          dependencies {
-            include(project(":androidLib1"))
-            include(project(":androidLib2"))
-          }
+    val build = rule.build {
+      fusedLibrary(":$FUSED_LIBRARY_PROJECT_NAME") {
+        dependencies {
+          include(project(":androidLib1"))
+          include(project(":androidLib2"))
         }
       }
+    }
     val classesFromDirectDependencies =
       listOf("com/example/androidLib2/ClassFromAndroidLib2", "com/example/androidLib1/ClassFromAndroidLib1")
 
@@ -281,16 +280,15 @@ class FusedLibraryClassesVerificationTest(private val publicationOnlyMode: Boole
 
   @Test
   fun checkTransitivesAreNotIncludedInAarImplicitly() {
-    val build =
-      rule.build {
-        fusedLibrary(":$FUSED_LIBRARY_PROJECT_NAME") {
-          dependencies {
-            include(project(":androidLib1"))
-            include(project(":androidLib2"))
-            include(project(":$ANDROID_LIB_WITH_EXTERNAL_LIB_DEPENDENCY"))
-          }
+    val build = rule.build {
+      fusedLibrary(":$FUSED_LIBRARY_PROJECT_NAME") {
+        dependencies {
+          include(project(":androidLib1"))
+          include(project(":androidLib2"))
+          include(project(":$ANDROID_LIB_WITH_EXTERNAL_LIB_DEPENDENCY"))
         }
       }
+    }
 
     val classesFromDirectDependencies =
       listOf(
@@ -332,15 +330,14 @@ class FusedLibraryClassesVerificationTest(private val publicationOnlyMode: Boole
 
   @Test
   fun checkExternalLibraryClassesIncludedInFusedAar() {
-    val build =
-      rule.build {
-        fusedLibrary(":$FUSED_LIBRARY_PROJECT_NAME") {
-          dependencies {
-            include("com.externaldep.externalaar:externalaar:1.0")
-            include(project(":androidLib1"))
-          }
+    val build = rule.build {
+      fusedLibrary(":$FUSED_LIBRARY_PROJECT_NAME") {
+        dependencies {
+          include("com.externaldep.externalaar:externalaar:1.0")
+          include(project(":androidLib1"))
         }
       }
+    }
 
     val classesFromDirectDependencies =
       listOf(
@@ -358,12 +355,11 @@ class FusedLibraryClassesVerificationTest(private val publicationOnlyMode: Boole
 
   @Test
   fun checkFusedLibraryAarForClassesFromLocalJarDependencies() {
-    val build =
-      rule.build {
-        fusedLibrary(":$FUSED_LIBRARY_PROJECT_NAME") {
-          dependencies { include(localJar("testClass.jar") { addClasses(TestClass::class.java) }) }
-        }
+    val build = rule.build {
+      fusedLibrary(":$FUSED_LIBRARY_PROJECT_NAME") {
+        dependencies { include(localJar("testClass.jar") { addClasses(TestClass::class.java) }) }
       }
+    }
     val fusedLibrary = build.fusedLibrary(":$FUSED_LIBRARY_PROJECT_NAME")
     val appProject = build.androidApplication()
 
@@ -407,15 +403,14 @@ class FusedLibraryClassesVerificationTest(private val publicationOnlyMode: Boole
 
   @Test
   fun checkPublishingFailsForLibrariesWithDatabinding() {
-    val build =
-      rule.build {
-        fusedLibrary(":$FUSED_LIBRARY_PROJECT_NAME") {
-          dependencies {
-            include(project(":androidLib1"))
-            include(project(":$ANDROID_LIB_WITH_DATABINDING"))
-          }
+    val build = rule.build {
+      fusedLibrary(":$FUSED_LIBRARY_PROJECT_NAME") {
+        dependencies {
+          include(project(":androidLib1"))
+          include(project(":$ANDROID_LIB_WITH_DATABINDING"))
         }
       }
+    }
     listOf("generatePomFileForMavenPublication", "publish").forEach {
       val failure = build.executor.expectFailure().run(":$FUSED_LIBRARY_PROJECT_NAME:$it")
       failure.assertErrorContains("[Databinding is not supported by Fused Library modules]:\n" + "    * androidx.databinding")
@@ -431,18 +426,17 @@ class FusedLibraryClassesVerificationTest(private val publicationOnlyMode: Boole
 
   @Test
   fun `validationFailsForDependencyIncludedButParentNotIncluded-ProjectDependency`() {
-    val build =
-      rule.build {
-        fusedLibrary(":$FUSED_LIBRARY_PROJECT_NAME") {
-          dependencies {
-            include(project(":$ANDROID_LIB_MANY_TRANSITIVE_DEPS"))
+    val build = rule.build {
+      fusedLibrary(":$FUSED_LIBRARY_PROJECT_NAME") {
+        dependencies {
+          include(project(":$ANDROID_LIB_MANY_TRANSITIVE_DEPS"))
 
-            // :androidLib1 is also a transitive dependency from $ANDROID_LIB_MANY_TRANSITIVE_DEPS
-            // via :androidLib2
-            include(project(":androidLib1"))
-          }
+          // :androidLib1 is also a transitive dependency from $ANDROID_LIB_MANY_TRANSITIVE_DEPS
+          // via :androidLib2
+          include(project(":androidLib1"))
         }
       }
+    }
 
     val failure = build.executor.expectFailure().run(":$FUSED_LIBRARY_PROJECT_NAME:assemble")
     failure.assertErrorContains(
@@ -455,16 +449,15 @@ class FusedLibraryClassesVerificationTest(private val publicationOnlyMode: Boole
 
   @Test
   fun `validationFailsForDependencyIncludedButParentNotIncluded-ExternalDependency`() {
-    val build =
-      rule.build {
-        fusedLibrary(":$FUSED_LIBRARY_PROJECT_NAME") {
-          dependencies {
-            include(project(":$ANDROID_LIB_WITH_EXTERNAL_LIB_DEPENDENCY"))
-            include(project(":$ANDROID_LIB_WITH_EXTERNAL_LIB_WITH_CIRCULAR_DEP"))
-            include("com.externaldep.externalaar:externalaar:1.0")
-          }
+    val build = rule.build {
+      fusedLibrary(":$FUSED_LIBRARY_PROJECT_NAME") {
+        dependencies {
+          include(project(":$ANDROID_LIB_WITH_EXTERNAL_LIB_DEPENDENCY"))
+          include(project(":$ANDROID_LIB_WITH_EXTERNAL_LIB_WITH_CIRCULAR_DEP"))
+          include("com.externaldep.externalaar:externalaar:1.0")
         }
       }
+    }
 
     val failure = build.executor.expectFailure().run(":$FUSED_LIBRARY_PROJECT_NAME:assemble")
     failure.assertErrorContains(
@@ -484,12 +477,11 @@ class FusedLibraryClassesVerificationTest(private val publicationOnlyMode: Boole
   // Regression test for b/383184394
   @Test
   fun checkUnresolvedDependencyFailures() {
-    val build =
-      rule.build {
-        fusedLibrary(":$FUSED_LIBRARY_PROJECT_NAME") {
-          dependencies { include("this.dependency:has-a-dependency-that-does-not-exist:1.0") }
-        }
+    val build = rule.build {
+      fusedLibrary(":$FUSED_LIBRARY_PROJECT_NAME") {
+        dependencies { include("this.dependency:has-a-dependency-that-does-not-exist:1.0") }
       }
+    }
 
     val failure = build.executor.expectFailure().run(":$FUSED_LIBRARY_PROJECT_NAME:assemble")
     failure.assertErrorContains(
@@ -509,23 +501,22 @@ class FusedLibraryClassesVerificationTest(private val publicationOnlyMode: Boole
   @Ignore("b/456213076")
   @Test
   fun checkPlatformBomDependenciesInLibraryDependencies() {
-    val build =
-      rule.build {
-        genericProject(":my-platform") {
-          applyPlugin(PluginType.JAVA_PLATFORM)
-          dependencies { constraints { api("com.externaldep.externalaar:externalaar:1.0") } }
-        }
-        androidLibrary {
-          dependencies {
-            implementation(platform(project(":my-platform")))
-            implementation("com.externaldep.externalaar:externalaar") // version from :my-platform
-          }
-        }
-        fusedLibrary(":$FUSED_LIBRARY_PROJECT_NAME") {
-          androidFusedLibrary { namespace = "com.example.fusedlib" }
-          dependencies { include(project(":lib")) }
+    val build = rule.build {
+      genericProject(":my-platform") {
+        applyPlugin(PluginType.JAVA_PLATFORM)
+        dependencies { constraints { api("com.externaldep.externalaar:externalaar:1.0") } }
+      }
+      androidLibrary {
+        dependencies {
+          implementation(platform(project(":my-platform")))
+          implementation("com.externaldep.externalaar:externalaar") // version from :my-platform
         }
       }
+      fusedLibrary(":$FUSED_LIBRARY_PROJECT_NAME") {
+        androidFusedLibrary { namespace = "com.example.fusedlib" }
+        dependencies { include(project(":lib")) }
+      }
+    }
 
     // Checks that including a platform/BOM in a transitive dependency doesn't impact build.
     build.executor.run(":$FUSED_LIBRARY_PROJECT_NAME:assemble")
@@ -556,19 +547,18 @@ class FusedLibraryClassesVerificationTest(private val publicationOnlyMode: Boole
   @Test
   @Ignore("This case does not work yet - b/399879853")
   fun checkExternalLibraryBomDependenciesInLibraryDependencies() {
-    val build =
-      rule.build {
-        androidLibrary {
-          dependencies {
-            implementation(platform("bom:external-lib-bom:1.0"))
-            implementation("com.externaldep:depwithdep") // version from bom:external-lib-bom:1.0
-          }
-        }
-        fusedLibrary(":$FUSED_LIBRARY_PROJECT_NAME") {
-          androidFusedLibrary { namespace = "com.example.fusedlib" }
-          dependencies { include(project(":lib")) }
+    val build = rule.build {
+      androidLibrary {
+        dependencies {
+          implementation(platform("bom:external-lib-bom:1.0"))
+          implementation("com.externaldep:depwithdep") // version from bom:external-lib-bom:1.0
         }
       }
+      fusedLibrary(":$FUSED_LIBRARY_PROJECT_NAME") {
+        androidFusedLibrary { namespace = "com.example.fusedlib" }
+        dependencies { include(project(":lib")) }
+      }
+    }
 
     // Checks that including a platform/BOM in a transitive dependency doesn't impact build.
     build.executor.run(":$FUSED_LIBRARY_PROJECT_NAME:assemble")
@@ -587,28 +577,27 @@ class FusedLibraryClassesVerificationTest(private val publicationOnlyMode: Boole
 
   @Test
   fun checkPlatformBomDependenciesInDirectDependencies() {
-    val build =
-      rule.build {
-        genericProject(":my-platform") {
-          applyPlugin(PluginType.JAVA_PLATFORM)
-          dependencies {
-            constraints {
-              api("com.externaldep.externalaar:externalaar:1.0")
-              api("com.externaldep:depwithdep:1.0")
-            }
-          }
-        }
-        fusedLibrary(":$FUSED_LIBRARY_PROJECT_NAME") {
-          androidFusedLibrary { namespace = "com.example.fusedlib" }
-          dependencies {
-            include(platform(project(":my-platform")))
-            include("bom:external-lib-bom:1.0")
-            // Omit version for platform version resolution
-            include("com.externaldep.externalaar:externalaar")
-            include("com.externaldep:depwithdep")
+    val build = rule.build {
+      genericProject(":my-platform") {
+        applyPlugin(PluginType.JAVA_PLATFORM)
+        dependencies {
+          constraints {
+            api("com.externaldep.externalaar:externalaar:1.0")
+            api("com.externaldep:depwithdep:1.0")
           }
         }
       }
+      fusedLibrary(":$FUSED_LIBRARY_PROJECT_NAME") {
+        androidFusedLibrary { namespace = "com.example.fusedlib" }
+        dependencies {
+          include(platform(project(":my-platform")))
+          include("bom:external-lib-bom:1.0")
+          // Omit version for platform version resolution
+          include("com.externaldep.externalaar:externalaar")
+          include("com.externaldep:depwithdep")
+        }
+      }
+    }
 
     build.executor.run(":$FUSED_LIBRARY_PROJECT_NAME:assemble")
     build.checkFusedLibReportContents(
@@ -631,37 +620,35 @@ class FusedLibraryClassesVerificationTest(private val publicationOnlyMode: Boole
   // Test coverage for b/425861331
   @Test
   fun testDependencyWithAmbiguousJvmTargetEnvironmentAttribute() {
-    val build =
-      rule.build {
-        androidLibrary {
-          dependencies {
-            // Include a dependency that has multiple TargetJvmEnvironments
-            implementation("com.google.guava:guava:33.3.1-android")
-          }
-        }
-        fusedLibrary(":$FUSED_LIBRARY_PROJECT_NAME") {
-          androidFusedLibrary { namespace = "com.example.fusedlib" }
-          dependencies { include(project(":lib")) }
+    val build = rule.build {
+      androidLibrary {
+        dependencies {
+          // Include a dependency that has multiple TargetJvmEnvironments
+          implementation("com.google.guava:guava:33.3.1-android")
         }
       }
+      fusedLibrary(":$FUSED_LIBRARY_PROJECT_NAME") {
+        androidFusedLibrary { namespace = "com.example.fusedlib" }
+        dependencies { include(project(":lib")) }
+      }
+    }
     build.executor.run("$FUSED_LIBRARY_PROJECT_NAME:assemble")
   }
 
   // Test coverage for b/428906893
   @Test
   fun testDependencyConstraintsAreIgnoredForTheTransitiveDependencyCheck() {
-    val build =
-      rule.build {
-        fusedLibrary(":$FUSED_LIBRARY_PROJECT_NAME") {
-          dependencies {
-            // This dependency specifies a version constraint on itself. Issue requires
-            // the constraint be declared in the .module file (not currently supported by
-            // the test fixtures), so an example Androidx dependency is used to reproduce.
-            // b/432264894 aims to allow for .module files to be supported for tests.
-            include("androidx.appcompat:appcompat:1.7.0")
-          }
+    val build = rule.build {
+      fusedLibrary(":$FUSED_LIBRARY_PROJECT_NAME") {
+        dependencies {
+          // This dependency specifies a version constraint on itself. Issue requires
+          // the constraint be declared in the .module file (not currently supported by
+          // the test fixtures), so an example Androidx dependency is used to reproduce.
+          // b/432264894 aims to allow for .module files to be supported for tests.
+          include("androidx.appcompat:appcompat:1.7.0")
         }
       }
+    }
     build.executor.run(":$FUSED_LIBRARY_PROJECT_NAME:assemble")
   }
 

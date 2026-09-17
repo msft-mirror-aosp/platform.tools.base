@@ -36,10 +36,16 @@ public abstract class ManifestAppComponentInfo {
 
     protected Set<String> permissions = new HashSet<>();
 
+    protected boolean isAlias = false;
+
+    protected String targetActivity = null;
+
     /**
      * Parse an activity xml element (see https://developer.android.com/guide/topics/manifest/activity-element).
      */
     public ManifestAppComponentInfo(@NonNull XmlNode node, @NonNull String applicationId) {
+        isAlias = AndroidManifest.NODE_ACTIVITY_ALIAS.equals(node.name());
+        Boolean explicitExported = null;
         for (String attribute : node.attributes().keySet()) {
             String value = node.attributes().get(attribute);
 
@@ -51,10 +57,16 @@ public abstract class ManifestAppComponentInfo {
                 else {
                     qualifiedName = value;
                 }
+            } else if (AndroidManifest.ATTRIBUTE_TARGET_ACTIVITY.equals(attribute)) {
+                if (value.startsWith(".")) {
+                    targetActivity = applicationId + value;
+                } else {
+                    targetActivity = value;
+                }
             } else if (AndroidManifest.ATTRIBUTE_ENABLED.equals(attribute)) {
                 enabled = value.isEmpty() || "true".equals(value);
             } else if (AndroidManifest.ATTRIBUTE_EXPORTED.equals(attribute)) {
-                exported = value.isEmpty() || "true".equals(value);
+                explicitExported = value.isEmpty() || "true".equals(value);
             } else if (AndroidManifest.ATTRIBUTE_PERMISSION.equals(attribute)) {
                 permissions.add(value);
             }
@@ -66,6 +78,8 @@ public abstract class ManifestAppComponentInfo {
                 intentFilters.add(intentFilter);
             }
         }
+
+        exported = explicitExported != null ? explicitExported : !intentFilters.isEmpty();
     }
 
     public boolean isEnabled() {
@@ -76,12 +90,25 @@ public abstract class ManifestAppComponentInfo {
         return exported;
     }
 
+    public boolean isExported() {
+        return exported;
+    }
+
     public boolean hasIntentFilter() {
         return !intentFilters.isEmpty();
     }
 
     public String getQualifiedName() {
         return qualifiedName;
+    }
+
+    public boolean isAlias() {
+        return isAlias;
+    }
+
+    @NonNull
+    public String getTargetActivity() {
+        return targetActivity != null ? targetActivity : qualifiedName;
     }
 
     @NonNull

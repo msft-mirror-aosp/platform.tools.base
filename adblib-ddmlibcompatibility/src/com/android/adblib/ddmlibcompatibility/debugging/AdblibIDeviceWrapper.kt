@@ -29,6 +29,7 @@ import com.android.adblib.ddmlibcompatibility.AdbLibDdmlibCompatibilityPropertie
 import com.android.adblib.ddmlibcompatibility.AdbLibIDeviceManager
 import com.android.adblib.ddmlibcompatibility.DEFAULT_DDMLIB_TIMEOUT
 import com.android.adblib.deviceProperties
+import com.android.adblib.isRoot
 import com.android.adblib.property
 import com.android.adblib.rootAndWait
 import com.android.adblib.scope
@@ -47,7 +48,6 @@ import com.android.ddmlib.AdbHelper
 import com.android.ddmlib.AndroidDebugBridge
 import com.android.ddmlib.AvdData
 import com.android.ddmlib.Client
-import com.android.ddmlib.CollectingOutputReceiver
 import com.android.ddmlib.FileListingService
 import com.android.ddmlib.IDevice
 import com.android.ddmlib.IDevice.DeviceState
@@ -318,23 +318,23 @@ internal class AdblibIDeviceWrapper(
     val job =
       connectedDevice.scope.launch(start = CoroutineStart.LAZY) {
         runCatching {
-            connectedDevice.waitUntilOnline()
-            val props = connectedDevice.deviceProperties().all().associate { it.name to it.value }
-            propertiesMapRef.set(props)
+          connectedDevice.waitUntilOnline()
+          val props = connectedDevice.deviceProperties().all().associate { it.name to it.value }
+          propertiesMapRef.set(props)
 
-            // Resolve all pending futures and clear the map
-            val snapshot =
-              synchronized(pendingPropertyFutures) {
-                val copy = HashMap(pendingPropertyFutures)
-                pendingPropertyFutures.clear()
-                copy
-              }
-
-            snapshot.forEach { (propName, futures) ->
-              val value = props[propName]
-              futures.forEach { it.set(value) }
+          // Resolve all pending futures and clear the map
+          val snapshot =
+            synchronized(pendingPropertyFutures) {
+              val copy = HashMap(pendingPropertyFutures)
+              pendingPropertyFutures.clear()
+              copy
             }
+
+          snapshot.forEach { (propName, futures) ->
+            val value = props[propName]
+            futures.forEach { it.set(value) }
           }
+        }
           .onFailure { t ->
             val snapshot =
               synchronized(pendingPropertyFutures) {
@@ -695,15 +695,12 @@ internal class AdblibIDeviceWrapper(
   }
 
   override fun kill(applicationName: String?) {
-    logUsage(IDeviceUsageTracker.Method.KILL) { iDeviceSharedImpl.kill(applicationName) }
+    unsupportedMethod()
   }
 
   override fun isRoot(): Boolean =
     logUsage(IDeviceUsageTracker.Method.IS_ROOT) {
-      val receiver = CollectingOutputReceiver()
-      executeShellCommand("echo \$USER_ID", receiver, QUERY_IS_ROOT_TIMEOUT_MS, TimeUnit.MILLISECONDS)
-      val userID = receiver.output.trim { it <= ' ' }
-      userID == "0"
+      runBlockingLegacy(timeout = Duration.ofMillis(QUERY_IS_ROOT_TIMEOUT_MS)) { connectedDevice.isRoot() }
     }
 
   @Deprecated("")
@@ -842,6 +839,28 @@ internal class AdblibIDeviceWrapper(
           }
         }
       }
+    }
+  }
+
+  override fun executeBinderCommand(
+    parameters: Array<out String>,
+    receiver: IShellOutputReceiver,
+    maxTimeToOutputResponse: Long,
+    maxTimeUnits: TimeUnit,
+    inputStream: InputStream?,
+  ) {
+    if (supportsFeature(IDevice.Feature.ABB_EXEC)) {
+      executeRemoteCommand(
+        AdbHelper.AdbService.ABB_EXEC,
+        parameters.joinToString("\u0000"),
+        receiver,
+        0L,
+        maxTimeToOutputResponse,
+        maxTimeUnits,
+        inputStream,
+      )
+    } else {
+      executeShellCommand("cmd " + parameters.joinToString(" "), receiver, maxTimeToOutputResponse, maxTimeUnits, inputStream)
     }
   }
 

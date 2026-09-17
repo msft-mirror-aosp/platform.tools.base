@@ -18,12 +18,14 @@
 
 package com.android.tools.profgen
 
+import java.io.InputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.charset.StandardCharsets
 import java.util.zip.CRC32
 
 private const val HEADER_SIZE = 0x70
+private const val HEADER_V41_SIZE = 0x78
 private const val MAGIC_PREFIX = "dex\n" // 0x64 0x65 0x78 0x0a
 private const val MAGIC_SUFFIX = "\u0000"
 private const val ENDIAN_TAG_OFFSET = 40
@@ -34,22 +36,12 @@ private val MAGIC_SUPPORTED_VERSIONS =
     "038", // Android O. Adds support for new bytecodes and data for method handles.
     "039", // Android P+. Adds support for const-method-handle and const-method-type bytecodes.
     "040", // Android R+. Extended the set of allowed characters in SimpleNames.
+    "041", // Android V+. Adds support for dex containers.
   )
 
-/**
- * Parses a Dex (Dalvik Executable) from a ByteArray. More information on the specification for this encoding can be found here:
- * https://source.android.com/devices/tech/dalvik/dex-format
- */
-internal fun parseDexFile(bytes: ByteArray, name: String): DexFile {
-  val crc32 = CRC32().apply { update(bytes) }
-  val crc32Checksum = crc32.value
-  val byteBuffer = ByteBuffer.wrap(bytes)
-  return parseDexFile(byteBuffer, crc32Checksum, name)
-}
-
-internal fun parseDexFile(buffer: ByteBuffer, checksum: Long, name: String): DexFile {
-  val dexHeader = parseHeader(buffer)
-  val dexFile = DexFile(dexHeader, checksum, name)
+private fun parseDexFile(buffer: ByteBuffer, checksum: Long, dexIndex: Int, headerOffset: Int? = null): DexFile {
+  val dexHeader = parseHeader(buffer, headerOffset)
+  val dexFile = DexFile(dexHeader, checksum, dexIndex)
   parseStringPool(buffer, dexFile)
   parseTypePool(buffer, dexFile)
   parsePrototypePool(buffer, dexFile)
@@ -58,22 +50,59 @@ internal fun parseDexFile(buffer: ByteBuffer, checksum: Long, name: String): Dex
   return dexFile
 }
 
-private fun parseHeader(src: ByteBuffer): DexHeader {
+fun parseDexFiles(src: InputStream, existingDexCount: Int = 0): List<DexFile> {
+  return parseDexFiles(src.readBytes(), existingDexCount)
+}
+
+internal fun parseDexFiles(bytes: ByteArray, existingDexCount: Int = 0): List<DexFile> {
+  val byteBuffer = ByteBuffer.wrap(bytes)
+  val crc32 = CRC32().apply { update(bytes) }
+  val crc32Checksum = crc32.value
+  return parseDexFiles(byteBuffer, crc32Checksum, existingDexCount)
+}
+
+internal fun parseDexFiles(buffer: ByteBuffer, checksum: Long, existingDexCount: Int = 0): List<DexFile> {
+  val firstHeader = parseHeader(buffer, 0)
+  val isContainer = firstHeader.version >= 41 && (firstHeader.fileSize < firstHeader.containerSize || firstHeader.headerOffset != 0)
+
+  if (isContainer) {
+    val dexes = mutableListOf<DexFile>()
+    var offset = 0
+    val containerSize = firstHeader.containerSize
+    var i = 0
+    while (offset < containerSize) {
+      val logicalDexIndex = existingDexCount + i
+      val dex = parseDexFile(buffer, checksum, logicalDexIndex, offset)
+      dexes.add(dex)
+      offset += dex.header.fileSize
+      i++
+    }
+    return dexes
+  } else {
+    buffer.position(0)
+    return listOf(parseDexFile(buffer, checksum, existingDexCount))
+  }
+}
+
+internal fun parseHeader(src: ByteBuffer, explicitHeaderOffset: Int? = null): DexHeader {
+  val offset = explicitHeaderOffset ?: 0
   // Determine the byte order of the file.
-  val endian = Endian.forNumber(src.order(ByteOrder.LITTLE_ENDIAN).getInt(ENDIAN_TAG_OFFSET))
+  val endian = Endian.forNumber(src.order(ByteOrder.LITTLE_ENDIAN).getInt(offset + ENDIAN_TAG_OFFSET))
   src.order(endian.order)
 
+  src.position(offset)
   val rawMagic = ByteArray(8)
   src.get(rawMagic)
   val magic = String(rawMagic, StandardCharsets.UTF_8)
-  checkMagic(magic)
+  val dexVersion = checkMagic(magic)
   /* val checksum = */ src.int
   val signature = ByteArray(20)
   src.get(signature)
-  /* val fileSize = */ src.int
+  val fileSize = src.int
   val headerSize = src.int
-  if (headerSize != HEADER_SIZE) {
-    invalidDexFile("Header is wrong size. Got $headerSize, Want $HEADER_SIZE")
+  val expectedHeaderSize = if (dexVersion >= 41) HEADER_V41_SIZE else HEADER_SIZE
+  if (headerSize != expectedHeaderSize) {
+    invalidDexFile("Header is wrong size. Got $headerSize, Want $expectedHeaderSize")
   }
 
   // Skip the endian tag as we read it earlier.
@@ -87,6 +116,17 @@ private fun parseHeader(src: ByteBuffer): DexHeader {
   val methodIds = parseSpan(src)
   val classDefs = parseSpan(src)
   val data = parseSpan(src)
+
+  var containerSize = 0
+  var headerOffset = 0
+  if (dexVersion >= 41) {
+    containerSize = src.int
+    headerOffset = src.int
+    if (explicitHeaderOffset != null && explicitHeaderOffset != headerOffset) {
+      invalidDexFile("Invalid Dex41+ header offset. Expected ($explicitHeaderOffset) / Actual ($headerOffset)")
+    }
+  }
+
   return DexHeader(
     stringIds = stringIds,
     typeIds = typeIds,
@@ -94,6 +134,10 @@ private fun parseHeader(src: ByteBuffer): DexHeader {
     methodIds = methodIds,
     classDefs = classDefs,
     data = data,
+    fileSize = fileSize,
+    containerSize = containerSize,
+    headerOffset = headerOffset,
+    version = dexVersion,
   )
 }
 
@@ -200,7 +244,7 @@ private fun getTypeList(dexFile: DexFile, buffer: ByteBuffer, offset: Long): Lis
     return emptyList()
   }
   val listOffset = offset.toIntSaturated()
-  if (!dexFile.header.data.includes(listOffset.toLong())) {
+  if (dexFile.header.data.size > 0 && !dexFile.header.data.includes(listOffset.toLong())) {
     invalidDexFile("offset invalid: offset=$offset, data=${dexFile.header.data}")
   }
   // Move the data buffer to the start of the string.
@@ -216,7 +260,7 @@ private fun getTypeList(dexFile: DexFile, buffer: ByteBuffer, offset: Long): Lis
   return result
 }
 
-private fun checkMagic(magic: String?) {
+private fun checkMagic(magic: String?): Int {
   if (magic == null || !magic.startsWith(MAGIC_PREFIX) || !magic.endsWith(MAGIC_SUFFIX)) {
     invalidDexFile("Unexpected magic number: $magic")
   }
@@ -224,6 +268,7 @@ private fun checkMagic(magic: String?) {
   if (!MAGIC_SUPPORTED_VERSIONS.contains(versionTag)) {
     invalidDexFile("Unsupported DEX version tag: $versionTag")
   }
+  return versionTag.toInt()
 }
 
 private fun parseSpan(src: ByteBuffer): Span {

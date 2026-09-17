@@ -47,13 +47,13 @@ internal class PerDeviceMonitor(
   fun start() {
     scope.launch {
       runCatching {
-          processTracker.trackProcesses().collect {
-            when (it) {
-              is ProcessRemoved -> handleProcessRemoved(it)
-              is ProcessAdded -> handleProcessAdded(it)
-            }
+        processTracker.trackProcesses().collect {
+          when (it) {
+            is ProcessRemoved -> handleProcessRemoved(it)
+            is ProcessAdded -> handleProcessAdded(it)
           }
         }
+      }
         .onFailure { throwable -> logger.logIOCompletionErrors(throwable) }
     }
   }

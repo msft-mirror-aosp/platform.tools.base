@@ -265,4 +265,23 @@ constructor(
   override val nativeBuildCreationConfig: NativeBuildCreationConfig? = null
   override val enableApiModeling: Boolean = false
   override val enableGlobalSynthetics: Boolean = false
+
+  private val testTaskConfigActions = mutableListOf<(Task) -> Unit>()
+  private val taskProviderActions = mutableListOf<(TaskProvider<out Task>) -> Unit>()
+
+  @Synchronized
+  override fun configureTestTask(action: (Task) -> Unit) {
+    testTaskConfigActions.add(action)
+  }
+
+  @Synchronized
+  override fun withTestTaskProvider(action: (TaskProvider<out Task>) -> Unit) {
+    taskProviderActions.add(action)
+  }
+
+  @Synchronized
+  override fun runTestTaskConfigurationActions(testTask: TaskProvider<out Task>) {
+    taskProviderActions.forEach { action2 -> action2(testTask) }
+    testTaskConfigActions.forEach { action -> testTask.configure { task -> action(task) } }
+  }
 }

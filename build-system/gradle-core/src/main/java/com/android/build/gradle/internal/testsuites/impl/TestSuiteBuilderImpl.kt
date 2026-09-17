@@ -89,7 +89,11 @@ internal constructor(
     }
   }
 
-  internal val codeCoverage = testSuiteDslInfo.testSuite.codeCoverage
+  internal var _enableCodeCoverage: Boolean = testSuiteDslInfo.testSuite.codeCoverage
+
+  override fun setEnabledCodeCoverage(value: Boolean) {
+    _enableCodeCoverage = value
+  }
 
   override val junitEngineSpec: JUnitEngineSpecBuilder =
     JUnitEngineSpecForVariantBuilder(objects, testSuiteDslInfo.testSuite.useJunitEngine as JUnitEngineSpecImpl)

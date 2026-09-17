@@ -68,24 +68,23 @@ class AarMetadataTaskTest {
 
   @Test
   fun testDsl() {
-    val build =
-      rule.build {
-        androidLibrary {
-          android {
-            defaultConfig {
-              multiDexEnabled = true
-              aarMetadata {
-                minCompileSdk = 27
-                minAgpVersion = "3.0.0"
-                minCompileSdkExtension = 2
-              }
+    val build = rule.build {
+      androidLibrary {
+        android {
+          defaultConfig {
+            multiDexEnabled = true
+            aarMetadata {
+              minCompileSdk = 27
+              minAgpVersion = "3.0.0"
+              minCompileSdkExtension = 2
             }
-            compileOptions { isCoreLibraryDesugaringEnabled = true }
-
-            dependencies { coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:$DESUGAR_DEPENDENCY_VERSION") }
           }
+          compileOptions { isCoreLibraryDesugaringEnabled = true }
+
+          dependencies { coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:$DESUGAR_DEPENDENCY_VERSION") }
         }
       }
+    }
 
     build.executor.run(":lib:assembleDebug")
     build.androidLibrary().assertAar(AarSelector.DEBUG) {
@@ -112,30 +111,29 @@ class AarMetadataTaskTest {
   fun testDsl_productFlavor() {
     // We add minCompileSdkVersion to defaultConfig and a product flavor to ensure that the
     // product flavor value trumps the defaultConfig value.
-    val build =
-      rule.build {
-        androidLibrary {
-          android {
-            defaultConfig {
-              aarMetadata {
-                minCompileSdk = 27
-                minAgpVersion = "3.0.0"
-                minCompileSdkExtension = 2
-              }
+    val build = rule.build {
+      androidLibrary {
+        android {
+          defaultConfig {
+            aarMetadata {
+              minCompileSdk = 27
+              minAgpVersion = "3.0.0"
+              minCompileSdkExtension = 2
             }
-            flavorDimensions += "foo"
-            productFlavors {
-              create("premium") {
-                it.aarMetadata {
-                  minCompileSdk = 28
-                  minAgpVersion = "3.1.0"
-                  minCompileSdkExtension = 3
-                }
+          }
+          flavorDimensions += "foo"
+          productFlavors {
+            create("premium") {
+              it.aarMetadata {
+                minCompileSdk = 28
+                minAgpVersion = "3.1.0"
+                minCompileSdkExtension = 3
               }
             }
           }
         }
       }
+    }
 
     build.executor.run(":lib:assemblePremiumDebug")
     build.androidLibrary().assertAar(AarSelector.DEBUG.withFlavor("premium")) {
@@ -153,39 +151,38 @@ class AarMetadataTaskTest {
   fun testDsl_buildType() {
     // We add minCompileSdkVersion to defaultConfig, a product flavor, and the debug build
     // type to ensure that the build type value trumps the other values.
-    val build =
-      rule.build {
-        androidLibrary {
-          android {
-            defaultConfig {
-              aarMetadata {
-                minCompileSdk = 27
-                minAgpVersion = "3.0.0"
-                minCompileSdkExtension = 2
+    val build = rule.build {
+      androidLibrary {
+        android {
+          defaultConfig {
+            aarMetadata {
+              minCompileSdk = 27
+              minAgpVersion = "3.0.0"
+              minCompileSdkExtension = 2
+            }
+          }
+          flavorDimensions += "foo"
+          productFlavors {
+            create("premium") {
+              it.aarMetadata {
+                minCompileSdk = 28
+                minAgpVersion = "3.1.0"
+                minCompileSdkExtension = 3
               }
             }
-            flavorDimensions += "foo"
-            productFlavors {
-              create("premium") {
-                it.aarMetadata {
-                  minCompileSdk = 28
-                  minAgpVersion = "3.1.0"
-                  minCompileSdkExtension = 3
-                }
-              }
-            }
-            buildTypes {
-              named("debug") {
-                it.aarMetadata {
-                  minCompileSdk = 29
-                  minAgpVersion = "3.2.0"
-                  minCompileSdkExtension = 4
-                }
+          }
+          buildTypes {
+            named("debug") {
+              it.aarMetadata {
+                minCompileSdk = 29
+                minAgpVersion = "3.2.0"
+                minCompileSdkExtension = 4
               }
             }
           }
         }
       }
+    }
 
     build.executor.run(":lib:assemblePremiumDebug")
     build.androidLibrary().assertAar(AarSelector.DEBUG.withFlavor("premium")) {
@@ -201,21 +198,20 @@ class AarMetadataTaskTest {
 
   @Test
   fun testVariantApi() {
-    val build =
-      rule.build {
-        androidLibrary {
-          android {
-            defaultConfig {
-              aarMetadata {
-                minCompileSdk = 26
-                minAgpVersion = "2.0.0"
-                minCompileSdkExtension = 1
-              }
+    val build = rule.build {
+      androidLibrary {
+        android {
+          defaultConfig {
+            aarMetadata {
+              minCompileSdk = 26
+              minAgpVersion = "2.0.0"
+              minCompileSdkExtension = 1
             }
           }
-          pluginCallbacks += LibCallback::class.java
         }
+        pluginCallbacks += LibCallback::class.java
       }
+    }
     build.executor.run(":lib:assembleDebug")
     build.androidLibrary().assertAar(AarSelector.DEBUG) {
       aarMetadata {
@@ -260,10 +256,9 @@ class AarMetadataTaskTest {
 
   @Test
   fun testMinSdkWithMinor() {
-    val build =
-      rule.build {
-        androidLibrary { android { defaultConfig { aarMetadata { minCompileSdk { version = release(33) { minorApiLevel = 1 } } } } } }
-      }
+    val build = rule.build {
+      androidLibrary { android { defaultConfig { aarMetadata { minCompileSdk { version = release(33) { minorApiLevel = 1 } } } } } }
+    }
 
     build.executor.run(":lib:assembleDebug")
 

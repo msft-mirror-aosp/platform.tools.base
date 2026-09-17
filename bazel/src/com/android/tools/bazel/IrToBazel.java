@@ -290,6 +290,48 @@ public class IrToBazel {
                                 }
                             }
                         }
+
+                        // IDEA library definitions (such as tools/adt/idea/.idea/libraries
+                        // /jetbrains_kotlinx_coroutines_test.xml) can list multiple source JARs.
+                        // But Bazel jvm_import rules only support one.
+                        if (library.getSourceFiles().size() == 1) {
+                            File srcjar = library.getSourceFiles().getFirst();
+
+                            String workspaceRelativePath =
+                                    workspace.relativize(srcjar.toPath()).toString();
+
+                            Package pkg = bazel.findPackage(workspaceRelativePath);
+
+                            if (pkg == null) {
+                                throw new IllegalStateException(
+                                        "Cannot find package for srcjar: "
+                                                + srcjar
+                                                + "\nFrom library: "
+                                                + library.getName());
+                            }
+
+                            String packageRelativePath = pkg.getRelativePath(srcjar);
+
+                            if (pkg == javaImport.getPackage()) {
+                                javaImport.setSrcjar(packageRelativePath);
+                            } else {
+                                String key = pkg.getName() + ":" + libName + "_srcjar";
+
+                                FileGroup fileGroup =
+                                        groups.computeIfAbsent(
+                                                key,
+                                                _ -> {
+                                                    FileGroup g =
+                                                            new FileGroup(pkg, libName + "_srcjar");
+                                                    g.addSource(packageRelativePath);
+
+                                                    return g;
+                                                });
+
+                                javaImport.setSrcjar(fileGroup.getLabel());
+                            }
+                        }
+
                         imports.put(library, javaImport);
                     }
 

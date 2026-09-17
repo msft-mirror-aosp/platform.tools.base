@@ -25,18 +25,17 @@ import org.junit.Test
 class LintPrintTextReportTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        android {
-          namespace = "com.example.app"
-          lint {
-            disable += listOf("AllowBackup", "MissingApplicationIcon", "GradleDependency")
-            error += "Fake"
-          }
+  val rule = GradleRule.from {
+    androidApplication {
+      android {
+        namespace = "com.example.app"
+        lint {
+          disable += listOf("AllowBackup", "MissingApplicationIcon", "GradleDependency")
+          error += "Fake"
         }
       }
     }
+  }
 
   @Test
   fun testPrintTextReportOption() {

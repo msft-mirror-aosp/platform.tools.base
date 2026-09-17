@@ -41,7 +41,7 @@ import org.gradle.tooling.model.gradle.GradleBuild
  */
 class GetAndroidModelV2Action(
   private val variantName: String? = null,
-  private val parameterMutator: (ModelBuilderParameter) -> Unit = { it.buildAllRuntimeClasspaths() },
+  private val parameterMutator: ModelBuilderV2.ParameterMutator = ModelBuilderV2.ParameterMutator { it.buildAllRuntimeClasspaths() },
   private val nativeParams: ModelBuilderV2.NativeModuleParams? = null,
 ) : BuildAction<ModelContainerV2> {
 

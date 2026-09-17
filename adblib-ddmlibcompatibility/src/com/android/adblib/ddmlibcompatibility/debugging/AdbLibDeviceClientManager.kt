@@ -95,13 +95,13 @@ internal class AdbLibDeviceClientManager(
       // the device is disconnected
       connectedDevice.scope.launch {
         runCatching {
-            launch { ddmlibEventQueue.runDispatcher() }
+          launch { ddmlibEventQueue.runDispatcher() }
 
-            connectedDevice.waitUntilOnline()
+          connectedDevice.waitUntilOnline()
 
-            // Track processes running on the device
-            startProcessTracking(connectedDevice)
-          }
+          // Track processes running on the device
+          startProcessTracking(connectedDevice)
+        }
           .onFailure { throwable -> logger.logIOCompletionErrors(throwable) }
       }
     }

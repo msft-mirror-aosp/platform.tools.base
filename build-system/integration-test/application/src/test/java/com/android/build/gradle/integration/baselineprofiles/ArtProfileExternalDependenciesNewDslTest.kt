@@ -37,22 +37,21 @@ class ArtProfileExternalDependenciesNewDslTest {
       .trimIndent()
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication(":app") {
-        android {
-          namespace = "com.example.app"
-          defaultConfig { minSdk = 28 }
-        }
-        dependencies {
-          implementation(activityDependency)
-          implementation(fragmentDependency)
-          implementation(lifecycleDependency)
-        }
-        files.add("src/main/baselineProfiles/file.txt", baselineProfileContent)
+  val rule = GradleRule.from {
+    androidApplication(":app") {
+      android {
+        namespace = "com.example.app"
+        defaultConfig { minSdk = 28 }
       }
-      gradleProperties { add("android.useAndroidX", "true") }
+      dependencies {
+        implementation(activityDependency)
+        implementation(fragmentDependency)
+        implementation(lifecycleDependency)
+      }
+      files.add("src/main/baselineProfiles/file.txt", baselineProfileContent)
     }
+    gradleProperties { add("android.useAndroidX", "true") }
+  }
 
   @Test
   fun testIgnoreFrom() {

@@ -18,6 +18,7 @@ package com.android.build.gradle.internal
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.variant.TestVariantBuilder
 import com.android.build.gradle.internal.component.*
+import com.android.build.gradle.internal.coverage.tasks.TestReportCreationConfigImpl
 import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask
 import com.android.build.gradle.internal.tasks.DeviceSerialTestTask
 import com.android.build.gradle.internal.tasks.SigningConfigVersionsWriterTask
@@ -137,14 +138,10 @@ class TestApplicationTaskManager(
     }
   }
 
-  override fun registerTestAndCodeCoverageCollectionTasks(
-    variantInfo: ComponentInfo<TestVariantBuilder, TestVariantCreationConfig>,
-    testResultsCollectionTasks: MutableList<TaskProvider<TestResultsCollectionTask>>,
-  ) {
+  override fun registerTestAndCodeCoverageCollectionTasks(variantInfo: ComponentInfo<TestVariantBuilder, TestVariantCreationConfig>) {
     if (isReportAggregationEnabled) {
-      testResultsCollectionTasks.add(
-        taskFactory.register(TestResultsCollectionTask.TestResultsCollectionCreationAction(variantInfo.variant))
-      )
+      val testReportCreationConfig = TestReportCreationConfigImpl(variantInfo.variant, emptyList())
+      taskFactory.register(TestResultsCollectionTask.TestResultsCollectionCreationAction(testReportCreationConfig))
     }
   }
 }

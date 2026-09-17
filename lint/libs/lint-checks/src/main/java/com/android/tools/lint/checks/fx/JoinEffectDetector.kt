@@ -20,6 +20,7 @@ import com.android.tools.lint.checks.fx.analysis.Ans
 import com.android.tools.lint.checks.fx.analysis.EffectResult
 import com.android.tools.lint.checks.fx.analysis.LocalFun
 import com.android.tools.lint.checks.fx.analysis.Module
+import com.android.tools.lint.checks.fx.analysis.Module.AnnotationParser.Companion.nearestBaseAnns
 import com.android.tools.lint.checks.fx.result.AssumptionTable
 import com.android.tools.lint.checks.fx.result.ClassId
 import com.android.tools.lint.checks.fx.result.Constraint
@@ -52,6 +53,7 @@ import com.android.tools.lint.checks.fx.utils.decodeFromDir
 import com.android.tools.lint.checks.fx.utils.encodeToDir
 import com.android.tools.lint.checks.fx.utils.leastFixPoint
 import com.android.tools.lint.checks.fx.utils.unionedWith
+import com.android.tools.lint.client.api.LintBaseline.Companion.stringsEquivalent
 import com.android.tools.lint.client.api.LintClient
 import com.android.tools.lint.client.api.UElementHandler
 import com.android.tools.lint.detector.api.Context
@@ -63,6 +65,7 @@ import com.android.tools.lint.detector.api.Project
 import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.intellij.openapi.application.runReadAction
 import com.intellij.psi.PsiTypeParameter
+import java.io.Closeable
 import java.io.File
 import java.lang.Iterable as JIterable
 import java.nio.file.Paths
@@ -80,12 +83,15 @@ import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.plus
 import kotlinx.collections.immutable.toPersistentSet
 import org.jetbrains.annotations.VisibleForTesting
-import org.jetbrains.kotlin.incremental.createDirectory
 import org.jetbrains.kotlin.psi.KtNamedFunction
+import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UClass
 import org.jetbrains.uast.UElement
+import org.jetbrains.uast.UExpression
 import org.jetbrains.uast.ULambdaExpression
+import org.jetbrains.uast.UMethod
 import org.jetbrains.uast.UVariable
+import org.jetbrains.uast.toUElement
 
 /**
  * Generic detector for effect with only one way of combining by joining up a [Lattice] regardless of whether sequentially or from different
@@ -167,7 +173,7 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
           }
         }
 
-        val summaries = Analysis(program, effects, knownResults).leastFixPoint(entries)
+        val summaries = Analysis(program, effects, knownResults, externalAnnotationFinder(context)).leastFixPoint(entries)
 
         buildMap {
           for ((k, v) in summaries) {
@@ -207,6 +213,63 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
    * is [Lattice.top].
    */
   protected abstract fun report(context: Context, error: Error<FX>)
+
+  /**
+   * The argument of [call] standing for the base of [invocation]'s receiver chain in the callee's assumed summary, if any. For example,
+   * with `invoke` assumed as `(this, x₀) -> x₀.run()`, `argumentOfAssumedDomain(app.invoke(r), x₀.run())` = `r`
+   */
+  protected fun argumentOfAssumedDomain(call: UExpression, invocation: Type.Sym<FX>): UExpression? {
+    val callExpr = call as? UCallExpression ?: return null
+    val callee = callExpr.resolve() ?: return null
+    if (callee.containingClass == null) return null
+    val calleeRef = Type.MethodRef(callee)
+    val assumption = knownResults[calleeRef] ?: return null
+    tailrec fun rootOf(sym: Type.Sym<FX>): Type.Sym<FX> =
+      when (sym) {
+        is Type.Sym.Invoke -> rootOf(sym.receiver)
+        else -> sym
+      }
+    // Like the analysis, resolve a symbol standing for a domain through one step of the template's substitution
+    val root =
+      when (val r = rootOf(invocation)) {
+        is Type.Sym.Name -> (assumption.subst[r] as? Type.Sym) ?: r
+        else -> r
+      }
+    val index = assumption.domains.indexOfFirst { it == root }
+    if (index < 0) return null
+    val receiverCount = if (calleeRef.method.isVirtual) 1 else 0
+    return if (index < receiverCount) callExpr.receiver else callExpr.getArgumentForParameter(index - receiverCount)
+  }
+
+  protected fun sameArgumentMessage(new: String, old: String): Boolean =
+    old.split(LEGACY_ARGUMENT_SENTENCE_BOUNDARY).any { stringsEquivalent(it.replace(LEGACY_ARGUMENT_PARAM, "$1"), new) }
+
+  /** Best-effort lookup of the explicit effect annotation on a method not in the current scope or the assumption table */
+  private fun externalAnnotationFinder(context: Context): (Type.MethodRef) -> FX? {
+    val evaluator = context.client.getUastParser(context.project).evaluator
+    fun find(ref: Type.MethodRef): FX? {
+      val psiClass = ref.klass.fqn?.let(evaluator::findClass) ?: return null
+      val psiMethod =
+        psiClass.findMethodsByName(ref.method.name, true).find { MethodId(it) == ref.method }
+          ?: psiClass.constructors.find { MethodId(it) == ref.method }
+          ?: return null
+      val uMethod = psiMethod.toUElement() as? UMethod ?: return null
+      return parseMethodImmediateAnnotations(evaluator, uMethod)
+        ?: nearestBaseAnns(evaluator, psiMethod.findSuperMethods()).map { it.annotated }.reduceOrNull(effects::meetOf)
+    }
+
+    return memoizeNullable(::find)
+  }
+
+  private fun <X, Y : Any> memoizeNullable(compute: (X) -> Y?): (X) -> Y? {
+    val cache = hashMapOf<X, Y?>()
+    return fun(key) =
+      // TODO `getOrPutIfMissing` when available in 2.4
+      when {
+        key in cache -> cache[key]
+        else -> compute(key).also { cache[key] = it }
+      }
+  }
 
   private fun maybeSavePartialResults(context: Context, program: Module<FX>) {
     if (context.isGlobalAnalysis()) return
@@ -250,7 +313,7 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
       }
     return when {
       path.exists() -> path.toFile()
-      createIfAbsent -> path.toFile().apply { createDirectory() }
+      createIfAbsent -> path.toFile().apply { mkdirs() }
       else -> null
     }
   }
@@ -351,16 +414,15 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
 
   private val summaryEncoder = Encoder.product(::Pair, classIdListEncoder, classSummaryEncoder.zeroOrMore())
 
-  private val methodIdEncoder: Encoder<MethodId> =
-    Encoder {
-        Encoder.product(
-          ::MethodId,
-          Encoder.boolean withDefault true,
-          Encoder.internedString withDefault "invoke",
-          classIdEncoder.orNull().zeroOrMore() withDefault listOf(),
-        )
-      }
-      .interned()
+  private val methodIdEncoder: Encoder<MethodId> = Encoder {
+    Encoder.product(
+      ::MethodId,
+      Encoder.boolean withDefault true,
+      Encoder.internedString withDefault "invoke",
+      classIdEncoder.orNull().zeroOrMore() withDefault listOf(),
+    )
+  }
+    .interned()
 
   private val methodRefEncoder: Encoder<Type.MethodRef> = Encoder.product(Type<FX>::MethodRef, classIdEncoder, methodIdEncoder)
 
@@ -434,6 +496,9 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
   }
 
   companion object {
+    private val LEGACY_ARGUMENT_PARAM = Regex("""(Argument) at `[^`]+` ?""")
+    private val LEGACY_ARGUMENT_SENTENCE_BOUNDARY = Regex("""(?<=\.) (?=Argument at )""")
+
     /** Adds assumptions on common Java and Kotlin utils */
     fun <FX> AssumptionTableBuilder<FX>.assumeCommonJavaAndKotlinSignatures() {
       // Iterable
@@ -524,7 +589,7 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
           forAll { t ->
             forAll(Iterable::class(t)) { self ->
               forAll(Function2::class(Type.Int, t, Type.Unit)) { action ->
-                given(Iterable::class(t), action) {
+                given(self, action) {
                   range = self
                   symbolicInvocations += action[MethodId.Invoke[2], Type.Int, t]
                 }
@@ -585,6 +650,133 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
               }
             }
           }
+
+        static<_, (Any?) -> Iterable<Any>>(Iterable<*>::flatMap) assumedAs
+          forAll { t ->
+            forAll { r ->
+              forAll(Function1::class(t, Iterable::class(r))) { transform ->
+                given(Iterable::class(t), transform) {
+                  range = List::class(r)
+                  symbolicInvocations += transform[MethodId.Invoke[1], t]
+                }
+              }
+            }
+          }
+        static<_, (Any?) -> Any>(Iterable<*>::mapNotNull) assumedAs
+          forAll { t ->
+            forAll { r ->
+              forAll(Function1::class(t, r)) { transform ->
+                given(Iterable::class(t), transform) {
+                  range = List::class(r)
+                  symbolicInvocations += transform[MethodId.Invoke[1], t]
+                }
+              }
+            }
+          }
+        static<_, (Int, Any?) -> Any>(Iterable<*>::mapIndexed) assumedAs
+          forAll { t ->
+            forAll { r ->
+              forAll(Function2::class(Type.Int, t, r)) { transform ->
+                given(Iterable::class(t), transform) {
+                  range = List::class(r)
+                  symbolicInvocations += transform[MethodId.Invoke[2], Type.Int, t]
+                }
+              }
+            }
+          }
+        (static(Iterable<*>::filterNot) + static(Iterable<*>::takeWhile) + static(Iterable<*>::dropWhile)) assumedAs
+          forAll { t ->
+            forAll(Function1::class(t, Type.Boolean)) { predicate ->
+              given(Iterable::class(t), predicate) {
+                range = List::class(t)
+                symbolicInvocations += predicate[MethodId.Invoke[1], t]
+              }
+            }
+          }
+        (static<_, (Any?) -> Boolean>(Iterable<*>::first) +
+          static<_, (Any?) -> Boolean>(Iterable<*>::firstOrNull) +
+          static(Iterable<*>::find)) assumedAs
+          forAll { t ->
+            forAll(Function1::class(t, Type.Boolean)) { predicate ->
+              given(Iterable::class(t), predicate) {
+                range = t
+                symbolicInvocations += predicate[MethodId.Invoke[1], t]
+              }
+            }
+          }
+        static<_, (Any?) -> Boolean>(Iterable<*>::count) assumedAs
+          forAll { t ->
+            forAll(Function1::class(t, Type.Boolean)) { predicate ->
+              given(Iterable::class(t), predicate) {
+                range = Type.Int
+                symbolicInvocations += predicate[MethodId.Invoke[1], t]
+              }
+            }
+          }
+        static(Iterable<*>::partition) assumedAs
+          forAll { t ->
+            forAll(Function1::class(t, Type.Boolean)) { predicate ->
+              given(Iterable::class(t), predicate) {
+                range = Pair::class(List::class(t), List::class(t))
+                symbolicInvocations += predicate[MethodId.Invoke[1], t]
+              }
+            }
+          }
+        static<_, (Any?) -> Any>(Iterable<*>::groupBy) assumedAs
+          forAll { t ->
+            forAll { k ->
+              forAll(Function1::class(t, k)) { keySelector ->
+                given(Iterable::class(t), keySelector) {
+                  range = Map::class(k, List::class(t))
+                  symbolicInvocations += keySelector[MethodId.Invoke[1], t]
+                }
+              }
+            }
+          }
+        static<_, (Any?) -> Any>(Iterable<*>::associateBy) assumedAs
+          forAll { t ->
+            forAll { k ->
+              forAll(Function1::class(t, k)) { keySelector ->
+                given(Iterable::class(t), keySelector) {
+                  range = Map::class(k, t)
+                  symbolicInvocations += keySelector[MethodId.Invoke[1], t]
+                }
+              }
+            }
+          }
+        static<_, (Any?) -> Any>(Iterable<*>::associateWith) assumedAs
+          forAll { t ->
+            forAll { v ->
+              forAll(Function1::class(t, v)) { valueSelector ->
+                given(Iterable::class(t), valueSelector) {
+                  range = Map::class(t, v)
+                  symbolicInvocations += valueSelector[MethodId.Invoke[1], t]
+                }
+              }
+            }
+          }
+        (static<_, (Any) -> Comparable<Any>>(Iterable<Nothing>::sortedBy) +
+          static<_, (Any) -> Comparable<Any>>(Iterable<Nothing>::sortedByDescending)) assumedAs
+          forAll { t ->
+            forAll { r ->
+              forAll(Function1::class(t, r)) { selector ->
+                given(Iterable::class(t), selector) {
+                  range = List::class(t)
+                  symbolicInvocations += selector[MethodId.Invoke[1], t]
+                  symbolicInvocations += r[Comparable<*>::compareTo, r]
+                }
+              }
+            }
+          }
+        static(Iterable<*>::sortedWith) assumedAs
+          forAll { t ->
+            forAll(Comparator::class(t)) { comparator ->
+              given(Iterable::class(t), comparator) {
+                range = List::class(t)
+                symbolicInvocations += comparator[Comparator<*>::compare, t, t]
+              }
+            }
+          }
       }
 
       // List
@@ -627,7 +819,7 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
           forAll { k ->
             forAll { v ->
               forAll(Function1::class(Map.Entry::class(k, v), Type.Unit)) { action ->
-                given(Map::class(k, v), action) { symbolicInvocations += action[MethodId.Invoke[1], Map::class(k, v)] }
+                given(Map::class(k, v), action) { symbolicInvocations += action[MethodId.Invoke[1], Map.Entry::class(k, v)] }
               }
             }
           }
@@ -640,6 +832,65 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
                     range = List::class(r)
                     symbolicInvocations += transform[MethodId.Invoke[1], Map.Entry::class(k, v)]
                   }
+                }
+              }
+            }
+          }
+        static<Map<*, *>, (Map.Entry<*, *>) -> Any>(Map<*, *>::mapValues) assumedAs
+          forAll { k ->
+            forAll { v ->
+              forAll { r ->
+                forAll(Function1::class(Map.Entry::class(k, v), r)) { transform ->
+                  given(Map::class(k, v), transform) {
+                    range = Map::class(k, r)
+                    symbolicInvocations += transform[MethodId.Invoke[1], Map.Entry::class(k, v)]
+                  }
+                }
+              }
+            }
+          }
+        static<Map<*, *>, (Map.Entry<*, *>) -> Any>(Map<*, *>::mapKeys) assumedAs
+          forAll { k ->
+            forAll { v ->
+              forAll { r ->
+                forAll(Function1::class(Map.Entry::class(k, v), r)) { transform ->
+                  given(Map::class(k, v), transform) {
+                    range = Map::class(r, v)
+                    symbolicInvocations += transform[MethodId.Invoke[1], Map.Entry::class(k, v)]
+                  }
+                }
+              }
+            }
+          }
+        static<Map<*, *>, (Map.Entry<*, *>) -> Boolean>(Map<*, *>::filter) assumedAs
+          forAll { k ->
+            forAll { v ->
+              forAll(Function1::class(Map.Entry::class(k, v), Type.Boolean)) { predicate ->
+                given(Map::class(k, v), predicate) {
+                  range = Map::class(k, v)
+                  symbolicInvocations += predicate[MethodId.Invoke[1], Map.Entry::class(k, v)]
+                }
+              }
+            }
+          }
+        static<Map<Any, Any>, Any, () -> Any>(Map<Any, Any>::getOrElse) assumedAs
+          forAll { k ->
+            forAll { v ->
+              forAll(Function0::class(v)) { defaultValue ->
+                given(Map::class(k, v), k, defaultValue) {
+                  range = v
+                  symbolicInvocations += defaultValue[MethodId.Invoke[0]]
+                }
+              }
+            }
+          }
+        static<MutableMap<Any, Any>, Any, () -> Any>(MutableMap<Any, Any>::getOrPut) assumedAs
+          forAll { k ->
+            forAll { v ->
+              forAll(Function0::class(v)) { defaultValue ->
+                given(Map::class(k, v), k, defaultValue) {
+                  range = v
+                  symbolicInvocations += defaultValue[MethodId.Invoke[0]]
                 }
               }
             }
@@ -868,6 +1119,139 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
                 given(T, block) {
                   range = R
                   symbolicInvocations += block[MethodId.Invoke[1], T]
+                }
+              }
+            }
+          }
+
+        (static<Any, (Any) -> Boolean>(Any::takeIf) + static<Any, (Any) -> Boolean>(Any::takeUnless)) assumedAs
+          forAll { t ->
+            forAll(Function1::class(t, Type.Boolean)) { predicate ->
+              given(t, predicate) {
+                range = t
+                symbolicInvocations += predicate[MethodId.Invoke[1], t]
+              }
+            }
+          }
+
+        static<() -> Any>(::runCatching) assumedAs
+          forAll { r ->
+            forAll(Function0::class(r)) { block ->
+              given(block) {
+                range = kotlin.Result::class(r)
+                symbolicInvocations += block[MethodId.Invoke[0]]
+              }
+            }
+          }
+        static<Any, Any.() -> Any>(Any::runCatching) assumedAs
+          forAll { t ->
+            forAll { r ->
+              forAll(Function1::class(t, r)) { block ->
+                given(t, block) {
+                  range = kotlin.Result::class(r)
+                  symbolicInvocations += block[MethodId.Invoke[1], t]
+                }
+              }
+            }
+          }
+
+        static<Closeable, (Closeable) -> Any>(Closeable::use) assumedAs
+          forAll(Closeable::class()) { t ->
+            forAll { r ->
+              forAll(Function1::class(t, r)) { block ->
+                given(t, block) {
+                  range = r
+                  symbolicInvocations += block[MethodId.Invoke[1], t]
+                  symbolicInvocations += t[Closeable::close]
+                }
+              }
+            }
+          }
+
+        // The lazy messages below are invoked at most once, synchronously; joining their effect unconditionally is the usual
+        // over-approximation.
+        (static<Boolean, () -> Any>(::require) + static<Boolean, () -> Any>(::check)) assumedAs
+          forAll(Function0::class(Type.Any)) { lazyMessage ->
+            given(Type.Boolean, lazyMessage) { symbolicInvocations += lazyMessage[MethodId.Invoke[0]] }
+          }
+        (static<Any?, () -> Any>(::requireNotNull) + static<Any?, () -> Any>(::checkNotNull)) assumedAs
+          forAll { t ->
+            forAll(Function0::class(Type.Any)) { lazyMessage ->
+              given(t, lazyMessage) {
+                range = t
+                symbolicInvocations += lazyMessage[MethodId.Invoke[0]]
+              }
+            }
+          }
+
+        static<StringBuilder.() -> Unit>(::buildString) assumedAs
+          forAll(Function1::class(StringBuilder::class(), Type.Unit)) { builderAction ->
+            given(builderAction) {
+              range = Type.String
+              symbolicInvocations += builderAction[MethodId.Invoke[1], StringBuilder::class()]
+            }
+          }
+        static<Int, StringBuilder.() -> Unit>(::buildString) assumedAs
+          forAll(Function1::class(StringBuilder::class(), Type.Unit)) { builderAction ->
+            given(Type.Int, builderAction) {
+              range = Type.String
+              symbolicInvocations += builderAction[MethodId.Invoke[1], StringBuilder::class()]
+            }
+          }
+        static<MutableList<Any>.() -> Unit>(::buildList) assumedAs
+          forAll { e ->
+            forAll(Function1::class(List::class(e), Type.Unit)) { builderAction ->
+              given(builderAction) {
+                range = List::class(e)
+                symbolicInvocations += builderAction[MethodId.Invoke[1], List::class(e)]
+              }
+            }
+          }
+        static<Int, MutableList<Any>.() -> Unit>(::buildList) assumedAs
+          forAll { e ->
+            forAll(Function1::class(List::class(e), Type.Unit)) { builderAction ->
+              given(Type.Int, builderAction) {
+                range = List::class(e)
+                symbolicInvocations += builderAction[MethodId.Invoke[1], List::class(e)]
+              }
+            }
+          }
+        static<MutableSet<Any>.() -> Unit>(::buildSet) assumedAs
+          forAll { e ->
+            forAll(Function1::class(Set::class(e), Type.Unit)) { builderAction ->
+              given(builderAction) {
+                range = Set::class(e)
+                symbolicInvocations += builderAction[MethodId.Invoke[1], Set::class(e)]
+              }
+            }
+          }
+        static<Int, MutableSet<Any>.() -> Unit>(::buildSet) assumedAs
+          forAll { e ->
+            forAll(Function1::class(Set::class(e), Type.Unit)) { builderAction ->
+              given(Type.Int, builderAction) {
+                range = Set::class(e)
+                symbolicInvocations += builderAction[MethodId.Invoke[1], Set::class(e)]
+              }
+            }
+          }
+        static<MutableMap<Any, Any>.() -> Unit>(::buildMap) assumedAs
+          forAll { k ->
+            forAll { v ->
+              forAll(Function1::class(Map::class(k, v), Type.Unit)) { builderAction ->
+                given(builderAction) {
+                  range = Map::class(k, v)
+                  symbolicInvocations += builderAction[MethodId.Invoke[1], Map::class(k, v)]
+                }
+              }
+            }
+          }
+        static<Int, MutableMap<Any, Any>.() -> Unit>(::buildMap) assumedAs
+          forAll { k ->
+            forAll { v ->
+              forAll(Function1::class(Map::class(k, v), Type.Unit)) { builderAction ->
+                given(Type.Int, builderAction) {
+                  range = Map::class(k, v)
+                  symbolicInvocations += builderAction[MethodId.Invoke[1], Map::class(k, v)]
                 }
               }
             }

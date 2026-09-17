@@ -28,37 +28,36 @@ import org.junit.Test
 
 class HostTestIncludeAndroidResourcesWithVariantApiTest {
   @get:Rule
-  val project =
-    GradleRule.from {
-      androidApplication {
-        android {
-          compileSdk = 34
-          defaultConfig.applicationId = "com.android_token_test_lib"
-        }
-        files {
-          add(
-            "src/main/res/values/strings.xml",
-            // language=xml
-            """
-            <resources>
-                <string name="oem_token_demo">TOKEN_DEMO</string>
-            </resources>
-            """
-              .trimIndent(),
-          )
-          add(
-            "src/main/res/values/values.xml",
-            // language=xml
-            "<resources />",
-          )
-        }
-        pluginCallbacks += HostTestIncludeAndroidResourcesWithVariantApiTestApplicationCallback::class.java
+  val project = GradleRule.from {
+    androidApplication {
+      android {
+        compileSdk = 34
+        defaultConfig.applicationId = "com.android_token_test_lib"
       }
-      androidLibrary {
-        android {}
-        pluginCallbacks += HostTestIncludeAndroidResourcesWithVariantApiTestLibraryCallback::class.java
+      files {
+        add(
+          "src/main/res/values/strings.xml",
+          // language=xml
+          """
+          <resources>
+              <string name="oem_token_demo">TOKEN_DEMO</string>
+          </resources>
+          """
+            .trimIndent(),
+        )
+        add(
+          "src/main/res/values/values.xml",
+          // language=xml
+          "<resources />",
+        )
       }
+      pluginCallbacks += HostTestIncludeAndroidResourcesWithVariantApiTestApplicationCallback::class.java
     }
+    androidLibrary {
+      android {}
+      pluginCallbacks += HostTestIncludeAndroidResourcesWithVariantApiTestLibraryCallback::class.java
+    }
+  }
 
   @Test
   fun checkClassesDir() {

@@ -558,13 +558,13 @@ class LintDetectorDetectorTest {
 
     val libs = mutableListOf<File>()
     findFromRuntimeClassPath { file ->
-        val name = file.name
-        val path = file.path
-        name.endsWith(DOT_JAR) ||
-          (!path.endsWith("android.sdktools.base.lint.checks-base") &&
-            !path.endsWith("android.sdktools.base.lint.studio-checks") &&
-            !path.contains("lint-tests"))
-      }
+      val name = file.name
+      val path = file.path
+      name.endsWith(DOT_JAR) ||
+        (!path.endsWith("android.sdktools.base.lint.checks-base") &&
+          !path.endsWith("android.sdktools.base.lint.studio-checks") &&
+          !path.contains("lint-tests"))
+    }
       .forEach { libs.add(it) }
 
     // Symlink to all the jars on the classpath and insert a src/ link

@@ -76,23 +76,38 @@ def gradle_requires_cpu4_or_more(build_env: bazel.BuildEnv):
   """Tests running on MacOS using Gradle must declare cpu:4 or higher."""
   studio_mac_tags = 'attr(tags, "ci:studio-mac", //tools/...)'
   high_cpu_tags = 'attr(tags, "cpu:([4-9]|[1-9][1-9])", //tools/...)'
-  paths_to_gradle = f'allpaths({studio_mac_tags} except {high_cpu_tags}, //tools/base/build-system:gradle-distrib)'
+  candidate_query = f'{studio_mac_tags} except {high_cpu_tags}'
 
-  result = build_env.bazel_query(paths_to_gradle, '--output=minrank')
+  result = build_env.bazel_query(candidate_query)
   if not result.stdout:
     return
-  query_targets = result.stdout.decode('utf8').splitlines()
-  # --output=minrank will prefix each target with a number, where 0 represents
-  # root targets.
-  query_targets = [s.removeprefix('0') for s in query_targets if s.startswith('0')]
+
+  starlark_expr = (
+      'str(target.label) if [f for f in'
+      ' providers(target)["DefaultInfo"].default_runfiles.files.to_list() if'
+      ' "tools/external/gradle/" in f.path and f.path.endswith(".zip")] else ""'
+  )
+  cquery_result = build_env.bazel_cquery(
+      candidate_query,
+      '--output=starlark',
+      f'--starlark:expr={starlark_expr}',
+  )
+  failing_targets = [
+      f' //{line.strip().removeprefix("@@//").removeprefix("//")}'
+      for line in cquery_result.stdout.decode('utf8').splitlines()
+      if line.strip()
+  ]
+  if not failing_targets:
+    return
+
   raise BuildGraphException(
-        title='Gradle tests need cpu:4 or greater',
-        go_link='go/studio-ci#macos',
-        body=(
-            'ERROR: The follow targets depend on //tools/base/build-system:gradle-distrib'
-            ' and must have cpu:4 or greater\n'
-        ) + '\n'.join(query_targets)
-    )
+      title='Gradle tests need cpu:4 or greater',
+      go_link='go/studio-ci#macos',
+      body=(
+          'ERROR: The follow targets depend on //tools/base/build-system:gradle-distrib'
+          ' and must have cpu:4 or greater\n'
+      ) + '\n'.join(failing_targets),
+  )
 
 
 def check_large_machine_allowlist(build_env: bazel.BuildEnv):

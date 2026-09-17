@@ -25,8 +25,8 @@ import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationAction
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.dexing.ClassFileInput.CLASS_MATCHER
-import java.io.File
 import java.util.jar.JarFile
+import org.gradle.api.InvalidUserDataException
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
@@ -52,6 +52,8 @@ abstract class FusedLibraryMergeClasses : NonIncrementalGlobalTask() {
   @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val incoming: ConfigurableFileCollection
 
   override fun doTaskAction() {
+    val outRoot = outputDirectory.get().asFile.toPath().toAbsolutePath().normalize()
+
     incoming.files
       .filter { it.exists() }
       .sortedBy { it.path }
@@ -63,12 +65,16 @@ abstract class FusedLibraryMergeClasses : NonIncrementalGlobalTask() {
             .asSequence()
             .sortedBy { it.name }
             .forEach { jarEntry ->
+              if (jarEntry.isDirectory) return@forEach
               jarFile.getInputStream(jarEntry).use { inputStream ->
-                val outputDir = outputDirectory.get().dir(jarEntry.name.substringBeforeLast('/'))
-                val fileName = jarEntry.name.substringAfterLast('/')
+                val entryName = jarEntry.name.replace('\\', '/')
+                val fileName = entryName.substringAfterLast('/')
                 if (CLASS_MATCHER.test(fileName) || (includeManifest.get() && fileName == "MANIFEST.MF")) {
-                  val outputFile = File(outputDir.asFile, fileName)
-
+                  val outputPath = outRoot.resolve(entryName).normalize()
+                  if (!outputPath.startsWith(outRoot)) {
+                    throw InvalidUserDataException("Refusing to extract zip entry outside of $outRoot: ${jarEntry.name} from $file")
+                  }
+                  val outputFile = outputPath.toFile()
                   if (!outputFile.exists()) {
                     outputFile.parentFile.mkdirs()
                     outputFile.writeBytes(inputStream.readBytes())

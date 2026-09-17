@@ -25,6 +25,7 @@ internal const val ATTR_CLASSNAME = "classname"
 internal const val KEY_MODULE_PATH = "modulePath"
 internal const val KEY_TEST_SUITE_NAME = "testSuiteName"
 internal const val KEY_TESTED_VARIANT_NAME = "testedVariantName"
+internal const val KEY_TEST_TARGET = "testTarget"
 
 /** XML element tags found in test reports. */
 internal const val TAG_PROPERTY = "property"
@@ -42,3 +43,5 @@ internal const val STATUS_FAIL = "fail"
 internal const val EXT_XML = "xml"
 
 internal const val AGGREGATED_TEST_SUITE_NAME = "Aggregated"
+
+const val UNKNOWN_TARGET = "unknown_target"

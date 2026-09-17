@@ -56,12 +56,7 @@ class AndroidManagedDeviceTest(val runWithBuiltInPlatform: Boolean) {
         val deviceName = DSL_DEVICE_NAME
         val deviceOutputDir = "$TEST_RESULTS/$deviceName"
 
-        util.testResultXmlPath =
-          if (util.runWithBuiltInPlatform) {
-            "${moduleName}/$deviceOutputDir/TEST-$deviceName.xml"
-          } else {
-            "${moduleName}/$deviceOutputDir/TEST-$DSL_DEVICE_NAME-_$moduleName-.xml"
-          }
+        util.testResultXmlPath = "${moduleName}/$deviceOutputDir/TEST-$deviceName.xml"
 
         util.testReportPath =
           "${moduleName}/$REPORTS/androidTests/managedDevice/debug/$deviceName/com.example.android.kotlin${if (rule.build.subProject(":$moduleName") is AndroidDynamicFeatureProject) ".feature" else ""}.html"
@@ -71,6 +66,7 @@ class AndroidManagedDeviceTest(val runWithBuiltInPlatform: Boolean) {
         util.testResultPbPath = "${moduleName}/$deviceOutputDir/test-result.pb"
         util.testCoverageXmlPath = "${moduleName}/$TEST_COV_XML"
         util.testAdditionalOutputPath = "${moduleName}/build/outputs/managed_device_android_test_additional_output/debug/$deviceName"
+        util.deviceName = deviceName
       },
     )
 
@@ -131,8 +127,28 @@ class AndroidManagedDeviceTest(val runWithBuiltInPlatform: Boolean) {
   }
 
   @Test
+  fun connectedAndroidTestWithLogcatOutputsNoExceptions() {
+    util.connectedAndroidTestWithLogcatOutputsNoExceptions()
+  }
+
+  @Test
   fun connectedAndroidTestFromTestOnlyModule() {
     util.connectedAndroidTestFromTestOnlyModule()
+  }
+
+  @Test
+  fun connectedAndroidTestFromTestOnlyModuleWithReportAggregation() {
+    util.connectedAndroidTestFromTestOnlyModuleWithNewReportFormat()
+  }
+
+  @Test
+  fun androidTestFromApplicationModuleWithReportAggregation() {
+    util.androidTestWithNewReportFormat()
+  }
+
+  @Test
+  fun androidTestFromLibraryModuleWithReportAggregation() {
+    util.androidTestFromLibraryModuleWithNewReportFormat()
   }
 
   @Test

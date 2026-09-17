@@ -15,43 +15,65 @@
  */
 package com.android.support;
 
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
+import com.google.common.collect.ImmutableList;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
- * Type representing an Android Support Library name. This type contains both the old name and the
- * new name of a class. The type also returns a "default name" that will be changed from the old to
+ * Type representing an Android Support Library name. This type contains the old name and the new
+ * name(s) of a class. The type also returns a "default name" that will be changed from the old to
  * new eventually.
  */
 public class AndroidxName {
-    private final String myOldName;
-    private final String myNewName;
 
-    public AndroidxName(@NonNull String oldName, @NonNull String newName) {
-        myOldName = oldName;
-        myNewName = newName;
+    private final ImmutableList<String> myNames;
+
+    private AndroidxName(@NotNull List<String> names) {
+        myNames = ImmutableList.copyOf(names);
+    }
+
+    public AndroidxName(
+            @NotNull String oldName, @NotNull String newName, @NotNull String... otherNames) {
+        this(
+                ImmutableList.<String>builder()
+                        .add(oldName)
+                        .add(newName)
+                        .addAll(Arrays.asList(otherNames))
+                        .build());
     }
 
     /** Creates a new instance for the given package and class name */
-    @NonNull
-    public static AndroidxName of(@NonNull AndroidxName pkg, @NonNull String simpleClassName) {
+    @NotNull
+    public static AndroidxName of(@NotNull AndroidxName pkg, @NotNull String simpleClassName) {
         assert !simpleClassName.contains(".");
 
-        return new AndroidxName(
-                pkg.oldName() + (pkg.oldName().endsWith(".") ? "" : ".") + simpleClassName,
-                pkg.newName() + (pkg.newName().endsWith(".") ? "" : ".") + simpleClassName);
+        ImmutableList.Builder<String> builder = ImmutableList.builder();
+        for (String name : pkg.myNames) {
+            builder.add(name + (name.endsWith(".") ? "" : ".") + simpleClassName);
+        }
+        return new AndroidxName(builder.build());
+    }
+
+    /** Returns all versions of the name */
+    @NotNull
+    public List<String> names() {
+        return myNames;
     }
 
     /** Returns the {@code com.android.support} version of the name */
-    @NonNull
+    @NotNull
     public String oldName() {
-        return myOldName;
+        return myNames.get(0);
     }
 
     /** Returns the {@code androidx} version of the name */
-    @NonNull
+    @NotNull
     public String newName() {
-        return myNewName;
+        return myNames.size() > 1 ? myNames.get(1) : myNames.get(0);
     }
 
     /**
@@ -60,9 +82,9 @@ public class AndroidxName {
      * should avoid using this method when possible and use {@link #oldName()} or {@link #newName()}
      * depending on the dependencies of the module.
      */
-    @NonNull
+    @NotNull
     public String defaultName() {
-        return myOldName;
+        return oldName();
     }
 
     /** Returns if the current name is a prefix of the given name. */
@@ -81,10 +103,10 @@ public class AndroidxName {
             return false;
         }
 
-        if (name.startsWith(oldName())) {
-            return !strict || oldName().length() < name.length();
-        } else if (name.startsWith(newName())) {
-            return !strict || newName().length() < name.length();
+        for (String n : myNames) {
+            if (name.startsWith(n) && (!strict || n.length() < name.length())) {
+                return true;
+            }
         }
 
         return false;
@@ -96,11 +118,11 @@ public class AndroidxName {
      * <p>For example, if the <code>AndroidxName</code> is "android" and the passed qualifiedName is
      * "android.TestClass", this method, will return "TestClass"
      */
-    public String removeFrom(@NonNull String qualifiedName) {
-        if (qualifiedName.startsWith(oldName())) {
-            return qualifiedName.substring(oldName().length());
-        } else if (qualifiedName.startsWith(newName())) {
-            return qualifiedName.substring(newName().length());
+    public String removeFrom(@NotNull String qualifiedName) {
+        for (String n : myNames) {
+            if (qualifiedName.startsWith(n)) {
+                return qualifiedName.substring(n.length());
+            }
         }
 
         return qualifiedName;
@@ -112,7 +134,7 @@ public class AndroidxName {
             return false;
         }
 
-        return myOldName.equals(strName) || myNewName.equals(strName);
+        return myNames.contains(strName);
     }
 
     /** Compares the current name with the given string ignoring case sensitivity */
@@ -121,18 +143,32 @@ public class AndroidxName {
             return false;
         }
 
-        return myOldName.equalsIgnoreCase(strName) || myNewName.equalsIgnoreCase(strName);
+        for (String n : myNames) {
+            if (n.equalsIgnoreCase(strName)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
+    @Override
     public boolean equals(Object other) {
         if (other instanceof String) {
             throw new IllegalStateException("You probably meant to call isEquals!");
         }
-        return super.equals(other);
+        if (this == other) {
+            return true;
+        }
+        if (other == null || getClass() != other.getClass()) {
+            return false;
+        }
+        return myNames.equals(((AndroidxName) other).myNames);
     }
 
+    @Override
     public int hashCode() {
-        return super.hashCode();
+        return myNames.hashCode();
     }
 
     @Override

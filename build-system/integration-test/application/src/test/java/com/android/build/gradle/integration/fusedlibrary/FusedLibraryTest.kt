@@ -212,15 +212,14 @@ class FusedLibraryTest {
 
   @Test
   fun checkSourcesCauseError() {
-    val build =
-      rule.build {
-        fusedLibrary(":fusedLib1") {
-          files {
-            // No sources are permitted in the Fused Library
-            add("src/main/java/com/fused/library/NotAllowed.java", "")
-          }
+    val build = rule.build {
+      fusedLibrary(":fusedLib1") {
+        files {
+          // No sources are permitted in the Fused Library
+          add("src/main/java/com/fused/library/NotAllowed.java", "")
         }
       }
+    }
 
     val failure = build.executor.expectFailure().run(":fusedLib1:assemble")
     failure.assertErrorContains(
@@ -232,15 +231,14 @@ class FusedLibraryTest {
 
   @Test
   fun checkContentsOfEmptyFusedLibrary() {
-    val build =
-      rule.build {
-        fusedLibrary(":empty-fused-library") {
-          androidFusedLibrary {
-            namespace = "com.example.emptyFusedLibrary"
-            minSdk { version = release(DEFAULT_MIN_SDK_VERSION) }
-          }
+    val build = rule.build {
+      fusedLibrary(":empty-fused-library") {
+        androidFusedLibrary {
+          namespace = "com.example.emptyFusedLibrary"
+          minSdk { version = release(DEFAULT_MIN_SDK_VERSION) }
         }
       }
+    }
     build.executor.run(":empty-fused-library:assemble")
     val buildDir = build.fusedLibrary(":empty-fused-library").buildDir.resolve("outputs/aar/empty-fused-library.aar")
     ZipFile(buildDir.toFile()).use {

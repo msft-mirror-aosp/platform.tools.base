@@ -2115,6 +2115,118 @@ class VersionChecksTest : AbstractCheckTest() {
       )
   }
 
+  // TODO b/555266733
+  fun testPrecededByWithComplexConditions() {
+    lint()
+      .files(
+        manifest().minSdk(10),
+        java(
+            """
+                package test.pkg;
+
+                import android.os.Build;
+                import androidx.annotation.RequiresApi;
+
+                @SuppressWarnings({"WeakerAccess", "unused"})
+                public class TestPrecededByVersionCheck {
+                    @RequiresApi(22)
+                    public boolean requiresLollipop() {
+                        return true;
+                    }
+
+                    public void orReturnThen(boolean optedIn) {
+                        if (Build.VERSION.SDK_INT < 22 || optedIn) {
+                            return;
+                        }
+                        requiresLollipop(); // OK 1
+                    }
+
+                    // Equivalent to the condition in orReturnThen
+                    public void negateAndReturnThen(boolean optedIn) {
+                        if (!(Build.VERSION.SDK_INT >= 22 && !optedIn)) {
+                            return;
+                        }
+                        requiresLollipop(); // OK 2
+                    }
+
+                    public void andReturnElse(boolean optedIn) {
+                        if (Build.VERSION.SDK_INT >= 22 && !optedIn) {
+                            // Something
+                        } else {
+                            return;
+                        }
+                        requiresLollipop(); // OK 3
+                    }
+
+                    // Equivalent to the condition in andReturnElse
+                    public void negateOrReturnElse(boolean optedIn) {
+                        if (!(Build.VERSION.SDK_INT < 22 || optedIn)) {
+                            // Something
+                        } else {
+                            return;
+                        }
+                        requiresLollipop(); // OK 4
+                    }
+
+                    // In all cases below, the API level can be less than 22 at `requiresLollipop`
+                    // if `optedIn` is true
+
+                    public void andReturnThen(boolean optedIn) {
+                        if (Build.VERSION.SDK_INT < 22 && !optedIn) {
+                            return;
+                        }
+                        requiresLollipop(); // ERROR 1
+                    }
+
+                    // Equivalent to the condition in andReturnThen
+                    public void negateOrReturnThen(boolean optedIn) {
+                        if (!(Build.VERSION.SDK_INT >= 22 || optedIn)) {
+                            return;
+                        }
+                        requiresLollipop(); // ERROR 2
+                    }
+
+                    public void orReturnElse(boolean optedIn) {
+                        if (Build.VERSION.SDK_INT >= 22 || optedIn) {
+                            // Something
+                        } else {
+                            return;
+                        }
+                        requiresLollipop(); // ERROR 3
+                    }
+
+                    // Equivalent to the condition in orReturnElse
+                    public void negateAndReturnElse(boolean optedIn) {
+                        if (!(Build.VERSION.SDK_INT < 22 && !optedIn)) {
+                            // Something
+                        } else {
+                            return;
+                        }
+                        requiresLollipop(); // ERROR 4
+                    }
+                }
+                """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+                src/test/pkg/TestPrecededByVersionCheck.java:25: Error: Call requires API level 22 (current min is 10): requiresLollipop [NewApi]
+                        requiresLollipop(); // OK 2
+                        ~~~~~~~~~~~~~~~~
+                src/test/pkg/TestPrecededByVersionCheck.java:54: Error: Call requires API level 22 (current min is 10): requiresLollipop [NewApi]
+                        requiresLollipop(); // ERROR 1
+                        ~~~~~~~~~~~~~~~~
+                src/test/pkg/TestPrecededByVersionCheck.java:81: Error: Call requires API level 22 (current min is 10): requiresLollipop [NewApi]
+                        requiresLollipop(); // ERROR 4
+                        ~~~~~~~~~~~~~~~~
+                3 errors, 0 warnings
+                """
+      )
+  }
+
   fun testNestedChecks() {
     lint()
       .files(

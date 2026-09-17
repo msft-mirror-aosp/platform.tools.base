@@ -142,6 +142,7 @@ constructor(
     }
 
   private val testTaskConfigActions = mutableListOf<(Test) -> Unit>()
+  private val taskProviderActions = mutableListOf<(TaskProvider<out Test>) -> Unit>()
 
   @Synchronized
   override fun configureTestTask(action: (Test) -> Unit) {
@@ -149,7 +150,13 @@ constructor(
   }
 
   @Synchronized
+  override fun withTestTaskProvider(action: (TaskProvider<out Test>) -> Unit) {
+    taskProviderActions.add(action)
+  }
+
+  @Synchronized
   override fun runTestTaskConfigurationActions(testTask: TaskProvider<out Test>) {
+    taskProviderActions.forEach { action2 -> action2(testTask) }
     testTaskConfigActions.forEach { action -> testTask.configure { task -> action(task) } }
   }
 

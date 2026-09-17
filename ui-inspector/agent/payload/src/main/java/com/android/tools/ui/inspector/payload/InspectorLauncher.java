@@ -17,7 +17,9 @@
 package com.android.tools.ui.inspector.payload;
 
 import android.util.Log;
+
 import com.android.tools.ui.inspector.common.ProtocolConstants;
+
 import java.util.function.Consumer;
 
 /** Entry point for the UI Inspector payload. Starts a Unix domain socket server to listen for commands from the host. */
@@ -27,24 +29,28 @@ public final class InspectorLauncher {
 
   private InspectorLauncher() {}
 
-  public static synchronized void start(String pid) {
-    start(pid, Server::startServer);
+    public static synchronized void start(String serverToken) {
+        start(serverToken, Server::startServer);
   }
 
-  public static synchronized void start(String pid, Consumer<String> serverStarter) {
+    public static synchronized void start(String serverToken, Consumer<String> serverStarter) {
     if (serverThread != null && serverThread.isAlive()) {
       Log.i(TAG, "Inspector server is already running.");
       return;
     }
-    serverThread = new Thread(() -> {
-      try {
-        serverStarter.accept(pid);
-      } catch (Throwable t) {
-        // Catching Throwable prevents any unhandled exception or error in the agent
-        // from bringing down the entire application process.
-        Log.e(TAG, "Uncaught exception in inspector", t);
-      }
-    }, "ui-inspector-server");
+        serverThread =
+                new Thread(
+                        () -> {
+                            try {
+                                serverStarter.accept(serverToken);
+                            } catch (Throwable t) {
+                                // Catching Throwable prevents any unhandled exception or error in
+                                // the agent
+                                // from bringing down the entire application process.
+                                Log.e(TAG, "Uncaught exception in inspector", t);
+                            }
+                        },
+                        "ui-inspector-server");
     serverThread.start();
   }
 }

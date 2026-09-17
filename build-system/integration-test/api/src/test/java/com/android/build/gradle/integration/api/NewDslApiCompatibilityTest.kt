@@ -31,18 +31,17 @@ import org.junit.Test
 class NewDslApiCompatibilityTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      buildFileType = BuildFileType.KTS
+  val rule = GradleRule.from {
+    buildFileType = BuildFileType.KTS
 
-      rootProject {
-        files {
-          val localRepos = GradleTestProject.localRepositories
-          val repoUrls = localRepos.joinToString("\n") { "maven { url = uri(\"${it.toUri()}\") }" }
+    rootProject {
+      files {
+        val localRepos = GradleTestProject.localRepositories
+        val repoUrls = localRepos.joinToString("\n") { "maven { url = uri(\"${it.toUri()}\") }" }
 
-          add(
-            "buildSrc/settings.gradle.kts",
-            """
+        add(
+          "buildSrc/settings.gradle.kts",
+          """
             pluginManagement {
                 repositories {
                     $repoUrls
@@ -59,12 +58,12 @@ class NewDslApiCompatibilityTest {
                 }
             }
             """
-              .trimIndent(),
-          )
+            .trimIndent(),
+        )
 
-          add(
-            "buildSrc/build.gradle.kts",
-            """
+        add(
+          "buildSrc/build.gradle.kts",
+          """
             plugins {
                 id("org.jetbrains.kotlin.jvm") version "${TestUtils.KOTLIN_VERSION_FOR_TESTS}"
                 `java-gradle-plugin`
@@ -86,118 +85,118 @@ class NewDslApiCompatibilityTest {
                 }
             }
             """
-              .trimIndent(),
-          )
+            .trimIndent(),
+        )
 
-          add(
-            "buildSrc/src/main/kotlin/com/example/apiuser/ExamplePlugin.kt",
-            """
-            package com.example.apiuser
+        add(
+          "buildSrc/src/main/kotlin/com/example/apiuser/ExamplePlugin.kt",
+          """
+          package com.example.apiuser
 
-            import com.android.build.api.variant.AndroidComponentsExtension
-            import org.gradle.api.Plugin
-            import org.gradle.api.Project
+          import com.android.build.api.variant.AndroidComponentsExtension
+          import org.gradle.api.Plugin
+          import org.gradle.api.Project
 
-            class ExamplePlugin : Plugin<Project> {
-                override fun apply(project: Project) {
-                    project.plugins.withId("com.android.library") {
-                        configure(project)
-                    }
+          class ExamplePlugin : Plugin<Project> {
+              override fun apply(project: Project) {
+                  project.plugins.withId("com.android.library") {
+                      configure(project)
+                  }
 
-                    project.afterEvaluate {
-                        val hasApp = project.plugins.hasPlugin("com.android.application")
-                        val hasLib = project.plugins.hasPlugin("com.android.library")
-                        if (!hasApp && !hasLib) {
-                            throw IllegalStateException(
-                                "To use com.example.apiuser.example-plugin " +
-                                        "you also need to apply one of the following:\n" +
-                                        " * com.android.application or\n" +
-                                        " * com.android.library"
-                            )
-                        }
-                    }
-                }
+                  project.afterEvaluate {
+                      val hasApp = project.plugins.hasPlugin("com.android.application")
+                      val hasLib = project.plugins.hasPlugin("com.android.library")
+                      if (!hasApp && !hasLib) {
+                          throw IllegalStateException(
+                              "To use com.example.apiuser.example-plugin " +
+                                      "you also need to apply one of the following:\n" +
+                                      " * com.android.application or\n" +
+                                      " * com.android.library"
+                          )
+                      }
+                  }
+              }
 
-                private fun configure(project: Project) {
-                    val androidComponents = project.extensions.getByType(AndroidComponentsExtension::class.java)
+              private fun configure(project: Project) {
+                  val androidComponents = project.extensions.getByType(AndroidComponentsExtension::class.java)
 
-                    androidComponents.finalizeDsl { extension ->
-                        extension.buildTypes.all { buildType ->
-                            val libBuildType = buildType as com.android.build.api.dsl.LibraryBuildType
-                            println("Build type ${'$'}{libBuildType.name} evaluated")
-                            libBuildType.manifestPlaceholders["customKey"] = "customValue"
-                        }
-                        extension.productFlavors.all { flavor ->
-                            val libFlavor = flavor as com.android.build.api.dsl.LibraryProductFlavor
-                            println("Product flavor ${'$'}{libFlavor.name} evaluated")
-                            libFlavor.manifestPlaceholders["customKey"] = "customValue"
-                        }
-                    }
+                  androidComponents.finalizeDsl { extension ->
+                      extension.buildTypes.all { buildType ->
+                          val libBuildType = buildType as com.android.build.api.dsl.LibraryBuildType
+                          println("Build type ${'$'}{libBuildType.name} evaluated")
+                          libBuildType.manifestPlaceholders["customKey"] = "customValue"
+                      }
+                      extension.productFlavors.all { flavor ->
+                          val libFlavor = flavor as com.android.build.api.dsl.LibraryProductFlavor
+                          println("Product flavor ${'$'}{libFlavor.name} evaluated")
+                          libFlavor.manifestPlaceholders["customKey"] = "customValue"
+                      }
+                  }
 
-                    project.tasks.register("examplePluginTask", ExampleTask::class.java) { task ->
-                        task.configure(androidComponents)
-                    }
-                }
-            }
-            """
-              .trimIndent(),
-          )
+                  project.tasks.register("examplePluginTask", ExampleTask::class.java) { task ->
+                      task.configure(androidComponents)
+                  }
+              }
+          }
+          """
+            .trimIndent(),
+        )
 
-          add(
-            "buildSrc/src/main/kotlin/com/example/apiuser/ExampleTask.kt",
-            """
-            package com.example.apiuser
+        add(
+          "buildSrc/src/main/kotlin/com/example/apiuser/ExampleTask.kt",
+          """
+          package com.example.apiuser
 
-            import com.android.build.api.variant.AndroidComponentsExtension
-            import org.gradle.api.DefaultTask
-            import org.gradle.api.file.DirectoryProperty
-            import org.gradle.api.file.RegularFileProperty
-            import org.gradle.api.tasks.InputFile
-            import org.gradle.api.tasks.Internal
-            import org.gradle.api.tasks.TaskAction
+          import com.android.build.api.variant.AndroidComponentsExtension
+          import org.gradle.api.DefaultTask
+          import org.gradle.api.file.DirectoryProperty
+          import org.gradle.api.file.RegularFileProperty
+          import org.gradle.api.tasks.InputFile
+          import org.gradle.api.tasks.Internal
+          import org.gradle.api.tasks.TaskAction
 
-            abstract class ExampleTask: DefaultTask() {
+          abstract class ExampleTask: DefaultTask() {
 
-                @get:InputFile
-                abstract val adbExecutable: RegularFileProperty
+              @get:InputFile
+              abstract val adbExecutable: RegularFileProperty
 
-                @get:Internal
-                abstract val sdkDirectory: DirectoryProperty
+              @get:Internal
+              abstract val sdkDirectory: DirectoryProperty
 
-                @TaskAction
-                fun doThings() {
-                    check(sdkDirectory.get().asFile.exists()) {
-                        "Sdk dir ${'$'}sdkDirectory exists"
-                    }
-                    print("Custom task ran OK")
-                }
+              @TaskAction
+              fun doThings() {
+                  check(sdkDirectory.get().asFile.exists()) {
+                      "Sdk dir ${'$'}sdkDirectory exists"
+                  }
+                  print("Custom task ran OK")
+              }
 
-                fun configure(androidComponents: AndroidComponentsExtension<*, *, *>) {
-                    adbExecutable.set(androidComponents.sdkComponents.adb)
-                    sdkDirectory.set(androidComponents.sdkComponents.sdkDirectory)
-                }
-            }
-            """
-              .trimIndent(),
-          )
-        }
-      }
-
-      androidLibrary {
-        // Replaces the default version with the internal marker to prevent the framework from
-        // writing an explicit version string. This bypasses the issue of the plugin already
-        // being on the classpath with an unknown version.
-        replaceAppliedPlugin(PluginType.ANDROID_LIB, "__internal_version__")
-        applyPlugin(PluginType.Custom("com.example.apiuser.example-plugin"))
-
-        android {
-          namespace = "com.example.lib"
-          compileSdk = DEFAULT_COMPILE_SDK_VERSION
-          flavorDimensions += "color"
-          productFlavors { create("yellow") {} }
-        }
+              fun configure(androidComponents: AndroidComponentsExtension<*, *, *>) {
+                  adbExecutable.set(androidComponents.sdkComponents.adb)
+                  sdkDirectory.set(androidComponents.sdkComponents.sdkDirectory)
+              }
+          }
+          """
+            .trimIndent(),
+        )
       }
     }
+
+    androidLibrary {
+      // Replaces the default version with the internal marker to prevent the framework from
+      // writing an explicit version string. This bypasses the issue of the plugin already
+      // being on the classpath with an unknown version.
+      replaceAppliedPlugin(PluginType.ANDROID_LIB, "__internal_version__")
+      applyPlugin(PluginType.Custom("com.example.apiuser.example-plugin"))
+
+      android {
+        namespace = "com.example.lib"
+        compileSdk = DEFAULT_COMPILE_SDK_VERSION
+        flavorDimensions += "color"
+        productFlavors { create("yellow") {} }
+      }
+    }
+  }
 
   @Test
   fun binaryCompatibilityTest() {

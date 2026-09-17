@@ -18,7 +18,7 @@ iml_module(
     name = "studio.android.sdktools.repository",
     srcs = ["src/main/java"],
     iml_files = ["android.sdktools.repository.iml"],
-    jvm_target = "8",
+    jvm_target = "11",
     lint_baseline = "lint_baseline.xml",
     resources = ["src/main/resources"],
     # do not sort: must match IML order

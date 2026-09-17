@@ -16,8 +16,6 @@
 
 package com.android.tools.preview.multipreview
 
-import java.io.File
-import java.util.zip.ZipFile
 import org.objectweb.asm.AnnotationVisitor
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassVisitor

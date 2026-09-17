@@ -25,11 +25,10 @@ import org.junit.Test
 /** Currently, all tests use Groovy build file, so this test uses KTS as a basic smoke test */
 class KtsTest {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      apply(BasicBuilds.HELLO_WORLD_APP)
-      buildFileType = KTS
-    }
+  val rule = GradleRule.from {
+    apply(BasicBuilds.HELLO_WORLD_APP)
+    buildFileType = KTS
+  }
 
   @Test
   fun test() {

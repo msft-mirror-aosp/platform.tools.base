@@ -52,25 +52,24 @@ class LintAlignUastWithLanguageVersionTest(private val useBuiltInKotlinSupport: 
   /** Test default behavior */
   @Test
   fun testDefaultBehavior() {
-    val build =
-      rule.build {
-        addLanguageVersionsToProject(
-          appExpectedLanguageVersion = kotlinLanguageVersion,
-          libExpectedLanguageVersion = kotlinLanguageVersion,
-          featureExpectedLanguageVersion = kotlinLanguageVersion,
-          javaLibExpectedLanguageVersion = null,
-          kotlinLibExpectedLanguageVersion = kotlinLanguageVersion,
-          kmpAndroidLibExpectedLanguageVersion = kotlinLanguageVersion,
-          kmpJvmLibExpectedLanguageVersion = kotlinLanguageVersion,
-          appExpectedUseK2Uast = true,
-          libExpectedUseK2Uast = true,
-          featureExpectedUseK2Uast = true,
-          javaLibExpectedUseK2Uast = true,
-          kotlinLibExpectedUseK2Uast = true,
-          kmpAndroidLibExpectedUseK2Uast = true,
-          kmpJvmLibExpectedUseK2Uast = true,
-        )
-      }
+    val build = rule.build {
+      addLanguageVersionsToProject(
+        appExpectedLanguageVersion = kotlinLanguageVersion,
+        libExpectedLanguageVersion = kotlinLanguageVersion,
+        featureExpectedLanguageVersion = kotlinLanguageVersion,
+        javaLibExpectedLanguageVersion = null,
+        kotlinLibExpectedLanguageVersion = kotlinLanguageVersion,
+        kmpAndroidLibExpectedLanguageVersion = kotlinLanguageVersion,
+        kmpJvmLibExpectedLanguageVersion = kotlinLanguageVersion,
+        appExpectedUseK2Uast = true,
+        libExpectedUseK2Uast = true,
+        featureExpectedUseK2Uast = true,
+        javaLibExpectedUseK2Uast = true,
+        kotlinLibExpectedUseK2Uast = true,
+        kmpAndroidLibExpectedUseK2Uast = true,
+        kmpJvmLibExpectedUseK2Uast = true,
+      )
+    }
 
     build.executor
       .withFailOnWarning(false) // b/455891987
@@ -91,25 +90,24 @@ class LintAlignUastWithLanguageVersionTest(private val useBuiltInKotlinSupport: 
     check(nextLanguageVersion != kotlinLanguageVersion) {
       "nextLanguageVersion must be higher than the current language version ($kotlinLanguageVersion)"
     }
-    val build =
-      rule.build {
-        addLanguageVersionsToProject(
-          appExpectedLanguageVersion = nextLanguageVersion,
-          libExpectedLanguageVersion = nextLanguageVersion,
-          featureExpectedLanguageVersion = nextLanguageVersion,
-          javaLibExpectedLanguageVersion = null,
-          kotlinLibExpectedLanguageVersion = nextLanguageVersion,
-          kmpAndroidLibExpectedLanguageVersion = nextLanguageVersion,
-          kmpJvmLibExpectedLanguageVersion = nextLanguageVersion,
-          appExpectedUseK2Uast = true,
-          libExpectedUseK2Uast = true,
-          featureExpectedUseK2Uast = true,
-          javaLibExpectedUseK2Uast = true,
-          kotlinLibExpectedUseK2Uast = true,
-          kmpAndroidLibExpectedUseK2Uast = true,
-          kmpJvmLibExpectedUseK2Uast = true,
-        )
-      }
+    val build = rule.build {
+      addLanguageVersionsToProject(
+        appExpectedLanguageVersion = nextLanguageVersion,
+        libExpectedLanguageVersion = nextLanguageVersion,
+        featureExpectedLanguageVersion = nextLanguageVersion,
+        javaLibExpectedLanguageVersion = null,
+        kotlinLibExpectedLanguageVersion = nextLanguageVersion,
+        kmpAndroidLibExpectedLanguageVersion = nextLanguageVersion,
+        kmpJvmLibExpectedLanguageVersion = nextLanguageVersion,
+        appExpectedUseK2Uast = true,
+        libExpectedUseK2Uast = true,
+        featureExpectedUseK2Uast = true,
+        javaLibExpectedUseK2Uast = true,
+        kotlinLibExpectedUseK2Uast = true,
+        kmpAndroidLibExpectedUseK2Uast = true,
+        kmpJvmLibExpectedUseK2Uast = true,
+      )
+    }
 
     build.executor
       .withArgument("-Pkotlin.experimental.tryNext=true")

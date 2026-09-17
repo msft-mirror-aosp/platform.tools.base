@@ -42,39 +42,37 @@ class BuiltInKotlinForAppTest(private val useLatestKgpVersion: Boolean) {
   }
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication { HelloWorldAndroid.setupKotlin(files) }
-      useLatestKgpVersion = this@BuiltInKotlinForAppTest.useLatestKgpVersion
-    }
+  val rule = GradleRule.from {
+    androidApplication { HelloWorldAndroid.setupKotlin(files) }
+    useLatestKgpVersion = this@BuiltInKotlinForAppTest.useLatestKgpVersion
+  }
 
   @Test
   fun testKotlinClassesInApk() {
-    val build =
-      rule.build {
-        androidApplication {
-          files {
-            add(
-              "src/main/java/com/foo/application/AppFoo.kt",
-              // language=kotlin
-              """
-              package com.foo.application
-              class AppFoo
-              """
-                .trimIndent(),
-            )
-            add(
-              "src/main/kotlin/com/foo/application/KotlinAppFoo.kt",
-              // language=kotlin
-              """
-              package com.foo.application
-              class KotlinAppFoo
-              """
-                .trimIndent(),
-            )
-          }
+    val build = rule.build {
+      androidApplication {
+        files {
+          add(
+            "src/main/java/com/foo/application/AppFoo.kt",
+            // language=kotlin
+            """
+            package com.foo.application
+            class AppFoo
+            """
+              .trimIndent(),
+          )
+          add(
+            "src/main/kotlin/com/foo/application/KotlinAppFoo.kt",
+            // language=kotlin
+            """
+            package com.foo.application
+            class KotlinAppFoo
+            """
+              .trimIndent(),
+          )
         }
       }
+    }
 
     build.executor.run(":app:assembleDebug")
     build.androidApplication().assertApk(ApkSelector.DEBUG) {
@@ -94,31 +92,30 @@ class BuiltInKotlinForAppTest(private val useLatestKgpVersion: Boolean) {
 
   @Test
   fun testKotlinClassesInTestApk() {
-    val build =
-      rule.build {
-        androidApplication {
-          files {
-            add(
-              "src/androidTest/java/AppFooTest.kt",
-              // language=kotlin
-              """
-              package com.foo.application
-              class AppFooTest
-              """
-                .trimIndent(),
-            )
-            add(
-              "src/androidTest/kotlin/KotlinAppFooTest.kt",
-              // language=kotlin
-              """
-              package com.foo.application
-              class KotlinAppFooTest
-              """
-                .trimIndent(),
-            )
-          }
+    val build = rule.build {
+      androidApplication {
+        files {
+          add(
+            "src/androidTest/java/AppFooTest.kt",
+            // language=kotlin
+            """
+            package com.foo.application
+            class AppFooTest
+            """
+              .trimIndent(),
+          )
+          add(
+            "src/androidTest/kotlin/KotlinAppFooTest.kt",
+            // language=kotlin
+            """
+            package com.foo.application
+            class KotlinAppFooTest
+            """
+              .trimIndent(),
+          )
         }
       }
+    }
 
     build.executor.run(":app:assembleDebugAndroidTest")
     build.androidApplication().assertApk(ApkSelector.ANDROIDTEST_DEBUG) {
@@ -128,28 +125,27 @@ class BuiltInKotlinForAppTest(private val useLatestKgpVersion: Boolean) {
 
   @Test
   fun testUnitTests() {
-    val build =
-      rule.build {
-        androidApplication {
-          dependencies { testImplementation("junit:junit:4.12") }
+    val build = rule.build {
+      androidApplication {
+        dependencies { testImplementation("junit:junit:4.12") }
 
-          files {
-            add(
-              "src/test/kotlin/AppFooTest.kt",
-              // language=kotlin
-              """
-              package com.foo.application.test
+        files {
+          add(
+            "src/test/kotlin/AppFooTest.kt",
+            // language=kotlin
+            """
+            package com.foo.application.test
 
-              class AppFooTest {
-                @org.junit.Test
-                fun testSample() {}
-              }
-              """
-                .trimIndent(),
-            )
-          }
+            class AppFooTest {
+              @org.junit.Test
+              fun testSample() {}
+            }
+            """
+              .trimIndent(),
+          )
         }
       }
+    }
 
     build.executor.run(":app:testDebug")
     val app = build.androidApplication()
@@ -159,75 +155,73 @@ class BuiltInKotlinForAppTest(private val useLatestKgpVersion: Boolean) {
 
   @Test
   fun testInternalModifierAccessibleFromTests() {
-    val build =
-      rule.build {
-        androidApplication {
-          files {
-            add(
-              "src/main/java/com/foo/application/AppFoo.kt",
-              // language=kotlin
-              """
-              package com.foo.application
-              class AppFoo {
-                internal fun bar() {}
-              }
-              """
-                .trimIndent(),
-            )
-            add(
-              "src/test/com/foo/application/AppFooTest.kt",
-              // language=kotlin
-              """
-              package com.foo.application
-              class AppFooTest {
-                init { AppFoo().bar() }
-              }
-              """
-                .trimIndent(),
-            )
-          }
+    val build = rule.build {
+      androidApplication {
+        files {
+          add(
+            "src/main/java/com/foo/application/AppFoo.kt",
+            // language=kotlin
+            """
+            package com.foo.application
+            class AppFoo {
+              internal fun bar() {}
+            }
+            """
+              .trimIndent(),
+          )
+          add(
+            "src/test/com/foo/application/AppFooTest.kt",
+            // language=kotlin
+            """
+            package com.foo.application
+            class AppFooTest {
+              init { AppFoo().bar() }
+            }
+            """
+              .trimIndent(),
+          )
         }
       }
+    }
 
     build.executor.run(":app:assembleDebugUnitTest")
   }
 
   @Test
   fun testAppCompilesAgainstKotlinClassesFromDependency() {
-    val build =
-      rule.build {
-        androidLibrary {
-          applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
+    val build = rule.build {
+      androidLibrary {
+        applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
 
-          HelloWorldAndroid.setupKotlin(files)
+        HelloWorldAndroid.setupKotlin(files)
 
-          files {
-            add(
-              "src/main/java/com/foo/library/LibFoo.kt",
-              // language=kotlin
-              """
-              package com.foo.library
-              open class LibFoo
-              """
-                .trimIndent(),
-            )
-          }
-        }
-        androidApplication {
-          files {
-            add(
-              "src/main/kotlin/com/foo/application/AppFoo.kt",
-              // language=kotlin
-              """
-              package com.foo.application
-              class AppFoo: com.foo.library.LibFoo()
-              """
-                .trimIndent(),
-            )
-          }
-          dependencies { api(project(":lib")) }
+        files {
+          add(
+            "src/main/java/com/foo/library/LibFoo.kt",
+            // language=kotlin
+            """
+            package com.foo.library
+            open class LibFoo
+            """
+              .trimIndent(),
+          )
         }
       }
+      androidApplication {
+        files {
+          add(
+            "src/main/kotlin/com/foo/application/AppFoo.kt",
+            // language=kotlin
+            """
+            package com.foo.application
+            class AppFoo: com.foo.library.LibFoo()
+            """
+              .trimIndent(),
+          )
+        }
+        dependencies { api(project(":lib")) }
+      }
+    }
 
     build.executor.run(":app:assembleDebug")
     build.androidApplication().assertApk(ApkSelector.DEBUG) {
@@ -249,44 +243,43 @@ class BuiltInKotlinForAppTest(private val useLatestKgpVersion: Boolean) {
 
   @Test
   fun testKotlinAndJavaCrossReferences() {
-    val build =
-      rule.build {
-        androidApplication {
-          files {
-            add(
-              "src/main/java/com/foo/application/AppJavaFoo.java",
-              // language=java
-              """
-              package com.foo.application;
-              public class AppJavaFoo {
-                String prop = new AppKotlinBar().getAppJavaFooClassName();
-              }
-              """
-                .trimIndent(),
-            )
-            add(
-              "src/main/java/com/foo/application/AppKotlinFoo.kt",
-              // language=kotlin
-              """
-              package com.foo.application
-              class AppKotlinFoo: AppJavaFoo()
-              """
-                .trimIndent(),
-            )
-            add(
-              "src/main/java/com/foo/application/AppKotlinBar.kt",
-              // language=kotlin
-              """
-              package com.foo.application
-              class AppKotlinBar {
-                val appJavaFooClassName = AppJavaFoo::class.java.name
-              }
-              """
-                .trimIndent(),
-            )
-          }
+    val build = rule.build {
+      androidApplication {
+        files {
+          add(
+            "src/main/java/com/foo/application/AppJavaFoo.java",
+            // language=java
+            """
+            package com.foo.application;
+            public class AppJavaFoo {
+              String prop = new AppKotlinBar().getAppJavaFooClassName();
+            }
+            """
+              .trimIndent(),
+          )
+          add(
+            "src/main/java/com/foo/application/AppKotlinFoo.kt",
+            // language=kotlin
+            """
+            package com.foo.application
+            class AppKotlinFoo: AppJavaFoo()
+            """
+              .trimIndent(),
+          )
+          add(
+            "src/main/java/com/foo/application/AppKotlinBar.kt",
+            // language=kotlin
+            """
+            package com.foo.application
+            class AppKotlinBar {
+              val appJavaFooClassName = AppJavaFoo::class.java.name
+            }
+            """
+              .trimIndent(),
+          )
         }
       }
+    }
 
     build.executor.run(":app:assembleDebug")
     build.androidApplication().assertApk(ApkSelector.DEBUG) {
@@ -307,94 +300,90 @@ class BuiltInKotlinForAppTest(private val useLatestKgpVersion: Boolean) {
 
   @Test
   fun testExplicitApiModeStrictForMain() {
-    val build =
-      rule.build {
-        androidApplication {
-          files {
-            add(
-              "src/main/kotlin/com/foo/application/KotlinAppFoo.kt",
-              // language=kotlin
-              """
-              package com.foo.application
+    val build = rule.build {
+      androidApplication {
+        files {
+          add(
+            "src/main/kotlin/com/foo/application/KotlinAppFoo.kt",
+            // language=kotlin
+            """
+            package com.foo.application
 
-              // This will cause the build to fail because it's missing an explicit
-              // visibility modifier.
-              fun publicFunction() {}
-              """
-                .trimIndent(),
-            )
-          }
-          kotlin { explicitApi() }
+            // This will cause the build to fail because it's missing an explicit
+            // visibility modifier.
+            fun publicFunction() {}
+            """
+              .trimIndent(),
+          )
         }
+        kotlin { explicitApi() }
       }
+    }
 
     build.executor.expectFailure().run(":app:compileDebugKotlin").assertErrorContains("Visibility must be specified in explicit API mode")
   }
 
   @Test
   fun testExplicitApiModeDisabledOnUnitTest() {
-    val build =
-      rule.build {
-        androidApplication {
-          dependencies { testImplementation("junit:junit:4.12") }
+    val build = rule.build {
+      androidApplication {
+        dependencies { testImplementation("junit:junit:4.12") }
 
-          files {
-            add(
-              "src/test/kotlin/AppFooTest.kt",
-              // language=kotlin
-              """
-              package com.foo.application.test
+        files {
+          add(
+            "src/test/kotlin/AppFooTest.kt",
+            // language=kotlin
+            """
+            package com.foo.application.test
 
-              class AppFooTest {
-                @org.junit.Test
-                fun testSample() {}
-              }
-              """
-                .trimIndent(),
-            )
-          }
-          kotlin { explicitApi() }
+            class AppFooTest {
+              @org.junit.Test
+              fun testSample() {}
+            }
+            """
+              .trimIndent(),
+          )
         }
+        kotlin { explicitApi() }
       }
+    }
     build.executor.expectFailure().run(":app:compileDebugUnitTestKotlin")
   }
 
   @Test
   fun testExplicitApiModeDisabledOnAndroidTest() {
-    val build =
-      rule.build {
-        androidApplication {
-          dependencies { testImplementation("junit:junit:4.12") }
+    val build = rule.build {
+      androidApplication {
+        dependencies { testImplementation("junit:junit:4.12") }
 
-          files {
-            add(
-              "src/androidTest/java/AppFooTest.kt",
-              // language=kotlin
-              """
-              package com.foo.application
-              class AppFooTest
-              """
-                .trimIndent(),
-            )
-          }
-          kotlin { explicitApi() }
+        files {
+          add(
+            "src/androidTest/java/AppFooTest.kt",
+            // language=kotlin
+            """
+            package com.foo.application
+            class AppFooTest
+            """
+              .trimIndent(),
+          )
         }
+        kotlin { explicitApi() }
       }
+    }
     build.executor.expectFailure().run(":app:compileDebugAndroidHostTestKotlin")
   }
 
   /** Regression test for b/338596003 */
   @Test
   fun testKotlinAttributeSetup() {
-    val build =
-      rule.build {
-        androidApplication {
-          android {
-            defaultConfig { minSdk = 21 }
-            dependencies { implementation("androidx.compose.ui:ui-tooling-preview:1.6.5") }
-          }
+    val build = rule.build {
+      androidApplication {
+        android {
+          defaultConfig { minSdk = 21 }
+          dependencies { implementation("androidx.compose.ui:ui-tooling-preview:1.6.5") }
         }
       }
+    }
 
     // Test that kotlin compilation completes successfully
     build.executor.run(":app:compileDebugKotlin")
@@ -411,25 +400,24 @@ class BuiltInKotlinForAppTest(private val useLatestKgpVersion: Boolean) {
 
   @Test
   fun testKotlinCompilerOptionsDsl() {
-    val build =
-      rule.build {
-        androidApplication {
-          // Add some kotlin code so that `compileDebugKotlin` task isn't skipped.
-          files.add(
-            "src/main/kotlin/KotlinAppFoo.kt",
-            // language=kotlin
-            """
-            package com.foo.application
-            class KotlinAppFoo
-            """
-              .trimIndent(),
-          )
-          // Set some values in the built-in Kotlin DSL and check that the values flow to the task
-          kotlin { compilerOptions { moduleName.set("foo") } }
+    val build = rule.build {
+      androidApplication {
+        // Add some kotlin code so that `compileDebugKotlin` task isn't skipped.
+        files.add(
+          "src/main/kotlin/KotlinAppFoo.kt",
+          // language=kotlin
+          """
+          package com.foo.application
+          class KotlinAppFoo
+          """
+            .trimIndent(),
+        )
+        // Set some values in the built-in Kotlin DSL and check that the values flow to the task
+        kotlin { compilerOptions { moduleName.set("foo") } }
 
-          pluginCallbacks += KotlinTaskCallback::class.java
-        }
+        pluginCallbacks += KotlinTaskCallback::class.java
       }
+    }
 
     val result = build.executor.run(":app:compileDebugKotlin")
     assertThat(result.didWorkTasks).contains(":app:compileDebugKotlin")
@@ -453,47 +441,46 @@ class BuiltInKotlinForAppTest(private val useLatestKgpVersion: Boolean) {
 
   @Test
   fun testKotlinSourceSets() {
-    val build =
-      rule.build {
-        androidApplication {
-          // Add some custom source directories.
-          files {
-            add(
-              "src/fooMain/kotlin/FooMain.kt",
-              // language=kotlin
-              """
-              package com.foo.application
-              class FooMain {}
-              """
-                .trimIndent(),
-            )
-            add(
-              "src/fooDebug/kotlin/FooDebug.kt",
-              // language=kotlin
-              """
-              package com.foo.application
-              class FooDebug {}
-              """
-                .trimIndent(),
-            )
-            add(
-              "src/fooAndroidTest/kotlin/FooAndroidTest.kt",
-              // language=kotlin
-              """
-              package com.foo.application
-              class FooAndroidTest {}
-              """
-                .trimIndent(),
-            )
-          }
-          // Add the custom source directories to the source sets.
-          android {
-            sourceSets.named("main") { it.kotlin.directories += "src/fooMain/kotlin" }
-            sourceSets.named("debug") { it.kotlin.directories += "src/fooDebug/kotlin" }
-            sourceSets.named("androidTest") { it.kotlin.directories += "src/fooAndroidTest/kotlin" }
-          }
+    val build = rule.build {
+      androidApplication {
+        // Add some custom source directories.
+        files {
+          add(
+            "src/fooMain/kotlin/FooMain.kt",
+            // language=kotlin
+            """
+            package com.foo.application
+            class FooMain {}
+            """
+              .trimIndent(),
+          )
+          add(
+            "src/fooDebug/kotlin/FooDebug.kt",
+            // language=kotlin
+            """
+            package com.foo.application
+            class FooDebug {}
+            """
+              .trimIndent(),
+          )
+          add(
+            "src/fooAndroidTest/kotlin/FooAndroidTest.kt",
+            // language=kotlin
+            """
+            package com.foo.application
+            class FooAndroidTest {}
+            """
+              .trimIndent(),
+          )
+        }
+        // Add the custom source directories to the source sets.
+        android {
+          sourceSets.named("main") { it.kotlin.directories += "src/fooMain/kotlin" }
+          sourceSets.named("debug") { it.kotlin.directories += "src/fooDebug/kotlin" }
+          sourceSets.named("androidTest") { it.kotlin.directories += "src/fooAndroidTest/kotlin" }
         }
       }
+    }
 
     // Run Kotlin compilation tasks and check that the expected class files are created.
     build.executor.run(":app:compileDebugKotlin", ":app:compileDebugAndroidTestKotlin")

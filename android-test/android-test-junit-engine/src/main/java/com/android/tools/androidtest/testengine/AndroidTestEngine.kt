@@ -16,6 +16,7 @@
 
 package com.android.tools.androidtest.testengine
 
+import com.android.tools.androidtest.testengine.descriptor.AndroidTestEngineDescriptor
 import org.junit.platform.engine.EngineDiscoveryRequest
 import org.junit.platform.engine.ExecutionRequest
 import org.junit.platform.engine.TestDescriptor

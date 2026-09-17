@@ -24,24 +24,23 @@ import org.junit.Test
 class ResourceShrinkerErrorTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      gradleProperties {
-        add(BooleanOption.USE_NON_FINAL_RES_IDS, false)
-        add(BooleanOption.R8_OPTIMIZED_RESOURCE_SHRINKING, true)
-      }
-      androidApplication {
-        android {
-          defaultConfig.minSdk = 24
-          buildTypes {
-            named("release") {
-              it.isMinifyEnabled = true
-              it.isShrinkResources = true
-            }
+  val rule = GradleRule.from {
+    gradleProperties {
+      add(BooleanOption.USE_NON_FINAL_RES_IDS, false)
+      add(BooleanOption.R8_OPTIMIZED_RESOURCE_SHRINKING, true)
+    }
+    androidApplication {
+      android {
+        defaultConfig.minSdk = 24
+        buildTypes {
+          named("release") {
+            it.isMinifyEnabled = true
+            it.isShrinkResources = true
           }
         }
       }
     }
+  }
 
   @Test
   fun `check error`() {

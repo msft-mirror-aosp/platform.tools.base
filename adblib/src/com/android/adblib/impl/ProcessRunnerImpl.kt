@@ -48,12 +48,6 @@ internal class ProcessRunnerImpl(private val host: AdbSessionHost) : ProcessRunn
     logger.debug { "runProcess: '${command.joinToString(" ")}'" }
 
     val processResult = execute(command, directory, envVars)
-    if (processResult.exitCode != 0) {
-      logger.warn(
-        "'${command.joinToString(" ")}' exited with code ${processResult.exitCode}\n" +
-          "Stdout: ${processResult.stdout}\nStderr: ${processResult.stderr}"
-      )
-    }
     return processResult
   }
 
@@ -71,10 +65,10 @@ internal class ProcessRunnerImpl(private val host: AdbSessionHost) : ProcessRunn
         ProcessResult(stdout.await(), stderr.await(), exitCode.await())
       } catch (t: Throwable) {
         runCatching {
-            if (process.isAlive) {
-              process.destroyForcibly()
-            }
+          if (process.isAlive) {
+            process.destroyForcibly()
           }
+        }
           .onFailure { t.addSuppressed(it) }
         throw t
       }

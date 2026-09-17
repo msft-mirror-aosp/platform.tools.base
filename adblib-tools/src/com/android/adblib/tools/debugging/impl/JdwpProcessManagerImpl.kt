@@ -103,23 +103,23 @@ internal class JdwpProcessManagerImpl(override val device: ConnectedDevice) : Jd
     lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
       scope.launch {
         runCatching {
-            JobTracker(this).use { jobTracker ->
-              jdwpProcessIdTracker.processIdsStateFlow
-                .filter { processIds ->
-                  // Skip the very first value of the flow, because it is always empty
-                  // and does not reflect the "current" list of active process IDs.
-                  !processIds.flowStatus.isStartOfFlow
+          JobTracker(this).use { jobTracker ->
+            jdwpProcessIdTracker.processIdsStateFlow
+              .filter { processIds ->
+                // Skip the very first value of the flow, because it is always empty
+                // and does not reflect the "current" list of active process IDs.
+                !processIds.flowStatus.isStartOfFlow
+              }
+              .collect { processIds ->
+                jobTracker.cancelPreviousAndLaunch {
+                  // Delay for a little bit so that we get cancelled if another
+                  // set of process IDs is emitted in the meantime.
+                  delay(jdwpProcessMapRefreshDelay.toMillis())
+                  setActiveProcessIds(processIds.toSet())
                 }
-                .collect { processIds ->
-                  jobTracker.cancelPreviousAndLaunch {
-                    // Delay for a little bit so that we get cancelled if another
-                    // set of process IDs is emitted in the meantime.
-                    delay(jdwpProcessMapRefreshDelay.toMillis())
-                    setActiveProcessIds(processIds.toSet())
-                  }
-                }
-            }
+              }
           }
+        }
           .onFailure { throwable -> logger.logIOCompletionErrors(throwable) }
       }
     }

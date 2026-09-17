@@ -17,8 +17,12 @@
 package com.android.tools.render.framework
 
 import com.android.tools.rendering.RenderService
+import com.intellij.ide.plugins.PluginInitContextFactory
 import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.ide.plugins.PluginSetBuilder
+import com.intellij.ide.plugins.PluginsDiscoveryResult
+import com.intellij.ide.plugins.UnambiguousPluginSet
+import com.intellij.ide.plugins.tryBuild
 import com.intellij.mock.MockApplication
 import com.intellij.mock.MockProject
 import com.intellij.openapi.Disposable
@@ -32,7 +36,14 @@ object IJFramework : Disposable {
 
   init {
     ApplicationManager.setApplication(application, this)
-    PluginManagerCore.setPluginSet(PluginSetBuilder(emptySet()).createPluginSetWithEnabledModulesMap())
+    PluginManagerCore.setPluginSet(
+      PluginSetBuilder(
+          PluginInitContextFactory.getInstance().createActualContext(),
+          UnambiguousPluginSet.tryBuild(emptyList())!!,
+          PluginsDiscoveryResult.build(emptyList()),
+        )
+        .createPluginSetWithEnabledModulesMap()
+    )
     application.registerService(com.intellij.openapi.application.AsyncExecutionService::class.java, StubAsyncExecutionService(), this)
   }
 

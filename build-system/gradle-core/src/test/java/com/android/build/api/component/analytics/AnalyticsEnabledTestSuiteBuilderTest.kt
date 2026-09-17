@@ -64,4 +64,13 @@ class AnalyticsEnabledTestSuiteBuilderTest {
     Truth.assertThat(stats.variantApiAccess.variantAccessList.first().type).isEqualTo(VariantMethodType.TEST_SUITE_BUILDER_TARGETS_VALUE)
     verify(delegate, times(1)).targets
   }
+
+  @Test
+  fun setEnabledCodeCoverage() {
+    proxy.setEnabledCodeCoverage(true)
+
+    Truth.assertThat(stats.variantApiAccess.variantAccessList.first().type)
+      .isEqualTo(VariantMethodType.HOST_TEST_ENABLE_CODE_COVERAGE_VALUE)
+    verify(delegate, times(1)).setEnabledCodeCoverage(true)
+  }
 }

@@ -28,18 +28,17 @@ import org.junit.Test
 class AppWithJarDependOnLibTest : ModelComparator() {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        android { enableKotlin = false }
-        dependencies { api(project(":jar")) }
-      }
-      androidLibrary { android { enableKotlin = false } }
-      genericProject(":jar") {
-        applyPlugin(PluginType.JAVA_LIBRARY)
-        dependencies { api(project(DEFAULT_LIB_PATH)) }
-      }
+  val rule = GradleRule.from {
+    androidApplication {
+      android { enableKotlin = false }
+      dependencies { api(project(":jar")) }
     }
+    androidLibrary { android { enableKotlin = false } }
+    genericProject(":jar") {
+      applyPlugin(PluginType.JAVA_LIBRARY)
+      dependencies { api(project(DEFAULT_LIB_PATH)) }
+    }
+  }
 
   @Test
   fun `test VariantDependencies model`() {

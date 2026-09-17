@@ -135,7 +135,7 @@ class R8GradleConfigDetectorTest : AbstractCheckTest() {
       )
       .expectFixDiffs(
         """
-          Fix for build.gradle line 6: Replace with true...:
+          Fix for build.gradle line 6: Set shrinkResources = true:
           @@ -6,0 +7 @@
           +      shrinkResources = true
         """
@@ -157,7 +157,7 @@ class R8GradleConfigDetectorTest : AbstractCheckTest() {
                    }
                  }
                }
-          """,
+           """,
           )
           .indented()
       )
@@ -197,7 +197,7 @@ class R8GradleConfigDetectorTest : AbstractCheckTest() {
       )
       .expectFixDiffs(
         """
-          Fix for build.gradle.kts line 8: Replace with true...:
+          Fix for build.gradle.kts line 8: Set isShrinkResources = true:
           @@ -8,0 +9 @@
           +      isShrinkResources = true
         """

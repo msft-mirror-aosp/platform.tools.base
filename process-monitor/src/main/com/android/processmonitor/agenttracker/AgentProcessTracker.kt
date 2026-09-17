@@ -62,24 +62,23 @@ internal class AgentProcessTracker(
 
   private val logger = logger.withPrefix("${this::class.simpleName}: $serialNumber: ")
 
-  override fun trackProcesses(): Flow<ProcessEvent> =
-    flow {
-        val deviceSelector = DeviceSelector.fromSerialNumber(serialNumber)
-        val agentPushed = pushAgent(deviceSelector, deviceAbi)
-        if (!agentPushed) {
-          return@flow
-        }
-        val command = "$AGENT_PATH --interval $intervalMillis"
-        adbSession.deviceServices.shellCommand(deviceSelector, command).withCollector(LineShellV2Collector()).execute().collect {
-          // TODO(aalbert): Support restarting on crashes etc
-          when (it) {
-            is StdoutLine -> handleLine(it.contents)
-            is StderrLine -> logger.warn("$AGENT_NAME error: ${it.contents}")
-            is ExitCode -> logger.warn("$AGENT_NAME terminated: rc=${it.exitCode}")
-          }
-        }
+  override fun trackProcesses(): Flow<ProcessEvent> = flow {
+    val deviceSelector = DeviceSelector.fromSerialNumber(serialNumber)
+    val agentPushed = pushAgent(deviceSelector, deviceAbi)
+    if (!agentPushed) {
+      return@flow
+    }
+    val command = "$AGENT_PATH --interval $intervalMillis"
+    adbSession.deviceServices.shellCommand(deviceSelector, command).withCollector(LineShellV2Collector()).execute().collect {
+      // TODO(aalbert): Support restarting on crashes etc
+      when (it) {
+        is StdoutLine -> handleLine(it.contents)
+        is StderrLine -> logger.warn("$AGENT_NAME error: ${it.contents}")
+        is ExitCode -> logger.warn("$AGENT_NAME terminated: rc=${it.exitCode}")
       }
-      .flowOn(adbSession.ioDispatcher + context)
+    }
+  }
+    .flowOn(adbSession.ioDispatcher + context)
 
   // TODO(aalbert): Support multiple ABI's?
   private suspend fun pushAgent(deviceSelector: DeviceSelector, deviceAbi: String): Boolean {

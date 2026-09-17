@@ -36,6 +36,7 @@ mkdir -p "${temp_mutation_testing_dir}"
 if [[ -n "${BUILD_NUMBER}" ]]; then
   echo "common --credential_helper=*.pkg.dev=%workspace%/build/bazel/tools/ci_credhelper.py" >> "${WORKSPACE}/ci.bazelrc"
   echo "common --credential_helper=*.googleapis.com=%workspace%/build/bazel/tools/ci_credhelper.py" >> "${WORKSPACE}/ci.bazelrc"
+  echo "common --credential_helper_timeout=60s" >> "${WORKSPACE}/ci.bazelrc"
 fi
 readonly config_options="--config=ci --config=remote-exec"
 
@@ -109,6 +110,9 @@ fi
  --finalHashes="${final_hashes_filepath}" \
  --output="${impacted_targets_filepath}" \
  --targetType=Rule
+
+# b/555799577 , filter out targets with the suffix _tests__all
+sed -E '/_tests__all[[:space:]]*$/d' "${impacted_targets_filepath}" > "${impacted_targets_filepath}.tmp" && mv "${impacted_targets_filepath}.tmp" "${impacted_targets_filepath}"
 
 # -- Check if Impacted Target File is non-empty ---
 if [[ ! -s "${impacted_targets_filepath}" ]]; then

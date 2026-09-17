@@ -31,4 +31,5 @@ interface DeviceTestOptionsDslInfo : TestOptionsDslInfo {
   val managedDevices: ManagedDevices
   val emulatorControl: EmulatorControl
   val codeCoverageEnabled: Boolean
+  val instrumentInPrivateComputeCore: Boolean
 }

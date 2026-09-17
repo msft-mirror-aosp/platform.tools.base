@@ -26,6 +26,7 @@ class DeserializedAnnotatedMethod(methodFqn: String, methodParams: List<Map<Stri
   override val name: String = methodFqn.substringAfterLast(".")
   override val qualifiedName: String = methodFqn
   override val methodBody: Unit? = null
-  override val parameterAnnotations: List<Pair<String, AnnotationAttributesProvider>> =
-    methodParams.mapIndexed { i, param -> ("param$i" to DeserializedAnnotationAttributesProvider(param)) }
+  override val parameterAnnotations: List<Pair<String, AnnotationAttributesProvider>> = methodParams.mapIndexed { i, param ->
+    ("param$i" to DeserializedAnnotationAttributesProvider(param))
+  }
 }

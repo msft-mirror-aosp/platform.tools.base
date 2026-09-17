@@ -20,7 +20,6 @@ import com.android.build.api.variant.CanMinifyAndroidResourcesBuilder
 import com.android.build.api.variant.CanMinifyCodeBuilder
 import com.android.build.gradle.ProguardFiles
 import com.android.build.gradle.internal.ProguardFileType
-import com.android.build.gradle.internal.component.ApplicationCreationConfig
 import com.android.build.gradle.internal.component.ConsumableCreationConfig
 import com.android.build.gradle.internal.component.DeviceTestCreationConfig
 import com.android.build.gradle.internal.component.LibraryCreationConfig
@@ -139,8 +138,6 @@ class OptimizationCreationConfigImpl(
           component.mainVariant.componentType.isAar -> dslInfo.postProcessingOptions.codeShrinkerEnabled()
           else -> component.mainVariant.optimizationCreationConfig.minifiedEnabled
         }
-      } else if (component is ApplicationCreationConfig) {
-        minify || dslInfo.applicationOptimizationEnabled
       } else {
         minify
       }
@@ -161,15 +158,9 @@ class OptimizationCreationConfigImpl(
           dslInfo.postProcessingOptions.let { it.resourcesShrinkingEnabled() }
         }
 
-        is ApplicationCreationConfig -> {
-          minify || dslInfo.applicationOptimizationEnabled
-        }
         else -> minify
       }
     }
-
-  override val applicationOptimizationEnabled: Boolean
-    get() = dslInfo.applicationOptimizationEnabled
 
   override val packageScopeEnabled: Boolean
     get() = dslInfo.includePackages != setOf("**")

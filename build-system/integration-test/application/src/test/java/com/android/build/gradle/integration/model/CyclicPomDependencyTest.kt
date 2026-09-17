@@ -80,28 +80,27 @@ class CyclicPomDependencyTest : ModelComparator() {
   class Bar2Callback : TestCallback(libName = "bar2", dependencyName = "bar1")
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        android { enableKotlin = false }
-        dependencies { implementation("com.foo:bar1:1.0") }
-      }
-      genericProject(":bar1") {
-        applyPlugin(PluginType.JAVA_LIBRARY)
-        applyPlugin(PluginType.MAVEN_PUBLISH)
-        pluginCallbacks += Bar1Callback::class.java
-      }
-      genericProject(":bar2") {
-        applyPlugin(PluginType.JAVA_LIBRARY)
-        applyPlugin(PluginType.MAVEN_PUBLISH)
-        pluginCallbacks += Bar2Callback::class.java
-      }
-      settings { addRepository("repo") }
-      gradleProperties {
-        // b/308936442
-        add(BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT, false)
-      }
+  val rule = GradleRule.from {
+    androidApplication {
+      android { enableKotlin = false }
+      dependencies { implementation("com.foo:bar1:1.0") }
     }
+    genericProject(":bar1") {
+      applyPlugin(PluginType.JAVA_LIBRARY)
+      applyPlugin(PluginType.MAVEN_PUBLISH)
+      pluginCallbacks += Bar1Callback::class.java
+    }
+    genericProject(":bar2") {
+      applyPlugin(PluginType.JAVA_LIBRARY)
+      applyPlugin(PluginType.MAVEN_PUBLISH)
+      pluginCallbacks += Bar2Callback::class.java
+    }
+    settings { addRepository("repo") }
+    gradleProperties {
+      // b/308936442
+      add(BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT, false)
+    }
+  }
 
   @Test
   fun `test models`() {

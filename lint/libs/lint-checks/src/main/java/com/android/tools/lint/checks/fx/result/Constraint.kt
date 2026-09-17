@@ -55,8 +55,9 @@ data class Constraint<out FX>(
     val MostPermissive: Constraint<Nothing> = Constraint(persistentMapOf(), persistentMapOf())
     val LeastPermissive: Constraint<Nothing> = Constraint(null, null)
 
-    fun <FX> concrete(upperbound: FX, leftHandSides: UnboundedSet<Type.Sym<FX>>): ConcreteUpperBounds<FX>? =
-      leftHandSides?.assoc { it to upperbound }
+    fun <FX> concrete(upperbound: FX, leftHandSides: UnboundedSet<Type.Sym<FX>>): ConcreteUpperBounds<FX>? = leftHandSides?.assoc {
+      it to upperbound
+    }
 
     /** A lattice on the concrete effect [FX] induces a lattice on the [Constraint]s */
     fun <FX> domain(onConcrete: Lattice<FX>): Lattice<Constraint<FX>> =

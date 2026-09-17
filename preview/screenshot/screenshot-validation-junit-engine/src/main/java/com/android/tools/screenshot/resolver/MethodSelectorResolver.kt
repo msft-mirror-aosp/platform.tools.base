@@ -34,7 +34,9 @@ class MethodSelectorResolver : SelectorResolver {
     return context
       .addToParent(
         { DiscoverySelectors.selectClass(selector.className) },
-        { parent -> Optional.of(PreviewMethodDescriptor(parent.uniqueId, selector.className, selector.methodName)) },
+        { parent ->
+          Optional.of(PreviewMethodDescriptor(parent.uniqueId, selector.className, selector.methodName))
+        },
       )
       .map { Resolution.match(Match.exact(it)) }
       .orElse(Resolution.unresolved())

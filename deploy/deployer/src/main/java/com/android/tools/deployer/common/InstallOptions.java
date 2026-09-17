@@ -15,8 +15,6 @@
  */
 package com.android.tools.deployer.common;
 
-import com.android.ddmlib.IDevice;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -134,7 +132,7 @@ public final class InstallOptions {
         }
 
         // Skips package verification if possible.
-        public Builder setSkipVerification(IDevice device, String packageName) {
+        public Builder setSkipVerification(DeviceHolder device, String packageName) {
             String skipVerificationString =
                     ApkVerifierTracker.getSkipVerificationInstallationFlag(device, packageName);
             if (skipVerificationString != null) {

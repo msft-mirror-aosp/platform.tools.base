@@ -23,34 +23,33 @@ internal class TrackDevicesService(private val serviceRunner: AdbServiceRunner) 
   private val host
     get() = serviceRunner.host
 
-  fun invoke(format: DeviceInfoFormat, timeout: Long, unit: TimeUnit): Flow<DeviceList> =
-    flow {
-        val tracker = TimeoutTracker(host.timeProvider, timeout, unit)
-        val service: String
-        val deviceParser: DeviceListParser
-        when (format) {
-          DeviceInfoFormat.SHORT_FORMAT -> {
-            service = "host:track-devices"
-            deviceParser = DeviceListTextParser(format)
-          }
-          DeviceInfoFormat.LONG_FORMAT -> {
-            service = "host:track-devices-l"
-            deviceParser = DeviceListTextParser(format)
-          }
-          DeviceInfoFormat.BINARY_PROTO_FORMAT -> {
-            service = "host:track-devices-proto-binary"
-            deviceParser = DeviceListProtoParser()
-          }
-        }
-
-        val workBuffer = ResizableBuffer()
-        logger.info { "\"${service}\" - opening connection to ADB server, timeout: $tracker" }
-
-        serviceRunner.startHostQuery(workBuffer, service, tracker).use { channel ->
-          collectAdbResponses(channel, workBuffer, service, deviceParser, this)
-        }
+  fun invoke(format: DeviceInfoFormat, timeout: Long, unit: TimeUnit): Flow<DeviceList> = flow {
+    val tracker = TimeoutTracker(host.timeProvider, timeout, unit)
+    val service: String
+    val deviceParser: DeviceListParser
+    when (format) {
+      DeviceInfoFormat.SHORT_FORMAT -> {
+        service = "host:track-devices"
+        deviceParser = DeviceListTextParser(format)
       }
-      .flowOn(host.ioDispatcher)
+      DeviceInfoFormat.LONG_FORMAT -> {
+        service = "host:track-devices-l"
+        deviceParser = DeviceListTextParser(format)
+      }
+      DeviceInfoFormat.BINARY_PROTO_FORMAT -> {
+        service = "host:track-devices-proto-binary"
+        deviceParser = DeviceListProtoParser()
+      }
+    }
+
+    val workBuffer = ResizableBuffer()
+    logger.info { "\"${service}\" - opening connection to ADB server, timeout: $tracker" }
+
+    serviceRunner.startHostQuery(workBuffer, service, tracker).use { channel ->
+      collectAdbResponses(channel, workBuffer, service, deviceParser, this)
+    }
+  }
+    .flowOn(host.ioDispatcher)
 
   private suspend fun collectAdbResponses(
     channel: AdbChannel,

@@ -27,8 +27,11 @@ public final class ProtocolConstants {
     public static final String COMPOSE_UI_LIBRARY_ID = "androidx.compose.ui:ui";
     public static final int MIN_SUPPORTED_API_LEVEL = 29;
 
-    /* Returns the unique socket name for a given process ID. */
-    public static String getSocketName(String pid) {
-        return SOCKET_NAME_PREFIX + pid;
+    /*
+     * Returns the socket name for a server token. The token is chosen by the host and identifies
+     * one agent server within a process.
+     */
+    public static String getSocketName(String serverToken) {
+        return SOCKET_NAME_PREFIX + serverToken;
     }
 }

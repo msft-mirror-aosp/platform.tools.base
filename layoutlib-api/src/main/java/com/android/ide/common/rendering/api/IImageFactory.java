@@ -17,6 +17,7 @@
 package com.android.ide.common.rendering.api;
 
 import com.android.annotations.NonNull;
+
 import java.awt.image.BufferedImage;
 
 /**
@@ -28,7 +29,10 @@ import java.awt.image.BufferedImage;
  *
  * <p>If no factory is passed in {@link RenderParams#setImageFactory(IImageFactory)}, then a default
  * {@link BufferedImage} of type {@link BufferedImage#TYPE_INT_ARGB_PRE} is created.
+ *
+ * @deprecated Kept for layoutlib transition.
  */
+@Deprecated
 public interface IImageFactory {
 
     /**

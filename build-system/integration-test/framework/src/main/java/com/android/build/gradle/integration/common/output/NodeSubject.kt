@@ -64,15 +64,14 @@ class NodeSubject(metadata: FailureMetadata, actual: Node) : Subject<NodeSubject
 
     // now gather the value of the 'name' attributes for them.
     // this will allow us to provide a better error message.
-    val nameAttributeValues =
-      nodeByNames.mapNotNull { node ->
-        node.attributes
-          .singleOrNull { it.startsWith("$NAME_ATTRIBUTE=") }
-          ?.let { nameAttr ->
-            // need to also remove the enclosing quotes
-            nameAttr.substring(NAME_ATTRIBUTE.length + 2, nameAttr.length - 1)
-          }
-      }
+    val nameAttributeValues = nodeByNames.mapNotNull { node ->
+      node.attributes
+        .singleOrNull { it.startsWith("$NAME_ATTRIBUTE=") }
+        ?.let { nameAttr ->
+          // need to also remove the enclosing quotes
+          nameAttr.substring(NAME_ATTRIBUTE.length + 2, nameAttr.length - 1)
+        }
+    }
 
     // check we have a match
     check("nodeByNameAndAttribute($nodeName, $nameAttributeValue)").that(nameAttributeValues).contains(nameAttributeValue)

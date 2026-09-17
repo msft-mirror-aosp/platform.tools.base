@@ -110,15 +110,42 @@ class FakeAdbServerProvider : FakeDeviceCreator, AutoCloseable {
     maxSpeedMbps: Long,
     negotiatedSpeedMbps: Long,
   ): DeviceState {
+    return connectDevice(
+      deviceId = deviceId,
+      manufacturer = manufacturer,
+      deviceModel = deviceModel,
+      release = release,
+      sdk = sdk,
+      hostConnectionType = hostConnectionType,
+      isRoot = false,
+      maxSpeedMbps = maxSpeedMbps,
+      negotiatedSpeedMbps = negotiatedSpeedMbps,
+    )
+  }
+
+  fun connectDevice(
+    deviceId: String,
+    manufacturer: String,
+    deviceModel: String,
+    release: String,
+    sdk: AndroidApiLevel,
+    hostConnectionType: HostConnectionType,
+    isRoot: Boolean = false,
+    maxSpeedMbps: Long = DEFAULT_SPEED,
+    negotiatedSpeedMbps: Long = DEFAULT_SPEED,
+  ): DeviceState {
     val deviceState =
       server
         ?.connectDevice(
-          deviceId,
-          manufacturer,
-          deviceModel,
-          release,
-          sdk,
-          hostConnectionType,
+          deviceId = deviceId,
+          manufacturer = manufacturer,
+          deviceModel = deviceModel,
+          release = release,
+          sdk = sdk,
+          cpuAbi = "x86_64",
+          properties = emptyMap(),
+          hostConnectionType = hostConnectionType,
+          isRoot = isRoot,
           maxSpeedMbps = maxSpeedMbps,
           negotiatedSpeedMbps = negotiatedSpeedMbps,
         )

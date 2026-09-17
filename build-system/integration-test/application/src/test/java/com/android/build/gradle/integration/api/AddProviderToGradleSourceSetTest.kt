@@ -33,17 +33,16 @@ import org.junit.Test
 
 class AddProviderToGradleSourceSetTest {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        android {
-          namespace = "com.example.api.java_res"
-          defaultConfig.applicationId = "com.example.api.java_res"
+  val rule = GradleRule.from {
+    androidApplication {
+      android {
+        namespace = "com.example.api.java_res"
+        defaultConfig.applicationId = "com.example.api.java_res"
 
-          pluginCallbacks += AddJavaResourcesWithSourceSetCallback::class.java
-        }
+        pluginCallbacks += AddJavaResourcesWithSourceSetCallback::class.java
       }
     }
+  }
 
   @Test
   fun disallowProvidersInSourceSet() {

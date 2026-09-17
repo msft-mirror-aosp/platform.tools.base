@@ -104,8 +104,24 @@ class DexFileParserTest {
     assertThat(dex.methodPool).isEqualTo(listOf(mainMain, mainMethodWithSpaces, printStreamPrintln))
   }
 
+  @Test
+  fun testDexV41Parsing() {
+    val file = TestUtils.resolveWorkspacePath(Dex041Path).toFile()
+    val dexes = parseDexFiles(file.readBytes())
+    assertThat(dexes).hasSize(2)
+
+    assertThat(dexes[0].header.version).isEqualTo(41)
+    assertThat(dexes[0].dexIndex).isEqualTo(0)
+    assertThat(dexes[0].typePool[dexes[0].classDefPool[0]]).isEqualTo("LFoo;")
+
+    assertThat(dexes[1].header.version).isEqualTo(41)
+    assertThat(dexes[1].dexIndex).isEqualTo(1)
+    assertThat(dexes[1].typePool[dexes[1].classDefPool[0]]).isEqualTo("LBar;")
+  }
+
   companion object {
     private const val Path = "tools/base/profgen/profgen/testData/hello.apk"
     private const val Dex040Path = "tools/base/profgen/profgen/testData/dex040.apk"
+    private const val Dex041Path = "tools/base/profgen/profgen/testData/dex041.dex"
   }
 }

@@ -25,7 +25,9 @@ import com.android.tools.lint.detector.api.Issue.IgnoredIdProvider
 import com.android.utils.CharSequences.indexOf
 import com.android.utils.CharSequences.lastIndexOf
 import com.android.utils.CharSequences.startsWith
+import com.google.common.collect.MapMaker
 import java.io.File
+import java.util.Arrays
 import kotlin.math.max
 import kotlin.math.min
 import org.jetbrains.uast.UIdentifier
@@ -536,25 +538,13 @@ protected constructor(
       }
 
       val size = contents.length
-      var startOffset = startOffset
-      var endOffset = endOffset
-      endOffset = min(endOffset, size)
-      startOffset = min(startOffset, endOffset)
-      var lineOffset = findLineBeginFromOffset(startOffset, contents)
-      var line = findLineFromOffset(lineOffset, contents)
-      val start = DefaultPosition(line, startOffset - lineOffset, startOffset)
-      for (offset in startOffset..size) {
-        if (offset == endOffset) {
-          val end = DefaultPosition(line, offset - lineOffset, offset)
-          return Location(file, start, end)
-        }
-        val c = contents[offset]
-        if (c == '\n') {
-          lineOffset = offset + 1
-          line++
-        }
-      }
-      val end = DefaultPosition(line, size - lineOffset, size)
+      val endOffset = min(endOffset, size)
+      val startOffset = min(startOffset, endOffset)
+      val lineStarts = getLineStarts(contents)
+      val startLine = findLineFromOffset(startOffset, lineStarts)
+      val endLine = findLineFromOffset(endOffset, lineStarts)
+      val start = DefaultPosition(startLine, startOffset - lineStarts[startLine], startOffset)
+      val end = DefaultPosition(endLine, endOffset - lineStarts[endLine], endOffset)
       return Location(file, start, end)
     }
 
@@ -584,83 +574,57 @@ protected constructor(
     @JvmStatic
     fun create(file: File, contents: CharSequence, line: Int, patternStart: String?, patternEnd: String?, hints: SearchHints?): Location {
 
-      var targetLine = line
       var targetPattern = patternStart
-      var offset = findLineOffset(targetLine, contents)
+      val lineStarts = getLineStarts(contents)
+      var offset = findLineOffset(line, lineStarts)
       if (offset == -1) {
         return create(file)
       }
 
+      fun lineEnd() =
+        when (val i = indexOf(contents, '\n', offset)) {
+          -1 -> contents.length
+          else -> i
+        }
+
+      var targetLine = line
       if (targetPattern != null) {
-        var direction = SearchDirection.NEAREST
-        if (hints != null) {
-          direction = hints.direction
-        }
+        val index =
+          when (hints?.direction ?: SearchDirection.NEAREST) {
+            SearchDirection.BACKWARD -> findPreviousMatch(contents, offset, targetPattern, hints)
+            SearchDirection.EOL_BACKWARD -> findPreviousMatch(contents, lineEnd(), targetPattern, hints)
+            SearchDirection.FORWARD -> findNextMatch(contents, offset, targetPattern, hints)
+            SearchDirection.NEAREST,
+            SearchDirection.EOL_NEAREST -> {
+              offset = lineEnd()
 
-        val index: Int
-        if (direction == SearchDirection.BACKWARD) {
-          index = findPreviousMatch(contents, offset, targetPattern, hints)
-          targetLine = adjustLine(contents, targetLine, offset, index)
-        } else if (direction == SearchDirection.EOL_BACKWARD) {
-          var lineEnd = indexOf(contents, '\n', offset)
-          if (lineEnd == -1) {
-            lineEnd = contents.length
-          }
+              val before = findPreviousMatch(contents, offset, targetPattern, hints)
+              val after = findNextMatch(contents, offset, targetPattern, hints)
 
-          index = findPreviousMatch(contents, lineEnd, targetPattern, hints)
-          targetLine = adjustLine(contents, targetLine, offset, index)
-        } else if (direction == SearchDirection.FORWARD) {
-          index = findNextMatch(contents, offset, targetPattern, hints)
-          targetLine = adjustLine(contents, targetLine, offset, index)
-        } else {
-          assert(direction == SearchDirection.NEAREST || direction == SearchDirection.EOL_NEAREST)
-
-          var lineEnd = indexOf(contents, '\n', offset)
-          if (lineEnd == -1) {
-            lineEnd = contents.length
-          }
-          offset = lineEnd
-
-          val before = findPreviousMatch(contents, offset, targetPattern, hints)
-          val after = findNextMatch(contents, offset, targetPattern, hints)
-
-          if (before == -1) {
-            index = after
-            targetLine = adjustLine(contents, targetLine, offset, index)
-          } else if (after == -1) {
-            index = before
-            targetLine = adjustLine(contents, targetLine, offset, index)
-          } else {
-            var newLinesBefore = 0
-            for (i in before until offset) {
-              if (contents[i] == '\n') {
-                newLinesBefore++
+              when {
+                before == -1 -> after
+                after == -1 -> before
+                else -> {
+                  val offsetLine = findLineFromOffset(offset, lineStarts)
+                  val newLinesBefore = offsetLine - findLineFromOffset(before, lineStarts)
+                  val newLinesAfter = findLineFromOffset(after, lineStarts) - offsetLine
+                  if (newLinesBefore < newLinesAfter || newLinesBefore == newLinesAfter && offset - before < after - offset) {
+                    before
+                  } else {
+                    after
+                  }
+                }
               }
             }
-            var newLinesAfter = 0
-            for (i in offset until after) {
-              if (contents[i] == '\n') {
-                newLinesAfter++
-              }
-            }
-            if (newLinesBefore < newLinesAfter || newLinesBefore == newLinesAfter && offset - before < after - offset) {
-              index = before
-              targetLine = adjustLine(contents, targetLine, offset, index)
-            } else {
-              index = after
-              targetLine = adjustLine(contents, targetLine, offset, index)
-            }
           }
-        }
+        targetLine =
+          when {
+            index == -1 -> line
+            else -> findLineFromOffset(index, lineStarts)
+          }
 
         if (index != -1) {
-          var lineStart = contents.lastIndexOf('\n', index)
-          if (lineStart == -1) {
-            lineStart = 0
-          } else {
-            lineStart++ // was pointing to the previous line's CR, not line start
-          }
-          val column = index - lineStart
+          val column = index - lineStarts[targetLine]
           if (patternEnd != null) {
             val end = indexOf(contents, patternEnd, offset + targetPattern.length)
             if (end != -1) {
@@ -784,32 +748,6 @@ protected constructor(
       return true
     }
 
-    @JvmStatic
-    private fun adjustLine(doc: CharSequence, line: Int, offset: Int, newOffset: Int): Int {
-      if (newOffset == -1) {
-        return line
-      }
-
-      return if (newOffset < offset) {
-        line - countLines(doc, newOffset, offset)
-      } else {
-        line + countLines(doc, offset, newOffset)
-      }
-    }
-
-    @JvmStatic
-    private fun countLines(doc: CharSequence, start: Int, end: Int): Int {
-      var lines = 0
-      for (offset in start until end) {
-        val c = doc[offset]
-        if (c == '\n') {
-          lines++
-        }
-      }
-
-      return lines
-    }
-
     /**
      * Reverses the secondary location list initiated by the given location
      *
@@ -831,51 +769,35 @@ protected constructor(
       return currentLocation
     }
 
-    /** Returns the offset of the first character on the given line. */
-    private fun findLineBeginFromOffset(offset: Int, contents: CharSequence): Int {
-      var i = offset - 1
-      while (i >= 0) {
-        if (contents[i] == '\n') {
-          return i + 1
-        }
-        i--
-      }
-      return 0
-    }
-
-    private fun findLineOffset(targetLine: Int, contents: CharSequence): Int {
-      var currentLine = 0
-      var offset = 0
-
-      while (currentLine < targetLine) {
-        offset = indexOf(contents, '\n', offset)
-        if (offset == -1) {
-          return -1
-        }
-        currentLine++
-        offset++
+    private fun findLineOffset(targetLine: Int, lineStarts: IntArray): Int =
+      when {
+        targetLine <= 0 -> 0
+        targetLine < lineStarts.size -> lineStarts[targetLine]
+        else -> -1
       }
 
-      return offset
+    private fun findLineFromOffset(offset: Int, lineStarts: IntArray): Int {
+      val index = Arrays.binarySearch(lineStarts, offset)
+      return if (index >= 0) index else -index - 2
     }
 
-    private fun findLineFromOffset(startOffset: Int, contents: CharSequence): Int {
-      val size = contents.length
-      val target = min(startOffset, size)
-      var line = 0
-
-      for (offset in 0..size) {
-        if (offset == target) {
-          return line
-        }
-        val c = contents[offset]
-        if (c == '\n') {
-          line++
-        }
+    /**
+     * Maps each file content to its lines' first characters' offsets. Without this index, finding an offset to a line number rescans the
+     * contents from the beginning, making location creation O(n²) aggregate across a large file. Entries of [CharSequence] are weakly
+     * retained by referential equality: they'll go away when the contents are no longer referenced.
+     */
+    private val getLineStarts: (CharSequence) -> IntArray =
+      MapMaker().weakKeys().makeMap<CharSequence, IntArray>().let { cache ->
+        fun(contents) =
+          cache.computeIfAbsent(contents) { text ->
+            // First line always 0. We're storing it to simplify lookup.
+            val lineCount = 1 + text.count { it == '\n' }
+            IntArray(lineCount).also { starts ->
+              var line = 1
+              for (i in text.indices) if (text[i] == '\n') starts[line++] = i + 1
+            }
+          }
       }
-
-      return line
-    }
   }
 
   /** Interface implemented by classes that can provide a related location. */

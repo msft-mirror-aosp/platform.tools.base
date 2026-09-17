@@ -180,10 +180,9 @@ internal open class StubClassFile(
       val (contexts, disposable) =
         parse(temporaryFolder = folder, sdkHome = task?.sdkHome, testFiles = (stubSources + compileOnly).toTypedArray())
       try {
-        val filtered =
-          contexts.filter { context ->
-            stubSources.any { testFile -> context.file.path.replace('\\', '/').endsWith(testFile.targetRelativePath) }
-          }
+        val filtered = contexts.filter { context ->
+          stubSources.any { testFile -> context.file.path.replace('\\', '/').endsWith(testFile.targetRelativePath) }
+        }
 
         val classFiles = mutableListOf<TestFile>()
         for (context in filtered) {

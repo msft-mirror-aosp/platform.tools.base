@@ -65,11 +65,10 @@ class ThreadUtilsTest {
     ThreadUtils.assertOffMainThread()
 
     val testValue: Any = Random.nextInt() // Just use any value, doesn't matter
-    val result =
-      ThreadUtils.runOnMainThread {
-        ThreadUtils.assertOnMainThread()
-        testValue
-      }
+    val result = ThreadUtils.runOnMainThread {
+      ThreadUtils.assertOnMainThread()
+      testValue
+    }
 
     assertThat(result.get()).isEqualTo(testValue)
   }
@@ -81,11 +80,10 @@ class ThreadUtilsTest {
         ThreadUtils.assertOnMainThread()
 
         val testValue: Any = Random.nextInt() // Just use any value, doesn't matter
-        val result =
-          ThreadUtils.runOnMainThread {
-            ThreadUtils.assertOnMainThread()
-            testValue
-          }
+        val result = ThreadUtils.runOnMainThread {
+          ThreadUtils.assertOnMainThread()
+          testValue
+        }
 
         assertThat(result.get()).isEqualTo(testValue)
       }

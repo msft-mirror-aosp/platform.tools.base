@@ -24,6 +24,10 @@ import org.junit.rules.TemporaryFolder
 class FakeTransformOutputs(temporaryFolder: TemporaryFolder) : TransformOutputs {
   val rootDir: File = temporaryFolder.newFolder()
 
+  private val _outputFiles = mutableListOf<File>()
+  val outputFiles: List<File>
+    get() = _outputFiles
+
   lateinit var outputDirectory: File
     private set
 
@@ -31,24 +35,28 @@ class FakeTransformOutputs(temporaryFolder: TemporaryFolder) : TransformOutputs 
     private set
 
   override fun file(path: Any): File {
-    outputFile =
+    val file =
       if (path is File && path.isAbsolute) {
         path
       } else {
         path as String
         rootDir.resolve(path)
       }
-    return outputFile
+    outputFile = file
+    _outputFiles.add(file)
+    return file
   }
 
   override fun dir(path: Any): File {
-    outputDirectory =
+    val dir =
       if (path is File && path.isAbsolute) {
         path
       } else {
         path as String
         rootDir.resolve(path).also { FileUtils.mkdirs(it) }
       }
-    return outputDirectory
+    outputDirectory = dir
+    _outputFiles.add(dir)
+    return dir
   }
 }

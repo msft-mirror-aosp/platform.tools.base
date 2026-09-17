@@ -34,31 +34,30 @@ import org.junit.Test
 class FirebaseTestLabDeviceTest {
 
   @get:Rule
-  val rule: GradleRule =
-    GradleRule.from {
-      simpleProject()
-      androidApplication {
-        applyPlugin(FirebaseTestLabPlugin) {
-          managedDevices.create("myFtlDevice1") {
-            it.device = "Pixel2"
-            it.apiLevel = 29
-          }
-          managedDevices.create("myFtlDevice2") {
-            it.device = "Pixel3"
-            it.apiLevel = 30
-            it.orientation = "landscape"
-            it.locale = "en-US"
-          }
-          managedDevices.create("myFtlDevice3") {
-            it.device = "Pixel2"
-            it.apiLevel = 29
-          }
+  val rule: GradleRule = GradleRule.from {
+    simpleProject()
+    androidApplication {
+      applyPlugin(FirebaseTestLabPlugin) {
+        managedDevices.create("myFtlDevice1") {
+          it.device = "Pixel2"
+          it.apiLevel = 29
         }
-        pluginCallbacks += PrintDslValueCallback::class.java
-        pluginCallbacks += CreateGMDGroupCallback::class.java
-        pluginCallbacks += RemoveFTLDevice3Callback::class.java
+        managedDevices.create("myFtlDevice2") {
+          it.device = "Pixel3"
+          it.apiLevel = 30
+          it.orientation = "landscape"
+          it.locale = "en-US"
+        }
+        managedDevices.create("myFtlDevice3") {
+          it.device = "Pixel2"
+          it.apiLevel = 29
+        }
       }
+      pluginCallbacks += PrintDslValueCallback::class.java
+      pluginCallbacks += CreateGMDGroupCallback::class.java
+      pluginCallbacks += RemoveFTLDevice3Callback::class.java
     }
+  }
 
   private val project: AndroidApplicationProject
     get() = rule.build.androidApplication()

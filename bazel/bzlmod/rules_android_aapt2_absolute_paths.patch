@@ -1,0 +1,31 @@
+diff --git a/src/tools/java/com/google/devtools/build/android/AaptCommandBuilder.java b/src/tools/java/com/google/devtools/build/android/AaptCommandBuilder.java
+index 4565ebc..18d2e6e 100644
+--- a/src/tools/java/com/google/devtools/build/android/AaptCommandBuilder.java
++++ b/src/tools/java/com/google/devtools/build/android/AaptCommandBuilder.java
+@@ -22,6 +22,7 @@ import com.google.errorprone.annotations.CanIgnoreReturnValue;
+ import java.io.IOException;
+ import java.nio.file.Files;
+ import java.nio.file.Path;
++import java.nio.file.Paths;
+ import java.util.Collection;
+ import java.util.List;
+ import java.util.Optional;
+@@ -175,7 +176,17 @@ public class AaptCommandBuilder {
+ 
+   /** Assembles the full command line as a list. */
+   public List<String> build() {
+-    return flags.build();
++    ImmutableList<String> rawFlags = flags.build();
++    if (!System.getProperty("os.name", "").toLowerCase().contains("win")) {
++      return rawFlags;
++    }
++    return rawFlags.stream()
++        .map(
++            flag -> {
++              Path p = Paths.get(flag);
++              return Files.exists(p) ? p.toAbsolutePath().normalize().toString() : flag;
++            })
++        .collect(ImmutableList.toImmutableList());
+   }
+ 
+   /** Wrapper for potentially adding flags to an AaptCommandBuilder based on a conditional. */

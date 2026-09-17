@@ -15,6 +15,8 @@
  */
 package com.android.tools.deployer.deployerrunner
 
+import com.android.adblib.connectedDevicesTracker
+import com.android.adblib.waitForDevice
 import com.android.ddmlib.AdbInitOptions
 import com.android.ddmlib.AndroidDebugBridge
 import com.android.testutils.AssumeUtil
@@ -29,10 +31,13 @@ import com.android.tools.deployer.common.AdbClient
 import com.android.tools.deployer.common.DeployMetric
 import com.android.tools.deployer.common.DeployerException
 import com.android.tools.deployer.common.DeployerTestConstants
+import com.android.tools.deployer.common.DeviceHolder
 import com.android.tools.deployer.common.Installer
 import com.android.tools.deployer.rules.ApiLevel
 import com.android.utils.ILogger
+import java.util.Optional
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -1363,6 +1368,7 @@ class InstallTestTest : DeployRunnerTestBase() {
 
   @Test
   @Throws(Exception::class)
+  @ApiLevel.InRange(min = 21) // Requires adb shell EXEC support
   fun testDump() {
     AssumeUtil.assumeNotWindows() // This test runs the installer on the host
 
@@ -1378,7 +1384,11 @@ class InstallTestTest : DeployRunnerTestBase() {
     }
     val iDevice = bridge.devices[0]
     val logger: ILogger = TestLogger()
-    val adb = AdbClient(iDevice, logger)
+    val session = connection!!.adbSession
+    val tracker = session.connectedDevicesTracker
+    val connectedDevice = runBlocking { tracker.waitForDevice(iDevice.serialNumber) }
+    val deviceHolder = DeviceHolder(iDevice, Optional.ofNullable(connectedDevice), useConnectedDevice = false)
+    val adb = AdbClient(deviceHolder, logger)
     val metrics = ArrayList<DeployMetric>()
     val installer: Installer = AdbInstaller(installersPath.toString(), adb, metrics, logger)
 

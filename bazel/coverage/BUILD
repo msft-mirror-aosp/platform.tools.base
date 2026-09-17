@@ -339,7 +339,7 @@ coverage_report(
         "tools/vendor/google/login/src",
     ],
     tests = [
-        "//tools/vendor/google/login:google-login_tests",
+        "//tools/vendor/google/login:google-login.tests_tests",
     ],
 )
 
@@ -698,6 +698,16 @@ coverage_report(
     ],
 )
 
+coverage_report(
+    name = "emulator-ui",
+    srcpath_include = [
+        "tools/vendor/google/emulator/ui/src",
+    ],
+    tests = [
+        "//tools/vendor/google/emulator/ui:emulator_ui_tests.test",
+    ],
+)
+
 # Coverage report for suggested import.
 coverage_report(
     name = "suggested-import",
@@ -840,13 +850,6 @@ coverage_report(
         "//tools/adt/idea/utp:utp_tests",
         "//tools/base/build-system/gradle-core:tests.test",
         "//tools/base/build-system/integration-test/connected:AndroidConnectedTest",
-        "//tools/base/utp/android-device-provider-ddmlib:tests.test",
-        "//tools/base/utp/android-test-plugin-host-additional-test-output:tests.test",
-        "//tools/base/utp/android-test-plugin-host-apk-installer:tests.test",
-        "//tools/base/utp/android-test-plugin-host-coverage:tests.test",
-        "//tools/base/utp/android-test-plugin-host-device-info:tests.test",
-        "//tools/base/utp/android-test-plugin-host-logcat:tests.test",
-        "//tools/base/utp/android-test-plugin-result-listener-gradle:tests.test",
     ],
 )
 
@@ -1182,19 +1185,12 @@ coverage_report(
         "//tools/base/testutils:studio.testutils-tests_tests",
         "//tools/base/testutils:tools.tests.test",
         "//tools/base/usb-devices:studio.usb-devices_tests",
-        "//tools/base/utp/android-device-provider-ddmlib:tests.test",
-        "//tools/base/utp/android-test-plugin-host-additional-test-output:tests.test",
-        "//tools/base/utp/android-test-plugin-host-apk-installer:tests.test",
-        "//tools/base/utp/android-test-plugin-host-coverage:tests.test",
-        "//tools/base/utp/android-test-plugin-host-device-info:tests.test",
-        "//tools/base/utp/android-test-plugin-host-logcat:tests.test",
-        "//tools/base/utp/android-test-plugin-result-listener-gradle:tests.test",
         "//tools/data-binding:studio.compilerCommon_tests",
         "//tools/data-binding:studio.compiler_tests",
         "//tools/data-binding:tools.compilerCommon_tests.test",
         "//tools/studio/google/cloud/testing/directaccess:directaccess_tests",
         "//tools/studio/google/cloud/testing/test-recorder:test-recorder.tests_tests",
-        "//tools/vendor/google/login:google-login_tests",
+        "//tools/vendor/google/login:google-login.tests_tests",
         "//tools/vendor/google/android-apk:android-apk.tests_tests",
         "//tools/vendor/google/android-ndk:android-ndk.tests_tests",
         "//tools/vendor/google/directaccess-client:directaccess-client_tests",

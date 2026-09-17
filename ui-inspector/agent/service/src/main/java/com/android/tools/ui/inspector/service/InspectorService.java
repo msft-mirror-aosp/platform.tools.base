@@ -45,18 +45,18 @@ public class InspectorService {
      * Initializes the inspector service, loads the payload JAR, and launches the inspector payload.
      *
      * @param payloadJarPath absolute path to the payload jar/dex file to load dynamically
-     * @param pid the target process ID of this application
+     * @param serverToken host-chosen token identifying the server the payload must start
      * @param artToolingPtr pointer to the native JvmtiArtTooling C++ instance
      * @return RESULT_OK on success, or an error/exception code on failure
      */
-    public static int initialize(String payloadJarPath, String pid, long artToolingPtr) {
+    public static int initialize(String payloadJarPath, String serverToken, long artToolingPtr) {
         try {
             // Register the native JvmtiArtTooling pointer in the bootstrap bridge so JNI callbacks
             // can delegate hooks and heap-walking queries to the JVMTI agent.
             ArtToolingBridge.initialize(artToolingPtr);
 
-            if (pid == null || pid.isEmpty()) {
-                Log.e(TAG, "PID is required for initialization");
+            if (serverToken == null || serverToken.isEmpty()) {
+                Log.e(TAG, "Server token is required for initialization");
                 return RESULT_ERROR;
             }
 
@@ -81,7 +81,7 @@ public class InspectorService {
 
             Method startMethod = launcherClass.getMethod(START_METHOD_NAME, String.class);
 
-            startMethod.invoke(null, pid);
+            startMethod.invoke(null, serverToken);
 
             return RESULT_OK;
         } catch (Throwable e) {

@@ -26,33 +26,32 @@ import org.junit.Test
 
 class VariantApiPropertiesTest {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      rootProject { buildscript { classpath("com.google.truth:truth:0.44") } }
-      androidApplication {
-        android {
-          defaultConfig { versionName = "1.2.3-alpha04" }
-          buildTypes {
-            named("debug") {
-              it.javaCompileOptions.annotationProcessorOptions {
-                className("Foo")
-                argument("value", "debugArg")
-              }
-              it.versionNameSuffix = "-xD"
+  val rule = GradleRule.from {
+    rootProject { buildscript { classpath("com.google.truth:truth:0.44") } }
+    androidApplication {
+      android {
+        defaultConfig { versionName = "1.2.3-alpha04" }
+        buildTypes {
+          named("debug") {
+            it.javaCompileOptions.annotationProcessorOptions {
+              className("Foo")
+              argument("value", "debugArg")
             }
+            it.versionNameSuffix = "-xD"
           }
-          flavorDimensions += "dimension"
-          productFlavors {
-            create("flavor1") {
-              it.javaCompileOptions.annotationProcessorOptions {
-                className("Bar")
-                argument("value", "flavor1Arg")
-              }
+        }
+        flavorDimensions += "dimension"
+        productFlavors {
+          create("flavor1") {
+            it.javaCompileOptions.annotationProcessorOptions {
+              className("Bar")
+              argument("value", "flavor1Arg")
             }
           }
         }
       }
     }
+  }
 
   @Test
   fun testMergedJavaCompileOptions() {

@@ -44,8 +44,9 @@ data class VariantOutputConfigurationImpl(
  * Returns the [FilterConfiguration] for a particular [FilterConfiguration.FilterType] or null if not such filter is configured on this
  * variant output
  */
-fun VariantOutputConfiguration.getFilter(type: FilterConfiguration.FilterType): FilterConfiguration? =
-  filters.firstOrNull { it.filterType == type }
+fun VariantOutputConfiguration.getFilter(type: FilterConfiguration.FilterType): FilterConfiguration? = filters.firstOrNull {
+  it.filterType == type
+}
 
 fun VariantOutputConfiguration.baseName(component: ComponentCreationConfig): String =
   when (this.outputType) {

@@ -23,23 +23,41 @@ genrule(
 cc_library(
     name = "agent_lib",
     srcs = [
+        "constructor_analyzer.cc",
         "hits_extractor.cc",
         "instrumenter.cc",
+        "kotlin_compose_filter.cc",
+        "kotlin_coroutine_filter.cc",
+        "kotlin_generated_filter.cc",
         "metadata_collector.cc",
+        "parameter_shifter.cc",
+        "register_scanner.cc",
+        "synthetic_filter.cc",
+        "tagging_manager.cc",
     ],
     hdrs = [
+        "constructor_analyzer.h",
+        "filter_interface.h",
         "hits_extractor.h",
         "instrumenter.h",
+        "kotlin_compose_filter.h",
+        "kotlin_coroutine_filter.h",
+        "kotlin_generated_filter.h",
         "metadata_collector.h",
+        "parameter_shifter.h",
+        "register_scanner.h",
+        "synthetic_filter.h",
+        "tagging_manager.h",
     ],
     copts = ANDROID_COPTS,
     tags = ["testonly"],
     deps = [
         "//prebuilts/studio/jdk:jni_headers",
         "//tools/base/android-test/coverage/common:log",
-        "//tools/base/android-test/coverage/proto:coverage_metadata_cc_proto",
+        "//tools/base/build-system/gradle-core:coverage_metadata_cc_proto",
         "@slicer",
     ],
+    alwayslink = 1,
 )
 
 cc_binary(
@@ -93,6 +111,7 @@ cc_test(
     name = "agent_unit_tests",
     size = "small",
     srcs = [
+        "bytecode_helpers_test.cc",
         "hits_extractor_test.cc",
         "metadata_collector_test.cc",
     ],

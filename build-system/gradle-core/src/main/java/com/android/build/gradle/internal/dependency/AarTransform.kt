@@ -74,6 +74,7 @@ import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactTyp
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.PATH_SHARED_LIBRARY_RESOURCES_APK
 import com.android.build.gradle.internal.r8.TargetedR8RulesReadWriter
 import com.android.build.gradle.internal.tasks.AarMetadataTask
+import com.android.ide.common.r8.ConsumerRuleGlobalGuardian
 import java.io.File
 import org.gradle.api.artifacts.transform.InputArtifact
 import org.gradle.api.artifacts.transform.TransformAction
@@ -157,7 +158,21 @@ abstract class AarTransform : TransformAction<AarTransform.Parameters> {
         if (targetedR8Rules.r8Rules.isNotEmpty()) {
           writeTargetedR8Rules(targetedR8Rules, transformOutputs, isClassesJarInAar = true)
         } else {
-          outputIfExists(FN_PROGUARD_TXT)
+          val proguardRulesFile = extractedAarDir.resolve(FN_PROGUARD_TXT)
+          if (proguardRulesFile.isFile) {
+            if (parameters.filterOutGlobalRules.get()) {
+              val filteredRules =
+                proguardRulesFile.inputStream().buffered().use {
+                  ConsumerRuleGlobalGuardian.readConsumerKeepRulesRemovingBannedGlobals(
+                    it,
+                    shouldRemoveBannedGlobals = true,
+                  )
+                }
+              transformOutputs.file(FN_PROGUARD_TXT).writeText(filteredRules)
+            } else {
+              transformOutputs.file(proguardRulesFile)
+            }
+          }
         }
       }
 

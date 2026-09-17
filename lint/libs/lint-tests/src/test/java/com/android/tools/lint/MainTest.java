@@ -914,6 +914,62 @@ public class MainTest extends AbstractCheckTest {
                 });
     }
 
+    public void testCheckCategory() throws Exception {
+        // Regression test: --check (and --disable etc) accept category names, which
+        // should be expanded into the issue ids in that category. Previously the
+        // category name itself was recorded as an issue id, which turned off
+        // everything.
+        File project =
+                getProjectDir(
+                        null,
+                        java("class Test {\n    String s = \"/sdcard/path\";\n}"),
+                        xml(
+                                "res/layout/foo.xml",
+                                ""
+                                        + "<merge xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
+                                        + "    <Button android:text=\"Button\" android:id=\"@+id/button1\" android:layout_width=\"wrap_content\" android:layout_height=\"wrap_content\"></Button>\n"
+                                        + "</merge>\n"));
+
+        // SdCardPath is in the Correctness category; HardcodedText is in
+        // Internationalization. --check Correctness should only run the former.
+        checkDriver(
+                ""
+                        + "src/Test.java:2: Warning: Do not hardcode \"/sdcard/\"; use Environment.getExternalStorageDirectory().getPath() instead [SdCardPath]\n"
+                        + "    String s = \"/sdcard/path\";\n"
+                        + "               ~~~~~~~~~~~~~~\n"
+                        + "0 errors, 1 warning",
+                "",
+
+                // Expected exit code
+                ERRNO_SUCCESS,
+
+                // Args
+                new String[] {
+                    "--check", "Correctness", "--disable", "LintError", project.getPath()
+                });
+
+        // --disable Correctness should turn off SdCardPath but leave HardcodedText
+        checkDriver(
+                ""
+                        + "res/layout/foo.xml:2: Warning: Hardcoded string \"Button\", should use @string resource [HardcodedText]\n"
+                        + "    <Button android:text=\"Button\" android:id=\"@+id/button1\" android:layout_width=\"wrap_content\" android:layout_height=\"wrap_content\"></Button>\n"
+                        + "            ~~~~~~~~~~~~~~~~~~~~~\n"
+                        + "0 errors, 1 warning",
+                "",
+
+                // Expected exit code
+                ERRNO_SUCCESS,
+
+                // Args
+                new String[] {
+                    "--disable",
+                    "Correctness,LintError,UnusedResources",
+                    "--check",
+                    "SdCardPath,HardcodedText",
+                    project.getPath()
+                });
+    }
+
     public void testUnicodeFileName() throws Exception {
         File project =
                 getProjectDir(

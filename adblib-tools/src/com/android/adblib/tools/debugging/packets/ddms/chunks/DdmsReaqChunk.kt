@@ -39,11 +39,10 @@ internal data class DdmsReaqChunk(
     internal suspend fun parse(chunk: DdmsChunkView, workBuffer: ResizableBuffer = ResizableBuffer()): DdmsReaqChunk {
       // Read payload into "buffer"
       workBuffer.clear()
-      val buffer =
-        chunk.withPayload { payload ->
-          payload.readNBytes(workBuffer, chunk.length)
-          workBuffer.afterChannelRead()
-        }
+      val buffer = chunk.withPayload { payload ->
+        payload.readNBytes(workBuffer, chunk.length)
+        workBuffer.afterChannelRead()
+      }
 
       buffer.order(DDMS_CHUNK_BYTE_ORDER)
       val enabled = readByte(buffer) != 0.toByte()

@@ -23,6 +23,7 @@ import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.coverage.JacocoConfigurations
 import com.android.build.gradle.internal.coverage.generateReport
 import com.android.build.gradle.internal.coverage.getUnitTestJacocoVersion
+import com.android.build.gradle.internal.coverage.injectMetadataInXmlReport
 import com.android.build.gradle.internal.coverage.report.ReportType
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalMultipleArtifactType
@@ -41,13 +42,6 @@ import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_MET
 import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.UNIT_TEST_TEST_SUITE_NAME
 import com.android.buildanalyzer.common.TaskCategory
 import java.io.File
-import java.io.IOException
-import javax.xml.parsers.DocumentBuilderFactory
-import javax.xml.parsers.ParserConfigurationException
-import javax.xml.transform.TransformerException
-import javax.xml.transform.TransformerFactory
-import javax.xml.transform.dom.DOMSource
-import javax.xml.transform.stream.StreamResult
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
@@ -70,8 +64,6 @@ import org.gradle.work.DisableCachingByDefault
 import org.gradle.workers.ClassLoaderWorkerSpec
 import org.gradle.workers.WorkAction
 import org.gradle.workers.WorkParameters
-import org.w3c.dom.Node
-import org.xml.sax.SAXException
 
 /**
  * For generating and collecting jacoco xml coverage reports for unit tests, instrumentation tests and test suites for current module and
@@ -99,7 +91,7 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
   @get:InputFiles
   @get:Optional
   @get:PathSensitive(PathSensitivity.RELATIVE)
-  abstract val dependentModuleCoverageData: ConfigurableFileCollection
+  abstract val dependantModulesReports: ConfigurableFileCollection
 
   @get:Classpath @get:Optional abstract val jacocoClasspath: ConfigurableFileCollection
 
@@ -125,7 +117,7 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
         it.testSuiteCoverageData.setFrom(testSuiteCoverageData)
         it.classFolders.setFrom(classFileCollection)
         it.sourceFolders.setFrom(sourceFolders)
-        it.dependentModuleCoverageData.setFrom(dependentModuleCoverageData)
+        it.dependantModulesReports.setFrom(dependantModulesReports)
         it.variantName.set(variantName)
         it.projectName.set(projectPath.get())
         it.projectRoot.set(projectRoot)
@@ -134,8 +126,8 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
 
   abstract class BaseCoverageCollectionCreationAction(
     val jacocoAntConfiguration: Configuration? = null,
-    creationConfig: CodeCoverageReportCreationConfig,
-  ) : VariantTaskCreationAction<CodeCoverageCollectionTask, CodeCoverageReportCreationConfig>(creationConfig) {
+    creationConfig: TestReportCreationConfig,
+  ) : VariantTaskCreationAction<CodeCoverageCollectionTask, TestReportCreationConfig>(creationConfig) {
 
     override val type: Class<CodeCoverageCollectionTask>
       get() = CodeCoverageCollectionTask::class.java
@@ -166,7 +158,7 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
     }
   }
 
-  class CoverageCollectionCreationAction(jacocoAntConfiguration: Configuration? = null, creationConfig: CodeCoverageReportCreationConfig) :
+  class CoverageCollectionCreationAction(jacocoAntConfiguration: Configuration? = null, creationConfig: TestReportCreationConfig) :
     BaseCoverageCollectionCreationAction(jacocoAntConfiguration, creationConfig) {
 
     override val name: String
@@ -188,7 +180,7 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
 
   class AggregatedCoverageCollectionCreationAction(
     jacocoAntConfiguration: Configuration? = null,
-    creationConfig: CodeCoverageReportCreationConfig,
+    creationConfig: TestReportCreationConfig,
   ) : BaseCoverageCollectionCreationAction(jacocoAntConfiguration, creationConfig) {
 
     override val name: String
@@ -197,7 +189,7 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
     override fun configure(task: CodeCoverageCollectionTask) {
       super.configure(task)
 
-      task.dependentModuleCoverageData.from(creationConfig.dependantModulesReports)
+      task.dependantModulesReports.from(creationConfig.dependantModulesReports)
     }
 
     override fun handleProvider(taskProvider: TaskProvider<CodeCoverageCollectionTask>) {
@@ -217,7 +209,7 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
     val testSuiteCoverageData: ConfigurableFileCollection
     val classFolders: ConfigurableFileCollection
     val sourceFolders: ConfigurableFileCollection
-    val dependentModuleCoverageData: ConfigurableFileCollection
+    val dependantModulesReports: ConfigurableFileCollection
     val variantName: Property<String>
     val projectName: Property<String>
     val projectRoot: DirectoryProperty
@@ -289,7 +281,7 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
         val mergedCoverageFiles = connectedTestCoverageFile + unitTestCoverageFile + testSuiteCoverageFiles
         generateXmlReport(mergedCoverageFiles, "Aggregated")
 
-        parameters.dependentModuleCoverageData.asFileTree.forEach { xmlFile ->
+        parameters.dependantModulesReports.asFileTree.forEach { xmlFile ->
           val targetFile = parameters.reportOutputDir.asFile.get().resolve(xmlFile.name)
           xmlFile.copyTo(targetFile, overwrite = true)
         }
@@ -329,80 +321,6 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
           }
         }
         return null
-      }
-
-      /**
-       * Injects metadata into the generated Jacoco XML report.
-       *
-       * This function adds custom properties and source folder information to the XML report generated by Jacoco. The properties are added
-       * under a `<properties>` tag, and the source folders are added under a `<sources>` tag.
-       *
-       * The following properties are added:
-       * - "moduleName": The name of the Gradle module.
-       * - "testSuiteName": The name of the test suite (e.g., "UnitTest", "AndroidTest", "Aggregated").
-       * - "testedVariantName": The name of the Android variant being tested.
-       *
-       * @param xmlFile The Jacoco XML report file.
-       * @param properties A map of key-value pairs to be added as properties.
-       * @param sourceFolders A list of source folder paths to be added.
-       */
-      fun injectMetadataInXmlReport(xmlFile: File, properties: Map<String, String>, sourceFolders: List<String>) {
-        try {
-          val docFactory = DocumentBuilderFactory.newInstance()
-          docFactory.isValidating = false
-          docFactory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
-          docFactory.isIgnoringElementContentWhitespace = true
-
-          val docBuilder = docFactory.newDocumentBuilder()
-          val document = docBuilder.parse(xmlFile)
-
-          val propertiesList = document.getElementsByTagName("properties")
-
-          val propertiesNode: Node
-          if (propertiesList.length == 0) {
-            propertiesNode = document.createElement("properties")
-            document.documentElement.appendChild(propertiesNode)
-          } else {
-            propertiesNode = propertiesList.item(0)
-          }
-          properties.forEach { (key, value) ->
-            val propertyElement = document.createElement("property")
-            propertyElement.setAttribute("name", key)
-            propertyElement.setAttribute("value", value)
-            propertiesNode.appendChild(propertyElement)
-          }
-
-          val sourcesList = document.getElementsByTagName("sources")
-
-          val sourcesNode: Node
-          if (sourcesList.length == 0) {
-            sourcesNode = document.createElement("sources")
-            document.documentElement.appendChild(sourcesNode)
-          } else {
-            sourcesNode = sourcesList.item(0)
-          }
-          sourceFolders.forEach { folderPath ->
-            val fileElement = document.createElement("file")
-            fileElement.setAttribute("path", folderPath)
-            sourcesNode.appendChild(fileElement)
-          }
-
-          val transformerFactory = TransformerFactory.newInstance()
-          val transformer = transformerFactory.newTransformer()
-
-          val source = DOMSource(document)
-          val result = StreamResult(xmlFile)
-
-          transformer.transform(source, result)
-        } catch (e: ParserConfigurationException) {
-          throw Exception("Error configuring XML parser", e)
-        } catch (e: SAXException) {
-          throw Exception("Error parsing XML Report", e)
-        } catch (e: IOException) {
-          throw Exception("Error reading or writing XML Report", e)
-        } catch (e: TransformerException) {
-          throw Exception("Error transforming XML Report", e)
-        }
       }
     }
   }

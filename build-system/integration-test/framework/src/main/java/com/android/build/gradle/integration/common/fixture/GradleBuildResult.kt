@@ -90,39 +90,38 @@ class GradleBuildResult(
    */
   @Deprecated("Use assertFailureMessage")
   val failureMessage: String?
-    get() =
-      exception?.let {
-        val causalChain = Throwables.getCausalChain(exception)
-        // Try the common scenarios: configuration or task failure.
-        for (throwable in causalChain) {
-          // Because of different class loaders involved, we are forced to do stringly-typed
-          // programming.
-          val throwableType = throwable.javaClass.name
-          if (throwableType == ProjectConfigurationException::class.java.name) {
-            return throwable.cause?.message ?: throw AssertionError("Exception had unexpected structure.", exception)
-          } else if (isPlaceholderEx(throwableType)) {
-            if (throwable.toString().startsWith(TaskExecutionException::class.java.name)) {
-              var cause = throwable
-              // there can be several levels of PlaceholderException when dealing with
-              // Worker API failures.
-              while (isPlaceholderEx(throwableType) && cause.cause != null) {
-                cause = cause.cause
-              }
-              return cause.message
+    get() = exception?.let {
+      val causalChain = Throwables.getCausalChain(exception)
+      // Try the common scenarios: configuration or task failure.
+      for (throwable in causalChain) {
+        // Because of different class loaders involved, we are forced to do stringly-typed
+        // programming.
+        val throwableType = throwable.javaClass.name
+        if (throwableType == ProjectConfigurationException::class.java.name) {
+          return throwable.cause?.message ?: throw AssertionError("Exception had unexpected structure.", exception)
+        } else if (isPlaceholderEx(throwableType)) {
+          if (throwable.toString().startsWith(TaskExecutionException::class.java.name)) {
+            var cause = throwable
+            // there can be several levels of PlaceholderException when dealing with
+            // Worker API failures.
+            while (isPlaceholderEx(throwableType) && cause.cause != null) {
+              cause = cause.cause
             }
+            return cause.message
           }
         }
-
-        // Look for any BuildException, for other cases.
-        for (throwable in causalChain) {
-          val throwableType = throwable.javaClass.name
-          if (throwableType == BuildException::class.java.name) {
-            return throwable.cause?.message ?: throw AssertionError("Exception had unexpected structure.", exception)
-          }
-        }
-
-        throw AssertionError("Failed to determine the failure message.", exception)
       }
+
+      // Look for any BuildException, for other cases.
+      for (throwable in causalChain) {
+        val throwableType = throwable.javaClass.name
+        if (throwableType == BuildException::class.java.name) {
+          return throwable.cause?.message ?: throw AssertionError("Exception had unexpected structure.", exception)
+        }
+      }
+
+      throw AssertionError("Failed to determine the failure message.", exception)
+    }
 
   val tasks: List<String>
     get() = taskStateList.tasks

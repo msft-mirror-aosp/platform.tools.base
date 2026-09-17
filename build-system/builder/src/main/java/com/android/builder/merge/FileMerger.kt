@@ -30,12 +30,12 @@ object FileMerger {
    * @param noCompressPredicate a predicate indicating whether paths should be uncompressed
    */
   @JvmStatic
-  fun merge(inputs: List<FileMergerInputNonIncremental>, output: FileMergerOutput, noCompressPredicate: Predicate<String>) {
+  fun merge(inputs: List<FileMergerInput>, output: FileMergerOutput, noCompressPredicate: Predicate<String>) {
     try {
       output.use {
         it.open()
         val pathsToInputFiles =
-          buildMap<String, MutableList<FileMergerInputNonIncremental>> {
+          buildMap<String, MutableList<FileMergerInput>> {
               inputs.forEach { input -> input.getAllPaths().forEach { path -> getOrPut(path) { mutableListOf() }.add(input) } }
             }
             .toMap()

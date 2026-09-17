@@ -38,7 +38,7 @@ class ScreenshotTestTaskManager(project: Project, globalConfig: GlobalTaskCreati
     createDependencyStreams(screenshotTestCreationConfig)
 
     // process java resources
-    createProcessJavaResTask(screenshotTestCreationConfig)
+    createProcessJavaResTask(screenshotTestCreationConfig, screenshotTestCreationConfig.mainVariant.packaging)
 
     setupAndroidRequiredTasks(testedVariant, screenshotTestCreationConfig)
 

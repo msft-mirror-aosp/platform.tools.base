@@ -1,7 +1,8 @@
 load("@bazel_skylib//rules:common_settings.bzl", "bool_flag", "string_flag")
 load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
-load("@rules_java//java:defs.bzl", "java_binary", "java_import", "java_library", "java_test")
+load("@npm_android_vsix//:defs.bzl", "npm_link_all_packages")
+load("@rules_java//java:defs.bzl", "java_binary", "java_library", "java_test")
 load("@rules_python//python:defs.bzl", "py_binary", "py_test")
 load("//tools/base/bazel:coverage.bzl", "coverage_java_test")
 load("//tools/base/bazel:kotlin_common.bzl", "kt_java_toolchain_bundle")
@@ -11,8 +12,35 @@ load("//tools/base/bazel:maven/remote_repos.bzl", "REMOTE_REPOS")
 load("//tools/base/bazel:owners.bzl", "owners_zip")
 load("//tools/base/bazel:proto.bzl", "PROTOC_VERSION", "java_proto_library")
 load("//tools/base/bazel:utils.bzl", "java_jarjar")
+load(":kotlin_common_test.bzl", "kotlin_common_test")
 
-exports_files(["jarjar_rules.txt"])
+exports_files([
+    "jarjar_rules.txt",
+    ".npmrc",
+    "package.json",
+    "pnpm-lock.yaml",
+    "pnpm-workspace.yaml",
+])
+
+# Creates the virtual npm package store (.aspect_rules_js/node_modules) in this workspace
+# root package from pnpm-lock.yaml. Member packages (such as //tools/vendor/google/android-vsix)
+# resolve and link their dependencies from this central store.
+npm_link_all_packages(name = "node_modules")
+
+# Helper target to update tools/base/bazel/pnpm-lock.yaml when dependencies are added,
+# removed, or updated in member package.json files across the workspace.
+# Runs the hermetic pnpm binary managed by Bazel without requiring local Node.js or pnpm.
+# Usage:
+#   tools/base/bazel/bazel run //tools/base/bazel:pnpm_update
+# Or pass custom pnpm arguments:
+#   tools/base/bazel/bazel run //tools/base/bazel:pnpm_update -- audit
+py_binary(
+    name = "pnpm_update",
+    srcs = ["pnpm_update.py"],
+    data = ["@pnpm"],
+    main = "pnpm_update.py",
+    tags = ["no_windows"],
+)
 
 java_library(
     name = "utils",
@@ -63,12 +91,6 @@ java_library(
     deps = [
         "@intellij//:intellij-sdk",
     ],
-)
-
-java_import(
-    name = "langtools",
-    jars = ["//prebuilts/studio/jdk/jdk8:langtools"],
-    visibility = ["//visibility:public"],
 )
 
 java_binary(
@@ -221,6 +243,7 @@ coverage_java_test(
         ":maven",
         ":pom_generator",
         "@maven//:junit.junit",
+        "@maven//:org.apache.maven.maven-aether-provider",
     ],
 )
 
@@ -374,13 +397,6 @@ java_jarjar(
     srcs = [
         "@maven//:io.grpc.grpc-testing",
     ],
-    rules = "jarjar_rules.txt",
-    visibility = ["//visibility:public"],
-)
-
-java_jarjar(
-    name = "utp-core-proto-jarjar",
-    srcs = ["//prebuilts/tools/common/m2:utp-core-proto"],
     rules = "jarjar_rules.txt",
     visibility = ["//visibility:public"],
 )
@@ -636,4 +652,8 @@ py_binary(
 owners_zip(
     name = "owners_zip",
     out = "owners.zip",
+)
+
+kotlin_common_test(
+    name = "kotlin_common_test",
 )

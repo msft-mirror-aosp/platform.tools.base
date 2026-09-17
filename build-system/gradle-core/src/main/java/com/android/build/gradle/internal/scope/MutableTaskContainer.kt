@@ -19,6 +19,8 @@ package com.android.build.gradle.internal.scope
 import com.android.build.gradle.internal.cxx.gradle.generator.CxxConfigurationModel
 import com.android.build.gradle.internal.tasks.CheckManifest
 import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask
+import com.android.build.gradle.internal.tasks.RedirectIdeApkOutputsTask
+import com.android.build.gradle.internal.tasks.RedirectIdeBundleOutputsTask
 import com.android.build.gradle.internal.tasks.ValidateSigningTask
 import com.android.build.gradle.tasks.AidlCompile
 import com.android.build.gradle.tasks.ExternalNativeBuildTask
@@ -64,7 +66,7 @@ class MutableTaskContainer : TaskContainer {
   override var renderscriptCompileTask: TaskProvider<out RenderscriptCompile>? = null
   override lateinit var mergeResourcesTask: TaskProvider<out MergeResources>
   override lateinit var mergeAssetsTask: TaskProvider<out MergeSourceSetFolders>
-  override lateinit var processJavaResourcesTask: TaskProvider<out Sync>
+  override var processJavaResourcesTask: TaskProvider<out Sync>? = null
   override var generateBuildConfigTask: TaskProvider<out GenerateBuildConfig>? = null
   override var processAndroidResTask: TaskProvider<out ProcessAndroidResources>? = null
   override var processManifestTask: TaskProvider<out ManifestProcessorTask>? = null
@@ -87,6 +89,8 @@ class MutableTaskContainer : TaskContainer {
   // anything below is scheduled for removal, using BuildableArtifact to link tasks.
 
   var bundleTask: TaskProvider<out Task>? = null
+  var redirectIdeApkOutputsTask: TaskProvider<RedirectIdeApkOutputsTask>? = null
+  var redirectIdeBundleOutputsTask: TaskProvider<RedirectIdeBundleOutputsTask>? = null
   lateinit var resourceGenTask: TaskProvider<out Task>
   lateinit var assetGenTask: TaskProvider<Task>
   var cxxConfigurationModel: CxxConfigurationModel? = null

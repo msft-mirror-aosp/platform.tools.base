@@ -16,21 +16,18 @@
 
 package com.android.build.gradle.internal.dependency
 
-import com.android.build.gradle.internal.fixtures.FakeGenericTransformParameters
 import com.android.build.gradle.internal.fixtures.FakeGradleProvider
 import com.android.build.gradle.internal.fixtures.FakeGradleRegularFile
 import com.android.build.gradle.internal.fixtures.FakeTransformOutputs
 import com.android.testutils.TestInputsGenerator
 import com.google.common.truth.Truth.assertThat
 import java.io.File
-import org.gradle.api.file.FileCollection
 import org.gradle.api.file.FileSystemLocation
 import org.gradle.api.provider.Provider
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.mockito.Mockito.mock
-import org.mockito.Mockito.`when`
 
 class LayoutlibExtractorTest {
 
@@ -39,24 +36,16 @@ class LayoutlibExtractorTest {
   @Test
   fun testExtractsData() {
     val inputJar = tmp.newFile("layoutlib-runtime.jar")
-    TestInputsGenerator.writeJarWithEmptyEntries(
-      inputJar.toPath(),
-      listOf("data/fonts/Font.ttf", "data/platform_data.txt", "data/framework_res.jar"),
-    )
-
-    val resourcesJar = tmp.newFile("layoutlib-resources.jar")
-    val fileCollectionMock = mock(FileCollection::class.java)
-    `when`(fileCollectionMock.files).thenReturn(setOf(resourcesJar))
+    TestInputsGenerator.writeJarWithEmptyEntries(inputJar.toPath(), listOf("data/fonts/Font.ttf", "data/platform_data.txt"))
 
     val transformOutputs = FakeTransformOutputs(tmp)
 
     val transform =
       object : LayoutlibExtractor() {
         override val layoutlibDistributionArtifact: Provider<FileSystemLocation> = FakeGradleProvider(FakeGradleRegularFile(inputJar))
-        override val artifactDependencies: FileCollection = fileCollectionMock
 
         override fun getParameters(): GenericTransformParameters {
-          return FakeGenericTransformParameters("project_name")
+          return mock(GenericTransformParameters::class.java)
         }
       }
 
@@ -66,6 +55,5 @@ class LayoutlibExtractorTest {
 
     assertThat(File(extractedDir, "data/fonts/Font.ttf").exists()).isTrue()
     assertThat(File(extractedDir, "data/platform_data.txt").exists()).isTrue()
-    assertThat(File(extractedDir, "data/framework_res.jar").exists()).isTrue()
   }
 }

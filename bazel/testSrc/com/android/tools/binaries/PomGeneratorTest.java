@@ -16,7 +16,13 @@
 
 package com.android.tools.binaries;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
+
+import org.apache.maven.model.Dependency;
+import org.apache.maven.model.Model;
+import org.junit.Test;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -24,7 +30,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import org.junit.Test;
 
 public class PomGeneratorTest {
 
@@ -53,6 +58,7 @@ public class PomGeneratorTest {
                 null,
                 outputPom,
                 pomDependencies,
+                null,
                 pomExports,
                 "group",
                 "artifact",
@@ -69,5 +75,44 @@ public class PomGeneratorTest {
             System.err.println("=== End of generated file contents ===");
             fail("Generated file does not match golden file.");
         }
+    }
+
+    @Test
+    public void testPomPackagingRoutesToDependencyManagement() throws Exception {
+        PomGenerator generator = new PomGenerator();
+        File outputPom = new File("output_dm.pom");
+
+        Path testDataDir = Paths.get("tools/base/bazel/test/pom_generator/");
+        List<File> pomDependencies = List.of(testDataDir.resolve("sample-bom-1.0.0.pom").toFile());
+        List<File> pomExports = List.of(testDataDir.resolve("guava-30.1-jre.pom").toFile());
+
+        generator.generatePom(
+                null,
+                outputPom,
+                pomDependencies,
+                null,
+                pomExports,
+                "com.example",
+                "test-artifact",
+                "1.0.0",
+                null,
+                null,
+                false);
+
+        Model generated = PomGenerator.pomToModel(outputPom.getAbsolutePath());
+
+        // Assert BOM is in dependencyManagement
+        assertNotNull(generated.getDependencyManagement());
+        Dependency bomDep = generated.getDependencyManagement().getDependencies().get(0);
+        assertEquals("org.example", bomDep.getGroupId());
+        assertEquals("sample-bom", bomDep.getArtifactId());
+        assertEquals("pom", bomDep.getType());
+        assertEquals("import", bomDep.getScope());
+
+        // Assert standard library is in dependencies
+        Dependency libDep = generated.getDependencies().get(0);
+        assertEquals("com.google.guava", libDep.getGroupId());
+        assertEquals("guava", libDep.getArtifactId());
+        assertEquals("compile", libDep.getScope());
     }
 }

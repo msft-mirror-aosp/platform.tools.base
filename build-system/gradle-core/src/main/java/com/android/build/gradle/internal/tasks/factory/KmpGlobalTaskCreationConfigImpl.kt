@@ -80,7 +80,11 @@ internal class KmpGlobalTaskCreationConfigImpl(
 
   override val asmApiVersion = ASM_API_VERSION
 
-  override val createdBy: String = "Android Gradle ${Version.ANDROID_GRADLE_PLUGIN_VERSION}"
+  override val createdBy: String by lazy {
+    val stringOption: String? = services.projectOptions[StringOption.PROJECT_CREATOR_TOOL]
+    val defaultCreatedBy = "Android Gradle ${Version.ANDROID_GRADLE_PLUGIN_VERSION}"
+    if (stringOption != null) "$stringOption/$defaultCreatedBy" else defaultCreatedBy
+  }
 
   override val globalArtifacts: ArtifactsImpl = ArtifactsImpl(project, "global")
 
@@ -138,7 +142,6 @@ internal class KmpGlobalTaskCreationConfigImpl(
 
   private fun createCustomLintChecksConfig(project: Project): Configuration {
     val lintChecks = project.configurations.maybeCreate(VariantDependencies.CONFIG_NAME_LINTCHECKS)
-    lintChecks.isVisible = false
     lintChecks.description = "Configuration to apply external lint check jar"
     lintChecks.isCanBeConsumed = false
     return lintChecks
@@ -146,7 +149,6 @@ internal class KmpGlobalTaskCreationConfigImpl(
 
   private fun createCustomLintPublishConfig(project: Project): Configuration {
     val lintChecks = project.configurations.maybeCreate(VariantDependencies.CONFIG_NAME_LINTPUBLISH)
-    lintChecks.isVisible = false
     lintChecks.description = "Configuration to publish external lint check jar"
     lintChecks.isCanBeConsumed = false
     return lintChecks

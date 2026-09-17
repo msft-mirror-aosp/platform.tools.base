@@ -26,24 +26,23 @@ import org.junit.Test
 class ProcessManifestPlaceholdersTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication { android { pluginCallbacks += ManifestPlaceHolderProviderCallback::class.java } }
-        .dependencies { api(project(":lib")) }
-      androidLibrary { android { namespace = "com.example.text" } }
-        .files {
-          add(
-            "src/main/AndroidManifest.xml",
-            """
-            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                <meta-data android:name="example_meta" android:value="${'$'}{exampleDataPlaceholder}" />
-                <application />
-            </manifest>
-            """
-              .trimIndent(),
-          )
-        }
-    }
+  val rule = GradleRule.from {
+    androidApplication { android { pluginCallbacks += ManifestPlaceHolderProviderCallback::class.java } }
+      .dependencies { api(project(":lib")) }
+    androidLibrary { android { namespace = "com.example.text" } }
+      .files {
+        add(
+          "src/main/AndroidManifest.xml",
+          """
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <meta-data android:name="example_meta" android:value="${'$'}{exampleDataPlaceholder}" />
+              <application />
+          </manifest>
+          """
+            .trimIndent(),
+        )
+      }
+  }
 
   @Test
   fun testBuild() {

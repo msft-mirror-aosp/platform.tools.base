@@ -245,9 +245,9 @@ enum class BooleanOption(
   ENABLE_PROGUARD_RULES_EXTRACTION("android.proguard.enableRulesExtraction", true, FeatureStage.Experimental),
   ENABLE_JAVA_RESOURCE_OPTIMIZATIONS(
     "android.experimental.enableJavaResourceOptimizations",
-    false,
+    true,
     FeatureStage.Experimental,
-    FutureStage(Version.VERSION_10_0, false, FeatureStage.SoftlyEnforced(VERSION_10_0)),
+    FutureStage(Version.VERSION_10_0, true, FeatureStage.Removed(Version.VERSION_10_0)),
   ),
   /**
    * Disables all constraints overriding all the other related flags.
@@ -301,6 +301,7 @@ enum class BooleanOption(
   LINT_BASELINE_OMIT_LINE_NUMBERS("android.lint.baselineOmitLineNumbers", false, FeatureStage.Experimental),
   ENABLE_NEW_TEST_DSL("android.experimental.enableNewTestDsl", false, FeatureStage.Experimental),
   @Suppress("unused") ENABLE_SCREENSHOT_TEST("android.experimental.enableScreenshotTest", false, FeatureStage.Experimental),
+  @Suppress("unused") ENABLE_BACKUP_TEST("android.experimental.enableBackupTest", false, FeatureStage.Experimental),
 
   /** Whether to enable kotlin compilation for test fixtures */
   ENABLE_TEST_FIXTURES_KOTLIN_SUPPORT("android.experimental.enableTestFixturesKotlinSupport", false, FeatureStage.Experimental),
@@ -331,17 +332,21 @@ enum class BooleanOption(
     FeatureStage.Experimental,
     FutureStage(Version.VERSION_9_0, true, FeatureStage.Enforced(Version.VERSION_9_0)),
   ),
+  R8_PLUGIN_SUPPORT("android.experimental.r8.plugin.support", false, FeatureStage.Experimental),
 
-  /** Switches Android Test execution from the Unified Test Platform (UTP) to the Android Test JUnit Engine. */
+  /** Switches Android Test execution from the Unified Test Platform (UTP) to the experimental direct-to-AGP implementation. */
   ANDROID_BUILTIN_TEST_PLATFORM(
     "android.experimental.androidTest.builtin_test_platform",
-    true,
+    false,
     FeatureStage.Experimental,
     futureStage = FutureStage(defaultValue = true, stage = FeatureStage.SoftlyEnforced(VERSION_10_0), version = Version.VERSION_9_0),
   ),
 
   /** When enabled, registers code coverage and test results aggregation tasks. */
   REPORT_AGGREGATION_SUPPORT("android.experimental.reportAggregationSupport", false, FeatureStage.Experimental),
+
+  /** When enabled, migrates test and coverage reports to the new format for individual suites. */
+  TEST_SUITE_NEW_REPORT_FORMAT("android.experimental.testSuite.newReportFormat", false, FeatureStage.Experimental),
 
   /** Temporary workaround to continue using R8 param of --main-dex-list */
   R8_MAIN_DEX_LIST_DISALLOWED(
@@ -352,7 +357,7 @@ enum class BooleanOption(
   ),
 
   /** Enables R8 gradual support */
-  R8_GRADUAL_API("android.r8.gradual.support", false, FeatureStage.Experimental),
+  R8_GRADUAL_API("android.r8.gradual.support", true, FeatureStage.Experimental),
 
   /** Whether to output the R8 Configuration Analyzer report from R8 builds. */
   R8_ENABLE_KEEP_RADIUS_REPORT(
@@ -376,6 +381,12 @@ enum class BooleanOption(
     stage = FeatureStage.Experimental,
     FutureStage(version = Version.VERSION_10_0, defaultValue = true, stage = FeatureStage.Enforced(enforcedVersion = Version.VERSION_10_0)),
   ),
+  ENFORCE_DYNAMIC_FEATURE_VARIANT_MATCHING(
+    "android.enforceDynamicFeatureVariantMatching",
+    false,
+    FeatureStage.Experimental,
+    FutureStage(Version.VERSION_10_0, true, FeatureStage.Enforced(Version.VERSION_10_0)),
+  ),
 
   /** When enabled, tasks for local and aggregated lint reports are registered. */
   LINT_REPORT_AGGREGATION(
@@ -385,7 +396,10 @@ enum class BooleanOption(
     futureStage = FutureStage(Version.VERSION_10_0, true, FeatureStage.Experimental),
   ),
 
-  /** When enabled, lint will use the default baseline file (lint-baseline.xml) if a baseline file is not specified in the DSL. */
+  /**
+   * When enabled, lint will use the default baseline file (lint-baseline.xml, or target-specific in KMP projects) if a baseline file is not
+   * specified in the DSL.
+   */
   LINT_DEFAULT_BASELINE_CONVENTION(
     "android.experimental.lint.defaultBaselineConvention",
     false,

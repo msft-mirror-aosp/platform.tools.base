@@ -25,13 +25,12 @@ import org.junit.Test
 /** Tests case where there's an artifact relocated via Gradle metadata */
 class RelocatedArtifactTest : ModelComparator() {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        android { enableKotlin = false }
-        dependencies { implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.2") }
-      }
+  val rule = GradleRule.from {
+    androidApplication {
+      android { enableKotlin = false }
+      dependencies { implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.2") }
     }
+  }
 
   @Test
   fun `test models`() {

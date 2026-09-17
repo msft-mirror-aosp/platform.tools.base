@@ -40,86 +40,85 @@ class JacocoVersionTest {
   }
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication(":app") {
-        android {
-          namespace = "com.example.app"
-          compileSdk { version = release(GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION) }
+  val rule = GradleRule.from {
+    androidApplication(":app") {
+      android {
+        namespace = "com.example.app"
+        compileSdk { version = release(GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION) }
 
-          installation { timeOutInMs = 30000 }
+        installation { timeOutInMs = 30000 }
 
-          defaultConfig {
-            minSdk { version = release(24) }
-            targetSdk { version = release(GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION) }
-          }
-
-          buildTypes { named("debug") { it.enableUnitTestCoverage = true } }
-
-          compileOptions {
-            sourceCompatibility = JavaVersion.VERSION_17
-            targetCompatibility = JavaVersion.VERSION_17
-          }
+        defaultConfig {
+          minSdk { version = release(24) }
+          targetSdk { version = release(GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION) }
         }
 
-        dependencies {
-          testImplementation("junit:junit:4.13.2")
-          testImplementation("org.mockito:mockito-core:5.20.0")
-          testImplementation("org.jdeferred:jdeferred-android-aar:1.2.3")
-          testImplementation("commons-logging:commons-logging:1.1.1")
+        buildTypes { named("debug") { it.enableUnitTestCoverage = true } }
+
+        compileOptions {
+          sourceCompatibility = JavaVersion.VERSION_17
+          targetCompatibility = JavaVersion.VERSION_17
         }
-
-        files {
-          add(
-            "src/main/java/com/android/tests/Foo.java",
-            // language=kotlin
-            """
-            package com.android.tests;
-
-            public class Foo {
-              public String foo() {
-                return "production code";
-              }
-            }
-            """
-              .trimIndent(),
-          )
-          add(
-            "src/main/java/com/android/tests/someKotlinCode.kt",
-            // language=kotlin
-            """
-            package com.android.tests
-
-            data class KotlinDataClass(val name: String = "kotlin data class")
-            """
-              .trimIndent(),
-          )
-          add(
-            "src/test/java/com/android/tests/TestInKotlin.kt",
-            // language=kotlin
-            """
-            package com.android.tests
-
-            import org.junit.Test
-            import org.junit.Assert.*
-
-            class TestInKotlin {
-                @Test
-                fun passesInKotlin() {
-                    // Use Java classes:
-                    assertEquals("production code", Foo().foo())
-
-                    // Use Kotlin classes:
-                    assertEquals("kotlin data class", KotlinDataClass().name)
-                }
-            }
-            """
-              .trimIndent(),
-          )
-        }
-        pluginCallbacks += JacocoReportTaskCallback::class.java
       }
+
+      dependencies {
+        testImplementation("junit:junit:4.13.2")
+        testImplementation("org.mockito:mockito-core:5.20.0")
+        testImplementation("org.jdeferred:jdeferred-android-aar:1.2.3")
+        testImplementation("commons-logging:commons-logging:1.1.1")
+      }
+
+      files {
+        add(
+          "src/main/java/com/android/tests/Foo.java",
+          // language=kotlin
+          """
+          package com.android.tests;
+
+          public class Foo {
+            public String foo() {
+              return "production code";
+            }
+          }
+          """
+            .trimIndent(),
+        )
+        add(
+          "src/main/java/com/android/tests/someKotlinCode.kt",
+          // language=kotlin
+          """
+          package com.android.tests
+
+          data class KotlinDataClass(val name: String = "kotlin data class")
+          """
+            .trimIndent(),
+        )
+        add(
+          "src/test/java/com/android/tests/TestInKotlin.kt",
+          // language=kotlin
+          """
+          package com.android.tests
+
+          import org.junit.Test
+          import org.junit.Assert.*
+
+          class TestInKotlin {
+              @Test
+              fun passesInKotlin() {
+                  // Use Java classes:
+                  assertEquals("production code", Foo().foo())
+
+                  // Use Kotlin classes:
+                  assertEquals("kotlin data class", KotlinDataClass().name)
+              }
+          }
+          """
+            .trimIndent(),
+        )
+      }
+      pluginCallbacks += JacocoReportTaskCallback::class.java
     }
+  }
 
   open class JacocoReportTaskCallback : GenericCallback {
     override fun handleProject(project: Project) {
@@ -178,13 +177,12 @@ class JacocoVersionTest {
 
   @Test
   fun testAndroidDslJacocoVersionForUnitTest() {
-    val build =
-      rule.build {
-        androidApplication {
-          android { testCoverage.jacocoVersion = EXPECTED_JACOCO_VERSION_2 }
-          pluginCallbacks += JacocoPluginExtensionCallback::class.java
-        }
+    val build = rule.build {
+      androidApplication {
+        android { testCoverage.jacocoVersion = EXPECTED_JACOCO_VERSION_2 }
+        pluginCallbacks += JacocoPluginExtensionCallback::class.java
       }
+    }
     build.executor.run(":app:jacocoTestReport")
 
     val appBuildDir = build.androidApplication(":app").buildDir.toFile()
@@ -199,11 +197,10 @@ class JacocoVersionTest {
 
   @Test
   fun testGradlePropertyJacocoVersionForUnitTest() {
-    val build =
-      rule.build {
-        androidApplication { android { testCoverage.jacocoVersion = EXPECTED_JACOCO_VERSION_1 } }
-        gradleProperties { add(StringOption.JACOCO_TOOL_VERSION, EXPECTED_JACOCO_VERSION_2) }
-      }
+    val build = rule.build {
+      androidApplication { android { testCoverage.jacocoVersion = EXPECTED_JACOCO_VERSION_1 } }
+      gradleProperties { add(StringOption.JACOCO_TOOL_VERSION, EXPECTED_JACOCO_VERSION_2) }
+    }
     build.executor.run(":app:jacocoTestReport")
 
     val appBuildDir = build.androidApplication(":app").buildDir.toFile()

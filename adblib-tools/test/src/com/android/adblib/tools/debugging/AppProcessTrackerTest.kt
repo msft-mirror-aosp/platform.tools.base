@@ -52,270 +52,265 @@ class AppProcessTrackerTest {
     get() = fakeAdbRule.adbSession.hostServices
 
   @Test
-  fun testAppProcessTrackerWorks(): Unit =
-    CoroutineTestUtils.runBlockingWithTimeout {
-      val deviceID = "1234"
-      val fakeDevice =
-        fakeAdb.connectDevice(
-          deviceID,
-          "test1",
-          "test2",
-          "model",
-          AndroidApiLevel(31), // SDK >= 31 is required for track_app feature.
-          DeviceState.HostConnectionType.USB,
-        )
-      fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
-      val connectedDevice = hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
-      val pid10 = 10
-      val pid11 = 11
+  fun testAppProcessTrackerWorks(): Unit = CoroutineTestUtils.runBlockingWithTimeout {
+    val deviceID = "1234"
+    val fakeDevice =
+      fakeAdb.connectDevice(
+        deviceID,
+        "test1",
+        "test2",
+        "model",
+        AndroidApiLevel(31), // SDK >= 31 is required for track_app feature.
+        DeviceState.HostConnectionType.USB,
+      )
+    fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+    val connectedDevice = hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
+    val pid10 = 10
+    val pid11 = 11
 
-      // Act
-      val listOfProcessList = CopyOnWriteArrayList<List<AppProcess>>()
-      launch {
-        fakeDevice.startClient(pid10, 0, "a.b.c", false)
-        Assert.assertNotNull(fakeDevice.getClient(pid10))
-        yieldUntil {
-          val size = listOfProcessList.size
-          size == 1
-        }
-
-        fakeDevice.startProfileableProcess(pid11, "x86", "")
-        Assert.assertNotNull(fakeDevice.getClient(pid10))
-        Assert.assertNotNull(fakeDevice.getProfileableProcess(pid11))
-        yieldUntil { listOfProcessList.size == 2 }
-
-        // Note: Depending on how fast FakeAdbServer is, adblib may get one or two
-        //       app tracking event
-        fakeDevice.stopClient(pid10)
-        fakeDevice.stopProfileableProcess(pid11)
-        Assert.assertNull(fakeDevice.getClient(pid10))
-        Assert.assertNull(fakeDevice.getProfileableProcess(pid11))
+    // Act
+    val listOfProcessList = CopyOnWriteArrayList<List<AppProcess>>()
+    launch {
+      fakeDevice.startClient(pid10, 0, "a.b.c", false)
+      Assert.assertNotNull(fakeDevice.getClient(pid10))
+      yieldUntil {
+        val size = listOfProcessList.size
+        size == 1
       }
 
-      val appTracker = AppProcessTracker.create(connectedDevice)
-      // Collecting the flow deterministically is a little tricky, as the list of events
-      // in the flow depends on how fast FakeAdbServer emits events from the "track-app"
-      // event and how fast adblib collects and emits these events in the app tracker
-      // flow.
-      appTracker.appProcessFlow
-        .takeWhile { processList ->
-          // The goal here is to collect 3 list of processes in `listOfProcessList`
-          // * One with a single process
-          // * One with 2 processes
-          // * One with no processes (after both processes are stopped)
-          // The flow itself may emit a variable amount of "no process" lists in the flow,
-          // then a variable amount of "1 process" lists in the flow, then a variable
-          // amount of "2 processes" lists, then a variable amount of "no process" lists.
-          when (listOfProcessList.size) {
-            // When the list is empty, only add a non-empty process list, it should be a list
-            // of 1 process.
-            0 -> {
-              if (processList.isNotEmpty()) {
-                assert(processList.size == 1)
-                listOfProcessList.add(processList)
-              }
-              true
-            }
-            // When the list has one element, add an element only if the process list
-            // contains 2 elements.
-            1 -> {
-              // The flow may emit a list of 1 process multiple times, because
-              // FakeAdbServer sometimes emit the same list multiple times
-              if (processList.size == 2) {
-                listOfProcessList.add(processList)
-              }
-              true
-            }
-            // When the list has 2 elements, wait until we get an empty process list
-            // stop collecting at that point.
-            2 -> {
-              if (processList.isEmpty()) {
-                // There may be 1 or 2 lists depending on how fast the flow
-                // catches up with the 2 process terminations.
-                listOfProcessList.add(processList)
-                false
-              } else {
-                true
-              }
-            }
+      fakeDevice.startProfileableProcess(pid11, "x86", "")
+      Assert.assertNotNull(fakeDevice.getClient(pid10))
+      Assert.assertNotNull(fakeDevice.getProfileableProcess(pid11))
+      yieldUntil { listOfProcessList.size == 2 }
 
-            else -> {
-              Assert.fail("Should not reach")
-              false
-            }
-          }
-        }
-        .collect()
-
-      // Assert: We should have 3 lists: 1 process, 2 processes, empty list.
-      Assert.assertTrue(listOfProcessList.size == 3)
-
-      // First list has one process
-      Assert.assertEquals(1, listOfProcessList[0].size)
-      Assert.assertEquals(listOf(pid10), listOfProcessList[0].map { it.pid }.toList())
-
-      // Second list has 2 processes
-      Assert.assertEquals(2, listOfProcessList[1].size)
-      Assert.assertEquals(listOf(pid10, pid11), listOfProcessList[1].map { it.pid }.toList())
-      Assert.assertNotNull(listOfProcessList[1].first { it.pid == pid10 }.jdwpProcess)
-      Assert.assertNull(listOfProcessList[1].first { it.pid == pid11 }.jdwpProcess)
-
-      // Last list is empty
-      Assert.assertEquals(0, listOfProcessList[2].size)
-
-      // Ensure AppProcess instances are re-used across flow changes
-      Assert.assertSame(listOfProcessList[0].first { it.pid == pid10 }, listOfProcessList[1].first { it.pid == pid10 })
-
-      val process10 = listOfProcessList[0].first { it.pid == pid10 }
-      Assert.assertEquals(connectedDevice, process10.device)
-      Assert.assertEquals(pid10, process10.pid)
-      yieldUntil { !process10.scope.isActive }
-      Assert.assertFalse(process10.scope.isActive)
+      // Note: Depending on how fast FakeAdbServer is, adblib may get one or two
+      //       app tracking event
+      fakeDevice.stopClient(pid10)
+      fakeDevice.stopProfileableProcess(pid11)
+      Assert.assertNull(fakeDevice.getClient(pid10))
+      Assert.assertNull(fakeDevice.getProfileableProcess(pid11))
     }
 
-  @Test
-  fun testAppProcessTrackerClearsProcesses_whenDeviceDisconnects(): Unit =
-    CoroutineTestUtils.runBlockingWithTimeout {
-      // Prepare
-      val deviceID = "1234"
-      val fakeDevice =
-        fakeAdb.connectDevice(
-          deviceID,
-          "test1",
-          "test2",
-          "model",
-          AndroidApiLevel(31), // SDK >= 31 is required for track_app feature.
-          DeviceState.HostConnectionType.USB,
-        )
-      fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
-      val connectedDevice = hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
-      val pid10 = 10
-      val pid11 = 11
-
-      // Act
-      val listOfProcessList = CopyOnWriteArrayList<List<AppProcess>>()
-      val appTracker = AppProcessTracker.create(connectedDevice)
-      launch {
-        fakeDevice.startClient(pid10, 0, "a.b.c", false)
-        fakeDevice.startClient(pid11, 0, "a.b.c.e", false)
-        yieldUntil { listOfProcessList.size >= 1 && listOfProcessList.last().size == 2 }
-
-        fakeAdb.disconnectDevice(fakeDevice.deviceId)
-      }
-
-      appTracker.scope
-        .launch {
-          appTracker.appProcessFlow.collect { processList ->
+    val appTracker = AppProcessTracker.create(connectedDevice)
+    // Collecting the flow deterministically is a little tricky, as the list of events
+    // in the flow depends on how fast FakeAdbServer emits events from the "track-app"
+    // event and how fast adblib collects and emits these events in the app tracker
+    // flow.
+    appTracker.appProcessFlow
+      .takeWhile { processList ->
+        // The goal here is to collect 3 list of processes in `listOfProcessList`
+        // * One with a single process
+        // * One with 2 processes
+        // * One with no processes (after both processes are stopped)
+        // The flow itself may emit a variable amount of "no process" lists in the flow,
+        // then a variable amount of "1 process" lists in the flow, then a variable
+        // amount of "2 processes" lists, then a variable amount of "no process" lists.
+        when (listOfProcessList.size) {
+          // When the list is empty, only add a non-empty process list, it should be a list
+          // of 1 process.
+          0 -> {
             if (processList.isNotEmpty()) {
+              assert(processList.size == 1)
               listOfProcessList.add(processList)
             }
+            true
+          }
+          // When the list has one element, add an element only if the process list
+          // contains 2 elements.
+          1 -> {
+            // The flow may emit a list of 1 process multiple times, because
+            // FakeAdbServer sometimes emit the same list multiple times
+            if (processList.size == 2) {
+              listOfProcessList.add(processList)
+            }
+            true
+          }
+          // When the list has 2 elements, wait until we get an empty process list
+          // stop collecting at that point.
+          2 -> {
+            if (processList.isEmpty()) {
+              // There may be 1 or 2 lists depending on how fast the flow
+              // catches up with the 2 process terminations.
+              listOfProcessList.add(processList)
+              false
+            } else {
+              true
+            }
+          }
+
+          else -> {
+            Assert.fail("Should not reach")
+            false
           }
         }
-        .join()
-      // Wait for the tracker's scope to fully complete to ensure cancellation is fully processed
-      appTracker.scope.coroutineContext[Job]?.join()
+      }
+      .collect()
 
-      // Assert: After the tracker's scope is cancelled (due to device disconnect), its cleanup
-      // `processesFlow` is reset to an empty list
-      assertTrue(appTracker.appProcessFlow.value.isEmpty())
-      assertTrue(appTracker.appProcessFlow.value.flowStatus.isEndOfFlow)
-    }
+    // Assert: We should have 3 lists: 1 process, 2 processes, empty list.
+    Assert.assertTrue(listOfProcessList.size == 3)
 
-  @Test
-  fun testAppProcessTrackerFlowIsExceptionTransparent(): Unit =
-    CoroutineTestUtils.runBlockingWithTimeout {
-      // Prepare
-      val deviceID = "1234"
-      val fakeDevice =
-        fakeAdb.connectDevice(
-          deviceID,
-          "test1",
-          "test2",
-          "model",
-          AndroidApiLevel(30), // SDK >= 30 is required for abb_exec feature.
-          DeviceState.HostConnectionType.USB,
-        )
-      fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
-      val connectedDevice = hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
-      val pid10 = 10
+    // First list has one process
+    Assert.assertEquals(1, listOfProcessList[0].size)
+    Assert.assertEquals(listOf(pid10), listOfProcessList[0].map { it.pid }.toList())
 
-      // Act
-      val exception =
-        Assert.assertThrows(Exception::class.java) {
-          fakeDevice.startClient(pid10, 0, "a.b.c", false)
-          val appTracker = AppProcessTracker.create(connectedDevice)
-          runBlocking { appTracker.appProcessFlow.collect { throw Exception("My Test Exception") } }
-        }
+    // Second list has 2 processes
+    Assert.assertEquals(2, listOfProcessList[1].size)
+    Assert.assertEquals(listOf(pid10, pid11), listOfProcessList[1].map { it.pid }.toList())
+    Assert.assertNotNull(listOfProcessList[1].first { it.pid == pid10 }.jdwpProcess)
+    Assert.assertNull(listOfProcessList[1].first { it.pid == pid11 }.jdwpProcess)
 
-      // Assert
-      Assert.assertEquals(exception.message, "My Test Exception")
-    }
+    // Last list is empty
+    Assert.assertEquals(0, listOfProcessList[2].size)
+
+    // Ensure AppProcess instances are re-used across flow changes
+    Assert.assertSame(listOfProcessList[0].first { it.pid == pid10 }, listOfProcessList[1].first { it.pid == pid10 })
+
+    val process10 = listOfProcessList[0].first { it.pid == pid10 }
+    Assert.assertEquals(connectedDevice, process10.device)
+    Assert.assertEquals(pid10, process10.pid)
+    yieldUntil { !process10.scope.isActive }
+    Assert.assertFalse(process10.scope.isActive)
+  }
 
   @Test
-  fun testAppProcessTrackerFlowCanBeCancelled(): Unit =
-    CoroutineTestUtils.runBlockingWithTimeout {
-      // Prepare
-      val deviceID = "1234"
-      val fakeDevice =
-        fakeAdb.connectDevice(
-          deviceID,
-          "test1",
-          "test2",
-          "model",
-          AndroidApiLevel(30), // SDK >= 30 is required for abb_exec feature.
-          DeviceState.HostConnectionType.USB,
-        )
-      fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
-      val connectedDevice = hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
-      val pid10 = 10
+  fun testAppProcessTrackerClearsProcesses_whenDeviceDisconnects(): Unit = CoroutineTestUtils.runBlockingWithTimeout {
+    // Prepare
+    val deviceID = "1234"
+    val fakeDevice =
+      fakeAdb.connectDevice(
+        deviceID,
+        "test1",
+        "test2",
+        "model",
+        AndroidApiLevel(31), // SDK >= 31 is required for track_app feature.
+        DeviceState.HostConnectionType.USB,
+      )
+    fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+    val connectedDevice = hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
+    val pid10 = 10
+    val pid11 = 11
 
-      // Act/Assert
-      val exception =
-        Assert.assertThrows(CancellationException::class.java) {
-          fakeDevice.startClient(pid10, 0, "a.b.c", false)
-          val appTracker = AppProcessTracker.create(connectedDevice)
-          runBlocking { appTracker.appProcessFlow.collect { cancel("My Test Exception") } }
-        }
-
-      // Assert
-      Assert.assertEquals(exception.message, "My Test Exception")
-    }
-
-  @Test
-  fun testAppProcessTrackerSetsAllPropertiesForDevicesSupportingAppInfo(): Unit =
-    CoroutineTestUtils.runBlockingWithTimeout {
-      val deviceID = "1234"
-      val fakeDevice =
-        fakeAdb.connectDevice(
-          deviceID,
-          "test1",
-          "test2",
-          "model",
-          AndroidApiLevel(36), // SDK >= 36 is required for app_info feature.
-          DeviceState.HostConnectionType.USB,
-        )
-      fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
-      val connectedDevice = hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
-      val pid10 = 10
+    // Act
+    val listOfProcessList = CopyOnWriteArrayList<List<AppProcess>>()
+    val appTracker = AppProcessTracker.create(connectedDevice)
+    launch {
       fakeDevice.startClient(pid10, 0, "a.b.c", false)
-      val appProcessTracker = AppProcessTracker.create(connectedDevice)
+      fakeDevice.startClient(pid11, 0, "a.b.c.e", false)
+      yieldUntil { listOfProcessList.size >= 1 && listOfProcessList.last().size == 2 }
 
-      // Act
-      val process = appProcessTracker.appProcessFlow.filter { it.isNotEmpty() }.map { it.first() }.first()
-      process.propertiesFlow.first()
-
-      // Assert
-      assertEquals(pid10, process.pid)
-      assertEquals(InstructionSet.X86_64, process.propertiesFlow.value.instructionSet.getOrNull())
-      assertEquals(true, process.propertiesFlow.value.debuggable.getOrNull())
-      assertEquals(false, process.propertiesFlow.value.profileable.getOrNull())
-      // AppInfo properties
-      assertEquals("a.b.c", process.propertiesFlow.value.processName.getOrNull())
-      assertEquals(0L, process.propertiesFlow.value.userId.getOrNull())
-      assertEquals(0L, process.propertiesFlow.value.uid.getOrNull())
-      assertEquals(listOf("a.b.c"), process.propertiesFlow.value.packageNames.getOrNull())
-      assertEquals(false, process.propertiesFlow.value.waitingForDebugger.getOrNull())
+      fakeAdb.disconnectDevice(fakeDevice.deviceId)
     }
+
+    appTracker.scope
+      .launch {
+        appTracker.appProcessFlow.collect { processList ->
+          if (processList.isNotEmpty()) {
+            listOfProcessList.add(processList)
+          }
+        }
+      }
+      .join()
+    // Wait for the tracker's scope to fully complete to ensure cancellation is fully processed
+    appTracker.scope.coroutineContext[Job]?.join()
+
+    // Assert: After the tracker's scope is cancelled (due to device disconnect), its cleanup
+    // `processesFlow` is reset to an empty list
+    assertTrue(appTracker.appProcessFlow.value.isEmpty())
+    assertTrue(appTracker.appProcessFlow.value.flowStatus.isEndOfFlow)
+  }
+
+  @Test
+  fun testAppProcessTrackerFlowIsExceptionTransparent(): Unit = CoroutineTestUtils.runBlockingWithTimeout {
+    // Prepare
+    val deviceID = "1234"
+    val fakeDevice =
+      fakeAdb.connectDevice(
+        deviceID,
+        "test1",
+        "test2",
+        "model",
+        AndroidApiLevel(30), // SDK >= 30 is required for abb_exec feature.
+        DeviceState.HostConnectionType.USB,
+      )
+    fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+    val connectedDevice = hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
+    val pid10 = 10
+
+    // Act
+    val exception =
+      Assert.assertThrows(Exception::class.java) {
+        fakeDevice.startClient(pid10, 0, "a.b.c", false)
+        val appTracker = AppProcessTracker.create(connectedDevice)
+        runBlocking { appTracker.appProcessFlow.collect { throw Exception("My Test Exception") } }
+      }
+
+    // Assert
+    Assert.assertEquals(exception.message, "My Test Exception")
+  }
+
+  @Test
+  fun testAppProcessTrackerFlowCanBeCancelled(): Unit = CoroutineTestUtils.runBlockingWithTimeout {
+    // Prepare
+    val deviceID = "1234"
+    val fakeDevice =
+      fakeAdb.connectDevice(
+        deviceID,
+        "test1",
+        "test2",
+        "model",
+        AndroidApiLevel(30), // SDK >= 30 is required for abb_exec feature.
+        DeviceState.HostConnectionType.USB,
+      )
+    fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+    val connectedDevice = hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
+    val pid10 = 10
+
+    // Act/Assert
+    val exception =
+      Assert.assertThrows(CancellationException::class.java) {
+        fakeDevice.startClient(pid10, 0, "a.b.c", false)
+        val appTracker = AppProcessTracker.create(connectedDevice)
+        runBlocking { appTracker.appProcessFlow.collect { cancel("My Test Exception") } }
+      }
+
+    // Assert
+    Assert.assertEquals(exception.message, "My Test Exception")
+  }
+
+  @Test
+  fun testAppProcessTrackerSetsAllPropertiesForDevicesSupportingAppInfo(): Unit = CoroutineTestUtils.runBlockingWithTimeout {
+    val deviceID = "1234"
+    val fakeDevice =
+      fakeAdb.connectDevice(
+        deviceID,
+        "test1",
+        "test2",
+        "model",
+        AndroidApiLevel(36), // SDK >= 36 is required for app_info feature.
+        DeviceState.HostConnectionType.USB,
+      )
+    fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+    val connectedDevice = hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
+    val pid10 = 10
+    fakeDevice.startClient(pid10, 0, "a.b.c", false)
+    val appProcessTracker = AppProcessTracker.create(connectedDevice)
+
+    // Act
+    val process = appProcessTracker.appProcessFlow.filter { it.isNotEmpty() }.map { it.first() }.first()
+    process.propertiesFlow.first()
+
+    // Assert
+    assertEquals(pid10, process.pid)
+    assertEquals(InstructionSet.X86_64, process.propertiesFlow.value.instructionSet.getOrNull())
+    assertEquals(true, process.propertiesFlow.value.debuggable.getOrNull())
+    assertEquals(false, process.propertiesFlow.value.profileable.getOrNull())
+    // AppInfo properties
+    assertEquals("a.b.c", process.propertiesFlow.value.processName.getOrNull())
+    assertEquals(0L, process.propertiesFlow.value.userId.getOrNull())
+    assertEquals(0L, process.propertiesFlow.value.uid.getOrNull())
+    assertEquals(listOf("a.b.c"), process.propertiesFlow.value.packageNames.getOrNull())
+    assertEquals(false, process.propertiesFlow.value.waitingForDebugger.getOrNull())
+  }
 
   @Test
   fun testAppProcessTrackerExposesUnsupportedProperties_whenDeviceDoesNotSupportAppInfo(): Unit =
@@ -354,29 +349,28 @@ class AppProcessTrackerTest {
     }
 
   @Test
-  fun testAppProcessTracker_shares_jdwpProcess_instances_with_jdwpProcessTracker(): Unit =
-    CoroutineTestUtils.runBlockingWithTimeout {
-      val deviceID = "1234"
-      val fakeDevice =
-        fakeAdb.connectDevice(
-          deviceID,
-          "test1",
-          "test2",
-          "model",
-          AndroidApiLevel(31), // SDK >= 31 is required for track_app feature.
-          DeviceState.HostConnectionType.USB,
-        )
-      fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
-      val connectedDevice = hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
-      val appProcessTracker = AppProcessTracker.create(connectedDevice)
-      val jdwpProcessTracker = JdwpProcessTracker.create(connectedDevice)
-      fakeDevice.startClient(pid = 10, userId = 0, packageName = "a.b.c", isWaiting = false)
+  fun testAppProcessTracker_shares_jdwpProcess_instances_with_jdwpProcessTracker(): Unit = CoroutineTestUtils.runBlockingWithTimeout {
+    val deviceID = "1234"
+    val fakeDevice =
+      fakeAdb.connectDevice(
+        deviceID,
+        "test1",
+        "test2",
+        "model",
+        AndroidApiLevel(31), // SDK >= 31 is required for track_app feature.
+        DeviceState.HostConnectionType.USB,
+      )
+    fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+    val connectedDevice = hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
+    val appProcessTracker = AppProcessTracker.create(connectedDevice)
+    val jdwpProcessTracker = JdwpProcessTracker.create(connectedDevice)
+    fakeDevice.startClient(pid = 10, userId = 0, packageName = "a.b.c", isWaiting = false)
 
-      // Act
-      val appTrackersJdwpProcess = appProcessTracker.appProcessFlow.first { it.isNotEmpty() }.first().jdwpProcess
-      val jdwpTrackersJdwpProcess = jdwpProcessTracker.processesFlow.first { it.isNotEmpty() }.first()
+    // Act
+    val appTrackersJdwpProcess = appProcessTracker.appProcessFlow.first { it.isNotEmpty() }.first().jdwpProcess
+    val jdwpTrackersJdwpProcess = jdwpProcessTracker.processesFlow.first { it.isNotEmpty() }.first()
 
-      // Assert
-      assertSame(appTrackersJdwpProcess, jdwpTrackersJdwpProcess)
-    }
+    // Assert
+    assertSame(appTrackersJdwpProcess, jdwpTrackersJdwpProcess)
+  }
 }

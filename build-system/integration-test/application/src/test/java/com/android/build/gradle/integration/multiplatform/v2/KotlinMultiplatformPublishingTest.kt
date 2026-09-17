@@ -57,20 +57,19 @@ class KotlinMultiplatformPublishingTest {
 
   @Test
   fun `test AGP-KMP consumer`() {
-    val build =
-      rule.build {
-        androidKotlinMultiplatformLibrary(":consumer") {
-          group = "com.example.consumer"
-          version = "1.0"
+    val build = rule.build {
+      androidKotlinMultiplatformLibrary(":consumer") {
+        group = "com.example.consumer"
+        version = "1.0"
 
-          android {
-            namespace = "com.example.consumer"
-            compileSdk = DEFAULT_COMPILE_SDK_VERSION
-          }
-
-          pluginCallbacks += AndroidDependencyCallback::class.java
+        android {
+          namespace = "com.example.consumer"
+          compileSdk = DEFAULT_COMPILE_SDK_VERSION
         }
+
+        pluginCallbacks += AndroidDependencyCallback::class.java
       }
+    }
     build.executor
       .withFailOnWarning(false) // b/455891987
       .run(":producer:publish")
@@ -102,20 +101,19 @@ class KotlinMultiplatformPublishingTest {
 
   @Test
   fun `test modern kmp and com_android_library consumer`() {
-    val build =
-      rule.build {
-        androidKotlinMultiplatformLibrary(":modernKmpConsumer") {
-          group = "com.example.modernKmpConsumer"
-          version = "1.0"
+    val build = rule.build {
+      androidKotlinMultiplatformLibrary(":modernKmpConsumer") {
+        group = "com.example.modernKmpConsumer"
+        version = "1.0"
 
-          android {
-            namespace = "com.example.modernKmpConsumer"
-            compileSdk = DEFAULT_COMPILE_SDK_VERSION
-            minSdk = 24
-          }
-          pluginCallbacks += AndroidDependencyCallback::class.java
+        android {
+          namespace = "com.example.modernKmpConsumer"
+          compileSdk = DEFAULT_COMPILE_SDK_VERSION
+          minSdk = 24
         }
+        pluginCallbacks += AndroidDependencyCallback::class.java
       }
+    }
     build.executor
       .withFailOnWarning(false) // b/455891987
       .run(":producer:publish")
@@ -197,17 +195,16 @@ class KotlinMultiplatformPublishingTest {
 
   @Test
   fun `test android library consumer`() {
-    val build =
-      rule.build {
-        androidLibrary(":plainAndroidLibConsumer") {
-          android {
-            namespace = "com.example.plainAndroidLibConsumer"
-            compileSdk = DEFAULT_COMPILE_SDK_VERSION
-            defaultConfig.minSdk = 24
-          }
-          dependencies { implementation("com.example.producer:producer:1.0") }
+    val build = rule.build {
+      androidLibrary(":plainAndroidLibConsumer") {
+        android {
+          namespace = "com.example.plainAndroidLibConsumer"
+          compileSdk = DEFAULT_COMPILE_SDK_VERSION
+          defaultConfig.minSdk = 24
         }
+        dependencies { implementation("com.example.producer:producer:1.0") }
       }
+    }
     build.executor
       .withFailOnWarning(false) // b/455891987
       .run(":producer:publish")
@@ -242,13 +239,12 @@ class KotlinMultiplatformPublishingTest {
    */
   @Test
   fun `test kmp consumer without android target`() {
-    val build =
-      rule.build {
-        kotlinMultiplatformLibrary(":kmpWithoutAndroidTargetConsumer") {
-          kotlin { jvm() }
-          pluginCallbacks += CommonDependencyCallback::class.java
-        }
+    val build = rule.build {
+      kotlinMultiplatformLibrary(":kmpWithoutAndroidTargetConsumer") {
+        kotlin { jvm() }
+        pluginCallbacks += CommonDependencyCallback::class.java
       }
+    }
     build.executor
       .withFailOnWarning(false) // b/455891987
       .run(":producer:publish")
@@ -268,18 +264,17 @@ class KotlinMultiplatformPublishingTest {
 
   @Test
   fun `test kmp consumer matching jvm target from producer`() {
-    val build =
-      rule.build {
-        kotlinMultiplatformLibrary(":producer") {
-          kotlin {
-            jvm() // add jvm target to the producer
-          }
-        }
-        kotlinMultiplatformLibrary(":kmpWithJvmTargetConsumer") {
-          kotlin { jvm() }
-          pluginCallbacks += CommonDependencyCallback::class.java
+    val build = rule.build {
+      kotlinMultiplatformLibrary(":producer") {
+        kotlin {
+          jvm() // add jvm target to the producer
         }
       }
+      kotlinMultiplatformLibrary(":kmpWithJvmTargetConsumer") {
+        kotlin { jvm() }
+        pluginCallbacks += CommonDependencyCallback::class.java
+      }
+    }
     build.executor
       .withFailOnWarning(false) // b/455891987
       .run(":producer:publish")

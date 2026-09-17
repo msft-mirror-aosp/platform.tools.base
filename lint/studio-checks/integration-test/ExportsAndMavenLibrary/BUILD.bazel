@@ -1,0 +1,61 @@
+# Copyright (C) 2026 The Android Open Source Project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load("//tools/base/bazel:kotlin.bzl", "kotlin_library")
+load("//tools/base/bazel:maven.bzl", "maven_library")
+
+licenses(["notice"])
+
+maven_library(
+    name = "core_maven",
+    srcs = ["core/test/exports/core/Core.kt"],
+    coordinates = "com.example.test:core-maven:1.0.0",
+    deps = [
+        "//tools/base/annotations",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib",
+    ],
+)
+
+# Exporter maven_library using exports = [":core_maven"] to verify aspect propagation over exports.
+maven_library(
+    name = "exporter",
+    srcs = [],
+    coordinates = "com.example.test:exporter:1.0.0",
+    exports = [":core_maven"],
+)
+
+# Maven library wrapping a kotlin_library to verify aspect propagation through the library attr.
+# Exports :exporter so transitively exported symbols in core_maven are reachable by consumer.
+maven_library(
+    name = "maven_wrapper",
+    srcs = ["maven/test/exports/maven/MavenWrapper.kt"],
+    coordinates = "com.example.test:maven-wrapper:1.0.0",
+    exports = [":exporter"],
+    deps = [
+        "//tools/base/annotations",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib",
+    ],
+)
+
+# Consumer lint test targeting maven_wrapper (which transitively exports core_maven).
+kotlin_library(
+    name = "consumer",
+    srcs = ["consumer/test/exports/consumer/Consumer.kt"],
+    lint_baseline = "consumer/ConsumerBaseline.xml",
+    lint_partial_analysis = True,
+    deps = [
+        ":maven_wrapper",
+        "//tools/base/annotations",
+    ],
+)

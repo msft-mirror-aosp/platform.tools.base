@@ -577,7 +577,8 @@ https://issuetracker.google.com/392162853
   * com.android.build.api.dsl.JUnitEngineSpec.getEnginesDependencies: org.gradle.api.artifacts.dsl.DependencyCollector ()
   * com.android.build.api.dsl.JUnitEngineSpec.getIncludeEngines: java.util.Set<java.lang.String> ()
   * com.android.build.api.dsl.JUnitEngineSpec.getInputs: java.util.List<com.android.build.api.dsl.AgpTestSuiteInputParameters> ()
-  * com.android.build.api.dsl.TestOptions.getSuites: org.gradle.api.ExtensiblePolymorphicDomainObjectContainer<com.android.build.api.dsl.AgpTestSuite> ()
+  * com.android.build.api.dsl.TestOptions.getCustomSuites: org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.AgpTestSuite> ()
+  * com.android.build.api.dsl.TestOptions.getSuites: org.gradle.api.PolymorphicDomainObjectContainer<com.android.build.api.dsl.AgpTestSuite> ()
   * com.android.build.api.dsl.TestSuiteHostJarSpec
   * com.android.build.api.dsl.TestSuiteHostJarSpec.dependencies: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AgpTestSuiteDependencies, kotlin.Unit>)
   * com.android.build.api.dsl.TestSuiteHostJarSpec.getDependencies: com.android.build.api.dsl.AgpTestSuiteDependencies ()
@@ -630,7 +631,6 @@ https://issuetracker.google.com/398918561
   * com.android.build.api.dsl.ManagedVirtualDevice.setTestedAbi: void (java.lang.String)
 https://issuetracker.google.com/422422985
   * com.android.build.api.dsl.KeepRules.getFiles: org.gradle.api.provider.SetProperty<java.io.File> ()
-  * com.android.build.api.dsl.Optimization.getPackageScope: org.gradle.api.provider.SetProperty<java.lang.String> ()
 https://issuetracker.google.com/438803230
   * com.android.build.api.variant.CanProduceConsumerProguardFiles
   * com.android.build.api.variant.CanProduceConsumerProguardFiles.getConsumerProguardFiles: org.gradle.api.provider.ListProperty<org.gradle.api.file.RegularFile> ()
@@ -647,7 +647,6 @@ https://issuetracker.google.com/443174826
   * com.android.build.api.variant.JUnitEngineSpec.getInputs: java.util.List<com.android.build.api.dsl.AgpTestSuiteInputParameters> ()
   * com.android.build.api.variant.JUnitEngineSpecBuilder implements com.android.build.api.variant.JUnitEngineSpec
   * com.android.build.api.variant.JUnitEngineSpecBuilder.getInputs: java.util.List<com.android.build.api.dsl.AgpTestSuiteInputParameters> ()
-  * com.android.build.api.variant.TestSuite.getCodeCoverage: org.gradle.api.provider.Property<java.lang.Boolean> ()
   * com.android.build.api.variant.TestSuite.getJunitEngineSpec: com.android.build.api.variant.JUnitEngineSpec ()
   * com.android.build.api.variant.TestSuiteTarget implements org.gradle.api.Named
   * com.android.build.api.variant.TestSuiteTarget.getEnabled: boolean ()
@@ -807,6 +806,48 @@ https://issuetracker.google.com/518472902
   * com.android.build.api.dsl.ScreenshotTestSuite
   * com.android.build.api.dsl.ScreenshotTestSuite.dependencies: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AgpTestSuiteDependencies, kotlin.Unit>)
   * com.android.build.api.dsl.ScreenshotTestSuite.getEngineVersion: java.lang.String ()
+  * com.android.build.api.dsl.ScreenshotTestSuite.getImageDifferenceThreshold: java.lang.Float ()
   * com.android.build.api.dsl.ScreenshotTestSuite.getTargetVariants: java.util.List<java.lang.String> ()
   * com.android.build.api.dsl.ScreenshotTestSuite.setEngineVersion: void (java.lang.String)
+  * com.android.build.api.dsl.ScreenshotTestSuite.setImageDifferenceThreshold: void (java.lang.Float)
   * com.android.build.api.dsl.TestOptions.getScreenshotTests: org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.ScreenshotTestSuite> ()
+https://issuetracker.google.com/519009084
+  * com.android.build.api.dsl.BackupTestSuite
+  * com.android.build.api.dsl.BackupTestSuite.getBackupTestLibraryVersion: java.lang.String ()
+  * com.android.build.api.dsl.BackupTestSuite.getTargetVariants: java.util.List<java.lang.String> ()
+  * com.android.build.api.dsl.BackupTestSuite.hostJar: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TestSuiteHostJarSpec, kotlin.Unit>)
+  * com.android.build.api.dsl.BackupTestSuite.setBackupTestLibraryVersion: void (java.lang.String)
+  * com.android.build.api.dsl.BackupTestSuite.testApk: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TestSuiteTestApkSpec, kotlin.Unit>)
+  * com.android.build.api.dsl.TestOptions.getBackupTests: org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.BackupTestSuite> ()
+  * com.android.build.api.variant.ScreenshotTestSuite implements com.android.build.api.variant.TestSuite
+  * com.android.build.api.variant.ScreenshotTestSuite.getEngineVersion: org.gradle.api.provider.Provider<java.lang.String> ()
+  * com.android.build.api.variant.ScreenshotTestSuite.getImageDifferenceThreshold: org.gradle.api.provider.Provider<java.lang.Float> ()
+https://issuetracker.google.com/527037384
+  * com.android.build.api.variant.LintBuilder
+  * com.android.build.api.variant.LintBuilder.getReports: com.android.build.api.variant.LintReportsBuilder ()
+  * com.android.build.api.variant.LintReportsBuilder
+  * com.android.build.api.variant.LintReportsBuilder.getEnableReportWithDependencies: boolean ()
+  * com.android.build.api.variant.LintReportsBuilder.getEnableReportWithoutDependencies: boolean ()
+  * com.android.build.api.variant.LintReportsBuilder.setEnableReportWithDependencies: void (boolean)
+  * com.android.build.api.variant.LintReportsBuilder.setEnableReportWithoutDependencies: void (boolean)
+  * com.android.build.api.variant.VariantBuilder.getLint: com.android.build.api.variant.LintBuilder ()
+https://issuetracker.google.com/530894183
+  * com.android.build.api.dsl.TestOptions.setInstrumentInPrivateComputeCore: void (boolean)
+https://issuetracker.google.com/534880695
+  * com.android.build.api.dsl.AgpTestSuite.getRequiresUpdateTask: boolean ()
+  * com.android.build.api.dsl.AgpTestSuite.setRequiresUpdateTask: void (boolean)
+  * com.android.build.api.dsl.TestTaskContext.isUpdateTask: boolean ()
+  * com.android.build.api.variant.TestSuite.getRequiresUpdateTask: org.gradle.api.provider.Provider<java.lang.Boolean> ()
+https://issuetracker.google.com/537432993
+  * com.android.build.api.dsl.R8Extension
+https://issuetracker.google.com/543456675
+  * com.android.build.api.dsl.AgpTestSuite.withTestTaskProviders: void (kotlin.jvm.functions.Function2<? super org.gradle.api.tasks.TaskProvider<org.gradle.api.tasks.testing.Test>, ? super com.android.build.api.dsl.TestTaskContext, kotlin.Unit>)
+  * com.android.build.api.variant.DeviceTest.configureTestTask: void (kotlin.jvm.functions.Function1<? super org.gradle.api.Task, kotlin.Unit>)
+  * com.android.build.api.variant.DeviceTest.withTestTaskProvider: void (kotlin.jvm.functions.Function1<? super org.gradle.api.tasks.TaskProvider<? extends org.gradle.api.Task>, kotlin.Unit>)
+  * com.android.build.api.variant.HostTest.withTestTaskProvider: void (kotlin.jvm.functions.Function1<? super org.gradle.api.tasks.TaskProvider<? extends org.gradle.api.tasks.testing.Test>, kotlin.Unit>)
+  * com.android.build.api.variant.TestSuite.withTestTaskProviders: void (kotlin.jvm.functions.Function2<? super org.gradle.api.tasks.TaskProvider<? extends org.gradle.api.tasks.testing.Test>, ? super com.android.build.api.dsl.TestTaskContext, kotlin.Unit>)
+https://issuetracker.google.com/549564936
+  * com.android.build.api.variant.TestSuite.getCodeCoverageEnabled: boolean ()
+  * com.android.build.api.variant.TestSuiteBuilder.setEnabledCodeCoverage: void (boolean)
+https://issuetracker.google.com/552337242
+  * com.android.build.api.dsl.TestOptions.getInstrumentInPrivateComputeCore: boolean ()

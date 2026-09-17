@@ -49,7 +49,10 @@ class PreviewAnnotationDescriptor(
 
     private val invalidCharsRegex = """[\u0000-\u001F\\/:*?"<>|]+""".toRegex()
 
-    private fun calcPreviewId(preview: PreviewMethod, previewAnnotation: BaseAnnotationRepresentation): String {
+    private fun calcPreviewId(
+      preview: PreviewMethod,
+      previewAnnotation: BaseAnnotationRepresentation,
+    ): String {
       val previewIdBuilder = StringBuilder(preview.method.methodFqn)
 
       val previewName = previewAnnotation.parameters["name"]
@@ -66,19 +69,34 @@ class PreviewAnnotationDescriptor(
 
       val digest = MessageDigest.getInstance("SHA-1")
 
-      updateAndAppendHash(digest, previewIdBuilder, "annotation-parameters", previewAnnotation.parameters)
+      updateAndAppendHash(
+        digest,
+        previewIdBuilder,
+        "annotation-parameters",
+        previewAnnotation.parameters,
+      )
 
       if (preview.method.parameters.isNotEmpty()) {
         // Currently only one param is supported and max size of method.parameters is 1
         for (param in preview.method.parameters) {
-          updateAndAppendHash(digest, previewIdBuilder, "method-parameter-annotations", param.annotationParameters)
+          updateAndAppendHash(
+            digest,
+            previewIdBuilder,
+            "method-parameter-annotations",
+            param.annotationParameters,
+          )
         }
       }
 
       return previewIdBuilder.toString()
     }
 
-    private fun updateAndAppendHash(digest: MessageDigest, builder: StringBuilder, dataSectionName: String, dataMap: Map<String, *>) {
+    private fun updateAndAppendHash(
+      digest: MessageDigest,
+      builder: StringBuilder,
+      dataSectionName: String,
+      dataMap: Map<String, *>,
+    ) {
       if (dataMap.isNotEmpty()) {
         digest.update(dataSectionName.toByteArray())
         for ((key, value) in dataMap.toSortedMap()) {
@@ -162,7 +180,15 @@ class PreviewAnnotationDescriptor(
         nameParam?.toString() ?: otherParamsBuilder.toString().removePrefix("_").takeIf { it.isNotEmpty() } ?: methodName
 
       val childNode =
-        PreviewScreenshotDescriptor(uniqueId, className, methodName, previewNameBuilder.toString(), previewDisplayName, idx, result)
+        PreviewScreenshotDescriptor(
+          uniqueId,
+          className,
+          methodName,
+          previewNameBuilder.toString(),
+          previewDisplayName,
+          idx,
+          result,
+        )
       addChild(childNode)
       dynamicTestExecutor.execute(childNode)
     }
@@ -182,7 +208,12 @@ class PreviewAnnotationDescriptor(
   }
 
   private fun convertMap(map: Map<String, Any?>): SortedMap<String, String> =
-    map.map { (key, value) -> key to (if (key == "provider") (value as Type).className else value.toString()) }.toMap().toSortedMap()
+    map
+      .map { (key, value) ->
+        key to (if (key == "provider") (value as Type).className else value.toString())
+      }
+      .toMap()
+      .toSortedMap()
 
   /**
    * Sort provided list of maps

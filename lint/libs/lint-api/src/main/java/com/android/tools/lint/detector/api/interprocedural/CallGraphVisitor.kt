@@ -74,12 +74,11 @@ class CallGraphVisitor(
     val superClass = node.superClass?.javaPsi?.navigationElement.toUElementOfType<UClass>()
     if (superClass != null) {
       val constructors = node.constructors()
-      val thoseWithoutExplicitSuper =
-        constructors.filter {
-          val explicitSuperFinder = ExplicitSuperConstructorCallFinder()
-          it.accept(explicitSuperFinder)
-          !explicitSuperFinder.foundExplicitCall
-        }
+      val thoseWithoutExplicitSuper = constructors.filter {
+        val explicitSuperFinder = ExplicitSuperConstructorCallFinder()
+        it.accept(explicitSuperFinder)
+        !explicitSuperFinder.foundExplicitCall
+      }
       val callers: Collection<UElement> = if (constructors.isNotEmpty()) thoseWithoutExplicitSuper else listOf(node)
       val callee: UElement = superClass.constructors().find { it.uastParameters.isEmpty() } ?: superClass
       with(mutableCallGraph) {

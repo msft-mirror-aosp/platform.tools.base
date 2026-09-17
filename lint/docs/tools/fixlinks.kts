@@ -65,12 +65,11 @@ class FixLinks {
           continue
         }
         val anchorHeading =
-          anchorFileContents.substring(
-            anchorHeadingIndex,
-            anchorFileContents.indexOf('\n', anchorHeadingIndex + 1),
-          )
-        val anchor =
-          "#" + anchorHeading.filter { it.isLetter() || it == ':' || it == '.' }.lowercase()
+            anchorFileContents.substring(
+                anchorHeadingIndex,
+                anchorFileContents.indexOf('\n', anchorHeadingIndex + 1),
+            )
+        val anchor = "#" + anchorHeading.filter { it.isLetter() || it == ':' || it == '.' }.lowercase()
         source = source.substring(0, start) + anchor + source.substring(end)
         offset = start
         continue

@@ -24,50 +24,49 @@ import org.junit.Test
 class AssetPackTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidJavaApplication {
-        android { assetPacks += listOf(":assetPackOne", ":assetPackTwo", ":assetPackA", ":assetPackAA", ":assetPackA:assetPackAB") }
-      }
-      assetPack(":assetPackOne") {
-        assetPack {
-          packName.set("assetPackOne")
-          dynamicDelivery {
-            deliveryType.set("fast-follow")
-            instantDeliveryType.set("on-demand")
-          }
-        }
-        files.add("src/main/assets/assetFileOne.txt", """This is an asset file from asset pack one.""")
-      }
-      assetPack(":assetPackTwo") {
-        assetPack {
-          packName.set("assetPackTwo")
-          dynamicDelivery { deliveryType.set("fast-follow") }
-        }
-        files.add("src/main/assets/assetFileTwo.txt", """This is an asset file from asset pack two.""")
-      }
-      assetPack(":assetPackA") {
-        assetPack {
-          packName.set("assetPackA")
-          dynamicDelivery { deliveryType.set("fast-follow") }
-        }
-        files.add("src/main/assets/assetFileA.txt", """This is an asset file from asset pack A.""")
-      }
-      assetPack(":assetPackAA") {
-        assetPack {
-          packName.set("assetPackAA")
-          dynamicDelivery { deliveryType.set("fast-follow") }
-        }
-        files.add("src/main/assets/assetFileAA.txt", """This is an asset file from asset pack AA.""")
-      }
-      assetPack(":assetPackA:assetPackAB") {
-        assetPack {
-          packName.set("assetPackAB")
-          dynamicDelivery { deliveryType.set("fast-follow") }
-        }
-        files.add("src/main/assets/assetFileAB.txt", """This is an asset file from asset pack AB.""")
-      }
+  val rule = GradleRule.from {
+    androidJavaApplication {
+      android { assetPacks += listOf(":assetPackOne", ":assetPackTwo", ":assetPackA", ":assetPackAA", ":assetPackA:assetPackAB") }
     }
+    assetPack(":assetPackOne") {
+      assetPack {
+        packName.set("assetPackOne")
+        dynamicDelivery {
+          deliveryType.set("fast-follow")
+          instantDeliveryType.set("on-demand")
+        }
+      }
+      files.add("src/main/assets/assetFileOne.txt", """This is an asset file from asset pack one.""")
+    }
+    assetPack(":assetPackTwo") {
+      assetPack {
+        packName.set("assetPackTwo")
+        dynamicDelivery { deliveryType.set("fast-follow") }
+      }
+      files.add("src/main/assets/assetFileTwo.txt", """This is an asset file from asset pack two.""")
+    }
+    assetPack(":assetPackA") {
+      assetPack {
+        packName.set("assetPackA")
+        dynamicDelivery { deliveryType.set("fast-follow") }
+      }
+      files.add("src/main/assets/assetFileA.txt", """This is an asset file from asset pack A.""")
+    }
+    assetPack(":assetPackAA") {
+      assetPack {
+        packName.set("assetPackAA")
+        dynamicDelivery { deliveryType.set("fast-follow") }
+      }
+      files.add("src/main/assets/assetFileAA.txt", """This is an asset file from asset pack AA.""")
+    }
+    assetPack(":assetPackA:assetPackAB") {
+      assetPack {
+        packName.set("assetPackAB")
+        dynamicDelivery { deliveryType.set("fast-follow") }
+      }
+      files.add("src/main/assets/assetFileAB.txt", """This is an asset file from asset pack AB.""")
+    }
+  }
 
   @Test
   fun buildDebugBundle() {

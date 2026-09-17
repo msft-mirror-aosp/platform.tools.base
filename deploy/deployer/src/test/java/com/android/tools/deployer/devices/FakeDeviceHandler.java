@@ -24,6 +24,9 @@ import com.android.fakeadbserver.FakeAdbServer;
 import com.android.fakeadbserver.devicecommandhandlers.DeviceCommandHandler;
 import com.android.fakeadbserver.services.ShellCommandOutput;
 import com.android.fakeadbserver.services.StatusWriter;
+import com.android.fakeadbserver.statechangehubs.DeviceStateChangeHandlerFactory;
+import com.android.fakeadbserver.statechangehubs.StateChangeHandlerFactory;
+import com.android.fakeadbserver.statechangehubs.StateChangeQueue;
 import com.android.tools.deployer.devices.shell.Arguments;
 import com.android.tools.deployer.devices.shell.Cmd;
 
@@ -42,13 +45,17 @@ import java.io.PrintStream;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class FakeDeviceHandler extends DeviceCommandHandler {
     //@GuardedBy("devices")
     private final Set<FakeDevice> devices = new HashSet<>();
+    private final AtomicReference<FakeAdbServer> fakeAdbServer = new AtomicReference<>(null);
 
     public FakeDeviceHandler() {
         super("");
@@ -60,7 +67,83 @@ public class FakeDeviceHandler extends DeviceCommandHandler {
         synchronized (devices) {
             devices.add(device);
         }
+        if (fakeAdbServer.compareAndSet(null, server)) {
+            subscribeToServer(server);
+        } else {
+            if (fakeAdbServer.get() != server) {
+                throw new IllegalStateException(
+                        "FakeDeviceHandler is already connected to a different server instance!");
+            }
+        }
         return deviceState;
+    }
+
+    // When the adb client requests a root restart, FakeAdbServer will disconnect the current
+    // device and reconnect a new device instance with isRoot set to true. We listen for these
+    // device list changes to update our FakeDevice's reference to the new DeviceState object
+    // so that subsequent commands target the correct restarted device state.
+    private void subscribeToServer(FakeAdbServer server) {
+        StateChangeQueue queue =
+                server.getDeviceChangeHub()
+                        .subscribe(
+                                new DeviceStateChangeHandlerFactory() {
+                                    @NonNull
+                                    @Override
+                                    public Callable<StateChangeHandlerFactory.HandlerResult>
+                                            createDeviceListChangedHandler(
+                                                    @NonNull Collection<DeviceState> deviceList) {
+                                        return () -> {
+                                            synchronized (devices) {
+                                                for (FakeDevice d : devices) {
+                                                    for (DeviceState s : deviceList) {
+                                                        if (d.getSerial().equals(s.getDeviceId())) {
+                                                            d.setDeviceState(s);
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            return new StateChangeHandlerFactory.HandlerResult(
+                                                    true);
+                                        };
+                                    }
+
+                                    @NonNull
+                                    @Override
+                                    public Callable<StateChangeHandlerFactory.HandlerResult>
+                                            createDeviceStateChangedHandler(
+                                                    @NonNull DeviceState device,
+                                                    @NonNull DeviceState.DeviceStatus status) {
+                                        return () ->
+                                                new StateChangeHandlerFactory.HandlerResult(true);
+                                    }
+                                });
+
+        if (queue == null) {
+            // Server has shutdown before we are able to start listening to the queue.
+            return;
+        }
+        // This thread is safe from leaks because:
+        // 1. It is marked as a daemon thread.
+        // 2. When the FakeAdbServer is stopped, the hub sends a termination result
+        //    where getMShouldContinue() is false, which breaks the loop and exits the thread.
+        Thread thread =
+                new Thread(
+                        () -> {
+                            while (true) {
+                                try {
+                                    if (!queue.take().call().getMShouldContinue()) {
+                                        break;
+                                    }
+                                } catch (InterruptedException e) {
+                                    break;
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        },
+                        "FakeDeviceHandler-DeviceListener-" + server.getPort());
+        thread.setDaemon(true);
+        thread.start();
     }
 
     @Override
@@ -74,37 +157,32 @@ public class FakeDeviceHandler extends DeviceCommandHandler {
             @NonNull StatusWriter statusWriter,
             @Nullable Function0<? extends ShellCommandOutput> shellCommandOutputProvider) {
         try {
+            FakeDevice targetDevice = null;
             synchronized (devices) {
                 for (FakeDevice device : devices) {
-                    if (!device.isDevice(deviceState)) {
-                        continue;
+                    if (device.getSerial().equals(deviceState.getDeviceId())) {
+                        targetDevice = device;
+                        break;
                     }
-
-                    switch (command) {
-                        case "shell":
-                        case "exec": // exec is different to shell, but we can interpret the same
-                            return shell(device, args, socket);
-                        case "sync":
-                            return sync(device, args, socket);
-                        case "abb_exec":
-                            return abb_exec(device, args, socket);
-                        case "root":
-                            return root(device, socket);
-                    }
-                    return false;
                 }
+            }
+
+            if (targetDevice != null) {
+                switch (command) {
+                    case "shell":
+                    case "exec": // exec is different to shell, but we can interpret the same
+                        return shell(targetDevice, args, socket);
+                    case "sync":
+                        return sync(targetDevice, args, socket);
+                    case "abb_exec":
+                        return abb_exec(targetDevice, args, socket);
+                }
+                return false;
             }
         } catch (IOException e) {
             e.printStackTrace(System.err);
         }
         return false;
-    }
-
-    private boolean root(FakeDevice device, Socket socket) throws IOException {
-        OutputStream output = socket.getOutputStream();
-        CommandHandler.writeOkay(output);
-        device.setCurrentUser(device.getRootUser());
-        return true;
     }
 
     private boolean abb_exec(FakeDevice device, String args, Socket socket) throws IOException {
@@ -179,7 +257,8 @@ public class FakeDeviceHandler extends DeviceCommandHandler {
                     break;
                 default:
                     // Unrecognized or not implemented command
-                    throw new UnsupportedOperationException("Not implemented sync command: " + command);
+                    throw new UnsupportedOperationException(
+                            "Not implemented sync command: " + command);
             }
         }
 

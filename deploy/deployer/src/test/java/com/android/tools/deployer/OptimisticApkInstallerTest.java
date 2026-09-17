@@ -19,13 +19,13 @@ import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.Mockito.when;
 
-import com.android.ddmlib.IDevice;
 import com.android.tools.deploy.proto.Deploy;
 import com.android.tools.deployer.common.AdbClient;
 import com.android.tools.deployer.common.ChangeType;
 import com.android.tools.deployer.common.DeployerException;
 import com.android.tools.deployer.common.DeployerOption;
 import com.android.tools.deployer.common.DeploymentCacheDatabase;
+import com.android.tools.deployer.common.DeviceHolder;
 import com.android.tools.deployer.common.Installer;
 import com.android.tools.deployer.common.OverlayId;
 import com.android.tools.deployer.model.Apk;
@@ -64,10 +64,9 @@ import java.util.Map;
 public class OptimisticApkInstallerTest {
 
     private class TestTerminator extends DeployerApplicationTerminator {
-        public TestTerminator(
-                @NotNull Collection<? extends @NotNull IDevice> devices, @NotNull String appId) {
+        public TestTerminator(@NotNull Collection<DeployerDevice> devices, @NotNull String appId) {
             super(
-                    devices,
+                    ImmutableList.copyOf(devices),
                     appId,
                     (device, s) -> {
                         killCount++;
@@ -106,9 +105,9 @@ public class OptimisticApkInstallerTest {
 
     @Before
     public void beforeTest() throws IOException {
-        IDevice device = Mockito.mock(IDevice.class);
-        when(device.getSerialNumber()).thenReturn(TEST_SERIAL);
-        when(device.getAbis()).thenReturn(ImmutableList.of(TEST_ABI));
+        DeviceHolder deviceHolder = Mockito.mock(DeviceHolder.class);
+        when(deviceHolder.getSerialNumber()).thenReturn(TEST_SERIAL);
+        when(deviceHolder.getAbis()).thenReturn(ImmutableList.of(TEST_ABI));
 
         installer = Mockito.mock(Installer.class);
         when(installer.overlayInstall(ArgumentMatchers.any()))
@@ -117,11 +116,14 @@ public class OptimisticApkInstallerTest {
                                 .setStatus(Deploy.OverlayInstallResponse.Status.OK)
                                 .build());
 
-        adb = new AdbClient(device, logger);
+        adb = new AdbClient(deviceHolder, logger);
         cache = new DeploymentCacheDatabase(DeploymentCacheDatabase.DEFAULT_SIZE);
         metrics = new MetricsRecorder();
         logger = new NullLogger();
-        terminator = new TestTerminator(List.of(device), "com.example.app.id");
+        terminator =
+                new TestTerminator(
+                        List.of(new DeployerDevice(deviceHolder.getSerialNumber())),
+                        "com.example.app.id");
         killCount = 0;
     }
 

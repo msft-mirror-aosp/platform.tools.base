@@ -4,7 +4,7 @@ load("@rules_java//java:defs.bzl", "JavaInfo", "java_common")
 load("@rules_license//rules:license.bzl", "license")
 load(":functions.bzl", "create_option_file")
 load(":jvm_import.bzl", "jvm_import")
-load(":kotlin.bzl", "kotlin_library")
+load(":kotlin.bzl", "DEFAULT_JVM_TARGET", "kotlin_library")
 load(":merge_archives.bzl", "run_singlejar")
 load(":utils.bzl", "is_release")
 
@@ -15,6 +15,7 @@ def generate_pom(
         version,
         output_pom,
         deps = [],
+        deps_compile_only = [],
         exports = [],
         description = None,
         pom_name = None,
@@ -62,9 +63,11 @@ def generate_pom(
         for (dependency, exclusions) in exclusions.items():
             args += ["--exclusion", dependency, ",".join([e for e in exclusions])]
 
+    if deps_compile_only:
+        args += ["--deps_compile_only", ":".join([p.path for p in deps_compile_only])]
     args += ["--deps", ":".join([dep.path for dep in deps])]
     args += ["--exports", ":".join([dep.path for dep in exports])]
-    inputs += deps + exports
+    inputs += deps + exports + deps_compile_only
 
     ctx.actions.run(
         mnemonic = "GenPom",
@@ -239,6 +242,18 @@ Args:
     },
 )
 
+def _for_target(x, y):
+    idx = x.rfind(":")
+    if idx != -1:
+        prefix = x[:idx + 1]
+        target_name = x[idx + 1:]
+    else:
+        prefix = ""
+        target_name = x
+    # We use the hash of the string rather than the whole string, since otherwise the path
+    # gets to be too long on windows.
+    return prefix + "for_" + str(abs(hash(target_name + "_for_" + y)))
+
 def maven_import(
         name,
         jars = [],
@@ -286,8 +301,8 @@ def maven_import(
     """
     java_import_name = name + "_jars"
     aar_import_name = name + "_aar"
-    renamed_deps = {d: d + "_for_" + name if d in deps_with_exclusions else d for d in deps}
-    renamed_exports = {e: e + "_for_" + name if e in deps_with_exclusions else e for e in exports}
+    renamed_deps = {d: _for_target(d, name) if d in deps_with_exclusions else d for d in deps}
+    renamed_exports = {e: _for_target(e, name) if e in deps_with_exclusions else e for e in exports}
 
     jvm_import(
         name = java_import_name,
@@ -303,13 +318,13 @@ def maven_import(
 
     for parent, exclusions in exclusions_for_parents.items():
         jvm_import(
-            name = name + "_for_" + parent + "_jars",
+            name = _for_target(name, parent) + "_jars",
             jars = jars,
             deps = [renamed for (d, renamed) in renamed_deps.items() if d not in exclusions],
         )
         if aar:
             aar_import(
-                name = name + "_for_" + parent + "_aar",
+                name = _for_target(name, parent) + "_aar",
                 aar = aar,
                 deps = [renamed for (d, renamed) in renamed_deps.items() if d not in exclusions],
             )
@@ -339,9 +354,9 @@ def maven_import(
 
     for parent, exclusions in exclusions_for_parents.items():
         _maven_import(
-            name = name + "_for_" + parent,
-            java_deps = [":" + name + "_for_" + parent + "_jars"],
-            aar_dep = (":" + name + "_for_" + parent + "_aar") if aar else None,
+            name = _for_target(name, parent),
+            java_deps = [":" + _for_target(name, parent) + "_jars"],
+            aar_dep = (":" + _for_target(name, parent) + "_aar") if aar else None,
             deps = [renamed for (d, renamed) in renamed_deps.items() if d not in exclusions],
             original_deps = original_deps,
             repo_path = repo_path,
@@ -479,9 +494,11 @@ def split_coordinates(coordinates, version):
     )
 
 def _maven_library_impl(ctx):
-    infos_deps = [dep[MavenInfo] for dep in ctx.attr.deps]
+    infos_deps = [dep[MavenInfo] for dep in ctx.attr.deps + getattr(ctx.attr, "data_deps", [])]
+    infos_deps_compile_only = [dep[MavenInfo] for dep in getattr(ctx.attr, "deps_compile_only", [])]
     infos_exports = [dep[MavenInfo] for dep in ctx.attr.exports]
     pom_deps = [info.pom for info in infos_deps]
+    pom_deps_compile_only = [info.pom for info in infos_deps_compile_only]
     pom_exports = [info.pom for info in infos_exports]
 
     coordinates = split_coordinates(ctx.attr.coordinates, ctx.attr.version)
@@ -497,6 +514,7 @@ def _maven_library_impl(ctx):
         description = ctx.attr.description,
         pom_name = pom_name,
         deps = pom_deps,
+        deps_compile_only = pom_deps_compile_only,
         exports = pom_exports,
     )
     outputs = [ctx.outputs.pom]
@@ -598,6 +616,8 @@ _maven_library = rule(
             allow_single_file = True,
         ),
         "deps": attr.label_list(providers = [MavenInfo]),
+        "deps_compile_only": attr.label_list(providers = [MavenInfo]),
+        "data_deps": attr.label_list(providers = [MavenInfo]),
         "exports": attr.label_list(providers = [MavenInfo]),
         "_zipper": attr.label(
             default = Label("@bazel_tools//tools/zip:zipper"),
@@ -628,12 +648,15 @@ def maven_library(
         srcs,
         javacopts = [],
         kotlinc_opts = [],
+        jvm_target = DEFAULT_JVM_TARGET,
         resources = [],
         resource_strip_prefix = None,
         data = [],
         deps = [],
+        deps_compile_only = [],
         exports = [],
         runtime_deps = [],
+        data_deps = [],
         bundled_deps = [],
         friends = [],
         notice = None,
@@ -651,6 +674,7 @@ def maven_library(
         plugins = [],
         manifest_lines = None,
         warn = "off",
+        kotlin_use_serialization = False,
         **kwargs):
     """Compiles a library jar from Java and Kotlin sources
 
@@ -658,9 +682,13 @@ def maven_library(
         srcs: The sources of the library.
         javacopts: Additional javac options.
         kotlinc_opts: Additional Kotlinc options.
+        jvm_target: The target JVM version.
         resources: Resources to add to the jar.
         resources_strip_prefix: The prefix to strip from the resources path.
+        data: Additional runtime data files/runfiles for Bazel execution (omitted from the generated POM file).
+        data_deps: Maven dependency targets needed at runtime. Unlike normal `deps`, these are NOT added to kotlinc's compile-time classpath or JVM system classpath, but ARE emitted as `<scope>runtime</scope>` in the published POM file, and included as runfiles for execution.
         deps: The dependencies of this library.
+        deps_compile_only: The compile-only (provided) dependencies of this library.
         exports: The exported dependencies of this library.
         runtime_deps: The runtime dependencies.
         bundled_deps: The dependencies that are bundled inside the output jar and not treated as a maven dependency
@@ -683,9 +711,10 @@ def maven_library(
         srcs = srcs,
         javacopts = javacopts,
         kotlinc_opts = kotlinc_opts,
+        jvm_target = jvm_target,
         compress_resources = is_release(),
-        data = data,
-        deps = deps + bundled_deps + neverlink_deps,
+        data = data + data_deps,
+        deps = deps + deps_compile_only + bundled_deps + neverlink_deps,
         exports = exports,
         friends = friends,
         notice = notice,
@@ -696,6 +725,7 @@ def maven_library(
         runtime_deps = runtime_deps,
         coverage_baseline_enabled = False,
         stdlib = None,  # Maven libraries use the stdlib in different scopes and versions.
+        kotlin_use_serialization = kotlin_use_serialization,
         plugins = plugins,
         warn = warn,
         **kwargs
@@ -706,6 +736,8 @@ def maven_library(
         jar_name = jar_name,
         notice = notice,
         deps = deps,
+        deps_compile_only = deps_compile_only,
+        data_deps = data_deps,
         bundled_deps = bundled_deps,
         exports = exports,
         coordinates = coordinates,

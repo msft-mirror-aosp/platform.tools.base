@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.services
 
 import com.android.build.gradle.internal.lint.LintFromMaven
+import com.android.build.gradle.internal.r8.R8FromMaven
 import java.io.File
 import org.gradle.api.Action
 import org.gradle.api.Named
@@ -78,6 +79,7 @@ interface TaskCreationServices : BaseServices {
   fun <T : Named> named(type: Class<T>, name: String): T
 
   val lintFromMaven: LintFromMaven
+  val r8FromMaven: R8FromMaven?
 
   val configurations: ConfigurationContainer
   val dependencies: DependencyHandler

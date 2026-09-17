@@ -29,20 +29,25 @@
 
 # --- Argument Parsing ---
 
-if [ "$#" -eq 0 ] || [ "$#" -gt 2 ]; then
-  echo "Usage: $0 <port>                 (to launch)" >&2
+if [ "$#" -eq 0 ]; then
+  echo "Usage: $0 <port> [extra_args...] (to launch)" >&2
   echo "   or: $0 create-snapshot <port> (to create a snapshot)" >&2
   echo "   or: $0 kill <port>            (to kill an emulator)" >&2
   exit 1
 fi
 
-# Default to 'launch' mode if only one argument is given.
 if [ "$1" = "create-snapshot" ] || [ "$1" = "kill" ]; then
+  if [ "$#" -lt 2 ]; then
+    echo "Error: Missing port for mode '$1'." >&2
+    exit 1
+  fi
   readonly mode="$1"
   readonly port="$2"
+  shift 2
 else
   readonly mode="launch"
   readonly port="$1"
+  shift 1
 fi
 
 # Validate that the port is a number.
@@ -53,6 +58,12 @@ fi
 
 # The serial name used by ADB to identify the emulator instance.
 readonly device_serial="emulator-${port}"
+
+# Capture any remaining arguments as extra emulator arguments.
+user_extra_args=("$@")
+
+# Save the execution root directory.
+readonly EXECROOT="$(pwd)"
 
 # --- System Image and Path Configuration ---
 
@@ -103,7 +114,11 @@ fi
 
 # Set up an isolated Android environment to avoid conflicts with the user's
 # local setup. All paths are relative to the current working directory.
-export HOME=$(pwd)
+if [ -n "$TEST_TMPDIR" ]; then
+  export HOME="$TEST_TMPDIR"
+else
+  export HOME=$(pwd)
+fi
 export ANDROID_PREFS_ROOT=$HOME
 export ANDROID_HOME=$HOME/prebuilts/studio/sdk/$OS_DIR_NAME
 export ANDROID_USER_HOME=$HOME/.android
@@ -310,9 +325,9 @@ else
   echo "Relocating paths in snapshot's .ini files..."
   for file in $(grep -rl "__PLACEHOLDER_EXTERNAL__" --include="*.ini" "$instance_avd_dir"); do
     if [ "$(uname)" = "Darwin" ]; then
-      sed -i '' "s#__PLACEHOLDER_EXTERNAL__#$HOME/..#g" "$file"
+      sed -i '' "s#__PLACEHOLDER_EXTERNAL__#$EXECROOT/..#g" "$file"
     else
-      sed -i "s#__PLACEHOLDER_EXTERNAL__#$HOME/..#g" "$file"
+      sed -i "s#__PLACEHOLDER_EXTERNAL__#$EXECROOT/..#g" "$file"
     fi
   done
   for file in $(grep -rl "__PLACEHOLDER_HOME__" --include="*.ini" "$instance_avd_dir"); do
@@ -332,7 +347,7 @@ else
 
   echo "Relocating paths in snapshot.pb..."
   $proto_patcher "$instance_avd_dir/snapshots/default_boot/snapshot.pb" \
-    "__PLACEHOLDER_EXTERNAL__" "$HOME/.." \
+    "__PLACEHOLDER_EXTERNAL__" "$EXECROOT/.." \
     "__PLACEHOLDER_HOME__" "$HOME" \
     "__PLACEHOLDER_AVD_NAME__" "$instance_avd_name"
 
@@ -349,7 +364,7 @@ fi
 # Redirect emulator output to a temporary log file. This allows the script
 # to display the log during boot and then detach, preventing the parent
 # process (e.g., Bazel) from hanging while waiting for stdout to close.
-readonly emu_log_file="/tmp/emulator-log-${port}.txt"
+readonly emu_log_file="${TEST_TMPDIR:-/tmp}/emulator-log-${port}.txt"
 
 # Ensure the log file is clean for this run.
 rm -f "$emu_log_file"
@@ -361,7 +376,7 @@ readonly tail_pid=$!
 
 # Set a trap to kill the tail process and clean up the log file when this script exits.
 # This is the key to detaching the emulator's output from this script's stdout.
-trap 'kill $tail_pid 2>/dev/null; rm -f "$emu_log_file"' EXIT
+trap 'kill $tail_pid 2>/dev/null' EXIT
 
 echo "Attempting to launch emulator '$avd_name_to_launch' on port $port ($device_serial)..."
 boot_complete=false
@@ -388,6 +403,7 @@ for i in "${retry_attempts[@]}"; do
     -feature -ModemSimulator \
     -feature -MultiDisplay \
     "${additional_emulator_args[@]}" \
+    "${user_extra_args[@]}" \
     >> "$emu_log_file" 2>&1 &
   emu_pid=$!
   echo "Emulator process started with PID $emu_pid (Attempt $i)."

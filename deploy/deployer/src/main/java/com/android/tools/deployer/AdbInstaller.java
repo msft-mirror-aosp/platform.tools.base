@@ -178,7 +178,7 @@ public class AdbInstaller extends Installer {
             } catch (TimeoutException e) {
                 // If something timed out, don't call into ddmlib to prepare and push the binary
                 // again (ddmlib default timeout if 30mn). Fail now.
-                String msg = String.format("Device '%s' timed out", adb.getName());
+                String msg = String.format("Device '%s' timed out", adb.getSerial());
                 throw new IOException(msg);
             }
 

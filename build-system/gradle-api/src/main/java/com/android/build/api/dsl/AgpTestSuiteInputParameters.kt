@@ -86,6 +86,9 @@ enum class AgpTestSuiteInputParameters(val propertyName: String) {
   /** Path to the ADB executable. */
   @Incubating ADB_EXECUTABLE("com.android.agp.test.ADB_EXECUTABLE"),
 
+  /** Whether to disable window animations on the device. */
+  @Incubating ANIMATIONS_DISABLED("com.android.agp.test.ANIMATIONS_DISABLED"),
+
   /** Path to the directory containing Android SDK fonts. */
   @Incubating SDK_FONTS_DIR("com.android.agp.test.SDK_FONTS_DIR"),
 

@@ -237,6 +237,30 @@ class LibraryPluginDslTest {
     }
   }
 
+  @Test
+  fun testSourceSets() {
+    val main = android.sourceSets.getByName("main")
+    assertThat(main.aarKeepRules).isNotNull()
+    assertThat(main).isInstanceOf(com.android.build.gradle.api.AndroidLibrarySourceSet::class.java)
+    assertThat(main).isInstanceOf(com.android.build.api.dsl.AndroidLibrarySourceSet::class.java)
+
+    android.sourceSets.named("main").configure {
+      it.assets.setSrcDirs(listOf("src/other/assets"))
+    }
+  }
+
+  @Test
+  fun testLegacyLibraryExtensionSourceSetsAccess() {
+    val legacyExt = plugin.extension as com.android.build.gradle.LibraryExtension
+    val mainSourceSet: com.android.build.gradle.api.AndroidLibrarySourceSet = legacyExt.sourceSets.getByName("main")
+    assertThat(mainSourceSet.aarKeepRules).isNotNull()
+    assertThat(mainSourceSet).isInstanceOf(com.android.build.api.dsl.AndroidLibrarySourceSet::class.java)
+
+    legacyExt.sourceSets.named("main").configure {
+      it.assets.setSrcDirs(listOf("src/other/assets"))
+    }
+  }
+
   companion object {
     init {
       importOfflineMavenRepo()

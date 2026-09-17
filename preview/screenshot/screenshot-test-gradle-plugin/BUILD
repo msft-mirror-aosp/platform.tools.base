@@ -30,6 +30,7 @@ filegroup(
 SCREENSHOT_TEST_GRADLE_PLUGIN_SOURCE_FILES = [
     ":agp_gradle_build_files",
     "//tools:agp_gradle_build_files",
+    "//tools/base/android-test:agp_gradle_build_files",
     "//tools/base/build-system/builder-model:agp_gradle_build_files",
     "//tools/base/build-system/builder-test-api:agp_gradle_build_files",
     "//tools/base/build-system/gradle-api:agp_gradle_build_files",
@@ -84,6 +85,7 @@ gradle_build(
 
 gradle_test(
     name = "screenshot-test-gradle-plugin_test",
+    timeout = "long",
     build_file = "//tools:agp_gradle_build_root_build_file",
     data = [
         ":agp_gradle_test_files",

@@ -31,20 +31,19 @@ import org.junit.Test
 class DynamicFeatureNamespaceTest {
 
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidJavaApplication {
-        android {
-          defaultConfig { applicationId = "com.example.test" }
-          dynamicFeatures.add(DEFAULT_FEATURE_PATH)
-        }
-      }
-      androidFeature {
-        android { namespace = "com.example.test.feature" }
-
-        dependencies { implementation(project(DEFAULT_APP_PATH)) }
+  val rule = GradleRule.from {
+    androidJavaApplication {
+      android {
+        defaultConfig { applicationId = "com.example.test" }
+        dynamicFeatures.add(DEFAULT_FEATURE_PATH)
       }
     }
+    androidFeature {
+      android { namespace = "com.example.test.feature" }
+
+      dependencies { implementation(project(DEFAULT_APP_PATH)) }
+    }
+  }
 
   @Test
   fun `intermediate feature manifest should have feature's namespace as package`() {

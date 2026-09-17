@@ -49,6 +49,7 @@ import org.gradle.api.DomainObjectSet
 import org.gradle.api.ExtensiblePolymorphicDomainObjectContainer
 import org.gradle.api.JavaVersion
 import org.gradle.api.NamedDomainObjectContainer
+import org.gradle.api.PolymorphicDomainObjectContainer
 import org.gradle.api.artifacts.dsl.DependencyCollector
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.file.SourceDirectorySet
@@ -425,6 +426,11 @@ class DslProxy private constructor(private val theInterface: Class<*>, internal 
             // android block)
           )
         ExtensiblePolymorphicDomainObjectContainer::class.java ->
+          ExtensiblePolymorphicDomainObjectContainerProxy(
+            extractResolvedTypeParamFromReturn(method),
+            dslRecorder.createChainedRecorder(propName),
+          )
+        PolymorphicDomainObjectContainer::class.java ->
           ExtensiblePolymorphicDomainObjectContainerProxy(
             extractResolvedTypeParamFromReturn(method),
             dslRecorder.createChainedRecorder(propName),

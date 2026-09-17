@@ -36,9 +36,7 @@
               "storeFile": {
                 "absolutePath": "{ANDROID_PREFS}/.android/debug.keystore"
               },
-              "storePassword": "android",
               "keyAlias": "AndroidDebugKey",
-              "keyPassword": "android",
               "enableV1Signing": true,
               "enableV2Signing": true,
               "enableV3Signing": false,
@@ -201,7 +199,8 @@
         "animationsDisabled": false,
         "execution": "HOST",
         "additionalRuntimeApks": [],
-        "instrumentedTestTaskName": "connectedAndroidDeviceTest"
+        "instrumentedTestTaskName": "connectedAndroidDeviceTest",
+        "instrumentInPrivateComputeCore": false
       },
       "flags": {
         "booleanFlagValues": [

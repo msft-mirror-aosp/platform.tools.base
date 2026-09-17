@@ -16,11 +16,12 @@
 package com.android.tools.deployer;
 
 import com.android.annotations.NonNull;
-import com.android.ddmlib.MultiLineReceiver;
+import com.android.tools.deployer.common.DeployerMultiLineReceiver;
 import com.android.utils.ILogger;
+
 import java.util.Arrays;
 
-class LoggerReceiver extends MultiLineReceiver {
+class LoggerReceiver extends DeployerMultiLineReceiver {
 
     ILogger logger;
 

@@ -350,7 +350,6 @@ public class VariantDependenciesBuilder {
         final String lintChecksClasspathName = variantName + "LintChecksClasspath";
         Configuration lintChecksClasspath =
                 project.getConfigurations().maybeCreate(lintChecksClasspathName);
-        lintChecksClasspath.setVisible(false);
         lintChecksClasspath.setDescription(
                 "Resolved configuration for lint check compilation for variant: " + variantName);
         lintChecksClasspath.extendsFrom(compileClasspath, runtimeClasspath);

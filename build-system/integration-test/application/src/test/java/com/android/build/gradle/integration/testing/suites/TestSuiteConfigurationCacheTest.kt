@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.testing.suites
 
 import com.android.Version
-import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor.ConfigurationCaching
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
@@ -45,7 +44,7 @@ class TestSuiteConfigurationCacheTest {
         androidApplication(":app") {
           android {
             namespace = "com.example.app"
-            testOptions.suites.create("first", AgpTestSuite::class.java) {
+            testOptions.customSuites.create("first") {
               it.useJunitEngine.apply {
                 inputs.add(AgpTestSuiteInputParameters.MERGED_MANIFEST)
                 includeEngines.add("[engine:toy-junit-engine-for-tests]")
@@ -67,10 +66,10 @@ class TestSuiteConfigurationCacheTest {
     val executor = rule.build.executor.withConfigurationCaching(ConfigurationCaching.ON)
 
     // First run to populate the configuration cache
-    executor.run(":app:testFirstT1DebugTestSuite")
+    executor.run(":app:testDebugFirstT1TestSuite")
 
     // Second run to use the configuration cache
-    val result = executor.run(":app:testFirstT1DebugTestSuite")
+    val result = executor.run(":app:testDebugFirstT1TestSuite")
 
     result.assertOutputContains("Reusing configuration cache.")
   }

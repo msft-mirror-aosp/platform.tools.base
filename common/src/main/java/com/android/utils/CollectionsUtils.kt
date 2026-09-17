@@ -29,15 +29,19 @@ inline fun <K, V, R> Map<out K, V>.mapValuesNotNull(transform: (Map.Entry<K, V>)
  * Returns a new [Map] with entries having this [Iterable]'s entries as keys and corresponding values obtained by applying the
  * [valueSelector] to each key, excluding those that are `null`.
  */
-inline fun <K, V> Iterable<K>.associateWithNotNull(valueSelector: (K) -> V?): Map<K, V> =
-  mapNotNull { key -> valueSelector(key)?.let { key to it } }.toMap()
+inline fun <K, V> Iterable<K>.associateWithNotNull(valueSelector: (K) -> V?): Map<K, V> = mapNotNull { key ->
+  valueSelector(key)?.let { key to it }
+}
+  .toMap()
 
 /**
  * Returns a new [Map] with entries having this [Iterable]'s entries as values and corresponding values obtained by applying the
  * [keySelector] to each value, excluding those that are `null`.
  */
-inline fun <T, K> Iterable<T>.associateByNotNull(keySelector: (T) -> K?): Map<K, T> =
-  mapNotNull { value -> keySelector(value)?.let { it to value } }.toMap()
+inline fun <T, K> Iterable<T>.associateByNotNull(keySelector: (T) -> K?): Map<K, T> = mapNotNull { value ->
+  keySelector(value)?.let { it to value }
+}
+  .toMap()
 
 /**
  * Returns a new [Map] with entries created from the non-`null` key/value [kotlin.Pair]s that result from applying [transform] to each item

@@ -109,16 +109,15 @@ class MappingFileAccessTest(private val useNewDsl: Boolean) {
 
   @Test
   fun useMappingFileSpecificApi() {
-    val build =
-      rule.build {
-        androidApplication(":app") {
-          if (useNewDsl) {
-            pluginCallbacks += MappingFileSpecificApiCallback::class.java
-          } else {
-            pluginCallbacks += LegacyMappingFileSpecificApiCallback::class.java
-          }
+    val build = rule.build {
+      androidApplication(":app") {
+        if (useNewDsl) {
+          pluginCallbacks += MappingFileSpecificApiCallback::class.java
+        } else {
+          pluginCallbacks += LegacyMappingFileSpecificApiCallback::class.java
         }
       }
+    }
 
     build.executor.run("mappingFileRelease").apply {
       assertTask(":app:mappingFileRelease").didWork()

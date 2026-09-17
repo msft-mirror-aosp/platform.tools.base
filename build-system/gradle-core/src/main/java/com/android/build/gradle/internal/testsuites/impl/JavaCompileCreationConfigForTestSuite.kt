@@ -16,16 +16,17 @@
 
 package com.android.build.gradle.internal.testsuites.impl
 
-import com.android.build.api.artifact.ScopedArtifact
 import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.api.component.impl.LifecycleTasksImpl
 import com.android.build.api.dsl.CompileOptions
 import com.android.build.api.variant.AnnotationProcessor
-import com.android.build.api.variant.ScopedArtifacts.Scope
 import com.android.build.api.variant.impl.TestSuiteSourceContainer
 import com.android.build.gradle.internal.api.AbstractTestSuiteSourceSet
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.CLASSES_JAR
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType
+import com.android.build.gradle.internal.publishing.PublishingSpecs
 import com.android.build.gradle.internal.scope.MutableTaskContainer
 import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.tasks.creationconfig.JavaCompileCreationConfig
@@ -95,16 +96,22 @@ internal class JavaCompileCreationConfigForTestSuite(
     get() = testedVariant.global.bootClasspath
 
   override val compileClasspath: FileCollection
-    get() =
-      services
+    get() {
+      val spec =
+        PublishingSpecs.getVariantPublishingSpec(testedVariant.componentType)
+          .getSpec(CLASSES_JAR, ConsumedConfigType.COMPILE_CLASSPATH.publishedTo)
+          ?: error("No CLASSES_JAR spec found for ${testedVariant.componentType}")
+      val mainComponentClassesJar = spec.outputType
+      return services
         .fileCollection()
         .from(
           sourceContainer.suiteSourceClasspath
             .getArtifactCollection(AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH, AndroidArtifacts.ArtifactType.CLASSES)
             .artifactFiles,
-          testedVariant.artifacts.forScope(Scope.PROJECT).getFinalArtifacts(ScopedArtifact.POST_COMPILATION_CLASSES),
+          testedVariant.artifacts.get(mainComponentClassesJar),
           testedVariant.androidResourcesCreationConfig?.getCompiledRClasses(AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH),
         )
+    }
 
   override val builtInKotlincOutput: Provider<Directory>?
     get() = null

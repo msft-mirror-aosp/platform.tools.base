@@ -145,7 +145,7 @@ class LibraryCacheabilityTest {
             /** Intentionally not cacheable. See [com.android.build.gradle.internal.tasks.MergeConsumerProguardFilesTask] */
             ":lib:mergeReleaseGeneratedProguardFiles",
             /** Intentionally not cacheable. See [com.android.build.gradle.internal.tasks.MergeGeneratedProguardFilesCreationAction] */
-            ":lib:mergeReleaseJavaResource", /* Bug 181142260 */
+            ":lib:mergeReleaseJavaResource",
             ":lib:mergeReleaseJniLibFolders",
             ":lib:prepareLintJarForPublish", /* b/8120413672 */
             ":lib:prepareReleaseArtProfile", /* No Bug, task is just file copy */
@@ -157,15 +157,15 @@ class LibraryCacheabilityTest {
           setOf(
             ":app:assembleRelease",
             ":app:compileReleaseKotlin",
+            ":app:compressReleaseJavaRes",
             ":app:extractReleaseNativeSymbolTables",
             ":app:mergeReleaseNativeDebugMetadata",
             ":app:mergeReleaseNativeLibs",
-            ":app:processReleaseJavaRes",
             ":app:stripReleaseDebugSymbols",
             ":lib:assembleRelease",
             ":lib:compileReleaseKotlin",
+            ":lib:compressReleaseJavaRes",
             ":lib:mergeReleaseNativeLibs",
-            ":lib:processReleaseJavaRes",
             ":lib:stripReleaseDebugSymbols",
           ),
         FAILED to setOf(),

@@ -102,6 +102,74 @@ class LintReportAggregationTest {
   }
 
   @Test
+  fun testVariantApiOnlyAggregatedReportEnabled() {
+    rule.build.androidApplication(":app").files.update("build.gradle") {
+      append(
+        """
+        androidComponents {
+            beforeVariants(selector().all()) { variant ->
+                variant.lint.reports.enableReportWithoutDependencies = false
+            }
+        }
+        """
+          .trimIndent()
+      )
+    }
+    rule.build.executor.with(BooleanOption.LINT_REPORT_AGGREGATION, true).run(":app:lint").let { result ->
+      assertThat(result.tasks).doesNotContain(":app:createLocalLintReportDebug")
+      assertThat(result.tasks).contains(":app:createAggregatedLintReportDebug")
+      // Global lint task should still run because aggregated is enabled
+      assertThat(result.tasks).contains(":app:lint")
+    }
+  }
+
+  @Test
+  fun testVariantApiOnlyLocalReportEnabled() {
+    rule.build.androidApplication(":app").files.update("build.gradle") {
+      append(
+        """
+        androidComponents {
+            beforeVariants(selector().all()) { variant ->
+                variant.lint.reports.enableReportWithDependencies = false
+            }
+        }
+        """
+          .trimIndent()
+      )
+    }
+    rule.build.executor.with(BooleanOption.LINT_REPORT_AGGREGATION, true).run(":app:lint").let { result ->
+      assertThat(result.tasks).contains(":app:createLocalLintReportDebug")
+      assertThat(result.tasks).doesNotContain(":app:createAggregatedLintReportDebug")
+      // Global lint task should still run because local is enabled
+      assertThat(result.tasks).contains(":app:lint")
+    }
+  }
+
+  @Test
+  fun testVariantApiBothReportsDisabled() {
+    rule.build.androidApplication(":app").files.update("build.gradle") {
+      append(
+        """
+        androidComponents {
+            beforeVariants(selector().all()) { variantBuilder ->
+                variantBuilder.lint.reports.enableReportWithoutDependencies = false
+                variantBuilder.lint.reports.enableReportWithDependencies = false
+            }
+        }
+        """
+          .trimIndent()
+      )
+    }
+    rule.build.executor.with(BooleanOption.LINT_REPORT_AGGREGATION, true).run(":app:lint").let { result ->
+      assertThat(result.tasks).doesNotContain(":app:createLocalLintReportDebug")
+      assertThat(result.tasks).doesNotContain(":app:createAggregatedLintReportDebug")
+      // Global lint task should NOT depend on variant reports when both are disabled
+      assertThat(result.tasks).doesNotContain(":app:lintDebug")
+      assertThat(result.tasks).doesNotContain(":app:lintAggregatedDebug")
+    }
+  }
+
+  @Test
   fun testLintReportAggregationSeparation() {
     verifyLintReportAggregationSeparation()
   }

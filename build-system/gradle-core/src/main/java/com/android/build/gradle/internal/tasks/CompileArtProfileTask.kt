@@ -30,7 +30,6 @@ import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.build.gradle.tasks.PackageAndroidArtifact
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.packaging.DexFileComparator
-import com.android.builder.packaging.DexFileNameSupplier
 import com.android.tools.profgen.ArtProfile
 import com.android.tools.profgen.ArtProfileSerializer
 import com.android.tools.profgen.DexFile
@@ -38,6 +37,7 @@ import com.android.tools.profgen.Diagnostics
 import com.android.tools.profgen.HumanReadableProfile
 import com.android.tools.profgen.ObfuscationMap
 import com.android.tools.profgen.buildArtProfileWithDexMetadata
+import com.android.tools.profgen.parseDexFiles
 import com.android.utils.FileUtils
 import com.google.common.annotations.VisibleForTesting
 import java.io.File
@@ -116,13 +116,14 @@ abstract class CompileArtProfileTask : NonIncrementalTask() {
         } else {
           ObfuscationMap.Empty
         }
-      val supplier = DexFileNameSupplier()
       // Sort and rename the dex files in the same way that they are packaged in the APK
       // (DexIncrementalRenameManager) and the bundle (PerModuleBundleTask) (b/346268213)
-      val dexFiles =
-        parameters.dexFolders.asFileTree.files.sortedWith(DexFileComparator).map {
-          it.inputStream().buffered().use { stream -> DexFile(stream, supplier.get()) }
-        }
+      // DEXv41 allows multiple dex files to be stored in single physical file / zip entry.
+      // For older DEX versions, parseDexFiles will return single file.
+      val dexFiles = mutableListOf<DexFile>()
+      parameters.dexFolders.asFileTree.files.sortedWith(DexFileComparator).forEach { file ->
+        file.inputStream().buffered().use { stream -> dexFiles.addAll(parseDexFiles(stream, dexFiles.size)) }
+      }
 
       val artProfile =
         if (parameters.dexMetadataDirectory.isPresent) {

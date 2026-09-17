@@ -102,6 +102,11 @@ class EmulatorPackage(private val emulator: LocalPackage) {
   fun hasStudioParamsSupport(): Boolean {
     return version >= Revision.parseRevision("26.1.0")
   }
+
+  companion object {
+    const val QEMU_NEXT_PACKAGE_NAME = "Emulator (Preview)"
+    const val QEMU_NEXT_PACKAGE_PATH = "${SdkConstants.FD_EMULATORS};latest"
+  }
 }
 
 enum class EmulatorFeaturesChannel(val featuresFile: String) {
@@ -120,10 +125,17 @@ object EmulatorAdvancedFeatures {
  * set of emulator packages. (This is currently the preview version of the emulator.)
  */
 @JvmOverloads
-fun AndroidSdkHandler.getEmulatorPackage(progress: ProgressIndicator, useLatestEmulator: Boolean = false): EmulatorPackage? {
-  if (useLatestEmulator) {
-    getLocalPackage("${SdkConstants.FD_EMULATORS};latest", progress)?.let {
+fun AndroidSdkHandler.getEmulatorPackage(
+  progress: ProgressIndicator,
+  useLatestEmulator: Boolean = false,
+  requireLatestEmulator: Boolean = false,
+): EmulatorPackage? {
+  if (useLatestEmulator || requireLatestEmulator) {
+    getLocalPackage(EmulatorPackage.QEMU_NEXT_PACKAGE_PATH, progress)?.let {
       return EmulatorPackage(it)
+    }
+    if (requireLatestEmulator) {
+      return null
     }
   }
   return getLocalPackage(SdkConstants.FD_EMULATOR, progress)?.let { EmulatorPackage(it) }

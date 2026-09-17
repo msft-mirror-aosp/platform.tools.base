@@ -38,9 +38,9 @@ private val EMULATOR_SCRIPT = System.getProperty("EMULATOR_SCRIPT_PATH")
 private const val PORT = 5554
 
 /** Return an [Emulator] using default port 5554 */
-fun getEmulator(): ExternalResource {
+fun getEmulator(vararg extraArgs: String): ExternalResource {
   if (TestUtils.runningFromBazel()) {
-    return Emulator(EMULATOR_SCRIPT, PORT)
+    return Emulator(EMULATOR_SCRIPT, PORT, *extraArgs)
   } else {
     // Don't manage the emulator when running from Gradle for now
     return object : ExternalResource() {}

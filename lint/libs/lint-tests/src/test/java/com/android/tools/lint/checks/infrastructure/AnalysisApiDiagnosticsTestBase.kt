@@ -20,8 +20,8 @@ import com.android.tools.lint.checks.infrastructure.TestFiles.bytecode
 import com.android.tools.lint.checks.infrastructure.TestFiles.java
 import com.android.tools.lint.checks.infrastructure.TestFiles.kotlin
 import com.android.tools.lint.checks.infrastructure.TestLintTask.lint
+import org.jetbrains.kotlin.cli.common.arguments.CommonCompilerArgumentsConfigurator
 import org.jetbrains.kotlin.cli.common.arguments.JavaTypeEnhancementStateParser
-import org.jetbrains.kotlin.cli.common.messages.MessageCollector
 import org.jetbrains.kotlin.config.ApiVersion
 import org.jetbrains.kotlin.config.JvmAnalysisFlags
 import org.jetbrains.kotlin.config.LanguageFeature
@@ -44,7 +44,7 @@ internal interface AnalysisApiDiagnosticsTestBase {
             // -Xjspecify-annotations=strict
             mapOf(
               JvmAnalysisFlags.javaTypeEnhancementState to
-                JavaTypeEnhancementStateParser(MessageCollector.NONE, languageLevel.toKotlinVersion())
+                JavaTypeEnhancementStateParser(CommonCompilerArgumentsConfigurator.Reporter.DoNothing, languageLevel.toKotlinVersion())
                   .parse(
                     jsr305Args = null,
                     supportCompatqualCheckerFrameworkAnnotations = null,

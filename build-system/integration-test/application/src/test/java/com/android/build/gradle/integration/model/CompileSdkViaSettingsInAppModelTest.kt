@@ -27,17 +27,16 @@ import org.junit.Test
 
 class CompileSdkViaSettingsInAppModelTest {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      settings {
-        applyPlugin(PluginType.ANDROID_SETTINGS)
-        android { compileSdk = DEFAULT_COMPILE_SDK_VERSION }
-      }
-      androidApplication(createMinimumProject = false) {
-        android { namespace = "com.example.app" }
-        files.setupMinimumManifest()
-      }
+  val rule = GradleRule.from {
+    settings {
+      applyPlugin(PluginType.ANDROID_SETTINGS)
+      android { compileSdk = DEFAULT_COMPILE_SDK_VERSION }
     }
+    androidApplication(createMinimumProject = false) {
+      android { namespace = "com.example.app" }
+      files.setupMinimumManifest()
+    }
+  }
 
   @Test
   fun `test compileTarget`() {

@@ -1,11 +1,14 @@
 package android.com.java.profilertester.taskcategory;
 
 import android.annotation.TargetApi;
+import android.app.Activity;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Build;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -40,6 +43,10 @@ public abstract class TaskCategory {
 
         @NonNull
         protected abstract String getTaskDescription();
+
+        public boolean usesTextEditor() {
+            return false;
+        }
 
         @Nullable
         protected SelectionListener getSelectionListener() {
@@ -100,7 +107,7 @@ public abstract class TaskCategory {
 
     /**
      * Callback to the {@link TaskCategory} if it needs to start an {@link Intent}. The params are
-     * just passed through from {@link android.app.Activity#onActivityResult(int, int, Intent)}.
+     * just passed through from {@link Activity#onActivityResult(int, int, Intent)}.
      */
     public void onActivityResult(int requestCode, int resultCode, Intent data) {}
 

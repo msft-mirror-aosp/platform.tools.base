@@ -16,14 +16,15 @@
 
 package com.android.build.gradle.internal.api
 
-import com.android.build.api.dsl.AndroidLibrarySourceSet
+import com.android.build.api.dsl.AndroidLibrarySourceSet as DslAndroidLibrarySourceSet
+import com.android.build.gradle.api.AndroidLibrarySourceSet as LegacyAndroidLibrarySourceSet
 import com.android.build.gradle.api.AndroidSourceSet
 import com.android.build.gradle.internal.api.artifact.SourceArtifactType
 import javax.inject.Inject
 import org.gradle.api.Project
 
 open class DefaultAndroidLibrarySourceSet @Inject constructor(name: String, project: Project, publishPackage: Boolean) :
-  DefaultAndroidSourceSet(name, project, publishPackage), AndroidLibrarySourceSet {
+  DefaultAndroidSourceSet(name, project, publishPackage), LegacyAndroidLibrarySourceSet, DslAndroidLibrarySourceSet {
 
   final override val aarKeepRules: com.android.build.api.dsl.AndroidSourceDirectorySet
 

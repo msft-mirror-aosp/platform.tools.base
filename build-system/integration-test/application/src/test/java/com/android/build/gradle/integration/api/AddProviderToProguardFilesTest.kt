@@ -31,16 +31,15 @@ import org.junit.Test
 
 class AddProviderToProguardFilesTest {
   @get:Rule
-  val rule =
-    GradleRule.from {
-      androidApplication {
-        android {
-          namespace = "com.example.api.java_res"
-          defaultConfig.applicationId = "com.example.api.java_res"
-          pluginCallbacks += AddProviderToProguardFiles::class.java
-        }
+  val rule = GradleRule.from {
+    androidApplication {
+      android {
+        namespace = "com.example.api.java_res"
+        defaultConfig.applicationId = "com.example.api.java_res"
+        pluginCallbacks += AddProviderToProguardFiles::class.java
       }
     }
+  }
 
   @Test
   fun expectFailure() {

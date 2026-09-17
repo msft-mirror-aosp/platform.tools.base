@@ -28,6 +28,7 @@ import com.android.build.gradle.internal.scope.InternalArtifactType.PACKAGED_MAN
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
 import com.android.build.gradle.internal.tasks.NonIncrementalTask
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
+import com.android.build.gradle.options.BooleanOption
 import com.android.buildanalyzer.common.TaskCategory
 import com.google.common.annotations.VisibleForTesting
 import java.io.File
@@ -37,7 +38,11 @@ import java.io.StringWriter
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.Properties
+import java.util.zip.ZipFile
 import javax.inject.Inject
+import kotlin.io.path.copyTo
+import kotlin.io.path.exists
+import kotlin.io.path.outputStream
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFile
@@ -72,6 +77,8 @@ abstract class GenerateTestConfig @Inject constructor(objectFactory: ObjectFacto
   lateinit var testConfigInputs: TestConfigInputs
     private set
 
+  @get:InputFiles @get:PathSensitive(PathSensitivity.NAME_ONLY) @get:Optional abstract val javaResCompressedJar: RegularFileProperty
+
   @get:Internal("only for task execution") abstract val projectDir: RegularFileProperty
 
   @get:OutputDirectory val outputDirectory: DirectoryProperty = objectFactory.directoryProperty()
@@ -81,18 +88,23 @@ abstract class GenerateTestConfig @Inject constructor(objectFactory: ObjectFacto
       it.initializeFromBaseTask(this)
       it.testConfigProperties.set(testConfigInputs.computeProperties(projectDir.get().asFile))
       it.outputDirectory.set(outputDirectory)
+      it.javaResCompressedJar.set(javaResCompressedJar)
     }
   }
 
   abstract class GenerateTestConfigRunnable : ProfileAwareWorkAction<GenerateTestConfigParams>() {
+
     override fun run() {
-      generateTestConfigFile(parameters.testConfigProperties.get(), parameters.outputDirectory.get().asFile.toPath())
+      val outputDirPath = parameters.outputDirectory.get().asFile.toPath()
+      generateTestConfigFile(parameters.testConfigProperties.get(), outputDirPath)
+      extractRobolectricDepsPropertiesFromJar(parameters.javaResCompressedJar.orNull?.asFile?.toPath(), outputDirPath)
     }
   }
 
   abstract class GenerateTestConfigParams : ProfileAwareWorkAction.Parameters() {
     abstract val testConfigProperties: Property<TestConfigProperties>
     abstract val outputDirectory: DirectoryProperty
+    abstract val javaResCompressedJar: RegularFileProperty
   }
 
   class CreationAction(private val unitTestCreationConfig: HostTestCreationConfig) :
@@ -118,6 +130,11 @@ abstract class GenerateTestConfig @Inject constructor(objectFactory: ObjectFacto
       task.testConfigInputs = TestConfigInputs(unitTestCreationConfig)
       task.projectDir.set(task.project.projectDir)
       task.projectDir.disallowChanges()
+
+      if (unitTestCreationConfig.services.projectOptions[BooleanOption.ENABLE_JAVA_RESOURCE_OPTIMIZATIONS]) {
+        task.javaResCompressedJar.set(unitTestCreationConfig.artifacts.get(InternalArtifactType.JAVA_RES_COMPRESSED_JAR))
+      }
+      task.javaResCompressedJar.disallowChanges()
     }
   }
 
@@ -197,6 +214,17 @@ abstract class GenerateTestConfig @Inject constructor(objectFactory: ObjectFacto
       val testConfigFile = outputDir.resolve(TEST_CONFIG_FILE.replace("/", outputDir.fileSystem.separator))
       Files.createDirectories(testConfigFile.parent)
       Files.write(testConfigFile, linesWithoutTimestamp)
+    }
+
+    fun extractRobolectricDepsPropertiesFromJar(jarFile: Path?, outputDir: Path) {
+      if (jarFile == null || !jarFile.exists()) return
+      ZipFile(jarFile.toFile()).use { zip ->
+        val entry = zip.getEntry("robolectric-deps.properties")
+        if (entry != null) {
+          val targetFile = outputDir.resolve("robolectric-deps.properties")
+          zip.getInputStream(entry).use { input -> targetFile.outputStream().use { input.copyTo(it) } }
+        }
+      }
     }
   }
 }

@@ -46,8 +46,8 @@ public final class Server {
 
   private Server() {}
 
-  public static void startServer(String pid) {
-    new ServerInstance(pid).run();
+    public static void startServer(String serverToken) {
+        new ServerInstance(serverToken).run();
   }
 
   private static final class ServerInstance {
@@ -111,8 +111,8 @@ public final class Server {
     private LocalServerSocket serverSocket;
     private ScheduledFuture<?> timeoutFuture;
 
-    ServerInstance(String pid) {
-      this.socketName = ProtocolConstants.getSocketName(pid);
+        ServerInstance(String serverToken) {
+            this.socketName = ProtocolConstants.getSocketName(serverToken);
     }
 
     void run() {

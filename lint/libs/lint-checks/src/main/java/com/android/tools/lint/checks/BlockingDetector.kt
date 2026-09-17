@@ -44,6 +44,8 @@ import org.jetbrains.uast.resolveToUElement
 class BlockingDetector : JoinEffectDetector<BlockingDetector.Status>(statusLattice, assumptions) {
   override val mainIssue = ISSUE
 
+  override fun sameMessage(issue: Issue, new: String, old: String): Boolean = sameArgumentMessage(new, old)
+
   override val effectEncoder = Encoder.enum<Status>()
 
   override fun report(context: Context, error: Error<Status>) =
@@ -77,13 +79,12 @@ class BlockingDetector : JoinEffectDetector<BlockingDetector.Status>(statusLatti
           null -> context.report(mainIssue, context.locationOf(call), "Call fails non-blocking requirements on arguments")
           else -> {
             assert(constraints.isNotEmpty())
-            val concreteReasons =
-              constraints.mapNotNull { failure ->
-                when (val arg = paramToArg[failure.invocation.chain.first]) {
-                  null -> null
-                  else -> arg to failure
-                }
+            val concreteReasons = constraints.mapNotNull { failure ->
+              when (val arg = paramToArg[failure.invocation.chain.first] ?: argumentOfAssumedDomain(call, failure.invocation)) {
+                null -> null
+                else -> arg to failure
               }
+            }
             when {
               concreteReasons.isEmpty() -> {
                 val message =
@@ -187,13 +188,12 @@ class BlockingDetector : JoinEffectDetector<BlockingDetector.Status>(statusLatti
     context: JavaContext,
     targetAnn: EffectAnnotation.Explicit<Status>,
     baseAnns: List<EffectAnnotation.Explicit<Status>>,
-  ): EffectAnnotation.Explicit<Status> =
-    targetAnn.also {
-      val conflicts = baseAnns.filter { !(statusLattice.precede(targetAnn.annotated, it.annotated)) }
-      if (conflicts.isNotEmpty()) {
-        report(context, Error.ConflictingAnnotations(targetAnn, conflicts))
-      }
+  ): EffectAnnotation.Explicit<Status> = targetAnn.also {
+    val conflicts = baseAnns.filter { !(statusLattice.precede(targetAnn.annotated, it.annotated)) }
+    if (conflicts.isNotEmpty()) {
+      report(context, Error.ConflictingAnnotations(targetAnn, conflicts))
     }
+  }
 
   override fun inheritAnnotations(
     evaluator: JavaEvaluator,

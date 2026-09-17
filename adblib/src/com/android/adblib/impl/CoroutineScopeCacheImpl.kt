@@ -103,6 +103,11 @@ internal class CoroutineScopeCacheImpl(parentScope: CoroutineScope, val descript
 
   private class SuspendingMap(private val scope: CoroutineScope) {
 
+    /**
+     * Map storing entries of either:
+     * - [Computing]: while the asynchronous computation is in progress
+     * - [Result]: once computation completes (wrapping either a successful value `T` or an exception)
+     */
     private val map = ConcurrentHashMap<Key<*>, Any>()
 
     fun <T> getOrDefault(key: Key<T>, defaultValue: T): T {
@@ -208,25 +213,30 @@ internal class CoroutineScopeCacheImpl(parentScope: CoroutineScope, val descript
         }
 
       if (valueWasStored) {
-        computing.job =
-          scope.launch {
-            val result = runCatching { defaultValue() }
+        computing.job = scope.launch {
+          val result = runCatching { defaultValue() }
 
-            // Replace in the cache only if we were the computing call
-            map.replace(key, computing, result).also { wasReplaced ->
-              // Note: If the cache have been closed, the key may not be present anymore,
-              //       so we need to also check the scope is active
-              assert(wasReplaced || !scope.isActive) {
-                "The 'computing' coroutine should always be the one storing " + "the computed value in the cache."
-              }
+          // Replace in the cache only if we were the computing call
+          map.replace(key, computing, result).also { wasReplaced ->
+            // Note: If the cache have been closed, the key may not be present anymore,
+            //       so we need to also check the scope is active
+            assert(wasReplaced || !scope.isActive) {
+              "The 'computing' coroutine should always be the one storing " + "the computed value in the cache."
             }
           }
+        }
       }
     }
 
     fun close() {
-      val toClose = map.values.filterIsInstance<AutoCloseable>()
-      val toCancel = map.values.filterIsInstance<Computing>()
+      val toClose = ArrayList<AutoCloseable>()
+      val toCancel = ArrayList<Computing>()
+      for (entry in map.values) {
+        when (entry) {
+          is Result<*> -> (entry.getOrNull() as? AutoCloseable)?.let { toClose.add(it) }
+          is Computing -> toCancel.add(entry)
+        }
+      }
       map.clear()
       closeAll(toClose)
       toCancel.forEach { it.job?.cancel("${this::class.java.simpleName} has been closed") }

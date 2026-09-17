@@ -43,7 +43,10 @@ abstract class TextReportRenderer<T> {
     } catch (e: IOException) {
       throw UncheckedIOException("Failed to write text report to file '${file.absolutePath}'.", e)
     } catch (e: Exception) {
-      throw RuntimeException("Unexpected error while rendering report to '${file.absolutePath}'.", e)
+      throw RuntimeException(
+        "Unexpected error while rendering report to '${file.absolutePath}'.",
+        e,
+      )
     }
   }
 }

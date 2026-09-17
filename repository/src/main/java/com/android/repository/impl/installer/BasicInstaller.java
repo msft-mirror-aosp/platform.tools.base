@@ -28,7 +28,9 @@ import com.android.repository.impl.meta.Archive;
 import com.android.repository.io.FileOpUtils;
 import com.android.repository.util.InstallerUtil;
 import com.android.utils.PathUtils;
+
 import com.google.common.base.Strings;
+
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -68,9 +70,7 @@ class BasicInstaller extends AbstractInstaller {
         Archive archive = getPackage().getArchive();
         assert archive != null;
         try {
-            String path = url.getPath();
-            Path downloadLocation =
-                    installTempPath.resolve(path.substring(path.lastIndexOf('/') + 1));
+            Path downloadLocation = getDownloadLocation(installTempPath, url);
             getDownloader()
                     .downloadFullyWithCaching(
                             url,
@@ -113,6 +113,24 @@ class BasicInstaller extends AbstractInstaller {
                     e);
         }
         return false;
+    }
+
+    @NonNull
+    private static Path getDownloadLocation(@NonNull Path installTempPath, URL url) throws IOException {
+        String rawPath = url.getPath();
+        String leaf = rawPath.substring(rawPath.lastIndexOf('/') + 1);
+        // The leaf is only ever used as a temp filename; strip every
+        // path-significant character so it cannot influence resolve().
+        leaf = leaf.replaceAll("[^A-Za-z0-9._-]", "_");
+        if (leaf.isEmpty() || leaf.equals(".") || leaf.equals("..")) {
+            leaf = "download.tmp";
+        }
+        Path downloadLocation = installTempPath.resolve(leaf);
+        if (!downloadLocation.normalize().getParent().equals(installTempPath.normalize())) {
+            throw new IOException(
+                    "Refusing download location outside temp dir: " + downloadLocation);
+        }
+        return downloadLocation;
     }
 
     @Override
@@ -165,6 +183,15 @@ class BasicInstaller extends AbstractInstaller {
                     String.format(
                             "Installing %1$s in %2$s",
                             getPackage().getDisplayName(), getLocation(progress)));
+
+            // packageRoot is wholly remote-supplied. safeRecursiveOverwrite() is about
+            // to replace <installDir> (including the framework's own .installer/ resume
+            // state) with it; do not let the archive smuggle a forged .installer/ in.
+            try {
+                PathUtils.deleteRecursivelyIfExists(
+                        packageRoot.resolve(InstallerUtil.INSTALLER_DIR_FN));
+            } catch (IOException ignore) {
+            }
 
             // Move the final unzipped archive into place.
             FileOpUtils.safeRecursiveOverwrite(packageRoot, getLocation(progress), progress);
