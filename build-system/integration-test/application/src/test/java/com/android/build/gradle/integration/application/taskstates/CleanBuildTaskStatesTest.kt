@@ -49,6 +49,7 @@ class CleanBuildTaskStatesTest {
               ":app:createDebugCompatibleScreenManifests",
               ":app:desugarDebugFileDependencies",
               ":app:dexBuilderDebug",
+              ":app:extractDebugUnitTestJavaRes",
               ":app:extractDeepLinksDebug",
               ":app:generateDebugResources",
               ":app:generateDebugResValues",
