@@ -20,6 +20,11 @@ task zipLinux(type: Jar) {
     from rootProject.file('../prebuilts/tools/common/aapt/NOTICE',)
     archiveClassifier.set('linux')
 }
+task zipLinuxArm64(type: Jar) {
+    from rootProject.file('../prebuilts/tools/common/aapt/linux_arm64',)
+    from rootProject.file('../prebuilts/tools/common/aapt/NOTICE',)
+    archiveClassifier.set('linux_arm64')
+}
 task zipWindows(type: Jar) {
     from rootProject.file('../prebuilts/tools/common/aapt/windows',)
     from rootProject.file('../prebuilts/tools/common/aapt/NOTICE',)
@@ -33,7 +38,7 @@ project.ext.publishJavaComponent = false
 publishing {
     publications {
         maven(MavenPublication) {
-            artifacts = [zipDarwin, zipLinux, zipWindows]
+            artifacts = [zipDarwin, zipLinux, zipLinuxArm64, zipWindows]
         }
     }
 }

@@ -9,11 +9,13 @@ custom_maven_library(
         "//tools/base/bazel:release": {
             ":darwin.jar": "aapt2-" + RELEASE_AAPT2_VERSION + "-osx.jar",
             ":linux.jar": "aapt2-" + RELEASE_AAPT2_VERSION + "-linux.jar",
+            ":linux_arm64.jar": "aapt2-" + RELEASE_AAPT2_VERSION + "-linux_arm64.jar",
             ":windows.jar": "aapt2-" + RELEASE_AAPT2_VERSION + "-windows.jar",
         },
         "//conditions:default": {
             ":darwin.jar": "aapt2-" + DEV_AAPT2_VERSION + "-osx.jar",
             ":linux.jar": "aapt2-" + DEV_AAPT2_VERSION + "-linux.jar",
+            ":linux_arm64.jar": "aapt2-" + DEV_AAPT2_VERSION + "-linux_arm64.jar",
             ":windows.jar": "aapt2-" + DEV_AAPT2_VERSION + "-windows.jar",
         },
     }),
@@ -65,6 +67,27 @@ merge_jars(
     ],
 )
 
+LINUX_ARM64_FILES = [
+    "//prebuilts/tools/common/aapt:linux_arm64/aapt2",
+    "//prebuilts/tools/common/aapt:linux_arm64/lib64/libc++.so",
+    "//prebuilts/tools/common/aapt:linux_arm64/lib64/libc_musl.so",
+]
+
+java_library(
+    name = "linux_arm64_resources",
+    resource_strip_prefix = "prebuilts/tools/common/aapt/linux_arm64",
+    resources = LINUX_ARM64_FILES,
+)
+
+merge_jars(
+    name = "linux_arm64",
+    out = "linux_arm64.jar",
+    jars = [
+        ":linux_arm64_resources",
+        ":notice",
+    ],
+)
+
 WINDOWS_FILES = [
     "//prebuilts/tools/common/aapt:windows/aapt2.exe",
 ]
@@ -86,7 +109,7 @@ merge_jars(
 
 filegroup(
     name = "aapt2_for_tests",
-    srcs = DARWIN_FILES + LINUX_FILES + WINDOWS_FILES,
+    srcs = DARWIN_FILES + LINUX_FILES + WINDOWS_FILES + LINUX_ARM64_FILES,
     visibility = ["//tools/base:__subpackages__"],
 )
 
@@ -99,6 +122,6 @@ filegroup(
     ]) + [
         "build.gradle",
         "//prebuilts/tools/common/aapt:NOTICE",
-    ] + DARWIN_FILES + LINUX_FILES + WINDOWS_FILES,
+    ] + DARWIN_FILES + LINUX_FILES + LINUX_ARM64_FILES + WINDOWS_FILES,
     visibility = ["//tools/base/build-system:__pkg__"],
 )
