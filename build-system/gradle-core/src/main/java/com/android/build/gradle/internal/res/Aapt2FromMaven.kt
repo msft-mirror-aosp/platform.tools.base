@@ -53,8 +53,9 @@ class Aapt2FromMaven(val aapt2Directory: FileCollection, val version: String) {
     private const val TYPE_EXTRACTED_AAPT2_BINARY = "_internal-android-aapt2-binary"
     private const val PLATFORM_WINDOWS = "windows"
     private const val PLATFORM_LINUX = "linux"
+    private const val PLATFORM_LINUX_ARM64 = "linux_arm64"
     private const val PLATFORM_OSX = "osx"
-    private val ACCEPTED_PLATFORMS = listOf(PLATFORM_WINDOWS, PLATFORM_OSX, PLATFORM_LINUX)
+    private val ACCEPTED_PLATFORMS = listOf(PLATFORM_WINDOWS, PLATFORM_OSX, PLATFORM_LINUX, PLATFORM_LINUX_ARM64)
 
     object DefaultAapt2Version {
 
@@ -106,25 +107,7 @@ class Aapt2FromMaven(val aapt2Directory: FileCollection, val version: String) {
 
       val version = if (overriddenVersion.any()) overriddenVersion else DefaultAapt2Version.VERSION
 
-      val overriddenPlatform: String = stringOption(StringOption.AAPT2_FROM_MAVEN_PLATFORM_OVERRIDE) ?: ""
-      // See tools/base/aapt2 for the classifiers to use.
-      val classifier =
-        if (overriddenPlatform.any()) {
-          if (!ACCEPTED_PLATFORMS.contains(overriddenPlatform)) {
-            error("Unknown platform '$overriddenPlatform'")
-          }
-          // Used when system is a not officially supported platform but can run
-          // other supported platform executables, eg. FreeBSD can use Linux.
-          // The option is experimental and we do not guarantee that the executable
-          // will work correctly.
-          overriddenPlatform
-        } else
-          when (SdkConstants.currentPlatform()) {
-            SdkConstants.PLATFORM_WINDOWS -> PLATFORM_WINDOWS
-            SdkConstants.PLATFORM_DARWIN -> PLATFORM_OSX
-            SdkConstants.PLATFORM_LINUX -> PLATFORM_LINUX
-            else -> error("Unknown platform '${System.getProperty("os.name")}'")
-          }
+      val classifier = getClassifier(stringOption)
 
       val configuration =
         project.configurations.detachedConfiguration(
@@ -145,6 +128,38 @@ class Aapt2FromMaven(val aapt2Directory: FileCollection, val version: String) {
           .artifacts
           .artifactFiles
       return Aapt2FromMaven(aapt2Directory, version)
+    }
+
+    internal fun getClassifier(
+      stringOption: (option: StringOption) -> String?,
+      currentPlatform: Int = SdkConstants.currentPlatform(),
+      osArch: String = System.getProperty("os.arch") ?: "",
+      osName: String = System.getProperty("os.name") ?: "",
+    ): String {
+      val overriddenPlatform: String = stringOption(StringOption.AAPT2_FROM_MAVEN_PLATFORM_OVERRIDE) ?: ""
+      // See tools/base/aapt2 for the classifiers to use.
+      return if (overriddenPlatform.any()) {
+        if (!ACCEPTED_PLATFORMS.contains(overriddenPlatform)) {
+          error("Unknown platform '$overriddenPlatform'")
+        }
+        // Used when system is a not officially supported platform but can run
+        // other supported platform executables, eg. FreeBSD can use Linux.
+        // The option is experimental and we do not guarantee that the executable
+        // will work correctly.
+        overriddenPlatform
+      } else
+        when (currentPlatform) {
+          SdkConstants.PLATFORM_WINDOWS -> PLATFORM_WINDOWS
+          SdkConstants.PLATFORM_DARWIN -> PLATFORM_OSX
+          SdkConstants.PLATFORM_LINUX -> {
+            if (osArch.contains("aarch64", ignoreCase = true) || osArch.contains("arm64", ignoreCase = true)) {
+              PLATFORM_LINUX_ARM64
+            } else {
+              PLATFORM_LINUX
+            }
+          }
+          else -> error("Unknown platform '$osName'")
+        }
     }
 
     abstract class Aapt2Extractor : TransformAction<GenericTransformParameters> {
