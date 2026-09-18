@@ -1,6 +1,6 @@
 #buildifier: disable=module-docstring
-BASE_VERSION = "32.5.0-alpha06"
-BUILD_VERSION = "9.5.0-alpha06"
+BASE_VERSION = "32.5.0-alpha07"
+BUILD_VERSION = "9.5.0-alpha07"
 COMMANDLINE_TOOLS_VERSION = "24.0-alpha01"
 
 # This is used to define
@@ -11,7 +11,7 @@ COMMANDLINE_TOOLS_VERSION = "24.0-alpha01"
 #   the New Project Wizard.
 # See `AgpVersions` and `AgpReleaseBranchProvider` for implementation
 # details.
-LAST_STABLE_BUILD_VERSION = "9.4.0"
+LAST_STABLE_BUILD_VERSION = "9.4.1"
 
 # This is to discriminate between release cycles with or without AGP.
 # Should be "true" on studio-main, and "false" on stabilization
