@@ -16,10 +16,12 @@
 
 package com.android.build.gradle.tasks
 
+import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.fixtures.FakeNoOpAnalyticsService
 import com.android.build.gradle.internal.profile.AnalyticsService
 import com.android.build.gradle.internal.services.getBuildServiceName
 import com.android.build.gradle.internal.utils.setDisallowChanges
+import com.android.builder.core.ComponentTypeImpl
 import com.google.common.truth.Truth.assertThat
 import java.io.File
 import org.gradle.api.Project
@@ -28,6 +30,8 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.`when` as whenever
 
 class GenerateComposePreviewRunfilesTaskTest {
 
@@ -141,5 +145,38 @@ class GenerateComposePreviewRunfilesTaskTest {
 
     val error = org.junit.Assert.assertThrows(IllegalStateException::class.java) { task.taskAction() }
     assertThat(error).isNotNull()
+  }
+
+  @Test
+  fun testComputePackageNameForApplicationVariantUsesApplicationId() {
+    val creationConfig = mock(ComponentCreationConfig::class.java)
+    whenever(creationConfig.componentType).thenReturn(ComponentTypeImpl.BASE_APK)
+    whenever(creationConfig.applicationId).thenReturn(project.provider { "com.example.custom.appid" })
+    whenever(creationConfig.namespace).thenReturn(project.provider { "com.example.libnamespace" })
+
+    val result = GenerateComposePreviewRunfilesTask.computePackageName(creationConfig)
+    assertThat(result.get()).isEqualTo("com.example.custom.appid")
+  }
+
+  @Test
+  fun testComputePackageNameForApplicationVariantFallsBackToNamespaceWhenApplicationIdUnset() {
+    val creationConfig = mock(ComponentCreationConfig::class.java)
+    whenever(creationConfig.componentType).thenReturn(ComponentTypeImpl.BASE_APK)
+    val unsetAppId = project.objects.property(String::class.java)
+    whenever(creationConfig.applicationId).thenReturn(unsetAppId)
+    whenever(creationConfig.namespace).thenReturn(project.provider { "com.example.fallback.namespace" })
+
+    val result = GenerateComposePreviewRunfilesTask.computePackageName(creationConfig)
+    assertThat(result.get()).isEqualTo("com.example.fallback.namespace")
+  }
+
+  @Test
+  fun testComputePackageNameForLibraryVariantUsesNamespace() {
+    val creationConfig = mock(ComponentCreationConfig::class.java)
+    whenever(creationConfig.componentType).thenReturn(ComponentTypeImpl.LIBRARY)
+    whenever(creationConfig.namespace).thenReturn(project.provider { "com.example.library" })
+
+    val result = GenerateComposePreviewRunfilesTask.computePackageName(creationConfig)
+    assertThat(result.get()).isEqualTo("com.example.library")
   }
 }
