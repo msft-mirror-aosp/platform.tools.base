@@ -19,13 +19,13 @@ import com.android.sdklib.AndroidVersion
 import com.android.tools.idea.wizard.template.ModuleTemplateData
 import com.android.tools.idea.wizard.template.RecipeExecutor
 import com.android.tools.idea.wizard.template.impl.activities.aiGlassesActivity.res.values.stringsXml
+import com.android.tools.idea.wizard.template.impl.activities.aiGlassesActivity.res.values.themesXml
 import com.android.tools.idea.wizard.template.impl.activities.aiGlassesActivity.src.app_package.audioInterfaceKt
 import com.android.tools.idea.wizard.template.impl.activities.aiGlassesActivity.src.app_package.glassesActivityKt
 import com.android.tools.idea.wizard.template.impl.activities.aiGlassesActivity.src.app_package.mainActivityKt
 import com.android.tools.idea.wizard.template.impl.activities.common.addAllKotlinDependencies
 import com.android.tools.idea.wizard.template.impl.activities.common.addComposeDependencies
 import com.android.tools.idea.wizard.template.impl.activities.common.generateManifest
-import com.android.tools.idea.wizard.template.impl.activities.composeActivityMaterial3.res.values.themesXml
 import com.android.tools.idea.wizard.template.impl.activities.composeActivityMaterial3.src.app_package.ui.colorKt
 import com.android.tools.idea.wizard.template.impl.activities.composeActivityMaterial3.src.app_package.ui.themeKt
 import com.android.tools.idea.wizard.template.impl.activities.composeActivityMaterial3.src.app_package.ui.typeKt
@@ -39,7 +39,7 @@ fun RecipeExecutor.aiGlassesActivityRecipe(moduleData: ModuleTemplateData, activ
   addDependency(mavenCoordinate = "androidx.activity:activity-compose:+")
 
   // Add Compose dependencies, using the BOM to set versions
-  addComposeDependencies(moduleData, composeBomVersion = "2026.03.01")
+  addComposeDependencies(moduleData, composeBomVersion = "2026.09.00")
 
   addDependency(mavenCoordinate = "androidx.compose.material3:material3")
 
@@ -47,9 +47,9 @@ fun RecipeExecutor.aiGlassesActivityRecipe(moduleData: ModuleTemplateData, activ
 
   addDependency(mavenCoordinate = "androidx.lifecycle:lifecycle-runtime-compose")
 
-  addDependency(mavenCoordinate = "androidx.xr.glimmer:glimmer:1.0.0-alpha15")
-  addDependency(mavenCoordinate = "androidx.xr.glimmer:glimmer-google-fonts:1.0.0-alpha15")
-  addDependency(mavenCoordinate = "androidx.xr.projected:projected:1.0.0-alpha10")
+  addDependency(mavenCoordinate = "androidx.xr.glimmer:glimmer:1.0.0-alpha22")
+  addDependency(mavenCoordinate = "androidx.xr.glimmer:glimmer-google-fonts:1.0.0-alpha22")
+  addDependency(mavenCoordinate = "androidx.xr.projected:projected:1.0.0-alpha13")
 
   val glassesActivityClass = "Glasses$activityClass"
   generateManifest(
