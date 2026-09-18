@@ -17,10 +17,13 @@
 package tests.com.android.tools.debuggers;
 
 import java.util.Collection;
+import java.util.regex.Pattern;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+
 import tests.com.android.tools.debuggers.infra.AgentTestBase;
 
 @RunWith(Parameterized.class)
@@ -42,8 +45,8 @@ public class CoroutineDebuggerAgentTest extends AgentTestBase {
         android.launchActivity(ACTIVITY_CLASS);
 
         android.triggerMethod(ACTIVITY_CLASS, "dumpCoroutines");
-        Assert.assertTrue(
-                android.waitForInput("Coroutine BlockingCoroutine{Active}", RETURN_VALUE_TIMEOUT));
+        Assert.assertNotNull(
+                android.waitForInput(Pattern.compile(".*(?<result>Coroutine \"coroutine#\\d+\":BlockingCoroutine\\{Active}).*"), RETURN_VALUE_TIMEOUT));
     }
 
     @Test

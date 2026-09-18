@@ -1,3 +1,6 @@
+#include <atomic>
+#include <cstdlib>
+
 #include "tools/base/debuggers/native/coroutine/agent/jni_utils.h"
 #include "tools/base/transport/native/jvmti/jvmti_helper.h"
 #include "tools/base/transport/native/utils/log.h"
@@ -6,7 +9,6 @@
 #include "slicer/instrumentation.h"
 #include "slicer/reader.h"
 #include "slicer/writer.h"
-#include "stdlib.h"
 
 /**
  * This agent works as follow:
@@ -42,6 +44,7 @@ const std::string kDebug_debugProbesKt =
     "Lkotlinx/coroutines/debug/internal/DebugProbesKt;";
 const std::string kStdlib_debugProbesKt =
     "Lkotlin/coroutines/jvm/internal/DebugProbesKt;";
+const std::string kCoroutines_debugKt = "Lkotlinx/coroutines/DebugKt;";
 
 const std::string kMeta_inf_version_path =
     "META-INF/kotlinx_coroutines_core.version";
@@ -158,15 +161,16 @@ bool installDebugProbes(JNIEnv* jni, std::string* error_msg) {
  * Instruments DebugProbesKt from kotlin stdlib, to call respective methods in
  * DebugProbesKt from kotlinx-coroutines-core
  */
-InstrumentedClass instrumentClass(jvmtiEnv* jvmti, std::string class_name,
-                                  const unsigned char* class_data,
-                                  int class_data_len, std::string* error_msg) {
+InstrumentedClass instrumentDebugProbesClass(jvmtiEnv* jvmti,
+                                             const unsigned char* class_data,
+                                             int class_data_len,
+                                             std::string* error_msg) {
   InstrumentedClass instrumentedClass{};
 
   dex::Reader reader(class_data, class_data_len);
-  auto class_index = reader.FindClassIndex(class_name.c_str());
+  auto class_index = reader.FindClassIndex(kStdlib_debugProbesKt.c_str());
   if (class_index == dex::kNoIndex) {
-    *error_msg = "Could not find class index for " + class_name;
+    *error_msg = "Could not find class index for " + kStdlib_debugProbesKt;
     instrumentedClass.success = false;
     return instrumentedClass;
   }
@@ -227,7 +231,96 @@ InstrumentedClass instrumentClass(jvmtiEnv* jvmti, std::string class_name,
 
   if (new_image == nullptr) {
     instrumentedClass.success = false;
-    *error_msg = "Failed to create new image for class " + class_name;
+    *error_msg =
+        "Failed to create new image for class " + kStdlib_debugProbesKt;
+    return instrumentedClass;
+  }
+
+  instrumentedClass.new_class_data = new_image;
+  instrumentedClass.new_class_data_len = new_image_size;
+  instrumentedClass.success = true;
+
+  return instrumentedClass;
+}
+
+/**
+ * Transformation that replaces the body of a method to simply return true.
+ */
+class ReturnTrueTransformation : public slicer::Transformation {
+ public:
+  bool Apply(lir::CodeIr* code_ir) override {
+    auto ir_method = code_ir->ir_method;
+    if (ir_method->code == nullptr) {
+      return false;
+    }
+
+    // Clear existing instructions
+    while (!code_ir->instructions.empty()) {
+      code_ir->instructions.Remove(*code_ir->instructions.begin());
+    }
+
+    // Ensure we have at least 1 register for the return value
+    ir_method->code->registers =
+        std::max<dex::u2>(ir_method->code->registers, 1);
+    ir_method->code->outs_count = 0;
+
+    // const/4 v0, #int 1
+    auto const_op = code_ir->Alloc<lir::Bytecode>();
+    const_op->opcode = dex::OP_CONST_4;
+    const_op->operands.push_back(code_ir->Alloc<lir::VReg>(0));
+    const_op->operands.push_back(code_ir->Alloc<lir::Const32>(1));
+    code_ir->instructions.push_back(const_op);
+
+    // return v0
+    auto ret_op = code_ir->Alloc<lir::Bytecode>();
+    ret_op->opcode = dex::OP_RETURN;
+    ret_op->operands.push_back(code_ir->Alloc<lir::VReg>(0));
+    code_ir->instructions.push_back(ret_op);
+
+    return true;
+  }
+};
+
+/**
+ * Instruments kotlinx/coroutines/DebugKt to make getDEBUG() return true.
+ */
+InstrumentedClass instrumentDebugKtClass(jvmtiEnv* jvmti,
+                                         const unsigned char* class_data,
+                                         int class_data_len,
+                                         std::string* error_msg) {
+  InstrumentedClass instrumentedClass{};
+
+  dex::Reader reader(class_data, class_data_len);
+  auto class_index = reader.FindClassIndex(kCoroutines_debugKt.c_str());
+  if (class_index == dex::kNoIndex) {
+    *error_msg = "Could not find class index for " + kCoroutines_debugKt;
+    instrumentedClass.success = false;
+    return instrumentedClass;
+  }
+
+  reader.CreateClassIr(class_index);
+  auto dex_ir = reader.GetIr();
+
+  slicer::MethodInstrumenter mi(dex_ir);
+  mi.AddTransformation<ReturnTrueTransformation>();
+
+  if (!mi.InstrumentMethod(
+          ir::MethodId(kCoroutines_debugKt.c_str(), "getDEBUG", "()Z"))) {
+    *error_msg = "Error instrumenting DebugKt.getDEBUG()";
+    instrumentedClass.success = false;
+    return instrumentedClass;
+  }
+
+  size_t new_image_size = 0;
+  dex::u1* new_image = nullptr;
+  dex::Writer writer(dex_ir);
+
+  JvmtiAllocator allocator(jvmti);
+  new_image = writer.CreateImage(&allocator, &new_image_size);
+
+  if (new_image == nullptr) {
+    instrumentedClass.success = false;
+    *error_msg = "Failed to create new image for class " + kCoroutines_debugKt;
     return instrumentedClass;
   }
 
@@ -540,22 +633,28 @@ void classFileLoadHook_CleanUp(jvmtiEnv* jvmti, JNIEnv* jni,
                                  JVMTI_EVENT_CLASS_FILE_LOAD_HOOK);
 }
 
-static void JNICALL
-ClassFileLoadHook(jvmtiEnv* jvmti, JNIEnv* jni, jclass class_being_redefined,
-                  jobject loader, const char* name, jobject protection_domain,
-                  jint class_data_len, const unsigned char* class_data,
-                  jint* new_class_data_len, unsigned char** new_class_data) {
-  // do nothing if class is not DebugProbesKt
-  const std::string class_name = "L" + std::string(name) + ";";
-  if (class_name != "Lkotlin/coroutines/jvm/internal/DebugProbesKt;") {
-    return;
+static InstrumentedClass HandleDebugKtClass(jvmtiEnv* jvmti, const char* name,
+                                            jint class_data_len,
+                                            const unsigned char* class_data) {
+  std::string error_msg;
+  InstrumentedClass instrumentedClass =
+      instrumentDebugKtClass(jvmti, class_data, class_data_len, &error_msg);
+  if (!instrumentedClass.success) {
+    profiler::Log::E(profiler::Log::Tag::COROUTINE_DEBUGGER,
+                     "Instrumentation of %s failed: %s", name,
+                     error_msg.c_str());
   }
+  return instrumentedClass;
+}
 
+static InstrumentedClass HandleDebugProbesClass(
+    jvmtiEnv* jvmti, JNIEnv* jni, jobject loader, jint class_data_len,
+    const unsigned char* class_data) {
   // check if coroutines version is supported
   std::string error_msg;
   if (!isUsingSupportedCoroutinesVersion(jni, loader, &error_msg)) {
     classFileLoadHook_CleanUp(jvmti, jni, error_msg);
-    return;
+    return InstrumentedClass{.success = false};
   }
 
   // set AgentInstallationType#isInstalledStatically to true
@@ -563,14 +662,14 @@ ClassFileLoadHook(jvmtiEnv* jvmti, JNIEnv* jni, jclass class_being_redefined,
       setAgentInstallationType(jni, &error_msg);
   if (!setAgentInstallationTypeSuccessful) {
     classFileLoadHook_CleanUp(jvmti, jni, error_msg);
-    return;
+    return InstrumentedClass{.success = false};
   }
 
   // call DebugProbesImpl#install
   bool installed = installDebugProbes(jni, &error_msg);
   if (!installed) {
     classFileLoadHook_CleanUp(jvmti, jni, error_msg);
-    return;
+    return InstrumentedClass{.success = false};
   }
 
   // check if kotlinx/coroutines/debug/internal/DebugProbesKt is loadable
@@ -581,29 +680,59 @@ ClassFileLoadHook(jvmtiEnv* jvmti, JNIEnv* jni, jclass class_being_redefined,
         "Couldn't find class kotlinx/coroutines/debug/internal/DebugProbesKt";
     // clear exception thrown by failed FindClass
     classFileLoadHook_CleanUp(jvmti, jni, error_msg);
-    return;
+    return InstrumentedClass{.success = false};
   }
 
   // instrument kotlin/coroutines/jvm/internal/DebugProbesKt to call methods in
   // kotlinx/coroutines/debug/internal/DebugProbesKt
-  InstrumentedClass instrumentedClass = instrumentClass(
-      jvmti, class_name, class_data, class_data_len, &error_msg);
+  InstrumentedClass instrumentedClass =
+      instrumentDebugProbesClass(jvmti, class_data, class_data_len, &error_msg);
   if (!instrumentedClass.success) {
     error_msg =
         "Instrumentation of kotlin/coroutines/jvm/internal/DebugProbesKt "
         "failed. " +
         error_msg;
     classFileLoadHook_CleanUp(jvmti, jni, error_msg);
+  }
+  return instrumentedClass;
+}
+
+std::atomic<bool> debugClassHandled = false;
+std::atomic<bool> debugProbesClassHandled = false;
+
+static void JNICALL
+ClassFileLoadHook(jvmtiEnv* jvmti, JNIEnv* jni,
+                  [[maybe_unused]] jclass class_being_redefined, jobject loader,
+                  const char* name, [[maybe_unused]] jobject protection_domain,
+                  jint class_data_len, const unsigned char* class_data,
+                  jint* new_class_data_len, unsigned char** new_class_data) {
+  if (name == nullptr) {
     return;
   }
 
-  *new_class_data_len = instrumentedClass.new_class_data_len;
-  *new_class_data = instrumentedClass.new_class_data;
+  const std::string class_name = "L" + std::string(name) + ";";
+  InstrumentedClass instrumentedClass{.success = false};
 
-  // DebugProbesKt is the only class we need to transform, so we can disable
-  // events
-  profiler::SetEventNotification(jvmti, JVMTI_DISABLE,
-                                 JVMTI_EVENT_CLASS_FILE_LOAD_HOOK);
+  if (class_name == kCoroutines_debugKt) {
+    instrumentedClass =
+        HandleDebugKtClass(jvmti, name, class_data_len, class_data);
+    debugClassHandled = true;
+  } else if (class_name == kStdlib_debugProbesKt) {
+    instrumentedClass =
+        HandleDebugProbesClass(jvmti, jni, loader, class_data_len, class_data);
+    debugProbesClassHandled = true;
+  }
+  if (instrumentedClass.success) {
+    profiler::Log::I(profiler::Log::Tag::COROUTINE_DEBUGGER,
+                     "Instrumentation of %s succeeded", name);
+    *new_class_data_len = instrumentedClass.new_class_data_len;
+    *new_class_data = instrumentedClass.new_class_data;
+  }
+
+  if (debugClassHandled && debugProbesClassHandled) {
+    profiler::SetEventNotification(jvmti, JVMTI_DISABLE,
+                                   JVMTI_EVENT_CLASS_FILE_LOAD_HOOK);
+  }
 }
 
 extern "C" JNIEXPORT jint JNICALL Agent_OnAttach(JavaVM* vm, char* options,
