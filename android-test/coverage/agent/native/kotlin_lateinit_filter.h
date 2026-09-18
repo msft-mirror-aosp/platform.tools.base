@@ -5,6 +5,12 @@
 
 namespace coverage {
 
+/**
+ * Filter for Kotlin compiler-generated lateinit property uninitialized checks.
+ *
+ * Filters out synthetic conditional null-safety branches
+ * used to verify if a lateinit property has been initialized before access.
+ */
 class KotlinLateinitFilter : public IFilter {
  public:
   bool FilterBranch(ir::EncodedMethod* ir_method,

@@ -5,6 +5,13 @@
 
 namespace coverage {
 
+/**
+ * Filter for Jetpack Compose compiler-generated branch structures.
+ *
+ * Demotes synthetic branches using boundary range-wiping,
+ * endRestartGroup branch suppressions, and isTraceInProgress conditional
+ * branch suppressions.
+ */
 class KotlinComposeFilter : public IFilter {
  public:
   bool FilterBranch(ir::EncodedMethod* ir_method,
