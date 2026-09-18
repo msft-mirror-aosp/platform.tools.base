@@ -116,8 +116,6 @@ public abstract class AbstractPackageOperation implements PackageOperation {
      */
     private Properties mInstallProperties;
 
-    private PackageOperation mFallbackOperation;
-
     private final Object mStateChangeLock = new Object();
 
     private enum StartTaskStatus {STARTED, ALREADY_DONE, FAILED}
@@ -560,18 +558,6 @@ public abstract class AbstractPackageOperation implements PackageOperation {
             return false;
         }
         return true;
-    }
-
-
-    @Override
-    @Nullable
-    public PackageOperation getFallbackOperation() {
-        return mFallbackOperation;
-    }
-
-    @Override
-    public void setFallbackOperation(@Nullable PackageOperation mFallbackOperation) {
-        this.mFallbackOperation = mFallbackOperation;
     }
 
     private final Object mProgressLock = new Object();

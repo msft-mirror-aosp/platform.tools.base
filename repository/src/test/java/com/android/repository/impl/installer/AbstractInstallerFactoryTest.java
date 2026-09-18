@@ -32,7 +32,6 @@ import com.android.repository.api.PackageOperation;
 import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.RemotePackage;
 import com.android.repository.api.RepoManager;
-import com.android.repository.api.RepoPackage;
 import com.android.repository.api.Uninstaller;
 import com.android.repository.impl.meta.RepositoryPackages;
 import com.android.repository.testframework.FakePackage;
@@ -50,92 +49,6 @@ import org.mockito.Mockito;
  * Tests for {@link AbstractInstallerFactory}
  */
 public class AbstractInstallerFactoryTest {
-
-    @Test
-    public void fallbackFactory() {
-        InstallerFactory testFactory =
-                new TestInstallerFactory() {
-                    @Override
-                    protected boolean canHandlePackage(
-                            @NonNull RepoPackage pack, @NonNull RepoManager manager) {
-                        return false;
-                    }
-                };
-        testFactory.setFallbackFactory(
-                new TestInstallerFactory() {
-                    @NonNull
-                    @Override
-                    protected Installer doCreateInstaller(
-                            @NonNull RemotePackage p,
-                            @NonNull RepoManager mgr,
-                            @NonNull Downloader downloader) {
-                        Installer installer = Mockito.mock(Installer.class);
-                        Mockito.when(installer.getName()).thenReturn("mock installer");
-                        return installer;
-                    }
-                });
-
-        assertEquals(
-                "mock installer",
-                testFactory
-                        .createInstaller(
-                                Mockito.mock(RemotePackage.class),
-                                Mockito.mock(RepoManager.class),
-                                Mockito.mock(Downloader.class))
-                        .getName());
-    }
-
-    @Test
-    public void installerFallback() {
-        InstallerFactory testFactory =
-                new TestInstallerFactory() {
-                    @NonNull
-                    @Override
-                    protected Installer doCreateInstaller(
-                            @NonNull RemotePackage p,
-                            @NonNull RepoManager mgr,
-                            @NonNull Downloader downloader) {
-                        return new AbstractInstaller(p, mgr, downloader) {
-                            @Override
-                            protected boolean doPrepare(
-                                    @NonNull Path installTempPath,
-                                    @NonNull ProgressIndicator progress) {
-                                return false;
-                            }
-
-                            @Override
-                            protected boolean doComplete(
-                                    @Nullable Path installTemp,
-                                    @NonNull ProgressIndicator progress) {
-                                return false;
-                            }
-                        };
-                    }
-                };
-
-        InstallerFactory fallbackFactory =
-                new TestInstallerFactory() {
-                    @NonNull
-                    @Override
-                    protected Installer doCreateInstaller(
-                            @NonNull RemotePackage p,
-                            @NonNull RepoManager mgr,
-                            @NonNull Downloader downloader) {
-                        Installer installer = Mockito.mock(Installer.class);
-                        Mockito.when(installer.getName()).thenReturn("fallback installer");
-                        return installer;
-                    }
-                };
-
-        testFactory.setFallbackFactory(fallbackFactory);
-
-        Installer installer =
-                testFactory.createInstaller(
-                        Mockito.mock(RemotePackage.class),
-                        Mockito.mock(RepoManager.class),
-                        Mockito.mock(Downloader.class));
-        assertEquals("fallback installer", installer.getFallbackOperation().getName());
-    }
 
     @Test
     public void installerListeners() {
@@ -195,34 +108,6 @@ public class AbstractInstallerFactoryTest {
 
         installer.get().complete(progress);
         assertTrue(didComplete.get());
-    }
-
-    @Test
-    public void addInstallerListenersToFallback() {
-
-        InstallerFactory testFactory = new TestInstallerFactory();
-
-        InstallerFactory mockFallbackFactory = Mockito.mock(InstallerFactory.class);
-        InstallerFactory.StatusChangeListenerFactory mockListenerFactory = Mockito.mock(InstallerFactory.StatusChangeListenerFactory.class);
-
-        testFactory.setFallbackFactory(mockFallbackFactory);
-        testFactory.setListenerFactory(mockListenerFactory);
-
-        Mockito.verify(mockFallbackFactory).setListenerFactory(mockListenerFactory);
-    }
-
-    @Test
-    public void addInstallerListenersToFallbackWhenSettingFallback() {
-
-        InstallerFactory testFactory = new TestInstallerFactory();
-
-        InstallerFactory mockFallbackFactory = Mockito.mock(InstallerFactory.class);
-        InstallerFactory.StatusChangeListenerFactory mockListenerFactory = Mockito.mock(InstallerFactory.StatusChangeListenerFactory.class);
-
-        testFactory.setListenerFactory(mockListenerFactory);
-        testFactory.setFallbackFactory(mockFallbackFactory);
-
-        Mockito.verify(mockFallbackFactory).setListenerFactory(mockListenerFactory);
     }
 
     private static class TestInstallerFactory extends AbstractInstallerFactory {

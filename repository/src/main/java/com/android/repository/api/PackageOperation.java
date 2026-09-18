@@ -128,19 +128,4 @@ public interface PackageOperation {
      */
     @NonNull
     String getName();
-
-    /**
-     * If this operation fails, it might be possible to try the install a different way.
-     * Specifically, if we have a
-     * {@link InstallerFactory#setFallbackFactory(InstallerFactory) fallback factory}, this could be
-     * an operation created by that factory.
-     */
-    @Nullable
-    PackageOperation getFallbackOperation();
-
-    /**
-     * Sets the operation used to retry if this operation fails.
-     * @see #getFallbackOperation()
-     */
-    void setFallbackOperation(@Nullable PackageOperation fallback);
 }
