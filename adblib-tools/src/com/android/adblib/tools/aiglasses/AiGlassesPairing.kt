@@ -132,6 +132,9 @@ class AiGlassesPairing(val session: AdbSession) {
     return checkAppInForeground(COMPANION_PKG, SETUP_ACTIVITY_NAME)
   }
 
+  private suspend fun ConnectedDevice.checkCdmOrSetupActivityInForeground(): Boolean =
+    checkSetupActivityInForeground() || checkAppInForeground(CDM_PKG)
+
   private suspend fun ConnectedDevice.checkAppInForeground(pkg: String, activity: String? = null): Boolean {
     val commands = listOf("dumpsys window displays", "dumpsys activity activities")
     val focusKeywords =
@@ -368,6 +371,19 @@ class AiGlassesPairing(val session: AdbSession) {
   }
 
   /**
+   * Ensures location services and Bluetooth are enabled on the device.
+   *
+   * @throws IOException if a communication error occurs with the device.
+   */
+  suspend fun ConnectedDevice.ensureBluetoothAndLocationEnabled() {
+    runCatchingIoException(CMD_ENABLE_LOCATION) { shell.executeAsText(it) }
+    if (!isBluetoothEnabled()) {
+      logger.info { "Bluetooth is disabled, enabling it..." }
+      runCatchingIoException(CMD_ENABLE_BLUETOOTH) { shell.executeAsText(it) }
+    }
+  }
+
+  /**
    * Initiates the pairing process with the glasses and emits the pairing state updates.
    *
    * @param glassesBluetoothAddress The Bluetooth address of the glasses to pair with.
@@ -381,13 +397,7 @@ class AiGlassesPairing(val session: AdbSession) {
     grantPermission(COMPANION_PKG, "android.permission.BLUETOOTH_CONNECT")
     grantPermission(CORE_PKG, "android.permission.ACCESS_FINE_LOCATION")
 
-    // Ensure location services are enabled on the phone emulator
-    runCatchingIoException(CMD_ENABLE_LOCATION) { shell.executeAsText(it) }
-
-    if (!isBluetoothEnabled()) {
-      logger.info { "Bluetooth is disabled, enabling it..." }
-      runCatchingIoException(CMD_ENABLE_BLUETOOTH) { shell.executeAsText(it) }
-    }
+    ensureBluetoothAndLocationEnabled()
 
     launchCompanionApp()
 
@@ -444,9 +454,13 @@ class AiGlassesPairing(val session: AdbSession) {
           associatingCount++
           idleCount = 0
           // TODO: Remove this fallback once http://b/505111138 is fixed
-          if (associatingCount >= 2 && checkSetupActivityInForeground()) {
+          if (associatingCount >= 2 && associatingCount % 2 == 0 && checkCdmOrSetupActivityInForeground()) {
             sendFocusNavigationTap()
-            associatingCount = 0
+          }
+          if (associatingCount >= MAX_ASSOCIATING_POLLS) {
+            logger.warn("Exceeded max UI_CDM_ASSOCIATING polls ($MAX_ASSOCIATING_POLLS)")
+            emit("UI_CDM_ASSOCIATION_FAILED")
+            return@flow
           }
           delay(pollingInterval)
         }
@@ -485,6 +499,7 @@ class AiGlassesPairing(val session: AdbSession) {
     private const val GLASSES_PKG = "com.google.android.glasses"
     private const val COMPANION_PKG = "com.google.android.glasses.companion"
     private const val CORE_PKG = "com.google.android.glasses.core"
+    private const val CDM_PKG = "com.android.companiondevicemanager"
 
     private const val CMD_ENABLE_LOCATION = "cmd location set-location-enabled true"
     private const val CMD_GET_BLUETOOTH_STATE = "settings get global bluetooth_on"
@@ -502,6 +517,7 @@ class AiGlassesPairing(val session: AdbSession) {
     // Time to wait between polling attempts
     private var pollingInterval = 2.seconds
     private const val MAX_IDLE_POLLS = 15
+    private const val MAX_ASSOCIATING_POLLS = 15
 
     // Max time to retry polling if it fails (returns null) continuously
     private var pollingTimeout = 30.seconds
