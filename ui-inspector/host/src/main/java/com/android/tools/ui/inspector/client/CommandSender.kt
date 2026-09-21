@@ -214,7 +214,7 @@ class CommandSender private constructor(private val socket: Socket, private val 
         error("Agent Command Failed: ${response.errorMessage}")
       }
 
-      val responseEnvelope = response.inspectorMessage
+      val responseEnvelope = response.requireVariant(Response.SpecializedCase.INSPECTOR_MESSAGE).inspectorMessage
       if (responseEnvelope.inspectorId != inspectorId) {
         error("Received response for wrong inspector. Expected: $inspectorId, Got: ${responseEnvelope.inspectorId}")
       }
@@ -253,4 +253,13 @@ class CommandSender private constructor(private val socket: Socket, private val 
     }
     failAllPendingCommands(disconnectException)
   }
+}
+
+/**
+ * Returns this response when it carries [expected]. A successful answer of another type is a failure: protobuf serves a default message for
+ * an unset variant, so reading the wrong one silently yields empty data.
+ */
+internal fun Response.requireVariant(expected: Response.SpecializedCase): Response {
+  check(specializedCase == expected) { "Unexpected response from the UI Inspector agent: expected $expected, got $specializedCase" }
+  return this
 }

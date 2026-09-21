@@ -48,6 +48,7 @@ internal suspend fun createViewInspector(commandSender: CommandSender, dexPath: 
   if (createResponse.status != UiInspectorProtocol.Response.Status.SUCCESS) {
     throw IllegalStateException("Failed to create inspector: ${createResponse.errorMessage}")
   }
+  createResponse.requireVariant(UiInspectorProtocol.Response.SpecializedCase.CREATE_INSPECTOR)
 }
 
 /** Sends a dump command to the view inspector and returns the parsed UI snapshot. */

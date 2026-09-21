@@ -345,29 +345,19 @@ private suspend fun fetchAndMergeComposeTrees(
 
     val composeResult =
       queryComposeTree(commandSender = commandSender, rootViewId = viewRoot.id, extractAllParameters = fetchComposeDetails)
-    if (composeResult != null) {
-      val stringsMap = composeResult.stringsList.associate { it.id to it.str }
-      val roots = composeResult.rootsList
+    val stringsMap = composeResult.stringsList.associate { it.id to it.str }
+    val roots = composeResult.rootsList
 
-      val composeParameters =
-        if (fetchComposeDetails) {
-          // An explicit --include facet is a demand: if the details it needs cannot be fetched, fail loudly instead of
-          // silently emitting a dump that is missing exactly what was asked for.
-          queryComposeParameters(commandSender, viewRoot.id)
-            ?: throw IllegalStateException("The requested attributes/semantics facets could not be fetched from the Compose inspector.")
-        } else {
-          null
-        }
+    val composeParameters = if (fetchComposeDetails) queryComposeParameters(commandSender, viewRoot.id) else null
 
-      mergeComposeRoots(
-        viewRoot = viewRoot,
-        composeRoots = roots,
-        stringTable = stringsMap,
-        parameters = composeParameters,
-        includeParameters = includeParameters,
-        includeSemantics = includeSemantics,
-      )
-    }
+    mergeComposeRoots(
+      viewRoot = viewRoot,
+      composeRoots = roots,
+      stringTable = stringsMap,
+      parameters = composeParameters,
+      includeParameters = includeParameters,
+      includeSemantics = includeSemantics,
+    )
   }
 }
 

@@ -1731,6 +1731,48 @@ class InjectionManagerTest {
   }
 
   @Test
+  fun testRunWithConnectedInspectors_wrongAnswerOnReconnectIsNotRetried() = runBlocking {
+    configureSuccessfulInjection()
+    // The reused server answers the first command with a success of the wrong type: it is alive, so the failure must propagate instead
+    // of triggering a full injection.
+    val server = ServerSocket(0)
+    val serverThread = thread {
+      runCatching {
+        server.accept().use { socket ->
+          val create = UiInspectorProtocol.Command.parseFrom(FramingProtocol.readMessage(socket.getInputStream()))
+          writeAgentResponse(
+            socket.getOutputStream(),
+            UiInspectorProtocol.Response.newBuilder()
+              .setCommandId(create.commandId)
+              .setStatus(UiInspectorProtocol.Response.Status.SUCCESS)
+              .setGetVersion(UiInspectorProtocol.GetVersionResponse.getDefaultInstance())
+              .build(),
+          )
+        }
+      }
+    }
+    testHostServices.queuedForwardPorts.add(server.localPort.toString())
+
+    var thrown: Exception? = null
+    try {
+      runWithConnectedInspectorsForTest { _, _ -> fail("The block must not run after a wrong answer") }
+      fail("Expected the wrong answer to propagate")
+    } catch (e: Exception) {
+      thrown = e
+    }
+    serverThread.join(5000)
+    server.close()
+
+    assertThat(thrown).isInstanceOf(IllegalStateException::class.java)
+    assertThat(thrown!!.message).contains("expected CREATE_INSPECTOR, got GET_VERSION")
+    assertThat(testHostServices.recordedForwardCalls).hasSize(1)
+    assertThat(
+        testDeviceServices.recordedSyncSends.map { it.remoteFilePath }.filter { path -> baseStagingPaths().any { path.startsWith(it) } }
+      )
+      .isEmpty()
+  }
+
+  @Test
   fun testRunWithConnectedInspectors_freshlyInjectedServerFailure_isNotRetried() = runBlocking {
     configureSuccessfulInjection()
     // The probe finds no socket, so the first attempt performs the full injection; its post-attach wait then sees the socket. The forward

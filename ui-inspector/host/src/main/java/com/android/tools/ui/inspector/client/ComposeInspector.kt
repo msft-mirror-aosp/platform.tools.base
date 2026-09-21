@@ -24,11 +24,16 @@ import com.android.tools.ui.inspector.proto.parseTreeResponse
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol
 import com.google.common.annotations.VisibleForTesting
 import java.io.File
+import java.io.IOException
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol
 
 private const val COMPOSE_UI_GROUP_ID = "androidx.compose.ui"
 
-/** Creates the Compose Inspector on the agent if Jetpack Compose is detected in the target application process. */
+/**
+ * Creates the Compose Inspector on the agent if Jetpack Compose is detected in the target application process. Returns false when the app
+ * does not use Compose. When it does, the inspector is created or the dump fails: a Compose app dumped without its Compose tree would be
+ * silently incomplete, so a jar that cannot be resolved or an agent that refuses to load it fails the dump.
+ */
 internal suspend fun createComposeInspector(
   commandSender: CommandSender,
   injectionManager: InjectionManager,
@@ -39,14 +44,14 @@ internal suspend fun createComposeInspector(
 ): Boolean {
   val composeVersion = getComposeVersion(commandSender) ?: return false
 
-  return try {
-    val jarFile = resolveJar(composeVersion)
-    launchComposeInspector(commandSender, injectionManager, jarFile)
-    true
-  } catch (e: Exception) {
-    System.err.println("Failed to resolve or deploy Compose Inspector: ${e.message}")
-    false
-  }
+  val jarFile =
+    try {
+      resolveJar(composeVersion)
+    } catch (e: IOException) {
+      throw IOException("Could not resolve the Compose inspector for Compose $composeVersion: ${e.message}", e)
+    }
+  launchComposeInspector(commandSender, injectionManager, jarFile)
+  return true
 }
 
 /** Queries the Compose inspector on the agent for the Composable tree of a specific root view. */
@@ -54,7 +59,7 @@ internal suspend fun queryComposeTree(
   commandSender: CommandSender,
   rootViewId: Long,
   extractAllParameters: Boolean,
-): LayoutInspectorComposeProtocol.GetComposablesResponse? {
+): LayoutInspectorComposeProtocol.GetComposablesResponse {
   val getComposablesCmd =
     LayoutInspectorComposeProtocol.Command.newBuilder()
       .setGetComposablesCommand(
@@ -75,19 +80,16 @@ internal suspend fun queryComposeTree(
   val responsePayload = commandSender.sendInspectorCommand(ProtocolConstants.COMPOSE_INSPECTOR_ID, getComposablesCmd.toByteArray())
   val composeResponse = LayoutInspectorComposeProtocol.Response.parser().parseTreeResponse(responsePayload)
 
-  if (composeResponse.specializedCase != LayoutInspectorComposeProtocol.Response.SpecializedCase.GET_COMPOSABLES_RESPONSE) {
-    System.err.println("Warning: Unexpected Compose Response: ${composeResponse.specializedCase}")
-    return null
-  }
-
-  return composeResponse.getComposablesResponse
+  return composeResponse
+    .requireVariant(LayoutInspectorComposeProtocol.Response.SpecializedCase.GET_COMPOSABLES_RESPONSE)
+    .getComposablesResponse
 }
 
 /** Queries the Compose inspector on the agent for the parameters of all active Composable views in a root layout tree. */
 internal suspend fun queryComposeParameters(
   commandSender: CommandSender,
   rootViewId: Long,
-): LayoutInspectorComposeProtocol.GetAllParametersResponse? {
+): LayoutInspectorComposeProtocol.GetAllParametersResponse {
   val getAllParamsCmd =
     LayoutInspectorComposeProtocol.Command.newBuilder()
       .setGetAllParametersCommand(
@@ -107,15 +109,23 @@ internal suspend fun queryComposeParameters(
   val responsePayload = commandSender.sendInspectorCommand(ProtocolConstants.COMPOSE_INSPECTOR_ID, getAllParamsCmd.toByteArray())
   val composeResponse = LayoutInspectorComposeProtocol.Response.parser().parseTreeResponse(responsePayload)
 
-  if (composeResponse.specializedCase != LayoutInspectorComposeProtocol.Response.SpecializedCase.GET_ALL_PARAMETERS_RESPONSE) {
-    System.err.println("Warning: Unexpected Compose Response: ${composeResponse.specializedCase}")
-    return null
-  }
-
-  return composeResponse.getAllParametersResponse
+  return composeResponse
+    .requireVariant(LayoutInspectorComposeProtocol.Response.SpecializedCase.GET_ALL_PARAMETERS_RESPONSE)
+    .getAllParametersResponse
 }
 
-/** Queries the target application agent for its installed Jetpack Compose version. */
+/**
+ * Returns this response when it carries [expected]. A response of another type is a failure: protobuf serves a default message for an unset
+ * variant, so reading the wrong one silently yields empty data.
+ */
+private fun LayoutInspectorComposeProtocol.Response.requireVariant(
+  expected: LayoutInspectorComposeProtocol.Response.SpecializedCase
+): LayoutInspectorComposeProtocol.Response {
+  check(specializedCase == expected) { "Unexpected Compose inspector response: expected $expected, got $specializedCase" }
+  return this
+}
+
+/** Queries the target application agent for its installed Jetpack Compose version; null when the app does not use Compose. */
 private suspend fun getComposeVersion(commandSender: CommandSender): String? {
   val getVersionCommand =
     UiInspectorProtocol.Command.newBuilder()
@@ -123,12 +133,16 @@ private suspend fun getComposeVersion(commandSender: CommandSender): String? {
       .build()
 
   val versionResponse = commandSender.sendMessage(getVersionCommand)
-  if (versionResponse.status != UiInspectorProtocol.Response.Status.SUCCESS) {
-    System.err.println("Failed to query Compose version: ${versionResponse.errorMessage}")
-    return null
+  // Only a successful answer without a Compose entry means "no Compose": a failed query says nothing about the app.
+  check(versionResponse.status == UiInspectorProtocol.Response.Status.SUCCESS) {
+    "Failed to query the Compose version: ${versionResponse.errorMessage}"
   }
 
-  val composeVersion = versionResponse.getVersion.versionsMap[ProtocolConstants.COMPOSE_UI_LIBRARY_ID]
+  val composeVersion =
+    versionResponse
+      .requireVariant(UiInspectorProtocol.Response.SpecializedCase.GET_VERSION)
+      .getVersion
+      .versionsMap[ProtocolConstants.COMPOSE_UI_LIBRARY_ID]
   if (composeVersion == null) {
     System.err.println("Compose not detected in target application.")
     return null
@@ -153,11 +167,11 @@ private suspend fun launchComposeInspector(commandSender: CommandSender, injecti
       .build()
 
   val createResponse = commandSender.sendMessage(createCommand)
-  if (createResponse.status != UiInspectorProtocol.Response.Status.SUCCESS) {
-    System.err.println("Warning: Failed to load Compose Inspector: ${createResponse.errorMessage}")
-  } else {
-    System.err.println("Compose Inspector successfully loaded on agent!")
+  check(createResponse.status == UiInspectorProtocol.Response.Status.SUCCESS) {
+    "The agent could not load the Compose inspector: ${createResponse.errorMessage}"
   }
+  createResponse.requireVariant(UiInspectorProtocol.Response.SpecializedCase.CREATE_INSPECTOR)
+  System.err.println("Compose Inspector successfully loaded on agent!")
 }
 
 /**
