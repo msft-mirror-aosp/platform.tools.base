@@ -22,28 +22,25 @@ import org.junit.Test
 class IncludeFacetTest {
 
   @Test
-  fun testExpandIncludeFacetsEmpty() {
-    assertThat(expandIncludeFacets(emptyList())).isEmpty()
+  fun testRequestedFacetsEmpty() {
+    assertThat(requestedFacets(emptyList())).isEmpty()
   }
 
   @Test
-  fun testExpandIncludeFacetsAllBecomesConcreteFacets() {
-    val expanded = expandIncludeFacets(listOf(IncludeFacet.ALL))
-    assertThat(expanded)
-      .containsExactly(IncludeFacet.ATTRIBUTES, IncludeFacet.SEMANTICS, IncludeFacet.RESOLUTION_STACK, IncludeFacet.SYSTEM_COMPOSABLES)
+  fun testRequestedFacetsAllStandsForEveryFacet() {
+    assertThat(requestedFacets(listOf(IncludeFacet.ALL))).containsExactlyElementsIn(Facet.entries)
   }
 
   @Test
-  fun testExpandIncludeFacetsResolutionStackImpliesAttributes() {
-    assertThat(expandIncludeFacets(listOf(IncludeFacet.RESOLUTION_STACK)))
-      .containsExactly(IncludeFacet.RESOLUTION_STACK, IncludeFacet.ATTRIBUTES)
+  fun testRequestedFacetsMapsEachName() {
+    assertThat(requestedFacets(listOf(IncludeFacet.RESOLUTION_STACK, IncludeFacet.SEMANTICS)))
+      .containsExactly(Facet.RESOLUTION_STACK, Facet.SEMANTICS)
   }
 
   @Test
-  fun testExpandIncludeFacetsIsIdempotentForAllPlusDuplicates() {
-    val expanded = expandIncludeFacets(listOf(IncludeFacet.ALL, IncludeFacet.SEMANTICS, IncludeFacet.SEMANTICS))
-    assertThat(expanded)
-      .containsExactly(IncludeFacet.ATTRIBUTES, IncludeFacet.SEMANTICS, IncludeFacet.RESOLUTION_STACK, IncludeFacet.SYSTEM_COMPOSABLES)
+  fun testRequestedFacetsIgnoresDuplicatesNextToAll() {
+    assertThat(requestedFacets(listOf(IncludeFacet.ALL, IncludeFacet.SEMANTICS, IncludeFacet.SEMANTICS)))
+      .containsExactlyElementsIn(Facet.entries)
   }
 
   @Test

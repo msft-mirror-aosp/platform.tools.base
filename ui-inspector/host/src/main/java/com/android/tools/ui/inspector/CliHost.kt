@@ -91,17 +91,14 @@ class DumpUiCommand : Callable<Int> {
         }
       val err = spec.commandLine().err
       err.println("Executing dump-ui for package: $targetPackage on device: $serial")
-      val facets = expandIncludeFacets(include)
+      val facets = requestedFacets(include)
       withJsonPrinter(output, prettyPrint) { printer ->
         runBlocking {
           doDumpUi(
             adbSession = adbSession,
             serial = serial,
             packageName = targetPackage,
-            includeAttributes = IncludeFacet.ATTRIBUTES in facets,
-            includeResolutionStack = IncludeFacet.RESOLUTION_STACK in facets,
-            includeSystemComposables = IncludeFacet.SYSTEM_COMPOSABLES in facets,
-            includeSemantics = IncludeFacet.SEMANTICS in facets,
+            facets = facets,
             composeInspectorJarPath = composeInspectorJarPath,
             composeInspectorCacheDir = AndroidLocationsSingleton.prefsLocation.resolve(COMPOSE_INSPECTOR_CACHE_PATH),
             printer = printer,

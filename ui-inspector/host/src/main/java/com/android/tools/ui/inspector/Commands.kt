@@ -147,10 +147,7 @@ private fun foregroundAppResolutionException() =
  * @param adbSession The [AdbSession] to communicate with the local ADB server.
  * @param serial The serial number of the target device.
  * @param packageName The application package name to dump.
- * @param includeAttributes If true, includes view attributes in the dump output.
- * @param includeResolutionStack If true, includes attribute resolution stacks in the dump output.
- * @param includeSystemComposables If true, includes system/framework composable nodes.
- * @param includeSemantics If true, includes accessibility semantics in the Compose dump.
+ * @param facets The optional data to carry on top of the tree.
  * @param composeInspectorJarPath Optional path to a local Compose Inspector JAR file.
  * @param composeInspectorCacheDir Where the Compose inspector jars downloaded from Maven are kept.
  * @param logger Receives what the dump has to say besides its result.
@@ -160,10 +157,7 @@ internal suspend fun doDumpUi(
   adbSession: AdbSession,
   serial: String,
   packageName: String,
-  includeAttributes: Boolean,
-  includeResolutionStack: Boolean,
-  includeSystemComposables: Boolean,
-  includeSemantics: Boolean,
+  facets: Set<Facet>,
   composeInspectorJarPath: String?,
   composeInspectorCacheDir: Path,
   printer: UiDumpPrinter,
@@ -171,12 +165,13 @@ internal suspend fun doDumpUi(
   injectionManagerFactory: InjectionManagerFactory = ::InjectionManager,
 ) {
   val composeInspectorOverrideJarPath = composeInspectorJarPath?.let(Paths::get)
+  val options = DumpOptions.of(facets)
   val uiDump =
     runWithConnectedInspectors(
       adbSession,
       serial,
       packageName,
-      includeResolutionStack,
+      options.resolutionStack,
       composeInspectorOverrideJarPath,
       composeInspectorCacheDir,
       logger,
@@ -184,11 +179,11 @@ internal suspend fun doDumpUi(
     ) { commandSender, composeInspectorConnected ->
       dumpUi(
         commandSender = commandSender,
-        includeAttributes = includeAttributes,
-        includeResolutionStack = includeResolutionStack,
+        includeAttributes = options.attributes,
+        includeResolutionStack = options.resolutionStack,
         composeInspectorConnected = composeInspectorConnected,
-        includeSystemComposables = includeSystemComposables,
-        includeSemantics = includeSemantics,
+        includeSystemComposables = options.systemComposables,
+        includeSemantics = options.semantics,
         logger = logger,
       )
     }
