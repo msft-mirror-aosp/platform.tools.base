@@ -140,7 +140,7 @@ private fun foregroundAppResolutionException() =
 
 /**
  * Ensures the UI Inspector agent is running in the target application (injecting it, or reconnecting to an already-running server of the
- * same version), and dumps the unified View and Compose tree structure to the console.
+ * same version), captures the unified View and Compose tree, and prints it with [printer].
  *
  * @param adbSession The [AdbSession] to communicate with the local ADB server.
  * @param serial The serial number of the target device.
@@ -167,26 +167,27 @@ internal suspend fun doDumpUi(
   injectionManagerFactory: InjectionManagerFactory = ::InjectionManager,
 ) {
   val composeInspectorOverrideJarPath = composeInspectorJarPath?.let(Paths::get)
-  runWithConnectedInspectors(
-    adbSession,
-    serial,
-    packageName,
-    includeResolutionStack,
-    composeInspectorOverrideJarPath,
-    logger,
-    injectionManagerFactory,
-  ) { commandSender, composeInspectorConnected ->
-    dumpUi(
-      commandSender = commandSender,
-      includeAttributes = includeAttributes,
-      includeResolutionStack = includeResolutionStack,
-      composeInspectorConnected = composeInspectorConnected,
-      includeSystemComposables = includeSystemComposables,
-      includeSemantics = includeSemantics,
-      printer = printer,
-      logger = logger,
-    )
-  }
+  val uiDump =
+    runWithConnectedInspectors(
+      adbSession,
+      serial,
+      packageName,
+      includeResolutionStack,
+      composeInspectorOverrideJarPath,
+      logger,
+      injectionManagerFactory,
+    ) { commandSender, composeInspectorConnected ->
+      dumpUi(
+        commandSender = commandSender,
+        includeAttributes = includeAttributes,
+        includeResolutionStack = includeResolutionStack,
+        composeInspectorConnected = composeInspectorConnected,
+        includeSystemComposables = includeSystemComposables,
+        includeSemantics = includeSemantics,
+        logger = logger,
+      )
+    }
+  printer.printDump(uiDump)
 }
 
 /** Creates the [InjectionManager] for a dump: session, serial, package, Compose inspector override jar, logger. */
@@ -194,12 +195,12 @@ internal typealias InjectionManagerFactory = (AdbSession, String, String, Path?,
 
 /**
  * Connects to the device, ensures the inspector agent is running in the target app (reusing an already-running server when possible),
- * starts the View and Compose inspectors, and runs [block] with the active connection.
+ * starts the View and Compose inspectors, and returns what [block] produces with the active connection.
  *
  * A reused server can prove stale — see [connectAndRunInspectors] — in which case a single retry performs a full injection. A failure of
  * the retry attempt carries the stale-server failure as a suppressed exception.
  */
-internal suspend fun runWithConnectedInspectors(
+internal suspend fun <T> runWithConnectedInspectors(
   adbSession: AdbSession,
   serial: String,
   packageName: String,
@@ -207,10 +208,10 @@ internal suspend fun runWithConnectedInspectors(
   composeInspectorOverrideJarPath: Path?,
   logger: Logger,
   injectionManagerFactory: InjectionManagerFactory,
-  block: suspend (CommandSender, Boolean) -> Unit,
-) {
+  block: suspend (CommandSender, Boolean) -> T,
+): T {
   val injectionManager = injectionManagerFactory(adbSession, serial, packageName, composeInspectorOverrideJarPath, logger)
-  try {
+  return try {
     try {
       connectAndRunInspectors(
         injectionManager,
@@ -258,14 +259,14 @@ internal suspend fun runWithConnectedInspectors(
  * reported as [StaleReconnectException]. Anything after the first response, and any [InspectorCrashException] (an explicit agent-side
  * report, so the server is alive), propagates unchanged. A freshly injected server ([InjectionResult.Injected]) never reports staleness.
  */
-private suspend fun connectAndRunInspectors(
+private suspend fun <T> connectAndRunInspectors(
   injectionManager: InjectionManager,
   mode: InjectionMode,
   needsDebugViewAttributes: Boolean,
   composeInspectorOverrideJarPath: Path?,
   logger: Logger,
-  block: suspend (CommandSender, Boolean) -> Unit,
-) = coroutineScope {
+  block: suspend (CommandSender, Boolean) -> T,
+): T = coroutineScope {
   try {
     val injection = injectionManager.injectAndAttach(needsDebugViewAttributes, mode)
     val commandSender =
@@ -306,7 +307,7 @@ private suspend fun connectAndRunInspectors(
   }
 }
 
-/** Dumps the View tree, enriches it with Compose if active, and prints the unified tree to console. */
+/** Dumps the View tree, enriches it with Compose if active, and returns the unified tree. */
 internal suspend fun dumpUi(
   commandSender: CommandSender,
   includeAttributes: Boolean,
@@ -314,16 +315,14 @@ internal suspend fun dumpUi(
   composeInspectorConnected: Boolean,
   includeSystemComposables: Boolean,
   includeSemantics: Boolean,
-  printer: UiDumpPrinter,
   logger: Logger,
-) {
+): UiDump {
   val uiDump = fetchUiDump(commandSender, includeAttributes, includeResolutionStack, composeInspectorConnected, includeSemantics, logger)
   if (uiDump.windows.isEmpty()) {
     throw EmptyViewRootsException()
   }
 
-  val outputDump = if (includeSystemComposables) uiDump else stripSystemComposables(uiDump)
-  printer.printDump(outputDump)
+  return if (includeSystemComposables) uiDump else stripSystemComposables(uiDump)
 }
 
 internal suspend fun fetchUiDump(
