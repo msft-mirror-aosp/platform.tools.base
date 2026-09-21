@@ -16,6 +16,8 @@
 
 package com.android.tools.ui.inspector.client
 
+import com.android.tools.ui.inspector.LogLevel
+import com.android.tools.ui.inspector.Logger
 import com.android.tools.ui.inspector.common.ProtocolConstants
 import com.android.tools.ui.inspector.deploy.InjectionManager
 import com.android.tools.ui.inspector.deploy.InspectorMetadata
@@ -37,12 +39,13 @@ private const val COMPOSE_UI_GROUP_ID = "androidx.compose.ui"
 internal suspend fun createComposeInspector(
   commandSender: CommandSender,
   injectionManager: InjectionManager,
+  logger: Logger,
   resolveJar: (version: String) -> File = { version ->
     val artifactId = getComposeArtifactId(version)
     MavenArtifactResolver().resolve(COMPOSE_UI_GROUP_ID, artifactId, version)
   },
 ): Boolean {
-  val composeVersion = getComposeVersion(commandSender) ?: return false
+  val composeVersion = getComposeVersion(commandSender, logger) ?: return false
 
   val jarFile =
     try {
@@ -50,7 +53,7 @@ internal suspend fun createComposeInspector(
     } catch (e: IOException) {
       throw IOException("Could not resolve the Compose inspector for Compose $composeVersion: ${e.message}", e)
     }
-  launchComposeInspector(commandSender, injectionManager, jarFile)
+  launchComposeInspector(commandSender, injectionManager, jarFile, logger)
   return true
 }
 
@@ -126,7 +129,7 @@ private fun LayoutInspectorComposeProtocol.Response.requireVariant(
 }
 
 /** Queries the target application agent for its installed Jetpack Compose version; null when the app does not use Compose. */
-private suspend fun getComposeVersion(commandSender: CommandSender): String? {
+private suspend fun getComposeVersion(commandSender: CommandSender, logger: Logger): String? {
   val getVersionCommand =
     UiInspectorProtocol.Command.newBuilder()
       .setGetVersion(UiInspectorProtocol.GetVersionCommand.newBuilder().addLibraryIds(ProtocolConstants.COMPOSE_UI_LIBRARY_ID).build())
@@ -144,15 +147,20 @@ private suspend fun getComposeVersion(commandSender: CommandSender): String? {
       .getVersion
       .versionsMap[ProtocolConstants.COMPOSE_UI_LIBRARY_ID]
   if (composeVersion == null) {
-    System.err.println("Compose not detected in target application.")
+    logger.log(LogLevel.PROGRESS, "Compose not detected in target application.")
     return null
   }
-  System.err.println("Compose detected: $composeVersion")
+  logger.log(LogLevel.PROGRESS, "Compose detected: $composeVersion")
   return composeVersion
 }
 
 /** Deploys the Compose Inspector JAR to the device sandbox and requests the agent to load it dynamically. */
-private suspend fun launchComposeInspector(commandSender: CommandSender, injectionManager: InjectionManager, jarFile: File) {
+private suspend fun launchComposeInspector(
+  commandSender: CommandSender,
+  injectionManager: InjectionManager,
+  jarFile: File,
+  logger: Logger,
+) {
   val inspectorMetadata = InspectorMetadata(id = ProtocolConstants.COMPOSE_INSPECTOR_ID, localJarPath = jarFile.toPath())
   val dexPath = injectionManager.stageInspectorPayload(inspectorMetadata)
 
@@ -171,7 +179,7 @@ private suspend fun launchComposeInspector(commandSender: CommandSender, injecti
     "The agent could not load the Compose inspector: ${createResponse.errorMessage}"
   }
   createResponse.requireVariant(UiInspectorProtocol.Response.SpecializedCase.CREATE_INSPECTOR)
-  System.err.println("Compose Inspector successfully loaded on agent!")
+  logger.log(LogLevel.PROGRESS, "Compose Inspector successfully loaded on agent!")
 }
 
 /**

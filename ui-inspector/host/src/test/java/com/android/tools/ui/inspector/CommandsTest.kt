@@ -25,8 +25,6 @@ import com.android.tools.ui.inspector.device.PackageUid
 import com.android.tools.ui.inspector.device.TOP_ACTIVITY_SHELL_COMMAND
 import com.android.tools.ui.inspector.model.UiNode
 import com.google.common.truth.Truth.assertThat
-import java.io.ByteArrayOutputStream
-import java.io.PrintStream
 import kotlinx.coroutines.runBlocking
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol
 import org.junit.Assert.assertThrows
@@ -215,23 +213,25 @@ class CommandsTest {
   }
 
   @Test
-  fun testMergeComposeRootsWarnsOnStderrWhenTargetViewIsMissing() {
+  fun testMergeComposeRootsWarnsWhenTargetViewIsMissing() {
     val viewRoot = viewNode(1)
     val composeRoots = listOf(composableRoot(targetViewId = 999, composableId = 100))
+    val logger = RecordingLogger()
 
-    val stderr = captureStderr {
-      mergeComposeRoots(
-        viewRoot,
-        composeRoots,
-        stringTable = emptyMap(),
-        parameters = null,
-        includeParameters = false,
-        includeSemantics = false,
-      )
-    }
+    mergeComposeRoots(
+      viewRoot,
+      composeRoots,
+      stringTable = emptyMap(),
+      parameters = null,
+      includeParameters = false,
+      includeSemantics = false,
+      logger = logger,
+    )
 
-    assertThat(stderr).contains("target view id 999")
-    assertThat(stderr).contains("view root 1")
+    val (level, message) = logger.messages.single()
+    assertThat(level).isEqualTo(LogLevel.WARNING)
+    assertThat(message).contains("target view id 999")
+    assertThat(message).contains("view root 1")
     assertThat(viewRoot.children).isEmpty()
   }
 
@@ -241,19 +241,19 @@ class CommandsTest {
     val viewRoot = viewNode(1, composeView)
     val composeRoots = listOf(composableRoot(targetViewId = 999, composableId = 100), composableRoot(targetViewId = 20, composableId = 200))
 
-    val stderr = captureStderr {
-      mergeComposeRoots(
-        viewRoot,
-        composeRoots,
-        stringTable = emptyMap(),
-        parameters = null,
-        includeParameters = false,
-        includeSemantics = false,
-      )
-    }
+    val logger = RecordingLogger()
+    mergeComposeRoots(
+      viewRoot,
+      composeRoots,
+      stringTable = emptyMap(),
+      parameters = null,
+      includeParameters = false,
+      includeSemantics = false,
+      logger = logger,
+    )
 
     // The missing target is warned about; the valid root after it still attaches.
-    assertThat(stderr).contains("target view id 999")
+    assertThat(logger.text()).contains("target view id 999")
     assertThat(composeView.children.map { it.id }).containsExactly(200L)
   }
 
@@ -266,18 +266,18 @@ class CommandsTest {
       val composeRoots =
         listOf(composableRoot(targetViewId = 20, composableId = 100), composableRoot(targetViewId = 30, composableId = 200))
 
-      val stderr = captureStderr {
-        mergeComposeRoots(
-          viewRoot,
-          if (reversed) composeRoots.reversed() else composeRoots,
-          stringTable = emptyMap(),
-          parameters = null,
-          includeParameters = false,
-          includeSemantics = false,
-        )
-      }
+      val logger = RecordingLogger()
+      mergeComposeRoots(
+        viewRoot,
+        if (reversed) composeRoots.reversed() else composeRoots,
+        stringTable = emptyMap(),
+        parameters = null,
+        includeParameters = false,
+        includeSemantics = false,
+        logger = logger,
+      )
 
-      assertThat(stderr).isEmpty()
+      assertThat(logger.messages).isEmpty()
       assertThat(innerComposeView.children.map { it.id }).containsExactly(200L)
     }
   }
@@ -298,16 +298,4 @@ class CommandsTest {
       .setViewId(targetViewId)
       .addNodes(LayoutInspectorComposeProtocol.ComposableNode.newBuilder().setId(composableId))
       .build()
-
-  private fun captureStderr(block: () -> Unit): String {
-    val original = System.err
-    val buffer = ByteArrayOutputStream()
-    System.setErr(PrintStream(buffer, true, Charsets.UTF_8))
-    try {
-      block()
-    } finally {
-      System.setErr(original)
-    }
-    return buffer.toString(Charsets.UTF_8)
-  }
 }

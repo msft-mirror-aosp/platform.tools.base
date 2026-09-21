@@ -21,6 +21,7 @@ import com.android.adblib.AdbLoggerFactory
 import com.android.adblib.AdbSession
 import com.android.adblib.tools.createStandaloneSession
 import com.android.tools.ui.inspector.printer.json.withJsonPrinter
+import java.io.PrintWriter
 import java.nio.file.Path
 import java.util.concurrent.Callable
 import kotlin.system.exitProcess
@@ -84,7 +85,8 @@ class DumpUiCommand : Callable<Int> {
           val serial = resolveDeviceSerial(adbSession, device)
           serial to resolveTargetPackage(adbSession, serial, packageName)
         }
-      spec.commandLine().err.println("Executing dump-ui for package: $targetPackage on device: $serial")
+      val err = spec.commandLine().err
+      err.println("Executing dump-ui for package: $targetPackage on device: $serial")
       val facets = expandIncludeFacets(include)
       withJsonPrinter(output, prettyPrint) { printer ->
         runBlocking {
@@ -98,6 +100,7 @@ class DumpUiCommand : Callable<Int> {
             includeSemantics = IncludeFacet.SEMANTICS in facets,
             composeInspectorJarPath = composeInspectorJarPath,
             printer = printer,
+            logger = stderrLogger(err),
           )
         }
       }
@@ -116,6 +119,11 @@ internal fun createCommandLine(): CommandLine = CommandLine(UiInspectorCommand()
 
 fun main(args: Array<String>) {
   exitProcess(createCommandLine().execute(*args))
+}
+
+/** The CLI shows every log message on [err], warnings marked as such. */
+internal fun stderrLogger(err: PrintWriter) = Logger { level, message ->
+  err.println(if (level == LogLevel.WARNING) "Warning: $message" else message)
 }
 
 /** A logger factory that silences all adblib logs to keep the CLI output clean. */

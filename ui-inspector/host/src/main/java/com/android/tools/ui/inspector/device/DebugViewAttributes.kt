@@ -18,6 +18,8 @@ package com.android.tools.ui.inspector.device
 
 import com.android.adblib.AdbSession
 import com.android.adblib.DeviceSelector
+import com.android.tools.ui.inspector.LogLevel
+import com.android.tools.ui.inspector.Logger
 
 /** The per-app setting that makes the platform expose attribute resolution stacks for a single package. */
 private const val DEBUG_VIEW_ATTRIBUTES_PACKAGE_SETTING = "debug_view_attributes_application_package"
@@ -34,6 +36,7 @@ internal class DebugViewAttributes(
   private val adbSession: AdbSession,
   private val deviceSelector: DeviceSelector,
   private val packageName: String,
+  private val logger: Logger,
 ) {
 
   /**
@@ -57,9 +60,10 @@ internal class DebugViewAttributes(
       return
     }
     adbSession.deviceServices.shellAsTextOrThrow(deviceSelector, "settings put global $DEBUG_VIEW_ATTRIBUTES_PACKAGE_SETTING $packageName")
-    System.err.println(
+    logger.log(
+      LogLevel.WARNING,
       "Enabled view-attribute debugging for $packageName: its activities will restart now, and the setting stays enabled for this app. " +
-        "Clear it with: adb shell settings delete global $DEBUG_VIEW_ATTRIBUTES_PACKAGE_SETTING"
+        "Clear it with: adb shell settings delete global $DEBUG_VIEW_ATTRIBUTES_PACKAGE_SETTING",
     )
   }
 }

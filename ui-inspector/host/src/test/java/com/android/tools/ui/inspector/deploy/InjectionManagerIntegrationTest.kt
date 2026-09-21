@@ -66,6 +66,7 @@ class InjectionManagerIntegrationTest {
         serial = serial,
         packageName = packageName!!,
         composeInspectorOverrideJarPath = null,
+        logger = { _, message -> System.err.println(message) },
         libraryDexPath = Paths.get(LIBRARY_DEX_PATH),
       )
 

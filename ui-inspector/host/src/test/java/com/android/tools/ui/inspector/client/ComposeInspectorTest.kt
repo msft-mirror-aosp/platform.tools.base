@@ -22,6 +22,7 @@ import com.android.adblib.DevicePropertyNames
 import com.android.adblib.DeviceSelector
 import com.android.adblib.DeviceState
 import com.android.adblib.testing.FakeAdbSession
+import com.android.tools.ui.inspector.RecordingLogger
 import com.android.tools.ui.inspector.TestAdbDeviceServices
 import com.android.tools.ui.inspector.TestAdbHostServices
 import com.android.tools.ui.inspector.TestAdbSession
@@ -93,6 +94,7 @@ class ComposeInspectorTest {
     FramingProtocol.writeMessage(output, agentMessage.toByteArray())
   }
 
+  private val logger = RecordingLogger()
   private val deviceSerial = "123"
   private val packageName = "com.example"
 
@@ -189,6 +191,7 @@ class ComposeInspectorTest {
         deviceSerial,
         packageName,
         composeInspectorOverrideJarPath = null,
+        logger,
         agentPathResolver,
         dummyJar,
         dummyPayload,
@@ -209,6 +212,7 @@ class ComposeInspectorTest {
       createComposeInspector(
         commandSender = commandSender,
         injectionManager = injectionManager,
+        logger = logger,
         resolveJar = {
           val fixedJar = tempFolder.newFile("compose-inspector.jar")
           fixedJar.writeText("fake pre-compiled compose dex classes")
@@ -293,6 +297,7 @@ class ComposeInspectorTest {
         deviceSerial,
         packageName,
         composeInspectorOverrideJarPath = null,
+        logger,
         { _: String -> tempFolder.newFile("unused-agent.so").toPath() },
         tempFolder.newFile("unused-library.jar").toPath(),
         tempFolder.newFile("unused-payload.jar").toPath(),
@@ -302,7 +307,12 @@ class ComposeInspectorTest {
 
     val connected =
       CommandSender.connect("127.0.0.1", serverPort, this).use { commandSender ->
-        createComposeInspector(commandSender = commandSender, injectionManager = injectionManager, resolveJar = { fixedJar })
+        createComposeInspector(
+          commandSender = commandSender,
+          injectionManager = injectionManager,
+          logger = logger,
+          resolveJar = { fixedJar },
+        )
       }
 
     assertThat(connected).isTrue()
@@ -555,6 +565,7 @@ class ComposeInspectorTest {
         deviceSerial,
         packageName,
         composeInspectorOverrideJarPath = null,
+        logger,
         agentPathResolver,
         dummyJar,
         dummyPayload,
@@ -575,6 +586,7 @@ class ComposeInspectorTest {
           createComposeInspector(
             commandSender = commandSender,
             injectionManager = injectionManager,
+            logger = logger,
             resolveJar = {
               val fixedJar = tempFolder.newFile("compose-inspector.jar")
               fixedJar.writeText("fake pre-compiled compose dex classes")
@@ -589,6 +601,7 @@ class ComposeInspectorTest {
           includeResolutionStack = false,
           composeInspectorConnected = composeInspectorConnected,
           includeSemantics = false,
+          logger = logger,
         )
       }
 
@@ -867,6 +880,7 @@ class ComposeInspectorTest {
         deviceSerial,
         packageName,
         composeInspectorOverrideJarPath = null,
+        logger,
         agentPathResolver,
         dummyJar,
         dummyPayload,
@@ -887,6 +901,7 @@ class ComposeInspectorTest {
           createComposeInspector(
             commandSender = commandSender,
             injectionManager = injectionManager,
+            logger = logger,
             resolveJar = {
               val fixedJar = tempFolder.newFile("compose-inspector.jar")
               fixedJar.writeText("fake pre-compiled compose dex classes")
@@ -901,6 +916,7 @@ class ComposeInspectorTest {
           includeResolutionStack = false,
           composeInspectorConnected = composeInspectorConnected,
           includeSemantics = false,
+          logger = logger,
         )
       }
 
@@ -1183,6 +1199,7 @@ class ComposeInspectorTest {
         deviceSerial,
         packageName,
         composeInspectorOverrideJarPath = null,
+        logger,
         agentPathResolver,
         dummyJar,
         dummyPayload,
@@ -1208,6 +1225,7 @@ class ComposeInspectorTest {
             createComposeInspector(
               commandSender = commandSender,
               injectionManager = injectionManager,
+              logger = logger,
               resolveJar = {
                 val fixedJar = tempFolder.newFile("compose-inspector.jar")
                 fixedJar.writeText("fake pre-compiled compose dex classes")
@@ -1222,6 +1240,7 @@ class ComposeInspectorTest {
             includeResolutionStack = false,
             composeInspectorConnected = composeInspectorConnected,
             includeSemantics = true,
+            logger = logger,
           )
         }
       } finally {
@@ -1335,7 +1354,12 @@ class ComposeInspectorTest {
               .setErrorMessage("version lookup crashed")
               .build()
           }) { commandSender ->
-            createComposeInspector(commandSender, injectionManager, resolveJar = { throw AssertionError("no jar resolution expected") })
+            createComposeInspector(
+              commandSender,
+              injectionManager,
+              logger,
+              resolveJar = { throw AssertionError("no jar resolution expected") },
+            )
           }
         }
       }
@@ -1357,7 +1381,12 @@ class ComposeInspectorTest {
               .setCreateInspector(UiInspectorProtocol.CreateInspectorResponse.getDefaultInstance())
               .build()
           }) { commandSender ->
-            createComposeInspector(commandSender, injectionManager, resolveJar = { throw AssertionError("no jar resolution expected") })
+            createComposeInspector(
+              commandSender,
+              injectionManager,
+              logger,
+              resolveJar = { throw AssertionError("no jar resolution expected") },
+            )
           }
         }
       }
@@ -1376,7 +1405,7 @@ class ComposeInspectorTest {
           .setGetVersion(UiInspectorProtocol.GetVersionResponse.getDefaultInstance())
           .build()
       }) { commandSender ->
-        createComposeInspector(commandSender, injectionManager, resolveJar = { throw AssertionError("no jar resolution expected") })
+        createComposeInspector(commandSender, injectionManager, logger, resolveJar = { throw AssertionError("no jar resolution expected") })
       }
 
     assertThat(connected).isFalse()
@@ -1390,7 +1419,7 @@ class ComposeInspectorTest {
       assertThrows(IOException::class.java) {
         runBlocking {
           respondingWith({ command -> composeVersionResponse(command, "1.6.0") }) { commandSender ->
-            createComposeInspector(commandSender, injectionManager, resolveJar = { throw downloadFailure })
+            createComposeInspector(commandSender, injectionManager, logger, resolveJar = { throw downloadFailure })
           }
         }
       }
@@ -1408,7 +1437,7 @@ class ComposeInspectorTest {
       assertThrows(NullPointerException::class.java) {
         runBlocking {
           respondingWith({ command -> composeVersionResponse(command, "1.6.0") }) { commandSender ->
-            createComposeInspector(commandSender, injectionManager, resolveJar = { throw defect })
+            createComposeInspector(commandSender, injectionManager, logger, resolveJar = { throw defect })
           }
         }
       }
@@ -1445,7 +1474,7 @@ class ComposeInspectorTest {
                 .build()
             }
           }) { commandSender ->
-            createComposeInspector(commandSender, injectionManager, resolveJar = { fixedJar })
+            createComposeInspector(commandSender, injectionManager, logger, resolveJar = { fixedJar })
           }
         }
       }
@@ -1512,6 +1541,7 @@ class ComposeInspectorTest {
       deviceSerial,
       packageName,
       composeInspectorOverrideJarPath = null,
+      logger,
       { _: String -> tempFolder.newFile("unused-agent-${System.nanoTime()}.so").toPath() },
       tempFolder.newFile("unused-library-${System.nanoTime()}.jar").toPath(),
       tempFolder.newFile("unused-payload-${System.nanoTime()}.jar").toPath(),

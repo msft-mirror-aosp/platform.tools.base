@@ -21,6 +21,8 @@ import com.android.adblib.DevicePropertyNames
 import com.android.adblib.DeviceSelector
 import com.android.adblib.SocketSpec
 import com.android.adblib.shellAsText
+import com.android.tools.ui.inspector.LogLevel
+import com.android.tools.ui.inspector.Logger
 import com.android.tools.ui.inspector.common.ProtocolConstants
 import com.android.tools.ui.inspector.device.AgentSocketChecker
 import com.android.tools.ui.inspector.device.DebugViewAttributes
@@ -70,6 +72,7 @@ private val DEFAULT_AGENT_PATH_RESOLVER: (String) -> Path = { abi -> Paths.get(H
  * @param composeInspectorOverrideJarPath A local Compose inspector jar substituting the maven-resolved one, or null when no override is
  *   configured. When present, its bytes join the server digest, so a changed override yields a new server instead of reconnecting to one
  *   that already loaded different inspector code.
+ * @param logger Receives what injection has to say besides its result.
  * @param agentPathResolver A function that takes a device ABI string and returns the [Path] to the agent binary on the host.
  * @param tempFileSuffixGenerator A function that generates unique suffixes for temporary files pushed to the device.
  */
@@ -78,6 +81,7 @@ class InjectionManager(
   val serial: String,
   val packageName: String,
   private val composeInspectorOverrideJarPath: Path?,
+  private val logger: Logger,
   private val agentPathResolver: (String) -> Path = DEFAULT_AGENT_PATH_RESOLVER,
   private val libraryDexPath: Path = Paths.get(HOST_LIBRARY_DEX_PATH),
   private val payloadJarPath: Path = Paths.get(HOST_PAYLOAD_JAR_PATH),
@@ -92,7 +96,7 @@ class InjectionManager(
   private val deviceSelector = DeviceSelector.fromSerialNumber(serial)
   private val uidResolver = UidResolver(adbSession, deviceSelector)
   private val artifactStaging = ArtifactStaging(adbSession, deviceSelector, tempFileSuffixGenerator)
-  private val debugViewAttributes = DebugViewAttributes(adbSession, deviceSelector, packageName)
+  private val debugViewAttributes = DebugViewAttributes(adbSession, deviceSelector, packageName, logger)
   private val agentSocketChecker = AgentSocketChecker(adbSession, deviceSelector)
 
   /** The local TCP spec of the adb forward created by [injectAndAttach]. Cleared by [removeAdbForward]. */
@@ -242,7 +246,7 @@ class InjectionManager(
     } catch (e: CancellationException) {
       throw e
     } catch (e: Exception) {
-      System.err.println("Warning: failed to remove adb forward ${localSpec.toQueryString()}: ${e.message}")
+      logger.log(LogLevel.WARNING, "failed to remove adb forward ${localSpec.toQueryString()}: ${e.message}")
     }
   }
 

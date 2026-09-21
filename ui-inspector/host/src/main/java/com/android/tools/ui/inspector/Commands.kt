@@ -150,6 +150,7 @@ private fun foregroundAppResolutionException() =
  * @param includeSystemComposables If true, includes system/framework composable nodes.
  * @param includeSemantics If true, includes accessibility semantics in the Compose dump.
  * @param composeInspectorJarPath Optional path to a local Compose Inspector JAR file.
+ * @param logger Receives what the dump has to say besides its result.
  * @param injectionManagerFactory Creates the [InjectionManager].
  */
 internal suspend fun doDumpUi(
@@ -162,9 +163,8 @@ internal suspend fun doDumpUi(
   includeSemantics: Boolean,
   composeInspectorJarPath: String?,
   printer: UiDumpPrinter,
-  injectionManagerFactory: (AdbSession, String, String, Path?) -> InjectionManager = { session, serial, pkg, overridePath ->
-    InjectionManager(session, serial, pkg, overridePath)
-  },
+  logger: Logger,
+  injectionManagerFactory: InjectionManagerFactory = ::InjectionManager,
 ) {
   val composeInspectorOverrideJarPath = composeInspectorJarPath?.let(Paths::get)
   runWithConnectedInspectors(
@@ -173,6 +173,7 @@ internal suspend fun doDumpUi(
     packageName,
     includeResolutionStack,
     composeInspectorOverrideJarPath,
+    logger,
     injectionManagerFactory,
   ) { commandSender, composeInspectorConnected ->
     dumpUi(
@@ -183,9 +184,13 @@ internal suspend fun doDumpUi(
       includeSystemComposables = includeSystemComposables,
       includeSemantics = includeSemantics,
       printer = printer,
+      logger = logger,
     )
   }
 }
+
+/** Creates the [InjectionManager] for a dump: session, serial, package, Compose inspector override jar, logger. */
+internal typealias InjectionManagerFactory = (AdbSession, String, String, Path?, Logger) -> InjectionManager
 
 /**
  * Connects to the device, ensures the inspector agent is running in the target app (reusing an already-running server when possible),
@@ -200,10 +205,11 @@ internal suspend fun runWithConnectedInspectors(
   packageName: String,
   needsDebugViewAttributes: Boolean,
   composeInspectorOverrideJarPath: Path?,
-  injectionManagerFactory: (AdbSession, String, String, Path?) -> InjectionManager,
+  logger: Logger,
+  injectionManagerFactory: InjectionManagerFactory,
   block: suspend (CommandSender, Boolean) -> Unit,
 ) {
-  val injectionManager = injectionManagerFactory(adbSession, serial, packageName, composeInspectorOverrideJarPath)
+  val injectionManager = injectionManagerFactory(adbSession, serial, packageName, composeInspectorOverrideJarPath, logger)
   try {
     try {
       connectAndRunInspectors(
@@ -211,16 +217,18 @@ internal suspend fun runWithConnectedInspectors(
         InjectionMode.RECONNECT_IF_AVAILABLE,
         needsDebugViewAttributes,
         composeInspectorOverrideJarPath,
+        logger,
         block,
       )
     } catch (stale: StaleReconnectException) {
-      System.err.println("The running UI Inspector server did not respond (${stale.cause?.message}); injecting a fresh agent.")
+      logger.log(LogLevel.PROGRESS, "The running UI Inspector server did not respond (${stale.cause?.message}); injecting a fresh agent.")
       try {
         connectAndRunInspectors(
           injectionManager,
           InjectionMode.FORCE_FULL_INJECTION,
           needsDebugViewAttributes,
           composeInspectorOverrideJarPath,
+          logger,
           block,
         )
       } catch (e: Throwable) {
@@ -255,6 +263,7 @@ private suspend fun connectAndRunInspectors(
   mode: InjectionMode,
   needsDebugViewAttributes: Boolean,
   composeInspectorOverrideJarPath: Path?,
+  logger: Logger,
   block: suspend (CommandSender, Boolean) -> Unit,
 ) = coroutineScope {
   try {
@@ -285,9 +294,9 @@ private suspend fun connectAndRunInspectors(
 
       val composeInspectorConnected =
         if (localJarProvider != null) {
-          createComposeInspector(commandSender, injectionManager, localJarProvider)
+          createComposeInspector(commandSender, injectionManager, logger, localJarProvider)
         } else {
-          createComposeInspector(commandSender, injectionManager)
+          createComposeInspector(commandSender, injectionManager, logger)
         }
 
       block(commandSender, composeInspectorConnected)
@@ -306,8 +315,9 @@ internal suspend fun dumpUi(
   includeSystemComposables: Boolean,
   includeSemantics: Boolean,
   printer: UiDumpPrinter,
+  logger: Logger,
 ) {
-  val uiDump = fetchUiDump(commandSender, includeAttributes, includeResolutionStack, composeInspectorConnected, includeSemantics)
+  val uiDump = fetchUiDump(commandSender, includeAttributes, includeResolutionStack, composeInspectorConnected, includeSemantics, logger)
   if (uiDump.windows.isEmpty()) {
     throw EmptyViewRootsException()
   }
@@ -322,10 +332,11 @@ internal suspend fun fetchUiDump(
   includeResolutionStack: Boolean,
   composeInspectorConnected: Boolean,
   includeSemantics: Boolean,
+  logger: Logger,
 ): UiDump {
   val result = dumpViews(commandSender, includeAttributes, includeResolutionStack)
   if (composeInspectorConnected) {
-    fetchAndMergeComposeTrees(commandSender, result.windows, includeAttributes, includeSemantics)
+    fetchAndMergeComposeTrees(commandSender, result.windows, includeAttributes, includeSemantics, logger)
   }
   return result
 }
@@ -336,6 +347,7 @@ private suspend fun fetchAndMergeComposeTrees(
   windows: List<UiWindow>,
   includeParameters: Boolean,
   includeSemantics: Boolean,
+  logger: Logger,
 ) {
   windows.forEach { window ->
     val viewRoot = window.root
@@ -357,11 +369,12 @@ private suspend fun fetchAndMergeComposeTrees(
       parameters = composeParameters,
       includeParameters = includeParameters,
       includeSemantics = includeSemantics,
+      logger = logger,
     )
   }
 }
 
-/** Grafts each Compose root under [viewRoot], warning on stderr when a root's target view is not present in the tree. */
+/** Grafts each Compose root under [viewRoot], warning through [logger] when a root's target view is not present in the tree. */
 internal fun mergeComposeRoots(
   viewRoot: UiNode.ViewNode,
   composeRoots: List<LayoutInspectorComposeProtocol.ComposableRoot>,
@@ -369,6 +382,7 @@ internal fun mergeComposeRoots(
   parameters: LayoutInspectorComposeProtocol.GetAllParametersResponse?,
   includeParameters: Boolean,
   includeSemantics: Boolean,
+  logger: Logger,
 ) {
   composeRoots.forEach { composeRoot ->
     val attached =
@@ -383,9 +397,9 @@ internal fun mergeComposeRoots(
         includeSemantics = includeSemantics,
       )
     if (!attached) {
-      System.err.println(
-        "Warning: could not attach a Compose tree (target view id ${composeRoot.viewId}) under view root ${viewRoot.id}; " +
-          "the dump may be incomplete."
+      logger.log(
+        LogLevel.WARNING,
+        "could not attach a Compose tree (target view id ${composeRoot.viewId}) under view root ${viewRoot.id}; the dump may be incomplete.",
       )
     }
   }
