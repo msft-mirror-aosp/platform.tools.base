@@ -141,15 +141,15 @@ private fun foregroundAppResolutionException() =
   )
 
 /**
- * Ensures the UI Inspector agent is running in the target application (injecting it, or reconnecting to an already-running server of the
- * same version), captures the unified View and Compose tree, and prints it with [printer].
+ * Dumps the UI of an app and prints it: the standalone CLI's entry point over [UiInspector].
  *
- * @param adbSession The [AdbSession] to communicate with the local ADB server.
+ * @param adbSession The session to the adb server.
  * @param serial The serial number of the target device.
- * @param packageName The application package name to dump.
+ * @param packageName The package name of the app to dump.
  * @param facets The optional data to carry on top of the tree.
- * @param composeInspectorJarPath Optional path to a local Compose Inspector JAR file.
+ * @param composeInspectorJarPath A local Compose inspector jar to use instead of the one Maven has for the app's Compose version.
  * @param composeInspectorCacheDir Where the Compose inspector jars downloaded from Maven are kept.
+ * @param printer Prints the dump.
  * @param logger Receives what the dump has to say besides its result.
  * @param injectionManagerFactory Creates the [InjectionManager].
  */
@@ -164,30 +164,9 @@ internal suspend fun doDumpUi(
   logger: Logger,
   injectionManagerFactory: InjectionManagerFactory = ::InjectionManager,
 ) {
-  val composeInspectorOverrideJarPath = composeInspectorJarPath?.let(Paths::get)
-  val options = DumpOptions.of(facets)
-  val uiDump =
-    runWithConnectedInspectors(
-      adbSession,
-      serial,
-      packageName,
-      options.resolutionStack,
-      composeInspectorOverrideJarPath,
-      composeInspectorCacheDir,
-      logger,
-      injectionManagerFactory,
-    ) { commandSender, composeInspectorConnected ->
-      dumpUi(
-        commandSender = commandSender,
-        includeAttributes = options.attributes,
-        includeResolutionStack = options.resolutionStack,
-        composeInspectorConnected = composeInspectorConnected,
-        includeSystemComposables = options.systemComposables,
-        includeSemantics = options.semantics,
-        logger = logger,
-      )
-    }
-  printer.printDump(uiDump)
+  val inspector =
+    UiInspector(adbSession, composeInspectorCacheDir, composeInspectorJarPath?.let(Paths::get), logger, injectionManagerFactory)
+  printer.printDump(inspector.dump(serial, packageName, facets))
 }
 
 /** Creates the [InjectionManager] for a dump: session, serial, package, Compose inspector override jar, logger. */
