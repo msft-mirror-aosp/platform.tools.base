@@ -62,13 +62,13 @@ internal fun UiNode.resolveDimensions(configuration: DeviceConfiguration?): UiNo
           attr
         }
       }
-      val resolvedChildren = children.map { it.resolveDimensions(configuration) }.toMutableList()
+      val resolvedChildren = children.map { it.resolveDimensions(configuration) }
       this.copy(attributes = resolvedAttributes, children = resolvedChildren)
     }
     is UiNode.ComposeNode -> {
       // Compose parameter dimensions are already resolved on the wire.
       // We only need to recursively resolve potential ViewNodes inside children.
-      val resolvedChildren = children.map { it.resolveDimensions(configuration) }.toMutableList()
+      val resolvedChildren = children.map { it.resolveDimensions(configuration) }
       this.copy(children = resolvedChildren)
     }
   }

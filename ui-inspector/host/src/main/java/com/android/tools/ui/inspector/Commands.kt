@@ -335,33 +335,31 @@ internal suspend fun fetchUiDump(
   logger: Logger,
 ): UiDump {
   val result = dumpViews(commandSender, includeAttributes, includeResolutionStack)
-  if (composeInspectorConnected) {
-    fetchAndMergeComposeTrees(commandSender, result.windows, includeAttributes, includeSemantics, logger)
-  }
-  return result
+  if (!composeInspectorConnected) return result
+  val windows = fetchAndMergeComposeTrees(commandSender, result.windows, includeAttributes, includeSemantics, logger)
+  return result.copy(windows = windows)
 }
 
-/** Queries the Compose Layout Inspector on the device and merges its trees into [windows] in-place. */
+/** Queries the Compose Layout Inspector on the device and returns [windows] with its trees merged into their roots. */
 private suspend fun fetchAndMergeComposeTrees(
   commandSender: CommandSender,
   windows: List<UiWindow>,
   includeParameters: Boolean,
   includeSemantics: Boolean,
   logger: Logger,
-) {
-  windows.forEach { window ->
-    val viewRoot = window.root
-    // In the compose inspector, standard parameters and semantics (accessibility properties) are fetched together with a single command.
-    // Each facet is still an independent demand, so the conversion below only copies the requested ones into the tree.
-    val fetchComposeDetails = includeParameters || includeSemantics
+): List<UiWindow> = windows.map { window ->
+  val viewRoot = window.root
+  // In the compose inspector, standard parameters and semantics (accessibility properties) are fetched together with a single command.
+  // Each facet is still an independent demand, so the conversion below only copies the requested ones into the tree.
+  val fetchComposeDetails = includeParameters || includeSemantics
 
-    val composeResult =
-      queryComposeTree(commandSender = commandSender, rootViewId = viewRoot.id, extractAllParameters = fetchComposeDetails)
-    val stringsMap = composeResult.stringsList.associate { it.id to it.str }
-    val roots = composeResult.rootsList
+  val composeResult = queryComposeTree(commandSender = commandSender, rootViewId = viewRoot.id, extractAllParameters = fetchComposeDetails)
+  val stringsMap = composeResult.stringsList.associate { it.id to it.str }
+  val roots = composeResult.rootsList
 
-    val composeParameters = if (fetchComposeDetails) queryComposeParameters(commandSender, viewRoot.id) else null
+  val composeParameters = if (fetchComposeDetails) queryComposeParameters(commandSender, viewRoot.id) else null
 
+  val mergedRoot =
     mergeComposeRoots(
       viewRoot = viewRoot,
       composeRoots = roots,
@@ -371,10 +369,13 @@ private suspend fun fetchAndMergeComposeTrees(
       includeSemantics = includeSemantics,
       logger = logger,
     )
-  }
+  window.copy(root = mergedRoot)
 }
 
-/** Grafts each Compose root under [viewRoot], warning through [logger] when a root's target view is not present in the tree. */
+/**
+ * Returns [viewRoot] with each Compose root grafted under its target view, warning through [logger] for a root whose target view is not
+ * present in the tree.
+ */
 internal fun mergeComposeRoots(
   viewRoot: UiNode.ViewNode,
   composeRoots: List<LayoutInspectorComposeProtocol.ComposableRoot>,
@@ -383,27 +384,25 @@ internal fun mergeComposeRoots(
   includeParameters: Boolean,
   includeSemantics: Boolean,
   logger: Logger,
-) {
-  composeRoots.forEach { composeRoot ->
-    val attached =
-      attachComposeTree(
-        viewNode = viewRoot,
-        targetViewId = composeRoot.viewId,
-        composeNodes = composeRoot.nodesList,
-        stringTable = stringTable,
-        viewsToSkip = composeRoot.viewsToSkipList,
-        parameters = parameters,
-        includeParameters = includeParameters,
-        includeSemantics = includeSemantics,
-      )
-    if (!attached) {
-      logger.log(
-        LogLevel.WARNING,
-        "could not attach a Compose tree (target view id ${composeRoot.viewId}) under view root ${viewRoot.id}; the dump may be incomplete.",
-      )
-    }
+): UiNode.ViewNode =
+  composeRoots.fold(viewRoot) { root, composeRoot ->
+    attachComposeTree(
+      root = root,
+      targetViewId = composeRoot.viewId,
+      composeNodes = composeRoot.nodesList,
+      stringTable = stringTable,
+      viewsToSkip = composeRoot.viewsToSkipList,
+      parameters = parameters,
+      includeParameters = includeParameters,
+      includeSemantics = includeSemantics,
+    )
+      ?: root.also {
+        logger.log(
+          LogLevel.WARNING,
+          "could not attach a Compose tree (target view id ${composeRoot.viewId}) under view root ${viewRoot.id}; the dump may be incomplete.",
+        )
+      }
   }
-}
 
 private class EmptyViewRootsException : Exception()
 

@@ -82,7 +82,7 @@ class DimensionResolverTest {
         id = 1L,
         className = "MyComposable",
         bounds = UiNode.Bounds(0, 0, 100, 100),
-        children = mutableListOf(viewNode),
+        children = listOf(viewNode),
         parameters = emptyList(),
         mergedSemantics = emptyList(),
         unmergedSemantics = emptyList(),

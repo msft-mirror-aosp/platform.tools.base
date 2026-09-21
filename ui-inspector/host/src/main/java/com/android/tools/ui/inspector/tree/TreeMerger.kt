@@ -21,13 +21,13 @@ import com.android.tools.ui.inspector.proto.convertComposeNode
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol
 
 /**
- * Finds the View node matching [targetViewId] and grafts the Composable nodes under it, moving any Android View subtrees hosted by the
- * composition under their owning Composable nodes.
- *
- * Returns false when [targetViewId] does not exist in the tree.
+ * Returns a copy of [root] with the Composable nodes grafted under the View node matching [targetViewId] (the AndroidComposeView that hosts
+ * the composition). Android Views that the composition embeds through the `AndroidView` composable sit in the View tree under an
+ * AndroidViewsHandler next to the composition; each is moved under the `AndroidView` Composable node that owns it. Returns null when
+ * [targetViewId] does not exist in the tree.
  */
 internal fun attachComposeTree(
-  viewNode: UiNode.ViewNode,
+  root: UiNode.ViewNode,
   targetViewId: Long,
   composeNodes: List<LayoutInspectorComposeProtocol.ComposableNode>,
   stringTable: Map<Int, String>,
@@ -35,30 +35,35 @@ internal fun attachComposeTree(
   parameters: LayoutInspectorComposeProtocol.GetAllParametersResponse?,
   includeParameters: Boolean,
   includeSemantics: Boolean,
-): Boolean {
+): UiNode.ViewNode? {
   // Nested interop (a ComposeView inside a hosted AndroidView) places the target below already-grafted Compose nodes, so the search must
   // traverse the mixed tree, not only View children.
-  val target = findViewNode(viewNode, targetViewId) ?: return false
+  if (findViewNode(root, targetViewId) == null) return null
 
-  target.children.removeAll { child -> child is UiNode.ViewNode && viewsToSkip.contains(child.id) }
-
-  val hostedViews = extractHostedViewSubtrees(target, collectHostedViewIds(composeNodes))
-
-  composeNodes.forEach { composeNode ->
-    val parsedComposeNode =
+  val hostedViewIds = collectHostedViewIds(composeNodes)
+  val hostedViews = mutableMapOf<Long, UiNode.ViewNode>()
+  val grafted = root.rebuilding { node ->
+    if (node !is UiNode.ViewNode || node.id != targetViewId) return@rebuilding null
+    val children =
+      node.children
+        .filterNot { child -> child is UiNode.ViewNode && viewsToSkip.contains(child.id) }
+        .let { remaining -> detachHostedViews(node, remaining, hostedViewIds, hostedViews) }
+        .mapNotNull { child -> child.withoutHostedViews(hostedViewIds, hostedViews) }
+    val composeChildren = composeNodes.map { composeNode ->
       convertComposeNode(
         composeNode,
         stringTable,
         hostedViews,
-        viewNode.bounds.x,
-        viewNode.bounds.y,
+        root.bounds.x,
+        root.bounds.y,
         parameters,
         includeParameters,
         includeSemantics,
       )
-    target.children.add(parsedComposeNode)
+    }
+    node.copy(children = children + composeChildren)
   }
-  return true
+  return grafted as UiNode.ViewNode
 }
 
 /** Finds the View node with [viewId], traversing View and already-grafted Compose children alike. */
@@ -74,6 +79,16 @@ private fun findViewNode(node: UiNode, viewId: Long): UiNode.ViewNode? {
   }
   return null
 }
+
+/** Rebuilds this tree recursively. When [replace] returns a node, that node is used as is, without looking at its children. */
+private fun UiNode.rebuilding(replace: (UiNode) -> UiNode?): UiNode =
+  replace(this) ?: withChildren(children.map { child -> child.rebuilding(replace) })
+
+private fun UiNode.withChildren(children: List<UiNode>): UiNode =
+  when (this) {
+    is UiNode.ViewNode -> copy(children = children)
+    is UiNode.ComposeNode -> copy(children = children)
+  }
 
 /**
  * Recursively collects the IDs of all Android views hosted within the given Composable nodes.
@@ -101,32 +116,34 @@ private fun UiNode.isAndroidViewsHandler(): Boolean =
   this is UiNode.ViewNode && (className == ANDROID_VIEWS_HANDLER || className.endsWith(".$ANDROID_VIEWS_HANDLER"))
 
 /**
- * Detaches the hosted Android View subtrees referenced by [hostedViewIds] so they can be grafted under their Composable owners.
+ * Returns [children] without the hosted views, when [owner] is an AndroidViewsHandler; the removed views land in [hostedViews], keyed by
+ * id, for the Composable nodes that own them. Any other owner keeps its children as they are.
  *
  * Compose keeps hosted Views inside AndroidViewsHandler carriers anywhere below the target: each direct child of a handler is the root of
  * one hosted subtree (a ViewFactoryHolder on current Compose, the payload View itself on older versions) and is what
- * `ComposableNode.view_id` references. Matching Studio's merger, only a handler's direct children are matched, a matched subtree is moved
- * wholesale, and a handler left without children is dropped.
+ * `ComposableNode.view_id` references. Only a handler's direct children are matched, and a matched subtree is moved wholesale.
  */
-private fun extractHostedViewSubtrees(target: UiNode.ViewNode, hostedViewIds: Set<Long>): Map<Long, UiNode.ViewNode> {
-  val hostedViews = mutableMapOf<Long, UiNode.ViewNode>()
-  extractHostedViewSubtrees(target, hostedViewIds, hostedViews)
-  return hostedViews
+private fun detachHostedViews(
+  owner: UiNode,
+  children: List<UiNode>,
+  hostedViewIds: Set<Long>,
+  hostedViews: MutableMap<Long, UiNode.ViewNode>,
+): List<UiNode> {
+  if (!owner.isAndroidViewsHandler()) return children
+  val (hosted, kept) = children.partition { child -> child is UiNode.ViewNode && hostedViewIds.contains(child.id) }
+  hosted.forEach { child -> hostedViews[child.id] = child as UiNode.ViewNode }
+  return kept
 }
 
-private fun extractHostedViewSubtrees(node: UiNode, hostedViewIds: Set<Long>, accumulator: MutableMap<Long, UiNode.ViewNode>) {
-  if (node.isAndroidViewsHandler()) {
-    node.children.removeAll { child ->
-      if (child is UiNode.ViewNode && hostedViewIds.contains(child.id)) {
-        accumulator[child.id] = child
-        true
-      } else {
-        false
-      }
+/**
+ * Returns a copy of this subtree with the hosted views detached (see [detachHostedViews]) at every level; null when this node is an
+ * AndroidViewsHandler left without children, which is dropped. Detached subtrees are not descended into: carriers inside them (from nested
+ * compositions) are left for the attach pass of their own compose root.
+ */
+private fun UiNode.withoutHostedViews(hostedViewIds: Set<Long>, hostedViews: MutableMap<Long, UiNode.ViewNode>): UiNode? {
+  val kept =
+    detachHostedViews(this, children, hostedViewIds, hostedViews).mapNotNull { child ->
+      child.withoutHostedViews(hostedViewIds, hostedViews)
     }
-  }
-  // Extracted subtrees are no longer in the tree at this point: carriers inside them (from nested compositions) are left for the attach
-  // pass of their own compose root.
-  node.children.forEach { child -> extractHostedViewSubtrees(child, hostedViewIds, accumulator) }
-  node.children.removeAll { child -> child.isAndroidViewsHandler() && child.children.isEmpty() }
+  return if (isAndroidViewsHandler() && kept.isEmpty()) null else withChildren(kept)
 }

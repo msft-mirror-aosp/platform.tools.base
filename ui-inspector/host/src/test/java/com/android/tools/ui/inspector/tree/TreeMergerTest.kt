@@ -29,7 +29,7 @@ class TreeMergerTest {
     // Root (FrameLayout)
     //   -> AndroidComposeView (id = 123)
     //   -> OtherView (id = 456)
-    val rootNode =
+    val original =
       UiNode.ViewNode(
         id = 1,
         className = "android.widget.FrameLayout",
@@ -38,7 +38,7 @@ class TreeMergerTest {
         layoutResource = "main_layout",
         attributes = emptyList(),
         children =
-          mutableListOf(
+          listOf(
             UiNode.ViewNode(
               id = 123,
               className = "androidx.compose.ui.platform.AndroidComposeView",
@@ -46,7 +46,7 @@ class TreeMergerTest {
               idResource = null,
               layoutResource = null,
               attributes = emptyList(),
-              children = mutableListOf(),
+              children = listOf(),
             ),
             UiNode.ViewNode(
               id = 456,
@@ -55,7 +55,7 @@ class TreeMergerTest {
               idResource = "submit_btn",
               layoutResource = null,
               attributes = emptyList(),
-              children = mutableListOf(),
+              children = listOf(),
             ),
           ),
       )
@@ -105,9 +105,9 @@ class TreeMergerTest {
         .build()
 
     // 3. Execute grafting
-    val wasAttached =
+    val rootNode =
       attachComposeTree(
-        viewNode = rootNode,
+        root = original,
         targetViewId = 123,
         composeNodes = composeNodes,
         stringTable = stringTable,
@@ -118,7 +118,8 @@ class TreeMergerTest {
       )
 
     // 4. Assertions
-    assertThat(wasAttached).isTrue()
+    assertThat(rootNode).isNotNull()
+    rootNode!!
 
     // Verify that FrameLayout child count is still 2
     assertThat(rootNode.children).hasSize(2)
@@ -163,7 +164,7 @@ class TreeMergerTest {
         layoutResource = null,
         attributes = emptyList(),
       )
-    val rootNode =
+    val original =
       UiNode.ViewNode(
         id = 1,
         className = "android.widget.FrameLayout",
@@ -171,7 +172,7 @@ class TreeMergerTest {
         idResource = null,
         layoutResource = null,
         attributes = emptyList(),
-        children = mutableListOf(target),
+        children = listOf(target),
       )
     val composeNodes =
       listOf(
@@ -203,9 +204,9 @@ class TreeMergerTest {
           .build(),
       )
 
-    val wasAttached =
+    val rootNode =
       attachComposeTree(
-        viewNode = rootNode,
+        root = original,
         targetViewId = 123,
         composeNodes = composeNodes,
         stringTable = mapOf(1 to "Rotated", 2 to "Fallback"),
@@ -215,14 +216,14 @@ class TreeMergerTest {
         includeSemantics = false,
       )
 
-    assertThat(wasAttached).isTrue()
-    assertThat((target.children[0] as UiNode.ComposeNode).bounds).isEqualTo(UiNode.Bounds(310, 410, 50, 40))
-    assertThat((target.children[1] as UiNode.ComposeNode).bounds).isEqualTo(UiNode.Bounds(320, 430, 20, 10))
+    val attachedTarget = rootNode!!.children.single() as UiNode.ViewNode
+    assertThat((attachedTarget.children[0] as UiNode.ComposeNode).bounds).isEqualTo(UiNode.Bounds(310, 410, 50, 40))
+    assertThat((attachedTarget.children[1] as UiNode.ComposeNode).bounds).isEqualTo(UiNode.Bounds(320, 430, 20, 10))
   }
 
   @Test
   fun testAttachComposeTreeSkipsNonMatchingId() {
-    val rootNode =
+    val original =
       UiNode.ViewNode(
         id = 1,
         className = "android.widget.FrameLayout",
@@ -230,15 +231,15 @@ class TreeMergerTest {
         idResource = "root",
         layoutResource = null,
         attributes = emptyList(),
-        children = mutableListOf(),
+        children = listOf(),
       )
 
     val composeNodes = listOf(LayoutInspectorComposeProtocol.ComposableNode.newBuilder().setId(200).setName(1).build())
 
     // Try grafting to a non-existent target view id 999
-    val wasAttached =
+    val rootNode =
       attachComposeTree(
-        viewNode = rootNode,
+        root = original,
         targetViewId = 999,
         composeNodes = composeNodes,
         stringTable = mapOf(1 to "Column"),
@@ -249,8 +250,8 @@ class TreeMergerTest {
       )
 
     // Must skip grafting because the view id 999 does not exist in the View tree!
-    assertThat(wasAttached).isFalse()
-    assertThat(rootNode.children).isEmpty()
+    assertThat(rootNode).isNull()
+    assertThat(original.children).isEmpty()
   }
 
   @Test
@@ -260,7 +261,7 @@ class TreeMergerTest {
     //   -> AndroidComposeView (id = 123)
     //        -> ShadowView (id = 777) -- should be skipped
     //        -> NormalView (id = 888) -- should keep
-    val rootNode =
+    val original =
       UiNode.ViewNode(
         id = 1,
         className = "android.widget.FrameLayout",
@@ -269,7 +270,7 @@ class TreeMergerTest {
         layoutResource = "main_layout",
         attributes = emptyList(),
         children =
-          mutableListOf(
+          listOf(
             UiNode.ViewNode(
               id = 123,
               className = "androidx.compose.ui.platform.AndroidComposeView",
@@ -278,7 +279,7 @@ class TreeMergerTest {
               layoutResource = null,
               attributes = emptyList(),
               children =
-                mutableListOf(
+                listOf(
                   UiNode.ViewNode(
                     id = 777,
                     className = "android.view.View", // e.g., paint shadow
@@ -286,7 +287,7 @@ class TreeMergerTest {
                     idResource = null,
                     layoutResource = null,
                     attributes = emptyList(),
-                    children = mutableListOf(),
+                    children = listOf(),
                   ),
                   UiNode.ViewNode(
                     id = 888,
@@ -295,7 +296,7 @@ class TreeMergerTest {
                     idResource = null,
                     layoutResource = null,
                     attributes = emptyList(),
-                    children = mutableListOf(),
+                    children = listOf(),
                   ),
                 ),
             )
@@ -317,9 +318,9 @@ class TreeMergerTest {
       )
 
     // 3. Execute grafting with viewsToSkip list containing 777
-    val wasAttached =
+    val rootNode =
       attachComposeTree(
-        viewNode = rootNode,
+        root = original,
         targetViewId = 123,
         composeNodes = composeNodes,
         stringTable = stringTable,
@@ -330,7 +331,8 @@ class TreeMergerTest {
       )
 
     // 4. Assertions
-    assertThat(wasAttached).isTrue()
+    assertThat(rootNode).isNotNull()
+    rootNode!!
 
     val composeView = rootNode.children[0] as UiNode.ViewNode
     // The children of AndroidComposeView should be:
@@ -350,7 +352,7 @@ class TreeMergerTest {
   fun testHostedViewGraftedThroughAndroidViewsHandler() {
     // The shape Compose actually produces: the hosted subtree sits under an AndroidViewsHandler carrier, and
     // ComposableNode.view_id references the handler's direct child (the ViewFactoryHolder), not the payload.
-    val rootNode =
+    val original =
       view(
         1,
         "FrameLayout",
@@ -358,9 +360,8 @@ class TreeMergerTest {
       )
     val composeNodes = listOf(composable(100, COLUMN, composable(101, ANDROID_VIEW, viewId = 12)))
 
-    val wasAttached = attach(rootNode, targetViewId = 10, composeNodes = composeNodes)
+    val rootNode = checkNotNull(attach(original, targetViewId = 10, composeNodes = composeNodes))
 
-    assertThat(wasAttached).isTrue()
     val composeView = rootNode.children[0] as UiNode.ViewNode
     // The emptied AndroidViewsHandler is gone; the grafted Compose root is the only child.
     assertThat(composeView.children.map { it.id }).containsExactly(100L)
@@ -378,7 +379,7 @@ class TreeMergerTest {
   fun testHostedViewGraftedWhenTargetIsAncestorOfComposeView() {
     // The lean fetch currently anchors the Compose root above the AndroidComposeView (e.g. the DecorView), so carrier
     // discovery must search the whole target subtree. This pins hosted grafting for that shape, not the anchoring itself.
-    val rootNode =
+    val original =
       view(
         1,
         "DecorView",
@@ -390,9 +391,8 @@ class TreeMergerTest {
       )
     val composeNodes = listOf(composable(100, COLUMN, composable(101, ANDROID_VIEW, viewId = 12)))
 
-    val wasAttached = attach(rootNode, targetViewId = 1, composeNodes = composeNodes)
+    val rootNode = checkNotNull(attach(original, targetViewId = 1, composeNodes = composeNodes))
 
-    assertThat(wasAttached).isTrue()
     val androidView = findCompose(rootNode, 101)
     assertThat((androidView.children.single() as UiNode.ViewNode).id).isEqualTo(12)
     assertThat(viewIds(rootNode)).containsExactly(1L, 2L, 10L, 12L, 13L)
@@ -401,13 +401,12 @@ class TreeMergerTest {
   @Test
   fun testLegacyHostedShapeWithoutHolderIsGrafted() {
     // Older Compose versions place the payload View directly under the handler; view_id then references the payload.
-    val rootNode =
+    val original =
       view(1, "FrameLayout", view(10, "AndroidComposeView", view(11, "AndroidViewsHandler", view(12, "Button", view(13, "TextView")))))
     val composeNodes = listOf(composable(100, COLUMN, composable(101, ANDROID_VIEW, viewId = 12)))
 
-    val wasAttached = attach(rootNode, targetViewId = 10, composeNodes = composeNodes)
+    val rootNode = checkNotNull(attach(original, targetViewId = 10, composeNodes = composeNodes))
 
-    assertThat(wasAttached).isTrue()
     val androidView = findCompose(rootNode, 101)
     val payload = androidView.children.single() as UiNode.ViewNode
     assertThat(payload.id).isEqualTo(12)
@@ -418,7 +417,7 @@ class TreeMergerTest {
   @Test
   fun testMultipleHostedViewsMatchedByIdNotOrder() {
     // Compose order deliberately differs from handler child order: ownership must follow ids.
-    val rootNode =
+    val original =
       view(
         1,
         "FrameLayout",
@@ -427,9 +426,8 @@ class TreeMergerTest {
     val composeNodes =
       listOf(composable(100, COLUMN, composable(101, ANDROID_VIEW, viewId = 13), composable(102, ANDROID_VIEW, viewId = 12)))
 
-    val wasAttached = attach(rootNode, targetViewId = 10, composeNodes = composeNodes)
+    val rootNode = checkNotNull(attach(original, targetViewId = 10, composeNodes = composeNodes))
 
-    assertThat(wasAttached).isTrue()
     assertThat((findCompose(rootNode, 101).children.single() as UiNode.ViewNode).id).isEqualTo(13)
     assertThat((findCompose(rootNode, 102).children.single() as UiNode.ViewNode).id).isEqualTo(12)
     // Each holder appears exactly once and the emptied handler is gone.
@@ -438,7 +436,7 @@ class TreeMergerTest {
 
   @Test
   fun testPartiallyEmptiedHandlerIsKept() {
-    val rootNode =
+    val original =
       view(
         1,
         "FrameLayout",
@@ -446,14 +444,62 @@ class TreeMergerTest {
       )
     val composeNodes = listOf(composable(100, COLUMN, composable(101, ANDROID_VIEW, viewId = 12)))
 
-    val wasAttached = attach(rootNode, targetViewId = 10, composeNodes = composeNodes)
+    val rootNode = checkNotNull(attach(original, targetViewId = 10, composeNodes = composeNodes))
 
-    assertThat(wasAttached).isTrue()
     val composeView = rootNode.children[0] as UiNode.ViewNode
     // The handler keeps its unmatched child.
     val handler = composeView.children.filterIsInstance<UiNode.ViewNode>().single { it.id == 11L }
     assertThat(handler.children.map { it.id }).containsExactly(14L)
     assertThat((findCompose(rootNode, 101).children.single() as UiNode.ViewNode).id).isEqualTo(12)
+  }
+
+  @Test
+  fun testAttachLeavesTheInputTreeAlone() {
+    val sibling = view(2, "Button")
+    val handler = view(11, "AndroidViewsHandler", view(12, "ViewFactoryHolder"))
+    val skipped = view(9, "View")
+    val composeView = view(10, "AndroidComposeView", skipped, handler)
+    val original = view(1, "FrameLayout", composeView, sibling)
+    val composeNodes = listOf(composable(100, COLUMN, composable(101, ANDROID_VIEW, viewId = 12)))
+
+    val rootNode =
+      checkNotNull(
+        attachComposeTree(
+          root = original,
+          targetViewId = 10,
+          composeNodes = composeNodes,
+          stringTable = STRING_TABLE,
+          viewsToSkip = listOf(9),
+          parameters = null,
+          includeParameters = false,
+          includeSemantics = false,
+        )
+      )
+
+    // The input is untouched: the skipped view and the carrier with its hosted view are still where they were.
+    assertThat(composeView.children).containsExactly(skipped, handler).inOrder()
+    assertThat(handler.children.map { it.id }).containsExactly(12L)
+    // The path to the target is rebuilt: the skipped view is gone, the emptied carrier is gone, the hosted view moved under its owner.
+    assertThat(rootNode).isNotSameAs(original)
+    val attachedComposeView = rootNode.children[0] as UiNode.ViewNode
+    assertThat(attachedComposeView.children.map { it.id }).containsExactly(100L)
+    assertThat(((attachedComposeView.children[0] as UiNode.ComposeNode).children[0] as UiNode.ComposeNode).children.map { it.id })
+      .containsExactly(12L)
+    assertThat(rootNode.children[1]).isEqualTo(sibling)
+  }
+
+  @Test
+  fun testAttachToACarrierTargetExtractsItsOwnHostedViews() {
+    // A target that is itself an AndroidViewsHandler takes part in the extraction and keeps its place even when emptied.
+    val original = view(1, "FrameLayout", view(10, "AndroidViewsHandler", view(12, "ViewFactoryHolder")))
+    val composeNodes = listOf(composable(100, COLUMN, composable(101, ANDROID_VIEW, viewId = 12)))
+
+    val rootNode = checkNotNull(attach(original, targetViewId = 10, composeNodes = composeNodes))
+
+    val target = rootNode.children.single() as UiNode.ViewNode
+    assertThat(target.id).isEqualTo(10)
+    assertThat(target.children.map { it.id }).containsExactly(100L)
+    assertThat(((target.children[0] as UiNode.ComposeNode).children[0] as UiNode.ComposeNode).children.map { it.id }).containsExactly(12L)
   }
 
   @Test
@@ -463,13 +509,8 @@ class TreeMergerTest {
     val outer = ComposeRootFixture(targetViewId = 10, nodes = listOf(composable(100, COLUMN, composable(101, ANDROID_VIEW, viewId = 12))))
     val inner = ComposeRootFixture(targetViewId = 15, nodes = listOf(composable(200, TEXT)))
 
-    val outerFirst = nestedFixture()
-    assertThat(attach(outerFirst, outer.targetViewId, outer.nodes)).isTrue()
-    assertThat(attach(outerFirst, inner.targetViewId, inner.nodes)).isTrue()
-
-    val innerFirst = nestedFixture()
-    assertThat(attach(innerFirst, inner.targetViewId, inner.nodes)).isTrue()
-    assertThat(attach(innerFirst, outer.targetViewId, outer.nodes)).isTrue()
+    val outerFirst = nestedFixture().attachAll(outer, inner)
+    val innerFirst = nestedFixture().attachAll(inner, outer)
 
     assertThat(parentPairs(innerFirst)).isEqualTo(parentPairs(outerFirst))
     // The inner Compose tree hangs off the inner AndroidComposeView, which stays inside the hosted subtree.
@@ -488,11 +529,10 @@ class TreeMergerTest {
         ComposeRootFixture(targetViewId = 20, nodes = listOf(composable(300, TEXT))),
       )
 
-    val expected = threeLevelFixture().also { fixture -> roots.forEach { assertThat(attach(fixture, it.targetViewId, it.nodes)).isTrue() } }
+    val expected = threeLevelFixture().attachAll(*roots.toTypedArray())
 
     permutations(roots).forEach { order ->
-      val fixture = threeLevelFixture()
-      order.forEach { assertThat(attach(fixture, it.targetViewId, it.nodes)).isTrue() }
+      val fixture = threeLevelFixture().attachAll(*order.toTypedArray())
       assertThat(parentPairs(fixture)).isEqualTo(parentPairs(expected))
       // Both emptied handlers (11, 16) are gone; everything else appears exactly once.
       assertThat(viewIds(fixture)).containsExactly(1L, 10L, 12L, 13L, 14L, 15L, 17L, 18L, 19L, 20L)
@@ -511,13 +551,18 @@ class TreeMergerTest {
 
   private data class ComposeRootFixture(val targetViewId: Long, val nodes: List<LayoutInspectorComposeProtocol.ComposableNode>)
 
+  /** Attaches each Compose root in turn, each one onto the tree the previous one produced; every target must exist. */
+  private fun UiNode.ViewNode.attachAll(vararg roots: ComposeRootFixture): UiNode.ViewNode =
+    roots.fold(this) { tree, root -> checkNotNull(attach(tree, root.targetViewId, root.nodes)) }
+
+  /** Attaches [composeNodes] under [targetViewId] and returns the rebuilt tree; null when the target is absent. */
   private fun attach(
     root: UiNode.ViewNode,
     targetViewId: Long,
     composeNodes: List<LayoutInspectorComposeProtocol.ComposableNode>,
-  ): Boolean =
+  ): UiNode.ViewNode? =
     attachComposeTree(
-      viewNode = root,
+      root = root,
       targetViewId = targetViewId,
       composeNodes = composeNodes,
       stringTable = STRING_TABLE,
@@ -535,7 +580,7 @@ class TreeMergerTest {
       idResource = null,
       layoutResource = null,
       attributes = emptyList(),
-      children = children.toMutableList(),
+      children = children.toList(),
     )
 
   private fun composable(

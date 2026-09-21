@@ -21,7 +21,7 @@ sealed class UiNode {
   abstract val id: Long
   abstract val className: String
   abstract val bounds: Bounds
-  abstract val children: MutableList<UiNode>
+  abstract val children: List<UiNode>
 
   /**
    * Where the node appears on screen: the straight (non-tilted) rectangle enclosing the node as rendered, in screen coordinates. For a node
@@ -59,7 +59,7 @@ sealed class UiNode {
     override val id: Long,
     override val className: String,
     override val bounds: Bounds,
-    override val children: MutableList<UiNode> = mutableListOf(),
+    override val children: List<UiNode> = emptyList(),
     val idResource: String?,
     val layoutResource: String?,
     val attributes: List<Attribute>,
@@ -115,7 +115,7 @@ sealed class UiNode {
     override val id: Long,
     override val className: String,
     override val bounds: Bounds,
-    override val children: MutableList<UiNode> = mutableListOf(),
+    override val children: List<UiNode> = emptyList(),
     val sourceLocation: SourceLocation? = null,
     val parameters: List<ComposeParameter>,
     val mergedSemantics: List<ComposeParameter>,

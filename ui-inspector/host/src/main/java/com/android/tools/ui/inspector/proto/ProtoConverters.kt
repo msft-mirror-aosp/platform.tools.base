@@ -94,7 +94,7 @@ internal fun convertViewNode(
         styleChain = styleChain,
       )
     }
-  val children = node.childrenList.map { convertViewNode(it, stringTable, includeResolutionStack) }.toMutableList<UiNode>()
+  val children = node.childrenList.map { convertViewNode(it, stringTable, includeResolutionStack) }
   return UiNode.ViewNode(
     id = node.id,
     className = className,
@@ -218,13 +218,10 @@ private fun doConvertComposeNode(
   val mappedMergedSemantics = nodeMergedSemantics.map { convertParameterToComposeParameter(it, paramStringTable) }
   val mappedUnmergedSemantics = nodeUnmergedSemantics.map { convertParameterToComposeParameter(it, paramStringTable) }
 
-  val children =
-    node.childrenList
-      .map { doConvertComposeNode(it, stringTable, hostedViews, renderOffsetX, renderOffsetY, parameters) }
-      .toMutableList<UiNode>()
-  if (node.viewId != 0L) {
-    hostedViews[node.viewId]?.let { hostedView -> children.add(hostedView) }
-  }
+  val composeChildren =
+    node.childrenList.map { doConvertComposeNode(it, stringTable, hostedViews, renderOffsetX, renderOffsetY, parameters) }
+  val hostedView = if (node.viewId != 0L) hostedViews[node.viewId] else null
+  val children: List<UiNode> = composeChildren + listOfNotNull(hostedView)
   val sourceLocation =
     if (node.filename != 0) {
       val filename = stringTable[node.filename] ?: "Missing"

@@ -23,8 +23,7 @@ import com.android.tools.ui.inspector.model.UiNode
 internal fun stripSystemComposables(uiDump: UiDump): UiDump =
   uiDump.copy(windows = uiDump.windows.map { window -> window.copy(root = stripViewNode(window.root)) })
 
-private fun stripViewNode(node: UiNode.ViewNode): UiNode.ViewNode =
-  node.copy(children = node.children.flatMap { stripNode(it) }.toMutableList())
+private fun stripViewNode(node: UiNode.ViewNode): UiNode.ViewNode = node.copy(children = node.children.flatMap { stripNode(it) })
 
 private fun stripNode(node: UiNode): List<UiNode> =
   when (node) {
@@ -34,7 +33,7 @@ private fun stripNode(node: UiNode): List<UiNode> =
       if (node.isSystemCreated) {
         strippedChildren
       } else {
-        listOf(node.copy(children = strippedChildren.toMutableList()))
+        listOf(node.copy(children = strippedChildren))
       }
     }
   }

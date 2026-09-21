@@ -218,21 +218,23 @@ class CommandsTest {
     val composeRoots = listOf(composableRoot(targetViewId = 999, composableId = 100))
     val logger = RecordingLogger()
 
-    mergeComposeRoots(
-      viewRoot,
-      composeRoots,
-      stringTable = emptyMap(),
-      parameters = null,
-      includeParameters = false,
-      includeSemantics = false,
-      logger = logger,
-    )
+    val merged =
+      mergeComposeRoots(
+        viewRoot,
+        composeRoots,
+        stringTable = emptyMap(),
+        parameters = null,
+        includeParameters = false,
+        includeSemantics = false,
+        logger = logger,
+      )
 
     val (level, message) = logger.messages.single()
     assertThat(level).isEqualTo(LogLevel.WARNING)
     assertThat(message).contains("target view id 999")
     assertThat(message).contains("view root 1")
-    assertThat(viewRoot.children).isEmpty()
+    // Nothing attached: the tree comes back as it was.
+    assertThat(merged).isSameAs(viewRoot)
   }
 
   @Test
@@ -242,19 +244,23 @@ class CommandsTest {
     val composeRoots = listOf(composableRoot(targetViewId = 999, composableId = 100), composableRoot(targetViewId = 20, composableId = 200))
 
     val logger = RecordingLogger()
-    mergeComposeRoots(
-      viewRoot,
-      composeRoots,
-      stringTable = emptyMap(),
-      parameters = null,
-      includeParameters = false,
-      includeSemantics = false,
-      logger = logger,
-    )
+    val merged =
+      mergeComposeRoots(
+        viewRoot,
+        composeRoots,
+        stringTable = emptyMap(),
+        parameters = null,
+        includeParameters = false,
+        includeSemantics = false,
+        logger = logger,
+      )
 
     // The missing target is warned about; the valid root after it still attaches.
     assertThat(logger.text()).contains("target view id 999")
-    assertThat(composeView.children.map { it.id }).containsExactly(200L)
+    val mergedComposeView = merged.children.single { it.id == 20L }
+    assertThat(mergedComposeView.children.map { it.id }).containsExactly(200L)
+    // The input tree is untouched.
+    assertThat(composeView.children).isEmpty()
   }
 
   @Test
@@ -267,18 +273,21 @@ class CommandsTest {
         listOf(composableRoot(targetViewId = 20, composableId = 100), composableRoot(targetViewId = 30, composableId = 200))
 
       val logger = RecordingLogger()
-      mergeComposeRoots(
-        viewRoot,
-        if (reversed) composeRoots.reversed() else composeRoots,
-        stringTable = emptyMap(),
-        parameters = null,
-        includeParameters = false,
-        includeSemantics = false,
-        logger = logger,
-      )
+      val merged =
+        mergeComposeRoots(
+          viewRoot,
+          if (reversed) composeRoots.reversed() else composeRoots,
+          stringTable = emptyMap(),
+          parameters = null,
+          includeParameters = false,
+          includeSemantics = false,
+          logger = logger,
+        )
 
       assertThat(logger.messages).isEmpty()
-      assertThat(innerComposeView.children.map { it.id }).containsExactly(200L)
+      val mergedInnerComposeView = merged.children.single { it.id == 20L }.children.single { it.id == 30L }
+      assertThat(mergedInnerComposeView.children.map { it.id }).containsExactly(200L)
+      assertThat(innerComposeView.children).isEmpty()
     }
   }
 
@@ -290,7 +299,7 @@ class CommandsTest {
       idResource = null,
       layoutResource = null,
       attributes = emptyList(),
-      children = children.toMutableList(),
+      children = children.toList(),
     )
 
   private fun composableRoot(targetViewId: Long, composableId: Long): LayoutInspectorComposeProtocol.ComposableRoot =

@@ -175,13 +175,13 @@ class JsonUiDumpPrinterTest {
         isSystemCreated = false,
       )
 
-    viewNode.children.add(composeNode)
+    val viewNodeWithChild = viewNode.copy(children = listOf(composeNode))
 
     val config = DeviceConfiguration(density = Dimension.Dpi(420), fontScale = 1.0f, locale = DeviceLocale("en", "US", null, null))
 
     val uiDump =
       UiDump(
-        windows = listOf(UiWindow(root = viewNode, configuration = config, theme = "AppTheme")),
+        windows = listOf(UiWindow(root = viewNodeWithChild, configuration = config, theme = "AppTheme")),
         displays = listOf(DisplayInfo(0, 1080, 1920, 0)),
       )
 
@@ -360,9 +360,9 @@ class JsonUiDumpPrinterTest {
         unmergedSemantics = listOf(UiNode.ComposeParameter.Single("ContentDescription", UiNode.ComposeParameter.Value.StringVal("Icon"))),
         isSystemCreated = false,
       )
-    rootNode.children.add(composeNode)
+    val rootNodeWithChild = rootNode.copy(children = listOf(composeNode))
 
-    val uiDump = dump(rootNode)
+    val uiDump = dump(rootNodeWithChild)
 
     val printer = JsonUiDumpPrinter(out = printStream, prettyPrint = false)
     printer.printDump(uiDump)
@@ -436,10 +436,10 @@ class JsonUiDumpPrinterTest {
         unmergedSemantics = emptyList(),
         isSystemCreated = false,
       )
-    viewNode.children.add(composeNode)
+    val viewNodeWithChild = viewNode.copy(children = listOf(composeNode))
 
     val config = DeviceConfiguration(fontScale = Float.NaN)
-    val uiDump = dump(viewNode, configuration = config)
+    val uiDump = dump(viewNodeWithChild, configuration = config)
 
     val printer = JsonUiDumpPrinter(out = printStream, prettyPrint = false)
     printer.printDump(uiDump)
