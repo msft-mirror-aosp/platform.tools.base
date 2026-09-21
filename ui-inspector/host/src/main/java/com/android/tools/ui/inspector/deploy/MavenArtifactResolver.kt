@@ -27,7 +27,7 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 /** Abstraction for downloading remote artifacts. */
-interface ArtifactDownloader {
+internal interface ArtifactDownloader {
 
   /**
    * Downloads the artifact payload from the specified [url] and writes it to the [outputFile].
@@ -49,7 +49,7 @@ private val DEFAULT_READ_TIMEOUT = 30.seconds
  * server from hanging the CLI forever; a read timeout bounds each stall rather than the total transfer, so large artifacts on slow
  * connections still complete.
  */
-class HttpArtifactDownloader(
+internal class HttpArtifactDownloader(
   private val connectTimeout: Duration = DEFAULT_CONNECT_TIMEOUT,
   private val readTimeout: Duration = DEFAULT_READ_TIMEOUT,
 ) : ArtifactDownloader {
@@ -72,7 +72,7 @@ class HttpArtifactDownloader(
  * @param cacheDir The local directory where resolved payload JARs are cached.
  * @param fileMover The function used to move the temporary extracted JAR to its final cached destination path.
  */
-class MavenArtifactResolver(
+internal class MavenArtifactResolver(
   private val downloader: ArtifactDownloader = HttpArtifactDownloader(),
   private val cacheDir: File,
   private val fileMover: (File, File) -> Unit = ::defaultMoveFile,

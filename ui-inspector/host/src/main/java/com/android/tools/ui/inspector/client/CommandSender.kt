@@ -44,13 +44,14 @@ import kotlinx.coroutines.withContext
 import org.jetbrains.annotations.TestOnly
 
 /** Exception thrown when the UI Inspector agent crashes on the device. */
-class InspectorCrashException(errorMessage: String, val stackTrace: String) : IOException("Agent crashed: $errorMessage\n$stackTrace")
+internal class InspectorCrashException(errorMessage: String, val stackTrace: String) :
+  IOException("Agent crashed: $errorMessage\n$stackTrace")
 
 /**
  * Sends messages to the UI Inspector agent running on the device and receives responses. Uses the shared FramingProtocol for message
  * framing.
  */
-class CommandSender private constructor(private val socket: Socket, private val scope: CoroutineScope) : AutoCloseable {
+internal class CommandSender private constructor(private val socket: Socket, private val scope: CoroutineScope) : AutoCloseable {
 
   companion object {
     /**

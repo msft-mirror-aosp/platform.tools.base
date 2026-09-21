@@ -76,7 +76,7 @@ private val DEFAULT_AGENT_PATH_RESOLVER: (String) -> Path = { abi -> Paths.get(H
  * @param agentPathResolver A function that takes a device ABI string and returns the [Path] to the agent binary on the host.
  * @param tempFileSuffixGenerator A function that generates unique suffixes for temporary files pushed to the device.
  */
-class InjectionManager(
+internal class InjectionManager(
   private val adbSession: AdbSession,
   val serial: String,
   val packageName: String,
@@ -497,7 +497,7 @@ internal fun buildInstallCommand(
 }
 
 /** Whether [InjectionManager.injectAndAttach] may reuse an already-running agent server. */
-enum class InjectionMode {
+internal enum class InjectionMode {
   /**
    * Reconnect to a running server whose socket matches the target pid and artifact digest; perform a full injection only when none does.
    */
@@ -507,7 +507,7 @@ enum class InjectionMode {
 }
 
 /** The outcome of [InjectionManager.injectAndAttach]: how the agent server was obtained, and the adb forward that reaches it. */
-sealed interface InjectionResult {
+internal sealed interface InjectionResult {
   /** The forwarded TCP port number on the host. Connect to this port to communicate with the agent. */
   val forwardedPort: String
 

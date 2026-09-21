@@ -17,7 +17,7 @@
 package com.android.tools.ui.inspector.printer
 
 /** Defines strategies for displaying Compose merged and unmerged accessibility semantics properties. */
-enum class SemanticsDisplayMode {
+internal enum class SemanticsDisplayMode {
   /** Always print both merged and unmerged semantics with explicit labels ("merged semantics", "unmerged semantics"). */
   BOTH,
 

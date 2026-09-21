@@ -41,10 +41,10 @@ private const val DEVICE_OPTION_DESCRIPTION =
 private const val COMPOSE_INSPECTOR_CACHE_PATH = "ui-inspector/cache"
 
 /** Factory for creating [AdbSession]. Can be overridden in tests. */
-var sessionFactory: () -> AdbSession = { createStandaloneSession(NO_LOGGING) }
+internal var sessionFactory: () -> AdbSession = { createStandaloneSession(NO_LOGGING) }
 
 @Command(name = "ui-inspector", mixinStandardHelpOptions = true, version = ["1.0"], description = ["UI Inspector CLI"])
-class UiInspectorCommand : Callable<Int> {
+internal class UiInspectorCommand : Callable<Int> {
   @CommandLine.Spec lateinit var spec: CommandLine.Model.CommandSpec
 
   override fun call(): Int {
@@ -54,7 +54,7 @@ class UiInspectorCommand : Callable<Int> {
 }
 
 @Command(name = "dump-ui", description = ["Dump UI hierarchy"])
-class DumpUiCommand : Callable<Int> {
+internal class DumpUiCommand : Callable<Int> {
   @CommandLine.Spec lateinit var spec: CommandLine.Model.CommandSpec
   @Option(names = ["-h", "--help"], usageHelp = true, description = ["Show this help message and exit"]) private var helpRequested = false
   @Option(names = ["--device"], description = [DEVICE_OPTION_DESCRIPTION]) var device: String? = null
