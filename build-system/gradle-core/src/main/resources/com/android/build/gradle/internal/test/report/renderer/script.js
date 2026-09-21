@@ -366,7 +366,7 @@ const TestReportApp = {
     currentTestCase: null,
     currentStackTraceContext: {},
     filters: { variants: [], search: '', status: ['passed', 'failed', 'skipped'], testSuite: 'all', modules: [], packages: [], classes: [], testCases: [], targets: [] },
-    sort: { by: 'name', order: 'asc' },
+    sort: { by: 'fail', order: 'desc' },
     isResizing: false,
     columnWidths: {},
     variants: [],
@@ -389,6 +389,7 @@ const TestReportApp = {
       this.state.selectedClass = null;
       this.state.currentView = 'report';
       this.state.currentTestCase = null;
+      this.state.sort = { by: 'fail', order: 'desc' };
     }
 
     // Directly access the global variable from data.js
@@ -600,6 +601,15 @@ const TestReportApp = {
     this.state.targets = rootReport.targets || [];
     this.state.filters.variants = [...rootReport.variants];
 
+    const actualSuites = (rootReport.testSuites || []).filter(ts => ts !== 'Aggregated');
+    if (actualSuites.length === 1) {
+      this.state.filters.testSuite = actualSuites[0];
+    }
+
+    if ((this.state.sort.by === 'fail' || this.state.sort.by === 'failed') && rootReport.variants && rootReport.variants.length > 0) {
+      this.state.sort.by = `${rootReport.variants[0]}.fail`;
+    }
+
     // Populate header
     if (this.elements.appTitle) this.elements.appTitle.textContent = rootReport.projectName || 'Test Report';
     if (this.elements.reportDate) this.elements.reportDate.textContent = rootReport.timestamp || '';
@@ -653,29 +663,40 @@ const TestReportApp = {
 
   populateFilters() {
     // Test Suite Dropdown
-    const testSuiteOptions = [
-      { name: 'All', value: 'all' },
-      ...this.state.testSuites.filter(ts => ts !== 'Aggregated').map(ts => ({ name: ts, value: ts }))
-    ];
-    UIUtils.buildActionDropdown(this.elements.testSuiteFilterList, testSuiteOptions, this.state.filters.testSuite, (newVal) => {
-      this.state.filters.testSuite = newVal;
+    const actualSuites = (this.state.testSuites || []).filter(ts => ts !== 'Aggregated');
+    const isSingleSuite = actualSuites.length === 1;
 
-      if (newVal === 'all') {
-        this.elements.tsAllState.classList.remove('hidden');
-        this.elements.tsSelectedState.classList.add('hidden');
-      } else {
-        this.elements.tsAllState.classList.add('hidden');
-        this.elements.tsSelectedState.classList.remove('hidden');
-        this.elements.testSuiteFilterText.textContent = newVal;
+    if (isSingleSuite) {
+      this.state.filters.testSuite = actualSuites[0];
+      if (this.elements.testSuiteFilterList) {
+        this.elements.testSuiteFilterList.innerHTML = '';
       }
-      this.render();
-      Navigation.push();
-    }, false, false);
+    } else {
+      const testSuiteOptions = [
+        { name: 'All', value: 'all' },
+        ...actualSuites.map(ts => ({ name: ts, value: ts }))
+      ];
+      UIUtils.buildActionDropdown(this.elements.testSuiteFilterList, testSuiteOptions, this.state.filters.testSuite, (newVal) => {
+        this.state.filters.testSuite = newVal;
+        this.updateTestSuiteUI();
+        this.render();
+        Navigation.push();
+      }, false, false);
+    }
+    this.updateTestSuiteUI();
 
     // Variants Dropdown
     const variantOptions = this.state.variants.map(v => ({ name: v, value: v }));
     UIUtils.buildActionDropdown(this.elements.variantFilterList, variantOptions, this.state.filters.variants, (newArr) => {
       this.state.filters.variants = newArr;
+      const { variant, metric } = this.parseSortKey(this.state.sort.by);
+      if (variant && !newArr.includes(variant)) {
+        if (newArr.length > 0) {
+          this.state.sort.by = `${newArr[0]}.${metric}`;
+        } else {
+          this.state.sort.by = 'name';
+        }
+      }
       this.updateVariantButtonText();
       this.render();
       Navigation.push();
@@ -765,6 +786,9 @@ const TestReportApp = {
     this.getDropdownConfigs().forEach(({ btn, dropdown }) => {
       if (btn && dropdown) {
         btn.addEventListener('keydown', (e) => {
+          if (btn.disabled || btn.classList.contains('unclickable') || btn.getAttribute('aria-disabled') === 'true') {
+            return;
+          }
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
             e.stopPropagation();
@@ -827,7 +851,11 @@ const TestReportApp = {
       });
     }
 
-    this.elements.testSuiteFilterBtn.addEventListener('click', () => this.toggleDropdown(this.elements.testSuiteFilterDropdown, this.elements.testSuiteFilterBtn));
+    this.elements.testSuiteFilterBtn.addEventListener('click', () => {
+      const actualSuites = (this.state.testSuites || []).filter(ts => ts !== 'Aggregated');
+      if (actualSuites.length <= 1) return;
+      this.toggleDropdown(this.elements.testSuiteFilterDropdown, this.elements.testSuiteFilterBtn);
+    });
     this.elements.variantFilterBtn.addEventListener('click', () => this.toggleDropdown(this.elements.variantFilterDropdown, this.elements.variantFilterBtn));
     this.elements.statusFilterBtn.addEventListener('click', () => this.toggleDropdown(this.elements.statusFilterDropdown, this.elements.statusFilterBtn));
 
@@ -1055,11 +1083,13 @@ const TestReportApp = {
       if (!th) return;
 
       const newSortBy = th.dataset.sortBy;
-      if (this.state.sort.by === newSortBy) {
+      const isAlreadyActive = this.isSortActive(newSortBy);
+      if (isAlreadyActive) {
+        this.state.sort.by = newSortBy;
         this.state.sort.order = this.state.sort.order === 'asc' ? 'desc' : 'asc';
       } else {
         this.state.sort.by = newSortBy;
-        this.state.sort.order = 'asc';
+        this.state.sort.order = (newSortBy === 'name') ? 'asc' : 'desc';
       }
 
       const headerName = th.textContent.replace(/[▲▼]/g, '').trim();
@@ -1080,6 +1110,51 @@ const TestReportApp = {
       }
     });
 
+  },
+
+  updateTestSuiteUI() {
+    const actualSuites = (this.state.testSuites || []).filter(ts => ts !== 'Aggregated');
+    const isSingleSuite = actualSuites.length === 1;
+
+    if (isSingleSuite) {
+      this.state.filters.testSuite = actualSuites[0];
+      if (this.elements.tsAllState) this.elements.tsAllState.classList.add('hidden');
+      if (this.elements.tsSelectedState) this.elements.tsSelectedState.classList.remove('hidden');
+      if (this.elements.testSuiteFilterText) {
+        this.elements.testSuiteFilterText.textContent = actualSuites[0];
+      }
+      if (this.elements.testSuiteFilterBtn) {
+        this.elements.testSuiteFilterBtn.disabled = true;
+        this.elements.testSuiteFilterBtn.classList.add('unclickable');
+        this.elements.testSuiteFilterBtn.setAttribute('aria-disabled', 'true');
+        this.elements.testSuiteFilterBtn.setAttribute('aria-expanded', 'false');
+        this.elements.testSuiteFilterBtn.removeAttribute('aria-haspopup');
+        this.elements.testSuiteFilterBtn.tabIndex = -1;
+      }
+      if (this.elements.testSuiteFilterDropdown) {
+        this.elements.testSuiteFilterDropdown.classList.add('hidden');
+      }
+    } else {
+      if (this.elements.testSuiteFilterBtn) {
+        this.elements.testSuiteFilterBtn.disabled = false;
+        this.elements.testSuiteFilterBtn.classList.remove('unclickable');
+        this.elements.testSuiteFilterBtn.removeAttribute('aria-disabled');
+        this.elements.testSuiteFilterBtn.setAttribute('aria-haspopup', 'listbox');
+        this.elements.testSuiteFilterBtn.tabIndex = 0;
+      }
+      if (this.elements.tsAllState && this.elements.tsSelectedState) {
+        if (this.state.filters.testSuite === 'all') {
+          this.elements.tsAllState.classList.remove('hidden');
+          this.elements.tsSelectedState.classList.add('hidden');
+        } else {
+          this.elements.tsAllState.classList.add('hidden');
+          this.elements.tsSelectedState.classList.remove('hidden');
+          if (this.elements.testSuiteFilterText) {
+            this.elements.testSuiteFilterText.textContent = this.state.filters.testSuite;
+          }
+        }
+      }
+    }
   },
 
   updateFilterButtons() {
@@ -1177,6 +1252,9 @@ const TestReportApp = {
   },
 
   toggleDropdown(dropdownToToggle, button) {
+    if (button && (button.disabled || button.classList.contains('unclickable') || button.getAttribute('aria-disabled') === 'true')) {
+      return;
+    }
     this.getDropdownConfigs().forEach(({ btn, dropdown }) => {
       if (dropdown && dropdown !== dropdownToToggle) {
         dropdown.classList.add('hidden');
@@ -1454,27 +1532,22 @@ const TestReportApp = {
       });
     };
 
-    const sortNodes = (nodes) => {
+    const sortNodes = (nodes, type = 'module') => {
       if (!nodes) return;
-      nodes.sort((a, b) => {
-        const valA = a.name.toLowerCase();
-        const valB = b.name.toLowerCase();
-        if (valA < valB) return this.state.sort.order === 'asc' ? -1 : 1;
-        if (valA > valB) return this.state.sort.order === 'asc' ? 1 : -1;
-        return 0;
-      });
+      nodes.sort((a, b) => this.compareNodes(a, b));
 
-      nodes.forEach(node => {
-        const childKey = this.pluralize(this.getChildType(node.type));
-        let children = node[childKey] || (node.type === 'class' ? node.testCases : []);
-        if (children) sortNodes(children);
-      });
+      const childType = this.getChildType(type);
+      if (childType) {
+        const childKey = this.pluralize(childType);
+        nodes.forEach(node => {
+          let children = node[childKey] || (type === 'class' ? node.testCases : []);
+          if (children) sortNodes(children, childType);
+        });
+      }
     };
 
     finalData.modules = applyFilters(finalData.modules, 'module');
-    if (this.state.sort.by === 'name') {
-      sortNodes(finalData.modules);
-    }
+    sortNodes(finalData.modules, 'module');
 
     return finalData;
   },
@@ -1612,8 +1685,8 @@ const TestReportApp = {
 
   renderHeaders() {
     const variantsToShow = this.state.filters.variants;
-    const sortIndicator = (key) => this.state.sort.by === key ? (this.state.sort.order === 'asc' ? '▲' : '▼') : '';
-    const getAriaSort = (key) => this.state.sort.by === key ? (this.state.sort.order === 'asc' ? 'ascending' : 'descending') : 'none';
+    const sortIndicator = (key) => this.isSortActive(key) ? (this.state.sort.order === 'asc' ? '▲' : '▼') : '';
+    const getAriaSort = (key) => this.isSortActive(key) ? (this.state.sort.order === 'asc' ? 'ascending' : 'descending') : 'none';
     let nameHeader = this.state.viewMode === 'tree' ? 'Name' : (this.state.currentFlatView === 'testCases' ? 'Test Case' : this.state.currentFlatView.charAt(0).toUpperCase() + this.state.currentFlatView.slice(1));
 
     let pathHeader = '';
@@ -1650,7 +1723,17 @@ const TestReportApp = {
                 <th scope="col" class="py-2 px-6 sticky-name bg-gray-50 z-30"></th>
                 ${targetSubHeader}
                 ${pathSubHeader}
-                ${variantsToShow.map(v => `<th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600 border-l border-gray-200">Pass</th><th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600">Fail</th><th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600">Skip</th><th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600">Pass Rate</th>`).join('')}
+                ${variantsToShow.map(v => {
+                  const passKey = `${v}.pass`;
+                  const failKey = `${v}.fail`;
+                  const skipKey = `${v}.skip`;
+                  const rateKey = `${v}.rate`;
+                  const escV = UIUtils.escapeHTML(v);
+                  return `<th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600 border-l border-gray-200 cursor-pointer" tabindex="0" data-sort-by="${passKey}" aria-sort="${getAriaSort(passKey)}" aria-label="Sort by Pass for ${escV}">Pass ${sortIndicator(passKey)}</th>` +
+                         `<th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600 cursor-pointer" tabindex="0" data-sort-by="${failKey}" aria-sort="${getAriaSort(failKey)}" aria-label="Sort by Fail for ${escV}">Fail ${sortIndicator(failKey)}</th>` +
+                         `<th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600 cursor-pointer" tabindex="0" data-sort-by="${skipKey}" aria-sort="${getAriaSort(skipKey)}" aria-label="Sort by Skip for ${escV}">Skip ${sortIndicator(skipKey)}</th>` +
+                         `<th scope="col" class="py-2 px-4 text-center text-xs font-medium text-gray-600 cursor-pointer" tabindex="0" data-sort-by="${rateKey}" aria-sort="${getAriaSort(rateKey)}" aria-label="Sort by Pass Rate for ${escV}">Pass Rate ${sortIndicator(rateKey)}</th>`;
+                }).join('')}
             </tr>`;
   },
 
@@ -1791,6 +1874,8 @@ const TestReportApp = {
         );
       }
     }
+
+    items.sort((a, b) => this.compareNodes(a, b));
 
     this.elements.resultsData.innerHTML = items.map(item => {
       let nameTd = `<td class="py-3 px-6 sticky-name font-medium" title="${UIUtils.escapeHTML(item.name)}">${UIUtils.escapeHTML(item.name)}</td>`;
@@ -2138,27 +2223,16 @@ const TestReportApp = {
       header.className = "variant-header";
 
       const titleDiv = document.createElement("div");
-      titleDiv.className = "flex items-center gap-2";
-      titleDiv.innerHTML = `
-            <svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-600">
-                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-                <line x1="12" y1="9" x2="12" y2="13"></line>
-                <line x1="12" y1="17" x2="12.01" y2="17"></line>
-            </svg>
-            <h2 class="text-sm font-semibold text-gray-900" id="${titleId}">Stack Trace</h2>
-        `;
-      header.appendChild(titleDiv);
-
-      const occurrencesDiv = document.createElement("div");
-      occurrencesDiv.className = "flex flex-wrap gap-1 mt-2";
+      titleDiv.className = "flex items-center gap-2 flex-wrap";
+      titleDiv.id = titleId;
 
       for (const [suite, variants] of Object.entries(group.filteredOccurrences)) {
         const tag = document.createElement("span");
         tag.className = "occurrence-tag";
         tag.textContent = `${suite} (${variants.join(", ")})`;
-        occurrencesDiv.appendChild(tag);
+        titleDiv.appendChild(tag);
       }
-      header.appendChild(occurrencesDiv);
+      header.appendChild(titleDiv);
       variantView.appendChild(header);
 
       const container = document.createElement("div");
@@ -2167,8 +2241,8 @@ const TestReportApp = {
       container.setAttribute("aria-labelledby", titleId);
 
       const pre = document.createElement("pre");
-      pre.className = "font-mono text-sm text-red-600 whitespace-pre-wrap break-all";
-      pre.textContent = group.stackTrace;
+      pre.className = "stack-trace-pre font-mono text-sm text-red-800 whitespace-pre-wrap break-all";
+      pre.textContent = group.stackTrace || "";
       container.appendChild(pre);
 
       variantView.appendChild(container);
@@ -2950,6 +3024,158 @@ const TestReportApp = {
   pluralize(type) {
     const pluralMap = { 'module': 'modules', 'package': 'packages', 'class': 'classes', 'testCase': 'testCases', 'target': 'targets' };
     return pluralMap[type];
+  },
+
+  parseSortKey(key) {
+    if (!key || key === 'name') {
+      return { variant: null, metric: 'name' };
+    }
+    const dotIndex = key.indexOf('.');
+    if (dotIndex !== -1) {
+      return {
+        variant: key.substring(0, dotIndex),
+        metric: key.substring(dotIndex + 1)
+      };
+    }
+    return {
+      variant: null,
+      metric: key
+    };
+  },
+
+  normalizeMetric(metric) {
+    if (!metric) return '';
+    const m = metric.toLowerCase();
+    if (m === 'pass' || m === 'passed') return 'passed';
+    if (m === 'fail' || m === 'failed') return 'failed';
+    if (m === 'skip' || m === 'skipped') return 'skipped';
+    if (m === 'rate' || m === 'passrate' || m === 'pass_rate') return 'rate';
+    if (m === 'name') return 'name';
+    return m;
+  },
+
+  isSortActive(key) {
+    if (this.state.sort.by === key) return true;
+    const { variant, metric } = this.parseSortKey(key);
+    const active = this.parseSortKey(this.state.sort.by);
+    const normMetric = this.normalizeMetric(metric);
+    const activeNormMetric = this.normalizeMetric(active.metric);
+
+    if (activeNormMetric !== normMetric) return false;
+
+    if (active.variant && variant) {
+      return active.variant === variant;
+    }
+
+    const visibleVariants = this.state.filters.variants && this.state.filters.variants.length > 0
+      ? this.state.filters.variants
+      : (this.state.variants || []);
+    if (!active.variant && visibleVariants.length > 0) {
+      return variant === visibleVariants[0];
+    }
+
+    return false;
+  },
+
+  getNodeMetric(node, variantName, metric) {
+    if (!node) return 0;
+    const normMetric = this.normalizeMetric(metric);
+    const suiteFilter = this.state.filters.testSuite;
+
+    let summariesList = [];
+    if (node.target && node.target.testSuiteSummaries) {
+      summariesList = [node.target.testSuiteSummaries];
+    } else if (node.targets && node.targets.length > 0) {
+      summariesList = node.targets.map(t => t.testSuiteSummaries).filter(Boolean);
+    } else if (node.testSuiteSummaries) {
+      summariesList = [node.testSuiteSummaries];
+    }
+
+    if (summariesList.length === 0) return 0;
+
+    let targetVariants = [];
+    if (variantName) {
+      targetVariants = [variantName];
+    } else if (this.state.filters.variants && this.state.filters.variants.length > 0) {
+      targetVariants = [this.state.filters.variants[0]];
+    } else if (this.state.variants && this.state.variants.length > 0) {
+      targetVariants = [this.state.variants[0]];
+    }
+
+    let totalPassed = 0;
+    let totalFailed = 0;
+    let totalSkipped = 0;
+
+    summariesList.forEach(testSuiteSummaries => {
+      let suiteSummary = null;
+      if (suiteFilter === 'all') {
+        suiteSummary = testSuiteSummaries.find(ts => ts.name === 'Aggregated');
+      } else {
+        suiteSummary = testSuiteSummaries.find(ts => ts.name === suiteFilter);
+      }
+      if (!suiteSummary || !suiteSummary.variantSummaries) return;
+
+      suiteSummary.variantSummaries.forEach(vs => {
+        if (targetVariants.includes(vs.name)) {
+          totalPassed += vs.passed || 0;
+          totalFailed += vs.failed || 0;
+          totalSkipped += vs.skipped || 0;
+        }
+      });
+    });
+
+    if (normMetric === 'passed') return totalPassed;
+    if (normMetric === 'failed') return totalFailed;
+    if (normMetric === 'skipped') return totalSkipped;
+    if (normMetric === 'rate') {
+      if (summariesList.length === 1 && targetVariants.length === 1) {
+        const testSuiteSummaries = summariesList[0];
+        const suiteSummary = (suiteFilter === 'all')
+          ? testSuiteSummaries.find(ts => ts.name === 'Aggregated')
+          : testSuiteSummaries.find(ts => ts.name === suiteFilter);
+        if (suiteSummary && suiteSummary.variantSummaries) {
+          const vs = suiteSummary.variantSummaries.find(s => s.name === targetVariants[0]);
+          if (vs && vs.rate !== undefined) return vs.rate;
+        }
+      }
+      const relevant = totalPassed + totalFailed;
+      return relevant > 0 ? (totalPassed / relevant) * 100 : 0;
+    }
+    return 0;
+  },
+
+  compareNodes(a, b) {
+    const { by, order } = this.state.sort;
+    const { variant, metric } = this.parseSortKey(by);
+    const normMetric = this.normalizeMetric(metric);
+
+    if (normMetric === 'name') {
+      const valA = (a.name || '').toLowerCase();
+      const valB = (b.name || '').toLowerCase();
+      if (valA < valB) return order === 'asc' ? -1 : 1;
+      if (valA > valB) return order === 'asc' ? 1 : -1;
+      return 0;
+    }
+
+    const valA = this.getNodeMetric(a, variant, normMetric);
+    const valB = this.getNodeMetric(b, variant, normMetric);
+
+    if (valA !== valB) {
+      return order === 'asc' ? valA - valB : valB - valA;
+    }
+
+    // Tie-breaker: sort by name ascending
+    const nameA = (a.name || '').toLowerCase();
+    const nameB = (b.name || '').toLowerCase();
+    if (nameA < nameB) return -1;
+    if (nameA > nameB) return 1;
+
+    const parentA = (a.parent || a.moduleName || '').toLowerCase();
+    const parentB = (b.parent || b.moduleName || '').toLowerCase();
+    if (parentA < parentB) return -1;
+    if (parentA > parentB) return 1;
+
+    return 0;
   }
 };
 
@@ -3023,6 +3249,11 @@ const Navigation = {
       ...state
     };
 
+    const actualSuites = (TestReportApp.state.testSuites || []).filter(ts => ts !== 'Aggregated');
+    if (actualSuites.length === 1) {
+      TestReportApp.state.filters.testSuite = actualSuites[0];
+    }
+
     // Update search UI to match restored state
     if (TestReportApp.elements.searchInput) {
       TestReportApp.elements.searchInput.value = TestReportApp.state.filters.search || '';
@@ -3082,18 +3313,7 @@ const Navigation = {
     TestReportApp.populateFilters();
 
     // Update test suite UI specifically since populateFilters handles the dropdown but not the external UI elements fully unless changed
-    if (TestReportApp.elements.tsAllState && TestReportApp.elements.tsSelectedState) {
-      if (TestReportApp.state.filters.testSuite === 'all') {
-        TestReportApp.elements.tsAllState.classList.remove('hidden');
-        TestReportApp.elements.tsSelectedState.classList.add('hidden');
-      } else {
-        TestReportApp.elements.tsAllState.classList.add('hidden');
-        TestReportApp.elements.tsSelectedState.classList.remove('hidden');
-        if (TestReportApp.elements.testSuiteFilterText) {
-          TestReportApp.elements.testSuiteFilterText.textContent = TestReportApp.state.filters.testSuite;
-        }
-      }
-    }
+    TestReportApp.updateTestSuiteUI();
 
     // Re-render
     if (TestReportApp.state.currentView === 'stack-trace') {
