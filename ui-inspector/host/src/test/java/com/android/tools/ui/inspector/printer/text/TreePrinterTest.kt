@@ -16,6 +16,8 @@
 
 package com.android.tools.ui.inspector.printer.text
 
+import com.android.tools.ui.inspector.attribute
+import com.android.tools.ui.inspector.dimension
 import com.android.tools.ui.inspector.model.UiNode
 import com.android.tools.ui.inspector.printer.SemanticsDisplayMode
 import com.google.common.truth.Truth.assertThat
@@ -25,75 +27,75 @@ class TreePrinterTest {
 
   @Test
   fun testFormatAttribute_String() {
-    val attr = UiNode.Attribute(name = "text", value = UiNode.AttributeValue.StringVal("Hello"))
+    val attr = attribute(name = "text", value = UiNode.AttributeValue.StringVal("Hello"))
     assertThat(attr.format()).isEqualTo("prop: text=Hello")
   }
 
   @Test
   fun testFormatAttribute_Boolean() {
-    val attr = UiNode.Attribute(name = "enabled", value = UiNode.AttributeValue.BooleanVal(true))
+    val attr = attribute(name = "enabled", value = UiNode.AttributeValue.BooleanVal(true))
     assertThat(attr.format()).isEqualTo("prop: enabled=true")
   }
 
   @Test
   fun testFormatAttribute_Color() {
-    val attr = UiNode.Attribute(name = "textColor", value = UiNode.AttributeValue.ColorVal(-1))
+    val attr = attribute(name = "textColor", value = UiNode.AttributeValue.ColorVal(-1))
     assertThat(attr.format()).isEqualTo("prop: textColor=#FFFFFFFF")
   }
 
   @Test
   fun testFormatAttribute_Null() {
-    val attr = UiNode.Attribute(name = "tag", value = UiNode.AttributeValue.NullVal)
+    val attr = attribute(name = "tag", value = UiNode.AttributeValue.NullVal)
     assertThat(attr.format()).isEqualTo("prop: tag=")
   }
 
   @Test
   fun testFormatAttribute_DimensionVal() {
     // 1. Integer-like dimension, no density
-    val attrInt = UiNode.Attribute(name = "layout_width", value = UiNode.AttributeValue.DimensionVal(120.0f))
+    val attrInt = attribute(name = "layout_width", value = dimension(120.0f))
     assertThat(attrInt.format()).isEqualTo("prop: layout_width=120px")
 
     // 2. Decimal-like dimension, no density
-    val attrDec = UiNode.Attribute(name = "layout_width", value = UiNode.AttributeValue.DimensionVal(120.5f))
+    val attrDec = attribute(name = "layout_width", value = dimension(120.5f))
     assertThat(attrDec.format()).isEqualTo("prop: layout_width=120.50px")
 
     // 3. Integer-like dp attribute, with density
-    val attrDpInt = UiNode.Attribute(name = "layout_width", value = UiNode.AttributeValue.DimensionVal(240.0f, dp = 120.0f))
+    val attrDpInt = attribute(name = "layout_width", value = dimension(240.0f, dp = 120.0f))
     assertThat(attrDpInt.format()).isEqualTo("prop: layout_width=240px (120dp)")
 
     // 4. Decimal dp attribute, with density
-    val attrDpDec = UiNode.Attribute(name = "layout_width", value = UiNode.AttributeValue.DimensionVal(241.0f, dp = 120.5f))
+    val attrDpDec = attribute(name = "layout_width", value = dimension(241.0f, dp = 120.5f))
     assertThat(attrDpDec.format()).isEqualTo("prop: layout_width=241px (120.50dp)")
 
     // 5. Integer-like sp attribute (textSize), with density and fontScale
-    val attrSpInt = UiNode.Attribute(name = "textSize", value = UiNode.AttributeValue.DimensionVal(240.0f, sp = 96.0f))
+    val attrSpInt = attribute(name = "textSize", value = dimension(240.0f, sp = 96.0f))
     assertThat(attrSpInt.format()).isEqualTo("prop: textSize=240px (96sp)")
 
     // 6. Decimal sp attribute (textSize), with density and fontScale
-    val attrSpDec = UiNode.Attribute(name = "textSize", value = UiNode.AttributeValue.DimensionVal(241.0f, sp = 96.4f))
+    val attrSpDec = attribute(name = "textSize", value = dimension(241.0f, sp = 96.4f))
     assertThat(attrSpDec.format()).isEqualTo("prop: textSize=241px (96.40sp)")
 
     // 7. sp attribute (textSize) with density but no fontScale (defaults to 1.0f)
-    val attrSpNoFontScale = UiNode.Attribute(name = "textSize", value = UiNode.AttributeValue.DimensionVal(240.0f, sp = 120.0f))
+    val attrSpNoFontScale = attribute(name = "textSize", value = dimension(240.0f, sp = 120.0f))
     assertThat(attrSpNoFontScale.format()).isEqualTo("prop: textSize=240px (120sp)")
 
     // 8. another sp attribute (lineHeight), with density and fontScale
-    val attrLineHeight = UiNode.Attribute(name = "lineHeight", value = UiNode.AttributeValue.DimensionVal(240.0f, sp = 96.0f))
+    val attrLineHeight = attribute(name = "lineHeight", value = dimension(240.0f, sp = 96.0f))
     assertThat(attrLineHeight.format()).isEqualTo("prop: lineHeight=240px (96sp)")
   }
 
   @Test
   fun testFormatAttribute_NumberVal() {
     // Integer number
-    val attrInt = UiNode.Attribute(name = "count", value = UiNode.AttributeValue.NumberVal(42))
+    val attrInt = attribute(name = "count", value = UiNode.AttributeValue.NumberVal(42))
     assertThat(attrInt.format()).isEqualTo("prop: count=42")
 
     // Double number
-    val attrDouble = UiNode.Attribute(name = "ratio", value = UiNode.AttributeValue.NumberVal(3.14159))
+    val attrDouble = attribute(name = "ratio", value = UiNode.AttributeValue.NumberVal(3.14159))
     assertThat(attrDouble.format()).isEqualTo("prop: ratio=3.14")
 
     // Float number
-    val attrFloat = UiNode.Attribute(name = "scale", value = UiNode.AttributeValue.NumberVal(1.5f))
+    val attrFloat = attribute(name = "scale", value = UiNode.AttributeValue.NumberVal(1.5f))
     assertThat(attrFloat.format()).isEqualTo("prop: scale=1.50")
   }
 
@@ -108,6 +110,8 @@ class TreePrinterTest {
         mergedSemantics = listOf(UiNode.ComposeParameter.Single("Role", UiNode.ComposeParameter.Value.StringVal("Button"))),
         unmergedSemantics = listOf(UiNode.ComposeParameter.Single("OnClick", UiNode.ComposeParameter.Value.StringVal("[lambda]"))),
         isSystemCreated = false,
+        children = emptyList(),
+        sourceLocation = null,
       )
 
     val output = captureOutput { printUiTree(node, 0, it, SemanticsDisplayMode.BOTH) }
@@ -136,6 +140,8 @@ View Hierarchy:
         mergedSemantics = listOf(UiNode.ComposeParameter.Single("Role", UiNode.ComposeParameter.Value.StringVal("Button"))),
         unmergedSemantics = listOf(UiNode.ComposeParameter.Single("OnClick", UiNode.ComposeParameter.Value.StringVal("[lambda]"))),
         isSystemCreated = false,
+        children = emptyList(),
+        sourceLocation = null,
       )
 
     val outputMerged = captureOutput { printUiTree(nodeWithMerged, 0, it, SemanticsDisplayMode.MERGED_WITH_UNMERGED_FALLBACK) }
@@ -160,6 +166,8 @@ View Hierarchy:
         mergedSemantics = emptyList(),
         unmergedSemantics = listOf(UiNode.ComposeParameter.Single("Text", UiNode.ComposeParameter.Value.StringVal("Hello"))),
         isSystemCreated = false,
+        children = emptyList(),
+        sourceLocation = null,
       )
 
     val outputUnmerged = captureOutput { printUiTree(nodeWithoutMerged, 0, it, SemanticsDisplayMode.MERGED_WITH_UNMERGED_FALLBACK) }
@@ -184,6 +192,8 @@ View Hierarchy:
         mergedSemantics = emptyList(),
         unmergedSemantics = emptyList(),
         isSystemCreated = false,
+        children = emptyList(),
+        sourceLocation = null,
       )
 
     val outputBothEmpty = captureOutput { printUiTree(nodeBothEmpty, 0, it, SemanticsDisplayMode.MERGED_WITH_UNMERGED_FALLBACK) }
@@ -209,6 +219,8 @@ View Hierarchy:
         mergedSemantics = listOf(UiNode.ComposeParameter.Single("Role", UiNode.ComposeParameter.Value.StringVal("Button"))),
         unmergedSemantics = listOf(UiNode.ComposeParameter.Single("OnClick", UiNode.ComposeParameter.Value.StringVal("[lambda]"))),
         isSystemCreated = false,
+        children = emptyList(),
+        sourceLocation = null,
       )
 
     val output = captureOutput { printUiTree(node, 0, it, SemanticsDisplayMode.MERGED_ONLY) }
@@ -235,6 +247,8 @@ View Hierarchy:
         mergedSemantics = listOf(UiNode.ComposeParameter.Single("Role", UiNode.ComposeParameter.Value.StringVal("Button"))),
         unmergedSemantics = listOf(UiNode.ComposeParameter.Single("OnClick", UiNode.ComposeParameter.Value.StringVal("[lambda]"))),
         isSystemCreated = false,
+        children = emptyList(),
+        sourceLocation = null,
       )
 
     val output = captureOutput { printUiTree(node, 0, it, SemanticsDisplayMode.UNMERGED_ONLY) }
@@ -261,6 +275,8 @@ View Hierarchy:
         mergedSemantics = listOf(UiNode.ComposeParameter.Single("Role", UiNode.ComposeParameter.Value.StringVal("Button"))),
         unmergedSemantics = listOf(UiNode.ComposeParameter.Single("OnClick", UiNode.ComposeParameter.Value.StringVal("[lambda]"))),
         isSystemCreated = false,
+        children = emptyList(),
+        sourceLocation = null,
       )
 
     val output = captureOutput { printUiTree(node, 0, it, SemanticsDisplayMode.NONE) }

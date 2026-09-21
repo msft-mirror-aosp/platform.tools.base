@@ -132,7 +132,8 @@ private fun ViewInspectorProtocol.ViewNode.Attribute.toAttributeValue(stringTabl
       UiNode.AttributeValue.NumberVal(floatValue)
     }
     ViewInspectorProtocol.ViewNode.Attribute.Type.DIMENSION -> {
-      UiNode.AttributeValue.DimensionVal(floatValue)
+      // The wire carries pixels only; dp and sp are resolved later against the window's configuration.
+      UiNode.AttributeValue.DimensionVal(floatValue, dp = null, sp = null)
     }
     ViewInspectorProtocol.ViewNode.Attribute.Type.COLOR -> {
       UiNode.AttributeValue.ColorVal(int32Value)

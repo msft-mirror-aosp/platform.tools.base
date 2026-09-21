@@ -163,6 +163,7 @@ class TreeMergerTest {
         idResource = null,
         layoutResource = null,
         attributes = emptyList(),
+        children = emptyList(),
       )
     val original =
       UiNode.ViewNode(

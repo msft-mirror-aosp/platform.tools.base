@@ -16,9 +16,9 @@
 
 package com.android.tools.ui.inspector.printer.text
 
+import com.android.tools.ui.inspector.configuration
 import com.android.tools.ui.inspector.model.ColorModeHdr
 import com.android.tools.ui.inspector.model.ColorModeWideGamut
-import com.android.tools.ui.inspector.model.DeviceConfiguration
 import com.android.tools.ui.inspector.model.DeviceLocale
 import com.android.tools.ui.inspector.model.Dimension
 import com.android.tools.ui.inspector.model.DisplayInfo
@@ -46,7 +46,7 @@ class ConfigurationPrinterTest {
   @Test
   fun testPrintDeviceConfiguration() {
     val config =
-      DeviceConfiguration(
+      configuration(
         density = Dimension.Dpi(420),
         screenWidthDp = Dimension.Dp(1080),
         screenHeightDp = Dimension.Dp(1920),
@@ -106,7 +106,7 @@ Device Configuration:
 
   @Test
   fun testPrintDeviceConfiguration_minimal() {
-    val config = DeviceConfiguration(density = Dimension.Dpi(160), grammaticalGender = null)
+    val config = configuration(density = Dimension.Dpi(160), grammaticalGender = null)
 
     val output = captureOutput { printDeviceConfiguration(config, it) }
 

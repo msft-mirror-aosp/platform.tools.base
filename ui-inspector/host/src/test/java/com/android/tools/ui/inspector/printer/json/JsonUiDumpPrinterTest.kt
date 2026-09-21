@@ -16,6 +16,9 @@
 
 package com.android.tools.ui.inspector.printer.json
 
+import com.android.tools.ui.inspector.attribute
+import com.android.tools.ui.inspector.configuration
+import com.android.tools.ui.inspector.dimension
 import com.android.tools.ui.inspector.model.DeviceConfiguration
 import com.android.tools.ui.inspector.model.DeviceLocale
 import com.android.tools.ui.inspector.model.Dimension
@@ -140,13 +143,14 @@ class JsonUiDumpPrinterTest {
         layoutResource = "activity_main",
         attributes =
           listOf(
-            UiNode.Attribute("text", UiNode.AttributeValue.StringVal("Hello")),
-            UiNode.Attribute("enabled", UiNode.AttributeValue.BooleanVal(true)),
-            UiNode.Attribute("count", UiNode.AttributeValue.NumberVal(42)),
-            UiNode.Attribute("color", UiNode.AttributeValue.ColorVal(0xFF00FF00.toInt())),
-            UiNode.Attribute("padding", UiNode.AttributeValue.DimensionVal(16f, dp = 16f, sp = null)),
-            UiNode.Attribute("empty", UiNode.AttributeValue.NullVal),
+            attribute("text", UiNode.AttributeValue.StringVal("Hello")),
+            attribute("enabled", UiNode.AttributeValue.BooleanVal(true)),
+            attribute("count", UiNode.AttributeValue.NumberVal(42)),
+            attribute("color", UiNode.AttributeValue.ColorVal(0xFF00FF00.toInt())),
+            attribute("padding", dimension(16f, dp = 16f)),
+            attribute("empty", UiNode.AttributeValue.NullVal),
           ),
+        children = emptyList(),
       )
 
     val composeNode =
@@ -173,11 +177,12 @@ class JsonUiDumpPrinterTest {
         mergedSemantics = listOf(UiNode.ComposeParameter.Single("Role", UiNode.ComposeParameter.Value.StringVal("Button"))),
         unmergedSemantics = emptyList(),
         isSystemCreated = false,
+        children = emptyList(),
       )
 
     val viewNodeWithChild = viewNode.copy(children = listOf(composeNode))
 
-    val config = DeviceConfiguration(density = Dimension.Dpi(420), fontScale = 1.0f, locale = DeviceLocale("en", "US", null, null))
+    val config = configuration(density = Dimension.Dpi(420), fontScale = 1.0f, locale = DeviceLocale("en", "US", null, null))
 
     val uiDump =
       UiDump(
@@ -225,6 +230,7 @@ class JsonUiDumpPrinterTest {
         idResource = null,
         layoutResource = null,
         attributes = emptyList(),
+        children = emptyList(),
       )
     val uiDump = dump(node)
 
@@ -248,6 +254,7 @@ class JsonUiDumpPrinterTest {
         idResource = null,
         layoutResource = null,
         attributes = emptyList(),
+        children = emptyList(),
       )
     val uiDump =
       UiDump(
@@ -255,10 +262,10 @@ class JsonUiDumpPrinterTest {
           listOf(
             UiWindow(
               root = node(1),
-              configuration = DeviceConfiguration(density = Dimension.Dpi(160), fontScale = 1.0f),
+              configuration = configuration(density = Dimension.Dpi(160), fontScale = 1.0f),
               theme = "@style/Theme.One",
             ),
-            UiWindow(root = node(2), configuration = DeviceConfiguration(density = Dimension.Dpi(420)), theme = null),
+            UiWindow(root = node(2), configuration = configuration(density = Dimension.Dpi(420)), theme = null),
           ),
         displays = listOf(DisplayInfo(id = 0, widthPx = 1080, heightPx = 1920, orientation = null)),
       )
@@ -281,11 +288,11 @@ class JsonUiDumpPrinterTest {
   fun testAllAttributeValueTypesSerialization() {
     val attrString =
       UiNode.Attribute("str", UiNode.AttributeValue.StringVal("val"), directSource = "layout.xml", styleChain = listOf("AppTheme"))
-    val attrBool = UiNode.Attribute("bool", UiNode.AttributeValue.BooleanVal(false))
-    val attrNum = UiNode.Attribute("num", UiNode.AttributeValue.NumberVal(3.14))
-    val attrColor = UiNode.Attribute("color", UiNode.AttributeValue.ColorVal(0xFFFF0000.toInt()))
-    val attrDim = UiNode.Attribute("dim", UiNode.AttributeValue.DimensionVal(24f, dp = 24f, sp = 18f))
-    val attrNull = UiNode.Attribute("nullVal", UiNode.AttributeValue.NullVal)
+    val attrBool = attribute("bool", UiNode.AttributeValue.BooleanVal(false))
+    val attrNum = attribute("num", UiNode.AttributeValue.NumberVal(3.14))
+    val attrColor = attribute("color", UiNode.AttributeValue.ColorVal(0xFFFF0000.toInt()))
+    val attrDim = attribute("dim", dimension(24f, dp = 24f, sp = 18f))
+    val attrNull = attribute("nullVal", UiNode.AttributeValue.NullVal)
 
     val viewNode =
       UiNode.ViewNode(
@@ -295,6 +302,7 @@ class JsonUiDumpPrinterTest {
         idResource = null,
         layoutResource = null,
         attributes = listOf(attrString, attrBool, attrNum, attrColor, attrDim, attrNull),
+        children = emptyList(),
       )
 
     val uiDump = dump(viewNode)
@@ -348,6 +356,7 @@ class JsonUiDumpPrinterTest {
         idResource = null,
         layoutResource = null,
         attributes = emptyList(),
+        children = emptyList(),
       )
     val composeNode =
       UiNode.ComposeNode(
@@ -359,6 +368,7 @@ class JsonUiDumpPrinterTest {
         mergedSemantics = emptyList(),
         unmergedSemantics = listOf(UiNode.ComposeParameter.Single("ContentDescription", UiNode.ComposeParameter.Value.StringVal("Icon"))),
         isSystemCreated = false,
+        children = emptyList(),
       )
     val rootNodeWithChild = rootNode.copy(children = listOf(composeNode))
 
@@ -410,13 +420,14 @@ class JsonUiDumpPrinterTest {
         layoutResource = null,
         attributes =
           listOf(
-            UiNode.Attribute("nan", UiNode.AttributeValue.NumberVal(Float.NaN)),
-            UiNode.Attribute("negInf", UiNode.AttributeValue.NumberVal(Double.NEGATIVE_INFINITY)),
-            UiNode.Attribute("dim", UiNode.AttributeValue.DimensionVal(Float.NaN, dp = Float.POSITIVE_INFINITY, sp = 18f)),
-            UiNode.Attribute("finite", UiNode.AttributeValue.NumberVal(42)),
+            attribute("nan", UiNode.AttributeValue.NumberVal(Float.NaN)),
+            attribute("negInf", UiNode.AttributeValue.NumberVal(Double.NEGATIVE_INFINITY)),
+            attribute("dim", dimension(Float.NaN, dp = Float.POSITIVE_INFINITY, sp = 18f)),
+            attribute("finite", UiNode.AttributeValue.NumberVal(42)),
             // Finite but beyond Double range: doubleValue() overflows to Infinity, yet this is a valid JSON number and must survive.
-            UiNode.Attribute("huge", UiNode.AttributeValue.NumberVal(BigDecimal("1e400"))),
+            attribute("huge", UiNode.AttributeValue.NumberVal(BigDecimal("1e400"))),
           ),
+        children = emptyList(),
       )
     val composeNode =
       UiNode.ComposeNode(
@@ -435,10 +446,11 @@ class JsonUiDumpPrinterTest {
         mergedSemantics = emptyList(),
         unmergedSemantics = emptyList(),
         isSystemCreated = false,
+        children = emptyList(),
       )
     val viewNodeWithChild = viewNode.copy(children = listOf(composeNode))
 
-    val config = DeviceConfiguration(fontScale = Float.NaN)
+    val config = configuration(fontScale = Float.NaN)
     val uiDump = dump(viewNodeWithChild, configuration = config)
 
     val printer = JsonUiDumpPrinter(out = printStream, prettyPrint = false)
@@ -481,12 +493,13 @@ class JsonUiDumpPrinterTest {
           idResource = null,
           layoutResource = null,
           attributes = emptyList(),
+          children = emptyList(),
         ),
         configuration = config,
       )
 
     val config =
-      DeviceConfiguration(
+      configuration(
         density = Dimension.Dpi(420),
         fontScale = Float.NaN,
         orientation = Orientation.PORTRAIT,
@@ -510,7 +523,7 @@ class JsonUiDumpPrinterTest {
     assertThat(json.get("fontScale").isJsonNull).isTrue()
 
     outputStream.reset()
-    printer.printDump(dumpWith(DeviceConfiguration(locale = DeviceLocale("", "", null, null))))
+    printer.printDump(dumpWith(configuration(locale = DeviceLocale("", "", null, null))))
     val emptyLocaleJson =
       JsonParser.parseString(outputStream.toString(Charsets.UTF_8))
         .asJsonObject

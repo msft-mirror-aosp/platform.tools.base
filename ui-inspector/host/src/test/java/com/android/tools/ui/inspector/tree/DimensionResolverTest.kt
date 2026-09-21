@@ -16,7 +16,9 @@
 
 package com.android.tools.ui.inspector.tree
 
-import com.android.tools.ui.inspector.model.DeviceConfiguration
+import com.android.tools.ui.inspector.attribute
+import com.android.tools.ui.inspector.configuration
+import com.android.tools.ui.inspector.dimension
 import com.android.tools.ui.inspector.model.Dimension
 import com.android.tools.ui.inspector.model.UiNode
 import com.google.common.truth.Truth.assertThat
@@ -35,14 +37,15 @@ class DimensionResolverTest {
         layoutResource = null,
         attributes =
           listOf(
-            UiNode.Attribute(name = "layout_width", value = UiNode.AttributeValue.DimensionVal(10f)),
-            UiNode.Attribute(name = "textSize", value = UiNode.AttributeValue.DimensionVal(15f)),
-            UiNode.Attribute(name = "text", value = UiNode.AttributeValue.StringVal("Hello")),
+            attribute(name = "layout_width", value = dimension(10f)),
+            attribute(name = "textSize", value = dimension(15f)),
+            attribute(name = "text", value = UiNode.AttributeValue.StringVal("Hello")),
           ),
+        children = emptyList(),
       )
 
     // 1. Resolve with density scale (densityDpi = 320 -> densityScale = 2.0) and fontScale = 1.5
-    val resolved = node.resolveDimensions(DeviceConfiguration(density = Dimension.Dpi(320), fontScale = 1.5f)) as UiNode.ViewNode
+    val resolved = node.resolveDimensions(configuration(density = Dimension.Dpi(320), fontScale = 1.5f)) as UiNode.ViewNode
 
     assertThat(resolved.attributes).hasSize(3)
 
@@ -74,7 +77,8 @@ class DimensionResolverTest {
         bounds = UiNode.Bounds(0, 0, 10, 10),
         idResource = null,
         layoutResource = null,
-        attributes = listOf(UiNode.Attribute(name = "layout_height", value = UiNode.AttributeValue.DimensionVal(20f))),
+        attributes = listOf(attribute(name = "layout_height", value = dimension(20f))),
+        children = emptyList(),
       )
 
     val composeNode =
@@ -87,9 +91,10 @@ class DimensionResolverTest {
         mergedSemantics = emptyList(),
         unmergedSemantics = emptyList(),
         isSystemCreated = false,
+        sourceLocation = null,
       )
 
-    val resolved = composeNode.resolveDimensions(DeviceConfiguration(density = Dimension.Dpi(320), fontScale = 1.0f)) as UiNode.ComposeNode
+    val resolved = composeNode.resolveDimensions(configuration(density = Dimension.Dpi(320), fontScale = 1.0f)) as UiNode.ComposeNode
     val resolvedChild = resolved.children[0] as UiNode.ViewNode
     val heightAttr = resolvedChild.attributes[0]
     assertThat(heightAttr.value).isEqualTo(UiNode.AttributeValue.DimensionVal(20f, dp = 10f, sp = null))
@@ -104,18 +109,15 @@ class DimensionResolverTest {
         bounds = UiNode.Bounds(0, 0, 100, 100),
         idResource = "text_view",
         layoutResource = null,
-        attributes =
-          listOf(
-            UiNode.Attribute(name = "layout_width", value = UiNode.AttributeValue.DimensionVal(10f)),
-            UiNode.Attribute(name = "textSize", value = UiNode.AttributeValue.DimensionVal(15f)),
-          ),
+        attributes = listOf(attribute(name = "layout_width", value = dimension(10f)), attribute(name = "textSize", value = dimension(15f))),
+        children = emptyList(),
       )
 
-    val resolvedZero = node.resolveDimensions(DeviceConfiguration(density = Dimension.Dpi(0), fontScale = 1.0f)) as UiNode.ViewNode
+    val resolvedZero = node.resolveDimensions(configuration(density = Dimension.Dpi(0), fontScale = 1.0f)) as UiNode.ViewNode
     assertThat(resolvedZero.attributes[0].value).isEqualTo(UiNode.AttributeValue.DimensionVal(10f, dp = null, sp = null))
     assertThat(resolvedZero.attributes[1].value).isEqualTo(UiNode.AttributeValue.DimensionVal(15f, dp = null, sp = null))
 
-    val resolvedNegative = node.resolveDimensions(DeviceConfiguration(density = Dimension.Dpi(-160), fontScale = 1.0f)) as UiNode.ViewNode
+    val resolvedNegative = node.resolveDimensions(configuration(density = Dimension.Dpi(-160), fontScale = 1.0f)) as UiNode.ViewNode
     assertThat(resolvedNegative.attributes[0].value).isEqualTo(UiNode.AttributeValue.DimensionVal(10f, dp = null, sp = null))
     assertThat(resolvedNegative.attributes[1].value).isEqualTo(UiNode.AttributeValue.DimensionVal(15f, dp = null, sp = null))
   }
@@ -129,19 +131,18 @@ class DimensionResolverTest {
         bounds = UiNode.Bounds(0, 0, 100, 100),
         idResource = "text_view",
         layoutResource = null,
-        attributes = listOf(UiNode.Attribute(name = "textSize", value = UiNode.AttributeValue.DimensionVal(15f))),
+        attributes = listOf(attribute(name = "textSize", value = dimension(15f))),
+        children = emptyList(),
       )
 
-    val resolvedZeroFontScale =
-      node.resolveDimensions(DeviceConfiguration(density = Dimension.Dpi(320), fontScale = 0.0f)) as UiNode.ViewNode
+    val resolvedZeroFontScale = node.resolveDimensions(configuration(density = Dimension.Dpi(320), fontScale = 0.0f)) as UiNode.ViewNode
     assertThat(resolvedZeroFontScale.attributes[0].value).isEqualTo(UiNode.AttributeValue.DimensionVal(15f, dp = null, sp = null))
 
     val resolvedNegativeFontScale =
-      node.resolveDimensions(DeviceConfiguration(density = Dimension.Dpi(320), fontScale = -1.0f)) as UiNode.ViewNode
+      node.resolveDimensions(configuration(density = Dimension.Dpi(320), fontScale = -1.0f)) as UiNode.ViewNode
     assertThat(resolvedNegativeFontScale.attributes[0].value).isEqualTo(UiNode.AttributeValue.DimensionVal(15f, dp = null, sp = null))
 
-    val resolvedMissingFontScale =
-      node.resolveDimensions(DeviceConfiguration(density = Dimension.Dpi(320), fontScale = null)) as UiNode.ViewNode
+    val resolvedMissingFontScale = node.resolveDimensions(configuration(density = Dimension.Dpi(320), fontScale = null)) as UiNode.ViewNode
     assertThat(resolvedMissingFontScale.attributes[0].value).isEqualTo(UiNode.AttributeValue.DimensionVal(15f, dp = null, sp = null))
   }
 }

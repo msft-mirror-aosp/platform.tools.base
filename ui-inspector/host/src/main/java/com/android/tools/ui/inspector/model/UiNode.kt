@@ -39,17 +39,12 @@ sealed class UiNode {
 
     data class ColorVal(val colorInt: Int) : AttributeValue()
 
-    data class DimensionVal(val value: Float, val dp: Float? = null, val sp: Float? = null) : AttributeValue()
+    data class DimensionVal(val value: Float, val dp: Float?, val sp: Float?) : AttributeValue()
 
     object NullVal : AttributeValue()
   }
 
-  data class Attribute(
-    val name: String,
-    val value: AttributeValue,
-    val directSource: String? = null,
-    val styleChain: List<String> = emptyList(),
-  )
+  data class Attribute(val name: String, val value: AttributeValue, val directSource: String?, val styleChain: List<String>)
 
   /** Represents the location in the source code where a layout node is defined. */
   data class SourceLocation(val filename: String, val lineNumber: Int)
@@ -59,7 +54,7 @@ sealed class UiNode {
     override val id: Long,
     override val className: String,
     override val bounds: Bounds,
-    override val children: List<UiNode> = emptyList(),
+    override val children: List<UiNode>,
     val idResource: String?,
     val layoutResource: String?,
     val attributes: List<Attribute>,
@@ -115,8 +110,8 @@ sealed class UiNode {
     override val id: Long,
     override val className: String,
     override val bounds: Bounds,
-    override val children: List<UiNode> = emptyList(),
-    val sourceLocation: SourceLocation? = null,
+    override val children: List<UiNode>,
+    val sourceLocation: SourceLocation?,
     val parameters: List<ComposeParameter>,
     val mergedSemantics: List<ComposeParameter>,
     val unmergedSemantics: List<ComposeParameter>,

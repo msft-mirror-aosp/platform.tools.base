@@ -16,7 +16,7 @@
 
 package com.android.tools.ui.inspector.tree
 
-import com.android.tools.ui.inspector.model.DeviceConfiguration
+import com.android.tools.ui.inspector.configuration
 import com.android.tools.ui.inspector.model.Dimension
 import com.android.tools.ui.inspector.model.DisplayInfo
 import com.android.tools.ui.inspector.model.UiDump
@@ -113,7 +113,7 @@ class StripSystemComposablesTest {
         attributes = emptyList(),
       )
 
-    val configuration = DeviceConfiguration(density = Dimension.Dpi(420), fontScale = 1.2f)
+    val configuration = configuration(density = Dimension.Dpi(420), fontScale = 1.2f)
     val displays = listOf(DisplayInfo(id = 0, widthPx = 1080, heightPx = 1920, orientation = 0))
     val input =
       UiDump(windows = listOf(UiWindow(root = root, configuration = configuration, theme = "@style/Theme.Main")), displays = displays)
