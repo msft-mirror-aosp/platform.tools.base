@@ -16,7 +16,6 @@
 
 package com.android.tools.ui.inspector.deploy
 
-import com.android.prefs.AndroidLocationsSingleton
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
@@ -66,8 +65,6 @@ class HttpArtifactDownloader(
   }
 }
 
-private const val DEFAULT_CACHE_PATH = "ui-inspector/cache"
-
 /**
  * Resolves and downloads library artifacts from Google's Maven repository and extracts their nested payload jars.
  *
@@ -77,8 +74,7 @@ private const val DEFAULT_CACHE_PATH = "ui-inspector/cache"
  */
 class MavenArtifactResolver(
   private val downloader: ArtifactDownloader = HttpArtifactDownloader(),
-  // TODO: Integrate with the Android CLI's SysInfoService once UI Inspector is moved there.
-  private val cacheDir: File = AndroidLocationsSingleton.prefsLocation.resolve(DEFAULT_CACHE_PATH).toFile(),
+  private val cacheDir: File,
   private val fileMover: (File, File) -> Unit = ::defaultMoveFile,
 ) {
 

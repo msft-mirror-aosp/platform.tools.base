@@ -1635,6 +1635,7 @@ class InjectionManagerTest {
           includeSystemComposables = false,
           includeSemantics = false,
           composeInspectorJarPath = cliArgument,
+          composeInspectorCacheDir = tempFolder.root.toPath(),
           printer = noopPrinter,
           logger = logger,
           injectionManagerFactory = { _, _, _, overridePath, logger ->
@@ -1970,6 +1971,7 @@ class InjectionManagerTest {
       packageName = packageName,
       needsDebugViewAttributes = false,
       composeInspectorOverrideJarPath = composeInspectorOverrideJarPath,
+      composeInspectorCacheDir = tempFolder.root.toPath(),
       logger = logger,
       injectionManagerFactory = { session, serial, pkg, overridePath, logger ->
         InjectionManager(
@@ -2040,6 +2042,7 @@ class InjectionManagerTest {
       includeSystemComposables = false,
       includeSemantics = false,
       composeInspectorJarPath = null,
+      composeInspectorCacheDir = tempFolder.root.toPath(),
       printer = noopPrinter,
       logger = logger,
       injectionManagerFactory = { session, serial, pkg, overridePath, logger ->

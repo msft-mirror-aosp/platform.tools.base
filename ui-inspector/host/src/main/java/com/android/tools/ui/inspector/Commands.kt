@@ -26,6 +26,7 @@ import com.android.tools.ui.inspector.client.InspectorCrashException
 import com.android.tools.ui.inspector.client.createComposeInspector
 import com.android.tools.ui.inspector.client.createViewInspector
 import com.android.tools.ui.inspector.client.dumpViews
+import com.android.tools.ui.inspector.client.mavenComposeInspectorResolver
 import com.android.tools.ui.inspector.client.queryComposeParameters
 import com.android.tools.ui.inspector.client.queryComposeTree
 import com.android.tools.ui.inspector.deploy.InjectionManager
@@ -41,6 +42,7 @@ import com.android.tools.ui.inspector.model.UiWindow
 import com.android.tools.ui.inspector.printer.UiDumpPrinter
 import com.android.tools.ui.inspector.tree.attachComposeTree
 import com.android.tools.ui.inspector.tree.stripSystemComposables
+import java.io.File
 import java.io.IOException
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -150,6 +152,7 @@ private fun foregroundAppResolutionException() =
  * @param includeSystemComposables If true, includes system/framework composable nodes.
  * @param includeSemantics If true, includes accessibility semantics in the Compose dump.
  * @param composeInspectorJarPath Optional path to a local Compose Inspector JAR file.
+ * @param composeInspectorCacheDir Where the Compose inspector jars downloaded from Maven are kept.
  * @param logger Receives what the dump has to say besides its result.
  * @param injectionManagerFactory Creates the [InjectionManager].
  */
@@ -162,6 +165,7 @@ internal suspend fun doDumpUi(
   includeSystemComposables: Boolean,
   includeSemantics: Boolean,
   composeInspectorJarPath: String?,
+  composeInspectorCacheDir: Path,
   printer: UiDumpPrinter,
   logger: Logger,
   injectionManagerFactory: InjectionManagerFactory = ::InjectionManager,
@@ -174,6 +178,7 @@ internal suspend fun doDumpUi(
       packageName,
       includeResolutionStack,
       composeInspectorOverrideJarPath,
+      composeInspectorCacheDir,
       logger,
       injectionManagerFactory,
     ) { commandSender, composeInspectorConnected ->
@@ -206,18 +211,22 @@ internal suspend fun <T> runWithConnectedInspectors(
   packageName: String,
   needsDebugViewAttributes: Boolean,
   composeInspectorOverrideJarPath: Path?,
+  composeInspectorCacheDir: Path,
   logger: Logger,
   injectionManagerFactory: InjectionManagerFactory,
   block: suspend (CommandSender, Boolean) -> T,
 ): T {
   val injectionManager = injectionManagerFactory(adbSession, serial, packageName, composeInspectorOverrideJarPath, logger)
+  val resolveComposeInspectorJar =
+    composeInspectorOverrideJarPath?.let { path -> { _: String -> path.toFile() } }
+      ?: mavenComposeInspectorResolver(composeInspectorCacheDir)
   return try {
     try {
       connectAndRunInspectors(
         injectionManager,
         InjectionMode.RECONNECT_IF_AVAILABLE,
         needsDebugViewAttributes,
-        composeInspectorOverrideJarPath,
+        resolveComposeInspectorJar,
         logger,
         block,
       )
@@ -228,7 +237,7 @@ internal suspend fun <T> runWithConnectedInspectors(
           injectionManager,
           InjectionMode.FORCE_FULL_INJECTION,
           needsDebugViewAttributes,
-          composeInspectorOverrideJarPath,
+          resolveComposeInspectorJar,
           logger,
           block,
         )
@@ -263,7 +272,7 @@ private suspend fun <T> connectAndRunInspectors(
   injectionManager: InjectionManager,
   mode: InjectionMode,
   needsDebugViewAttributes: Boolean,
-  composeInspectorOverrideJarPath: Path?,
+  resolveComposeInspectorJar: (version: String) -> File,
   logger: Logger,
   block: suspend (CommandSender, Boolean) -> T,
 ): T = coroutineScope {
@@ -291,14 +300,7 @@ private suspend fun <T> connectAndRunInspectors(
         throw e
       }
 
-      val localJarProvider = composeInspectorOverrideJarPath?.let { path -> { _: String -> path.toFile() } }
-
-      val composeInspectorConnected =
-        if (localJarProvider != null) {
-          createComposeInspector(commandSender, injectionManager, logger, localJarProvider)
-        } else {
-          createComposeInspector(commandSender, injectionManager, logger)
-        }
+      val composeInspectorConnected = createComposeInspector(commandSender, injectionManager, logger, resolveComposeInspectorJar)
 
       block(commandSender, composeInspectorConnected)
     }

@@ -20,6 +20,7 @@ import com.android.adblib.AdbLogger
 import com.android.adblib.AdbLoggerFactory
 import com.android.adblib.AdbSession
 import com.android.adblib.tools.createStandaloneSession
+import com.android.prefs.AndroidLocationsSingleton
 import com.android.tools.ui.inspector.printer.json.withJsonPrinter
 import java.io.PrintWriter
 import java.nio.file.Path
@@ -35,6 +36,9 @@ private const val EXIT_ERROR = 1
 
 private const val DEVICE_OPTION_DESCRIPTION =
   "The device serial number. Defaults to the only online device; required when multiple online devices are connected"
+
+/** Where the CLI keeps the Compose inspector jars it downloads, on the host cache. */
+private const val COMPOSE_INSPECTOR_CACHE_PATH = "ui-inspector/cache"
 
 /** Factory for creating [AdbSession]. Can be overridden in tests. */
 var sessionFactory: () -> AdbSession = { createStandaloneSession(NO_LOGGING) }
@@ -99,6 +103,7 @@ class DumpUiCommand : Callable<Int> {
             includeSystemComposables = IncludeFacet.SYSTEM_COMPOSABLES in facets,
             includeSemantics = IncludeFacet.SEMANTICS in facets,
             composeInspectorJarPath = composeInspectorJarPath,
+            composeInspectorCacheDir = AndroidLocationsSingleton.prefsLocation.resolve(COMPOSE_INSPECTOR_CACHE_PATH),
             printer = printer,
             logger = stderrLogger(err),
           )

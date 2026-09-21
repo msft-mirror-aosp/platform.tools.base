@@ -27,6 +27,7 @@ import com.android.tools.ui.inspector.protocol.UiInspectorProtocol
 import com.google.common.annotations.VisibleForTesting
 import java.io.File
 import java.io.IOException
+import java.nio.file.Path
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol
 
 private const val COMPOSE_UI_GROUP_ID = "androidx.compose.ui"
@@ -40,10 +41,7 @@ internal suspend fun createComposeInspector(
   commandSender: CommandSender,
   injectionManager: InjectionManager,
   logger: Logger,
-  resolveJar: (version: String) -> File = { version ->
-    val artifactId = getComposeArtifactId(version)
-    MavenArtifactResolver().resolve(COMPOSE_UI_GROUP_ID, artifactId, version)
-  },
+  resolveJar: (version: String) -> File,
 ): Boolean {
   val composeVersion = getComposeVersion(commandSender, logger) ?: return false
 
@@ -55,6 +53,11 @@ internal suspend fun createComposeInspector(
     }
   launchComposeInspector(commandSender, injectionManager, jarFile, logger)
   return true
+}
+
+/** Resolves the Compose inspector jar for a Compose version from Google Maven, caching it under [cacheDir]. */
+internal fun mavenComposeInspectorResolver(cacheDir: Path): (version: String) -> File = { version ->
+  MavenArtifactResolver(cacheDir = cacheDir.toFile()).resolve(COMPOSE_UI_GROUP_ID, getComposeArtifactId(version), version)
 }
 
 /** Queries the Compose inspector on the agent for the Composable tree of a specific root view. */
