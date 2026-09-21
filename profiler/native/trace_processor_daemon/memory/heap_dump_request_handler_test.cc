@@ -18,6 +18,10 @@
 
 #include <gtest/gtest.h>
 
+#include <set>
+#include <string>
+#include <unordered_map>
+
 #include "perfetto/trace_processor/basic_types.h"
 #include "perfetto/trace_processor/read_trace.h"
 #include "perfetto/trace_processor/trace_processor.h"
@@ -33,6 +37,10 @@ using ::perfetto::trace_processor::TraceProcessor;
 const std::string HPROF_PATH(
     "tools/base/profiler/native/trace_processor_daemon/testdata/"
     "bitmap-duplicates.hprof");
+
+const std::string PERFETTO_JAVA_HEAP_DUMP_PATH(
+    "tools/base/profiler/native/trace_processor_daemon/testdata/"
+    "profilertester.perfetto-java-heap-dump");
 
 std::unique_ptr<TraceProcessor> LoadTrace(const std::string& trace_path) {
   Config config;
@@ -202,6 +210,112 @@ TEST(HeapDumpRequestHandlerTest, TestPopulateReferences) {
   EXPECT_TRUE(found_klass_ref);
   EXPECT_TRUE(found_drawcanvas_ref);
 }
+
+// Capture format under test, and whether that format is expected to contain
+// edges the importer leaves unnamed.
+struct ReferenceFormatParam {
+  std::string trace_path;
+  std::string name;
+  bool has_unnamed_edges;
+};
+
+class HeapDumpReferenceFormatTest
+    : public testing::TestWithParam<ReferenceFormatParam> {};
+
+// Validates that array_index identifies unnamed array elements and is -1 for
+// named fields, in every supported capture format, and that both query
+// directions agree on an element's slot.
+TEST_P(HeapDumpReferenceFormatTest,
+       TestArrayIndexAccompaniesUnnamedReferences) {
+  const ReferenceFormatParam& param = GetParam();
+  auto tp = LoadTrace(param.trace_path);
+  HeapDumpRequestHandler handler{tp.get()};
+
+  proto::HeapDumpResult events_result;
+  handler.PopulateEvents(&events_result);
+
+  // Sample the largest instances, which is enough to cover arrays in both
+  // formats.
+  proto::QueryParameters::HeapDumpInstancesParameters instances_request;
+  instances_request.set_limit(2000);
+  instances_request.set_sort_descending(true);
+
+  proto::HeapDumpInstancesResult instances_result;
+  handler.PopulateInstances(instances_request, &instances_result);
+  ASSERT_GT(instances_result.instance_size(), 0);
+
+  proto::QueryParameters::GetReferencesParameters refs_request;
+  for (const auto& instance : instances_result.instance()) {
+    refs_request.add_instance_ids(instance.id());
+  }
+  refs_request.set_fetch_forward(true);
+
+  proto::GetReferencesResult refs_result;
+  handler.PopulateReferences(refs_request, &refs_result);
+  ASSERT_GT(refs_result.reference_size(), 0);
+
+  int unnamed_edge_count = 0;
+  std::unordered_map<int64_t, std::set<int64_t>> indices_by_owner;
+  for (const auto& ref : refs_result.reference()) {
+    if (ref.field_name().empty()) {
+      unnamed_edge_count++;
+      EXPECT_GE(ref.array_index(), 0)
+          << "unnamed edge owned by " << ref.owner_id() << " has no index";
+      // Two elements of the same array must never claim the same slot.
+      EXPECT_TRUE(
+          indices_by_owner[ref.owner_id()].insert(ref.array_index()).second)
+          << "index " << ref.array_index() << " repeats for owner "
+          << ref.owner_id();
+    } else {
+      EXPECT_EQ(ref.array_index(), -1)
+          << "named edge '" << ref.field_name() << "' reports an array index";
+    }
+  }
+
+  if (param.has_unnamed_edges) {
+    EXPECT_GT(unnamed_edge_count, 0);
+  }
+
+  // The reverse query selects on the owned object rather than the owner, so it
+  // returns a subset of each owner's edges. Every slot it reports must still
+  // be one the forward query reported for that owner.
+  refs_request.set_fetch_forward(false);
+  refs_request.set_fetch_reverse(true);
+
+  proto::GetReferencesResult reverse_result;
+  handler.PopulateReferences(refs_request, &reverse_result);
+  ASSERT_GT(reverse_result.reference_size(), 0);
+
+  int cross_checked_count = 0;
+  for (const auto& ref : reverse_result.reference()) {
+    if (!ref.field_name().empty()) {
+      EXPECT_EQ(ref.array_index(), -1)
+          << "named edge '" << ref.field_name() << "' reports an array index";
+      continue;
+    }
+    EXPECT_GE(ref.array_index(), 0)
+        << "unnamed edge owned by " << ref.owner_id() << " has no index";
+    auto owner = indices_by_owner.find(ref.owner_id());
+    if (owner == indices_by_owner.end()) continue;
+    EXPECT_GT(owner->second.count(ref.array_index()), 0u)
+        << "reverse query reports slot " << ref.array_index() << " for owner "
+        << ref.owner_id() << ", which the forward query never reported";
+    cross_checked_count++;
+  }
+
+  if (param.has_unnamed_edges) {
+    EXPECT_GT(cross_checked_count, 0);
+  }
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    CaptureFormats, HeapDumpReferenceFormatTest,
+    testing::Values(ReferenceFormatParam{HPROF_PATH, "ArtHprof", false},
+                    ReferenceFormatParam{PERFETTO_JAVA_HEAP_DUMP_PATH,
+                                         "PerfettoJavaHeapDump", true}),
+    [](const testing::TestParamInfo<ReferenceFormatParam>& info) {
+      return info.param.name;
+    });
 
 TEST(HeapDumpRequestHandlerTest, TestEscapeSqlString) {
   // 1. Happy case: clean strings pass through with identical contents and size

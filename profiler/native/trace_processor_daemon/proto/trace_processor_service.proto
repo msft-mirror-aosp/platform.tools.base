@@ -651,12 +651,16 @@ message GetReferencesResult {
 
   // Represents a directed reference edge from owner_id to owned_id.
   message ReferenceData {
-    // Name of the field holding the reference on the owner object (or array index notation e.g., "[0]" for array elements).
+    // Name of the field holding the reference on the owner object, e.g. "com.example.Foo.mBar", or index notation
+    // such as "[0]" for array elements. May be empty, in which case array_index identifies the element.
     string field_name = 1;
     // Unique instance ID of the referenced (owned/target) object.
     int64 owned_id = 2;
     // Unique instance ID of the referencing (owner/source) object.
     int64 owner_id = 3;
+    // Zero-based slot of this element when the owner is an array, or -1 for named edges.
+    // Unnamed edges on other owners also report an offset, so only consult this on array owners.
+    int64 array_index = 4;
   }
 }
 
