@@ -461,6 +461,7 @@ def iml_module(
         test_class = "com.android.testutils.JarTestSuite",
         test_shard_count = None,
         split_test_targets = None,
+        shorten_test_target_name = False,
         tags = None,
         compatible_intellij_platforms = None,
         test_tags = None,
@@ -519,6 +520,7 @@ def iml_module(
                             This class sets up the test environment for the code in the test target and allows to
                             customize access to additional data for the testing code.
         test_shard_count: Number of shards to use for testing, should not be used with split_test_targets.
+        shorten_test_target_name: Drops the module name from test targets to workaround Windows path length limitations
         split_test_targets: A dict indicating split test targets to create, should not be used with test_shard_count.
                             Each split target runs a subset of tests matching a package name or FQCN.
                             If a test target does not define a `test_filter`, it will run the set of tests that
@@ -652,6 +654,7 @@ def iml_module(
             test_shard_count = test_shard_count,
             test_tags = test_tags,
             test_data = test_data,
+            shorten_target_name = shorten_test_target_name,
             runtime_deps = [":" + name + "_testlib"] + test_utils,
             jvm_flags = test_jvm_flags + ["-Dtest.suite.jar=" + name + "_test.jar"],
             main_class = test_main_class,
@@ -924,6 +927,7 @@ def _gen_tests(
         test_shard_count = None,
         test_tags = None,
         test_data = None,
+        shorten_target_name = False,
         jvm_flags = [],
         visibility = [],
         intellij_platform = "studio-sdk",
@@ -940,6 +944,7 @@ def _gen_tests(
         test_shard_count: Shard count for the generated test. Only valid for single tests.
         test_tags: optional list of tags to include for test targets.
         test_data: optional list of data to include for test targets.
+        shorten_target_name: drops the module name from test targets to workaround Windows path length limitations
         jvm_flags: Extra flags passed to java_test().
         visibility: Target visibility.
         intellij_platform: The target intellij platform.
@@ -959,13 +964,14 @@ def _gen_tests(
             split_test_targets = split_test_targets,
             test_tags = test_tags,
             test_data = test_data,
+            shorten_target_name = shorten_target_name,
             jvm_flags = jvm_flags,
             visibility = visibility,
             **kwargs
         )
     else:
         coverage_java_test(
-            name = name + "_tests",
+            name = "tests" if shorten_target_name else name + "_tests",
             flaky = test_flaky,
             shard_count = test_shard_count,
             tags = test_tags,
@@ -980,6 +986,7 @@ def _gen_split_tests(
         split_test_targets,
         test_tags = None,
         test_data = None,
+        shorten_target_name = False,
         timeout = None,
         exec_properties = None,
         jvm_flags = [],
@@ -998,6 +1005,7 @@ def _gen_split_tests(
         split_test_targets: A dict of names to split_test_target definitions.
         test_tags: optional list of tags to include for test targets.
         test_data: optional list of data to include for test targets.
+        shorten_target_name: drops the module name from test targets to workaround Windows path length limitations
         timeout: optional timeout that applies to this split test only (overriding target level).
         exec_properties: See https://bazel.build/reference/be/common-definitions#common-attributes
         jvm_flags: Extra flags passed to java_test().
@@ -1005,10 +1013,12 @@ def _gen_split_tests(
         **kwargs: Extra arguments passed to java_test().
     """
 
+    name = "tests" if shorten_target_name else name + "_tests"
+
     # create a _tests__all target for local development with all test sources
     # primarily useful if users want to specify a --test_filter themselves
     coverage_java_test(
-        name = name + "_tests__all",
+        name = name + "__all",
         data = test_data + _get_unique_split_data(split_test_targets),
         tags = ["manual"],
         exec_properties = exec_properties,
@@ -1018,7 +1028,7 @@ def _gen_split_tests(
     )
     split_tests = []
     for split_name in split_test_targets:
-        test_name = name + "_tests__" + split_name
+        test_name = name + "__" + split_name
         split_target = split_test_targets[split_name]
         shard_count = split_target.get("shard_count")
         tags = list(split_target.get("tags", default = []))
@@ -1049,7 +1059,7 @@ def _gen_split_tests(
             **kwargs
         )
     native.test_suite(
-        name = name + "_tests",
+        name = name,
         tags = ["manual"] if test_tags and "manual" in test_tags else [],
         tests = split_tests,
         visibility = visibility,
