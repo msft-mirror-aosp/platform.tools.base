@@ -121,6 +121,32 @@ void HeapDumpRequestHandler::PopulateEvents(proto::HeapDumpResult* result) {
     class_overview->set_retained_native_size(
         it.Get(9).is_null() ? 0 : it.Get(9).AsLong());
   }
+
+  std::string heap_query = R"(
+    SELECT
+      IFNULL(o.heap_type, 'default') AS heap_name,
+      SUM(IFNULL(o.native_size, 0)) AS retained_native_size,
+      SUM(IFNULL(o.self_size, 0)) AS retained_size
+    FROM heap_graph_object o
+    WHERE o.reachable != 0
+    GROUP BY heap_name
+  )";
+
+  auto heap_it = processor_->ExecuteQuery(heap_query);
+  if (!heap_it.Status().ok()) {
+    std::cerr << "Heap aggregation query failed: " << heap_it.Status().message()
+              << std::endl;
+    return;
+  }
+  while (heap_it.Next()) {
+    auto* heap_overview = result->add_heap_overview();
+    heap_overview->set_heap_name(
+        heap_it.Get(0).is_null() ? "default" : heap_it.Get(0).AsString());
+    heap_overview->set_retained_native_size(
+        heap_it.Get(1).is_null() ? 0 : heap_it.Get(1).AsLong());
+    heap_overview->set_retained_size(
+        heap_it.Get(2).is_null() ? 0 : heap_it.Get(2).AsLong());
+  }
 }
 
 void HeapDumpRequestHandler::PopulateInstances(

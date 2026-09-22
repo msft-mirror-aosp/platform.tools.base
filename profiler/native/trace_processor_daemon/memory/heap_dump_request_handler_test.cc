@@ -65,6 +65,18 @@ TEST(HeapDumpRequestHandlerTest, TestPopulateEvents) {
     }
   }
   EXPECT_TRUE(found_bitmap);
+
+  EXPECT_GT(result.heap_overview_size(), 0);
+  bool found_app_heap = false;
+  for (const auto& heap_overview : result.heap_overview()) {
+    if (heap_overview.heap_name() == "app") {
+      found_app_heap = true;
+      EXPECT_GT(heap_overview.retained_native_size(), 0);
+      EXPECT_GT(heap_overview.retained_size(), 0);
+      break;
+    }
+  }
+  EXPECT_TRUE(found_app_heap);
 }
 
 // Validates that instance querying with sorting and pagination works correctly.

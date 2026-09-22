@@ -546,6 +546,8 @@ message AndroidFrameTimelineResult {
 message HeapDumpResult {
   // List of aggregated class overview metrics per heap.
   repeated ClassOverview class_overview = 1;
+  // List of aggregated heap-level retained size metrics per heap.
+  repeated HeapOverview heap_overview = 2;
 
   // Aggregated overview of all instances of a class within a specific heap.
   message ClassOverview {
@@ -567,6 +569,16 @@ message HeapDumpResult {
     int64 shallow_size = 8;
     // Unique identifier of the superclass for this class, or -1 if none.
     int64 super_class_id = 9;
+  }
+
+  // Aggregated retained size overview of a specific heap.
+  message HeapOverview {
+    // Name of the heap (e.g., "default", "app", "image", "zygote").
+    string heap_name = 1;
+    // Total retained native memory size of reachable objects in this heap (in bytes).
+    int64 retained_native_size = 2;
+    // Total retained heap memory size of reachable objects in this heap (in bytes).
+    int64 retained_size = 3;
   }
 }
 
