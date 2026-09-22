@@ -115,7 +115,7 @@ new_local_repository(
 new_local_repository(
     name = "maven",
     build_file = "//tools/base/bazel:maven/BUILD.maven",
-    path = "prebuilts/tools/common/m2",
+    path = "prebuilts/tools/common/m2/repository",
 )
 
 new_local_repository(
@@ -200,4 +200,3 @@ filegroup(
     sha256 = "c2ef9a5f65472c34d14bd3e67b7d14e66b0c01f124aba45263d6a4232160e13a",
     urls = ["https://github.com/electron/electron/releases/download/v43.4.1/electron-v43.4.1-win32-x64.zip"],
 )
-

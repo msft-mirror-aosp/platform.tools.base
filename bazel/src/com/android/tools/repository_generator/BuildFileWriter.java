@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.function.Predicate;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -54,8 +53,8 @@ public class BuildFileWriter {
         // that the generated BUILD file will be mounted at.
         // This assumes the following:
         //   The maven repo is at studio-main/prebuilts/tools/common/m2/repository
-        //   The BUILD file will be mounted at studio-main/prebuilts/tools/m2/
-        repoPrefix = Paths.get("repository");
+        //   The BUILD file will be mounted at studio-main/prebuilts/tools/m2/repository
+        repoPrefix = Paths.get("");
         fileWriter = new FileWriter(filePath);
     }
 
@@ -110,7 +109,8 @@ public class BuildFileWriter {
             fileWriter.append("maven_artifact(\n");
             fileWriter.append(String.format("    name = \"%s\",\n", mavenArtifactRuleName));
             fileWriter.append(
-                    String.format("    pom = \"%s/%s\",\n", repoPrefix, pathToString(dep.pomPath)));
+                    String.format(
+                            "    pom = \"%s\",\n", pathToString(repoPrefix.resolve(dep.pomPath))));
             fileWriter.append(
                     String.format("    repo_root_path = \"%s\",\n", pathToString(repoPrefix)));
             fileWriter.append(
@@ -188,13 +188,14 @@ public class BuildFileWriter {
             if (dep.file.endsWith(".jar")) {
                 fileWriter.append("    jars = [\n");
                 fileWriter.append(
-                        String.format("        \"%s/%s\"\n", repoPrefix, pathToString(dep.file)));
+                        String.format(
+                                "        \"%s\"\n", pathToString(repoPrefix.resolve(dep.file))));
                 fileWriter.append("    ],\n");
             }
             if (dep.file.endsWith(".aar")) {
                 fileWriter.append(
                         String.format(
-                                "    aar = \"%s/%s\",\n", repoPrefix, pathToString(dep.file)));
+                                "    aar = \"%s\",\n", pathToString(repoPrefix.resolve(dep.file))));
             }
             for (Map.Entry<String, List<String>> scopedDeps : dep.directDependencies.entrySet()) {
                 String scope = scopedDeps.getKey();
@@ -244,14 +245,16 @@ public class BuildFileWriter {
                 fileWriter.append("    original_deps = [],\n");
             }
             fileWriter.append(
-                    String.format("    pom = \"%s/%s\",\n", repoPrefix, pathToString(dep.pomPath)));
+                    String.format(
+                            "    pom = \"%s\",\n", pathToString(repoPrefix.resolve(dep.pomPath))));
             fileWriter.append(String.format("    repo_root_path = \"%s\",\n", repoPrefix));
             fileWriter.append(
                     String.format("    repo_path = \"%s\",\n", pathToString(artifactRepoPath)));
             if (dep.srcjar != null) {
                 fileWriter.append(
                         String.format(
-                                "    srcjar = \"%s/%s\",\n", repoPrefix, pathToString(dep.srcjar)));
+                                "    srcjar = \"%s\",\n",
+                                pathToString(repoPrefix.resolve(dep.srcjar))));
             }
             if (dep.declaredExclusions != null && !dep.declaredExclusions.isEmpty()) {
                 fileWriter.append("    deps_with_exclusions = [\n");
@@ -291,7 +294,8 @@ public class BuildFileWriter {
         fileWriter.append("maven_artifact(\n");
         fileWriter.append(String.format("    name = \"%s\",\n", ruleName));
         fileWriter.append(
-                String.format("    pom = \"%s/%s\",\n", repoPrefix, pathToString(parent.pomPath)));
+                String.format(
+                        "    pom = \"%s\",\n", pathToString(repoPrefix.resolve(parent.pomPath))));
         fileWriter.append(String.format("    repo_root_path = \"%s\",\n", repoPrefix));
         // Deduce the repo path of the artifact from the pom file.
         Path artifactRepoPath = Paths.get(parent.pomPath).getParent();
@@ -390,10 +394,5 @@ public class BuildFileWriter {
         }
 
         return path.toString().replaceAll("\\\\", "/");
-    }
-
-    /** Converts a string that represents a path into forward slash separated string. */
-    private static String pathToString(String input) {
-      return pathToString(Paths.get(input));
     }
 }

@@ -75,7 +75,7 @@ class ValidateTaskPropertiesTest {
         .getProperty("maven")
     val filteredPaths = paths.filterNot {
       it.contains("/prebuilts/tools/common/m2/repository/") &&
-        paths.contains(it.replace("/prebuilts/tools/common/m2/repository/", "/../${mavenRepoName}/repo/"))
+        paths.contains(it.replace("/prebuilts/tools/common/m2/repository/", "/../${mavenRepoName}/"))
     }
 
     val classpathLists =

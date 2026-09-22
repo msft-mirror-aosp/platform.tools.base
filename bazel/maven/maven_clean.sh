@@ -27,18 +27,18 @@ $BAZEL query 'labels(aar,  //prebuilts/tools/common/m2/...  except //prebuilts/t
 
 # Collect artifacts from //tools/base/bazel/maven/BUILD.maven
 $BAZEL query 'labels(srcs,  deps(@maven//...))' \
-    | grep '@maven//:repository'  \
-    | sed "s|@maven//:repository|$top/prebuilts/tools/common/m2/repository|g" \
+    | grep '@maven//:'  \
+    | sed "s|@maven//:|$top/prebuilts/tools/common/m2/repository/|g" \
     >> $workdir/maven_file_refs.txt  || true
 
 $BAZEL query 'labels(jars,  deps(@maven//...))' \
-    | grep '@maven//:repository'  \
-    | sed "s|@maven//:repository|$top/prebuilts/tools/common/m2/repository|g" \
+    | grep '@maven//:'  \
+    | sed "s|@maven//:|$top/prebuilts/tools/common/m2/repository/|g" \
     >> $workdir/maven_file_refs.txt  || true
 
 $BAZEL query 'labels(files,  deps(@maven//...))' \
-    | grep '@maven//:repository'  \
-    | sed "s|@maven//:repository|$top/prebuilts/tools/common/m2/repository|g" \
+    | grep '@maven//:'  \
+    | sed "s|@maven//:|$top/prebuilts/tools/common/m2/repository/|g" \
     >> $workdir/maven_file_refs.txt  || true
 
 # artifact file -> dir

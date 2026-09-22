@@ -469,7 +469,7 @@ public class TestUtils {
         // The test utils library is shipped to gMaven. We have to hardcode the
         // canonical name of maven repository instead of using the repo map so
         // we don't add a repo map resource to the jar.
-        return resolveWorkspacePath("../+new_local_repository+maven/repository/" + path);
+        return resolveWorkspacePath("../+new_local_repository+maven/" + path);
     }
 
     @NonNull
