@@ -71,7 +71,7 @@ class ImageUpdaterTest {
   }
 
   @Test
-  fun updateIfDifferent_invalidReferenceImage_throws() {
+  fun updateIfDifferent_gitLfsPointerReferenceImage_throwsWithGitLfsHelp() {
     val imageUpdater = ImageUpdater(PixelPerfect())
     val newFile = File(createImageFile("circle", newDir))
     // Simulates an un-pulled Git LFS pointer text file
@@ -87,6 +87,24 @@ class ImageUpdaterTest {
         imageUpdater.updateIfDifferent(newFile, lfsPointerRefFile, tempDir.root)
       }
     assertThat(error).hasMessageThat().contains("Cannot read reference image file")
+    assertThat(error).hasMessageThat().contains("The file is a Git LFS pointer, not an image.")
+    assertThat(error).hasMessageThat().contains("Install Git LFS, then run 'git lfs install'")
+    assertThat(error).hasMessageThat().doesNotContain("https://")
+    assertThat(error).hasMessageThat().contains("git lfs pull")
+  }
+
+  @Test
+  fun updateIfDifferent_invalidReferenceImage_throwsWithoutGitLfsHelp() {
+    val imageUpdater = ImageUpdater(PixelPerfect())
+    val newFile = File(createImageFile("circle", newDir))
+    val invalidRefFile = File(refDir, "circle.png").apply { writeText("not an image") }
+
+    val error =
+      assertThrows(ScreenshotImageInvalidException::class.java) {
+        imageUpdater.updateIfDifferent(newFile, invalidRefFile, tempDir.root)
+      }
+    assertThat(error).hasMessageThat().contains("Cannot read reference image file")
+    assertThat(error).hasMessageThat().doesNotContain("Git LFS")
   }
 
   @Test

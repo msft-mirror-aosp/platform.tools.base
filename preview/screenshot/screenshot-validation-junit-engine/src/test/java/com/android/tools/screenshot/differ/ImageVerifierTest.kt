@@ -195,6 +195,29 @@ class ImageVerifierTest {
         imageVerifier.verify(newFile, emptyFile, diffImage, tempDir.root)
       }
     assertThat(error).hasMessageThat().contains("Cannot read reference image file")
+    assertThat(error).hasMessageThat().doesNotContain("Git LFS")
+  }
+
+  @Test
+  fun verify_gitLfsPointerReferenceImage_throwsWithGitLfsHelp() {
+    val imageVerifier = ImageVerifier(PixelPerfect())
+    val diffImage = File(diffDir, "diff.png")
+    val newFile = File(createImageFile("circle", newDir))
+    // Simulates a reference image that was not downloaded because Git LFS is not installed.
+    val lfsPointerRefFile =
+      File(refDir, "circle.png").apply {
+        writeText(
+          "version https://git-lfs.github.com/spec/v1\noid sha256:4d7a214614ab2935c943f9e0ff69d22eadbb8f32b1218128f550ef869f710734\nsize 4252\n"
+        )
+      }
+
+    val error =
+      assertThrows(ScreenshotImageInvalidException::class.java) {
+        imageVerifier.verify(newFile, lfsPointerRefFile, diffImage, tempDir.root)
+      }
+    assertThat(error).hasMessageThat().contains("Cannot read reference image file")
+    assertThat(error).hasMessageThat().contains("The file is a Git LFS pointer, not an image.")
+    assertThat(error).hasMessageThat().contains("git lfs pull")
   }
 
   /** Create a reference image for this test from the supplied test image [name]. */
