@@ -75,9 +75,6 @@ constructor(
   /** Lock for synchronizing changes to our [RepoManager]. */
   private val lock = Any()
 
-  /**  */
-  // @GuardedBy("lock") private var repoManager: RepoManager? = customRepoManager
-
   /** Finds all [SystemImageManager]s in packages known to [repoManager]; */
   @GuardedBy("lock") private var systemImageManager: SystemImageManager? = null
 
@@ -122,11 +119,9 @@ constructor(
       latestBuildTool = null
 
       val newRepoManager = getRepoConfig(progress).createRepoManager(location, getUserSourceProvider(progress))
-      // Invalidate system images, targets, the latest build tool, and the legacy local
-      // package manager when local packages change
+      // Invalidate targets and the latest build tool when local packages change.
       newRepoManager.addLocalChangeListener {
         synchronized(lock) {
-          systemImageManager = null
           androidTargetManager = null
           latestBuildTool = null
         }
@@ -150,11 +145,6 @@ constructor(
     synchronized(lock) {
       return systemImageManager ?: SystemImageManager(rm).also { systemImageManager = it }
     }
-  }
-
-  /** Clears cache of the [SystemImageManager]. */
-  fun clearSystemImageManagerCache() {
-    synchronized(lock) { systemImageManager?.clearCache() }
   }
 
   /** Gets (and creates if necessary) an [AndroidTargetManager] based on our local sdk packages. */

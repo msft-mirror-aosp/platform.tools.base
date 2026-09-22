@@ -648,11 +648,11 @@ public class AvdManagerCliTest {
 
         assertEquals(
                 "E Package path (-k) not specified. Valid system image paths are:\n"
+                        + android25GoogleApisSdkPath
+                        + "\n"
                         + android25GoogleApisPlayStoreSdkPath
                         + "\n"
-                        + android26WearSdkPath
-                        + "\n"
-                        + android25GoogleApisSdkPath,
+                        + android26WearSdkPath,
                 Joiner.on("").join(mLogger.getMessages()));
         mLogger.clear();
         try {
@@ -667,11 +667,11 @@ public class AvdManagerCliTest {
 
         assertEquals(
                 "E Package path is not valid. Valid system image paths are:\n"
+                        + android25GoogleApisSdkPath
+                        + "\n"
                         + android25GoogleApisPlayStoreSdkPath
                         + "\n"
-                        + android26WearSdkPath
-                        + "\n"
-                        + android25GoogleApisSdkPath,
+                        + android26WearSdkPath,
                 Joiner.on("").join(mLogger.getMessages()));
     }
 

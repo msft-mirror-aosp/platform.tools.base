@@ -216,7 +216,6 @@ private constructor(
   @Slow
   @Throws(AndroidLocationsException::class)
   fun reloadAvds() {
-    sdkHandler.clearSystemImageManagerCache()
     // Build the list in a temp list first, in case the method throws an exception.
     // It's better than deleting the whole list before reading the new one.
     val allList = mutableListOf<AvdInfo>()

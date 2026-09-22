@@ -664,7 +664,7 @@ class AvdManagerCli extends CommandLineParser {
         return mSdkHandler.getSystemImageManager(new ProgressIndicatorAdapter() {
             // don't log anything
         }).getImages().stream()
-          .map(image -> image.getPackage().getPath())
+          .map(image -> image.getPackage().getPath()).sorted()
           .collect(Collectors.joining("\n"));
     }
 
@@ -705,8 +705,8 @@ class AvdManagerCli extends CommandLineParser {
         }
         assert imagePkg != null;
 
-        Collection<SystemImage> sysImgs = mSdkHandler.getSystemImageManager(progress)
-                .getImageMap().get(imagePkg);
+        Collection<SystemImage> sysImgs =
+                mSdkHandler.getSystemImageManager(progress).getImagesInPackage(imagePkg);
 
         if (sysImgs.isEmpty()) {
             errorAndExit(

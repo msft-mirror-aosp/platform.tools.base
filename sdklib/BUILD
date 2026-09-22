@@ -174,6 +174,7 @@ kotlin_test(
         "@maven//:junit.junit",
         "@maven//:org.apache.httpcomponents.httpcore",
         "@maven//:org.jetbrains.kotlin.kotlin-reflect",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
         "@maven//:org.mockito.mockito-core",
     ],
 )

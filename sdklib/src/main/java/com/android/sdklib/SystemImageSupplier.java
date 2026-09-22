@@ -89,7 +89,7 @@ public final class SystemImageSupplier {
 
     @Nullable
     private ISystemImage get(@NonNull LocalPackage localPackage) {
-        Collection<SystemImage> images = systemImageManager.getImageMap().get(localPackage);
+        Collection<SystemImage> images = systemImageManager.getImagesInPackage(localPackage);
 
         switch (images.size()) {
             case 0:
