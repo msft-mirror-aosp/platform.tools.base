@@ -38,14 +38,17 @@ open class XmlTestRunListener {
   private var runName = ""
   private var numTests = 0
   private val testResults = LinkedHashMap<DdmlibTestIdentifier, TestResult>()
+  private var currentTest: DdmlibTestIdentifier? = null
   private var currentTestStartTime = 0L
   private var hostName = "localhost"
+  private var isRunEnded = false
 
   private data class TestResult(
     val testId: DdmlibTestIdentifier,
     var failed: Boolean = false,
     var failureTrace: String? = null,
     var elapsedTimeMs: Long = 0L,
+    var completed: Boolean = false,
   )
 
   fun setReportDir(file: File) {
@@ -62,10 +65,13 @@ open class XmlTestRunListener {
     this.runName = runName
     this.numTests = testCount
     this.testResults.clear()
+    this.currentTest = null
+    this.isRunEnded = false
   }
 
   fun testStarted(test: DdmlibTestIdentifier) {
     currentTestStartTime = System.currentTimeMillis()
+    currentTest = test
     testResults[test] = TestResult(test)
   }
 
@@ -77,14 +83,66 @@ open class XmlTestRunListener {
   }
 
   fun testEnded(test: DdmlibTestIdentifier, testMetrics: Map<String, String>) {
-    testResults[test]?.let { it.elapsedTimeMs = System.currentTimeMillis() - currentTestStartTime }
+    testResults[test]?.let {
+      it.elapsedTimeMs = System.currentTimeMillis() - currentTestStartTime
+      it.completed = true
+    }
+    if (currentTest == test) {
+      currentTest = null
+    }
   }
 
   fun testRunFailed(errorMessage: String) {
-    // No-op or log
+    val inFlightTest = currentTest?.let { testResults[it] }
+    if (inFlightTest != null && !inFlightTest.completed) {
+      // If a test was actively running when the run aborted/crashed, attribute the failure to it.
+      inFlightTest.failed = true
+      inFlightTest.failureTrace =
+        if (inFlightTest.failureTrace.isNullOrBlank()) {
+          errorMessage
+        } else {
+          "${inFlightTest.failureTrace}\n$errorMessage"
+        }
+      inFlightTest.elapsedTimeMs = System.currentTimeMillis() - currentTestStartTime
+      inFlightTest.completed = true
+      currentTest = null
+    } else {
+      // If no test was currently in-flight (e.g. the emulator crashed before any test started
+      // or between tests), synthesize a testcase entry. In the JUnit XML schema, failures
+      // must reside within a <testcase> element; without this, report parsers would observe
+      // 0 tests and 0 failures and report the run as passed.
+      // We use runName (defaults to "android-test" in AGP) and "testRunFailed" following the
+      // convention used by Tradefed and JUnit runners for framework-level failures.
+      val syntheticTest = DdmlibTestIdentifier(runName.ifBlank { "android-test" }, "testRunFailed")
+      testResults[syntheticTest] =
+        TestResult(
+          testId = syntheticTest,
+          failed = true,
+          failureTrace = errorMessage,
+          elapsedTimeMs = 0L,
+          completed = true,
+        )
+    }
   }
 
   open fun testRunEnded(elapsedTime: Long, runMetrics: Map<String, String>?) {
+    if (isRunEnded) return
+    isRunEnded = true
+
+    currentTest?.let { testId ->
+      testResults[testId]?.let { result ->
+        if (!result.completed) {
+          result.failed = true
+          if (result.failureTrace.isNullOrBlank()) {
+            result.failureTrace = "Test did not complete before test run ended."
+          }
+          result.elapsedTimeMs = System.currentTimeMillis() - currentTestStartTime
+          result.completed = true
+        }
+      }
+      currentTest = null
+    }
+
     generateDocument(reportDir, elapsedTime)
   }
 
@@ -93,6 +151,7 @@ open class XmlTestRunListener {
     var stream: OutputStream? = null
     try {
       val resultFile = getResultFile(reportDir)
+      resultFile.parentFile?.mkdirs()
       stream = BufferedOutputStream(FileOutputStream(resultFile))
       writeXml(stream, timestamp, elapsedTime)
       val msg = "XML test result file generated at ${resultFile.absolutePath}."
