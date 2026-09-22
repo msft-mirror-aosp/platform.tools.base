@@ -25,6 +25,7 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.testing.Test
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.process.CommandLineArgumentProvider
 
 /**
@@ -61,6 +62,16 @@ internal class ScreenshotTestSuiteTaskConfigurator(private val suiteName: String
   fun configureTask(task: Test, context: TestTaskContext, dslServices: DslServices, providers: ProviderFactory, threshold: Float?) {
     val isRecordingMode = context.isUpdateTask
     task.systemProperty("PreviewScreenshotTestEngineInput.TestOption.recordingModeEnabled", isRecordingMode.toString())
+    task.testLogging {
+      it.showStandardStreams = true
+      if (!isRecordingMode) {
+        // Gradle's default SHORT exception format prints only the exception class name,
+        // which hides the image comparison details (paths and diff percentage). The
+        // screenshot exceptions carry no stack frames, so FULL prints the message once and
+        // adds no stack trace noise.
+        it.exceptionFormat = TestExceptionFormat.FULL
+      }
+    }
 
     val targetName = context.targetName
     val capitalizedTargetName = targetName.replaceFirstChar { if (it.isLowerCase()) it.titlecase(java.util.Locale.US) else it.toString() }
