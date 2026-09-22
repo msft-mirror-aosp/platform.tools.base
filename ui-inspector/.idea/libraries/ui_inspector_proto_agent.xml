@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="ui-inspector-proto-agent">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../../../bazel-bin/tools/base/ui-inspector/common/proto/ui_inspector_protocol_java_proto.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../../bazel-bin/tools/base/bazel/studio-proto.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

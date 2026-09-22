@@ -1,0 +1,14 @@
+<component name="libraryTable">
+  <library name="ui-inspector-proto-host">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../../../bazel-bin/tools/base/ui-inspector/common/proto/libui_inspector_protocol_java_proto-nojarjar.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../../bazel-bin/prebuilts/tools/common/app-inspection/androidx/compose/ui/liblayout_inspector_compose_java_proto-nojarjar.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../../prebuilts/tools/common/m2/repository/com/google/protobuf/protobuf-java/3.25.5/protobuf-java-3.25.5.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$PROJECT_DIR$/../../../bazel-bin/tools/base/ui-inspector/common/proto/ui_inspector_protocol_java_proto-nojarjar_srcs.srcjar.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../../bazel-bin/prebuilts/tools/common/app-inspection/androidx/compose/ui/layout_inspector_compose_java_proto-nojarjar_srcs.srcjar.jar!/" />
+    </SOURCES>
+  </library>
+</component>

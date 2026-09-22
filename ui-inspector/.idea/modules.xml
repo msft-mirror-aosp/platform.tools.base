@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/ui-inspector.root.iml" filepath="$PROJECT_DIR$/.idea/modules/ui-inspector.root.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/ui-inspector.common.iml" filepath="$PROJECT_DIR$/.idea/modules/ui-inspector.common.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/ui-inspector.art-tooling.iml" filepath="$PROJECT_DIR$/.idea/modules/ui-inspector.art-tooling.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/ui-inspector.agent.payload.iml" filepath="$PROJECT_DIR$/.idea/modules/ui-inspector.agent.payload.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/ui-inspector.agent.inspectors.view.iml" filepath="$PROJECT_DIR$/.idea/modules/ui-inspector.agent.inspectors.view.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/ui-inspector.host.iml" filepath="$PROJECT_DIR$/.idea/modules/ui-inspector.host.iml" />
+    </modules>
+  </component>
+</project>

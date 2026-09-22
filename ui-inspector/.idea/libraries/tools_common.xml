@@ -1,0 +1,14 @@
+<component name="libraryTable">
+  <library name="tools.common">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../../../bazel-bin/tools/base/common/studio.android.sdktools.common.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../../bazel-bin/tools/base/common/tools.common.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../../bazel-bin/tools/base/annotations/studio.android.sdktools.android-annotations.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="file://$PROJECT_DIR$/../common/src/main/java" />
+      <root url="file://$PROJECT_DIR$/../annotations/src/main/java" />
+    </SOURCES>
+  </library>
+</component>

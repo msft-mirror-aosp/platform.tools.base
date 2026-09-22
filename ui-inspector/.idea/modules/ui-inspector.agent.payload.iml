@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
+    <exclude-output />
+    <content url="file://$MODULE_DIR$/../../agent/payload">
+      <sourceFolder url="file://$MODULE_DIR$/../../agent/payload/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../agent/payload/src/test/java" isTestSource="true" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module" module-name="ui-inspector.common" />
+    <orderEntry type="module" module-name="ui-inspector.art-tooling" />
+    <orderEntry type="library" name="android-sdk" level="project" />
+    <orderEntry type="library" name="androidx-inspection" level="project" />
+    <orderEntry type="library" name="ui-inspector-proto-agent" level="project" />
+    <orderEntry type="library" scope="TEST" name="junit4" level="project" />
+    <orderEntry type="library" scope="TEST" name="truth" level="project" />
+    <orderEntry type="library" scope="TEST" name="tools.testutils" level="project" />
+    <orderEntry type="library" scope="TEST" name="mockito" level="project" />
+    <orderEntry type="library" scope="TEST" name="robolectric" level="project" />
+  </component>
+</module>
