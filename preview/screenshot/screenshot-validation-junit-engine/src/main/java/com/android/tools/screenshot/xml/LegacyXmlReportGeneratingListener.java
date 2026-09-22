@@ -20,8 +20,10 @@ import javax.xml.stream.XMLStreamException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.time.Clock;
 
 import com.android.tools.screenshot.PreviewScreenshotTestEngineInput;
@@ -99,11 +101,46 @@ public class LegacyXmlReportGeneratingListener implements TestExecutionListener 
 
     private void writeXmlReportSafely(TestIdentifier testIdentifier, String rootName) {
         Path xmlFile = this.reportsDir.resolve("TEST-" + rootName + ".xml");
-        try (Writer fileWriter = Files.newBufferedWriter(xmlFile)) {
-            new XmlReportWriter(this.reportData).writeXmlReport(testIdentifier, fileWriter);
+        // Write to a temporary file and move it into place instead of writing xmlFile directly:
+        // writing in place leaves a partially overwritten, unparsable report behind when this JVM
+        // is killed mid-write or when two test workers write the same file (b/479862361). The
+        // temporary name intentionally does not match the "TEST-*.xml" pattern report readers use.
+        Path tempFile = null;
+        try {
+            tempFile = Files.createTempFile(this.reportsDir, rootName + "-", ".xml.tmp");
+            try (Writer fileWriter = Files.newBufferedWriter(tempFile)) {
+                new XmlReportWriter(this.reportData).writeXmlReport(testIdentifier, fileWriter);
+            }
+            move(tempFile, xmlFile);
+            tempFile = null;
         }
         catch (XMLStreamException | IOException e) {
             printException("Could not write XML report: " + xmlFile, e);
+        }
+        finally {
+            deleteIfExistsQuietly(tempFile);
+        }
+    }
+
+    private static void move(Path source, Path target) throws IOException {
+        try {
+            Files.move(source, target, StandardCopyOption.REPLACE_EXISTING,
+                    StandardCopyOption.ATOMIC_MOVE);
+        }
+        catch (AtomicMoveNotSupportedException e) {
+            Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
+        }
+    }
+
+    private static void deleteIfExistsQuietly(Path file) {
+        if (file == null) {
+            return;
+        }
+        try {
+            Files.deleteIfExists(file);
+        }
+        catch (IOException ignored) {
+            // The file lives in the task's output directory and is deleted before the next run.
         }
     }
 

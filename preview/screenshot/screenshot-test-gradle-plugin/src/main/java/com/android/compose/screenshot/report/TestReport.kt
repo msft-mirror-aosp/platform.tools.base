@@ -24,15 +24,22 @@ import java.math.BigDecimal
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.text.ParseException
+import javax.xml.parsers.DocumentBuilder
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.xpath.XPathFactory
 import org.gradle.api.GradleException
+import org.gradle.api.logging.Logging
 import org.w3c.dom.Document
 import org.w3c.dom.Element
+import org.xml.sax.ErrorHandler
 import org.xml.sax.InputSource
+import org.xml.sax.SAXException
+import org.xml.sax.SAXParseException
 
 /** Custom test reporter based on Gradle's DefaultTestReport */
 class TestReport(private val resultDir: File, private val reportDir: File) {
+
+  private val logger = Logging.getLogger(TestReport::class.java)
 
   private val htmlRenderer: HtmlReportRenderer = HtmlReportRenderer()
 
@@ -69,7 +76,15 @@ class TestReport(private val resultDir: File, private val reportDir: File) {
       inputStream = FileInputStream(file)
       val document: Document =
         try {
-          DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(InputSource(inputStream))
+          parseXml(file, inputStream)
+        } catch (e: SAXException) {
+          logger.warn(
+            "Skipping test result file '${file.absolutePath}' because it could not be parsed. " +
+              "It is most likely incomplete because a previous run was interrupted. Delete " +
+              "'${file.parentFile.absolutePath}' and re-run the task to get a complete report.",
+            e,
+          )
+          return
         } finally {
           inputStream.close()
         }
@@ -197,6 +212,29 @@ class TestReport(private val resultDir: File, private val reportDir: File) {
         // cannot happen
       }
     }
+  }
+
+  private fun parseXml(file: File, inputStream: InputStream): Document {
+    val documentBuilder: DocumentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder()
+    // Replace the default error handler, which prints parse errors to stderr without telling
+    // which file they came from, e.g. '[Fatal Error] :2:118: Element type "testsuite" must be
+    // followed by either attribute specifications, ">" or "/>".'
+    documentBuilder.setErrorHandler(
+      object : ErrorHandler {
+        override fun warning(exception: SAXParseException) {}
+
+        override fun error(exception: SAXParseException) {
+          throw exception
+        }
+
+        override fun fatalError(exception: SAXParseException) {
+          throw exception
+        }
+      }
+    )
+    val inputSource = InputSource(inputStream)
+    inputSource.systemId = file.toURI().toString()
+    return documentBuilder.parse(inputSource)
   }
 
   private fun isImage(path: String?): Boolean {
