@@ -91,18 +91,19 @@ def sdk_java_binary(name, command_name = None, main_class = None, runtime_deps =
 
 def _combine_licenses_impl(ctx):
     inputs = []
-    license_infos = set([])
+    all_licenses = {}
     for dep in ctx.attr.deps:
-        if not TransitiveMetadataInfo in dep:
-            continue
-        metadata = dep[TransitiveMetadataInfo]
-        for license_info in metadata.licenses.to_list():
-            if license_info in license_infos:
-                continue
-            license_infos.add(license_info)
-            notice_link = ctx.actions.declare_file(license_info.label.name + ".NOTICE")
-            ctx.actions.symlink(output = notice_link, target_file = license_info.license_text)
-            inputs.append(notice_link)
+        if TransitiveMetadataInfo in dep:
+            for lic in dep[TransitiveMetadataInfo].licenses.to_list():
+                all_licenses[lic.label] = lic
+
+    for idx, license_info in enumerate(all_licenses.values()):
+        notice_link = ctx.actions.declare_file(
+            # Add an index prefix to avoid name conflicts.
+            "{}-{}.NOTICE".format(idx, license_info.label.name),
+        )
+        ctx.actions.symlink(output = notice_link, target_file = license_info.license_text)
+        inputs.append(notice_link)
 
     ctx.actions.run(
         inputs = inputs,
@@ -112,11 +113,28 @@ def _combine_licenses_impl(ctx):
     )
 
 combine_licenses = rule(
+    doc = """Combines license notice files from transitive dependencies into a single output file.
+Licenses are deduplicated by target label across all transitive dependencies so
+that duplicated notice files are processed only once. In the combined output
+file, each notice file is prefixed with a unique index (e.g. `32-license.NOTICE`)
+to prevent filename collisions when different targets share the same license file name.
+""",
     implementation = _combine_licenses_impl,
     attrs = {
-        "deps": attr.label_list(aspects = [gather_metadata_info]),
-        "out": attr.output(mandatory = True),
-        "_combine_notices": attr.label(executable = True, cfg = "exec", default = Label("//tools/base/bazel/sdk:combine_notices")),
+        "deps": attr.label_list(
+            doc = "Dependencies to collect transitive license metadata from.",
+            aspects = [gather_metadata_info],
+        ),
+        "out": attr.output(
+            doc = "Output file where combined license notices are written.",
+            mandatory = True,
+        ),
+        "_combine_notices": attr.label(
+            doc = "Executable tool to merge notice files.",
+            executable = True,
+            cfg = "exec",
+            default = Label("//tools/base/bazel/sdk:combine_notices"),
+        ),
     },
 )
 
