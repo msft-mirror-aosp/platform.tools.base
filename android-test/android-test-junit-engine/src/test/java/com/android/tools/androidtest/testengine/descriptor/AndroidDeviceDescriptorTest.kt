@@ -22,10 +22,12 @@ import com.android.tools.androidtest.testengine.adb.EmulatorGrpcInfo
 import com.android.tools.androidtest.testengine.collector.AndroidAdditionalTestOutputCollector
 import com.android.tools.androidtest.testengine.collector.BenchmarkOutput
 import com.android.tools.androidtest.testengine.config.AndroidTestConfigurationKeys
+import com.android.tools.androidtest.testengine.instrument.AmInstrumentationParser
 import com.android.tools.androidtest.testengine.instrument.AmInstrumentationRunner
 import com.android.tools.androidtest.testengine.instrument.TestIdentifier
 import com.android.tools.androidtest.testengine.instrument.TestResult
 import com.android.tools.androidtest.testengine.report.AndroidTestReportKeys
+import com.android.tools.androidtest.testengine.report.DdmlibTestIdentifier
 import com.google.common.truth.Truth.assertThat
 import java.io.File
 import org.junit.Before
@@ -254,5 +256,48 @@ class AndroidDeviceDescriptorTest {
     val messageEntry = reportEntryCaptor.allValues.find { it.keyValuePairs.containsKey(AndroidTestReportKeys.BENCHMARK_MESSAGE_PATH) }
     assertThat(messageEntry).isNotNull()
     assertThat(messageEntry?.keyValuePairs?.get(AndroidTestReportKeys.BENCHMARK_MESSAGE_PATH)).isEqualTo(messageFile.absolutePath)
+  }
+
+  @Test
+  fun `testEnded with ignored status calls reporter testIgnored`() {
+    val uniqueId = UniqueId.forEngine("android-test-engine").append("device", deviceSerial)
+    val descriptor = AndroidDeviceDescriptor(uniqueId, deviceSerial)
+    val mockReporter = mock<AndroidDeviceDescriptor.SimpleXmlResultReporter>()
+
+    val testIdentifier = TestIdentifier("pkg", "Cls", "meth")
+    val mockTestResult = mock<TestResult>()
+    whenever(mockTestResult.testIdentifier).thenReturn(testIdentifier)
+    whenever(mockTestResult.status).thenReturn(AmInstrumentationParser.STATUS_CODE_IGNORED)
+
+    val listener = descriptor.Listener(reporter = mockReporter)
+    listener.testStarted(testIdentifier)
+    listener.testEnded(mockTestResult)
+
+    val ddmlibTestId = DdmlibTestIdentifier("pkg.Cls", "meth")
+    verify(mockReporter).testIgnored(eq(ddmlibTestId))
+    verify(mockReporter, never()).testFailed(any(), any())
+    verify(mockReporter).testEnded(eq(ddmlibTestId), any())
+  }
+
+  @Test
+  fun `testEnded with assumption failure calls reporter testAssumptionFailure`() {
+    val uniqueId = UniqueId.forEngine("android-test-engine").append("device", deviceSerial)
+    val descriptor = AndroidDeviceDescriptor(uniqueId, deviceSerial)
+    val mockReporter = mock<AndroidDeviceDescriptor.SimpleXmlResultReporter>()
+
+    val testIdentifier = TestIdentifier("pkg", "Cls", "meth")
+    val mockTestResult = mock<TestResult>()
+    whenever(mockTestResult.testIdentifier).thenReturn(testIdentifier)
+    whenever(mockTestResult.status).thenReturn(AmInstrumentationParser.STATUS_CODE_ASSUMPTION_FAILURE)
+    whenever(mockTestResult.stackTrace).thenReturn("Assumption violated")
+
+    val listener = descriptor.Listener(reporter = mockReporter)
+    listener.testStarted(testIdentifier)
+    listener.testEnded(mockTestResult)
+
+    val ddmlibTestId = DdmlibTestIdentifier("pkg.Cls", "meth")
+    verify(mockReporter).testAssumptionFailure(eq(ddmlibTestId), eq("Assumption violated"))
+    verify(mockReporter, never()).testFailed(any(), any())
+    verify(mockReporter).testEnded(eq(ddmlibTestId), any())
   }
 }

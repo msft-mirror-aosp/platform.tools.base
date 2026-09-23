@@ -150,4 +150,39 @@ class XmlTestRunListenerTest {
     assertThat(xml).contains("<testcase name=\"testIncomplete\" classname=\"com.example.FooTest\"")
     assertThat(xml).contains("<failure>Test did not complete before test run ended.</failure>")
   }
+
+  @Test
+  fun `generate report with ignored and assumption failure tests`() {
+    val out = ByteArrayOutputStream()
+    listener.testRunStarted("testRun", 3)
+
+    val testPass = DdmlibTestIdentifier("com.example.FooTest", "testPass")
+    listener.testStarted(testPass)
+    listener.testEnded(testPass, emptyMap())
+
+    val testIgnored = DdmlibTestIdentifier("com.example.FooTest", "testIgnored")
+    listener.testStarted(testIgnored)
+    listener.testIgnored(testIgnored)
+    listener.testEnded(testIgnored, emptyMap())
+
+    val testAssumption = DdmlibTestIdentifier("com.example.FooTest", "testAssumption")
+    listener.testStarted(testAssumption)
+    listener.testAssumptionFailure(testAssumption, "org.junit.AssumptionViolatedException: skip")
+    listener.testEnded(testAssumption, emptyMap())
+
+    listener.writeXml(out, "2026-06-24T12:00:00", 3000L)
+
+    val xml = out.toString(Charsets.UTF_8.name())
+    assertThat(xml)
+      .contains(
+        "<testsuites tests=\"3\" failures=\"0\" errors=\"0\" skipped=\"2\" time=\"3.000\" timestamp=\"2026-06-24T12:00:00\" hostname=\"localhost\">"
+      )
+    assertThat(xml).contains("<testsuite name=\"com.example.FooTest\" tests=\"3\" failures=\"0\" errors=\"0\" skipped=\"2\"")
+    assertThat(xml).contains("<testcase name=\"testPass\" classname=\"com.example.FooTest\"")
+    assertThat(xml).contains("<testcase name=\"testIgnored\" classname=\"com.example.FooTest\"")
+    assertThat(xml).contains("<skipped />")
+    assertThat(xml).contains("<testcase name=\"testAssumption\" classname=\"com.example.FooTest\"")
+    assertThat(xml).contains("<skipped>org.junit.AssumptionViolatedException: skip</skipped>")
+    assertThat(xml).doesNotContain("<failure")
+  }
 }
