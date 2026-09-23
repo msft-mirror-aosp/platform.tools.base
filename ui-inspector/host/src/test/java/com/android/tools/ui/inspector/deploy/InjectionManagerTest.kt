@@ -35,7 +35,7 @@ import com.android.tools.ui.inspector.common.ProtocolConstants
 import com.android.tools.ui.inspector.device.PROCESS_PACKAGES_SHELL_COMMAND
 import com.android.tools.ui.inspector.device.TOP_ACTIVITY_SHELL_COMMAND
 import com.android.tools.ui.inspector.protocol.UiInspectorProtocol
-import com.android.tools.ui.inspector.resolveTargetPackage
+import com.android.tools.ui.inspector.resolveForegroundPackage
 import com.android.tools.ui.inspector.runWithConnectedInspectors
 import com.android.tools.ui.inspector.statProbeCommand
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol
@@ -1046,7 +1046,7 @@ class InjectionManagerTest {
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "pm list packages -U --user 0", "package:$targetPackage uid:10123\n")
     configureSuccessfulInjection(targetPackage = targetPackage, pid = pid, processName = processName)
 
-    val resolvedPackage = resolveTargetPackage(testSession, deviceSerial, requested = null)
+    val resolvedPackage = resolveForegroundPackage(testSession, deviceSerial)
     val injectionManager =
       InjectionManager(
         testSession,

@@ -85,8 +85,15 @@ internal class DumpUiCommand(private val sessionFactory: () -> AdbSession) : Cal
     try {
       val (serial, targetPackage) =
         runBlocking {
-          val serial = resolveDeviceSerial(adbSession, device)
-          serial to resolveTargetPackage(adbSession, serial, packageName)
+          val serial =
+            device
+              ?: runCatching { resolveSoleOnlineDevice(adbSession) }
+                .getOrElse { throw IllegalStateException("${it.message} Specify a device with --device.", it) }
+          val targetPackage =
+            packageName
+              ?: runCatching { resolveForegroundPackage(adbSession, serial) }
+                .getOrElse { throw IllegalStateException("${it.message} Specify a package with --package.", it) }
+          serial to targetPackage
         }
       val err = spec.commandLine().err
       err.println("Executing dump-ui for package: $targetPackage on device: $serial")

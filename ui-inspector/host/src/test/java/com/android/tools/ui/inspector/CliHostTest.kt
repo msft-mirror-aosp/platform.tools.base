@@ -154,9 +154,12 @@ class CliHostTest {
     val outputFile = tempFolder.newFile("dump.json").toPath()
     Files.write(outputFile, "existing content".toByteArray(Charsets.UTF_8))
     val noDevicesSession = FakeAdbSession().apply { hostServices.devices = DeviceList(emptyList(), emptyList()) }
-    val exitCode = createCommandLine { noDevicesSession }.execute("dump-ui", "--package", "com.example", "-o", outputFile.toString())
+    val capturedErr = StringWriter()
+    val cmd = createCommandLine { noDevicesSession }.apply { setErr(PrintWriter(capturedErr)) }
+    val exitCode = cmd.execute("dump-ui", "--package", "com.example", "-o", outputFile.toString())
 
     assertThat(exitCode).isEqualTo(1)
+    assertThat(capturedErr.toString()).contains("--device")
     assertThat(String(Files.readAllBytes(outputFile), Charsets.UTF_8)).isEqualTo("existing content")
   }
 
